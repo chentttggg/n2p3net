@@ -1,0 +1,205 @@
+# GTN 242 人 N2P3-Net 失败诊断与修复记录（2026-08-22）
+
+> 状态：方案 B 已实施并通过测试；30 被试小验证完成；方案 A（60 被试）运行中；方案 D 待 A 后启动。
+> 本文档记录实测证据、文献依据与代码/文档改动，供后续会话与验收追溯。
+
+## 1. 起点
+
+- N2P3-Net 全量 242 人 × 10 epoch LOSO：hit 0.7727 / bacc 0.6447 / AUC 0.7019。
+- 同协议基线：Inception 0.8512 ≈ Conformer 0.8512 > EEGNet 0.8388 > SWLDA 0.7851 >
+  N2P3-Net 0.7727 > Template 0.6405 > xDAWN 0.6322 > WindowLR 0.5041。
+- 60 人 × 30 epoch 试点全面差于 10 epoch（hit 0.7333 vs 0.7833；bacc 0.6206 vs 0.6620；
+  AUC 0.6863 vs 0.7299），训练损失却持续下降 → 过拟合，不是欠拟合。
+
+## 2. 关键实测证据
+
+### 2.1 GTN 真实 P3b 峰在 460–490ms，不是模型先验的 350ms
+逐被试基线校正后 ERP：
+- 群体平均 Pz target 峰 464.1ms；target−nontarget 最大差 479.7ms（14.94μV）；
+  Cz 460.2ms（13.01μV）；Fz 417.2ms（6.19μV）。
+- 逐被试 Pz target 峰：mean 490.0ms、SD 84.9ms、q10/50/90 = 378/499/589ms。
+- 单试次 Pz 250–500ms 平均幅值 AUC 仅 0.601±0.105（数据天花板）。
+- 模型旧配置 target τ_P3b≈345–365ms，系统性偏早 ~120ms。
+
+### 2.2 PCW 参数弱识别（核心机制失效）
+一阶梯度诊断（batch=512）：
+- head_a/tokenizer 梯度量级 0.1–1.2；**tau0 梯度 ≈2×10⁻⁴**（弱 3–4 个数量级）；
+  dtau_attn_query/sigma_raw 也弱 100–1000 倍。
+- 30 epoch 后 τ0 移动 <0.05ms；λ3=0 仍不动 → 不是被 L_tau 拉住，而是分类监督推不动。
+- freeze-τ 与可学习 τ 的 12 被试性能几乎相同；时间均值池化替换整个 PCW 只损失
+  ~0.01 bacc/AUC → PCW 接近「装饰性」，判别信息主要在 encoder 分布式时间特征。
+
+### 2.3 L_jit 不收敛且有害
+- 反推 L_jit≈1.1–1.25，对应 ±40ms 平移的 τ 跟踪 RMS≈52ms。
+- 单折 30ep：nojit 末点 bacc/AUC 0.644/0.637，明显好于 baseline 0.546/0.556 和 jit_prob=1 的 0.591/0.589。
+
+### 2.4 过拟合曲线
+一折逐 epoch：L_target 1.16→0.92 单调降，held-out bacc/AUC 在 epoch 10–11 见顶
+（~0.68/0.73），epoch 30 掉到 0.55/0.56。无 val/嵌套早停的训练协议放大了该问题。
+
+### 2.5 失败被试结构
+N2P3-Net 错 55 人；Inception/Conformer 同时错 28 人，仅 27 人「N2P3-Net 独错而
+Inception 对」；19 人所有模型全错。说明主要是困难被试上更差，而非完全不同的失败模式。
+bacc/AUC 与试次数负相关（r=−0.29/−0.32），试次数高的被试更难。
+
+## 3. 文献依据（关键条目）
+
+- GTN 数据集与范式：[Mouček et al., Scientific Data 2017](https://link.springer.com/article/10.1038/sdata.2016.121?fromPaywallRec=false)；
+  同源多被试 CNN 结果多在 60–68% 单试次精度（[Vařeka et al. 2020](https://ar5iv.labs.arxiv.org/html/2001.04225)）。
+- P3b 通常 250–500ms，儿童更晚、跨被试变异大：[Polich, Updating P300](https://pmc.ncbi.nlm.nih.gov/articles/PMC2715154/)；
+  单试次 jitter 是 ERP 量化的头等问题（[Woody 1967](https://scispace.com/papers/characterization-of-an-adaptive-filter-for-the-analysis-of-4eu57785pm)、
+  [DTW warp-averaging](https://pubmed.ncbi.nlm.nih.gov/11595152/)）。
+- 软 argmax/注意力边界偏置与弱梯度退化：[Removing the Bias of Integral Pose Regression](https://mlanthology.org/iccv/2021/gu2021iccv-removing/)；
+  时间序列注意力可坍缩为 MLP（[Why Attention Fails](https://openreview.net/pdf?id=mYzlRNMAxS)）。
+- 时间不变性自监督与时间局域 P300 判别的冲突：[EEG SSL 系统综述](https://ar5iv.labs.arxiv.org/html/2401.05446)。
+- 小样本 LOSO 过拟合与验证协议：[Trustworthy EEG decoding, PMID 39549492](https://pubmed.ncbi.nlm.nih.gov/39549492/)；
+  [Data partitioning, arXiv:2505.13021](https://ar5iv.labs.arxiv.org/html/2505.13021)。
+
+## 4. 方案 B 改动（代码+文档）
+
+1. `MultiTaskHeads`：Head-A 增加全局时间池化旁路 `g_global=mean_pool(Z')`，
+   `use_global_bypass=True` 默认开启；False 为旧结构消融。
+2. `N2P3Net`：新增 `tau0_ms`、`global_bypass` 构造参数，透传 ComponentWindow/Heads。
+3. `TrainerConfig`：`lambda_jit=0.0`、`jit_prob=0.0` 默认关闭 L_jit（接口保留）。
+4. `run_n2p3net_gtn.py`：GTN 默认 epochs=10、τ0=(220,300,460)、P3b τ0 界 [350,600]、
+   attention_softargmax、lambda_jit=0；新增 `--p3b-tau0-*`、`--no-global-bypass`；
+   `--subjects` 一律从 nall 缓存派生（删除了与全量口径不一致的旧 n<N> 子集缓存）。
+5. `run_gtn_baseline.py`：同样统一从 nall 缓存限缩，避免旧子集缓存改变分母。
+6. 文档：constitution v5、blueprint v5、roadmap 更新；测试新增回归项。
+
+测试：全量 pytest 通过（方案 B 后 241 项）。
+
+## 5. 小验证结果（30 被试，同一 runner/缓存/seed 口径）
+
+| 配置 | hit | bacc | AUC | target τ_P3b |
+|---|---|---|---|---|
+| 旧（τ0=350, direct, jit .5, 无 bypass） | .7667 | .6454 | .7153 | 345.1ms |
+| 新（τ0=460, softargmax, jit 0, bypass） | **.8000** | **.6558** | **.7174** | **487.9ms** |
+
+- 配对置换 hit p=1.000（N=30，只差 1 人，不显著），但三项指标方向一致；
+- **可解释性目标达成**：新配置的 target τ_P3b=487.9ms，与逐被试 ERP 实测 490ms 一致。
+
+## 6. 方案 A 结果（60 被试，同 runner/缓存/seed 口径）
+
+| 配置 | hit | bacc | AUC | target τ_P3b |
+|---|---|---|---|---|
+| 旧（τ0=350, direct, jit .5, 无 bypass） | **.8500** | .6580 | .7189 | 369.9ms |
+| 新（τ0=460, softargmax, jit 0, bypass） | .8000 | **.6590** | **.7195** | **481.7ms** |
+
+- 配对置换检验：mean(A−B)=−0.0500，p=0.2492（不显著）。
+- 结论：方案 B 的命中率没有显著提升（60 被试反而 −0.05），单试次 bacc/AUC 几乎持平（+0.001/0.0006），
+  但 τ 从 370ms 修正到 482ms，与 ERP 实测 490ms 一致——**修复的是可解释性，不是命中率**。
+- 决策：不以此为由重训全量 242；保留新配置作为默认（可解释性 + 训练更快 16.4s/fold vs 19.6s/fold），
+  hit 指标仍需以全量 242 旧/新配置复核才能定论。
+
+## 7. 方案 D（运行中）
+
+按 transfer_policy 三臂（T0/T1/T2/T3），先 60 被试试点，显著才考虑全量 242。
+
+### 7.1 EEGNet 60 被试（已跑完）
+| 臂 | hit | bacc | AUC | vs T0 p |
+|---|---|---|---|---|
+| T0 from scratch | .8333 | .6845 | .7713 | — |
+| T1 erpcore | .8667 | .6872 | .7745 | 0.5000 |
+| T1 bnci008 | .8667 | .6915 | .7715 | 0.5004 |
+| T1 bi2014a | **.9000** | .6877 | **.7786** | 0.1188 |
+| T2 erpcore | .8333 | .6702 | .7551 | 1.0000 |
+| T2 bnci008 | .8167 | .6781 | .7577 | 1.0000 |
+| T2 bi2014a | .8833 | .6742 | .7649 | 0.2450 |
+
+结论：T1 微调全线不劣，bi2014a 方向性 +0.0667；T2 冻结骨干无优势。N=60 未达显著，
+符合 transfer_policy「不显著不采用」的默认结论；bi2014a 值得全量复核。
+
+### 7.2 N2P3-Net T3 域对齐（实现 + 60 被试已完成）
+- 新代码：`N2P3NetDomainBaseline`（aux 域只进 n_domains=2 的域条件仿射 + RBF-MMD，
+  GTN 独占 L_target/L_early/L_amp/L_tau；predict 仍只吃 GTN 测试 fold）。
+- runner 新参数：`--aux-dataset/--aux-channels/--aux-max-trials/--lambda4/--mmd-bandwidth`。
+- 12 被试试点：T0-new .6667/.6454/.7061 → T3-erpcore .7500/.6480/.7223（方向性改善）。
+- 60 被试结果（T0-new = planb_new60）：
+
+| 臂 | hit | bacc | AUC | vs T0 p |
+|---|---|---|---|---|
+| T0-new | .8000 | .6590 | .7195 | — |
+| T3-erpcore (λ4=0.1) | .8167 | .6570 | .7176 | 1.0000 |
+| T3-bnci008 (λ4=0.1) | .7833 | .6568 | .7168 | 1.0000 |
+
+T3 无显著收益；bacc/AUC 与 T0 持平。
+
+## 8. 方案 D 总结与决策
+
+- EEGNet T1 微调全线不劣（bi2014a 方向性 +0.0667 hit，p=0.119）；T2 冻结无优势。
+- N2P3-Net T3 域对齐无显著收益（erpcore hit +0.0167，bnci −0.0167）。
+- 按 transfer_policy §7：60 被试试点不显著 → 默认「辅助数据无增益」，不采用辅助预训练。
+- 不建议全量 242 跑 D 矩阵（EEGNet T1-bi2014a 全量约 30–40min、N2P3Net T3 每臂约 3.5–4h
+  且当前无阳性信号）；若仍要复核 T1-bi2014a 全量，可作为唯一例外单独批准。
+
+## 9. 样本量外推与 EEGNet 可借鉴设计（无新训练，仅统计与文献分析）
+
+### 9.1 哪些小样本不显著的变化值得怀疑"扩大样本会显著"
+- **T1 辅助预训练 + 微调（EEGNet）**：三个辅助域 hit 全部不劣或更优，且 60 人内所有
+  discordant 对都朝 T1 方向（erpcore/bnci 各 2/0、bi2014a 4/0）。bi2014a 的 discordant
+  比例 95%CI≈[0.40,0.99]，若 242 人按 6.7% discordant 率外推约 16 对；要 80% 功效需
+  ~19–47 对（取决于真实比例 0.8/0.7），故 242 人仍只是"可能显著"，不是确定。
+- **P3b τ0=460 + softargmax（方案 B 的时间先验部分）**：机制证据最强（GTN 真实峰
+  460–490ms，模型 τ 从 370→482ms），12/30 人 bacc/AUC 方向一致；但 60 人 bacc/AUC
+  差只有 +0.001/+0.0006，bootstrap 95%CI 已跨 0。按 242 人外推 CI 仍不排除 0，
+  **它应作为"可解释性修正"保留，不应期待 hit 显著提升**。
+- **关闭 L_jit**：机制与文献一致（时间不变性自监督与 P300 时间局域任务冲突），
+  但 10ep 下收益近乎为 0，只在 30ep 过拟合区显示价值；不是扩大样本就能兑现的调整。
+
+### 9.2 不应继续投入的调整
+- **T3 域对齐（λ4=0.1/带宽5.0）**：242 人投影功效仅 0.15–0.23，且 bacc/AUC 方向为负。
+- **T2 冻结骨干**、**全量增强**：机制不利或方向为负。
+- **方案 B 的 global bypass**：60 人 hit 方向为负，bacc/AUC 近 0；未被单独验证的收益。
+
+### 9.3 EEGNet 值得借鉴的设计（按可落地性排序）
+1. **原生通道数与"无幻象通道"**：EEGNet 直接用 GTN 3 导；N2P3Net 零填充到 8 导。
+   建议 tokenizer 支持 3 导或 mask 化 spatial conv，而不是训练 5 个恒 0 通道。
+2. **降容 + 池化**：EEGNet 3 导仅 1410 参数，N2P3Net 37.5k；EEGNet 两次平均池化
+   （4×、8×）把 T 从 256 压到 8。分类旁路可池化，PCW 保持全 T 作可解释路径。
+3. **频率特异空间滤波 + max-norm**：EEGNet 每个时间滤波器配 2 个空间滤波器并约束
+   ‖w‖≤1（CSP 式可解释正则）；tokenizer 空间深度卷积可加同样 max-norm。
+4. **更强 dropout/简单头**：EEGNet 两处 dropout=0.25；N2P3Net 只有 TCN 0.1。
+   EEGNet 分类头是 1×8 conv（258 参数），N2P3Net Head-A 是 192→32→1 MLP。
+5. **标准化口径**：EEGNet 用训练集逐通道全局 z-score；N2P3Net 只用基线段 z-score。
+   可组合：基线校正 + 训练集通道 z-score。
+6. **ELU/BN 与自适应 BN**：EEGNet 用 ELU + BN(momentum=0.01)；跨域迁移文献支持
+   adaptive BN。N2P3Net 的 LayerNorm 不是必然错误，但值得做小样本 A/B。
+7. **单任务优先**：EEGNet 只有 L_target；N2P3Net 的 L_early/L_tau/L_amp 可能争夺
+   共享编码器。最终 hit 口径建议先跑 λ2=λ3=λamp=0 的 60 人对照（~25min）。
+8. **参数账对标**：设计 N2P3Net-Mini（F1=8、D=2、separable block + pooling +
+   linear head，目标 3–5k 参数），作为"结构正则化"对照。
+
+> 大样本实验暂不启动；上述任何候选都先在 12/30 人上做配对检验，明确效果方向后再议。
+
+## 10. v5.1 已实现（EEGNet 借鉴 6 项，全部可回退）
+
+1. GTN 原生 3 导：`--n-channels 3`（默认）；`--n-channels 8` 回退零填充。
+2. Head-A separable-pool 判别旁路：4× 池化 → depthwise+pointwise → adaptive 8 bin；
+   `--bypass-mode mean_pool|none` 回退。
+3. 空间 max-norm=1：tokenizer 有效空间权重约束；`--no-spatial-max-norm` 回退。
+4. Dropout 0.25：encoder + 瘦头；`--encoder-dropout 0.1` 回退。
+5. 简单线性头：Head-A/B = Dropout+Linear；`--head-mlp` 回退旧 MLP。
+6. 分类旁路与 PCW 分离：E5 收窄为仅约束可解释路径（constitution v5.1）。
+测试：新增 test_bypass / 3 导 / max-norm / 回退路径测试；全量 pytest 253 项通过。
+
+### 10.1 v5.1 比较结果（同 folds/seed，12/30/60 被试）
+
+| 配置 | hit | bacc | AUC | wall |
+|---|---|---|---|---|
+| v5.1-12 | .6667 | .6407 | .7080 | 32s |
+| v5-new-12 | .6667 | .6454 | .7061 | — |
+| v5.1-30 | **.8667** | .6476 | .7162 | 165s |
+| v5-new-30 | .8000 | .6558 | .7174 | 383s |
+| v5-old-30 | .7667 | .6454 | .7153 | 612s |
+| v5.1-60 | .8167 | .6562 | .7175 | 616s |
+| v5-new-60 | .8000 | .6590 | .7195 | 1002s |
+| v5-old-60 | **.8500** | .6580 | .7189 | 1193s |
+| EEGNet-60 T0 | .8333 | .6845 | .7713 | — |
+
+- v5.1 vs v5-new60：hit +0.0167（p=1.000），bacc −0.0028，AUC −0.0020。
+- v5.1 vs v5-old60：hit −0.0333（p=0.626）。
+- v5.1 vs EEGNet60：hit −0.0167（p=1.000）。
+- 结论：6 项 EEGNet 借鉴带来的主要收益是**效率**（60 人训练 1002s→616s，约 39% 加速）
+  与更干净的原生 3 导接口；hit/bacc/AUC 与 v5 两个版本在同一噪声带内，未显著超越。
+  30 人 hit 高 +0.067 但 60 人回落，不能作为稳健证据。

@@ -134,7 +134,7 @@ except RuntimeError as e:                       # 旧版兜底
 
 | 设备 | torch 安装命令 | 说明 |
 |---|---|---|
-| NVIDIA 5070 | `pip install torch --index-url https://download.pytorch.org/whl/cu126` | cu126 为示例，按你的驱动 CUDA 版本选 cu126/cu128 等 |
+| NVIDIA 5070 | `pip install torch --index-url https://download.pytorch.org/whl/cu132` | 5070 是 Blackwell（sm_120），需 CUDA ≥12.8；cu128 索引只到 torch 2.11，而 Python 3.14 需 torch 2.13，故用 cu132（2026-08-21 实测该索引有 2.13.0+cu132 cp314 win wheel） |
 | Intel Arc 130T | `pip install torch --index-url https://download.pytorch.org/whl/xpu` | **XPU 专用源**；PyPI 官方 wheel 是 CPU 版、不带 XPU |
 | CPU 兜底 | `pip install torch` | PyPI 官方 CPU 版 |
 

@@ -45,8 +45,8 @@ Phase D  真实数据验证 —— 换 GTN / 自有数据，跑 Phase 1 基线 +
 | # | 模块 | 职责 | 关键契约（输入 → 输出） | 测试 |
 |---|---|---|---|---|
 | 1 | data/preprocess.py | 重采样/0.1Hz连续域高通/epoch/伪迹剔除 | raw → (N,8,T) | 冒烟 |
-| 2 | data/channel.py | 坐标式通道身份 + 缺失掩码 | 坐标 → E_chn (C,D) | 冒烟 |
-| 3 | data/metadata.py | 年龄/性别嵌入 | 元数据 → E_sub (D) | 冒烟 |
+| 2 | data/channel.py | 坐标式通道身份 + 缺失掩码 | 坐标 → E_chn (C,6·n_freqs) | 冒烟 |
+| 3 | data/metadata.py | 年龄/性别嵌入 | 元数据 → E_sub (2·n_freqs+3) | 冒烟 |
 | 4 | data/dataset.py | 统一加载器 | 三类数据 → (N,8,T)+元数据 | 冒烟+语义 |
 | 5 | models/reference.py | 加权再参考（9参数） | X → X_ref | 冒烟+语义(参考无关) |
 | 6 | models/tokenizer.py | Stage1 多尺度卷积+空间卷积 | (B,8,T) → Z (B,T,D) | 冒烟+语义(无池化保T) |

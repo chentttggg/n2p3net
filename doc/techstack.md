@@ -7,10 +7,10 @@
 
 | 层 | 选择 | 理由 | 否决的替代 |
 |---|---|---|---|
-| 语言 | Python 3.11 / 3.12 | 科学计算生态最稳 | 3.13（部分库 wheel 滞后） |
+| 语言 | Python 3.14 | 关键库已逐项核实 3.14 兼容：braindecode 1.7 / pyriemann 0.12 / mne 1.12 / numpy 2.5 / scipy 1.18 / matplotlib 3.11 / torch 2.13 均有 cp314 或纯 Python wheel | ≤3.10（braindecode 要求 ≥3.11）；3.11/3.12 较旧 |
 | 深度学习 | PyTorch（≥2.5） | EEG 生态 + braindecode 兼容；2.5+ 原生支持 CUDA/XPU 双后端 | TensorFlow（生态弱）、JAX（门槛高） |
 | EEG 预处理 | MNE-Python | 重采样/连续域高通/epoch/伪迹剔除的事实标准 | 自研（重造轮子） |
-| EEG 深度学习库 | braindecode | 现成 EEGNet/DeepConvNet/ATCNet 基线 | — |
+| EEG 深度学习库 | braindecode | 本项目实际注册 EEGNet / EEG-Inception / EEG Conformer 三个基线 | — |
 | 传统基线 | scikit-learn + pyriemann | SWLDA/LDA + xDAWN/Riemannian | — |
 | 统计验证 | MNE(cluster permutation) + LIMO | 成分可解释性对照 + 年龄/性别协变量 | — |
 | 数值 | numpy / scipy / pandas | 标准 | — |
@@ -49,21 +49,26 @@
 | 去漂移高通依据 | Tanner, Morgan-Short & Luck (2015, Psychophysiology) | 0.1 Hz 连续域高通 | 0.5 Hz（P3b 失真，E1/D8） |
 | N2 早期证据 | Kaufmann 2011 / Hong 2009 | 多成分协同优于单 P300 | 当作独立新任务（实为同标签集成） |
 | 去漂移证据 | Clements 2016 (J Neural Eng) | δ/θ 频段漂移量化 | — |
-| 基线实现 | braindecode + pyriemann | EEGNet/ATCNet + xDAWN | — |
+| 基线实现 | braindecode + pyriemann | EEGNet/EEG-Inception/EEG Conformer + xDAWN | — |
 
 ## 依赖清单（示意）
 mne, braindecode, torch, numpy, scipy, pandas, scikit-learn, pyriemann,
 hydra-core, wandb(或 mlflow), ruff, black, pytest
 
-## 数据源
-- **GTN**（Moucek 2017, Sci Data 4:160121）——儿童（7–17 岁）3 导 P300，**跨年龄迁移源域** + 文献对照。
-- **ERP CORE**（Kappenman 2021）视觉 oddball P3 + 听觉 MMN——成人 30 导 / 1024 Hz，异构格式迁移测试集。
-- **自有 8 导干电极数据**——成人为主，主训练/评估集（含年龄/性别元数据）。
+## 数据源与角色（P9）
+- **GTN**（Moucek 2017, Sci Data 4:160121）——儿童（7–17 岁）3 导 P300，**主域：最终实验情景与验收**；
+  242-fold LOSO 的训练/测试和分类头监督只由 GTN 决定。
+- **ERP CORE**（Kappenman 2021）视觉 oddball P3 + 听觉 MMN——成人 30 导 / 1024 Hz，
+  **辅助域：只做预训练或域对齐**；视觉 P3 部分可作辅助预训练，听觉 MMN 不作为 P300 辅助。
+- **Brain Invaders bi2014a / BNCI2014_008**——干电极/8 导 P300，**辅助预训练域**；
+  只有 target/non-target 标签参与预训练，不进入 GTN 主分类损失。
+- **自有 8 导干电极数据**——成人为主，部署目标域（最终 zero/few-shot 验收），当前阶段不混入 GTN。
+- 辅助域使用细则与四臂协议：见 doc/transfer_policy.md。
 
 ## 目录约定（建议）
 ```
 n2p3-net/
-├── constitution.md / mission.md / techstack.md / blueprint.md / roadmap.md
+├── constitution.md / mission.md / techstack.md / blueprint.md / roadmap.md / transfer_policy.md
 ├── src/
 │   ├── data/          # 格式无关适配器（重采样/连续域高通/坐标通道/掩码/元数据加载器）
 │   ├── models/        # N2P3-Net（Stage0–Stage4，参数化成分窗 ×3）

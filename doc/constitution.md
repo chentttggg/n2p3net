@@ -3,7 +3,9 @@
 > 本文档是项目的最高准则。所有代码、架构决策、实验设计都必须服从本文档。
 > 当 mission / techstack / roadmap 与本文档冲突时，以本文档为准。
 > 修改本文档必须显式记录理由（见第六节）。
-> 版本：v2（吸收 review v1 + 人群假设改为成人为主）。
+> 版本：v5.1（v5 + EEGNet 借鉴：GTN 原生 3 导、tokenizer 空间 max-norm、Head-A separable-pool
+> 判别旁路、Dropout+Linear 瘦头、dropout 0.25；E5 收窄为仅约束可解释路径，全部可通过
+> bypass_mode/n-channels/head-mlp/no-spatial-max-norm 显式回退 v5 结构）。
 
 ## 一、任务定义
 
@@ -44,6 +46,12 @@ P8 先基线，后创新。任何新模块必须先与 SWLDA、xDAWN+RG、EEGNet
    基线对比，并证明复杂度收益来自跨域泛化/可解释/多成分，而非单数据集精度。基线须含两个
    「免费地板」：手工窗特征逻辑回归、grand-average 模板匹配相关。
 
+P9 辅助数据只预训练/域对齐，主监督与验收只属于主域。其他 P300 数据集（Brain Invaders /
+   BNCI008 / ERP CORE 等）只允许以两种方式参与：(a) 预训练特征提取器后，每个 GTN fold
+   从该初始化开始、用 GTN 微调；(b) 共享编码器 + 域对齐，分类头仅由 GTN 监督。禁止把辅助
+   试次与 GTN 拼接后联合优化主分类 BCE；禁止辅助域梯度更新主分类头/决策层。最终实验情景
+   （猜数字）的分类头、fold 协议与验收指标一律由 GTN 决定。细则见 doc/transfer_policy.md。
+
 ## 三、工程经验条例（E 系列 —— 从 prior art 的坑中提炼）
 
 E1 干电极漂移是硬伤，但去漂移方式有讲究。Clements 2016 实测干电极 δ/θ 频段功率持续高于湿电极。
@@ -62,22 +70,36 @@ E3 潜伏期标签不可标注。Depuydt 2023 的教训：单试次潜伏期估�
 
 E4 容量克制，预算 ≤50k。Alvarado-Gonzalez 2021 证明 P300 判别信息集中在少数时空滤波器。
    Phase 2 参数量上限 50k（EEGNet <10k 量级的扩展），Stage 2 序列编码降为 depth∈{0,1,2,3}
-   消融轴、默认 1 层；任何新增参数必须归因到具体收益。
+   消融轴、默认 3 层膨胀 TCN（2026-08-20 修订：原「默认 1 层轻量 Conformer」实测 58k 超预算，
+   TCN 38k 符合预算且膨胀感受野覆盖 N2→P3b）；任何新增参数必须归因到具体收益。
 
-E5 时间分辨率不可被池化抹掉。CNN 窗口化 + 池化会丢失潜伏期信息并造成 latency-amplitude confound。
-   任何输出潜伏期的路径不得使用均值/大核池化；潜伏期 τ 是显式参数（生成窗），不经过池化。
+E5 时间分辨率在**可解释路径**不可被池化抹掉（v5.1 收窄）。CNN 窗口化 + 池化会丢失潜伏期信息并造成 latency-amplitude confound。
+   任何输出 τ/σ 的路径不得使用均值/大核池化，PCW 必须吃全 T 的 Z'。Head-A 判别旁路允许
+    EEGNet 式池化（separable_pool），但旁路特征不得反哺 τ/σ 读数。
 
 E6 跨域对齐是边际增益，非雪中送炭。AS-MMD 实测跨数据集单试次仅 0.61→0.66，跨域对齐无法抵消
    根本域差（参考/设备/年龄）。跨受试命中率须按物理天花板（~80%）诚实预期；跨数据集单试次
    接近随机，故「猜数字」依赖「每数字多次试次平均」而非单试次跨域。
 
-E7 成分窗须防坍缩（根治）。free attention 的多查询共享 1-bit 监督会坍缩（DETR 系失败模式）。
+E7 成分窗须防坍缩（根治，v4 修订）。free attention 的多查询共享 1-bit 监督会坍缩（DETR 系失败模式）。
    参数化成分窗以「位置寻址」替代「内容寻址」——不同成分先验中心 τ0 不同，位置天然区分，
-   无需 JSD 散度；只保留进头/进损失的成分（N2/P3a/P3b）。
+   无需 JSD 散度；只保留进头/进损失的成分（N2/P3a/P3b）。P3b Δτ 界放宽为 [−50,150]ms，
+    覆盖真实 P3b 300–600ms；P3a 仍只前移 [−30,0]ms，保留二者下界不重叠。
+      v5：GTN（儿童）实测 P3b 峰值 460–490ms，故 GTN τ0_P3b 先验 460ms、τ0 界 [350,600]；
+      成人先验 350ms/[280,500] 不变。
 
 E8 元数据是资产，不是噪声。年龄/性别作为 subject metadata 嵌入输入网络，并作为协变量进入
    Phase 4 回归；P300 潜伏期随年龄递增（成人亦然）。GTN（儿童）与成人目标存在年龄域差，
    GTN 定位为「跨年龄迁移源域」而非同源主数据。
+
+E9 辅助预训练权重只是初始化或对齐信号，不是成品。即使使用辅助 P300 预训练，也必须保存
+   checkpoint、显式记录层加载/冻结映射，并在每个 GTN fold 完成微调后才能进入主评估；
+   辅助域单独精度不得作为主任务验收指标（P9 / transfer_policy.md）。
+
+E10 分类饱和不等于潜伏期已标定。review v6 合成诊断实测分类 AUC 可接近 1.0，但 τ 仍可能
+    不随真实 latency jitter 协变。v5 修订（GTN 242 人失败诊断）：L_jit 曾被默认开启作物理 ms 尺度锚点，但实测未收敛
+    （±40ms 平移的 τ 跟踪 RMS≈52ms），且时间不变性自监督与 P300 时间局域判别冲突；
+    故 v5 起默认 λ_jit=0，L_jit 仅作显式消融保留（接口仍支持复现旧实验）。
 
 ## 四、明令禁止（Do Not）
 
@@ -89,6 +111,9 @@ D5 禁止在成分定位未经生理学检验时宣称「可解释」。
 D6 禁止引入 Hungarian / bipartite 匹配作为参数化成分窗的损失（见 E2）。
 D7 禁止把窗口内峰值/均值当作逐试次潜伏期真实标签（见 E3）。
 D8 禁止默认 0.5 Hz 高通（见 E1，Tanner 2015 失真风险）。
+D9 禁止辅助 P300 试次与 GTN 试次混合后直接训练主分类；禁止把辅助试次放入 GTN 测试 fold；
+   禁止辅助域标签进入主分类/早期证据损失；禁止以辅助域精度替代主任务验收
+   （P9 / transfer_policy.md）。
 
 ## 五、决策优先级（冲突时自上而下裁决）
 
@@ -97,9 +122,29 @@ D8 禁止默认 0.5 Hz 高通（见 E1，Tanner 2015 失真风险）。
 3. P2 / P5 格式无关 > 实现便利
 4. P8 基线对比 > 创新叙事
 5. E 系列经验条例 > 实现便利（E 与 P 同级）
-6. 其余按 P3 → P7 → P6
+6. 其余按 P3 → P7 → P6 → P9
 
 ## 六、修订规则
 
 - 本文档仅在以下情况修订：实测数据推翻某条原则/经验条例的假设；出现新的硬约束。
 - 修订必须记录：修订理由、旧条目、新条目、影响范围，并同步检查 mission / techstack / roadmap 的一致性。
+
+### 修订记录
+
+- v3（2026-08-21）：新增 P9/E9/D9。理由：明确「其他 P300 数据只做预训练或域对齐，最终每个
+  fold 仍在 GTN 上微调；分类头与评估协议只由 GTN 决定」的硬边界，防止辅助域污染猜数字情景。
+  影响：blueprint Stage 4、roadmap Phase 3、新增 doc/transfer_policy.md。
+- v4（2026-08-21）：新增 E10 并修订 E7 落地口径。理由：合成诊断显示分类饱和不保证 τ 被标定，
+  global_pool 与窄 P3b Δτ 界分别造成信息洗平和结构饱和；默认改为 attention_direct + L_jit，
+  P3b Δτ=[−50,150]ms。影响：component_window / n2p3net / trainer / blueprint §4/§8。
+- v5（2026-08-22）：修订 E7/E10 落地口径。理由：GTN 242 人 LOSO 实测 PCW 参数梯度弱
+  3–4 个数量级（τ0 30 epoch 仅动 <0.05ms），L_jit 未收敛且 nojit 更稳；GTN 真实 P3b
+  峰值 460–490ms。新口径：GTN τ0_P3b=460ms/界[350,600]、attention_softargmax、
+  λ_jit 默认 0、Head-A 全局时间池化旁路、固定 10 epoch。影响：heads / n2p3net /
+  trainer / run_n2p3net_gtn / blueprint §4/§5/§8。
+- v5.1（2026-08-22）：修订 E5 落地口径并引入 EEGNet 借鉴项。理由：GTN 60 人对比显示
+  N2P3Net hit 低于 EEGNet，而 EEGNet 的 1410 参数/原生 3 导/两段池化/空间 max-norm/
+  dropout+线性头在小样本 LOSO 下更有优势。新口径：GTN 原生 3 导、tokenizer 空间
+  max-norm=1、Head-A separable-pool 判别旁路（4× 池化→depthwise+pointwise→8 bin）、
+  Head-A/B Dropout+Linear 瘦头、dropout 0.25；E5 仅约束可解释路径。影响：tokenizer /
+  heads / n2p3net / bypass（新模块）/ run_n2p3net_gtn / blueprint §1/§3/§5。

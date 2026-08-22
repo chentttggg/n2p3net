@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "n2p3-net"
+version = "0.1.0"
+description = "成分感知的 P300 oddball 认知判定 EEG 解码模型（N2P3-Net）"
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+# -p no:cacheprovider 禁用缓存，避免受限环境下写 .pytest_cache 的 PermissionError 噪音
+addopts = "-q -p no:cacheprovider"
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B"]
+ignore = ["E501"]

@@ -6,7 +6,15 @@ dist/
 build/
 .pytest_cache/
 .ruff_cache/
+.mne_home/
 data/
 Data/
 
 
+
+# GLM: 数据与实验产物不入库（大文件/运行记录）
+experiments/cache/
+experiments/runs/
+experiments/results*/
+mne_data/
+aux_smoke/

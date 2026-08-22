@@ -1,7 +1,7 @@
 # N2P3-Net 路线图（Roadmap）
 
 > 每个阶段以「可量化的验收标准」为准；未达标不得进入下一阶段。
-> 全程遵循 constitution.md 的 P1–P8 与 E1–E8。
+> 全程遵循 constitution.md 的 P1–P9 与 E1–E10。
 > 版本：v2（吸收 review v1 + 成人为主）。
 
 ## 阶段总览
@@ -52,33 +52,51 @@
 目标：实现 Stage0–Stage3，单受试命中率超越最强基线，参数预算 ≤50k。
 交付：
 - Stage1 多尺度时间卷积 + 空间深度卷积（按尺度分地形先验初始化）。
-- Stage2 序列编码 depth∈{0,1,2,3} 消融轴（默认 1 层轻量 Conformer exp=2 或膨胀 TCN）+ 参数化成分窗 ×3（N2/P3a/P3b，τ 生成 A，D8）。
-- Stage3 多任务头：主二分类（pos_weight）+ 早期证据头（t<300ms，固定 λ2 网格）+ 潜伏期（参数化窗）+ 幅值。
+- Stage2 序列编码 depth∈{0,1,2,3} 消融轴（默认 3 层膨胀 TCN，2026-08-20 决策）+ 参数化成分窗 ×3（N2/P3a/P3b，τ 生成 A，D8）。
+- Stage3 多任务头：主二分类（pos_weight，含全局时间池化旁路 g_global，v5 方案 B）+ 早期证据头（t<300ms，固定 λ2 网格）+ 潜伏期（参数化窗）+ 幅值。
 - Stage0 加权再参考（9 参数）+ 参考抖动增强。
 验收：
 - 单受试（多次本体训练，按 run 分组切分）命中率 ≥ 80%（阶段性门槛，最终目标 85% 见 mission），且 ≥ 最强基线 +2pt（配对置换检验）；
 - 参数预算 ≤50k；参数化窗 τ 定位到 N2(~200–250ms)/P3b(300–500ms) 区间；
-- 潜伏期诊断：模拟数据检验 MAE(τ, τ_true) < 40ms（验证而非补救，D8）。
+- 潜伏期诊断：模拟数据检验 MAE(τ, τ_true) < 40ms；attention_direct + L_jit 合成诊断 36.2ms 通过，
+  但 GTN 242 人真实数据失败诊断（2026-08-22）显示 PCW 参数梯度弱 3–4 个数量级、L_jit 不收敛，
+  v5 起 L_jit 默认关闭、GTN τ0_P3b=460ms/界[350,600]、默认 attention_softargmax。
 坑预警：
 - 成分窗坍缩（E7）——参数化窗位置寻址天然防坍缩，无需 JSD；
 - 潜伏期无真实标签（E3/D7）——τ 是生成参数被直接监督，方案 2 仅作初始化兜底；
 - 池化抹掉潜伏期（E5）——Stage 1 无池化，τ 显式参数。
 参考实现：DETRtime（query，避 Hungarian）、Depuydt 2023、EEG-Inception、EEGNet。
+待办（review v3 记录）：
+- Head-D 物理幅值：传 A + 归一化 X 进 heads，替代 Linear(H_P3b→1) 代理（当前无 μV 标定、无重构监督）；
+- ~~τ0 数据驱动初始化~~：已按 GTN grand-average 差波峰位设 220/300/460（v5）；跨数据集再按各自数据修订；
+- time_warp 性能：GPU 训练挪进 collate_fn（当前 .cpu().numpy() 往返 + B×C 双循环）。
 依赖：Phase 1。
 
-## Phase 3 —— 跨域 + 自监督
-目标：实现 Stage4，跨受试/跨数据集达标。
+## Phase 3 —— 辅助 P300 预训练/域对齐 + 跨域 + 自监督
+目标：实现 Stage4；辅助数据只提供初始化或域对齐，GTN 每个 fold 仍微调并独占验收（P9/D10）。
 交付：
-- 掩码 ERP 自监督预训练（语料 = GTN + ERP CORE + 自有无标签，靠坐标嵌入吃异构通道）。
-- 域条件仿射（per-domain scale/shift）+ 特征级 RBF-MMD + 目标加权损失（非 Split-BN）。
-- ERP 感知数据增强：时间扭曲/加噪/通道 dropout/参考抖动。
+- 辅助 P300 监督预训练：Brain Invaders / BNCI008 / ERP CORE 二分类预训练特征提取器，
+  保存 checkpoint + load_mapping；每个 GTN fold 加载后微调（方式 A）。
+- 共享编码器 + 域对齐：域条件仿射（per-domain scale/shift）+ 特征级 RBF-MMD + 目标加权损失；
+  辅助域只进 L_MMD，L_target/L_early/L_amp 只在 GTN 试次上计算（方式 B）。
+- 冻结骨干对照：辅助预训练后冻结特征层，GTN 只训分类头（方式 C）。
+- 掩码 ERP 自监督预训练（可选，语料 = GTN + ERP CORE + 自有无标签，靠坐标嵌入吃异构通道）。
+- ERP 感知数据增强：时间扭曲/加噪/通道 dropout/参考抖动（GTN fold 与辅助预训练分别配置）。
 验收：
 - 跨受试零样本命中率 ≥ 78%（自有成人数据）；少样本（5–20 试次）≥ 82%；
-- 跨数据集 AUC：先「GTN 内部年龄分层」中间档，主目标 ≥ 0.70（高风险，儿童↔成人年龄域差）。
+- 跨数据集 AUC：先「GTN 内部年龄分层」中间档，主目标 ≥ 0.70（高风险，儿童↔成人年龄域差）；
+- 辅助数据三臂协议（T0/T1/T2/T3）跑完，主口径 GTN 242-fold LOSO，配对置换检验判显著；
+  无显著增益则退回 T0，并写回 transfer_policy.md 结论。
 坑预警：
 - 跨域对齐是边际增益（E6）；跨数据集单试次接近随机，命中率靠决策层累加；
-- SSL 自有数据数千试次不足以学表征，收益预期「小正则」，勿高估（review 3.8）。
-参考实现：AS-MMD（域条件仿射 + MMD）、LaBraM/EEG2Rep（掩码重建思想）。
+- SSL 自有数据数千试次不足以学表征，收益预期「小正则」，勿高估（review 3.8）；
+- 辅助预训练可能带来负迁移：必须用冻结/微调消融与 GTN-only 对照检测（E9）；
+- 禁止辅助试次与 GTN 拼接训练、禁止辅助试次进入 GTN 测试 fold（P9/D9）。
+参考实现：AS-MMD（域条件仿射 + MMD）、LaBraM/EEG2Rep（掩码重建思想）、transfer_policy.md。
+待办（review v3 记录）：
+- L_MMD 带宽改 median heuristic 或多带宽（D=64 距离量级 ≫1，固定 1.0 会 exp(−d²/2) 全零梯度）；
+- DeepBaseline 增加 pretrained_state_dict / load_mapping / freeze_prefixes 接口；
+- 辅助预训练 checkpoint 落盘目录与命名规范（experiments/cache/pretrain/<aux>_<backbone>_<sfreq>.pt）。
 依赖：Phase 2。
 
 ## Phase 4 —— 可解释与统计验证
