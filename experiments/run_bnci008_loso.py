@@ -38,6 +38,9 @@ from data.channel import build_channel_identity  # noqa: E402
 
 CH_8 = ("Fz", "Cz", "P3", "Pz", "P4", "PO7", "PO8", "Oz")
 CH_3 = ("Fz", "Cz", "Pz")
+# BI2014a（Brain Invaders 2014a）16 干电极（缺 Fz/PO7/PO8，与 8 导蒙太奇仅部分重叠，用全量）
+CH_16 = ("Fp1", "Fp2", "F5", "AFz", "F6", "T7", "Cz", "T8",
+         "P7", "P3", "Pz", "P4", "P8", "O1", "Oz", "O2")
 
 
 class FoldZScoreN2P3Adapter(N2P3NetBaseline):
@@ -160,6 +163,8 @@ def main():
         "eegnet8": ("eegnet", CH_8),
         "n2p3net3": ("n2p3net", CH_3),
         "eegnet3": ("eegnet", CH_3),
+        "n2p3net16": ("n2p3net", CH_16),  # bi2014a：16 干电极全量
+        "eegnet16": ("eegnet", CH_16),
     }
     selected = [m.strip() for m in args.models.split(",") if m.strip()]
 
