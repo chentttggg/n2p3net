@@ -154,6 +154,9 @@ def main() -> None:
                     help="P3b 先验中心（GTN 儿童数据实测峰值 460–490ms，成人仍可用 350）")
     ap.add_argument("--p3b-tau0-lo", type=float, default=350.0, help="P3b τ0 生理界下界（ms）")
     ap.add_argument("--p3b-tau0-hi", type=float, default=600.0, help="P3b τ0 生理界上界（ms）")
+    ap.add_argument("--erp-calib", default=None,
+                    help="ERP 校准 JSON（experiments/calibrate_erp.py 产出）；"
+                         "给定后覆盖 τ0/σ 人工先验（数据驱动，换数据集先跑校准）")
     ap.add_argument("--n-channels", type=int, default=3, choices=(3, 8),
                     help="GTN 原生 3 导（默认，EEGNet 借鉴）；8=旧版零填充回退")
     ap.add_argument("--bypass-mode", default="separable_pool",
@@ -254,6 +257,15 @@ def main() -> None:
         bypass_mode=bypass_mode,
         use_rereference=args.use_rereference,
     )
+    # GLM v3.1：数据驱动 ERP 校准覆盖人工先验（新数据集先跑 calibrate_erp.py）
+    if args.erp_calib:
+        calib = json.loads(Path(args.erp_calib).read_text(encoding="utf-8"))
+        model_kwargs.update(
+            tau0_ms=tuple(float(v) for v in calib["tau0_ms"]),
+            tau0_bounds=tuple(tuple(float(x) for x in b) for b in calib["tau0_bounds"]),
+            sigma_bounds=tuple(tuple(float(x) for x in b) for b in calib["sigma_bounds"]),
+        )
+        print(f"[erp-calib] {args.erp_calib}: tau0_ms={[round(v) for v in calib['tau0_ms']]}", flush=True)
     # GLM：容量预设（mini 系列）。实测 38.5k→7.3k/2.5k 参数 AUC 不降（容量非瓶颈）。
     if args.model_size == "mini":
         model_kwargs.update(d_model=32, filters_per_scale=4,

@@ -41,11 +41,11 @@ CH_3 = ("Fz", "Cz", "Pz")
 
 
 def build_adapter(model_name: str, n_channels: int, ch_names: tuple[str, ...],
-                  epochs: int, batch_size: int, early_stop_patience: int):
+                  epochs: int, batch_size: int, early_stop_patience: int,
+                  erp_calib: dict | None = None):
     if model_name == "n2p3net":
         identity = build_channel_identity(ch_names=list(ch_names), channel_mask=(True,) * n_channels)
-        return N2P3NetBaseline(
-            model_kwargs=dict(
+        model_kwargs = dict(
                 n_channels=n_channels,
                 channel_names=ch_names,
                 encoder_depth=3,
@@ -56,7 +56,8 @@ def build_adapter(model_name: str, n_channels: int, ch_names: tuple[str, ...],
                 tokenizer_init="bandpass",
                 # 门控参考层：恒等起步；BNCI008 记录参考类型未知，交给门自学
                 use_rereference=True,
-                # BNCI008 成人 P3b：τ0 先验用成人值（380ms），界放宽到儿童档以防被试差异
+                # 默认成人先验；--erp-calib 传入数据驱动校准值覆盖（2026-08-24：
+                # 校准发现 BNCI-008 真实 P3b=504ms/σ=63ms，默认 380/120 先验错位 124ms）
                 tau0_ms=(200.0, 280.0, 380.0),
                 tau0_bounds=((160.0, 260.0), (230.0, 360.0), (300.0, 560.0)),
                 sigma_bounds=((20.0, 50.0), (20.0, 80.0), (20.0, 120.0)),
@@ -65,7 +66,15 @@ def build_adapter(model_name: str, n_channels: int, ch_names: tuple[str, ...],
                 sfreq=256.0,
                 n_time=256,
                 baseline_n=4,  # AUX epoch 从 0ms 起，用前 4 点(~16ms)作每试次基线，避免 1 点 std NaN
-            ),
+        )
+        if erp_calib:
+            model_kwargs.update(
+                tau0_ms=tuple(float(v) for v in erp_calib["tau0_ms"]),
+                tau0_bounds=tuple(tuple(float(x) for x in b) for b in erp_calib["tau0_bounds"]),
+                sigma_bounds=tuple(tuple(float(x) for x in b) for b in erp_calib["sigma_bounds"]),
+            )
+        return N2P3NetBaseline(
+            model_kwargs=model_kwargs,
             trainer_kwargs=dict(
                 epochs=epochs,
                 batch_size=batch_size,
@@ -106,7 +115,15 @@ def main():
     ap.add_argument("--dataset", default="bnci008", choices=("bnci008", "erpcore"))
     ap.add_argument("--cache-dir", default="experiments/cache")
     ap.add_argument("--run-name", default=None)
+    ap.add_argument("--erp-calib", default=None,
+                    help="ERP 校准 JSON（experiments/calibrate_erp.py 产出）；"
+                         "τ0/σ 用数据驱动值覆盖人工先验。BNCI-008 校准真值：P3b=504ms/σ=63ms")
     args = ap.parse_args()
+
+    erp_calib = None
+    if args.erp_calib:
+        erp_calib = json.loads(Path(args.erp_calib).read_text(encoding="utf-8"))
+        print(f"[erp-calib] {args.erp_calib}: tau0_ms={[round(v) for v in erp_calib['tau0_ms']]}", flush=True)
 
     model_specs = {
         "n2p3net8": ("n2p3net", CH_8),
@@ -137,7 +154,8 @@ def main():
         run_dir.mkdir(parents=True, exist_ok=True)
 
         adapter = build_adapter(model_name, n_channels, ch_names,
-                                args.epochs, args.batch_size, args.early_stop_patience)
+                                args.epochs, args.batch_size, args.early_stop_patience,
+                                erp_calib=erp_calib)
 
         # 逐 fold 实时进度（dashboard.html 消费）
         progress_f = (run_dir / "progress.jsonl").open("w", encoding="utf-8")
