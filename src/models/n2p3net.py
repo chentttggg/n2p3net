@@ -189,8 +189,10 @@ class N2P3Net(nn.Module):
             "mean_pool" if global_bypass else "none"
         )
 
-        # Stage 0.1 加权再参考（可选）
-        self.reference = WeightedRereference(n_channels) if use_rereference else None
+        # Stage 0.1 加权再参考（可选；GLM v2：门控参考层 + 按域条件化，见 reference.py）
+        self.reference = (
+            WeightedRereference(n_channels, n_domains=n_domains) if use_rereference else None
+        )
 
         # Stage 1 时空 token 化（v5.1：原生通道名 + spatial max-norm）
         self.tokenizer = ERPTokenizer(
@@ -279,8 +281,12 @@ class N2P3Net(nn.Module):
         # 入口防御：NaN/±inf → 0（review v3 P0 + audit P2-5，缺失/异常通道不毒化）
         X = torch.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
 
-        # Stage 0：加权再参考（mask 重归一化）+ 基线段标准化
-        X0 = self.reference(X, channel_mask) if self.reference is not None else X
+        # Stage 0：门控加权再参考（mask 重归一化 + 按域条件化）+ 基线段标准化
+        X0 = (
+            self.reference(X, channel_mask, domain_id=domain_id)
+            if self.reference is not None
+            else X
+        )
         X0 = self._baseline_standardize(X0)
 
         # Stage 1：token 化

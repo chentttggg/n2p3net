@@ -2,8 +2,40 @@
 
 > 本文档是 N2P3-Net 的施工蓝图，把 constitution 的原则（P/E 系列）落到可实现的张量流、模块、损失与超参。
 > 张量形状、损失项、设计决策均在此钉死；实现以本文档为准，与本文档冲突需回改本文档。
-> 版本：v6-GLM（v5.1 + 训练协议修复：被试级验证早停 + 30ep 预算、TCN BN 消融轴、
-> P3b σ 上界 150ms（儿童宽 P3b）；架构不变，全部可通过 CLI 回退）。
+> 版本：v6.2-GLM（v6 + 门控参考层 D-glm-gate + 默认 encoder-norm=bn；历史：v6 训练协议
+> 修复/BN 轴/σ150，v5.1 EEGNet 借鉴，v5 方案 B；全部可通过 CLI 回退）。
+
+## 0.6 GLM v2 决策记录（2026-08-23，门控参考层）
+
+D-glm-gate         Stage 0.1 再参考层重设计：out = X − g⊙(1·wᵀX)。w=softmax 保留
+                    （{Σw=1} 是从任意记录参考可达的再参考变换全集）；**g 自由线性门
+                    init=0 → 精确恒等**。推翻旧版「w=softmax 均匀 init → 强制 CAR」：
+                    ① softmax Σw=1 使恒等不可表达（结构缺陷）；② CAR 在 <32~64 导时
+                    无效（Junghöfer et al. 2001：不足 32 导时 CAR 偏差可能比单物理参考
+                    更糟；Luck 2014 要求 64–128 导均匀覆盖）；③ GTN 实测 3 导 CAR 销毁
+                    P3b（信号损失 4.36×、SNR 损失 1.90×、Fz 反转 −4.0μV 伪信号，
+                    AUC −1.5~3.3pt，见 failure_diagnosis §12）；④ P300 惯例参考是
+                    鼻尖/乳突（上海 ERP 临床共识），非 CAR。
+                    门为自由线性（非 sigmoid）：∂out/∂g = −m(t)，无饱和——对照 tau0
+                    梯度饥饿教训（sigmoid 门在 0 附近 g(1−g)≈0 会重蹈覆辙）。
+                    验证：GTN 12 被门控开启与关闭完全等价（AUC 0.7207 vs 0.7204），
+                    网络自学到 gate≈0（数据自证恒等最优）；训练后 g·w 是可报告的
+                    「有效参考权重」可解释性读数。
+D-glm-per-domain   参考层支持 n_domains：w_logits/gate_raw 形状 (D,C)，按 batch 的
+                    domain_id 逐样本取行（推理无 domain_id 时回退主域，P9）。为 Phase 3
+                    跨数据集（鼻参考 GTN ↔ 平均参考 ERP CORE ↔ A1 耳参考自采 8 导）
+                    保留「每域学自己的参考变换」通路。注意：per-domain 是域适配思路
+                    （各域各自变换），与 REST（统一到无穷远参考）的标准化思路互补，
+                    后者见 D-glm-rest-next。
+D-glm-rest-next    跨参考标准化的原理性方案是 REST（Yao 2001，参考电极标准化技术）：
+                    T_REST = G_REST·G_m⁺，只依赖头模型+蒙太奇+原参考（不需要真实源），
+                    把任意参考数据变换到无穷远参考；文献一致报告其参考误差小于
+                    AR/LM。本项目已有电极三维坐标（channel.py），具备实现条件；
+                    但 REST 质量依赖蒙太奇密度（3 导下严重近似），列为 Phase 3
+                    跨数据集前的预处理选项，不在 v6.2 实现。
+D-glm-ref-jitter   副作用警示：train/augment.py 的 reference_jitter 增强随机凸组合
+                    重参考——在新证据下它把数据推向销毁信号的 CAR 型变换，GTN 类
+                    鼻参考数据上应保持关闭（augment 默认本就 off；启用前须重新评估）。
 
 ## 0.5 GLM 协议决策记录（2026-08-22，v6）
 
@@ -14,9 +46,12 @@ D-glm-early-stop   训练协议：固定 10ep → 30ep 上限 + 被试级验证�
                     早停锁定每 fold 的 val 峰值而非全局赌一个 epoch 数。验证集按被试分组切
                     （frac=0.08、clamp [2,12]，evaluate 传 subject_ids），试次级随机切分会有
                     同被试泄漏、验证损失高估泛化。Trainer 已支持 val_loader/早停，本次接入。
-D-glm-bn           TCN block 归一化消融轴（norm=ln/bn，默认 ln 不变）。依据：跨被试 P300
-                    文献反复报告 BN 是 CNN 泛化关键（Värbu 2020：ELU+dropout+BN 与最佳
-                    CNN 性能相关）；LN 逐 token 归一化抹平单 token 幅值维度。bn 供 A/B 实测。
+D-glm-bn           TCN block 归一化消融轴（norm=ln/bn）。v6.2 起默认 bn：三组实测
+                    （12/60 被试，含/不含再参考）BN 一致优于 LN +0.5~0.9pt AUC，
+                    其中 60 被 default+bn+noref 0.7575 为全系最高。依据：跨被试 P300
+                    文献反复报告 BN 是 CNN 泛化关键（Värbu 2020：ELU+dropout+BN 与
+                    最佳 CNN 性能相关）；LN 逐 token 归一化抹平单 token 幅值维度。
+                    --encoder-norm ln 回退。
 D-glm-sigma-hi     P3b σ 上界 80→150ms（GTN runner 默认）。依据：GTN 儿童的 P3b 宽达
                     300–650ms（ERP 实测 350–650ms 窗差值仍 11–14μV、逐被试峰潜伏期
                     SD 85ms），旧上界 80ms 使 PCW 窗物理上盖不住真实成分。成人数据传 80 恢复。
