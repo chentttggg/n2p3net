@@ -61,7 +61,7 @@ import warnings
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Iterator, Mapping, Sequence
+from typing import Callable, Iterator, Mapping, Optional, Sequence
 
 import numpy as np
 from sklearn.metrics import balanced_accuracy_score, roc_auc_score
@@ -305,6 +305,7 @@ def evaluate(
     decision_center: bool = True,
     decision_aggregation: str = "sum",
     n_jobs: int = 1,
+    on_fold_end: Optional[Callable] = None,
 ) -> EvalSummary:
     """按 folds 评估一个「有 fit/predict_logit 接口」的模型。
 
@@ -326,6 +327,10 @@ def evaluate(
           并行 fold 的线程数（默认 1 串行）。LOSO 各 fold 独立，线程池复用同一份 X/y 内存，
           不复制大数据；每个 worker 内把 BLAS 限制为单线程，避免 oversubscription
           （review v6 性能项）。
+      on_fold_end : Callable | None
+          逐 fold 回调 on_fold_end(fold_idx, fold_result, records)（GLM v3 实时进度：
+          runner 用它把每 fold 指标增量写入 progress.jsonl 供仪表盘消费）。串行路径在
+          每 fold 完成即调用；并行路径在全部完成后按 fold 顺序补调（实时性以串行为准）。
 
     Returns
     -------
@@ -393,6 +398,8 @@ def evaluate(
         for _, fold_result, records in sorted(results, key=lambda item: item[0]):
             per_fold.append(fold_result)
             subject_records.extend(records)
+            if on_fold_end is not None:
+                on_fold_end(len(per_fold) - 1, fold_result, records)
     else:
         for train_mask, test_mask in mask_folds:
             fold_result, records = _evaluate_one_fold(
@@ -410,6 +417,8 @@ def evaluate(
             )
             per_fold.append(fold_result)
             subject_records.extend(records)
+            if on_fold_end is not None:
+                on_fold_end(len(per_fold) - 1, fold_result, records)
 
     baccs = np.array([f.balanced_acc for f in per_fold], dtype=float)
     baccs = baccs[np.isfinite(baccs)]

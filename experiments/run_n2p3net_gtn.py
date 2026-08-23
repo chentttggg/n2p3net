@@ -343,6 +343,42 @@ def main() -> None:
 
     folds = loso_folds(subject_ids)
     wall_t0 = time.perf_counter()
+
+    # GLM v3：逐 fold 实时进度（progress.jsonl，供仪表盘消费；见 experiments/dashboard.html）
+    progress_path = run_dir / "progress.jsonl"
+    progress_f = progress_path.open("w", encoding="utf-8")
+
+    def _write_progress(fold_idx: int, fold_result, records) -> None:
+        # records: list[(predicted, true, subject)]（见 evaluate._evaluate_one_fold）
+        hits = [1 if p == t else 0 for p, t, _ in records] if records else []
+        hist = getattr(adapter, "last_history", None) or {}
+        line = {
+            "type": "fold",
+            "fold": fold_idx,
+            "n_folds_done": fold_idx + 1,
+            "subject": str(records[0][2]) if records else None,
+            "hit": hits[0] if hits else None,
+            "fold_bacc": float(fold_result.balanced_acc),
+            "fold_auc": float(fold_result.auc),
+            "fit_sec": float(adapter.fit_durations[-1]) if getattr(adapter, "fit_durations", None) else None,
+            "epochs_ran": len(hist.get("train_losses", [])),
+            "val_losses": [round(float(v), 4) for v in hist.get("val_losses", [])][-12:],
+            "ts": datetime.now(timezone.utc).isoformat(),
+        }
+        progress_f.write(json.dumps(line, ensure_ascii=False) + "\n")
+        progress_f.flush()
+
+    progress_f.write(json.dumps({
+        "type": "manifest",
+        "run_name": run_name,
+        "total_folds": len(folds),
+        "n_trials": int(len(X8)),
+        "model_kwargs": {k: str(v) for k, v in model_kwargs.items()},
+        "trainer_kwargs": trainer_kwargs,
+        "started_utc": datetime.now(timezone.utc).isoformat(),
+    }, ensure_ascii=False) + "\n")
+    progress_f.flush()
+
     if args.benchmark:
         train_mask, test_mask = folds[0]
         Xtr, ytr = X8[train_mask], y[train_mask]
@@ -376,6 +412,7 @@ def main() -> None:
         record_path = run_dir / "record.json"
         record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"[record] {record_path}")
+        progress_f.close()
         return
 
     summary = evaluate(
@@ -387,7 +424,11 @@ def main() -> None:
         true_digits,
         folds,
         n_jobs=1,
+        on_fold_end=_write_progress,
     )
+    progress_f.write(json.dumps({"type": "done", "ts": datetime.now(timezone.utc).isoformat()},
+                                ensure_ascii=False) + "\n")
+    progress_f.close()
     wall_seconds = time.perf_counter() - wall_t0
     print(f"[result] N2P3Net: 命中率={summary.hit_rate_mean:.4f} "
           f"(±{summary.hit_rate_std:.4f}) bacc={summary.balanced_acc_mean:.4f} "
