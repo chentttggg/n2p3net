@@ -119,6 +119,17 @@ def main() -> None:
     ap.add_argument("--encoder-norm", default="bn", choices=("ln", "bn"),
                     help="TCN block 归一化（GLM 消融轴）。默认 bn：三组实测（12/60 被试，"
                          "含/不含再参考）BN 一致优于 LN +0.5~0.9pt AUC；ln=旧默认回退")
+    ap.add_argument("--tokenizer-init", default="random", choices=("random", "bandpass"),
+                    help="GLM v3：时间卷积初始化。random=kaiming（旧默认）；bandpass=Gabor "
+                         "带通（诊断证据：随机 init 的 FIR 频谱中心 ~60Hz 且训练后几乎不动，"
+                         "从未学出 ERP 形状；文献：FBCNet 滤波器组/Sinc-ShallowNet 带通）。"
+                         "核长分层分配频带，k=129 占据 P3b δ-θ 带 [1.5,7]Hz")
+    ap.add_argument("--tokenizer-post-norm", default="none", choices=("none", "bn"),
+                    help="GLM v3：每尺度时间卷积后 BatchNorm1d（EEG-Inception/ATCNet 标准 "
+                         "结构；修 4× 尺度幅值失衡 + 提供非线性位点，防多尺度线性塌缩）")
+    ap.add_argument("--tokenizer-post-act", default="none", choices=("none", "elu", "gelu"),
+                    help="GLM v3：时间卷积后激活（ELU 保负电位，EEG 文献论点）。"
+                         "默认 none=旧行为")
     ap.add_argument("--model-size", default="default", choices=("default", "mini", "mini_a"),
                     help="GLM：mini=d_model32/4滤波器×2尺度/depth1（~7.3k 参数），"
                          "mini_a=d_model16/2滤波器×1尺度/depth0（~2.5k 参数）；"
@@ -233,6 +244,9 @@ def main() -> None:
         encoder_depth=args.encoder_depth,
         encoder_type=args.encoder_type,
         encoder_norm=args.encoder_norm,
+        tokenizer_init=args.tokenizer_init,
+        tokenizer_post_norm=args.tokenizer_post_norm,
+        tokenizer_post_act=args.tokenizer_post_act,
         tau0_ms=(220.0, 300.0, args.p3b_tau0_ms),
         tau0_bounds=((180.0, 280.0), (250.0, 380.0), (args.p3b_tau0_lo, args.p3b_tau0_hi)),
         sigma_bounds=((20.0, 50.0), (20.0, 80.0), (20.0, args.p3b_sigma_hi)),

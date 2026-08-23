@@ -46,6 +46,24 @@
     D-sub-bias       E_sub 融合为「加性 bias 广播到每个时间步」，反映「年龄/性别全局调制 P300
                      潜伏期与幅值」（blueprint E8），而非逐时间步独立调制（过度设计）。
     D-device         纯 nn.Module，不硬编码设备（device-portability DP1）；设备由调用方 .to(DEVICE)。
+    D-glm-bpinit     GLM v3（2026-08-23，tokenizer 深度科研）：时间卷积带通（Gabor）初始化。
+                     诊断证据：随机 kaiming 初始化的 FIR 频谱中心 ~60Hz（宽带噪声），训练后
+                     cos_sim(init,trained)=0.90-0.98 几乎不动——时间滤波器从未学出 ERP 形状
+                     （ERP 能量在 1-8Hz），判别信息全靠地形空间权重 + 下游 TCN 兜底。
+                     文献依据：FBCNet 滤波器组多视图、Sinc-ShallowNet/Sinc-EEGNet 带通约束。
+                     设计：w[t] = sin(2πf·t + φ)·hann(k)，f 按尺度分层 log 采样
+                     （f_lo(k) = max(1.5, 1.2·fs/k)，f_hi = min(40, 3·f_lo)；长核占据
+                     ERP δ-θ 带 [1.5,7]Hz），单位 L2 范数 + 随机相位 + 小噪声(0.05)破对称。
+                     与 SincNet 硬参数化的区别：滤波器仍完全自由可学习（init 只是起点），
+                     保留漂移到任意形状的能力。
+    D-glm-postnorm   GLM v3：每尺度时间卷积后接 BatchNorm1d(F) + ELU（空间混合之前）。
+                     诊断证据：① 尺度幅值失衡 4×（kaiming 1/√k 缩放，k=13 输出 std 0.141
+                     vs k=129 的 0.035）；② Stage 1 纯 affine（无任何非线性/归一化），多尺度
+                     线性混合塌缩为单组长 504ms FIR。文献依据：EEG-Inception（ERP 专用，
+                     每卷积块 BN+ELU）、ATCNet（BN→ELU→pool）——BN+激活是 ERP-CNN 的
+                     标准结构。ELU 而非 ReLU/GELU：保留负向电位（EEG 文献明确论点，
+                     Santamaria-Vazquez 2020 / Altaheri 2022）。BN 作用于 (B*C,F,T) 的
+                     F 通道（跨被试×通道×时间共享统计，滤波器跨通道共享故合理）。
 
 契约（输入 → 输出）：
     X ∈ R^{B×C×T}；E_chn ∈ R^{C×d_chn_in}（坐标正弦特征，data/channel 输出 6·n_freqs）；
@@ -145,6 +163,47 @@ def _make_spatial_prior(
     return w
 
 
+def _bandpass_filter_bank(
+    kernel_size: int,
+    n_filters: int,
+    sfreq: float,
+    f_lo: float,
+    f_hi: float,
+    noise: float = 0.05,
+) -> torch.Tensor:
+    """带通（Gabor）初始化滤波器组 (F, k)：sin(2πf·t + φ)·hann(k)，单位 L2 + 小噪声。
+
+    频率在 [f_lo, f_hi] log 采样；随机相位 φ 打破同频对称。见 D-glm-bpinit。
+    noise 是相对每抽头幅度（~1/√k）的噪声比例——绝对 std 会以白噪能量主导
+    频谱重心（实测教训：0.05 绝对 std 占总能 32%，把主频拉到 ~48Hz）。
+    """
+    if f_hi <= f_lo:
+        raise ValueError(f"f_hi({f_hi}) 须 > f_lo({f_lo})。")
+    freqs = torch.logspace(math.log10(f_lo), math.log10(f_hi), n_filters)  # (F,)
+    t = torch.arange(kernel_size, dtype=torch.float32) - (kernel_size - 1) / 2.0  # (k,) 居中
+    win = torch.hann_window(kernel_size, dtype=torch.float32)  # (k,)
+    phase = torch.rand(n_filters) * 2.0 * math.pi  # (F,)
+    w = torch.sin(2.0 * math.pi * freqs[:, None] * t[None, :] / sfreq + phase[:, None])
+    w = w * win[None, :]
+    w = w / w.norm(dim=1, keepdim=True).clamp_min(1e-8)  # 每滤波器单位 L2
+    if noise > 0:
+        # 噪声 std 相对每抽头幅度缩放：总噪声能量 = noise²（占单位范数信号的 noise² 比例）
+        w = w + (noise / math.sqrt(kernel_size)) * torch.randn_like(w)
+    return w
+
+
+def _band_assignment(kernel_size: int, sfreq: float) -> tuple[float, float]:
+    """按核长分配频带：f_lo = max(1.5, 1.2·fs/k)（窗口内 ≥1.2 周期），f_hi = min(40, 3·f_lo)。
+
+    长核自然占据低频（ERP δ-θ 带），短核占据高频——与核长的物理表达能力一致。
+    """
+    f_lo = max(1.5, 1.2 * sfreq / kernel_size)
+    f_hi = min(40.0, 3.0 * f_lo)
+    if f_hi <= f_lo:
+        f_hi = min(40.0, f_lo * 1.5)
+    return float(f_lo), float(f_hi)
+
+
 def _build_time_pe(n_times: int, d_model: int, tmin: float, tmax: float) -> torch.Tensor:
     """物理时间位置编码 (T, D)，标准正弦公式、频率封顶于 1（无爆炸，见 D-time-pe）。
 
@@ -188,6 +247,15 @@ class ERPTokenizer(nn.Module):
     n_time : int
         预计算时间位置编码的默认时间点数（默认 256，与 [-200,+800]ms@256Hz 一致）；
         forward 若 T 不匹配则动态生成。
+    sfreq : float
+        采样率（Hz），带通初始化的频率分配用（D-glm-bpinit）。
+    init : str
+        时间卷积初始化："random"（kaiming，旧行为）或 "bandpass"（Gabor 带通，D-glm-bpinit）。
+    post_norm : str
+        时间卷积后的逐尺度归一化："none"（旧行为）或 "bn"（BatchNorm1d，D-glm-postnorm）。
+    post_act : str
+        时间卷积后的激活："none"、"elu"（默认，保负电位）或 "gelu"。仅在 post_norm 生效路径
+        中可选；单独启用无归一化的激活也允许。
     """
 
     def __init__(
@@ -203,15 +271,29 @@ class ERPTokenizer(nn.Module):
         tmin: float = -200.0,
         tmax: float = 800.0,
         n_time: int = 256,
+        sfreq: float = 256.0,
+        init: str = "random",
+        post_norm: str = "none",
+        post_act: str = "none",
     ):
         super().__init__()
         n_neg, n_pos, names = _resolve_spatial_indices(n_channels, channel_names)
         if d_model % 2 != 0:
             raise ValueError(f"d_model 须为偶数（正弦 PE 的 sin/cos 交替），得到 {d_model}。")
+        if init not in ("random", "bandpass"):
+            raise ValueError(f"init 须为 'random' 或 'bandpass'，得到 {init!r}。")
+        if post_norm not in ("none", "bn"):
+            raise ValueError(f"post_norm 须为 'none' 或 'bn'，得到 {post_norm!r}。")
+        if post_act not in ("none", "elu", "gelu"):
+            raise ValueError(f"post_act 须为 'none'/'elu'/'gelu'，得到 {post_act!r}。")
         self.n_channels = n_channels
         self.channel_names = names
         self.spatial_max_norm = None if spatial_max_norm is None else float(spatial_max_norm)
         self.d_model = d_model
+        self.sfreq = float(sfreq)
+        self.init = init
+        self.post_norm = post_norm
+        self.post_act = post_act
         self.temporal_kernels = tuple(int(k) for k in temporal_kernels)
         if not self.temporal_kernels:
             raise ValueError("temporal_kernels 不能为空。")
@@ -236,6 +318,27 @@ class ERPTokenizer(nn.Module):
                 for k in self.temporal_kernels
             ]
         )
+        # GLM v3：带通（Gabor）初始化（D-glm-bpinit）
+        if init == "bandpass":
+            with torch.no_grad():
+                for tconv, k in zip(self.temporal_convs, self.temporal_kernels):
+                    f_lo, f_hi = _band_assignment(k, self.sfreq)
+                    w = _bandpass_filter_bank(k, filters_per_scale, self.sfreq, f_lo, f_hi)
+                    tconv.weight.copy_(w.unsqueeze(1))  # (F, 1, k)
+                    nn.init.zeros_(tconv.bias)
+        # GLM v3：每尺度 BN（D-glm-postnorm）
+        self.post_bns = (
+            nn.ModuleList(
+                [nn.BatchNorm1d(filters_per_scale) for _ in self.temporal_kernels]
+            )
+            if post_norm == "bn"
+            else None
+        )
+        self.post_act_fn: Optional[nn.Module] = {
+            "none": None,
+            "elu": nn.ELU(),
+            "gelu": nn.GELU(),
+        }[post_act]
 
         # 1.2 空间深度卷积：地形先验（可学习）+ 坐标调制（从 E_chn 生成）
         self.spatial_priors = nn.ParameterList()
@@ -293,10 +396,15 @@ class ERPTokenizer(nn.Module):
         # 减少逐尺度的小矩阵乘与逐尺度 cat（D-tokenizer-batched-mix）。
         scale_feats: list[torch.Tensor] = []
         scale_weights: list[torch.Tensor] = []
-        for tconv, spat_prior, coord_mod in zip(
-            self.temporal_convs, self.spatial_priors, self.coord_mods
+        for si, (tconv, spat_prior, coord_mod) in enumerate(
+            zip(self.temporal_convs, self.spatial_priors, self.coord_mods)
         ):
             feat = tconv(X.reshape(B * C, 1, T))  # (B*C, F, T)
+            # GLM v3：每尺度 BN + 激活（D-glm-postnorm；BN 统计跨 B*C 与 T，滤波器共享故合理）
+            if self.post_bns is not None:
+                feat = self.post_bns[si](feat)
+            if self.post_act_fn is not None:
+                feat = self.post_act_fn(feat)
             feat = feat.reshape(B, C, self.filters_per_scale, T)  # (B, C, F, T)
             scale_feats.append(feat)
 

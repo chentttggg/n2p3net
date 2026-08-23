@@ -129,6 +129,12 @@ class N2P3Net(nn.Module):
       encoder_norm : str
           TCN block 归一化（GLM 消融轴）："ln"（默认）或 "bn"（BatchNorm1d，跨被试
           P300 文献中 BN 是 CNN 泛化关键组件的假设检验入口）。
+      tokenizer_init : str
+          时间卷积初始化（GLM v3）："random"（kaiming，默认旧行为）或 "bandpass"
+          （Gabor 带通；诊断证据：随机 init 的滤波器从未学出 ERP 形状）。
+      tokenizer_post_norm / tokenizer_post_act : str
+          时间卷积后每尺度归一化/激活（GLM v3）："none"（默认旧行为）/"bn"；激活
+          "none"/"elu"（默认）/"gelu"。
       sigma_bounds : Sequence[tuple[float, float]] | None
           PCW 每成分窗宽 σ 的 [lo, hi]（ms），None 用 ComponentWindow 默认
           （成人先验 N2 [20,50]、P3a/P3b [20,80]）。GTN 儿童的 P3b 宽达 300–650ms
@@ -161,6 +167,9 @@ class N2P3Net(nn.Module):
         dtau_bounds: Optional[Sequence[tuple[float, float]]] = None,
         sigma_bounds: Optional[Sequence[tuple[float, float]]] = None,
         encoder_norm: str = "ln",
+        tokenizer_init: str = "random",
+        tokenizer_post_norm: str = "none",
+        tokenizer_post_act: str = "elu",
         bypass_mode: str = "separable_pool",
         global_bypass: bool = True,
         head_mlp: bool = False,
@@ -194,7 +203,7 @@ class N2P3Net(nn.Module):
             WeightedRereference(n_channels, n_domains=n_domains) if use_rereference else None
         )
 
-        # Stage 1 时空 token 化（v5.1：原生通道名 + spatial max-norm）
+        # Stage 1 时空 token 化（v5.1：原生通道名 + spatial max-norm；GLM v3：带通 init + BN/ELU）
         self.tokenizer = ERPTokenizer(
             n_channels=n_channels,
             channel_names=channel_names,
@@ -207,6 +216,10 @@ class N2P3Net(nn.Module):
             tmin=self.tmin,
             tmax=self.tmax,
             n_time=self.n_time,
+            sfreq=self.sfreq,
+            init=tokenizer_init,
+            post_norm=tokenizer_post_norm,
+            post_act=tokenizer_post_act,
         )
 
         # Stage 2 序列编码（域条件仿射暴露，P1：n_domains 传给 encoder）+ 参数化成分窗
