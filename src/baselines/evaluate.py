@@ -521,7 +521,12 @@ def _evaluate_one_binary_fold(
     test_mask: np.ndarray,
 ) -> BinaryFoldResult:
     """执行单个二分类 fold（与 evaluate_binary 串行路径完全同构）。"""
-    model.fit(X[train_mask], y[train_mask])
+    # GLM v3：声明 fit_accepts_subject_ids 的模型收到被试分组（被试级验证早停；
+    # 此前二分类路径漏传，导致 BNCI 路线早停静默失效——2026-08-23 bnci008 run 实测发现）
+    if getattr(model, "fit_accepts_subject_ids", False):
+        model.fit(X[train_mask], y[train_mask], subject_ids=subject_ids[train_mask])
+    else:
+        model.fit(X[train_mask], y[train_mask])
     logits = model.predict_logit(X[test_mask])
 
     if not np.isfinite(logits).all():
@@ -566,6 +571,7 @@ def evaluate_binary(
     subject_ids: np.ndarray,
     folds: Sequence[tuple[np.ndarray, np.ndarray]],
     n_jobs: int = 1,
+    on_fold_end: Optional[Callable] = None,
 ) -> BinarySummary:
     """二分类评估（LOSO / within-subject）→ balanced_acc + AUC。
 
@@ -625,14 +631,18 @@ def evaluate_binary(
         ]
         with ThreadPoolExecutor(max_workers=n_jobs) as executor:
             results = list(executor.map(_run_binary_fold_threaded, task_args))
-        per_fold = [result for _, result in sorted(results, key=lambda item: item[0])]
+        for _, result in sorted(results, key=lambda item: item[0]):
+            per_fold.append(result)
+            if on_fold_end is not None:
+                on_fold_end(len(per_fold) - 1, result)
     else:
         for train_mask, test_mask in mask_folds:
-            per_fold.append(
-                _evaluate_one_binary_fold(
-                    model, X, y, subject_ids, train_mask, test_mask
-                )
+            fr = _evaluate_one_binary_fold(
+                model, X, y, subject_ids, train_mask, test_mask
             )
+            per_fold.append(fr)
+            if on_fold_end is not None:
+                on_fold_end(len(per_fold) - 1, fr)
 
     baccs = np.array([f.balanced_acc for f in per_fold], dtype=float)
     baccs = baccs[np.isfinite(baccs)]
