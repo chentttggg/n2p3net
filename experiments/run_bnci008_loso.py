@@ -40,9 +40,32 @@ CH_8 = ("Fz", "Cz", "P3", "Pz", "P4", "PO7", "PO8", "Oz")
 CH_3 = ("Fz", "Cz", "Pz")
 
 
+class FoldZScoreN2P3Adapter(N2P3NetBaseline):
+    """fold 级 z-score 预处理 + 模型内部标准化关闭（EEGNet 式）。
+
+    2026-08-24 BNCI 排查：aux epoch 从 0ms 起、无 pre-stimulus 基线段，
+    试次内 σ_b（4 点估计）是噪声放大器（单 fold 实测 0.7365→0.8346，+9.8pt）。
+    GTN（有 −200~0ms 真基线）保持 trial 模式更优——策略按数据集基线结构选择。
+    """
+
+    def _fit_common(self, X_train, y_train, X_val=None, y_val=None):
+        mu = X_train.mean(axis=(0, 2), keepdims=True)
+        sd = X_train.std(axis=(0, 2), keepdims=True) + 1e-6
+        self._mu, self._sd = mu, sd
+        X_train = ((X_train - mu) / sd).astype(np.float32)
+        if X_val is not None and len(X_val) > 0:
+            X_val = ((X_val - mu) / sd).astype(np.float32)
+        return super()._fit_common(X_train, y_train, X_val, y_val)
+
+    def predict_logit(self, X):
+        X = np.asarray(X, dtype=np.float32)
+        X = ((X - self._mu) / self._sd).astype(np.float32)
+        return super().predict_logit(X)
+
+
 def build_adapter(model_name: str, n_channels: int, ch_names: tuple[str, ...],
                   epochs: int, batch_size: int, early_stop_patience: int,
-                  erp_calib: dict | None = None):
+                  erp_calib: dict | None = None, input_norm: str = "zscore"):
     if model_name == "n2p3net":
         identity = build_channel_identity(ch_names=list(ch_names), channel_mask=(True,) * n_channels)
         model_kwargs = dict(
@@ -65,7 +88,9 @@ def build_adapter(model_name: str, n_channels: int, ch_names: tuple[str, ...],
                 tmax=0.8,
                 sfreq=256.0,
                 n_time=256,
-                baseline_n=4,  # AUX epoch 从 0ms 起，用前 4 点(~16ms)作每试次基线，避免 1 点 std NaN
+                baseline_n=4,  # AUX epoch 从 0ms 起，无 pre-stimulus 基线
+                # GLM v3.1：zscore 模式下内部标准化关闭（由 FoldZScore 适配器做 fold 级 z-score）
+                baseline_mode="none" if input_norm == "zscore" else "trial",
         )
         if erp_calib:
             model_kwargs.update(
@@ -73,7 +98,8 @@ def build_adapter(model_name: str, n_channels: int, ch_names: tuple[str, ...],
                 tau0_bounds=tuple(tuple(float(x) for x in b) for b in erp_calib["tau0_bounds"]),
                 sigma_bounds=tuple(tuple(float(x) for x in b) for b in erp_calib["sigma_bounds"]),
             )
-        return N2P3NetBaseline(
+        adapter_cls = FoldZScoreN2P3Adapter if input_norm == "zscore" else N2P3NetBaseline
+        return adapter_cls(
             model_kwargs=model_kwargs,
             trainer_kwargs=dict(
                 epochs=epochs,
@@ -112,12 +138,16 @@ def main():
     ap.add_argument("--models", default="n2p3net8",
                     help="逗号分隔：n2p3net8/eegnet8/n2p3net3/eegnet3（默认 n2p3net8=我们的模型原生 8 导）")
     ap.add_argument("--subjects", type=int, default=None, help="前 N 被试（benchmark 用）")
-    ap.add_argument("--dataset", default="bnci008", choices=("bnci008", "erpcore"))
+    ap.add_argument("--dataset", default="bnci008", choices=("bnci008", "erpcore", "bi2014a"))
     ap.add_argument("--cache-dir", default="experiments/cache")
     ap.add_argument("--run-name", default=None)
     ap.add_argument("--erp-calib", default=None,
                     help="ERP 校准 JSON（experiments/calibrate_erp.py 产出）；"
                          "τ0/σ 用数据驱动值覆盖人工先验。BNCI-008 校准真值：P3b=504ms/σ=63ms")
+    ap.add_argument("--input-norm", default="zscore", choices=("zscore", "trial"),
+                    help="输入标准化策略（GLM v3.1）：zscore=fold 级 z-score + 模型内部关闭"
+                         "（默认；无 pre-stimulus 基线的数据集最优，BNCI 单 fold +9.8pt）；"
+                         "trial=试次内基线标准化（须有真基线段如 GTN −200~0ms）")
     args = ap.parse_args()
 
     erp_calib = None
@@ -155,7 +185,7 @@ def main():
 
         adapter = build_adapter(model_name, n_channels, ch_names,
                                 args.epochs, args.batch_size, args.early_stop_patience,
-                                erp_calib=erp_calib)
+                                erp_calib=erp_calib, input_norm=args.input_norm)
 
         # 逐 fold 实时进度（dashboard.html 消费）
         progress_f = (run_dir / "progress.jsonl").open("w", encoding="utf-8")

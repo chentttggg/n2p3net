@@ -148,6 +148,7 @@ class N2P3Net(nn.Module):
         d_model: int = 64,
         use_rereference: bool = True,
         baseline_n: Optional[int] = None,
+        baseline_mode: str = "trial",
         tmin: float = -200.0,
         tmax: float = 800.0,
         sfreq: float = 256.0,
@@ -189,6 +190,16 @@ class N2P3Net(nn.Module):
             # tmin 为 ms；tmin=−200ms、sfreq=256Hz → 51 点（review v6 P1）
             baseline_n = max(1, int(round(-tmin / 1000.0 * sfreq)))
         self.baseline_n = int(baseline_n)
+        # GLM v3.1（2026-08-24 BNCI 排查）：标准化策略按「有无真基线段」选择。
+        # trial（默认，GTN）：(X−μ_b)/σ_b，μ/σ 取前 baseline_n 点——要求 epoch 含
+        #   pre-stimulus 基线段（GTN −200~0ms 共 51 点，σ 稳定）。
+        # mean_only：只减 μ_b 不除 σ——基线点数过少（如 4 点）时 σ 估计是噪声放大器
+        #   （BNCI 单 fold 实测：除 σ 0.7365 → 不除 0.8177，+8.1pt）。
+        # none：恒等——配合适配器层 fold 级 z-score（EEGNet 式预处理；
+        #   BNCI 实测最优 0.8346，与 EEGNet 持平）。
+        if baseline_mode not in ("trial", "mean_only", "none"):
+            raise ValueError(f"baseline_mode 须为 trial/mean_only/none，得到 {baseline_mode!r}。")
+        self.baseline_mode = baseline_mode
         self.tmin = float(tmin)
         self.tmax = float(tmax)
         self.sfreq = float(sfreq)
@@ -268,9 +279,18 @@ class N2P3Net(nn.Module):
         )
 
     def _baseline_standardize(self, X: torch.Tensor) -> torch.Tensor:
-        """基线段标准化（D-baseline）：(X − μ_b) / σ_b，μ_b/σ_b 取前 baseline_n 点逐通道。"""
+        """基线段标准化（D-baseline + GLM v3.1 baseline_mode）。
+
+        trial：(X − μ_b)/σ_b（μ/σ 取前 baseline_n 点逐通道；须有真 pre-stimulus 基线段）。
+        mean_only：(X − μ_b)（σ 点数不足时防噪声放大）。
+        none：恒等（配合适配器层 fold 级 z-score）。
+        """
+        if getattr(self, "baseline_mode", "trial") == "none":
+            return X
         b = X[:, :, : self.baseline_n]  # (B, C, n_b)
         mu = b.mean(dim=2, keepdim=True)  # (B, C, 1)
+        if getattr(self, "baseline_mode", "trial") == "mean_only":
+            return X - mu
         std = b.std(dim=2, keepdim=True).clamp(min=1e-6)  # (B, C, 1) 防除零（D-std-clamp）
         return (X - mu) / std
 
