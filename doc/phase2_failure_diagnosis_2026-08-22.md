@@ -467,9 +467,36 @@ GTN 类数据应保持关闭（augment 默认本就 off）。
   ELU 的非对称变换对读出无益。**胜出配置 = 仅带通初始化**。
 - 12 被消融（噪声带内）：bpinit .7159 / bnelu .7249 / 组合 .7195 vs 基线 .7207。
 
-### 14.5 状态与待办
+### 14.5 242 被试全量结果（2026-08-23 22:48 完成，run `glm_v3_full242`，wall 3.2h）
 
-- 242 被全量验证运行中（run `glm_v3_full242`，batch 512，配置=GLM v2 默认 +
-  --tokenizer-init bandpass）；对照锚点 GLM v2-242 .8182/.7462、EEGNet-242 .8395/.7620。
-- 242 确认后切换 runner 默认 --tokenizer-init bandpass 并复提交。
-- seed 稳健性复跑（60 被 seed≠0）待做。
+配置：GLM v2 全默认 + --tokenizer-init bandpass（batch 512）。
+
+| 242 被 LOSO | hit | bacc | AUC |
+|---|---|---|---|
+| **GLM v3（带通 init）** | **.8388** | **.6802** | **.7543** |
+| GLM v2 | .8182 | .6734 | .7462 |
+| v5.1（项目原起点） | .7727 | — | .7019 |
+| SWLDA | .7851 | — | .7219 |
+| EEGNet | .8395 | — | .7620 |
+| Inception/Conformer | .8512 | — | — |
+
+配对 McNemar（n=242，digit-level hit）：
+- **GLM v3 vs EEGNet：203/242 vs 203/242——完全平局**（6 胜 6 负，p=1.000）。
+  「追平 EEGNet」验收目标以最强形式达成；AUC 0.7543 vs 0.7620（差 0.8pt）。
+- GLM v3 vs Inception：203 vs 206（5 胜 8 负），p=0.581——差距不再显著
+  （v2 时 p=0.096）；hit 差 3pt 内。
+- GLM v3 vs SWLDA：203 vs 190（18 胜 5 负），**p=0.011 显著超越**。
+- GLM v3 vs v5.1 旧版：203 vs 187（24 胜 8 负），**p=0.007 显著超越**。
+- 相对项目原起点（v5.1）：hit +6.6pt、AUC +5.2pt、bacc +0.7pt。
+
+**决策**：runner 默认切换 --tokenizer-init bandpass（commit 本次）。
+本轮失败诊断→修复链至此收束：门控参考层（空间通路，§13）+ 带通初始化
+（时间通路，§14）+ BN/早停协议（§11-12）= N2P3Net 在 GTN 全量上追平最强
+深度基线，同时保留成分可解释结构（PCW τ/σ + 有效参考读数）。
+
+### 14.6 遗留
+
+- seed 稳健性复跑（60/242 被 seed≠0）。
+- AUC 与 EEGNet 的最后 0.8pt：tokenizer 后续可试（按频率重分配 filters_per_scale、
+  k=13 高频分支是否可删）。
+- 去参考 + 带通 init 后 PCW τ/σ 可解释性复核（前端两处都变了，需重验）。

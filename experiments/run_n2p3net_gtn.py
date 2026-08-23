@@ -119,11 +119,12 @@ def main() -> None:
     ap.add_argument("--encoder-norm", default="bn", choices=("ln", "bn"),
                     help="TCN block 归一化（GLM 消融轴）。默认 bn：三组实测（12/60 被试，"
                          "含/不含再参考）BN 一致优于 LN +0.5~0.9pt AUC；ln=旧默认回退")
-    ap.add_argument("--tokenizer-init", default="random", choices=("random", "bandpass"),
-                    help="GLM v3：时间卷积初始化。random=kaiming（旧默认）；bandpass=Gabor "
-                         "带通（诊断证据：随机 init 的 FIR 频谱中心 ~60Hz 且训练后几乎不动，"
-                         "从未学出 ERP 形状；文献：FBCNet 滤波器组/Sinc-ShallowNet 带通）。"
-                         "核长分层分配频带，k=129 占据 P3b δ-θ 带 [1.5,7]Hz")
+    ap.add_argument("--tokenizer-init", default="bandpass", choices=("random", "bandpass"),
+                    help="GLM v3：时间卷积初始化。默认 bandpass（2026-08-23 定案）：Gabor 带通，"
+                         "诊断证据=随机 init 的 FIR 从未学出 ERP 形状（~60Hz 白噪不动），修复后 "
+                         "60 被 AUC +1.55pt、242 被 hit 与 EEGNet 完全打平（203/242 vs 203/242，"
+                         "McNemar p=1.0）；random=kaiming 旧默认回退。核长分层分配频带，"
+                         "k=129 占据 P3b δ-θ 带 [1.5,7]Hz")
     ap.add_argument("--tokenizer-post-norm", default="none", choices=("none", "bn"),
                     help="GLM v3：每尺度时间卷积后 BatchNorm1d（EEG-Inception/ATCNet 标准 "
                          "结构；修 4× 尺度幅值失衡 + 提供非线性位点，防多尺度线性塌缩）")
