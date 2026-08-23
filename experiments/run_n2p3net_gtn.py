@@ -363,6 +363,7 @@ def main() -> None:
             "fold_auc": float(fold_result.auc),
             "fit_sec": float(adapter.fit_durations[-1]) if getattr(adapter, "fit_durations", None) else None,
             "epochs_ran": len(hist.get("train_losses", [])),
+            "train_losses": [round(float(v), 4) for v in hist.get("train_losses", [])][-12:],
             "val_losses": [round(float(v), 4) for v in hist.get("val_losses", [])][-12:],
             "ts": datetime.now(timezone.utc).isoformat(),
         }

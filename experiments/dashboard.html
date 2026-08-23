@@ -36,7 +36,7 @@
 </head>
 <body>
 <h1>N2P3-Net LOSO 实时训练仪表盘</h1>
-<div class="sub">轮询 progress.jsonl（每 3 秒）· 训练结束后自动展示 record.json 最终结果</div>
+<div class="sub">轮询 progress.jsonl（每 3 秒）· 含逐 fold 训练/验证 LOSS · 训练结束后自动展示最终结果 · 无参数时自动跟踪 active_run.txt（启动器维护）</div>
 <div class="controls">
   <label style="font-size:12px;color:#5f5e5a">run 名称：</label>
   <input id="run" placeholder="glm_v3_full242">
@@ -48,19 +48,27 @@
 <div class="charts">
   <div class="chartbox"><h2>运行均值：hit / fold AUC（逐 fold 更新）</h2><canvas id="c1"></canvas></div>
   <div class="chartbox"><h2>逐 fold 指标</h2><canvas id="c2"></canvas></div>
-  <div class="chartbox"><h2>最近 fold 的验证损失曲线（早停轨迹）</h2><canvas id="c3"></canvas></div>
+  <div class="chartbox"><h2>最近 fold 训练/验证 LOSS 曲线（早停轨迹）</h2><canvas id="c3"></canvas></div>
   <div class="chartbox"><h2>每 fold 训练耗时（秒）</h2><canvas id="c4"></canvas></div>
+  <div class="chartbox"><h2>逐 fold 最终训练 LOSS</h2><canvas id="c5"></canvas></div>
 </div>
 <p class="err" id="err"></p>
 <script>
 const params = new URLSearchParams(location.search);
 let RUN = params.get("run") || null;
-if (!RUN) {
-  // 无参数时按优先级探测最近的关键 run
+async function resolveRun() {
+  if (RUN) return RUN;
+  try {
+    const r = await fetch("active_run.txt", { cache: "no-store" });
+    if (r.ok) {
+      const name = (await r.text()).trim();
+      if (name) { RUN = name; return RUN; }
+    }
+  } catch {}
   const CANDIDATES = ["glm_v3_full242", "glm_v2_full242", "_progress_smoke"];
   RUN = CANDIDATES[0];
+  return RUN;
 }
-document.getElementById("run").value = RUN;
 const charts = {};
 function mkChart(id, cfg) {
   if (charts[id]) { charts[id].destroy(); }
@@ -71,6 +79,8 @@ function kpi(v, l, good) {
 }
 let prevFoldCount = -1;
 async function tick() {
+  await resolveRun();
+  document.getElementById("run").value = RUN;
   const errEl = document.getElementById("err");
   try {
     const r = await fetch(`runs/${RUN}/progress.jsonl`, { cache: "no-store" });
@@ -153,13 +163,24 @@ async function tick() {
         options: { animation: false, responsive: true, maintainAspectRatio: false }
       });
     }
-    // 图3：最近 fold val loss（每次都更新，轻量）
+    // 图3：最近 fold 训练/验证 loss（每次都更新，轻量）
     const last = folds[folds.length - 1];
     const vl = last && last.val_losses ? last.val_losses : [];
+    const tl = last && last.train_losses ? last.train_losses : [];
+    const nEp = Math.max(vl.length, tl.length);
     mkChart("c3", {
       type: "line",
-      data: { labels: vl.map((_, i) => i + 1), datasets: [
-        { label: `fold ${last ? last.fold + 1 : "-"} val loss`, data: vl, borderColor: "#993556", pointRadius: 2, borderWidth: 2 },
+      data: { labels: Array.from({length: nEp}, (_, i) => i + 1), datasets: [
+        { label: `fold ${last ? last.fold + 1 : "-"} train loss`, data: tl, borderColor: "#ba7517", pointRadius: 2, borderWidth: 2 },
+        { label: `fold ${last ? last.fold + 1 : "-"} val loss`, data: vl, borderColor: "#993556", pointRadius: 2, borderWidth: 2, borderDash: [5, 3] },
+      ]},
+      options: { animation: false, responsive: true, maintainAspectRatio: false }
+    });
+    // 图5：逐 fold 最终训练 loss
+    mkChart("c5", {
+      type: "line",
+      data: { labels: folds.map(f => f.fold + 1), datasets: [
+        { label: "末 epoch train loss", data: folds.map(f => f.train_losses && f.train_losses.length ? f.train_losses[f.train_losses.length - 1] : null), borderColor: "#7F77DD", pointRadius: 1.5, borderWidth: 1.5 },
       ]},
       options: { animation: false, responsive: true, maintainAspectRatio: false }
     });
