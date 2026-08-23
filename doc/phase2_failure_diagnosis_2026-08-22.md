@@ -409,3 +409,67 @@ GTN 类数据应保持关闭（augment 默认本就 off）。
 - Phase 3 前的真正考验：跨数据集（GTN↔ERP CORE↔自采）per-domain 参考层的
   域适配 vs REST 预处理的标准化，两者对照实验。
 - τ/σ 可解释性复核：门控参考开启后 PCW 成分定位读数与 ERP 实测的一致性验证。
+
+## 14. Tokenizer 深度科研：带通初始化（2026-08-23，GLM v3，branch `GLM` commit b5aaced）
+
+### 14.1 第一手诊断：时间滤波器从未学习
+
+单 fold（241 被训练）训后取证（对照同 seed 未训练模型）：
+
+- **随机 kaiming init 的 FIR 频谱中心 ~60Hz**（宽带白噪特征）；训练后 cos_sim(init,trained)
+  = 0.90–0.98、相对漂移仅 0.2–0.5——**滤波器从未学出 ERP 形状**（ERP 能量在 1–8Hz）。
+  判别信息全靠地形空间权重（保持 init，k=65/129→Pz 主导）+ 下游 TCN 兜底。
+- 尺度幅值失衡 4×：kaiming 1/√k 缩放（k=13 输出 std 0.141 vs k=129 的 0.035）。
+- Stage 1 纯 affine（无任何非线性/归一化）：多尺度线性混合在数学上塌缩为单组长 504ms FIR。
+- 这同时解释了 Mini 实验（容量砍 15 倍不掉点：随机投影本来就无可砍）与
+  「与 inception 基线剩余差距」的定位。
+
+### 14.2 文献核验（四个优秀案例收敛的设计规则）
+
+- **EEG-Inception**（Santamaria-Vazquez 2020，TNSRE，ERP 专用，胜 EEGNet 5.1%）：
+  核长从 ERP 成分时长推导（500/250/125ms）；**每个卷积块 BN+ELU+dropout**。
+- **FBCNet**（Mane 2021，MI SOTA）：9×4Hz 窄带滤波器组多视图——时间滤波器频带定位。
+- **ATCNet**（Altaheri 2022，TII）：conv stem 后 BN→ELU→AvgPool。
+- **Sinc-ShallowNet / Sinc-EEGNet**（Borra 2020 / Baria 2021）：第一层带通约束/初始化
+  （sinc 参数化，Hamming 加窗），可解释频谱读数。
+
+共性规则：时间滤波器应**频带定位**而非宽带随机；**BN+激活**是 ERP-CNN 标准结构。
+
+### 14.3 设计与实现（tokenizer.py D-glm-bpinit / D-glm-postnorm）
+
+- **init="bandpass"**：w[t] = sin(2πf·t+φ)·hann(k)，频带按核长分层
+  （f_lo = max(1.5, 1.2·fs/k)，f_hi = min(40, 3·f_lo)）——k=129 占据 P3b δ-θ 带
+  [2.4,7.1]Hz、k=65 [4.7,14.2]、k=33 [9.3,27.9]、k=13 [23.6,40]。
+  单位 L2 + 随机相位 + 相对每抽头幅度 5% 噪声。
+  与 SincNet 硬参数化的区别：滤波器仍完全自由可学习（init 只是更近的起点）。
+  **实现教训**：噪声必须按 1/√k 缩放——绝对 std 的白噪能量虽仅 0.25%，但
+  幅度加权频谱一阶矩（Σ|W|f）被 65 个高频 bin 主导，把 2.4Hz Gabor 的
+  「主频」拉到 15Hz；检验指标也须用能量加权（Σ|W|²f）。
+- **post_norm="bn" + post_act="elu"**：每尺度 BatchNorm1d(F)+ELU（作用于 (B*C,F,T)）。
+- N2P3Net 透传 + runner --tokenizer-init/--tokenizer-post-norm/--tokenizer-post-act。
+- tests/test_tokenizer_v3.py 10 项语义测试；全量 287 项通过。
+
+### 14.4 验证结果（60 被 LOSO，batch 256，与 GLM v2 锚点同口径）
+
+| 配置 | hit | bacc | AUC |
+|---|---|---|---|
+| GLM v2（基线：门控+BN+随机 init） | .9000 | .6745 | .7536 |
+| **v3a 带通 init 单独** | **.9167** | **.6939** | **.7691** |
+| v3b BN+ELU 单独 | .9167 | .6779 | .7532 |
+| v3c 带通 init + BN + ELU | .9167 | .6797 | .7630 |
+| （参照）EEGNet-60 | .8333 | .6845 | .7713 |
+
+- **v3a：AUC +1.55pt 至 0.7691——与 EEGNet-60（0.7713）打平**（差 0.002），
+  hit 0.9167 远超 EEGNet 的 0.8333；bacc 亦全系最高。
+- **机理确认**：训后滤波器稳定在分配频带（k=129 中位 4.1Hz q10-90 [2.9,6.4]
+  = P3b δ-θ 带；k=65 8.2Hz；k=33 16.2Hz；k=13 30Hz）——对照旧版全部 ~60Hz。
+- BN+ELU 在带通 init 之上略降（0.7630）：单位范数初始化已天然均衡尺度，
+  ELU 的非对称变换对读出无益。**胜出配置 = 仅带通初始化**。
+- 12 被消融（噪声带内）：bpinit .7159 / bnelu .7249 / 组合 .7195 vs 基线 .7207。
+
+### 14.5 状态与待办
+
+- 242 被全量验证运行中（run `glm_v3_full242`，batch 512，配置=GLM v2 默认 +
+  --tokenizer-init bandpass）；对照锚点 GLM v2-242 .8182/.7462、EEGNet-242 .8395/.7620。
+- 242 确认后切换 runner 默认 --tokenizer-init bandpass 并复提交。
+- seed 稳健性复跑（60 被 seed≠0）待做。
