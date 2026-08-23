@@ -196,3 +196,31 @@ def test_glm_default_model_budget_within_50k():
     torch.manual_seed(0)
     model = N2P3Net(n_channels=3, channel_names=("Fz", "Cz", "Pz"))
     assert model.num_parameters() <= 50000
+
+
+def test_glm_mini_presets_budget():
+    """GLM 容量预设：mini ≈7.3k / mini_a ≈2.5k 参数（容量非瓶颈的实证载体）。"""
+    torch.manual_seed(0)
+    mini = N2P3Net(
+        n_channels=3, channel_names=("Fz", "Cz", "Pz"),
+        d_model=32, filters_per_scale=4, temporal_kernels=(33, 65), encoder_depth=1,
+    )
+    mini_a = N2P3Net(
+        n_channels=3, channel_names=("Fz", "Cz", "Pz"),
+        d_model=16, filters_per_scale=2, temporal_kernels=(65,), encoder_depth=0,
+    )
+    assert mini.num_parameters() < 10000
+    assert mini_a.num_parameters() < 5000
+    X = torch.randn(2, 3, T)
+    assert mini(X).heads.logit_target.shape == (2, 1)
+    assert mini_a(X).heads.logit_target.shape == (2, 1)
+
+
+def test_glm_noref_forward():
+    """GLM 前端修复：use_rereference=False 时 reference 层不存在（鼻参考数据默认）。"""
+    torch.manual_seed(0)
+    model = N2P3Net(n_channels=3, channel_names=("Fz", "Cz", "Pz"), use_rereference=False)
+    assert model.reference is None
+    X = torch.randn(2, 3, T)
+    out = model(X)
+    assert not torch.isnan(out.heads.logit_target).any()

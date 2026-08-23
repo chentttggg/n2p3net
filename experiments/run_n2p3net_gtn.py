@@ -13,16 +13,25 @@
 GTN 为 3 导。v5.1 起默认用原生 3 导（--n-channels 3）；--n-channels 8 显式恢复
 旧版零填充 8 导。E_chn 使用对应蒙太奇坐标身份。
 
-GLM（2026-08-22，训练协议修复版）默认配置：
+GLM（2026-08-22/23，训练协议修复 + 前端修复版）默认配置：
     epochs=30 + 被试级验证早停（val_subject_frac=0.08、patience=6）——
     失败诊断 §2.4 显示 held-out 指标在 epoch 10–11 见顶后崩塌，固定 10ep 是
     「欠拟合赌博」；早停锁定每 fold 的 val 峰值而非全局赌一个 epoch 数。
+    **use_rereference 默认 False**（2026-08-23 修复）：实测 3 导均匀 CAR 把 Pz 的
+    P3b 差值 10.8μV 砍到 2.5μV（损失 4.36×）、单试次 SNR 损失 1.90×、Fz 反转成
+    伪负信号；去掉再参考后 12 被 AUC +1.5~2.7pt。--use-rereference 可重新启用。
+    **encoder-norm 默认 bn**（2026-08-23）：去参考后 60 被 BN 0.7575 vs LN ~0.747，
+    三组实验一致 +0.5~0.9pt；--encoder-norm ln 回退。
+    60 被实测最佳：default+bn+noref hit 0.8833 / AUC 0.7575（超 EEGNet-60 hit 0.8333，
+    AUC 差距 0.054→0.014）。
     P3b τ0=460ms/界[350,600]、σ 上界 150ms（儿童 P3b 宽达 300–650ms，ERP 实测）、
     dtau_readout=attention_softargmax、lambda_jit=0、bypass_mode=separable_pool、
     head Dropout+Linear、spatial max-norm=1。
-    --encoder-norm bn 打开 TCN BatchNorm 消融（EEGNet 借鉴项 A/B）。
-回退旧结构：--n-channels 8 --bypass-mode mean_pool --head-mlp
-    --no-spatial-max-norm --encoder-dropout 0.1 --no-val-early-stop --epochs 10。
+    --model-size mini/mini_a 容量预设（~7.3k/~2.5k 参数；实测容量砍 15 倍 AUC 不降，
+    容量非瓶颈；去参考后小模型也大涨但 60 被上 default 略优）。
+回退 2026-08-22 v5.1 行为：--n-channels 8 --bypass-mode mean_pool --head-mlp
+    --no-spatial-max-norm --encoder-dropout 0.1 --no-val-early-stop --epochs 10
+    --p3b-sigma-hi 80 --use-rereference --encoder-norm ln。
 """
 
 from __future__ import annotations
@@ -105,8 +114,19 @@ def main() -> None:
     ap.add_argument("--jit-max-ms", type=float, default=40.0)
     ap.add_argument("--encoder-depth", type=int, default=3)
     ap.add_argument("--encoder-type", default="tcn", choices=("tcn", "conformer"))
-    ap.add_argument("--encoder-norm", default="ln", choices=("ln", "bn"),
-                    help="TCN block 归一化（GLM 消融轴）：ln=LayerNorm（旧默认），bn=BatchNorm1d")
+    ap.add_argument("--encoder-norm", default="bn", choices=("ln", "bn"),
+                    help="TCN block 归一化（GLM 消融轴）。默认 bn：三组实测（12/60 被试，"
+                         "含/不含再参考）BN 一致优于 LN +0.5~0.9pt AUC；ln=旧默认回退")
+    ap.add_argument("--model-size", default="default", choices=("default", "mini", "mini_a"),
+                    help="GLM：mini=d_model32/4滤波器×2尺度/depth1（~7.3k 参数），"
+                         "mini_a=d_model16/2滤波器×1尺度/depth0（~2.5k 参数）；"
+                         "default=旧 38.5k。实测容量砍 15 倍 AUC 不降（容量非瓶颈），"
+                         "且去参考后 mini 泛化更好")
+    ap.add_argument("--use-rereference", action="store_true",
+                    help="GLM：重新启用加权再参考层（Stage 0.1）。GTN 默认关闭：实测 3 导均匀 "
+                         "CAR 把 Pz 的 P3b 差值 10.8μV 砍到 2.5μV（损失 4.36×）、单试次 SNR 损失 "
+                         "1.90×，Fz 反转成 -4.0μV 伪信号——鼻参考数据上该层在进门处销毁判别信息。"
+                         "平均参考数据集可重新评估启用")
     ap.add_argument("--p3b-sigma-hi", type=float, default=150.0,
                     help="P3b σ 上界 ms（GLM：儿童 P3b 宽达 300–650ms，旧默认 80 过窄；"
                          "成人数据建议传 80 恢复）")
@@ -211,7 +231,15 @@ def main() -> None:
         tau0_bounds=((180.0, 280.0), (250.0, 380.0), (args.p3b_tau0_lo, args.p3b_tau0_hi)),
         sigma_bounds=((20.0, 50.0), (20.0, 80.0), (20.0, args.p3b_sigma_hi)),
         bypass_mode=bypass_mode,
+        use_rereference=args.use_rereference,
     )
+    # GLM：容量预设（mini 系列）。实测 38.5k→7.3k/2.5k 参数 AUC 不降（容量非瓶颈）。
+    if args.model_size == "mini":
+        model_kwargs.update(d_model=32, filters_per_scale=4,
+                            temporal_kernels=(33, 65), encoder_depth=1)
+    elif args.model_size == "mini_a":
+        model_kwargs.update(d_model=16, filters_per_scale=2,
+                            temporal_kernels=(65,), encoder_depth=0)
     trainer_kwargs = dict(
         epochs=args.epochs,
         batch_size=args.batch_size,
