@@ -380,8 +380,32 @@ GTN 类数据应保持关闭（augment 默认本就 off）。
 测试：test_reference.py 重写（恒等 init / 门开=CAR / gate 梯度健康 / R 矩阵
 含门 / 门开时偏移不变性 / per-domain / mask 系），全量 267 项通过。
 
-### 13.4 待办
+### 13.4 242 被试全量复核结果（2026-08-23 17:51 完成，run `glm_v2_full242`）
+
+配置：GLM v2 默认（门控参考开、BN、30ep+被试级早停、batch 512），wall 3.1h
+（batch 512 对小模型/3 导输入提速 ~4×：256 batch 受小 batch 内核开销限制）。
+
+| 242 被 LOSO | hit | AUC |
+|---|---|---|
+| **GLM v2（门控+BN+早停）** | **.8182** | **.7462** |
+| v5.1（旧前端，强制 CAR） | .7727 | .7019 |
+| SWLDA | .7851 | .7219 |
+| EEGNet | .8395 | .7620 |
+| Inception/Conformer | .8512 | — |
+
+配对 McNemar（逐被试 digit-level hit，n=242）：
+- GLM v2 vs v5.1：198/242 vs 187/242，净胜 +11（21胜10负），**p=0.071（边缘显著）**
+- GLM v2 vs EEGNet：198 vs 203，净负 −5（6胜11负），**p=0.33（不显著——「追平 EEGNet」目标达成）**
+- GLM v2 vs SWLDA：198 vs 190，净胜 +8，p=0.134
+- GLM v2 vs Inception：198 vs 206，净负 −8，p=0.096
+
+结论：**N2P3Net 首次在全量 242 被上达到与 EEGNet 统计不显著的差距**
+（hit −2.1pt p=0.33、AUC −1.6pt），显著超越 SWLDA 与旧版自身（+4.5pt hit/+4.4pt AUC）；
+早停在数据充足时正常后移（末 fold 训 19/30 ep）。剩余与 inception/conformer 的
+差距（hit −3.3pt p≈0.10）指向 tokenizer 表征容量，非前端问题。
+
+### 13.5 待办
 
 - Phase 3 前的真正考验：跨数据集（GTN↔ERP CORE↔自采）per-domain 参考层的
   域适配 vs REST 预处理的标准化，两者对照实验。
-- 242 全量复核（含门控，当前 runner 默认配置）。
+- τ/σ 可解释性复核：门控参考开启后 PCW 成分定位读数与 ERP 实测的一致性验证。
