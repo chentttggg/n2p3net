@@ -43,15 +43,16 @@ def _start_active_run_monitor(stop_event: threading.Event) -> threading.Thread:
     def _monitor() -> None:
         while not stop_event.is_set():
             try:
+                # 含多模型 run 的嵌套子目录（runs/<run>/<spec>/progress.jsonl）
                 progs = sorted(
-                    EXPS.glob("runs/*/progress.jsonl"),
+                    list(EXPS.glob("runs/*/progress.jsonl"))
+                    + list(EXPS.glob("runs/*/*/progress.jsonl")),
                     key=lambda p: p.stat().st_mtime,
                     reverse=True,
                 )
                 if progs:
-                    (EXPS / "active_run.txt").write_text(
-                        progs[0].parent.name, encoding="utf-8"
-                    )
+                    rel = progs[0].parent.relative_to(EXPS / "runs").as_posix()
+                    (EXPS / "active_run.txt").write_text(rel, encoding="utf-8")
             except OSError:
                 pass
             stop_event.wait(5.0)

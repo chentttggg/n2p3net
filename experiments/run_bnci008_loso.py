@@ -185,18 +185,21 @@ def main():
         folds = loso_folds(subj)
 
         run_name = args.run_name or f"{args.dataset}_glm_v3_{spec}"
-        run_dir = ROOT / "experiments" / "runs" / run_name
-        run_dir.mkdir(parents=True, exist_ok=True)
+        # GLM v3.1 修复：多模型 run 每模型独立子目录（runs/<run>/<spec>/）——
+        # 此前 progress.jsonl/record.json 被后续模型覆盖（§15.4 遗留①）
+        spec_dir = ROOT / "experiments" / "runs" / run_name / spec
+        spec_dir.mkdir(parents=True, exist_ok=True)
+        dashboard_run = f"{run_name}/{spec}"
 
         adapter = build_adapter(model_name, n_channels, ch_names,
                                 args.epochs, args.batch_size, args.early_stop_patience,
                                 erp_calib=erp_calib, input_norm=args.input_norm)
 
-        # 逐 fold 实时进度（dashboard.html 消费）
-        progress_f = (run_dir / "progress.jsonl").open("w", encoding="utf-8")
+        # 逐 fold 实时进度（dashboard.html 消费；URL 用 ?run=<run_name>/<spec>）
+        progress_f = (spec_dir / "progress.jsonl").open("w", encoding="utf-8")
         progress_f.write(json.dumps({
             "type": "manifest",
-            "run_name": run_name,
+            "run_name": dashboard_run,
             "total_folds": len(folds),
             "n_trials": int(len(y)),
             "model_spec": spec,
@@ -240,7 +243,7 @@ def main():
 
         payload = {
             "model": f"{model_name}_{n_channels}ch",
-            "run_name": run_name,
+            "run_name": dashboard_run,
             "n_subjects": int(len(np.unique(subj))),
             "epochs": args.epochs,
             "batch_size": args.batch_size,
@@ -253,8 +256,9 @@ def main():
             "per_fold": [f.__dict__ for f in summary.per_fold],
             "finished_utc": datetime.now(timezone.utc).isoformat(),
         }
-        (run_dir / "record.json").write_text(
+        (spec_dir / "record.json").write_text(
             json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"[record] {spec_dir / 'record.json'}", flush=True)
         # 兼容旧的汇总目录
         out = ROOT / "experiments" / "runs" / f"{args.dataset}_loso_compare"
         out.mkdir(parents=True, exist_ok=True)
