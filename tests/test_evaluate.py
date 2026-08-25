@@ -6,21 +6,202 @@
 
 from __future__ import annotations
 
+import json
+from types import SimpleNamespace
+
 import numpy as np
+import pytest
 
 from baselines.classic import WindowLogisticRegression
 from baselines.evaluate import (
+    _evaluate_epoch_trajectory_audit,
+    _fold_process_executor_kwargs,
+    _fold_threadpool_limits,
+    _initialize_fold_worker,
     evaluate,
     loso_folds,
     paired_permutation_test,
     within_subject_folds,
 )
+from baselines.evidence_protocol import EvidenceBudget, evidence_row_indices, validate_outer_folds
 from baselines.features import time_to_index
+from data.events import ScheduledEventTimeline
+from models.decision import decide
 
 C = 8
 T = 256
 SFR = 256.0
 TMIN = -0.2  # 秒；与 data/preprocess.py 一致
+
+
+def test_fold_process_executor_registers_parent_death_signal(monkeypatch) -> None:
+    from baselines import evaluate as evaluate_module
+
+    monkeypatch.setattr(evaluate_module.mp, "get_context", lambda method: method)
+    monkeypatch.setattr(evaluate_module.os, "getpid", lambda: 1234)
+
+    kwargs = _fold_process_executor_kwargs(4)
+
+    assert kwargs == {
+        "max_workers": 4,
+        "mp_context": "spawn",
+        "initializer": _initialize_fold_worker,
+        "initargs": (1234,),
+    }
+
+
+def test_fold_threadpool_limits_applies_fold_cpu_threads(monkeypatch) -> None:
+    import torch
+
+    monkeypatch.setenv("FOLD_CPU_THREADS", "2")
+    previous = torch.get_num_threads()
+    try:
+        with _fold_threadpool_limits():
+            assert torch.get_num_threads() == 2
+    finally:
+        assert torch.get_num_threads() == previous
+
+
+def test_fold_threadpool_limits_fallback_restores_torch_threads(monkeypatch) -> None:
+    import torch
+
+    from baselines import evaluate as evaluate_module
+
+    monkeypatch.setattr(evaluate_module, "threadpool_limits", None)
+    monkeypatch.setenv("FOLD_CPU_THREADS", "2")
+    previous = torch.get_num_threads()
+    try:
+        with _fold_threadpool_limits():
+            assert torch.get_num_threads() == 2
+    finally:
+        assert torch.get_num_threads() == previous
+
+
+
+def make_event_timeline(
+    digits: np.ndarray,
+    subjects: np.ndarray,
+    *,
+    statuses: np.ndarray | None = None,
+    online_causal: bool = False,
+) -> ScheduledEventTimeline:
+    digits = np.asarray(digits, dtype=np.int64)
+    subjects = np.asarray(subjects).astype(str)
+    n_events = len(digits)
+    statuses = (
+        np.repeat("available", n_events) if statuses is None else np.asarray(statuses).astype(str)
+    )
+    available = statuses == "available"
+    evidence = np.full(n_events, -1, dtype=np.int64)
+    evidence[available] = np.arange(int(available.sum()))
+    onset = np.arange(n_events, dtype=float)
+    available_at = np.full(n_events, np.nan)
+    available_at[available] = onset[available] + 1.0
+    return ScheduledEventTimeline(
+        event_ids=np.asarray([f"event:{index}" for index in range(n_events)]),
+        group_ids=subjects,
+        subject_ids=subjects,
+        stimulus_ids=digits,
+        onset_samples=np.arange(n_events, dtype=np.int64),
+        onset_times_s=onset,
+        evidence_available_times_s=available_at,
+        evidence_indices=evidence,
+        statuses=statuses,
+        status_details=np.repeat("", n_events),
+        dataset_ids=np.repeat("synthetic", n_events),
+        session_ids=np.repeat("", n_events),
+        run_ids=np.repeat("", n_events),
+        selection_ids=subjects,
+        complete=True,
+        online_causal=online_causal,
+        timing_source="synthetic_schedule",
+    ).validate(n_epochs=int(available.sum()))
+
+
+def test_epoch_trajectory_audit_records_auc_and_digit_hits_without_selection(tmp_path):
+    digits = np.tile(np.arange(1, 10), 3)
+    subjects = np.repeat("s0", len(digits))
+    labels = (digits == 3).astype(np.int64)
+    good_logits = np.where(labels == 1, 4.0, -1.0)
+
+    class TrajectoryModel:
+        def predict_epoch_trajectory_logits(self, X):
+            return [
+                {
+                    "epoch": 1,
+                    "phase": "joint",
+                    "task_val_loss": 0.8,
+                    "objective_val_loss": 1.2,
+                    "val_innovation_nll": 0.4,
+                    "checkpoint": str(tmp_path / "epoch_001.pt"),
+                    "logits": good_logits,
+                }
+            ]
+
+    rows = _evaluate_epoch_trajectory_audit(
+        TrajectoryModel(),
+        np.zeros((len(digits), 1, 1), dtype=np.float32),
+        labels,
+        digits,
+        subjects,
+        {"s0": 3},
+        tuple(range(1, 10)),
+        True,
+        "sum",
+        (EvidenceBudget("prefix_minK", 3),),
+        make_event_timeline(digits, subjects),
+        np.arange(len(digits)),
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["test_trial_auc"] == 1.0
+    assert rows[0]["test_all_digit_hit_rate"] == 1.0
+    assert rows[0]["test_prefix_minK_sum_at_3_hit_rate"] == 1.0
+    assert rows[0]["diagnostic_only"] is True
+    assert rows[0]["prohibited_use"] == "outer_test_metrics_must_not_select_checkpoints"
+    persisted = json.loads((tmp_path / "trajectory.json").read_text(encoding="utf-8"))
+    assert persisted[0]["test_trial_auc"] == 1.0
+
+
+def test_exact_k_and_prefix_min_k_have_distinct_semantics() -> None:
+    digits = np.asarray([1, 1, 1, 2, 3])
+    subjects = np.zeros(5, dtype=int)
+    timeline = make_event_timeline(digits, subjects)
+    exact = evidence_row_indices(timeline, "0", (1, 2, 3), EvidenceBudget("exact", 1))
+    prefix = evidence_row_indices(timeline, "0", (1, 2, 3), EvidenceBudget("prefix_minK", 1))
+    assert exact.tolist() == [0, 3, 4]
+    assert prefix.tolist() == [0, 1, 2, 3, 4]
+
+    logits = np.asarray([0.0, 10.0, 10.0, 5.0, 4.0])
+    exact_result = decide(
+        logits[exact], digits[exact], np.repeat("0", len(exact)), (1, 2, 3), center_logits=False
+    )
+    prefix_result = decide(
+        logits[prefix],
+        digits[prefix],
+        np.repeat("0", len(prefix)),
+        (1, 2, 3),
+        center_logits=False,
+    )
+    assert exact_result.predicted.tolist() == [2]
+    assert prefix_result.predicted.tolist() == [1]
+
+
+def test_rejected_events_advance_flash_budget() -> None:
+    timeline = make_event_timeline(
+        np.asarray([1, 1, 2]),
+        np.asarray(["s", "s", "s"]),
+        statuses=np.asarray(["artifact_rejected", "available", "available"]),
+    )
+    assert evidence_row_indices(timeline, "s", (1, 2), EvidenceBudget("flash", 2)) is None
+    selected = evidence_row_indices(timeline, "s", (1, 2), EvidenceBudget("flash", 3))
+    assert selected.tolist() == [0, 1]
+
+
+def test_time_budget_rejects_acausal_preprocessing() -> None:
+    timeline = make_event_timeline(np.asarray([1, 2]), np.asarray(["s", "s"]))
+    with pytest.raises(ValueError, match="not online-causal"):
+        evidence_row_indices(timeline, "s", (1, 2), EvidenceBudget("time", 3.0))
 
 
 def make_multi_subject(n_subjects=8, trials_per_digit=5, seed=0):
@@ -75,6 +256,17 @@ def test_loso_folds():
         assert (train_mask | test_mask).all()
 
 
+def test_fold_validation_rejects_overlap_and_incomplete_loso() -> None:
+    subjects = np.asarray(["a", "a", "b", "b"])
+    same = subjects == "a"
+    with pytest.raises(ValueError, match="overlapping"):
+        validate_outer_folds([(same, same)], subjects, protocol="loso")
+    with pytest.raises(ValueError, match="every available row"):
+        validate_outer_folds([(~same, same)], subjects, protocol="loso")
+    with pytest.raises(ValueError, match="more than one outer test fold"):
+        validate_outer_folds([(~same, same), (~same, same)], subjects, protocol="partial_loso")
+
+
 def test_within_subject_folds():
     subject_ids = np.array([0, 0, 0, 0, 1, 1, 1, 1, 1, 1])
     run_ids = np.array([0, 0, 1, 1, 0, 0, 1, 1, 2, 2])
@@ -103,7 +295,16 @@ def test_evaluate_loso():
     X, y, digits, subject_ids, true_digits = make_multi_subject(n_subjects=8, trials_per_digit=5)
     folds = loso_folds(subject_ids)
     model = WindowLogisticRegression(window_ms=(250.0, 500.0))
-    summary = evaluate(model, X, y, digits, subject_ids, true_digits, folds)
+    summary = evaluate(
+        model,
+        X,
+        y,
+        digits,
+        subject_ids,
+        true_digits,
+        folds,
+        event_timeline=make_event_timeline(digits, subject_ids),
+    )
 
     assert len(summary.per_fold) == 8
     assert summary.hit_rate_mean > 0.5, (
@@ -113,6 +314,63 @@ def test_evaluate_loso():
         f"单试次 balanced acc 应 >0.7，得到 {summary.balanced_acc_mean:.3f}"
     )
     assert 0.0 <= summary.hit_rate_std <= 1.0
+    assert summary.per_fold[0].threshold_source == "subject_disjoint_validation"
+    assert "exact_llr@5" in summary.decision_metrics
+    assert summary.decision_metrics["exact_llr@5"].coverage == 1.0
+    assert summary.decision_metrics["exact_sum@10"].coverage == 0.0
+    assert set(summary.confound_baselines) == {"digit_prior", "count_only"}
+    assert summary.repetition_efficiency is not None
+    assert [point.repetitions for point in summary.repetition_efficiency.points] == [
+        1,
+        3,
+        5,
+        10,
+        15,
+    ]
+    assert summary.repetition_efficiency.aggregation == "llr"
+
+
+def test_itt_keeps_unavailable_unit_in_frozen_denominator() -> None:
+    class PerfectScore:
+        def fit(self, X_, y_):
+            return self
+
+        def predict_logit(self, X_):
+            return np.asarray(X_)[:, 0, 0]
+
+    available_subjects = np.repeat(np.arange(9).astype(str), 2)
+    available_digits = np.tile(np.asarray([1, 2]), 9)
+    all_subjects = np.concatenate([available_subjects, np.asarray(["9", "9"])])
+    all_digits = np.concatenate([available_digits, np.asarray([1, 2])])
+    statuses = np.concatenate(
+        [np.repeat("available", len(available_subjects)), np.repeat("missing", 2)]
+    )
+    timeline = make_event_timeline(all_digits, all_subjects, statuses=statuses)
+    X = np.zeros((len(available_subjects), 1, 1), dtype=np.float32)
+    X[:, 0, 0] = np.where(available_digits == 1, 3.0, -3.0)
+    y = (available_digits == 1).astype(np.int64)
+    truth = {str(unit): 1 for unit in range(10)}
+
+    summary = evaluate(
+        PerfectScore(),
+        X,
+        y,
+        available_digits,
+        available_subjects,
+        truth,
+        loso_folds(available_subjects),
+        digit_vocab=(1, 2),
+        evidence_budgets=(1,),
+        primary_decision_metric="exact_llr@1",
+        event_timeline=timeline,
+    )
+
+    primary = summary.decision_metrics["exact_llr@1"]
+    assert primary.n_total == 10 and primary.n_covered == 9
+    assert primary.coverage == pytest.approx(0.9)
+    assert primary.conditional_hit_rate == 1.0
+    assert primary.hit_rate == pytest.approx(0.9)
+    assert primary.subject_records[-1] == (None, 1, "9")
 
 
 def test_evaluate_empty_train_raises():
@@ -121,7 +379,260 @@ def test_evaluate_empty_train_raises():
     import pytest
 
     with pytest.raises(ValueError):
-        evaluate(WindowLogisticRegression(), X, y, digits, subject_ids, true_digits, [empty_train])
+        evaluate(
+            WindowLogisticRegression(),
+            X,
+            y,
+            digits,
+            subject_ids,
+            true_digits,
+            [empty_train],
+            event_timeline=make_event_timeline(digits, subject_ids),
+        )
+
+
+def test_evaluate_passes_gtn_trial_context_to_capable_model():
+    seen = {}
+
+    class ContextModel:
+        fit_accepts_trial_context = True
+
+        def fit(self, X_, y_, subject_ids=None, digits=None):
+            seen["subjects"] = np.asarray(subject_ids).copy()
+            seen["digits"] = np.asarray(digits).copy()
+            self.calibration_logits_ = np.asarray(y_, dtype=float) * 2.0 - 1.0
+            self.calibration_labels_ = np.asarray(y_)
+            self.calibration_source_ = "outer_train"
+            return self
+
+        def predict_logit(self, X_):
+            return np.asarray(X_)[:, 0, 0]
+
+    X, y, digits, subjects, truth = make_multi_subject(n_subjects=3, trials_per_digit=2)
+    # The score itself is irrelevant; this test protects the training metadata route.
+    X[:, 0, 0] = y * 2.0 - 1.0
+    train = subjects != 2
+    test = subjects == 2
+    evaluate(
+        ContextModel(),
+        X,
+        y,
+        digits,
+        subjects,
+        truth,
+        [(train, test)],
+        event_timeline=make_event_timeline(digits, subjects),
+        fold_protocol="partial_loso",
+    )
+    assert np.array_equal(seen["subjects"], subjects[train].astype(str))
+    assert np.array_equal(seen["digits"], digits[train])
+
+
+def test_evaluate_aggregates_chain_llr_and_repetition_audit(tmp_path):
+    class RepetitionModel:
+        fit_accepts_trial_context = True
+
+        def fit(self, X_, y_, subject_ids=None, digits=None):
+            self.calibration_logits_ = np.asarray(y_, dtype=float) * 4.0 - 2.0
+            self.calibration_labels_ = np.asarray(y_)
+            self.calibration_source_ = "subject_disjoint_validation"
+            self.repetition_temperature_calibration_ = SimpleNamespace(
+                temperature=1.25,
+                source="subject_disjoint_validation",
+                pos_weight=8.0,
+                train_prior=1.0 / 9.0,
+            )
+            self.repetition_ready_ = True
+            return self
+
+        def predict_logit(self, X_):
+            return np.asarray(X_)[:, 0, 0]
+
+        def predict_repetition_candidates(
+            self, X_, digits_, subject_ids_, *, digit_vocab, evidence_budgets
+        ):
+            subject = np.unique(subject_ids_)[0]
+            scores = np.arange(len(digit_vocab), dtype=float)[None]
+            return {
+                "prefix_minK_chain_llr@1": {
+                    "predicted": np.asarray([digit_vocab[-1]], dtype=object),
+                    "subject_ids": np.asarray([subject], dtype=object),
+                    "scores": scores,
+                    "mean_reliability": np.asarray([0.75]),
+                },
+                "prefix_minK_chain_llr@2": {
+                    "predicted": np.asarray([], dtype=object),
+                    "subject_ids": np.asarray([], dtype=object),
+                    "scores": np.empty((0, len(digit_vocab))),
+                    "mean_reliability": np.asarray([]),
+                },
+            }
+
+    X, y, digits, subjects, truth = make_multi_subject(n_subjects=3, trials_per_digit=2)
+    X[:, 0, 0] = y * 4.0 - 2.0
+    truth[2] = 9
+    train = subjects != 2
+    test = subjects == 2
+    summary = evaluate(
+        RepetitionModel(),
+        X,
+        y,
+        digits,
+        subjects,
+        truth,
+        [(train, test)],
+        evidence_budgets=(1, 2),
+        primary_decision_metric="prefix_minK_chain_llr@1",
+        event_timeline=make_event_timeline(digits, subjects),
+        fold_protocol="partial_loso",
+    )
+
+    chain_one = summary.decision_metrics["prefix_minK_chain_llr@1"]
+    assert chain_one.hit_rate == 1.0
+    assert chain_one.coverage == 1.0
+    assert chain_one.aggregation == "chain_llr"
+    assert summary.decision_metrics["prefix_minK_chain_llr@2"].coverage == 0.0
+    assert summary.primary_decision_metric == "prefix_minK_chain_llr@1"
+    assert summary.primary_metric_gate["claim_eligible"] is True
+    assert summary.primary_metric_gate["checks"]["minimum_availability_coverage"]["passed"] is True
+    assert summary.primary_metric_gate["repetition_fold_readiness"] == {
+        "attempted_folds": 1,
+        "ready_folds": 1,
+        "unready_folds": [],
+    }
+    assert summary.repetition_efficiency.aggregation == "chain_llr"
+    assert summary.repetition_efficiency.budget_semantics == "prefix_minK"
+    assert [point.repetitions for point in summary.repetition_efficiency.points] == [1, 2]
+
+    audit = summary.per_fold[0].audit["repetition"]
+    assert audit["temperature"] == 1.25
+    assert audit["pos_weight"] == 8.0
+    assert audit["train_prior"] == 1.0 / 9.0
+    assert audit["metrics"]["prefix_minK_chain_llr@1"]["mean_reliability"] == 0.75
+    assert audit["metrics"]["prefix_minK_chain_llr@1"]["mean_top1_log_score_margin"] == 1.0
+
+    class UnreadyRepetitionModel(RepetitionModel):
+        def predict_repetition_candidates(
+            self, X_, digits_, subject_ids_, *, digit_vocab, evidence_budgets
+        ):
+            self.repetition_ready_ = False
+            return super().predict_repetition_candidates(
+                X_, digits_, subject_ids_, digit_vocab=digit_vocab, evidence_budgets=evidence_budgets
+            )
+
+    unready = evaluate(
+        UnreadyRepetitionModel(),
+        X,
+        y,
+        digits,
+        subjects,
+        truth,
+        [(train, test)],
+        evidence_budgets=(1, 2),
+        primary_decision_metric="prefix_minK_chain_llr@1",
+        event_timeline=make_event_timeline(digits, subjects),
+        fold_protocol="partial_loso",
+    )
+    assert unready.decision_metrics["prefix_minK_chain_llr@1"].coverage == 0.0
+    gate = unready.primary_metric_gate
+    assert gate["applicable"] is True
+    assert gate["passed"] is False
+    assert gate["claim_eligible"] is False
+    assert gate["name"] == "primary_metric_claim_gate"
+    assert gate["effect"] == "descriptive_only_no_result_suppression"
+    assert gate["failed_checks"] == ["minimum_availability_coverage"]
+    assert gate["checks"]["minimum_availability_coverage"] == {
+        "passed": False,
+        "observed": 0.0,
+        "minimum": 0.9,
+        "n_covered": 0,
+        "n_total": 1,
+    }
+    assert gate["repetition_fold_readiness"]["attempted_folds"] == 1
+    assert gate["repetition_fold_readiness"]["ready_folds"] == 0
+    assert gate["repetition_fold_readiness"]["unready_folds"][0]["ready"] is False
+
+    descriptive = unready.per_fold[0].audit["repetition"]["metrics"]["prefix_minK_chain_llr@1"]
+    assert descriptive["formal_eligible"] is False
+    assert descriptive["formal_covered"] == 0
+    assert descriptive["descriptive_covered"] == 1
+    descriptive_records = unready.descriptive_decision_records["prefix_minK_chain_llr@1"]
+    assert descriptive_records == [
+        {
+            "subject": "2",
+            "predicted": 9,
+            "true": 9,
+            "available": True,
+            "hit": 1,
+            "scores": list(np.arange(9, dtype=float)),
+            "mean_reliability": 0.75,
+            "claim_eligible": False,
+            "formal_available": False,
+        }
+    ]
+    from experiments.run_gtn_baseline import save_subject_scores
+
+    score_path = save_subject_scores(unready, "repetition", tmp_path / "scores.json")
+    score_payload = json.loads(score_path.read_text(encoding="utf-8"))
+    assert score_payload["primary_records"][0]["available"] is False
+    assert score_payload["descriptive_primary_records"] == descriptive_records
+    assert score_payload["descriptive_records_by_metric"][
+        "prefix_minK_chain_llr@1"
+    ] == descriptive_records
+
+
+def test_primary_coverage_threshold_is_independent_from_efficiency_threshold():
+    class ReadyRepetitionModel:
+        fit_accepts_trial_context = True
+
+        def fit(self, X_, y_, subject_ids=None, digits=None):
+            self.calibration_logits_ = np.asarray(y_, dtype=float) * 4.0 - 2.0
+            self.calibration_labels_ = np.asarray(y_)
+            self.calibration_source_ = "subject_disjoint_validation"
+            self.repetition_ready_ = True
+            return self
+
+        def predict_logit(self, X_):
+            return np.asarray(X_)[:, 0, 0]
+
+        def predict_repetition_candidates(
+            self, X_, digits_, subject_ids_, *, digit_vocab, evidence_budgets
+        ):
+            subject = np.unique(subject_ids_)[0]
+            return {
+                "prefix_minK_chain_llr@1": {
+                    "predicted": np.asarray([digit_vocab[-1]], dtype=object),
+                    "subject_ids": np.asarray([subject], dtype=object),
+                    "scores": np.arange(len(digit_vocab), dtype=float)[None],
+                    "mean_reliability": np.asarray([0.8]),
+                    "claim_eligible": True,
+                }
+            }
+
+    X, y, digits, subjects, truth = make_multi_subject(n_subjects=3, trials_per_digit=1)
+    X[:, 0, 0] = y * 4.0 - 2.0
+    truth[2] = 9
+    train = subjects != 2
+    test = subjects == 2
+
+    summary = evaluate(
+        ReadyRepetitionModel(),
+        X,
+        y,
+        digits,
+        subjects,
+        truth,
+        [(train, test)],
+        evidence_budgets=(1,),
+        primary_decision_metric="prefix_minK_chain_llr@1",
+        primary_min_coverage=1.0,
+        efficiency_min_coverage=0.25,
+        event_timeline=make_event_timeline(digits, subjects),
+        fold_protocol="partial_loso",
+    )
+
+    assert summary.primary_metric_gate["minimum_coverage"] == 1.0
+    assert summary.repetition_efficiency.minimum_coverage == 0.25
 
 
 # ---------------- 配对置换检验 ----------------
@@ -158,7 +669,41 @@ def test_evaluate_nan_raises():
     X[:, 3:, :] = float("nan")
     folds = loso_folds(subject_ids)
     with pytest.raises(ValueError):
-        evaluate(WindowLogisticRegression(), X, y, digits, subject_ids, true_digits, folds)
+        evaluate(
+            WindowLogisticRegression(),
+            X,
+            y,
+            digits,
+            subject_ids,
+            true_digits,
+            folds,
+            event_timeline=make_event_timeline(digits, subject_ids),
+        )
+
+
+def test_outer_prequential_claim_gate_is_claim_only_and_fail_closed():
+    from experiments.run_n2p3net_gtn import _outer_prequential_claim_gate
+
+    def fold(delta_auc: float, delta_brier: float, coefficient: float = 0.2):
+        return SimpleNamespace(
+            audit={
+                "branches": {
+                    "pcw": {"auc": 0.7, "brier": 0.2},
+                    "final": {"auc": 0.7 + delta_auc, "brier": 0.2 + delta_brier},
+                },
+                "prequential_gate": {"passed": True},
+                "prequential_coefficient": coefficient,
+            }
+        )
+
+    passed = _outer_prequential_claim_gate([fold(0.01, -0.01) for _ in range(5)])
+    assert passed["passed"] is True
+    failed = _outer_prequential_claim_gate(
+        [fold(0.01, -0.01), fold(0.0, 0.0, 0.0), fold(-0.01, 0.01, 0.0)]
+    )
+    assert failed["passed"] is False
+    assert failed["checks"]["at_least_five_outer_folds"] is False
+    assert failed["checks"]["fusion_active_in_strict_majority"] is False
 
 
 def test_composite_group_key():
@@ -171,18 +716,19 @@ def test_composite_group_key():
 
     X_list, y_list, d_list, s_list = [], [], [], []
     true_digits = {}
-    for run, true_d in [(0, 5), (1, 8)]:
-        key = f"s0_r{run}"
-        true_digits[key] = true_d
-        for d in range(1, 10):
-            for _ in range(3):
-                x = rng.standard_normal((C, T)).astype(np.float32)
-                if d == true_d:
-                    x[3, :] += 5.0 * gauss
-                X_list.append(x)
-                y_list.append(1 if d == true_d else 0)
-                d_list.append(d)
-                s_list.append(key)
+    for subject in range(5):
+        for run, true_d in [(0, 5), (1, 8)]:
+            key = f"s{subject}_r{run}"
+            true_digits[key] = true_d
+            for d in range(1, 10):
+                for _ in range(3):
+                    x = rng.standard_normal((C, T)).astype(np.float32)
+                    if d == true_d:
+                        x[3, :] += 5.0 * gauss
+                    X_list.append(x)
+                    y_list.append(1 if d == true_d else 0)
+                    d_list.append(d)
+                    s_list.append(key)
 
     X = np.stack(X_list).astype(np.float32)
     y = np.array(y_list)
@@ -192,11 +738,60 @@ def test_composite_group_key():
 
     summary = evaluate(
         WindowLogisticRegression(window_ms=(250.0, 500.0)),
-        X, y, digits, subject_ids, true_digits, folds,
+        X,
+        y,
+        digits,
+        subject_ids,
+        true_digits,
+        folds,
+        event_timeline=make_event_timeline(digits, subject_ids),
     )
-    # 两个 (subject, run) 单元都被正确计数
-    assert len(summary.subject_records) == 2
+    # 五名被试的两个 run 均作为独立选择单元计数。
+    assert len(summary.subject_records) == 10
     assert 0.0 <= summary.hit_rate_mean <= 1.0
+
+
+def test_loso_rejects_two_selection_groups_from_same_physical_subject() -> None:
+    groups = np.repeat(np.asarray(["s0_run1", "s0_run2", "s1_run1"]), 2)
+    physical_subjects = np.asarray(["s0", "s0", "s0", "s0", "s1", "s1"])
+    digits = np.tile(np.asarray([1, 2]), 3)
+    timeline = ScheduledEventTimeline(
+        event_ids=np.asarray([f"e{index}" for index in range(6)]),
+        group_ids=groups,
+        subject_ids=physical_subjects,
+        stimulus_ids=digits,
+        onset_samples=np.arange(6),
+        onset_times_s=np.arange(6, dtype=float),
+        evidence_available_times_s=np.arange(6, dtype=float) + 1.0,
+        evidence_indices=np.arange(6),
+        statuses=np.repeat("available", 6),
+        status_details=np.repeat("", 6),
+        dataset_ids=np.repeat("synthetic", 6),
+        session_ids=np.repeat("session", 6),
+        run_ids=groups,
+        selection_ids=groups,
+        complete=True,
+        online_causal=False,
+        timing_source="synthetic",
+    ).validate(n_epochs=6)
+    X = np.zeros((6, 1, 4), dtype=np.float32)
+    y = (digits == 1).astype(np.int64)
+    truth = {group: 1 for group in np.unique(groups)}
+
+    with pytest.raises(ValueError, match="leaks test subjects"):
+        evaluate(
+            WindowLogisticRegression(),
+            X,
+            y,
+            digits,
+            groups,
+            truth,
+            loso_folds(groups),
+            digit_vocab=(1, 2),
+            evidence_budgets=(1,),
+            primary_decision_metric="exact_llr@1",
+            event_timeline=timeline,
+        )
 
 
 # ---------------- 二分类评估（evaluate_binary） ----------------
@@ -231,3 +826,48 @@ def test_evaluate_binary_nan_raises():
     folds = loso_folds(subject_ids)
     with pytest.raises(ValueError):
         evaluate_binary(WindowLogisticRegression(), X, y, subject_ids, folds)
+
+
+def test_binary_evaluation_requires_validation_calibration():
+    """Small folds fail closed instead of calibrating on outer-train scores."""
+    from baselines.evaluate import evaluate_binary
+
+    class ScoreModel:
+        def fit(self, X_, y_):
+            return self
+
+        def predict_logit(self, X_):
+            return np.asarray(X_)[:, 0, 0]
+
+    y = np.array([0, 0, 1, 1, 0, 0, 1, 1])
+    subjects = np.array([0, 0, 0, 0, 1, 1, 1, 1])
+    X = np.zeros((8, 1, 1), dtype=np.float32)
+    X[:, 0, 0] = np.array([-2.0, -1.0, 1.0, 2.0, -1.5, -0.5, 0.5, 1.5])
+    fold = [(subjects == 0, subjects == 1)]
+    with pytest.raises(ValueError, match="Subject-disjoint validation requires"):
+        evaluate_binary(ScoreModel(), X, y, subjects, fold, fold_protocol="partial_loso")
+
+
+def test_model_validation_scores_take_priority_for_threshold():
+    from baselines.evaluate import evaluate_binary
+
+    class ValidationAwareModel:
+        fit_accepts_subject_ids = True
+
+        def fit(self, X_, y_, subject_ids=None):
+            self.calibration_logits_ = np.array([-4.0, -3.0, 3.0, 4.0])
+            self.calibration_labels_ = np.array([0, 0, 1, 1])
+            self.calibration_source_ = "subject_disjoint_validation"
+            return self
+
+        def predict_logit(self, X_):
+            return np.asarray(X_)[:, 0, 0]
+
+    y = np.array([0, 1, 0, 1, 0, 1])
+    subjects = np.array([0, 0, 1, 1, 2, 2])
+    X = np.zeros((6, 1, 1), dtype=np.float32)
+    fold = [(subjects != 2, subjects == 2)]
+    result = evaluate_binary(
+        ValidationAwareModel(), X, y, subjects, fold, fold_protocol="partial_loso"
+    )
+    assert result.per_fold[0].threshold_source == "subject_disjoint_validation"
