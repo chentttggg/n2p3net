@@ -195,7 +195,7 @@ def recovery_metrics(predicted: np.ndarray, expected: np.ndarray | float) -> dic
     }
 
 
-def _model_kwargs() -> dict[str, object]:
+def _model_kwargs(*, p3b_tau0_init_ms: float = 460.0) -> dict[str, object]:
     return NEURAL_RIDE_V11.model_kwargs(
         n_channels=3,
         channel_names=CHANNEL_NAMES,
@@ -204,7 +204,7 @@ def _model_kwargs() -> dict[str, object]:
         sfreq=SFREQ,
         n_time=N_TIME,
         baseline_mode="trial",
-        tau0_ms=(220.0, 300.0, 460.0),
+        tau0_ms=(220.0, 300.0, p3b_tau0_init_ms),
         tau0_bounds=((180.0, 280.0), (250.0, 380.0), (350.0, 600.0)),
         sigma_bounds=((20.0, 50.0), (20.0, 80.0), (20.0, 150.0)),
         overrides={
@@ -234,6 +234,7 @@ def run_fold(
     data: SyntheticTrainingData,
     probes: dict[float, np.ndarray],
     base_latency_ms: float,
+    tau0_init_ms: float,
     device: torch.device,
     epochs: int,
     batch_size: int,
@@ -249,7 +250,7 @@ def run_fold(
         random_state=seed + fold_index,
         stratify=data.y[train_indices],
     )
-    model = N2P3Net(**_model_kwargs())
+    model = N2P3Net(**_model_kwargs(p3b_tau0_init_ms=tau0_init_ms))
     config = TrainerConfig(
         epochs=epochs,
         batch_size=batch_size,
@@ -306,6 +307,7 @@ def run_fold(
         "fit_seconds": fit_seconds,
         "epochs_ran": len(history["train_losses"]),
         "best_task_epoch_zero_based": history.get("best_task_epoch"),
+        "tau0_init_p3b_ms": tau0_init_ms,
         "tau0_p3b_ms": tau0,
         "tau0": recovery_metrics(np.asarray([tau0]), base_latency_ms),
         "conditions": conditions,
@@ -354,6 +356,7 @@ def main() -> None:
     parser.add_argument("--nontarget-per-subject", type=int, default=512)
     parser.add_argument("--probe-trials-per-subject", type=int, default=64)
     parser.add_argument("--base-latency-ms", type=float, default=460.0)
+    parser.add_argument("--tau0-init-offset-ms", type=float, default=40.0)
     parser.add_argument("--train-jitter-ms", type=float, default=40.0)
     parser.add_argument("--shifts-ms", default="-20,20,40")
     parser.add_argument("--noise-std", type=float, default=1.0)
@@ -369,7 +372,15 @@ def main() -> None:
     args = parser.parse_args()
     if args.folds != 2:
         parser.error("The time-bounded identifiability protocol is locked to exactly two folds.")
+    if args.tau0_init_offset_ms <= 0:
+        parser.error("--tau0-init-offset-ms must be positive for a recovery audit.")
     shifts = _parse_shifts(args.shifts_ms)
+    tau0_initializations = (
+        args.base_latency_ms - args.tau0_init_offset_ms,
+        args.base_latency_ms + args.tau0_init_offset_ms,
+    )
+    if min(tau0_initializations) < 350.0 or max(tau0_initializations) > 600.0:
+        parser.error("P3b tau0 initializations must remain within the [350, 600] ms bounds.")
     device = get_device() if args.device == "auto" else torch.device(args.device)
     if args.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested but is unavailable.")
@@ -411,6 +422,7 @@ def main() -> None:
                 data=data,
                 probes=probes,
                 base_latency_ms=args.base_latency_ms,
+                tau0_init_ms=tau0_initializations[fold_index],
                 device=device,
                 epochs=args.epochs,
                 batch_size=args.batch_size,
@@ -426,12 +438,17 @@ def main() -> None:
             "paired_test_noise": True,
             "checkpoint_selection_uses_test_latency": False,
             "base_latency_ms": args.base_latency_ms,
+            "tau0_initialization_ms_by_fold": list(tau0_initializations),
             "shifts_ms": list(shifts),
             "tau_semantics": "effective_dtau = predicted_tau - learned_tau0",
             "current_training_has_explicit_latency_supervision": False,
         },
         "args": {**vars(args), "output": str(args.output)},
-        "model_kwargs": _model_kwargs(),
+        "model_kwargs_common": {
+            key: value
+            for key, value in _model_kwargs(p3b_tau0_init_ms=args.base_latency_ms).items()
+            if key != "tau0_ms"
+        },
         "data": {
             "shape": list(data.X.shape),
             "target_rate": float(data.y.mean()),

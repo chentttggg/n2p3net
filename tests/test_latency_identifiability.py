@@ -4,6 +4,7 @@ import numpy as np
 
 from experiments.run_latency_identifiability import (
     N_TIME,
+    _model_kwargs,
     _pool_fold_results,
     make_paired_latency_probe,
     make_synthetic_training_data,
@@ -36,6 +37,10 @@ def test_pool_uses_configured_base_latency_for_tau0() -> None:
 
     assert pooled["tau0_p3b_ms"]["bias_ms"] == 0.0
     assert pooled["tau0_p3b_ms"]["rmse_ms"] == 1.0
+
+
+def test_model_kwargs_accept_deliberately_offset_p3b_tau0() -> None:
+    assert _model_kwargs(p3b_tau0_init_ms=420.0)["tau0_ms"] == (220.0, 300.0, 420.0)
 
 
 def test_paired_probe_reuses_noise_and_changes_only_p3b_latency() -> None:
