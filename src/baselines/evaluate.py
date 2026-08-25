@@ -638,6 +638,34 @@ def _confound_records(
 
 
 @contextmanager
+def _cpu_threadpool_limits(cpu_threads: int) -> Iterator[None]:
+    """Apply one CPU budget to BLAS and PyTorch intra-op threads."""
+
+    if cpu_threads < 1:
+        raise ValueError(f"cpu_threads must be positive, got {cpu_threads}")
+    try:
+        import torch
+    except ImportError:
+        if threadpool_limits is None:
+            yield
+        else:
+            with threadpool_limits(limits=cpu_threads):
+                yield
+        return
+
+    previous = torch.get_num_threads()
+    torch.set_num_threads(cpu_threads)
+    try:
+        if threadpool_limits is None:
+            yield
+        else:
+            with threadpool_limits(limits=cpu_threads):
+                yield
+    finally:
+        torch.set_num_threads(previous)
+
+
+@contextmanager
 def _fold_threadpool_limits() -> Iterator[None]:
     """Apply the per-fold CPU budget to BLAS and PyTorch intra-op threads.
 
@@ -647,27 +675,8 @@ def _fold_threadpool_limits() -> Iterator[None]:
     inter-op threads are configured once in spawned-worker initialization;
     unlike intra-op threads, they cannot be changed and restored repeatedly.
     """
-    fold_threads = _fold_cpu_threads()
-    try:
-        import torch
-    except ImportError:
-        if threadpool_limits is None:
-            yield
-        else:
-            with threadpool_limits(limits=fold_threads):
-                yield
-        return
-
-    previous = torch.get_num_threads()
-    torch.set_num_threads(fold_threads)
-    try:
-        if threadpool_limits is None:
-            yield
-        else:
-            with threadpool_limits(limits=fold_threads):
-                yield
-    finally:
-        torch.set_num_threads(previous)
+    with _cpu_threadpool_limits(_fold_cpu_threads()):
+        yield
 
 
 def _fold_cpu_threads() -> int:

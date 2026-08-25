@@ -31,7 +31,12 @@ if str(_ROOT) not in sys.path:
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from baselines.evaluate import _fold_threadpool_limits, evaluate, loso_folds  # noqa: E402
+from baselines.evaluate import (  # noqa: E402
+    _cpu_threadpool_limits,
+    _fold_threadpool_limits,
+    evaluate,
+    loso_folds,
+)
 from baselines.evidence_protocol import row_acquisition_indices  # noqa: E402
 from baselines.n2p3net import N2P3NetBaseline  # noqa: E402
 from data.channel import build_channel_identity  # noqa: E402
@@ -65,6 +70,26 @@ def _build_gtn_x_and_identity(
     )
     E_chn = torch.from_numpy(identity.embedding)
     return X, E_chn, mask
+
+
+def _postprocess_cpu_threads() -> int:
+    """Return the parent-only finalization CPU budget.
+
+    Fold workers divide the host budget through ``FOLD_CPU_THREADS``. Once they
+    have exited, the parent may reclaim the full OpenMP budget for the required
+    final-fold refit and artifact inference.
+    """
+
+    raw = os.environ.get("POSTPROCESS_CPU_THREADS", os.environ.get("OMP_NUM_THREADS", "8"))
+    try:
+        threads = int(raw)
+    except ValueError as exc:
+        raise ValueError(
+            f"POSTPROCESS_CPU_THREADS must be a positive integer, got {raw!r}"
+        ) from exc
+    if threads < 1:
+        raise ValueError(f"POSTPROCESS_CPU_THREADS must be positive, got {threads}")
+    return threads
 
 
 def _outer_prequential_claim_gate(per_fold) -> dict[str, object]:
@@ -990,13 +1015,19 @@ def main() -> None:
     # Refit only the final fold in the parent so the legacy record/component
     # artifacts still have a concrete model without changing outer-fold scores.
     parent_final_fold_refit = not getattr(adapter, "_fitted", False)
+    postprocess_cpu_threads = _postprocess_cpu_threads()
+    print(
+        f"[finalize] cpu_threads={postprocess_cpu_threads} "
+        "for parent refit and component artifacts",
+        flush=True,
+    )
     if parent_final_fold_refit:
         final_train_mask, _ = folds[-1]
         acquisition_indices = row_acquisition_indices(event_timeline)
         trajectory_setting = adapter.trainer_kwargs.get("epoch_trajectory_audit", False)
         adapter.trainer_kwargs["epoch_trajectory_audit"] = False
         try:
-            with _fold_threadpool_limits():
+            with _cpu_threadpool_limits(postprocess_cpu_threads):
                 adapter.fit(
                     X_model[final_train_mask],
                     y[final_train_mask],
@@ -1132,6 +1163,7 @@ def main() -> None:
     }
     record["timing"] = {
         "total_wall_seconds": wall_seconds,
+        "postprocess_cpu_threads": postprocess_cpu_threads,
         "fit_durations_sec": [
             fold.fit_sec for fold in summary.per_fold if fold.fit_sec is not None
         ],
@@ -1167,8 +1199,9 @@ def main() -> None:
 
     # 最后 fold 的成分记录：τ/σ 与 target/non-target P3b τ 分布。
     last_train_mask, last_test_mask = folds[-1]
-    logits_last, tau_last, sigma_last = adapter.predict_full(X_model[last_test_mask])
-    branch_logits = adapter.predict_branches(X_model[last_test_mask])
+    with _cpu_threadpool_limits(postprocess_cpu_threads):
+        logits_last, tau_last, sigma_last = adapter.predict_full(X_model[last_test_mask])
+        branch_logits = adapter.predict_branches(X_model[last_test_mask])
     y_last = y[last_test_mask]
     components = {
         "tau0_bounded_ms": [

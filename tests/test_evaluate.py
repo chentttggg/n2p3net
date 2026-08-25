@@ -14,6 +14,7 @@ import pytest
 
 from baselines.classic import WindowLogisticRegression
 from baselines.evaluate import (
+    _cpu_threadpool_limits,
     _evaluate_epoch_trajectory_audit,
     _fold_process_executor_kwargs,
     _fold_threadpool_limits,
@@ -75,6 +76,35 @@ def test_fold_threadpool_limits_fallback_restores_torch_threads(monkeypatch) -> 
             assert torch.get_num_threads() == 2
     finally:
         assert torch.get_num_threads() == previous
+
+
+def test_cpu_threadpool_limits_applies_explicit_parent_budget() -> None:
+    import torch
+
+    previous = torch.get_num_threads()
+    try:
+        with _cpu_threadpool_limits(3):
+            assert torch.get_num_threads() == 3
+    finally:
+        assert torch.get_num_threads() == previous
+
+
+def test_postprocess_cpu_threads_prefers_explicit_budget(monkeypatch) -> None:
+    from experiments.run_n2p3net_gtn import _postprocess_cpu_threads
+
+    monkeypatch.setenv("OMP_NUM_THREADS", "8")
+    monkeypatch.setenv("POSTPROCESS_CPU_THREADS", "6")
+
+    assert _postprocess_cpu_threads() == 6
+
+
+def test_postprocess_cpu_threads_defaults_to_openmp_budget(monkeypatch) -> None:
+    from experiments.run_n2p3net_gtn import _postprocess_cpu_threads
+
+    monkeypatch.delenv("POSTPROCESS_CPU_THREADS", raising=False)
+    monkeypatch.setenv("OMP_NUM_THREADS", "8")
+
+    assert _postprocess_cpu_threads() == 8
 
 
 
