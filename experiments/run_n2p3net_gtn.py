@@ -92,6 +92,27 @@ def _postprocess_cpu_threads() -> int:
     return threads
 
 
+def _configure_parent_cpu_scheduler(cpu_threads: int) -> dict[str, int]:
+    """Initialize the parent process CPU schedulers before training starts."""
+
+    for variable in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
+        os.environ[variable] = str(cpu_threads)
+    torch.set_num_threads(cpu_threads)
+    current_interop = torch.get_num_interop_threads()
+    if current_interop != cpu_threads:
+        try:
+            torch.set_num_interop_threads(cpu_threads)
+        except RuntimeError as exc:
+            raise RuntimeError(
+                "Parent CPU scheduler must be configured before PyTorch parallel work; "
+                f"requested {cpu_threads} inter-op threads, current {current_interop}."
+            ) from exc
+    return {
+        "intraop_threads": int(torch.get_num_threads()),
+        "interop_threads": int(torch.get_num_interop_threads()),
+    }
+
+
 def _outer_prequential_claim_gate(per_fold) -> dict[str, object]:
     """Summarize locked outer-fold evidence without changing the fitted model."""
 
@@ -482,6 +503,14 @@ def main() -> None:
     if args.fold_jobs < 1:
         ap.error("--fold-jobs must be positive")
     postprocess_cpu_threads = _postprocess_cpu_threads()
+    parent_cpu_scheduler = _configure_parent_cpu_scheduler(postprocess_cpu_threads)
+    print(
+        "[cpu scheduler] parent "
+        f"intraop={parent_cpu_scheduler['intraop_threads']} "
+        f"interop={parent_cpu_scheduler['interop_threads']}; "
+        f"fold_workers={args.fold_jobs}x{os.environ.get('FOLD_CPU_THREADS', '2')}",
+        flush=True,
+    )
     if not 0.0 < args.primary_min_coverage <= 1.0:
         ap.error("--primary-min-coverage must be in (0,1]")
     if not 0.0 < args.efficiency_min_coverage <= 1.0:
@@ -1164,6 +1193,7 @@ def main() -> None:
     record["timing"] = {
         "total_wall_seconds": wall_seconds,
         "postprocess_cpu_threads": postprocess_cpu_threads,
+        "parent_cpu_scheduler": parent_cpu_scheduler,
         "fit_durations_sec": [
             fold.fit_sec for fold in summary.per_fold if fold.fit_sec is not None
         ],

@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import os
 from types import SimpleNamespace
 
 import numpy as np
@@ -105,6 +106,27 @@ def test_postprocess_cpu_threads_defaults_to_openmp_budget(monkeypatch) -> None:
     monkeypatch.setenv("OMP_NUM_THREADS", "8")
 
     assert _postprocess_cpu_threads() == 8
+
+
+def test_parent_cpu_scheduler_configures_eight_core_dispatch(monkeypatch) -> None:
+    from experiments import run_n2p3net_gtn as runner
+
+    for variable in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
+        monkeypatch.setenv(variable, "1")
+    state = {"intraop": 16, "interop": 16}
+    monkeypatch.setattr(runner.torch, "set_num_threads", lambda value: state.update(intraop=value))
+    monkeypatch.setattr(runner.torch, "get_num_threads", lambda: state["intraop"])
+    monkeypatch.setattr(
+        runner.torch, "set_num_interop_threads", lambda value: state.update(interop=value)
+    )
+    monkeypatch.setattr(runner.torch, "get_num_interop_threads", lambda: state["interop"])
+
+    configured = runner._configure_parent_cpu_scheduler(8)
+
+    assert configured == {"intraop_threads": 8, "interop_threads": 8}
+    assert os.environ["OMP_NUM_THREADS"] == "8"
+    assert os.environ["MKL_NUM_THREADS"] == "8"
+    assert os.environ["OPENBLAS_NUM_THREADS"] == "8"
 
 
 
