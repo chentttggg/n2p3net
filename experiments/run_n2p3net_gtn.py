@@ -481,6 +481,7 @@ def main() -> None:
         ap.error("--batch-size must be positive")
     if args.fold_jobs < 1:
         ap.error("--fold-jobs must be positive")
+    postprocess_cpu_threads = _postprocess_cpu_threads()
     if not 0.0 < args.primary_min_coverage <= 1.0:
         ap.error("--primary-min-coverage must be in (0,1]")
     if not 0.0 < args.efficiency_min_coverage <= 1.0:
@@ -1015,7 +1016,6 @@ def main() -> None:
     # Refit only the final fold in the parent so the legacy record/component
     # artifacts still have a concrete model without changing outer-fold scores.
     parent_final_fold_refit = not getattr(adapter, "_fitted", False)
-    postprocess_cpu_threads = _postprocess_cpu_threads()
     print(
         f"[finalize] cpu_threads={postprocess_cpu_threads} "
         "for parent refit and component artifacts",
