@@ -23,4 +23,6 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B"]
-ignore = ["E501"]
+# Preserve conventional mathematical tensor names (X, H, W, etc.) used throughout
+# the EEG model equations and implementations.
+ignore = ["E501", "N803", "N806", "N812"]

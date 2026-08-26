@@ -7,8 +7,9 @@ build/
 .pytest_cache/
 .ruff_cache/
 .mne_home/
-data/
-Data/
+/data/
+/Data/
+/tmp/
 
 
 

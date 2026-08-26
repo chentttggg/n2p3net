@@ -84,8 +84,8 @@ def test_encode_age_adjacent_similarity():
 
     cos_20_21 = _cosine(e20, e21)
     cos_20_60 = _cosine(e20, e60)
-    assert cos_20_21 > cos_20_60   # 单调性：年龄近 → 编码更相似
-    assert cos_20_21 > 0.3         # 非近似正交（修复前频率爆炸时余弦≈0）
+    assert cos_20_21 > cos_20_60  # 单调性：年龄近 → 编码更相似
+    assert cos_20_21 > 0.3  # 非近似正交（修复前频率爆炸时余弦≈0）
 
 
 def test_encode_sex_onehot():

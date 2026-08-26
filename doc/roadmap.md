@@ -1,133 +1,71 @@
-# N2P3-Net 路线图（Roadmap）
+# N2P3-Net 路线图
 
-> 每个阶段以「可量化的验收标准」为准；未达标不得进入下一阶段。
-> 全程遵循 constitution.md 的 P1–P9 与 E1–E10。
-> 版本：v2（吸收 review v1 + 成人为主）。
+> 本路线图只描述当前可执行的阶段、门槛和未完成工作。历史材料见
+> [`../archives/README.md`](../archives/README.md) 与
+> [`../archives/legacy_v11_docs_2026-08-25/`](../archives/legacy_v11_docs_2026-08-25/)。
+> 版本：v4（2026-08-25，v12 四对象架构）。
 
 ## 阶段总览
 
-| 阶段 | 主题 | 关键验收 |
+| 阶段 | 内容 | 进入下一阶段的硬门槛 |
 |---|---|---|
-| Phase 0 | 数据层（格式无关适配） | 异构数据统一到 (N,8,T)，含元数据 |
-| Phase 1 | 基线复现 | GTN 命中率 77%±3，三层协议 + 免费地板 |
-| Phase 2 | N2P3-Net 骨架（单受试） | 单受试命中率超基线 ≥ 80%，预算 ≤50k |
-| Phase 3 | 跨域 + 自监督 | 跨受试零样本 ≥ 78%、少样本 ≥ 82% |
-| Phase 4 | 可解释与统计验证 | 成分定位与 mass-univariate 一致 + 年龄协变量 |
-| Phase 5 | 消融 + 调优 + 报告 | 每项复杂度有归因（含 depth/高通/参考抖动轴） |
+| S0 | 反例 harness：soft-label 语义、count 抵消、rho-chain 排序、冗余 L 融合、latency 规范、prior-shift、stopping replay | S0 七项全过 |
+| P1 | LatencyMeasurement + PCW detached 消费 | S0-5、合成与已有 2-fold latency audit 全过 |
+| P2 | RepetitionEvidence 可加 LLR 主干 + state residual | S0-2/3/4 全过，locked 开发折 |
+| P3 | Reliability 双 estimand（fidelity / clean_probability） | S0-6 全过 |
+| P4 | InnovationAudit 嵌套 M0/M1 + DynamicStopping replay/e-process | S0-7 全过 |
+| P5 | 预注册 8-fold locked 开发；全部通过后按 E4a 删除旧语义与旧入口 | blueprint.md 第 7 节门槛 |
 
-## Phase 0 —— 数据层（格式无关适配）
-目标：把 GTN / ERP CORE / 自有 8 导三类异构数据统一到规范 tensor，含年龄/性别元数据。
-交付：
-- 统一数据加载器：任意输入 → (N, 8, T) tensor + 元数据字段（年龄、性别、参考、剔除率）。
-- 坐标式通道身份编码 + 缺失通道掩码 token；subject metadata 嵌入（年龄/性别）。
-- 网络外预处理（epocheng 之前）：重采样 256 Hz + 0.1 Hz 连续域高通 + epoch 切分 + 阈值伪迹剔除。
-验收：
-- 三个异构数据集可加载到同一形状 tensor；元数据完整可用；
-- 随机通道 dropout 掩码不报错；0.1 Hz 高通在连续域执行（非 epoch 内）；
-- 单元测试覆盖重采样、高通、坐标映射、掩码、元数据。
-坑预警：
-- 跨数据集参考不一致（GTN 鼻梁 vs ERP CORE 平均）系统性改变 P300 地形——坐标通道 + 加权再参考须做对；
-- 0.5 Hz 高通失真（E1）——默认 0.1 Hz，0.5 Hz 仅作 Phase 4 消融；
-- GTN 是儿童数据，与成人目标存在年龄 shift（E8）——元数据必须记录年龄。
-参考实现：BrainOmni（坐标通道）、Tanner 2015（高通失真依据）、MNE（重采样/epoch/剔除）。
-依赖：无。
+任何阶段失败都回 S0，禁止在开发折上调超参。现有 GTN 242 开发暴露队列只做 locked
+development/replication；confirmatory 仍要求未暴露 cohort + 一次性锁 + >=5 seeds。
 
-## Phase 1 —— 基线复现
-目标：在 GTN 上复现 77%±3 命中率，建立三层评估协议与「免费地板」。
-交付：
-- 基线：SWLDA、xDAWN+RG、EEGNet、EEG-Inception、EEG Conformer；
-- 免费地板：手工窗特征逻辑回归、grand-average 模板匹配相关（P8）。
-- 评估协议：within-subject（按 run/会话分组切分）/ LOSO / 跨数据集；配对置换检验防 +2pt 假阳性。
-- 指标：9 选 1 命中率（chance 11.1%）、balanced acc、AUC；BCE 用 pos_weight≈8。
-验收：
-- GTN 跨受试命中率 77%±3（对齐 Vařeka 2016）；三层协议一键运行、可复现；
-- 单受试切分按 run/会话分组，无泄漏（同 run 试次共享时漂与噪声状态，混切会虚高）。
-坑预警：
-- 线性基线极高，不得用弱基线自欺（E4、P8）；9 选 1 禁止报原始准确率（D3）。
-- target 占 1/9，无 pos_weight 会学「全判非目标」（review 3.7）。
-参考实现：braindecode、pyriemann、Vařeka 2016（77.2% 对照）。
-依赖：Phase 0。
+## Phase 0 数据与格式（保持）
 
-## Phase 2 —— N2P3-Net 骨架（单受试）
-目标：实现 Stage0–Stage3，单受试命中率超越最强基线，参数预算 ≤50k。
-交付：
-- Stage1 多尺度时间卷积 + 空间深度卷积（按尺度分地形先验初始化）。
-- Stage2 序列编码 depth∈{0,1,2,3} 消融轴（默认 3 层膨胀 TCN，2026-08-20 决策）+ 参数化成分窗 ×3（N2/P3a/P3b，τ 生成 A，D8）。
-- Stage3 多任务头：主二分类（pos_weight，含全局时间池化旁路 g_global，v5 方案 B）+ 早期证据头（t<300ms，固定 λ2 网格）+ 潜伏期（参数化窗）+ 幅值。
-- Stage0 加权再参考（9 参数）+ 参考抖动增强。
-验收：
-- 单受试（多次本体训练，按 run 分组切分）命中率 ≥ 80%（阶段性门槛，最终目标 85% 见 mission），且 ≥ 最强基线 +2pt（配对置换检验）；
-- 参数预算 ≤50k；参数化窗 τ 定位到 N2(~200–250ms)/P3b(300–500ms) 区间；
-- 潜伏期诊断：模拟数据检验 MAE(τ, τ_true) < 40ms；attention_direct + L_jit 合成诊断 36.2ms 通过，
-  但 GTN 242 人真实数据失败诊断（2026-08-22）显示 PCW 参数梯度弱 3–4 个数量级、L_jit 不收敛，
-  v5 起 L_jit 默认关闭、GTN τ0_P3b=460ms/界[350,600]、默认 attention_softargmax。
-坑预警：
-- 成分窗坍缩（E7）——参数化窗位置寻址天然防坍缩，无需 JSD；
-- 潜伏期无真实标签（E3/D7）——τ 是生成参数被直接监督，方案 2 仅作初始化兜底；
-- 池化抹掉潜伏期（E5）——Stage 1 无池化，τ 显式参数。
-参考实现：DETRtime（query，避 Hungarian）、Depuydt 2023、EEG-Inception、EEGNet。
-待办（review v3 记录）：
-- Head-D 物理幅值：传 A + 归一化 X 进 heads，替代 Linear(H_P3b→1) 代理（当前无 μV 标定、无重构监督）；
-- ~~τ0 数据驱动初始化~~：已按 GTN grand-average 差波峰位设 220/300/460（v5）；跨数据集再按各自数据修订；
-- time_warp 性能：GPU 训练挪进 collate_fn（当前 .cpu().numpy() 往返 + B×C 双循环）。
-依赖：Phase 1。
+数据契约、缓存 schema、mask、metadata 与之前一致；不新增数据集专用训练脚本。
 
-## Phase 3 —— 辅助 P300 预训练/域对齐 + 跨域 + 自监督
-目标：实现 Stage4；辅助数据只提供初始化或域对齐，GTN 每个 fold 仍微调并独占验收（P9/D10）。
-交付：
-- 辅助 P300 监督预训练：Brain Invaders / BNCI008 / ERP CORE 二分类预训练特征提取器，
-  保存 checkpoint + load_mapping；每个 GTN fold 加载后微调（方式 A）。
-- 共享编码器 + 域对齐：域条件仿射（per-domain scale/shift）+ 特征级 RBF-MMD + 目标加权损失；
-  辅助域只进 L_MMD，L_target/L_early/L_amp 只在 GTN 试次上计算（方式 B）。
-- 冻结骨干对照：辅助预训练后冻结特征层，GTN 只训分类头（方式 C）。
-- 掩码 ERP 自监督预训练（可选，语料 = GTN + ERP CORE + 自有无标签，靠坐标嵌入吃异构通道）。
-- ERP 感知数据增强：时间扭曲/加噪/通道 dropout/参考抖动（GTN fold 与辅助预训练分别配置）。
-验收：
-- 跨受试零样本命中率 ≥ 78%（自有成人数据）；少样本（5–20 试次）≥ 82%；
-- 跨数据集 AUC：先「GTN 内部年龄分层」中间档，主目标 ≥ 0.70（高风险，儿童↔成人年龄域差）；
-- 辅助数据三臂协议（T0/T1/T2/T3）跑完，主口径 GTN 242-fold LOSO，配对置换检验判显著；
-  无显著增益则退回 T0，并写回 transfer_policy.md 结论。
-坑预警：
-- 跨域对齐是边际增益（E6）；跨数据集单试次接近随机，命中率靠决策层累加；
-- SSL 自有数据数千试次不足以学表征，收益预期「小正则」，勿高估（review 3.8）；
-- 辅助预训练可能带来负迁移：必须用冻结/微调消融与 GTN-only 对照检测（E9）；
-- 禁止辅助试次与 GTN 拼接训练、禁止辅助试次进入 GTN 测试 fold（P9/D9）。
-参考实现：AS-MMD（域条件仿射 + MMD）、LaBraM/EEG2Rep（掩码重建思想）、transfer_policy.md。
-待办（review v3 记录）：
-- L_MMD 带宽改 median heuristic 或多带宽（D=64 距离量级 ≫1，固定 1.0 会 exp(−d²/2) 全零梯度）；
-- DeepBaseline 增加 pretrained_state_dict / load_mapping / freeze_prefixes 接口；
-- 辅助预训练 checkpoint 落盘目录与命名规范（experiments/cache/pretrain/<aux>_<backbone>_<sfreq>.pt）。
-依赖：Phase 2。
+## Phase 1 基线与锁定评估（保持）
 
-## Phase 4 —— 可解释与统计验证
-目标：成分级证据与经典 ERP 统计对齐（P4），年龄作为协变量。
-交付：
-- 参数化成分窗输出（τ/σ/幅值/地形）导出接口。
-- mass-univariate + cluster-based permutation + LIMO 单试次回归（年龄、性别作协变量）。
-- 0.5 Hz 高通负面消融（验证 E1 的幅值-潜伏期失真）。
-验收：
-- 组级 N2/P3 显著簇与参数化成分窗定位一致；年龄协变量进入 LIMO 且方向正确（潜伏期随年龄递增）；
-- 生成「分类提升 + 成分定位」双报告。
-坑预警：
-- CNN 丢失时间分辨率（E5）——可解释性基于「参数化窗的 τ/σ/地形」而非事后热图。
-参考实现：Depuydt 2023、Groppe 2011 / Maris 2007、Tanner 2015（高通对照）。
-依赖：Phase 2/3。
+主终点仍为 validation-calibrated `exact_llr@3` ITT hit；显式报告
+exact/prefix/flash/all 与 coverage/N。次指标增加四个对象的分项报告：
+`measured_tau_posterior`、repetition backbone/state 分项、`fidelity`/
+`clean_probability` 分项、嵌套 M0/M1 审计与 stopping replay。
 
-## Phase 5 —— 消融 + 调优 + 报告
-目标：证明每项复杂度有目的（P1/P8/E4），产出可复现结论。
-交付：
-- 消融轴：depth{0..3} / 去参数化成分窗 / 去坐标适配 / 去早期证据头 / 去自监督 / 去域条件仿射+MMD / 0.5Hz 高通 / 参考抖动 / 对称vs不对称窗（D9）。
-- 超参调优（早停、正则、多任务 λ 网格）+ 最终报告。
-验收：
-- 每项消融有明确贡献归因（正贡献保留、无贡献移除）；depth 收益若存在须定位在跨数据集迁移；
-- 最终报告含：三层协议命中率、成分可解释性、消融表、与 constitution 的一致性说明。
-坑预警：
-- 复杂度必须归因（E4），无贡献模块砍掉（few filters are enough 的反面教训）。
-参考实现：Alvarado-Gonzalez 2021（容量克制依据）。
-依赖：Phase 4。
+## Phase 2 四对象架构（替换旧 strict-past 研究）
+
+正式路线仍 `final=PCW`。研究路线按 [`blueprint.md`](blueprint.md) 实施
+L/R/Q/S 四对象，全部 fail-closed：
+
+- L：fold-local 白化 P3b 模板 + amplitude profile likelihood + 显式规范锚；
+- R：所有正负 flash 的 additive LLR 主干；state residual 必须自证 held-out log score
+  增量；
+- Q：`fidelity` 常开；`clean_probability` 仅在硬标签生成模型与 prior-shift gate 后启用；
+- S：嵌套 M0/M1 cluster bootstrap；two-hypothesis conformal 异常；first-crossing replay，
+  e-process 后置。
+
+旧 strict-past fusion（单参数非负 alpha）已归档；旧 rho 0.9/0.1 概率语义已归档；
+PCW attention tau 只作 routing。
+
+## Phase 3 跨域与辅助数据
+
+保持 T0/T1/T2/T3 规则；四对象不进入辅助域主损失，L 的模板/白化必须 fold-local。
+
+## Phase 4 可解释性与采集
+
+- 生理潜伏期只接受 LatencyMeasurement gate 过的 `measured_tau_posterior`；
+- PCW attention / P300 PEC audit 只证明表示层贡献，不冒充生理定位；
+- fidelity/clean_probability 分字段报告，不混称。
+
+## Phase 5 消融与报告
+
+按一次只改一个主要因素的嵌套顺序运行：四对象逐个开启，其余保持零输出；最终报告必须
+包含四对象 gate 结果、cluster bootstrap CI、prior-shift、coverage、expected flashes、
+risk-coverage 曲线、paired statistics、参数量/成本与删除清单执行状态。
 
 ## 里程碑
-- M1（Phase 1 完成）：基线复现 + 评估协议 + 免费地板就绪。
-- M2（Phase 2 完成）：单受试命中率超基线，预算 ≤50k。
-- M3（Phase 3 完成）：跨受试/跨数据集达标。
-- M4（Phase 5 完成）：可复现的最终报告。
+
+- M1：S0 harness 全过，数据/基线协议保持锁定。
+- M2：L 对象通过合成 latency gate，或明确 `measured_tau=None`。
+- M3：R 主干/残差在 locked 开发折上给出合法前缀后验。
+- M4：Q 双 estimand 通过 unseen corruption / prior-shift / chain-NLL。
+- M5：S 嵌套审计与 replay 完成；激活或退役 innovation fusion。
+- M6：独立 confirmatory cohort 一次性锁运行，旧 v11 语义与入口删除。

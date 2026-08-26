@@ -14,7 +14,7 @@
 |---|---|---|---|
 | C1 | `try-except import intel_extension_for_pytorch as ipex` | **弃用 IPEX，改用原生 `torch.xpu`** | IPEX 已于 2026-03 底 EOL；Intel 官方建议直接用原生 PyTorch。PyTorch 2.5+ 原生支持 XPU（`torch.xpu.is_available()`），Arc 130T 属 Arrow Lake-H，在官方支持列表内 |
 | C2 | "强制 AMP + 配合 GradScaler" | **AMP 用 bf16，默认不需要 GradScaler** | GradScaler 是 fp16 专用的（防 loss under/overflow）。bf16 指数位与 fp32 相同，天然无此问题；5070(Blackwell) 与 Arc(Xe2) 均支持 bf16。用 bf16 既省显存又省去 GradScaler 复杂度 |
-| C3 | "8GB 显存规避"当作硬需求 | **本项目 8GB 绰绰有余，此套为防御性通用规范** | N2P3-Net ≤50k 参数、输入 (B,8,256)，即使 batch=256 显存占用也仅数百 MB，8GB 不会 OOM。AMP/梯度累积/OOM 保护是为「通用大模型训练」保留的防御能力，非本项目必需 |
+| C3 | "8GB 显存规避"当作硬需求 | **本项目 8GB 绰绰有余，此套为防御性通用规范** | N2P3-Net ≤80k 参数、输入 (B,8,256)，即使 batch=256 显存占用也仅数百 MB，8GB 不会 OOM。AMP/梯度累积/OOM 保护是为「通用大模型训练」保留的防御能力，非本项目必需 |
 
 > 其余条目（禁止硬编码 `.cuda()`、`.to(device)` 统一、batch_size 参数化、pin_memory 动态、
 > OOM 提示）判断正确，予以保留并细化。
@@ -26,7 +26,7 @@
 - **DP3 模型与张量统一 `.to(DEVICE)`**。model、inputs、labels、以及所有新造张量（含合成数据的
   buffer、可学习参数初始化）一律 `.to(DEVICE)`，禁止漏掉任何一处。
 - **DP4 AMP 按设备动态启用**。CUDA/XPU 启用（默认 bf16），CPU 禁用。禁止写死 `device_type="cuda"`。
-- **DP5 batch_size 外部传入**。经 argparse 或 hydra config 传入，严禁写死常量；配套 `accum_steps`
+- **DP5 batch_size 外部传入**。经 argparse 传入，严禁写死常量；配套 `accum_steps`
   梯度累积参数，物理 batch 过小时用累积模拟大 batch。
 - **DP6 显存与异常设备感知**。`empty_cache`、显存打印、OOM 捕获均须按 `DEVICE.type` 分支，禁止只写 CUDA 分支。
 
@@ -35,13 +35,15 @@
 ```python
 import torch
 
+
 def get_device() -> torch.device:
     """动态检测设备：CUDA → XPU → CPU。禁止硬编码 .cuda()。"""
     if torch.cuda.is_available():
         return torch.device("cuda")
-    if torch.xpu.is_available():          # PyTorch 2.5+ 原生，无需 IPEX（已 EOL）
+    if hasattr(torch, "xpu") and torch.xpu.is_available():  # PyTorch 2.5+ 原生，无需 IPEX（已 EOL）
         return torch.device("xpu")
     return torch.device("cpu")
+
 
 DEVICE = get_device()
 ```
@@ -55,7 +57,7 @@ DEVICE = get_device()
 
 ```python
 use_amp = DEVICE.type in ("cuda", "xpu")
-AMP_DTYPE = torch.bfloat16          # 5070 与 Arc 均支持；bf16 无需 GradScaler
+AMP_DTYPE = torch.bfloat16  # 5070 与 Arc 均支持；bf16 无需 GradScaler
 
 # 前向
 with torch.amp.autocast(device_type=DEVICE.type, dtype=AMP_DTYPE, enabled=use_amp):
@@ -88,6 +90,7 @@ def _print_device_memory() -> None:
     except Exception as e:
         print(f"[device] 显存查询失败（不影响运行）：{e}")
 
+
 def _empty_cache() -> None:
     if DEVICE.type == "cuda":
         torch.cuda.empty_cache()
@@ -101,17 +104,20 @@ def _empty_cache() -> None:
   loss = loss / accum_steps
   loss.backward()
   if (step + 1) % accum_steps == 0:
-      optimizer.step(); optimizer.zero_grad()
+      optimizer.step()
+      optimizer.zero_grad()
   ```
 
 ## 5. 数据加载器
 
 ```python
-pin_memory = (DEVICE.type == "cuda")   # 仅 CUDA 开 pinned 内存加速 H2D 拷贝
-loader = DataLoader(ds, batch_size=cfg.batch_size, pin_memory=pin_memory, num_workers=cfg.num_workers)
+pin_memory = DEVICE.type == "cuda"  # 仅 CUDA 开 pinned 内存加速 H2D 拷贝
+loader = DataLoader(
+    ds, batch_size=cfg.batch_size, pin_memory=pin_memory, num_workers=cfg.num_workers
+)
 
 for inputs, labels in loader:
-    inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)   # DP3：显式 .to(DEVICE)
+    inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)  # DP3：显式 .to(DEVICE)
 ```
 
 ## 6. OOM 异常保护
@@ -119,12 +125,12 @@ for inputs, labels in loader:
 ```python
 try:
     ...  # 训练一步
-except torch.OutOfMemoryError:                 # torch 2.x 统一 OOM 异常（CUDA/XPU 共用）
+except torch.OutOfMemoryError:  # torch 2.x 统一 OOM 异常（CUDA/XPU 共用）
     raise RuntimeError(
         "显存溢出（OOM）：请减小 batch_size（当前 "
         f"{cfg.batch_size}）、调大 accum_steps、或关闭其他占用显存的程序后重试。"
     ) from None
-except RuntimeError as e:                       # 旧版兜底
+except RuntimeError as e:  # 旧版兜底
     if "out of memory" in str(e).lower():
         raise RuntimeError("显存溢出（OOM）：请减小 batch_size 后重试。") from None
     raise
@@ -140,7 +146,7 @@ except RuntimeError as e:                       # 旧版兜底
 
 - 其余依赖（mne/numpy/...）用 `pip install -r requirements.txt` 统一装，torch 因源不同单独先装。
 - Arc 130T 需先装 Intel GPU 驱动；若 `torch.xpu.is_available()` 为 False，先查驱动，不要怀疑代码。
-- 装完自检：`python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.xpu.is_available())"`。
+- 装完自检：`python -c "import torch; print(torch.__version__, torch.cuda.is_available(), hasattr(torch, 'xpu') and torch.xpu.is_available())"`。
 
 ## 8. 补充注意（三思新增）
 

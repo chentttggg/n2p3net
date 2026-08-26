@@ -1,0 +1,23 @@
+{
+  "schema": "n2p3net_eligibility_manifest/1",
+  "dataset": "gtn",
+  "version": "gtn_confirmatory_cohort_v1",
+  "n_source_directories": 248,
+  "n_evaluation_units": 245,
+  "n_units_with_model_ready_epochs_at_freeze": 242,
+  "truth_universe_sha256": "befff5ed2dfb53f48408274e9f294fd1cd94710984f06e4d7b626c453cdd52d2",
+  "confirmatory_status": "unavailable_all_current_units_development_exposed",
+  "n_confirmatory_units": 0,
+  "development_exposed_scope": "all_245_eligible_units",
+  "development_exposure_basis": "Full-cohort 242 model-ready LOSO headlines and fold-level diagnostics were used for architecture and gate decisions before this protocol freeze; the 3 unavailable units are part of the same known cohort.",
+  "eligibility_rule": "Unique NIX subject with readable scheduled events and a valid thought-number label; units with zero usable epochs remain in ITT.",
+  "excluded_source_records": {
+    "duplicate_nix_subject": [
+      "Experiment_531_P3_Numbers",
+      "Experiment_644_P3_Numbers"
+    ],
+    "missing_thought_number_metadata": [
+      "Experiment_611_P3_Numbers"
+    ]
+  }
+}

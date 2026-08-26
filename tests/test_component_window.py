@@ -15,7 +15,13 @@ from __future__ import annotations
 import pytest
 import torch
 
-from models.component_window import ComponentWindow
+from models.component_window import (
+    PCW_CANONICAL_DTAU_BOUNDS,
+    PCW_CANONICAL_SIGMA_BOUNDS,
+    PCW_CANONICAL_TAU0_BOUNDS,
+    PCW_CANONICAL_TAU0_MS,
+    ComponentWindow,
+)
 from train.losses import tau_regularization
 
 D = 64
@@ -96,7 +102,7 @@ def test_peak_at_tau():
             expected = _time_index(tau[b, c].item(), cw)
             actual = int(A[b, c].argmax())
             assert abs(actual - expected) <= 1, (
-                f"成分{c} A 峰值应在 τ={tau[b,c]:.1f}ms（索引{expected}），实际{actual}"
+                f"成分{c} A 峰值应在 τ={tau[b, c]:.1f}ms（索引{expected}），实际{actual}"
             )
 
 
@@ -138,6 +144,14 @@ def test_dtau_asymmetric_bounds():
         assert (tau[:, 2] - tau0[2] <= 150.0 + 1e-3).all(), "P3b 上界应 ≤ τ0+150"
 
 
+def test_component_latency_order_is_hard_constrained():
+    cw = make_cw(tau0_ms=(270.0, 260.0, 300.0))
+    with torch.no_grad():
+        _, tau, _ = cw(make_input(B=8))
+    assert torch.all(tau[:, 0] < tau[:, 1])
+    assert torch.all(tau[:, 1] < tau[:, 2])
+
+
 def test_soft_alignment_manual():
     """软对齐读取正确：H_c = Σ_t A_c(t)·Z'(t) 手动对照。"""
     cw = make_cw()
@@ -173,9 +187,9 @@ def test_tau0_is_learnable():
     assert cw.tau0.requires_grad
 
 
-def test_attention_direct_ltau_does_not_supervise_tau0():
-    """默认 attention_direct 下 L_tau 仍只正则 Δτ，不监督 tau0（audit P1-4 回归）。"""
-    cw = make_cw(dtau_readout="attention_direct")
+def test_attention_softargmax_ltau_does_not_supervise_tau0():
+    """正式 attention_softargmax 下 L_tau 不监督 tau0。"""
+    cw = make_cw(dtau_readout="attention_softargmax")
     Z = make_input(B=4)
     _, tau, _ = cw(Z)
     loss = tau_regularization(tau, cw.tau0_bounded, 50.0)
@@ -191,14 +205,20 @@ def test_dtau_mlp_grad_flows():
     H, _, _ = cw(Z)
     H.sum().backward()
     assert cw.dtau_mlp[0].weight.grad is not None, "第一层应参与计算图"
-    assert cw.dtau_mlp[0].weight.grad.abs().sum() > 0, "dtau_mlp 第一层梯度不应为零（零初始化会截断）"
+    assert cw.dtau_mlp[0].weight.grad.abs().sum() > 0, (
+        "dtau_mlp 第一层梯度不应为零（零初始化会截断）"
+    )
     assert cw.dtau_mlp[2].weight.grad.abs().sum() > 0, "dtau_mlp 最后一层梯度不应为零"
 
 
-
 def test_dtau_readout_variants_shape_and_finite():
-    """review v6 Phase 2：Δτ 读出路径四种消融均应输出有效 (B,3) tau。"""
-    for readout in ("global_pool", "maxmean", "attention", "attention_softargmax", "attention_direct"):
+    """正式读出与注册的研究对照均应输出有效 (B,3) tau。"""
+    for readout in (
+        "global_pool",
+        "maxmean",
+        "attention",
+        "attention_softargmax",
+    ):
         cw = make_cw(dtau_readout=readout)
         Z = make_input(B=4)
         with torch.no_grad():
@@ -222,3 +242,15 @@ def test_attention_softargmax_has_per_component_query():
     H.sum().backward()
     assert cw.dtau_attn_query.grad is not None
     assert cw.dtau_attn_query.grad.abs().sum() > 0
+
+
+def test_component_window_defaults_use_canonical_constants() -> None:
+    cw = make_cw()
+    assert tuple(cw.tau0.tolist()) == PCW_CANONICAL_TAU0_MS
+    assert tuple(cw.tau0_bounds) == PCW_CANONICAL_TAU0_BOUNDS
+    assert tuple(zip(cw.sigma_lo.tolist(), cw.sigma_hi.tolist(), strict=True)) == (
+        PCW_CANONICAL_SIGMA_BOUNDS
+    )
+    assert tuple(zip(cw.dtau_lo.tolist(), cw.dtau_hi.tolist(), strict=True)) == (
+        PCW_CANONICAL_DTAU_BOUNDS
+    )

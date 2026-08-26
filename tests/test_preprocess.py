@@ -4,14 +4,14 @@
 语义测试：用已知答案的合成样例验证「语义正确」（重采样/通道映射/高通去 DC/伪迹剔除/点数对齐）。
 """
 
+import mne
 import numpy as np
 import pytest
 
-import mne
-
+from data.channel import STANDARD_CHANNELS
 from data.preprocess import (
-    STANDARD_CHANNELS,
     _canonical,
+    filter_continuous,
     highpass,
     map_channels,
     preprocess,
@@ -38,7 +38,9 @@ def make_events(sfreq=512.0, n_seconds=20.0, first=2.0, step=1.0):
     """构造刺激 events（单一类型 id=1），保证每个 epoch 都落在数据范围内。"""
     times = np.arange(first, n_seconds - 1.0, step)  # 留 1s 余量给 tmax=0.8
     samples = np.round(times * sfreq).astype(int)
-    return np.column_stack([samples, np.zeros(len(samples), dtype=int), np.ones(len(samples), dtype=int)])
+    return np.column_stack(
+        [samples, np.zeros(len(samples), dtype=int), np.ones(len(samples), dtype=int)]
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -58,18 +60,37 @@ def test_canonical_channel_name():
 def test_preprocess_smoke_shape_dtype():
     raw = make_raw(sfreq=512.0)
     events = make_events(sfreq=512.0)
-    res = preprocess(raw, events)
+    res = preprocess(raw, events, channels=STANDARD_CHANNELS)
 
     assert res.data.ndim == 3
     assert res.data.shape[1] == 8
     assert res.data.shape[2] == 256
     assert res.data.dtype == np.float32
     assert res.channel_mask.dtype == bool
-    assert res.channel_mask.all()          # 合成数据含全部 8 通道
+    assert res.channel_mask.all()  # 合成数据含全部 8 通道
     assert res.sfreq == 256.0
     assert res.tmin == -0.2
-    assert res.data.shape[0] >= 1          # 至少切出一个 epoch
+    assert res.data.shape[0] >= 1  # 至少切出一个 epoch
     assert isinstance(res.n_epochs, int) and isinstance(res.n_times, int)
+
+
+def test_preprocess_prefers_embedded_digitization_over_default_template():
+    raw = make_raw(sfreq=100.0, ch_names=["X1", "X2"])
+    positions = {"X1": (-0.03, 0.02, 0.08), "X2": (0.03, -0.02, 0.09)}
+    raw.set_montage(mne.channels.make_dig_montage(ch_pos=positions, coord_frame="head"))
+
+    result = preprocess(
+        raw,
+        make_events(sfreq=100.0),
+        sfreq=100.0,
+        l_freq=None,
+        n_times=100,
+        reject_threshold=None,
+    )
+
+    assert result.coordinate_registration.source == "individual_digitization"
+    assert result.coordinate_registration.method == "identity_head"
+    assert np.allclose(result.channel_positions_m, np.asarray(list(positions.values())))
 
 
 # --------------------------------------------------------------------------- #
@@ -90,25 +111,24 @@ def test_resample_scales_events():
     assert np.array_equal(ev2[:, 0], expected)
 
 
-def test_preprocess_missing_channel_nan_and_mask():
-    """缺失通道：mask 标记 False，data 对应位置填 NaN，存在通道非 NaN。"""
+def test_preprocess_rejects_missing_explicit_channel():
+    """显式布局缺失必须失败，禁止 NaN/零填充伪装成物理观测。"""
     present = ["Fz", "Cz", "Pz", "PO7", "Oz"]  # 缺 P3, P4, PO8
     raw = make_raw(sfreq=512.0, ch_names=present)
     events = make_events(sfreq=512.0)
+    with pytest.raises(ValueError, match="does not pad or substitute"):
+        preprocess(raw, events, channels=STANDARD_CHANNELS)
 
-    res = preprocess(raw, events)
 
-    # 标准顺序：Fz,Cz,P3,Pz,P4,PO7,PO8,Oz → present 掩码
-    expected_mask = np.array([True, True, False, True, False, True, False, True])
-    assert np.array_equal(res.channel_mask, expected_mask)
-    assert res.n_present == 5
-
-    # 缺失通道全 NaN
-    for idx in (2, 4, 6):  # P3, P4, PO8
-        assert np.isnan(res.data[:, idx, :]).all()
-    # 存在通道非 NaN
-    for idx in (0, 1, 3, 5, 7):
-        assert not np.isnan(res.data[:, idx, :]).any()
+def test_preprocess_native_layout_keeps_only_observed_sensors():
+    present = ["Fz", "Cz", "Pz", "PO7", "Oz"]
+    raw = make_raw(sfreq=512.0, ch_names=present)
+    events = make_events(sfreq=512.0)
+    result = preprocess(raw, events, channels=None)
+    assert result.channel_names == tuple(name.upper() for name in present)
+    assert result.data.shape[1] == len(present)
+    assert result.channel_mask.all()
+    assert np.isfinite(result.data).all()
 
 
 def test_preprocess_channel_reorder():
@@ -124,7 +144,13 @@ def test_preprocess_channel_reorder():
     events = make_events(sfreq=256.0, n_seconds=20.0)
 
     # 跳过高通与伪迹剔除（常数指纹会被高通滤掉/被阈值剔除）
-    res = preprocess(raw, events, l_freq=None, reject_threshold=None)
+    res = preprocess(
+        raw,
+        events,
+        l_freq=None,
+        reject_threshold=None,
+        channels=STANDARD_CHANNELS,
+    )
 
     for i, std in enumerate(STANDARD_CHANNELS):
         assert np.allclose(res.data[:, i, :], finger[std], atol=1e-3), f"通道 {std} 顺序错误"
@@ -142,6 +168,33 @@ def test_highpass_removes_dc():
     d = raw.get_data()[0]
     mid = d[n_times // 4 : 3 * n_times // 4]  # 避开滤波边界
     assert np.abs(mid.mean()) < 5e-6
+
+
+def test_filter_continuous_applies_declared_lowpass():
+    """Manifest h_freq must reach MNE rather than being stored as inert metadata."""
+    sfreq = 256.0
+    times = np.arange(int(8 * sfreq)) / sfreq
+    data = np.sin(2 * np.pi * 5 * times) + np.sin(2 * np.pi * 60 * times)
+    raw = mne.io.RawArray(
+        data[None, :], mne.create_info(["Fz"], sfreq, ch_types="eeg"), verbose=False
+    )
+
+    filtered = filter_continuous(raw, l_freq=None, h_freq=20.0, copy=True)
+    spectrum = np.abs(np.fft.rfft(filtered.get_data()[0]))
+    frequencies = np.fft.rfftfreq(len(times), d=1.0 / sfreq)
+    amp_5hz = spectrum[np.argmin(np.abs(frequencies - 5.0))]
+    amp_60hz = spectrum[np.argmin(np.abs(frequencies - 60.0))]
+
+    assert amp_60hz < 0.05 * amp_5hz
+
+
+def test_preprocess_rejects_nonfinite_source_samples():
+    raw = make_raw(sfreq=256.0)
+    raw._data[0, 100] = np.nan
+    events = make_events(sfreq=256.0)
+
+    with pytest.raises(ValueError, match="never imputes"):
+        preprocess(raw, events, l_freq=None, channels=STANDARD_CHANNELS)
 
 
 def test_reject_epochs_drops_outlier():
@@ -172,7 +225,7 @@ def test_preprocess_copy_semantics():
     orig_channels = list(raw.ch_names)
     events = make_events(sfreq=512.0)
 
-    preprocess(raw, events, copy=True)
+    preprocess(raw, events, copy=True, channels=STANDARD_CHANNELS)
 
     assert raw.info["sfreq"] == orig_sfreq
     assert list(raw.ch_names) == orig_channels
@@ -183,10 +236,10 @@ def test_preprocess_n_times_alignment():
     raw = make_raw(sfreq=256.0)  # 已是目标采样率，不触发重采样
     events = make_events(sfreq=256.0)
 
-    res = preprocess(raw, events)
+    res = preprocess(raw, events, channels=STANDARD_CHANNELS)
     assert res.data.shape[2] == 256
 
-    res2 = preprocess(raw, events, n_times=None)
+    res2 = preprocess(raw, events, n_times=None, channels=STANDARD_CHANNELS)
     assert res2.data.shape[2] == 257  # (0.8-(-0.2))*256 + 1
 
 
@@ -197,17 +250,24 @@ def test_preprocess_raises_on_bad_events():
         preprocess(raw, bad)
 
 
+def test_preprocess_rejects_fractional_event_samples() -> None:
+    raw = make_raw(sfreq=100.0)
+    events = np.array([[200.5, 0.0, 1.0]])
+    with pytest.raises(ValueError, match="integer dtype"):
+        preprocess(raw, events)
+
+
 def test_map_channels_no_standard_raises():
     raw = make_raw(sfreq=512.0, ch_names=["X1", "Y2", "Z3"])  # 无任何标准通道
-    with pytest.raises(ValueError):
-        map_channels(raw)
+    with pytest.raises(ValueError, match="does not pad or substitute"):
+        map_channels(raw, channels=STANDARD_CHANNELS)
 
 
 def test_preprocess_event_indices():
     """event_indices：无伪迹剔除时，最终 epoch 对应原始 events 行索引（标签对齐的依据）。"""
     raw = make_raw(sfreq=512.0)
     events = make_events(sfreq=512.0)
-    res = preprocess(raw, events, reject_threshold=None)
+    res = preprocess(raw, events, reject_threshold=None, channels=STANDARD_CHANNELS)
 
     assert res.event_indices.shape[0] == res.data.shape[0]
     assert np.array_equal(res.event_indices, np.arange(len(events)))  # 全部 event 均在边界内
@@ -225,7 +285,42 @@ def test_preprocess_event_indices_with_reject():
     events = make_events(sfreq, n_seconds)
     raw._data[:, events[1, 0] : events[1, 0] + 20] = 1.0  # 第 2 个 event 注入伪迹
 
-    res = preprocess(raw, events, l_freq=None)  # 默认 reject 150 μV；跳过高通避免瞬态扩散干扰 event_indices 验证
+    res = preprocess(
+        raw,
+        events,
+        l_freq=None,
+        channels=STANDARD_CHANNELS,
+    )
 
     assert 1 not in res.event_indices  # 第 2 个 event 被剔除
     assert res.event_indices.shape[0] == res.data.shape[0]
+
+
+def test_preprocess_preserves_boundary_and_ignored_event_reasons() -> None:
+    raw = make_raw(sfreq=256.0, n_seconds=5.0)
+    events = np.asarray(
+        [
+            [0, 0, 1],
+            [2 * 256, 0, 1],
+            [3 * 256, 0, 2],
+        ],
+        dtype=np.int64,
+    )
+    result = preprocess(
+        raw,
+        events,
+        sfreq=256.0,
+        l_freq=None,
+        event_id=[1],
+        reject_threshold=None,
+        channels=STANDARD_CHANNELS,
+    )
+
+    assert result.event_statuses.tolist() == [
+        "boundary_dropped",
+        "available",
+        "acquisition_rejected",
+    ]
+    assert "NO_DATA" in result.event_status_details[0]
+    assert "IGNORED" in result.event_status_details[2]
+    assert result.event_evidence_indices.tolist() == [-1, 0, -1]

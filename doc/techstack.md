@@ -1,7 +1,7 @@
 # N2P3-Net 技术栈（Techstack）
 
 > 深度设计（张量流/模块/损失/关键决策）见 blueprint.md。
-> 版本：v2（吸收 review v1 + 成人为主）。
+> 版本：v4（与当前 constitution/blueprint/evaluation_protocol 和通用 EEG 入口对齐）。
 
 ## 选型总表
 
@@ -12,9 +12,9 @@
 | EEG 预处理 | MNE-Python | 重采样/连续域高通/epoch/伪迹剔除的事实标准 | 自研（重造轮子） |
 | EEG 深度学习库 | braindecode | 本项目实际注册 EEGNet / EEG-Inception / EEG Conformer 三个基线 | — |
 | 传统基线 | scikit-learn + pyriemann | SWLDA/LDA + xDAWN/Riemannian | — |
-| 统计验证 | MNE(cluster permutation) + LIMO | 成分可解释性对照 + 年龄/性别协变量 | — |
+| 统计验证 | 当前由评估协议与 NumPy/scikit-learn 指标实现 | 成分级统计扩展尚未纳入当前可执行入口 | — |
 | 数值 | numpy / scipy / pandas | 标准 | — |
-| 实验管理 | hydra（配置）+ wandb 或 MLflow | 可复现实验 | 硬编码参数 |
+| 实验管理 | argparse + JSON schema-versioned records | 当前入口可复现且不依赖外部 tracking 服务 | Hydra / wandb / MLflow |
 | 代码质量 | ruff + black + pytest | 统一风格与测试 | — |
 
 ## 关键选型说明
@@ -26,10 +26,11 @@
    （Tanner 2015），仅作消融对照。参考无关化与幅值标准化在模型内以可微层（加权再参考 + 归一化）
    再做一遍，MNE 不做（或仅作对照预处理）。
 3. **pyriemann**：xDAWN + 黎曼几何是 P300 的强基线（Kaggle BCI 竞赛冠军方案），必须纳入对照。
-4. **hydra**：三层评估协议 + 多任务头 + 跨域组件 + 消融轴（depth/高通/参考抖动）参数矩阵大，
-   必须配置化、可一键复现。
-5. **归一化体系**：全程 InstanceNorm / LayerNorm / GroupNorm，**不使用 BatchNorm**；跨域对齐用
-   「域条件仿射」（per-domain scale/shift），不用 Split-BN（BN 不存在时其为空操作）。
+4. **实验记录**：当前入口使用 argparse 和 schema-versioned JSON record；配置矩阵尚未迁移到
+   Hydra，因此 Hydra 不属于当前依赖或执行接口。
+5. **归一化体系**：TCN 的 `BatchNorm1d` 是当前 GTN runner 默认，统计量只来自训练 fold、推理时冻结；
+   LayerNorm 是预注册回退。跨域对齐用「域条件仿射」（per-domain scale/shift）和独立实验的
+   RBF-MMD，不恢复 Split-BN。
 6. **环境隔离**：沿用项目 venv，禁止全局 pip install。
 7. **设备可移植性**：代码须在 Intel Arc 130T（XPU）/ NVIDIA 5070（CUDA）/ CPU 三端无缝运行：
    动态检测 `DEVICE`（CUDA→XPU→CPU）、统一 `.to(DEVICE)`、AMP 用 bf16、batch_size 参数化。
@@ -53,7 +54,7 @@
 
 ## 依赖清单（示意）
 mne, braindecode, torch, numpy, scipy, pandas, scikit-learn, pyriemann,
-hydra-core, wandb(或 mlflow), ruff, black, pytest
+ruff, black, pytest
 
 ## 数据源与角色（P9）
 - **GTN**（Moucek 2017, Sci Data 4:160121）——儿童（7–17 岁）3 导 P300，**主域：最终实验情景与验收**；
@@ -73,9 +74,7 @@ n2p3-net/
 │   ├── data/          # 格式无关适配器（重采样/连续域高通/坐标通道/掩码/元数据加载器）
 │   ├── models/        # N2P3-Net（Stage0–Stage4，参数化成分窗 ×3）
 │   ├── baselines/     # SWLDA/xDAWN/EEGNet/EEG-Inception/EEG Conformer + 两个免费地板
-│   ├── stats/         # mass-univariate / cluster-permutation / LIMO（含年龄/性别协变量）
 │   └── train/         # 训练配方（自监督/域条件仿射+MMD/多任务损失）
-├── configs/           # hydra 配置（含消融轴 depth/高通/参考抖动）
 ├── experiments/       # 三层评估协议 + 消融 + 配对置换检验
 └── tests/
 ```

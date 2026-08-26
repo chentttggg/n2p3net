@@ -39,6 +39,9 @@ def optimize_device_for_training(device: torch.device) -> None:
         torch.backends.cudnn.allow_tf32 = True
         if hasattr(torch.backends.cuda, "matmul"):
             torch.backends.cuda.matmul.allow_tf32 = True
+        # The model uses BF16 autocast for the bulk of the forward path.  This
+        # setting also permits TF32 for the remaining float32 matmuls.
+        torch.set_float32_matmul_precision("high")
 
 
 def print_device_memory(device: torch.device) -> None:

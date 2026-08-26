@@ -1,263 +1,287 @@
-# N2P3-Net 深度设计蓝图（Blueprint）
+# N2P3-Net v12 blueprint: 四个独立可证伪对象
 
-> 本文档是 N2P3-Net 的施工蓝图，把 constitution 的原则（P/E 系列）落到可实现的张量流、模块、损失与超参。
-> 张量形状、损失项、设计决策均在此钉死；实现以本文档为准，与本文档冲突需回改本文档。
-> 版本：v6.2-GLM（v6 + 门控参考层 D-glm-gate + 默认 encoder-norm=bn；历史：v6 训练协议
-> 修复/BN 轴/σ150，v5.1 EEGNet 借鉴，v5 方案 B；全部可通过 CLI 回退）。
+> 版本：v12（2026-08-25）。本文档是现行唯一架构规范；v11 的 strict-past
+> blueprint、decision record、routes 与 recipe 已归档到
+> [`../archives/legacy_v11_docs_2026-08-25/`](../archives/legacy_v11_docs_2026-08-25/)，
+> 只作历史复现，不再作为实现或评估依据。
+>
+> 代码迁移已完成默认切换：生产 recipe 为 `neural_ride_v12_pcw_fail_closed`，
+> R/Q/S 默认 fail-closed；`NEURAL_RIDE_V11_LEGACY` 只保留为显式命名的
+> 历史对照，任何新代码不得再扩展 v11 语义。
 
-## 0.6 GLM v2 决策记录（2026-08-23，门控参考层）
+## 0. 总原则
 
-D-glm-gate         Stage 0.1 再参考层重设计：out = X − g⊙(1·wᵀX)。w=softmax 保留
-                    （{Σw=1} 是从任意记录参考可达的再参考变换全集）；**g 自由线性门
-                    init=0 → 精确恒等**。推翻旧版「w=softmax 均匀 init → 强制 CAR」：
-                    ① softmax Σw=1 使恒等不可表达（结构缺陷）；② CAR 在 <32~64 导时
-                    无效（Junghöfer et al. 2001：不足 32 导时 CAR 偏差可能比单物理参考
-                    更糟；Luck 2014 要求 64–128 导均匀覆盖）；③ GTN 实测 3 导 CAR 销毁
-                    P3b（信号损失 4.36×、SNR 损失 1.90×、Fz 反转 −4.0μV 伪信号，
-                    AUC −1.5~3.3pt，见 failure_diagnosis §12）；④ P300 惯例参考是
-                    鼻尖/乳突（上海 ERP 临床共识），非 CAR。
-                    门为自由线性（非 sigmoid）：∂out/∂g = −m(t)，无饱和——对照 tau0
-                    梯度饥饿教训（sigmoid 门在 0 附近 g(1−g)≈0 会重蹈覆辙）。
-                    验证：GTN 12 被门控开启与关闭完全等价（AUC 0.7207 vs 0.7204），
-                    网络自学到 gate≈0（数据自证恒等最优）；训练后 g·w 是可报告的
-                    「有效参考权重」可解释性读数。
-D-glm-per-domain   参考层支持 n_domains：w_logits/gate_raw 形状 (D,C)，按 batch 的
-                    domain_id 逐样本取行（推理无 domain_id 时回退主域，P9）。为 Phase 3
-                    跨数据集（鼻参考 GTN ↔ 平均参考 ERP CORE ↔ A1 耳参考自采 8 导）
-                    保留「每域学自己的参考变换」通路。注意：per-domain 是域适配思路
-                    （各域各自变换），与 REST（统一到无穷远参考）的标准化思路互补，
-                    后者见 D-glm-rest-next。
-D-glm-rest-next    跨参考标准化的原理性方案是 REST（Yao 2001，参考电极标准化技术）：
-                    T_REST = G_REST·G_m⁺，只依赖头模型+蒙太奇+原参考（不需要真实源），
-                    把任意参考数据变换到无穷远参考；文献一致报告其参考误差小于
-                    AR/LM。本项目已有电极三维坐标（channel.py），具备实现条件；
-                    但 REST 质量依赖蒙太奇密度（3 导下严重近似），列为 Phase 3
-                    跨数据集前的预处理选项，不在 v6.2 实现。
-D-glm-ref-jitter   副作用警示：train/augment.py 的 reference_jitter 增强随机凸组合
-                    重参考——在新证据下它把数据推向销毁信号的 CAR 型变换，GTN 类
-                    鼻参考数据上应保持关闭（augment 默认本就 off；启用前须重新评估）。
+把科学测量、分类增量信息、异常检测、序贯停止拆成四个独立对象。每个对象
+有独立数据契约、独立 gate、独立删除规则；谁过不了谁 fail-closed。禁止
+`tau/rho/alpha` 一个量承担多种科学含义。
 
-## 0.5 GLM 协议决策记录（2026-08-22，v6）
+| 对象 | 科学问题 | 输出 | fail-closed 默认 |
+|---|---|---|---|
+| L: LatencyMeasurement | 单试次 P3b 潜伏期是否可测量 | `q_i(tau)`、均值、90% 区间、entropy | `measured_tau=None`，PCW `tau` 只算 routing 参数 |
+| R: RepetitionEvidence | 前缀证据如何合法累加 | `score(c|prefix)` | 纯可加 LLR 主干，state residual 收缩到零 |
+| Q: Reliability | clean/artifact 判别与信息保真度 | `fidelity(q)`、可选 `clean_probability(q; prior)` | 无硬标签时禁止输出概率 |
+| S: InnovationAudit + DynamicStopping | LLR 有无增量；何时停止 | 嵌套 M0/M1 审计、replay 指标 | `final=PCW`，停止只作经验 replay |
 
-D-glm-early-stop   训练协议：固定 10ep → 30ep 上限 + 被试级验证早停。证据：
-                    失败诊断 §2.4 一折曲线显示 held-out 指标在 epoch 10–11 见顶后崩塌
-                    （30ep bacc 0.68→0.55），固定 epoch 是「欠拟合赌博」；且「10ep 过拟合」
-                    的结论来自小训练池（12/60 被）观察，从未在 242 被试全量 + 验证协议下验证。
-                    早停锁定每 fold 的 val 峰值而非全局赌一个 epoch 数。验证集按被试分组切
-                    （frac=0.08、clamp [2,12]，evaluate 传 subject_ids），试次级随机切分会有
-                    同被试泄漏、验证损失高估泛化。Trainer 已支持 val_loader/早停，本次接入。
-D-glm-bn           TCN block 归一化消融轴（norm=ln/bn）。v6.2 起默认 bn：三组实测
-                    （12/60 被试，含/不含再参考）BN 一致优于 LN +0.5~0.9pt AUC，
-                    其中 60 被 default+bn+noref 0.7575 为全系最高。依据：跨被试 P300
-                    文献反复报告 BN 是 CNN 泛化关键（Värbu 2020：ELU+dropout+BN 与
-                    最佳 CNN 性能相关）；LN 逐 token 归一化抹平单 token 幅值维度。
-                    --encoder-norm ln 回退。
-D-glm-sigma-hi     P3b σ 上界 80→150ms（GTN runner 默认）。依据：GTN 儿童的 P3b 宽达
-                    300–650ms（ERP 实测 350–650ms 窗差值仍 11–14μV、逐被试峰潜伏期
-                    SD 85ms），旧上界 80ms 使 PCW 窗物理上盖不住真实成分。成人数据传 80 恢复。
-D-glm-evidence     2026-08-22 GLM 消融矩阵（12 被 LOSO）：架构侧单点修复（τ0 先验、读出
-                    路径、PCW 移除、final-LN 移除、辅助损失开关、fold z-score 输入缩放）
-                    全部不移动 AUC（0.70±0.01 平台；z-score 反而 −8pt）；v5.1 的 6 项 EEGNet
-                    借鉴同样在同一噪声带。剩余可测假设按优先级：训练协议（本版）→ BN（本版）
-                    → 表征瓶颈（tokenizer，未动）。
+四条铁律：
 
-## 0. 张量与符号约定
+1. **stop-gradient**：L 的后验进入 PCW 必须 detach；分类 BCE 不得反传进测量分支。
+2. **语义分离**：`pcw_tau`（分类参数）与 `measured_tau_posterior`（测量）分字段；
+   `fidelity` 与 `clean_probability` 分字段。
+3. **增量证据要成对嵌套**：判断某量是否带来分类增量，必须用同一族模型
+   `M0` 与 `M1` 做 subject-cluster bootstrap；禁止用单参数非负拟合当增量证明。
+4. **先 S0 反例 harness，后开发集**：S0 任一测试不过，禁止进入 8-fold 开发折。
 
-- fs = 256 Hz（重采样后）。
-- 试次窗口：刺激锁时 [-200, +800] ms，共 1000 ms → T = 256 点。
-- 通道 C = 8（固定顺序）：Fz、Cz、P3、Pz、P4、PO7、PO8、Oz。
-- 隐藏维 D = 64。
-- 输入 X ∈ R^{B×C×T} = R^{B×8×256}，B 为 batch。
-- 参数预算：Phase 2 单受试 ≤ 50k；Phase 3 跨域 + 自监督 ≤ 100k 且须归因收益（E4 落地）。
+## 1. 数据分区
 
-## 1. 关键设计决策（三思记录，指导后续工程）
+每个 outer LOSO fold 内按被试分四类角色：
 
-D1 「9 选 1」是决策层，不是单试次 softmax。
-   单试次任务只能是「target / non-target 二分类」（sigmoid），因一个试次只对应一个刺激数字 d，
-   监督只有 1 bit（d 是否等于心选数字）。「猜中数字」= 对每个数字 d 累加其所有试次的
-   p(target) 后 argmax。禁止单试次做 9 类 softmax。
+```text
+outer train
+  +-- optimization: 梯度、模板、白化、质量归一化
+  +-- audit: 结构选择、density family 选择、held-out log score
+  +-- validation: 校准、阈值、嵌套 M0/M1 交叉拟合
+outer test: 只读指标
+```
 
-D2 网络外允许项（修订版）：重采样 + 连续域高通（默认 0.1 Hz）+ epoch 切分 + 阈值法伪迹剔除。
-   高通必须在「连续数据」上做（epoching 之前），因低截止频率 FIR 冲激响应达数秒，在 1 s
-   epoch 内做在数学上无效且引入边缘伪影（review 1.3）。伪迹剔除是数据质量步骤，非特征工程。
+- L 的白化/模板只在 optimization 上估计，validation 只做覆盖/方差校准，test 只读；
+- Q 的 `clean_probability` 校准必须做 prior-shift 与未见 corruption-type 双重审计；
+- S 的 M0/M1 只用 validation subjects 做 leave-one-subject-out，最终激活条件
+  使用 cluster bootstrap，禁止普通 block permutation 当零分布。
 
-D3 时间分辨率在**可解释路径**全程保留（E5 落地，v5.1 收窄）。Stage 1 卷积 stride=1 + padding=same，
-   PCW 与 τ/σ 读数吃全 T 的 Z'；判别旁路（Head-A bypass）允许 EEGNet 式池化。
+## 2. 对象 L：LatencyMeasurement
 
-D4 潜伏期由参数化成分窗显式生成（τ 被直接监督，D8），监督 = 分类 + τ 软约束（L_tau）；
-   方案 2 峰值弱标签仅作 τ0 初始化兜底（E3）。
+### 2.1 定义
 
-D8（根治 —— 因果反转，参数化成分窗 PCW）。
-   旧方案「free attention A → 事后 soft-argmax 得 τ」有结构性缺陷：H 与 τ 是 A 的两个并行统计量
-   （加权和 vs 期望），分类只监督 H、不监督 τ 的绝对位置（软对齐的平移等变性使 H 对 A 整体平移
-   近似不变）。这是因果反了，非调参问题，故不再用「诊断 + 升级」补救，直接换策略。
-   根治：反转因果——先估计潜伏期 τ，再用 τ 生成参数化软窗 A(t)=Gauss(τ,σ)，软对齐读取 H。
-   τ 从「事后统计量」变为「生成参数」，被分类经 H→A→τ 直接、单调监督（∂L/∂τ ≠ 0 且方向正确），
-   逐试次 latency jitter 可被 τ 自然学到。
-   由此简化：不再需要熵锐化（A 形状由 τ,σ 决定）、JSD 防坍缩（不同成分 τ0 不同，位置天然区分）、
-   显式时移（无 circular 伪影）。Phase 2 仍保留模拟数据诊断 MAE(τ,τ_true)<40ms 作为验证（非补救）。
+对 fold-local 训练侧 target trials 建立白化 P3b 模板 `g`，对每个 trial 计算
+amplitude profile likelihood：
 
-D9（不对称高斯窗 —— 优雅解形状受限 + σ 退化）。
-   对称高斯窗两个缺陷：(1) 真实 P3b 不对称（上升 ~100ms 陡、下降 ~250ms 缓），对称高斯系统性
-   偏估 τ（偏向对称质心而非峰值）；(2) σ 自由退化（→0 成脉冲、→∞ 成均匀）。
-   优雅解（参数化本身升级，非补丁）：不对称高斯窗——左右独立宽度 σ_up/σ_down，σ 经 sigmoid
-   软映射到 [20,80]ms（有界无 clamp）；τ 处 sigmoid 平滑过渡（处处可微）。τ 仍直接 = 峰值
-   （左右对称中心在 τ，无偏斜耦合），符合 ERP「峰值潜伏期」惯例。
-   比偏斜正态更优：偏斜正态 τ 非峰值（偏斜拉均值）+ 需 erf；左右 σ 的 τ 即峰值、无耦合、计算简单。
-   退化兼容：σ_up=σ_down 退化为对称高斯（可作初始化/消融）。
+```math
+ell_i(tau) = max_a [-0.5 (x_i - a g_tau)^T Sigma^{-1} (x_i - a g_tau)],
+quad
+a*(tau) = (g_tau^T Sigma^{-1} x_i)/(g_tau^T Sigma^{-1} g_tau).
+```
 
-D5（新增，人群假设）被试以成人为主，可采集年龄/性别等元数据。
-   年龄/性别作为「subject metadata 嵌入」与坐标嵌入并列输入；P300 潜伏期随年龄递增
-   （成人亦如此，Depuydt 2023），故先验中心数据驱动初始化并允许年龄协变量进入 Phase 4 回归。
-   GTN（7–17 岁儿童）从「同源主数据」改定位为「跨年龄迁移源域」，其与成人目标存在年龄域差，
-   跨数据集验收须增加「GTN 内部年龄分层」中间档。
+后验：
 
-D6（新增，容量）Stage 2 序列编码降级为消融轴 depth ∈ {0,1,2,3}，默认 3 层膨胀 TCN（2026-08-20
-   决策，原「默认 depth=1 轻量 Conformer」因实测参数 58k 超 E4 50k 被否决，见 constitution E4 修订）。
-   Stage 1 多尺度卷积已提供 ~500 ms 局部上下文，序列编码要补的只剩 N2→P3b ~150 ms 关系，
-   ROI 低；GTN 上 CNN≈LDA 亦指向「容量非瓶颈、域差才是」。预算 ≤50k。
+```math
+q_i(tau) propto pi(tau) exp(ell_i(tau)),
+quad tau_i = tau0 + delta_i,  E[delta_i]=0.
+```
 
-D7（新增，归一化）全程 InstanceNorm/LayerNorm/GroupNorm，不使用 BatchNorm；故删除 Split-BN
-   （BN 不存在时 Split-BN 是空操作），跨域对齐改用「域条件仿射」（per-domain 可学习 scale/shift
-   加于 LayerNorm 后）+ 特征级 RBF-MMD + 目标加权损失。
+### 2.2 规范锚（必选其一，不能只用 E(delta)=0）
 
-D10（新增，辅助数据协议，P9）其他 P300 数据只允许两种参与方式：
-   (a) 辅助域 target/non-target 预训练特征提取器，保存 checkpoint；每个 GTN fold 从该初始化
-       开始、用 GTN 微调；
-   (b) 共享 Stage 0–2 编码器，辅助域只参与域条件仿射与 L_MMD；L_target/L_early/L_amp 只在
-       GTN 试次上计算。
-   禁止辅助试次与 GTN 拼接后联合优化主分类；禁止辅助梯度进入分类头/决策层。实验须按
-   doc/transfer_policy.md 的 T0/T1/T2/T3 四臂协议执行。
+- **模板固定**：fold-local ReSync/Woody 式受限迭代先固定模板，再以 `E(delta)=0`
+  识别个体偏移；或
+- **显式生理先验**：GTN 儿童 P3b `460 ± 30 ms`、成人 `350 ± 30 ms`。
+- 报告“锚点先验敏感度”；仅报告“初始化敏感度 < 2 ms”不充分。
 
-## 2. Stage 0 —— 格式无关适配（Format Adapter）
+### 2.3 与 PCW 的边界
 
-网络外（MNE，均在 epoching 之前）：
-- 重采样 → 256 Hz；
-- 高通 0.1 Hz（连续域，去极慢漂移；0.5 Hz 仅作消融对照，见坑位对照 E1）；
-- epoch 切分 [-200, +800] ms；
-- 阈值法伪迹剔除（默认 ±100–150 μV，剔除率作为数据集元信息记录）。
+PCW 只消费 detached 期望窗：
 
-网络内（可微）：
-- 0.1 加权再参考：R = I − 1·wᵀ，w ∈ R^C 过 softmax（C=8 参数），X_ref = R @ X。
-      语义「可学习加权再参考」：所有通道减同一个加权均值 1·(wᵀX)。**外积方向必须是 1·wᵀ**，
-      不是 w·1ᵀ——后者展开为逐通道增益 w_c·(Σ_j x_j)，每通道减量不同、破坏「参考无关」语义
-      （review v1 带进来的笔误，v3 修正）。替代原 C×C 自由矩阵（自由度大、与 Stage 1 空间卷积
-      耦合、「参考无关」声明失守）。可选加每通道增益（8 参数，吸收设备增益差）。
-- 0.2 基线校正：X_base = X_ref − mean(X_ref[:, :, :51], dim=2)（前 200 ms 基线）。
-- 0.3 参考抖动增强（训练时）：以概率 p 随机重参考到随机通道/凸组合，零参数教网络参考不变性。
-- 0.4 归一化：基线段归一化（默认）——用前 200ms 基线段（t<0）的逐通道均值/std 做 z-score，
-      而非全窗 InstanceNorm。理由：target 试次因 P300 大幅值抬高全窗 std 会被压缩、non-target
-      纯噪声被放大到单位方差，而两类试次的「evoked-vs-noise」幅值对比恰是核心判别特征
-      （v3 盲区）。全窗 InstanceNorm 保留为消融轴。
-- 0.5 坐标式通道身份：10-20 三维坐标 → 正弦嵌入（频率封顶 k≤n_freqs−1，默认 n_freqs=8，输出
-      6·n_freqs 维；见 data/channel.D-freq-cap，P0②）→ models 层可学习投影到 D；缺失通道用
-      可学习 mask 嵌入。正弦分支的维度由「频段数×2」决定，**不得硬堆高频**（float32 高频段是数值噪声）。
-- 0.6 subject metadata 嵌入（新增）：年龄、性别 → 正弦嵌入（频率封顶，2·n_freqs+3 维）→ 可学习
-      投影到 D，与通道坐标嵌入并列。性别数字编码遵循 MNE 惯例（0=unknown, 1=male, 2=female）。
-- 诚实声明：再参考 + 参考抖动仅统计意义上吸收参考域差，不构成严格不变性。
+```text
+A_c(t) = sum_tau q_i(tau) * Gaussian(t; tau0_c + tau, sigma_c),
+q_i 来自 L 且 detach。
+```
 
-输出：X0 ∈ R^{B×C×T}，E_chn ∈ R^{C×D}，E_sub ∈ R^D。（E_chn/E_sub 的可学习投影到 D 在此完成；
-      data 层只产出频率封顶的正弦特征。）
+分类可以因该输入获益，但不得反传进入 L；L 的训练目标只来自模板匹配、已知
+shift 合成校准和覆盖校准。PCW 的 `attention_softargmax` 永远只称 routing，
+不得称生理潜伏期。
 
-## 3. Stage 1 —— ERP 感知时空 token 化（Spatio-Temporal Tokenizer）
+### 2.4 门槛（两层）
 
-- 1.1 多尺度时间卷积银行：核长 {13, 33, 65, 129} @256 Hz ≈ {51, 129, 254, 504} ms，
-      跨通道共享；每核长 F=16 滤波器，stride=1 + padding=same，四尺度拼接 → B×64×T。
-- 1.2 空间深度卷积（按尺度分地形先验初始化）：短核 → N2 地形（PO7/PO8/Oz 枕区负），
-      长核 → P3b 地形（Pz/P3/P4 顶区正）；EEGNet 式 depthwise + pointwise。
-      v5.1：支持原生 3 导（channel_names=("Fz","Cz","Pz")），不零填充；有效空间权重
-      W=prior+coord_mod 后做 max-norm=1（Lawhern 2018；spatial_max_norm=None 回退）。
-- 1.3 token 化：Z ∈ R^{B×T×D}（T=256, D=64）+ 时间位置编码（绝对潜伏期是时域任务关键）。
-- 1.4 融合 E_chn（通道坐标嵌入）与 E_sub（subject metadata 嵌入）。
+- S0 合成：bias < 5 ms、RMSE < 10 ms、paired slope 0.9–1.1、90% 区间覆盖
+  85–95%、初始化敏感度 < 2 ms；
+- 真实数据：只有 S0 全过后，才用 split-half 稳定性、区间覆盖、与
+  mass-univariate/峰值法的相关性申请；256 Hz 下 RMSE<10 ms 不得直接当真实
+  数据硬门槛。
+- 通过后输出 `measured_tau_posterior`；不通过保持 `measured_tau=None`。
 
-输出：Z ∈ R^{B×T×D}。
+## 3. 对象 R：RepetitionEvidence
 
-## 4. Stage 2 —— 成分感知编码器（Component-Aware Encoder）
+### 3.1 主干：可加 LLR，消费全部正负 flash
 
-- 2.1 序列编码（消融轴 depth ∈ {0,1,2,3}，默认 3 层膨胀 TCN，2026-08-20 决策）：
-      3 层膨胀 TCN（dilation 1/4/16，感受野 ~168 ms，覆盖 N2→P3b ~150 ms 关系），或备选轻量 Conformer
-      （FFN expansion=2，LayerNorm + 域条件仿射；depth=1 Conformer 自身约 33k，叠加 tokenizer 后全模型约 58k 超预算，仅作消融对照）。
-      depth=0 时参数化成分窗直接吃 Stage 1 输出。
-- 2.2 参数化成分窗 ×3（N2、P3a、P3b；砍掉无监督必然退化的 N1/P2）：
-      对每个成分 c：先估计潜伏期 τ_c = τ0_c + Δτ_c（τ0_c 数据驱动初始化，Δτ_c 由 dtau_readout 估计（GTN 默认 attention_softargmax）
-      再生成不对称高斯窗（D9）；attention_direct 模式下 Δτ 由时间质心经 tanh 软映射直接得到）：
-      A_c(t) = softmax(−(t−τ_c)²/(2·σ_c(t)²))，σ_c(t) = σ_up + (σ_down−σ_up)·sigmoid((t−τ_c)/w)
-      （w≈10ms 平滑过渡，处处可微）；σ_up/σ_down 独立 sigmoid 映射到 [20,80]ms（有界无 clamp）。
-      软对齐读取 H_c = Σ_t A_c(t)·Z'(t)。
-      因果反转（D8）：τ 是 A 的「生成参数」而非「事后统计量」，被分类监督。v5 失败诊断：GTN 实测 τ0/σ/Δτ 梯度比分类头弱 3–4 个数量级，分类监督不足以标定 τ0；L_jit 未收敛且与时间局域判别冲突，故默认关闭（§8），τ0 改用 GTN 数据驱动先验。
-      **Δτ 界不对称（v4 修订）**：P3a Δτ∈[−30,0]ms（只前移）；
-      P3b 放宽到 Δτ∈[−50,150]ms，覆盖真实 P3b 300–600ms。v5：GTN 儿童实测 P3b 峰值 460–490ms（逐被试 490±85ms），
-       GTN runner 默认 τ0_P3b=460ms、τ0 界 [350,600]；成人默认 350ms/[280,500] 不变。
-      注意：代码只约束相对 Δτ，不硬性保证 P3a≤300ms/P3b≥300ms；
-      防互换依赖 τ0 中心与 Δτ 符号界，Phase 2 须实测 τ 顺序（audit 修订）。
-      **global_pool 消融说明（v4）**：global_pool 会洗平时间位置信息，仅作消融；
-      H_c=ΣA·Z' 读出路径未池化、保时间分辨率仍不变。Phase 2 合成诊断结果见 review 记录
-      attention_direct + L_jit 达到 MAE 36.2ms；v5 后二者仅作显式消融，不再默认。
-- 2.3 潜伏期即 τ_c 本身（显式参数，无需事后 soft-argmax）。
+```math
+S_c(n)=log pi_c + sum_{t=1}^{n} [
+  1(d_t=c) LLR_1(e_t,q_t) + 1(d_t != c) LLR_0(e_t,q_t) ].
+```
 
-## 5. Stage 3 —— 时域多任务头（Multi-Task Heads）
+- `LLR_1/LLR_0` 来自每个 flash 的条件密度比，上下文只能由 `(e,q,t)` 决定，
+  不含 candidate-specific hidden；
+- 候选必须消费**全部** flash：候选自己的 flash 是正证据，其他 8 个数字的
+  flash 是负证据；只聚合候选自己的集合是 contract 错误。
 
-- Head-A 主分类（target/non-target 二分类）：h = concat(H_P3b, H_P3a, g_bypass) → sigmoid → p_target。
-       v5.1（EEGNet 借鉴）：g_bypass 默认来自 TemporalPoolingBypass（4× 池化 → depthwise+
-       pointwise separable conv → adaptive 8 bin），头为 Dropout(0.25)+Linear；bypass_mode=
-       mean_pool 回退旧方案 B 旁路，none 关闭旁路，use_mlp_heads=True 回退旧 MLP 头。
-       依据：失败诊断实测 PCW 参数梯度弱 3–4 个数量级，判别信息主要在 encoder 分布式时间特征中。
-      损失 L_target = BCE(pos_weight≈8)（target 占 1/9，无 pos_weight 会学「全判非目标」）。
-- Head-B 早期证据头（原「N200 辅助」，重新定性）：输入 H_N2（参数化窗 τ0_N2≈220ms、
-      σ∈[20,50]ms、Δτ∈±30ms，**单独收窄**限制在早期窗），→ MLP → sigmoid → p_early。
-      N2 窗必须单独收窄（σ 上限 50ms、Δτ 上限 30ms，v3 P1）：若沿用 P3 的 σ∈[20,80]ms+Δτ±50ms，
-      N2 窗尾部可达 ~350ms，P3a/P3b 前缘会泄漏进早期证据。
-      它是「同标签的早期证据集成头」（multi-view ensemble + 正则），不是新任务。
-      损失 L_early = BCE，λ2 用固定网格 {0.1, 0.3, 0.5}（不做不确定性加权，数千试次难拟合）。
-- Head-C 潜伏期（参数化成分窗，根治版）：输出 τ_c、σ_up,c、σ_down,c（τ 是生成参数，直接监督）：
-      (1) 分类直接监督：τ_c 是 A_c 的生成参数，∂L_target/∂τ_c 经 H→A→τ 直接、单调；
-      (2) 软参数化（无 clamp）：σ_up/σ_down = lo + (hi−lo)·sigmoid(σ_raw)，
-          天然有界 [20,80]ms；Δτ 按成分独立 sigmoid/tanh 映射到 dtau_bounds；
-          L_tau = mean((τ_c−τ0_c)²)/50² 小正则，且 τ0 在读出路径中被 detach；
-      (3) 方案 2 兜底：训练前几 epoch，τ0_c 用 Pz 峰值弱标签初始化（仅初始化，非监督）。
-      不再需要熵锐化与 JSD（D8）；不对称窗解形状受限与 σ 退化（D9）。
-- Head-D 幅值：Â = Σ_t A_P3b(t)·X_Pz(t)，被 L_target 隐式监督 + 可选重构。
+### 3.2 状态残差
 
-## 6. 决策层（猜数字）
+```math
+S_c(n)=S_c^{add}(n)+sum_t delta_t^{(c)},
+quad delta^{(c)}=small GRU(e,q,1(d=c)),
+quad L_shrink = lambda * sum (delta_t^{(c)})^2.
+```
 
-- score(d) = Σ_{trials of d} logit(p_target)（对数似然比累积，非平均概率）。
-- 被试内标准化：每被试用其 9 个数字的 score 分布做 z-score（P300 speller 标准技巧，去校准偏差）。
-  防边界（v3 P2）：伪迹剔除后某数字试次可能清零，此时 score(d) 未定义——规定空集 score=−∞
-  （或该数字不参与 argmax）；且 z-score 的 std=0（9 数字 score 全同）时退化为不加标准化。
-- d̂* = argmax_d score(d)。命中率 = P(d̂* = d*)，chance 11.1%。
+- 残差初始化为零，强 L2 收缩到零；
+- 只有它在 untouched audit subjects 的 held-out prequential log score 上形成
+  strict-majority 且 cluster CI 下界 > 0 的增量，才允许非零；否则置零。
 
-## 7. Stage 4 —— 训练配方（辅助数据只预训练/域对齐，P9/D10）
+### 3.3 count 先验的正确形式
 
-- 7.1 辅助 P300 监督预训练（可选，Phase 3 默认路线）：用 Brain Invaders / BNCI008 / ERP CORE
-      的 target/non-target 标签预训练特征提取器，保存 state_dict；目的只是「更好的初始化」。
-      之后每个 GTN fold 从该初始化开始、用 GTN 微调；禁止辅助域与 GTN 联合优化主分类。
-      加载须 strict=False + 显式 load_mapping，记录成功/跳过/形状不匹配的层。
-- 7.2 自监督预训练（可选，Phase 3）：掩码时间点重建波形（Stage 0–1 + 轻量 decoder）。
-      语料 = GTN + ERP CORE + 自有无标签数据（靠坐标嵌入 + 通道掩码吃异构通道数）。
-      自有数千试次不足以学有意义表征，收益预期「小正则」，排在辅助监督预训练之后。
-- 7.3 跨域对齐（仅 N2P3-Net 微调时）：域条件仿射（per-domain scale/shift）+ 特征级 RBF-MMD +
-      目标加权损失。辅助域只进入 L_MMD；主分类/早期证据/幅值损失只由 GTN 试次计算。
-- 7.4 ERP 感知数据增强：时间扭曲（PMB-TW）、幅值抖动、高斯噪声、通道 dropout、参考抖动。
-      增强只作用于 GTN 训练 fold；辅助预训练可用独立增强配置，不得把 GTN 增强后的数据当辅助域。
+- `exact@K`：所有候选计数相同，`beta_0 + beta_1 log K` 在 softmax 中严格抵消，
+  禁止进入；
+- `prefix_minK`：候选计数 `n_c` 可能不同，合法项是 `gamma f(n_c)`；任何全局
+  `log K` 项都非法。
+- 计数信息主要进入累计方差/有效样本量/停止策略，而不是 ad hoc 候选先验。
 
-## 8. 总损失（微调阶段）
+### 3.4 多 K 训练
 
-L = λ1·L_target + λ2·L_early + λ3·L_tau + λ_jit·L_jit + λ4·L_MMD
-- λ1=1.0；λ2∈{0.1,0.3,0.5} 网格；λ3≈1e-2（权重），L_tau = Σ_c(τ_c−τ0_c)²（损失，v3 分写避免混淆）；
-  σ 由 sigmoid 软参数化天然有界，无需额外正则；λ4 跨域时启用。
-- v5：λ_jit 默认 **0**（关闭 L_jit）。失败诊断实测 L_jit 未收敛（±40ms 平移的 τ 跟踪 RMS≈52ms），
-  且时间不变性自监督与 P300 时间局域判别冲突；接口保留，显式传 λ_jit>0 可复现旧实验。
-- P9 约束：L_target / L_early / L_amp 只在 GTN 试次上求梯度；辅助域最多进入 L_MMD。
-  任何把辅助标签加入上述 BCE/MSE 的实现都属于协议违规。
+- 同一累积轨迹在 K=1/3/5/10/15 处取 CE；**禁止 per-K 独立头**，前后缀必须
+  由同一条件模型递推一致；
+- 主开发终点只使用共同支撑 K=1/3/5；K=10/15 仅作带 coverage 的次要分析；
+- 高 K 权重不得再进入主 estimand。
 
-## 9. 实现要点与坑位对照（v2 更新）
+## 4. 对象 Q：Reliability 双 estimand
 
-- E1 去漂移：默认 0.1 Hz 连续域高通 + 基线校正 + InstanceNorm；0.5 Hz 高通对 P3b 有失真风险
-  （Tanner 2015 实测 ≥0.3 Hz 高通在慢成分前制造反极性伪峰），仅作消融对照（Phase 4）。
-- E2 禁 Hungarian：参数化成分窗不涉及集合匹配，天然满足（软窗 + 位置参数化）。
-- E3 禁窗口峰值当标签：τ 无真实标签，由参数化窗直接监督；方案 2 仅作 τ0 初始化兜底。
-- E4 容量：Phase 2 ≤50k，Stage 2 降容 + depth 消融。
-- E5 时间分辨率：Stage 1 无池化；τ 是显式参数（生成窗，非从 A 事后读出）。
-- E6 跨域边际：跨数据集单试次接近随机，命中率靠决策层累加。
-- 防坍缩（根治）：参数化窗位置寻址天然区分成分，无需 JSD（D8）。
-- 新增类不平衡：pos_weight≈8 + 按 run/会话分组切分（review 3.7）。
+### 4.1 `fidelity(q)`：严重度/保真度，不叫概率
+
+- 训练目标从 soft-BCE(0.9/0.1) 换成 margin/rank 目标；
+- gate 必须覆盖**未见被试 + 未见 corruption type**；
+- 输出进入 mixture 时作为收缩权重：
+
+```math
+p(e|q,y)=w(q) p_clean(e|y,q,sigma_fid) + (1-w(q)) p_artifact(e|q),
+quad
+sigma_fid(q)=exp(gamma_0+gamma_y^T q).
+```
+
+- `w(q)` 是保真度权重；未建立硬标签概率模型时禁止写 `P(clean|q)`。
+
+### 4.2 `clean_probability(q; prior)`：仅在显式二元污染生成模型存在时启用
+
+- 生成器：`c ~ Bernoulli(pi0)`；`c=1` 为 clean，`c=0` 用预注册 artifact 模型；
+  标签为硬 `c`；
+- 训练目标可用 log loss 或 Brier（二者均为严格真分数；只允许以有限样本
+  稳健性为理由选择，不允许声称“更严格真”）；
+- 部署前必须做 prior-shift odds 换算：
+
+```math
+odds_deploy(rho) =
+odds_cal(rho) * [pi_deploy/(1-pi_deploy)] * [(1-pi_cal)/pi_cal].
+```
+
+- 校准只用全局单调映射；按 subject/target/corruption 打的 group patch 不得
+  直接部署；
+- 单调校准不保证 chain 排序不变：`log(rho A+(1-rho)B)` 对 rho 的单调方向
+  逐 step、逐 candidate 可变。因此验收必须包含完整 digit-chain NLL 与决策
+  复验，不能只看 rho 的 Brier/ECE/AUC。
+
+### 4.3 删除
+
+删除 `reliability_identification_loss` 的 0.9/0.1 概率锚；删除
+“rho gate 通过 ⇒ chain 概率可信”的隐含链条。
+
+## 5. 对象 S：InnovationAudit + DynamicStopping
+
+### 5.1 分类增量审计（嵌套比较）
+
+对每个 validation subject 做 LOSO：
+
+```math
+M0: a + b S,      M1: a + b S + c L,   c in R.
+```
+
+- S 为 PCW logit（或 Platt 校准后的 S）；
+- 报告 c 的 subject-cluster bootstrap 95% CI、strict-majority 改善、AUC
+  非劣界；
+- **激活条件**：c 符号符合预注册（理论默认 c>0；允许负号必须显式预注册）、
+  CI 不跨 0、subject-macro NLL 改善 ≥ 0.5%、AUC 非劣界 −0.005；
+- 推断阶段允许 c<0 是为了避免边界选择偏差；跨 fold 显著为负是符号异常警报，
+  不是增量证据；
+- 禁止 `corr(S,L)` 强制翻转符号；删除 `_fit_nonnegative_fusion_coefficient`
+  的非负单参数融合契约。
+
+### 5.2 异常价值审计
+
+- 在 y=0 与 y=1 两个假设下分别计算 predictive typicality：
+  `T_i^(y) = -log p_y(x_i)`；
+- 用 calibration subjects 构造 per-class conformal p-value；**只有两个假设的
+  p-value 都拒绝**才标记 out-of-model 并进入“继续采样”，该标记只影响停止
+  策略与 descriptive 权重，不冒充错误率控制；
+- raw NLL 不得直接作可靠性 gate。
+
+### 5.3 动态停止
+
+1. 第一步只做 replay：在完整未见序列上回放
+   `max_c p_c(n) >= 1-epsilon` 的 first crossing；
+   报告已决集错误率、未决率、expected flashes、risk-coverage 曲线；
+   阈值只在 validation 拟合，禁止在 test 上挑 K/阈值。
+2. 需要 anytime-valid 保证时，再实现可预测 quality gate 的 e-process；
+   单元测试必须验证非负性与 `E[e] <= 1`。普通 posterior 阈值不得宣称
+   固定错误率控制。
+
+## 6. S0 反例 harness（全部通过后才准接触开发折）
+
+1. `s0_soft_label_semantics`：Brier 与 soft-BCE 的总体最优点都是 `E[y|z]`；
+   1-a 只是质量分数，不可能是 clean 状态概率。
+2. `s0_count_prior_cancellation`：`exact@K` 下 `beta log K` 对 softmax 响应为
+   0；`prefix_minK` 下 ragged counts 会改变排序但该先验无合法生成模型来源。
+3. `s0_monotone_rho_chain_rank`：构造单调 rho 校准使候选 chain 排序翻转，
+   证伪“rho AUC 不变 ⇒ chain 不变”。
+4. `s0_redundant_likelihood_fusion`：DAG `S -> Y <- ?` 反例中，旧非负 alpha
+   给出表观 BCE 增益，而嵌套 M0/M1 的 c CI 覆盖 0。
+5. `s0_latency_gauge`：全体 tau 平移 +c、模板平移 -c 时似然不变；加锚后
+   profile likelihood 通过 bias<5/RMSE<10/slope 0.9–1.1/覆盖 85–95%。
+6. `s0_reliability_prevalence_shift`：prevalence=0.2 上校准的检测器在部署
+   prior 下 ECE 超限；显式硬标签生成模型 + odds 换算才通过。
+7. `s0_stopping_replay`：错设 posterior 阈值违反固定错误率；e-process 非负且
+   `E[e]<=1`；replay 指标可计算且不用 test 标签调参。
+
+## 7. 预注册门槛汇总
+
+- Latency：S0 门槛 + 真实数据 split-half/覆盖/相关性；锚点先验敏感度必须报告。
+- Fusion：subject-macro NLL 改善 ≥ 0.5%；subject cluster 95% CI 下界 > 0；
+  AUC 非劣界 −0.005；c 符号预注册。
+- Reliability：未见被试、未见 corruption type、prior-shift、完整 digit-chain
+  NLL 四项全过；不允许只报 rho ECE。
+- Low-K：主开发终点只用共同支持 K=1/3/5；K=10/15 只做带 coverage 的次要分析。
+- Stopping：固定 clean reject 5% 后 risk-coverage 曲线改善，且固定错误率下
+  expected flashes 至少下降 2%。
+
+## 8. 与现有代码的落点
+
+| 对象 | 落点 | 改动 |
+|---|---|---|
+| L | `erp_calibration.py`、`erp_uncertainty.py`、`component_window.py` | 新增 `latency_measurement.py`；PCW 增加 detached 期望窗；`attention_softargmax` 降级为 routing |
+| R | `repetition.py`、`losses.py`、`trainer.py` | `RepetitionEvidenceModel` 拆 `AdditiveLLRBackbone` + `StateResidual`；删除 per-K 头 |
+| Q | `repetition.py`、`n2p3net.py` audit | 双输出 `fidelity`/`clean_probability`；gate 拆两层 |
+| S | `n2p3net.py` fusion、evidence protocol | 替换非负 alpha；新增 `stopping_replay.py`；e-process 后置 |
+
+默认全部 fail-closed：新模块默认权重 0、`final=PCW`；只有对应 outer gate 通过
+才启用。
+
+## 9. 删除/废弃清单（S0 与对应 Phase 通过后执行）
+
+- `_fit_nonnegative_fusion_coefficient` 与非负 alpha 融合契约；
+- `reliability_identification_loss` 的 0.9/0.1 概率锚；
+- `known_time_shift` 零填充在 latency audit 中的使用；
+- “attention_softargmax 输出 = 生理潜伏期”的文档/报告表述；
+- per-K 独立 scorer、`beta log K` 候选先验；
+- 普通 posterior 阈值被宣称为固定错误率控制的任何报告口径。
+
+## 10. 实施阶段与算力
+
+| Phase | 内容 | 通过标准 | 算力 |
+|---|---|---|---|
+| 0 | 只写 S0 harness，冻结真实开发折 | S0 1–7 全过 | 单 GPU/CPU，小时级 |
+| 1 | L 测量 + PCW detached 消费 | S0-5、合成与已有 2-fold latency audit 全过 | 同上 |
+| 2 | R 主干/残差拆分 | S0-2/3/4 全过，locked 开发折 | 8 折 `fold_jobs=4` |
+| 3 | Q 双 estimand 拆分 | S0-6 全过 | 同上 |
+| 4 | S 嵌套审计 + stopping replay | S0-7 全过 | 同上 |
+| 5 | 预注册 8-fold 确认 | 第 7 节门槛 | 全部剩余算力 |
+
+任何阶段失败都回 S0，禁止在开发折上调超参。
+
+## 11. 科研叙事
+
+主论文聚焦“可靠性条件化的序贯证据机（reliability-conditioned sequential
+evidence machine）”；可辨识潜伏期是独立测量工作或第二篇工作；innovation
+要么通过嵌套 M0/M1，要么只作两假设典型性/补采信号。不再把四个对象硬塞进
+一个“万能网络”。

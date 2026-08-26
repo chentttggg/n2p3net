@@ -3,12 +3,18 @@
 语义重点：标签对齐（伪迹剔除后标签不错位）、元数据嵌入、文件格式分派。
 """
 
+import mne
 import numpy as np
 import pytest
 
-import mne
-
-from data.dataset import SubjectData, build_subject, load_dataset, read_raw
+from data.dataset import (
+    EEGRecord,
+    SubjectData,
+    build_subject,
+    load_dataset,
+    read_event_table,
+    read_raw,
+)
 
 STD = ["Fz", "Cz", "P3", "Pz", "P4", "PO7", "PO8", "Oz"]
 
@@ -29,7 +35,20 @@ def make_raw(sfreq=512.0, n_seconds=20.0, ch_names=None, amp=10e-6, seed=0):
 def make_events(sfreq=512.0, n_seconds=20.0, first=2.0, step=1.0):
     times = np.arange(first, n_seconds - 1.0, step)  # 留 1s 余量给 tmax=0.8
     samples = np.round(times * sfreq).astype(int)
-    return np.column_stack([samples, np.zeros(len(samples), dtype=int), np.ones(len(samples), dtype=int)])
+    return np.column_stack(
+        [samples, np.zeros(len(samples), dtype=int), np.ones(len(samples), dtype=int)]
+    )
+
+
+def test_event_archive_rejects_fractional_labels_and_events(tmp_path) -> None:
+    path = tmp_path / "events.npz"
+    np.savez(path, events=np.array([[10, 0, 1]], dtype=np.int64), labels=np.array([0.9]))
+    with pytest.raises(ValueError, match="labels must have an integer dtype"):
+        read_event_table(path, sfreq=100.0)
+
+    np.savez(path, events=np.array([[10.5, 0.0, 1.0]]), labels=np.array([1]))
+    with pytest.raises(ValueError, match="Event array.*integer dtype"):
+        read_event_table(path, sfreq=100.0)
 
 
 # --------------------------------------------------------------------------- #
@@ -45,14 +64,14 @@ def test_build_subject_shape():
     assert s.data.shape[2] == 256
     assert s.data.dtype == np.float32
     assert s.labels.dtype == np.int64
-    assert s.E_chn.shape == (8, 48)   # 6*n_freqs = 48
-    assert s.E_sub.shape == (19,)      # 2*n_freqs + 3 = 19
+    assert s.E_chn.shape == (8, 48)  # 6*n_freqs = 48
+    assert s.E_sub.shape == (19,)  # 2*n_freqs + 3 = 19
     assert s.sfreq == 256.0
     assert s.n_epochs == s.data.shape[0]
 
 
-def test_read_raw_unsupported():
-    with pytest.raises(ValueError):
+def test_read_raw_missing():
+    with pytest.raises(FileNotFoundError):
         read_raw("foo.xyz")
 
 
@@ -85,7 +104,13 @@ def test_build_subject_labels_alignment_with_reject():
     # 在第 3 个 event（index 2）的锁时点附近注入 1V 伪迹 → 其 epoch 必被剔除
     raw._data[:, events[2, 0] : events[2, 0] + 20] = 1.0
 
-    s = build_subject(raw, events, labels=labels, l_freq=None)  # 默认 reject 150 μV；跳过高通以隔离标签对齐逻辑
+    s = build_subject(
+        raw,
+        events,
+        labels=labels,
+        l_freq=None,
+        channels=STD,
+    )
 
     assert 2 not in s.labels
     assert s.labels.shape[0] == s.data.shape[0]
@@ -118,18 +143,23 @@ def test_build_subject_metadata_embedding():
     assert np.array_equal(s.E_sub[-3:], [0, 1, 0])  # F → [0,1,0]
 
 
-def test_build_subject_channel_mask_propagates():
-    """缺失通道：channel_mask 与 preprocess 结果一致，缺失通道 E_chn 置 0。"""
+def test_build_subject_rejects_incomplete_explicit_layout():
+    """显式布局有缺失时必须失败，不能静默补零。"""
     present = ["Fz", "Cz", "Pz", "PO7", "Oz"]  # 缺 P3/P4/PO8
     raw = make_raw(ch_names=present)
     events = make_events()
-    s = build_subject(raw, events, reject_threshold=None)
+    with pytest.raises(ValueError, match="does not pad or substitute"):
+        build_subject(raw, events, reject_threshold=None, channels=STD)
 
-    expected_mask = np.array([True, True, False, True, False, True, False, True])
-    assert np.array_equal(s.channel_mask, expected_mask)
-    # 缺失通道的坐标嵌入为 0
-    for idx in (2, 4, 6):
-        assert np.all(s.E_chn[idx] == 0)
+
+def test_build_subject_uses_native_layout_without_padding():
+    present = ["Fz", "Cz", "Pz", "PO7", "Oz"]
+    raw = make_raw(ch_names=present)
+    events = make_events()
+    subject = build_subject(raw, events, reject_threshold=None, channels=None)
+    assert subject.channel_names == tuple(name.upper() for name in present)
+    assert subject.data.shape[1] == len(present)
+    assert subject.channel_mask.all()
 
 
 def test_build_subject_nonstandard_three_channel():
@@ -137,7 +167,10 @@ def test_build_subject_nonstandard_three_channel():
     raw = make_raw(ch_names=["Fz", "Cz", "Pz"])
     events = make_events()
     s = build_subject(
-        raw, events, labels=np.arange(len(events)), standard=("Fz", "Cz", "Pz"),
+        raw,
+        events,
+        labels=np.arange(len(events)),
+        channels=("Fz", "Cz", "Pz"),
         reject_threshold=None,
     )
     assert s.data.shape[1] == 3
@@ -152,14 +185,16 @@ def test_load_dataset(tmp_path):
     raw.save(fpath, overwrite=True)
 
     events = make_events()
-    records = [{
-        "path": str(fpath),
-        "events": events,
-        "labels": np.arange(len(events)),
-        "age": 30.0,
-        "sex": "M",
-        "subject_id": "s1",
-    }]
+    records = [
+        EEGRecord(
+            path=fpath,
+            events=events,
+            labels=np.arange(len(events)),
+            age=30.0,
+            sex="M",
+            subject_id="s1",
+        )
+    ]
 
     subjects = load_dataset(records, preprocess_kwargs={"reject_threshold": None})
     assert len(subjects) == 1

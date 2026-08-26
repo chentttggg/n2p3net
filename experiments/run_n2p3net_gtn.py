@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import time
 from dataclasses import asdict
@@ -22,6 +23,11 @@ import numpy as np
 # Keep the parent CUDA-free until Linux fork workers initialize their own
 # contexts. PyTorch's NVML-based availability check does not poison fork.
 os.environ.setdefault("PYTORCH_NVML_BASED_CUDA_CHECK", "1")
+if __name__ == "__main__" and sys.platform == "win32" and not sys.flags.utf8_mode:
+    env = os.environ.copy()
+    env["PYTHONUTF8"] = "1"
+    completed = subprocess.run([sys.executable, *sys.argv], env=env, check=False)
+    raise SystemExit(completed.returncode)
 import torch
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -32,29 +38,37 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from baselines.evaluate import (  # noqa: E402
-    _cpu_threadpool_limits,
     _fold_threadpool_limits,
     evaluate,
     loso_folds,
 )
-from baselines.evidence_protocol import row_acquisition_indices  # noqa: E402
 from baselines.n2p3net import N2P3NetBaseline  # noqa: E402
 from data.channel import build_channel_identity  # noqa: E402
 from experiments.run_gtn_baseline import (  # noqa: E402
+    GTN_DEFAULT_DEEP_EPOCHS,
     GTN_STANDARD,
     _gtn_cache_filename,
     _load_gtn_cache,
     save_subject_scores,
 )
+from models.component_window import (  # noqa: E402
+    GTN_CHILD_DTAU_BOUNDS,
+    GTN_CHILD_SIGMA_BOUNDS,
+    GTN_CHILD_TAU0_BOUNDS,
+    GTN_CHILD_TAU0_MS,
+)
 from models.erp_calibration import FoldERPCalibrator  # noqa: E402
+from models.heads import Z2_AUX_POOLS  # noqa: E402
 from models.n2p3net import N2P3Net  # noqa: E402
 from models.time_axis import EpochTimeAxis  # noqa: E402
+from train.batch import DEFAULT_TRAINING_BATCH, TrainingBatchConfig  # noqa: E402
 from train.device import get_device  # noqa: E402
 from train.recipe import (  # noqa: E402
     GTN_DIGIT_TASK,
-    NEURAL_RIDE_V11,
-    NEURAL_RIDE_V11_STRICT_PAST_RESEARCH,
+    NEURAL_RIDE_V12,
+    NEURAL_RIDE_V12_STRICT_PAST_RESEARCH,
 )
+from train.trainer import COMPILE_MODES, LR_SCHEDULES  # noqa: E402
 
 
 def _build_gtn_x_and_identity(
@@ -171,7 +185,33 @@ def _outer_prequential_claim_gate(per_fold) -> dict[str, object]:
 
 
 def _recipe_for_innovation_weight(weight: float):
-    return NEURAL_RIDE_V11_STRICT_PAST_RESEARCH if weight > 0.0 else NEURAL_RIDE_V11
+    return NEURAL_RIDE_V12_STRICT_PAST_RESEARCH if weight > 0.0 else NEURAL_RIDE_V12
+
+
+def _recipe_for_research_route(innovation_weight: float, z2_aux_mode: str):
+    """Select the named recipe for orthogonal research branches.
+
+    ``z2_aux_mode`` is one of ``off``, ``add`` or ``replace``. Production
+    keeps both research branches off (E5). Enabling an auxiliary branch
+    always yields an explicitly named research recipe, never the canonical
+    ``neural_ride_v12_pcw_fail_closed`` name.
+    """
+
+    from dataclasses import replace
+
+
+    if z2_aux_mode not in ("off", "add", "replace"):
+        raise ValueError(f"z2_aux_mode must be off/add/replace, got {z2_aux_mode!r}.")
+    base = _recipe_for_innovation_weight(innovation_weight)
+    if z2_aux_mode == "off":
+        return base
+    prefix = "neural_ride_v12_strict_past_z2_aux" if innovation_weight > 0.0 else "neural_ride_v12_z2_aux"
+    return replace(
+        base,
+        name=f"{prefix}_{z2_aux_mode}_research",
+        use_z2_aux_head=True,
+        z2_aux_head_mode=z2_aux_mode,
+    )
 
 
 def _resolve_device(value: str) -> torch.device:
@@ -206,7 +246,7 @@ def main() -> None:
     ap.add_argument(
         "--epochs",
         type=int,
-        default=30,
+        default=GTN_DEFAULT_DEEP_EPOCHS,
         help="epoch 上限；须覆盖 variance warmup/ramp 和至少一个 joint epoch",
     )
     ap.add_argument(
@@ -220,7 +260,7 @@ def main() -> None:
     ap.add_argument(
         "--early-stop-patience",
         type=int,
-        default=NEURAL_RIDE_V11.early_stop_patience,
+        default=NEURAL_RIDE_V12.early_stop_patience,
         help="验证损失连续 N epoch 不改善即停（GLM 协议）",
     )
     ap.add_argument(
@@ -235,7 +275,33 @@ def main() -> None:
         default=4,
         help="untouched inner subjects reserved for ERP and prequential structure gates",
     )
-    ap.add_argument("--batch-size", type=int, default=1024)
+    ap.add_argument(
+        "--batch-size",
+        type=int,
+        default=DEFAULT_TRAINING_BATCH.physical_batch_size,
+        help="physical micro-batch size held by one forward/backward pass",
+    )
+    ap.add_argument(
+        "--effective-batch-size",
+        type=int,
+        default=None,
+        help=(
+            "optimizer batch represented by gradient accumulation; defaults to "
+            f"{DEFAULT_TRAINING_BATCH.effective_batch_size}"
+        ),
+    )
+    ap.add_argument(
+        "--accum-steps",
+        type=int,
+        default=None,
+        help=argparse.SUPPRESS,
+    )
+    ap.add_argument(
+        "--compile-mode",
+        choices=COMPILE_MODES,
+        default="eager",
+        help="PyTorch model compilation mode; eager is the reproducible fallback",
+    )
     ap.add_argument(
         "--fold-jobs",
         type=int,
@@ -248,66 +314,134 @@ def main() -> None:
         default="auto",
         help="fold 并发后端；Linux 自动使用独立多进程，thread 仅作兼容回退",
     )
-    ap.add_argument("--lr", type=float, default=NEURAL_RIDE_V11.lr)
-    ap.add_argument("--lambda2", type=float, default=NEURAL_RIDE_V11.lambda2)
-    ap.add_argument("--lambda3", type=float, default=NEURAL_RIDE_V11.lambda3)
+    ap.add_argument("--lr", type=float, default=NEURAL_RIDE_V12.lr)
+    ap.add_argument(
+        "--lr-schedule",
+        choices=LR_SCHEDULES,
+        default=NEURAL_RIDE_V12.lr_schedule,
+        help="optimizer-step learning-rate schedule",
+    )
+    ap.add_argument(
+        "--lr-warmup-fraction",
+        type=float,
+        default=NEURAL_RIDE_V12.lr_warmup_fraction,
+        help="fraction of planned optimizer steps used for linear warmup",
+    )
+    ap.add_argument(
+        "--min-lr-ratio",
+        type=float,
+        default=NEURAL_RIDE_V12.min_lr_ratio,
+        help="cosine schedule floor as a fraction of base LR",
+    )
+    ap.add_argument("--weight-decay", type=float, default=NEURAL_RIDE_V12.weight_decay)
+    ap.add_argument("--lambda2", type=float, default=NEURAL_RIDE_V12.lambda2)
+    ap.add_argument("--lambda3", type=float, default=NEURAL_RIDE_V12.lambda3)
     ap.add_argument(
         "--lambda-pcw",
         type=float,
-        default=NEURAL_RIDE_V11.lambda_pcw,
+        default=NEURAL_RIDE_V12.lambda_pcw,
         help="Neural-RIDE PCW-only auxiliary BCE weight",
     )
     ap.add_argument(
         "--lambda-digit",
         type=float,
-        default=NEURAL_RIDE_V11.lambda_digit,
+        default=NEURAL_RIDE_V12.lambda_digit,
         help="fixed-K nine-digit set cross-entropy weight",
     )
     ap.add_argument(
         "--lambda-conditional-nll",
         type=float,
-        default=NEURAL_RIDE_V11.lambda_conditional_nll,
+        default=NEURAL_RIDE_V12.lambda_conditional_nll,
         help="causal clean/artifact mixture conditional NLL weight",
     )
     ap.add_argument(
         "--repetition-refit-epochs",
         type=int,
-        default=NEURAL_RIDE_V11.repetition_refit_epochs,
+        default=NEURAL_RIDE_V12.repetition_refit_epochs,
         help="density-head-only epochs after inner-validation temperature calibration",
     )
     ap.add_argument(
+        "--repetition-v12",
+        action=argparse.BooleanOptionalAction,
+        default=NEURAL_RIDE_V12.repetition_v12,
+        help="enable/disable the v12 additive-LLR repetition backbone + fidelity estimator（生产默认 True；legacy 仅历史对照）",
+    )
+    ap.add_argument(
+        "--repetition-state-residual",
+        action="store_true",
+        default=NEURAL_RIDE_V12.repetition_state_residual,
+        help="v12 state residual（默认 gain=0，须经 audit gate 才可非零）",
+    )
+    ap.add_argument(
+        "--repetition-state-residual-l2-weight",
+        type=float,
+        default=NEURAL_RIDE_V12.repetition_state_residual_l2_weight,
+        help="v12 state residual delta^2 shrink weight（blueprint 3.2）",
+    )
+    ap.add_argument(
+        "--measurement-windows",
+        action=argparse.BooleanOptionalAction,
+        default=NEURAL_RIDE_V12.use_measurement_windows,
+        help="enable/disable object L: fold-local latency posterior + gated detached PCW consumer",
+    )
+    ap.add_argument(
+        "--measurement-anchor-ms",
+        type=float,
+        default=NEURAL_RIDE_V12.measurement_anchor_ms,
+    )
+    ap.add_argument(
+        "--measurement-grid-radius-ms",
+        type=float,
+        default=NEURAL_RIDE_V12.measurement_grid_radius_ms,
+    )
+    ap.add_argument(
+        "--measurement-grid-step-ms",
+        type=float,
+        default=NEURAL_RIDE_V12.measurement_grid_step_ms,
+    )
+    ap.add_argument(
+        "--measurement-window-width-ms",
+        type=float,
+        default=NEURAL_RIDE_V12.measurement_window_width_ms,
+    )
+    ap.add_argument(
+        "--measurement-refit-epochs",
+        type=int,
+        default=NEURAL_RIDE_V12.measurement_refit_epochs,
+    )
+    ap.add_argument(
         "--digit-evidence-ks",
-        default=",".join(str(k) for k in NEURAL_RIDE_V11.digit_evidence_ks),
+        default=",".join(str(k) for k in NEURAL_RIDE_V12.digit_evidence_ks),
         help="online acquisition checkpoints for the nested repetition objective",
     )
     ap.add_argument(
         "--digit-evidence-weights",
-        default=",".join(str(weight) for weight in NEURAL_RIDE_V11.digit_evidence_weights),
+        default=",".join(str(weight) for weight in NEURAL_RIDE_V12.digit_evidence_weights),
         help="comma-separated weights aligned with --digit-evidence-ks",
     )
-    ap.add_argument("--lambda-amp", type=float, default=NEURAL_RIDE_V11.lambda_amp)
+    ap.add_argument("--lambda-amp", type=float, default=NEURAL_RIDE_V12.lambda_amp)
     ap.add_argument(
         "--lambda-recon",
         type=float,
-        default=NEURAL_RIDE_V11.lambda_recon,
+        default=NEURAL_RIDE_V12.lambda_recon,
         help="gate-aligned ERP class-contrast reconstruction weight",
     )
     ap.add_argument(
         "--lambda-innovation",
         type=float,
-        default=NEURAL_RIDE_V11.lambda_innovation,
+        default=NEURAL_RIDE_V12.lambda_innovation,
         help="strict-past prequential observation NLL weight",
     )
     ap.add_argument(
         "--innovation-ar-order",
         type=int,
-        default=NEURAL_RIDE_V11.innovation_ar_order,
+        default=NEURAL_RIDE_V12.innovation_ar_order,
         help="fold-local ridge VAR order used as the causal likelihood baseline",
     )
     ap.add_argument(
         "--lambda-morphology-l0",
         type=float,
-        default=NEURAL_RIDE_V11.lambda_morphology_l0,
+        default=NEURAL_RIDE_V12.lambda_morphology_l0,
         help="Hard-Concrete optional morphology atom sparsity weight",
     )
     ap.add_argument(
@@ -325,13 +459,13 @@ def main() -> None:
     ap.add_argument(
         "--recon-bootstrap-samples",
         type=int,
-        default=NEURAL_RIDE_V11.recon_bootstrap_samples,
+        default=NEURAL_RIDE_V12.recon_bootstrap_samples,
         help="class-stratified fold-local ERP target bootstrap replicates",
     )
     ap.add_argument(
         "--recon-split-half-repeats",
         type=int,
-        default=NEURAL_RIDE_V11.recon_split_half_repeats,
+        default=NEURAL_RIDE_V12.recon_split_half_repeats,
         help="fold-local averaged-ERP reliability audit replicates",
     )
     ap.add_argument(
@@ -339,20 +473,42 @@ def main() -> None:
     )
     ap.add_argument("--jit-prob", type=float, default=0.0)
     ap.add_argument("--jit-max-ms", type=float, default=40.0)
-    ap.add_argument("--encoder-depth", type=int, default=NEURAL_RIDE_V11.encoder_depth)
     ap.add_argument(
-        "--encoder-type", default=NEURAL_RIDE_V11.encoder_type, choices=("tcn", "conformer")
+        "--encoder-depth",
+        type=int,
+        default=NEURAL_RIDE_V12.encoder_depth,
+        help="Stage 2 TCN depth；TCN dilation 由该 dep 自动生成，正式默认 4",
+    )
+    ap.add_argument(
+        "--encoder-bn-momentum",
+        type=float,
+        default=NEURAL_RIDE_V12.encoder_bn_momentum,
+        help="TCN BatchNorm EMA momentum calibrated for the physical batch",
+    )
+    ap.add_argument(
+        "--disable-bn-recalibration",
+        action="store_true",
+        help="skip the final optimization-fold BatchNorm running-stat pass",
+    )
+    ap.add_argument(
+        "--encoder-type", default=NEURAL_RIDE_V12.encoder_type, choices=("tcn", "conformer")
     )
     ap.add_argument(
         "--encoder-norm",
-        default=NEURAL_RIDE_V11.encoder_norm,
+        default=NEURAL_RIDE_V12.encoder_norm,
         choices=("ln", "bn"),
         help="TCN block 归一化（GLM 消融轴）。默认 bn：三组实测（12/60 被试，"
         "含/不含再参考）BN 一致优于 LN +0.5~0.9pt AUC；ln=旧默认回退",
     )
     ap.add_argument(
+        "--tcn-pointwise-execution",
+        choices=("conv1d", "linear"),
+        default=NEURAL_RIDE_V12.tcn_pointwise_execution,
+        help="TCN 1x1 mixing API; linear folds B*T and preserves checkpoint layout",
+    )
+    ap.add_argument(
         "--tokenizer-init",
-        default=NEURAL_RIDE_V11.tokenizer_init,
+        default=NEURAL_RIDE_V12.tokenizer_init,
         choices=("random", "bandpass"),
         help="GLM v3：时间卷积初始化。默认 bandpass（2026-08-23 定案）：Gabor 带通，"
         "诊断证据=随机 init 的 FIR 从未学出 ERP 形状（~60Hz 白噪不动），修复后 "
@@ -361,15 +517,20 @@ def main() -> None:
         "k=129 占据 P3b δ-θ 带 [1.5,7]Hz",
     )
     ap.add_argument(
+        "--disable-tokenizer-fusion",
+        action="store_true",
+        help="use the legacy temporal Conv1d plus spatial einsum path for scheduling A/B",
+    )
+    ap.add_argument(
         "--tokenizer-post-norm",
-        default=NEURAL_RIDE_V11.tokenizer_post_norm,
+        default=NEURAL_RIDE_V12.tokenizer_post_norm,
         choices=("none", "bn"),
         help="GLM v3：每尺度时间卷积后 BatchNorm1d（EEG-Inception/ATCNet 标准 "
         "结构；修 4× 尺度幅值失衡 + 提供非线性位点，防多尺度线性塌缩）",
     )
     ap.add_argument(
         "--tokenizer-post-act",
-        default=NEURAL_RIDE_V11.tokenizer_post_act,
+        default=NEURAL_RIDE_V12.tokenizer_post_act,
         choices=("none", "elu", "gelu"),
         help="GLM v3：时间卷积后激活（ELU 保负电位，EEG 文献论点）。默认 none=旧行为",
     )
@@ -383,7 +544,7 @@ def main() -> None:
         "--rereference",
         dest="use_rereference",
         action=argparse.BooleanOptionalAction,
-        default=NEURAL_RIDE_V11.use_rereference,
+        default=NEURAL_RIDE_V12.use_rereference,
         help="GLM v2：门控参考层（gate init=0 → 恒等起步，训练自证开合），"
         "默认开启。60 被实测：开启 hit .9000（全系最高）vs 关闭 .8833，"
         "AUC 0.7536 vs 0.7575（噪声带内等价）；60 被数据量下网络自学到"
@@ -395,9 +556,11 @@ def main() -> None:
     ap.add_argument(
         "--p3b-sigma-hi",
         type=float,
-        default=150.0,
-        help="P3b σ 上界 ms（GLM：儿童 P3b 宽达 300–650ms，旧默认 80 过窄；"
-        "成人数据建议传 80 恢复）",
+        default=GTN_CHILD_SIGMA_BOUNDS[2][1],
+        help=(
+            "P3b σ 上界 ms（GTN 儿童宽 P3b 专用默认 150；成人数据建议显式传 "
+            "PCW_CANONICAL_SIGMA_BOUNDS 的 P3b 上界 80）"
+        ),
     )
     ap.add_argument(
         "--dtau-readout",
@@ -408,11 +571,37 @@ def main() -> None:
     ap.add_argument(
         "--p3b-tau0-ms",
         type=float,
-        default=460.0,
+        default=GTN_CHILD_TAU0_MS[2],
         help="P3b 先验中心（GTN 儿童数据实测峰值 460–490ms，成人仍可用 350）",
     )
-    ap.add_argument("--p3b-tau0-lo", type=float, default=350.0, help="P3b τ0 生理界下界（ms）")
-    ap.add_argument("--p3b-tau0-hi", type=float, default=600.0, help="P3b τ0 生理界上界（ms）")
+    ap.add_argument(
+        "--p3b-tau0-lo",
+        type=float,
+        default=GTN_CHILD_TAU0_BOUNDS[2][0],
+        help="P3b τ0 生理界下界（ms）",
+    )
+    ap.add_argument(
+        "--p3b-tau0-hi",
+        type=float,
+        default=GTN_CHILD_TAU0_BOUNDS[2][1],
+        help="P3b τ0 生理界上界（ms）",
+    )
+    ap.add_argument(
+        "--z2-aux-head",
+        choices=("off", "add", "replace"),
+        default="off",
+        help=(
+            "research-only full-Z2 auxiliary trial head（E5 claim-gate 对照）："
+            "off=生产默认 PCW-only；add=logit_pcw+head_z2(Z2)；"
+            "replace=logit_target=head_z2(Z2)，PCW 仍作为 side readout 由 lambda_pcw 训练"
+        ),
+    )
+    ap.add_argument(
+        "--z2-aux-pool",
+        choices=Z2_AUX_POOLS,
+        default="attention",
+        help="full-Z2 auxiliary head 的时间池化方式（仅 --z2-aux-head != off 时生效）",
+    )
     ap.add_argument(
         "--erp-calibration",
         default="fixed",
@@ -424,8 +613,8 @@ def main() -> None:
         default=None,
         help="独立开发集冻结先验 JSON；须声明 calibration_scope=independent_development",
     )
-    ap.add_argument("--head-dropout", type=float, default=NEURAL_RIDE_V11.head_dropout)
-    ap.add_argument("--encoder-dropout", type=float, default=NEURAL_RIDE_V11.encoder_dropout)
+    ap.add_argument("--head-dropout", type=float, default=NEURAL_RIDE_V12.head_dropout)
+    ap.add_argument("--encoder-dropout", type=float, default=NEURAL_RIDE_V12.encoder_dropout)
     ap.add_argument(
         "--no-spatial-max-norm",
         action="store_true",
@@ -498,10 +687,19 @@ def main() -> None:
         help="Measured seconds for one complete 1-9 repetition; required for bits/min ITR.",
     )
     args = ap.parse_args()
-    if args.batch_size < 1:
-        ap.error("--batch-size must be positive")
+    try:
+        batch_config = TrainingBatchConfig.from_cli(
+            physical_batch_size=args.batch_size,
+            effective_batch_size=args.effective_batch_size,
+            accum_steps=args.accum_steps,
+            default=DEFAULT_TRAINING_BATCH,
+        )
+    except ValueError as exc:
+        ap.error(str(exc))
     if args.fold_jobs < 1:
         ap.error("--fold-jobs must be positive")
+    if args.compile_mode != "eager" and args.fold_jobs != 1:
+        ap.error("compiled runs require --fold-jobs 1 to avoid compiler/cache contention")
     postprocess_cpu_threads = _postprocess_cpu_threads()
     parent_cpu_scheduler = _configure_parent_cpu_scheduler(postprocess_cpu_threads)
     print(
@@ -555,8 +753,11 @@ def main() -> None:
         or len(digit_evidence_ks) != len(digit_evidence_weights)
     ):
         ap.error("digit evidence Ks must be ordered/unique and match their weights")
-    if max(digit_evidence_ks) != 15:
-        ap.error("the locked multi-horizon protocol requires max(digit_evidence_ks)=15")
+    if max(digit_evidence_ks) not in (5, 15):
+        ap.error(
+            "digit_evidence_ks must cover the v12 main development horizon K=5 "
+            "(default 1,3,5) or the locked K=15 protocol (1,3,5,10,15)"
+        )
     if "chain_llr" in args.primary_decision and (
         args.lambda_conditional_nll <= 0.0 or args.repetition_refit_epochs <= 0
     ):
@@ -564,7 +765,7 @@ def main() -> None:
             "a chain_llr primary requires --lambda-conditional-nll > 0 and "
             "--repetition-refit-epochs > 0; use sum/mean/llr for a trial-only ablation"
         )
-    active_recipe = _recipe_for_innovation_weight(args.lambda_innovation)
+    active_recipe = _recipe_for_research_route(args.lambda_innovation, args.z2_aux_head)
     if args.variance_warmup_epochs is None:
         args.variance_warmup_epochs = active_recipe.variance_warmup_epochs
     if args.variance_ramp_epochs is None:
@@ -655,14 +856,44 @@ def main() -> None:
         event_timeline = event_timeline.subset_groups(set(keep_subj.astype(str).tolist()))
 
     X_model, E_chn, channel_mask = _build_gtn_x_and_identity(X3)
+    # GTN uses the native Fz/Cz/Pz layout for every trial: a dense all-true
+    # per-trial channel mask is the explicit contract required by the
+    # capability-based evaluation adapter.
+    trial_channel_mask = np.ones(X_model.shape[:2], dtype=bool)
     print(f"[n2p3net] X={X_model.shape} y={y.shape} subjects={len(np.unique(subject_ids))}")
 
     run_name = args.run_name or datetime.now(UTC).strftime("n2p3net_gtn_%Y%m%d_%H%M%SZ")
     run_dir = Path(args.run_dir) / run_name
     run_dir.mkdir(parents=True, exist_ok=True)
+    progress_path = run_dir / "progress.jsonl"
+    existing_progress: list[dict[str, object]] = []
+    if progress_path.is_file():
+        for raw_line in progress_path.read_text(encoding="utf-8").splitlines():
+            try:
+                row = json.loads(raw_line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(row, dict):
+                existing_progress.append(row)
+    existing_fold_ids = [
+        int(row["fold"])
+        for row in existing_progress
+        if row.get("type") == "fold" and isinstance(row.get("fold"), int)
+    ]
+    existing_fold_count = len(set(existing_fold_ids))
+    display_fold_offset = max(existing_fold_ids, default=-1) + 1
+    batch_index = sum(1 for row in existing_progress if row.get("type") == "manifest")
+    previous_record: dict[str, object] | None = None
+    record_path = run_dir / "record.json"
+    if record_path.is_file():
+        try:
+            loaded_record = json.loads(record_path.read_text(encoding="utf-8"))
+            if isinstance(loaded_record, dict):
+                previous_record = loaded_record
+        except (OSError, json.JSONDecodeError):
+            previous_record = None
     epoch_progress_dir = (run_dir / "epochs").resolve()
     epoch_progress_dir.mkdir(parents=True, exist_ok=True)
-    os.environ["N2P3NET_EPOCH_PROGRESS_DIR"] = str(epoch_progress_dir)
     scores_dir = Path(args.save_scores_dir) if args.save_scores_dir else run_dir / "scores"
     scores_dir.mkdir(parents=True, exist_ok=True)
 
@@ -694,9 +925,18 @@ def main() -> None:
         sfreq=256.0,
         n_time=X_model.shape[2],
         baseline_mode="trial",
-        tau0_ms=(220.0, 300.0, args.p3b_tau0_ms),
-        tau0_bounds=((180.0, 280.0), (250.0, 380.0), (args.p3b_tau0_lo, args.p3b_tau0_hi)),
-        sigma_bounds=((20.0, 50.0), (20.0, 80.0), (20.0, args.p3b_sigma_hi)),
+        tau0_ms=(GTN_CHILD_TAU0_MS[0], GTN_CHILD_TAU0_MS[1], args.p3b_tau0_ms),
+        tau0_bounds=(
+            GTN_CHILD_TAU0_BOUNDS[0],
+            GTN_CHILD_TAU0_BOUNDS[1],
+            (args.p3b_tau0_lo, args.p3b_tau0_hi),
+        ),
+        sigma_bounds=(
+            GTN_CHILD_SIGMA_BOUNDS[0],
+            GTN_CHILD_SIGMA_BOUNDS[1],
+            (GTN_CHILD_SIGMA_BOUNDS[2][0], args.p3b_sigma_hi),
+        ),
+        dtau_bounds=GTN_CHILD_DTAU_BOUNDS,
         overrides={
             "spatial_max_norm": None if args.no_spatial_max_norm else 1.0,
             "encoder_dropout": args.encoder_dropout,
@@ -707,10 +947,23 @@ def main() -> None:
             "encoder_depth": args.encoder_depth,
             "encoder_type": args.encoder_type,
             "encoder_norm": args.encoder_norm,
+            "encoder_bn_momentum": args.encoder_bn_momentum,
             "tokenizer_init": args.tokenizer_init,
             "tokenizer_post_norm": args.tokenizer_post_norm,
             "tokenizer_post_act": args.tokenizer_post_act,
+            "tcn_pointwise_execution": args.tcn_pointwise_execution,
             "use_rereference": args.use_rereference,
+            "repetition_v12": args.repetition_v12,
+            "repetition_state_residual": args.repetition_state_residual,
+            "use_measurement_windows": args.measurement_windows,
+            "measurement_anchor_ms": args.measurement_anchor_ms,
+            "measurement_grid_radius_ms": args.measurement_grid_radius_ms,
+            "measurement_grid_step_ms": args.measurement_grid_step_ms,
+            "measurement_window_width_ms": args.measurement_window_width_ms,
+            "measurement_refit_epochs": args.measurement_refit_epochs,
+            "use_z2_aux_head": args.z2_aux_head != "off",
+            "z2_aux_head_mode": args.z2_aux_head if args.z2_aux_head != "off" else "add",
+            "z2_aux_pool": args.z2_aux_pool,
         },
     )
     erp_prior_record = {
@@ -742,6 +995,10 @@ def main() -> None:
             tau0_ms=tuple(float(v) for v in calib["tau0_ms"]),
             tau0_bounds=tuple(tuple(float(x) for x in b) for b in calib["tau0_bounds"]),
             sigma_bounds=tuple(tuple(float(x) for x in b) for b in calib["sigma_bounds"]),
+            dtau_bounds=tuple(
+                tuple(float(x) for x in b)
+                for b in calib.get("dtau_bounds", GTN_CHILD_DTAU_BOUNDS)
+            ),
         )
         erp_prior_record.update(
             {
@@ -755,7 +1012,15 @@ def main() -> None:
             f"tau0_ms={[round(v) for v in calib['tau0_ms']]}",
             flush=True,
         )
+    erp_prior_record["resolved"] = {
+        "tau0_ms": model_kwargs["tau0_ms"],
+        "tau0_bounds": model_kwargs["tau0_bounds"],
+        "sigma_bounds": model_kwargs["sigma_bounds"],
+        "dtau_bounds": model_kwargs["dtau_bounds"],
+    }
     record["erp_prior"] = erp_prior_record
+    if args.disable_tokenizer_fusion:
+        model_kwargs["tokenizer_temporal_spatial_fusion"] = False
     # Capacity ablations scale both the PCW and independent likelihood paths.
     if args.model_size == "mini":
         model_kwargs.update(
@@ -778,16 +1043,22 @@ def main() -> None:
     trainer_config = active_recipe.trainer_config(
         GTN_DIGIT_TASK,
         epochs=args.epochs,
-        batch_size=args.batch_size,
         seed=args.seed,
+        batch_config=batch_config,
         overrides={
             "lr": args.lr,
+            "lr_schedule": args.lr_schedule,
+            "lr_warmup_fraction": args.lr_warmup_fraction,
+            "min_lr_ratio": args.min_lr_ratio,
+            "weight_decay": args.weight_decay,
             "lambda2": args.lambda2,
             "lambda3": args.lambda3,
             "lambda_pcw": args.lambda_pcw,
             "lambda_digit": args.lambda_digit,
             "lambda_conditional_nll": args.lambda_conditional_nll,
             "repetition_refit_epochs": args.repetition_refit_epochs,
+            "repetition_v12": args.repetition_v12,
+            "repetition_state_residual_l2_weight": args.repetition_state_residual_l2_weight,
             "digit_evidence_ks": digit_evidence_ks,
             "digit_evidence_weights": digit_evidence_weights,
             "lambda_amp": args.lambda_amp,
@@ -800,17 +1071,22 @@ def main() -> None:
             "recon_bootstrap_samples": args.recon_bootstrap_samples,
             "recon_split_half_repeats": args.recon_split_half_repeats,
             "lambda_jit": args.lambda_jit,
+            "compile_mode": args.compile_mode,
             "jit_prob": args.jit_prob,
             "jit_max_ms": args.jit_max_ms,
             "augment": args.augment,
             "early_stop_patience": args.early_stop_patience,
             "epoch_trajectory_audit": args.epoch_trajectory_audit,
+            "recalibrate_batch_norm": not args.disable_bn_recalibration,
         },
     )
     trainer_kwargs = asdict(trainer_config)
     print(
-        f"[perf] GTN batch={args.batch_size} fold_jobs={args.fold_jobs} "
+        f"[perf] GTN physical_batch={batch_config.physical_batch_size} "
+        f"accum_steps={batch_config.accumulation_steps} "
+        f"effective_batch={batch_config.effective_batch_size} fold_jobs={args.fold_jobs} "
         f"fold_backend={fold_backend} "
+        f"compile={args.compile_mode} "
         f"amp={'bf16' if device.type in ('cuda', 'xpu') else 'off'} "
         f"tf32={'on' if device.type == 'cuda' else 'off'}",
         flush=True,
@@ -820,6 +1096,11 @@ def main() -> None:
         FoldERPCalibrator(
             EpochTimeAxis(-200.0, args.epoch_tmax_ms, 256.0, X_model.shape[2]),
             tuple(GTN_STANDARD),
+            sigma_bounds=(
+                GTN_CHILD_SIGMA_BOUNDS[0],
+                GTN_CHILD_SIGMA_BOUNDS[1],
+                (GTN_CHILD_SIGMA_BOUNDS[2][0], args.p3b_sigma_hi),
+            ),
         )
         if args.erp_calibration == "fold"
         else None
@@ -827,6 +1108,7 @@ def main() -> None:
 
     record["model_kwargs"] = model_kwargs
     record["model_parameter_count"] = model_parameter_count
+    record["batch_config"] = batch_config.record()
     record["trainer_kwargs"] = trainer_kwargs
     record["recipe"] = active_recipe.record(GTN_DIGIT_TASK, trainer_config)
     record["environment"] = {
@@ -835,7 +1117,9 @@ def main() -> None:
         "xpu_available": bool(hasattr(torch, "xpu") and torch.xpu.is_available()),
         "device": str(device),
         "performance": {
-            "batch_size": int(args.batch_size),
+            "physical_batch_size": batch_config.physical_batch_size,
+            "effective_batch_size": batch_config.effective_batch_size,
+            "accumulation_steps": batch_config.accumulation_steps,
             "fold_jobs": int(args.fold_jobs),
             "fold_backend": fold_backend,
             "amp_dtype": "bfloat16" if device.type in ("cuda", "xpu") else None,
@@ -851,6 +1135,9 @@ def main() -> None:
             if device.type == "cuda"
             else False,
             "fused_adamw": device.type == "cuda",
+            "compile_mode": args.compile_mode,
+            "tokenizer_temporal_spatial_fusion_requested": not args.disable_tokenizer_fusion,
+            "tcn_pointwise_execution": args.tcn_pointwise_execution,
         },
     }
     adapter = N2P3NetBaseline(
@@ -863,6 +1150,7 @@ def main() -> None:
         erp_calibrator=erp_calibrator,
         device=device,
     )
+    adapter.configure_epoch_progress(epoch_progress_dir)
 
     folds = loso_folds(subject_ids)
     if args.evaluation_mode == "confirmatory":
@@ -881,9 +1169,8 @@ def main() -> None:
         folds = folds[: args.max_folds]
     wall_t0 = time.perf_counter()
 
-    # GLM v3：逐 fold 实时进度（progress.jsonl，供仪表盘消费；见 experiments/dashboard.html）
-    progress_path = run_dir / "progress.jsonl"
-    progress_f = progress_path.open("w", encoding="utf-8")
+    # Append batches when a queue reuses one logical run name.
+    progress_f = progress_path.open("a" if existing_progress else "w", encoding="utf-8")
     completed_folds = 0
 
     def _write_progress(fold_idx: int, fold_result, records) -> None:
@@ -896,10 +1183,13 @@ def main() -> None:
         val_innovation_nlls = list(
             getattr(fold_result, "val_innovation_nlls", ()) or ()
         )
+        task_val_aucs = list(getattr(fold_result, "task_val_aucs", ()) or ())
         line = {
             "type": "fold",
-            "fold": fold_idx,
-            "n_folds_done": completed_folds,
+            "fold": display_fold_offset + fold_idx,
+            "batch_fold": fold_idx,
+            "batch_index": batch_index,
+            "n_folds_done": existing_fold_count + completed_folds,
             "subject": str(records[0][2]) if records else None,
             "hit": hits[0] if hits else None,
             "fold_bacc": float(fold_result.balanced_acc),
@@ -912,6 +1202,10 @@ def main() -> None:
             "val_innovation_nlls": [
                 round(float(v), 6) for v in val_innovation_nlls
             ][-12:],
+            "task_val_aucs": [
+                None if v is None else round(float(v), 6) for v in task_val_aucs
+            ][-12:],
+            "final_task_val_auc": fold_result.final_task_val_auc,
             "best_task_epoch": fold_result.best_task_epoch,
             "best_density_epoch": fold_result.best_density_epoch,
             "best_task_val_loss": fold_result.best_task_val_loss,
@@ -929,7 +1223,11 @@ def main() -> None:
             {
                 "type": "manifest",
                 "run_name": run_name,
-                "total_folds": len(folds),
+                "total_folds": display_fold_offset + len(folds),
+                "batch_total_folds": len(folds),
+                "batch_index": batch_index,
+                "batch_fold_offset": display_fold_offset,
+                "folds_completed_before": existing_fold_count,
                 "n_trials": int(len(X_model)),
                 "model_kwargs": {k: str(v) for k, v in model_kwargs.items()},
                 "model_parameter_count": model_parameter_count,
@@ -985,7 +1283,11 @@ def main() -> None:
         }
         record["finished_utc"] = datetime.now(UTC).isoformat()
         record_path = run_dir / "record.json"
-        record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+        record_tmp_path = run_dir / f".record.json.{os.getpid()}.tmp"
+        record_tmp_path.write_text(
+            json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        record_tmp_path.replace(record_path)
         print(f"[record] {record_path}")
         progress_f.close()
         return
@@ -999,6 +1301,7 @@ def main() -> None:
         true_digits,
         folds,
         n_jobs=args.fold_jobs,
+        fold_id_offset=display_fold_offset,
         primary_decision_metric=args.primary_decision,
         fixed_error_rate=args.fixed_error_rate,
         primary_min_coverage=args.primary_min_coverage,
@@ -1006,6 +1309,7 @@ def main() -> None:
         repetition_duration_s=args.repetition_duration_s,
         flash_budgets=(9, 27, 45, 90, 135),
         event_timeline=event_timeline,
+        trial_channel_mask=trial_channel_mask,
         evaluation_units=(
             tuple(
                 sorted(
@@ -1032,6 +1336,8 @@ def main() -> None:
         json.dumps(
             {
                 "type": "done",
+                "batch_index": batch_index,
+                "total_folds": display_fold_offset + len(folds),
                 "primary_metric_gate": summary.primary_metric_gate,
                 "ts": datetime.now(UTC).isoformat(),
             },
@@ -1041,37 +1347,14 @@ def main() -> None:
     )
     progress_f.close()
 
-    # Process workers keep their fitted adapters in their own address spaces.
-    # Refit only the final fold in the parent so the legacy record/component
-    # artifacts still have a concrete model without changing outer-fold scores.
-    parent_final_fold_refit = not getattr(adapter, "_fitted", False)
+    # Process workers return compact final-fold artifacts with FoldResult, so
+    # post-processing never needs to fit the final fold again in the parent.
+    last_fold = summary.per_fold[-1]
     print(
         f"[finalize] cpu_threads={postprocess_cpu_threads} "
-        "for parent refit and component artifacts",
+        "for post-processing; using final-fold worker artifacts",
         flush=True,
     )
-    if parent_final_fold_refit:
-        final_train_mask, _ = folds[-1]
-        acquisition_indices = row_acquisition_indices(event_timeline)
-        trajectory_setting = adapter.trainer_kwargs.get("epoch_trajectory_audit", False)
-        adapter.trainer_kwargs["epoch_trajectory_audit"] = False
-        try:
-            with _cpu_threadpool_limits(postprocess_cpu_threads):
-                adapter.fit(
-                    X_model[final_train_mask],
-                    y[final_train_mask],
-                    subject_ids=subject_ids[final_train_mask],
-                    group_ids=subject_ids[final_train_mask],
-                    digits=digits[final_train_mask],
-                    acquisition_indices=acquisition_indices[final_train_mask],
-                )
-        finally:
-            adapter.trainer_kwargs["epoch_trajectory_audit"] = trajectory_setting
-        print(
-            "[finalize] parent refit completed for final-fold component artifacts "
-            "(outer-fold metrics are unchanged)",
-            flush=True,
-        )
     wall_seconds = time.perf_counter() - wall_t0
     primary_metric = summary.decision_metrics[args.primary_decision]
     print(
@@ -1166,6 +1449,9 @@ def main() -> None:
         },
         "per_fold": [
             {
+                "fold": display_fold_offset + batch_fold_idx,
+                "batch_fold": batch_fold_idx,
+                "batch_index": batch_index,
                 "hit_rate": f.hit_rate,
                 "balanced_acc": f.balanced_acc,
                 "auc": None if f.auc != f.auc else f.auc,
@@ -1181,11 +1467,12 @@ def main() -> None:
                 "best_density_nll": f.best_density_nll,
                 "task_patience_exhausted": f.task_patience_exhausted,
                 "val_innovation_nlls": f.val_innovation_nlls,
+                "task_val_aucs": f.task_val_aucs,
                 "val_objective_losses": f.val_objective_losses,
                 "epoch_trajectory_audit": f.epoch_trajectory_audit,
                 "neural_ride_audit": f.audit,
             }
-            for f in summary.per_fold
+            for batch_fold_idx, f in enumerate(summary.per_fold)
         ],
         "scores_path": str(scores_path),
         "prequential_claim_gate": prequential_claim_gate,
@@ -1202,21 +1489,67 @@ def main() -> None:
             for fold in summary.per_fold
             if fold.fit_peak_memory_mb is not None
         ],
-        "parent_final_fold_refit_sec": (
-            adapter.fit_durations[-1] if parent_final_fold_refit else None
-        ),
+        "parent_final_fold_refit_sec": None,
+        "component_artifact_source": "fold_worker_summary",
     }
-    record["training_history_last_fold"] = adapter.last_history
+    previous_results = (previous_record or {}).get("results", {})
+    previous_per_fold = (
+        previous_results.get("per_fold", [])
+        if isinstance(previous_results, dict)
+        else []
+    )
+    current_per_fold = record["results"]["per_fold"]
+    if isinstance(previous_per_fold, list) and previous_per_fold:
+        combined_per_fold = [*previous_per_fold, *current_per_fold]
+        record["results"]["per_fold"] = combined_per_fold
+        for field_name in (
+            "hit_rate",
+            "balanced_acc",
+            "transductive_balanced_acc",
+            "auc",
+        ):
+            values = np.asarray(
+                [row.get(field_name) for row in combined_per_fold], dtype=float
+            )
+            finite = values[np.isfinite(values)]
+            mean_name = {
+                "hit_rate": "hit_rate_mean",
+                "balanced_acc": "balanced_acc_mean",
+                "transductive_balanced_acc": "transductive_balanced_acc_mean",
+                "auc": "auc_mean",
+            }[field_name]
+            record["results"][mean_name] = (
+                float(finite.mean()) if len(finite) else None
+            )
+            if field_name == "hit_rate":
+                record["results"]["hit_rate_std"] = (
+                    float(finite.std()) if len(finite) else None
+                )
+        previous_timing = (
+            (previous_record or {}).get("timing", {})
+            if isinstance(previous_record, dict)
+            else {}
+        )
+        if isinstance(previous_timing, dict):
+            for field_name in ("fit_durations_sec", "fit_peak_memory_mb"):
+                prior_values = previous_timing.get(field_name, [])
+                current_values = record["timing"].get(field_name, [])
+                if isinstance(prior_values, list) and isinstance(current_values, list):
+                    record["timing"][field_name] = [*prior_values, *current_values]
+        record["batch_index"] = batch_index
+        record["batches_accumulated"] = batch_index + 1
+    record["training_history_last_fold"] = last_fold.training_history
     # GLM：记录早停协议是否生效（最后 fold 的验证被试数与 val 曲线长度）。
     record["protocol"] = {
         "val_subject_frac": val_subject_frac,
         "early_stop_patience": args.early_stop_patience,
-        "last_fold_val_subjects": adapter.last_val_subjects,
-        "last_fold_n_val_epochs": len(adapter.last_history.get("val_losses", []))
-        if adapter.last_history
+        "last_fold_val_subjects": last_fold.val_subjects,
+        "last_fold_audit_subjects": last_fold.audit_subjects,
+        "last_fold_n_val_epochs": len(last_fold.training_history.get("val_losses", []))
+        if last_fold.training_history
         else None,
         "erp_calibration": args.erp_calibration,
-        "last_fold_erp_calibration": adapter.last_erp_calibration,
+        "last_fold_erp_calibration": last_fold.erp_calibration,
         "epoch_trajectory_audit": {
             "enabled": bool(args.epoch_trajectory_audit),
             "scope": "development_only",
@@ -1227,48 +1560,18 @@ def main() -> None:
         },
     }
 
-    # 最后 fold 的成分记录：τ/σ 与 target/non-target P3b τ 分布。
-    last_train_mask, last_test_mask = folds[-1]
-    with _cpu_threadpool_limits(postprocess_cpu_threads):
-        logits_last, tau_last, sigma_last = adapter.predict_full(X_model[last_test_mask])
-        branch_logits = adapter.predict_branches(X_model[last_test_mask])
-    y_last = y[last_test_mask]
-    components = {
-        "tau0_bounded_ms": [
-            float(v) for v in adapter.model_.component_window.tau0_bounded.detach().cpu().tolist()
-        ],
-        "sigma_ms": sigma_last.tolist(),
-        "n_test_trials": int(len(y_last)),
-        "target_n": int((y_last == 1).sum()),
-        "nontarget_n": int((y_last == 0).sum()),
-        "tau_target_mean_ms": [float(v) for v in tau_last[y_last == 1].mean(axis=0).tolist()],
-        "tau_target_std_ms": [float(v) for v in tau_last[y_last == 1].std(axis=0).tolist()],
-        "tau_nontarget_mean_ms": [float(v) for v in tau_last[y_last == 0].mean(axis=0).tolist()],
-        "tau_nontarget_std_ms": [float(v) for v in tau_last[y_last == 0].std(axis=0).tolist()],
-        "branch_audit": {
-            "final_mean": float(np.mean(branch_logits["final"])),
-            "final_std": float(np.std(branch_logits["final"])),
-            "pcw_mean": float(np.mean(branch_logits["pcw"])),
-            "pcw_std": float(np.std(branch_logits["pcw"])),
-            "prequential_llr_mean": float(np.mean(branch_logits["prequential_llr"])),
-            "prequential_llr_std": float(np.std(branch_logits["prequential_llr"])),
-            "prequential_coefficient": branch_logits["prequential_coefficient"],
-            "fusion_identity_max_abs_error": float(
-                np.max(
-                    np.abs(
-                        branch_logits["final"]
-                        - branch_logits["pcw"]
-                        - branch_logits["prequential_contribution"]
-                    )
-                )
-            ),
-        },
-    }
-    record["components_last_fold"] = components
+    record["components_last_fold"] = last_fold.component_summary
     record["finished_utc"] = datetime.now(UTC).isoformat()
 
     record_path = run_dir / "record.json"
-    record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+    # The queue uses record.json as its completion barrier. Publish only after
+    # the complete cumulative record has been written, so the next batch can
+    # never observe a truncated file and discard the previous batch.
+    record_tmp_path = run_dir / f".record.json.{os.getpid()}.tmp"
+    record_tmp_path.write_text(
+        json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    record_tmp_path.replace(record_path)
     print(f"[record] {record_path}")
 
 

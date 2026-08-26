@@ -1,0 +1,7 @@
+# Runtime dependencies for the cached GTN strict-past training path.
+# Install CUDA-enabled Torch separately in setup_cloud.sh.
+numpy>=2.0
+scipy>=1.14
+mne>=1.8
+scikit-learn>=1.5
+threadpoolctl>=3.5

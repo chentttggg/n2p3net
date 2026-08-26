@@ -1,0 +1,521 @@
+================================================================================
+Oddball 范式下基于 P300 的认知判定：EEG 干电极数采与神经网络模型综述
+暨面向 8 电极（Fz/Cz/P3/Pz/P4/PO7/PO8/Oz）小样本、非统一格式场景的 SOTA 架构方案
+================================================================================
+撰写日期：2026-08-20
+性质：深度科研综述 + 架构设计提案（不涉及代码实现）
+关键词：P300 / oddball / ERP / 干电极 / 神经网络 / 时域分析 / N200 辅助判据 / 跨域小样本 / 成分分解
+
+--------------------------------------------------------------------------------
+0. 摘要与任务定位
+--------------------------------------------------------------------------------
+本报告服务于"猜数字（Guess the Number, GTN）"类 oddball 范式的认知判定实验：被试在 1–9 中
+心选一个数字作为目标刺激，随后数字随机闪现（本领域标准配置 ISI≈1.5 s），要求系统在单试次
+（single-trial）层面判定"目标/非目标"，从而推断被试所注意/识别的数字。该范式与 Moucek 等
+（Scientific Data 2017，GTN 数据集，250 名 7–17 岁学龄儿童，Fz/Cz/Pz 三导）同源，本项目的
+8 电极蒙太奇（Fz、Cz、P3、Pz、P4、PO7、PO8、Oz）是其面向"P300 + 视觉 N200"双成分判定的扩展。
+
+三个硬约束决定了本报告的结论取向：
+  (1) 数据量不大——最多数千份 EEG 试次（≈数十被试 × 数百试次），远低于深度学习"大样本"门槛；
+  (2) 格式不统一——不同设备/采样率/参考电极/通道子集/被试年龄跨度的跨数据集迁移是常态；
+  (3) 时域为主——信息主要蕴含在 N200/P300 的潜伏期、幅值、地形（topography）与时序关系上，
+      而非频带功率。
+
+在上述约束下，本报告给出三部分内容：
+  第一部分——干电极数采文献综述（≥20 篇）；
+  第二部分——P300/ERP 神经网络模型文献综述（≥20 篇）；
+  第三部分——oddball 范式、N200 辅助判据与统计方法；
+  第四部分——架构决策日志（三思与推翻记录）；
+  第五部分——SOTA 架构方案 N2P3-Net（成分感知、格式无关、跨域适配的时域 ERP 网络）；
+  第六部分——训练/评估协议、消融与风险；
+  末尾附完整参考文献。
+
+核心结论（先给答案）：面对"数千试次 + 8 电极 + 非统一格式 + 时域"的组合，既不应上重型
+Transformer 基础模型（LaBraM/BENDR 预训练于 128 导/200 Hz 临床数据，与本蒙太奇不匹配，且会过
+拟合），也不应退回单任务浅层 CNN（EEGNet 强但容量有限、跨数据集退化）。最优解是"小而聪明"的
+结构：用"ERP 成分查询（component query）"这一生理先验替代黑盒自注意力，用"坐标式通道适配器"
+化解格式不统一，用"多任务头（分类 + N200 辅助 + 潜伏期/幅值回归）"在时域榨取可解释信号，并
+用"掩码 ERP 自监督预训练 + 分裂归一化/MMD 跨域对齐"应对小样本与跨数据集迁移。
+
+--------------------------------------------------------------------------------
+1. 第一部分：EEG 干电极数采文献综述
+--------------------------------------------------------------------------------
+干电极（dry electrode）的核心矛盾是：省去导电膏与皮肤准备（快速、舒适、可穿戴、免维护），但
+代价是更高的电极-皮肤阻抗（kΩ~MΩ 量级 vs 湿电极 <10 kΩ）、更强的低频漂移（δ/θ 频段功率升高）
+与运动伪迹，进而拉低信噪比（SNR）。对 P300 这类幅值仅 2–10 μV 的时域成分而言，SNR 是决定性的，
+因此"干电极能否可靠诱发并检出 P300/N200"是本研究的第一道关口。
+
+1.1 奠基性方法学与综述（按被引/时间优先）
+  [1] Chi YM, Jung TP, Cauwenberghs G (2010). Dry-contact and noncontact biopotential electrodes:
+      methodological review. IEEE Rev Biomed Eng 3:106–119.
+      ——干/非接触电极的电学模型奠基之作：证明"一味降低电极阻抗并非必要，噪声受耦合电容影响"；
+      厘清干电极/绝缘/非接触三类，是该领域被引最多的方法学文献。
+  [2] Lopez-Gordo MA, Sanchez-Morillo D, Valle FP (2014). Dry EEG electrodes. Sensors 14(7):12847–12870.
+      ——干 EEG 电极的权威综述，系统分类（接触式/非接触电容式/微针/导电聚合物/泡沫）。
+  [3] Im C, Seo JM (2016). A review of electrodes for the electrical brain signal recording.
+      Biomed Eng Lett 6(3):104–112.
+  [4] Xu J, Mitra S, Van Hoof C, Yazicioglu RF, Makinwa KAA (2017). Active electrodes for wearable
+      EEG acquisition: review and electronics design methodology. IEEE Rev Biomed Eng 10:187–198.
+      ——有源（active）电极与前端电子学设计方法论，是便携干电极系统的电路基础。
+  [5] Searle A, Kirkup L (2000). A direct comparison of wet, dry and insulating bioelectric
+      recording electrodes. Physiol Meas 21(2):271–283.
+      ——湿/干/绝缘电极的经典直接对比，确立了干电极"可行但噪声更高"的基线结论。
+
+1.2 干电极与 P300 的直接验证（本研究最关键的一组）
+  [6] Guger C, Krausz G, Allison BZ, Edlinger G (2012). Comparison of dry and gel based electrodes
+      for P300 brain-computer interfaces. Front Neurosci 6:60.
+      ——首个干电极 P300 拼写器的现场验证：g.SAHARA 干电极与凝胶电极在 P300 speller 上分类准确率
+      无显著差异（23 名被试 vs 历史 81 人凝胶数据）。P300 在 Cz 处峰值 ~6 μV @ ~240 ms，干湿波形
+      高度一致（相关 >0.99）。结论：干电极 P300 认知判定"可行且不牺牲精度"。
+  [7] Zander TO, et al. (2011)。——oddball 范式下干湿电极 P300 峰值幅值无显著差异（经 [10] 转述）。
+  [8] Mathewson KE, Harrison TJL, Kizuk SAD (2017). High and dry? Comparing active dry EEG
+      electrodes to active and passive wet electrodes. Psychophysiology 54(1):74–82.
+      ——听觉 oddball：主动干电极单试次噪声更高（宽带功率抬升），但 P3 波形、频谱 1/f 特征与
+      地形均与湿电极一致，说明"噪声升高但不失真"，对后续模型意味着需要更强的去噪/鲁棒设计。
+  [9] Clements JM, Sellers EW, Ryan DB, et al. (2016). Applying dynamic data collection to improve
+      dry electrode system performance for a P300-based BCI. J Neural Eng 13(6):066018.
+      ——关键的反面证据：干电极 P300 speller 在线精度显著低于湿电极（16 名健康人 + ALS/PLS 患者），
+      且干电极记录的 δ/θ 频段功率持续偏高（瞬态/漂移伪迹）。动态停止（dynamic stopping）能部分
+      弥补但无法完全抵消。这是"干电极 SNR 劣势"最严谨的量化之一，直接指导本报告的降噪设计。
+
+1.3 半干（semi-dry）电极：干电极 SNR 与湿电极便捷的折中
+  [10] Li G, Zhang D, Wang S, Duan Y (2016). Novel passive ceramic based semi-dry electrodes for
+       recording EEG signals from the hairy scalp. Sens Actuators B Chem 237:167–178.
+      ——多孔陶瓷半干电极：毛细作用持续释放微量盐水，阻抗低且稳（44.4±16.9 kΩ，8 h 内仅升 20 kΩ）	，
+      与湿电极时域相关 0.938/0.937（睁闭眼/SSVEP）。
+  [11] Wang F, Li G, Chen J, Duan Y, Zhang D (2016). Novel semi-dry electrodes for brain-computer
+       interface applications. J Neural Eng 13(4):046021.
+      ——半干电极在五大 BCI 范式（含 P300 speller、N200 speller）上验证：时域相关 0.95±0.07，
+      >10 Hz 相干 >0.90，分类精度与湿电极相当。→ 半干电极是"P300/N200 双成分判定"的理想采集端。
+  [12] Lin CT, Liao LD, Liu YH, et al. (2011). Novel dry polymer foam electrodes for long-term EEG
+       measurement. IEEE Trans Biomed Eng 58(5):1200–1207. ——导电聚合物泡沫电极（长时间穿戴）。
+  [13] Ruffini G, Dunne S, Fuentemilla L, et al. (2008). First human trials of a dry
+       electrophysiology sensor using a carbon nanotube array interface. Sens Actuators A 144:275–279.
+      ——碳纳米管阵列干电极首次人体试验（纳米材料路线）。
+  [14] Griss P, et al. (2002). Micromachined spiked biopotential electrodes. IEEE Trans Biomed Eng
+      49(6):597–604. ——微针阵列（MEMS 微创路线，穿透角质层降阻抗，但存在感染/断裂风险）。
+  [15] Fiedler P, et al. (2015). ——多针（multipin）干电极（带发区穿透，兼容标准放大器）。
+
+1.4 移动/可穿戴/耳周干电极系统（生态效度与真实场景 P300）
+  [16] Debener S, Minow F, Emkes R, et al. (2012). How about taking a low-cost, small, and wireless
+       EEG for a walk? Psychophysiology 49(11):1617–1621.
+      ——14 导无线移动 EEG；听觉 oddball P300 单试次可分类（69%，54–88%）。
+  [17] De Vos M, Gandras K, Debener S (2014). Towards a truly mobile auditory BCI: exploring the
+       P300 to take away. Int J Psychophysiol 91(1):46–53.
+      ——户外行走中 P300 单试次分类：坐姿 71% / 行走 64%（SWLDA），证明干电极可耐受真实动作。
+  [18] Debener S, Emkes R, De Vos M, Bleichner M (2015). Unobtrusive ambulatory EEG using a
+       smartphone and flexible printed electrodes around the ear. Sci Rep 5:16743.
+      ——cEEGrid（耳周柔性印刷电极）：oddball P300 上午/下午重测信度 r≥0.74，分类 >70%，可戴数小时。
+  [19] Looney D, Kidmose P, et al. (2012). In-the-ear recording concept. IEEE Pulse.
+      ——ear-EEG 概念（入耳式），P300 可在耳内检出，是最不显眼的采集形态。
+  [20] Radüntz T (2018). Signal quality evaluation of emerging EEG devices. Front Physiol 9:98.
+      ——多款商用干/半干 EEG 设备的信号质量系统评估（客观指标：SNR、漂移、伪迹率）。
+  [21] Hairston WD, Whitaker KW, Ries AJ, et al. (2014). Usability of four commercially-oriented
+       EEG systems. J Neural Eng 11(4):046018. ——四款商用 EEG 系统的可用性与数据质量横评。
+  [22] Gao KP, et al. (2019). A novel dry-contact electrode for measuring EEG signals. Sens
+       Actuators A Phys. ——铂纳米多孔涂层干电极：P300 干湿 RMSD<1 μV、相关 >0.99。
+  [23] Recent Advances in Portable Dry Electrode EEG: Architecture and Applications in BCI.
+       Sensors 25(16):5215 (2025). ——2025 年最新综述，覆盖非接触电容式（CNT/PDMS）、微针、
+       柔性基底-刚性微针复合结构等最新工艺，明确指出"非接触电极 SNR 仍低于接触/微针"。
+
+1.5 干电极文献小结（对架构设计的直接含义）
+  (a) 干电极 P300"可用"但"更脏"：波形与地形不失真（[6][8]），但单试次噪声、δ/θ 漂移、运动伪迹
+      更高（[8][9][20]），SNR 劣势在线任务中被放大（[9]）。
+  (b) 半干电极是当前"便捷度/SNR"最优折中（[10][11]），本项目若可自选电极，优先半干/镀 Ag-AgCl
+      干电极而非纯电容式。
+  (c) 参考与接地方式敏感：GTN 用鼻梁参考+耳接地（见用户同源 PDF），跨数据集参考差异（鼻梁/乳突/
+      平均/Cz）会系统性改变 P300 地形，这是"格式不统一"的关键来源之一，必须在模型输入层显式对齐。
+  (d) 年龄跨度大（7–17 岁）带来更大的被试内/间变异与更高的 δ/θ 漂移（儿童头皮阻抗高），进一步
+      放大了小样本、低 SNR 的难度——模型必须强正则 + 强先验。
+
+--------------------------------------------------------------------------------
+2. 第二部分：P300/ERP 神经网络模型文献综述
+--------------------------------------------------------------------------------
+2.1 经典基线（线性/几何，作为"必须打败"的对照）
+  [R1] Farwell LA, Donchin E (1988). Talking off the top of your head. Electroencephalogr Clin
+       Neurophysiol 70(6):510–523. ——P300 speller 与 SWLDA 基线源头。
+  [R2] Krusienski DJ, Sellers EW, Cabestaing F, et al. (2006). A comparison of classification
+       techniques for the P300 speller. J Neural Eng 3(4):299–305.
+      ——Pearson 相关/LDA/SWLDA/线性与核 SVM 对比：LDA、SWLDA 最优 → 线性分类器在 P300 上极强，
+      是深度模型必须正视的"高基线"。
+  [R3] Rivet B, Souloumiac A, Attina V, Gibert G (2009). xDAWN algorithm to enhance evoked
+       potentials. IEEE Trans Biomed Eng 56(8):2035–2043. ——空间滤波器，提升诱发响应 SNR，P300 标配。
+  [R4] Blankertz B, Lemm S, Treder M, Haufe S, Müller KR (2011). Single-trial analysis and
+       classification of ERP components—a tutorial. Neuroimage 56(2):814–825. ——正则 LDA 单试次教程。
+  [R5] Lotte F, Congedo M, Lécuyer A, et al. (2007). A review of classification algorithms for
+       EEG-based BCIs. J Neural Eng 4(2):R1–R13（及 Lotte 2018 续评）。
+
+2.2 卷积神经网络时代（端到端时空特征）
+  [R6] Cecotti H, Graser A (2011). Convolutional neural networks for P300 detection with
+       application to BCIs. IEEE Trans Pattern Anal Mach Intell 33(3):433–445.
+      ——首个用于 P300 的 CNN，时间卷积+空间卷积的分层结构，确立"时空分解"范式。
+  [R7] Schirrmeister RT, Springenberg JT, et al. (2017). Deep learning with convolutional neural
+       networks for EEG decoding and visualization. Hum Brain Mapp 38(11):5391–5420.
+      ——DeepConvNet / ShallowConvNet，端到端+可视化；ShallowConvNet 以"时间→空间卷积+平方+对数"
+      模拟 FBCSP 带通功率，是重要的可解释小样本基线。
+  [R8] Lawhern VJ, Solon AJ, Waytowich NR, et al. (2018). EEGNet: a compact CNN for EEG-based
+       BCIs. J Neural Eng 15(5):056013.
+      ——深度可分离卷积：以 <2000 参数的极轻结构在 P300/ERN/MRCP/SMR 上持平或超过传统方法
+      （P300 上 EEGNet 89.5% vs xDAWN+SWLDA 88%）。是小样本 EEG 的"默认骨干"，也是本报告的对照上限。
+  [R9] Manor R, Geva AB (2015). CNN-R（含时空正则的 CNN，P300/RSVP）。
+  [R10] Waytowich NR, Lawhern VJ, et al. (2018). Compact CNN（异步 SSVEP/紧凑结构）。
+  [R11] Santamaría-Vázquez E, et al. (2020). EEG-Inception: a novel deep CNN for assistive
+       ERP-based BCIs. IEEE Trans Neural Syst Rehabil Eng 28(12):2773–2782.
+      ——Inception 多尺度核 + 并行支路，专为 ERP 设计；在跨被试场景显著优于 SWLDA（关键结论：
+      多尺度时间核适合不同潜伏期的 ERP 成分）。
+  [R12] Borra D, Fantozzi S, Magosso E (2019/2022). CNN for P300 BCI（ASD 社交注意；贝叶斯优化+
+      可解释 CNN 解码 P300）。
+
+2.3 "深度并非免费"的关键警示（对本项目最重要的一组反证）
+  [R13] Värbu K, Muhammad N, Muhammad Y (2019). Evaluation of convolutional neural networks using
+       a large multi-subject P300 dataset. Biomed Signal Process Control（GTN 数据集上的 CNN 评估）。
+      ——在 GTN（250 名学龄儿童、Fz/Cz/Pz）上：单试次分类 CNN≈LDA≈SVM≈62–64%，平均后 76–79%，
+      CNN 并未显著优于基线。→ "更大更深≠更好"，尤其在儿童、嘈杂环境、少通道、低 SNR 时。
+  [R14] "A few filters are enough: CNN for P300 detection"（arXiv:1909.06970）。
+      ——单卷积层 OCLNN、SepConv1D 即可接近复杂 CNN：P300 判别信息高度集中在少数时空滤波器上。
+  （两条 [R13][R14] 共同构成"奥卡姆剃刀"约束：本项目的 SOTA 必须证明复杂度带来的收益来自
+    "跨格式泛化/多成分/可解释"，而非单数据集精度，否则复杂度无意义。）
+
+2.4 Transformer / 注意力 / 图网络时代
+  [R15] Kostas D, Aroca-Ouellette S, Rudzicz F (2021). BENDR. Front Hum Neurosci 15:653659.
+      ——对比自监督 + Transformer，EEG 基础模型的开端（但预训练于大通道临床语料）。
+  [R16] Song Y, Zheng Q, Liu B, Gao X (2023). EEG Conformer: convolutional transformer for EEG
+       decoding and visualization. IEEE Trans Neural Syst Rehabil Eng 31:710–719.
+      ——卷积+自注意力的紧凑混合（低通道也有效），是跨数据集 ERP 迁移（AS-MMD）的推荐骨干。
+  [R17] Altaheri H, Muhammad G, Alsulaiman M (2023). ATCNet（物理启发的注意力时序卷积网络）。
+      ——CNN 块 + 多头自注意力 + TCN 块的并行编码器，滑窗增强；给出可插拔的 SE/CBAM/MHA 注意力。
+  [R18] Ding Y, et al. (2023). Transformer-based EEG decoding: a survey. ——Transformer 在 EEG 的
+      系统综述（CNN-Transformer/GNN-Transformer/定制 Encoder/Pyramid 等谱系），指出数据稀缺与
+      泛化是 Transformer 路线的两大软肋。
+
+2.5 自监督 / 基础模型（大模型路线，需谨慎迁移）
+  [R19] Jiang W, Zhao L, Lu BL (2024). LaBraM: Large brain model. ICLR 2024 Spotlight.
+      ——2,500 h、约 20 数据集、神经码本（VQ 频谱预测）+ 掩码重建；但输入为 200 Hz/最多 128 导、
+      标准 10-20 通道名匹配，未匹配通道直接丢弃——与本项目 8 导、多参考、非标准蒙太奇存在显著
+      域差，且 2500 h 预训练对"数千试次"下游过重。
+  [R20] Yang C, Westover MB, Sun J (2024). BIOT: cross-data biosignal learning. ICLR 2024.
+      ——跨数据/跨通道数/跨长度的统一 token 化（linear attention），"格式不统一"的通用解法灵感。
+  [R21] Wang J, et al. (2024). CBraMod: criss-cross brain foundation model.（时/空分离注意力）
+  [R22] Mohammadi Foumani N, et al. (2024). EEG2Rep（上下文掩码重建）。
+  [R23] Wu H, et al. (2024). Neuro-BERT（掩码预测幅值/相位）。
+  [R24] Zhu H, et al. (2023). EEG2Vec（对比+掩码）。
+  [R25] BrainOmni (2025). arXiv:2505.18185. ——EEG/MEG 统一基础模型：用"传感器真实物理属性
+      （坐标/朝向/类型）替代通道命名"，实现跨设备/跨模态零样本泛化——本报告"坐标式通道适配器"
+      的直接理论支撑。
+
+2.6 跨被试/跨数据集迁移与小样本（与本项目约束最贴合的一组）
+  [R26] Li S, Daly I, Guan C, Cichocki A, Jin J (2024). Inter-participant transfer learning with
+       attention-based domain adversarial training for P300. Neural Netw 180:106655.（OADANN）
+      ——单源域对抗迁移 + 通道注意力重标定，优于 EEGNet/DeepCovNet 及 ERM/Mixup/GroupDRO。
+  [R27] He W, Zhou Y, Pan J (2025). MSCNN-ADDA：多尺度 CNN + 对抗判别域适配的跨被试 P300（>83%）。
+  [R28] Chen W, Delorme A (2025). Adaptive Split-MMD training for small-sample cross-dataset P300
+       EEG classification. arXiv:2510.21969.
+      ——与本研究约束几乎完全重合：两公开视觉 oddball 数据集、5 共享电极（Fz/Pz/P3/P4/Oz）、
+      严格小样本（目标域 10 试次/被试）、EEG Conformer 骨干；提出"目标加权损失 + Split-BN +
+      logit 级 RBF-MMD"的骨干无关配方，无新增可训练模块即获稳定跨域增益。
+      → 本报告"分裂归一化 + 特征级 MMD 对齐"直接借鉴此工作。
+  [R29] Mussabayeva A, et al. (2021). 跨被试集成（LDA/SVM/kNN/CNN 投票）在患者上 >90%。
+  [R30] Maddula RK, et al. (2017). DRCNN（跨被试 P300 时空特征）。
+  [R31] Mijani A, et al. (2020). 预训练 CNN + 迁移学习跨被试 P300。
+
+2.7 数据增强（小样本的工程支柱）
+  [R32] Data Augmentation for DNNs in EEG classification: a review. Front Hum Neurosci (2021) 15:765525.
+  [R33] Li R, et al. (2022). Sample-based DA based on EEG intrinsic characteristics. IEEE J Biomed
+       Health Inform 26(10):4996–5007.
+      ——性能度量时间扭曲（PMB-TW）、频域加噪（FreqNoise）、频域掩码（FreqMasking），参数无关、
+      单样本可用，对 P300 时域扭曲鲁棒性尤其关键。
+
+2.8 模型文献小结（关键判断）
+  (a) 线性基线极高：SWLDA/LDA/xDAWN+RG 在单数据集、被试内场景几乎不可被深度模型超越（[R2][R13][R14]）。
+  (b) 深度模型的真实价值在"跨被试/跨数据集泛化"与"多成分/可解释"而非"单点精度"（[R11][R26][R28]）。
+  (c) 紧凑注意力混合（EEG Conformer、ATCNet）在低通道/小样本下优于纯 Transformer（[R16][R17][R18]）。
+  (d) 大基础模型（LaBraM 等）与本项目 8 导/多参考/非标准蒙太奇存在域差，迁移需坐标式通道对齐 +
+      轻量微调，而非直接冻结骨干（[R19][R25]）。
+  (e) 小样本跨域有成熟、廉价、骨干无关的配方（Split-BN + MMD + 目标加权，[R28]），应作为默认组件。
+
+--------------------------------------------------------------------------------
+3. 第三部分：oddball 范式、N200 辅助判据与统计方法
+--------------------------------------------------------------------------------
+3.1 P300 的构成与本研究相关的地形
+  [S1] Sutton S, et al. (1965). Science 150:1187–1188. ——P300 的发现（刺激不确定性）。
+  [S2] Polich J (2007). Updating P300: an integrative theory of P3a and P3b. Clin Neurophysiol
+       118(10):2128–2148. ——P3a（额中央、新异性、250–280 ms）/ P3b（顶区、任务相关、250–500 ms）。
+  [S3] Verleger R (2020). ——P3b 与"刺激-反应联结/情景更新"理论。
+  含义：8 电极蒙太奇中 Fz/Cz 对应 P3a+N2，P3/Pz/P4 对应 P3b，PO7/PO8/Oz 对应视觉 N1/N2/VEP。
+      即本项目有意同时捕获"额中央新异加工 + 顶区目标更新 + 枕区视觉注意"三条通路。
+
+3.2 N200/非 P300 成分作为辅助判据（本报告允许引入 N200 的依据）
+  [S4] Frenzel S, Neubert E (2010). Is the P300 speller independent? arXiv:1006.3688.
+      ——明确记录：后部电极（顶/枕）提供"不来自 P300"的判别信息，即视觉 N200（~200 ms、后部），
+      与注视目标相关；指出 P300 拼写器的独立性问题。→ 枕区 N200 是合法且互补的判据。
+  [S5] Hong B, Guo F, Liu T, Gao X, Gao S (2009). N200-speller using motion-onset visual response.
+      Clin Neurophysiol 120(9):1658–1666. ——以 N200 为主成分的拼写器，验证 N200 可独立支撑 BCI。
+  [S6] Kaufmann T, Schulz SM, Grünzinger C, Kübler A (2011). Flashing characters with famous faces
+       improves ERP-based BCI performance. J Neural Eng 8(5):056016.
+      ——引入面孔增强 N170/N400f 等非 P300 成分可显著提升分类精度（"多成分协同 > 单 P300"）。
+  [S7] Jin J, Allison BZ, Wang X, Neuper C (2012). P300 + motion-onset VEP 联合系统。
+  [S8] Näätänen R, et al. (2007). MMN（失匹配负波，前中央 100–250 ms 自动偏差检测）——听觉 oddball
+       的早期辅助成分，作为 N2/MMN 家族的理论背景。
+  结论：在"目标/非目标"判定中，将 N200（尤其枕区/额中央）作为与 P300 并行的辅助判据，符合
+       文献证据，且能提供"早期决策 + 后部注视信息"两路互补信号，显著改善单试次鲁棒性。
+
+3.3 oddball 范式与公开数据集
+  [S9] Moucek R, Vařeka L, Prokop T, Štěbeták J, Brůha P (2017). Event-related potential data from
+       a guess the number BCI experiment on school children. Sci Data 4:160121.
+      ——本项目同源范式：250 名 7–17 岁儿童、Fz/Cz/Pz、ISI 1.5 s、鼻梁参考+耳接地、嘈杂教室。
+      是"最大的公开 oddball P300 数据集"，也是本报告最直接的迁移源/基准。
+  [S10] Kappenman ES, Farrens JL, Zhang W, Stewart AX, Luck SJ (2021). ERP CORE: an open resource
+        for human event-related potentials. Neuroimage 225:117465.
+      ——ERP CORE：N=40、30 导、1024 Hz，含视觉 oddball P3 与听觉 MMN 范式，是跨数据集迁移的另一
+       公开源（与 GTN 在通道数/采样率/参考上均不同 → 天然构成"格式不统一"迁移测试）。
+  [S11] Donchin E, Spencer KM, Wijesinghe R (2000). The mental prosthesis. IEEE Trans Rehabil Eng.
+  [S12] Brunner P, et al. (2009/2011). P300 speller 与 gaze 关系（BCI2000）。
+
+3.4 ERP 统计分析方法（认知判定的"科学层"配套）
+  [S13] Groppe DM, Urbach TP, Kutas M (2011). Mass univariate analysis of event-related brain
+        potentials/fields I: a critical tutorial. Psychophysiology 48(12):1711–1725.
+      ——mass-univariate + 多重比较校正（tmax/FDR/cluster）教程，时域 ERP 组级检验的基石。
+  [S14] Maris E, Oostenveld R (2007). Nonparametric statistical testing of EEG/MEG. J Neurosci
+       Methods 164(1):177–190. ——基于簇的置换检验（cluster-based permutation）。
+  [S15] Pernet CR, Chauveau N, Gaspar C, Rousselet GA (2011). LIMO EEG. Comput Intell Neurosci
+       2011:831409. ——层级线性模型（LMM）+ 单试次回归 + TFCE 校正。
+  用途：模型的"成分可解释性"输出（成分查询的潜伏期/幅值/地形）应与上述 mass-univariate/
+       cluster-permutation 结论相互印证，而非仅依赖分类精度，从而满足"认知判定"的科学严谨性。
+
+--------------------------------------------------------------------------------
+4. 第四部分：架构决策日志（三思与推翻记录）
+--------------------------------------------------------------------------------
+（用户要求"重思考、三思而后行、可能频繁推翻"——本节显式记录推理轨迹，每一条含"初判→证据→推翻/修正"）
+
+D1 初判：直接微调 EEG 基础模型（LaBraM/BENDR）作为骨干。
+   证据：LaBraM 预训练于 200 Hz、最多 128 导、标准 10-20 通道名匹配，未匹配通道直接丢弃
+         （[R19] 官方 NeuralBench 说明）；本项目 8 导、多参考（鼻梁/乳突/平均）、非标准蒙太奇、
+         儿童低 SNR。
+   推翻：冻结骨干存在严重域差与通道丢弃；全量微调在数千试次上必然过拟合。→ 大基础模型仅作为
+         "可选的自监督预训练初始化 + 坐标对齐"思想来源（[R25] BrainOmni），不作为骨干。
+
+D2 初判：为了"SOTA"，上更深、更宽的模型（大 Transformer/多支路）。
+   证据：GTN 上 CNN≈LDA≈SVM（62–64% 单试次，[R13]）；"少数滤波器即足够"（[R14]）；线性基线极高
+         （[R2]）。
+   推翻：单数据集精度上深度模型几乎无红利，复杂度只会带来过拟合。→ 复杂度必须"有目的"：
+         用于 (i) 跨格式/跨被试泛化；(ii) N2/P3 多成分分解；(iii) 可解释输出。
+
+D3 初判：用图神经网络（GNN）建模 8 电极拓扑/功能连接。
+   证据：GNN 在 30–128 导情绪/疾病任务有效，但本项目仅 8 电极、样本少、且判别信息主要沿
+         头皮的少数确定地形（P3b 顶区、N2 枕区）而非复杂连接图。
+   推翻：8 节点图信息量与参数量之比过低，GNN 会拟合噪声。→ 用"通道注意力 + 可学习空间滤波"
+         表达电极间关系，更省参数、更可解释（[R16][R17]）。
+
+D4 初判：单任务二分类（目标/非目标）足够。
+   证据：N200 是后部/额中央的独立且互补判据（[S4][S5]）；面孔/多成分增强优于单 P300（[S6]）；
+         P300 潜伏期随任务与被试漂移（250–500 ms）。
+   推翻：单任务头丢弃了"早期 N200 决策"与"潜伏期信息"。→ 多任务头（分类 + N200 辅助 + 潜伏期/
+         幅值回归）作为正则与信息增强，且天然产出可解释量。
+
+D5 初判：输入统一重采样 + 平均参考即可解决"格式不统一"。
+   证据：参考电极差异（鼻梁/乳突/平均/Cz）会系统性改变 P300 地形；不同设备通道子集不同；
+         不同设备幅值增益/单位不同。
+   推翻：仅平均参考不够。→ 需"坐标式通道适配器"：以标准 10-20 三维坐标为通道身份（而非通道名），
+         支持任意子集映射、缺失通道掩码、参考无关（对每个通道做基线校正 + 全局减均值），并做
+         每设备/每被试的幅值标准化。
+
+D6 初判：单次试次直接进网络，不显式建模 ERP 成分。
+   证据：P300/N200 具有先验已知的潜伏期窗（N2 ~200 ms、P3b 250–500 ms、P3a 250–280 ms）与地形。
+   推翻：无先验的黑盒学习在低 SNR 下不稳定。→ 引入"ERP 成分查询（component query）"：
+         可学习查询 [N1, P2, N2, P3a, P3b] 以交叉注意力读取时序 token，输出成分向量，既注入
+         生理先验（相当于软约束的时间窗），又输出可直接检验的成分幅值/潜伏期/地形。
+
+最终收敛（本报告的立场）：
+  "小而聪明"的成分感知结构 + 格式无关适配 + 多任务时域头 + 自监督预训练/跨域对齐，
+  而非"大而黑"的基础模型或"小而弱"的单任务 CNN。
+
+--------------------------------------------------------------------------------
+5. 第五部分：SOTA 架构方案 N2P3-Net（成分感知、格式无关、跨域适配）
+--------------------------------------------------------------------------------
+命名：N2P3-Net —— "时域成分分解 + 跨域适配"的 ERP 认知判定网络。
+设计五原则：①生理先验优先（成分/地形/潜伏期显式注入）；②参数效率（数千试次下必须轻量）；
+③格式无关（坐标式通道身份 + 参考无关）；④可解释（输出成分级证据，配合 mass-univariate 验证）；
+⑤跨域鲁棒（Split-BN + 特征对齐 + 目标加权）。
+
+【Stage 0】格式无关适配层（Format Adapter）
+  输入：单试次 epoch（刺激锁时，取 −200~800 ms 或 0~1000 ms），任意采样率/通道子集/参考。
+  0.1 重采样：统一到 256 Hz（P300 有效频段 <30 Hz，256 Hz 足够且与 ERP CORE 预处理一致）。
+  0.2 参考无关化：逐通道去均值 + 每试次基线校正（−200~0 ms）+ 全局减去 8 通道均值（近似 CAR，
+      对鼻梁/乳突/平均参考鲁棒）。
+  0.3 坐标式通道身份：以标准 10-20 三维坐标对 8 电极编码（正弦/学习式位置嵌入），形成固定
+      顺序的 8 节点规范图；缺失通道填入"掩码 token"（可学习），保证任意设备子集可映射。
+       —— 灵感：LaBraM 的通道名匹配（[R19]）与 BrainOmni 的传感器坐标（[R25]），但做了
+          参考无关与掩码通道的针对性改造。
+  0.4 幅值标准化：按设备/被试做稳健 z-score（去异常值后），消除增益差异。
+  （本层即"非统一格式"的工程解，是本报告第一处硬创新。）
+
+【Stage 1】ERP 感知的时空 token 化（Spatio-Temporal Tokenizer）
+  1.1 多尺度时间卷积银行：并行 1D 卷积，核长覆盖 ~50 ms 至 ~500 ms（如 13/33/65/129 点 @256 Hz），
+      显式捕获 N1/P2、N200、P3a、P3b 等不同时长成分（思想源自 EEG-Inception 的多尺度 [R11]）。
+  1.2 空间深度卷积：对 8 通道做深度卷积，并用"生理先验"初始化空间权重（Pz/P3/P4 正权、Fz 正权、
+      PO7/PO8/Oz 早期负权），加速收敛并诱导出符合 P3b/N2 地形的滤波器（可解释）。
+  1.3 输出：形状 (8 通道 × T 时间步 × D 特征) 的 token 序列；加入可学习的"时间位置编码"
+      （保留绝对潜伏期信息——时域任务的关键，与 NLP 的绝对位置不同，这里潜伏期本身携带语义）。
+
+【Stage 2】成分感知编码器（Component-Aware Encoder）——本报告第二处硬创新
+  2.1 轻量序列编码：2~3 层卷积增强注意力（Conformer 风格，[R16]），在 token 序列上同时建模
+      局部波形（卷积支路）与长程"早 N2→晚 P3"时序关系（注意力支路）；Dropout + 层归一化强正则。
+  2.2 成分查询（Component Query）：定义可学习查询向量 Q = [Q_N1, Q_P2, Q_N2, Q_P3a, Q_P3b]
+      （可选再加 Q_VEP），以交叉注意力对 token 序列做"软读取"，每个查询输出一个成分向量。
+       —— 与 DETR/Perceiver 的 object query 同构，但查询对应"已知 ERP 成分"这一生理先验；
+          相当于把传统的时间窗+峰值检测"软化为"可学习、可微、抗抖动（latency-jitter）的成分读取。
+       —— 通过"成分定位"：每个成分向量附带一个可微的"潜伏期注意力分布"（attention over time），
+          即可无监督地读出每个试次的 N2/P3 潜伏期与幅值，天然产出可解释证据（对照 [S13][S14]）。
+
+【Stage 3】多任务头（Multi-Task Heads）——时域信号的充分利用
+  Head-A（主）：目标/非目标 二分类（P300 认知判定）。
+  Head-B（辅助·N200）：以 Q_N2（前中央 Fz/Cz 与后部 PO7/PO8/Oz 两条 N2 通路）做早窗二分类，
+       作为早期/后部注意的辅助判据（依据 [S4][S5][S6]），与 Head-A 做损失加权融合（不确定性加权）。
+  Head-C（辅助·潜伏期回归）：回归 P3b 潜伏期，作为"抖动鲁棒"的正则（时域任务专属增强）。
+  Head-D（辅助·幅值回归）：回归 P3b 幅值，用于 SNR 感知与阈值化。
+  多任务总损失 = L_cls + λ_N2·L_N2 + λ_lat·L_lat + λ_amp·L_amp（λ 由不确定性/验证集调节）。
+  决策融合：最终认知判定 = α·Head-A + β·Head-B（早期 N200 置信 + 晚期 P3 置信），并可依据
+  Head-C 的潜伏期做窗口自适应。
+
+【Stage 4】跨域泛化与自监督预训练（训练配方，而非新结构）
+  4.1 自监督预训练（可选但推荐）：在全部无标签试次上做"掩码 ERP 重建"（mask 时间片段，重建波形，
+      思想源自 LaBraM/EEG2Rep [R19][R22]），仅需数据本身、与格式/标签无关，显著提升低 SNR 下的
+      表征质量；再在少量有标签目标数据上微调。
+  4.2 跨域对齐：Split-BN（共享仿射、每域独立统计量，[R28]）+ 特征级 RBF-MMD（对齐源/目标域特征
+      分布，参数无关）+ 目标加权损失（按源/目标规模比的开方做 warm-up，抑制大源域主导）。
+  4.3 ERP 感知数据增强：时间扭曲（PMB-TW，[R33]）、幅值抖动、高斯噪声（模拟干电极噪声，[8][9]）、
+      通道 dropout（模拟缺失通道，训练格式无关性）、目标/非目标均衡采样。
+
+【整体数据流】
+  原始 epoch(任意格式) → Stage0 适配 → Stage1 时空 token → Stage2 成分查询/编码
+    → {成分向量, 潜伏期分布} → Stage3 多头 → 融合判定 + 可解释证据（成分幅值/潜伏期/地形）。
+
+【相对现有 SOTA 的增量（innovation 声明）】
+  I1（格式无关适配）：坐标式通道身份 + 参考无关 + 掩码通道，专门针对"8 导多参考非统一格式"，
+     现有 P300 网络（EEGNet/EEG-Inception）均假设固定通道与参考。
+  I2（成分查询解码）：用可微的 N2/P3 成分查询取代黑盒注意力与硬编码时间窗，兼顾生理先验、
+     抗抖动、可解释三者的统一（现有 CNN/Transformer 未见同类"成分级查询"设计）。
+  I3（时域多任务 + N200 辅助）：分类 + 早窗 N200 辅助 + 潜伏期/幅值回归的联合，把"时域信息"
+     与"多成分协同"显式编码进目标函数，而非仅靠单头分类。
+  I4（自监督掩码 ERP + 轻量跨域对齐的联合训练配方）：面向小样本、跨数据集、干电极低 SNR 的
+     完整训练管线（借鉴但系统整合了 [R19][R22][R28][R33]）。
+
+--------------------------------------------------------------------------------
+6. 第六部分：训练/评估协议、消融与风险
+--------------------------------------------------------------------------------
+6.1 评估协议（必须与"科学层"配套）
+  - 分类：单试次 AUC / 平衡准确率；被试内（within-subject）、跨被试（LOSO）、跨数据集（GTN↔ERP CORE）
+    三层协议，避免"单数据集自娱"。
+  - 统计/可解释：将成分查询产出的 N2/P3 潜伏期、幅值、地形，与 mass-univariate（[S13]）+
+    cluster-based permutation（[S14]）+ LIMO 单试次 LMM（[S15]）的组级结论做一致性检验；
+    报告"分类提升"的同时必须报告"成分定位是否吻合已知 ERP 生理"。
+  - 迁移：零样本（冻结）+ 少样本（每被试 5–20 试次微调）两档，对标 [R28] 的严格小样本协议。
+
+6.2 消融与对照（证明复杂度"有目的"）
+  对照基线：SWLDA / xDAWN+RG / ShallowConvNet / EEGNet / EEG-Inception / EEG Conformer / (可选 LaBraM)。
+  消融轴：①去成分查询（换成普通注意力）→ 验证 I2；②去坐标适配（改成通道名 one-hot）→ 验证 I1；
+  ③去 N200 辅助头 → 验证 I3；④去自监督预训练 → 验证 I4；⑤去 Split-BN/MMD → 验证跨域贡献。
+
+6.3 预期风险与缓解
+  R1 过拟合（儿童低 SNR + 小样本）：强正则（Dropout/权重衰减）、多尺度核初始化、自监督预训练、
+     早停、严格 train/val/test 分离（借鉴 ATCNet 的 Train-Val-Test 规范）。
+  R2 干电极漂移伪迹（δ/θ 抬升，[9]）：0.1–0.5 Hz 高通 + 基线校正 + 幅值标准化；可加"漂移感知"
+     的正则（惩罚低频能量）。
+  R3 成分查询可能退化为"任意可学习模板"而非真正 P3/N2：以"潜伏期注意力分布 + 地形权重"做正则，
+     与已知成分窗对齐（软先验），并用人机可读输出接受生理学检验（6.1）。
+  R4 跨数据集标签/范式差异：仅在同一"视觉 oddball 目标/非目标"语义下迁移，不在听觉/运动想象间
+     强行迁移；MMD 对齐仅在共享语义源域上使用。
+
+--------------------------------------------------------------------------------
+7. 结论
+--------------------------------------------------------------------------------
+本项目场景（oddball 猜数字、8 电极 Fz/Cz/P3/Pz/P4/PO7/PO8/Oz、数千试次、非统一格式、时域、
+干电极低 SNR）的 SOTA 不应是"更大更深的模型"，而是"更懂 ERP 的小模型"。推荐 N2P3-Net：
+格式无关适配（Stage0）→ 多尺度时空 token（Stage1）→ 成分查询编码（Stage2）→ 时域多任务头
+（Stage3，含 N200 辅助）→ 自监督预训练 + 跨域对齐（Stage4）。其四项增量（坐标适配、成分查询、
+时域多任务+N200、掩码 ERP+跨域对齐训练配方）直击本场景的四个真痛点，并保持可解释、可检验、
+可迁移。下一步工作是在 GTN（[S9]）与 ERP CORE（[S10]）上做上述消融与三层迁移验证。
+
+--------------------------------------------------------------------------------
+8. 参考文献（编号与本报告对应）
+--------------------------------------------------------------------------------
+【干电极数采】
+[1] Chi YM, Jung TP, Cauwenberghs G. IEEE Rev Biomed Eng 2010;3:106–119.
+[2] Lopez-Gordo MA, et al. Sensors 2014;14(7):12847–12870.
+[3] Im C, Seo JM. Biomed Eng Lett 2016;6(3):104–112.
+[4] Xu J, et al. IEEE Rev Biomed Eng 2017;10:187–198.
+[5] Searle A, Kirkup L. Physiol Meas 2000;21(2):271–283.
+[6] Guger C, et al. Front Neurosci 2012;6:60.
+[7] Zander TO, et al. (2011) dry-electrode P300 oddball.
+[8] Mathewson KE, et al. Psychophysiology 2017;54(1):74–82.
+[9] Clements JM, et al. J Neural Eng 2016;13(6):066018.
+[10] Li G, et al. Sens Actuators B Chem 2016;237:167–178.
+[11] Wang F, et al. J Neural Eng 2016;13(4):046021.
+[12] Lin CT, et al. IEEE Trans Biomed Eng 2011;58(5):1200–1207.
+[13] Ruffini G, et al. Sens Actuators A Phys 2008;144:275–279.
+[14] Griss P, et al. IEEE Trans Biomed Eng 2002;49(6):597–604.
+[15] Fiedler P, et al. (2015) multipin dry electrodes.
+[16] Debener S, et al. Psychophysiology 2012;49(11):1617–1621.
+[17] De Vos M, et al. Int J Psychophysiol 2014;91(1):46–53.
+[18] Debener S, et al. Sci Rep 2015;5:16743.
+[19] Looney D, et al. IEEE Pulse 2012.
+[20] Radüntz T. Front Physiol 2018;9:98.
+[21] Hairston WD, et al. J Neural Eng 2014;11(4):046018.
+[22] Gao KP, et al. Sens Actuators A Phys 2019 (Pt nanoporous dry electrode).
+[23] Sensors 2025;25(16):5215 (Portable dry electrode EEG review).
+
+【神经网络模型】
+[R1] Farwell LA, Donchin E. Electroencephalogr Clin Neurophysiol 1988;70(6):510–523.
+[R2] Krusienski DJ, et al. J Neural Eng 2006;3(4):299–305.
+[R3] Rivet B, et al. IEEE Trans Biomed Eng 2009;56(8):2035–2043.
+[R4] Blankertz B, et al. Neuroimage 2011;56(2):814–825.
+[R5] Lotte F, et al. J Neural Eng 2007;4(2):R1–R13.
+[R6] Cecotti H, Graser A. IEEE Trans PAMI 2011;33(3):433–445.
+[R7] Schirrmeister RT, et al. Hum Brain Mapp 2017;38(11):5391–5420.
+[R8] Lawhern VJ, et al. J Neural Eng 2018;15(5):056013.
+[R9] Manor R, Geva AB. Front Comput Neurosci 2015;9:146.
+[R10] Waytowich NR, et al. J Neural Eng 2018 (Compact CNN).
+[R11] Santamaría-Vázquez E, et al. IEEE TNSRE 2020;28(12):2773–2782.
+[R12] Borra D, et al. (2019/2022) CNN for P300 BCI.
+[R13] Värbu K, et al. Biomed Signal Process Control 2019 (CNN on GTN P300 dataset).
+[R14] "A few filters are enough: CNN for P300" arXiv:1909.06970.
+[R15] Kostas D, et al. Front Hum Neurosci 2021;15:653659 (BENDR).
+[R16] Song Y, et al. IEEE TNSRE 2023;31:710–719 (EEG Conformer).
+[R17] Altaheri H, et al. IEEE Trans Industr Inform 2023;19(2):2249–2258 (ATCNet).
+[R18] Ding Y, et al. Transformer-based EEG decoding: a survey (2023).
+[R19] Jiang W, Zhao L, Lu BL. ICLR 2024 (LaBraM).
+[R20] Yang C, et al. ICLR 2024 (BIOT).
+[R21] Wang J, et al. (2024) CBraMod.
+[R22] Mohammadi Foumani N, et al. (2024) EEG2Rep.
+[R23] Wu H, et al. (2024) Neuro-BERT.
+[R24] Zhu H, et al. (2023) EEG2Vec.
+[R25] BrainOmni. arXiv:2505.18185 (2025).
+[R26] Li S, et al. Neural Netw 2024;180:106655 (OADANN).
+[R27] He W, et al. CogSci 2025 (MSCNN-ADDA).
+[R28] Chen W, Delorme A. arXiv:2510.21969 (2025) (AS-MMD).
+[R29] Mussabayeva A, et al. (2021) cross-subject ensemble.
+[R30] Maddula RK, et al. (2017) DRCNN.
+[R31] Mijani A, et al. (2020) transfer CNN P300.
+[R32] Front Hum Neurosci 2021;15:765525 (DA review).
+[R33] Li R, et al. IEEE JBHI 2022;26(10):4996–5007.
+
+【oddball/ERP/N200/统计】
+[S1] Sutton S, et al. Science 1965;150:1187–1188.
+[S2] Polich J. Clin Neurophysiol 2007;118(10):2128–2148.
+[S3] Verleger R. (2020) P3b theory.
+[S4] Frenzel S, Neubert E. arXiv:1006.3688 (2010).
+[S5] Hong B, et al. Clin Neurophysiol 2009;120(9):1658–1666.
+[S6] Kaufmann T, et al. J Neural Eng 2011;8(5):056016.
+[S7] Jin J, et al. J Neurosci Methods 2012;205(2):265–276.
+[S8] Näätänen R, et al. Clin Neurophysiol 2007;118(12):2544–2590.
+[S9] Moucek R, et al. Sci Data 2017;4:160121 (GTN dataset).
+[S10] Kappenman ES, et al. Neuroimage 2021;225:117465 (ERP CORE).
+[S11] Donchin E, et al. IEEE Trans Rehabil Eng 2000.
+[S12] Brunner P, et al. (2009/2011) P300 speller & gaze.
+[S13] Groppe DM, et al. Psychophysiology 2011;48(12):1711–1725.
+[S14] Maris E, Oostenveld R. J Neurosci Methods 2007;164(1):177–190.
+[S15] Pernet CR, et al. Comput Intell Neurosci 2011;2011:831409.
+
+================================================================================
+（完）
+================================================================================

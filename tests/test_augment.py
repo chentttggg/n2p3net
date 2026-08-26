@@ -177,3 +177,22 @@ def test_known_time_shift_batched_and_differentiable():
     assert not torch.isnan(X2).any()
     X2.sum().backward()
     assert X.grad is not None and X.grad.abs().sum() > 0
+
+
+def test_channel_dropout_returns_trial_specific_effective_mask():
+    X = torch.ones(4, 8, 16)
+    base = _missing_mask()
+    output, effective = apply_augmentations(
+        X,
+        seed=3,
+        p_time_warp=0.0,
+        p_amp_jitter=0.0,
+        p_noise=0.0,
+        p_ch_dropout=1.0,
+        p_ref_jitter=0.0,
+        channel_mask=base,
+        return_channel_mask=True,
+    )
+    assert effective.shape == (4, 8)
+    assert effective.sum(dim=1).eq(1).all()
+    assert torch.equal(output != 0.0, effective[:, :, None].expand_as(output))

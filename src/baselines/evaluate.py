@@ -60,6 +60,7 @@ import json
 import multiprocessing as mp
 import os
 import signal
+import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from contextlib import contextmanager, nullcontext
@@ -102,6 +103,8 @@ def loso_folds(subject_ids: Sequence) -> list[tuple[np.ndarray, np.ndarray]]:
     list[(train_mask, test_mask)]，每元布尔掩码长度 = len(subject_ids)。
     """
     subject_ids = np.asarray(subject_ids)
+    if subject_ids.ndim != 1 or len(subject_ids) == 0:
+        raise ValueError("subject_ids must be a non-empty one-dimensional sequence.")
     folds = []
     for subj in np.unique(subject_ids):
         test_mask = subject_ids == subj
@@ -123,7 +126,7 @@ def within_subject_folds(
     """
     subject_ids = np.asarray(subject_ids)
     run_ids = np.asarray(run_ids)
-    if len(subject_ids) != len(run_ids):
+    if subject_ids.ndim != 1 or run_ids.ndim != 1 or len(subject_ids) != len(run_ids):
         raise ValueError("subject_ids 与 run_ids 长度须一致。")
 
     folds = []
@@ -162,12 +165,19 @@ class FoldResult:
     val_losses: list[float] = field(default_factory=list)
     val_objective_losses: list[float] = field(default_factory=list)
     val_innovation_nlls: list[float] = field(default_factory=list)
+    task_val_aucs: list[float | None] = field(default_factory=list)
+    final_task_val_auc: float | None = None
     best_task_epoch: int | None = None
     best_density_epoch: int | None = None
     best_task_val_loss: float | None = None
     best_density_nll: float | None = None
     task_patience_exhausted: bool = False
     epoch_trajectory_audit: list[dict[str, object]] = field(default_factory=list)
+    training_history: dict[str, object] = field(default_factory=dict)
+    val_subjects: int | None = None
+    audit_subjects: int | None = None
+    erp_calibration: dict[str, object] | None = None
+    component_summary: dict[str, object] = field(default_factory=dict)
     descriptive_decision_records: dict[str, list[dict[str, object]]] = field(default_factory=dict)
 
 
@@ -485,13 +495,20 @@ def _neural_ride_fold_audit(
     digit_vocab: Sequence[int],
     event_timeline: ScheduledEventTimeline,
     global_test_rows: np.ndarray,
+    trial_channel_mask_test: np.ndarray | None = None,
 ) -> dict:
     """Compute calibrated PCW, prequential and localization diagnostics."""
 
     predict_branches = getattr(model, "predict_branches", None)
     if not callable(predict_branches):
         return {}
-    test_branches = predict_branches(X_test)
+    auxiliary_kwargs = {}
+    if (
+        trial_channel_mask_test is not None
+        and getattr(model, "auxiliary_predict_accepts_trial_channel_mask", False)
+    ):
+        auxiliary_kwargs["trial_channel_mask"] = trial_channel_mask_test
+    test_branches = predict_branches(X_test, **auxiliary_kwargs)
     calibration_branches = getattr(model, "calibration_branch_logits_", None)
     calibration_labels = getattr(model, "calibration_labels_", None)
     calibration_source = getattr(model, "calibration_source_", None)
@@ -564,9 +581,10 @@ def _neural_ride_fold_audit(
         }
 
     localization: dict = {}
+    component_summary: dict = {}
     predict_interpretability = getattr(model, "predict_interpretability", None)
     if callable(predict_interpretability):
-        values = predict_interpretability(X_test)
+        values = predict_interpretability(X_test, **auxiliary_kwargs)
         tau = np.asarray(values["tau"])
         bounds = np.asarray(values["tau_bounds"])
         span = np.maximum(bounds[:, 1] - bounds[:, 0], 1e-6)
@@ -578,6 +596,8 @@ def _neural_ride_fold_audit(
             "tau_std_ms": tau.std(axis=0).tolist(),
             "tau_target_mean_ms": tau[y_test == 1].mean(axis=0).tolist(),
             "tau_nontarget_mean_ms": tau[y_test == 0].mean(axis=0).tolist(),
+            "tau_target_std_ms": tau[y_test == 1].std(axis=0).tolist(),
+            "tau_nontarget_std_ms": tau[y_test == 0].std(axis=0).tolist(),
             "tau_bound_saturation_fraction": saturation.mean(axis=0).tolist(),
             "tau_noise_median_abs_shift_ms": np.median(
                 np.abs(tau - np.asarray(values["tau_perturbed"])), axis=0
@@ -588,6 +608,55 @@ def _neural_ride_fold_audit(
                 np.asarray(values["amplitude_variance"]).mean(axis=(0, 2)).tolist()
             )
             localization["erp_energy_ratio_mean"] = float(np.mean(values["erp_energy_ratio"]))
+        fitted_model = getattr(model, "model_", None)
+        component_window = getattr(fitted_model, "component_window", None)
+        if component_window is not None:
+            import torch
+
+            sigma = component_window.sigma_lo[:, None] + (
+                component_window.sigma_hi[:, None] - component_window.sigma_lo[:, None]
+            ) * torch.sigmoid(component_window.sigma_raw)
+            component_summary = {
+                "tau0_bounded_ms": component_window.tau0_bounded.detach().cpu().tolist(),
+                "sigma_ms": sigma.detach().cpu().tolist(),
+                "n_test_trials": int(len(y_test)),
+                "target_n": int((y_test == 1).sum()),
+                "nontarget_n": int((y_test == 0).sum()),
+                "tau_target_mean_ms": localization["tau_target_mean_ms"],
+                "tau_target_std_ms": localization["tau_target_std_ms"],
+                "tau_nontarget_mean_ms": localization["tau_nontarget_mean_ms"],
+                "tau_nontarget_std_ms": localization["tau_nontarget_std_ms"],
+                "branch_audit": {
+                    "final_mean": float(np.mean(test_branches["final"])),
+                    "final_std": float(np.std(test_branches["final"])),
+                    "pcw_mean": float(np.mean(test_branches["pcw"])),
+                    "pcw_std": float(np.std(test_branches["pcw"])),
+                    "prequential_llr_mean": float(np.mean(test_branches["prequential_llr"])),
+                    "prequential_llr_std": float(np.std(test_branches["prequential_llr"])),
+                    "prequential_coefficient": float(
+                        test_branches["prequential_coefficient"]
+                    ),
+                    "fusion_identity_max_abs_error": float(
+                        np.max(
+                            np.abs(
+                                test_branches["final"]
+                                - (
+                                    float(test_branches.get("prequential_base_intercept", 0.0))
+                                    + float(test_branches.get("prequential_base_slope", 1.0))
+                                    * (
+                                        test_branches["pcw"]
+                                        + test_branches.get(
+                                            "measurement_contribution",
+                                            np.zeros_like(test_branches["pcw"]),
+                                        )
+                                    )
+                                    + test_branches["prequential_contribution"]
+                                )
+                            )
+                        )
+                    ),
+                },
+            }
 
     gradients: dict = {}
     history = getattr(model, "last_history", None) or {}
@@ -597,12 +666,56 @@ def _neural_ride_fold_audit(
     for key, series in diagnostics.items():
         if key.endswith("_norms") and series:
             gradients[f"{key}_mean"] = float(np.mean(series))
+
+    measurement_gate = history.get(
+        "measurement_gate", getattr(model, "measurement_gate_", None)
+    )
+    state_gate = history.get("repetition_state_residual_gate", None)
+    reliability_audit = history.get(
+        "repetition_reliability_audit",
+        getattr(model, "repetition_reliability_audit_", None),
+    )
+    stopping_replay = history.get("validation_stopping_replay", None)
+    v12_gates = {
+        "measurement": measurement_gate,
+        "repetition_state_residual": state_gate,
+        "reliability_fidelity": (
+            reliability_audit.get("fidelity") if isinstance(reliability_audit, dict) else None
+        ),
+        "reliability_clean_probability": (
+            reliability_audit.get("clean_probability")
+            if isinstance(reliability_audit, dict)
+            else None
+        ),
+        "stopping_replay": stopping_replay,
+    }
+
+    measured_latency: dict[str, object] | None = None
+    posterior = getattr(model, "measurement_posterior_", None)
+    predict_measurement = getattr(model, "predict_measurement", None)
+    if callable(predict_measurement):
+        posterior = predict_measurement(X_test, **auxiliary_kwargs) or posterior
+    if posterior is not None and getattr(posterior, "mean_ms", None) is not None:
+        width_ms = posterior.upper_ms - posterior.lower_ms
+        measured_latency = {
+            "n_trials": int(posterior.effective_n),
+            "mean_ms_mean": float(np.mean(posterior.mean_ms)),
+            "mean_ms_std": float(np.std(posterior.mean_ms)),
+            "interval_width_ms_mean": float(np.mean(width_ms)),
+            "interval_width_ms_median": float(np.median(width_ms)),
+            "entropy_nats_mean": float(np.mean(posterior.entropy)),
+            "gate": measurement_gate,
+        }
     return {
         "branches": branch_metrics,
         "prequential_gate": prequential,
         "prequential_fusion": prequential_fusion,
         "prequential_coefficient": float(getattr(model, "prequential_coefficient_", 0.0)),
         "localization": localization,
+        "pcw_routing": localization,
+        "measured_latency": measured_latency,
+        "v12_gates": v12_gates,
+        "component_summary": component_summary,
         "gradients": gradients,
     }
 
@@ -701,6 +814,7 @@ def _fit_model_with_optional_subjects(
     train_mask,
     digits: np.ndarray | None = None,
     acquisition_indices: np.ndarray | None = None,
+    trial_channel_mask: np.ndarray | None = None,
 ) -> None:
     """按模型能力调用 fit（GLM：被试级验证早停协议）。
 
@@ -732,9 +846,16 @@ def _fit_model_with_optional_subjects(
                     "Model requires scheduled acquisition indices, but none were supplied."
                 )
             fit_kwargs["acquisition_indices"] = acquisition_indices[train_mask]
+        if getattr(model, "fit_accepts_trial_channel_mask", False):
+            if trial_channel_mask is not None:
+                fit_kwargs["trial_channel_mask"] = trial_channel_mask[train_mask]
         model.fit(X[train_mask], y[train_mask], **fit_kwargs)
     elif getattr(model, "fit_accepts_subject_ids", False):
-        model.fit(X[train_mask], y[train_mask], subject_ids=subject_ids[train_mask])
+        fit_kwargs = {"subject_ids": subject_ids[train_mask]}
+        if getattr(model, "fit_accepts_trial_channel_mask", False):
+            if trial_channel_mask is not None:
+                fit_kwargs["trial_channel_mask"] = trial_channel_mask[train_mask]
+        model.fit(X[train_mask], y[train_mask], **fit_kwargs)
     else:
         outer_subjects = subject_ids[train_mask]
         split = subject_disjoint_validation_split(
@@ -745,11 +866,45 @@ def _fit_model_with_optional_subjects(
             seed=0,
         )
         outer_X, outer_y = X[train_mask], y[train_mask]
-        model.fit(outer_X[split.train_mask], outer_y[split.train_mask])
+        outer_trial_channel_mask = (
+            trial_channel_mask[train_mask] if trial_channel_mask is not None else None
+        )
+        fit_kwargs = {}
+        if getattr(model, "fit_accepts_trial_channel_mask", False):
+            if outer_trial_channel_mask is not None:
+                fit_kwargs["trial_channel_mask"] = outer_trial_channel_mask[split.train_mask]
+        model.fit(outer_X[split.train_mask], outer_y[split.train_mask], **fit_kwargs)
         if split.n_validation_subjects > 0:
-            model.calibration_logits_ = model.predict_logit(outer_X[split.validation_mask])
+            model.calibration_logits_ = _predict_logit_with_optional_trial_mask(
+                model,
+                outer_X[split.validation_mask],
+                (
+                    outer_trial_channel_mask[split.validation_mask]
+                    if outer_trial_channel_mask is not None
+                    else None
+                ),
+            )
             model.calibration_labels_ = outer_y[split.validation_mask].copy()
             model.calibration_source_ = "subject_disjoint_validation"
+
+
+def _predict_logit_with_optional_trial_mask(
+    model,
+    X: np.ndarray,
+    trial_channel_mask: np.ndarray | None = None,
+) -> np.ndarray:
+    """Call prediction through the common capability-based adapter interface."""
+
+    predict_kwargs = {}
+    if getattr(model, "predict_accepts_trial_channel_mask", False):
+        if trial_channel_mask is not None:
+            predict_kwargs["trial_channel_mask"] = trial_channel_mask
+    logits = np.asarray(model.predict_logit(X, **predict_kwargs))
+    if logits.shape != (len(X),):
+        raise ValueError(
+            f"predict_logit must return shape ({len(X)},), got {logits.shape}."
+        )
+    return logits
 
 
 def _evaluate_epoch_trajectory_audit(
@@ -765,13 +920,20 @@ def _evaluate_epoch_trajectory_audit(
     evidence_budgets: Sequence[EvidenceBudget],
     event_timeline: ScheduledEventTimeline,
     global_test_rows: np.ndarray,
+    trial_channel_mask_test: np.ndarray | None = None,
 ) -> list[dict[str, object]]:
     """Score raw epoch states on outer test data for development diagnostics only."""
 
     predictor = getattr(model, "predict_epoch_trajectory_logits", None)
     if not callable(predictor):
         return []
-    checkpoint_rows = predictor(X_test)
+    predictor_kwargs = {}
+    if (
+        trial_channel_mask_test is not None
+        and getattr(model, "auxiliary_predict_accepts_trial_channel_mask", False)
+    ):
+        predictor_kwargs["trial_channel_mask"] = trial_channel_mask_test
+    checkpoint_rows = predictor(X_test, **predictor_kwargs)
     if not checkpoint_rows:
         return []
     units = tuple(np.unique(group_ids_test).astype(str).tolist())
@@ -869,6 +1031,7 @@ def _evaluate_one_fold(
     evidence_budgets: Sequence[EvidenceBudget],
     event_timeline: ScheduledEventTimeline,
     acquisition_indices: np.ndarray,
+    trial_channel_mask: np.ndarray | None,
     train_mask: np.ndarray,
     test_mask: np.ndarray,
 ) -> tuple[
@@ -892,6 +1055,7 @@ def _evaluate_one_fold(
         train_mask,
         digits=digits,
         acquisition_indices=acquisition_indices,
+        trial_channel_mask=trial_channel_mask,
     )
     fit_durations = getattr(model, "fit_durations", ()) or ()
     fit_sec = float(fit_durations[-1]) if fit_durations else None
@@ -906,6 +1070,10 @@ def _evaluate_one_fold(
     val_innovation_nlls = [
         float(value) for value in history.get("val_innovation_nlls", ())
     ]
+    task_val_aucs = [
+        None if value is None else float(value)
+        for value in history.get("task_val_aucs", ())
+    ]
     epoch_trajectory_audit = _evaluate_epoch_trajectory_audit(
         model,
         X[test_mask],
@@ -919,6 +1087,7 @@ def _evaluate_one_fold(
         evidence_budgets,
         event_timeline,
         np.flatnonzero(test_mask),
+        trial_channel_mask[test_mask] if trial_channel_mask is not None else None,
     )
     calibration_logits, calibration_y, calibration_source = calibration_data_from_model(
         model, X[train_mask], y[train_mask]
@@ -926,7 +1095,11 @@ def _evaluate_one_fold(
     calibration = fit_logit_calibration(
         calibration_logits, calibration_y, source=calibration_source
     )
-    logits = model.predict_logit(X[test_mask])
+    logits = _predict_logit_with_optional_trial_mask(
+        model,
+        X[test_mask],
+        trial_channel_mask[test_mask] if trial_channel_mask is not None else None,
+    )
 
     # 非有限 logits 统一入口守卫（audit P2-1），避免 bacc/AUC 先吃 NaN 再在 decide 报错。
     if not np.isfinite(logits).all():
@@ -1010,6 +1183,11 @@ def _evaluate_one_fold(
         }
         if getattr(model, "predict_accepts_acquisition_indices", False):
             predict_kwargs["acquisition_indices"] = acquisition_indices[test_mask]
+        if (
+            trial_channel_mask is not None
+            and getattr(model, "auxiliary_predict_accepts_trial_channel_mask", False)
+        ):
+            predict_kwargs["trial_channel_mask"] = trial_channel_mask[test_mask]
         chain_results = predict_repetition(
             X[test_mask],
             digits[test_mask],
@@ -1157,6 +1335,7 @@ def _evaluate_one_fold(
         digit_vocab,
         event_timeline,
         np.flatnonzero(test_mask),
+        trial_channel_mask[test_mask] if trial_channel_mask is not None else None,
     )
     if chain_diagnostics:
         temperature = getattr(model, "repetition_temperature_calibration_", None)
@@ -1203,12 +1382,19 @@ def _evaluate_one_fold(
             val_losses=val_losses,
             val_objective_losses=val_objective_losses,
             val_innovation_nlls=val_innovation_nlls,
+            task_val_aucs=task_val_aucs,
+            final_task_val_auc=history.get("final_task_val_auc"),
             best_task_epoch=history.get("best_task_epoch", history.get("best_epoch")),
             best_density_epoch=history.get("best_density_epoch"),
             best_task_val_loss=history.get("best_task_val_loss"),
             best_density_nll=history.get("best_density_nll"),
             task_patience_exhausted=bool(history.get("task_patience_exhausted", False)),
             epoch_trajectory_audit=epoch_trajectory_audit,
+            training_history=history,
+            val_subjects=getattr(model, "last_val_subjects", None),
+            audit_subjects=getattr(model, "last_audit_subjects", None),
+            erp_calibration=getattr(model, "last_erp_calibration", None),
+            component_summary=dict(audit.get("component_summary", {})),
             descriptive_decision_records=descriptive_variant_records,
         ),
         records,
@@ -1219,8 +1405,21 @@ def _evaluate_one_fold(
     )
 
 
+def _configure_model_fold(model, fold_id: int) -> None:
+    """Configure a model's fold context through the shared baseline interface."""
+
+    configure = getattr(model, "configure_evaluation_fold", None)
+    if callable(configure):
+        configure(fold_id)
+    elif hasattr(model, "_evaluation_fold_id"):
+        # Compatibility for third-party baseline adapters that predate the
+        # public configuration method.
+        model._evaluation_fold_id = fold_id
+
+
 def _run_fold_core(
     args: tuple[
+        int,
         int,
         object,
         np.ndarray,
@@ -1237,6 +1436,7 @@ def _run_fold_core(
         np.ndarray,
         np.ndarray,
         np.ndarray,
+        np.ndarray,
     ],
 ) -> tuple[
     int,
@@ -1250,6 +1450,7 @@ def _run_fold_core(
     """Execute one fold after the caller selects its process or thread backend."""
     (
         fold_idx,
+        fold_id_offset,
         model_proto,
         X,
         y,
@@ -1263,30 +1464,42 @@ def _run_fold_core(
         evidence_budgets,
         event_timeline,
         acquisition_indices,
+        trial_channel_mask,
         train_mask,
         test_mask,
     ) = args
     model = copy.deepcopy(model_proto)
-    if hasattr(model, "_evaluation_fold_id"):
-        model._evaluation_fold_id = fold_idx
-    fold_result, records, variants, covered, total, confounds = _evaluate_one_fold(
-        model,
-        X,
-        y,
-        digits,
-        subject_ids,
-        fold_subject_ids,
-        true_digits,
-        digit_vocab,
-        decision_center,
-        decision_aggregation,
-        evidence_budgets,
-        event_timeline,
-        acquisition_indices,
-        train_mask,
-        test_mask,
-    )
-    return fold_idx, fold_result, records, variants, covered, total, confounds
+    _configure_model_fold(model, fold_idx + fold_id_offset)
+    try:
+        fold_result, records, variants, covered, total, confounds = _evaluate_one_fold(
+            model,
+            X,
+            y,
+            digits,
+            subject_ids,
+            fold_subject_ids,
+            true_digits,
+            digit_vocab,
+            decision_center,
+            decision_aggregation,
+            evidence_budgets,
+            event_timeline,
+            acquisition_indices,
+            trial_channel_mask,
+            train_mask,
+            test_mask,
+        )
+        return fold_idx, fold_result, records, variants, covered, total, confounds
+    finally:
+        _release_fold_model(model)
+
+
+def _release_fold_model(model) -> None:
+    """Drop fold-local accelerator state after metrics no longer need the model."""
+
+    release = getattr(model, "_release_fold_runtime", None)
+    if callable(release):
+        release()
 
 
 def _terminate_fold_worker_with_parent(parent_pid: int) -> None:
@@ -1332,17 +1545,10 @@ def _fold_process_executor_kwargs(n_jobs: int) -> dict[str, object]:
 
 def _run_fold_process(task_args):
     fold_idx = int(task_args[0])
-    previous_fold_id = os.environ.get("N2P3NET_FOLD_ID")
-    os.environ["N2P3NET_FOLD_ID"] = str(fold_idx)
-    try:
-        print(f"[fold {fold_idx}] worker started pid={os.getpid()}", flush=True)
-        with _fold_threadpool_limits():
-            return _run_fold_core(task_args)
-    finally:
-        if previous_fold_id is None:
-            os.environ.pop("N2P3NET_FOLD_ID", None)
-        else:
-            os.environ["N2P3NET_FOLD_ID"] = previous_fold_id
+    display_fold_idx = fold_idx + int(task_args[1])
+    print(f"[fold {display_fold_idx}] worker started pid={os.getpid()}", flush=True)
+    with _fold_threadpool_limits():
+        return _run_fold_core(task_args)
 
 
 def evaluate(
@@ -1354,6 +1560,7 @@ def evaluate(
     true_digits: Mapping,
     folds: Sequence[tuple[np.ndarray, np.ndarray]],
     digit_vocab: Sequence[int] = (1, 2, 3, 4, 5, 6, 7, 8, 9),
+    trial_channel_mask: np.ndarray | None = None,
     decision_center: bool = True,
     decision_aggregation: str = "sum",
     evidence_budgets: Sequence[int | None] = (1, 3, 5, 10, 15, None),
@@ -1371,6 +1578,7 @@ def evaluate(
     dataset_sha256: str | None = None,
     n_jobs: int = 1,
     parallel_backend: str = "thread",
+    fold_id_offset: int = 0,
     on_fold_end: Callable | None = None,
 ) -> EvalSummary:
     """按 folds 评估一个「有 fit/predict_logit 接口」的模型。
@@ -1399,6 +1607,9 @@ def evaluate(
       parallel_backend : {"auto", "process", "thread"}
           ``process`` 在 Linux 使用独立 fork worker 和独立 CUDA context；``thread`` 保留
           兼容路径。``auto`` 在 Linux 选择 ``process``，其他平台选择 ``thread``。
+      fold_id_offset : int
+          Display fold offset for batched runs. It is passed explicitly to workers so
+          progress paths do not depend on process-global environment variables.
 
     Returns
     -------
@@ -1407,19 +1618,40 @@ def evaluate(
     X = np.asarray(X)
     y = np.asarray(y)
     digits = np.asarray(digits)
-    subject_ids = np.asarray(subject_ids).astype(str)
+    subject_array = np.asarray(subject_ids)
+    if X.ndim != 3 or len(X) == 0:
+        raise ValueError(f"X must be a non-empty (N,C,T) tensor, got {X.shape}.")
+    if not np.issubdtype(X.dtype, np.floating):
+        raise ValueError("X must have a floating dtype.")
+    if y.shape != (len(X),) or not np.issubdtype(y.dtype, np.integer):
+        raise ValueError("y must be a one-dimensional integer array aligned with X.")
+    if set(np.unique(y).tolist()) != {0, 1}:
+        raise ValueError("Evaluation requires binary labels {0,1}.")
+    if digits.shape != (len(X),) or not np.issubdtype(digits.dtype, np.integer):
+        raise ValueError("digits must be a one-dimensional integer array aligned with X.")
+    if subject_array.shape != (len(X),):
+        raise ValueError("subject_ids must be one-dimensional and aligned with X.")
+    subject_ids = subject_array.astype(str)
     if not (len(X) == len(y) == len(digits) == len(subject_ids)):
         raise ValueError("X/y/digits/subject_ids must contain the same number of rows.")
-    if X.ndim < 1 or len(X) == 0:
-        raise ValueError("Evaluation requires at least one model-ready epoch.")
+    if trial_channel_mask is not None:
+        trial_channel_mask = np.asarray(trial_channel_mask)
+        if trial_channel_mask.dtype != np.dtype(bool):
+            raise ValueError("trial_channel_mask must have boolean dtype.")
+        if trial_channel_mask.shape != X.shape[:2]:
+            raise ValueError("trial_channel_mask must have shape (N,C) matching X.")
+        if not bool(trial_channel_mask.any(axis=1).all()):
+            raise ValueError("Every trial must retain at least one observed channel.")
+        if bool((X[~trial_channel_mask] != 0.0).any()):
+            raise ValueError("X must be zero where trial_channel_mask is false.")
     if not np.isfinite(X).all():
         raise ValueError(
             "X contains NaN/inf; repair or explicitly reject invalid epochs before evaluation."
         )
-    if not np.issubdtype(y.dtype, np.number) or not np.isfinite(y).all():
-        raise ValueError("y must contain finite numeric labels.")
-    if not np.issubdtype(digits.dtype, np.integer):
-        raise ValueError("digits must use an integer dtype; implicit rounding is forbidden.")
+    if n_jobs < 1:
+        raise ValueError("n_jobs must be positive.")
+    if fold_id_offset < 0:
+        raise ValueError("fold_id_offset must be non-negative.")
     if parallel_backend not in {"auto", "process", "thread"}:
         raise ValueError("parallel_backend must be one of 'auto', 'process', or 'thread'.")
     if parallel_backend == "auto":
@@ -1519,6 +1751,7 @@ def evaluate(
         task_args = [
             (
                 fold_idx,
+                fold_id_offset,
                 model,
                 X,
                 y,
@@ -1532,6 +1765,7 @@ def evaluate(
                 budgets,
                 event_timeline,
                 acquisition_indices,
+                trial_channel_mask,
                 train_mask,
                 test_mask,
             )
@@ -1569,29 +1803,33 @@ def evaluate(
                 confound_records.setdefault(name, []).extend(rows)
     else:
         for fold_idx, (train_mask, test_mask) in enumerate(mask_folds):
-            if hasattr(model, "_evaluation_fold_id"):
-                model._evaluation_fold_id = fold_idx
+            fold_model = copy.deepcopy(model)
+            _configure_model_fold(fold_model, fold_idx + fold_id_offset)
             # Serial folds must honor the same FOLD_CPU_THREADS budget as the
             # parallel workers; the parallel branch enters this context inside
             # _run_fold_core, so the single-fold / n_jobs=1 path must not skip it.
-            with _fold_threadpool_limits():
-                fold_result, records, variants, covered, total, confounds = _evaluate_one_fold(
-                    model,
-                    X,
-                    y,
-                    digits,
-                    subject_ids,
-                    fold_subject_ids,
-                    true_digits,
-                    digit_vocab,
-                    decision_center,
-                    decision_aggregation,
-                    budgets,
-                    event_timeline,
-                    acquisition_indices,
-                    train_mask,
-                    test_mask,
-                )
+            try:
+                with _fold_threadpool_limits():
+                    fold_result, records, variants, covered, total, confounds = _evaluate_one_fold(
+                        fold_model,
+                        X,
+                        y,
+                        digits,
+                        subject_ids,
+                        fold_subject_ids,
+                        true_digits,
+                        digit_vocab,
+                        decision_center,
+                        decision_aggregation,
+                        budgets,
+                        event_timeline,
+                        acquisition_indices,
+                        trial_channel_mask,
+                        train_mask,
+                        test_mask,
+                    )
+            finally:
+                _release_fold_model(fold_model)
             per_fold.append(fold_result)
             subject_records.extend(records)
             for name, rows in variants.items():
@@ -1802,6 +2040,21 @@ class BinaryFoldResult:
     threshold: float = 0.0
     threshold_source: str = "unknown"
     transductive_balanced_acc: float = float("nan")
+    # Keep the fold-local training trace with the result so threaded workers
+    # can publish it without relying on mutable state in the parent prototype.
+    epochs_ran: int = 0
+    train_losses: list[float] = field(default_factory=list)
+    val_losses: list[float] = field(default_factory=list)
+    val_objective_losses: list[float] = field(default_factory=list)
+    task_val_aucs: list[float | None] = field(default_factory=list)
+    final_task_val_auc: float | None = None
+    phases: list[str] = field(default_factory=list)
+    best_epoch: int | None = None
+    best_task_epoch: int | None = None
+    best_task_val_loss: float | None = None
+    task_patience_exhausted: bool = False
+    fit_sec: float | None = None
+    fit_peak_memory_mb: float | None = None
 
 
 @dataclass
@@ -1822,18 +2075,51 @@ def _evaluate_one_binary_fold(
     subject_ids: np.ndarray,
     train_mask: np.ndarray,
     test_mask: np.ndarray,
+    acquisition_indices: np.ndarray | None = None,
+    trial_channel_mask: np.ndarray | None = None,
 ) -> BinaryFoldResult:
     """执行单个二分类 fold（与 evaluate_binary 串行路径完全同构）。"""
     # GLM v3：声明 fit_accepts_subject_ids 的模型收到被试分组（被试级验证早停；
     # 此前二分类路径漏传，导致 BNCI 路线早停静默失效——2026-08-23 bnci008 run 实测发现）
-    _fit_model_with_optional_subjects(model, X, y, subject_ids, subject_ids, train_mask)
+    fit_started = time.perf_counter()
+    _fit_model_with_optional_subjects(
+        model,
+        X,
+        y,
+        subject_ids,
+        subject_ids,
+        train_mask,
+        acquisition_indices=acquisition_indices,
+        trial_channel_mask=trial_channel_mask,
+    )
+    fit_sec = time.perf_counter() - fit_started
+    fit_durations = getattr(model, "fit_durations", ()) or ()
+    if fit_durations:
+        fit_sec = float(fit_durations[-1])
+    fit_peak_memory = getattr(model, "fit_peak_memory_mb", ()) or ()
+    fit_peak_memory_mb = float(fit_peak_memory[-1]) if fit_peak_memory else None
+    history = getattr(model, "last_history", None) or {}
+    train_losses = [float(value) for value in history.get("train_losses", ())]
+    val_losses = [float(value) for value in history.get("val_losses", ())]
+    val_objective_losses = [
+        float(value) for value in history.get("val_objective_losses", ())
+    ]
+    task_val_aucs = [
+        None if value is None else float(value)
+        for value in history.get("task_val_aucs", ())
+    ]
+    phases = [str(value) for value in history.get("phases", ())]
     calibration_logits, calibration_y, calibration_source = calibration_data_from_model(
         model, X[train_mask], y[train_mask]
     )
     calibration = fit_logit_calibration(
         calibration_logits, calibration_y, source=calibration_source
     )
-    logits = model.predict_logit(X[test_mask])
+    logits = _predict_logit_with_optional_trial_mask(
+        model,
+        X[test_mask],
+        trial_channel_mask[test_mask] if trial_channel_mask is not None else None,
+    )
 
     if not np.isfinite(logits).all():
         raise ValueError("模型 predict_logit 输出含 NaN/inf，无法进入 bacc/AUC。")
@@ -1860,17 +2146,73 @@ def _evaluate_one_binary_fold(
         threshold=calibration.threshold,
         threshold_source=calibration.source,
         transductive_balanced_acc=transductive_bacc,
+        epochs_ran=len(train_losses),
+        train_losses=train_losses,
+        val_losses=val_losses,
+        val_objective_losses=val_objective_losses,
+        task_val_aucs=task_val_aucs,
+        final_task_val_auc=history.get("final_task_val_auc"),
+        phases=phases,
+        best_epoch=history.get("best_epoch"),
+        best_task_epoch=history.get("best_task_epoch", history.get("best_epoch")),
+        best_task_val_loss=history.get("best_task_val_loss"),
+        task_patience_exhausted=bool(history.get("task_patience_exhausted", False)),
+        fit_sec=fit_sec,
+        fit_peak_memory_mb=fit_peak_memory_mb,
     )
 
 
 def _run_binary_fold_threaded(
-    args: tuple[int, object, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+    args: tuple[
+        int,
+        int,
+        object,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray | None,
+        np.ndarray | None,
+    ],
 ) -> tuple[int, BinaryFoldResult]:
     """线程池 worker：深拷贝未拟合模型，BLAS 限单线程，避免并行 fold 互相抢占。"""
-    fold_idx, model_proto, X, y, subject_ids, train_mask, test_mask = args
+    (
+        fold_idx,
+        fold_id_offset,
+        model_proto,
+        X,
+        y,
+        subject_ids,
+        train_mask,
+        test_mask,
+        acquisition_indices,
+        trial_channel_mask,
+    ) = args
     model = copy.deepcopy(model_proto)
-    result = _evaluate_one_binary_fold(model, X, y, subject_ids, train_mask, test_mask)
-    return fold_idx, result
+    _configure_model_fold(model, fold_idx + fold_id_offset)
+    try:
+        result = _evaluate_one_binary_fold(
+            model,
+            X,
+            y,
+            subject_ids,
+            train_mask,
+            test_mask,
+            acquisition_indices,
+            trial_channel_mask,
+        )
+        return fold_idx, result
+    finally:
+        _release_fold_model(model)
+
+
+def _run_binary_fold_process(task_args):
+    fold_idx = int(task_args[0])
+    display_fold_idx = fold_idx + int(task_args[1])
+    print(f"[fold {display_fold_idx}] binary worker started pid={os.getpid()}", flush=True)
+    with _fold_threadpool_limits():
+        return _run_binary_fold_threaded(task_args)
 
 
 def evaluate_binary(
@@ -1879,8 +2221,12 @@ def evaluate_binary(
     y: np.ndarray,
     subject_ids: np.ndarray,
     folds: Sequence[tuple[np.ndarray, np.ndarray]],
+    acquisition_indices: np.ndarray | None = None,
+    trial_channel_mask: np.ndarray | None = None,
     fold_protocol: str = "loso",
     n_jobs: int = 1,
+    parallel_backend: str = "auto",
+    fold_id_offset: int = 0,
     on_fold_end: Callable | None = None,
 ) -> BinarySummary:
     """二分类评估（LOSO / within-subject）→ balanced_acc + AUC。
@@ -1916,14 +2262,53 @@ def evaluate_binary(
     """
     X = np.asarray(X)
     y = np.asarray(y)
-    subject_ids = np.asarray(subject_ids).astype(str)
+    subject_array = np.asarray(subject_ids)
+    if subject_array.shape != (len(X),):
+        raise ValueError("subject_ids must be one-dimensional and aligned with X.")
+    subject_ids = subject_array.astype(str)
+    if X.ndim != 3:
+        raise ValueError(f"X must be (N,C,T), got {X.shape}.")
+    if not np.issubdtype(X.dtype, np.floating):
+        raise ValueError("X must have a floating dtype.")
     if not (len(X) == len(y) == len(subject_ids)):
         raise ValueError("X/y/subject_ids must contain the same number of rows.")
+    if y.ndim != 1:
+        raise ValueError(f"y must be one-dimensional, got {y.shape}.")
+    labels = set(np.unique(y).tolist())
+    if labels != {0, 1}:
+        raise ValueError(f"Binary evaluation requires labels {{0,1}}, got {sorted(labels)}.")
+    if not np.issubdtype(y.dtype, np.integer):
+        raise ValueError("Binary evaluation labels must have an integer dtype.")
+    if trial_channel_mask is not None:
+        trial_channel_mask = np.asarray(trial_channel_mask)
+        if trial_channel_mask.dtype != np.dtype(bool):
+            raise ValueError("trial_channel_mask must have boolean dtype.")
+        if trial_channel_mask.shape != X.shape[:2]:
+            raise ValueError("trial_channel_mask must have shape (N,C) matching X.")
+        if not bool(trial_channel_mask.any(axis=1).all()):
+            raise ValueError("Every evaluated trial must retain at least one channel.")
+        if bool((X[~trial_channel_mask] != 0.0).any()):
+            raise ValueError("X must be zero where trial_channel_mask is false.")
+    if fold_id_offset < 0:
+        raise ValueError("fold_id_offset must be non-negative.")
+    if n_jobs < 1:
+        raise ValueError("n_jobs must be positive.")
+    if parallel_backend not in {"auto", "process", "thread"}:
+        raise ValueError("parallel_backend must be auto, process, or thread.")
+    if parallel_backend == "auto":
+        parallel_backend = "process" if os.name == "posix" else "thread"
+    if parallel_backend == "process" and os.name != "posix":
+        raise RuntimeError("parallel_backend='process' requires a POSIX/Linux runtime.")
+    if acquisition_indices is not None:
+        acquisition_indices = np.asarray(acquisition_indices)
+        if acquisition_indices.shape != (len(X),):
+            raise ValueError("acquisition_indices must contain one value per row of X.")
+        if not np.issubdtype(acquisition_indices.dtype, np.integer):
+            raise ValueError("acquisition_indices must contain integer ordinals.")
     # NaN 守卫（D-binary-noguard，同 D-nan-guard）
-    if np.isnan(X).any():
+    if not np.isfinite(X).all():
         raise ValueError(
-            "X 含 NaN：缺失通道须先处理——classic/riemann 用 subset_channels 提取子集，"
-            "deep baseline 须按原生物理通道数构造，不能静默补齐布局。"
+            "X contains NaN/inf: missing channels must be represented as zero plus an explicit mask."
         )
 
     mask_folds = validate_outer_folds(folds, subject_ids, protocol=fold_protocol)
@@ -1931,23 +2316,60 @@ def evaluate_binary(
     per_fold: list[BinaryFoldResult] = []
     if n_jobs > 1 and len(mask_folds) > 1:
         task_args = [
-            (fold_idx, model, X, y, subject_ids, train_mask, test_mask)
+            (
+                fold_idx,
+                fold_id_offset,
+                model,
+                X,
+                y,
+                subject_ids,
+                train_mask,
+                test_mask,
+                acquisition_indices,
+                trial_channel_mask,
+            )
             for fold_idx, (train_mask, test_mask) in enumerate(mask_folds)
         ]
-        with _fold_threadpool_limits():
-            with ThreadPoolExecutor(max_workers=n_jobs) as executor:
-                results = list(executor.map(_run_binary_fold_threaded, task_args))
+        use_processes = parallel_backend == "process"
+        executor_type = ProcessPoolExecutor if use_processes else ThreadPoolExecutor
+        executor_kwargs = (
+            _fold_process_executor_kwargs(n_jobs)
+            if use_processes
+            else {"max_workers": n_jobs}
+        )
+        worker = _run_binary_fold_process if use_processes else _run_binary_fold_threaded
+        limits = nullcontext() if use_processes else _fold_threadpool_limits()
+        results = []
+        with limits:
+            with executor_type(**executor_kwargs) as executor:
+                futures = [executor.submit(worker, args) for args in task_args]
+                for future in as_completed(futures):
+                    fold_idx, result = future.result()
+                    results.append((fold_idx, result))
+                    if on_fold_end is not None:
+                        on_fold_end(fold_idx, result)
         for _, result in sorted(results, key=lambda item: item[0]):
             per_fold.append(result)
-            if on_fold_end is not None:
-                on_fold_end(len(per_fold) - 1, result)
     else:
-        for train_mask, test_mask in mask_folds:
+        for fold_idx, (train_mask, test_mask) in enumerate(mask_folds):
             with _fold_threadpool_limits():
-                fr = _evaluate_one_binary_fold(model, X, y, subject_ids, train_mask, test_mask)
+                _, fr = _run_binary_fold_threaded(
+                    (
+                        fold_idx,
+                        fold_id_offset,
+                        model,
+                        X,
+                        y,
+                        subject_ids,
+                        train_mask,
+                        test_mask,
+                        acquisition_indices,
+                        trial_channel_mask,
+                    )
+                )
             per_fold.append(fr)
             if on_fold_end is not None:
-                on_fold_end(len(per_fold) - 1, fr)
+                on_fold_end(fold_idx, fr)
 
     baccs = np.array([f.balanced_acc for f in per_fold], dtype=float)
     baccs = baccs[np.isfinite(baccs)]
@@ -1957,8 +2379,8 @@ def evaluate_binary(
     transductive = transductive[np.isfinite(transductive)]
 
     return BinarySummary(
-        balanced_acc_mean=float(baccs.mean()) if baccs.size else 0.0,
-        balanced_acc_std=float(baccs.std()) if baccs.size else 0.0,
+        balanced_acc_mean=float(baccs.mean()) if baccs.size else float("nan"),
+        balanced_acc_std=float(baccs.std()) if baccs.size else float("nan"),
         auc_mean=float(aucs.mean()) if aucs.size else float("nan"),
         per_fold=per_fold,
         transductive_balanced_acc_mean=(

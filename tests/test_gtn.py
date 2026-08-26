@@ -77,7 +77,7 @@ def test_gtn_events_count_matches_stimuli():
     digits, counts = np.unique(d.events[:, 2].astype(int), return_counts=True)
     # 9 个数字都应出现，且每个数字出现多次（GTN 各数字 7–19 次不等，>=5 是安全下界）
     assert len(digits) == 9
-    assert (counts >= 5).all(), f"每个数字应出现多次，得到 {dict(zip(digits, counts))}"
+    assert (counts >= 5).all(), f"每个数字应出现多次，得到 {dict(zip(digits, counts, strict=True))}"
 
 
 @pytest.mark.skipif(not HAS_GTN, reason="GTN 数据未下载")

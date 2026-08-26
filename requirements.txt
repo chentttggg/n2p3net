@@ -21,10 +21,7 @@ braindecode>=1.7      # EEG 深度学习基线库（EEGNet/DeepConvNet/ATCNet）
 pandas>=2.2           # 解析到 3.0.x（含 cp314 wheel）
 scikit-learn>=1.5     # 解析到 1.9.x（含 cp314 wheel）
 pyriemann>=0.6        # xDAWN + 黎曼几何基线；纯 Python（py3-none-any）
-moabb>=1.1            # 公开 P300 数据下载/缓存（experiments/download_datasets.py 依赖）
-
-# --- 实验管理 ---
-hydra-core>=1.3       # 纯 Python；若出现 ReadTimeout 属网络问题，重试即可
+moabb>=1.1            # 公开 P300 数据适配（experiments/prepare_eeg_dataset.py）
 
 # --- 开发与测试 ---
 pytest>=8.0           # 纯 Python（py3-none-any）

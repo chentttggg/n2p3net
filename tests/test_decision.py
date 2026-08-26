@@ -18,7 +18,6 @@ import pytest
 
 from models.decision import decide, hit_rate
 
-
 # ---------------- 冒烟测试 ----------------
 
 
@@ -43,7 +42,9 @@ def test_length_mismatch_raises():
 
 def test_argmax_correct():
     """核心：累积 logit 最大的数字被猜中。"""
-    digits = np.array([1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9])
+    digits = np.array(
+        [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9]
+    )
     logits = np.zeros(27)
     logits[12:15] = 3.0  # 数字 5
     logits[0:3] = 1.0  # 数字 1

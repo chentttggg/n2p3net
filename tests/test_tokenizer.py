@@ -103,7 +103,7 @@ def test_3ch_requires_channel_names():
 def test_spatial_prior_3ch():
     """v5.1：3 导时短核前中央负（Fz/Cz）、长核 Pz 正。"""
     tok = make_tokenizer(n_channels=3, channel_names=("Fz", "Cz", "Pz"))
-    for k, prior in zip(tok.temporal_kernels, tok.spatial_priors):
+    for k, prior in zip(tok.temporal_kernels, tok.spatial_priors, strict=True):
         p = prior.detach()
         if k < 64:
             assert p[:, 0:2].mean() < 0, "短核应以前中央 Fz/Cz 为负"
@@ -122,6 +122,58 @@ def test_max_norm_spatial():
     assert torch.equal(max_norm_spatial(W, None), W)
 
 
+def test_fused_temporal_spatial_matches_legacy_outputs_and_gradients():
+    """代数融合须保留输出、输入梯度和所有参与参数的梯度。"""
+
+    kwargs = dict(
+        d_model=16,
+        temporal_kernels=(3, 5),
+        filters_per_scale=4,
+        n_time=31,
+        post_norm="none",
+        post_act="none",
+    )
+    fused = make_tokenizer(**kwargs, temporal_spatial_fusion=True)
+    with torch.no_grad():
+        for mod in fused.coord_mods:
+            nn.init.normal_(mod.weight, std=0.05)
+    legacy = make_tokenizer(**kwargs, temporal_spatial_fusion=False)
+    legacy.load_state_dict(fused.state_dict())
+
+    generator = torch.Generator().manual_seed(17)
+    X_fused = torch.randn(2, C, 31, generator=generator, requires_grad=True)
+    X_legacy = X_fused.detach().clone().requires_grad_(True)
+    E_chn = torch.randn(C, D_CHN, generator=generator)
+    probe = torch.randn(2, 31, 16, generator=generator)
+
+    output_fused = fused(X_fused, E_chn)
+    output_legacy = legacy(X_legacy, E_chn)
+    assert fused.uses_fused_temporal_spatial
+    assert not legacy.uses_fused_temporal_spatial
+    assert torch.allclose(output_fused, output_legacy, atol=2e-5, rtol=2e-4)
+
+    (output_fused * probe).sum().backward()
+    (output_legacy * probe).sum().backward()
+    assert torch.allclose(X_fused.grad, X_legacy.grad, atol=3e-5, rtol=3e-4)
+    for (name_fused, param_fused), (name_legacy, param_legacy) in zip(
+        fused.named_parameters(), legacy.named_parameters(), strict=True
+    ):
+        assert name_fused == name_legacy
+        assert (param_fused.grad is None) == (param_legacy.grad is None)
+        if param_fused.grad is not None:
+            assert torch.allclose(
+                param_fused.grad,
+                param_legacy.grad,
+                atol=5e-5,
+                rtol=5e-4,
+            ), name_fused
+
+
+def test_temporal_spatial_fusion_falls_back_around_channel_local_activation():
+    tok = make_tokenizer(post_act="elu", temporal_spatial_fusion=True)
+    assert not tok.uses_fused_temporal_spatial
+
+
 # ---------------- 语义测试 ----------------
 
 
@@ -138,7 +190,7 @@ def test_spatial_prior_init():
     """地形先验初始化（D-spatial-prior）：短核枕区负、长核顶区正。"""
     tok = make_tokenizer()
     kernels = tok.temporal_kernels  # (13, 33, 65, 129)
-    for k, prior in zip(kernels, tok.spatial_priors):
+    for k, prior in zip(kernels, tok.spatial_priors, strict=True):
         p = prior.detach()  # (F, C)
         if k < 64:  # 短核 → N2 枕区负（索引 5/6/7）
             assert p[:, 5:8].mean() < 0, f"核长 {k} 应为 N2 枕区负"

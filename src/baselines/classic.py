@@ -35,7 +35,8 @@
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from pathlib import Path
 
 import numpy as np
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -47,12 +48,42 @@ from baselines.features import (
     grand_average_template,
     window_mean_feature,
 )
+from baselines.progress import EpochProgressCallback, make_epoch_progress_callback
 
 
 class Baseline:
     """经典基线统一接口（D-unified-iface）。"""
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "Baseline":
+    # Optional arguments are capability declarations consumed by evaluate.py.
+    # Defaults keep legacy adapters compatible with the common runner.
+    fit_accepts_subject_ids = False
+    fit_accepts_trial_context = False
+    fit_accepts_group_ids = False
+    fit_accepts_acquisition_indices = False
+    fit_accepts_trial_channel_mask = False
+    predict_accepts_acquisition_indices = False
+    predict_accepts_trial_channel_mask = False
+    auxiliary_predict_accepts_trial_channel_mask = False
+
+    _epoch_progress_dir: Path | None = None
+    _evaluation_fold_id: int | None = None
+
+    def configure_epoch_progress(self, directory: str | Path | None) -> None:
+        """Configure the shared epoch sink owned by an experiment runner."""
+
+        self._epoch_progress_dir = Path(directory) if directory is not None else None
+
+    def configure_evaluation_fold(self, fold_id: int | None) -> None:
+        """Set the display fold id used by the shared progress sink."""
+
+        self._evaluation_fold_id = None if fold_id is None else int(fold_id)
+
+    def epoch_progress_callback(self) -> EpochProgressCallback | None:
+        """Return this model's configured epoch callback, if any."""
+
+        return make_epoch_progress_callback(self._epoch_progress_dir, self._evaluation_fold_id)
+
+    def fit(self, X: np.ndarray, y: np.ndarray) -> Baseline:
         raise NotImplementedError
 
     def predict_logit(self, X: np.ndarray) -> np.ndarray:
@@ -121,7 +152,7 @@ class SWLDA(Baseline):
         selected = [int(i) for i in order if pvals[i] < self.p_entry][: self.max_features]
         return selected
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "SWLDA":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> SWLDA:
         F = self._features(X)
         self._mean = F.mean(axis=0)
         self._std = F.std(axis=0) + 1e-8
@@ -158,7 +189,7 @@ class WindowLogisticRegression(Baseline):
         sfreq: float = 256.0,
         tmin: float = -0.2,
         window_ms: tuple[float, float] = (250.0, 500.0),
-        channels: Optional[Sequence[int]] = None,
+        channels: Sequence[int] | None = None,
     ):
         self.sfreq = sfreq
         self.tmin = tmin
@@ -171,11 +202,9 @@ class WindowLogisticRegression(Baseline):
         self.lr = LogisticRegression(max_iter=2000, class_weight="balanced")
 
     def _features(self, X: np.ndarray) -> np.ndarray:
-        return window_mean_feature(
-            X, self.sfreq, self.tmin, self.window_ms, channels=self.channels
-        )
+        return window_mean_feature(X, self.sfreq, self.tmin, self.window_ms, channels=self.channels)
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "WindowLogisticRegression":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> WindowLogisticRegression:
         F = self._features(X)
         Fs = self.scaler.fit_transform(F)  # D-lr-scale
         self.lr.fit(Fs, y)
@@ -195,8 +224,8 @@ class TemplateMatching(Baseline):
         self,
         sfreq: float = 256.0,
         tmin: float = -0.2,
-        window_ms: Optional[tuple[float, float]] = None,
-        channels: Optional[Sequence[int]] = None,
+        window_ms: tuple[float, float] | None = None,
+        channels: Sequence[int] | None = None,
     ):
         self.sfreq = sfreq
         self.tmin = tmin
@@ -213,7 +242,7 @@ class TemplateMatching(Baseline):
             return X[:, list(self.channels), :]
         return X
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "TemplateMatching":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> TemplateMatching:
         self.template_ = grand_average_template(self._view(X), y).ravel()
         # NaN 防御（D-nan-guard）：输入含 NaN 时模板/相关会静默产出 NaN logit，
         # 进而被 decision 层当空集剔除、命中率分母悄悄变小（review P0）。故显式报错。

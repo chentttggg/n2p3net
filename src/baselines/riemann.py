@@ -138,7 +138,7 @@ class XdawnRiemann(Baseline):
             raise ValueError(f"X 须为 (N,C,T)，得到 {X.shape}。")
         return X
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "XdawnRiemann":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> XdawnRiemann:
         X = self._as_double(X)
         y = np.asarray(y).astype(int)
 

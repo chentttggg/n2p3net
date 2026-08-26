@@ -47,8 +47,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 import torch
 from torch import nn
 
@@ -68,8 +66,13 @@ class WeightedRereference(nn.Module):
         门初值（默认 0.0 = 恒等；1.0 ≈ 旧版强制 CAR 方向）。
     """
 
-    def __init__(self, n_channels: int = 8, use_gain: bool = False,
-                 n_domains: Optional[int] = None, gate_init: float = 0.0):
+    def __init__(
+        self,
+        n_channels: int = 8,
+        use_gain: bool = False,
+        n_domains: int | None = None,
+        gate_init: float = 0.0,
+    ):
         super().__init__()
         self.n_domains = n_domains
         shape = (n_channels,) if n_domains is None else (n_domains, n_channels)
@@ -96,8 +99,15 @@ class WeightedRereference(nn.Module):
         """可解释性读数：每通道的有效参考权重 g·w（(C,) 或 (D,C)）。"""
         return self.gate_raw * torch.softmax(self.w_logits, dim=-1)
 
-    def _select(self, param: torch.Tensor, domain_id: Optional[torch.Tensor],
-                B: int, C: int, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
+    def _select(
+        self,
+        param: torch.Tensor,
+        domain_id: torch.Tensor | None,
+        B: int,
+        C: int,
+        dtype: torch.dtype,
+        device: torch.device,
+    ) -> torch.Tensor:
         """按 domain_id 取参数行；(C,) 共享 → 广播 (B,C)；(D,C) → 索引 (B,C)。
 
         n_domains 给定但 domain_id 为 None 时回退域 0（主域 = GTN，P9：推理/评估
@@ -117,8 +127,8 @@ class WeightedRereference(nn.Module):
     def forward(
         self,
         X: torch.Tensor,
-        channel_mask: Optional[torch.Tensor] = None,
-        domain_id: Optional[torch.Tensor] = None,
+        channel_mask: torch.Tensor | None = None,
+        domain_id: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """X ∈ R^{B×C×T} → X_ref ∈ R^{B×C×T}。
 
@@ -135,9 +145,15 @@ class WeightedRereference(nn.Module):
         w = self._select(self.w, domain_id, B, C, dtype, device)  # (B, C)
         gate = self._select(self.gate_raw, domain_id, B, C, dtype, device)  # (B, C)
 
-        mask: Optional[torch.Tensor] = None
+        mask: torch.Tensor | None = None
         if channel_mask is not None:
             mask = channel_mask.to(device=device, dtype=dtype)
+            if mask.shape == (C,):
+                mask = mask.unsqueeze(0).expand(B, -1)
+            if mask.shape != (B, C):
+                raise ValueError(
+                    f"channel_mask must be ({C},) or ({B},{C}), got {tuple(mask.shape)}."
+                )
             w = w * mask
             w = w / w.sum(dim=1, keepdim=True).clamp(min=1e-8)  # 存在通道上重归一化
 
@@ -145,7 +161,7 @@ class WeightedRereference(nn.Module):
         subtract = gate.unsqueeze(-1) * m.unsqueeze(1)  # (B, C, 1)×(B, 1, T) → (B, C, T)
         if mask is not None:
             # 只对存在通道减除，缺失通道保持恒 0（避免幻象通道）
-            out = X - subtract * mask.view(1, C, 1)
+            out = X - subtract * mask.unsqueeze(-1)
         else:
             out = X - subtract
         if self.gain is not None:

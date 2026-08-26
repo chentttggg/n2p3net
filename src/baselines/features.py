@@ -26,12 +26,12 @@
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
 import numpy as np
 from scipy.signal import resample
 
-# 标准 8 导顺序（与 data.preprocess.STANDARD_CHANNELS 一致）：Fz,Cz,P3,Pz,P4,PO7,PO8,Oz。
+# 标准 8 导顺序（与 data.channel.STANDARD_CHANNELS 一致）：Fz,Cz,P3,Pz,P4,PO7,PO8,Oz。
 STANDARD_CHANNELS: tuple[str, ...] = ("Fz", "Cz", "P3", "Pz", "P4", "PO7", "PO8", "Oz")
 
 
@@ -60,7 +60,7 @@ def extract_window(
     sfreq: float,
     tmin: float,
     window_ms: tuple[float, float],
-    channels: Optional[Sequence[int]] = None,
+    channels: Sequence[int] | None = None,
 ) -> np.ndarray:
     """提取时间窗 [window_ms[0], window_ms[1]] 的信号 → (N, C_sel, T_window)。"""
     X = np.asarray(X, dtype=float)
@@ -81,7 +81,7 @@ def window_mean_feature(
     sfreq: float,
     tmin: float,
     window_ms: tuple[float, float],
-    channels: Optional[Sequence[int]] = None,
+    channels: Sequence[int] | None = None,
 ) -> np.ndarray:
     """窗内均值特征 → (N, C_sel)（D-window-mean）。"""
     W = extract_window(X, sfreq, tmin, window_ms, channels=channels)
@@ -101,10 +101,10 @@ def grand_average_template(X: np.ndarray, y: np.ndarray) -> np.ndarray:
 def subset_channels(X: np.ndarray, channel_mask) -> np.ndarray:
     """按 channel_mask 提取存在通道子集 → X[:, mask, :]（D-channel-strategy）。
 
-    缺失通道策略（review P0）：classic（SWLDA/WindowLR/TemplateMatching）与 riemann
-    （XdawnRiemann）应在「存在通道子集」上训练/预测，而非零填充——零填充会让协方差奇异
-    （实测 xDAWN 崩）或把 0 通道当无信息噪声特征。deep（braindecode 固定 n_chans）才零填充
-    到 8 导。此函数是 experiment 层适配 classic/riemann 的统一入口。
+    缺失通道策略：classic（SWLDA/WindowLR/TemplateMatching）与 riemann
+    （XdawnRiemann）应在「存在通道子集」上训练/预测，而非零填充；零填充会让协方差奇异
+    或把 0 通道当无信息噪声特征。deep 模型也必须按数据集原生通道数构造；此函数是
+    experiment 层适配 classic/riemann 的统一入口。
     """
     X = np.asarray(X)
     mask = np.asarray(channel_mask, dtype=bool)

@@ -6,7 +6,7 @@
 3. post_norm=bn 时前向含 BN+ELU（非线性、尺度均衡）
 4. 旧行为完全兼容（init=random, post_norm=none 时与 v2 输出一致性由既有测试覆盖）
 5. N2P3Net 参数透传契约
-6. 参数预算 ≤50k（E4）
+6. 参数硬上限 ≤80k（E4；性能优先，但不要求用满）
 """
 
 from __future__ import annotations
@@ -55,9 +55,10 @@ class TestBandpassInit:
     def test_init_filters_center_in_assigned_band(self):
         """init='bandpass' 后滤波器能量加权主频应落在分配带 [f_lo, f_hi] 内（噪声容差）。"""
         torch.manual_seed(0)
-        tok = ERPTokenizer(n_channels=3, channel_names=("Fz", "Cz", "Pz"),
-                           init="bandpass", n_time=256)
-        for tconv, k in zip(tok.temporal_convs, tok.temporal_kernels):
+        tok = ERPTokenizer(
+            n_channels=3, channel_names=("Fz", "Cz", "Pz"), init="bandpass", n_time=256
+        )
+        for tconv, k in zip(tok.temporal_convs, tok.temporal_kernels, strict=True):
             lo, hi = _band_assignment(k, 256.0)
             w = tconv.weight.detach().squeeze(1).numpy()
             centers = np.array([_energy_weighted_freq(w[f], k) for f in range(w.shape[0])])
@@ -77,8 +78,14 @@ class TestPostNorm:
     def test_bn_elu_introduces_nonlinearity_and_equalizes_scales(self):
         """post_norm=bn + post_act=elu：f(2x) ≠ 2f(x)（非线性）；各尺度输出 std 均衡。"""
         torch.manual_seed(0)
-        tok = ERPTokenizer(n_channels=3, channel_names=("Fz", "Cz", "Pz"),
-                           init="bandpass", post_norm="bn", post_act="elu", n_time=256)
+        tok = ERPTokenizer(
+            n_channels=3,
+            channel_names=("Fz", "Cz", "Pz"),
+            init="bandpass",
+            post_norm="bn",
+            post_act="elu",
+            n_time=256,
+        )
         tok.eval()
         # BN 在 eval 下用 running stats（先跑一次 train 模式填充）
         tok.train()
@@ -111,9 +118,13 @@ class TestN2P3NetPassthrough:
         from models.n2p3net import N2P3Net
 
         torch.manual_seed(0)
-        m = N2P3Net(n_channels=3, channel_names=("Fz", "Cz", "Pz"),
-                    tokenizer_init="bandpass", tokenizer_post_norm="bn",
-                    tokenizer_post_act="elu")
+        m = N2P3Net(
+            n_channels=3,
+            channel_names=("Fz", "Cz", "Pz"),
+            tokenizer_init="bandpass",
+            tokenizer_post_norm="bn",
+            tokenizer_post_act="elu",
+        )
         assert m.tokenizer.init == "bandpass"
         assert m.tokenizer.post_bns is not None
         assert isinstance(m.tokenizer.post_act_fn, torch.nn.ELU)
@@ -121,23 +132,31 @@ class TestN2P3NetPassthrough:
         out = m(x)
         assert out.heads.logit_target.shape[0] == 2
 
-    def test_glm_v3_budget_within_50k(self):
+    def test_glm_v3_budget_within_80k(self):
         from models.n2p3net import N2P3Net
 
         torch.manual_seed(0)
-        m = N2P3Net(n_channels=3, channel_names=("Fz", "Cz", "Pz"),
-                    tokenizer_init="bandpass", tokenizer_post_norm="bn",
-                    tokenizer_post_act="elu")
-        assert m.num_parameters() <= 50000
+        m = N2P3Net(
+            n_channels=3,
+            channel_names=("Fz", "Cz", "Pz"),
+            tokenizer_init="bandpass",
+            tokenizer_post_norm="bn",
+            tokenizer_post_act="elu",
+        )
+        assert m.num_parameters() <= 80000
 
     def test_backward_grad_reaches_temporal_convs(self):
         """带通 init + BN 路径下时间卷积权重仍收到非零梯度（无梯度饥饿回归）。"""
         from models.n2p3net import N2P3Net
 
         torch.manual_seed(0)
-        m = N2P3Net(n_channels=3, channel_names=("Fz", "Cz", "Pz"),
-                    tokenizer_init="bandpass", tokenizer_post_norm="bn",
-                    tokenizer_post_act="elu")
+        m = N2P3Net(
+            n_channels=3,
+            channel_names=("Fz", "Cz", "Pz"),
+            tokenizer_init="bandpass",
+            tokenizer_post_norm="bn",
+            tokenizer_post_act="elu",
+        )
         x = torch.randn(8, 3, 256)
         out = m(x)
         loss = out.heads.logit_target.sum()

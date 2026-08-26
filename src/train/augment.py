@@ -33,14 +33,26 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 import torch
 
 
+def _batch_channel_mask(X: torch.Tensor, channel_mask: torch.Tensor | None) -> torch.Tensor:
+    batch, channels, _ = X.shape
+    if channel_mask is None:
+        return torch.ones(batch, channels, device=X.device, dtype=torch.bool)
+    mask = channel_mask.to(device=X.device, dtype=torch.bool)
+    if mask.shape == (channels,):
+        return mask[None].expand(batch, -1)
+    if mask.shape != (batch, channels):
+        raise ValueError(
+            f"channel_mask must be ({channels},) or ({batch},{channels}), got {tuple(mask.shape)}."
+        )
+    return mask
+
+
 def reference_jitter(
-    X: torch.Tensor, p: float = 0.5, channel_mask: Optional[torch.Tensor] = None
+    X: torch.Tensor, p: float = 0.5, channel_mask: torch.Tensor | None = None
 ) -> torch.Tensor:
     """参考抖动：以概率 p 随机重参考到随机凸组合（D-ref-jitter）。
 
@@ -52,20 +64,21 @@ def reference_jitter(
     if not mask.any():
         return X
     w = torch.rand(B, C, device=X.device)
-    if channel_mask is not None:
-        w = w * channel_mask.to(device=X.device, dtype=w.dtype)[None, :]
+    present = _batch_channel_mask(X, channel_mask)
+    w = w * present.to(dtype=w.dtype)
     w = w / w.sum(dim=1, keepdim=True).clamp(min=1e-8)  # 凸组合权重（存在通道上重归一化）
     ref = (X * w[:, :, None]).sum(dim=1)  # (B, T) 凸组合参考
-    if channel_mask is not None:
-        subtract = ref[:, None, :] * channel_mask.to(device=X.device, dtype=X.dtype)[None, :, None]
-        X_jitter = X - subtract
-    else:
-        X_jitter = X - ref[:, None, :]
+    subtract = ref[:, None, :] * present.to(dtype=X.dtype)[:, :, None]
+    X_jitter = X - subtract
     return torch.where(mask[:, None, None], X_jitter, X)
 
 
 def known_time_shift(X: torch.Tensor, shift_samples: torch.Tensor) -> torch.Tensor:
-    """按已知整数采样点偏移平移每条 trial（L_jit 自监督用）。
+    """LEGACY augmentation: integer-sample shift for the old L_jit ablation.
+
+    This zero-padded implementation has a boundary shortcut and must not be
+    used as latency-identifiability evidence. The v12 latency object uses
+    masked interior scoring instead.
 
     X: (B,C,T)；shift_samples: (B,) 整数。正数表示把波形整体向时间轴右侧移动：
         X_shift[:, :, t] = X[:, :, t - shift]；越界位置填 0。
@@ -134,7 +147,7 @@ def amplitude_jitter(X: torch.Tensor, scale: float = 0.1) -> torch.Tensor:
 
 
 def gaussian_noise(
-    X: torch.Tensor, sigma: float = 0.1, channel_mask: Optional[torch.Tensor] = None
+    X: torch.Tensor, sigma: float = 0.1, channel_mask: torch.Tensor | None = None
 ) -> torch.Tensor:
     """高斯噪声：X += N(0, (sigma·std(X))²)（相对信号 std，D-relative-noise）。
 
@@ -142,10 +155,13 @@ def gaussian_noise(
                    （review v6 P0-2）。
     """
     if channel_mask is not None:
-        present = channel_mask.to(device=X.device, dtype=torch.bool)
-        std = X[:, present, :].std() if present.any() else 1.0
+        present = _batch_channel_mask(X, channel_mask)
+        weight = present.to(dtype=X.dtype)[:, :, None]
+        count = (weight.sum() * X.shape[-1]).clamp_min(1.0)
+        mean = (X * weight).sum() / count
+        std = (((X - mean) * weight).square().sum() / count).sqrt()
         noise = torch.randn_like(X) * (sigma * std)
-        noise = noise * present.to(dtype=X.dtype)[None, :, None]
+        noise = noise * weight
         return X + noise
     std = X.std() if X.numel() > 0 else 1.0
     noise = torch.randn_like(X) * (sigma * std)
@@ -153,15 +169,25 @@ def gaussian_noise(
 
 
 def channel_dropout(
-    X: torch.Tensor, p: float = 0.2, channel_mask: Optional[torch.Tensor] = None
-) -> torch.Tensor:
+    X: torch.Tensor,
+    p: float = 0.2,
+    channel_mask: torch.Tensor | None = None,
+    *,
+    return_mask: bool = False,
+) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """通道 dropout：随机置 0 通道（D-ch-dropout）。"""
     B, C, _ = X.shape
-    mask = torch.rand(B, C, 1, device=X.device) >= p  # True=保留
-    if channel_mask is not None:
-        # 缺失通道始终不参与 dropout（保持 0）
-        mask = mask | (~channel_mask.to(device=X.device, dtype=torch.bool)[None, :, None])
-    return X * mask.to(dtype=X.dtype)
+    present = _batch_channel_mask(X, channel_mask)
+    if not bool(present.any(dim=1).all()):
+        raise ValueError("channel_dropout requires one observed channel per trial.")
+    keep = (torch.rand(B, C, device=X.device) >= p) & present
+    empty = ~keep.any(dim=1)
+    if bool(empty.any()):
+        fallback_scores = torch.rand(B, C, device=X.device).masked_fill(~present, -1.0)
+        fallback = fallback_scores.argmax(dim=1)
+        keep[empty, fallback[empty]] = True
+    output = X * keep.to(dtype=X.dtype)[:, :, None]
+    return (output, keep) if return_mask else output
 
 
 def apply_augmentations(
@@ -175,9 +201,10 @@ def apply_augmentations(
     noise_sigma: float = 0.1,
     p_ch_dropout: float = 0.2,
     p_ref_jitter: float = 0.5,
-    seed: Optional[int] = None,
-    channel_mask: Optional[torch.Tensor] = None,
-) -> torch.Tensor:
+    seed: int | None = None,
+    channel_mask: torch.Tensor | None = None,
+    return_channel_mask: bool = False,
+) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """组合增强管线（训练期调用），按固定顺序施加各增强（D-order）。
 
     channel_mask : (C,) bool 可选；提供时所有增强对缺失通道保持 0，出口再做一次
@@ -191,18 +218,31 @@ def apply_augmentations(
     # 一次生成 5 个设备端随机数并一次同步回主机（D-aug-coins），
     # 避免逐增强 `torch.rand(1).item()` 造成每 batch 5 次 GPU→CPU 同步。
     coins = torch.rand(5, device=X.device).tolist()
+    effective_mask = _batch_channel_mask(X, channel_mask)
+    mask_became_trial_specific = False
     if coins[0] < p_time_warp:
         X = time_warp(X, max_shift=max_shift)
     if coins[1] < p_amp_jitter:
         X = amplitude_jitter(X, scale=amp_scale)
     if coins[2] < p_noise:
-        X = gaussian_noise(X, sigma=noise_sigma, channel_mask=channel_mask)
+        X = gaussian_noise(X, sigma=noise_sigma, channel_mask=effective_mask)
     if coins[3] < p_ch_dropout:
-        X = channel_dropout(X, p=p_ch_dropout, channel_mask=channel_mask)
+        X, effective_mask = channel_dropout(
+            X, p=p_ch_dropout, channel_mask=effective_mask, return_mask=True
+        )
+        mask_became_trial_specific = True
     if coins[4] < p_ref_jitter:
-        X = reference_jitter(X, p=1.0, channel_mask=channel_mask)  # 此处已决定施加，内部全量施加
+        X = reference_jitter(X, p=1.0, channel_mask=effective_mask)
 
     # 缺失通道出口强制归零（双保险，review v6 P0-2）
-    if channel_mask is not None:
-        X = X * channel_mask.to(device=X.device, dtype=X.dtype)[None, :, None]
+    X = X * effective_mask.to(dtype=X.dtype)[:, :, None]
+    if return_channel_mask:
+        returned_mask = effective_mask
+        if (
+            not mask_became_trial_specific
+            and channel_mask is not None
+            and channel_mask.shape == (X.shape[1],)
+        ):
+            returned_mask = channel_mask.to(device=X.device, dtype=torch.bool)
+        return X, returned_mask
     return X

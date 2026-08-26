@@ -26,8 +26,8 @@
                      短核（k<64 采样点）→ N2 地形（PO7/PO8/Oz 枕区负，索引 5/6/7）；
                      长核（k≥64）→ P3b 地形（P3/Pz/P4 顶区正，索引 2/3/4）。
                      先验向量归一化到单位范数 + 小噪声(0.1)打破 F 个滤波器的对称退化。
-      D-native-ch      v5.1（EEGNet 借鉴）：支持原生 3 导蒙太奇。channel_names 决定先验索引，
-                       避免 GTN 零填充 5 个恒 0 通道；旧 8 导零填充仍可用 n_channels=8 显式复现。
+      D-native-ch      支持原生 3 导蒙太奇。channel_names 决定先验索引，避免把 GTN 伪造为
+                       8 导布局；所有入口均使用数据集的原生物理通道布局。
       D-spatial-maxn   v5.1（EEGNet 借鉴）：有效空间权重 W=prior+coord_mod 后按行做 max-norm=1
                        （Lawhern 2018 的 CSP 式正则）；spatial_max_norm=None 恢复旧行为。
     D-coord-mod      空间权重 = 地形先验（可学习） + 坐标调制（Linear(d_model→F)(E_chn_proj)），
@@ -77,12 +77,16 @@
 from __future__ import annotations
 
 import math
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass
 
+import numpy as np
 import torch
 from torch import nn
+from torch.nn import functional as F
 
-from data.preprocess import STANDARD_CHANNELS
+from data.channel import STANDARD_CHANNELS, channel_coords, sinusoidal_embedding
+from models.canonical import CoordinateResidualAttention, RegisteredCoordinateGPProjector
 
 # 地形先验的通道索引（基于 STANDARD_CHANNELS 顺序 Fz,Cz,P3,Pz,P4,PO7,PO8,Oz）。
 _N2_NEGATIVE: tuple[int, ...] = (5, 6, 7)  # PO7 / PO8 / Oz 枕区负（N2 地形）
@@ -97,8 +101,14 @@ _P3B_POSITIVE_NAMES: tuple[str, ...] = ("P3", "Pz", "P4")
 _N2_FRONTAL_FALLBACK: tuple[str, ...] = ("Fz", "Cz")
 
 
+@dataclass(frozen=True)
+class TokenizerOutput:
+    tokens: torch.Tensor
+    canonical_covariance: torch.Tensor | None = None
+
+
 def _resolve_spatial_indices(
-    n_channels: int, channel_names: Optional[Sequence[str]]
+    n_channels: int, channel_names: Sequence[str] | None
 ) -> tuple[tuple[int, ...], tuple[int, ...], tuple[str, ...]]:
     """把通道名解析为 (短核负权索引, 长核正权索引, 实际通道名)。
 
@@ -138,7 +148,9 @@ def max_norm_spatial(W: torch.Tensor, max_norm: float) -> torch.Tensor:
     if max_norm is None or float(max_norm) <= 0.0:
         return W
     row_norm = W.norm(dim=1, keepdim=True).clamp_min(1e-6)
-    scale = torch.where(row_norm > float(max_norm), float(max_norm) / row_norm, torch.ones_like(row_norm))
+    scale = torch.where(
+        row_norm > float(max_norm), float(max_norm) / row_norm, torch.ones_like(row_norm)
+    )
     return W * scale
 
 
@@ -261,8 +273,8 @@ class ERPTokenizer(nn.Module):
     def __init__(
         self,
         n_channels: int = 8,
-        channel_names: Optional[Sequence[str]] = None,
-        spatial_max_norm: Optional[float] = 1.0,
+        channel_names: Sequence[str] | None = None,
+        spatial_max_norm: float | None = 1.0,
         d_model: int = 64,
         temporal_kernels: Sequence[int] = (13, 33, 65, 129),
         filters_per_scale: int = 16,
@@ -275,9 +287,25 @@ class ERPTokenizer(nn.Module):
         init: str = "random",
         post_norm: str = "none",
         post_act: str = "none",
+        channel_positions_m: np.ndarray | None = None,
+        canonical_channel_names: Sequence[str] | None = None,
+        canonical_positions_m: np.ndarray | None = None,
+        canonical_noise_variance: float | Sequence[float] = 0.05,
+        canonical_length_scale: float = 0.055,
+        canonical_residual_attention: bool = True,
+        canonical_residual_limit: float = 0.10,
+        temporal_spatial_fusion: bool = True,
     ):
         super().__init__()
-        n_neg, n_pos, names = _resolve_spatial_indices(n_channels, channel_names)
+        _, _, names = _resolve_spatial_indices(n_channels, channel_names)
+        spatial_names = names
+        if canonical_channel_names is not None:
+            spatial_names = tuple(str(name) for name in canonical_channel_names)
+            n_neg, n_pos, spatial_names = _resolve_spatial_indices(
+                len(spatial_names), spatial_names
+            )
+        else:
+            n_neg, n_pos, _ = _resolve_spatial_indices(n_channels, names)
         if d_model % 2 != 0:
             raise ValueError(f"d_model 须为偶数（正弦 PE 的 sin/cos 交替），得到 {d_model}。")
         if init not in ("random", "bandpass"):
@@ -288,6 +316,8 @@ class ERPTokenizer(nn.Module):
             raise ValueError(f"post_act 须为 'none'/'elu'/'gelu'，得到 {post_act!r}。")
         self.n_channels = n_channels
         self.channel_names = names
+        self.spatial_channel_names = spatial_names
+        self.spatial_n_channels = len(spatial_names)
         self.spatial_max_norm = None if spatial_max_norm is None else float(spatial_max_norm)
         self.d_model = d_model
         self.sfreq = float(sfreq)
@@ -303,9 +333,57 @@ class ERPTokenizer(nn.Module):
                     f"temporal_kernels 须为正奇数以保持 T 不变（padding=k//2），得到 {k}。"
                 )
         self.filters_per_scale = int(filters_per_scale)
+        self.temporal_spatial_fusion = bool(temporal_spatial_fusion)
         self.tmin = float(tmin)
         self.tmax = float(tmax)
         n_scales = len(self.temporal_kernels)
+
+        self.canonical_projector: RegisteredCoordinateGPProjector | None = None
+        self.coordinate_residual_attention: CoordinateResidualAttention | None = None
+        self.uncertainty_proj: nn.Linear | None = None
+        if canonical_channel_names is not None:
+            observed_coords, observed_mask = channel_coords(
+                names,
+                positions_m=channel_positions_m,
+                montage=None if channel_positions_m is not None else "standard_1005",
+                allow_missing=False,
+            )
+            query_coords, query_mask = channel_coords(
+                spatial_names,
+                positions_m=canonical_positions_m,
+                montage=None if canonical_positions_m is not None else "standard_1005",
+                allow_missing=False,
+            )
+            if not observed_mask.all() or not query_mask.all():
+                raise ValueError(
+                    "Canonical GP requires physical coordinates for every active sensor."
+                )
+            self.canonical_projector = RegisteredCoordinateGPProjector(
+                observed_coords,
+                query_coords,
+                noise_variance=canonical_noise_variance,
+                length_scale=canonical_length_scale,
+            )
+            if d_chn_in % 6 != 0:
+                raise ValueError(
+                    "Internal canonical coordinate encoding requires d_chn_in divisible by 6."
+                )
+            query_embedding = sinusoidal_embedding(query_coords, n_freqs=d_chn_in // 6)
+            self.register_buffer(
+                "canonical_channel_embedding",
+                torch.from_numpy(query_embedding),
+                persistent=False,
+            )
+            if canonical_residual_attention:
+                self.coordinate_residual_attention = CoordinateResidualAttention(
+                    self.canonical_projector.observed_positions,
+                    self.canonical_projector.query_positions,
+                    max_residual_fraction=canonical_residual_limit,
+                )
+            self.uncertainty_proj = nn.Linear(self.spatial_n_channels, d_model, bias=False)
+            nn.init.zeros_(self.uncertainty_proj.weight)
+        else:
+            self.register_buffer("canonical_channel_embedding", None, persistent=False)
 
         # 嵌入投影（E_chn 共享投影到 D；E_sub 投影到 D）
         self.chn_proj = nn.Linear(d_chn_in, d_model)
@@ -321,20 +399,18 @@ class ERPTokenizer(nn.Module):
         # GLM v3：带通（Gabor）初始化（D-glm-bpinit）
         if init == "bandpass":
             with torch.no_grad():
-                for tconv, k in zip(self.temporal_convs, self.temporal_kernels):
+                for tconv, k in zip(self.temporal_convs, self.temporal_kernels, strict=True):
                     f_lo, f_hi = _band_assignment(k, self.sfreq)
                     w = _bandpass_filter_bank(k, filters_per_scale, self.sfreq, f_lo, f_hi)
                     tconv.weight.copy_(w.unsqueeze(1))  # (F, 1, k)
                     nn.init.zeros_(tconv.bias)
         # GLM v3：每尺度 BN（D-glm-postnorm）
         self.post_bns = (
-            nn.ModuleList(
-                [nn.BatchNorm1d(filters_per_scale) for _ in self.temporal_kernels]
-            )
+            nn.ModuleList([nn.BatchNorm1d(filters_per_scale) for _ in self.temporal_kernels])
             if post_norm == "bn"
             else None
         )
-        self.post_act_fn: Optional[nn.Module] = {
+        self.post_act_fn: nn.Module | None = {
             "none": None,
             "elu": nn.ELU(),
             "gelu": nn.GELU(),
@@ -346,11 +422,11 @@ class ERPTokenizer(nn.Module):
         for k in self.temporal_kernels:
             if k < _SHORT_KERNEL_LIMIT:
                 prior = _make_spatial_prior(
-                    n_channels, filters_per_scale, positive=(), negative=n_neg
+                    self.spatial_n_channels, filters_per_scale, positive=(), negative=n_neg
                 )
             else:
                 prior = _make_spatial_prior(
-                    n_channels, filters_per_scale, positive=n_pos, negative=()
+                    self.spatial_n_channels, filters_per_scale, positive=n_pos, negative=()
                 )
             self.spatial_priors.append(nn.Parameter(prior))
             # 坐标调制初始化为 0，使初始空间权重 ≈ 地形先验（D-coord-mod）
@@ -367,12 +443,48 @@ class ERPTokenizer(nn.Module):
             "time_pe", _build_time_pe(n_time, d_model, tmin, tmax), persistent=False
         )
 
+    @property
+    def uses_fused_temporal_spatial(self) -> bool:
+        """Whether the exact temporal/spatial algebraic fusion is active."""
+
+        return (
+            self.temporal_spatial_fusion
+            and self.canonical_projector is None
+            and self.post_bns is None
+            and self.post_act_fn is None
+        )
+
+    @staticmethod
+    def _fused_temporal_spatial_conv(
+        X: torch.Tensor,
+        temporal_conv: nn.Conv1d,
+        spatial_weight: torch.Tensor,
+    ) -> torch.Tensor:
+        """Fold separable temporal and spatial operators into one exact Conv1d."""
+
+        effective_weight = spatial_weight.unsqueeze(-1) * temporal_conv.weight
+        effective_bias = (
+            None
+            if temporal_conv.bias is None
+            else temporal_conv.bias * spatial_weight.sum(dim=1)
+        )
+        return F.conv1d(
+            X,
+            effective_weight,
+            effective_bias,
+            stride=temporal_conv.stride,
+            padding=temporal_conv.padding,
+            dilation=temporal_conv.dilation,
+        )
+
     def forward(
         self,
         X: torch.Tensor,
-        E_chn: Optional[torch.Tensor] = None,
-        E_sub: Optional[torch.Tensor] = None,
-    ) -> torch.Tensor:
+        E_chn: torch.Tensor | None = None,
+        E_sub: torch.Tensor | None = None,
+        channel_mask: torch.Tensor | None = None,
+        return_details: bool = False,
+    ) -> torch.Tensor | TokenizerOutput:
         """X (B,C,T) → Z (B,T,D)。
 
         E_chn (C, d_chn_in) 与 E_sub (d_sub_in,) 可选；None 时跳过对应融合。
@@ -384,30 +496,34 @@ class ERPTokenizer(nn.Module):
             raise ValueError(f"X 通道数 {C} 与初始化 n_channels={self.n_channels} 不一致。")
 
         # E_chn 投影（共享）
-        if E_chn is not None:
+        if self.canonical_projector is not None:
+            expected_query = (self.spatial_n_channels, self.chn_proj.in_features)
+            expected_observed = (C, self.chn_proj.in_features)
+            if E_chn is not None and E_chn.shape not in (expected_query, expected_observed):
+                raise ValueError(
+                    f"Canonical E_chn must be observed {expected_observed} or query "
+                    f"{expected_query}, got {tuple(E_chn.shape)}."
+                )
+            query_identity = (
+                E_chn
+                if E_chn is not None and E_chn.shape == expected_query
+                else self.canonical_channel_embedding
+            )
+            E_chn_proj = self.chn_proj(query_identity)
+        elif E_chn is not None:
             if E_chn.shape != (C, self.chn_proj.in_features):
-                raise ValueError(f"E_chn 须为 (C, {self.chn_proj.in_features})，得到 {E_chn.shape}。")
+                raise ValueError(
+                    f"E_chn 须为 (C, {self.chn_proj.in_features})，得到 {E_chn.shape}。"
+                )
             E_chn_proj = self.chn_proj(E_chn)  # (C, D)
         else:
             E_chn_proj = None
 
         # 时间卷积（跨通道共享）+ 空间卷积（地形先验 + 坐标调制）。
-        # 先收集所有尺度的 (B,C,F,T) 特征与 (F,C) 空间权重，再做一次批量 einsum，
-        # 减少逐尺度的小矩阵乘与逐尺度 cat（D-tokenizer-batched-mix）。
-        scale_feats: list[torch.Tensor] = []
         scale_weights: list[torch.Tensor] = []
-        for si, (tconv, spat_prior, coord_mod) in enumerate(
-            zip(self.temporal_convs, self.spatial_priors, self.coord_mods)
+        for spat_prior, coord_mod in zip(
+            self.spatial_priors, self.coord_mods, strict=True
         ):
-            feat = tconv(X.reshape(B * C, 1, T))  # (B*C, F, T)
-            # GLM v3：每尺度 BN + 激活（D-glm-postnorm；BN 统计跨 B*C 与 T，滤波器共享故合理）
-            if self.post_bns is not None:
-                feat = self.post_bns[si](feat)
-            if self.post_act_fn is not None:
-                feat = self.post_act_fn(feat)
-            feat = feat.reshape(B, C, self.filters_per_scale, T)  # (B, C, F, T)
-            scale_feats.append(feat)
-
             # 空间权重 = 地形先验 + 坐标调制；可选 EEGNet 式 max-norm（v5.1）
             W = spat_prior  # (F, C)
             if E_chn_proj is not None:
@@ -416,11 +532,62 @@ class ERPTokenizer(nn.Module):
             W = max_norm_spatial(W, self.spatial_max_norm)
             scale_weights.append(W)
 
-        feat_all = torch.cat(scale_feats, dim=2)  # (B, C, F*n_scales, T)
         W_all = torch.cat(scale_weights, dim=0)  # (F*n_scales, C)
-        Z = torch.einsum("bcft,fc->bft", feat_all, W_all)  # (B, F*n_scales, T)
+        canonical_covariance: torch.Tensor | None = None
+        canonical_variance: torch.Tensor | None = None
+        if self.uses_fused_temporal_spatial:
+            # K_eff[f,c,k] = W[f,c] * K[f,k]. All T samples are retained while the
+            # (B,C,F,T) activations and the following spatial einsum disappear.
+            scale_outputs = [
+                self._fused_temporal_spatial_conv(X, tconv, W)
+                for tconv, W in zip(self.temporal_convs, scale_weights, strict=True)
+            ]
+            Z = torch.cat(scale_outputs, dim=1)  # (B, F*n_scales, T)
+        else:
+            scale_feats: list[torch.Tensor] = []
+            for si, tconv in enumerate(self.temporal_convs):
+                feat = tconv(X.reshape(B * C, 1, T))  # (B*C, F, T)
+                if self.post_bns is not None:
+                    feat = self.post_bns[si](feat)
+                if self.post_act_fn is not None:
+                    feat = self.post_act_fn(feat)
+                feat = feat.reshape(B, C, self.filters_per_scale, T)
+                if self.canonical_projector is not None:
+                    observed_feat = feat
+                    projection = self.canonical_projector(observed_feat, channel_mask=channel_mask)
+                    feat = projection.mean
+                    if self.coordinate_residual_attention is not None:
+                        feat = self.coordinate_residual_attention(
+                            observed=observed_feat,
+                            gp_mean=feat,
+                            channel_mask=channel_mask,
+                        )
+                    canonical_covariance = projection.covariance
+                    canonical_variance = projection.variance
+                scale_feats.append(feat)
+
+            feat_all = torch.cat(scale_feats, dim=2)  # (B, C, F*n_scales, T)
+            Z = torch.einsum("bcft,fc->bft", feat_all, W_all)
+        if canonical_covariance is not None and self.canonical_projector is not None:
+            # Exact uncertainty propagation through each learned linear spatial
+            # functional: Var[w^T mu_Q] = w^T Sigma_Q w. Normalizing by the
+            # prior variance of an independent canonical field makes the
+            # attenuation dimensionless while retaining off-diagonal structure.
+            weights = W_all.float()
+            propagated_variance = torch.einsum(
+                "fc,bcq,fq->bf", weights, canonical_covariance.float(), weights
+            ).clamp_min(0.0)
+            prior_variance = self.canonical_projector.kernel_variance * weights.square().sum(
+                dim=-1
+            ).clamp_min(1e-8)
+            spatial_reliability = torch.rsqrt(1.0 + propagated_variance / prior_variance[None])
+            Z = Z * spatial_reliability.to(dtype=Z.dtype).unsqueeze(-1)
         Z = self.pointwise(Z)  # (B, D, T)
         Z = Z.transpose(1, 2)  # (B, T, D)
+
+        if canonical_variance is not None and self.uncertainty_proj is not None:
+            uncertainty = torch.log1p(canonical_variance.float())
+            Z = Z + self.uncertainty_proj(uncertainty).to(dtype=Z.dtype).unsqueeze(1)
 
         # 时间位置编码（物理时间，缓存 + dtype 对齐，D-time-pe）
         if T == self.time_pe.shape[0]:
@@ -442,4 +609,6 @@ class ERPTokenizer(nn.Module):
             else:
                 raise ValueError(f"E_sub 须为 (d,) 或 (B,d)，得到 {E_sub.shape}。")
 
+        if return_details:
+            return TokenizerOutput(tokens=Z, canonical_covariance=canonical_covariance)
         return Z

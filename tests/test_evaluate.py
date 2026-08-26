@@ -20,7 +20,9 @@ from baselines.evaluate import (
     _fold_process_executor_kwargs,
     _fold_threadpool_limits,
     _initialize_fold_worker,
+    _neural_ride_fold_audit,
     evaluate,
+    evaluate_binary,
     loso_folds,
     paired_permutation_test,
     within_subject_folds,
@@ -213,6 +215,77 @@ def test_epoch_trajectory_audit_records_auc_and_digit_hits_without_selection(tmp
     assert rows[0]["prohibited_use"] == "outer_test_metrics_must_not_select_checkpoints"
     persisted = json.loads((tmp_path / "trajectory.json").read_text(encoding="utf-8"))
     assert persisted[0]["test_trial_auc"] == 1.0
+
+
+def test_epoch_trajectory_and_branch_audits_forward_test_channel_mask() -> None:
+    mask = np.array([[True, False], [True, True], [True, False], [True, True]])
+    X = np.zeros((4, 2, 1), dtype=np.float32)
+    y = np.array([0, 1, 0, 1])
+    digits = np.array([1, 2, 1, 2])
+    groups = np.repeat("s0", 4)
+    seen: dict[str, np.ndarray] = {}
+
+    class AuxiliaryModel:
+        auxiliary_predict_accepts_trial_channel_mask = True
+        calibration_labels_ = y
+        calibration_source_ = "subject_disjoint_validation"
+        calibration_branch_logits_ = {
+            "final": np.array([-2.0, 2.0, -1.0, 1.0]),
+            "pcw": np.array([-2.0, 2.0, -1.0, 1.0]),
+        }
+
+        def predict_epoch_trajectory_logits(self, values, trial_channel_mask=None):
+            seen["trajectory"] = np.asarray(trial_channel_mask).copy()
+            return [{"epoch": 0, "checkpoint": "in_memory", "logits": 2.0 * y - 1.0}]
+
+        def predict_branches(self, values, trial_channel_mask=None):
+            seen["branches"] = np.asarray(trial_channel_mask).copy()
+            scores = 2.0 * y - 1.0
+            return {"final": scores, "pcw": scores}
+
+        def predict_interpretability(self, values, trial_channel_mask=None):
+            seen["interpretability"] = np.asarray(trial_channel_mask).copy()
+            return {
+                "tau": np.tile([200.0, 300.0, 400.0], (len(values), 1)),
+                "tau_perturbed": np.tile([201.0, 301.0, 401.0], (len(values), 1)),
+                "tau_bounds": np.array([[150.0, 250.0], [250.0, 350.0], [350.0, 500.0]]),
+            }
+
+    timeline = make_event_timeline(digits, groups)
+    model = AuxiliaryModel()
+    _evaluate_epoch_trajectory_audit(
+        model,
+        X,
+        y,
+        digits,
+        groups,
+        {"s0": 2},
+        (1, 2),
+        True,
+        "sum",
+        (),
+        timeline,
+        np.arange(4),
+        mask,
+    )
+    _neural_ride_fold_audit(
+        model,
+        X,
+        y,
+        X,
+        y,
+        digits,
+        groups,
+        {"s0": 2},
+        (1, 2),
+        timeline,
+        np.arange(4),
+        mask,
+    )
+
+    assert np.array_equal(seen["trajectory"], mask)
+    assert np.array_equal(seen["branches"], mask)
+    assert np.array_equal(seen["interpretability"], mask)
 
 
 def test_exact_k_and_prefix_min_k_have_distinct_semantics() -> None:
@@ -864,6 +937,162 @@ def test_evaluate_binary_loso():
     )
     assert summary.auc_mean > 0.8, f"二分类 AUC 应 >0.8，得到 {summary.auc_mean:.3f}"
     assert 0.0 <= summary.balanced_acc_std <= 1.0
+
+
+def test_optional_mask_capability_does_not_make_mask_mandatory() -> None:
+    class OptionalMaskModel:
+        fit_accepts_subject_ids = True
+        fit_accepts_trial_channel_mask = True
+        predict_accepts_trial_channel_mask = True
+
+        def fit(self, X_, y_, subject_ids=None, trial_channel_mask=None):
+            assert trial_channel_mask is None
+            self.calibration_logits_ = np.array([-2.0, -1.0, 1.0, 2.0])
+            self.calibration_labels_ = np.array([0, 0, 1, 1])
+            self.calibration_source_ = "subject_disjoint_validation"
+            return self
+
+        def predict_logit(self, X_, trial_channel_mask=None):
+            assert trial_channel_mask is None
+            return np.asarray(X_)[:, 0, 0]
+
+    X = np.array([-2.0, 2.0, -1.0, 1.0, -3.0, 3.0], dtype=np.float32)[:, None, None]
+    y = np.array([0, 1, 0, 1, 0, 1])
+    subjects = np.repeat(np.arange(3), 2)
+
+    result = evaluate_binary(
+        OptionalMaskModel(),
+        X,
+        y,
+        subjects,
+        [(subjects != 2, subjects == 2)],
+        fold_protocol="partial_loso",
+    )
+    assert result.per_fold[0].auc == 1.0
+
+
+def test_serial_folds_clone_pristine_prototype_state() -> None:
+    class StatefulModel:
+        fit_accepts_subject_ids = True
+        starts: list[int] = []
+
+        def __init__(self):
+            self.fit_count = 0
+
+        def fit(self, X_, y_, subject_ids=None):
+            self.starts.append(self.fit_count)
+            self.fit_count += 1
+            self.calibration_logits_ = np.array([-2.0, -1.0, 1.0, 2.0])
+            self.calibration_labels_ = np.array([0, 0, 1, 1])
+            self.calibration_source_ = "subject_disjoint_validation"
+            return self
+
+        def predict_logit(self, X_):
+            return np.asarray(X_)[:, 0, 0]
+
+    X = np.tile(np.array([-1.0, 1.0], dtype=np.float32), 3)[:, None, None]
+    y = np.tile([0, 1], 3)
+    subjects = np.repeat(np.arange(3), 2)
+    prototype = StatefulModel()
+
+    summary = evaluate_binary(prototype, X, y, subjects, loso_folds(subjects), n_jobs=1)
+
+    assert len(summary.per_fold) == 3
+    assert StatefulModel.starts == [0, 0, 0]
+    assert prototype.fit_count == 0
+
+
+def test_binary_evaluation_rejects_column_vector_logits() -> None:
+    class BadShapeModel:
+        fit_accepts_subject_ids = True
+
+        def fit(self, X_, y_, subject_ids=None):
+            self.calibration_logits_ = np.array([-2.0, -1.0, 1.0, 2.0])
+            self.calibration_labels_ = np.array([0, 0, 1, 1])
+            self.calibration_source_ = "subject_disjoint_validation"
+            return self
+
+        def predict_logit(self, X_):
+            return np.asarray(X_)[:, 0, 0, None]
+
+    X = np.tile(np.array([-1.0, 1.0], dtype=np.float32), 3)[:, None, None]
+    y = np.tile([0, 1], 3)
+    subjects = np.repeat(np.arange(3), 2)
+    with pytest.raises(ValueError, match=r"must return shape \(2,\)"):
+        evaluate_binary(
+            BadShapeModel(),
+            X,
+            y,
+            subjects,
+            [(subjects != 2, subjects == 2)],
+            fold_protocol="partial_loso",
+        )
+
+
+def test_all_single_class_test_folds_report_nan_summary() -> None:
+    class CalibratedModel:
+        fit_accepts_subject_ids = True
+
+        def fit(self, X_, y_, subject_ids=None):
+            self.calibration_logits_ = np.array([-2.0, -1.0, 1.0, 2.0])
+            self.calibration_labels_ = np.array([0, 0, 1, 1])
+            self.calibration_source_ = "subject_disjoint_validation"
+            return self
+
+        def predict_logit(self, X_):
+            return np.asarray(X_)[:, 0, 0]
+
+    subjects = np.repeat(np.arange(4), 2)
+    y = np.repeat([0, 1, 0, 1], 2)
+    X = (2.0 * y.astype(np.float32) - 1.0)[:, None, None]
+
+    summary = evaluate_binary(CalibratedModel(), X, y, subjects, loso_folds(subjects))
+
+    assert all(np.isnan(fold.balanced_acc) for fold in summary.per_fold)
+    assert np.isnan(summary.balanced_acc_mean)
+    assert np.isnan(summary.balanced_acc_std)
+    assert np.isnan(summary.auc_mean)
+
+
+def test_evaluate_binary_forwards_acquisition_indices_to_capable_models():
+    from baselines.evaluate import evaluate_binary
+
+    class AcquisitionAwareModel:
+        fit_accepts_trial_context = True
+        fit_accepts_group_ids = True
+        fit_accepts_acquisition_indices = True
+        seen = []
+
+        def fit(self, X_, y_, subject_ids=None, group_ids=None, acquisition_indices=None, digits=None):
+            self.seen.append(np.asarray(acquisition_indices).copy())
+            self.calibration_logits_ = np.array([-2.0, -1.0, 1.0, 2.0])
+            self.calibration_labels_ = np.array([0, 0, 1, 1])
+            self.calibration_source_ = "subject_disjoint_validation"
+            return self
+
+        def predict_logit(self, X_):
+            return np.asarray(X_)[:, 0, 0]
+
+    X = np.zeros((6, 1, 1), dtype=np.float32)
+    X[:, 0, 0] = np.array([-2.0, -1.0, 1.0, 2.0, -1.5, 1.5])
+    y = np.array([0, 0, 1, 1, 0, 1])
+    subjects = np.array([0, 0, 1, 1, 2, 2])
+    acquisition = np.array([4, 5, 0, 1, 2, 3], dtype=np.int64)
+    model = AcquisitionAwareModel()
+
+    summary = evaluate_binary(
+        model,
+        X,
+        y,
+        subjects,
+        [(subjects != 2, subjects == 2)],
+        acquisition_indices=acquisition,
+        fold_protocol="partial_loso",
+    )
+
+    assert summary.per_fold[0].auc > 0.9
+    assert np.array_equal(AcquisitionAwareModel.seen[-1], acquisition[:4])
+    assert not hasattr(model, "seen_acquisition_indices")
 
 
 def test_evaluate_binary_nan_raises():

@@ -5,17 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import pytest
 import torch
 from torch.utils.data import DataLoader, Dataset
 
 from baselines.deep import DeepBaseline, DeepConfig
-from data.auxiliary import load_auxiliary, select_channels
 from models.heads import HeadsOutput
 from models.n2p3net import N2P3Net, N2P3NetOutput
 from train.losses import (
-    Losses,
     _bce_with_pos_weight,
     compute_losses,
     tau_regularization,
@@ -31,6 +28,7 @@ def make_output(B=4, seed=0):
     return N2P3NetOutput(
         heads=HeadsOutput(
             logit_target=logit_target,
+            logit_pcw=logit_target,
             logit_early=logit_early,
             amplitude=amplitude,
         ),
@@ -54,14 +52,12 @@ def test_deep_pretrained_same_weights_and_report():
         n_chans=3,
         n_times=256,
         sfreq=256.0,
-        config=DeepConfig(epochs=0, batch_size=16),
+        config=DeepConfig(epochs=1, batch_size=16),
         device=torch.device("cpu"),
         pretrained_state_dict=state,
     )
-    rng = np.random.default_rng(0)
-    X = rng.standard_normal((16, 3, 256)).astype(np.float32)
-    y = rng.integers(0, 2, 16).astype(np.int64)
-    clf.fit(X, y)
+    clf.model_ = clf._make_model()
+    clf._apply_pretrained_state_dict()
 
     assert any(e["event"] == "loaded" for e in clf.load_report)
     assert not any(e["event"] == "shape_mismatch" for e in clf.load_report)
@@ -72,21 +68,19 @@ def test_deep_pretrained_same_weights_and_report():
 def test_deep_pretrained_shape_mismatch_skip_and_strict_raises():
     source = DeepBaseline("eegnet", n_chans=4, n_times=256, sfreq=256.0, device=torch.device("cpu"))
     state = source._make_model().state_dict()
-    rng = np.random.default_rng(0)
-    X = rng.standard_normal((8, 3, 256)).astype(np.float32)
-    y = rng.integers(0, 2, 8).astype(np.int64)
 
     clf = DeepBaseline(
         "eegnet",
         n_chans=3,
         n_times=256,
         sfreq=256.0,
-        config=DeepConfig(epochs=0),
+        config=DeepConfig(epochs=1),
         device=torch.device("cpu"),
         pretrained_state_dict=state,
         strict_load=False,
     )
-    clf.fit(X, y)
+    clf.model_ = clf._make_model()
+    clf._apply_pretrained_state_dict()
     assert any(e["event"] == "shape_mismatch" for e in clf.load_report)
 
     strict = DeepBaseline(
@@ -94,13 +88,14 @@ def test_deep_pretrained_shape_mismatch_skip_and_strict_raises():
         n_chans=3,
         n_times=256,
         sfreq=256.0,
-        config=DeepConfig(epochs=0),
+        config=DeepConfig(epochs=1),
         device=torch.device("cpu"),
         pretrained_state_dict=state,
         strict_load=True,
     )
+    strict.model_ = strict._make_model()
     with pytest.raises(ValueError, match="strict_load"):
-        strict.fit(X, y)
+        strict._apply_pretrained_state_dict()
 
 
 def test_deep_freeze_prefixes():
@@ -109,12 +104,15 @@ def test_deep_freeze_prefixes():
         n_chans=3,
         n_times=256,
         sfreq=256.0,
-        config=DeepConfig(epochs=0),
+        config=DeepConfig(epochs=1),
         device=torch.device("cpu"),
         freeze_prefixes=("final_layer",),
     )
     rng = np.random.default_rng(0)
-    clf.fit(rng.standard_normal((8, 3, 256)).astype(np.float32), rng.integers(0, 2, 8))
+    clf.fit(
+        rng.standard_normal((8, 3, 256)).astype(np.float32),
+        np.asarray([0, 1, 0, 1, 0, 1, 0, 1], dtype=np.int64),
+    )
     for name, param in clf.model_.named_parameters():
         if name.startswith("final_layer"):
             assert not param.requires_grad
@@ -139,8 +137,14 @@ def test_losses_all_aux_batch_has_zero_main_supervision():
     y = torch.tensor([[1.0], [1.0], [1.0], [1.0]])
     domain_ids = torch.tensor([1, 1, 1, 1])
     losses = compute_losses(
-        out, torch.tensor([220.0, 300.0, 350.0]), y,
-        lambda2=0.3, lambda_amp=0.1, domain_ids=domain_ids, main_domain=0, aux_domain=1,
+        out,
+        torch.tensor([220.0, 300.0, 350.0]),
+        y,
+        lambda2=0.3,
+        lambda_amp=0.1,
+        domain_ids=domain_ids,
+        main_domain=0,
+        aux_domain=1,
     )
     assert losses.target.item() == 0.0
     assert losses.early.item() == 0.0
@@ -156,8 +160,12 @@ def test_losses_mixed_domain_only_main_labels_used():
     y = torch.tensor([[1.0], [0.0], [1.0], [1.0]])
     domain_ids = torch.tensor([0, 0, 1, 1])
     losses = compute_losses(
-        out, torch.tensor([220.0, 300.0, 350.0]), y,
-        lambda2=0.0, lambda_amp=0.0, domain_ids=domain_ids,
+        out,
+        torch.tensor([220.0, 300.0, 350.0]),
+        y,
+        lambda2=0.0,
+        lambda_amp=0.0,
+        domain_ids=domain_ids,
     )
     expected = _bce_with_pos_weight(out.heads.logit_target[:2], y[:2], 8.0)
     assert torch.allclose(losses.target, expected)
@@ -171,10 +179,18 @@ def test_losses_tau_and_jit_main_domain_only():
     tau_shift = out.tau.detach().clone()
     shift_ms = torch.tensor([10.0, -8.0, 5.0, -3.0])
     losses = compute_losses(
-        out, tau0, y,
-        lambda2=0.0, lambda_amp=0.0, lambda3=0.2, lambda_jit=0.1,
-        tau_shift=tau_shift, shift_ms=shift_ms,
-        domain_ids=domain_ids, main_domain=0, aux_domain=1,
+        out,
+        tau0,
+        y,
+        lambda2=0.0,
+        lambda_amp=0.0,
+        lambda3=0.2,
+        lambda_jit=0.1,
+        tau_shift=tau_shift,
+        shift_ms=shift_ms,
+        domain_ids=domain_ids,
+        main_domain=0,
+        aux_domain=1,
     )
     assert torch.allclose(losses.tau, tau_regularization(out.tau[:2], tau0, 50.0))
     # 混合域中 L_jit 也只作用于主域样本
@@ -187,10 +203,19 @@ def test_losses_all_aux_batch_tau_and_jit_zero():
     y = torch.tensor([[1.0], [1.0], [1.0], [1.0]])
     domain_ids = torch.tensor([1, 1, 1, 1])
     losses = compute_losses(
-        out, torch.tensor([220.0, 300.0, 350.0]), y,
-        lambda2=0.0, lambda_amp=0.0, lambda3=0.2, lambda_jit=0.1,
-        tau_shift=out.tau.detach().clone(), shift_ms=torch.tensor([1.0, 2.0, 3.0, 4.0]),
-        domain_ids=domain_ids, main_domain=0, aux_domain=1, lambda4=0.0,
+        out,
+        torch.tensor([220.0, 300.0, 350.0]),
+        y,
+        lambda2=0.0,
+        lambda_amp=0.0,
+        lambda3=0.2,
+        lambda_jit=0.1,
+        tau_shift=out.tau.detach().clone(),
+        shift_ms=torch.tensor([1.0, 2.0, 3.0, 4.0]),
+        domain_ids=domain_ids,
+        main_domain=0,
+        aux_domain=1,
+        lambda4=0.0,
     )
     assert losses.tau.item() == 0.0
     assert losses.jit.item() == 0.0
@@ -215,7 +240,11 @@ def test_trainer_accepts_domain_id_batches():
             return 8
 
         def __getitem__(self, i):
-            return torch.randn(8, 256), torch.tensor([i % 2], dtype=torch.float32), torch.tensor(i % 2)
+            return (
+                torch.randn(8, 256),
+                torch.tensor([i % 2], dtype=torch.float32),
+                torch.tensor(i % 2),
+            )
 
     loader = DataLoader(D(), batch_size=4)
     trainer.fit(loader)
@@ -227,8 +256,13 @@ def test_trainer_all_aux_batch_zero_loss_does_not_crash():
     torch.manual_seed(0)
     model = N2P3Net()
     cfg = TrainerConfig(
-        augment=False, lambda_amp=0.0, lambda2=0.0, lambda3=0.1,
-        lambda_jit=0.1, lambda4=0.0, epochs=1,
+        augment=False,
+        lambda_amp=0.0,
+        lambda2=0.0,
+        lambda3=0.1,
+        lambda_jit=0.1,
+        lambda4=0.0,
+        epochs=1,
     )
     trainer = Trainer(model, cfg, device=torch.device("cpu"))
 
@@ -243,40 +277,3 @@ def test_trainer_all_aux_batch_zero_loss_does_not_crash():
     history = trainer.fit(loader)
     assert len(history["train_losses"]) == 1
     assert history["train_losses"][0] == pytest.approx(0.0, abs=1e-6)
-
-
-# ---------------- 辅助数据加载器 ----------------
-
-
-def test_auxiliary_load_and_channel_select(tmp_path: Path):
-    rng = np.random.default_rng(0)
-    X = rng.standard_normal((5, 3, 257)).astype(np.float32)
-    y = np.array(["Target", "NonTarget", "Target", "NonTarget", "Target"], dtype=object)
-    np.savez(tmp_path / "bnci008.npz", X=X, y=y, channel_names=np.array(["Fz", "Cz", "Pz"], dtype=object))
-    pd.DataFrame({"subject": [1, 2, 3, 4, 5]}).to_csv(tmp_path / "bnci008_metadata.csv", index=False)
-
-    aux = load_auxiliary("bnci008", tmp_path, target_channels=("Fz", "Cz", "Pz"), n_times=256)
-    assert aux.X.shape == (5, 3, 256)
-    assert aux.y.tolist() == [1, 0, 1, 0, 1]
-    assert aux.channel_names == ("Fz", "Cz", "Pz")
-    assert aux.subject_ids.tolist() == ["1", "2", "3", "4", "5"]
-
-
-def test_auxiliary_old_cache_fallback_channels(tmp_path: Path):
-    rng = np.random.default_rng(0)
-    X = rng.standard_normal((4, 8, 256)).astype(np.float32)
-    y = np.array([0, 1, 0, 1], dtype=np.int64)
-    np.savez(tmp_path / "bnci008.npz", X=X, y=y)
-    aux = load_auxiliary("bnci008", tmp_path, target_channels=("Fz", "Cz", "Pz"))
-    assert aux.X.shape == (4, 3, 256)
-    assert aux.channel_names == ("Fz", "Cz", "Pz")
-
-
-def test_auxiliary_strict_channel_error(tmp_path: Path):
-    rng = np.random.default_rng(0)
-    X = rng.standard_normal((2, 16, 256)).astype(np.float32)
-    np.savez(tmp_path / "bi2014a.npz", X=X, y=np.array([0, 1]))
-    with pytest.raises(ValueError, match="Fz"):
-        load_auxiliary("bi2014a", tmp_path, target_channels=("Fz", "Cz", "Pz"), strict_channels=True)
-    aux = load_auxiliary("bi2014a", tmp_path, target_channels=("Fz", "Cz", "Pz"), strict_channels=False)
-    assert aux.channel_names == ("Cz", "Pz")

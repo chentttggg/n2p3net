@@ -2,16 +2,19 @@
 
 用法（任何实验命令前面加 run_with_dashboard.py 即可）：
     .venv/Scripts/python.exe experiments/run_with_dashboard.py -- \
-        .venv/Scripts/python.exe experiments/run_bnci008_loso.py --models n2p3net8 --epochs 30
+        .venv/Scripts/python.exe experiments/run_eeg_loso.py \
+            --dataset-cache experiments/cache/bnci008_v8.npz --epochs 30
 
 行为：
-1. 找空闲端口（8812 起）启动 http.server（--directory experiments）
+1. 找空闲端口（8812 起）启动 dashboard server（--directory experiments）
 2. 后台线程每 5 秒把「最近更新的 runs/*/progress.jsonl」写入 experiments/active_run.txt
    —— dashboard.html 无 URL 参数时自动加载该 run（等效于自动改好地址参数）
 3. 实验结束后（无论成败）自动关闭服务器；dashboard.html 与 progress.jsonl/record.json
    全部保留，随时可用任意静态服务器重开：
-   .venv/Scripts/python.exe -m http.server 8812 --directory experiments
+   .venv/Scripts/python.exe experiments/dashboard_server.py --port 8812 \
+       --directory experiments
 """
+
 from __future__ import annotations
 
 import argparse
@@ -72,7 +75,16 @@ def main() -> None:
 
     port = _free_port()
     server = subprocess.Popen(
-        [sys.executable, "-m", "http.server", str(port), "--directory", str(EXPS)]
+        [
+            sys.executable,
+            str(EXPS / "dashboard_server.py"),
+            "--port",
+            str(port),
+            "--bind",
+            "127.0.0.1",
+            "--directory",
+            str(EXPS),
+        ]
     )
     stop_event = threading.Event()
     _start_active_run_monitor(stop_event)
@@ -92,11 +104,13 @@ def main() -> None:
             server.wait(timeout=5)
         except subprocess.TimeoutExpired:
             server.kill()
-        active = (EXPS / "active_run.txt").read_text(encoding="utf-8").strip()
+        active_path = EXPS / "active_run.txt"
+        active = active_path.read_text(encoding="utf-8").strip() if active_path.exists() else ""
+        location = f"experiments/runs/{active}/" if active else "no run record was created"
         print(
-            f"[dashboard] 服务器已关闭。数据已保留：experiments/runs/{active}/"
+            f"[dashboard] 服务器已关闭。数据已保留：{location}"
             f"（progress.jsonl + record.json，含逐 fold 训练/验证 LOSS）；"
-            f"重开仪表盘：python -m http.server 8812 --directory experiments",
+            f"重开仪表盘：python experiments/dashboard_server.py --port 8812 --directory experiments",
             flush=True,
         )
     sys.exit(rc)

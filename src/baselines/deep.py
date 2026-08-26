@@ -9,8 +9,8 @@
     - 不复用 train/trainer.py（它是 N2P3-Net 专用：吃 N2P3NetOutput + compute_losses 多任务
       损失）。深度基线是「输入 (N,C,T) → 二分类 logits」的单任务模型，用一个自包含的轻量
       训练循环更直接、无耦合。
-    - 不做超参精调（早停/λ 网格）——基线复现用固定 epoch + Adam + pos_weight，保证可复现；
-      精调留给 Phase 2 的 N2P3-Net 本身。
+    - 不做架构超参搜索；epochs 是上限，模型选择与 N2P3-Net 共用被试隔离验证、patience 和
+      最佳权重恢复。优化器仍固定为 Adam + pos_weight。
 
 三思决策记录（供后续会话追溯）：
     D-deep-ce        用 n_outputs=2 + CrossEntropyLoss(weight=[1, pos_weight])，而非 n_outputs=1 +
@@ -21,7 +21,7 @@
     D-deep-shape     braindecode 模型输入约定 (N, C, T)（channels-first），与 data 层输出一致，直接
                      喂无需转置。实测三个模型 n_outputs=2 均输出 (N,2)。
     D-deep-param     实测参数量：EEGNet 1,490 / EEGInceptionERP 26,622 / EEGConformer 255,106。
-                     EEGConformer 远超 E4 的 50k——但 E4 约束的是 N2P3-Net 本体，深度基线是「对照
+                     EEGConformer 远超 E4 的 80k——但 E4 约束的是 N2P3-Net 本体，深度基线是「对照
                      坐标系」：复现一个高容量基线恰好验证 D6「容量非瓶颈」的对照意义（若 Conformer
                      在数千试次上过拟合、反而不如 EEGNet，正是 D6 的实证）。docstring 如实标注。
     D-deep-amp       AMP 用 bf16，CUDA/XPU 启用、CPU 禁用（DP4），复用 train/device.get_device 与
@@ -41,6 +41,9 @@
 
 契约（输入 → 输出）：
     X ∈ R^{N×C×T}（float32，缺失通道须已填 0）+ y ∈ {0,1}^N → fit 后 predict_logit(X) ∈ R^N。
+    ``channel_mask`` describes channels that are physically available in the
+    dataset; ``trial_channel_mask`` can further mark channels missing in an
+    individual trial. Both masks are optional for backwards compatibility.
 
 依赖的决策：roadmap Phase 1、constitution P8/D6、device-portability.md（DP1–DP6）、
     train/device.py（get_device）、baselines/classic.Baseline。
@@ -48,17 +51,20 @@
 
 from __future__ import annotations
 
+import copy
 import threading
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Sequence, Union
 
 import numpy as np
 import torch
 import torch.nn as nn
 from braindecode.models import EEGConformer, EEGInceptionERP, EEGNet
+from sklearn.metrics import roc_auc_score
 
 from baselines.classic import Baseline
+from baselines.validation import subject_disjoint_validation_split
 from train.device import get_device, optimize_device_for_training
 
 # 模型名（lowercase）→ 构造类
@@ -67,6 +73,7 @@ _MODEL_FACTORIES = {
     "inception": EEGInceptionERP,
     "conformer": EEGConformer,
 }
+DEEP_MODEL_NAMES = tuple(_MODEL_FACTORIES)
 
 # deep fold 线程并行时，torch.manual_seed 与模型初始化必须串行化，否则两个线程
 # 会互相踩全局 RNG，导致初始化不可复现（review v6 性能项）。
@@ -78,12 +85,29 @@ class DeepConfig:
     """深度基线训练配置（DP5：batch_size 等经配置传入，不写死）。"""
 
     epochs: int = 30
-    batch_size: int = 64
+    batch_size: int = 256
     lr: float = 1e-3
     weight_decay: float = 1e-4
     pos_weight: float = 8.0
     seed: int = 0
     standardize_input: bool = True
+    early_stop_patience: int = 6
+    val_subject_frac: float | None = 0.08
+    val_subjects_min: int = 2
+    val_subjects_max: int = 12
+    early_stop_min_delta: float = 1e-6
+
+    def __post_init__(self) -> None:
+        if self.epochs < 1 or self.batch_size < 1:
+            raise ValueError("DeepConfig epochs and batch_size must be positive.")
+        if self.lr <= 0.0 or self.weight_decay < 0.0 or self.pos_weight <= 0.0:
+            raise ValueError("DeepConfig lr/pos_weight must be positive and weight_decay non-negative.")
+        if self.early_stop_patience < 1 or self.early_stop_min_delta < 0.0:
+            raise ValueError("DeepConfig early-stop patience must be positive and delta non-negative.")
+        if self.val_subjects_min < 1 or self.val_subjects_max < self.val_subjects_min:
+            raise ValueError("DeepConfig validation subject bounds are invalid.")
+        if self.val_subject_frac is not None and not 0.0 < self.val_subject_frac < 1.0:
+            raise ValueError("DeepConfig val_subject_frac must be in (0,1) or None.")
 
 
 class DeepBaseline(Baseline):
@@ -101,23 +125,30 @@ class DeepBaseline(Baseline):
         默认 get_device()；测试可显式传 CPU。
     """
 
+    fit_accepts_subject_ids = True
+    fit_accepts_trial_channel_mask = True
+    predict_accepts_trial_channel_mask = True
+
     def __init__(
         self,
         model_name: str = "eegnet",
         n_chans: int = 8,
         n_times: int = 256,
         sfreq: float = 256.0,
-        config: Optional[DeepConfig] = None,
-        device: Optional[torch.device] = None,
+        config: DeepConfig | None = None,
+        device: torch.device | None = None,
         *,
-        pretrained_state_dict: Optional[dict] = None,
-        load_mapping: Optional[dict[str, Optional[str]]] = None,
+        channel_mask: np.ndarray | None = None,
+        pretrained_state_dict: dict | None = None,
+        load_mapping: dict[str, str | None] | None = None,
         freeze_prefixes: Sequence[str] = (),
         strict_load: bool = False,
     ):
         key = model_name.lower()
         if key not in _MODEL_FACTORIES:
             raise ValueError(f"未知 model_name={model_name!r}，可选 {list(_MODEL_FACTORIES)}。")
+        if n_chans < 1 or n_times < 1 or not np.isfinite(sfreq) or sfreq <= 0.0:
+            raise ValueError("n_chans/n_times/sfreq must define a positive physical input.")
         self.model_name = key
         self.n_chans = n_chans
         self.n_times = n_times
@@ -125,13 +156,29 @@ class DeepBaseline(Baseline):
         self.cfg = config if config is not None else DeepConfig()
         self.device = device if device is not None else get_device()
         self.use_amp = self.device.type in ("cuda", "xpu")  # DP4
+        if channel_mask is None:
+            self.channel_mask = np.ones(self.n_chans, dtype=bool)
+        else:
+            self.channel_mask = np.asarray(channel_mask, dtype=bool)
+            if self.channel_mask.shape != (self.n_chans,) or not bool(self.channel_mask.any()):
+                raise ValueError("channel_mask must be (n_chans,) and retain one channel.")
         # P9 辅助预训练接口（transfer_policy 方式 A/C）：加载报告 + 层冻结/映射
         self.pretrained_state_dict = pretrained_state_dict
-        self.load_mapping: dict[str, Optional[str]] = dict(load_mapping or {})
+        self.load_mapping: dict[str, str | None] = dict(load_mapping or {})
         self.freeze_prefixes = tuple(freeze_prefixes)
         self.strict_load = bool(strict_load)
         self.load_report: list[dict] = []
         self._fitted = False
+        self.last_history: dict[str, list[float] | int | None] = {
+            "train_losses": [],
+            "val_losses": [],
+            "best_epoch": None,
+        }
+        self._evaluation_fold_id: int | None = None
+        self.last_val_subjects: int | None = None
+        self.calibration_logits_: np.ndarray | None = None
+        self.calibration_labels_: np.ndarray | None = None
+        self.calibration_source_: str | None = None
 
     # ---------------- 模型构造 ----------------
 
@@ -168,7 +215,6 @@ class DeepBaseline(Baseline):
             return
 
         model_state = self.model_.state_dict()
-        src_keys = set(self.pretrained_state_dict.keys())
         loaded: dict[str, torch.Tensor] = {}
 
         for src_key, src_value in self.pretrained_state_dict.items():
@@ -192,9 +238,7 @@ class DeepBaseline(Baseline):
                     }
                 )
                 continue
-            loaded[dst_key] = src_value.to(
-                device=dst_value.device, dtype=dst_value.dtype
-            )
+            loaded[dst_key] = src_value.to(device=dst_value.device, dtype=dst_value.dtype)
             self.load_report.append({"event": "loaded", "key": dst_key})
 
         # 从未出现在源 checkpoint 中的目标 key
@@ -222,7 +266,7 @@ class DeepBaseline(Baseline):
             ):
                 param.requires_grad = False
 
-    def save_checkpoint(self, path: Union[str, Path]) -> Path:
+    def save_checkpoint(self, path: str | Path) -> Path:
         """保存 P9 预训练 checkpoint：state_dict + 构造元数据。"""
         if not hasattr(self, "model_") or self.model_ is None:
             raise RuntimeError("模型尚未构造，无法保存 checkpoint。")
@@ -233,6 +277,7 @@ class DeepBaseline(Baseline):
             "n_chans": self.n_chans,
             "n_times": self.n_times,
             "sfreq": self.sfreq,
+            "channel_mask": self.channel_mask.copy(),
             "config": self.cfg,
             "model_state_dict": self.model_.state_dict(),
         }
@@ -240,7 +285,7 @@ class DeepBaseline(Baseline):
         return path
 
     @staticmethod
-    def load_state_dict_file(path: Union[str, Path]) -> dict:
+    def load_state_dict_file(path: str | Path) -> dict:
         """读取 checkpoint 的 state_dict（供其他模型作为 pretrained_state_dict 传入）。"""
         payload = torch.load(Path(path), map_location="cpu", weights_only=False)
         if "model_state_dict" in payload:
@@ -249,17 +294,123 @@ class DeepBaseline(Baseline):
 
     # ---------------- 训练 ----------------
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "DeepBaseline":
-        X = np.asarray(X, dtype=np.float32)
-        y = np.asarray(y).astype(np.int64)
-        if X.ndim != 3 or X.shape[1] != self.n_chans:
-            raise ValueError(f"X 须为 (N,{self.n_chans},T)，得到 {X.shape}。")
+    def _effective_trial_channel_mask(
+        self,
+        X: np.ndarray,
+        trial_channel_mask: np.ndarray | None,
+    ) -> np.ndarray:
+        """Validate and combine static and per-trial channel availability."""
 
-        # 输入标准化（D-deep-standard）：统计量只来自训练 fold，predict 复用
-        self._input_mean = X.mean(axis=(0, 2), keepdims=True)
-        self._input_std = X.std(axis=(0, 2), keepdims=True) + 1e-6
+        static = np.broadcast_to(self.channel_mask, X.shape[:2])
+        if trial_channel_mask is None:
+            effective = np.array(static, dtype=bool, copy=True)
+        else:
+            supplied = np.asarray(trial_channel_mask)
+            if supplied.dtype != np.dtype(bool):
+                raise ValueError("trial_channel_mask must have boolean dtype.")
+            if supplied.shape != X.shape[:2]:
+                raise ValueError("trial_channel_mask must have shape (N,C) matching X.")
+            if bool((supplied & ~static).any()):
+                raise ValueError("trial_channel_mask cannot enable a permanently absent channel.")
+            effective = supplied & static
+        if not bool(effective.any(axis=1).all()):
+            raise ValueError("Every trial must retain at least one observed channel.")
+        if not np.isfinite(X).all():
+            raise ValueError("X contains NaN/inf.")
+        if bool((X[~effective] != 0.0).any()):
+            raise ValueError("X must be zero where the channel mask is false.")
+        return effective
+
+    def _masked_input_stats(
+        self,
+        X: np.ndarray,
+        mask: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Compute per-channel statistics using observed samples only."""
+
+        weights = mask[:, :, None].astype(np.float64)
+        counts = mask.sum(axis=0, dtype=np.float64)[None, :, None] * X.shape[2]
+        denominator = np.maximum(counts, 1.0)
+        mean = (X.astype(np.float64) * weights).sum(axis=(0, 2), keepdims=True) / denominator
+        centered = X.astype(np.float64) - mean
+        variance = (centered * centered * weights).sum(axis=(0, 2), keepdims=True) / denominator
+        std = np.where(
+            counts > 0.0,
+            np.sqrt(np.maximum(variance, 0.0)) + 1e-6,
+            1.0,
+        )
+        return mean.astype(np.float32), std.astype(np.float32)
+
+    def _prepare_input(self, X: np.ndarray, mask: np.ndarray) -> np.ndarray:
         if self.cfg.standardize_input:
             X = (X - self._input_mean) / self._input_std
+        # Standardization turns zero-filled missing channels into non-zero
+        # values unless the mask is re-applied after the transform.
+        return np.where(mask[:, :, None], X, 0.0).astype(np.float32, copy=False)
+
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        subject_ids: np.ndarray | None = None,
+        trial_channel_mask: np.ndarray | None = None,
+    ) -> DeepBaseline:
+        X = np.asarray(X)
+        if not np.issubdtype(X.dtype, np.floating):
+            raise ValueError("X must have a floating dtype.")
+        X = X.astype(np.float32, copy=False)
+        y_raw = np.asarray(y)
+        if y_raw.ndim != 1 or len(y_raw) != len(X):
+            raise ValueError("y must be a one-dimensional array aligned with X.")
+        if not np.issubdtype(y_raw.dtype, np.integer) or set(np.unique(y_raw).tolist()) != {0, 1}:
+            raise ValueError("Deep binary training requires integer labels {0,1}.")
+        y = y_raw.astype(np.int64)
+        if X.ndim != 3 or X.shape[1] != self.n_chans:
+            raise ValueError(f"X 须为 (N,{self.n_chans},T)，得到 {X.shape}。")
+        if X.shape[2] != self.n_times:
+            raise ValueError(f"X 时间点数 {X.shape[2]} 与模型契约 n_times={self.n_times} 不一致。")
+        trial_mask = self._effective_trial_channel_mask(X, trial_channel_mask)
+
+        if subject_ids is None:
+            train_mask = np.ones(len(X), dtype=bool)
+            val_mask = np.zeros(len(X), dtype=bool)
+            self.last_val_subjects = None
+        else:
+            subject_ids = np.asarray(subject_ids)
+            if subject_ids.shape != (len(X),):
+                raise ValueError("subject_ids 与 X 长度须一致。")
+            split = subject_disjoint_validation_split(
+                subject_ids,
+                fraction=self.cfg.val_subject_frac,
+                min_subjects=self.cfg.val_subjects_min,
+                max_subjects=self.cfg.val_subjects_max,
+                seed=self.cfg.seed,
+            )
+            train_mask, val_mask = split.train_mask, split.validation_mask
+            self.last_val_subjects = split.n_validation_subjects
+        X_train, y_train = X[train_mask], y[train_mask]
+        X_val, y_val = X[val_mask], y[val_mask]
+        train_channel_mask = trial_mask[train_mask]
+        val_channel_mask = trial_mask[val_mask]
+        unobserved_train_channels = self.channel_mask & ~train_channel_mask.any(axis=0)
+        if bool(unobserved_train_channels.any()):
+            missing = np.flatnonzero(unobserved_train_channels).tolist()
+            raise ValueError(
+                "Training split never observes active channels "
+                f"{missing}; use an intersection layout or mark them permanently absent."
+            )
+        if set(np.unique(y_train).tolist()) != {0, 1}:
+            raise ValueError("Deep training split must contain both binary classes.")
+        if len(y_val) and set(np.unique(y_val).tolist()) != {0, 1}:
+            raise ValueError("Deep validation split must contain both binary classes.")
+
+        # 输入标准化（D-deep-standard）：统计量只来自训练 fold，predict 复用
+        self._input_mean, self._input_std = self._masked_input_stats(
+            X_train, train_channel_mask
+        )
+        X_train = self._prepare_input(X_train, train_channel_mask)
+        if len(X_val):
+            X_val = self._prepare_input(X_val, val_channel_mask)
 
         # D-deep-seed：模型初始化/全局种子必须串行化，线程并行 fold 时避免互踩 RNG。
         with _INIT_LOCK:
@@ -277,9 +428,7 @@ class DeepBaseline(Baseline):
         trainable_params = [p for p in self.model_.parameters() if p.requires_grad]
         if not trainable_params:
             raise RuntimeError("freeze_prefixes 冻结了全部参数，没有可训练参数。")
-        opt = torch.optim.Adam(
-            trainable_params, lr=self.cfg.lr, weight_decay=self.cfg.weight_decay
-        )
+        opt = torch.optim.Adam(trainable_params, lr=self.cfg.lr, weight_decay=self.cfg.weight_decay)
         loss_fn = nn.CrossEntropyLoss(
             weight=torch.tensor([1.0, self.cfg.pos_weight], device=self.device)
         )
@@ -287,14 +436,27 @@ class DeepBaseline(Baseline):
         # D-deep-upload：一次性把训练张量放到目标设备，后续 batch 只做设备端索引切片，
         # 避免每个 batch 都从 CPU 做 H2D 拷贝。N2P3-Net 数据量（≤数千试次 × 8 × 256）远
         # 小于显存上限；若未来数据过大，可回退为逐 batch 上传。
-        Xt = torch.from_numpy(X).to(self.device)  # (N, C, T)
-        yt = torch.from_numpy(y).to(self.device)  # (N,)
+        Xt = torch.from_numpy(X_train).to(self.device)  # (N, C, T)
+        yt = torch.from_numpy(y_train).to(self.device)  # (N,)
+        Xvt = torch.from_numpy(X_val).to(self.device) if len(X_val) else None
+        yvt = torch.from_numpy(y_val).to(self.device) if len(y_val) else None
         n = Xt.shape[0]
+        train_losses: list[float] = []
+        val_losses: list[float] = []
+        task_val_aucs: list[float | None] = []
+        best_state = None
+        best_epoch = None
+        best_val_loss = float("inf")
+        patience_left = int(self.cfg.early_stop_patience)
+        early_stop_triggered = False
+        epoch_progress_callback = self.epoch_progress_callback()
 
         try:
-            for _ in range(self.cfg.epochs):
+            for epoch in range(self.cfg.epochs):
                 self.model_.train()
                 perm = torch.randperm(n, generator=perm_gen).to(self.device)
+                epoch_loss = 0.0
+                n_seen = 0
                 for i in range(0, n, self.cfg.batch_size):
                     idx = perm[i : i + self.cfg.batch_size]
                     with self._autocast_ctx():
@@ -303,6 +465,82 @@ class DeepBaseline(Baseline):
                     opt.zero_grad(set_to_none=True)  # 释放梯度张量，减少显存碎片
                     loss.backward()
                     opt.step()
+                    epoch_loss += float(loss.detach()) * len(idx)
+                    n_seen += len(idx)
+                train_losses.append(epoch_loss / max(n_seen, 1))
+                mean_val = None
+                task_val_auc = None
+
+                if Xvt is not None and yvt is not None:
+                    self.model_.eval()
+                    total_val = 0.0
+                    n_val = 0
+                    val_score_parts: list[torch.Tensor] = []
+                    val_label_parts: list[torch.Tensor] = []
+                    with torch.inference_mode():
+                        for i in range(0, len(Xvt), self.cfg.batch_size):
+                            xb = Xvt[i : i + self.cfg.batch_size]
+                            yb = yvt[i : i + self.cfg.batch_size]
+                            with self._autocast_ctx():
+                                val_logits = self.model_(xb)
+                                val_loss = loss_fn(val_logits, yb)
+                            val_score_parts.append(
+                                (val_logits[:, 1] - val_logits[:, 0]).float().cpu()
+                            )
+                            val_label_parts.append(yb.float().cpu())
+                            total_val += float(val_loss) * len(xb)
+                            n_val += len(xb)
+                    mean_val = total_val / max(n_val, 1)
+                    val_losses.append(mean_val)
+                    val_labels = torch.cat(val_label_parts).numpy()
+                    val_scores = torch.cat(val_score_parts).numpy()
+                    if len(np.unique(val_labels)) == 2:
+                        task_val_auc = float(roc_auc_score(val_labels, val_scores))
+                    task_val_aucs.append(task_val_auc)
+                    if mean_val < best_val_loss - self.cfg.early_stop_min_delta:
+                        best_val_loss = mean_val
+                        best_epoch = epoch
+                        best_state = copy.deepcopy(self.model_.state_dict())
+                        patience_left = int(self.cfg.early_stop_patience)
+                    else:
+                        patience_left -= 1
+                    if patience_left <= 0:
+                        will_early_stop = True
+                    else:
+                        will_early_stop = False
+                else:
+                    will_early_stop = False
+
+                if epoch_progress_callback is not None:
+                    epoch_progress_callback(
+                        {
+                            "epoch": epoch + 1,
+                            "epoch_limit": self.cfg.epochs,
+                            "train_loss": train_losses[-1],
+                            "train_loss_components": {},
+                            "task_val_loss": mean_val,
+                            "task_val_auc": task_val_auc,
+                            "objective_val_loss": mean_val,
+                            "val_innovation_nll": None,
+                            "phase": "joint",
+                            "optimizer_steps": None,
+                            "selection_active": mean_val is not None,
+                            "patience_left": patience_left if mean_val is not None else None,
+                            "early_stop_patience": self.cfg.early_stop_patience,
+                            "best_epoch": best_epoch + 1 if best_epoch is not None else None,
+                            "best_task_epoch": best_epoch + 1 if best_epoch is not None else None,
+                            "best_val_loss": (
+                                best_val_loss if best_val_loss != float("inf") else None
+                            ),
+                            "best_task_val_loss": (
+                                best_val_loss if best_val_loss != float("inf") else None
+                            ),
+                            "will_early_stop": will_early_stop,
+                        }
+                    )
+                if will_early_stop:
+                    early_stop_triggered = True
+                    break
         except torch.OutOfMemoryError:  # DP6
             raise RuntimeError(
                 f"显存溢出（OOM）：请减小 batch_size（当前 {self.cfg.batch_size}）后重试。"
@@ -312,23 +550,83 @@ class DeepBaseline(Baseline):
                 raise RuntimeError("显存溢出（OOM）：请减小 batch_size 后重试。") from None
             raise
 
+        if best_state is not None:
+            self.model_.load_state_dict(best_state)
+        final_task_val_auc = None
+        if Xvt is not None and yvt is not None:
+            self.model_.eval()
+            final_score_parts: list[torch.Tensor] = []
+            final_label_parts: list[torch.Tensor] = []
+            with torch.inference_mode():
+                for i in range(0, len(Xvt), self.cfg.batch_size):
+                    xb = Xvt[i : i + self.cfg.batch_size]
+                    yb = yvt[i : i + self.cfg.batch_size]
+                    with self._autocast_ctx():
+                        final_logits = self.model_(xb)
+                    final_score_parts.append(
+                        (final_logits[:, 1] - final_logits[:, 0]).float().cpu()
+                    )
+                    final_label_parts.append(yb.float().cpu())
+            final_labels = torch.cat(final_label_parts).numpy()
+            final_scores = torch.cat(final_score_parts).numpy()
+            if len(np.unique(final_labels)) == 2:
+                final_task_val_auc = float(roc_auc_score(final_labels, final_scores))
+            self.model_.train()
+        self.last_history = {
+            "train_losses": train_losses,
+            "val_losses": val_losses,
+            "val_objective_losses": list(val_losses),
+            "task_val_aucs": task_val_aucs,
+            "final_task_val_auc": final_task_val_auc,
+            "phases": ["joint"] * len(train_losses),
+            "best_epoch": best_epoch,
+            "best_task_epoch": best_epoch,
+            "best_task_val_loss": (
+                best_val_loss if best_val_loss != float("inf") else None
+            ),
+            "task_patience_exhausted": early_stop_triggered,
+        }
         self._fitted = True
+        self.calibration_logits_ = None
+        self.calibration_labels_ = None
+        self.calibration_source_ = None
+        if len(X_val):
+            # Use held-out training subjects for downstream threshold/LLR
+            # calibration. X_val is already standardized here, so use a raw
+            # forward rather than predict_logit (which would standardize twice).
+            self.model_.eval()
+            chunks = []
+            with torch.inference_mode():
+                for i in range(0, len(Xvt), max(self.cfg.batch_size * 4, 256)):
+                    with self._autocast_ctx():
+                        val_logits = self.model_(Xvt[i : i + max(self.cfg.batch_size * 4, 256)])
+                    chunks.append((val_logits[:, 1] - val_logits[:, 0]).float().cpu())
+            self.calibration_logits_ = torch.cat(chunks).numpy().astype(np.float64)
+            self.calibration_labels_ = y_val.copy()
+            self.calibration_source_ = "subject_disjoint_validation"
         return self
 
     # ---------------- 预测 ----------------
 
-    def predict_logit(self, X: np.ndarray) -> np.ndarray:
+    def predict_logit(
+        self,
+        X: np.ndarray,
+        trial_channel_mask: np.ndarray | None = None,
+    ) -> np.ndarray:
         if not self._fitted:
             raise RuntimeError("请先 fit 再 predict_logit。")
-        X = np.asarray(X, dtype=np.float32)
+        X = np.asarray(X)
+        if not np.issubdtype(X.dtype, np.floating):
+            raise ValueError("X must have a floating dtype.")
+        X = X.astype(np.float32, copy=False)
         if X.ndim != 3 or X.shape[1] != self.n_chans:
             raise ValueError(f"X 须为 (N,{self.n_chans},T)，得到 {X.shape}。")
         if X.shape[2] != self.n_times:
-            raise ValueError(
-                f"X 时间点数 {X.shape[2]} 与模型契约 n_times={self.n_times} 不一致。"
-            )
-        if self.cfg.standardize_input:
-            X = (X - self._input_mean) / self._input_std
+            raise ValueError(f"X 时间点数 {X.shape[2]} 与模型契约 n_times={self.n_times} 不一致。")
+        if len(X) == 0:
+            raise ValueError("predict_logit requires at least one trial.")
+        mask = self._effective_trial_channel_mask(X, trial_channel_mask)
+        X = self._prepare_input(X, mask)
 
         # D-deep-predict-chunks：分块前向，既避免大测试集一次性占满显存，也避免在
         # GPU 上拼接全部 logits；每块只把 log-odds 转 float32 后立即搬回 CPU。

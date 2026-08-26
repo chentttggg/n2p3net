@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pytest
 import torch
@@ -111,3 +113,115 @@ def test_wrong_channels_raises():
     y = np.zeros(10, dtype=int)
     with pytest.raises(ValueError):
         clf.fit(X, y)
+
+
+def test_masked_channels_stay_zero_after_input_standardization():
+    """Zero-filled missing channels must not become signal after z-scoring."""
+    rng = np.random.default_rng(21)
+    X = rng.standard_normal((6, C, T)).astype(np.float32)
+    mask = np.ones((6, C), dtype=bool)
+    mask[:, 2] = False
+    X[:, 2, :] = 0.0
+    clf = DeepBaseline(
+        "eegnet",
+        channel_mask=np.ones(C, dtype=bool),
+        config=DeepConfig(epochs=1),
+        device=_cpu_device(),
+    )
+
+    effective = clf._effective_trial_channel_mask(X, mask)
+    clf._input_mean, clf._input_std = clf._masked_input_stats(X, effective)
+    prepared = clf._prepare_input(X, effective)
+
+    assert np.allclose(prepared[:, 2, :], 0.0)
+    assert np.isclose(clf._input_mean[0, 2, 0], 0.0)
+
+
+def test_masked_input_statistics_count_every_observed_time_sample():
+    """Counterexample: the denominator is observed trials times T, not trials alone."""
+    X = np.ones((3, 2, 4), dtype=np.float32)
+    mask = np.ones((3, 2), dtype=bool)
+    clf = DeepBaseline(
+        "eegnet",
+        n_chans=2,
+        n_times=4,
+        config=DeepConfig(epochs=1),
+        device=_cpu_device(),
+    )
+
+    mean, std = clf._masked_input_stats(X, mask)
+    clf._input_mean, clf._input_std = mean, std
+    prepared = clf._prepare_input(X, mask)
+
+    assert np.allclose(mean, 1.0)
+    assert np.allclose(std, 1e-6)
+    assert np.allclose(prepared, 0.0)
+
+
+def test_static_channel_mask_is_enforced():
+    X, y = make_p300_data(n_target=20, n_nontarget=20)
+    static = np.ones(C, dtype=bool)
+    static[1] = False
+    X[:, 1, :] = 0.0
+    clf = DeepBaseline(
+        "eegnet",
+        channel_mask=static,
+        config=DeepConfig(epochs=1, batch_size=40),
+        device=_cpu_device(),
+    )
+    clf.fit(X, y)
+    assert np.allclose(clf.predict_logit(X), clf.predict_logit(X, np.broadcast_to(static, (len(X), C))))
+
+
+def test_subject_disjoint_early_stopping_and_calibration(monkeypatch):
+    """Deep baselines use the same grouped split and restore minimum-val weights."""
+    X, y = make_p300_data(n_target=32, n_nontarget=96, seed=9)
+    subjects = np.repeat(np.arange(8), 16)
+    cfg = DeepConfig(
+        epochs=5,
+        batch_size=32,
+        lr=2e-2,
+        seed=7,
+        val_subject_frac=0.25,
+        val_subjects_min=2,
+        val_subjects_max=2,
+        early_stop_patience=2,
+    )
+    clf = DeepBaseline("eegnet", config=cfg, device=_cpu_device())
+    clf.fit(X, y, subject_ids=subjects)
+
+    assert clf.last_val_subjects == 2
+    assert len(clf.last_history["val_losses"]) >= 1
+    assert clf.last_history["best_epoch"] is not None
+    assert clf.calibration_source_ == "subject_disjoint_validation"
+    assert len(clf.calibration_logits_) == len(clf.calibration_labels_) == 32
+    assert np.isfinite(clf.calibration_logits_).all()
+
+
+def test_subject_disjoint_history_records_validation_auc(tmp_path):
+    rng = np.random.default_rng(12)
+    X = rng.standard_normal((64, C, T)).astype(np.float32)
+    y = np.tile([0, 1], 32).astype(np.int64)
+    subjects = np.repeat(np.arange(8), 8)
+    clf = DeepBaseline(
+        "eegnet",
+        config=DeepConfig(
+            epochs=2,
+            batch_size=16,
+            val_subject_frac=0.25,
+            val_subjects_min=2,
+            val_subjects_max=2,
+        ),
+        device=_cpu_device(),
+    )
+    clf.configure_epoch_progress(tmp_path)
+    clf.configure_evaluation_fold(3)
+    clf.fit(X, y, subject_ids=subjects)
+
+    assert len(clf.last_history["task_val_aucs"]) == len(clf.last_history["val_losses"])
+    assert all(value is not None and 0.0 <= value <= 1.0 for value in clf.last_history["task_val_aucs"])
+    rows = [
+        json.loads(line) for line in (tmp_path / "fold_3.jsonl").read_text().splitlines()
+    ]
+    assert len(rows) == len(clf.last_history["val_losses"])
+    assert all(row["task_val_auc"] is not None for row in rows)

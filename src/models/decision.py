@@ -46,8 +46,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional, Sequence
 
 import numpy as np
 
@@ -81,7 +81,7 @@ def decide(
     logits: Sequence[float],
     digits: Sequence[int],
     subject_ids: Sequence,
-    digit_vocab: Optional[Sequence[int]] = None,
+    digit_vocab: Sequence[int] | None = None,
     center_logits: bool = True,
     aggregation: str = "sum",
 ) -> DecisionResult:
@@ -126,16 +126,14 @@ def decide(
     if not np.isfinite(logits).all():
         raise ValueError(
             "logits 含 NaN/inf：上游模型对缺失通道输出异常。请先处理缺失通道"
-            "（classic/riemann 用子集、deep 零填充）后再喂 decision 层。"
+            "（classic/riemann 用存在通道子集，deep 按原生物理通道数构造）后再喂 decision 层。"
         )
 
     if digit_vocab is None:
         digit_vocab = np.arange(1, 10)
     digit_vocab = np.asarray(digit_vocab)
     if digit_vocab.ndim != 1 or len(np.unique(digit_vocab)) != len(digit_vocab):
-        raise ValueError(
-            f"digit_vocab 须为一维且不含重复数字，得到 {digit_vocab.tolist()}。"
-        )
+        raise ValueError(f"digit_vocab 须为一维且不含重复数字，得到 {digit_vocab.tolist()}。")
 
     uniq_subjects, inverse = np.unique(subject_ids, return_inverse=True)
     n_subs = len(uniq_subjects)

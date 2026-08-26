@@ -32,7 +32,7 @@ if str(_SRC) not in sys.path:
 from models.n2p3net import N2P3Net  # noqa: E402
 from train.device import get_device  # noqa: E402
 from train.preloaded import PreloadedDataLoader  # noqa: E402
-from train.recipe import NEURAL_RIDE_V11  # noqa: E402
+from train.recipe import NEURAL_RIDE_V11_LEGACY  # noqa: E402
 from train.trainer import Trainer, TrainerConfig  # noqa: E402
 
 SFREQ = 256.0
@@ -196,7 +196,10 @@ def recovery_metrics(predicted: np.ndarray, expected: np.ndarray | float) -> dic
 
 
 def _model_kwargs(*, p3b_tau0_init_ms: float = 460.0) -> dict[str, object]:
-    return NEURAL_RIDE_V11.model_kwargs(
+    # Deliberately uses the legacy PCW recipe: this runner is the negative
+    # control showing that task-only PCW routing parameters do not recover
+    # synthetic latency. The v12 measurement object has its own gate runner.
+    return NEURAL_RIDE_V11_LEGACY.model_kwargs(
         n_channels=3,
         channel_names=CHANNEL_NAMES,
         tmin_ms=TMIN_MS,

@@ -5,8 +5,8 @@
 （GTN 实测信号损失 4.36×，见 failure_diagnosis §12），v2 用自由线性门修复。
 """
 
-import torch
 import pytest
+import torch
 
 from models.reference import WeightedRereference
 
@@ -184,7 +184,7 @@ def test_per_domain_reference():
     with torch.no_grad():
         ref.gate_raw[0].fill_(1.0)  # 域 0：门全开（CAR 方向）
         ref.gate_raw[1].fill_(0.0)  # 域 1：恒等
-        ref.w_logits[1, 0] = 10.0   # 域 1 的 w 无所谓（门关）
+        ref.w_logits[1, 0] = 10.0  # 域 1 的 w 无所谓（门关）
     X = torch.randn(3, 4, 8)
     domain = torch.tensor([0, 1, 0])
     out = ref(X, domain_id=domain)
@@ -202,3 +202,16 @@ def test_effective_reference_per_domain_shape():
     ref = WeightedRereference(n_channels=4, n_domains=3)
     eff = ref.effective_reference()
     assert eff.shape == (3, 4)
+
+
+def test_per_trial_channel_mask_prevents_phantom_reference_channels():
+    ref = WeightedRereference(n_channels=4)
+    with torch.no_grad():
+        ref.gate_raw.fill_(1.0)
+    X = torch.randn(2, 4, 16)
+    mask = torch.tensor([[True, True, False, False], [False, True, True, False]])
+    X = X * mask[:, :, None]
+    output = ref(X, channel_mask=mask)
+    assert torch.equal(output[~mask], torch.zeros_like(output[~mask]))
+    assert torch.allclose(output[0, :2].mean(dim=0), torch.zeros(16), atol=1e-6)
+    assert torch.allclose(output[1, 1:3].mean(dim=0), torch.zeros(16), atol=1e-6)
