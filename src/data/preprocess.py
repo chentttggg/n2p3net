@@ -15,6 +15,7 @@ from data.channel import (
     canonical_channel_name,
     resolve_channel_layout,
 )
+from data.contract import DEFAULT_P300_DATA_CONTRACT
 
 DEFAULT_REJECT_THRESHOLD: float | None = None
 
@@ -148,7 +149,7 @@ def map_channels(
 def resample(
     raw: mne.io.BaseRaw,
     events: np.ndarray | None = None,
-    sfreq: float = 256.0,
+    sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
     *,
     copy: bool = False,
 ) -> tuple[mne.io.BaseRaw, np.ndarray | None]:
@@ -245,12 +246,12 @@ def preprocess(
     raw: mne.io.BaseRaw,
     events: np.ndarray,
     *,
-    sfreq: float = 256.0,
-    l_freq: float | None = 0.1,
-    h_freq: float | None = None,
-    tmin: float = -0.2,
-    tmax: float = 0.8,
-    n_times: int | None = 256,
+    sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
+    l_freq: float | None = DEFAULT_P300_DATA_CONTRACT.l_freq,
+    h_freq: float | None = DEFAULT_P300_DATA_CONTRACT.h_freq,
+    tmin: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms / 1000.0,
+    tmax: float = DEFAULT_P300_DATA_CONTRACT.tmax_ms / 1000.0,
+    n_times: int | None = DEFAULT_P300_DATA_CONTRACT.n_times,
     reject_threshold: float | None = DEFAULT_REJECT_THRESHOLD,
     baseline: tuple[float, float] | None = None,
     channels: Sequence[str] | None = None,

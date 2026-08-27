@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from data.contract import DEFAULT_GTN_DATA_CONTRACT
 from data.epochs import EpochDataset, PreprocessingSpec
 from data.events import (
     ScheduledEventTimeline,
@@ -20,14 +21,14 @@ from data.preprocess import PreprocessResult, preprocess
 
 GTN_CHANNELS = ("Fz", "Cz", "Pz")
 GTN_LMBC_PREPROCESSING = PreprocessingSpec(
-    name="gtn_lmbc_v1",
-    sfreq=256.0,
-    l_freq=0.1,
-    h_freq=None,
-    tmin_ms=-200.0,
-    tmax_ms=800.0,
-    n_times=256,
-    baseline_mode="trial",
+    name=DEFAULT_GTN_DATA_CONTRACT.name,
+    sfreq=DEFAULT_GTN_DATA_CONTRACT.sample_rate_hz,
+    l_freq=DEFAULT_GTN_DATA_CONTRACT.l_freq,
+    h_freq=DEFAULT_GTN_DATA_CONTRACT.h_freq,
+    tmin_ms=DEFAULT_GTN_DATA_CONTRACT.tmin_ms,
+    tmax_ms=DEFAULT_GTN_DATA_CONTRACT.tmax_ms,
+    n_times=DEFAULT_GTN_DATA_CONTRACT.n_times,
+    baseline_mode=DEFAULT_GTN_DATA_CONTRACT.baseline_mode,
     reject_threshold_v=None,
 )
 

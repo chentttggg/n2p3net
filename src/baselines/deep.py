@@ -31,8 +31,8 @@
     D-deep-seed      fit 起始 torch.manual_seed(seed) + 每 epoch shuffle 用 torch.randperm，保证
                      可复现。注意：deep fold 线程并行时 CUDA dropout 仍用进程级全局 RNG；
                       模型初始化与 shuffle 已确定化，但逐 bit 复现建议 --deep-jobs 1（audit P2）。
-    D-deep-sfreq     EEGInceptionERP 的 scales_samples_s 是「秒」单位，需显式传 sfreq=256 与
-                     n_times=256（默认 n_times=1000/sfreq=128，是 ~7.8s 窗口，与我们的 1s epoch
+    D-deep-sfreq     EEGInceptionERP 的 scales_samples_s 是「秒」单位，需显式传 sfreq=250 与
+                     n_times=350（默认 n_times=1000/sfreq=128，是 ~7.8s 窗口，与我们的 P300 epoch
                      不符）；EEGNet 用 kernel_length(样本) 与 sfreq 无关；EEGConformer 无需 sfreq。
     D-deep-standard  训练前用训练集逐通道 mean/std 做 z-score（fit 内完成，predict 复用训练统计量）。
                      review v6 P1：V 单位输入（~1e-5–1e-4）会让 deep logit 坍缩成窄带
@@ -65,6 +65,7 @@ from sklearn.metrics import roc_auc_score
 
 from baselines.classic import Baseline
 from baselines.validation import subject_disjoint_validation_split
+from data.contract import DEFAULT_P300_DATA_CONTRACT
 from train.device import get_device
 from train.runtime import GpuPerformanceScheduler, MatrixBatchSource, is_oom_error
 
@@ -131,7 +132,7 @@ class DeepBaseline(Baseline):
     model_name : str
         "eegnet" / "inception" / "conformer"（大小写不敏感）。
     n_chans / n_times / sfreq : int / int / float
-        通道数、时间点数、采样率（与 data 层契约一致：8 / 256 / 256）。
+        通道数、时间点数、采样率（与 data 层契约一致：8 / 350 / 250）。
     config : DeepConfig | None
         训练配置（默认 DeepConfig()）。
     device : torch.device | None
@@ -147,8 +148,8 @@ class DeepBaseline(Baseline):
         self,
         model_name: str = "eegnet",
         n_chans: int = 8,
-        n_times: int = 256,
-        sfreq: float = 256.0,
+        n_times: int = DEFAULT_P300_DATA_CONTRACT.n_times,
+        sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
         config: DeepConfig | None = None,
         device: torch.device | None = None,
         runtime: GpuPerformanceScheduler | None = None,

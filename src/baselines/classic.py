@@ -49,6 +49,7 @@ from baselines.features import (
     window_mean_feature,
 )
 from baselines.progress import EpochProgressCallback, make_epoch_progress_callback
+from data.contract import DEFAULT_P300_DATA_CONTRACT
 
 
 class Baseline:
@@ -113,8 +114,8 @@ class SWLDA(Baseline):
 
     def __init__(
         self,
-        sfreq: float = 256.0,
-        tmin: float = -0.2,
+        sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
+        tmin: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms / 1000.0,
         target_hz: float = 20.0,
         p_entry: float = 0.1,
         max_features: int = 60,
@@ -186,8 +187,8 @@ class WindowLogisticRegression(Baseline):
 
     def __init__(
         self,
-        sfreq: float = 256.0,
-        tmin: float = -0.2,
+        sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
+        tmin: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms / 1000.0,
         window_ms: tuple[float, float] = (250.0, 500.0),
         channels: Sequence[int] | None = None,
     ):
@@ -222,8 +223,8 @@ class TemplateMatching(Baseline):
 
     def __init__(
         self,
-        sfreq: float = 256.0,
-        tmin: float = -0.2,
+        sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
+        tmin: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms / 1000.0,
         window_ms: tuple[float, float] | None = None,
         channels: Sequence[int] | None = None,
     ):

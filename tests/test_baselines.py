@@ -22,8 +22,8 @@ from baselines.features import (
 )
 
 C = 8
-T = 256
-SFR = 256.0
+T = 250
+SFR = 250.0
 TMIN = -0.2  # 秒；与 data/preprocess.py 的单位一致
 
 
@@ -51,19 +51,19 @@ def make_p300_data(n_target=120, n_nontarget=480, seed=0):
 
 def test_time_to_index():
     assert time_to_index(-200, SFR, TMIN) == 0
-    assert time_to_index(300, SFR, TMIN) == 128  # (300+200)/1000*256
+    assert time_to_index(300, SFR, TMIN) == 125  # (300+200)/1000*250
 
 
 def test_downsample_shape():
     X = np.random.randn(10, C, T).astype(np.float32)
     Xd = downsample_epochs(X, SFR, target_hz=20)
-    assert Xd.shape == (10, C, 20)  # 256*20/256=20
+    assert Xd.shape == (10, C, 20)  # 250*20/250=20
 
 
 def test_extract_window_shape():
     X = np.random.randn(10, C, T).astype(np.float32)
     W = extract_window(X, SFR, TMIN, (250, 500))
-    assert W.shape == (10, C, 64)  # idx 115..179
+    assert W.shape == (10, C, 63)  # idx 112..175
 
 
 def test_window_mean_feature_shape():
@@ -121,21 +121,21 @@ def test_predict_proba_range():
 
 def test_subset_channels():
     """通道子集（D-channel-strategy）：classic/riemann 用子集而非零填充。"""
-    X = np.random.randn(5, 8, 256).astype(np.float32)
+    X = np.random.randn(5, 8, 250).astype(np.float32)
     mask = np.array([True, True, True, False, False, False, False, False])
     Xsub = subset_channels(X, mask)
-    assert Xsub.shape == (5, 3, 256)
+    assert Xsub.shape == (5, 3, 250)
     assert np.array_equal(Xsub, X[:, :3, :])
 
 
 def test_subset_channels_all_false_raises():
     with pytest.raises(ValueError):
-        subset_channels(np.random.randn(5, 8, 256), np.zeros(8, dtype=bool))
+        subset_channels(np.random.randn(5, 8, 250), np.zeros(8, dtype=bool))
 
 
 def test_template_nan_raises():
     """NaN 防御（D-nan-guard）：TemplateMatching 对 NaN 输入显式报错，不静默产出 NaN logit。"""
-    X = np.random.randn(20, 8, 256).astype(np.float32)
+    X = np.random.randn(20, 8, 250).astype(np.float32)
     X[:, 3:, :] = float("nan")
     y = np.array([1, 0] * 10)
     with pytest.raises(ValueError):

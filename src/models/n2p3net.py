@@ -8,6 +8,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from data.contract import DEFAULT_P300_DATA_CONTRACT
+
 POOLING_MODES = frozenset({"global_average", "ms_flatten", "latency_marginal_contrast"})
 
 DEFAULT_ST_TEMPORAL_FILTERS = 8
@@ -257,8 +259,8 @@ class N2P3Net(nn.Module):
         dropout: float = 0.25,
         spatial_max_norm: float = 1.0,
         n_times: int | None = None,
-        sfreq: float = 256.0,
-        tmin_s: float = -0.2,
+        sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
+        tmin_s: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms / 1000.0,
         pooling_mode: str = "latency_marginal_contrast",
         evidence_window_ms: Sequence[float] = (250.0, 600.0),
         reference_window_ms: Sequence[float] = (-200.0, 0.0),

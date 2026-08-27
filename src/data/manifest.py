@@ -22,6 +22,7 @@ _MANIFEST_FIELDS = {
     "records",
     "preprocessing",
     "channels",
+    "channel_positions_m",
     "montage",
     "channel_aliases",
     "layout_policy",
@@ -52,6 +53,7 @@ class DatasetManifest:
     records: tuple[EEGRecord, ...]
     preprocessing: PreprocessingSpec
     channels: tuple[str, ...] | None = None
+    channel_positions_m: Mapping[str, tuple[float, float, float]] | list[list[float]] | None = None
     montage: str | Path | None = DEFAULT_MONTAGE
     channel_aliases: Mapping[str, str] | None = None
     layout_policy: str = "intersection"
@@ -68,6 +70,10 @@ class DatasetManifest:
                 not isinstance(channel, str) or not channel.strip() for channel in self.channels
             ):
                 raise ValueError("Manifest channels must be non-empty strings.")
+        if self.channel_positions_m is not None and not isinstance(
+            self.channel_positions_m, (Mapping, list, tuple)
+        ):
+            raise ValueError("Manifest channel_positions_m must be a channel mapping or (C,3) array.")
         if self.channel_aliases is not None and (
             not isinstance(self.channel_aliases, Mapping)
             or any(
@@ -162,6 +168,7 @@ def load_manifest(path: str | Path) -> DatasetManifest:
         records=tuple(records),
         preprocessing=preprocessing,
         channels=(tuple(payload["channels"]) if payload.get("channels") else None),
+        channel_positions_m=payload.get("channel_positions_m"),
         montage=montage,
         channel_aliases=payload.get("channel_aliases"),
         layout_policy=payload.get("layout_policy", "intersection"),
@@ -286,6 +293,8 @@ def build_manifest_dataset(manifest: DatasetManifest) -> EpochDataset:
                     "reject_threshold": spec.reject_threshold_v,
                     "baseline": None,
                     "channels": selected_channels,
+                    "positions_m": manifest.channel_positions_m,
+                    "coordinate_source": "manifest" if manifest.channel_positions_m is not None else None,
                     "montage": manifest.montage,
                     "channel_aliases": manifest.channel_aliases,
                 },

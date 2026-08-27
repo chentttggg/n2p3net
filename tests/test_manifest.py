@@ -58,7 +58,7 @@ def _write_manifest(tmp_path, *, layout_policy: str = "intersection"):
                     "tmin_ms": -200.0,
                     "tmax_ms": 800.0,
                     "n_times": 100,
-                    "baseline_mode": "trial",
+                    "baseline_mode": "none",
                     "reject_threshold_v": None,
                 },
                 "records": [
@@ -90,6 +90,26 @@ def test_manifest_intersection_builds_fixed_physical_layout(tmp_path) -> None:
     assert all(record["source"] == "individual_digitization" for record in registrations.values())
     assert all(record["output_frame"] == "head" for record in registrations.values())
     assert all(record["units"] == "m" for record in registrations.values())
+
+
+def test_manifest_explicit_channel_positions_are_used(tmp_path) -> None:
+    path = _write_manifest(tmp_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["records"] = [payload["records"][0]]
+    payload["channels"] = ["X1", "X2", "X3"]
+    payload["montage"] = None
+    payload["channel_positions_m"] = {
+        name: list(POSITIONS[name]) for name in ("X1", "X2", "X3")
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    dataset = build_manifest_dataset(load_manifest(path))
+
+    assert np.allclose(dataset.channel_positions_m, np.asarray([POSITIONS[name] for name in ("X1", "X2", "X3")]))
+    assert all(
+        registration["source"] == "manifest"
+        for registration in dataset.provenance["coordinate_registration"]["per_subject"].values()
+    )
 
 
 def test_manifest_strict_rejects_different_channel_sets(tmp_path) -> None:

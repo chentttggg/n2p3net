@@ -15,6 +15,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from data.brainsync import load_brainsync_session  # noqa: E402
 from data.epochs import P300_PERFORMANCE_PREPROCESSING, save_epoch_dataset  # noqa: E402
 from data.manifest import build_manifest_dataset, load_manifest  # noqa: E402
 from data.moabb import prepare_moabb_p300  # noqa: E402
@@ -124,6 +125,13 @@ def main() -> None:
     manifest_parser.add_argument("--output", required=True)
     manifest_parser.add_argument("--uncompressed", action="store_true")
 
+    brainsync_parser = subparsers.add_parser(
+        "brainsync", help="Prepare one BrainSync GTN session into EpochDataset"
+    )
+    brainsync_parser.add_argument("--session-dir", required=True)
+    brainsync_parser.add_argument("--output", required=True)
+    brainsync_parser.add_argument("--uncompressed", action="store_true")
+
     args = parser.parse_args()
     if args.source == "moabb":
         preprocessing_overrides = {
@@ -173,8 +181,10 @@ def main() -> None:
             preprocessing=preprocessing,
             target_label=args.target_label,
         )
-    else:
+    elif args.source == "manifest":
         dataset = build_manifest_dataset(load_manifest(args.manifest))
+    else:
+        dataset = load_brainsync_session(args.session_dir)
 
     output = save_epoch_dataset(args.output, dataset, compressed=not args.uncompressed)
     record_path = output.with_suffix(".record.json")

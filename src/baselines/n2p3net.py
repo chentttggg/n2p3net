@@ -7,6 +7,7 @@ import math
 import torch
 
 from baselines.deep import DeepBaseline, DeepConfig
+from data.contract import DEFAULT_P300_DATA_CONTRACT
 from models.n2p3net import POOLING_MODES, N2P3Net
 from train.runtime import GpuPerformanceScheduler
 
@@ -24,7 +25,7 @@ class N2P3NetBaseline(DeepBaseline):
         runtime: GpuPerformanceScheduler | None = None,
         *,
         channel_mask=None,
-        tmin_s: float = -0.2,
+        tmin_s: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms / 1000.0,
         pooling_mode: str = "latency_marginal_contrast",
     ) -> None:
         if not math.isfinite(tmin_s):

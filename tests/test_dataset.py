@@ -61,12 +61,12 @@ def test_build_subject_shape():
 
     assert isinstance(s, SubjectData)
     assert s.data.shape[1] == 8
-    assert s.data.shape[2] == 256
+    assert s.data.shape[2] == 350
     assert s.data.dtype == np.float32
     assert s.labels.dtype == np.int64
     assert s.E_chn.shape == (8, 48)  # 6*n_freqs = 48
     assert s.E_sub.shape == (19,)  # 2*n_freqs + 3 = 19
-    assert s.sfreq == 256.0
+    assert s.sfreq == 250.0
     assert s.n_epochs == s.data.shape[0]
 
 

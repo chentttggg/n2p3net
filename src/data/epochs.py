@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 
 from data.channel import canonical_channel_name
+from data.contract import DEFAULT_P300_DATA_CONTRACT
 from data.events import (
     EVENT_TIMELINE_SCHEMA,
     LEGACY_EVENT_TIMELINE_SCHEMAS,
@@ -23,18 +24,19 @@ from data.events import (
 
 EPOCH_DATASET_SCHEMA = "n2p3net_epoch_dataset/3"
 LEGACY_EPOCH_DATASET_SCHEMAS = frozenset({"n2p3net_epoch_dataset/2"})
+DEFAULT_SAMPLE_RATE_HZ = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz
 
 
 @dataclass(frozen=True)
 class PreprocessingSpec:
-    name: str = "p300_performance_v1"
-    sfreq: float = 256.0
-    l_freq: float | None = 0.1
-    h_freq: float | None = None
-    tmin_ms: float = -200.0
-    tmax_ms: float = 1200.0
-    n_times: int = 358
-    baseline_mode: str = "trial"
+    name: str = DEFAULT_P300_DATA_CONTRACT.name
+    sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz
+    l_freq: float | None = DEFAULT_P300_DATA_CONTRACT.l_freq
+    h_freq: float | None = DEFAULT_P300_DATA_CONTRACT.h_freq
+    tmin_ms: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms
+    tmax_ms: float = DEFAULT_P300_DATA_CONTRACT.tmax_ms
+    n_times: int = DEFAULT_P300_DATA_CONTRACT.n_times
+    baseline_mode: str = DEFAULT_P300_DATA_CONTRACT.baseline_mode
     trial_reference_window_ms: tuple[float, float] | None = None
     trial_reference_center: str = "mean"
     trial_reference_scale: str = "none"

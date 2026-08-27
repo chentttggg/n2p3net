@@ -190,9 +190,10 @@ def test_preprocessing_trial_reference_accepts_stimulus_locked_window() -> None:
 
 def test_preprocessing_trial_reference_rejects_window_outside_epoch() -> None:
     profile = PreprocessingSpec(
+        sfreq=250.0,
         tmin_ms=0.0,
         tmax_ms=1000.0,
-        n_times=256,
+        n_times=250,
         baseline_mode="trial_reference",
         trial_reference_window_ms=(-1.0, 50.0),
     )

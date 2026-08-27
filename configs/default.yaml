@@ -1,10 +1,14 @@
 seed: 20260827
 
 data:
-  sample_rate_hz: 256.0
+  sample_rate_hz: 250.0
   epoch_start_ms: -200.0
   epoch_stop_ms: 800.0
-  preprocessing: nested_search
+  preprocessing: default
+  baseline_mode: none
+  l_freq_hz: 0.1
+  h_freq_hz: null
+  artifact_quality: fold_local_ptp_cv
 
 protocol:
   outer_split: grouped_run_or_session
@@ -12,5 +16,5 @@ protocol:
   report_metrics: [auc, bacc, nine_choice_hit_rate, median_latency_ms, p95_latency_ms, peak_memory_mb]
 
 model:
-  family: xdawn_rg
-  selection_pool: [linear_time_domain, xdawn_rg, eegnet, p300_cnn, multiscale_cnn]
+  family: n2p3net
+  selection_pool: [swdla, window_lr, template, xdawn_rg, n2p3net, eegnet, inception]

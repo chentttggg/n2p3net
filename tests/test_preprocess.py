@@ -63,11 +63,11 @@ def test_preprocess_smoke_shape_dtype():
 
     assert res.data.ndim == 3
     assert res.data.shape[1] == 8
-    assert res.data.shape[2] == 256
+    assert res.data.shape[2] == 350
     assert res.data.dtype == np.float32
     assert res.channel_mask.dtype == bool
     assert res.channel_mask.all()  # 合成数据含全部 8 通道
-    assert res.sfreq == 256.0
+    assert res.sfreq == 250.0
     assert res.tmin == -0.2
     assert res.data.shape[0] >= 1  # 至少切出一个 epoch
     assert isinstance(res.n_epochs, int) and isinstance(res.n_times, int)
@@ -217,15 +217,15 @@ def test_preprocess_copy_semantics():
 
 
 def test_preprocess_n_times_alignment():
-    """D-n-times-align：默认输出 256 点；n_times=None 保留 MNE 自然点数（257）。"""
-    raw = make_raw(sfreq=256.0)  # 已是目标采样率，不触发重采样
-    events = make_events(sfreq=256.0)
+    """D-n-times-align：默认输出 250 点；n_times=None 保留 MNE 自然点数（251）。"""
+    raw = make_raw(sfreq=250.0)  # 已是目标采样率，不触发重采样
+    events = make_events(sfreq=250.0)
 
     res = preprocess(raw, events, channels=STANDARD_CHANNELS)
-    assert res.data.shape[2] == 256
+    assert res.data.shape[2] == 350
 
     res2 = preprocess(raw, events, n_times=None, channels=STANDARD_CHANNELS)
-    assert res2.data.shape[2] == 257  # (0.8-(-0.2))*256 + 1
+    assert res2.data.shape[2] == 351  # (1.2-(-0.2))*250 + 1
 
 
 def test_preprocess_raises_on_bad_events():
