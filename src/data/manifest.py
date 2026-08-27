@@ -40,6 +40,9 @@ _RECORD_FIELDS = {
     "session",
     "run",
     "reference",
+    "candidate_ids",
+    "target_candidate_ids",
+    "repetition_indices",
 }
 
 
@@ -144,6 +147,9 @@ def load_manifest(path: str | Path) -> DatasetManifest:
                 sex=item.get("sex"),
                 reader_kwargs=reader_kwargs,
                 metadata=metadata,
+                candidate_ids=item.get("candidate_ids"),
+                target_candidate_ids=item.get("target_candidate_ids"),
+                repetition_indices=item.get("repetition_indices"),
             )
         )
     montage: str | Path | None = payload.get("montage", DEFAULT_MONTAGE)

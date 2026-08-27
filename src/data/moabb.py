@@ -7,10 +7,52 @@ from collections.abc import Sequence
 import mne
 import moabb
 import numpy as np
+import pandas as pd
 
 from data.channel import DEFAULT_MONTAGE, build_channel_identity
-from data.epochs import NEURAL_RIDE_V8_PREPROCESSING, EpochDataset, PreprocessingSpec
+from data.epochs import P300_PERFORMANCE_PREPROCESSING, EpochDataset, PreprocessingSpec
 from data.events import observed_only_timeline, selection_group_id
+
+CANDIDATE_METADATA_ALIASES = (
+    "candidate_id",
+    "stimulus_candidate_id",
+    "command_id",
+)
+TARGET_CANDIDATE_METADATA_ALIASES = (
+    "target_candidate_id",
+    "selected_candidate_id",
+    "intended_candidate_id",
+)
+REPETITION_METADATA_ALIASES = (
+    "repetition_index",
+    "repetition_id",
+    "sequence_index",
+)
+
+
+def _optional_metadata_column(
+    metadata: pd.DataFrame,
+    aliases: tuple[str, ...],
+    *,
+    integer: bool = False,
+) -> np.ndarray | None:
+    present = [name for name in aliases if name in metadata]
+    if not present:
+        return None
+    reference = metadata[present[0]].to_numpy()
+    for name in present[1:]:
+        if not np.array_equal(reference.astype(str), metadata[name].to_numpy().astype(str)):
+            raise ValueError(f"Conflicting metadata aliases {present}.")
+    if integer:
+        if not np.issubdtype(reference.dtype, np.integer) or np.issubdtype(
+            reference.dtype, np.bool_
+        ):
+            raise ValueError(f"Metadata column {present[0]!r} must contain integers.")
+        return reference.astype(np.int64, copy=False)
+    values = reference.astype(str)
+    if np.any(np.char.strip(values) == ""):
+        raise ValueError(f"Metadata column {present[0]!r} contains empty identifiers.")
+    return values
 
 
 def resolve_moabb_dataset(dataset_class: str):
@@ -55,7 +97,7 @@ def prepare_moabb_p300(
     subjects: Sequence[int] | None = None,
     channels: Sequence[str] | None = None,
     montage: str = DEFAULT_MONTAGE,
-    preprocessing: PreprocessingSpec = NEURAL_RIDE_V8_PREPROCESSING,
+    preprocessing: PreprocessingSpec = P300_PERFORMANCE_PREPROCESSING,
     target_label: str = "Target",
 ) -> EpochDataset:
     """Download/process an installed MOABB P300 dataset without dataset-specific branches."""
@@ -90,21 +132,28 @@ def prepare_moabb_p300(
     raw_labels = np.asarray(raw_labels)
     if len(X) != len(raw_labels) or len(metadata) != len(X):
         raise ValueError("MOABB epochs, labels, and metadata are not row-aligned.")
+    if "subject" not in metadata:
+        raise ValueError("MOABB metadata does not contain a subject column required for LOSO.")
+    requested_subject_keys = {str(subject) for subject in selected_subjects}
+    returned_subject_keys = set(metadata["subject"].astype(str))
+    missing_before_rejection = requested_subject_keys - returned_subject_keys
+    if missing_before_rejection:
+        raise ValueError(
+            "MOABB returned no epochs for selected subjects "
+            f"{sorted(missing_before_rejection)}."
+        )
     if X.shape[2] < preprocessing.n_times:
         raise ValueError(
             f"MOABB returned {X.shape[2]} time samples; {preprocessing.n_times} are required."
         )
     X = X[:, :, : preprocessing.n_times].astype(np.float32, copy=False)
-    keep = np.ones(len(X), dtype=bool)
     if preprocessing.reject_threshold_v is not None:
-        keep = np.max(np.abs(X), axis=(1, 2)) <= preprocessing.reject_threshold_v
-        if not bool(keep.any()):
-            raise ValueError("Artifact rejection removed every MOABB epoch.")
-        X = X[keep]
-        raw_labels = raw_labels[keep]
-        metadata = metadata.iloc[np.flatnonzero(keep)].reset_index(drop=True)
-    else:
-        metadata = metadata.reset_index(drop=True).copy()
+        raise ValueError(
+            "Fixed absolute-voltage artifact rejection is retired; set reject_threshold_v=None "
+            "and use fold-local artifact QC during evaluation."
+        )
+    keep = np.ones(len(X), dtype=bool)
+    metadata = metadata.reset_index(drop=True).copy()
     channel_names = tuple(str(name) for name in epochs.ch_names)
     identity = build_channel_identity(
         channel_names,
@@ -112,8 +161,6 @@ def prepare_moabb_p300(
         montage=montage,
         allow_missing_positions=False,
     )
-    if "subject" not in metadata:
-        raise ValueError("MOABB metadata does not contain a subject column required for LOSO.")
     metadata["acquisition_time_s"] = np.asarray(epochs.events[keep, 0], dtype=float) / float(
         epochs.info["sfreq"]
     )
@@ -143,6 +190,16 @@ def prepare_moabb_p300(
         stimulus_ids=np.asarray(epochs.events[keep, 2], dtype=np.int64),
         onset_times_s=metadata["acquisition_time_s"].to_numpy(dtype=float),
         group_ids=groups,
+        selection_ids=np.asarray(selections, dtype=str),
+        session_ids=np.asarray(sessions, dtype=str),
+        run_ids=np.asarray(runs, dtype=str),
+        candidate_ids=_optional_metadata_column(metadata, CANDIDATE_METADATA_ALIASES),
+        target_candidate_ids=_optional_metadata_column(
+            metadata, TARGET_CANDIDATE_METADATA_ALIASES
+        ),
+        repetition_indices=_optional_metadata_column(
+            metadata, REPETITION_METADATA_ALIASES, integer=True
+        ),
         online_causal=False,
         timing_source="moabb_observed_epochs_only;preprocessing_not_online_causal",
     )
@@ -167,11 +224,7 @@ def prepare_moabb_p300(
             "coordinate_registration": identity.registration.record(),
             "right_endpoint": "exclusive_crop",
             "continuous_baseline_correction": None,
-            "artifact_rejection": {
-                "threshold_v": preprocessing.reject_threshold_v,
-                "n_before": int(len(keep)),
-                "n_rejected": int((~keep).sum()),
-            },
+            "artifact_rejection": {"method": "fold_local_ptp_cv", "n_before": int(len(keep))},
         },
     )
     result.validate(require_labels=True)

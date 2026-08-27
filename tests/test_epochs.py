@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -38,6 +40,9 @@ def _dataset() -> EpochDataset:
         complete=True,
         online_causal=False,
         timing_source="synthetic_schedule",
+        candidate_ids=np.tile(np.asarray(["left", "right"]), 3),
+        target_candidate_ids=np.repeat("right", n_epochs),
+        repetition_indices=np.zeros(n_epochs, dtype=np.int64),
     )
     return EpochDataset(
         name="synthetic_p300",
@@ -77,6 +82,50 @@ def test_epoch_dataset_safe_round_trip(tmp_path) -> None:
     assert np.allclose(loaded.channel_positions_m, source.channel_positions_m)
     assert loaded.metadata.to_dict("list") == source.metadata.to_dict("list")
     assert loaded.provenance == source.provenance
+    assert np.array_equal(loaded.event_timeline.candidate_ids, source.event_timeline.candidate_ids)
+    assert loaded.event_timeline.supports_full_candidate_chain is True
+
+
+def test_epoch_dataset_v2_loads_without_promoting_stimulus_codes(tmp_path) -> None:
+    source = _dataset()
+    current = save_epoch_dataset(tmp_path / "current.npz", source)
+    with np.load(current, allow_pickle=False) as archive:
+        payload = {
+            key: np.asarray(archive[key])
+            for key in archive.files
+            if key
+            not in {
+                "event_candidate_ids",
+                "event_target_candidate_ids",
+                "event_repetition_indices",
+            }
+        }
+    payload["schema"] = np.asarray("n2p3net_epoch_dataset/2")
+    payload["event_schema"] = np.asarray("n2p3net_scheduled_events/1")
+    legacy = tmp_path / "legacy_v2.npz"
+    np.savez(legacy, **payload)
+
+    loaded = load_epoch_dataset(legacy)
+
+    assert loaded.event_timeline.has_candidate_ids is False
+    assert loaded.event_timeline.has_candidate_sets is False
+    assert loaded.event_timeline.supports_full_candidate_chain is False
+
+
+def test_epoch_dataset_rejects_candidate_truth_label_disagreement() -> None:
+    dataset = _dataset()
+    dataset.y[0] = 1
+
+    with pytest.raises(ValueError, match="candidate_id == target_candidate_id"):
+        dataset.validate()
+
+
+def test_candidate_decision_support_is_derived_from_event_contract() -> None:
+    dataset = _dataset()
+    assert dataset.event_timeline.supports_full_candidate_chain is True
+
+    dataset.event_timeline = replace(dataset.event_timeline, complete=False)
+    assert dataset.event_timeline.supports_full_candidate_chain is False
 
 
 def test_epoch_dataset_trial_channel_mask_round_trip(tmp_path) -> None:

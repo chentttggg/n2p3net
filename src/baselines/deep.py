@@ -521,7 +521,6 @@ class DeepBaseline(Baseline):
                             "task_val_loss": mean_val,
                             "task_val_auc": task_val_auc,
                             "objective_val_loss": mean_val,
-                            "val_innovation_nll": None,
                             "phase": "joint",
                             "optimizer_steps": None,
                             "selection_active": mean_val is not None,

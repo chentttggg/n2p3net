@@ -5,8 +5,19 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "n2p3-net"
 version = "0.1.0"
-description = "成分感知的 P300 oddball 认知判定 EEG 解码模型（N2P3-Net）"
-requires-python = ">=3.11"
+description = "Performance-first oddball P300 decoding research framework"
+requires-python = ">=3.14"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.14",
+    "scikit-learn>=1.5",
+    "torch>=2.4",
+]
+
+[project.optional-dependencies]
+signals = ["mne>=1.8", "pandas>=2.2", "moabb>=1.1"]
+baselines = ["pyriemann>=0.6", "braindecode>=1.7"]
+dev = ["pytest>=8.0", "ruff>=0.14"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

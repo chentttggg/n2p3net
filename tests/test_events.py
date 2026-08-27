@@ -74,3 +74,68 @@ def test_observed_timeline_rejects_fractional_stimulus_ids() -> None:
             subject_ids=np.array(["s"]),
             stimulus_ids=np.array([1.5]),
         )
+
+
+def test_candidate_contract_is_string_safe_and_keeps_unavailable_rows() -> None:
+    timeline = replace(
+        _timeline(),
+        candidate_ids=np.asarray(["left", "right"]),
+        target_candidate_ids=np.asarray(["right", "right"]),
+        repetition_indices=np.asarray([0, 0], dtype=np.int64),
+    ).validate(n_epochs=1)
+
+    assert timeline.has_candidate_sets is True
+    assert timeline.has_repetition_structure is True
+    assert timeline.supports_full_candidate_chain is True
+    scheduled = timeline.encoded_candidate_selection(available_only=False)
+    available = timeline.encoded_candidate_selection()
+    assert scheduled.vocabulary == ("left", "right")
+    assert scheduled.candidate_codes.tolist() == [0, 1]
+    assert scheduled.target_codes.tolist() == [1, 1]
+    assert available.candidate_codes.tolist() == [0]
+    assert scheduled.truth_by_group == {"g": 1}
+
+
+def test_candidate_metadata_fails_closed_when_target_is_missing() -> None:
+    timeline = replace(
+        _timeline(),
+        candidate_ids=np.asarray(["A", "B"]),
+    ).validate(n_epochs=1)
+
+    assert timeline.has_candidate_ids is True
+    assert timeline.has_candidate_sets is False
+    assert timeline.supports_full_candidate_chain is False
+
+
+def test_candidate_contract_rejects_mixed_truth_and_repetition_order() -> None:
+    with pytest.raises(ValueError, match="mixed target_candidate_ids"):
+        replace(
+            _timeline(),
+            candidate_ids=np.asarray(["A", "B"]),
+            target_candidate_ids=np.asarray(["A", "B"]),
+        ).validate(n_epochs=1)
+
+    four = ScheduledEventTimeline(
+        event_ids=np.asarray(["e0", "e1", "e2", "e3"]),
+        group_ids=np.repeat("g", 4),
+        subject_ids=np.repeat("s", 4),
+        stimulus_ids=np.asarray([10, 20, 10, 20]),
+        onset_samples=np.arange(4),
+        onset_times_s=np.arange(4, dtype=float),
+        evidence_available_times_s=np.arange(4, dtype=float),
+        evidence_indices=np.arange(4),
+        statuses=np.repeat("available", 4),
+        status_details=np.repeat("", 4),
+        dataset_ids=np.repeat("d", 4),
+        session_ids=np.repeat("session", 4),
+        run_ids=np.repeat("run", 4),
+        selection_ids=np.repeat("selection", 4),
+        complete=True,
+        online_causal=False,
+        timing_source="synthetic",
+        candidate_ids=np.asarray(["A", "B", "A", "B"]),
+        target_candidate_ids=np.repeat("B", 4),
+        repetition_indices=np.asarray([1, 0, 0, 1]),
+    )
+    with pytest.raises(ValueError, match="non-increasing repetition_indices"):
+        four.validate(n_epochs=4)

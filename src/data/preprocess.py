@@ -16,7 +16,7 @@ from data.channel import (
     resolve_channel_layout,
 )
 
-DEFAULT_REJECT_THRESHOLD: float = 150e-6
+DEFAULT_REJECT_THRESHOLD: float | None = None
 
 
 @dataclass(frozen=True)
@@ -229,20 +229,16 @@ def highpass(
 
 def reject_epochs(
     data: np.ndarray,
-    threshold: float = DEFAULT_REJECT_THRESHOLD,
+    threshold: float | None = DEFAULT_REJECT_THRESHOLD,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Reject epochs whose observed EEG magnitude exceeds a voltage threshold."""
+    """Reject the retired fixed-threshold artifact path explicitly."""
 
-    data = np.asarray(data)
-    if data.size == 0:
-        return data, np.array([], dtype=np.int64)
-    if threshold <= 0:
-        raise ValueError("reject threshold must be positive.")
-    peak = np.nanmax(np.abs(data), axis=(1, 2))
-    dropped = np.flatnonzero(peak > threshold)
-    keep = np.ones(data.shape[0], dtype=bool)
-    keep[dropped] = False
-    return data[keep], dropped.astype(np.int64)
+    del data
+    if threshold is not None:
+        raise ValueError(
+            "Fixed absolute-voltage epoch rejection is retired; use fold-local artifact QC."
+        )
+    raise ValueError("reject_epochs is retired; cache all finite epochs for fold-local QC.")
 
 
 def preprocess(
@@ -273,7 +269,7 @@ def preprocess(
     copy: bool = True,
     verbose: bool = False,
 ) -> PreprocessResult:
-    """Map channels, resample, high-pass, epoch, reject, and preserve provenance."""
+    """Map channels, resample, high-pass, epoch, and preserve provenance."""
 
     events = np.asarray(events)
     if events.ndim != 2 or events.shape[1] != 3:
@@ -284,6 +280,10 @@ def preprocess(
         raise ValueError("tmin must be smaller than tmax.")
     if n_times is not None and n_times <= 0:
         raise ValueError("n_times must be positive or None.")
+    if reject_threshold is not None:
+        raise ValueError(
+            "Fixed absolute-voltage epoch rejection is retired; use fold-local artifact QC."
+        )
     if copy:
         raw = raw.copy()
 
@@ -357,14 +357,6 @@ def preprocess(
 
     dropped = np.array([], dtype=np.int64)
     event_indices = selection
-    if reject_threshold is not None:
-        data, dropped_rows = reject_epochs(data, threshold=reject_threshold)
-        keep = np.ones(len(selection), dtype=bool)
-        keep[dropped_rows] = False
-        dropped = selection[dropped_rows]
-        event_statuses[dropped] = "artifact_rejected"
-        event_status_details[dropped] = f"abs_voltage_gt_{float(reject_threshold):.12g}V"
-        event_indices = selection[keep]
 
     event_evidence_indices = np.full(len(events), -1, dtype=np.int64)
     event_evidence_indices[event_indices] = np.arange(len(event_indices), dtype=np.int64)

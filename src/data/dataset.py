@@ -42,6 +42,9 @@ class EEGRecord:
     sex: str | int | None = None
     reader_kwargs: Mapping[str, Any] = field(default_factory=dict)
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    candidate_ids: Sequence[object] | None = None
+    target_candidate_ids: Sequence[object] | object | None = None
+    repetition_indices: Sequence[int] | None = None
 
 
 @dataclass
@@ -245,6 +248,9 @@ def build_subject(
     sex: str | int | None = None,
     subject_id: str = "anonymous_subject",
     metadata: Mapping[str, Any] | None = None,
+    candidate_ids: Sequence[object] | None = None,
+    target_candidate_ids: Sequence[object] | object | None = None,
+    repetition_indices: Sequence[int] | None = None,
     n_freqs: int = DEFAULT_N_FREQS,
     **preprocess_kwargs,
 ) -> SubjectData:
@@ -281,6 +287,32 @@ def build_subject(
     run_id = str(subject_metadata.get("run", ""))
     selection_id = str(subject_metadata.get("selection_id", subject_id))
     group_id = selection_group_id(dataset_id, subject_id, session_id, run_id, selection_id)
+
+    def _event_strings(values: Sequence[object] | object | None, name: str) -> np.ndarray | None:
+        if values is None:
+            return None
+        raw = np.asarray(values)
+        if raw.ndim == 0:
+            raw = np.repeat(raw.item(), len(events))
+        if raw.shape != (len(events),):
+            raise ValueError(f"{name} must be scalar or contain one value per scheduled event.")
+        output = raw.astype(str)
+        if np.any(np.char.strip(output) == ""):
+            raise ValueError(f"{name} cannot contain empty identifiers.")
+        return output
+
+    event_candidates = _event_strings(candidate_ids, "candidate_ids")
+    event_targets = _event_strings(target_candidate_ids, "target_candidate_ids")
+    event_repetitions = None
+    if repetition_indices is not None:
+        raw_repetitions = np.asarray(repetition_indices)
+        if raw_repetitions.shape != (len(events),) or not np.issubdtype(
+            raw_repetitions.dtype, np.integer
+        ) or np.issubdtype(raw_repetitions.dtype, np.bool_):
+            raise ValueError(
+                "repetition_indices must be an integer array aligned with scheduled events."
+            )
+        event_repetitions = raw_repetitions.astype(np.int64, copy=False)
     event_timeline = ScheduledEventTimeline(
         event_ids=np.asarray(
             [
@@ -304,6 +336,9 @@ def build_subject(
         complete=True,
         online_causal=result.online_causal,
         timing_source="resampled_mne_event_samples;epoch_right_edge",
+        candidate_ids=event_candidates,
+        target_candidate_ids=event_targets,
+        repetition_indices=event_repetitions,
     ).validate(n_epochs=len(data))
     return SubjectData(
         data=data,
@@ -347,6 +382,9 @@ def load_dataset(
                 sex=record.sex,
                 subject_id=record.subject_id,
                 metadata=record.metadata,
+                candidate_ids=record.candidate_ids,
+                target_candidate_ids=record.target_candidate_ids,
+                repetition_indices=record.repetition_indices,
                 n_freqs=n_freqs,
                 **kwargs,
             )

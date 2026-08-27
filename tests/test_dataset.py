@@ -1,6 +1,6 @@
 """data/dataset.py 的两级测试（冒烟 + 语义）。
 
-语义重点：标签对齐（伪迹剔除后标签不错位）、元数据嵌入、文件格式分派。
+语义重点：标签对齐、元数据嵌入、文件格式分派。
 """
 
 import mne
@@ -89,8 +89,8 @@ def test_build_subject_labels_alignment_no_reject():
     assert np.array_equal(s.labels, labels)
 
 
-def test_build_subject_labels_alignment_with_reject():
-    """伪迹剔除后，被剔除 epoch 的标签被同步剔除，其余保持顺序（D-label-align）。"""
+def test_build_subject_labels_alignment_preserves_finite_artifact_rows():
+    """Ingress preserves labels; fold-local QC later owns artifact handling."""
     sfreq = 256.0  # 与目标采样率一致，避免 resample 的 anti-aliasing 扩散瞬态到相邻 epoch
     n_seconds = 20.0
     rng = np.random.default_rng(0)
@@ -101,7 +101,7 @@ def test_build_subject_labels_alignment_with_reject():
 
     events = make_events(sfreq, n_seconds)
     labels = np.arange(len(events))
-    # 在第 3 个 event（index 2）的锁时点附近注入 1V 伪迹 → 其 epoch 必被剔除
+    # Inject a finite transient. Ingress must preserve its row and label.
     raw._data[:, events[2, 0] : events[2, 0] + 20] = 1.0
 
     s = build_subject(
@@ -112,10 +112,8 @@ def test_build_subject_labels_alignment_with_reject():
         channels=STD,
     )
 
-    assert 2 not in s.labels
     assert s.labels.shape[0] == s.data.shape[0]
-    expected = np.array([i for i in range(len(events)) if i != 2])
-    assert np.array_equal(s.labels, expected)
+    assert np.array_equal(s.labels, labels)
 
 
 def test_build_subject_no_labels():

@@ -1,7 +1,7 @@
 """data/preprocess.py 的两级测试（冒烟 + 语义）。
 
 冒烟测试：验证形状、dtype、不报错。
-语义测试：用已知答案的合成样例验证「语义正确」（重采样/通道映射/高通去 DC/伪迹剔除/点数对齐）。
+语义测试：用已知答案的合成样例验证「语义正确」（重采样/通道映射/高通去 DC/点数对齐）。
 """
 
 import mne
@@ -15,7 +15,6 @@ from data.preprocess import (
     highpass,
     map_channels,
     preprocess,
-    reject_epochs,
     resample,
 )
 
@@ -24,7 +23,7 @@ from data.preprocess import (
 # 合成数据工具
 # --------------------------------------------------------------------------- #
 def make_raw(sfreq=512.0, n_seconds=20.0, ch_names=None, amp=10e-6, dc=0.0, seed=0):
-    """构造合成 Raw。amp 默认 10 μV，确保不会被 150 μV 伪迹阈值误剔除。"""
+    """Construct synthetic finite EEG samples."""
     if ch_names is None:
         ch_names = list(STANDARD_CHANNELS)
     rng = np.random.default_rng(seed)
@@ -143,7 +142,7 @@ def test_preprocess_channel_reorder():
     raw = mne.io.RawArray(data, info, verbose=False)
     events = make_events(sfreq=256.0, n_seconds=20.0)
 
-    # 跳过高通与伪迹剔除（常数指纹会被高通滤掉/被阈值剔除）
+    # Skip high-pass; it would remove the constant channel fingerprint.
     res = preprocess(
         raw,
         events,
@@ -197,25 +196,11 @@ def test_preprocess_rejects_nonfinite_source_samples():
         preprocess(raw, events, l_freq=None, channels=STANDARD_CHANNELS)
 
 
-def test_reject_epochs_drops_outlier():
-    """伪迹剔除：含超阈值样本的 epoch 被剔除，其余保留。"""
-    rng = np.random.default_rng(0)
-    data = rng.standard_normal((5, 8, 256)) * 20e-6
-    data[2, 3, 100] = 1.0  # 第 2 个 epoch 的第 3 通道注入 1V 伪迹
-
-    clean, dropped = reject_epochs(data, threshold=150e-6)
-
-    assert np.array_equal(dropped, np.array([2]))
-    assert clean.shape[0] == 4
-
-
-def test_reject_epochs_ignores_nan():
-    """伪迹剔除：缺失通道的 NaN 不应触发剔除。"""
-    data = np.full((3, 8, 256), 1e-6, dtype=float)
-    data[:, 2, :] = np.nan  # 第 2 通道全 NaN（缺失通道）
-    clean, dropped = reject_epochs(data, threshold=150e-6)
-    assert len(dropped) == 0
-    assert clean.shape[0] == 3
+def test_preprocess_rejects_retired_fixed_artifact_threshold():
+    raw = make_raw(sfreq=256.0)
+    events = make_events(sfreq=256.0)
+    with pytest.raises(ValueError, match="Fixed absolute-voltage epoch rejection is retired"):
+        preprocess(raw, events, reject_threshold=150e-6, channels=STANDARD_CHANNELS)
 
 
 def test_preprocess_copy_semantics():
@@ -264,7 +249,7 @@ def test_map_channels_no_standard_raises():
 
 
 def test_preprocess_event_indices():
-    """event_indices：无伪迹剔除时，最终 epoch 对应原始 events 行索引（标签对齐的依据）。"""
+    """event_indices align with original event rows when all rows are finite."""
     raw = make_raw(sfreq=512.0)
     events = make_events(sfreq=512.0)
     res = preprocess(raw, events, reject_threshold=None, channels=STANDARD_CHANNELS)
@@ -273,8 +258,8 @@ def test_preprocess_event_indices():
     assert np.array_equal(res.event_indices, np.arange(len(events)))  # 全部 event 均在边界内
 
 
-def test_preprocess_event_indices_with_reject():
-    """event_indices：伪迹剔除后，被剔除 epoch 对应的 events 行索引被移除。"""
+def test_preprocess_event_indices_preserve_artifact_rows_for_fold_local_qc():
+    """Ingress retains finite artifact rows; fold-local QC owns later handling."""
     sfreq = 256.0  # 与目标采样率一致，避免 resample 的 anti-aliasing 扩散瞬态
     n_seconds = 20.0
     rng = np.random.default_rng(0)
@@ -292,7 +277,7 @@ def test_preprocess_event_indices_with_reject():
         channels=STANDARD_CHANNELS,
     )
 
-    assert 1 not in res.event_indices  # 第 2 个 event 被剔除
+    assert 1 in res.event_indices
     assert res.event_indices.shape[0] == res.data.shape[0]
 
 

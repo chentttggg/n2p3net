@@ -15,7 +15,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from data.epochs import NEURAL_RIDE_V8_PREPROCESSING, save_epoch_dataset  # noqa: E402
+from data.epochs import P300_PERFORMANCE_PREPROCESSING, save_epoch_dataset  # noqa: E402
 from data.manifest import build_manifest_dataset, load_manifest  # noqa: E402
 from data.moabb import prepare_moabb_p300  # noqa: E402
 
@@ -90,9 +90,6 @@ def main() -> None:
     moabb_parser.add_argument(
         "--h-freq", type=_parse_optional_float, default=argparse.SUPPRESS
     )
-    moabb_parser.add_argument(
-        "--reject-threshold-v", type=_parse_optional_float, default=argparse.SUPPRESS
-    )
     moabb_parser.add_argument("--tmin-ms", type=float, default=None)
     moabb_parser.add_argument("--tmax-ms", type=float, default=None)
     moabb_parser.add_argument("--n-times", type=int, default=None)
@@ -146,7 +143,6 @@ def main() -> None:
         for argument, field in (
             ("l_freq", "l_freq"),
             ("h_freq", "h_freq"),
-            ("reject_threshold_v", "reject_threshold_v"),
         ):
             if hasattr(args, argument):
                 preprocessing_overrides[field] = getattr(args, argument)
@@ -154,20 +150,20 @@ def main() -> None:
             key in preprocessing_overrides for key in ("sfreq", "tmin_ms", "tmax_ms")
         ):
             sfreq = float(
-                preprocessing_overrides.get("sfreq", NEURAL_RIDE_V8_PREPROCESSING.sfreq)
+                preprocessing_overrides.get("sfreq", P300_PERFORMANCE_PREPROCESSING.sfreq)
             )
             tmin_ms = float(
-                preprocessing_overrides.get("tmin_ms", NEURAL_RIDE_V8_PREPROCESSING.tmin_ms)
+                preprocessing_overrides.get("tmin_ms", P300_PERFORMANCE_PREPROCESSING.tmin_ms)
             )
             tmax_ms = float(
-                preprocessing_overrides.get("tmax_ms", NEURAL_RIDE_V8_PREPROCESSING.tmax_ms)
+                preprocessing_overrides.get("tmax_ms", P300_PERFORMANCE_PREPROCESSING.tmax_ms)
             )
             preprocessing_overrides["n_times"] = _derive_exclusive_n_times(
                 sfreq=sfreq,
                 tmin_ms=tmin_ms,
                 tmax_ms=tmax_ms,
             )
-        preprocessing = replace(NEURAL_RIDE_V8_PREPROCESSING, **preprocessing_overrides)
+        preprocessing = replace(P300_PERFORMANCE_PREPROCESSING, **preprocessing_overrides)
         preprocessing.validate()
         dataset = prepare_moabb_p300(
             args.dataset_class,

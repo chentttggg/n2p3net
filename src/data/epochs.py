@@ -16,16 +16,18 @@ import pandas as pd
 from data.channel import canonical_channel_name
 from data.events import (
     EVENT_TIMELINE_SCHEMA,
+    LEGACY_EVENT_TIMELINE_SCHEMAS,
     ScheduledEventTimeline,
     concatenate_event_timelines,
 )
 
-EPOCH_DATASET_SCHEMA = "n2p3net_epoch_dataset/2"
+EPOCH_DATASET_SCHEMA = "n2p3net_epoch_dataset/3"
+LEGACY_EPOCH_DATASET_SCHEMAS = frozenset({"n2p3net_epoch_dataset/2"})
 
 
 @dataclass(frozen=True)
 class PreprocessingSpec:
-    name: str = "neural_ride_v8"
+    name: str = "p300_performance_v1"
     sfreq: float = 256.0
     l_freq: float | None = 0.1
     h_freq: float | None = None
@@ -36,7 +38,9 @@ class PreprocessingSpec:
     trial_reference_window_ms: tuple[float, float] | None = None
     trial_reference_center: str = "mean"
     trial_reference_scale: str = "none"
-    reject_threshold_v: float | None = 150e-6
+    # Retained only to read historical cache records. New ingress rejects a
+    # fixed threshold because artifact quality is fitted inside each outer fold.
+    reject_threshold_v: float | None = None
 
     def __post_init__(self) -> None:
         # JSON round-trips tuples as lists; normalize valid windows so the
@@ -121,7 +125,7 @@ class PreprocessingSpec:
             raise ValueError("reject_threshold_v must be finite and positive or None.")
 
 
-NEURAL_RIDE_V8_PREPROCESSING = PreprocessingSpec()
+P300_PERFORMANCE_PREPROCESSING = PreprocessingSpec()
 
 
 def _json_default(value: Any) -> Any:
@@ -224,6 +228,19 @@ class EpochDataset:
                 raise ValueError("y must be a one-dimensional array with one label per epoch.")
             if not np.issubdtype(labels.dtype, np.integer) or np.issubdtype(labels.dtype, np.bool_):
                 raise ValueError("y must use an integer dtype.")
+            if self.event_timeline.has_candidate_sets:
+                evidence = np.asarray(self.event_timeline.evidence_indices, dtype=np.int64)
+                available = evidence >= 0
+                expected = (
+                    np.asarray(self.event_timeline.candidate_ids).astype(str)[available]
+                    == np.asarray(self.event_timeline.target_candidate_ids).astype(str)[available]
+                ).astype(np.int64)
+                aligned_expected = np.empty(n_epochs, dtype=np.int64)
+                aligned_expected[evidence[available]] = expected
+                if not np.array_equal(labels.astype(np.int64), aligned_expected):
+                    raise ValueError(
+                        "Candidate metadata requires y == (candidate_id == target_candidate_id)."
+                    )
         if require_labels and self.y is None:
             raise ValueError("This operation requires labels.")
         if not np.isfinite(X).all():
@@ -277,6 +294,12 @@ class EpochDataset:
                 "n_available": self.event_timeline.n_available,
                 "complete": self.event_timeline.complete,
                 "online_causal": self.event_timeline.online_causal,
+                "has_candidate_ids": self.event_timeline.has_candidate_ids,
+                "has_candidate_sets": self.event_timeline.has_candidate_sets,
+                "has_repetition_structure": self.event_timeline.has_repetition_structure,
+                "supports_full_candidate_chain": (
+                    self.event_timeline.supports_full_candidate_chain
+                ),
                 "fingerprint": self.event_timeline.fingerprint(),
             },
             "provenance": self.provenance,
@@ -331,6 +354,13 @@ def save_epoch_dataset(
         "event_session_ids": np.asarray(dataset.event_timeline.session_ids, dtype=str),
         "event_run_ids": np.asarray(dataset.event_timeline.run_ids, dtype=str),
         "event_selection_ids": np.asarray(dataset.event_timeline.selection_ids, dtype=str),
+        "event_candidate_ids": np.asarray(dataset.event_timeline.candidate_ids, dtype=str),
+        "event_target_candidate_ids": np.asarray(
+            dataset.event_timeline.target_candidate_ids, dtype=str
+        ),
+        "event_repetition_indices": np.asarray(
+            dataset.event_timeline.repetition_indices, dtype=np.int64
+        ),
         "event_complete": np.asarray(dataset.event_timeline.complete),
         "event_online_causal": np.asarray(dataset.event_timeline.online_causal),
         "event_timing_source": np.asarray(dataset.event_timeline.timing_source),
@@ -403,16 +433,38 @@ def load_epoch_dataset(
         if missing:
             raise ValueError(f"{path} lacks EpochDataset fields {sorted(missing)}.")
         schema = str(np.asarray(archive["schema"]).item())
-        if schema != EPOCH_DATASET_SCHEMA:
+        if schema not in {EPOCH_DATASET_SCHEMA, *LEGACY_EPOCH_DATASET_SCHEMAS}:
             raise ValueError(f"Unsupported EpochDataset schema {schema!r} in {path}.")
         event_schema = str(np.asarray(archive["event_schema"]).item())
-        if event_schema != EVENT_TIMELINE_SCHEMA:
+        if event_schema not in {EVENT_TIMELINE_SCHEMA, *LEGACY_EVENT_TIMELINE_SCHEMAS}:
             raise ValueError(f"Unsupported event timeline schema {event_schema!r} in {path}.")
+        if schema == EPOCH_DATASET_SCHEMA and event_schema != EVENT_TIMELINE_SCHEMA:
+            raise ValueError(
+                f"EpochDataset schema {schema!r} requires event schema "
+                f"{EVENT_TIMELINE_SCHEMA!r}, got {event_schema!r}."
+            )
+        has_current_candidate_contract = (
+            schema == EPOCH_DATASET_SCHEMA and event_schema == EVENT_TIMELINE_SCHEMA
+        )
+        candidate_fields = {
+            "event_candidate_ids",
+            "event_target_candidate_ids",
+            "event_repetition_indices",
+        }
+        if schema == EPOCH_DATASET_SCHEMA:
+            missing_candidate_fields = candidate_fields - set(archive.files)
+            if missing_candidate_fields:
+                raise ValueError(
+                    f"{path} lacks schema-v3 candidate fields "
+                    f"{sorted(missing_candidate_fields)}."
+                )
         integer_fields = (
             "event_stimulus_ids",
             "event_onset_samples",
             "event_evidence_indices",
         )
+        if "event_repetition_indices" in archive.files:
+            integer_fields = (*integer_fields, "event_repetition_indices")
         if bool(np.asarray(archive["has_labels"]).item()):
             integer_fields = (*integer_fields, "y")
         for field_name in integer_fields:
@@ -468,6 +520,21 @@ def load_epoch_dataset(
                 complete=bool(np.asarray(archive["event_complete"]).item()),
                 online_causal=bool(np.asarray(archive["event_online_causal"]).item()),
                 timing_source=str(np.asarray(archive["event_timing_source"]).item()),
+                candidate_ids=(
+                    np.asarray(archive["event_candidate_ids"], dtype=str)
+                    if has_current_candidate_contract
+                    else None
+                ),
+                target_candidate_ids=(
+                    np.asarray(archive["event_target_candidate_ids"], dtype=str)
+                    if has_current_candidate_contract
+                    else None
+                ),
+                repetition_indices=(
+                    np.asarray(archive["event_repetition_indices"], dtype=np.int64)
+                    if has_current_candidate_contract
+                    else None
+                ),
             ),
             metadata=pd.read_json(StringIO(metadata_json), orient="table"),
             provenance=json.loads(str(np.asarray(archive["provenance_json"]).item())),

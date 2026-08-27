@@ -1,64 +1,16 @@
-# N2P3-Net 使命（Mission）
+# Mission
 
-## 一句话使命
-用 8 导干电极 EEG，在 oddball「猜数字」范式下，可靠地判定**成人**被试心选的数字（1–9），
-并给出可解释的 ERP 成分级证据。
+Build an offline oddball EEG decoder that identifies target trials and selects
+the intended item from a 9-choice decision set. The target population is adult
+EEG, principally 8 channels, while adapters support non-uniform recordings and
+channel subsets.
 
-## 要解决的问题
-- 现状：GTN 任务（Vařeka 2016, BIOSIGNALS）人类专家在线猜中率 67.6%，3 导 MLP 自动算法 77.2%，
-  但该数据为 **7–17 岁儿童**、湿电极、3 导、教室环境——仅作「跨年龄迁移源域」与文献对照，
-  不直接等同本项目的成人干电极目标。
-- 痛点：干电极低 SNR、小样本（≤ 数千试次）、非统一格式（多设备/采样率/参考/通道子集）、
-  时域信息主导；被试以成人为主，可采集年龄/性别元数据（P300 潜伏期随年龄递增，成人亦然）。
-- 目标：用「更懂 ERP 的小模型」在命中率与可解释性上同时超越基线，而非堆容量。
-- 辅助数据边界（P9）：Brain Invaders / BNCI008 / ERP CORE 等 P300 数据仅用于预训练或域对齐；
-  每个 GTN fold 仍从该初始化/共享编码器出发在 GTN 上微调，分类头与验收始终只由 GTN 决定。
+Success is a reproducible result table under three protocols: grouped
+within-subject/session, leave-one-subject-out, and cross-dataset where possible.
+Each result reports trial AUC, BACC, 9-choice hit rate by repetition count,
+parameter count, median/p95 inference latency, and peak memory. No universal
+threshold is asserted before data are collected; the first milestone is a
+leakage-free baseline.
 
-## 成功标准（量化，chance = 11.1%）
-
-| 指标 | 目标 | 说明 |
-|---|---|---|
-| 单受试 · 多次本体训练 命中率 | ≥ 85%（K≥30 时） | 每数字平均试次 K 写入条件 |
-| 跨受试 · 零样本 命中率 | GTN 复现 77%±3；自有成人数据回填真实值 | 两档：先对齐文献，再测自有 |
-| 跨受试 · 少样本（5–20 试次微调）命中率 | ≥ 82% | — |
-| 跨数据集（GTN ↔ ERP CORE）AUC | 先「GTN 内部年龄分层」中间档；主目标 ≥ 0.70（高风险） | 儿童↔成人叠加年龄域差 |
-| 成分定位吻合度 | N2(~200ms)/P3b(300–500ms) 潜伏期与地形同文献一致 | 与 mass-univariate 对照 |
-| 辅助预训练/域对齐收益 | 相对 GTN 从头训练有配对置换显著提升，且 GTN 口径无泄漏 | 三臂协议见 doc/transfer_policy.md |
-
-> 上述「目标」为预测值，实测后回填并校准。命中率一律用 9 选 1 命中率或 balanced acc / AUC，
-> 禁止用原始准确率（1/9 不平衡）。成人 P300 较儿童更稳，单受试命中率存在上探空间，但跨年龄
-> 迁移（GTN 儿童源域）更难——两者方向相反，须实测分辨。
-
-## 范围（In Scope）
-- oddball 视觉 P300「猜数字」范式（含 N2 早期证据）。
-- 8 电极：Fz、Cz、P3、Pz、P4、PO7、PO8、Oz。
-- 离线、单试次 / 少试次平均的解码。
-- 时域 ERP 分析 + 成分可解释性。
-- 跨被试 / 跨数据集（GTN ↔ ERP CORE）泛化，含年龄分层验证。
-- 辅助 P300 数据的受控使用：只做预训练初始化或域对齐，不做联合主分类训练（P9）。
-- 年龄/性别元数据的条件化与协变量分析。
-
-## 非目标（Out of Scope）
-- 不做实时闭环 BCI（先离线验证）。
-- 不做 SSVEP、运动想象等其他范式。
-- 不做多模态融合（眼动 / 心电等）。
-- 不做任何医疗诊断声明。
-
-## 关键风险与假设
-- R1 干电极实际 SNR 未知：接近半干电极则命中率上探，纯电容式非接触则下探。
-- R2 每数字平均试次数 K 决定命中率上限：K 越小命中率骤降（验收写 K≥30）。
-- R3 成人年龄跨度放大 P300 潜伏期个体差异（每十年 ~2–5 ms），跨受试命中率难达 90%+。
-- R4 干电极 δ/θ 漂移（Clements 2016）：去漂移须用 0.1 Hz 连续域高通，0.5 Hz 有 P3b 失真风险（E1）。
-- R5 潜伏期标签不可标注（Depuydt 2023）：参数化成分窗提供结构化读数，但分类梯度不足以证明单试次物理可识别；先做 fold-local 校准，只有通过 claim gate 才能提升表述（E3）。
-- R6 跨域物理天花板（AS-MMD 0.61→0.66）：跨受试/跨设备域差是主要风险，跨域对齐不保证提升；所有收益必须以 GTN 主终点验证（E6）。
-- R7 年龄域差（新增）：GTN 儿童 ↔ 成人目标的迁移存在年龄 shift，跨数据集验收须先做年龄分层。
-- R8 辅助域污染（新增）：辅助 P300 预训练权重若过度主导，会把模型拉向辅助设备/参考/年龄域；当前试点未显著优于 GTN from-scratch，默认不采用。
-  用「冻结 vs 微调」消融、GTN-only 对照与配对置换检验检测；无显著收益则退回 from scratch。
-
-## 从 prior art 学到的经验（要点）
-- 线性基线极高：SWLDA / xDAWN+RG 在被试内几乎不可被深度模型超越，深度模型价值在跨域与多成分。
-- 「多成分协同 > 单 P300」成立，但机制是「早期证据集成」而非独立新监督（Kaufmann 2011 / Hong 2009）。
-- 干电极 P300「可用但更脏」：波形/地形不失真，但单试次噪声与漂移更高（Guger 2012 / Mathewson 2017）。
-- 猜数字靠「每数字多次平均」才能到 77%+，单试次跨域分类接近随机（Vařeka 2016 / AS-MMD 2025）。
-- 成人 P300 潜伏期 ~300–350 ms、N2 ~200–250 ms，先验中心数据驱动初始化而非硬编码（Depuydt 2023）。
-- 辅助 P300 预训练的价值是「更好的初始化/更通用的 P300 表示」，不是替代 GTN 微调；最终 head 仍由 GTN 监督（P9）。
+The project is limited to offline EEG decoding and does not make cognitive or
+medical diagnostic claims.
