@@ -487,6 +487,8 @@ class FoldLocalArtifactModel:
         X: np.ndarray,
         trial_channel_mask: np.ndarray | None = None,
         qc_features: EpochQCFeatures | None = None,
+        *,
+        materialize_masked_data: bool = True,
     ) -> ArtifactTransformResult:
         X = np.asarray(X)
         if X.ndim != 3 or X.shape[1] != len(self.ptp_thresholds):
@@ -510,8 +512,14 @@ class FoldLocalArtifactModel:
         drop = global_epoch_scale_mask | (
             bad_counts > self.selected_bad_channel_fraction * observed_counts
         )
-        transformed = X.copy()
-        transformed[~effective_mask] = 0.0
+        # Classical estimators receive a physically zero-filled tensor.  Deep
+        # estimators with an explicit mask contract can defer that zero-fill to
+        # their input projection, avoiding one full (N, C, T) fold copy.
+        if materialize_masked_data:
+            transformed = X.copy()
+            transformed[~effective_mask] = 0.0
+        else:
+            transformed = X
         return ArtifactTransformResult(
             X=transformed,
             trial_channel_mask=effective_mask,
@@ -571,6 +579,8 @@ def apply_fold_local_artifact_policy(
     test_mask: np.ndarray,
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
+    *,
+    materialize_masked_data: bool = True,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, object]]:
     """Fit on train only; mask local bad channels and drop only train epochs."""
 
@@ -581,7 +591,54 @@ def apply_fold_local_artifact_policy(
         _subset_mask(trial_channel_mask, train_mask),
         train_features,
     )
-    transformed = fitted.transform(X, trial_channel_mask, qc_features)
+    return apply_fitted_artifact_model(
+        fitted,
+        X,
+        subject_ids,
+        train_mask,
+        test_mask,
+        trial_channel_mask,
+        qc_features,
+        materialize_masked_data=materialize_masked_data,
+    )
+
+
+def apply_fitted_artifact_model(
+    fitted: FoldLocalArtifactModel,
+    X: np.ndarray,
+    subject_ids: np.ndarray,
+    train_mask: np.ndarray,
+    test_mask: np.ndarray,
+    trial_channel_mask: np.ndarray | None = None,
+    qc_features: EpochQCFeatures | None = None,
+    *,
+    materialize_masked_data: bool = True,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, object]]:
+    """Apply a policy already fitted on this fold's outer-training rows.
+
+    This is intentionally separate from :func:`apply_fold_local_artifact_policy`
+    so CPU policy compilation can run ahead of GPU model fitting.  The caller
+    must preserve the original train/test masks; otherwise this function fails
+    closed rather than silently reusing a policy on another split.
+    """
+
+    X = np.asarray(X)
+    labels = np.asarray(subject_ids)
+    train_mask = np.asarray(train_mask, dtype=bool)
+    test_mask = np.asarray(test_mask, dtype=bool)
+    if train_mask.shape != (len(X),) or test_mask.shape != (len(X),):
+        raise ValueError("Artifact train/test masks must align with X.")
+    if labels.shape != (len(X),):
+        raise ValueError("Artifact subject_ids must align with X.")
+    expected_subjects = tuple(sorted(np.unique(labels[train_mask].astype(str)).tolist()))
+    if fitted.fit_subjects != expected_subjects:
+        raise ValueError("Frozen artifact policy was not fitted on this outer-training subject set.")
+    transformed = fitted.transform(
+        X,
+        trial_channel_mask,
+        qc_features,
+        materialize_masked_data=materialize_masked_data,
+    )
     if transformed.all_channels_bad[test_mask].any():
         count = int(transformed.all_channels_bad[test_mask].sum())
         raise ValueError(
@@ -591,7 +648,6 @@ def apply_fold_local_artifact_policy(
     effective_train_mask = train_mask & ~transformed.drop_epoch_mask
     if not effective_train_mask.any():
         raise ValueError("Fold-local artifact policy removed every training epoch.")
-    labels = np.asarray(subject_ids)
     remaining_subjects = np.unique(labels[effective_train_mask])
     if len(remaining_subjects) < 2:
         raise ValueError("Artifact policy left fewer than two training subjects for validation.")

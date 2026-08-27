@@ -5,8 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -18,7 +16,10 @@ if str(ROOT) not in sys.path:
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from baselines.evaluate import loso_folds  # noqa: E402
+from baselines.evaluate import (  # noqa: E402
+    loso_folds,
+    precompute_fold_local_artifact_models,
+)
 from data.artifact import (  # noqa: E402
     FoldLocalArtifactPolicy,
     parse_candidate_bad_channel_fractions,
@@ -41,39 +42,26 @@ def _parse_bad_channel_fractions(value: str) -> tuple[float, ...]:
         raise argparse.ArgumentTypeError(str(exc)) from exc
 
 
-def _audit_fold_partition(
-    dataset_cache: str,
-    policy_values: dict[str, object],
-    fold_indices: list[int],
+def _audit_fitted_folds(
+    X: np.ndarray,
+    subject_ids: np.ndarray,
+    folds: list[tuple[np.ndarray, np.ndarray]],
+    trial_channel_mask: np.ndarray,
+    qc_features: object,
+    fitted_models: dict[int, object],
 ) -> list[dict[str, object]]:
-    dataset = load_epoch_dataset(dataset_cache, require_labels=True)
-    if dataset.qc_features is None:
-        raise ValueError("Dataset cache lacks QC v2 features; regenerate before preflight.")
-    trial_channel_mask = (
-        dataset.trial_channel_mask
-        if dataset.trial_channel_mask is not None
-        else np.broadcast_to(dataset.channel_mask, dataset.X.shape[:2])
-    )
-    folds = loso_folds(dataset.subject_ids)
-    policy = FoldLocalArtifactPolicy(**policy_values)
     results = []
-    for fold_index in fold_indices:
-        train, test = folds[fold_index]
-        fitted = policy.fit(
-            dataset.X[train],
-            dataset.subject_ids[train],
-            trial_channel_mask[train],
-            dataset.qc_features.subset(train),
-        )
+    for fold_index, (_, test) in enumerate(folds):
+        fitted = fitted_models[fold_index]
         transformed = fitted.transform(
-            dataset.X[test],
+            X[test],
             trial_channel_mask[test],
-            dataset.qc_features.subset(test),
+            qc_features.subset(test),
         )
         results.append(
             {
                 "fold": fold_index,
-                "held_out_subjects": sorted(set(dataset.subject_ids[test].astype(str))),
+                "held_out_subjects": sorted(set(subject_ids[test].astype(str))),
                 "n_test_epochs": int(test.sum()),
                 "n_all_channels_bad": int(transformed.all_channels_bad.sum()),
                 "n_epochs_over_bad_channel_limit": int(transformed.drop_epoch_mask.sum()),
@@ -102,13 +90,28 @@ def main() -> None:
     )
     parser.add_argument("--artifact-global-scale-mad-z", type=float, default=6.0)
     parser.add_argument("--artifact-min-training-epoch-retention", type=float, default=0.70)
-    parser.add_argument("--jobs", type=int, default=1)
+    parser.add_argument(
+        "--artifact-qc-jobs",
+        "--jobs",
+        dest="artifact_qc_jobs",
+        type=int,
+        default=1,
+        help="CPU processes used to fit independent outer-fold QC policies.",
+    )
+    parser.add_argument(
+        "--cpu-threads",
+        type=int,
+        default=None,
+        help="Total CPU thread budget shared by artifact QC workers.",
+    )
     parser.add_argument("--output", default=None)
     args = parser.parse_args()
     if args.max_folds is not None and args.max_folds < 1:
         parser.error("--max-folds must be positive")
-    if args.jobs < 1:
-        parser.error("--jobs must be positive")
+    if args.artifact_qc_jobs < 1:
+        parser.error("--artifact-qc-jobs must be positive")
+    if args.cpu_threads is not None and args.cpu_threads < 1:
+        parser.error("--cpu-threads must be positive when set")
     policy = FoldLocalArtifactPolicy(
         candidate_quantiles=args.artifact_candidate_quantiles,
         flat_quantile=args.artifact_flat_quantile,
@@ -121,27 +124,31 @@ def main() -> None:
     folds = loso_folds(dataset.subject_ids)
     if args.max_folds is not None:
         folds = folds[: args.max_folds]
-    fold_indices = list(range(len(folds)))
-    partitions = [
-        fold_indices[offset :: min(args.jobs, len(fold_indices))]
-        for offset in range(min(args.jobs, len(fold_indices)))
-    ]
-    policy_values = asdict(policy)
-    if len(partitions) == 1:
-        results = _audit_fold_partition(args.dataset_cache, policy_values, partitions[0])
-    else:
-        with ProcessPoolExecutor(max_workers=len(partitions)) as executor:
-            results = [
-                result
-                for partition in executor.map(
-                    _audit_fold_partition,
-                    [args.dataset_cache] * len(partitions),
-                    [policy_values] * len(partitions),
-                    partitions,
-                )
-                for result in partition
-            ]
-    results.sort(key=lambda result: int(result["fold"]))
+    if dataset.qc_features is None:
+        raise ValueError("Dataset cache lacks QC v2 features; regenerate before preflight.")
+    trial_channel_mask = (
+        np.asarray(dataset.trial_channel_mask, dtype=bool)
+        if dataset.trial_channel_mask is not None
+        else np.broadcast_to(np.asarray(dataset.channel_mask, dtype=bool), dataset.X.shape[:2])
+    )
+    fitted_models = precompute_fold_local_artifact_models(
+        dataset.X,
+        dataset.subject_ids,
+        folds,
+        trial_channel_mask=trial_channel_mask,
+        qc_features=dataset.qc_features,
+        artifact_policy=policy,
+        artifact_qc_jobs=args.artifact_qc_jobs,
+        cpu_threads=args.cpu_threads,
+    )
+    results = _audit_fitted_folds(
+        dataset.X,
+        dataset.subject_ids,
+        folds,
+        trial_channel_mask,
+        dataset.qc_features,
+        fitted_models,
+    )
     for result in results:
         print(json.dumps(result, ensure_ascii=False), flush=True)
     failed = [result for result in results if result["n_all_channels_bad"]]
@@ -149,7 +156,8 @@ def main() -> None:
         "dataset_cache": str(args.dataset_cache),
         "n_folds": len(results),
         "policy": policy.__dict__,
-        "jobs": min(args.jobs, len(fold_indices)),
+        "artifact_qc_jobs": min(args.artifact_qc_jobs, len(folds)),
+        "cpu_threads": args.cpu_threads,
         "n_failed_folds": len(failed),
         "failed_folds": failed,
     }

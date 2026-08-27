@@ -5,6 +5,7 @@ import pytest
 
 from data.artifact import (
     FoldLocalArtifactPolicy,
+    apply_fitted_artifact_model,
     apply_fold_local_artifact_policy,
 )
 from data.qc_features import EpochQCFeatures, compute_epoch_qc_features
@@ -203,6 +204,54 @@ def test_test_extreme_does_not_change_train_fitted_thresholds() -> None:
 
     assert first["ptp_thresholds"] == second["ptp_thresholds"]
     assert first["selected_quantiles"] == second["selected_quantiles"]
+
+
+def test_frozen_policy_matches_direct_fold_fit_and_audit() -> None:
+    X, subjects = _clean_epochs()
+    X[3, 2, 5] = 100.0
+    train = np.arange(len(X)) < 20
+    test = ~train
+    features = compute_epoch_qc_features(X, channel_mask=np.ones(X.shape[1], dtype=bool))
+    policy = FoldLocalArtifactPolicy(global_scale_mad_z=1e9)
+
+    direct = apply_fold_local_artifact_policy(
+        policy,
+        X,
+        subjects,
+        train,
+        test,
+        qc_features=features,
+    )
+    fitted = policy.fit(X[train], subjects[train], qc_features=features.subset(train))
+    frozen = apply_fitted_artifact_model(
+        fitted,
+        X,
+        subjects,
+        train,
+        test,
+        qc_features=features,
+    )
+
+    np.testing.assert_array_equal(frozen[0], direct[0])
+    np.testing.assert_array_equal(frozen[1], direct[1])
+    np.testing.assert_array_equal(frozen[2], direct[2])
+    assert frozen[3] == direct[3]
+
+
+def test_transform_can_defer_zero_fill_without_changing_mask_decision() -> None:
+    X, subjects = _clean_epochs()
+    fitted = FoldLocalArtifactPolicy(global_scale_mad_z=1e9).fit(X, subjects)
+    probe = X.copy()
+    probe[0, 2, 5] = 100.0
+
+    materialized = fitted.transform(probe, materialize_masked_data=True)
+    deferred = fitted.transform(probe, materialize_masked_data=False)
+
+    np.testing.assert_array_equal(deferred.trial_channel_mask, materialized.trial_channel_mask)
+    assert deferred.X is probe
+    assert not deferred.trial_channel_mask[0, 2]
+    assert deferred.X[0, 2, 5] == 100.0
+    assert materialized.X[0, 2, 5] == 0.0
 
 
 def test_all_bad_test_epoch_fails_closed() -> None:

@@ -10,6 +10,8 @@ from baselines.evaluate import (
     evaluate_binary,
     evaluate_candidate_selection,
     loso_folds,
+    precompute_fold_local_artifact_models,
+    resolve_artifact_qc_workers,
 )
 from data.artifact import FoldLocalArtifactPolicy
 from data.qc_features import compute_epoch_qc_features
@@ -120,7 +122,57 @@ def test_process_folds_share_cached_qc_features() -> None:
 
     assert summary.execution_backend == "process"
     assert summary.input_transport == "shared_memory"
+    assert summary.artifact_qc_workers == 2
+    assert summary.artifact_qc_cpu_threads_per_worker == 1
     assert summary.auc_mean > 0.8
+
+
+def test_precomputed_artifact_models_validate_cpu_worker_budget() -> None:
+    X, _, subjects = _p300_data()
+    features = compute_epoch_qc_features(X, channel_mask=np.ones(X.shape[1], dtype=bool))
+    policy = FoldLocalArtifactPolicy(global_scale_mad_z=1e9)
+
+    with pytest.raises(ValueError, match="artifact_qc_jobs"):
+        precompute_fold_local_artifact_models(
+            X,
+            subjects,
+            loso_folds(subjects),
+            trial_channel_mask=None,
+            qc_features=features,
+            artifact_policy=policy,
+            artifact_qc_jobs=0,
+            cpu_threads=2,
+        )
+
+
+def test_artifact_qc_worker_default_scales_with_cpu_budget() -> None:
+    assert (
+        resolve_artifact_qc_workers(
+            64,
+            artifact_qc_jobs=None,
+            cpu_threads=128,
+            available_threads=128,
+        )
+        == 16
+    )
+    assert (
+        resolve_artifact_qc_workers(
+            64,
+            artifact_qc_jobs=24,
+            cpu_threads=128,
+            available_threads=128,
+        )
+        == 24
+    )
+    assert (
+        resolve_artifact_qc_workers(
+            64,
+            artifact_qc_jobs=None,
+            cpu_threads=32,
+            available_threads=128,
+        )
+        == 16
+    )
 
 
 def test_gpu_execution_uses_processes_and_never_shared_threads() -> None:

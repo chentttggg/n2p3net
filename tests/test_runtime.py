@@ -80,3 +80,16 @@ def test_cpu_budget_is_divided_per_worker_and_restored() -> None:
     with cpu_thread_budget(1):
         assert torch.get_num_threads() == 1
     assert torch.get_num_threads() == previous
+
+
+def test_available_cpu_threads_respects_cgroup_quota(monkeypatch) -> None:
+    monkeypatch.setattr(runtime_module.os, "process_cpu_count", lambda: 128, raising=False)
+    monkeypatch.setattr(
+        runtime_module.os,
+        "sched_getaffinity",
+        lambda _pid: set(range(128)),
+        raising=False,
+    )
+    monkeypatch.setattr(runtime_module, "_linux_cgroup_cpu_quota_threads", lambda: 16)
+
+    assert runtime_module.available_cpu_threads() == 16

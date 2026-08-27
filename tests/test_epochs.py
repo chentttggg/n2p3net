@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import data.epochs as epochs_module
 from data.channel import build_channel_identity
 from data.epochs import (
     EpochDataset,
@@ -84,6 +85,40 @@ def test_epoch_dataset_safe_round_trip(tmp_path) -> None:
     assert loaded.provenance == source.provenance
     assert np.array_equal(loaded.event_timeline.candidate_ids, source.event_timeline.candidate_ids)
     assert loaded.event_timeline.supports_full_candidate_chain is True
+
+
+def test_epoch_dataset_decompresses_signal_member_once(tmp_path, monkeypatch) -> None:
+    path = save_epoch_dataset(tmp_path / "epochs.npz", _dataset())
+    original_load = epochs_module.np.load
+    calls: dict[str, int] = {}
+
+    class CountingArchive:
+        def __init__(self, archive):
+            self._archive = archive
+
+        def __enter__(self):
+            self._archive.__enter__()
+            return self
+
+        def __exit__(self, *args):
+            return self._archive.__exit__(*args)
+
+        @property
+        def files(self):
+            return self._archive.files
+
+        def __getitem__(self, key):
+            calls[key] = calls.get(key, 0) + 1
+            return self._archive[key]
+
+    def counted_load(*args, **kwargs):
+        return CountingArchive(original_load(*args, **kwargs))
+
+    monkeypatch.setattr(epochs_module.np, "load", counted_load)
+    loaded = load_epoch_dataset(path, require_labels=True)
+
+    assert loaded.X.shape == _dataset().X.shape
+    assert calls["X"] == 1
 
 
 def test_epoch_dataset_v2_loads_without_promoting_stimulus_codes(tmp_path) -> None:

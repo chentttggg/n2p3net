@@ -153,6 +153,28 @@ def test_masked_channels_stay_zero_after_input_standardization():
     assert np.isclose(clf._input_mean[0, 2, 0], 0.0)
 
 
+def test_masked_nonzero_channels_are_removed_by_deep_input_projection():
+    rng = np.random.default_rng(22)
+    X = rng.standard_normal((6, C, T)).astype(np.float32)
+    mask = np.ones((6, C), dtype=bool)
+    mask[:, 2] = False
+    X[:, 2, :] = 123.0
+    clf = DeepBaseline(
+        "eegnet",
+        channel_mask=np.ones(C, dtype=bool),
+        config=DeepConfig(epochs=1),
+        device=_cpu_device(),
+    )
+
+    effective = clf._effective_trial_channel_mask(X, mask)
+    clf._input_mean, clf._input_std = clf._masked_input_stats(X, effective)
+    prepared = clf._prepare_input(X, effective)
+
+    assert clf.accepts_unmaterialized_trial_channel_mask is True
+    assert np.allclose(prepared[:, 2, :], 0.0)
+    assert np.isclose(clf._input_mean[0, 2, 0], 0.0)
+
+
 def test_masked_input_statistics_count_every_observed_time_sample():
     """Counterexample: the denominator is observed trials times T, not trials alone."""
     X = np.ones((3, 2, 4), dtype=np.float32)

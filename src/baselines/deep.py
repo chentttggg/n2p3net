@@ -142,6 +142,7 @@ class DeepBaseline(Baseline):
     fit_accepts_subject_ids = True
     fit_accepts_trial_channel_mask = True
     predict_accepts_trial_channel_mask = True
+    accepts_unmaterialized_trial_channel_mask = True
     runtime_requires_exclusive_lease = True
 
     def __init__(
@@ -350,8 +351,6 @@ class DeepBaseline(Baseline):
             raise ValueError("Every trial must retain at least one observed channel.")
         if not np.isfinite(X).all():
             raise ValueError("X contains NaN/inf.")
-        if bool((X[~effective] != 0.0).any()):
-            raise ValueError("X must be zero where the channel mask is false.")
         return effective
 
     def _masked_input_stats(

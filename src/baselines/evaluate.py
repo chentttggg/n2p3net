@@ -16,10 +16,20 @@ from sklearn.metrics import balanced_accuracy_score, roc_auc_score
 
 from baselines.calibration import calibration_data_from_model, fit_logit_calibration
 from baselines.validation import subject_disjoint_validation_split
-from data.artifact import FoldLocalArtifactPolicy, apply_fold_local_artifact_policy
+from data.artifact import (
+    FoldLocalArtifactModel,
+    FoldLocalArtifactPolicy,
+    apply_fitted_artifact_model,
+    apply_fold_local_artifact_policy,
+)
 from data.qc_features import EpochQCFeatures
 from models.decision import decide
-from train.runtime import configure_spawned_worker_threads, cpu_thread_budget, resolve_cpu_threads
+from train.runtime import (
+    available_cpu_threads,
+    configure_spawned_worker_threads,
+    cpu_thread_budget,
+    resolve_cpu_threads,
+)
 
 
 def loso_folds(subject_ids: Sequence[object]) -> list[tuple[np.ndarray, np.ndarray]]:
@@ -91,6 +101,8 @@ class BinarySummary:
     effective_n_jobs: int = 1
     input_transport: str = "direct"
     cpu_threads_per_worker: int = 1
+    artifact_qc_workers: int = 0
+    artifact_qc_cpu_threads_per_worker: int = 0
 
 
 @dataclass
@@ -266,6 +278,21 @@ def _fit(
     model.calibration_source_ = "subject_disjoint_validation"
 
 
+def _can_defer_artifact_zero_fill(model: object) -> bool:
+    """Return whether the model enforces an explicit dynamic channel mask.
+
+    This is deliberately an opt-in capability.  A false mask must otherwise
+    mean a literal zero signal for legacy estimators, whose interface has no
+    way to prevent rejected values from entering their feature extraction.
+    """
+
+    return bool(
+        getattr(model, "fit_accepts_trial_channel_mask", False)
+        and getattr(model, "predict_accepts_trial_channel_mask", False)
+        and getattr(model, "accepts_unmaterialized_trial_channel_mask", False)
+    )
+
+
 def _fold_result(
     prototype: object,
     X: np.ndarray,
@@ -276,6 +303,7 @@ def _fold_result(
     trial_channel_mask: np.ndarray | None,
     qc_features: EpochQCFeatures | None,
     artifact_policy: FoldLocalArtifactPolicy | None,
+    fitted_artifact_model: FoldLocalArtifactModel | None = None,
     fold_id: int | None = None,
     shared_worker_count: int = 1,
 ) -> tuple[BinaryFoldResult, np.ndarray, object]:
@@ -287,7 +315,18 @@ def _fold_result(
     if callable(configure_fold):
         configure_fold(fold_id)
     artifact_quality = None
-    if artifact_policy is not None:
+    if fitted_artifact_model is not None:
+        X, trial_channel_mask, train, artifact_quality = apply_fitted_artifact_model(
+            fitted_artifact_model,
+            X,
+            subject_ids,
+            train,
+            test,
+            trial_channel_mask,
+            qc_features,
+            materialize_masked_data=not _can_defer_artifact_zero_fill(model),
+        )
+    elif artifact_policy is not None:
         X, trial_channel_mask, train, artifact_quality = apply_fold_local_artifact_policy(
             artifact_policy,
             X,
@@ -395,6 +434,7 @@ def _run_fold_task(
         np.ndarray | None,
         EpochQCFeatures | None,
         FoldLocalArtifactPolicy | None,
+        FoldLocalArtifactModel | None,
         int,
         int,
     ],
@@ -410,6 +450,7 @@ def _run_fold_task(
         trial_channel_mask,
         qc_features,
         artifact_policy,
+        fitted_artifact_model,
         fold_id,
         shared_worker_count,
     ) = task
@@ -423,6 +464,7 @@ def _run_fold_task(
         trial_channel_mask,
         qc_features,
         artifact_policy,
+        fitted_artifact_model=fitted_artifact_model,
         fold_id=fold_id,
         shared_worker_count=shared_worker_count,
     )
@@ -441,6 +483,7 @@ def _run_shared_fold_task(
         _SharedArraySpec | None,
         _SharedQCFeatureSpecs | None,
         FoldLocalArtifactPolicy | None,
+        FoldLocalArtifactModel | None,
         int,
         int,
         int,
@@ -459,6 +502,7 @@ def _run_shared_fold_task(
         mask_spec,
         qc_specs,
         artifact_policy,
+        fitted_artifact_model,
         fold_id,
         shared_worker_count,
         cpu_threads,
@@ -505,6 +549,7 @@ def _run_shared_fold_task(
                     trial_channel_mask,
                     qc_features,
                     artifact_policy,
+                    fitted_artifact_model,
                     fold_id,
                     shared_worker_count,
                 )
@@ -517,6 +562,192 @@ def _run_shared_fold_task(
                 pass
 
 
+def _fit_artifact_policy_task(
+    task: tuple[
+        int,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray | None,
+        EpochQCFeatures | None,
+        FoldLocalArtifactPolicy,
+    ],
+) -> tuple[int, FoldLocalArtifactModel]:
+    """Fit one fold's small QC policy without constructing a classifier."""
+
+    fold_index, X, subject_ids, train, trial_channel_mask, qc_features, policy = task
+    train_features = None if qc_features is None else qc_features.subset(train)
+    return (
+        fold_index,
+        policy.fit(
+            X[train],
+            subject_ids[train],
+            None if trial_channel_mask is None else trial_channel_mask[train],
+            train_features,
+        ),
+    )
+
+
+def _fit_shared_artifact_policy_task(
+    task: tuple[
+        int,
+        _SharedArraySpec,
+        _SharedArraySpec,
+        np.ndarray,
+        _SharedArraySpec | None,
+        _SharedQCFeatureSpecs | None,
+        FoldLocalArtifactPolicy,
+        int,
+    ],
+) -> tuple[int, FoldLocalArtifactModel]:
+    """Attach shared EEG/QC arrays before one CPU-only policy fit."""
+
+    fold_index, X_spec, subject_spec, train, mask_spec, qc_specs, policy, cpu_threads = task
+    handles: list[shared_memory.SharedMemory] = []
+    try:
+        configure_spawned_worker_threads(cpu_threads)
+        X, handle = _attach_shared_array(X_spec)
+        handles.append(handle)
+        subject_ids, handle = _attach_shared_array(subject_spec)
+        handles.append(handle)
+        trial_channel_mask = None
+        if mask_spec is not None:
+            trial_channel_mask, handle = _attach_shared_array(mask_spec)
+            handles.append(handle)
+        qc_features = None
+        if qc_specs is not None:
+            relative_ptp, handle = _attach_shared_array(qc_specs.relative_ptp)
+            handles.append(handle)
+            channel_std_v, handle = _attach_shared_array(qc_specs.channel_std_v)
+            handles.append(handle)
+            epoch_scale_v, handle = _attach_shared_array(qc_specs.epoch_scale_v)
+            handles.append(handle)
+            observed_mask, handle = _attach_shared_array(qc_specs.observed_mask)
+            handles.append(handle)
+            qc_features = EpochQCFeatures(
+                relative_ptp=relative_ptp,
+                channel_std_v=channel_std_v,
+                epoch_scale_v=epoch_scale_v,
+                observed_mask=observed_mask,
+            )
+        with cpu_thread_budget(cpu_threads):
+            return _fit_artifact_policy_task(
+                (
+                    fold_index,
+                    X,
+                    subject_ids,
+                    train,
+                    trial_channel_mask,
+                    qc_features,
+                    policy,
+                )
+            )
+    finally:
+        for handle in handles:
+            try:
+                handle.close()
+            except OSError:
+                pass
+
+
+def resolve_artifact_qc_workers(
+    n_folds: int,
+    *,
+    artifact_qc_jobs: int | None,
+    cpu_threads: int | None,
+    available_threads: int | None = None,
+) -> int:
+    """Choose a bounded QC worker count from the usable CPU budget.
+
+    Each fit has serial masked-median work plus BLAS contractions.  One worker
+    per usable CPU thread keeps the serial median scans busy. The automatic
+    policy is capped at 16 workers because each fit holds a training-set slice
+    in addition to the shared source array.
+    """
+
+    if n_folds < 1:
+        raise ValueError("n_folds must be positive.")
+    if artifact_qc_jobs is not None and artifact_qc_jobs < 1:
+        raise ValueError("artifact_qc_jobs must be positive or None.")
+    available = available_cpu_threads() if available_threads is None else int(available_threads)
+    if available < 1:
+        raise ValueError("available_threads must be positive.")
+    budget = available if cpu_threads is None else min(int(cpu_threads), available)
+    requested = min(16, budget) if artifact_qc_jobs is None else int(artifact_qc_jobs)
+    return min(n_folds, budget, requested)
+
+
+def precompute_fold_local_artifact_models(
+    X: np.ndarray,
+    subject_ids: np.ndarray,
+    folds: Sequence[tuple[np.ndarray, np.ndarray]],
+    *,
+    trial_channel_mask: np.ndarray | None,
+    qc_features: EpochQCFeatures | None,
+    artifact_policy: FoldLocalArtifactPolicy | None,
+    artifact_qc_jobs: int | None,
+    cpu_threads: int | None,
+) -> dict[int, FoldLocalArtifactModel]:
+    """Compile all outer-fold QC policies on CPU before model fitting.
+
+    The return payload contains only fold-local fitted thresholds.  It is small
+    enough to pass to accelerator workers and prevents each worker from
+    rebuilding the same CPU CV state between GPU training phases.
+    """
+
+    if artifact_policy is None:
+        return {}
+    workers = resolve_artifact_qc_workers(
+        len(folds),
+        artifact_qc_jobs=artifact_qc_jobs,
+        cpu_threads=cpu_threads,
+    )
+    cpu_threads_per_worker = resolve_cpu_threads(workers, total_threads=cpu_threads)
+    if workers == 1:
+        with cpu_thread_budget(cpu_threads_per_worker):
+            pairs = [
+                _fit_artifact_policy_task(
+                    (
+                        index,
+                        X,
+                        subject_ids,
+                        train,
+                        trial_channel_mask,
+                        qc_features,
+                        artifact_policy,
+                    )
+                )
+                for index, (train, _) in enumerate(folds)
+            ]
+    else:
+        with _SharedFoldInputs(
+            X,
+            np.empty(0, dtype=np.int8),
+            subject_ids,
+            trial_channel_mask,
+            qc_features,
+        ) as shared_inputs:
+            tasks = [
+                (
+                    index,
+                    shared_inputs.X,
+                    shared_inputs.subject_ids,
+                    train,
+                    shared_inputs.trial_channel_mask,
+                    shared_inputs.qc_features,
+                    artifact_policy,
+                    cpu_threads_per_worker,
+                )
+                for index, (train, _) in enumerate(folds)
+            ]
+            with ProcessPoolExecutor(
+                max_workers=workers,
+                mp_context=mp.get_context("spawn"),
+            ) as executor:
+                pairs = list(executor.map(_fit_shared_artifact_policy_task, tasks))
+    return dict(pairs)
+
+
 def _run_fold_tasks(
     prototype: object,
     X: np.ndarray,
@@ -527,12 +758,13 @@ def _run_fold_tasks(
     trial_channel_mask: np.ndarray | None,
     qc_features: EpochQCFeatures | None,
     artifact_policy: FoldLocalArtifactPolicy | None,
+    artifact_qc_jobs: int | None,
     n_jobs: int,
     parallel_backend: str,
     fold_id_offset: int,
     max_gpu_jobs: int | None,
     cpu_threads: int | None,
-) -> tuple[list[tuple[int, BinaryFoldResult, np.ndarray, object]], str, int, str, int]:
+) -> tuple[list[tuple[int, BinaryFoldResult, np.ndarray, object]], str, int, str, int, int, int]:
     backend, effective_n_jobs = _resolve_fold_execution(
         prototype,
         n_jobs=n_jobs,
@@ -541,6 +773,30 @@ def _run_fold_tasks(
         max_gpu_jobs=max_gpu_jobs,
     )
     cpu_threads_per_worker = resolve_cpu_threads(effective_n_jobs, total_threads=cpu_threads)
+    artifact_qc_workers = (
+        0
+        if artifact_policy is None
+        else resolve_artifact_qc_workers(
+            len(folds),
+            artifact_qc_jobs=artifact_qc_jobs,
+            cpu_threads=cpu_threads,
+        )
+    )
+    artifact_qc_cpu_threads_per_worker = (
+        0
+        if artifact_qc_workers == 0
+        else resolve_cpu_threads(artifact_qc_workers, total_threads=cpu_threads)
+    )
+    fitted_artifact_models = precompute_fold_local_artifact_models(
+        X,
+        subject_ids,
+        folds,
+        trial_channel_mask=trial_channel_mask,
+        qc_features=qc_features,
+        artifact_policy=artifact_policy,
+        artifact_qc_jobs=artifact_qc_jobs,
+        cpu_threads=cpu_threads,
+    )
     tasks = [
         (
             index,
@@ -553,6 +809,7 @@ def _run_fold_tasks(
             trial_channel_mask,
             qc_features,
             artifact_policy,
+            fitted_artifact_models.get(index),
             index + fold_id_offset,
             effective_n_jobs,
         )
@@ -561,7 +818,15 @@ def _run_fold_tasks(
     if backend == "serial":
         with cpu_thread_budget(cpu_threads_per_worker):
             results = [_run_fold_task(task) for task in tasks]
-        return results, backend, effective_n_jobs, "direct", cpu_threads_per_worker
+        return (
+            results,
+            backend,
+            effective_n_jobs,
+            "direct",
+            cpu_threads_per_worker,
+            artifact_qc_workers,
+            artifact_qc_cpu_threads_per_worker,
+        )
     if backend == "thread":
         with cpu_thread_budget(cpu_threads_per_worker):
             with ThreadPoolExecutor(max_workers=effective_n_jobs) as executor:
@@ -581,6 +846,7 @@ def _run_fold_tasks(
                     shared_inputs.trial_channel_mask,
                     shared_inputs.qc_features,
                     artifact_policy,
+                    fitted_artifact_models.get(index),
                     index + fold_id_offset,
                     effective_n_jobs,
                     cpu_threads_per_worker,
@@ -599,6 +865,8 @@ def _run_fold_tasks(
         effective_n_jobs,
         transport,
         cpu_threads_per_worker,
+        artifact_qc_workers,
+        artifact_qc_cpu_threads_per_worker,
     )
 
 
@@ -612,6 +880,7 @@ def evaluate_binary(
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
     artifact_policy: FoldLocalArtifactPolicy | None = None,
+    artifact_qc_jobs: int | None = None,
     fold_protocol: str | None = None,
     n_jobs: int = 1,
     parallel_backend: str = "auto",
@@ -632,7 +901,15 @@ def evaluate_binary(
         qc_features.validate(n_epochs=len(X), n_channels=X.shape[1])
     if fold_id_offset < 0:
         raise ValueError("fold_id_offset must be non-negative.")
-    fold_results, backend, effective_n_jobs, input_transport, cpu_threads_per_worker = _run_fold_tasks(
+    (
+        fold_results,
+        backend,
+        effective_n_jobs,
+        input_transport,
+        cpu_threads_per_worker,
+        artifact_qc_workers,
+        artifact_qc_cpu_threads_per_worker,
+    ) = _run_fold_tasks(
         model,
         X,
         y,
@@ -641,6 +918,7 @@ def evaluate_binary(
         trial_channel_mask=trial_channel_mask,
         qc_features=qc_features,
         artifact_policy=artifact_policy,
+        artifact_qc_jobs=artifact_qc_jobs,
         n_jobs=n_jobs,
         parallel_backend=parallel_backend,
         fold_id_offset=fold_id_offset,
@@ -659,6 +937,8 @@ def evaluate_binary(
         effective_n_jobs=effective_n_jobs,
         input_transport=input_transport,
         cpu_threads_per_worker=cpu_threads_per_worker,
+        artifact_qc_workers=artifact_qc_workers,
+        artifact_qc_cpu_threads_per_worker=artifact_qc_cpu_threads_per_worker,
     )
 
 
@@ -677,6 +957,7 @@ def evaluate_candidate_selection(
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
     artifact_policy: FoldLocalArtifactPolicy | None = None,
+    artifact_qc_jobs: int | None = None,
     fold_protocol: str | None = None,
     n_jobs: int = 1,
     parallel_backend: str = "auto",
@@ -709,7 +990,15 @@ def evaluate_candidate_selection(
     results: list[CandidateFoldResult] = []
     records: list[tuple[object, object, str]] = []
     validated_folds = _validate_folds(folds, len(X))
-    fold_results, backend, effective_n_jobs, input_transport, cpu_threads_per_worker = _run_fold_tasks(
+    (
+        fold_results,
+        backend,
+        effective_n_jobs,
+        input_transport,
+        cpu_threads_per_worker,
+        artifact_qc_workers,
+        artifact_qc_cpu_threads_per_worker,
+    ) = _run_fold_tasks(
         model,
         X,
         y,
@@ -718,6 +1007,7 @@ def evaluate_candidate_selection(
         trial_channel_mask=trial_channel_mask,
         qc_features=qc_features,
         artifact_policy=artifact_policy,
+        artifact_qc_jobs=artifact_qc_jobs,
         n_jobs=n_jobs,
         parallel_backend=parallel_backend,
         fold_id_offset=fold_id_offset,
@@ -757,6 +1047,8 @@ def evaluate_candidate_selection(
         effective_n_jobs=effective_n_jobs,
         input_transport=input_transport,
         cpu_threads_per_worker=cpu_threads_per_worker,
+        artifact_qc_workers=artifact_qc_workers,
+        artifact_qc_cpu_threads_per_worker=artifact_qc_cpu_threads_per_worker,
     )
 
 

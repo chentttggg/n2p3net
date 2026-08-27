@@ -65,6 +65,9 @@ class Baseline:
     predict_accepts_acquisition_indices = False
     predict_accepts_trial_channel_mask = False
     auxiliary_predict_accepts_trial_channel_mask = False
+    # A mask-aware model must opt in before evaluate.py may retain non-zero
+    # values behind a dynamically rejected QC channel mask.
+    accepts_unmaterialized_trial_channel_mask = False
 
     _epoch_progress_dir: Path | None = None
     _evaluation_fold_id: int | None = None

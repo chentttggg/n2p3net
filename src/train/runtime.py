@@ -8,10 +8,12 @@ and scientific protocol code remain outside this module.
 from __future__ import annotations
 
 import os
+import sys
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
-from math import prod
+from math import ceil, prod
+from pathlib import Path
 from threading import Lock, RLock
 from typing import Literal
 
@@ -44,12 +46,45 @@ def is_oom_error(error: BaseException) -> bool:
     return "out of memory" in message or "cuda oom" in message or "显存溢出" in message
 
 
+def _linux_cgroup_cpu_quota_threads() -> int | None:
+    """Return a finite Linux cgroup CPU quota, when one is enforced."""
+
+    if sys.platform != "linux":
+        return None
+    try:
+        quota_text, period_text = Path("/sys/fs/cgroup/cpu.max").read_text().split()
+        if quota_text != "max":
+            quota, period = int(quota_text), int(period_text)
+            if quota > 0 and period > 0:
+                return max(1, ceil(quota / period))
+    except (OSError, ValueError):
+        pass
+    try:
+        quota = int(Path("/sys/fs/cgroup/cpu/cpu.cfs_quota_us").read_text().strip())
+        period = int(Path("/sys/fs/cgroup/cpu/cpu.cfs_period_us").read_text().strip())
+        if quota > 0 and period > 0:
+            return max(1, ceil(quota / period))
+    except (OSError, ValueError):
+        pass
+    return None
+
+
 def available_cpu_threads() -> int:
-    """Return the CPU quota visible to this process, with safe fallbacks."""
+    """Return CPUs usable by this process, including a Linux cgroup quota."""
 
     process_count = getattr(os, "process_cpu_count", None)
     detected = process_count() if callable(process_count) else os.cpu_count()
-    return max(1, int(detected or 1))
+    limits = [max(1, int(detected or 1))]
+    affinity = getattr(os, "sched_getaffinity", None)
+    if callable(affinity):
+        try:
+            limits.append(max(1, len(affinity(0))))
+        except OSError:
+            pass
+    quota = _linux_cgroup_cpu_quota_threads()
+    if quota is not None:
+        limits.append(quota)
+    return min(limits)
 
 
 def resolve_cpu_threads(

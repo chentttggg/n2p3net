@@ -522,7 +522,11 @@ def load_epoch_dataset(
         for field_name in ("event_complete", "event_online_causal", "has_labels"):
             if np.asarray(archive[field_name]).dtype != np.dtype(bool):
                 raise ValueError(f"{path} field {field_name} must be a strict boolean.")
-        if not np.issubdtype(np.asarray(archive["X"]).dtype, np.floating):
+        # NpzFile does not memoize member reads. Retain the decoded tensor so
+        # the dtype validation below does not decompress the full EEG cache a
+        # second time while constructing the dataset.
+        X = np.asarray(archive["X"])
+        if not np.issubdtype(X.dtype, np.floating):
             raise ValueError(f"{path} field X must have a floating-point dtype.")
         if not np.issubdtype(np.asarray(archive["channel_positions_m"]).dtype, np.floating):
             raise ValueError(f"{path} field channel_positions_m must be floating-point.")
@@ -562,7 +566,7 @@ def load_epoch_dataset(
             )
         dataset = EpochDataset(
             name=str(np.asarray(archive["name"]).item()),
-            X=np.asarray(archive["X"], dtype=np.float32),
+            X=np.asarray(X, dtype=np.float32),
             y=np.asarray(archive["y"], dtype=np.int64) if has_labels else None,
             subject_ids=np.asarray(archive["subject_ids"], dtype=str),
             channel_names=tuple(str(name) for name in archive["channel_names"]),

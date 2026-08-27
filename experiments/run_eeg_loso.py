@@ -129,6 +129,12 @@ def main() -> None:
         default=None,
         help="total CPU thread budget shared across active fold workers; default uses the visible quota",
     )
+    parser.add_argument(
+        "--artifact-qc-jobs",
+        type=int,
+        default=None,
+        help="CPU processes used to precompute fold-local artifact policies; default uses one worker per usable CPU thread, capped at 16",
+    )
     parser.add_argument("--fold-offset", type=int, default=0)
     parser.add_argument("--max-folds", type=int, default=None)
     parser.add_argument("--subjects", type=int, default=None)
@@ -184,6 +190,8 @@ def main() -> None:
         parser.error("--gpu-fold-jobs must be positive when set")
     if args.cpu_threads is not None and args.cpu_threads < 1:
         parser.error("--cpu-threads must be positive when set")
+    if args.artifact_qc_jobs is not None and args.artifact_qc_jobs < 1:
+        parser.error("--artifact-qc-jobs must be positive when set")
     if args.fold_offset < 0 or (args.max_folds is not None and args.max_folds < 1):
         parser.error("fold offset must be non-negative and max folds must be positive")
     if args.subjects is not None and args.subjects < 2:
@@ -281,6 +289,7 @@ def main() -> None:
             "parallel_backend": args.fold_backend,
             "max_gpu_jobs": args.gpu_fold_jobs,
             "cpu_threads": args.cpu_threads,
+            "artifact_qc_jobs": args.artifact_qc_jobs,
             "fold_id_offset": args.fold_offset,
             "trial_channel_mask": trial_channel_mask,
             "qc_features": qc_features,
@@ -321,10 +330,13 @@ def main() -> None:
                 "requested_backend": args.fold_backend,
                 "max_gpu_jobs": args.gpu_fold_jobs,
                 "requested_cpu_threads": args.cpu_threads,
+                "requested_artifact_qc_jobs": args.artifact_qc_jobs,
                 "effective_n_jobs": summary.effective_n_jobs,
                 "backend": summary.execution_backend,
                 "input_transport": summary.input_transport,
                 "cpu_threads_per_worker": summary.cpu_threads_per_worker,
+                "artifact_qc_workers": summary.artifact_qc_workers,
+                "artifact_qc_cpu_threads_per_worker": summary.artifact_qc_cpu_threads_per_worker,
             },
             "per_fold": [fold.__dict__ for fold in summary.per_fold],
             "wall_seconds": time.perf_counter() - started,
