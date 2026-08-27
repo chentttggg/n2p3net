@@ -21,7 +21,13 @@ from train.runtime import GpuPerformanceScheduler
 
 
 def test_n2p3net_returns_binary_logits_and_has_compact_capacity() -> None:
-    model = N2P3Net(n_channels=3, n_times=256, sfreq=256.0, tmin_s=-0.2)
+    model = N2P3Net(
+        n_channels=3,
+        n_times=256,
+        sfreq=256.0,
+        tmin_s=-0.2,
+        pooling_mode="latency_marginal_contrast",
+    )
     logits = model(torch.randn(4, 3, 256))
 
     assert logits.shape == (4, 2)
@@ -29,6 +35,13 @@ def test_n2p3net_returns_binary_logits_and_has_compact_capacity() -> None:
     assert isinstance(model.pool, nn.ModuleList)
     assert len(model.pool) == 2
     assert all(isinstance(pool, LatencyMarginalContrastPool) for pool in model.pool)
+
+
+def test_n2p3net_default_is_the_promoted_ms_flatten_head() -> None:
+    model = N2P3Net(n_channels=3, n_times=128, sfreq=128.0, tmin_s=-0.2)
+
+    assert model.pooling_mode == "ms_flatten"
+    assert isinstance(model.pool, MSFlattenPool)
 
 
 def test_n2p3net_matches_the_baseline_ms_eegnet_parameterization() -> None:
@@ -238,6 +251,7 @@ def test_factory_propagates_dataset_physical_time_to_n2p3net(monkeypatch) -> Non
     assert architecture["tmin_s"] == -0.15
     assert architecture["trunk"] == "ms_eegnet_style"
     assert architecture["mst_kernel_samples"] == [5, 17]
+    assert architecture["pooling_mode"] == "ms_flatten"
 
 
 def test_factory_exposes_global_average_only_as_an_explicit_ablation(monkeypatch) -> None:

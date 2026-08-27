@@ -69,7 +69,7 @@ def build_binary_model(
     deep_config_overrides: dict[str, Any] | None = None,
     device: torch.device | None = None,
     runtime: GpuPerformanceScheduler | None = None,
-    n2p3net_pooling_mode: str = "latency_marginal_contrast",
+    n2p3net_pooling_mode: str = "ms_flatten",
 ):
     """Return one candidate using only the data and performance contracts."""
 

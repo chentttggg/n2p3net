@@ -155,8 +155,8 @@ def main() -> None:
     parser.add_argument(
         "--n2p3net-pooling",
         choices=sorted(POOLING_MODES),
-        default="latency_marginal_contrast",
-        help="N2P3-Net head: LMBC default, global_average matched ablation, ms_flatten paper-style head.",
+        default="ms_flatten",
+        help="N2P3-Net head: promoted ms_flatten, LMBC research ablation, or global_average negative control.",
     )
     parser.add_argument(
         "--artifact-candidate-bad-channel-fractions",

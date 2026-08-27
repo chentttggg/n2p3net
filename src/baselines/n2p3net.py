@@ -26,7 +26,7 @@ class N2P3NetBaseline(DeepBaseline):
         *,
         channel_mask=None,
         tmin_s: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms / 1000.0,
-        pooling_mode: str = "latency_marginal_contrast",
+        pooling_mode: str = "ms_flatten",
     ) -> None:
         if not math.isfinite(tmin_s):
             raise ValueError("tmin_s must be finite.")

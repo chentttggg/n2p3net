@@ -46,14 +46,14 @@ candidate score.
 
 The compact N2P3-Net branch uses an MS-EEGNet-style trunk: an EEGNet-factorized
 spatio-temporal block followed by two compressed separable temporal summaries.
-Its default LMBC head receives the dataset's physical `sfreq` and `tmin`,
-contrasts fixed post-stimulus P300 candidates against the pre-stimulus
-reference, and softly marginalizes latency independently inside each temporal
-scale. `ms_flatten` reproduces the paper-style head and `global_average` is a
-matched aggregation ablation. All modes emit the same binary logits and leave
-calibration and candidate aggregation unchanged. The complete hypothesis,
-equations, counterexamples, and promotion criteria are in
-`doc/latency_marginal_pooling.zh.md`.
+The promoted project head is paper-style `ms_flatten`. LMBC receives the
+dataset's physical `sfreq` and `tmin`, contrasts post-stimulus candidates
+against the pre-stimulus reference, and remains available as a rejected
+research hypothesis. `global_average` is the matched negative control. All
+modes emit the same binary logits and leave calibration and candidate
+aggregation unchanged. Equations and failure boundaries are in
+`doc/latency_marginal_pooling.zh.md`; matched results are in
+`doc/ablation_20260828.zh.md`.
 
 ## Initial Search Space
 

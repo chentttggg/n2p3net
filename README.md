@@ -1,8 +1,9 @@
 # N2P3-Net
 
-Performance-first oddball P300 decoding research framework. The production
-candidate is the compact MS-EEGNet-style N2P3-Net with latency-marginal
-contrast pooling; promotion remains conditional on matched held-out ablations.
+Performance-first oddball P300 decoding research framework. Under the matched
+BI2014a 64-subject LOSO ablation, EEGNet is the current overall champion and
+paper-style MS-EEGNet (`ms_flatten`) is the strongest project architecture.
+LMBC remains an explicit research ablation after failing the promotion test.
 
 ## Environment
 
