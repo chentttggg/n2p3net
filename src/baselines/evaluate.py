@@ -765,6 +765,7 @@ def _run_fold_tasks(
     trial_channel_mask: np.ndarray | None,
     qc_features: EpochQCFeatures | None,
     artifact_policy: FoldLocalArtifactPolicy | None,
+    fitted_artifact_models: Mapping[int, FoldLocalArtifactModel] | None,
     artifact_qc_jobs: int | None,
     n_jobs: int,
     parallel_backend: str,
@@ -780,30 +781,32 @@ def _run_fold_tasks(
         max_gpu_jobs=max_gpu_jobs,
     )
     cpu_threads_per_worker = resolve_cpu_threads(effective_n_jobs, total_threads=cpu_threads)
-    artifact_qc_workers = (
-        0
-        if artifact_policy is None
-        else resolve_artifact_qc_workers(
-            len(folds),
-            artifact_qc_jobs=artifact_qc_jobs,
-            cpu_threads=cpu_threads,
+    artifact_qc_workers = 0
+    if artifact_policy is not None and fitted_artifact_models is None:
+        artifact_qc_workers = resolve_artifact_qc_workers(
+            len(folds), artifact_qc_jobs=artifact_qc_jobs, cpu_threads=cpu_threads
         )
-    )
     artifact_qc_cpu_threads_per_worker = (
         0
         if artifact_qc_workers == 0
         else resolve_cpu_threads(artifact_qc_workers, total_threads=cpu_threads)
     )
-    fitted_artifact_models = precompute_fold_local_artifact_models(
-        X,
-        subject_ids,
-        folds,
-        trial_channel_mask=trial_channel_mask,
-        qc_features=qc_features,
-        artifact_policy=artifact_policy,
-        artifact_qc_jobs=artifact_qc_jobs,
-        cpu_threads=cpu_threads,
-    )
+    if fitted_artifact_models is None:
+        fitted_artifact_models = precompute_fold_local_artifact_models(
+            X,
+            subject_ids,
+            folds,
+            trial_channel_mask=trial_channel_mask,
+            qc_features=qc_features,
+            artifact_policy=artifact_policy,
+            artifact_qc_jobs=artifact_qc_jobs,
+            cpu_threads=cpu_threads,
+        )
+    else:
+        fitted_artifact_models = dict(fitted_artifact_models)
+        expected = set(range(len(folds))) if artifact_policy is not None else set()
+        if set(fitted_artifact_models) != expected:
+            raise ValueError("fitted_artifact_models must contain exactly one model per fold.")
     tasks = [
         (
             index,
@@ -888,6 +891,7 @@ def evaluate_binary(
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
     artifact_policy: FoldLocalArtifactPolicy | None = None,
+    fitted_artifact_models: Mapping[int, FoldLocalArtifactModel] | None = None,
     artifact_qc_jobs: int | None = None,
     fold_protocol: str | None = None,
     n_jobs: int = 1,
@@ -933,6 +937,7 @@ def evaluate_binary(
         trial_channel_mask=trial_channel_mask,
         qc_features=qc_features,
         artifact_policy=artifact_policy,
+        fitted_artifact_models=fitted_artifact_models,
         artifact_qc_jobs=artifact_qc_jobs,
         n_jobs=n_jobs,
         parallel_backend=parallel_backend,
@@ -972,6 +977,7 @@ def evaluate_candidate_selection(
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
     artifact_policy: FoldLocalArtifactPolicy | None = None,
+    fitted_artifact_models: Mapping[int, FoldLocalArtifactModel] | None = None,
     artifact_qc_jobs: int | None = None,
     fold_protocol: str | None = None,
     n_jobs: int = 1,
@@ -1022,6 +1028,7 @@ def evaluate_candidate_selection(
         trial_channel_mask=trial_channel_mask,
         qc_features=qc_features,
         artifact_policy=artifact_policy,
+        fitted_artifact_models=fitted_artifact_models,
         artifact_qc_jobs=artifact_qc_jobs,
         n_jobs=n_jobs,
         parallel_backend=parallel_backend,

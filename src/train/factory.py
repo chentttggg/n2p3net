@@ -15,12 +15,19 @@ from baselines.riemann import XdawnRiemann
 from data.epochs import EpochDataset
 from train.runtime import GpuPerformanceScheduler
 
+N2P3_POOLING_BY_MODEL = {
+    "n2p3net_lmbc": "latency_marginal_contrast",
+    "n2p3net_global_average": "global_average",
+    "ms_eegnet": "ms_flatten",
+}
+
 BINARY_MODEL_NAMES = (
     "swdla",
     "window_lr",
     "template",
     "xdawn_rg",
     "n2p3net",
+    *N2P3_POOLING_BY_MODEL,
     *DEEP_MODEL_NAMES,
 )
 
@@ -86,7 +93,8 @@ def build_binary_model(
         validation_group_fraction=validation_group_fraction,
         overrides=deep_config_overrides,
     )
-    if key == "n2p3net":
+    if key == "n2p3net" or key in N2P3_POOLING_BY_MODEL:
+        pooling_mode = N2P3_POOLING_BY_MODEL.get(key, n2p3net_pooling_mode)
         return N2P3NetBaseline(
             dataset.n_channels,
             dataset.n_times,
@@ -96,7 +104,7 @@ def build_binary_model(
             runtime=runtime,
             channel_mask=common_mask,
             tmin_s=tmin,
-            pooling_mode=n2p3net_pooling_mode,
+            pooling_mode=pooling_mode,
         )
     if key in DEEP_MODEL_NAMES:
         return DeepBaseline(
@@ -127,6 +135,6 @@ def describe_binary_model(model_name: str, model: object) -> dict[str, Any]:
         "n_times": int(model.n_times),
         "sfreq": float(model.sfreq),
     }
-    if key == "n2p3net":
+    if key == "n2p3net" or key in N2P3_POOLING_BY_MODEL:
         record["architecture"] = model.architecture_record()
     return record

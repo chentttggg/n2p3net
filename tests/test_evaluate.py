@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import torch
 
+import baselines.evaluate as evaluate_module
 from baselines.classic import WindowLogisticRegression
 from baselines.evaluate import (
     _resolve_fold_execution,
@@ -179,6 +180,41 @@ def test_process_folds_share_cached_qc_features() -> None:
     assert summary.input_transport == "shared_memory"
     assert summary.artifact_qc_workers == 2
     assert summary.artifact_qc_cpu_threads_per_worker == 1
+    assert summary.auc_mean > 0.8
+
+
+def test_precomputed_artifact_models_are_reused_across_candidates(monkeypatch) -> None:
+    X, y, subjects = _p300_data()
+    folds = loso_folds(subjects)
+    features = compute_epoch_qc_features(X, channel_mask=np.ones(X.shape[1], dtype=bool))
+    policy = FoldLocalArtifactPolicy(global_scale_mad_z=1e9)
+    fitted = precompute_fold_local_artifact_models(
+        X,
+        subjects,
+        folds,
+        trial_channel_mask=None,
+        qc_features=features,
+        artifact_policy=policy,
+        artifact_qc_jobs=1,
+        cpu_threads=1,
+    )
+
+    def fail_recompute(*_args, **_kwargs):
+        raise AssertionError("frozen fold-local QC must be reused")
+
+    monkeypatch.setattr(evaluate_module, "precompute_fold_local_artifact_models", fail_recompute)
+    summary = evaluate_binary(
+        WindowLogisticRegression(sfreq=128.0, tmin=-0.2, window_ms=(125.0, 300.0)),
+        X,
+        y,
+        subjects,
+        folds,
+        qc_features=features,
+        artifact_policy=policy,
+        fitted_artifact_models=fitted,
+    )
+
+    assert summary.artifact_qc_workers == 0
     assert summary.auc_mean > 0.8
 
 

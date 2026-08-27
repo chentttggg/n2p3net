@@ -19,6 +19,13 @@ there is no gradient accumulation. Matrix-shaped EEG inputs are preloaded only
 when live free memory leaves the configured headroom. Otherwise, contiguous
 pinned CPU batches use non-blocking device copies.
 
+The optimizer hot path has no per-batch host synchronization. Gradients are
+set to `None` before forward, training loss is accumulated on device and read
+once per epoch, and validation/inference logits return to CPU once per complete
+pass. This follows the PyTorch performance guidance to avoid `.item()` and
+`.cpu()` inside accelerator batch loops:
+`https://docs.pytorch.org/tutorials/recipes/recipes/tuning_guide.html`.
+
 LOSO fold execution accepts `--fold-jobs` and `--fold-backend`. CPU work may
 use thread or process workers. GPU folds use spawned processes, never shared
 training threads, so each worker owns its CUDA RNG and context. The automatic
@@ -29,6 +36,11 @@ those workers. Process workers receive read-only EEG source arrays through
 shared memory, then perform their fold-local preprocessing privately. Each
 experiment record includes peak allocated/reserved memory, the effective
 executor, and the input transport.
+
+Fold-local QC is model-independent. A multi-model ablation fits every outer
+fold's QC policy once in the runner and reuses the frozen thresholds for all
+candidates. Recomputing QC per model is prohibited because it wastes host CPU
+and can introduce accidental candidate-specific preprocessing drift.
 
 `--cpu-threads` is a total host budget, not a per-worker number. The runtime
 divides it across the effective fold workers and applies the result to PyTorch,

@@ -264,3 +264,37 @@ def test_factory_exposes_global_average_only_as_an_explicit_ablation(monkeypatch
     assert architecture["tmin_s"] == -0.15
     assert architecture["trunk"] == "ms_eegnet_style"
     assert "evidence_window_ms" not in architecture
+
+
+@pytest.mark.parametrize(
+    ("model_name", "pooling_mode"),
+    [
+        ("n2p3net_lmbc", "latency_marginal_contrast"),
+        ("n2p3net_global_average", "global_average"),
+        ("ms_eegnet", "ms_flatten"),
+    ],
+)
+def test_factory_named_ablation_models_lock_one_pooling_mode(
+    monkeypatch, model_name: str, pooling_mode: str
+) -> None:
+    dataset = SimpleNamespace(
+        preprocessing=SimpleNamespace(sfreq=128.0, tmin_ms=-200.0),
+        n_channels=3,
+        n_times=128,
+        channel_mask=np.ones(3, dtype=bool),
+    )
+    monkeypatch.setattr(factory, "_validate_binary_dataset", lambda _: None)
+
+    model = factory.build_binary_model(
+        model_name,
+        dataset,
+        epochs=1,
+        batch_size=4,
+        device=torch.device("cpu"),
+        n2p3net_pooling_mode="global_average",
+    )
+    record = factory.describe_binary_model(model_name, model)
+
+    assert model.pooling_mode == pooling_mode
+    assert record["name"] == model_name
+    assert record["architecture"]["pooling_mode"] == pooling_mode

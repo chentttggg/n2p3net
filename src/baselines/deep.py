@@ -411,7 +411,7 @@ class DeepBaseline(Baseline):
 
         score_parts: list[torch.Tensor] = []
         label_parts: list[torch.Tensor] = []
-        total_loss = 0.0
+        total_loss: torch.Tensor | None = None
         n_rows = 0
         self.model_.eval()
         with torch.inference_mode():
@@ -420,16 +420,25 @@ class DeepBaseline(Baseline):
                 with self._autocast_ctx():
                     logits = self.model_(xb)
                     loss = None if loss_fn is None else loss_fn(logits, yb)
-                score_parts.append((logits[:, 1] - logits[:, 0]).float().cpu())
-                label_parts.append(yb.cpu())
+                score_parts.append((logits[:, 1] - logits[:, 0]).float())
+                label_parts.append(yb)
                 if loss is not None:
-                    total_loss += float(loss) * len(xb)
+                    weighted_loss = loss.detach().float() * len(xb)
+                    total_loss = (
+                        weighted_loss if total_loss is None else total_loss + weighted_loss
+                    )
                 n_rows += len(xb)
-        mean_loss = None if loss_fn is None else total_loss / max(n_rows, 1)
+        scores = torch.cat(score_parts).cpu().numpy().astype(np.float64)
+        labels = torch.cat(label_parts).cpu().numpy().astype(np.int64)
+        mean_loss = (
+            None
+            if total_loss is None
+            else float(total_loss.cpu()) / max(n_rows, 1)
+        )
         return (
             mean_loss,
-            torch.cat(score_parts).numpy().astype(np.float64),
-            torch.cat(label_parts).numpy().astype(np.int64),
+            scores,
+            labels,
         )
 
     def _clear_failed_fit(self) -> None:
@@ -468,6 +477,7 @@ class DeepBaseline(Baseline):
                     "batch_size": self._active_batch_size,
                     "preloaded": self._preloaded_batches,
                     "transfer_fallback": self._transfer_fallback,
+                    "host_sync_policy": "epoch_boundary",
                     "oom_retries": retries,
                     "shared_worker_count": self.runtime.shared_worker_count,
                     "memory": self.runtime.memory_record(),
@@ -608,19 +618,22 @@ class DeepBaseline(Baseline):
         for epoch in range(self.cfg.epochs):
             self.model_.train()
             permutation = train_source.random_permutation(perm_gen)
-            epoch_loss = 0.0
+            epoch_loss: torch.Tensor | None = None
             n_seen = 0
             for xb, yb in train_source.batches(batch_size, indices=permutation):
                 assert yb is not None
+                opt.zero_grad(set_to_none=True)
                 with self._autocast_ctx():
                     logits = self.model_(xb)
                     loss = loss_fn(logits, yb)
-                opt.zero_grad(set_to_none=True)
                 loss.backward()
                 opt.step()
-                epoch_loss += float(loss.detach()) * len(xb)
+                weighted_loss = loss.detach().float() * len(xb)
+                epoch_loss = weighted_loss if epoch_loss is None else epoch_loss + weighted_loss
                 n_seen += len(xb)
-            train_losses.append(epoch_loss / max(n_seen, 1))
+            if epoch_loss is None:
+                raise RuntimeError("Deep training produced no optimizer batches.")
+            train_losses.append(float(epoch_loss.cpu()) / max(n_seen, 1))
             mean_val = None
             task_val_auc = None
             will_early_stop = False
@@ -740,14 +753,16 @@ class DeepBaseline(Baseline):
                 for xb, _ in source.batches(chunk_size):
                     with self._autocast_ctx():
                         logits = self.model_(xb)
-                    out_chunks.append((logits[:, 1] - logits[:, 0]).float().cpu())
+                    out_chunks.append((logits[:, 1] - logits[:, 0]).float())
+            output = torch.cat(out_chunks).cpu().numpy().astype(np.float64)
         self.last_inference_runtime = {
             "device": str(self.device),
             "precision": self.runtime.precision.name,
             "batch_size": chunk_size,
             "preloaded": source.preloaded,
             "transfer_fallback": source.transfer_fallback,
+            "host_sync_policy": "output_boundary",
             "shared_worker_count": self.runtime.shared_worker_count,
             "memory": self.runtime.memory_record(),
         }
-        return torch.cat(out_chunks).numpy().astype(np.float64)
+        return output

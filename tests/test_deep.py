@@ -87,6 +87,7 @@ def test_cpu_runtime_record_uses_bounded_matrix_batches() -> None:
     assert clf.last_runtime["precision"] == "fp32"
     assert clf.last_runtime["batch_size"] == 8
     assert clf.last_runtime["preloaded"] is False
+    assert clf.last_runtime["host_sync_policy"] == "epoch_boundary"
     assert clf.last_runtime["memory"]["device"] == "cpu"
 
 

@@ -23,6 +23,8 @@ from baselines.evaluate import (  # noqa: E402
     evaluate_binary,
     evaluate_candidate_selection,
     loso_folds,
+    precompute_fold_local_artifact_models,
+    resolve_artifact_qc_workers,
 )
 from data.artifact import (  # noqa: E402
     FoldLocalArtifactPolicy,
@@ -257,6 +259,23 @@ def main() -> None:
         if args.run_name is not None
         else f"{_safe_auto_run_component(dataset.name)}_performance_{datetime.now(UTC):%Y%m%d_%H%M%SZ}"
     )
+    artifact_qc_workers = resolve_artifact_qc_workers(
+        len(folds),
+        artifact_qc_jobs=args.artifact_qc_jobs,
+        cpu_threads=args.cpu_threads,
+    )
+    artifact_qc_started = time.perf_counter()
+    fitted_artifact_models = precompute_fold_local_artifact_models(
+        X,
+        subject_ids,
+        folds,
+        trial_channel_mask=trial_channel_mask,
+        qc_features=qc_features,
+        artifact_policy=artifact_policy,
+        artifact_qc_jobs=args.artifact_qc_jobs,
+        cpu_threads=args.cpu_threads,
+    )
+    artifact_qc_seconds = time.perf_counter() - artifact_qc_started
 
     for model_name in models:
         model = build_binary_model(
@@ -280,6 +299,11 @@ def main() -> None:
             "fold_protocol": "partial_loso" if args.fold_offset or args.max_folds else "loso",
             "selection_mode": "candidate_selection" if candidate_selection is not None else "binary_oddball",
             "artifact_quality_policy": {"method": "fold_local_ptp_cv", **artifact_policy.__dict__},
+            "shared_artifact_qc": {
+                "reused_across_models": True,
+                "workers": artifact_qc_workers,
+                "fit_seconds": artifact_qc_seconds,
+            },
             "environment": {
                 "torch": torch.__version__,
                 "device": str(device),
@@ -304,6 +328,7 @@ def main() -> None:
             "trial_channel_mask": trial_channel_mask,
             "qc_features": qc_features,
             "artifact_policy": artifact_policy,
+            "fitted_artifact_models": fitted_artifact_models,
         }
         if candidate_selection is None:
             summary = evaluate_binary(
