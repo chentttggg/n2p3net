@@ -9,11 +9,16 @@ eeg: float32 (N, C, T)       label: int64 (N,) in {0, 1}
 subject/run/trial: string (N,) stimulus: string (N,)
 decision_id: string (N,)      channel_mask: bool (C,)
 sample_rate_hz: float         channel_names: tuple[str, ...]
+qc_features: relative_ptp, channel_std, epoch_scale, observed_mask
 ```
 
 The artifact stores provenance, source units, epoch bounds, preprocessing
 configuration, and rejected-trial counts. Canonical resampling and filtering
 are configuration choices evaluated inside the protocol, not hidden defaults.
+Current standardized ingress stores unbaselined epochs (`baseline_mode=none`)
+and fails closed on an unimplemented baseline transform. QC cache features are
+unlabeled and fold-independent; every threshold, global scale calibration, and
+epoch acceptance decision is fitted only on the outer training fold.
 
 ## Model Contract
 
