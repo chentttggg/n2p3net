@@ -25,7 +25,7 @@ from data.artifact import (  # noqa: E402
     parse_candidate_bad_channel_fractions,
     parse_candidate_quantiles,
 )
-from data.epochs import load_epoch_dataset  # noqa: E402
+from data.epochs import load_epoch_dataset, write_epoch_dataset_record  # noqa: E402
 
 
 def _parse_quantiles(value: str) -> tuple[float, ...]:
@@ -91,6 +91,11 @@ def main() -> None:
     parser.add_argument("--artifact-global-scale-mad-z", type=float, default=6.0)
     parser.add_argument("--artifact-min-training-epoch-retention", type=float, default=0.70)
     parser.add_argument(
+        "--full-contract-check",
+        action="store_true",
+        help="Re-run the full tensor/event/QC contract scan before QC preflight.",
+    )
+    parser.add_argument(
         "--artifact-qc-jobs",
         "--jobs",
         dest="artifact_qc_jobs",
@@ -120,7 +125,13 @@ def main() -> None:
         min_training_epoch_retention=args.artifact_min_training_epoch_retention,
     )
     policy.validate()
-    dataset = load_epoch_dataset(args.dataset_cache, require_labels=True)
+    dataset = load_epoch_dataset(
+        args.dataset_cache,
+        require_labels=True,
+        validation="full" if args.full_contract_check else "attested",
+    )
+    if args.full_contract_check:
+        write_epoch_dataset_record(args.dataset_cache, dataset, already_validated=True)
     folds = loso_folds(dataset.subject_ids)
     if args.max_folds is not None:
         folds = folds[: args.max_folds]
@@ -158,6 +169,7 @@ def main() -> None:
         "policy": policy.__dict__,
         "artifact_qc_jobs": min(args.artifact_qc_jobs, len(folds)),
         "cpu_threads": args.cpu_threads,
+        "full_contract_check": args.full_contract_check,
         "n_failed_folds": len(failed),
         "failed_folds": failed,
     }

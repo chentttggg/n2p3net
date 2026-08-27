@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from io import StringIO
 from numbers import Real
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -84,8 +85,10 @@ class PreprocessingSpec:
             raise ValueError(
                 "baseline_mode must be trial, mean_only, none, or trial_reference."
             )
-        if self.baseline_mode == "trial" and self.tmin_ms >= 0:
-            raise ValueError("trial baseline standardization requires pre-stimulus samples.")
+        if self.baseline_mode in {"trial", "mean_only"} and self.tmin_ms >= 0:
+            raise ValueError(
+                f"{self.baseline_mode} baseline correction requires pre-stimulus samples."
+            )
         if self.trial_reference_center not in {"mean", "median"}:
             raise ValueError("trial_reference_center must be mean or median.")
         if self.trial_reference_scale not in {"none", "std", "mad"}:
@@ -289,8 +292,9 @@ class EpochDataset:
     def n_times(self) -> int:
         return int(self.X.shape[2])
 
-    def record(self) -> dict[str, Any]:
-        self.validate()
+    def record(self, *, validate: bool = True) -> dict[str, Any]:
+        if validate:
+            self.validate()
         return {
             "schema": EPOCH_DATASET_SCHEMA,
             "name": self.name,
@@ -418,7 +422,76 @@ def save_epoch_dataset(
     temporary = path.with_suffix(path.suffix + ".tmp.npz")
     writer(temporary, **payload)
     temporary.replace(path)
+    write_epoch_dataset_record(path, dataset)
     return path
+
+
+_CACHE_ATTESTATION_SCHEMA = "n2p3net_epoch_cache_attestation/1"
+
+
+def _cache_record_path(path: str | Path) -> Path:
+    return Path(path).with_suffix(".record.json")
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def write_epoch_dataset_record(
+    path: str | Path,
+    dataset: EpochDataset,
+    *,
+    already_validated: bool = False,
+) -> Path:
+    """Persist the full-contract cache attestation beside an epoch cache."""
+
+    cache_path = Path(path)
+    if not already_validated:
+        dataset.validate()
+    record = dataset.record(validate=False)
+    record["cache_attestation"] = {
+        "schema": _CACHE_ATTESTATION_SCHEMA,
+        "full_contract_validated": True,
+        "sha256": _sha256_file(cache_path),
+        "byte_size": cache_path.stat().st_size,
+    }
+    record_path = _cache_record_path(cache_path)
+    record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+    return record_path
+
+
+def _validate_attested_cache(path: Path, dataset: EpochDataset) -> None:
+    record_path = _cache_record_path(path)
+    if not record_path.is_file():
+        raise ValueError(
+            f"{path} lacks a cache attestation; regenerate or fully validate the cache before training."
+        )
+    try:
+        record = json.loads(record_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"{record_path} is not a readable cache attestation.") from error
+    attestation = record.get("cache_attestation")
+    if not isinstance(attestation, dict) or attestation.get("schema") != _CACHE_ATTESTATION_SCHEMA:
+        raise ValueError(f"{record_path} lacks a supported cache attestation.")
+    if attestation.get("full_contract_validated") is not True:
+        raise ValueError(f"{record_path} does not attest a full contract validation.")
+    if attestation.get("byte_size") != path.stat().st_size:
+        raise ValueError(f"{path} byte size no longer matches its cache attestation.")
+    if record.get("schema") != EPOCH_DATASET_SCHEMA:
+        raise ValueError(f"{record_path} schema does not match the current EpochDataset contract.")
+    if record.get("name") != dataset.name or record.get("shape") != list(dataset.X.shape):
+        raise ValueError(f"{record_path} identity does not match {path}.")
+    if record.get("preprocessing") != asdict(dataset.preprocessing):
+        raise ValueError(f"{record_path} preprocessing does not match {path}.")
+    qc_record = record.get("qc_features")
+    if dataset.qc_features is None or not isinstance(qc_record, dict):
+        raise ValueError(f"{record_path} QC feature attestation is incomplete.")
+    if qc_record.get("schema") != dataset.qc_features.schema:
+        raise ValueError(f"{record_path} QC feature schema does not match {path}.")
 
 
 def load_epoch_dataset(
@@ -426,12 +499,15 @@ def load_epoch_dataset(
     *,
     expected_preprocessing: PreprocessingSpec | None = None,
     require_labels: bool = False,
+    validation: Literal["full", "attested"] = "full",
 ) -> EpochDataset:
-    """Load and fail closed on schema or physical-contract mismatch."""
+    """Load a cache with full validation or an immutable cache attestation."""
 
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(path)
+    if validation not in {"full", "attested"}:
+        raise ValueError("validation must be 'full' or 'attested'.")
     with np.load(path, allow_pickle=False) as archive:
         required = {
             "schema",
@@ -619,7 +695,12 @@ def load_epoch_dataset(
             ),
             qc_features=qc_features,
         )
-    dataset.validate(require_labels=require_labels)
+    if validation == "full":
+        dataset.validate(require_labels=require_labels)
+    else:
+        _validate_attested_cache(path, dataset)
+        if require_labels and dataset.y is None:
+            raise ValueError("This operation requires labels.")
     if expected_preprocessing is not None and dataset.preprocessing != expected_preprocessing:
         raise ValueError(
             f"{path} preprocessing {dataset.preprocessing} does not match the required "

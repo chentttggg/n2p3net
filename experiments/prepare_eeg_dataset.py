@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from dataclasses import replace
 from pathlib import Path
@@ -188,9 +187,6 @@ def main() -> None:
 
     output = save_epoch_dataset(args.output, dataset, compressed=not args.uncompressed)
     record_path = output.with_suffix(".record.json")
-    record_path.write_text(
-        json.dumps(dataset.record(), ensure_ascii=False, indent=2), encoding="utf-8"
-    )
     print(
         f"[prepared] {output} X={dataset.X.shape} subjects={len(set(dataset.subject_ids))} "
         f"channels={list(dataset.channel_names)}",

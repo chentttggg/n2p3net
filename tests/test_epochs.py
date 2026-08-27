@@ -14,6 +14,7 @@ from data.epochs import (
     load_epoch_dataset,
     save_epoch_dataset,
     select_epoch_channels,
+    write_epoch_dataset_record,
 )
 from data.events import ScheduledEventTimeline
 
@@ -85,6 +86,40 @@ def test_epoch_dataset_safe_round_trip(tmp_path) -> None:
     assert loaded.provenance == source.provenance
     assert np.array_equal(loaded.event_timeline.candidate_ids, source.event_timeline.candidate_ids)
     assert loaded.event_timeline.supports_full_candidate_chain is True
+
+
+def test_attested_cache_load_skips_repeated_full_contract_scan(tmp_path, monkeypatch) -> None:
+    path = save_epoch_dataset(tmp_path / "epochs.npz", _dataset())
+    assert path.with_suffix(".record.json").is_file()
+
+    def fail_full_validation(*_args, **_kwargs):
+        raise AssertionError("attested load must not repeat the full dataset scan")
+
+    monkeypatch.setattr(EpochDataset, "validate", fail_full_validation)
+    loaded = load_epoch_dataset(path, require_labels=True, validation="attested")
+
+    assert loaded.X.shape == _dataset().X.shape
+
+
+def test_attested_cache_rejects_missing_record(tmp_path) -> None:
+    path = save_epoch_dataset(tmp_path / "epochs.npz", _dataset())
+    path.with_suffix(".record.json").unlink()
+
+    with pytest.raises(ValueError, match="lacks a cache attestation"):
+        load_epoch_dataset(path, validation="attested")
+
+
+def test_attestation_can_reuse_a_completed_full_validation(tmp_path, monkeypatch) -> None:
+    path = save_epoch_dataset(tmp_path / "epochs.npz", _dataset())
+    dataset = load_epoch_dataset(path, require_labels=True)
+
+    def fail_full_validation(*_args, **_kwargs):
+        raise AssertionError("the full validation was already completed")
+
+    monkeypatch.setattr(EpochDataset, "validate", fail_full_validation)
+    record = write_epoch_dataset_record(path, dataset, already_validated=True)
+
+    assert record.is_file()
 
 
 def test_epoch_dataset_decompresses_signal_member_once(tmp_path, monkeypatch) -> None:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import math
 import sys
 from dataclasses import replace
@@ -53,7 +52,6 @@ def main() -> None:
     )
     output = save_epoch_dataset(args.output, dataset)
     record_path = output.with_suffix(".record.json")
-    record_path.write_text(json.dumps(dataset.record(), ensure_ascii=False, indent=2), encoding="utf-8")
     print(
         f"[prepared] {output} X={dataset.X.shape} subjects={len(set(dataset.subject_ids))} "
         f"candidate_chain={dataset.event_timeline.supports_full_candidate_chain}",

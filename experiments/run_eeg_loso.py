@@ -29,6 +29,7 @@ from data.artifact import (  # noqa: E402
     parse_candidate_bad_channel_fractions,
     parse_candidate_quantiles,
 )
+from data.contract import assert_default_p300_input_contract  # noqa: E402
 from data.epochs import load_epoch_dataset  # noqa: E402
 from models.n2p3net import POOLING_MODES  # noqa: E402
 from train.device import get_device  # noqa: E402
@@ -206,7 +207,12 @@ def main() -> None:
     )
     artifact_policy.validate()
 
-    dataset = load_epoch_dataset(args.dataset_cache, require_labels=True)
+    dataset = load_epoch_dataset(
+        args.dataset_cache,
+        require_labels=True,
+        validation="attested",
+    )
+    assert_default_p300_input_contract(dataset.preprocessing)
     timeline = dataset.event_timeline
     trial_channel_mask = (
         np.asarray(dataset.trial_channel_mask, dtype=bool)
@@ -266,7 +272,7 @@ def main() -> None:
         manifest = {
             "run_name": run_name,
             "model": describe_binary_model(model_name, model),
-            "dataset": dataset.record(),
+            "dataset": dataset.record(validate=False),
             "fold_protocol": "partial_loso" if args.fold_offset or args.max_folds else "loso",
             "selection_mode": "candidate_selection" if candidate_selection is not None else "binary_oddball",
             "artifact_quality_policy": {"method": "fold_local_ptp_cv", **artifact_policy.__dict__},
