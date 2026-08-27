@@ -16,7 +16,9 @@ class EEGDataContract:
     h_freq: float | None = None
     tmin_ms: float = -200.0
     tmax_ms: float = 1200.0
-    baseline_mode: str = "trial"
+    # The standardized ingress paths do not apply a baseline transform. Keep
+    # this declarative contract honest; non-none modes fail closed at ingress.
+    baseline_mode: str = "none"
 
     @property
     def n_times(self) -> int:

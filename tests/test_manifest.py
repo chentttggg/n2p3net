@@ -92,6 +92,16 @@ def test_manifest_intersection_builds_fixed_physical_layout(tmp_path) -> None:
     assert all(record["units"] == "m" for record in registrations.values())
 
 
+def test_manifest_rejects_unexecuted_baseline_metadata(tmp_path) -> None:
+    path = _write_manifest(tmp_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["preprocessing"]["baseline_mode"] = "trial"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="baseline_mode must be 'none'"):
+        build_manifest_dataset(load_manifest(path))
+
+
 def test_manifest_explicit_channel_positions_are_used(tmp_path) -> None:
     path = _write_manifest(tmp_path)
     payload = json.loads(path.read_text(encoding="utf-8"))

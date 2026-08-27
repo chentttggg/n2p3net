@@ -58,6 +58,30 @@ def test_moabb_adapter_rejects_retired_fixed_artifact_threshold(monkeypatch) -> 
         prepare_moabb_p300("FakeP300", preprocessing=profile)
 
 
+def test_moabb_adapter_rejects_baseline_metadata_without_a_transform(monkeypatch) -> None:
+    from data import moabb as adapter_module
+
+    monkeypatch.setattr(
+        adapter_module,
+        "resolve_moabb_dataset",
+        lambda name: SimpleNamespace(subject_list=[1, 2]),
+    )
+    profile = PreprocessingSpec(
+        name="mock_unexecuted_baseline",
+        sfreq=100.0,
+        l_freq=0.1,
+        h_freq=30.0,
+        tmin_ms=-200.0,
+        tmax_ms=100.0,
+        n_times=30,
+        baseline_mode="trial",
+        reject_threshold_v=None,
+    )
+
+    with pytest.raises(ValueError, match="baseline_mode must be 'none'"):
+        prepare_moabb_p300("FakeP300", preprocessing=profile)
+
+
 def test_moabb_adapter_rejects_retired_filter_before_subject_coverage(monkeypatch) -> None:
     from data import moabb as adapter_module
 

@@ -3,7 +3,7 @@ seed: 20260827
 data:
   sample_rate_hz: 250.0
   epoch_start_ms: -200.0
-  epoch_stop_ms: 800.0
+  epoch_stop_ms: 1200.0
   preprocessing: default
   baseline_mode: none
   l_freq_hz: 0.1

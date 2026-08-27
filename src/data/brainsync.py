@@ -209,6 +209,11 @@ def load_brainsync_session(
     """Load a BrainSync raw session and apply the standard n2p3 preprocessing."""
 
     preprocessing.validate()
+    if preprocessing.baseline_mode != "none":
+        raise ValueError(
+            "BrainSync ingress currently preserves unbaselined epochs only; "
+            "baseline_mode must be 'none' rather than recorded without execution."
+        )
     root = Path(session_dir).expanduser().resolve()
     session = _load_json_object(root / "session.json")
     schema = session.get("schema")

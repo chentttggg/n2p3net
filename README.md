@@ -6,15 +6,16 @@ to one model family.
 
 ## Environment
 
-Use the repository-local Python environment:
+Use the repository-local Python environment. Bootstrap pip first when the
+bundled environment does not include it:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m ensurepip --upgrade
+.\.venv\Scripts\python.exe -m pip install -e ".[signals,baselines,dev]"
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Install `.[baselines]`, `.[signals]`, and device-specific PyTorch plus
-`.[train]` only when beginning those phases. The research contract is in
+The LOSO runner requires the signal and baseline extras. The research contract is in
 `doc/constitution.md`, `doc/blueprint.md`, and `doc/roadmap.md`.
 
 ## Data Contract

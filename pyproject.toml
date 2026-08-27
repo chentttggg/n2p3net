@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "n2p3-net"
 version = "0.1.0"
 description = "Performance-first oddball P300 decoding research framework"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.0",
     "scipy>=1.14",

@@ -266,6 +266,12 @@ def _subject_epoch_dataset(
 def build_manifest_dataset(manifest: DatasetManifest) -> EpochDataset:
     """Materialize a manifest into the universal EpochDataset contract."""
 
+    if manifest.preprocessing.baseline_mode != "none":
+        raise ValueError(
+            "Manifest ingress currently preserves unbaselined epochs only; "
+            "baseline_mode must be 'none' rather than recorded without execution."
+        )
+
     manifest.validate()
     channels = resolve_manifest_channels(manifest)
     spec = manifest.preprocessing

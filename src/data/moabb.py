@@ -105,6 +105,11 @@ def prepare_moabb_p300(
     from moabb.paradigms import P300
 
     preprocessing.validate()
+    if preprocessing.baseline_mode != "none":
+        raise ValueError(
+            "MOABB ingress currently preserves unbaselined epochs only; "
+            "baseline_mode must be 'none' rather than recorded without execution."
+        )
     dataset = resolve_moabb_dataset(dataset_class)
     selected_subjects = list(subjects) if subjects is not None else list(dataset.subject_list)
     if not selected_subjects:
