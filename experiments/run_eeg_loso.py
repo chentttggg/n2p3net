@@ -24,8 +24,9 @@ from baselines.evaluate import (  # noqa: E402
     evaluate_candidate_selection,
     loso_folds,
 )
-from data.artifact import FoldLocalArtifactPolicy  # noqa: E402
+from data.artifact import FoldLocalArtifactPolicy, parse_candidate_quantiles  # noqa: E402
 from data.epochs import load_epoch_dataset  # noqa: E402
+from models.n2p3net import POOLING_MODES  # noqa: E402
 from train.device import get_device  # noqa: E402
 from train.factory import (  # noqa: E402
     BINARY_MODEL_NAMES,
@@ -60,6 +61,13 @@ def _parse_models(value: str, parser: argparse.ArgumentParser) -> tuple[str, ...
     if unknown:
         parser.error(f"Unknown models: {sorted(unknown)}")
     return names
+
+
+def _parse_quantiles(value: str) -> tuple[float, ...]:
+    try:
+        return parse_candidate_quantiles(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
 
 
 def _resolve_device(choice: str) -> torch.device:
@@ -121,7 +129,25 @@ def main() -> None:
         default="auto",
         help="auto, cpu, cuda[:INDEX], or xpu[:INDEX]",
     )
+    parser.add_argument(
+        "--n2p3net-pooling",
+        choices=sorted(POOLING_MODES),
+        default="latency_marginal_contrast",
+        help="N2P3-Net head: LMBC default, global_average matched ablation, ms_flatten paper-style head.",
+    )
     parser.add_argument("--artifact-max-bad-channel-fraction", type=float, default=0.25)
+    parser.add_argument(
+        "--artifact-candidate-quantiles",
+        type=_parse_quantiles,
+        default=(0.90, 0.95, 0.975, 0.99),
+        help="Training-fold PTP threshold candidates, from least to most conservative.",
+    )
+    parser.add_argument(
+        "--artifact-flat-quantile",
+        type=float,
+        default=0.005,
+        help="Training-fold per-channel flatline quantile; zero keeps only true minimum-variance cases.",
+    )
     args = parser.parse_args()
 
     if args.epochs < 1 or args.batch_size < 1 or args.fold_jobs < 1:
@@ -136,7 +162,9 @@ def main() -> None:
         parser.error("--subjects must be at least two for LOSO")
     models = _parse_models(args.models, parser)
     artifact_policy = FoldLocalArtifactPolicy(
-        max_bad_channel_fraction=args.artifact_max_bad_channel_fraction
+        candidate_quantiles=args.artifact_candidate_quantiles,
+        flat_quantile=args.artifact_flat_quantile,
+        max_bad_channel_fraction=args.artifact_max_bad_channel_fraction,
     )
     artifact_policy.validate()
 
@@ -185,6 +213,7 @@ def main() -> None:
             validation_subject_fraction=args.validation_subject_fraction,
             deep_config_overrides={"lr": args.lr, "early_stop_patience": args.early_stop_patience},
             device=device,
+            n2p3net_pooling_mode=args.n2p3net_pooling,
         )
         output_dir = Path(args.run_dir) / run_name / model_name
         output_dir.mkdir(parents=True, exist_ok=True)

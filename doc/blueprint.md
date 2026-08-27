@@ -22,6 +22,19 @@ Every classifier exposes `fit(train)`, `predict_logit(test)`, and
 sums calibrated logits by `(decision_id, stimulus)` and selects the largest
 candidate score.
 
+### N2P3-Net Temporal Evidence
+
+The compact N2P3-Net branch uses an MS-EEGNet-style trunk: an EEGNet-factorized
+spatio-temporal block followed by two compressed separable temporal summaries.
+Its default LMBC head receives the dataset's physical `sfreq` and `tmin`,
+contrasts fixed post-stimulus P300 candidates against the pre-stimulus
+reference, and softly marginalizes latency independently inside each temporal
+scale. `ms_flatten` reproduces the paper-style head and `global_average` is a
+matched aggregation ablation. All modes emit the same binary logits and leave
+calibration and candidate aggregation unchanged. The complete hypothesis,
+equations, counterexamples, and promotion criteria are in
+`doc/latency_marginal_pooling.zh.md`.
+
 ## Initial Search Space
 
 | Family | Search axes | Promotion condition |

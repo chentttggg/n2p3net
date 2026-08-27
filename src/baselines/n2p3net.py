@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import math
+
 import torch
 
 from baselines.deep import DeepBaseline, DeepConfig
-from models.n2p3net import N2P3Net
+from models.n2p3net import POOLING_MODES, N2P3Net
 from train.runtime import GpuPerformanceScheduler
 
 
@@ -22,7 +24,13 @@ class N2P3NetBaseline(DeepBaseline):
         runtime: GpuPerformanceScheduler | None = None,
         *,
         channel_mask=None,
+        tmin_s: float = -0.2,
+        pooling_mode: str = "latency_marginal_contrast",
     ) -> None:
+        if not math.isfinite(tmin_s):
+            raise ValueError("tmin_s must be finite.")
+        if pooling_mode not in POOLING_MODES:
+            raise ValueError(f"pooling_mode must be one of {sorted(POOLING_MODES)}.")
         # DeepBaseline owns the validated fold-local training and calibration path.
         super().__init__(
             "eegnet",
@@ -35,6 +43,23 @@ class N2P3NetBaseline(DeepBaseline):
             channel_mask=channel_mask,
         )
         self.model_name = "n2p3net"
+        self.tmin_s = float(tmin_s)
+        self.pooling_mode = pooling_mode
 
     def _make_model(self) -> N2P3Net:
-        return N2P3Net(n_channels=self.n_chans, dropout=0.25)
+        return N2P3Net(
+            n_channels=self.n_chans,
+            n_times=self.n_times,
+            sfreq=self.sfreq,
+            tmin_s=self.tmin_s,
+            pooling_mode=self.pooling_mode,
+            dropout=0.25,
+        )
+
+    def architecture_record(self) -> dict[str, object]:
+        """Return the physical pooling contract before a fold constructs the model."""
+
+        return N2P3Net.default_architecture_record(
+            pooling_mode=self.pooling_mode,
+            tmin_s=self.tmin_s,
+        )

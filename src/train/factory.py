@@ -62,6 +62,7 @@ def build_binary_model(
     deep_config_overrides: dict[str, Any] | None = None,
     device: torch.device | None = None,
     runtime: GpuPerformanceScheduler | None = None,
+    n2p3net_pooling_mode: str = "latency_marginal_contrast",
 ):
     """Return one candidate using only the data and performance contracts."""
 
@@ -94,6 +95,8 @@ def build_binary_model(
             device=device,
             runtime=runtime,
             channel_mask=common_mask,
+            tmin_s=tmin,
+            pooling_mode=n2p3net_pooling_mode,
         )
     if key in DEEP_MODEL_NAMES:
         return DeepBaseline(
@@ -116,7 +119,7 @@ def describe_binary_model(model_name: str, model: object) -> dict[str, Any]:
     if key in {"swdla", "window_lr", "template", "xdawn_rg"}:
         return {"name": key, "class": type(model).__name__}
     config = getattr(model, "cfg", None)
-    return {
+    record = {
         "name": key,
         "class": type(model).__name__,
         "config": asdict(config) if config is not None else {},
@@ -124,3 +127,6 @@ def describe_binary_model(model_name: str, model: object) -> dict[str, Any]:
         "n_times": int(model.n_times),
         "sfreq": float(model.sfreq),
     }
+    if key == "n2p3net":
+        record["architecture"] = model.architecture_record()
+    return record

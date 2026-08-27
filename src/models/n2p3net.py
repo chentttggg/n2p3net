@@ -1,4 +1,4 @@
-"""Compact performance-first neural model for oddball P300 detection."""
+"""MS-EEGNet-style P300 decoder with constrained latency evidence pooling."""
 
 from __future__ import annotations
 
@@ -6,112 +6,446 @@ from collections.abc import Sequence
 
 import torch
 from torch import nn
+from torch.nn import functional as F
+
+POOLING_MODES = frozenset({"global_average", "ms_flatten", "latency_marginal_contrast"})
+
+DEFAULT_ST_TEMPORAL_FILTERS = 8
+DEFAULT_ST_TEMPORAL_KERNEL_SIZE = 65
+DEFAULT_SPATIAL_DEPTH_MULTIPLIER = 2
+DEFAULT_ST_POOL_SIZE = 4
+DEFAULT_MST_KERNEL_SIZES = (5, 17)
+DEFAULT_MST_FEATURES_PER_SCALE = 2
+DEFAULT_MST_POOL_SIZE = 8
 
 
-class _TemporalResidualBlock(nn.Module):
-    """A small dilated temporal block that preserves the epoch time axis."""
+class _MaxNormSpatialConv(nn.Conv2d):
+    """Depthwise spatial projection with a differentiable effective max-norm."""
 
-    def __init__(self, channels: int, dilation: int, dropout: float) -> None:
+    def __init__(self, *args, max_norm: float, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if max_norm <= 0.0:
+            raise ValueError("max_norm must be positive.")
+        self.max_norm = float(max_norm)
+
+    def effective_weight(self) -> torch.Tensor:
+        flat = self.weight.flatten(start_dim=1)
+        norms = torch.linalg.vector_norm(flat, ord=2, dim=1, keepdim=True).clamp_min(1e-12)
+        scales = torch.clamp(self.max_norm / norms, max=1.0).reshape(-1, 1, 1, 1)
+        return self.weight * scales
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return F.conv2d(
+            x,
+            self.effective_weight(),
+            self.bias,
+            self.stride,
+            self.padding,
+            self.dilation,
+            self.groups,
+        )
+
+
+class _MSTBranch(nn.Module):
+    """One compressed MS-EEGNet temporal scale after the shared ST block."""
+
+    def __init__(
+        self,
+        channels: int,
+        *,
+        kernel_size: int,
+        output_features: int,
+        dropout: float,
+    ) -> None:
         super().__init__()
-        self.norm = nn.BatchNorm1d(channels)
         self.depthwise = nn.Conv1d(
             channels,
             channels,
-            kernel_size=3,
-            padding=dilation,
-            dilation=dilation,
+            kernel_size=kernel_size,
+            padding=kernel_size // 2,
             groups=channels,
             bias=False,
         )
-        self.pointwise = nn.Conv1d(channels, channels, kernel_size=1, bias=False)
+        self.pointwise = nn.Conv1d(channels, output_features, kernel_size=1, bias=False)
+        self.norm = nn.BatchNorm1d(output_features)
+        self.activation = nn.ELU()
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        residual = x
-        x = self.norm(x)
-        x = torch.nn.functional.elu(self.depthwise(x))
-        x = self.dropout(self.pointwise(x))
-        return residual + x
+        x = self.depthwise(x)
+        x = self.pointwise(x)
+        return self.dropout(self.activation(self.norm(x)))
+
+
+class MSFlattenPool(nn.Module):
+    """The original MS-EEGNet temporal-position-preserving classification pool."""
+
+    def __init__(self, pool_size: int = DEFAULT_MST_POOL_SIZE) -> None:
+        super().__init__()
+        if pool_size < 1:
+            raise ValueError("pool_size must be positive.")
+        self.pool_size = int(pool_size)
+        self.pool = nn.AvgPool1d(self.pool_size, stride=self.pool_size)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim != 3:
+            raise ValueError(f"Expected MST features (B,D,T), got {tuple(x.shape)}.")
+        if x.shape[-1] < self.pool_size:
+            raise ValueError("MS flatten pooling requires at least one complete temporal pool window.")
+        return torch.flatten(self.pool(x), start_dim=1)
+
+
+class LatencyMarginalContrastPool(nn.Module):
+    """Pool one temporal scale over a small, physically bounded latency bank.
+
+    Candidate summaries are referenced to the pre-stimulus interval. A learned
+    query marginalizes latency inside the declared P300 window rather than
+    allowing an unconstrained time attention to select arbitrary peaks.
+    """
+
+    def __init__(
+        self,
+        channels: int,
+        *,
+        n_times: int | None,
+        sfreq: float,
+        tmin_s: float,
+        evidence_window_ms: Sequence[float] = (250.0, 600.0),
+        reference_window_ms: Sequence[float] = (-200.0, 0.0),
+        latency_offsets_ms: Sequence[float] = (-100.0, -50.0, 0.0, 50.0, 100.0),
+        temperature: float = 0.5,
+    ) -> None:
+        super().__init__()
+        if channels < 1:
+            raise ValueError("channels must be positive.")
+        if n_times is not None and (isinstance(n_times, bool) or n_times < 1):
+            raise ValueError("n_times must be positive or None.")
+        numeric = torch.tensor([sfreq, tmin_s, temperature], dtype=torch.float64)
+        if not bool(torch.isfinite(numeric).all()) or sfreq <= 0.0 or temperature <= 0.0:
+            raise ValueError("sfreq and temperature must be finite and positive; tmin_s must be finite.")
+
+        self.channels = int(channels)
+        self.n_times = int(n_times) if n_times is not None else None
+        self.sfreq = float(sfreq)
+        self.tmin_s = float(tmin_s)
+        self.evidence_window_ms = self._validate_window("evidence_window_ms", evidence_window_ms)
+        self.reference_window_ms = self._validate_window("reference_window_ms", reference_window_ms)
+        offsets = tuple(float(offset) for offset in latency_offsets_ms)
+        if not offsets or not bool(torch.isfinite(torch.tensor(offsets)).all()):
+            raise ValueError("latency_offsets_ms must contain finite offsets.")
+        if len(set(offsets)) != len(offsets):
+            raise ValueError("latency_offsets_ms must not contain duplicates.")
+        self.latency_offsets_ms = offsets
+        self.temperature = float(temperature)
+
+        if self.n_times is None:
+            candidate_weights = torch.empty((0, 0), dtype=torch.float32)
+            reference_weights = torch.empty(0, dtype=torch.float32)
+            active_offsets = torch.empty(0, dtype=torch.float32)
+        else:
+            candidate_weights, reference_weights, active_offsets = self._build_weights(
+                self.n_times, device=torch.device("cpu")
+            )
+        self.register_buffer("candidate_weights", candidate_weights, persistent=False)
+        self.register_buffer("reference_weights", reference_weights, persistent=False)
+        self.register_buffer("candidate_offsets_ms", active_offsets, persistent=False)
+        self.latency_query = nn.Parameter(torch.zeros(self.channels))
+
+    @staticmethod
+    def _validate_window(name: str, values: Sequence[float]) -> tuple[float, float]:
+        if len(values) != 2:
+            raise ValueError(f"{name} must contain exactly two values.")
+        start, end = (float(values[0]), float(values[1]))
+        if not bool(torch.isfinite(torch.tensor([start, end])).all()) or start >= end:
+            raise ValueError(f"{name} must be a finite increasing interval.")
+        return start, end
+
+    def _build_weights(
+        self,
+        n_times: int,
+        *,
+        device: torch.device,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        times_ms = self.tmin_s * 1000.0 + torch.arange(
+            n_times, device=device, dtype=torch.float32
+        ) * (1000.0 / self.sfreq)
+        reference_start, reference_end = self.reference_window_ms
+        reference_mask = (times_ms >= reference_start) & (times_ms < reference_end)
+        if int(reference_mask.sum()) < 2:
+            raise ValueError(
+                "The physical epoch must contain at least two pre-stimulus reference samples; "
+                "use global_average or ms_flatten only as explicit ablations."
+            )
+
+        evidence_start, evidence_end = self.evidence_window_ms
+        weights: list[torch.Tensor] = []
+        active_offsets: list[float] = []
+        for offset in self.latency_offsets_ms:
+            mask = (times_ms >= evidence_start + offset) & (times_ms < evidence_end + offset)
+            count = int(mask.sum())
+            if count >= 2:
+                weights.append(mask.to(torch.float32) / count)
+                active_offsets.append(offset)
+        if not weights:
+            raise ValueError(
+                "The physical epoch contains no usable latency candidate in the declared evidence window."
+            )
+        reference_weights = reference_mask.to(torch.float32) / int(reference_mask.sum())
+        return (
+            torch.stack(weights),
+            reference_weights,
+            torch.tensor(active_offsets, device=device, dtype=torch.float32),
+        )
+
+    def _weights_for(
+        self, x: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if self.n_times is not None:
+            if x.shape[-1] != self.n_times:
+                raise ValueError(
+                    f"Expected {self.n_times} time samples from the physical epoch contract, "
+                    f"got {x.shape[-1]}."
+                )
+            return (
+                self.candidate_weights.to(device=x.device, dtype=x.dtype),
+                self.reference_weights.to(device=x.device, dtype=x.dtype),
+                self.candidate_offsets_ms.to(device=x.device),
+            )
+        candidate_weights, reference_weights, active_offsets = self._build_weights(
+            x.shape[-1], device=x.device
+        )
+        return candidate_weights.to(dtype=x.dtype), reference_weights.to(dtype=x.dtype), active_offsets
+
+    def forward(
+        self, x: torch.Tensor, *, return_attention: bool = False
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+        if x.ndim != 3 or x.shape[1] != self.channels:
+            raise ValueError(f"Expected encoded features (B,{self.channels},T), got {tuple(x.shape)}.")
+        candidate_weights, reference_weights, _ = self._weights_for(x)
+        candidate_means = torch.einsum("bct,kt->bkc", x, candidate_weights)
+        reference_mean = torch.einsum("bct,t->bc", x, reference_weights)
+        contrasts = candidate_means - reference_mean.unsqueeze(1)
+        scores = torch.einsum("bkc,c->bk", contrasts, torch.tanh(self.latency_query))
+        attention = torch.softmax(scores / (self.temperature * self.channels**0.5), dim=1)
+        pooled = torch.einsum("bk,bkc->bc", attention, contrasts)
+        if return_attention:
+            return pooled, attention
+        return pooled
 
 
 class N2P3Net(nn.Module):
-    """Multi-scale temporal CNN for a single target/non-target logit pair.
+    """A compact MS-EEGNet-style P300 trunk with optional LMBC aggregation.
 
-    The model retains the project's neural learning core: parallel ERP-scale
-    temporal filters, learned spatial mixing, and a compact dilated temporal
-    encoder. Its public output is intentionally limited to binary class logits.
+    The shared spatio-temporal block follows the lightweight EEGNet/MS-EEGNet
+    factorization. Two compressed separable temporal branches then summarize
+    short and long P300 scales. The only default departure from MS-EEGNet is
+    the final LMBC pooling, which preserves a fixed physiological reference and
+    a small latent latency bank before the binary classifier.
     """
 
     def __init__(
         self,
         n_channels: int,
         *,
-        temporal_kernels: Sequence[int] = (17, 33, 65, 129),
-        filters_per_scale: int = 8,
-        spatial_filters: int = 32,
-        temporal_dilations: Sequence[int] = (1, 4, 16),
+        temporal_filters: int = DEFAULT_ST_TEMPORAL_FILTERS,
+        temporal_kernel_size: int = DEFAULT_ST_TEMPORAL_KERNEL_SIZE,
+        spatial_depth_multiplier: int = DEFAULT_SPATIAL_DEPTH_MULTIPLIER,
+        st_pool_size: int = DEFAULT_ST_POOL_SIZE,
+        mst_kernel_sizes: Sequence[int] = DEFAULT_MST_KERNEL_SIZES,
+        mst_features_per_scale: int = DEFAULT_MST_FEATURES_PER_SCALE,
+        mst_pool_size: int = DEFAULT_MST_POOL_SIZE,
         dropout: float = 0.25,
+        spatial_max_norm: float = 1.0,
+        n_times: int | None = None,
+        sfreq: float = 256.0,
+        tmin_s: float = -0.2,
+        pooling_mode: str = "latency_marginal_contrast",
+        evidence_window_ms: Sequence[float] = (250.0, 600.0),
+        reference_window_ms: Sequence[float] = (-200.0, 0.0),
+        latency_offsets_ms: Sequence[float] = (-100.0, -50.0, 0.0, 50.0, 100.0),
+        latency_temperature: float = 0.5,
     ) -> None:
         super().__init__()
         if n_channels < 1:
             raise ValueError("n_channels must be positive.")
-        if not temporal_kernels or any(kernel < 3 or kernel % 2 == 0 for kernel in temporal_kernels):
-            raise ValueError("temporal_kernels must contain positive odd kernels of at least 3 samples.")
-        if filters_per_scale < 1 or spatial_filters < 1:
-            raise ValueError("filter counts must be positive.")
-        if not temporal_dilations or any(dilation < 1 for dilation in temporal_dilations):
-            raise ValueError("temporal_dilations must contain positive values.")
+        if temporal_filters < 1 or spatial_depth_multiplier < 1 or mst_features_per_scale < 1:
+            raise ValueError("filter and feature counts must be positive.")
+        if temporal_kernel_size < 3 or temporal_kernel_size % 2 == 0:
+            raise ValueError("temporal_kernel_size must be an odd integer of at least three.")
+        if not mst_kernel_sizes or any(kernel < 3 or kernel % 2 == 0 for kernel in mst_kernel_sizes):
+            raise ValueError("mst_kernel_sizes must contain odd kernels of at least three samples.")
+        if st_pool_size < 1 or mst_pool_size < 1:
+            raise ValueError("pool sizes must be positive.")
         if not 0.0 <= dropout < 1.0:
             raise ValueError("dropout must be in [0, 1).")
+        if spatial_max_norm <= 0.0:
+            raise ValueError("spatial_max_norm must be positive.")
+        if n_times is not None and (isinstance(n_times, bool) or n_times < 1):
+            raise ValueError("n_times must be positive or None.")
+        if pooling_mode not in POOLING_MODES:
+            raise ValueError(f"pooling_mode must be one of {sorted(POOLING_MODES)}.")
+        if pooling_mode == "ms_flatten" and n_times is None:
+            raise ValueError("ms_flatten pooling requires n_times.")
 
         self.n_channels = int(n_channels)
-        branch_channels = len(temporal_kernels) * int(filters_per_scale)
-        self.temporal_branches = nn.ModuleList(
-            nn.Sequential(
-                nn.Conv2d(
-                    1,
-                    filters_per_scale,
-                    kernel_size=(1, kernel),
-                    padding=(0, kernel // 2),
-                    bias=False,
-                ),
-                nn.BatchNorm2d(filters_per_scale),
-                nn.ELU(),
+        self.n_times = int(n_times) if n_times is not None else None
+        self.sfreq = float(sfreq)
+        self.tmin_s = float(tmin_s)
+        self.pooling_mode = pooling_mode
+        self.temporal_filters = int(temporal_filters)
+        self.temporal_kernel_size = int(temporal_kernel_size)
+        self.spatial_depth_multiplier = int(spatial_depth_multiplier)
+        self.st_pool_size = int(st_pool_size)
+        self.mst_kernel_sizes = tuple(int(kernel) for kernel in mst_kernel_sizes)
+        self.mst_features_per_scale = int(mst_features_per_scale)
+        self.mst_pool_size = int(mst_pool_size)
+        self.dropout_probability = float(dropout)
+        self.spatial_max_norm = float(spatial_max_norm)
+        spatial_features = self.temporal_filters * self.spatial_depth_multiplier
+        self.spatial_features = spatial_features
+
+        self.st_temporal = nn.Conv2d(
+            1,
+            self.temporal_filters,
+            kernel_size=(1, self.temporal_kernel_size),
+            padding=(0, self.temporal_kernel_size // 2),
+            bias=False,
+        )
+        self.st_temporal_norm = nn.BatchNorm2d(self.temporal_filters)
+        self.st_spatial = _MaxNormSpatialConv(
+            self.temporal_filters,
+            spatial_features,
+            kernel_size=(self.n_channels, 1),
+            groups=self.temporal_filters,
+            bias=False,
+            max_norm=self.spatial_max_norm,
+        )
+        self.st_spatial_norm = nn.BatchNorm2d(spatial_features)
+        self.st_activation = nn.ELU()
+        self.st_pool = nn.AvgPool2d((1, self.st_pool_size), stride=(1, self.st_pool_size))
+        self.st_dropout = nn.Dropout(self.dropout_probability)
+        self.mst_branches = nn.ModuleList(
+            _MSTBranch(
+                spatial_features,
+                kernel_size=kernel,
+                output_features=self.mst_features_per_scale,
+                dropout=self.dropout_probability,
             )
-            for kernel in temporal_kernels
+            for kernel in self.mst_kernel_sizes
         )
-        self.spatial = nn.Sequential(
-            nn.Conv2d(
-                branch_channels,
-                spatial_filters,
-                kernel_size=(self.n_channels, 1),
-                bias=False,
-            ),
-            nn.BatchNorm2d(spatial_filters),
-            nn.ELU(),
-            nn.Dropout(dropout),
+
+        st_times = (
+            self._pooled_time_samples(self.n_times, self.st_pool_size)
+            if self.n_times is not None
+            else None
         )
-        self.temporal_encoder = nn.Sequential(
-            *[
-                _TemporalResidualBlock(spatial_filters, int(dilation), dropout)
-                for dilation in temporal_dilations
-            ]
+        feature_sfreq = self.sfreq / self.st_pool_size
+        # AvgPool summarizes samples [j*s, ..., j*s+s-1] at their center.
+        feature_tmin_s = self.tmin_s + (self.st_pool_size - 1) / (2.0 * self.sfreq)
+        feature_channels = len(self.mst_branches) * self.mst_features_per_scale
+        if self.pooling_mode == "global_average":
+            self.pool: nn.Module = nn.AdaptiveAvgPool1d(1)
+            classifier_features = feature_channels
+        elif self.pooling_mode == "ms_flatten":
+            self.pool = MSFlattenPool(self.mst_pool_size)
+            assert st_times is not None
+            classifier_features = feature_channels * self._pooled_time_samples(
+                st_times, self.mst_pool_size
+            )
+        else:
+            self.pool = nn.ModuleList(
+                [
+                    LatencyMarginalContrastPool(
+                        self.mst_features_per_scale,
+                        n_times=st_times,
+                        sfreq=feature_sfreq,
+                        tmin_s=feature_tmin_s,
+                        evidence_window_ms=evidence_window_ms,
+                        reference_window_ms=reference_window_ms,
+                        latency_offsets_ms=latency_offsets_ms,
+                        temperature=latency_temperature,
+                    )
+                    for _ in self.mst_branches
+                ]
+            )
+            classifier_features = feature_channels
+        self.classifier = nn.Linear(classifier_features, 2)
+
+    @staticmethod
+    def _pooled_time_samples(n_times: int, pool_size: int) -> int:
+        output = (n_times - pool_size) // pool_size + 1
+        if output < 1:
+            raise ValueError("The physical epoch is shorter than the required pooling window.")
+        return output
+
+    @classmethod
+    def default_architecture_record(cls, *, pooling_mode: str, tmin_s: float) -> dict[str, object]:
+        if pooling_mode not in POOLING_MODES:
+            raise ValueError(f"pooling_mode must be one of {sorted(POOLING_MODES)}.")
+        record: dict[str, object] = {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": pooling_mode,
+            "tmin_s": float(tmin_s),
+            "st_temporal_filters": DEFAULT_ST_TEMPORAL_FILTERS,
+            "st_temporal_kernel_samples": DEFAULT_ST_TEMPORAL_KERNEL_SIZE,
+            "spatial_depth_multiplier": DEFAULT_SPATIAL_DEPTH_MULTIPLIER,
+            "st_pool_size": DEFAULT_ST_POOL_SIZE,
+            "mst_kernel_samples": list(DEFAULT_MST_KERNEL_SIZES),
+            "mst_features_per_scale": DEFAULT_MST_FEATURES_PER_SCALE,
+            "mst_pool_size": DEFAULT_MST_POOL_SIZE,
+        }
+        if pooling_mode == "latency_marginal_contrast":
+            record.update(
+                {
+                    "evidence_window_ms": [250.0, 600.0],
+                    "reference_window_ms": [-200.0, 0.0],
+                    "latency_offsets_ms": [-100.0, -50.0, 0.0, 50.0, 100.0],
+                }
+            )
+        return record
+
+    def architecture_record(self) -> dict[str, object]:
+        record = self.default_architecture_record(
+            pooling_mode=self.pooling_mode,
+            tmin_s=self.tmin_s,
         )
-        self.classifier = nn.Sequential(
-            nn.AdaptiveAvgPool1d(1),
-            nn.Flatten(),
-            nn.Linear(spatial_filters, 2),
+        record.update(
+            {
+                "st_temporal_filters": self.temporal_filters,
+                "st_temporal_kernel_samples": self.temporal_kernel_size,
+                "spatial_depth_multiplier": self.spatial_depth_multiplier,
+                "st_pool_size": self.st_pool_size,
+                "mst_kernel_samples": list(self.mst_kernel_sizes),
+                "mst_features_per_scale": self.mst_features_per_scale,
+                "mst_pool_size": self.mst_pool_size,
+            }
         )
+        return record
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if x.ndim != 3 or x.shape[1] != self.n_channels:
             raise ValueError(
                 f"Expected EEG input (B,{self.n_channels},T), got {tuple(x.shape)}."
             )
+        if self.n_times is not None and x.shape[-1] != self.n_times:
+            raise ValueError(
+                f"Expected {self.n_times} time samples from the physical epoch contract, "
+                f"got {x.shape[-1]}."
+            )
         x = x.unsqueeze(1)
-        x = torch.cat([branch(x) for branch in self.temporal_branches], dim=1)
-        x = self.spatial(x).squeeze(2)
-        return self.classifier(self.temporal_encoder(x))
+        x = self.st_temporal_norm(self.st_temporal(x))
+        x = self.st_spatial_norm(self.st_spatial(x))
+        x = self.st_dropout(self.st_pool(self.st_activation(x))).squeeze(2)
+        branch_features = [branch(x) for branch in self.mst_branches]
+        if self.pooling_mode == "global_average":
+            features = self.pool(torch.cat(branch_features, dim=1)).squeeze(-1)
+        elif self.pooling_mode == "ms_flatten":
+            features = self.pool(torch.cat(branch_features, dim=1))
+        else:
+            features = torch.cat(
+                [pool(branch) for pool, branch in zip(self.pool, branch_features, strict=True)], dim=1
+            )
+        return self.classifier(features)
 
     def parameter_count(self) -> int:
         return sum(parameter.numel() for parameter in self.parameters() if parameter.requires_grad)

@@ -7,9 +7,25 @@ channel, and are then frozen before the held-out subject is inspected.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 
 import numpy as np
+
+
+def parse_candidate_quantiles(value: str | Sequence[float]) -> tuple[float, ...]:
+    """Normalize a reusable artifact-threshold candidate contract."""
+
+    if isinstance(value, str):
+        try:
+            quantiles = tuple(float(item.strip()) for item in value.split(",") if item.strip())
+        except ValueError as exc:
+            raise ValueError("artifact quantiles must be comma-separated numbers") from exc
+    else:
+        quantiles = tuple(float(item) for item in value)
+    if not quantiles:
+        raise ValueError("artifact quantiles must not be empty")
+    return quantiles
 
 
 @dataclass(frozen=True)
