@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import copy
+import multiprocessing as mp
 import time
+import warnings
 from collections.abc import Mapping, Sequence
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from dataclasses import dataclass, field
+from multiprocessing import shared_memory
 
 import numpy as np
 from sklearn.metrics import balanced_accuracy_score, roc_auc_score
@@ -14,6 +18,7 @@ from baselines.calibration import calibration_data_from_model, fit_logit_calibra
 from baselines.validation import subject_disjoint_validation_split
 from data.artifact import FoldLocalArtifactPolicy, apply_fold_local_artifact_policy
 from models.decision import decide
+from train.runtime import configure_spawned_worker_threads, cpu_thread_budget, resolve_cpu_threads
 
 
 def loso_folds(subject_ids: Sequence[object]) -> list[tuple[np.ndarray, np.ndarray]]:
@@ -66,6 +71,13 @@ class BinaryFoldResult:
     val_losses: list[float] = field(default_factory=list)
     best_epoch: int | None = None
     artifact_quality: dict[str, object] | None = None
+    device: str | None = None
+    precision: str | None = None
+    batch_size: int | None = None
+    fit_peak_allocated_mb: float | None = None
+    fit_peak_reserved_mb: float | None = None
+    oom_retries: int = 0
+    shared_worker_count: int = 1
 
 
 @dataclass
@@ -74,6 +86,10 @@ class BinarySummary:
     balanced_acc_std: float
     auc_mean: float
     per_fold: list[BinaryFoldResult] = field(default_factory=list)
+    execution_backend: str = "serial"
+    effective_n_jobs: int = 1
+    input_transport: str = "direct"
+    cpu_threads_per_worker: int = 1
 
 
 @dataclass
@@ -88,6 +104,75 @@ class CandidateSummary(BinarySummary):
     hit_rate_mean: float = float("nan")
     primary_hit_rate: float = float("nan")
     subject_records: list[tuple[object, object, str]] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class _SharedArraySpec:
+    name: str
+    shape: tuple[int, ...]
+    dtype: str
+
+
+class _SharedFoldInputs:
+    """Own read-only process-shared source arrays for independent fold workers."""
+
+    def __init__(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        subject_ids: np.ndarray,
+        trial_channel_mask: np.ndarray | None,
+    ) -> None:
+        self._blocks: list[shared_memory.SharedMemory] = []
+        try:
+            self.X = self._share(X)
+            self.y = self._share(y)
+            self.subject_ids = self._share(subject_ids)
+            self.trial_channel_mask = (
+                None if trial_channel_mask is None else self._share(trial_channel_mask)
+            )
+        except Exception:
+            self.close()
+            self.unlink()
+            raise
+
+    def _share(self, value: np.ndarray) -> _SharedArraySpec:
+        array = np.ascontiguousarray(value)
+        if array.dtype.hasobject:
+            raise TypeError("Process-shared fold inputs cannot use object dtypes.")
+        block = shared_memory.SharedMemory(create=True, size=max(array.nbytes, 1))
+        target = np.ndarray(array.shape, dtype=array.dtype, buffer=block.buf)
+        target[...] = array
+        self._blocks.append(block)
+        return _SharedArraySpec(block.name, tuple(array.shape), array.dtype.str)
+
+    def close(self) -> None:
+        for block in self._blocks:
+            try:
+                block.close()
+            except OSError:
+                pass
+
+    def unlink(self) -> None:
+        for block in self._blocks:
+            try:
+                block.unlink()
+            except FileNotFoundError:
+                pass
+
+    def __enter__(self) -> _SharedFoldInputs:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
+        self.unlink()
+
+
+def _attach_shared_array(spec: _SharedArraySpec) -> tuple[np.ndarray, shared_memory.SharedMemory]:
+    block = shared_memory.SharedMemory(name=spec.name)
+    array = np.ndarray(spec.shape, dtype=np.dtype(spec.dtype), buffer=block.buf)
+    array.setflags(write=False)
+    return array, block
 
 
 def _validate_binary_inputs(X: np.ndarray, y: np.ndarray, subject_ids: np.ndarray) -> None:
@@ -170,8 +255,16 @@ def _fold_result(
     test: np.ndarray,
     trial_channel_mask: np.ndarray | None,
     artifact_policy: FoldLocalArtifactPolicy | None,
+    fold_id: int | None = None,
+    shared_worker_count: int = 1,
 ) -> tuple[BinaryFoldResult, np.ndarray, object]:
     model = copy.deepcopy(prototype)
+    configure_budget = getattr(model, "configure_runtime_worker_budget", None)
+    if callable(configure_budget):
+        configure_budget(shared_worker_count)
+    configure_fold = getattr(model, "configure_evaluation_fold", None)
+    if callable(configure_fold):
+        configure_fold(fold_id)
     artifact_quality = None
     if artifact_policy is not None:
         X, trial_channel_mask, train, artifact_quality = apply_fold_local_artifact_policy(
@@ -190,6 +283,8 @@ def _fold_result(
         bacc = float(balanced_accuracy_score(y_test, logits >= calibration.threshold))
         auc = float(roc_auc_score(y_test, logits))
     history = getattr(model, "last_history", {}) or {}
+    runtime = getattr(model, "last_runtime", {}) or {}
+    memory = runtime.get("memory", {}) if isinstance(runtime, dict) else {}
     result = BinaryFoldResult(
         balanced_acc=bacc,
         auc=auc,
@@ -202,8 +297,257 @@ def _fold_result(
         val_losses=[float(value) for value in history.get("val_losses", ())],
         best_epoch=history.get("best_epoch"),
         artifact_quality=artifact_quality,
+        device=runtime.get("device") if isinstance(runtime, dict) else None,
+        precision=runtime.get("precision") if isinstance(runtime, dict) else None,
+        batch_size=runtime.get("batch_size") if isinstance(runtime, dict) else None,
+        fit_peak_allocated_mb=(
+            memory.get("peak_allocated_mb") if isinstance(memory, dict) else None
+        ),
+        fit_peak_reserved_mb=(
+            memory.get("peak_reserved_mb") if isinstance(memory, dict) else None
+        ),
+        oom_retries=int(runtime.get("oom_retries", 0)) if isinstance(runtime, dict) else 0,
+        shared_worker_count=(
+            int(runtime.get("shared_worker_count", 1)) if isinstance(runtime, dict) else 1
+        ),
     )
     return result, calibration.to_llr(logits), calibration
+
+
+def _resolve_fold_execution(
+    model: object,
+    *,
+    n_jobs: int,
+    parallel_backend: str,
+    n_folds: int,
+    max_gpu_jobs: int | None,
+) -> tuple[str, int]:
+    """Choose a safe fold executor without opening competing CUDA contexts."""
+
+    if n_jobs < 1:
+        raise ValueError("n_jobs must be positive.")
+    if parallel_backend not in {"auto", "process", "thread"}:
+        raise ValueError("parallel_backend must be 'auto', 'process', or 'thread'.")
+    if max_gpu_jobs is not None and max_gpu_jobs < 1:
+        raise ValueError("max_gpu_jobs must be positive or None.")
+    if n_jobs == 1 or n_folds == 1:
+        return "serial", 1
+    device = getattr(model, "device", None)
+    if getattr(device, "type", None) in {"cuda", "xpu"}:
+        if parallel_backend == "thread":
+            warnings.warn(
+                "GPU folds require isolated processes; thread execution was reduced to one worker "
+                "to avoid shared CUDA RNG and allocator state.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+            return "serial", 1
+        if max_gpu_jobs is None:
+            runtime = getattr(model, "runtime", None)
+            recommend = getattr(runtime, "recommended_concurrent_workers", None)
+            gpu_limit = int(recommend(n_jobs, cap=2)) if callable(recommend) else 1
+        else:
+            gpu_limit = int(max_gpu_jobs)
+        return "process", min(int(n_jobs), n_folds, gpu_limit)
+    if parallel_backend == "auto":
+        parallel_backend = (
+            "process" if getattr(model, "runtime_requires_exclusive_lease", False) else "thread"
+        )
+    return parallel_backend, min(int(n_jobs), n_folds)
+
+
+def _run_fold_task(
+    task: tuple[
+        int,
+        object,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray | None,
+        FoldLocalArtifactPolicy | None,
+        int,
+        int,
+    ],
+) -> tuple[int, BinaryFoldResult, np.ndarray, object]:
+    (
+        fold_index,
+        prototype,
+        X,
+        y,
+        subject_ids,
+        train,
+        test,
+        trial_channel_mask,
+        artifact_policy,
+        fold_id,
+        shared_worker_count,
+    ) = task
+    result, llr, calibration = _fold_result(
+        prototype,
+        X,
+        y,
+        subject_ids,
+        train,
+        test,
+        trial_channel_mask,
+        artifact_policy,
+        fold_id=fold_id,
+        shared_worker_count=shared_worker_count,
+    )
+    return fold_index, result, llr, calibration
+
+
+def _run_shared_fold_task(
+    task: tuple[
+        int,
+        object,
+        _SharedArraySpec,
+        _SharedArraySpec,
+        _SharedArraySpec,
+        np.ndarray,
+        np.ndarray,
+        _SharedArraySpec | None,
+        FoldLocalArtifactPolicy | None,
+        int,
+        int,
+        int,
+    ],
+) -> tuple[int, BinaryFoldResult, np.ndarray, object]:
+    """Attach shared source arrays for one process worker, then close handles."""
+
+    (
+        fold_index,
+        prototype,
+        X_spec,
+        y_spec,
+        subject_spec,
+        train,
+        test,
+        mask_spec,
+        artifact_policy,
+        fold_id,
+        shared_worker_count,
+        cpu_threads,
+    ) = task
+    handles: list[shared_memory.SharedMemory] = []
+    try:
+        configure_spawned_worker_threads(cpu_threads)
+        X, handle = _attach_shared_array(X_spec)
+        handles.append(handle)
+        y, handle = _attach_shared_array(y_spec)
+        handles.append(handle)
+        subject_ids, handle = _attach_shared_array(subject_spec)
+        handles.append(handle)
+        trial_channel_mask = None
+        if mask_spec is not None:
+            trial_channel_mask, handle = _attach_shared_array(mask_spec)
+            handles.append(handle)
+        with cpu_thread_budget(cpu_threads):
+            return _run_fold_task(
+                (
+                    fold_index,
+                    prototype,
+                    X,
+                    y,
+                    subject_ids,
+                    train,
+                    test,
+                    trial_channel_mask,
+                    artifact_policy,
+                    fold_id,
+                    shared_worker_count,
+                )
+            )
+    finally:
+        for handle in handles:
+            try:
+                handle.close()
+            except OSError:
+                pass
+
+
+def _run_fold_tasks(
+    prototype: object,
+    X: np.ndarray,
+    y: np.ndarray,
+    subject_ids: np.ndarray,
+    folds: Sequence[tuple[np.ndarray, np.ndarray]],
+    *,
+    trial_channel_mask: np.ndarray | None,
+    artifact_policy: FoldLocalArtifactPolicy | None,
+    n_jobs: int,
+    parallel_backend: str,
+    fold_id_offset: int,
+    max_gpu_jobs: int | None,
+    cpu_threads: int | None,
+) -> tuple[list[tuple[int, BinaryFoldResult, np.ndarray, object]], str, int, str, int]:
+    backend, effective_n_jobs = _resolve_fold_execution(
+        prototype,
+        n_jobs=n_jobs,
+        parallel_backend=parallel_backend,
+        n_folds=len(folds),
+        max_gpu_jobs=max_gpu_jobs,
+    )
+    cpu_threads_per_worker = resolve_cpu_threads(effective_n_jobs, total_threads=cpu_threads)
+    tasks = [
+        (
+            index,
+            prototype,
+            X,
+            y,
+            subject_ids,
+            train,
+            test,
+            trial_channel_mask,
+            artifact_policy,
+            index + fold_id_offset,
+            effective_n_jobs,
+        )
+        for index, (train, test) in enumerate(folds)
+    ]
+    if backend == "serial":
+        with cpu_thread_budget(cpu_threads_per_worker):
+            results = [_run_fold_task(task) for task in tasks]
+        return results, backend, effective_n_jobs, "direct", cpu_threads_per_worker
+    if backend == "thread":
+        with cpu_thread_budget(cpu_threads_per_worker):
+            with ThreadPoolExecutor(max_workers=effective_n_jobs) as executor:
+                results = list(executor.map(_run_fold_task, tasks))
+        transport = "direct"
+    else:
+        with _SharedFoldInputs(X, y, subject_ids, trial_channel_mask) as shared_inputs:
+            shared_tasks = [
+                (
+                    index,
+                    prototype,
+                    shared_inputs.X,
+                    shared_inputs.y,
+                    shared_inputs.subject_ids,
+                    train,
+                    test,
+                    shared_inputs.trial_channel_mask,
+                    artifact_policy,
+                    index + fold_id_offset,
+                    effective_n_jobs,
+                    cpu_threads_per_worker,
+                )
+                for index, (train, test) in enumerate(folds)
+            ]
+            with ProcessPoolExecutor(
+                max_workers=effective_n_jobs,
+                mp_context=mp.get_context("spawn"),
+            ) as executor:
+                results = list(executor.map(_run_shared_fold_task, shared_tasks))
+        transport = "shared_memory"
+    return (
+        sorted(results, key=lambda value: value[0]),
+        backend,
+        effective_n_jobs,
+        transport,
+        cpu_threads_per_worker,
+    )
 
 
 def evaluate_binary(
@@ -215,20 +559,39 @@ def evaluate_binary(
     *,
     trial_channel_mask: np.ndarray | None = None,
     artifact_policy: FoldLocalArtifactPolicy | None = None,
-    **_ignored: object,
+    fold_protocol: str | None = None,
+    n_jobs: int = 1,
+    parallel_backend: str = "auto",
+    fold_id_offset: int = 0,
+    max_gpu_jobs: int | None = None,
+    cpu_threads: int | None = None,
 ) -> BinarySummary:
     """Evaluate a target detector with held-out BACC and AUC."""
 
+    del fold_protocol  # Runner metadata; split masks remain the executable protocol.
     X, y, subject_ids = np.asarray(X), np.asarray(y), np.asarray(subject_ids).astype(str)
     _validate_binary_inputs(X, y, subject_ids)
     if trial_channel_mask is not None:
         trial_channel_mask = np.asarray(trial_channel_mask, dtype=bool)
         if trial_channel_mask.shape != X.shape[:2] or not trial_channel_mask.any(axis=1).all():
             raise ValueError("trial_channel_mask must retain at least one channel per epoch.")
-    results = [
-        _fold_result(model, X, y, subject_ids, train, test, trial_channel_mask, artifact_policy)[0]
-        for train, test in _validate_folds(folds, len(X))
-    ]
+    if fold_id_offset < 0:
+        raise ValueError("fold_id_offset must be non-negative.")
+    fold_results, backend, effective_n_jobs, input_transport, cpu_threads_per_worker = _run_fold_tasks(
+        model,
+        X,
+        y,
+        subject_ids,
+        _validate_folds(folds, len(X)),
+        trial_channel_mask=trial_channel_mask,
+        artifact_policy=artifact_policy,
+        n_jobs=n_jobs,
+        parallel_backend=parallel_backend,
+        fold_id_offset=fold_id_offset,
+        max_gpu_jobs=max_gpu_jobs,
+        cpu_threads=cpu_threads,
+    )
+    results = [result for _, result, _, _ in fold_results]
     bacc = np.asarray([fold.balanced_acc for fold in results], dtype=float)
     auc = np.asarray([fold.auc for fold in results], dtype=float)
     return BinarySummary(
@@ -236,6 +599,10 @@ def evaluate_binary(
         balanced_acc_std=float(np.nanstd(bacc)),
         auc_mean=float(np.nanmean(auc)),
         per_fold=results,
+        execution_backend=backend,
+        effective_n_jobs=effective_n_jobs,
+        input_transport=input_transport,
+        cpu_threads_per_worker=cpu_threads_per_worker,
     )
 
 
@@ -250,12 +617,19 @@ def evaluate_candidate_selection(
     candidate_vocab: Sequence[int],
     *,
     fold_subject_ids: np.ndarray | None = None,
+    event_timeline: object | None = None,
     trial_channel_mask: np.ndarray | None = None,
     artifact_policy: FoldLocalArtifactPolicy | None = None,
-    **_ignored: object,
+    fold_protocol: str | None = None,
+    n_jobs: int = 1,
+    parallel_backend: str = "auto",
+    fold_id_offset: int = 0,
+    max_gpu_jobs: int | None = None,
+    cpu_threads: int | None = None,
 ) -> CandidateSummary:
     """Evaluate calibrated 9-choice candidate evidence on held-out groups."""
 
+    del fold_protocol, event_timeline  # Runner metadata; split masks remain the executable protocol.
     X, y = np.asarray(X), np.asarray(y)
     group_ids = np.asarray(selection_group_ids).astype(str)
     fit_subjects = (
@@ -269,12 +643,29 @@ def evaluate_candidate_selection(
         raise ValueError("candidate_codes must align with X.")
     if trial_channel_mask is not None:
         trial_channel_mask = np.asarray(trial_channel_mask, dtype=bool)
+        if trial_channel_mask.shape != X.shape[:2] or not trial_channel_mask.any(axis=1).all():
+            raise ValueError("trial_channel_mask must retain at least one channel per epoch.")
+    if fold_id_offset < 0:
+        raise ValueError("fold_id_offset must be non-negative.")
     results: list[CandidateFoldResult] = []
     records: list[tuple[object, object, str]] = []
-    for train, test in _validate_folds(folds, len(X)):
-        binary, llr, _ = _fold_result(
-            model, X, y, fit_subjects, train, test, trial_channel_mask, artifact_policy
-        )
+    validated_folds = _validate_folds(folds, len(X))
+    fold_results, backend, effective_n_jobs, input_transport, cpu_threads_per_worker = _run_fold_tasks(
+        model,
+        X,
+        y,
+        fit_subjects,
+        validated_folds,
+        trial_channel_mask=trial_channel_mask,
+        artifact_policy=artifact_policy,
+        n_jobs=n_jobs,
+        parallel_backend=parallel_backend,
+        fold_id_offset=fold_id_offset,
+        max_gpu_jobs=max_gpu_jobs,
+        cpu_threads=cpu_threads,
+    )
+    for fold_index, binary, llr, _ in fold_results:
+        _, test = validated_folds[fold_index]
         decision = decide(llr, codes[test], group_ids[test], candidate_vocab, center_logits=False)
         fold_records = [
             (predicted, truth_by_group[str(group)], str(group))
@@ -302,6 +693,10 @@ def evaluate_candidate_selection(
         hit_rate_mean=float(np.nanmean(hit)),
         primary_hit_rate=overall,
         subject_records=records,
+        execution_backend=backend,
+        effective_n_jobs=effective_n_jobs,
+        input_transport=input_transport,
+        cpu_threads_per_worker=cpu_threads_per_worker,
     )
 
 

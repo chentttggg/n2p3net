@@ -108,14 +108,18 @@ class FoldLocalArtifactPolicy:
                 continue
             template = np.median(X[training, channel, :], axis=0)
             training_ptp = ptp[training, channel]
-            for index, quantile in enumerate(self.candidate_quantiles):
-                threshold = float(np.quantile(training_ptp, quantile))
-                clean_validation = validation & (ptp[:, channel] <= threshold)
-                if clean_validation.sum() < self.min_clean_epochs:
-                    continue
-                mean_validation = np.mean(X[clean_validation, channel, :], axis=0)
-                errors[index] += float(np.mean((mean_validation - template) ** 2))
-                counts[index] += 1
+            thresholds = np.quantile(training_ptp, self.candidate_quantiles)
+            clean_validation = validation[:, None] & (ptp[:, channel, None] <= thresholds)
+            clean_counts = clean_validation.sum(axis=0)
+            valid = clean_counts >= self.min_clean_epochs
+            if not valid.any():
+                continue
+            # (Q,N) @ (N,T) evaluates every candidate threshold without a
+            # Python loop over quantiles. Q is deliberately small and fixed.
+            means = clean_validation.T.astype(np.float64) @ X[:, channel, :]
+            means /= np.maximum(clean_counts[:, None], 1)
+            errors[valid] += np.mean((means[valid] - template) ** 2, axis=1)
+            counts[valid] += 1
         valid = counts > 0
         if not valid.any():
             return self.candidate_quantiles[-1]
@@ -272,11 +276,8 @@ def _relative_peak_to_peak(X: np.ndarray, observed: np.ndarray) -> np.ndarray:
     """
 
     raw_ptp = np.ptp(X.astype(np.float64, copy=False), axis=2)
-    scales = np.empty(len(X), dtype=float)
-    for row, row_observed in enumerate(observed):
-        values = raw_ptp[row, row_observed]
-        if len(values) == 0:
-            raise ValueError("Every epoch must contain at least one observed channel.")
-        scales[row] = float(np.median(values))
+    if not observed.any(axis=1).all():
+        raise ValueError("Every epoch must contain at least one observed channel.")
+    scales = np.nanmedian(np.where(observed, raw_ptp, np.nan), axis=1)
     floor = np.finfo(float).eps
     return raw_ptp / np.maximum(scales[:, None], floor)

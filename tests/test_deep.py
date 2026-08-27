@@ -74,6 +74,22 @@ def test_predict_proba_range():
     assert (p >= 0).all() and (p <= 1).all()
 
 
+def test_cpu_runtime_record_uses_bounded_matrix_batches() -> None:
+    X, y = make_p300_data(n_target=12, n_nontarget=36, seed=4)
+    clf = DeepBaseline(
+        "eegnet",
+        config=DeepConfig(epochs=1, batch_size=32, max_update_batch_size=8),
+        device=_cpu_device(),
+    )
+
+    clf.fit(X, y)
+
+    assert clf.last_runtime["precision"] == "fp32"
+    assert clf.last_runtime["batch_size"] == 8
+    assert clf.last_runtime["preloaded"] is False
+    assert clf.last_runtime["memory"]["device"] == "cpu"
+
+
 # ---------------- 冒烟（三模型） ----------------
 
 

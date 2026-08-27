@@ -10,3 +10,28 @@ promotion report includes median and p95 inference latency plus peak allocated
 and reserved memory where the backend exposes both measures. CPU is the
 correctness reference; accelerator results are performance measurements, not
 bitwise-reference outputs.
+
+## Runtime Scheduling
+
+`train.runtime.GpuPerformanceScheduler` is the shared accelerator policy. It
+uses BF16 autocast when the selected accelerator supports it, otherwise FP32;
+there is no gradient accumulation. Matrix-shaped EEG inputs are preloaded only
+when live free memory leaves the configured headroom. Otherwise, contiguous
+pinned CPU batches use non-blocking device copies.
+
+LOSO fold execution accepts `--fold-jobs` and `--fold-backend`. CPU work may
+use thread or process workers. GPU folds use spawned processes, never shared
+training threads, so each worker owns its CUDA RNG and context. The automatic
+GPU limit is one worker below 24 GiB total memory and two workers at or above
+that threshold. `--gpu-fold-jobs N` explicitly raises or lowers it after a
+CUDA smoke benchmark. The scheduler divides batch and preload headroom across
+those workers. Process workers receive read-only EEG source arrays through
+shared memory, then perform their fold-local preprocessing privately. Each
+experiment record includes peak allocated/reserved memory, the effective
+executor, and the input transport.
+
+`--cpu-threads` is a total host budget, not a per-worker number. The runtime
+divides it across the effective fold workers and applies the result to PyTorch,
+BLAS, and OpenMP pools. On a 16-vCPU host with two active folds this yields
+eight CPU threads per worker, allowing one fold's CPU preprocessing to overlap
+the other fold's GPU work without native thread oversubscription.

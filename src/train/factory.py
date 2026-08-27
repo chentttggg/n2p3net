@@ -13,6 +13,7 @@ from baselines.deep import DEEP_MODEL_NAMES, DeepBaseline, DeepConfig
 from baselines.n2p3net import N2P3NetBaseline
 from baselines.riemann import XdawnRiemann
 from data.epochs import EpochDataset
+from train.runtime import GpuPerformanceScheduler
 
 BINARY_MODEL_NAMES = (
     "swdla",
@@ -60,6 +61,7 @@ def build_binary_model(
     validation_subject_fraction: float = 0.1,
     deep_config_overrides: dict[str, Any] | None = None,
     device: torch.device | None = None,
+    runtime: GpuPerformanceScheduler | None = None,
 ):
     """Return one candidate using only the data and performance contracts."""
 
@@ -90,6 +92,7 @@ def build_binary_model(
             sfreq,
             config=config,
             device=device,
+            runtime=runtime,
             channel_mask=common_mask,
         )
     if key in DEEP_MODEL_NAMES:
@@ -100,6 +103,7 @@ def build_binary_model(
             sfreq=sfreq,
             config=config,
             device=device,
+            runtime=runtime,
             channel_mask=common_mask,
         )
     raise ValueError(f"Unknown binary model {model_name!r}; choose from {BINARY_MODEL_NAMES}.")

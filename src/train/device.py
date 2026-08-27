@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+import gc
+
 import torch
 
 
@@ -48,9 +50,11 @@ def print_device_memory(device: torch.device) -> None:
     """启动时打印总显存，供人工核对环境（DP6）。"""
     try:
         if device.type == "cuda":
-            total = torch.cuda.get_device_properties(0).total_memory / 1024**3
+            index = 0 if device.index is None else int(device.index)
+            total = torch.cuda.get_device_properties(index).total_memory / 1024**3
         elif device.type == "xpu" and hasattr(torch, "xpu"):
-            total = torch.xpu.get_device_properties(0).total_memory / 1024**3
+            index = 0 if device.index is None else int(device.index)
+            total = torch.xpu.get_device_properties(index).total_memory / 1024**3
         else:
             return
         print(f"[device] {device} 总显存 ≈ {total:.1f} GiB")
@@ -64,3 +68,23 @@ def empty_cache(device: torch.device) -> None:
         torch.cuda.empty_cache()
     elif device.type == "xpu" and hasattr(torch, "xpu"):
         torch.xpu.empty_cache()
+
+
+def release_device_memory(device: torch.device) -> None:
+    """Release temporary host/device references after a failed or finished workload.
+
+    This is deliberately a lifecycle operation rather than a per-batch action.
+    Calling it in the hot path would introduce synchronization and hurt throughput.
+    """
+
+    gc.collect()
+    try:
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
+            if hasattr(torch.cuda, "ipc_collect"):
+                torch.cuda.ipc_collect()
+        elif device.type == "xpu" and hasattr(torch, "xpu"):
+            torch.xpu.empty_cache()
+    except (AttributeError, RuntimeError):
+        # Cleanup is best-effort. Never obscure the training error that caused it.
+        pass

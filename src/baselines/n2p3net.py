@@ -6,6 +6,7 @@ import torch
 
 from baselines.deep import DeepBaseline, DeepConfig
 from models.n2p3net import N2P3Net
+from train.runtime import GpuPerformanceScheduler
 
 
 class N2P3NetBaseline(DeepBaseline):
@@ -18,6 +19,7 @@ class N2P3NetBaseline(DeepBaseline):
         sfreq: float,
         config: DeepConfig | None = None,
         device: torch.device | None = None,
+        runtime: GpuPerformanceScheduler | None = None,
         *,
         channel_mask=None,
     ) -> None:
@@ -29,6 +31,7 @@ class N2P3NetBaseline(DeepBaseline):
             sfreq=sfreq,
             config=config,
             device=device,
+            runtime=runtime,
             channel_mask=channel_mask,
         )
         self.model_name = "n2p3net"

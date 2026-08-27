@@ -65,7 +65,8 @@ from sklearn.metrics import roc_auc_score
 
 from baselines.classic import Baseline
 from baselines.validation import subject_disjoint_validation_split
-from train.device import get_device, optimize_device_for_training
+from train.device import get_device
+from train.runtime import GpuPerformanceScheduler, MatrixBatchSource, is_oom_error
 
 # 模型名（lowercase）→ 构造类
 _MODEL_FACTORIES = {
@@ -96,6 +97,10 @@ class DeepConfig:
     val_subjects_min: int = 2
     val_subjects_max: int = 12
     early_stop_min_delta: float = 1e-6
+    precision: str = "auto"
+    max_update_batch_size: int | None = 512
+    batch_memory_fraction: float = 0.55
+    preload_memory_fraction: float = 0.30
 
     def __post_init__(self) -> None:
         if self.epochs < 1 or self.batch_size < 1:
@@ -108,6 +113,14 @@ class DeepConfig:
             raise ValueError("DeepConfig validation subject bounds are invalid.")
         if self.val_subject_frac is not None and not 0.0 < self.val_subject_frac < 1.0:
             raise ValueError("DeepConfig val_subject_frac must be in (0,1) or None.")
+        if self.precision not in {"auto", "bf16", "fp32"}:
+            raise ValueError("DeepConfig precision must be 'auto', 'bf16', or 'fp32'.")
+        if self.max_update_batch_size is not None and self.max_update_batch_size < 1:
+            raise ValueError("DeepConfig max_update_batch_size must be positive or None.")
+        if not 0.05 <= self.batch_memory_fraction < 1.0:
+            raise ValueError("DeepConfig batch_memory_fraction must be in [0.05, 1).")
+        if not 0.05 <= self.preload_memory_fraction < 1.0:
+            raise ValueError("DeepConfig preload_memory_fraction must be in [0.05, 1).")
 
 
 class DeepBaseline(Baseline):
@@ -128,6 +141,7 @@ class DeepBaseline(Baseline):
     fit_accepts_subject_ids = True
     fit_accepts_trial_channel_mask = True
     predict_accepts_trial_channel_mask = True
+    runtime_requires_exclusive_lease = True
 
     def __init__(
         self,
@@ -137,6 +151,7 @@ class DeepBaseline(Baseline):
         sfreq: float = 256.0,
         config: DeepConfig | None = None,
         device: torch.device | None = None,
+        runtime: GpuPerformanceScheduler | None = None,
         *,
         channel_mask: np.ndarray | None = None,
         pretrained_state_dict: dict | None = None,
@@ -154,8 +169,26 @@ class DeepBaseline(Baseline):
         self.n_times = n_times
         self.sfreq = sfreq
         self.cfg = config if config is not None else DeepConfig()
-        self.device = device if device is not None else get_device()
-        self.use_amp = self.device.type in ("cuda", "xpu")  # DP4
+        requested_device = torch.device(device) if device is not None else get_device()
+        if runtime is not None:
+            if (
+                runtime.device.type != requested_device.type
+                or (
+                    requested_device.index is not None
+                    and runtime.device.index != requested_device.index
+                )
+            ):
+                raise ValueError("runtime device must match the requested model device.")
+            self.runtime = runtime
+        else:
+            self.runtime = GpuPerformanceScheduler(
+                requested_device,
+                precision=self.cfg.precision,
+                batch_memory_fraction=self.cfg.batch_memory_fraction,
+                preload_memory_fraction=self.cfg.preload_memory_fraction,
+            )
+        self.device = self.runtime.device
+        self.use_amp = self.runtime.precision.amp_enabled
         if channel_mask is None:
             self.channel_mask = np.ones(self.n_chans, dtype=bool)
         else:
@@ -179,6 +212,7 @@ class DeepBaseline(Baseline):
         self.calibration_logits_: np.ndarray | None = None
         self.calibration_labels_: np.ndarray | None = None
         self.calibration_source_: str | None = None
+        self.last_runtime: dict[str, object] = {}
 
     # ---------------- 模型构造 ----------------
 
@@ -194,9 +228,7 @@ class DeepBaseline(Baseline):
         raise AssertionError("unreachable")  # 构造前已校验 model_name
 
     def _autocast_ctx(self):
-        return torch.amp.autocast(
-            device_type=self.device.type, dtype=torch.bfloat16, enabled=self.use_amp
-        )
+        return self.runtime.autocast()
 
     # ---------------- P9 辅助预训练加载 / 冻结 / checkpoint ----------------
 
@@ -348,6 +380,66 @@ class DeepBaseline(Baseline):
         # values unless the mask is re-applied after the transform.
         return np.where(mask[:, :, None], X, 0.0).astype(np.float32, copy=False)
 
+    def _model_seed(self) -> int:
+        return int(self.cfg.seed + (self._evaluation_fold_id or 0))
+
+    def configure_runtime_worker_budget(self, worker_count: int) -> None:
+        """Apply the parent scheduler's per-worker memory budget before fitting."""
+
+        self.runtime.configure_shared_worker_budget(worker_count)
+
+    def _initialize_model(self, seed: int) -> None:
+        """Construct a fold-local model without leaking CPU RNG state to peer workers."""
+
+        with _INIT_LOCK:
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(seed)
+                if self.device.type == "cuda":
+                    with torch.cuda.device(self.device):
+                        torch.cuda.manual_seed(seed)
+                self.model_ = self._make_model().to(self.device)
+            self._apply_pretrained_state_dict()
+            self._freeze_layers()
+
+    def _validation_pass(
+        self,
+        source: MatrixBatchSource,
+        loss_fn: nn.Module | None,
+        batch_size: int,
+    ) -> tuple[float | None, np.ndarray, np.ndarray]:
+        """Run a vectorized batch pass and return CPU scores/labels once."""
+
+        score_parts: list[torch.Tensor] = []
+        label_parts: list[torch.Tensor] = []
+        total_loss = 0.0
+        n_rows = 0
+        self.model_.eval()
+        with torch.inference_mode():
+            for xb, yb in source.batches(batch_size):
+                assert yb is not None
+                with self._autocast_ctx():
+                    logits = self.model_(xb)
+                    loss = None if loss_fn is None else loss_fn(logits, yb)
+                score_parts.append((logits[:, 1] - logits[:, 0]).float().cpu())
+                label_parts.append(yb.cpu())
+                if loss is not None:
+                    total_loss += float(loss) * len(xb)
+                n_rows += len(xb)
+        mean_loss = None if loss_fn is None else total_loss / max(n_rows, 1)
+        return (
+            mean_loss,
+            torch.cat(score_parts).numpy().astype(np.float64),
+            torch.cat(label_parts).numpy().astype(np.int64),
+        )
+
+    def _clear_failed_fit(self) -> None:
+        self.model_ = None
+        self._fitted = False
+        self.calibration_logits_ = None
+        self.calibration_labels_ = None
+        self.calibration_source_ = None
+        self.runtime.release_temporary_memory()
+
     def fit(
         self,
         X: np.ndarray,
@@ -355,6 +447,58 @@ class DeepBaseline(Baseline):
         subject_ids: np.ndarray | None = None,
         trial_channel_mask: np.ndarray | None = None,
     ) -> DeepBaseline:
+        """Fit with a bounded OOM retry that never accumulates gradients."""
+
+        self._clear_failed_fit()
+        requested_batch_size = self.cfg.batch_size
+        retries = 0
+        while True:
+            try:
+                with self.runtime.lease():
+                    self._fit_attempt(
+                        X,
+                        y,
+                        subject_ids=subject_ids,
+                        trial_channel_mask=trial_channel_mask,
+                        requested_batch_size=requested_batch_size,
+                    )
+                self.last_runtime = {
+                    "device": str(self.device),
+                    "precision": self.runtime.precision.name,
+                    "batch_size": self._active_batch_size,
+                    "preloaded": self._preloaded_batches,
+                    "transfer_fallback": self._transfer_fallback,
+                    "oom_retries": retries,
+                    "shared_worker_count": self.runtime.shared_worker_count,
+                    "memory": self.runtime.memory_record(),
+                }
+                return self
+            except RuntimeError as error:
+                if not is_oom_error(error):
+                    self._clear_failed_fit()
+                    raise
+                attempted_batch_size = getattr(self, "_active_batch_size", requested_batch_size)
+                self._clear_failed_fit()
+                if attempted_batch_size <= 1:
+                    raise RuntimeError(
+                        "GPU OOM persists at batch_size=1 after releasing temporary memory. "
+                        "Reduce model/data residency or select a larger device."
+                    ) from error
+                requested_batch_size = max(1, attempted_batch_size // 2)
+                retries += 1
+            except Exception:
+                self._clear_failed_fit()
+                raise
+
+    def _fit_attempt(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        *,
+        subject_ids: np.ndarray | None,
+        trial_channel_mask: np.ndarray | None,
+        requested_batch_size: int,
+    ) -> None:
         X = np.asarray(X)
         if not np.issubdtype(X.dtype, np.floating):
             raise ValueError("X must have a floating dtype.")
@@ -404,43 +548,53 @@ class DeepBaseline(Baseline):
         if len(y_val) and set(np.unique(y_val).tolist()) != {0, 1}:
             raise ValueError("Deep validation split must contain both binary classes.")
 
-        # 输入标准化（D-deep-standard）：统计量只来自训练 fold，predict 复用
-        self._input_mean, self._input_std = self._masked_input_stats(
-            X_train, train_channel_mask
-        )
+        self._input_mean, self._input_std = self._masked_input_stats(X_train, train_channel_mask)
         X_train = self._prepare_input(X_train, train_channel_mask)
         if len(X_val):
             X_val = self._prepare_input(X_val, val_channel_mask)
 
-        # D-deep-seed：模型初始化/全局种子必须串行化，线程并行 fold 时避免互踩 RNG。
-        with _INIT_LOCK:
-            torch.manual_seed(self.cfg.seed)
-            if self.device.type == "cuda":
-                torch.cuda.manual_seed_all(self.cfg.seed)
-            optimize_device_for_training(self.device)  # D-device-tune
-            self.model_ = self._make_model().to(self.device)  # DP3
-            # P9：先加载辅助预训练权重，再冻结指定前缀（transfer_policy 方式 A/C）。
-            self._apply_pretrained_state_dict()
-            self._freeze_layers()
-            # 使用每 fold 私有的 CPU Generator，shuffle 顺序不依赖其他线程的 RNG 进度。
-            perm_gen = torch.Generator()
-            perm_gen.manual_seed(self.cfg.seed)
-        trainable_params = [p for p in self.model_.parameters() if p.requires_grad]
+        seed = self._model_seed()
+        self._initialize_model(seed)
+        trainable_params = [parameter for parameter in self.model_.parameters() if parameter.requires_grad]
         if not trainable_params:
-            raise RuntimeError("freeze_prefixes 冻结了全部参数，没有可训练参数。")
+            raise RuntimeError("freeze_prefixes froze every parameter; no optimizer update is possible.")
+        batch_size = self.runtime.choose_batch_size(
+            requested_batch_size,
+            X_train.shape[1:],
+            model=self.model_,
+            max_update_batch_size=self.cfg.max_update_batch_size,
+        )
+        self._active_batch_size = batch_size
+        total_matrix_bytes = X_train.nbytes + y_train.nbytes + X_val.nbytes + y_val.nbytes
+        preload = self.runtime.can_preload(total_matrix_bytes)
+        train_source = MatrixBatchSource(
+            torch.from_numpy(np.ascontiguousarray(X_train)),
+            torch.from_numpy(np.ascontiguousarray(y_train)),
+            self.runtime,
+            preload=preload,
+        )
+        val_source = (
+            MatrixBatchSource(
+                torch.from_numpy(np.ascontiguousarray(X_val)),
+                torch.from_numpy(np.ascontiguousarray(y_val)),
+                self.runtime,
+                preload=preload,
+            )
+            if len(X_val)
+            else None
+        )
+        self._preloaded_batches = train_source.preloaded and (
+            val_source is None or val_source.preloaded
+        )
+        self._transfer_fallback = train_source.transfer_fallback or bool(
+            val_source is not None and val_source.transfer_fallback
+        )
+
         opt = torch.optim.Adam(trainable_params, lr=self.cfg.lr, weight_decay=self.cfg.weight_decay)
         loss_fn = nn.CrossEntropyLoss(
             weight=torch.tensor([1.0, self.cfg.pos_weight], device=self.device)
         )
-
-        # D-deep-upload：一次性把训练张量放到目标设备，后续 batch 只做设备端索引切片，
-        # 避免每个 batch 都从 CPU 做 H2D 拷贝。N2P3-Net 数据量（≤数千试次 × 8 × 256）远
-        # 小于显存上限；若未来数据过大，可回退为逐 batch 上传。
-        Xt = torch.from_numpy(X_train).to(self.device)  # (N, C, T)
-        yt = torch.from_numpy(y_train).to(self.device)  # (N,)
-        Xvt = torch.from_numpy(X_val).to(self.device) if len(X_val) else None
-        yvt = torch.from_numpy(y_val).to(self.device) if len(y_val) else None
-        n = Xt.shape[0]
+        perm_gen = train_source.make_generator(seed)
         train_losses: list[float] = []
         val_losses: list[float] = []
         task_val_aucs: list[float | None] = []
@@ -451,126 +605,85 @@ class DeepBaseline(Baseline):
         early_stop_triggered = False
         epoch_progress_callback = self.epoch_progress_callback()
 
-        try:
-            for epoch in range(self.cfg.epochs):
-                self.model_.train()
-                perm = torch.randperm(n, generator=perm_gen).to(self.device)
-                epoch_loss = 0.0
-                n_seen = 0
-                for i in range(0, n, self.cfg.batch_size):
-                    idx = perm[i : i + self.cfg.batch_size]
-                    with self._autocast_ctx():
-                        logits = self.model_(Xt[idx])
-                        loss = loss_fn(logits, yt[idx])
-                    opt.zero_grad(set_to_none=True)  # 释放梯度张量，减少显存碎片
-                    loss.backward()
-                    opt.step()
-                    epoch_loss += float(loss.detach()) * len(idx)
-                    n_seen += len(idx)
-                train_losses.append(epoch_loss / max(n_seen, 1))
-                mean_val = None
-                task_val_auc = None
+        for epoch in range(self.cfg.epochs):
+            self.model_.train()
+            permutation = train_source.random_permutation(perm_gen)
+            epoch_loss = 0.0
+            n_seen = 0
+            for xb, yb in train_source.batches(batch_size, indices=permutation):
+                assert yb is not None
+                with self._autocast_ctx():
+                    logits = self.model_(xb)
+                    loss = loss_fn(logits, yb)
+                opt.zero_grad(set_to_none=True)
+                loss.backward()
+                opt.step()
+                epoch_loss += float(loss.detach()) * len(xb)
+                n_seen += len(xb)
+            train_losses.append(epoch_loss / max(n_seen, 1))
+            mean_val = None
+            task_val_auc = None
+            will_early_stop = False
 
-                if Xvt is not None and yvt is not None:
-                    self.model_.eval()
-                    total_val = 0.0
-                    n_val = 0
-                    val_score_parts: list[torch.Tensor] = []
-                    val_label_parts: list[torch.Tensor] = []
-                    with torch.inference_mode():
-                        for i in range(0, len(Xvt), self.cfg.batch_size):
-                            xb = Xvt[i : i + self.cfg.batch_size]
-                            yb = yvt[i : i + self.cfg.batch_size]
-                            with self._autocast_ctx():
-                                val_logits = self.model_(xb)
-                                val_loss = loss_fn(val_logits, yb)
-                            val_score_parts.append(
-                                (val_logits[:, 1] - val_logits[:, 0]).float().cpu()
-                            )
-                            val_label_parts.append(yb.float().cpu())
-                            total_val += float(val_loss) * len(xb)
-                            n_val += len(xb)
-                    mean_val = total_val / max(n_val, 1)
-                    val_losses.append(mean_val)
-                    val_labels = torch.cat(val_label_parts).numpy()
-                    val_scores = torch.cat(val_score_parts).numpy()
-                    if len(np.unique(val_labels)) == 2:
-                        task_val_auc = float(roc_auc_score(val_labels, val_scores))
-                    task_val_aucs.append(task_val_auc)
-                    if mean_val < best_val_loss - self.cfg.early_stop_min_delta:
-                        best_val_loss = mean_val
-                        best_epoch = epoch
-                        best_state = copy.deepcopy(self.model_.state_dict())
-                        patience_left = int(self.cfg.early_stop_patience)
-                    else:
-                        patience_left -= 1
-                    if patience_left <= 0:
-                        will_early_stop = True
-                    else:
-                        will_early_stop = False
+            if val_source is not None:
+                mean_val, val_scores, val_labels = self._validation_pass(
+                    val_source, loss_fn, batch_size
+                )
+                assert mean_val is not None
+                val_losses.append(mean_val)
+                if len(np.unique(val_labels)) == 2:
+                    task_val_auc = float(roc_auc_score(val_labels, val_scores))
+                task_val_aucs.append(task_val_auc)
+                if mean_val < best_val_loss - self.cfg.early_stop_min_delta:
+                    best_val_loss = mean_val
+                    best_epoch = epoch
+                    best_state = copy.deepcopy(self.model_.state_dict())
+                    patience_left = int(self.cfg.early_stop_patience)
                 else:
-                    will_early_stop = False
+                    patience_left -= 1
+                will_early_stop = patience_left <= 0
 
-                if epoch_progress_callback is not None:
-                    epoch_progress_callback(
-                        {
-                            "epoch": epoch + 1,
-                            "epoch_limit": self.cfg.epochs,
-                            "train_loss": train_losses[-1],
-                            "train_loss_components": {},
-                            "task_val_loss": mean_val,
-                            "task_val_auc": task_val_auc,
-                            "objective_val_loss": mean_val,
-                            "phase": "joint",
-                            "optimizer_steps": None,
-                            "selection_active": mean_val is not None,
-                            "patience_left": patience_left if mean_val is not None else None,
-                            "early_stop_patience": self.cfg.early_stop_patience,
-                            "best_epoch": best_epoch + 1 if best_epoch is not None else None,
-                            "best_task_epoch": best_epoch + 1 if best_epoch is not None else None,
-                            "best_val_loss": (
-                                best_val_loss if best_val_loss != float("inf") else None
-                            ),
-                            "best_task_val_loss": (
-                                best_val_loss if best_val_loss != float("inf") else None
-                            ),
-                            "will_early_stop": will_early_stop,
-                        }
-                    )
-                if will_early_stop:
-                    early_stop_triggered = True
-                    break
-        except torch.OutOfMemoryError:  # DP6
-            raise RuntimeError(
-                f"显存溢出（OOM）：请减小 batch_size（当前 {self.cfg.batch_size}）后重试。"
-            ) from None
-        except RuntimeError as e:  # 旧版兜底
-            if "out of memory" in str(e).lower():
-                raise RuntimeError("显存溢出（OOM）：请减小 batch_size 后重试。") from None
-            raise
+            if epoch_progress_callback is not None:
+                epoch_progress_callback(
+                    {
+                        "epoch": epoch + 1,
+                        "epoch_limit": self.cfg.epochs,
+                        "train_loss": train_losses[-1],
+                        "train_loss_components": {},
+                        "task_val_loss": mean_val,
+                        "task_val_auc": task_val_auc,
+                        "objective_val_loss": mean_val,
+                        "phase": "joint",
+                        "optimizer_steps": None,
+                        "selection_active": mean_val is not None,
+                        "patience_left": patience_left if mean_val is not None else None,
+                        "early_stop_patience": self.cfg.early_stop_patience,
+                        "best_epoch": best_epoch + 1 if best_epoch is not None else None,
+                        "best_task_epoch": best_epoch + 1 if best_epoch is not None else None,
+                        "best_val_loss": best_val_loss if best_val_loss != float("inf") else None,
+                        "best_task_val_loss": best_val_loss if best_val_loss != float("inf") else None,
+                        "will_early_stop": will_early_stop,
+                    }
+                )
+            if will_early_stop:
+                early_stop_triggered = True
+                break
 
         if best_state is not None:
             self.model_.load_state_dict(best_state)
         final_task_val_auc = None
-        if Xvt is not None and yvt is not None:
-            self.model_.eval()
-            final_score_parts: list[torch.Tensor] = []
-            final_label_parts: list[torch.Tensor] = []
-            with torch.inference_mode():
-                for i in range(0, len(Xvt), self.cfg.batch_size):
-                    xb = Xvt[i : i + self.cfg.batch_size]
-                    yb = yvt[i : i + self.cfg.batch_size]
-                    with self._autocast_ctx():
-                        final_logits = self.model_(xb)
-                    final_score_parts.append(
-                        (final_logits[:, 1] - final_logits[:, 0]).float().cpu()
-                    )
-                    final_label_parts.append(yb.float().cpu())
-            final_labels = torch.cat(final_label_parts).numpy()
-            final_scores = torch.cat(final_score_parts).numpy()
+        if val_source is not None:
+            _, final_scores, final_labels = self._validation_pass(val_source, None, batch_size)
             if len(np.unique(final_labels)) == 2:
                 final_task_val_auc = float(roc_auc_score(final_labels, final_scores))
+            self.calibration_logits_ = final_scores
+            self.calibration_labels_ = final_labels
+            self.calibration_source_ = "subject_disjoint_validation"
             self.model_.train()
+        else:
+            self.calibration_logits_ = None
+            self.calibration_labels_ = None
+            self.calibration_source_ = None
         self.last_history = {
             "train_losses": train_losses,
             "val_losses": val_losses,
@@ -580,30 +693,10 @@ class DeepBaseline(Baseline):
             "phases": ["joint"] * len(train_losses),
             "best_epoch": best_epoch,
             "best_task_epoch": best_epoch,
-            "best_task_val_loss": (
-                best_val_loss if best_val_loss != float("inf") else None
-            ),
+            "best_task_val_loss": best_val_loss if best_val_loss != float("inf") else None,
             "task_patience_exhausted": early_stop_triggered,
         }
         self._fitted = True
-        self.calibration_logits_ = None
-        self.calibration_labels_ = None
-        self.calibration_source_ = None
-        if len(X_val):
-            # Use held-out training subjects for downstream threshold/LLR
-            # calibration. X_val is already standardized here, so use a raw
-            # forward rather than predict_logit (which would standardize twice).
-            self.model_.eval()
-            chunks = []
-            with torch.inference_mode():
-                for i in range(0, len(Xvt), max(self.cfg.batch_size * 4, 256)):
-                    with self._autocast_ctx():
-                        val_logits = self.model_(Xvt[i : i + max(self.cfg.batch_size * 4, 256)])
-                    chunks.append((val_logits[:, 1] - val_logits[:, 0]).float().cpu())
-            self.calibration_logits_ = torch.cat(chunks).numpy().astype(np.float64)
-            self.calibration_labels_ = y_val.copy()
-            self.calibration_source_ = "subject_disjoint_validation"
-        return self
 
     # ---------------- 预测 ----------------
 
@@ -627,18 +720,34 @@ class DeepBaseline(Baseline):
         mask = self._effective_trial_channel_mask(X, trial_channel_mask)
         X = self._prepare_input(X, mask)
 
-        # D-deep-predict-chunks：分块前向，既避免大测试集一次性占满显存，也避免在
-        # GPU 上拼接全部 logits；每块只把 log-odds 转 float32 后立即搬回 CPU。
-        Xt = torch.from_numpy(X)
-        chunk_size = max(self.cfg.batch_size * 4, 256)
-        self.model_.eval()
-        out_chunks: list[torch.Tensor] = []
-        with torch.inference_mode():
-            for i in range(0, X.shape[0], chunk_size):
-                xb = Xt[i : i + chunk_size].to(self.device)
-                with self._autocast_ctx():
-                    logits = self.model_(xb)  # (chunk, 2)
-                # log-odds（target vs non-target），D-deep-ce
-                # AMP 下 logits 可能是 bfloat16，先转 float32 再回 CPU（numpy 不支持 bfloat16）
-                out_chunks.append((logits[:, 1] - logits[:, 0]).float().cpu())
+        # D-deep-predict-chunks: bounded matrix batches keep output tensors on
+        # CPU and avoid a large test-set allocation on the accelerator.
+        with self.runtime.lease():
+            source = MatrixBatchSource(
+                torch.from_numpy(np.ascontiguousarray(X)),
+                None,
+                self.runtime,
+                preload=self.runtime.can_preload(X.nbytes),
+            )
+            chunk_size = self.runtime.choose_batch_size(
+                max(self.cfg.batch_size * 4, 256),
+                X.shape[1:],
+                model=self.model_,
+            )
+            self.model_.eval()
+            out_chunks: list[torch.Tensor] = []
+            with torch.inference_mode():
+                for xb, _ in source.batches(chunk_size):
+                    with self._autocast_ctx():
+                        logits = self.model_(xb)
+                    out_chunks.append((logits[:, 1] - logits[:, 0]).float().cpu())
+        self.last_inference_runtime = {
+            "device": str(self.device),
+            "precision": self.runtime.precision.name,
+            "batch_size": chunk_size,
+            "preloaded": source.preloaded,
+            "transfer_fallback": source.transfer_fallback,
+            "shared_worker_count": self.runtime.shared_worker_count,
+            "memory": self.runtime.memory_record(),
+        }
         return torch.cat(out_chunks).numpy().astype(np.float64)

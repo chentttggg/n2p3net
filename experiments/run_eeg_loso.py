@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -64,11 +65,20 @@ def _parse_models(value: str, parser: argparse.ArgumentParser) -> tuple[str, ...
 def _resolve_device(choice: str) -> torch.device:
     if choice == "auto":
         return get_device()
-    device = torch.device(choice)
+    try:
+        device = torch.device(choice)
+    except RuntimeError as error:
+        raise ValueError(f"Invalid --device value {choice!r}.") from error
+    if device.type not in {"cuda", "xpu", "cpu"}:
+        raise ValueError("--device must be auto, cpu, cuda[:INDEX], or xpu[:INDEX].")
     if device.type == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("--device cuda was requested, but CUDA is unavailable.")
     if device.type == "xpu" and not (hasattr(torch, "xpu") and torch.xpu.is_available()):
         raise RuntimeError("--device xpu was requested, but XPU is unavailable.")
+    if device.type == "cuda" and device.index is not None and device.index >= torch.cuda.device_count():
+        raise ValueError(f"CUDA device index {device.index} is unavailable.")
+    if device.type == "cpu" and device.index is not None:
+        raise ValueError("CPU device indices are not supported.")
     return device
 
 
@@ -81,20 +91,45 @@ def main() -> None:
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--early-stop-patience", type=int, default=6)
     parser.add_argument("--validation-subject-fraction", type=float, default=0.1)
-    parser.add_argument("--fold-jobs", type=int, default=1)
+    parser.add_argument(
+        "--fold-jobs",
+        type=int,
+        default=2,
+        help="concurrent fold workers; default 2 overlaps CPU preprocessing with GPU work",
+    )
     parser.add_argument("--fold-backend", choices=("auto", "process", "thread"), default="auto")
+    parser.add_argument(
+        "--gpu-fold-jobs",
+        type=int,
+        default=None,
+        help="maximum concurrent GPU fold processes; default is hardware-aware",
+    )
+    parser.add_argument(
+        "--cpu-threads",
+        type=int,
+        default=None,
+        help="total CPU thread budget shared across active fold workers; default uses the visible quota",
+    )
     parser.add_argument("--fold-offset", type=int, default=0)
     parser.add_argument("--max-folds", type=int, default=None)
     parser.add_argument("--subjects", type=int, default=None)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--run-dir", default="experiments/runs")
     parser.add_argument("--run-name", default=None)
-    parser.add_argument("--device", choices=("auto", "cuda", "xpu", "cpu"), default="auto")
+    parser.add_argument(
+        "--device",
+        default="auto",
+        help="auto, cpu, cuda[:INDEX], or xpu[:INDEX]",
+    )
     parser.add_argument("--artifact-max-bad-channel-fraction", type=float, default=0.25)
     args = parser.parse_args()
 
     if args.epochs < 1 or args.batch_size < 1 or args.fold_jobs < 1:
         parser.error("epochs, batch size, and fold jobs must be positive")
+    if args.gpu_fold_jobs is not None and args.gpu_fold_jobs < 1:
+        parser.error("--gpu-fold-jobs must be positive when set")
+    if args.cpu_threads is not None and args.cpu_threads < 1:
+        parser.error("--cpu-threads must be positive when set")
     if args.fold_offset < 0 or (args.max_folds is not None and args.max_folds < 1):
         parser.error("fold offset must be non-negative and max folds must be positive")
     if args.subjects is not None and args.subjects < 2:
@@ -161,7 +196,13 @@ def main() -> None:
             "fold_protocol": "partial_loso" if args.fold_offset or args.max_folds else "loso",
             "selection_mode": "candidate_selection" if candidate_selection is not None else "binary_oddball",
             "artifact_quality_policy": {"method": "fold_local_ptp_cv", **artifact_policy.__dict__},
-            "environment": {"torch": torch.__version__, "device": str(device)},
+            "environment": {
+                "torch": torch.__version__,
+                "device": str(device),
+                "cuda_available": torch.cuda.is_available(),
+                "xpu_available": bool(hasattr(torch, "xpu") and torch.xpu.is_available()),
+                "visible_cpu_threads": os.cpu_count(),
+            },
             "started_utc": datetime.now(UTC).isoformat(),
         }
         (output_dir / "manifest.json").write_text(
@@ -172,6 +213,8 @@ def main() -> None:
             "fold_protocol": manifest["fold_protocol"],
             "n_jobs": args.fold_jobs,
             "parallel_backend": args.fold_backend,
+            "max_gpu_jobs": args.gpu_fold_jobs,
+            "cpu_threads": args.cpu_threads,
             "fold_id_offset": args.fold_offset,
             "trial_channel_mask": trial_channel_mask,
             "artifact_policy": artifact_policy,
@@ -206,6 +249,16 @@ def main() -> None:
             "auc_mean": summary.auc_mean,
             "decision_hit_rate_mean": getattr(summary, "hit_rate_mean", None),
             "primary_decision_hit_rate": getattr(summary, "primary_hit_rate", None),
+            "execution": {
+                "requested_n_jobs": args.fold_jobs,
+                "requested_backend": args.fold_backend,
+                "max_gpu_jobs": args.gpu_fold_jobs,
+                "requested_cpu_threads": args.cpu_threads,
+                "effective_n_jobs": summary.effective_n_jobs,
+                "backend": summary.execution_backend,
+                "input_transport": summary.input_transport,
+                "cpu_threads_per_worker": summary.cpu_threads_per_worker,
+            },
             "per_fold": [fold.__dict__ for fold in summary.per_fold],
             "wall_seconds": time.perf_counter() - started,
             "finished_utc": datetime.now(UTC).isoformat(),

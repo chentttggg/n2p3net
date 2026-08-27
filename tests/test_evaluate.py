@@ -1,9 +1,16 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
+import torch
 
 from baselines.classic import WindowLogisticRegression
-from baselines.evaluate import evaluate_binary, evaluate_candidate_selection, loso_folds
+from baselines.evaluate import (
+    _resolve_fold_execution,
+    evaluate_binary,
+    evaluate_candidate_selection,
+    loso_folds,
+)
 
 
 def _p300_data() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -49,3 +56,74 @@ def test_candidate_evidence_uses_calibrated_target_scores() -> None:
     )
 
     assert summary.primary_hit_rate > 0.8
+
+
+def test_threaded_cpu_folds_match_serial_results() -> None:
+    X, y, subjects = _p300_data()
+    model = WindowLogisticRegression(sfreq=128.0, tmin=-0.2, window_ms=(125.0, 300.0))
+    serial = evaluate_binary(model, X, y, subjects, loso_folds(subjects))
+    parallel = evaluate_binary(
+        model,
+        X,
+        y,
+        subjects,
+        loso_folds(subjects),
+        n_jobs=2,
+        parallel_backend="thread",
+        cpu_threads=2,
+    )
+
+    assert parallel.execution_backend == "thread"
+    assert parallel.effective_n_jobs == 2
+    assert parallel.cpu_threads_per_worker == 1
+    assert parallel.balanced_acc_mean == serial.balanced_acc_mean
+    assert parallel.auc_mean == serial.auc_mean
+
+
+def test_process_cpu_folds_share_the_input_matrix() -> None:
+    X, y, subjects = _p300_data()
+    summary = evaluate_binary(
+        WindowLogisticRegression(sfreq=128.0, tmin=-0.2, window_ms=(125.0, 300.0)),
+        X,
+        y,
+        subjects,
+        loso_folds(subjects),
+        n_jobs=2,
+        parallel_backend="process",
+        cpu_threads=2,
+    )
+
+    assert summary.execution_backend == "process"
+    assert summary.effective_n_jobs == 2
+    assert summary.cpu_threads_per_worker == 1
+    assert summary.input_transport == "shared_memory"
+    assert summary.auc_mean > 0.8
+
+
+def test_gpu_execution_uses_processes_and_never_shared_threads() -> None:
+    class LargeGpuRuntime:
+        def recommended_concurrent_workers(self, requested: int, *, cap: int) -> int:
+            return min(requested, cap)
+
+    class GpuModel:
+        device = torch.device("cuda:0")
+        runtime = LargeGpuRuntime()
+
+    backend, workers = _resolve_fold_execution(
+        GpuModel(),
+        n_jobs=4,
+        parallel_backend="auto",
+        n_folds=5,
+        max_gpu_jobs=None,
+    )
+    assert (backend, workers) == ("process", 2)
+
+    with pytest.warns(RuntimeWarning, match="GPU folds require isolated processes"):
+        backend, workers = _resolve_fold_execution(
+            GpuModel(),
+            n_jobs=4,
+            parallel_backend="thread",
+            n_folds=5,
+            max_gpu_jobs=4,
+        )
+    assert (backend, workers) == ("serial", 1)
