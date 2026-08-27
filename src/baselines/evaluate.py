@@ -1086,5 +1086,7 @@ def paired_permutation_test(
     observed = float(delta.mean())
     rng = np.random.default_rng(seed)
     signs = rng.choice((-1.0, 1.0), size=(int(n_perm), len(delta)))
-    p_value = float((np.abs((signs * delta).mean(axis=1)) >= abs(observed)).mean())
+    exceedances = int(np.count_nonzero(np.abs((signs * delta).mean(axis=1)) >= abs(observed)))
+    # Plus-one correction prevents an impossible p=0 from a finite Monte Carlo sample.
+    p_value = float((exceedances + 1) / (int(n_perm) + 1))
     return observed, p_value

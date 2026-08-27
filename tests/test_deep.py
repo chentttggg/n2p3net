@@ -110,6 +110,7 @@ def test_all_models_fit_predict():
 def test_model_name_normalization():
     clf = DeepBaseline("EEGNet", device=_cpu_device())
     assert clf.model_name == "eegnet"
+    assert clf.parameter_count() > 0
 
 
 def test_unknown_model_raises():

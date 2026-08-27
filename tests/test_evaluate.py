@@ -11,6 +11,7 @@ from baselines.evaluate import (
     evaluate_binary,
     evaluate_candidate_selection,
     loso_folds,
+    paired_permutation_test,
     precompute_fold_local_artifact_models,
     resolve_artifact_qc_workers,
     within_subject_folds,
@@ -46,6 +47,15 @@ def test_within_subject_folds_hold_out_complete_groups() -> None:
             subject = np.unique(subjects[test])[0]
             expected = (subjects == subject) & (groups == group)
             assert np.all(test[expected])
+
+
+def test_paired_permutation_uses_finite_sample_plus_one_correction() -> None:
+    delta, p_value = paired_permutation_test(
+        np.ones(8), np.zeros(8), n_perm=100, seed=4
+    )
+
+    assert delta == 1.0
+    assert 0.0 < p_value <= 1.0
 
 
 def test_within_subject_folds_refuse_random_epoch_fallback() -> None:

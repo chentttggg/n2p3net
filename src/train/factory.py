@@ -134,6 +134,7 @@ def describe_binary_model(model_name: str, model: object) -> dict[str, Any]:
         "n_chans": int(model.n_chans),
         "n_times": int(model.n_times),
         "sfreq": float(model.sfreq),
+        "parameter_count": int(model.parameter_count()),
     }
     if key == "n2p3net" or key in N2P3_POOLING_BY_MODEL:
         record["architecture"] = model.architecture_record()

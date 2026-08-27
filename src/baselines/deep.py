@@ -229,6 +229,20 @@ class DeepBaseline(Baseline):
             return EEGConformer(**common)
         raise AssertionError("unreachable")  # 构造前已校验 model_name
 
+    def parameter_count(self) -> int:
+        """Return trainable architecture parameters without allocating on the accelerator."""
+
+        fitted = getattr(self, "model_", None)
+        if fitted is not None:
+            return sum(parameter.numel() for parameter in fitted.parameters() if parameter.requires_grad)
+        with _INIT_LOCK:
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(self.cfg.seed)
+                candidate = self._make_model()
+        return sum(
+            parameter.numel() for parameter in candidate.parameters() if parameter.requires_grad
+        )
+
     def _autocast_ctx(self):
         return self.runtime.autocast()
 
