@@ -15,7 +15,7 @@ from data.channel import DEFAULT_MONTAGE, canonical_channel_name
 from data.dataset import EEGRecord, SubjectData, load_dataset, read_raw
 from data.epochs import EpochDataset, PreprocessingSpec, concatenate_epoch_datasets
 
-MANIFEST_SCHEMA = "n2p3net_raw_manifest/1"
+MANIFEST_SCHEMA = "n2p3net_raw_manifest/2"
 _MANIFEST_FIELDS = {
     "schema",
     "name",
@@ -85,6 +85,10 @@ class DatasetManifest:
         subject_ids = [record.subject_id for record in self.records]
         if any(not subject_id for subject_id in subject_ids):
             raise ValueError("Every manifest record needs a non-empty subject_id.")
+        if any(
+            not str(record.metadata.get("reference", "")).strip() for record in self.records
+        ):
+            raise ValueError("Every raw manifest record must declare its EEG reference.")
 
 
 def _resolve_relative(base: Path, value: str | None) -> Path | None:
@@ -256,6 +260,7 @@ def _subject_epoch_dataset(
         metadata=pd.DataFrame(metadata),
         provenance={
             "subject_id": subject.subject_id,
+            "source_reference": str(subject.metadata.get("reference", "unspecified")),
             "coordinate_registration": subject.coordinate_registration.record(),
         },
     )
@@ -265,12 +270,6 @@ def _subject_epoch_dataset(
 
 def build_manifest_dataset(manifest: DatasetManifest) -> EpochDataset:
     """Materialize a manifest into the universal EpochDataset contract."""
-
-    if manifest.preprocessing.baseline_mode != "none":
-        raise ValueError(
-            "Manifest ingress currently preserves unbaselined epochs only; "
-            "baseline_mode must be 'none' rather than recorded without execution."
-        )
 
     manifest.validate()
     channels = resolve_manifest_channels(manifest)
@@ -298,6 +297,18 @@ def build_manifest_dataset(manifest: DatasetManifest) -> EpochDataset:
                     "n_times": spec.n_times,
                     "reject_threshold": spec.reject_threshold_v,
                     "baseline": None,
+                    "baseline_mode": spec.baseline_mode,
+                    "trial_reference_window_ms": spec.trial_reference_window_ms,
+                    "trial_reference_center": spec.trial_reference_center,
+                    "trial_reference_scale": spec.trial_reference_scale,
+                    "filter_method": spec.filter_method,
+                    "filter_order": spec.filter_order,
+                    "filter_phase": spec.filter_phase,
+                    "resample_domain": spec.resample_domain,
+                    "resample_method": spec.resample_method,
+                    "resample_npad": spec.resample_npad,
+                    "resample_window": spec.resample_window,
+                    "resample_pad": spec.resample_pad,
                     "channels": selected_channels,
                     "positions_m": manifest.channel_positions_m,
                     "coordinate_source": "manifest" if manifest.channel_positions_m is not None else None,
@@ -363,6 +374,19 @@ def build_manifest_dataset(manifest: DatasetManifest) -> EpochDataset:
             "manifest_path": str(manifest.source_path) if manifest.source_path else None,
             "layout_policy": manifest.layout_policy,
             "montage": str(manifest.montage),
+            "source_sample_rate_hz": {
+                subject.subject_id: float(subject.metadata["source_sample_rate_hz"])
+                for subject in subjects
+            },
+            "model_input_sample_rate_hz": spec.sfreq,
+            "source_reference": next(
+                iter(
+                    {
+                        str(subject.metadata.get("reference", "unspecified"))
+                        for subject in subjects
+                    }
+                )
+            ),
             "coordinate_registration": {
                 "priority": [
                     "individual_digitization",

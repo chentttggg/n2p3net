@@ -61,13 +61,22 @@ def test_build_subject_shape():
 
     assert isinstance(s, SubjectData)
     assert s.data.shape[1] == 8
-    assert s.data.shape[2] == 350
+    assert s.data.shape[2] == 128
     assert s.data.dtype == np.float32
     assert s.labels.dtype == np.int64
     assert s.E_chn.shape == (8, 48)  # 6*n_freqs = 48
     assert s.E_sub.shape == (19,)  # 2*n_freqs + 3 = 19
-    assert s.sfreq == 250.0
+    assert s.sfreq == 128.0
     assert s.n_epochs == s.data.shape[0]
+
+
+def test_build_subject_acquisition_times_follow_resampled_events():
+    raw = make_raw(sfreq=512.0)
+    events = make_events(sfreq=512.0)
+    s = build_subject(raw, events, labels=np.arange(len(events)))
+
+    expected_s = events[:, 0].astype(float) / 512.0
+    np.testing.assert_allclose(s.metadata["acquisition_time_s"], expected_s, atol=1e-7)
 
 
 def test_read_raw_missing():

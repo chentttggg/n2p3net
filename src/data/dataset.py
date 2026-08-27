@@ -279,9 +279,11 @@ def build_subject(
     )
     subject = build_subject_embedding(age, sex, n_freqs=n_freqs)
     subject_metadata = dict(metadata or {})
-    subject_metadata["acquisition_time_s"] = np.asarray(events)[result.event_indices, 0].astype(
-        float
-    ) / float(raw.info["sfreq"])
+    subject_metadata["source_sample_rate_hz"] = float(raw.info["sfreq"])
+    subject_metadata["model_input_sample_rate_hz"] = float(result.sfreq)
+    subject_metadata["acquisition_time_s"] = np.asarray(result.event_times_s)[
+        result.event_indices
+    ].astype(float)
     dataset_id = str(subject_metadata.get("dataset_id", "manifest"))
     session_id = str(subject_metadata.get("session", ""))
     run_id = str(subject_metadata.get("run", ""))
@@ -335,7 +337,7 @@ def build_subject(
         selection_ids=np.repeat(selection_id, len(events)),
         complete=True,
         online_causal=result.online_causal,
-        timing_source="resampled_mne_event_samples;epoch_right_edge",
+        timing_source="source_mne_event_samples;epoched_resample;epoch_right_edge",
         candidate_ids=event_candidates,
         target_candidate_ids=event_targets,
         repetition_indices=event_repetitions,

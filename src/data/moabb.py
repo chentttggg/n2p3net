@@ -12,6 +12,7 @@ import pandas as pd
 from data.channel import DEFAULT_MONTAGE, build_channel_identity
 from data.epochs import P300_PERFORMANCE_PREPROCESSING, EpochDataset, PreprocessingSpec
 from data.events import observed_only_timeline, selection_group_id
+from data.preprocess import apply_trial_baseline
 
 CANDIDATE_METADATA_ALIASES = (
     "candidate_id",
@@ -105,12 +106,19 @@ def prepare_moabb_p300(
     from moabb.paradigms import P300
 
     preprocessing.validate()
-    if preprocessing.baseline_mode != "none":
+    if preprocessing.reject_threshold_v is not None:
         raise ValueError(
-            "MOABB ingress currently preserves unbaselined epochs only; "
-            "baseline_mode must be 'none' rather than recorded without execution."
+            "Fixed absolute-voltage artifact rejection is retired; set reject_threshold_v=None "
+            "and use fold-local artifact QC during evaluation."
         )
     dataset = resolve_moabb_dataset(dataset_class)
+    acquisition = getattr(getattr(dataset, "metadata", None), "acquisition", None)
+    source_reference = str(getattr(acquisition, "reference", None) or "unspecified")
+    source_sample_rate = getattr(acquisition, "sampling_rate", None)
+    if source_reference == "unspecified" or source_sample_rate is None:
+        raise ValueError(
+            f"MOABB dataset {dataset_class} lacks acquisition reference/sample-rate metadata."
+        )
     selected_subjects = list(subjects) if subjects is not None else list(dataset.subject_list)
     if not selected_subjects:
         raise ValueError("At least one MOABB subject must be selected.")
@@ -125,7 +133,7 @@ def prepare_moabb_p300(
         tmin=preprocessing.tmin_ms / 1000.0,
         tmax=preprocessing.tmax_ms / 1000.0,
         baseline=None,
-        resample=preprocessing.sfreq,
+        resample=None,
         channels=None if channels is None else list(channels),
     )
     epochs, raw_labels, metadata = paradigm.get_data(
@@ -133,6 +141,16 @@ def prepare_moabb_p300(
         subjects=selected_subjects,
         return_epochs=True,
     )
+    expected_tmin = preprocessing.tmin_ms / 1000.0
+    if not np.isclose(float(epochs.times[0]), expected_tmin, atol=0.5 / preprocessing.sfreq):
+        raise ValueError(
+            "MOABB epoch origin does not match the declared stimulus-relative time contract: "
+            f"{float(epochs.times[0]):g}s vs {expected_tmin:g}s."
+        )
+    source_epoch_sfreq = float(epochs.info["sfreq"])
+    source_epoch_events = np.asarray(epochs.events, dtype=np.int64).copy()
+    if not np.isclose(source_epoch_sfreq, preprocessing.sfreq):
+        epochs.resample(preprocessing.sfreq, verbose=False)
     X = epochs.get_data()
     raw_labels = np.asarray(raw_labels)
     if len(X) != len(raw_labels) or len(metadata) != len(X):
@@ -152,11 +170,15 @@ def prepare_moabb_p300(
             f"MOABB returned {X.shape[2]} time samples; {preprocessing.n_times} are required."
         )
     X = X[:, :, : preprocessing.n_times].astype(np.float32, copy=False)
-    if preprocessing.reject_threshold_v is not None:
-        raise ValueError(
-            "Fixed absolute-voltage artifact rejection is retired; set reject_threshold_v=None "
-            "and use fold-local artifact QC during evaluation."
-        )
+    X = apply_trial_baseline(
+        X,
+        sfreq=preprocessing.sfreq,
+        tmin=preprocessing.tmin_ms / 1000.0,
+        baseline_mode=preprocessing.baseline_mode,
+        trial_reference_window_ms=preprocessing.trial_reference_window_ms,
+        trial_reference_center=preprocessing.trial_reference_center,
+        trial_reference_scale=preprocessing.trial_reference_scale,
+    )
     keep = np.ones(len(X), dtype=bool)
     metadata = metadata.reset_index(drop=True).copy()
     channel_names = tuple(str(name) for name in epochs.ch_names)
@@ -166,9 +188,7 @@ def prepare_moabb_p300(
         montage=montage,
         allow_missing_positions=False,
     )
-    metadata["acquisition_time_s"] = np.asarray(epochs.events[keep, 0], dtype=float) / float(
-        epochs.info["sfreq"]
-    )
+    metadata["acquisition_time_s"] = source_epoch_events[keep, 0].astype(float) / source_epoch_sfreq
     subjects_array = metadata["subject"].astype(str).to_numpy()
     sessions = (
         metadata["session"].astype(str).to_numpy()
@@ -192,7 +212,7 @@ def prepare_moabb_p300(
     timeline = observed_only_timeline(
         dataset_id=dataset_class,
         subject_ids=subjects_array,
-        stimulus_ids=np.asarray(epochs.events[keep, 2], dtype=np.int64),
+        stimulus_ids=source_epoch_events[keep, 2],
         onset_times_s=metadata["acquisition_time_s"].to_numpy(dtype=float),
         group_ids=groups,
         selection_ids=np.asarray(selections, dtype=str),
@@ -206,7 +226,10 @@ def prepare_moabb_p300(
             metadata, REPETITION_METADATA_ALIASES, integer=True
         ),
         online_causal=False,
-        timing_source="moabb_observed_epochs_only;preprocessing_not_online_causal",
+        timing_source=(
+            "moabb_post_resample_epoch_events;observed_epochs_only;"
+            "preprocessing_not_online_causal"
+        ),
     )
     result = EpochDataset(
         name=dataset_class,
@@ -225,10 +248,42 @@ def prepare_moabb_p300(
             "subjects": selected_subjects,
             "moabb_version": moabb.__version__,
             "mne_version": mne.__version__,
+            "source_sample_rate_hz": source_sample_rate,
+            "model_input_sample_rate_hz": preprocessing.sfreq,
+            "source_reference": source_reference,
+            "source_ground": getattr(acquisition, "ground", None),
+            "event_time_basis": "post_resample_epoch_event_samples",
+            "grouping_fidelity": "subject_session_run_only; source blocks are not exposed",
+            "signal_unit": preprocessing.signal_unit,
+            "filter": {
+                "method": preprocessing.filter_method,
+                "order": preprocessing.filter_order,
+                "phase": preprocessing.filter_phase,
+            },
+            "resample_domain": preprocessing.resample_domain,
+            "resample": {
+                "method": preprocessing.resample_method,
+                "npad": preprocessing.resample_npad,
+                "window": preprocessing.resample_window,
+                "pad": preprocessing.resample_pad,
+            },
             "montage": montage,
             "coordinate_registration": identity.registration.record(),
             "right_endpoint": "exclusive_crop",
-            "continuous_baseline_correction": None,
+            "epoch_baseline": {
+                "mode": preprocessing.baseline_mode,
+                "window_ms": (
+                    list(preprocessing.trial_reference_window_ms)
+                    if preprocessing.trial_reference_window_ms is not None
+                    else [preprocessing.tmin_ms, 0.0]
+                ),
+                "center": preprocessing.trial_reference_center,
+                "scale": (
+                    "std"
+                    if preprocessing.baseline_mode == "trial"
+                    else preprocessing.trial_reference_scale
+                ),
+            },
             "artifact_rejection": {"method": "fold_local_ptp_cv", "n_before": int(len(keep))},
         },
     )

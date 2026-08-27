@@ -44,6 +44,7 @@ def test_brainsync_session_is_preprocessed_into_universal_dataset(tmp_path) -> N
             "channel_positions_m": POSITIONS,
             "coordinate_frame": "head",
             "units": "m",
+            "ref_label": "A2",
         },
     }
     (session_dir / "session.json").write_text(json.dumps(session), encoding="utf-8")
@@ -62,10 +63,14 @@ def test_brainsync_session_is_preprocessed_into_universal_dataset(tmp_path) -> N
 
     dataset = load_brainsync_session(session_dir, preprocessing=BRAIN_SYNC_PREPROCESSING)
 
-    assert dataset.X.shape == (3, 8, 250)
+    assert dataset.X.shape == (3, 8, 128)
     assert dataset.X.dtype == np.float32
     assert np.array_equal(dataset.y, np.array([0, 1, 0], dtype=np.int64))
-    assert dataset.preprocessing.sfreq == 250.0
+    assert dataset.preprocessing.sfreq == 128.0
+    assert dataset.provenance["source_sample_rate_hz"] == 1000.0
+    assert dataset.provenance["target_sample_rate_hz"] == 128.0
+    baseline_samples = round(0.2 * dataset.preprocessing.sfreq)
+    np.testing.assert_allclose(dataset.X[:, :, :baseline_samples].mean(axis=2), 0.0, atol=1e-10)
     assert np.allclose(dataset.channel_positions_m, np.asarray(POSITIONS, dtype=np.float32))
     assert dataset.metadata["repetition_index"].tolist() == [0, 0, 1]
     assert dataset.event_timeline.supports_full_candidate_chain is True

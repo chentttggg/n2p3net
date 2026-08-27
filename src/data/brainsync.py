@@ -209,11 +209,6 @@ def load_brainsync_session(
     """Load a BrainSync raw session and apply the standard n2p3 preprocessing."""
 
     preprocessing.validate()
-    if preprocessing.baseline_mode != "none":
-        raise ValueError(
-            "BrainSync ingress currently preserves unbaselined epochs only; "
-            "baseline_mode must be 'none' rather than recorded without execution."
-        )
     root = Path(session_dir).expanduser().resolve()
     session = _load_json_object(root / "session.json")
     schema = session.get("schema")
@@ -237,6 +232,9 @@ def load_brainsync_session(
     montage = session.get("montage")
     if not isinstance(montage, dict):
         montage = {}
+    source_reference = str(montage.get("ref_label", "")).strip()
+    if not source_reference:
+        raise ValueError("BrainSync session.montage.ref_label must declare the EEG reference.")
     if (
         montage.get("coordinate_frame", "head") != "head"
         or montage.get("units", "m") != "m"
@@ -307,6 +305,18 @@ def load_brainsync_session(
         n_times=preprocessing.n_times,
         reject_threshold=preprocessing.reject_threshold_v,
         baseline=None,
+        baseline_mode=preprocessing.baseline_mode,
+        trial_reference_window_ms=preprocessing.trial_reference_window_ms,
+        trial_reference_center=preprocessing.trial_reference_center,
+        trial_reference_scale=preprocessing.trial_reference_scale,
+        filter_method=preprocessing.filter_method,
+        filter_order=preprocessing.filter_order,
+        filter_phase=preprocessing.filter_phase,
+        resample_domain=preprocessing.resample_domain,
+        resample_method=preprocessing.resample_method,
+        resample_npad=preprocessing.resample_npad,
+        resample_window=preprocessing.resample_window,
+        resample_pad=preprocessing.resample_pad,
         channels=selected_channels,
         positions_m=positions,
         montage=None if positions is not None else "standard_1005",
@@ -367,6 +377,8 @@ def load_brainsync_session(
             "event_time_field": time_field,
             "source_sample_rate_hz": float(raw.info["sfreq"]),
             "target_sample_rate_hz": float(preprocessing.sfreq),
+            "source_reference": source_reference,
+            "signal_unit": preprocessing.signal_unit,
             "target_digit": target,
             "channel_positions_source": (
                 "session.montage.channel_positions_m" if positions is not None else "standard_1005_fallback"

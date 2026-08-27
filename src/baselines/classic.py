@@ -57,7 +57,6 @@ class Baseline:
 
     # Optional arguments are capability declarations consumed by evaluate.py.
     # Defaults keep legacy adapters compatible with the common runner.
-    fit_accepts_subject_ids = False
     fit_accepts_trial_context = False
     fit_accepts_group_ids = False
     fit_accepts_acquisition_indices = False

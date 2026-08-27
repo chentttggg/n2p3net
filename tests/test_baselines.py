@@ -22,8 +22,8 @@ from baselines.features import (
 )
 
 C = 8
-T = 250
-SFR = 250.0
+T = 128
+SFR = 128.0
 TMIN = -0.2  # 秒；与 data/preprocess.py 的单位一致
 
 
@@ -51,7 +51,7 @@ def make_p300_data(n_target=120, n_nontarget=480, seed=0):
 
 def test_time_to_index():
     assert time_to_index(-200, SFR, TMIN) == 0
-    assert time_to_index(300, SFR, TMIN) == 125  # (300+200)/1000*250
+    assert time_to_index(300, SFR, TMIN) == 64  # (300+200)/1000*128
 
 
 def test_downsample_shape():
@@ -63,7 +63,7 @@ def test_downsample_shape():
 def test_extract_window_shape():
     X = np.random.randn(10, C, T).astype(np.float32)
     W = extract_window(X, SFR, TMIN, (250, 500))
-    assert W.shape == (10, C, 63)  # idx 112..175
+    assert W.shape == (10, C, 32)  # idx 58..90
 
 
 def test_window_mean_feature_shape():
@@ -77,7 +77,7 @@ def test_grand_average_template():
     tpl = grand_average_template(X, y)
     assert tpl.shape == (C, T)
     # 模板应在 Pz（索引 3）的 300-500ms 有正波
-    assert tpl[3, 120:180].max() > 1.0, "target 模板应在 Pz 有正波"
+    assert tpl[3, 60:100].max() > 1.0, "target 模板应在 Pz 有正波"
 
 
 # ---------------- 基线语义 ----------------
@@ -121,10 +121,10 @@ def test_predict_proba_range():
 
 def test_subset_channels():
     """通道子集（D-channel-strategy）：classic/riemann 用子集而非零填充。"""
-    X = np.random.randn(5, 8, 250).astype(np.float32)
+    X = np.random.randn(5, 8, 128).astype(np.float32)
     mask = np.array([True, True, True, False, False, False, False, False])
     Xsub = subset_channels(X, mask)
-    assert Xsub.shape == (5, 3, 250)
+    assert Xsub.shape == (5, 3, 128)
     assert np.array_equal(Xsub, X[:, :3, :])
 
 

@@ -175,6 +175,7 @@ def filter_continuous(
     *,
     method: str = "iir",
     phase: str = "zero",
+    order: int = 4,
     copy: bool = False,
     verbose: bool = False,
 ) -> mne.io.BaseRaw:
@@ -197,7 +198,7 @@ def filter_continuous(
         l_freq=l_freq,
         h_freq=h_freq,
         method=method,
-        iir_params=dict(order=4, ftype="butter") if method == "iir" else None,
+        iir_params=dict(order=order, ftype="butter") if method == "iir" else None,
         phase=phase,
         verbose=verbose,
     )
@@ -242,6 +243,66 @@ def reject_epochs(
     raise ValueError("reject_epochs is retired; cache all finite epochs for fold-local QC.")
 
 
+def apply_trial_baseline(
+    data: np.ndarray,
+    *,
+    sfreq: float,
+    tmin: float,
+    baseline_mode: str,
+    trial_reference_window_ms: tuple[float, float] | None = None,
+    trial_reference_center: str = "mean",
+    trial_reference_scale: str = "none",
+) -> np.ndarray:
+    """Execute the declared per-trial, per-channel reference transform.
+
+    Windows use the same half-open physical time axis as ``EpochDataset``.
+    The transform is label-free and does not fit population statistics.
+    """
+
+    values = np.asarray(data)
+    if values.ndim != 3 or not np.issubdtype(values.dtype, np.floating):
+        raise ValueError("baseline input must be a floating-point (N,C,T) array.")
+    if not np.isfinite(values).all():
+        raise ValueError("baseline input contains NaN/inf.")
+    if baseline_mode == "none":
+        return values
+    if baseline_mode not in {"mean_only", "trial_reference"}:
+        raise ValueError(
+            "Executable baseline_mode must be none, mean_only, or center-only trial_reference."
+        )
+    if trial_reference_center not in {"mean", "median"}:
+        raise ValueError("trial_reference_center must be mean or median.")
+    if trial_reference_scale not in {"none", "std", "mad"}:
+        raise ValueError("trial_reference_scale must be none, std, or mad.")
+    if trial_reference_scale != "none":
+        raise ValueError("Baseline scale normalization would destroy the physical volts contract.")
+
+    if baseline_mode == "mean_only":
+        if tmin >= 0.0:
+            raise ValueError(f"baseline_mode={baseline_mode!r} requires tmin < 0.")
+        window_ms = (tmin * 1000.0, 0.0)
+        center_mode = "mean"
+    else:
+        if trial_reference_window_ms is None:
+            raise ValueError("trial_reference mode requires trial_reference_window_ms.")
+        window_ms = tuple(float(value) for value in trial_reference_window_ms)
+        center_mode = trial_reference_center
+
+    start = int(np.ceil((window_ms[0] / 1000.0 - tmin) * sfreq - 1e-9))
+    stop = int(np.ceil((window_ms[1] / 1000.0 - tmin) * sfreq - 1e-9))
+    if start < 0 or stop > values.shape[2] or stop - start < 2:
+        raise ValueError(
+            "baseline reference window must contain at least two samples inside the epoch."
+        )
+    reference = values[:, :, start:stop].astype(np.float64, copy=False)
+    if center_mode == "mean":
+        center = reference.mean(axis=2, keepdims=True)
+    else:
+        center = np.median(reference, axis=2, keepdims=True)
+    transformed = values.astype(np.float64, copy=False) - center
+    return transformed.astype(values.dtype, copy=False)
+
+
 def preprocess(
     raw: mne.io.BaseRaw,
     events: np.ndarray,
@@ -254,6 +315,18 @@ def preprocess(
     n_times: int | None = DEFAULT_P300_DATA_CONTRACT.n_times,
     reject_threshold: float | None = DEFAULT_REJECT_THRESHOLD,
     baseline: tuple[float, float] | None = None,
+    baseline_mode: str = DEFAULT_P300_DATA_CONTRACT.baseline_mode,
+    trial_reference_window_ms: tuple[float, float] | None = None,
+    trial_reference_center: str = "mean",
+    trial_reference_scale: str = "none",
+    filter_method: str = DEFAULT_P300_DATA_CONTRACT.filter_method,
+    filter_order: int = DEFAULT_P300_DATA_CONTRACT.filter_order,
+    filter_phase: str = DEFAULT_P300_DATA_CONTRACT.filter_phase,
+    resample_domain: str = DEFAULT_P300_DATA_CONTRACT.resample_domain,
+    resample_method: str = DEFAULT_P300_DATA_CONTRACT.resample_method,
+    resample_npad: str = DEFAULT_P300_DATA_CONTRACT.resample_npad,
+    resample_window: str = DEFAULT_P300_DATA_CONTRACT.resample_window,
+    resample_pad: str = DEFAULT_P300_DATA_CONTRACT.resample_pad,
     channels: Sequence[str] | None = None,
     montage: str | Path | mne.channels.DigMontage | None = DEFAULT_MONTAGE,
     positions_m: Mapping[str, Sequence[float]]
@@ -270,7 +343,7 @@ def preprocess(
     copy: bool = True,
     verbose: bool = False,
 ) -> PreprocessResult:
-    """Map channels, resample, high-pass, epoch, and preserve provenance."""
+    """Map/filter continuous EEG, epoch on source events, then derive model rate."""
 
     events = np.asarray(events)
     if events.ndim != 2 or events.shape[1] != 3:
@@ -284,6 +357,28 @@ def preprocess(
     if reject_threshold is not None:
         raise ValueError(
             "Fixed absolute-voltage epoch rejection is retired; use fold-local artifact QC."
+        )
+    if baseline is not None:
+        raise ValueError(
+            "MNE baseline= is not part of the executable contract; use baseline_mode instead."
+        )
+    if resample_domain != "epoched":
+        raise ValueError("Executable preprocessing requires resample_domain='epoched'.")
+    if (
+        filter_method != DEFAULT_P300_DATA_CONTRACT.filter_method
+        or filter_order != DEFAULT_P300_DATA_CONTRACT.filter_order
+        or filter_phase != DEFAULT_P300_DATA_CONTRACT.filter_phase
+    ):
+        raise ValueError("Executable preprocessing requires zero-phase fourth-order IIR.")
+    if (
+        resample_method != DEFAULT_P300_DATA_CONTRACT.resample_method
+        or resample_npad != DEFAULT_P300_DATA_CONTRACT.resample_npad
+        or resample_window != DEFAULT_P300_DATA_CONTRACT.resample_window
+        or resample_pad != DEFAULT_P300_DATA_CONTRACT.resample_pad
+    ):
+        raise ValueError(
+            "Executable preprocessing requires FFT resampling with "
+            "npad/window='auto' and pad='edge'."
         )
     if copy:
         raw = raw.copy()
@@ -305,12 +400,14 @@ def preprocess(
             f"Selected EEG channels contain {count} non-finite samples; repair or reject "
             "the source recording explicitly. The standard ingress never imputes samples."
         )
-    raw, events = resample(raw, events, sfreq=sfreq, copy=False)
     if l_freq is not None or h_freq is not None:
         raw = filter_continuous(
             raw,
             l_freq=l_freq,
             h_freq=h_freq,
+            method=filter_method,
+            order=filter_order,
+            phase=filter_phase,
             copy=False,
             verbose=verbose,
         )
@@ -323,11 +420,20 @@ def preprocess(
         event_id=event_id,
         tmin=tmin,
         tmax=tmax,
-        baseline=baseline,
+        baseline=None,
         preload=True,
         on_missing="warn",
         verbose=verbose,
     )
+    if not np.isclose(float(epochs.info["sfreq"]), sfreq):
+        epochs.resample(
+            sfreq,
+            method=resample_method,
+            npad=resample_npad,
+            window=resample_window,
+            pad=resample_pad,
+            verbose=verbose,
+        )
     data = epochs.get_data()
     if not np.isfinite(data).all():
         count = int(np.count_nonzero(~np.isfinite(data)))
@@ -355,6 +461,15 @@ def preprocess(
                 f"requires ({n_times})."
             )
         data = data[:, :, :n_times]
+    data = apply_trial_baseline(
+        data,
+        sfreq=float(epochs.info["sfreq"]),
+        tmin=float(tmin),
+        baseline_mode=baseline_mode,
+        trial_reference_window_ms=trial_reference_window_ms,
+        trial_reference_center=trial_reference_center,
+        trial_reference_scale=trial_reference_scale,
+    )
 
     dropped = np.array([], dtype=np.int64)
     event_indices = selection
@@ -397,7 +512,7 @@ def preprocess(
         position_mask=layout.position_mask,
         layout_source=layout.source,
         coordinate_registration=layout.registration,
-        sfreq=float(raw.info["sfreq"]),
+        sfreq=float(epochs.info["sfreq"]),
         tmin=float(tmin),
         tmax=float(tmax),
         dropped=dropped,

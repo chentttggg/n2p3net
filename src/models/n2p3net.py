@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from math import isfinite
 
 import torch
 from torch import nn
@@ -19,6 +20,33 @@ DEFAULT_ST_POOL_SIZE = 4
 DEFAULT_MST_KERNEL_SIZES = (5, 17)
 DEFAULT_MST_FEATURES_PER_SCALE = 2
 DEFAULT_MST_POOL_SIZE = 8
+
+
+def temporal_receptive_span_ms(kernel_samples: int, sample_rate_hz: float) -> float:
+    """Return the endpoint-to-endpoint span of an odd discrete kernel."""
+
+    if (
+        kernel_samples < 1
+        or kernel_samples % 2 == 0
+        or not isfinite(sample_rate_hz)
+        or sample_rate_hz <= 0.0
+    ):
+        raise ValueError("kernel_samples must be positive and odd; sample_rate_hz must be positive.")
+    return (kernel_samples - 1) * 1000.0 / sample_rate_hz
+
+
+def scale_odd_kernel_preserving_span(
+    kernel_samples: int,
+    *,
+    source_sample_rate_hz: float,
+    target_sample_rate_hz: float,
+) -> int:
+    """Scale an odd kernel by preserving its centered physical endpoint span."""
+
+    source_span_ms = temporal_receptive_span_ms(kernel_samples, source_sample_rate_hz)
+    target_intervals = source_span_ms * target_sample_rate_hz / 1000.0
+    even_intervals = 2 * int(round(target_intervals / 2.0))
+    return even_intervals + 1
 
 
 class _MaxNormSpatialConv(nn.Conv2d):
@@ -381,18 +409,33 @@ class N2P3Net(nn.Module):
         return output
 
     @classmethod
-    def default_architecture_record(cls, *, pooling_mode: str, tmin_s: float) -> dict[str, object]:
+    def default_architecture_record(
+        cls,
+        *,
+        pooling_mode: str,
+        tmin_s: float,
+        sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
+    ) -> dict[str, object]:
         if pooling_mode not in POOLING_MODES:
             raise ValueError(f"pooling_mode must be one of {sorted(POOLING_MODES)}.")
         record: dict[str, object] = {
             "trunk": "ms_eegnet_style",
             "pooling_mode": pooling_mode,
             "tmin_s": float(tmin_s),
+            "input_sample_rate_hz": float(sfreq),
+            "feature_sample_rate_hz": float(sfreq) / DEFAULT_ST_POOL_SIZE,
             "st_temporal_filters": DEFAULT_ST_TEMPORAL_FILTERS,
             "st_temporal_kernel_samples": DEFAULT_ST_TEMPORAL_KERNEL_SIZE,
+            "st_temporal_receptive_span_ms": temporal_receptive_span_ms(
+                DEFAULT_ST_TEMPORAL_KERNEL_SIZE, float(sfreq)
+            ),
             "spatial_depth_multiplier": DEFAULT_SPATIAL_DEPTH_MULTIPLIER,
             "st_pool_size": DEFAULT_ST_POOL_SIZE,
             "mst_kernel_samples": list(DEFAULT_MST_KERNEL_SIZES),
+            "mst_receptive_span_ms": [
+                temporal_receptive_span_ms(kernel, float(sfreq) / DEFAULT_ST_POOL_SIZE)
+                for kernel in DEFAULT_MST_KERNEL_SIZES
+            ],
             "mst_features_per_scale": DEFAULT_MST_FEATURES_PER_SCALE,
             "mst_pool_size": DEFAULT_MST_POOL_SIZE,
         }
@@ -410,14 +453,24 @@ class N2P3Net(nn.Module):
         record = self.default_architecture_record(
             pooling_mode=self.pooling_mode,
             tmin_s=self.tmin_s,
+            sfreq=self.sfreq,
         )
         record.update(
             {
                 "st_temporal_filters": self.temporal_filters,
                 "st_temporal_kernel_samples": self.temporal_kernel_size,
+                "st_temporal_receptive_span_ms": temporal_receptive_span_ms(
+                    self.temporal_kernel_size, self.sfreq
+                ),
                 "spatial_depth_multiplier": self.spatial_depth_multiplier,
                 "st_pool_size": self.st_pool_size,
                 "mst_kernel_samples": list(self.mst_kernel_sizes),
+                "mst_receptive_span_ms": [
+                    temporal_receptive_span_ms(
+                        kernel, self.sfreq / self.st_pool_size
+                    )
+                    for kernel in self.mst_kernel_sizes
+                ],
                 "mst_features_per_scale": self.mst_features_per_scale,
                 "mst_pool_size": self.mst_pool_size,
             }

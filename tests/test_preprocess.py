@@ -11,6 +11,7 @@ import pytest
 from data.channel import STANDARD_CHANNELS
 from data.preprocess import (
     _canonical,
+    apply_trial_baseline,
     filter_continuous,
     highpass,
     map_channels,
@@ -63,11 +64,11 @@ def test_preprocess_smoke_shape_dtype():
 
     assert res.data.ndim == 3
     assert res.data.shape[1] == 8
-    assert res.data.shape[2] == 350
+    assert res.data.shape[2] == 128
     assert res.data.dtype == np.float32
     assert res.channel_mask.dtype == bool
     assert res.channel_mask.all()  # 合成数据含全部 8 通道
-    assert res.sfreq == 250.0
+    assert res.sfreq == 128.0
     assert res.tmin == -0.2
     assert res.data.shape[0] >= 1  # 至少切出一个 epoch
     assert isinstance(res.n_epochs, int) and isinstance(res.n_times, int)
@@ -147,6 +148,8 @@ def test_preprocess_channel_reorder():
         raw,
         events,
         l_freq=None,
+        h_freq=None,
+        baseline_mode="none",
         reject_threshold=None,
         channels=STANDARD_CHANNELS,
     )
@@ -187,6 +190,25 @@ def test_filter_continuous_applies_declared_lowpass():
     assert amp_60hz < 0.05 * amp_5hz
 
 
+def test_continuous_filtering_and_epoch_crop_do_not_commute() -> None:
+    """Counterexample: an impulse just outside the epoch affects a continuous filter."""
+
+    sfreq = 128.0
+    event_sample = 256
+    epoch_start = event_sample - round(0.2 * sfreq)
+    epoch_stop = event_sample + round(0.8 * sfreq)
+    data = np.zeros((1, 512), dtype=float)
+    data[0, epoch_start - 4] = 1.0
+    raw = mne.io.RawArray(data, mne.create_info(["Fz"], sfreq, ch_types="eeg"), verbose=False)
+
+    filtered = filter_continuous(raw, l_freq=2.0, h_freq=30.0, copy=True)
+    filter_then_crop = filtered.get_data(start=epoch_start, stop=epoch_stop)
+    crop_then_filter_input = raw.get_data(start=epoch_start, stop=epoch_stop)
+
+    assert np.count_nonzero(crop_then_filter_input) == 0
+    assert np.linalg.norm(filter_then_crop) > 1e-3
+
+
 def test_preprocess_rejects_nonfinite_source_samples():
     raw = make_raw(sfreq=256.0)
     raw._data[0, 100] = np.nan
@@ -217,15 +239,32 @@ def test_preprocess_copy_semantics():
 
 
 def test_preprocess_n_times_alignment():
-    """D-n-times-align：默认输出 250 点；n_times=None 保留 MNE 自然点数（251）。"""
+    """The 128 Hz model cache uses a half-open one-second epoch."""
     raw = make_raw(sfreq=250.0)  # 已是目标采样率，不触发重采样
     events = make_events(sfreq=250.0)
 
     res = preprocess(raw, events, channels=STANDARD_CHANNELS)
-    assert res.data.shape[2] == 350
+    assert res.data.shape[2] == 128
 
     res2 = preprocess(raw, events, n_times=None, channels=STANDARD_CHANNELS)
-    assert res2.data.shape[2] == 351  # (1.2-(-0.2))*250 + 1
+    assert res2.data.shape[2] == 129  # (0.8-(-0.2))*128 + 1
+
+
+def test_mean_only_baseline_executes_on_the_half_open_prestimulus_window() -> None:
+    data = np.zeros((2, 2, 10), dtype=np.float32)
+    data[0, 0] = np.arange(10, dtype=np.float32) + 10.0
+    data[0, 1] = np.arange(10, dtype=np.float32) - 5.0
+    data[1] = data[0] * 2.0
+
+    transformed = apply_trial_baseline(
+        data,
+        sfreq=10.0,
+        tmin=-0.2,
+        baseline_mode="mean_only",
+    )
+
+    np.testing.assert_allclose(transformed[:, :, :2].mean(axis=2), 0.0, atol=1e-7)
+    np.testing.assert_allclose(transformed[:, :, 2], data[:, :, 2] - data[:, :, :2].mean(axis=2))
 
 
 def test_preprocess_raises_on_bad_events():

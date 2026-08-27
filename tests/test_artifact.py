@@ -275,15 +275,15 @@ def test_binary_evaluator_preserves_test_denominator_and_records_quality() -> No
     test = ~train
 
     class MaskAwareScoreModel:
-        fit_accepts_subject_ids = True
+        fit_accepts_group_ids = True
         fit_accepts_trial_channel_mask = True
         predict_accepts_trial_channel_mask = True
 
-        def fit(self, values, labels, subject_ids=None, trial_channel_mask=None):
-            assert len(values) == len(labels) == len(subject_ids) == len(trial_channel_mask)
+        def fit(self, values, labels, group_ids=None, trial_channel_mask=None):
+            assert len(values) == len(labels) == len(group_ids) == len(trial_channel_mask)
             self.calibration_logits_ = np.array([-2.0, -1.0, 1.0, 2.0])
             self.calibration_labels_ = np.array([0, 0, 1, 1])
-            self.calibration_source_ = "subject_disjoint_validation"
+            self.calibration_source_ = "group_disjoint_validation"
             return self
 
         def predict_logit(self, values, trial_channel_mask=None):

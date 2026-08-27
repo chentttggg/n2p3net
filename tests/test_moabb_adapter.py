@@ -10,6 +10,18 @@ from data.epochs import PreprocessingSpec
 from data.moabb import prepare_moabb_p300
 
 
+def _fake_dataset(subjects=(1, 2)):
+    acquisition = SimpleNamespace(
+        sampling_rate=100.0,
+        reference="right earlobe",
+        ground="Fz",
+    )
+    return SimpleNamespace(
+        subject_list=list(subjects),
+        metadata=SimpleNamespace(acquisition=acquisition),
+    )
+
+
 def test_moabb_adapter_rejects_retired_fixed_artifact_threshold(monkeypatch) -> None:
     from data import moabb as adapter_module
 
@@ -22,6 +34,7 @@ def test_moabb_adapter_rejects_retired_fixed_artifact_threshold(monkeypatch) -> 
     class FakeEpochs:
         ch_names = ["Fz", "Cz"]
         info = {"sfreq": 100.0}
+        times = np.arange(10, dtype=float) / 100.0
 
         def __init__(self):
             self.events = events
@@ -40,7 +53,7 @@ def test_moabb_adapter_rejects_retired_fixed_artifact_threshold(monkeypatch) -> 
                 pd.DataFrame({"subject": [1, 1, 2]}),
             )
 
-    monkeypatch.setattr(adapter_module, "resolve_moabb_dataset", lambda name: SimpleNamespace(subject_list=[1, 2]))
+    monkeypatch.setattr(adapter_module, "resolve_moabb_dataset", lambda name: _fake_dataset())
     monkeypatch.setattr("moabb.paradigms.P300", FakeP300)
     profile = PreprocessingSpec(
         name="mock",
@@ -58,28 +71,62 @@ def test_moabb_adapter_rejects_retired_fixed_artifact_threshold(monkeypatch) -> 
         prepare_moabb_p300("FakeP300", preprocessing=profile)
 
 
-def test_moabb_adapter_rejects_baseline_metadata_without_a_transform(monkeypatch) -> None:
+def test_moabb_adapter_executes_declared_mean_baseline(monkeypatch) -> None:
     from data import moabb as adapter_module
+
+    data = np.zeros((4, 2, 30), dtype=np.float64)
+    data[:, 0] += np.arange(4, dtype=float)[:, None] + 5.0
+    data[:, 1] += np.arange(4, dtype=float)[:, None] - 3.0
+    data[:, :, 20:] += 2.0
+    events = np.column_stack(
+        [np.arange(100, 500, 100), np.zeros(4, dtype=int), np.array([1, 2, 1, 2])]
+    )
+
+    class FakeEpochs:
+        ch_names = ["Fz", "Cz"]
+        info = {"sfreq": 100.0}
+        times = -0.2 + np.arange(30, dtype=float) / 100.0
+
+        def __init__(self):
+            self.events = events
+
+        def get_data(self):
+            return data.copy()
+
+    class FakeP300:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+        def get_data(self, **kwargs):
+            return (
+                FakeEpochs(),
+                np.array(["NonTarget", "Target", "NonTarget", "Target"]),
+                pd.DataFrame({"subject": [1, 1, 2, 2]}),
+            )
 
     monkeypatch.setattr(
         adapter_module,
         "resolve_moabb_dataset",
-        lambda name: SimpleNamespace(subject_list=[1, 2]),
+        lambda name: _fake_dataset(),
     )
+    monkeypatch.setattr("moabb.paradigms.P300", FakeP300)
     profile = PreprocessingSpec(
-        name="mock_unexecuted_baseline",
+        name="mock_executed_baseline",
         sfreq=100.0,
         l_freq=0.1,
         h_freq=30.0,
         tmin_ms=-200.0,
         tmax_ms=100.0,
         n_times=30,
-        baseline_mode="trial",
+        baseline_mode="mean_only",
         reject_threshold_v=None,
     )
 
-    with pytest.raises(ValueError, match="baseline_mode must be 'none'"):
-        prepare_moabb_p300("FakeP300", preprocessing=profile)
+    dataset = prepare_moabb_p300("FakeP300", preprocessing=profile)
+
+    np.testing.assert_allclose(dataset.X[:, :, :20].mean(axis=2), 0.0, atol=1e-12)
+    np.testing.assert_allclose(dataset.X[:, :, 20:], 2.0, atol=1e-12)
+    assert dataset.provenance["epoch_baseline"]["mode"] == "mean_only"
 
 
 def test_moabb_adapter_rejects_retired_filter_before_subject_coverage(monkeypatch) -> None:
@@ -94,6 +141,7 @@ def test_moabb_adapter_rejects_retired_filter_before_subject_coverage(monkeypatc
     class FakeEpochs:
         ch_names = ["Fz", "Cz"]
         info = {"sfreq": 100.0}
+        times = np.arange(10, dtype=float) / 100.0
 
         def __init__(self):
             self.events = events
@@ -115,7 +163,7 @@ def test_moabb_adapter_rejects_retired_filter_before_subject_coverage(monkeypatc
     monkeypatch.setattr(
         adapter_module,
         "resolve_moabb_dataset",
-        lambda name: SimpleNamespace(subject_list=[1, 2]),
+        lambda name: _fake_dataset(),
     )
     monkeypatch.setattr("moabb.paradigms.P300", FakeP300)
     profile = PreprocessingSpec(
@@ -145,6 +193,7 @@ def test_moabb_adapter_uses_explicit_candidates_not_binary_event_codes(monkeypat
     class FakeEpochs:
         ch_names = ["Fz", "Cz"]
         info = {"sfreq": 100.0}
+        times = np.arange(10, dtype=float) / 100.0
 
         def __init__(self):
             self.events = events
@@ -174,7 +223,7 @@ def test_moabb_adapter_uses_explicit_candidates_not_binary_event_codes(monkeypat
     monkeypatch.setattr(
         adapter_module,
         "resolve_moabb_dataset",
-        lambda name: SimpleNamespace(subject_list=[1]),
+        lambda name: _fake_dataset((1,)),
     )
     monkeypatch.setattr("moabb.paradigms.P300", FakeP300)
     profile = PreprocessingSpec(

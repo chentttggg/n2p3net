@@ -15,10 +15,25 @@ qc_features: relative_ptp, channel_std, epoch_scale, observed_mask
 The artifact stores provenance, source units, epoch bounds, preprocessing
 configuration, and rejected-trial counts. Canonical resampling and filtering
 are configuration choices evaluated inside the protocol, not hidden defaults.
-Current standardized ingress stores unbaselined epochs (`baseline_mode=none`)
-and fails closed on an unimplemented baseline transform. QC cache features are
-unlabeled and fold-independent; every threshold, global scale calibration, and
-epoch acceptance decision is fitted only on the outer training fold.
+The mainline MS-EEGNet input contract is 128 Hz, 2-30 Hz, `[-200,800) ms`,
+with an executed per-trial, per-channel `[-200,0) ms` mean correction. These
+values preserve the physical scales of the fixed 65/5/17-sample temporal
+kernels. Native acquisition remains first-class (250 Hz for BrainSync); raw
+samples and event indices are preserved while only the derived model tensor is
+resampled. Every adapter executes the same order: zero-phase fourth-order IIR
+on continuous EEG, source-sample epoching, then epoch-domain resampling. QC
+cache features are unlabeled and fold-independent; every threshold,
+global scale calibration, and epoch acceptance decision is fitted only on the
+outer training fold.
+
+The model tensor remains in volts. Per-trial division by a baseline standard
+deviation is prohibited before physical QC. Source reference and native sample
+rate are provenance fields; datasets with different source references cannot be
+concatenated until one explicit common re-reference has been executed and
+recorded.
+
+The executable equations, discrete-time conventions, counterexamples, and
+source-to-decision code chain are specified in `doc/input_contract_math.zh.md`.
 
 ## Model Contract
 

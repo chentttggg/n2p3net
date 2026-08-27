@@ -31,9 +31,9 @@
     D-deep-seed      fit 起始 torch.manual_seed(seed) + 每 epoch shuffle 用 torch.randperm，保证
                      可复现。注意：deep fold 线程并行时 CUDA dropout 仍用进程级全局 RNG；
                       模型初始化与 shuffle 已确定化，但逐 bit 复现建议 --deep-jobs 1（audit P2）。
-    D-deep-sfreq     EEGInceptionERP 的 scales_samples_s 是「秒」单位，需显式传 sfreq=250 与
-                     n_times=350（默认 n_times=1000/sfreq=128，是 ~7.8s 窗口，与我们的 P300 epoch
-                     不符）；EEGNet 用 kernel_length(样本) 与 sfreq 无关；EEGConformer 无需 sfreq。
+    D-deep-sfreq     EEGInceptionERP 的 scales_samples_s 是「秒」单位，需显式传 sfreq=128 与
+                     n_times=128；EEGNet 用 kernel_length(样本)，其物理跨度必须随输入合同审计；
+                     EEGConformer 无需 sfreq。
     D-deep-standard  训练前用训练集逐通道 mean/std 做 z-score（fit 内完成，predict 复用训练统计量）。
                      review v6 P1：V 单位输入（~1e-5–1e-4）会让 deep logit 坍缩成窄带
                      （实测 EEGNet AUC 0.744 但 bacc@0=0.500、命中率≈chance），z-score 后
@@ -64,7 +64,7 @@ from braindecode.models import EEGConformer, EEGInceptionERP, EEGNet
 from sklearn.metrics import roc_auc_score
 
 from baselines.classic import Baseline
-from baselines.validation import subject_disjoint_validation_split
+from baselines.validation import group_disjoint_validation_split
 from data.contract import DEFAULT_P300_DATA_CONTRACT
 from train.device import get_device
 from train.runtime import GpuPerformanceScheduler, MatrixBatchSource, is_oom_error
@@ -94,9 +94,9 @@ class DeepConfig:
     seed: int = 0
     standardize_input: bool = True
     early_stop_patience: int = 6
-    val_subject_frac: float | None = 0.08
-    val_subjects_min: int = 2
-    val_subjects_max: int = 12
+    val_group_frac: float | None = 0.08
+    val_groups_min: int = 2
+    val_groups_max: int = 12
     early_stop_min_delta: float = 1e-6
     precision: str = "auto"
     max_update_batch_size: int | None = 512
@@ -110,10 +110,10 @@ class DeepConfig:
             raise ValueError("DeepConfig lr/pos_weight must be positive and weight_decay non-negative.")
         if self.early_stop_patience < 1 or self.early_stop_min_delta < 0.0:
             raise ValueError("DeepConfig early-stop patience must be positive and delta non-negative.")
-        if self.val_subjects_min < 1 or self.val_subjects_max < self.val_subjects_min:
-            raise ValueError("DeepConfig validation subject bounds are invalid.")
-        if self.val_subject_frac is not None and not 0.0 < self.val_subject_frac < 1.0:
-            raise ValueError("DeepConfig val_subject_frac must be in (0,1) or None.")
+        if self.val_groups_min < 1 or self.val_groups_max < self.val_groups_min:
+            raise ValueError("DeepConfig validation group bounds are invalid.")
+        if self.val_group_frac is not None and not 0.0 < self.val_group_frac < 1.0:
+            raise ValueError("DeepConfig val_group_frac must be in (0,1) or None.")
         if self.precision not in {"auto", "bf16", "fp32"}:
             raise ValueError("DeepConfig precision must be 'auto', 'bf16', or 'fp32'.")
         if self.max_update_batch_size is not None and self.max_update_batch_size < 1:
@@ -132,14 +132,14 @@ class DeepBaseline(Baseline):
     model_name : str
         "eegnet" / "inception" / "conformer"（大小写不敏感）。
     n_chans / n_times / sfreq : int / int / float
-        通道数、时间点数、采样率（与 data 层契约一致：8 / 350 / 250）。
+        通道数、时间点数、采样率（默认模型合同为 8 / 128 / 128）。
     config : DeepConfig | None
         训练配置（默认 DeepConfig()）。
     device : torch.device | None
         默认 get_device()；测试可显式传 CPU。
     """
 
-    fit_accepts_subject_ids = True
+    fit_accepts_group_ids = True
     fit_accepts_trial_channel_mask = True
     predict_accepts_trial_channel_mask = True
     accepts_unmaterialized_trial_channel_mask = True
@@ -210,7 +210,7 @@ class DeepBaseline(Baseline):
             "best_epoch": None,
         }
         self._evaluation_fold_id: int | None = None
-        self.last_val_subjects: int | None = None
+        self.last_val_groups: int | None = None
         self.calibration_logits_: np.ndarray | None = None
         self.calibration_labels_: np.ndarray | None = None
         self.calibration_source_: str | None = None
@@ -444,7 +444,7 @@ class DeepBaseline(Baseline):
         self,
         X: np.ndarray,
         y: np.ndarray,
-        subject_ids: np.ndarray | None = None,
+        group_ids: np.ndarray | None = None,
         trial_channel_mask: np.ndarray | None = None,
     ) -> DeepBaseline:
         """Fit with a bounded OOM retry that never accumulates gradients."""
@@ -458,7 +458,7 @@ class DeepBaseline(Baseline):
                     self._fit_attempt(
                         X,
                         y,
-                        subject_ids=subject_ids,
+                        group_ids=group_ids,
                         trial_channel_mask=trial_channel_mask,
                         requested_batch_size=requested_batch_size,
                     )
@@ -495,7 +495,7 @@ class DeepBaseline(Baseline):
         X: np.ndarray,
         y: np.ndarray,
         *,
-        subject_ids: np.ndarray | None,
+        group_ids: np.ndarray | None,
         trial_channel_mask: np.ndarray | None,
         requested_batch_size: int,
     ) -> None:
@@ -515,23 +515,23 @@ class DeepBaseline(Baseline):
             raise ValueError(f"X 时间点数 {X.shape[2]} 与模型契约 n_times={self.n_times} 不一致。")
         trial_mask = self._effective_trial_channel_mask(X, trial_channel_mask)
 
-        if subject_ids is None:
+        if group_ids is None:
             train_mask = np.ones(len(X), dtype=bool)
             val_mask = np.zeros(len(X), dtype=bool)
-            self.last_val_subjects = None
+            self.last_val_groups = None
         else:
-            subject_ids = np.asarray(subject_ids)
-            if subject_ids.shape != (len(X),):
-                raise ValueError("subject_ids 与 X 长度须一致。")
-            split = subject_disjoint_validation_split(
-                subject_ids,
-                fraction=self.cfg.val_subject_frac,
-                min_subjects=self.cfg.val_subjects_min,
-                max_subjects=self.cfg.val_subjects_max,
+            group_ids = np.asarray(group_ids)
+            if group_ids.shape != (len(X),):
+                raise ValueError("group_ids must align with X.")
+            split = group_disjoint_validation_split(
+                group_ids,
+                fraction=self.cfg.val_group_frac,
+                min_groups=self.cfg.val_groups_min,
+                max_groups=self.cfg.val_groups_max,
                 seed=self.cfg.seed,
             )
             train_mask, val_mask = split.train_mask, split.validation_mask
-            self.last_val_subjects = split.n_validation_subjects
+            self.last_val_groups = split.n_validation_groups
         X_train, y_train = X[train_mask], y[train_mask]
         X_val, y_val = X[val_mask], y[val_mask]
         train_channel_mask = trial_mask[train_mask]
@@ -678,7 +678,7 @@ class DeepBaseline(Baseline):
                 final_task_val_auc = float(roc_auc_score(final_labels, final_scores))
             self.calibration_logits_ = final_scores
             self.calibration_labels_ = final_labels
-            self.calibration_source_ = "subject_disjoint_validation"
+            self.calibration_source_ = "group_disjoint_validation"
             self.model_.train()
         else:
             self.calibration_logits_ = None

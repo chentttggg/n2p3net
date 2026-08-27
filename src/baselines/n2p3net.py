@@ -63,4 +63,5 @@ class N2P3NetBaseline(DeepBaseline):
         return N2P3Net.default_architecture_record(
             pooling_mode=self.pooling_mode,
             tmin_s=self.tmin_s,
+            sfreq=self.sfreq,
         )

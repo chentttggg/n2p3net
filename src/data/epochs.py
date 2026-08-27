@@ -41,6 +41,15 @@ class PreprocessingSpec:
     tmax_ms: float = DEFAULT_P300_DATA_CONTRACT.tmax_ms
     n_times: int = DEFAULT_P300_DATA_CONTRACT.n_times
     baseline_mode: str = DEFAULT_P300_DATA_CONTRACT.baseline_mode
+    signal_unit: str = DEFAULT_P300_DATA_CONTRACT.signal_unit
+    filter_method: str = DEFAULT_P300_DATA_CONTRACT.filter_method
+    filter_order: int = DEFAULT_P300_DATA_CONTRACT.filter_order
+    filter_phase: str = DEFAULT_P300_DATA_CONTRACT.filter_phase
+    resample_domain: str = DEFAULT_P300_DATA_CONTRACT.resample_domain
+    resample_method: str = DEFAULT_P300_DATA_CONTRACT.resample_method
+    resample_npad: str = DEFAULT_P300_DATA_CONTRACT.resample_npad
+    resample_window: str = DEFAULT_P300_DATA_CONTRACT.resample_window
+    resample_pad: str = DEFAULT_P300_DATA_CONTRACT.resample_pad
     trial_reference_window_ms: tuple[float, float] | None = None
     trial_reference_center: str = "mean"
     trial_reference_scale: str = "none"
@@ -84,6 +93,35 @@ class PreprocessingSpec:
         if self.baseline_mode not in {"trial", "mean_only", "none", "trial_reference"}:
             raise ValueError(
                 "baseline_mode must be trial, mean_only, none, or trial_reference."
+            )
+        if self.signal_unit != "V":
+            raise ValueError("Model-ready EEG samples must declare signal_unit='V'.")
+        if (
+            self.filter_method != "iir"
+            or self.filter_order != 4
+            or self.filter_phase != "zero"
+        ):
+            raise ValueError(
+                "The common executable filter contract is zero-phase fourth-order IIR."
+            )
+        if self.resample_domain != "epoched":
+            raise ValueError("The common executable resampling domain is epoched EEG.")
+        if (
+            self.resample_method != "fft"
+            or self.resample_npad != "auto"
+            or self.resample_window != "auto"
+            or self.resample_pad != "edge"
+        ):
+            raise ValueError(
+                "The common executable resampling contract is FFT with "
+                "npad/window='auto' and pad='edge'."
+            )
+        if self.baseline_mode == "trial" or (
+            self.baseline_mode == "trial_reference" and self.trial_reference_scale != "none"
+        ):
+            raise ValueError(
+                "Per-trial scale normalization destroys the volts contract required by physical QC; "
+                "use mean_only or trial_reference with scale='none'."
             )
         if self.baseline_mode in {"trial", "mean_only"} and self.tmin_ms >= 0:
             raise ValueError(
@@ -481,17 +519,19 @@ def _validate_attested_cache(path: Path, dataset: EpochDataset) -> None:
         raise ValueError(f"{record_path} does not attest a full contract validation.")
     if attestation.get("byte_size") != path.stat().st_size:
         raise ValueError(f"{path} byte size no longer matches its cache attestation.")
-    if record.get("schema") != EPOCH_DATASET_SCHEMA:
-        raise ValueError(f"{record_path} schema does not match the current EpochDataset contract.")
-    if record.get("name") != dataset.name or record.get("shape") != list(dataset.X.shape):
-        raise ValueError(f"{record_path} identity does not match {path}.")
-    if record.get("preprocessing") != asdict(dataset.preprocessing):
-        raise ValueError(f"{record_path} preprocessing does not match {path}.")
-    qc_record = record.get("qc_features")
-    if dataset.qc_features is None or not isinstance(qc_record, dict):
-        raise ValueError(f"{record_path} QC feature attestation is incomplete.")
-    if qc_record.get("schema") != dataset.qc_features.schema:
-        raise ValueError(f"{record_path} QC feature schema does not match {path}.")
+    expected_hash = attestation.get("sha256")
+    if not isinstance(expected_hash, str) or _sha256_file(path) != expected_hash:
+        raise ValueError(f"{path} SHA-256 no longer matches its cache attestation.")
+    expected_record = json.loads(
+        json.dumps(dataset.record(validate=False), default=_json_default)
+    )
+    mismatched = [
+        key for key, expected in expected_record.items() if record.get(key) != expected
+    ]
+    if mismatched:
+        raise ValueError(
+            f"{record_path} fields do not match {path}: {sorted(mismatched)}."
+        )
 
 
 def load_epoch_dataset(
@@ -766,6 +806,15 @@ def concatenate_epoch_datasets(
         raise ValueError("At least one EpochDataset is required.")
     first = datasets[0]
     first.validate()
+    source_references = {
+        str(dataset.provenance.get("source_reference", "unspecified")).strip().casefold()
+        for dataset in datasets
+    }
+    if "" in source_references or "unspecified" in source_references or len(source_references) > 1:
+        raise ValueError(
+            "Cannot concatenate EEG datasets with different or unspecified source references; "
+            "apply and record one common re-reference first."
+        )
     for dataset in datasets[1:]:
         dataset.validate()
         if (

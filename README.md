@@ -20,9 +20,11 @@ The LOSO runner requires the signal and baseline extras. The research contract i
 
 ## Data Contract
 
-The shared P300 defaults are defined once in `src/data/contract.py`: 250 Hz,
-`-200..1200 ms`, and 350 samples for the general contract. The GTN contract
-derives its 250 samples from the same 250 Hz source. Use the BrainSync adapter
+The shared P300 defaults are defined once in `src/data/contract.py`: 128 Hz,
+2-30 Hz, `-200..800 ms`, and 128 samples. This restores the physical time
+scales assumed by the MS-EEGNet 65/5/17-sample kernels. BrainSync acquisition
+and raw event indices remain at the device-native 250 Hz; only the derived
+model tensor is anti-aliased and resampled. Use the BrainSync adapter
 to preserve the frontend's raw recording boundary while applying preprocessing:
 
 ```powershell
@@ -34,10 +36,14 @@ to preserve the frontend's raw recording boundary while applying preprocessing:
 The adapter reads `recording.path`, filters onset `recording_marker` rows from
 `events/events.jsonl`, derives labels from the confirmed target digit, uses
 `montage.channel_positions_m` when present, and applies the GTN window
-(`-200..800 ms`, 250 samples at 250 Hz) by default.
+(`-200..800 ms`, 128 samples at 128 Hz) by default.
 
-All standard ingress paths currently preserve unbaselined epochs and record
-`baseline_mode=none`; a requested transform fails closed until it has an
-implemented, tested signal path. Versioned QC caches contain only
-fold-independent epoch statistics; thresholds remain outer-training-fold
-parameters.
+All standard ingress paths execute a half-open `[-200,0) ms` per-trial,
+per-channel mean baseline correction and record `baseline_mode=mean_only`.
+Versioned QC caches contain only fold-independent epoch statistics; thresholds
+remain outer-training-fold parameters. Mainline training fails closed on older
+physical input contracts; historical result records remain audit evidence, but
+their caches must be regenerated before reuse.
+
+The discrete-time equations, physical receptive-field convention, and
+counterexamples are documented in `doc/input_contract_math.zh.md`.

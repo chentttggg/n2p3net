@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 
 import numpy as np
@@ -8,9 +9,11 @@ import pytest
 
 import data.epochs as epochs_module
 from data.channel import build_channel_identity
+from data.contract import assert_default_p300_input_contract
 from data.epochs import (
     EpochDataset,
     PreprocessingSpec,
+    concatenate_epoch_datasets,
     load_epoch_dataset,
     save_epoch_dataset,
     select_epoch_channels,
@@ -65,7 +68,7 @@ def _dataset() -> EpochDataset:
         ),
         event_timeline=timeline,
         metadata=pd.DataFrame({"subject": ["s1", "s1", "s2", "s2", "s3", "s3"], "run": [1] * 6}),
-        provenance={"source": "unit_test", "reference": "average"},
+        provenance={"source": "unit_test", "source_reference": "average"},
     )
 
 
@@ -106,6 +109,28 @@ def test_attested_cache_rejects_missing_record(tmp_path) -> None:
     path.with_suffix(".record.json").unlink()
 
     with pytest.raises(ValueError, match="lacks a cache attestation"):
+        load_epoch_dataset(path, validation="attested")
+
+
+def test_attested_cache_rejects_hash_disagreement(tmp_path) -> None:
+    path = save_epoch_dataset(tmp_path / "epochs.npz", _dataset())
+    record_path = path.with_suffix(".record.json")
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    record["cache_attestation"]["sha256"] = "0" * 64
+    record_path.write_text(json.dumps(record), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="SHA-256"):
+        load_epoch_dataset(path, validation="attested")
+
+
+def test_attested_cache_rejects_sidecar_event_contract_tampering(tmp_path) -> None:
+    path = save_epoch_dataset(tmp_path / "epochs.npz", _dataset())
+    record_path = path.with_suffix(".record.json")
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    record["events"]["fingerprint"] = "0" * 64
+    record_path.write_text(json.dumps(record), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="events"):
         load_epoch_dataset(path, validation="attested")
 
 
@@ -251,11 +276,34 @@ def test_preprocessing_trial_reference_accepts_stimulus_locked_window() -> None:
         baseline_mode="trial_reference",
         trial_reference_window_ms=(0.0, 50.0),
         trial_reference_center="median",
-        trial_reference_scale="mad",
+        trial_reference_scale="none",
         reject_threshold_v=None,
     )
     profile.validate()
     assert profile.trial_reference_window_ms == (0.0, 50.0)
+
+
+def test_preprocessing_rejects_dimensionless_trial_scaling_before_physical_qc() -> None:
+    with pytest.raises(ValueError, match="destroys the volts contract"):
+        PreprocessingSpec(baseline_mode="trial").validate()
+    with pytest.raises(ValueError, match="destroys the volts contract"):
+        PreprocessingSpec(
+            baseline_mode="trial_reference",
+            trial_reference_window_ms=(-200.0, 0.0),
+            trial_reference_scale="mad",
+        ).validate()
+
+
+def test_trial_scale_normalization_can_erase_erp_amplitude_information() -> None:
+    """Counterexample motivating the volts-preserving ingress restriction."""
+
+    base = np.array([-1.0, 1.0, 2.0, 4.0])
+    doubled = 2.0 * base
+    normalized_base = (base - base[:2].mean()) / base[:2].std()
+    normalized_doubled = (doubled - doubled[:2].mean()) / doubled[:2].std()
+
+    assert np.ptp(doubled) == 2.0 * np.ptp(base)
+    np.testing.assert_allclose(normalized_base, normalized_doubled)
 
 
 def test_preprocessing_trial_reference_rejects_window_outside_epoch() -> None:
@@ -324,6 +372,62 @@ def test_preprocessing_rejects_invalid_filter_contract() -> None:
         PreprocessingSpec(l_freq=128.0, h_freq=None).validate()
     with pytest.raises(ValueError, match="must be numeric"):
         PreprocessingSpec(sfreq="256").validate()
+
+
+def test_default_preprocessing_matches_ms_eegnet_physical_scales() -> None:
+    profile = PreprocessingSpec()
+
+    assert profile.name == "p300_ms_eegnet_input_v2"
+    assert (profile.sfreq, profile.l_freq, profile.h_freq) == (128.0, 2.0, 30.0)
+    assert (profile.tmin_ms, profile.tmax_ms, profile.n_times) == (-200.0, 800.0, 128)
+    assert profile.baseline_mode == "mean_only"
+    assert profile.signal_unit == "V"
+    assert profile.resample_method == "fft"
+    assert profile.resample_npad == "auto"
+    assert profile.resample_window == "auto"
+    assert profile.resample_pad == "edge"
+
+
+def test_mainline_contract_rejects_the_retired_250_hz_cache_geometry() -> None:
+    assert_default_p300_input_contract(PreprocessingSpec())
+    retired = PreprocessingSpec(
+        name="retired_250_hz",
+        sfreq=250.0,
+        l_freq=0.1,
+        h_freq=None,
+        tmin_ms=-200.0,
+        tmax_ms=800.0,
+        n_times=250,
+        baseline_mode="none",
+    )
+
+    with pytest.raises(ValueError, match="Regenerate the cache"):
+        assert_default_p300_input_contract(retired)
+
+
+def test_concatenation_rejects_unharmonized_source_references() -> None:
+    left = _dataset()
+    right = _dataset()
+    left.provenance["source_reference"] = "right earlobe"
+    right.provenance["source_reference"] = "nose"
+
+    with pytest.raises(ValueError, match="common re-reference"):
+        concatenate_epoch_datasets((left, right), name="invalid_transfer")
+
+
+def test_reference_choice_creates_a_common_mode_dataset_confound() -> None:
+    """Counterexample: identical scalp potentials differ under two references."""
+
+    scalp = np.array([[1.0, 2.0, 3.0], [2.0, 4.0, 6.0], [4.0, 8.0, 12.0]])
+    reference_a = np.array([0.5, 1.0, 1.5])
+    reference_b = np.array([-1.0, -2.0, -3.0])
+    observed_a = scalp - reference_a[None, :]
+    observed_b = scalp - reference_b[None, :]
+
+    assert not np.allclose(observed_a, observed_b)
+    car_a = observed_a - observed_a.mean(axis=0, keepdims=True)
+    car_b = observed_b - observed_b.mean(axis=0, keepdims=True)
+    np.testing.assert_allclose(car_a, car_b)
 
 
 def test_epoch_dataset_rejects_unit_sphere_values_mislabeled_as_metres() -> None:

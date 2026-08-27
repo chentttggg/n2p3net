@@ -144,7 +144,7 @@ class FoldLocalArtifactPolicy:
             global_scale_log_center=global_center,
             global_scale_log_robust_std=global_scale,
             fit_n_epochs=int(len(X)),
-            fit_subjects=tuple(sorted(np.unique(subject_ids.astype(str)).tolist())),
+            fit_groups=tuple(sorted(np.unique(subject_ids.astype(str)).tolist())),
         )
 
     def _choose_quantile(
@@ -480,7 +480,7 @@ class FoldLocalArtifactModel:
     global_scale_log_center: float
     global_scale_log_robust_std: float
     fit_n_epochs: int
-    fit_subjects: tuple[str, ...]
+    fit_groups: tuple[str, ...]
 
     def transform(
         self,
@@ -535,7 +535,7 @@ class FoldLocalArtifactModel:
             "ptp_normalization": "within_epoch_observed_channel_median",
             "policy": asdict(self.policy),
             "fit_n_epochs": self.fit_n_epochs,
-            "fit_subjects": list(self.fit_subjects),
+            "fit_groups": list(self.fit_groups),
             "ptp_thresholds": self.ptp_thresholds.tolist(),
             "flat_std_thresholds": self.flat_std_thresholds.tolist(),
             "selected_quantiles": self.selected_quantiles.tolist(),
@@ -631,8 +631,8 @@ def apply_fitted_artifact_model(
     if labels.shape != (len(X),):
         raise ValueError("Artifact subject_ids must align with X.")
     expected_subjects = tuple(sorted(np.unique(labels[train_mask].astype(str)).tolist()))
-    if fitted.fit_subjects != expected_subjects:
-        raise ValueError("Frozen artifact policy was not fitted on this outer-training subject set.")
+    if fitted.fit_groups != expected_subjects:
+        raise ValueError("Frozen artifact policy was not fitted on this outer-training group set.")
     transformed = fitted.transform(
         X,
         trial_channel_mask,

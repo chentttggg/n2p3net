@@ -1,0 +1,145 @@
+# P300 模型输入合同：离散时间、单位与分组
+
+## 1. 证据边界
+
+设源记录的采样率为 `f_src`，第 `c` 个物理 EEG 通道为
+`x_c[n] in V`，第 `i` 个刺激在源记录中的 sample index 为 `e_i`。
+`x_c[n]`、`f_src` 和 `e_i` 属于采集证据，不因模型输入采样率改变。
+
+主线模型张量的固定合同为：
+
+```text
+f_model = 128 Hz
+passband = 2..30 Hz
+epoch = [-200, 800) ms
+T = floor((800 - (-200)) * 128 / 1000) = 128
+unit = V
+baseline = per-trial, per-channel mean over [-200, 0) ms
+```
+
+## 2. 可执行算子
+
+### 2.1 连续域滤波
+
+令 `B4` 为 2--30 Hz 四阶 Butterworth IIR。MNE 的 `phase=zero`
+执行前向/反向滤波，因此
+
+```text
+x_bar_c = filtfilt(B4, x_c)
+|H_zero(f)| = |H_B4(f)|^2
+```
+
+它是离线、非因果算子。不能把 `e_i + 800 ms` 解释为在线系统真正可用
+证据的时刻。
+
+### 2.2 源事件切片与重采样
+
+先在源 sample 轴上按 `e_i` 切片，再对每个 epoch 重采样：
+
+```text
+E_i[c,m] = x_bar_c[e_i + round(-0.2 * f_src) + m]
+E_hat_i = R_fft(E_i; f_src -> 128,
+                npad=auto, window=auto, pad=edge)
+```
+
+MNE epoch 的右端点是闭合的；缓存随后只保留前 `T=128` 点，从而得到
+统一的半开区间 `[-200,800) ms`。滤波必须在连续信号上执行，因为一般有
+
+```text
+Crop(Filter(x)) != Filter(Crop(x)).
+```
+
+反例：在 `-200 ms` 左侧放置一个脉冲。先裁剪会把它完全删除；先连续滤波
+会使其滤波响应进入 epoch。测试覆盖这一不交换性。
+
+### 2.3 基线均值扣除
+
+模型时间点为 `t_j = -200 + 1000*j/128` ms，基线索引集为
+`B={j | -200 <= t_j < 0}`。最终输入为
+
+```text
+mu_i,c = (1 / |B|) * sum_(j in B) E_hat_i[c,j]
+X_i[c,j] = E_hat_i[c,j] - mu_i,c
+```
+
+因此对任意逐试次、逐通道常数 `b_i,c`，有
+
+```text
+Baseline(E_hat_i + b_i,c) = Baseline(E_hat_i).
+```
+
+只允许减均值，不允许除以逐试次基线标准差。若 `E2=2*E1`，逐试次
+z-score 会令 `z(E2)=z(E1)`，从而抹去可能有判别意义的 ERP 幅值，同时把
+单位从 V 改为无量纲，破坏 `channel_std_v` 和 `epoch_scale_v` 的物理语义。
+
+## 3. 卷积核的物理尺度
+
+奇数长度 `K` 的中心卷积核在采样率 `f` 上，首末采样点的物理跨度为
+
+```text
+D_ms(K,f) = 1000 * (K - 1) / f.
+```
+
+当前尺度为：
+
+```text
+ST:       D_ms(65, 128) = 500 ms
+MST-short after /4 pooling: D_ms(5, 32) = 125 ms
+MST-long  after /4 pooling: D_ms(17,32) = 500 ms
+```
+
+把采样率从 `f0` 改为 `f1` 时，保持跨度的奇数核满足
+
+```text
+K1 = 1 + round_even((K0 - 1) * f1 / f0).
+```
+
+所以严格的 256 Hz 对照是 `129/9/33`。`127/9/33` 的 ST 跨度为
+`492.1875 ms`，不是纯采样率对照；若保留，必须标成额外的感受野扰动。
+
+## 4. 参考电极与跨数据集
+
+若真实头皮电势为 `s_c(t)`，参考电极为 `r(t)`，记录值是
+
+```text
+x_c(t) = s_c(t) - r(t).
+```
+
+两个数据集使用不同 `r(t)` 时，即使 `s_c(t)` 相同，输入也不同。任意空间
+权重和不为零的分类器都会响应这一公共偏移。因此 source reference 必须记录；
+不同或未知参考的数据不能直接拼接。共同重参考必须是独立、显式、可消融的
+变换，不能只修改 provenance 字符串。
+
+## 5. 分组证据
+
+设 `g(i)` 为 run/session/decision group。所有外层和内层掩码必须满足
+
+```text
+{g(i) | i in train} intersect {g(i) | i in test} = empty.
+```
+
+随机 epoch 划分通常违反该式，并让相邻刺激或同一重复序列同时进入训练和
+测试。没有至少两个真实 group 的被试不能生成单被试结果。
+
+## 6. 代码逻辑链
+
+```text
+data.contract.EEGDataContract
+  -> epochs.PreprocessingSpec.validate
+  -> MOABB | BrainSync | GTN | raw manifest adapter
+  -> preprocess: continuous IIR -> source epoch -> FFT resample -> mean baseline
+  -> EpochDataset.validate + QC features + SHA-256 attestation
+  -> run_eeg_loso: physical contract + source provenance fail-closed
+  -> train.factory -> N2P3NetBaseline
+  -> N2P3Net architecture record (samples + physical milliseconds)
+  -> fold-local QC -> group-disjoint early stop/calibration -> held-out logits
+  -> calibrated candidate aggregation
+```
+
+## 7. 尚未解决的边界
+
+- BI2014a 的 MOABB 通用输出未暴露 9 个 source block，当前不能产生可信的
+  within-subject 指标。
+- GTN 的参考电极并非逐文件完整记录，跨数据集前需要独立重参考方案。
+- 128 Hz 与 256 Hz 的比较必须共享源事件、带宽、基线、QC、fold、seed 和
+  校准；只允许采样率及其跨度匹配核发生变化。

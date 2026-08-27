@@ -34,7 +34,7 @@ architecture and must not be compared or reported as its results.
 
 ## Mathematical Contract
 
-Let `X in R^(C x T)` be one standardized EEG epoch. The ST block learns eight
+Let `X in R^(C x T)` be one volts-preserving, baseline-corrected EEG epoch. The ST block learns eight
 temporal filters and two spatial projections per temporal filter:
 
 ```text
@@ -51,7 +51,7 @@ The MST block has two depthwise-separable branches `s in {short, long}`:
 ```text
 H_(s,k)(t) = ELU(BN(sum_(f,d) p_(s,k,f,d)
                     (g_s * V_(f,d))(t))),          k = 1,2
-g_short: kernel 5   (about 150 ms after ST pooling)
+g_short: kernel 5   (125 ms endpoint span after ST pooling)
 g_long:  kernel 17  (about 500 ms after ST pooling)
 ```
 
@@ -100,17 +100,18 @@ relative importance of the two scales.
 ## Code Chain
 
 ```text
-EpochDataset.preprocessing(sfreq, tmin_ms, n_times)
+EEGDataContract -> executable preprocessing -> EpochDataset(sfreq, tmin_ms, n_times)
   -> train.factory.build_binary_model(..., tmin_s)
   -> N2P3NetBaseline
   -> N2P3Net ST block -> two MST branches
   -> ms_flatten | global_average | LMBC head
-  -> DeepBaseline weighted CE, subject-disjoint validation, calibration
+  -> DeepBaseline weighted CE, group-disjoint validation and calibration
   -> decision.py calibrated candidate aggregation when metadata exist
 ```
 
 The manifest records `trunk=ms_eegnet_style`, ST/MST dimensions, pooling mode,
-and the LMBC physical windows. `global_average` is the matched head ablation;
+sample and millisecond receptive spans, and the LMBC physical windows.
+`global_average` is the matched head ablation;
 `ms_flatten` is the paper-style MS-EEGNet head; `latency_marginal_contrast` is
 the production candidate.
 

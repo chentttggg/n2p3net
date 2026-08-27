@@ -18,8 +18,8 @@ from baselines.deep import DeepBaseline, DeepConfig
 from baselines.features import time_to_index
 
 C = 8
-T = 350
-SFR = 250.0
+T = 128
+SFR = 128.0
 TMIN = -0.2  # 秒；与 data/preprocess.py 一致
 
 
@@ -211,7 +211,7 @@ def test_static_channel_mask_is_enforced():
     assert np.allclose(clf.predict_logit(X), clf.predict_logit(X, np.broadcast_to(static, (len(X), C))))
 
 
-def test_subject_disjoint_early_stopping_and_calibration(monkeypatch):
+def test_group_disjoint_early_stopping_and_calibration(monkeypatch):
     """Deep baselines use the same grouped split and restore minimum-val weights."""
     X, y = make_p300_data(n_target=32, n_nontarget=96, seed=9)
     subjects = np.repeat(np.arange(8), 16)
@@ -220,23 +220,23 @@ def test_subject_disjoint_early_stopping_and_calibration(monkeypatch):
         batch_size=32,
         lr=2e-2,
         seed=7,
-        val_subject_frac=0.25,
-        val_subjects_min=2,
-        val_subjects_max=2,
+        val_group_frac=0.25,
+        val_groups_min=2,
+        val_groups_max=2,
         early_stop_patience=2,
     )
     clf = DeepBaseline("eegnet", config=cfg, device=_cpu_device())
-    clf.fit(X, y, subject_ids=subjects)
+    clf.fit(X, y, group_ids=subjects)
 
-    assert clf.last_val_subjects == 2
+    assert clf.last_val_groups == 2
     assert len(clf.last_history["val_losses"]) >= 1
     assert clf.last_history["best_epoch"] is not None
-    assert clf.calibration_source_ == "subject_disjoint_validation"
+    assert clf.calibration_source_ == "group_disjoint_validation"
     assert len(clf.calibration_logits_) == len(clf.calibration_labels_) == 32
     assert np.isfinite(clf.calibration_logits_).all()
 
 
-def test_subject_disjoint_history_records_validation_auc(tmp_path):
+def test_group_disjoint_history_records_validation_auc(tmp_path):
     rng = np.random.default_rng(12)
     X = rng.standard_normal((64, C, T)).astype(np.float32)
     y = np.tile([0, 1], 32).astype(np.int64)
@@ -246,15 +246,15 @@ def test_subject_disjoint_history_records_validation_auc(tmp_path):
         config=DeepConfig(
             epochs=2,
             batch_size=16,
-            val_subject_frac=0.25,
-            val_subjects_min=2,
-            val_subjects_max=2,
+            val_group_frac=0.25,
+            val_groups_min=2,
+            val_groups_max=2,
         ),
         device=_cpu_device(),
     )
     clf.configure_epoch_progress(tmp_path)
     clf.configure_evaluation_fold(3)
-    clf.fit(X, y, subject_ids=subjects)
+    clf.fit(X, y, group_ids=subjects)
 
     assert len(clf.last_history["task_val_aucs"]) == len(clf.last_history["val_losses"])
     assert all(value is not None and 0.0 <= value <= 1.0 for value in clf.last_history["task_val_aucs"])

@@ -45,7 +45,7 @@ def _write_manifest(tmp_path, *, layout_policy: str = "intersection"):
     manifest_path.write_text(
         json.dumps(
             {
-                "schema": "n2p3net_raw_manifest/1",
+                "schema": "n2p3net_raw_manifest/2",
                 "name": "heterogeneous_cap",
                 "montage": "embedded",
                 "layout_policy": layout_policy,
@@ -62,8 +62,17 @@ def _write_manifest(tmp_path, *, layout_policy: str = "intersection"):
                     "reject_threshold_v": None,
                 },
                 "records": [
-                    {"path": "s1_raw.fif", "subject_id": "s1", "session": "ignored"},
-                    {"path": "s2_raw.fif", "subject_id": "s2"},
+                    {
+                        "path": "s1_raw.fif",
+                        "subject_id": "s1",
+                        "session": "ignored",
+                        "reference": "linked-mastoids",
+                    },
+                    {
+                        "path": "s2_raw.fif",
+                        "subject_id": "s2",
+                        "reference": "linked-mastoids",
+                    },
                 ],
             }
         ),
@@ -92,14 +101,15 @@ def test_manifest_intersection_builds_fixed_physical_layout(tmp_path) -> None:
     assert all(record["units"] == "m" for record in registrations.values())
 
 
-def test_manifest_rejects_unexecuted_baseline_metadata(tmp_path) -> None:
+def test_manifest_executes_declared_mean_baseline(tmp_path) -> None:
     path = _write_manifest(tmp_path)
     payload = json.loads(path.read_text(encoding="utf-8"))
-    payload["preprocessing"]["baseline_mode"] = "trial"
+    payload["preprocessing"]["baseline_mode"] = "mean_only"
     path.write_text(json.dumps(payload), encoding="utf-8")
 
-    with pytest.raises(ValueError, match="baseline_mode must be 'none'"):
-        build_manifest_dataset(load_manifest(path))
+    dataset = build_manifest_dataset(load_manifest(path))
+
+    np.testing.assert_allclose(dataset.X[:, :, :20].mean(axis=2), 0.0, atol=1e-10)
 
 
 def test_manifest_explicit_channel_positions_are_used(tmp_path) -> None:

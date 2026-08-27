@@ -1,13 +1,24 @@
 seed: 20260827
 
 data:
-  sample_rate_hz: 250.0
+  contract: p300_ms_eegnet_input_v2
+  sample_rate_hz: 128.0
   epoch_start_ms: -200.0
-  epoch_stop_ms: 1200.0
+  epoch_stop_ms: 800.0
   preprocessing: default
-  baseline_mode: none
-  l_freq_hz: 0.1
-  h_freq_hz: null
+  baseline_mode: mean_only
+  baseline_window_ms: [-200.0, 0.0]
+  signal_unit: V
+  l_freq_hz: 2.0
+  h_freq_hz: 30.0
+  filter_method: iir
+  filter_order: 4
+  filter_phase: zero
+  resample_domain: epoched
+  resample_method: fft
+  resample_npad: auto
+  resample_window: auto
+  resample_pad: edge
   artifact_quality: fold_local_ptp_cv
 
 protocol:

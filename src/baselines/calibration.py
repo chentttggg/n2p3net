@@ -53,7 +53,7 @@ def fit_weighted_logit_temperature(
     train_prior: float,
     source: str,
 ) -> WeightedLogitTemperatureCalibration:
-    """Fit temperature on subject-disjoint validation after exact offset removal."""
+    """Fit temperature on group-disjoint validation after exact offset removal."""
 
     logits = np.asarray(logits, dtype=float).reshape(-1)
     y = np.asarray(y, dtype=float).reshape(-1)
@@ -148,7 +148,7 @@ def calibration_data_from_model(
     X_train: np.ndarray,
     y_train: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, str]:
-    """Prefer subject-disjoint validation scores exposed by trainable adapters."""
+    """Require group-disjoint validation scores exposed by trainable adapters."""
 
     logits = getattr(model, "calibration_logits_", None)
     labels = getattr(model, "calibration_labels_", None)

@@ -9,7 +9,13 @@ from torch import nn
 
 from baselines.deep import DeepConfig
 from baselines.n2p3net import N2P3NetBaseline
-from models.n2p3net import LatencyMarginalContrastPool, MSFlattenPool, N2P3Net
+from models.n2p3net import (
+    LatencyMarginalContrastPool,
+    MSFlattenPool,
+    N2P3Net,
+    scale_odd_kernel_preserving_span,
+    temporal_receptive_span_ms,
+)
 from train import factory
 from train.runtime import GpuPerformanceScheduler
 
@@ -55,6 +61,43 @@ def test_n2p3net_matches_the_baseline_ms_eegnet_parameterization() -> None:
     assert dataset_23_shape.parameter_count() == 1_210
 
 
+def test_sampling_rate_scaling_preserves_endpoint_receptive_span() -> None:
+    """Counterexample: 127 samples is not the exact 256 Hz match for 65 at 128 Hz."""
+
+    assert temporal_receptive_span_ms(65, 128.0) == pytest.approx(500.0)
+    assert scale_odd_kernel_preserving_span(
+        65,
+        source_sample_rate_hz=128.0,
+        target_sample_rate_hz=256.0,
+    ) == 129
+    assert temporal_receptive_span_ms(127, 256.0) == pytest.approx(492.1875)
+    assert temporal_receptive_span_ms(129, 256.0) == pytest.approx(500.0)
+    assert scale_odd_kernel_preserving_span(
+        5,
+        source_sample_rate_hz=32.0,
+        target_sample_rate_hz=64.0,
+    ) == 9
+    assert scale_odd_kernel_preserving_span(
+        17,
+        source_sample_rate_hz=32.0,
+        target_sample_rate_hz=64.0,
+    ) == 33
+
+
+def test_architecture_record_exposes_physical_receptive_spans() -> None:
+    record = N2P3Net(
+        n_channels=8,
+        n_times=128,
+        sfreq=128.0,
+        tmin_s=-0.2,
+    ).architecture_record()
+
+    assert record["input_sample_rate_hz"] == 128.0
+    assert record["feature_sample_rate_hz"] == 32.0
+    assert record["st_temporal_receptive_span_ms"] == pytest.approx(500.0)
+    assert record["mst_receptive_span_ms"] == pytest.approx([125.0, 500.0])
+
+
 def test_spatial_projection_is_frequency_conditioned_and_max_norm_bounded() -> None:
     model = N2P3Net(n_channels=3, n_times=256, sfreq=256.0, tmin_s=-0.2)
     with torch.no_grad():
@@ -84,7 +127,7 @@ def test_ms_flatten_requires_a_declared_physical_epoch_width() -> None:
         N2P3Net(n_channels=3, pooling_mode="ms_flatten")
 
 
-def test_n2p3net_baseline_fits_with_subject_disjoint_validation() -> None:
+def test_n2p3net_baseline_fits_with_group_disjoint_validation() -> None:
     rng = np.random.default_rng(7)
     X = rng.normal(size=(24, 3, 64)).astype(np.float32)
     y = np.tile(np.array([0, 1], dtype=np.int64), 12)
@@ -94,12 +137,12 @@ def test_n2p3net_baseline_fits_with_subject_disjoint_validation() -> None:
         3,
         64,
         128.0,
-        config=DeepConfig(epochs=1, batch_size=8, val_subject_frac=0.25, val_subjects_min=1),
+        config=DeepConfig(epochs=1, batch_size=8, val_group_frac=0.25, val_groups_min=1),
         device=torch.device("cpu"),
-    ).fit(X, y, subject_ids=subjects)
+    ).fit(X, y, group_ids=subjects)
 
     assert baseline.predict_logit(X).shape == (len(X),)
-    assert baseline.calibration_source_ == "subject_disjoint_validation"
+    assert baseline.calibration_source_ == "group_disjoint_validation"
 
 
 def test_n2p3net_baseline_accepts_the_shared_runtime() -> None:

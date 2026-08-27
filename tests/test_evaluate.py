@@ -12,6 +12,7 @@ from baselines.evaluate import (
     loso_folds,
     precompute_fold_local_artifact_models,
     resolve_artifact_qc_workers,
+    within_subject_folds,
 )
 from data.artifact import FoldLocalArtifactPolicy
 from data.qc_features import compute_epoch_qc_features
@@ -24,6 +25,60 @@ def _p300_data() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     X = rng.normal(size=(len(y), 3, 96)).astype(np.float32)
     X[y == 1, 2, 42:62] += 2.5
     return X, y, subjects
+
+
+def test_within_subject_folds_hold_out_complete_groups() -> None:
+    subjects = np.repeat(["s1", "s2"], 12)
+    groups = np.tile(np.repeat(["run-1", "run-2", "run-3"], 4), 2)
+
+    naive_test = np.arange(len(groups)) % 2 == 0
+    naive_train = ~naive_test
+    assert set(groups[naive_train]) & set(groups[naive_test])
+
+    folds = within_subject_folds(subjects, groups, fraction=1 / 3, seed=7)
+
+    assert len(folds) == 2
+    for train, test in folds:
+        assert len(np.unique(subjects[train | test])) == 1
+        assert set(groups[train]).isdisjoint(set(groups[test]))
+        for group in np.unique(groups[test]):
+            subject = np.unique(subjects[test])[0]
+            expected = (subjects == subject) & (groups == group)
+            assert np.all(test[expected])
+
+
+def test_within_subject_folds_refuse_random_epoch_fallback() -> None:
+    subjects = np.repeat(["s1", "s2"], 8)
+    groups = subjects.copy()
+
+    with pytest.raises(ValueError, match="random epoch splits are forbidden"):
+        within_subject_folds(subjects, groups)
+
+
+def test_within_subject_evaluation_uses_groups_for_inner_validation() -> None:
+    rng = np.random.default_rng(17)
+    groups = np.repeat([f"run-{index}" for index in range(6)], 12)
+    subjects = np.repeat("single-subject", len(groups))
+    y = np.tile(np.array([0, 1] * 6, dtype=np.int64), 6)
+    X = rng.normal(size=(len(y), 3, 96)).astype(np.float32)
+    X[y == 1, 2, 42:62] += 2.5
+    folds = within_subject_folds(subjects, groups, fraction=0.2, seed=3)
+    model = WindowLogisticRegression(sfreq=128.0, tmin=-0.2, window_ms=(125.0, 300.0))
+
+    with pytest.raises(ValueError, match="at least four available groups"):
+        evaluate_binary(model, X, y, subjects, folds)
+
+    summary = evaluate_binary(
+        model,
+        X,
+        y,
+        subjects,
+        folds,
+        fit_group_ids=groups,
+    )
+
+    assert summary.auc_mean > 0.8
+    assert summary.per_fold[0].threshold_source == "group_disjoint_validation"
 
 
 def test_binary_loso_reports_auc_and_bacc() -> None:
@@ -56,7 +111,7 @@ def test_candidate_evidence_uses_calibrated_target_scores() -> None:
         {str(subject): 1 for subject in range(6)},
         loso_folds(physical_subjects),
         candidate_vocab=(0, 1, 2),
-        fold_subject_ids=physical_subjects,
+        fit_group_ids=physical_subjects,
     )
 
     assert summary.primary_hit_rate > 0.8

@@ -38,14 +38,14 @@ def _deep_config(
     epochs: int,
     batch_size: int,
     seed: int,
-    validation_subject_fraction: float,
+    validation_group_fraction: float,
     overrides: dict[str, Any] | None,
 ) -> DeepConfig:
     values: dict[str, Any] = {
         "epochs": epochs,
         "batch_size": batch_size,
         "seed": seed,
-        "val_subject_frac": validation_subject_fraction,
+        "val_group_frac": validation_group_fraction,
     }
     values.update(overrides or {})
     return DeepConfig(**values)
@@ -58,7 +58,7 @@ def build_binary_model(
     epochs: int,
     batch_size: int,
     seed: int = 0,
-    validation_subject_fraction: float = 0.1,
+    validation_group_fraction: float = 0.1,
     deep_config_overrides: dict[str, Any] | None = None,
     device: torch.device | None = None,
     runtime: GpuPerformanceScheduler | None = None,
@@ -83,7 +83,7 @@ def build_binary_model(
         epochs=epochs,
         batch_size=batch_size,
         seed=seed,
-        validation_subject_fraction=validation_subject_fraction,
+        validation_group_fraction=validation_group_fraction,
         overrides=deep_config_overrides,
     )
     if key == "n2p3net":

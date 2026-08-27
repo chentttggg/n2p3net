@@ -46,6 +46,8 @@ class PreparedGTNExperiment:
     channel_names: tuple[str, ...]
     channel_positions_m: np.ndarray
     channel_mask: np.ndarray
+    source_sample_rate_hz: float
+    source_reference: str
 
 
 def gtn_experiment_dirs(root: str | Path) -> tuple[Path, ...]:
@@ -98,7 +100,10 @@ def _prepare_gtn_experiment(
         selection_ids=np.repeat(selection_id, event_count),
         complete=True,
         online_causal=bool(result.online_causal),
-        timing_source="gtn_nix_event_samples;epoch_right_edge;acausal_preprocessing",
+        timing_source=(
+            "gtn_nix_source_event_samples;epoched_resample;"
+            "epoch_right_edge;acausal_preprocessing"
+        ),
         candidate_ids=candidates,
         target_candidate_ids=np.repeat(str(int(gtn.thought_number)), event_count),
         repetition_indices=repetitions,
@@ -126,6 +131,8 @@ def _prepare_gtn_experiment(
         channel_names=tuple(result.channel_names),
         channel_positions_m=np.asarray(result.channel_positions_m, dtype=np.float32),
         channel_mask=np.asarray(result.channel_mask, dtype=bool),
+        source_sample_rate_hz=float(gtn.metadata["sfreq"]),
+        source_reference=str(gtn.metadata["source_reference"]),
     )
 
 
@@ -145,6 +152,18 @@ def _preprocess_gtn_experiment(
         tmax=preprocessing.tmax_ms / 1000.0,
         n_times=preprocessing.n_times,
         reject_threshold=preprocessing.reject_threshold_v,
+        baseline_mode=preprocessing.baseline_mode,
+        trial_reference_window_ms=preprocessing.trial_reference_window_ms,
+        trial_reference_center=preprocessing.trial_reference_center,
+        trial_reference_scale=preprocessing.trial_reference_scale,
+        filter_method=preprocessing.filter_method,
+        filter_order=preprocessing.filter_order,
+        filter_phase=preprocessing.filter_phase,
+        resample_domain=preprocessing.resample_domain,
+        resample_method=preprocessing.resample_method,
+        resample_npad=preprocessing.resample_npad,
+        resample_window=preprocessing.resample_window,
+        resample_pad=preprocessing.resample_pad,
         channels=GTN_CHANNELS,
     )
     return _prepare_gtn_experiment(experiment_dir, gtn, result)
@@ -221,6 +240,15 @@ def build_gtn_epoch_dataset(
             "source_experiments_used": [item.experiment_name for item in prepared],
             "skipped_sources": skipped,
             "candidate_vocabulary": list(range(1, 10)),
+            "source_sample_rate_hz": {
+                item.experiment_name: item.source_sample_rate_hz for item in prepared
+            },
+            "model_input_sample_rate_hz": preprocessing.sfreq,
+            "source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+            "source_reference_by_experiment": {
+                item.experiment_name: item.source_reference for item in prepared
+            },
+            "signal_unit": preprocessing.signal_unit,
             "artifact_rejection": {"method": "fold_local_ptp_cv"},
         },
     )

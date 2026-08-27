@@ -29,7 +29,10 @@ from data.artifact import (  # noqa: E402
     parse_candidate_bad_channel_fractions,
     parse_candidate_quantiles,
 )
-from data.contract import assert_default_p300_input_contract  # noqa: E402
+from data.contract import (  # noqa: E402
+    assert_default_p300_input_contract,
+    assert_p300_source_provenance,
+)
 from data.epochs import load_epoch_dataset  # noqa: E402
 from models.n2p3net import POOLING_MODES  # noqa: E402
 from train.device import get_device  # noqa: E402
@@ -110,7 +113,7 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--early-stop-patience", type=int, default=6)
-    parser.add_argument("--validation-subject-fraction", type=float, default=0.1)
+    parser.add_argument("--validation-group-fraction", type=float, default=0.1)
     parser.add_argument(
         "--fold-jobs",
         type=int,
@@ -213,6 +216,7 @@ def main() -> None:
         validation="attested",
     )
     assert_default_p300_input_contract(dataset.preprocessing)
+    assert_p300_source_provenance(dataset)
     timeline = dataset.event_timeline
     trial_channel_mask = (
         np.asarray(dataset.trial_channel_mask, dtype=bool)
@@ -261,7 +265,7 @@ def main() -> None:
             epochs=args.epochs,
             batch_size=args.batch_size,
             seed=args.seed,
-            validation_subject_fraction=args.validation_subject_fraction,
+            validation_group_fraction=args.validation_group_fraction,
             deep_config_overrides={"lr": args.lr, "early_stop_patience": args.early_stop_patience},
             device=device,
             n2p3net_pooling_mode=args.n2p3net_pooling,
@@ -320,7 +324,7 @@ def main() -> None:
                 candidate_selection.truth_by_group,
                 folds,
                 candidate_vocab=tuple(range(len(candidate_selection.vocabulary))),
-                fold_subject_ids=subject_ids,
+                fit_group_ids=subject_ids,
                 event_timeline=timeline,
                 **common,
             )

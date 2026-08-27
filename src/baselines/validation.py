@@ -1,4 +1,4 @@
-"""Shared subject-disjoint validation split for all trainable baselines."""
+"""Shared group-disjoint validation split for all trainable baselines."""
 
 from __future__ import annotations
 
@@ -8,14 +8,14 @@ import numpy as np
 
 
 @dataclass(frozen=True)
-class SubjectValidationSplit:
+class GroupValidationSplit:
     train_mask: np.ndarray
     validation_mask: np.ndarray
-    validation_subjects: tuple[object, ...]
+    validation_groups: tuple[object, ...]
 
     @property
-    def n_validation_subjects(self) -> int:
-        return len(self.validation_subjects)
+    def n_validation_groups(self) -> int:
+        return len(self.validation_groups)
 
 
 @dataclass(frozen=True)
@@ -29,50 +29,50 @@ class SubjectAuditSplit:
         return len(self.audit_subjects)
 
 
-def subject_disjoint_validation_split(
-    subject_ids: np.ndarray,
+def group_disjoint_validation_split(
+    group_ids: np.ndarray,
     *,
     fraction: float | None,
-    min_subjects: int = 2,
-    max_subjects: int = 12,
-    min_train_subjects: int = 2,
+    min_groups: int = 2,
+    max_groups: int = 12,
+    min_train_groups: int = 2,
     seed: int = 0,
-) -> SubjectValidationSplit:
-    """Select complete validation subjects deterministically.
+) -> GroupValidationSplit:
+    """Select complete validation groups deterministically.
 
     ``fraction=None`` explicitly disables validation for fit-only callers.
-    A requested validation split with fewer than four subjects fails closed;
+    A requested validation split with fewer than four groups fails closed;
     no training-set resubstitution calibration is permitted.
     """
 
-    subject_ids = np.asarray(subject_ids)
-    if subject_ids.ndim != 1:
-        raise ValueError(f"subject_ids must be one-dimensional, got {subject_ids.shape}.")
-    unique = np.unique(subject_ids)
-    all_train = np.ones(len(subject_ids), dtype=bool)
-    no_validation = np.zeros(len(subject_ids), dtype=bool)
+    group_ids = np.asarray(group_ids)
+    if group_ids.ndim != 1:
+        raise ValueError(f"group_ids must be one-dimensional, got {group_ids.shape}.")
+    unique = np.unique(group_ids)
+    all_train = np.ones(len(group_ids), dtype=bool)
+    no_validation = np.zeros(len(group_ids), dtype=bool)
     if fraction is None:
-        return SubjectValidationSplit(all_train, no_validation, ())
+        return GroupValidationSplit(all_train, no_validation, ())
     if len(unique) < 4:
         raise ValueError(
-            "Subject-disjoint validation requires at least four available subjects; "
+            "Group-disjoint validation requires at least four available groups; "
             "training-set resubstitution calibration is forbidden."
         )
     if not 0.0 < fraction < 1.0:
         raise ValueError(f"validation fraction must be in (0,1), got {fraction}.")
-    if min_subjects < 1 or max_subjects < min_subjects:
-        raise ValueError("invalid validation subject bounds.")
+    if min_groups < 1 or max_groups < min_groups:
+        raise ValueError("invalid validation group bounds.")
 
     count = int(round(float(fraction) * len(unique)))
-    count = max(min_subjects, min(max_subjects, count))
-    count = min(count, len(unique) - min_train_subjects)
+    count = max(min_groups, min(max_groups, count))
+    count = min(count, len(unique) - min_train_groups)
     if count <= 0:
-        return SubjectValidationSplit(all_train, no_validation, ())
+        return GroupValidationSplit(all_train, no_validation, ())
 
     rng = np.random.default_rng(int(seed))
     selected = tuple(rng.choice(unique, size=count, replace=False).tolist())
-    validation_mask = np.isin(subject_ids, selected)
-    return SubjectValidationSplit(~validation_mask, validation_mask, selected)
+    validation_mask = np.isin(group_ids, selected)
+    return GroupValidationSplit(~validation_mask, validation_mask, selected)
 
 
 def subject_disjoint_audit_split(

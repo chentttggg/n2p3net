@@ -37,6 +37,7 @@ def test_gtn_preparation_preserves_the_complete_nine_choice_ledger(tmp_path) -> 
         ).astype(np.int64),
         thought_number=4,
         subject_id="participant-1",
+        metadata={"sfreq": 256.0, "source_reference": "nose"},
     )
 
     prepared = _prepare_gtn_experiment(experiment, gtn, result)

@@ -15,7 +15,7 @@ import numpy as np
 from sklearn.metrics import balanced_accuracy_score, roc_auc_score
 
 from baselines.calibration import calibration_data_from_model, fit_logit_calibration
-from baselines.validation import subject_disjoint_validation_split
+from baselines.validation import group_disjoint_validation_split
 from data.artifact import (
     FoldLocalArtifactModel,
     FoldLocalArtifactPolicy,
@@ -42,30 +42,37 @@ def loso_folds(subject_ids: Sequence[object]) -> list[tuple[np.ndarray, np.ndarr
 
 def within_subject_folds(
     subject_ids: Sequence[object],
+    group_ids: Sequence[object],
     *,
     fraction: float = 0.2,
     seed: int = 0,
 ) -> list[tuple[np.ndarray, np.ndarray]]:
-    """Create chronological-agnostic grouped folds only when called explicitly."""
+    """Create within-subject folds by holding out complete acquisition groups."""
 
     if not 0.0 < fraction < 1.0:
         raise ValueError("fraction must be in (0,1).")
     subjects = np.asarray(subject_ids).astype(str)
+    groups = np.asarray(group_ids).astype(str)
+    if subjects.ndim != 1 or groups.shape != subjects.shape:
+        raise ValueError("subject_ids and group_ids must be aligned one-dimensional arrays.")
+    if np.any(np.char.strip(groups) == ""):
+        raise ValueError("within-subject evaluation requires non-empty group_ids.")
     rng = np.random.default_rng(seed)
     folds: list[tuple[np.ndarray, np.ndarray]] = []
     for subject in np.unique(subjects):
-        rows = np.flatnonzero(subjects == subject)
-        if len(rows) < 2:
+        subject_rows = subjects == subject
+        subject_groups = np.unique(groups[subject_rows])
+        if len(subject_groups) < 2:
             continue
-        n_test = max(1, int(round(len(rows) * fraction)))
-        test_rows = rng.choice(rows, size=n_test, replace=False)
-        test = np.zeros(len(subjects), dtype=bool)
-        test[test_rows] = True
-        train = np.zeros(len(subjects), dtype=bool)
-        train[rows] = ~test[rows]
+        n_test = min(len(subject_groups) - 1, max(1, int(round(len(subject_groups) * fraction))))
+        test_groups = rng.choice(subject_groups, size=n_test, replace=False)
+        test = subject_rows & np.isin(groups, test_groups)
+        train = subject_rows & ~np.isin(groups, test_groups)
         folds.append((train, test))
     if not folds:
-        raise ValueError("No subject has enough trials for a within-subject fold.")
+        raise ValueError(
+            "No subject has at least two acquisition groups; random epoch splits are forbidden."
+        )
     return folds
 
 
@@ -257,15 +264,15 @@ def _fit(
 ) -> None:
     for name in ("calibration_logits_", "calibration_labels_", "calibration_source_"):
         setattr(model, name, None)
-    if getattr(model, "fit_accepts_subject_ids", False):
-        kwargs = {"subject_ids": subject_ids[train]}
+    if getattr(model, "fit_accepts_group_ids", False):
+        kwargs = {"group_ids": subject_ids[train]}
         if getattr(model, "fit_accepts_trial_channel_mask", False) and trial_channel_mask is not None:
             kwargs["trial_channel_mask"] = trial_channel_mask[train]
         model.fit(X[train], y[train], **kwargs)
         return
 
-    split = subject_disjoint_validation_split(
-        subject_ids[train], fraction=0.1, min_subjects=2, max_subjects=12, seed=0
+    split = group_disjoint_validation_split(
+        subject_ids[train], fraction=0.1, min_groups=2, max_groups=12, seed=0
     )
     outer_X, outer_y = X[train], y[train]
     model.fit(outer_X[split.train_mask], outer_y[split.train_mask])
@@ -275,7 +282,7 @@ def _fit(
         None if trial_channel_mask is None else trial_channel_mask[train][split.validation_mask],
     )
     model.calibration_labels_ = outer_y[split.validation_mask]
-    model.calibration_source_ = "subject_disjoint_validation"
+    model.calibration_source_ = "group_disjoint_validation"
 
 
 def _can_defer_artifact_zero_fill(model: object) -> bool:
@@ -877,6 +884,7 @@ def evaluate_binary(
     subject_ids: np.ndarray,
     folds: Sequence[tuple[np.ndarray, np.ndarray]],
     *,
+    fit_group_ids: np.ndarray | None = None,
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
     artifact_policy: FoldLocalArtifactPolicy | None = None,
@@ -893,6 +901,13 @@ def evaluate_binary(
     del fold_protocol  # Runner metadata; split masks remain the executable protocol.
     X, y, subject_ids = np.asarray(X), np.asarray(y), np.asarray(subject_ids).astype(str)
     _validate_binary_inputs(X, y, subject_ids)
+    fit_groups = (
+        subject_ids
+        if fit_group_ids is None
+        else np.asarray(fit_group_ids).astype(str)
+    )
+    if fit_groups.shape != (len(X),) or np.any(np.char.strip(fit_groups) == ""):
+        raise ValueError("fit_group_ids must contain one non-empty group per epoch.")
     if trial_channel_mask is not None:
         trial_channel_mask = np.asarray(trial_channel_mask, dtype=bool)
         if trial_channel_mask.shape != X.shape[:2] or not trial_channel_mask.any(axis=1).all():
@@ -913,7 +928,7 @@ def evaluate_binary(
         model,
         X,
         y,
-        subject_ids,
+        fit_groups,
         _validate_folds(folds, len(X)),
         trial_channel_mask=trial_channel_mask,
         qc_features=qc_features,
@@ -952,7 +967,7 @@ def evaluate_candidate_selection(
     folds: Sequence[tuple[np.ndarray, np.ndarray]],
     candidate_vocab: Sequence[int],
     *,
-    fold_subject_ids: np.ndarray | None = None,
+    fit_group_ids: np.ndarray | None = None,
     event_timeline: object | None = None,
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
@@ -970,13 +985,13 @@ def evaluate_candidate_selection(
     del fold_protocol, event_timeline  # Runner metadata; split masks remain the executable protocol.
     X, y = np.asarray(X), np.asarray(y)
     group_ids = np.asarray(selection_group_ids).astype(str)
-    fit_subjects = (
-        group_ids if fold_subject_ids is None else np.asarray(fold_subject_ids).astype(str)
+    fit_groups = (
+        group_ids if fit_group_ids is None else np.asarray(fit_group_ids).astype(str)
     )
     codes = np.asarray(candidate_codes)
     _validate_binary_inputs(X, y, group_ids)
-    if fit_subjects.shape != (len(X),):
-        raise ValueError("fold_subject_ids must align with X.")
+    if fit_groups.shape != (len(X),) or np.any(np.char.strip(fit_groups) == ""):
+        raise ValueError("fit_group_ids must contain one non-empty group per epoch.")
     if codes.shape != (len(X),):
         raise ValueError("candidate_codes must align with X.")
     if trial_channel_mask is not None:
@@ -1002,7 +1017,7 @@ def evaluate_candidate_selection(
         model,
         X,
         y,
-        fit_subjects,
+        fit_groups,
         validated_folds,
         trial_channel_mask=trial_channel_mask,
         qc_features=qc_features,

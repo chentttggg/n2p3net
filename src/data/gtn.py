@@ -158,6 +158,10 @@ def read_gtn(nix_path: str | Path, txt_path: str | Path) -> GTNData:
         "record_time": rec_time,
         "n_channels": len(picked_ch),
         "sfreq": sfreq,
+        "source_reference": (
+            "nose" if "reference electrode on the nose" in md.get("other", "").lower() else "unspecified"
+        ),
+        "notes": md.get("other", ""),
     }
 
     return GTNData(

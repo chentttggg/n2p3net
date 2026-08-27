@@ -95,7 +95,7 @@ def main() -> None:
     moabb_parser.add_argument("--n-times", type=int, default=None)
     moabb_parser.add_argument(
         "--baseline-mode",
-        choices=("trial", "mean_only", "none", "trial_reference"),
+        choices=("mean_only", "none", "trial_reference"),
         default=None,
     )
     moabb_parser.add_argument(
@@ -111,7 +111,7 @@ def main() -> None:
     )
     moabb_parser.add_argument(
         "--trial-reference-scale",
-        choices=("none", "std", "mad"),
+        choices=("none",),
         default=None,
     )
     moabb_parser.add_argument("--output", required=True)
