@@ -66,8 +66,13 @@ fi
 
 mapfile -d '' -t FILES < <(find "$TMP_DIR" -type f -print0)
 [[ "${#FILES[@]}" -gt 0 ]] || die "patch archive contains no files"
-"$PYTHON_BIN" -m compileall -q "$TMP_DIR/src" "$TMP_DIR/experiments" || \
-    die "patch syntax validation failed"
+COMPILE_DIRS=()
+[[ -d "$TMP_DIR/src" ]] && COMPILE_DIRS+=("$TMP_DIR/src")
+[[ -d "$TMP_DIR/experiments" ]] && COMPILE_DIRS+=("$TMP_DIR/experiments")
+if [[ "${#COMPILE_DIRS[@]}" -gt 0 ]]; then
+    "$PYTHON_BIN" -m compileall -q "${COMPILE_DIRS[@]}" || \
+        die "patch syntax validation failed"
+fi
 validate_tree "$TMP_DIR"
 
 mkdir -p "$BACKUP_DIR"
