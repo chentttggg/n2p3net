@@ -3,7 +3,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from data.artifact import FoldLocalArtifactPolicy, apply_fold_local_artifact_policy
+from data.artifact import (
+    FoldLocalArtifactPolicy,
+    _relative_peak_to_peak,
+    apply_fold_local_artifact_policy,
+)
 
 
 def _clean_epochs() -> tuple[np.ndarray, np.ndarray]:
@@ -11,6 +15,87 @@ def _clean_epochs() -> tuple[np.ndarray, np.ndarray]:
     return rng.normal(0.0, 1.0, size=(24, 4, 32)).astype(np.float32), np.repeat(
         np.arange(6), 4
     ).astype(str)
+
+
+def _legacy_fit(policy, X, subject_ids, trial_channel_mask):
+    """Reference implementation for checking the batched fit semantics."""
+
+    observed = np.asarray(trial_channel_mask, dtype=bool)
+    ptp = _relative_peak_to_peak(X, observed)
+    std = np.std(X.astype(np.float64, copy=False), axis=2)
+    subject_keys = np.asarray(subject_ids).astype(str)
+    subjects = np.unique(subject_keys)
+    chosen = []
+    for channel in range(X.shape[1]):
+        if len(subjects) < 2:
+            chosen.append(policy.candidate_quantiles[-1])
+            continue
+        errors = np.zeros(len(policy.candidate_quantiles), dtype=float)
+        counts = np.zeros(len(policy.candidate_quantiles), dtype=np.int64)
+        folds = np.array_split(subjects, min(policy.cv_splits, len(subjects)))
+        for held_out_subjects in folds:
+            validation_subjects = np.isin(subject_keys, held_out_subjects)
+            validation = validation_subjects & observed[:, channel]
+            training = ~validation_subjects & observed[:, channel]
+            if training.sum() < policy.min_clean_epochs or validation.sum() < policy.min_clean_epochs:
+                continue
+            template = np.median(X[training, channel, :], axis=0)
+            thresholds = np.quantile(ptp[training, channel], policy.candidate_quantiles)
+            clean = validation[:, None] & (ptp[:, channel, None] <= thresholds)
+            clean_counts = clean.sum(axis=0)
+            valid = clean_counts >= policy.min_clean_epochs
+            if not valid.any():
+                continue
+            means = clean.T.astype(np.float64) @ X[:, channel, :]
+            means /= np.maximum(clean_counts[:, None], 1)
+            errors[valid] += np.mean((means[valid] - template) ** 2, axis=1)
+            counts[valid] += 1
+        valid = counts > 0
+        if not valid.any():
+            chosen.append(policy.candidate_quantiles[-1])
+            continue
+        mean_errors = np.full(len(errors), np.inf)
+        mean_errors[valid] = errors[valid] / counts[valid]
+        best = float(np.min(mean_errors))
+        tolerance = best * 1e-6 + np.finfo(float).eps
+        chosen.append(
+            policy.candidate_quantiles[
+                int(np.flatnonzero(mean_errors <= best + tolerance)[-1])
+            ]
+        )
+
+    ptp_thresholds = np.empty(X.shape[1], dtype=float)
+    flat_thresholds = np.empty(X.shape[1], dtype=float)
+    for channel in range(X.shape[1]):
+        values = ptp[observed[:, channel], channel]
+        scales = std[observed[:, channel], channel]
+        if len(values) == 0:
+            ptp_thresholds[channel] = np.inf
+            flat_thresholds[channel] = -np.inf
+        else:
+            ptp_thresholds[channel] = float(np.quantile(values, chosen[channel]))
+            flat_thresholds[channel] = float(np.quantile(scales, policy.flat_quantile))
+    return np.asarray(chosen), ptp_thresholds, flat_thresholds
+
+
+def test_batched_fit_matches_legacy_with_trial_channel_mask() -> None:
+    rng = np.random.default_rng(18)
+    X = rng.normal(0.0, 1.0, size=(36, 4, 32)).astype(np.float32)
+    subjects = np.repeat(np.arange(9), 4).astype(str)
+    trial_mask = np.ones((len(X), X.shape[1]), dtype=bool)
+    trial_mask[::3, 1] = False
+    trial_mask[1::4, 3] = False
+    X[~trial_mask] = 0.0
+    policy = FoldLocalArtifactPolicy()
+
+    expected_quantiles, expected_ptp, expected_flat = _legacy_fit(
+        policy, X, subjects, trial_mask
+    )
+    actual = policy.fit(X, subjects, trial_mask)
+
+    np.testing.assert_array_equal(actual.selected_quantiles, expected_quantiles)
+    np.testing.assert_allclose(actual.ptp_thresholds, expected_ptp)
+    np.testing.assert_allclose(actual.flat_std_thresholds, expected_flat)
 
 
 def test_local_ptp_masks_one_bad_channel_without_dropping_epoch() -> None:

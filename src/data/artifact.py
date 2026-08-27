@@ -77,21 +77,19 @@ class FoldLocalArtifactPolicy:
         observed = _observed_mask(X, trial_channel_mask)
         ptp = _relative_peak_to_peak(X, observed)
         std = np.std(X.astype(np.float64, copy=False), axis=2)
-        chosen_quantiles = np.asarray(
-            [self._choose_quantile(X, ptp, observed, subject_ids, channel) for channel in range(X.shape[1])],
-            dtype=float,
+        chosen_quantiles = self._choose_quantiles(X, ptp, observed, subject_ids)
+        ptp_thresholds = _per_channel_quantile(
+            ptp,
+            observed,
+            chosen_quantiles,
+            empty_value=np.inf,
         )
-        ptp_thresholds = np.empty(X.shape[1], dtype=float)
-        flat_thresholds = np.empty(X.shape[1], dtype=float)
-        for channel in range(X.shape[1]):
-            values = ptp[observed[:, channel], channel]
-            scales = std[observed[:, channel], channel]
-            if len(values) == 0:
-                ptp_thresholds[channel] = np.inf
-                flat_thresholds[channel] = -np.inf
-            else:
-                ptp_thresholds[channel] = float(np.quantile(values, chosen_quantiles[channel]))
-                flat_thresholds[channel] = float(np.quantile(scales, self.flat_quantile))
+        flat_thresholds = _per_channel_quantile(
+            std,
+            observed,
+            np.full(X.shape[1], self.flat_quantile, dtype=float),
+            empty_value=-np.inf,
+        )
         return FoldLocalArtifactModel(
             policy=self,
             ptp_thresholds=ptp_thresholds,
@@ -109,45 +107,172 @@ class FoldLocalArtifactPolicy:
         subject_ids: np.ndarray,
         channel: int,
     ) -> float:
-        """Choose a threshold quantile through subject-disjoint ERP stability CV."""
+        """Choose one channel's threshold quantile through subject-disjoint CV.
 
-        subjects = np.unique(subject_ids.astype(str))
+        Keep this narrow wrapper for callers that used the former private helper;
+        fitting uses :meth:`_choose_quantiles` to batch the channel calculations.
+        """
+
+        return float(self._choose_quantiles(X, ptp, observed, subject_ids)[channel])
+
+    def _choose_quantiles(
+        self,
+        X: np.ndarray,
+        ptp: np.ndarray,
+        observed: np.ndarray,
+        subject_ids: np.ndarray,
+    ) -> np.ndarray:
+        """Choose all channel quantiles with batched candidate evaluation.
+
+        The subject-CV loop remains explicit so each fold stays auditable and
+        memory-bounded. Channel and candidate dimensions are evaluated together;
+        candidate ERP means are reduced with one batched einsum per CV fold.
+        """
+
+        subject_keys = np.asarray(subject_ids).astype(str)
+        subjects = np.unique(subject_keys)
+        n_channels = X.shape[1]
+        selected = np.full(n_channels, self.candidate_quantiles[-1], dtype=float)
         if len(subjects) < 2:
-            return self.candidate_quantiles[-1]
+            return selected
         folds = np.array_split(subjects, min(self.cv_splits, len(subjects)))
-        errors = np.zeros(len(self.candidate_quantiles), dtype=float)
-        counts = np.zeros(len(self.candidate_quantiles), dtype=np.int64)
+        errors = np.zeros((n_channels, len(self.candidate_quantiles)), dtype=float)
+        counts = np.zeros_like(errors, dtype=np.int64)
         for held_out_subjects in folds:
-            validation = np.isin(subject_ids.astype(str), held_out_subjects) & observed[:, channel]
-            training = ~np.isin(subject_ids.astype(str), held_out_subjects) & observed[:, channel]
-            if training.sum() < self.min_clean_epochs or validation.sum() < self.min_clean_epochs:
+            validation_subjects = np.isin(subject_keys, held_out_subjects)
+            training_subjects = ~validation_subjects
+            training_observed = observed[training_subjects]
+            validation_observed = observed[validation_subjects]
+            training_counts = training_observed.sum(axis=0)
+            validation_counts = validation_observed.sum(axis=0)
+            eligible = (training_counts >= self.min_clean_epochs) & (
+                validation_counts >= self.min_clean_epochs
+            )
+            if not eligible.any():
                 continue
-            template = np.median(X[training, channel, :], axis=0)
-            training_ptp = ptp[training, channel]
-            thresholds = np.quantile(training_ptp, self.candidate_quantiles)
-            clean_validation = validation[:, None] & (ptp[:, channel, None] <= thresholds)
-            clean_counts = clean_validation.sum(axis=0)
-            valid = clean_counts >= self.min_clean_epochs
+
+            # Keep templates channel-local. A fully batched (N,C,T) masked
+            # median would duplicate the largest array in the fold.
+            templates = _channel_medians(
+                X,
+                training_subjects,
+                observed,
+                eligible,
+            )
+            training_ptp = ptp[training_subjects]
+            thresholds = _candidate_quantiles_by_channel(
+                training_ptp,
+                training_observed,
+                self.candidate_quantiles,
+            )
+            validation_ptp = ptp[validation_subjects]
+            clean_validation = validation_observed[:, :, None] & (
+                validation_ptp[:, :, None] <= thresholds.T[None, :, :]
+            )
+            clean_counts = clean_validation.sum(axis=0, dtype=np.int64)
+            valid = eligible[:, None] & (clean_counts >= self.min_clean_epochs)
             if not valid.any():
                 continue
-            # (Q,N) @ (N,T) evaluates every candidate threshold without a
-            # Python loop over quantiles. Q is deliberately small and fixed.
-            means = clean_validation.T.astype(np.float64) @ X[:, channel, :]
-            means /= np.maximum(clean_counts[:, None], 1)
-            errors[valid] += np.mean((means[valid] - template) ** 2, axis=1)
+
+            # (N,C,Q) x (N,C,T) evaluates all channels and candidates together.
+            # Only validation rows are materialized, avoiding the old full-N
+            # matrix multiply whose non-validation rows were all zero.
+            validation_X = X[validation_subjects]
+            means = np.einsum(
+                "ncq,nct->cqt",
+                clean_validation,
+                validation_X,
+                dtype=np.float64,
+                optimize=True,
+            )
+            means /= np.maximum(clean_counts[:, :, None], 1)
+            fold_errors = np.mean((means - templates[:, None, :]) ** 2, axis=2)
+            errors[valid] += fold_errors[valid]
             counts[valid] += 1
+
         valid = counts > 0
-        if not valid.any():
-            return self.candidate_quantiles[-1]
-        mean_errors = np.full(len(errors), np.inf)
-        mean_errors[valid] = errors[valid] / counts[valid]
+        mean_errors = np.full_like(errors, np.inf)
+        np.divide(errors, counts, out=mean_errors, where=valid)
+        has_valid = valid.any(axis=1)
+        if not has_valid.any():
+            return selected
         # A tolerance tie-break keeps the least aggressive threshold, avoiding
         # unstable hard deletions when CV error is numerically indistinguishable.
-        best = float(np.min(mean_errors))
+        best = np.min(mean_errors, axis=1)
         tolerance = best * 1e-6 + np.finfo(float).eps
-        return self.candidate_quantiles[
-            int(np.flatnonzero(mean_errors <= best + tolerance)[-1])
-        ]
+        ties = mean_errors <= best[:, None] + tolerance[:, None]
+        selected_indices = len(self.candidate_quantiles) - 1 - np.argmax(ties[:, ::-1], axis=1)
+        selected[has_valid] = np.asarray(self.candidate_quantiles)[selected_indices[has_valid]]
+        return selected
+
+
+def _channel_medians(
+    X: np.ndarray,
+    row_mask: np.ndarray,
+    observed: np.ndarray,
+    eligible: np.ndarray,
+) -> np.ndarray:
+    """Compute channel templates without materializing a masked ``(N,C,T)`` copy."""
+
+    templates = np.zeros((X.shape[1], X.shape[2]), dtype=X.dtype)
+    for channel in np.flatnonzero(eligible):
+        rows = row_mask & observed[:, channel]
+        templates[channel] = np.median(X[rows, channel, :], axis=0)
+    return templates
+
+
+def _candidate_quantiles_by_channel(
+    values: np.ndarray,
+    observed: np.ndarray,
+    quantiles: Sequence[float],
+) -> np.ndarray:
+    """Evaluate one common quantile grid independently for every channel."""
+
+    values = np.asarray(values)
+    observed = np.asarray(observed, dtype=bool)
+    q = np.asarray(quantiles, dtype=float)
+    output = np.full((len(q), values.shape[1]), np.nan, dtype=float)
+    active = observed.any(axis=0)
+    if not active.any():
+        return output
+
+    active_values = values[:, active]
+    active_observed = observed[:, active]
+    if active_observed.all():
+        output[:, active] = np.quantile(active_values, q, axis=0)
+    else:
+        masked_values = np.where(active_observed, active_values, np.nan)
+        output[:, active] = np.nanquantile(masked_values, q, axis=0)
+    return output
+
+
+def _per_channel_quantile(
+    values: np.ndarray,
+    observed: np.ndarray,
+    quantiles: np.ndarray,
+    *,
+    empty_value: float,
+) -> np.ndarray:
+    """Evaluate possibly different quantiles per channel with bounded batching."""
+
+    values = np.asarray(values)
+    observed = np.asarray(observed, dtype=bool)
+    q = np.asarray(quantiles, dtype=float)
+    if q.shape != (values.shape[1],):
+        raise ValueError("per-channel quantiles must have one value per channel.")
+
+    output = np.full(values.shape[1], empty_value, dtype=float)
+    active = observed.any(axis=0)
+    for candidate in np.unique(q[active]):
+        channels = active & (q == candidate)
+        selected_values = values[:, channels]
+        selected_observed = observed[:, channels]
+        if selected_observed.all():
+            output[channels] = np.quantile(selected_values, candidate, axis=0)
+        else:
+            masked_values = np.where(selected_observed, selected_values, np.nan)
+            output[channels] = np.nanquantile(masked_values, candidate, axis=0)
+    return output
 
 
 @dataclass(frozen=True)
