@@ -17,6 +17,7 @@ from sklearn.metrics import balanced_accuracy_score, roc_auc_score
 from baselines.calibration import calibration_data_from_model, fit_logit_calibration
 from baselines.validation import subject_disjoint_validation_split
 from data.artifact import FoldLocalArtifactPolicy, apply_fold_local_artifact_policy
+from data.qc_features import EpochQCFeatures
 from models.decision import decide
 from train.runtime import configure_spawned_worker_threads, cpu_thread_budget, resolve_cpu_threads
 
@@ -113,6 +114,14 @@ class _SharedArraySpec:
     dtype: str
 
 
+@dataclass(frozen=True)
+class _SharedQCFeatureSpecs:
+    relative_ptp: _SharedArraySpec
+    channel_std_v: _SharedArraySpec
+    epoch_scale_v: _SharedArraySpec
+    observed_mask: _SharedArraySpec
+
+
 class _SharedFoldInputs:
     """Own read-only process-shared source arrays for independent fold workers."""
 
@@ -122,6 +131,7 @@ class _SharedFoldInputs:
         y: np.ndarray,
         subject_ids: np.ndarray,
         trial_channel_mask: np.ndarray | None,
+        qc_features: EpochQCFeatures | None,
     ) -> None:
         self._blocks: list[shared_memory.SharedMemory] = []
         try:
@@ -130,6 +140,16 @@ class _SharedFoldInputs:
             self.subject_ids = self._share(subject_ids)
             self.trial_channel_mask = (
                 None if trial_channel_mask is None else self._share(trial_channel_mask)
+            )
+            self.qc_features = (
+                None
+                if qc_features is None
+                else _SharedQCFeatureSpecs(
+                    relative_ptp=self._share(qc_features.relative_ptp),
+                    channel_std_v=self._share(qc_features.channel_std_v),
+                    epoch_scale_v=self._share(qc_features.epoch_scale_v),
+                    observed_mask=self._share(qc_features.observed_mask),
+                )
             )
         except Exception:
             self.close()
@@ -254,6 +274,7 @@ def _fold_result(
     train: np.ndarray,
     test: np.ndarray,
     trial_channel_mask: np.ndarray | None,
+    qc_features: EpochQCFeatures | None,
     artifact_policy: FoldLocalArtifactPolicy | None,
     fold_id: int | None = None,
     shared_worker_count: int = 1,
@@ -268,7 +289,13 @@ def _fold_result(
     artifact_quality = None
     if artifact_policy is not None:
         X, trial_channel_mask, train, artifact_quality = apply_fold_local_artifact_policy(
-            artifact_policy, X, subject_ids, train, test, trial_channel_mask
+            artifact_policy,
+            X,
+            subject_ids,
+            train,
+            test,
+            trial_channel_mask,
+            qc_features,
         )
     started = time.perf_counter()
     _fit(model, X, y, subject_ids, train, trial_channel_mask)
@@ -366,6 +393,7 @@ def _run_fold_task(
         np.ndarray,
         np.ndarray,
         np.ndarray | None,
+        EpochQCFeatures | None,
         FoldLocalArtifactPolicy | None,
         int,
         int,
@@ -380,6 +408,7 @@ def _run_fold_task(
         train,
         test,
         trial_channel_mask,
+        qc_features,
         artifact_policy,
         fold_id,
         shared_worker_count,
@@ -392,6 +421,7 @@ def _run_fold_task(
         train,
         test,
         trial_channel_mask,
+        qc_features,
         artifact_policy,
         fold_id=fold_id,
         shared_worker_count=shared_worker_count,
@@ -409,6 +439,7 @@ def _run_shared_fold_task(
         np.ndarray,
         np.ndarray,
         _SharedArraySpec | None,
+        _SharedQCFeatureSpecs | None,
         FoldLocalArtifactPolicy | None,
         int,
         int,
@@ -426,6 +457,7 @@ def _run_shared_fold_task(
         train,
         test,
         mask_spec,
+        qc_specs,
         artifact_policy,
         fold_id,
         shared_worker_count,
@@ -444,6 +476,22 @@ def _run_shared_fold_task(
         if mask_spec is not None:
             trial_channel_mask, handle = _attach_shared_array(mask_spec)
             handles.append(handle)
+        qc_features = None
+        if qc_specs is not None:
+            relative_ptp, handle = _attach_shared_array(qc_specs.relative_ptp)
+            handles.append(handle)
+            channel_std_v, handle = _attach_shared_array(qc_specs.channel_std_v)
+            handles.append(handle)
+            epoch_scale_v, handle = _attach_shared_array(qc_specs.epoch_scale_v)
+            handles.append(handle)
+            observed_mask, handle = _attach_shared_array(qc_specs.observed_mask)
+            handles.append(handle)
+            qc_features = EpochQCFeatures(
+                relative_ptp=relative_ptp,
+                channel_std_v=channel_std_v,
+                epoch_scale_v=epoch_scale_v,
+                observed_mask=observed_mask,
+            )
         with cpu_thread_budget(cpu_threads):
             return _run_fold_task(
                 (
@@ -455,6 +503,7 @@ def _run_shared_fold_task(
                     train,
                     test,
                     trial_channel_mask,
+                    qc_features,
                     artifact_policy,
                     fold_id,
                     shared_worker_count,
@@ -476,6 +525,7 @@ def _run_fold_tasks(
     folds: Sequence[tuple[np.ndarray, np.ndarray]],
     *,
     trial_channel_mask: np.ndarray | None,
+    qc_features: EpochQCFeatures | None,
     artifact_policy: FoldLocalArtifactPolicy | None,
     n_jobs: int,
     parallel_backend: str,
@@ -501,6 +551,7 @@ def _run_fold_tasks(
             train,
             test,
             trial_channel_mask,
+            qc_features,
             artifact_policy,
             index + fold_id_offset,
             effective_n_jobs,
@@ -517,7 +568,7 @@ def _run_fold_tasks(
                 results = list(executor.map(_run_fold_task, tasks))
         transport = "direct"
     else:
-        with _SharedFoldInputs(X, y, subject_ids, trial_channel_mask) as shared_inputs:
+        with _SharedFoldInputs(X, y, subject_ids, trial_channel_mask, qc_features) as shared_inputs:
             shared_tasks = [
                 (
                     index,
@@ -528,6 +579,7 @@ def _run_fold_tasks(
                     train,
                     test,
                     shared_inputs.trial_channel_mask,
+                    shared_inputs.qc_features,
                     artifact_policy,
                     index + fold_id_offset,
                     effective_n_jobs,
@@ -558,6 +610,7 @@ def evaluate_binary(
     folds: Sequence[tuple[np.ndarray, np.ndarray]],
     *,
     trial_channel_mask: np.ndarray | None = None,
+    qc_features: EpochQCFeatures | None = None,
     artifact_policy: FoldLocalArtifactPolicy | None = None,
     fold_protocol: str | None = None,
     n_jobs: int = 1,
@@ -575,6 +628,8 @@ def evaluate_binary(
         trial_channel_mask = np.asarray(trial_channel_mask, dtype=bool)
         if trial_channel_mask.shape != X.shape[:2] or not trial_channel_mask.any(axis=1).all():
             raise ValueError("trial_channel_mask must retain at least one channel per epoch.")
+    if qc_features is not None:
+        qc_features.validate(n_epochs=len(X), n_channels=X.shape[1])
     if fold_id_offset < 0:
         raise ValueError("fold_id_offset must be non-negative.")
     fold_results, backend, effective_n_jobs, input_transport, cpu_threads_per_worker = _run_fold_tasks(
@@ -584,6 +639,7 @@ def evaluate_binary(
         subject_ids,
         _validate_folds(folds, len(X)),
         trial_channel_mask=trial_channel_mask,
+        qc_features=qc_features,
         artifact_policy=artifact_policy,
         n_jobs=n_jobs,
         parallel_backend=parallel_backend,
@@ -619,6 +675,7 @@ def evaluate_candidate_selection(
     fold_subject_ids: np.ndarray | None = None,
     event_timeline: object | None = None,
     trial_channel_mask: np.ndarray | None = None,
+    qc_features: EpochQCFeatures | None = None,
     artifact_policy: FoldLocalArtifactPolicy | None = None,
     fold_protocol: str | None = None,
     n_jobs: int = 1,
@@ -645,6 +702,8 @@ def evaluate_candidate_selection(
         trial_channel_mask = np.asarray(trial_channel_mask, dtype=bool)
         if trial_channel_mask.shape != X.shape[:2] or not trial_channel_mask.any(axis=1).all():
             raise ValueError("trial_channel_mask must retain at least one channel per epoch.")
+    if qc_features is not None:
+        qc_features.validate(n_epochs=len(X), n_channels=X.shape[1])
     if fold_id_offset < 0:
         raise ValueError("fold_id_offset must be non-negative.")
     results: list[CandidateFoldResult] = []
@@ -657,6 +716,7 @@ def evaluate_candidate_selection(
         fit_subjects,
         validated_folds,
         trial_channel_mask=trial_channel_mask,
+        qc_features=qc_features,
         artifact_policy=artifact_policy,
         n_jobs=n_jobs,
         parallel_backend=parallel_backend,

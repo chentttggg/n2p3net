@@ -21,9 +21,12 @@ from data.events import (
     ScheduledEventTimeline,
     concatenate_event_timelines,
 )
+from data.qc_features import EpochQCFeatures
 
-EPOCH_DATASET_SCHEMA = "n2p3net_epoch_dataset/3"
-LEGACY_EPOCH_DATASET_SCHEMAS = frozenset({"n2p3net_epoch_dataset/2"})
+EPOCH_DATASET_SCHEMA = "n2p3net_epoch_dataset/4"
+LEGACY_EPOCH_DATASET_SCHEMAS = frozenset(
+    {"n2p3net_epoch_dataset/2", "n2p3net_epoch_dataset/3"}
+)
 DEFAULT_SAMPLE_RATE_HZ = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz
 
 
@@ -156,6 +159,7 @@ class EpochDataset:
     metadata: pd.DataFrame = field(default_factory=pd.DataFrame)
     provenance: dict[str, Any] = field(default_factory=dict)
     trial_channel_mask: np.ndarray | None = None
+    qc_features: EpochQCFeatures | None = None
 
     def validate(self, *, require_labels: bool = False) -> None:
         self.preprocessing.validate()
@@ -255,6 +259,17 @@ class EpochDataset:
             X[~np.asarray(self.trial_channel_mask)] != 0.0
         ):
             raise ValueError("Trial-masked channels must be exactly zero.")
+        if self.qc_features is not None:
+            from data.qc_features import effective_observed_mask
+
+            self.qc_features.validate(n_epochs=n_epochs, n_channels=n_channels)
+            expected_observed = effective_observed_mask(
+                n_epochs=n_epochs,
+                channel_mask=channel_mask,
+                trial_channel_mask=self.trial_channel_mask,
+            )
+            if not np.array_equal(self.qc_features.observed_mask, expected_observed):
+                raise ValueError("QC features must use the dataset's effective channel-availability mask.")
         if not isinstance(self.metadata, pd.DataFrame):
             raise ValueError("metadata must be a pandas DataFrame.")
         if not self.metadata.empty and len(self.metadata) != n_epochs:
@@ -304,6 +319,11 @@ class EpochDataset:
                 ),
                 "fingerprint": self.event_timeline.fingerprint(),
             },
+            "qc_features": (
+                self.qc_features.record()
+                if self.qc_features is not None
+                else {"available": False}
+            ),
             "provenance": self.provenance,
         }
 
@@ -317,6 +337,15 @@ def save_epoch_dataset(
     """Persist an EpochDataset without pickle-dependent object arrays."""
 
     dataset.validate()
+    if dataset.qc_features is None:
+        from data.qc_features import compute_epoch_qc_features
+
+        dataset.qc_features = compute_epoch_qc_features(
+            dataset.X,
+            channel_mask=dataset.channel_mask,
+            trial_channel_mask=dataset.trial_channel_mask,
+        )
+    dataset.qc_features.validate(n_epochs=dataset.n_epochs, n_channels=dataset.n_channels)
     path = Path(path)
     if path.suffix.lower() != ".npz":
         raise ValueError("EpochDataset cache paths must end in .npz.")
@@ -337,6 +366,11 @@ def save_epoch_dataset(
             if dataset.trial_channel_mask is not None
             else np.empty((0, dataset.n_channels), dtype=bool)
         ),
+        "qc_feature_schema": np.asarray(dataset.qc_features.schema),
+        "qc_relative_ptp": np.asarray(dataset.qc_features.relative_ptp, dtype=np.float32),
+        "qc_channel_std_v": np.asarray(dataset.qc_features.channel_std_v, dtype=np.float32),
+        "qc_epoch_scale_v": np.asarray(dataset.qc_features.epoch_scale_v, dtype=np.float32),
+        "qc_observed_mask": np.asarray(dataset.qc_features.observed_mask, dtype=bool),
         "event_schema": np.asarray(EVENT_TIMELINE_SCHEMA),
         "event_ids": np.asarray(dataset.event_timeline.event_ids, dtype=str),
         "event_group_ids": np.asarray(dataset.event_timeline.group_ids, dtype=str),
@@ -445,21 +479,33 @@ def load_epoch_dataset(
                 f"EpochDataset schema {schema!r} requires event schema "
                 f"{EVENT_TIMELINE_SCHEMA!r}, got {event_schema!r}."
             )
-        has_current_candidate_contract = (
-            schema == EPOCH_DATASET_SCHEMA and event_schema == EVENT_TIMELINE_SCHEMA
-        )
+        has_current_candidate_contract = schema in {
+            EPOCH_DATASET_SCHEMA,
+            "n2p3net_epoch_dataset/3",
+        } and event_schema == EVENT_TIMELINE_SCHEMA
         candidate_fields = {
             "event_candidate_ids",
             "event_target_candidate_ids",
             "event_repetition_indices",
         }
-        if schema == EPOCH_DATASET_SCHEMA:
+        if has_current_candidate_contract:
             missing_candidate_fields = candidate_fields - set(archive.files)
             if missing_candidate_fields:
                 raise ValueError(
                     f"{path} lacks schema-v3 candidate fields "
                     f"{sorted(missing_candidate_fields)}."
                 )
+        qc_fields = {
+            "qc_feature_schema",
+            "qc_relative_ptp",
+            "qc_channel_std_v",
+            "qc_epoch_scale_v",
+            "qc_observed_mask",
+        }
+        if schema == EPOCH_DATASET_SCHEMA:
+            missing_qc_fields = qc_fields - set(archive.files)
+            if missing_qc_fields:
+                raise ValueError(f"{path} lacks schema-v4 QC fields {sorted(missing_qc_fields)}.")
         integer_fields = (
             "event_stimulus_ids",
             "event_onset_samples",
@@ -488,11 +534,32 @@ def load_epoch_dataset(
                 raise ValueError(
                     f"{path} field trial_channel_mask must be a strict boolean array."
                 )
+        if schema == EPOCH_DATASET_SCHEMA:
+            from data.qc_features import QC_FEATURE_SCHEMA
+
+            if str(np.asarray(archive["qc_feature_schema"]).item()) != QC_FEATURE_SCHEMA:
+                raise ValueError(f"{path} has an unsupported QC feature schema.")
+            for field_name in ("qc_relative_ptp", "qc_channel_std_v", "qc_epoch_scale_v"):
+                if not np.issubdtype(np.asarray(archive[field_name]).dtype, np.floating):
+                    raise ValueError(f"{path} field {field_name} must be floating-point.")
+            if np.asarray(archive["qc_observed_mask"]).dtype != np.dtype(bool):
+                raise ValueError(f"{path} field qc_observed_mask must be boolean.")
         preprocessing = PreprocessingSpec(
             **json.loads(str(np.asarray(archive["preprocessing_json"]).item()))
         )
         has_labels = bool(np.asarray(archive["has_labels"]).item())
         metadata_json = str(np.asarray(archive["metadata_json"]).item())
+        qc_features = None
+        if schema == EPOCH_DATASET_SCHEMA:
+            from data.qc_features import EpochQCFeatures
+
+            qc_features = EpochQCFeatures(
+                relative_ptp=np.asarray(archive["qc_relative_ptp"], dtype=np.float32),
+                channel_std_v=np.asarray(archive["qc_channel_std_v"], dtype=np.float32),
+                epoch_scale_v=np.asarray(archive["qc_epoch_scale_v"], dtype=np.float32),
+                observed_mask=np.asarray(archive["qc_observed_mask"], dtype=bool),
+                schema=str(np.asarray(archive["qc_feature_schema"]).item()),
+            )
         dataset = EpochDataset(
             name=str(np.asarray(archive["name"]).item()),
             X=np.asarray(archive["X"], dtype=np.float32),
@@ -546,6 +613,7 @@ def load_epoch_dataset(
                 and np.asarray(archive["trial_channel_mask"]).size > 0
                 else None
             ),
+            qc_features=qc_features,
         )
     dataset.validate(require_labels=require_labels)
     if expected_preprocessing is not None and dataset.preprocessing != expected_preprocessing:
@@ -591,6 +659,11 @@ def select_epoch_channels(
         trial_channel_mask=(
             dataset.trial_channel_mask[:, picks] if dataset.trial_channel_mask is not None else None
         ),
+        qc_features=(
+            dataset.qc_features.select_channels(picks)
+            if dataset.qc_features is not None
+            else None
+        ),
     )
     selected.validate()
     return selected
@@ -626,6 +699,11 @@ def concatenate_epoch_datasets(
         if all(not dataset.metadata.empty for dataset in datasets)
         else pd.DataFrame()
     )
+    qc_features = None
+    if all(dataset.qc_features is not None for dataset in datasets):
+        from data.qc_features import EpochQCFeatures
+
+        qc_features = EpochQCFeatures.concatenate([dataset.qc_features for dataset in datasets])
     merged = EpochDataset(
         name=name,
         X=np.concatenate([dataset.X for dataset in datasets], axis=0),
@@ -659,6 +737,7 @@ def concatenate_epoch_datasets(
             if any(dataset.trial_channel_mask is not None for dataset in datasets)
             else None
         ),
+        qc_features=qc_features,
     )
     merged.validate()
     return merged

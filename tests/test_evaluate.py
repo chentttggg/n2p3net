@@ -11,6 +11,8 @@ from baselines.evaluate import (
     evaluate_candidate_selection,
     loso_folds,
 )
+from data.artifact import FoldLocalArtifactPolicy
+from data.qc_features import compute_epoch_qc_features
 
 
 def _p300_data() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -96,6 +98,27 @@ def test_process_cpu_folds_share_the_input_matrix() -> None:
     assert summary.execution_backend == "process"
     assert summary.effective_n_jobs == 2
     assert summary.cpu_threads_per_worker == 1
+    assert summary.input_transport == "shared_memory"
+    assert summary.auc_mean > 0.8
+
+
+def test_process_folds_share_cached_qc_features() -> None:
+    X, y, subjects = _p300_data()
+    features = compute_epoch_qc_features(X, channel_mask=np.ones(X.shape[1], dtype=bool))
+    summary = evaluate_binary(
+        WindowLogisticRegression(sfreq=128.0, tmin=-0.2, window_ms=(125.0, 300.0)),
+        X,
+        y,
+        subjects,
+        loso_folds(subjects),
+        qc_features=features,
+        artifact_policy=FoldLocalArtifactPolicy(global_scale_mad_z=1e9),
+        n_jobs=2,
+        parallel_backend="process",
+        cpu_threads=2,
+    )
+
+    assert summary.execution_backend == "process"
     assert summary.input_transport == "shared_memory"
     assert summary.auc_mean > 0.8
 

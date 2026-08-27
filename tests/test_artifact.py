@@ -5,9 +5,9 @@ import pytest
 
 from data.artifact import (
     FoldLocalArtifactPolicy,
-    _relative_peak_to_peak,
     apply_fold_local_artifact_policy,
 )
+from data.qc_features import EpochQCFeatures, compute_epoch_qc_features
 
 
 def _clean_epochs() -> tuple[np.ndarray, np.ndarray]:
@@ -17,12 +17,15 @@ def _clean_epochs() -> tuple[np.ndarray, np.ndarray]:
     ).astype(str)
 
 
-def _legacy_fit(policy, X, subject_ids, trial_channel_mask):
-    """Reference implementation for checking the batched fit semantics."""
+def _v2_fit_reference(policy, X, subject_ids, trial_channel_mask):
+    """Scalar reference for training-clean / fixed-validation-median CV."""
 
     observed = np.asarray(trial_channel_mask, dtype=bool)
-    ptp = _relative_peak_to_peak(X, observed)
-    std = np.std(X.astype(np.float64, copy=False), axis=2)
+    features = compute_epoch_qc_features(
+        X,
+        channel_mask=np.ones(X.shape[1], dtype=bool),
+        trial_channel_mask=observed,
+    )
     subject_keys = np.asarray(subject_ids).astype(str)
     subjects = np.unique(subject_keys)
     chosen = []
@@ -35,21 +38,26 @@ def _legacy_fit(policy, X, subject_ids, trial_channel_mask):
         folds = np.array_split(subjects, min(policy.cv_splits, len(subjects)))
         for held_out_subjects in folds:
             validation_subjects = np.isin(subject_keys, held_out_subjects)
+            training_subjects = ~validation_subjects
+            training = training_subjects & observed[:, channel]
             validation = validation_subjects & observed[:, channel]
-            training = ~validation_subjects & observed[:, channel]
             if training.sum() < policy.min_clean_epochs or validation.sum() < policy.min_clean_epochs:
                 continue
-            template = np.median(X[training, channel, :], axis=0)
-            thresholds = np.quantile(ptp[training, channel], policy.candidate_quantiles)
-            clean = validation[:, None] & (ptp[:, channel, None] <= thresholds)
-            clean_counts = clean.sum(axis=0)
-            valid = clean_counts >= policy.min_clean_epochs
-            if not valid.any():
-                continue
-            means = clean.T.astype(np.float64) @ X[:, channel, :]
-            means /= np.maximum(clean_counts[:, None], 1)
-            errors[valid] += np.mean((means[valid] - template) ** 2, axis=1)
-            counts[valid] += 1
+            target = np.median(X[validation, channel, :], axis=0)
+            flat_threshold = np.quantile(
+                features.channel_std_v[training, channel], policy.flat_quantile
+            )
+            thresholds = np.quantile(
+                features.relative_ptp[training, channel], policy.candidate_quantiles
+            )
+            for candidate, threshold in enumerate(thresholds):
+                clean = training & (features.relative_ptp[:, channel] <= threshold)
+                clean &= features.channel_std_v[:, channel] > flat_threshold
+                if clean.sum() < policy.min_clean_epochs:
+                    continue
+                mean = X[clean, channel, :].mean(axis=0)
+                errors[candidate] += np.mean((mean - target) ** 2)
+                counts[candidate] += 1
         valid = counts > 0
         if not valid.any():
             chosen.append(policy.candidate_quantiles[-1])
@@ -67,8 +75,8 @@ def _legacy_fit(policy, X, subject_ids, trial_channel_mask):
     ptp_thresholds = np.empty(X.shape[1], dtype=float)
     flat_thresholds = np.empty(X.shape[1], dtype=float)
     for channel in range(X.shape[1]):
-        values = ptp[observed[:, channel], channel]
-        scales = std[observed[:, channel], channel]
+        values = features.relative_ptp[observed[:, channel], channel]
+        scales = features.channel_std_v[observed[:, channel], channel]
         if len(values) == 0:
             ptp_thresholds[channel] = np.inf
             flat_thresholds[channel] = -np.inf
@@ -78,7 +86,7 @@ def _legacy_fit(policy, X, subject_ids, trial_channel_mask):
     return np.asarray(chosen), ptp_thresholds, flat_thresholds
 
 
-def test_batched_fit_matches_legacy_with_trial_channel_mask() -> None:
+def test_batched_fit_matches_v2_training_clean_reference_with_trial_channel_mask() -> None:
     rng = np.random.default_rng(18)
     X = rng.normal(0.0, 1.0, size=(36, 4, 32)).astype(np.float32)
     subjects = np.repeat(np.arange(9), 4).astype(str)
@@ -86,9 +94,9 @@ def test_batched_fit_matches_legacy_with_trial_channel_mask() -> None:
     trial_mask[::3, 1] = False
     trial_mask[1::4, 3] = False
     X[~trial_mask] = 0.0
-    policy = FoldLocalArtifactPolicy()
+    policy = FoldLocalArtifactPolicy(global_scale_mad_z=1e9)
 
-    expected_quantiles, expected_ptp, expected_flat = _legacy_fit(
+    expected_quantiles, expected_ptp, expected_flat = _v2_fit_reference(
         policy, X, subjects, trial_mask
     )
     actual = policy.fit(X, subjects, trial_mask)
@@ -128,6 +136,60 @@ def test_many_bad_channels_drop_train_but_not_test_rows() -> None:
     assert not kept_train[2]
     assert mask[22].any()
     assert audit["test"]["n_epochs_over_bad_channel_limit"] == 1
+
+
+def test_global_epoch_scale_gate_drops_training_but_keeps_test_denominator() -> None:
+    X, subjects = _clean_epochs()
+    train = np.arange(len(X)) < 20
+    test = ~train
+    X[3] *= 100.0
+    X[22] *= 100.0
+    features = compute_epoch_qc_features(X, channel_mask=np.ones(X.shape[1], dtype=bool))
+
+    _, _, kept_train, audit = apply_fold_local_artifact_policy(
+        FoldLocalArtifactPolicy(global_scale_mad_z=4.0),
+        X,
+        subjects,
+        train,
+        test,
+        qc_features=features,
+    )
+
+    assert not kept_train[3]
+    assert audit["test"]["n_epochs"] == int(test.sum())
+    assert audit["test"]["n_global_epoch_scale"] >= 1
+
+
+def test_kappa_selection_requires_training_coverage() -> None:
+    n_subjects = 4
+    repeats = 4
+    n_epochs = n_subjects * repeats
+    X = np.zeros((n_epochs, 3, 8), dtype=np.float32)
+    subjects = np.repeat(np.arange(n_subjects), repeats).astype(str)
+    relative_ptp = np.ones((n_epochs, 3), dtype=np.float32)
+    relative_ptp[::repeats, 0] = 10.0
+    features = EpochQCFeatures(
+        relative_ptp=relative_ptp,
+        channel_std_v=np.ones((n_epochs, 3), dtype=np.float32),
+        epoch_scale_v=np.ones(n_epochs, dtype=np.float32),
+        observed_mask=np.ones((n_epochs, 3), dtype=bool),
+    )
+    policy = FoldLocalArtifactPolicy(
+        candidate_bad_channel_fractions=(0.0, 0.5),
+        min_training_epoch_retention=0.9,
+        global_scale_mad_z=1e9,
+        cv_splits=2,
+        min_clean_epochs=2,
+    )
+
+    selected = policy._choose_bad_channel_fraction(
+        X,
+        features,
+        subjects,
+        np.full(3, 0.5, dtype=float),
+    )
+
+    assert selected == 0.5
 
 
 def test_test_extreme_does_not_change_train_fitted_thresholds() -> None:

@@ -24,7 +24,11 @@ from baselines.evaluate import (  # noqa: E402
     evaluate_candidate_selection,
     loso_folds,
 )
-from data.artifact import FoldLocalArtifactPolicy, parse_candidate_quantiles  # noqa: E402
+from data.artifact import (  # noqa: E402
+    FoldLocalArtifactPolicy,
+    parse_candidate_bad_channel_fractions,
+    parse_candidate_quantiles,
+)
 from data.epochs import load_epoch_dataset  # noqa: E402
 from models.n2p3net import POOLING_MODES  # noqa: E402
 from train.device import get_device  # noqa: E402
@@ -66,6 +70,13 @@ def _parse_models(value: str, parser: argparse.ArgumentParser) -> tuple[str, ...
 def _parse_quantiles(value: str) -> tuple[float, ...]:
     try:
         return parse_candidate_quantiles(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+
+
+def _parse_bad_channel_fractions(value: str) -> tuple[float, ...]:
+    try:
+        return parse_candidate_bad_channel_fractions(value)
     except ValueError as exc:
         raise argparse.ArgumentTypeError(str(exc)) from exc
 
@@ -135,7 +146,12 @@ def main() -> None:
         default="latency_marginal_contrast",
         help="N2P3-Net head: LMBC default, global_average matched ablation, ms_flatten paper-style head.",
     )
-    parser.add_argument("--artifact-max-bad-channel-fraction", type=float, default=0.25)
+    parser.add_argument(
+        "--artifact-candidate-bad-channel-fractions",
+        type=_parse_bad_channel_fractions,
+        default=(0.125, 0.25, 0.375, 0.5),
+        help="Training-fold candidates for the maximum local-bad-channel fraction per epoch.",
+    )
     parser.add_argument(
         "--artifact-candidate-quantiles",
         type=_parse_quantiles,
@@ -147,6 +163,18 @@ def main() -> None:
         type=float,
         default=0.005,
         help="Training-fold per-channel flatline quantile; zero keeps only true minimum-variance cases.",
+    )
+    parser.add_argument(
+        "--artifact-global-scale-mad-z",
+        type=float,
+        default=6.0,
+        help="Outer-training physical epoch-scale gate in robust standard-deviation units.",
+    )
+    parser.add_argument(
+        "--artifact-min-training-epoch-retention",
+        type=float,
+        default=0.70,
+        help="Minimum inner-CV training-epoch retention required for a kappa candidate.",
     )
     args = parser.parse_args()
 
@@ -164,7 +192,9 @@ def main() -> None:
     artifact_policy = FoldLocalArtifactPolicy(
         candidate_quantiles=args.artifact_candidate_quantiles,
         flat_quantile=args.artifact_flat_quantile,
-        max_bad_channel_fraction=args.artifact_max_bad_channel_fraction,
+        candidate_bad_channel_fractions=args.artifact_candidate_bad_channel_fractions,
+        global_scale_mad_z=args.artifact_global_scale_mad_z,
+        min_training_epoch_retention=args.artifact_min_training_epoch_retention,
     )
     artifact_policy.validate()
 
@@ -176,11 +206,18 @@ def main() -> None:
         else np.broadcast_to(np.asarray(dataset.channel_mask, dtype=bool), dataset.X.shape[:2]).copy()
     )
     X, y, subject_ids = dataset.X, dataset.y, dataset.subject_ids
+    if dataset.qc_features is None:
+        raise ValueError(
+            "Dataset cache lacks QC v2 features. Regenerate the cache before training; "
+            "legacy caches are not accepted by the QC v2 runner."
+        )
+    qc_features = dataset.qc_features
     if args.subjects is not None:
         selected_subjects = np.unique(subject_ids)[: args.subjects]
         keep = np.isin(subject_ids, selected_subjects)
         X, y, subject_ids = X[keep], y[keep], subject_ids[keep]
         trial_channel_mask = trial_channel_mask[keep]
+        qc_features = qc_features.subset(keep)
         timeline_subjects = np.asarray(timeline.subject_ids).astype(str)
         timeline_groups = np.asarray(timeline.group_ids).astype(str)
         selected_groups = set(timeline_groups[np.isin(timeline_subjects, selected_subjects)].tolist())
@@ -246,6 +283,7 @@ def main() -> None:
             "cpu_threads": args.cpu_threads,
             "fold_id_offset": args.fold_offset,
             "trial_channel_mask": trial_channel_mask,
+            "qc_features": qc_features,
             "artifact_policy": artifact_policy,
         }
         if candidate_selection is None:
