@@ -138,7 +138,7 @@ def build_candidates(
     return candidates
 
 
-def build_refinement_candidates(*, base_batch_size: int) -> list[SensitivityCandidate]:
+def build_boundary_candidates(*, base_batch_size: int) -> list[SensitivityCandidate]:
     candidates = [
         SensitivityCandidate(
             name="baseline",
@@ -150,7 +150,7 @@ def build_refinement_candidates(*, base_batch_size: int) -> list[SensitivityCand
         )
     ]
     base_kernel = DEFAULT_N2P3_ARCHITECTURE.temporal_kernel_size
-    for kernel in (51, 53, 55, 57, 59, 71, 73, 75, 77, 79):
+    for kernel in (45, 85):
         candidates.append(
             SensitivityCandidate(
                 name=f"temporal_kernel_size_{kernel}",
@@ -159,18 +159,6 @@ def build_refinement_candidates(*, base_batch_size: int) -> list[SensitivityCand
                 batch_size=base_batch_size,
                 deep_overrides={},
                 architecture_overrides={"temporal_kernel_size": kernel},
-            )
-        )
-    base_dropout = DEFAULT_N2P3_ARCHITECTURE.dropout
-    for dropout in (0.25625, 0.2625, 0.26875, 0.275):
-        candidates.append(
-            SensitivityCandidate(
-                name=f"dropout_{str(dropout).replace('.', 'p')}",
-                axis="dropout",
-                relative_delta=dropout / base_dropout - 1.0,
-                batch_size=base_batch_size,
-                deep_overrides={},
-                architecture_overrides={"dropout": dropout},
             )
         )
     return candidates
@@ -201,7 +189,7 @@ def main() -> None:
     parser.add_argument("--sample-rate-hz", type=float, choices=(128.0, 256.0), default=128.0)
     parser.add_argument("--fold-indices", type=_parse_fold_indices, default=None)
     parser.add_argument("--max-candidates", type=int, default=None)
-    parser.add_argument("--grid", choices=("coarse", "refined"), default="coarse")
+    parser.add_argument("--grid", choices=("coarse", "boundary"), default="coarse")
     parser.add_argument("--epochs", type=int, default=defaults.epochs)
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--early-stop-patience", type=int, default=defaults.early_stop_patience)
@@ -218,8 +206,8 @@ def main() -> None:
         parser.error("--max-candidates must be positive")
     if args.subjects is not None and args.subjects < 2:
         parser.error("--subjects must be at least two")
-    if args.grid == "refined" and args.sample_rate_hz != 128.0:
-        parser.error("The refined kernel grid is defined only for the 128 Hz contract.")
+    if args.grid == "boundary" and args.sample_rate_hz != 128.0:
+        parser.error("The boundary kernel grid is defined only for the 128 Hz contract.")
 
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
     dataset_record = dataset.record(validate=False)
@@ -281,7 +269,7 @@ def main() -> None:
             base_architecture=base_architecture,
         )
         if args.grid == "coarse"
-        else build_refinement_candidates(base_batch_size=args.batch_size)
+        else build_boundary_candidates(base_batch_size=args.batch_size)
     )
     if args.max_candidates is not None:
         candidates = candidates[: args.max_candidates]
