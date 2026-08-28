@@ -207,14 +207,13 @@ def decide(
 
 
 def hit_rate(predicted: Sequence, true_digits: Sequence) -> float:
-    """命中率 = P(d̂* = d*)（chance ≈ 11.1%），全空集试次不计入。"""
+    """命中率 = P(d̂* = d*)；无法判定的 ``None`` 按未命中计入分母。"""
     predicted = np.asarray(predicted, dtype=object)
     true_digits = np.asarray(true_digits)
     if predicted.shape != true_digits.shape:
         raise ValueError(
             f"predicted 与 true_digits 形状须一致，得到 {predicted.shape} / {true_digits.shape}。"
         )
-    valid = np.array([p is not None for p in predicted], dtype=bool)
-    if not valid.any():
+    if not predicted.size:
         return 0.0
-    return float((predicted[valid] == true_digits[valid]).mean())
+    return float((predicted == true_digits).mean())

@@ -1,3 +1,6 @@
+# LEGACY, NON-EXECUTABLE SNAPSHOT. No runner loads this file.
+# Read defaults from Python dataclasses/CLI help and freeze resolved values in
+# each run manifest. Scientific status and profiles live in doc/research_program.zh.md.
 seed: 20260827
 
 data:

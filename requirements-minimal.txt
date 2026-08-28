@@ -1,4 +1,4 @@
-# Runtime dependencies for the cached GTN strict-past training path.
+# Runtime dependencies for the cached GTN MS-EEGNet training path.
 # Install CUDA-enabled Torch separately in setup_cloud.sh.
 numpy>=2.0
 scipy>=1.14

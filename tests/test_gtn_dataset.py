@@ -43,8 +43,13 @@ def test_gtn_preparation_preserves_the_complete_nine_choice_ledger(tmp_path) -> 
     prepared = _prepare_gtn_experiment(experiment, gtn, result)
 
     assert prepared.timeline.supports_full_candidate_chain is True
+    assert prepared.timeline.timing_source.endswith("acausal_zero_phase_preprocessing")
     assert prepared.y.sum() == 2
     assert set(prepared.metadata["candidate_id"]) == {str(value) for value in range(1, 10)}
     repetitions = prepared.timeline.repetition_indices.reshape(2, 9)
     assert np.array_equal(repetitions[0], np.zeros(9, dtype=np.int64))
     assert np.array_equal(repetitions[1], np.ones(9, dtype=np.int64))
+
+    result.online_causal = True
+    causal = _prepare_gtn_experiment(experiment, gtn, result)
+    assert causal.timeline.timing_source.endswith("causal_forward_preprocessing")

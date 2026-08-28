@@ -25,6 +25,8 @@ class PrefixSuffixSplit:
     repetition_indices: np.ndarray
     suffix_repetition_indices: np.ndarray
     usable_groups: tuple[str, ...]
+    candidate_vocab: tuple[int, ...]
+    excluded_groups: dict[str, str]
 
 
 def causal_prefix_suffix_split(
@@ -36,10 +38,10 @@ def causal_prefix_suffix_split(
 ) -> PrefixSuffixSplit:
     """Return chronological train/test masks for every complete selection group.
 
-    The split is strict: a group is usable only when every candidate digit has
-    at least ``prefix_repetitions + test_repetitions`` trials and exactly one
-    target. Groups with incomplete candidate chains are skipped rather than
-    silently repaired.
+    The split is strict: every candidate must supply the requested prefix and
+    suffix around one global raw-sample embargo, and the group must have exactly
+    one target. Excluded groups and reasons are returned rather than silently
+    repaired.
     """
 
     dataset.validate(require_labels=True)
@@ -58,38 +60,71 @@ def causal_prefix_suffix_split(
     if not (len(group_ids) == len(candidates) == len(targets) == len(repetitions) == dataset.n_epochs):
         raise ValueError("encoded candidate selection is not aligned with epoch rows.")
 
+    timeline = dataset.event_timeline
+    evidence_indices = np.asarray(timeline.evidence_indices, dtype=np.int64)
+    available = evidence_indices >= 0
+    onset_times_s = np.empty(dataset.n_epochs, dtype=np.float64)
+    onset_times_s[evidence_indices[available]] = np.asarray(
+        timeline.onset_times_s, dtype=np.float64
+    )[available]
+    evidence_available_times_s = np.empty(dataset.n_epochs, dtype=np.float64)
+    evidence_available_times_s[evidence_indices[available]] = np.asarray(
+        timeline.evidence_available_times_s, dtype=np.float64
+    )[available]
+
     prefix = np.zeros(dataset.n_epochs, dtype=bool)
     suffix = np.zeros(dataset.n_epochs, dtype=bool)
     suffix_reps = np.full(dataset.n_epochs, -1, dtype=np.int64)
     usable: list[str] = []
+    excluded: dict[str, str] = {}
+    candidate_vocab = tuple(range(len(encoded.vocabulary)))
     for group in np.unique(group_ids):
         rows = np.flatnonzero(group_ids == group)
         group_targets = np.unique(targets[rows])
         if len(group_targets) != 1:
+            excluded[str(group)] = "mixed_target"
             continue
-        counts = {int(code): int(np.count_nonzero(candidates[rows] == code)) for code in np.unique(candidates[rows])}
-        if any(count < prefix_repetitions + test_repetitions for count in counts.values()):
+        ordered_by_code: dict[int, np.ndarray] = {}
+        prefix_by_code: dict[int, np.ndarray] = {}
+        insufficient = False
+        for code in candidate_vocab:
+            code_rows = rows[candidates[rows] == code]
+            order = np.argsort(onset_times_s[code_rows], kind="stable")
+            code_rows = code_rows[order]
+            if len(code_rows) < max(min_candidate_repetitions, prefix_repetitions):
+                insufficient = True
+                break
+            ordered_by_code[int(code)] = code_rows
+            prefix_by_code[int(code)] = code_rows[:prefix_repetitions]
+        if insufficient:
+            excluded[str(group)] = "insufficient_prefix_candidate_repetitions"
             continue
-        if any(
-            count < min_candidate_repetitions
-            for count in counts.values()
+
+        pre = np.concatenate(list(prefix_by_code.values()))
+        boundary_s = float(np.max(evidence_available_times_s[pre]))
+        epoch_start_offset_s = float(dataset.preprocessing.tmin_ms) / 1000.0
+        suffix_by_code: dict[int, np.ndarray] = {}
+        for code, code_rows in ordered_by_code.items():
+            later = code_rows[
+                onset_times_s[code_rows] + epoch_start_offset_s > boundary_s
+            ]
+            if len(later) < test_repetitions:
+                insufficient = True
+                break
+            suffix_by_code[code] = later[:test_repetitions]
+        if insufficient:
+            excluded[str(group)] = "insufficient_suffix_after_time_embargo"
+            continue
+        post = np.concatenate(list(suffix_by_code.values()))
+        if not float(np.max(evidence_available_times_s[pre])) < float(
+            np.min(onset_times_s[post] + epoch_start_offset_s)
         ):
-            continue
-        pre = rows[repetitions[rows] < prefix_repetitions]
-        post = rows[
-            (repetitions[rows] >= prefix_repetitions)
-            & (repetitions[rows] < prefix_repetitions + test_repetitions)
-        ]
-        # The strict inequality above assumes repetitions start at zero and are
-        # contiguous for every candidate (validated by the event timeline).
-        if len(pre) < prefix_repetitions * len(counts) or len(post) < test_repetitions * len(counts):
-            continue
+            raise AssertionError("prefix/suffix construction failed to produce a global time boundary.")
+
         prefix[pre] = True
         suffix[post] = True
-        suffix_reps[post] = repetitions[rows][
-            (repetitions[rows] >= prefix_repetitions)
-            & (repetitions[rows] < prefix_repetitions + test_repetitions)
-        ] - prefix_repetitions
+        for code_rows in suffix_by_code.values():
+            suffix_reps[code_rows] = np.arange(test_repetitions, dtype=np.int64)
         usable.append(str(group))
 
     if not usable:
@@ -108,4 +143,6 @@ def causal_prefix_suffix_split(
         repetition_indices=repetitions,
         suffix_repetition_indices=suffix_reps,
         usable_groups=tuple(usable),
+        candidate_vocab=candidate_vocab,
+        excluded_groups=excluded,
     )

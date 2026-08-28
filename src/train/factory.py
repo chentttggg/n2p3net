@@ -16,7 +16,9 @@ from data.epochs import EpochDataset
 from models.n2p3net import (
     DEFAULT_N2P3_ARCHITECTURE,
     TUNED_FULL_UNFOLD_ARCHITECTURE,
+    TUNED_FULL_UNFOLD_SOURCE_SAMPLE_RATE_HZ,
     N2P3ArchitectureConfig,
+    scale_architecture_preserving_spans,
 )
 from train.runtime import GpuPerformanceScheduler
 
@@ -106,7 +108,11 @@ def build_binary_model(
     if key == "n2p3net" or key in N2P3_POOLING_BY_MODEL:
         pooling_mode = N2P3_POOLING_BY_MODEL.get(key, n2p3net_pooling_mode)
         architecture = (
-            TUNED_FULL_UNFOLD_ARCHITECTURE
+            scale_architecture_preserving_spans(
+                TUNED_FULL_UNFOLD_ARCHITECTURE,
+                source_sample_rate_hz=TUNED_FULL_UNFOLD_SOURCE_SAMPLE_RATE_HZ,
+                target_sample_rate_hz=sfreq,
+            )
             if key == "n2p3net_full_unfold_k35"
             else n2p3net_architecture
         )

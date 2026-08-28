@@ -30,11 +30,22 @@ from transfer.subject_adapter import SubjectAdapter, SubjectAdapterConfig  # noq
 from transfer.within_subject import causal_prefix_suffix_split  # noqa: E402
 
 
-def _load_trunk(path: str | Path, dataset) -> N2P3Net:
+def _load_trunk(path: str | Path, dataset, *, target_subject: str) -> N2P3Net:
     payload = torch.load(path, map_location="cpu", weights_only=False)
     state = payload.get("trunk_state_dict")
     if state is None:
         raise ValueError(f"{path} is not an N2P3 pretraining checkpoint.")
+    training_subject_keys = payload.get("training_subject_keys")
+    if not isinstance(training_subject_keys, list) or not all(
+        isinstance(value, str) for value in training_subject_keys
+    ):
+        raise ValueError("pretraining checkpoint lacks auditable training_subject_keys.")
+    target_key = f"{dataset.name}\0{target_subject}"
+    if target_key in set(training_subject_keys):
+        raise ValueError(
+            f"pretraining checkpoint includes target subject {target_subject!r}; "
+            "use a leave-target-out checkpoint."
+        )
     trunk = N2P3Net(
         dataset.n_channels,
         n_times=dataset.n_times,
@@ -81,6 +92,10 @@ def main() -> None:
         groups = groups[: args.max_subjects]
     for group in groups:
         group_rows = np.flatnonzero(split.group_ids == group)
+        target_subjects = np.unique(np.asarray(dataset.subject_ids).astype(str)[group_rows])
+        if len(target_subjects) != 1:
+            raise ValueError(f"selection group {group!r} must map to exactly one target subject.")
+        target_subject = str(target_subjects[0])
         pre_rows = group_rows[split.prefix_mask[group_rows]]
         post_rows = group_rows[split.suffix_mask[group_rows]]
         X_pre = dataset.X[pre_rows]
@@ -90,7 +105,11 @@ def main() -> None:
         )
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(args.seed)
-            trunk = _load_trunk(args.checkpoint, dataset) if args.checkpoint else N2P3Net(
+            trunk = _load_trunk(
+                args.checkpoint,
+                dataset,
+                target_subject=target_subject,
+            ) if args.checkpoint else N2P3Net(
                 dataset.n_channels,
                 n_times=dataset.n_times,
                 sfreq=dataset.preprocessing.sfreq,
@@ -122,10 +141,12 @@ def main() -> None:
             split.suffix_repetition_indices[post_rows],
             aggregation="sum",
             max_repetitions=args.test_reps,
+            candidate_vocabulary=split.candidate_vocab,
         )
         records.append(
             {
                 "group": group,
+                "target_subject": target_subject,
                 "n_prefix": int(len(pre_rows)),
                 "n_suffix": int(len(post_rows)),
                 "binary_auc": auc,
@@ -142,7 +163,10 @@ def main() -> None:
         "prefix_reps": args.prefix_reps,
         "test_reps": args.test_reps,
         "head": args.head,
-        "n_subjects": len(records),
+        "n_groups": len(records),
+        "n_subjects": len({rec["target_subject"] for rec in records}),
+        "requested_groups": sorted(np.unique(split.group_ids).tolist()),
+        "excluded_groups": split.excluded_groups,
         "binary_auc_mean": float(np.nanmean([rec["binary_auc"] for rec in records if rec["binary_auc"] is not None])),
         "hit_mean_by_repetition": {
             str(r): float(np.nanmean(hit_curves[:, r - 1])) for r in range(1, args.test_reps + 1)

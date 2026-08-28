@@ -1,6 +1,9 @@
 # N2P3-Net Constitution
 
-Version 3, 2026-08-27. This is the sole project contract.
+Version 4, 2026-08-28. This document contains stable scientific and engineering
+principles; it is not the source of mutable defaults or model status. Executable
+code/tests and attested run artifacts take precedence. The living hypothesis,
+evidence, and GTN promotion plan is `research_program.zh.md`.
 
 ## Objective
 

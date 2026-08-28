@@ -87,6 +87,7 @@ class N2P3ArchitectureConfig:
 
 
 DEFAULT_N2P3_ARCHITECTURE = N2P3ArchitectureConfig()
+TUNED_FULL_UNFOLD_SOURCE_SAMPLE_RATE_HZ = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz
 TUNED_FULL_UNFOLD_ARCHITECTURE = replace(
     DEFAULT_N2P3_ARCHITECTURE,
     temporal_kernel_size=35,
@@ -104,6 +105,23 @@ def temporal_receptive_span_ms(kernel_samples: int, sample_rate_hz: float) -> fl
     ):
         raise ValueError("kernel_samples must be positive and odd; sample_rate_hz must be positive.")
     return (kernel_samples - 1) * 1000.0 / sample_rate_hz
+
+
+def stacked_temporal_receptive_field_samples(
+    temporal_kernel_samples: int,
+    pool_samples: int,
+    branch_kernel_samples: int,
+) -> int:
+    """Return the input-sample receptive field through ST conv, pool, and MST conv."""
+
+    if temporal_kernel_samples < 1 or branch_kernel_samples < 1 or pool_samples < 1:
+        raise ValueError("temporal kernels and pool_samples must be positive.")
+    return (
+        temporal_kernel_samples
+        + pool_samples
+        - 1
+        + (branch_kernel_samples - 1) * pool_samples
+    )
 
 
 def scale_odd_kernel_preserving_span(
@@ -624,6 +642,27 @@ class N2P3Net(nn.Module):
                 temporal_receptive_span_ms(kernel, float(sfreq) / architecture.st_pool_size)
                 for kernel in architecture.mst_kernel_sizes
             ],
+            "mst_total_receptive_field_samples": [
+                stacked_temporal_receptive_field_samples(
+                    architecture.temporal_kernel_size,
+                    architecture.st_pool_size,
+                    kernel,
+                )
+                for kernel in architecture.mst_kernel_sizes
+            ],
+            "mst_total_receptive_span_ms": [
+                (
+                    stacked_temporal_receptive_field_samples(
+                        architecture.temporal_kernel_size,
+                        architecture.st_pool_size,
+                        kernel,
+                    )
+                    - 1
+                )
+                * 1000.0
+                / float(sfreq)
+                for kernel in architecture.mst_kernel_sizes
+            ],
             "mst_features_per_scale": architecture.mst_features_per_scale,
             "mst_pool_size": architecture.mst_pool_size,
             "dropout": architecture.dropout,
@@ -664,6 +703,7 @@ class N2P3Net(nn.Module):
                     "evidence_window_ms": [250.0, 600.0],
                     "reference_window_ms": [-200.0, 0.0],
                     "latency_offsets_ms": [-100.0, -50.0, 0.0, 50.0, 100.0],
+                    "latency_temperature": 0.5,
                 }
             )
         return record
@@ -706,6 +746,27 @@ class N2P3Net(nn.Module):
                     )
                     for kernel in self.mst_kernel_sizes
                 ],
+                "mst_total_receptive_field_samples": [
+                    stacked_temporal_receptive_field_samples(
+                        self.temporal_kernel_size,
+                        self.st_pool_size,
+                        kernel,
+                    )
+                    for kernel in self.mst_kernel_sizes
+                ],
+                "mst_total_receptive_span_ms": [
+                    (
+                        stacked_temporal_receptive_field_samples(
+                            self.temporal_kernel_size,
+                            self.st_pool_size,
+                            kernel,
+                        )
+                        - 1
+                    )
+                    * 1000.0
+                    / self.sfreq
+                    for kernel in self.mst_kernel_sizes
+                ],
                 "mst_features_per_scale": self.mst_features_per_scale,
                 "mst_pool_size": self.mst_pool_size,
                 "classifier_features": self.classifier_features,
@@ -724,6 +785,17 @@ class N2P3Net(nn.Module):
                     "unfold_features": (
                         len(self.mst_branches) * self.mst_features_per_scale * unfold_time_samples
                     ),
+                }
+            )
+        if self.pooling_mode == "latency_marginal_contrast":
+            first_pool = self.pool[0]
+            record.update(
+                {
+                    "evidence_window_ms": list(first_pool.evidence_window_ms),
+                    "reference_window_ms": list(first_pool.reference_window_ms),
+                    "latency_offsets_ms": list(first_pool.latency_offsets_ms),
+                    "active_latency_offsets_ms": first_pool.candidate_offsets_ms.tolist(),
+                    "latency_temperature": first_pool.temperature,
                 }
             )
         return record

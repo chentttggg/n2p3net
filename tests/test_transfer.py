@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,7 +10,9 @@ import torch
 from baselines.validation import group_disjoint_validation_split
 from data.channel import build_channel_identity
 from data.epochs import EpochDataset, PreprocessingSpec
-from data.events import ScheduledEventTimeline
+from data.events import ScheduledEventTimeline, candidate_repetition_indices
+from experiments.run_pretrain import _source_training_rows
+from experiments.run_within_subject_transfer import _load_trunk
 from models.n2p3net import N2P3Net
 from transfer.evaluation import hit_at_repetition
 from transfer.heads import SubjectProbeHead, WaveDecoderHead
@@ -133,6 +137,18 @@ def test_pretraining_task_loss_and_subject_probe() -> None:
     assert task.decoder is None and task.probe is None
 
 
+def test_pretraining_holdout_must_exist_in_the_source_cache() -> None:
+    rows, subjects = _source_training_rows(
+        np.asarray(["s1", "s2", "s1"]),
+        {"s2"},
+    )
+    assert subjects == {"s1", "s2"}
+    assert rows.tolist() == [True, False, True]
+
+    with pytest.raises(ValueError, match="absent from the source cache"):
+        _source_training_rows(np.asarray(["s1", "s2"]), {"typo"})
+
+
 def test_subject_probe_shape() -> None:
     probe = SubjectProbeHead(16, 5)
     out = probe(torch.randn(3, 16))
@@ -237,6 +253,29 @@ def test_hit_at_repetition_sums_target_logits() -> None:
     assert hits[2] == 1.0
 
 
+def test_hit_at_repetition_accepts_zero_based_encoded_candidate_vocabulary() -> None:
+    candidate_block = np.arange(9, dtype=np.int64)
+    digits = np.tile(np.repeat(candidate_block, 2), 2)
+    groups = np.repeat(np.array(["a", "b"]), 18)
+    repetitions = np.tile(np.tile(np.array([0, 1], dtype=np.int64), 9), 2)
+    logits = np.zeros(36, dtype=float)
+    logits[(groups == "a") & (digits == 0)] = 1.0
+    logits[(groups == "b") & (digits == 8)] = 1.0
+
+    hits = hit_at_repetition(
+        logits,
+        digits,
+        groups,
+        {"a": 0, "b": 8},
+        repetitions,
+        aggregation="sum",
+        max_repetitions=2,
+    )
+
+    assert hits[1] == 1.0
+    assert hits[2] == 1.0
+
+
 def test_hit_at_repetition_rejects_nonfinite_logits() -> None:
     with pytest.raises(ValueError, match="NaN"):
         hit_at_repetition(
@@ -248,13 +287,44 @@ def test_hit_at_repetition_rejects_nonfinite_logits() -> None:
         )
 
 
+def test_precision_aggregation_requires_predictive_variance() -> None:
+    logits = np.asarray([1.0, 2.0, 0.1, 0.1])
+    digits = np.asarray([1, 1, 2, 2])
+    groups = np.repeat("g", 4)
+    repetitions = np.asarray([0, 1, 0, 1])
+
+    with pytest.raises(ValueError, match="predictive variances"):
+        hit_at_repetition(
+            logits,
+            digits,
+            groups,
+            {"g": 1},
+            repetitions,
+            aggregation="precision",
+        )
+
+    hits = hit_at_repetition(
+        logits,
+        digits,
+        groups,
+        {"g": 1},
+        repetitions,
+        aggregation="precision",
+        logit_variances=np.asarray([1.0, 1.0, 0.01, 0.01]),
+    )
+    assert hits[2] == 1.0
+
+
 def _causal_candidate_dataset() -> EpochDataset:
-    digits = np.array([1, 2, 3, 4], dtype=np.int64)
-    n_epochs = 3 * len(digits) * 4
+    one_group_candidates = np.array(
+        [1, 2, 1, 3, 4, 2, 1, 3, 4, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4],
+        dtype=np.int64,
+    )
+    n_epochs = 3 * len(one_group_candidates)
     groups = np.repeat(np.array(["g1", "g2", "g3"]), n_epochs // 3)
-    candidates = np.tile(np.repeat(digits, 4), 3)
+    candidates = np.tile(one_group_candidates, 3)
     targets = np.repeat(np.array([2, 3, 1], dtype=np.int64), n_epochs // 3)
-    repetitions = np.tile(np.arange(4, dtype=np.int64), 3 * len(digits))
+    repetitions = candidate_repetition_indices(candidates.astype(str), groups)
     identity = build_channel_identity(("Fz", "Cz", "Pz"), allow_missing_positions=False)
     timeline = ScheduledEventTimeline(
         event_ids=np.asarray([f"e{i}" for i in range(n_epochs)]),
@@ -308,6 +378,8 @@ def test_causal_prefix_suffix_split_is_chronological_and_complete() -> None:
     split = causal_prefix_suffix_split(dataset, prefix_repetitions=2, test_repetitions=2)
 
     assert set(split.usable_groups) == {"g1", "g2", "g3"}
+    assert split.candidate_vocab == (0, 1, 2, 3)
+    assert split.excluded_groups == {}
     assert int(split.prefix_mask.sum()) == int(split.suffix_mask.sum()) == 3 * 4 * 2
     for group in split.usable_groups:
         rows = np.flatnonzero(split.group_ids == group)
@@ -315,6 +387,29 @@ def test_causal_prefix_suffix_split_is_chronological_and_complete() -> None:
         assert int(split.suffix_mask[rows].sum()) == 8
         suffix_reps = split.suffix_repetition_indices[rows][split.suffix_mask[rows]]
         assert set(np.unique(suffix_reps).tolist()) == {0, 1}
+        prefix_onsets = dataset.event_timeline.onset_times_s[rows][split.prefix_mask[rows]]
+        suffix_onsets = dataset.event_timeline.onset_times_s[rows][split.suffix_mask[rows]]
+        assert float(np.max(prefix_onsets)) < float(np.min(suffix_onsets))
+        prefix_available = dataset.event_timeline.evidence_available_times_s[rows][
+            split.prefix_mask[rows]
+        ]
+        suffix_epoch_starts = suffix_onsets + dataset.preprocessing.tmin_ms / 1000.0
+        assert float(np.max(prefix_available)) < float(np.min(suffix_epoch_starts))
+        prefix_evidence_times = dataset.event_timeline.evidence_available_times_s[rows][
+            split.prefix_mask[rows]
+        ]
+        assert float(np.max(prefix_evidence_times)) < float(np.min(suffix_onsets))
+
+
+def test_causal_prefix_suffix_split_rejects_overlapping_epoch_evidence() -> None:
+    dataset = _causal_candidate_dataset()
+    dataset.event_timeline = replace(
+        dataset.event_timeline,
+        evidence_available_times_s=dataset.event_timeline.onset_times_s + 100.0,
+    )
+
+    with pytest.raises(ValueError, match="No selection group"):
+        causal_prefix_suffix_split(dataset, prefix_repetitions=2, test_repetitions=2)
 
 
 def test_causal_prefix_suffix_split_rejects_zero_phase_cache() -> None:
@@ -334,3 +429,21 @@ def test_causal_prefix_suffix_split_rejects_zero_phase_cache() -> None:
     # still marked acausal; this is the first leakage gate.
     with pytest.raises(ValueError, match="online_causal"):
         causal_prefix_suffix_split(dataset, prefix_repetitions=2, test_repetitions=2)
+
+
+def test_pretrained_trunk_rejects_target_subject_overlap(tmp_path) -> None:
+    dataset = _causal_candidate_dataset()
+    checkpoint = tmp_path / "pretrained.pt"
+    payload = {
+        "trunk_state_dict": _trunk().state_dict(),
+        "training_subject_keys": [f"{dataset.name}\0g1"],
+    }
+    torch.save(payload, checkpoint)
+
+    with pytest.raises(ValueError, match="includes target subject"):
+        _load_trunk(checkpoint, dataset, target_subject="g1")
+
+    payload["training_subject_keys"] = [f"{dataset.name}\0other"]
+    torch.save(payload, checkpoint)
+    loaded = _load_trunk(checkpoint, dataset, target_subject="g1")
+    assert isinstance(loaded, N2P3Net)

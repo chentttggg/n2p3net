@@ -612,9 +612,9 @@ async function tick() {
     const manifest = [...lines].reverse().find(l => l.type === "manifest") || {};
     let folds = lines.filter(l => l.type === "fold");
     const done = lines.length > 0 && lines[lines.length - 1].type === "done";
-    // done is flushed before record.json is written. On a parallel run the
-    // final fold callback can also be observed one poll late, so use the
-    // immutable final record to fill only genuinely missing fold rows.
+    // Current runners write record.json atomically before done. Keep reading
+    // the immutable final record to support historical runs and fill genuinely
+    // missing fold rows after parallel callback delays.
     let final = null;
     try {
       const rr = await fetch(`runs/${RUN}/record.json`, { cache: "no-store" });

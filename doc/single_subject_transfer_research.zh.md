@@ -1,7 +1,8 @@
 # 单被试 9 选数字解码 85% 研究预注册（含迁移训练）
 
 日期：2026-08-28
-状态：research proposal / preregistration
+状态：historical proposal；已由 `doc/research_program.zh.md` 接管。原型代码已存在，
+但正式 GTN 协议仍需完成 Gate 0。
 依赖：`doc/input_contract_math.zh.md`、`doc/ablation_20260828.zh.md`、
 `doc/prior_free_unfolding.zh.md`
 
@@ -20,11 +21,11 @@
 | 单被试 binary trial AUC | >= 0.78 | 预测 9 选能力的前提 |
 | `hit@8` | >= 0.85 | GTN 中位数每数字约 16 次，留 8 次测试 |
 | `hit@5` | 仅报告 | 用于评估快系统 |
-| calibration trials | <= 60% prefix | 允许迁移预训练减少校准量 |
+| calibration budget | 绝对 reps/决策数/分钟 + 比例 | 60% 目标数据不自动等于 few-shot |
 
 若把目标误写成 LOSO 单试次 BACC=0.85，会在当前证据下先验失败：
-本仓库 128 Hz 合同的最强 LOSO 结果是 EEGNet AUC=0.7396 / BACC=0.6754
-（`doc/ablation_20260828.zh.md`）；外部 LOSO P300 对照同样落在
+本仓库 128 Hz 合同的 BI2014a 探索领先为 full-unfold
+AUC=0.7451 / BACC=0.6774；外部 LOSO P300 对照同样落在
 AUROC 0.72–0.78 区间（ERP-XTTN, ERP CORE P300，见本文件第 4 节）。
 
 ## 1. 可行性：由 binary AUC 推导 hit@R（本项目自己的判断）
@@ -52,26 +53,30 @@ P(hit)   = P(Z_target > max_k Z_other)
 
 判断：
 
-1. 85% 单被试数字命中不需要 binary AUC=0.85；`AUC>=0.78` 且 `R=8` 即可
-   跨过 0.92 的模型上界，留出非平稳/校准漂移的余量。
+1. 该 iid 等方差高斯模型在 `AUC>=0.78, R=8` 时给出约 0.92 的点估计，
+   但它不是理论上界，也不是性能保证。
 2. 因此研究优先级是：**先让同人 prefix 训练的 binary AUC 稳定到 0.78–0.80，
    再用 `R=8` 决策**；不要先堆 9 选端到端网络。
 3. 上述独立性假设会被试次间自相关、注意漂移和校准误差破坏，所以实际
    hit@R 必须用留出 suffix 实测，不能用此表替代实验。
 
+若同一候选的重复相关系数为 `rho`，理想分离度变为
+`sqrt(R/(1+(R-1)rho))*d'`；`rho=1` 时重复完全不增加信息。相同 trial AUC
+还可能因 9 候选的联合相关结构不同而产生不同 hit rate。
+
 ## 2. 为什么单被试协议必须重新设计
 
-### 2.1 当前代码不能直接做该协议
+### 2.1 当前代码已有原型，但还不能作正式结论
 
-- `run_eeg_loso.py` 只有 LOSO，没有 per-subject prefix/suffix runner。
-- `within_subject_folds` 现在要求完整 acquisition group；GTN 每个 subject 只有
-  一个 group（245 groups / 242 subjects），因此无法按 run/block 分组。
-- 主线滤波是 `phase=zero` 的非因果 IIR。把同一连续记录切成 train/test，
-  train epoch 会含有 test 时期的滤波响应，形成时间泄漏。
+- `run_within_subject_transfer.py`、causal prefix/suffix 和 `hit@R` 已有原型。
+- 当前工作树会按 evidence-available time 到 suffix epoch start 施加 embargo，
+  并校验 checkpoint target overlap。
+- 内层 early-stop/calibration 仍是随机 group 选择，不是严格 earlier->later；
+  transfer runner 也尚未接入 fold-local QC 和完整 calibration/artifact 记录。
 - BI2014a 通用 MOABB 元数据未暴露 9 个 source block；GTN 的 candidate chain
   和 repetition index 才是可执行单被试数字协议的来源。
 
-### 2.2 必须新增的协议
+### 2.2 正式协议必须满足
 
 对每个 GTN/BrainSync subject：
 
@@ -99,9 +104,11 @@ P(hit)   = P(Z_target > max_k Z_other)
 
 ## 3. 大数据迁移训练：采用什么、不采用什么
 
-### 3.1 主路线：P300 域内 SSL + 轻量 subject head
+### 3.1 主路线：多被试 supervised transfer，再检验联合 SSL
 
-最有直接证据的蓝本是 SpellerSSL：
+Lee 2020 的真实在线新被试测试和 Gao 2021 的 150-train/50-test 研究，比纯重建
+更直接地支持“大规模 P300 supervised pretraining + 候选聚合 + 短校准回退”。
+SpellerSSL 提供的机制线索是：
 
 - 1D U-Net backbone，masked reconstruction + FFT 幅度一致 loss；
 - in-domain P300 预训练优于 cross-domain MI 预训练；
@@ -113,7 +120,7 @@ P(hit)   = P(Z_target > max_k Z_other)
 **批判保留**：SpellerSSL 的 "in-domain pretraining" 实际上是在 Subject A 上
 预训练、在 Subject B 的 85 个字符校准后测试；它是单源被试迁移，不是大规模
 多中心预训练。94% CRR@7 不能直接迁移到 GTN 9 选数字，但机制（重建预训练 +
-聚合 + 轻量 head）值得在本项目用 matched protocol 复验。
+  聚合 + 轻量 head）值得作为 matched auxiliary/control 复验，不能预设为主线。
 
 建议迁移层级：
 
@@ -129,21 +136,22 @@ T3  通用 EEG FM: 只作为探针/负对照，不作为 85% 目标的依赖路�
 
 - xDAWN + Riemannian transfer 是 P300 上最稳的 classical transfer floor：
   [MDPI xDAWN-Riemann transfer](https://www.mdpi.com/2076-3417/10/5/1804)。
-- 小样本跨数据集 P300 上显式 MMD 对齐优于直接混训：
+- AS-MMD 报告显式域对齐，但目标域实际汇集 40 人共 400 个标签并随机 trial CV，
+  不是单新被试 10-trial 或 LOSO：
   [Adaptive Split-MMD P300](https://scirate.com/arxiv/2510.21969)。
-- 本项目应跑 `xdawn_rg`、source-pretrain/fine-tune、MMD 三条 matched 路线；
-  不能用“更多源数据”掩盖协议泄漏。
+- 本项目先跑 `xdawn_rg` 和 source-supervised/fine-tune；MMD 只作后置对照，并须
+  比较边际、先验加权和 class-conditional 版本。
 
 ### 3.3 明确不押注的路线
 
 - 通用 EEG foundation model 直接线性 probing：多篇独立基准显示短窗 BCI 上
   specialist 不差、linear probing 常不足：
-  [EEG-FM-Compass](Paper/EEG_FM_Compass_arXiv_2601.17883.pdf)、
-  [CHIL FM generalization](Paper/EEG_FM_Generalization_Framework_arXiv_2605.28563.pdf)、
-  [NeuralBench](Paper/NeuralBench_arXiv_2605.08495.pdf)。
+  [EEG-FM-Compass](../Paper/EEG_FM_Compass_arXiv_2601.17883.pdf)、
+  [CHIL FM generalization](../Paper/EEG_FM_Generalization_Framework_arXiv_2605.28563.pdf)、
+  [NeuralBench](../Paper/NeuralBench_arXiv_2605.08495.pdf)。
 - 大规模 FM 表示里的 subject identity 和 1/f 低频捷径必须先审计：
-  [Identity Trap](Paper/Identity_Trap_in_EEG_Foundation_Models_arXiv_2606.06647.pdf)、
-  [Low-frequency bias](Paper/Understanding_and_Correcting_Low-Frequency_Bias_in_EEG_Foundation_Models_arXiv_2608.01898.pdf)。
+  [Identity Trap](../Paper/Identity_Trap_in_EEG_Foundation_Models_arXiv_2606.06647.pdf)、
+  [Low-frequency bias](../Paper/Understanding_and_Correcting_Low-Frequency_Bias_in_EEG_Foundation_Models_arXiv_2608.01898.pdf)。
 - GAN/WGAN 数据增强不作为第一阶段；先做便宜且无分布的 time jitter +
   Gaussian noise + channel dropout。ERP-WGAN 证据存在
   ([ERP-WGAN](https://www.sciencedirect.com/science/article/pii/S0165027022001480))，
@@ -153,17 +161,17 @@ T3  通用 EEG FM: 只作为探针/负对照，不作为 85% 目标的依赖路�
 
 - ERP CORE P300 LOSO：full montage EEGNet AUROC=0.776 / BACC=0.693；
   3 通道 EEGNet AUROC=0.720 / BACC=0.640。
-  [ERP-XTTN arXiv](Paper/ERP_XTTN_arXiv_2606.02939.pdf)。
-- 本项目 128 Hz 合同 LOSO：EEGNet AUC=0.7396 / BACC=0.6754，与上述外部
-  LOSO 水平一致；说明当前 pipeline 没有明显泄漏或虚高。
+  [ERP-XTTN arXiv](../Paper/ERP_XTTN_arXiv_2606.02939.pdf)。
+- 本项目 128 Hz BI2014a LOSO 与上述外部量级一致；这只是合理性检查，不能证明
+  pipeline 没有泄漏，协议仍必须由 executable validators 和负对照保证。
 - GTN 旧文献（Vařeka 及后续比较）单试次 accuracy 约 61–77%，且多数是
   3 通道、旧预处理；不作为当前合同的目标上限。
-  [Vařeka P300 CNN/RNN](Paper/102482.pdf)、
-  [GTN architecture comparison](Paper/SHTI-292-SHTI220333.pdf)。
+  [Vařeka P300 CNN/RNN](../Paper/102482.pdf)、
+  [GTN architecture comparison](../Paper/SHTI-292-SHTI220333.pdf)。
 - P300 latency jitter 是单试次信息损失的主因之一，`[200,500] ms` 约束窗内
   单试次 realignment 可显著改善 ERP 形态；但必须同时报告 latency shift/jitter，
   防止把伪迹对齐误当增益：
-  [JNE 2026 latency realignment](Paper/Improving_P300_Morphology_Single_Trial_Latency_Realignment_JNE_2026.pdf)。
+  [JNE 2026 latency realignment](../Paper/Improving_P300_Morphology_Single_Trial_Latency_Realignment_JNE_2026.pdf)。
 
 ## 5. 预注册实验矩阵
 
@@ -173,12 +181,13 @@ T3  通用 EEG FM: 只作为探针/负对照，不作为 85% 目标的依赖路�
 | ID | 训练数据 | 模型 | 决策 | 主判据 |
 |---|---|---|---|---|
 | W0 | target prefix | `window_lr`, `xdawn_rg` | hit@8 | classical floor |
-| W1 | target prefix | `eegnet`, `ms_eegnet` | hit@8 | neural floor |
+| W1 | target prefix | EEGNet、MS、full-unfold K65/K35 | hit@8 | neural floor |
 | W2 | target prefix + jitter/noise | W1 冠军 | hit@8 | augmentation 净效应 |
-| T1 | 其他 GTN 被试 SSL | frozen trunk + subject head | hit@8 | leave-one-out transfer |
-| T2 | T1 + BI/BNCI 源 | same | hit@8 | cross-dataset transfer |
-| T3 | T1/T2 冠军 + MMD | same | hit@8 | explicit alignment |
-| D1 | W/T 冠军 | sum vs mean vs precision-weight | hit@R, R=3..8 | decision aggregation |
+| T1 | 其他 GTN 被试 supervised | frozen/full-fine head | hit@8 | leave-one-out transfer |
+| J1 | T1 + auxiliary SSL | same backbone | hit@8 | SSL 净增益 |
+| T2 | T1/J1 + 合法跨源 stem | same | hit@8 | cross-dataset transfer |
+| T3 | T2 + conditional MMD | same | hit@8 | explicit alignment |
+| D1 | W/T 冠军 | sum/mean/trim/valid precision | hit@R | decision aggregation |
 | L1 | T 冠军 | prefix 大小 5/8/12 reps | hit@8 | calibration budget |
 
 判定规则：
@@ -196,11 +205,11 @@ T3  通用 EEG FM: 只作为探针/负对照，不作为 85% 目标的依赖路�
 2. **causal filter 合同**：`PreprocessingSpec` 增加合法的
    `filter_phase=forward` / `online_causal=True` 单被试 profile；
    不允许把零相位滤波结果切成 prefix/suffix 后宣称无泄漏。
-3. **per-subject prefix/suffix folds**：
-   `experiments/run_within_subject.py` 或 `evaluate_within_subject.py`，
-   输入 `(subject, repetition_index, stimulus)`，输出 hit@R 曲线。
-4. **decision 层升级**：在 `models/decision.py` 增加
-   repetition-weighted sum、mean、precision-weighted sum，并报告空集/低置信。
+3. **per-subject prefix/suffix folds**：原型已在
+   `experiments/run_within_subject_transfer.py`；仍需 chronological inner validation、
+   fold-local QC/calibration 和完整 exclusion ledger/artifacts。
+4. **decision 层升级**：sum/mean/trim 可直接消融；precision 只有存在逐 trial
+   predictive variance 时才合法，并报告空集、低置信和 abstain。
 5. **transfer 模块**：
    - `src/transfer/ssl.py`：P300 masked reconstruction pretraining；
    - `src/transfer/adapters.py`：frozen trunk + subject head；
@@ -213,9 +222,9 @@ T3  通用 EEG FM: 只作为探针/负对照，不作为 85% 目标的依赖路�
 
 - 85% 必须定义为**同人 prefix→suffix 的 9 选 hit@8**，不是 LOSO 单试次
   BACC。
-- 由 binary AUC 推导，单被试 binary AUC 0.78–0.80 时 hit@8 的理论上限已达
-  0.92–0.95；因此工作重心是稳定单被试 binary AUC，而不是发明 9 选网络。
-- 文献中 SpellerSSL 是机制最接近的迁移方案，但其数字不能直接搬；
-  xDAWN-Riemann/MMD 是必须保留的 transfer floor；通用 FM 不押注。
+- iid 高斯模型在 binary AUC 0.78–0.80 时预测较高 hit@8，但不是上限；工作重心
+  必须同时包含 binary evidence、重复相关性和组级决策目标。
+- 大规模 P300 supervised transfer 是第一主线；SpellerSSL/MTCN 提供 auxiliary
+  机制。xDAWN-Riemann 是 floor，MMD 是条件对照，通用 FM 不押注。
 - 先实现 GTN 新 cache + causal single-subject folds + hit@R evaluation，
   再按 T0→T1→T2 顺序做迁移；每层晋升都必须有同 prefix 训练量对照。

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 from experiments.run_n2p3_sensitivity import (
     DELTAS,
+    _anchor_subjects_for_folds,
     _subject_sort_key,
     architecture_for_sample_rate,
     build_batch_retry_candidates,
@@ -61,6 +63,16 @@ def test_subject_subset_uses_natural_numeric_order() -> None:
     subjects = ["1", "10", "2", "20", "3"]
 
     assert sorted(subjects, key=_subject_sort_key) == ["1", "2", "3", "10", "20"]
+
+
+def test_anchor_subjects_are_read_from_fold_masks_not_a_second_sort() -> None:
+    subjects = np.asarray(["1", "10", "2", "1", "10", "2"])
+    folds = [
+        (subjects != held_out, subjects == held_out)
+        for held_out in np.unique(subjects)
+    ]
+
+    assert _anchor_subjects_for_folds(subjects, folds) == ["1", "10", "2"]
 
 
 def test_boundary_grid_extends_both_temporal_kernel_directions() -> None:

@@ -1,8 +1,9 @@
 # SpellerSSL 类预训练头与后处理横向对比
 
 日期：2026-08-28
-状态：research plan
-前提：已完成因果滤波泄漏修复；单被试目标为同人 prefix->suffix 的 9 选 `hit@8 >= 0.85`。
+状态：historical comparison；主路线已由 `research_program.zh.md` 修订。
+前提：零相位未来泄漏已封堵；checkpoint holdout、raw-sample embargo 已有工作树
+修正，chronological inner validation、QC/calibration 和完整 artifacts 仍待闭环。
 参考文献按“可复验程度”排序，不按论文宣称数字排序。
 
 ## 1. 预训练头/目标横向对比
@@ -14,15 +15,15 @@
 | BENDR | 时域 mask + contextualized token 预测 | CNN encoder + Transformer | linear probe / fine-tune | 长时程上下文 | 1 s P300 epoch 上下文有限；线性探针增益不稳 |
 | LaBraM/CoMET/FAME | patch mask 重建；FAME 做 band-balanced 频域重建 | Transformer | linear/full fine-tune | 数据规模大；FAME 缓解 1/f 低频偏置 | 短窗 BCI 增益有限；subject identity 捷径；部署重 |
 | Contrastive ERP CNN | supervised/self-supervised contrastive 拉近同标签 ERP | compact CNN | 分类头 | 小样本稳定；目标类别语义强 | 需要 batch/pair 设计；可能与 reconstruction 重叠 |
-| xDAWN-Riemann | 无预训练；空间增强 + 协方差黎曼几何 | 非参数 | tangent-space logistic | P300 transfer floor 强、轻量、无身份特征 | 单试次容量有限；不适合端到端 9 选扩展 |
+| xDAWN-Riemann | 无预训练；空间增强 + 协方差黎曼几何 | 非参数 | tangent-space logistic | P300 transfer floor 强、轻量 | 单试次容量有限；但校准 score 可直接做 9 选聚合 |
 
 来源：
 - [SpellerSSL arXiv](https://arxiv.org/abs/2509.19401)；
 - [EEG2ERP](https://openreview.net/forum?id=c6LgqDhpH0)、
-  [EEG2ERP TMLR](Paper/Estimating_Event_Related_Potential_from_Few_EEG_Trials_arXiv_2511.23162.pdf)；
+  [EEG2ERP TMLR](../Paper/Estimating_Event_Related_Potential_from_Few_EEG_Trials_arXiv_2511.23162.pdf)；
 - [BENDR](https://pmc.ncbi.nlm.nih.gov/articles/PMC8261053/)；
 - [CoMET](https://ar5iv.labs.arxiv.org/html/2509.00314)、
-  [FAME/Low-frequency bias](Paper/Understanding_and_Correcting_Low-Frequency_Bias_in_EEG_Foundation_Models_arXiv_2608.01898.pdf)；
+  [FAME/Low-frequency bias](../Paper/Understanding_and_Correcting_Low-Frequency_Bias_in_EEG_Foundation_Models_arXiv_2608.01898.pdf)；
 - [ERP contrastive CNN](https://arxiv.org/abs/2407.04738)；
 - [xDAWN-Riemann transfer](https://www.mdpi.com/2076-3417/10/5/1804)。
 
@@ -47,8 +48,8 @@
 
 ### 3.1 主干与预训练头
 
-主干继续使用已晋升的 MS-EEGNet `ms_flatten`（1,282 参数，AUC 0.7348），
-不换 U-Net，避免破坏已完成 matched ablation。
+主干不再预先固定。GTN matched 轴至少保留 EEGNet、MS-EEGNet、linear
+full-unfold K65/K35；BI2014a 只支持 full-unfold 的探索领先，不能决定 GTN backbone。
 
 预训练时加一个可丢弃的 decoder：
 
@@ -63,9 +64,9 @@ loss = lambda_wave * |X - X_hat|_1
 - `w_b` 使用 band-normalized 权重：delta/theta/alpha/beta 各自先除以该频带
   训练能量，再归一化；这是把 FAME 的 band-balance 思想压缩进 P300 频段，
   避免 1/f 低频主导重建。
-- 在 loss 外增加 subject-axis linear probe 审计；若 latent 可线性解码
-  subject 身份，则在冻结前做 subject-axis erasure 或加 subject-CL 惩罚。
-  依据：[Identity Trap](Paper/Identity_Trap_in_EEG_Foundation_Models_arXiv_2606.06647.pdf)。
+- 在 loss 外增加独立、stop-gradient 的 subject-axis linear probe 审计。高 probe
+  分数只触发 erasure/GRL 的 matched ablation，不能自动删除可能与 P300 共线的表示。
+  依据：[Identity Trap](../Paper/Identity_Trap_in_EEG_Foundation_Models_arXiv_2606.06647.pdf)。
 
 ### 3.2 预训练语料优先级
 
@@ -75,24 +76,24 @@ T1b  BrainSync-GTN（若可得，8 通道同设备）
 T2   BI2014a + BNCI2014_008（16/8 通道，仅作 representation 辅助源）
 ```
 
-T1a 必须先行；T1b/T2 只有在 source reference 显式一致或完成共同重参考后
-才允许进入同一预训练批。MOABB 源仍用 zero-phase 离线缓存，不用于目标人
-prefix/suffix 因果缓存。
+T1a 必须先行。T1b/T2 除共同重参考外还必须解决通道数/坐标合同；当前固定
+`n_channels` 空间卷积和 dataset concat 不能把 3/8/16 导直接混入一批。可选方案是
+共同真实通道子集或 dataset-specific spatial stem。MOABB zero-phase 只作 source。
 
 ### 3.3 下游 subject head
 
 对每个目标人：
 
 ```text
-frozen trunk -> ms_flatten features (40-dim)
+frozen trunk -> ms_flatten features (16-dim)
              -> Linear + temperature/Platt calibration
              -> target-only prefix fine-tune
 ```
 
 并行消融：
 
-1. `head_linear`：只训练 40->2 线性层；
-2. `head_mlp16`：40->16 GELU->2，capacity 对照；
+1. `head_linear`：只训练 16->2 线性层；
+2. `head_mlp16`：16->16 GELU->2，capacity 对照；
 3. `full_fine`：低学习率全参数 fine-tune，BN 可选冻结；
 4. `xdawn_rg`：同 prefix 的 classical floor。
 
@@ -104,7 +105,8 @@ frozen trunk -> ms_flatten features (40-dim)
 1. binary 阶段输出 calibrated logit（prefix 内 group-disjoint 校准）；
 2. 对测试 suffix 按数字聚合：
    - 默认 `sum`；
-   - 与 `mean`、`trimmed_mean(0.2)`、precision-weight 做 paired 比较；
+   - 与 `mean`、`trimmed_mean(0.2)` 做 paired 比较；precision-weight 仅在模型
+     输出逐 trial predictive variance 时启用；
 3. 报告 hit@R，R=3..8；
 4. dynamic stopping 作为可选层：后验最高候选的 margin 达到 prefix 选定
    阈值即停止，否则继续 repetition；
@@ -115,12 +117,14 @@ frozen trunk -> ms_flatten features (40-dim)
 
 ```text
 W0  target prefix classical floor
-W1  target prefix EEGNet / MS-EEGNet
-P1  T1a SSL pretrain -> frozen trunk + subject head
-P2  P1 + band-balanced FFT loss
-P3  P2 + subject-axis erasure/contrastive penalty
-P4  P2 + T2 cross-dataset source（重参考后）
-D1  P 冠军 + sum/mean/trimmed/precision-weight
+W1  target prefix EEGNet / MS / full-unfold K65/K35
+S1  T1a supervised pretrain -> frozen/full-fine subject head
+J1  S1 + temporal/spatial auxiliary SSL
+R1  pure masked reconstruction control
+P2  J1/R1 + band-balanced spectral objective
+P3  P2 + subject-axis erasure/contrastive penalty ablation
+P4  P2 + compatible cross-dataset spatial stem
+D1  P 冠军 + sum/mean/trimmed/(valid precision)
 D2  D1 + dynamic stopping
 ```
 
@@ -144,10 +148,7 @@ D2  D1 + dynamic stopping
 
 ## 5. 判定
 
-- 泄漏修复已完成：`filter_phase=forward` 与 `online_causal` 绑定，MOABB 拒绝
-  假因果声明。
-- 推荐架构：**MS-EEGNet trunk + 可丢弃 band-balanced FFT 重建 decoder +
-  frozen/linear subject head + calibrated sum/trimmed aggregation +
-  optional dynamic stopping**。
-- 若 P1 在 GTN 单被试 hit@8 达到 0.85 且 60% prefix 校准量，则该方案晋升；
-  否则退回到 W1 + classical xDAWN-Riemann floor，不追加无证据的复杂度。
+- 目前只能说 causal ingress 原型成立，正式 leakage/QC/calibration/artifact 门禁未闭环。
+- 不预定推荐架构：先完成 GTN floor，再由 S1/J1/R1 matched ablation 决定。
+- `hit@8 >= 0.85` 必须同时报告绝对校准量、完整 cohort 和 CI；60% 目标数据
+  不视为 few-shot。

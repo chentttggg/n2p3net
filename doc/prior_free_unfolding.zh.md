@@ -1,5 +1,8 @@
 # 无生理时窗先验的完整时序展开
 
+状态：BI2014a 探索性消融已完成；本文后半的“预注册”保留为历史方案。
+确认性结论和 GTN 后续规则见 `research_program.zh.md`。
+
 ## 结论先行
 
 本轮不再把 P300 窗、N200 窗、pre-stimulus reference、latency bank 或固定
@@ -164,3 +167,22 @@ AUC/BACC，使用被试级 bootstrap 区间和带 plus-one 修正的配对 sign-
    `ms_flatten`，不因理论表达力更强而晋升。
 5. 外层测试结果只用于最终报告，不用于回头选择 rank、hidden width、epoch 或
    threshold。
+
+## 已完成结果与后续边界
+
+完整 64-subject / 61,015-trial BI2014a 结果：
+
+| Head | AUC | BACC |
+|---|---:|---:|
+| linear `full_unfold` | 0.745109 | 0.677407 |
+| quadratic `full_unfold` | 0.740752 | 0.675562 |
+| MLP `full_unfold` | 0.744027 | 0.675290 |
+| EEGNet | 0.739513 | 0.675382 |
+| MS-EEGNet | 0.734211 | 0.667776 |
+
+审计重算中，linear full-unfold 相对 MS 的 AUC 差约 `+0.01090`，相对 EEGNet
+约 `+0.00560`；后者 BACC 区间跨零。该轮支持“保留主干时间坐标”，不支持
+低秩二阶或 MLP 机制。K35 仅由后续 inner sensitivity 注册，未取得独立确认。
+
+BI2014a outer test 已被后续 epoch/patience/sampling-rate 运行重复查看，不再用于
+选择模型。下一次裁决必须在预注册 GTN chronological 9-choice 或新的独立数据上进行。

@@ -46,19 +46,21 @@ candidate score.
 
 The compact N2P3-Net branch uses an MS-EEGNet-style trunk: an EEGNet-factorized
 spatio-temporal block followed by two compressed separable temporal summaries.
-The promoted project head is paper-style `ms_flatten`. LMBC receives the
-dataset's physical `sfreq` and `tmin`, contrasts post-stimulus candidates
-against the pre-stimulus reference, and remains available as a rejected
-research hypothesis. `global_average` is the matched negative control. All
-modes emit the same binary logits and leave calibration and candidate
-aggregation unchanged. Equations and failure boundaries are in
-`doc/latency_marginal_pooling.zh.md`; matched results are in
-`doc/ablation_20260828.zh.md`.
+Paper-style `ms_flatten` remains the stable software default, while linear
+`full_unfold` is the current BI2014a exploratory mean leader. Neither is a
+confirmatory champion. Architecture records expose both local kernel spans and
+the total input-domain receptive field through ST convolution, pooling, and MST
+convolution. LMBC uses physical `sfreq`/`tmin` and remains a conditional
+latency hypothesis after failing only the BI2014a binary promotion test;
+`global_average` is the matched negative control. All modes emit the same
+binary logits and leave calibration and candidate aggregation unchanged.
+Equations, counterexamples, and the GTN adjudication plan are in
+`doc/research_program.zh.md`.
 
 Prior-free research heads expose every post-trunk feature/time coordinate to a
-linear, factorized-quadratic, or parameter-matched MLP readout. They are not
-promoted defaults. Their equations, counterexamples, literature boundary, and
-preregistered comparisons are in `doc/prior_free_unfolding.zh.md`.
+linear, factorized-quadratic, or parameter-matched MLP readout. BI2014a supports
+the linear full-unfold mechanism, not the quadratic or MLP extensions. Their
+equations and historical preregistration are in `doc/prior_free_unfolding.zh.md`.
 
 ## Initial Search Space
 

@@ -8,6 +8,7 @@ import baselines.evaluate as evaluate_module
 from baselines.classic import WindowLogisticRegression
 from baselines.evaluate import (
     _resolve_fold_execution,
+    _validate_folds,
     evaluate_binary,
     evaluate_candidate_selection,
     loso_folds,
@@ -56,6 +57,23 @@ def test_paired_permutation_uses_finite_sample_plus_one_correction() -> None:
 
     assert delta == 1.0
     assert 0.0 < p_value <= 1.0
+
+
+def test_loso_protocol_requires_exact_global_test_coverage() -> None:
+    groups = np.repeat(np.asarray(["s1", "s2", "s3"]), 2)
+    folds = loso_folds(groups)
+
+    _validate_folds(folds, len(groups), group_ids=groups, fold_protocol="loso")
+
+    with pytest.raises(ValueError, match="cover every row exactly once"):
+        _validate_folds(folds[:-1], len(groups), group_ids=groups, fold_protocol="loso")
+    with pytest.raises(ValueError, match="must not repeat"):
+        _validate_folds(
+            [folds[0], folds[0]],
+            len(groups),
+            group_ids=groups,
+            fold_protocol="partial_loso",
+        )
 
 
 def test_within_subject_folds_refuse_random_epoch_fallback() -> None:

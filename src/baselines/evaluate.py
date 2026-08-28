@@ -246,7 +246,11 @@ def _validate_binary_inputs(X: np.ndarray, y: np.ndarray, subject_ids: np.ndarra
 
 
 def _validate_folds(
-    folds: Sequence[tuple[np.ndarray, np.ndarray]], n_rows: int
+    folds: Sequence[tuple[np.ndarray, np.ndarray]],
+    n_rows: int,
+    *,
+    group_ids: np.ndarray | None = None,
+    fold_protocol: str | None = None,
 ) -> list[tuple[np.ndarray, np.ndarray]]:
     if not folds:
         raise ValueError("At least one fold is required.")
@@ -259,6 +263,34 @@ def _validate_folds(
         if not train.any() or not test.any() or (train & test).any():
             raise ValueError(f"Fold {index} must have non-overlapping non-empty train/test rows.")
         output.append((train, test))
+
+    grouped_protocols = {"loso", "partial_loso", "inner_sensitivity_screen"}
+    if fold_protocol in grouped_protocols:
+        if group_ids is None:
+            raise ValueError(f"{fold_protocol} validation requires group_ids.")
+        groups = np.asarray(group_ids).astype(str)
+        if groups.shape != (n_rows,) or np.any(np.char.strip(groups) == ""):
+            raise ValueError("fold group_ids must contain one non-empty group per row.")
+        test_counts = np.zeros(n_rows, dtype=np.int64)
+        held_out_groups: list[str] = []
+        for index, (train, test) in enumerate(output):
+            train_groups = set(np.unique(groups[train]).tolist())
+            test_groups = np.unique(groups[test]).tolist()
+            if len(test_groups) != 1:
+                raise ValueError(
+                    f"Fold {index} in {fold_protocol} must hold out exactly one complete group."
+                )
+            held_out = str(test_groups[0])
+            if held_out in train_groups:
+                raise ValueError(
+                    f"Fold {index} in {fold_protocol} leaks held-out group {held_out!r} into train."
+                )
+            held_out_groups.append(held_out)
+            test_counts += test.astype(np.int64)
+        if len(set(held_out_groups)) != len(held_out_groups) or np.any(test_counts > 1):
+            raise ValueError(f"{fold_protocol} test folds must not repeat held-out groups or rows.")
+        if fold_protocol == "loso" and np.any(test_counts != 1):
+            raise ValueError("loso test folds must cover every row exactly once.")
     return output
 
 
@@ -1029,7 +1061,6 @@ def evaluate_binary(
 ) -> BinarySummary:
     """Evaluate a target detector with held-out BACC and AUC."""
 
-    del fold_protocol  # Runner metadata; split masks remain the executable protocol.
     X, y, subject_ids = np.asarray(X), np.asarray(y), np.asarray(subject_ids).astype(str)
     _validate_binary_inputs(X, y, subject_ids)
     fit_groups = (
@@ -1060,7 +1091,12 @@ def evaluate_binary(
         X,
         y,
         fit_groups,
-        _validate_folds(folds, len(X)),
+        _validate_folds(
+            folds,
+            len(X),
+            group_ids=subject_ids,
+            fold_protocol=fold_protocol,
+        ),
         trial_channel_mask=trial_channel_mask,
         qc_features=qc_features,
         artifact_policy=artifact_policy,
@@ -1121,7 +1157,7 @@ def evaluate_candidate_selection(
 ) -> CandidateSummary:
     """Evaluate calibrated 9-choice candidate evidence on held-out groups."""
 
-    del fold_protocol, event_timeline  # Runner metadata; split masks remain the executable protocol.
+    del event_timeline  # Candidate-chain validation remains an ingress responsibility.
     X, y = np.asarray(X), np.asarray(y)
     group_ids = np.asarray(selection_group_ids).astype(str)
     fit_groups = (
@@ -1143,7 +1179,12 @@ def evaluate_candidate_selection(
         raise ValueError("fold_id_offset must be non-negative.")
     results: list[CandidateFoldResult] = []
     records: list[tuple[object, object, str]] = []
-    validated_folds = _validate_folds(folds, len(X))
+    validated_folds = _validate_folds(
+        folds,
+        len(X),
+        group_ids=fit_groups,
+        fold_protocol=fold_protocol,
+    )
     (
         fold_results,
         backend,

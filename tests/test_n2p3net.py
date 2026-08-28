@@ -125,6 +125,29 @@ def test_architecture_record_exposes_physical_receptive_spans() -> None:
     assert record["feature_sample_rate_hz"] == 32.0
     assert record["st_temporal_receptive_span_ms"] == pytest.approx(500.0)
     assert record["mst_receptive_span_ms"] == pytest.approx([125.0, 500.0])
+    assert record["mst_total_receptive_field_samples"] == [84, 132]
+    assert record["mst_total_receptive_span_ms"] == pytest.approx(
+        [648.4375, 1023.4375]
+    )
+
+
+def test_lmbc_architecture_record_uses_the_executed_windows() -> None:
+    record = N2P3Net(
+        n_channels=3,
+        n_times=128,
+        sfreq=128.0,
+        tmin_s=-0.2,
+        pooling_mode="latency_marginal_contrast",
+        evidence_window_ms=(200.0, 500.0),
+        reference_window_ms=(-150.0, -25.0),
+        latency_offsets_ms=(-50.0, 0.0, 75.0),
+        latency_temperature=0.25,
+    ).architecture_record()
+
+    assert record["evidence_window_ms"] == [200.0, 500.0]
+    assert record["reference_window_ms"] == [-150.0, -25.0]
+    assert record["latency_offsets_ms"] == [-50.0, 0.0, 75.0]
+    assert record["latency_temperature"] == pytest.approx(0.25)
 
 
 def test_spatial_projection_is_frequency_conditioned_and_max_norm_bounded() -> None:
@@ -554,3 +577,28 @@ def test_factory_locks_the_tuned_full_unfold_kernel(monkeypatch) -> None:
     assert model.architecture.temporal_kernel_size == 35
     assert model.parameter_count() == 1_266
     assert record["architecture"]["st_temporal_kernel_samples"] == 35
+
+
+def test_factory_scales_the_tuned_kernel_at_256_hz(monkeypatch) -> None:
+    dataset = SimpleNamespace(
+        preprocessing=SimpleNamespace(sfreq=256.0, tmin_ms=-200.0),
+        n_channels=16,
+        n_times=256,
+        channel_mask=np.ones(16, dtype=bool),
+    )
+    monkeypatch.setattr(factory, "_validate_binary_dataset", lambda _: None)
+
+    model = factory.build_binary_model(
+        "n2p3net_full_unfold_k35",
+        dataset,
+        epochs=1,
+        batch_size=4,
+        device=torch.device("cpu"),
+    )
+    record = factory.describe_binary_model("n2p3net_full_unfold_k35", model)
+
+    assert model.architecture.temporal_kernel_size == 69
+    assert model.architecture.mst_kernel_sizes == (9, 33)
+    assert record["architecture"]["st_temporal_receptive_span_ms"] == pytest.approx(
+        265.625
+    )

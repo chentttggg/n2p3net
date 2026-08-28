@@ -102,7 +102,12 @@ def _prepare_gtn_experiment(
         online_causal=bool(result.online_causal),
         timing_source=(
             "gtn_nix_source_event_samples;epoched_resample;"
-            "epoch_right_edge;acausal_preprocessing"
+            "epoch_right_edge;"
+            + (
+                "causal_forward_preprocessing"
+                if result.online_causal
+                else "acausal_zero_phase_preprocessing"
+            )
         ),
         candidate_ids=candidates,
         target_candidate_ids=np.repeat(str(int(gtn.thought_number)), event_count),

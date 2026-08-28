@@ -611,11 +611,6 @@ def main() -> None:
             )
             progress_file.flush()
             raise
-        else:
-            progress_file.write(
-                json.dumps({"type": "done", "ts": datetime.now(UTC).isoformat()}) + "\n"
-            )
-            progress_file.flush()
         finally:
             progress_file.close()
         record = {
@@ -642,9 +637,16 @@ def main() -> None:
             "wall_seconds": time.perf_counter() - started,
             "finished_utc": datetime.now(UTC).isoformat(),
         }
-        (output_dir / "record.json").write_text(
+        record_path = output_dir / "record.json"
+        temporary_record = output_dir / ".record.json.tmp"
+        temporary_record.write_text(
             json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8"
         )
+        temporary_record.replace(record_path)
+        with (output_dir / "progress.jsonl").open("a", encoding="utf-8") as completed:
+            completed.write(
+                json.dumps({"type": "done", "ts": datetime.now(UTC).isoformat()}) + "\n"
+            )
         print(
             f"[{model_name}] bacc={summary.balanced_acc_mean:.4f} "
             f"auc={summary.auc_mean:.4f} wall={record['wall_seconds']:.1f}s",

@@ -250,6 +250,20 @@ def _subject_sort_key(subject: str) -> tuple[int, int | str]:
     return (0, int(stripped)) if stripped.isdigit() else (1, stripped)
 
 
+def _anchor_subjects_for_folds(
+    subject_ids: np.ndarray,
+    folds: list[tuple[np.ndarray, np.ndarray]],
+) -> list[str]:
+    subjects = np.asarray(subject_ids).astype(str)
+    output: list[str] = []
+    for index, (_, test) in enumerate(folds):
+        held_out = np.unique(subjects[np.asarray(test, dtype=bool)])
+        if len(held_out) != 1:
+            raise ValueError(f"Anchor fold {index} must hold out exactly one subject.")
+        output.append(str(held_out[0]))
+    return output
+
+
 def main() -> None:
     defaults = DeepConfig()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -349,8 +363,7 @@ def main() -> None:
     if max(fold_indices) >= len(all_folds):
         parser.error(f"fold index exceeds the available {len(all_folds)} LOSO folds")
     folds = [all_folds[index] for index in fold_indices]
-    subjects = np.asarray(sorted(np.unique(subject_ids).tolist(), key=_subject_sort_key))
-    anchor_subjects = [str(subjects[index]) for index in fold_indices]
+    anchor_subjects = _anchor_subjects_for_folds(subject_ids, folds)
     artifact_policy = FoldLocalArtifactPolicy()
     fitted_artifact_models, artifact_qc_sidecar = resolve_fold_local_artifact_models(
         X,

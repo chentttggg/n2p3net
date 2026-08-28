@@ -1,30 +1,17 @@
 # Performance Roadmap
 
-## Phase 0: Research and Contract
+This file is a compact status index. The authoritative living plan, equations,
+counterexamples, GTN protocol, and stop rules are in `research_program.zh.md`.
 
-Complete the literature catalog, data manifest schema, format adapters, and
-grouped split audit. Exit only when every available source exposes subject and
-run/session provenance or is explicitly excluded from grouped claims.
+| Stage | Status | Exit condition |
+|---|---|---|
+| Data/LOSO contract | implemented, still audited | executable fold/attestation checks stay green |
+| Classical and compact baselines | implemented | matched GTN chronological floor exists |
+| BI2014a architecture screen | complete, exploratory only | no further BI outer-test tuning |
+| GTN causal 9-choice protocol | prototype, Gate 0 incomplete | current 128 Hz cache, embargo, chronological inner validation, QC/calibration and full ledger |
+| Architecture confirmation | not started | 3-seed GTN paired comparison of classical, EEGNet, MS/full-unfold and LMBC |
+| Transfer/SSL | prototype only | target-excluded checkpoints beat scratch and xDAWN at equal absolute calibration budget |
+| Robustness/deployment | not started | jitter/channel/reference stress, latency, memory and abstain gates pass |
 
-## Phase 1: Baselines
-
-Implement regularized time-domain logistic regression and xDAWN-RG. Establish
-within-subject grouped, LOSO, and decision-level aggregation reports.
-
-## Phase 2: Compact Neural Search
-
-Implement EEGNet, P300-CNN, and multi-scale CNN behind one classifier
-interface. Run nested grouped selection, then publish the complete Pareto
-table.
-
-## Phase 3: Transfer and Deployment Cost
-
-If an external corpus is available, test pretrain/fine-tune and calibration
-budgets against scratch training and xDAWN-RG. Profile CPU/CUDA/XPU latency,
-memory, and failure behavior.
-
-## Phase 4: Confirmation
-
-Freeze the winning configuration, rerun untouched outer tests, calculate
-group-level confidence intervals, and export reproducible artifacts. Remove
-any module that has no supported performance contribution.
+No current model is a confirmatory or deployment champion. GTN `hit@R`, not
+BI2014a trial AUC alone, is the final promotion criterion.

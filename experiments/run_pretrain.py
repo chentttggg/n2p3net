@@ -39,6 +39,21 @@ def _parse_bands(value: str) -> tuple[tuple[float, float], ...]:
     return tuple(bands)
 
 
+def _source_training_rows(
+    subject_ids: np.ndarray,
+    holdout: set[str],
+) -> tuple[np.ndarray, set[str]]:
+    subjects = np.asarray(subject_ids).astype(str)
+    all_subjects = set(subjects.tolist())
+    unknown_holdout = holdout - all_subjects
+    if unknown_holdout:
+        raise ValueError(
+            "holdout subjects are absent from the source cache: "
+            f"{sorted(unknown_holdout)}"
+        )
+    return ~np.isin(subjects, list(holdout)), all_subjects
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-cache", required=True)
@@ -67,7 +82,7 @@ def main() -> None:
 
         assert_causal_p300_input_contract(dataset.preprocessing)
     holdout = {item.strip() for item in args.holdout_subjects.split(",") if item.strip()}
-    source_rows = ~np.isin(dataset.subject_ids.astype(str), list(holdout))
+    source_rows, all_subjects = _source_training_rows(dataset.subject_ids, holdout)
     if not source_rows.any():
         raise ValueError("holdout subjects removed every source epoch.")
 
@@ -166,6 +181,12 @@ def main() -> None:
         "config": asdict(config),
         "source_cache": str(Path(args.source_cache).resolve()),
         "holdout_subjects": sorted(holdout),
+        "source_dataset_name": dataset.name,
+        "source_subjects": sorted(all_subjects),
+        "training_subjects": sorted(all_subjects - holdout),
+        "training_subject_keys": [
+            f"{dataset.name}\0{subject}" for subject in sorted(all_subjects - holdout)
+        ],
         "n_source_epochs": int(source_rows.sum()),
         "standardized": args.standardize,
         "runtime": {

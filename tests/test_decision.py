@@ -151,6 +151,13 @@ def test_hit_rate():
     assert hit_rate(predicted, true) == pytest.approx(2 / 3)
 
 
+def test_hit_rate_counts_missing_decisions_as_misses() -> None:
+    predicted = np.array([5, None], dtype=object)
+    true = np.array([5, 8])
+
+    assert hit_rate(predicted, true) == pytest.approx(0.5)
+
+
 def test_duplicate_digit_vocab_raises():
     """digit_vocab 含重复数字会双计同一数字，应显式拒绝（audit P1/P2 补防）。"""
     with pytest.raises(ValueError, match="digit_vocab"):

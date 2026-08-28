@@ -1,9 +1,17 @@
 # N2P3-Net
 
-Performance-first oddball P300 decoding research framework. Under the matched
-BI2014a 64-subject LOSO ablation, EEGNet is the current overall champion and
-paper-style MS-EEGNet (`ms_flatten`) is the strongest project architecture.
-LMBC remains an explicit research ablation after failing the promotion test.
+Performance-first oddball P300 decoding research framework. BI2014a is now an
+exploratory architecture screen: linear `full_unfold` has the best observed
+mean AUC, but no model is a confirmatory champion. GTN chronological 9-choice
+`hit@R` is the final promotion protocol. LMBC failed promotion only on the
+BI2014a binary contract and remains a GTN/latency-stratified hypothesis.
+
+> Update 2026-08-28: the later prior-free readout ablation
+> (`doc/prior_free_unfold_result_20260828.zh.md`) puts `full_unfold` ahead of
+> `ms_flatten` on both AUC and BACC, and ahead of EEGNet on AUC only. This
+> registers `full_unfold` as a GTN candidate; it does not promote the default
+> from one dataset. The BI2014a training-budget runs (`bi2014a_full_unfold_*`)
+> are performance exploration only and are not promotion evidence.
 
 ## Environment
 
@@ -30,8 +38,9 @@ Use `--no-fused-adam --compile-mode none` for the matched eager ablation. The
 full settings, requested/effective record fields, and cold-start boundaries are
 documented in `doc/device-portability.md`.
 
-The LOSO runner requires the signal and baseline extras. The research contract is in
-`doc/constitution.md`, `doc/blueprint.md`, and `doc/roadmap.md`.
+The LOSO runner requires the signal and baseline extras. The living research
+guide is `doc/research_program.zh.md`; dated ablations remain historical evidence.
+`doc/constitution.md` and `doc/blueprint.md` contain stable engineering principles.
 
 ## Data Contract
 

@@ -17,8 +17,23 @@ def _aggregate_scores(
     digits: np.ndarray,
     *,
     aggregation: str,
+    vocabulary: np.ndarray | None = None,
+    logit_variances: np.ndarray | None = None,
 ) -> tuple[dict[int, float], int]:
-    vocabulary = np.arange(1, 10, dtype=np.int64)
+    if aggregation not in {"sum", "mean", "trim0.2", "precision"}:
+        raise ValueError("aggregation must be sum, mean, trim0.2, or precision.")
+    logits = np.asarray(logits, dtype=float)
+    digits = np.asarray(digits, dtype=np.int64)
+    variances = None if logit_variances is None else np.asarray(logit_variances, dtype=float)
+    if variances is not None and variances.shape != logits.shape:
+        raise ValueError("logit_variances must align with logits.")
+    if aggregation == "precision" and variances is None:
+        raise ValueError("precision aggregation requires per-trial predictive variances.")
+    if vocabulary is None:
+        vocabulary = np.unique(digits)
+    vocabulary = np.asarray(vocabulary, dtype=np.int64)
+    if vocabulary.ndim != 1 or len(vocabulary) == 0:
+        raise ValueError("candidate vocabulary must be a non-empty one-dimensional array.")
     scores: dict[int, float] = {}
     counts: dict[int, int] = {}
     for digit in vocabulary:
@@ -27,7 +42,7 @@ def _aggregate_scores(
         if not sel.any():
             scores[int(digit)] = -np.inf
             continue
-        values = np.asarray(logits, dtype=float)[sel]
+        values = logits[sel]
         if aggregation == "sum":
             scores[int(digit)] = float(values.sum())
         elif aggregation == "mean":
@@ -37,10 +52,12 @@ def _aggregate_scores(
             kept = values[(values >= lower) & (values <= upper)]
             scores[int(digit)] = float(kept.sum())
         elif aggregation == "precision":
-            variance = float(np.var(values))
-            scores[int(digit)] = float(values.sum() / max(variance, 1e-12))
-        else:
-            raise ValueError("aggregation must be sum, mean, trim0.2, or precision.")
+            assert variances is not None
+            candidate_variances = variances[sel]
+            if not np.isfinite(candidate_variances).all() or np.any(candidate_variances <= 0.0):
+                raise ValueError("predictive variances must be finite and positive.")
+            weights = 1.0 / candidate_variances
+            scores[int(digit)] = float(np.dot(weights, values) / weights.sum())
     best = max(scores.items(), key=lambda item: (item[1], -item[0]))
     return scores, best[0]
 
@@ -54,6 +71,8 @@ def hit_at_repetition(
     *,
     aggregation: str = "sum",
     max_repetitions: int | None = None,
+    logit_variances: Sequence[float] | None = None,
+    candidate_vocabulary: Sequence[int] | None = None,
 ) -> dict[int, float]:
     """Return 9-choice hit rate at every repetition prefix 1..R."""
 
@@ -65,6 +84,18 @@ def hit_at_repetition(
         raise ValueError("logits/digits/group_ids/repetition_indices must be aligned.")
     if not np.isfinite(logits).all():
         raise ValueError("logits contain NaN/inf.")
+    variances = None if logit_variances is None else np.asarray(logit_variances, dtype=float)
+    if variances is not None and variances.shape != logits.shape:
+        raise ValueError("logit_variances must align with logits.")
+    vocabulary = (
+        np.unique(digits)
+        if candidate_vocabulary is None
+        else np.asarray(candidate_vocabulary, dtype=np.int64)
+    )
+    if vocabulary.ndim != 1 or len(np.unique(vocabulary)) != len(vocabulary):
+        raise ValueError("candidate_vocabulary must be one-dimensional and unique.")
+    if len(vocabulary) < 2:
+        raise ValueError("candidate selection requires at least two candidate codes.")
     groups = np.unique(group_ids)
     if max_repetitions is None:
         max_repetitions = int(repetition_indices.max()) + 1
@@ -85,6 +116,8 @@ def hit_at_repetition(
                 logits[sel],
                 digits[sel],
                 aggregation=aggregation,
+                vocabulary=vocabulary,
+                logit_variances=None if variances is None else variances[sel],
             )
             del scores
             correct += int(predicted == int(truth))

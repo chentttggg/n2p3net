@@ -60,6 +60,11 @@ The paper's original `ms_flatten` head applies a further average pool by eight,
 flattens both branches, and learns a binary FC classifier. It remains available
 as an explicit paper-style ablation.
 
+The 125/500 ms values above are local MST-kernel spans, not end-to-end branch
+receptive fields. Including the shared K65 ST convolution and pool-4 support,
+the default branches cover approximately 648/1023 ms of the input. This
+distinction is now recorded explicitly and is a primary future ablation.
+
 The LMBC research head instead preserves the ST-pooled physical time coordinate.
 For each branch feature `H_(s,k)`, a fixed reference `R=[-200,0)` ms and latent
 P300 candidates `W_delta=[250,600)+delta` ms are used:
@@ -112,8 +117,8 @@ EEGDataContract -> executable preprocessing -> EpochDataset(sfreq, tmin_ms, n_ti
 The manifest records `trunk=ms_eegnet_style`, ST/MST dimensions, pooling mode,
 sample and millisecond receptive spans, and the LMBC physical windows.
 `global_average` is the matched head ablation;
-`ms_flatten` is the promoted project default; `latency_marginal_contrast` is a
-retained research ablation; `global_average` is a negative control.
+`ms_flatten` is the stable software default; `latency_marginal_contrast` is a
+retained conditional research ablation; `global_average` is a negative control.
 
 ## Verification Requirements
 
@@ -124,6 +129,7 @@ retained research ablation; `global_average` is a negative control.
    counterexample.
 3. Rerun MS-EEGNet (`ms_flatten`), N2P3 global average, N2P3 LMBC, and EEGNet
    under identical grouped folds, QC, epochs, seed, and calibration.
-4. The 2026-08-28 matched BI2014a comparison rejected LMBC promotion:
-   MS-EEGNet exceeded it by 0.01063 mean AUC (`p=0.00119`). Reconsider LMBC
-   only after a preregistered cross-dataset or latency-stratified countertest.
+4. The 2026-08-28 matched BI2014a binary comparison did not promote LMBC:
+   MS-EEGNet exceeded it by 0.01063 mean AUC (`p=0.00119`). This is a
+   dataset-conditional result, not a rejection of latency marginalization.
+   GTN 9-choice and latency-stratified countertests are the final adjudication.
