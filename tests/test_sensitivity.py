@@ -8,6 +8,7 @@ from experiments.run_n2p3_sensitivity import (
     architecture_for_sample_rate,
     build_boundary_candidates,
     build_candidates,
+    build_lower_boundary_candidates,
 )
 
 
@@ -69,3 +70,13 @@ def test_boundary_grid_extends_both_temporal_kernel_directions() -> None:
     assert by_name["temporal_kernel_size_85"].architecture_overrides == {
         "temporal_kernel_size": 85
     }
+
+
+def test_lower_boundary_grid_uses_only_three_wide_probes() -> None:
+    candidates = build_lower_boundary_candidates(base_batch_size=512)
+
+    assert [candidate.architecture_overrides["temporal_kernel_size"] for candidate in candidates] == [
+        45,
+        35,
+        25,
+    ]

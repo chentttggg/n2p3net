@@ -164,6 +164,21 @@ def build_boundary_candidates(*, base_batch_size: int) -> list[SensitivityCandid
     return candidates
 
 
+def build_lower_boundary_candidates(*, base_batch_size: int) -> list[SensitivityCandidate]:
+    base_kernel = DEFAULT_N2P3_ARCHITECTURE.temporal_kernel_size
+    return [
+        SensitivityCandidate(
+            name=f"temporal_kernel_size_{kernel}",
+            axis="temporal_kernel_size",
+            relative_delta=kernel / base_kernel - 1.0,
+            batch_size=base_batch_size,
+            deep_overrides={},
+            architecture_overrides={"temporal_kernel_size": kernel},
+        )
+        for kernel in (45, 35, 25)
+    ]
+
+
 def _parse_fold_indices(value: str) -> tuple[int, ...]:
     try:
         indices = tuple(int(item.strip()) for item in value.split(",") if item.strip())
@@ -185,11 +200,15 @@ def main() -> None:
     parser.add_argument("--dataset-cache", required=True)
     parser.add_argument("--run-dir", default="experiments/runs")
     parser.add_argument("--run-name", default="n2p3_local_sensitivity")
-    parser.add_argument("--subjects", type=int, default=32)
+    parser.add_argument("--subjects", type=int, default=64)
     parser.add_argument("--sample-rate-hz", type=float, choices=(128.0, 256.0), default=128.0)
     parser.add_argument("--fold-indices", type=_parse_fold_indices, default=None)
     parser.add_argument("--max-candidates", type=int, default=None)
-    parser.add_argument("--grid", choices=("coarse", "boundary"), default="coarse")
+    parser.add_argument(
+        "--grid",
+        choices=("coarse", "boundary", "lower_boundary"),
+        default="coarse",
+    )
     parser.add_argument("--epochs", type=int, default=defaults.epochs)
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--early-stop-patience", type=int, default=defaults.early_stop_patience)
@@ -206,7 +225,7 @@ def main() -> None:
         parser.error("--max-candidates must be positive")
     if args.subjects is not None and args.subjects < 2:
         parser.error("--subjects must be at least two")
-    if args.grid == "boundary" and args.sample_rate_hz != 128.0:
+    if args.grid != "coarse" and args.sample_rate_hz != 128.0:
         parser.error("The boundary kernel grid is defined only for the 128 Hz contract.")
 
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
@@ -241,7 +260,7 @@ def main() -> None:
     fold_indices = args.fold_indices
     if fold_indices is None:
         fold_indices = tuple(
-            np.linspace(0, len(all_folds) - 1, num=min(8, len(all_folds)), dtype=int).tolist()
+            np.linspace(0, len(all_folds) - 1, num=min(16, len(all_folds)), dtype=int).tolist()
         )
     if max(fold_indices) >= len(all_folds):
         parser.error(f"fold index exceeds the available {len(all_folds)} LOSO folds")
@@ -263,14 +282,15 @@ def main() -> None:
     )
     device = get_device() if args.device == "auto" else torch.device(args.device)
     base_architecture = architecture_for_sample_rate(args.sample_rate_hz)
-    candidates = (
-        build_candidates(
+    if args.grid == "coarse":
+        candidates = build_candidates(
             base_batch_size=args.batch_size,
             base_architecture=base_architecture,
         )
-        if args.grid == "coarse"
-        else build_boundary_candidates(base_batch_size=args.batch_size)
-    )
+    elif args.grid == "boundary":
+        candidates = build_boundary_candidates(base_batch_size=args.batch_size)
+    else:
+        candidates = build_lower_boundary_candidates(base_batch_size=args.batch_size)
     if args.max_candidates is not None:
         candidates = candidates[: args.max_candidates]
 
