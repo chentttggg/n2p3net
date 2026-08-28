@@ -81,19 +81,22 @@ DEEP_MODEL_NAMES = tuple(_MODEL_FACTORIES)
 # 会互相踩全局 RNG，导致初始化不可复现（review v6 性能项）。
 _INIT_LOCK = threading.Lock()
 
+DEFAULT_DEEP_EPOCHS = 32
+DEFAULT_EARLY_STOP_PATIENCE = 6
+
 
 @dataclass
 class DeepConfig:
     """深度基线训练配置（DP5：batch_size 等经配置传入，不写死）。"""
 
-    epochs: int = 30
+    epochs: int = DEFAULT_DEEP_EPOCHS
     batch_size: int = 256
     lr: float = 1e-3
     weight_decay: float = 1e-4
     pos_weight: float = 8.0
     seed: int = 0
     standardize_input: bool = True
-    early_stop_patience: int = 6
+    early_stop_patience: int = DEFAULT_EARLY_STOP_PATIENCE
     val_group_frac: float | None = 0.08
     val_groups_min: int = 2
     val_groups_max: int = 12

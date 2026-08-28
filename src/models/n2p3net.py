@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass, replace
 from math import isfinite
 
 import torch
@@ -29,6 +30,63 @@ DEFAULT_ST_POOL_SIZE = 4
 DEFAULT_MST_KERNEL_SIZES = (5, 17)
 DEFAULT_MST_FEATURES_PER_SCALE = 2
 DEFAULT_MST_POOL_SIZE = 8
+DEFAULT_N2P3_DROPOUT = 0.25
+DEFAULT_SPATIAL_MAX_NORM = 1.0
+DEFAULT_INTERACTION_RANK = 8
+DEFAULT_MLP_HIDDEN_FEATURES = 16
+
+
+@dataclass(frozen=True)
+class N2P3ArchitectureConfig:
+    """Complete, serializable N2P3-Net structure contract."""
+
+    temporal_filters: int = DEFAULT_ST_TEMPORAL_FILTERS
+    temporal_kernel_size: int = DEFAULT_ST_TEMPORAL_KERNEL_SIZE
+    spatial_depth_multiplier: int = DEFAULT_SPATIAL_DEPTH_MULTIPLIER
+    st_pool_size: int = DEFAULT_ST_POOL_SIZE
+    mst_kernel_sizes: tuple[int, ...] = DEFAULT_MST_KERNEL_SIZES
+    mst_features_per_scale: int = DEFAULT_MST_FEATURES_PER_SCALE
+    mst_pool_size: int = DEFAULT_MST_POOL_SIZE
+    dropout: float = DEFAULT_N2P3_DROPOUT
+    spatial_max_norm: float = DEFAULT_SPATIAL_MAX_NORM
+    interaction_rank: int = DEFAULT_INTERACTION_RANK
+    mlp_hidden_features: int = DEFAULT_MLP_HIDDEN_FEATURES
+
+    def __post_init__(self) -> None:
+        kernels = tuple(int(kernel) for kernel in self.mst_kernel_sizes)
+        object.__setattr__(self, "mst_kernel_sizes", kernels)
+        if self.temporal_filters < 1 or self.spatial_depth_multiplier < 1:
+            raise ValueError("temporal_filters and spatial_depth_multiplier must be positive.")
+        if self.temporal_kernel_size < 3 or self.temporal_kernel_size % 2 == 0:
+            raise ValueError("temporal_kernel_size must be an odd integer of at least three.")
+        if not kernels or any(kernel < 3 or kernel % 2 == 0 for kernel in kernels):
+            raise ValueError("mst_kernel_sizes must contain odd kernels of at least three samples.")
+        if self.mst_features_per_scale < 1 or self.st_pool_size < 1 or self.mst_pool_size < 1:
+            raise ValueError("feature and pool sizes must be positive.")
+        if not 0.0 <= self.dropout < 1.0:
+            raise ValueError("dropout must be in [0, 1).")
+        if self.spatial_max_norm <= 0.0:
+            raise ValueError("spatial_max_norm must be positive.")
+        if self.interaction_rank < 1 or self.mlp_hidden_features < 1:
+            raise ValueError("interaction_rank and mlp_hidden_features must be positive.")
+
+    def model_kwargs(self) -> dict[str, object]:
+        return {
+            "temporal_filters": self.temporal_filters,
+            "temporal_kernel_size": self.temporal_kernel_size,
+            "spatial_depth_multiplier": self.spatial_depth_multiplier,
+            "st_pool_size": self.st_pool_size,
+            "mst_kernel_sizes": self.mst_kernel_sizes,
+            "mst_features_per_scale": self.mst_features_per_scale,
+            "mst_pool_size": self.mst_pool_size,
+            "dropout": self.dropout,
+            "spatial_max_norm": self.spatial_max_norm,
+            "interaction_rank": self.interaction_rank,
+            "mlp_hidden_features": self.mlp_hidden_features,
+        }
+
+
+DEFAULT_N2P3_ARCHITECTURE = N2P3ArchitectureConfig()
 
 
 def temporal_receptive_span_ms(kernel_samples: int, sample_rate_hz: float) -> float:
@@ -56,6 +114,34 @@ def scale_odd_kernel_preserving_span(
     target_intervals = source_span_ms * target_sample_rate_hz / 1000.0
     even_intervals = 2 * int(round(target_intervals / 2.0))
     return even_intervals + 1
+
+
+def scale_architecture_preserving_spans(
+    architecture: N2P3ArchitectureConfig,
+    *,
+    source_sample_rate_hz: float,
+    target_sample_rate_hz: float,
+) -> N2P3ArchitectureConfig:
+    """Scale temporal kernels while retaining both trunk feature-rate spans."""
+
+    source_feature_rate = source_sample_rate_hz / architecture.st_pool_size
+    target_feature_rate = target_sample_rate_hz / architecture.st_pool_size
+    return replace(
+        architecture,
+        temporal_kernel_size=scale_odd_kernel_preserving_span(
+            architecture.temporal_kernel_size,
+            source_sample_rate_hz=source_sample_rate_hz,
+            target_sample_rate_hz=target_sample_rate_hz,
+        ),
+        mst_kernel_sizes=tuple(
+            scale_odd_kernel_preserving_span(
+                kernel,
+                source_sample_rate_hz=source_feature_rate,
+                target_sample_rate_hz=target_feature_rate,
+            )
+            for kernel in architecture.mst_kernel_sizes
+        ),
+    )
 
 
 class _MaxNormSpatialConv(nn.Conv2d):
@@ -343,8 +429,8 @@ class N2P3Net(nn.Module):
         mst_kernel_sizes: Sequence[int] = DEFAULT_MST_KERNEL_SIZES,
         mst_features_per_scale: int = DEFAULT_MST_FEATURES_PER_SCALE,
         mst_pool_size: int = DEFAULT_MST_POOL_SIZE,
-        dropout: float = 0.25,
-        spatial_max_norm: float = 1.0,
+        dropout: float = DEFAULT_N2P3_DROPOUT,
+        spatial_max_norm: float = DEFAULT_SPATIAL_MAX_NORM,
         n_times: int | None = None,
         sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
         tmin_s: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms / 1000.0,
@@ -353,8 +439,8 @@ class N2P3Net(nn.Module):
         reference_window_ms: Sequence[float] = (-200.0, 0.0),
         latency_offsets_ms: Sequence[float] = (-100.0, -50.0, 0.0, 50.0, 100.0),
         latency_temperature: float = 0.5,
-        interaction_rank: int = 8,
-        mlp_hidden_features: int = 16,
+        interaction_rank: int = DEFAULT_INTERACTION_RANK,
+        mlp_hidden_features: int = DEFAULT_MLP_HIDDEN_FEATURES,
     ) -> None:
         super().__init__()
         if n_channels < 1:
@@ -510,33 +596,34 @@ class N2P3Net(nn.Module):
         tmin_s: float,
         sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
         n_times: int | None = DEFAULT_P300_DATA_CONTRACT.n_times,
-        interaction_rank: int = 8,
-        mlp_hidden_features: int = 16,
+        architecture: N2P3ArchitectureConfig = DEFAULT_N2P3_ARCHITECTURE,
     ) -> dict[str, object]:
         if pooling_mode not in POOLING_MODES:
             raise ValueError(f"pooling_mode must be one of {sorted(POOLING_MODES)}.")
-        if interaction_rank < 1 or mlp_hidden_features < 1:
-            raise ValueError("interaction_rank and mlp_hidden_features must be positive.")
+        if not isinstance(architecture, N2P3ArchitectureConfig):
+            raise TypeError("architecture must be an N2P3ArchitectureConfig.")
         record: dict[str, object] = {
             "trunk": "ms_eegnet_style",
             "pooling_mode": pooling_mode,
             "tmin_s": float(tmin_s),
             "input_sample_rate_hz": float(sfreq),
-            "feature_sample_rate_hz": float(sfreq) / DEFAULT_ST_POOL_SIZE,
-            "st_temporal_filters": DEFAULT_ST_TEMPORAL_FILTERS,
-            "st_temporal_kernel_samples": DEFAULT_ST_TEMPORAL_KERNEL_SIZE,
+            "feature_sample_rate_hz": float(sfreq) / architecture.st_pool_size,
+            "st_temporal_filters": architecture.temporal_filters,
+            "st_temporal_kernel_samples": architecture.temporal_kernel_size,
             "st_temporal_receptive_span_ms": temporal_receptive_span_ms(
-                DEFAULT_ST_TEMPORAL_KERNEL_SIZE, float(sfreq)
+                architecture.temporal_kernel_size, float(sfreq)
             ),
-            "spatial_depth_multiplier": DEFAULT_SPATIAL_DEPTH_MULTIPLIER,
-            "st_pool_size": DEFAULT_ST_POOL_SIZE,
-            "mst_kernel_samples": list(DEFAULT_MST_KERNEL_SIZES),
+            "spatial_depth_multiplier": architecture.spatial_depth_multiplier,
+            "st_pool_size": architecture.st_pool_size,
+            "mst_kernel_samples": list(architecture.mst_kernel_sizes),
             "mst_receptive_span_ms": [
-                temporal_receptive_span_ms(kernel, float(sfreq) / DEFAULT_ST_POOL_SIZE)
-                for kernel in DEFAULT_MST_KERNEL_SIZES
+                temporal_receptive_span_ms(kernel, float(sfreq) / architecture.st_pool_size)
+                for kernel in architecture.mst_kernel_sizes
             ],
-            "mst_features_per_scale": DEFAULT_MST_FEATURES_PER_SCALE,
-            "mst_pool_size": DEFAULT_MST_POOL_SIZE,
+            "mst_features_per_scale": architecture.mst_features_per_scale,
+            "mst_pool_size": architecture.mst_pool_size,
+            "dropout": architecture.dropout,
+            "spatial_max_norm": architecture.spatial_max_norm,
         }
         if (
             pooling_mode
@@ -547,12 +634,14 @@ class N2P3Net(nn.Module):
             }
             and n_times is not None
         ):
-            st_times = cls._pooled_time_samples(int(n_times), DEFAULT_ST_POOL_SIZE)
+            st_times = cls._pooled_time_samples(int(n_times), architecture.st_pool_size)
             record.update(
                 {
                     "unfold_time_samples": st_times,
                     "unfold_features": (
-                        len(DEFAULT_MST_KERNEL_SIZES) * DEFAULT_MST_FEATURES_PER_SCALE * st_times
+                        len(architecture.mst_kernel_sizes)
+                        * architecture.mst_features_per_scale
+                        * st_times
                     ),
                     "classifier": {
                         "full_unfold": "linear_full_resolution",
@@ -562,9 +651,9 @@ class N2P3Net(nn.Module):
                 }
             )
         if pooling_mode == "quadratic_full_unfold":
-            record["interaction_rank"] = int(interaction_rank)
+            record["interaction_rank"] = architecture.interaction_rank
         if pooling_mode == "mlp_full_unfold":
-            record["mlp_hidden_features"] = int(mlp_hidden_features)
+            record["mlp_hidden_features"] = architecture.mlp_hidden_features
         if pooling_mode == "latency_marginal_contrast":
             record.update(
                 {
@@ -576,13 +665,25 @@ class N2P3Net(nn.Module):
         return record
 
     def architecture_record(self) -> dict[str, object]:
+        architecture = N2P3ArchitectureConfig(
+            temporal_filters=self.temporal_filters,
+            temporal_kernel_size=self.temporal_kernel_size,
+            spatial_depth_multiplier=self.spatial_depth_multiplier,
+            st_pool_size=self.st_pool_size,
+            mst_kernel_sizes=self.mst_kernel_sizes,
+            mst_features_per_scale=self.mst_features_per_scale,
+            mst_pool_size=self.mst_pool_size,
+            dropout=self.dropout_probability,
+            spatial_max_norm=self.spatial_max_norm,
+            interaction_rank=self.interaction_rank,
+            mlp_hidden_features=self.mlp_hidden_features,
+        )
         record = self.default_architecture_record(
             pooling_mode=self.pooling_mode,
             tmin_s=self.tmin_s,
             sfreq=self.sfreq,
             n_times=self.n_times,
-            interaction_rank=self.interaction_rank,
-            mlp_hidden_features=self.mlp_hidden_features,
+            architecture=architecture,
         )
         record.update(
             {

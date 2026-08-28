@@ -13,6 +13,7 @@ from baselines.deep import DEEP_MODEL_NAMES, DeepBaseline, DeepConfig
 from baselines.n2p3net import N2P3NetBaseline
 from baselines.riemann import XdawnRiemann
 from data.epochs import EpochDataset
+from models.n2p3net import DEFAULT_N2P3_ARCHITECTURE, N2P3ArchitectureConfig
 from train.runtime import GpuPerformanceScheduler
 
 N2P3_POOLING_BY_MODEL = {
@@ -73,6 +74,7 @@ def build_binary_model(
     device: torch.device | None = None,
     runtime: GpuPerformanceScheduler | None = None,
     n2p3net_pooling_mode: str = "ms_flatten",
+    n2p3net_architecture: N2P3ArchitectureConfig = DEFAULT_N2P3_ARCHITECTURE,
 ):
     """Return one candidate using only the data and performance contracts."""
 
@@ -108,6 +110,7 @@ def build_binary_model(
             channel_mask=common_mask,
             tmin_s=tmin,
             pooling_mode=pooling_mode,
+            architecture=n2p3net_architecture,
         )
     if key in DEEP_MODEL_NAMES:
         return DeepBaseline(

@@ -13,9 +13,11 @@ from models.n2p3net import (
     FullResolutionUnfold,
     LatencyMarginalContrastPool,
     MSFlattenPool,
+    N2P3ArchitectureConfig,
     N2P3Net,
     ResidualFactorizedQuadraticClassifier,
     ResidualMLPClassifier,
+    scale_architecture_preserving_spans,
     scale_odd_kernel_preserving_span,
     temporal_receptive_span_ms,
 )
@@ -98,6 +100,17 @@ def test_sampling_rate_scaling_preserves_endpoint_receptive_span() -> None:
         source_sample_rate_hz=32.0,
         target_sample_rate_hz=64.0,
     ) == 33
+
+
+def test_architecture_scaling_preserves_both_temporal_feature_rates() -> None:
+    architecture = scale_architecture_preserving_spans(
+        N2P3ArchitectureConfig(),
+        source_sample_rate_hz=128.0,
+        target_sample_rate_hz=256.0,
+    )
+
+    assert architecture.temporal_kernel_size == 129
+    assert architecture.mst_kernel_sizes == (9, 33)
 
 
 def test_architecture_record_exposes_physical_receptive_spans() -> None:
@@ -245,6 +258,63 @@ def test_unfold_architecture_record_uses_instance_geometry() -> None:
     assert record["feature_sample_rate_hz"] == pytest.approx(25.6)
 
 
+def test_architecture_config_controls_the_complete_baseline_model() -> None:
+    architecture = N2P3ArchitectureConfig(
+        temporal_filters=6,
+        temporal_kernel_size=53,
+        spatial_depth_multiplier=3,
+        st_pool_size=5,
+        mst_kernel_sizes=(3, 13, 19),
+        mst_features_per_scale=3,
+        mst_pool_size=7,
+        dropout=0.2,
+        spatial_max_norm=0.8,
+        interaction_rank=6,
+        mlp_hidden_features=12,
+    )
+    baseline = N2P3NetBaseline(
+        3,
+        120,
+        128.0,
+        device=torch.device("cpu"),
+        pooling_mode="full_unfold",
+        architecture=architecture,
+    )
+
+    model = baseline._make_model()
+    record = baseline.architecture_record()
+
+    assert model.temporal_filters == 6
+    assert model.temporal_kernel_size == 53
+    assert model.spatial_depth_multiplier == 3
+    assert model.st_pool_size == 5
+    assert model.mst_kernel_sizes == (3, 13, 19)
+    assert model.mst_features_per_scale == 3
+    assert model.mst_pool_size == 7
+    assert model.dropout_probability == pytest.approx(0.2)
+    assert model.spatial_max_norm == pytest.approx(0.8)
+    assert model.interaction_rank == 6
+    assert model.mlp_hidden_features == 12
+    assert record["unfold_time_samples"] == 24
+    assert record["unfold_features"] == 216
+    assert record["dropout"] == pytest.approx(0.2)
+    assert record["spatial_max_norm"] == pytest.approx(0.8)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"temporal_kernel_size": 64}, "odd integer"),
+        ({"mst_kernel_sizes": (5, 16)}, "odd kernels"),
+        ({"dropout": 1.0}, "dropout"),
+        ({"spatial_max_norm": 0.0}, "spatial_max_norm"),
+    ],
+)
+def test_architecture_config_rejects_invalid_values(kwargs: dict, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        N2P3ArchitectureConfig(**kwargs)
+
+
 def test_ms_flatten_requires_a_declared_physical_epoch_width() -> None:
     with pytest.raises(ValueError, match="requires n_times"):
         N2P3Net(n_channels=3, pooling_mode="ms_flatten")
@@ -362,6 +432,40 @@ def test_factory_propagates_dataset_physical_time_to_n2p3net(monkeypatch) -> Non
     assert architecture["trunk"] == "ms_eegnet_style"
     assert architecture["mst_kernel_samples"] == [5, 17]
     assert architecture["pooling_mode"] == "ms_flatten"
+
+
+def test_factory_propagates_the_n2p3_architecture_contract(monkeypatch) -> None:
+    dataset = SimpleNamespace(
+        preprocessing=SimpleNamespace(sfreq=128.0, tmin_ms=-200.0),
+        n_channels=3,
+        n_times=128,
+        channel_mask=np.ones(3, dtype=bool),
+    )
+    architecture = N2P3ArchitectureConfig(
+        temporal_filters=7,
+        temporal_kernel_size=59,
+        mst_kernel_sizes=(5, 15),
+        mst_pool_size=9,
+        dropout=0.3,
+    )
+    monkeypatch.setattr(factory, "_validate_binary_dataset", lambda _: None)
+
+    model = factory.build_binary_model(
+        "n2p3net_full_unfold",
+        dataset,
+        epochs=1,
+        batch_size=4,
+        device=torch.device("cpu"),
+        n2p3net_architecture=architecture,
+    )
+    record = factory.describe_binary_model("n2p3net_full_unfold", model)["architecture"]
+
+    assert model.architecture is architecture
+    assert record["st_temporal_filters"] == 7
+    assert record["st_temporal_kernel_samples"] == 59
+    assert record["mst_kernel_samples"] == [5, 15]
+    assert record["mst_pool_size"] == 9
+    assert record["dropout"] == pytest.approx(0.3)
 
 
 def test_factory_exposes_global_average_only_as_an_explicit_ablation(monkeypatch) -> None:

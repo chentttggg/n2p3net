@@ -94,16 +94,21 @@ def test_within_subject_evaluation_uses_groups_for_inner_validation() -> None:
 
 def test_binary_loso_reports_auc_and_bacc() -> None:
     X, y, subjects = _p300_data()
+    fold_events = []
     summary = evaluate_binary(
         WindowLogisticRegression(sfreq=128.0, tmin=-0.2, window_ms=(125.0, 300.0)),
         X,
         y,
         subjects,
         loso_folds(subjects),
+        fold_id_offset=4,
+        on_fold_end=lambda fold_id, result: fold_events.append((fold_id, result)),
     )
 
     assert summary.auc_mean > 0.8
     assert summary.balanced_acc_mean > 0.7
+    assert [fold_id for fold_id, _ in fold_events] == list(range(4, 10))
+    assert [result.auc for _, result in fold_events] == [result.auc for result in summary.per_fold]
 
 
 def test_candidate_evidence_uses_calibrated_target_scores() -> None:

@@ -6,8 +6,8 @@ import copy
 import multiprocessing as mp
 import time
 import warnings
-from collections.abc import Mapping, Sequence
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from multiprocessing import shared_memory
 
@@ -88,6 +88,8 @@ class BinaryFoldResult:
     train_losses: list[float] = field(default_factory=list)
     val_losses: list[float] = field(default_factory=list)
     best_epoch: int | None = None
+    best_task_val_loss: float | None = None
+    final_task_val_auc: float | None = None
     artifact_quality: dict[str, object] | None = None
     device: str | None = None
     precision: str | None = None
@@ -369,6 +371,8 @@ def _fold_result(
         train_losses=[float(value) for value in history.get("train_losses", ())],
         val_losses=[float(value) for value in history.get("val_losses", ())],
         best_epoch=history.get("best_epoch"),
+        best_task_val_loss=history.get("best_task_val_loss"),
+        final_task_val_auc=history.get("final_task_val_auc"),
         artifact_quality=artifact_quality,
         device=runtime.get("device") if isinstance(runtime, dict) else None,
         precision=runtime.get("precision") if isinstance(runtime, dict) else None,
@@ -772,6 +776,7 @@ def _run_fold_tasks(
     fold_id_offset: int,
     max_gpu_jobs: int | None,
     cpu_threads: int | None,
+    on_fold_result: Callable[[tuple[int, BinaryFoldResult, np.ndarray, object]], None] | None = None,
 ) -> tuple[list[tuple[int, BinaryFoldResult, np.ndarray, object]], str, int, str, int, int, int]:
     backend, effective_n_jobs = _resolve_fold_execution(
         prototype,
@@ -827,7 +832,12 @@ def _run_fold_tasks(
     ]
     if backend == "serial":
         with cpu_thread_budget(cpu_threads_per_worker):
-            results = [_run_fold_task(task) for task in tasks]
+            results = []
+            for task in tasks:
+                result = _run_fold_task(task)
+                results.append(result)
+                if on_fold_result is not None:
+                    on_fold_result(result)
         return (
             results,
             backend,
@@ -840,7 +850,13 @@ def _run_fold_tasks(
     if backend == "thread":
         with cpu_thread_budget(cpu_threads_per_worker):
             with ThreadPoolExecutor(max_workers=effective_n_jobs) as executor:
-                results = list(executor.map(_run_fold_task, tasks))
+                futures = [executor.submit(_run_fold_task, task) for task in tasks]
+                results = []
+                for future in as_completed(futures):
+                    result = future.result()
+                    results.append(result)
+                    if on_fold_result is not None:
+                        on_fold_result(result)
         transport = "direct"
     else:
         with _SharedFoldInputs(X, y, subject_ids, trial_channel_mask, qc_features) as shared_inputs:
@@ -867,7 +883,13 @@ def _run_fold_tasks(
                 max_workers=effective_n_jobs,
                 mp_context=mp.get_context("spawn"),
             ) as executor:
-                results = list(executor.map(_run_shared_fold_task, shared_tasks))
+                futures = [executor.submit(_run_shared_fold_task, task) for task in shared_tasks]
+                results = []
+                for future in as_completed(futures):
+                    result = future.result()
+                    results.append(result)
+                    if on_fold_result is not None:
+                        on_fold_result(result)
         transport = "shared_memory"
     return (
         sorted(results, key=lambda value: value[0]),
@@ -894,6 +916,7 @@ def evaluate_binary(
     fitted_artifact_models: Mapping[int, FoldLocalArtifactModel] | None = None,
     artifact_qc_jobs: int | None = None,
     fold_protocol: str | None = None,
+    on_fold_end: Callable[[int, BinaryFoldResult], None] | None = None,
     n_jobs: int = 1,
     parallel_backend: str = "auto",
     fold_id_offset: int = 0,
@@ -944,6 +967,11 @@ def evaluate_binary(
         fold_id_offset=fold_id_offset,
         max_gpu_jobs=max_gpu_jobs,
         cpu_threads=cpu_threads,
+        on_fold_result=(
+            None
+            if on_fold_end is None
+            else lambda result: on_fold_end(result[0] + fold_id_offset, result[1])
+        ),
     )
     results = [result for _, result, _, _ in fold_results]
     bacc = np.asarray([fold.balanced_acc for fold in results], dtype=float)
@@ -980,6 +1008,7 @@ def evaluate_candidate_selection(
     fitted_artifact_models: Mapping[int, FoldLocalArtifactModel] | None = None,
     artifact_qc_jobs: int | None = None,
     fold_protocol: str | None = None,
+    on_fold_end: Callable[[int, CandidateFoldResult], None] | None = None,
     n_jobs: int = 1,
     parallel_backend: str = "auto",
     fold_id_offset: int = 0,
@@ -1049,9 +1078,15 @@ def evaluate_candidate_selection(
             if fold_records
             else float("nan")
         )
-        results.append(
-            CandidateFoldResult(**binary.__dict__, hit_rate=hit_rate, n_decisions=len(fold_records), decision_records=fold_records)
+        result = CandidateFoldResult(
+            **binary.__dict__,
+            hit_rate=hit_rate,
+            n_decisions=len(fold_records),
+            decision_records=fold_records,
         )
+        results.append(result)
+        if on_fold_end is not None:
+            on_fold_end(fold_index + fold_id_offset, result)
         records.extend(fold_records)
     bacc = np.asarray([fold.balanced_acc for fold in results], dtype=float)
     auc = np.asarray([fold.auc for fold in results], dtype=float)

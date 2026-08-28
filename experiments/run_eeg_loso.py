@@ -8,6 +8,7 @@ import os
 import re
 import sys
 import time
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -19,6 +20,11 @@ if str(SRC) not in sys.path:
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
+from baselines.deep import (  # noqa: E402
+    DEFAULT_DEEP_EPOCHS,
+    DEFAULT_EARLY_STOP_PATIENCE,
+    DeepConfig,
+)
 from baselines.evaluate import (  # noqa: E402
     evaluate_binary,
     evaluate_candidate_selection,
@@ -32,11 +38,17 @@ from data.artifact import (  # noqa: E402
     parse_candidate_quantiles,
 )
 from data.contract import (  # noqa: E402
-    assert_default_p300_input_contract,
+    DEFAULT_P300_DATA_CONTRACT,
+    assert_p300_input_contract,
     assert_p300_source_provenance,
 )
 from data.epochs import load_epoch_dataset  # noqa: E402
-from models.n2p3net import POOLING_MODES  # noqa: E402
+from models.n2p3net import (  # noqa: E402
+    DEFAULT_N2P3_ARCHITECTURE,
+    POOLING_MODES,
+    N2P3ArchitectureConfig,
+    scale_architecture_preserving_spans,
+)
 from train.device import get_device  # noqa: E402
 from train.factory import (  # noqa: E402
     BINARY_MODEL_NAMES,
@@ -87,6 +99,15 @@ def _parse_bad_channel_fractions(value: str) -> tuple[float, ...]:
         raise argparse.ArgumentTypeError(str(exc)) from exc
 
 
+def _parse_odd_kernel_sizes(value: str) -> tuple[int, ...]:
+    try:
+        kernels = tuple(int(item.strip()) for item in value.split(",") if item.strip())
+        N2P3ArchitectureConfig(mst_kernel_sizes=kernels)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+    return kernels
+
+
 def _resolve_device(choice: str) -> torch.device:
     if choice == "auto":
         return get_device()
@@ -108,26 +129,60 @@ def _resolve_device(choice: str) -> torch.device:
 
 
 def main() -> None:
+    deep_defaults = DeepConfig()
+    architecture_defaults = DEFAULT_N2P3_ARCHITECTURE
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-cache", required=True)
+    parser.add_argument("--sample-rate-hz", type=float, choices=(128.0, 256.0), default=128.0)
     parser.add_argument("--models", default=DEFAULT_MODELS)
-    parser.add_argument("--epochs", type=int, default=30)
-    parser.add_argument("--batch-size", type=int, default=256)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--early-stop-patience", type=int, default=6)
+    parser.add_argument("--epochs", type=int, default=DEFAULT_DEEP_EPOCHS)
+    parser.add_argument("--batch-size", type=int, default=deep_defaults.batch_size)
+    parser.add_argument("--lr", type=float, default=deep_defaults.lr)
+    parser.add_argument("--weight-decay", type=float, default=deep_defaults.weight_decay)
+    parser.add_argument("--pos-weight", type=float, default=deep_defaults.pos_weight)
+    parser.add_argument(
+        "--early-stop-patience",
+        type=int,
+        default=DEFAULT_EARLY_STOP_PATIENCE,
+    )
+    parser.add_argument(
+        "--early-stop-min-delta",
+        type=float,
+        default=deep_defaults.early_stop_min_delta,
+    )
+    parser.add_argument(
+        "--standardize-input",
+        action=argparse.BooleanOptionalAction,
+        default=deep_defaults.standardize_input,
+    )
+    parser.add_argument(
+        "--max-update-batch-size",
+        type=int,
+        default=deep_defaults.max_update_batch_size,
+    )
+    parser.add_argument(
+        "--batch-memory-fraction",
+        type=float,
+        default=deep_defaults.batch_memory_fraction,
+    )
+    parser.add_argument(
+        "--preload-memory-fraction",
+        type=float,
+        default=deep_defaults.preload_memory_fraction,
+    )
     parser.add_argument("--validation-group-fraction", type=float, default=0.1)
     parser.add_argument(
         "--fold-jobs",
         type=int,
-        default=2,
-        help="concurrent fold workers; default 2 overlaps CPU preprocessing with GPU work",
+        default=4,
+        help="concurrent fold workers; default 4 keeps the GPU fed through fold-boundary gaps",
     )
     parser.add_argument("--fold-backend", choices=("auto", "process", "thread"), default="auto")
     parser.add_argument(
         "--gpu-fold-jobs",
         type=int,
-        default=None,
-        help="maximum concurrent GPU fold processes; default is hardware-aware",
+        default=4,
+        help="maximum concurrent GPU fold processes; default 4 matches --fold-jobs",
     )
     parser.add_argument(
         "--cpu-threads",
@@ -160,6 +215,61 @@ def main() -> None:
             "N2P3-Net head: promoted ms_flatten, prior-free unfold candidates, "
             "LMBC rejected hypothesis, or global_average negative control."
         ),
+    )
+    parser.add_argument(
+        "--n2p3net-temporal-filters",
+        type=int,
+        default=architecture_defaults.temporal_filters,
+    )
+    parser.add_argument(
+        "--n2p3net-temporal-kernel-size",
+        type=int,
+        default=None,
+    )
+    parser.add_argument(
+        "--n2p3net-spatial-depth-multiplier",
+        type=int,
+        default=architecture_defaults.spatial_depth_multiplier,
+    )
+    parser.add_argument(
+        "--n2p3net-st-pool-size",
+        type=int,
+        default=architecture_defaults.st_pool_size,
+    )
+    parser.add_argument(
+        "--n2p3net-mst-kernel-sizes",
+        type=_parse_odd_kernel_sizes,
+        default=None,
+    )
+    parser.add_argument(
+        "--n2p3net-mst-features-per-scale",
+        type=int,
+        default=architecture_defaults.mst_features_per_scale,
+    )
+    parser.add_argument(
+        "--n2p3net-mst-pool-size",
+        type=int,
+        default=architecture_defaults.mst_pool_size,
+    )
+    parser.add_argument(
+        "--n2p3net-dropout",
+        type=float,
+        default=architecture_defaults.dropout,
+    )
+    parser.add_argument(
+        "--n2p3net-spatial-max-norm",
+        type=float,
+        default=architecture_defaults.spatial_max_norm,
+    )
+    parser.add_argument(
+        "--n2p3net-interaction-rank",
+        type=int,
+        default=architecture_defaults.interaction_rank,
+    )
+    parser.add_argument(
+        "--n2p3net-mlp-hidden-features",
+        type=int,
+        default=architecture_defaults.mlp_hidden_features,
     )
     parser.add_argument(
         "--artifact-candidate-bad-channel-fractions",
@@ -205,6 +315,53 @@ def main() -> None:
         parser.error("fold offset must be non-negative and max folds must be positive")
     if args.subjects is not None and args.subjects < 2:
         parser.error("--subjects must be at least two for LOSO")
+    architecture_defaults = scale_architecture_preserving_spans(
+        DEFAULT_N2P3_ARCHITECTURE,
+        source_sample_rate_hz=DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
+        target_sample_rate_hz=args.sample_rate_hz,
+    )
+    deep_config_overrides = {
+        "lr": args.lr,
+        "weight_decay": args.weight_decay,
+        "pos_weight": args.pos_weight,
+        "early_stop_patience": args.early_stop_patience,
+        "early_stop_min_delta": args.early_stop_min_delta,
+        "standardize_input": args.standardize_input,
+        "max_update_batch_size": args.max_update_batch_size,
+        "batch_memory_fraction": args.batch_memory_fraction,
+        "preload_memory_fraction": args.preload_memory_fraction,
+    }
+    try:
+        DeepConfig(
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            seed=args.seed,
+            val_group_frac=args.validation_group_fraction,
+            **deep_config_overrides,
+        )
+        n2p3net_architecture = N2P3ArchitectureConfig(
+            temporal_filters=args.n2p3net_temporal_filters,
+            temporal_kernel_size=(
+                architecture_defaults.temporal_kernel_size
+                if args.n2p3net_temporal_kernel_size is None
+                else args.n2p3net_temporal_kernel_size
+            ),
+            spatial_depth_multiplier=args.n2p3net_spatial_depth_multiplier,
+            st_pool_size=args.n2p3net_st_pool_size,
+            mst_kernel_sizes=(
+                architecture_defaults.mst_kernel_sizes
+                if args.n2p3net_mst_kernel_sizes is None
+                else args.n2p3net_mst_kernel_sizes
+            ),
+            mst_features_per_scale=args.n2p3net_mst_features_per_scale,
+            mst_pool_size=args.n2p3net_mst_pool_size,
+            dropout=args.n2p3net_dropout,
+            spatial_max_norm=args.n2p3net_spatial_max_norm,
+            interaction_rank=args.n2p3net_interaction_rank,
+            mlp_hidden_features=args.n2p3net_mlp_hidden_features,
+        )
+    except (TypeError, ValueError) as exc:
+        parser.error(str(exc))
     models = _parse_models(args.models, parser)
     artifact_policy = FoldLocalArtifactPolicy(
         candidate_quantiles=args.artifact_candidate_quantiles,
@@ -220,7 +377,11 @@ def main() -> None:
         require_labels=True,
         validation="attested",
     )
-    assert_default_p300_input_contract(dataset.preprocessing)
+    expected_contract = replace(
+        DEFAULT_P300_DATA_CONTRACT,
+        sample_rate_hz=args.sample_rate_hz,
+    )
+    assert_p300_input_contract(dataset.preprocessing, expected_contract)
     assert_p300_source_provenance(dataset)
     timeline = dataset.event_timeline
     trial_channel_mask = (
@@ -288,19 +449,32 @@ def main() -> None:
             batch_size=args.batch_size,
             seed=args.seed,
             validation_group_fraction=args.validation_group_fraction,
-            deep_config_overrides={"lr": args.lr, "early_stop_patience": args.early_stop_patience},
+            deep_config_overrides=deep_config_overrides,
             device=device,
             n2p3net_pooling_mode=args.n2p3net_pooling,
+            n2p3net_architecture=n2p3net_architecture,
         )
         output_dir = Path(args.run_dir) / run_name / model_name
         output_dir.mkdir(parents=True, exist_ok=True)
         model.configure_epoch_progress(output_dir / "epochs")
+        progress_file = (output_dir / "progress.jsonl").open("w", encoding="utf-8")
         manifest = {
+            "type": "manifest",
             "run_name": run_name,
             "model": describe_binary_model(model_name, model),
             "dataset": dataset.record(validate=False),
             "fold_protocol": "partial_loso" if args.fold_offset or args.max_folds else "loso",
             "selection_mode": "candidate_selection" if candidate_selection is not None else "binary_oddball",
+            "total_folds": args.fold_offset + len(folds),
+            "batch_total_folds": len(folds),
+            "batch_fold_offset": args.fold_offset,
+            "epoch_progress": "epochs/fold_<fold>.jsonl",
+            "epoch_index_base": 0,
+            "trainer_kwargs": {
+                "epochs": args.epochs,
+                "batch_size": args.batch_size,
+                "early_stop_patience": args.early_stop_patience,
+            },
             "artifact_quality_policy": {"method": "fold_local_ptp_cv", **artifact_policy.__dict__},
             "shared_artifact_qc": {
                 "reused_across_models": True,
@@ -319,43 +493,99 @@ def main() -> None:
         (output_dir / "manifest.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
         )
+        progress_file.write(json.dumps(manifest, ensure_ascii=False) + "\n")
+        progress_file.flush()
+        folds_completed = 0
+
+        def on_fold_end(fold_id: int, fold_result: object, *, _file=progress_file) -> None:
+            nonlocal folds_completed
+            folds_completed += 1
+            hit_rate = getattr(fold_result, "hit_rate", None)
+            line = {
+                "type": "fold",
+                "fold": fold_id,
+                "n_folds_done": folds_completed,
+                "fold_bacc": float(fold_result.balanced_acc),
+                "fold_auc": float(fold_result.auc),
+                "hit": None if hit_rate is None else float(hit_rate),
+                "epochs_ran": int(fold_result.epochs_ran),
+                "train_losses": [
+                    round(float(value), 6) for value in fold_result.train_losses
+                ][-12:],
+                "val_losses": [
+                    round(float(value), 6) for value in fold_result.val_losses
+                ][-12:],
+                "best_epoch": fold_result.best_epoch,
+                "fit_sec": fold_result.fit_sec,
+                "fit_peak_allocated_mb": fold_result.fit_peak_allocated_mb,
+                "fit_peak_reserved_mb": fold_result.fit_peak_reserved_mb,
+                "artifact_quality": fold_result.artifact_quality,
+                "ts": datetime.now(UTC).isoformat(),
+            }
+            _file.write(json.dumps(line, ensure_ascii=False) + "\n")
+            _file.flush()
+
         started = time.perf_counter()
-        common = {
-            "fold_protocol": manifest["fold_protocol"],
-            "n_jobs": args.fold_jobs,
-            "parallel_backend": args.fold_backend,
-            "max_gpu_jobs": args.gpu_fold_jobs,
-            "cpu_threads": args.cpu_threads,
-            "artifact_qc_jobs": args.artifact_qc_jobs,
-            "fold_id_offset": args.fold_offset,
-            "trial_channel_mask": trial_channel_mask,
-            "qc_features": qc_features,
-            "artifact_policy": artifact_policy,
-            "fitted_artifact_models": fitted_artifact_models,
-        }
-        if candidate_selection is None:
-            summary = evaluate_binary(
-                model,
-                X,
-                y,
-                subject_ids,
-                folds,
-                **common,
+        try:
+            common = {
+                "fold_protocol": manifest["fold_protocol"],
+                "n_jobs": args.fold_jobs,
+                "parallel_backend": args.fold_backend,
+                "max_gpu_jobs": args.gpu_fold_jobs,
+                "cpu_threads": args.cpu_threads,
+                "artifact_qc_jobs": args.artifact_qc_jobs,
+                "fold_id_offset": args.fold_offset,
+                "trial_channel_mask": trial_channel_mask,
+                "qc_features": qc_features,
+                "artifact_policy": artifact_policy,
+                "fitted_artifact_models": fitted_artifact_models,
+                "on_fold_end": on_fold_end,
+            }
+            if candidate_selection is None:
+                summary = evaluate_binary(
+                    model,
+                    X,
+                    y,
+                    subject_ids,
+                    folds,
+                    **common,
+                )
+            else:
+                summary = evaluate_candidate_selection(
+                    model,
+                    X,
+                    y,
+                    candidate_selection.candidate_codes,
+                    candidate_selection.group_ids,
+                    candidate_selection.truth_by_group,
+                    folds,
+                    candidate_vocab=tuple(range(len(candidate_selection.vocabulary))),
+                    fit_group_ids=subject_ids,
+                    event_timeline=timeline,
+                    **common,
+                )
+        except BaseException as exc:
+            progress_file.write(
+                json.dumps(
+                    {
+                        "type": "failed",
+                        "error_type": type(exc).__name__,
+                        "error": str(exc),
+                        "ts": datetime.now(UTC).isoformat(),
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
             )
+            progress_file.flush()
+            raise
         else:
-            summary = evaluate_candidate_selection(
-                model,
-                X,
-                y,
-                candidate_selection.candidate_codes,
-                candidate_selection.group_ids,
-                candidate_selection.truth_by_group,
-                folds,
-                candidate_vocab=tuple(range(len(candidate_selection.vocabulary))),
-                fit_group_ids=subject_ids,
-                event_timeline=timeline,
-                **common,
+            progress_file.write(
+                json.dumps({"type": "done", "ts": datetime.now(UTC).isoformat()}) + "\n"
             )
+            progress_file.flush()
+        finally:
+            progress_file.close()
         record = {
             **manifest,
             "balanced_acc_mean": summary.balanced_acc_mean,
