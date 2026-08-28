@@ -194,6 +194,9 @@ d'_R = sqrt(R / (1 + (R-1)rho)) d'.
 
 ### H1. 按总感受野重建多尺度
 
+精确有限输入支持、LMBC 反例、ERF 协议和 matched 机制矩阵见
+[`total_receptive_field_research_20260828.zh.md`](total_receptive_field_research_20260828.zh.md)。
+
 理念：尺度应代表不同的输入域支持，而不是不同的局部 kernel 名称。
 
 数学：先给定目标 `R_short < R_long < T`，再由

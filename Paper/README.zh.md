@@ -12,10 +12,11 @@
 - 自监督/联合监督、MMD/Riemannian/Bayesian transfer；
 - EEG foundation model 的身份捷径、低频偏置、负对照和 benchmark protocol；
 - 重参考、通道/坐标、伪迹和可复现性。
+- theoretical/effective receptive field、padding、stride、dilation 与 temporal CNN。
 
-截至本次更新，`Paper/` 中 51 个 PDF 均已通过结构与首段文本校验，没有损坏或加密 PDF。
+截至本次更新，`Paper/` 中 53 个 PDF 均已通过结构与首段文本校验，没有损坏或加密 PDF。
 “已下载”只表示原文可审计，不表示论文结论已被本项目接受。
-完整 64-source 检索/失败清单见 `literature_manifest_20260828.md`，逐 PDF 的
+完整 68-source 检索/失败清单见 `literature_manifest_20260828.md`，逐 PDF 的
 SHA-256、页数和首段可读性见 `pdf_validation_20260828.json`；本文只保留决策摘要。
 
 ## 深度核对后的路线判断
@@ -52,6 +53,7 @@ SHA-256、页数和首段可读性见 `pdf_validation_20260828.json`；本文只
 | 低频偏置 | `Understanding_and_Correcting_Low-Frequency_Bias_in_EEG_Foundation_Models_arXiv_2608.01898.pdf`、`Spectral_Audit_Task_Dependent_Aperiodic_Reliance_arXiv_2606.08583.pdf` | band balance 与敏感性分析；不作单项判死 |
 | benchmark 负对照 | `EEG_FM_Negative_Control_Protocol_arXiv_2607.24519.pdf`、`EEG_Task_Specification_NeuroDoc_arXiv_2606.22925.pdf`、`MOABB_Reproducibility_Benchmark_arXiv_2404.15319.pdf` | executable protocol/ledger |
 | FM 对照 | `EEG_FM_Compass_arXiv_2601.17883.pdf`、`EEG_FM_Generalization_Framework_arXiv_2605.28563.pdf`、`NeuralBench_arXiv_2605.08495.pdf`、`OmniEEG_Bench_arXiv_2606.00815.pdf` | specialist 先行，FM 后置 |
+| 感受野方法 | `Effective_Receptive_Field_Luo_NeurIPS_2016.pdf`、`Temporal_Convolutional_Networks_Lea_CVPR_2017.pdf` | RF/ERF 计算与时序层级先例，不作 P300 性能证据 |
 
 ## 仍需谨慎解读
 

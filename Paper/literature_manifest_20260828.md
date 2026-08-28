@@ -22,7 +22,16 @@
 | Crossref exact DOI validation | 25 | 25 | 25/25 resolved |
 | Semantic Scholar exact OA batch | 1 | 7 | 7/7 resolved; used only to distinguish OA claims from actually retrievable files |
 
-Final curated set: **64 unique sources** after DOI, arXiv ID, and normalized-title reconciliation. Of these, **51 PDFs are local and readable**; **13 are metadata-only, indirect mechanism references, or failed legal-download attempts**. `pdf_validation_20260828.json` records SHA-256, pages, metadata, and first-page text extraction for every local PDF. All 51 parsed successfully and yielded first-page text.
+Final curated set: **68 unique sources** after DOI, arXiv ID, and normalized-title reconciliation. Of these, **53 PDFs are local and readable**; **15 are metadata-only, HTML/TeX method sources, indirect mechanism references, or failed legal-download attempts**. `pdf_validation_20260828.json` records SHA-256, pages, metadata, and first-page text extraction for every local PDF. All 53 parsed successfully and yielded first-page text.
+
+### Focused receptive-field addendum
+
+On 2026-08-28, a bounded follow-up queried OpenAlex (three 20-result searches plus exact IDs),
+Crossref exact DOI, PubMed/Europe PMC P300 latency terms, and Unpaywall. Full request parameters,
+count boundaries, transport failures, and retained-source rationale are preserved in
+[`receptive_field_literature_ledger_20260828.md`](receptive_field_literature_ledger_20260828.md).
+This addendum is methodological, not a
+systematic review or direct GTN performance search.
 
 ## Evidence labels
 
@@ -95,6 +104,8 @@ These are useful for hypotheses, implementation controls, or failure analysis, b
 | 2019 | Riemannian Artifact Subspace Reconstruction | [10.3389/fnhum.2019.00141](https://doi.org/10.3389/fnhum.2019.00141) | T | `Riemannian_Artifact_Subspace_Reconstruction_2019.pdf`; artifact handling is indirect and may erase ERP signal |
 | 2026 | Spectral Audit of Task-Dependent Aperiodic Reliance | [arXiv:2606.08583](https://arxiv.org/abs/2606.08583) | T/negative | `Spectral_Audit_Task_Dependent_Aperiodic_Reliance_arXiv_2606.08583.pdf` |
 | 2026 | Understanding and Correcting Low-Frequency Bias in EEG Foundation Models | [arXiv:2608.01898](https://arxiv.org/abs/2608.01898) | T/negative | `Understanding_and_Correcting_Low-Frequency_Bias_in_EEG_Foundation_Models_arXiv_2608.01898.pdf` |
+| 2016 | Understanding the Effective Receptive Field in Deep CNNs | [arXiv:1701.04128](https://arxiv.org/abs/1701.04128) | T/method | `Effective_Receptive_Field_Luo_NeurIPS_2016.pdf`; image-domain ERF theory, not EEG evidence |
+| 2017 | Temporal Convolutional Networks for Action Segmentation | [10.1109/CVPR.2017.113](https://doi.org/10.1109/CVPR.2017.113) | T/method | `Temporal_Convolutional_Networks_Lea_CVPR_2017.pdf`; temporal hierarchy precedent only |
 
 ## Metadata-only and failed full-text retrievals
 
@@ -115,6 +126,8 @@ No local PDF is claimed for these rows. OA labels come from OpenAlex/Semantic Sc
 | 2026 | Data Aggregation Strategies for a P300 Speller | [10.64898/2026.06.17.732982](https://doi.org/10.64898/2026.06.17.732982) | bioRxiv PDF request returned HTTP 403 | M |
 | 2022 | EEG Conformer | [10.1109/TNSRE.2022.3230250](https://doi.org/10.1109/TNSRE.2022.3230250) | OA metadata; not downloaded because it is mechanism-only, not direct P300 evidence | T/M |
 | 2022 | ATCNet | [10.1109/TII.2022.3197419](https://doi.org/10.1109/TII.2022.3197419) | closed metadata; motor-imagery mechanism only, not direct P300 evidence | T/M |
+| 2019 | Computing Receptive Fields of CNNs | [10.23915/distill.00021](https://doi.org/10.23915/distill.00021) | official OA HTML; no publisher PDF | T/M |
+| 2016 | A Guide to Convolution Arithmetic for Deep Learning | [arXiv:1603.07285](https://arxiv.org/abs/1603.07285) | official TeX source verified; arXiv PDF transport failed | T/M |
 
 ## High-confidence synthesis and contradictions
 
@@ -125,10 +138,13 @@ No local PDF is claimed for these rows. OA labels come from OpenAlex/Semantic Sc
 5. **Foundation/SSM evidence is indirect and includes negative controls.** Current foundation benchmarks report limited gains on short-window, channel-constrained BCI tasks and expose identity, low-frequency, and dataset-leakage traps. Foundation pretraining should be tested against random-weight/frozen-feature and source-identity controls before it is called an improvement.
 6. **Uncertainty and sequential aggregation need separate endpoints.** Trial ROC-AUC/BACC, calibration (NLL/Brier/ECE), character/candidate hit rate, stopping time, and ITR are different outcomes. A model can improve character accuracy through repetitions or a language model while leaving single-trial discrimination unchanged.
 7. **Direct artifact-robustness evidence for P300 is thin.** Riemannian ASR and channel-reflection augmentation are transferable methods, not proof that a particular rejection/correction policy preserves P300. Artifact methods require constructed counterexamples and clean-vs-corrupted paired tests because aggressive cleaning can delete the ERP itself.
+8. **Theoretical RF and trained ERF are different objects.** Arithmetic sources justify exact
+   support, jump, center, padding, and dilation calculations; Luo et al. show that high-impact ERF
+   can occupy only part of that support. Neither line of work establishes an optimal P300 RF.
 
 ## Important interpretation limits
 
-- The 51 PDFs are not 51 mutually comparable GTN experiments. They include reviews, preprints, benchmark/protocol papers, broad EEG foundation work, and indirect methods.
+- The 53 PDFs are not 53 mutually comparable GTN experiments. They include reviews, preprints, benchmark/protocol papers, broad EEG foundation work, and indirect methods.
 - No external AUC, BACC, F1, AP, character accuracy, hit rate, or ITR value should enter a leaderboard unless dataset, subject split, calibration, repetitions, preprocessing, channels, and metric definition match.
 - Preprints dated 2025-2026 are hypothesis sources until peer review and independent reproduction. Metadata-only rows were not treated as full-text evidence.
 - Search packets and exact API provenance are preserved under `tmp/literature_search_20260828/`; the stable local integrity record is `Paper/pdf_validation_20260828.json`.

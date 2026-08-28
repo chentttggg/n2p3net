@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-28T00:00:00+08:00",
-  "validation": "pypdf parse, page count, first-page text extraction, SHA-256",
+  "generated_at": "2026-08-28T19:54:05+08:00",
+  "validation": "PDF magic, pypdf parse, page count, first-page text extraction, SHA-256",
   "files": [
     {
       "file": "102482.pdf",
@@ -10,7 +10,7 @@
       "encrypted": false,
       "metadata_title": "",
       "metadata_author": "",
-      "first_page_text_chars": 4168,
+      "first_page_text_chars": 4169,
       "readable": true
     },
     {
@@ -76,7 +76,7 @@
       "encrypted": false,
       "metadata_title": "Introducing Block-Toeplitz Covariance Matrices to Remaster Linear Discriminant Analysis for Event-related Potential Brain-computer Interfaces",
       "metadata_author": "Jan Sosulski Department of Computer Science, University of Freiburg, Freiburg, Germany, Michael Tangermann Donders Institute for Brain, Cognition and Behaviour, Radboud University, Nijmegen, The Netherlands, Correspondence to: michael.tangermann@donders.ru.nl",
-      "first_page_text_chars": 5206,
+      "first_page_text_chars": 5205,
       "readable": true
     },
     {
@@ -98,7 +98,7 @@
       "encrypted": false,
       "metadata_title": "",
       "metadata_author": "",
-      "first_page_text_chars": 2016,
+      "first_page_text_chars": 2060,
       "readable": true
     },
     {
@@ -108,8 +108,8 @@
       "pages": 21,
       "encrypted": false,
       "metadata_title": "Channel Reflection: Knowledge-Driven Data Augmentation for EEG-Based Brain-Computer Interfaces",
-      "metadata_author": "Ziwei Wang; Siyang Li; Jingwei Luo; Jiajing Liu; Dongrui Wu;",
-      "first_page_text_chars": 3499,
+      "metadata_author": "Ziwei Wang; Siyang Li; Jingwei Luo; Jiajing Liu; Dongrui Wu; ",
+      "first_page_text_chars": 3498,
       "readable": true
     },
     {
@@ -118,9 +118,9 @@
       "sha256": "3f1f958b53eddc6972f84792f0caf0b893d27920e6fca3d2dfe5fe1d64a9aca2",
       "pages": 5,
       "encrypted": false,
-      "metadata_title": "\uf020",
+      "metadata_title": "",
       "metadata_author": "Tiffany McKerahan",
-      "first_page_text_chars": 4992,
+      "first_page_text_chars": 4995,
       "readable": true
     },
     {
@@ -131,7 +131,7 @@
       "encrypted": false,
       "metadata_title": "A Cross-Scale Transformer and Triple-View Attention based Domain-Rectified Transfer Learning for EEG Classification in RSVP Tasks",
       "metadata_author": "",
-      "first_page_text_chars": 6355,
+      "first_page_text_chars": 6361,
       "readable": true
     },
     {
@@ -142,7 +142,7 @@
       "encrypted": false,
       "metadata_title": "",
       "metadata_author": "",
-      "first_page_text_chars": 386,
+      "first_page_text_chars": 387,
       "readable": true
     },
     {
@@ -175,7 +175,7 @@
       "encrypted": false,
       "metadata_title": "Ogg_et_al_2025_EEG_BCI_FM_mk2",
       "metadata_author": "Mattson W Ogg",
-      "first_page_text_chars": 5828,
+      "first_page_text_chars": 5830,
       "readable": true
     },
     {
@@ -245,6 +245,17 @@
       "readable": true
     },
     {
+      "file": "Effective_Receptive_Field_Luo_NeurIPS_2016.pdf",
+      "bytes": 615339,
+      "sha256": "3c6fcfa484a10bad19d01e59718e94c09f319cf86716b3081ee0b15f1afa3168",
+      "pages": 9,
+      "encrypted": false,
+      "metadata_title": "Understanding the Effective Receptive Field in Deep Convolutional Neural Networks",
+      "metadata_author": "Wenjie Luo, Yujia Li, Raquel Urtasun, Richard Zemel",
+      "first_page_text_chars": 3287,
+      "readable": true
+    },
+    {
       "file": "ERP_XTTN_arXiv_2606.02939.pdf",
       "bytes": 7045544,
       "sha256": "023d501937949029f9f707d0c102780d312337626dbb464233ed02ba026abb5a",
@@ -262,7 +273,7 @@
       "pages": 30,
       "encrypted": false,
       "metadata_title": "Estimating the Event-Related Potential from Few EEG Trials",
-      "metadata_author": "Anders Vestergaard N\u00f8rskov; Kasper J\u00f8rgensen; Alexander Neergaard Zahid; Morten M\u00f8rup",
+      "metadata_author": "Anders Vestergaard Nørskov; Kasper Jørgensen; Alexander Neergaard Zahid; Morten Mørup",
       "first_page_text_chars": 3313,
       "readable": true
     },
@@ -285,7 +296,7 @@
       "encrypted": false,
       "metadata_title": "",
       "metadata_author": "",
-      "first_page_text_chars": 3479,
+      "first_page_text_chars": 3482,
       "readable": true
     },
     {
@@ -296,7 +307,7 @@
       "encrypted": false,
       "metadata_title": "The Identity Trap in EEG Foundation Models: A Diagnostic Audit",
       "metadata_author": "Jun-You Lin; Ying Choon Wu; Tzyy-Ping Jung",
-      "first_page_text_chars": 2761,
+      "first_page_text_chars": 2760,
       "readable": true
     },
     {
@@ -383,7 +394,7 @@
       "pages": 31,
       "encrypted": false,
       "metadata_title": "NeuralBench: A Unifying Framework to Benchmark NeuroAI Models",
-      "metadata_author": "Hubert Banville; St\u00e9phane d'Ascoli; Simon Dahan; J\u00e9r\u00e9my Rapin; Marl\u00e8ne Careil; Yohann Benchetrit; Jarod L\u00e9vy; Saarang Panchavati; Antoine Ratouchniak; Mingfang; Zhang; Elisa Cascardi; Katelyn Begany; Teon Brooks; Jean-R\u00e9mi King",
+      "metadata_author": "Hubert Banville; Stéphane d'Ascoli; Simon Dahan; Jérémy Rapin; Marlène Careil; Yohann Benchetrit; Jarod Lévy; Saarang Panchavati; Antoine Ratouchniak; Mingfang; Zhang; Elisa Cascardi; Katelyn Begany; Teon Brooks; Jean-Rémi King",
       "first_page_text_chars": 3161,
       "readable": true
     },
@@ -426,7 +437,7 @@
       "sha256": "053427a4ac8a94b91b7ac7cf6ee67c6fd20414e1decf5a52717a58e583e0969a",
       "pages": 13,
       "encrypted": false,
-      "metadata_title": "Advances in P300 brain\u2013computer interface spellers: toward paradigm design and performance evaluation",
+      "metadata_title": "Advances in P300 brain–computer interface spellers: toward paradigm design and performance evaluation",
       "metadata_author": "Jiahui Pan",
       "first_page_text_chars": 3846,
       "readable": true
@@ -461,7 +472,7 @@
       "encrypted": false,
       "metadata_title": "Type of the Paper (Article",
       "metadata_author": "MDPI",
-      "first_page_text_chars": 3282,
+      "first_page_text_chars": 3287,
       "readable": true
     },
     {
@@ -483,7 +494,7 @@
       "encrypted": false,
       "metadata_title": "",
       "metadata_author": "",
-      "first_page_text_chars": 3086,
+      "first_page_text_chars": 3087,
       "readable": true
     },
     {
@@ -516,7 +527,7 @@
       "encrypted": false,
       "metadata_title": "SpellerSSL: Self-Supervised Learning with P300 Aggregation for Speller BCIs",
       "metadata_author": "Jiazhen Hong; Geoff Mackellar; Soheila Ghane",
-      "first_page_text_chars": 3364,
+      "first_page_text_chars": 3363,
       "readable": true
     },
     {
@@ -528,6 +539,17 @@
       "metadata_title": "ST-CapsNet: Linking Spatial and Temporal Attention With Capsule Network for P300 Detection Improvement",
       "metadata_author": "",
       "first_page_text_chars": 6326,
+      "readable": true
+    },
+    {
+      "file": "Temporal_Convolutional_Networks_Lea_CVPR_2017.pdf",
+      "bytes": 733157,
+      "sha256": "009ed1921b987dd6d2d614d9b6b0d5dd759899590211d34c0bb86ce0980d70cb",
+      "pages": 10,
+      "encrypted": false,
+      "metadata_title": "Temporal Convolutional Networks for Action Segmentation and Detection",
+      "metadata_author": "Colin Lea, Michael D. Flynn, Rene Vidal, Austin Reiter, Gregory D. Hager",
+      "first_page_text_chars": 3431,
       "readable": true
     },
     {
