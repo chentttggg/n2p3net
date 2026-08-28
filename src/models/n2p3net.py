@@ -623,7 +623,7 @@ class N2P3Net(nn.Module):
             )
         return record
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def _validate_input(self, x: torch.Tensor) -> None:
         if x.ndim != 3 or x.shape[1] != self.n_channels:
             raise ValueError(
                 f"Expected EEG input (B,{self.n_channels},T), got {tuple(x.shape)}."
@@ -633,25 +633,40 @@ class N2P3Net(nn.Module):
                 f"Expected {self.n_times} time samples from the physical epoch contract, "
                 f"got {x.shape[-1]}."
             )
+
+    def forward_features(self, x: torch.Tensor) -> torch.Tensor:
+        """Return concatenated post-MST trunk features without the readout.
+
+        ``forward`` remains unchanged in its public contract: it consumes these
+        features through the configured pooling/classification head.
+        """
+
+        self._validate_input(x)
         x = x.unsqueeze(1)
         x = self.st_temporal_norm(self.st_temporal(x))
         x = self.st_spatial_norm(self.st_spatial(x))
         x = self.st_dropout(self.st_pool(self.st_activation(x))).squeeze(2)
         branch_features = [branch(x) for branch in self.mst_branches]
+        return torch.cat(branch_features, dim=1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        features = self.forward_features(x)
         if self.pooling_mode == "global_average":
-            features = self.pool(torch.cat(branch_features, dim=1)).squeeze(-1)
+            pooled = self.pool(features).squeeze(-1)
         elif self.pooling_mode in {
             "ms_flatten",
             "full_unfold",
             "mlp_full_unfold",
             "quadratic_full_unfold",
         }:
-            features = self.pool(torch.cat(branch_features, dim=1))
+            pooled = self.pool(features)
         else:
-            features = torch.cat(
-                [pool(branch) for pool, branch in zip(self.pool, branch_features, strict=True)], dim=1
+            branch_features = torch.split(features, self.mst_features_per_scale, dim=1)
+            pooled = torch.cat(
+                [pool(branch) for pool, branch in zip(self.pool, branch_features, strict=True)],
+                dim=1,
             )
-        return self.classifier(features)
+        return self.classifier(pooled)
 
     def parameter_count(self) -> int:
         return sum(parameter.numel() for parameter in self.parameters() if parameter.requires_grad)

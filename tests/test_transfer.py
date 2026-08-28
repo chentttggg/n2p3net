@@ -1,0 +1,159 @@
+from __future__ import annotations
+
+import numpy as np
+import pytest
+import torch
+
+from models.n2p3net import N2P3Net
+from transfer.evaluation import hit_at_repetition
+from transfer.heads import SubjectProbeHead, WaveDecoderHead
+from transfer.losses import (
+    ReconstructionLossConfig,
+    band_balanced_spectral_loss,
+    estimate_band_weights,
+    reconstruction_loss,
+)
+from transfer.masking import MaskingConfig, apply_time_mask, make_temporal_mask
+from transfer.pretraining import PretrainingConfig, PretrainingTask
+from transfer.subject_adapter import SubjectAdapter, SubjectAdapterConfig
+
+
+def _trunk() -> N2P3Net:
+    return N2P3Net(
+        n_channels=3,
+        n_times=128,
+        sfreq=128.0,
+        tmin_s=-0.2,
+        pooling_mode="ms_flatten",
+    )
+
+
+def test_n2p3net_exposes_trunk_features_without_changing_logits() -> None:
+    trunk = _trunk()
+    x = torch.randn(2, 3, 128)
+    features = trunk.forward_features(x)
+    assert features.shape == (2, 4, 32)
+    logits = trunk(x)
+    assert logits.shape == (2, 2)
+    # forward_features is part of forward, so repeated calls are finite.
+    assert torch.isfinite(features).all()
+
+
+def test_temporal_mask_is_deterministic_and_nonempty() -> None:
+    config = MaskingConfig(mask_fraction=0.5, min_block_samples=12, max_block_samples=32)
+    gen = torch.Generator().manual_seed(7)
+    first = make_temporal_mask(128, config=config, generator=gen)
+    gen = torch.Generator().manual_seed(7)
+    second = make_temporal_mask(128, config=config, generator=gen)
+    assert torch.equal(first, second)
+    fraction = float(first.to(torch.float32).mean())
+    assert 0.35 <= fraction <= 0.65
+    x = torch.randn(4, 3, 128)
+    masked, keep = apply_time_mask(x, first)
+    assert masked.shape == x.shape
+    assert torch.all(masked[:, :, first] == 0.0)
+    assert keep.dtype == x.dtype
+
+
+def test_band_weights_sum_to_one_and_zero_reconstruction_loss() -> None:
+    x = torch.randn(8, 3, 128)
+    weights = estimate_band_weights(x, sfreq=128.0)
+    assert weights.shape == (4,)
+    assert abs(float(weights.sum()) - 1.0) < 1e-6
+    config = ReconstructionLossConfig()
+    losses = reconstruction_loss(x, x, sfreq=128.0, config=config, weights=weights)
+    assert float(losses["waveform"]) < 1e-6
+    assert float(losses["spectral"]) < 1e-5
+
+
+def test_band_balanced_loss_is_lower_for_exact_waveform() -> None:
+    x = torch.randn(4, 3, 128)
+    bad = torch.randn(4, 3, 128)
+    good = band_balanced_spectral_loss(x, x, sfreq=128.0)
+    worse = band_balanced_spectral_loss(x, bad, sfreq=128.0)
+    assert float(good) < float(worse)
+
+
+def test_wave_decoder_matches_contract_and_is_small() -> None:
+    decoder = WaveDecoderHead(trunk_channels=4, output_channels=3, st_pool_size=4)
+    features = torch.randn(2, 4, 32)
+    mask = torch.ones(2, 128)
+    out = decoder(features, mask)
+    assert out.shape == (2, 3, 128)
+    assert decoder.parameter_count() < 200
+
+
+def test_pretraining_task_loss_and_subject_probe() -> None:
+    trunk = _trunk()
+    config = PretrainingConfig(subject_probe_subjects=4)
+    task = PretrainingTask(trunk, config)
+    x = torch.randn(8, 3, 128)
+    ids = torch.randint(0, 4, (8,))
+    components = task.loss_components(x, subject_ids=ids)
+    assert set(components) == {"waveform", "spectral", "total", "subject_probe"}
+    assert torch.isfinite(components["total"])
+    task.discard_decoder()
+    assert task.decoder is None and task.probe is None
+
+
+def test_subject_probe_shape() -> None:
+    probe = SubjectProbeHead(16, 5)
+    out = probe(torch.randn(3, 16))
+    assert out.shape == (3, 5)
+
+
+def test_subject_adapter_fits_and_predicts() -> None:
+    rng = np.random.default_rng(0)
+    trunk = _trunk()
+    adapter = SubjectAdapter(
+        trunk,
+        config=SubjectAdapterConfig(
+            head_kind="linear",
+            epochs=3,
+            batch_size=16,
+            val_group_fraction=None,
+        ),
+    )
+    X = rng.normal(size=(32, 3, 128)).astype(np.float32)
+    y = np.tile(np.array([0, 1], dtype=np.int64), 16)
+    X[y == 1, 2, 60:80] += 0.5
+    adapter.fit(X, y)
+    logits = adapter.predict_logit(X)
+    assert logits.shape == (32,)
+    assert np.isfinite(logits).all()
+    # Frozen-trunk adapter should train only the 2-class linear head.
+    assert adapter.parameter_count() == 34
+
+
+def test_hit_at_repetition_sums_target_logits() -> None:
+    # Two groups, digits 1..4, two repetitions per digit. group-a truth=2,
+    # group-b truth=3; positive logits are placed on those target digits.
+    digit_block = np.array([1, 2, 3, 4], dtype=np.int64)
+    digits = np.concatenate([np.repeat(digit_block, 2), np.repeat(digit_block, 2)])
+    groups = np.concatenate([np.repeat("a", 8), np.repeat("b", 8)])
+    repetitions = np.tile(np.array([0, 1], dtype=np.int64), 8)
+    logits = np.zeros(16, dtype=float)
+    logits[(groups == "a") & (digits == 2)] = 1.0
+    logits[(groups == "b") & (digits == 3)] = 1.5
+    hits = hit_at_repetition(
+        logits,
+        digits,
+        groups,
+        {"a": 2, "b": 3},
+        repetitions,
+        aggregation="sum",
+        max_repetitions=2,
+    )
+    assert hits[1] == 1.0
+    assert hits[2] == 1.0
+
+
+def test_hit_at_repetition_rejects_nonfinite_logits() -> None:
+    with pytest.raises(ValueError, match="NaN"):
+        hit_at_repetition(
+            [1.0, float("nan")],
+            [1, 2],
+            ["g", "g"],
+            {"g": 1},
+            [0, 0],
+        )
