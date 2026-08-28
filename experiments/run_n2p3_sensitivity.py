@@ -227,6 +227,14 @@ def build_secondary_candidates(*, base_batch_size: int) -> list[SensitivityCandi
     return output
 
 
+def build_batch_retry_candidates(*, base_batch_size: int) -> list[SensitivityCandidate]:
+    return [
+        replace(candidate, architecture_overrides={"temporal_kernel_size": 35})
+        for candidate in build_candidates(base_batch_size=base_batch_size)
+        if candidate.axis in {"baseline", "batch_size"}
+    ]
+
+
 def _parse_fold_indices(value: str) -> tuple[int, ...]:
     try:
         indices = tuple(int(item.strip()) for item in value.split(",") if item.strip())
@@ -261,6 +269,7 @@ def main() -> None:
             "kernel_range",
             "kernel_fine",
             "secondary",
+            "batch_retry",
         ),
         default="coarse",
     )
@@ -350,8 +359,10 @@ def main() -> None:
         candidates = build_kernel_range_candidates(base_batch_size=args.batch_size)
     elif args.grid == "kernel_fine":
         candidates = build_kernel_fine_candidates(base_batch_size=args.batch_size)
-    else:
+    elif args.grid == "secondary":
         candidates = build_secondary_candidates(base_batch_size=args.batch_size)
+    else:
+        candidates = build_batch_retry_candidates(base_batch_size=args.batch_size)
     if args.max_candidates is not None:
         candidates = candidates[: args.max_candidates]
 
@@ -398,6 +409,7 @@ def main() -> None:
             "weight_decay": defaults.weight_decay,
             "pos_weight": defaults.pos_weight,
             "early_stop_patience": args.early_stop_patience,
+            "max_update_batch_size": candidate.batch_size,
             **candidate.deep_overrides,
         }
         model = build_binary_model(

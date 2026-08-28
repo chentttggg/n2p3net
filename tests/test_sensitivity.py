@@ -6,6 +6,7 @@ from experiments.run_n2p3_sensitivity import (
     DELTAS,
     _subject_sort_key,
     architecture_for_sample_rate,
+    build_batch_retry_candidates,
     build_boundary_candidates,
     build_candidates,
     build_kernel_fine_candidates,
@@ -113,5 +114,15 @@ def test_secondary_grid_fixes_the_winning_kernel_and_excludes_kernel_axis() -> N
     assert all(candidate.axis != "temporal_kernel_size" for candidate in candidates)
     assert all(
         candidate.architecture_overrides["temporal_kernel_size"] == 35
+        for candidate in candidates
+    )
+
+
+def test_batch_retry_grid_contains_only_baseline_and_real_batch_variants() -> None:
+    candidates = build_batch_retry_candidates(base_batch_size=512)
+
+    assert [candidate.batch_size for candidate in candidates] == [512, 435, 486, 538, 589]
+    assert all(
+        candidate.architecture_overrides == {"temporal_kernel_size": 35}
         for candidate in candidates
     )
