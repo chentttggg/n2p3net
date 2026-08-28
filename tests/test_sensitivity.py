@@ -8,6 +8,7 @@ from experiments.run_n2p3_sensitivity import (
     architecture_for_sample_rate,
     build_boundary_candidates,
     build_candidates,
+    build_kernel_fine_candidates,
     build_kernel_range_candidates,
     build_lower_boundary_candidates,
 )
@@ -94,3 +95,11 @@ def test_kernel_range_grid_uses_requested_35_to_85_step_10() -> None:
         75,
         85,
     ]
+
+
+def test_kernel_fine_grid_keeps_every_kernel_odd() -> None:
+    candidates = build_kernel_fine_candidates(base_batch_size=512)
+    kernels = [candidate.architecture_overrides["temporal_kernel_size"] for candidate in candidates]
+
+    assert kernels == [25, 29, 33, 35, 37, 41, 45]
+    assert all(kernel % 2 == 1 for kernel in kernels)
