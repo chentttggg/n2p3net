@@ -99,10 +99,11 @@ class PreprocessingSpec:
         if (
             self.filter_method != "iir"
             or self.filter_order != 4
-            or self.filter_phase != "zero"
+            or self.filter_phase not in {"zero", "forward"}
         ):
             raise ValueError(
-                "The common executable filter contract is zero-phase fourth-order IIR."
+                "The executable filter contract is fourth-order IIR with "
+                "phase='zero' (offline LOSO) or phase='forward' (causal single-subject)."
             )
         if self.resample_domain != "epoched":
             raise ValueError("The common executable resampling domain is epoched EEG.")
@@ -204,6 +205,12 @@ class EpochDataset:
 
     def validate(self, *, require_labels: bool = False) -> None:
         self.preprocessing.validate()
+        expected_online = self.preprocessing.filter_phase == "forward"
+        if bool(self.event_timeline.online_causal) != expected_online:
+            raise ValueError(
+                "event_timeline.online_causal must equal "
+                "(preprocessing.filter_phase == 'forward')."
+            )
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError("EpochDataset.name must be a non-empty string.")
         X = np.asarray(self.X)

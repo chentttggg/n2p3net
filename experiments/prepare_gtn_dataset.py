@@ -31,6 +31,12 @@ def main() -> None:
     parser.add_argument("--tmax-ms", type=float, default=GTN_LMBC_PREPROCESSING.tmax_ms)
     parser.add_argument("--n-times", type=int, default=None)
     parser.add_argument(
+        "--filter-phase",
+        choices=("zero", "forward"),
+        default=GTN_LMBC_PREPROCESSING.filter_phase,
+        help="forward is required for chronological single-subject prefix/suffix folds.",
+    )
+    parser.add_argument(
         "--allow-skipped",
         action="store_true",
         help="Record invalid or duplicate public GTN sources instead of failing the cohort build.",
@@ -44,6 +50,7 @@ def main() -> None:
         tmin_ms=args.tmin_ms,
         tmax_ms=args.tmax_ms,
         n_times=n_times,
+        filter_phase=args.filter_phase,
     )
     dataset = build_gtn_epoch_dataset(
         args.root,

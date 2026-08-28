@@ -9,7 +9,11 @@ import pytest
 
 import data.epochs as epochs_module
 from data.channel import build_channel_identity
-from data.contract import assert_default_p300_input_contract
+from data.contract import (
+    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+    assert_causal_p300_input_contract,
+    assert_default_p300_input_contract,
+)
 from data.epochs import (
     EpochDataset,
     PreprocessingSpec,
@@ -386,6 +390,38 @@ def test_default_preprocessing_matches_ms_eegnet_physical_scales() -> None:
     assert profile.resample_npad == "auto"
     assert profile.resample_window == "auto"
     assert profile.resample_pad == "edge"
+def test_causal_single_subject_contract_accepts_forward_phase_only() -> None:
+    profile = PreprocessingSpec()
+    with pytest.raises(ValueError, match="forward"):
+        assert_causal_p300_input_contract(profile)
+
+    causal = PreprocessingSpec(
+        name=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.name,
+        filter_phase="forward",
+    )
+    causal.validate()
+    assert_causal_p300_input_contract(causal)
+
+
+def test_epoch_dataset_rejects_mismatched_causal_declaration() -> None:
+    dataset = _dataset()
+    dataset.preprocessing = PreprocessingSpec(
+        name=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.name,
+        sfreq=100.0,
+        tmin_ms=-200.0,
+        tmax_ms=800.0,
+        n_times=100,
+        filter_phase="forward",
+    )
+    with pytest.raises(ValueError, match="online_causal"):
+        dataset.validate()
+
+    causal_timeline = replace(dataset.event_timeline, online_causal=True)
+    dataset.event_timeline = causal_timeline
+    dataset.validate()
+
+
+
 
 
 def test_mainline_contract_rejects_the_retired_250_hz_cache_geometry() -> None:

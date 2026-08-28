@@ -40,12 +40,21 @@ DEFAULT_P300_DATA_CONTRACT = EEGDataContract(name="p300_ms_eegnet_input_v2")
 DEFAULT_GTN_DATA_CONTRACT = EEGDataContract(
     name="gtn_ms_eegnet_input_v2",
 )
+# Causal one-pass filtering for within-subject prefix/suffix protocols.
+# Zero-phase filtering would smear future test-period samples into training
+# epochs; a chronological single-subject split therefore requires this contract.
+SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT = EEGDataContract(
+    name="p300_single_subject_causal_v1",
+    filter_phase="forward",
+)
 
 
-def assert_default_p300_input_contract(preprocessing: object) -> None:
-    """Fail closed before mainline training on a physically incompatible cache."""
+def assert_p300_input_contract(
+    preprocessing: object,
+    expected: EEGDataContract = DEFAULT_P300_DATA_CONTRACT,
+) -> None:
+    """Fail closed when a cache does not match an executable input contract."""
 
-    expected = DEFAULT_P300_DATA_CONTRACT
     fields = {
         "sfreq": expected.sample_rate_hz,
         "l_freq": expected.l_freq,
@@ -79,6 +88,18 @@ def assert_default_p300_input_contract(preprocessing: object) -> None:
             + "; ".join(mismatches)
             + ". Regenerate the cache; legacy inputs cannot support current model claims."
         )
+
+
+def assert_default_p300_input_contract(preprocessing: object) -> None:
+    """Assert the offline zero-phase LOSO contract."""
+
+    assert_p300_input_contract(preprocessing, DEFAULT_P300_DATA_CONTRACT)
+
+
+def assert_causal_p300_input_contract(preprocessing: object) -> None:
+    """Assert the causal contract required for chronological single-subject folds."""
+
+    assert_p300_input_contract(preprocessing, SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT)
 
 
 def assert_p300_source_provenance(dataset: object) -> None:

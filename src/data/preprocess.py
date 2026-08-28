@@ -367,9 +367,12 @@ def preprocess(
     if (
         filter_method != DEFAULT_P300_DATA_CONTRACT.filter_method
         or filter_order != DEFAULT_P300_DATA_CONTRACT.filter_order
-        or filter_phase != DEFAULT_P300_DATA_CONTRACT.filter_phase
+        or filter_phase not in {"zero", "forward"}
     ):
-        raise ValueError("Executable preprocessing requires zero-phase fourth-order IIR.")
+        raise ValueError(
+            "Executable preprocessing requires fourth-order IIR with "
+            "phase='zero' or phase='forward'."
+        )
     if (
         resample_method != DEFAULT_P300_DATA_CONTRACT.resample_method
         or resample_npad != DEFAULT_P300_DATA_CONTRACT.resample_npad
@@ -523,5 +526,5 @@ def preprocess(
         event_statuses=event_statuses,
         event_status_details=event_status_details,
         event_evidence_indices=event_evidence_indices,
-        online_causal=False,
+        online_causal=filter_phase == "forward",
     )

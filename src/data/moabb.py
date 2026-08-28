@@ -106,6 +106,11 @@ def prepare_moabb_p300(
     from moabb.paradigms import P300
 
     preprocessing.validate()
+    if preprocessing.filter_phase != "zero":
+        raise ValueError(
+            "MOABB's paradigm-level filtering is zero-phase only; "
+            "causal single-subject caches must use manifest/BrainSync/GTN ingestion."
+        )
     if preprocessing.reject_threshold_v is not None:
         raise ValueError(
             "Fixed absolute-voltage artifact rejection is retired; set reject_threshold_v=None "

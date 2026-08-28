@@ -20,6 +20,17 @@ def _fake_dataset(subjects=(1, 2)):
         subject_list=list(subjects),
         metadata=SimpleNamespace(acquisition=acquisition),
     )
+def test_moabb_adapter_rejects_causal_phase_it_cannot_execute(monkeypatch) -> None:
+    from data import moabb as adapter_module
+
+    monkeypatch.setattr(adapter_module, "resolve_moabb_dataset", lambda name: _fake_dataset())
+    profile = PreprocessingSpec(filter_phase="forward")
+
+    with pytest.raises(ValueError, match="zero-phase only"):
+        prepare_moabb_p300("FakeP300", preprocessing=profile)
+
+
+
 
 
 def test_moabb_adapter_rejects_retired_fixed_artifact_threshold(monkeypatch) -> None:

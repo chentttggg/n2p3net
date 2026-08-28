@@ -72,6 +72,24 @@ def test_preprocess_smoke_shape_dtype():
     assert res.tmin == -0.2
     assert res.data.shape[0] >= 1  # 至少切出一个 epoch
     assert isinstance(res.n_epochs, int) and isinstance(res.n_times, int)
+def test_preprocess_forward_phase_marks_causal_and_zero_phase_does_not():
+    raw = make_raw(sfreq=512.0)
+    events = make_events(sfreq=512.0)
+
+    offline = preprocess(raw, events, channels=STANDARD_CHANNELS)
+    assert offline.online_causal is False
+
+    causal = preprocess(
+        raw,
+        events,
+        channels=STANDARD_CHANNELS,
+        filter_phase="forward",
+    )
+    assert causal.online_causal is True
+    assert np.isfinite(causal.data).all()
+
+
+
 
 
 def test_preprocess_prefers_embedded_digitization_over_default_template():
