@@ -35,6 +35,7 @@ required = {
     "n2p3net_global_average",
     "ms_eegnet",
     "n2p3net_full_unfold",
+    "n2p3net_full_unfold_k35",
     "n2p3net_mlp_full_unfold",
     "n2p3net_quadratic_full_unfold",
     "eegnet",

@@ -87,6 +87,10 @@ class N2P3ArchitectureConfig:
 
 
 DEFAULT_N2P3_ARCHITECTURE = N2P3ArchitectureConfig()
+TUNED_FULL_UNFOLD_ARCHITECTURE = replace(
+    DEFAULT_N2P3_ARCHITECTURE,
+    temporal_kernel_size=35,
+)
 
 
 def temporal_receptive_span_ms(kernel_samples: int, sample_rate_hz: float) -> float:

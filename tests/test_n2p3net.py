@@ -501,6 +501,7 @@ def test_factory_exposes_global_average_only_as_an_explicit_ablation(monkeypatch
         ("n2p3net_global_average", "global_average"),
         ("ms_eegnet", "ms_flatten"),
         ("n2p3net_full_unfold", "full_unfold"),
+        ("n2p3net_full_unfold_k35", "full_unfold"),
         ("n2p3net_mlp_full_unfold", "mlp_full_unfold"),
         ("n2p3net_quadratic_full_unfold", "quadratic_full_unfold"),
     ],
@@ -529,3 +530,27 @@ def test_factory_named_ablation_models_lock_one_pooling_mode(
     assert model.pooling_mode == pooling_mode
     assert record["name"] == model_name
     assert record["architecture"]["pooling_mode"] == pooling_mode
+
+
+def test_factory_locks_the_tuned_full_unfold_kernel(monkeypatch) -> None:
+    dataset = SimpleNamespace(
+        preprocessing=SimpleNamespace(sfreq=128.0, tmin_ms=-200.0),
+        n_channels=16,
+        n_times=128,
+        channel_mask=np.ones(16, dtype=bool),
+    )
+    monkeypatch.setattr(factory, "_validate_binary_dataset", lambda _: None)
+
+    model = factory.build_binary_model(
+        "n2p3net_full_unfold_k35",
+        dataset,
+        epochs=1,
+        batch_size=4,
+        device=torch.device("cpu"),
+        n2p3net_architecture=N2P3ArchitectureConfig(temporal_kernel_size=65),
+    )
+    record = factory.describe_binary_model("n2p3net_full_unfold_k35", model)
+
+    assert model.architecture.temporal_kernel_size == 35
+    assert model.parameter_count() == 1_266
+    assert record["architecture"]["st_temporal_kernel_samples"] == 35

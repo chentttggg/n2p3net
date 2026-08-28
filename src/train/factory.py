@@ -13,7 +13,11 @@ from baselines.deep import DEEP_MODEL_NAMES, DeepBaseline, DeepConfig
 from baselines.n2p3net import N2P3NetBaseline
 from baselines.riemann import XdawnRiemann
 from data.epochs import EpochDataset
-from models.n2p3net import DEFAULT_N2P3_ARCHITECTURE, N2P3ArchitectureConfig
+from models.n2p3net import (
+    DEFAULT_N2P3_ARCHITECTURE,
+    TUNED_FULL_UNFOLD_ARCHITECTURE,
+    N2P3ArchitectureConfig,
+)
 from train.runtime import GpuPerformanceScheduler
 
 N2P3_POOLING_BY_MODEL = {
@@ -21,6 +25,7 @@ N2P3_POOLING_BY_MODEL = {
     "n2p3net_global_average": "global_average",
     "ms_eegnet": "ms_flatten",
     "n2p3net_full_unfold": "full_unfold",
+    "n2p3net_full_unfold_k35": "full_unfold",
     "n2p3net_mlp_full_unfold": "mlp_full_unfold",
     "n2p3net_quadratic_full_unfold": "quadratic_full_unfold",
 }
@@ -100,6 +105,11 @@ def build_binary_model(
     )
     if key == "n2p3net" or key in N2P3_POOLING_BY_MODEL:
         pooling_mode = N2P3_POOLING_BY_MODEL.get(key, n2p3net_pooling_mode)
+        architecture = (
+            TUNED_FULL_UNFOLD_ARCHITECTURE
+            if key == "n2p3net_full_unfold_k35"
+            else n2p3net_architecture
+        )
         return N2P3NetBaseline(
             dataset.n_channels,
             dataset.n_times,
@@ -110,7 +120,7 @@ def build_binary_model(
             channel_mask=common_mask,
             tmin_s=tmin,
             pooling_mode=pooling_mode,
-            architecture=n2p3net_architecture,
+            architecture=architecture,
         )
     if key in DEEP_MODEL_NAMES:
         return DeepBaseline(
