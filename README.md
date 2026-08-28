@@ -16,6 +16,20 @@ bundled environment does not include it:
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
+## CUDA Training Defaults
+
+All supervised models built from `DeepConfig` default to fused Adam and
+`torch.compile(mode="reduce-overhead")` on CUDA. This covers N2P3Net and every
+registered pooling head, EEGNet, EEG-Inception, and EEG Conformer through the
+LOSO, sensitivity, and model-factory entrypoints. CPU and XPU retain the same
+requested config in audit metadata but automatically execute eager, non-fused
+training.
+
+Use `--no-fused-adam --compile-mode none` for the matched eager ablation. The
+64-subject / 8-fold RTX 5090 check reduced wall time from 72.161 s to 46.875 s;
+full settings, requested/effective record fields, and cold-start boundaries are
+documented in `doc/device-portability.md`.
+
 The LOSO runner requires the signal and baseline extras. The research contract is in
 `doc/constitution.md`, `doc/blueprint.md`, and `doc/roadmap.md`.
 
