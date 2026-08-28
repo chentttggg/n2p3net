@@ -104,6 +104,15 @@ def test_integer_list_parsers_require_unique_nonnegative_values() -> None:
         runner._parse_fold_indices("-1")
 
 
+def test_cpu_qc_defaults_use_runtime_resource_detection() -> None:
+    args = runner._build_parser(runner.DeepConfig()).parse_args(
+        ["--dataset-cache", "dataset.npz"]
+    )
+
+    assert args.cpu_threads is None
+    assert args.artifact_qc_jobs is None
+
+
 def test_run_name_must_remain_below_the_run_directory() -> None:
     assert runner._validate_run_name("rf/seed_1") == "rf/seed_1"
     with pytest.raises(argparse.ArgumentTypeError, match="safe relative"):

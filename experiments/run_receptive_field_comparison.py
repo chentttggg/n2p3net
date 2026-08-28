@@ -506,8 +506,18 @@ def _build_parser(defaults: DeepConfig) -> argparse.ArgumentParser:
     parser.add_argument("--early-stop-patience", type=int, default=defaults.early_stop_patience)
     parser.add_argument("--fold-jobs", type=int, default=4)
     parser.add_argument("--gpu-fold-jobs", type=int, default=None)
-    parser.add_argument("--cpu-threads", type=int, default=32)
-    parser.add_argument("--artifact-qc-jobs", type=int, default=16)
+    parser.add_argument(
+        "--cpu-threads",
+        type=int,
+        default=None,
+        help="total CPU budget; default uses the cgroup-aware available quota",
+    )
+    parser.add_argument(
+        "--artifact-qc-jobs",
+        type=int,
+        default=None,
+        help="QC process count; default adapts to folds and the effective CPU budget",
+    )
     parser.add_argument(
         "--precision",
         choices=("auto", "bf16", "fp32"),
@@ -540,10 +550,14 @@ def main(argv: Sequence[str] | None = None) -> None:
         parser.error("epochs, batch size, and patience must be positive")
     if args.subjects is not None and args.subjects < 2:
         parser.error("--subjects must be at least two")
-    if args.fold_jobs < 1 or args.artifact_qc_jobs < 1 or args.cpu_threads < 1:
-        parser.error("fold jobs, artifact QC jobs, and CPU threads must be positive")
+    if args.fold_jobs < 1:
+        parser.error("--fold-jobs must be positive")
     if args.gpu_fold_jobs is not None and args.gpu_fold_jobs < 1:
         parser.error("--gpu-fold-jobs must be positive when set")
+    if args.cpu_threads is not None and args.cpu_threads < 1:
+        parser.error("--cpu-threads must be positive when set")
+    if args.artifact_qc_jobs is not None and args.artifact_qc_jobs < 1:
+        parser.error("--artifact-qc-jobs must be positive when set")
 
     architectures = _load_rf_architectures()
     source_commit, source_commit_origin = _resolve_source_commit()
