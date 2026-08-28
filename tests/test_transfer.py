@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 import pytest
 import torch
 
+from data.channel import build_channel_identity
+from data.epochs import EpochDataset, PreprocessingSpec
+from data.events import ScheduledEventTimeline
 from models.n2p3net import N2P3Net
 from transfer.evaluation import hit_at_repetition
 from transfer.heads import SubjectProbeHead, WaveDecoderHead
@@ -16,6 +20,7 @@ from transfer.losses import (
 from transfer.masking import MaskingConfig, apply_time_mask, make_temporal_mask
 from transfer.pretraining import PretrainingConfig, PretrainingTask
 from transfer.subject_adapter import SubjectAdapter, SubjectAdapterConfig
+from transfer.within_subject import causal_prefix_suffix_split
 
 
 def _trunk() -> N2P3Net:
@@ -157,3 +162,91 @@ def test_hit_at_repetition_rejects_nonfinite_logits() -> None:
             {"g": 1},
             [0, 0],
         )
+
+
+def _causal_candidate_dataset() -> EpochDataset:
+    digits = np.array([1, 2, 3, 4], dtype=np.int64)
+    n_epochs = 3 * len(digits) * 4
+    groups = np.repeat(np.array(["g1", "g2", "g3"]), n_epochs // 3)
+    candidates = np.tile(np.repeat(digits, 4), 3)
+    targets = np.repeat(np.array([2, 3, 1], dtype=np.int64), n_epochs // 3)
+    repetitions = np.tile(np.arange(4, dtype=np.int64), 3 * len(digits))
+    identity = build_channel_identity(("Fz", "Cz", "Pz"), allow_missing_positions=False)
+    timeline = ScheduledEventTimeline(
+        event_ids=np.asarray([f"e{i}" for i in range(n_epochs)]),
+        group_ids=groups,
+        subject_ids=groups,
+        stimulus_ids=candidates,
+        onset_samples=np.arange(n_epochs, dtype=np.int64) * 100,
+        onset_times_s=np.arange(n_epochs, dtype=float),
+        evidence_available_times_s=np.arange(n_epochs, dtype=float) + 0.8,
+        evidence_indices=np.arange(n_epochs, dtype=np.int64),
+        statuses=np.repeat("available", n_epochs),
+        status_details=np.repeat("", n_epochs),
+        dataset_ids=np.repeat("synthetic", n_epochs),
+        session_ids=np.repeat("", n_epochs),
+        run_ids=groups,
+        selection_ids=groups,
+        complete=True,
+        online_causal=True,
+        timing_source="synthetic_causal",
+        candidate_ids=candidates.astype(str),
+        target_candidate_ids=targets.astype(str),
+        repetition_indices=repetitions,
+    )
+    return EpochDataset(
+        name="synthetic_causal_candidates",
+        X=np.zeros((n_epochs, 3, 128), dtype=np.float32),
+        y=(candidates == targets).astype(np.int64),
+        subject_ids=groups.astype(str),
+        channel_names=identity.names,
+        channel_positions_m=identity.coords,
+        channel_mask=np.ones(3, dtype=bool),
+        preprocessing=PreprocessingSpec(
+            name="p300_single_subject_causal_v1",
+            sfreq=128.0,
+            l_freq=2.0,
+            h_freq=30.0,
+            tmin_ms=-200.0,
+            tmax_ms=800.0,
+            n_times=128,
+            baseline_mode="mean_only",
+            filter_phase="forward",
+        ),
+        event_timeline=timeline,
+        metadata=pd.DataFrame({"subject": groups.astype(str)}),
+        provenance={"source": "unit_test", "source_reference": "average", "source_sample_rate_hz": 128.0},
+    )
+
+
+def test_causal_prefix_suffix_split_is_chronological_and_complete() -> None:
+    dataset = _causal_candidate_dataset()
+    split = causal_prefix_suffix_split(dataset, prefix_repetitions=2, test_repetitions=2)
+
+    assert set(split.usable_groups) == {"g1", "g2", "g3"}
+    assert int(split.prefix_mask.sum()) == int(split.suffix_mask.sum()) == 3 * 4 * 2
+    for group in split.usable_groups:
+        rows = np.flatnonzero(split.group_ids == group)
+        assert int(split.prefix_mask[rows].sum()) == 8
+        assert int(split.suffix_mask[rows].sum()) == 8
+        suffix_reps = split.suffix_repetition_indices[rows][split.suffix_mask[rows]]
+        assert set(np.unique(suffix_reps).tolist()) == {0, 1}
+
+
+def test_causal_prefix_suffix_split_rejects_zero_phase_cache() -> None:
+    dataset = _causal_candidate_dataset()
+    dataset.preprocessing = PreprocessingSpec(
+        name="offline",
+        sfreq=128.0,
+        l_freq=2.0,
+        h_freq=30.0,
+        tmin_ms=-200.0,
+        tmax_ms=800.0,
+        n_times=128,
+        baseline_mode="mean_only",
+        filter_phase="zero",
+    )
+    # EpochDataset.validate now refuses a forward contract whose timeline is
+    # still marked acausal; this is the first leakage gate.
+    with pytest.raises(ValueError, match="online_causal"):
+        causal_prefix_suffix_split(dataset, prefix_repetitions=2, test_repetitions=2)
