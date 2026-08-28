@@ -93,8 +93,9 @@ def main() -> None:
     audit = []
     for subject_dir in subject_dirs:
         recovered = recover_bi2014a_candidates(subject_dir)
-        if not (len(recovered.flash_sample) == 1188 and np.count_nonzero(recovered.target_label == 2) == 198):
-            raise ValueError(f"{subject_dir.name} failed the 1188/198 completeness check.")
+        expected_targets = 2 * recovered.n_repetitions
+        if not (len(recovered.flash_sample) == 12 * recovered.n_repetitions and np.count_nonzero(recovered.target_label == 2) == expected_targets):
+            raise ValueError(f"{subject_dir.name} failed its complete-repetition check.")
         datasets.append(build_bi2014a_subject_dataset(subject_dir, preprocessing=preprocessing))
         audit.append(
             {
@@ -105,6 +106,7 @@ def main() -> None:
                 "n_repetitions": recovered.n_repetitions,
                 "n_selections": int(len(np.unique(recovered.selection_id))),
                 "n_epochs": datasets[-1].n_epochs,
+                "dropped_tail_flashes": recovered.dropped_tail_flashes,
             }
         )
         print(json.dumps(audit[-1], ensure_ascii=False), flush=True)

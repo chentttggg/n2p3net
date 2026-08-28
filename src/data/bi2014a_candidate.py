@@ -60,6 +60,7 @@ class BI2014ACandidateRecord:
     selection_id: np.ndarray
     repetition_index: np.ndarray
     n_repetitions: int
+    dropped_tail_flashes: int = 0
 
 
 def _require_csv(subject_dir: Path) -> Path:
@@ -86,17 +87,29 @@ def recover_bi2014a_candidates(
     target_label = table[_LABEL_COLUMN].to_numpy(dtype=np.float64).astype(np.int64)
     flash_samples = np.flatnonzero((flash_code >= 20) & (flash_code <= 85))
 
-    if len(flash_samples) != 1188:
-        raise ValueError(f"{subject_dir.name}: expected 1188 flashes, got {len(flash_samples)}.")
-    if len(flash_samples) % 12 != 0:
-        raise ValueError(f"{subject_dir.name}: flash count is not divisible by 12.")
+    # Some public BI2014a files end with one or two trailing flashes that do
+    # not form a complete 12-flash repetition. Keep only complete repetitions
+    # and report the dropped tail in the audit.
     n_repetitions = len(flash_samples) // 12
+    if n_repetitions < 1:
+        raise ValueError(f"{subject_dir.name}: fewer than one complete flash repetition.")
+    complete_count = n_repetitions * 12
+    dropped_tail = len(flash_samples) - complete_count
+    flash_samples = flash_samples[:complete_count]
     codes = flash_code[flash_samples]
     labels = target_label[flash_samples]
-    if np.count_nonzero(labels == 2) != 198:
-        raise ValueError(f"{subject_dir.name}: expected 198 target flashes, got {np.count_nonzero(labels == 2)}.")
-    if np.count_nonzero(labels == 1) != 990:
-        raise ValueError(f"{subject_dir.name}: expected 990 non-target flashes, got {np.count_nonzero(labels == 1)}.")
+    expected_targets = 2 * n_repetitions
+    expected_nontargets = 10 * n_repetitions
+    if np.count_nonzero(labels == 2) != expected_targets:
+        raise ValueError(
+            f"{subject_dir.name}: expected {expected_targets} target flashes, "
+            f"got {np.count_nonzero(labels == 2)}."
+        )
+    if np.count_nonzero(labels == 1) != expected_nontargets:
+        raise ValueError(
+            f"{subject_dir.name}: expected {expected_nontargets} non-target flashes, "
+            f"got {np.count_nonzero(labels == 1)}."
+        )
 
     row_code = np.full(len(flash_samples), -1, dtype=np.int64)
     col_code = np.full(len(flash_samples), -1, dtype=np.int64)
@@ -152,6 +165,7 @@ def recover_bi2014a_candidates(
         selection_id=np.asarray(selection_id),
         repetition_index=repetition_index,
         n_repetitions=n_repetitions,
+        dropped_tail_flashes=dropped_tail,
     )
 
 
@@ -232,7 +246,7 @@ def build_bi2014a_subject_dataset(
         }
     )
     timeline = observed_only_timeline(
-        dataset_id="BI2014a-candidate",
+        dataset_id=f"BI2014a-candidate:{subject_id}",
         subject_ids=np.repeat(subject_id, result.n_epochs),
         stimulus_ids=recovered.flash_code[ordered],
         onset_times_s=result.event_times_s[ordered],
