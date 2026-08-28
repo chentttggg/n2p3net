@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 
 import torch
 from torch.nn import functional as F
@@ -41,6 +42,48 @@ class ReconstructionLossConfig:
                 raise ValueError(f"invalid band {start}-{end} Hz at sfreq={sfreq}.")
 
 
+@lru_cache(maxsize=64)
+def _spectral_basis(
+    n_times: int,
+    sfreq: float,
+    bands_hz: tuple[tuple[float, float], ...],
+    device_name: str,
+    dtype: torch.dtype,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Cache the fixed Hann window and band-reduction matrix per device."""
+
+    basis_dtype = torch.float64 if dtype is torch.float64 else torch.float32
+    freqs = torch.fft.rfftfreq(n_times, d=1.0 / sfreq, dtype=basis_dtype)
+    selectors = torch.stack(
+        [(freqs >= start) & (freqs < end) for start, end in bands_hz]
+    )
+    counts = selectors.sum(dim=1)
+    if bool((counts == 0).any()):
+        empty = int(torch.nonzero(counts == 0, as_tuple=False)[0])
+        start, end = bands_hz[empty]
+        raise ValueError(f"band {start}-{end} Hz contains no FFT bins.")
+    reduction = selectors.to(basis_dtype) / counts[:, None]
+    window = torch.hann_window(n_times, periodic=False, dtype=basis_dtype)
+    device = torch.device(device_name)
+    return window.to(device=device, dtype=dtype), reduction.to(device=device, dtype=dtype)
+
+
+def _band_magnitude_tensor(
+    x: torch.Tensor,
+    *,
+    sfreq: float,
+    bands_hz: Sequence[tuple[float, float]],
+) -> torch.Tensor:
+    """Return band magnitudes with the band axis first."""
+
+    t = x.shape[-1]
+    bands = tuple((float(start), float(end)) for start, end in bands_hz)
+    window, reduction = _spectral_basis(t, float(sfreq), bands, str(x.device), x.dtype)
+    centered = x - x.mean(dim=-1, keepdim=True)
+    spectrum = torch.fft.rfft(centered * window, dim=-1).abs()
+    return torch.einsum("...f,kf->k...", spectrum, reduction)
+
+
 def band_magnitudes(
     x: torch.Tensor,
     *,
@@ -58,19 +101,7 @@ def band_magnitudes(
         raise ValueError("band_magnitudes expects (C,T) or (B,C,T).")
     if x.shape[-1] < 8:
         raise ValueError("the input is too short for a stable FFT magnitude.")
-    t = x.shape[-1]
-    centered = x - x.mean(dim=-1, keepdim=True)
-    window = torch.hann_window(t, periodic=False, device=x.device, dtype=x.dtype)
-    windowed = centered * window
-    spectrum = torch.fft.rfft(windowed, dim=-1).abs()
-    freqs = torch.fft.rfftfreq(t, d=1.0 / sfreq, device=x.device)
-    output: list[torch.Tensor] = []
-    for start, end in bands_hz:
-        sel = (freqs >= start) & (freqs < end)
-        if int(sel.sum()) == 0:
-            raise ValueError(f"band {start}-{end} Hz contains no FFT bins.")
-        output.append(spectrum[..., sel].mean(dim=-1))
-    return output
+    return list(_band_magnitude_tensor(x, sfreq=sfreq, bands_hz=bands_hz).unbind(0))
 
 
 def estimate_band_weights(
@@ -84,8 +115,8 @@ def estimate_band_weights(
     The result is used only as a loss-scale normalizer, not as model input.
     """
 
-    magnitudes = band_magnitudes(x, sfreq=sfreq, bands_hz=bands_hz)
-    means = torch.stack([m.mean() for m in magnitudes])
+    magnitudes = _band_magnitude_tensor(x, sfreq=sfreq, bands_hz=bands_hz)
+    means = magnitudes.flatten(start_dim=1).mean(dim=1)
     means = means.clamp_min(1e-12)
     weights = (1.0 / means) / (1.0 / means).sum()
     return weights
@@ -101,8 +132,9 @@ def band_balanced_spectral_loss(
 ) -> torch.Tensor:
     if x.shape != x_hat.shape:
         raise ValueError("x and x_hat must have identical shape.")
-    magnitudes_x = torch.stack(band_magnitudes(x, sfreq=sfreq, bands_hz=bands_hz))
-    magnitudes_hat = torch.stack(band_magnitudes(x_hat, sfreq=sfreq, bands_hz=bands_hz))
+    paired = torch.stack((x, x_hat), dim=0)
+    magnitudes = _band_magnitude_tensor(paired, sfreq=sfreq, bands_hz=bands_hz)
+    magnitudes_x, magnitudes_hat = magnitudes.unbind(dim=1)
     if weights is None:
         weights = torch.ones(len(bands_hz), device=x.device, dtype=x.dtype) / len(bands_hz)
     if weights.shape != (len(bands_hz),):
@@ -110,7 +142,7 @@ def band_balanced_spectral_loss(
     weights = weights.to(device=x.device, dtype=x.dtype)
     per_band = F.l1_loss(magnitudes_x, magnitudes_hat, reduction="none")
     view = (-1,) + (1,) * (per_band.ndim - 1)
-    return (weights.view(*view) * per_band).sum()
+    return (weights.view(*view) * per_band).sum(dim=0).mean()
 
 
 def waveform_l1_loss(x: torch.Tensor, x_hat: torch.Tensor) -> torch.Tensor:
@@ -138,8 +170,10 @@ def reconstruction_loss(
         bands_hz=config.bands_hz,
         weights=weights,
     )
+    weighted_wave = config.waveform_weight * wave
+    weighted_spec = config.spectral_weight * spec
     return {
-        "waveform": config.waveform_weight * wave,
-        "spectral": config.spectral_weight * spec,
-        "total": config.waveform_weight * wave + config.spectral_weight * spec,
+        "waveform": weighted_wave,
+        "spectral": weighted_spec,
+        "total": weighted_wave + weighted_spec,
     }

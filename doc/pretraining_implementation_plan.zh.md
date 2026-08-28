@@ -79,12 +79,16 @@ L = lambda_wave * L1(x, x_hat)
 
 1. 对每个 epoch 先 detrend + Hann window，再算 FFT 幅值；
 2. 频带固定：delta 1–4, theta 4–8, alpha 8–13, beta 13–30 Hz；
-3. `w_b` 由**源训练集**的每频带平均幅值倒数归一化得到；不使用目标人
-   suffix，也不逐 subject 计算，避免把身份信息写进 loss；
+3. `w_b` 由**源训练集**中固定 seed、固定样本数子集的每频带全局平均幅值
+   倒数归一化得到；不按 batch 分别求逆，不使用目标人 suffix，也不逐
+   subject 计算，避免把 batch size 或身份信息写进 loss；
 4. `lambda_wave/lambda_fft` 初始 1/1，但每 N step 用 gradient-magnitude
    归一化保持两个 loss 同量级，不用验证集调这两个超参；
 5. 增加总能量不变性测试：`L(x + c)` 与 `L(x)` 在 baseline-corrected 输入上
    必须接近，防止模型只学 DC/慢漂移。
+6. 每个频带先对 batch 和 channel 求均值，再按 `w_b` 加权；重复同一批样本
+   不得改变 loss。Hann window 与频带归约矩阵按 `(T, sfreq, device, dtype)`
+   缓存，禁止在 CUDA batch loop 中用 `int(tensor)` 检查频点数。
 
 这是 SpellerSSL 的 FFT 一致性 + FAME 的 band-balance，但明确去掉了
 channel mask 和长窗 patch。

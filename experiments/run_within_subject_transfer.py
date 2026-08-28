@@ -88,13 +88,15 @@ def main() -> None:
         inner_groups = np.asarray(
             [f"{group}:block{int(rep) // 2}" for rep in split.repetition_indices[pre_rows]]
         )
-        trunk = _load_trunk(args.checkpoint, dataset) if args.checkpoint else N2P3Net(
-            dataset.n_channels,
-            n_times=dataset.n_times,
-            sfreq=dataset.preprocessing.sfreq,
-            tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
-            pooling_mode="ms_flatten",
-        )
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(args.seed)
+            trunk = _load_trunk(args.checkpoint, dataset) if args.checkpoint else N2P3Net(
+                dataset.n_channels,
+                n_times=dataset.n_times,
+                sfreq=dataset.preprocessing.sfreq,
+                tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
+                pooling_mode="ms_flatten",
+            )
         adapter = SubjectAdapter(
             trunk,
             config=SubjectAdapterConfig(

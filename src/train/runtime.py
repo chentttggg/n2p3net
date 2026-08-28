@@ -188,6 +188,15 @@ def _device_index(device: torch.device) -> int:
     return 0 if device.index is None else int(device.index)
 
 
+def _is_pinned_tensor(tensor: torch.Tensor) -> bool:
+    """Return whether a CPU tensor is in accelerator-pinned host memory."""
+
+    try:
+        return bool(tensor.is_pinned())
+    except (AttributeError, RuntimeError):
+        return False
+
+
 def _backend(device: torch.device):
     return getattr(torch, device.type, None)
 
@@ -280,6 +289,9 @@ class MatrixBatchSource:
         self.device_y: torch.Tensor | None = None
         self.preloaded = False
         self.transfer_fallback = False
+        self.shuffle_each_epoch = False
+        self._shuffle_x: torch.Tensor | None = None
+        self._shuffle_y: torch.Tensor | None = None
 
         if preload and runtime.can_preload(self.nbytes):
             try:
@@ -321,8 +333,65 @@ class MatrixBatchSource:
 
     def random_permutation(self, generator: torch.Generator) -> torch.Tensor:
         if self.preloaded:
-            return torch.randperm(self.n_rows, generator=generator, device=self.runtime.device)
+            generator_device = getattr(generator, "device", None)
+            if generator_device is not None and generator_device.type == self.runtime.device.type:
+                return torch.randperm(
+                    self.n_rows, generator=generator, device=self.runtime.device
+                )
+            # A backend without accelerator Generator support received a CPU
+            # fallback generator. Generate on CPU and move the permutation once;
+            # row order and label alignment are unchanged.
+            return torch.randperm(self.n_rows, generator=generator).to(self.runtime.device)
         return torch.randperm(self.n_rows, generator=generator)
+
+    def shuffled_batches(
+        self,
+        batch_size: int,
+        generator: torch.Generator,
+    ) -> Iterator[tuple[torch.Tensor, torch.Tensor | None]]:
+        """Yield row-permuted batches using one device-side shuffle per epoch.
+
+        When the full matrix is already resident and extra device headroom was
+        admitted, one ``index_select`` of the complete permutation replaces
+        one ``index_select`` per optimizer batch. The resulting rows are
+        identical to the per-batch path; only the number and size of gather
+        kernels change. If shuffle buffers are unavailable, this falls back to
+        the original per-batch path with the same permutation.
+        """
+
+        permutation = self.random_permutation(generator)
+        if not self.preloaded or not self.shuffle_each_epoch:
+            yield from self.batches(batch_size, indices=permutation)
+            return
+        assert self.device_X is not None
+        try:
+            if self._shuffle_x is None or self._shuffle_x.shape != self.device_X.shape:
+                self._shuffle_x = torch.empty_like(self.device_X)
+            torch.index_select(self.device_X, 0, permutation, out=self._shuffle_x)
+            shuffled_y: torch.Tensor | None = None
+            if self.device_y is not None:
+                if self._shuffle_y is None or self._shuffle_y.shape != self.device_y.shape:
+                    self._shuffle_y = torch.empty_like(self.device_y)
+                torch.index_select(self.device_y, 0, permutation, out=self._shuffle_y)
+                shuffled_y = self._shuffle_y
+        except RuntimeError as error:
+            if not is_oom_error(error):
+                raise
+            # Keep the exact row order; only lose the one-shot shuffle
+            # optimization. Releasing buffers at this boundary is safe because
+            # no batch from the failed shuffle has been yielded yet.
+            self.shuffle_each_epoch = False
+            self._shuffle_x = None
+            self._shuffle_y = None
+            self.runtime.release_temporary_memory()
+            yield from self.batches(batch_size, indices=permutation)
+            return
+
+        for start in range(0, self.n_rows, batch_size):
+            stop = min(start + batch_size, self.n_rows)
+            xb = self._shuffle_x[start:stop]
+            yb = None if shuffled_y is None else shuffled_y[start:stop]
+            yield xb, yb
 
     def batches(
         self,
@@ -332,29 +401,36 @@ class MatrixBatchSource:
     ) -> Iterator[tuple[torch.Tensor, torch.Tensor | None]]:
         if batch_size < 1:
             raise ValueError("batch_size must be positive.")
-        row_indices = indices
-        if row_indices is None:
-            row_indices = torch.arange(
-                self.n_rows,
-                device=self.runtime.device if self.preloaded else "cpu",
-            )
-        if row_indices.ndim != 1 or len(row_indices) != self.n_rows:
+        if indices is not None and (indices.ndim != 1 or len(indices) != self.n_rows):
             raise ValueError("indices must be a complete one-dimensional row permutation.")
 
         for start in range(0, self.n_rows, batch_size):
-            rows = row_indices[start : start + batch_size]
+            stop = min(start + batch_size, self.n_rows)
             if self.preloaded:
                 assert self.device_X is not None
-                xb = self.device_X.index_select(0, rows)
-                yb = None if self.device_y is None else self.device_y.index_select(0, rows)
+                if indices is None:
+                    xb = self.device_X[start:stop]
+                    yb = None if self.device_y is None else self.device_y[start:stop]
+                else:
+                    rows = indices[start:stop]
+                    xb = self.device_X.index_select(0, rows)
+                    yb = None if self.device_y is None else self.device_y.index_select(0, rows)
             else:
-                cpu_rows = rows.cpu()
-                xb = self.runtime.to_device(self.cpu_X.index_select(0, cpu_rows))
-                yb = (
-                    None
-                    if self.cpu_y is None
-                    else self.runtime.to_device(self.cpu_y.index_select(0, cpu_rows))
-                )
+                if indices is None:
+                    selected_x = self.cpu_X[start:stop]
+                    selected_y = None if self.cpu_y is None else self.cpu_y[start:stop]
+                else:
+                    cpu_rows = indices[start:stop].cpu()
+                    selected_x = self.cpu_X.index_select(0, cpu_rows)
+                    selected_y = (
+                        None if self.cpu_y is None else self.cpu_y.index_select(0, cpu_rows)
+                    )
+                xb = self.runtime.to_device(selected_x)
+                if self.cpu_y is None:
+                    yb = None
+                else:
+                    assert selected_y is not None
+                    yb = self.runtime.to_device(selected_y)
             yield xb, yb
 
 
@@ -473,7 +549,7 @@ class GpuPerformanceScheduler:
             raise ValueError("worker_count must be positive.")
         self.shared_worker_count = int(worker_count)
 
-    def recommended_concurrent_workers(self, requested: int, *, cap: int = 2) -> int:
+    def recommended_concurrent_workers(self, requested: int, *, cap: int = 4) -> int:
         """Return a hardware-aware default for one physical accelerator.
 
         A compact model can fit many copies, but allocator fragmentation and
@@ -484,7 +560,7 @@ class GpuPerformanceScheduler:
 
         if requested < 1 or cap < 1:
             raise ValueError("requested and cap must be positive.")
-        if not is_accelerator(self.device):
+        if self.device.type != "cuda":
             return 1
         _, total_bytes = _memory_info(self.device)
         if total_bytes is None or total_bytes < 24 * 1024**3:
@@ -551,7 +627,8 @@ class GpuPerformanceScheduler:
             return tensor
 
     def to_device(self, tensor: torch.Tensor) -> torch.Tensor:
-        return tensor.to(self.device, non_blocking=is_accelerator(self.device))
+        non_blocking = is_accelerator(self.device) and _is_pinned_tensor(tensor)
+        return tensor.to(self.device, non_blocking=non_blocking)
 
     def release_temporary_memory(self) -> None:
         """Run expensive allocator cleanup only at workload boundaries."""

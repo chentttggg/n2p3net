@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 import torch
 
+from baselines.validation import group_disjoint_validation_split
 from data.channel import build_channel_identity
 from data.epochs import EpochDataset, PreprocessingSpec
 from data.events import ScheduledEventTimeline
@@ -12,8 +13,10 @@ from models.n2p3net import N2P3Net
 from transfer.evaluation import hit_at_repetition
 from transfer.heads import SubjectProbeHead, WaveDecoderHead
 from transfer.losses import (
+    DEFAULT_BANDS_HZ,
     ReconstructionLossConfig,
     band_balanced_spectral_loss,
+    band_magnitudes,
     estimate_band_weights,
     reconstruction_loss,
 )
@@ -79,6 +82,35 @@ def test_band_balanced_loss_is_lower_for_exact_waveform() -> None:
     assert float(good) < float(worse)
 
 
+def test_band_balanced_loss_is_invariant_to_repeated_batch_rows() -> None:
+    x = torch.randn(3, 3, 128)
+    x_hat = x + 0.1 * torch.randn_like(x)
+    single = band_balanced_spectral_loss(x, x_hat, sfreq=128.0)
+    repeated = band_balanced_spectral_loss(
+        x.repeat(4, 1, 1),
+        x_hat.repeat(4, 1, 1),
+        sfreq=128.0,
+    )
+    assert torch.allclose(single, repeated, rtol=1e-5, atol=1e-6)
+
+
+@pytest.mark.parametrize("shape", [(3, 128), (2, 3, 128)])
+def test_cached_band_projection_matches_direct_slices_and_has_gradient(shape) -> None:
+    x = torch.randn(*shape, dtype=torch.float64, requires_grad=True)
+    actual = torch.stack(
+        band_magnitudes(x, sfreq=128.0, bands_hz=DEFAULT_BANDS_HZ)
+    )
+    window = torch.hann_window(128, periodic=False, dtype=x.dtype)
+    spectrum = torch.fft.rfft((x - x.mean(dim=-1, keepdim=True)) * window, dim=-1).abs()
+    freqs = torch.fft.rfftfreq(128, d=1.0 / 128.0, dtype=x.dtype)
+    expected = torch.stack(
+        [spectrum[..., (freqs >= start) & (freqs < end)].mean(dim=-1) for start, end in DEFAULT_BANDS_HZ]
+    )
+    assert torch.allclose(actual, expected, rtol=1e-10, atol=1e-12)
+    actual.sum().backward()
+    assert x.grad is not None and torch.isfinite(x.grad).all()
+
+
 def test_wave_decoder_matches_contract_and_is_small() -> None:
     decoder = WaveDecoderHead(trunk_channels=4, output_channels=3, st_pool_size=4)
     features = torch.randn(2, 4, 32)
@@ -128,6 +160,58 @@ def test_subject_adapter_fits_and_predicts() -> None:
     assert np.isfinite(logits).all()
     # Frozen-trunk adapter should train only the 2-class linear head.
     assert adapter.parameter_count() == 34
+
+
+def test_frozen_subject_adapter_keeps_trunk_batchnorm_state() -> None:
+    rng = np.random.default_rng(4)
+    trunk = _trunk()
+    before = {
+        name: value.detach().clone()
+        for name, value in trunk.state_dict().items()
+        if "running_" in name or "num_batches_tracked" in name
+    }
+    adapter = SubjectAdapter(
+        trunk,
+        config=SubjectAdapterConfig(
+            head_kind="linear",
+            epochs=2,
+            batch_size=8,
+            val_group_fraction=None,
+        ),
+    )
+    X = rng.normal(size=(16, 3, 128)).astype(np.float32)
+    y = np.tile(np.array([0, 1], dtype=np.int64), 8)
+    adapter.fit(X, y)
+    after = trunk.state_dict()
+    assert all(torch.equal(value, after[name]) for name, value in before.items())
+
+
+def test_subject_adapter_statistics_exclude_validation_groups() -> None:
+    rng = np.random.default_rng(9)
+    X = rng.normal(size=(24, 3, 128)).astype(np.float32)
+    y = np.tile(np.array([0, 1], dtype=np.int64), 12)
+    groups = np.repeat(np.array(["g0", "g1", "g2", "g3"]), 6)
+    config = SubjectAdapterConfig(
+        head_kind="linear",
+        epochs=1,
+        batch_size=8,
+        val_group_fraction=0.25,
+        val_groups_min=1,
+        val_groups_max=1,
+        early_stop_patience=1,
+    )
+    split = group_disjoint_validation_split(
+        groups,
+        fraction=config.val_group_fraction,
+        min_groups=config.val_groups_min,
+        max_groups=config.val_groups_max,
+        seed=config.seed,
+    )
+    adapter = SubjectAdapter(_trunk(), config=config)
+    adapter.fit(X, y, group_ids=groups)
+    expected = X[split.train_mask].mean(axis=(0, 2), keepdims=True)
+    assert np.allclose(adapter._input_mean, expected)
+    assert isinstance(adapter.calibration_logits_, np.ndarray)
 
 
 def test_hit_at_repetition_sums_target_logits() -> None:

@@ -23,14 +23,14 @@ class PretrainingConfig:
     mask: MaskingConfig = field(default_factory=MaskingConfig)
     loss: ReconstructionLossConfig = field(default_factory=ReconstructionLossConfig)
     seed: int = 0
-    estimate_band_weights_on_batches: int = 16
+    band_weight_estimation_samples: int = 4096
     subject_probe_subjects: int = 0
 
     def validate(self, sfreq: float, n_times: int) -> None:
         self.mask.validate(n_times)
         self.loss.validate(sfreq)
-        if self.estimate_band_weights_on_batches < 1:
-            raise ValueError("estimate_band_weights_on_batches must be positive.")
+        if self.band_weight_estimation_samples < 1:
+            raise ValueError("band_weight_estimation_samples must be positive.")
         if self.subject_probe_subjects < 0:
             raise ValueError("subject_probe_subjects must be non-negative.")
 
@@ -51,7 +51,6 @@ class PretrainingTask(nn.Module):
             st_pool_size=trunk.st_pool_size,
         )
         self._band_weights: torch.Tensor | None = None
-        self._band_weight_observations = 0
         self.probe: SubjectProbeHead | None = None
         if config.subject_probe_subjects > 1:
             self.probe = SubjectProbeHead(
@@ -63,20 +62,13 @@ class PretrainingTask(nn.Module):
 
     @torch.no_grad()
     def update_band_weights(self, x: torch.Tensor) -> None:
-        """Update band weights from a source training batch only."""
+        """Estimate and freeze weights from one fixed source-training subset."""
 
-        weights = estimate_band_weights(
+        self._band_weights = estimate_band_weights(
             x,
             sfreq=self.trunk.sfreq,
             bands_hz=self.config.loss.bands_hz,
         )
-        if self._band_weights is None:
-            self._band_weights = weights
-        else:
-            self._band_weights = (
-                self._band_weights * self._band_weight_observations + weights
-            ) / (self._band_weight_observations + 1)
-        self._band_weight_observations += 1
 
     def loss_components(
         self,

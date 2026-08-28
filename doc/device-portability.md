@@ -17,7 +17,32 @@ bitwise-reference outputs.
 uses BF16 autocast when the selected accelerator supports it, otherwise FP32;
 there is no gradient accumulation. Matrix-shaped EEG inputs are preloaded only
 when live free memory leaves the configured headroom. Otherwise, contiguous
-pinned CPU batches use non-blocking device copies.
+views of the pinned CPU source use non-blocking copies, while randomly gathered
+rows use a correctness-first blocking copy. A single reusable pinned staging
+buffer is prohibited: without a CUDA event it can be overwritten while the
+previous DMA still reads it. A future streaming prefetcher must use at least a
+two-slot ring, a copy stream, and per-slot completion events.
+
+`MatrixBatchSource.shuffled_batches` implements an optional one-shot epoch
+shuffle: one device-side row permutation per epoch followed by contiguous
+narrowed batches. Row order, label alignment, and loss accumulation are
+identical to the per-batch `index_select` path. The feature reserves an extra
+training-matrix copy, so it is opt-in through `--shuffle-each-epoch`. On the
+matched RTX 5090 audit below it slowed a warmed compiled 30-epoch fold from
+15.22 s to 17.70 s and raised peak allocation from 457 MiB to 859 MiB, so it
+remains off by default. When enabled and admitted by the memory headroom check,
+fold records report `shuffle_each_epoch=True`.
+
+Precision, fused Adam, one-shot shuffle, and `torch.compile` are experiment
+configuration, not hidden policy. Compile mode covers the complete training
+step (forward, weighted loss, backward, and Adam update), rather than only the
+model forward. The LOSO runner exposes
+`--precision {auto,bf16,fp32}`, `--fused-adam`,
+`--compile-mode {none,default,reduce-overhead,max-autotune}`, and
+`--shuffle-each-epoch`. All default to the previous eager, non-fused path.
+Fused Adam and compile mode are CUDA-only in the current adapter; unsupported
+devices fail closed. They remain opt-in because compile has a material cold
+start and fused Adam did not improve the matched short-fold wall time.
 
 The optimizer hot path has no per-batch host synchronization. Gradients are
 set to `None` before forward, training loss is accumulated on device and read
@@ -28,14 +53,33 @@ pass. This follows the PyTorch performance guidance to avoid `.item()` and
 
 LOSO fold execution accepts `--fold-jobs` and `--fold-backend`. CPU work may
 use thread or process workers. GPU folds use spawned processes, never shared
-training threads, so each worker owns its CUDA RNG and context. The automatic
-GPU limit is one worker below 24 GiB total memory and two workers at or above
-that threshold. `--gpu-fold-jobs N` explicitly raises or lowers it after a
-CUDA smoke benchmark. The scheduler divides batch and preload headroom across
-those workers. Process workers receive read-only EEG source arrays through
-shared memory, then perform their fold-local preprocessing privately. Each
-experiment record includes peak allocated/reserved memory, the effective
-executor, and the input transport.
+training threads, so each worker owns its CUDA RNG and context. The mainline
+requests four folds but leaves `--gpu-fold-jobs` unset: automatic policy uses
+one GPU worker below 24 GiB and up to four at or above 24 GiB. An explicit
+`--gpu-fold-jobs N` overrides it after a device-specific benchmark. The
+scheduler divides batch and preload headroom across those workers. Process workers receive
+read-only EEG source arrays through shared memory, then perform their
+fold-local preprocessing privately. Each experiment record includes peak
+allocated/reserved memory, the effective executor, the input transport, and
+per-fold `preloaded` / `shuffle_each_epoch` / compile / optimizer flags.
+
+## RTX 5090 Launch-Overhead Audit (2026-08-28)
+
+The matched target was BI2014a fold 0, N2P3Net `ms_flatten`, BF16, physical
+batch 512, Torch 2.8.0 + CUDA 12.8. The 8-epoch fit took 9.408 s eager and
+9.426 s with fused Adam; a cold `reduce-overhead` fit took 21.771 s. With the
+Inductor cache warm, a forced 30-epoch fit took 23.603 s eager versus 14.747 s
+compiled (37.5% lower fit time).
+
+The production-shaped four-process, four-fold cold-start comparison used the
+same fold set and seed. Eager wall time was 41.343 s with per-fold fits of
+34.820--35.869 s. Full-step `reduce-overhead` wall time was 38.956 s with fits
+of 29.250--31.532 s; peak allocation rose from 469.0 to 524.6 MiB. This is a
+5.8% end-to-end wall reduction and about a 12% fit-stage reduction, not enough
+to hide the cold-start cost for short runs. Compile therefore remains an
+explicit long-run performance arm. Its AUC/BACC must be revalidated over the
+complete matched LOSO protocol before scientific promotion; these four folds
+are performance evidence only.
 
 Fold-local QC is model-independent. A multi-model ablation fits every outer
 fold's QC policy once in the runner and reuses the frozen thresholds for all

@@ -25,6 +25,7 @@ if str(SRC) not in sys.path:
 from data.epochs import load_epoch_dataset  # noqa: E402
 from models.n2p3net import N2P3Net  # noqa: E402
 from train.device import get_device  # noqa: E402
+from train.runtime import GpuPerformanceScheduler, MatrixBatchSource  # noqa: E402
 from transfer.losses import ReconstructionLossConfig  # noqa: E402
 from transfer.masking import MaskingConfig  # noqa: E402
 from transfer.pretraining import PretrainingConfig, PretrainingTask  # noqa: E402
@@ -53,6 +54,7 @@ def main() -> None:
     parser.add_argument("--bands", default="1-4,4-8,8-13,13-30")
     parser.add_argument("--waveform-weight", type=float, default=1.0)
     parser.add_argument("--spectral-weight", type=float, default=1.0)
+    parser.add_argument("--band-weight-estimation-samples", type=int, default=4096)
     parser.add_argument("--standardize", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--device", default="auto")
@@ -95,6 +97,7 @@ def main() -> None:
             bands_hz=_parse_bands(args.bands),
         ),
         seed=args.seed,
+        band_weight_estimation_samples=args.band_weight_estimation_samples,
     )
     task = PretrainingTask(trunk, config).to(device)
     optimizer = torch.optim.AdamW(
@@ -104,42 +107,56 @@ def main() -> None:
     )
     rng = np.random.default_rng(args.seed)
     tensor = torch.from_numpy(np.ascontiguousarray(X))
-    n_batches = max(1, int(np.ceil(len(tensor) / args.batch_size)))
+    runtime = GpuPerformanceScheduler(device, precision="fp32")
     history: list[dict[str, float]] = []
 
-    for epoch in range(1, args.epochs + 1):
-        permutation = rng.permutation(len(tensor))
-        epoch_loss = 0.0
-        epoch_wave = 0.0
-        epoch_spec = 0.0
-        for batch in range(n_batches):
-            idx = permutation[batch * args.batch_size : (batch + 1) * args.batch_size]
-            if not len(idx):
-                continue
-            x = tensor[idx].to(device)
-            if epoch == 1 and batch < config.estimate_band_weights_on_batches:
-                task.update_band_weights(x)
-            generator = torch.Generator(device="cpu").manual_seed(
-                args.seed * 1_000_003 + epoch * 10_001 + batch
+    with runtime.lease():
+        preload = runtime.can_preload(tensor.numel() * tensor.element_size())
+        source = MatrixBatchSource(tensor, None, runtime, preload=preload)
+        weight_count = min(config.band_weight_estimation_samples, len(tensor))
+        weight_rng = np.random.default_rng(args.seed + 97_531)
+        weight_rows = torch.from_numpy(
+            np.ascontiguousarray(
+                weight_rng.choice(len(tensor), size=weight_count, replace=False),
+                dtype=np.int64,
             )
-            components = task.loss_components(x, generator=generator)
-            loss = components["total"]
-            optimizer.zero_grad(set_to_none=True)
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(task.parameters(), 1.0)
-            optimizer.step()
-            epoch_loss += float(loss.detach()) * len(idx)
-            epoch_wave += float(components["waveform"].detach()) * len(idx)
-            epoch_spec += float(components["spectral"].detach()) * len(idx)
-        history.append(
-            {
-                "epoch": epoch,
-                "total": epoch_loss / len(tensor),
-                "waveform": epoch_wave / len(tensor),
-                "spectral": epoch_spec / len(tensor),
-            }
         )
-        print(json.dumps(history[-1]), flush=True)
+        if source.preloaded:
+            assert source.device_X is not None
+            weight_input = source.device_X.index_select(0, weight_rows.to(runtime.device))
+        else:
+            weight_input = runtime.to_device(source.cpu_X.index_select(0, weight_rows))
+        task.update_band_weights(weight_input)
+        del weight_input, weight_rows
+        indices_device = runtime.device if source.preloaded else torch.device("cpu")
+        for epoch in range(1, args.epochs + 1):
+            permutation = rng.permutation(len(tensor))
+            indices = torch.as_tensor(permutation, device=indices_device)
+            epoch_loss = torch.zeros((), dtype=torch.float32, device=device)
+            epoch_wave = torch.zeros((), dtype=torch.float32, device=device)
+            epoch_spec = torch.zeros((), dtype=torch.float32, device=device)
+            for batch, (x, _) in enumerate(source.batches(args.batch_size, indices=indices)):
+                generator = torch.Generator(device="cpu").manual_seed(
+                    args.seed * 1_000_003 + epoch * 10_001 + batch
+                )
+                components = task.loss_components(x, generator=generator)
+                loss = components["total"]
+                optimizer.zero_grad(set_to_none=True)
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(task.parameters(), 1.0)
+                optimizer.step()
+                epoch_loss += loss.detach().float() * len(x)
+                epoch_wave += components["waveform"].detach().float() * len(x)
+                epoch_spec += components["spectral"].detach().float() * len(x)
+            history.append(
+                {
+                    "epoch": epoch,
+                    "total": float(epoch_loss) / len(tensor),
+                    "waveform": float(epoch_wave) / len(tensor),
+                    "spectral": float(epoch_spec) / len(tensor),
+                }
+            )
+            print(json.dumps(history[-1]), flush=True)
 
     task.discard_decoder()
     checkpoint = Path(args.checkpoint)
@@ -151,6 +168,11 @@ def main() -> None:
         "holdout_subjects": sorted(holdout),
         "n_source_epochs": int(source_rows.sum()),
         "standardized": args.standardize,
+        "runtime": {
+            "device": str(device),
+            "preloaded": source.preloaded,
+            "memory": runtime.memory_record(),
+        },
     }
     torch.save(payload, checkpoint)
     print(f"[pretrained] {checkpoint}", flush=True)

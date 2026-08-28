@@ -69,7 +69,10 @@ def test_gpu_worker_recommendation_requires_large_total_memory(monkeypatch) -> N
         "_memory_info",
         lambda _device: (28 * 1024**3, 32 * 1024**3),
     )
-    assert runtime.recommended_concurrent_workers(4) == 2
+    assert runtime.recommended_concurrent_workers(4) == 4
+
+    xpu_runtime = GpuPerformanceScheduler(torch.device("xpu:0"))
+    assert xpu_runtime.recommended_concurrent_workers(4) == 1
 
 
 def test_cpu_budget_is_divided_per_worker_and_restored() -> None:
@@ -93,3 +96,24 @@ def test_available_cpu_threads_respects_cgroup_quota(monkeypatch) -> None:
     monkeypatch.setattr(runtime_module, "_linux_cgroup_cpu_quota_threads", lambda: 16)
 
     assert runtime_module.available_cpu_threads() == 16
+
+def test_matrix_batch_source_one_shot_shuffle_preserves_permutation() -> None:
+    runtime = GpuPerformanceScheduler(torch.device("cpu"))
+    X = torch.arange(30, dtype=torch.float32).reshape(5, 2, 3)
+    y = torch.arange(5, dtype=torch.int64)
+    source = MatrixBatchSource(X, y, runtime, preload=False)
+    # Exercise the one-shot branch without an accelerator by hand-wiring the
+    # already-validated preload state on the CPU tensors.
+    source.preloaded = True
+    source.device_X = X
+    source.device_y = y
+    source.shuffle_each_epoch = True
+    generator = torch.Generator().manual_seed(7)
+    rows = list(source.shuffled_batches(2, generator))
+    observed_X = torch.cat([xb for xb, _ in rows])
+    observed_y = torch.cat([yb for _, yb in rows if yb is not None])
+
+    expected_generator = torch.Generator().manual_seed(7)
+    permutation = torch.randperm(5, generator=expected_generator)
+    assert torch.equal(observed_X, X[permutation])
+    assert torch.equal(observed_y, y[permutation])

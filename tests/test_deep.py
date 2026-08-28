@@ -265,3 +265,30 @@ def test_group_disjoint_history_records_validation_auc(tmp_path):
     ]
     assert len(rows) == len(clf.last_history["val_losses"])
     assert all(row["task_val_auc"] is not None for row in rows)
+
+def test_deep_config_validates_optional_accelerator_knobs() -> None:
+    with pytest.raises(ValueError, match="compile_mode"):
+        DeepConfig(compile_mode="invalid-mode")
+    with pytest.raises(ValueError, match="fused_adam"):
+        DeepConfig(fused_adam=1)  # type: ignore[arg-type]
+
+
+def test_deep_baseline_rejects_cuda_only_knobs_on_cpu() -> None:
+    with pytest.raises(ValueError, match="CUDA"):
+        DeepBaseline(
+            "eegnet",
+            n_chans=C,
+            n_times=T,
+            sfreq=SFR,
+            device=torch.device("cpu"),
+            config=DeepConfig(fused_adam=True),
+        )
+    with pytest.raises(ValueError, match="CUDA"):
+        DeepBaseline(
+            "eegnet",
+            n_chans=C,
+            n_times=T,
+            sfreq=SFR,
+            device=torch.device("cpu"),
+            config=DeepConfig(compile_mode="default"),
+        )

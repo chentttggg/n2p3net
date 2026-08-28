@@ -170,6 +170,30 @@ def main() -> None:
         type=float,
         default=deep_defaults.preload_memory_fraction,
     )
+    parser.add_argument(
+        "--precision",
+        choices=("auto", "bf16", "fp32"),
+        default=deep_defaults.precision,
+        help="accelerator precision policy; auto selects BF16 when the backend supports it",
+    )
+    parser.add_argument(
+        "--fused-adam",
+        action=argparse.BooleanOptionalAction,
+        default=deep_defaults.fused_adam,
+        help="use CUDA fused Adam; defaults to off pending model-specific benchmarking",
+    )
+    parser.add_argument(
+        "--compile-mode",
+        choices=("none", "default", "reduce-overhead", "max-autotune"),
+        default="none" if deep_defaults.compile_mode is None else deep_defaults.compile_mode,
+        help="optional torch.compile mode; off by default",
+    )
+    parser.add_argument(
+        "--shuffle-each-epoch",
+        action=argparse.BooleanOptionalAction,
+        default=deep_defaults.shuffle_each_epoch,
+        help="optional one-shot device shuffle per epoch; off by default",
+    )
     parser.add_argument("--validation-group-fraction", type=float, default=0.1)
     parser.add_argument(
         "--fold-jobs",
@@ -181,8 +205,8 @@ def main() -> None:
     parser.add_argument(
         "--gpu-fold-jobs",
         type=int,
-        default=4,
-        help="maximum concurrent GPU fold processes; default 4 matches --fold-jobs",
+        default=None,
+        help="maximum concurrent GPU fold processes; default adapts to accelerator memory",
     )
     parser.add_argument(
         "--cpu-threads",
@@ -327,6 +351,10 @@ def main() -> None:
         "early_stop_patience": args.early_stop_patience,
         "early_stop_min_delta": args.early_stop_min_delta,
         "standardize_input": args.standardize_input,
+        "precision": args.precision,
+        "fused_adam": args.fused_adam,
+        "compile_mode": None if args.compile_mode == "none" else args.compile_mode,
+        "shuffle_each_epoch": args.shuffle_each_epoch,
         "max_update_batch_size": args.max_update_batch_size,
         "batch_memory_fraction": args.batch_memory_fraction,
         "preload_memory_fraction": args.preload_memory_fraction,

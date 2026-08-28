@@ -31,7 +31,13 @@ def optimize_device_for_training(device: torch.device) -> None:
     """
     if device.type == "cuda":
         torch.backends.cudnn.benchmark = True
-        torch.backends.cudnn.allow_tf32 = True
+        conv_precision = getattr(torch.backends.cudnn, "conv", None)
+        if conv_precision is not None and hasattr(conv_precision, "fp32_precision"):
+            # PyTorch 2.9+ replaced the boolean allow_tf32 switch with a
+            # per-domain precision selector. Keep both paths explicit.
+            conv_precision.fp32_precision = "tf32"
+        else:
+            torch.backends.cudnn.allow_tf32 = True
         if hasattr(torch.backends.cuda, "matmul"):
             torch.backends.cuda.matmul.allow_tf32 = True
         # The model uses BF16 autocast for the bulk of the forward path.  This

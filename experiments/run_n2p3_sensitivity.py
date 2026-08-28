@@ -278,9 +278,29 @@ def main() -> None:
     parser.add_argument("--early-stop-patience", type=int, default=defaults.early_stop_patience)
     parser.add_argument("--seed", type=int, default=20260828)
     parser.add_argument("--fold-jobs", type=int, default=4)
-    parser.add_argument("--gpu-fold-jobs", type=int, default=4)
+    parser.add_argument("--gpu-fold-jobs", type=int, default=None)
     parser.add_argument("--cpu-threads", type=int, default=32)
     parser.add_argument("--artifact-qc-jobs", type=int, default=16)
+    parser.add_argument(
+        "--precision",
+        choices=("auto", "bf16", "fp32"),
+        default=defaults.precision,
+    )
+    parser.add_argument(
+        "--fused-adam",
+        action=argparse.BooleanOptionalAction,
+        default=defaults.fused_adam,
+    )
+    parser.add_argument(
+        "--compile-mode",
+        choices=("none", "default", "reduce-overhead", "max-autotune"),
+        default="none" if defaults.compile_mode is None else defaults.compile_mode,
+    )
+    parser.add_argument(
+        "--shuffle-each-epoch",
+        action=argparse.BooleanOptionalAction,
+        default=defaults.shuffle_each_epoch,
+    )
     parser.add_argument("--device", default="auto")
     args = parser.parse_args()
     if args.epochs < 1 or args.batch_size < 1 or args.early_stop_patience < 1:
@@ -409,6 +429,10 @@ def main() -> None:
             "weight_decay": defaults.weight_decay,
             "pos_weight": defaults.pos_weight,
             "early_stop_patience": args.early_stop_patience,
+            "precision": args.precision,
+            "fused_adam": args.fused_adam,
+            "compile_mode": None if args.compile_mode == "none" else args.compile_mode,
+            "shuffle_each_epoch": args.shuffle_each_epoch,
             "max_update_batch_size": candidate.batch_size,
             **candidate.deep_overrides,
         }

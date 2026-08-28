@@ -51,8 +51,8 @@
 
 from __future__ import annotations
 
-import copy
 import threading
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -102,6 +102,9 @@ class DeepConfig:
     val_groups_max: int = 12
     early_stop_min_delta: float = 1e-6
     precision: str = "auto"
+    fused_adam: bool = False
+    compile_mode: str | None = None
+    shuffle_each_epoch: bool = False
     max_update_batch_size: int | None = 512
     batch_memory_fraction: float = 0.55
     preload_memory_fraction: float = 0.30
@@ -119,6 +122,19 @@ class DeepConfig:
             raise ValueError("DeepConfig val_group_frac must be in (0,1) or None.")
         if self.precision not in {"auto", "bf16", "fp32"}:
             raise ValueError("DeepConfig precision must be 'auto', 'bf16', or 'fp32'.")
+        if not isinstance(self.fused_adam, bool):
+            raise ValueError("DeepConfig fused_adam must be boolean.")
+        if not isinstance(self.shuffle_each_epoch, bool):
+            raise ValueError("DeepConfig shuffle_each_epoch must be boolean.")
+        if self.compile_mode is not None and self.compile_mode not in {
+            "default",
+            "reduce-overhead",
+            "max-autotune",
+        }:
+            raise ValueError(
+                "DeepConfig compile_mode must be None, 'default', 'reduce-overhead', "
+                "or 'max-autotune'."
+            )
         if self.max_update_batch_size is not None and self.max_update_batch_size < 1:
             raise ValueError("DeepConfig max_update_batch_size must be positive or None.")
         if not 0.05 <= self.batch_memory_fraction < 1.0:
@@ -175,6 +191,10 @@ class DeepBaseline(Baseline):
         self.sfreq = sfreq
         self.cfg = config if config is not None else DeepConfig()
         requested_device = torch.device(device) if device is not None else get_device()
+        if self.cfg.fused_adam and requested_device.type != "cuda":
+            raise ValueError("fused_adam=True requires a CUDA accelerator.")
+        if self.cfg.compile_mode is not None and requested_device.type != "cuda":
+            raise ValueError("compile_mode is currently supported on CUDA accelerators only.")
         if runtime is not None:
             if (
                 runtime.device.type != requested_device.type
@@ -377,12 +397,29 @@ class DeepBaseline(Baseline):
     ) -> tuple[np.ndarray, np.ndarray]:
         """Compute per-channel statistics using observed samples only."""
 
-        weights = mask[:, :, None].astype(np.float64)
+        observed = mask[:, :, None]
         counts = mask.sum(axis=0, dtype=np.float64)[None, :, None] * X.shape[2]
         denominator = np.maximum(counts, 1.0)
-        mean = (X.astype(np.float64) * weights).sum(axis=(0, 2), keepdims=True) / denominator
-        centered = X.astype(np.float64) - mean
-        variance = (centered * centered * weights).sum(axis=(0, 2), keepdims=True) / denominator
+        sums = np.sum(
+            X,
+            axis=(0, 2),
+            dtype=np.float64,
+            keepdims=True,
+            where=observed,
+        )
+        mean = np.divide(sums, denominator, out=np.zeros_like(sums), where=counts > 0.0)
+        # NumPy performs the masked two-pass reduction internally, avoiding
+        # several full-size float64 temporaries in every parallel fold.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            variance = np.var(
+                X,
+                axis=(0, 2),
+                dtype=np.float64,
+                keepdims=True,
+                where=observed,
+                mean=mean,
+            )
         std = np.where(
             counts > 0.0,
             np.sqrt(np.maximum(variance, 0.0)) + 1e-6,
@@ -391,11 +428,16 @@ class DeepBaseline(Baseline):
         return mean.astype(np.float32), std.astype(np.float32)
 
     def _prepare_input(self, X: np.ndarray, mask: np.ndarray) -> np.ndarray:
+        prepared = np.empty(X.shape, dtype=np.float32)
         if self.cfg.standardize_input:
-            X = (X - self._input_mean) / self._input_std
+            np.subtract(X, self._input_mean, out=prepared, casting="unsafe")
+            np.divide(prepared, self._input_std, out=prepared)
+        else:
+            np.copyto(prepared, X, casting="unsafe")
         # Standardization turns zero-filled missing channels into non-zero
         # values unless the mask is re-applied after the transform.
-        return np.where(mask[:, :, None], X, 0.0).astype(np.float32, copy=False)
+        np.copyto(prepared, 0.0, where=~mask[:, :, None])
+        return prepared
 
     def _model_seed(self) -> int:
         return int(self.cfg.seed + (self._evaluation_fold_id or 0))
@@ -458,13 +500,34 @@ class DeepBaseline(Baseline):
             labels,
         )
 
-    def _clear_failed_fit(self) -> None:
+    def _validation_pass_with_oom_retry(
+        self,
+        source: MatrixBatchSource,
+        loss_fn: nn.Module | None,
+        batch_size: int,
+    ) -> tuple[tuple[float | None, np.ndarray, np.ndarray], int]:
+        """Retry an inference-only pass without restarting completed training."""
+
+        active_batch_size = int(batch_size)
+        while True:
+            try:
+                return self._validation_pass(source, loss_fn, active_batch_size), active_batch_size
+            except RuntimeError as error:
+                if not is_oom_error(error) or active_batch_size <= 1:
+                    raise
+                active_batch_size = max(1, active_batch_size // 2)
+            # The exception variable and its traceback are cleared when the
+            # handler exits, so failed-pass tensors can actually be reclaimed.
+            self.runtime.release_temporary_memory()
+
+    def _clear_failed_fit(self, *, release_memory: bool = True) -> None:
         self.model_ = None
         self._fitted = False
         self.calibration_logits_ = None
         self.calibration_labels_ = None
         self.calibration_source_ = None
-        self.runtime.release_temporary_memory()
+        if release_memory:
+            self.runtime.release_temporary_memory()
 
     def fit(
         self,
@@ -475,7 +538,10 @@ class DeepBaseline(Baseline):
     ) -> DeepBaseline:
         """Fit with a bounded OOM retry that never accumulates gradients."""
 
-        self._clear_failed_fit()
+        # Dropping Python references returns prior tensors to the caching
+        # allocator. Emptying the CUDA cache here would create a gap before
+        # every healthy fold; reserve that expensive cleanup for actual OOMs.
+        self._clear_failed_fit(release_memory=False)
         requested_batch_size = self.cfg.batch_size
         retries = 0
         while True:
@@ -492,8 +558,13 @@ class DeepBaseline(Baseline):
                     "device": str(self.device),
                     "precision": self.runtime.precision.name,
                     "batch_size": self._active_batch_size,
+                    "validation_batch_size": self._validation_batch_size,
                     "preloaded": self._preloaded_batches,
+                    "shuffle_each_epoch": self._shuffle_each_epoch,
                     "transfer_fallback": self._transfer_fallback,
+                    "fused_adam": self.cfg.fused_adam,
+                    "compile_mode": self.cfg.compile_mode,
+                    "compile_scope": "train_step" if self.cfg.compile_mode else None,
                     "host_sync_policy": "epoch_boundary",
                     "oom_retries": retries,
                     "shared_worker_count": self.runtime.shared_worker_count,
@@ -502,20 +573,23 @@ class DeepBaseline(Baseline):
                 return self
             except RuntimeError as error:
                 if not is_oom_error(error):
-                    self._clear_failed_fit()
+                    self._clear_failed_fit(release_memory=False)
                     raise
                 attempted_batch_size = getattr(self, "_active_batch_size", requested_batch_size)
-                self._clear_failed_fit()
                 if attempted_batch_size <= 1:
+                    self._clear_failed_fit(release_memory=False)
                     raise RuntimeError(
-                        "GPU OOM persists at batch_size=1 after releasing temporary memory. "
+                        "GPU OOM persists at batch_size=1. "
                         "Reduce model/data residency or select a larger device."
                     ) from error
                 requested_batch_size = max(1, attempted_batch_size // 2)
                 retries += 1
             except Exception:
-                self._clear_failed_fit()
+                self._clear_failed_fit(release_memory=False)
                 raise
+            # Leave the OOM handler first so its traceback no longer owns the
+            # failed model, optimizer, source matrices, or activation tensors.
+            self._clear_failed_fit()
 
     def _fit_attempt(
         self,
@@ -616,8 +690,37 @@ class DeepBaseline(Baseline):
         self._transfer_fallback = train_source.transfer_fallback or bool(
             val_source is not None and val_source.transfer_fallback
         )
+        # The one-shot epoch shuffle is an explicit performance experiment:
+        # it uses one device gather per epoch instead of one per batch, but it
+        # reserves an extra full training-matrix copy. Row order and label
+        # alignment are identical to the per-batch path.
+        self._shuffle_each_epoch = (
+            self.cfg.shuffle_each_epoch
+            and self._preloaded_batches
+            and self.runtime.can_preload(train_source.nbytes)
+        )
+        train_source.shuffle_each_epoch = self._shuffle_each_epoch
+        # Inference and validation do not retain activations or gradients.
+        # After an OOM-induced training-batch reduction, give them their own
+        # memory-safe batch budget so validation does not inherit batch_size=1.
+        validation_batch_size = batch_size
+        if val_source is not None and batch_size < self.cfg.batch_size:
+            validation_batch_size = self.runtime.choose_batch_size(
+                max(self.cfg.batch_size * 4, 256),
+                X_train.shape[1:],
+                model=self.model_,
+            )
+        self._validation_batch_size = validation_batch_size
 
-        opt = torch.optim.Adam(trainable_params, lr=self.cfg.lr, weight_decay=self.cfg.weight_decay)
+        adam_kwargs: dict[str, object] = {
+            "lr": self.cfg.lr,
+            "weight_decay": self.cfg.weight_decay,
+        }
+        if self.cfg.fused_adam:
+            adam_kwargs["fused"] = True
+        if self.cfg.compile_mode in {"reduce-overhead", "max-autotune"}:
+            adam_kwargs["capturable"] = True
+        opt = torch.optim.Adam(trainable_params, **adam_kwargs)
         loss_fn = nn.CrossEntropyLoss(
             weight=torch.tensor([1.0, self.cfg.pos_weight], device=self.device)
         )
@@ -632,20 +735,26 @@ class DeepBaseline(Baseline):
         early_stop_triggered = False
         epoch_progress_callback = self.epoch_progress_callback()
 
+        def train_step(xb: torch.Tensor, yb: torch.Tensor) -> torch.Tensor:
+            opt.zero_grad(set_to_none=True)
+            with self._autocast_ctx():
+                logits = self.model_(xb)
+                loss = loss_fn(logits, yb)
+            loss.backward()
+            opt.step()
+            return loss.detach()
+
+        if self.cfg.compile_mode is not None:
+            train_step = torch.compile(train_step, mode=self.cfg.compile_mode, fullgraph=False)
+
         for epoch in range(self.cfg.epochs):
             self.model_.train()
-            permutation = train_source.random_permutation(perm_gen)
             epoch_loss: torch.Tensor | None = None
             n_seen = 0
-            for xb, yb in train_source.batches(batch_size, indices=permutation):
+            for xb, yb in train_source.shuffled_batches(batch_size, perm_gen):
                 assert yb is not None
-                opt.zero_grad(set_to_none=True)
-                with self._autocast_ctx():
-                    logits = self.model_(xb)
-                    loss = loss_fn(logits, yb)
-                loss.backward()
-                opt.step()
-                weighted_loss = loss.detach().float() * len(xb)
+                loss = train_step(xb, yb)
+                weighted_loss = loss.float() * len(xb)
                 epoch_loss = weighted_loss if epoch_loss is None else epoch_loss + weighted_loss
                 n_seen += len(xb)
             if epoch_loss is None:
@@ -656,9 +765,15 @@ class DeepBaseline(Baseline):
             will_early_stop = False
 
             if val_source is not None:
-                mean_val, val_scores, val_labels = self._validation_pass(
-                    val_source, loss_fn, batch_size
+                (
+                    (mean_val, val_scores, val_labels),
+                    validation_batch_size,
+                ) = self._validation_pass_with_oom_retry(
+                    val_source,
+                    loss_fn,
+                    validation_batch_size,
                 )
+                self._validation_batch_size = validation_batch_size
                 assert mean_val is not None
                 val_losses.append(mean_val)
                 if len(np.unique(val_labels)) == 2:
@@ -667,7 +782,10 @@ class DeepBaseline(Baseline):
                 if mean_val < best_val_loss - self.cfg.early_stop_min_delta:
                     best_val_loss = mean_val
                     best_epoch = epoch
-                    best_state = copy.deepcopy(self.model_.state_dict())
+                    best_state = {
+                        key: value.detach().clone()
+                        for key, value in self.model_.state_dict().items()
+                    }
                     patience_left = int(self.cfg.early_stop_patience)
                 else:
                     patience_left -= 1
@@ -703,7 +821,15 @@ class DeepBaseline(Baseline):
             self.model_.load_state_dict(best_state)
         final_task_val_auc = None
         if val_source is not None:
-            _, final_scores, final_labels = self._validation_pass(val_source, None, batch_size)
+            (
+                (_, final_scores, final_labels),
+                validation_batch_size,
+            ) = self._validation_pass_with_oom_retry(
+                val_source,
+                None,
+                validation_batch_size,
+            )
+            self._validation_batch_size = validation_batch_size
             if len(np.unique(final_labels)) == 2:
                 final_task_val_auc = float(roc_auc_score(final_labels, final_scores))
             self.calibration_logits_ = final_scores

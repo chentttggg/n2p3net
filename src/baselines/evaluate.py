@@ -101,6 +101,12 @@ class BinaryFoldResult:
     device: str | None = None
     precision: str | None = None
     batch_size: int | None = None
+    validation_batch_size: int | None = None
+    preloaded: bool | None = None
+    shuffle_each_epoch: bool | None = None
+    fused_adam: bool = False
+    compile_mode: str | None = None
+    compile_scope: str | None = None
     fit_peak_allocated_mb: float | None = None
     fit_peak_reserved_mb: float | None = None
     oom_retries: int = 0
@@ -384,6 +390,16 @@ def _fold_result(
         device=runtime.get("device") if isinstance(runtime, dict) else None,
         precision=runtime.get("precision") if isinstance(runtime, dict) else None,
         batch_size=runtime.get("batch_size") if isinstance(runtime, dict) else None,
+        validation_batch_size=runtime.get("validation_batch_size")
+        if isinstance(runtime, dict)
+        else None,
+        preloaded=runtime.get("preloaded") if isinstance(runtime, dict) else None,
+        shuffle_each_epoch=runtime.get("shuffle_each_epoch")
+        if isinstance(runtime, dict)
+        else None,
+        fused_adam=bool(runtime.get("fused_adam", False)) if isinstance(runtime, dict) else False,
+        compile_mode=runtime.get("compile_mode") if isinstance(runtime, dict) else None,
+        compile_scope=runtime.get("compile_scope") if isinstance(runtime, dict) else None,
         fit_peak_allocated_mb=(
             memory.get("peak_allocated_mb") if isinstance(memory, dict) else None
         ),
@@ -429,7 +445,7 @@ def _resolve_fold_execution(
         if max_gpu_jobs is None:
             runtime = getattr(model, "runtime", None)
             recommend = getattr(runtime, "recommended_concurrent_workers", None)
-            gpu_limit = int(recommend(n_jobs, cap=2)) if callable(recommend) else 1
+            gpu_limit = int(recommend(n_jobs, cap=4)) if callable(recommend) else 1
         else:
             gpu_limit = int(max_gpu_jobs)
         return "process", min(int(n_jobs), n_folds, gpu_limit)

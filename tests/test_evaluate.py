@@ -297,7 +297,7 @@ def test_gpu_execution_uses_processes_and_never_shared_threads() -> None:
         n_folds=5,
         max_gpu_jobs=None,
     )
-    assert (backend, workers) == ("process", 2)
+    assert (backend, workers) == ("process", 4)
 
     with pytest.warns(RuntimeWarning, match="GPU folds require isolated processes"):
         backend, workers = _resolve_fold_execution(

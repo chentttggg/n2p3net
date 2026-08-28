@@ -7,7 +7,6 @@ can hold out complete temporal groups for early stopping and calibration.
 
 from __future__ import annotations
 
-import copy
 from dataclasses import dataclass
 
 import numpy as np
@@ -64,21 +63,25 @@ class SubjectAdapter:
         self.trunk = trunk.to(self.device)
         self.feature_dim = trunk.classifier_features
         self.head: nn.Module
-        if self.config.head_kind == "linear":
-            self.head = nn.Linear(self.feature_dim, 2)
-        elif self.config.head_kind == "mlp16":
-            self.head = nn.Sequential(
-                nn.Linear(self.feature_dim, 16),
-                nn.GELU(),
-                nn.Linear(16, 2),
-            )
-        else:
-            self.head = None  # type: ignore[assignment]
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(self.config.seed)
+            if self.config.head_kind == "linear":
+                self.head = nn.Linear(self.feature_dim, 2).to(self.device)
+            elif self.config.head_kind == "mlp16":
+                self.head = nn.Sequential(
+                    nn.Linear(self.feature_dim, 16),
+                    nn.GELU(),
+                    nn.Linear(16, 2),
+                ).to(self.device)
+            else:
+                self.head = None  # type: ignore[assignment]
         self._fitted = False
         self.calibration_logits_: np.ndarray | None = None
         self.calibration_labels_: np.ndarray | None = None
         self.calibration_source_ = None
         self.last_history: dict[str, object] = {}
+        self._input_mean_t: torch.Tensor | None = None
+        self._input_std_t: torch.Tensor | None = None
 
     def _features(self, X: torch.Tensor) -> torch.Tensor:
         with torch.set_grad_enabled(self.training):
@@ -115,13 +118,6 @@ class SubjectAdapter:
         y = np.asarray(y).astype(np.int64)
         if y.ndim != 1 or len(y) != len(X) or set(np.unique(y).tolist()) != {0, 1}:
             raise ValueError("subject adapter requires binary labels {0,1} aligned with X.")
-        self._input_mean = X.reshape(X.shape[0], X.shape[1], -1).mean(axis=(0, 2), keepdims=True)
-        self._input_std = X.reshape(X.shape[0], X.shape[1], -1).std(axis=(0, 2), keepdims=True)
-        self._input_std = np.where(self._input_std < 1e-6, 1.0, self._input_std)
-        Xt = torch.from_numpy(np.ascontiguousarray((X - self._input_mean) / self._input_std)).to(
-            self.device
-        )
-        yt = torch.from_numpy(np.ascontiguousarray(y)).to(self.device)
 
         train_mask = np.ones(len(X), dtype=bool)
         val_mask = np.zeros(len(X), dtype=bool)
@@ -140,8 +136,25 @@ class SubjectAdapter:
         if len(np.unique(y[train_mask])) != 2:
             raise ValueError("training split must contain both classes.")
 
+        # Fit input statistics only on the prefix-training rows. Validation
+        # groups remain fully held out for early stopping and calibration.
+        X_train_stats = X[train_mask]
+        self._input_mean = X_train_stats.mean(axis=(0, 2), keepdims=True)
+        self._input_std = X_train_stats.std(axis=(0, 2), keepdims=True)
+        self._input_std = np.where(self._input_std < 1e-6, 1.0, self._input_std)
+        self._input_mean_t = torch.as_tensor(self._input_mean, device=self.device)
+        self._input_std_t = torch.as_tensor(self._input_std, device=self.device)
+        Xt = torch.from_numpy(np.ascontiguousarray((X - self._input_mean) / self._input_std)).to(
+            self.device
+        )
+        yt = torch.from_numpy(np.ascontiguousarray(y)).to(self.device)
+
         torch.manual_seed(self.config.seed)
-        self._set_trainable(trunk_trainable=self.config.head_kind == "full_fine")
+        if self.device.type == "cuda":
+            with torch.cuda.device(self.device):
+                torch.cuda.manual_seed(self.config.seed)
+        trunk_trainable = self.config.head_kind == "full_fine"
+        self._set_trainable(trunk_trainable=trunk_trainable)
         parameters = [p for p in self.trunk.parameters() if p.requires_grad]
         if self.head is not None:
             parameters.extend(self.head.parameters())
@@ -158,46 +171,81 @@ class SubjectAdapter:
             weight=torch.tensor([1.0, pos_weight], device=self.device)
         )
 
+        # Materialize train/validation row blocks once. The training loop then
+        # uses device-side index_select with the same permutation values, so the
+        # epoch batches are identical to the previous numpy-indexed path without
+        # any per-batch host synchronization.
+        n_train = int(train_mask.sum())
+        train_rows = torch.as_tensor(np.flatnonzero(train_mask), dtype=torch.long, device=self.device)
+        Xt_train = Xt.index_select(0, train_rows)
+        yt_train = yt.index_select(0, train_rows)
+        val_rows = torch.as_tensor(np.flatnonzero(val_mask), dtype=torch.long, device=self.device)
+        Xt_val = Xt.index_select(0, val_rows) if len(val_rows) else Xt[:0]
+        yt_val = yt.index_select(0, val_rows) if len(val_rows) else yt[:0]
+
+        train_inputs = Xt_train
+        val_inputs = Xt_val
+        if not trunk_trainable:
+            # A frozen trunk is a fixed feature transform. Keeping it in train
+            # mode would update BatchNorm and apply fresh dropout every epoch;
+            # caching eval-mode features is both the intended contract and the
+            # dominant launch reduction for subject-head adaptation.
+            self.trunk.eval()
+            with torch.no_grad():
+                train_inputs = self._features(Xt_train)
+                val_inputs = self._features(Xt_val) if len(Xt_val) else train_inputs[:0]
+            del Xt, Xt_train, Xt_val
+
         best_state = None
         best_val = float("inf")
         patience = self.config.early_stop_patience
         train_losses: list[float] = []
         val_losses: list[float] = []
         for _ in range(self.config.epochs):
-            self.trunk.train()
+            self.trunk.train(trunk_trainable)
             if self.head is not None:
                 self.head.train()
-            permutation = torch.randperm(int(train_mask.sum()), device=self.device)
-            train_idx = np.flatnonzero(train_mask)
-            epoch_loss = 0.0
-            for start in range(0, len(train_idx), self.config.batch_size):
-                idx = train_idx[permutation[start : start + self.config.batch_size].cpu().numpy()]
-                logits = self._forward_head(Xt[idx])
-                loss = loss_fn(logits, yt[idx])
+            permutation = torch.randperm(n_train, device=self.device)
+            epoch_loss = torch.zeros((), dtype=torch.float32, device=self.device)
+            for start in range(0, n_train, self.config.batch_size):
+                rows = permutation[start : start + self.config.batch_size]
+                xb = train_inputs.index_select(0, rows)
+                yb = yt_train.index_select(0, rows)
+                logits = self._forward_head(xb) if trunk_trainable else self.head(xb)
+                loss = loss_fn(logits, yb)
                 optimizer.zero_grad(set_to_none=True)
                 loss.backward()
                 optimizer.step()
-                epoch_loss += float(loss.detach()) * len(idx)
-            train_losses.append(epoch_loss / max(len(train_idx), 1))
+                epoch_loss += loss.detach().float() * len(xb)
 
             val_loss = None
             if val_mask.any():
-                val_idx = np.flatnonzero(val_mask)
                 self.trunk.eval()
                 if self.head is not None:
                     self.head.eval()
                 with torch.inference_mode():
-                    logits = self._forward_head(Xt[val_idx])
-                    val_loss = float(loss_fn(logits, yt[val_idx]))
+                    logits = (
+                        self._forward_head(val_inputs)
+                        if trunk_trainable
+                        else self.head(val_inputs)
+                    )
+                    val_loss_tensor = loss_fn(logits, yt_val).detach().float()
+                train_value, val_loss = torch.stack(
+                    (epoch_loss / max(n_train, 1), val_loss_tensor)
+                ).cpu().tolist()
+                train_losses.append(float(train_value))
+                val_loss = float(val_loss)
                 val_losses.append(val_loss)
                 if val_loss < best_val - self.config.early_stop_min_delta:
                     best_val = val_loss
                     patience = self.config.early_stop_patience
-                    best_state = copy.deepcopy(self._state_dict())
+                    best_state = self._clone_state()
                 else:
                     patience -= 1
                 if patience <= 0:
                     break
+            else:
+                train_losses.append(float(epoch_loss.cpu()) / max(n_train, 1))
 
         if best_state is not None:
             self._load_state_dict(best_state)
@@ -206,11 +254,14 @@ class SubjectAdapter:
         if self.head is not None:
             self.head.eval()
         if val_mask.any():
-            val_idx = np.flatnonzero(val_mask)
             with torch.inference_mode():
-                logits = self._forward_head(Xt[val_idx])
-            self.calibration_logits_ = logits[:, 1] - logits[:, 0]
-            self.calibration_labels_ = y[val_idx]
+                logits = (
+                    self._forward_head(val_inputs) if trunk_trainable else self.head(val_inputs)
+                )
+            self.calibration_logits_ = (
+                (logits[:, 1] - logits[:, 0]).detach().cpu().numpy().astype(np.float64)
+            )
+            self.calibration_labels_ = y[np.flatnonzero(val_mask)]
             self.calibration_source_ = "group_disjoint_prefix_validation"
         else:
             self.calibration_logits_ = None
@@ -236,6 +287,14 @@ class SubjectAdapter:
             payload["head"] = self.head.state_dict()
         return payload
 
+    def _clone_state(self) -> dict[str, dict[str, torch.Tensor]]:
+        return {
+            scope: {
+                key: value.detach().clone() for key, value in state.items()
+            }
+            for scope, state in self._state_dict().items()
+        }
+
     def _load_state_dict(self, state: dict[str, dict[str, torch.Tensor]]) -> None:
         self.trunk.load_state_dict(state["trunk"])
         if self.head is not None:
@@ -248,9 +307,9 @@ class SubjectAdapter:
         if self.head is not None:
             self.head.eval()
         Xt = self._prepare_input(X)
-        standardized = (Xt - torch.from_numpy(self._input_mean).to(self.device)) / torch.from_numpy(
-            self._input_std
-        ).to(self.device)
+        if self._input_mean_t is None or self._input_std_t is None:
+            raise RuntimeError("predict_logit requires fitted input statistics.")
+        standardized = (Xt - self._input_mean_t) / self._input_std_t
         with torch.inference_mode():
             logits = self._forward_head(standardized)
         return (logits[:, 1] - logits[:, 0]).cpu().numpy().astype(np.float64)
