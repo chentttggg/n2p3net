@@ -84,6 +84,11 @@ P(hit)   = P(Z_target > max_k Z_other)
 6. 对同一 raw 连续记录，单被试协议必须使用因果滤波
    （`filter_phase=forward` 或等效 FIR），并在 provenance 标记
    `online_causal=True`；零相位版本只能用于 LOSO 离线诊断。
+   **已实现**：`SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT`、
+   `assert_causal_p300_input_contract`、`preprocess(... filter_phase="forward")`
+   会把 `event_timeline.online_causal` 置真；MOABB 路径无法执行因果滤波，
+   会 fail-closed。GTN cache 生成命令使用
+   `prepare_gtn_dataset.py --filter-phase forward`。
 
 ### 2.3 GTN 当前数据量（旧 256 Hz cache 的直接统计）
 
