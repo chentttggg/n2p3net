@@ -41,12 +41,18 @@ def _fold(loss: float, auc: float, *, fold: int = 0) -> dict[str, object]:
         "final_task_val_auc": auc,
         "epochs_ran": 2,
         "batch_size": 32,
+        "validation_batch_size": 32,
+        "precision": "fp32",
+        "preloaded": False,
+        "shuffle_each_epoch": False,
         "fused_adam_requested": False,
         "compile_mode_requested": None,
         "fused_adam": False,
         "compile_mode": None,
         "compile_scope": None,
         "optimizer_fallback_reason": None,
+        "fit_peak_allocated_mb": None,
+        "fit_peak_reserved_mb": None,
         "oom_retries": 0,
     }
 
@@ -143,12 +149,18 @@ def test_seed_record_whitelists_inner_metrics_and_drops_outer_results() -> None:
         final_task_val_auc=0.73,
         epochs_ran=2,
         batch_size=32,
+        validation_batch_size=32,
+        precision="bf16",
+        preloaded=True,
+        shuffle_each_epoch=False,
         fused_adam_requested=True,
         compile_mode_requested="reduce-overhead",
         fused_adam=True,
         compile_mode="reduce-overhead",
         compile_scope="train_step",
         optimizer_fallback_reason=None,
+        fit_peak_allocated_mb=100.0,
+        fit_peak_reserved_mb=150.0,
         oom_retries=0,
         auc=0.999,
         balanced_acc=0.999,
@@ -172,6 +184,8 @@ def test_seed_record_whitelists_inner_metrics_and_drops_outer_results() -> None:
     assert record["selection_metric"] == runner.ARM_SELECTION_METRIC
     assert record["mean_inner_best_task_val_loss"] == pytest.approx(0.42)
     assert record["mean_inner_final_task_val_auc"] == pytest.approx(0.73)
+    assert record["per_fold"][0]["precision"] == "bf16"
+    assert record["per_fold"][0]["fit_peak_reserved_mb"] == pytest.approx(150.0)
     assert not {"auc", "balanced_acc", "scores"} & set(record["per_fold"][0])
 
 
@@ -284,12 +298,18 @@ def test_main_writes_complete_inner_only_comparison_artifacts(monkeypatch, tmp_p
         final_task_val_auc=0.7,
         epochs_ran=1,
         batch_size=4,
+        validation_batch_size=4,
+        precision="fp32",
+        preloaded=False,
+        shuffle_each_epoch=False,
         fused_adam_requested=False,
         compile_mode_requested=None,
         fused_adam=False,
         compile_mode=None,
         compile_scope=None,
         optimizer_fallback_reason=None,
+        fit_peak_allocated_mb=None,
+        fit_peak_reserved_mb=None,
         oom_retries=0,
         auc=0.999,
         balanced_acc=0.999,

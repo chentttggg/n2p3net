@@ -290,12 +290,18 @@ def _inner_fold_record(
         "final_task_val_auc": float(result.final_task_val_auc),
         "epochs_ran": int(result.epochs_ran),
         "batch_size": int(result.batch_size),
+        "validation_batch_size": int(result.validation_batch_size),
+        "precision": result.precision,
+        "preloaded": bool(result.preloaded),
+        "shuffle_each_epoch": bool(result.shuffle_each_epoch),
         "fused_adam_requested": bool(result.fused_adam_requested),
         "compile_mode_requested": result.compile_mode_requested,
         "fused_adam": bool(result.fused_adam),
         "compile_mode": result.compile_mode,
         "compile_scope": result.compile_scope,
         "optimizer_fallback_reason": result.optimizer_fallback_reason,
+        "fit_peak_allocated_mb": result.fit_peak_allocated_mb,
+        "fit_peak_reserved_mb": result.fit_peak_reserved_mb,
         "oom_retries": int(result.oom_retries),
     }
 

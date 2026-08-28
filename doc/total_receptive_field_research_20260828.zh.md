@@ -329,7 +329,8 @@ Gradients/occlusion 作为正交方法；单一 saliency 图不能决定机制�
 - **保留** K65 作为 broad reference，它的表达集合包含 K35；
 - **停止** 用 local MST kernel span 解释完整 branch；
 - **停止** 把 LMBC feature mask 称为 raw pre/post isolation；
-- **暂不修改** 当前模型结构，先完成 matched mechanism matrix 和 trained ERF audit；
+- **已完成** A--E matched mechanism matrix 的 32-subject、2-seed inner-development
+  W2；结果与冻结决定见 `doc/receptive_field_comparison_w2_20260828.zh.md`；
 - **最终仍由 GTN 裁决**，但只有在 `hit@R` evaluator、cache、reference 和 normalization
   Gate 0 闭合后才能运行。
 
