@@ -11,6 +11,7 @@ from experiments.run_n2p3_sensitivity import (
     build_kernel_fine_candidates,
     build_kernel_range_candidates,
     build_lower_boundary_candidates,
+    build_secondary_candidates,
 )
 
 
@@ -103,3 +104,14 @@ def test_kernel_fine_grid_keeps_every_kernel_odd() -> None:
 
     assert kernels == [25, 29, 33, 35, 37, 41, 45]
     assert all(kernel % 2 == 1 for kernel in kernels)
+
+
+def test_secondary_grid_fixes_the_winning_kernel_and_excludes_kernel_axis() -> None:
+    candidates = build_secondary_candidates(base_batch_size=512)
+
+    assert len(candidates) == 27
+    assert all(candidate.axis != "temporal_kernel_size" for candidate in candidates)
+    assert all(
+        candidate.architecture_overrides["temporal_kernel_size"] == 35
+        for candidate in candidates
+    )

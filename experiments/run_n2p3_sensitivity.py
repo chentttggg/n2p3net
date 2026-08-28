@@ -209,6 +209,24 @@ def build_kernel_fine_candidates(*, base_batch_size: int) -> list[SensitivityCan
     ]
 
 
+def build_secondary_candidates(*, base_batch_size: int) -> list[SensitivityCandidate]:
+    candidates = build_candidates(base_batch_size=base_batch_size)
+    output: list[SensitivityCandidate] = []
+    for candidate in candidates:
+        if candidate.axis == "temporal_kernel_size":
+            continue
+        output.append(
+            replace(
+                candidate,
+                architecture_overrides={
+                    "temporal_kernel_size": 35,
+                    **candidate.architecture_overrides,
+                },
+            )
+        )
+    return output
+
+
 def _parse_fold_indices(value: str) -> tuple[int, ...]:
     try:
         indices = tuple(int(item.strip()) for item in value.split(",") if item.strip())
@@ -236,7 +254,14 @@ def main() -> None:
     parser.add_argument("--max-candidates", type=int, default=None)
     parser.add_argument(
         "--grid",
-        choices=("coarse", "boundary", "lower_boundary", "kernel_range", "kernel_fine"),
+        choices=(
+            "coarse",
+            "boundary",
+            "lower_boundary",
+            "kernel_range",
+            "kernel_fine",
+            "secondary",
+        ),
         default="coarse",
     )
     parser.add_argument("--epochs", type=int, default=defaults.epochs)
@@ -323,8 +348,10 @@ def main() -> None:
         candidates = build_lower_boundary_candidates(base_batch_size=args.batch_size)
     elif args.grid == "kernel_range":
         candidates = build_kernel_range_candidates(base_batch_size=args.batch_size)
-    else:
+    elif args.grid == "kernel_fine":
         candidates = build_kernel_fine_candidates(base_batch_size=args.batch_size)
+    else:
+        candidates = build_secondary_candidates(base_batch_size=args.batch_size)
     if args.max_candidates is not None:
         candidates = candidates[: args.max_candidates]
 
