@@ -509,11 +509,14 @@ def write_epoch_dataset_record(
     return record_path
 
 
-def _validate_attested_cache(path: Path, dataset: EpochDataset) -> None:
-    record_path = _cache_record_path(path)
+def read_epoch_cache_attestation(path: str | Path) -> dict[str, object]:
+    """Read the validated cache identity stored beside an epoch cache."""
+
+    cache_path = Path(path)
+    record_path = _cache_record_path(cache_path)
     if not record_path.is_file():
         raise ValueError(
-            f"{path} lacks a cache attestation; regenerate or fully validate the cache before training."
+            f"{cache_path} lacks a cache attestation; regenerate or fully validate the cache before training."
         )
     try:
         record = json.loads(record_path.read_text(encoding="utf-8"))
@@ -524,8 +527,21 @@ def _validate_attested_cache(path: Path, dataset: EpochDataset) -> None:
         raise ValueError(f"{record_path} lacks a supported cache attestation.")
     if attestation.get("full_contract_validated") is not True:
         raise ValueError(f"{record_path} does not attest a full contract validation.")
-    if attestation.get("byte_size") != path.stat().st_size:
-        raise ValueError(f"{path} byte size no longer matches its cache attestation.")
+    if attestation.get("byte_size") != cache_path.stat().st_size:
+        raise ValueError(f"{cache_path} byte size no longer matches its cache attestation.")
+    sha256 = attestation.get("sha256")
+    if not isinstance(sha256, str) or len(sha256) != 64:
+        raise ValueError(f"{record_path} lacks a valid cache SHA-256.")
+    return dict(attestation)
+
+
+def _validate_attested_cache(path: Path, dataset: EpochDataset) -> None:
+    record_path = _cache_record_path(path)
+    attestation = read_epoch_cache_attestation(path)
+    try:
+        record = json.loads(record_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"{record_path} is not a readable cache attestation.") from error
     expected_hash = attestation.get("sha256")
     if not isinstance(expected_hash, str) or _sha256_file(path) != expected_hash:
         raise ValueError(f"{path} SHA-256 no longer matches its cache attestation.")

@@ -10,6 +10,7 @@ from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from multiprocessing import shared_memory
+from pathlib import Path
 
 import numpy as np
 from sklearn.metrics import balanced_accuracy_score, roc_auc_score
@@ -21,6 +22,12 @@ from data.artifact import (
     FoldLocalArtifactPolicy,
     apply_fitted_artifact_model,
     apply_fold_local_artifact_policy,
+)
+from data.artifact_sidecar import (
+    default_fold_artifact_sidecar_path,
+    fold_artifact_fingerprint,
+    load_fold_artifact_sidecar,
+    save_fold_artifact_sidecar,
 )
 from data.qc_features import EpochQCFeatures
 from models.decision import decide
@@ -757,6 +764,75 @@ def precompute_fold_local_artifact_models(
             ) as executor:
                 pairs = list(executor.map(_fit_shared_artifact_policy_task, tasks))
     return dict(pairs)
+
+
+def resolve_fold_local_artifact_models(
+    X: np.ndarray,
+    subject_ids: np.ndarray,
+    folds: Sequence[tuple[np.ndarray, np.ndarray]],
+    *,
+    cache_path: str | Path,
+    cache_sha256: str,
+    trial_channel_mask: np.ndarray | None,
+    qc_features: EpochQCFeatures | None,
+    artifact_policy: FoldLocalArtifactPolicy | None,
+    artifact_qc_jobs: int | None,
+    cpu_threads: int | None,
+) -> tuple[dict[int, FoldLocalArtifactModel], dict[str, object]]:
+    """Load an exact fold-QC sidecar or compute and persist it once."""
+
+    if artifact_policy is None:
+        return {}, {"enabled": False, "hit": False, "fit_seconds": 0.0}
+    normalized_folds = [
+        (np.asarray(train, dtype=bool), np.asarray(test, dtype=bool)) for train, test in folds
+    ]
+    fingerprint = fold_artifact_fingerprint(
+        cache_sha256=cache_sha256,
+        folds=normalized_folds,
+        policy=artifact_policy,
+    )
+    sidecar_path = default_fold_artifact_sidecar_path(cache_path, fingerprint)
+    started = time.perf_counter()
+    loaded = load_fold_artifact_sidecar(
+        sidecar_path,
+        expected_fingerprint=fingerprint,
+        expected_fold_count=len(normalized_folds),
+    )
+    if loaded is not None:
+        return loaded, {
+            "enabled": True,
+            "hit": True,
+            "fingerprint": fingerprint,
+            "path": str(sidecar_path),
+            "fit_seconds": 0.0,
+            "load_seconds": time.perf_counter() - started,
+        }
+    models = precompute_fold_local_artifact_models(
+        X,
+        subject_ids,
+        normalized_folds,
+        trial_channel_mask=trial_channel_mask,
+        qc_features=qc_features,
+        artifact_policy=artifact_policy,
+        artifact_qc_jobs=artifact_qc_jobs,
+        cpu_threads=cpu_threads,
+    )
+    fit_seconds = time.perf_counter() - started
+    save_fold_artifact_sidecar(
+        sidecar_path,
+        fingerprint=fingerprint,
+        cache_sha256=cache_sha256,
+        policy=artifact_policy,
+        models=models,
+    )
+    return models, {
+        "enabled": True,
+        "hit": False,
+        "fingerprint": fingerprint,
+        "path": str(sidecar_path),
+        "fit_seconds": fit_seconds,
+        "load_seconds": 0.0,
+    }
 
 
 def _run_fold_tasks(

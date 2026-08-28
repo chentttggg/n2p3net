@@ -22,7 +22,7 @@ from baselines.deep import DeepConfig  # noqa: E402
 from baselines.evaluate import (  # noqa: E402
     evaluate_binary,
     loso_folds,
-    precompute_fold_local_artifact_models,
+    resolve_fold_local_artifact_models,
 )
 from data.artifact import FoldLocalArtifactPolicy  # noqa: E402
 from data.contract import (  # noqa: E402
@@ -30,7 +30,7 @@ from data.contract import (  # noqa: E402
     assert_p300_input_contract,
     assert_p300_source_provenance,
 )
-from data.epochs import load_epoch_dataset  # noqa: E402
+from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
     N2P3ArchitectureConfig,
@@ -181,6 +181,8 @@ def main() -> None:
         parser.error("--subjects must be at least two")
 
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
+    dataset_record = dataset.record(validate=False)
+    cache_sha256 = str(read_epoch_cache_attestation(args.dataset_cache)["sha256"])
     expected_contract = replace(
         DEFAULT_P300_DATA_CONTRACT,
         sample_rate_hz=args.sample_rate_hz,
@@ -218,10 +220,12 @@ def main() -> None:
     subjects = np.asarray(sorted(np.unique(subject_ids).tolist(), key=_subject_sort_key))
     anchor_subjects = [str(subjects[index]) for index in fold_indices]
     artifact_policy = FoldLocalArtifactPolicy()
-    fitted_artifact_models = precompute_fold_local_artifact_models(
+    fitted_artifact_models, artifact_qc_sidecar = resolve_fold_local_artifact_models(
         X,
         subject_ids,
         folds,
+        cache_path=args.dataset_cache,
+        cache_sha256=cache_sha256,
         trial_channel_mask=trial_channel_mask,
         qc_features=qc_features,
         artifact_policy=artifact_policy,
@@ -241,7 +245,7 @@ def main() -> None:
     output_root.mkdir(parents=True, exist_ok=True)
     manifest = {
         "schema": "n2p3net_local_sensitivity/1",
-        "selection_metric": "mean_inner_best_validation_loss",
+        "selection_metric": "mean_inner_final_validation_auc",
         "outer_test_metrics_persisted": False,
         "deltas": [0.0, -0.05, 0.05, -0.15, 0.15],
         "selected_subject_count": len(selected_subjects),
@@ -256,7 +260,8 @@ def main() -> None:
         "seed": args.seed,
         "candidate_count": len(candidates),
         "candidates": [asdict(candidate) for candidate in candidates],
-        "dataset": dataset.record(validate=False),
+        "dataset": dataset_record,
+        "artifact_qc_sidecar": artifact_qc_sidecar,
         "started_utc": datetime.now(UTC).isoformat(),
     }
     (output_root / "manifest.json").write_text(
@@ -354,8 +359,8 @@ def main() -> None:
     ranking = sorted(
         records,
         key=lambda record: (
-            record["mean_inner_best_validation_loss"],
             -record["mean_inner_final_validation_auc"],
+            record["mean_inner_best_validation_loss"],
         ),
     )
     (output_root / "screening.json").write_text(

@@ -29,8 +29,8 @@ from baselines.evaluate import (  # noqa: E402
     evaluate_binary,
     evaluate_candidate_selection,
     loso_folds,
-    precompute_fold_local_artifact_models,
     resolve_artifact_qc_workers,
+    resolve_fold_local_artifact_models,
 )
 from data.artifact import (  # noqa: E402
     FoldLocalArtifactPolicy,
@@ -42,7 +42,7 @@ from data.contract import (  # noqa: E402
     assert_p300_input_contract,
     assert_p300_source_provenance,
 )
-from data.epochs import load_epoch_dataset  # noqa: E402
+from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
     POOLING_MODES,
@@ -377,6 +377,8 @@ def main() -> None:
         require_labels=True,
         validation="attested",
     )
+    dataset_record = dataset.record(validate=False)
+    cache_sha256 = str(read_epoch_cache_attestation(args.dataset_cache)["sha256"])
     expected_contract = replace(
         DEFAULT_P300_DATA_CONTRACT,
         sample_rate_hz=args.sample_rate_hz,
@@ -428,18 +430,19 @@ def main() -> None:
         artifact_qc_jobs=args.artifact_qc_jobs,
         cpu_threads=args.cpu_threads,
     )
-    artifact_qc_started = time.perf_counter()
-    fitted_artifact_models = precompute_fold_local_artifact_models(
+    fitted_artifact_models, artifact_qc_sidecar = resolve_fold_local_artifact_models(
         X,
         subject_ids,
         folds,
+        cache_path=args.dataset_cache,
+        cache_sha256=cache_sha256,
         trial_channel_mask=trial_channel_mask,
         qc_features=qc_features,
         artifact_policy=artifact_policy,
         artifact_qc_jobs=args.artifact_qc_jobs,
         cpu_threads=args.cpu_threads,
     )
-    artifact_qc_seconds = time.perf_counter() - artifact_qc_started
+    artifact_qc_seconds = float(artifact_qc_sidecar["fit_seconds"])
 
     for model_name in models:
         model = build_binary_model(
@@ -462,7 +465,7 @@ def main() -> None:
             "type": "manifest",
             "run_name": run_name,
             "model": describe_binary_model(model_name, model),
-            "dataset": dataset.record(validate=False),
+            "dataset": dataset_record,
             "fold_protocol": "partial_loso" if args.fold_offset or args.max_folds else "loso",
             "selection_mode": "candidate_selection" if candidate_selection is not None else "binary_oddball",
             "total_folds": args.fold_offset + len(folds),
@@ -480,6 +483,7 @@ def main() -> None:
                 "reused_across_models": True,
                 "workers": artifact_qc_workers,
                 "fit_seconds": artifact_qc_seconds,
+                "sidecar": artifact_qc_sidecar,
             },
             "environment": {
                 "torch": torch.__version__,
