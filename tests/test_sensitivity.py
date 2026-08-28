@@ -7,6 +7,7 @@ from experiments.run_n2p3_sensitivity import (
     _subject_sort_key,
     architecture_for_sample_rate,
     build_candidates,
+    build_refinement_candidates,
 )
 
 
@@ -55,3 +56,17 @@ def test_subject_subset_uses_natural_numeric_order() -> None:
     subjects = ["1", "10", "2", "20", "3"]
 
     assert sorted(subjects, key=_subject_sort_key) == ["1", "2", "3", "10", "20"]
+
+
+def test_refinement_grid_targets_kernel_modes_and_dropout_peak() -> None:
+    candidates = build_refinement_candidates(base_batch_size=512)
+    by_name = {candidate.name: candidate for candidate in candidates}
+
+    assert len(candidates) == 15
+    assert by_name["temporal_kernel_size_51"].architecture_overrides == {
+        "temporal_kernel_size": 51
+    }
+    assert by_name["temporal_kernel_size_79"].architecture_overrides == {
+        "temporal_kernel_size": 79
+    }
+    assert by_name["dropout_0p2625"].architecture_overrides == {"dropout": 0.2625}
