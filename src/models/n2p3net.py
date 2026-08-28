@@ -25,9 +25,11 @@ POOLING_MODES = frozenset(
 
 DEFAULT_ST_TEMPORAL_FILTERS = 8
 DEFAULT_ST_TEMPORAL_KERNEL_SIZE = 65
+DEFAULT_ST_TEMPORAL_DILATION = 1
 DEFAULT_SPATIAL_DEPTH_MULTIPLIER = 2
 DEFAULT_ST_POOL_SIZE = 4
 DEFAULT_MST_KERNEL_SIZES = (5, 17)
+DEFAULT_MST_DILATION = 1
 DEFAULT_MST_FEATURES_PER_SCALE = 2
 DEFAULT_MST_POOL_SIZE = 8
 DEFAULT_N2P3_DROPOUT = 0.25
@@ -42,9 +44,11 @@ class N2P3ArchitectureConfig:
 
     temporal_filters: int = DEFAULT_ST_TEMPORAL_FILTERS
     temporal_kernel_size: int = DEFAULT_ST_TEMPORAL_KERNEL_SIZE
+    st_temporal_dilation: int = DEFAULT_ST_TEMPORAL_DILATION
     spatial_depth_multiplier: int = DEFAULT_SPATIAL_DEPTH_MULTIPLIER
     st_pool_size: int = DEFAULT_ST_POOL_SIZE
     mst_kernel_sizes: tuple[int, ...] = DEFAULT_MST_KERNEL_SIZES
+    mst_dilations: tuple[int, ...] | None = None
     mst_features_per_scale: int = DEFAULT_MST_FEATURES_PER_SCALE
     mst_pool_size: int = DEFAULT_MST_POOL_SIZE
     dropout: float = DEFAULT_N2P3_DROPOUT
@@ -54,13 +58,25 @@ class N2P3ArchitectureConfig:
 
     def __post_init__(self) -> None:
         kernels = tuple(int(kernel) for kernel in self.mst_kernel_sizes)
+        dilations = (
+            tuple(DEFAULT_MST_DILATION for _ in kernels)
+            if self.mst_dilations is None
+            else tuple(int(dilation) for dilation in self.mst_dilations)
+        )
         object.__setattr__(self, "mst_kernel_sizes", kernels)
+        object.__setattr__(self, "mst_dilations", dilations)
         if self.temporal_filters < 1 or self.spatial_depth_multiplier < 1:
             raise ValueError("temporal_filters and spatial_depth_multiplier must be positive.")
         if self.temporal_kernel_size < 3 or self.temporal_kernel_size % 2 == 0:
             raise ValueError("temporal_kernel_size must be an odd integer of at least three.")
+        if self.st_temporal_dilation < 1:
+            raise ValueError("st_temporal_dilation must be positive.")
         if not kernels or any(kernel < 3 or kernel % 2 == 0 for kernel in kernels):
             raise ValueError("mst_kernel_sizes must contain odd kernels of at least three samples.")
+        if len(dilations) != len(kernels) or any(dilation < 1 for dilation in dilations):
+            raise ValueError(
+                "mst_dilations must contain one positive dilation per MST kernel."
+            )
         if self.mst_features_per_scale < 1 or self.st_pool_size < 1 or self.mst_pool_size < 1:
             raise ValueError("feature and pool sizes must be positive.")
         if not 0.0 <= self.dropout < 1.0:
@@ -74,9 +90,11 @@ class N2P3ArchitectureConfig:
         return {
             "temporal_filters": self.temporal_filters,
             "temporal_kernel_size": self.temporal_kernel_size,
+            "st_temporal_dilation": self.st_temporal_dilation,
             "spatial_depth_multiplier": self.spatial_depth_multiplier,
             "st_pool_size": self.st_pool_size,
             "mst_kernel_sizes": self.mst_kernel_sizes,
+            "mst_dilations": self.mst_dilations,
             "mst_features_per_scale": self.mst_features_per_scale,
             "mst_pool_size": self.mst_pool_size,
             "dropout": self.dropout,
@@ -92,35 +110,68 @@ TUNED_FULL_UNFOLD_ARCHITECTURE = replace(
     DEFAULT_N2P3_ARCHITECTURE,
     temporal_kernel_size=35,
 )
+RF_MECHANISM_ARCHITECTURES: dict[str, N2P3ArchitectureConfig] = {
+    "A": DEFAULT_N2P3_ARCHITECTURE,
+    "B": TUNED_FULL_UNFOLD_ARCHITECTURE,
+    "C": replace(DEFAULT_N2P3_ARCHITECTURE, temporal_kernel_size=33),
+    "D": replace(
+        DEFAULT_N2P3_ARCHITECTURE,
+        temporal_kernel_size=33,
+        st_temporal_dilation=2,
+    ),
+    "E": replace(
+        DEFAULT_N2P3_ARCHITECTURE,
+        temporal_kernel_size=33,
+        mst_kernel_sizes=(13, 25),
+    ),
+}
 
 
-def temporal_receptive_span_ms(kernel_samples: int, sample_rate_hz: float) -> float:
+def temporal_receptive_span_ms(
+    kernel_samples: int,
+    sample_rate_hz: float,
+    dilation: int = 1,
+) -> float:
     """Return the endpoint-to-endpoint span of an odd discrete kernel."""
 
     if (
         kernel_samples < 1
         or kernel_samples % 2 == 0
+        or dilation < 1
         or not isfinite(sample_rate_hz)
         or sample_rate_hz <= 0.0
     ):
-        raise ValueError("kernel_samples must be positive and odd; sample_rate_hz must be positive.")
-    return (kernel_samples - 1) * 1000.0 / sample_rate_hz
+        raise ValueError(
+            "kernel_samples must be positive and odd; dilation and sample_rate_hz "
+            "must be positive."
+        )
+    return (kernel_samples - 1) * dilation * 1000.0 / sample_rate_hz
 
 
 def stacked_temporal_receptive_field_samples(
     temporal_kernel_samples: int,
     pool_samples: int,
     branch_kernel_samples: int,
+    *,
+    temporal_dilation: int = 1,
+    branch_dilation: int = 1,
 ) -> int:
     """Return the input-sample receptive field through ST conv, pool, and MST conv."""
 
-    if temporal_kernel_samples < 1 or branch_kernel_samples < 1 or pool_samples < 1:
-        raise ValueError("temporal kernels and pool_samples must be positive.")
+    if (
+        temporal_kernel_samples < 1
+        or branch_kernel_samples < 1
+        or pool_samples < 1
+        or temporal_dilation < 1
+        or branch_dilation < 1
+    ):
+        raise ValueError("temporal kernels, dilations, and pool_samples must be positive.")
     return (
-        temporal_kernel_samples
+        1
+        + (temporal_kernel_samples - 1) * temporal_dilation
         + pool_samples
         - 1
-        + (branch_kernel_samples - 1) * pool_samples
+        + (branch_kernel_samples - 1) * branch_dilation * pool_samples
     )
 
 
@@ -129,12 +180,18 @@ def scale_odd_kernel_preserving_span(
     *,
     source_sample_rate_hz: float,
     target_sample_rate_hz: float,
+    dilation: int = 1,
 ) -> int:
     """Scale an odd kernel by preserving its centered physical endpoint span."""
 
-    source_span_ms = temporal_receptive_span_ms(kernel_samples, source_sample_rate_hz)
-    target_intervals = source_span_ms * target_sample_rate_hz / 1000.0
-    even_intervals = 2 * int(round(target_intervals / 2.0))
+    source_span_ms = temporal_receptive_span_ms(
+        kernel_samples,
+        source_sample_rate_hz,
+        dilation,
+    )
+    target_dilated_intervals = source_span_ms * target_sample_rate_hz / 1000.0
+    target_kernel_intervals = target_dilated_intervals / dilation
+    even_intervals = 2 * int(round(target_kernel_intervals / 2.0))
     return even_intervals + 1
 
 
@@ -154,14 +211,20 @@ def scale_architecture_preserving_spans(
             architecture.temporal_kernel_size,
             source_sample_rate_hz=source_sample_rate_hz,
             target_sample_rate_hz=target_sample_rate_hz,
+            dilation=architecture.st_temporal_dilation,
         ),
         mst_kernel_sizes=tuple(
             scale_odd_kernel_preserving_span(
                 kernel,
                 source_sample_rate_hz=source_feature_rate,
                 target_sample_rate_hz=target_feature_rate,
+                dilation=dilation,
             )
-            for kernel in architecture.mst_kernel_sizes
+            for kernel, dilation in zip(
+                architecture.mst_kernel_sizes,
+                architecture.mst_dilations,
+                strict=True,
+            )
         ),
     )
 
@@ -201,6 +264,7 @@ class _MSTBranch(nn.Module):
         channels: int,
         *,
         kernel_size: int,
+        dilation: int,
         output_features: int,
         dropout: float,
     ) -> None:
@@ -209,7 +273,8 @@ class _MSTBranch(nn.Module):
             channels,
             channels,
             kernel_size=kernel_size,
-            padding=kernel_size // 2,
+            padding=dilation * (kernel_size - 1) // 2,
+            dilation=dilation,
             groups=channels,
             bias=False,
         )
@@ -446,9 +511,11 @@ class N2P3Net(nn.Module):
         *,
         temporal_filters: int = DEFAULT_ST_TEMPORAL_FILTERS,
         temporal_kernel_size: int = DEFAULT_ST_TEMPORAL_KERNEL_SIZE,
+        st_temporal_dilation: int = DEFAULT_ST_TEMPORAL_DILATION,
         spatial_depth_multiplier: int = DEFAULT_SPATIAL_DEPTH_MULTIPLIER,
         st_pool_size: int = DEFAULT_ST_POOL_SIZE,
         mst_kernel_sizes: Sequence[int] = DEFAULT_MST_KERNEL_SIZES,
+        mst_dilations: Sequence[int] | None = None,
         mst_features_per_scale: int = DEFAULT_MST_FEATURES_PER_SCALE,
         mst_pool_size: int = DEFAULT_MST_POOL_SIZE,
         dropout: float = DEFAULT_N2P3_DROPOUT,
@@ -471,8 +538,21 @@ class N2P3Net(nn.Module):
             raise ValueError("filter and feature counts must be positive.")
         if temporal_kernel_size < 3 or temporal_kernel_size % 2 == 0:
             raise ValueError("temporal_kernel_size must be an odd integer of at least three.")
+        if st_temporal_dilation < 1:
+            raise ValueError("st_temporal_dilation must be positive.")
         if not mst_kernel_sizes or any(kernel < 3 or kernel % 2 == 0 for kernel in mst_kernel_sizes):
             raise ValueError("mst_kernel_sizes must contain odd kernels of at least three samples.")
+        resolved_mst_dilations = (
+            tuple(DEFAULT_MST_DILATION for _ in mst_kernel_sizes)
+            if mst_dilations is None
+            else tuple(int(dilation) for dilation in mst_dilations)
+        )
+        if len(resolved_mst_dilations) != len(mst_kernel_sizes) or any(
+            dilation < 1 for dilation in resolved_mst_dilations
+        ):
+            raise ValueError(
+                "mst_dilations must contain one positive dilation per MST kernel."
+            )
         if st_pool_size < 1 or mst_pool_size < 1:
             raise ValueError("pool sizes must be positive.")
         if not 0.0 <= dropout < 1.0:
@@ -504,9 +584,11 @@ class N2P3Net(nn.Module):
         self.pooling_mode = pooling_mode
         self.temporal_filters = int(temporal_filters)
         self.temporal_kernel_size = int(temporal_kernel_size)
+        self.st_temporal_dilation = int(st_temporal_dilation)
         self.spatial_depth_multiplier = int(spatial_depth_multiplier)
         self.st_pool_size = int(st_pool_size)
         self.mst_kernel_sizes = tuple(int(kernel) for kernel in mst_kernel_sizes)
+        self.mst_dilations = resolved_mst_dilations
         self.mst_features_per_scale = int(mst_features_per_scale)
         self.mst_pool_size = int(mst_pool_size)
         self.dropout_probability = float(dropout)
@@ -520,7 +602,11 @@ class N2P3Net(nn.Module):
             1,
             self.temporal_filters,
             kernel_size=(1, self.temporal_kernel_size),
-            padding=(0, self.temporal_kernel_size // 2),
+            padding=(
+                0,
+                self.st_temporal_dilation * (self.temporal_kernel_size - 1) // 2,
+            ),
+            dilation=(1, self.st_temporal_dilation),
             bias=False,
         )
         self.st_temporal_norm = nn.BatchNorm2d(self.temporal_filters)
@@ -540,10 +626,15 @@ class N2P3Net(nn.Module):
             _MSTBranch(
                 spatial_features,
                 kernel_size=kernel,
+                dilation=dilation,
                 output_features=self.mst_features_per_scale,
                 dropout=self.dropout_probability,
             )
-            for kernel in self.mst_kernel_sizes
+            for kernel, dilation in zip(
+                self.mst_kernel_sizes,
+                self.mst_dilations,
+                strict=True,
+            )
         )
 
         st_times = (
@@ -632,23 +723,41 @@ class N2P3Net(nn.Module):
             "feature_sample_rate_hz": float(sfreq) / architecture.st_pool_size,
             "st_temporal_filters": architecture.temporal_filters,
             "st_temporal_kernel_samples": architecture.temporal_kernel_size,
+            "st_temporal_dilation": architecture.st_temporal_dilation,
             "st_temporal_receptive_span_ms": temporal_receptive_span_ms(
-                architecture.temporal_kernel_size, float(sfreq)
+                architecture.temporal_kernel_size,
+                float(sfreq),
+                architecture.st_temporal_dilation,
             ),
             "spatial_depth_multiplier": architecture.spatial_depth_multiplier,
             "st_pool_size": architecture.st_pool_size,
             "mst_kernel_samples": list(architecture.mst_kernel_sizes),
+            "mst_dilations": list(architecture.mst_dilations),
             "mst_receptive_span_ms": [
-                temporal_receptive_span_ms(kernel, float(sfreq) / architecture.st_pool_size)
-                for kernel in architecture.mst_kernel_sizes
+                temporal_receptive_span_ms(
+                    kernel,
+                    float(sfreq) / architecture.st_pool_size,
+                    dilation,
+                )
+                for kernel, dilation in zip(
+                    architecture.mst_kernel_sizes,
+                    architecture.mst_dilations,
+                    strict=True,
+                )
             ],
             "mst_total_receptive_field_samples": [
                 stacked_temporal_receptive_field_samples(
                     architecture.temporal_kernel_size,
                     architecture.st_pool_size,
                     kernel,
+                    temporal_dilation=architecture.st_temporal_dilation,
+                    branch_dilation=dilation,
                 )
-                for kernel in architecture.mst_kernel_sizes
+                for kernel, dilation in zip(
+                    architecture.mst_kernel_sizes,
+                    architecture.mst_dilations,
+                    strict=True,
+                )
             ],
             "mst_total_receptive_span_ms": [
                 (
@@ -656,12 +765,18 @@ class N2P3Net(nn.Module):
                         architecture.temporal_kernel_size,
                         architecture.st_pool_size,
                         kernel,
+                        temporal_dilation=architecture.st_temporal_dilation,
+                        branch_dilation=dilation,
                     )
                     - 1
                 )
                 * 1000.0
                 / float(sfreq)
-                for kernel in architecture.mst_kernel_sizes
+                for kernel, dilation in zip(
+                    architecture.mst_kernel_sizes,
+                    architecture.mst_dilations,
+                    strict=True,
+                )
             ],
             "mst_features_per_scale": architecture.mst_features_per_scale,
             "mst_pool_size": architecture.mst_pool_size,
@@ -712,9 +827,11 @@ class N2P3Net(nn.Module):
         architecture = N2P3ArchitectureConfig(
             temporal_filters=self.temporal_filters,
             temporal_kernel_size=self.temporal_kernel_size,
+            st_temporal_dilation=self.st_temporal_dilation,
             spatial_depth_multiplier=self.spatial_depth_multiplier,
             st_pool_size=self.st_pool_size,
             mst_kernel_sizes=self.mst_kernel_sizes,
+            mst_dilations=self.mst_dilations,
             mst_features_per_scale=self.mst_features_per_scale,
             mst_pool_size=self.mst_pool_size,
             dropout=self.dropout_probability,
@@ -733,26 +850,42 @@ class N2P3Net(nn.Module):
             {
                 "st_temporal_filters": self.temporal_filters,
                 "st_temporal_kernel_samples": self.temporal_kernel_size,
+                "st_temporal_dilation": self.st_temporal_dilation,
                 "st_temporal_receptive_span_ms": temporal_receptive_span_ms(
-                    self.temporal_kernel_size, self.sfreq
+                    self.temporal_kernel_size,
+                    self.sfreq,
+                    self.st_temporal_dilation,
                 ),
                 "spatial_depth_multiplier": self.spatial_depth_multiplier,
                 "st_pool_size": self.st_pool_size,
                 "feature_sample_rate_hz": self.sfreq / self.st_pool_size,
                 "mst_kernel_samples": list(self.mst_kernel_sizes),
+                "mst_dilations": list(self.mst_dilations),
                 "mst_receptive_span_ms": [
                     temporal_receptive_span_ms(
-                        kernel, self.sfreq / self.st_pool_size
+                        kernel,
+                        self.sfreq / self.st_pool_size,
+                        dilation,
                     )
-                    for kernel in self.mst_kernel_sizes
+                    for kernel, dilation in zip(
+                        self.mst_kernel_sizes,
+                        self.mst_dilations,
+                        strict=True,
+                    )
                 ],
                 "mst_total_receptive_field_samples": [
                     stacked_temporal_receptive_field_samples(
                         self.temporal_kernel_size,
                         self.st_pool_size,
                         kernel,
+                        temporal_dilation=self.st_temporal_dilation,
+                        branch_dilation=dilation,
                     )
-                    for kernel in self.mst_kernel_sizes
+                    for kernel, dilation in zip(
+                        self.mst_kernel_sizes,
+                        self.mst_dilations,
+                        strict=True,
+                    )
                 ],
                 "mst_total_receptive_span_ms": [
                     (
@@ -760,12 +893,18 @@ class N2P3Net(nn.Module):
                             self.temporal_kernel_size,
                             self.st_pool_size,
                             kernel,
+                            temporal_dilation=self.st_temporal_dilation,
+                            branch_dilation=dilation,
                         )
                         - 1
                     )
                     * 1000.0
                     / self.sfreq
-                    for kernel in self.mst_kernel_sizes
+                    for kernel, dilation in zip(
+                        self.mst_kernel_sizes,
+                        self.mst_dilations,
+                        strict=True,
+                    )
                 ],
                 "mst_features_per_scale": self.mst_features_per_scale,
                 "mst_pool_size": self.mst_pool_size,
