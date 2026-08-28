@@ -40,9 +40,9 @@ function Test-Dashboard {
 }
 
 function Ensure-RemoteDashboard {
-    $remoteCommand = "cd $RemoteRoot && mkdir -p logs && if ! pgrep -f '[d]ashboard_server.py --port $RemotePort' >/dev/null; then nohup .venv/bin/python experiments/dashboard_server.py --port $RemotePort --bind 127.0.0.1 --directory experiments > logs/dashboard-http.log 2>&1 < /dev/null & fi"
-    Write-Host "[monitor] Remote dashboard API is unavailable; starting remote dashboard on port $RemotePort."
-    Write-Host "[monitor] SSH may prompt for the password again. Training processes are not restarted."
+    $remoteCommand = "cd $RemoteRoot && mkdir -p logs && if .venv/bin/python -c 'import urllib.request; urllib.request.urlopen(`"http://127.0.0.1:$RemotePort/api/status`", timeout=2)' >/dev/null 2>&1; then echo '[monitor] Remote dashboard is already healthy.'; else echo '[monitor] Remote dashboard API is unavailable; starting it.'; nohup .venv/bin/python experiments/dashboard_server.py --port $RemotePort --bind 127.0.0.1 --directory experiments > logs/dashboard-http.log 2>&1 < /dev/null & fi"
+    Write-Host "[monitor] Checking remote dashboard API on port $RemotePort."
+    Write-Host "[monitor] SSH may prompt for a password; training processes are not restarted."
     & ssh.exe @sshAuthArgs -o ConnectTimeout=10 -o StrictHostKeyChecking=no -p $SshPort "${SshUser}@${SshHost}" $remoteCommand
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to start the remote dashboard service."
@@ -77,6 +77,8 @@ $sshAuthArgs = @(
     "-i", $IdentityFile,
     "-o", "IdentitiesOnly=yes"
 )
+
+Ensure-RemoteDashboard
 
 $listener = Get-LocalListener
 if ($listener) {
@@ -122,15 +124,7 @@ do {
     if (-not $status) { Start-Sleep -Milliseconds 500 }
 } while (-not $status -and (Get-Date) -lt $deadline)
 if (-not $status) {
-    Ensure-RemoteDashboard
-    $deadline = (Get-Date).AddSeconds(15)
-    do {
-        $status = Test-Dashboard
-        if (-not $status) { Start-Sleep -Milliseconds 500 }
-    } while (-not $status -and (Get-Date) -lt $deadline)
-}
-if (-not $status) {
-    throw "SSH tunnel is up, but dashboard API is still unavailable on remote port $RemotePort."
+    throw "SSH tunnel is up, but dashboard API is still unavailable on remote port $RemotePort. Check logs/dashboard-http.log on the remote host."
 }
 
 $targetUrl = $dashboardUrl
