@@ -48,3 +48,27 @@ their caches must be regenerated before reuse.
 
 The discrete-time equations, physical receptive-field convention, and
 counterexamples are documented in `doc/input_contract_math.zh.md`.
+
+## Dashboard
+
+The training runner writes the dashboard protocol beside each model under
+`experiments/runs/<run>/<model>/`: flushed `progress.jsonl`, per-fold epoch
+JSONL, and the final `record.json`. Start the local dashboard with:
+
+```powershell
+.\.venv\Scripts\python.exe experiments\dashboard_server.py `
+  --port 8812 --bind 127.0.0.1 --directory experiments
+```
+
+Open `http://127.0.0.1:8812/dashboard.html`. To start the dashboard together
+with a training command, use the companion runner:
+
+```powershell
+.\.venv\Scripts\python.exe experiments\run_with_dashboard.py -- `
+  .\.venv\Scripts\python.exe experiments\run_eeg_loso.py `
+  --dataset-cache experiments\cache\dataset.npz --run-name smoke --max-folds 2
+```
+
+The previous cloud workflow is also available through `open_dashboard.ps1` or
+`open_dashboard.cmd`; it creates the SSH tunnel and opens the same page without
+affecting the remote training process.

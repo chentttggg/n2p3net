@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>N2P3-Net LOSO 实时训练仪表盘</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="chart.umd.min.js"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+         background: #f6f5f1; color: #2c2c2a; padding: 20px; }
+  h1 { font-size: 17px; font-weight: 500; margin-bottom: 4px; }
+  .sub { font-size: 12px; color: #5f5e5a; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .card { background: #fff; border: 1px solid #d3d1c7; border-radius: 12px; padding: 14px; }
+  .card h2 { font-size: 13px; font-weight: 500; color: #444441; margin-bottom: 10px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .kpi { background: #fff; border: 1px solid #d3d1c7; border-radius: 12px; padding: 12px 14px; }
+  .kpi .v { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .kpi .l { font-size: 11px; color: #5f5e5a; margin-top: 2px; }
+  .kpi.good .v { color: #0f6e56; }
+  .bar { height: 10px; background: #e7e5dd; border-radius: 5px; overflow: hidden; margin-top: 6px; }
+  .bar > div { height: 100%; background: #1d9e75; width: 0%; transition: width .6s; }
+  .sources { font-size: 11px; color: #5f5e5a; margin: 7px 0 14px; }
+  .sources .ok { color: #0f6e56; }
+  .sources .warn { color: #993c1d; }
+  .epoch-table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 12px; }
+  .epoch-table th, .epoch-table td { padding: 7px 8px; border-bottom: 1px solid #e7e5dd; text-align: right; }
+  .epoch-table th:first-child, .epoch-table td:first-child,
+  .epoch-table th:nth-child(2), .epoch-table td:nth-child(2),
+  .epoch-table th:nth-child(6), .epoch-table td:nth-child(6) { text-align: left; }
+  .epoch-table th { color: #5f5e5a; font-weight: 500; }
+  .epoch-table-wrap { overflow-x: auto; }
+  .epoch-controls { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: 12px; }
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
+  .chartbox { background: #fff; border: 1px solid #d3d1c7; border-radius: 12px; padding: 12px; height: 260px; }
+  .chartbox h2 { font-size: 13px; font-weight: 500; color: #444441; margin-bottom: 6px; }
+  .err { color: #993c1d; font-size: 13px; padding: 8px; }
+  select#run, select#fold-select { font-size: 13px; padding: 6px 8px; border: 1px solid #b4b2a9; border-radius: 8px; background: #fff; }
+  select#run { width: min(420px, 72vw); }
+  select#fold-select { width: min(220px, 72vw); }
+  button { font-size: 13px; padding: 6px 12px; border: 1px solid #b4b2a9; border-radius: 8px;
+           background: #fff; cursor: pointer; }
+  .controls { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .live { font-size: 11px; color: #0f6e56; }
+  .live.off { color: #993c1d; }
+  .port { font-size: 11px; color: #5f5e5a; }
+  button.danger { color: #993c1d; border-color: #d3a395; }
+  button:disabled { opacity: .55; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<h1>N2P3-Net LOSO 实时训练仪表盘</h1>
+<div class="sub">轮询 fold / epoch / 资源 JSONL（每 3 秒）· 训练结束后自动展示最终结果 · 无参数时自动跟踪 active_run.txt</div>
+<div class="controls">
+  <label style="font-size:12px;color:#5f5e5a">run 名称：</label>
+  <select id="run" aria-label="选择 run">
+    <option value="">自动检测活动 run</option>
+  </select>
+  <button id="refresh-runs" type="button">刷新 run 列表</button>
+  <span class="live off" id="livetag">● 未连接</span>
+  <span class="port" id="port">端口：—</span>
+  <button class="danger" id="killrun" type="button" disabled>终止当前训练</button>
+</div>
+<div class="kpis" id="kpis"></div>
+<div class="bar"><div id="barfill"></div></div>
+<div class="sources" id="sources" aria-live="polite">数据源：等待连接</div>
+<div class="epoch-controls">
+  <label for="fold-select">查看 fold：</label>
+  <select id="fold-select" aria-label="选择 fold" disabled>
+    <option value="">等待 fold 记录</option>
+  </select>
+</div>
+<div class="epoch-table-wrap">
+  <table class="epoch-table" aria-label="每个 fold 的最新 epoch 状态">
+    <thead><tr><th>fold</th><th>epoch</th><th>train loss</th><th>val loss</th><th>val AUC</th><th>phase</th><th>patience</th><th>更新时间</th><th>预计完成时间</th></tr></thead>
+    <tbody id="epochtable"><tr><td colspan="9">等待 epoch 记录</td></tr></tbody>
+  </table>
+</div>
+<div class="charts">
+  <div class="chartbox"><h2>运行均值：hit / fold AUC（逐 fold 更新）</h2><canvas id="c1"></canvas></div>
+  <div class="chartbox"><h2>逐 fold 指标</h2><canvas id="c2"></canvas></div>
+  <div class="chartbox"><h2>最近 fold validation LOSS 曲线（早停轨迹）</h2><canvas id="c3"></canvas></div>
+  <div class="chartbox"><h2>每 fold 训练耗时（秒）</h2><canvas id="c4"></canvas></div>
+  <div class="chartbox"><h2>实时 epoch：各 fold validation AUC</h2><canvas id="c9"></canvas></div>
+  <div class="chartbox"><h2>phase 轨迹：joint 后收尾阶段</h2><canvas id="c8"></canvas></div>
+  <div class="chartbox"><h2>资源曲线：GPU 显存 / 利用率 / worker RSS</h2><canvas id="c7"></canvas></div>
+</div>
+<p class="err" id="err"></p>
+<script>
+const params = new URLSearchParams(location.search);
+const PINNED_RUN = params.get("run") || null;
+let RUN = PINNED_RUN;
+let previousRun = null;
+let refreshing = false;
+let cachedResources = [];
+let resourcesFetchedAt = 0;
+let currentRootPid = null;
+let killRequested = false;
+let monitorClientId = null;
+let monitorRun = null;
+let monitorState = "offline";
+let monitorLastHeartbeat = 0;
+let monitorError = "";
+let availableRuns = [];
+let runsFetchedAt = 0;
+let runsRefreshing = false;
+let selectedFold = null;
+let epochTableState = { latestRows: [], allRows: [], foldRecords: [], totalFolds: 0 };
+
+function updatePort(status) {
+  const fallback = location.port || (location.protocol === "https:" ? "443" : "80");
+  document.getElementById("port").textContent = `端口：${status?.port || fallback}`;
+}
+
+updatePort(null);
+
+function runStatusLabel(run) {
+  const state = run.active ? "运行中" : (run.done ? "已完成" : "已停止");
+  const updated = run.updated_at ? formatTimestamp(new Date(run.updated_at * 1000).toISOString()) : "";
+  return `${state} · ${run.label || run.name}${updated ? ` · ${updated}` : ""}`;
+}
+
+function updateRunOptions(runs = availableRuns) {
+  const select = document.getElementById("run");
+  const autoRun = runs.find(run => run.active)?.name || runs[0]?.name || "";
+  const options = [{
+    value: "",
+    label: autoRun ? `自动检测活动 run（当前：${autoRun}）` : "自动检测活动 run",
+  }];
+  const names = new Set();
+  if (PINNED_RUN && !runs.some(run => run.name === PINNED_RUN)) {
+    options.push({ value: PINNED_RUN, label: `当前 URL · ${PINNED_RUN}` });
+    names.add(PINNED_RUN);
+  }
+  runs.forEach(run => {
+    if (names.has(run.name)) return;
+    names.add(run.name);
+    options.push({ value: run.name, label: runStatusLabel(run) });
+  });
+  select.replaceChildren(...options.map(option => {
+    const element = document.createElement("option");
+    element.value = option.value;
+    element.textContent = option.label;
+    return element;
+  }));
+  select.value = PINNED_RUN || "";
+}
+
+async function readRuns(force = false) {
+  if (!force && Date.now() - runsFetchedAt < 5000) return availableRuns;
+  if (runsRefreshing) return availableRuns;
+  runsRefreshing = true;
+  try {
+    const response = await fetch("api/runs", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json();
+    availableRuns = Array.isArray(result.runs) ? result.runs : [];
+    runsFetchedAt = Date.now();
+    updateRunOptions();
+  } catch {
+    updateRunOptions();
+  } finally {
+    runsRefreshing = false;
+  }
+  return availableRuns;
+}
+
+document.getElementById("run").addEventListener("change", event => {
+  const value = event.target.value;
+  location.search = value ? `?run=${encodeURIComponent(value)}` : "";
+});
+document.getElementById("refresh-runs").addEventListener("click", () => readRuns(true));
+updateRunOptions();
+
+async function requestKill() {
+  const button = document.getElementById("killrun");
+  if (!RUN || !currentRootPid) return;
+  if (!window.confirm(`确认终止 run「${RUN}」？\n训练主进程 PID：${currentRootPid}\n将发送 SIGTERM，并停止其 fold worker。`)) return;
+  button.disabled = true;
+  button.textContent = "正在终止…";
+  try {
+    const response = await fetch("api/kill", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Dashboard-Confirm": "yes" },
+      body: JSON.stringify({ run: RUN }),
+      cache: "no-store",
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    killRequested = true;
+    document.getElementById("err").textContent = `已发送终止信号：PID ${result.pid}，等待进程退出。`;
+  } catch (error) {
+    killRequested = false;
+    button.disabled = false;
+    button.textContent = "终止当前训练";
+    document.getElementById("err").textContent = `终止失败：${error.message}`;
+  }
+}
+
+document.getElementById("killrun").addEventListener("click", requestKill);
+
+function releaseResourceMonitor() {
+  if (!monitorClientId || !monitorRun) return;
+  const body = JSON.stringify({ run: monitorRun, client_id: monitorClientId });
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon("api/monitor/release", new Blob([body], { type: "application/json" }));
+  } else {
+    fetch("api/monitor/release", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  }
+  monitorClientId = null;
+  monitorRun = null;
+  monitorState = "offline";
+  monitorLastHeartbeat = 0;
+}
+
+window.addEventListener("pagehide", releaseResourceMonitor);
+
+function finiteNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function normalizeEpoch(row) {
+  return {
+    ...row,
+    fold: finiteNumber(row.fold),
+    epoch: finiteNumber(row.epoch),
+    train_loss: finiteNumber(row.train_loss),
+    task_val_loss: finiteNumber(row.task_val_loss ?? row.val_loss ?? row.validation_loss),
+    task_val_auc: finiteNumber(row.task_val_auc),
+    objective_val_loss: finiteNumber(row.objective_val_loss),
+    phase: row.phase || "—",
+    patience_left: finiteNumber(row.patience_left),
+    early_stop_patience: finiteNumber(row.early_stop_patience),
+  };
+}
+
+async function resolveRun(serverStatus = null) {
+  let candidate = PINNED_RUN;
+  if (!candidate) {
+    const status = serverStatus || await readServerStatus();
+    candidate = status?.active_run || status?.latest_run || null;
+  }
+  if (!candidate) {
+    try {
+      const r = await fetch("active_run.txt", { cache: "no-store" });
+      if (r.ok) candidate = (await r.text()).trim();
+    } catch {}
+  }
+  if (candidate !== RUN) {
+    RUN = candidate;
+    killRequested = false;
+    previousRun = null;
+    selectedFold = null;
+    epochTableState = { latestRows: [], allRows: [], foldRecords: [], totalFolds: 0 };
+    prevFoldCount = -1;
+    prevChartSignature = "";
+    cachedResources = [];
+    resourcesFetchedAt = 0;
+    Object.keys(charts).forEach(id => {
+      if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+    });
+  }
+  return RUN;
+}
+const charts = {};
+function chartVisibilityKey(id) {
+  return `n2p3.dashboard.visibility.${RUN || "auto"}.${id}`;
+}
+
+function readHiddenDatasets(id) {
+  try {
+    const value = JSON.parse(localStorage.getItem(chartVisibilityKey(id)) || "[]");
+    return new Set(Array.isArray(value) ? value.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveChartVisibility(id, chart) {
+  try {
+    const hidden = chart.data.datasets
+      .map((dataset, index) => chart.isDatasetVisible(index) ? null : String(dataset.label ?? index))
+      .filter(value => value !== null);
+    localStorage.setItem(chartVisibilityKey(id), JSON.stringify(hidden));
+  } catch {}
+}
+
+function mkChart(id, cfg) {
+  let hidden = readHiddenDatasets(id);
+  if (charts[id]) {
+    saveChartVisibility(id, charts[id]);
+    charts[id].destroy();
+    hidden = readHiddenDatasets(id);
+  }
+  cfg.data.datasets.forEach((dataset, index) => {
+    const key = String(dataset.label ?? index);
+    if (hidden.has(key)) dataset.hidden = true;
+  });
+  charts[id] = new Chart(document.getElementById(id), cfg);
+}
+function kpi(v, l, good) {
+  return `<div class="kpi${good ? " good" : ""}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+}
+function parseJsonl(text) {
+  return text.trim().split("\n").filter(Boolean).map(s => {
+    try { return JSON.parse(s); } catch { return null; }
+  }).filter(Boolean);
+}
+async function readJsonl(url) {
+  try {
+    const r = await fetch(url, { cache: "no-store" });
+    if (!r.ok) return [];
+    return parseJsonl(await r.text());
+  } catch { return []; }
+}
+
+async function readJson(url) {
+  try {
+    const r = await fetch(url, { cache: "no-store" });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+async function readServerStatus() {
+  try {
+    const response = await fetch("api/status", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return { ...(await response.json()), connected: true };
+  } catch (error) {
+    return { connected: false, error: error.message };
+  }
+}
+
+async function syncResourceMonitor(run) {
+  if (!run) return { state: "offline" };
+  try {
+    if (!monitorClientId || monitorRun !== run) {
+      if (monitorClientId) releaseResourceMonitor();
+      const response = await fetch("api/monitor/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ run }),
+        cache: "no-store",
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+      monitorClientId = result.client_id;
+      monitorRun = run;
+      monitorState = result.sample?.state || result.state || "running";
+      monitorLastHeartbeat = Date.now();
+      monitorError = "";
+      return result.sample || result;
+    }
+    if (Date.now() - monitorLastHeartbeat < 5000) return { state: monitorState };
+    const response = await fetch("api/monitor/heartbeat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ run, client_id: monitorClientId }),
+      cache: "no-store",
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    monitorState = result.state || "running";
+    monitorLastHeartbeat = Date.now();
+    monitorError = "";
+    if (monitorState === "offline") {
+      monitorClientId = null;
+      monitorRun = null;
+      monitorLastHeartbeat = 0;
+    }
+    return result;
+  } catch (error) {
+    monitorClientId = null;
+    monitorRun = null;
+    monitorLastHeartbeat = 0;
+    monitorState = "offline";
+    monitorError = error.message;
+    return { state: "offline", error: error.message };
+  }
+}
+
+async function readEpochs(total) {
+  if (!Number.isFinite(total) || total < 1) return [];
+  const files = await Promise.all(Array.from({length: total}, (_, fold) =>
+    readJsonl(`runs/${RUN}/epochs/fold_${fold}.jsonl`)
+  ));
+  return files.flat().filter(row => row.type === "epoch");
+}
+
+async function readResources() {
+  // The latest sample is a small atomic file; the JSONL is refreshed less often for history.
+  const latest = await readJson(`runs/${RUN}/resources.latest.json`);
+  if (Date.now() - resourcesFetchedAt >= 10000 || !cachedResources.length) {
+    const history = await readJsonl(`runs/${RUN}/resources.jsonl`);
+    if (history.length) cachedResources = history.slice(-720);
+    resourcesFetchedAt = Date.now();
+  }
+  return { latest, history: cachedResources };
+}
+
+function formatValue(value, digits = 1) {
+  const number = finiteNumber(value);
+  return number === null ? "—" : number.toFixed(digits);
+}
+
+function formatTimestamp(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? "—" : date.toLocaleTimeString();
+}
+
+function dynamicAxisBounds(values, lower = 0, upper = 1) {
+  const finite = values
+    .flat(Infinity)
+    .map(finiteNumber)
+    .filter(value => value !== null);
+  if (!finite.length) return { min: lower, max: upper };
+  const observedMin = Math.min(...finite);
+  const observedMax = Math.max(...finite);
+  const spread = Math.max(observedMax - observedMin, 0.02);
+  const padding = Math.max(spread * 0.15, 0.01);
+  let min = Math.max(lower, observedMin - padding);
+  let max = Math.min(upper, observedMax + padding);
+  if (max - min < 0.04) {
+    const center = (min + max) / 2;
+    min = Math.max(lower, center - 0.02);
+    max = Math.min(upper, center + 0.02);
+  }
+  return { min, max };
+}
+
+function timestampMs(value) {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function estimateFoldCompletion(row, allRows, completionByFold) {
+  const completion = completionByFold.get(row.fold);
+  const completionMs = timestampMs(completion?.ts);
+  const epochMs = timestampMs(row.ts);
+  if (completion && (completionMs === null || epochMs === null || completionMs >= epochMs)) return "已完成";
+  const epoch = finiteNumber(row.epoch);
+  const limit = finiteNumber(row.epoch_limit);
+  if (epoch === null || limit === null) return "计算中";
+  if (epoch >= limit) return "已完成";
+  const history = allRows
+    .filter(item => item.fold === row.fold && item.epoch !== null && item.ts)
+    .sort((a, b) => a.epoch - b.epoch)
+    .map(item => ({ epoch: item.epoch, time: new Date(item.ts).getTime() }))
+    .filter(item => Number.isFinite(item.time));
+  const windowRows = history.slice(-Math.min(5, history.length));
+  if (windowRows.length < 2) return "计算中";
+  const first = windowRows[0];
+  const last = windowRows[windowRows.length - 1];
+  const epochDelta = last.epoch - first.epoch;
+  const seconds = (last.time - first.time) / 1000;
+  if (epochDelta <= 0 || !Number.isFinite(seconds) || seconds <= 0) return "计算中";
+  const etaMs = last.time + (limit - epoch) * (seconds / epochDelta) * 1000;
+  return formatTimestamp(new Date(etaMs).toISOString());
+}
+
+function latestEpochPerFold(rows) {
+  const byFold = new Map();
+  rows.forEach(row => {
+    if (row.fold === null || row.epoch === null) return;
+    const prior = byFold.get(row.fold);
+    if (!prior || row.epoch >= prior.epoch) byFold.set(row.fold, row);
+  });
+  return [...byFold.values()].sort((a, b) => a.fold - b.fold);
+}
+
+function foldIdsForTable(totalFolds, allRows, foldRecords) {
+  const foldIds = new Set();
+  const count = Number(totalFolds);
+  if (Number.isInteger(count) && count > 0) {
+    for (let fold = 0; fold < count; fold++) foldIds.add(fold);
+  }
+  [...allRows, ...foldRecords].forEach(row => {
+    const fold = finiteNumber(row.fold);
+    if (fold !== null && Number.isInteger(fold) && fold >= 0) foldIds.add(fold);
+  });
+  return [...foldIds].sort((a, b) => a - b);
+}
+
+function updateFoldOptions(totalFolds, allRows, foldRecords) {
+  const select = document.getElementById("fold-select");
+  const foldIds = foldIdsForTable(totalFolds, allRows, foldRecords);
+  if (!foldIds.length) {
+    select.replaceChildren(new Option("等待 fold 记录", ""));
+    select.disabled = true;
+    selectedFold = null;
+    return foldIds;
+  }
+
+  let latestFold = foldIds[0];
+  let latestTimestamp = -Infinity;
+  [...allRows, ...foldRecords].forEach(row => {
+    const fold = finiteNumber(row.fold);
+    if (fold === null || !foldIds.includes(fold)) return;
+    const timestamp = timestampMs(row.ts ?? row.timestamp_utc) ?? -Infinity;
+    if (timestamp >= latestTimestamp) {
+      latestTimestamp = timestamp;
+      latestFold = fold;
+    }
+  });
+  if (selectedFold === null || !foldIds.includes(selectedFold)) selectedFold = latestFold;
+
+  select.replaceChildren(...foldIds.map(fold => {
+    const option = new Option(`fold ${fold + 1}`, String(fold));
+    option.selected = fold === selectedFold;
+    return option;
+  }));
+  select.disabled = false;
+  select.value = String(selectedFold);
+  return foldIds;
+}
+
+function renderEpochTable(rows, allRows = [], foldRecords = [], totalFolds = 0) {
+  epochTableState = { latestRows: rows, allRows, foldRecords, totalFolds };
+  const foldIds = updateFoldOptions(totalFolds, allRows, foldRecords);
+  const body = document.getElementById("epochtable");
+  if (!foldIds.length) {
+    body.innerHTML = '<tr><td colspan="9">当前 run 没有 epoch 记录；旧进程仍可查看 fold 和资源监测。</td></tr>';
+    return;
+  }
+  const visibleRows = rows.filter(row => row.fold === selectedFold);
+  if (!visibleRows.length) {
+    body.innerHTML = `<tr><td colspan="9">fold ${selectedFold + 1} 暂无 epoch 记录；请从下拉菜单选择其他 fold。</td></tr>`;
+    return;
+  }
+  const completionByFold = new Map();
+  foldRecords.forEach(record => {
+    const fold = finiteNumber(record.fold);
+    if (fold === null) return;
+    const prior = completionByFold.get(fold);
+    if (!prior || timestampMs(record.ts) >= timestampMs(prior.ts)) completionByFold.set(fold, record);
+  });
+  body.innerHTML = visibleRows.map(row => {
+    const patience = row.patience_left === null ? "—" : `${row.patience_left}/${row.early_stop_patience ?? "?"}`;
+    const eta = estimateFoldCompletion(row, allRows, completionByFold);
+    return `<tr><td>fold ${row.fold + 1}</td><td>${row.epoch}/${row.epoch_limit ?? "?"}</td>` +
+      `<td>${formatValue(row.train_loss, 4)}</td><td>${formatValue(row.task_val_loss, 4)}</td>` +
+      `<td>${formatValue(row.task_val_auc, 4)}</td><td>${row.phase}</td>` +
+      `<td>${patience}</td><td>${formatTimestamp(row.ts)}</td><td>${eta}</td></tr>`;
+  }).join("");
+}
+
+document.getElementById("fold-select").addEventListener("change", event => {
+  const fold = finiteNumber(event.target.value);
+  if (fold === null) return;
+  selectedFold = fold;
+  const state = epochTableState;
+  renderEpochTable(state.latestRows, state.allRows, state.foldRecords, state.totalFolds);
+});
+
+let prevFoldCount = -1;
+let prevChartSignature = "";
+async function tick() {
+  if (refreshing) return;
+  refreshing = true;
+  const errEl = document.getElementById("err");
+  const sourceEl = document.getElementById("sources");
+  const serverStatus = await readServerStatus();
+  updatePort(serverStatus);
+  if (!serverStatus.connected) {
+    document.getElementById("livetag").textContent = "● dashboard 断开";
+    document.getElementById("livetag").className = "live off";
+    sourceEl.innerHTML = `<span class="warn">dashboard HTTP 失联</span> · ${serverStatus.error || "SSH 隧道不可达"} · 自动重试中`;
+    errEl.textContent = "请保持 SSH 隧道；连接恢复后页面会自动重新读取 run 和资源数据。";
+    refreshing = false;
+    return;
+  }
+  await readRuns();
+  await resolveRun(serverStatus);
+  updateRunOptions();
+  if (!RUN) {
+    releaseResourceMonitor();
+    currentRootPid = null;
+    killRequested = false;
+    document.getElementById("killrun").disabled = true;
+    document.getElementById("livetag").textContent = "● 无活动 run";
+    document.getElementById("livetag").className = "live off";
+    document.getElementById("barfill").style.width = "0%";
+    document.getElementById("kpis").innerHTML = kpi("等待", "训练 run");
+    sourceEl.textContent = "未发现活动 run：请先启动训练，或在 URL 中指定 ?run=...";
+    renderEpochTable([]);
+    errEl.textContent = "";
+    refreshing = false;
+    return;
+  }
+  currentRootPid = null;
+  document.getElementById("killrun").disabled = true;
+  try {
+    const monitor = await syncResourceMonitor(RUN);
+    const r = await fetch(`runs/${RUN}/progress.jsonl`, { cache: "no-store" });
+    if (!r.ok) throw new Error(`progress.jsonl 不存在（HTTP ${r.status}）——旧版 run 无实时进度，或 run 名错误`);
+    const text = await r.text();
+    const lines = parseJsonl(text);
+    const manifest = [...lines].reverse().find(l => l.type === "manifest") || {};
+    let folds = lines.filter(l => l.type === "fold");
+    const done = lines.length > 0 && lines[lines.length - 1].type === "done";
+    // done is flushed before record.json is written. On a parallel run the
+    // final fold callback can also be observed one poll late, so use the
+    // immutable final record to fill only genuinely missing fold rows.
+    let final = null;
+    try {
+      const rr = await fetch(`runs/${RUN}/record.json`, { cache: "no-store" });
+      if (rr.ok) final = await rr.json();
+    } catch {}
+    // GTN records nest metrics under results; binary LOSO records keep them at the top level.
+    const finalResults = final?.results || final || {};
+    const recordedFolds = finalResults.per_fold || [];
+    if (done && recordedFolds.length) {
+      const knownFolds = new Set(folds.map(row => Number(row.fold)));
+      const fitDurations = final?.timing?.fit_durations_sec || [];
+      const peakMemory = final?.timing?.fit_peak_memory_mb || [];
+      const lastHistory = final?.training_history_last_fold || {};
+      const recovered = recordedFolds.map((row, index) => ({
+        type: "fold",
+        fold: finiteNumber(row.fold) ?? index,
+        n_folds_done: recordedFolds.length,
+        subject: null,
+        hit: finiteNumber(row.hit_rate),
+        fold_bacc: finiteNumber(row.balanced_acc),
+        fold_auc: finiteNumber(row.auc),
+        fit_sec: finiteNumber(fitDurations[index]),
+        fit_peak_memory_mb: finiteNumber(peakMemory[index]),
+        epochs_ran: finiteNumber(row.epochs_ran),
+        train_losses: index === recordedFolds.length - 1 ? (lastHistory.train_losses || []) : [],
+        val_losses: index === recordedFolds.length - 1 ? (lastHistory.val_losses || []) : [],
+        task_val_aucs: row.task_val_aucs || (index === recordedFolds.length - 1 ? (lastHistory.task_val_aucs || []) : []),
+        ts: final.finished_utc || null,
+      })).filter(row => !knownFolds.has(row.fold));
+      if (recovered.length) {
+        folds = [...folds, ...recovered].sort((a, b) => Number(a.fold) - Number(b.fold));
+      }
+    }
+    const totalFolds = Number(manifest.total_folds || 0) ||
+      (folds.length ? Math.max(...folds.map(f => Number(f.fold || 0))) + 1 : 0);
+    const epochRows = (await readEpochs(totalFolds)).map(normalizeEpoch);
+    const completedFoldIds = new Set(
+      folds.map(row => finiteNumber(row.fold)).filter(fold => fold !== null),
+    );
+    epochRows.forEach(row => {
+      const epoch = finiteNumber(row.epoch);
+      const limit = finiteNumber(row.epoch_limit);
+      if (row.fold !== null && epoch !== null && limit !== null && epoch >= limit) {
+        completedFoldIds.add(row.fold);
+      }
+    });
+    const completedFoldCount = completedFoldIds.size;
+    const resourceData = await readResources();
+    const resources = resourceData.history;
+    const latestResource = resourceData.latest || resources[resources.length - 1] || null;
+    currentRootPid = latestResource ? finiteNumber(latestResource.root_pid) : null;
+    const killButton = document.getElementById("killrun");
+    killButton.disabled = killRequested || !currentRootPid || done;
+    if (!killButton.disabled && killButton.textContent !== "正在终止…") killButton.textContent = "终止当前训练";
+    const epochLatest = latestEpochPerFold(epochRows);
+    renderEpochTable(epochLatest, epochRows, folds, totalFolds);
+    document.getElementById("livetag").textContent = done ? "● 已完成" : "● 实时";
+    document.getElementById("livetag").className = "live" + (done ? "" : "");
+    const total = totalFolds || folds.length || "?";
+    const pct = totalFolds ? (completedFoldCount / totalFolds * 100) : 0;
+    document.getElementById("barfill").style.width = pct + "%";
+
+    // KPI
+    const hits = folds.filter(f => f.hit !== null).map(f => f.hit);
+    const aucs = folds.map(f => f.fold_auc).filter(v => isFinite(v));
+    const fit = folds.map(f => f.fit_sec).filter(v => v);
+    const mean = a => a.length ? (a.reduce((x, y) => x + y, 0) / a.length) : NaN;
+    let eta = "—";
+    if (fit.length >= 5 && manifest.total_folds) {
+      const rate = fit.slice(-20).reduce((x, y) => x + y, 0) / Math.min(20, fit.length);
+      eta = fmtTime(rate * Math.max(0, manifest.total_folds - completedFoldCount));
+    }
+    const hitRate = hits.length ? mean(hits) : NaN;
+    const aucNow = mean(aucs);
+    const configuredEpochs = Number(manifest.trainer_kwargs?.epochs || 0);
+    const latestEpoch = epochRows.reduce((value, row) => Math.max(value, row.epoch || 0), 0);
+    const latestEpochLimit = epochRows.reduce((value, row) => Math.max(value, row.epoch_limit || 0), configuredEpochs);
+    const gpuText = latestResource && latestResource.gpu_util_pct != null
+      ? `GPU ${formatValue(latestResource.gpu_util_pct, 0)}% · VRAM ${formatValue(latestResource.gpu_memory_used_mib, 0)}/${formatValue(latestResource.gpu_memory_total_mib, 0)} MiB`
+      : "GPU 监测等待中";
+    const processRows = latestResource?.processes || [];
+    const privateGiB = processRows.reduce((sum, process) => sum + Number(process.private_mib || 0), 0) / 1024;
+    const monitorStateNow = monitor?.state || monitorState;
+    const monitorLive = monitorStateNow === "running" || monitorStateNow === "started";
+    const monitorText = monitorLive ? "monitor 在线" :
+      (monitorStateNow === "stale" ? "monitor 数据过期" : `monitor 未连接${monitorError ? `（${monitorError}）` : ""}`);
+    sourceEl.innerHTML = `<span class="ok">progress ${lines.length ? "已连接" : "空"}</span> · ` +
+      `<span class="${epochRows.length ? "ok" : "warn"}">epoch ${epochRows.length ? "已连接" : "无记录"}</span> · ` +
+      `<span class="${latestResource ? "ok" : "warn"}">resource ${latestResource ? "已连接" : "未连接"}</span> · ` +
+      `<span class="${monitorLive ? "ok" : "warn"}">${monitorText}</span> · ` +
+      `${gpuText} · worker private ${formatValue(privateGiB, 2)} GiB · 最近采样 ${formatTimestamp(latestResource?.ts)}`;
+    const finalHit = finiteNumber(
+      finalResults.hit_rate_mean ??
+      finalResults.candidate_hit_rate_mean ??
+      finalResults.primary_candidate_hit_rate,
+    );
+    const finalAuc = finiteNumber(finalResults.auc_mean);
+    document.getElementById("kpis").innerHTML =
+      kpi(`${completedFoldCount}/${total}`, "folds 完成") +
+      kpi(epochRows.length ? `${latestEpoch}/${latestEpochLimit || "?"}` : "—", "最新 epoch") +
+      kpi(isFinite(hitRate) ? hitRate.toFixed(4) : "—", "运行 hit（digit 级）", true) +
+      kpi(isFinite(aucNow) ? aucNow.toFixed(4) : "—", "运行测试 fold-AUC 均值", true) +
+      kpi(eta, "预计剩余") +
+      kpi(latestResource ? formatValue(latestResource.gpu_util_pct, 0) + "%" : "—", "GPU 利用率") +
+      kpi(latestResource ? formatValue(latestResource.gpu_memory_used_mib, 0) + " MiB" : "—", "GPU 显存") +
+      (final ? kpi(finalHit === null ? "—" : finalHit.toFixed(4), "最终 hit") +
+              kpi(finalAuc === null ? "—" : finalAuc.toFixed(4), "最终测试 AUC") : "");
+
+    const chartSignature = [
+      manifest.batch_index ?? "",
+      manifest.total_folds ?? "",
+      folds.length,
+    ].join(":");
+    if (chartSignature !== prevChartSignature) {
+      prevChartSignature = chartSignature;
+      prevFoldCount = folds.length;
+      // 图1：运行均值
+      const runHit = [], runAuc = [], idx = [];
+      let hs = 0, hn = 0;
+      const aucWin = [];
+      folds.forEach((f, i) => {
+        idx.push(i + 1);
+        if (f.hit !== null) { hs += f.hit; hn++; }
+        runHit.push(hn ? hs / hn : null);
+        aucWin.push(f.fold_auc);
+        runAuc.push(mean(aucWin));
+      });
+      const trendBounds = dynamicAxisBounds([...runHit, ...runAuc]);
+      mkChart("c1", {
+        type: "line",
+        data: { labels: idx, datasets: [
+          { label: "运行 hit", data: runHit, borderColor: "#1d9e75", pointRadius: 0, borderWidth: 2, tension: .2 },
+          { label: "运行测试 fold-AUC", data: runAuc, borderColor: "#378add", pointRadius: 0, borderWidth: 2, tension: .2 },
+        ]},
+        options: { animation: false, responsive: true, maintainAspectRatio: false,
+          scales: { y: { min: trendBounds.min, max: trendBounds.max } } }
+      });
+      // 图2：逐 fold
+      mkChart("c2", {
+        type: "bar",
+        data: { labels: folds.map(f => f.fold + 1), datasets: [
+          { label: "测试 fold AUC", data: folds.map(f => f.fold_auc), backgroundColor: "#85b7eb" },
+          { label: "验证 task AUC（末 epoch）", data: folds.map(f => {
+            const values = (f.task_val_aucs || []).filter(value => value != null && isFinite(value));
+            return values.length ? values[values.length - 1] : null;
+          }), backgroundColor: "#c0ddff" },
+          { label: "fold hit", data: folds.map(f => f.hit), backgroundColor: "#5dcaa5" },
+        ]},
+        options: { animation: false, responsive: true, maintainAspectRatio: false,
+          scales: { y: { suggestedMin: 0, suggestedMax: 1 } } }
+      });
+      // 图4：fit 时长
+      mkChart("c4", {
+        type: "line",
+        data: { labels: folds.map(f => f.fold + 1), datasets: [
+          { label: "fit 秒", data: fit, borderColor: "#ba7517", pointRadius: 1, borderWidth: 1.5 },
+        ]},
+        options: { animation: false, responsive: true, maintainAspectRatio: false }
+      });
+    }
+    // 图3：最近 fold validation loss（每次都更新，轻量）
+    const epochFoldIds = [...new Set(epochRows.map(row => row.fold).filter(value => value !== null))].sort((a, b) => a - b);
+    const latestFoldId = epochFoldIds.length ? epochFoldIds[epochFoldIds.length - 1] : null;
+    const chartFoldId = selectedFold !== null ? selectedFold : latestFoldId;
+    const latestEpochRows = chartFoldId === null ? [] : epochRows
+      .filter(row => Number(row.fold) === chartFoldId)
+      .sort((a, b) => a.epoch - b.epoch);
+    const last = folds[folds.length - 1];
+    const selectedFoldRecord = selectedFold === null ? null : folds.find(row => Number(row.fold) === selectedFold);
+    const fallbackFoldRecord = selectedFoldRecord || (selectedFold === null ? last : null);
+    const vl = latestEpochRows.length ? latestEpochRows.map(row => row.task_val_loss) : (fallbackFoldRecord && fallbackFoldRecord.val_losses ? fallbackFoldRecord.val_losses : []);
+    const ol = latestEpochRows.length ? latestEpochRows.map(row => row.objective_val_loss) : [];
+    const nEp = Math.max(vl.length, ol.length);
+    mkChart("c3", {
+      type: "line",
+      data: { labels: Array.from({length: nEp}, (_, i) => i + 1), datasets: [
+        { label: `fold ${chartFoldId === null ? (fallbackFoldRecord ? fallbackFoldRecord.fold + 1 : "-") : chartFoldId + 1} val loss`, data: vl, borderColor: "#993556", pointRadius: 2, borderWidth: 2, borderDash: [5, 3], yAxisID: "val" },
+        { label: `fold ${chartFoldId === null ? (fallbackFoldRecord ? fallbackFoldRecord.fold + 1 : "-") : chartFoldId + 1} obj val loss`, data: ol, borderColor: "#378add", pointRadius: 2, borderWidth: 2, borderDash: [2, 2], yAxisID: "objective" },
+      ]},
+      options: { animation: false, responsive: true, maintainAspectRatio: false,
+        scales: {
+          val: { position: "left", title: { display: true, text: "val loss" } },
+          objective: { position: "right", title: { display: true, text: "obj val loss" }, grid: { drawOnChartArea: false } },
+        } }
+    });
+    const palette = ["#1d9e75", "#378add", "#ba7517", "#993556", "#7F77DD", "#0f6e56"];
+    const aucHistory = latestEpochRows.length
+      ? latestEpochRows.map(row => row.task_val_auc)
+      : (fallbackFoldRecord && fallbackFoldRecord.task_val_aucs ? fallbackFoldRecord.task_val_aucs : []);
+    const aucBounds = dynamicAxisBounds(aucHistory, 0, 1);
+    mkChart("c9", {
+      type: "line",
+      data: { labels: Array.from({length: aucHistory.length}, (_, i) => i + 1), datasets: [
+        { label: `fold ${chartFoldId === null ? (fallbackFoldRecord ? fallbackFoldRecord.fold + 1 : "-") : chartFoldId + 1} val AUC`, data: aucHistory, borderColor: "#1d9e75", pointRadius: 2, borderWidth: 2, spanGaps: true },
+      ]},
+      options: { animation: false, responsive: true, maintainAspectRatio: false,
+        scales: { x: { title: { display: true, text: "epoch" } }, y: { min: aucBounds.min, max: aucBounds.max, title: { display: true, text: "AUC" } } } }
+    });
+    const phaseOrder = ["mean_warmup", "variance_ramp", "joint", "repetition_refit"];
+    epochRows.forEach(row => {
+      if (row.phase && !phaseOrder.includes(row.phase)) phaseOrder.push(row.phase);
+    });
+    const phaseDatasets = [];
+    const phaseFoldIds = selectedFold === null ? epochFoldIds : [selectedFold];
+    phaseFoldIds.forEach((fold, index) => {
+      const rows = epochRows.filter(row => row.fold === fold).sort((a, b) => a.epoch - b.epoch);
+      phaseDatasets.push({
+        label: `fold ${fold + 1} phase`,
+        data: rows.map(row => ({ x: row.epoch, y: phaseOrder.indexOf(row.phase) })),
+        borderColor: palette[index % palette.length],
+        backgroundColor: palette[index % palette.length],
+        pointRadius: 3,
+        borderWidth: 2,
+        stepped: true,
+        showLine: true,
+      });
+    });
+    mkChart("c8", {
+      type: "line",
+      data: { datasets: phaseDatasets },
+      options: { animation: false, responsive: true, maintainAspectRatio: false,
+        parsing: false,
+        scales: {
+          x: { type: "linear", title: { display: true, text: "epoch" } },
+          y: { min: 0, max: Math.max(phaseOrder.length - 1, 0), ticks: { stepSize: 1, callback: value => phaseOrder[value] || "" }, title: { display: true, text: "phase" } },
+        } }
+    });
+    const resourceLabels = resources.map(row => new Date(row.ts).toLocaleTimeString());
+    const workerRss = resources.map(row => (row.processes || []).reduce((sum, process) => sum + Number(process.rss_mib || 0), 0) / 1024);
+    const workerPss = resources.map(row => (row.processes || []).reduce((sum, process) => sum + Number(process.pss_mib || 0), 0) / 1024);
+    const workerPrivate = resources.map(row => (row.processes || []).reduce((sum, process) => sum + Number(process.private_mib || 0), 0) / 1024);
+    mkChart("c7", {
+      type: "line",
+      data: { labels: resourceLabels, datasets: [
+        { label: "GPU memory (MiB)", data: resources.map(row => row.gpu_memory_used_mib), borderColor: "#378add", pointRadius: 0, yAxisID: "memory" },
+        { label: "GPU util (%)", data: resources.map(row => row.gpu_util_pct), borderColor: "#1d9e75", pointRadius: 0, yAxisID: "util" },
+        { label: "worker RSS (GiB)", data: workerRss, borderColor: "#ba7517", pointRadius: 0, yAxisID: "rss" },
+        { label: "worker PSS (GiB)", data: workerPss, borderColor: "#993556", pointRadius: 0, yAxisID: "rss" },
+        { label: "worker private (GiB)", data: workerPrivate, borderColor: "#7F77DD", pointRadius: 0, yAxisID: "rss" },
+      ]},
+      options: { animation: false, responsive: true, maintainAspectRatio: false,
+        scales: { memory: { position: "left", title: { display: true, text: "MiB" } }, util: { position: "right", min: 0, max: 100, title: { display: true, text: "%" }, grid: { drawOnChartArea: false } }, rss: { position: "right", title: { display: true, text: "GiB" }, grid: { drawOnChartArea: false } } } }
+    });
+    errEl.textContent = epochRows.length ? "" : "当前 run 尚未提供 epoch 事件；旧启动进程只能显示 fold/资源进度，下一次 run 将自动启用 epoch 曲线。";
+  } catch (e) {
+    document.getElementById("livetag").textContent = "● 未连接";
+    document.getElementById("livetag").className = "live off";
+    sourceEl.innerHTML = `<span class="warn">progress 未连接</span> · ${e.message}`;
+    errEl.textContent = e.message;
+  } finally {
+    refreshing = false;
+  }
+}
+function fmtTime(s) {
+  if (!isFinite(s) || s < 0) return "—";
+  const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+tick();
+setInterval(tick, 3000);
+</script>
+</body>
+</html>
