@@ -104,9 +104,12 @@ class BinaryFoldResult:
     validation_batch_size: int | None = None
     preloaded: bool | None = None
     shuffle_each_epoch: bool | None = None
+    fused_adam_requested: bool | None = None
+    compile_mode_requested: str | None = None
     fused_adam: bool = False
     compile_mode: str | None = None
     compile_scope: str | None = None
+    optimizer_fallback_reason: str | None = None
     fit_peak_allocated_mb: float | None = None
     fit_peak_reserved_mb: float | None = None
     oom_retries: int = 0
@@ -397,9 +400,18 @@ def _fold_result(
         shuffle_each_epoch=runtime.get("shuffle_each_epoch")
         if isinstance(runtime, dict)
         else None,
+        fused_adam_requested=(
+            runtime.get("fused_adam_requested") if isinstance(runtime, dict) else None
+        ),
+        compile_mode_requested=(
+            runtime.get("compile_mode_requested") if isinstance(runtime, dict) else None
+        ),
         fused_adam=bool(runtime.get("fused_adam", False)) if isinstance(runtime, dict) else False,
         compile_mode=runtime.get("compile_mode") if isinstance(runtime, dict) else None,
         compile_scope=runtime.get("compile_scope") if isinstance(runtime, dict) else None,
+        optimizer_fallback_reason=(
+            runtime.get("optimizer_fallback_reason") if isinstance(runtime, dict) else None
+        ),
         fit_peak_allocated_mb=(
             memory.get("peak_allocated_mb") if isinstance(memory, dict) else None
         ),

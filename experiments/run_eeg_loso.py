@@ -180,13 +180,13 @@ def main() -> None:
         "--fused-adam",
         action=argparse.BooleanOptionalAction,
         default=deep_defaults.fused_adam,
-        help="use CUDA fused Adam; defaults to off pending model-specific benchmarking",
+        help="use CUDA fused Adam; enabled by default with portable non-CUDA fallback",
     )
     parser.add_argument(
         "--compile-mode",
         choices=("none", "default", "reduce-overhead", "max-autotune"),
         default="none" if deep_defaults.compile_mode is None else deep_defaults.compile_mode,
-        help="optional torch.compile mode; off by default",
+        help="torch.compile mode; reduce-overhead is the CUDA default",
     )
     parser.add_argument(
         "--shuffle-each-epoch",

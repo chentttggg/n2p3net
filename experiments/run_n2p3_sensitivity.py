@@ -491,6 +491,12 @@ def main() -> None:
                     "final_validation_auc": float(result.final_task_val_auc),
                     "epochs_ran": result.epochs_ran,
                     "batch_size": result.batch_size,
+                    "fused_adam_requested": result.fused_adam_requested,
+                    "compile_mode_requested": result.compile_mode_requested,
+                    "fused_adam": result.fused_adam,
+                    "compile_mode": result.compile_mode,
+                    "compile_scope": result.compile_scope,
+                    "optimizer_fallback_reason": result.optimizer_fallback_reason,
                     "oom_retries": result.oom_retries,
                 }
                 for fold_index, subject, result in zip(

@@ -87,6 +87,10 @@ def test_cpu_runtime_record_uses_bounded_matrix_batches() -> None:
     assert clf.last_runtime["precision"] == "fp32"
     assert clf.last_runtime["batch_size"] == 8
     assert clf.last_runtime["preloaded"] is False
+    assert clf.last_runtime["fused_adam_requested"] is True
+    assert clf.last_runtime["compile_mode_requested"] == "reduce-overhead"
+    assert clf.last_runtime["fused_adam"] is False
+    assert clf.last_runtime["compile_mode"] is None
     assert clf.last_runtime["host_sync_policy"] == "epoch_boundary"
     assert clf.last_runtime["memory"]["device"] == "cpu"
 
@@ -273,22 +277,21 @@ def test_deep_config_validates_optional_accelerator_knobs() -> None:
         DeepConfig(fused_adam=1)  # type: ignore[arg-type]
 
 
-def test_deep_baseline_rejects_cuda_only_knobs_on_cpu() -> None:
-    with pytest.raises(ValueError, match="CUDA"):
-        DeepBaseline(
-            "eegnet",
-            n_chans=C,
-            n_times=T,
-            sfreq=SFR,
-            device=torch.device("cpu"),
-            config=DeepConfig(fused_adam=True),
-        )
-    with pytest.raises(ValueError, match="CUDA"):
-        DeepBaseline(
-            "eegnet",
-            n_chans=C,
-            n_times=T,
-            sfreq=SFR,
-            device=torch.device("cpu"),
-            config=DeepConfig(compile_mode="default"),
-        )
+def test_deep_defaults_request_cuda_optimizations_and_fall_back_on_cpu() -> None:
+    config = DeepConfig()
+    assert config.fused_adam is True
+    assert config.compile_mode == "reduce-overhead"
+
+    clf = DeepBaseline(
+        "eegnet",
+        n_chans=C,
+        n_times=T,
+        sfreq=SFR,
+        device=torch.device("cpu"),
+        config=config,
+    )
+    record = clf.optimizer_execution.record()
+    assert record["fused_adam_requested"] is True
+    assert record["compile_mode_requested"] == "reduce-overhead"
+    assert record["fused_adam"] is False
+    assert record["compile_mode"] is None

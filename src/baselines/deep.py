@@ -67,7 +67,14 @@ from baselines.classic import Baseline
 from baselines.validation import group_disjoint_validation_split
 from data.contract import DEFAULT_P300_DATA_CONTRACT
 from train.device import get_device
-from train.runtime import GpuPerformanceScheduler, MatrixBatchSource, is_oom_error
+from train.runtime import (
+    DEFAULT_COMPILE_MODE,
+    DEFAULT_FUSED_ADAM,
+    GpuPerformanceScheduler,
+    MatrixBatchSource,
+    is_oom_error,
+    resolve_optimizer_execution,
+)
 
 # 模型名（lowercase）→ 构造类
 _MODEL_FACTORIES = {
@@ -102,8 +109,8 @@ class DeepConfig:
     val_groups_max: int = 12
     early_stop_min_delta: float = 1e-6
     precision: str = "auto"
-    fused_adam: bool = False
-    compile_mode: str | None = None
+    fused_adam: bool = DEFAULT_FUSED_ADAM
+    compile_mode: str | None = DEFAULT_COMPILE_MODE
     shuffle_each_epoch: bool = False
     max_update_batch_size: int | None = 512
     batch_memory_fraction: float = 0.55
@@ -191,10 +198,6 @@ class DeepBaseline(Baseline):
         self.sfreq = sfreq
         self.cfg = config if config is not None else DeepConfig()
         requested_device = torch.device(device) if device is not None else get_device()
-        if self.cfg.fused_adam and requested_device.type != "cuda":
-            raise ValueError("fused_adam=True requires a CUDA accelerator.")
-        if self.cfg.compile_mode is not None and requested_device.type != "cuda":
-            raise ValueError("compile_mode is currently supported on CUDA accelerators only.")
         if runtime is not None:
             if (
                 runtime.device.type != requested_device.type
@@ -213,6 +216,11 @@ class DeepBaseline(Baseline):
                 preload_memory_fraction=self.cfg.preload_memory_fraction,
             )
         self.device = self.runtime.device
+        self.optimizer_execution = resolve_optimizer_execution(
+            self.device,
+            fused_adam=self.cfg.fused_adam,
+            compile_mode=self.cfg.compile_mode,
+        )
         self.use_amp = self.runtime.precision.amp_enabled
         if channel_mask is None:
             self.channel_mask = np.ones(self.n_chans, dtype=bool)
@@ -562,9 +570,7 @@ class DeepBaseline(Baseline):
                     "preloaded": self._preloaded_batches,
                     "shuffle_each_epoch": self._shuffle_each_epoch,
                     "transfer_fallback": self._transfer_fallback,
-                    "fused_adam": self.cfg.fused_adam,
-                    "compile_mode": self.cfg.compile_mode,
-                    "compile_scope": "train_step" if self.cfg.compile_mode else None,
+                    **self.optimizer_execution.record(),
                     "host_sync_policy": "epoch_boundary",
                     "oom_retries": retries,
                     "shared_worker_count": self.runtime.shared_worker_count,
@@ -716,9 +722,9 @@ class DeepBaseline(Baseline):
             "lr": self.cfg.lr,
             "weight_decay": self.cfg.weight_decay,
         }
-        if self.cfg.fused_adam:
+        if self.optimizer_execution.fused_adam:
             adam_kwargs["fused"] = True
-        if self.cfg.compile_mode in {"reduce-overhead", "max-autotune"}:
+        if self.optimizer_execution.uses_cuda_graphs:
             adam_kwargs["capturable"] = True
         opt = torch.optim.Adam(trainable_params, **adam_kwargs)
         loss_fn = nn.CrossEntropyLoss(
@@ -744,8 +750,12 @@ class DeepBaseline(Baseline):
             opt.step()
             return loss.detach()
 
-        if self.cfg.compile_mode is not None:
-            train_step = torch.compile(train_step, mode=self.cfg.compile_mode, fullgraph=False)
+        if self.optimizer_execution.compile_mode is not None:
+            train_step = torch.compile(
+                train_step,
+                mode=self.optimizer_execution.compile_mode,
+                fullgraph=False,
+            )
 
         for epoch in range(self.cfg.epochs):
             self.model_.train()

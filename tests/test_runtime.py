@@ -11,6 +11,7 @@ from train.runtime import (
     cpu_thread_budget,
     is_oom_error,
     resolve_cpu_threads,
+    resolve_optimizer_execution,
     resolve_precision,
 )
 
@@ -26,6 +27,30 @@ def test_cpu_runtime_uses_fp32_and_respects_update_batch_cap() -> None:
         model=model,
         max_update_batch_size=16,
     ) == 16
+
+
+def test_optimizer_execution_defaults_to_cuda_and_audits_cpu_fallback() -> None:
+    cuda_policy = resolve_optimizer_execution(torch.device("cuda:0"))
+    assert cuda_policy.fused_adam is True
+    assert cuda_policy.compile_mode == "reduce-overhead"
+    assert cuda_policy.uses_cuda_graphs is True
+
+    cpu_record = resolve_optimizer_execution(torch.device("cpu")).record()
+    assert cpu_record["fused_adam_requested"] is True
+    assert cpu_record["compile_mode_requested"] == "reduce-overhead"
+    assert cpu_record["fused_adam"] is False
+    assert cpu_record["compile_mode"] is None
+    assert cpu_record["optimizer_fallback_reason"] == "compile_and_fused_adam_require_cuda"
+
+    compile_only = resolve_optimizer_execution(
+        torch.device("cpu"), fused_adam=False
+    ).record()
+    assert compile_only["optimizer_fallback_reason"] == "compile_requires_cuda"
+
+    fused_only = resolve_optimizer_execution(
+        torch.device("cpu"), compile_mode=None
+    ).record()
+    assert fused_only["optimizer_fallback_reason"] == "fused_adam_requires_cuda"
 
 
 def test_matrix_batch_source_preserves_row_label_alignment() -> None:

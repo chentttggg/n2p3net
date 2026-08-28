@@ -39,10 +39,14 @@ step (forward, weighted loss, backward, and Adam update), rather than only the
 model forward. The LOSO runner exposes
 `--precision {auto,bf16,fp32}`, `--fused-adam`,
 `--compile-mode {none,default,reduce-overhead,max-autotune}`, and
-`--shuffle-each-epoch`. All default to the previous eager, non-fused path.
-Fused Adam and compile mode are CUDA-only in the current adapter; unsupported
-devices fail closed. They remain opt-in because compile has a material cold
-start and fused Adam did not improve the matched short-fold wall time.
+`--shuffle-each-epoch`. All supervised `DeepConfig` models default to fused
+Adam plus `reduce-overhead`; `--no-fused-adam --compile-mode none` restores the
+eager ablation. CUDA applies the requested settings. CPU and XPU automatically
+fall back to non-fused eager execution, while runtime records retain both the
+requested and effective values plus the fallback reason. Experiment manifests
+retain the requested config and ordinary LOSO fold records retain the effective
+config. SSL pretraining and the subject adapter use separate AdamW loops and are
+outside this measured default contract.
 
 The optimizer hot path has no per-batch host synchronization. Gradients are
 set to `None` before forward, training loss is accumulated on device and read
@@ -75,11 +79,17 @@ The production-shaped four-process, four-fold cold-start comparison used the
 same fold set and seed. Eager wall time was 41.343 s with per-fold fits of
 34.820--35.869 s. Full-step `reduce-overhead` wall time was 38.956 s with fits
 of 29.250--31.532 s; peak allocation rose from 469.0 to 524.6 MiB. This is a
-5.8% end-to-end wall reduction and about a 12% fit-stage reduction, not enough
-to hide the cold-start cost for short runs. Compile therefore remains an
-explicit long-run performance arm. Its AUC/BACC must be revalidated over the
-complete matched LOSO protocol before scientific promotion; these four folds
-are performance evidence only.
+5.8% end-to-end wall reduction and about a 12% fit-stage reduction.
+
+The subsequent production-shaped 64-subject / 8-fold run used four GPU workers,
+30 epochs, BF16, and batch 512. Eager execution completed 232 fold-epochs in
+72.161 s (1110.879 ms per fit epoch). `reduce-overhead` plus fused Adam completed
+240 fold-epochs in 46.875 s (634.655 ms per fit epoch), a 42.9% normalized
+fit-epoch reduction and 35.0% lower wall time despite running eight extra
+epochs. CUDA logs recorded 24 graph trees and zero graph skips. By explicit
+project decision, this measured combination is now the CUDA default for all
+supervised deep baselines. Full 64-fold metrics remain the scientific promotion
+gate; the 8-fold result establishes the runtime default, not an accuracy claim.
 
 Fold-local QC is model-independent. A multi-model ablation fits every outer
 fold's QC policy once in the runner and reuses the frozen thresholds for all

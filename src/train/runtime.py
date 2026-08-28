@@ -27,6 +27,9 @@ except ImportError:  # pragma: no cover - sklearn installations normally provide
     threadpool_limits = None
 
 PrecisionPreference = Literal["auto", "bf16", "fp32"]
+CompileMode = Literal["default", "reduce-overhead", "max-autotune"]
+DEFAULT_FUSED_ADAM = True
+DEFAULT_COMPILE_MODE: CompileMode = "reduce-overhead"
 _ACCELERATOR_TYPES = frozenset({"cuda", "xpu"})
 
 
@@ -166,6 +169,68 @@ class PrecisionPolicy:
         if not self.amp_enabled or self.amp_dtype is None:
             return "fp32"
         return "bf16" if self.amp_dtype is torch.bfloat16 else str(self.amp_dtype).removeprefix("torch.")
+
+
+@dataclass(frozen=True)
+class OptimizerExecutionPolicy:
+    """Requested and device-effective optimizer/compiler settings."""
+
+    requested_fused_adam: bool
+    requested_compile_mode: CompileMode | None
+    fused_adam: bool
+    compile_mode: CompileMode | None
+    fallback_reason: str | None = None
+
+    @property
+    def uses_cuda_graphs(self) -> bool:
+        return self.compile_mode in {"reduce-overhead", "max-autotune"}
+
+    def record(self) -> dict[str, bool | str | None]:
+        return {
+            "fused_adam_requested": self.requested_fused_adam,
+            "compile_mode_requested": self.requested_compile_mode,
+            "fused_adam": self.fused_adam,
+            "compile_mode": self.compile_mode,
+            "compile_scope": "train_step" if self.compile_mode is not None else None,
+            "optimizer_fallback_reason": self.fallback_reason,
+        }
+
+
+def resolve_optimizer_execution(
+    device: torch.device,
+    *,
+    fused_adam: bool = DEFAULT_FUSED_ADAM,
+    compile_mode: CompileMode | None = DEFAULT_COMPILE_MODE,
+) -> OptimizerExecutionPolicy:
+    """Enable compile and fused Adam on CUDA and audit portable fallback."""
+
+    if not isinstance(fused_adam, bool):
+        raise ValueError("fused_adam must be boolean.")
+    if compile_mode not in {None, "default", "reduce-overhead", "max-autotune"}:
+        raise ValueError("compile_mode is invalid.")
+    requested_device = torch.device(device)
+    if requested_device.type == "cuda":
+        return OptimizerExecutionPolicy(
+            requested_fused_adam=fused_adam,
+            requested_compile_mode=compile_mode,
+            fused_adam=fused_adam,
+            compile_mode=compile_mode,
+        )
+    if fused_adam and compile_mode is not None:
+        fallback = "compile_and_fused_adam_require_cuda"
+    elif fused_adam:
+        fallback = "fused_adam_requires_cuda"
+    elif compile_mode is not None:
+        fallback = "compile_requires_cuda"
+    else:
+        fallback = None
+    return OptimizerExecutionPolicy(
+        requested_fused_adam=fused_adam,
+        requested_compile_mode=compile_mode,
+        fused_adam=False,
+        compile_mode=None,
+        fallback_reason=fallback,
+    )
 
 
 @dataclass(frozen=True)
