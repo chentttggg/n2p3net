@@ -1,4 +1,4 @@
-"""MS-EEGNet-style P300 decoder with constrained latency evidence pooling."""
+"""Compact multi-scale P300 decoder with auditable alternative readouts."""
 
 from __future__ import annotations
 
@@ -11,7 +11,16 @@ from torch.nn import functional as F
 
 from data.contract import DEFAULT_P300_DATA_CONTRACT
 
-POOLING_MODES = frozenset({"global_average", "ms_flatten", "latency_marginal_contrast"})
+POOLING_MODES = frozenset(
+    {
+        "full_unfold",
+        "mlp_full_unfold",
+        "quadratic_full_unfold",
+        "global_average",
+        "ms_flatten",
+        "latency_marginal_contrast",
+    }
+)
 
 DEFAULT_ST_TEMPORAL_FILTERS = 8
 DEFAULT_ST_TEMPORAL_KERNEL_SIZE = 65
@@ -123,6 +132,63 @@ class MSFlattenPool(nn.Module):
         if x.shape[-1] < self.pool_size:
             raise ValueError("MS flatten pooling requires at least one complete temporal pool window.")
         return torch.flatten(self.pool(x), start_dim=1)
+
+
+class FullResolutionUnfold(nn.Module):
+    """Injectively expose every encoded feature/time coordinate to the head."""
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim != 3:
+            raise ValueError(f"Expected MST features (B,D,T), got {tuple(x.shape)}.")
+        return torch.flatten(x, start_dim=1)
+
+
+class ResidualFactorizedQuadraticClassifier(nn.Module):
+    """Full linear readout plus a low-rank factorized quadratic residual."""
+
+    def __init__(self, features: int, outputs: int = 2, rank: int = 8) -> None:
+        super().__init__()
+        if features < 1 or outputs < 1 or rank < 1:
+            raise ValueError("features, outputs, and rank must be positive.")
+        self.features = int(features)
+        self.outputs = int(outputs)
+        self.rank = int(rank)
+        self.linear = nn.Linear(self.features, self.outputs)
+        self.left = nn.Linear(self.features, self.rank, bias=False)
+        self.right = nn.Linear(self.features, self.rank, bias=False)
+        self.quadratic_output = nn.Linear(self.rank, self.outputs, bias=False)
+        nn.init.zeros_(self.quadratic_output.weight)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim != 2 or x.shape[1] != self.features:
+            raise ValueError(
+                f"Expected unfolded features (B,{self.features}), got {tuple(x.shape)}."
+            )
+        interaction = self.left(x) * self.right(x)
+        return self.linear(x) + self.quadratic_output(interaction)
+
+
+class ResidualMLPClassifier(nn.Module):
+    """Parameter-matched nonlinear control for the factorized quadratic head."""
+
+    def __init__(self, features: int, outputs: int = 2, hidden_features: int = 16) -> None:
+        super().__init__()
+        if features < 1 or outputs < 1 or hidden_features < 1:
+            raise ValueError("features, outputs, and hidden_features must be positive.")
+        self.features = int(features)
+        self.outputs = int(outputs)
+        self.hidden_features = int(hidden_features)
+        self.linear = nn.Linear(self.features, self.outputs)
+        self.hidden = nn.Linear(self.features, self.hidden_features)
+        self.nonlinear_output = nn.Linear(self.hidden_features, self.outputs, bias=False)
+        nn.init.zeros_(self.nonlinear_output.weight)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim != 2 or x.shape[1] != self.features:
+            raise ValueError(
+                f"Expected unfolded features (B,{self.features}), got {tuple(x.shape)}."
+            )
+        return self.linear(x) + self.nonlinear_output(F.gelu(self.hidden(x)))
 
 
 class LatencyMarginalContrastPool(nn.Module):
@@ -264,14 +330,7 @@ class LatencyMarginalContrastPool(nn.Module):
 
 
 class N2P3Net(nn.Module):
-    """A compact MS-EEGNet-style P300 trunk with optional LMBC aggregation.
-
-    The shared spatio-temporal block follows the lightweight EEGNet/MS-EEGNet
-    factorization. Two compressed separable temporal branches then summarize
-    short and long P300 scales. The only default departure from MS-EEGNet is
-    the final LMBC pooling, which preserves a fixed physiological reference and
-    a small latent latency bank before the binary classifier.
-    """
+    """A compact MS-EEGNet-style trunk with interchangeable readout hypotheses."""
 
     def __init__(
         self,
@@ -294,6 +353,8 @@ class N2P3Net(nn.Module):
         reference_window_ms: Sequence[float] = (-200.0, 0.0),
         latency_offsets_ms: Sequence[float] = (-100.0, -50.0, 0.0, 50.0, 100.0),
         latency_temperature: float = 0.5,
+        interaction_rank: int = 8,
+        mlp_hidden_features: int = 16,
     ) -> None:
         super().__init__()
         if n_channels < 1:
@@ -310,12 +371,23 @@ class N2P3Net(nn.Module):
             raise ValueError("dropout must be in [0, 1).")
         if spatial_max_norm <= 0.0:
             raise ValueError("spatial_max_norm must be positive.")
+        if interaction_rank < 1 or mlp_hidden_features < 1:
+            raise ValueError("interaction_rank and mlp_hidden_features must be positive.")
         if n_times is not None and (isinstance(n_times, bool) or n_times < 1):
             raise ValueError("n_times must be positive or None.")
         if pooling_mode not in POOLING_MODES:
             raise ValueError(f"pooling_mode must be one of {sorted(POOLING_MODES)}.")
-        if pooling_mode == "ms_flatten" and n_times is None:
-            raise ValueError("ms_flatten pooling requires n_times.")
+        if (
+            pooling_mode
+            in {
+                "ms_flatten",
+                "full_unfold",
+                "mlp_full_unfold",
+                "quadratic_full_unfold",
+            }
+            and n_times is None
+        ):
+            raise ValueError(f"{pooling_mode} pooling requires n_times.")
 
         self.n_channels = int(n_channels)
         self.n_times = int(n_times) if n_times is not None else None
@@ -331,6 +403,8 @@ class N2P3Net(nn.Module):
         self.mst_pool_size = int(mst_pool_size)
         self.dropout_probability = float(dropout)
         self.spatial_max_norm = float(spatial_max_norm)
+        self.interaction_rank = int(interaction_rank)
+        self.mlp_hidden_features = int(mlp_hidden_features)
         spatial_features = self.temporal_filters * self.spatial_depth_multiplier
         self.spatial_features = spatial_features
 
@@ -382,6 +456,14 @@ class N2P3Net(nn.Module):
             classifier_features = feature_channels * self._pooled_time_samples(
                 st_times, self.mst_pool_size
             )
+        elif self.pooling_mode in {
+            "full_unfold",
+            "mlp_full_unfold",
+            "quadratic_full_unfold",
+        }:
+            self.pool = FullResolutionUnfold()
+            assert st_times is not None
+            classifier_features = feature_channels * st_times
         else:
             self.pool = nn.ModuleList(
                 [
@@ -399,7 +481,19 @@ class N2P3Net(nn.Module):
                 ]
             )
             classifier_features = feature_channels
-        self.classifier = nn.Linear(classifier_features, 2)
+        self.classifier_features = int(classifier_features)
+        if self.pooling_mode == "quadratic_full_unfold":
+            self.classifier: nn.Module = ResidualFactorizedQuadraticClassifier(
+                self.classifier_features,
+                rank=self.interaction_rank,
+            )
+        elif self.pooling_mode == "mlp_full_unfold":
+            self.classifier = ResidualMLPClassifier(
+                self.classifier_features,
+                hidden_features=self.mlp_hidden_features,
+            )
+        else:
+            self.classifier = nn.Linear(self.classifier_features, 2)
 
     @staticmethod
     def _pooled_time_samples(n_times: int, pool_size: int) -> int:
@@ -415,9 +509,14 @@ class N2P3Net(nn.Module):
         pooling_mode: str,
         tmin_s: float,
         sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
+        n_times: int | None = DEFAULT_P300_DATA_CONTRACT.n_times,
+        interaction_rank: int = 8,
+        mlp_hidden_features: int = 16,
     ) -> dict[str, object]:
         if pooling_mode not in POOLING_MODES:
             raise ValueError(f"pooling_mode must be one of {sorted(POOLING_MODES)}.")
+        if interaction_rank < 1 or mlp_hidden_features < 1:
+            raise ValueError("interaction_rank and mlp_hidden_features must be positive.")
         record: dict[str, object] = {
             "trunk": "ms_eegnet_style",
             "pooling_mode": pooling_mode,
@@ -439,6 +538,33 @@ class N2P3Net(nn.Module):
             "mst_features_per_scale": DEFAULT_MST_FEATURES_PER_SCALE,
             "mst_pool_size": DEFAULT_MST_POOL_SIZE,
         }
+        if (
+            pooling_mode
+            in {
+                "full_unfold",
+                "mlp_full_unfold",
+                "quadratic_full_unfold",
+            }
+            and n_times is not None
+        ):
+            st_times = cls._pooled_time_samples(int(n_times), DEFAULT_ST_POOL_SIZE)
+            record.update(
+                {
+                    "unfold_time_samples": st_times,
+                    "unfold_features": (
+                        len(DEFAULT_MST_KERNEL_SIZES) * DEFAULT_MST_FEATURES_PER_SCALE * st_times
+                    ),
+                    "classifier": {
+                        "full_unfold": "linear_full_resolution",
+                        "mlp_full_unfold": "residual_mlp",
+                        "quadratic_full_unfold": "residual_factorized_quadratic",
+                    }[pooling_mode],
+                }
+            )
+        if pooling_mode == "quadratic_full_unfold":
+            record["interaction_rank"] = int(interaction_rank)
+        if pooling_mode == "mlp_full_unfold":
+            record["mlp_hidden_features"] = int(mlp_hidden_features)
         if pooling_mode == "latency_marginal_contrast":
             record.update(
                 {
@@ -454,6 +580,9 @@ class N2P3Net(nn.Module):
             pooling_mode=self.pooling_mode,
             tmin_s=self.tmin_s,
             sfreq=self.sfreq,
+            n_times=self.n_times,
+            interaction_rank=self.interaction_rank,
+            mlp_hidden_features=self.mlp_hidden_features,
         )
         record.update(
             {
@@ -464,6 +593,7 @@ class N2P3Net(nn.Module):
                 ),
                 "spatial_depth_multiplier": self.spatial_depth_multiplier,
                 "st_pool_size": self.st_pool_size,
+                "feature_sample_rate_hz": self.sfreq / self.st_pool_size,
                 "mst_kernel_samples": list(self.mst_kernel_sizes),
                 "mst_receptive_span_ms": [
                     temporal_receptive_span_ms(
@@ -473,8 +603,24 @@ class N2P3Net(nn.Module):
                 ],
                 "mst_features_per_scale": self.mst_features_per_scale,
                 "mst_pool_size": self.mst_pool_size,
+                "classifier_features": self.classifier_features,
             }
         )
+        if self.pooling_mode in {
+            "full_unfold",
+            "mlp_full_unfold",
+            "quadratic_full_unfold",
+        }:
+            assert self.n_times is not None
+            unfold_time_samples = self._pooled_time_samples(self.n_times, self.st_pool_size)
+            record.update(
+                {
+                    "unfold_time_samples": unfold_time_samples,
+                    "unfold_features": (
+                        len(self.mst_branches) * self.mst_features_per_scale * unfold_time_samples
+                    ),
+                }
+            )
         return record
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -494,7 +640,12 @@ class N2P3Net(nn.Module):
         branch_features = [branch(x) for branch in self.mst_branches]
         if self.pooling_mode == "global_average":
             features = self.pool(torch.cat(branch_features, dim=1)).squeeze(-1)
-        elif self.pooling_mode == "ms_flatten":
+        elif self.pooling_mode in {
+            "ms_flatten",
+            "full_unfold",
+            "mlp_full_unfold",
+            "quadratic_full_unfold",
+        }:
             features = self.pool(torch.cat(branch_features, dim=1))
         else:
             features = torch.cat(

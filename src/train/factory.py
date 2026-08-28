@@ -19,6 +19,9 @@ N2P3_POOLING_BY_MODEL = {
     "n2p3net_lmbc": "latency_marginal_contrast",
     "n2p3net_global_average": "global_average",
     "ms_eegnet": "ms_flatten",
+    "n2p3net_full_unfold": "full_unfold",
+    "n2p3net_mlp_full_unfold": "mlp_full_unfold",
+    "n2p3net_quadratic_full_unfold": "quadratic_full_unfold",
 }
 
 BINARY_MODEL_NAMES = (

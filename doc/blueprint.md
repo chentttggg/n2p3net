@@ -55,6 +55,11 @@ aggregation unchanged. Equations and failure boundaries are in
 `doc/latency_marginal_pooling.zh.md`; matched results are in
 `doc/ablation_20260828.zh.md`.
 
+Prior-free research heads expose every post-trunk feature/time coordinate to a
+linear, factorized-quadratic, or parameter-matched MLP readout. They are not
+promoted defaults. Their equations, counterexamples, literature boundary, and
+preregistered comparisons are in `doc/prior_free_unfolding.zh.md`.
+
 ## Initial Search Space
 
 | Family | Search axes | Promotion condition |

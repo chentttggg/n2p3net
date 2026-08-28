@@ -156,7 +156,10 @@ def main() -> None:
         "--n2p3net-pooling",
         choices=sorted(POOLING_MODES),
         default="ms_flatten",
-        help="N2P3-Net head: promoted ms_flatten, LMBC research ablation, or global_average negative control.",
+        help=(
+            "N2P3-Net head: promoted ms_flatten, prior-free unfold candidates, "
+            "LMBC rejected hypothesis, or global_average negative control."
+        ),
     )
     parser.add_argument(
         "--artifact-candidate-bad-channel-fractions",

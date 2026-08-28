@@ -27,6 +27,8 @@ class N2P3NetBaseline(DeepBaseline):
         channel_mask=None,
         tmin_s: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms / 1000.0,
         pooling_mode: str = "ms_flatten",
+        interaction_rank: int = 8,
+        mlp_hidden_features: int = 16,
     ) -> None:
         if not math.isfinite(tmin_s):
             raise ValueError("tmin_s must be finite.")
@@ -46,6 +48,8 @@ class N2P3NetBaseline(DeepBaseline):
         self.model_name = "n2p3net"
         self.tmin_s = float(tmin_s)
         self.pooling_mode = pooling_mode
+        self.interaction_rank = int(interaction_rank)
+        self.mlp_hidden_features = int(mlp_hidden_features)
 
     def _make_model(self) -> N2P3Net:
         return N2P3Net(
@@ -54,6 +58,8 @@ class N2P3NetBaseline(DeepBaseline):
             sfreq=self.sfreq,
             tmin_s=self.tmin_s,
             pooling_mode=self.pooling_mode,
+            interaction_rank=self.interaction_rank,
+            mlp_hidden_features=self.mlp_hidden_features,
             dropout=0.25,
         )
 
@@ -64,4 +70,7 @@ class N2P3NetBaseline(DeepBaseline):
             pooling_mode=self.pooling_mode,
             tmin_s=self.tmin_s,
             sfreq=self.sfreq,
+            n_times=self.n_times,
+            interaction_rank=self.interaction_rank,
+            mlp_hidden_features=self.mlp_hidden_features,
         )

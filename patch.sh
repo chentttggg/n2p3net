@@ -30,11 +30,28 @@ model = N2P3Net(
 record = model.architecture_record()
 assert record["st_temporal_receptive_span_ms"] == 500.0
 assert record["mst_receptive_span_ms"] == [125.0, 500.0]
-required = {"n2p3net_lmbc", "n2p3net_global_average", "ms_eegnet", "eegnet"}
+required = {
+    "n2p3net_lmbc",
+    "n2p3net_global_average",
+    "ms_eegnet",
+    "n2p3net_full_unfold",
+    "n2p3net_mlp_full_unfold",
+    "n2p3net_quadratic_full_unfold",
+    "eegnet",
+}
 assert required <= set(BINARY_MODEL_NAMES)
+for pooling_mode in ("full_unfold", "mlp_full_unfold", "quadratic_full_unfold"):
+    candidate = N2P3Net(
+        8,
+        n_times=contract.n_times,
+        sfreq=contract.sample_rate_hz,
+        tmin_s=contract.tmin_ms / 1000.0,
+        pooling_mode=pooling_mode,
+    )
+    assert candidate.architecture_record()["unfold_features"] == 128
 print(
     "[patch] contract=128Hz/128 samples "
-    "receptive_spans=500/125/500ms ablations=ready"
+    "receptive_spans=500/125/500ms prior_free_unfold=ready"
 )
 PY
 }

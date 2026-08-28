@@ -10,9 +10,12 @@ from torch import nn
 from baselines.deep import DeepConfig
 from baselines.n2p3net import N2P3NetBaseline
 from models.n2p3net import (
+    FullResolutionUnfold,
     LatencyMarginalContrastPool,
     MSFlattenPool,
     N2P3Net,
+    ResidualFactorizedQuadraticClassifier,
+    ResidualMLPClassifier,
     scale_odd_kernel_preserving_span,
     temporal_receptive_span_ms,
 )
@@ -133,6 +136,113 @@ def test_ms_flatten_preserves_position_that_global_mean_discards() -> None:
 
     assert torch.equal(early.mean(dim=2), late.mean(dim=2))
     assert not torch.equal(pool(early), pool(late))
+
+
+def test_full_unfold_resolves_within_pool_collisions() -> None:
+    """Counterexample: fixed average pooling aliases positions inside one bin."""
+
+    pooled = MSFlattenPool(pool_size=8)
+    unfolded = FullResolutionUnfold()
+    left = torch.zeros(1, 1, 32)
+    right = torch.zeros(1, 1, 32)
+    left[:, :, 2] = 1.0
+    right[:, :, 5] = 1.0
+
+    torch.testing.assert_close(pooled(left), pooled(right))
+    assert not torch.equal(unfolded(left), unfolded(right))
+    delta = unfolded(left) - unfolded(right)
+    separation = (delta * unfolded(left)).sum() - (delta * unfolded(right)).sum()
+    torch.testing.assert_close(separation, delta.square().sum())
+    assert float(separation) > 0.0
+
+
+@pytest.mark.parametrize(
+    "head",
+    [
+        ResidualFactorizedQuadraticClassifier(features=12, outputs=2, rank=4),
+        ResidualMLPClassifier(features=12, outputs=2, hidden_features=8),
+    ],
+)
+def test_residual_nonlinear_classifiers_start_as_exact_linear_unfold(head: nn.Module) -> None:
+    x = torch.randn(5, 12, requires_grad=True)
+
+    torch.testing.assert_close(head(x), head.linear(x))
+    head(x).sum().backward()
+
+    assert head.linear.weight.grad is not None
+    residual_output = (
+        head.quadratic_output
+        if isinstance(head, ResidualFactorizedQuadraticClassifier)
+        else head.nonlinear_output
+    )
+    assert residual_output.weight.grad is not None
+
+
+def test_factorized_quadratic_resolves_linear_xnor_counterexample() -> None:
+    """Four XNOR corners cannot be separated by an affine readout."""
+
+    head = ResidualFactorizedQuadraticClassifier(features=2, outputs=2, rank=1)
+    with torch.no_grad():
+        head.linear.weight.zero_()
+        head.linear.bias.zero_()
+        head.left.weight.copy_(torch.tensor([[1.0, 0.0]]))
+        head.right.weight.copy_(torch.tensor([[0.0, 1.0]]))
+        head.quadratic_output.weight.copy_(torch.tensor([[0.0], [1.0]]))
+    x = torch.tensor([[1.0, 1.0], [1.0, -1.0], [-1.0, 1.0], [-1.0, -1.0]])
+
+    predicted = head(x).argmax(dim=1)
+
+    torch.testing.assert_close(predicted, torch.tensor([1, 0, 0, 1]))
+
+
+@pytest.mark.parametrize(
+    "pooling_mode",
+    ["full_unfold", "mlp_full_unfold", "quadratic_full_unfold"],
+)
+def test_prior_free_unfold_models_execute_forward_backward(pooling_mode: str) -> None:
+    model = N2P3Net(
+        n_channels=3,
+        n_times=128,
+        sfreq=128.0,
+        tmin_s=-0.2,
+        pooling_mode=pooling_mode,
+    )
+    x = torch.randn(4, 3, 128)
+    loss = model(x).square().mean()
+
+    loss.backward()
+    record = model.architecture_record()
+
+    assert record["unfold_time_samples"] == 32
+    assert record["unfold_features"] == 128
+    assert record["classifier_features"] == 128
+    assert model.parameter_count() > 0
+    if pooling_mode == "quadratic_full_unfold":
+        assert record["interaction_rank"] == 8
+        assert record["classifier"] == "residual_factorized_quadratic"
+    elif pooling_mode == "mlp_full_unfold":
+        assert record["mlp_hidden_features"] == 16
+        assert record["classifier"] == "residual_mlp"
+    else:
+        assert record["classifier"] == "linear_full_resolution"
+
+
+def test_unfold_architecture_record_uses_instance_geometry() -> None:
+    model = N2P3Net(
+        n_channels=3,
+        n_times=120,
+        st_pool_size=5,
+        mst_kernel_sizes=(3, 7, 11),
+        mst_features_per_scale=3,
+        pooling_mode="full_unfold",
+    )
+
+    record = model.architecture_record()
+
+    assert record["unfold_time_samples"] == 24
+    assert record["unfold_features"] == 216
+    assert record["classifier_features"] == 216
+    assert record["feature_sample_rate_hz"] == pytest.approx(25.6)
 
 
 def test_ms_flatten_requires_a_declared_physical_epoch_width() -> None:
@@ -286,6 +396,9 @@ def test_factory_exposes_global_average_only_as_an_explicit_ablation(monkeypatch
         ("n2p3net_lmbc", "latency_marginal_contrast"),
         ("n2p3net_global_average", "global_average"),
         ("ms_eegnet", "ms_flatten"),
+        ("n2p3net_full_unfold", "full_unfold"),
+        ("n2p3net_mlp_full_unfold", "mlp_full_unfold"),
+        ("n2p3net_quadratic_full_unfold", "quadratic_full_unfold"),
     ],
 )
 def test_factory_named_ablation_models_lock_one_pooling_mode(
