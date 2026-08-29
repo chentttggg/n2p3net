@@ -6,6 +6,7 @@ import pytest
 from data.artifact import (
     FoldLocalArtifactPolicy,
     apply_fitted_artifact_model,
+    apply_fitted_artifact_model_with_test_exclusion,
     apply_fold_local_artifact_policy,
 )
 from data.qc_features import EpochQCFeatures, compute_epoch_qc_features
@@ -262,6 +263,32 @@ def test_all_bad_test_epoch_fails_closed() -> None:
 
     with pytest.raises(ValueError, match="every channel"):
         apply_fold_local_artifact_policy(FoldLocalArtifactPolicy(), X, subjects, train, test)
+
+
+def test_all_bad_test_epoch_excluded_with_ledger_when_enabled() -> None:
+    X, subjects = _clean_epochs()
+    train = np.arange(len(X)) < 20
+    test = ~train
+    X[22] = 0.0
+
+    fitted = FoldLocalArtifactPolicy(exclude_unusable_test_epochs=True).fit(
+        X[train], subjects[train]
+    )
+    (
+        transformed,
+        mask,
+        kept_train,
+        test_effective,
+        audit,
+    ) = apply_fitted_artifact_model_with_test_exclusion(fitted, X, subjects, train, test)
+
+    assert not test_effective[22]
+    assert int(test_effective.sum()) == int(test.sum()) - 1
+    assert audit["test_all_channels_bad_policy"] == "exclude"
+    assert audit["n_test_all_channels_bad_excluded"] == 1
+    assert kept_train.shape == train.shape
+    assert transformed.shape == X.shape
+    assert not mask[22].all() or not test_effective[22]
 
 
 def test_binary_evaluator_preserves_test_denominator_and_records_quality() -> None:

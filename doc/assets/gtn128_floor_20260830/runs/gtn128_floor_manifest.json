@@ -1,0 +1,83 @@
+{
+  "schema": "n2p3net_gtn128_floor_manifest/1",
+  "frozen_utc": "2026-08-30T01:00:00Z",
+  "source_commit": "559814567a68419afcb96fcf4b394564ca974d6d",
+  "purpose": "Gate 1 GTN floor (LOSO zero-target + causal adaptation M=5,R=5) and Gate 2 A-vs-C confirmation",
+  "caches": {
+    "loso_zero_phase": {
+      "path": "experiments/cache/gtn_sf128_lf2_hf30_tm-0.2_tx0.8_mean_zero.npz",
+      "sha256": "ec86d54a49414e01e0683cb5d4b7fe43b91346f460becb583e2ddbd7e951ead0",
+      "contract": "p300_ms_eegnet_input_v2",
+      "shape": [
+        50562,
+        3,
+        128
+      ],
+      "subjects": 245,
+      "candidate_chain": true
+    },
+    "causal_forward": {
+      "path": "experiments/cache/gtn_sf128_lf2_hf30_tm-0.2_tx0.8_mean_fwd.npz",
+      "sha256": "77007281f7631835faae06233f035e729f9be70e27f0ddff37705067501b106a",
+      "contract": "p300_single_subject_causal_v1",
+      "shape": [
+        50562,
+        3,
+        128
+      ],
+      "subjects": 245,
+      "candidate_chain": true
+    }
+  },
+  "seeds": [
+    20260828,
+    20260829,
+    20260830
+  ],
+  "protocols": {
+    "loso": {
+      "folds": "leave-one-subject-out, 245 folds",
+      "primary": "trial AUC/BACC + subject-macro hit@R"
+    },
+    "causal": {
+      "prefix_repetitions": 5,
+      "test_repetitions": 5,
+      "embargo": "raw-sample",
+      "primary": "subject-macro hit@5"
+    }
+  },
+  "models_gate1": [
+    "window_lr",
+    "xdawn_rg",
+    "eegnet",
+    "ms_eegnet",
+    "n2p3net_full_unfold"
+  ],
+  "models_gate2": {
+    "A": "n2p3net_full_unfold K65",
+    "C": "n2p3net_full_unfold K33 (arm C of W2)"
+  },
+  "artifact_policy": {
+    "exclude_unusable_test_epochs": true,
+    "ledger_field": "per_fold[].artifact_quality.n_test_all_channels_bad_excluded"
+  },
+  "training": {
+    "epochs": 30,
+    "early_stop_patience": 6,
+    "batch_size": 512,
+    "pos_weight": 8.0,
+    "precision": "bf16(auto)",
+    "compile": "reduce-overhead",
+    "fused_adam": true
+  },
+  "statistics": {
+    "test": "subject-paired two-sided sign-flip with plus-one correction",
+    "ci": "subject-level percentile bootstrap",
+    "multiplicity": "Holm within preregistered contrast family",
+    "seed_aggregation": "average seeds within subject before paired inference"
+  },
+  "stop_rules": [
+    "GTN suffix read once per frozen configuration",
+    "deep must beat classical floor before any transfer work"
+  ]
+}

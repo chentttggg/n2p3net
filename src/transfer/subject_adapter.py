@@ -16,6 +16,16 @@ from torch import nn
 from baselines.validation import group_disjoint_validation_split
 from models.n2p3net import N2P3Net
 
+ADAPTER_POOLING_MODES = frozenset(
+    {
+        "ms_flatten",
+        "global_average",
+        "full_unfold",
+        "mlp_full_unfold",
+        "quadratic_full_unfold",
+    }
+)
+
 
 @dataclass
 class SubjectAdapterConfig:
@@ -58,8 +68,12 @@ class SubjectAdapter:
         self.device = torch.device("cpu") if device is None else device
         if trunk.n_times is None:
             raise ValueError("subject adapters require a trunk with fixed n_times.")
-        if trunk.pooling_mode != "ms_flatten":
-            raise ValueError("subject adapters currently require pooling_mode='ms_flatten'.")
+        if trunk.pooling_mode not in ADAPTER_POOLING_MODES:
+            raise ValueError(
+                "subject adapters require a single-tensor pooling readout; "
+                f"got {trunk.pooling_mode!r}. latency_marginal_contrast is not supported "
+                "because its pool is a per-branch ModuleList."
+            )
         self.trunk = trunk.to(self.device)
         self.feature_dim = trunk.classifier_features
         self.head: nn.Module

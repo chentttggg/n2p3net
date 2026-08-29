@@ -23,7 +23,7 @@ if str(SRC) not in sys.path:
 
 from data.contract import assert_causal_p300_input_contract  # noqa: E402
 from data.epochs import load_epoch_dataset  # noqa: E402
-from models.n2p3net import N2P3Net  # noqa: E402
+from models.n2p3net import POOLING_MODES, N2P3Net  # noqa: E402
 from train.device import get_device  # noqa: E402
 from transfer.evaluation import hit_at_repetition  # noqa: E402
 from transfer.subject_adapter import SubjectAdapter, SubjectAdapterConfig  # noqa: E402
@@ -68,6 +68,18 @@ def main() -> None:
     parser.add_argument("--prefix-reps", type=int, default=8)
     parser.add_argument("--test-reps", type=int, default=8)
     parser.add_argument("--head", choices=("linear", "mlp16", "full_fine"), default="linear")
+    parser.add_argument(
+        "--pooling-mode",
+        default="ms_flatten",
+        choices=sorted(POOLING_MODES - {"latency_marginal_contrast"}),
+        help="Scratch-trunk readout hypothesis; ignored when --checkpoint is given.",
+    )
+    parser.add_argument(
+        "--temporal-kernel-size",
+        type=int,
+        default=65,
+        help="ST temporal kernel width for the scratch trunk (odd, >=3).",
+    )
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
@@ -101,7 +113,7 @@ def main() -> None:
         X_pre = dataset.X[pre_rows]
         y_pre = dataset.y[pre_rows]
         inner_groups = np.asarray(
-            [f"{group}:block{int(rep) // 2}" for rep in split.repetition_indices[pre_rows]]
+            [f"{group}:rep{int(rep)}" for rep in split.repetition_indices[pre_rows]]
         )
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(args.seed)
@@ -114,7 +126,8 @@ def main() -> None:
                 n_times=dataset.n_times,
                 sfreq=dataset.preprocessing.sfreq,
                 tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
-                pooling_mode="ms_flatten",
+                pooling_mode=args.pooling_mode,
+                temporal_kernel_size=args.temporal_kernel_size,
             )
         adapter = SubjectAdapter(
             trunk,

@@ -1,0 +1,2977 @@
+{
+  "dataset_cache": "/root/autodl-tmp/n2p3-net/experiments/cache/gtn_sf128_lf2_hf30_tm-0.2_tx0.8_mean_fwd.npz",
+  "checkpoint": null,
+  "prefix_reps": 5,
+  "test_reps": 5,
+  "head": "linear",
+  "n_groups": 176,
+  "n_subjects": 176,
+  "requested_groups": [
+    "gtn:Experiment_341_P3_Numbers",
+    "gtn:Experiment_344_P3_Numbers",
+    "gtn:Experiment_345_P3_Numbers",
+    "gtn:Experiment_346_P3_Numbers",
+    "gtn:Experiment_347_P3_Numbers",
+    "gtn:Experiment_348_P3_Numbers",
+    "gtn:Experiment_349_P3_Numbers",
+    "gtn:Experiment_350_P3_Numbers",
+    "gtn:Experiment_351_P3_Numbers",
+    "gtn:Experiment_352_P3_Numbers",
+    "gtn:Experiment_353_P3_Numbers",
+    "gtn:Experiment_354_P3_Numbers",
+    "gtn:Experiment_355_P3_Numbers",
+    "gtn:Experiment_356_P3_Numbers",
+    "gtn:Experiment_357_P3_Numbers",
+    "gtn:Experiment_358_P3_Numbers",
+    "gtn:Experiment_359_P3_Numbers",
+    "gtn:Experiment_360_P3_Numbers",
+    "gtn:Experiment_361_P3_Numbers",
+    "gtn:Experiment_362_P3_Numbers",
+    "gtn:Experiment_405_P3_Numbers",
+    "gtn:Experiment_407_P3_Numbers",
+    "gtn:Experiment_411_P3_Numbers",
+    "gtn:Experiment_416_P3_Numbers",
+    "gtn:Experiment_418_P3_Numbers",
+    "gtn:Experiment_420_P3_Numbers",
+    "gtn:Experiment_422_P3_Numbers",
+    "gtn:Experiment_425_P3_Numbers",
+    "gtn:Experiment_427_P3_Numbers",
+    "gtn:Experiment_447_P3_Numbers",
+    "gtn:Experiment_448_P3_Numbers",
+    "gtn:Experiment_449_P3_Numbers",
+    "gtn:Experiment_451_P3_Numbers",
+    "gtn:Experiment_453_P3_Numbers",
+    "gtn:Experiment_456_P3_Numbers",
+    "gtn:Experiment_459_P3_Numbers",
+    "gtn:Experiment_462_P3_Numbers",
+    "gtn:Experiment_464_P3_Numbers",
+    "gtn:Experiment_466_P3_Numbers",
+    "gtn:Experiment_495_P3_Numbers",
+    "gtn:Experiment_496_P3_Numbers",
+    "gtn:Experiment_497_P3_Numbers",
+    "gtn:Experiment_498_P3_Numbers",
+    "gtn:Experiment_499_P3_Numbers",
+    "gtn:Experiment_500_P3_Numbers",
+    "gtn:Experiment_501_P3_Numbers",
+    "gtn:Experiment_502_P3_Numbers",
+    "gtn:Experiment_503_P3_Numbers",
+    "gtn:Experiment_504_P3_Numbers",
+    "gtn:Experiment_505_P3_Numbers",
+    "gtn:Experiment_506_P3_Numbers",
+    "gtn:Experiment_507_P3_Numbers",
+    "gtn:Experiment_508_P3_Numbers",
+    "gtn:Experiment_509_P3_Numbers",
+    "gtn:Experiment_510_P3_Numbers",
+    "gtn:Experiment_511_P3_Numbers",
+    "gtn:Experiment_515_P3_Numbers",
+    "gtn:Experiment_516_P3_Numbers",
+    "gtn:Experiment_517_P3_Numbers",
+    "gtn:Experiment_518_P3_Numbers",
+    "gtn:Experiment_519_P3_Numbers",
+    "gtn:Experiment_520_P3_Numbers",
+    "gtn:Experiment_521_P3_Numbers",
+    "gtn:Experiment_522_P3_Numbers",
+    "gtn:Experiment_523_P3_Numbers",
+    "gtn:Experiment_524_P3_Numbers",
+    "gtn:Experiment_525_P3_Numbers",
+    "gtn:Experiment_526_P3_Numbers",
+    "gtn:Experiment_527_P3_Numbers",
+    "gtn:Experiment_528_P3_Numbers",
+    "gtn:Experiment_529_P3_Numbers",
+    "gtn:Experiment_530_P3_Numbers",
+    "gtn:Experiment_532_P3_Numbers",
+    "gtn:Experiment_533_P3_Numbers",
+    "gtn:Experiment_534_P3_Numbers",
+    "gtn:Experiment_535_P3_Numbers",
+    "gtn:Experiment_536_P3_Numbers",
+    "gtn:Experiment_537_P3_Numbers",
+    "gtn:Experiment_538_P3_Numbers",
+    "gtn:Experiment_539_P3_Numbers",
+    "gtn:Experiment_540_P3_Numbers",
+    "gtn:Experiment_541_P3_Numbers",
+    "gtn:Experiment_543_P3_Numbers",
+    "gtn:Experiment_544_P3_Numbers",
+    "gtn:Experiment_545_P3_Numbers",
+    "gtn:Experiment_546_P3_Numbers",
+    "gtn:Experiment_547_P3_Numbers",
+    "gtn:Experiment_548_P3_Numbers",
+    "gtn:Experiment_549_P3_Numbers",
+    "gtn:Experiment_550_P3_Numbers",
+    "gtn:Experiment_551_P3_Numbers",
+    "gtn:Experiment_552_P3_Numbers",
+    "gtn:Experiment_553_P3_Numbers",
+    "gtn:Experiment_554_P3_Numbers",
+    "gtn:Experiment_555_P3_Numbers",
+    "gtn:Experiment_556_P3_Numbers",
+    "gtn:Experiment_557_P3_Numbers",
+    "gtn:Experiment_558_P3_Numbers",
+    "gtn:Experiment_559_P3_Numbers",
+    "gtn:Experiment_560_P3_Numbers",
+    "gtn:Experiment_561_P3_Numbers",
+    "gtn:Experiment_562_P3_Numbers",
+    "gtn:Experiment_563_P3_Numbers",
+    "gtn:Experiment_564_P3_Numbers",
+    "gtn:Experiment_565_P3_Numbers",
+    "gtn:Experiment_566_P3_Numbers",
+    "gtn:Experiment_567_P3_Numbers",
+    "gtn:Experiment_568_P3_Numbers",
+    "gtn:Experiment_569_P3_Numbers",
+    "gtn:Experiment_570_P3_Numbers",
+    "gtn:Experiment_571_P3_Numbers",
+    "gtn:Experiment_572_P3_Numbers",
+    "gtn:Experiment_573_P3_Numbers",
+    "gtn:Experiment_574_P3_Numbers",
+    "gtn:Experiment_575_P3_Numbers",
+    "gtn:Experiment_576_P3_Numbers",
+    "gtn:Experiment_577_P3_Numbers",
+    "gtn:Experiment_578_P3_Numbers",
+    "gtn:Experiment_579_P3_Numbers",
+    "gtn:Experiment_580_P3_Numbers",
+    "gtn:Experiment_581_P3_Numbers",
+    "gtn:Experiment_582_P3_Numbers",
+    "gtn:Experiment_583_P3_Numbers",
+    "gtn:Experiment_584_P3_Numbers",
+    "gtn:Experiment_585_P3_Numbers",
+    "gtn:Experiment_586_P3_Numbers",
+    "gtn:Experiment_587_P3_Numbers",
+    "gtn:Experiment_588_P3_Numbers",
+    "gtn:Experiment_589_P3_Numbers",
+    "gtn:Experiment_590_P3_Numbers",
+    "gtn:Experiment_609_P3_Numbers",
+    "gtn:Experiment_610_P3_Numbers",
+    "gtn:Experiment_612_P3_Numbers",
+    "gtn:Experiment_613_P3_Numbers",
+    "gtn:Experiment_614_P3_Numbers",
+    "gtn:Experiment_615_P3_Numbers",
+    "gtn:Experiment_616_P3_Numbers",
+    "gtn:Experiment_617_P3_Numbers",
+    "gtn:Experiment_618_P3_Numbers",
+    "gtn:Experiment_619_P3_Numbers",
+    "gtn:Experiment_620_P3_Numbers",
+    "gtn:Experiment_621_P3_Numbers",
+    "gtn:Experiment_622_P3_Numbers",
+    "gtn:Experiment_623_P3_Numbers",
+    "gtn:Experiment_624_P3_Numbers",
+    "gtn:Experiment_626_P3_Numbers",
+    "gtn:Experiment_627_P3_Numbers",
+    "gtn:Experiment_628_P3_Numbers",
+    "gtn:Experiment_629_P3_Numbers",
+    "gtn:Experiment_630_P3_Numbers",
+    "gtn:Experiment_631_P3_Numbers",
+    "gtn:Experiment_632_P3_Numbers",
+    "gtn:Experiment_633_P3_Numbers",
+    "gtn:Experiment_634_P3_Numbers",
+    "gtn:Experiment_635_P3_Numbers",
+    "gtn:Experiment_636_P3_Numbers",
+    "gtn:Experiment_637_P3_Numbers",
+    "gtn:Experiment_638_P3_Numbers",
+    "gtn:Experiment_639_P3_Numbers",
+    "gtn:Experiment_640_P3_Numbers",
+    "gtn:Experiment_641_P3_Numbers",
+    "gtn:Experiment_642_P3_Numbers",
+    "gtn:Experiment_643_P3_Numbers",
+    "gtn:Experiment_648_P3_Numbers",
+    "gtn:Experiment_649_P3_Numbers",
+    "gtn:Experiment_650_P3_Numbers",
+    "gtn:Experiment_651_P3_Numbers",
+    "gtn:Experiment_652_P3_Numbers",
+    "gtn:Experiment_653_P3_Numbers",
+    "gtn:Experiment_655_P3_Numbers",
+    "gtn:Experiment_656_P3_Numbers",
+    "gtn:Experiment_657_P3_Numbers",
+    "gtn:Experiment_658_P3_Numbers",
+    "gtn:Experiment_659_P3_Numbers",
+    "gtn:Experiment_660_P3_Numbers",
+    "gtn:Experiment_661_P3_Numbers",
+    "gtn:Experiment_662_P3_Numbers",
+    "gtn:Experiment_663_P3_Numbers",
+    "gtn:Experiment_664_P3_Numbers",
+    "gtn:Experiment_665_P3_Numbers",
+    "gtn:Experiment_666_P3_Numbers",
+    "gtn:Experiment_667_P3_Numbers",
+    "gtn:Experiment_668_P3_Numbers",
+    "gtn:Experiment_670_P3_Numbers",
+    "gtn:Experiment_671_P3_Numbers",
+    "gtn:Experiment_672_P3_Numbers",
+    "gtn:Experiment_673_P3_Numbers",
+    "gtn:Experiment_674_P3_Numbers",
+    "gtn:Experiment_675_P3_Numbers",
+    "gtn:Experiment_676_P3_Numbers",
+    "gtn:Experiment_677_P3_Numbers",
+    "gtn:Experiment_678_P3_Numbers",
+    "gtn:Experiment_679_P3_Numbers",
+    "gtn:Experiment_680_P3_Numbers",
+    "gtn:Experiment_681_P3_Numbers",
+    "gtn:Experiment_682_P3_Numbers",
+    "gtn:Experiment_683_P3_Numbers",
+    "gtn:Experiment_684_P3_Numbers",
+    "gtn:Experiment_685_P3_Numbers",
+    "gtn:Experiment_686_P3_Numbers",
+    "gtn:Experiment_687_P3_Numbers",
+    "gtn:Experiment_688_P3_Numbers",
+    "gtn:Experiment_689_P3_Numbers",
+    "gtn:Experiment_690_P3_Numbers",
+    "gtn:Experiment_691_P3_Numbers",
+    "gtn:Experiment_692_P3_Numbers",
+    "gtn:Experiment_693_P3_Numbers",
+    "gtn:Experiment_694_P3_Numbers",
+    "gtn:Experiment_695_P3_Numbers",
+    "gtn:Experiment_696_P3_Numbers",
+    "gtn:Experiment_697_P3_Numbers",
+    "gtn:Experiment_698_P3_Numbers",
+    "gtn:Experiment_699_P3_Numbers",
+    "gtn:Experiment_700_P3_Numbers",
+    "gtn:Experiment_701_P3_Numbers",
+    "gtn:Experiment_702_P3_Numbers",
+    "gtn:Experiment_703_P3_Numbers",
+    "gtn:Experiment_704_P3_Numbers",
+    "gtn:Experiment_705_P3_Numbers",
+    "gtn:Experiment_706_P3_Numbers",
+    "gtn:Experiment_707_P3_Numbers",
+    "gtn:Experiment_708_P3_Numbers",
+    "gtn:Experiment_709_P3_Numbers",
+    "gtn:Experiment_710_P3_Numbers",
+    "gtn:Experiment_711_P3_Numbers",
+    "gtn:Experiment_712_P3_Numbers",
+    "gtn:Experiment_713_P3_Numbers",
+    "gtn:Experiment_714_P3_Numbers",
+    "gtn:Experiment_715_P3_Numbers",
+    "gtn:Experiment_716_P3_Numbers",
+    "gtn:Experiment_717_P3_Numbers",
+    "gtn:Experiment_718_P3_Numbers",
+    "gtn:Experiment_719_P3_Numbers",
+    "gtn:Experiment_720_P3_Numbers",
+    "gtn:Experiment_721_P3_Numbers",
+    "gtn:Experiment_722_P3_Numbers",
+    "gtn:Experiment_723_P3_Numbers",
+    "gtn:Experiment_724_P3_Numbers",
+    "gtn:Experiment_725_P3_Numbers",
+    "gtn:Experiment_726_P3_Numbers",
+    "gtn:Experiment_727_P3_Numbers",
+    "gtn:Experiment_728_P3_Numbers",
+    "gtn:Experiment_729_P3_Numbers",
+    "gtn:Experiment_730_P3_Numbers",
+    "gtn:Experiment_731_P3_Numbers"
+  ],
+  "excluded_groups": {
+    "gtn:Experiment_341_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_344_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_346_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_347_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_349_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_352_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_357_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_361_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_407_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_418_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_425_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_427_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_448_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_449_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_451_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_462_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_464_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_495_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_496_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_497_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_499_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_500_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_508_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_515_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_518_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_520_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_521_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_522_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_524_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_526_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_527_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_533_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_536_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_550_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_554_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_555_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_559_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_567_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_577_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_578_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_580_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_582_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_585_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_587_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_588_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_590_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_612_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_613_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_616_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_618_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_619_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_622_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_635_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_640_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_650_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_666_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_677_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_680_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_682_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_696_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_697_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_707_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_710_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_714_P3_Numbers": "insufficient_prefix_candidate_repetitions",
+    "gtn:Experiment_719_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_723_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_724_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_726_P3_Numbers": "insufficient_suffix_after_time_embargo",
+    "gtn:Experiment_727_P3_Numbers": "insufficient_suffix_after_time_embargo"
+  },
+  "binary_auc_mean": 0.5257670454545454,
+  "hit_mean_by_repetition": {
+    "1": 0.1534090909090909,
+    "2": 0.13068181818181818,
+    "3": 0.14204545454545456,
+    "4": 0.16477272727272727,
+    "5": 0.14772727272727273
+  },
+  "records": [
+    {
+      "group": "gtn:Experiment_345_P3_Numbers",
+      "target_subject": "P3Numbers_20150618_f_11_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.585,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 1.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_348_P3_Numbers",
+      "target_subject": "P3Numbers_20150618_f_11_005",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.585,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_350_P3_Numbers",
+      "target_subject": "P3Numbers_20150618_m_11_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6799999999999999,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 0.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_351_P3_Numbers",
+      "target_subject": "P3Numbers_20150618_m_12_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.575,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_353_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_f_12_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.78,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_354_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_f_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.42000000000000004,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_355_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_f_13_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.74,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_356_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_f_13_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.505,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_358_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_m_13_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.78,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_359_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_m_13_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.28500000000000003,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_360_P3_Numbers",
+      "target_subject": "P3Numbers_20150618_f_11_006",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.315,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_362_P3_Numbers",
+      "target_subject": "P3Numbers_20150618_m_11_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_405_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_f_11_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.34,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_411_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_f_13_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.72,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_416_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_f_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.45,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_420_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_f_14_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.38999999999999996,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_422_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_f_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.645,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_447_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_m_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.885,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_453_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_f_15_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.43499999999999994,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_456_P3_Numbers",
+      "target_subject": "P3Numbers_20150414_f_14_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.545,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_459_P3_Numbers",
+      "target_subject": "P3Numbers_20141023_m_12_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.47000000000000003,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_466_P3_Numbers",
+      "target_subject": "P3Numbers_20141023_f_11_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5800000000000001,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_498_P3_Numbers",
+      "target_subject": "P3Numbers_20141023_f_11_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.52,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_501_P3_Numbers",
+      "target_subject": "P3Numbers_20141023_f_14_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.38,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_502_P3_Numbers",
+      "target_subject": "P3Numbers_20141023_f_14_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.38500000000000006,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_503_P3_Numbers",
+      "target_subject": "P3Numbers_20141023_f_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5599999999999999,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_504_P3_Numbers",
+      "target_subject": "P3Numbers_20141023_m_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.43500000000000005,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_505_P3_Numbers",
+      "target_subject": "P3Numbers_20141023_m_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.28,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_506_P3_Numbers",
+      "target_subject": "P3Numbers_20141023_m_14_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.485,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_507_P3_Numbers",
+      "target_subject": "P3Numbers_20141023_m_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.46,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_509_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_f_09_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5800000000000001,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_510_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_f_10_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.8300000000000001,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_511_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_f_11_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.465,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_516_P3_Numbers",
+      "target_subject": "P3Numbers_20141124_f_12_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.49,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_517_P3_Numbers",
+      "target_subject": "P3Numbers_20141124_f_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.375,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_519_P3_Numbers",
+      "target_subject": "P3Numbers_20141124_f_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.62,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_523_P3_Numbers",
+      "target_subject": "P3Numbers_20141124_f_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.565,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_525_P3_Numbers",
+      "target_subject": "P3Numbers_20141124_f_17_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.27499999999999997,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_528_P3_Numbers",
+      "target_subject": "P3Numbers_20141124_m_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.62,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_529_P3_Numbers",
+      "target_subject": "P3Numbers_20141124_m_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6799999999999999,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_530_P3_Numbers",
+      "target_subject": "P3Numbers_20141124_m_14_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.445,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_532_P3_Numbers",
+      "target_subject": "P3Numbers_20141124_m_14_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.455,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_534_P3_Numbers",
+      "target_subject": "P3Numbers_20141124_m_17_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.645,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_535_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_10_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.45499999999999996,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_537_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_11_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.555,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 1.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_538_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_11_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.685,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_539_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_11_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.39,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_540_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_11_005",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.345,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_541_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_11_006",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.48000000000000004,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_543_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_12_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.33499999999999996,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_544_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_12_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.41500000000000004,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_545_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_12_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5449999999999999,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_546_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.73,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 0.0,
+        "4": 1.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_547_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_13_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.435,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_548_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.365,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_549_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_f_14_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.56,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_551_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_m_08_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.45000000000000007,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_552_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_m_11_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6300000000000001,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_553_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_m_11_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.4,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_556_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_m_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.505,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_557_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_m_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.57,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_558_P3_Numbers",
+      "target_subject": "P3Numbers_20141204_m_14_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.26,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_560_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_f_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.51,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_561_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_f_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.62,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_562_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_11_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.41000000000000003,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_563_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_11_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.635,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 1.0,
+        "3": 0.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_564_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_11_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5549999999999999,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_565_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_11_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.44,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_566_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_12_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.605,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_568_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_12_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.35000000000000003,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_569_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.47000000000000003,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_570_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_13_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.605,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_571_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.685,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_572_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.53,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 1.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_573_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_15_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.49,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_574_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_15_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.52,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_575_P3_Numbers",
+      "target_subject": "P3Numbers_20150224_m_15_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.8049999999999999,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_576_P3_Numbers",
+      "target_subject": "P3Numbers_20150507_f_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.49,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_579_P3_Numbers",
+      "target_subject": "P3Numbers_20150507_f_14_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.835,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_581_P3_Numbers",
+      "target_subject": "P3Numbers_20150507_m_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.54,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_583_P3_Numbers",
+      "target_subject": "P3Numbers_20150507_m_14_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.565,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_584_P3_Numbers",
+      "target_subject": "P3Numbers_20150507_m_14_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6700000000000002,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_586_P3_Numbers",
+      "target_subject": "P3Numbers_20150507_m_14_005",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.72,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_589_P3_Numbers",
+      "target_subject": "P3Numbers_20150507_m_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.495,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_609_P3_Numbers",
+      "target_subject": "P3Numbers_20150107_f_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.585,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_610_P3_Numbers",
+      "target_subject": "P3Numbers_20150107_f_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.44000000000000006,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_614_P3_Numbers",
+      "target_subject": "P3Numbers_20150107_f_14_005",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.48500000000000004,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_615_P3_Numbers",
+      "target_subject": "P3Numbers_20150107_f_14_006",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.595,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_617_P3_Numbers",
+      "target_subject": "P3Numbers_20150107_f_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6300000000000001,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_620_P3_Numbers",
+      "target_subject": "P3Numbers_20150107_m_14_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.36,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_621_P3_Numbers",
+      "target_subject": "P3Numbers_20150107_m_14_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.645,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_623_P3_Numbers",
+      "target_subject": "P3Numbers_20150107_m_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6950000000000001,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_624_P3_Numbers",
+      "target_subject": "P3Numbers_20150314_m_12_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.47,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_626_P3_Numbers",
+      "target_subject": "P3Numbers_20150203_m_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.345,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_627_P3_Numbers",
+      "target_subject": "P3Numbers_20150203_m_16_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.64,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_628_P3_Numbers",
+      "target_subject": "P3Numbers_20150203_m_17_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6799999999999999,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_629_P3_Numbers",
+      "target_subject": "P3Numbers_20150203_m_17_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.35000000000000003,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_630_P3_Numbers",
+      "target_subject": "P3Numbers_20150203_m_17_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.665,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_631_P3_Numbers",
+      "target_subject": "P3Numbers_20150203_m_17_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.735,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_632_P3_Numbers",
+      "target_subject": "P3Numbers_20150203_m_17_005",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.575,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_633_P3_Numbers",
+      "target_subject": "P3Numbers_20150203_m_17_006",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.575,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_634_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_f_09_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.34500000000000003,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_636_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_f_10_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.42,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_637_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_f_11_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.35,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_638_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_f_12_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.31,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_639_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_f_12_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.8,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 0.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_641_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_f_12_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.665,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_642_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_f_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5050000000000001,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_643_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_f_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.485,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_648_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_m_07_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.8400000000000001,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_649_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_m_09_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.66,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_651_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_m_12_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.535,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_652_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_m_12_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.61,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_653_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_m_12_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5650000000000001,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_655_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_m_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5650000000000001,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_656_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_m_13_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.47500000000000003,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_657_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_m_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5149999999999999,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_658_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_m_15_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.36,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_659_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_m_15_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.835,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_660_P3_Numbers",
+      "target_subject": "P3Numbers_20150126_m_15_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.76,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_661_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_f_11_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6649999999999999,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 1.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_662_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_f_11_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.31999999999999995,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_663_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_f_12_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_664_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_f_12_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.63,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_665_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_f_12_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.665,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_667_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_f_13_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.595,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_668_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_f_13_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.405,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_670_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_m_12_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.385,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_671_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_m_12_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.455,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_672_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_m_12_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.46499999999999997,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 1.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_673_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_m_12_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.705,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_674_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_m_12_005",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.305,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_675_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_m_12_006",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.44499999999999995,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_676_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_m_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.72,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 0.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_678_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_m_13_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.41999999999999993,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_679_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_m_13_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.30500000000000005,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_681_P3_Numbers",
+      "target_subject": "P3Numbers_20150204_m_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.4,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_683_P3_Numbers",
+      "target_subject": "P3Numbers_20150326_f_13_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.655,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_684_P3_Numbers",
+      "target_subject": "P3Numbers_20150326_f_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.69,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_685_P3_Numbers",
+      "target_subject": "P3Numbers_20150326_m_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.545,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_686_P3_Numbers",
+      "target_subject": "P3Numbers_20150326_m_14_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5850000000000001,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_687_P3_Numbers",
+      "target_subject": "P3Numbers_20150326_m_15_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.605,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_688_P3_Numbers",
+      "target_subject": "P3Numbers_20150326_m_15_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.52,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_689_P3_Numbers",
+      "target_subject": "P3Numbers_20150326_m_15_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.485,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_690_P3_Numbers",
+      "target_subject": "P3Numbers_20150326_m_15_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6000000000000001,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_691_P3_Numbers",
+      "target_subject": "P3Numbers_20150326_m_16_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.345,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_692_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_f_09_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.32499999999999996,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_693_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_f_09_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.29500000000000004,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_694_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_f_10_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.27999999999999997,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_695_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_f_10_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.45499999999999996,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_698_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_10_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.58,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_699_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_10_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.47500000000000003,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_700_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_11_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.515,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_701_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_11_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.53,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_702_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_12_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.5,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_703_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_12_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.635,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_704_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_12_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.37500000000000006,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_705_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.605,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_706_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_13_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.45000000000000007,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_708_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_13_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.24,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_709_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_13_005",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.7750000000000001,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_711_P3_Numbers",
+      "target_subject": "P3Numbers_20150514_m_13_007",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.735,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_712_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_f_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.485,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_713_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_f_13_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.51,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_715_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_f_14_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.24,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_716_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_m_11_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.615,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_717_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_m_12_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.36,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_718_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_m_12_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.45999999999999996,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_720_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_m_12_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6849999999999999,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_721_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_m_13_001",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.52,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_722_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_m_13_002",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.36500000000000005,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_725_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_m_13_005",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.355,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_728_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_m_14_003",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.585,
+      "hit_by_repetition": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_729_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_m_14_004",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.6549999999999999,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 0.0,
+        "5": 1.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_730_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_m_14_005",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.375,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    },
+    {
+      "group": "gtn:Experiment_731_P3_Numbers",
+      "target_subject": "P3Numbers_20150526_m_14_006",
+      "n_prefix": 45,
+      "n_suffix": 45,
+      "binary_auc": 0.555,
+      "hit_by_repetition": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "parameters": 258
+    }
+  ]
+}

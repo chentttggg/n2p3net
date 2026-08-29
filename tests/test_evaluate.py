@@ -151,6 +151,63 @@ def test_candidate_evidence_uses_calibrated_target_scores() -> None:
     assert summary.primary_hit_rate > 0.8
 
 
+def test_candidate_hit_at_repetition_prefixes() -> None:
+    X, y, physical_subjects = _p300_data()
+    groups = np.repeat(np.arange(6).astype(str), 12)
+    codes = np.tile(np.tile(np.arange(3), 4), 6)
+    repetitions = np.tile(np.arange(12) % 4, 6)
+    y = (codes == 1).astype(np.int64)
+    X[y == 1, 2, 42:62] += 2.5
+    summary = evaluate_candidate_selection(
+        WindowLogisticRegression(sfreq=128.0, tmin=-0.2, window_ms=(125.0, 300.0)),
+        X,
+        y,
+        codes,
+        groups,
+        {str(subject): 1 for subject in range(6)},
+        loso_folds(physical_subjects),
+        candidate_vocab=(0, 1, 2),
+        fit_group_ids=physical_subjects,
+        repetition_indices=repetitions,
+    )
+
+    macro = summary.hit_at_repetition_macro
+    assert macro is not None
+    assert sorted(int(key) for key in macro) == [1, 2, 3, 4]
+    for fold in summary.per_fold:
+        assert fold.hit_correct_by_repetition is not None
+        assert fold.hit_total_by_repetition is not None
+        assert sum(fold.hit_total_by_repetition.values()) > 0
+    aggregated_correct = sum(
+        sum(fold.hit_correct_by_repetition.values()) for fold in summary.per_fold
+    )
+    aggregated_total = sum(
+        sum(fold.hit_total_by_repetition.values()) for fold in summary.per_fold
+    )
+    assert aggregated_total == aggregated_correct == 6 * 4
+
+
+def test_hit_repetition_rejects_misaligned_indices() -> None:
+    X, y, physical_subjects = _p300_data()
+    groups = np.repeat(np.arange(6).astype(str), 12)
+    codes = np.tile(np.tile(np.arange(3), 4), 6)
+    y = (codes == 1).astype(np.int64)
+    X[y == 1, 2, 42:62] += 2.5
+    with pytest.raises(ValueError, match="align"):
+        evaluate_candidate_selection(
+            WindowLogisticRegression(sfreq=128.0, tmin=-0.2, window_ms=(125.0, 300.0)),
+            X,
+            y,
+            codes,
+            groups,
+            {str(subject): 1 for subject in range(6)},
+            loso_folds(physical_subjects),
+            candidate_vocab=(0, 1, 2),
+            fit_group_ids=physical_subjects,
+            repetition_indices=np.zeros(len(X) - 1, dtype=np.int64),
+        )
+
+
 def test_threaded_cpu_folds_match_serial_results() -> None:
     X, y, subjects = _p300_data()
     model = WindowLogisticRegression(sfreq=128.0, tmin=-0.2, window_ms=(125.0, 300.0))

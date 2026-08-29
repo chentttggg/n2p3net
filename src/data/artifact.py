@@ -66,6 +66,11 @@ class FoldLocalArtifactPolicy:
     min_training_epoch_retention: float = 0.70
     cv_splits: int = 5
     min_clean_epochs: int = 4
+    # When True, held-out epochs whose every channel was masked by the fitted
+    # policy are EXCLUDED from the outer test fold instead of failing closed.
+    # Every exclusion is written to the fold audit ledger; the ledger, not the
+    # silent default, is what keeps the test denominator honest.
+    exclude_unusable_test_epochs: bool = False
 
     def validate(self) -> None:
         if not self.candidate_quantiles or any(
@@ -655,6 +660,70 @@ def apply_fitted_artifact_model(
     audit["train"] = transformed_summary(transformed, train_mask)
     audit["test"] = transformed_summary(transformed, test_mask)
     return transformed.X, transformed.trial_channel_mask, effective_train_mask, audit
+
+
+def apply_fitted_artifact_model_with_test_exclusion(
+    fitted: FoldLocalArtifactModel,
+    X: np.ndarray,
+    subject_ids: np.ndarray,
+    train_mask: np.ndarray,
+    test_mask: np.ndarray,
+    trial_channel_mask: np.ndarray | None = None,
+    qc_features: EpochQCFeatures | None = None,
+    *,
+    materialize_masked_data: bool = True,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict[str, object]]:
+    """Apply a frozen policy and exclude unusable held-out epochs with a ledger.
+
+    Held-out epochs whose every channel was masked by the fold-local policy are
+    removed from the outer test fold and counted in the returned audit under
+    ``n_test_all_channels_bad_excluded``. This trades the fail-closed default
+    for an explicit, per-fold recorded exclusion: the test denominator changes
+    only through a visible ledger entry, never silently.
+    """
+
+    X = np.asarray(X)
+    labels = np.asarray(subject_ids)
+    train_mask = np.asarray(train_mask, dtype=bool)
+    test_mask = np.asarray(test_mask, dtype=bool)
+    if train_mask.shape != (len(X),) or test_mask.shape != (len(X),):
+        raise ValueError("Artifact train/test masks must align with X.")
+    if labels.shape != (len(X),):
+        raise ValueError("Artifact subject_ids must align with X.")
+    expected_subjects = tuple(sorted(np.unique(labels[train_mask].astype(str)).tolist()))
+    if fitted.fit_groups != expected_subjects:
+        raise ValueError("Frozen artifact policy was not fitted on this outer-training group set.")
+    transformed = fitted.transform(
+        X,
+        trial_channel_mask,
+        qc_features,
+        materialize_masked_data=materialize_masked_data,
+    )
+    effective_test_mask = test_mask & ~transformed.all_channels_bad
+    excluded = int((test_mask & transformed.all_channels_bad).sum())
+    if not effective_test_mask.any():
+        raise ValueError(
+            "Fold-local artifact policy masked every channel in all held-out epochs; "
+            "no test evidence would remain."
+        )
+    effective_train_mask = train_mask & ~transformed.drop_epoch_mask
+    if not effective_train_mask.any():
+        raise ValueError("Fold-local artifact policy removed every training epoch.")
+    remaining_subjects = np.unique(labels[effective_train_mask])
+    if len(remaining_subjects) < 2:
+        raise ValueError("Artifact policy left fewer than two training subjects for validation.")
+    audit = fitted.record()
+    audit["test_all_channels_bad_policy"] = "exclude"
+    audit["n_test_all_channels_bad_excluded"] = excluded
+    audit["train"] = transformed_summary(transformed, train_mask)
+    audit["test"] = transformed_summary(transformed, effective_test_mask)
+    return (
+        transformed.X,
+        transformed.trial_channel_mask,
+        effective_train_mask,
+        effective_test_mask,
+        audit,
+    )
 
 
 def transformed_summary(result: ArtifactTransformResult, rows: np.ndarray) -> dict[str, object]:

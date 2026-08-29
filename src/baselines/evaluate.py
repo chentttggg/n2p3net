@@ -21,6 +21,7 @@ from data.artifact import (
     FoldLocalArtifactModel,
     FoldLocalArtifactPolicy,
     apply_fitted_artifact_model,
+    apply_fitted_artifact_model_with_test_exclusion,
     apply_fold_local_artifact_policy,
 )
 from data.artifact_sidecar import (
@@ -135,6 +136,8 @@ class CandidateFoldResult(BinaryFoldResult):
     hit_rate: float = float("nan")
     n_decisions: int = 0
     decision_records: list[tuple[object, object, str]] = field(default_factory=list)
+    hit_correct_by_repetition: dict[str, int] | None = None
+    hit_total_by_repetition: dict[str, int] | None = None
 
 
 @dataclass
@@ -142,6 +145,68 @@ class CandidateSummary(BinarySummary):
     hit_rate_mean: float = float("nan")
     primary_hit_rate: float = float("nan")
     subject_records: list[tuple[object, object, str]] = field(default_factory=list)
+    hit_at_repetition_macro: dict[str, float] | None = None
+
+
+def hit_correct_total_by_repetition(
+    logits: np.ndarray,
+    codes: np.ndarray,
+    group_ids: np.ndarray,
+    truth_by_group: Mapping[object, object],
+    repetitions: np.ndarray,
+    candidate_vocab: Sequence[int],
+    *,
+    max_repetitions: int | None = None,
+) -> tuple[dict[str, int], dict[str, int]]:
+    """Return per-repetition-prefix correct/total decision counts (macro units).
+
+    Every selection group contributes exactly one vote per repetition prefix,
+    mirroring the causal hit@R estimand: candidate scores accumulate calibrated
+    log-likelihood ratios over the first ``r`` repetitions and the argmax must
+    recover the group's target candidate. Trials without a valid repetition
+    index (negative) are excluded from every prefix.
+    """
+
+    logits = np.asarray(logits, dtype=float)
+    codes = np.asarray(codes)
+    group_ids = np.asarray(group_ids).astype(str)
+    repetitions = np.asarray(repetitions)
+    if not (len(logits) == len(codes) == len(group_ids) == len(repetitions)):
+        raise ValueError("logits, codes, group_ids, and repetitions must align.")
+    if not np.isfinite(logits).all():
+        raise ValueError("logits contain NaN/inf; cannot aggregate candidate evidence.")
+    vocabulary = np.asarray(candidate_vocab)
+    if max_repetitions is None:
+        valid_reps = repetitions[repetitions >= 0]
+        max_repetitions = int(valid_reps.max()) + 1 if len(valid_reps) else 1
+    if max_repetitions < 1:
+        raise ValueError("max_repetitions must be positive.")
+
+    correct: dict[str, int] = {}
+    total: dict[str, int] = {}
+    usable = repetitions >= 0
+    for group in np.unique(group_ids[usable]):
+        truth = truth_by_group.get(group)
+        if truth is None:
+            continue
+        rows = np.flatnonzero(usable & (group_ids == group))
+        if not len(rows):
+            continue
+        group_codes = codes[rows]
+        group_reps = repetitions[rows]
+        for r in range(1, max_repetitions + 1):
+            sel = group_reps < r
+            if not sel.any():
+                continue
+            scores = {
+                int(d): float(logits[rows[sel]][group_codes[sel] == d].sum())
+                for d in np.unique(group_codes[sel])
+            }
+            predicted = max(scores.items(), key=lambda item: (item[1], -item[0]))[0]
+            key = str(r)
+            total[key] = total.get(key, 0) + 1
+            correct[key] = correct.get(key, 0) + int(predicted == int(truth))
+    return correct, total
 
 
 @dataclass(frozen=True)
@@ -372,17 +437,35 @@ def _fold_result(
     if callable(configure_fold):
         configure_fold(fold_id)
     artifact_quality = None
+    test_effective = test
     if fitted_artifact_model is not None:
-        X, trial_channel_mask, train, artifact_quality = apply_fitted_artifact_model(
-            fitted_artifact_model,
-            X,
-            subject_ids,
-            train,
-            test,
-            trial_channel_mask,
-            qc_features,
-            materialize_masked_data=not _can_defer_artifact_zero_fill(model),
+        exclude_unusable = bool(
+            getattr(fitted_artifact_model.policy, "exclude_unusable_test_epochs", False)
         )
+        if exclude_unusable:
+            X, trial_channel_mask, train, test_effective, artifact_quality = (
+                apply_fitted_artifact_model_with_test_exclusion(
+                    fitted_artifact_model,
+                    X,
+                    subject_ids,
+                    train,
+                    test,
+                    trial_channel_mask,
+                    qc_features,
+                    materialize_masked_data=not _can_defer_artifact_zero_fill(model),
+                )
+            )
+        else:
+            X, trial_channel_mask, train, artifact_quality = apply_fitted_artifact_model(
+                fitted_artifact_model,
+                X,
+                subject_ids,
+                train,
+                test,
+                trial_channel_mask,
+                qc_features,
+                materialize_masked_data=not _can_defer_artifact_zero_fill(model),
+            )
     elif artifact_policy is not None:
         X, trial_channel_mask, train, artifact_quality = apply_fold_local_artifact_policy(
             artifact_policy,
@@ -398,8 +481,12 @@ def _fold_result(
     fit_sec = time.perf_counter() - started
     calibration_logits, calibration_y, source = calibration_data_from_model(model, X[train], y[train])
     calibration = fit_logit_calibration(calibration_logits, calibration_y, source=source)
-    logits = _predict(model, X[test], None if trial_channel_mask is None else trial_channel_mask[test])
-    y_test = y[test]
+    logits = _predict(
+        model,
+        X[test_effective],
+        None if trial_channel_mask is None else trial_channel_mask[test_effective],
+    )
+    y_test = y[test_effective]
     bacc = float("nan")
     auc = float("nan")
     if len(np.unique(y_test)) == 2:
@@ -411,7 +498,7 @@ def _fold_result(
     result = BinaryFoldResult(
         balanced_acc=bacc,
         auc=auc,
-        n_test_trials=int(test.sum()),
+        n_test_trials=int(test_effective.sum()),
         threshold=calibration.threshold,
         threshold_source=calibration.source,
         fit_sec=fit_sec,
@@ -455,7 +542,7 @@ def _fold_result(
             int(runtime.get("shared_worker_count", 1)) if isinstance(runtime, dict) else 1
         ),
     )
-    return result, calibration.to_llr(logits), calibration
+    return result, calibration.to_llr(logits), test_effective, calibration
 
 
 def _resolve_fold_execution(
@@ -516,7 +603,7 @@ def _run_fold_task(
         int,
         int,
     ],
-) -> tuple[int, BinaryFoldResult, np.ndarray, object]:
+) -> tuple[int, BinaryFoldResult, np.ndarray, np.ndarray, object]:
     (
         fold_index,
         prototype,
@@ -532,7 +619,7 @@ def _run_fold_task(
         fold_id,
         shared_worker_count,
     ) = task
-    result, llr, calibration = _fold_result(
+    result, llr, test_effective, calibration = _fold_result(
         prototype,
         X,
         y,
@@ -546,7 +633,7 @@ def _run_fold_task(
         fold_id=fold_id,
         shared_worker_count=shared_worker_count,
     )
-    return fold_index, result, llr, calibration
+    return fold_index, result, llr, test_effective, calibration
 
 
 def _run_shared_fold_task(
@@ -566,7 +653,7 @@ def _run_shared_fold_task(
         int,
         int,
     ],
-) -> tuple[int, BinaryFoldResult, np.ndarray, object]:
+) -> tuple[int, BinaryFoldResult, np.ndarray, np.ndarray, object]:
     """Attach shared source arrays for one process worker, then close handles."""
 
     (
@@ -912,8 +999,8 @@ def _run_fold_tasks(
     fold_id_offset: int,
     max_gpu_jobs: int | None,
     cpu_threads: int | None,
-    on_fold_result: Callable[[tuple[int, BinaryFoldResult, np.ndarray, object]], None] | None = None,
-) -> tuple[list[tuple[int, BinaryFoldResult, np.ndarray, object]], str, int, str, int, int, int]:
+    on_fold_result: Callable[[tuple[int, BinaryFoldResult, np.ndarray, np.ndarray, object]], None] | None = None,
+) -> tuple[list[tuple[int, BinaryFoldResult, np.ndarray, np.ndarray, object]], str, int, str, int, int, int]:
     backend, effective_n_jobs = _resolve_fold_execution(
         prototype,
         n_jobs=n_jobs,
@@ -1113,7 +1200,7 @@ def evaluate_binary(
             else lambda result: on_fold_end(result[0] + fold_id_offset, result[1])
         ),
     )
-    results = [result for _, result, _, _ in fold_results]
+    results = [result for _, result, _, _, _ in fold_results]
     bacc = np.asarray([fold.balanced_acc for fold in results], dtype=float)
     auc = np.asarray([fold.auc for fold in results], dtype=float)
     return BinarySummary(
@@ -1149,6 +1236,7 @@ def evaluate_candidate_selection(
     artifact_qc_jobs: int | None = None,
     fold_protocol: str | None = None,
     on_fold_end: Callable[[int, CandidateFoldResult], None] | None = None,
+    repetition_indices: np.ndarray | None = None,
     n_jobs: int = 1,
     parallel_backend: str = "auto",
     fold_id_offset: int = 0,
@@ -1210,9 +1298,10 @@ def evaluate_candidate_selection(
         max_gpu_jobs=max_gpu_jobs,
         cpu_threads=cpu_threads,
     )
-    for fold_index, binary, llr, _ in fold_results:
-        _, test = validated_folds[fold_index]
-        decision = decide(llr, codes[test], group_ids[test], candidate_vocab, center_logits=False)
+    for fold_index, binary, llr, test_effective, _ in fold_results:
+        decision = decide(
+            llr, codes[test_effective], group_ids[test_effective], candidate_vocab, center_logits=False
+        )
         fold_records = [
             (predicted, truth_by_group[str(group)], str(group))
             for predicted, group in zip(decision.predicted, decision.subject_ids, strict=True)
@@ -1223,11 +1312,27 @@ def evaluate_candidate_selection(
             if fold_records
             else float("nan")
         )
+        hit_correct: dict[str, int] | None = None
+        hit_total: dict[str, int] | None = None
+        if repetition_indices is not None:
+            repetitions = np.asarray(repetition_indices)
+            if repetitions.shape != (len(X),):
+                raise ValueError("repetition_indices must align with X rows.")
+            hit_correct, hit_total = hit_correct_total_by_repetition(
+                llr,
+                codes[test_effective],
+                group_ids[test_effective],
+                truth_by_group,
+                repetitions[test_effective],
+                candidate_vocab,
+            )
         result = CandidateFoldResult(
             **binary.__dict__,
             hit_rate=hit_rate,
             n_decisions=len(fold_records),
             decision_records=fold_records,
+            hit_correct_by_repetition=hit_correct,
+            hit_total_by_repetition=hit_total,
         )
         results.append(result)
         if on_fold_end is not None:
@@ -1237,6 +1342,20 @@ def evaluate_candidate_selection(
     auc = np.asarray([fold.auc for fold in results], dtype=float)
     hit = np.asarray([fold.hit_rate for fold in results], dtype=float)
     overall = float(np.mean([predicted == truth for predicted, truth, _ in records])) if records else float("nan")
+    macro_hits: dict[str, float] | None = None
+    if repetition_indices is not None and results:
+        sum_correct: dict[str, int] = {}
+        sum_total: dict[str, int] = {}
+        for fold in results:
+            for key, value in (fold.hit_correct_by_repetition or {}).items():
+                sum_correct[key] = sum_correct.get(key, 0) + int(value)
+            for key, value in (fold.hit_total_by_repetition or {}).items():
+                sum_total[key] = sum_total.get(key, 0) + int(value)
+        macro_hits = {
+            key: float(sum_correct[key]) / sum_total[key]
+            for key in sorted(sum_total, key=lambda item: int(item))
+            if sum_total[key] > 0
+        }
     return CandidateSummary(
         balanced_acc_mean=float(np.nanmean(bacc)),
         balanced_acc_std=float(np.nanstd(bacc)),
@@ -1245,6 +1364,7 @@ def evaluate_candidate_selection(
         hit_rate_mean=float(np.nanmean(hit)),
         primary_hit_rate=overall,
         subject_records=records,
+        hit_at_repetition_macro=macro_hits,
         execution_backend=backend,
         effective_n_jobs=effective_n_jobs,
         input_transport=input_transport,

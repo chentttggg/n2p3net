@@ -325,6 +325,16 @@ def main() -> None:
         default=0.70,
         help="Minimum inner-CV training-epoch retention required for a kappa candidate.",
     )
+    parser.add_argument(
+        "--exclude-unusable-test-epochs",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Exclude held-out epochs whose every channel was masked by the fold-local "
+            "artifact policy, recording each exclusion in the fold audit ledger, "
+            "instead of failing closed."
+        ),
+    )
     args = parser.parse_args()
 
     if args.epochs < 1 or args.batch_size < 1 or args.fold_jobs < 1:
@@ -397,6 +407,7 @@ def main() -> None:
         candidate_bad_channel_fractions=args.artifact_candidate_bad_channel_fractions,
         global_scale_mad_z=args.artifact_global_scale_mad_z,
         min_training_epoch_retention=args.artifact_min_training_epoch_retention,
+        exclude_unusable_test_epochs=args.exclude_unusable_test_epochs,
     )
     artifact_policy.validate()
 
@@ -594,6 +605,7 @@ def main() -> None:
                     candidate_vocab=tuple(range(len(candidate_selection.vocabulary))),
                     fit_group_ids=subject_ids,
                     event_timeline=timeline,
+                    repetition_indices=candidate_selection.repetition_indices,
                     **common,
                 )
         except BaseException as exc:
@@ -620,6 +632,7 @@ def main() -> None:
             "auc_mean": summary.auc_mean,
             "decision_hit_rate_mean": getattr(summary, "hit_rate_mean", None),
             "primary_decision_hit_rate": getattr(summary, "primary_hit_rate", None),
+            "hit_at_repetition_macro": getattr(summary, "hit_at_repetition_macro", None),
             "execution": {
                 "requested_n_jobs": args.fold_jobs,
                 "requested_backend": args.fold_backend,
