@@ -157,6 +157,7 @@ def hit_correct_total_by_repetition(
     candidate_vocab: Sequence[int],
     *,
     max_repetitions: int | None = None,
+    center_logits: bool = False,
 ) -> tuple[dict[str, int], dict[str, int]]:
     """Return per-repetition-prefix correct/total decision counts (macro units).
 
@@ -164,7 +165,10 @@ def hit_correct_total_by_repetition(
     mirroring the causal hit@R estimand: candidate scores accumulate calibrated
     log-likelihood ratios over the first ``r`` repetitions and the argmax must
     recover the group's target candidate. Trials without a valid repetition
-    index (negative) are excluded from every prefix.
+    index (negative) are excluded from every prefix. With ``center_logits``,
+    each group's logits are centered on their own mean before summing, so a
+    constant classifier bias cannot become ``c * n_d`` when artifact rejection
+    makes per-candidate trial counts unequal.
     """
 
     logits = np.asarray(logits, dtype=float)
@@ -182,9 +186,17 @@ def hit_correct_total_by_repetition(
     if max_repetitions < 1:
         raise ValueError("max_repetitions must be positive.")
 
+    usable = repetitions >= 0
+    aligned_logits = logits
+    if center_logits:
+        aligned_logits = logits.astype(float, copy=True)
+        for group in np.unique(group_ids[usable]):
+            mask = usable & (group_ids == group)
+            if int(mask.sum()) > 1:
+                aligned_logits[mask] -= aligned_logits[mask].mean()
+
     correct: dict[str, int] = {}
     total: dict[str, int] = {}
-    usable = repetitions >= 0
     for group in np.unique(group_ids[usable]):
         truth = truth_by_group.get(group)
         if truth is None:
@@ -199,7 +211,7 @@ def hit_correct_total_by_repetition(
             if not sel.any():
                 continue
             scores = {
-                int(d): float(logits[rows[sel]][group_codes[sel] == d].sum())
+                int(d): float(aligned_logits[rows[sel]][group_codes[sel] == d].sum())
                 for d in np.unique(group_codes[sel])
             }
             predicted = max(scores.items(), key=lambda item: (item[1], -item[0]))[0]
@@ -1237,6 +1249,7 @@ def evaluate_candidate_selection(
     fold_protocol: str | None = None,
     on_fold_end: Callable[[int, CandidateFoldResult], None] | None = None,
     repetition_indices: np.ndarray | None = None,
+    center_decision_logits: bool = False,
     n_jobs: int = 1,
     parallel_backend: str = "auto",
     fold_id_offset: int = 0,
@@ -1300,7 +1313,11 @@ def evaluate_candidate_selection(
     )
     for fold_index, binary, llr, test_effective, _ in fold_results:
         decision = decide(
-            llr, codes[test_effective], group_ids[test_effective], candidate_vocab, center_logits=False
+            llr,
+            codes[test_effective],
+            group_ids[test_effective],
+            candidate_vocab,
+            center_logits=center_decision_logits,
         )
         fold_records = [
             (predicted, truth_by_group[str(group)], str(group))
@@ -1325,6 +1342,7 @@ def evaluate_candidate_selection(
                 truth_by_group,
                 repetitions[test_effective],
                 candidate_vocab,
+                center_logits=center_decision_logits,
             )
         result = CandidateFoldResult(
             **binary.__dict__,

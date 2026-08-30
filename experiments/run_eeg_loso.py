@@ -335,6 +335,34 @@ def main() -> None:
             "instead of failing closed."
         ),
     )
+    parser.add_argument(
+        "--center-decision-logits",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Center each group's calibrated logits on their mean before summing for "
+            "the decision layer and hit@R. Use when per-candidate trial counts are "
+            "unequal after artifact rejection."
+        ),
+    )
+    parser.add_argument(
+        "--l-freq",
+        type=float,
+        default=None,
+        help="Expected high-pass contract value; defaults to the canonical contract.",
+    )
+    parser.add_argument(
+        "--tmin-ms",
+        type=float,
+        default=None,
+        help="Expected epoch start contract value; defaults to the canonical contract.",
+    )
+    parser.add_argument(
+        "--tmax-ms",
+        type=float,
+        default=None,
+        help="Expected epoch end contract value; defaults to the canonical contract.",
+    )
     args = parser.parse_args()
 
     if args.epochs < 1 or args.batch_size < 1 or args.fold_jobs < 1:
@@ -421,6 +449,9 @@ def main() -> None:
     expected_contract = replace(
         DEFAULT_P300_DATA_CONTRACT,
         sample_rate_hz=args.sample_rate_hz,
+        l_freq=DEFAULT_P300_DATA_CONTRACT.l_freq if args.l_freq is None else args.l_freq,
+        tmin_ms=DEFAULT_P300_DATA_CONTRACT.tmin_ms if args.tmin_ms is None else args.tmin_ms,
+        tmax_ms=DEFAULT_P300_DATA_CONTRACT.tmax_ms if args.tmax_ms is None else args.tmax_ms,
     )
     assert_p300_input_contract(dataset.preprocessing, expected_contract)
     assert_p300_source_provenance(dataset)
@@ -606,6 +637,7 @@ def main() -> None:
                     fit_group_ids=subject_ids,
                     event_timeline=timeline,
                     repetition_indices=candidate_selection.repetition_indices,
+                    center_decision_logits=args.center_decision_logits,
                     **common,
                 )
         except BaseException as exc:
