@@ -60,6 +60,14 @@ GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT = EEGDataContract(
     tmax_ms=1200.0,
     filter_phase="forward",
 )
+# Paper-aligned GTN causal contract (the source study high-passes at 0.5 Hz);
+# used only for SOTA-comparison anchors, not for our performance claims.
+PAPER_GTN_CAUSAL_DATA_CONTRACT = EEGDataContract(
+    name="gtn_paper_causal_v1",
+    l_freq=0.5,
+    tmax_ms=1200.0,
+    filter_phase="forward",
+)
 
 
 def assert_p300_input_contract(
@@ -119,6 +127,12 @@ def assert_gtn_causal_input_contract(preprocessing: object) -> None:
     """Assert the revised GTN causal contract (0.1 Hz high-pass, 1200 ms window)."""
 
     assert_p300_input_contract(preprocessing, GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT)
+
+
+def assert_paper_gtn_causal_input_contract(preprocessing: object) -> None:
+    """Assert the paper-aligned GTN causal contract (0.5 Hz high-pass, 1200 ms window)."""
+
+    assert_p300_input_contract(preprocessing, PAPER_GTN_CAUSAL_DATA_CONTRACT)
 
 
 def assert_p300_source_provenance(dataset: object) -> None:
