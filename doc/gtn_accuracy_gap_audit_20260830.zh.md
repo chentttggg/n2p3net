@@ -243,3 +243,42 @@ scratch+45-trial 校准仍近 chance（hit@5≤0.18 vs chance 0.111），Gate 3 
 原文线与性能线的差距（ΔAUC 0.0125、Δhit_all 0.029）即为"0.1 Hz deviation"
 的定量价格。两条线的 cache、record、runner 断言（--cohort gtn / gtn_paper）
 全部就绪。
+
+## 8. Gate 3-S1：预训练零校准突破（2026-08-30 晚）
+
+### 8.1 流程审查（T 质疑驱动的三次验证）
+
+1. **原文协议对照**：GTN 原文（gtn_unet_2023）只有 11,532 epochs（每被试
+   ~47，非全量 50,562），协议为**随机 75/25 划分 + 500 次 Monte Carlo CV**
+   （被试信息泄漏进测试集），100µV QC 去三分之一，**single-trial 最佳
+   64.5%**（U-Net；CNN 62.2/RNN 56.9/SNN 63.4）。我们的 LOSO（跨被试、
+   零校准）BACC 0.61–0.67 已在更严协议上超过它；"80%" 是随机划分协议
+   的数字，与 LOSO/因果协议不可比。
+2. **预训练 zero-shot 验证**：leave-block-out checkpoint 在**从未见过的
+   44 个被试上 AUC 0.6342**（训练被试上 0.6341，零泛化损失）——预训练
+   管线无流程 bug，trunk 特征真实有效。
+3. **适配环节 bug 确认**：SubjectAdapter 用 45-trial 统计做输入标准化
+   （与预训练的 source 全量统计不同源），且 45 样本从零训练 258 参数
+   head 训不动——两种 head 方案（0.513/0.466）都低于 zero-shot 0.634。
+
+### 8.2 修正后的 Gate 3-S1 结果（0.1 Hz 契约，n=175，M=5,R=5）
+
+| 配置 | suffix trial AUC | hit@5 |
+|---|---:|---:|
+| scratch head（45-trial 训练） | 0.520 | 0.131 |
+| 预训练 trunk + 重训 head（两版） | 0.466–0.513 | 0.103–0.114 |
+| **预训练全模型 zero-shot** | **0.634** | **0.440** |
+
+**零校准预训练全模型把 causal hit@5 从 0.13 推到 0.44（chance 的 4 倍）**，
+hit 曲线 0.246→0.440 单调健康。45-trial 从零训 head 是结构性死路；
+预训练自带的 head（39k source trials 训练）才是正确的初始点。
+
+### 8.3 下一轮（按序）
+
+1. **head 微调的正确实现**：冻结 trunk，微调 `self.classifier`（3ch
+   ms_flatten 下参数名），lr ≤1e-4、≤5 epochs、prefix 校准后应再上一个
+   台阶（zero-shot 0.44 → 目标 0.55+）；
+2. **预训练加 QC**（挡掉 27% artifact epochs）：zero-shot AUC 0.634 →
+   预期 0.68+；
+3. 预训练 epochs 30→100（单块成本 24s×3）与 8 块划分（leave-block-out
+   更细，每 checkpoint 更大训练集）。
