@@ -40,7 +40,7 @@ def main() -> None:
     parser.add_argument("--holdout-subjects", default="", help="comma separated; never pretrain on these")
     parser.add_argument(
         "--cohort",
-        choices=("default", "gtn"),
+        choices=("default", "gtn", "gtn_paper"),
         default="default",
         help=(
             "Causal contract family asserted for forward-phase source caches: "
@@ -61,6 +61,16 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--seed", type=int, default=20260828)
+    parser.add_argument(
+        "--qc-ptp-uv",
+        type=float,
+        default=0.0,
+        help=(
+            "Drop source epochs whose peak-to-peak amplitude on any channel "
+            "exceeds this many microvolts (the GTN source study uses 100). "
+            "0 disables QC; applies to pretraining rows only."
+        ),
+    )
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--device", default="auto")
     args = parser.parse_args()
@@ -68,11 +78,13 @@ def main() -> None:
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.source_cache, require_labels=True, validation="attested")
     if dataset.preprocessing.filter_phase == "forward":
-        expected = (
-            GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT
-            if args.cohort == "gtn"
-            else SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
-        )
+        if args.cohort == "gtn":
+            expected = GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT
+        elif args.cohort == "gtn_paper":
+            from data.contract import PAPER_GTN_CAUSAL_DATA_CONTRACT
+            expected = PAPER_GTN_CAUSAL_DATA_CONTRACT
+        else:
+            expected = SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
         assert_p300_input_contract(dataset.preprocessing, expected)
     holdout = {item.strip() for item in args.holdout_subjects.split(",") if item.strip()}
     subjects = np.asarray(dataset.subject_ids).astype(str)
@@ -81,6 +93,14 @@ def main() -> None:
     if unknown:
         raise ValueError(f"holdout subjects absent from cache: {sorted(unknown)}")
     source_rows = ~np.isin(subjects, list(holdout))
+    qc_dropped = 0
+    if args.qc_ptp_uv > 0:
+        threshold = float(args.qc_ptp_uv) * 1e-6
+        X_all = np.asarray(dataset.X, dtype=np.float32)
+        ptp = X_all.max(axis=2) - X_all.min(axis=2)  # (N, C)
+        bad = (ptp >= threshold).any(axis=1)
+        qc_dropped = int((source_rows & bad).sum())
+        source_rows = source_rows & ~bad
     if int(source_rows.sum()) < 1000:
         raise ValueError("too few source rows remain after holdout exclusion.")
 
@@ -129,6 +149,8 @@ def main() -> None:
             f"{dataset.name}\0{subject}" for subject in sorted(all_subjects - holdout)
         ],
         "n_source_epochs_used": int(len(X)),
+        "qc_ptp_uv": float(args.qc_ptp_uv),
+        "qc_dropped_source_epochs": qc_dropped,
         "fit_seconds": fit_sec,
         "best_epoch": history.get("best_epoch"),
         "final_task_val_auc": history.get("final_task_val_auc"),
