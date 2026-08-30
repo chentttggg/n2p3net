@@ -183,3 +183,22 @@ K33 的 hit_all 0.804 为全场最高，W2 的"压缩候选"在 GTN 上获得支
 云端 runs：`gtn128rev_loso_floor_seed2026082{8,9}/`、
 `gtn128rev_loso_k33_seed20260828/`、`gtn128rev_causal_m5r5_*_seed20260828.json`、
 `gtn128rev_floor_analysis_seed2026{0828,0829}.json`。
+
+## 6. 高通终值：原文 0.5 Hz vs 0.1 Hz（T 提供原文设定后补测）
+
+GTN 原文（gtn_unet_2023）高通为 **0.5 Hz**。同代码同 seed 的 eegnet 对照：
+
+| 高通 | AUC | BACC | hit_all | hit@8 |
+|---|---:|---:|---:|---:|
+| 0.1 Hz | 0.7302 | 0.6688 | 0.7918 | 0.739 |
+| **0.5 Hz（原文）** | 0.7177 | 0.6557 | 0.7551 | 0.722 |
+| 2 Hz（已废弃） | 0.6637 | 0.6109 | 0.6898 | 0.604 |
+
+裁决：0.5 Hz 恢复大部分性能（vs 2 Hz：+0.054 AUC），较 0.1 Hz 低
+0.0125 AUC / 0.037 hit_all，方向与 Bougrain 2012 一致。
+**双轨决定**：
+- 主契约 `gtn_ms_eegnet_input_v3` 维持 0.1 Hz（准确率优先，性能上限），
+  作为 documented deviation 记录在案；
+- 与原文 SOTA 的正式对比表将用 0.5 Hz 锚点臂重跑（EEGNet 锚点已有：
+  0.7177/0.7551），保证预处理对齐的可比性。
+原文窗宽待查：若原文亦为 1200 ms 则 v3 窗宽已对齐。
