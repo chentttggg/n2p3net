@@ -110,6 +110,8 @@ def main() -> None:
     history = getattr(baseline, "last_history", {}) or {}
     payload = {
         "trunk_state_dict": {k: v.detach().cpu() for k, v in model.state_dict().items()},
+        "input_mean": np.asarray(baseline._input_mean, dtype=np.float32).squeeze().tolist(),
+        "input_std": np.asarray(baseline._input_std, dtype=np.float32).squeeze().tolist(),
         "config": {
             "pooling_mode": args.pooling_mode,
             "temporal_kernel_size": args.temporal_kernel_size,

@@ -40,6 +40,8 @@ class SubjectAdapterConfig:
     val_groups_max: int = 6
     early_stop_patience: int = 6
     early_stop_min_delta: float = 1e-6
+    input_mean: np.ndarray | None = None
+    input_std: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         if self.head_kind not in {"linear", "mlp16", "full_fine"}:
@@ -150,11 +152,23 @@ class SubjectAdapter:
         if len(np.unique(y[train_mask])) != 2:
             raise ValueError("training split must contain both classes.")
 
-        # Fit input statistics only on the prefix-training rows. Validation
+        # Standardization source: when the checkpoint carries the pretraining
+        # input statistics, reuse them exactly -- 45-trial std estimates are
+        # far too noisy and would shift the first-layer input distribution
+        # away from the one the pretrained trunk was trained on. Otherwise
+        # fall back to prefix-training rows (scratch behaviour). Validation
         # groups remain fully held out for early stopping and calibration.
-        X_train_stats = X[train_mask]
-        self._input_mean = X_train_stats.mean(axis=(0, 2), keepdims=True)
-        self._input_std = X_train_stats.std(axis=(0, 2), keepdims=True)
+        if self.config.input_mean is not None and self.config.input_std is not None:
+            self._input_mean = np.asarray(
+                self.config.input_mean, dtype=np.float32
+            ).reshape(1, -1, 1)
+            self._input_std = np.asarray(
+                self.config.input_std, dtype=np.float32
+            ).reshape(1, -1, 1)
+        else:
+            X_train_stats = X[train_mask]
+            self._input_mean = X_train_stats.mean(axis=(0, 2), keepdims=True)
+            self._input_std = X_train_stats.std(axis=(0, 2), keepdims=True)
         self._input_std = np.where(self._input_std < 1e-6, 1.0, self._input_std)
         self._input_mean_t = torch.as_tensor(self._input_mean, device=self.device)
         self._input_std_t = torch.as_tensor(self._input_std, device=self.device)

@@ -73,14 +73,29 @@ def main() -> None:
     parser.add_argument("--standardize", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--device", default="auto")
+    parser.add_argument(
+        "--cohort",
+        choices=("default", "gtn"),
+        default="default",
+        help=(
+            "Causal contract family asserted for forward-phase source caches: "
+            "'gtn' enforces the revised 0.1 Hz / 1200 ms child-cohort contract; "
+            "'default' enforces 2 Hz / 800 ms."
+        ),
+    )
     args = parser.parse_args()
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.source_cache, require_labels=False, validation="attested")
     if dataset.preprocessing.filter_phase == "forward":
-        from data.contract import assert_causal_p300_input_contract
+        from data.contract import assert_causal_p300_input_contract, assert_p300_input_contract
 
-        assert_causal_p300_input_contract(dataset.preprocessing)
+        from data.contract import GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT  # noqa: E402
+
+        if args.cohort == "gtn":
+            assert_p300_input_contract(dataset.preprocessing, GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT)
+        else:
+            assert_causal_p300_input_contract(dataset.preprocessing)
     holdout = {item.strip() for item in args.holdout_subjects.split(",") if item.strip()}
     source_rows, all_subjects = _source_training_rows(dataset.subject_ids, holdout)
     if not source_rows.any():

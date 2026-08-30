@@ -133,6 +133,15 @@ def main() -> None:
         contract=causal_contract,
     )
 
+    ckpt_input_stats = None
+    if args.checkpoint:
+        payload = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
+        if payload.get("input_mean") is not None and payload.get("input_std") is not None:
+            ckpt_input_stats = (
+                np.asarray(payload["input_mean"], dtype=np.float32),
+                np.asarray(payload["input_std"], dtype=np.float32),
+            )
+
     records = []
     groups = split.usable_groups
     if args.subject_offset:
@@ -174,6 +183,8 @@ def main() -> None:
                 batch_size=args.batch_size,
                 lr=args.lr,
                 seed=args.seed,
+                input_mean=None if ckpt_input_stats is None else ckpt_input_stats[0],
+                input_std=None if ckpt_input_stats is None else ckpt_input_stats[1],
             ),
             device=device,
         )
