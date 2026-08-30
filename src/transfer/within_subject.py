@@ -10,8 +10,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from data.contract import assert_causal_p300_input_contract
-from data.epochs import EpochDataset
+from data.contract import (  # noqa: E402
+    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+    assert_p300_input_contract,
+)
+from data.epochs import EpochDataset  # noqa: E402
 
 
 @dataclass(frozen=True)
@@ -35,17 +38,22 @@ def causal_prefix_suffix_split(
     prefix_repetitions: int,
     test_repetitions: int,
     min_candidate_repetitions: int = 2,
+    contract: object | None = None,
 ) -> PrefixSuffixSplit:
     """Return chronological train/test masks for every complete selection group.
 
     The split is strict: every candidate must supply the requested prefix and
     suffix around one global raw-sample embargo, and the group must have exactly
     one target. Excluded groups and reasons are returned rather than silently
-    repaired.
+    repaired. ``contract`` selects the executable causal input contract; it
+    defaults to the canonical 2 Hz / 800 ms one and cohort runners pass their
+    own (e.g. the revised GTN 0.1 Hz / 1200 ms contract).
     """
 
     dataset.validate(require_labels=True)
-    assert_causal_p300_input_contract(dataset.preprocessing)
+    assert_p300_input_contract(
+        dataset.preprocessing, contract or SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
+    )
     if prefix_repetitions < 1 or test_repetitions < 1:
         raise ValueError("prefix/test repetitions must be positive.")
     if min_candidate_repetitions < 1:

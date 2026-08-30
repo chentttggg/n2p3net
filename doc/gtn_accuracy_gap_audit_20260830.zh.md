@@ -118,3 +118,68 @@ AUC 0.66 / hit_all 0.690 / hit@8 0.62。本文审查"数学自洽但工程过严
 4. 契约修订属"documented contract change"（CODING_WORKFLOW），旧结果
    不与新契约结果跨版本比较；128/2/800 轮的所有 record 保留并标记
    `contract=p300_ms_eegnet_input_v2`（受限版）。
+
+## 4. 修订契约复跑结果（2026-08-30 下午，seed 20260828 先行）
+
+契约：`gtn_ms_eegnet_input_v3`（128 Hz / **0.1 Hz** / [-200,**1200**) ms），
+LOSO 与 causal 均已在新契约上重跑。
+
+### 4.1 LOSO floor（seed 28，245 折，subject-paired）
+
+| 模型 | AUC | BACC | hit_all | hit@5 | hit@8 |
+|---|---:|---:|---:|---:|---:|
+| window_lr | 0.596 | 0.567 | 0.404 | 0.257 | 0.359 |
+| xdawn_rg | 0.613 | 0.573 | 0.506 | 0.327 | 0.376 |
+| eegnet | 0.7302 | 0.6688 | 0.7918 | 0.653 | 0.739 |
+| ms_eegnet | 0.7283 | 0.6701 | 0.7878 | 0.649 | 0.731 |
+| n2p3net_full_unfold K65 | 0.7291 | 0.6673 | **0.8000** | 0.641 | 0.735 |
+
+配对检验（100k sign-flip）：fu−ms p=0.64、fu−eegnet p=0.53（**打平**）；
+fu−xdawn/window_lr p<1e-5。**修正上午的判定：修订契约下三深度臂 AUC 打平
+（0.728–0.730），"full_unfold 被 GTN 否定"撤回**；hit_all 上 fu 最高
+（+0.008–0.012，待 seed 29 确认）。旧契约 2 Hz 下 fu 的劣势与 causal 下的
+伪优势均为损坏信号上的 artifact。
+
+### 4.2 causal M=5,R=5（n=175，seed 28）
+
+| 臂 | AUC | hit@5 |
+|---|---:|---:|
+| ms_flatten | 0.5204 | 0.131 |
+| full_unfold K65 | 0.4776 | 0.103 |
+| full_unfold K33 | 0.5169 | 0.171 |
+
+fu−ms = **−0.043（p=0.0037）**、fu−k33 = −0.039（p=0.0020）。**causal 排序
+再次反转回 ms/k33 占优**——旧契约下 fu 的 causal 优势是损坏信号 artifact。
+全臂仍近 chance：scratch + 45 trials 校准不可行的结论在修订契约下维持，
+Gate 3（source-supervised 预训练 → 留出目标被试适配）动机不变。
+注意 n=175 时三臂都挤在 0.48–0.52，单点显著要谨慎；causal 侧最终判定
+应等多 seed 与 fold-local QC 补齐后再冻结。
+
+### 4.3 契约修订落地
+
+- `DEFAULT_GTN_DATA_CONTRACT` → `gtn_ms_eegnet_input_v3`（0.1 Hz / 1200 ms）；
+  新增 `GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT`；
+  `causal_prefix_suffix_split(contract=...)` 参数化（旧硬编码 assert 移除）。
+- BI/成人默认契约 `DEFAULT_P300_DATA_CONTRACT` 未动，其 l_freq/窗宽由
+  BI2014a 同款 A/B 另行裁决。
+- 新 caches（云端，均带 record）：`gtn_sf128_lf0.1_tm-0.2_tx1.2_mean_zero/fwd.npz`。
+
+## 5. 两 seed 终判（修订契约，LOSO 各 245 折）
+
+| 模型 | AUC s28/s29 | hit@8 s28/s29 |
+|---|---:|---:|
+| eegnet | 0.7302 / 0.7297 | 0.739 / 0.755 |
+| ms_eegnet | 0.7283 / 0.7251 | 0.731 / 0.747 |
+| full_unfold K65 | 0.7291 / 0.7266 | 0.735 / 0.722 |
+| full_unfold K33 | 0.7299（s28） | 0.759；hit_all **0.804** |
+
+配对（fu − ms）：+0.0009 (p=0.64) / +0.0015 (p=0.48)；（fu − eegnet）：
+−0.0011 (p=0.53) / −0.0032 (p=0.10)。**终判：修订契约下四臂（EEGNet、
+ms_flatten、fu-K65、fu-K33）在 trial AUC 与 hit@R 上均无可靠排序**；
+K33 的 hit_all 0.804 为全场最高，W2 的"压缩候选"在 GTN 上获得支持。
+历史 0.78/0.80 的水平已恢复并小幅超越（hit_all 0.79–0.80）。
+0.85 路线：契约修复贡献 Δhit@8 ≈ +0.13，剩余缺口归 Gate 3 transfer。
+
+云端 runs：`gtn128rev_loso_floor_seed2026082{8,9}/`、
+`gtn128rev_loso_k33_seed20260828/`、`gtn128rev_causal_m5r5_*_seed20260828.json`、
+`gtn128rev_floor_analysis_seed2026{0828,0829}.json`。

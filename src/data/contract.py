@@ -37,14 +37,27 @@ class EEGDataContract:
 
 
 DEFAULT_P300_DATA_CONTRACT = EEGDataContract(name="p300_ms_eegnet_input_v2")
+# GTN is a 7-17 year-old, 3-channel cohort: its P300 energy sits at 1-4 Hz and
+# its positive component can extend to ~1000 ms. The controlled LOSO ablation
+# of 2026-08-30 (doc/gtn_accuracy_gap_audit_20260830.zh.md) measured the
+# previous 2 Hz / 800 ms defaults at dAUC -0.066 / dHit -0.102 versus 0.1 Hz /
+# 1200 ms, so this cohort contract restores the literature-supported values.
 DEFAULT_GTN_DATA_CONTRACT = EEGDataContract(
-    name="gtn_ms_eegnet_input_v2",
+    name="gtn_ms_eegnet_input_v3",
+    l_freq=0.1,
+    tmax_ms=1200.0,
 )
 # Causal one-pass filtering for within-subject prefix/suffix protocols.
 # Zero-phase filtering would smear future test-period samples into training
 # epochs; a chronological single-subject split therefore requires this contract.
 SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT = EEGDataContract(
     name="p300_single_subject_causal_v1",
+    filter_phase="forward",
+)
+GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT = EEGDataContract(
+    name="gtn_single_subject_causal_v3",
+    l_freq=0.1,
+    tmax_ms=1200.0,
     filter_phase="forward",
 )
 
@@ -100,6 +113,12 @@ def assert_causal_p300_input_contract(preprocessing: object) -> None:
     """Assert the causal contract required for chronological single-subject folds."""
 
     assert_p300_input_contract(preprocessing, SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT)
+
+
+def assert_gtn_causal_input_contract(preprocessing: object) -> None:
+    """Assert the revised GTN causal contract (0.1 Hz high-pass, 1200 ms window)."""
+
+    assert_p300_input_contract(preprocessing, GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT)
 
 
 def assert_p300_source_provenance(dataset: object) -> None:

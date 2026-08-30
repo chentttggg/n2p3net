@@ -63,7 +63,7 @@ def test_brainsync_session_is_preprocessed_into_universal_dataset(tmp_path) -> N
 
     dataset = load_brainsync_session(session_dir, preprocessing=BRAIN_SYNC_PREPROCESSING)
 
-    assert dataset.X.shape == (3, 8, 128)
+    assert dataset.X.shape == (3, 8, BRAIN_SYNC_PREPROCESSING.n_times)
     assert dataset.X.dtype == np.float32
     assert np.array_equal(dataset.y, np.array([0, 1, 0], dtype=np.int64))
     assert dataset.preprocessing.sfreq == 128.0

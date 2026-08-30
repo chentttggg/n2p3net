@@ -21,7 +21,11 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from data.contract import assert_causal_p300_input_contract  # noqa: E402
+from data.contract import (  # noqa: E402
+    GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
+    assert_causal_p300_input_contract,
+    assert_gtn_causal_input_contract,
+)
 from data.epochs import load_epoch_dataset  # noqa: E402
 from models.n2p3net import POOLING_MODES, N2P3Net  # noqa: E402
 from train.device import get_device  # noqa: E402
@@ -85,17 +89,32 @@ def main() -> None:
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max-subjects", type=int, default=None)
+    parser.add_argument(
+        "--cohort",
+        choices=("default", "gtn"),
+        default="default",
+        help=(
+            "Causal contract family to assert: 'gtn' enforces the revised 0.1 Hz / "
+            "1200 ms child-cohort contract; 'default' enforces 2 Hz / 800 ms."
+        ),
+    )
     parser.add_argument("--device", default="auto")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
-    assert_causal_p300_input_contract(dataset.preprocessing)
+    if args.cohort == "gtn":
+        assert_gtn_causal_input_contract(dataset.preprocessing)
+    else:
+        assert_causal_p300_input_contract(dataset.preprocessing)
     split = causal_prefix_suffix_split(
         dataset,
         prefix_repetitions=args.prefix_reps,
         test_repetitions=args.test_reps,
+        contract=GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT
+        if args.cohort == "gtn"
+        else None,
     )
 
     records = []
