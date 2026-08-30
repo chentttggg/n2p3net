@@ -92,6 +92,16 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max-subjects", type=int, default=None)
     parser.add_argument(
+        "--subject-offset",
+        type=int,
+        default=0,
+        help=(
+            "Skip this many leading usable groups before --max-subjects. Combined "
+            "with a leave-block-out checkpoint this lets one checkpoint serve "
+            "exactly one contiguous block of targets."
+        ),
+    )
+    parser.add_argument(
         "--cohort",
         choices=("default", "gtn", "gtn_paper"),
         default="default",
@@ -125,6 +135,8 @@ def main() -> None:
 
     records = []
     groups = split.usable_groups
+    if args.subject_offset:
+        groups = groups[args.subject_offset :]
     if args.max_subjects is not None:
         groups = groups[: args.max_subjects]
     for group in groups:
