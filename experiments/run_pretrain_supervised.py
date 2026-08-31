@@ -50,6 +50,103 @@ SOURCE_COHORT_CONTRACTS = {
 }
 
 
+def parse_subject_prefix_repeats(value: str) -> dict[str, int]:
+    """Parse explicit subject-prefix exposure repeats from a CLI value."""
+
+    if not value.strip():
+        return {}
+    repeats: dict[str, int] = {}
+    for raw_item in value.split(","):
+        item = raw_item.strip()
+        prefix, separator, raw_repeat = item.partition("=")
+        prefix = prefix.strip()
+        raw_repeat = raw_repeat.strip()
+        if not separator or not prefix or not raw_repeat:
+            raise ValueError(
+                "subject-prefix-repeat entries must use PREFIX=INTEGER, "
+                "for example BI::=3,BNCI::=1."
+            )
+        if prefix in repeats:
+            raise ValueError(f"duplicate subject-prefix-repeat prefix: {prefix!r}")
+        try:
+            repeat = int(raw_repeat)
+        except ValueError as error:
+            raise ValueError(
+                f"subject-prefix-repeat for {prefix!r} must be an integer."
+            ) from error
+        if repeat < 1:
+            raise ValueError(
+                f"subject-prefix-repeat for {prefix!r} must be at least 1."
+            )
+        repeats[prefix] = repeat
+    return repeats
+
+
+def build_subject_prefix_exposure(
+    subjects: np.ndarray,
+    prefix_repeats: dict[str, int],
+) -> tuple[np.ndarray, dict[str, object]]:
+    """Expand row indices without splitting repeats across subject groups."""
+
+    subjects = np.asarray(subjects).astype(str)
+    if subjects.ndim != 1 or len(subjects) == 0:
+        raise ValueError("subjects must be a non-empty one-dimensional array.")
+    row_repeats = np.ones(len(subjects), dtype=np.int64)
+    matched = np.zeros(len(subjects), dtype=bool)
+    records: list[dict[str, object]] = []
+    for prefix, repeat in prefix_repeats.items():
+        prefix_mask = np.fromiter(
+            (subject.startswith(prefix) for subject in subjects),
+            dtype=bool,
+            count=len(subjects),
+        )
+        if not bool(prefix_mask.any()):
+            raise ValueError(
+                f"subject-prefix-repeat prefix {prefix!r} matches no retained source rows."
+            )
+        if bool((matched & prefix_mask).any()):
+            overlapping = sorted(set(subjects[matched & prefix_mask].tolist()))
+            raise ValueError(
+                "subject-prefix-repeat prefixes overlap for retained subjects: "
+                f"{overlapping[:5]}"
+            )
+        matched |= prefix_mask
+        row_repeats[prefix_mask] = repeat
+        unique_rows = int(prefix_mask.sum())
+        records.append(
+            {
+                "prefix": prefix,
+                "repeat": repeat,
+                "unique_physical_rows": unique_rows,
+                "optimizer_rows": unique_rows * repeat,
+                "unique_subjects": int(len(np.unique(subjects[prefix_mask]))),
+            }
+        )
+    unmatched_rows = int((~matched).sum())
+    if unmatched_rows:
+        records.append(
+            {
+                "prefix": None,
+                "repeat": 1,
+                "unique_physical_rows": unmatched_rows,
+                "optimizer_rows": unmatched_rows,
+                "unique_subjects": int(len(np.unique(subjects[~matched]))),
+            }
+        )
+    indices = np.repeat(np.arange(len(subjects), dtype=np.int64), row_repeats)
+    optimizer_rows = int(len(indices))
+    for record in records:
+        record["optimizer_fraction"] = float(record["optimizer_rows"] / optimizer_rows)
+    report: dict[str, object] = {
+        "method": "deterministic_full_row_repeat",
+        "unique_physical_rows": int(len(subjects)),
+        "optimizer_rows_per_epoch": optimizer_rows,
+        "all_unique_rows_retained": bool(len(np.unique(indices)) == len(subjects)),
+        "prefixes": records,
+    }
+    return indices, report
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-cache", required=True)
@@ -83,6 +180,15 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--seed", type=int, default=20260828)
+    parser.add_argument(
+        "--subject-prefix-repeat",
+        default="",
+        help=(
+            "Optional comma-separated PREFIX=INTEGER exposure contract. Every unique row is "
+            "retained; matching rows are deterministically repeated before group-disjoint "
+            "selection and full refit. Example: BI::=3,BNCI::=1."
+        ),
+    )
     parser.add_argument(
         "--qc-ptp-uv",
         type=float,
@@ -130,6 +236,13 @@ def main() -> None:
     if int(source_rows.sum()) < 1000:
         raise ValueError("too few source rows remain after holdout exclusion.")
 
+    prefix_repeats = parse_subject_prefix_repeats(args.subject_prefix_repeat)
+    physical_subjects = subjects[source_rows]
+    exposure_indices, source_exposure = build_subject_prefix_exposure(
+        physical_subjects,
+        prefix_repeats,
+    )
+
     runtime = GpuPerformanceScheduler(device, precision="fp32")
     config = DeepConfig(epochs=args.epochs, batch_size=args.batch_size, seed=args.seed)
     architecture = N2P3ArchitectureConfig(temporal_kernel_size=args.temporal_kernel_size)
@@ -145,9 +258,11 @@ def main() -> None:
         architecture=architecture,
     )
 
-    X = np.ascontiguousarray(dataset.X[source_rows])
-    y = np.asarray(dataset.y)[source_rows]
-    src_subjects = subjects[source_rows]
+    X_physical = np.asarray(dataset.X[source_rows])
+    y_physical = np.asarray(dataset.y)[source_rows]
+    X = np.ascontiguousarray(X_physical[exposure_indices])
+    y = y_physical[exposure_indices]
+    src_subjects = physical_subjects[exposure_indices]
     started = time.perf_counter()
     baseline.fit(X, y, group_ids=src_subjects)
     fit_sec = time.perf_counter() - started
@@ -209,6 +324,7 @@ def main() -> None:
             "epochs": args.epochs,
             "batch_size": args.batch_size,
             "seed": args.seed,
+            "subject_prefix_repeat": prefix_repeats,
             "training": "N2P3NetBaseline supervised (LOSO-identical path)",
         },
         "architecture": model.architecture_record(),
@@ -240,6 +356,15 @@ def main() -> None:
             for subject in sorted(all_subjects - holdout)
         ],
         "n_source_epochs_used": int(len(X)),
+        "n_unique_source_epochs_used": int(len(X_physical)),
+        "n_optimizer_source_rows_per_epoch": int(len(X)),
+        "source_exposure": source_exposure,
+        "source_label_counts_unique_after_qc": np.bincount(
+            y_physical, minlength=2
+        ).astype(int).tolist(),
+        "source_label_counts_optimizer_rows": np.bincount(
+            y, minlength=2
+        ).astype(int).tolist(),
         "qc_ptp_uv": float(args.qc_ptp_uv),
         "qc_dropped_source_epochs": qc_dropped,
         "source_label_counts_before_qc": source_label_counts_before_qc.tolist(),
@@ -261,6 +386,8 @@ def main() -> None:
                 "checkpoint": str(checkpoint),
                 "fit_seconds": fit_sec,
                 "n_source_epochs_used": payload["n_source_epochs_used"],
+                "n_unique_source_epochs_used": payload["n_unique_source_epochs_used"],
+                "source_exposure": source_exposure,
                 "training_subjects": len(payload["training_subjects"]),
                 "best_epoch": history.get("best_epoch"),
                 "final_task_val_auc": history.get("final_task_val_auc"),

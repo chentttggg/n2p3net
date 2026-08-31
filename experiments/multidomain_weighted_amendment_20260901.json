@@ -1,0 +1,81 @@
+{
+  "schema": "n2p3_bi2014a_cross_decision_experiment/1",
+  "frozen_before_results": false,
+  "frozen_before_new_arm_results": true,
+  "post_result_exploratory": true,
+  "parent_manifest": "experiments/multidomain_joint_manifest_20260901.json",
+  "parent_result_seen": {
+    "analysis": "artifacts/multidomain_joint_20260901/analysis.json",
+    "analysis_sha256": "2332a64a677b2d6c6bb8626f9ae32760c2e477e695866834528fa195c5ec9d0b",
+    "uniform_joint_minus_bi_only_subject_macro_delta": -0.0333048713744912,
+    "interpretation": "Uniform BI+BNCI joint training showed negative transfer before this amendment was designed."
+  },
+  "question": "After uniform BI+BNCI negative transfer, does retaining all BNCI rows but increasing BI optimizer exposure recover BI cross-decision accuracy?",
+  "dataset_cache_sha256": "ba3b9319c7bf3749bcf2aab8907ba2aef6fc68d957843959aea4eece841b8679",
+  "block_manifest": "experiments/manifests/bi2014a_cross_decision_car5/manifest.json",
+  "architecture": {
+    "pooling_mode": "full_unfold",
+    "temporal_kernel_size": 35,
+    "channels": ["CZ", "P3", "PZ", "P4", "OZ"],
+    "reference": "common_average[CZ,P3,PZ,P4,OZ]",
+    "preprocessing": "multidomain_p300_causal_v1"
+  },
+  "source_training": {
+    "seeds": [20260901, 20260902, 20260903],
+    "epochs": 100,
+    "batch_size": 512,
+    "source_qc_ptp_uv": 0.0,
+    "new_arm_subject_prefix_repeat": {
+      "BI::": 3,
+      "BNCI::": 1
+    },
+    "epoch_semantics": "one pass over expanded optimizer rows; the new arm has more updates per epoch than both parent arms"
+  },
+  "target_protocol": {
+    "calibration_selections": 5,
+    "test_repetitions": 2,
+    "max_test_selections": null,
+    "epoch_selection": "fixed_budget",
+    "batch_size": 256,
+    "fold_local_qc": false,
+    "adapt_batchnorm": false,
+    "target_stat_weight": 0.25
+  },
+  "arms": [
+    {
+      "name": "bi_only_car5",
+      "head": "zero_shot",
+      "normalization": "source",
+      "source_cache_sha256": "ba3b9319c7bf3749bcf2aab8907ba2aef6fc68d957843959aea4eece841b8679",
+      "result_origin": "parent_experiment"
+    },
+    {
+      "name": "bi_bnci_joint_car5",
+      "head": "zero_shot",
+      "normalization": "source",
+      "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+      "result_origin": "parent_experiment"
+    },
+    {
+      "name": "bi_bnci_joint_bi3_bnci1_car5",
+      "head": "zero_shot",
+      "normalization": "source",
+      "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+      "subject_prefix_repeat": {
+        "BI::": 3,
+        "BNCI::": 1
+      },
+      "result_origin": "amendment_new_arm"
+    }
+  ],
+  "primary_endpoint": "requested-subject macro operational hit@2",
+  "planned_contrasts": [
+    ["bi_bnci_joint_bi3_bnci1_car5", "bi_only_car5"],
+    ["bi_bnci_joint_bi3_bnci1_car5", "bi_bnci_joint_car5"]
+  ],
+  "bootstrap_iterations": 100000,
+  "analysis_seed": 20260911,
+  "minimum_engineering_delta": 0.02,
+  "causal_limit": "A gain cannot distinguish exposure ratio from the larger optimizer-step budget in this amendment arm.",
+  "evidence_scope": "post-result exploratory adult public-source development test; not BrainSync target-domain confirmation"
+}
