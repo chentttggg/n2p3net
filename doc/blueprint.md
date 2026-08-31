@@ -24,6 +24,11 @@ There is no universal P300 recipe. Executable profiles currently include:
 | GTN paper anchor | source-paper comparison | 128 Hz, 0.5 Hz, 1200 ms anchor |
 | causal | chronological online estimate | forward IIR with persisted steady-state initial state |
 
+BrainSync uses the generic causal 2-30 Hz / 800 ms profile by default. Multiple
+sessions are ordered by timezone-aware `started_utc`; marker `selection_id` or
+`block_id` defines target-changing decisions. Multi-session input without a
+unique timestamp fails closed.
+
 All profiles execute per-trial, per-channel `[-200,0) ms` mean correction.
 Native acquisition remains first-class (250 Hz for BrainSync); raw samples and
 event indices are preserved while only the derived model tensor is resampled.
@@ -39,6 +44,14 @@ deviation is prohibited before physical QC. Source reference and native sample
 rate are provenance fields; datasets with different source references cannot be
 concatenated until one explicit common re-reference has been executed and
 recorded.
+
+Cross-dataset transfer has one implemented deterministic route: select a
+declared real-channel intersection and subtract its instantaneous common
+average in every domain. This cancels the original common reference offset
+algebraically and regenerates QC features. It does not solve missing selected
+channels, incompatible filtering/windows, or learned spatial alignment; those
+remain fail-closed. A dataset-specific spatial stem is still a research arm,
+not an implemented default.
 
 The executable equations, discrete-time conventions, counterexamples, and
 source-to-decision code chain are specified in `doc/input_contract_math.zh.md`.

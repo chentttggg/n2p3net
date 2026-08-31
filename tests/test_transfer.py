@@ -13,7 +13,8 @@ from data.channel import build_channel_identity
 from data.contract import CAUSAL_IIR_INITIAL_STATE
 from data.epochs import EpochDataset, PreprocessingSpec, save_epoch_dataset
 from data.events import ScheduledEventTimeline, candidate_repetition_indices
-from experiments.run_pretrain import _source_training_rows
+from experiments.run_pretrain import _source_training_rows, _subject_probe_validation_mask
+from experiments.run_pretrain import main as run_pretrain_main
 from experiments.run_within_subject_transfer import _load_trunk
 from experiments.run_within_subject_transfer import main as run_transfer_main
 from models.n2p3net import N2P3Net
@@ -85,6 +86,24 @@ def test_band_weights_sum_to_one_and_zero_reconstruction_loss() -> None:
     assert float(losses["spectral"]) < 1e-5
 
 
+def test_reconstruction_loss_ignores_visible_region_errors() -> None:
+    x = torch.zeros(2, 3, 128)
+    x_hat = x.clone()
+    x_hat[..., :64] = 10.0
+    masked_region = torch.zeros(1, 1, 128, dtype=torch.bool)
+    masked_region[..., 64:] = True
+
+    losses = reconstruction_loss(
+        x,
+        x_hat,
+        sfreq=128.0,
+        config=ReconstructionLossConfig(waveform_weight=1.0, spectral_weight=0.0),
+        sample_mask=masked_region,
+    )
+
+    assert float(losses["total"]) == pytest.approx(0.0, abs=1e-8)
+
+
 def test_band_balanced_loss_is_lower_for_exact_waveform() -> None:
     x = torch.randn(4, 3, 128)
     bad = torch.randn(4, 3, 128)
@@ -138,8 +157,18 @@ def test_pretraining_task_loss_and_subject_probe() -> None:
     x = torch.randn(8, 3, 128)
     ids = torch.randint(0, 4, (8,))
     components = task.loss_components(x, subject_ids=ids)
-    assert set(components) == {"waveform", "spectral", "total", "subject_probe"}
+    assert set(components) == {
+        "waveform",
+        "spectral",
+        "total",
+        "subject_probe",
+        "subject_probe_correct",
+    }
     assert torch.isfinite(components["total"])
+    task.zero_grad(set_to_none=True)
+    components["subject_probe"].backward()
+    assert all(parameter.grad is None for parameter in task.trunk.parameters())
+    assert any(parameter.grad is not None for parameter in task.probe.parameters())
     task.discard_decoder()
     assert task.decoder is None and task.probe is None
 
@@ -154,6 +183,50 @@ def test_pretraining_holdout_must_exist_in_the_source_cache() -> None:
 
     with pytest.raises(ValueError, match="absent from the source cache"):
         _source_training_rows(np.asarray(["s1", "s2"]), {"typo"})
+
+
+def test_subject_probe_validation_split_holds_out_each_subject() -> None:
+    subjects = np.repeat(np.asarray(["s1", "s2", "s3"]), 10)
+    first = _subject_probe_validation_mask(subjects, seed=11)
+    second = _subject_probe_validation_mask(subjects, seed=11)
+
+    assert np.array_equal(first, second)
+    assert [int(first[subjects == subject].sum()) for subject in np.unique(subjects)] == [2, 2, 2]
+
+
+def test_pretraining_runner_records_trained_stop_gradient_subject_probe(
+    tmp_path, monkeypatch
+) -> None:
+    dataset = _causal_candidate_dataset()
+    cache = save_epoch_dataset(tmp_path / "pretrain.npz", dataset)
+    checkpoint = tmp_path / "pretrained.pt"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_pretrain.py",
+            "--source-cache",
+            str(cache),
+            "--checkpoint",
+            str(checkpoint),
+            "--cohort",
+            "p300_causal",
+            "--epochs",
+            "1",
+            "--batch-size",
+            "32",
+            "--device",
+            "cpu",
+        ],
+    )
+
+    run_pretrain_main()
+
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    assert payload["classifier_trained"] is False
+    assert payload["subject_probe_audit"]["enabled"] is True
+    assert payload["subject_probe_audit"]["stop_gradient"] is True
+    assert payload["subject_probe_audit"]["n_subjects"] == 3
+    assert payload["subject_probe_audit"]["final_validation_accuracy"] is not None
 
 
 def test_subject_probe_shape() -> None:

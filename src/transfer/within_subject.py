@@ -43,6 +43,28 @@ class PrefixSuffixSplit:
 
 
 @dataclass(frozen=True)
+class CalibrationDecisionSplit:
+    """Known complete decisions followed by later unknown target decisions."""
+
+    calibration_mask: np.ndarray
+    test_mask: np.ndarray
+    group_ids: np.ndarray
+    candidate_codes: np.ndarray
+    target_codes: np.ndarray
+    repetition_indices: np.ndarray
+    test_repetition_indices: np.ndarray
+    truth_by_group: dict[str, int]
+    candidate_vocab: tuple[int, ...]
+    usable_subjects: tuple[str, ...]
+    calibration_groups_by_subject: dict[str, tuple[str, ...]]
+    requested_test_groups_by_subject: dict[str, tuple[str, ...]]
+    test_groups_by_subject: dict[str, tuple[str, ...]]
+    failed_test_groups_by_subject: dict[str, dict[str, str]]
+    excluded_subjects: dict[str, str]
+    excluded_groups: dict[str, str]
+
+
+@dataclass(frozen=True)
 class ChronologicalValidationSplit:
     """A temporal inner split with validation strictly after optimization rows.
 
@@ -57,6 +79,202 @@ class ChronologicalValidationSplit:
     train_repetitions: tuple[int, ...]
     validation_repetitions: tuple[int, ...]
     embargo_mask: np.ndarray | None = None
+
+
+def calibration_decision_split(
+    dataset: EpochDataset,
+    *,
+    calibration_selections: int,
+    test_repetitions: int,
+    max_test_selections: int | None = None,
+    candidate_vocabulary: Sequence[int] | None = None,
+) -> CalibrationDecisionSplit:
+    """Split complete early decisions from later target-changing decisions."""
+
+    dataset.validate(require_labels=True)
+    assert_p300_input_contract(
+        dataset.preprocessing, SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
+    )
+    if calibration_selections < 1 or test_repetitions < 1:
+        raise ValueError("calibration_selections and test_repetitions must be positive.")
+    if max_test_selections is not None and max_test_selections < 1:
+        raise ValueError("max_test_selections must be positive or None.")
+
+    timeline = dataset.event_timeline
+    evidence = np.asarray(timeline.evidence_indices, dtype=np.int64)
+    available_events = np.flatnonzero(evidence >= 0)
+    if len(np.unique(evidence[available_events])) != len(available_events):
+        raise ValueError("candidate event evidence mapping must be one-to-one.")
+    scheduled_candidates = np.asarray(timeline.candidate_ids).astype(str)
+    scheduled_targets = np.asarray(timeline.target_candidate_ids).astype(str)
+    scheduled_repetitions = np.asarray(timeline.repetition_indices, dtype=np.int64)
+    scheduled_groups = np.asarray(timeline.group_ids).astype(str)
+    scheduled_sessions = np.asarray(timeline.session_ids).astype(str)
+    scheduled_onsets = np.asarray(timeline.onset_times_s, dtype=float)
+    scheduled_available = np.asarray(timeline.evidence_available_times_s, dtype=float)
+    try:
+        candidate_values = scheduled_candidates[available_events].astype(np.int64)
+        _ = scheduled_targets[available_events].astype(np.int64)
+    except ValueError as exc:
+        raise ValueError("candidate and target ids must encode integer choices.") from exc
+    vocabulary = (
+        tuple(sorted(np.unique(candidate_values).tolist()))
+        if candidate_vocabulary is None
+        else tuple(int(value) for value in candidate_vocabulary)
+    )
+    if len(vocabulary) < 2 or len(set(vocabulary)) != len(vocabulary):
+        raise ValueError("candidate_vocabulary must contain at least two unique choices.")
+
+    n_epochs = dataset.n_epochs
+    group_by_epoch = np.empty(n_epochs, dtype=object)
+    candidate_by_epoch = np.full(n_epochs, -1, dtype=np.int64)
+    target_by_epoch = np.full(n_epochs, -1, dtype=np.int64)
+    repetition_by_epoch = np.full(n_epochs, -1, dtype=np.int64)
+    onset_by_epoch = np.empty(n_epochs, dtype=float)
+    available_by_epoch = np.empty(n_epochs, dtype=float)
+    session_by_epoch = np.empty(n_epochs, dtype=object)
+    for event in available_events:
+        epoch = int(evidence[event])
+        group_by_epoch[epoch] = scheduled_groups[event]
+        candidate_by_epoch[epoch] = int(scheduled_candidates[event])
+        target_by_epoch[epoch] = int(scheduled_targets[event])
+        repetition_by_epoch[epoch] = int(scheduled_repetitions[event])
+        onset_by_epoch[epoch] = float(scheduled_onsets[event])
+        available_by_epoch[epoch] = float(scheduled_available[event])
+        session_by_epoch[epoch] = scheduled_sessions[event]
+
+    session_start = np.zeros(n_epochs, dtype=float)
+    if "session_start_timestamp_s" in dataset.metadata:
+        raw_starts = dataset.metadata["session_start_timestamp_s"].to_numpy()
+        session_start = np.asarray(
+            [np.nan if value is None else float(value) for value in raw_starts], dtype=float
+        )
+    unique_sessions = np.unique(session_by_epoch.astype(str))
+    if len(unique_sessions) > 1 and not np.isfinite(session_start).all():
+        raise ValueError(
+            "multi-session decision splitting requires session_start_timestamp_s metadata."
+        )
+    session_start = np.where(np.isfinite(session_start), session_start, 0.0)
+    absolute_onset = session_start + onset_by_epoch
+    absolute_available = session_start + available_by_epoch
+
+    calibration_mask = np.zeros(n_epochs, dtype=bool)
+    test_mask = np.zeros(n_epochs, dtype=bool)
+    test_repetitions_out = np.full(n_epochs, -1, dtype=np.int64)
+    truth_by_group: dict[str, int] = {}
+    usable_subjects: list[str] = []
+    calibration_by_subject: dict[str, tuple[str, ...]] = {}
+    requested_by_subject: dict[str, tuple[str, ...]] = {}
+    test_by_subject: dict[str, tuple[str, ...]] = {}
+    failed_by_subject: dict[str, dict[str, str]] = {}
+    excluded_subjects: dict[str, str] = {}
+    excluded_groups: dict[str, str] = {}
+    epoch_start_offset_s = float(dataset.preprocessing.tmin_ms) / 1000.0
+
+    def group_rows(group: str) -> np.ndarray:
+        return np.flatnonzero(group_by_epoch == group)
+
+    def complete(rows: np.ndarray, repetitions: int | None) -> bool:
+        if len(np.unique(target_by_epoch[rows])) != 1:
+            return False
+        if set(candidate_by_epoch[rows].tolist()) != set(vocabulary):
+            return False
+        for candidate in vocabulary:
+            candidate_rows = rows[candidate_by_epoch[rows] == candidate]
+            candidate_repetitions = np.sort(repetition_by_epoch[candidate_rows])
+            if repetitions is None:
+                if len(candidate_repetitions) < 1 or not np.array_equal(
+                    candidate_repetitions,
+                    np.arange(len(candidate_repetitions), dtype=np.int64),
+                ):
+                    return False
+            elif not np.array_equal(
+                candidate_repetitions[candidate_repetitions < repetitions],
+                np.arange(repetitions, dtype=np.int64),
+            ):
+                return False
+        return True
+
+    epoch_subjects = np.asarray(dataset.subject_ids).astype(str)
+    for subject in np.unique(epoch_subjects):
+        subject = str(subject)
+        subject_rows = np.flatnonzero(epoch_subjects == subject)
+        groups = np.unique(group_by_epoch[subject_rows].astype(str)).tolist()
+        ordered = tuple(
+            sorted(groups, key=lambda group: float(np.min(absolute_onset[group_rows(group)])))
+        )
+        if len(ordered) <= calibration_selections:
+            excluded_subjects[subject] = "insufficient_decisions"
+            continue
+        calibration = ordered[:calibration_selections]
+        later = ordered[calibration_selections:]
+        requested = tuple(
+            later if max_test_selections is None else later[:max_test_selections]
+        )
+        requested_by_subject[subject] = requested
+        calibration_rows = [group_rows(group) for group in calibration]
+        invalid_calibration = [
+            group for group, rows in zip(calibration, calibration_rows, strict=True)
+            if not complete(rows, None)
+        ]
+        if invalid_calibration:
+            for group in invalid_calibration:
+                excluded_groups[group] = "incomplete_calibration_decision"
+            excluded_subjects[subject] = "invalid_calibration_decision"
+            failed = {group: "calibration_failed" for group in requested}
+            failed_by_subject[subject] = failed
+            excluded_groups.update(failed)
+            continue
+        calibration_rows_array = np.concatenate(calibration_rows)
+        boundary = float(np.max(absolute_available[calibration_rows_array]))
+        eligible: list[str] = []
+        failed: dict[str, str] = {}
+        for group in requested:
+            rows = group_rows(group)
+            if float(np.min(absolute_onset[rows] + epoch_start_offset_s)) <= boundary:
+                reason = "selection_overlaps_calibration_evidence"
+            elif not complete(rows, test_repetitions):
+                reason = "insufficient_complete_test_repetitions"
+            else:
+                reason = ""
+            if reason:
+                failed[group] = reason
+                excluded_groups[group] = reason
+                continue
+            selected = rows[repetition_by_epoch[rows] < test_repetitions]
+            test_mask[selected] = True
+            test_repetitions_out[selected] = repetition_by_epoch[selected]
+            truth_by_group[group] = int(np.unique(target_by_epoch[selected])[0])
+            eligible.append(group)
+        failed_by_subject[subject] = failed
+        if not eligible:
+            excluded_subjects[subject] = "no_eligible_unknown_test_decision"
+            continue
+        calibration_mask[calibration_rows_array] = True
+        usable_subjects.append(subject)
+        calibration_by_subject[subject] = calibration
+        test_by_subject[subject] = tuple(eligible)
+
+    if not usable_subjects:
+        raise ValueError("No subject has valid calibration and later unknown decisions.")
+    return CalibrationDecisionSplit(
+        calibration_mask=calibration_mask,
+        test_mask=test_mask,
+        group_ids=group_by_epoch.astype(str),
+        candidate_codes=candidate_by_epoch,
+        target_codes=target_by_epoch,
+        repetition_indices=repetition_by_epoch,
+        test_repetition_indices=test_repetitions_out,
+        truth_by_group=truth_by_group,
+        candidate_vocab=vocabulary,
+        usable_subjects=tuple(usable_subjects),
+        calibration_groups_by_subject=calibration_by_subject,
+        requested_test_groups_by_subject=requested_by_subject,
+        test_groups_by_subject=test_by_subject,
+        failed_test_groups_by_subject=failed_by_subject,
+        excluded_subjects=excluded_subjects,
+        excluded_groups=excluded_groups,
+    )
 
 
 def chronological_time_validation_split(

@@ -113,11 +113,17 @@ BrainSync 成人 8 导、多数字、多 session 数据是 90% 的最终裁决�
 - acquisition/source/model sample rate、参考、坐标、EOG/QC 独立记录；
 - session 边界、真实 `block_id`、事件 onset 和 evidence-available time。
 
+工程入口现已支持 causal steady-state、单 session 多 block/selection、多 session
+`started_utc` 排序、target-switch split/runner，以及显式公共通道 CAR 域适配。当前
+本机 4 个历史 sessions 分别缺 recording、recording_error 或仍为
+`analysis_ready=false`/target pending，均不能进入准确率分析；必须重新采集。
+
 ## 3. 2026-08-31 证据清算
 
 | 证据 | 当前状态 | 允许结论 |
 |---|---|---|
 | BI2014a 128 Hz zero-phase LOSO assets | 历史开发制品，可复算 | 只作架构开发；outer test 已被多轮查看 |
+| BI2014a causal-v2 cross-decision | 64 人、12 source checkpoints、13 arms x 3 seeds；zero-shot hit@2=0.194，coverage=964/1416 | source stats/classifier 保留；5-decision fine 无可靠增益；target stats 不采用 |
 | GTN 2 Hz/800 ms zero-phase assets | 历史开发制品，可复算 | 旧受限 recipe 的结果 |
 | GTN steady-state causal 2x2 bundle | 4 cache records、32 checkpoints、120 eval JSON 已本地独立复算 | 0.1 Hz/1200 ms 是当前开发 signal winner；不作产品确认 |
 | GTN Z0 最佳固定-R baseline | hit@5 coverage 230/245；conditional 0.578；operational 0.543；AUC 0.709 | 未达到 0.90；15 人仅因 R_s=2--4 无法到 @5，仍进入 all-evidence 主分析 |
@@ -166,10 +172,10 @@ gtn_paper_causal_v2
 | causal high-pass | 0.1 vs 0.5 Hz | GTN steady-state 已完成，development 冻结 0.1 Hz |
 | epoch end | 800 vs 1200 ms | GTN 2x2 已完成，development 冻结 1200 ms |
 | online/offline | forward steady-state vs split-local zero-phase | 机制敏感性；禁止 whole-record zero-phase |
-| normalization | source stats / target-prefix stats / shrinkage | 合法 cross-decision 待跑 |
+| normalization | source stats / target-prefix stats / shrinkage | BI 已完成：source≈shrinkage，target-prefix 在所有 head 上下降 |
 | target QC | none / prefix-fit fold-local | source QC100 已冻结；target QC 待独立 decision 消融 |
 | epoch budget | source/fixed budget / real-time target holdout + full-prefix refit | 代码闭合，性能待独立 decision |
-| adaptation | zero-shot / pretrained-classifier fine / scratch head / full fine | GTN 有标签只允许 O5；BI/BrainSync 待跑 |
+| adaptation | zero-shot / pretrained-classifier fine / scratch head / full fine | BI 已完成：fine 无可靠增益，scratch 更差；BrainSync 待真实数据 |
 | BatchNorm | frozen running stats / target adapt | 待合法 cross-decision |
 | aggregation | all-evidence mean / tempered effective count / sum / fixed-count trim | mean 当前领先；all/R/cost 共同报告；precision 仅有预测方差时启用 |
 | decision objective | trial CE / 9-candidate listwise + trial CE | 30-epoch全参数实验已完成且不晋升；保护 backbone 的分阶段策略待新实验 |
@@ -266,6 +272,13 @@ fixed epoch budget vs time-heldout selection + full-prefix refit
 
 同一 GTN thought digit 的 O5 只作反例/诊断，不参与晋升。
 
+BI causal-v2 已完成 64 人、3 seeds 匹配比较。zero-shot/source stats 的
+subject-macro operational hit@2=`0.1941`；classifier fine + shrinkage=`0.1958`，
+full fine + shrinkage=`0.1989`，paired CI 均跨 0。target-prefix normalization
+在 classifier/full/linear/MLP16 四种 head 上均下降，scratch linear 相对 zero-shot
+显著下降 `4.22 pp`。因此当前默认保持 source classifier + source stats；少量已知
+decisions 暂不用于更新网络或替换输入统计。
+
 ### Gate 4：无真值目标自适配与决策目标
 
 GTN 可合法研究不使用 thought-number 真标签的目标适配：
@@ -302,8 +315,8 @@ primary 为 subject-macro `hit@R`，并给 subject-cluster CI、coverage、absta
 1. 已完成 steady-state causal 2x2、source-QC 消融与独立制品审计；
 2. 采用不额外微调的 `full_unfold + K35` v4 checkpoint 和 all-evidence candidate
    mean 作为临时工程默认；K65 保留强对照，停止 K33 主线；
-3. 使用已重建 candidate-v2，训练四个 target-block-excluded checkpoint 并跑跨 decision calibration；
+3. BI cross-decision 已完成且不支持 5-decision personalization；保留 zero-shot/source stats；
 4. decision-aligned 全参数 30-epoch recipe 已否决；下一次只研究保护 backbone 的
    分阶段单轴策略、无真值 adaptation 与 target-switch personalization；
-5. 设计并采集成人 BrainSync 多 decision/target-switch 数据；
+5. 使用已闭合的 causal multi-session/target-switch 入口重新采集成人 BrainSync 数据；
 6. 不再引用 legacy zero-state ranking，也不把 O5 当未知数字校准。

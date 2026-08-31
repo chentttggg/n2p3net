@@ -30,3 +30,23 @@ Rebuild with the project environment:
 The four target blocks contain 16 subjects each and were balanced only by
 unlabeled epoch count. They are used to train target-block-excluded supervised
 source checkpoints; they are not performance-selected folds.
+
+## Cross-Decision Result
+
+The matched experiment ran from Git commit `fc7c8f2` with 12 source
+checkpoints and 13 model/normalization arms across three seeds. Compact analysis,
+checkpoint metadata and SHA indexes are in `cross_decision/`; the `.pt` files
+and 156 full result JSON files remain external.
+
+- requested decisions: 1416;
+- eligible at two repetitions: 964 (68.1%);
+- zero-shot/source-stats subject-macro hit@2: 19.41%;
+- classifier-fine/shrinkage: 19.58%, no reliable paired gain;
+- full-fine/shrinkage: 19.89%, no reliable paired gain;
+- target-prefix normalization reduced every head;
+- linear scratch/shrinkage reduced hit by 4.22 percentage points versus zero-shot.
+
+The compact archive downloaded from the cloud had SHA-256
+`9643ff74fca209434e3c3c17cefa6987cb4e84bc8d280f721b98f457f316a8e0`.
+BI2014a is a 6x6 character mechanism benchmark, not 9-choice BrainSync
+confirmation.

@@ -87,16 +87,41 @@ class PretrainingTask(nn.Module):
             sfreq=self.trunk.sfreq,
             config=self.config.loss,
             weights=self._band_weights,
+            sample_mask=mask.to(device=x.device)[None, None, :],
         )
-        if self.probe is not None:
-            if subject_ids is None or subject_ids.shape != (x.shape[0],):
+        if self.probe is not None and subject_ids is not None:
+            if subject_ids.shape != (x.shape[0],):
                 raise ValueError("subject probe requires subject_ids aligned with x.")
-            flattened = features.flatten(start_dim=1)
+            flattened = features.detach().flatten(start_dim=1)
+            probe_logits = self.probe(flattened)
             components["subject_probe"] = nn.functional.cross_entropy(
-                self.probe(flattened),
+                probe_logits,
                 subject_ids.to(device=x.device),
             )
+            components["subject_probe_correct"] = probe_logits.argmax(dim=1).eq(
+                subject_ids.to(device=x.device)
+            ).sum()
         return components
+
+    def subject_probe_components(
+        self,
+        x: torch.Tensor,
+        subject_ids: torch.Tensor,
+    ) -> dict[str, torch.Tensor]:
+        """Evaluate the audit probe on unmasked stop-gradient trunk features."""
+
+        if self.probe is None:
+            raise RuntimeError("subject probe is disabled.")
+        if subject_ids.shape != (x.shape[0],):
+            raise ValueError("subject_ids must align with the probe batch.")
+        with torch.no_grad():
+            features = self.trunk.forward_features(x).flatten(start_dim=1)
+        logits = self.probe(features.detach())
+        targets = subject_ids.to(device=x.device)
+        return {
+            "loss": nn.functional.cross_entropy(logits, targets),
+            "correct": logits.argmax(dim=1).eq(targets).sum(),
+        }
 
     def discard_decoder(self) -> None:
         """Remove pretraining-only parameters after pretraining is complete."""

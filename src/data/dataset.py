@@ -251,6 +251,7 @@ def build_subject(
     candidate_ids: Sequence[object] | None = None,
     target_candidate_ids: Sequence[object] | object | None = None,
     repetition_indices: Sequence[int] | None = None,
+    selection_ids: Sequence[object] | None = None,
     n_freqs: int = DEFAULT_N_FREQS,
     **preprocess_kwargs,
 ) -> SubjectData:
@@ -288,7 +289,6 @@ def build_subject(
     session_id = str(subject_metadata.get("session", ""))
     run_id = str(subject_metadata.get("run", ""))
     selection_id = str(subject_metadata.get("selection_id", subject_id))
-    group_id = selection_group_id(dataset_id, subject_id, session_id, run_id, selection_id)
 
     def _event_strings(values: Sequence[object] | object | None, name: str) -> np.ndarray | None:
         if values is None:
@@ -305,6 +305,16 @@ def build_subject(
 
     event_candidates = _event_strings(candidate_ids, "candidate_ids")
     event_targets = _event_strings(target_candidate_ids, "target_candidate_ids")
+    event_selections = _event_strings(selection_ids, "selection_ids")
+    if event_selections is None:
+        event_selections = np.repeat(selection_id, len(events)).astype(str)
+    event_groups = np.asarray(
+        [
+            selection_group_id(dataset_id, subject_id, session_id, run_id, value)
+            for value in event_selections
+        ],
+        dtype=str,
+    )
     event_repetitions = None
     if repetition_indices is not None:
         raw_repetitions = np.asarray(repetition_indices)
@@ -322,7 +332,7 @@ def build_subject(
                 for index in range(len(events))
             ]
         ),
-        group_ids=np.repeat(group_id, len(events)),
+        group_ids=event_groups,
         subject_ids=np.repeat(str(subject_id), len(events)),
         stimulus_ids=np.asarray(events[:, 2], dtype=np.int64),
         onset_samples=result.event_samples,
@@ -334,7 +344,7 @@ def build_subject(
         dataset_ids=np.repeat(dataset_id, len(events)),
         session_ids=np.repeat(session_id, len(events)),
         run_ids=np.repeat(run_id, len(events)),
-        selection_ids=np.repeat(selection_id, len(events)),
+        selection_ids=event_selections,
         complete=True,
         online_causal=result.online_causal,
         timing_source="source_mne_event_samples;epoched_resample;epoch_right_edge",

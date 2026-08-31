@@ -59,6 +59,7 @@ documented in `doc/device-portability.md`.
 The LOSO runner requires the signal and baseline extras. The living research
 guide is `doc/research_program.zh.md`; dated ablations remain historical evidence.
 The current concise research briefing is `doc/research_status_report_20260831.zh.md`.
+The current project-wide critical review is `doc/project_critical_review_20260901.zh.md`.
 `doc/constitution.md` and `doc/blueprint.md` contain stable engineering principles.
 
 ## Data Contract
@@ -69,14 +70,30 @@ P300 filter/window recipe. The adult offline default is 128 Hz, 2-30 Hz and
 Chronological online profiles use forward IIR with
 `causal_iir_initial_state=steady_state_first_sample`; legacy zero-state forward
 caches are rejected. BrainSync acquisition and raw event indices remain at the
-device-native 250 Hz; only the derived model tensor is resampled. Use the adapter
-to preserve the frontend's raw recording boundary while applying preprocessing:
+device-native 250 Hz; only the derived model tensor is resampled. BrainSync now
+defaults to the generic causal 2-30 Hz / 800 ms profile and accepts repeated
+session inputs; block/selection markers remain distinct target-changing decisions.
+Use the adapter to preserve the frontend's raw recording boundary while applying preprocessing:
 
 ```powershell
 .\.venv\Scripts\python.exe experiments\prepare_eeg_dataset.py brainsync `
-  --session-dir "D:\path\to\session" `
+  --session-dir "D:\path\to\calibration-session" `
+  --session-dir "D:\path\to\test-session" `
   --output "D:\path\to\epochs.npz"
 ```
+
+Cross-dataset checkpoints remain fail-closed. The implemented deterministic
+domain route is an explicit common channel subset followed by CAR on that same
+subset in every domain:
+
+```powershell
+.\.venv\Scripts\python.exe experiments\adapt_eeg_domain.py `
+  --dataset-cache source.npz --target-channels "Cz,P3,Pz,P4,Oz" `
+  --output source_common_car.npz
+```
+
+Source and target caches must then share preprocessing, channel order, CAR
+provenance and a newly trained checkpoint. Missing channels are not padded.
 
 The adapter reads `recording.path`, filters onset `recording_marker` rows from
 `events/events.jsonl`, derives labels from the confirmed target digit, uses

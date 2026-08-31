@@ -3,7 +3,9 @@
 日期：2026-08-28
 状态：historical mechanism spec；当前执行状态如下：source-supervised checkpoint
 保留训练好的 classifier、inner epoch 选择后在全部 source rows refit，并固化完整输入
-签名；masked-reconstruction checkpoint 的 classifier 未训练，不能 zero-shot 使用。
+签名；masked-region reconstruction 与 stop-gradient、逐 subject 20% held-out probe
+已进入标准 runner，
+但其 checkpoint classifier 仍未训练，不能 zero-shot 使用。
 GTN labelled same-selection adaptation 已降级为 oracle proxy。当前研究顺序直接见
 `research_program.zh.md`，本文不再提供独立执行默认值。
 依赖：`doc/pretraining_head_comparison.zh.md`、
@@ -231,9 +233,8 @@ Step 3  `--prefix-reps 5 --head zero_shot` 是 Z5。任何读取同 selection �
         classifier_fine/linear/mlp16/full_fine 都是 O5 oracle proxy，必须带
         `--allow-oracle-same-selection-adaptation`，不得写成未知数字校准。
 
-Step 4  监督校准主线转到 BI candidate-v2 的跨 decision split；64 人 causal-v2
-        cache 已构建并 attested，性能结果须等待冻结 block checkpoint 后再报告。
-        最终裁决转到成人 BrainSync 多 target-switch decisions。
+Step 4  BI candidate-v2 cross-decision 已完成；5-decision fine 无可靠增益，
+        source stats/classifier 保留。最终裁决转到成人 BrainSync 多 target-switch decisions。
 
 Step 5  对冻结候选执行鲁棒性门禁 G1-G5。
 ```

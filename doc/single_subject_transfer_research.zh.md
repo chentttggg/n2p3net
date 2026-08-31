@@ -81,6 +81,12 @@ zero-shot all-evidence。K35 的 learned-tempered 为 `0.6884`，低于不微调
 candidate mean 的 `0.7143`；fine-tuned backbone 即使用 fixed mean 也只有 `0.6585`。
 因此 `full_fine` 继续保留为高风险消融，不再默认假设“算力更多/训练更久会更准”。
 
+BI2014a 合法 cross-decision 进一步给出同方向结果：5 个已知 decisions 后，
+zero-shot/source stats=`0.1941`，classifier/full fine + shrinkage=`0.1958/0.1989`，
+paired CI 均跨 0；target-prefix stats 在所有 head 上下降，linear scratch 明显更差。
+因此当前单被试默认是**不更新 source classifier、不替换 source stats**。这不是证明
+personalization 永远无效，而是证明当前 5-decision/当前 optimizer 没有净收益。
+
 45 trial 随机重训 head 的旧失败不能证明所有校准无效。正确比较至少包括：
 
 - 保留 source classifier；
@@ -124,6 +130,6 @@ uniform `1/9` 和 empirical-majority baseline；正式采集目标必须随机�
 1. GTN steady-state causal 2x2、Z0/Z5 与 source-QC 消融已经完成并审计；
 2. 当前工程主线固定为 full-unfold+K35、0.1 Hz/1200 ms、source QC100、
    不做额外联合微调；all-evidence 使用全部 trial 的 candidate mean，K65 保留对照；
-3. 使用已重建 BI candidate-v2 和冻结 block checkpoint，跑 early-known -> later-unknown calibration；
-4. 只在独立 development decisions 选择 personalization/normalization/decision objective；
-5. 冻结后采集成人 BrainSync 多 target-switch decisions；untouched BrainSync 才能裁决 90%。
+3. BI early-known -> later-unknown 已完成；保留 zero-shot/source stats 为默认；
+4. BrainSync causal multi-session/target-switch 入口已闭合，重新采集 analysis-ready decisions；
+5. untouched BrainSync 才能裁决 90%。

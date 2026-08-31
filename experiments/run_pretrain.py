@@ -67,6 +67,26 @@ def _source_training_rows(
     return ~np.isin(subjects, list(holdout)), all_subjects
 
 
+def _subject_probe_validation_mask(
+    subject_ids: np.ndarray,
+    *,
+    seed: int,
+    fraction: float = 0.2,
+) -> np.ndarray:
+    """Hold out a deterministic within-subject trial subset for probe validation."""
+
+    subjects = np.asarray(subject_ids).astype(str)
+    validation = np.zeros(len(subjects), dtype=bool)
+    rng = np.random.default_rng(seed)
+    for subject in np.unique(subjects):
+        rows = np.flatnonzero(subjects == subject)
+        if len(rows) < 2:
+            raise ValueError("subject probe validation requires at least two rows per subject.")
+        count = min(len(rows) - 1, max(1, int(round(fraction * len(rows)))))
+        validation[rng.choice(rows, size=count, replace=False)] = True
+    return validation
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-cache", required=True)
@@ -83,6 +103,12 @@ def main() -> None:
     parser.add_argument("--waveform-weight", type=float, default=1.0)
     parser.add_argument("--spectral-weight", type=float, default=1.0)
     parser.add_argument("--band-weight-estimation-samples", type=int, default=4096)
+    parser.add_argument(
+        "--subject-probe",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Train a stop-gradient subject-identity probe and record leakage accuracy.",
+    )
     parser.add_argument("--standardize", action="store_true")
     parser.add_argument(
         "--pooling-mode",
@@ -133,6 +159,17 @@ def main() -> None:
         raise ValueError("holdout subjects removed every source epoch.")
 
     X = np.asarray(dataset.X[source_rows], dtype=np.float32)
+    source_subjects = np.asarray(dataset.subject_ids).astype(str)[source_rows]
+    probe_subjects = tuple(sorted(np.unique(source_subjects).tolist()))
+    probe_index = {subject: index for index, subject in enumerate(probe_subjects)}
+    probe_labels = np.asarray([probe_index[subject] for subject in source_subjects], dtype=np.int64)
+    probe_validation = (
+        _subject_probe_validation_mask(source_subjects, seed=args.seed + 31_337)
+        if args.subject_probe
+        else np.zeros(len(source_subjects), dtype=bool)
+    )
+    # One integer carries both the class and fixed probe split through MatrixBatchSource.
+    encoded_probe_labels = probe_labels * 2 + probe_validation.astype(np.int64)
     if args.standardize:
         mean = X.reshape(X.shape[0], X.shape[1], -1).mean(axis=(0, 2), keepdims=True)
         std = X.reshape(X.shape[0], X.shape[1], -1).std(axis=(0, 2), keepdims=True)
@@ -162,12 +199,19 @@ def main() -> None:
         ),
         seed=args.seed,
         band_weight_estimation_samples=args.band_weight_estimation_samples,
+        subject_probe_subjects=(len(probe_subjects) if args.subject_probe else 0),
     )
     task = PretrainingTask(trunk, config).to(device)
+    reconstruction_parameters = [*task.trunk.parameters(), *task.decoder.parameters()]
     optimizer = torch.optim.AdamW(
-        list(task.parameters()),
+        reconstruction_parameters,
         lr=args.lr,
         weight_decay=args.weight_decay,
+    )
+    probe_optimizer = (
+        torch.optim.AdamW(task.probe.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        if task.probe is not None
+        else None
     )
     rng = np.random.default_rng(args.seed)
     tensor = torch.from_numpy(np.ascontiguousarray(X))
@@ -176,7 +220,22 @@ def main() -> None:
 
     with runtime.lease():
         preload = runtime.can_preload(tensor.numel() * tensor.element_size())
-        source = MatrixBatchSource(tensor, None, runtime, preload=preload)
+        source = MatrixBatchSource(
+            tensor,
+            torch.from_numpy(encoded_probe_labels) if task.probe is not None else None,
+            runtime,
+            preload=preload,
+        )
+        probe_validation_source = (
+            MatrixBatchSource(
+                tensor[torch.from_numpy(np.flatnonzero(probe_validation))],
+                torch.from_numpy(encoded_probe_labels[probe_validation]),
+                runtime,
+                preload=preload,
+            )
+            if task.probe is not None
+            else None
+        )
         weight_count = min(config.band_weight_estimation_samples, len(tensor))
         weight_rng = np.random.default_rng(args.seed + 97_531)
         weight_rows = torch.from_numpy(
@@ -199,29 +258,113 @@ def main() -> None:
             epoch_loss = torch.zeros((), dtype=torch.float32, device=device)
             epoch_wave = torch.zeros((), dtype=torch.float32, device=device)
             epoch_spec = torch.zeros((), dtype=torch.float32, device=device)
-            for batch, (x, _) in enumerate(source.batches(args.batch_size, indices=indices)):
+            epoch_probe = torch.zeros((), dtype=torch.float32, device=device)
+            epoch_probe_correct = torch.zeros((), dtype=torch.int64, device=device)
+            epoch_probe_rows = 0
+            for batch, (x, subject_batch) in enumerate(
+                source.batches(args.batch_size, indices=indices)
+            ):
                 generator = torch.Generator(device="cpu").manual_seed(
                     args.seed * 1_000_003 + epoch * 10_001 + batch
                 )
-                components = task.loss_components(x, generator=generator)
+                components = task.loss_components(
+                    x,
+                    generator=generator,
+                )
                 loss = components["total"]
                 optimizer.zero_grad(set_to_none=True)
+                if probe_optimizer is not None:
+                    probe_optimizer.zero_grad(set_to_none=True)
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(task.parameters(), 1.0)
+                if probe_optimizer is not None:
+                    assert subject_batch is not None
+                    probe_train = subject_batch.remainder(2) == 0
+                    probe_components = None
+                    if bool(probe_train.any()):
+                        probe_targets = torch.div(
+                            subject_batch[probe_train], 2, rounding_mode="floor"
+                        )
+                        probe_components = task.subject_probe_components(
+                            x[probe_train], probe_targets
+                        )
+                        probe_components["loss"].backward()
+                torch.nn.utils.clip_grad_norm_(reconstruction_parameters, 1.0)
                 optimizer.step()
+                if probe_optimizer is not None and probe_components is not None:
+                    probe_optimizer.step()
                 epoch_loss += loss.detach().float() * len(x)
                 epoch_wave += components["waveform"].detach().float() * len(x)
                 epoch_spec += components["spectral"].detach().float() * len(x)
-            history.append(
-                {
-                    "epoch": epoch,
-                    "total": float(epoch_loss) / len(tensor),
-                    "waveform": float(epoch_wave) / len(tensor),
-                    "spectral": float(epoch_spec) / len(tensor),
-                }
-            )
+                if probe_optimizer is not None:
+                    epoch_probe += (
+                        probe_components["loss"].detach().float() * int(probe_train.sum())
+                    )
+                    epoch_probe_correct += probe_components["correct"].detach()
+                    epoch_probe_rows += int(probe_train.sum())
+            record = {
+                "epoch": epoch,
+                "total": float(epoch_loss) / len(tensor),
+                "waveform": float(epoch_wave) / len(tensor),
+                "spectral": float(epoch_spec) / len(tensor),
+            }
+            if probe_optimizer is not None:
+                task.trunk.eval()
+                task.probe.eval()
+                validation_loss = torch.zeros((), dtype=torch.float32, device=device)
+                validation_correct = torch.zeros((), dtype=torch.int64, device=device)
+                validation_rows = int(probe_validation.sum())
+                assert probe_validation_source is not None
+                with torch.inference_mode():
+                    for validation_x, validation_subjects in probe_validation_source.batches(
+                        args.batch_size
+                    ):
+                        assert validation_subjects is not None
+                        validation_targets = torch.div(
+                            validation_subjects, 2, rounding_mode="floor"
+                        )
+                        probe_validation_components = task.subject_probe_components(
+                            validation_x, validation_targets
+                        )
+                        validation_loss += (
+                            probe_validation_components["loss"].float()
+                            * len(validation_x)
+                        )
+                        validation_correct += probe_validation_components["correct"]
+                task.trunk.train()
+                task.probe.train()
+                record.update(
+                    {
+                        "subject_probe_train_loss": float(epoch_probe) / epoch_probe_rows,
+                        "subject_probe_train_accuracy": (
+                            float(epoch_probe_correct) / epoch_probe_rows
+                        ),
+                        "subject_probe_validation_loss": (
+                            float(validation_loss) / validation_rows
+                        ),
+                        "subject_probe_validation_accuracy": (
+                            float(validation_correct) / validation_rows
+                        ),
+                    }
+                )
+            history.append(record)
             print(json.dumps(history[-1]), flush=True)
 
+    probe_enabled = probe_optimizer is not None
+    probe_audit = {
+        "enabled": probe_enabled,
+        "stop_gradient": True,
+        "n_subjects": len(probe_subjects) if probe_enabled else 0,
+        "chance_accuracy": 1.0 / len(probe_subjects) if probe_enabled else None,
+        "validation_fraction": 0.2 if probe_enabled else None,
+        "training_rows": int((~probe_validation).sum()) if probe_enabled else 0,
+        "validation_rows": int(probe_validation.sum()) if probe_enabled else 0,
+        "final_train_loss": history[-1].get("subject_probe_train_loss"),
+        "final_train_accuracy": history[-1].get("subject_probe_train_accuracy"),
+        "final_validation_loss": history[-1].get("subject_probe_validation_loss"),
+        "final_validation_accuracy": history[-1].get(
+            "subject_probe_validation_accuracy"
+        ),
+    }
     task.discard_decoder()
     checkpoint = Path(args.checkpoint)
     checkpoint.parent.mkdir(parents=True, exist_ok=True)
@@ -241,6 +384,7 @@ def main() -> None:
         "source_cache_sha256": source_cache_sha256,
         "architecture": trunk.architecture_record(),
         "classifier_trained": False,
+        "subject_probe_audit": probe_audit,
         "model_config": {
             "pooling_mode": args.pooling_mode,
             "temporal_kernel_size": args.temporal_kernel_size,

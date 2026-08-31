@@ -115,15 +115,20 @@ GTN contract 目前只是通用 P300 contract 换名。128 Hz 和 2 Hz 高通可
 
 ### 3.3 指导文件领先于实现
 
-迁移文档承诺的 masked-only reconstruction、subject identity audit、MMD、三种 calibration、dynamic stopping、xDAWN/EEGNet controls 目前没有形成一个闭合 runner。尤其是：
+迁移链已补上 masked-only reconstruction、stop-gradient subject identity audit、三种
+normalization 和 BI cross-decision 实测；MMD/GRL、pseudo/latent adaptation 与
+dynamic stopping 仍未形成可验证 runner。当前状态是：
 
-- pretraining loss 对整个 epoch 计分，不只计 masked region，允许 visible-copy shortcut
-- subject probe loss 没有进入 total，runner 也未形成独立 audit record
-- 预训练默认 raw volts，下游 adapter 无条件 target-prefix standardization，冻结 trunk 的输入分布不一致
-- adapter 暴露 calibration logits，但 transfer runner 未实际拟合并应用校准后证据
+- waveform 与 spectral reconstruction 只在 masked region 计分，visible-copy 反例已通过
+- subject probe 使用 stop-gradient features 和独立 optimizer，每个 source subject 固定
+  留 20% trials 报告 held-out loss/accuracy；不反向擦除 trunk
+- adapter 默认保留 checkpoint source stats；BI 实测 target-prefix stats 在四种 head 上下降
+- weighted-CE 解析 LLR 已进入 GTN/BI/BrainSync runner
 - 同人协议虽已修正为统一时间 embargo，仍需把所有 excluded groups 和原因写进最终 record
 
-在这些问题解决前，不应启动可对外解释的 SSL/transfer 实验。
+SSL checkpoint 的 classifier 仍未监督训练，故不能 zero-shot 使用；只有经过明确
+supervised downstream head/full-fine 的结果才可解释。MMD/GRL/pseudo/dynamic stopping
+在真实 BrainSync development decisions 到位前不进入默认路线。
 
 ## 4. 第一优先创新：候选集与前缀目标
 

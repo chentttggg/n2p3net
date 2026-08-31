@@ -129,9 +129,16 @@ def band_balanced_spectral_loss(
     sfreq: float,
     bands_hz: Sequence[tuple[float, float]] = DEFAULT_BANDS_HZ,
     weights: torch.Tensor | None = None,
+    sample_mask: torch.Tensor | None = None,
 ) -> torch.Tensor:
     if x.shape != x_hat.shape:
         raise ValueError("x and x_hat must have identical shape.")
+    if sample_mask is not None:
+        mask = torch.as_tensor(sample_mask, device=x.device, dtype=x.dtype)
+        try:
+            x, x_hat = torch.broadcast_tensors(x * mask, x_hat * mask)
+        except RuntimeError as exc:
+            raise ValueError("sample_mask must broadcast to the reconstruction tensor.") from exc
     paired = torch.stack((x, x_hat), dim=0)
     magnitudes = _band_magnitude_tensor(paired, sfreq=sfreq, bands_hz=bands_hz)
     magnitudes_x, magnitudes_hat = magnitudes.unbind(dim=1)
@@ -145,10 +152,24 @@ def band_balanced_spectral_loss(
     return (weights.view(*view) * per_band).sum(dim=0).mean()
 
 
-def waveform_l1_loss(x: torch.Tensor, x_hat: torch.Tensor) -> torch.Tensor:
+def waveform_l1_loss(
+    x: torch.Tensor,
+    x_hat: torch.Tensor,
+    *,
+    sample_mask: torch.Tensor | None = None,
+) -> torch.Tensor:
     if x.shape != x_hat.shape:
         raise ValueError("x and x_hat must have identical shape.")
-    return F.l1_loss(x_hat, x)
+    error = (x_hat - x).abs()
+    if sample_mask is None:
+        return error.mean()
+    mask = torch.as_tensor(sample_mask, device=x.device, dtype=x.dtype)
+    try:
+        mask = torch.broadcast_to(mask, error.shape)
+    except RuntimeError as exc:
+        raise ValueError("sample_mask must broadcast to the reconstruction tensor.") from exc
+    denominator = mask.sum().clamp_min(1.0)
+    return (error * mask).sum() / denominator
 
 
 def reconstruction_loss(
@@ -158,17 +179,19 @@ def reconstruction_loss(
     sfreq: float,
     config: ReconstructionLossConfig,
     weights: torch.Tensor | None = None,
+    sample_mask: torch.Tensor | None = None,
 ) -> dict[str, torch.Tensor]:
     """Return a labelled loss dict suitable for recording and weighting."""
 
     config.validate(sfreq)
-    wave = waveform_l1_loss(x, x_hat)
+    wave = waveform_l1_loss(x, x_hat, sample_mask=sample_mask)
     spec = band_balanced_spectral_loss(
         x,
         x_hat,
         sfreq=sfreq,
         bands_hz=config.bands_hz,
         weights=weights,
+        sample_mask=sample_mask,
     )
     weighted_wave = config.waveform_weight * wave
     weighted_spec = config.spectral_weight * spec

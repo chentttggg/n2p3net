@@ -15,8 +15,9 @@ _更新至 2026-09-01；GTN development、单被试迁移链与 90% 产品目标
 - `hit@5` 不是通用标准。当前 all-evidence 开发默认使用全部 245 人和全部 trial 的
   candidate mean；balanced truncation、sqrt-count、raw sum 与完整 hit@R/cost
   作为兼容和机制对照。
-- BI 64 人 raw source 与 candidate-v2 已重建并 attested；尚无合法监督校准性能结果，
-  当前门禁是四个 target-block-excluded supervised checkpoint。
+- BI 64 人 candidate-v2 的 12 个 source checkpoints、13 arms x 3 seeds
+  cross-decision 比较已完成。zero-shot/source stats 为 `19.41%` subject-macro hit@2；
+  classifier/full fine 没有可靠增益，target-prefix normalization 明显下降。
 
 ## 实测结果
 
@@ -33,6 +34,34 @@ _更新至 2026-09-01；GTN development、单被试迁移链与 90% 产品目标
 
 source QC100 相对 no-QC 的 operational hit@5 提升 `+0.118`，95% CI
 `[+0.053,+0.184]`，因此 source QC100 已冻结；target-prefix QC 保持关闭。
+
+### BI2014a 合法跨 decision 校准
+
+64 人 causal-v2 cache 使用前 5 个已知 character decisions 校准，后续未知
+decisions 取每 row/column 前 2 repetitions；四个 target-block-excluded K35
+full-unfold checkpoint、3 source/adaptation seeds。requested decisions=`1416`，
+eligible=`964`，失败 `452` 全部保留在 operational 分母。
+
+| Arm | subject-macro hit@2 |
+|---|---:|
+| zero-shot + source stats | **0.1941** |
+| classifier fine + source / shrinkage | 0.1952 / 0.1958 |
+| full fine + source / shrinkage | **0.1994** / 0.1989 |
+| linear scratch + source / shrinkage | 0.1524 / 0.1518 |
+| MLP16 scratch + source / shrinkage | 0.1831 / 0.1774 |
+| classifier / full / linear / MLP16 + target stats | 0.1569 / 0.1590 / 0.1148 / 0.1294 |
+
+- primary `classifier_fine_shrinkage - zero_shot_source`=`+0.18 pp`，95% CI
+  `[-0.78,+1.04] pp`，Holm `p=1.0`；不支持 5-decision classifier personalization。
+- `full_fine_shrinkage - zero_shot_source`=`+0.45 pp`，95% CI
+  `[-0.52,+1.33] pp`，Holm `p=1.0`；同样不支持晋升。
+- target stats 相对 source stats 在 classifier/full 上约 `-3.83/-4.04 pp`；
+  full fine 的 Holm `p=0.043`。目标 prefix 统计不是当前默认。
+- linear scratch shrinkage 相对 zero-shot `-4.22 pp`，95% CI
+  `[-7.01,-1.52] pp`，Holm `p=0.043`。保留 source classifier 是必要基线。
+
+该任务是 6x6 character (`chance=1/36`)，只能验证跨 decision 校准机制，不能与
+BrainSync 9-choice 的 90% 指标直接换算。
 
 ### Full-unfold 核长
 
@@ -130,7 +159,8 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
   trial/listwise loss、参数改变量、峰值显存和 245 人 all-evidence 结果。
 - 软件默认已统一为 `full_unfold + K35`；`ms_eegnet` 与无架构声明的旧 checkpoint
   显式保持 K65。
-- 项目 `.venv` 最终验证：`357 passed`，Ruff、compileall 与 `git diff --check` 通过。
+- 项目 `.venv` 最终验证：`372 passed`，Ruff、compileall、uv lock 与
+  `git diff --check` 通过。
 
 ## 证据边界
 
@@ -140,13 +170,16 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
 - 本轮完成的是 K35/K65 同一 full-unfold 链路；没有做 `full_unfold + K35` 对
   `ms_flatten + K65` 的匹配多 seed
   pooling 比较；full-unfold 的采用是机制与工程决定，不是 GTN 产品冠军声明。
-- 没有 BI candidate-v2 性能，也没有成人 BrainSync 多 target-switch 数据；因此不能声称
+- 已有 BI candidate-v2 development 性能，但没有成人 BrainSync 多 target-switch 数据；因此不能声称
   “单人长期 90%”或“校准后未知数字 90%”。
+- BrainSync causal multi-session loader、target-switch runner 和 common-channel CAR
+  已通过 synthetic 反例；这属于工程验收，不是实际被试性能。现有 4 个 sessions
+  均非 analysis-ready。
 
 ## 下一轮科研优先级
 
-1. **合法 personalization**：使用已重建 BI candidate-v2 或采集 BrainSync 多 known-target decisions，
-   比较 zero-shot、classifier fine、full fine、source/target/shrinkage normalization。
+1. **BrainSync 真实数据**：入口已支持 causal multi-session/multi-decision 和 target-switch
+   runner；现有 4 个 session 均非 analysis-ready，需重新采集 known-target decisions。
 2. **保护已有表征**：当前强联合微调已否决；下一轮只做冻结 backbone、渐进解冻、
    更低 backbone LR 或梯度冲突控制的单轴比较。N200/P300 多窗辅助目标须单独归因。
 3. **证据效率**：在同一预测 ledger 上研究 latency tolerance、correlation-aware evidence
@@ -157,6 +190,7 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
 - [权威科研总纲](research_program.zh.md)
 - [合同审计](contract_audit_20260831.zh.md)
 - [BI candidate-v2 cache evidence](evidence/bi2014a_candidate_v2/README.md)
+- [BI cross-decision analysis](evidence/bi2014a_candidate_v2/cross_decision/analysis.json)
 - [证据边界](evidence/gtn_20260831/README.md)
 - [steady-state 云端独立审计](evidence/gtn_20260831/factorial/independent_cloud_audit.json)
 - [核长 v4 总分析](evidence/gtn_20260831/kernel_v4/v4_kernel_ablation_analysis.json)

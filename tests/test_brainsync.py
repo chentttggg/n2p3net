@@ -1,11 +1,21 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 
 import mne
 import numpy as np
+import torch
 
-from data.brainsync import BRAIN_SYNC_PREPROCESSING, load_brainsync_session
+from data.brainsync import (
+    BRAIN_SYNC_PREPROCESSING,
+    load_brainsync_session,
+    load_brainsync_sessions,
+)
+from data.epochs import save_epoch_dataset
+from experiments.run_brainsync_cross_decision import main as run_brainsync_cross_decision
+from models.n2p3net import N2P3Net
+from transfer.within_subject import calibration_decision_split
 
 CHANNELS = ("Fz", "Cz", "P3", "Pz", "P4", "PO7", "PO8", "Oz")
 POSITIONS = [
@@ -67,10 +77,199 @@ def test_brainsync_session_is_preprocessed_into_universal_dataset(tmp_path) -> N
     assert dataset.X.dtype == np.float32
     assert np.array_equal(dataset.y, np.array([0, 1, 0], dtype=np.int64))
     assert dataset.preprocessing.sfreq == 128.0
+    assert dataset.preprocessing.filter_phase == "forward"
+    assert dataset.preprocessing.causal_iir_initial_state == "steady_state_first_sample"
     assert dataset.provenance["source_sample_rate_hz"] == 1000.0
     assert dataset.provenance["target_sample_rate_hz"] == 128.0
     baseline_samples = round(0.2 * dataset.preprocessing.sfreq)
     np.testing.assert_allclose(dataset.X[:, :, :baseline_samples].mean(axis=2), 0.0, atol=1e-10)
     assert np.allclose(dataset.channel_positions_m, np.asarray(POSITIONS, dtype=np.float32))
     assert dataset.metadata["repetition_index"].tolist() == [0, 0, 1]
+    assert len(set(dataset.metadata["selection_id"])) == 1
     assert dataset.event_timeline.supports_full_candidate_chain is True
+
+
+def _write_multi_decision_session(
+    root,
+    *,
+    session_id: str,
+    subject_id: str = "P001",
+    block_targets: tuple[int, ...] = (1, 2),
+) -> None:
+    raw_dir = root / "raw"
+    events_dir = root / "events"
+    raw_dir.mkdir(parents=True)
+    events_dir.mkdir()
+    info = mne.create_info(list(CHANNELS), 1000.0, ch_types="eeg")
+    n_samples = (len(block_targets) * 9 + 3) * 1000
+    values = np.random.default_rng(len(session_id)).normal(
+        0.0, 5e-6, (len(CHANNELS), n_samples)
+    )
+    mne.io.RawArray(values, info, verbose=False).save(
+        raw_dir / "recording_raw.fif", overwrite=True, verbose=False
+    )
+    session = {
+        "schema": "brainsync-gtn-session/2",
+        "session_id": session_id,
+        "started_utc": (
+            "2026-09-01T00:00:00+00:00"
+            if session_id.endswith("_a")
+            else "2026-09-02T00:00:00+00:00"
+        ),
+        "experiment": {"subject_id": subject_id, "age": "19", "sex": "F"},
+        "recording": {"path": "raw/recording_raw.fif"},
+        "montage": {
+            "labels": list(CHANNELS),
+            "active_mask": 0xFF,
+            "channel_positions_m": POSITIONS,
+            "coordinate_frame": "head",
+            "units": "m",
+            "ref_label": "A2",
+        },
+    }
+    (root / "session.json").write_text(json.dumps(session), encoding="utf-8")
+    rows = []
+    onset = 1.0
+    for block, target in enumerate(block_targets, start=1):
+        for digit in range(1, 10):
+            rows.append(
+                {
+                    "trial_id": f"B{block:03d}-T{digit:03d}",
+                    "block_id": block,
+                    "trial_index": digit,
+                    "digit": digit,
+                    "target_digit": target,
+                    "eeg_time_seconds": onset,
+                }
+            )
+            onset += 1.0
+    (events_dir / "events.jsonl").write_text(
+        "".join(
+            json.dumps({"event": "recording_marker", "payload": {"kind": "onset", **row}})
+            + "\n"
+            for row in rows
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_brainsync_blocks_form_distinct_target_changing_decisions(tmp_path) -> None:
+    session_dir = tmp_path / "multi"
+    _write_multi_decision_session(session_dir, session_id="P001_multi")
+
+    dataset = load_brainsync_session(session_dir)
+
+    assert len(np.unique(dataset.event_timeline.group_ids)) == 2
+    assert len(np.unique(dataset.event_timeline.selection_ids)) == 2
+    assert set(dataset.metadata["target_candidate_id"]) == {"1", "2"}
+    assert dataset.metadata.groupby("selection_id")["repetition_index"].min().eq(0).all()
+
+
+def test_brainsync_multi_session_loader_preserves_session_decisions(tmp_path) -> None:
+    first = tmp_path / "session_a"
+    second = tmp_path / "session_b"
+    _write_multi_decision_session(first, session_id="P001_a", block_targets=(1,))
+    _write_multi_decision_session(second, session_id="P001_b", block_targets=(2,))
+
+    dataset = load_brainsync_sessions([first, second])
+
+    assert dataset.name == "BrainSync-GTN-multisession"
+    assert dataset.provenance["n_sessions"] == 2
+    assert set(dataset.event_timeline.session_ids) == {"P001_a", "P001_b"}
+    assert len(np.unique(dataset.event_timeline.group_ids)) == 2
+
+
+def test_brainsync_cross_decision_split_enforces_real_time_embargo(tmp_path) -> None:
+    session_dir = tmp_path / "three_decisions"
+    _write_multi_decision_session(
+        session_dir,
+        session_id="P001_three",
+        block_targets=(1, 2, 3),
+    )
+    dataset = load_brainsync_session(session_dir)
+
+    split = calibration_decision_split(
+        dataset,
+        calibration_selections=1,
+        test_repetitions=1,
+        candidate_vocabulary=range(1, 10),
+    )
+
+    assert split.usable_subjects == ("P001",)
+    assert len(split.requested_test_groups_by_subject["P001"]) == 2
+    assert len(split.test_groups_by_subject["P001"]) == 1
+    assert set(split.failed_test_groups_by_subject["P001"].values()) == {
+        "selection_overlaps_calibration_evidence"
+    }
+
+
+def test_brainsync_cross_decision_runner_keeps_failed_decision_in_denominator(
+    tmp_path, monkeypatch
+) -> None:
+    session_dir = tmp_path / "runner_decisions"
+    _write_multi_decision_session(
+        session_dir,
+        session_id="P001_runner",
+        block_targets=(1, 2, 3),
+    )
+    dataset = load_brainsync_session(session_dir)
+    cache = save_epoch_dataset(tmp_path / "brainsync.npz", dataset)
+    trunk = N2P3Net(
+        dataset.n_channels,
+        n_times=dataset.n_times,
+        sfreq=dataset.preprocessing.sfreq,
+        tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
+        pooling_mode="full_unfold",
+        temporal_kernel_size=35,
+    )
+    checkpoint = tmp_path / "source.pt"
+    torch.save(
+        {
+            "trunk_state_dict": trunk.state_dict(),
+            "training_subject_keys": ["external-source\0other"],
+            "training_subjects": ["other"],
+            "source_dataset_name": "external-source",
+            "input_channel_names": list(dataset.channel_names),
+            "input_preprocessing": asdict(dataset.preprocessing),
+            "input_source_reference": dataset.provenance["source_reference"],
+            "classifier_trained": True,
+            "input_mean": [0.0] * dataset.n_channels,
+            "input_std": [1.0] * dataset.n_channels,
+            "training_pos_weight": 8.0,
+            "training_prior": 1.0 / 9.0,
+            "architecture": trunk.architecture_record(),
+            "n_channels": dataset.n_channels,
+            "n_times": dataset.n_times,
+            "input_sample_rate_hz": dataset.preprocessing.sfreq,
+            "input_tmin_s": dataset.preprocessing.tmin_ms / 1000.0,
+        },
+        checkpoint,
+    )
+    output = tmp_path / "result.json"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_brainsync_cross_decision.py",
+            "--dataset-cache",
+            str(cache),
+            "--checkpoint",
+            str(checkpoint),
+            "--calibration-selections",
+            "1",
+            "--test-reps",
+            "1",
+            "--head",
+            "zero_shot",
+            "--device",
+            "cpu",
+            "--output",
+            str(output),
+        ],
+    )
+
+    run_brainsync_cross_decision()
+
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["decision_accounting"]["requested"] == 2
+    assert result["decision_accounting"]["eligible"] == 1
+    assert result["decision_accounting"]["failed"] == 1
