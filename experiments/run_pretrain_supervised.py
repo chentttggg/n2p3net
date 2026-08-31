@@ -190,6 +190,14 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--input-stats-subject-prefix",
+        default="",
+        help=(
+            "Optional subject prefix whose training-fold rows alone fit checkpoint input "
+            "mean/std. All source rows still train the classifier. Example: BI::."
+        ),
+    )
+    parser.add_argument(
         "--qc-ptp-uv",
         type=float,
         default=0.0,
@@ -263,8 +271,47 @@ def main() -> None:
     X = np.ascontiguousarray(X_physical[exposure_indices])
     y = y_physical[exposure_indices]
     src_subjects = physical_subjects[exposure_indices]
+    input_stats_prefix = args.input_stats_subject_prefix.strip()
+    input_stats_row_mask = None
+    if input_stats_prefix:
+        input_stats_row_mask = np.fromiter(
+            (subject.startswith(input_stats_prefix) for subject in src_subjects),
+            dtype=bool,
+            count=len(src_subjects),
+        )
+        if not bool(input_stats_row_mask.any()):
+            raise ValueError(
+                f"input-stats-subject-prefix {input_stats_prefix!r} matches no optimizer rows."
+            )
+        physical_stats_mask = np.fromiter(
+            (subject.startswith(input_stats_prefix) for subject in physical_subjects),
+            dtype=bool,
+            count=len(physical_subjects),
+        )
+        source_input_stats_scope = {
+            "mode": "subject_prefix",
+            "subject_prefix": input_stats_prefix,
+            "unique_physical_rows": int(physical_stats_mask.sum()),
+            "optimizer_rows": int(input_stats_row_mask.sum()),
+            "unique_subjects": int(len(np.unique(src_subjects[input_stats_row_mask]))),
+            "optimizer_fraction": float(input_stats_row_mask.mean()),
+        }
+    else:
+        source_input_stats_scope = {
+            "mode": "all_source_rows",
+            "subject_prefix": None,
+            "unique_physical_rows": int(len(X_physical)),
+            "optimizer_rows": int(len(X)),
+            "unique_subjects": int(len(np.unique(src_subjects))),
+            "optimizer_fraction": 1.0,
+        }
     started = time.perf_counter()
-    baseline.fit(X, y, group_ids=src_subjects)
+    baseline.fit(
+        X,
+        y,
+        group_ids=src_subjects,
+        input_stats_row_mask=input_stats_row_mask,
+    )
     fit_sec = time.perf_counter() - started
     selection_baseline = baseline
     selection_history = getattr(selection_baseline, "last_history", {}) or {}
@@ -285,7 +332,12 @@ def main() -> None:
         architecture=architecture,
     )
     refit_started = time.perf_counter()
-    baseline.fit(X, y, group_ids=None)
+    baseline.fit(
+        X,
+        y,
+        group_ids=None,
+        input_stats_row_mask=input_stats_row_mask,
+    )
     refit_sec = time.perf_counter() - refit_started
     model = baseline.model_
 
@@ -325,6 +377,7 @@ def main() -> None:
             "batch_size": args.batch_size,
             "seed": args.seed,
             "subject_prefix_repeat": prefix_repeats,
+            "input_stats_subject_prefix": input_stats_prefix or None,
             "training": "N2P3NetBaseline supervised (LOSO-identical path)",
         },
         "architecture": model.architecture_record(),
@@ -359,6 +412,7 @@ def main() -> None:
         "n_unique_source_epochs_used": int(len(X_physical)),
         "n_optimizer_source_rows_per_epoch": int(len(X)),
         "source_exposure": source_exposure,
+        "source_input_stats_scope": source_input_stats_scope,
         "source_label_counts_unique_after_qc": np.bincount(
             y_physical, minlength=2
         ).astype(int).tolist(),
@@ -388,6 +442,7 @@ def main() -> None:
                 "n_source_epochs_used": payload["n_source_epochs_used"],
                 "n_unique_source_epochs_used": payload["n_unique_source_epochs_used"],
                 "source_exposure": source_exposure,
+                "source_input_stats_scope": source_input_stats_scope,
                 "training_subjects": len(payload["training_subjects"]),
                 "best_epoch": history.get("best_epoch"),
                 "final_task_val_auc": history.get("final_task_val_auc"),

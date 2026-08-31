@@ -202,6 +202,42 @@ def test_masked_input_statistics_count_every_observed_time_sample():
     assert np.allclose(prepared, 0.0)
 
 
+def test_input_statistics_row_mask_changes_stats_without_dropping_training_rows():
+    X, y = make_p300_data(n_target=12, n_nontarget=36, seed=27)
+    stats_rows = np.zeros(len(X), dtype=bool)
+    stats_rows[:24] = True
+    X[stats_rows] += 10.0
+    X[~stats_rows] -= 10.0
+    clf = DeepBaseline(
+        "eegnet",
+        config=DeepConfig(epochs=1, batch_size=48),
+        device=_cpu_device(),
+    )
+    expected_mean, expected_std = clf._masked_input_stats(
+        X[stats_rows],
+        np.ones((int(stats_rows.sum()), C), dtype=bool),
+    )
+
+    clf.fit(X, y, input_stats_row_mask=stats_rows)
+
+    assert np.allclose(clf._input_mean, expected_mean)
+    assert np.allclose(clf._input_std, expected_std)
+    assert clf.last_runtime["batch_size"] == 48
+
+
+def test_input_statistics_row_mask_fails_closed() -> None:
+    X, y = make_p300_data(n_target=4, n_nontarget=12, seed=28)
+    clf = DeepBaseline(
+        "eegnet",
+        config=DeepConfig(epochs=1, batch_size=16),
+        device=_cpu_device(),
+    )
+    with pytest.raises(ValueError, match="must align"):
+        clf.fit(X, y, input_stats_row_mask=np.ones(len(X) - 1, dtype=bool))
+    with pytest.raises(ValueError, match="at least one row"):
+        clf.fit(X, y, input_stats_row_mask=np.zeros(len(X), dtype=bool))
+
+
 def test_static_channel_mask_is_enforced():
     X, y = make_p300_data(n_target=20, n_nontarget=20)
     static = np.ones(C, dtype=bool)

@@ -124,6 +124,7 @@ BrainSync 成人 8 导、多数字、多 session 数据是 90% 的最终裁决�
 |---|---|---|
 | BI2014a 128 Hz zero-phase LOSO assets | 历史开发制品，可复算 | 只作架构开发；outer test 已被多轮查看 |
 | BI2014a causal-v2 cross-decision | 64 人、12 source checkpoints、13 arms x 3 seeds；zero-shot hit@2=0.194，coverage=964/1416 | source stats/classifier 保留；5-decision fine 无可靠增益；target stats 不采用 |
+| BI2014a+BNCI2014_008 common-CAR5 source | BI-only/uniform joint/BI3x-BNCI1x=`0.1300/0.0967/0.1239` hit@2 | uniform joint 显著负迁移；80/20 暴露恢复但未胜 BI-only；下一轴固定 rows/steps 隔离 BI-source stats |
 | GTN 2 Hz/800 ms zero-phase assets | 历史开发制品，可复算 | 旧受限 recipe 的结果 |
 | GTN steady-state causal 2x2 bundle | 4 cache records、32 checkpoints、120 eval JSON 已本地独立复算 | 0.1 Hz/1200 ms 是当前开发 signal winner；不作产品确认 |
 | GTN Z0 最佳固定-R baseline | hit@5 coverage 230/245；conditional 0.578；operational 0.543；AUC 0.709 | 未达到 0.90；15 人仅因 R_s=2--4 无法到 @5，仍进入 all-evidence 主分析 |
@@ -173,6 +174,7 @@ gtn_paper_causal_v2
 | epoch end | 800 vs 1200 ms | GTN 2x2 已完成，development 冻结 1200 ms |
 | online/offline | forward steady-state vs split-local zero-phase | 机制敏感性；禁止 whole-record zero-phase |
 | normalization | source stats / target-prefix stats / shrinkage | BI 已完成：source≈shrinkage，target-prefix 在所有 head 上下降 |
+| multi-source normalization | all-source stats / target-dataset source stats | uniform BI+BNCI 已负迁移；BI-source-stats 单轴已冻结待运行 |
 | target QC | none / prefix-fit fold-local | source QC100 已冻结；target QC 待独立 decision 消融 |
 | epoch budget | source/fixed budget / real-time target holdout + full-prefix refit | 代码闭合，性能待独立 decision |
 | adaptation | zero-shot / pretrained-classifier fine / scratch head / full fine | BI 已完成：fine 无可靠增益，scratch 更差；BrainSync 待真实数据 |
@@ -257,6 +259,14 @@ provisional default = K35; unresolved strong control = K65
 
 GTN 已被多轮查看，只能继续作 development。确认值需要新 target block/新采集。
 
+BI+BNCI 的 5 导 common-CAR source 路径已进入匹配训练，而不再只是 loader 能力。
+uniform joint hit@2=`0.0967`，相对 BI-only `0.1300` 为 `-3.33 pp`，95% CI
+`[-5.90,-1.28] pp`。看到该结果后冻结的 BI 3x/BNCI 1x 探索臂为 `0.1239`：
+相对 uniform 恢复 `+2.72 pp`，Holm `p=0.0052`，但相对 BI-only 仍 `-0.61 pp`
+且 CI 跨 0。由于 3x/1x 同时增加每 epoch optimizer steps，它不能把恢复纯归因于
+域权重。下一臂固定 uniform rows/steps，只用非 holdout BI source rows 拟合 input
+mean/std；该统计在 inner validation 中仍只看 training side。
+
 ### Gate 3：合法单被试校准
 
 先用 BI2014a cross-decision 协议验证机制，再进入 BrainSync 9 选：
@@ -316,7 +326,9 @@ primary 为 subject-macro `hit@R`，并给 subject-cluster CI、coverage、absta
 2. 采用不额外微调的 `full_unfold + K35` v4 checkpoint 和 all-evidence candidate
    mean 作为临时工程默认；K65 保留强对照，停止 K33 主线；
 3. BI cross-decision 已完成且不支持 5-decision personalization；保留 zero-shot/source stats；
-4. decision-aligned 全参数 30-epoch recipe 已否决；下一次只研究保护 backbone 的
+4. BI+BNCI uniform joint 已确认负迁移，80/20 暴露只恢复未超越；立即运行固定
+   uniform rows/steps 的 BI-source-stat 单轴，之后才决定是否进入梯度冲突控制；
+5. decision-aligned 全参数 30-epoch recipe 已否决；后继只研究保护 backbone 的
    分阶段单轴策略、无真值 adaptation 与 target-switch personalization；
-5. 使用已闭合的 causal multi-session/target-switch 入口重新采集成人 BrainSync 数据；
-6. 不再引用 legacy zero-state ranking，也不把 O5 当未知数字校准。
+6. 使用已闭合的 causal multi-session/target-switch 入口重新采集成人 BrainSync 数据；
+7. 不再引用 legacy zero-state ranking，也不把 O5 当未知数字校准。

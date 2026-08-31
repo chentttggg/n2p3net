@@ -1,0 +1,1130 @@
+[
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260901_blk0.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::02",
+      "BI::04",
+      "BI::08",
+      "BI::15",
+      "BI::16",
+      "BI::18",
+      "BI::19",
+      "BI::23",
+      "BI::25",
+      "BI::31",
+      "BI::35",
+      "BI::48",
+      "BI::56",
+      "BI::59",
+      "BI::61",
+      "BI::64"
+    ],
+    "n_source_epochs_used": 170919,
+    "n_unique_source_epochs_used": 79373,
+    "n_optimizer_source_rows_per_epoch": 170919,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79373,
+      "optimizer_rows_per_epoch": 170919,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45773,
+          "optimizer_rows": 137319,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8034156530286276
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.1965843469713724
+        }
+      ]
+    },
+    "best_epoch": 4,
+    "final_task_val_auc": 0.5623307254846515,
+    "fit_seconds": 20.31357371248305,
+    "refit_seconds": 7.577643169090152,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  },
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260901_blk1.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::03",
+      "BI::05",
+      "BI::11",
+      "BI::14",
+      "BI::21",
+      "BI::22",
+      "BI::26",
+      "BI::27",
+      "BI::29",
+      "BI::32",
+      "BI::38",
+      "BI::40",
+      "BI::45",
+      "BI::47",
+      "BI::50",
+      "BI::63"
+    ],
+    "n_source_epochs_used": 170919,
+    "n_unique_source_epochs_used": 79373,
+    "n_optimizer_source_rows_per_epoch": 170919,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79373,
+      "optimizer_rows_per_epoch": 170919,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45773,
+          "optimizer_rows": 137319,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8034156530286276
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.1965843469713724
+        }
+      ]
+    },
+    "best_epoch": 0,
+    "final_task_val_auc": 0.4874484062589847,
+    "fit_seconds": 15.88123887591064,
+    "refit_seconds": 4.762564737349749,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  },
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260901_blk2.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::01",
+      "BI::06",
+      "BI::10",
+      "BI::12",
+      "BI::30",
+      "BI::33",
+      "BI::41",
+      "BI::42",
+      "BI::43",
+      "BI::49",
+      "BI::52",
+      "BI::53",
+      "BI::55",
+      "BI::58",
+      "BI::60",
+      "BI::62"
+    ],
+    "n_source_epochs_used": 170859,
+    "n_unique_source_epochs_used": 79353,
+    "n_optimizer_source_rows_per_epoch": 170859,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79353,
+      "optimizer_rows_per_epoch": 170859,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45753,
+          "optimizer_rows": 137259,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8033466191420996
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.19665338085790038
+        }
+      ]
+    },
+    "best_epoch": 23,
+    "final_task_val_auc": 0.6513369722603263,
+    "fit_seconds": 34.83931786008179,
+    "refit_seconds": 23.84117946960032,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  },
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260901_blk3.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::07",
+      "BI::09",
+      "BI::13",
+      "BI::17",
+      "BI::20",
+      "BI::24",
+      "BI::28",
+      "BI::34",
+      "BI::36",
+      "BI::37",
+      "BI::39",
+      "BI::44",
+      "BI::46",
+      "BI::51",
+      "BI::54",
+      "BI::57"
+    ],
+    "n_source_epochs_used": 170820,
+    "n_unique_source_epochs_used": 79340,
+    "n_optimizer_source_rows_per_epoch": 170820,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79340,
+      "optimizer_rows_per_epoch": 170820,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45740,
+          "optimizer_rows": 137220,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8033017211099402
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.19669827889005972
+        }
+      ]
+    },
+    "best_epoch": 23,
+    "final_task_val_auc": 0.6334185624840638,
+    "fit_seconds": 34.08107792399824,
+    "refit_seconds": 23.57542698830366,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  },
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260902_blk0.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::02",
+      "BI::04",
+      "BI::08",
+      "BI::15",
+      "BI::16",
+      "BI::18",
+      "BI::19",
+      "BI::23",
+      "BI::25",
+      "BI::31",
+      "BI::35",
+      "BI::48",
+      "BI::56",
+      "BI::59",
+      "BI::61",
+      "BI::64"
+    ],
+    "n_source_epochs_used": 170919,
+    "n_unique_source_epochs_used": 79373,
+    "n_optimizer_source_rows_per_epoch": 170919,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79373,
+      "optimizer_rows_per_epoch": 170919,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45773,
+          "optimizer_rows": 137319,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8034156530286276
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.1965843469713724
+        }
+      ]
+    },
+    "best_epoch": 7,
+    "final_task_val_auc": 0.6104706194652679,
+    "fit_seconds": 22.126476204022765,
+    "refit_seconds": 9.8133335839957,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  },
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260902_blk1.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::03",
+      "BI::05",
+      "BI::11",
+      "BI::14",
+      "BI::21",
+      "BI::22",
+      "BI::26",
+      "BI::27",
+      "BI::29",
+      "BI::32",
+      "BI::38",
+      "BI::40",
+      "BI::45",
+      "BI::47",
+      "BI::50",
+      "BI::63"
+    ],
+    "n_source_epochs_used": 170919,
+    "n_unique_source_epochs_used": 79373,
+    "n_optimizer_source_rows_per_epoch": 170919,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79373,
+      "optimizer_rows_per_epoch": 170919,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45773,
+          "optimizer_rows": 137319,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8034156530286276
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.1965843469713724
+        }
+      ]
+    },
+    "best_epoch": 30,
+    "final_task_val_auc": 0.6273633606265574,
+    "fit_seconds": 40.02319964580238,
+    "refit_seconds": 30.453522024676204,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  },
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260902_blk2.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::01",
+      "BI::06",
+      "BI::10",
+      "BI::12",
+      "BI::30",
+      "BI::33",
+      "BI::41",
+      "BI::42",
+      "BI::43",
+      "BI::49",
+      "BI::52",
+      "BI::53",
+      "BI::55",
+      "BI::58",
+      "BI::60",
+      "BI::62"
+    ],
+    "n_source_epochs_used": 170859,
+    "n_unique_source_epochs_used": 79353,
+    "n_optimizer_source_rows_per_epoch": 170859,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79353,
+      "optimizer_rows_per_epoch": 170859,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45753,
+          "optimizer_rows": 137259,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8033466191420996
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.19665338085790038
+        }
+      ]
+    },
+    "best_epoch": 8,
+    "final_task_val_auc": 0.6091187109204595,
+    "fit_seconds": 22.49412389844656,
+    "refit_seconds": 11.046013247221708,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  },
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260902_blk3.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::07",
+      "BI::09",
+      "BI::13",
+      "BI::17",
+      "BI::20",
+      "BI::24",
+      "BI::28",
+      "BI::34",
+      "BI::36",
+      "BI::37",
+      "BI::39",
+      "BI::44",
+      "BI::46",
+      "BI::51",
+      "BI::54",
+      "BI::57"
+    ],
+    "n_source_epochs_used": 170820,
+    "n_unique_source_epochs_used": 79340,
+    "n_optimizer_source_rows_per_epoch": 170820,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79340,
+      "optimizer_rows_per_epoch": 170820,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45740,
+          "optimizer_rows": 137220,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8033017211099402
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.19669827889005972
+        }
+      ]
+    },
+    "best_epoch": 0,
+    "final_task_val_auc": 0.45845718557004217,
+    "fit_seconds": 16.477643894031644,
+    "refit_seconds": 4.208053966984153,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  },
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260903_blk0.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::02",
+      "BI::04",
+      "BI::08",
+      "BI::15",
+      "BI::16",
+      "BI::18",
+      "BI::19",
+      "BI::23",
+      "BI::25",
+      "BI::31",
+      "BI::35",
+      "BI::48",
+      "BI::56",
+      "BI::59",
+      "BI::61",
+      "BI::64"
+    ],
+    "n_source_epochs_used": 170919,
+    "n_unique_source_epochs_used": 79373,
+    "n_optimizer_source_rows_per_epoch": 170919,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79373,
+      "optimizer_rows_per_epoch": 170919,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45773,
+          "optimizer_rows": 137319,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8034156530286276
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.1965843469713724
+        }
+      ]
+    },
+    "best_epoch": 7,
+    "final_task_val_auc": 0.6161041232819658,
+    "fit_seconds": 19.675735659897327,
+    "refit_seconds": 10.204688476398587,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  },
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260903_blk1.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::03",
+      "BI::05",
+      "BI::11",
+      "BI::14",
+      "BI::21",
+      "BI::22",
+      "BI::26",
+      "BI::27",
+      "BI::29",
+      "BI::32",
+      "BI::38",
+      "BI::40",
+      "BI::45",
+      "BI::47",
+      "BI::50",
+      "BI::63"
+    ],
+    "n_source_epochs_used": 170919,
+    "n_unique_source_epochs_used": 79373,
+    "n_optimizer_source_rows_per_epoch": 170919,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79373,
+      "optimizer_rows_per_epoch": 170919,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45773,
+          "optimizer_rows": 137319,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8034156530286276
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.1965843469713724
+        }
+      ]
+    },
+    "best_epoch": 18,
+    "final_task_val_auc": 0.6431288491728051,
+    "fit_seconds": 29.250655956566334,
+    "refit_seconds": 20.76015780121088,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  },
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260903_blk2.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::01",
+      "BI::06",
+      "BI::10",
+      "BI::12",
+      "BI::30",
+      "BI::33",
+      "BI::41",
+      "BI::42",
+      "BI::43",
+      "BI::49",
+      "BI::52",
+      "BI::53",
+      "BI::55",
+      "BI::58",
+      "BI::60",
+      "BI::62"
+    ],
+    "n_source_epochs_used": 170859,
+    "n_unique_source_epochs_used": 79353,
+    "n_optimizer_source_rows_per_epoch": 170859,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79353,
+      "optimizer_rows_per_epoch": 170859,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45753,
+          "optimizer_rows": 137259,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8033466191420996
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.19665338085790038
+        }
+      ]
+    },
+    "best_epoch": 4,
+    "final_task_val_auc": 0.6430178359096315,
+    "fit_seconds": 16.106210079044104,
+    "refit_seconds": 7.082876183092594,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  },
+  {
+    "file": "bi_bnci_joint_bi3_bnci1_car5_seed20260903_blk3.pt",
+    "source_cache_sha256": "2ad651a296fa9d121131156a38dc7dc6c4aeef1d0a6e7b12ff19683fad4f5aef",
+    "holdout_subjects": [
+      "BI::07",
+      "BI::09",
+      "BI::13",
+      "BI::17",
+      "BI::20",
+      "BI::24",
+      "BI::28",
+      "BI::34",
+      "BI::36",
+      "BI::37",
+      "BI::39",
+      "BI::44",
+      "BI::46",
+      "BI::51",
+      "BI::54",
+      "BI::57"
+    ],
+    "n_source_epochs_used": 170820,
+    "n_unique_source_epochs_used": 79340,
+    "n_optimizer_source_rows_per_epoch": 170820,
+    "source_exposure": {
+      "method": "deterministic_full_row_repeat",
+      "unique_physical_rows": 79340,
+      "optimizer_rows_per_epoch": 170820,
+      "all_unique_rows_retained": true,
+      "prefixes": [
+        {
+          "prefix": "BI::",
+          "repeat": 3,
+          "unique_physical_rows": 45740,
+          "optimizer_rows": 137220,
+          "unique_subjects": 48,
+          "optimizer_fraction": 0.8033017211099402
+        },
+        {
+          "prefix": "BNCI::",
+          "repeat": 1,
+          "unique_physical_rows": 33600,
+          "optimizer_rows": 33600,
+          "unique_subjects": 8,
+          "optimizer_fraction": 0.19669827889005972
+        }
+      ]
+    },
+    "best_epoch": 21,
+    "final_task_val_auc": 0.6262636889898905,
+    "fit_seconds": 31.226528832688928,
+    "refit_seconds": 21.95188158005476,
+    "architecture": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_kernel_samples": 35,
+      "st_temporal_dilation": 1,
+      "st_temporal_receptive_span_ms": 265.625,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [
+        5,
+        17
+      ],
+      "mst_dilations": [
+        1,
+        1
+      ],
+      "mst_receptive_span_ms": [
+        125.0,
+        500.0
+      ],
+      "mst_total_receptive_field_samples": [
+        54,
+        102
+      ],
+      "mst_total_receptive_span_ms": [
+        414.0625,
+        789.0625
+      ],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 32,
+      "unfold_features": 128,
+      "classifier": "linear_full_resolution",
+      "classifier_features": 128
+    }
+  }
+]

@@ -18,6 +18,10 @@ _更新至 2026-09-01；GTN development、单被试迁移链与 90% 产品目标
 - BI 64 人 candidate-v2 的 12 个 source checkpoints、13 arms x 3 seeds
   cross-decision 比较已完成。zero-shot/source stats 为 `19.41%` subject-macro hit@2；
   classifier/full fine 没有可靠增益，target-prefix normalization 明显下降。
+- 匹配 5 导 common-CAR 的 BI+BNCI 联合源实验已完成。uniform joint 相对 BI-only
+  为 `-3.33 pp`；后验 BI 3x/BNCI 1x 暴露恢复 `+2.72 pp`，但仍未胜 BI-only
+  (`-0.61 pp`, CI 跨 0)。因此不采用朴素联合源，下一轴只隔离 source normalization
+  污染与跨域梯度冲突。
 
 ## 实测结果
 
@@ -62,6 +66,32 @@ eligible=`964`，失败 `452` 全部保留在 operational 分母。
 
 该任务是 6x6 character (`chance=1/36`)，只能验证跨 decision 校准机制，不能与
 BrainSync 9-choice 的 90% 指标直接换算。
+
+### BI+BNCI 多数据集联合源
+
+两臂父实验和一个后验探索臂都使用相同 BI target blocks、5 导
+`CZ,P3,PZ,P4,OZ`、同子集 CAR、causal-v2、`full_unfold + K35`、100 epoch 上限、
+3 seeds 和 operational hit@2。父实验在看到结果前冻结；3x/1x 是看到 uniform
+负迁移后才冻结的新臂，不得写成确认性结果。
+
+| Source arm | subject-macro hit@2 | 相对 BI-only |
+|---|---:|---:|
+| BI-only CAR5 | **0.1300** | reference |
+| BI+BNCI uniform CAR5 | 0.0967 | `-3.33 pp` |
+| BI+BNCI, BI 3x / BNCI 1x | 0.1239 | `-0.61 pp` |
+
+- uniform joint - BI-only：95% CI `[-5.90,-1.28] pp`，sign-flip
+  `p=0.00108`，三个 seed 均为负，确认当前朴素拼接产生负迁移；
+- 3x/1x - uniform joint：`+2.72 pp`，95% CI `[+1.01,+4.68] pp`，Holm
+  `p=0.0052`，三个 seed 均为正；
+- 3x/1x - BI-only：95% CI `[-2.04,+0.80] pp`，`p=0.414`，没有联合源净增益；
+- 每个 3x/1x fold 保留约 79.3k 唯一行，展开为约 170.8k optimizer rows；BI
+  暴露约 80.3%。因此该臂同时改变域比例和每 epoch step 数，不能把恢复量纯归因于权重。
+
+当前结论是：BNCI 数据本身并非被证明“必然有害”，但把它直接并入公共输入统计和
+trial CE 会损伤 BI 目标。继续扫描 repeat 比例价值很低；下一次匹配实验应保持
+uniform 行数/梯度不变，只把 checkpoint normalization 改为由 BI source rows 拟合，
+以区分输入统计污染和表征梯度冲突。
 
 ### Full-unfold 核长
 
@@ -159,7 +189,7 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
   trial/listwise loss、参数改变量、峰值显存和 245 人 all-evidence 结果。
 - 软件默认已统一为 `full_unfold + K35`；`ms_eegnet` 与无架构声明的旧 checkpoint
   显式保持 K65。
-- 项目 `.venv` 最终验证：`372 passed`，Ruff、compileall、uv lock 与
+- 项目 `.venv` 最终验证：`383 passed`，Ruff、compileall、uv lock 与
   `git diff --check` 通过。
 
 ## 证据边界
@@ -182,7 +212,10 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
    runner；现有 4 个 session 均非 analysis-ready，需重新采集 known-target decisions。
 2. **保护已有表征**：当前强联合微调已否决；下一轮只做冻结 backbone、渐进解冻、
    更低 backbone LR 或梯度冲突控制的单轴比较。N200/P300 多窗辅助目标须单独归因。
-3. **证据效率**：在同一预测 ledger 上研究 latency tolerance、correlation-aware evidence
+3. **多源负迁移定位**：保持 uniform BI+BNCI optimizer 行与模型不变，只比较
+   all-source stats 与 BI-source stats；若仍负迁移，再进入 domain-balanced batch 或
+   梯度冲突控制，不继续盲扫 repeat。
+4. **证据效率**：在同一预测 ledger 上研究 latency tolerance、correlation-aware evidence
    和 dynamic stopping，以 hit-all/R/cost 曲线裁决，不再增加核长搜索。
 
 ## 证据入口
@@ -191,6 +224,8 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
 - [合同审计](contract_audit_20260831.zh.md)
 - [BI candidate-v2 cache evidence](evidence/bi2014a_candidate_v2/README.md)
 - [BI cross-decision analysis](evidence/bi2014a_candidate_v2/cross_decision/analysis.json)
+- [uniform BI+BNCI joint analysis](evidence/multidomain_joint_20260901/analysis.json)
+- [BI-weighted BI+BNCI analysis](evidence/multidomain_weighted_20260901/analysis.json)
 - [证据边界](evidence/gtn_20260831/README.md)
 - [steady-state 云端独立审计](evidence/gtn_20260831/factorial/independent_cloud_audit.json)
 - [核长 v4 总分析](evidence/gtn_20260831/kernel_v4/v4_kernel_ablation_analysis.json)

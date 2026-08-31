@@ -83,7 +83,9 @@ T1a 必须先行。T1b/T2 除共同重参考外还必须解决通道数/坐标�
 `n_channels` 空间卷积不能把 3/8/16 导直接混入一批。当前已实现第一条显式路径：
 pairwise 公共真实通道子集 + 同子集 CAR，并重新计算 QC/重建 checkpoint；缺通道和
 preprocessing mismatch 继续 fail closed。dataset-specific spatial stem 尚未实现，
-不得与确定性 CAR 结果混报。MOABB zero-phase 只作 source。
+不得与确定性 CAR 结果混报。BI+BNCI 匹配 causal 5 导实测中，uniform joint
+显著低于 BI-only；BI 3x/BNCI 1x 只恢复到 BI-only 附近。因此 T2 不能再写成默认
+representation 增益，下一轴须先隔离 BI-source normalization 与跨域梯度冲突。
 
 ### 3.3 下游 subject head
 
@@ -111,8 +113,8 @@ frozen trunk -> adopted full_unfold features (4 x 32 = 128-dim at current input)
    温度只能由 source validation 或更早、目标已知且与测试目标变化的 calibration
    decisions 拟合。GTN 同一 selection 的 labelled prefix 只允许标为 O5 oracle proxy；
 2. 对测试 suffix 按数字聚合：
-   - 默认 `sum`；
-   - 与 `mean`、`trimmed_mean(0.2)` 做 paired 比较；precision-weight 仅在模型
+   - 默认使用全部可用 trial 的 candidate `mean`，消除随机 occurrence 数量偏置；
+   - `sqrt-count` 与 `sum` 只作计数敏感性对照；`trimmed_mean(0.2)` 作鲁棒性对照；precision-weight 仅在模型
      输出逐 trial predictive variance 时启用；
 3. 报告 hit@R，R=3..8；
 4. dynamic stopping 作为可选层：后验最高候选的 margin 达到 prefix 选定

@@ -167,6 +167,7 @@ class DeepBaseline(Baseline):
 
     fit_accepts_group_ids = True
     fit_accepts_trial_channel_mask = True
+    fit_accepts_input_stats_row_mask = True
     predict_accepts_trial_channel_mask = True
     accepts_unmaterialized_trial_channel_mask = True
     runtime_requires_exclusive_lease = True
@@ -545,6 +546,7 @@ class DeepBaseline(Baseline):
         y: np.ndarray,
         group_ids: np.ndarray | None = None,
         trial_channel_mask: np.ndarray | None = None,
+        input_stats_row_mask: np.ndarray | None = None,
     ) -> DeepBaseline:
         """Fit with a bounded OOM retry that never accumulates gradients."""
 
@@ -562,6 +564,7 @@ class DeepBaseline(Baseline):
                         y,
                         group_ids=group_ids,
                         trial_channel_mask=trial_channel_mask,
+                        input_stats_row_mask=input_stats_row_mask,
                         requested_batch_size=requested_batch_size,
                     )
                 self.last_runtime = {
@@ -606,6 +609,7 @@ class DeepBaseline(Baseline):
         *,
         group_ids: np.ndarray | None,
         trial_channel_mask: np.ndarray | None,
+        input_stats_row_mask: np.ndarray | None,
         requested_batch_size: int,
     ) -> None:
         X = np.asarray(X)
@@ -623,6 +627,14 @@ class DeepBaseline(Baseline):
         if X.shape[2] != self.n_times:
             raise ValueError(f"X 时间点数 {X.shape[2]} 与模型契约 n_times={self.n_times} 不一致。")
         trial_mask = self._effective_trial_channel_mask(X, trial_channel_mask)
+        if input_stats_row_mask is None:
+            requested_stats_rows = np.ones(len(X), dtype=bool)
+        else:
+            requested_stats_rows = np.asarray(input_stats_row_mask, dtype=bool)
+            if requested_stats_rows.shape != (len(X),):
+                raise ValueError("input_stats_row_mask must align with X.")
+            if not bool(requested_stats_rows.any()):
+                raise ValueError("input_stats_row_mask must retain at least one row.")
 
         if group_ids is None:
             train_mask = np.ones(len(X), dtype=bool)
@@ -652,6 +664,19 @@ class DeepBaseline(Baseline):
                 "Training split never observes active channels "
                 f"{missing}; use an intersection layout or mark them permanently absent."
             )
+        stats_mask = train_mask & requested_stats_rows
+        if not bool(stats_mask.any()):
+            raise ValueError(
+                "input_stats_row_mask retains no rows in the group-disjoint training split."
+            )
+        stats_channel_mask = trial_mask[stats_mask]
+        unobserved_stats_channels = self.channel_mask & ~stats_channel_mask.any(axis=0)
+        if bool(unobserved_stats_channels.any()):
+            missing = np.flatnonzero(unobserved_stats_channels).tolist()
+            raise ValueError(
+                "Input-statistics rows never observe active channels "
+                f"{missing}; choose a complete statistics domain."
+            )
         if set(np.unique(y_train).tolist()) != {0, 1}:
             raise ValueError("Deep training split must contain both binary classes.")
         if len(y_val) and set(np.unique(y_val).tolist()) != {0, 1}:
@@ -659,7 +684,10 @@ class DeepBaseline(Baseline):
         self.training_pos_weight_ = float(self.cfg.pos_weight)
         self.training_prior_ = float(y_train.mean())
 
-        self._input_mean, self._input_std = self._masked_input_stats(X_train, train_channel_mask)
+        self._input_mean, self._input_std = self._masked_input_stats(
+            X[stats_mask],
+            stats_channel_mask,
+        )
         X_train = self._prepare_input(X_train, train_channel_mask)
         if len(X_val):
             X_val = self._prepare_input(X_val, val_channel_mask)

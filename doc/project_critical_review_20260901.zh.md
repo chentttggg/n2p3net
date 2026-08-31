@@ -8,7 +8,7 @@
 项目已经从“dirty worktree 上可运行”推进到 Git 可追溯的研究系统：核心 causal
 合同、checkpoint loader、BI/GTN runner、decision-aligned 负结果和 compact evidence
 均已进入提交历史。当前主瓶颈不再是代码缺线，而是：没有合法成人 BrainSync
-analysis-ready 数据、跨域只有确定性公共通道 CAR 路径、SSL 没有 downstream 性能。
+analysis-ready 数据、跨域联合源仍未超过单域 source、SSL 没有 downstream 性能。
 
 任何“接近产品 90%”“域迁移已打通”“个体校准有效”的表述目前都不成立。
 
@@ -61,7 +61,7 @@ full fine 或随机新 head 都没有证据支持。BI 是 6x6 character，不�
 约 25-28%，operational decision hit 约 17-19%。只报 eligible 会高估实际系统。
 增加 R 会进一步降低覆盖；业务要更高 R，应增加每 decision 刺激量，而不是删失败。
 
-### P1：跨域适配只完成可证明的 CAR 路径
+### P1：公共 CAR 已打通，但朴素联合源产生负迁移
 
 公共通道 CAR 可消除共同参考：
 
@@ -70,9 +70,16 @@ full fine 或随机新 head 都没有证据支持。BI 是 6x6 character，不�
 ```
 
 但它要求每条 trial 的全部选定通道都存在，并要求 source/target preprocessing 完全
-一致。BI-BrainSync 可取 `CZ,P3,PZ,P4,OZ`，GTN-BrainSync 可取 `FZ,CZ,PZ`；三者
-共同仅 `CZ,PZ`，不适合宣称统一多源模型。dataset-specific spatial stem 仍未实现，
-也没有真实跨域性能。
+一致。该路径已在 BI2014a+BNCI2014_008 的 5 导 causal common-CAR cache 上进入真实
+训练：BI-only hit@2=`0.1300`，uniform joint=`0.0967`，差 `-3.33 pp`，95% CI
+`[-5.90,-1.28] pp`。因此“通道/参考可加载”不等于“域迁移有效”。
+
+看到该负结果后注册的 BI 3x/BNCI 1x 探索臂为 `0.1239`：相对 uniform 恢复
+`+2.72 pp`，Holm `p=0.0052`；相对 BI-only 仍 `-0.61 pp`，CI 跨 0。它还增加了
+每 epoch optimizer steps，不能把恢复量纯解释为域权重。当前最小下一轴是固定
+uniform joint 数据与 steps，仅用 BI source rows 拟合 checkpoint 输入统计；若仍低于
+BI-only，才把剩余损失归于跨域梯度/表征冲突并研究 balanced batches、gradient surgery
+或 dataset-specific stem。三数据集公共仅 `CZ,PZ`，仍不适合统一空间卷积。
 
 ### P1：Git 远端跟踪分支不存在
 
@@ -117,14 +124,17 @@ GRL/erasure、pseudo/latent target 或动态停止会增加不可区分自由度
 - GTN all-evidence candidate mean 优于当前 count-tempered/sum 默认。
 - 当前 30-epoch decision-aligned full fine 对 K35 有负迁移。
 - BI 5-decision personalization 没有可靠优于 zero-shot/source stats。
+- BI+BNCI uniform joint 有显著负迁移；80/20 暴露只能恢复到 BI-only 附近，未产生净增益。
 - BrainSync 工程入口已闭合，但真实准确率完全未知。
 - 产品 90% 仍只能由新成人、多 session、多 target-switch prospective 数据裁决。
 
 ## 下一执行顺序
 
 1. 采集并验收新的 BrainSync analysis-ready sessions，先冻结 zero-shot/source-stats。
-2. 对 BI/BrainSync source-target 分别生成匹配 preprocessing 的 common-CAR caches，
-   训练新的 source checkpoint；不得 `allow_input_domain_shift` 绕门禁。
-3. 只在新 development decisions 比较 classifier fine 与 full fine；target stats 暂停。
-4. 运行 masked SSL downstream 对照；保留 supervised source checkpoint 强基线。
-5. 只有上述基线成立后再研究 spatial stem、pseudo adaptation 和 dynamic stopping。
+2. 在现有 BI+BNCI common-CAR cache 上固定 uniform joint rows/steps，比较 all-source
+   stats 与 BI-source stats；不得通过 repeat 扫描代替归因。
+3. 若 BI-source stats 仍未胜 BI-only，再比较 domain-balanced batch/梯度冲突控制；
+   dataset-specific spatial stem 放在确定梯度负迁移之后。
+4. 只在新 BrainSync development decisions 比较 classifier fine 与 full fine；target stats 暂停。
+5. 运行 masked SSL downstream 对照；保留 supervised source checkpoint 强基线。
+6. 只有上述基线成立后再研究 pseudo adaptation 和 dynamic stopping。
