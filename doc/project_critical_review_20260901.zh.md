@@ -76,10 +76,13 @@ full fine 或随机新 head 都没有证据支持。BI 是 6x6 character，不�
 
 看到该负结果后注册的 BI 3x/BNCI 1x 探索臂为 `0.1239`：相对 uniform 恢复
 `+2.72 pp`，Holm `p=0.0052`；相对 BI-only 仍 `-0.61 pp`，CI 跨 0。它还增加了
-每 epoch optimizer steps，不能把恢复量纯解释为域权重。当前最小下一轴是固定
-uniform joint 数据与 steps，仅用 BI source rows 拟合 checkpoint 输入统计；若仍低于
-BI-only，才把剩余损失归于跨域梯度/表征冲突并研究 balanced batches、gradient surgery
-或 dataset-specific stem。三数据集公共仅 `CZ,PZ`，仍不适合统一空间卷积。
+每 epoch optimizer steps，不能把恢复量纯解释为域权重。固定 uniform joint 数据与
+steps、仅用 BI source rows 拟合 checkpoint 输入统计后，hit@2=`0.0974`，相对
+all-source stats 仅 `+0.07 pp`，CI 跨 0；相对 BI-only 仍显著 `-3.26 pp`。因此
+normalization contamination 不是主因，剩余损失来自跨域梯度/表征冲突的证据更强。
+下一轴应先用固定 steps 的 normalized per-row domain loss weight 隔离梯度比例；若仍
+无增益，再研究 gradient surgery 或 dataset-specific stem。三数据集公共仅 `CZ,PZ`，
+仍不适合统一空间卷积。
 
 ### P1：Git 远端跟踪分支不存在
 
@@ -124,16 +127,17 @@ GRL/erasure、pseudo/latent target 或动态停止会增加不可区分自由度
 - GTN all-evidence candidate mean 优于当前 count-tempered/sum 默认。
 - 当前 30-epoch decision-aligned full fine 对 K35 有负迁移。
 - BI 5-decision personalization 没有可靠优于 zero-shot/source stats。
-- BI+BNCI uniform joint 有显著负迁移；80/20 暴露只能恢复到 BI-only 附近，未产生净增益。
+- BI+BNCI uniform joint 有显著负迁移；80/20 行重复只能恢复到 BI-only 附近；
+  BI-source stats 与 all-source stats 等效，未产生净增益。
 - BrainSync 工程入口已闭合，但真实准确率完全未知。
 - 产品 90% 仍只能由新成人、多 session、多 target-switch prospective 数据裁决。
 
 ## 下一执行顺序
 
 1. 采集并验收新的 BrainSync analysis-ready sessions，先冻结 zero-shot/source-stats。
-2. 在现有 BI+BNCI common-CAR cache 上固定 uniform joint rows/steps，比较 all-source
-   stats 与 BI-source stats；不得通过 repeat 扫描代替归因。
-3. 若 BI-source stats 仍未胜 BI-only，再比较 domain-balanced batch/梯度冲突控制；
+2. 在现有 BI+BNCI common-CAR cache 上保持 uniform 唯一行、batch 与 steps，比较
+   unweighted CE 与归一化 80/20 per-row domain-weighted CE；不得再扫 repeat/stats。
+3. 若固定-step domain weight 仍未胜 BI-only，停止简单混合，再进入梯度冲突控制；
    dataset-specific spatial stem 放在确定梯度负迁移之后。
 4. 只在新 BrainSync development decisions 比较 classifier fine 与 full fine；target stats 暂停。
 5. 运行 masked SSL downstream 对照；保留 supervised source checkpoint 强基线。

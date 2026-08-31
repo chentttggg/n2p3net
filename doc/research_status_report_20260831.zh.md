@@ -20,8 +20,9 @@ _更新至 2026-09-01；GTN development、单被试迁移链与 90% 产品目标
   classifier/full fine 没有可靠增益，target-prefix normalization 明显下降。
 - 匹配 5 导 common-CAR 的 BI+BNCI 联合源实验已完成。uniform joint 相对 BI-only
   为 `-3.33 pp`；后验 BI 3x/BNCI 1x 暴露恢复 `+2.72 pp`，但仍未胜 BI-only
-  (`-0.61 pp`, CI 跨 0)。因此不采用朴素联合源，下一轴只隔离 source normalization
-  污染与跨域梯度冲突。
+  (`-0.61 pp`, CI 跨 0)。固定 uniform rows/steps 后改用 BI-source input stats 仅
+  `+0.07 pp`，等同无变化。因此不采用朴素联合源，也不再归因于 mean/std 污染；
+  下一轴隔离固定 step 下的域梯度权重。
 
 ## 实测结果
 
@@ -88,10 +89,15 @@ BrainSync 9-choice 的 90% 指标直接换算。
 - 每个 3x/1x fold 保留约 79.3k 唯一行，展开为约 170.8k optimizer rows；BI
   暴露约 80.3%。因此该臂同时改变域比例和每 epoch step 数，不能把恢复量纯归因于权重。
 
-当前结论是：BNCI 数据本身并非被证明“必然有害”，但把它直接并入公共输入统计和
-trial CE 会损伤 BI 目标。继续扫描 repeat 比例价值很低；下一次匹配实验应保持
-uniform 行数/梯度不变，只把 checkpoint normalization 改为由 BI source rows 拟合，
-以区分输入统计污染和表征梯度冲突。
+固定 uniform 的约 79.3k optimizer rows 和所有训练设置，只让 mean/std 由约 45.7k
+非 holdout BI source rows 拟合后，hit@2=`0.0974`；相对 all-source stats 仅
+`+0.07 pp`，95% CI `[-0.36,+0.62] pp`，`p=0.837`；相对 BI-only 仍 `-3.26 pp`，
+95% CI `[-5.48,-1.39] pp`，Holm `p=0.00148`。因此公共输入统计不是负迁移主因。
+
+当前结论是：BNCI 数据本身并非被证明“必然有害”，但其 uniform 分类梯度会损伤 BI
+目标；3x/1x 的恢复更符合“增加 BI 梯度质量/步数”而不是 normalization 修复。
+继续扫描 repeat 或 stats 没有价值。下一次应保持唯一行数、batch 和 step 不变，给
+BI/BNCI per-row CE 设置归一化权重，使总梯度暴露约 80/20，以隔离域梯度比例。
 
 ### Full-unfold 核长
 
@@ -212,9 +218,9 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
    runner；现有 4 个 session 均非 analysis-ready，需重新采集 known-target decisions。
 2. **保护已有表征**：当前强联合微调已否决；下一轮只做冻结 backbone、渐进解冻、
    更低 backbone LR 或梯度冲突控制的单轴比较。N200/P300 多窗辅助目标须单独归因。
-3. **多源负迁移定位**：保持 uniform BI+BNCI optimizer 行与模型不变，只比较
-   all-source stats 与 BI-source stats；若仍负迁移，再进入 domain-balanced batch 或
-   梯度冲突控制，不继续盲扫 repeat。
+3. **多源负迁移定位**：all-source 与 BI-source stats 已等效；下一步保持 uniform
+   唯一行、batch 和 step 不变，用归一化 per-row CE weight 实现约 80/20 域梯度质量。
+   若仍未胜 BI-only，再停止简单混合并进入 gradient conflict/stem 机制。
 4. **证据效率**：在同一预测 ledger 上研究 latency tolerance、correlation-aware evidence
    和 dynamic stopping，以 hit-all/R/cost 曲线裁决，不再增加核长搜索。
 
@@ -226,6 +232,7 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
 - [BI cross-decision analysis](evidence/bi2014a_candidate_v2/cross_decision/analysis.json)
 - [uniform BI+BNCI joint analysis](evidence/multidomain_joint_20260901/analysis.json)
 - [BI-weighted BI+BNCI analysis](evidence/multidomain_weighted_20260901/analysis.json)
+- [BI-source-stat BI+BNCI analysis](evidence/multidomain_bi_stats_20260901/analysis.json)
 - [证据边界](evidence/gtn_20260831/README.md)
 - [steady-state 云端独立审计](evidence/gtn_20260831/factorial/independent_cloud_audit.json)
 - [核长 v4 总分析](evidence/gtn_20260831/kernel_v4/v4_kernel_ablation_analysis.json)

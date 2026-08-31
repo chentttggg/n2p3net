@@ -85,7 +85,8 @@ pairwise 公共真实通道子集 + 同子集 CAR，并重新计算 QC/重建 ch
 preprocessing mismatch 继续 fail closed。dataset-specific spatial stem 尚未实现，
 不得与确定性 CAR 结果混报。BI+BNCI 匹配 causal 5 导实测中，uniform joint
 显著低于 BI-only；BI 3x/BNCI 1x 只恢复到 BI-only 附近。因此 T2 不能再写成默认
-representation 增益，下一轴须先隔离 BI-source normalization 与跨域梯度冲突。
+representation 增益。固定 steps 的 BI-source normalization 与 all-source 等效，已排除
+公共 mean/std 主因；下一轴须用 normalized per-row loss weight 隔离域梯度比例。
 
 ### 3.3 下游 subject head
 
