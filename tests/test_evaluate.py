@@ -5,6 +5,7 @@ import pytest
 import torch
 
 import baselines.evaluate as evaluate_module
+from baselines.calibration import fit_logit_calibration
 from baselines.classic import WindowLogisticRegression
 from baselines.evaluate import (
     _resolve_fold_execution,
@@ -127,6 +128,25 @@ def test_binary_loso_reports_auc_and_bacc() -> None:
     assert summary.balanced_acc_mean > 0.7
     assert [fold_id for fold_id, _ in fold_events] == list(range(4, 10))
     assert [result.auc for _, result in fold_events] == [result.auc for result in summary.per_fold]
+    assert all(result.calibration_slope > 0.0 for result in summary.per_fold)
+    assert all(result.calibration_temperature > 0.0 for result in summary.per_fold)
+    assert all(np.isfinite(result.calibration_offset) for result in summary.per_fold)
+
+
+def test_monotone_calibration_cannot_reverse_anticorrelated_scores() -> None:
+    logits = np.asarray([4.0, 2.0, -2.0, -4.0])
+    labels = np.asarray([0, 0, 1, 1], dtype=np.int64)
+
+    calibration = fit_logit_calibration(
+        logits,
+        labels,
+        source="counterexample_validation",
+    )
+    calibrated = calibration.to_llr(logits)
+
+    assert calibration.llr_slope > 0.0
+    assert calibration.temperature is not None and calibration.temperature > 0.0
+    assert np.array_equal(np.argsort(calibrated), np.argsort(logits))
 
 
 def test_candidate_evidence_uses_calibrated_target_scores() -> None:

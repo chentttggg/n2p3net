@@ -37,10 +37,10 @@ def test_local_sensitivity_grid_maps_continuous_and_discrete_axes() -> None:
     assert by_name["batch_size_m15"].batch_size == 435
     assert by_name["batch_size_p15"].batch_size == 589
     assert by_name["temporal_kernel_size_m15"].architecture_overrides == {
-        "temporal_kernel_size": 55
+        "temporal_kernel_size": 29
     }
     assert by_name["temporal_kernel_size_p15"].architecture_overrides == {
-        "temporal_kernel_size": 75
+        "temporal_kernel_size": 41
     }
     assert "temporal_filters_m05" not in by_name
     assert "temporal_filters_p05" not in by_name
@@ -55,7 +55,7 @@ def test_local_sensitivity_grid_maps_continuous_and_discrete_axes() -> None:
 def test_256_hz_architecture_preserves_physical_kernel_spans() -> None:
     architecture = architecture_for_sample_rate(256.0)
 
-    assert architecture.temporal_kernel_size == 129
+    assert architecture.temporal_kernel_size == 69
     assert architecture.mst_kernel_sizes == (9, 33)
 
 

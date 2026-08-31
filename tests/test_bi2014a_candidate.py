@@ -13,8 +13,9 @@ def _write_synthetic_subject(tmp_path) -> None:
     rows = np.zeros((1188, 19), dtype=float)
     rng = np.random.default_rng(0)
     for rep in range(99):
-        row = rep % 6
-        col = rep % 6
+        # Three repetitions per selection, then move to a new character.
+        row = (rep // 3) % 6
+        col = (rep // 3) % 6
         target_row_code = 60 + row
         target_col_code = 80 + col
         nontarget_rows = [code for code in range(20, 26) if code != 20 + row][:5]
@@ -35,14 +36,64 @@ def test_recover_bi2014a_synthetic_schedule(tmp_path) -> None:
     assert np.count_nonzero(record.target_label == 2) == 198
     assert np.count_nonzero(record.target_label == 1) == 990
     assert record.n_repetitions == 99
+    assert record.n_explicit_boundaries == 0
     assert record.dropped_tail_flashes == 0
     assert set(np.unique(record.row_code).tolist()) == {-1, 0, 1, 2, 3, 4, 5}
     assert set(np.unique(record.col_code).tolist()) == {-1, 0, 1, 2, 3, 4, 5}
-    assert int(record.repetition_index.max()) < 99
+    assert len(np.unique(record.selection_id)) == 33
+    assert set(np.unique(record.repetition_index).tolist()) == {0, 1, 2}
+    for selection in np.unique(record.selection_id):
+        rows = record.selection_id == selection
+        assert np.array_equal(
+            np.unique(record.repetition_index[rows]), np.arange(3, dtype=np.int64)
+        )
+        assert all(
+            np.count_nonzero(rows & (record.repetition_index == repetition)) == 12
+            for repetition in range(3)
+        )
     target_rows = record.target_label == 2
     target_cols = target_rows
     assert np.all(record.row_code[target_rows & (record.row_code >= 0)] == record.target_row[target_rows & (record.row_code >= 0)])
     assert np.all(record.col_code[target_cols & (record.col_code >= 0)] == record.target_col[target_cols & (record.col_code >= 0)])
+
+
+def test_recover_bi2014a_splits_same_target_at_raw_level_boundary(tmp_path) -> None:
+    subject_dir = tmp_path / "subject_01"
+    subject_dir.mkdir()
+    row, col = 2, 4
+    codes = np.asarray(
+        [
+            *(code for code in range(20, 26) if code != 20 + row),
+            60 + row,
+            *(code for code in range(40, 46) if code != 40 + col),
+            80 + col,
+        ],
+        dtype=np.int64,
+    )
+    raw_rows: list[np.ndarray] = []
+    for repetition in range(3):
+        for code in codes:
+            raw = np.zeros(19, dtype=float)
+            raw[17] = code
+            raw[18] = 2 if code >= 60 else 1
+            raw_rows.append(raw)
+        if repetition == 1:
+            boundary = np.zeros(19, dtype=float)
+            boundary[17] = 104
+            raw_rows.append(boundary)
+    pd.DataFrame(raw_rows).to_csv(
+        subject_dir / "subject_01.csv", index=False, header=False
+    )
+
+    record = recover_bi2014a_candidates(subject_dir)
+
+    assert record.n_explicit_boundaries == 1
+    assert len(np.unique(record.selection_id)) == 2
+    assert record.repetition_index.reshape(3, 12)[:, 0].tolist() == [0, 1, 0]
+    assert (
+        np.unique(record.selection_boundary_reason.reshape(3, 12)[2]).tolist()
+        == ["raw_level_or_restart_code_104"]
+    )
 
 
 def test_recover_bi2014a_keeps_complete_repetitions_and_drops_tail(tmp_path) -> None:

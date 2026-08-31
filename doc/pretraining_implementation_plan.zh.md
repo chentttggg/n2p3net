@@ -1,7 +1,11 @@
 # N2P3-Transfer v1 落地实现与鲁棒性门禁
 
 日期：2026-08-28
-状态：historical prototype spec；可执行状态和新研究顺序见 `research_program.zh.md`。
+状态：historical mechanism spec；当前执行状态如下：source-supervised checkpoint
+保留训练好的 classifier、inner epoch 选择后在全部 source rows refit，并固化完整输入
+签名；masked-reconstruction checkpoint 的 classifier 未训练，不能 zero-shot 使用。
+GTN labelled same-selection adaptation 已降级为 oracle proxy。当前研究顺序直接见
+`research_program.zh.md`，本文不再提供独立执行默认值。
 依赖：`doc/pretraining_head_comparison.zh.md`、
 `doc/single_subject_transfer_research.zh.md`
 
@@ -48,8 +52,11 @@ reconstruction control。以下实现保留为 pure reconstruction 对照，不�
 
 ### 2.1 输入
 
-- 只用源域：GTN 除目标人外 241 subjects；BrainSync/BI/BNCI 作为后续 T2。
-- 输入仍是当前合同：128 Hz，2–30 Hz，`[-200,800) ms`，V，mean-only baseline。
+- 源域人数不硬编码；从冻结的 block manifest 与 cache subject ledger 派生，并在
+  checkpoint 中逐一固化 `training_subject_keys` 与 holdout subjects。
+- 输入由 checkpoint 绑定的完整合同决定。当前 GTN matched factorial 是
+  0.1/0.5 Hz x 800/1200 ms、128 Hz、V、mean-only baseline；chronological 路径
+  必须使用 forward IIR + `steady_state_first_sample`，不得回退到通用 2 Hz/800 ms。
 - **不做 channel mask**。3 通道掩掉 1 个就丢失大量空间信息；8 通道同理。
   时间 mask 是主目标。
 - 时间 mask：连续 block，block 长度 12–32 samples，总 mask 40–60%；
@@ -131,8 +138,10 @@ head 轴：
 
 ### 4.1 binary 校准
 
-- 用目标人 prefix 内更早的 sub-prefix 做 group-disjoint 校准；
-- 候选：Platt、temperature、isotonic；选择 NLL/ECE 最好的，禁止用 suffix。
+- 用目标人 prefix 内更早且满足 evidence-available time 隔离的 sub-prefix 做校准；
+- 当前合同是 weighted-CE prior offset correction + 正温度 `T>0`。普通 Platt
+  可能在小验证集学出负斜率并翻转候选排序，禁止使用；若保留诊断 Platt，必须
+  强制正 slope。isotonic 不作为当前小样本在线默认。
 
 ### 4.2 9 选聚合
 
@@ -168,7 +177,8 @@ precision  sum(w_i l_i)/sum(w_i), w_i=1/v_i；v_i 必须是逐 trial predictive 
 
 ### G2 统计门禁
 
-- 242 目标人按可用 trial 分层报告，不只报告均值；
+- 以 manifest 请求的完整 cohort 为 operational 分母，按实际 eligible/failed
+  原因分层报告；不得硬编码 241/242，也不得只报告 eligible 均值；
 - 每模型至少 3 seed；对外层 subject 做 paired bootstrap CI；
 - 多对比时报告 Holm 校正后的 p；
 - 报告最差 decile subject，而不是只报中位数。
@@ -196,34 +206,43 @@ precision  sum(w_i l_i)/sum(w_i), w_i=1/v_i；v_i 必须是逐 trial predictive 
 ## 6. 实验执行顺序
 
 ```text
-Step 0  生成 GTN causal cache:
-        python experiments/prepare_gtn_dataset.py \
-          --root D:/path/to/GTN --sfreq 128 --tmin-ms -200 --tmax-ms 800 \
-          --filter-phase forward --output experiments/cache/gtn_causal_v1.npz
+Step 0  单个已冻结 GTN steady-state causal arm 的复现模板（2x2 factorial 已完成）:
+        .venv/Scripts/python experiments/prepare_gtn_dataset.py \
+          --root D:/path/to/GTN --cohort gtn --filter-phase forward \
+          --l-freq 0.1 --tmax-ms 1200 --output CACHE.npz
 
-Step 1  W0/W1 target-only prefix -> suffix hit@R baseline
+Step 1  按冻结 4-block manifest 做 source-supervised checkpoint；每个 checkpoint
+        排除完整 target block，并绑定 cache SHA、输入合同与 source ledger:
+        .venv/Scripts/python experiments/run_pretrain_supervised.py \
+          --source-cache CACHE.npz --cohort gtn --tmax-ms 1200 \
+          --holdout-subjects BLOCK_KEYS --pooling-mode full_unfold \
+          --temporal-kernel-size 35 \
+          --epochs 100 --qc-ptp-uv 100 --checkpoint BLOCK.pt
 
-Step 2  P1 T1a 预训练:
-        python experiments/run_pretrain.py --source-cache gtn_causal_v1.npz \
-          --checkpoint checkpoints/SUBJ.pt --holdout-subjects SUBJ \
-          --mask-fraction 0.5 --bands 1-4,4-8,8-13,13-30
+Step 2  GTN 合法主结果只跑 target-excluded Z0；保存完整 trial ledger 后计算
+        hit@all_balanced、raw hit@all 与全部 hit@R。Z5 等待相同 M 但不使用标签，
+        只用于 time/coverage sensitivity:
+        .venv/Scripts/python experiments/run_within_subject_transfer.py \
+          --dataset-cache CACHE.npz --checkpoint BLOCK.pt --cohort gtn \
+          --prefix-reps 0 --test-reps all --head zero_shot --aggregation sum \
+          --target-subjects-file BLOCK.json --output Z0.json
 
-Step 3  downstream:
-        python experiments/run_within_subject_transfer.py \
-          --dataset-cache experiments/cache/gtn_causal_v1.npz \
-          --checkpoint checkpoints/SUBJ.pt --prefix-reps 8 --test-reps 8 \
-          --head linear --output experiments/runs/SUBJ.json
+Step 3  `--prefix-reps 5 --head zero_shot` 是 Z5。任何读取同 selection 标签的
+        classifier_fine/linear/mlp16/full_fine 都是 O5 oracle proxy，必须带
+        `--allow-oracle-same-selection-adaptation`，不得写成未知数字校准。
 
-Step 4  decision:
-        sum / mean / trim0.2 / precision; dynamic stopping threshold from prefix
+Step 4  监督校准主线转到 BI candidate-v2 的跨 decision split；当前 raw source
+        缺失，cache 尚未构建且没有 cross-decision 性能结果。最终裁决转到成人
+        BrainSync 多 target-switch decisions。
 
-Step 5  robustness gates G1-G5
+Step 5  对冻结候选执行鲁棒性门禁 G1-G5。
 ```
 
 ## 7. 何时停止
 
-- 若 `linear`/`mlp16` 在预注册的绝对 prefix 预算下 hit@8 >= 0.85，且通过
-  G1–G5，报告 point estimate 与 CI；60% 目标数据不称 few-shot；
+- 只有成人 BrainSync 9-choice 多 target-switch 的合法 cross-decision arm 在预注册
+  绝对 prefix/R 预算下 hit@R >= 0.90 且通过 G1–G5，才报告产品 point estimate 与 CI；
 - 若只有 `full_fine` 达到，说明收益来自目标人训练而非迁移，不得称 SSL 有效；
-- 若都达不到，回退到 `ms_flatten` + xDAWN-Riemann classical floor，并删除
+- 若迁移头都达不到，回退到 adopted `full_unfold` zero-shot + xDAWN-Riemann
+  classical floor；`ms_flatten` 仅保留结构基线，并删除
   未通过门禁的 transfer 分支，不保留弱化语义。

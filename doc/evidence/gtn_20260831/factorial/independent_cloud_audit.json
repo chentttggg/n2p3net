@@ -1,0 +1,3893 @@
+{
+  "schema": "n2p3_cloud_frozen_artifact_audit/1",
+  "generated_at": "2026-08-31T07:45:20.372751+00:00",
+  "root": "/root/autodl-tmp/n2p3-audit-20260831",
+  "source_snapshot_git_commit": null,
+  "source_snapshot_note": "Directory is not a Git worktree; reproducibility is anchored by artifact and code-file SHA-256 values.",
+  "manifest": {
+    "path": "artifacts/manifests/factorial_manifest.json",
+    "sha256": "52d3cfcf3a534d4062e99b0bff94926c388b3830fa8945a01b2c468725870744",
+    "schema": "n2p3_accuracy_factorial/1",
+    "seed": 20260831,
+    "assignment": "greedy_stratified(target_digit,sex,age_bin)",
+    "n_blocks": 4,
+    "n_subjects": 245,
+    "block_sizes": [
+      62,
+      61,
+      61,
+      61
+    ],
+    "unique_subjects": true
+  },
+  "cache_integrity": {
+    "gtn_causal_ss_lf0.1_t1200": {
+      "path": "artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+      "byte_size": 103525649,
+      "sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+      "manifest_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+      "manifest_match": true,
+      "record_path": "artifacts/cache/gtn_causal_ss_lf0.1_t1200.record.json",
+      "record_sha256": "eb2c8864d897cad50cf1fbc9f57277038ef47f62e6425ecd2de6a8af28db13d7",
+      "record_attestation_match": true,
+      "npz_crc_ok": true,
+      "npz_bad_member": null,
+      "shape": [
+        50322,
+        3,
+        179
+      ],
+      "n_subjects": 245,
+      "preprocessing": {
+        "name": "gtn_single_subject_causal_v4",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "event_contract": {
+        "schema": "n2p3net_scheduled_events/2",
+        "n_scheduled": 50566,
+        "n_available": 50322,
+        "complete": true,
+        "online_causal": true,
+        "has_candidate_ids": true,
+        "has_candidate_sets": true,
+        "has_repetition_structure": true,
+        "supports_full_candidate_chain": true,
+        "fingerprint": "6ca5c0827aead8c8360b474fbe0cd6da2c7a9d161f455cc272c912a1a69583c5"
+      }
+    },
+    "gtn_causal_ss_lf0.1_t800": {
+      "path": "artifacts/cache/gtn_causal_ss_lf0.1_t800.npz",
+      "byte_size": 75208190,
+      "sha256": "5d0f8a30a8877c1c7d58b46de85bbfe172fb94db91aca11a18f5efc38f903919",
+      "manifest_sha256": "5d0f8a30a8877c1c7d58b46de85bbfe172fb94db91aca11a18f5efc38f903919",
+      "manifest_match": true,
+      "record_path": "artifacts/cache/gtn_causal_ss_lf0.1_t800.record.json",
+      "record_sha256": "abbe0a9bb2861f0fb419d70a02599d502453ffa99d391b79720d8bb0eda0efe5",
+      "record_attestation_match": true,
+      "npz_crc_ok": true,
+      "npz_bad_member": null,
+      "shape": [
+        50562,
+        3,
+        128
+      ],
+      "n_subjects": 245,
+      "preprocessing": {
+        "name": "gtn_single_subject_causal_v4",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 800.0,
+        "n_times": 128,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "event_contract": {
+        "schema": "n2p3net_scheduled_events/2",
+        "n_scheduled": 50566,
+        "n_available": 50562,
+        "complete": true,
+        "online_causal": true,
+        "has_candidate_ids": true,
+        "has_candidate_sets": true,
+        "has_repetition_structure": true,
+        "supports_full_candidate_chain": true,
+        "fingerprint": "790d305a39dc938a59f464dc51fc7e6f09b698b2d06430e5dbc3cc67c7ffbd2e"
+      }
+    },
+    "gtn_causal_ss_lf0.5_t1200": {
+      "path": "artifacts/cache/gtn_causal_ss_lf0.5_t1200.npz",
+      "byte_size": 103441371,
+      "sha256": "c5decd630262823155ac3193a01ab660b5b91791fd235d1a7cc94f1292aea5fc",
+      "manifest_sha256": "c5decd630262823155ac3193a01ab660b5b91791fd235d1a7cc94f1292aea5fc",
+      "manifest_match": true,
+      "record_path": "artifacts/cache/gtn_causal_ss_lf0.5_t1200.record.json",
+      "record_sha256": "0744be30ba2be35d3c4f1f75354a670b6eb2af612f16c3cd0ea8a6b97921e719",
+      "record_attestation_match": true,
+      "npz_crc_ok": true,
+      "npz_bad_member": null,
+      "shape": [
+        50322,
+        3,
+        179
+      ],
+      "n_subjects": 245,
+      "preprocessing": {
+        "name": "gtn_paper_causal_v2",
+        "sfreq": 128.0,
+        "l_freq": 0.5,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "event_contract": {
+        "schema": "n2p3net_scheduled_events/2",
+        "n_scheduled": 50566,
+        "n_available": 50322,
+        "complete": true,
+        "online_causal": true,
+        "has_candidate_ids": true,
+        "has_candidate_sets": true,
+        "has_repetition_structure": true,
+        "supports_full_candidate_chain": true,
+        "fingerprint": "6ca5c0827aead8c8360b474fbe0cd6da2c7a9d161f455cc272c912a1a69583c5"
+      }
+    },
+    "gtn_causal_ss_lf0.5_t800": {
+      "path": "artifacts/cache/gtn_causal_ss_lf0.5_t800.npz",
+      "byte_size": 75176165,
+      "sha256": "f407d7e24bc7bd2e99547f4c734ff78059f3c5c8cff01663f0eabbbd7e670cfe",
+      "manifest_sha256": "f407d7e24bc7bd2e99547f4c734ff78059f3c5c8cff01663f0eabbbd7e670cfe",
+      "manifest_match": true,
+      "record_path": "artifacts/cache/gtn_causal_ss_lf0.5_t800.record.json",
+      "record_sha256": "5e9f8d32cbc90b1d93f74be3058329cc51b617628f8f176d9953cbb3fe134247",
+      "record_attestation_match": true,
+      "npz_crc_ok": true,
+      "npz_bad_member": null,
+      "shape": [
+        50562,
+        3,
+        128
+      ],
+      "n_subjects": 245,
+      "preprocessing": {
+        "name": "gtn_paper_causal_v2",
+        "sfreq": 128.0,
+        "l_freq": 0.5,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 800.0,
+        "n_times": 128,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "event_contract": {
+        "schema": "n2p3net_scheduled_events/2",
+        "n_scheduled": 50566,
+        "n_available": 50562,
+        "complete": true,
+        "online_causal": true,
+        "has_candidate_ids": true,
+        "has_candidate_sets": true,
+        "has_repetition_structure": true,
+        "supports_full_candidate_chain": true,
+        "fingerprint": "790d305a39dc938a59f464dc51fc7e6f09b698b2d06430e5dbc3cc67c7ffbd2e"
+      }
+    }
+  },
+  "checkpoint_metadata_path": "artifacts/results/checkpoint_metadata.json",
+  "checkpoint_count": 32,
+  "factorial_tables": {
+    "z0": [
+      {
+        "arm": "lf01_t800",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 85,
+        "hit5_conditional": 0.3695652173913043,
+        "hit5_operational": 0.3469387755102041,
+        "auc_subject_macro": 0.6567826086956522
+      },
+      {
+        "arm": "lf01_t800",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 85,
+        "hit5_conditional": 0.3695652173913043,
+        "hit5_operational": 0.3469387755102041,
+        "auc_subject_macro": 0.6567826086956522
+      },
+      {
+        "arm": "lf01_t800",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 97,
+        "hit5_conditional": 0.4217391304347826,
+        "hit5_operational": 0.39591836734693875,
+        "auc_subject_macro": 0.6567826086956522
+      },
+      {
+        "arm": "lf01_t1200",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 133,
+        "hit5_conditional": 0.5782608695652174,
+        "hit5_operational": 0.5428571428571428,
+        "auc_subject_macro": 0.7094347826086957
+      },
+      {
+        "arm": "lf01_t1200",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 133,
+        "hit5_conditional": 0.5782608695652174,
+        "hit5_operational": 0.5428571428571428,
+        "auc_subject_macro": 0.7094347826086957
+      },
+      {
+        "arm": "lf01_t1200",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 133,
+        "hit5_conditional": 0.5782608695652174,
+        "hit5_operational": 0.5428571428571428,
+        "auc_subject_macro": 0.7094347826086957
+      },
+      {
+        "arm": "lf05_t800",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 69,
+        "hit5_conditional": 0.3,
+        "hit5_operational": 0.2816326530612245,
+        "auc_subject_macro": 0.6321521739130433
+      },
+      {
+        "arm": "lf05_t800",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 69,
+        "hit5_conditional": 0.3,
+        "hit5_operational": 0.2816326530612245,
+        "auc_subject_macro": 0.6321521739130433
+      },
+      {
+        "arm": "lf05_t800",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 84,
+        "hit5_conditional": 0.3652173913043478,
+        "hit5_operational": 0.34285714285714286,
+        "auc_subject_macro": 0.6321521739130433
+      },
+      {
+        "arm": "lf05_t1200",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 120,
+        "hit5_conditional": 0.5217391304347826,
+        "hit5_operational": 0.4897959183673469,
+        "auc_subject_macro": 0.6740869565217392
+      },
+      {
+        "arm": "lf05_t1200",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 120,
+        "hit5_conditional": 0.5217391304347826,
+        "hit5_operational": 0.4897959183673469,
+        "auc_subject_macro": 0.6740869565217392
+      },
+      {
+        "arm": "lf05_t1200",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 117,
+        "hit5_conditional": 0.508695652173913,
+        "hit5_operational": 0.4775510204081633,
+        "auc_subject_macro": 0.6740869565217392
+      }
+    ],
+    "z5": [
+      {
+        "arm": "lf01_t800",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 176,
+        "excluded": 69,
+        "coverage": 0.7183673469387755,
+        "hit5_count": 60,
+        "hit5_conditional": 0.3409090909090909,
+        "hit5_operational": 0.24489795918367346,
+        "auc_subject_macro": 0.6367045454545455
+      },
+      {
+        "arm": "lf01_t800",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 176,
+        "excluded": 69,
+        "coverage": 0.7183673469387755,
+        "hit5_count": 60,
+        "hit5_conditional": 0.3409090909090909,
+        "hit5_operational": 0.24489795918367346,
+        "auc_subject_macro": 0.6367045454545455
+      },
+      {
+        "arm": "lf01_t800",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 176,
+        "excluded": 69,
+        "coverage": 0.7183673469387755,
+        "hit5_count": 66,
+        "hit5_conditional": 0.375,
+        "hit5_operational": 0.2693877551020408,
+        "auc_subject_macro": 0.6367045454545455
+      },
+      {
+        "arm": "lf01_t1200",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 175,
+        "excluded": 70,
+        "coverage": 0.7142857142857143,
+        "hit5_count": 100,
+        "hit5_conditional": 0.5714285714285714,
+        "hit5_operational": 0.40816326530612246,
+        "auc_subject_macro": 0.7000857142857143
+      },
+      {
+        "arm": "lf01_t1200",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 175,
+        "excluded": 70,
+        "coverage": 0.7142857142857143,
+        "hit5_count": 100,
+        "hit5_conditional": 0.5714285714285714,
+        "hit5_operational": 0.40816326530612246,
+        "auc_subject_macro": 0.7000857142857143
+      },
+      {
+        "arm": "lf01_t1200",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 175,
+        "excluded": 70,
+        "coverage": 0.7142857142857143,
+        "hit5_count": 97,
+        "hit5_conditional": 0.5542857142857143,
+        "hit5_operational": 0.39591836734693875,
+        "auc_subject_macro": 0.7000857142857143
+      },
+      {
+        "arm": "lf05_t800",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 176,
+        "excluded": 69,
+        "coverage": 0.7183673469387755,
+        "hit5_count": 44,
+        "hit5_conditional": 0.25,
+        "hit5_operational": 0.17959183673469387,
+        "auc_subject_macro": 0.6038636363636364
+      },
+      {
+        "arm": "lf05_t800",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 176,
+        "excluded": 69,
+        "coverage": 0.7183673469387755,
+        "hit5_count": 44,
+        "hit5_conditional": 0.25,
+        "hit5_operational": 0.17959183673469387,
+        "auc_subject_macro": 0.6038636363636364
+      },
+      {
+        "arm": "lf05_t800",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 176,
+        "excluded": 69,
+        "coverage": 0.7183673469387755,
+        "hit5_count": 50,
+        "hit5_conditional": 0.2840909090909091,
+        "hit5_operational": 0.20408163265306123,
+        "auc_subject_macro": 0.6038636363636364
+      },
+      {
+        "arm": "lf05_t1200",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 175,
+        "excluded": 70,
+        "coverage": 0.7142857142857143,
+        "hit5_count": 75,
+        "hit5_conditional": 0.42857142857142855,
+        "hit5_operational": 0.30612244897959184,
+        "auc_subject_macro": 0.6561428571428572
+      },
+      {
+        "arm": "lf05_t1200",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 175,
+        "excluded": 70,
+        "coverage": 0.7142857142857143,
+        "hit5_count": 75,
+        "hit5_conditional": 0.42857142857142855,
+        "hit5_operational": 0.30612244897959184,
+        "auc_subject_macro": 0.6561428571428572
+      },
+      {
+        "arm": "lf05_t1200",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 175,
+        "excluded": 70,
+        "coverage": 0.7142857142857143,
+        "hit5_count": 77,
+        "hit5_conditional": 0.44,
+        "hit5_operational": 0.3142857142857143,
+        "auc_subject_macro": 0.6561428571428572
+      }
+    ]
+  },
+  "factorial_pairwise": {
+    "z0": [
+      {
+        "a": "z0:lf01_t800:sum",
+        "b": "z0:lf01_t1200:sum",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": -0.19591836734693877,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.2612244897959184,
+          -0.1306122448979592
+        ],
+        "a_wins": 13,
+        "b_wins": 61,
+        "ties": 171,
+        "mcnemar_exact_two_sided_p": 1.3936467518320873e-08,
+        "delta_auc_shared_eligible_a_minus_b": -0.05265217391304348,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.06823967391304349,
+          -0.03667391304347826
+        ]
+      },
+      {
+        "a": "z0:lf01_t800:sum",
+        "b": "z0:lf05_t800:sum",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.0653061224489796,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.024489795918367346,
+          0.11020408163265306
+        ],
+        "a_wins": 23,
+        "b_wins": 7,
+        "ties": 215,
+        "mcnemar_exact_two_sided_p": 0.005222879350185395,
+        "delta_auc_shared_eligible_a_minus_b": 0.024630434782608703,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.014347826086956533,
+          0.03471739130434783
+        ]
+      },
+      {
+        "a": "z0:lf01_t800:sum",
+        "b": "z0:lf05_t1200:sum",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": -0.14285714285714285,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.2,
+          -0.08571428571428572
+        ],
+        "a_wins": 11,
+        "b_wins": 46,
+        "ties": 188,
+        "mcnemar_exact_two_sided_p": 3.3118847623803123e-06,
+        "delta_auc_shared_eligible_a_minus_b": -0.017304347826086957,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.030847826086956517,
+          -0.004021739130434784
+        ]
+      },
+      {
+        "a": "z0:lf01_t1200:sum",
+        "b": "z0:lf05_t800:sum",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.2612244897959184,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.19591836734693877,
+          0.32653061224489793
+        ],
+        "a_wins": 74,
+        "b_wins": 10,
+        "ties": 161,
+        "mcnemar_exact_two_sided_p": 3.2856922591567363e-13,
+        "delta_auc_shared_eligible_a_minus_b": 0.07728260869565216,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.06063043478260869,
+          0.09397880434782604
+        ]
+      },
+      {
+        "a": "z0:lf01_t1200:sum",
+        "b": "z0:lf05_t1200:sum",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.053061224489795916,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.0,
+          0.11020408163265306
+        ],
+        "a_wins": 30,
+        "b_wins": 17,
+        "ties": 198,
+        "mcnemar_exact_two_sided_p": 0.07894069368148846,
+        "delta_auc_shared_eligible_a_minus_b": 0.03534782608695651,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.02106467391304346,
+          0.049565217391304345
+        ]
+      },
+      {
+        "a": "z0:lf05_t800:sum",
+        "b": "z0:lf05_t1200:sum",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": -0.20816326530612245,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.2693877551020408,
+          -0.1510204081632653
+        ],
+        "a_wins": 8,
+        "b_wins": 59,
+        "ties": 178,
+        "mcnemar_exact_two_sided_p": 1.0167485039666578e-10,
+        "delta_auc_shared_eligible_a_minus_b": -0.04193478260869566,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.05465271739130436,
+          -0.029260869565217406
+        ]
+      },
+      {
+        "a": "z0:lf01_t800:trim0.2",
+        "b": "z0:lf01_t1200:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": -0.1469387755102041,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.21224489795918366,
+          -0.08163265306122448
+        ],
+        "a_wins": 16,
+        "b_wins": 52,
+        "ties": 177,
+        "mcnemar_exact_two_sided_p": 1.4074155775977473e-05,
+        "delta_auc_shared_eligible_a_minus_b": -0.05265217391304348,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.06832608695652172,
+          -0.0368255434782609
+        ]
+      },
+      {
+        "a": "z0:lf01_t800:trim0.2",
+        "b": "z0:lf05_t800:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.053061224489795916,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.00816326530612245,
+          0.10204081632653061
+        ],
+        "a_wins": 24,
+        "b_wins": 11,
+        "ties": 210,
+        "mcnemar_exact_two_sided_p": 0.040959591511636986,
+        "delta_auc_shared_eligible_a_minus_b": 0.024630434782608703,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.014586413043478266,
+          0.034760869565217394
+        ]
+      },
+      {
+        "a": "z0:lf01_t800:trim0.2",
+        "b": "z0:lf05_t1200:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": -0.08163265306122448,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.14285714285714285,
+          -0.02040816326530612
+        ],
+        "a_wins": 20,
+        "b_wins": 40,
+        "ties": 185,
+        "mcnemar_exact_two_sided_p": 0.01348929373119186,
+        "delta_auc_shared_eligible_a_minus_b": -0.017304347826086957,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.030456521739130438,
+          -0.004239130434782619
+        ]
+      },
+      {
+        "a": "z0:lf01_t1200:trim0.2",
+        "b": "z0:lf05_t800:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.2,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.1306122448979592,
+          0.2653061224489796
+        ],
+        "a_wins": 65,
+        "b_wins": 16,
+        "ties": 164,
+        "mcnemar_exact_two_sided_p": 3.641398627788796e-08,
+        "delta_auc_shared_eligible_a_minus_b": 0.07728260869565216,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.0602391304347826,
+          0.09432608695652173
+        ]
+      },
+      {
+        "a": "z0:lf01_t1200:trim0.2",
+        "b": "z0:lf05_t1200:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.0653061224489796,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.00816326530612245,
+          0.12244897959183673
+        ],
+        "a_wins": 35,
+        "b_wins": 19,
+        "ties": 191,
+        "mcnemar_exact_two_sided_p": 0.04022356409571669,
+        "delta_auc_shared_eligible_a_minus_b": 0.03534782608695651,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.021413043478260865,
+          0.04989130434782608
+        ]
+      },
+      {
+        "a": "z0:lf05_t800:trim0.2",
+        "b": "z0:lf05_t1200:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": -0.1346938775510204,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.19591836734693877,
+          -0.07346938775510205
+        ],
+        "a_wins": 15,
+        "b_wins": 48,
+        "ties": 182,
+        "mcnemar_exact_two_sided_p": 3.7606121325417525e-05,
+        "delta_auc_shared_eligible_a_minus_b": -0.04193478260869566,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.05482608695652175,
+          -0.029173369565217443
+        ]
+      }
+    ],
+    "z5": [
+      {
+        "a": "z5:lf01_t800:sum",
+        "b": "z5:lf01_t1200:sum",
+        "n_requested": 245,
+        "n_common_auc": 175,
+        "delta_operational_hit5_a_minus_b": -0.16326530612244897,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.22448979591836735,
+          -0.10612244897959183
+        ],
+        "a_wins": 11,
+        "b_wins": 51,
+        "ties": 183,
+        "mcnemar_exact_two_sided_p": 2.775636864143019e-07,
+        "delta_auc_shared_eligible_a_minus_b": -0.06405714285714287,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.08362857142857144,
+          -0.04457142857142859
+        ]
+      },
+      {
+        "a": "z5:lf01_t800:sum",
+        "b": "z5:lf05_t800:sum",
+        "n_requested": 245,
+        "n_common_auc": 176,
+        "delta_operational_hit5_a_minus_b": 0.0653061224489796,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.024489795918367346,
+          0.10612244897959183
+        ],
+        "a_wins": 22,
+        "b_wins": 6,
+        "ties": 217,
+        "mcnemar_exact_two_sided_p": 0.0037191659212112427,
+        "delta_auc_shared_eligible_a_minus_b": 0.032840909090909094,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.021448863636363644,
+          0.04411931818181818
+        ]
+      },
+      {
+        "a": "z5:lf01_t800:sum",
+        "b": "z5:lf05_t1200:sum",
+        "n_requested": 245,
+        "n_common_auc": 175,
+        "delta_operational_hit5_a_minus_b": -0.061224489795918366,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.11020408163265306,
+          -0.012244897959183673
+        ],
+        "a_wins": 12,
+        "b_wins": 27,
+        "ties": 206,
+        "mcnemar_exact_two_sided_p": 0.023702702470473014,
+        "delta_auc_shared_eligible_a_minus_b": -0.02011428571428572,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.03660000000000001,
+          -0.003771428571428571
+        ]
+      },
+      {
+        "a": "z5:lf01_t1200:sum",
+        "b": "z5:lf05_t800:sum",
+        "n_requested": 245,
+        "n_common_auc": 175,
+        "delta_operational_hit5_a_minus_b": 0.22857142857142856,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.1673469387755102,
+          0.2897959183673469
+        ],
+        "a_wins": 66,
+        "b_wins": 10,
+        "ties": 169,
+        "mcnemar_exact_two_sided_p": 2.960046439225788e-11,
+        "delta_auc_shared_eligible_a_minus_b": 0.09677142857142858,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.07491428571428572,
+          0.1184857142857143
+        ]
+      },
+      {
+        "a": "z5:lf01_t1200:sum",
+        "b": "z5:lf05_t1200:sum",
+        "n_requested": 245,
+        "n_common_auc": 175,
+        "delta_operational_hit5_a_minus_b": 0.10204081632653061,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.04897959183673469,
+          0.15510204081632653
+        ],
+        "a_wins": 36,
+        "b_wins": 11,
+        "ties": 198,
+        "mcnemar_exact_two_sided_p": 0.00034600114031491097,
+        "delta_auc_shared_eligible_a_minus_b": 0.04394285714285715,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.029542142857142857,
+          0.058400714285714236
+        ]
+      },
+      {
+        "a": "z5:lf05_t800:sum",
+        "b": "z5:lf05_t1200:sum",
+        "n_requested": 245,
+        "n_common_auc": 175,
+        "delta_operational_hit5_a_minus_b": -0.12653061224489795,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.1836734693877551,
+          -0.07346938775510205
+        ],
+        "a_wins": 10,
+        "b_wins": 41,
+        "ties": 194,
+        "mcnemar_exact_two_sided_p": 1.4737715885004832e-05,
+        "delta_auc_shared_eligible_a_minus_b": -0.05282857142857143,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.07102857142857144,
+          -0.03491357142857149
+        ]
+      },
+      {
+        "a": "z5:lf01_t800:trim0.2",
+        "b": "z5:lf01_t1200:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 175,
+        "delta_operational_hit5_a_minus_b": -0.12653061224489795,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.1836734693877551,
+          -0.06938775510204082
+        ],
+        "a_wins": 13,
+        "b_wins": 44,
+        "ties": 188,
+        "mcnemar_exact_two_sided_p": 4.7104376093953786e-05,
+        "delta_auc_shared_eligible_a_minus_b": -0.06405714285714287,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.08374285714285715,
+          -0.04462785714285721
+        ]
+      },
+      {
+        "a": "z5:lf01_t800:trim0.2",
+        "b": "z5:lf05_t800:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 176,
+        "delta_operational_hit5_a_minus_b": 0.0653061224489796,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.02040816326530612,
+          0.11020408163265306
+        ],
+        "a_wins": 23,
+        "b_wins": 7,
+        "ties": 215,
+        "mcnemar_exact_two_sided_p": 0.005222879350185395,
+        "delta_auc_shared_eligible_a_minus_b": 0.032840909090909094,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.021392045454545462,
+          0.04440411931818176
+        ]
+      },
+      {
+        "a": "z5:lf01_t800:trim0.2",
+        "b": "z5:lf05_t1200:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 175,
+        "delta_operational_hit5_a_minus_b": -0.044897959183673466,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.09387755102040816,
+          0.004081632653061225
+        ],
+        "a_wins": 13,
+        "b_wins": 24,
+        "ties": 208,
+        "mcnemar_exact_two_sided_p": 0.09887174959294498,
+        "delta_auc_shared_eligible_a_minus_b": -0.02011428571428572,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.03665714285714285,
+          -0.0037421428571429165
+        ]
+      },
+      {
+        "a": "z5:lf01_t1200:trim0.2",
+        "b": "z5:lf05_t800:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 175,
+        "delta_operational_hit5_a_minus_b": 0.19183673469387755,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.12653061224489795,
+          0.2571428571428571
+        ],
+        "a_wins": 61,
+        "b_wins": 14,
+        "ties": 170,
+        "mcnemar_exact_two_sided_p": 3.807704084089984e-08,
+        "delta_auc_shared_eligible_a_minus_b": 0.09677142857142858,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.07494285714285716,
+          0.11879999999999999
+        ]
+      },
+      {
+        "a": "z5:lf01_t1200:trim0.2",
+        "b": "z5:lf05_t1200:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 175,
+        "delta_operational_hit5_a_minus_b": 0.08163265306122448,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.0326530612244898,
+          0.1346938775510204
+        ],
+        "a_wins": 32,
+        "b_wins": 12,
+        "ties": 201,
+        "mcnemar_exact_two_sided_p": 0.003657766827927844,
+        "delta_auc_shared_eligible_a_minus_b": 0.04394285714285715,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.029285714285714286,
+          0.058542857142857146
+        ]
+      },
+      {
+        "a": "z5:lf05_t800:trim0.2",
+        "b": "z5:lf05_t1200:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 175,
+        "delta_operational_hit5_a_minus_b": -0.11020408163265306,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          -0.16326530612244897,
+          -0.05714285714285714
+        ],
+        "a_wins": 9,
+        "b_wins": 36,
+        "ties": 200,
+        "mcnemar_exact_two_sided_p": 6.57466324582856e-05,
+        "delta_auc_shared_eligible_a_minus_b": -0.05282857142857143,
+        "delta_auc_ci95_paired_bootstrap": [
+          -0.07114285714285715,
+          -0.034542857142857146
+        ]
+      }
+    ]
+  },
+  "factorial_main_effects_and_interaction": {
+    "z0": {
+      "sum": {
+        "t1200_minus_t800_average_over_low_cutoff": {
+          "estimate": 0.20204081632653062,
+          "ci95_paired_subject_bootstrap": [
+            0.1510204081632653,
+            0.2530612244897959
+          ]
+        },
+        "lf0.1_minus_lf0.5_average_over_tmax": {
+          "estimate": 0.05918367346938776,
+          "ci95_paired_subject_bootstrap": [
+            0.026530612244897958,
+            0.09387755102040816
+          ]
+        },
+        "interaction_tmax_effect_lf0.1_minus_lf0.5": {
+          "estimate": -0.012244897959183673,
+          "ci95_paired_subject_bootstrap": [
+            -0.08163265306122448,
+            0.05714285714285714
+          ]
+        }
+      },
+      "trim0.2": {
+        "t1200_minus_t800_average_over_low_cutoff": {
+          "estimate": 0.14081632653061224,
+          "ci95_paired_subject_bootstrap": [
+            0.08979591836734693,
+            0.19183673469387755
+          ]
+        },
+        "lf0.1_minus_lf0.5_average_over_tmax": {
+          "estimate": 0.05918367346938776,
+          "ci95_paired_subject_bootstrap": [
+            0.02040816326530612,
+            0.09795918367346938
+          ]
+        },
+        "interaction_tmax_effect_lf0.1_minus_lf0.5": {
+          "estimate": 0.012244897959183673,
+          "ci95_paired_subject_bootstrap": [
+            -0.05714285714285714,
+            0.08163265306122448
+          ]
+        }
+      }
+    },
+    "z5": {
+      "sum": {
+        "t1200_minus_t800_average_over_low_cutoff": {
+          "estimate": 0.14489795918367346,
+          "ci95_paired_subject_bootstrap": [
+            0.1,
+            0.18979591836734694
+          ]
+        },
+        "lf0.1_minus_lf0.5_average_over_tmax": {
+          "estimate": 0.0836734693877551,
+          "ci95_paired_subject_bootstrap": [
+            0.05102040816326531,
+            0.11836734693877551
+          ]
+        },
+        "interaction_tmax_effect_lf0.1_minus_lf0.5": {
+          "estimate": 0.036734693877551024,
+          "ci95_paired_subject_bootstrap": [
+            -0.0326530612244898,
+            0.10612244897959183
+          ]
+        }
+      },
+      "trim0.2": {
+        "t1200_minus_t800_average_over_low_cutoff": {
+          "estimate": 0.11836734693877551,
+          "ci95_paired_subject_bootstrap": [
+            0.07346938775510205,
+            0.16326530612244897
+          ]
+        },
+        "lf0.1_minus_lf0.5_average_over_tmax": {
+          "estimate": 0.07346938775510205,
+          "ci95_paired_subject_bootstrap": [
+            0.03877551020408163,
+            0.10816326530612246
+          ]
+        },
+        "interaction_tmax_effect_lf0.1_minus_lf0.5": {
+          "estimate": 0.0163265306122449,
+          "ci95_paired_subject_bootstrap": [
+            -0.04897959183673469,
+            0.08163265306122448
+          ]
+        }
+      }
+    }
+  },
+  "existing_summary_validation": {
+    "z0": {
+      "path": "artifacts/results/z0_factorial_analysis.json",
+      "sha256": "80e32603915cc6f9f58ddc6ebbb0076abab6daa2a3dbf0ff59f1a65ee3d0b278",
+      "table_mismatches": [],
+      "independent_point_estimates_match": true
+    },
+    "z5": {
+      "path": "artifacts/results/z5_factorial_analysis.json",
+      "sha256": "e45a3c30d69efdddb5eea21a7cc084f848b407251d8bd97ea8e2373b646d3d9f",
+      "table_mismatches": [],
+      "independent_point_estimates_match": true
+    }
+  },
+  "sum_mean_identity": {
+    "z0": {
+      "lf01_t800": {
+        "same_eligible_groups": true,
+        "same_hit5_every_group": true,
+        "same_auc_every_group": true
+      },
+      "lf01_t1200": {
+        "same_eligible_groups": true,
+        "same_hit5_every_group": true,
+        "same_auc_every_group": true
+      },
+      "lf05_t800": {
+        "same_eligible_groups": true,
+        "same_hit5_every_group": true,
+        "same_auc_every_group": true
+      },
+      "lf05_t1200": {
+        "same_eligible_groups": true,
+        "same_hit5_every_group": true,
+        "same_auc_every_group": true
+      }
+    },
+    "z5": {
+      "lf01_t800": {
+        "same_eligible_groups": true,
+        "same_hit5_every_group": true,
+        "same_auc_every_group": true
+      },
+      "lf01_t1200": {
+        "same_eligible_groups": true,
+        "same_hit5_every_group": true,
+        "same_auc_every_group": true
+      },
+      "lf05_t800": {
+        "same_eligible_groups": true,
+        "same_hit5_every_group": true,
+        "same_auc_every_group": true
+      },
+      "lf05_t1200": {
+        "same_eligible_groups": true,
+        "same_hit5_every_group": true,
+        "same_auc_every_group": true
+      }
+    }
+  },
+  "source_qc_none_vs_100": {
+    "schema": "n2p3_source_qc_none_vs_100_z0_audit/1",
+    "generated_at": "2026-08-31T07:45:20.368461+00:00",
+    "estimand": "target_excluded_session_start_zero_calibration_operational_R5",
+    "matched_contract": {
+      "dataset_cache": "artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+      "pooling_mode": "ms_flatten",
+      "temporal_kernel_size": 65,
+      "manifest": "artifacts/manifests/factorial_manifest.json",
+      "blocks": 4,
+      "prefix_reps": 0,
+      "test_reps": 5,
+      "only_intended_difference": "source training PTP QC: 100 uV versus disabled (0)"
+    },
+    "bootstrap": {
+      "unit": "requested group/subject",
+      "n_resamples": 20000,
+      "seed_root": 20260831,
+      "interval": "percentile_95"
+    },
+    "tables": [
+      {
+        "condition": "qc100_uv",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 133,
+        "hit5_conditional": 0.5782608695652174,
+        "hit5_operational": 0.5428571428571428,
+        "auc_subject_macro": 0.7094347826086957
+      },
+      {
+        "condition": "qc_none",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 104,
+        "hit5_conditional": 0.45217391304347826,
+        "hit5_operational": 0.42448979591836733,
+        "auc_subject_macro": 0.6649565217391304
+      },
+      {
+        "condition": "qc100_uv",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 133,
+        "hit5_conditional": 0.5782608695652174,
+        "hit5_operational": 0.5428571428571428,
+        "auc_subject_macro": 0.7094347826086957
+      },
+      {
+        "condition": "qc_none",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 104,
+        "hit5_conditional": 0.45217391304347826,
+        "hit5_operational": 0.42448979591836733,
+        "auc_subject_macro": 0.6649565217391304
+      },
+      {
+        "condition": "qc100_uv",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 133,
+        "hit5_conditional": 0.5782608695652174,
+        "hit5_operational": 0.5428571428571428,
+        "auc_subject_macro": 0.7094347826086957
+      },
+      {
+        "condition": "qc_none",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 108,
+        "hit5_conditional": 0.46956521739130436,
+        "hit5_operational": 0.44081632653061226,
+        "auc_subject_macro": 0.6649565217391304
+      }
+    ],
+    "paired_qc100_minus_none": [
+      {
+        "a": "z0:lf01_t1200:sum",
+        "b": "z0:lf01_t1200_noqc:sum",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.11836734693877551,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.053061224489795916,
+          0.1836734693877551
+        ],
+        "a_wins": 50,
+        "b_wins": 21,
+        "ties": 174,
+        "mcnemar_exact_two_sided_p": 0.0007667649897412908,
+        "delta_auc_shared_eligible_a_minus_b": 0.0444782608695652,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.025108695652173905,
+          0.06406576086956517
+        ]
+      },
+      {
+        "a": "z0:lf01_t1200:mean",
+        "b": "z0:lf01_t1200_noqc:mean",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.11836734693877551,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.053061224489795916,
+          0.1836734693877551
+        ],
+        "a_wins": 50,
+        "b_wins": 21,
+        "ties": 174,
+        "mcnemar_exact_two_sided_p": 0.0007667649897412908,
+        "delta_auc_shared_eligible_a_minus_b": 0.0444782608695652,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.024804347826086957,
+          0.06399999999999999
+        ]
+      },
+      {
+        "a": "z0:lf01_t1200:trim0.2",
+        "b": "z0:lf01_t1200_noqc:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.10204081632653061,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.04081632653061224,
+          0.16326530612244897
+        ],
+        "a_wins": 45,
+        "b_wins": 20,
+        "ties": 180,
+        "mcnemar_exact_two_sided_p": 0.0026263768106840374,
+        "delta_auc_shared_eligible_a_minus_b": 0.0444782608695652,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.025,
+          0.06400054347826083
+        ]
+      }
+    ],
+    "interpretation": "Coverage is identical. Positive paired deltas favor 100 uV source QC. This is a source-training QC ablation; target-prefix QC is disabled in both arms."
+  },
+  "source_qc_summary_path": "artifacts/results/qc_ablation_noqc/source_qc_none_vs_100_z0_analysis.json",
+  "k65_vs_k33_ms_flatten": {
+    "schema": "n2p3_ms_flatten_k65_vs_k33_z0_audit/1",
+    "generated_at": "2026-08-31T07:45:20.368820+00:00",
+    "estimand": "target_excluded_session_start_zero_calibration_operational_R5",
+    "matched_contract": {
+      "dataset_cache": "artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+      "source_qc_ptp_uv": 100.0,
+      "pooling_mode": "ms_flatten",
+      "manifest": "artifacts/manifests/factorial_manifest.json",
+      "blocks": 4,
+      "prefix_reps": 0,
+      "test_reps": 5,
+      "only_intended_difference": "first-stage temporal kernel size: 65 versus 33 samples"
+    },
+    "bootstrap": {
+      "unit": "requested group/subject",
+      "n_resamples": 20000,
+      "seed_root": 20260831,
+      "interval": "percentile_95"
+    },
+    "tables": [
+      {
+        "condition": "k65_ms_flatten",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 133,
+        "hit5_conditional": 0.5782608695652174,
+        "hit5_operational": 0.5428571428571428,
+        "auc_subject_macro": 0.7094347826086957
+      },
+      {
+        "condition": "k33_ms_flatten",
+        "aggregation": "sum",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 93,
+        "hit5_conditional": 0.4043478260869565,
+        "hit5_operational": 0.3795918367346939,
+        "auc_subject_macro": 0.6711521739130435
+      },
+      {
+        "condition": "k65_ms_flatten",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 133,
+        "hit5_conditional": 0.5782608695652174,
+        "hit5_operational": 0.5428571428571428,
+        "auc_subject_macro": 0.7094347826086957
+      },
+      {
+        "condition": "k33_ms_flatten",
+        "aggregation": "mean",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 93,
+        "hit5_conditional": 0.4043478260869565,
+        "hit5_operational": 0.3795918367346939,
+        "auc_subject_macro": 0.6711521739130435
+      },
+      {
+        "condition": "k65_ms_flatten",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 133,
+        "hit5_conditional": 0.5782608695652174,
+        "hit5_operational": 0.5428571428571428,
+        "auc_subject_macro": 0.7094347826086957
+      },
+      {
+        "condition": "k33_ms_flatten",
+        "aggregation": "trim0.2",
+        "requested": 245,
+        "eligible": 230,
+        "excluded": 15,
+        "coverage": 0.9387755102040817,
+        "hit5_count": 99,
+        "hit5_conditional": 0.43043478260869567,
+        "hit5_operational": 0.40408163265306124,
+        "auc_subject_macro": 0.6711521739130435
+      }
+    ],
+    "paired_k65_minus_k33": [
+      {
+        "a": "z0:lf01_t1200:sum",
+        "b": "z0:lf01_t1200_k33:sum",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.16326530612244897,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.10612244897959183,
+          0.22040816326530613
+        ],
+        "a_wins": 50,
+        "b_wins": 10,
+        "ties": 185,
+        "mcnemar_exact_two_sided_p": 1.6163814566157175e-07,
+        "delta_auc_shared_eligible_a_minus_b": 0.03828260869565217,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.02462989130434782,
+          0.052152717391304296
+        ]
+      },
+      {
+        "a": "z0:lf01_t1200:mean",
+        "b": "z0:lf01_t1200_k33:mean",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.16326530612244897,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.10612244897959183,
+          0.22040816326530613
+        ],
+        "a_wins": 50,
+        "b_wins": 10,
+        "ties": 185,
+        "mcnemar_exact_two_sided_p": 1.6163814566157175e-07,
+        "delta_auc_shared_eligible_a_minus_b": 0.03828260869565217,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.02441304347826086,
+          0.052021739130434765
+        ]
+      },
+      {
+        "a": "z0:lf01_t1200:trim0.2",
+        "b": "z0:lf01_t1200_k33:trim0.2",
+        "n_requested": 245,
+        "n_common_auc": 230,
+        "delta_operational_hit5_a_minus_b": 0.13877551020408163,
+        "delta_operational_hit5_ci95_paired_bootstrap": [
+          0.08163265306122448,
+          0.19591836734693877
+        ],
+        "a_wins": 46,
+        "b_wins": 12,
+        "ties": 187,
+        "mcnemar_exact_two_sided_p": 8.219663963332515e-06,
+        "delta_auc_shared_eligible_a_minus_b": 0.03828260869565217,
+        "delta_auc_ci95_paired_bootstrap": [
+          0.024347282608695637,
+          0.0519782608695652
+        ]
+      }
+    ]
+  },
+  "k33_summary_path": "artifacts/results/k33_z0_analysis.json",
+  "checkpoint_family_status": {
+    "baseline_ms_flatten_k65_qc100": {
+      "checkpoints": [
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_blk0.pt",
+          "byte_size": 56351,
+          "sha256": "680ac32031fd39c8b639e7b7c4fc0e83383825523ad7eff4c4be71ab9823d2cc",
+          "load_ok": true,
+          "block": 0,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 62,
+          "training_subject_count": 183,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 17733,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 20789,
+          "best_epoch": 19,
+          "final_task_val_auc": 0.7270177821373777,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.1056786781706423,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.1056786781706423,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.1068013387520918,
+            "temperature": 1.2000914512048606,
+            "validation_nll": 0.27418266977153977,
+            "source": "group_disjoint_validation",
+            "n_samples": 1001
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1142,
+          "contract_digest": "e2bfcf54d2647faefd47f4a65f085ea79ee928741a1f29c7e6b62e3ce869fa06"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_blk1.pt",
+          "byte_size": 56479,
+          "sha256": "5566727f195663e0c2e6e10ab54d5e70db596f7fbe6e68759d5440d3249aa3a0",
+          "load_ok": true,
+          "block": 1,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 18368,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 19017,
+          "best_epoch": 22,
+          "final_task_val_auc": 0.6902277039848197,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10768728222996515,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10768728222996515,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10881487040350979,
+            "temperature": 1.017026073467869,
+            "validation_nll": 0.2802986516898836,
+            "source": "group_disjoint_validation",
+            "n_samples": 1045
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1142,
+          "contract_digest": "e2bfcf54d2647faefd47f4a65f085ea79ee928741a1f29c7e6b62e3ce869fa06"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_blk2.pt",
+          "byte_size": 56479,
+          "sha256": "ecde2251dd43214e17d1a879c57e635232c9a8423f6bc9e97f71c007b400108c",
+          "load_ok": true,
+          "block": 2,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 18280,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 18690,
+          "best_epoch": 28,
+          "final_task_val_auc": 0.7222819318627702,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10547045951859957,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10547045951859957,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10552998077035138,
+            "temperature": 0.9966695902491213,
+            "validation_nll": 0.3005531882203969,
+            "source": "group_disjoint_validation",
+            "n_samples": 1119
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1142,
+          "contract_digest": "e2bfcf54d2647faefd47f4a65f085ea79ee928741a1f29c7e6b62e3ce869fa06"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_blk3.pt",
+          "byte_size": 56479,
+          "sha256": "dbd59c87105c68b357cc476ef40b6d135b5603d6f05466904871cc6c506bc047",
+          "load_ok": true,
+          "block": 3,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 17832,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 20257,
+          "best_epoch": 37,
+          "final_task_val_auc": 0.6866523720182256,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10587707492148946,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10587707492148946,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10506577772486457,
+            "temperature": 0.9608999580736293,
+            "validation_nll": 0.33585222554096805,
+            "source": "group_disjoint_validation",
+            "n_samples": 1033
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1142,
+          "contract_digest": "e2bfcf54d2647faefd47f4a65f085ea79ee928741a1f29c7e6b62e3ce869fa06"
+        }
+      ],
+      "z0_result_files": 12,
+      "z5_result_files": 12
+    },
+    "source_qc_none_ms_flatten_k65": {
+      "checkpoints": [
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_noqc_blk0.pt",
+          "byte_size": 56521,
+          "sha256": "ccffc52d474a877e291ab884e944da69821dea9979cceda0e8270302d67c722a",
+          "load_ok": true,
+          "block": 0,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 62,
+          "training_subject_count": 183,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 38522,
+          "qc_ptp_uv": 0.0,
+          "qc_dropped_source_epochs": 0,
+          "best_epoch": 15,
+          "final_task_val_auc": 0.6233488421840739,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10980738279424744,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10980738279424744,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10985356583948133,
+            "temperature": 0.31767898245045234,
+            "validation_nll": 0.3447504239855762,
+            "source": "group_disjoint_validation",
+            "n_samples": 2738
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1142,
+          "contract_digest": "e2bfcf54d2647faefd47f4a65f085ea79ee928741a1f29c7e6b62e3ce869fa06"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_noqc_blk1.pt",
+          "byte_size": 56649,
+          "sha256": "4341b909dff99a50f58f8a8d6e205fd2c3269049393618a04e2181151333632a",
+          "load_ok": true,
+          "block": 1,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 37385,
+          "qc_ptp_uv": 0.0,
+          "qc_dropped_source_epochs": 0,
+          "best_epoch": 27,
+          "final_task_val_auc": 0.6342648762346056,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.11135482145245419,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.11135482145245419,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.11093902369070155,
+            "temperature": 0.9978802505017692,
+            "validation_nll": 0.36100471675744095,
+            "source": "group_disjoint_validation",
+            "n_samples": 2519
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1142,
+          "contract_digest": "e2bfcf54d2647faefd47f4a65f085ea79ee928741a1f29c7e6b62e3ce869fa06"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_noqc_blk2.pt",
+          "byte_size": 56649,
+          "sha256": "e3b71c70ae834af27411c7aa3946e7f0d834972a9edf503ee49f1e371f481218",
+          "load_ok": true,
+          "block": 2,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 36970,
+          "qc_ptp_uv": 0.0,
+          "qc_dropped_source_epochs": 0,
+          "best_epoch": 6,
+          "final_task_val_auc": 0.6199449388840007,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.11003516364619963,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.11003516364619963,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10993227334825452,
+            "temperature": 19.999986505788147,
+            "validation_nll": 0.3499213081265118,
+            "source": "group_disjoint_validation",
+            "n_samples": 2567
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1142,
+          "contract_digest": "e2bfcf54d2647faefd47f4a65f085ea79ee928741a1f29c7e6b62e3ce869fa06"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_noqc_blk3.pt",
+          "byte_size": 56649,
+          "sha256": "c51f4e74610dca5a242ddd9b2d6751776c9a57f70c74fc9499308be6207eac99",
+          "load_ok": true,
+          "block": 3,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 38089,
+          "qc_ptp_uv": 0.0,
+          "qc_dropped_source_epochs": 0,
+          "best_epoch": 2,
+          "final_task_val_auc": 0.6407583492924652,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10966420751398041,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10966420751398041,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.11012517385257302,
+            "temperature": 0.9045349848718501,
+            "validation_nll": 0.3292666476794143,
+            "source": "group_disjoint_validation",
+            "n_samples": 2139
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1142,
+          "contract_digest": "e2bfcf54d2647faefd47f4a65f085ea79ee928741a1f29c7e6b62e3ce869fa06"
+        }
+      ],
+      "z0_result_files": 12,
+      "z5_result_files": 0
+    },
+    "ms_flatten_k33_qc100": {
+      "checkpoints": [
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_k33_blk0.pt",
+          "byte_size": 55463,
+          "sha256": "4e1bc8c8397558650e0452ab9a8d46f112bd8cef428c227a3ed5e54e69162ca0",
+          "load_ok": true,
+          "block": 0,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 62,
+          "training_subject_count": 183,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 17733,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 20789,
+          "best_epoch": 8,
+          "final_task_val_auc": 0.7179003496063784,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.1056786781706423,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.1056786781706423,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.1068013387520918,
+            "temperature": 0.9646021782185442,
+            "validation_nll": 0.27516209415314785,
+            "source": "group_disjoint_validation",
+            "n_samples": 1001
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 33,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 33,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 250.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              52,
+              100
+            ],
+            "mst_total_receptive_span_ms": [
+              398.4375,
+              773.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 886,
+          "contract_digest": "5a2e06498bd7898a10bb09ab055da0803c8496c52f1397014dfff8d580871b9d"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_k33_blk1.pt",
+          "byte_size": 55591,
+          "sha256": "bb8ebadb746c99984de66031865b951b809c449798b27508f47dcd91c76c3276",
+          "load_ok": true,
+          "block": 1,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 18368,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 19017,
+          "best_epoch": 18,
+          "final_task_val_auc": 0.697682298725942,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10768728222996515,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10768728222996515,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10881487040350979,
+            "temperature": 1.0327470596331478,
+            "validation_nll": 0.2809862992370148,
+            "source": "group_disjoint_validation",
+            "n_samples": 1045
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 33,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 33,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 250.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              52,
+              100
+            ],
+            "mst_total_receptive_span_ms": [
+              398.4375,
+              773.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 886,
+          "contract_digest": "5a2e06498bd7898a10bb09ab055da0803c8496c52f1397014dfff8d580871b9d"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_k33_blk2.pt",
+          "byte_size": 55591,
+          "sha256": "192de1361d5dd6bb1f0b9adda141214314bf9254d6b2e630d2ad939ef78cb00a",
+          "load_ok": true,
+          "block": 2,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 18280,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 18690,
+          "best_epoch": 9,
+          "final_task_val_auc": 0.692700069945579,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10547045951859957,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10547045951859957,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10552998077035138,
+            "temperature": 1.0123610842225397,
+            "validation_nll": 0.3091882567334071,
+            "source": "group_disjoint_validation",
+            "n_samples": 1119
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 33,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 33,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 250.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              52,
+              100
+            ],
+            "mst_total_receptive_span_ms": [
+              398.4375,
+              773.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 886,
+          "contract_digest": "5a2e06498bd7898a10bb09ab055da0803c8496c52f1397014dfff8d580871b9d"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_k33_blk3.pt",
+          "byte_size": 55591,
+          "sha256": "bcd2b80402f26473d346a862e6242c6b5642f7f7dba56a9c436f1657bc14501d",
+          "load_ok": true,
+          "block": 3,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 17832,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 20257,
+          "best_epoch": 16,
+          "final_task_val_auc": 0.6709639953542392,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10587707492148946,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10587707492148946,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10506577772486457,
+            "temperature": 1.1035796415466546,
+            "validation_nll": 0.3422534955743657,
+            "source": "group_disjoint_validation",
+            "n_samples": 1033
+          },
+          "config": {
+            "pooling_mode": "ms_flatten",
+            "temporal_kernel_size": 33,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "ms_flatten",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 33,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 250.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              52,
+              100
+            ],
+            "mst_total_receptive_span_ms": [
+              398.4375,
+              773.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "classifier_features": 20
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 886,
+          "contract_digest": "5a2e06498bd7898a10bb09ab055da0803c8496c52f1397014dfff8d580871b9d"
+        }
+      ],
+      "z0_result_files": 12,
+      "z5_result_files": 0
+    },
+    "full_unfold_k33_qc100": {
+      "checkpoints": [
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_full_k33_blk0.pt",
+          "byte_size": 57105,
+          "sha256": "39893ce70c56657febd6182dd85db4b4f42e46a3f0f532e6cfacdfde082fe807",
+          "load_ok": true,
+          "block": 0,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 62,
+          "training_subject_count": 183,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 17733,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 20789,
+          "best_epoch": 11,
+          "final_task_val_auc": 0.7065695817299228,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.1056786781706423,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.1056786781706423,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.1068013387520918,
+            "temperature": 0.9042678549289171,
+            "validation_nll": 0.274884739036312,
+            "source": "group_disjoint_validation",
+            "n_samples": 1001
+          },
+          "config": {
+            "pooling_mode": "full_unfold",
+            "temporal_kernel_size": 33,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "full_unfold",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 33,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 250.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              52,
+              100
+            ],
+            "mst_total_receptive_span_ms": [
+              398.4375,
+              773.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "unfold_time_samples": 44,
+            "unfold_features": 176,
+            "classifier": "linear_full_resolution",
+            "classifier_features": 176
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1198,
+          "contract_digest": "c0a33bcef88f965c78557a724dba4a5c5a2623f19f66226b5c897204be4c7f61"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_full_k33_blk1.pt",
+          "byte_size": 57169,
+          "sha256": "e3421bb5410e94f36fec38fe3bfe34d35bb25c79c87f259f8b0faa378f42fc07",
+          "load_ok": true,
+          "block": 1,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 18368,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 19017,
+          "best_epoch": 19,
+          "final_task_val_auc": 0.6890982199331346,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10768728222996515,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10768728222996515,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10881487040350979,
+            "temperature": 1.138458339515739,
+            "validation_nll": 0.2829493450523968,
+            "source": "group_disjoint_validation",
+            "n_samples": 1045
+          },
+          "config": {
+            "pooling_mode": "full_unfold",
+            "temporal_kernel_size": 33,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "full_unfold",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 33,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 250.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              52,
+              100
+            ],
+            "mst_total_receptive_span_ms": [
+              398.4375,
+              773.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "unfold_time_samples": 44,
+            "unfold_features": 176,
+            "classifier": "linear_full_resolution",
+            "classifier_features": 176
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1198,
+          "contract_digest": "c0a33bcef88f965c78557a724dba4a5c5a2623f19f66226b5c897204be4c7f61"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_full_k33_blk2.pt",
+          "byte_size": 57169,
+          "sha256": "4a2b8189bff9465f190bdbd80c26aaa16d97faf4b43a2ef7a6c82c7fe19506ec",
+          "load_ok": true,
+          "block": 2,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 18280,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 18690,
+          "best_epoch": 9,
+          "final_task_val_auc": 0.6919579644130542,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10547045951859957,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10547045951859957,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10552998077035138,
+            "temperature": 1.06830584177164,
+            "validation_nll": 0.3106775588214089,
+            "source": "group_disjoint_validation",
+            "n_samples": 1119
+          },
+          "config": {
+            "pooling_mode": "full_unfold",
+            "temporal_kernel_size": 33,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "full_unfold",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 33,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 250.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              52,
+              100
+            ],
+            "mst_total_receptive_span_ms": [
+              398.4375,
+              773.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "unfold_time_samples": 44,
+            "unfold_features": 176,
+            "classifier": "linear_full_resolution",
+            "classifier_features": 176
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1198,
+          "contract_digest": "c0a33bcef88f965c78557a724dba4a5c5a2623f19f66226b5c897204be4c7f61"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_full_k33_blk3.pt",
+          "byte_size": 57169,
+          "sha256": "09ea5855b381540b01611821418e6510dfa4ec24524d93b329f4d0cb782cd7a2",
+          "load_ok": true,
+          "block": 3,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 17832,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 20257,
+          "best_epoch": 0,
+          "final_task_val_auc": 0.6236755114803895,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10587707492148946,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10587707492148946,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10506577772486457,
+            "temperature": 0.9524117984655079,
+            "validation_nll": 0.35368607958248655,
+            "source": "group_disjoint_validation",
+            "n_samples": 1033
+          },
+          "config": {
+            "pooling_mode": "full_unfold",
+            "temporal_kernel_size": 33,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "full_unfold",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 33,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 250.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              52,
+              100
+            ],
+            "mst_total_receptive_span_ms": [
+              398.4375,
+              773.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "unfold_time_samples": 44,
+            "unfold_features": 176,
+            "classifier": "linear_full_resolution",
+            "classifier_features": 176
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1198,
+          "contract_digest": "c0a33bcef88f965c78557a724dba4a5c5a2623f19f66226b5c897204be4c7f61"
+        }
+      ],
+      "z0_result_files": 0,
+      "z5_result_files": 0
+    },
+    "full_unfold_k65_qc100": {
+      "checkpoints": [
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_full_k65_blk0.pt",
+          "byte_size": 58129,
+          "sha256": "a8a9f276190e48d3ee80ced751b671963634f12bb58046d38c2e27b244087b84",
+          "load_ok": true,
+          "block": 0,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 62,
+          "training_subject_count": 183,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 17733,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 20789,
+          "best_epoch": 8,
+          "final_task_val_auc": 0.7193842903493548,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.1056786781706423,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.1056786781706423,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.1068013387520918,
+            "temperature": 0.8623462065862942,
+            "validation_nll": 0.2727870038780239,
+            "source": "group_disjoint_validation",
+            "n_samples": 1001
+          },
+          "config": {
+            "pooling_mode": "full_unfold",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "full_unfold",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "unfold_time_samples": 44,
+            "unfold_features": 176,
+            "classifier": "linear_full_resolution",
+            "classifier_features": 176
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1454,
+          "contract_digest": "befc0cce6c238901441a472acdf3c25b932d46e18240f862f68f05e4a2a85dd5"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_full_k65_blk1.pt",
+          "byte_size": 58193,
+          "sha256": "ac155947f65d09f8c9f57c7edaaeecd26b80e81ae8b2fd4670104a131798ddee",
+          "load_ok": true,
+          "block": 1,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 18368,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 19017,
+          "best_epoch": 18,
+          "final_task_val_auc": 0.6894370651486401,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10768728222996515,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10768728222996515,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10881487040350979,
+            "temperature": 0.9814148648857332,
+            "validation_nll": 0.28168472939580874,
+            "source": "group_disjoint_validation",
+            "n_samples": 1045
+          },
+          "config": {
+            "pooling_mode": "full_unfold",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "full_unfold",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "unfold_time_samples": 44,
+            "unfold_features": 176,
+            "classifier": "linear_full_resolution",
+            "classifier_features": 176
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1454,
+          "contract_digest": "befc0cce6c238901441a472acdf3c25b932d46e18240f862f68f05e4a2a85dd5"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_full_k65_blk2.pt",
+          "byte_size": 58193,
+          "sha256": "5befa93575d3a0d2559fa537bddc6a950c2e55fee8d7d08dffdbcb5c8a8f7329",
+          "load_ok": true,
+          "block": 2,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 18280,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 18690,
+          "best_epoch": 18,
+          "final_task_val_auc": 0.7028251189927837,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10547045951859957,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10547045951859957,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10552998077035138,
+            "temperature": 0.9891761951583288,
+            "validation_nll": 0.30602469017045375,
+            "source": "group_disjoint_validation",
+            "n_samples": 1119
+          },
+          "config": {
+            "pooling_mode": "full_unfold",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "full_unfold",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "unfold_time_samples": 44,
+            "unfold_features": 176,
+            "classifier": "linear_full_resolution",
+            "classifier_features": 176
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1454,
+          "contract_digest": "befc0cce6c238901441a472acdf3c25b932d46e18240f862f68f05e4a2a85dd5"
+        },
+        {
+          "path": "artifacts/checkpoints/lf01_t1200_full_k65_blk3.pt",
+          "byte_size": 58193,
+          "sha256": "ce7ef8c7931ed04fe91edcf3052eee522558554212f26bd51471ef2504a511bd",
+          "load_ok": true,
+          "block": 3,
+          "source_cache": "/root/autodl-tmp/n2p3-audit-20260831/artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+          "source_cache_sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a",
+          "source_cache_hash_known": true,
+          "holdout_subject_count": 61,
+          "training_subject_count": 184,
+          "holdout_matches_manifest_block": true,
+          "training_is_manifest_complement": true,
+          "n_source_epochs_used": 17832,
+          "qc_ptp_uv": 100.0,
+          "qc_dropped_source_epochs": 20257,
+          "best_epoch": 0,
+          "final_task_val_auc": 0.6265612436344145,
+          "classifier_trained": true,
+          "training_pos_weight": 8.0,
+          "training_prior": 0.10587707492148946,
+          "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10587707492148946,
+            "temperature": 1.0,
+            "source": "source_full_refit_weighted_ce_analytic"
+          },
+          "source_selection_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 0.10506577772486457,
+            "temperature": 0.9379692973246001,
+            "validation_nll": 0.35635333819910475,
+            "source": "group_disjoint_validation",
+            "n_samples": 1033
+          },
+          "config": {
+            "pooling_mode": "full_unfold",
+            "temporal_kernel_size": 65,
+            "epochs": 100,
+            "batch_size": 512,
+            "seed": 20260831,
+            "training": "N2P3NetBaseline supervised (LOSO-identical path)"
+          },
+          "architecture": {
+            "trunk": "ms_eegnet_style",
+            "pooling_mode": "full_unfold",
+            "tmin_s": -0.2,
+            "input_sample_rate_hz": 128.0,
+            "feature_sample_rate_hz": 32.0,
+            "st_temporal_filters": 8,
+            "st_temporal_kernel_samples": 65,
+            "st_temporal_dilation": 1,
+            "st_temporal_receptive_span_ms": 500.0,
+            "spatial_depth_multiplier": 2,
+            "st_pool_size": 4,
+            "mst_kernel_samples": [
+              5,
+              17
+            ],
+            "mst_dilations": [
+              1,
+              1
+            ],
+            "mst_receptive_span_ms": [
+              125.0,
+              500.0
+            ],
+            "mst_total_receptive_field_samples": [
+              84,
+              132
+            ],
+            "mst_total_receptive_span_ms": [
+              648.4375,
+              1023.4375
+            ],
+            "mst_features_per_scale": 2,
+            "mst_pool_size": 8,
+            "dropout": 0.25,
+            "spatial_max_norm": 1.0,
+            "unfold_time_samples": 44,
+            "unfold_features": 176,
+            "classifier": "linear_full_resolution",
+            "classifier_features": 176
+          },
+          "input_preprocessing": {
+            "name": "gtn_single_subject_causal_v4",
+            "sfreq": 128.0,
+            "l_freq": 0.1,
+            "h_freq": 30.0,
+            "tmin_ms": -200.0,
+            "tmax_ms": 1200.0,
+            "n_times": 179,
+            "baseline_mode": "mean_only",
+            "signal_unit": "V",
+            "filter_method": "iir",
+            "filter_order": 4,
+            "filter_phase": "forward",
+            "causal_iir_initial_state": "steady_state_first_sample",
+            "resample_domain": "epoched",
+            "resample_method": "fft",
+            "resample_npad": "auto",
+            "resample_window": "auto",
+            "resample_pad": "edge",
+            "trial_reference_window_ms": null,
+            "trial_reference_center": "mean",
+            "trial_reference_scale": "none",
+            "reject_threshold_v": null
+          },
+          "input_channel_names": [
+            "FZ",
+            "CZ",
+            "PZ"
+          ],
+          "input_source_reference": "not_uniformly_recorded_in_gtn_source_metadata",
+          "tensor_entry_count": 28,
+          "tensor_numel_including_buffers": 1454,
+          "contract_digest": "befc0cce6c238901441a472acdf3c25b932d46e18240f862f68f05e4a2a85dd5"
+        }
+      ],
+      "z0_result_files": 0,
+      "z5_result_files": 0
+    }
+  },
+  "full_unfold_has_no_operational_results": true,
+  "bi2014a_status": {
+    "cache_or_result_present": false,
+    "log": "logs/bi_cache_v2.log",
+    "failed": true,
+    "reason": "FileNotFoundError for mne_data/MNE-braininvaders2014a-data/zenodo/3266223"
+  },
+  "best_observed_operational_hit5_row": {
+    "arm": "lf01_t1200",
+    "aggregation": "sum",
+    "requested": 245,
+    "eligible": 230,
+    "excluded": 15,
+    "coverage": 0.9387755102040817,
+    "hit5_count": 133,
+    "hit5_conditional": 0.5782608695652174,
+    "hit5_operational": 0.5428571428571428,
+    "auc_subject_macro": 0.7094347826086957
+  },
+  "accuracy_target_assessment": {
+    "target": 0.9,
+    "best_observed_operational_hit5": 0.5428571428571428,
+    "target_met": false
+  },
+  "protocol_findings": [
+    "Z0 is target-excluded session-start zero-shot: prefix_reps=0, head=zero_shot, uses_target_prefix_labels=false.",
+    "Z5 is matched-time zero-target-fit, not personalization: prefix_reps=5 but head=zero_shot and uses_target_prefix_labels=false.",
+    "Operational hit@5 uses all 245 requested groups and counts ineligible groups as failures; conditional hit@5 uses eligible groups only.",
+    "Z5 coverage is lower (175-176/245) because the prefix plus time embargo leaves insufficient suffix evidence; direct Z0/Z5 operational comparison mixes time and coverage.",
+    "Sum and mean produce identical per-group outcomes under equal candidate evidence counts; they are not independent empirical arms here.",
+    "The tmax factorial changes epoch length and cache membership (50,562 at 800 ms versus 50,322 at 1200 ms), so it estimates a practical recipe effect, not a pure window-length causal effect.",
+    "The low-cutoff factorial is trained after source PTP QC, so it may also change which epochs pass QC; interpret as an end-to-end recipe effect.",
+    "Full-unfold K33 and K65 have four loadable source-training checkpoints each but zero Z0/Z5 operational result files; no target accuracy conclusion is supported.",
+    "K33 ms_flatten has complete Z0 results only; no Z5 result exists.",
+    "BI2014a cache preparation failed because the expected local dataset root is absent; no BI accuracy evidence exists in this snapshot."
+  ],
+  "errors": [],
+  "audit_passed": true,
+  "log_summary_path": "artifacts/results/log_summary.json"
+}

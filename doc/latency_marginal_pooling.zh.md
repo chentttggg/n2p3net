@@ -116,9 +116,9 @@ EEGDataContract -> executable preprocessing -> EpochDataset(sfreq, tmin_ms, n_ti
 
 The manifest records `trunk=ms_eegnet_style`, ST/MST dimensions, pooling mode,
 sample and millisecond receptive spans, and the LMBC physical windows.
-`global_average` is the matched head ablation;
-`ms_flatten` is the stable software default; `latency_marginal_contrast` is a
-retained conditional research ablation; `global_average` is a negative control.
+`global_average` is the matched negative control; linear `full_unfold` is the
+adopted N2P3-Net readout; `ms_flatten` is the explicit MS-EEGNet baseline; and
+`latency_marginal_contrast` is a retained conditional research ablation.
 
 ## Verification Requirements
 
@@ -132,4 +132,6 @@ retained conditional research ablation; `global_average` is a negative control.
 4. The 2026-08-28 matched BI2014a binary comparison did not promote LMBC:
    MS-EEGNet exceeded it by 0.01063 mean AUC (`p=0.00119`). This is a
    dataset-conditional result, not a rejection of latency marginalization.
-   GTN 9-choice and latency-stratified countertests are the final adjudication.
+   GTN 9-choice and latency-stratified countertests may test the hypothesis during
+   development. Confirmation must use a new target block or adult BrainSync
+   target-switch decisions that were not used for model or recipe selection.

@@ -1,0 +1,23 @@
+{
+  "schema": "n2p3_kernel_runtime_lock_provenance/2",
+  "lock_revision": "v4.2",
+  "recorded_at": "2026-08-31T17:30:00+08:00",
+  "training_snapshot_pyproject": {
+    "sha256": "63698ad66dd095da06f5caad9f973a443c40c91123e108ee470853d4f2c71f59",
+    "authoritative": true
+  },
+  "local_post_training_pyproject": {
+    "sha256": "885c6105669b03874c4de1c6da72deeec4c33e81658489a567c4d18f2a4c7a92",
+    "change": "Ruff excludes doc/assets; not executed by training or evaluation",
+    "upload_to_remote": false
+  },
+  "preflight_correction": {
+    "failed_manifest_sha256": "5f74299f59238e21aa781bdef2d3b1a76127cf3913e04937c71096d92a02ba6c",
+    "failed_evaluator_sha256": "2c4964e50cdf32c450fb2a120d05a0f647ecf72a28fbbb705e36fc1d7d31fef3",
+    "failure": "All 36 checkpoints were rejected because the classmethod expected record omitted the instance-derived classifier_features field.",
+    "current_manifest_sha256": "5944dbbad5fd4f43dfd735488634d04334b5ca9144f1418f0e2d677c7ab8d2d3",
+    "current_evaluator_sha256": "087c21e436b27873855446f81345a402c4b71af0dde10d1a18110050034dcc7c",
+    "scientific_contract_changed": false,
+    "v4_predictions_before_correction": 0
+  }
+}

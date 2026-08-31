@@ -1,0 +1,192 @@
+{
+  "schema": "n2p3_temporal_kernel_ablation_amendment/4",
+  "effective_before_resume_or_any_valid_cross_kernel_analysis": true,
+  "amended_at": "2026-08-31T17:04:13+08:00",
+  "amendment_class": "outcome-independent fail-closed contract and inference hardening",
+  "reason": {
+    "checkpoint_gate": "A non-empty checkpoint is not sufficient evidence that temporal kernel size was the sole changed variable.",
+    "block_gate": "The frozen parent partition and every block file must be identical across kernels and seeds.",
+    "winner_gate": "A single winner must beat both alternatives and remain directionally stable over the three registered seeds.",
+    "cost_gate": "Scheduled-stimulus cost ends when selected EEG evidence is available, not at the final selected onset.",
+    "endpoint_change": false
+  },
+  "outcome_access_declaration": {
+    "effective_timing": "before the first v4-valid cross-kernel analysis",
+    "completed_checkpoint_policy": "may be reused only after the complete v4 checkpoint gate passes",
+    "previous_block_predictions_or_analyses": "quarantined and never mixed into v4"
+  },
+  "amendment_chain": [
+    {
+      "path": "artifacts/manifests/kernel_ablation_manifest_20260831.json",
+      "schema": "n2p3_temporal_kernel_ablation/2",
+      "sha256": "cc169523c02f9623be4b1ce24fc7f7e892e0dcdda40cf145f2988940f9a21d1f"
+    },
+    {
+      "path": "artifacts/manifests/kernel_ablation_manifest_v3_20260831.json",
+      "schema": "n2p3_temporal_kernel_ablation_amendment/3",
+      "sha256": "e78668f0e2331824de2827f7d6d02be444b0ac0754ee47b443baf15a0c4c8124"
+    }
+  ],
+  "endpoint_contract": {
+    "inherits_v3_sha256": "e78668f0e2331824de2827f7d6d02be444b0ac0754ee47b443baf15a0c4c8124",
+    "primary": "requested-cohort operational hit@all_balanced",
+    "raw_all": "secondary",
+    "fixed_hit_curve": "secondary operational and conditional",
+    "ties": "abstain and count as miss",
+    "changed_by_v4": false
+  },
+  "runtime_lock": {
+    "path": "kernel_ablation_v4_runtime.sha256",
+    "binding": "the runner hard-codes the detached lock SHA-256 to avoid a manifest-runner hash cycle",
+    "verify_full_once": [
+      "cache SHA-256",
+      "source archive SHA-256"
+    ],
+    "verify_each_arm_boundary": [
+      "v2/v3/v4 manifests",
+      "parent and block manifests",
+      "evaluator",
+      "trainer and imported training contracts",
+      "dependency locks"
+    ],
+    "evaluator_sha256": "087c21e436b27873855446f81345a402c4b71af0dde10d1a18110050034dcc7c",
+    "preflight_correction": "Expected architecture is instantiated so classifier_features and all other derived fields are included; the previous classmethod record omitted classifier_features and rejected all 36 checkpoints before any v4 prediction.",
+    "source_archive": {
+      "path": "n2p3-kernel-source-20260831.tar.gz",
+      "sha256": "c72426575c8d5927cfdbe219f168cb11f1ae94bf58593e7ebda337fb1130efd4"
+    }
+  },
+  "data_lock": {
+    "cache": {
+      "path": "artifacts/cache/gtn_causal_ss_lf0.1_t1200.npz",
+      "sha256": "3b4c6b0439dff13a8a47c28be8722c42d2585cea74956bf4b4675e30d5922a9a"
+    },
+    "parent_block_manifest": {
+      "path": "artifacts/manifests/factorial_manifest.json",
+      "sha256": "52d3cfcf3a534d4062e99b0bff94926c388b3830fa8945a01b2c468725870744"
+    },
+    "block_manifests": [
+      {
+        "block": 0,
+        "n": 62,
+        "path": "artifacts/manifests/block_0.json",
+        "sha256": "4336a8bde143b356fd84ea887f8e99b0d77967972aeae102f436a4e0a24852d2"
+      },
+      {
+        "block": 1,
+        "n": 61,
+        "path": "artifacts/manifests/block_1.json",
+        "sha256": "85b40c2f7de80ff0f682e3178ad5d27ad7fc27655e5d434765eb5024aa0cf725"
+      },
+      {
+        "block": 2,
+        "n": 61,
+        "path": "artifacts/manifests/block_2.json",
+        "sha256": "635ca94e47c4a214b2133811a695b669f31739c0d3a37e065fbd1ab6e1db9c42"
+      },
+      {
+        "block": 3,
+        "n": 61,
+        "path": "artifacts/manifests/block_3.json",
+        "sha256": "1e4d6b9abcb099fa20cb8bbc85d5e41bdbc3db73dbbc9ee12d14b0e3a2233b0f"
+      }
+    ],
+    "requested_subjects": 245,
+    "block_sizes": [62, 61, 61, 61],
+    "required_relation": "disjoint union(block subjects) == unique(cache subject_ids)"
+  },
+  "architecture_contract": {
+    "comparison": "exact full N2P3Net.default_architecture_record equality",
+    "sole_independent_variable": "st_temporal_kernel_samples",
+    "kernel_values": [33, 35, 65],
+    "invariants": {
+      "trunk": "ms_eegnet_style",
+      "pooling_mode": "full_unfold",
+      "tmin_s": -0.2,
+      "input_sample_rate_hz": 128.0,
+      "feature_sample_rate_hz": 32.0,
+      "st_temporal_filters": 8,
+      "st_temporal_dilation": 1,
+      "spatial_depth_multiplier": 2,
+      "st_pool_size": 4,
+      "mst_kernel_samples": [5, 17],
+      "mst_dilations": [1, 1],
+      "mst_features_per_scale": 2,
+      "mst_pool_size": 8,
+      "dropout": 0.25,
+      "spatial_max_norm": 1.0,
+      "unfold_time_samples": 44,
+      "unfold_features": 176,
+      "classifier": "linear_full_resolution"
+    },
+    "kernel_receptive_span_ms": {
+      "33": 250.0,
+      "35": 265.625,
+      "65": 500.0
+    },
+    "derived_receptive_field_fields_must_match": true
+  },
+  "training_contract": {
+    "registered_seeds": [20260828, 20260829, 20260830],
+    "selection_config": {
+      "epochs": 100,
+      "batch_size": 512,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "pos_weight": 8.0,
+      "standardize_input": true,
+      "early_stop_patience": 6,
+      "val_group_frac": 0.08,
+      "val_groups_min": 2,
+      "val_groups_max": 12,
+      "early_stop_min_delta": 0.000001,
+      "effective_precision": "fp32",
+      "fused_adam": true,
+      "compile_mode": "reduce-overhead",
+      "shuffle_each_epoch": false,
+      "max_update_batch_size": 512,
+      "batch_memory_fraction": 0.55,
+      "preload_memory_fraction": 0.3
+    },
+    "source_qc": "drop row when any channel PTP >= 100 uV",
+    "inner_selection": "subject-group validation",
+    "refit": "all exact source complement rows surviving QC for best_epoch+1; val_group_frac=null",
+    "checkpoint_requirements": [
+      "holdout_subjects exactly equal frozen block",
+      "source_subjects exactly equal cache subject set",
+      "training_subjects and dataset/cache keys exactly equal cache minus holdout",
+      "QC row and label counts recompute exactly",
+      "source_refit_epochs equals best_epoch+1",
+      "source prior and analytic calibration match refit rows",
+      "input mean/std recompute from exact refit rows and observed-channel mask",
+      "complete architecture record matches registered kernel arm"
+    ]
+  },
+  "analysis_contract": {
+    "inference_unit": "subject after seed aggregation",
+    "inference_scope": "conditional on the frozen three seeds, four target-excluded blocks, checkpoints, and GTN development cohort",
+    "training_randomness_inference": "not estimated with n_seed=3; use the descriptive seed stability gate",
+    "seed_stability": {
+      "minimum_positive_seeds": 2,
+      "practical_reversal": "any seed delta <= -0.02 fails",
+      "formal_seed_p_value": null
+    },
+    "single_winner_requires_for_each_of_both_other_kernels": [
+      "primary delta >= 0.02",
+      "paired subject bootstrap CI lower bound > 0",
+      "Holm-adjusted paired sign-flip p < 0.05",
+      "no monitored evidence-budget reversal >= 0.02",
+      "seed stability gate passes"
+    ],
+    "block_result_invariants": [
+      "block subject set exactly equals frozen parent block for every kernel and seed",
+      "truth, candidate counts, and R_s are identical across all arms per subject",
+      "cache, endpoint, QC, pooling, checkpoint, and ledger hashes match"
+    ]
+  },
+  "quarantine": {
+    "v2_and_v3_block_predictions": "invalid_for_v4_comparison",
+    "v2_and_v3_cross_kernel_analyses": "invalid_for_v4_selection",
+    "source_checkpoints": "conditionally_reusable_after_v4_validation"
+  }
+}

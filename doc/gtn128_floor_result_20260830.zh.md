@@ -1,42 +1,43 @@
-# GTN 128 Hz 全量地板与因果适配：第一轮结果
+# GTN 128 Hz 历史地板与 steady-state zero-shot 结果
 
-日期：2026-08-30。状态：immutable exploratory result（2 seeds LOSO + 1 seed causal）。
-资产：`doc/assets/gtn128_floor_20260830/`（manifest、两 seed 配对分析、causal 三臂、
-逐折 record、双 cache record）。云端：AutoDL RTX 5090，源码 `SOURCE_COMMIT=5598145` +
-evalhit r2/r4/r5 改动，训练环境 Python 3.12 / torch 2.8.0+cu128 / BF16 / compile。
+日期：2026-08-30；2026-08-31 按 steady-state successor 证据直接修订。zero-phase
+LOSO 制品仍可复算，但该 outer cohort 已用于多轮开发，不能作确认集。旧 zero-state
+forward causal 制品已从正文结果中移除，不再作为 baseline。当前 causal 证据位于
+`doc/evidence/gtn_20260831/`。该目录是 Git 内的 compact audit index，不包含
+`.npz/.pt`，不能单独重跑；边界见其 `README.md`。
 
 ## 0. 结论先行
 
-1. **Gate 1（深度 vs classical）通过**：EEGNet/MS-EEGNet/full_unfold 相对
-   xDAWN-RG 的 ΔAUC ≈ +0.10（p<1e-5，两 seed 一致）。深度不能省。
-2. **full_unfold 晋升路线被 GTN LOSO 否定**：对 ms_flatten 两 seed
+1. **历史 zero-phase LOSO 开发观察**：EEGNet/MS-EEGNet/full_unfold 相对
+   xDAWN-RG 的 ΔAUC ≈ +0.10（p<1e-5，两 seed 一致）；支持保留深度候选。
+2. **full_unfold 未在该历史 LOSO recipe 复现 BI 优势**：对 ms_flatten 两 seed
    ΔAUC −0.0041(p=0.27) / +0.0026(p=0.54)；对 EEGNet −0.0041(p=0.25) /
    **−0.0129(p=0.0017)**。BI2014a 的 +0.0109 优势在 GTN 3 导儿童数据上不复现，
-   且对 EEGNet 方向反转为负。`factory.py` 默认头保持 `ms_flatten` 的决定被数据支持。
-3. **GTN LOSO 零校准 hit@8 天花板 ≈ 0.60**（最好臂 0.624）。0.85 目标与
-   LOSO 零校准 estimand 不兼容；缺口必须由 transfer/预训练填补（Gate 3）。
-4. **Causal M=5,R=5（176 可用组）全面接近 chance**：ms_flatten AUC 0.484 /
-   hit@5 0.085；full_unfold 0.526 / 0.148；K33 0.511 / 0.119。
-   45 个 prefix trials 校准 258 参数 head 不够用。
-5. **Causal 协议下 readout 排序反转**：full_unfold − ms_flatten
-   ΔAUC=+0.0418（p=0.0017，CI [0.016,0.067]）。保留时序分辨率的 readout 在
-   少样本被试内适配下占优——与 LOSO 结论相反，机制分化真实存在。
-6. **Arm C（K33）非劣确认（LOSO）**：AUC 0.657 vs K65 0.660，hit@8 0.592 vs
-   0.588；causal 上 K65 方向占优但不显著（p=0.26）。W2 的压缩候选在 GTN 上
-   保住了 LOSO 非劣性，没有拿到 causal 优势。
+   且对 EEGNet 方向反转为负。`full_unfold` 已因 BI 预注册机制比较被采用为项目
+   读出，但本表不支持其为 GTN 准确率冠军。
+3. **旧 recipe 的 GTN LOSO hit@8 最好 0.624**。它不是天花板，也不等于
+   成人多 decision 的产品目标。
+4. **当前 steady-state Z0 baseline**：0.1 Hz/1200 ms、source QC100、ms K65 的
+   coverage 为 `230/245`，conditional hit@5 `0.578`，operational hit@5 `0.543`，
+   AUC `0.709`；未达到 0.90。
+5. **信号与 QC 已裁决为开发合同**：1200 ms 平均提升约 `+20.20 pp`，0.1 Hz
+   平均提升约 `+5.92 pp`；source QC100 对 no-QC 提升 `+11.84 pp`，95% CI
+   `[+5.31,+18.37] pp`。固定 0.1 Hz/1200 ms/source QC100。
+6. **核长开发比较已完成**：balanced-all K35/K65/K33=`0.669/0.654/0.623`。
+   K35 临时默认、K65 保留对照；K35 未确认胜 K65，K33 退出主线。
 
 ## 1. 协议
 
-- **缓存**（新增，均带 record.json + SHA attestation，见 manifest）：
-  `gtn_sf128_lf2_hf30_tm-0.2_tx0.8_mean_zero.npz`（LOSO，zero-phase 契约）
-  与 `..._mean_fwd.npz`（causal，`filter_phase=forward`）。
+- **历史缓存**（仅用于本节 zero-phase LOSO 复算）：
+  `gtn_sf128_lf2_hf30_tm-0.2_tx0.8_mean_zero.npz`。同名旧 `..._mean_fwd.npz`
+  使用 zero-state，永久拒绝；当前 causal asset 是 2026-08-31 steady-state bundle。
   50,562 epochs × 3 ch × 128 samples，245 subjects，candidate_chain=True。
 - **协议 A（LOSO）**：245 折，`window_lr / xdawn_rg / eegnet / ms_eegnet /
   n2p3net_full_unfold`，seeds 20260828/20260829（+20260830 classical）。
   30 epochs、patience 6、batch 512、BF16、compile、fused Adam。
-- **协议 B（causal）**：`causal_prefix_suffix_split` M=5,R=5，raw-sample embargo，
-  **usable=176 / excluded=69**（insufficient_suffix 54、insufficient_prefix 15）。
-  SubjectAdapter 线性 head（trunk 冻结），30 epochs。
+- 旧 zero-state M=5/R=5 protocol 已从当前结果删除。后继 causal protocol 使用
+  target-excluded Z0、forward steady-state IIR、source-full-refit checkpoint 与
+  requested operational denominator；Z5 只作 matched-time sensitivity。
 - **QC 台账**：新增 `exclude_unusable_test_epochs`——全通道被 fold-local 策略
   mask 的 held-out epoch 从测试折剔除并计入
   `per_fold[].artifact_quality.n_test_all_channels_bad_excluded`。这是对 3 导
@@ -72,47 +73,35 @@ classical 三 seed 完全一致（无随机性，管道确定性 ✓）。
 BI2014a 增益不迁移到 GTN。种子间深度模型 AUC 波动 ~0.02，与被试内 seed 聚合
 后的判读一致：**三深度臂在 GTN LOSO 上无可靠排序**。
 
-## 3. Causal M=5,R=5（seed 20260828，n=176）
+## 3. Steady-state causal successor（2026-08-31）
 
-| 臂 | AUC 均值 | hit@1 | hit@5 |
-|---|---:|---:|---:|
-| ms_flatten | 0.4839 | 0.102 | 0.085 |
-| full_unfold K65 | 0.5258 | 0.153 | 0.148 |
-| full_unfold K33 | 0.5105 | — | 0.119 |
+四个 `0.1/0.5 Hz x 800/1200 ms` cache 的 record attestation、NPZ CRC 与 SHA 均
+通过；4-block manifest 覆盖 245 人，32 个 source-full-refit checkpoints 可加载，
+120 个 Z0/Z5 JSON 与独立复算一致。
 
-- fu − ms：**+0.0418，p=0.0017，CI [0.0162, 0.0673]**（100k sign-flip，
-  被试级 bootstrap）。
-- fu − K33：+0.0152（p=0.258）。
-- 全部臂的 hit@5 与 chance(0.111) 同量级：**scratch + 45-trial 校准不可行**。
+| signal arm | Z0 coverage | conditional hit@5 | operational hit@5 | AUC |
+|---|---:|---:|---:|---:|
+| 0.1 Hz / 800 ms | 230/245 | 0.370 | 0.347 | 0.657 |
+| **0.1 Hz / 1200 ms** | **230/245** | **0.578** | **0.543** | **0.709** |
+| 0.5 Hz / 800 ms | 230/245 | 0.300 | 0.282 | 0.632 |
+| 0.5 Hz / 1200 ms | 230/245 | 0.522 | 0.490 | 0.674 |
+
+Z5 仅等待 M=5、但不使用标签，是 matched-time sensitivity；最佳臂 operational
+hit@5 `0.408`，coverage `175/245`。它相对 Z0 的下降反映 late-session/coverage，
+不是校准损失或增益。GTN O5 使用同 thought digit 标签，只允许 oracle proxy。
 
 ## 4. 与既有结论的关系（含推翻）
 
-- `doc/prior_free_unfold_result_20260828.zh.md` 第 0 节第 3 条的保留意见
-  （"对 EEGNet 仅 AUC 显著，不得写取代"）——GTN 数据进一步反转为劣势方向，
-  默认头晋升正式冻结。
-- `doc/research_program.zh.md` H1（total-RF 重建）：K33 在 LOSO 非劣、causal
-  略差；"更短 RF 恢复局部性"在 GTN 上没有显示收益，H1 降级为搁置。
-- H2（group-level objective）与 H3（source-supervised pretraining）优先级
-  上升：causal scratch 已到 chance，唯一有希望的杠杆是把多被试监督先验带进
-  prefix 校准，而不是继续改 readout。
-- 昨日 GTN 统计能力审计的修正：v3（不预剔除）口径下 M=5,R=5 usable=176
-  （v2 预剔除口径 101）；hit=0.85 时 CI 半宽 ±0.053，"可靠 85%" 仍不可证。
+- `full_unfold` 的采用回答读出结构，不回答核长或产品准确率；`ms_flatten` 保留显式基线。
+- K35 的旧 sensitivity 领先在三 seed all-evidence 中得到方向支持；K33 被稳定淘汰，
+  K65 与 K35 仍未严格分离。
+- source classifier + QC 在合法 Z0 上显著优于 no-QC，但 `0.543` 离 0.90 仍远；
+  合法监督校准必须进入 BI cross-decision 或 BrainSync target-switch。
+- 245 人仍不能估计“每个单被试长期 90%”；每人需要多个独立未知 target decisions。
 
 ## 5. 已知缺口与下一步
 
-1. **causal 协议无 fold-local artifact QC**（runner 直接用 cache 张量）；
-   LOSO 有。若 causal 进入确认阶段需补齐。
-2. seeds：causal 仅 1 seed；LOSO 深度 2 seeds。Gate 2 正式判定需补第 3 seed
-   并预注册 contrasts（当前数字只能定方向）。
-3. 下一轮（按 ROI 排序）：
-   a. **Gate 3-S1**：用 BI2014a(+其他) 做 source-supervised 预训练 checkpoint，
-      leave-target-out，接入 causal zero/short adaptation——这是唯一能同时
-      攻击 hit 天花板与 45-trial 校准不可行的杠杆；
-   b. BI2014a 候选码恢复（`event_stimulus_ids` 24 个编码待映射），把 9 选因果
-      证据量从 176 提到 1701；
-   c. BNCI2014_008（8 导、T 的蒙太奇）作为目标域烟测。
-4. 复现命令与代码差异：evalhit r2（hit@R + exclusion ledger）、r4（adapter
-   pooling 放宽 + rep-block 校准组）、r5（causal --pooling-mode/--temporal-kernel-size），
-   本地 `tmp/evalhit_r1.patch`、`tmp/causal_pooling_r3.tar.gz`、
-   `tmp/causal_fix_r4.tar.gz`、`tmp/causal_k33_r5.tar.gz`；全部改动需在下一次
-   commit 中固化为 git 历史。
+1. 当前开发主线固定 `full_unfold + K35`、0.1 Hz/1200 ms、source QC100；
+2. BI candidate-v2 仍因 raw source 缺失未构建；补齐后执行跨 decision calibration；
+3. 直接推进 decision objective/personalization 试错，最终由成人 BrainSync 多
+   target-switch decisions 裁决 90%。

@@ -10,6 +10,7 @@ import pytest
 import data.epochs as epochs_module
 from data.channel import build_channel_identity
 from data.contract import (
+    CAUSAL_IIR_INITIAL_STATE,
     SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     assert_causal_p300_input_contract,
     assert_default_p300_input_contract,
@@ -398,6 +399,7 @@ def test_causal_single_subject_contract_accepts_forward_phase_only() -> None:
     causal = PreprocessingSpec(
         name=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.name,
         filter_phase="forward",
+        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
     )
     causal.validate()
     assert_causal_p300_input_contract(causal)
@@ -412,6 +414,7 @@ def test_epoch_dataset_rejects_mismatched_causal_declaration() -> None:
         tmax_ms=800.0,
         n_times=100,
         filter_phase="forward",
+        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
     )
     with pytest.raises(ValueError, match="online_causal"):
         dataset.validate()

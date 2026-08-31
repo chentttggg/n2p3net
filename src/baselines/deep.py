@@ -245,6 +245,8 @@ class DeepBaseline(Baseline):
         self.calibration_logits_: np.ndarray | None = None
         self.calibration_labels_: np.ndarray | None = None
         self.calibration_source_: str | None = None
+        self.training_pos_weight_: float | None = None
+        self.training_prior_: float | None = None
         self.last_runtime: dict[str, object] = {}
 
     # ---------------- 模型构造 ----------------
@@ -654,6 +656,8 @@ class DeepBaseline(Baseline):
             raise ValueError("Deep training split must contain both binary classes.")
         if len(y_val) and set(np.unique(y_val).tolist()) != {0, 1}:
             raise ValueError("Deep validation split must contain both binary classes.")
+        self.training_pos_weight_ = float(self.cfg.pos_weight)
+        self.training_prior_ = float(y_train.mean())
 
         self._input_mean, self._input_std = self._masked_input_stats(X_train, train_channel_mask)
         X_train = self._prepare_input(X_train, train_channel_mask)

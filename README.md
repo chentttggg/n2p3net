@@ -1,17 +1,35 @@
 # N2P3-Net
 
-Performance-first oddball P300 decoding research framework. BI2014a is now an
-exploratory architecture screen: linear `full_unfold` has the best observed
-mean AUC, but no model is a confirmatory champion. GTN chronological 9-choice
-`hit@R` is the final promotion protocol. LMBC failed promotion only on the
-BI2014a binary contract and remains a GTN/latency-stratified hypothesis.
+Accuracy-first oddball P300 decoding research framework. The product endpoint
+is adult BrainSync 9-choice subject-macro `hit@R >= 0.90` after a fixed labelled
+calibration budget, on later independent decisions whose target digit was
+unknown during calibration.
 
-> Update 2026-08-28: the later prior-free readout ablation
-> (`doc/prior_free_unfold_result_20260828.zh.md`) puts `full_unfold` ahead of
-> `ms_flatten` on both AUC and BACC, and ahead of EEGNet on AUC only. This
-> registers `full_unfold` as a GTN candidate; it does not promote the default
-> from one dataset. The BI2014a training-budget runs (`bi2014a_full_unfold_*`)
-> are performance exploration only and are not promotion evidence.
+GTN is a child/3-channel, one-selection-per-subject development benchmark. Its
+same-selection labelled prefix/suffix path is an oracle proxy, not an
+unknown-number calibration estimate. BI2014a is used for the legal mechanism
+test: early known character decisions -> later unknown character decisions.
+Linear `full_unfold` is the adopted N2P3-Net readout and K35 is the provisional
+engineering default; `ms_flatten + K65` remains the explicit MS-EEGNet baseline.
+On the current all-evidence, count-neutral endpoint, the unchanged v4 K35
+checkpoint reaches 71.43% versus 68.30% for K65. The paired difference is
++3.13 points (95% CI +0.41 to +5.85), but seed direction reverses and the
+eight-contrast Holm result is not significant. K35 therefore remains a smaller
+development default, not a confirmatory or deployment champion.
+
+Legacy causal records used a zero-state forward IIR and reused the same suffix
+for recipe selection; their numeric rankings have been removed from current
+guidance. Four steady-state causal GTN caches have now been rebuilt and
+independently audited. The current best audited fixed-budget Z0 baseline is
+0.1 Hz/1200 ms, source QC 100 uV, with `hit@5` coverage `230/245` and operational
+accuracy `0.543`; it remains far below 0.90. The kernel experiment now uses all
+245 subjects. For unequal candidate counts, the current development default uses
+every available trial and compares candidate means (`count_power=0`); balanced
+truncation and raw sum remain compatibility endpoints. A 24-checkpoint,
+30-epoch end-to-end listwise fine-tune was completed and did not improve this
+frozen-backbone mean baseline, so that training recipe is not adopted. Read
+`doc/research_program.zh.md`
+before running experiments.
 
 ## Environment
 
@@ -40,15 +58,18 @@ documented in `doc/device-portability.md`.
 
 The LOSO runner requires the signal and baseline extras. The living research
 guide is `doc/research_program.zh.md`; dated ablations remain historical evidence.
+The current concise research briefing is `doc/research_status_report_20260831.zh.md`.
 `doc/constitution.md` and `doc/blueprint.md` contain stable engineering principles.
 
 ## Data Contract
 
-The shared P300 defaults are defined once in `src/data/contract.py`: 128 Hz,
-2-30 Hz, `-200..800 ms`, and 128 samples. This restores the physical time
-scales assumed by the MS-EEGNet 65/5/17-sample kernels. BrainSync acquisition
-and raw event indices remain at the device-native 250 Hz; only the derived
-model tensor is anti-aliased and resampled. Use the BrainSync adapter
+Executable profiles are defined in `src/data/contract.py`; there is no universal
+P300 filter/window recipe. The adult offline default is 128 Hz, 2-30 Hz and
+`[-200,800) ms`. GTN accuracy development compares 0.1/0.5 Hz and 800/1200 ms.
+Chronological online profiles use forward IIR with
+`causal_iir_initial_state=steady_state_first_sample`; legacy zero-state forward
+caches are rejected. BrainSync acquisition and raw event indices remain at the
+device-native 250 Hz; only the derived model tensor is resampled. Use the adapter
 to preserve the frontend's raw recording boundary while applying preprocessing:
 
 ```powershell
@@ -59,15 +80,17 @@ to preserve the frontend's raw recording boundary while applying preprocessing:
 
 The adapter reads `recording.path`, filters onset `recording_marker` rows from
 `events/events.jsonl`, derives labels from the confirmed target digit, uses
-`montage.channel_positions_m` when present, and applies the GTN window
-(`-200..800 ms`, 128 samples at 128 Hz) by default.
+`montage.channel_positions_m` when present, and applies the explicitly selected
+preprocessing profile.
 
 All standard ingress paths execute a half-open `[-200,0) ms` per-trial,
 per-channel mean baseline correction and record `baseline_mode=mean_only`.
 Versioned QC caches contain only fold-independent epoch statistics; thresholds
-remain outer-training-fold parameters. Mainline training fails closed on older
-physical input contracts; historical result records remain audit evidence, but
-their caches must be regenerated before reuse.
+remain source/calibration-fold parameters. Target-prefix QC is an accuracy
+ablation and is off in zero-shot. Checkpoints bind ordered channels, reference,
+preprocessing, cache identity and training subjects. Legacy zero-state causal and
+BI candidate-v1 caches are rejected. The GTN steady-state replacement is complete;
+the BI candidate-v2 raw rebuild is still blocked on the missing BI raw source files.
 
 The discrete-time equations, physical receptive-field convention, and
 counterexamples are documented in `doc/input_contract_math.zh.md`.

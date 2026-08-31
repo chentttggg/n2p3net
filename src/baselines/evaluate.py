@@ -92,6 +92,10 @@ class BinaryFoldResult:
     threshold: float
     threshold_source: str
     fit_sec: float
+    calibration_mode: str | None = None
+    calibration_slope: float | None = None
+    calibration_temperature: float | None = None
+    calibration_offset: float | None = None
     epochs_ran: int = 0
     train_losses: list[float] = field(default_factory=list)
     val_losses: list[float] = field(default_factory=list)
@@ -177,16 +181,34 @@ def hit_correct_total_by_repetition(
     repetitions = np.asarray(repetitions)
     if not (len(logits) == len(codes) == len(group_ids) == len(repetitions)):
         raise ValueError("logits, codes, group_ids, and repetitions must align.")
+    if logits.ndim != 1 or codes.ndim != 1 or group_ids.ndim != 1 or repetitions.ndim != 1:
+        raise ValueError("logits, codes, group_ids, and repetitions must be one-dimensional.")
     if not np.isfinite(logits).all():
         raise ValueError("logits contain NaN/inf; cannot aggregate candidate evidence.")
+    if not np.issubdtype(repetitions.dtype, np.integer) or np.issubdtype(
+        repetitions.dtype, np.bool_
+    ):
+        raise ValueError("repetitions must use an integer dtype.")
     vocabulary = np.asarray(candidate_vocab)
+    if vocabulary.ndim != 1 or len(vocabulary) < 2 or len(np.unique(vocabulary)) != len(vocabulary):
+        raise ValueError("candidate_vocab must be a unique one-dimensional array with at least two codes.")
+    if len(repetitions) == 0:
+        raise ValueError("repetitions cannot be empty.")
+    if np.any(repetitions < 0):
+        raise ValueError("repetitions must be non-negative.")
+    unique_repetitions = np.unique(repetitions)
+    if not np.array_equal(
+        unique_repetitions,
+        np.arange(unique_repetitions[0], unique_repetitions[-1] + 1, dtype=np.int64),
+    ):
+        raise ValueError("repetitions must be contiguous; missing repetitions cannot be compressed.")
+    repetitions = repetitions.astype(np.int64, copy=False) - int(unique_repetitions[0])
     if max_repetitions is None:
-        valid_reps = repetitions[repetitions >= 0]
-        max_repetitions = int(valid_reps.max()) + 1 if len(valid_reps) else 1
+        max_repetitions = int(repetitions.max()) + 1
     if max_repetitions < 1:
         raise ValueError("max_repetitions must be positive.")
 
-    usable = repetitions >= 0
+    usable = repetitions < int(max_repetitions)
     aligned_logits = logits
     if center_logits:
         aligned_logits = logits.astype(float, copy=True)
@@ -210,14 +232,35 @@ def hit_correct_total_by_repetition(
             sel = group_reps < r
             if not sel.any():
                 continue
+            selected_codes = group_codes[sel]
+            selected_logits = aligned_logits[rows[sel]]
             scores = {
-                int(d): float(aligned_logits[rows[sel]][group_codes[sel] == d].sum())
-                for d in np.unique(group_codes[sel])
+                int(d): float(selected_logits[selected_codes == d].sum())
+                if np.any(selected_codes == d)
+                else -np.inf
+                for d in vocabulary
             }
-            predicted = max(scores.items(), key=lambda item: (item[1], -item[0]))[0]
+            # A missing candidate is not evidence against that candidate.  It
+            # is an incomplete decision and therefore a miss, rather than an
+            # opportunity to select from the surviving subset.
+            predicted = None
+            if all(np.isfinite(value) for value in scores.values()):
+                score_values = np.asarray(list(scores.values()), dtype=float)
+                tied = np.flatnonzero(
+                    np.isclose(
+                        score_values,
+                        float(score_values.max()),
+                        rtol=1e-12,
+                        atol=1e-12,
+                    )
+                )
+                if len(tied) == 1:
+                    predicted = int(vocabulary[tied[0]])
             key = str(r)
             total[key] = total.get(key, 0) + 1
-            correct[key] = correct.get(key, 0) + int(predicted == int(truth))
+            correct[key] = correct.get(key, 0) + int(
+                predicted is not None and predicted == int(truth)
+            )
     return correct, total
 
 
@@ -492,7 +535,15 @@ def _fold_result(
     _fit(model, X, y, subject_ids, train, trial_channel_mask)
     fit_sec = time.perf_counter() - started
     calibration_logits, calibration_y, source = calibration_data_from_model(model, X[train], y[train])
-    calibration = fit_logit_calibration(calibration_logits, calibration_y, source=source)
+    pos_weight = getattr(model, "training_pos_weight_", None)
+    train_prior = getattr(model, "training_prior_", None)
+    calibration = fit_logit_calibration(
+        calibration_logits,
+        calibration_y,
+        source=source,
+        pos_weight=None if pos_weight is None else float(pos_weight),
+        train_prior=None if train_prior is None else float(train_prior),
+    )
     logits = _predict(
         model,
         X[test_effective],
@@ -542,6 +593,10 @@ def _fold_result(
         threshold=calibration.threshold,
         threshold_source=calibration.source,
         fit_sec=fit_sec,
+        calibration_mode=calibration.mode,
+        calibration_slope=calibration.llr_slope,
+        calibration_temperature=calibration.temperature,
+        calibration_offset=calibration.offset,
         epochs_ran=len(history.get("train_losses", ())),
         train_losses=[float(value) for value in history.get("train_losses", ())],
         val_losses=[float(value) for value in history.get("val_losses", ())],

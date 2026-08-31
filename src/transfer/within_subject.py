@@ -6,7 +6,8 @@ filtering smears future suffix samples into training prefix epochs.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Sequence
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -26,17 +27,204 @@ class PrefixSuffixSplit:
     target_codes: np.ndarray
     truth_by_group: dict[str, int]
     repetition_indices: np.ndarray
+    onset_times_s: np.ndarray
+    evidence_available_times_s: np.ndarray
     suffix_repetition_indices: np.ndarray
     usable_groups: tuple[str, ...]
     candidate_vocab: tuple[int, ...]
     excluded_groups: dict[str, str]
+    selected_scheduled_repetitions: dict[
+        str, dict[str, dict[str, tuple[int, ...]]]
+    ] = field(default_factory=dict)
+    evidence_cost_by_group: dict[str, dict[str, object]] = field(default_factory=dict)
+    evidence_cost_by_repetition: dict[
+        str, dict[str, dict[str, float | int]]
+    ] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ChronologicalValidationSplit:
+    """A temporal inner split with validation strictly after optimization rows.
+
+    ``train_mask`` and ``validation_mask`` refer to the rows supplied to the
+    adapter, while the repetition tuples preserve the declared schedule.  The
+    helper deliberately does not sample groups: selecting the latest complete
+    repetitions makes the direction of information flow explicit.
+    """
+
+    train_mask: np.ndarray
+    validation_mask: np.ndarray
+    train_repetitions: tuple[int, ...]
+    validation_repetitions: tuple[int, ...]
+    embargo_mask: np.ndarray | None = None
+
+
+def chronological_time_validation_split(
+    onset_times_s: Sequence[float],
+    evidence_available_times_s: Sequence[float],
+    labels: Sequence[int],
+    *,
+    epoch_start_offset_s: float,
+    min_positive_per_partition: int = 2,
+) -> ChronologicalValidationSplit:
+    """Choose a real-time train/validation boundary with an explicit embargo."""
+
+    onset = np.asarray(onset_times_s, dtype=float)
+    available_at = np.asarray(evidence_available_times_s, dtype=float)
+    y = np.asarray(labels)
+    if onset.ndim != 1 or available_at.shape != onset.shape or y.shape != onset.shape:
+        raise ValueError("onset/evidence/labels must be aligned one-dimensional arrays.")
+    if not np.isfinite(onset).all() or not np.isfinite(available_at).all():
+        raise ValueError("chronological timestamps must be finite.")
+    if np.any(available_at < onset):
+        raise ValueError("evidence cannot be available before onset.")
+    if not np.issubdtype(y.dtype, np.integer) or set(np.unique(y).tolist()) != {0, 1}:
+        raise ValueError("chronological time validation requires integer labels {0,1}.")
+    if min_positive_per_partition < 1:
+        raise ValueError("min_positive_per_partition must be positive.")
+
+    epoch_starts = onset + float(epoch_start_offset_s)
+    target_epoch_starts = np.sort(epoch_starts[y == 1])
+    if len(target_epoch_starts) < 2 * min_positive_per_partition:
+        raise ValueError("not enough target trials for chronological train/validation.")
+    # Start with the latest validation window containing the requested target
+    # count, then move earlier only if class or embargo constraints require it.
+    candidate_boundaries = target_epoch_starts[: min_positive_per_partition - 1 : -1]
+    for boundary in candidate_boundaries:
+        train = available_at < boundary
+        validation = epoch_starts >= boundary
+        embargo = ~(train | validation)
+        if int(np.count_nonzero(y[train] == 1)) < min_positive_per_partition:
+            continue
+        if int(np.count_nonzero(y[validation] == 1)) < min_positive_per_partition:
+            continue
+        if set(np.unique(y[train]).tolist()) != {0, 1} or set(
+            np.unique(y[validation]).tolist()
+        ) != {0, 1}:
+            continue
+        if not float(np.max(available_at[train])) < float(np.min(epoch_starts[validation])):
+            continue
+        return ChronologicalValidationSplit(
+            train_mask=train,
+            validation_mask=validation,
+            train_repetitions=(),
+            validation_repetitions=(),
+            embargo_mask=embargo,
+        )
+    raise ValueError(
+        "no real-time chronological split retains both classes and the requested target counts."
+    )
+
+
+def chronological_validation_split(
+    repetition_indices: Sequence[int],
+    labels: Sequence[int],
+    *,
+    fraction: float | None = 0.1,
+    min_repetitions: int = 2,
+    max_repetitions: int = 6,
+) -> ChronologicalValidationSplit:
+    """Build an earlier-repetition train / later-repetition validation split.
+
+    Repetition metadata is part of the protocol, so gaps, negative values, and
+    duplicate schedule values fail closed instead of being silently sorted or
+    compressed.  Both partitions must retain the two binary classes whenever
+    validation is enabled; otherwise early stopping/calibration would be
+    undefined and the caller must choose a larger prefix.
+
+    ``fraction=None`` explicitly disables validation and returns all rows in the
+    training mask.  This mirrors the fit-only option used by small unit tests
+    while keeping the default transfer path chronological.
+    """
+
+    raw_repetitions = np.asarray(repetition_indices)
+    if raw_repetitions.ndim != 1:
+        raise ValueError("repetition_indices must be one-dimensional.")
+    if not np.issubdtype(raw_repetitions.dtype, np.integer) or np.issubdtype(
+        raw_repetitions.dtype, np.bool_
+    ):
+        raise ValueError("repetition_indices must use an integer dtype.")
+    repetitions = raw_repetitions.astype(np.int64, copy=False)
+
+    labels_array = np.asarray(labels)
+    if labels_array.ndim != 1 or labels_array.shape != repetitions.shape:
+        raise ValueError("labels and repetition_indices must be aligned one-dimensional arrays.")
+    if not np.issubdtype(labels_array.dtype, np.integer) or np.issubdtype(
+        labels_array.dtype, np.bool_
+    ):
+        raise ValueError("labels must use an integer dtype.")
+    labels_array = labels_array.astype(np.int64, copy=False)
+    if set(np.unique(labels_array).tolist()) != {0, 1}:
+        raise ValueError("chronological validation requires both binary classes in the input.")
+    if len(repetitions) == 0:
+        raise ValueError("chronological validation requires at least one row.")
+
+    unique_repetitions = np.unique(repetitions)
+    if unique_repetitions[0] < 0 or not np.array_equal(
+        unique_repetitions,
+        np.arange(unique_repetitions[0], unique_repetitions[-1] + 1, dtype=np.int64),
+    ):
+        raise ValueError(
+            "repetition_indices must be non-negative and contiguous; missing schedule "
+            "repetitions cannot be repaired by re-numbering."
+        )
+
+    train_mask = np.ones(len(repetitions), dtype=bool)
+    validation_mask = np.zeros(len(repetitions), dtype=bool)
+    if fraction is None:
+        return ChronologicalValidationSplit(
+            train_mask=train_mask,
+            validation_mask=validation_mask,
+            train_repetitions=tuple(int(value) for value in unique_repetitions),
+            validation_repetitions=(),
+        )
+    if not isinstance(fraction, (int, float, np.integer, np.floating)) or not 0.0 < float(
+        fraction
+    ) < 1.0:
+        raise ValueError("fraction must be in (0,1) or None.")
+    if (
+        isinstance(min_repetitions, bool)
+        or isinstance(max_repetitions, bool)
+        or int(min_repetitions) < 1
+        or int(max_repetitions) < int(min_repetitions)
+    ):
+        raise ValueError("invalid chronological validation repetition bounds.")
+
+    n_repetitions = len(unique_repetitions)
+    n_validation = int(round(float(fraction) * n_repetitions))
+    n_validation = max(int(min_repetitions), min(int(max_repetitions), n_validation))
+    if n_validation >= n_repetitions:
+        raise ValueError(
+            "chronological validation needs at least one earlier training repetition; "
+            f"got {n_repetitions} total and requested {n_validation} validation repetitions."
+        )
+    validation_repetitions = unique_repetitions[-n_validation:]
+    train_repetitions = unique_repetitions[:-n_validation]
+    validation_mask = np.isin(repetitions, validation_repetitions)
+    train_mask = ~validation_mask
+    if set(np.unique(labels_array[train_mask]).tolist()) != {0, 1}:
+        raise ValueError(
+            "chronological training repetitions do not retain both binary classes; "
+            "increase the calibration prefix."
+        )
+    if set(np.unique(labels_array[validation_mask]).tolist()) != {0, 1}:
+        raise ValueError(
+            "chronological validation repetitions do not retain both binary classes; "
+            "increase the calibration prefix."
+        )
+    return ChronologicalValidationSplit(
+        train_mask=train_mask,
+        validation_mask=validation_mask,
+        train_repetitions=tuple(int(value) for value in train_repetitions),
+        validation_repetitions=tuple(int(value) for value in validation_repetitions),
+    )
 
 
 def causal_prefix_suffix_split(
     dataset: EpochDataset,
     *,
     prefix_repetitions: int,
-    test_repetitions: int,
+    test_repetitions: int | None,
     min_candidate_repetitions: int = 2,
     contract: object | None = None,
 ) -> PrefixSuffixSplit:
@@ -54,93 +242,189 @@ def causal_prefix_suffix_split(
     assert_p300_input_contract(
         dataset.preprocessing, contract or SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
     )
-    if prefix_repetitions < 1 or test_repetitions < 1:
-        raise ValueError("prefix/test repetitions must be positive.")
+    if prefix_repetitions < 0 or (
+        test_repetitions is not None and test_repetitions < 1
+    ):
+        raise ValueError(
+            "prefix repetitions must be non-negative and test repetitions positive or None."
+        )
     if min_candidate_repetitions < 1:
         raise ValueError("min_candidate_repetitions must be positive.")
     if not dataset.event_timeline.supports_full_candidate_chain:
         raise ValueError("dataset must expose a complete candidate/repetition chain.")
-    encoded = dataset.event_timeline.encoded_candidate_selection(require_full_chain=True)
-    group_ids = np.asarray(encoded.group_ids, dtype=str)
-    candidates = np.asarray(encoded.candidate_codes, dtype=np.int64)
-    targets = np.asarray(encoded.target_codes, dtype=np.int64)
-    repetitions = np.asarray(encoded.repetition_indices, dtype=np.int64)
-    if not (len(group_ids) == len(candidates) == len(targets) == len(repetitions) == dataset.n_epochs):
-        raise ValueError("encoded candidate selection is not aligned with epoch rows.")
-
     timeline = dataset.event_timeline
-    evidence_indices = np.asarray(timeline.evidence_indices, dtype=np.int64)
-    available = evidence_indices >= 0
-    onset_times_s = np.empty(dataset.n_epochs, dtype=np.float64)
-    onset_times_s[evidence_indices[available]] = np.asarray(
-        timeline.onset_times_s, dtype=np.float64
-    )[available]
-    evidence_available_times_s = np.empty(dataset.n_epochs, dtype=np.float64)
-    evidence_available_times_s[evidence_indices[available]] = np.asarray(
+    scheduled_groups = np.asarray(timeline.group_ids).astype(str)
+    scheduled_candidates = np.asarray(timeline.candidate_ids).astype(str)
+    scheduled_targets = np.asarray(timeline.target_candidate_ids).astype(str)
+    scheduled_repetitions = np.asarray(timeline.repetition_indices, dtype=np.int64)
+    scheduled_onsets = np.asarray(timeline.onset_times_s, dtype=np.float64)
+    scheduled_available_at = np.asarray(
         timeline.evidence_available_times_s, dtype=np.float64
-    )[available]
+    )
+    evidence_indices = np.asarray(timeline.evidence_indices, dtype=np.int64)
+    if len(scheduled_groups) != timeline.n_events:
+        raise ValueError("scheduled event fields are not aligned.")
+
+    # Build the model-row view after retaining the original scheduled ordinal.
+    # The operational policy below may wait for R *available* evidence rows,
+    # but every selected row keeps its source repetition index and acquisition
+    # cost so that waiting cannot be mistaken for a fixed-schedule estimand.
+    scheduled_vocabulary = tuple(sorted(np.unique(scheduled_candidates).tolist()))
+    code_by_candidate = {value: index for index, value in enumerate(scheduled_vocabulary)}
+    candidate_vocab = tuple(range(len(scheduled_vocabulary)))
+    available_events = np.flatnonzero(evidence_indices >= 0)
+    available_events = available_events[
+        np.argsort(evidence_indices[available_events], kind="stable")
+    ]
+    group_ids = scheduled_groups[available_events]
+    candidates = np.asarray(
+        [code_by_candidate[value] for value in scheduled_candidates[available_events]],
+        dtype=np.int64,
+    )
+    targets = np.asarray(
+        [code_by_candidate[value] for value in scheduled_targets[available_events]],
+        dtype=np.int64,
+    )
+    repetitions = scheduled_repetitions[available_events]
+    onset_times_s = scheduled_onsets[available_events]
+    evidence_available_times_s = scheduled_available_at[available_events]
+    if not (
+        len(group_ids) == len(candidates) == len(targets) == len(repetitions) == dataset.n_epochs
+    ):
+        raise ValueError("scheduled-event evidence mapping is not aligned with epoch rows.")
 
     prefix = np.zeros(dataset.n_epochs, dtype=bool)
     suffix = np.zeros(dataset.n_epochs, dtype=bool)
     suffix_reps = np.full(dataset.n_epochs, -1, dtype=np.int64)
     usable: list[str] = []
     excluded: dict[str, str] = {}
-    candidate_vocab = tuple(range(len(encoded.vocabulary)))
-    for group in np.unique(group_ids):
-        rows = np.flatnonzero(group_ids == group)
-        group_targets = np.unique(targets[rows])
+    selected_schedule: dict[str, dict[str, dict[str, tuple[int, ...]]]] = {}
+    evidence_cost: dict[str, dict[str, object]] = {}
+    evidence_cost_by_repetition: dict[
+        str, dict[str, dict[str, float | int]]
+    ] = {}
+    for group in np.unique(scheduled_groups):
+        group = str(group)
+        scheduled_rows = np.flatnonzero(scheduled_groups == group)
+        group_targets = np.unique(scheduled_targets[scheduled_rows])
         if len(group_targets) != 1:
-            excluded[str(group)] = "mixed_target"
+            excluded[group] = "mixed_target"
             continue
-        ordered_by_code: dict[int, np.ndarray] = {}
+        group_candidates = np.unique(scheduled_candidates[scheduled_rows])
+        if tuple(sorted(group_candidates.tolist())) != scheduled_vocabulary:
+            excluded[group] = "incomplete_candidate_vocabulary"
+            continue
+
+        epoch_rows = np.flatnonzero(group_ids == group)
         prefix_by_code: dict[int, np.ndarray] = {}
+        ordered_by_code: dict[int, np.ndarray] = {}
         insufficient = False
         for code in candidate_vocab:
-            code_rows = rows[candidates[rows] == code]
-            order = np.argsort(onset_times_s[code_rows], kind="stable")
-            code_rows = code_rows[order]
-            if len(code_rows) < max(min_candidate_repetitions, prefix_repetitions):
+            code_rows = epoch_rows[candidates[epoch_rows] == code]
+            code_rows = code_rows[np.argsort(onset_times_s[code_rows], kind="stable")]
+            minimum = max(prefix_repetitions, min_candidate_repetitions if prefix_repetitions else 0)
+            if len(code_rows) < minimum:
                 insufficient = True
                 break
             ordered_by_code[int(code)] = code_rows
             prefix_by_code[int(code)] = code_rows[:prefix_repetitions]
         if insufficient:
-            excluded[str(group)] = "insufficient_prefix_candidate_repetitions"
+            excluded[group] = "insufficient_available_prefix_evidence"
             continue
 
-        pre = np.concatenate(list(prefix_by_code.values()))
-        boundary_s = float(np.max(evidence_available_times_s[pre]))
+        if prefix_repetitions:
+            pre_epoch = np.concatenate(list(prefix_by_code.values()))
+            boundary_s = float(np.max(evidence_available_times_s[pre_epoch]))
+        else:
+            pre_epoch = np.empty(0, dtype=np.int64)
+            boundary_s = float("-inf")
         epoch_start_offset_s = float(dataset.preprocessing.tmin_ms) / 1000.0
+        if prefix_repetitions and not np.isfinite(boundary_s):
+            excluded[group] = "invalid_prefix_evidence_time"
+            continue
         suffix_by_code: dict[int, np.ndarray] = {}
         for code, code_rows in ordered_by_code.items():
-            later = code_rows[
-                onset_times_s[code_rows] + epoch_start_offset_s > boundary_s
-            ]
+            later = code_rows[onset_times_s[code_rows] + epoch_start_offset_s > boundary_s]
+            if test_repetitions is None:
+                if len(later) < 1:
+                    insufficient = True
+                    break
+                suffix_by_code[code] = later
+                continue
             if len(later) < test_repetitions:
                 insufficient = True
                 break
             suffix_by_code[code] = later[:test_repetitions]
         if insufficient:
-            excluded[str(group)] = "insufficient_suffix_after_time_embargo"
+            excluded[group] = "insufficient_available_suffix_after_time_embargo"
             continue
-        post = np.concatenate(list(suffix_by_code.values()))
-        if not float(np.max(evidence_available_times_s[pre])) < float(
-            np.min(onset_times_s[post] + epoch_start_offset_s)
-        ):
-            raise AssertionError("prefix/suffix construction failed to produce a global time boundary.")
+        post_epoch = np.concatenate(list(suffix_by_code.values()))
 
-        prefix[pre] = True
-        suffix[post] = True
+        prefix[pre_epoch] = True
+        suffix[post_epoch] = True
         for code_rows in suffix_by_code.values():
-            suffix_reps[code_rows] = np.arange(test_repetitions, dtype=np.int64)
-        usable.append(str(group))
+            suffix_reps[code_rows] = np.arange(len(code_rows), dtype=np.int64)
+        selected_schedule[group] = {
+            "prefix": {
+                str(code): tuple(int(value) for value in repetitions[rows])
+                for code, rows in prefix_by_code.items()
+            },
+            "suffix": {
+                str(code): tuple(int(value) for value in repetitions[rows])
+                for code, rows in suffix_by_code.items()
+            },
+        }
+        group_scheduled_onsets = scheduled_onsets[scheduled_rows]
+        first_onset = float(np.min(group_scheduled_onsets))
+        prefix_end = boundary_s if prefix_repetitions else first_onset
+        suffix_end = float(np.max(evidence_available_times_s[post_epoch]))
+        candidate_counts = {
+            str(code): int(len(rows)) for code, rows in suffix_by_code.items()
+        }
+        balanced_repetitions = min(candidate_counts.values())
+        evidence_cost[group] = {
+            "prefix_available_trials": int(len(pre_epoch)),
+            "suffix_available_trials": int(len(post_epoch)),
+            "suffix_available_trials_by_candidate": candidate_counts,
+            "balanced_all_repetitions": int(balanced_repetitions),
+            "prefix_elapsed_seconds": float(max(0.0, prefix_end - first_onset)),
+            "suffix_elapsed_seconds_after_prefix": float(max(0.0, suffix_end - prefix_end)),
+            "scheduled_events_through_suffix": int(
+                np.count_nonzero(group_scheduled_onsets <= np.max(onset_times_s[post_epoch]))
+            ),
+        }
+        evidence_cost_by_repetition[group] = {}
+        for repetition_count in range(1, balanced_repetitions + 1):
+            balanced_rows = np.concatenate(
+                [rows[:repetition_count] for rows in suffix_by_code.values()]
+            )
+            balanced_end = float(
+                np.max(evidence_available_times_s[balanced_rows])
+            )
+            evidence_cost_by_repetition[group][str(repetition_count)] = {
+                "available_trials": int(len(balanced_rows)),
+                "scheduled_events_through_evidence": int(
+                    np.count_nonzero(
+                        group_scheduled_onsets
+                        <= np.max(onset_times_s[balanced_rows])
+                    )
+                ),
+                "elapsed_seconds_after_prefix": float(
+                    max(0.0, balanced_end - prefix_end)
+                ),
+            }
+        usable.append(group)
 
     if not usable:
         raise ValueError(
             "No selection group has enough complete candidate repetitions for "
-            f"{prefix_repetitions}+{test_repetitions} chronological within-subject folds."
+            f"{prefix_repetitions}+{test_repetitions or 'all'} chronological "
+            "within-subject folds."
         )
-    truth_by_group = {str(group): int(target) for group, target in encoded.truth_by_group.items()}
+    truth_by_group = {
+        group: int(code_by_candidate[np.unique(scheduled_targets[np.asarray(scheduled_groups) == group])[0]])
+        for group in np.unique(scheduled_groups).astype(str)
+    }
     return PrefixSuffixSplit(
         prefix_mask=prefix,
         suffix_mask=suffix,
@@ -149,8 +433,13 @@ def causal_prefix_suffix_split(
         target_codes=targets,
         truth_by_group=truth_by_group,
         repetition_indices=repetitions,
+        onset_times_s=onset_times_s,
+        evidence_available_times_s=evidence_available_times_s,
         suffix_repetition_indices=suffix_reps,
         usable_groups=tuple(usable),
         candidate_vocab=candidate_vocab,
         excluded_groups=excluded,
+        selected_scheduled_repetitions=selected_schedule,
+        evidence_cost_by_group=evidence_cost,
+        evidence_cost_by_repetition=evidence_cost_by_repetition,
     )

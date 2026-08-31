@@ -20,7 +20,7 @@
 | arm | ST kernel / dilation | MST kernels | 总 RF samples | 16ch 参数 | 角色 |
 |---|---:|---:|---:|---:|---|
 | A | 65 / 1 | 5,17 | 84,132 | 1506 | broad dense reference |
-| B | 35 / 1 | 5,17 | 54,102 | 1266 | 旧 K35 bridge |
+| B | 35 / 1 | 5,17 | 54,102 | 1266 | 旧 sensitivity 领先；当前核长臂 |
 | C | 33 / 1 | 5,17 | 52,100 | 1250 | local, same taps as D |
 | D | 33 / 2 | 5,17 | 84,132 | 1250 | broad, same taps as C |
 | E | 33 / 1 | 13,25 | 84,132 | 1506 | 与 A 等 RF、等参数的层间重分配 |
@@ -83,20 +83,24 @@ QC 首次构建使用 25 个 worker，耗时 130.43 s；10 个 arm-seed 批次�
 - AUC delta `+0.000762`，95% CI `[-0.000592,+0.002136]`；
 - C 参数为 1250，较 A 的 1506 少 17.0%；总 RF 从 `84/132` 缩为 `52/100`。
 
-因此冻结 C 进入 GTN，但其身份是“更短 RF、较少参数、BI inner validation 非劣”的
-压缩/泛化候选，不是 BI 性能改进模型。B 只保留为历史 bridge；D 停止；E 留作未来
-factorization 研究，不进入本次 GTN，以免在最终数据集继续选候选。
+因此 C 证明 K33 是“更短 RF、较少参数、BI inner validation 对 K65 非劣”的机制臂，
+不是已确认的性能赢家。B/K35 在 A/B/C 中有最高 mean inner AUC (`0.747974`)，
+且 loss 优于 K33/K65，但 W2 未预注册 B-C 或 B-A 直接 contrast，不能据此选胜者，
+也不能把 B 删除。D 停止；E 留作未来 factorization 研究。
 
-## 6. GTN 门
+## 6. GTN development 后继结果
 
-GTN 最终只比较 A 与 C，各 3 seeds。运行前必须先：
+相同 4-block、3-seed、steady-state Z0 链已完成：
 
-1. 让 evaluator 真正按 repetition/timeline 输出 subject-macro `hit@5` 与 `hit@R`；
-2. 冻结 GTN cache SHA、采样率缩放后的 architecture record、reference、normalization、
-   fold-local QC 和 chronological split；
-3. primary 使用 subject-macro `hit@5`，AUC/BACC 仅作 secondary/non-inferiority；
-4. seed 先在 subject 内聚合，再做 subject-cluster paired bootstrap；
-5. 不因 GTN 的中间结果重新启用 B、D 或 E。
+| arm | balanced-all | raw-all | AUC | 判定 |
+|---|---:|---:|---:|---|
+| B / K35 | **0.669** | **0.687** | **0.694** | 临时工程默认 |
+| A / K65 | 0.654 | 0.669 | 0.686 | 未分离强对照 |
+| C / K33 | 0.623 | 0.623 | 0.681 | 退出主线 |
+
+K35-K33=`+0.046`，95% CI `[+0.012,+0.082]`，三 seed 同方向；K35-K65=`+0.015`，
+CI `[-0.012,+0.044]`，且 seed 方向反转。因此 K35 的旧 sensitivity 领先得到支持，
+但唯一核长仍未确认。工程上采用 K35、保留 K65，不再继续 K33 或新增核长搜索。
 
 ## 7. 证据文件
 

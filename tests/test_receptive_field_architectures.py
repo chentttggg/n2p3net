@@ -105,8 +105,8 @@ def test_receptive_field_controls_match_parameter_budgets() -> None:
 
     assert models["A"].parameter_count() == models["E"].parameter_count() == 1_506
     assert models["C"].parameter_count() == models["D"].parameter_count()
-    default = N2P3Net(n_channels=16, n_times=128, pooling_mode="ms_flatten")
-    assert default.parameter_count() == 1_282
+    provisional_default = N2P3Net(n_channels=16, n_times=128, pooling_mode="ms_flatten")
+    assert provisional_default.parameter_count() == 1_042
 
 
 def test_nondefault_mst_dilations_propagate_without_changing_time_shape() -> None:

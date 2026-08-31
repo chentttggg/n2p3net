@@ -10,6 +10,7 @@ from baselines.deep import DeepBaseline, DeepConfig
 from data.contract import DEFAULT_P300_DATA_CONTRACT
 from models.n2p3net import (
     DEFAULT_N2P3_ARCHITECTURE,
+    DEFAULT_N2P3_POOLING_MODE,
     POOLING_MODES,
     N2P3ArchitectureConfig,
     N2P3Net,
@@ -31,7 +32,7 @@ class N2P3NetBaseline(DeepBaseline):
         *,
         channel_mask=None,
         tmin_s: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms / 1000.0,
-        pooling_mode: str = "ms_flatten",
+        pooling_mode: str = DEFAULT_N2P3_POOLING_MODE,
         architecture: N2P3ArchitectureConfig = DEFAULT_N2P3_ARCHITECTURE,
     ) -> None:
         if not math.isfinite(tmin_s):

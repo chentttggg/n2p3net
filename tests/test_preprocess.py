@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 from data.channel import STANDARD_CHANNELS
+from data.contract import CAUSAL_IIR_INITIAL_STATE
 from data.preprocess import (
     _canonical,
     apply_trial_baseline,
@@ -84,6 +85,7 @@ def test_preprocess_forward_phase_marks_causal_and_zero_phase_does_not():
         events,
         channels=STANDARD_CHANNELS,
         filter_phase="forward",
+        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
     )
     assert causal.online_causal is True
     assert np.isfinite(causal.data).all()
@@ -206,6 +208,46 @@ def test_filter_continuous_applies_declared_lowpass():
     amp_60hz = spectrum[np.argmin(np.abs(frequencies - 60.0))]
 
     assert amp_60hz < 0.05 * amp_5hz
+
+
+def test_forward_iir_steady_state_does_not_turn_dc_offset_into_startup_artifact():
+    sfreq = 128.0
+    data = np.full((1, int(sfreq * 12)), 3e-3, dtype=np.float64)
+    raw = mne.io.RawArray(
+        data, mne.create_info(["Cz"], sfreq, ch_types="eeg"), verbose=False
+    )
+
+    filtered = filter_continuous(
+        raw,
+        l_freq=0.1,
+        h_freq=30.0,
+        phase="forward",
+        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
+        copy=True,
+    ).get_data()[0]
+
+    assert np.max(np.abs(filtered[: int(2 * sfreq)])) < 1e-9
+
+
+def test_forward_iir_never_uses_a_future_impulse():
+    sfreq = 128.0
+    data = np.zeros((1, int(sfreq * 8)), dtype=np.float64)
+    impulse = int(5 * sfreq)
+    data[0, impulse] = 1.0
+    raw = mne.io.RawArray(
+        data, mne.create_info(["Cz"], sfreq, ch_types="eeg"), verbose=False
+    )
+
+    filtered = filter_continuous(
+        raw,
+        l_freq=0.1,
+        h_freq=30.0,
+        phase="forward",
+        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
+        copy=True,
+    ).get_data()[0]
+
+    assert np.all(filtered[:impulse] == 0.0)
 
 
 def test_continuous_filtering_and_epoch_crop_do_not_commute() -> None:

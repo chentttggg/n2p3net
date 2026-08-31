@@ -45,6 +45,7 @@ class PreprocessingSpec:
     filter_method: str = DEFAULT_P300_DATA_CONTRACT.filter_method
     filter_order: int = DEFAULT_P300_DATA_CONTRACT.filter_order
     filter_phase: str = DEFAULT_P300_DATA_CONTRACT.filter_phase
+    causal_iir_initial_state: str = DEFAULT_P300_DATA_CONTRACT.causal_iir_initial_state
     resample_domain: str = DEFAULT_P300_DATA_CONTRACT.resample_domain
     resample_method: str = DEFAULT_P300_DATA_CONTRACT.resample_method
     resample_npad: str = DEFAULT_P300_DATA_CONTRACT.resample_npad
@@ -104,6 +105,18 @@ class PreprocessingSpec:
             raise ValueError(
                 "The executable filter contract is fourth-order IIR with "
                 "phase='zero' (offline LOSO) or phase='forward' (causal single-subject)."
+            )
+        if self.filter_phase == "forward":
+            from data.contract import CAUSAL_IIR_INITIAL_STATE
+
+            if self.causal_iir_initial_state != CAUSAL_IIR_INITIAL_STATE:
+                raise ValueError(
+                    "Causal forward IIR requires steady_state_first_sample initialization; "
+                    "legacy zero-state caches must be regenerated."
+                )
+        elif self.causal_iir_initial_state != "not_applicable":
+            raise ValueError(
+                "Zero-phase filtering requires causal_iir_initial_state='not_applicable'."
             )
         if self.resample_domain != "epoched":
             raise ValueError("The common executable resampling domain is epoched EEG.")
@@ -548,6 +561,14 @@ def _validate_attested_cache(path: Path, dataset: EpochDataset) -> None:
     expected_record = json.loads(
         json.dumps(dataset.record(validate=False), default=_json_default)
     )
+    stored_preprocessing = record.get("preprocessing")
+    if (
+        isinstance(stored_preprocessing, dict)
+        and "causal_iir_initial_state" not in stored_preprocessing
+        and stored_preprocessing.get("filter_phase") == "zero"
+    ):
+        # Backward-compatible audit normalization for unaffected offline caches.
+        stored_preprocessing["causal_iir_initial_state"] = "not_applicable"
     mismatched = [
         key for key, expected in expected_record.items() if record.get(key) != expected
     ]

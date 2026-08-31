@@ -503,6 +503,7 @@ def observed_only_timeline(
     subject_ids: np.ndarray,
     stimulus_ids: np.ndarray,
     onset_times_s: np.ndarray | None = None,
+    evidence_available_times_s: np.ndarray | None = None,
     group_ids: np.ndarray | None = None,
     online_causal: bool = False,
     timing_source: str = "observed_epoch_order_only",
@@ -535,6 +536,15 @@ def observed_only_timeline(
     )
     if onset.shape != (n_events,):
         raise ValueError("onset_times_s must contain one value per event.")
+    available_at = (
+        onset.copy()
+        if evidence_available_times_s is None
+        else np.asarray(evidence_available_times_s, dtype=float)
+    )
+    if available_at.shape != (n_events,) or not np.isfinite(available_at).all():
+        raise ValueError("evidence_available_times_s must be finite and align with events.")
+    if np.any(available_at < onset):
+        raise ValueError("evidence cannot be available before event onset.")
     dataset_ids = np.repeat(str(dataset_id), n_events)
     def _strings_or_default(values: np.ndarray | None, default: np.ndarray) -> np.ndarray:
         output = default if values is None else np.asarray(values).astype(str)
@@ -552,7 +562,7 @@ def observed_only_timeline(
         stimulus_ids=raw_stimulus.astype(np.int64, copy=False),
         onset_samples=np.arange(n_events, dtype=np.int64),
         onset_times_s=onset,
-        evidence_available_times_s=onset.copy(),
+        evidence_available_times_s=available_at,
         evidence_indices=np.arange(n_events, dtype=np.int64),
         statuses=np.repeat(AVAILABLE, n_events),
         status_details=np.repeat("source_exposes_observed_epochs_only", n_events),

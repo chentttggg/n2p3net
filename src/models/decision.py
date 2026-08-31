@@ -2,7 +2,7 @@
 
 职责（blueprint §6）：
     把试次级 logit（每个试次的 target/non-target 对数似然比）聚合成被试级的「猜数字」判定：
-        score(d) = Σ_{trials of d} logit(p_target)   —— 对数似然比累积（非平均概率）
+        score(d) = weighted_mean(d) * n_eff(d)^beta
         被试内 z-score（去校准偏差）→ d̂* = argmax_d score(d)
 
     命中率 = P(d̂* = d*)，chance ≈ 11.1%（9 选 1）。
@@ -12,9 +12,12 @@
     - 不处理原始 EEG，只消费 heads 输出的 logit_target。
 
 三思决策记录（供后续会话追溯）：
-    D-logsum         score(d) = Σ logit（对数似然比累积），**非平均概率**。理由：独立证据的对数
-                     似然比可加（贝叶斯正确），而平均概率在「各数字试次数不同」时引入偏差（试次
-                     多的数字被平均压低、试次少的虚高）。这是蓝图 §6 的明确要求。
+    D-tempered       `beta=0/0.5/1` 分别对应 weighted mean、平方根温度化和完整有效计数
+                     累积；单位权重时 `beta=1` 等于 sum。该模式使用全部 trial，同时减弱
+                     随机刺激次数不齐带来的排名偏移。
+    D-default-mean   245-subject GTN all-evidence comparison found beta=0 strongest for K35
+                     and no worse for K65. The shared default is therefore candidate mean;
+                     explicit sum remains available for frozen-result reproduction.
     D-center-logits  （review v6 P0-1，推翻旧版「score 后 z-score 去校准偏差」）分类器常数偏置 c
                       经 Σlogit 变成 c·n_d，n_d 逐数字不等时进入 argmax；score 后 z-score 是同一
                       仿射变换，去不掉该项。因此累加前必须先对每个 subject 的 logit 做被试内中心化。
@@ -51,6 +54,47 @@ from dataclasses import dataclass
 
 import numpy as np
 
+DEFAULT_EVIDENCE_COUNT_POWER = 0.5
+DEFAULT_EVIDENCE_AGGREGATION = "mean"
+COUNT_AGGREGATIONS = frozenset({"sum", "mean", "tempered_evidence"})
+
+
+def count_tempered_evidence_scores(
+    weighted_sums: np.ndarray,
+    weight_sums: np.ndarray,
+    squared_weight_sums: np.ndarray,
+    *,
+    count_power: float = DEFAULT_EVIDENCE_COUNT_POWER,
+) -> np.ndarray:
+    """Return weighted means tempered by effective evidence count.
+
+    With unit weights this is ``mean(logit) * n**count_power``. Therefore
+    ``count_power=0`` is mean aggregation and ``count_power=1`` is sum.
+    """
+
+    weighted_sums = np.asarray(weighted_sums, dtype=float)
+    weight_sums = np.asarray(weight_sums, dtype=float)
+    squared_weight_sums = np.asarray(squared_weight_sums, dtype=float)
+    if not weighted_sums.shape == weight_sums.shape == squared_weight_sums.shape:
+        raise ValueError("weighted sums and weight moments must have identical shapes.")
+    if not np.isfinite(weighted_sums).all():
+        raise ValueError("weighted evidence sums contain NaN/inf.")
+    if not np.isfinite(count_power) or not 0.0 <= count_power <= 1.0:
+        raise ValueError("count_power must be finite and in [0, 1].")
+    if np.any(weight_sums < 0.0) or np.any(squared_weight_sums < 0.0):
+        raise ValueError("evidence weight moments must be non-negative.")
+
+    scores = np.full(weighted_sums.shape, -np.inf, dtype=float)
+    nonempty = (weight_sums > 0.0) & (squared_weight_sums > 0.0)
+    effective_count = np.zeros(weighted_sums.shape, dtype=float)
+    effective_count[nonempty] = (
+        weight_sums[nonempty] ** 2 / squared_weight_sums[nonempty]
+    )
+    weighted_mean = np.zeros(weighted_sums.shape, dtype=float)
+    weighted_mean[nonempty] = weighted_sums[nonempty] / weight_sums[nonempty]
+    scores[nonempty] = weighted_mean[nonempty] * effective_count[nonempty] ** count_power
+    return scores
+
 
 @dataclass
 class DecisionResult:
@@ -83,7 +127,9 @@ def decide(
     subject_ids: Sequence,
     digit_vocab: Sequence[int] | None = None,
     center_logits: bool = True,
-    aggregation: str = "sum",
+    aggregation: str = DEFAULT_EVIDENCE_AGGREGATION,
+    evidence_count_power: float = DEFAULT_EVIDENCE_COUNT_POWER,
+    trial_weights: Sequence[float] | None = None,
 ) -> DecisionResult:
     """试次级 logit → 被试级猜数字判定。
 
@@ -103,16 +149,23 @@ def decide(
         c·n_d（n_d 为每数字试次数）进入排名，被试内 score z-score 无法消除该项。
         先中心化再累加/平均，可去掉这一校准偏置（review v6 P0-1）。
     aggregation : str
-        "sum"（对数似然比累加，blueprint §6 默认）或 "mean"（每数字平均，消融轴）。
-        logit 未严格校准时，mean 对每数字试次数不等的噪声更稳。
+        ``sum``、``mean`` 或 ``tempered_evidence``。单位 trial 权重下，前两者等于
+        温度化公式的 ``beta=1/0``。默认 ``mean``，避免 all-evidence 中随机
+        candidate 次数直接进入排名；历史 sum 必须显式指定。
+    evidence_count_power : float
+        温度化证据的 ``beta``，范围 ``[0,1]``；默认 0.5。
+    trial_weights : Sequence[float] | None
+        可选的非负、label-free trial 可靠性权重。省略时每条 trial 权重为 1。
 
     Returns
     -------
     DecisionResult
         predicted 为每个被试猜的数字（argmax）。
     """
-    if aggregation not in ("sum", "mean"):
-        raise ValueError(f"aggregation 须为 'sum' 或 'mean'，得到 {aggregation!r}。")
+    if aggregation not in COUNT_AGGREGATIONS:
+        raise ValueError(
+            f"aggregation 须为 {sorted(COUNT_AGGREGATIONS)}，得到 {aggregation!r}。"
+        )
 
     logits = np.asarray(logits, dtype=float)
     digits = np.asarray(digits)
@@ -128,6 +181,17 @@ def decide(
             "logits 含 NaN/inf：上游模型对缺失通道输出异常。请先处理缺失通道"
             "（classic/riemann 用存在通道子集，deep 按原生物理通道数构造）后再喂 decision 层。"
         )
+    weights = (
+        np.ones(len(logits), dtype=float)
+        if trial_weights is None
+        else np.asarray(trial_weights, dtype=float)
+    )
+    if weights.shape != logits.shape:
+        raise ValueError("trial_weights 必须与 logits 对齐。")
+    if not np.isfinite(weights).all() or np.any(weights < 0.0):
+        raise ValueError("trial_weights 必须有限且非负。")
+    if len(weights) and not np.any(weights > 0.0):
+        raise ValueError("trial_weights 至少包含一个正权重。")
 
     if digit_vocab is None:
         digit_vocab = np.arange(1, 10)
@@ -141,9 +205,13 @@ def decide(
 
     # 0. 逐被试 logit 中心化（review v6 P0-1：去除 c·n_d 校准偏置）
     if center_logits:
-        counts = np.bincount(inverse, minlength=n_subs).astype(float)
-        sums = np.bincount(inverse, weights=logits, minlength=n_subs)
-        centered = logits - sums[inverse] / counts[inverse]
+        subject_weight_sums = np.bincount(inverse, weights=weights, minlength=n_subs)
+        subject_logit_sums = np.bincount(
+            inverse, weights=weights * logits, minlength=n_subs
+        )
+        if np.any(subject_weight_sums <= 0.0):
+            raise ValueError("每个 subject 必须至少有一个正权重 trial。")
+        centered = logits - subject_logit_sums[inverse] / subject_weight_sums[inverse]
     else:
         centered = logits
 
@@ -154,20 +222,38 @@ def decide(
     digit_cols = np.arange(n_digits, dtype=np.int64)[None, :]
     bucket_idx = inverse[:, None] * n_digits + digit_cols  # (N, n_digits)
     bucket_idx = bucket_idx[digit_matches]
-    bucket_weights = np.broadcast_to(centered[:, None], digit_matches.shape)[digit_matches]
+    matched_logits = np.broadcast_to(centered[:, None], digit_matches.shape)[digit_matches]
+    matched_weights = np.broadcast_to(weights[:, None], digit_matches.shape)[digit_matches]
 
     n_buckets = n_subs * n_digits
     bucket_counts = np.bincount(bucket_idx, minlength=n_buckets)
-    bucket_sums = np.bincount(bucket_idx, weights=bucket_weights, minlength=n_buckets)
+    bucket_weight_sums = np.bincount(
+        bucket_idx, weights=matched_weights, minlength=n_buckets
+    )
+    bucket_squared_weight_sums = np.bincount(
+        bucket_idx, weights=matched_weights**2, minlength=n_buckets
+    )
+    bucket_sums = np.bincount(
+        bucket_idx, weights=matched_weights * matched_logits, minlength=n_buckets
+    )
     bucket_counts = bucket_counts.reshape(n_subs, n_digits)
+    bucket_weight_sums = bucket_weight_sums.reshape(n_subs, n_digits)
+    bucket_squared_weight_sums = bucket_squared_weight_sums.reshape(n_subs, n_digits)
     bucket_sums = bucket_sums.reshape(n_subs, n_digits)
 
     raw_scores = np.full((n_subs, n_digits), -np.inf)
-    nonempty = bucket_counts > 0
+    nonempty = (bucket_counts > 0) & (bucket_weight_sums > 0.0)
     if aggregation == "sum":
         raw_scores[nonempty] = bucket_sums[nonempty]
+    elif aggregation == "mean":
+        raw_scores[nonempty] = bucket_sums[nonempty] / bucket_weight_sums[nonempty]
     else:
-        raw_scores[nonempty] = bucket_sums[nonempty] / bucket_counts[nonempty]
+        raw_scores = count_tempered_evidence_scores(
+            bucket_sums,
+            bucket_weight_sums,
+            bucket_squared_weight_sums,
+            count_power=evidence_count_power,
+        )
 
     # 2. 被试内 z-score（非空集上，D-zscore-monotone / D-empty-set / D-std-zero）
     z_scores = np.full((n_subs, n_digits), -np.inf)
@@ -190,12 +276,18 @@ def decide(
         )
         z_scores[has_valid] = z_vals[has_valid]
 
-    # 3. argmax（raw_scores 上做，z-score 单调等价；空集 −inf 天然排除）
+    # 3. argmax（raw_scores 上做，z-score 单调等价；空集 −inf 天然排除）。
+    # Exact/numerical ties abstain: choosing the smallest encoded digit would
+    # make accuracy depend on arbitrary candidate naming.
     predicted = np.full(n_subs, None, dtype=object)
     has_any = n_valid > 0
-    if has_any.any():
-        best_cols = np.argmax(raw_scores[has_any], axis=1)
-        predicted[has_any] = digit_vocab[best_cols]
+    for row in np.flatnonzero(has_any):
+        maximum = float(np.max(raw_scores[row]))
+        tied = np.flatnonzero(
+            np.isclose(raw_scores[row], maximum, rtol=1e-12, atol=1e-12)
+        )
+        if len(tied) == 1:
+            predicted[row] = digit_vocab[tied[0]]
 
     return DecisionResult(
         predicted=predicted,

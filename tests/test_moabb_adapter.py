@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from data.contract import CAUSAL_IIR_INITIAL_STATE
 from data.epochs import PreprocessingSpec
 from data.moabb import prepare_moabb_p300
 
@@ -24,7 +25,10 @@ def test_moabb_adapter_rejects_causal_phase_it_cannot_execute(monkeypatch) -> No
     from data import moabb as adapter_module
 
     monkeypatch.setattr(adapter_module, "resolve_moabb_dataset", lambda name: _fake_dataset())
-    profile = PreprocessingSpec(filter_phase="forward")
+    profile = PreprocessingSpec(
+        filter_phase="forward",
+        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
+    )
 
     with pytest.raises(ValueError, match="zero-phase only"):
         prepare_moabb_p300("FakeP300", preprocessing=profile)

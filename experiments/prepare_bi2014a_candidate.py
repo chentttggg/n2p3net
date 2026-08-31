@@ -24,7 +24,10 @@ from data.bi2014a_candidate import (  # noqa: E402
     build_bi2014a_subject_dataset,
     recover_bi2014a_candidates,
 )
-from data.contract import assert_causal_p300_input_contract  # noqa: E402
+from data.contract import (  # noqa: E402
+    CAUSAL_IIR_INITIAL_STATE,
+    assert_causal_p300_input_contract,
+)
 from data.epochs import (  # noqa: E402
     PreprocessingSpec,
     concatenate_epoch_datasets,
@@ -36,7 +39,7 @@ DEFAULT_BI_ROOT = ROOT / "mne_data" / "MNE-braininvaders2014a-data" / "zenodo" /
 
 def _preprocessing() -> PreprocessingSpec:
     return PreprocessingSpec(
-        name="bi2014a_candidate_causal_v1",
+        name="p300_single_subject_causal_v2",
         sfreq=128.0,
         l_freq=2.0,
         h_freq=30.0,
@@ -46,6 +49,7 @@ def _preprocessing() -> PreprocessingSpec:
         baseline_mode="mean_only",
         signal_unit="V",
         filter_phase="forward",
+        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
     )
 
 
@@ -105,6 +109,10 @@ def main() -> None:
                 "n_nontargets": int(np.count_nonzero(recovered.target_label == 1)),
                 "n_repetitions": recovered.n_repetitions,
                 "n_selections": int(len(np.unique(recovered.selection_id))),
+                "n_explicit_selection_boundaries": recovered.n_explicit_boundaries,
+                "selection_boundary_rule": (
+                    "target_pair_change_or_raw_session_100_or_level_restart_104"
+                ),
                 "n_epochs": datasets[-1].n_epochs,
                 "dropped_tail_flashes": recovered.dropped_tail_flashes,
             }

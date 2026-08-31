@@ -1,9 +1,11 @@
 # SpellerSSL 类预训练头与后处理横向对比
 
 日期：2026-08-28
-状态：historical comparison；主路线已由 `research_program.zh.md` 修订。
-前提：零相位未来泄漏已封堵；checkpoint holdout、raw-sample embargo 已有工作树
-修正，chronological inner validation、QC/calibration 和完整 artifacts 仍待闭环。
+状态：historical mechanism comparison；执行指令已直接改由
+`research_program.zh.md` 和 `single_subject_transfer_research.zh.md` 管理。
+当前 checkpoint 已绑定 target/cache identity、通道、参考和 preprocessing；causal
+IIR 使用稳态初值。GTN 同一 thought digit 的 labelled prefix 不再视为合法校准，
+只允许 zero-shot 或无真值适配；监督校准由跨 decision target-switch 数据验证。
 参考文献按“可复验程度”排序，不按论文宣称数字排序。
 
 ## 1. 预训练头/目标横向对比
@@ -36,7 +38,7 @@
 | SpellerSSL G aggregation | fine-tune 时相邻 G 个 repetition 平均 | 提高 calibration 信噪比 | 应作为训练增强，不等同测试聚合 | G 过大降低类间方差 |
 | precision/inverse-variance 加权 | EEG2ERP 逐 trial variance | 可靠性加权 | 适合有 uncertainty head 的迁移模型 | 无方差估计时不可用 |
 | trimmed/median logit | trial-level logit | 去离群 trial | 对眼动/伪迹残留鲁棒 | 需要选择 trim 比例，必须 train-only |
-| Platt/temperature | prefix validation logits | 校准 logit 到证据尺度 | 当前已有；升级为 group-disjoint prefix 校准 | 校准集不能含测试 suffix |
+| weighted-CE offset + positive temperature | source 或更早的独立 calibration-decision validation logits | 解析移除训练权重/先验偏移，再以 `T>0` 缩放证据 | 保持候选排序方向，适合可加 LLR | GTN 同 selection 标签不得用于未知数字校准；校准集不能含测试 decision/suffix |
 | dynamic stopping | 当前 9 选 posterior | 置信度阈值 / 不确定即继续 | 报告 hit@R 的速率-精度曲线 | 阈值必须 prefix 选，不能用 suffix 回头调 |
 | candidate-level z-score | 9 个候选分数 | 去常数 bias | 当前 `decide` 已有 | 中心化会破坏严格 LLR；只做诊断 |
 
@@ -48,8 +50,9 @@
 
 ### 3.1 主干与预训练头
 
-主干不再预先固定。GTN matched 轴至少保留 EEGNet、MS-EEGNet、linear
-full-unfold K65/K35；BI2014a 只支持 full-unfold 的探索领先，不能决定 GTN backbone。
+读出已固定为线性 `full_unfold`；`ms_flatten` 仅作显式 MS-EEGNet 基线。当前
+GTN 三 seed all-evidence 已将 K35 设为临时默认，K65 保留强对照，K33 退出主线。
+BI2014a 与 GTN 共同支持 full-unfold+K35 的开发采用，但不能产生产品确认。
 
 预训练时加一个可丢弃的 decoder：
 
@@ -71,7 +74,7 @@ loss = lambda_wave * |X - X_hat|_1
 ### 3.2 预训练语料优先级
 
 ```text
-T1a  GTN 其余 241 被试（3 通道，与目标同范式）
+T1a  GTN 冻结 manifest 中除 target block 外的 subjects（人数从 ledger 派生）
 T1b  BrainSync-GTN（若可得，8 通道同设备）
 T2   BI2014a + BNCI2014_008（16/8 通道，仅作 representation 辅助源）
 ```
@@ -85,15 +88,15 @@ T1a 必须先行。T1b/T2 除共同重参考外还必须解决通道数/坐标�
 对每个目标人：
 
 ```text
-frozen trunk -> ms_flatten features (16-dim)
-             -> Linear + temperature/Platt calibration
+frozen trunk -> adopted full_unfold features (4 x 32 = 128-dim at current input)
+             -> Linear + weighted-CE offset + positive-temperature calibration
              -> target-only prefix fine-tune
 ```
 
 并行消融：
 
-1. `head_linear`：只训练 16->2 线性层；
-2. `head_mlp16`：16->16 GELU->2，capacity 对照；
+1. `head_linear`：只训练 full-unfold feature -> 2 线性层；
+2. `head_mlp16`：低容量非线性 head，作为 capacity 对照；
 3. `full_fine`：低学习率全参数 fine-tune，BN 可选冻结；
 4. `xdawn_rg`：同 prefix 的 classical floor。
 
@@ -102,7 +105,9 @@ frozen trunk -> ms_flatten features (16-dim)
 
 ### 3.4 决策后处理（默认推荐）
 
-1. binary 阶段输出 calibrated logit（prefix 内 group-disjoint 校准）；
+1. binary 阶段先解析移除 weighted-CE 权重/训练先验偏移，再以 `T>0` 做缩放；
+   温度只能由 source validation 或更早、目标已知且与测试目标变化的 calibration
+   decisions 拟合。GTN 同一 selection 的 labelled prefix 只允许标为 O5 oracle proxy；
 2. 对测试 suffix 按数字聚合：
    - 默认 `sum`；
    - 与 `mean`、`trimmed_mean(0.2)` 做 paired 比较；precision-weight 仅在模型
@@ -117,20 +122,21 @@ frozen trunk -> ms_flatten features (16-dim)
 
 ```text
 W0  target prefix classical floor
-W1  target prefix EEGNet / MS / full-unfold K65/K35
+W1  adopted full-unfold+K35；K65 强对照；MS-EEGNet 结构基线
 S1  T1a supervised pretrain -> frozen/full-fine subject head
 J1  S1 + temporal/spatial auxiliary SSL
 R1  pure masked reconstruction control
 P2  J1/R1 + band-balanced spectral objective
 P3  P2 + subject-axis erasure/contrastive penalty ablation
 P4  P2 + compatible cross-dataset spatial stem
-D1  P 冠军 + sum/mean/trimmed/(valid precision)
+D1  P development leader + sum/mean/trimmed/(valid precision)
 D2  D1 + dynamic stopping
 ```
 
 每层晋升判据：
 
-- 与 W1 相同 prefix 训练量下的 hit@8 delta 必须有 subject-level bootstrap CI；
+- 与 W1 相同 prefix 训练量下，主比较使用 operational `hit@all_balanced` 的
+  subject-level bootstrap CI；raw all、完整 hit@R/cost curve 必须共同报告；
 - P2/P3/P4 任一步不优于 P1，即停止该分支；
 - 外测 suffix 只用一次，不能回头改 mask 比例、band 权重、head 结构或 R。
 
@@ -148,7 +154,10 @@ D2  D1 + dynamic stopping
 
 ## 5. 判定
 
-- 目前只能说 causal ingress 原型成立，正式 leakage/QC/calibration/artifact 门禁未闭环。
-- 不预定推荐架构：先完成 GTN floor，再由 S1/J1/R1 matched ablation 决定。
-- `hit@8 >= 0.85` 必须同时报告绝对校准量、完整 cohort 和 CI；60% 目标数据
-  不视为 few-shot。
+- causal steady-state ingress、checkpoint 输入签名和 `hit@R` 计算链已实现；每次准确率
+  结论仍须由该次 cache/checkpoint/prediction artifacts 完整审计。
+- GTN full-unfold 三核比较已完成；K35 是 development default、K65 是 unresolved
+  control，不产生产品确认。
+- 只有成人 BrainSync 9-choice、多 target-switch、later independent decisions 才能裁决
+  `hit@R >= 0.90`。必须同时报告固定绝对校准量、完整 cohort、失败分母和 subject-cluster
+  CI；GTN/BI 结果及 60% 目标数据都不得写成产品 90% 或 few-shot 达成。

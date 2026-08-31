@@ -1,0 +1,65 @@
+{
+  "schema": "n2p3_tempered_evidence_ablation/2",
+  "frozen_before_analytic_cloud_results": true,
+  "analytic_manifest_sha256": "dca5289e0e857a589979f7613177e180f03915b485a6999060ef330f80fe4914",
+  "analytic_result_sha256": "93bc973668dfe033b06a41f26972d91887a1fc0ca3fc28cfe531a29c842aa754",
+  "learned_arm_registered_after_analytic_baseline": true,
+  "frozen_before_learned_cloud_results": true,
+  "frozen_at": "2026-08-31T18:50:00+08:00",
+  "question": "Can all-evidence count tempering reduce candidate occurrence-count bias without discarding trials?",
+  "formula": "score_d = weighted_mean_d * effective_count_d ** count_power",
+  "weights": "uniform in this first matched experiment; no test label or correctness enters a weight",
+  "kernels": [35, 65],
+  "kernel_roles": {
+    "35": "provisional engineering default",
+    "65": "unresolved broad control"
+  },
+  "seeds": [20260828, 20260829, 20260830],
+  "blocks": [0, 1, 2, 3],
+  "requested_subjects": 245,
+  "count_powers": [0.0, 0.25, 0.5, 0.75, 1.0],
+  "primary_count_power": 0.5,
+  "compatibility_endpoints": {
+    "0.0": "raw-all mean",
+    "1.0": "raw-all sum"
+  },
+  "primary_contrasts": [
+    "K35: beta0.5 - beta1.0",
+    "K35: beta0.5 - beta0.0"
+  ],
+  "secondary": [
+    "K65 replication",
+    "beta 0.25 and 0.75 sensitivity",
+    "four-block cross-fitted beta selection",
+    "fraction of predictions assigned to a maximum-count candidate"
+  ],
+  "learned_aggregator": {
+    "objective": "candidate_listwise_ce",
+    "crossfit": "train three frozen subject blocks and test the fourth; rotate four times",
+    "features": ["absolute calibrated LLR", "normalized candidate occurrence"],
+    "learned_parameters": ["count_power", "absolute-LLR weight", "occurrence weight", "gain"],
+    "epochs": 600,
+    "learning_rate": 0.03,
+    "weight_decay": 0.001,
+    "backbone_retraining": false,
+    "reason": "Retraining the unchanged trial classifier cannot affect a decision-only aggregation formula."
+  },
+  "independent_unit": "subject after averaging three seed correctness indicators",
+  "bootstrap_iterations": 100000,
+  "analysis_seed": 20260831,
+  "minimum_engineering_delta": 0.01,
+  "inference_scope": "GTN development only; conditional on frozen v4 checkpoints and ledgers",
+  "source_evidence": {
+    "v4_analysis_sha256": "1309c06793f044c44ecb64172561b6e631769530f1eb8e6f1a20365084b318ed",
+    "v4_evidence_index_sha256": "13fa51bf7b59ab608e756edbeae0a7032ddb8613ed07e62fc4d400803c910cb2",
+    "expected_beta1_raw_all": {
+      "35": 0.6870748299319728,
+      "65": 0.6693877551020408
+    }
+  },
+  "runtime_sha256": {
+    "experiments/run_tempered_evidence_ablation.py": "30134c27dc61be27b5ec2db26254aa85ba18dbc15ed2b75bc1a3c6c83b29e472",
+    "src/models/decision.py": "cdc9c09f0c17c19660100b600c4fb991c829e12e59ea4cc11f459857a99a19a3",
+    "src/transfer/evaluation.py": "4622e9c7a23d75cac72d2bf999a7ad73cb5173f38193c8081ca2633790a843d3"
+  }
+}

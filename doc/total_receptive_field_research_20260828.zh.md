@@ -2,7 +2,7 @@
 
 _日期化机制审计，2026-08-28；不改变当前模型结构或默认配置_
 
-状态：test-ready research appendix。科研状态与 GTN 晋升仍由
+状态：test-ready research appendix。科研状态、GTN development 与确认边界仍由
 [`research_program.zh.md`](research_program.zh.md) 管理。
 
 ---
@@ -25,8 +25,9 @@ candidate 的正权混合后也覆盖整段。
 有限样本归纳偏置”，不能说最终模型只看 414/789 ms。现有 K35 开发轨迹还同时改变
 参数量和 padding 比例，因此不能把性能变化归因于 RF。
 
-推荐先做 RF-preserving、parameter-preserving 和 tap-density 分离的机制矩阵，保存
-训练 checkpoint 后测 `.eval()` 推理态 ERF；只允许一个冻结候选进入 GTN。
+RF-preserving、parameter-preserving 和 tap-density 分离的 W2 机制矩阵已经完成。
+线性 `full_unfold + K35` 已作为临时工程默认；K65 保留 broad reference，K33 退出
+当前主线。GTN 结果只支持开发选择，不产生产品确认。
 
 ## 1. 研究问题与对象边界
 
@@ -228,7 +229,7 @@ samples 耦合。卷积权重和为零时可能发生数值抵消，但结构上
 
 ## 7. 待检验假设与竞争解释
 
-### H-RF：K35 的收益来自更局部的 basis
+### H-RF：历史 K35 假设认为收益来自更局部的 basis
 
 预测：在参数、tap 数、feature rate 和 readout 匹配后，缩短 RF 仍改善 inner-subject
 泛化与 jitter robustness；训练后 logit ERF 的 `r90` 变窄，branch ERF 分离增加。
@@ -248,10 +249,11 @@ samples 耦合。卷积权重和为零时可能发生数值抵消，但结构上
 预测：RF、参数量都相同，仅把 taps 从 shared ST 移到 branches，性能仍变化；此时
 “总 RF”不是充分解释。
 
-### H-NOISE：当前 K35 只是自适应开发选择
+### H-NOISE：K35 的旧领先可能只是自适应开发选择
 
-预测：在 paired seeds 和未参与 K 搜索的 inner folds 上差异不稳定。现有本地仓库没有
-可独立复核的 K35 screening records，所以该竞争解释尚未排除。
+W2 已保存 paired-seed inner-development records，但 planned contrasts 没有直接比较
+K35-K33 或 K35-K65。K35 在 A/B/C 中 mean inner AUC 最高，不能被 W2 排除；也不能
+仅凭 W2 事后排序不能冻结；后继三 seed all-evidence 已支持 K35 胜 K33，但未分离 K65。
 
 ## 8. 最小 matched 机制矩阵
 
@@ -261,7 +263,7 @@ samples 耦合。卷积权重和为零时可能发生数值抵消，但结构上
 | Arm | K0 / d / branches | branch RF | 参数 16ch / 3ch | 角色 |
 |---|---|---:|---:|---|
 | A | 65 / 1 / 5,17 | 84,132 | 1506 / 1298 | 当前 broad reference |
-| B | 35 / 1 / 5,17 | 54,102 | 1266 / 1058 | 当前 K35 bridge |
+| B | 35 / 1 / 5,17 | 54,102 | 1266 / 1058 | 旧 sensitivity 领先；当前比较臂 |
 | C | 33 / 1 / 5,17 | 52,100 | 1250 / 1042 | local support |
 | D | 33 / 2 / 5,17 | 84,132 | 1250 / 1042 | same taps, broad support |
 | E | 33 / 1 / 13,25 | 84,132 | 1506 / 1298 | same RF/params as A |
@@ -313,26 +315,28 @@ Gradients/occlusion 作为正交方法；单一 saliency 图不能决定机制�
 
 1. BI2014a 只作 grouped inner development，使用 paired folds、相同 QC、相同 updates、
    相同初始化映射和至少 3 seeds；不再读取其 outer result 做晋升。
-2. 先跑 A/C/D/E 和 B bridge，只检验三个 planned contrasts；seed 先在 subject 内聚合。
-3. 若 `C vs D` 不改善泛化或 jitter，停止“K35 因局部 RF 获益”的解释。
+2. W2 与后继三 seed准确率实验均已完成；当前采用 B/K35，保留 A/K65，停止 C/K33。
+3. 若 `C vs D` 不改善泛化或 jitter，停止“更短 RF 带来收益”的解释。
 4. 若 `E vs A` 有差异，转向 factorization/optimization；总 RF 不能单独解释。
-5. 若 B 只在参数、延迟、内存上非劣，称工程压缩，不称科学 RF 改进。
-6. 只冻结一个 RF 候选进入 GTN；GTN 前必须先让 evaluator 真正输出 subject-macro
-   `hit@R`。当前 `evaluate_candidate_selection()` 尚未消费 `repetition_indices`，不能用
-   overall hit 冒充 `hit@5`。
+5. 若三核 operational `hit@all_balanced` 差异低于 0.02 且 CI 支持非劣，按参数/延迟选择更短核；
+   不把工程选择写成科学 RF 改进。
+6. evaluator 已实现 all-balanced/raw-all/完整 `hit@R` 并消费真实 `repetition_indices`；缺候选、tie
+   和不完整 decision 进入分母。该工程门禁已完成。K33/K35/K65 的 GTN 比较仍只作
+   development，确认必须进入新的 target block 或成人 BrainSync 多 decision 数据。
 7. 最小有意义差值、非劣界和样本精度在看到新结果前预注册；本报告不从已用 BI outer
    数字反推方便阈值。
 
 ## 11. 对当前路线的判定
 
-- **保留** K35 为桥接候选，但撤销任何“已证明 RF 更合理”的表述；
-- **保留** K65 作为 broad reference，它的表达集合包含 K35；
+- **采用**线性 `full_unfold + K35`；K65 保留强对照，K33 退出主线；
+- **保留** K35 的旧 sensitivity 领先事实，但撤销任何“已证明 RF 更合理”的表述；
 - **停止** 用 local MST kernel span 解释完整 branch；
 - **停止** 把 LMBC feature mask 称为 raw pre/post isolation；
 - **已完成** A--E matched mechanism matrix 的 32-subject、2-seed inner-development
   W2；结果与冻结决定见 `doc/receptive_field_comparison_w2_20260828.zh.md`；
-- **最终仍由 GTN 裁决**，但只有在 `hit@R` evaluator、cache、reference 和 normalization
-  Gate 0 闭合后才能运行。
+- GTN 只能继续裁决开发方向；确认性 RF 结论必须进入新的 target block 或成人
+  BrainSync 多 decision 数据。`hit@R` evaluator 已闭合；每次运行仍须审计 cache、
+  reference、normalization 和完整结果制品。
 
 ## 参考文献
 

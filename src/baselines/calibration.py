@@ -5,8 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-from scipy.optimize import minimize_scalar
-from sklearn.linear_model import LogisticRegression
+from scipy.optimize import minimize, minimize_scalar
 from sklearn.metrics import balanced_accuracy_score, roc_curve
 
 
@@ -18,6 +17,9 @@ class LogitCalibration:
     llr_intercept: float
     source: str
     n_samples: int
+    mode: str = "monotone_platt_llr"
+    temperature: float | None = None
+    offset: float | None = None
 
     def to_llr(self, logits: np.ndarray) -> np.ndarray:
         values = np.asarray(logits, dtype=float)
@@ -120,26 +122,87 @@ def fit_logit_calibration(
     y: np.ndarray,
     *,
     source: str,
+    pos_weight: float | None = None,
+    train_prior: float | None = None,
 ) -> LogitCalibration:
-    """Fit threshold and a prior-corrected Platt map from score to LLR."""
+    """Fit an order-preserving score-to-LLR map on non-test observations.
+
+    Weighted-cross-entropy models have a known analytic offset, so only a
+    strictly positive temperature is fitted. Other estimators use a monotone
+    Platt map whose slope is parameterized as ``exp(log_slope)``. A noisy inner
+    validation set can therefore attenuate an unhelpful score toward zero, but
+    can never reverse candidate rankings.
+    """
 
     logits = np.asarray(logits, dtype=float).reshape(-1)
     y = np.asarray(y).astype(int).reshape(-1)
     threshold, bacc = learn_balanced_threshold(logits, y)
+    if (pos_weight is None) != (train_prior is None):
+        raise ValueError("pos_weight and train_prior must be supplied together.")
+    if pos_weight is not None and train_prior is not None:
+        weighted = fit_weighted_logit_temperature(
+            logits,
+            y,
+            pos_weight=float(pos_weight),
+            train_prior=float(train_prior),
+            source=source,
+        )
+        slope = 1.0 / weighted.temperature
+        intercept = -weighted.offset / weighted.temperature
+        return LogitCalibration(
+            threshold=threshold,
+            threshold_balanced_acc=bacc,
+            llr_slope=float(slope),
+            llr_intercept=float(intercept),
+            source=str(source),
+            n_samples=int(len(y)),
+            mode="weighted_ce_positive_temperature_llr",
+            temperature=float(weighted.temperature),
+            offset=float(weighted.offset),
+        )
 
-    # Platt's decision function estimates posterior log-odds. Subtracting the
-    # empirical class-prior log-odds yields an evidence LLR suitable for sums.
-    platt = LogisticRegression(C=1.0, solver="lbfgs", random_state=0)
-    platt.fit(logits[:, None], y)
     prior = float(np.clip(y.mean(), 1e-6, 1.0 - 1e-6))
     prior_log_odds = float(np.log(prior / (1.0 - prior)))
+
+    score_center = float(np.mean(logits))
+    score_scale = max(float(np.std(logits)), 1e-6)
+    normalized_logits = (logits - score_center) / score_scale
+
+    def objective(parameters: np.ndarray) -> float:
+        normalized_slope = float(np.exp(parameters[0]))
+        posterior_log_odds = (
+            normalized_slope * normalized_logits + float(parameters[1])
+        )
+        nll = np.mean(
+            np.logaddexp(0.0, posterior_log_odds) - y * posterior_log_odds
+        )
+        # Match the former C=1 Platt fit's finite-sample slope regularization
+        # while leaving the intercept unpenalized.
+        return float(nll + 0.5 * normalized_slope**2 / len(y))
+
+    optimum = minimize(
+        objective,
+        x0=np.asarray([0.0, prior_log_odds], dtype=float),
+        method="L-BFGS-B",
+        bounds=((np.log(1e-6), np.log(1e3)), (-50.0, 50.0)),
+    )
+    if not optimum.success or not np.isfinite(optimum.fun):
+        raise RuntimeError("monotone Platt calibration optimization failed.")
+    slope = float(np.exp(optimum.x[0]) / score_scale)
+    posterior_intercept = float(optimum.x[1] - slope * score_center)
+    llr_intercept = posterior_intercept - prior_log_odds
+    temperature = 1.0 / slope
+    offset = -llr_intercept / slope
     return LogitCalibration(
         threshold=threshold,
         threshold_balanced_acc=bacc,
-        llr_slope=float(platt.coef_[0, 0]),
-        llr_intercept=float(platt.intercept_[0] - prior_log_odds),
+        llr_slope=slope,
+        llr_intercept=llr_intercept,
         source=str(source),
         n_samples=int(len(y)),
+        mode="monotone_platt_llr",
+        temperature=float(temperature),
+        offset=float(offset),
     )
 
 

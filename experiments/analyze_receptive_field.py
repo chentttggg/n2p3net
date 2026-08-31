@@ -22,7 +22,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from models.n2p3net import (  # noqa: E402
-    DEFAULT_N2P3_ARCHITECTURE,
+    BROAD_REFERENCE_N2P3_ARCHITECTURE,
     TUNED_FULL_UNFOLD_ARCHITECTURE,
     stacked_temporal_receptive_field_samples,
 )
@@ -470,10 +470,10 @@ def main() -> None:
     specs = (
         ArchitectureSpec(
             "K65",
-            DEFAULT_N2P3_ARCHITECTURE.temporal_kernel_size,
-            DEFAULT_N2P3_ARCHITECTURE.st_pool_size,
-            DEFAULT_N2P3_ARCHITECTURE.mst_kernel_sizes,
-            DEFAULT_N2P3_ARCHITECTURE.mst_pool_size,
+            BROAD_REFERENCE_N2P3_ARCHITECTURE.temporal_kernel_size,
+            BROAD_REFERENCE_N2P3_ARCHITECTURE.st_pool_size,
+            BROAD_REFERENCE_N2P3_ARCHITECTURE.mst_kernel_sizes,
+            BROAD_REFERENCE_N2P3_ARCHITECTURE.mst_pool_size,
         ),
         ArchitectureSpec(
             "K35",

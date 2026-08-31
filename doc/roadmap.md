@@ -1,17 +1,20 @@
 # Performance Roadmap
 
-This file is a compact status index. The authoritative living plan, equations,
-counterexamples, GTN protocol, and stop rules are in `research_program.zh.md`.
+权威总纲为 `research_program.zh.md`。准确率是当前第一目标；算力只在影响部署时
+成为约束。
 
-| Stage | Status | Exit condition |
+| Stage | 当前状态 | Exit condition |
 |---|---|---|
-| Data/LOSO contract | implemented, still audited | executable fold/attestation checks stay green |
-| Classical and compact baselines | implemented | matched GTN chronological floor exists |
-| BI2014a architecture screen | complete, exploratory only | no further BI outer-test tuning |
-| GTN causal 9-choice protocol | prototype, Gate 0 incomplete | current 128 Hz cache, embargo, chronological inner validation, QC/calibration and full ledger |
-| Architecture confirmation | not started | 3-seed GTN paired comparison of classical, EEGNet, MS/full-unfold and LMBC |
-| Transfer/SSL | prototype only | target-excluded checkpoints beat scratch and xDAWN at equal absolute calibration budget |
-| Robustness/deployment | not started | jitter/channel/reference stress, latency, memory and abstain gates pass |
+| 输入/事件硬合同 | causal steady-state v2/v4 与 4 个真实 cache 已完成独立审计 | 保持 SHA/CRC/ledger 门禁 |
+| GTN zero-shot | v4 checkpoint + all-evidence candidate mean：K35/K65=0.714/0.683；仍远低于 0.90 | K35 临时默认，K65 保留对照；不再用 K33 扩展搜索 |
+| GTN decision-aligned fine-tune | 2 kernel x 3 seed x 4 block、30 epoch 全源 EEG 已完成；K35/K65 learned=0.688/0.676，均未胜各自 no-fine mean | 当前联合微调 recipe 不晋升；默认保留 source-supervised checkpoint + fixed mean |
+| GTN oracle proxy | 仅机制诊断 | 永不用于未知数字 90% |
+| BI cross-decision calibration | repetition/boundary/split 已修；raw source 缺失，candidate-v2 blocked，无性能结果 | 补 raw 后前 K 已知 decisions -> 后续未知 decisions 跑通 |
+| Signal recipe | 2x2 已完成；冻结 0.1 Hz/1200 ms，source QC=100 uV | 新 target block 前不再用同一 GTN cohort选 signal recipe |
+| Source transfer | source full refit/checkpoint signature 已实现；full-unfold+K35 临时默认；强联合微调有负迁移 | 进入合法 cross-decision personalization，并把 full-fine 作为高风险对照 |
+| Unlabelled target adaptation | 未开始 | pseudo/latent target 胜 zero-shot 且过反例 |
+| BrainSync adult 9-choice | 数据合同已有，正式多 decision 数据未采 | subject-macro hit@R >=0.90，失败进入分母 |
+| Confirmation/deployment | 未开始 | untouched cohort CI、覆盖、鲁棒、延迟、内存全部通过 |
 
-No current model is a confirmatory or deployment champion. GTN `hit@R`, not
-BI2014a trial AUC alone, is the final promotion criterion.
+当前没有确认冠军或部署冠军。GTN 是儿童 3 导、每人一次 selection 的开发集；
+最终 90% 只能由成人 BrainSync 多目标、多独立 decision/session 裁决。

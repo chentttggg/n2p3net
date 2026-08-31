@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from data.contract import DEFAULT_GTN_DATA_CONTRACT
+from data.contract import (
+    DEFAULT_GTN_DATA_CONTRACT,
+    GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
+    PAPER_GTN_CAUSAL_DATA_CONTRACT,
+    PAPER_GTN_DATA_CONTRACT,
+)
 from data.epochs import EpochDataset, PreprocessingSpec
 from data.events import (
     ScheduledEventTimeline,
@@ -31,6 +36,44 @@ GTN_LMBC_PREPROCESSING = PreprocessingSpec(
     baseline_mode=DEFAULT_GTN_DATA_CONTRACT.baseline_mode,
     reject_threshold_v=None,
 )
+
+GTN_COHORT_CONTRACTS = {
+    "default": DEFAULT_GTN_DATA_CONTRACT,
+    "gtn": GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
+    "gtn_paper_offline": PAPER_GTN_DATA_CONTRACT,
+    "gtn_paper": PAPER_GTN_CAUSAL_DATA_CONTRACT,
+}
+
+
+def gtn_preprocessing_for_cohort(cohort: str = "default") -> PreprocessingSpec:
+    """Resolve one GTN cohort name to its executable preprocessing spec.
+
+    ``default``/``gtn`` select 0.1 Hz offline/causal profiles;
+    ``gtn_paper_offline``/``gtn_paper`` select the 0.5 Hz pair. Preparing a
+    chronological cache requires a causal profile rather than restating phase
+    and initial-state fields on every command line.
+    """
+
+    try:
+        contract = GTN_COHORT_CONTRACTS[cohort]
+    except KeyError:
+        raise ValueError(
+            f"Unknown GTN cohort {cohort!r}; expected one of {sorted(GTN_COHORT_CONTRACTS)}."
+        ) from None
+    return replace(
+        GTN_LMBC_PREPROCESSING,
+        name=contract.name,
+        sfreq=contract.sample_rate_hz,
+        l_freq=contract.l_freq,
+        h_freq=contract.h_freq,
+        tmin_ms=contract.tmin_ms,
+        tmax_ms=contract.tmax_ms,
+        n_times=contract.n_times,
+        baseline_mode=contract.baseline_mode,
+        signal_unit=contract.signal_unit,
+        filter_phase=contract.filter_phase,
+        causal_iir_initial_state=contract.causal_iir_initial_state,
+    )
 
 
 @dataclass(frozen=True)
@@ -104,7 +147,7 @@ def _prepare_gtn_experiment(
             "gtn_nix_source_event_samples;epoched_resample;"
             "epoch_right_edge;"
             + (
-                "causal_forward_preprocessing"
+                "causal_forward_steady_state_preprocessing"
                 if result.online_causal
                 else "acausal_zero_phase_preprocessing"
             )
@@ -164,6 +207,7 @@ def _preprocess_gtn_experiment(
         filter_method=preprocessing.filter_method,
         filter_order=preprocessing.filter_order,
         filter_phase=preprocessing.filter_phase,
+        causal_iir_initial_state=preprocessing.causal_iir_initial_state,
         resample_domain=preprocessing.resample_domain,
         resample_method=preprocessing.resample_method,
         resample_npad=preprocessing.resample_npad,
@@ -255,6 +299,7 @@ def build_gtn_epoch_dataset(
             },
             "signal_unit": preprocessing.signal_unit,
             "artifact_rejection": {"method": "fold_local_ptp_cv"},
+            "causal_iir_initial_state": preprocessing.causal_iir_initial_state,
         },
     )
     dataset.validate(require_labels=True)

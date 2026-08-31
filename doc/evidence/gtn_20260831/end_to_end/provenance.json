@@ -1,0 +1,23 @@
+{
+  "schema": "n2p3_end_to_end_tempered_provenance/1",
+  "completed_at": "2026-09-01T00:08:00+08:00",
+  "hardware": "NVIDIA GeForce RTX 5090 32607 MiB",
+  "execution": {
+    "runs": 24,
+    "kernels": [35, 65],
+    "seeds": [20260828, 20260829, 20260830],
+    "blocks": [0, 1, 2, 3],
+    "epochs_per_run": 30,
+    "maximum_parallel_jobs": 8
+  },
+  "sha256": {
+    "paired_analysis.json": "21ffcbf0aded470e7cdcdb7bd359d92c31c734e4f873ce0d33aa462cd98e4aa5",
+    "analysis.json": "3420a0178c584f6eaa414889a6ee4f926c664036580e505080ba96cbbfc47b6b",
+    "experiments/analyze_end_to_end_tempered_results.py": "f9f7276731801a7166e4834f49edc0860e366344b923d585cc7c942900efb6c3",
+    "experiments/run_end_to_end_tempered_finetune.py": "dafea6da33bb7353e29d646f8dd2ab943a780fbcfe70923f86f554798e449b49",
+    "experiments/end_to_end_tempered_finetune_manifest_20260831.json": "70e4ca5835128ea37b7c8e7e36c5294b0ea9d068b8de58b9e911bdfdf2531a1d",
+    "experiments/end_to_end_tempered_runtime_20260831.sha256": "d8978c3b7ec7df57ab8fb56808beca9f96e504cbace269860fe45f85cf5fc1fb",
+    "downloaded_compact_archive": "ae3c5ad6fb06f584d215a4bf01dd1c2e905a02e29d996c8aa432c19c6e22275c"
+  },
+  "evidence_scope": "GTN development cohort only; conditional on the frozen subjects, blocks, seeds, base checkpoints, and trial ledgers"
+}

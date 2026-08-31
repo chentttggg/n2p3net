@@ -25,6 +25,7 @@ class EEGDataContract:
     filter_method: str = "iir"
     filter_order: int = 4
     filter_phase: str = "zero"
+    causal_iir_initial_state: str = "not_applicable"
     resample_domain: str = "epoched"
     resample_method: str = "fft"
     resample_npad: str = "auto"
@@ -37,6 +38,7 @@ class EEGDataContract:
 
 
 DEFAULT_P300_DATA_CONTRACT = EEGDataContract(name="p300_ms_eegnet_input_v2")
+CAUSAL_IIR_INITIAL_STATE = "steady_state_first_sample"
 # GTN is a 7-17 year-old, 3-channel cohort: its P300 energy sits at 1-4 Hz and
 # its positive component can extend to ~1000 ms. The controlled LOSO ablation
 # of 2026-08-30 (doc/gtn_accuracy_gap_audit_20260830.zh.md) measured the
@@ -47,26 +49,34 @@ DEFAULT_GTN_DATA_CONTRACT = EEGDataContract(
     l_freq=0.1,
     tmax_ms=1200.0,
 )
+PAPER_GTN_DATA_CONTRACT = EEGDataContract(
+    name="gtn_paper_offline_v1",
+    l_freq=0.5,
+    tmax_ms=1200.0,
+)
 # Causal one-pass filtering for within-subject prefix/suffix protocols.
 # Zero-phase filtering would smear future test-period samples into training
 # epochs; a chronological single-subject split therefore requires this contract.
 SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT = EEGDataContract(
-    name="p300_single_subject_causal_v1",
+    name="p300_single_subject_causal_v2",
     filter_phase="forward",
+    causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
 )
 GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT = EEGDataContract(
-    name="gtn_single_subject_causal_v3",
+    name="gtn_single_subject_causal_v4",
     l_freq=0.1,
     tmax_ms=1200.0,
     filter_phase="forward",
+    causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
 )
 # Paper-aligned GTN causal contract (the source study high-passes at 0.5 Hz);
 # used only for SOTA-comparison anchors, not for our performance claims.
 PAPER_GTN_CAUSAL_DATA_CONTRACT = EEGDataContract(
-    name="gtn_paper_causal_v1",
+    name="gtn_paper_causal_v2",
     l_freq=0.5,
     tmax_ms=1200.0,
     filter_phase="forward",
+    causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
 )
 
 
@@ -88,6 +98,7 @@ def assert_p300_input_contract(
         "filter_method": expected.filter_method,
         "filter_order": expected.filter_order,
         "filter_phase": expected.filter_phase,
+        "causal_iir_initial_state": expected.causal_iir_initial_state,
         "resample_domain": expected.resample_domain,
         "resample_method": expected.resample_method,
         "resample_npad": expected.resample_npad,

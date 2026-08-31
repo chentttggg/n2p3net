@@ -52,4 +52,6 @@ def test_gtn_preparation_preserves_the_complete_nine_choice_ledger(tmp_path) -> 
 
     result.online_causal = True
     causal = _prepare_gtn_experiment(experiment, gtn, result)
-    assert causal.timeline.timing_source.endswith("causal_forward_preprocessing")
+    assert causal.timeline.timing_source.endswith(
+        "causal_forward_steady_state_preprocessing"
+    )

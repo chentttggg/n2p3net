@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 
 import numpy as np
@@ -22,8 +22,21 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from data.epochs import load_epoch_dataset  # noqa: E402
-from models.n2p3net import N2P3Net  # noqa: E402
+from data.contract import (  # noqa: E402
+    DEFAULT_P300_DATA_CONTRACT,
+    GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
+    PAPER_GTN_CAUSAL_DATA_CONTRACT,
+    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+    assert_p300_input_contract,
+)
+from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
+from models.n2p3net import (  # noqa: E402
+    DEFAULT_N2P3_ARCHITECTURE,
+    DEFAULT_N2P3_POOLING_MODE,
+    POOLING_MODES,
+    N2P3ArchitectureConfig,
+    N2P3Net,
+)
 from train.device import get_device  # noqa: E402
 from train.runtime import GpuPerformanceScheduler, MatrixBatchSource  # noqa: E402
 from transfer.losses import ReconstructionLossConfig  # noqa: E402
@@ -71,11 +84,22 @@ def main() -> None:
     parser.add_argument("--spectral-weight", type=float, default=1.0)
     parser.add_argument("--band-weight-estimation-samples", type=int, default=4096)
     parser.add_argument("--standardize", action="store_true")
+    parser.add_argument(
+        "--pooling-mode",
+        choices=sorted(POOLING_MODES - {"latency_marginal_contrast"}),
+        default=DEFAULT_N2P3_POOLING_MODE,
+        help="Readout geometry retained in the transfer checkpoint.",
+    )
+    parser.add_argument(
+        "--temporal-kernel-size",
+        type=int,
+        default=DEFAULT_N2P3_ARCHITECTURE.temporal_kernel_size,
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--device", default="auto")
     parser.add_argument(
         "--cohort",
-        choices=("default", "gtn"),
+        choices=("default", "p300_causal", "gtn", "gtn_paper"),
         default="default",
         help=(
             "Causal contract family asserted for forward-phase source caches: "
@@ -83,19 +107,26 @@ def main() -> None:
             "'default' enforces 2 Hz / 800 ms."
         ),
     )
+    parser.add_argument(
+        "--tmax-ms",
+        type=float,
+        default=None,
+        help="Explicit epoch-end recipe override for matched factorials.",
+    )
     args = parser.parse_args()
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.source_cache, require_labels=False, validation="attested")
-    if dataset.preprocessing.filter_phase == "forward":
-        from data.contract import assert_causal_p300_input_contract, assert_p300_input_contract
-
-        from data.contract import GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT  # noqa: E402
-
-        if args.cohort == "gtn":
-            assert_p300_input_contract(dataset.preprocessing, GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT)
-        else:
-            assert_causal_p300_input_contract(dataset.preprocessing)
+    source_cache_sha256 = str(read_epoch_cache_attestation(args.source_cache)["sha256"])
+    expected_contract = {
+        "default": DEFAULT_P300_DATA_CONTRACT,
+        "p300_causal": SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+        "gtn": GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
+        "gtn_paper": PAPER_GTN_CAUSAL_DATA_CONTRACT,
+    }[args.cohort]
+    if args.tmax_ms is not None:
+        expected_contract = replace(expected_contract, tmax_ms=float(args.tmax_ms))
+    assert_p300_input_contract(dataset.preprocessing, expected_contract)
     holdout = {item.strip() for item in args.holdout_subjects.split(",") if item.strip()}
     source_rows, all_subjects = _source_training_rows(dataset.subject_ids, holdout)
     if not source_rows.any():
@@ -113,7 +144,10 @@ def main() -> None:
         n_times=dataset.n_times,
         sfreq=dataset.preprocessing.sfreq,
         tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
-        pooling_mode="ms_flatten",
+        pooling_mode=args.pooling_mode,
+        **N2P3ArchitectureConfig(
+            temporal_kernel_size=args.temporal_kernel_size
+        ).model_kwargs(),
     ).to(device)
     config = PretrainingConfig(
         mask=MaskingConfig(
@@ -197,13 +231,41 @@ def main() -> None:
         "source_cache": str(Path(args.source_cache).resolve()),
         "holdout_subjects": sorted(holdout),
         "source_dataset_name": dataset.name,
+        "n_channels": int(dataset.n_channels),
+        "n_times": int(dataset.n_times),
+        "input_sample_rate_hz": float(dataset.preprocessing.sfreq),
+        "input_tmin_s": float(dataset.preprocessing.tmin_ms) / 1000.0,
+        "input_preprocessing": asdict(dataset.preprocessing),
+        "input_channel_names": list(dataset.channel_names),
+        "input_source_reference": dataset.provenance.get("source_reference"),
+        "source_cache_sha256": source_cache_sha256,
+        "architecture": trunk.architecture_record(),
+        "classifier_trained": False,
+        "model_config": {
+            "pooling_mode": args.pooling_mode,
+            "temporal_kernel_size": args.temporal_kernel_size,
+        },
         "source_subjects": sorted(all_subjects),
         "training_subjects": sorted(all_subjects - holdout),
         "training_subject_keys": [
             f"{dataset.name}\0{subject}" for subject in sorted(all_subjects - holdout)
         ],
+        "training_cache_subject_keys": [
+            f"{source_cache_sha256}\0{subject}"
+            for subject in sorted(all_subjects - holdout)
+        ],
         "n_source_epochs": int(source_rows.sum()),
         "standardized": args.standardize,
+        "input_mean": (
+            np.asarray(mean, dtype=np.float32).squeeze().tolist()
+            if args.standardize
+            else np.zeros(dataset.n_channels, dtype=np.float32).tolist()
+        ),
+        "input_std": (
+            np.asarray(std, dtype=np.float32).squeeze().tolist()
+            if args.standardize
+            else np.ones(dataset.n_channels, dtype=np.float32).tolist()
+        ),
         "runtime": {
             "device": str(device),
             "preloaded": source.preloaded,

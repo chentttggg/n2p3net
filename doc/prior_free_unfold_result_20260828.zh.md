@@ -1,7 +1,8 @@
 # BI2014a 无先验完整时序展开：matched 消融结果
 
 日期：2026-08-28
-状态：immutable single-dataset exploratory result；不得单独触发默认头晋升
+状态：immutable single-dataset mechanism result；该预注册主比较已用于采用线性
+`full_unfold` 读出，但不构成成人 BrainSync 准确率确认
 预注册：`doc/prior_free_unfolding.zh.md`
 结果目录：`experiments/runs/bi2014a_prior_free_unfold_ablation_20260828_r1/`
 
@@ -14,10 +15,11 @@
    相对 `full_unfold` 都不改善，二阶在 AUC 上还显著变差（Δ=−0.0044, p=0.0458）。
    因此增益来自"保留主干时序分辨率"，不是来自容量或非线性。
 3. **对 EEGNet 的优势仅存在于 AUC。** ΔAUC=+0.0056 (p=0.035)，BACC 打平
-   （Δ=+0.0020, p=0.443）。**在多种子确认之前，不得写"full_unfold 取代 EEGNet
-   成为总冠军"。**
-4. **将 `full_unfold` 注册为 GTN 候选，不晋升项目默认头。** 单个 BI2014a
-   数据集只能支持机制方向；GTN 9-choice 和独立跨数据方向一致性才有晋升权。
+   （Δ=+0.0020, p=0.443）。**在新的 untouched target block 或成人 BrainSync
+   确认之前，不得写"full_unfold 取代 EEGNet 成为总冠军"。**
+4. **采用线性 `full_unfold` 为项目主读出。** 该决定只冻结“保留完整时序坐标、
+   不增加额外非线性”的工程架构；它不宣称 `full_unfold` 是所有数据集的准确率冠军。
+   GTN 只能检验方向迁移，产品准确率确认属于成人 BrainSync 多 target-switch decisions。
 
 ## 1. 协议
 
@@ -75,8 +77,9 @@
    未获支持**。
 4. **MLP 机制对照** → 无增量。既然二阶与 MLP 都不改善，排除"只是容量变大"的
    解释，也排除"一般非线性有效"的解释。
-5. **完整展开是否退化** → 未退化。因此进入后续候选集；软件默认仍保持
-   `ms_flatten`，直到 GTN 确认。
+5. **完整展开是否退化** → 未退化。因此冻结线性 `full_unfold` 为 N2P3-Net
+   默认读出；`ms_flatten` 保留为显式 MS-EEGNet/结构基线。GTN 后续仍只提供开发
+   证据，产品确认需成人 BrainSync 新 target-switch decisions。
 
 ## 5. 脆性说明（晋升前必须读完）
 
@@ -87,7 +90,8 @@
 
 - 只有预注册的一对一主判据（`full_unfold` vs `ms_flatten`）可以不做全族校正；
 - 其余对比（尤其对 EEGNet 的 AUC）只能作为方向性证据，不能单独作为晋升依据；
-- 晋升最终需要**多种子确认**，而不是在这张表上继续挖掘。
+- 多种子只能提高当前开发效应估计的稳定性；晋升仍需新的 untouched target block
+  或成人 BrainSync 多 target-switch decisions，不能在这张表上继续挖掘。
 
 ### 5.2 重跑噪声底
 
@@ -134,12 +138,13 @@ QC 策略本身一致。故上述差异只能来自 BF16 数值非确定性与�
 
 ## 7. 未决事项
 
-1. **GTN 多种子确认**：至少 3 个 seed 的 `full_unfold`、`eegnet`、`ms_flatten`
-   在 chronological 9-choice 上配对比较。继续读取 BI outer 不能恢复独立确认性。
-2. **代码默认头未晋升**：`src/train/factory.py` 的 `n2p3net_pooling_mode` 仍为
-   `ms_flatten`。多种子确认通过后再改。
-3. **文档状态**：入口已改为“BI 探索、GTN 最终”，历史 ablation 数字保持不变。
-4. **跨数据集未验证**：本轮为单数据集、单 seed 结论。GTN 与 BNCI 上的确认仍缺失。
+1. **后续比较**：GTN 已被多轮开发使用；至少 3 seeds 的架构比较只能继续作
+   development。确认需新 target block/BrainSync decisions。
+2. **代码默认已统一**：`DEFAULT_N2P3_POOLING_MODE`、factory 和 runners 都采用
+   linear `full_unfold`；`ms_flatten` 仅为显式结构基线。该工程采用不等于确认冠军，
+   产品准确率仍需成人 BrainSync。
+3. **文档状态**：本轮只保留为 BI 探索；GTN 也不再是 untouched 最终集。
+4. **跨数据集未验证**：本轮为单数据集、单 seed 结论；成人目标域确认仍缺失。
 
 ## 8. 复现方式
 

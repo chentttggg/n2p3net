@@ -312,6 +312,7 @@ def load_brainsync_session(
         filter_method=preprocessing.filter_method,
         filter_order=preprocessing.filter_order,
         filter_phase=preprocessing.filter_phase,
+        causal_iir_initial_state=preprocessing.causal_iir_initial_state,
         resample_domain=preprocessing.resample_domain,
         resample_method=preprocessing.resample_method,
         resample_npad=preprocessing.resample_npad,

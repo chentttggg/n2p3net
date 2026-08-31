@@ -46,6 +46,16 @@ BI2014A_CHANNELS = (
 )
 _FLASH_COLUMN = 17
 _LABEL_COLUMN = 18
+# The public BI2014a Event stream retains experiment/session and game-level
+# control markers in addition to the 20..85 flash codes. Code 100 starts a new
+# recorded game session; code 104 closes a level or its forced restart after
+# the attempt budget. Either marker is a hard target-episode boundary even when
+# the next level happens to use the same target row/column pair.
+_SESSION_START_CODE = 100
+_LEVEL_OR_RESTART_BOUNDARY_CODE = 104
+_SELECTION_BOUNDARY_CODES = frozenset(
+    {_SESSION_START_CODE, _LEVEL_OR_RESTART_BOUNDARY_CODE}
+)
 
 
 @dataclass(frozen=True)
@@ -59,7 +69,9 @@ class BI2014ACandidateRecord:
     target_col: np.ndarray
     selection_id: np.ndarray
     repetition_index: np.ndarray
+    selection_boundary_reason: np.ndarray
     n_repetitions: int
+    n_explicit_boundaries: int
     dropped_tail_flashes: int = 0
 
 
@@ -117,9 +129,12 @@ def recover_bi2014a_candidates(
     target_col = np.full(n_repetitions, -1, dtype=np.int64)
     selection_id = np.empty(len(flash_samples), dtype=object)
     repetition_index = np.empty(len(flash_samples), dtype=np.int64)
+    selection_boundary_reason = np.empty(len(flash_samples), dtype=object)
 
     previous_pair: tuple[int, int] | None = None
     active_selection = 0
+    active_repetition = -1
+    explicit_boundary_count = 0
 
     for rep in range(n_repetitions):
         start = rep * 12
@@ -133,9 +148,47 @@ def recover_bi2014a_candidates(
             raise ValueError(f"{subject_dir.name}: repetition {rep} has invalid flash structure.")
 
         pair = (int(t_row_codes[0] - 60), int(t_col_codes[0] - 80))
-        if previous_pair != pair:
+        span_start = int(flash_samples[start])
+        span_stop = int(flash_samples[stop - 1]) + 1
+        internal_markers = _SELECTION_BOUNDARY_CODES.intersection(
+            flash_code[span_start:span_stop].tolist()
+        )
+        if internal_markers:
+            raise ValueError(
+                f"{subject_dir.name}: repetition {rep} contains selection-boundary "
+                f"markers {sorted(internal_markers)} inside its 12-flash block."
+            )
+
+        explicit_markers: tuple[int, ...] = ()
+        if rep > 0:
+            previous_flash = int(flash_samples[start - 1])
+            current_flash = int(flash_samples[start])
+            explicit_markers = tuple(
+                sorted(
+                    _SELECTION_BOUNDARY_CODES.intersection(
+                        flash_code[previous_flash + 1 : current_flash].tolist()
+                    )
+                )
+            )
+        pair_changed = previous_pair is not None and previous_pair != pair
+        starts_selection = previous_pair is None or pair_changed or bool(explicit_markers)
+        if starts_selection:
             active_selection += 1
-            previous_pair = pair
+            active_repetition = 0
+            explicit_boundary_count += int(bool(explicit_markers))
+        else:
+            active_repetition += 1
+        reasons: list[str] = []
+        if previous_pair is None:
+            reasons.append("recording_start")
+        if _SESSION_START_CODE in explicit_markers:
+            reasons.append("raw_session_start_code_100")
+        if _LEVEL_OR_RESTART_BOUNDARY_CODE in explicit_markers:
+            reasons.append("raw_level_or_restart_code_104")
+        if pair_changed:
+            reasons.append("target_pair_change")
+        boundary_reason = "+".join(reasons) if reasons else "same_selection_repetition"
+        previous_pair = pair
         target_row[rep] = pair[0]
         target_col[rep] = pair[1]
 
@@ -152,7 +205,8 @@ def recover_bi2014a_candidates(
             else:
                 raise AssertionError(f"unexpected flash code {code}")
             selection_id[global_idx] = f"{subject_dir.name}:selection{active_selection}"
-            repetition_index[global_idx] = int(np.count_nonzero(selection_id[start : global_idx + 1] == selection_id[global_idx])) - 1
+            repetition_index[global_idx] = active_repetition
+            selection_boundary_reason[global_idx] = boundary_reason
 
     return BI2014ACandidateRecord(
         flash_sample=flash_samples,
@@ -164,7 +218,9 @@ def recover_bi2014a_candidates(
         target_col=np.repeat(target_col, 12),
         selection_id=np.asarray(selection_id),
         repetition_index=repetition_index,
+        selection_boundary_reason=np.asarray(selection_boundary_reason),
         n_repetitions=n_repetitions,
+        n_explicit_boundaries=explicit_boundary_count,
         dropped_tail_flashes=dropped_tail,
     )
 
@@ -211,6 +267,7 @@ def build_bi2014a_subject_dataset(
         filter_method=preprocessing.filter_method,
         filter_order=preprocessing.filter_order,
         filter_phase=preprocessing.filter_phase,
+        causal_iir_initial_state=preprocessing.causal_iir_initial_state,
         resample_domain=preprocessing.resample_domain,
         resample_method=preprocessing.resample_method,
         resample_npad=preprocessing.resample_npad,
@@ -242,6 +299,7 @@ def build_bi2014a_subject_dataset(
             "target_col": recovered.target_col[ordered],
             "selection_id": recovered.selection_id[ordered],
             "repetition_index": recovered.repetition_index[ordered],
+            "selection_boundary_reason": recovered.selection_boundary_reason[ordered],
             "acquisition_time_s": result.event_times_s[ordered],
         }
     )
@@ -250,6 +308,7 @@ def build_bi2014a_subject_dataset(
         subject_ids=np.repeat(subject_id, result.n_epochs),
         stimulus_ids=recovered.flash_code[ordered],
         onset_times_s=result.event_times_s[ordered],
+        evidence_available_times_s=result.evidence_available_times_s[ordered],
         group_ids=np.asarray(recovered.selection_id[ordered]),
         online_causal=result.online_causal,
         timing_source="bi2014a_raw_csv_flash_codes;epoched_resample",
@@ -281,6 +340,10 @@ def build_bi2014a_subject_dataset(
                 "n_nontargets": int(np.count_nonzero(recovered.target_label == 1)),
                 "n_repetitions": recovered.n_repetitions,
                 "candidate_grid": "6x6",
+                "selection_boundary_rule": (
+                    "target_pair_change_or_raw_session_100_or_level_restart_104"
+                ),
+                "n_explicit_boundaries": recovered.n_explicit_boundaries,
             },
         },
     )

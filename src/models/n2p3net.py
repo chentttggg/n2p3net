@@ -22,9 +22,11 @@ POOLING_MODES = frozenset(
         "latency_marginal_contrast",
     }
 )
+DEFAULT_N2P3_POOLING_MODE = "full_unfold"
 
 DEFAULT_ST_TEMPORAL_FILTERS = 8
-DEFAULT_ST_TEMPORAL_KERNEL_SIZE = 65
+DEFAULT_ST_TEMPORAL_KERNEL_SIZE = 35
+BROAD_REFERENCE_ST_TEMPORAL_KERNEL_SIZE = 65
 DEFAULT_ST_TEMPORAL_DILATION = 1
 DEFAULT_SPATIAL_DEPTH_MULTIPLIER = 2
 DEFAULT_ST_POOL_SIZE = 4
@@ -105,13 +107,14 @@ class N2P3ArchitectureConfig:
 
 
 DEFAULT_N2P3_ARCHITECTURE = N2P3ArchitectureConfig()
-TUNED_FULL_UNFOLD_SOURCE_SAMPLE_RATE_HZ = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz
-TUNED_FULL_UNFOLD_ARCHITECTURE = replace(
+BROAD_REFERENCE_N2P3_ARCHITECTURE = replace(
     DEFAULT_N2P3_ARCHITECTURE,
-    temporal_kernel_size=35,
+    temporal_kernel_size=BROAD_REFERENCE_ST_TEMPORAL_KERNEL_SIZE,
 )
+TUNED_FULL_UNFOLD_SOURCE_SAMPLE_RATE_HZ = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz
+TUNED_FULL_UNFOLD_ARCHITECTURE = DEFAULT_N2P3_ARCHITECTURE
 RF_MECHANISM_ARCHITECTURES: dict[str, N2P3ArchitectureConfig] = {
-    "A": DEFAULT_N2P3_ARCHITECTURE,
+    "A": BROAD_REFERENCE_N2P3_ARCHITECTURE,
     "B": TUNED_FULL_UNFOLD_ARCHITECTURE,
     "C": replace(DEFAULT_N2P3_ARCHITECTURE, temporal_kernel_size=33),
     "D": replace(
@@ -523,7 +526,7 @@ class N2P3Net(nn.Module):
         n_times: int | None = None,
         sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
         tmin_s: float = DEFAULT_P300_DATA_CONTRACT.tmin_ms / 1000.0,
-        pooling_mode: str = "ms_flatten",
+        pooling_mode: str = DEFAULT_N2P3_POOLING_MODE,
         evidence_window_ms: Sequence[float] = (250.0, 600.0),
         reference_window_ms: Sequence[float] = (-200.0, 0.0),
         latency_offsets_ms: Sequence[float] = (-100.0, -50.0, 0.0, 50.0, 100.0),

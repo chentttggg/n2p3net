@@ -14,7 +14,9 @@ from baselines.n2p3net import N2P3NetBaseline
 from baselines.riemann import XdawnRiemann
 from data.epochs import EpochDataset
 from models.n2p3net import (
+    BROAD_REFERENCE_N2P3_ARCHITECTURE,
     DEFAULT_N2P3_ARCHITECTURE,
+    DEFAULT_N2P3_POOLING_MODE,
     TUNED_FULL_UNFOLD_ARCHITECTURE,
     TUNED_FULL_UNFOLD_SOURCE_SAMPLE_RATE_HZ,
     N2P3ArchitectureConfig,
@@ -80,7 +82,7 @@ def build_binary_model(
     deep_config_overrides: dict[str, Any] | None = None,
     device: torch.device | None = None,
     runtime: GpuPerformanceScheduler | None = None,
-    n2p3net_pooling_mode: str = "ms_flatten",
+    n2p3net_pooling_mode: str = DEFAULT_N2P3_POOLING_MODE,
     n2p3net_architecture: N2P3ArchitectureConfig = DEFAULT_N2P3_ARCHITECTURE,
 ):
     """Return one candidate using only the data and performance contracts."""
@@ -107,15 +109,20 @@ def build_binary_model(
     )
     if key == "n2p3net" or key in N2P3_POOLING_BY_MODEL:
         pooling_mode = N2P3_POOLING_BY_MODEL.get(key, n2p3net_pooling_mode)
-        architecture = (
-            scale_architecture_preserving_spans(
+        if key == "ms_eegnet":
+            architecture = scale_architecture_preserving_spans(
+                BROAD_REFERENCE_N2P3_ARCHITECTURE,
+                source_sample_rate_hz=TUNED_FULL_UNFOLD_SOURCE_SAMPLE_RATE_HZ,
+                target_sample_rate_hz=sfreq,
+            )
+        elif key == "n2p3net_full_unfold_k35":
+            architecture = scale_architecture_preserving_spans(
                 TUNED_FULL_UNFOLD_ARCHITECTURE,
                 source_sample_rate_hz=TUNED_FULL_UNFOLD_SOURCE_SAMPLE_RATE_HZ,
                 target_sample_rate_hz=sfreq,
             )
-            if key == "n2p3net_full_unfold_k35"
-            else n2p3net_architecture
-        )
+        else:
+            architecture = n2p3net_architecture
         return N2P3NetBaseline(
             dataset.n_channels,
             dataset.n_times,

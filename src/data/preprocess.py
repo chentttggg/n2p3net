@@ -8,6 +8,7 @@ from pathlib import Path
 
 import mne
 import numpy as np
+from scipy.signal import sosfilt, sosfilt_zi
 
 from data.channel import (
     DEFAULT_MONTAGE,
@@ -15,7 +16,7 @@ from data.channel import (
     canonical_channel_name,
     resolve_channel_layout,
 )
-from data.contract import DEFAULT_P300_DATA_CONTRACT
+from data.contract import CAUSAL_IIR_INITIAL_STATE, DEFAULT_P300_DATA_CONTRACT
 
 DEFAULT_REJECT_THRESHOLD: float | None = None
 
@@ -41,6 +42,7 @@ class PreprocessResult:
     event_status_details: np.ndarray
     event_evidence_indices: np.ndarray
     online_causal: bool
+    causal_iir_initial_state: str
 
     def __post_init__(self) -> None:
         if self.data.ndim != 3:
@@ -175,6 +177,7 @@ def filter_continuous(
     *,
     method: str = "iir",
     phase: str = "zero",
+    causal_iir_initial_state: str = "not_applicable",
     order: int = 4,
     copy: bool = False,
     verbose: bool = False,
@@ -194,14 +197,54 @@ def filter_continuous(
         raise ValueError(f"h_freq must be below Nyquist ({nyquist:g} Hz).")
     if copy:
         raw = raw.copy()
-    raw.filter(
-        l_freq=l_freq,
-        h_freq=h_freq,
-        method=method,
-        iir_params=dict(order=order, ftype="butter") if method == "iir" else None,
-        phase=phase,
-        verbose=verbose,
-    )
+    if phase == "forward" and causal_iir_initial_state != CAUSAL_IIR_INITIAL_STATE:
+        raise ValueError(
+            "forward IIR requires causal_iir_initial_state='steady_state_first_sample'."
+        )
+    if phase != "forward" and causal_iir_initial_state != "not_applicable":
+        raise ValueError("non-causal filtering requires causal_iir_initial_state='not_applicable'.")
+    if method == "iir" and phase == "forward":
+        if l_freq is not None and h_freq is not None:
+            f_pass: float | list[float] = [float(l_freq), float(h_freq)]
+            btype = "bandpass"
+        elif l_freq is not None:
+            f_pass = float(l_freq)
+            btype = "highpass"
+        else:
+            assert h_freq is not None
+            f_pass = float(h_freq)
+            btype = "lowpass"
+        designed = mne.filter.construct_iir_filter(
+            dict(order=order, ftype="butter", output="sos"),
+            f_pass=f_pass,
+            sfreq=float(raw.info["sfreq"]),
+            btype=btype,
+            phase="forward",
+            verbose=verbose,
+        )
+        sos = np.asarray(designed["sos"], dtype=np.float64)
+        steady_state = sosfilt_zi(sos)
+
+        def causal_filter(channel: np.ndarray) -> np.ndarray:
+            initial_state = steady_state * float(channel[0])
+            filtered, _ = sosfilt(sos, channel, zi=initial_state)
+            return filtered
+
+        raw.apply_function(
+            causal_filter,
+            picks="eeg",
+            channel_wise=True,
+            verbose=verbose,
+        )
+    else:
+        raw.filter(
+            l_freq=l_freq,
+            h_freq=h_freq,
+            method=method,
+            iir_params=dict(order=order, ftype="butter") if method == "iir" else None,
+            phase=phase,
+            verbose=verbose,
+        )
     return raw
 
 
@@ -211,6 +254,7 @@ def highpass(
     *,
     method: str = "iir",
     phase: str = "zero",
+    causal_iir_initial_state: str = "not_applicable",
     copy: bool = False,
     verbose: bool = False,
 ) -> mne.io.BaseRaw:
@@ -224,6 +268,7 @@ def highpass(
         h_freq=None,
         method=method,
         phase=phase,
+        causal_iir_initial_state=causal_iir_initial_state,
         copy=copy,
         verbose=verbose,
     )
@@ -322,6 +367,7 @@ def preprocess(
     filter_method: str = DEFAULT_P300_DATA_CONTRACT.filter_method,
     filter_order: int = DEFAULT_P300_DATA_CONTRACT.filter_order,
     filter_phase: str = DEFAULT_P300_DATA_CONTRACT.filter_phase,
+    causal_iir_initial_state: str = DEFAULT_P300_DATA_CONTRACT.causal_iir_initial_state,
     resample_domain: str = DEFAULT_P300_DATA_CONTRACT.resample_domain,
     resample_method: str = DEFAULT_P300_DATA_CONTRACT.resample_method,
     resample_npad: str = DEFAULT_P300_DATA_CONTRACT.resample_npad,
@@ -411,6 +457,7 @@ def preprocess(
             method=filter_method,
             order=filter_order,
             phase=filter_phase,
+            causal_iir_initial_state=causal_iir_initial_state,
             copy=False,
             verbose=verbose,
         )
@@ -527,4 +574,5 @@ def preprocess(
         event_status_details=event_status_details,
         event_evidence_indices=event_evidence_indices,
         online_causal=filter_phase == "forward",
+        causal_iir_initial_state=causal_iir_initial_state,
     )

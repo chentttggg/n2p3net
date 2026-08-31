@@ -1,4 +1,4 @@
-# N2P3-Net 深度模型研究方向与 GTN 最终验证方案
+# N2P3-Net 深度模型历史研究方向与 GTN 开发方案
 
 状态：2026-08-28 日期化深度研究报告/证据附录。唯一 living guide 为
 [`research_program.zh.md`](research_program.zh.md)；冲突时以后者和可执行代码为准。
@@ -11,9 +11,13 @@ _研究分支审计、外部文献检索与可证伪实验设计，2026-08-28_
 
 当前 N2P3-Net 的可执行身份是 **MS-EEGNet 式紧凑 CNN**，不是旧的 gated reference、tokenizer、TCN 或 PCW 路线。BI2014a 的完整 64 被试 LOSO 结果表明：保留主干全部 32 Hz 时间坐标的 `full_unfold` 比固定 250 ms 二级平均池化更有希望，而低秩二阶头和同预算 MLP 没有提供稳定增益。因此下一步不应继续加深网络，首要矛盾是三个目标错位：单试次交叉熵与最终候选选择错位、固定位置模板与 P300 时延漂移错位、独立 logit 求和与重复试次相关性错位。
 
-推荐主路线是：保留紧凑主干，以 `full_unfold_k35` 作为待确认的开发候选，依次检验候选集前缀损失、受限时移边缘化和相关性感知的序贯证据。监督式 episodic transfer 比当前 masked reconstruction 更贴近最终任务；SSL 只有在 masked-region loss、源目标隔离和归一化契约闭合后才值得进入比较。LMBC 在 BI2014a 当前配方下不晋升，但这不能否定时延边缘化本身，因为现实现的特征时间窗没有原始信号域的局部性保证。
+推荐主路线是：保留紧凑主干并固定线性 `full_unfold` 读出，以 K35 为临时工程默认、K65 为强对照，停止 K33 主线投入。2026-09-01 的后继实验已完成第一版候选集目标：24 个 checkpoint、30 epoch 全源 EEG 的 trial CE + listwise 联合微调没有超过不微调 candidate mean；K35 learned/no-fine mean=`0.688/0.714`。因此当前强联合 recipe 已否决，后继只能单独检验保护 backbone 的分阶段策略，再进入受限时移边缘化和相关性感知序贯证据。监督式 episodic transfer 比当前 masked reconstruction 更贴近最终任务；SSL 只有在 masked-region loss、源目标隔离和归一化契约闭合后才值得进入比较。LMBC 在 BI2014a 当前配方下不晋升，但这不能否定时延边缘化本身。
 
-GTN 必须是最终模型裁决数据，但要拆成两项实验：完全留出目标被试的 GTN-LOSO 用于跨被试模型确认；同一被试 prefix 到 suffix 的因果协议用于校准/迁移。后者的旧事件表显示 `M=8,R=8` 仅约 29 个 selection 可满足严格时间隔离，不能作为全体主 estimand。GTN 又是 3 导、7-17 岁学龄人群，而项目 mission 写的是成人、主要 8 导，所以 GTN 最终结果只能确认 GTN benchmark，不能单独证明 BrainSync 成人部署有效。
+GTN 现在只作模型开发数据：它已被多轮查看，且每名被试只有一个固定 thought
+digit。同 selection labelled prefix/suffix 是 oracle proxy，不是未知数字校准。
+target-excluded Z0/Z5 仍可用于开发比较；确认性裁决必须进入新 target block 或成人
+BrainSync 多 target-switch decisions。GTN 为 3 导、7--17 岁人群，不能单独证明
+成人 8 导部署有效。
 
 ## 1. 证据边界
 
@@ -71,13 +75,14 @@ R_s = k0 + (p - 1) + (k_s - 1) p,  p = 4.
 
 逐被试重算显示，`full_unfold - ms_flatten` 的 AUC 95% bootstrap CI 为 `[+0.00339,+0.01816]`，BACC CI 为 `[+0.00260,+0.01657]`。相对 EEGNet，AUC 差为 `+0.00560`，CI `[+0.00046,+0.01059]`，但 BACC CI 跨 0。随后同一批外层被试又被用于 epoch、patience、采样率和 kernel 搜索，所以这些 p 值和 CI 只能描述开发轨迹，不能再当 untouched confirmation。
 
-最稳妥的局部判断是：**保留时间坐标比增加 readout 非线性更值得继续研究**。它不证明 `full_unfold_k35` 已经优于 EEGNet，也不证明 LMBC 的理念错误。紧凑 EEGNet 和少滤波器 CNN 本来就是 P300 的强基线；MS-EEGNet 在不同 oddball 数据上的优势也并不一致。[^1][^2][^3]
+最稳妥的局部判断是：**采用线性 `full_unfold + K35`，并保留 K65 对照**。K35/K65 的统计不确定性不妨碍开发默认前移，但禁止包装为确认性冠军。紧凑 EEGNet 和少滤波器 CNN 仍是 P300 强基线。[^1][^2][^3]
 
 ### 2.3 当前证据缺口
 
 - 当前合同下没有 matched `xDAWN-RG` 和 regularized linear 完整 record，却已使用“promoted”措辞
-- 本地 GTN 只有旧 256 Hz cache，没有 v4 attestation，也没有当前合同的完整 GTN `record.json`
-- k35 是开发候选，没有独立最终数据的确认记录
+- GTN steady-state 2x2 与 full-unfold 三核 v4 all-evidence 均已调回；当前缺口转为
+  合法 cross-decision personalization 与成人 target-switch 数据
+- K35 是旧 kernel-range inner sensitivity 领先臂；与 K33/K65 的最新多 seed、同链路比较尚未完成
 - records 缺 outer logits、fold-subject 映射、直接 cache/raw hash、dirty diff hash、完整包版本和 batch-1 latency
 - GTN 原始 metadata 只有 22/249 个 TXT 明确写 nose reference，其余未说明，不能被一个非空哨兵字符串变成共同参考
 - GTN 本地年龄为 7-17 岁，而 [mission.md](mission.md) 的目标人群是成人 EEG；GTN 原论文同样把它描述为 school-age children 数据集。[^4]
@@ -167,7 +172,7 @@ L = lambda_trial L_trial + lambda_set L_set.
 
 ### 4.4 整个代码链
 
-`events.py` 的 candidate/group/repetition ledger -> group-aware batch sampler -> `N2P3Net.forward_features` -> 新的 set loss -> train-only candidate calibration -> `hit@R`/outer predictions。单 trial baseline 路径保持不变，确保净效应可归因。
+`events.py` 的 candidate/group/repetition ledger -> group-aware batch sampler -> `N2P3Net.forward_features` -> set loss -> train-only candidate calibration -> `hit@R`/outer predictions。第一版 all-evidence 实现已证明梯度能穿过聚合层进入 EEG trunk，但 30-epoch 全参数更新使 K35 fixed-mean 相对 no-fine mean 下降 `5.58 pp`；learned head 只回收 `2.99 pp`。因此单 trial baseline 与冻结-backbone arm 必须保留，后继不得只比较两个都更新 backbone 的头。
 
 ## 5. 第二优先创新：局部、可平移的形态模板
 
@@ -308,45 +313,36 @@ L_mask = sum M_t |x_t - xhat_t| / sum M_t,
 | re-reference invariant 更好 | 全通道同相 P300 | zero-sum branch删除真信号 | reference 只能 matched 消融 |
 | cross-dataset alignment 更好 | 源/目标 class shift 方向相反 | marginal MMD 降、BACC也降 | 改 conditional 或停止 |
 
-## 9. GTN 最终实验
+## 9. GTN 开发实验（产品确认需成人多 decision 新数据）
 
 ### 9.1 两个不同 estimand
 
-**实验 A：GTN cross-subject confirmation**
+**实验 A：GTN target-excluded cross-subject development**
 
-目标 subject 的全部 epochs、labels、candidate decisions 都不进入训练、早停、calibration、pretraining 或选择。主结果是 subject-clustered hit@R；macro AUC/BACC 是辅助。它回答“模型能否跨新被试泛化”。
+目标 subject 的全部 epochs、labels、candidate decisions 都不进入训练、早停、calibration、pretraining 或选择。主结果是 subject-clustered hit@R；macro AUC/BACC 是辅助。它只能回答“在这个已经反复查看的 GTN cohort 上，target-excluded 泛化表现如何”，不能产生 confirmation。
 
-**实验 B：GTN causal prefix-to-suffix adaptation**
+**实验 B：GTN Z0/Z5 时间对照与 O5 oracle proxy**
 
-同一 subject 只使用严格更早、完整可用的 prefix evidence 训练/校准，suffix epoch 的起点必须晚于所有 prefix epoch 的 evidence-available time。它回答“少量本人校准能否改善后续 9 选决策”。它不能与 A 的 LOSO 数字混报。
+GTN 每个 subject 只有一个固定 thought digit，因而同 selection 的 prefix 真标签已经泄露 suffix 的最终答案。合法开发主线是：Z0 在 session start 直接 zero-shot；Z5 等待每候选 M 个 evidence、但不读取标签，以隔离 late-session 与 coverage 影响。使用 prefix 标签的 O5 只能称 `same-selection oracle-label personalization proxy`，必须显式开启 oracle 许可；它不能回答未知数字校准是否有效，也不能与 A、Z0 或 Z5 混报。
 
-### 9.2 为什么 `M=8,R=8` 不能作主分析
+### 9.2 为什么不能把随机流当同步 repetition block
 
-旧 GTN event ledger 的 schedule-only 审计得到以下可用 selection 数。它不是新模型性能，只用于设计样本覆盖：
-
-| Prefix M | Suffix R | 严格可用 selection | 解释 |
-|---:|---:|---:|---|
-| 3 | 5 | 130 | 低校准、覆盖较好 |
-| 5 | 5 | 101 | 建议主适配候选 |
-| 5 | 8 | 69 | 高 repetition 次要分析 |
-| 8 | 8 | 29 | 选择偏倚大、区间很宽 |
-
-因此实验 B 建议先以 `M=5,R=5` 为主 estimand，以 `M=3,R=5` 做低校准敏感性，以 R=8 仅作明确标注 eligibility 的 secondary endpoint。若业务硬性要求代表性 `hit@8`，正确方案是收集更多 repetitions/selection，而不是放宽时间隔离。
+GTN 是随机刺激流，没有每轮同时出现 1--9 的同步 block。operational split 必须按原始时间顺序等待每个候选收齐 M/R 个有效 evidence，并同时记录 raw occurrence、总刺激数、耗时、缺候选与 exclusion。当前 steady-state 0.1 Hz/1200 ms 开发资产中，固定 `hit@5` 覆盖 `230/245`，Z5@5 覆盖 `175/245`；前者其余 15 人仍有完整 9 候选和 `R_s=2--4`，应进入 all-evidence 主分析，而不是误称缺候选。Z5 的分母损失本身是 late-session/coverage 效应，不能删掉后只报 conditional hit。若业务要求更大的固定 R 或更高覆盖，正确方案是增加刺激和独立 decisions，而不是假设不存在的同步 round 或放宽时间隔离。
 
 ### 9.3 执行门禁
 
 ```mermaid
 flowchart LR
     accTitle: GTN evidence promotion flow
-    accDescr: Research candidates move from contract repair and nonfinal development data to one frozen GTN confirmation, with failures returning to hypothesis revision.
+    accDescr: Research candidates are tested on GTN only as development evidence, then frozen before confirmation on new adult target-switch decisions.
 
     repair[Repair evidence contracts] --> countertests[Pass counterexample tests]
     countertests --> develop[Develop on nonfinal data]
     develop --> freeze{Freeze candidate?}
     freeze -->|No| revise[Revise hypothesis]
     revise --> countertests
-    freeze -->|Yes| gtn[Run GTN once]
-    gtn --> gate{Promotion gates pass?}
+    freeze -->|Yes| gtn[Run frozen GTN development arm]
+    gtn --> gate{Development evidence sufficient?}
     gate -->|No| retain[Retain as research arm]
     gate -->|Yes| prospective[Confirm on adult BrainSync]
 
@@ -358,7 +354,7 @@ flowchart LR
     class retain,prospective terminal
 ```
 
-GTN 启动前必须全部满足：
+冻结的 GTN development arm 启动前必须全部满足：
 
 1. raw/source reference、通道顺序、单位、坐标、event hash 和 schedule exclusions 可审计
 2. v4 cache 完整校验与 SHA-256 attestation；offline 和 causal recipe 不混用
@@ -373,8 +369,8 @@ GTN 启动前必须全部满足：
 | 阶段 | 固定 arms | 只回答的问题 |
 |---|---|---|
 | G0 | chance/schedule, window-LR, xDAWN-RG | 数据链和 classical floor 是否可信 |
-| G1 | EEGNet, `ms_flatten`, `full_unfold_k65`, `full_unfold_k35` | BI 机制能否迁移 GTN |
-| G2 | G1 胜者 + `L_set` | decision-aligned loss 的净效应 |
+| G1 | adopted `full_unfold + K35`；K65 对照；`ms_flatten` 基线 | 已完成开发核长选择 |
+| G2 | no-fine mean / frozen-backbone head / 低 LR 渐进解冻 | 第一版强联合 `L_set` 已否决；只研究如何避免 backbone 负迁移 |
 | G3 | G2 胜者 + shift template | latency tolerance 的净效应 |
 | G4 | G3 胜者 + correlation/quality evidence | hit-speed-calibration tradeoff |
 | T1 | supervised pooled/episodic/SSL controls | transfer 的来源与边界 |
@@ -383,13 +379,14 @@ GTN 启动前必须全部满足：
 
 ### 9.5 统计与报告
 
-- 预先指定一个 primary `hit@R` 和一个最小有意义差值；不要以 p<0.05 代替效果大小
+- 当前三核预先指定 operational `hit@all_balanced` primary 和 0.02 最小工程差值；
+  raw all 与完整 hit@R/cost curve 检查 evidence-budget interaction
 - 每个模型至少 3 seeds；seed 不是独立 subject，先对同 subject 聚合或使用层级模型
 - paired subject-cluster bootstrap CI；同 subject 多 selection 时使用两级 cluster
 - 多模型/多指标使用 Holm 或层级 gatekeeping
 - 报告 macro AUC/BACC、NLL/ECE、hit@1..R、coverage、最差 decile、平均 R、abstain、参数、batch-1 latency、峰值内存
 - 对年龄、性别、采集批次、reference-known/unknown、QC 分层只作预注册的异质性分析，不做 subgroup fishing
-- BI2014a 已是开发数据；GTN 配置一旦解锁 outer results，不得回头改 kernel、loss、R、calibration 或 exclusions
+- BI2014a 与当前 GTN cohort 都已是开发数据；每个配对消融仍须先冻结 manifest、arm 和 denominator，查看结果后不得把探索选择包装成确认性检验
 
 ## 10. 明确不优先的方向
 
@@ -398,7 +395,7 @@ GTN 启动前必须全部满足：
 - **通用 EEG foundation model 直接 linear probe**：短窗 BCI 和少通道条件下收益不稳，审计成本高
 - **把 LMBC 永久删除**：删除旧 TCN 路线是对的，但只应把当前 LMBC 标为该配方不晋升；局部 shift marginalization 仍需新的有效实现
 - **用更多数据直接 concat**：reference、通道、年龄、任务和 session 不同，未经条件化的混训可能扩大 domain shortcut
-- **把 GTN 当成人 8 导部署证明**：GTN 可以是最终 benchmark，成人 BrainSync 仍需独立 prospective confirmation
+- **把 GTN 当成人 8 导部署证明**：GTN 只可作为儿童 3 导 development benchmark；产品结论必须来自成人 BrainSync 的多目标、跨 decision prospective confirmation
 
 ## 11. 当前结论与下一步
 
@@ -407,13 +404,13 @@ GTN 启动前必须全部满足：
 ```text
 MS-EEGNet compact trunk
 -> full-resolution temporal representation
--> candidate-set prefix loss
+-> protected candidate decision learning
 -> bounded local shift marginalization
 -> correlation-aware sequential evidence
 -> optional episodic subject adaptation.
 ```
 
-实施顺序必须是：先闭合 GTN reference/normalization/recording contracts和 classical baselines；再在非最终数据上分别证伪 set loss、shift head、sequential evidence；冻结后一次性运行 GTN。当前 SSL path 不满足启动条件。若 G1 在 GTN 上不能复现 `full_unfold` 的净效应，停止 k35/readout 搜索并回到 EEGNet/MS baseline；若 G1 成立而 G2 不成立，保留简单 trial CE；若只有 G2 成立，论文贡献应表述为“任务目标对齐”，而不是新 backbone。
+实施顺序改为：保留不微调 `full_unfold + K35` + candidate mean 作为基线；decision-aligned 强联合 G2 已不成立，下一轮只做冻结 backbone、显著更低 backbone LR、渐进解冻或梯度冲突控制的单轴试错。通过后才进入 shift tolerance、sequential evidence 与合法 personalization；K65 仅作强对照，不再扩展核长流程。最终候选必须进入成人 BrainSync target-switch 数据。只有保护表征后的 G2 在独立 development decisions 成立时，论文贡献才可表述为“任务目标对齐”。
 
 ## 参考文献
 

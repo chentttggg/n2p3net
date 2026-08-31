@@ -10,6 +10,7 @@ from torch import nn
 from baselines.deep import DeepConfig
 from baselines.n2p3net import N2P3NetBaseline
 from models.n2p3net import (
+    BROAD_REFERENCE_N2P3_ARCHITECTURE,
     FullResolutionUnfold,
     LatencyMarginalContrastPool,
     MSFlattenPool,
@@ -36,17 +37,18 @@ def test_n2p3net_returns_binary_logits_and_has_compact_capacity() -> None:
     logits = model(torch.randn(4, 3, 256))
 
     assert logits.shape == (4, 2)
-    assert model.parameter_count() == 1_054
+    assert model.parameter_count() == 814
     assert isinstance(model.pool, nn.ModuleList)
     assert len(model.pool) == 2
     assert all(isinstance(pool, LatencyMarginalContrastPool) for pool in model.pool)
 
 
-def test_n2p3net_default_is_the_promoted_ms_flatten_head() -> None:
+def test_n2p3net_default_is_the_adopted_full_unfold_head() -> None:
     model = N2P3Net(n_channels=3, n_times=128, sfreq=128.0, tmin_s=-0.2)
 
-    assert model.pooling_mode == "ms_flatten"
-    assert isinstance(model.pool, MSFlattenPool)
+    assert model.pooling_mode == "full_unfold"
+    assert model.temporal_kernel_size == 35
+    assert isinstance(model.pool, FullResolutionUnfold)
 
 
 def test_n2p3net_matches_the_baseline_ms_eegnet_parameterization() -> None:
@@ -57,6 +59,7 @@ def test_n2p3net_matches_the_baseline_ms_eegnet_parameterization() -> None:
         sfreq=128.0,
         tmin_s=-0.2,
         pooling_mode="ms_flatten",
+        **BROAD_REFERENCE_N2P3_ARCHITECTURE.model_kwargs(),
     )
     dataset_23_shape = N2P3Net(
         n_channels=12,
@@ -64,6 +67,7 @@ def test_n2p3net_matches_the_baseline_ms_eegnet_parameterization() -> None:
         sfreq=125.0,
         tmin_s=-0.2,
         pooling_mode="ms_flatten",
+        **BROAD_REFERENCE_N2P3_ARCHITECTURE.model_kwargs(),
     )
 
     assert dataset_1_shape.st_temporal.out_channels == 8
@@ -109,7 +113,7 @@ def test_architecture_scaling_preserves_both_temporal_feature_rates() -> None:
         target_sample_rate_hz=256.0,
     )
 
-    assert architecture.temporal_kernel_size == 129
+    assert architecture.temporal_kernel_size == 69
     assert architecture.mst_kernel_sizes == (9, 33)
 
 
@@ -123,11 +127,11 @@ def test_architecture_record_exposes_physical_receptive_spans() -> None:
 
     assert record["input_sample_rate_hz"] == 128.0
     assert record["feature_sample_rate_hz"] == 32.0
-    assert record["st_temporal_receptive_span_ms"] == pytest.approx(500.0)
+    assert record["st_temporal_receptive_span_ms"] == pytest.approx(265.625)
     assert record["mst_receptive_span_ms"] == pytest.approx([125.0, 500.0])
-    assert record["mst_total_receptive_field_samples"] == [84, 132]
+    assert record["mst_total_receptive_field_samples"] == [54, 102]
     assert record["mst_total_receptive_span_ms"] == pytest.approx(
-        [648.4375, 1023.4375]
+        [414.0625, 789.0625]
     )
 
 
@@ -454,7 +458,8 @@ def test_factory_propagates_dataset_physical_time_to_n2p3net(monkeypatch) -> Non
     assert architecture["tmin_s"] == -0.15
     assert architecture["trunk"] == "ms_eegnet_style"
     assert architecture["mst_kernel_samples"] == [5, 17]
-    assert architecture["pooling_mode"] == "ms_flatten"
+    assert architecture["pooling_mode"] == "full_unfold"
+    assert architecture["st_temporal_kernel_samples"] == 35
 
 
 def test_factory_propagates_the_n2p3_architecture_contract(monkeypatch) -> None:
@@ -553,6 +558,8 @@ def test_factory_named_ablation_models_lock_one_pooling_mode(
     assert model.pooling_mode == pooling_mode
     assert record["name"] == model_name
     assert record["architecture"]["pooling_mode"] == pooling_mode
+    expected_kernel = 65 if model_name == "ms_eegnet" else 35
+    assert record["architecture"]["st_temporal_kernel_samples"] == expected_kernel
 
 
 def test_factory_locks_the_tuned_full_unfold_kernel(monkeypatch) -> None:

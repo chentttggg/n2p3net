@@ -83,12 +83,23 @@ def hit_at_repetition_6x6(
             col_sel = sel & (col_codes >= 0)
             np.add.at(row_score, row_codes[row_sel], logits[row_sel])
             np.add.at(col_score, col_codes[col_sel], logits[col_sel])
-            predicted_row = int(np.argmax(row_score))
-            predicted_col = int(np.argmax(col_score))
+            row_winners = np.flatnonzero(
+                np.isclose(row_score, float(row_score.max()), rtol=1e-12, atol=1e-12)
+            )
+            col_winners = np.flatnonzero(
+                np.isclose(col_score, float(col_score.max()), rtol=1e-12, atol=1e-12)
+            )
+            predicted_row = int(row_winners[0]) if len(row_winners) == 1 else None
+            predicted_col = int(col_winners[0]) if len(col_winners) == 1 else None
             truth_rows = np.unique(target_rows[sel])
             truth_cols = np.unique(target_cols[sel])
             if len(truth_rows) == 1 and len(truth_cols) == 1:
-                correct += int(predicted_row == truth_rows[0] and predicted_col == truth_cols[0])
+                correct += int(
+                    predicted_row is not None
+                    and predicted_col is not None
+                    and predicted_row == truth_rows[0]
+                    and predicted_col == truth_cols[0]
+                )
                 total += 1
         hits[r] = float(correct / total) if total else float("nan")
     return hits

@@ -114,7 +114,7 @@ z = W0 x + b + V GELU(M x + c).
 | `full_unfold` | 1,506 | 消除二级池化碰撞是否有效 |
 | `quadratic_full_unfold`, rank 8 | 3,570 | 显式低秩二阶关系是否有效 |
 | `mlp_full_unfold`, hidden 16 | 3,602 | 相近容量的一般非线性是否同样有效 |
-| EEGNet | 1,490 | 当前整体冠军、近似参数匹配线性对照 |
+| EEGNet | 1,490 | 当时 BI 表的紧凑对照；当前无确认冠军 |
 
 ## 文献检索后的取舍
 
@@ -163,8 +163,8 @@ AUC/BACC，使用被试级 bootstrap 区间和带 plus-one 修正的配对 sign-
 2. 二阶 head 只与 `full_unfold` 比较其增量；同时与 MLP 比较机制特异性。
 3. 若二阶和 MLP 都改善且差异不清楚，只能结论为“容量/非线性有效”，不能结论为
    二阶交互有效。
-4. 若只二阶改善，才获得低秩交互的支持；若完整展开退化，默认仍保持
-   `ms_flatten`，不因理论表达力更强而晋升。
+4. 若只二阶改善，才获得低秩交互的支持；若完整展开退化，则保持
+   `ms_flatten`。实际主比较中 linear full-unfold 未退化且双指标胜 MS，因而已采用。
 5. 外层测试结果只用于最终报告，不用于回头选择 rank、hidden width、epoch 或
    threshold。
 
@@ -182,7 +182,9 @@ AUC/BACC，使用被试级 bootstrap 区间和带 plus-one 修正的配对 sign-
 
 审计重算中，linear full-unfold 相对 MS 的 AUC 差约 `+0.01090`，相对 EEGNet
 约 `+0.00560`；后者 BACC 区间跨零。该轮支持“保留主干时间坐标”，不支持
-低秩二阶或 MLP 机制。K35 仅由后续 inner sensitivity 注册，未取得独立确认。
+低秩二阶或 MLP 机制，因此 linear full-unfold 已采用为项目读出。K35 是后续
+inner sensitivity 领先臂；后继多 seed GTN 选择 K35 为临时默认，K65 保留对照。
 
 BI2014a outer test 已被后续 epoch/patience/sampling-rate 运行重复查看，不再用于
-选择模型。下一次裁决必须在预注册 GTN chronological 9-choice 或新的独立数据上进行。
+选择模型。GTN 已被后续多轮开发使用，不能再承担 untouched confirmation；下一次
+确认裁决必须在新 target block 或成人 BrainSync 多 decision 数据上进行。

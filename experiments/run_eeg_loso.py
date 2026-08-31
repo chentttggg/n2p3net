@@ -38,13 +38,27 @@ from data.artifact import (  # noqa: E402
     parse_candidate_quantiles,
 )
 from data.contract import (  # noqa: E402
+    CAUSAL_IIR_INITIAL_STATE,
+    DEFAULT_GTN_DATA_CONTRACT,
     DEFAULT_P300_DATA_CONTRACT,
+    GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
+    PAPER_GTN_CAUSAL_DATA_CONTRACT,
+    PAPER_GTN_DATA_CONTRACT,
     assert_p300_input_contract,
     assert_p300_source_provenance,
 )
+
+COHORT_CONTRACTS = {
+    "default": DEFAULT_P300_DATA_CONTRACT,
+    "gtn_offline": DEFAULT_GTN_DATA_CONTRACT,
+    "gtn": GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
+    "gtn_paper_offline": PAPER_GTN_DATA_CONTRACT,
+    "gtn_paper": PAPER_GTN_CAUSAL_DATA_CONTRACT,
+}
 from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
+    DEFAULT_N2P3_POOLING_MODE,
     POOLING_MODES,
     N2P3ArchitectureConfig,
     scale_architecture_preserving_spans,
@@ -234,10 +248,10 @@ def main() -> None:
     parser.add_argument(
         "--n2p3net-pooling",
         choices=sorted(POOLING_MODES),
-        default="ms_flatten",
+        default=DEFAULT_N2P3_POOLING_MODE,
         help=(
-            "N2P3-Net head: promoted ms_flatten, prior-free unfold candidates, "
-            "LMBC rejected hypothesis, or global_average negative control."
+            "N2P3-Net head: adopted linear full_unfold, explicit ms_flatten baseline, "
+            "nonlinear unfold research arms, LMBC hypothesis, or global_average negative control."
         ),
     )
     parser.add_argument(
@@ -346,10 +360,21 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--cohort",
+        choices=tuple(COHORT_CONTRACTS),
+        default="default",
+        help=(
+            "Contract family to assert: gtn_offline/gtn select 0.1 Hz zero/forward; "
+            "gtn_paper_offline/gtn_paper select 0.5 Hz zero/forward; default is "
+            "the adult 2 Hz / 800 ms zero-phase profile. Explicit --l-freq/--tmin-ms/--tmax-ms/"
+            "--filter-phase still override the selected family."
+        ),
+    )
+    parser.add_argument(
         "--l-freq",
         type=float,
         default=None,
-        help="Expected high-pass contract value; defaults to the canonical contract.",
+        help="Expected high-pass contract value; defaults to the selected contract family.",
     )
     parser.add_argument(
         "--tmin-ms",
@@ -452,16 +477,21 @@ def main() -> None:
     )
     dataset_record = dataset.record(validate=False)
     cache_sha256 = str(read_epoch_cache_attestation(args.dataset_cache)["sha256"])
+    base_contract = COHORT_CONTRACTS[args.cohort]
     expected_contract = replace(
-        DEFAULT_P300_DATA_CONTRACT,
+        base_contract,
         sample_rate_hz=args.sample_rate_hz,
-        l_freq=DEFAULT_P300_DATA_CONTRACT.l_freq if args.l_freq is None else args.l_freq,
-        tmin_ms=DEFAULT_P300_DATA_CONTRACT.tmin_ms if args.tmin_ms is None else args.tmin_ms,
-        tmax_ms=DEFAULT_P300_DATA_CONTRACT.tmax_ms if args.tmax_ms is None else args.tmax_ms,
+        l_freq=base_contract.l_freq if args.l_freq is None else args.l_freq,
+        tmin_ms=base_contract.tmin_ms if args.tmin_ms is None else args.tmin_ms,
+        tmax_ms=base_contract.tmax_ms if args.tmax_ms is None else args.tmax_ms,
         filter_phase=(
-            DEFAULT_P300_DATA_CONTRACT.filter_phase
-            if args.filter_phase is None
-            else args.filter_phase
+            base_contract.filter_phase if args.filter_phase is None else args.filter_phase
+        ),
+        causal_iir_initial_state=(
+            CAUSAL_IIR_INITIAL_STATE
+            if (base_contract.filter_phase if args.filter_phase is None else args.filter_phase)
+            == "forward"
+            else "not_applicable"
         ),
     )
     assert_p300_input_contract(dataset.preprocessing, expected_contract)
