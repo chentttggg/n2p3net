@@ -1,0 +1,63 @@
+{
+  "schema": "n2p3_bi2014a_cross_decision_experiment/1",
+  "frozen_before_results": true,
+  "dataset_cache_sha256": "252237a8ebae8e5edfe1bdf3ec7bcc28fd2adb815fa0c60323e666a372fb75f5",
+  "block_manifest": "experiments/manifests/bi2014a_cross_decision_v2/manifest.json",
+  "architecture": {
+    "pooling_mode": "full_unfold",
+    "temporal_kernel_size": 35
+  },
+  "source_training": {
+    "seeds": [20260901, 20260902, 20260903],
+    "epochs": 100,
+    "batch_size": 512,
+    "source_qc_ptp_uv": 0.0,
+    "checkpoint_selection": "group-disjoint inner epoch selection then all-source refit"
+  },
+  "target_protocol": {
+    "calibration_selections": 5,
+    "test_repetitions": 2,
+    "max_test_selections": null,
+    "epoch_selection": "fixed_budget",
+    "batch_size": 256,
+    "fold_local_qc": false,
+    "adapt_batchnorm": false,
+    "target_stat_weight": 0.25
+  },
+  "arms": [
+    {"name": "zero_shot_source", "head": "zero_shot", "normalization": "source"},
+    {"name": "classifier_fine_source", "head": "classifier_fine", "normalization": "source"},
+    {"name": "classifier_fine_target", "head": "classifier_fine", "normalization": "target_prefix"},
+    {"name": "classifier_fine_shrinkage", "head": "classifier_fine", "normalization": "shrinkage"},
+    {"name": "full_fine_source", "head": "full_fine", "normalization": "source"},
+    {"name": "full_fine_target", "head": "full_fine", "normalization": "target_prefix"},
+    {"name": "full_fine_shrinkage", "head": "full_fine", "normalization": "shrinkage"},
+    {"name": "linear_source", "head": "linear", "normalization": "source"},
+    {"name": "linear_target", "head": "linear", "normalization": "target_prefix"},
+    {"name": "linear_shrinkage", "head": "linear", "normalization": "shrinkage"},
+    {"name": "mlp16_source", "head": "mlp16", "normalization": "source"},
+    {"name": "mlp16_target", "head": "mlp16", "normalization": "target_prefix"},
+    {"name": "mlp16_shrinkage", "head": "mlp16", "normalization": "shrinkage"}
+  ],
+  "primary_endpoint": "requested-subject macro operational hit@2",
+  "planned_contrasts": [
+    ["classifier_fine_shrinkage", "zero_shot_source"],
+    ["full_fine_shrinkage", "zero_shot_source"],
+    ["linear_shrinkage", "zero_shot_source"],
+    ["mlp16_shrinkage", "zero_shot_source"],
+    ["classifier_fine_target", "classifier_fine_source"],
+    ["classifier_fine_shrinkage", "classifier_fine_source"],
+    ["full_fine_target", "full_fine_source"],
+    ["full_fine_shrinkage", "full_fine_source"],
+    ["linear_target", "linear_source"],
+    ["linear_shrinkage", "linear_source"],
+    ["mlp16_target", "mlp16_source"],
+    ["mlp16_shrinkage", "mlp16_source"],
+    ["full_fine_shrinkage", "classifier_fine_shrinkage"],
+    ["mlp16_shrinkage", "linear_shrinkage"]
+  ],
+  "bootstrap_iterations": 100000,
+  "analysis_seed": 20260901,
+  "minimum_engineering_delta": 0.02,
+  "evidence_scope": "BI2014a development mechanism test; not 9-choice BrainSync confirmation"
+}

@@ -496,9 +496,25 @@ def main() -> None:
         for repetition in range(1, args.test_reps + 1)
     }
     summary = {
+        "schema": "n2p3_bi2014a_cross_decision_result/1",
         "dataset_cache": str(Path(args.dataset_cache).resolve()),
         "checkpoint": str(Path(args.checkpoint).resolve()) if args.checkpoint else None,
         "checkpoint_sha256": _sha256_file(args.checkpoint) if args.checkpoint else None,
+        "checkpoint_source_cache_sha256": (
+            checkpoint_payload.get("source_cache_sha256")
+            if checkpoint_payload is not None
+            else None
+        ),
+        "checkpoint_holdout_subjects": (
+            checkpoint_payload.get("holdout_subjects")
+            if checkpoint_payload is not None
+            else None
+        ),
+        "checkpoint_training_subjects": (
+            checkpoint_payload.get("training_subjects")
+            if checkpoint_payload is not None
+            else None
+        ),
         "target_cache_sha256": target_cache_sha256,
         "target_subjects_file": (
             str(args.target_subjects_file.resolve())
