@@ -363,6 +363,12 @@ def main() -> None:
         default=None,
         help="Expected epoch end contract value; defaults to the canonical contract.",
     )
+    parser.add_argument(
+        "--filter-phase",
+        choices=("zero", "forward"),
+        default=None,
+        help="Expected filter phase contract value; defaults to the canonical contract.",
+    )
     args = parser.parse_args()
 
     if args.epochs < 1 or args.batch_size < 1 or args.fold_jobs < 1:
@@ -452,6 +458,11 @@ def main() -> None:
         l_freq=DEFAULT_P300_DATA_CONTRACT.l_freq if args.l_freq is None else args.l_freq,
         tmin_ms=DEFAULT_P300_DATA_CONTRACT.tmin_ms if args.tmin_ms is None else args.tmin_ms,
         tmax_ms=DEFAULT_P300_DATA_CONTRACT.tmax_ms if args.tmax_ms is None else args.tmax_ms,
+        filter_phase=(
+            DEFAULT_P300_DATA_CONTRACT.filter_phase
+            if args.filter_phase is None
+            else args.filter_phase
+        ),
     )
     assert_p300_input_contract(dataset.preprocessing, expected_contract)
     assert_p300_source_provenance(dataset)

@@ -507,6 +507,34 @@ def _fold_result(
     history = getattr(model, "last_history", {}) or {}
     runtime = getattr(model, "last_runtime", {}) or {}
     memory = runtime.get("memory", {}) if isinstance(runtime, dict) else {}
+    import os
+
+    import torch as _torch
+
+    save_dir = os.environ.get("P300_SAVE_FOLD_MODELS_DIR")
+    if save_dir:
+        save_root = Path(save_dir)
+        save_root.mkdir(parents=True, exist_ok=True)
+        test_subjects = [str(v) for v in np.unique(subject_ids[test_effective])]
+        inner = getattr(model, "model_", model)
+        stats = {
+            "input_mean": np.asarray(getattr(model, "_input_mean", np.zeros((1, 1, 1))), dtype=np.float32).squeeze().tolist(),
+            "input_std": np.asarray(getattr(model, "_input_std", np.ones((1, 1, 1))), dtype=np.float32).squeeze().tolist(),
+        }
+        _torch.save(
+            {
+                "model_state_dict": {
+                    k: v.detach().cpu() for k, v in inner.state_dict().items()
+                },
+                "input_stats": stats,
+                "fold_id": fold_id,
+                "test_subjects": test_subjects,
+                "calibration_threshold": calibration.threshold,
+                "prototype_class": type(model).__name__,
+            },
+            save_root / f"fold_{int(fold_id or 0):04d}.pt",
+        )
+
     result = BinaryFoldResult(
         balanced_acc=bacc,
         auc=auc,
