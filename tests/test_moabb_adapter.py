@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+import mne
 import numpy as np
 import pandas as pd
 import pytest
@@ -21,17 +22,40 @@ def _fake_dataset(subjects=(1, 2)):
         subject_list=list(subjects),
         metadata=SimpleNamespace(acquisition=acquisition),
     )
-def test_moabb_adapter_rejects_causal_phase_it_cannot_execute(monkeypatch) -> None:
+def test_moabb_adapter_builds_causal_cache_from_raw_runs(monkeypatch) -> None:
     from data import moabb as adapter_module
 
-    monkeypatch.setattr(adapter_module, "resolve_moabb_dataset", lambda name: _fake_dataset())
+    info = mne.create_info(["Fz", "Cz"], 100.0, ch_types="eeg")
+    raw = mne.io.RawArray(np.zeros((2, 600), dtype=float), info, verbose=False)
+    raw.set_montage("standard_1005")
+    raw.set_annotations(
+        mne.Annotations(
+            onset=[1.0, 2.0, 3.0, 4.0],
+            duration=[0.0] * 4,
+            description=["NonTarget", "Target", "NonTarget", "Target"],
+        )
+    )
+    dataset = _fake_dataset((1,))
+    dataset.event_id = {"NonTarget": 1, "Target": 2}
+    dataset.get_data = lambda subjects: {1: {"0": {"0": raw}}}
+    monkeypatch.setattr(adapter_module, "resolve_moabb_dataset", lambda name: dataset)
     profile = PreprocessingSpec(
+        name="causal_mock",
+        sfreq=100.0,
+        l_freq=2.0,
+        h_freq=30.0,
+        tmin_ms=-200.0,
+        tmax_ms=800.0,
+        n_times=100,
         filter_phase="forward",
         causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
     )
 
-    with pytest.raises(ValueError, match="zero-phase only"):
-        prepare_moabb_p300("FakeP300", preprocessing=profile)
+    prepared = prepare_moabb_p300("FakeP300", preprocessing=profile)
+
+    assert prepared.X.shape == (4, 2, 100)
+    assert prepared.preprocessing.filter_phase == "forward"
+    assert prepared.event_timeline.online_causal is True
 
 
 

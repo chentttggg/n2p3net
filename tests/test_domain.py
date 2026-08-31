@@ -7,7 +7,11 @@ import pandas as pd
 import pytest
 
 from data.channel import build_channel_identity
-from data.domain import adapt_common_channel_average_reference, common_channel_intersection
+from data.domain import (
+    adapt_common_channel_average_reference,
+    common_channel_intersection,
+    namespace_epoch_dataset,
+)
 from data.epochs import EpochDataset, PreprocessingSpec
 from data.events import ScheduledEventTimeline
 
@@ -95,3 +99,14 @@ def test_common_channel_intersection_preserves_first_dataset_order() -> None:
     )
 
     assert common_channel_intersection(first, second) == ("CZ", "PZ")
+
+
+def test_namespace_qualifies_subject_and_event_identity() -> None:
+    dataset = _dataset(np.ones((1, 3, 4)), reference="A1")
+
+    namespaced = namespace_epoch_dataset(dataset, "BI")
+
+    assert namespaced.subject_ids.tolist() == ["BI::s"]
+    assert namespaced.event_timeline.subject_ids.tolist() == ["BI::s"]
+    assert namespaced.event_timeline.event_ids.tolist() == ["BI::e0"]
+    assert namespaced.provenance["subject_namespace"] == "BI"

@@ -15,6 +15,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from data.brainsync import load_brainsync_sessions  # noqa: E402
+from data.contract import CAUSAL_IIR_INITIAL_STATE  # noqa: E402
 from data.epochs import P300_PERFORMANCE_PREPROCESSING, save_epoch_dataset  # noqa: E402
 from data.manifest import build_manifest_dataset, load_manifest  # noqa: E402
 from data.moabb import prepare_moabb_p300  # noqa: E402
@@ -99,6 +100,12 @@ def main() -> None:
         default=None,
     )
     moabb_parser.add_argument(
+        "--filter-phase",
+        choices=("zero", "forward"),
+        default=None,
+        help="Use forward with steady-state initialization for causal transfer caches.",
+    )
+    moabb_parser.add_argument(
         "--trial-reference-window-ms",
         type=_parse_float_pair,
         default=None,
@@ -149,6 +156,7 @@ def main() -> None:
                 "trial_reference_center": args.trial_reference_center,
                 "trial_reference_scale": args.trial_reference_scale,
                 "sfreq": args.sfreq,
+                "filter_phase": args.filter_phase,
             }.items()
             if value is not None
         }
@@ -176,6 +184,13 @@ def main() -> None:
                 tmax_ms=tmax_ms,
             )
         preprocessing = replace(P300_PERFORMANCE_PREPROCESSING, **preprocessing_overrides)
+        if preprocessing.filter_phase == "forward":
+            preprocessing = replace(
+                preprocessing,
+                causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
+            )
+        elif preprocessing.filter_phase == "zero":
+            preprocessing = replace(preprocessing, causal_iir_initial_state="not_applicable")
         preprocessing.validate()
         dataset = prepare_moabb_p300(
             args.dataset_class,

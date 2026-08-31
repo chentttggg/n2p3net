@@ -10,7 +10,13 @@ import numpy as np
 import pandas as pd
 
 from data.channel import DEFAULT_MONTAGE, build_channel_identity
-from data.epochs import P300_PERFORMANCE_PREPROCESSING, EpochDataset, PreprocessingSpec
+from data.dataset import annotation_events_and_labels, build_subject
+from data.epochs import (
+    P300_PERFORMANCE_PREPROCESSING,
+    EpochDataset,
+    PreprocessingSpec,
+    concatenate_epoch_datasets,
+)
 from data.events import observed_only_timeline, selection_group_id
 from data.preprocess import apply_trial_baseline
 
@@ -106,11 +112,6 @@ def prepare_moabb_p300(
     from moabb.paradigms import P300
 
     preprocessing.validate()
-    if preprocessing.filter_phase != "zero":
-        raise ValueError(
-            "MOABB's paradigm-level filtering is zero-phase only; "
-            "causal single-subject caches must use manifest/BrainSync/GTN ingestion."
-        )
     if preprocessing.reject_threshold_v is not None:
         raise ValueError(
             "Fixed absolute-voltage artifact rejection is retired; set reject_threshold_v=None "
@@ -132,6 +133,103 @@ def prepare_moabb_p300(
     unknown_subjects = set(selected_subjects) - set(dataset.subject_list)
     if unknown_subjects:
         raise ValueError(f"Unknown subjects for {dataset_class}: {sorted(unknown_subjects)}.")
+    if preprocessing.filter_phase == "forward":
+        event_id = getattr(dataset, "event_id", None)
+        if not isinstance(event_id, dict) or target_label not in event_id:
+            raise ValueError(
+                f"MOABB dataset {dataset_class} does not expose target event {target_label!r}."
+            )
+        label_map = {
+            str(description): int(str(description) == target_label)
+            for description in event_id
+        }
+        runs = dataset.get_data(subjects=selected_subjects)
+        datasets: list[EpochDataset] = []
+        for subject in selected_subjects:
+            for session_id, session_runs in runs[subject].items():
+                for run_id, raw in session_runs.items():
+                    events, labels = annotation_events_and_labels(raw, label_map)
+                    record = build_subject(
+                        raw,
+                        events,
+                        labels,
+                        subject_id=str(subject),
+                        metadata={
+                            "dataset_id": dataset_class,
+                            "session": str(session_id),
+                            "run": str(run_id),
+                            "selection_id": f"{session_id}:{run_id}",
+                            "reference": source_reference,
+                        },
+                        sfreq=preprocessing.sfreq,
+                        l_freq=preprocessing.l_freq,
+                        h_freq=preprocessing.h_freq,
+                        tmin=preprocessing.tmin_ms / 1000.0,
+                        tmax=preprocessing.tmax_ms / 1000.0,
+                        n_times=preprocessing.n_times,
+                        reject_threshold=preprocessing.reject_threshold_v,
+                        baseline=None,
+                        baseline_mode=preprocessing.baseline_mode,
+                        trial_reference_window_ms=preprocessing.trial_reference_window_ms,
+                        trial_reference_center=preprocessing.trial_reference_center,
+                        trial_reference_scale=preprocessing.trial_reference_scale,
+                        filter_method=preprocessing.filter_method,
+                        filter_order=preprocessing.filter_order,
+                        filter_phase=preprocessing.filter_phase,
+                        causal_iir_initial_state=preprocessing.causal_iir_initial_state,
+                        resample_domain=preprocessing.resample_domain,
+                        resample_method=preprocessing.resample_method,
+                        resample_npad=preprocessing.resample_npad,
+                        resample_window=preprocessing.resample_window,
+                        resample_pad=preprocessing.resample_pad,
+                        channels=None if channels is None else list(channels),
+                        montage=montage,
+                    )
+                    n_epochs = record.n_epochs
+                    datasets.append(
+                        EpochDataset(
+                            name=dataset_class,
+                            X=np.asarray(record.data, dtype=np.float32),
+                            y=np.asarray(record.labels, dtype=np.int64),
+                            subject_ids=np.repeat(str(subject), n_epochs),
+                            channel_names=record.channel_names,
+                            channel_positions_m=record.channel_positions_m,
+                            channel_mask=record.channel_mask,
+                            preprocessing=preprocessing,
+                            event_timeline=record.event_timeline,
+                            metadata=pd.DataFrame(
+                                {
+                                    "subject": np.repeat(str(subject), n_epochs),
+                                    "session": np.repeat(str(session_id), n_epochs),
+                                    "run": np.repeat(str(run_id), n_epochs),
+                                }
+                            ),
+                            provenance={
+                                "source": "moabb_raw_causal_p300",
+                                "dataset_class": dataset_class,
+                                "source_reference": source_reference,
+                                "source_sample_rate_hz": float(raw.info["sfreq"]),
+                                "model_input_sample_rate_hz": preprocessing.sfreq,
+                                "signal_unit": preprocessing.signal_unit,
+                                "filter_phase": "forward",
+                            },
+                        )
+                    )
+        return concatenate_epoch_datasets(
+            datasets,
+            name=dataset_class,
+            provenance={
+                "source": "moabb_raw_causal_p300",
+                "dataset_class": dataset_class,
+                "subjects": selected_subjects,
+                "source_reference": source_reference,
+                "source_sample_rate_hz": float(source_sample_rate),
+                "model_input_sample_rate_hz": preprocessing.sfreq,
+                "moabb_version": moabb.__version__,
+                "mne_version": mne.__version__,
+                "signal_unit": preprocessing.signal_unit,
+            },
+        )
     paradigm = P300(
         fmin=preprocessing.l_freq,
         fmax=preprocessing.h_freq,

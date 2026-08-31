@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import replace
 
 import numpy as np
 
@@ -31,6 +32,7 @@ def adapt_common_channel_average_reference(
     target_channels: Sequence[str],
     *,
     name: str | None = None,
+    preprocessing_name: str | None = None,
 ) -> EpochDataset:
     """Select a complete common montage and apply the same CAR in every domain."""
 
@@ -67,7 +69,11 @@ def adapt_common_channel_average_reference(
         channel_names=channels,
         channel_positions_m=np.asarray(dataset.channel_positions_m[indices], dtype=np.float32),
         channel_mask=np.ones(len(channels), dtype=bool),
-        preprocessing=dataset.preprocessing,
+        preprocessing=(
+            replace(dataset.preprocessing, name=preprocessing_name)
+            if preprocessing_name is not None
+            else dataset.preprocessing
+        ),
         event_timeline=dataset.event_timeline,
         metadata=dataset.metadata.copy(),
         provenance={
@@ -80,6 +86,9 @@ def adapt_common_channel_average_reference(
                 "schema": DOMAIN_ADAPTER_SCHEMA,
                 "target_channels": list(channels),
                 "operation": "select channels then subtract their instantaneous mean",
+                "preprocessing_identity": (
+                    preprocessing_name or dataset.preprocessing.name
+                ),
             },
         },
         trial_channel_mask=None,
@@ -90,3 +99,63 @@ def adapt_common_channel_average_reference(
     )
     adapted.validate(require_labels=dataset.y is not None)
     return adapted
+
+
+def namespace_epoch_dataset(
+    dataset: EpochDataset,
+    namespace: str,
+    *,
+    name: str | None = None,
+) -> EpochDataset:
+    """Qualify participant/event identity before cross-dataset concatenation."""
+
+    dataset.validate(require_labels=dataset.y is not None)
+    prefix = str(namespace).strip()
+    if not prefix or "\0" in prefix:
+        raise ValueError("namespace must be non-empty and cannot contain NUL.")
+    subject_ids = np.asarray(
+        [f"{prefix}::{value}" for value in np.asarray(dataset.subject_ids).astype(str)]
+    )
+    timeline = replace(
+        dataset.event_timeline,
+        event_ids=np.asarray(
+            [f"{prefix}::{value}" for value in dataset.event_timeline.event_ids]
+        ),
+        group_ids=np.asarray(
+            [f"{prefix}::{value}" for value in dataset.event_timeline.group_ids]
+        ),
+        subject_ids=np.asarray(
+            [f"{prefix}::{value}" for value in dataset.event_timeline.subject_ids]
+        ),
+        dataset_ids=np.asarray(
+            [f"{prefix}::{value}" for value in dataset.event_timeline.dataset_ids]
+        ),
+    ).validate(n_epochs=dataset.n_epochs)
+    metadata = dataset.metadata.copy()
+    if "subject" in metadata:
+        metadata["subject"] = subject_ids
+    namespaced = EpochDataset(
+        name=name or f"{prefix}::{dataset.name}",
+        X=np.asarray(dataset.X, dtype=np.float32),
+        y=None if dataset.y is None else np.asarray(dataset.y, dtype=np.int64),
+        subject_ids=subject_ids,
+        channel_names=dataset.channel_names,
+        channel_positions_m=np.asarray(dataset.channel_positions_m, dtype=np.float32),
+        channel_mask=np.asarray(dataset.channel_mask, dtype=bool),
+        preprocessing=dataset.preprocessing,
+        event_timeline=timeline,
+        metadata=metadata,
+        provenance={
+            **dataset.provenance,
+            "parent_dataset_name": dataset.name,
+            "subject_namespace": prefix,
+        },
+        trial_channel_mask=(
+            None
+            if dataset.trial_channel_mask is None
+            else np.asarray(dataset.trial_channel_mask, dtype=bool)
+        ),
+        qc_features=dataset.qc_features,
+    )
+    namespaced.validate(require_labels=dataset.y is not None)
+    return namespaced

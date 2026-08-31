@@ -114,6 +114,12 @@ def analyze(args: argparse.Namespace) -> None:
                     raise ValueError(f"{path} checkpoint holdout does not equal block {block}.")
                 if result["target_cache_sha256"] != manifest["dataset_cache_sha256"]:
                     raise ValueError(f"{path} target cache identity mismatch.")
+                expected_source_cache = expected.get("source_cache_sha256")
+                if (
+                    expected_source_cache is not None
+                    and result.get("checkpoint_source_cache_sha256") != expected_source_cache
+                ):
+                    raise ValueError(f"{path} checkpoint source cache identity mismatch.")
                 ledger = result["subject_decision_ledger"]
                 ledger_subjects = {str(record["subject"]) for record in ledger}
                 if ledger_subjects != set(expected_subjects) or seen & ledger_subjects:
