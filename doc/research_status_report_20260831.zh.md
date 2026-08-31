@@ -15,7 +15,8 @@ _更新至 2026-09-01；GTN development、单被试迁移链与 90% 产品目标
 - `hit@5` 不是通用标准。当前 all-evidence 开发默认使用全部 245 人和全部 trial 的
   candidate mean；balanced truncation、sqrt-count、raw sum 与完整 hit@R/cost
   作为兼容和机制对照。
-- BI cross-decision 代码链已修，但 raw source 缺失，尚无合法监督校准性能结果。
+- BI 64 人 raw source 与 candidate-v2 已重建并 attested；尚无合法监督校准性能结果，
+  当前门禁是四个 target-block-excluded supervised checkpoint。
 
 ## 实测结果
 
@@ -144,7 +145,7 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
 
 ## 下一轮科研优先级
 
-1. **合法 personalization**：补齐 BI raw 或直接采集 BrainSync 多 known-target decisions，
+1. **合法 personalization**：使用已重建 BI candidate-v2 或采集 BrainSync 多 known-target decisions，
    比较 zero-shot、classifier fine、full fine、source/target/shrinkage normalization。
 2. **保护已有表征**：当前强联合微调已否决；下一轮只做冻结 backbone、渐进解冻、
    更低 backbone LR 或梯度冲突控制的单轴比较。N200/P300 多窗辅助目标须单独归因。
@@ -155,6 +156,7 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
 
 - [权威科研总纲](research_program.zh.md)
 - [合同审计](contract_audit_20260831.zh.md)
+- [BI candidate-v2 cache evidence](evidence/bi2014a_candidate_v2/README.md)
 - [证据边界](evidence/gtn_20260831/README.md)
 - [steady-state 云端独立审计](evidence/gtn_20260831/factorial/independent_cloud_audit.json)
 - [核长 v4 总分析](evidence/gtn_20260831/kernel_v4/v4_kernel_ablation_analysis.json)

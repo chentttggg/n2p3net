@@ -169,8 +169,8 @@ data.contract.EEGDataContract
 ## 7. 尚未解决的边界
 
 - BI2014a raw CSV candidate path 可恢复多 character decisions；旧 cache 的 repetition
-  index 写错。当前 raw source 缺失，待恢复后才能构建 causal-v2；合法指标按 early
-  known decisions -> later unknown decisions，当前没有 cross-decision 性能结果。
+  index 写错。64 人 raw source 已恢复并构建 causal-v2；合法指标按 early known
+  decisions -> later unknown decisions，当前没有 cross-decision 性能结果。
 - GTN 的参考电极并非逐文件完整记录，跨数据集前需要独立重参考方案。
 - GTN candidate occurrence 异步；不能把相同 occurrence index 当同步 block。
 - 128 Hz 与 256 Hz 的比较必须共享源事件、带宽、基线、QC、fold、seed 和

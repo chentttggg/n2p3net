@@ -1,0 +1,107 @@
+{
+  "schema": "n2p3_bi2014a_cross_decision_blocks/1",
+  "dataset_cache": "D:\\BCI\\n2p3-net\\experiments\\cache\\bi2014a_candidate_causal_v2.npz",
+  "dataset_cache_sha256": "252237a8ebae8e5edfe1bdf3ec7bcc28fd2adb815fa0c60323e666a372fb75f5",
+  "dataset_cache_byte_size": 474972098,
+  "assignment": "sort subjects by descending unlabeled epoch count then id; assign to the lowest-load non-full block; equal subject capacity",
+  "n_subjects": 64,
+  "n_epochs": 61013,
+  "blocks": [
+    {
+      "block": 0,
+      "subjects": [
+        "02",
+        "04",
+        "08",
+        "15",
+        "16",
+        "18",
+        "19",
+        "23",
+        "25",
+        "31",
+        "35",
+        "48",
+        "56",
+        "59",
+        "61",
+        "64"
+      ],
+      "n_subjects": 16,
+      "n_epochs": 15240,
+      "file": "block_0.json"
+    },
+    {
+      "block": 1,
+      "subjects": [
+        "03",
+        "05",
+        "11",
+        "14",
+        "21",
+        "22",
+        "26",
+        "27",
+        "29",
+        "32",
+        "38",
+        "40",
+        "45",
+        "47",
+        "50",
+        "63"
+      ],
+      "n_subjects": 16,
+      "n_epochs": 15240,
+      "file": "block_1.json"
+    },
+    {
+      "block": 2,
+      "subjects": [
+        "01",
+        "06",
+        "10",
+        "12",
+        "30",
+        "33",
+        "41",
+        "42",
+        "43",
+        "49",
+        "52",
+        "53",
+        "55",
+        "58",
+        "60",
+        "62"
+      ],
+      "n_subjects": 16,
+      "n_epochs": 15260,
+      "file": "block_2.json"
+    },
+    {
+      "block": 3,
+      "subjects": [
+        "07",
+        "09",
+        "13",
+        "17",
+        "20",
+        "24",
+        "28",
+        "34",
+        "36",
+        "37",
+        "39",
+        "44",
+        "46",
+        "51",
+        "54",
+        "57"
+      ],
+      "n_subjects": 16,
+      "n_epochs": 15273,
+      "file": "block_3.json"
+    }
+  ]
+}

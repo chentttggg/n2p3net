@@ -37,8 +37,9 @@ GTN 刺激是随机流，不是同步 1--9 round。candidate-local occurrence in
 
 旧构造器在每个 12-flash block 内计数，导致 repetition index 永远为 flash 位置
 0..11；旧 475 MB causal cache虽 schema/attestation 合法，语义错误且 runner 无法执行。
-构造器已改为 selection 内 repetition 0,1,2... 并消费 raw Event 100/104 边界；
-但当前本地/远端缺 BI raw source，candidate-v2 尚未构建，没有 cross-decision 性能结果。
+构造器已改为 selection 内 repetition 0,1,2... 并消费 raw Event 100/104 边界。
+本机 64 人 raw CSV/MAT 已核验，candidate-v2 已重建并 attested；当前尚无合法
+cross-decision 性能结果，下一门禁是四个 target-block-excluded supervised checkpoint。
 
 BI runner 已改成：前 K 个已知 character decisions 校准 -> raw-time embargo ->
 later unknown character decisions 测试，不再在同一 character 内切 repetition。
@@ -112,5 +113,5 @@ inner embargo、trim/tie、checkpoint signature、full-prefix refit、BI cross-d
 
 1. 当前工程 recipe 冻结为 `full_unfold + K35`、0.1 Hz/1200 ms、source QC100、
    无额外联合微调、all-evidence candidate mean；K65 保留强对照，K33 停止主线投入；
-2. 补齐 BI raw source后重建 causal-v2 cache，跑跨 decision calibration；当前无性能结果；
+2. BI causal-v2 cache 已重建；训练四个冻结 block checkpoint 后跑跨 decision calibration；
 3. 采集成人 BrainSync target-switch 多 decision 数据；只有该数据可裁决 90%。

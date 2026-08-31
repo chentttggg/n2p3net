@@ -89,8 +89,10 @@ Versioned QC caches contain only fold-independent epoch statistics; thresholds
 remain source/calibration-fold parameters. Target-prefix QC is an accuracy
 ablation and is off in zero-shot. Checkpoints bind ordered channels, reference,
 preprocessing, cache identity and training subjects. Legacy zero-state causal and
-BI candidate-v1 caches are rejected. The GTN steady-state replacement is complete;
-the BI candidate-v2 raw rebuild is still blocked on the missing BI raw source files.
+BI candidate-v1 caches are rejected. The GTN steady-state replacement is complete.
+The BI candidate-v2 cache has been rebuilt from all 64 raw CSV/MAT pairs and
+attested; matched cross-decision performance still requires the four frozen
+target-block-excluded supervised checkpoints.
 
 The discrete-time equations, physical receptive-field convention, and
 counterexamples are documented in `doc/input_contract_math.zh.md`.

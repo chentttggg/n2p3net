@@ -253,5 +253,5 @@ source QC100 已冻结；target-prefix QC 保持关闭。sum 与 mean 在每候�
 三核结果已完成并报告 `hit@all_balanced`、raw `hit@all`、完整 hit@R 曲线及成本；
 开发选择 K35，K65 保留强对照，K33 停止。
 
-BI candidate-v2 仍因缺 raw source 未构建。合法监督校准由 BI cross-decision 与最终
+BI candidate-v2 已从 64 人 raw CSV/MAT 重建。合法监督校准由 BI cross-decision 与最终
 BrainSync target-switch 数据裁决；GTN O5 永远只作 oracle proxy。

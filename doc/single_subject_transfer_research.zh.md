@@ -124,6 +124,6 @@ uniform `1/9` 和 empirical-majority baseline；正式采集目标必须随机�
 1. GTN steady-state causal 2x2、Z0/Z5 与 source-QC 消融已经完成并审计；
 2. 当前工程主线固定为 full-unfold+K35、0.1 Hz/1200 ms、source QC100、
    不做额外联合微调；all-evidence 使用全部 trial 的 candidate mean，K65 保留对照；
-3. 补齐 BI raw source并重建 candidate-v2，跑 early-known -> later-unknown calibration；
+3. 使用已重建 BI candidate-v2 和冻结 block checkpoint，跑 early-known -> later-unknown calibration；
 4. 只在独立 development decisions 选择 personalization/normalization/decision objective；
 5. 冻结后采集成人 BrainSync 多 target-switch decisions；untouched BrainSync 才能裁决 90%。

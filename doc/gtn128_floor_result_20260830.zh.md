@@ -102,6 +102,6 @@ hit@5 `0.408`，coverage `175/245`。它相对 Z0 的下降反映 late-session/c
 ## 5. 已知缺口与下一步
 
 1. 当前开发主线固定 `full_unfold + K35`、0.1 Hz/1200 ms、source QC100；
-2. BI candidate-v2 仍因 raw source 缺失未构建；补齐后执行跨 decision calibration；
+2. BI candidate-v2 已重建并 attested；训练冻结 block checkpoint 后执行跨 decision calibration；
 3. 直接推进 decision objective/personalization 试错，最终由成人 BrainSync 多
    target-switch decisions 裁决 90%。

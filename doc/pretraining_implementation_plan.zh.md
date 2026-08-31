@@ -231,9 +231,9 @@ Step 3  `--prefix-reps 5 --head zero_shot` 是 Z5。任何读取同 selection �
         classifier_fine/linear/mlp16/full_fine 都是 O5 oracle proxy，必须带
         `--allow-oracle-same-selection-adaptation`，不得写成未知数字校准。
 
-Step 4  监督校准主线转到 BI candidate-v2 的跨 decision split；当前 raw source
-        缺失，cache 尚未构建且没有 cross-decision 性能结果。最终裁决转到成人
-        BrainSync 多 target-switch decisions。
+Step 4  监督校准主线转到 BI candidate-v2 的跨 decision split；64 人 causal-v2
+        cache 已构建并 attested，性能结果须等待冻结 block checkpoint 后再报告。
+        最终裁决转到成人 BrainSync 多 target-switch decisions。
 
 Step 5  对冻结候选执行鲁棒性门禁 G1-G5。
 ```

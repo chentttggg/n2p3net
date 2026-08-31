@@ -9,7 +9,7 @@
 | GTN zero-shot | v4 checkpoint + all-evidence candidate mean：K35/K65=0.714/0.683；仍远低于 0.90 | K35 临时默认，K65 保留对照；不再用 K33 扩展搜索 |
 | GTN decision-aligned fine-tune | 2 kernel x 3 seed x 4 block、30 epoch 全源 EEG 已完成；K35/K65 learned=0.688/0.676，均未胜各自 no-fine mean | 当前联合微调 recipe 不晋升；默认保留 source-supervised checkpoint + fixed mean |
 | GTN oracle proxy | 仅机制诊断 | 永不用于未知数字 90% |
-| BI cross-decision calibration | repetition/boundary/split 已修；raw source 缺失，candidate-v2 blocked，无性能结果 | 补 raw 后前 K 已知 decisions -> 后续未知 decisions 跑通 |
+| BI cross-decision calibration | 64 人 causal-v2 cache 已重建；合法 split 与 block scope 已闭合，暂无性能结果 | 四个 source checkpoint 后跑前 K 已知 decisions -> 后续未知 decisions |
 | Signal recipe | 2x2 已完成；冻结 0.1 Hz/1200 ms，source QC=100 uV | 新 target block 前不再用同一 GTN cohort选 signal recipe |
 | Source transfer | source full refit/checkpoint signature 已实现；full-unfold+K35 临时默认；强联合微调有负迁移 | 进入合法 cross-decision personalization，并把 full-fine 作为高风险对照 |
 | Unlabelled target adaptation | 未开始 | pseudo/latent target 胜 zero-shot 且过反例 |

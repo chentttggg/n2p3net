@@ -37,6 +37,7 @@ from transfer.checkpoint import (  # noqa: E402
     load_n2p3_trunk_checkpoint,
     predict_n2p3_checkpoint,
 )
+from transfer.cohort import read_subject_manifest, resolve_subject_scope  # noqa: E402
 from transfer.subject_adapter import SubjectAdapter, SubjectAdapterConfig  # noqa: E402
 from transfer.within_subject import chronological_time_validation_split  # noqa: E402
 
@@ -103,9 +104,20 @@ def main() -> None:
         default=False,
     )
     parser.add_argument("--max-subjects", type=int, default=None)
+    parser.add_argument(
+        "--target-subjects-file",
+        type=Path,
+        default=None,
+        help="JSON list or newline-delimited target subjects assigned to this checkpoint.",
+    )
     parser.add_argument("--device", default="auto")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
+    if args.target_subjects_file is not None and args.max_subjects is not None:
+        parser.error(
+            "--target-subjects-file defines the exact denominator; do not combine it "
+            "with --max-subjects"
+        )
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
@@ -117,11 +129,24 @@ def main() -> None:
         test_repetitions=args.test_reps,
         max_test_selections=args.max_test_selections,
     )
-    subjects = np.asarray(split.usable_subjects)
-    requested_subjects = set(np.unique(np.asarray(dataset.subject_ids).astype(str)).tolist())
-    if args.max_subjects is not None:
-        subjects = subjects[: args.max_subjects]
-        requested_subjects = set(str(value) for value in subjects)
+    manifest_subjects = (
+        read_subject_manifest(args.target_subjects_file)
+        if args.target_subjects_file is not None
+        else None
+    )
+    try:
+        requested_order, usable_order = resolve_subject_scope(
+            np.asarray(dataset.subject_ids).astype(str),
+            split.usable_subjects,
+            requested_subjects=manifest_subjects,
+            max_subjects=args.max_subjects,
+        )
+    except ValueError as error:
+        parser.error(str(error))
+    requested_subjects = set(requested_order)
+    subjects = np.asarray(usable_order)
+    if not len(subjects):
+        raise ValueError("No usable BI target subjects remain in the requested cohort.")
 
     checkpoint_payload = load_checkpoint_payload(args.checkpoint) if args.checkpoint else None
     checkpoint_stats = (
@@ -475,6 +500,16 @@ def main() -> None:
         "checkpoint": str(Path(args.checkpoint).resolve()) if args.checkpoint else None,
         "checkpoint_sha256": _sha256_file(args.checkpoint) if args.checkpoint else None,
         "target_cache_sha256": target_cache_sha256,
+        "target_subjects_file": (
+            str(args.target_subjects_file.resolve())
+            if args.target_subjects_file is not None
+            else None
+        ),
+        "target_subjects_file_sha256": (
+            _sha256_file(args.target_subjects_file)
+            if args.target_subjects_file is not None
+            else None
+        ),
         "calibration_selections": args.calibration_selections,
         "test_reps": args.test_reps,
         "head": head_mode,

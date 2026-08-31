@@ -127,7 +127,7 @@ BrainSync 成人 8 导、多数字、多 session 数据是 90% 的最终裁决�
 | end-to-end decision-aligned fine-tune | K35/K65 x 3 seed x 4 block；30 epoch；每 epoch 全部 QC100 source EEG；learned=0.688/0.676 | 当前联合微调 recipe 不晋升；保留不微调 v4 checkpoint |
 | legacy zero-state causal ranking | 同一 suffix 连续选 QC/epoch/block/aggregation 且有 startup transient | 数值已从当前指导移除 |
 | 旧 forward causal cache/checkpoint | IIR 零状态产生严重 startup transient | 永久拒绝；steady-state replacement 已完成 |
-| 旧 BI candidate causal cache | repetition metadata 语义错误 | 永久拒绝；replacement 因 raw source 缺失而 blocked |
+| 旧 BI candidate causal cache | repetition metadata 语义错误 | 永久拒绝；64 人 causal-v2 replacement 已重建并 attested |
 | 当前代码 | 反例和聚焦测试通过 | 只证明合同能力，不是准确率结果 |
 
 旧 `forward` IIR 从零状态启动，在带 mV 直流偏置的 GTN 原始记录上会把前期 trial
@@ -214,7 +214,7 @@ scheduled events 和秒数。它不等同 fixed scheduled-block estimand；后�
 ### Gate 0：代码与制品闭环
 
 - causal steady-state GTN 0.1/0.5 x 800/1200 四个 cache 已重建并审计；
-- BI candidate causal-v2 cache 仍需从缺失的 raw BI source 重建；
+- BI candidate causal-v2 cache 已从 64 人 raw CSV/MAT 重建并 attested；
 - checkpoint 完整输入签名、source refit、subject/cache identity 已闭合；
 - Z0、Z5、O5 和 BI cross-decision 输出不可混报；
 - 所有核心反例测试、Ruff、full pytest 通过。
@@ -302,7 +302,7 @@ primary 为 subject-macro `hit@R`，并给 subject-cluster CI、coverage、absta
 1. 已完成 steady-state causal 2x2、source-QC 消融与独立制品审计；
 2. 采用不额外微调的 `full_unfold + K35` v4 checkpoint 和 all-evidence candidate
    mean 作为临时工程默认；K65 保留强对照，停止 K33 主线；
-3. 补齐 BI raw source，重建 candidate-v2 并跑跨 decision calibration；
+3. 使用已重建 candidate-v2，训练四个 target-block-excluded checkpoint 并跑跨 decision calibration；
 4. decision-aligned 全参数 30-epoch recipe 已否决；下一次只研究保护 backbone 的
    分阶段单轴策略、无真值 adaptation 与 target-switch personalization；
 5. 设计并采集成人 BrainSync 多 decision/target-switch 数据；
