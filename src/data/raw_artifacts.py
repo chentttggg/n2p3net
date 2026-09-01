@@ -419,7 +419,7 @@ def _publish_verified_stream(
             handle.seek(0)
             try:
                 before = os.fstat(handle.fileno())
-            except AttributeError, OSError:
+            except (AttributeError, OSError):
                 before = None
             size_bytes, sha256, md5 = _stream_digest(
                 handle,
