@@ -74,7 +74,7 @@ loss = lambda_wave * |X - X_hat|_1
 ### 3.2 预训练语料优先级
 
 ```text
-T1a  GTN 冻结 manifest 中除 target block 外的 subjects（人数从 ledger 派生）
+T1a  GTN v3 重建 manifest 中除 target block 外的 subjects（人数从 ledger 派生）
 T1b  BrainSync-GTN（若可得，8 通道同设备）
 T2   BI2014a + BNCI2014_008（16/8 通道，仅作 representation 辅助源）
 ```
@@ -83,17 +83,17 @@ T1a 必须先行。T1b/T2 除共同重参考外还必须解决通道数/坐标�
 `n_channels` 空间卷积不能把 3/8/16 导直接混入一批。当前已实现第一条显式路径：
 pairwise 公共真实通道子集 + 同子集 CAR，并重新计算 QC/重建 checkpoint；缺通道和
 preprocessing mismatch 继续 fail closed。dataset-specific spatial stem 尚未实现，
-不得与确定性 CAR 结果混报。BI+BNCI 匹配 causal 5 导实测中，uniform joint
+不得与确定性 CAR 结果混报。物理归档的 BI+BNCI 5 导实测中，uniform joint
 显著低于 BI-only；BI 3x/BNCI 1x 只恢复到 BI-only 附近。因此 T2 不能再写成默认
 representation 增益。固定 steps 的 BI-source normalization 与 all-source 等效，已排除
-公共 mean/std 主因；下一轴须用 normalized per-row loss weight 隔离域梯度比例。
+公共 mean/std 主因；该结论仅用于设计 v3 实验，旧 cache/checkpoint 不可续用。
 
 ### 3.3 下游 subject head
 
 对每个目标人：
 
 ```text
-frozen trunk -> adopted full_unfold features (4 x 32 = 128-dim at current input)
+frozen trunk -> adopted full_unfold features (4 x 44 = 176-dim at current input)
              -> Linear + weighted-CE offset + positive-temperature calibration
              -> target-only prefix fine-tune
 ```

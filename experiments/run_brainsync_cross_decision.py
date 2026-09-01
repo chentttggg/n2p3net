@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -283,6 +284,7 @@ def main() -> None:
         "schema": RESULT_SCHEMA,
         "dataset_cache": str(Path(args.dataset_cache).resolve()),
         "target_cache_sha256": target_cache_sha,
+        "input_preprocessing": asdict(dataset.preprocessing),
         "checkpoint": str(Path(args.checkpoint).resolve()),
         "checkpoint_sha256": _sha256(args.checkpoint),
         "head": args.head,

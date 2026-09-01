@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 
 class WaveDecoderHead(nn.Module):
-    """Reconstruct (B,C,T) from trunk features (B,S,T/4) and a time mask.
+    """Reconstruct (B,C,T) from trunk features (B,S,floor(T/4)) and a time mask.
 
     The mask is pooled to the trunk time resolution and projected to the same
     feature width, then added to the features. This is intentionally small:
@@ -32,13 +33,15 @@ class WaveDecoderHead(nn.Module):
         self.st_pool_size = int(st_pool_size)
         self.mask_pool = nn.AvgPool1d(self.st_pool_size, stride=self.st_pool_size)
         self.mask_projection = nn.Conv1d(1, trunk_channels, kernel_size=1)
-        self.upsample = nn.Upsample(scale_factor=self.st_pool_size, mode="linear")
         self.output_conv = nn.Conv1d(trunk_channels, output_channels, kernel_size=1)
 
     def forward(self, features: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        if features.ndim != 3 or features.shape[-1] * self.st_pool_size != mask.shape[-1]:
+        if mask.ndim not in {1, 2}:
+            raise ValueError("mask must be (T) or (B,T).")
+        expected_feature_times = mask.shape[-1] // self.st_pool_size
+        if features.ndim != 3 or features.shape[-1] != expected_feature_times:
             raise ValueError(
-                "features must be (B,S,T/4) and mask must be (B,T) or (T)."
+                "features must be (B,S,floor(T/pool)) and mask must be (B,T) or (T)."
             )
         if mask.ndim == 1:
             mask = mask[None]
@@ -49,9 +52,12 @@ class WaveDecoderHead(nn.Module):
         pooled = self.mask_pool(mask[:, None, :])
         projected = self.mask_projection(pooled)
         conditioned = features + projected
-        upsampled = self.upsample(conditioned)
-        if upsampled.shape[-1] != mask.shape[-1]:
-            upsampled = upsampled[..., : mask.shape[-1]]
+        upsampled = F.interpolate(
+            conditioned,
+            size=mask.shape[-1],
+            mode="linear",
+            align_corners=False,
+        )
         return self.output_conv(upsampled)
 
     def parameter_count(self) -> int:

@@ -24,7 +24,6 @@ def main() -> None:
     parser.add_argument("--target-channels", required=True, help="Comma-separated canonical EEG channels.")
     parser.add_argument("--name", default=None)
     parser.add_argument("--subject-namespace", default=None)
-    parser.add_argument("--preprocessing-name", default=None)
     parser.add_argument("--output", required=True)
     parser.add_argument("--uncompressed", action="store_true")
     args = parser.parse_args()
@@ -35,7 +34,6 @@ def main() -> None:
         dataset,
         channels,
         name=args.name,
-        preprocessing_name=args.preprocessing_name,
     )
     if args.subject_namespace is not None:
         adapted = namespace_epoch_dataset(adapted, args.subject_namespace, name=args.name)

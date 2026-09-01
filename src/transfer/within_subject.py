@@ -451,9 +451,8 @@ def causal_prefix_suffix_split(
     The split is strict: every candidate must supply the requested prefix and
     suffix around one global raw-sample embargo, and the group must have exactly
     one target. Excluded groups and reasons are returned rather than silently
-    repaired. ``contract`` selects the executable causal input contract; it
-    defaults to the canonical 2 Hz / 800 ms one and cohort runners pass their
-    own (e.g. the revised GTN 0.1 Hz / 1200 ms contract).
+    repaired. ``contract`` selects the executable causal input contract; the
+    default is the canonical 0.1 Hz / 1200 ms forward steady-state profile.
     """
 
     dataset.validate(require_labels=True)

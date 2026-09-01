@@ -10,8 +10,13 @@ import torch
 
 from baselines.validation import group_disjoint_validation_split
 from data.channel import build_channel_identity
-from data.contract import CAUSAL_IIR_INITIAL_STATE
-from data.epochs import EpochDataset, PreprocessingSpec, save_epoch_dataset
+from data.contract import SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
+from data.epochs import (
+    EpochDataset,
+    PreprocessingSpec,
+    preprocessing_spec_from_contract,
+    save_epoch_dataset,
+)
 from data.events import ScheduledEventTimeline, candidate_repetition_indices
 from experiments.run_pretrain import _source_training_rows, _subject_probe_validation_mask
 from experiments.run_pretrain import main as run_pretrain_main
@@ -44,6 +49,16 @@ def _trunk() -> N2P3Net:
         n_times=128,
         sfreq=128.0,
         tmin_s=-0.2,
+        pooling_mode="ms_flatten",
+    )
+
+
+def _dataset_trunk(dataset: EpochDataset) -> N2P3Net:
+    return N2P3Net(
+        n_channels=dataset.n_channels,
+        n_times=dataset.n_times,
+        sfreq=dataset.preprocessing.sfreq,
+        tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
         pooling_mode="ms_flatten",
     )
 
@@ -100,7 +115,6 @@ def test_reconstruction_loss_ignores_visible_region_errors() -> None:
         config=ReconstructionLossConfig(waveform_weight=1.0, spectral_weight=0.0),
         sample_mask=masked_region,
     )
-
     assert float(losses["total"]) == pytest.approx(0.0, abs=1e-8)
 
 
@@ -209,7 +223,7 @@ def test_pretraining_runner_records_trained_stop_gradient_subject_probe(
             "--checkpoint",
             str(checkpoint),
             "--cohort",
-            "p300_causal",
+            "causal",
             "--epochs",
             "1",
             "--batch-size",
@@ -233,6 +247,16 @@ def test_subject_probe_shape() -> None:
     probe = SubjectProbeHead(16, 5)
     out = probe(torch.randn(3, 16))
     assert out.shape == (3, 5)
+
+
+def test_wave_decoder_restores_nondivisible_causal_length() -> None:
+    decoder = WaveDecoderHead(trunk_channels=4, output_channels=3, st_pool_size=4)
+    mask = torch.ones(SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.n_times)
+    features = torch.randn(2, 4, len(mask) // 4)
+
+    reconstructed = decoder(features, mask)
+
+    assert reconstructed.shape == (2, 3, len(mask))
 
 
 def test_subject_adapter_fits_and_predicts() -> None:
@@ -558,23 +582,17 @@ def _causal_candidate_dataset() -> EpochDataset:
     )
     return EpochDataset(
         name="synthetic_causal_candidates",
-        X=np.zeros((n_epochs, 3, 128), dtype=np.float32),
+        X=np.zeros(
+            (n_epochs, 3, SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.n_times),
+            dtype=np.float32,
+        ),
         y=(candidates == targets).astype(np.int64),
         subject_ids=groups.astype(str),
         channel_names=identity.names,
         channel_positions_m=identity.coords,
         channel_mask=np.ones(3, dtype=bool),
-        preprocessing=PreprocessingSpec(
-            name="p300_single_subject_causal_v2",
-            sfreq=128.0,
-            l_freq=2.0,
-            h_freq=30.0,
-            tmin_ms=-200.0,
-            tmax_ms=800.0,
-            n_times=128,
-            baseline_mode="mean_only",
-            filter_phase="forward",
-            causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
+        preprocessing=preprocessing_spec_from_contract(
+            SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
         ),
         event_timeline=timeline,
         metadata=pd.DataFrame({"subject": groups.astype(str)}),
@@ -730,7 +748,7 @@ def test_pretrained_trunk_rejects_target_subject_overlap(tmp_path) -> None:
     dataset = _causal_candidate_dataset()
     checkpoint = tmp_path / "pretrained.pt"
     payload = {
-        "trunk_state_dict": _trunk().state_dict(),
+        "trunk_state_dict": _dataset_trunk(dataset).state_dict(),
         "training_subject_keys": [f"{dataset.name}\0g1"],
         "source_dataset_name": dataset.name,
         "input_channel_names": list(dataset.channel_names),
@@ -762,9 +780,9 @@ def test_legacy_checkpoint_without_kernel_declaration_uses_k65(tmp_path) -> None
     dataset = _causal_candidate_dataset()
     legacy = N2P3Net(
         n_channels=3,
-        n_times=128,
-        sfreq=128.0,
-        tmin_s=-0.2,
+        n_times=dataset.n_times,
+        sfreq=dataset.preprocessing.sfreq,
+        tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
         pooling_mode="ms_flatten",
         temporal_kernel_size=65,
     )
@@ -792,7 +810,7 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
 ) -> None:
     dataset = _causal_candidate_dataset()
     cache = save_epoch_dataset(tmp_path / "causal.npz", dataset)
-    trunk = _trunk()
+    trunk = _dataset_trunk(dataset)
     checkpoint = tmp_path / "supervised.pt"
     torch.save(
         {
@@ -812,8 +830,8 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
             "training_prior": 0.25,
             "architecture": trunk.architecture_record(),
             "n_channels": 3,
-            "n_times": 128,
-            "input_sample_rate_hz": 128.0,
+            "n_times": dataset.n_times,
+            "input_sample_rate_hz": dataset.preprocessing.sfreq,
             "input_tmin_s": -0.2,
         },
         checkpoint,

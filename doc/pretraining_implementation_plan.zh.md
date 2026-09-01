@@ -56,13 +56,13 @@ reconstruction control。以下实现保留为 pure reconstruction 对照，不�
 
 - 源域人数不硬编码；从冻结的 block manifest 与 cache subject ledger 派生，并在
   checkpoint 中逐一固化 `training_subject_keys` 与 holdout subjects。
-- 输入由 checkpoint 绑定的完整合同决定。当前 GTN matched factorial 是
-  0.1/0.5 Hz x 800/1200 ms、128 Hz、V、mean-only baseline；chronological 路径
-  必须使用 forward IIR + `steady_state_first_sample`，不得回退到通用 2 Hz/800 ms。
+- 输入由 checkpoint 绑定的完整合同决定。当前唯一主线是 0.1--30 Hz、
+  `[-200,1200) ms`、128 Hz、179 samples、V、mean-only baseline；chronological
+  路径使用 forward IIR + `steady_state_first_sample`。
 - **不做 channel mask**。3 通道掩掉 1 个就丢失大量空间信息；8 通道同理。
   时间 mask 是主目标。
 - 时间 mask：连续 block，block 长度 12–32 samples，总 mask 40–60%；
-  对 128 sample epoch，短 mask 保留 N200/P300 局部形态，长 mask 强迫上下文补全。
+  对 179 sample epoch，短 mask 保留 N200/P300 局部形态，长 mask 强迫上下文补全。
 - 当前实现把 masked samples 置零，`keep mask` 只传给 decoder；没有把 mask 作为
   新通道送入 trunk。若增加 mask embedding，必须作为独立消融。
 
@@ -71,9 +71,9 @@ reconstruction control。以下实现保留为 pure reconstruction 对照，不�
 不引入 U-Net。Decoder 是 trunk 的近似逆：
 
 ```text
-H = trunk(x_masked)            # (B, S=4, T=32)
+H = trunk(x_masked)            # (B, S=4, T=floor(179/4)=44)
 decoder:
-  per-branch upsample x4  -> (B, S, T=128)
+  interpolate to input T  -> (B, S, T=179)
   pointwise mix S -> C
   output C x T
 ```
@@ -208,15 +208,15 @@ precision  sum(w_i l_i)/sum(w_i), w_i=1/v_i；v_i 必须是逐 trial predictive 
 ## 6. 实验执行顺序
 
 ```text
-Step 0  单个已冻结 GTN steady-state causal arm 的复现模板（2x2 factorial 已完成）:
+Step 0  从 raw 重建统一 causal-v3 GTN source cache:
         .venv/Scripts/python experiments/prepare_gtn_dataset.py \
-          --root D:/path/to/GTN --cohort gtn --filter-phase forward \
+          --root D:/path/to/GTN --cohort causal --filter-phase forward \
           --l-freq 0.1 --tmax-ms 1200 --output CACHE.npz
 
-Step 1  按冻结 4-block manifest 做 source-supervised checkpoint；每个 checkpoint
+Step 1  重新生成 4-block manifest 并训练 source-supervised checkpoint；每个 checkpoint
         排除完整 target block，并绑定 cache SHA、输入合同与 source ledger:
         .venv/Scripts/python experiments/run_pretrain_supervised.py \
-          --source-cache CACHE.npz --cohort gtn --tmax-ms 1200 \
+          --source-cache CACHE.npz --cohort causal --tmax-ms 1200 \
           --holdout-subjects BLOCK_KEYS --pooling-mode full_unfold \
           --temporal-kernel-size 35 \
           --epochs 100 --qc-ptp-uv 100 --checkpoint BLOCK.pt
@@ -225,7 +225,7 @@ Step 2  GTN 合法主结果只跑 target-excluded Z0；保存完整 trial ledger
         hit@all_balanced、raw hit@all 与全部 hit@R。Z5 等待相同 M 但不使用标签，
         只用于 time/coverage sensitivity:
         .venv/Scripts/python experiments/run_within_subject_transfer.py \
-          --dataset-cache CACHE.npz --checkpoint BLOCK.pt --cohort gtn \
+          --dataset-cache CACHE.npz --checkpoint BLOCK.pt --cohort default \
           --prefix-reps 0 --test-reps all --head zero_shot --aggregation sum \
           --target-subjects-file BLOCK.json --output Z0.json
 
@@ -233,10 +233,10 @@ Step 3  `--prefix-reps 5 --head zero_shot` 是 Z5。任何读取同 selection �
         classifier_fine/linear/mlp16/full_fine 都是 O5 oracle proxy，必须带
         `--allow-oracle-same-selection-adaptation`，不得写成未知数字校准。
 
-Step 4  BI candidate-v2 cross-decision 已完成；5-decision fine 无可靠增益，
-        source stats/classifier 保留。最终裁决转到成人 BrainSync 多 target-switch decisions。
+Step 4  从 raw 重建 BI candidate-v3 后重跑 cross-decision；归档 v2 只支持保留
+        source stats/classifier 作为强基线，不可复用旧 checkpoint。
 
-Step 5  对冻结候选执行鲁棒性门禁 G1-G5。
+Step 5  对当前 v3 候选执行鲁棒性门禁 G1-G5，最终裁决转到成人 BrainSync。
 ```
 
 ## 7. 何时停止

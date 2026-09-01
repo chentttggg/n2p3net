@@ -16,9 +16,10 @@ from sklearn.metrics import roc_auc_score
 
 from baselines.deep import DeepBaseline, DeepConfig
 from baselines.features import time_to_index
+from data.contract import DEFAULT_P300_DATA_CONTRACT
 
 C = 8
-T = 128
+T = DEFAULT_P300_DATA_CONTRACT.n_times
 SFR = 128.0
 TMIN = -0.2  # 秒；与 data/preprocess.py 一致
 

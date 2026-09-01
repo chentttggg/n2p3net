@@ -34,7 +34,6 @@ def main() -> None:
     parser.add_argument("--source", action="append", type=_source_spec, required=True)
     parser.add_argument("--target-channels", required=True)
     parser.add_argument("--name", default="MultiSource-P300")
-    parser.add_argument("--preprocessing-name", default="multidomain_p300_causal_v1")
     parser.add_argument("--output", required=True)
     parser.add_argument("--uncompressed", action="store_true")
     args = parser.parse_args()
@@ -52,7 +51,6 @@ def main() -> None:
         aligned = adapt_common_channel_average_reference(
             dataset,
             channels,
-            preprocessing_name=args.preprocessing_name,
         )
         aligned = namespace_epoch_dataset(aligned, namespace)
         adapted.append(aligned)

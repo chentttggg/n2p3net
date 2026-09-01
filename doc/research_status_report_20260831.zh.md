@@ -6,8 +6,9 @@ _更新至 2026-09-01；GTN development、单被试迁移链与 90% 产品目标
 
 ## 结论摘要
 
-- 当前工程主线为 `full_unfold + K35`、0.1--30 Hz、1200 ms、source QC 100 uV。
-- 当前准确率最高的 all-evidence 配方是不额外微调 v4 checkpoint，并对每个候选
+- 当前工程主线为 causal-v3：`full_unfold + K35`、128 Hz、0.1--30 Hz、
+  `[-200,1200) ms`、179 samples、forward steady-state、source QC 100 uV。
+- 物理归档中准确率最高的 all-evidence 配方是不额外微调 v4 checkpoint，并对每个候选
   使用全部 trial 的 mean：K35 `71.43%`、K65 `68.30%`。K35 保持临时默认，
   K65 保留强对照，K33 退出主线。
 - 24 个端到端联合微调 checkpoint 已按 30 epoch 全量训练完成。K35/K65 的
@@ -15,16 +16,19 @@ _更新至 2026-09-01；GTN development、单被试迁移链与 90% 产品目标
 - `hit@5` 不是通用标准。当前 all-evidence 开发默认使用全部 245 人和全部 trial 的
   candidate mean；balanced truncation、sqrt-count、raw sum 与完整 hit@R/cost
   作为兼容和机制对照。
-- BI 64 人 candidate-v2 的 12 个 source checkpoints、13 arms x 3 seeds
+- 物理归档中的 BI 64 人 candidate-v2、12 个 source checkpoints、13 arms x 3 seeds
   cross-decision 比较已完成。zero-shot/source stats 为 `19.41%` subject-macro hit@2；
   classifier/full fine 没有可靠增益，target-prefix normalization 明显下降。
-- 匹配 5 导 common-CAR 的 BI+BNCI 联合源实验已完成。uniform joint 相对 BI-only
+- 物理归档中的 5 导 common-CAR BI+BNCI 实验显示 uniform joint 相对 BI-only
   为 `-3.33 pp`；后验 BI 3x/BNCI 1x 暴露恢复 `+2.72 pp`，但仍未胜 BI-only
   (`-0.61 pp`, CI 跨 0)。固定 uniform rows/steps 后改用 BI-source input stats 仅
   `+0.07 pp`，等同无变化。因此不采用朴素联合源，也不再归因于 mean/std 污染；
   下一轴隔离固定 step 下的域梯度权重。
 
 ## 实测结果
+
+以下数值均来自 `d1db8e4` 物理冻结归档，用于保留科研结论，不代表当前 v3
+cache/checkpoint 已生成。
 
 ### 信号与 source QC
 
@@ -193,10 +197,9 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
 - runner 支持 `--test-reps all`，输出 balanced-all、raw-all、完整 hit@R 与真实成本。
 - 端到端 runner 强制每 epoch 全部合法 source EEG、subject/group 不拆 batch，保存
   trial/listwise loss、参数改变量、峰值显存和 245 人 all-evidence 结果。
-- 软件默认已统一为 `full_unfold + K35`；`ms_eegnet` 与无架构声明的旧 checkpoint
-  显式保持 K65。
-- 项目 `.venv` 最终验证：`383 passed`，Ruff、compileall、uv lock 与
-  `git diff --check` 通过。
+- 软件结构默认为 `full_unfold + K35`；旧 v4 checkpoint 已压缩隔离，v3 尚待重训。
+- 项目 `.venv` 最终验证：活跃 suite `343 passed`；6 个已完成实验专用 test
+  modules 随 runner 进入物理归档。Ruff、compileall、uv lock 与 `git diff --check` 通过。
 
 ## 证据边界
 
@@ -211,31 +214,24 @@ listwise CE；`14--16` 个缺候选组的剩余 EEG 仍进入 trial CE，不删 
 - BrainSync causal multi-session loader、target-switch runner 和 common-channel CAR
   已通过 synthetic 反例；这属于工程验收，不是实际被试性能。现有 4 个 sessions
   均非 analysis-ready。
+- 冻结材料只存在 `frozen/*.tar.gz`；活跃树没有旧 runner、manifest 或 loose evidence。
 
 ## 下一轮科研优先级
 
-1. **BrainSync 真实数据**：入口已支持 causal multi-session/multi-decision 和 target-switch
-   runner；现有 4 个 session 均非 analysis-ready，需重新采集 known-target decisions。
-2. **保护已有表征**：当前强联合微调已否决；下一轮只做冻结 backbone、渐进解冻、
+1. **重建统一 source**：从 raw 重建 causal-v3 BI/BNCI/GTN cache、common-CAR 和
+   target-excluded K35/K65 checkpoint；旧 128-sample 对象不得改名复用。
+2. **BrainSync 真实数据**：入口已支持 v3 causal multi-session/multi-decision 和
+   target-switch runner；现有 4 个 session 均非 analysis-ready，需重新采集。
+3. **保护已有表征**：当前强联合微调已否决；下一轮只做冻结 backbone、渐进解冻、
    更低 backbone LR 或梯度冲突控制的单轴比较。N200/P300 多窗辅助目标须单独归因。
-3. **多源负迁移定位**：all-source 与 BI-source stats 已等效；下一步保持 uniform
+4. **多源负迁移定位**：归档中 all-source 与 BI-source stats 等效；v3 下一步保持 uniform
    唯一行、batch 和 step 不变，用归一化 per-row CE weight 实现约 80/20 域梯度质量。
    若仍未胜 BI-only，再停止简单混合并进入 gradient conflict/stem 机制。
-4. **证据效率**：在同一预测 ledger 上研究 latency tolerance、correlation-aware evidence
+5. **证据效率**：在同一预测 ledger 上研究 latency tolerance、correlation-aware evidence
    和 dynamic stopping，以 hit-all/R/cost 曲线裁决，不再增加核长搜索。
 
 ## 证据入口
 
 - [权威科研总纲](research_program.zh.md)
-- [合同审计](contract_audit_20260831.zh.md)
-- [BI candidate-v2 cache evidence](evidence/bi2014a_candidate_v2/README.md)
-- [BI cross-decision analysis](evidence/bi2014a_candidate_v2/cross_decision/analysis.json)
-- [uniform BI+BNCI joint analysis](evidence/multidomain_joint_20260901/analysis.json)
-- [BI-weighted BI+BNCI analysis](evidence/multidomain_weighted_20260901/analysis.json)
-- [BI-source-stat BI+BNCI analysis](evidence/multidomain_bi_stats_20260901/analysis.json)
-- [证据边界](evidence/gtn_20260831/README.md)
-- [steady-state 云端独立审计](evidence/gtn_20260831/factorial/independent_cloud_audit.json)
-- [核长 v4 总分析](evidence/gtn_20260831/kernel_v4/v4_kernel_ablation_analysis.json)
-- [端到端配对分析](evidence/gtn_20260831/end_to_end/paired_analysis.json)
-- [端到端 24 臂结果](evidence/gtn_20260831/end_to_end/analysis.json)
-- [端到端制品 provenance](evidence/gtn_20260831/end_to_end/provenance.json)
+- [物理冻结归档 manifest](../frozen/research_evidence_through_20260901-d1db8e4.manifest.json)
+- `../frozen/research_evidence_through_20260901-d1db8e4.tar.gz`

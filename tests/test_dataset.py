@@ -7,6 +7,7 @@ import mne
 import numpy as np
 import pytest
 
+from data.contract import DEFAULT_P300_DATA_CONTRACT
 from data.dataset import (
     EEGRecord,
     SubjectData,
@@ -33,7 +34,7 @@ def make_raw(sfreq=512.0, n_seconds=20.0, ch_names=None, amp=10e-6, seed=0):
 
 
 def make_events(sfreq=512.0, n_seconds=20.0, first=2.0, step=1.0):
-    times = np.arange(first, n_seconds - 1.0, step)  # 留 1s 余量给 tmax=0.8
+    times = np.arange(first, n_seconds - 1.0, step)  # final event still leaves >1.2 s
     samples = np.round(times * sfreq).astype(int)
     return np.column_stack(
         [samples, np.zeros(len(samples), dtype=int), np.ones(len(samples), dtype=int)]
@@ -61,7 +62,7 @@ def test_build_subject_shape():
 
     assert isinstance(s, SubjectData)
     assert s.data.shape[1] == 8
-    assert s.data.shape[2] == 128
+    assert s.data.shape[2] == DEFAULT_P300_DATA_CONTRACT.n_times
     assert s.data.dtype == np.float32
     assert s.labels.dtype == np.int64
     assert s.E_chn.shape == (8, 48)  # 6*n_freqs = 48

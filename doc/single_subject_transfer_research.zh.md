@@ -75,7 +75,7 @@ GTN 是随机刺激流，不存在同步 1--9 round。默认 operational M/R 表
 | full_fine | known calibration decisions | 高风险 arm，BN frozen/adapt 分开 |
 | pseudo/latent target | 0 | GTN 无真值自适配研究 |
 
-GTN source-only 决策目标实验已给出一个直接反例：从 target-block-excluded v4
+物理归档中的 GTN source-only 决策目标实验已给出一个直接反例：从 target-block-excluded v4
 checkpoint 出发，30 epoch 全参数 trial CE + 9-candidate listwise 联合微调并未提高
 zero-shot all-evidence。K35 的 learned-tempered 为 `0.6884`，低于不微调
 candidate mean 的 `0.7143`；fine-tuned backbone 即使用 fixed mean 也只有 `0.6585`。

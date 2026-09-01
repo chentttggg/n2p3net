@@ -6,20 +6,19 @@
 `x_c[n] in V`，第 `i` 个刺激在源记录中的 sample index 为 `e_i`。
 `x_c[n]`、`f_src` 和 `e_i` 属于采集证据，不因模型输入采样率改变。
 
-成人 offline 软件默认张量为：
+当前统一软件默认张量为：
 
 ```text
 f_model = 128 Hz
-passband = 2..30 Hz
-epoch = [-200, 800) ms
-T = floor((800 - (-200)) * 128 / 1000) = 128
+passband = 0.1..30 Hz
+epoch = [-200, 1200) ms
+T = floor((1200 - (-200)) * 128 / 1000) = 179
 unit = V
 baseline = per-trial, per-channel mean over [-200, 0) ms
 ```
 
-这不是所有 cohort 的准确率最优硬合同。GTN steady-state 2x2 已比较
-`l_freq in {0.1,0.5}` 与 `tmax in {800,1200}`，development winner 冻结为
-0.1 Hz/1200 ms；对应 `T` 由同一公式推导。
+该默认来自已完成 GTN steady-state 2x2 的 achieved-best recipe；成人 BrainSync
+仍需 prospective confirmation，但在出现更强证据前不保留较差降级接口。
 online causal profile 另声明 `filter_phase=forward` 和
 `causal_iir_initial_state=steady_state_first_sample`。
 
@@ -168,9 +167,9 @@ data.contract.EEGDataContract
 
 ## 7. 尚未解决的边界
 
-- BI2014a raw CSV candidate path 可恢复多 character decisions；旧 cache 的 repetition
-  index 写错。64 人 raw source 已恢复并构建 causal-v2；合法指标按 early known
-  decisions -> later unknown decisions，当前没有 cross-decision 性能结果。
+- BI2014a raw CSV candidate path 可恢复多 character decisions。causal-v2 与其
+  cross-decision 结果已压缩隔离；当前须从 64 人 raw source 重建 causal-v3，不能
+  改 cache 名称或 metadata 冒充新合同。
 - GTN 的参考电极并非逐文件完整记录，跨数据集前需要独立重参考方案。
 - GTN candidate occurrence 异步；不能把相同 occurrence index 当同步 block。
 - 128 Hz 与 256 Hz 的比较必须共享源事件、带宽、基线、QC、fold、seed 和

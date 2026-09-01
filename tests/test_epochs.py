@@ -20,6 +20,7 @@ from data.epochs import (
     PreprocessingSpec,
     concatenate_epoch_datasets,
     load_epoch_dataset,
+    preprocessing_spec_from_contract,
     save_epoch_dataset,
     select_epoch_channels,
     write_epoch_dataset_record,
@@ -382,9 +383,9 @@ def test_preprocessing_rejects_invalid_filter_contract() -> None:
 def test_default_preprocessing_matches_ms_eegnet_physical_scales() -> None:
     profile = PreprocessingSpec()
 
-    assert profile.name == "p300_ms_eegnet_input_v2"
-    assert (profile.sfreq, profile.l_freq, profile.h_freq) == (128.0, 2.0, 30.0)
-    assert (profile.tmin_ms, profile.tmax_ms, profile.n_times) == (-200.0, 800.0, 128)
+    assert profile.name == "p300_ms_eegnet_input_v3"
+    assert (profile.sfreq, profile.l_freq, profile.h_freq) == (128.0, 0.1, 30.0)
+    assert (profile.tmin_ms, profile.tmax_ms, profile.n_times) == (-200.0, 1200.0, 179)
     assert profile.baseline_mode == "mean_only"
     assert profile.signal_unit == "V"
     assert profile.resample_method == "fft"
@@ -396,11 +397,7 @@ def test_causal_single_subject_contract_accepts_forward_phase_only() -> None:
     with pytest.raises(ValueError, match="forward"):
         assert_causal_p300_input_contract(profile)
 
-    causal = PreprocessingSpec(
-        name=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.name,
-        filter_phase="forward",
-        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
-    )
+    causal = preprocessing_spec_from_contract(SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT)
     causal.validate()
     assert_causal_p300_input_contract(causal)
 

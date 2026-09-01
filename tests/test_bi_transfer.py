@@ -9,11 +9,11 @@ import pytest
 import torch
 
 from data.channel import build_channel_identity
-from data.contract import CAUSAL_IIR_INITIAL_STATE
+from data.contract import SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
 from data.epochs import (
     EpochDataset,
-    PreprocessingSpec,
     concatenate_epoch_datasets,
+    preprocessing_spec_from_contract,
     save_epoch_dataset,
 )
 from data.events import observed_only_timeline
@@ -103,23 +103,17 @@ def _bi_dataset() -> EpochDataset:
     )
     return EpochDataset(
         name="synthetic_bi",
-        X=np.zeros((n, 3, 128), dtype=np.float32),
+        X=np.zeros(
+            (n, 3, SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.n_times),
+            dtype=np.float32,
+        ),
         y=y,
         subject_ids=selection.astype(str),
         channel_names=identity.names,
         channel_positions_m=identity.coords,
         channel_mask=np.ones(3, dtype=bool),
-        preprocessing=PreprocessingSpec(
-            name="p300_single_subject_causal_v2",
-            sfreq=128.0,
-            l_freq=2.0,
-            h_freq=30.0,
-            tmin_ms=-200.0,
-            tmax_ms=800.0,
-            n_times=128,
-            baseline_mode="mean_only",
-            filter_phase="forward",
-            causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
+        preprocessing=preprocessing_spec_from_contract(
+            SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
         ),
         event_timeline=timeline,
         metadata=pd.DataFrame(
@@ -201,16 +195,17 @@ def _bi_cross_decision_dataset(subject: str = "s1") -> EpochDataset:
     )
     dataset = EpochDataset(
         name="synthetic-bi-decisions",
-        X=np.zeros((len(rows), 3, 128), dtype=np.float32),
+        X=np.zeros(
+            (len(rows), 3, SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.n_times),
+            dtype=np.float32,
+        ),
         y=np.asarray(labels, dtype=np.int64),
         subject_ids=np.asarray(subject_ids),
         channel_names=identity.names,
         channel_positions_m=identity.coords,
         channel_mask=np.ones(3, dtype=bool),
-        preprocessing=PreprocessingSpec(
-            name="p300_single_subject_causal_v2",
-            filter_phase="forward",
-            causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
+        preprocessing=preprocessing_spec_from_contract(
+            SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
         ),
         event_timeline=timeline,
         metadata=metadata,
@@ -310,7 +305,12 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
     ][0]
     dataset.metadata.loc[broken_row, "repetition_index"] = 99
     cache = save_epoch_dataset(tmp_path / "bi-causal.npz", dataset)
-    trunk = N2P3Net(n_channels=3, n_times=128, sfreq=128.0, tmin_s=-0.2)
+    trunk = N2P3Net(
+        n_channels=3,
+        n_times=dataset.n_times,
+        sfreq=dataset.preprocessing.sfreq,
+        tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
+    )
     checkpoint = tmp_path / "source.pt"
     torch.save(
         {
@@ -330,8 +330,8 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
             "training_prior": 1.0 / 6.0,
             "architecture": trunk.architecture_record(),
             "n_channels": 3,
-            "n_times": 128,
-            "input_sample_rate_hz": 128.0,
+            "n_times": dataset.n_times,
+            "input_sample_rate_hz": dataset.preprocessing.sfreq,
             "input_tmin_s": -0.2,
         },
         checkpoint,

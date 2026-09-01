@@ -15,16 +15,15 @@ qc_features: relative_ptp, channel_std, epoch_scale, observed_mask
 The artifact stores provenance, source units, epoch bounds, preprocessing
 configuration, and rejected-trial counts. Canonical resampling and filtering
 are configuration choices evaluated inside the protocol, not hidden defaults.
-There is no universal P300 recipe. Executable profiles currently include:
+The active interfaces expose one achieved-best physical recipe:
 
 | profile | purpose | current axes |
 |---|---|---|
-| default offline | adult/BI development | 128 Hz, 2-30 Hz, `[-200,800) ms`, zero phase |
-| GTN performance | child/3-channel development | 128 Hz, 0.1 Hz, 1200 ms; matched 2x2 completed |
-| GTN paper anchor | source-paper comparison | 128 Hz, 0.5 Hz, 1200 ms anchor |
-| causal | chronological online estimate | forward IIR with persisted steady-state initial state |
+| offline | non-chronological analysis | 128 Hz, 0.1-30 Hz, `[-200,1200) ms`, zero phase |
+| causal | chronological analysis | same band/window, forward IIR, steady-state initial state |
+| GTN paper anchor | source-paper comparison only | 128 Hz, 0.5-30 Hz, `[-200,1200) ms` |
 
-BrainSync uses the generic causal 2-30 Hz / 800 ms profile by default. Multiple
+BrainSync uses the canonical 0.1-30 Hz / 1200 ms causal profile. Multiple
 sessions are ordered by timezone-aware `started_utc`; marker `selection_id` or
 `block_id` defines target-changing decisions. Multi-session input without a
 unique timestamp fails closed.
@@ -87,16 +86,16 @@ binary logits and leave calibration and candidate aggregation unchanged.
 K35 is the provisional default kernel under the adopted `full_unfold` readout.
 The completed GTN development comparison removed K33 from the main line and retained
 K65 as the unresolved broad reference. The strongest current all-evidence control
-is the unchanged v4 checkpoint with candidate-mean scoring (K35 71.43%, K65
+was the now-archived v4 checkpoint with candidate-mean scoring (K35 71.43%, K65
 68.30%). Thirty-epoch joint backbone/listwise fine-tuning reduced K35 to 68.84%
 and is not part of the default recipe. Equations, counterexamples, and the GTN development and
 confirmation boundaries are in
 `doc/research_program.zh.md`.
 
-Prior-free research heads expose every post-trunk feature/time coordinate to a
+Prior-free research heads exposed every post-trunk feature/time coordinate to a
 linear, factorized-quadratic, or parameter-matched MLP readout. BI2014a supports
 the linear full-unfold mechanism, not the quadratic or MLP extensions. Their
-equations and historical preregistration are in `doc/prior_free_unfolding.zh.md`.
+equations and preregistration are in the physical archive under `frozen/`.
 
 ## Initial Search Space
 

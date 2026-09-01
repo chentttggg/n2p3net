@@ -32,7 +32,6 @@ def adapt_common_channel_average_reference(
     target_channels: Sequence[str],
     *,
     name: str | None = None,
-    preprocessing_name: str | None = None,
 ) -> EpochDataset:
     """Select a complete common montage and apply the same CAR in every domain."""
 
@@ -69,11 +68,7 @@ def adapt_common_channel_average_reference(
         channel_names=channels,
         channel_positions_m=np.asarray(dataset.channel_positions_m[indices], dtype=np.float32),
         channel_mask=np.ones(len(channels), dtype=bool),
-        preprocessing=(
-            replace(dataset.preprocessing, name=preprocessing_name)
-            if preprocessing_name is not None
-            else dataset.preprocessing
-        ),
+        preprocessing=dataset.preprocessing,
         event_timeline=dataset.event_timeline,
         metadata=dataset.metadata.copy(),
         provenance={
@@ -86,9 +81,7 @@ def adapt_common_channel_average_reference(
                 "schema": DOMAIN_ADAPTER_SCHEMA,
                 "target_channels": list(channels),
                 "operation": "select channels then subtract their instantaneous mean",
-                "preprocessing_identity": (
-                    preprocessing_name or dataset.preprocessing.name
-                ),
+                "preprocessing_identity": dataset.preprocessing.name,
             },
         },
         trial_channel_mask=None,

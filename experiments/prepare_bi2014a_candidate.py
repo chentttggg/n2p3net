@@ -25,12 +25,13 @@ from data.bi2014a_candidate import (  # noqa: E402
     recover_bi2014a_candidates,
 )
 from data.contract import (  # noqa: E402
-    CAUSAL_IIR_INITIAL_STATE,
+    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     assert_causal_p300_input_contract,
 )
 from data.epochs import (  # noqa: E402
     PreprocessingSpec,
     concatenate_epoch_datasets,
+    preprocessing_spec_from_contract,
     save_epoch_dataset,
 )
 
@@ -38,18 +39,8 @@ DEFAULT_BI_ROOT = ROOT / "mne_data" / "MNE-braininvaders2014a-data" / "zenodo" /
 
 
 def _preprocessing() -> PreprocessingSpec:
-    return PreprocessingSpec(
-        name="p300_single_subject_causal_v2",
-        sfreq=128.0,
-        l_freq=2.0,
-        h_freq=30.0,
-        tmin_ms=-200.0,
-        tmax_ms=800.0,
-        n_times=128,
-        baseline_mode="mean_only",
-        signal_unit="V",
-        filter_phase="forward",
-        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
+    return preprocessing_spec_from_contract(
+        SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
     )
 
 

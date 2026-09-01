@@ -12,55 +12,21 @@ import numpy as np
 import pandas as pd
 
 from data.channel import canonical_channel_name
-from data.contract import (
-    DEFAULT_GTN_DATA_CONTRACT,
-    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
-)
+from data.contract import SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
 from data.dataset import build_subject, read_raw
 from data.epochs import (
     EpochDataset,
     PreprocessingSpec,
     concatenate_epoch_datasets,
+    preprocessing_spec_from_contract,
 )
 
 BRAIN_SYNC_SESSION_SCHEMA_PREFIX = "brainsync-gtn-session/"
 BRAIN_SYNC_MARKER_EVENT = "recording_marker"
 BRAIN_SYNC_ONSET_KIND = "onset"
-BRAIN_SYNC_OFFLINE_PREPROCESSING = PreprocessingSpec(
-    name=DEFAULT_GTN_DATA_CONTRACT.name,
-    sfreq=DEFAULT_GTN_DATA_CONTRACT.sample_rate_hz,
-    l_freq=DEFAULT_GTN_DATA_CONTRACT.l_freq,
-    h_freq=DEFAULT_GTN_DATA_CONTRACT.h_freq,
-    tmin_ms=DEFAULT_GTN_DATA_CONTRACT.tmin_ms,
-    tmax_ms=DEFAULT_GTN_DATA_CONTRACT.tmax_ms,
-    n_times=DEFAULT_GTN_DATA_CONTRACT.n_times,
-    baseline_mode=DEFAULT_GTN_DATA_CONTRACT.baseline_mode,
+BRAIN_SYNC_PREPROCESSING = preprocessing_spec_from_contract(
+    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
 )
-BRAIN_SYNC_CAUSAL_PREPROCESSING = PreprocessingSpec(
-    name="brainsync_single_subject_causal_v1",
-    sfreq=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.sample_rate_hz,
-    l_freq=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.l_freq,
-    h_freq=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.h_freq,
-    tmin_ms=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.tmin_ms,
-    tmax_ms=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.tmax_ms,
-    n_times=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.n_times,
-    baseline_mode=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.baseline_mode,
-    signal_unit=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.signal_unit,
-    filter_method=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.filter_method,
-    filter_order=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.filter_order,
-    filter_phase=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.filter_phase,
-    causal_iir_initial_state=(
-        SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.causal_iir_initial_state
-    ),
-    resample_domain=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.resample_domain,
-    resample_method=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.resample_method,
-    resample_npad=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.resample_npad,
-    resample_window=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.resample_window,
-    resample_pad=SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.resample_pad,
-)
-# Chronological calibration/test analysis is the BrainSync default. The old
-# offline profile remains explicit for non-causal sensitivity work.
-BRAIN_SYNC_PREPROCESSING = BRAIN_SYNC_CAUSAL_PREPROCESSING
 
 
 def _load_json_object(path: Path) -> dict[str, Any]:

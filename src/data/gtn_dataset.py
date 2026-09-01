@@ -10,10 +10,10 @@ import numpy as np
 import pandas as pd
 
 from data.contract import (
-    DEFAULT_GTN_DATA_CONTRACT,
-    GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
+    DEFAULT_P300_DATA_CONTRACT,
     PAPER_GTN_CAUSAL_DATA_CONTRACT,
     PAPER_GTN_DATA_CONTRACT,
+    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
 )
 from data.epochs import EpochDataset, PreprocessingSpec
 from data.events import (
@@ -26,29 +26,29 @@ from data.preprocess import PreprocessResult, preprocess
 
 GTN_CHANNELS = ("Fz", "Cz", "Pz")
 GTN_LMBC_PREPROCESSING = PreprocessingSpec(
-    name=DEFAULT_GTN_DATA_CONTRACT.name,
-    sfreq=DEFAULT_GTN_DATA_CONTRACT.sample_rate_hz,
-    l_freq=DEFAULT_GTN_DATA_CONTRACT.l_freq,
-    h_freq=DEFAULT_GTN_DATA_CONTRACT.h_freq,
-    tmin_ms=DEFAULT_GTN_DATA_CONTRACT.tmin_ms,
-    tmax_ms=DEFAULT_GTN_DATA_CONTRACT.tmax_ms,
-    n_times=DEFAULT_GTN_DATA_CONTRACT.n_times,
-    baseline_mode=DEFAULT_GTN_DATA_CONTRACT.baseline_mode,
+    name=DEFAULT_P300_DATA_CONTRACT.name,
+    sfreq=DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
+    l_freq=DEFAULT_P300_DATA_CONTRACT.l_freq,
+    h_freq=DEFAULT_P300_DATA_CONTRACT.h_freq,
+    tmin_ms=DEFAULT_P300_DATA_CONTRACT.tmin_ms,
+    tmax_ms=DEFAULT_P300_DATA_CONTRACT.tmax_ms,
+    n_times=DEFAULT_P300_DATA_CONTRACT.n_times,
+    baseline_mode=DEFAULT_P300_DATA_CONTRACT.baseline_mode,
     reject_threshold_v=None,
 )
 
 GTN_COHORT_CONTRACTS = {
-    "default": DEFAULT_GTN_DATA_CONTRACT,
-    "gtn": GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
+    "offline": DEFAULT_P300_DATA_CONTRACT,
+    "causal": SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     "gtn_paper_offline": PAPER_GTN_DATA_CONTRACT,
     "gtn_paper": PAPER_GTN_CAUSAL_DATA_CONTRACT,
 }
 
 
-def gtn_preprocessing_for_cohort(cohort: str = "default") -> PreprocessingSpec:
+def gtn_preprocessing_for_cohort(cohort: str = "offline") -> PreprocessingSpec:
     """Resolve one GTN cohort name to its executable preprocessing spec.
 
-    ``default``/``gtn`` select 0.1 Hz offline/causal profiles;
+    ``offline``/``causal`` select 0.1 Hz zero/forward profiles;
     ``gtn_paper_offline``/``gtn_paper`` select the 0.5 Hz pair. Preparing a
     chronological cache requires a causal profile rather than restating phase
     and initial-state fields on every command line.

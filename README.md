@@ -57,22 +57,24 @@ full settings, requested/effective record fields, and cold-start boundaries are
 documented in `doc/device-portability.md`.
 
 The LOSO runner requires the signal and baseline extras. The living research
-guide is `doc/research_program.zh.md`; dated ablations remain historical evidence.
+guide is `doc/research_program.zh.md`; frozen ablations and evidence are physically
+isolated in `frozen/research_evidence_through_20260901-d1db8e4.tar.gz`.
 The current concise research briefing is `doc/research_status_report_20260831.zh.md`.
 The current project-wide critical review is `doc/project_critical_review_20260901.zh.md`.
 `doc/constitution.md` and `doc/blueprint.md` contain stable engineering principles.
 
 ## Data Contract
 
-Executable profiles are defined in `src/data/contract.py`; there is no universal
-P300 filter/window recipe. The adult offline default is 128 Hz, 2-30 Hz and
-`[-200,800) ms`. GTN accuracy development compares 0.1/0.5 Hz and 800/1200 ms.
-Chronological online profiles use forward IIR with
+Executable profiles are defined in `src/data/contract.py`. The single active
+default is 128 Hz, 0.1-30 Hz and `[-200,1200) ms` (`179` samples). Offline
+analysis uses zero-phase IIR; chronological analysis uses forward IIR with
 `causal_iir_initial_state=steady_state_first_sample`; legacy zero-state forward
 caches are rejected. BrainSync acquisition and raw event indices remain at the
-device-native 250 Hz; only the derived model tensor is resampled. BrainSync now
-defaults to the generic causal 2-30 Hz / 800 ms profile and accepts repeated
-session inputs; block/selection markers remain distinct target-changing decisions.
+device-native 250 Hz; only the derived model tensor is resampled. BrainSync,
+BI and GTN chronological builders all derive from this same causal contract.
+Repeated BrainSync sessions are accepted; block/selection markers remain distinct
+target-changing decisions. The paper-aligned 0.5 Hz contract is a named anchor,
+not a fallback default.
 Use the adapter to preserve the frontend's raw recording boundary while applying preprocessing:
 
 ```powershell
@@ -93,7 +95,9 @@ subset in every domain:
 ```
 
 Source and target caches must then share preprocessing, channel order, CAR
-provenance and a newly trained checkpoint. Missing channels are not padded.
+provenance and a newly trained checkpoint. Existing 128-sample BI/BNCI caches
+cannot be renamed or reused; they must be rebuilt from raw data. Missing channels
+are not padded.
 
 The adapter reads `recording.path`, filters onset `recording_marker` rows from
 `events/events.jsonl`, derives labels from the confirmed target digit, uses
@@ -105,11 +109,11 @@ per-channel mean baseline correction and record `baseline_mode=mean_only`.
 Versioned QC caches contain only fold-independent epoch statistics; thresholds
 remain source/calibration-fold parameters. Target-prefix QC is an accuracy
 ablation and is off in zero-shot. Checkpoints bind ordered channels, reference,
-preprocessing, cache identity and training subjects. Legacy zero-state causal and
-BI candidate-v1 caches are rejected. The GTN steady-state replacement is complete.
-The BI candidate-v2 cache has been rebuilt from all 64 raw CSV/MAT pairs and
-attested; matched cross-decision performance still requires the four frozen
-target-block-excluded supervised checkpoints.
+preprocessing, cache identity and training subjects. Legacy zero-state, 2 Hz/800 ms,
+GTN-v4 and BI candidate-v1/v2 caches are rejected by the active contract. Their
+audit snapshot is compressed under `frozen/`. Current BI/BNCI/GTN source caches
+and checkpoints must be rebuilt under `p300_single_subject_causal_v3` before new
+promotion experiments.
 
 The discrete-time equations, physical receptive-field convention, and
 counterexamples are documented in `doc/input_contract_math.zh.md`.

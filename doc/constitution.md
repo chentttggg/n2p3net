@@ -56,6 +56,12 @@ P8. Online causal filtering declares and persists its initial state. Whole-recor
 zero-phase filtering before chronological splitting is forbidden; offline
 split-local zero-phase is a separate accuracy arm with boundary-safe padding.
 
+P9. Important contract changes modify the canonical interface and all derived
+builders, runners, checkpoints, tests, and living documents in one change. Obsolete
+aliases and downgrade options are removed. Frozen research material is physically
+isolated as a checksummed compressed archive and removed from executable paths;
+text labels such as "legacy" or "historical" are not an isolation boundary.
+
 ## Prohibited
 
 - Random epoch-level train/test splits when run/session data are available.

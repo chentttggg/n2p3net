@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 from data.channel import canonical_channel_name
-from data.contract import DEFAULT_P300_DATA_CONTRACT
+from data.contract import DEFAULT_P300_DATA_CONTRACT, EEGDataContract
 from data.events import (
     EVENT_TIMELINE_SCHEMA,
     LEGACY_EVENT_TIMELINE_SCHEMAS,
@@ -185,7 +185,34 @@ class PreprocessingSpec:
             raise ValueError("reject_threshold_v must be finite and positive or None.")
 
 
-P300_PERFORMANCE_PREPROCESSING = PreprocessingSpec()
+def preprocessing_spec_from_contract(contract: EEGDataContract) -> PreprocessingSpec:
+    """Materialize one canonical data contract without restating coupled fields."""
+
+    return PreprocessingSpec(
+        name=contract.name,
+        sfreq=contract.sample_rate_hz,
+        l_freq=contract.l_freq,
+        h_freq=contract.h_freq,
+        tmin_ms=contract.tmin_ms,
+        tmax_ms=contract.tmax_ms,
+        n_times=contract.n_times,
+        baseline_mode=contract.baseline_mode,
+        signal_unit=contract.signal_unit,
+        filter_method=contract.filter_method,
+        filter_order=contract.filter_order,
+        filter_phase=contract.filter_phase,
+        causal_iir_initial_state=contract.causal_iir_initial_state,
+        resample_domain=contract.resample_domain,
+        resample_method=contract.resample_method,
+        resample_npad=contract.resample_npad,
+        resample_window=contract.resample_window,
+        resample_pad=contract.resample_pad,
+    )
+
+
+P300_PERFORMANCE_PREPROCESSING = preprocessing_spec_from_contract(
+    DEFAULT_P300_DATA_CONTRACT
+)
 
 
 def _json_default(value: Any) -> Any:

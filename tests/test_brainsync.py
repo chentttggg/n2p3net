@@ -1,16 +1,22 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict
+from dataclasses import asdict, replace
 
 import mne
 import numpy as np
+import pytest
 import torch
 
 from data.brainsync import (
     BRAIN_SYNC_PREPROCESSING,
     load_brainsync_session,
     load_brainsync_sessions,
+)
+from data.contract import (
+    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+    SOURCE_COHORT_DATA_CONTRACTS,
+    assert_causal_p300_input_contract,
 )
 from data.epochs import save_epoch_dataset
 from experiments.run_brainsync_cross_decision import main as run_brainsync_cross_decision
@@ -28,6 +34,32 @@ POSITIONS = [
     [0.0556666, -0.0976251, 0.00273],
     [0.0001076, -0.114892, 0.014657],
 ]
+
+
+def test_brainsync_uses_the_canonical_causal_profile() -> None:
+    assert BRAIN_SYNC_PREPROCESSING.name == SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.name
+    assert BRAIN_SYNC_PREPROCESSING.l_freq == 0.1
+    assert BRAIN_SYNC_PREPROCESSING.h_freq == 30.0
+    assert BRAIN_SYNC_PREPROCESSING.tmax_ms == 1200.0
+    assert BRAIN_SYNC_PREPROCESSING.filter_phase == "forward"
+    assert BRAIN_SYNC_PREPROCESSING.causal_iir_initial_state == "steady_state_first_sample"
+    assert BRAIN_SYNC_PREPROCESSING.n_times == SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.n_times
+    assert (
+        SOURCE_COHORT_DATA_CONTRACTS["causal"]
+        is SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
+    )
+
+
+def test_brainsync_rejects_the_removed_2hz_800ms_contract() -> None:
+    removed = replace(
+        BRAIN_SYNC_PREPROCESSING,
+        name="removed_causal_2hz_800ms",
+        l_freq=2.0,
+        tmax_ms=800.0,
+        n_times=128,
+    )
+    with pytest.raises(ValueError, match="Regenerate the cache"):
+        assert_causal_p300_input_contract(removed)
 
 
 def test_brainsync_session_is_preprocessed_into_universal_dataset(tmp_path) -> None:
@@ -270,6 +302,7 @@ def test_brainsync_cross_decision_runner_keeps_failed_decision_in_denominator(
     run_brainsync_cross_decision()
 
     result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["input_preprocessing"] == asdict(BRAIN_SYNC_PREPROCESSING)
     assert result["decision_accounting"]["requested"] == 2
     assert result["decision_accounting"]["eligible"] == 1
     assert result["decision_accounting"]["failed"] == 1

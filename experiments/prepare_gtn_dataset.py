@@ -33,9 +33,9 @@ def main() -> None:
     parser.add_argument(
         "--cohort",
         choices=tuple(GTN_COHORT_CONTRACTS),
-        default="default",
+        default="offline",
         help=(
-            "Contract family to bake into the cache: default/gtn are 0.1 Hz "
+            "Contract family to bake into the cache: offline/causal are 0.1 Hz "
             "zero/forward; gtn_paper_offline/gtn_paper are 0.5 Hz zero/forward. "
             "Chronological paths require a forward profile."
         ),

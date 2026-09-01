@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from data.channel import STANDARD_CHANNELS
-from data.contract import CAUSAL_IIR_INITIAL_STATE
+from data.contract import CAUSAL_IIR_INITIAL_STATE, DEFAULT_P300_DATA_CONTRACT
 from data.preprocess import (
     _canonical,
     apply_trial_baseline,
@@ -37,7 +37,7 @@ def make_raw(sfreq=512.0, n_seconds=20.0, ch_names=None, amp=10e-6, dc=0.0, seed
 
 def make_events(sfreq=512.0, n_seconds=20.0, first=2.0, step=1.0):
     """构造刺激 events（单一类型 id=1），保证每个 epoch 都落在数据范围内。"""
-    times = np.arange(first, n_seconds - 1.0, step)  # 留 1s 余量给 tmax=0.8
+    times = np.arange(first, n_seconds - 1.0, step)  # final event still leaves >1.2 s
     samples = np.round(times * sfreq).astype(int)
     return np.column_stack(
         [samples, np.zeros(len(samples), dtype=int), np.ones(len(samples), dtype=int)]
@@ -65,7 +65,7 @@ def test_preprocess_smoke_shape_dtype():
 
     assert res.data.ndim == 3
     assert res.data.shape[1] == 8
-    assert res.data.shape[2] == 128
+    assert res.data.shape[2] == DEFAULT_P300_DATA_CONTRACT.n_times
     assert res.data.dtype == np.float32
     assert res.channel_mask.dtype == bool
     assert res.channel_mask.all()  # 合成数据含全部 8 通道
@@ -299,15 +299,15 @@ def test_preprocess_copy_semantics():
 
 
 def test_preprocess_n_times_alignment():
-    """The 128 Hz model cache uses a half-open one-second epoch."""
+    """The 128 Hz model cache uses the half-open canonical 1.4-second epoch."""
     raw = make_raw(sfreq=250.0)  # 已是目标采样率，不触发重采样
     events = make_events(sfreq=250.0)
 
     res = preprocess(raw, events, channels=STANDARD_CHANNELS)
-    assert res.data.shape[2] == 128
+    assert res.data.shape[2] == DEFAULT_P300_DATA_CONTRACT.n_times
 
     res2 = preprocess(raw, events, n_times=None, channels=STANDARD_CHANNELS)
-    assert res2.data.shape[2] == 129  # (0.8-(-0.2))*128 + 1
+    assert res2.data.shape[2] == 180  # (1.2-(-0.2))*128 + 1
 
 
 def test_mean_only_baseline_executes_on_the_half_open_prestimulus_window() -> None:

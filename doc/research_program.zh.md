@@ -101,8 +101,7 @@ BI2014a 有多个、目标变化的 character selections，可检验：
 ```
 
 它不是 9 选数字最终数据，但能回答“个体 ERP 校准是否迁移到新目标”。旧 candidate
-cache 把 12 个 flash 位置误写成 repetition index，已失效；必须用修复后的 causal-v2
-构造器重建后才能运行该协议。
+cache 与 causal-v2 结果已压缩隔离；当前必须从 raw 用统一 causal-v3 构造器重建。
 
 ### 2.3 BrainSync
 
@@ -115,6 +114,8 @@ BrainSync 成人 8 导、多数字、多 session 数据是 90% 的最终裁决�
 
 工程入口现已支持 causal steady-state、单 session 多 block/selection、多 session
 `started_utc` 排序、target-switch split/runner，以及显式公共通道 CAR 域适配。当前
+默认固定为 128 Hz、0.1--30 Hz、`[-200,1200) ms`、179 samples；没有 2/800
+降级选项。当前
 本机 4 个历史 sessions 分别缺 recording、recording_error 或仍为
 `analysis_ready=false`/target pending，均不能进入准确率分析；必须重新采集。
 
@@ -122,28 +123,27 @@ BrainSync 成人 8 导、多数字、多 session 数据是 90% 的最终裁决�
 
 | 证据 | 当前状态 | 允许结论 |
 |---|---|---|
-| BI2014a 128 Hz zero-phase LOSO assets | 历史开发制品，可复算 | 只作架构开发；outer test 已被多轮查看 |
-| BI2014a causal-v2 cross-decision | 64 人、12 source checkpoints、13 arms x 3 seeds；zero-shot hit@2=0.194，coverage=964/1416 | source stats/classifier 保留；5-decision fine 无可靠增益；target stats 不采用 |
-| BI2014a+BNCI2014_008 common-CAR5 source | BI-only/uniform/BI3x-BNCI1x/BI-stats=`0.1300/0.0967/0.1239/0.0974` hit@2 | uniform 显著负迁移；80/20 行重复恢复但未胜；BI-source stats 无效；下一轴固定 steps 隔离 loss weight |
-| GTN 2 Hz/800 ms zero-phase assets | 历史开发制品，可复算 | 旧受限 recipe 的结果 |
+| BI2014a 128 Hz zero-phase LOSO assets | 已进入物理压缩归档 | 只作架构开发；不可作为当前 checkpoint |
+| BI2014a causal-v2 cross-decision | 物理归档：64 人、12 checkpoints、13 arms x 3 seeds | 只保留机制结论；v3 必须重建重训 |
+| BI2014a+BNCI2014_008 common-CAR5 source | 物理归档：`0.1300/0.0967/0.1239/0.0974` hit@2 | 负迁移机制证据；旧 128-sample cache 不可续用 |
+| GTN 2 Hz/800 ms assets | 仅存在物理压缩归档 | 不提供活跃降级接口 |
 | GTN steady-state causal 2x2 bundle | 4 cache records、32 checkpoints、120 eval JSON 已本地独立复算 | 0.1 Hz/1200 ms 是当前开发 signal winner；不作产品确认 |
 | GTN Z0 最佳固定-R baseline | hit@5 coverage 230/245；conditional 0.578；operational 0.543；AUC 0.709 | 未达到 0.90；15 人仅因 R_s=2--4 无法到 @5，仍进入 all-evidence 主分析 |
 | source QC 100 uV vs none | operational +0.118，95% CI [+0.053,+0.184]；覆盖相同 | 冻结 source QC=100 uV，target-prefix QC 仍关闭 |
 | full-unfold K33/K35/K65 v4 | 36 checkpoints、36 ledgers、3 seeds；balanced-all 0.623/0.669/0.654 | K35 临时工程默认；K35 稳定胜 K33，未确认胜 K65 |
 | v4 ledger all-evidence count correction | K35 mean/sqrt/sum=0.714/0.703/0.687；K65=0.683/0.683/0.669 | 不丢 trial 的 candidate mean 为当前开发默认；learned decision-only 头不晋升 |
-| end-to-end decision-aligned fine-tune | K35/K65 x 3 seed x 4 block；30 epoch；每 epoch 全部 QC100 source EEG；learned=0.688/0.676 | 当前联合微调 recipe 不晋升；保留不微调 v4 checkpoint |
+| end-to-end decision-aligned fine-tune | 物理归档：K35/K65 x 3 seed x 4 block；learned=0.688/0.676 | 当前联合微调 recipe 不晋升；v4 不进入活跃链 |
 | legacy zero-state causal ranking | 同一 suffix 连续选 QC/epoch/block/aggregation 且有 startup transient | 数值已从当前指导移除 |
 | 旧 forward causal cache/checkpoint | IIR 零状态产生严重 startup transient | 永久拒绝；steady-state replacement 已完成 |
-| 旧 BI candidate causal cache | repetition metadata 语义错误 | 永久拒绝；64 人 causal-v2 replacement 已重建并 attested |
+| 旧 BI candidate causal cache | repetition metadata 语义错误 | 永久拒绝；causal-v2 replacement 也已归档，当前重建 v3 |
 | 当前代码 | 反例和聚焦测试通过 | 只证明合同能力，不是准确率结果 |
 
 旧 `forward` IIR 从零状态启动，在带 mV 直流偏置的 GTN 原始记录上会把前期 trial
 制造成 mV 级伪迹，而 later suffix 已趋稳，形成假的 prefix/suffix domain shift。
-当前 causal 合同使用 `steady_state_first_sample` 初始化并升级版本：
+当前活跃合同只有：
 
 ```text
-p300_single_subject_causal_v2
-gtn_single_subject_causal_v4
+p300_single_subject_causal_v3
 gtn_paper_causal_v2
 ```
 
@@ -222,7 +222,7 @@ scheduled events 和秒数。它不等同 fixed scheduled-block estimand；后�
 ### Gate 0：代码与制品闭环
 
 - causal steady-state GTN 0.1/0.5 x 800/1200 四个 cache 已重建并审计；
-- BI candidate causal-v2 cache 已从 64 人 raw CSV/MAT 重建并 attested；
+- BI/BNCI/GTN 当前 v3 cache 尚未从 raw 重建；旧 cache 已物理压缩隔离；
 - checkpoint 完整输入签名、source refit、subject/cache identity 已闭合；
 - Z0、Z5、O5 和 BI cross-decision 输出不可混报；
 - 所有核心反例测试、Ruff、full pytest 通过。
@@ -255,7 +255,8 @@ provisional default = K35; unresolved strong control = K65
 仅为 `0.688/0.676`。K35 learned 相对 no-fine mean 为 `-2.59 pp`，95% CI
 `[-4.90,-0.14] pp`；fine-tuned fixed mean 更低 `-5.58 pp`，而 learned head
 相对该受损 backbone 回收 `+2.99 pp`。结论是当前损失会破坏已有 trial 表征，
-不是训练没跑全，也不是算力不足。默认继续使用不微调 v4 checkpoint。
+不是训练没跑全，也不是算力不足。该 v4 checkpoint 已物理归档；当前 v3 必须重训，
+不得修改 metadata 后继续使用。
 
 GTN 已被多轮查看，只能继续作 development。确认值需要新 target block/新采集。
 
@@ -285,7 +286,7 @@ fixed epoch budget vs time-heldout selection + full-prefix refit
 
 同一 GTN thought digit 的 O5 只作反例/诊断，不参与晋升。
 
-BI causal-v2 已完成 64 人、3 seeds 匹配比较。zero-shot/source stats 的
+物理归档中的 BI causal-v2 已完成 64 人、3 seeds 匹配比较。zero-shot/source stats 的
 subject-macro operational hit@2=`0.1941`；classifier fine + shrinkage=`0.1958`，
 full fine + shrinkage=`0.1989`，paired CI 均跨 0。target-prefix normalization
 在 classifier/full/linear/MLP16 四种 head 上均下降，scratch linear 相对 zero-shot
@@ -325,13 +326,12 @@ primary 为 subject-macro `hit@R`，并给 subject-cluster CI、coverage、absta
 
 ## 8. 立即执行顺序
 
-1. 已完成 steady-state causal 2x2、source-QC 消融与独立制品审计；
-2. 采用不额外微调的 `full_unfold + K35` v4 checkpoint 和 all-evidence candidate
-   mean 作为临时工程默认；K65 保留强对照，停止 K33 主线；
-3. BI cross-decision 已完成且不支持 5-decision personalization；保留 zero-shot/source stats；
-4. BI+BNCI uniform joint 已确认负迁移，80/20 行重复只恢复未超越，BI-source stats
-   无效；下一次固定 uniform rows/steps，只改 normalized per-row domain loss weight；
-5. decision-aligned 全参数 30-epoch recipe 已否决；后继只研究保护 backbone 的
+1. 已完成证据已物理压缩归档，活跃树不再包含旧合同 runner/manifest；
+2. 从 raw 重建统一 v3 的 BI/BNCI/GTN cache、common-CAR source 和 checkpoint；
+3. v3 继续采用 `full_unfold + K35` 与 candidate mean，K65 保留强对照；
+4. 归档 BI 结果不支持 5-decision personalization；新 v3 保留 zero-shot/source stats 基线；
+5. 归档 BI+BNCI 结果提示负迁移；v3 下一次固定 rows/steps，只改 normalized per-row domain loss weight；
+6. decision-aligned 全参数 30-epoch recipe 已否决；后继只研究保护 backbone 的
    分阶段单轴策略、无真值 adaptation 与 target-switch personalization；
-6. 使用已闭合的 causal multi-session/target-switch 入口重新采集成人 BrainSync 数据；
-7. 不再引用 legacy zero-state ranking，也不把 O5 当未知数字校准。
+7. 使用统一 v3 causal multi-session/target-switch 入口重新采集成人 BrainSync 数据；
+8. 不把 O5 当未知数字校准。

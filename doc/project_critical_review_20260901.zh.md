@@ -6,8 +6,9 @@
 ## 总判断
 
 项目已经从“dirty worktree 上可运行”推进到 Git 可追溯的研究系统：核心 causal
-合同、checkpoint loader、BI/GTN runner、decision-aligned 负结果和 compact evidence
-均已进入提交历史。当前主瓶颈不再是代码缺线，而是：没有合法成人 BrainSync
+合同、checkpoint loader、BI/GTN runner 和 decision-aligned 负结果均已进入提交历史；
+冻结材料已从活跃树压缩隔离。当前主瓶颈是：统一 v3 合同后的 source cache/checkpoint
+尚未重建、没有合法成人 BrainSync
 analysis-ready 数据、跨域联合源仍未超过单域 source、SSL 没有 downstream 性能。
 
 任何“接近产品 90%”“域迁移已打通”“个体校准有效”的表述目前都不成立。
@@ -17,10 +18,10 @@ analysis-ready 数据、跨域联合源仍未超过单域 source、SSL 没有 do
 | 项目 | 当前状态 | 验收证据 |
 |---|---|---|
 | dirty 主链 | 已关闭 | `f107bfa` 纳入 checkpoint/runner/tests/docs；后继 BI commits 可追溯 |
-| 冻结证据混入源码 | 已关闭 | Git 仅保留 compact audit index；完整旧目录移出仓库；README 明示无 `.npz/.pt` |
-| BI raw/candidate-v2 | 已关闭 | 64 CSV/MAT，cache `61013x16x128`，SHA `252237...75f5` |
+| 冻结证据混入源码 | 已关闭 | loose evidence、dated runners/docs 已移入 checksummed `frozen/*.tar.gz` 并从活跃路径删除 |
+| BI raw/candidate-v3 | 待重建 | builder 已统一到 179 samples；旧 `61013x16x128` cache 只存在冻结归档 |
 | BI block checkpoint scope | 已关闭 | 4x16 被试，target-subject manifest 与 checkpoint holdout 精确核对 |
-| BrainSync zero-phase 默认 | 已关闭 | 默认 generic causal 2-30 Hz/800 ms，forward IIR steady-state |
+| BrainSync causal 默认 | 已关闭 | canonical v3：0.1-30 Hz/1200 ms，forward IIR steady-state；无 2/800 fallback |
 | BrainSync 单 selection | 已关闭 | marker `selection_id/block_id` 形成独立 group；per-selection target/repetition 校验 |
 | BrainSync 单 session CLI | 已关闭 | `--session-dir` 可重复；多 session 由 timezone-aware `started_utc` 排序 |
 | target-switch runner | 已关闭 | calibration decisions -> real-time embargo -> later 9-choice decisions；失败留分母 |
@@ -41,9 +42,9 @@ known-target calibration decisions 和 later target-changing decisions。
 QC required。正式确认前必须至少保存 timing failure ledger，并将不完整/失败 decision
 计入分母。
 
-### P1：BI 合法校准没有显示净收益
+### P1：归档 BI 合法校准没有显示净收益
 
-BI causal-v2 使用 64 人、12 个 source checkpoints、13 arms、3 seeds：
+物理归档中的 BI causal-v2 使用 64 人、12 个 source checkpoints、13 arms、3 seeds：
 
 - zero-shot/source stats subject-macro hit@2=`0.1941`；
 - classifier fine + shrinkage=`0.1958`，paired delta `+0.18 pp`，CI 跨 0；
@@ -70,8 +71,8 @@ full fine 或随机新 head 都没有证据支持。BI 是 6x6 character，不�
 ```
 
 但它要求每条 trial 的全部选定通道都存在，并要求 source/target preprocessing 完全
-一致。该路径已在 BI2014a+BNCI2014_008 的 5 导 causal common-CAR cache 上进入真实
-训练：BI-only hit@2=`0.1300`，uniform joint=`0.0967`，差 `-3.33 pp`，95% CI
+一致。冻结的 128-sample BI2014a+BNCI2014_008 common-CAR 实验中，BI-only
+hit@2=`0.1300`，uniform joint=`0.0967`，差 `-3.33 pp`，95% CI
 `[-5.90,-1.28] pp`。因此“通道/参考可加载”不等于“域迁移有效”。
 
 看到该负结果后注册的 BI 3x/BNCI 1x 探索臂为 `0.1239`：相对 uniform 恢复
@@ -82,7 +83,8 @@ all-source stats 仅 `+0.07 pp`，CI 跨 0；相对 BI-only 仍显著 `-3.26 pp`
 normalization contamination 不是主因，剩余损失来自跨域梯度/表征冲突的证据更强。
 下一轴应先用固定 steps 的 normalized per-row domain loss weight 隔离梯度比例；若仍
 无增益，再研究 gradient surgery 或 dataset-specific stem。三数据集公共仅 `CZ,PZ`，
-仍不适合统一空间卷积。
+仍不适合统一空间卷积。这些数值只能作为压缩归档中的机制证据；v3 当前链必须从
+raw 重建 179-sample source cache 后重新训练，不能直接续跑旧 checkpoint。
 
 ### P1：Git 远端跟踪分支不存在
 
@@ -90,12 +92,12 @@ normalization contamination 不是主因，剩余损失来自跨域梯度/表征
 当前 commits 只在本机和上传到云端的 Git bundle 中。是否重建/推送 GitHub branch
 是外部发布动作，未在本轮擅自执行。正式协作前必须恢复受保护 remote branch。
 
-### P2：证据包可审计但不能独立重跑
+### P2：冻结证据已物理隔离但不能独立重跑
 
-Git 内包含 manifest、分析、subject aggregate、checkpoint/cache hashes 和 source
-commit；不包含 EEG `.npz`、checkpoint `.pt`、完整 trial ledgers 或容器镜像。它能
-验证外部对象，不能生成对象。该边界已写入每个 evidence README，不再称独立
-reproduction bundle。
+`frozen/research_evidence_through_20260901-d1db8e4.tar.gz` 包含当时的 manifest、
+分析、subject aggregate、checkpoint/cache hashes、runner、合同和文档快照；活跃树
+不再暴露旧接口。压缩包不包含 EEG `.npz`、checkpoint `.pt`、完整 trial ledgers 或
+容器镜像，因此只能验证外部对象，不能独立重跑。
 
 ### P2：SSL 辅助目标已修工程合同，仍无 downstream 结果
 
@@ -134,11 +136,12 @@ GRL/erasure、pseudo/latent target 或动态停止会增加不可区分自由度
 
 ## 下一执行顺序
 
-1. 采集并验收新的 BrainSync analysis-ready sessions，先冻结 zero-shot/source-stats。
-2. 在现有 BI+BNCI common-CAR cache 上保持 uniform 唯一行、batch 与 steps，比较
+1. 从 raw 重建 v3 BI/BNCI/GTN common-CAR source cache 与 target-excluded checkpoint。
+2. 采集并验收新的 v3 BrainSync analysis-ready sessions，先冻结 zero-shot/source-stats。
+3. 在新 BI+BNCI common-CAR cache 上保持 uniform 唯一行、batch 与 steps，比较
    unweighted CE 与归一化 80/20 per-row domain-weighted CE；不得再扫 repeat/stats。
-3. 若固定-step domain weight 仍未胜 BI-only，停止简单混合，再进入梯度冲突控制；
+4. 若固定-step domain weight 仍未胜 BI-only，停止简单混合，再进入梯度冲突控制；
    dataset-specific spatial stem 放在确定梯度负迁移之后。
-4. 只在新 BrainSync development decisions 比较 classifier fine 与 full fine；target stats 暂停。
-5. 运行 masked SSL downstream 对照；保留 supervised source checkpoint 强基线。
-6. 只有上述基线成立后再研究 pseudo adaptation 和 dynamic stopping。
+5. 只在新 BrainSync development decisions 比较 classifier fine 与 full fine；target stats 暂停。
+6. 运行 masked SSL downstream 对照；保留 supervised source checkpoint 强基线。
+7. 只有上述基线成立后再研究 pseudo adaptation 和 dynamic stopping。

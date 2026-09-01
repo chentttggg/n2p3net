@@ -1,0 +1,23 @@
+{
+  "schema": "n2p3_frozen_research_archive/1",
+  "archive": "research_evidence_through_20260901-d1db8e4.tar.gz",
+  "archive_sha256": "3b79b2fa95320fe14d0a95f81e1c07663447b49970c338ddf87585f56016029d",
+  "source_commit": "d1db8e4826f77aefe98bd3145ff3b467a5adc6e0",
+  "member_count": 204,
+  "physical_isolation": true,
+  "removed_from_active_tree": [
+    "doc/evidence",
+    "doc/assets",
+    "dated ablation and result documents",
+    "completed experiment manifests and cloud harnesses",
+    "completed receptive-field and tempered/end-to-end runners and tests"
+  ],
+  "includes_source_snapshot": [
+    "data contracts",
+    "BrainSync and BI ingestion",
+    "within-subject split and runners",
+    "living research documents as of source_commit"
+  ],
+  "contains_raw_eeg_npz_or_model_pt": false,
+  "reproducibility_scope": "audit snapshot only; external cache and checkpoint hashes remain required"
+}

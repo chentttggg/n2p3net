@@ -39,19 +39,17 @@ from data.artifact import (  # noqa: E402
 )
 from data.contract import (  # noqa: E402
     CAUSAL_IIR_INITIAL_STATE,
-    DEFAULT_GTN_DATA_CONTRACT,
     DEFAULT_P300_DATA_CONTRACT,
-    GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
     PAPER_GTN_CAUSAL_DATA_CONTRACT,
     PAPER_GTN_DATA_CONTRACT,
+    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     assert_p300_input_contract,
     assert_p300_source_provenance,
 )
 
 COHORT_CONTRACTS = {
-    "default": DEFAULT_P300_DATA_CONTRACT,
-    "gtn_offline": DEFAULT_GTN_DATA_CONTRACT,
-    "gtn": GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
+    "offline": DEFAULT_P300_DATA_CONTRACT,
+    "causal": SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     "gtn_paper_offline": PAPER_GTN_DATA_CONTRACT,
     "gtn_paper": PAPER_GTN_CAUSAL_DATA_CONTRACT,
 }
@@ -362,11 +360,11 @@ def main() -> None:
     parser.add_argument(
         "--cohort",
         choices=tuple(COHORT_CONTRACTS),
-        default="default",
+        default="offline",
         help=(
-            "Contract family to assert: gtn_offline/gtn select 0.1 Hz zero/forward; "
+            "Contract family to assert: offline/causal select 0.1 Hz zero/forward; "
             "gtn_paper_offline/gtn_paper select 0.5 Hz zero/forward; default is "
-            "the adult 2 Hz / 800 ms zero-phase profile. Explicit --l-freq/--tmin-ms/--tmax-ms/"
+            "the 0.1 Hz / 1200 ms offline profile. Explicit --l-freq/--tmin-ms/--tmax-ms/"
             "--filter-phase still override the selected family."
         ),
     )

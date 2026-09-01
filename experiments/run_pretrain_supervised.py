@@ -27,10 +27,7 @@ from baselines.calibration import fit_weighted_logit_temperature  # noqa: E402
 from baselines.deep import DeepConfig  # noqa: E402
 from baselines.n2p3net import N2P3NetBaseline  # noqa: E402
 from data.contract import (  # noqa: E402
-    DEFAULT_P300_DATA_CONTRACT,
-    GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
-    PAPER_GTN_CAUSAL_DATA_CONTRACT,
-    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+    SOURCE_COHORT_DATA_CONTRACTS,
     assert_p300_input_contract,
 )
 from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
@@ -41,13 +38,6 @@ from models.n2p3net import (  # noqa: E402
 )
 from train.device import get_device  # noqa: E402
 from train.runtime import GpuPerformanceScheduler  # noqa: E402
-
-SOURCE_COHORT_CONTRACTS = {
-    "default": DEFAULT_P300_DATA_CONTRACT,
-    "p300_causal": SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
-    "gtn": GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
-    "gtn_paper": PAPER_GTN_CAUSAL_DATA_CONTRACT,
-}
 
 
 def parse_subject_prefix_repeats(value: str) -> dict[str, int]:
@@ -153,11 +143,11 @@ def main() -> None:
     parser.add_argument("--holdout-subjects", default="", help="comma separated; never pretrain on these")
     parser.add_argument(
         "--cohort",
-        choices=("default", "p300_causal", "gtn", "gtn_paper"),
-        default="default",
+        choices=tuple(SOURCE_COHORT_DATA_CONTRACTS),
+        default="causal",
         help=(
             "Causal contract family asserted for forward-phase source caches: "
-            "'gtn' enforces the revised 0.1 Hz / 1200 ms child-cohort contract."
+            "'causal' is the current 0.1 Hz / 1200 ms forward steady-state contract."
         ),
     )
     parser.add_argument(
@@ -214,7 +204,7 @@ def main() -> None:
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.source_cache, require_labels=True, validation="attested")
     source_cache_sha256 = str(read_epoch_cache_attestation(args.source_cache)["sha256"])
-    expected_contract = SOURCE_COHORT_CONTRACTS[args.cohort]
+    expected_contract = SOURCE_COHORT_DATA_CONTRACTS[args.cohort]
     if args.tmax_ms is not None:
         expected_contract = replace(expected_contract, tmax_ms=float(args.tmax_ms))
     assert_p300_input_contract(dataset.preprocessing, expected_contract)

@@ -32,7 +32,6 @@ from data.artifact import (  # noqa: E402
     apply_fold_local_artifact_policy,
 )
 from data.contract import (  # noqa: E402
-    GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
     PAPER_GTN_CAUSAL_DATA_CONTRACT,
     SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     assert_p300_input_contract,
@@ -231,12 +230,11 @@ def main() -> None:
     )
     parser.add_argument(
         "--cohort",
-        choices=("default", "gtn", "gtn_paper"),
+        choices=("default", "gtn_paper"),
         default="default",
         help=(
-            "Causal contract family to assert: 'gtn' enforces the revised 0.1 Hz / "
-            "1200 ms child-cohort contract; 'gtn_paper' enforces the paper-aligned "
-            "0.5 Hz / 1200 ms contract for SOTA anchors; 'default' enforces 2 Hz / 800 ms."
+            "Causal contract family to assert: 'default' is the current 0.1 Hz / "
+            "1200 ms contract; 'gtn_paper' is the 0.5 Hz / 1200 ms SOTA anchor."
         ),
     )
     parser.add_argument(
@@ -269,7 +267,6 @@ def main() -> None:
     target_cache_sha256 = str(read_epoch_cache_attestation(args.dataset_cache)["sha256"])
     causal_contract = {
         "default": SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
-        "gtn": GTN_SINGLE_SUBJECT_CAUSAL_DATA_CONTRACT,
         "gtn_paper": PAPER_GTN_CAUSAL_DATA_CONTRACT,
     }[args.cohort]
     if args.tmax_ms is not None:

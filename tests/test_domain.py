@@ -74,6 +74,8 @@ def test_common_car_cancels_different_original_reference_offsets() -> None:
     np.testing.assert_allclose(first_car.X, second_car.X, atol=1e-6)
     assert first_car.provenance["source_reference"] == second_car.provenance["source_reference"]
     assert first_car.channel_names == second_car.channel_names == ("FZ", "CZ", "PZ")
+    assert first_car.preprocessing is first.preprocessing
+    assert second_car.preprocessing is second.preprocessing
 
 
 def test_common_car_rejects_missing_trial_channel() -> None:
