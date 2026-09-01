@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import replace
 
 import numpy as np
@@ -17,6 +17,9 @@ from data.lineage import DataLineage
 from data.qc_features import compute_epoch_qc_features
 
 DOMAIN_ADAPTER_SCHEMA = "n2p3_common_channel_car/1"
+NAMESPACE_SEPARATOR = "::"
+CAR_FLOAT32_ROUNDOFF_FACTOR = 4.0
+CAR_VALIDATION_BLOCK_BYTES = 64 * 1024 * 1024
 
 
 def common_channel_intersection(*datasets: EpochDataset) -> tuple[str, ...]:
@@ -46,6 +49,11 @@ def adapt_common_channel_average_reference(
     channels = tuple(canonical_channel_name(value) for value in target_channels)
     if len(channels) < 2 or len(set(channels)) != len(channels):
         raise ValueError("target_channels must contain at least two unique channels.")
+    if _existing_common_car_matches(dataset, channels):
+        raise ValueError(
+            "dataset already satisfies this common-channel CAR contract; "
+            "use ensure_common_channel_average_reference to verify and reuse it."
+        )
     indices_by_name = {name: index for index, name in enumerate(dataset.channel_names)}
     missing = [channel for channel in channels if channel not in indices_by_name]
     if missing:
@@ -110,6 +118,111 @@ def adapt_common_channel_average_reference(
     return adapted
 
 
+def _existing_common_car_matches(
+    dataset: EpochDataset,
+    channels: tuple[str, ...],
+) -> bool:
+    adapter = dataset.provenance.get("domain_adapter")
+    if adapter is None:
+        return False
+    if not isinstance(adapter, Mapping) or adapter.get("schema") != DOMAIN_ADAPTER_SCHEMA:
+        raise ValueError("dataset declares an unsupported or malformed domain_adapter contract.")
+    raw_claimed_channels = adapter.get("target_channels")
+    if not isinstance(raw_claimed_channels, Sequence) or isinstance(
+        raw_claimed_channels,
+        (str, bytes, bytearray),
+    ):
+        raise ValueError("domain_adapter.target_channels must be a channel-name sequence.")
+    claimed_channels = tuple(
+        canonical_channel_name(value) for value in raw_claimed_channels
+    )
+    if claimed_channels != channels:
+        return False
+
+    reference = "common_average[" + ",".join(channels) + "]"
+    mismatches: list[str] = []
+    if dataset.channel_names != channels:
+        mismatches.append("channel_names")
+    if not bool(np.asarray(dataset.channel_mask, dtype=bool).all()):
+        mismatches.append("channel_mask")
+    if dataset.trial_channel_mask is not None:
+        mismatches.append("trial_channel_mask")
+    if dataset.provenance.get("source_reference") != reference:
+        mismatches.append("source_reference")
+    if adapter.get("preprocessing_identity") != dataset.preprocessing.name:
+        mismatches.append("preprocessing_identity")
+    expected_lineage_parameters = {
+        "target_channels": list(channels),
+        "reference": reference,
+    }
+    lineage = materialize_dataset_lineage(dataset)
+    if not any(
+        entity.operation == "common_channel_average_reference"
+        and dict(entity.parameters) == expected_lineage_parameters
+        for entity in lineage.entities
+    ):
+        mismatches.append("lineage")
+    if mismatches:
+        raise ValueError(
+            "common-channel CAR provenance disagrees with the dataset contract: "
+            f"{mismatches}."
+        )
+
+    maximum_relative_channel_mean = 0.0
+    values_per_epoch = max(1, dataset.n_channels * dataset.n_times)
+    epochs_per_block = max(
+        1,
+        CAR_VALIDATION_BLOCK_BYTES // (values_per_epoch * np.dtype(np.float64).itemsize),
+    )
+    for start in range(0, dataset.n_epochs, epochs_per_block):
+        block = dataset.X[start : start + epochs_per_block]
+        values = np.asarray(block, dtype=np.float64)
+        scale = np.max(np.abs(values), axis=1)
+        mean = np.abs(values.mean(axis=1))
+        relative_mean = np.divide(
+            mean,
+            scale,
+            out=np.zeros_like(mean),
+            where=scale > 0.0,
+        )
+        maximum_relative_channel_mean = max(
+            maximum_relative_channel_mean,
+            float(np.max(relative_mean)),
+        )
+    tolerance = (
+        CAR_FLOAT32_ROUNDOFF_FACTOR
+        * np.finfo(np.float32).eps
+        * len(channels)
+    )
+    if maximum_relative_channel_mean > tolerance:
+        raise ValueError(
+            "common-channel CAR provenance is contradicted by non-zero channel means: "
+            f"max_relative_mean={maximum_relative_channel_mean:g}, tolerance={tolerance:g}."
+        )
+    return True
+
+
+def ensure_common_channel_average_reference(
+    dataset: EpochDataset,
+    target_channels: Sequence[str],
+    *,
+    name: str | None = None,
+) -> EpochDataset:
+    """Apply CAR once, or prove that an existing identical CAR can be reused."""
+
+    dataset.validate(require_labels=dataset.y is not None)
+    channels = tuple(canonical_channel_name(value) for value in target_channels)
+    if len(channels) < 2 or len(set(channels)) != len(channels):
+        raise ValueError("target_channels must contain at least two unique channels.")
+    if _existing_common_car_matches(dataset, channels):
+        if name is not None and dataset.name != name:
+            raise ValueError(
+                "an already-adapted dataset cannot be renamed by an idempotent CAR check."
+            )
+        return dataset
+    return adapt_common_channel_average_reference(dataset, channels, name=name)
+
+
 def namespace_epoch_dataset(
     dataset: EpochDataset,
     namespace: str,
@@ -124,33 +237,54 @@ def namespace_epoch_dataset(
     prefix = str(namespace).strip()
     if not prefix or "\0" in prefix:
         raise ValueError("namespace must be non-empty and cannot contain NUL.")
+    existing_namespace = dataset.provenance.get("subject_namespace")
+    if existing_namespace is not None:
+        raise ValueError(
+            f"dataset already declares subject_namespace={existing_namespace!r}; "
+            "use ensure_epoch_dataset_namespace to verify and reuse it."
+        )
     subject_ids = np.asarray(
-        [f"{prefix}::{value}" for value in np.asarray(dataset.subject_ids).astype(str)]
+        [
+            f"{prefix}{NAMESPACE_SEPARATOR}{value}"
+            for value in np.asarray(dataset.subject_ids).astype(str)
+        ]
     )
     subject_mapping = {
-        value: f"{prefix}::{value}"
+        value: f"{prefix}{NAMESPACE_SEPARATOR}{value}"
         for value in identity_table.local_subject_ids
     }
     timeline = replace(
         dataset.event_timeline,
         event_ids=np.asarray(
-            [f"{prefix}::{value}" for value in dataset.event_timeline.event_ids]
+            [
+                f"{prefix}{NAMESPACE_SEPARATOR}{value}"
+                for value in dataset.event_timeline.event_ids
+            ]
         ),
         group_ids=np.asarray(
-            [f"{prefix}::{value}" for value in dataset.event_timeline.group_ids]
+            [
+                f"{prefix}{NAMESPACE_SEPARATOR}{value}"
+                for value in dataset.event_timeline.group_ids
+            ]
         ),
         subject_ids=np.asarray(
-            [f"{prefix}::{value}" for value in dataset.event_timeline.subject_ids]
+            [
+                f"{prefix}{NAMESPACE_SEPARATOR}{value}"
+                for value in dataset.event_timeline.subject_ids
+            ]
         ),
         dataset_ids=np.asarray(
-            [f"{prefix}::{value}" for value in dataset.event_timeline.dataset_ids]
+            [
+                f"{prefix}{NAMESPACE_SEPARATOR}{value}"
+                for value in dataset.event_timeline.dataset_ids
+            ]
         ),
     ).validate(n_epochs=dataset.n_epochs)
     metadata = dataset.metadata.copy()
     if "subject" in metadata:
         metadata["subject"] = subject_ids
     namespaced = EpochDataset(
-        name=name or f"{prefix}::{dataset.name}",
+        name=name or f"{prefix}{NAMESPACE_SEPARATOR}{dataset.name}",
         X=np.asarray(dataset.X, dtype=np.float32),
         y=None if dataset.y is None else np.asarray(dataset.y, dtype=np.int64),
         subject_ids=subject_ids,
@@ -180,3 +314,58 @@ def namespace_epoch_dataset(
     )
     namespaced.validate(require_labels=dataset.y is not None)
     return namespaced
+
+
+def ensure_epoch_dataset_namespace(
+    dataset: EpochDataset,
+    namespace: str,
+    *,
+    name: str | None = None,
+) -> EpochDataset:
+    """Apply one namespace or prove that the requested namespace is already complete."""
+
+    dataset.validate(require_labels=dataset.y is not None)
+    prefix = str(namespace).strip()
+    if not prefix or "\0" in prefix:
+        raise ValueError("namespace must be non-empty and cannot contain NUL.")
+    existing = dataset.provenance.get("subject_namespace")
+    if existing is None:
+        return namespace_epoch_dataset(dataset, prefix, name=name)
+    if existing != prefix:
+        raise ValueError(
+            f"dataset declares subject_namespace={existing!r}, not requested {prefix!r}."
+        )
+    if name is not None and dataset.name != name:
+        raise ValueError(
+            "an already-namespaced dataset cannot be renamed by an idempotent namespace check."
+        )
+
+    qualified_prefix = f"{prefix}{NAMESPACE_SEPARATOR}"
+    axes = {
+        "subject_ids": np.asarray(dataset.subject_ids).astype(str),
+        "event_timeline.event_ids": np.asarray(dataset.event_timeline.event_ids).astype(str),
+        "event_timeline.group_ids": np.asarray(dataset.event_timeline.group_ids).astype(str),
+        "event_timeline.subject_ids": np.asarray(dataset.event_timeline.subject_ids).astype(str),
+        "event_timeline.dataset_ids": np.asarray(dataset.event_timeline.dataset_ids).astype(str),
+    }
+    identity_table = materialize_dataset_identity(dataset)
+    axes["identity_table.local_subject_ids"] = np.asarray(
+        identity_table.local_subject_ids,
+        dtype=str,
+    )
+    malformed = {
+        axis: values[~np.char.startswith(values, qualified_prefix)].tolist()
+        for axis, values in axes.items()
+        if not bool(np.char.startswith(values, qualified_prefix).all())
+    }
+    if malformed:
+        raise ValueError(
+            "dataset subject_namespace provenance is inconsistent with qualified identity axes: "
+            f"{malformed}"
+        )
+    if "subject" in dataset.metadata and not np.array_equal(
+        dataset.metadata["subject"].astype(str).to_numpy(),
+        np.asarray(dataset.subject_ids).astype(str),
+    ):
+        raise ValueError("namespaced metadata.subject disagrees with subject_ids.")
+    return dataset

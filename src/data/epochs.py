@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Mapping, Sequence
-from dataclasses import asdict, dataclass, field
+import os
+import shutil
+import stat
+import tempfile
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from dataclasses import asdict, dataclass, field, replace
 from io import StringIO
 from numbers import Real
 from pathlib import Path
-from typing import Any, Literal
+from types import MappingProxyType
+from typing import Any, BinaryIO, Literal
 
 import numpy as np
 import pandas as pd
@@ -242,6 +248,11 @@ class EpochDataset:
     qc_features: EpochQCFeatures | None = None
     identity_table: DatasetIdentityTable | None = None
     lineage: DataLineage | None = None
+    verified_cache_attestation: Mapping[str, object] | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
 
     def validate(self, *, require_labels: bool = False) -> None:
         self.preprocessing.validate()
@@ -373,6 +384,8 @@ class EpochDataset:
                 )
         if self.lineage is not None and not isinstance(self.lineage, DataLineage):
             raise ValueError("lineage must be a DataLineage record.")
+        if self.verified_cache_attestation is not None:
+            _validate_verified_cache_load_fields(self.verified_cache_attestation)
 
     @property
     def n_epochs(self) -> int:
@@ -491,6 +504,168 @@ def materialize_dataset_lineage(dataset: EpochDataset) -> DataLineage:
     return dataset.lineage
 
 
+def _semantic_sha256(value: object) -> str:
+    encoded = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+        default=_json_default,
+    ).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _array_content_sha256(value: np.ndarray) -> str:
+    array = np.ascontiguousarray(np.asarray(value))
+    digest = hashlib.sha256()
+    digest.update(
+        json.dumps(
+            {"dtype": array.dtype.str, "shape": list(array.shape)},
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("ascii")
+    )
+    content = memoryview(array).cast("B")
+    for offset in range(0, len(content), 16 * 1024 * 1024):
+        digest.update(content[offset : offset + 16 * 1024 * 1024])
+    return digest.hexdigest()
+
+
+def _dataset_content_invariants(dataset: EpochDataset) -> dict[str, object]:
+    identity = materialize_dataset_identity(dataset)
+    return {
+        "X_sha256": _array_content_sha256(dataset.X),
+        "y_sha256": (
+            _array_content_sha256(dataset.y) if dataset.y is not None else None
+        ),
+        "subject_ids_sha256": _array_content_sha256(
+            np.asarray(dataset.subject_ids).astype(str)
+        ),
+        "channel_names": list(dataset.channel_names),
+        "channel_positions_sha256": _array_content_sha256(dataset.channel_positions_m),
+        "channel_mask_sha256": _array_content_sha256(dataset.channel_mask),
+        "trial_channel_mask_sha256": (
+            _array_content_sha256(dataset.trial_channel_mask)
+            if dataset.trial_channel_mask is not None
+            else None
+        ),
+        "event_timeline_fingerprint": dataset.event_timeline.fingerprint(),
+        "metadata_sha256": _semantic_sha256(
+            json.loads(dataset.metadata.to_json(orient="table", index=False))
+        ),
+        "identity_digest": identity.digest(),
+        "qc_features": (
+            {
+                "schema": dataset.qc_features.schema,
+                "relative_ptp_sha256": _array_content_sha256(
+                    dataset.qc_features.relative_ptp
+                ),
+                "channel_std_v_sha256": _array_content_sha256(
+                    dataset.qc_features.channel_std_v
+                ),
+                "epoch_scale_v_sha256": _array_content_sha256(
+                    dataset.qc_features.epoch_scale_v
+                ),
+                "observed_mask_sha256": _array_content_sha256(
+                    dataset.qc_features.observed_mask
+                ),
+            }
+            if dataset.qc_features is not None
+            else None
+        ),
+    }
+
+
+def _decoded_dataset_sha256(dataset: EpochDataset) -> str:
+    return _semantic_sha256(
+        {
+            "record": dataset.record(validate=False),
+            "content_invariants": _dataset_content_invariants(dataset),
+        }
+    )
+
+
+def bind_named_preprocessing_contract(
+    dataset: EpochDataset,
+    contract: EEGDataContract,
+    *,
+    name: str | None = None,
+) -> EpochDataset:
+    """Bind a canonical contract name only when every physical field already matches."""
+
+    dataset.validate(require_labels=dataset.y is not None)
+    target = preprocessing_spec_from_contract(contract)
+    current_record = asdict(dataset.preprocessing)
+    target_record = asdict(target)
+    mismatches = {
+        field: {"current": current_record[field], "target": target_record[field]}
+        for field in current_record
+        if field != "name" and current_record[field] != target_record[field]
+    }
+    if mismatches:
+        raise ValueError(
+            "preprocessing cannot bind to the named contract because physical fields differ: "
+            f"{mismatches}"
+        )
+    if current_record["name"] == target_record["name"]:
+        raise ValueError("dataset already uses the requested named preprocessing contract.")
+
+    source_attestation = loaded_epoch_cache_attestation(dataset)
+    if source_attestation["decoded_dataset_sha256"] != _decoded_dataset_sha256(dataset):
+        raise ValueError("dataset content changed after its attested cache load.")
+    output_name = dataset.name if name is None else name
+    content_invariants = _dataset_content_invariants(dataset)
+    parent_lineage = materialize_dataset_lineage(dataset)
+    rebound_provenance = dict(dataset.provenance)
+    metadata_updates: dict[str, object] = {}
+    domain_adapter = dataset.provenance.get("domain_adapter")
+    if domain_adapter is not None:
+        if not isinstance(domain_adapter, Mapping):
+            raise ValueError("domain_adapter provenance must be a mapping.")
+        adapter_preprocessing = domain_adapter.get("preprocessing_identity")
+        if adapter_preprocessing != current_record["name"]:
+            raise ValueError(
+                "domain_adapter preprocessing_identity disagrees with the source cache."
+            )
+        updated_adapter = dict(domain_adapter)
+        updated_adapter["preprocessing_identity"] = target_record["name"]
+        rebound_provenance["domain_adapter"] = updated_adapter
+        metadata_updates["domain_adapter.preprocessing_identity"] = {
+            "from": adapter_preprocessing,
+            "to": target_record["name"],
+        }
+    binding_record = {
+        "schema": "n2p3_preprocessing_contract_binding/1",
+        "from": current_record,
+        "to": target_record,
+        "output_dataset_name": output_name,
+        "source_cache_attestation": source_attestation,
+        "content_invariants": content_invariants,
+        "metadata_updates": metadata_updates,
+        "tensor_unchanged": True,
+    }
+    rebound = replace(
+        dataset,
+        name=output_name,
+        preprocessing=target,
+        provenance={
+            **rebound_provenance,
+            "preprocessing_contract_binding": binding_record,
+        },
+        lineage=DataLineage.derive(
+            [parent_lineage],
+            operation="bind_named_preprocessing_contract",
+            parameters=binding_record,
+        ),
+        verified_cache_attestation=None,
+    )
+    rebound.validate(require_labels=dataset.y is not None)
+    if _dataset_content_invariants(rebound) != content_invariants:
+        raise RuntimeError("named preprocessing binding changed dataset content.")
+    return rebound
+
+
 def save_epoch_dataset(
     path: str | Path,
     dataset: EpochDataset,
@@ -594,6 +769,9 @@ def save_epoch_dataset(
 
 
 _CACHE_ATTESTATION_SCHEMA = "n2p3net_epoch_cache_attestation/1"
+_VERIFIED_CACHE_LOAD_SCHEMA = "n2p3_verified_epoch_cache_load/1"
+_VERIFIED_CACHE_SNAPSHOT_DIR_ENV = "N2P3_VERIFIED_CACHE_SNAPSHOT_DIR"
+_VERIFIED_CACHE_SNAPSHOT_MIN_RESERVE_BYTES = 64 * 1024 * 1024
 
 
 def _cache_record_path(path: str | Path) -> Path:
@@ -606,6 +784,243 @@ def _sha256_file(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _copy_and_sha256_stream(source: BinaryIO, destination: BinaryIO) -> tuple[str, int]:
+    digest = hashlib.sha256()
+    size_bytes = 0
+    source.seek(0)
+    for block in iter(lambda: source.read(1024 * 1024), b""):
+        digest.update(block)
+        destination.write(block)
+        size_bytes += len(block)
+    return digest.hexdigest(), size_bytes
+
+
+def _sha256_stable_cache_object(
+    path: Path,
+    attestation: Mapping[str, object],
+) -> str:
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as error:
+        raise ValueError(f"{path} cannot be opened as a stable cache object.") from error
+    try:
+        with os.fdopen(descriptor, "rb") as stream:
+            before = os.fstat(stream.fileno())
+            if not stat.S_ISREG(before.st_mode):
+                raise ValueError(f"{path} must be a regular cache file.")
+            if before.st_size != attestation["byte_size"]:
+                raise ValueError(f"{path} byte size no longer matches its cache attestation.")
+            digest = hashlib.sha256()
+            observed_size = 0
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+                observed_size += len(block)
+            after = os.fstat(stream.fileno())
+    except OSError as error:
+        raise ValueError(f"{path} could not be read as a stable cache object.") from error
+    if _file_identity(after) != _file_identity(before):
+        raise ValueError(f"{path} changed while its attestation was verified.")
+    if observed_size != attestation["byte_size"]:
+        raise ValueError(f"{path} byte size no longer matches its cache attestation.")
+    observed_sha256 = digest.hexdigest()
+    if observed_sha256 != attestation["sha256"]:
+        raise ValueError(f"{path} SHA-256 no longer matches its cache attestation.")
+    return observed_sha256
+
+
+def _verified_cache_snapshot_directory(path: Path, *, byte_size: int) -> Path:
+    configured = os.environ.get(_VERIFIED_CACHE_SNAPSHOT_DIR_ENV)
+    directory = (
+        Path(configured).expanduser().resolve(strict=True)
+        if configured
+        else path.parent.resolve(strict=True)
+    )
+    if not directory.is_dir():
+        raise ValueError("verified cache snapshot location must be a directory.")
+    try:
+        free_bytes = shutil.disk_usage(directory).free
+    except OSError as error:
+        raise ValueError(
+            f"cannot inspect free space for verified cache snapshots in {directory}."
+        ) from error
+    reserve_bytes = max(
+        _VERIFIED_CACHE_SNAPSHOT_MIN_RESERVE_BYTES,
+        int(byte_size * 0.05),
+    )
+    required_bytes = byte_size + reserve_bytes
+    if free_bytes < required_bytes:
+        raise ValueError(
+            "insufficient free space for an immutable verified cache snapshot: "
+            f"required={required_bytes} available={free_bytes} directory={directory}. "
+            f"Set {_VERIFIED_CACHE_SNAPSHOT_DIR_ENV} to a private filesystem with "
+            "enough space."
+        )
+    return directory
+
+
+def _validate_cache_attestation_fields(
+    value: Mapping[str, object],
+) -> dict[str, object]:
+    if value.get("schema") != _CACHE_ATTESTATION_SCHEMA:
+        raise ValueError("cache attestation schema is unsupported.")
+    if value.get("full_contract_validated") is not True:
+        raise ValueError("cache attestation does not record full contract validation.")
+    byte_size = value.get("byte_size")
+    if isinstance(byte_size, bool) or not isinstance(byte_size, int) or byte_size < 1:
+        raise ValueError("cache attestation byte_size must be a positive integer.")
+    sha256 = value.get("sha256")
+    if (
+        not isinstance(sha256, str)
+        or len(sha256) != 64
+        or any(character not in "0123456789abcdef" for character in sha256)
+    ):
+        raise ValueError("cache attestation SHA-256 must be a lowercase hex digest.")
+    return {
+        "schema": _CACHE_ATTESTATION_SCHEMA,
+        "full_contract_validated": True,
+        "sha256": sha256,
+        "byte_size": byte_size,
+    }
+
+
+def _validate_verified_cache_load_fields(
+    value: Mapping[str, object],
+) -> dict[str, object]:
+    if value.get("schema") != _VERIFIED_CACHE_LOAD_SCHEMA:
+        raise ValueError("verified cache load schema is unsupported.")
+    cache_attestation = _validate_cache_attestation_fields(
+        {
+            "schema": value.get("cache_attestation_schema"),
+            "full_contract_validated": value.get("full_contract_validated"),
+            "sha256": value.get("sha256"),
+            "byte_size": value.get("byte_size"),
+        }
+    )
+    decoded_dataset_sha256 = value.get("decoded_dataset_sha256")
+    if (
+        not isinstance(decoded_dataset_sha256, str)
+        or len(decoded_dataset_sha256) != 64
+        or any(
+            character not in "0123456789abcdef"
+            for character in decoded_dataset_sha256
+        )
+    ):
+        raise ValueError("verified cache load decoded dataset SHA-256 is invalid.")
+    return {
+        "schema": _VERIFIED_CACHE_LOAD_SCHEMA,
+        "cache_attestation_schema": cache_attestation["schema"],
+        "full_contract_validated": True,
+        "sha256": cache_attestation["sha256"],
+        "byte_size": cache_attestation["byte_size"],
+        "decoded_dataset_sha256": decoded_dataset_sha256,
+    }
+
+
+def loaded_epoch_cache_attestation(dataset: EpochDataset) -> dict[str, object]:
+    """Return the cache identity verified by the exact load that produced ``dataset``."""
+
+    value = dataset.verified_cache_attestation
+    if value is None:
+        raise ValueError(
+            "operation requires a cache loaded with validation='attested'."
+        )
+    return _validate_verified_cache_load_fields(value)
+
+
+def _read_epoch_cache_record(
+    cache_path: Path,
+) -> tuple[dict[str, object], dict[str, object]]:
+    record_path = _cache_record_path(cache_path)
+    if not record_path.is_file():
+        raise ValueError(
+            f"{cache_path} lacks a cache attestation; regenerate or fully validate "
+            "the cache before training."
+        )
+    try:
+        record = json.loads(record_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"{record_path} is not a readable cache attestation.") from error
+    attestation = record.get("cache_attestation")
+    if not isinstance(attestation, Mapping):
+        raise ValueError(f"{record_path} lacks a supported cache attestation.")
+    try:
+        validated = _validate_cache_attestation_fields(attestation)
+    except ValueError as error:
+        raise ValueError(f"{record_path} lacks a supported cache attestation: {error}") from error
+    return record, validated
+
+
+def _file_identity(value: os.stat_result) -> tuple[int, int, int, int]:
+    return (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns)
+
+
+@contextmanager
+def _epoch_cache_archive_source(
+    path: Path,
+    *,
+    validation: Literal["full", "attested"],
+) -> Iterator[
+    tuple[
+        Path | BinaryIO,
+        dict[str, object] | None,
+        dict[str, object] | None,
+    ]
+]:
+    if validation == "full":
+        yield path, None, None
+        return
+
+    record, attestation = _read_epoch_cache_record(path)
+    snapshot_directory = _verified_cache_snapshot_directory(
+        path,
+        byte_size=int(attestation["byte_size"]),
+    )
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as error:
+        raise ValueError(f"{path} cannot be opened as a stable cache object.") from error
+    try:
+        snapshot = tempfile.TemporaryFile(
+            mode="w+b",
+            prefix=".n2p3-attested-cache-",
+            suffix=".npz",
+            dir=snapshot_directory,
+        )
+    except OSError as error:
+        os.close(descriptor)
+        raise ValueError(
+            f"cannot create a private verified cache snapshot in {snapshot_directory}."
+        ) from error
+    with snapshot:
+        try:
+            with os.fdopen(descriptor, "rb") as stream:
+                before = os.fstat(stream.fileno())
+                if not stat.S_ISREG(before.st_mode):
+                    raise ValueError(f"{path} must be a regular cache file.")
+                if before.st_size != attestation["byte_size"]:
+                    raise ValueError(
+                        f"{path} byte size no longer matches its cache attestation."
+                    )
+                observed_sha256, observed_size = _copy_and_sha256_stream(
+                    stream,
+                    snapshot,
+                )
+                after = os.fstat(stream.fileno())
+        except OSError as error:
+            raise ValueError(f"{path} could not be copied into a stable snapshot.") from error
+        if _file_identity(after) != _file_identity(before):
+            raise ValueError(f"{path} changed while its attested bytes were copied.")
+        if observed_size != attestation["byte_size"]:
+            raise ValueError(f"{path} byte size no longer matches its cache attestation.")
+        if observed_sha256 != attestation["sha256"]:
+            raise ValueError(f"{path} SHA-256 no longer matches its cache attestation.")
+        snapshot.flush()
+        snapshot.seek(0)
+        yield snapshot, record, attestation
 
 
 def write_epoch_dataset_record(
@@ -632,41 +1047,20 @@ def write_epoch_dataset_record(
 
 
 def read_epoch_cache_attestation(path: str | Path) -> dict[str, object]:
-    """Read the validated cache identity stored beside an epoch cache."""
+    """Fully hash one stable cache object against its sidecar and return its identity."""
 
     cache_path = Path(path)
-    record_path = _cache_record_path(cache_path)
-    if not record_path.is_file():
-        raise ValueError(
-            f"{cache_path} lacks a cache attestation; regenerate or fully validate the cache before training."
-        )
-    try:
-        record = json.loads(record_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise ValueError(f"{record_path} is not a readable cache attestation.") from error
-    attestation = record.get("cache_attestation")
-    if not isinstance(attestation, dict) or attestation.get("schema") != _CACHE_ATTESTATION_SCHEMA:
-        raise ValueError(f"{record_path} lacks a supported cache attestation.")
-    if attestation.get("full_contract_validated") is not True:
-        raise ValueError(f"{record_path} does not attest a full contract validation.")
-    if attestation.get("byte_size") != cache_path.stat().st_size:
-        raise ValueError(f"{cache_path} byte size no longer matches its cache attestation.")
-    sha256 = attestation.get("sha256")
-    if not isinstance(sha256, str) or len(sha256) != 64:
-        raise ValueError(f"{record_path} lacks a valid cache SHA-256.")
+    _, attestation = _read_epoch_cache_record(cache_path)
+    _sha256_stable_cache_object(cache_path, attestation)
     return dict(attestation)
 
 
-def _validate_attested_cache(path: Path, dataset: EpochDataset) -> None:
-    record_path = _cache_record_path(path)
-    attestation = read_epoch_cache_attestation(path)
-    try:
-        record = json.loads(record_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise ValueError(f"{record_path} is not a readable cache attestation.") from error
-    expected_hash = attestation.get("sha256")
-    if not isinstance(expected_hash, str) or _sha256_file(path) != expected_hash:
-        raise ValueError(f"{path} SHA-256 no longer matches its cache attestation.")
+def _validate_attested_cache(
+    record: dict[str, object],
+    dataset: EpochDataset,
+    *,
+    record_path: Path,
+) -> None:
     expected_record = json.loads(
         json.dumps(dataset.record(validate=False), default=_json_default)
     )
@@ -683,7 +1077,7 @@ def _validate_attested_cache(path: Path, dataset: EpochDataset) -> None:
     ]
     if mismatched:
         raise ValueError(
-            f"{record_path} fields do not match {path}: {sorted(mismatched)}."
+            f"{record_path} fields do not match the decoded cache: {sorted(mismatched)}."
         )
 
 
@@ -701,7 +1095,11 @@ def load_epoch_dataset(
         raise FileNotFoundError(path)
     if validation not in {"full", "attested"}:
         raise ValueError("validation must be 'full' or 'attested'.")
-    with np.load(path, allow_pickle=False) as archive:
+    with _epoch_cache_archive_source(path, validation=validation) as (
+        archive_source,
+        attested_record,
+        verified_attestation,
+    ), np.load(archive_source, allow_pickle=False) as archive:
         required = {
             "schema",
             "name",
@@ -880,7 +1278,23 @@ def load_epoch_dataset(
     if validation == "full":
         dataset.validate(require_labels=require_labels)
     else:
-        _validate_attested_cache(path, dataset)
+        assert attested_record is not None
+        assert verified_attestation is not None
+        _validate_attested_cache(
+            attested_record,
+            dataset,
+            record_path=_cache_record_path(path),
+        )
+        dataset.verified_cache_attestation = MappingProxyType(
+            {
+                "schema": _VERIFIED_CACHE_LOAD_SCHEMA,
+                "cache_attestation_schema": verified_attestation["schema"],
+                "full_contract_validated": True,
+                "sha256": verified_attestation["sha256"],
+                "byte_size": verified_attestation["byte_size"],
+                "decoded_dataset_sha256": _decoded_dataset_sha256(dataset),
+            }
+        )
         if require_labels and dataset.y is None:
             raise ValueError("This operation requires labels.")
     if expected_preprocessing is not None and dataset.preprocessing != expected_preprocessing:

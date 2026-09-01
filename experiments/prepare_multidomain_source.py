@@ -12,12 +12,13 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from data.domain import (  # noqa: E402
-    adapt_common_channel_average_reference,
-    namespace_epoch_dataset,
+    ensure_common_channel_average_reference,
+    ensure_epoch_dataset_namespace,
 )
 from data.epochs import (  # noqa: E402
     concatenate_epoch_datasets,
     load_epoch_dataset,
+    loaded_epoch_cache_attestation,
     save_epoch_dataset,
 )
 
@@ -48,16 +49,21 @@ def main() -> None:
     source_records = []
     for namespace, path in args.source:
         dataset = load_epoch_dataset(path, require_labels=True, validation="attested")
-        aligned = adapt_common_channel_average_reference(
+        cache_attestation = loaded_epoch_cache_attestation(dataset)
+        namespace_preexisting = dataset.provenance.get("subject_namespace") is not None
+        aligned = ensure_common_channel_average_reference(
             dataset,
             channels,
         )
-        aligned = namespace_epoch_dataset(aligned, namespace)
+        aligned = ensure_epoch_dataset_namespace(aligned, namespace)
         adapted.append(aligned)
         source_records.append(
             {
                 "namespace": namespace,
+                "namespace_preexisting": namespace_preexisting,
                 "cache": str(path.resolve()),
+                "cache_sha256": str(cache_attestation["sha256"]),
+                "verified_cache_attestation": cache_attestation,
                 "dataset_name": dataset.name,
                 "n_subjects": len(set(dataset.subject_ids)),
                 "n_epochs": dataset.n_epochs,

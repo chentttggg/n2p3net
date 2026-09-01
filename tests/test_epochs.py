@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -18,10 +20,13 @@ from data.contract import (
 from data.epochs import (
     EpochDataset,
     PreprocessingSpec,
+    bind_named_preprocessing_contract,
     concatenate_epoch_datasets,
     load_epoch_dataset,
+    loaded_epoch_cache_attestation,
     materialize_dataset_identity,
     preprocessing_spec_from_contract,
+    read_epoch_cache_attestation,
     save_epoch_dataset,
     select_epoch_channels,
     write_epoch_dataset_record,
@@ -80,6 +85,31 @@ def _dataset() -> EpochDataset:
     )
 
 
+def _named_contract_source() -> EpochDataset:
+    from data.domain import adapt_common_channel_average_reference
+
+    dataset = _dataset()
+    preprocessing = replace(
+        preprocessing_spec_from_contract(SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT),
+        name="producer_equivalent_causal_profile",
+    )
+    dataset.preprocessing = preprocessing
+    dataset.X = (
+        np.arange(
+            dataset.n_epochs * dataset.n_channels * preprocessing.n_times,
+            dtype=np.float32,
+        ).reshape(dataset.n_epochs, dataset.n_channels, preprocessing.n_times)
+        * np.float32(1e-10)
+    )
+    dataset.event_timeline = replace(dataset.event_timeline, online_causal=True)
+    dataset.validate(require_labels=True)
+    return adapt_common_channel_average_reference(
+        dataset,
+        dataset.channel_names,
+        name="producer_equivalent_causal_car",
+    )
+
+
 def test_epoch_dataset_safe_round_trip(tmp_path) -> None:
     source = _dataset()
     path = save_epoch_dataset(tmp_path / "epochs.npz", source)
@@ -99,6 +129,393 @@ def test_epoch_dataset_safe_round_trip(tmp_path) -> None:
     assert loaded.event_timeline.supports_full_candidate_chain is True
     assert loaded.identity_table is not None
     assert loaded.identity_table.payload() == source.identity_table.payload()
+
+
+def test_attested_load_rejects_a_substituted_physical_object(
+    tmp_path: Path, monkeypatch
+) -> None:
+    canonical = save_epoch_dataset(
+        tmp_path / "canonical.npz",
+        _dataset(),
+        compressed=False,
+    )
+    with np.load(canonical, allow_pickle=False) as archive:
+        payload = {key: np.asarray(archive[key]) for key in archive.files}
+    payload["X"] = payload["X"].copy()
+    payload["X"][0, 0, 0] += np.float32(0.123)
+    malicious = tmp_path / "malicious.npz"
+    np.savez(malicious, **payload)
+    assert malicious.stat().st_size == canonical.stat().st_size
+
+    real_open = epochs_module.os.open
+
+    def substitute_open(path, flags, *args):
+        selected = malicious if Path(path) == canonical else path
+        return real_open(selected, flags, *args)
+
+    monkeypatch.setattr(epochs_module.os, "open", substitute_open)
+
+    with pytest.raises(ValueError, match="SHA-256"):
+        load_epoch_dataset(canonical, validation="attested")
+    assert not list(tmp_path.glob(".n2p3-attested-cache-*"))
+
+
+def test_attested_load_decodes_private_snapshot_when_path_is_swapped_after_hash(
+    tmp_path: Path, monkeypatch
+) -> None:
+    canonical = save_epoch_dataset(
+        tmp_path / "canonical.npz",
+        _dataset(),
+        compressed=False,
+    )
+    canonical_bytes = canonical.read_bytes()
+    with np.load(canonical, allow_pickle=False) as archive:
+        payload = {key: np.asarray(archive[key]) for key in archive.files}
+    payload["X"] = payload["X"].copy()
+    payload["X"][0, 0, 0] += np.float32(0.123)
+    malicious = tmp_path / "malicious.npz"
+    np.savez(malicious, **payload)
+    assert malicious.stat().st_size == canonical.stat().st_size
+
+    original_load = epochs_module.np.load
+    attack_executed = False
+
+    def swap_path_then_decode(snapshot, *args, **kwargs):
+        nonlocal attack_executed
+        if hasattr(snapshot, "read"):
+            canonical.write_bytes(malicious.read_bytes())
+            canonical.write_bytes(canonical_bytes)
+            attack_executed = True
+        return original_load(snapshot, *args, **kwargs)
+
+    monkeypatch.setattr(epochs_module.np, "load", swap_path_then_decode)
+    loaded = load_epoch_dataset(canonical, validation="attested")
+
+    assert attack_executed is True
+    assert loaded.X[0, 0, 0] == _dataset().X[0, 0, 0]
+    assert canonical.read_bytes() == canonical_bytes
+
+
+def test_attested_load_fails_closed_when_snapshot_disk_space_is_insufficient(
+    tmp_path: Path, monkeypatch
+) -> None:
+    canonical = save_epoch_dataset(tmp_path / "canonical.npz", _dataset())
+
+    class NoFreeSpace:
+        free = 0
+
+    monkeypatch.setattr(epochs_module.shutil, "disk_usage", lambda _path: NoFreeSpace())
+
+    with pytest.raises(ValueError, match="insufficient free space"):
+        load_epoch_dataset(canonical, validation="attested")
+
+
+def test_named_contract_binding_preserves_content_and_binds_attestation(
+    tmp_path: Path,
+) -> None:
+    from data.domain import ensure_common_channel_average_reference
+
+    source_path = save_epoch_dataset(
+        tmp_path / "source.npz",
+        _named_contract_source(),
+        compressed=False,
+    )
+    source = load_epoch_dataset(source_path, require_labels=True, validation="attested")
+    source_attestation = loaded_epoch_cache_attestation(source)
+    source_lineage_head = source.lineage.entity_digest
+    source_timeline_fingerprint = source.event_timeline.fingerprint()
+    source_identity = source.identity_table.payload()
+    source_metadata = source.metadata.copy()
+    source_X = source.X.copy()
+    source_y = source.y.copy()
+
+    with pytest.raises(TypeError):
+        source.verified_cache_attestation["sha256"] = "0" * 64
+
+    rebound = bind_named_preprocessing_contract(
+        source,
+        SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+        name="canonical-causal-car",
+    )
+    second_name = bind_named_preprocessing_contract(
+        source,
+        SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+        name="canonical-causal-car-2",
+    )
+
+    assert rebound.preprocessing == preprocessing_spec_from_contract(
+        SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
+    )
+    assert rebound.verified_cache_attestation is None
+    assert rebound.X is source.X
+    assert rebound.y is source.y
+    assert rebound.event_timeline is source.event_timeline
+    assert np.array_equal(rebound.X, source_X)
+    assert rebound.X.tobytes() == source_X.tobytes()
+    assert np.array_equal(rebound.y, source_y)
+    assert rebound.event_timeline.fingerprint() == source_timeline_fingerprint
+    for field_name in (
+        "selection_ids",
+        "candidate_ids",
+        "target_candidate_ids",
+        "repetition_indices",
+        "evidence_indices",
+        "statuses",
+    ):
+        assert np.array_equal(
+            getattr(rebound.event_timeline, field_name),
+            getattr(source.event_timeline, field_name),
+        )
+    assert rebound.event_timeline.supports_full_candidate_chain is True
+    pd.testing.assert_frame_equal(rebound.metadata, source_metadata)
+    assert rebound.identity_table.payload() == source_identity
+
+    binding = rebound.provenance["preprocessing_contract_binding"]
+    assert binding["source_cache_attestation"] == source_attestation
+    assert binding["content_invariants"]["event_timeline_fingerprint"] == (
+        source_timeline_fingerprint
+    )
+    assert set(binding["content_invariants"]["qc_features"]) == {
+        "schema",
+        "relative_ptp_sha256",
+        "channel_std_v_sha256",
+        "epoch_scale_v_sha256",
+        "observed_mask_sha256",
+    }
+    assert binding["metadata_updates"] == {
+        "domain_adapter.preprocessing_identity": {
+            "from": "producer_equivalent_causal_profile",
+            "to": SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.name,
+        }
+    }
+    assert rebound.provenance["domain_adapter"]["preprocessing_identity"] == (
+        SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.name
+    )
+    assert source.provenance["domain_adapter"]["preprocessing_identity"] == (
+        "producer_equivalent_causal_profile"
+    )
+    assert rebound.lineage.entities[-1].parent_entity_digests == (source_lineage_head,)
+    assert dict(rebound.lineage.entities[-1].parameters) == binding
+    assert rebound.lineage.entity_digest != second_name.lineage.entity_digest
+    assert (
+        ensure_common_channel_average_reference(rebound, rebound.channel_names)
+        is rebound
+    )
+
+    output_path = save_epoch_dataset(tmp_path / "bound.npz", rebound)
+    loaded = load_epoch_dataset(output_path, require_labels=True, validation="attested")
+    output_attestation = loaded_epoch_cache_attestation(loaded)
+    assert output_attestation["sha256"] == hashlib.sha256(
+        output_path.read_bytes()
+    ).hexdigest()
+    assert loaded.X.tobytes() == source_X.tobytes()
+    assert np.array_equal(loaded.y, source_y)
+    assert loaded.event_timeline.fingerprint() == source_timeline_fingerprint
+    pd.testing.assert_frame_equal(loaded.metadata, source_metadata)
+    assert loaded.identity_table.payload() == source_identity
+    assert loaded.provenance["preprocessing_contract_binding"] == binding
+    assert not list(tmp_path.glob(".n2p3-attested-cache-*"))
+
+
+def test_named_contract_binding_rejects_an_existing_canonical_name(tmp_path: Path) -> None:
+    dataset = _named_contract_source()
+    dataset.preprocessing = preprocessing_spec_from_contract(
+        SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
+    )
+    source = load_epoch_dataset(
+        save_epoch_dataset(tmp_path / "canonical.npz", dataset),
+        validation="attested",
+    )
+
+    with pytest.raises(ValueError, match="already uses"):
+        bind_named_preprocessing_contract(
+            source,
+            SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+        )
+
+
+def test_named_contract_binding_does_not_silently_ignore_an_empty_output_name(
+    tmp_path: Path,
+) -> None:
+    source = load_epoch_dataset(
+        save_epoch_dataset(tmp_path / "source.npz", _named_contract_source()),
+        validation="attested",
+    )
+
+    with pytest.raises(ValueError, match="name must be a non-empty"):
+        bind_named_preprocessing_contract(
+            source,
+            SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+            name="",
+        )
+
+
+def test_named_contract_binding_rejects_content_mutated_after_attested_load(
+    tmp_path: Path,
+) -> None:
+    source = load_epoch_dataset(
+        save_epoch_dataset(tmp_path / "source.npz", _named_contract_source()),
+        validation="attested",
+    )
+    source.X[0, 0, 0] += np.float32(1e-4)
+
+    with pytest.raises(ValueError, match="content changed after"):
+        bind_named_preprocessing_contract(
+            source,
+            SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field_name", "different_value", "reported_field"),
+    [
+        ("sample_rate_hz", 129.0, "sfreq"),
+        ("l_freq", 0.2, "l_freq"),
+        ("h_freq", 29.0, "h_freq"),
+        ("tmin_ms", -100.0, "tmin_ms"),
+        ("tmax_ms", 1100.0, "tmax_ms"),
+        ("baseline_mode", "none", "baseline_mode"),
+        ("signal_unit", "uV", "signal_unit"),
+        ("filter_method", "fir", "filter_method"),
+        ("filter_order", 2, "filter_order"),
+        ("filter_phase", "zero", "filter_phase"),
+        ("causal_iir_initial_state", "not_applicable", "causal_iir_initial_state"),
+        ("resample_domain", "continuous", "resample_domain"),
+        ("resample_method", "polyphase", "resample_method"),
+        ("resample_npad", "0", "resample_npad"),
+        ("resample_window", "boxcar", "resample_window"),
+        ("resample_pad", "reflect", "resample_pad"),
+    ],
+)
+def test_named_contract_binding_rejects_every_physical_contract_difference(
+    tmp_path: Path,
+    field_name: str,
+    different_value: object,
+    reported_field: str,
+) -> None:
+    source = load_epoch_dataset(
+        save_epoch_dataset(tmp_path / "source.npz", _named_contract_source()),
+        validation="attested",
+    )
+    target = replace(
+        SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+        **{field_name: different_value},
+    )
+
+    with pytest.raises(ValueError, match=reported_field):
+        bind_named_preprocessing_contract(source, target)
+
+
+@pytest.mark.parametrize(
+    ("field_name", "different_value"),
+    [
+        ("trial_reference_window_ms", (-200.0, 0.0)),
+        ("trial_reference_center", "median"),
+        ("trial_reference_scale", "std"),
+        ("reject_threshold_v", 1e-4),
+    ],
+)
+def test_named_contract_binding_rejects_extra_preprocessing_physical_differences(
+    tmp_path: Path,
+    field_name: str,
+    different_value: object,
+) -> None:
+    dataset = _named_contract_source()
+    dataset.preprocessing = replace(
+        dataset.preprocessing,
+        **{field_name: different_value},
+    )
+    source = load_epoch_dataset(
+        save_epoch_dataset(tmp_path / "source.npz", dataset),
+        validation="attested",
+    )
+
+    with pytest.raises(ValueError, match=field_name):
+        bind_named_preprocessing_contract(
+            source,
+            SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+        )
+
+
+def test_bind_preprocessing_contract_cli_is_canonical_and_non_destructive(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    from experiments.bind_preprocessing_contract import main
+
+    source_path = save_epoch_dataset(tmp_path / "source.npz", _named_contract_source())
+    output_path = tmp_path / "bound.npz"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "bind_preprocessing_contract.py",
+            "--dataset-cache",
+            str(source_path),
+            "--contract",
+            "causal",
+            "--output",
+            str(output_path),
+        ],
+    )
+    main()
+
+    assert "[contract-bound]" in capsys.readouterr().out
+    assert source_path.is_file()
+    loaded = load_epoch_dataset(output_path, validation="attested")
+    assert loaded.preprocessing.name == SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.name
+    assert loaded.provenance["preprocessing_contract_binding"][
+        "source_cache_attestation"
+    ]["sha256"] == loaded_epoch_cache_attestation(
+        load_epoch_dataset(source_path, validation="attested")
+    )["sha256"]
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "bind_preprocessing_contract.py",
+            "--dataset-cache",
+            str(source_path),
+            "--contract",
+            "causal",
+            "--output",
+            str(source_path),
+        ],
+    )
+    with pytest.raises(ValueError, match="must not overwrite"):
+        main()
+
+    existing_output = tmp_path / "existing.npz"
+    existing_output.write_bytes(b"do-not-replace")
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "bind_preprocessing_contract.py",
+            "--dataset-cache",
+            str(source_path),
+            "--contract",
+            "causal",
+            "--output",
+            str(existing_output),
+        ],
+    )
+    with pytest.raises(FileExistsError, match="requires a new output path"):
+        main()
+    assert existing_output.read_bytes() == b"do-not-replace"
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "bind_preprocessing_contract.py",
+            "--dataset-cache",
+            str(source_path),
+            "--contract",
+            "invented-contract",
+            "--output",
+            str(tmp_path / "invalid.npz"),
+        ],
+    )
+    with pytest.raises(SystemExit) as exc_info:
+        main()
+    assert exc_info.value.code == 2
 
 
 def test_attested_cache_load_skips_repeated_full_contract_scan(tmp_path, monkeypatch) -> None:
@@ -131,6 +548,25 @@ def test_attested_cache_rejects_hash_disagreement(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="SHA-256"):
         load_epoch_dataset(path, validation="attested")
+
+
+def test_read_epoch_cache_attestation_fully_hashes_the_stable_object(tmp_path: Path) -> None:
+    path = save_epoch_dataset(
+        tmp_path / "epochs.npz",
+        _dataset(),
+        compressed=False,
+    )
+    with np.load(path, allow_pickle=False) as archive:
+        payload = {key: np.asarray(archive[key]) for key in archive.files}
+    payload["X"] = payload["X"].copy()
+    payload["X"][0, 0, 0] += np.float32(0.123)
+    tampered = tmp_path / "tampered.npz"
+    np.savez(tampered, **payload)
+    assert tampered.stat().st_size == path.stat().st_size
+    tampered.replace(path)
+
+    with pytest.raises(ValueError, match="SHA-256"):
+        read_epoch_cache_attestation(path)
 
 
 def test_attested_cache_rejects_sidecar_event_contract_tampering(tmp_path) -> None:

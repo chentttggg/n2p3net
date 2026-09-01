@@ -10,6 +10,8 @@ from data.channel import build_channel_identity
 from data.domain import (
     adapt_common_channel_average_reference,
     common_channel_intersection,
+    ensure_common_channel_average_reference,
+    ensure_epoch_dataset_namespace,
     namespace_epoch_dataset,
 )
 from data.epochs import (
@@ -98,6 +100,37 @@ def test_common_car_rejects_missing_trial_channel() -> None:
         adapt_common_channel_average_reference(dataset, ("Fz", "Cz", "Pz"))
 
 
+def test_common_car_ensure_reuses_exact_existing_adapter_without_rounding_again() -> None:
+    source = _dataset(
+        np.asarray([[[1, 2, 3, 4], [3, 4, 5, 6], [7, 8, 9, 10]]]),
+        reference="A1",
+    )
+    adapted = adapt_common_channel_average_reference(source, ("Fz", "Cz", "Pz"))
+    signal_before = adapted.X.copy()
+    lineage_before = adapted.lineage.payload()
+
+    ensured = ensure_common_channel_average_reference(adapted, ("Fz", "Cz", "Pz"))
+
+    assert ensured is adapted
+    np.testing.assert_array_equal(ensured.X, signal_before)
+    assert ensured.lineage.payload() == lineage_before
+    with pytest.raises(ValueError, match="already satisfies"):
+        adapt_common_channel_average_reference(adapted, ("Fz", "Cz", "Pz"))
+
+
+def test_common_car_ensure_rejects_provenance_contradicted_by_tensor() -> None:
+    source = _dataset(
+        np.asarray([[[1, 2, 3, 4], [3, 4, 5, 6], [7, 8, 9, 10]]]),
+        reference="A1",
+    )
+    adapted = adapt_common_channel_average_reference(source, ("Fz", "Cz", "Pz"))
+    forged = replace(adapted, X=source.X.copy())
+    forged.validate(require_labels=True)
+
+    with pytest.raises(ValueError, match="contradicted by non-zero channel means"):
+        ensure_common_channel_average_reference(forged, ("Fz", "Cz", "Pz"))
+
+
 def test_common_channel_intersection_preserves_first_dataset_order() -> None:
     first = _dataset(np.ones((1, 3, 4)), reference="A1")
     second = _dataset(
@@ -122,6 +155,44 @@ def test_namespace_qualifies_subject_and_event_identity() -> None:
     assert namespaced.identity_table is not None
     namespaced_identity = namespaced.identity_table.record_for("BI::s")
     assert namespaced_identity.origin_subject_keys == source_identity.origin_subject_keys
+
+
+def test_namespace_ensure_reuses_complete_preexisting_namespace_after_car() -> None:
+    source = _dataset(np.ones((1, 3, 4)), reference="A1")
+    namespaced = namespace_epoch_dataset(source, "BI")
+    adapted = adapt_common_channel_average_reference(namespaced, ("Fz", "Cz", "Pz"))
+    lineage_before = adapted.lineage.payload()
+
+    ensured = ensure_epoch_dataset_namespace(adapted, "BI")
+
+    assert ensured is adapted
+    assert ensured.subject_ids.tolist() == ["BI::s"]
+    assert ensured.event_timeline.subject_ids.tolist() == ["BI::s"]
+    assert ensured.lineage.payload() == lineage_before
+
+
+def test_namespace_transform_rejects_accidental_second_namespace() -> None:
+    namespaced = namespace_epoch_dataset(
+        _dataset(np.ones((1, 3, 4)), reference="A1"),
+        "BI",
+    )
+
+    with pytest.raises(ValueError, match="already declares subject_namespace"):
+        namespace_epoch_dataset(namespaced, "BI")
+
+
+def test_namespace_ensure_rejects_conflicting_or_forged_provenance() -> None:
+    source = _dataset(np.ones((1, 3, 4)), reference="A1")
+    namespaced = namespace_epoch_dataset(source, "BI")
+    with pytest.raises(ValueError, match="not requested"):
+        ensure_epoch_dataset_namespace(namespaced, "BNCI")
+
+    forged = replace(
+        source,
+        provenance={**source.provenance, "subject_namespace": "BI"},
+    )
+    with pytest.raises(ValueError, match="inconsistent with qualified identity axes"):
+        ensure_epoch_dataset_namespace(forged, "BI")
 
 
 def test_car_and_channel_representation_changes_preserve_origin_identity() -> None:
