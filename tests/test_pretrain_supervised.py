@@ -217,7 +217,7 @@ def test_supervised_runner_records_verified_physical_source_snapshot(
         lambda *_args, **_kwargs: dataset,
     )
     monkeypatch.setattr(
-        "experiments.run_pretrain_supervised.read_epoch_cache_attestation",
+        "experiments.run_pretrain_supervised.loaded_epoch_cache_attestation",
         lambda *_args, **_kwargs: {"sha256": "1" * 64},
     )
     monkeypatch.setattr(

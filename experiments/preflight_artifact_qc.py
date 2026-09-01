@@ -25,7 +25,11 @@ from data.artifact import (  # noqa: E402
     parse_candidate_bad_channel_fractions,
     parse_candidate_quantiles,
 )
-from data.epochs import load_epoch_dataset, write_epoch_dataset_record  # noqa: E402
+from data.epochs import (  # noqa: E402
+    load_epoch_dataset,
+    loaded_epoch_cache_attestation,
+    write_epoch_dataset_record,
+)
 
 
 def _parse_quantiles(value: str) -> tuple[float, ...]:
@@ -71,6 +75,14 @@ def _audit_fitted_folds(
             }
         )
     return results
+
+
+def _load_verified_preflight_dataset(path: str, *, full_contract_check: bool):
+    if full_contract_check:
+        scanned = load_epoch_dataset(path, require_labels=True, validation="full")
+        write_epoch_dataset_record(path, scanned, already_validated=True)
+    dataset = load_epoch_dataset(path, require_labels=True, validation="attested")
+    return dataset, loaded_epoch_cache_attestation(dataset)
 
 
 def main() -> None:
@@ -125,13 +137,10 @@ def main() -> None:
         min_training_epoch_retention=args.artifact_min_training_epoch_retention,
     )
     policy.validate()
-    dataset = load_epoch_dataset(
+    dataset, verified_load = _load_verified_preflight_dataset(
         args.dataset_cache,
-        require_labels=True,
-        validation="full" if args.full_contract_check else "attested",
+        full_contract_check=args.full_contract_check,
     )
-    if args.full_contract_check:
-        write_epoch_dataset_record(args.dataset_cache, dataset, already_validated=True)
     folds = loso_folds(dataset.subject_ids)
     if args.max_folds is not None:
         folds = folds[: args.max_folds]
@@ -165,6 +174,7 @@ def main() -> None:
     failed = [result for result in results if result["n_all_channels_bad"]]
     summary = {
         "dataset_cache": str(args.dataset_cache),
+        "dataset_cache_verified_load": verified_load,
         "n_folds": len(results),
         "policy": policy.__dict__,
         "artifact_qc_jobs": min(args.artifact_qc_jobs, len(folds)),

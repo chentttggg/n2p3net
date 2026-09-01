@@ -30,7 +30,7 @@ from data.contract import (  # noqa: E402
     assert_p300_input_contract,
     assert_p300_source_provenance,
 )
-from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
+from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
     N2P3ArchitectureConfig,
@@ -328,7 +328,7 @@ def main() -> None:
 
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
     dataset_record = dataset.record(validate=False)
-    cache_sha256 = str(read_epoch_cache_attestation(args.dataset_cache)["sha256"])
+    cache_sha256 = str(loaded_epoch_cache_attestation(dataset)["sha256"])
     expected_contract = replace(
         DEFAULT_P300_DATA_CONTRACT,
         sample_rate_hz=args.sample_rate_hz,

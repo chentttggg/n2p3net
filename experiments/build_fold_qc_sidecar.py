@@ -18,7 +18,7 @@ from baselines.evaluate import loso_folds, resolve_fold_local_artifact_models  #
 from data.artifact import FoldLocalArtifactPolicy  # noqa: E402
 from data.epochs import (  # noqa: E402
     load_epoch_dataset,
-    read_epoch_cache_attestation,
+    loaded_epoch_cache_attestation,
 )
 
 
@@ -59,7 +59,7 @@ def main() -> None:
         subject_ids,
         loso_folds(subject_ids),
         cache_path=args.dataset_cache,
-        cache_sha256=str(read_epoch_cache_attestation(args.dataset_cache)["sha256"]),
+        cache_sha256=str(loaded_epoch_cache_attestation(dataset)["sha256"]),
         trial_channel_mask=trial_channel_mask,
         qc_features=qc_features,
         artifact_policy=FoldLocalArtifactPolicy(),

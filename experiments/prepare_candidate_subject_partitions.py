@@ -15,7 +15,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from data.candidate_task import candidate_task_contract_from_provenance  # noqa: E402
-from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
+from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from research.contracts import semantic_sha256  # noqa: E402
 
 SCHEMA = "n2p3_candidate_subject_partition_manifest/1"
@@ -54,7 +54,7 @@ def main() -> None:
     args = parser.parse_args()
 
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
-    cache = read_epoch_cache_attestation(args.dataset_cache)
+    cache = loaded_epoch_cache_attestation(dataset)
     candidate_task = candidate_task_contract_from_provenance(dataset.provenance)
     partitions = balanced_subject_partitions(dataset.subject_ids, n_partitions=args.partitions)
     output = Path(args.output_dir)
@@ -78,6 +78,7 @@ def main() -> None:
         "dataset_cache": str(Path(args.dataset_cache).resolve()),
         "dataset_cache_sha256": cache["sha256"],
         "dataset_cache_byte_size": cache["byte_size"],
+        "dataset_cache_verified_load": cache,
         "dataset_id": candidate_task.dataset_id,
         "task_id": candidate_task.task_id,
         "candidate_task_contract": candidate_task.record(),

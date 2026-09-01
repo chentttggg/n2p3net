@@ -36,7 +36,7 @@ from data.contract import (  # noqa: E402
     SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     assert_p300_input_contract,
 )
-from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
+from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from data.identity import IdentityExclusionPolicy  # noqa: E402
 from data.qc_features import compute_epoch_qc_features  # noqa: E402
 from models.decision import (  # noqa: E402
@@ -296,7 +296,7 @@ def main() -> None:
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
-    target_cache_sha256 = str(read_epoch_cache_attestation(args.dataset_cache)["sha256"])
+    target_cache_sha256 = str(loaded_epoch_cache_attestation(dataset)["sha256"])
     causal_contract = {
         "default": SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
         "gtn_paper": PAPER_GTN_CAUSAL_DATA_CONTRACT,

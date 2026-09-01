@@ -26,7 +26,7 @@ from data.contract import (  # noqa: E402
     SOURCE_COHORT_DATA_CONTRACTS,
     assert_p300_input_contract,
 )
-from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
+from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from data.identity import training_identity_ledger_from_rows  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
@@ -156,7 +156,7 @@ def main() -> None:
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.source_cache, require_labels=False, validation="attested")
-    source_cache_sha256 = str(read_epoch_cache_attestation(args.source_cache)["sha256"])
+    source_cache_sha256 = str(loaded_epoch_cache_attestation(dataset)["sha256"])
     expected_contract = SOURCE_COHORT_DATA_CONTRACTS[args.cohort]
     if args.tmax_ms is not None:
         expected_contract = replace(expected_contract, tmax_ms=float(args.tmax_ms))

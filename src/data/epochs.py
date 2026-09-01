@@ -797,40 +797,6 @@ def _copy_and_sha256_stream(source: BinaryIO, destination: BinaryIO) -> tuple[st
     return digest.hexdigest(), size_bytes
 
 
-def _sha256_stable_cache_object(
-    path: Path,
-    attestation: Mapping[str, object],
-) -> str:
-    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
-    try:
-        descriptor = os.open(path, flags)
-    except OSError as error:
-        raise ValueError(f"{path} cannot be opened as a stable cache object.") from error
-    try:
-        with os.fdopen(descriptor, "rb") as stream:
-            before = os.fstat(stream.fileno())
-            if not stat.S_ISREG(before.st_mode):
-                raise ValueError(f"{path} must be a regular cache file.")
-            if before.st_size != attestation["byte_size"]:
-                raise ValueError(f"{path} byte size no longer matches its cache attestation.")
-            digest = hashlib.sha256()
-            observed_size = 0
-            for block in iter(lambda: stream.read(1024 * 1024), b""):
-                digest.update(block)
-                observed_size += len(block)
-            after = os.fstat(stream.fileno())
-    except OSError as error:
-        raise ValueError(f"{path} could not be read as a stable cache object.") from error
-    if _file_identity(after) != _file_identity(before):
-        raise ValueError(f"{path} changed while its attestation was verified.")
-    if observed_size != attestation["byte_size"]:
-        raise ValueError(f"{path} byte size no longer matches its cache attestation.")
-    observed_sha256 = digest.hexdigest()
-    if observed_sha256 != attestation["sha256"]:
-        raise ValueError(f"{path} SHA-256 no longer matches its cache attestation.")
-    return observed_sha256
-
-
 def _verified_cache_snapshot_directory(path: Path, *, byte_size: int) -> Path:
     configured = os.environ.get(_VERIFIED_CACHE_SNAPSHOT_DIR_ENV)
     directory = (
@@ -1044,15 +1010,6 @@ def write_epoch_dataset_record(
     record_path = _cache_record_path(cache_path)
     record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
     return record_path
-
-
-def read_epoch_cache_attestation(path: str | Path) -> dict[str, object]:
-    """Fully hash one stable cache object against its sidecar and return its identity."""
-
-    cache_path = Path(path)
-    _, attestation = _read_epoch_cache_record(cache_path)
-    _sha256_stable_cache_object(cache_path, attestation)
-    return dict(attestation)
 
 
 def _validate_attested_cache(

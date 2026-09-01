@@ -53,7 +53,7 @@ COHORT_CONTRACTS = {
     "gtn_paper_offline": PAPER_GTN_DATA_CONTRACT,
     "gtn_paper": PAPER_GTN_CAUSAL_DATA_CONTRACT,
 }
-from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
+from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
     DEFAULT_N2P3_POOLING_MODE,
@@ -474,7 +474,7 @@ def main() -> None:
         validation="attested",
     )
     dataset_record = dataset.record(validate=False)
-    cache_sha256 = str(read_epoch_cache_attestation(args.dataset_cache)["sha256"])
+    cache_sha256 = str(loaded_epoch_cache_attestation(dataset)["sha256"])
     base_contract = COHORT_CONTRACTS[args.cohort]
     expected_contract = replace(
         base_contract,

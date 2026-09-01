@@ -26,7 +26,6 @@ from data.epochs import (
     loaded_epoch_cache_attestation,
     materialize_dataset_identity,
     preprocessing_spec_from_contract,
-    read_epoch_cache_attestation,
     save_epoch_dataset,
     select_epoch_channels,
     write_epoch_dataset_record,
@@ -548,25 +547,6 @@ def test_attested_cache_rejects_hash_disagreement(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="SHA-256"):
         load_epoch_dataset(path, validation="attested")
-
-
-def test_read_epoch_cache_attestation_fully_hashes_the_stable_object(tmp_path: Path) -> None:
-    path = save_epoch_dataset(
-        tmp_path / "epochs.npz",
-        _dataset(),
-        compressed=False,
-    )
-    with np.load(path, allow_pickle=False) as archive:
-        payload = {key: np.asarray(archive[key]) for key in archive.files}
-    payload["X"] = payload["X"].copy()
-    payload["X"][0, 0, 0] += np.float32(0.123)
-    tampered = tmp_path / "tampered.npz"
-    np.savez(tampered, **payload)
-    assert tampered.stat().st_size == path.stat().st_size
-    tampered.replace(path)
-
-    with pytest.raises(ValueError, match="SHA-256"):
-        read_epoch_cache_attestation(path)
 
 
 def test_attested_cache_rejects_sidecar_event_contract_tampering(tmp_path) -> None:

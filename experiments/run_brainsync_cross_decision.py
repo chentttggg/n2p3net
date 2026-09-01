@@ -27,7 +27,7 @@ from data.brainsync_contract import (  # noqa: E402
     derive_population_scope,
 )
 from data.contract import assert_causal_p300_input_contract  # noqa: E402
-from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
+from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from research.evaluation import (  # noqa: E402
     build_evaluation_run_contract,
     checkpoint_model_origin,
@@ -229,7 +229,7 @@ def main() -> None:
         population_scope,
         target_policy=args.target_policy,
     )
-    target_cache_sha = str(read_epoch_cache_attestation(args.dataset_cache)["sha256"])
+    target_cache_sha = str(loaded_epoch_cache_attestation(dataset)["sha256"])
     split = calibration_decision_split(
         dataset,
         calibration_selections=args.calibration_selections,
