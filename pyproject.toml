@@ -11,13 +11,15 @@ dependencies = [
     "numpy>=2.0",
     "scipy>=1.14",
     "scikit-learn>=1.5",
-    "torch>=2.4",
+    "torch==2.8.0; sys_platform == 'linux' and platform_machine == 'x86_64' and python_version < '3.14'",
+    "torchaudio==2.8.0; sys_platform == 'linux' and platform_machine == 'x86_64' and python_version < '3.14'",
+    "torch>=2.4; sys_platform != 'linux' or platform_machine != 'x86_64' or python_version >= '3.14'",
 ]
 
 [project.optional-dependencies]
 signals = ["mne>=1.8", "pandas>=2.2", "moabb>=1.1"]
 baselines = ["pyriemann>=0.6", "braindecode>=1.7"]
-dev = ["pytest>=8.0", "ruff>=0.14"]
+dev = ["packaging>=24", "pytest>=8.0", "ruff>=0.14"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
