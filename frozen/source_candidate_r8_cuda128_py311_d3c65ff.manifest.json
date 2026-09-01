@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "source_candidate_r8_cuda128_py311_d3c65ff.source-only.tar.gz",
+  "archive_sha256": "3782d42449bf05f41f43fe610ac696115865737c3a45f235557f6df313c4a54e",
+  "source_commit": "d3c65ff09a6b4da77eeba90194e9b13085baa8d3",
+  "member_count": 166,
+  "byte_size": 753280,
+  "scope": "Git-tracked candidate promotion source, immutable raw-data loaders, tests, documentation, CUDA 12.8 dependency lock, and the declared Python 3.11 syntax gate",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "GPU training must verify this archive and execute code that parses under the declared Python minimum version"
+}
