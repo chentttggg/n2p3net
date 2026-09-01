@@ -8,7 +8,11 @@ import pandas as pd
 import pytest
 
 from data.channel import build_channel_identity
-from data.domain import adapt_common_channel_average_reference, namespace_epoch_dataset
+from data.domain import (
+    adapt_common_channel_average_reference,
+    ensure_common_channel_average_reference,
+    namespace_epoch_dataset,
+)
 from data.epochs import (
     EpochDataset,
     PreprocessingSpec,
@@ -141,6 +145,10 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
     main()
 
     merged = load_epoch_dataset(output_path, require_labels=True, validation="attested")
+    assert ensure_common_channel_average_reference(
+        merged,
+        ("Cz", "P3", "Pz", "P4", "Oz"),
+    ) is merged
     np.testing.assert_array_equal(merged.X[: first.n_epochs], first.X)
     np.testing.assert_array_equal(merged.X[first.n_epochs :], second.X)
     assert merged.subject_ids.tolist() == ["A::01", "A::01", "B::02", "B::02"]
@@ -161,6 +169,12 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
             load_epoch_dataset(second_path, validation="attested")
         )["sha256"]
     )
+    output_sha256 = loaded_epoch_cache_attestation(merged)["sha256"]
+    with pytest.raises(FileExistsError, match="requires a new output path"):
+        main()
+    assert loaded_epoch_cache_attestation(
+        load_epoch_dataset(output_path, validation="attested")
+    )["sha256"] == output_sha256
 
 
 def test_multidomain_builder_requires_explicit_binary_view_for_mixed_event_metadata(

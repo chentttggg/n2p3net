@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -51,6 +52,18 @@ def main() -> None:
     if len(set(namespaces)) != len(namespaces):
         parser.error("source namespaces must be unique")
     channels = tuple(value.strip() for value in args.target_channels.split(",") if value.strip())
+    output_path = Path(args.output).resolve(strict=False)
+    output_artifacts = (
+        output_path,
+        output_path.with_suffix(".record.json"),
+        output_path.with_suffix(output_path.suffix + ".tmp.npz"),
+    )
+    collisions = [path for path in output_artifacts if path.exists()]
+    if collisions:
+        raise FileExistsError(
+            "multi-domain source preparation requires a new output path; existing artifacts: "
+            + ", ".join(str(path) for path in collisions)
+        )
 
     adapted = []
     source_records = []
@@ -89,12 +102,18 @@ def main() -> None:
             }
         )
     reference = adapted[0].provenance["source_reference"]
+    domain_adapter = adapted[0].provenance.get("domain_adapter")
+    if not isinstance(domain_adapter, Mapping) or any(
+        dataset.provenance.get("domain_adapter") != domain_adapter for dataset in adapted[1:]
+    ):
+        raise ValueError("multi-domain sources do not share one verified domain_adapter contract.")
     merged = concatenate_epoch_datasets(
         adapted,
         name=args.name,
         provenance={
             "source": "explicit_multidomain_common_channel_car",
             "source_reference": reference,
+            "domain_adapter": dict(domain_adapter),
             "target_channels": list(adapted[0].channel_names),
             "event_contract": args.event_contract,
             "sources": source_records,
@@ -103,7 +122,7 @@ def main() -> None:
     merged.provenance["identity_table_digest"] = (
         merged.identity_table.digest() if merged.identity_table is not None else None
     )
-    output = save_epoch_dataset(args.output, merged, compressed=not args.uncompressed)
+    output = save_epoch_dataset(output_path, merged, compressed=not args.uncompressed)
     print(
         f"[multidomain] {output} X={merged.X.shape} "
         f"subjects={len(set(merged.subject_ids))}",
