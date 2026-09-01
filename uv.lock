@@ -1810,7 +1810,7 @@ signals = [
 requires-dist = [
     { name = "braindecode", marker = "extra == 'baselines'", specifier = ">=1.7" },
     { name = "mne", marker = "extra == 'signals'", specifier = ">=1.8" },
-    { name = "moabb", marker = "extra == 'signals'", specifier = ">=1.1" },
+    { name = "moabb", marker = "extra == 'signals'", specifier = "==1.6.1" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "packaging", marker = "extra == 'dev'", specifier = ">=24" },
     { name = "pandas", marker = "extra == 'signals'", specifier = ">=2.2" },

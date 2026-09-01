@@ -9,6 +9,7 @@ import os
 import re
 import stat
 import tempfile
+import time
 import zipfile
 import zlib
 from collections.abc import Iterator, Mapping, Sequence
@@ -27,6 +28,22 @@ RAW_ARTIFACT_ZIP_MAX_EXPANSION_RATIO = 200.0
 RAW_ARTIFACT_SNAPSHOT_OBJECT_ROLE = "content_addressed_verified_source"
 RAW_ARTIFACT_MOABB_WORKSPACE_ROLE = "controlled_read_only_mne_materialization"
 RAW_ARTIFACT_COPY_CHUNK_BYTES = 1024 * 1024
+
+
+def _unlink_with_retry(path: Path, *, attempts: int = 20, delay_s: float = 0.01) -> None:
+    """Remove a closed temporary file despite short Windows scanner locks."""
+
+    for attempt in range(attempts):
+        try:
+            path.unlink()
+            return
+        except FileNotFoundError:
+            return
+        except PermissionError:
+            if attempt + 1 == attempts:
+                raise
+            time.sleep(delay_s)
+
 
 _MANIFEST_FIELDS = {
     "schema",
@@ -457,7 +474,7 @@ def _publish_verified_stream(
             pass
         else:
             _fsync_directory(object_dir)
-        temporary.unlink()
+        _unlink_with_retry(temporary)
         _make_read_only(target)
     finally:
         if temporary.exists():
@@ -1286,7 +1303,7 @@ def _materialize_snapshot(
                 )
         else:
             _fsync_directory(target.parent)
-        temporary.unlink()
+        _unlink_with_retry(temporary)
         _make_read_only(target)
     finally:
         if temporary.exists():
@@ -1395,7 +1412,7 @@ def _publish_content_stream(
             pass
         else:
             _fsync_directory(object_dir)
-        temporary.unlink()
+        _unlink_with_retry(temporary)
         _make_read_only(target)
     finally:
         if temporary.exists():

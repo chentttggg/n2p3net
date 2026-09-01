@@ -218,6 +218,31 @@ def test_concurrent_snapshot_publish_is_single_and_leaves_no_temp(tmp_path: Path
     assert not list(snapshot_root.rglob(".snapshot-*.tmp"))
 
 
+def test_snapshot_temp_cleanup_retries_transient_windows_lock(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from data import raw_artifacts as module
+
+    path = tmp_path / ".snapshot-transient.tmp"
+    path.write_bytes(b"temporary")
+    original_unlink = Path.unlink
+    attempts = 0
+
+    def transient_unlink(target: Path, *args, **kwargs) -> None:
+        nonlocal attempts
+        if target == path and attempts < 2:
+            attempts += 1
+            raise PermissionError("transient scanner lock")
+        original_unlink(target, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", transient_unlink)
+
+    module._unlink_with_retry(path, delay_s=0.0)
+
+    assert attempts == 2
+    assert not path.exists()
+
+
 def test_stale_temp_file_is_never_treated_as_a_snapshot(tmp_path: Path) -> None:
     root, source, manifest = _direct_fixture(tmp_path)
     object_dir = tmp_path / "cache" / "raw-snapshots" / "objects" / "sha256"

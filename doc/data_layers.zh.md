@@ -31,6 +31,9 @@ loader member。
 MOABB 仅用于已验证的信号解释，不再负责下载或解压。项目在 dataset instance 上安装只读
 `data_path` proxy，指向 snapshot 物化目录，从而绕过 MOABB 1.6.1 中 BI2015a 的错误
 `str.strip()` 路径推导，也避免 dataset-specific MNE config 将“验证 A”悄悄切换成“读取 B”。
+MOABB 固定为 1.6.1；解析作用域将 provider 固定为 `upstream` 以关闭 NEMAR 前置预取，
+同时阻断网络 socket，并要求 parser 访问账本覆盖每个 requested subject。作用域退出后环境与
+socket 实现必须恢复，任何网络尝试或未消费 snapshot mapping 都会使 cache 构建失败。
 BNCI2014-008 MAT 同样从认证 snapshot descriptor 读取，并显式记录 MATLAB 1-based trial
 索引到内部 0-based sample 的转换。
 

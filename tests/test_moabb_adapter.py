@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import zipfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -10,6 +11,7 @@ import mne
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.io import savemat
 
 from data.contract import CAUSAL_IIR_INITIAL_STATE
 from data.epochs import PreprocessingSpec
@@ -167,8 +169,350 @@ def _verified_zip_artifact_attestation(
     return attestation, reported_loader, resolved_loader
 
 
+def _verified_braininvaders_mat_attestation(
+    tmp_path: Path,
+    dataset_class: str,
+    loader_payloads: list[tuple[str, str, np.ndarray]],
+) -> RawArtifactAttestation:
+    artifact_root = tmp_path / f"mat-artifacts-{dataset_class}"
+    mne_data_root = artifact_root / "mne_data"
+    source_root = mne_data_root / "official"
+    source_root.mkdir(parents=True)
+    files = []
+    entries = []
+    for index, (loader_relative_path, variable_name, payload) in enumerate(loader_payloads):
+        source = source_root / f"source-{index:02}.mat"
+        savemat(source, {variable_name: payload})
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()
+        source_relative = source.relative_to(artifact_root).as_posix()
+        files.append(
+            {
+                "relative_path": source_relative,
+                "size_bytes": source.stat().st_size,
+                "official_md5": None,
+                "local_sha256": digest,
+                "remote_sha256": digest,
+                "verified": True,
+            }
+        )
+        entries.append(
+            {
+                "subject": 1,
+                "loader_relative_path": loader_relative_path,
+                "source": {"kind": "manifest_file", "relative_path": source_relative},
+            }
+        )
+    manifest = {
+        "schema": RAW_ARTIFACT_MANIFEST_SCHEMA,
+        "dataset_class": dataset_class,
+        "official_source": {"kind": "synthetic_braininvaders_parser_fixture"},
+        "official_record": {"record_id": f"parser-fixture:{dataset_class}"},
+        "artifact_root_contract": {
+            "path_semantics": RAW_ARTIFACT_PATH_SEMANTICS,
+            "expected_mne_data_root": "mne_data",
+            "mne_dataset_path_key": f"MNE_DATASETS_{dataset_class.upper()}_PATH",
+            "moabb_loader_mapping": {
+                "schema": "n2p3_moabb_loader_mapping/1",
+                "entries": entries,
+            },
+        },
+        "files": files,
+    }
+    manifest_path = tmp_path / f"mat-raw-artifacts-{dataset_class}.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    cache_root = tmp_path / "cache" / dataset_class
+    cache_root.mkdir(parents=True)
+    return verify_raw_artifact_manifest(
+        manifest_path,
+        artifact_root,
+        snapshot_root=cache_root / "snapshots",
+        cache_workspace_root=cache_root,
+        expected_dataset_class=dataset_class,
+    )
+
+
+def _forbid_moabb_downloads(monkeypatch) -> list[str]:
+    import moabb.datasets.base as base_module
+    import moabb.datasets.download as download_module
+
+    calls: list[str] = []
+
+    def deny(name: str):
+        def blocked(*args, **kwargs):
+            del args, kwargs
+            calls.append(name)
+            raise AssertionError(f"Forbidden MOABB download entrypoint called: {name}")
+
+        return blocked
+
+    monkeypatch.setattr(download_module, "data_dl", deny("data_dl"))
+    monkeypatch.setattr(base_module, "nemar_dl", deny("nemar_dl"))
+    monkeypatch.setattr(base_module, "nemar_sourcedata_dl", deny("nemar_sourcedata_dl"))
+    monkeypatch.setattr(base_module, "nemar_store", deny("nemar_store"))
+    return calls
+
+
+def _allow_narrow_moabb_test_double(monkeypatch) -> None:
+    monkeypatch.setattr("data.moabb._assert_validated_moabb_runtime", lambda dataset: False)
+
+
+def test_attested_scope_bypasses_nemar_prefetch_and_restores_process_state(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    import socket
+
+    from moabb.datasets.base import BaseDataset
+
+    from data.moabb import _install_attested_data_path, _scoped_attested_moabb_io
+
+    class SnapshotDataset(BaseDataset):
+        nemar_id = "nm-unit-test"
+
+        def __init__(self):
+            super().__init__(
+                subjects=[1],
+                sessions_per_subject=1,
+                events={"Target": 2, "NonTarget": 1},
+                code="SnapshotDataset",
+                interval=[0.0, 1.0],
+                paradigm="p300",
+            )
+
+        def data_path(self, subject, **kwargs):
+            del subject, kwargs
+            raise AssertionError("Class-level upstream data_path must be bypassed.")
+
+        def _get_single_subject_data(self, subject):
+            paths = self.data_path(subject)
+            assert len(paths) == 1
+            assert Path(paths[0]).read_bytes() == b"attested"
+            return {"0": {"0": object()}}
+
+    loader = tmp_path / "attested.bin"
+    loader.write_bytes(b"attested")
+    dataset = SnapshotDataset()
+    binding = _install_attested_data_path(dataset, {1: (loader,)})
+    download_calls = _forbid_moabb_downloads(monkeypatch)
+    monkeypatch.setenv("MOABB_DOWNLOAD_PROVIDER", "nemar")
+    original_connect = socket.socket.connect
+
+    with _scoped_attested_moabb_io(dataset, [1], binding) as resolver:
+        result = dataset.get_data(
+            subjects=[1],
+            process_pipeline=SimpleNamespace(steps=[]),
+        )
+        assert os.environ["MOABB_DOWNLOAD_PROVIDER"] == "upstream"
+
+    assert result[1]["0"]["0"] is not None
+    assert binding.parser_calls() == (1,)
+    assert download_calls == []
+    assert os.environ["MOABB_DOWNLOAD_PROVIDER"] == "nemar"
+    assert socket.socket.connect is original_connect
+    assert resolver.record() == {
+        "schema": "n2p3_attested_moabb_resolver/1",
+        "moabb_version": "1.6.1",
+        "declared_nemar_id": "nm-unit-test",
+        "requested_download_provider": "nemar",
+        "effective_download_provider": "upstream",
+        "prefetch_bypassed": True,
+        "upstream_data_path_bypassed": True,
+        "parser_data_path_verified": True,
+        "subjects": [1],
+        "offline_guard": "python_socket_offline_guard/1",
+    }
+
+
+def test_attested_scope_fails_closed_on_unvalidated_moabb_version(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    from data import moabb as adapter_module
+
+    loader = tmp_path / "attested.bin"
+    loader.write_bytes(b"attested")
+    dataset = _fake_dataset((1,))
+    binding = adapter_module._install_attested_data_path(dataset, {1: (loader,)})
+    monkeypatch.setattr(adapter_module.moabb, "__version__", "1.6.2")
+
+    with pytest.raises(RuntimeError, match="validated only for moabb==1.6.1"):
+        with adapter_module._scoped_attested_moabb_io(dataset, [1], binding):
+            raise AssertionError("Unvalidated MOABB must fail before parsing.")
+
+
+def test_attested_scope_rejects_parser_that_does_not_consume_bound_data_path(
+    tmp_path: Path,
+) -> None:
+    from moabb.datasets.base import BaseDataset
+
+    from data.moabb import _install_attested_data_path, _scoped_attested_moabb_io
+
+    class NonConsumingDataset(BaseDataset):
+        def __init__(self):
+            super().__init__(
+                subjects=[1],
+                sessions_per_subject=1,
+                events={"Target": 2, "NonTarget": 1},
+                code="NonConsumingDataset",
+                interval=[0.0, 1.0],
+                paradigm="p300",
+            )
+
+        def data_path(self, subject, **kwargs):
+            del subject, kwargs
+            raise AssertionError("Class-level data_path must be bypassed.")
+
+        def _get_single_subject_data(self, subject):
+            if subject < 0:
+                self.data_path(subject)
+            return {"0": {"0": object()}}
+
+    loader = tmp_path / "attested.bin"
+    loader.write_bytes(b"attested")
+    dataset = NonConsumingDataset()
+    binding = _install_attested_data_path(dataset, {1: (loader,)})
+
+    with pytest.raises(RuntimeError, match="did not consume the complete attested data_path"):
+        with _scoped_attested_moabb_io(dataset, [1], binding):
+            dataset.get_data(
+                subjects=[1],
+                process_pipeline=SimpleNamespace(steps=[]),
+            )
+
+
+def test_attested_scope_blocks_socket_io_and_restores_guard(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    import socket
+
+    from moabb.datasets.base import BaseDataset
+
+    from data.moabb import _install_attested_data_path, _scoped_attested_moabb_io
+
+    class NetworkAttemptDataset(BaseDataset):
+        def __init__(self):
+            super().__init__(
+                subjects=[1],
+                sessions_per_subject=1,
+                events={"Target": 2, "NonTarget": 1},
+                code="NetworkAttemptDataset",
+                interval=[0.0, 1.0],
+                paradigm="p300",
+            )
+
+        def data_path(self, subject, **kwargs):
+            del subject, kwargs
+            raise AssertionError("Class-level data_path must be bypassed.")
+
+        def _get_single_subject_data(self, subject):
+            self.data_path(subject)
+            socket.create_connection(("127.0.0.1", 9))
+            return {"0": {"0": object()}}
+
+    loader = tmp_path / "attested.bin"
+    loader.write_bytes(b"attested")
+    dataset = NetworkAttemptDataset()
+    binding = _install_attested_data_path(dataset, {1: (loader,)})
+    original_create_connection = socket.create_connection
+    monkeypatch.setenv("MOABB_DOWNLOAD_PROVIDER", "auto")
+
+    with pytest.raises(RuntimeError, match="Network I/O is forbidden"):
+        with _scoped_attested_moabb_io(dataset, [1], binding):
+            dataset.get_data(
+                subjects=[1],
+                process_pipeline=SimpleNamespace(steps=[]),
+            )
+
+    assert socket.create_connection is original_create_connection
+    assert os.environ["MOABB_DOWNLOAD_PROVIDER"] == "auto"
+
+
+def test_bi2013a_reads_eight_sessions_only_from_attested_snapshot_mapping(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    from moabb.datasets import BI2013a
+
+    from data.moabb import (
+        _install_attested_data_path,
+        _reported_moabb_loader_paths,
+        _scoped_attested_moabb_io,
+    )
+
+    payloads = [
+        (
+            f"subject_01/Session{session:02}/data_{session}.mat",
+            "data",
+            np.zeros((64, 17), dtype=np.float64),
+        )
+        for session in range(1, 9)
+    ]
+    attestation = _verified_braininvaders_mat_attestation(tmp_path, "BI2013a", payloads)
+    materialization = attestation.materialize_moabb_loaders([1])
+    dataset = BI2013a()
+    binding = _install_attested_data_path(dataset, dict(materialization.paths_by_subject))
+    resolutions = _reported_moabb_loader_paths(dataset, [1])
+    materialization.verify_loader_paths([item.resolved_loader_path for item in resolutions])
+    download_calls = _forbid_moabb_downloads(monkeypatch)
+    monkeypatch.setenv("MOABB_DOWNLOAD_PROVIDER", "auto")
+
+    with _scoped_attested_moabb_io(dataset, [1], binding) as resolver:
+        runs = dataset.get_data(
+            subjects=[1],
+            process_pipeline=SimpleNamespace(steps=[]),
+        )
+
+    assert set(runs[1]) == {str(index) for index in range(8)}
+    assert all(len(session_runs) == 1 for session_runs in runs[1].values())
+    assert binding.parser_calls() == (1,)
+    assert download_calls == []
+    assert resolver.record()["declared_nemar_id"] == BI2013a.nemar_id
+    assert resolver.record()["requested_download_provider"] == "auto"
+    assert os.environ["MOABB_DOWNLOAD_PROVIDER"] == "auto"
+
+
+def test_bi2015a_bypasses_upstream_strip_logic_with_attested_session_paths(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    from moabb.datasets import BI2015a
+
+    from data.moabb import (
+        _install_attested_data_path,
+        _scoped_attested_moabb_io,
+    )
+
+    payloads = [
+        (
+            f"subject_01/subject_01_session_{session:02}.mat",
+            "DATA",
+            np.zeros((64, 34), dtype=np.float64),
+        )
+        for session in range(1, 4)
+    ]
+    attestation = _verified_braininvaders_mat_attestation(tmp_path, "BI2015a", payloads)
+    materialization = attestation.materialize_moabb_loaders([1])
+    dataset = BI2015a()
+    binding = _install_attested_data_path(dataset, dict(materialization.paths_by_subject))
+    download_calls = _forbid_moabb_downloads(monkeypatch)
+
+    with _scoped_attested_moabb_io(dataset, [1], binding):
+        runs = dataset.get_data(
+            subjects=[1],
+            process_pipeline=SimpleNamespace(steps=[]),
+        )
+
+    assert set(runs[1]) == {"0", "1", "2"}
+    assert all(set(session_runs) == {"0"} for session_runs in runs[1].values())
+    assert binding.parser_calls() == (1,)
+    assert download_calls == []
+
+
 def test_moabb_adapter_builds_causal_cache_from_raw_runs(monkeypatch, tmp_path: Path) -> None:
     from data import moabb as adapter_module
+
+    _allow_narrow_moabb_test_double(monkeypatch)
 
     info = mne.create_info(["Fz", "Cz"], 100.0, ch_types="eeg")
     raw = mne.io.RawArray(np.zeros((2, 600), dtype=float), info, verbose=False)
@@ -283,6 +627,8 @@ def test_moabb_adapter_rejects_retired_fixed_artifact_threshold(
 
 def test_moabb_adapter_executes_declared_mean_baseline(monkeypatch, tmp_path: Path) -> None:
     from data import moabb as adapter_module
+
+    _allow_narrow_moabb_test_double(monkeypatch)
 
     data = np.zeros((4, 2, 30), dtype=np.float64)
     data[:, 0] += np.arange(4, dtype=float)[:, None] + 5.0
@@ -408,6 +754,8 @@ def test_moabb_adapter_uses_explicit_candidates_not_binary_event_codes(
 ) -> None:
     from data import moabb as adapter_module
 
+    _allow_narrow_moabb_test_double(monkeypatch)
+
     data = np.zeros((4, 2, 10), dtype=np.float64)
     events = np.column_stack(
         [np.arange(100, 500, 100), np.zeros(4, dtype=int), np.array([7, 8, 7, 8])]
@@ -479,6 +827,8 @@ def test_moabb_adapter_rejects_loader_mutation_during_third_party_parse(
     monkeypatch, tmp_path: Path
 ) -> None:
     from data import moabb as adapter_module
+
+    _allow_narrow_moabb_test_double(monkeypatch)
 
     events = np.column_stack([np.array([100, 200]), np.zeros(2, dtype=int), np.array([1, 2])])
 

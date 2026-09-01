@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-signals = ["mne>=1.8", "pandas>=2.2", "moabb>=1.1"]
+signals = ["mne>=1.8", "pandas>=2.2", "moabb==1.6.1"]
 baselines = ["pyriemann>=0.6", "braindecode>=1.7"]
 dev = ["packaging>=24", "pytest>=8.0", "ruff>=0.14"]
 

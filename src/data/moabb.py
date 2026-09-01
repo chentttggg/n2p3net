@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from dataclasses import dataclass
+import inspect
+import os
+import socket
+import threading
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from pathlib import Path
-from types import MethodType
+from types import CodeType, MethodType
 
 import mne
 import moabb
@@ -24,6 +29,11 @@ from data.events import observed_only_timeline, selection_group_id
 from data.preprocess import apply_trial_baseline
 from data.raw_artifacts import RawArtifactAttestation
 
+ATTESTED_MOABB_RESOLVER_SCHEMA = "n2p3_attested_moabb_resolver/1"
+ATTESTED_MOABB_OFFLINE_GUARD_SCHEMA = "python_socket_offline_guard/1"
+VALIDATED_MOABB_VERSION = "1.6.1"
+MOABB_DOWNLOAD_PROVIDER_ENV = "MOABB_DOWNLOAD_PROVIDER"
+
 CANDIDATE_METADATA_ALIASES = (
     "candidate_id",
     "stimulus_candidate_id",
@@ -39,6 +49,58 @@ REPETITION_METADATA_ALIASES = (
     "repetition_id",
     "sequence_index",
 )
+
+_MOABB_IO_SCOPE_LOCK = threading.RLock()
+
+
+class _AttestedMoabbNetworkAccessError(RuntimeError):
+    """Raised when a third-party parser attempts network I/O."""
+
+
+@dataclass
+class _AttestedMoabbDataPathBinding:
+    paths_by_subject: dict[int, tuple[Path, ...]]
+    calls: list[int] = field(default_factory=list)
+    parser_call_start: int | None = None
+
+    def begin_parser_phase(self) -> None:
+        self.parser_call_start = len(self.calls)
+
+    def parser_calls(self) -> tuple[int, ...]:
+        if self.parser_call_start is None:
+            raise RuntimeError("Attested MOABB parser phase was not started.")
+        return tuple(self.calls[self.parser_call_start :])
+
+    def assert_parser_consumed(self, subjects: Sequence[int]) -> None:
+        requested = set(subjects)
+        consumed = set(self.parser_calls())
+        if consumed != requested:
+            raise RuntimeError(
+                "MOABB parser did not consume the complete attested data_path mapping: "
+                f"requested={sorted(requested)}, consumed={sorted(consumed)}."
+            )
+
+
+@dataclass(frozen=True)
+class _MoabbRuntimeResolver:
+    declared_nemar_id: str | None
+    requested_download_provider: str
+    strict_base_dataset_contract: bool
+    subjects: tuple[int, ...]
+
+    def record(self) -> dict[str, object]:
+        return {
+            "schema": ATTESTED_MOABB_RESOLVER_SCHEMA,
+            "moabb_version": VALIDATED_MOABB_VERSION,
+            "declared_nemar_id": self.declared_nemar_id,
+            "requested_download_provider": self.requested_download_provider,
+            "effective_download_provider": "upstream",
+            "prefetch_bypassed": self.strict_base_dataset_contract,
+            "upstream_data_path_bypassed": True,
+            "parser_data_path_verified": self.strict_base_dataset_contract,
+            "subjects": list(self.subjects),
+            "offline_guard": ATTESTED_MOABB_OFFLINE_GUARD_SCHEMA,
+        }
 
 
 @dataclass(frozen=True)
@@ -62,6 +124,149 @@ class _MoabbLoaderPathResolution:
             "resolved_loader_path": display(self.resolved_loader_path),
             "appendmat_resolution": self.appendmat_resolution,
         }
+
+
+def _code_references_name(code: CodeType, name: str) -> bool:
+    return name in code.co_names or any(
+        isinstance(constant, CodeType) and _code_references_name(constant, name)
+        for constant in code.co_consts
+    )
+
+
+def _call_graph_references_name(
+    function: Callable[..., object],
+    name: str,
+    *,
+    visited: set[int] | None = None,
+) -> bool:
+    """Follow same-module Python helpers and inspect their referenced names."""
+
+    function = getattr(function, "__func__", function)
+    code = getattr(function, "__code__", None)
+    globals_by_name = getattr(function, "__globals__", None)
+    if code is None or not isinstance(globals_by_name, dict):
+        return False
+    seen = set() if visited is None else visited
+    identity = id(function)
+    if identity in seen:
+        return False
+    seen.add(identity)
+    if _code_references_name(code, name):
+        return True
+    module_name = getattr(function, "__module__", None)
+    for referenced_name in code.co_names:
+        candidate = globals_by_name.get(referenced_name)
+        if (
+            inspect.isfunction(candidate)
+            and getattr(candidate, "__module__", None) == module_name
+            and _call_graph_references_name(candidate, name, visited=seen)
+        ):
+            return True
+    return False
+
+
+def _assert_validated_moabb_runtime(dataset: object) -> bool:
+    """Fail closed if the inspected MOABB 1.6.1 dispatch contract has changed."""
+
+    from moabb.datasets.base import BaseDataset
+
+    installed_version = str(moabb.__version__)
+    if installed_version != VALIDATED_MOABB_VERSION:
+        raise RuntimeError(
+            "Attested MOABB loading is validated only for "
+            f"moabb=={VALIDATED_MOABB_VERSION}; installed {installed_version}."
+        )
+    required_base_names = {
+        "_prefetch_nemar_sourcedata",
+        "_get_selected_subject_data",
+    }
+    if not all(
+        _code_references_name(BaseDataset.get_data.__code__, name) for name in required_base_names
+    ):
+        raise RuntimeError("MOABB BaseDataset.get_data dispatch contract has changed.")
+    if "_get_single_subject_data_using_cache" not in (
+        BaseDataset._get_selected_subject_data.__code__.co_names
+    ):
+        raise RuntimeError("MOABB selected-subject dispatch contract has changed.")
+    cache_loader_names = set(BaseDataset._get_single_subject_data_using_cache.__code__.co_names)
+    if not {"_sourcedata_store", "_get_single_subject_data"} <= cache_loader_names:
+        raise RuntimeError("MOABB single-subject loader dispatch contract has changed.")
+
+    if not isinstance(dataset, BaseDataset):
+        raise RuntimeError("Attested MOABB loading requires a BaseDataset instance.")
+    if getattr(type(dataset), "get_data", None) is not BaseDataset.get_data:
+        raise RuntimeError("Attested MOABB loading does not accept an overridden get_data method.")
+    parser = getattr(dataset, "_get_single_subject_data", None)
+    if not callable(parser) or not _call_graph_references_name(parser, "data_path"):
+        raise RuntimeError(
+            "MOABB single-subject parser no longer dispatches through the instance data_path."
+        )
+    return True
+
+
+def _blocked_network_io(*args: object, **kwargs: object) -> None:
+    del args, kwargs
+    raise _AttestedMoabbNetworkAccessError(
+        "Network I/O is forbidden while parsing attested MOABB snapshots."
+    )
+
+
+@contextmanager
+def _scoped_attested_moabb_io(
+    dataset: object,
+    subjects: Sequence[int],
+    binding: _AttestedMoabbDataPathBinding,
+) -> Iterator[_MoabbRuntimeResolver]:
+    """Use MOABB's upstream mode locally while blocking every outbound socket."""
+
+    from moabb.utils import get_download_provider
+
+    strict_contract = _assert_validated_moabb_runtime(dataset)
+    declared_nemar_id = getattr(dataset, "nemar_id", None)
+    if declared_nemar_id is not None:
+        declared_nemar_id = str(declared_nemar_id)
+    requested_provider = str(get_download_provider())
+    resolver = _MoabbRuntimeResolver(
+        declared_nemar_id=declared_nemar_id,
+        requested_download_provider=requested_provider,
+        strict_base_dataset_contract=strict_contract,
+        subjects=tuple(subjects),
+    )
+    socket_targets = [
+        (socket.socket, "connect"),
+        (socket.socket, "connect_ex"),
+        (socket.socket, "send"),
+        (socket.socket, "sendall"),
+        (socket.socket, "sendto"),
+        (socket, "create_connection"),
+        (socket, "getaddrinfo"),
+    ]
+    if hasattr(socket.socket, "sendmsg"):
+        socket_targets.append((socket.socket, "sendmsg"))
+
+    with _MOABB_IO_SCOPE_LOCK:
+        missing = object()
+        previous_provider: object = os.environ.get(MOABB_DOWNLOAD_PROVIDER_ENV, missing)
+        originals: list[tuple[object, str, object]] = []
+        try:
+            os.environ[MOABB_DOWNLOAD_PROVIDER_ENV] = "upstream"
+            if get_download_provider() != "upstream":
+                raise RuntimeError("MOABB ignored the scoped upstream provider override.")
+            for owner, attribute in socket_targets:
+                original = getattr(owner, attribute)
+                originals.append((owner, attribute, original))
+                setattr(owner, attribute, _blocked_network_io)
+            binding.begin_parser_phase()
+            yield resolver
+            if strict_contract:
+                binding.assert_parser_consumed(subjects)
+        finally:
+            for owner, attribute, original in reversed(originals):
+                setattr(owner, attribute, original)
+            if previous_provider is missing:
+                os.environ.pop(MOABB_DOWNLOAD_PROVIDER_ENV, None)
+            else:
+                os.environ[MOABB_DOWNLOAD_PROVIDER_ENV] = str(previous_provider)
 
 
 def _resolve_reported_moabb_path(value: str | Path, *, subject: int) -> _MoabbLoaderPathResolution:
@@ -120,8 +325,10 @@ def _reported_moabb_loader_paths(
 def _install_attested_data_path(
     dataset: object,
     paths_by_subject: dict[int, tuple[Path, ...]],
-) -> None:
+) -> _AttestedMoabbDataPathBinding:
     """Bind one dataset instance to verified local files without upstream I/O."""
+
+    binding = _AttestedMoabbDataPathBinding(paths_by_subject=paths_by_subject)
 
     def data_path(
         _dataset: object,
@@ -135,12 +342,14 @@ def _install_attested_data_path(
         if path is not None or force_update or update_path not in {None, False}:
             raise ValueError("Attested MOABB data_path is read-only and accepts no overrides.")
         try:
-            paths = paths_by_subject[subject]
+            paths = binding.paths_by_subject[subject]
         except KeyError as exc:
             raise ValueError(f"No attested loader mapping exists for subject {subject}.") from exc
+        binding.calls.append(subject)
         return [str(value) for value in paths]
 
     dataset.data_path = MethodType(data_path, dataset)  # type: ignore[attr-defined]
+    return binding
 
 
 def _available_mne_source_paths(instances: Sequence[object]) -> tuple[Path, ...]:
@@ -256,7 +465,7 @@ def prepare_moabb_p300(
     if unknown_subjects:
         raise ValueError(f"Unknown subjects for {dataset_class}: {sorted(unknown_subjects)}.")
     materialization = raw_artifact_attestation.materialize_moabb_loaders(selected_subjects)
-    _install_attested_data_path(
+    attested_data_path = _install_attested_data_path(
         dataset,
         dict(materialization.paths_by_subject),
     )
@@ -272,7 +481,12 @@ def prepare_moabb_p300(
         label_map = {
             str(description): int(str(description) == target_label) for description in event_id
         }
-        runs = dataset.get_data(subjects=selected_subjects)
+        with _scoped_attested_moabb_io(
+            dataset,
+            selected_subjects,
+            attested_data_path,
+        ) as runtime_resolver:
+            runs = dataset.get_data(subjects=selected_subjects)
         raw_instances = [
             raw
             for subject_runs in runs.values()
@@ -286,6 +500,7 @@ def prepare_moabb_p300(
             item.record(Path(materialization.expected_mne_data_root))
             for item in loader_path_resolutions
         ]
+        raw_artifact_provenance["moabb_attested_resolver"] = runtime_resolver.record()
         datasets: list[EpochDataset] = []
         for subject in selected_subjects:
             for session_id, session_runs in runs[subject].items():
@@ -383,11 +598,16 @@ def prepare_moabb_p300(
         resample=None,
         channels=None if channels is None else list(channels),
     )
-    epochs, raw_labels, metadata = paradigm.get_data(
-        dataset=dataset,
-        subjects=selected_subjects,
-        return_epochs=True,
-    )
+    with _scoped_attested_moabb_io(
+        dataset,
+        selected_subjects,
+        attested_data_path,
+    ) as runtime_resolver:
+        epochs, raw_labels, metadata = paradigm.get_data(
+            dataset=dataset,
+            subjects=selected_subjects,
+            return_epochs=True,
+        )
     loader_paths = reported_loader_paths + _available_mne_source_paths([epochs])
     materialization.verify_loader_paths(loader_paths)
     raw_artifact_provenance = materialization.attestation.provenance_record()
@@ -395,6 +615,7 @@ def prepare_moabb_p300(
         item.record(Path(materialization.expected_mne_data_root))
         for item in loader_path_resolutions
     ]
+    raw_artifact_provenance["moabb_attested_resolver"] = runtime_resolver.record()
     expected_tmin = preprocessing.tmin_ms / 1000.0
     if not np.isclose(float(epochs.times[0]), expected_tmin, atol=0.5 / preprocessing.sfreq):
         raise ValueError(
