@@ -17,6 +17,7 @@ from data.lineage import DataLineage
 from data.qc_features import compute_epoch_qc_features
 
 DOMAIN_ADAPTER_SCHEMA = "n2p3_common_channel_car/1"
+BINARY_EVIDENCE_PROJECTION_SCHEMA = "n2p3_binary_evidence_source_view/1"
 NAMESPACE_SEPARATOR = "::"
 CAR_FLOAT32_ROUNDOFF_FACTOR = 4.0
 CAR_VALIDATION_BLOCK_BYTES = 64 * 1024 * 1024
@@ -221,6 +222,60 @@ def ensure_common_channel_average_reference(
             )
         return dataset
     return adapt_common_channel_average_reference(dataset, channels, name=name)
+
+
+def project_binary_evidence_source_view(dataset: EpochDataset) -> EpochDataset:
+    """Drop candidate-only fields explicitly for binary supervised source pretraining."""
+
+    dataset.validate(require_labels=True)
+    labels = set(np.asarray(dataset.y, dtype=np.int64).tolist())
+    if not labels <= {0, 1}:
+        raise ValueError("binary evidence projection requires labels encoded as 0/1.")
+    timeline = dataset.event_timeline
+    if not (
+        timeline.has_candidate_ids
+        or timeline.has_candidate_sets
+        or timeline.has_repetition_structure
+    ):
+        return dataset
+
+    parent_lineage = materialize_dataset_lineage(dataset)
+    source_fingerprint = timeline.fingerprint()
+    projected_timeline = replace(
+        timeline,
+        candidate_ids=None,
+        target_candidate_ids=None,
+        repetition_indices=None,
+    ).validate(n_epochs=dataset.n_epochs)
+    projection_record = {
+        "schema": BINARY_EVIDENCE_PROJECTION_SCHEMA,
+        "purpose": "binary_supervised_source_pretraining",
+        "dropped_fields": [
+            "candidate_ids",
+            "target_candidate_ids",
+            "repetition_indices",
+        ],
+        "source_event_fingerprint": source_fingerprint,
+        "projected_event_fingerprint": projected_timeline.fingerprint(),
+        "tensor_unchanged": True,
+        "labels_unchanged": True,
+    }
+    projected = replace(
+        dataset,
+        event_timeline=projected_timeline,
+        provenance={
+            **dataset.provenance,
+            "binary_evidence_projection": projection_record,
+        },
+        lineage=DataLineage.derive(
+            [parent_lineage],
+            operation="project_binary_evidence_source_view",
+            parameters=projection_record,
+        ),
+        verified_cache_attestation=None,
+    )
+    projected.validate(require_labels=True)
+    return projected
 
 
 def namespace_epoch_dataset(

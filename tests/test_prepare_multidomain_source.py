@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from data.channel import build_channel_identity
 from data.domain import adapt_common_channel_average_reference, namespace_epoch_dataset
@@ -19,13 +20,23 @@ from data.events import ScheduledEventTimeline
 from experiments.prepare_multidomain_source import main
 
 
-def _source_dataset(*, source_id: str, subject: str, offset: float) -> EpochDataset:
+def _source_dataset(
+    *,
+    source_id: str,
+    subject: str,
+    offset: float,
+    candidate_metadata: bool = False,
+) -> EpochDataset:
     channels = ("Cz", "P3", "Pz", "P4", "Oz")
     identity = build_channel_identity(channels, allow_missing_positions=False)
     n_epochs = 2
     timeline = ScheduledEventTimeline(
         event_ids=np.asarray([f"{source_id}:event:{index}" for index in range(n_epochs)]),
-        group_ids=np.asarray([f"{source_id}:group:{index}" for index in range(n_epochs)]),
+        group_ids=(
+            np.repeat(f"{source_id}:group", n_epochs)
+            if candidate_metadata
+            else np.asarray([f"{source_id}:group:{index}" for index in range(n_epochs)])
+        ),
         subject_ids=np.repeat(subject, n_epochs),
         stimulus_ids=np.arange(n_epochs, dtype=np.int64),
         onset_samples=np.arange(n_epochs, dtype=np.int64),
@@ -37,10 +48,21 @@ def _source_dataset(*, source_id: str, subject: str, offset: float) -> EpochData
         dataset_ids=np.repeat(source_id, n_epochs),
         session_ids=np.repeat("session", n_epochs),
         run_ids=np.repeat("run", n_epochs),
-        selection_ids=np.asarray([f"selection:{index}" for index in range(n_epochs)]),
+        selection_ids=(
+            np.repeat("selection", n_epochs)
+            if candidate_metadata
+            else np.asarray([f"selection:{index}" for index in range(n_epochs)])
+        ),
         complete=True,
         online_causal=True,
         timing_source="synthetic",
+        candidate_ids=(np.asarray(["left", "right"]) if candidate_metadata else None),
+        target_candidate_ids=(
+            np.asarray(["right", "right"]) if candidate_metadata else None
+        ),
+        repetition_indices=(
+            np.asarray([0, 0], dtype=np.int64) if candidate_metadata else None
+        ),
     )
     values = np.arange(n_epochs * len(channels) * 4, dtype=np.float32).reshape(
         n_epochs,
@@ -72,9 +94,20 @@ def _source_dataset(*, source_id: str, subject: str, offset: float) -> EpochData
     )
 
 
-def _prepared_source(*, source_id: str, subject: str, offset: float) -> EpochDataset:
+def _prepared_source(
+    *,
+    source_id: str,
+    subject: str,
+    offset: float,
+    candidate_metadata: bool = False,
+) -> EpochDataset:
     car = adapt_common_channel_average_reference(
-        _source_dataset(source_id=source_id, subject=subject, offset=offset),
+        _source_dataset(
+            source_id=source_id,
+            subject=subject,
+            offset=offset,
+            candidate_metadata=candidate_metadata,
+        ),
         ("Cz", "P3", "Pz", "P4", "Oz"),
     )
     return namespace_epoch_dataset(car, source_id)
@@ -128,3 +161,72 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
             load_epoch_dataset(second_path, validation="attested")
         )["sha256"]
     )
+
+
+def test_multidomain_builder_requires_explicit_binary_view_for_mixed_event_metadata(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    candidate = _prepared_source(
+        source_id="CANDIDATE",
+        subject="01",
+        offset=0.0,
+        candidate_metadata=True,
+    )
+    binary = _prepared_source(source_id="BINARY", subject="02", offset=100.0)
+    candidate_path = save_epoch_dataset(tmp_path / "candidate.npz", candidate)
+    binary_path = save_epoch_dataset(tmp_path / "binary.npz", binary)
+    output_path = tmp_path / "binary-view.npz"
+    rejected_path = tmp_path / "implicit-drop.npz"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prepare_multidomain_source.py",
+            "--source",
+            f"CANDIDATE={candidate_path}",
+            "--source",
+            f"BINARY={binary_path}",
+            "--target-channels",
+            "Cz,P3,Pz,P4,Oz",
+            "--output",
+            str(rejected_path),
+        ],
+    )
+    with pytest.raises(ValueError, match="candidate_ids must be either absent or present"):
+        main()
+    assert not rejected_path.exists()
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prepare_multidomain_source.py",
+            "--source",
+            f"CANDIDATE={candidate_path}",
+            "--source",
+            f"BINARY={binary_path}",
+            "--target-channels",
+            "Cz,P3,Pz,P4,Oz",
+            "--event-contract",
+            "binary_evidence",
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    main()
+
+    merged = load_epoch_dataset(output_path, require_labels=True, validation="attested")
+    assert merged.event_timeline.has_candidate_ids is False
+    assert merged.event_timeline.has_candidate_sets is False
+    assert merged.provenance["event_contract"] == "binary_evidence"
+    source_records = merged.provenance["sources"]
+    assert [record["candidate_metadata_projected"] for record in source_records] == [
+        True,
+        False,
+    ]
+    reloaded_candidate = load_epoch_dataset(candidate_path, validation="attested")
+    assert reloaded_candidate.event_timeline.supports_full_candidate_chain is True
+    np.testing.assert_array_equal(merged.X[: candidate.n_epochs], candidate.X)
+    np.testing.assert_array_equal(merged.X[candidate.n_epochs :], binary.X)

@@ -13,6 +13,7 @@ from data.domain import (
     ensure_common_channel_average_reference,
     ensure_epoch_dataset_namespace,
     namespace_epoch_dataset,
+    project_binary_evidence_source_view,
 )
 from data.epochs import (
     EpochDataset,
@@ -129,6 +130,53 @@ def test_common_car_ensure_rejects_provenance_contradicted_by_tensor() -> None:
 
     with pytest.raises(ValueError, match="contradicted by non-zero channel means"):
         ensure_common_channel_average_reference(forged, ("Fz", "Cz", "Pz"))
+
+
+def test_binary_evidence_source_projection_is_explicit_and_tensor_preserving() -> None:
+    source = _dataset(np.ones((2, 3, 4)), reference="A1")
+    source.event_timeline = replace(
+        source.event_timeline,
+        candidate_ids=np.asarray(["left", "right"]),
+        target_candidate_ids=np.asarray(["right", "right"]),
+        repetition_indices=np.asarray([0, 0], dtype=np.int64),
+    )
+    source.validate(require_labels=True)
+    assert source.event_timeline.supports_full_candidate_chain is True
+    signal_before = source.X.copy()
+    labels_before = source.y.copy()
+    timeline_before = source.event_timeline
+
+    projected = project_binary_evidence_source_view(source)
+
+    np.testing.assert_array_equal(projected.X, signal_before)
+    np.testing.assert_array_equal(projected.y, labels_before)
+    assert projected.event_timeline.has_candidate_ids is False
+    assert projected.event_timeline.has_candidate_sets is False
+    assert projected.event_timeline.has_repetition_structure is False
+    for field_name in (
+        "event_ids",
+        "group_ids",
+        "subject_ids",
+        "stimulus_ids",
+        "onset_samples",
+        "onset_times_s",
+        "evidence_available_times_s",
+        "evidence_indices",
+        "statuses",
+        "dataset_ids",
+        "session_ids",
+        "run_ids",
+        "selection_ids",
+    ):
+        np.testing.assert_array_equal(
+            getattr(projected.event_timeline, field_name),
+            getattr(timeline_before, field_name),
+        )
+    record = projected.provenance["binary_evidence_projection"]
+    assert record["source_event_fingerprint"] == timeline_before.fingerprint()
+    assert record["projected_event_fingerprint"] == projected.event_timeline.fingerprint()
+    assert projected.lineage.entities[-1].operation == "project_binary_evidence_source_view"
+    assert project_binary_evidence_source_view(projected) is projected
 
 
 def test_common_channel_intersection_preserves_first_dataset_order() -> None:

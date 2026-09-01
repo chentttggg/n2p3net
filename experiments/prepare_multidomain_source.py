@@ -14,6 +14,7 @@ if str(SRC) not in sys.path:
 from data.domain import (  # noqa: E402
     ensure_common_channel_average_reference,
     ensure_epoch_dataset_namespace,
+    project_binary_evidence_source_view,
 )
 from data.epochs import (  # noqa: E402
     concatenate_epoch_datasets,
@@ -34,6 +35,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", action="append", type=_source_spec, required=True)
     parser.add_argument("--target-channels", required=True)
+    parser.add_argument(
+        "--event-contract",
+        choices=("preserve", "binary_evidence"),
+        default="preserve",
+        help="Explicit common event view; binary_evidence drops candidate-only source fields.",
+    )
     parser.add_argument("--name", default="MultiSource-P300")
     parser.add_argument("--output", required=True)
     parser.add_argument("--uncompressed", action="store_true")
@@ -56,11 +63,17 @@ def main() -> None:
             channels,
         )
         aligned = ensure_epoch_dataset_namespace(aligned, namespace)
+        candidate_metadata_projected = False
+        if args.event_contract == "binary_evidence":
+            source_aligned = aligned
+            aligned = project_binary_evidence_source_view(aligned)
+            candidate_metadata_projected = aligned is not source_aligned
         adapted.append(aligned)
         source_records.append(
             {
                 "namespace": namespace,
                 "namespace_preexisting": namespace_preexisting,
+                "candidate_metadata_projected": candidate_metadata_projected,
                 "cache": str(path.resolve()),
                 "cache_sha256": str(cache_attestation["sha256"]),
                 "verified_cache_attestation": cache_attestation,
@@ -83,6 +96,7 @@ def main() -> None:
             "source": "explicit_multidomain_common_channel_car",
             "source_reference": reference,
             "target_channels": list(adapted[0].channel_names),
+            "event_contract": args.event_contract,
             "sources": source_records,
         },
     )
