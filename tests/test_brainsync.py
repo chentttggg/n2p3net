@@ -12,13 +12,16 @@ import numpy as np
 import pytest
 import torch
 
+from data.bids_eeg import BidsRestInterval, epoch_rest_overlap_mask
 from data.brainsync import (
     BRAIN_SYNC_PREPROCESSING,
+    InvalidSessionPolicy,
     load_brainsync_session,
     load_brainsync_sessions,
+    load_brainsync_sessions_resilient,
 )
 from data.brainsync_contract import (
-    BRAIN_SYNC_ANALYSIS_TIME_BASE,
+    BRAIN_SYNC_RAW_TIME_BASE,
     BRAIN_SYNC_SESSION_SCHEMA,
     DecisionTargetPolicy,
     PopulationScopePolicy,
@@ -30,8 +33,9 @@ from data.contract import (
     SOURCE_COHORT_DATA_CONTRACTS,
     assert_causal_p300_input_contract,
 )
-from data.epochs import EpochDataset, save_epoch_dataset
+from data.epochs import EpochDataset, load_epoch_dataset, save_epoch_dataset
 from data.identity import DatasetIdentityTable
+from experiments.prepare_brainsync_cache import main as prepare_brainsync_cache
 from experiments.run_brainsync_cross_decision import main as run_brainsync_cross_decision
 from models.n2p3net import N2P3Net
 from research.contracts import TrainingRunContract
@@ -51,7 +55,7 @@ POSITIONS = [
 ]
 
 
-def _write_v2_session(
+def _write_bids_session(
     root: Path,
     *,
     session_id: str,
@@ -60,24 +64,50 @@ def _write_v2_session(
     subject_id: str = "P001",
     age: str = "19",
     blocks: tuple[tuple[int, ...], ...] = (tuple(range(1, 10)),),
-    source_rate_hz: float = 128.0,
+    source_rate_hz: float = 250.0,
 ) -> Path:
-    """Write the current workstation v2 shape: target only in session.json."""
+    """Write a self-contained workstation v3 BIDS raw session."""
 
-    raw_dir = root / "raw"
-    events_dir = root / "events"
-    raw_dir.mkdir(parents=True)
-    events_dir.mkdir()
-    n_trials = sum(len(block) for block in blocks)
-    duration_seconds = 2.0 + 1.5 * n_trials
+    subject_label = "P001"
+    session_label = "session"
+    eeg_dir = root / f"sub-{subject_label}" / f"ses-{session_label}" / "eeg"
+    eeg_dir.mkdir(parents=True)
+    rest_duration_seconds = 2.0
+    onset = 1.0
+    event_rows: list[list[object]] = []
+    rest_segments: list[dict[str, float]] = []
+    for block_id, digits in enumerate(blocks, start=1):
+        for trial_index, digit in enumerate(digits, start=1):
+            trial_id = f"B{block_id:03d}-T{trial_index:03d}"
+            event_rows.append([
+                onset, 0.3, round(onset * source_rate_hz), "stimulus", digit,
+                "stimulus", trial_id, block_id, trial_index, digit, "n/a",
+            ])
+            onset += 1.5
+        if block_id < len(blocks):
+            rest_start = onset
+            rest_end = rest_start + rest_duration_seconds
+            event_rows.append([
+                rest_start, rest_duration_seconds, round(rest_start * source_rate_hz),
+                "rest", "rest", "rest", "n/a", block_id, "n/a", "n/a",
+                f"block-{block_id}",
+            ])
+            rest_segments.append({
+                "start_seconds": rest_start,
+                "end_seconds": rest_end,
+                "duration_seconds": rest_duration_seconds,
+            })
+            onset = rest_end + 0.5
+    duration_seconds = onset + 1.5
     n_samples = int(round(duration_seconds * source_rate_hz))
     info = mne.create_info(list(CHANNELS), source_rate_hz, ch_types="eeg")
     values = np.random.default_rng(sum(map(ord, session_id))).normal(
         0.0, 5e-6, (len(CHANNELS), n_samples)
     )
-    raw_path = raw_dir / "recording_trimmed_raw.fif"
-    mne.io.RawArray(values, info, verbose=False).save(
-        raw_path, overwrite=True, verbose=False
+    stem = f"sub-{subject_label}_ses-{session_label}_task-gtn_run-01"
+    raw_path = eeg_dir / f"{stem}_eeg.edf"
+    mne.io.RawArray(values, info, verbose=False).export(
+        raw_path, fmt="edf", overwrite=True, physical_range="auto", verbose=False
     )
     started = datetime.fromisoformat(started_utc.replace("Z", "+00:00"))
     confirmed_utc = (
@@ -103,75 +133,68 @@ def _write_v2_session(
             "thought_digit": target,
             "confirmed_utc": confirmed_utc,
         },
-        "channels": list(CHANNELS),
         "recording": {
-            "path": "raw/recording_trimmed_raw.fif",
+            "path": raw_path.relative_to(root).as_posix(),
             "source_sample_rate_hz": source_rate_hz,
-            "analysis_ready": True,
+            "stage": "bids_raw",
+            "preprocessing_status": "pending",
             "timeline": {
                 "status": "finalized",
-                "time_base": BRAIN_SYNC_ANALYSIS_TIME_BASE,
-                "source_path": "raw/recording_source_raw.fif",
-                "output_path": "raw/recording_trimmed_raw.fif",
+                "time_base": BRAIN_SYNC_RAW_TIME_BASE,
+                "rest_segments_retained": True,
+                "rest_segments": rest_segments,
                 "source_sample_rate_hz": source_rate_hz,
                 "output_duration_seconds": n_samples / source_rate_hz,
             },
+            "bids": {
+                "dataset_description": "dataset_description.json",
+                "recording": raw_path.relative_to(root).as_posix(),
+                "eeg_json": (eeg_dir / f"{stem}_eeg.json").relative_to(root).as_posix(),
+                "channels_tsv": (eeg_dir / f"{stem}_channels.tsv").relative_to(root).as_posix(),
+                "events_tsv": (eeg_dir / f"{stem}_events.tsv").relative_to(root).as_posix(),
+                "electrodes_tsv": (eeg_dir / f"sub-{subject_label}_ses-{session_label}_space-BrainSyncHead_electrodes.tsv").relative_to(root).as_posix(),
+                "coordsystem_json": (eeg_dir / f"sub-{subject_label}_ses-{session_label}_space-BrainSyncHead_coordsystem.json").relative_to(root).as_posix(),
+            },
         },
         "quality": {"eeg_continuity": {"passed": True}},
-        "montage": {
-            "schema": "brainsync-channel-montage/2",
-            "labels": list(CHANNELS),
-            "active_mask": 0xFF,
-            "channel_positions_m": POSITIONS,
-            "coordinate_frame": "head",
-            "units": "m",
-            "ref_label": "A2",
-            "gnd_label": "GND",
-        },
     }
     (root / "session.json").write_text(json.dumps(session), encoding="utf-8")
-
-    records: list[dict[str, object]] = []
-    onset = 1.0
-    for block_id, digits in enumerate(blocks, start=1):
-        for trial_index, digit in enumerate(digits, start=1):
-            common = {
-                "trial_id": f"B{block_id:03d}-T{trial_index:03d}",
-                "block_id": block_id,
-                "trial_index": trial_index,
-                "digit": digit,
-            }
-            records.append(
-                {
-                    "event": "recording_marker",
-                    "payload": {
-                        "kind": "onset",
-                        **common,
-                        "eeg_time_seconds": onset,
-                        "eeg_time_base": BRAIN_SYNC_ANALYSIS_TIME_BASE,
-                        "annotation": (
-                            f"STIM_ONSET|trial={common['trial_id']}|digit={digit}"
-                        ),
-                    },
-                }
-            )
-            records.append(
-                {
-                    "event": "recording_marker",
-                    "payload": {
-                        "kind": "offset",
-                        **common,
-                        "eeg_time_seconds": onset + 0.3,
-                        "eeg_time_base": BRAIN_SYNC_ANALYSIS_TIME_BASE,
-                        "annotation": (
-                            f"STIM_OFFSET|trial={common['trial_id']}|digit={digit}"
-                        ),
-                    },
-                }
-            )
-            onset += 1.5
-    (events_dir / "events.jsonl").write_text(
-        "".join(json.dumps(record) + "\n" for record in records),
+    (root / "dataset_description.json").write_text(json.dumps({
+        "Name": "BrainSync test",
+        "BIDSVersion": "1.11.0",
+        "DatasetType": "raw",
+    }), encoding="utf-8")
+    (eeg_dir / f"{stem}_eeg.json").write_text(json.dumps({
+        "TaskName": "gtn",
+        "SamplingFrequency": source_rate_hz,
+        "RecordingDuration": n_samples / source_rate_hz,
+        "EEGReference": "A2",
+    }), encoding="utf-8")
+    (eeg_dir / f"{stem}_channels.tsv").write_text(
+        "name\ttype\tunits\tsampling_frequency\tstatus\n"
+        + "".join(f"{label}\tEEG\tuV\t{source_rate_hz:g}\tgood\n" for label in CHANNELS),
+        encoding="utf-8",
+    )
+    (eeg_dir / f"sub-{subject_label}_ses-{session_label}_space-BrainSyncHead_electrodes.tsv").write_text(
+        "name\tx\ty\tz\n"
+        + "".join(
+            f"{label}\t{position[0]}\t{position[1]}\t{position[2]}\n"
+            for label, position in zip(CHANNELS, POSITIONS, strict=True)
+        ),
+        encoding="utf-8",
+    )
+    (eeg_dir / f"sub-{subject_label}_ses-{session_label}_space-BrainSyncHead_coordsystem.json").write_text(json.dumps({
+        "EEGCoordinateSystem": "Other",
+        "EEGCoordinateUnits": "m",
+        "EEGCoordinateSystemDescription": "Synthetic MNE head coordinates.",
+    }), encoding="utf-8")
+    event_rows.sort(key=lambda row: float(row[0]))
+    event_header = (
+        "onset\tduration\tsample\ttrial_type\tvalue\tevent_kind\ttrial_id\t"
+        "block_id\ttrial_index\tdigit\trest_segment_id\n"
+    )
+    (eeg_dir / f"{stem}_events.tsv").write_text(
+        event_header + "".join("\t".join(str(value) for value in row) + "\n" for row in event_rows),
         encoding="utf-8",
     )
     return root
@@ -315,10 +338,23 @@ def test_brainsync_rejects_the_removed_2hz_800ms_contract() -> None:
         assert_causal_p300_input_contract(removed)
 
 
-def test_v2_session_is_one_decision_and_blocks_only_preserve_schedule_metadata(
+def test_rest_overlap_uses_half_open_epoch_and_rest_intervals() -> None:
+    rest = BidsRestInterval(2.0, 1.0, 500, "block-1", 1, 2)
+
+    overlaps = epoch_rest_overlap_mask(
+        [0.8, 0.8001, 3.1999, 3.2],
+        tmin_seconds=-0.2,
+        tmax_seconds=1.2,
+        rest_intervals=[rest],
+    )
+
+    assert overlaps == (False, True, True, False)
+
+
+def test_v3_bids_session_is_one_decision_and_blocks_preserve_schedule_metadata(
     tmp_path: Path,
 ) -> None:
-    session_dir = _write_v2_session(
+    session_dir = _write_bids_session(
         tmp_path / "session",
         session_id="P001_s1",
         target=2,
@@ -337,54 +373,32 @@ def test_v2_session_is_one_decision_and_blocks_only_preserve_schedule_metadata(
     assert dataset.metadata["repetition_index"].tolist() == [0] * 9 + [1] * 9
     assert set(dataset.metadata["age_years"]) == {19.0}
     assert dataset.provenance["decision_unit"] == "session"
-    assert dataset.provenance["event_time_base"] == BRAIN_SYNC_ANALYSIS_TIME_BASE
+    assert dataset.provenance["event_time_base"] == BRAIN_SYNC_RAW_TIME_BASE
+    assert dataset.provenance["retained_rest_interval_count"] == 1
     assert dataset.event_timeline.supports_full_candidate_chain is True
 
 
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     [
-        ("schema", "brainsync-gtn-session/20", "Unsupported BrainSync session schema"),
-        ("status", "running", "status is not analysis-ready"),
+        ("schema", "brainsync-gtn-session/2", "Unsupported BrainSync session schema"),
+        ("status", "running", "status is not a model input"),
         ("target_label.status", "pending", "post-experiment confirmed"),
-        ("target_label.source", "inline_label", "post_experiment_confirmation"),
-        ("target_label.confirmed_utc", None, "must be a non-empty string"),
-        (
-            "experiment.target_label_status",
-            "pending_post_experiment_confirmation",
-            "confirmed_post_experiment",
-        ),
-        ("ended_utc", None, "must be a non-empty string"),
-        ("recording.analysis_ready", False, "analysis-ready gate"),
-        ("recording.timeline.status", "continuous_recording", "must be finalized"),
-        ("recording.timeline.time_base", "continuous_recording", "rest-removed"),
-        ("recording.timeline.output_path", None, "must be a non-empty string"),
-        (
-            "recording.source_sample_rate_hz",
-            None,
-            "must be a finite non-negative number",
-        ),
-        (
-            "recording.timeline.source_sample_rate_hz",
-            None,
-            "must be a finite non-negative number",
-        ),
-        (
-            "recording.timeline.output_duration_seconds",
-            None,
-            "must be a finite non-negative number",
-        ),
-        ("quality.eeg_continuity.passed", False, "continuity quality must pass"),
+        ("recording.stage", "rest_removed_recording", "stage must be bids_raw"),
+        ("recording.preprocessing_status", "completed", "must be pending"),
+        ("recording.timeline.time_base", "rest_removed_recording", "continuous_recording"),
+        ("recording.timeline.rest_segments_retained", False, "retain rest"),
+        ("quality.eeg_continuity.passed", False, "continuity quality"),
     ],
 )
-def test_analysis_ready_gate_fails_before_raw_read(
+def test_v3_manifest_gate_fails_before_binary_eeg_read(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     field: str,
     value: object,
     message: str,
 ) -> None:
-    session_dir = _write_v2_session(
+    session_dir = _write_bids_session(
         tmp_path / field.replace(".", "_"),
         session_id="P001_gate",
         target=1,
@@ -395,287 +409,166 @@ def test_analysis_ready_gate_fails_before_raw_read(
     _write_manifest(session_dir, manifest)
     monkeypatch.setattr(
         "data.brainsync.read_raw",
-        lambda *_args, **_kwargs: pytest.fail("raw reader ran before v2 gate"),
+        lambda *_args, **_kwargs: pytest.fail("EEG binary reader ran before metadata gate"),
     )
 
     with pytest.raises(ValueError, match=message):
         load_brainsync_session(session_dir)
 
 
-def test_analysis_ready_gate_binds_recording_to_finalized_output_before_raw_read(
+def test_bids_sidecars_reject_path_escape_and_bad_coordinates_before_raw_read(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    session_dir = _write_v2_session(
-        tmp_path / "wrong_output",
-        session_id="P001_wrong_output",
+    escaped = _write_bids_session(
+        tmp_path / "escaped",
+        session_id="P001_escaped",
+        target=1,
+        started_utc="2026-09-01T00:00:00+00:00",
+    )
+    manifest = _read_manifest(escaped)
+    _set_nested(manifest, "recording.bids.events_tsv", "../outside.tsv")
+    _write_manifest(escaped, manifest)
+    monkeypatch.setattr(
+        "data.brainsync.read_raw",
+        lambda *_args, **_kwargs: pytest.fail("EEG binary reader ran before BIDS path gate"),
+    )
+    with pytest.raises(ValueError, match="inside the dataset root"):
+        load_brainsync_session(escaped)
+
+    invalid = _write_bids_session(
+        tmp_path / "invalid_coordinates",
+        session_id="P001_invalid_coordinates",
+        target=1,
+        started_utc="2026-09-01T00:00:00+00:00",
+    )
+    invalid_manifest = _read_manifest(invalid)
+    bids = invalid_manifest["recording"]["bids"]
+    electrodes_path = invalid / bids["electrodes_tsv"]
+    lines = electrodes_path.read_text(encoding="utf-8").splitlines()
+    cells = lines[1].split("\t")
+    cells[1] = "not-a-number"
+    lines[1] = "\t".join(cells)
+    electrodes_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="finite number"):
+        load_brainsync_session(invalid)
+
+
+def test_bids_event_sample_must_match_onset_before_raw_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session_dir = _write_bids_session(
+        tmp_path / "sample_mismatch",
+        session_id="P001_sample_mismatch",
         target=1,
         started_utc="2026-09-01T00:00:00+00:00",
     )
     manifest = _read_manifest(session_dir)
-    _set_nested(
-        manifest,
-        "recording.timeline.output_path",
-        "events/events.jsonl",
-    )
-    _write_manifest(session_dir, manifest)
+    bids = manifest["recording"]["bids"]
+    events_path = session_dir / bids["events_tsv"]
+    lines = events_path.read_text(encoding="utf-8").splitlines()
+    cells = lines[1].split("\t")
+    cells[2] = str(int(cells[2]) + 2)
+    lines[1] = "\t".join(cells)
+    events_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     monkeypatch.setattr(
         "data.brainsync.read_raw",
-        lambda *_args, **_kwargs: pytest.fail("raw reader ran before output-path gate"),
+        lambda *_args, **_kwargs: pytest.fail("EEG binary reader ran before event gate"),
     )
 
-    with pytest.raises(ValueError, match="must identify the finalized"):
+    with pytest.raises(ValueError, match="more than half a sample"):
         load_brainsync_session(session_dir)
 
 
-def test_analysis_ready_gate_requires_ordered_lifecycle_timestamps_before_raw_read(
+def test_manifest_rest_ledger_must_match_bids_events_before_raw_read(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    session_dir = _write_v2_session(
-        tmp_path / "bad_timestamps",
-        session_id="P001_bad_timestamps",
+    session_dir = _write_bids_session(
+        tmp_path / "rest_mismatch",
+        session_id="P001_rest_mismatch",
         target=1,
         started_utc="2026-09-01T00:00:00+00:00",
+        blocks=(tuple(range(1, 10)), tuple(range(1, 10))),
     )
     manifest = _read_manifest(session_dir)
-    manifest["ended_utc"] = manifest["started_utc"]
+    timeline = manifest["recording"]["timeline"]
+    timeline["rest_segments"][0]["end_seconds"] += 0.5
+    timeline["rest_segments"][0]["duration_seconds"] += 0.5
     _write_manifest(session_dir, manifest)
     monkeypatch.setattr(
         "data.brainsync.read_raw",
-        lambda *_args, **_kwargs: pytest.fail("raw reader ran before timestamp gate"),
+        lambda *_args, **_kwargs: pytest.fail("EEG binary reader ran before rest ledger gate"),
     )
 
-    with pytest.raises(ValueError, match="started_utc <= target confirmation <= ended_utc"):
+    with pytest.raises(ValueError, match="conflict with BIDS events.tsv"):
         load_brainsync_session(session_dir)
 
 
-@pytest.mark.parametrize(
-    ("field", "value", "message"),
-    [
-        ("montage.schema", None, "montage schema"),
-        ("montage.coordinate_frame", None, "head frame and metres"),
-        ("montage.units", None, "head frame and metres"),
-        ("montage.labels", None, "must provide montage.labels"),
-        ("montage.active_mask", None, "active_mask must be an integer"),
-        ("montage.channel_positions_m", None, "must align with montage.labels"),
-        ("montage.gnd_label", None, "REF/GND labels"),
-        ("channels", list(reversed(CHANNELS)), "must exactly match montage.labels"),
-    ],
-)
-def test_v2_montage_fields_have_no_fallback_before_raw_read(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    field: str,
-    value: object,
-    message: str,
-) -> None:
-    session_dir = _write_v2_session(
-        tmp_path / field.replace(".", "_"),
-        session_id="P001_montage_gate",
-        target=1,
-        started_utc="2026-09-01T00:00:00+00:00",
-    )
-    manifest = _read_manifest(session_dir)
-    _set_nested(manifest, field, value)
-    _write_manifest(session_dir, manifest)
-    monkeypatch.setattr(
-        "data.brainsync.read_raw",
-        lambda *_args, **_kwargs: pytest.fail("raw reader ran before montage gate"),
-    )
-
-    with pytest.raises(ValueError, match=message):
-        load_brainsync_session(session_dir)
-
-
-def test_v2_montage_rejects_wrong_channel_count_and_invalid_positions_before_raw_read(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    wrong_count = _write_v2_session(
-        tmp_path / "wrong_channel_count",
-        session_id="P001_wrong_channel_count",
-        target=1,
-        started_utc="2026-09-01T00:00:00+00:00",
-    )
-    manifest = _read_manifest(wrong_count)
-    manifest["channels"] = list(CHANNELS[:-1])
-    montage = manifest["montage"]
-    assert isinstance(montage, dict)
-    montage["labels"] = list(CHANNELS[:-1])
-    montage["channel_positions_m"] = POSITIONS[:-1]
-    montage["active_mask"] = 0x7F
-    _write_manifest(wrong_count, manifest)
-    monkeypatch.setattr(
-        "data.brainsync.read_raw",
-        lambda *_args, **_kwargs: pytest.fail("raw reader ran before montage count gate"),
-    )
-    with pytest.raises(ValueError, match="must declare 8 EEG channels"):
-        load_brainsync_session(wrong_count)
-
-    invalid_position = _write_v2_session(
-        tmp_path / "invalid_position",
-        session_id="P001_invalid_position",
-        target=1,
-        started_utc="2026-09-01T00:00:00+00:00",
-    )
-    manifest = _read_manifest(invalid_position)
-    montage = manifest["montage"]
-    assert isinstance(montage, dict)
-    positions = montage["channel_positions_m"]
-    assert isinstance(positions, list)
-    positions[0] = ["not-a-number", 0.0, 0.1]
-    _write_manifest(invalid_position, manifest)
-    with pytest.raises(ValueError, match="finite numbers"):
-        load_brainsync_session(invalid_position)
-
-
-def test_v2_markers_must_fit_declared_output_duration_before_raw_read(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    session_dir = _write_v2_session(
-        tmp_path / "short_duration",
-        session_id="P001_short_duration",
-        target=1,
-        started_utc="2026-09-01T00:00:00+00:00",
-    )
-    manifest = _read_manifest(session_dir)
-    _set_nested(manifest, "recording.timeline.output_duration_seconds", 1.1)
-    _write_manifest(session_dir, manifest)
-    monkeypatch.setattr(
-        "data.brainsync.read_raw",
-        lambda *_args, **_kwargs: pytest.fail("raw reader ran before duration gate"),
-    )
-
-    with pytest.raises(ValueError, match="onset marker exceeds"):
-        load_brainsync_session(session_dir)
-
-
-@pytest.mark.parametrize("unsafe_path", ["../outside.fif", "D:/outside.fif"])
-def test_analysis_ready_gate_rejects_noncontained_recording_paths_before_raw_read(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    unsafe_path: str,
-) -> None:
-    session_dir = _write_v2_session(
-        tmp_path / "unsafe",
-        session_id="P001_unsafe",
-        target=1,
-        started_utc="2026-09-01T00:00:00+00:00",
-    )
-    manifest = _read_manifest(session_dir)
-    _set_nested(manifest, "recording.path", unsafe_path)
-    _write_manifest(session_dir, manifest)
-    monkeypatch.setattr(
-        "data.brainsync.read_raw",
-        lambda *_args, **_kwargs: pytest.fail("raw reader ran before path gate"),
-    )
-
-    with pytest.raises(ValueError, match="relative|parent traversal"):
-        load_brainsync_session(session_dir)
-
-
-def test_v2_marker_rejects_label_leakage_before_raw_read(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    session_dir = _write_v2_session(
-        tmp_path / "leak",
-        session_id="P001_leak",
-        target=1,
-        started_utc="2026-09-01T00:00:00+00:00",
-    )
-    events_path = session_dir / "events" / "events.jsonl"
-    records = [json.loads(line) for line in events_path.read_text().splitlines()]
-    records[0]["payload"]["target_digit"] = 1
-    events_path.write_text(
-        "".join(json.dumps(record) + "\n" for record in records), encoding="utf-8"
-    )
-    monkeypatch.setattr(
-        "data.brainsync.read_raw",
-        lambda *_args, **_kwargs: pytest.fail("raw reader ran before marker gate"),
-    )
-
-    with pytest.raises(ValueError, match="cannot contain derived decision/label fields"):
-        load_brainsync_session(session_dir)
-
-
-def test_v2_marker_requires_the_finalized_time_base_before_raw_read(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    session_dir = _write_v2_session(
-        tmp_path / "marker_timebase",
-        session_id="P001_marker_timebase",
-        target=1,
-        started_utc="2026-09-01T00:00:00+00:00",
-    )
-    events_path = session_dir / "events" / "events.jsonl"
-    records = [json.loads(line) for line in events_path.read_text().splitlines()]
-    records[0]["payload"]["eeg_time_base"] = "continuous_recording"
-    events_path.write_text(
-        "".join(json.dumps(record) + "\n" for record in records), encoding="utf-8"
-    )
-    monkeypatch.setattr(
-        "data.brainsync.read_raw",
-        lambda *_args, **_kwargs: pytest.fail("raw reader ran before marker time-base gate"),
-    )
-
-    with pytest.raises(ValueError, match="must use eeg_time_base"):
-        load_brainsync_session(session_dir)
-
-
-def test_v2_marker_rejects_duplicate_trial_identity_before_raw_read(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    session_dir = _write_v2_session(
-        tmp_path / "duplicate",
-        session_id="P001_duplicate",
-        target=1,
-        started_utc="2026-09-01T00:00:00+00:00",
-    )
-    events_path = session_dir / "events" / "events.jsonl"
-    records = [json.loads(line) for line in events_path.read_text().splitlines()]
-    records.insert(1, records[0])
-    events_path.write_text(
-        "".join(json.dumps(record) + "\n" for record in records), encoding="utf-8"
-    )
-    monkeypatch.setattr(
-        "data.brainsync.read_raw",
-        lambda *_args, **_kwargs: pytest.fail("raw reader ran before marker gate"),
-    )
-
-    with pytest.raises(ValueError, match="Duplicate BrainSync onset trial_id"):
-        load_brainsync_session(session_dir)
-
-
-def test_v2_marker_rejects_distinct_onsets_mapping_to_one_source_sample(
+def test_rest_overlap_is_excluded_after_continuous_filtering_without_time_shift(
     tmp_path: Path,
 ) -> None:
-    session_dir = _write_v2_session(
+    session_dir = _write_bids_session(
+        tmp_path / "rest_overlap",
+        session_id="P001_rest_overlap",
+        target=2,
+        started_utc="2026-09-01T00:00:00+00:00",
+        blocks=(tuple(range(1, 10)), tuple(range(1, 10))),
+    )
+    manifest = _read_manifest(session_dir)
+    bids = manifest["recording"]["bids"]
+    events_path = session_dir / bids["events_tsv"]
+    lines = events_path.read_text(encoding="utf-8").splitlines()
+    header = lines[0].split("\t")
+    rows = [line.split("\t") for line in lines[1:]]
+    second_block = next(row for row in rows if row[header.index("trial_id")] == "B002-T001")
+    second_block[header.index("onset")] = "16.6"
+    second_block[header.index("sample")] = str(round(16.6 * 250))
+    lines = ["\t".join(header), *["\t".join(row) for row in rows]]
+    events_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    dataset = load_brainsync_session(session_dir)
+
+    timeline = dataset.event_timeline
+    event_index = 9
+    assert timeline.onset_times_s[event_index] == pytest.approx(16.6)
+    assert timeline.evidence_indices[event_index] == -1
+    assert "BAD_brainsync_rest" in timeline.status_details[event_index]
+    assert dataset.X.shape[0] == 17
+    assert dataset.provenance["event_time_base"] == BRAIN_SYNC_RAW_TIME_BASE
+    assert dataset.provenance["rest_policy"] == "continuous_filter_then_exclude_intersecting_epochs"
+    assert dataset.provenance["rest_overlapping_stimulus_count"] == 1
+
+
+def test_duplicate_bids_source_samples_are_rejected(
+    tmp_path: Path,
+) -> None:
+    session_dir = _write_bids_session(
         tmp_path / "duplicate_sample",
         session_id="P001_duplicate_sample",
         target=1,
         started_utc="2026-09-01T00:00:00+00:00",
     )
-    events_path = session_dir / "events" / "events.jsonl"
-    onset_records = [
-        json.loads(line)
-        for line in events_path.read_text().splitlines()
-        if json.loads(line)["payload"]["kind"] == "onset"
-    ]
-    onset_records[1]["payload"]["eeg_time_seconds"] = 1.001
-    events_path.write_text(
-        "".join(json.dumps(record) + "\n" for record in onset_records), encoding="utf-8"
-    )
+    manifest = _read_manifest(session_dir)
+    events_path = session_dir / manifest["recording"]["bids"]["events_tsv"]
+    lines = events_path.read_text(encoding="utf-8").splitlines()
+    first = lines[1].split("\t")
+    second = lines[2].split("\t")
+    second[0] = first[0]
+    second[2] = first[2]
+    lines[2] = "\t".join(second)
+    events_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="duplicate source EEG samples"):
         load_brainsync_session(session_dir)
 
 
 def test_multisession_loader_preserves_one_decision_per_session(tmp_path: Path) -> None:
-    first = _write_v2_session(
+    first = _write_bids_session(
         tmp_path / "session_a",
         session_id="P001_a",
         target=1,
         started_utc="2026-09-01T00:00:00+00:00",
     )
-    second = _write_v2_session(
+    second = _write_bids_session(
         tmp_path / "session_b",
         session_id="P001_b",
         target=2,
@@ -693,7 +586,7 @@ def test_multisession_loader_preserves_one_decision_per_session(tmp_path: Path) 
 
 
 def test_multisession_loader_rejects_duplicate_session_input(tmp_path: Path) -> None:
-    session = _write_v2_session(
+    session = _write_bids_session(
         tmp_path / "session",
         session_id="P001_duplicate_input",
         target=1,
@@ -703,9 +596,81 @@ def test_multisession_loader_rejects_duplicate_session_input(tmp_path: Path) -> 
         load_brainsync_sessions([session, session])
 
 
+def test_resilient_loader_skips_invalid_session_and_records_failure(tmp_path: Path) -> None:
+    valid = _write_bids_session(
+        tmp_path / "valid",
+        session_id="P001_valid",
+        target=1,
+        started_utc="2026-09-01T00:00:00+00:00",
+    )
+    invalid = _write_bids_session(
+        tmp_path / "invalid",
+        session_id="P002_invalid",
+        target=2,
+        subject_id="P002",
+        started_utc="2026-09-02T00:00:00+00:00",
+    )
+    manifest = _read_manifest(invalid)
+    _set_nested(manifest, "quality.eeg_continuity.passed", False)
+    _write_manifest(invalid, manifest)
+    corrupt = _write_bids_session(
+        tmp_path / "corrupt",
+        session_id="P003_corrupt",
+        target=3,
+        subject_id="P003",
+        started_utc="2026-09-03T00:00:00+00:00",
+    )
+    corrupt_manifest = _read_manifest(corrupt)
+    corrupt_raw = corrupt / corrupt_manifest["recording"]["bids"]["recording"]
+    corrupt_raw.write_bytes(b"not an EDF")
+
+    with pytest.warns(RuntimeWarning, match="Invalid measurement date"):
+        result = load_brainsync_sessions_resilient(
+            [invalid, corrupt, valid], invalid_session_policy=InvalidSessionPolicy.SKIP
+        )
+
+    assert set(result.dataset.subject_ids) == {"P001"}
+    assert len(result.failures) == 2
+    assert result.failures[0].session_dir == str(invalid.resolve())
+    assert result.failures[1].session_dir == str(corrupt.resolve())
+    assert result.dataset.provenance["ingress_policy"] == "skip"
+    assert result.dataset.provenance["skipped_sessions"][0]["error_type"] == "ValueError"
+
+
+def test_brainsync_cache_cli_runs_the_v3_bids_preprocessing_chain(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = _write_bids_session(
+        tmp_path / "cli_session",
+        session_id="P001_cli",
+        target=4,
+        started_utc="2026-09-01T00:00:00+00:00",
+    )
+    output = tmp_path / "output" / "brainsync_epochs.npz"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "prepare_brainsync_cache.py",
+            "--session-dir",
+            str(session),
+            "--output",
+            str(output),
+            "--invalid-session",
+            "error",
+        ],
+    )
+
+    prepare_brainsync_cache()
+
+    dataset = load_epoch_dataset(output)
+    assert dataset.X.shape == (9, 8, BRAIN_SYNC_PREPROCESSING.n_times)
+    assert output.with_suffix(".record.json").is_file()
+    assert dataset.provenance["session_schema"] == BRAIN_SYNC_SESSION_SCHEMA
+
+
 def test_forced_switch_policy_retains_violation_without_replacement(tmp_path: Path) -> None:
     sessions = [
-        _write_v2_session(
+        _write_bids_session(
             tmp_path / f"session_{index}",
             session_id=f"P001_s{index}",
             target=target,
@@ -737,7 +702,7 @@ def test_forced_switch_returns_complete_failure_ledger_when_none_are_eligible(
     tmp_path: Path,
 ) -> None:
     sessions = [
-        _write_v2_session(
+        _write_bids_session(
             tmp_path / f"all_failed_{index}",
             session_id=f"P001_all_failed_{index}",
             target=1,
@@ -767,7 +732,7 @@ def test_forced_switch_returns_complete_failure_ledger_when_none_are_eligible(
 def test_split_rejects_legacy_cache_that_promotes_blocks_to_decisions(
     tmp_path: Path,
 ) -> None:
-    session = _write_v2_session(
+    session = _write_bids_session(
         tmp_path / "legacy_blocks",
         session_id="P001_legacy_blocks",
         target=1,
@@ -798,7 +763,7 @@ def test_split_rejects_legacy_cache_that_promotes_blocks_to_decisions(
 
 def test_observed_sequence_policy_does_not_claim_target_switch(tmp_path: Path) -> None:
     sessions = [
-        _write_v2_session(
+        _write_bids_session(
             tmp_path / f"observed_{index}",
             session_id=f"P001_observed_{index}",
             target=1,
@@ -832,7 +797,7 @@ def test_observed_sequence_policy_does_not_claim_target_switch(tmp_path: Path) -
 
 def test_unseen_calibration_policy_uses_all_calibration_targets(tmp_path: Path) -> None:
     sessions = [
-        _write_v2_session(
+        _write_bids_session(
             tmp_path / f"unseen_{index}",
             session_id=f"P001_unseen_{index}",
             target=target,
@@ -889,7 +854,7 @@ def test_brainsync_runner_derives_scope_and_keeps_policy_failure_in_denominator(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     sessions = [
-        _write_v2_session(
+        _write_bids_session(
             tmp_path / f"runner_{index}",
             session_id=f"P001_runner_{index}",
             target=target,
@@ -964,7 +929,7 @@ def test_brainsync_runner_validates_bad_checkpoint_when_policy_leaves_no_usable_
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     sessions = [
-        _write_v2_session(
+        _write_bids_session(
             tmp_path / f"empty_runner_{index}",
             session_id=f"P001_empty_runner_{index}",
             target=1,

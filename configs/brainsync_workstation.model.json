@@ -1,0 +1,29 @@
+{
+  "schema": "brainsync-model-manifest/1",
+  "name": "N2P3 BrainSync BIDS preprocessing",
+  "version": "3.0.0",
+  "python_executable": "../.venv/Scripts/python.exe",
+  "entrypoint": "../experiments/prepare_brainsync_cache.py",
+  "tasks": ["preprocess"],
+  "parameter_options": [
+    {
+      "key": "strict_bids_raw",
+      "label": "严格生成模型输入缓存",
+      "description": "校验 BIDS、连续时间轴、事件、休息区间、通道和坐标后生成缓存",
+      "arguments": "--session-dir \"{session_dir}\" --output \"{output_dir}/brainsync_epochs.npz\" --invalid-session error",
+      "tasks": ["preprocess"]
+    }
+  ],
+  "input_contract": {
+    "session_schema": "brainsync-gtn-session/3",
+    "dataset": "BIDS raw EEG 1.11 or newer within major version 1",
+    "time_base": "continuous_recording",
+    "events": "events.tsv stimulus and rest rows with aligned onset/sample",
+    "rest_policy": "filter continuous raw, then exclude rest-intersecting epochs",
+    "coordinates": "electrodes.tsv plus coordsystem.json in metres"
+  },
+  "output_contract": {
+    "epoch_cache": "{output_dir}/brainsync_epochs.npz",
+    "attestation": "{output_dir}/brainsync_epochs.record.json"
+  }
+}

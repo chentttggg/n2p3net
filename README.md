@@ -72,17 +72,18 @@ analysis uses zero-phase IIR; chronological analysis uses forward IIR with
 caches are rejected. BrainSync acquisition and raw event indices remain at the
 device-native 250 Hz; only the derived model tensor is resampled. BrainSync,
 BI and GTN chronological builders all derive from this same causal contract.
-Repeated analysis-ready BrainSync sessions are accepted; each v2 session is one
+Repeated BIDS raw BrainSync sessions are accepted; each v3 session is one
 decision and `block_id` is scheduling metadata only. Target-sequence behavior is
 an explicit evaluation policy. The paper-aligned 0.5 Hz contract is a named
 anchor, not a fallback default.
 Use the adapter to preserve the frontend's raw recording boundary while applying preprocessing:
 
 ```powershell
-.\.venv\Scripts\python.exe experiments\prepare_eeg_dataset.py brainsync `
+.\.venv\Scripts\python.exe experiments\prepare_brainsync_cache.py `
   --session-dir "D:\path\to\calibration-session" `
   --session-dir "D:\path\to\test-session" `
-  --output "D:\path\to\epochs.npz"
+  --output "D:\path\to\epochs.npz" `
+  --invalid-session error
 ```
 
 Cross-dataset checkpoints remain fail-closed. The implemented deterministic
@@ -100,10 +101,20 @@ provenance and a newly trained checkpoint. Existing 128-sample BI/BNCI caches
 cannot be renamed or reused; they must be rebuilt from raw data. Missing channels
 are not padded.
 
-The adapter reads `recording.path`, filters onset `recording_marker` rows from
-`events/events.jsonl`, derives labels from the confirmed target digit, uses
-`montage.channel_positions_m` when present, and applies the explicitly selected
-preprocessing profile.
+The adapter validates the v3 session plus BIDS 1.11 raw dataset, reads stimulus
+and retained-rest rows from `events.tsv`, derives labels only from the confirmed
+post-experiment target digit, and reads channel geometry from `electrodes.tsv`
+plus `coordsystem.json`. Filtering runs on the intact continuous recording.
+Epochs intersecting a half-open rest interval are excluded when the cache is
+generated; event times after rest are never shifted. `--invalid-session skip`
+is available only as an explicit batch policy and records every skipped session
+and error in cache provenance.
+
+Historical v1/v2 BrainSync sessions may remain as acquisition evidence, but they
+are not accepted by the active loader and must not be mixed with v3 BIDS raw.
+The removed v2 source contract is physically isolated in
+`frozen/brainsync_rest_removed_adapter_bb70dfe.source-only.tar.gz`; its adjacent
+manifest records the source commit and archive hash.
 
 All standard ingress paths execute a half-open `[-200,0) ms` per-trial,
 per-channel mean baseline correction and record `baseline_mode=mean_only`.

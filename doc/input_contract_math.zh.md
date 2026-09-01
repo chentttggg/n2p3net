@@ -24,6 +24,28 @@ online causal profile 另声明 `filter_phase=forward` 和
 
 ## 2. 可执行算子
 
+### 2.0 BIDS raw 时间轴与休息段
+
+BrainSync v3 输入只接受连续 BIDS raw。设刺激时刻为 `t_i`，模型 epoch 为
+半开区间 `[t_i+t_min, t_i+t_max)`，第 `k` 个休息段为 `[r_k0,r_k1)`。
+缓存保留该刺激当且仅当对所有休息段都有：
+
+```text
+t_i + t_max <= r_k0  or  t_i + t_min >= r_k1
+```
+
+等价地，排除条件是：
+
+```text
+(t_i + t_min < r_k1) and (t_i + t_max > r_k0)
+```
+
+连续滤波在完整 raw 上先执行，休息段通过 `BAD_brainsync_rest` 只参与 epoch
+选择。不能先把休息段拼接删除再滤波，因为拼接点一般满足
+`x(r_k0-) != x(r_k1+)`，会制造非生理阶跃及 IIR 瞬态。反例测试同时验证：
+跨休息事件仍保持原始秒数、相交 epoch 的 `evidence_index=-1`、未相交 epoch
+继续生成缓存。
+
 ### 2.1 连续域滤波
 
 令 `B4` 为所选通带的四阶 Butterworth IIR。offline `phase=zero`
@@ -155,7 +177,8 @@ x_c(t) = s_c(t) - r(t).
 ```text
 data.contract.EEGDataContract
   -> epochs.PreprocessingSpec.validate
-  -> MOABB | BrainSync | GTN | raw manifest adapter
+  -> BIDS EEG validator | MOABB | BrainSync | GTN | raw manifest adapter
+  -> BrainSync session v3 + events/channels/electrodes/coordsystem consistency gates
   -> preprocess: continuous IIR + declared phase/state -> source epoch -> FFT resample -> mean baseline
   -> EpochDataset.validate + QC features + SHA-256 attestation
   -> run_eeg_loso: physical contract + source provenance fail-closed
