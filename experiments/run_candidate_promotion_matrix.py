@@ -13,15 +13,19 @@ import hashlib
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import tempfile
+import time
 from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from math import isfinite
 from pathlib import Path
 from typing import Any, Literal
+from uuid import uuid4
 
 import numpy as np
 
@@ -33,7 +37,7 @@ for search_path in (ROOT, SRC):
 
 from data.epochs import (  # noqa: E402
     load_epoch_dataset,
-    read_epoch_cache_attestation,
+    loaded_epoch_cache_attestation,
 )
 from data.identity import DatasetIdentityTable  # noqa: E402
 from experiments.analyze_candidate_cross_decision import ANALYSIS_SCHEMA  # noqa: E402
@@ -61,6 +65,7 @@ from transfer.checkpoint import (  # noqa: E402
 PLAN_SCHEMA = "n2p3_candidate_promotion_plan/1"
 JOURNAL_SCHEMA = "n2p3_candidate_promotion_journal/1"
 DRY_RUN_SCHEMA = "n2p3_candidate_promotion_dag/1"
+ORCHESTRATOR_LOCK_SCHEMA = "n2p3_candidate_promotion_orchestrator_lock/1"
 
 _PRETRAIN_POOLING_MODES = frozenset(
     {"ms_flatten", "full_unfold", "mlp_full_unfold", "quadratic_full_unfold"}
@@ -182,6 +187,20 @@ class _AttestedCacheInput:
     preprocessing: Mapping[str, Any]
     source_reference: str
     resolved_record: Mapping[str, Any]
+
+
+@dataclass(frozen=True)
+class _SubprocessInvocation:
+    task: MatrixTask
+    dependency_outputs: Mapping[str, str]
+    attempt_index: int
+    stdout_path: Path
+    stderr_path: Path
+
+
+@dataclass(frozen=True)
+class _SubprocessOutcome:
+    error: BaseException | None
 
 
 def evaluation_arm_name(source_arm: str, evaluation_arm: str) -> str:
@@ -1023,10 +1042,75 @@ def _atomic_write_json(path: Path, value: object) -> None:
             stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temp, path)
+        for attempt in range(20):
+            try:
+                os.replace(temp, path)
+                break
+            except PermissionError:
+                if attempt == 19:
+                    raise
+                time.sleep(0.01 * (attempt + 1))
     except BaseException:
         temp.unlink(missing_ok=True)
         raise
+
+
+def _orchestrator_lock_path(dag: PromotionDag) -> Path:
+    return _within_output(
+        dag.plan.output_root / ".promotion.orchestrator.lock.json",
+        dag.plan.output_root,
+    )
+
+
+def _acquire_orchestrator_lock(dag: PromotionDag, dag_digest: str) -> dict[str, Any]:
+    lock_path = _orchestrator_lock_path(dag)
+    token = uuid4().hex
+    record = {
+        "schema": ORCHESTRATOR_LOCK_SCHEMA,
+        "pid": os.getpid(),
+        "host": socket.gethostname(),
+        "dag_digest": _validate_sha(dag_digest, "orchestrator lock DAG digest"),
+        "created_at": _now(),
+        "token": token,
+    }
+    flags = (
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | getattr(os, "O_BINARY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        descriptor = os.open(lock_path, flags, 0o600)
+    except FileExistsError as exc:
+        try:
+            owner = _read_json_mapping(lock_path, "promotion orchestrator lock")
+        except (OSError, ValueError, json.JSONDecodeError) as read_error:
+            owner = {"unreadable": f"{type(read_error).__name__}: {read_error}"}
+        raise FileExistsError(
+            "promotion output root is locked by another or stale orchestrator; "
+            "locks are never stolen automatically and require operator inspection: "
+            f"{owner}"
+        ) from exc
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
+            json.dump(record, stream, ensure_ascii=True, indent=2, allow_nan=False)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+    except BaseException:
+        lock_path.unlink(missing_ok=True)
+        raise
+    return record
+
+
+def _release_orchestrator_lock(dag: PromotionDag, owner: Mapping[str, Any]) -> None:
+    lock_path = _orchestrator_lock_path(dag)
+    current = _read_json_mapping(lock_path, "promotion orchestrator lock")
+    identity_fields = ("schema", "pid", "host", "dag_digest", "token")
+    if any(current.get(field) != owner.get(field) for field in identity_fields):
+        raise RuntimeError("promotion orchestrator lock ownership changed during execution.")
+    lock_path.unlink()
 
 
 def _read_json_mapping(path: Path, name: str) -> dict[str, Any]:
@@ -1114,10 +1198,6 @@ def _artifact_attestation(task: MatrixTask) -> dict[str, Any]:
     }
 
 
-def _attestation_record_path(cache_path: Path) -> Path:
-    return cache_path.with_suffix(".record.json")
-
-
 def _load_attested_cache_input(
     cache_path: Path, *, name: str, dag: PromotionDag
 ) -> _AttestedCacheInput:
@@ -1126,13 +1206,12 @@ def _load_attested_cache_input(
         require_labels=True,
         validation="attested",
     )
-    attestation = read_epoch_cache_attestation(cache_path)
+    attestation = loaded_epoch_cache_attestation(dataset)
     cache_sha256 = _validate_sha(attestation.get("sha256"), f"{name} cache sha256")
-    if _sha256_file(cache_path) != cache_sha256:
-        raise ValueError(f"{name} changed after its attested cache load.")
-    record_path = _attestation_record_path(cache_path)
-    if not record_path.is_file():
-        raise ValueError(f"{name} cache attestation record is missing: {record_path}")
+    decoded_dataset_sha256 = _validate_sha(
+        attestation.get("decoded_dataset_sha256"),
+        f"{name} decoded dataset sha256",
+    )
     if dataset.identity_table is None:
         raise ValueError(f"{name} lacks a participant identity table.")
     source_reference = dataset.provenance.get("source_reference")
@@ -1142,8 +1221,8 @@ def _load_attested_cache_input(
     resolved_record = {
         "path": _portable_path(cache_path, dag),
         "cache_sha256": cache_sha256,
-        "cache_attestation_sha256": _sha256_file(record_path),
-        "cache_attestation_path": _portable_path(record_path, dag),
+        "decoded_dataset_sha256": decoded_dataset_sha256,
+        "verified_cache_attestation": dict(attestation),
         "identity_digest": dataset.identity_table.digest(),
         "channel_contract_digest": semantic_sha256(
             {
@@ -1285,6 +1364,7 @@ def _initial_state(dag: PromotionDag, resolved_inputs: Mapping[str, Any]) -> dic
         "updated_at": timestamp,
         "finished_at": None,
         "derived_inputs": {},
+        "dispatch_sequence": [],
         "tasks": {
             task.task_id: {
                 "kind": task.kind,
@@ -1294,6 +1374,7 @@ def _initial_state(dag: PromotionDag, resolved_inputs: Mapping[str, Any]) -> dic
                 "status": "pending",
                 "started_at": None,
                 "finished_at": None,
+                "attempts": [],
             }
             for task in dag.tasks
         },
@@ -1309,6 +1390,7 @@ def _load_or_create_state(
     journal = _journal_path(dag)
     known_outputs = [task.output for task in dag.tasks]
     known_outputs.extend(dag.subject_scope_paths.values())
+    known_outputs.append(dag.plan.output_root / "logs")
     if journal.exists():
         if not resume:
             raise FileExistsError(
@@ -1347,6 +1429,16 @@ def _load_or_create_state(
                 raise ValueError(
                     f"promotion journal task {task.task_id!r} changed static fields {mismatched}."
                 )
+            attempts = task_record.setdefault("attempts", [])
+            if not isinstance(attempts, list) or not all(
+                isinstance(attempt, Mapping) for attempt in attempts
+            ):
+                raise ValueError(f"promotion journal task {task.task_id!r} has invalid attempts.")
+        dispatch_sequence = state.setdefault("dispatch_sequence", [])
+        if not isinstance(dispatch_sequence, list) or not all(
+            isinstance(task_id, str) and task_id in state_tasks for task_id in dispatch_sequence
+        ):
+            raise ValueError("promotion journal dispatch_sequence is invalid.")
         state["status"] = "running"
         state["finished_at"] = None
         state["updated_at"] = _now()
@@ -1394,7 +1486,10 @@ def _dependency_digests(task: MatrixTask, state_tasks: Mapping[str, Any]) -> dic
 
 
 def _resume_validation(
-    task: MatrixTask, record: Mapping[str, Any], state_tasks: Mapping[str, Any]
+    dag: PromotionDag,
+    task: MatrixTask,
+    record: Mapping[str, Any],
+    state_tasks: Mapping[str, Any],
 ) -> tuple[bool, str | None]:
     if record.get("status") != "completed":
         return False, "journal task is not completed"
@@ -1413,6 +1508,40 @@ def _resume_validation(
         embedded = _embedded_artifact_record(task)
         if embedded != output.get("embedded"):
             return False, "embedded schema or contract digest changed"
+        attempts = record.get("attempts")
+        if not isinstance(attempts, list) or not attempts:
+            return False, "completed task has no subprocess attempt provenance"
+        attempt = attempts[-1]
+        if not isinstance(attempt, Mapping) or attempt.get("status") != "completed":
+            return False, "latest subprocess attempt is not completed"
+        attempt_number = _integer(
+            attempt.get("attempt"),
+            "journal attempt number",
+            minimum=1,
+        )
+        stdout_path, stderr_path = _task_log_paths(
+            dag,
+            task,
+            attempt_number=attempt_number,
+        )
+        logs = _mapping(attempt.get("logs"), "journal attempt logs")
+        for stream_name, path in (("stdout", stdout_path), ("stderr", stderr_path)):
+            log = _mapping(logs.get(stream_name), f"journal {stream_name} log")
+            if log.get("path") != _portable_path(path, dag):
+                return False, f"{stream_name} log path changed"
+            byte_size = _integer(
+                log.get("byte_size"),
+                f"journal {stream_name} log byte_size",
+                minimum=0,
+            )
+            digest = _validate_sha(
+                log.get("sha256"),
+                f"journal {stream_name} log sha256",
+            )
+            if not path.is_file() or path.stat().st_size != byte_size:
+                return False, f"{stream_name} log is missing or changed size"
+            if _sha256_file(path) != digest:
+                return False, f"{stream_name} log SHA-256 changed"
         current_dependencies = _dependency_digests(task, state_tasks)
         if current_dependencies != record.get("dependency_outputs", {}):
             return False, "dependency output digest changed"
@@ -1422,13 +1551,337 @@ def _resume_validation(
 
 
 def _error_record(error: BaseException) -> dict[str, Any]:
+    message = (
+        f"subprocess exited with return code {error.returncode}"
+        if isinstance(error, subprocess.CalledProcessError)
+        else str(error)
+    )
     record: dict[str, Any] = {
         "type": type(error).__name__,
-        "message": str(error),
+        "message": message,
     }
     if isinstance(error, subprocess.CalledProcessError):
         record["returncode"] = error.returncode
     return record
+
+
+def _validate_max_workers(value: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError("max_workers must be a positive integer.")
+    return value
+
+
+def _task_log_paths(
+    dag: PromotionDag,
+    task: MatrixTask,
+    *,
+    attempt_number: int,
+) -> tuple[Path, Path]:
+    task_index = next(
+        index for index, candidate in enumerate(dag.tasks) if candidate.task_id == task.task_id
+    )
+    task_digest = hashlib.sha256(task.task_id.encode("utf-8")).hexdigest()[:12]
+    stem = f"{task_index:04d}-{task.kind}-{task_digest}.attempt-{attempt_number:03d}"
+    log_root = _within_output(dag.plan.output_root / "logs", dag.plan.output_root)
+    return (
+        _within_output(log_root / f"{stem}.stdout.log", dag.plan.output_root),
+        _within_output(log_root / f"{stem}.stderr.log", dag.plan.output_root),
+    )
+
+
+def _run_subprocess_invocation(
+    invocation: _SubprocessInvocation,
+    runner: Callable[..., Any],
+) -> _SubprocessOutcome:
+    """Worker boundary: invoke one subprocess and write only its private logs."""
+
+    try:
+        with (
+            invocation.stdout_path.open("xb") as stdout,
+            invocation.stderr_path.open("xb") as stderr,
+        ):
+            runner(
+                list(invocation.task.argv),
+                check=True,
+                shell=False,
+                cwd=ROOT,
+                stdout=stdout,
+                stderr=stderr,
+            )
+    except BaseException as error:
+        return _SubprocessOutcome(error=error)
+    return _SubprocessOutcome(error=None)
+
+
+def _log_attestation(path: Path, dag: PromotionDag) -> dict[str, Any]:
+    _within_output(path, dag.plan.output_root)
+    if not path.is_file():
+        raise FileNotFoundError(f"subprocess log is missing: {path.name}")
+    return {
+        "path": _portable_path(path, dag),
+        "sha256": _sha256_file(path),
+        "byte_size": path.stat().st_size,
+    }
+
+
+def _prepare_execution_records(
+    dag: PromotionDag,
+    state: dict[str, Any],
+    *,
+    resume: bool,
+) -> dict[str, dict[str, Any]]:
+    raw_tasks = state.get("tasks")
+    if not isinstance(raw_tasks, dict):
+        raise ValueError("promotion journal tasks must be a mutable JSON mapping.")
+    state_tasks: dict[str, dict[str, Any]] = {}
+    timestamp = _now()
+    for task in dag.tasks:
+        raw_record = raw_tasks.get(task.task_id)
+        if not isinstance(raw_record, dict):
+            raise ValueError(f"journal task {task.task_id} must be a mutable JSON mapping.")
+        record = raw_record
+        attempts = record.setdefault("attempts", [])
+        if not isinstance(attempts, list):
+            raise ValueError(f"journal task {task.task_id} attempts must be a list.")
+        orphan_reason: str | None = None
+        if resume and record.get("status") == "running":
+            orphan_reason = "previous orchestrator ended while task was running"
+            if (
+                attempts
+                and isinstance(attempts[-1], dict)
+                and attempts[-1].get("status") == "running"
+            ):
+                attempts[-1]["status"] = "orphaned"
+                attempts[-1]["finished_at"] = timestamp
+                attempts[-1]["orphaned_reason"] = orphan_reason
+            else:
+                attempts.append(
+                    {
+                        "attempt": len(attempts) + 1,
+                        "status": "orphaned",
+                        "started_at": record.get("started_at"),
+                        "finished_at": timestamp,
+                        "orphaned_reason": orphan_reason,
+                    }
+                )
+            record["status"] = "pending"
+        can_skip, reason = (
+            _resume_validation(dag, task, record, raw_tasks)
+            if resume and orphan_reason is None
+            else (False, orphan_reason)
+        )
+        if can_skip:
+            record["resume_validation"] = {
+                "status": "skipped_verified",
+                "checked_at": timestamp,
+            }
+        else:
+            if resume:
+                record["resume_validation"] = {
+                    "status": "rerun",
+                    "reason": reason,
+                    "checked_at": timestamp,
+                }
+            else:
+                record.pop("resume_validation", None)
+            record["status"] = "pending"
+            record["started_at"] = None
+            record["finished_at"] = None
+            record.pop("error", None)
+            record.pop("output", None)
+            record.pop("dependency_outputs", None)
+        state_tasks[task.task_id] = record
+    state["updated_at"] = timestamp
+    _atomic_write_json(_journal_path(dag), state)
+    return state_tasks
+
+
+def _dispatch_invocation(
+    dag: PromotionDag,
+    task: MatrixTask,
+    record: dict[str, Any],
+    state_tasks: Mapping[str, Any],
+) -> _SubprocessInvocation:
+    attempts = record.get("attempts")
+    if not isinstance(attempts, list):
+        raise ValueError(f"journal task {task.task_id} attempts must be a list.")
+    attempt_number = len(attempts) + 1
+    stdout_path, stderr_path = _task_log_paths(
+        dag,
+        task,
+        attempt_number=attempt_number,
+    )
+    stdout_path.parent.mkdir(parents=True, exist_ok=True)
+    if stdout_path.exists() or stderr_path.exists():
+        raise FileExistsError(f"subprocess attempt logs already exist for task {task.task_id!r}.")
+    task.output.parent.mkdir(parents=True, exist_ok=True)
+    dependency_outputs = _dependency_digests(task, state_tasks)
+    started_at = _now()
+    attempt = {
+        "attempt": attempt_number,
+        "status": "running",
+        "started_at": started_at,
+        "finished_at": None,
+        "stdout_path": _portable_path(stdout_path, dag),
+        "stderr_path": _portable_path(stderr_path, dag),
+    }
+    attempts.append(attempt)
+    record["status"] = "running"
+    record["started_at"] = started_at
+    record["finished_at"] = None
+    record.pop("error", None)
+    record.pop("output", None)
+    record.pop("dependency_outputs", None)
+    return _SubprocessInvocation(
+        task=task,
+        dependency_outputs=dependency_outputs,
+        attempt_index=len(attempts) - 1,
+        stdout_path=stdout_path,
+        stderr_path=stderr_path,
+    )
+
+
+def _invocation_attempt(
+    record: dict[str, Any], invocation: _SubprocessInvocation
+) -> dict[str, Any]:
+    attempts = record.get("attempts")
+    if not isinstance(attempts, list) or invocation.attempt_index >= len(attempts):
+        raise ValueError(f"journal task {invocation.task.task_id} lost its running attempt.")
+    attempt = attempts[invocation.attempt_index]
+    if not isinstance(attempt, dict):
+        raise ValueError(f"journal task {invocation.task.task_id} attempt is invalid.")
+    return attempt
+
+
+def _complete_invocation(
+    dag: PromotionDag,
+    invocation: _SubprocessInvocation,
+    outcome: _SubprocessOutcome,
+    state_tasks: Mapping[str, Any],
+) -> BaseException | None:
+    record_value = state_tasks.get(invocation.task.task_id)
+    if not isinstance(record_value, dict):
+        raise ValueError(f"journal task {invocation.task.task_id} is invalid.")
+    record = record_value
+    attempt = _invocation_attempt(record, invocation)
+    finished_at = _now()
+    error = outcome.error
+    try:
+        logs = {
+            "stdout": _log_attestation(invocation.stdout_path, dag),
+            "stderr": _log_attestation(invocation.stderr_path, dag),
+        }
+        if error is None:
+            current_dependencies = _dependency_digests(invocation.task, state_tasks)
+            if current_dependencies != dict(invocation.dependency_outputs):
+                raise RuntimeError("dependency output digests changed while a task was running.")
+            output = _artifact_attestation(invocation.task)
+    except BaseException as finalize_error:
+        if error is None:
+            error = finalize_error
+        else:
+            error.add_note(
+                f"Task finalization also failed: {type(finalize_error).__name__}: {finalize_error}"
+            )
+        logs = {
+            "stdout": (
+                _log_attestation(invocation.stdout_path, dag)
+                if invocation.stdout_path.is_file()
+                else None
+            ),
+            "stderr": (
+                _log_attestation(invocation.stderr_path, dag)
+                if invocation.stderr_path.is_file()
+                else None
+            ),
+        }
+    attempt["finished_at"] = finished_at
+    attempt["logs"] = logs
+    record["finished_at"] = finished_at
+    if error is not None:
+        error_record = _error_record(error)
+        attempt["status"] = "failed"
+        attempt["error"] = error_record
+        record["status"] = "failed"
+        record["error"] = error_record
+        return error
+    attempt["status"] = "completed"
+    record["status"] = "completed"
+    record["output"] = output
+    record["dependency_outputs"] = dict(invocation.dependency_outputs)
+    return None
+
+
+def _cancel_invocation_before_start(
+    invocation: _SubprocessInvocation,
+    state_tasks: Mapping[str, Any],
+) -> None:
+    record_value = state_tasks.get(invocation.task.task_id)
+    if not isinstance(record_value, dict):
+        raise ValueError(f"journal task {invocation.task.task_id} is invalid.")
+    record = record_value
+    attempt = _invocation_attempt(record, invocation)
+    finished_at = _now()
+    attempt["status"] = "cancelled_before_start"
+    attempt["finished_at"] = finished_at
+    attempt["logs"] = {"stdout": None, "stderr": None}
+    record["status"] = "pending"
+    record["started_at"] = None
+    record["finished_at"] = None
+
+
+def _orphan_invocation_after_interrupt(
+    dag: PromotionDag,
+    invocation: _SubprocessInvocation,
+    state_tasks: Mapping[str, Any],
+) -> None:
+    record_value = state_tasks.get(invocation.task.task_id)
+    if not isinstance(record_value, dict):
+        raise ValueError(f"journal task {invocation.task.task_id} is invalid.")
+    record = record_value
+    attempt = _invocation_attempt(record, invocation)
+    finished_at = _now()
+    attempt["status"] = "orphaned_after_interrupt"
+    attempt["finished_at"] = finished_at
+    attempt["logs"] = {
+        "stdout": (
+            _log_attestation(invocation.stdout_path, dag)
+            if invocation.stdout_path.is_file()
+            else None
+        ),
+        "stderr": (
+            _log_attestation(invocation.stderr_path, dag)
+            if invocation.stderr_path.is_file()
+            else None
+        ),
+    }
+    record["status"] = "pending"
+    record["started_at"] = None
+    record["finished_at"] = None
+    record.pop("output", None)
+    record.pop("dependency_outputs", None)
+
+
+def _clear_running_records_after_abort(
+    state_tasks: Mapping[str, Any],
+    *,
+    reason: str,
+) -> None:
+    timestamp = _now()
+    for record_value in state_tasks.values():
+        if not isinstance(record_value, dict) or record_value.get("status") != "running":
+            continue
+        attempts = record_value.get("attempts")
+        if isinstance(attempts, list) and attempts and isinstance(attempts[-1], dict):
+            if attempts[-1].get("status") == "running":
+                attempts[-1]["status"] = "orphaned"
+                attempts[-1]["finished_at"] = timestamp
+                attempts[-1]["orphaned_reason"] = reason
+        record_value["status"] = "pending"
+        record_value["started_at"] = None
+        record_value["finished_at"] = None
+        record_value.pop("output", None)
+        record_value.pop("dependency_outputs", None)
 
 
 def execute_dag(
@@ -1437,9 +1890,11 @@ def execute_dag(
     resume: bool = False,
     subprocess_runner: Callable[..., Any] | None = None,
     verify_inputs: bool = True,
+    max_workers: int = 1,
 ) -> Path:
-    """Execute one DAG sequentially and return the analyzed result path."""
+    """Execute one dependency-aware DAG with one main-thread state writer."""
 
+    workers = _validate_max_workers(max_workers)
     resolved_inputs = (
         _verify_inputs(dag)
         if verify_inputs
@@ -1450,73 +1905,269 @@ def execute_dag(
     )
     runner = subprocess.run if subprocess_runner is None else subprocess_runner
     dag.plan.output_root.mkdir(parents=True, exist_ok=True)
-    state = _load_or_create_state(
-        dag,
-        resume=resume,
-        resolved_inputs=resolved_inputs,
-    )
-    _materialize_subject_scopes(dag, state)
-    state_tasks_value = state.get("tasks")
-    if not isinstance(state_tasks_value, dict):
-        raise ValueError("promotion journal tasks must be a mutable JSON mapping.")
-    state_tasks = state_tasks_value
-    journal = _journal_path(dag)
-    for task in dag.tasks:
-        _within_output(task.output, dag.plan.output_root)
-        record_value = state_tasks[task.task_id]
-        if not isinstance(record_value, dict):
-            raise ValueError(f"journal task {task.task_id} must be a mutable JSON mapping.")
-        record = record_value
-        can_skip, reason = (
-            _resume_validation(task, record, state_tasks) if resume else (False, None)
+    resolved_dag_digest = _dag_digest(dag, resolved_inputs)
+    lock_owner = _acquire_orchestrator_lock(dag, resolved_dag_digest)
+
+    def run_locked() -> Path:
+        state = _load_or_create_state(
+            dag,
+            resume=resume,
+            resolved_inputs=resolved_inputs,
         )
-        if can_skip:
-            record["resume_validation"] = {
-                "status": "skipped_verified",
-                "checked_at": _now(),
-            }
+        state["execution"] = {
+            "max_workers": workers,
+            "scheduler": "dependency_aware_threadpool_subprocess_only",
+            "state_writer": "orchestrator_main_thread_only",
+            "orchestrator_lock": {
+                "schema": lock_owner["schema"],
+                "pid": lock_owner["pid"],
+                "host": lock_owner["host"],
+                "dag_digest": lock_owner["dag_digest"],
+            },
+            "keyboard_interrupt_policy": (
+                "stop_dispatch;cancel_not_started;wait_active;mark_unattested_outputs_orphaned"
+            ),
+        }
+        _materialize_subject_scopes(dag, state)
+        state_tasks = _prepare_execution_records(dag, state, resume=resume)
+        journal = _journal_path(dag)
+        task_order = {task.task_id: index for index, task in enumerate(dag.tasks)}
+        pending = {
+            task.task_id
+            for task in dag.tasks
+            if state_tasks[task.task_id].get("status") == "pending"
+        }
+        dispatch_sequence = state.get("dispatch_sequence")
+        if not isinstance(dispatch_sequence, list):
+            raise ValueError("promotion journal dispatch_sequence must be a list.")
+        in_flight: dict[Future[_SubprocessOutcome], _SubprocessInvocation] = {}
+        primary_error: BaseException | None = None
+        executor = ThreadPoolExecutor(
+            max_workers=workers, thread_name_prefix="promotion-subprocess"
+        )
+
+        def write_state() -> None:
             state["updated_at"] = _now()
             _atomic_write_json(journal, state)
-            continue
-        if resume:
-            record["resume_validation"] = {
-                "status": "rerun",
-                "reason": reason,
-                "checked_at": _now(),
-            }
-        record["status"] = "running"
-        record["started_at"] = _now()
-        record["finished_at"] = None
-        record.pop("error", None)
-        record.pop("output", None)
-        record.pop("dependency_outputs", None)
-        state["updated_at"] = _now()
-        _atomic_write_json(journal, state)
-        try:
-            task.output.parent.mkdir(parents=True, exist_ok=True)
-            runner(list(task.argv), check=True, shell=False, cwd=ROOT)
-            output = _artifact_attestation(task)
-            dependencies = _dependency_digests(task, state_tasks)
-        except BaseException as error:
+
+        def mark_dispatch_failure(
+            invocation: _SubprocessInvocation,
+            error: BaseException,
+        ) -> None:
+            record = state_tasks[invocation.task.task_id]
+            attempt = _invocation_attempt(record, invocation)
+            finished_at = _now()
+            error_record = _error_record(error)
+            attempt["status"] = "failed"
+            attempt["finished_at"] = finished_at
+            attempt["logs"] = {"stdout": None, "stderr": None}
+            attempt["error"] = error_record
             record["status"] = "failed"
-            record["finished_at"] = _now()
-            record["error"] = _error_record(error)
-            state["status"] = "failed"
-            state["finished_at"] = record["finished_at"]
-            state["updated_at"] = record["finished_at"]
-            _atomic_write_json(journal, state)
+            record["finished_at"] = finished_at
+            record["error"] = error_record
+
+        try:
+            while pending or in_flight:
+                while primary_error is None and len(in_flight) < workers:
+                    ready = next(
+                        (
+                            task
+                            for task in dag.tasks
+                            if task.task_id in pending
+                            and all(
+                                state_tasks[dependency].get("status") == "completed"
+                                for dependency in task.dependencies
+                            )
+                        ),
+                        None,
+                    )
+                    if ready is None:
+                        break
+                    pending.remove(ready.task_id)
+                    invocation = _dispatch_invocation(
+                        dag,
+                        ready,
+                        state_tasks[ready.task_id],
+                        state_tasks,
+                    )
+                    dispatch_sequence.append(ready.task_id)
+                    write_state()
+                    try:
+                        future = executor.submit(_run_subprocess_invocation, invocation, runner)
+                    except BaseException as error:
+                        mark_dispatch_failure(invocation, error)
+                        primary_error = error
+                        state["status"] = "failed"
+                        write_state()
+                        break
+                    in_flight[future] = invocation
+
+                if not in_flight:
+                    if primary_error is not None:
+                        break
+                    if pending:
+                        blocked = [task.task_id for task in dag.tasks if task.task_id in pending]
+                        raise RuntimeError(
+                            "promotion DAG has pending tasks with no satisfied dependency path: "
+                            f"{blocked}."
+                        )
+                    break
+
+                completed_futures, _ = wait(
+                    tuple(in_flight),
+                    return_when=FIRST_COMPLETED,
+                )
+                for future in sorted(
+                    completed_futures,
+                    key=lambda value: task_order[in_flight[value].task.task_id],
+                ):
+                    invocation = in_flight.pop(future)
+                    try:
+                        outcome = future.result()
+                        if not isinstance(outcome, _SubprocessOutcome):
+                            raise TypeError("subprocess worker returned an invalid outcome.")
+                    except BaseException as error:
+                        outcome = _SubprocessOutcome(error=error)
+                    error = _complete_invocation(
+                        dag,
+                        invocation,
+                        outcome,
+                        state_tasks,
+                    )
+                    if error is not None and primary_error is None:
+                        primary_error = error
+                        state["status"] = "failed"
+                    write_state()
+
+                if primary_error is not None:
+                    for future, invocation in list(in_flight.items()):
+                        if future.cancel():
+                            _cancel_invocation_before_start(invocation, state_tasks)
+                            in_flight.pop(future)
+                    state["status"] = "failed"
+                    write_state()
+        except KeyboardInterrupt as error:
+            state["status"] = "interrupted_draining"
+            state["last_error"] = _error_record(error)
+            for future, invocation in list(in_flight.items()):
+                if future.cancel():
+                    _cancel_invocation_before_start(invocation, state_tasks)
+                    in_flight.pop(future)
+            write_state()
+            try:
+                executor.shutdown(wait=True, cancel_futures=True)
+            except BaseException as shutdown_error:
+                error.add_note(
+                    "Could not drain active subprocess workers; the orchestrator lock was retained: "
+                    f"{type(shutdown_error).__name__}: {shutdown_error}"
+                )
+                error._retain_orchestrator_lock = True  # type: ignore[attr-defined]
+                write_state()
+                raise error from shutdown_error
+            for invocation in in_flight.values():
+                try:
+                    _orphan_invocation_after_interrupt(dag, invocation, state_tasks)
+                except BaseException as orphan_error:
+                    error.add_note(
+                        "Could not fully attest interrupted task logs: "
+                        f"{type(orphan_error).__name__}: {orphan_error}"
+                    )
+                    record = state_tasks[invocation.task.task_id]
+                    record["status"] = "pending"
+                    record["started_at"] = None
+                    record["finished_at"] = None
+            _clear_running_records_after_abort(
+                state_tasks,
+                reason="orchestrator interrupted while draining subprocesses",
+            )
+            state["status"] = "interrupted"
+            state["finished_at"] = _now()
+            write_state()
             raise
-        record["status"] = "completed"
-        record["finished_at"] = _now()
-        record["output"] = output
-        record["dependency_outputs"] = dependencies
-        state["updated_at"] = record["finished_at"]
+        except BaseException as error:
+            state["status"] = "failed_draining"
+            state["last_error"] = _error_record(error)
+            for future, invocation in list(in_flight.items()):
+                if future.cancel():
+                    _cancel_invocation_before_start(invocation, state_tasks)
+                    in_flight.pop(future)
+            write_state()
+            try:
+                executor.shutdown(wait=True, cancel_futures=True)
+            except BaseException as shutdown_error:
+                error.add_note(
+                    "Could not drain active subprocess workers; the orchestrator lock was retained: "
+                    f"{type(shutdown_error).__name__}: {shutdown_error}"
+                )
+                error._retain_orchestrator_lock = True  # type: ignore[attr-defined]
+                write_state()
+                raise error from shutdown_error
+            for invocation in in_flight.values():
+                try:
+                    _orphan_invocation_after_interrupt(dag, invocation, state_tasks)
+                except BaseException as orphan_error:
+                    error.add_note(
+                        "Could not fully attest failed task logs: "
+                        f"{type(orphan_error).__name__}: {orphan_error}"
+                    )
+            _clear_running_records_after_abort(
+                state_tasks,
+                reason="orchestrator failed while draining subprocesses",
+            )
+            state["status"] = "failed"
+            state["finished_at"] = _now()
+            write_state()
+            raise
+        else:
+            try:
+                executor.shutdown(wait=True, cancel_futures=True)
+            except BaseException as error:
+                state["status"] = "failed_draining"
+                state["last_error"] = _error_record(error)
+                write_state()
+                error._retain_orchestrator_lock = True  # type: ignore[attr-defined]
+                raise
+
+        if primary_error is not None:
+            state["status"] = "failed"
+            state["finished_at"] = _now()
+            state["updated_at"] = state["finished_at"]
+            _atomic_write_json(journal, state)
+            raise primary_error
+        state["status"] = "completed"
+        state["finished_at"] = _now()
+        state["updated_at"] = state["finished_at"]
         _atomic_write_json(journal, state)
-    state["status"] = "completed"
-    state["finished_at"] = _now()
-    state["updated_at"] = state["finished_at"]
-    _atomic_write_json(journal, state)
-    return dag.tasks[-1].output
+        return dag.tasks[-1].output
+
+    try:
+        result = run_locked()
+    except BaseException as error:
+        if getattr(error, "_retain_orchestrator_lock", False):
+            error.add_note(
+                "Promotion orchestrator lock retained because worker drain was not confirmed."
+            )
+            raise
+        try:
+            _release_orchestrator_lock(dag, lock_owner)
+        except BaseException as release_error:
+            error.add_note(
+                "Could not release promotion orchestrator lock: "
+                f"{type(release_error).__name__}: {release_error}"
+            )
+        raise
+    _release_orchestrator_lock(dag, lock_owner)
+    return result
+
+
+def _positive_int_argument(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be a positive integer") from exc
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -1529,6 +2180,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         help="Resolve relative plan paths from this explicit root instead of the plan directory.",
     )
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--max-workers", type=_positive_int_argument, default=1)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
@@ -1544,7 +2196,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
         )
         return
-    output = execute_dag(dag, resume=args.resume)
+    output = execute_dag(dag, resume=args.resume, max_workers=args.max_workers)
     print(
         json.dumps(
             {

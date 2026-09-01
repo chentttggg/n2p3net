@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import tarfile
+import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -457,7 +460,10 @@ def test_attested_inputs_are_bound_to_journal_and_cache_tamper_blocks_resume(
     resolved = journal["resolved_inputs"]
     assert resolved["source_snapshot"]["manifest_sha256"]
     assert resolved["target_cache"]["cache_sha256"]
-    assert resolved["target_cache"]["cache_attestation_sha256"]
+    assert resolved["target_cache"]["decoded_dataset_sha256"]
+    assert resolved["target_cache"]["verified_cache_attestation"]["sha256"] == (
+        resolved["target_cache"]["cache_sha256"]
+    )
     assert set(resolved["source_caches"]) == {"source_a", "source_ab"}
     assert resolved["power_plan"]["sha256"] == hashlib.sha256(power_plan.read_bytes()).hexdigest()
     assert journal["dag_digest"] == matrix._dag_digest(dag, resolved)
@@ -528,3 +534,367 @@ def test_subprocess_failure_is_atomically_recorded_and_reraised(tmp_path: Path) 
     assert first["started_at"] and first["finished_at"]
     assert first["error"]["returncode"] == 17
     assert first["argv"][0] == "$PYTHON"
+
+
+def test_parallel_scheduler_respects_limit_dependencies_and_main_thread_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dag = matrix.build_dag(_load(tmp_path))
+    main_thread = threading.get_ident()
+    task_by_output = {task.output.resolve(): task for task in dag.tasks}
+    active = 0
+    peak = 0
+    calls: list[str] = []
+    dependency_violations: list[tuple[str, str]] = []
+    worker_threads: set[int] = set()
+    guard = threading.Lock()
+
+    original_atomic = matrix._atomic_write_json
+    original_dependencies = matrix._dependency_digests
+
+    def main_thread_atomic(path: Path, value: object) -> None:
+        assert threading.get_ident() == main_thread
+        original_atomic(path, value)
+
+    def main_thread_dependencies(task, state_tasks):
+        assert threading.get_ident() == main_thread
+        return original_dependencies(task, state_tasks)
+
+    def main_thread_attestation(task):
+        assert threading.get_ident() == main_thread
+        return _fake_artifact_attestation(task)
+
+    def succeed(argv: list[str], **_: Any) -> None:
+        nonlocal active, peak
+        output = _output_from_argv(argv).resolve()
+        task = task_by_output[output]
+        with guard:
+            worker_threads.add(threading.get_ident())
+            active += 1
+            peak = max(peak, active)
+            calls.append(task.task_id)
+            for dependency in task.dependencies:
+                dependency_task = dag.task_by_id[dependency]
+                if not dependency_task.output.is_file():
+                    dependency_violations.append((task.task_id, dependency))
+        try:
+            time.sleep(0.015)
+            output.write_text(f"artifact:{task.task_id}", encoding="utf-8")
+        finally:
+            with guard:
+                active -= 1
+
+    monkeypatch.setattr(matrix, "_atomic_write_json", main_thread_atomic)
+    monkeypatch.setattr(matrix, "_dependency_digests", main_thread_dependencies)
+    monkeypatch.setattr(matrix, "_artifact_attestation", main_thread_attestation)
+    monkeypatch.setattr(matrix, "_embedded_artifact_record", _fake_embedded)
+
+    result = matrix.execute_dag(
+        dag,
+        subprocess_runner=succeed,
+        verify_inputs=False,
+        max_workers=4,
+    )
+
+    assert result == dag.tasks[-1].output
+    assert 1 < peak <= 4
+    assert worker_threads and main_thread not in worker_threads
+    assert dependency_violations == []
+    journal = json.loads(matrix._journal_path(dag).read_text(encoding="utf-8"))
+    assert journal["status"] == "completed"
+    assert journal["execution"]["max_workers"] == 4
+    assert journal["execution"]["state_writer"] == "orchestrator_main_thread_only"
+    assert journal["execution"]["orchestrator_lock"]["dag_digest"] == journal["dag_digest"]
+    first_ready = [task.task_id for task in dag.tasks if not task.dependencies][:4]
+    assert journal["dispatch_sequence"][:4] == first_ready
+    assert set(journal["dispatch_sequence"]) == set(calls)
+    assert len(journal["dispatch_sequence"]) == len(set(journal["dispatch_sequence"])) == 26
+    assert all(record["status"] == "completed" for record in journal["tasks"].values())
+    assert all(len(record["attempts"]) == 1 for record in journal["tasks"].values())
+    for record in journal["tasks"].values():
+        for log in record["attempts"][0]["logs"].values():
+            log_path = dag.plan.output_root / Path(log["path"].removeprefix("$OUTPUT_ROOT/"))
+            assert hashlib.sha256(log_path.read_bytes()).hexdigest() == log["sha256"]
+
+
+def test_parallel_failure_stops_dispatch_drains_and_resumes_strictly(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dag = matrix.build_dag(_load(tmp_path))
+    task_by_output = {task.output.resolve(): task for task in dag.tasks}
+    release_siblings = threading.Event()
+    failure_journal_seen = threading.Event()
+    initial_calls: list[str] = []
+    journal_snapshot: dict[str, Any] = {}
+    journal_path = dag.plan.output_root / "promotion.journal.json"
+
+    def fail_first_and_block_siblings(argv: list[str], **_: Any) -> None:
+        output = _output_from_argv(argv).resolve()
+        task = task_by_output[output]
+        initial_calls.append(task.task_id)
+        if task.task_id == dag.tasks[0].task_id:
+            raise subprocess.CalledProcessError(19, argv)
+        assert release_siblings.wait(timeout=10)
+        output.write_text(f"initial:{task.task_id}", encoding="utf-8")
+
+    def observe_failure() -> None:
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            if journal_path.is_file():
+                current = json.loads(journal_path.read_text(encoding="utf-8"))
+                if current.get("status") == "failed":
+                    journal_snapshot.update(current)
+                    failure_journal_seen.set()
+                    release_siblings.set()
+                    return
+            time.sleep(0.01)
+        release_siblings.set()
+
+    observer = threading.Thread(target=observe_failure, daemon=True)
+    observer.start()
+    monkeypatch.setattr(matrix, "_artifact_attestation", _fake_artifact_attestation)
+    monkeypatch.setattr(matrix, "_embedded_artifact_record", _fake_embedded)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        matrix.execute_dag(
+            dag,
+            subprocess_runner=fail_first_and_block_siblings,
+            verify_inputs=False,
+            max_workers=4,
+        )
+    observer.join(timeout=10)
+
+    assert failure_journal_seen.is_set()
+    assert journal_snapshot["tasks"][dag.tasks[0].task_id]["status"] == "failed"
+    first_ready = [task.task_id for task in dag.tasks if not task.dependencies][:4]
+    assert set(initial_calls) == set(first_ready)
+    failed_state = json.loads(matrix._journal_path(dag).read_text(encoding="utf-8"))
+    assert failed_state["status"] == "failed"
+    assert "running" not in {record["status"] for record in failed_state["tasks"].values()}
+    assert set(failed_state["dispatch_sequence"]) == set(initial_calls)
+
+    resume_calls: list[str] = []
+
+    def succeed(argv: list[str], **_: Any) -> None:
+        output = _output_from_argv(argv).resolve()
+        task = task_by_output[output]
+        resume_calls.append(task.task_id)
+        output.write_text(f"resumed:{task.task_id}", encoding="utf-8")
+
+    matrix.execute_dag(
+        dag,
+        resume=True,
+        subprocess_runner=succeed,
+        verify_inputs=False,
+        max_workers=4,
+    )
+    resumed = json.loads(matrix._journal_path(dag).read_text(encoding="utf-8"))
+    assert resumed["status"] == "completed"
+    assert dag.tasks[0].task_id in resume_calls
+    initial_successes = set(initial_calls) - {dag.tasks[0].task_id}
+    assert not initial_successes & set(resume_calls)
+    assert len(resume_calls) == 23
+    assert all(record["status"] == "completed" for record in resumed["tasks"].values())
+
+
+def test_resume_marks_old_running_attempt_orphaned_and_invalidates_dependents(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dag = matrix.build_dag(_load(tmp_path))
+    task_by_output = {task.output.resolve(): task for task in dag.tasks}
+
+    def succeed(argv: list[str], **_: Any) -> None:
+        output = _output_from_argv(argv)
+        output.write_text(f"artifact:{output.name}", encoding="utf-8")
+
+    monkeypatch.setattr(matrix, "_artifact_attestation", _fake_artifact_attestation)
+    monkeypatch.setattr(matrix, "_embedded_artifact_record", _fake_embedded)
+    matrix.execute_dag(dag, subprocess_runner=succeed, verify_inputs=False, max_workers=3)
+
+    journal_path = matrix._journal_path(dag)
+    state = json.loads(journal_path.read_text(encoding="utf-8"))
+    first = state["tasks"][dag.tasks[0].task_id]
+    first["status"] = "running"
+    first["finished_at"] = None
+    first["attempts"][-1]["status"] = "running"
+    first["attempts"][-1]["finished_at"] = None
+    state["status"] = "running"
+    journal_path.write_text(json.dumps(state), encoding="utf-8")
+    calls: list[str] = []
+
+    def resume_succeed(argv: list[str], **_: Any) -> None:
+        output = _output_from_argv(argv).resolve()
+        calls.append(task_by_output[output].task_id)
+        output.write_text(f"resume:{len(calls)}", encoding="utf-8")
+
+    matrix.execute_dag(
+        dag,
+        resume=True,
+        subprocess_runner=resume_succeed,
+        verify_inputs=False,
+        max_workers=3,
+    )
+    resumed = json.loads(journal_path.read_text(encoding="utf-8"))
+    first = resumed["tasks"][dag.tasks[0].task_id]
+    assert first["attempts"][-2]["status"] == "orphaned"
+    assert first["resume_validation"]["status"] == "rerun"
+    assert len(calls) == 5
+    assert str(dag.tasks[0].task_id) in calls
+    assert all(record["status"] == "completed" for record in resumed["tasks"].values())
+
+
+def test_resume_reruns_log_tamper_and_transitive_dependents(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dag = matrix.build_dag(_load(tmp_path))
+    calls: list[str] = []
+
+    def succeed(argv: list[str], **_: Any) -> None:
+        output = _output_from_argv(argv)
+        calls.append(str(output))
+        output.write_text(f"artifact:{len(calls)}", encoding="utf-8")
+
+    monkeypatch.setattr(matrix, "_artifact_attestation", _fake_artifact_attestation)
+    monkeypatch.setattr(matrix, "_embedded_artifact_record", _fake_embedded)
+    matrix.execute_dag(
+        dag,
+        subprocess_runner=succeed,
+        verify_inputs=False,
+        max_workers=3,
+    )
+    state = json.loads(matrix._journal_path(dag).read_text(encoding="utf-8"))
+    first = state["tasks"][dag.tasks[0].task_id]
+    stdout_record = first["attempts"][-1]["logs"]["stdout"]
+    stdout_path = dag.plan.output_root / Path(stdout_record["path"].removeprefix("$OUTPUT_ROOT/"))
+    stdout_path.write_text("tampered log", encoding="utf-8")
+    calls.clear()
+
+    matrix.execute_dag(
+        dag,
+        resume=True,
+        subprocess_runner=succeed,
+        verify_inputs=False,
+        max_workers=3,
+    )
+
+    resumed = json.loads(matrix._journal_path(dag).read_text(encoding="utf-8"))
+    assert len(calls) == 5
+    assert resumed["tasks"][dag.tasks[0].task_id]["resume_validation"]["reason"] == (
+        "stdout log is missing or changed size"
+    )
+    assert resumed["status"] == "completed"
+
+
+def test_orchestrator_lock_is_exclusive_bound_and_never_stolen(
+    tmp_path: Path,
+) -> None:
+    dag = matrix.build_dag(_load(tmp_path))
+    dag.plan.output_root.mkdir(parents=True)
+    resolved_inputs = {
+        "verification": "disabled_for_orchestrator_test",
+        "digest": matrix.semantic_sha256({"verification": "disabled_for_orchestrator_test"}),
+    }
+    owner = matrix._acquire_orchestrator_lock(
+        dag,
+        matrix._dag_digest(dag, resolved_inputs),
+    )
+    try:
+        assert owner["schema"] == matrix.ORCHESTRATOR_LOCK_SCHEMA
+        assert owner["pid"] == os.getpid()
+        assert owner["host"]
+        with pytest.raises(FileExistsError, match="never stolen automatically"):
+            matrix.execute_dag(dag, verify_inputs=False, max_workers=2)
+        assert matrix._orchestrator_lock_path(dag).is_file()
+        assert not matrix._journal_path(dag).exists()
+    finally:
+        matrix._release_orchestrator_lock(dag, owner)
+
+
+def test_keyboard_interrupt_fail_closed_clears_all_running_records(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dag = matrix.build_dag(_load(tmp_path))
+    original_wait = matrix.wait
+    wait_calls = 0
+
+    def interrupt_once(*args, **kwargs):
+        nonlocal wait_calls
+        wait_calls += 1
+        if wait_calls == 1:
+            raise KeyboardInterrupt
+        return original_wait(*args, **kwargs)
+
+    def succeed(argv: list[str], **_: Any) -> None:
+        time.sleep(0.02)
+        _output_from_argv(argv).write_text("finished but unattested", encoding="utf-8")
+
+    monkeypatch.setattr(matrix, "wait", interrupt_once)
+    monkeypatch.setattr(matrix, "_artifact_attestation", _fake_artifact_attestation)
+    monkeypatch.setattr(matrix, "_embedded_artifact_record", _fake_embedded)
+
+    with pytest.raises(KeyboardInterrupt):
+        matrix.execute_dag(
+            dag,
+            subprocess_runner=succeed,
+            verify_inputs=False,
+            max_workers=3,
+        )
+
+    state = json.loads(matrix._journal_path(dag).read_text(encoding="utf-8"))
+    assert state["status"] == "interrupted"
+    assert state["execution"]["keyboard_interrupt_policy"].startswith("stop_dispatch")
+    assert "running" not in {record["status"] for record in state["tasks"].values()}
+    assert any(
+        attempt["status"] == "orphaned_after_interrupt"
+        for record in state["tasks"].values()
+        for attempt in record["attempts"]
+    )
+    assert not matrix._orchestrator_lock_path(dag).exists()
+
+
+def test_keyboard_interrupt_retains_lock_when_worker_drain_cannot_be_confirmed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dag = matrix.build_dag(_load(tmp_path))
+
+    class UndrainableExecutor:
+        def __init__(self, **_kwargs):
+            pass
+
+        def submit(self, *_args, **_kwargs):
+            return matrix.Future()
+
+        def shutdown(self, **_kwargs):
+            raise RuntimeError("drain unavailable")
+
+    monkeypatch.setattr(matrix, "ThreadPoolExecutor", UndrainableExecutor)
+    monkeypatch.setattr(
+        matrix,
+        "wait",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(KeyboardInterrupt()),
+    )
+
+    with pytest.raises(KeyboardInterrupt) as exc_info:
+        matrix.execute_dag(dag, verify_inputs=False, max_workers=2)
+
+    assert any("lock was retained" in note for note in exc_info.value.__notes__)
+    lock_path = matrix._orchestrator_lock_path(dag)
+    assert lock_path.is_file()
+    state = json.loads(matrix._journal_path(dag).read_text(encoding="utf-8"))
+    assert state["status"] == "interrupted_draining"
+    assert "running" not in {record["status"] for record in state["tasks"].values()}
+    matrix._release_orchestrator_lock(
+        dag,
+        json.loads(lock_path.read_text(encoding="utf-8")),
+    )
+
+
+@pytest.mark.parametrize("workers", [0, -1, True, 1.5])
+def test_execute_rejects_invalid_max_workers(tmp_path: Path, workers: object) -> None:
+    dag = matrix.build_dag(_load(tmp_path))
+    with pytest.raises(ValueError, match="max_workers must be a positive integer"):
+        matrix.execute_dag(
+            dag,
+            verify_inputs=False,
+            max_workers=workers,
+        )
