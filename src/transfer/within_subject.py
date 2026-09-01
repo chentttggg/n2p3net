@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from data.brainsync_contract import DecisionTargetPolicy
 from data.contract import (  # noqa: E402
     SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     assert_p300_input_contract,
@@ -44,7 +45,7 @@ class PrefixSuffixSplit:
 
 @dataclass(frozen=True)
 class CalibrationDecisionSplit:
-    """Known complete decisions followed by later unknown target decisions."""
+    """Known complete decisions followed by policy-constrained later decisions."""
 
     calibration_mask: np.ndarray
     test_mask: np.ndarray
@@ -62,6 +63,7 @@ class CalibrationDecisionSplit:
     failed_test_groups_by_subject: dict[str, dict[str, str]]
     excluded_subjects: dict[str, str]
     excluded_groups: dict[str, str]
+    target_policy: str
 
 
 @dataclass(frozen=True)
@@ -86,10 +88,11 @@ def calibration_decision_split(
     *,
     calibration_selections: int,
     test_repetitions: int,
+    target_policy: DecisionTargetPolicy | str,
     max_test_selections: int | None = None,
     candidate_vocabulary: Sequence[int] | None = None,
 ) -> CalibrationDecisionSplit:
-    """Split complete early decisions from later target-changing decisions."""
+    """Split early decisions from a frozen later set under an explicit target policy."""
 
     dataset.validate(require_labels=True)
     assert_p300_input_contract(
@@ -99,6 +102,10 @@ def calibration_decision_split(
         raise ValueError("calibration_selections and test_repetitions must be positive.")
     if max_test_selections is not None and max_test_selections < 1:
         raise ValueError("max_test_selections must be positive or None.")
+    try:
+        resolved_target_policy = DecisionTargetPolicy(target_policy)
+    except ValueError as exc:
+        raise ValueError(f"Unsupported decision target policy: {target_policy!r}.") from exc
 
     timeline = dataset.event_timeline
     evidence = np.asarray(timeline.evidence_indices, dtype=np.int64)
@@ -110,6 +117,7 @@ def calibration_decision_split(
     scheduled_repetitions = np.asarray(timeline.repetition_indices, dtype=np.int64)
     scheduled_groups = np.asarray(timeline.group_ids).astype(str)
     scheduled_sessions = np.asarray(timeline.session_ids).astype(str)
+    scheduled_subjects = np.asarray(timeline.subject_ids).astype(str)
     scheduled_onsets = np.asarray(timeline.onset_times_s, dtype=float)
     scheduled_available = np.asarray(timeline.evidence_available_times_s, dtype=float)
     try:
@@ -117,6 +125,16 @@ def calibration_decision_split(
         _ = scheduled_targets[available_events].astype(np.int64)
     except ValueError as exc:
         raise ValueError("candidate and target ids must encode integer choices.") from exc
+    for session in np.unique(scheduled_sessions):
+        session_rows = np.flatnonzero(scheduled_sessions == session)
+        if len(np.unique(scheduled_subjects[session_rows])) != 1:
+            raise ValueError("one BrainSync session cannot belong to multiple subjects.")
+        if len(np.unique(scheduled_groups[session_rows])) != 1:
+            raise ValueError(
+                "BrainSync v2 defines one decision per session; blocks cannot form decisions."
+            )
+        if len(np.unique(scheduled_targets[session_rows])) != 1:
+            raise ValueError("one BrainSync v2 session cannot contain multiple targets.")
     vocabulary = (
         tuple(sorted(np.unique(candidate_values).tolist()))
         if candidate_vocabulary is None
@@ -227,16 +245,37 @@ def calibration_decision_split(
             continue
         calibration_rows_array = np.concatenate(calibration_rows)
         boundary = float(np.max(absolute_available[calibration_rows_array]))
+        calibration_targets = {
+            int(np.unique(target_by_epoch[rows])[0]) for rows in calibration_rows
+        }
+        previous_target = int(np.unique(target_by_epoch[calibration_rows[-1]])[0])
         eligible: list[str] = []
         failed: dict[str, str] = {}
         for group in requested:
             rows = group_rows(group)
+            group_targets = np.unique(target_by_epoch[rows])
             if float(np.min(absolute_onset[rows] + epoch_start_offset_s)) <= boundary:
                 reason = "selection_overlaps_calibration_evidence"
             elif not complete(rows, test_repetitions):
                 reason = "insufficient_complete_test_repetitions"
+            elif (
+                resolved_target_policy is DecisionTargetPolicy.FORCED_SWITCH
+                and int(group_targets[0]) == previous_target
+            ):
+                reason = "target_policy_same_as_previous_decision"
+            elif (
+                resolved_target_policy
+                is DecisionTargetPolicy.UNSEEN_CALIBRATION_CODES
+                and int(group_targets[0]) in calibration_targets
+            ):
+                reason = "target_policy_seen_in_calibration"
             else:
                 reason = ""
+            if len(group_targets) == 1:
+                # Policy is evaluated against the frozen chronological schedule,
+                # including failed requested decisions. Eligibility never pulls a
+                # later replacement decision forward.
+                previous_target = int(group_targets[0])
             if reason:
                 failed[group] = reason
                 excluded_groups[group] = reason
@@ -255,8 +294,6 @@ def calibration_decision_split(
         calibration_by_subject[subject] = calibration
         test_by_subject[subject] = tuple(eligible)
 
-    if not usable_subjects:
-        raise ValueError("No subject has valid calibration and later unknown decisions.")
     return CalibrationDecisionSplit(
         calibration_mask=calibration_mask,
         test_mask=test_mask,
@@ -274,6 +311,7 @@ def calibration_decision_split(
         failed_test_groups_by_subject=failed_by_subject,
         excluded_subjects=excluded_subjects,
         excluded_groups=excluded_groups,
+        target_policy=resolved_target_policy.value,
     )
 
 

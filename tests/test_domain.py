@@ -12,8 +12,14 @@ from data.domain import (
     common_channel_intersection,
     namespace_epoch_dataset,
 )
-from data.epochs import EpochDataset, PreprocessingSpec
+from data.epochs import (
+    EpochDataset,
+    PreprocessingSpec,
+    concatenate_epoch_datasets,
+    materialize_dataset_identity,
+)
 from data.events import ScheduledEventTimeline
+from data.identity import DatasetIdentityTable, ParticipantIdentityRecord
 
 
 def _dataset(values: np.ndarray, *, reference: str, channels=("Fz", "Cz", "Pz")) -> EpochDataset:
@@ -105,6 +111,7 @@ def test_common_channel_intersection_preserves_first_dataset_order() -> None:
 
 def test_namespace_qualifies_subject_and_event_identity() -> None:
     dataset = _dataset(np.ones((1, 3, 4)), reference="A1")
+    source_identity = materialize_dataset_identity(dataset).record_for("s")
 
     namespaced = namespace_epoch_dataset(dataset, "BI")
 
@@ -112,3 +119,81 @@ def test_namespace_qualifies_subject_and_event_identity() -> None:
     assert namespaced.event_timeline.subject_ids.tolist() == ["BI::s"]
     assert namespaced.event_timeline.event_ids.tolist() == ["BI::e0"]
     assert namespaced.provenance["subject_namespace"] == "BI"
+    assert namespaced.identity_table is not None
+    namespaced_identity = namespaced.identity_table.record_for("BI::s")
+    assert namespaced_identity.origin_subject_keys == source_identity.origin_subject_keys
+
+
+def test_car_and_channel_representation_changes_preserve_origin_identity() -> None:
+    dataset = _dataset(np.ones((1, 3, 4)), reference="A1")
+    original = materialize_dataset_identity(dataset)
+
+    car = adapt_common_channel_average_reference(dataset, ("Fz", "Cz", "Pz"))
+
+    assert car.name != dataset.name
+    assert car.identity_table is original
+    assert car.identity_table.digest() == original.digest()
+
+
+def test_identity_concat_rejects_unqualified_local_collision() -> None:
+    first = _dataset(np.ones((1, 3, 4)), reference="A1")
+    second = _dataset(np.ones((1, 3, 4)), reference="A1")
+    second.event_timeline = replace(
+        second.event_timeline,
+        event_ids=np.asarray(["other-e0"]),
+        group_ids=np.asarray(["other-group"]),
+        dataset_ids=np.asarray(["unrelated-source"]),
+        session_ids=np.asarray(["other-session"]),
+        run_ids=np.asarray(["other-run"]),
+        selection_ids=np.asarray(["other-selection"]),
+    )
+
+    with pytest.raises(ValueError, match="local-subject collision"):
+        concatenate_epoch_datasets((first, second), name="ambiguous")
+
+    merged = concatenate_epoch_datasets(
+        (
+            namespace_epoch_dataset(first, "A"),
+            namespace_epoch_dataset(second, "B"),
+        ),
+        name="qualified",
+    )
+    assert merged.identity_table is not None
+    first_origin = merged.identity_table.record_for("A::s").origin_subject_keys
+    second_origin = merged.identity_table.record_for("B::s").origin_subject_keys
+    assert first_origin != second_origin
+
+
+def test_explicit_global_identity_survives_namespace_without_local_aliasing() -> None:
+    dataset = _dataset(np.ones((1, 3, 4)), reference="A1")
+    source = materialize_dataset_identity(dataset).record_for("s")
+    dataset.identity_table = DatasetIdentityTable(
+        records=(
+            ParticipantIdentityRecord(
+                local_subject_id="s",
+                origin_subject_keys=source.origin_subject_keys,
+                global_person_keys=("registry:participant-17",),
+                identity_status="global_verified",
+            ),
+        )
+    )
+
+    namespaced = namespace_epoch_dataset(dataset, "DERIVED")
+
+    assert namespaced.identity_table is not None
+    record = namespaced.identity_table.record_for("DERIVED::s")
+    assert record.global_person_keys == ("registry:participant-17",)
+    assert record.origin_subject_keys == source.origin_subject_keys
+    assert record.authority_key() == "registry:participant-17"
+    assert record.authority_key("source") == source.origin_subject_keys[0]
+
+
+def test_sampling_authority_key_rejects_ambiguous_source_aliases() -> None:
+    record = ParticipantIdentityRecord(
+        local_subject_id="s",
+        origin_subject_keys=("source-a:s", "source-b:s"),
+        identity_status="source_verified",
+    )
+
+    with pytest.raises(ValueError, match="exactly one"):
+        record.authority_key("source_or_global")

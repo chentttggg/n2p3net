@@ -112,8 +112,9 @@ BrainSync 成人 8 导、多数字、多 session 数据是 90% 的最终裁决�
 - acquisition/source/model sample rate、参考、坐标、EOG/QC 独立记录；
 - session 边界、真实 `block_id`、事件 onset 和 evidence-available time。
 
-工程入口现已支持 causal steady-state、单 session 多 block/selection、多 session
-`started_utc` 排序、target-switch split/runner，以及显式公共通道 CAR 域适配。当前
+工程入口现已支持 causal steady-state、严格 analysis-ready、多 session
+`started_utc` 排序和显式 target-policy split/runner。v2 中一 session 是一个
+decision，block 只表示调度/休息分段；显式公共通道 CAR 域适配另行记录。当前
 默认固定为 128 Hz、0.1--30 Hz、`[-200,1200) ms`、179 samples；没有 2/800
 降级选项。当前
 本机 4 个历史 sessions 分别缺 recording、recording_error 或仍为
@@ -173,11 +174,11 @@ gtn_paper_causal_v2
 | causal high-pass | 0.1 vs 0.5 Hz | GTN steady-state 已完成，development 冻结 0.1 Hz |
 | epoch end | 800 vs 1200 ms | GTN 2x2 已完成，development 冻结 1200 ms |
 | online/offline | forward steady-state vs split-local zero-phase | 机制敏感性；禁止 whole-record zero-phase |
-| normalization | source stats / target-prefix stats / shrinkage | BI 已完成：source≈shrinkage，target-prefix 在所有 head 上下降 |
+| normalization | source stats / target-prefix stats / shrinkage | 旧 causal-v2 归档观察：source≈shrinkage、target-prefix 下降；v3 尚未重跑 |
 | multi-source normalization | all-source stats / target-dataset source stats | 已完成且等效：BI-source stats 相对 all-source `+0.07 pp`，CI 跨 0 |
 | target QC | none / prefix-fit fold-local | source QC100 已冻结；target QC 待独立 decision 消融 |
 | epoch budget | source/fixed budget / real-time target holdout + full-prefix refit | 代码闭合，性能待独立 decision |
-| adaptation | zero-shot / pretrained-classifier fine / scratch head / full fine | BI 已完成：fine 无可靠增益，scratch 更差；BrainSync 待真实数据 |
+| adaptation | zero-shot / pretrained-classifier fine / scratch head / full fine | 旧 causal-v2 归档观察：fine 无可靠增益、scratch 更差；v3 与 BrainSync 待真实数据 |
 | BatchNorm | frozen running stats / target adapt | 待合法 cross-decision |
 | aggregation | all-evidence mean / tempered effective count / sum / fixed-count trim | mean 当前领先；all/R/cost 共同报告；precision 仅有预测方差时启用 |
 | decision objective | trial CE / 9-candidate listwise + trial CE | 30-epoch全参数实验已完成且不晋升；保护 backbone 的分阶段策略待新实验 |

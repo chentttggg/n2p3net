@@ -72,9 +72,10 @@ analysis uses zero-phase IIR; chronological analysis uses forward IIR with
 caches are rejected. BrainSync acquisition and raw event indices remain at the
 device-native 250 Hz; only the derived model tensor is resampled. BrainSync,
 BI and GTN chronological builders all derive from this same causal contract.
-Repeated BrainSync sessions are accepted; block/selection markers remain distinct
-target-changing decisions. The paper-aligned 0.5 Hz contract is a named anchor,
-not a fallback default.
+Repeated analysis-ready BrainSync sessions are accepted; each v2 session is one
+decision and `block_id` is scheduling metadata only. Target-sequence behavior is
+an explicit evaluation policy. The paper-aligned 0.5 Hz contract is a named
+anchor, not a fallback default.
 Use the adapter to preserve the frontend's raw recording boundary while applying preprocessing:
 
 ```powershell
@@ -114,6 +115,10 @@ GTN-v4 and BI candidate-v1/v2 caches are rejected by the active contract. Their
 audit snapshot is compressed under `frozen/`. Current BI/BNCI/GTN source caches
 and checkpoints must be rebuilt under `p300_single_subject_causal_v3` before new
 promotion experiments.
+
+Raw, active-derived, legacy-derived, frozen-code, and evidence layers are defined
+in `doc/data_layers.zh.md`. Active loaders contain no legacy schema flags,
+checkpoint aliases, or downgrade paths.
 
 The discrete-time equations, physical receptive-field convention, and
 counterexamples are documented in `doc/input_contract_math.zh.md`.

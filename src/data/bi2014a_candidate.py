@@ -20,6 +20,7 @@ import mne
 import numpy as np
 import pandas as pd
 
+from data.bi2014a_schedule import BI2014A_FLASH_SCHEDULE, BIFlashLabelAudit
 from data.channel import build_channel_identity
 from data.epochs import EpochDataset, PreprocessingSpec
 from data.events import observed_only_timeline
@@ -63,6 +64,7 @@ class BI2014ACandidateRecord:
     flash_sample: np.ndarray
     flash_code: np.ndarray
     target_label: np.ndarray
+    is_target: np.ndarray
     row_code: np.ndarray
     col_code: np.ndarray
     target_row: np.ndarray
@@ -72,6 +74,7 @@ class BI2014ACandidateRecord:
     selection_boundary_reason: np.ndarray
     n_repetitions: int
     n_explicit_boundaries: int
+    raw_label_audit: BIFlashLabelAudit
     dropped_tail_flashes: int = 0
 
 
@@ -95,9 +98,29 @@ def recover_bi2014a_candidates(
     table = pd.read_csv(csv_path, header=None)
     if table.shape[1] <= _LABEL_COLUMN:
         raise ValueError(f"{csv_path} lacks the BI2014a event columns.")
-    flash_code = table[_FLASH_COLUMN].to_numpy(dtype=np.float64).astype(np.int64)
-    target_label = table[_LABEL_COLUMN].to_numpy(dtype=np.float64).astype(np.int64)
-    flash_samples = np.flatnonzero((flash_code >= 20) & (flash_code <= 85))
+    raw_flash_code = table[_FLASH_COLUMN].to_numpy(dtype=np.float64)
+    raw_target_label = table[_LABEL_COLUMN].to_numpy(dtype=np.float64)
+    possible_flash = (
+        np.isfinite(raw_flash_code)
+        & (raw_flash_code >= 20)
+        & (raw_flash_code <= 85)
+    )
+    flash_samples = np.flatnonzero(possible_flash)
+    if np.any(raw_flash_code[flash_samples] != np.floor(raw_flash_code[flash_samples])):
+        raise ValueError(f"{subject_dir.name}: non-integer BI flash code.")
+    flash_code = np.zeros(len(raw_flash_code), dtype=np.int64)
+    integer_event_codes = np.isfinite(raw_flash_code) & (
+        raw_flash_code == np.floor(raw_flash_code)
+    )
+    flash_code[integer_event_codes] = raw_flash_code[integer_event_codes].astype(np.int64)
+    all_codes = flash_code[flash_samples]
+    all_labels = raw_target_label[flash_samples]
+    raw_label_audit = BI2014A_FLASH_SCHEDULE.audit_raw_labels(
+        all_codes,
+        all_labels,
+        flash_samples=flash_samples,
+        stage="raw_csv_before_preprocessing",
+    )
 
     # Some public BI2014a files end with one or two trailing flashes that do
     # not form a complete 12-flash repetition. Keep only complete repetitions
@@ -108,19 +131,20 @@ def recover_bi2014a_candidates(
     complete_count = n_repetitions * 12
     dropped_tail = len(flash_samples) - complete_count
     flash_samples = flash_samples[:complete_count]
-    codes = flash_code[flash_samples]
-    labels = target_label[flash_samples]
+    codes = all_codes[:complete_count]
+    labels = all_labels[:complete_count].astype(np.int64, copy=False)
+    is_target = BI2014A_FLASH_SCHEDULE.target_mask(codes)
     expected_targets = 2 * n_repetitions
     expected_nontargets = 10 * n_repetitions
-    if np.count_nonzero(labels == 2) != expected_targets:
+    if np.count_nonzero(is_target) != expected_targets:
         raise ValueError(
             f"{subject_dir.name}: expected {expected_targets} target flashes, "
-            f"got {np.count_nonzero(labels == 2)}."
+            f"got {np.count_nonzero(is_target)}."
         )
-    if np.count_nonzero(labels == 1) != expected_nontargets:
+    if np.count_nonzero(~is_target) != expected_nontargets:
         raise ValueError(
             f"{subject_dir.name}: expected {expected_nontargets} non-target flashes, "
-            f"got {np.count_nonzero(labels == 1)}."
+            f"got {np.count_nonzero(~is_target)}."
         )
 
     row_code = np.full(len(flash_samples), -1, dtype=np.int64)
@@ -140,14 +164,26 @@ def recover_bi2014a_candidates(
         start = rep * 12
         stop = start + 12
         rep_codes = codes[start:stop]
-        t_row_codes = rep_codes[(rep_codes >= 60) & (rep_codes <= 65)]
-        t_col_codes = rep_codes[(rep_codes >= 80) & (rep_codes <= 85)]
-        n20 = np.count_nonzero((rep_codes >= 20) & (rep_codes <= 25))
-        n40 = np.count_nonzero((rep_codes >= 40) & (rep_codes <= 45))
-        if len(t_row_codes) != 1 or len(t_col_codes) != 1 or n20 != 5 or n40 != 5:
+        decoded_events = tuple(BI2014A_FLASH_SCHEDULE.decode(code) for code in rep_codes)
+        row_events = tuple(event for event in decoded_events if event.axis == "row")
+        col_events = tuple(event for event in decoded_events if event.axis == "column")
+        target_row_events = tuple(event for event in row_events if event.is_target)
+        target_col_events = tuple(event for event in col_events if event.is_target)
+        valid_candidates = tuple(range(BI2014A_FLASH_SCHEDULE.grid_size))
+        if (
+            len(target_row_events) != 1
+            or len(target_col_events) != 1
+            or tuple(sorted(event.candidate_index for event in row_events))
+            != valid_candidates
+            or tuple(sorted(event.candidate_index for event in col_events))
+            != valid_candidates
+        ):
             raise ValueError(f"{subject_dir.name}: repetition {rep} has invalid flash structure.")
 
-        pair = (int(t_row_codes[0] - 60), int(t_col_codes[0] - 80))
+        pair = (
+            target_row_events[0].candidate_index,
+            target_col_events[0].candidate_index,
+        )
         span_start = int(flash_samples[start])
         span_stop = int(flash_samples[stop - 1]) + 1
         internal_markers = _SELECTION_BOUNDARY_CODES.intersection(
@@ -193,17 +229,11 @@ def recover_bi2014a_candidates(
         target_col[rep] = pair[1]
 
         for local, global_idx in enumerate(range(start, stop)):
-            code = int(rep_codes[local])
-            if 20 <= code <= 25:
-                row_code[global_idx] = code - 20
-            elif 40 <= code <= 45:
-                col_code[global_idx] = code - 40
-            elif 60 <= code <= 65:
-                row_code[global_idx] = code - 60
-            elif 80 <= code <= 85:
-                col_code[global_idx] = code - 80
+            decoded = decoded_events[local]
+            if decoded.axis == "row":
+                row_code[global_idx] = decoded.candidate_index
             else:
-                raise AssertionError(f"unexpected flash code {code}")
+                col_code[global_idx] = decoded.candidate_index
             selection_id[global_idx] = f"{subject_dir.name}:selection{active_selection}"
             repetition_index[global_idx] = active_repetition
             selection_boundary_reason[global_idx] = boundary_reason
@@ -212,6 +242,7 @@ def recover_bi2014a_candidates(
         flash_sample=flash_samples,
         flash_code=codes,
         target_label=labels,
+        is_target=is_target,
         row_code=row_code,
         col_code=col_code,
         target_row=np.repeat(target_row, 12),
@@ -221,6 +252,7 @@ def recover_bi2014a_candidates(
         selection_boundary_reason=np.asarray(selection_boundary_reason),
         n_repetitions=n_repetitions,
         n_explicit_boundaries=explicit_boundary_count,
+        raw_label_audit=raw_label_audit,
         dropped_tail_flashes=dropped_tail,
     )
 
@@ -281,6 +313,17 @@ def build_bi2014a_subject_dataset(
     ordered = available[np.argsort(evidence[available], kind="stable")]
     if len(ordered) != result.n_epochs:
         raise AssertionError("preprocess evidence mapping is not bijective.")
+    post_is_target = BI2014A_FLASH_SCHEDULE.target_mask(
+        recovered.flash_code[ordered]
+    )
+    if not np.array_equal(post_is_target, recovered.is_target[ordered]):
+        raise AssertionError("preprocessing changed BI flash-code label semantics.")
+    post_label_audit = BI2014A_FLASH_SCHEDULE.audit_raw_labels(
+        recovered.flash_code[ordered],
+        recovered.target_label[ordered],
+        flash_samples=recovered.flash_sample[ordered],
+        stage="retained_epochs_after_preprocessing",
+    )
 
     identity = build_channel_identity(
         result.channel_names,
@@ -293,6 +336,8 @@ def build_bi2014a_subject_dataset(
             "subject": np.repeat(subject_id, result.n_epochs),
             "flash_sample": recovered.flash_sample[ordered],
             "flash_code": recovered.flash_code[ordered],
+            "is_target": post_is_target,
+            "raw_target_label": recovered.target_label[ordered],
             "row_code": recovered.row_code[ordered],
             "col_code": recovered.col_code[ordered],
             "target_row": recovered.target_row[ordered],
@@ -319,7 +364,7 @@ def build_bi2014a_subject_dataset(
     dataset = EpochDataset(
         name="BI2014a-candidate",
         X=result.data.astype(np.float32, copy=False),
-        y=(recovered.target_label[ordered] == 2).astype(np.int64),
+        y=post_is_target.astype(np.int64),
         subject_ids=np.repeat(subject_id, result.n_epochs).astype(str),
         channel_names=identity.names,
         channel_positions_m=identity.coords,
@@ -336,10 +381,18 @@ def build_bi2014a_subject_dataset(
             "signal_unit": "V",
             "flash_schedule": {
                 "n_flashes": int(len(recovered.flash_sample)),
-                "n_targets": int(np.count_nonzero(recovered.target_label == 2)),
-                "n_nontargets": int(np.count_nonzero(recovered.target_label == 1)),
+                "n_targets": int(np.count_nonzero(recovered.is_target)),
+                "n_nontargets": int(np.count_nonzero(~recovered.is_target)),
                 "n_repetitions": recovered.n_repetitions,
                 "candidate_grid": "6x6",
+                "label_source": "derived_from_flash_code",
+                "raw_label_role": "per_event_cross_check_only",
+                "raw_label_audit": recovered.raw_label_audit.to_record(
+                    BI2014A_FLASH_SCHEDULE
+                ),
+                "post_preprocessing_label_audit": post_label_audit.to_record(
+                    BI2014A_FLASH_SCHEDULE
+                ),
                 "selection_boundary_rule": (
                     "target_pair_change_or_raw_session_100_or_level_restart_104"
                 ),

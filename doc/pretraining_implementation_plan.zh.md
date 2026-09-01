@@ -54,8 +54,8 @@ reconstruction control。以下实现保留为 pure reconstruction 对照，不�
 
 ### 2.1 输入
 
-- 源域人数不硬编码；从冻结的 block manifest 与 cache subject ledger 派生，并在
-  checkpoint 中逐一固化 `training_subject_keys` 与 holdout subjects。
+- 源域人数不硬编码；从冻结的 participant/decision manifest 派生。checkpoint 只保存
+  结构化 identity ledger、TrainingRunContract 及 digest，不存在字符串拼接 subject key。
 - 输入由 checkpoint 绑定的完整合同决定。当前唯一主线是 0.1--30 Hz、
   `[-200,1200) ms`、128 Hz、179 samples、V、mean-only baseline；chronological
   路径使用 forward IIR + `steady_state_first_sample`。

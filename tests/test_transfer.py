@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import tarfile
 from dataclasses import asdict, replace
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -11,19 +14,38 @@ import torch
 from baselines.validation import group_disjoint_validation_split
 from data.channel import build_channel_identity
 from data.contract import SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
+from data.domain import namespace_epoch_dataset
 from data.epochs import (
     EpochDataset,
     PreprocessingSpec,
+    materialize_dataset_identity,
     preprocessing_spec_from_contract,
     save_epoch_dataset,
 )
 from data.events import ScheduledEventTimeline, candidate_repetition_indices
+from data.identity import (
+    DatasetIdentityTable,
+    ParticipantIdentityRecord,
+    origin_subject_key,
+)
 from experiments.run_pretrain import _source_training_rows, _subject_probe_validation_mask
 from experiments.run_pretrain import main as run_pretrain_main
-from experiments.run_within_subject_transfer import _load_trunk
+from experiments.run_within_subject_transfer import (
+    _load_trunk,
+    _target_fixed_budget_calibration_payload,
+)
 from experiments.run_within_subject_transfer import main as run_transfer_main
 from models.n2p3net import N2P3Net
-from transfer.checkpoint import checkpoint_scores_to_llr
+from research.contracts import TrainingRunContract
+from transfer.checkpoint import (
+    CHECKPOINT_SCHEMA,
+    checkpoint_architecture_record,
+    checkpoint_classifier_is_trained,
+    checkpoint_input_stats,
+    checkpoint_scores_to_llr,
+    checkpoint_training_contract,
+    load_n2p3_trunk_checkpoint,
+)
 from transfer.evaluation import candidate_evidence_endpoints, hit_at_repetition
 from transfer.heads import SubjectProbeHead, WaveDecoderHead
 from transfer.losses import (
@@ -61,6 +83,99 @@ def _dataset_trunk(dataset: EpochDataset) -> N2P3Net:
         tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
         pooling_mode="ms_flatten",
     )
+
+
+def _identity_ledger(
+    source_dataset_id: str,
+    *subjects: str,
+    global_key: str | None = None,
+) -> DatasetIdentityTable:
+    return DatasetIdentityTable(
+        records=tuple(
+            ParticipantIdentityRecord(
+                local_subject_id=subject,
+                origin_subject_keys=(origin_subject_key(source_dataset_id, subject),),
+                global_person_keys=(global_key,) if global_key is not None else (),
+                identity_status=(
+                    "global_verified" if global_key is not None else "source_verified"
+                ),
+            )
+            for subject in subjects
+        )
+    )
+
+
+def _checkpoint_identity_fields(
+    table: DatasetIdentityTable,
+    dataset: EpochDataset,
+    *,
+    source_snapshot_sha256: str = "2" * 64,
+) -> dict[str, object]:
+    architecture = _dataset_trunk(dataset).architecture_record()
+    preprocessing = {
+        "epoch": asdict(dataset.preprocessing),
+        "channel_names": list(dataset.channel_names),
+        "source_reference": dataset.provenance["source_reference"],
+    }
+    contract = TrainingRunContract(
+        source_cache_sha256="1" * 64,
+        source_identity_digest=table.digest(),
+        source_snapshot_sha256=source_snapshot_sha256,
+        architecture=architecture,
+        preprocessing=preprocessing,
+        optimizer={"fixture": "adam"},
+        validation={"fixture": "target_excluded"},
+        objective={"fixture": "binary_or_reconstruction"},
+        seed=0,
+        training_participant_keys=table.authority_keys(),
+        holdout_participant_keys=(),
+    )
+    return {
+        "schema": CHECKPOINT_SCHEMA,
+        "source_cache_sha256": "1" * 64,
+        "source_snapshot_sha256": source_snapshot_sha256,
+        "architecture": architecture,
+        "input_preprocessing": asdict(dataset.preprocessing),
+        "input_channel_names": list(dataset.channel_names),
+        "input_source_reference": dataset.provenance["source_reference"],
+        "classifier_trained": True,
+        "input_mean": [0.0] * dataset.n_channels,
+        "input_std": [1.0] * dataset.n_channels,
+        "n_channels": dataset.n_channels,
+        "n_times": dataset.n_times,
+        "input_sample_rate_hz": dataset.preprocessing.sfreq,
+        "input_tmin_s": dataset.preprocessing.tmin_ms / 1000.0,
+        "training_identity_ledger": table.payload(),
+        "training_identity_ledger_digest": table.digest(),
+        "training_contract": contract.record(),
+        "training_contract_digest": contract.digest(),
+    }
+
+
+def _write_source_snapshot_manifest(
+    directory: Path,
+) -> tuple[Path, str, Path]:
+    source = directory / "snapshot_source.py"
+    source.write_text("SNAPSHOT_VALUE = 1\n", encoding="utf-8")
+    archive = directory / "source_snapshot.tar.gz"
+    with tarfile.open(archive, mode="w:gz") as stream:
+        stream.add(source, arcname="snapshot_source.py")
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    manifest = directory / "source_snapshot.manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema": "n2p3_source_freeze/1",
+                "archive": archive.name,
+                "archive_sha256": digest,
+                "source_commit": "a" * 40,
+                "member_count": 1,
+                "byte_size": archive.stat().st_size,
+            }
+        ),
+        encoding="utf-8",
+    )
+    return manifest, digest, archive
 
 
 def test_n2p3net_exposes_trunk_features_without_changing_logits() -> None:
@@ -214,16 +329,21 @@ def test_pretraining_runner_records_trained_stop_gradient_subject_probe(
     dataset = _causal_candidate_dataset()
     cache = save_epoch_dataset(tmp_path / "pretrain.npz", dataset)
     checkpoint = tmp_path / "pretrained.pt"
+    source_manifest, source_digest, _ = _write_source_snapshot_manifest(tmp_path)
     monkeypatch.setattr(
         "sys.argv",
         [
             "run_pretrain.py",
             "--source-cache",
             str(cache),
+            "--source-snapshot-manifest",
+            str(source_manifest),
             "--checkpoint",
             str(checkpoint),
             "--cohort",
             "causal",
+            "--holdout-subjects",
+            "g3",
             "--epochs",
             "1",
             "--batch-size",
@@ -237,10 +357,97 @@ def test_pretraining_runner_records_trained_stop_gradient_subject_probe(
 
     payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
     assert payload["classifier_trained"] is False
+    assert payload["schema"] == CHECKPOINT_SCHEMA
     assert payload["subject_probe_audit"]["enabled"] is True
     assert payload["subject_probe_audit"]["stop_gradient"] is True
-    assert payload["subject_probe_audit"]["n_subjects"] == 3
+    assert payload["subject_probe_audit"]["n_subjects"] == 2
     assert payload["subject_probe_audit"]["final_validation_accuracy"] is not None
+    assert "training_subject_keys" not in payload
+    ledger = DatasetIdentityTable.from_payload(payload["training_identity_ledger"])
+    assert ledger.local_subject_ids == ("g1", "g2")
+    assert "g3" not in ledger.local_subject_ids
+    assert payload["training_identity_ledger_digest"] == ledger.digest()
+    contract = checkpoint_training_contract(payload)
+    assert contract.source_snapshot_sha256 == source_digest
+    assert payload["source_snapshot_sha256"] == source_digest
+    assert payload["source_snapshot_manifest"] == str(source_manifest.resolve())
+    assert set(contract.training_participant_keys) == set(
+        ledger.authority_keys()
+    )
+    assert origin_subject_key("synthetic", "g3") in contract.holdout_participant_keys
+    changed = replace(
+        contract,
+        objective={**contract.objective, "waveform_weight": 99.0},
+    )
+    assert changed.digest() != contract.digest()
+    mutated_payload = {
+        **payload,
+        "training_contract": changed.record(),
+    }
+    with pytest.raises(ValueError, match="training_contract_digest"):
+        checkpoint_training_contract(mutated_payload)
+
+
+def test_pretraining_runner_requires_source_snapshot_manifest(
+    tmp_path, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_pretrain.py",
+            "--source-cache",
+            str(tmp_path / "source.npz"),
+            "--checkpoint",
+            str(tmp_path / "checkpoint.pt"),
+        ],
+    )
+
+    with pytest.raises(SystemExit):
+        run_pretrain_main()
+
+
+def test_pretraining_runner_rejects_legacy_naked_snapshot_digest(
+    tmp_path, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_pretrain.py",
+            "--source-cache",
+            str(tmp_path / "source.npz"),
+            "--source-snapshot-sha256",
+            "a" * 64,
+            "--checkpoint",
+            str(tmp_path / "checkpoint.pt"),
+        ],
+    )
+
+    with pytest.raises(SystemExit):
+        run_pretrain_main()
+
+
+def test_pretraining_runner_rejects_tampered_source_archive(
+    tmp_path, monkeypatch
+) -> None:
+    source_manifest, _, archive = _write_source_snapshot_manifest(tmp_path)
+    tampered = bytearray(archive.read_bytes())
+    tampered[4] ^= 1
+    archive.write_bytes(tampered)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_pretrain.py",
+            "--source-cache",
+            str(tmp_path / "unused.npz"),
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--checkpoint",
+            str(tmp_path / "must-not-exist.pt"),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="archive hash disagrees"):
+        run_pretrain_main()
 
 
 def test_subject_probe_shape() -> None:
@@ -464,8 +671,6 @@ def test_trim_two_repetitions_keeps_both_values_and_ties_abstain() -> None:
 
 def test_positive_source_calibration_preserves_score_order() -> None:
     payload = {
-        "training_pos_weight": 8.0,
-        "training_prior": 1.0 / 9.0,
         "source_calibration": {
             "pos_weight": 8.0,
             "train_prior": 1.0 / 9.0,
@@ -479,6 +684,92 @@ def test_positive_source_calibration_preserves_score_order() -> None:
 
     assert np.array_equal(np.argsort(llr), np.argsort(logits))
     assert record["order_preserving"] is True
+
+
+@pytest.mark.parametrize(
+    "missing_key",
+    ["pos_weight", "train_prior", "temperature", "source"],
+)
+def test_source_calibration_rejects_missing_structured_key(missing_key: str) -> None:
+    calibration = {
+        "pos_weight": 8.0,
+        "train_prior": 1.0 / 9.0,
+        "temperature": 1.0,
+        "source": "source_validation",
+    }
+    calibration.pop(missing_key)
+
+    with pytest.raises(ValueError, match="lacks required keys"):
+        checkpoint_scores_to_llr(
+            {"source_calibration": calibration},
+            np.asarray([0.0, 1.0]),
+        )
+
+
+def test_source_calibration_rejects_top_level_legacy_fields() -> None:
+    payload = {
+        "training_pos_weight": 8.0,
+        "training_prior": 1.0 / 9.0,
+    }
+
+    with pytest.raises(ValueError, match="obsolete top-level calibration fields"):
+        checkpoint_scores_to_llr(payload, np.asarray([0.0, 1.0]))
+
+
+def test_source_calibration_rejects_coexisting_top_level_legacy_fields() -> None:
+    payload = {
+        "training_pos_weight": 99.0,
+        "source_calibration": {
+            "pos_weight": 8.0,
+            "train_prior": 1.0 / 9.0,
+            "temperature": 1.0,
+            "source": "source_validation",
+        },
+    }
+
+    with pytest.raises(ValueError, match="obsolete top-level calibration fields"):
+        checkpoint_scores_to_llr(payload, np.asarray([0.0, 1.0]))
+
+
+@pytest.mark.parametrize("invalid_value", [True, "8.0", None])
+def test_source_calibration_rejects_non_numeric_weight(invalid_value: object) -> None:
+    payload = {
+        "source_calibration": {
+            "pos_weight": invalid_value,
+            "train_prior": 1.0 / 9.0,
+            "temperature": 1.0,
+            "source": "source_validation",
+        },
+    }
+
+    with pytest.raises(ValueError, match="numeric fields are invalid"):
+        checkpoint_scores_to_llr(payload, np.asarray([0.0, 1.0]))
+
+
+def test_target_fixed_budget_adapter_uses_current_calibration_contract() -> None:
+    payload = _target_fixed_budget_calibration_payload(
+        pos_weight=8.0,
+        train_prior=1.0 / 9.0,
+    )
+
+    llr, record = checkpoint_scores_to_llr(payload, np.asarray([0.0, 1.0]))
+
+    assert np.isfinite(llr).all()
+    assert record["source"] == "target_fixed_budget_weighted_ce_analytic"
+    assert "training_pos_weight" not in payload
+    assert "training_prior" not in payload
+
+
+def test_current_checkpoint_helpers_reject_implicit_defaults() -> None:
+    with pytest.raises(ValueError, match="explicit input_mean"):
+        checkpoint_input_stats({}, 3)
+    with pytest.raises(ValueError, match="explicit boolean"):
+        checkpoint_classifier_is_trained({"config": {"training": "supervised"}})
+    architecture = _trunk().architecture_record()
+    with pytest.raises(ValueError, match="required input geometry"):
+        checkpoint_architecture_record({"architecture": architecture})
+    with pytest.raises(ValueError, match="requires a source_calibration mapping"):
+        checkpoint_scores_to_llr({}, np.asarray([0.0, 1.0]))
 
 
 def test_all_evidence_reports_raw_bias_balanced_endpoint_and_missing_coverage() -> None:
@@ -746,14 +1037,17 @@ def test_causal_prefix_suffix_split_rejects_zero_phase_cache() -> None:
 
 def test_pretrained_trunk_rejects_target_subject_overlap(tmp_path) -> None:
     dataset = _causal_candidate_dataset()
+    identity = materialize_dataset_identity(dataset)
     checkpoint = tmp_path / "pretrained.pt"
+    training_ledger = identity.subset(["g1"])
     payload = {
         "trunk_state_dict": _dataset_trunk(dataset).state_dict(),
-        "training_subject_keys": [f"{dataset.name}\0g1"],
+        **_checkpoint_identity_fields(training_ledger, dataset),
         "source_dataset_name": dataset.name,
         "input_channel_names": list(dataset.channel_names),
         "input_preprocessing": asdict(dataset.preprocessing),
         "input_source_reference": dataset.provenance["source_reference"],
+        "architecture": _dataset_trunk(dataset).architecture_record(),
         "config": {
             "pooling_mode": "ms_flatten",
             "temporal_kernel_size": 35,
@@ -762,47 +1056,176 @@ def test_pretrained_trunk_rejects_target_subject_overlap(tmp_path) -> None:
     }
     torch.save(payload, checkpoint)
 
-    with pytest.raises(ValueError, match="includes target subject"):
-        _load_trunk(checkpoint, dataset, target_subject="g1")
+    with pytest.raises(ValueError, match="shared source identity"):
+        _load_trunk(
+            checkpoint,
+            dataset,
+            target_subject="g1",
+            identity_exclusion_policy="source",
+        )
 
-    payload["training_subject_keys"] = [f"{dataset.name}\0other"]
+    payload.update(
+        _checkpoint_identity_fields(_identity_ledger("synthetic", "other"), dataset)
+    )
     torch.save(payload, checkpoint)
-    loaded = _load_trunk(checkpoint, dataset, target_subject="g1")
+    loaded = _load_trunk(
+        checkpoint,
+        dataset,
+        target_subject="g1",
+        identity_exclusion_policy="source",
+    )
     assert isinstance(loaded, N2P3Net)
 
     payload["input_channel_names"] = list(reversed(dataset.channel_names))
     torch.save(payload, checkpoint)
-    with pytest.raises(ValueError, match="channel_names/order"):
-        _load_trunk(checkpoint, dataset, target_subject="g1")
+    with pytest.raises(ValueError, match="input signature disagrees"):
+        _load_trunk(
+            checkpoint,
+            dataset,
+            target_subject="g1",
+            identity_exclusion_policy="source",
+        )
 
 
-def test_legacy_checkpoint_without_kernel_declaration_uses_k65(tmp_path) -> None:
+def test_current_checkpoint_rejects_incomplete_architecture() -> None:
     dataset = _causal_candidate_dataset()
-    legacy = N2P3Net(
-        n_channels=3,
-        n_times=dataset.n_times,
-        sfreq=dataset.preprocessing.sfreq,
-        tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
-        pooling_mode="ms_flatten",
-        temporal_kernel_size=65,
-    )
-    checkpoint = tmp_path / "legacy-k65.pt"
-    torch.save(
-        {
-            "trunk_state_dict": legacy.state_dict(),
-            "training_subject_keys": [f"{dataset.name}\0other"],
-            "source_dataset_name": dataset.name,
-            "input_channel_names": list(dataset.channel_names),
-            "input_preprocessing": asdict(dataset.preprocessing),
-            "input_source_reference": dataset.provenance["source_reference"],
-            "config": {"pooling_mode": "ms_flatten", "training": "supervised"},
-        },
-        checkpoint,
+    materialize_dataset_identity(dataset)
+    trunk = _dataset_trunk(dataset)
+    architecture = trunk.architecture_record()
+    architecture.pop("st_temporal_kernel_samples")
+    payload = {
+        "trunk_state_dict": trunk.state_dict(),
+        **_checkpoint_identity_fields(_identity_ledger("synthetic", "other"), dataset),
+        "input_channel_names": list(dataset.channel_names),
+        "input_preprocessing": asdict(dataset.preprocessing),
+        "input_source_reference": dataset.provenance["source_reference"],
+        "architecture": architecture,
+    }
+    contract = checkpoint_training_contract(payload)
+    contract = replace(contract, architecture=architecture)
+    payload["training_contract"] = contract.record()
+    payload["training_contract_digest"] = contract.digest()
+
+    with pytest.raises(ValueError, match="lacks current fields"):
+        load_n2p3_trunk_checkpoint(payload, dataset, target_subject="g1")
+
+
+def test_checkpoint_rejects_missing_current_schema() -> None:
+    dataset = _causal_candidate_dataset()
+    materialize_dataset_identity(dataset)
+    payload = {
+        "trunk_state_dict": _dataset_trunk(dataset).state_dict(),
+        "input_channel_names": list(dataset.channel_names),
+        "input_preprocessing": asdict(dataset.preprocessing),
+        "input_source_reference": dataset.provenance["source_reference"],
+    }
+
+    with pytest.raises(ValueError, match="schema is unsupported"):
+        load_n2p3_trunk_checkpoint(payload, dataset, target_subject="g1")
+
+
+def test_same_local_number_from_unrelated_source_is_not_false_overlap() -> None:
+    dataset = _causal_candidate_dataset()
+    materialize_dataset_identity(dataset)
+    unrelated = _identity_ledger("independent-study", "g1")
+    payload = {
+        "trunk_state_dict": _dataset_trunk(dataset).state_dict(),
+        **_checkpoint_identity_fields(unrelated, dataset),
+        "input_channel_names": list(dataset.channel_names),
+        "input_preprocessing": asdict(dataset.preprocessing),
+        "input_source_reference": dataset.provenance["source_reference"],
+        "architecture": _dataset_trunk(dataset).architecture_record(),
+        "config": {"pooling_mode": "ms_flatten", "temporal_kernel_size": 35},
+    }
+
+    loaded, _ = load_n2p3_trunk_checkpoint(
+        payload,
+        dataset,
+        target_subject="g1",
     )
 
-    loaded = _load_trunk(checkpoint, dataset, target_subject="g1")
+    assert isinstance(loaded, N2P3Net)
 
-    assert loaded.temporal_kernel_size == 65
+
+def test_namespaced_derived_target_still_overlaps_its_source_participant() -> None:
+    source = _causal_candidate_dataset()
+    source_identity = materialize_dataset_identity(source)
+    target = namespace_epoch_dataset(source, "DERIVED")
+    training = source_identity.subset(["g1"])
+    payload = {
+        "trunk_state_dict": _dataset_trunk(source).state_dict(),
+        **_checkpoint_identity_fields(training, target),
+        "input_channel_names": list(target.channel_names),
+        "input_preprocessing": asdict(target.preprocessing),
+        "input_source_reference": target.provenance["source_reference"],
+        "architecture": _dataset_trunk(source).architecture_record(),
+        "config": {"pooling_mode": "ms_flatten", "temporal_kernel_size": 35},
+    }
+
+    with pytest.raises(ValueError, match="shared source identity"):
+        load_n2p3_trunk_checkpoint(
+            payload,
+            target,
+            target_subject="DERIVED::g1",
+        )
+
+
+def test_explicit_global_identity_rejects_cross_source_same_person() -> None:
+    dataset = _causal_candidate_dataset()
+    source_table = materialize_dataset_identity(dataset)
+    records = []
+    for record in source_table.records:
+        if record.local_subject_id == "g1":
+            records.append(
+                ParticipantIdentityRecord(
+                    local_subject_id="g1",
+                    origin_subject_keys=record.origin_subject_keys,
+                    global_person_keys=("registry:person-1",),
+                    identity_status="global_verified",
+                )
+            )
+        else:
+            records.append(record)
+    dataset.identity_table = DatasetIdentityTable(records=tuple(records))
+    training = _identity_ledger(
+        "independent-study",
+        "different-local-id",
+        global_key="registry:person-1",
+    )
+    payload = {
+        "trunk_state_dict": _dataset_trunk(dataset).state_dict(),
+        **_checkpoint_identity_fields(training, dataset),
+        "input_channel_names": list(dataset.channel_names),
+        "input_preprocessing": asdict(dataset.preprocessing),
+        "input_source_reference": dataset.provenance["source_reference"],
+        "architecture": _dataset_trunk(dataset).architecture_record(),
+        "config": {"pooling_mode": "ms_flatten", "temporal_kernel_size": 35},
+    }
+
+    with pytest.raises(ValueError, match="shared global identity"):
+        load_n2p3_trunk_checkpoint(payload, dataset, target_subject="g1")
+
+    loaded, _ = load_n2p3_trunk_checkpoint(
+        payload,
+        dataset,
+        target_subject="g1",
+        identity_exclusion_policy="source",
+    )
+    assert isinstance(loaded, N2P3Net)
+
+
+def test_checkpoint_identity_digest_tampering_fails_closed() -> None:
+    dataset = _causal_candidate_dataset()
+    materialize_dataset_identity(dataset)
+    training = _identity_ledger("independent-study", "other")
+    payload = {
+        "trunk_state_dict": _dataset_trunk(dataset).state_dict(),
+        **_checkpoint_identity_fields(training, dataset),
+    }
+    payload["training_identity_ledger_digest"] = "0" * 64
+
+    with pytest.raises(ValueError, match="digest disagrees"):
+        load_n2p3_trunk_checkpoint(payload, dataset, target_subject="g1")
 
 
 def test_session_start_zero_shot_runner_never_requires_prefix_training(
@@ -812,11 +1235,15 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
     cache = save_epoch_dataset(tmp_path / "causal.npz", dataset)
     trunk = _dataset_trunk(dataset)
     checkpoint = tmp_path / "supervised.pt"
+    source_manifest, source_digest, _ = _write_source_snapshot_manifest(tmp_path)
     torch.save(
         {
             "trunk_state_dict": trunk.state_dict(),
-            "training_subject_keys": [f"{dataset.name}\0other"],
-            "training_subjects": ["other"],
+            **_checkpoint_identity_fields(
+                _identity_ledger("synthetic", "other"),
+                dataset,
+                source_snapshot_sha256=source_digest,
+            ),
             "holdout_subjects": ["g1", "g2", "g3"],
             "source_dataset_name": dataset.name,
             "input_channel_names": list(dataset.channel_names),
@@ -826,8 +1253,12 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
             "classifier_trained": True,
             "input_mean": [0.0, 0.0, 0.0],
             "input_std": [1.0, 1.0, 1.0],
-            "training_pos_weight": 3.0,
-            "training_prior": 0.25,
+            "source_calibration": {
+                "pos_weight": 3.0,
+                "train_prior": 0.25,
+                "temperature": 1.0,
+                "source": "fixture_weighted_ce_analytic",
+            },
             "architecture": trunk.architecture_record(),
             "n_channels": 3,
             "n_times": dataset.n_times,
@@ -845,6 +1276,12 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
             str(cache),
             "--checkpoint",
             str(checkpoint),
+            "--arm-name",
+            "zero_shot_source",
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--identity-exclusion-policy",
+            "source",
             "--head",
             "zero_shot",
             "--test-reps",
@@ -862,6 +1299,9 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
     assert record["prefix_reps"] == 0
     assert record["estimand"] == "target_excluded_session_start_zero_calibration"
     assert record["n_groups"] == 3
+    assert record["source_snapshot_manifest"] == str(source_manifest.resolve())
+    assert record["source_snapshot_sha256"] == source_digest
+    assert record["evaluation_contract"]["source_snapshot_sha256"] == source_digest
 
     all_output = tmp_path / "zero-shot-all.json"
     monkeypatch.setattr(
@@ -872,6 +1312,12 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
             str(cache),
             "--checkpoint",
             str(checkpoint),
+            "--arm-name",
+            "zero_shot_source_all",
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--identity-exclusion-policy",
+            "source",
             "--head",
             "zero_shot",
             "--test-reps",
@@ -908,6 +1354,12 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
             str(cache),
             "--checkpoint",
             str(checkpoint),
+            "--arm-name",
+            "invalid_target_manifest",
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--identity-exclusion-policy",
+            "source",
             "--target-subjects-file",
             str(target_file),
             "--device",
@@ -920,7 +1372,50 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
         run_transfer_main()
 
 
-def test_target_subject_file_rejects_ambiguous_offset_or_limit(
+def test_transfer_runner_rejects_checkpoint_snapshot_mismatch(
+    tmp_path, monkeypatch
+) -> None:
+    dataset = _causal_candidate_dataset()
+    cache = save_epoch_dataset(tmp_path / "causal.npz", dataset)
+    source_manifest, _, _ = _write_source_snapshot_manifest(tmp_path)
+    checkpoint = tmp_path / "mismatched.pt"
+    torch.save(
+        {
+            "trunk_state_dict": _dataset_trunk(dataset).state_dict(),
+            **_checkpoint_identity_fields(
+                _identity_ledger("synthetic", "other"), dataset
+            ),
+        },
+        checkpoint,
+    )
+    output = tmp_path / "must-not-exist.json"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_within_subject_transfer.py",
+            "--dataset-cache",
+            str(cache),
+            "--checkpoint",
+            str(checkpoint),
+            "--arm-name",
+            "snapshot_mismatch",
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--identity-exclusion-policy",
+            "source",
+            "--device",
+            "cpu",
+            "--output",
+            str(output),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="verified physical source freeze"):
+        run_transfer_main()
+    assert not output.exists()
+
+
+def test_transfer_runner_rejects_legacy_naked_snapshot_digest(
     tmp_path, monkeypatch
 ) -> None:
     monkeypatch.setattr(
@@ -929,6 +1424,37 @@ def test_target_subject_file_rejects_ambiguous_offset_or_limit(
             "run_within_subject_transfer.py",
             "--dataset-cache",
             str(tmp_path / "unused.npz"),
+            "--arm-name",
+            "legacy_digest",
+            "--source-snapshot-sha256",
+            "a" * 64,
+            "--identity-exclusion-policy",
+            "source",
+            "--output",
+            str(tmp_path / "unused.json"),
+        ],
+    )
+
+    with pytest.raises(SystemExit):
+        run_transfer_main()
+
+
+def test_target_subject_file_rejects_ambiguous_offset_or_limit(
+    tmp_path, monkeypatch
+) -> None:
+    source_manifest, _, _ = _write_source_snapshot_manifest(tmp_path)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_within_subject_transfer.py",
+            "--dataset-cache",
+            str(tmp_path / "unused.npz"),
+            "--arm-name",
+            "ambiguous_scope",
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--identity-exclusion-policy",
+            "source",
             "--target-subjects-file",
             str(tmp_path / "targets.json"),
             "--max-subjects",

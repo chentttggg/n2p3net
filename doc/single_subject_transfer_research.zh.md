@@ -130,6 +130,7 @@ uniform `1/9` 和 empirical-majority baseline；正式采集目标必须随机�
 1. GTN steady-state causal 2x2、Z0/Z5 与 source-QC 消融已经完成并审计；
 2. 当前工程主线固定为 full-unfold+K35、0.1 Hz/1200 ms、source QC100、
    不做额外联合微调；all-evidence 使用全部 trial 的 candidate mean，K65 保留对照；
-3. BI early-known -> later-unknown 已完成；保留 zero-shot/source stats 为默认；
+3. BI early-known -> later-unknown 的 causal-v2 比较已物理归档；其启示是 v3 的
+   首个冻结基线仍应包含 zero-shot/source stats，但 v3 尚未重跑；
 4. BrainSync causal multi-session/target-switch 入口已闭合，重新采集 analysis-ready decisions；
 5. untouched BrainSync 才能裁决 90%。

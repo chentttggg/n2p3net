@@ -20,12 +20,14 @@ from data.epochs import (
     PreprocessingSpec,
     concatenate_epoch_datasets,
     load_epoch_dataset,
+    materialize_dataset_identity,
     preprocessing_spec_from_contract,
     save_epoch_dataset,
     select_epoch_channels,
     write_epoch_dataset_record,
 )
 from data.events import ScheduledEventTimeline
+from data.identity import DatasetIdentityTable
 
 
 def _dataset() -> EpochDataset:
@@ -95,6 +97,8 @@ def test_epoch_dataset_safe_round_trip(tmp_path) -> None:
     assert loaded.provenance == source.provenance
     assert np.array_equal(loaded.event_timeline.candidate_ids, source.event_timeline.candidate_ids)
     assert loaded.event_timeline.supports_full_candidate_chain is True
+    assert loaded.identity_table is not None
+    assert loaded.identity_table.payload() == source.identity_table.payload()
 
 
 def test_attested_cache_load_skips_repeated_full_contract_scan(tmp_path, monkeypatch) -> None:
@@ -187,7 +191,7 @@ def test_epoch_dataset_decompresses_signal_member_once(tmp_path, monkeypatch) ->
     assert calls["X"] == 1
 
 
-def test_epoch_dataset_v2_loads_without_promoting_stimulus_codes(tmp_path) -> None:
+def test_epoch_loader_rejects_every_retired_schema(tmp_path) -> None:
     source = _dataset()
     current = save_epoch_dataset(tmp_path / "current.npz", source)
     with np.load(current, allow_pickle=False) as archive:
@@ -201,16 +205,49 @@ def test_epoch_dataset_v2_loads_without_promoting_stimulus_codes(tmp_path) -> No
                 "event_repetition_indices",
             }
         }
-    payload["schema"] = np.asarray("n2p3net_epoch_dataset/2")
-    payload["event_schema"] = np.asarray("n2p3net_scheduled_events/1")
-    legacy = tmp_path / "legacy_v2.npz"
-    np.savez(legacy, **payload)
+    for retired_schema in (
+        "n2p3net_epoch_dataset/2",
+        "n2p3net_epoch_dataset/3",
+        "n2p3net_epoch_dataset/4",
+    ):
+        payload["schema"] = np.asarray(retired_schema)
+        retired = tmp_path / f"retired_{retired_schema.rsplit('/', 1)[-1]}.npz"
+        np.savez(retired, **payload)
+        with pytest.raises(ValueError, match="Unsupported EpochDataset schema"):
+            load_epoch_dataset(retired)
 
-    loaded = load_epoch_dataset(legacy)
 
-    assert loaded.event_timeline.has_candidate_ids is False
-    assert loaded.event_timeline.has_candidate_sets is False
-    assert loaded.event_timeline.supports_full_candidate_chain is False
+def test_current_cache_rejects_identity_digest_tampering(tmp_path) -> None:
+    current = save_epoch_dataset(tmp_path / "current.npz", _dataset())
+    with np.load(current, allow_pickle=False) as archive:
+        payload = {key: np.asarray(archive[key]) for key in archive.files}
+    identity = json.loads(str(payload["identity_json"].item()))
+    identity["records"][0]["origin_subject_keys"] = ["forged-origin"]
+    payload["identity_json"] = np.asarray(json.dumps(identity))
+    tampered = tmp_path / "tampered.npz"
+    np.savez(tampered, **payload)
+
+    with pytest.raises(ValueError, match="identity digest"):
+        load_epoch_dataset(tampered)
+
+
+def test_identity_materialization_requires_producer_source_dataset_ids() -> None:
+    dataset = _dataset()
+    dataset.event_timeline = replace(
+        dataset.event_timeline,
+        dataset_ids=np.repeat("", dataset.event_timeline.n_events),
+    )
+
+    with pytest.raises(ValueError, match="source_dataset_id must be non-empty"):
+        materialize_dataset_identity(dataset)
+
+
+def test_identity_table_must_cover_exactly_the_epoch_subjects() -> None:
+    dataset = _dataset()
+    dataset.identity_table = DatasetIdentityTable.from_source_rows(["s1"], ["source"])
+
+    with pytest.raises(ValueError, match="cover exactly"):
+        dataset.validate()
 
 
 def test_epoch_dataset_rejects_candidate_truth_label_disagreement() -> None:
@@ -327,9 +364,12 @@ def test_preprocessing_trial_reference_rejects_window_outside_epoch() -> None:
 
 def test_select_epoch_channels_is_exact_and_ordered() -> None:
     dataset = _dataset()
+    identity_before = materialize_dataset_identity(dataset).payload()
     selected = select_epoch_channels(dataset, ("Pz", "Fz"))
     assert selected.channel_names == ("PZ", "FZ")
     assert np.array_equal(selected.X, dataset.X[:, [2, 0], :])
+    assert selected.identity_table is not None
+    assert selected.identity_table.payload() == identity_before
     with pytest.raises(ValueError, match="cannot supply channels"):
         select_epoch_channels(dataset, ("Pz", "Oz"))
 

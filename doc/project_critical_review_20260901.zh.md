@@ -19,10 +19,10 @@ analysis-ready 数据、跨域联合源仍未超过单域 source、SSL 没有 do
 |---|---|---|
 | dirty 主链 | 已关闭 | `f107bfa` 纳入 checkpoint/runner/tests/docs；后继 BI commits 可追溯 |
 | 冻结证据混入源码 | 已关闭 | loose evidence、dated runners/docs 已移入 checksummed `frozen/*.tar.gz` 并从活跃路径删除 |
-| BI raw/candidate-v3 | 待重建 | builder 已统一到 179 samples；旧 `61013x16x128` cache 只存在冻结归档 |
+| BI raw/candidate-v3 | 待重建 | builder 已统一到 179 samples；旧 `61013x16x128` cache 位于 `experiments/cache/legacy/pre_v3/`，不属于活动数据层 |
 | BI block checkpoint scope | 已关闭 | 4x16 被试，target-subject manifest 与 checkpoint holdout 精确核对 |
 | BrainSync causal 默认 | 已关闭 | canonical v3：0.1-30 Hz/1200 ms，forward IIR steady-state；无 2/800 fallback |
-| BrainSync 单 selection | 已关闭 | marker `selection_id/block_id` 形成独立 group；per-selection target/repetition 校验 |
+| BrainSync 单 session decision | 已关闭 | v2 中一个 session 就是一个 decision；`block_id` 仅为 presentation 元数据，不参与 decision 分组 |
 | BrainSync 单 session CLI | 已关闭 | `--session-dir` 可重复；多 session 由 timezone-aware `started_utc` 排序 |
 | target-switch runner | 已关闭 | calibration decisions -> real-time embargo -> later 9-choice decisions；失败留分母 |
 | 跨域确定性入口 | 部分关闭 | 公共真实通道子集 + 同子集 CAR；参考抵消和缺通道反例通过 |

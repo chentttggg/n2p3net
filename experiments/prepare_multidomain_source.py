@@ -62,6 +62,11 @@ def main() -> None:
                 "n_subjects": len(set(dataset.subject_ids)),
                 "n_epochs": dataset.n_epochs,
                 "parent_source_reference": dataset.provenance.get("source_reference"),
+                "identity_table_digest": (
+                    dataset.identity_table.digest()
+                    if dataset.identity_table is not None
+                    else None
+                ),
             }
         )
     reference = adapted[0].provenance["source_reference"]
@@ -74,6 +79,9 @@ def main() -> None:
             "target_channels": list(adapted[0].channel_names),
             "sources": source_records,
         },
+    )
+    merged.provenance["identity_table_digest"] = (
+        merged.identity_table.digest() if merged.identity_table is not None else None
     )
     output = save_epoch_dataset(args.output, merged, compressed=not args.uncompressed)
     print(

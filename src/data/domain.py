@@ -8,7 +8,12 @@ from dataclasses import replace
 import numpy as np
 
 from data.channel import canonical_channel_name
-from data.epochs import EpochDataset
+from data.epochs import (
+    EpochDataset,
+    materialize_dataset_identity,
+    materialize_dataset_lineage,
+)
+from data.lineage import DataLineage
 from data.qc_features import compute_epoch_qc_features
 
 DOMAIN_ADAPTER_SCHEMA = "n2p3_common_channel_car/1"
@@ -36,6 +41,8 @@ def adapt_common_channel_average_reference(
     """Select a complete common montage and apply the same CAR in every domain."""
 
     dataset.validate(require_labels=dataset.y is not None)
+    identity_table = materialize_dataset_identity(dataset)
+    parent_lineage = materialize_dataset_lineage(dataset)
     channels = tuple(canonical_channel_name(value) for value in target_channels)
     if len(channels) < 2 or len(set(channels)) != len(channels):
         raise ValueError("target_channels must contain at least two unique channels.")
@@ -89,6 +96,15 @@ def adapt_common_channel_average_reference(
             values,
             channel_mask=np.ones(len(channels), dtype=bool),
         ),
+        identity_table=identity_table,
+        lineage=DataLineage.derive(
+            [parent_lineage],
+            operation="common_channel_average_reference",
+            parameters={
+                "target_channels": list(channels),
+                "reference": reference,
+            },
+        ),
     )
     adapted.validate(require_labels=dataset.y is not None)
     return adapted
@@ -103,12 +119,18 @@ def namespace_epoch_dataset(
     """Qualify participant/event identity before cross-dataset concatenation."""
 
     dataset.validate(require_labels=dataset.y is not None)
+    identity_table = materialize_dataset_identity(dataset)
+    parent_lineage = materialize_dataset_lineage(dataset)
     prefix = str(namespace).strip()
     if not prefix or "\0" in prefix:
         raise ValueError("namespace must be non-empty and cannot contain NUL.")
     subject_ids = np.asarray(
         [f"{prefix}::{value}" for value in np.asarray(dataset.subject_ids).astype(str)]
     )
+    subject_mapping = {
+        value: f"{prefix}::{value}"
+        for value in identity_table.local_subject_ids
+    }
     timeline = replace(
         dataset.event_timeline,
         event_ids=np.asarray(
@@ -149,6 +171,12 @@ def namespace_epoch_dataset(
             else np.asarray(dataset.trial_channel_mask, dtype=bool)
         ),
         qc_features=dataset.qc_features,
+        identity_table=identity_table.relabel_local_subjects(subject_mapping),
+        lineage=DataLineage.derive(
+            [parent_lineage],
+            operation="namespace_subject_axis",
+            parameters={"namespace": prefix},
+        ),
     )
     namespaced.validate(require_labels=dataset.y is not None)
     return namespaced

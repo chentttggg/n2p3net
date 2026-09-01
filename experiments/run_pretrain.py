@@ -27,6 +27,7 @@ from data.contract import (  # noqa: E402
     assert_p300_input_contract,
 )
 from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
+from data.identity import training_identity_ledger_from_rows  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
     DEFAULT_N2P3_POOLING_MODE,
@@ -34,8 +35,13 @@ from models.n2p3net import (  # noqa: E402
     N2P3ArchitectureConfig,
     N2P3Net,
 )
+from research.contracts import TrainingRunContract  # noqa: E402
+from research.evaluation import (  # noqa: E402
+    source_snapshot_sha256_from_archive_manifest,
+)
 from train.device import get_device  # noqa: E402
 from train.runtime import GpuPerformanceScheduler, MatrixBatchSource  # noqa: E402
+from transfer.checkpoint import CHECKPOINT_SCHEMA  # noqa: E402
 from transfer.losses import ReconstructionLossConfig  # noqa: E402
 from transfer.masking import MaskingConfig  # noqa: E402
 from transfer.pretraining import PretrainingConfig, PretrainingTask  # noqa: E402
@@ -87,6 +93,12 @@ def _subject_probe_validation_mask(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-cache", required=True)
+    parser.add_argument(
+        "--source-snapshot-manifest",
+        type=Path,
+        required=True,
+        help="Manifest for the physical source archive used for this training run.",
+    )
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--holdout-subjects", default="", help="comma separated; never pretrain on these")
     parser.add_argument("--epochs", type=int, default=20)
@@ -137,6 +149,10 @@ def main() -> None:
         help="Explicit epoch-end recipe override for matched factorials.",
     )
     args = parser.parse_args()
+    source_snapshot_manifest = args.source_snapshot_manifest.resolve()
+    source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
+        source_snapshot_manifest
+    )
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.source_cache, require_labels=False, validation="attested")
@@ -152,6 +168,13 @@ def main() -> None:
 
     X = np.asarray(dataset.X[source_rows], dtype=np.float32)
     source_subjects = np.asarray(dataset.subject_ids).astype(str)[source_rows]
+    if dataset.identity_table is None:
+        raise ValueError("source cache lacks the required participant identity table.")
+    training_identity_ledger = training_identity_ledger_from_rows(
+        dataset.identity_table,
+        dataset.subject_ids,
+        source_rows,
+    )
     probe_subjects = tuple(sorted(np.unique(source_subjects).tolist()))
     probe_index = {subject: index for index, subject in enumerate(probe_subjects)}
     probe_labels = np.asarray([probe_index[subject] for subject in source_subjects], dtype=np.int64)
@@ -357,13 +380,68 @@ def main() -> None:
             "subject_probe_validation_accuracy"
         ),
     }
+    assert dataset.identity_table is not None
+    holdout_participant_keys = (
+        dataset.identity_table.subset(holdout).authority_keys()
+        if holdout
+        else ()
+    )
+    training_contract = TrainingRunContract(
+        source_cache_sha256=source_cache_sha256,
+        source_identity_digest=dataset.identity_table.digest(),
+        source_snapshot_sha256=source_snapshot_sha256,
+        architecture=trunk.architecture_record(),
+        preprocessing={
+            "epoch": asdict(dataset.preprocessing),
+            "channel_names": list(dataset.channel_names),
+            "source_reference": dataset.provenance.get("source_reference"),
+        },
+        optimizer={
+            "name": "torch.optim.AdamW",
+            "learning_rate": float(args.lr),
+            "weight_decay": float(args.weight_decay),
+            "epochs": int(args.epochs),
+            "batch_size": int(args.batch_size),
+            "gradient_clip_max_norm": 1.0,
+            "shuffle_each_epoch": True,
+            "subject_probe_optimizer": probe_optimizer is not None,
+        },
+        validation={
+            "task_model_selection": "fixed_epochs_no_task_validation",
+            "subject_probe": {
+                "enabled": bool(probe_enabled),
+                "stop_gradient": True,
+                "split": "deterministic_within_subject_rows",
+                "validation_fraction": 0.2 if probe_enabled else None,
+                "split_seed": int(args.seed + 31_337) if probe_enabled else None,
+            },
+        },
+        objective={
+            "name": "masked_eeg_reconstruction",
+            "mask": asdict(config.mask),
+            "loss": asdict(config.loss),
+            "band_weight_estimation_samples": int(config.band_weight_estimation_samples),
+            "resolved_band_weights": (
+                task.band_weights.detach().cpu().tolist()
+                if task.band_weights is not None
+                else None
+            ),
+            "standardize_input": bool(args.standardize),
+        },
+        seed=int(args.seed),
+        training_participant_keys=training_identity_ledger.authority_keys(),
+        holdout_participant_keys=holdout_participant_keys,
+    )
     task.discard_decoder()
     checkpoint = Path(args.checkpoint)
     checkpoint.parent.mkdir(parents=True, exist_ok=True)
     payload = {
+        "schema": CHECKPOINT_SCHEMA,
         "trunk_state_dict": trunk.state_dict(),
         "config": asdict(config),
         "source_cache": str(Path(args.source_cache).resolve()),
+        "source_snapshot_manifest": str(source_snapshot_manifest),
+        "source_snapshot_sha256": source_snapshot_sha256,
         "holdout_subjects": sorted(holdout),
         "source_dataset_name": dataset.name,
         "n_channels": int(dataset.n_channels),
@@ -382,14 +460,10 @@ def main() -> None:
             "temporal_kernel_size": args.temporal_kernel_size,
         },
         "source_subjects": sorted(all_subjects),
-        "training_subjects": sorted(all_subjects - holdout),
-        "training_subject_keys": [
-            f"{dataset.name}\0{subject}" for subject in sorted(all_subjects - holdout)
-        ],
-        "training_cache_subject_keys": [
-            f"{source_cache_sha256}\0{subject}"
-            for subject in sorted(all_subjects - holdout)
-        ],
+        "training_identity_ledger": training_identity_ledger.payload(),
+        "training_identity_ledger_digest": training_identity_ledger.digest(),
+        "training_contract": training_contract.record(),
+        "training_contract_digest": training_contract.digest(),
         "n_source_epochs": int(source_rows.sum()),
         "standardized": args.standardize,
         "input_mean": (

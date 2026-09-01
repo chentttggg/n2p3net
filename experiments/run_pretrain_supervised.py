@@ -2,8 +2,8 @@
 
 Trains N2P3NetBaseline (the exact LOSO-floor training path) on every source
 subject except the holdout block. The saved checkpoint carries the full model
-state dict plus the auditable ``training_subject_keys`` ledger consumed by
-``experiments/run_within_subject_transfer.py``.
+state dict plus a structured participant-identity ledger derived from the rows
+that actually reach fitting.
 """
 
 from __future__ import annotations
@@ -31,13 +31,19 @@ from data.contract import (  # noqa: E402
     assert_p300_input_contract,
 )
 from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
+from data.identity import training_identity_ledger_from_rows  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
     DEFAULT_N2P3_POOLING_MODE,
     N2P3ArchitectureConfig,
 )
+from research.contracts import TrainingRunContract  # noqa: E402
+from research.evaluation import (  # noqa: E402
+    source_snapshot_sha256_from_archive_manifest,
+)
 from train.device import get_device  # noqa: E402
 from train.runtime import GpuPerformanceScheduler  # noqa: E402
+from transfer.checkpoint import CHECKPOINT_SCHEMA  # noqa: E402
 
 
 def parse_subject_prefix_repeats(value: str) -> dict[str, int]:
@@ -140,6 +146,12 @@ def build_subject_prefix_exposure(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-cache", required=True)
+    parser.add_argument(
+        "--source-snapshot-manifest",
+        type=Path,
+        required=True,
+        help="Manifest for the physical source archive used for this training run.",
+    )
     parser.add_argument("--holdout-subjects", default="", help="comma separated; never pretrain on these")
     parser.add_argument(
         "--cohort",
@@ -200,6 +212,10 @@ def main() -> None:
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--device", default="auto")
     args = parser.parse_args()
+    source_snapshot_manifest = args.source_snapshot_manifest.resolve()
+    source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
+        source_snapshot_manifest
+    )
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.source_cache, require_labels=True, validation="attested")
@@ -234,6 +250,13 @@ def main() -> None:
     if int(source_rows.sum()) < 1000:
         raise ValueError("too few source rows remain after holdout exclusion.")
 
+    if dataset.identity_table is None:
+        raise ValueError("source cache lacks the required participant identity table.")
+    training_identity_ledger = training_identity_ledger_from_rows(
+        dataset.identity_table,
+        dataset.subject_ids,
+        source_rows,
+    )
     prefix_repeats = parse_subject_prefix_repeats(args.subject_prefix_repeat)
     physical_subjects = subjects[source_rows]
     exposure_indices, source_exposure = build_subject_prefix_exposure(
@@ -356,7 +379,56 @@ def main() -> None:
         "temperature": 1.0,
         "source": "source_full_refit_weighted_ce_analytic",
     }
+    assert dataset.identity_table is not None
+    holdout_participant_keys = (
+        dataset.identity_table.subset(holdout).authority_keys()
+        if holdout
+        else ()
+    )
+    training_contract = TrainingRunContract(
+        source_cache_sha256=source_cache_sha256,
+        source_identity_digest=dataset.identity_table.digest(),
+        source_snapshot_sha256=source_snapshot_sha256,
+        architecture=model.architecture_record(),
+        preprocessing={
+            "epoch": asdict(dataset.preprocessing),
+            "channel_names": list(dataset.channel_names),
+            "source_reference": dataset.provenance.get("source_reference"),
+        },
+        optimizer={
+            "name": "torch.optim.Adam",
+            "selection_config": asdict(config),
+            "refit_config": asdict(refit_config),
+            "selection_execution": selection_baseline.optimizer_execution.record(),
+            "refit_execution": baseline.optimizer_execution.record(),
+            "optimizer_rows_per_epoch": int(len(X)),
+            "source_exposure": source_exposure,
+        },
+        validation={
+            "strategy": "group_disjoint_epoch_selection_then_full_source_refit",
+            "group_key": "local_subject_id",
+            "selected_epoch_zero_based": int(selected_epoch),
+            "refit_epochs": int(refit_epochs),
+            "selection_calibration_source": selection_baseline.calibration_source_,
+            "full_source_refit": True,
+        },
+        objective={
+            "name": "weighted_binary_cross_entropy",
+            "effective_pos_weight": float(baseline.training_pos_weight_),
+            "training_prior": float(baseline.training_prior_),
+            "qc_ptp_uv": float(args.qc_ptp_uv),
+            "input_statistics_scope": source_input_stats_scope,
+            "unique_label_counts": np.bincount(
+                y_physical, minlength=2
+            ).astype(int).tolist(),
+            "optimizer_label_counts": np.bincount(y, minlength=2).astype(int).tolist(),
+        },
+        seed=int(args.seed),
+        training_participant_keys=training_identity_ledger.authority_keys(),
+        holdout_participant_keys=holdout_participant_keys,
+    )
     payload = {
+        "schema": CHECKPOINT_SCHEMA,
         "trunk_state_dict": {k: v.detach().cpu() for k, v in model.state_dict().items()},
         "input_mean": np.asarray(baseline._input_mean, dtype=np.float32).squeeze().tolist(),
         "input_std": np.asarray(baseline._input_std, dtype=np.float32).squeeze().tolist(),
@@ -380,24 +452,20 @@ def main() -> None:
         "input_source_reference": dataset.provenance.get("source_reference"),
         "source_cache_sha256": source_cache_sha256,
         "classifier_trained": True,
-        "training_pos_weight": float(baseline.training_pos_weight_),
-        "training_prior": float(baseline.training_prior_),
         "source_calibration": source_calibration,
         "source_selection_calibration": source_selection_calibration,
         "source_full_refit": True,
         "source_refit_epochs": refit_epochs,
         "source_cache": str(Path(args.source_cache).resolve()),
+        "source_snapshot_manifest": str(source_snapshot_manifest),
+        "source_snapshot_sha256": source_snapshot_sha256,
         "holdout_subjects": sorted(holdout),
         "source_dataset_name": dataset.name,
         "source_subjects": sorted(all_subjects),
-        "training_subjects": sorted(all_subjects - holdout),
-        "training_subject_keys": [
-            f"{dataset.name}\0{subject}" for subject in sorted(all_subjects - holdout)
-        ],
-        "training_cache_subject_keys": [
-            f"{source_cache_sha256}\0{subject}"
-            for subject in sorted(all_subjects - holdout)
-        ],
+        "training_identity_ledger": training_identity_ledger.payload(),
+        "training_identity_ledger_digest": training_identity_ledger.digest(),
+        "training_contract": training_contract.record(),
+        "training_contract_digest": training_contract.digest(),
         "n_source_epochs_used": int(len(X)),
         "n_unique_source_epochs_used": int(len(X_physical)),
         "n_optimizer_source_rows_per_epoch": int(len(X)),
@@ -433,7 +501,9 @@ def main() -> None:
                 "n_unique_source_epochs_used": payload["n_unique_source_epochs_used"],
                 "source_exposure": source_exposure,
                 "source_input_stats_scope": source_input_stats_scope,
-                "training_subjects": len(payload["training_subjects"]),
+                "training_participant_count": len(
+                    training_identity_ledger.local_subject_ids
+                ),
                 "best_epoch": history.get("best_epoch"),
                 "final_task_val_auc": history.get("final_task_val_auc"),
             }

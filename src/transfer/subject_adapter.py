@@ -15,6 +15,7 @@ from torch import nn
 
 from baselines.validation import group_disjoint_validation_split
 from models.n2p3net import N2P3Net
+from research.execution import ExpectedSubjectError, SubjectFailureCode
 from transfer.within_subject import chronological_validation_split
 
 ADAPTER_POOLING_MODES = frozenset(
@@ -316,7 +317,11 @@ class SubjectAdapter:
             train_mask, val_mask = split.train_mask, split.validation_mask
             validation_source = "group_disjoint_prefix_validation"
         if len(np.unique(y[train_mask])) != 2:
-            raise ValueError("training split must contain both classes.")
+            raise ExpectedSubjectError(
+                SubjectFailureCode.INSUFFICIENT_CLASSES,
+                stage="adapter_fit",
+                detail="training split does not contain both binary classes",
+            )
 
         target_mean, target_std = self._masked_stats(
             X[train_mask], observed_mask[train_mask]
@@ -424,6 +429,12 @@ class SubjectAdapter:
                 yb = yt_train.index_select(0, rows)
                 logits = self._forward_head(xb) if trunk_trainable else self.head(xb)
                 loss = loss_fn(logits, yb)
+                if not bool(torch.isfinite(loss)):
+                    raise ExpectedSubjectError(
+                        SubjectFailureCode.NONFINITE_OPTIMIZATION,
+                        stage="adapter_fit",
+                        detail="training loss became non-finite",
+                    )
                 optimizer.zero_grad(set_to_none=True)
                 loss.backward()
                 optimizer.step()
@@ -575,6 +586,12 @@ class SubjectAdapter:
                 yb = labels.index_select(0, rows)
                 logits = self._forward_head(xb) if trunk_trainable else self.head(xb)
                 loss = loss_fn(logits, yb)
+                if not bool(torch.isfinite(loss)):
+                    raise ExpectedSubjectError(
+                        SubjectFailureCode.NONFINITE_OPTIMIZATION,
+                        stage="adapter_refit",
+                        detail="full-prefix refit loss became non-finite",
+                    )
                 optimizer.zero_grad(set_to_none=True)
                 loss.backward()
                 optimizer.step()
@@ -625,7 +642,14 @@ class SubjectAdapter:
         Xt = self._prepare_input(X, trial_channel_mask)
         with torch.inference_mode():
             logits = self._forward_head(Xt)
-        return (logits[:, 1] - logits[:, 0]).cpu().numpy().astype(np.float64)
+        values = (logits[:, 1] - logits[:, 0]).cpu().numpy().astype(np.float64)
+        if not np.isfinite(values).all():
+            raise ExpectedSubjectError(
+                SubjectFailureCode.NUMERICAL_FAILURE,
+                stage="adapter_predict",
+                detail="adapter produced non-finite logits",
+            )
+        return values
 
     def parameter_count(self) -> int:
         parameters = [parameter for parameter in self.trunk.parameters() if parameter.requires_grad]

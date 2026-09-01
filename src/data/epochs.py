@@ -18,16 +18,14 @@ from data.channel import canonical_channel_name
 from data.contract import DEFAULT_P300_DATA_CONTRACT, EEGDataContract
 from data.events import (
     EVENT_TIMELINE_SCHEMA,
-    LEGACY_EVENT_TIMELINE_SCHEMAS,
     ScheduledEventTimeline,
     concatenate_event_timelines,
 )
+from data.identity import DatasetIdentityTable
+from data.lineage import DataLineage
 from data.qc_features import EpochQCFeatures
 
-EPOCH_DATASET_SCHEMA = "n2p3net_epoch_dataset/4"
-LEGACY_EPOCH_DATASET_SCHEMAS = frozenset(
-    {"n2p3net_epoch_dataset/2", "n2p3net_epoch_dataset/3"}
-)
+EPOCH_DATASET_SCHEMA = "n2p3net_epoch_dataset/5"
 DEFAULT_SAMPLE_RATE_HZ = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz
 
 
@@ -242,6 +240,8 @@ class EpochDataset:
     provenance: dict[str, Any] = field(default_factory=dict)
     trial_channel_mask: np.ndarray | None = None
     qc_features: EpochQCFeatures | None = None
+    identity_table: DatasetIdentityTable | None = None
+    lineage: DataLineage | None = None
 
     def validate(self, *, require_labels: bool = False) -> None:
         self.preprocessing.validate()
@@ -364,6 +364,15 @@ class EpochDataset:
             raise ValueError("metadata must have one row per epoch or be empty.")
         if not isinstance(self.provenance, dict):
             raise ValueError("provenance must be a dictionary.")
+        if self.identity_table is not None:
+            identity_subjects = set(self.identity_table.local_subject_ids)
+            dataset_subjects = set(subject_ids.astype(str).tolist())
+            if identity_subjects != dataset_subjects:
+                raise ValueError(
+                    "identity_table must cover exactly the EpochDataset subject_ids."
+                )
+        if self.lineage is not None and not isinstance(self.lineage, DataLineage):
+            raise ValueError("lineage must be a DataLineage record.")
 
     @property
     def n_epochs(self) -> int:
@@ -378,6 +387,8 @@ class EpochDataset:
         return int(self.X.shape[2])
 
     def record(self, *, validate: bool = True) -> dict[str, Any]:
+        identity_table = materialize_dataset_identity(self)
+        lineage = materialize_dataset_lineage(self)
         if validate:
             self.validate()
         return {
@@ -394,6 +405,8 @@ class EpochDataset:
             ),
             "preprocessing": asdict(self.preprocessing),
             "n_subjects": int(len(np.unique(self.subject_ids))),
+            "identity": identity_table.payload(),
+            "lineage": lineage.payload(),
             "events": {
                 "schema": EVENT_TIMELINE_SCHEMA,
                 "n_scheduled": self.event_timeline.n_events,
@@ -417,6 +430,67 @@ class EpochDataset:
         }
 
 
+def materialize_dataset_identity(dataset: EpochDataset) -> DatasetIdentityTable:
+    """Attach source-scoped identities before any representation-changing step."""
+
+    if dataset.identity_table is not None:
+        identity_subjects = set(dataset.identity_table.local_subject_ids)
+        dataset_subjects = set(np.asarray(dataset.subject_ids).astype(str).tolist())
+        if identity_subjects != dataset_subjects:
+            raise ValueError(
+                "identity_table must cover exactly the EpochDataset subject_ids."
+            )
+        return dataset.identity_table
+
+    timeline = dataset.event_timeline.validate(n_epochs=dataset.n_epochs)
+    evidence = np.asarray(timeline.evidence_indices, dtype=np.int64)
+    available = evidence >= 0
+    aligned_sources = np.empty(dataset.n_epochs, dtype=object)
+    aligned_sources[evidence[available]] = np.asarray(timeline.dataset_ids).astype(str)[
+        available
+    ]
+    table = DatasetIdentityTable.from_source_rows(
+        np.asarray(dataset.subject_ids).astype(str).tolist(),
+        aligned_sources.astype(str).tolist(),
+    )
+    dataset.identity_table = table
+    return table
+
+
+def materialize_dataset_lineage(dataset: EpochDataset) -> DataLineage:
+    """Attach one deterministic source entity before any derived operation."""
+
+    if dataset.lineage is not None:
+        return dataset.lineage
+    identity = materialize_dataset_identity(dataset)
+    timeline = dataset.event_timeline.validate(n_epochs=dataset.n_epochs)
+    stable_provenance_fields = {
+        "source",
+        "source_reference",
+        "source_sample_rate_hz",
+        "session_schema",
+    }
+    stable_provenance = {
+        key: value
+        for key, value in dataset.provenance.items()
+        if key in stable_provenance_fields or key.endswith("_sha256")
+    }
+    dataset.lineage = DataLineage.source(
+        parameters={
+            "dataset_name": dataset.name,
+            "source_dataset_ids": sorted(
+                set(np.asarray(timeline.dataset_ids).astype(str).tolist())
+            ),
+            "event_fingerprint": timeline.fingerprint(),
+            "identity_digest": identity.digest(),
+            "preprocessing": asdict(dataset.preprocessing),
+            "shape": list(dataset.X.shape),
+            "source_provenance": stable_provenance,
+        }
+    )
+    return dataset.lineage
+
+
 def save_epoch_dataset(
     path: str | Path,
     dataset: EpochDataset,
@@ -426,6 +500,8 @@ def save_epoch_dataset(
     """Persist an EpochDataset without pickle-dependent object arrays."""
 
     dataset.validate()
+    identity_table = materialize_dataset_identity(dataset)
+    lineage = materialize_dataset_lineage(dataset)
     if dataset.qc_features is None:
         from data.qc_features import compute_epoch_qc_features
 
@@ -495,6 +571,12 @@ def save_epoch_dataset(
         "metadata_json": np.asarray(metadata.to_json(orient="table", index=False)),
         "provenance_json": np.asarray(
             json.dumps(dataset.provenance, sort_keys=True, default=_json_default)
+        ),
+        "identity_json": np.asarray(
+            json.dumps(identity_table.payload(), sort_keys=True, default=_json_default)
+        ),
+        "lineage_json": np.asarray(
+            json.dumps(lineage.payload(), sort_keys=True, default=_json_default)
         ),
         "has_labels": np.asarray(dataset.y is not None),
         "y": (
@@ -631,6 +713,8 @@ def load_epoch_dataset(
             "preprocessing_json",
             "metadata_json",
             "provenance_json",
+            "identity_json",
+            "lineage_json",
             "has_labels",
             "y",
             "event_schema",
@@ -656,32 +740,22 @@ def load_epoch_dataset(
         if missing:
             raise ValueError(f"{path} lacks EpochDataset fields {sorted(missing)}.")
         schema = str(np.asarray(archive["schema"]).item())
-        if schema not in {EPOCH_DATASET_SCHEMA, *LEGACY_EPOCH_DATASET_SCHEMAS}:
+        if schema != EPOCH_DATASET_SCHEMA:
             raise ValueError(f"Unsupported EpochDataset schema {schema!r} in {path}.")
         event_schema = str(np.asarray(archive["event_schema"]).item())
-        if event_schema not in {EVENT_TIMELINE_SCHEMA, *LEGACY_EVENT_TIMELINE_SCHEMAS}:
+        if event_schema != EVENT_TIMELINE_SCHEMA:
             raise ValueError(f"Unsupported event timeline schema {event_schema!r} in {path}.")
-        if schema == EPOCH_DATASET_SCHEMA and event_schema != EVENT_TIMELINE_SCHEMA:
-            raise ValueError(
-                f"EpochDataset schema {schema!r} requires event schema "
-                f"{EVENT_TIMELINE_SCHEMA!r}, got {event_schema!r}."
-            )
-        has_current_candidate_contract = schema in {
-            EPOCH_DATASET_SCHEMA,
-            "n2p3net_epoch_dataset/3",
-        } and event_schema == EVENT_TIMELINE_SCHEMA
         candidate_fields = {
             "event_candidate_ids",
             "event_target_candidate_ids",
             "event_repetition_indices",
         }
-        if has_current_candidate_contract:
-            missing_candidate_fields = candidate_fields - set(archive.files)
-            if missing_candidate_fields:
-                raise ValueError(
-                    f"{path} lacks schema-v3 candidate fields "
-                    f"{sorted(missing_candidate_fields)}."
-                )
+        missing_candidate_fields = candidate_fields - set(archive.files)
+        if missing_candidate_fields:
+            raise ValueError(
+                f"{path} lacks current candidate fields "
+                f"{sorted(missing_candidate_fields)}."
+            )
         qc_fields = {
             "qc_feature_schema",
             "qc_relative_ptp",
@@ -689,10 +763,9 @@ def load_epoch_dataset(
             "qc_epoch_scale_v",
             "qc_observed_mask",
         }
-        if schema == EPOCH_DATASET_SCHEMA:
-            missing_qc_fields = qc_fields - set(archive.files)
-            if missing_qc_fields:
-                raise ValueError(f"{path} lacks schema-v4 QC fields {sorted(missing_qc_fields)}.")
+        missing_qc_fields = qc_fields - set(archive.files)
+        if missing_qc_fields:
+            raise ValueError(f"{path} lacks current QC fields {sorted(missing_qc_fields)}.")
         integer_fields = (
             "event_stimulus_ids",
             "event_onset_samples",
@@ -725,32 +798,30 @@ def load_epoch_dataset(
                 raise ValueError(
                     f"{path} field trial_channel_mask must be a strict boolean array."
                 )
-        if schema == EPOCH_DATASET_SCHEMA:
-            from data.qc_features import QC_FEATURE_SCHEMA
+        from data.qc_features import QC_FEATURE_SCHEMA
 
-            if str(np.asarray(archive["qc_feature_schema"]).item()) != QC_FEATURE_SCHEMA:
-                raise ValueError(f"{path} has an unsupported QC feature schema.")
-            for field_name in ("qc_relative_ptp", "qc_channel_std_v", "qc_epoch_scale_v"):
-                if not np.issubdtype(np.asarray(archive[field_name]).dtype, np.floating):
-                    raise ValueError(f"{path} field {field_name} must be floating-point.")
-            if np.asarray(archive["qc_observed_mask"]).dtype != np.dtype(bool):
-                raise ValueError(f"{path} field qc_observed_mask must be boolean.")
+        if str(np.asarray(archive["qc_feature_schema"]).item()) != QC_FEATURE_SCHEMA:
+            raise ValueError(f"{path} has an unsupported QC feature schema.")
+        for field_name in ("qc_relative_ptp", "qc_channel_std_v", "qc_epoch_scale_v"):
+            if not np.issubdtype(np.asarray(archive[field_name]).dtype, np.floating):
+                raise ValueError(f"{path} field {field_name} must be floating-point.")
+        if np.asarray(archive["qc_observed_mask"]).dtype != np.dtype(bool):
+            raise ValueError(f"{path} field qc_observed_mask must be boolean.")
         preprocessing = PreprocessingSpec(
             **json.loads(str(np.asarray(archive["preprocessing_json"]).item()))
         )
         has_labels = bool(np.asarray(archive["has_labels"]).item())
         metadata_json = str(np.asarray(archive["metadata_json"]).item())
         qc_features = None
-        if schema == EPOCH_DATASET_SCHEMA:
-            from data.qc_features import EpochQCFeatures
+        from data.qc_features import EpochQCFeatures
 
-            qc_features = EpochQCFeatures(
-                relative_ptp=np.asarray(archive["qc_relative_ptp"], dtype=np.float32),
-                channel_std_v=np.asarray(archive["qc_channel_std_v"], dtype=np.float32),
-                epoch_scale_v=np.asarray(archive["qc_epoch_scale_v"], dtype=np.float32),
-                observed_mask=np.asarray(archive["qc_observed_mask"], dtype=bool),
-                schema=str(np.asarray(archive["qc_feature_schema"]).item()),
-            )
+        qc_features = EpochQCFeatures(
+            relative_ptp=np.asarray(archive["qc_relative_ptp"], dtype=np.float32),
+            channel_std_v=np.asarray(archive["qc_channel_std_v"], dtype=np.float32),
+            epoch_scale_v=np.asarray(archive["qc_epoch_scale_v"], dtype=np.float32),
+            observed_mask=np.asarray(archive["qc_observed_mask"], dtype=bool),
+            schema=str(np.asarray(archive["qc_feature_schema"]).item()),
+        )
         dataset = EpochDataset(
             name=str(np.asarray(archive["name"]).item()),
             X=np.asarray(X, dtype=np.float32),
@@ -782,18 +853,12 @@ def load_epoch_dataset(
                 timing_source=str(np.asarray(archive["event_timing_source"]).item()),
                 candidate_ids=(
                     np.asarray(archive["event_candidate_ids"], dtype=str)
-                    if has_current_candidate_contract
-                    else None
                 ),
                 target_candidate_ids=(
                     np.asarray(archive["event_target_candidate_ids"], dtype=str)
-                    if has_current_candidate_contract
-                    else None
                 ),
                 repetition_indices=(
                     np.asarray(archive["event_repetition_indices"], dtype=np.int64)
-                    if has_current_candidate_contract
-                    else None
                 ),
             ),
             metadata=pd.read_json(StringIO(metadata_json), orient="table"),
@@ -805,6 +870,12 @@ def load_epoch_dataset(
                 else None
             ),
             qc_features=qc_features,
+            identity_table=DatasetIdentityTable.from_payload(
+                json.loads(str(np.asarray(archive["identity_json"]).item()))
+            ),
+            lineage=DataLineage.from_payload(
+                json.loads(str(np.asarray(archive["lineage_json"]).item()))
+            ),
         )
     if validation == "full":
         dataset.validate(require_labels=require_labels)
@@ -860,6 +931,12 @@ def select_epoch_channels(
             if dataset.qc_features is not None
             else None
         ),
+        identity_table=materialize_dataset_identity(dataset),
+        lineage=DataLineage.derive(
+            [materialize_dataset_lineage(dataset)],
+            operation="select_channels",
+            parameters={"target_channels": list(targets)},
+        ),
     )
     selected.validate()
     return selected
@@ -876,6 +953,9 @@ def concatenate_epoch_datasets(
     if not datasets:
         raise ValueError("At least one EpochDataset is required.")
     first = datasets[0]
+    for dataset in datasets:
+        materialize_dataset_identity(dataset)
+        materialize_dataset_lineage(dataset)
     first.validate()
     source_references = {
         str(dataset.provenance.get("source_reference", "unspecified")).strip().casefold()
@@ -943,6 +1023,14 @@ def concatenate_epoch_datasets(
             else None
         ),
         qc_features=qc_features,
+        identity_table=DatasetIdentityTable.concatenate(
+            [materialize_dataset_identity(dataset) for dataset in datasets]
+        ),
+        lineage=DataLineage.derive(
+            [materialize_dataset_lineage(dataset) for dataset in datasets],
+            operation="concatenate_epoch_datasets",
+            parameters={"name": name, "parent_count": len(datasets)},
+        ),
     )
     merged.validate()
     return merged

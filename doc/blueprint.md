@@ -25,8 +25,9 @@ The active interfaces expose one achieved-best physical recipe:
 
 BrainSync uses the canonical 0.1-30 Hz / 1200 ms causal profile. Multiple
 sessions are ordered by timezone-aware `started_utc`; marker `selection_id` or
-`block_id` defines target-changing decisions. Multi-session input without a
-unique timestamp fails closed.
+`block_id` never defines a decision in the v2 producer. One v2 session is one
+decision; a target-sequence policy is declared by evaluation. Multi-session
+input without a unique timestamp fails closed.
 
 All profiles execute per-trial, per-channel `[-200,0) ms` mean correction.
 Native acquisition remains first-class (250 Hz for BrainSync); raw samples and

@@ -37,6 +37,7 @@ from data.contract import (  # noqa: E402
     assert_p300_input_contract,
 )
 from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
+from data.identity import IdentityExclusionPolicy  # noqa: E402
 from data.qc_features import compute_epoch_qc_features  # noqa: E402
 from models.decision import (  # noqa: E402
     COUNT_AGGREGATIONS,
@@ -49,11 +50,18 @@ from models.n2p3net import (  # noqa: E402
     POOLING_MODES,
     N2P3Net,
 )
+from research.evaluation import (  # noqa: E402
+    build_evaluation_run_contract,
+    checkpoint_model_origin,
+    scratch_model_origin,
+    source_snapshot_sha256_from_archive_manifest,
+)
 from train.device import get_device  # noqa: E402
 from transfer.checkpoint import (  # noqa: E402
     checkpoint_classifier_is_trained,
     checkpoint_input_stats,
     checkpoint_scores_to_llr,
+    checkpoint_training_contract,
     load_checkpoint_payload,
     load_n2p3_trunk_checkpoint,
     predict_n2p3_checkpoint,
@@ -71,13 +79,13 @@ def _load_trunk(
     dataset,
     *,
     target_subject: str,
-    target_cache_sha256: str | None = None,
+    identity_exclusion_policy: IdentityExclusionPolicy,
 ) -> N2P3Net:
     trunk, _ = load_n2p3_trunk_checkpoint(
         path,
         dataset,
         target_subject=target_subject,
-        target_cache_sha256=target_cache_sha256,
+        identity_exclusion_policy=identity_exclusion_policy,
     )
     return trunk
 
@@ -88,6 +96,19 @@ def _sha256_file(path: str | Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _target_fixed_budget_calibration_payload(
+    *, pos_weight: float, train_prior: float
+) -> dict[str, object]:
+    return {
+        "source_calibration": {
+            "pos_weight": pos_weight,
+            "train_prior": train_prior,
+            "temperature": 1.0,
+            "source": "target_fixed_budget_weighted_ce_analytic",
+        }
+    }
 
 
 def _parse_test_repetitions(value: str) -> int | None:
@@ -116,6 +137,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-cache", required=True)
     parser.add_argument("--checkpoint", default=None)
+    parser.add_argument("--arm-name", required=True)
+    parser.add_argument("--source-snapshot-manifest", type=Path, required=True)
+    parser.add_argument(
+        "--identity-exclusion-policy",
+        required=True,
+        choices=("source", "source_or_global", "global"),
+    )
     parser.add_argument(
         "--prefix-reps",
         type=int,
@@ -261,6 +289,10 @@ def main() -> None:
             "--target-subjects-file already defines the exact target cohort; "
             "do not combine it with --subject-offset/--max-subjects"
         )
+    source_snapshot_manifest = args.source_snapshot_manifest.resolve()
+    source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
+        source_snapshot_manifest
+    )
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
@@ -276,9 +308,15 @@ def main() -> None:
     ckpt_input_stats = None
     if args.checkpoint:
         checkpoint_payload = load_checkpoint_payload(args.checkpoint)
-        ckpt_input_stats = checkpoint_input_stats(
-            checkpoint_payload, dataset.n_channels, required=True
-        )
+        if (
+            checkpoint_training_contract(checkpoint_payload).source_snapshot_sha256
+            != source_snapshot_sha256
+        ):
+            raise ValueError(
+                "checkpoint TrainingRunContract source snapshot disagrees with the "
+                "verified physical source freeze."
+            )
+        ckpt_input_stats = checkpoint_input_stats(checkpoint_payload, dataset.n_channels)
     head_mode = args.head
     if head_mode == "auto":
         head_mode = "zero_shot" if checkpoint_payload is not None else "linear"
@@ -465,7 +503,7 @@ def main() -> None:
                 checkpoint_payload,
                 dataset,
                 target_subject=target_subject,
-                target_cache_sha256=target_cache_sha256,
+                identity_exclusion_policy=args.identity_exclusion_policy,
             ) if args.checkpoint else N2P3Net(
                 dataset.n_channels,
                 n_times=dataset.n_times,
@@ -564,13 +602,12 @@ def main() -> None:
                 }
             else:
                 suffix_llr, calibration_record = checkpoint_scores_to_llr(
-                    {
-                        "training_pos_weight": adapter.training_pos_weight_,
-                        "training_prior": adapter.training_prior_,
-                    },
+                    _target_fixed_budget_calibration_payload(
+                        pos_weight=adapter.training_pos_weight_,
+                        train_prior=adapter.training_prior_,
+                    ),
                     suffix_logits,
                 )
-                calibration_record["source"] = "target_fixed_budget_weighted_ce_analytic"
             total_parameters = adapter.total_parameter_count()
             trainable_parameters = adapter.parameter_count()
             refit_record = {
@@ -718,10 +755,90 @@ def main() -> None:
         if group in split.truth_by_group
     ]
     truth_counts = np.bincount(requested_truths, minlength=len(split.candidate_vocab))
+    scheduled_groups = np.asarray(dataset.event_timeline.group_ids).astype(str)
+    scheduled_subjects = np.asarray(dataset.event_timeline.subject_ids).astype(str)
+    requested_subjects = tuple(
+        sorted(
+            {
+                str(subject)
+                for group in requested_groups
+                for subject in np.unique(scheduled_subjects[scheduled_groups == group])
+            }
+        )
+    )
+    checkpoint_sha256 = _sha256_file(args.checkpoint) if args.checkpoint else None
+    model_origin = (
+        checkpoint_model_origin(
+            checkpoint_payload,
+            checkpoint_sha256=checkpoint_sha256,
+        )
+        if checkpoint_payload is not None and checkpoint_sha256 is not None
+        else scratch_model_origin(
+            {
+                "model": "N2P3Net",
+                "pooling_mode": args.pooling_mode,
+                "temporal_kernel_size": args.temporal_kernel_size,
+                "head": head_mode,
+                "seed": args.seed,
+                "n_channels": dataset.n_channels,
+                "n_times": dataset.n_times,
+            }
+        )
+    )
+    evaluation_contract = build_evaluation_run_contract(
+        arm_name=args.arm_name,
+        model_origin=model_origin,
+        dataset=dataset,
+        target_cache_sha256=target_cache_sha256,
+        source_snapshot_sha256=source_snapshot_sha256,
+        requested_subjects=requested_subjects,
+        identity_policy=args.identity_exclusion_policy,
+        target_protocol={
+            "estimand": estimand,
+            "prefix_repetitions": prefix_reps,
+            "test_repetitions": "all" if args.test_reps is None else args.test_reps,
+            "cohort": args.cohort,
+            "epoch_selection": args.epoch_selection,
+        },
+        adaptation={
+            "head": head_mode,
+            "epochs": epochs,
+            "learning_rate": lr,
+            "batch_size": args.batch_size,
+            "adapt_batchnorm": bool(args.adapt_batchnorm),
+            "normalization": normalization,
+            "target_stat_weight": args.target_stat_weight,
+            "fold_local_qc": bool(args.fold_local_qc),
+            "identity_exclusion_policy": args.identity_exclusion_policy,
+        },
+        decision={
+            "task": "nine_choice_digit",
+            "aggregation": args.aggregation,
+            "evidence_count_power": args.evidence_count_power,
+            "tie_policy": "abstain",
+        },
+        evidence_scope={
+            "stage": "development",
+            "dataset": dataset.name,
+            "estimand": estimand,
+            "same_selection_oracle_proxy": head_mode != "zero_shot",
+            "product_confirmation": False,
+        },
+    )
     summary = {
+        "schema": "n2p3_within_subject_transfer_result/2",
+        "run_status": "completed",
+        "arm_name": args.arm_name,
+        "evaluation_contract": evaluation_contract.record(),
+        "evaluation_contract_digest": evaluation_contract.digest(),
+        "requested_participant_keys": list(
+            evaluation_contract.requested_participant_keys
+        ),
+        "source_snapshot_manifest": str(source_snapshot_manifest),
+        "source_snapshot_sha256": source_snapshot_sha256,
         "dataset_cache": str(Path(args.dataset_cache).resolve()),
         "checkpoint": str(Path(args.checkpoint).resolve()) if args.checkpoint else None,
-        "checkpoint_sha256": _sha256_file(args.checkpoint) if args.checkpoint else None,
+        "checkpoint_sha256": checkpoint_sha256,
         "target_cache_sha256": target_cache_sha256,
         "prefix_reps": prefix_reps,
         "test_reps": "all" if args.test_reps is None else args.test_reps,

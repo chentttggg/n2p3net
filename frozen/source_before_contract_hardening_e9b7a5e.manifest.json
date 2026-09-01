@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "source_before_contract_hardening_e9b7a5e.source-only.tar.gz",
+  "archive_sha256": "6cbf2d5f041c3f79c6fe0eb514efe847488bc0852f3343489fad4c98d8c1b856",
+  "source_commit": "e9b7a5ea4be8281323ee00ca577f3785e9698b99",
+  "member_count": 142,
+  "byte_size": 611564,
+  "scope": "Git-tracked src, experiments, tests, documentation, and dependency records before session, identity, run, and outcome contract hardening",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "obsolete executable contracts are removed from the active tree; this archive is the physical historical boundary"
+}

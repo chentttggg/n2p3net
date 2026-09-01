@@ -80,7 +80,7 @@ def test_epoch_cache_round_trip_persists_qc_features(tmp_path) -> None:
 
     assert source.qc_features is not None
     assert loaded.qc_features is not None
-    assert loaded.record()["schema"] == "n2p3net_epoch_dataset/4"
+    assert loaded.record()["schema"] == "n2p3net_epoch_dataset/5"
     np.testing.assert_allclose(loaded.qc_features.relative_ptp, source.qc_features.relative_ptp)
     np.testing.assert_allclose(loaded.qc_features.channel_std_v, source.qc_features.channel_std_v)
     np.testing.assert_allclose(loaded.qc_features.epoch_scale_v, source.qc_features.epoch_scale_v)

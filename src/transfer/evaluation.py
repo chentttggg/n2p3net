@@ -18,6 +18,7 @@ from models.decision import (
     DEFAULT_EVIDENCE_COUNT_POWER,
     count_tempered_evidence_scores,
 )
+from transfer.outcomes import CandidateCoverage, DecisionKey, DecisionOutcome, DecisionStatus
 
 
 def _aggregate_scores(
@@ -171,6 +172,128 @@ def hit_at_repetition(
             total += 1
         hits[r] = float(correct / total) if total else float("nan")
     return hits
+
+
+def candidate_decision_outcomes(
+    logits: Sequence[float],
+    digits: Sequence[int],
+    group_ids: Sequence,
+    truth_by_group: Mapping[object, object],
+    repetition_indices: Sequence[int],
+    subject_by_group: Mapping[object, object],
+    *,
+    aggregation: str,
+    max_repetitions: int,
+    candidate_vocabulary: Sequence[int],
+    evidence_count_power: float = DEFAULT_EVIDENCE_COUNT_POWER,
+    onset_times_s: Sequence[float] | None = None,
+    evidence_available_times_s: Sequence[float] | None = None,
+) -> tuple[DecisionOutcome, ...]:
+    """Return one auditable outcome for every available decision and evidence level."""
+
+    values = np.asarray(logits, dtype=float)
+    candidates = np.asarray(digits, dtype=np.int64)
+    groups = np.asarray(group_ids).astype(str)
+    repetitions = np.asarray(repetition_indices, dtype=np.int64)
+    vocabulary = np.asarray(candidate_vocabulary, dtype=np.int64)
+    if not (
+        values.ndim == candidates.ndim == groups.ndim == repetitions.ndim == 1
+        and len(values) == len(candidates) == len(groups) == len(repetitions)
+    ):
+        raise ValueError("candidate outcome arrays must be aligned one-dimensional vectors.")
+    if len(values) == 0 or not np.isfinite(values).all():
+        raise ValueError("candidate outcome logits must be finite and non-empty.")
+    if max_repetitions < 1 or len(vocabulary) < 2 or len(np.unique(vocabulary)) != len(
+        vocabulary
+    ):
+        raise ValueError("candidate outcome budget and vocabulary are invalid.")
+    onsets = None if onset_times_s is None else np.asarray(onset_times_s, dtype=float)
+    available = (
+        None
+        if evidence_available_times_s is None
+        else np.asarray(evidence_available_times_s, dtype=float)
+    )
+    if onsets is not None and (onsets.shape != values.shape or not np.isfinite(onsets).all()):
+        raise ValueError("onset_times_s must be finite and align with logits.")
+    if available is not None and (
+        available.shape != values.shape or not np.isfinite(available).all()
+    ):
+        raise ValueError("evidence_available_times_s must be finite and align with logits.")
+
+    outcomes: list[DecisionOutcome] = []
+    for group in np.unique(groups):
+        group = str(group)
+        truth = truth_by_group.get(group)
+        subject = subject_by_group.get(group)
+        if truth is None or subject is None:
+            raise ValueError(f"decision {group!r} lacks truth or subject identity.")
+        group_rows = groups == group
+        for level in range(1, max_repetitions + 1):
+            selected = group_rows & (repetitions < level)
+            observed = {
+                str(int(candidate)): int(np.count_nonzero(selected & (candidates == candidate)))
+                for candidate in vocabulary
+            }
+            coverage = CandidateCoverage.from_mappings(
+                {str(int(candidate)): level for candidate in vocabulary}, observed
+            )
+            timing_rows = np.flatnonzero(selected)
+            timing = {
+                "onset_start_s": (
+                    float(np.min(onsets[timing_rows]))
+                    if onsets is not None and len(timing_rows)
+                    else None
+                ),
+                "onset_end_s": (
+                    float(np.max(onsets[timing_rows]))
+                    if onsets is not None and len(timing_rows)
+                    else None
+                ),
+                "evidence_available_s": (
+                    float(np.max(available[timing_rows]))
+                    if available is not None and len(timing_rows)
+                    else None
+                ),
+            }
+            key = DecisionKey(str(subject), group)
+            if not coverage.complete:
+                outcomes.append(
+                    DecisionOutcome(
+                        key=key,
+                        evidence_level=level,
+                        status=DecisionStatus.INCOMPLETE,
+                        coverage=coverage,
+                        target_candidate=str(int(truth)),
+                        failure_reason="incomplete_candidate_coverage",
+                        **timing,
+                    )
+                )
+                continue
+            _, predicted = _aggregate_scores(
+                values[selected],
+                candidates[selected],
+                aggregation=aggregation,
+                vocabulary=vocabulary,
+                evidence_count_power=evidence_count_power,
+            )
+            if predicted is None:
+                status = DecisionStatus.TIE
+            elif int(predicted) == int(truth):
+                status = DecisionStatus.CORRECT
+            else:
+                status = DecisionStatus.INCORRECT
+            outcomes.append(
+                DecisionOutcome(
+                    key=key,
+                    evidence_level=level,
+                    status=status,
+                    coverage=coverage,
+                    target_candidate=str(int(truth)),
+                    predicted_candidate=(None if predicted is None else str(int(predicted))),
+                    **timing,
+                )
+            )
+    return tuple(outcomes)
 
 
 def candidate_evidence_endpoints(
