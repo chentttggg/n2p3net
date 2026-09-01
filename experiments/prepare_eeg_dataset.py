@@ -69,6 +69,16 @@ def _parse_optional_float(value: str) -> float | None:
         raise argparse.ArgumentTypeError("expected a number or 'none'") from exc
 
 
+def _positive_int(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be a positive integer") from exc
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
+
+
 def _derive_exclusive_n_times(*, sfreq: float, tmin_ms: float, tmax_ms: float) -> int:
     """Derive the cache width for the preprocessing contract's exclusive right edge."""
 
@@ -97,6 +107,12 @@ def main() -> None:
         help="Dedicated immutable snapshot directory beneath the output cache workspace.",
     )
     moabb_parser.add_argument("--subjects", default=None, help="Comma/range list, e.g. 1-8,12")
+    moabb_parser.add_argument(
+        "--subject-workers",
+        type=_positive_int,
+        default=1,
+        help="Subject parser processes for forward causal caches (default: 1).",
+    )
     moabb_parser.add_argument("--channels", default="native")
     moabb_parser.add_argument("--montage", default="standard_1005")
     moabb_parser.add_argument("--target-label", default="Target")
@@ -221,6 +237,7 @@ def main() -> None:
             montage=args.montage,
             preprocessing=preprocessing,
             target_label=args.target_label,
+            subject_workers=args.subject_workers,
         )
     elif args.source == "manifest":
         dataset = build_manifest_dataset(load_manifest(args.manifest))

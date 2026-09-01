@@ -3,7 +3,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import threading
 import zipfile
+from concurrent.futures import Future
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -256,6 +259,151 @@ def _allow_narrow_moabb_test_double(monkeypatch) -> None:
     monkeypatch.setattr("data.moabb._assert_validated_moabb_runtime", lambda dataset: False)
 
 
+class _InlineSubjectExecutor:
+    """Exercise Future scheduling deterministically without spawning patched test doubles."""
+
+    def submit(self, function, task):
+        future = Future()
+        try:
+            future.set_result(function(task))
+        except BaseException as exc:  # noqa: BLE001 - Future transports the worker exception
+            future.set_exception(exc)
+        return future
+
+    def shutdown(self, *, wait: bool, cancel_futures: bool) -> None:
+        assert wait is True
+        assert cancel_futures is True
+
+
+def _spawn_roundtrip(value):
+    return value
+
+
+def _causal_parallel_fixture(monkeypatch, tmp_path: Path):
+    from data import moabb as adapter_module
+
+    _allow_narrow_moabb_test_double(monkeypatch)
+    info = mne.create_info(["Fz", "Cz"], 100.0, ch_types="eeg")
+
+    def raw(value: float):
+        times = np.arange(600, dtype=float) / 100.0
+        signal = np.vstack(
+            [
+                np.sin(2.0 * np.pi * 5.0 * times) + value,
+                np.cos(2.0 * np.pi * 7.0 * times) - value,
+            ]
+        )
+        instance = mne.io.RawArray(signal, info, verbose=False)
+        instance.set_montage("standard_1005")
+        instance.set_annotations(
+            mne.Annotations(
+                onset=[1.0, 2.0],
+                duration=[0.0, 0.0],
+                description=["NonTarget", "Target"],
+            )
+        )
+        return instance
+
+    runs_by_subject = {
+        subject: {
+            "session-b": {"run-2": raw(subject * 10 + 2), "run-1": raw(subject * 10 + 1)},
+            "session-a": {"run-2": raw(subject * 10 + 4), "run-1": raw(subject * 10 + 3)},
+        }
+        for subject in (1, 2)
+    }
+
+    def resolve(_name: str):
+        dataset = _fake_dataset((1, 2))
+        dataset.event_id = {"NonTarget": 1, "Target": 2}
+        dataset.get_data = lambda subjects: {
+            subject: runs_by_subject[subject] for subject in subjects
+        }
+        return dataset
+
+    monkeypatch.setattr(adapter_module, "resolve_moabb_dataset", resolve)
+    profile = PreprocessingSpec(
+        name="causal_subject_parallel",
+        sfreq=100.0,
+        l_freq=2.0,
+        h_freq=30.0,
+        tmin_ms=0.0,
+        tmax_ms=500.0,
+        n_times=50,
+        baseline_mode="none",
+        filter_phase="forward",
+        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
+    )
+    return (
+        adapter_module,
+        _verified_artifact_attestation(tmp_path, "ParallelP300"),
+        profile,
+    )
+
+
+def _source_race_fixture(monkeypatch, tmp_path: Path, dataset_class: str):
+    from data import moabb as adapter_module
+
+    _allow_narrow_moabb_test_double(monkeypatch)
+    attestation = _verified_artifact_attestation(tmp_path, dataset_class)
+    materialization = attestation.materialize_moabb_loaders([1])
+    source_path = materialization.paths_by_subject[1][0]
+    canonical = source_path.read_bytes()
+    observed: list[bytes] = []
+    parser_action = {"before": lambda: None, "after": lambda: None}
+
+    def resolve(_name: str):
+        dataset = _fake_dataset((1,))
+        dataset.event_id = {"NonTarget": 1, "Target": 2}
+
+        def get_data(*, subjects):
+            parser_action["before"]()
+            parser_path = Path(dataset.data_path(subjects[0])[0])
+            payload = parser_path.read_bytes()
+            observed.append(payload)
+            parser_action["after"]()
+            scale = 1.0 if payload == canonical else 50.0
+            info = mne.create_info(["Fz", "Cz"], 100.0, ch_types="eeg")
+            times = np.arange(600, dtype=float) / 100.0
+            raw = mne.io.RawArray(
+                scale
+                * np.vstack(
+                    [
+                        np.sin(2.0 * np.pi * 5.0 * times),
+                        np.cos(2.0 * np.pi * 7.0 * times),
+                    ]
+                ),
+                info,
+                verbose=False,
+            )
+            raw.set_montage("standard_1005")
+            raw.set_annotations(
+                mne.Annotations(
+                    onset=[1.0, 2.0],
+                    duration=[0.0, 0.0],
+                    description=["NonTarget", "Target"],
+                )
+            )
+            return {subjects[0]: {"0": {"0": raw}}}
+
+        dataset.get_data = get_data
+        return dataset
+
+    monkeypatch.setattr(adapter_module, "resolve_moabb_dataset", resolve)
+    profile = PreprocessingSpec(
+        name="causal_private_parser_snapshot",
+        sfreq=100.0,
+        l_freq=2.0,
+        h_freq=30.0,
+        tmin_ms=0.0,
+        tmax_ms=500.0,
+        n_times=50,
+        baseline_mode="none",
+        filter_phase="forward",
+        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
+    )
+    return adapter_module, attestation, source_path, canonical, observed, parser_action, profile
+
+
 def test_attested_scope_bypasses_nemar_prefetch_and_restores_process_state(
     monkeypatch,
     tmp_path: Path,
@@ -319,7 +467,20 @@ def test_attested_scope_bypasses_nemar_prefetch_and_restores_process_state(
         "upstream_data_path_bypassed": True,
         "parser_data_path_verified": True,
         "subjects": [1],
-        "offline_guard": "python_socket_offline_guard/1",
+        "parser_trust_boundary": {
+            "dependency": "moabb==1.6.1",
+            "role": "trusted_pinned_parser_not_process_sandbox",
+        },
+        "parsed_byte_authority": "n2p3_private_moabb_parser_snapshot/1",
+        "network_guard": {
+            "schema": "python_socket_offline_guard/1",
+            "role": "defense_in_depth_not_process_network_sandbox",
+        },
+        "parser_snapshot_schema": "n2p3_private_moabb_parser_snapshot/1",
+        "python_audit_guard": {
+            "schema": "python_audit_read_only_loader_guard/1",
+            "role": "defense_in_depth_not_parsed_byte_attestation",
+        },
     }
 
 
@@ -437,6 +598,7 @@ def test_bi2013a_reads_eight_sessions_only_from_attested_snapshot_mapping(
     from data.moabb import (
         _install_attested_data_path,
         _reported_moabb_loader_paths,
+        _scoped_attested_loader_read_only,
         _scoped_attested_moabb_io,
     )
 
@@ -458,10 +620,11 @@ def test_bi2013a_reads_eight_sessions_only_from_attested_snapshot_mapping(
     monkeypatch.setenv("MOABB_DOWNLOAD_PROVIDER", "auto")
 
     with _scoped_attested_moabb_io(dataset, [1], binding) as resolver:
-        runs = dataset.get_data(
-            subjects=[1],
-            process_pipeline=SimpleNamespace(steps=[]),
-        )
+        with _scoped_attested_loader_read_only():
+            runs = dataset.get_data(
+                subjects=[1],
+                process_pipeline=SimpleNamespace(steps=[]),
+            )
 
     assert set(runs[1]) == {str(index) for index in range(8)}
     assert all(len(session_runs) == 1 for session_runs in runs[1].values())
@@ -480,6 +643,7 @@ def test_bi2015a_bypasses_upstream_strip_logic_with_attested_session_paths(
 
     from data.moabb import (
         _install_attested_data_path,
+        _scoped_attested_loader_read_only,
         _scoped_attested_moabb_io,
     )
 
@@ -498,10 +662,11 @@ def test_bi2015a_bypasses_upstream_strip_logic_with_attested_session_paths(
     download_calls = _forbid_moabb_downloads(monkeypatch)
 
     with _scoped_attested_moabb_io(dataset, [1], binding):
-        runs = dataset.get_data(
-            subjects=[1],
-            process_pipeline=SimpleNamespace(steps=[]),
-        )
+        with _scoped_attested_loader_read_only():
+            runs = dataset.get_data(
+                subjects=[1],
+                process_pipeline=SimpleNamespace(steps=[]),
+            )
 
     assert set(runs[1]) == {"0", "1", "2"}
     assert all(set(session_runs) == {"0"} for session_runs in runs[1].values())
@@ -568,6 +733,538 @@ def test_moabb_adapter_builds_causal_cache_from_raw_runs(monkeypatch, tmp_path: 
         "upstream_data_path_bypassed": True,
         "workspace_role": "controlled_read_only_mne_materialization",
     }
+
+
+def test_causal_subject_workers_match_serial_output_and_stabilize_order(
+    monkeypatch, tmp_path: Path
+) -> None:
+    adapter_module, attestation, profile = _causal_parallel_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(adapter_module, "_available_cpu_count", lambda: 25)
+    created_workers: list[int] = []
+
+    def inline_executor(max_workers: int):
+        created_workers.append(max_workers)
+        return _InlineSubjectExecutor()
+
+    monkeypatch.setattr(adapter_module, "_create_subject_executor", inline_executor)
+    serial = prepare_moabb_p300(
+        "ParallelP300",
+        raw_artifact_attestation=attestation,
+        subjects=[2, 1],
+        preprocessing=profile,
+        subject_workers=1,
+    )
+    parallel = prepare_moabb_p300(
+        "ParallelP300",
+        raw_artifact_attestation=attestation,
+        subjects=[2, 1],
+        preprocessing=profile,
+        subject_workers=4,
+    )
+
+    assert created_workers == [2]
+    np.testing.assert_array_equal(parallel.X, serial.X)
+    np.testing.assert_array_equal(parallel.y, serial.y)
+    np.testing.assert_array_equal(parallel.subject_ids, serial.subject_ids)
+    np.testing.assert_array_equal(
+        parallel.event_timeline.onset_times_s,
+        serial.event_timeline.onset_times_s,
+    )
+    pd.testing.assert_frame_equal(parallel.metadata, serial.metadata)
+    assert parallel.identity_table.payload() == serial.identity_table.payload()
+    assert parallel.lineage.payload() == serial.lineage.payload()
+    assert parallel.metadata[["subject", "session", "run"]].drop_duplicates().values.tolist() == [
+        ["2", "session-a", "run-1"],
+        ["2", "session-a", "run-2"],
+        ["2", "session-b", "run-1"],
+        ["2", "session-b", "run-2"],
+        ["1", "session-a", "run-1"],
+        ["1", "session-a", "run-2"],
+        ["1", "session-b", "run-1"],
+        ["1", "session-b", "run-2"],
+    ]
+    assert parallel.provenance["subject_execution"]["requested_workers"] == 4
+    assert parallel.provenance["subject_execution"]["effective_workers"] == 2
+    assert parallel.provenance["subject_execution"]["execution_mode"] == ("spawn_process_subjects")
+    assert parallel.provenance["subject_execution"]["shard_cleanup"]["status"] == "completed"
+    assert serial.provenance["subject_execution"]["execution_mode"] == "serial_subjects"
+    assert not list((Path(attestation.cache_workspace_root) / "shards").glob("run-*"))
+
+
+def test_parallel_subjects_materialize_and_build_raw_provenance_only_in_parent_once(
+    monkeypatch, tmp_path: Path
+) -> None:
+    adapter_module, attestation, profile = _causal_parallel_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(adapter_module, "_available_cpu_count", lambda: 25)
+    monkeypatch.setattr(
+        adapter_module,
+        "_create_subject_executor",
+        lambda _workers: _InlineSubjectExecutor(),
+    )
+    calls = {"materialize": 0, "provenance": 0}
+    original_materialize = RawArtifactAttestation.materialize_moabb_loaders
+    original_provenance = RawArtifactAttestation.provenance_record
+
+    def counted_materialize(self, subjects):
+        calls["materialize"] += 1
+        return original_materialize(self, subjects)
+
+    def counted_provenance(self):
+        calls["provenance"] += 1
+        return original_provenance(self)
+
+    monkeypatch.setattr(
+        RawArtifactAttestation,
+        "materialize_moabb_loaders",
+        counted_materialize,
+    )
+    monkeypatch.setattr(RawArtifactAttestation, "provenance_record", counted_provenance)
+
+    prepared = prepare_moabb_p300(
+        "ParallelP300",
+        raw_artifact_attestation=attestation,
+        subjects=[1, 2],
+        preprocessing=profile,
+        subject_workers=4,
+    )
+
+    assert prepared.n_epochs > 0
+    assert calls == {"materialize": 1, "provenance": 1}
+
+
+def test_causal_subject_worker_failure_keeps_typed_journal_without_partial_shards(
+    monkeypatch, tmp_path: Path
+) -> None:
+    adapter_module, attestation, profile = _causal_parallel_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(adapter_module, "_available_cpu_count", lambda: 25)
+    monkeypatch.setattr(
+        adapter_module,
+        "_create_subject_executor",
+        lambda _workers: _InlineSubjectExecutor(),
+    )
+    original_worker = adapter_module._process_causal_subject_task
+
+    def fail_second_subject(task):
+        if task.subject == 2:
+            raise RuntimeError("injected subject parser failure")
+        return original_worker(task)
+
+    monkeypatch.setattr(adapter_module, "_process_causal_subject_task", fail_second_subject)
+
+    with pytest.raises(RuntimeError, match="injected subject parser failure"):
+        prepare_moabb_p300(
+            "ParallelP300",
+            raw_artifact_attestation=attestation,
+            subjects=[1, 2],
+            preprocessing=profile,
+            subject_workers=4,
+        )
+
+    run_roots = list((Path(attestation.cache_workspace_root) / "shards").glob("run-*"))
+    assert len(run_roots) == 1
+    journal = json.loads((run_roots[0] / "subject-workers.journal.json").read_text())
+    assert journal["schema"] == "n2p3_moabb_subject_journal/1"
+    assert journal["run_status"] == "failed"
+    assert journal["fatal_error"]["error_type"] == "RuntimeError"
+    assert journal["fatal_error"]["subject"] == 2
+    assert not list(run_roots[0].glob("*.npz"))
+    assert not list(run_roots[0].glob("*.record.json"))
+
+
+def test_parallel_failure_journal_is_failed_before_waiting_for_sibling_shutdown(
+    monkeypatch, tmp_path: Path
+) -> None:
+    adapter_module, attestation, profile = _causal_parallel_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(adapter_module, "_available_cpu_count", lambda: 25)
+    observed_at_shutdown: dict[str, object] = {}
+
+    class FailingThenPendingExecutor:
+        def __init__(self):
+            self.calls = 0
+
+        def submit(self, _function, _task):
+            self.calls += 1
+            future = Future()
+            if self.calls == 1:
+                future.set_exception(RuntimeError("first subject failed"))
+            return future
+
+        def shutdown(self, *, wait: bool, cancel_futures: bool) -> None:
+            assert wait is True
+            assert cancel_futures is True
+            roots = list((Path(attestation.cache_workspace_root) / "shards").glob("run-*"))
+            observed_at_shutdown.update(
+                json.loads((roots[0] / "subject-workers.journal.json").read_text())
+            )
+
+    monkeypatch.setattr(
+        adapter_module,
+        "_create_subject_executor",
+        lambda _workers: FailingThenPendingExecutor(),
+    )
+
+    with pytest.raises(RuntimeError, match="first subject failed"):
+        prepare_moabb_p300(
+            "ParallelP300",
+            raw_artifact_attestation=attestation,
+            subjects=[1, 2],
+            preprocessing=profile,
+            subject_workers=4,
+        )
+
+    assert observed_at_shutdown["run_status"] == "failed"
+    assert observed_at_shutdown["fatal_error"]["subject"] == 1
+    assert observed_at_shutdown["subjects"] == [
+        {
+            "subject": 1,
+            "status": "failed",
+            "error_type": "RuntimeError",
+            "message": "first subject failed",
+            "stage": "subject_parse",
+        },
+        {"subject": 2, "status": "cancelled"},
+    ]
+    assert observed_at_shutdown["shard_cleanup"] == {"status": "pending_worker_shutdown"}
+
+
+def test_parallel_worker_result_must_match_submitted_subject(monkeypatch, tmp_path: Path) -> None:
+    adapter_module, attestation, profile = _causal_parallel_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(adapter_module, "_available_cpu_count", lambda: 25)
+
+    class FirstResultThenPendingExecutor:
+        def __init__(self):
+            self.calls = 0
+
+        def submit(self, function, task):
+            self.calls += 1
+            future = Future()
+            if self.calls == 1:
+                future.set_result(function(task))
+            return future
+
+        def shutdown(self, *, wait: bool, cancel_futures: bool) -> None:
+            assert wait is True
+            assert cancel_futures is True
+
+    monkeypatch.setattr(
+        adapter_module,
+        "_create_subject_executor",
+        lambda _workers: FirstResultThenPendingExecutor(),
+    )
+
+    def wrong_subject(task):
+        return adapter_module._CausalSubjectResult(
+            subject=2 if task.subject == 1 else 1,
+            shard_path=task.shard_path,
+            n_epochs=1,
+            session_runs=(("0", "0"),),
+            loader_path_resolutions=(),
+            runtime_resolver={"schema": "wrong-subject"},
+        )
+
+    monkeypatch.setattr(adapter_module, "_process_causal_subject_task", wrong_subject)
+
+    with pytest.raises(RuntimeError, match="result identity mismatch: task=1, result=2"):
+        prepare_moabb_p300(
+            "ParallelP300",
+            raw_artifact_attestation=attestation,
+            subjects=[1, 2],
+            preprocessing=profile,
+            subject_workers=4,
+        )
+
+
+def test_parallel_worker_snapshot_provenance_must_match_task_contracts(
+    monkeypatch, tmp_path: Path
+) -> None:
+    adapter_module, attestation, profile = _causal_parallel_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(adapter_module, "_available_cpu_count", lambda: 25)
+    monkeypatch.setattr(
+        adapter_module,
+        "_create_subject_executor",
+        lambda _workers: _InlineSubjectExecutor(),
+    )
+    original_worker = adapter_module._process_causal_subject_task
+
+    def tamper_snapshot_digest(task):
+        result = original_worker(task)
+        snapshot = json.loads(json.dumps(result.parser_snapshot))
+        snapshot["files"][0]["sha256"] = "0" * 64
+        return replace(result, parser_snapshot=snapshot)
+
+    monkeypatch.setattr(
+        adapter_module,
+        "_process_causal_subject_task",
+        tamper_snapshot_digest,
+    )
+
+    with pytest.raises(ValueError, match="file mapping disagrees with task contracts"):
+        prepare_moabb_p300(
+            "ParallelP300",
+            raw_artifact_attestation=attestation,
+            subjects=[1, 2],
+            preprocessing=profile,
+            subject_workers=4,
+        )
+
+
+def test_failure_cleanup_issue_does_not_mask_primary_parser_error(
+    monkeypatch, tmp_path: Path
+) -> None:
+    adapter_module, attestation, profile = _causal_parallel_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        adapter_module,
+        "_process_causal_subject_task",
+        lambda _task: (_ for _ in ()).throw(RuntimeError("primary parser error")),
+    )
+    monkeypatch.setattr(
+        adapter_module,
+        "_clean_subject_shard_files",
+        lambda _workspace: [
+            {
+                "path": "1.npz",
+                "error_type": "PermissionError",
+                "message": "locked",
+            }
+        ],
+    )
+
+    with pytest.raises(RuntimeError, match="primary parser error") as exc_info:
+        prepare_moabb_p300(
+            "ParallelP300",
+            raw_artifact_attestation=attestation,
+            subjects=[1],
+            preprocessing=profile,
+            subject_workers=1,
+        )
+
+    assert any("Shard cleanup issues" in note for note in exc_info.value.__notes__)
+    roots = list((Path(attestation.cache_workspace_root) / "shards").glob("run-*"))
+    journal = json.loads((roots[0] / "subject-workers.journal.json").read_text())
+    assert journal["fatal_error"]["message"] == "primary parser error"
+    assert journal["shard_cleanup"]["status"] == "incomplete"
+    assert journal["shard_cleanup"]["issues"][0]["error_type"] == "PermissionError"
+
+
+def test_success_cleanup_failure_leaves_audited_tombstone(monkeypatch, tmp_path: Path) -> None:
+    adapter_module, attestation, profile = _causal_parallel_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(adapter_module.time, "sleep", lambda _seconds: None)
+    original_rmtree = adapter_module.shutil.rmtree
+
+    def fail_tombstone_cleanup(path):
+        if Path(path).name.startswith(".run-"):
+            raise PermissionError("scanner lock")
+        return original_rmtree(path)
+
+    monkeypatch.setattr(
+        adapter_module.shutil,
+        "rmtree",
+        fail_tombstone_cleanup,
+    )
+
+    with pytest.raises(RuntimeError, match="shard cleanup failed"):
+        prepare_moabb_p300(
+            "ParallelP300",
+            raw_artifact_attestation=attestation,
+            subjects=[1],
+            preprocessing=profile,
+            subject_workers=1,
+        )
+
+    shard_root = Path(attestation.cache_workspace_root) / "shards"
+    assert not list(shard_root.glob("run-*"))
+    tombstones = list(shard_root.glob(".run-*.complete-*"))
+    assert len(tombstones) == 1
+    journal = json.loads((tombstones[0] / "subject-workers.journal.json").read_text())
+    assert journal["run_status"] == "failed"
+    assert journal["fatal_error"]["stage"] == "shard_cleanup"
+    assert journal["shard_cleanup"]["status"] == "incomplete"
+    assert journal["shard_cleanup"]["workspace"] == tombstones[0].name
+
+
+def test_cleaning_journal_failure_still_cleans_and_keeps_typed_failure(
+    monkeypatch, tmp_path: Path
+) -> None:
+    adapter_module, attestation, profile = _causal_parallel_fixture(monkeypatch, tmp_path)
+    original_write = adapter_module._atomic_write_subject_journal
+    injected = False
+
+    def fail_cleaning_once(path, payload):
+        nonlocal injected
+        if payload["run_status"] == "cleaning" and not injected:
+            injected = True
+            raise PermissionError("injected cleaning journal failure")
+        return original_write(path, payload)
+
+    monkeypatch.setattr(
+        adapter_module,
+        "_atomic_write_subject_journal",
+        fail_cleaning_once,
+    )
+
+    with pytest.raises(PermissionError, match="injected cleaning journal failure"):
+        prepare_moabb_p300(
+            "ParallelP300",
+            raw_artifact_attestation=attestation,
+            subjects=[1],
+            preprocessing=profile,
+            subject_workers=1,
+        )
+
+    shard_root = Path(attestation.cache_workspace_root) / "shards"
+    assert not list(shard_root.glob("run-*"))
+    audit_roots = list(shard_root.glob(".run-*.journal-failure-*"))
+    assert len(audit_roots) == 1
+    assert not list(audit_roots[0].glob("*.npz"))
+    journal = json.loads((audit_roots[0] / "subject-workers.journal.json").read_text())
+    assert journal["run_status"] == "failed"
+    assert journal["fatal_error"]["stage"] == "cleaning_journal"
+    assert journal["shard_cleanup"]["status"] == "completed"
+    assert journal["shard_cleanup"]["failure_audit_workspace"] == audit_roots[0].name
+
+
+@pytest.mark.parametrize("workers", [0, -1, True, 1.5])
+def test_moabb_adapter_rejects_invalid_subject_workers(
+    monkeypatch, tmp_path: Path, workers: object
+) -> None:
+    adapter_module, attestation, profile = _causal_parallel_fixture(monkeypatch, tmp_path)
+    with pytest.raises(ValueError, match="subject_workers must be a positive integer"):
+        adapter_module.prepare_moabb_p300(
+            "ParallelP300",
+            raw_artifact_attestation=attestation,
+            subjects=[1],
+            preprocessing=profile,
+            subject_workers=workers,
+        )
+
+
+def test_moabb_adapter_rejects_parallel_workers_for_zero_phase(monkeypatch, tmp_path: Path) -> None:
+    adapter_module, attestation, profile = _causal_parallel_fixture(monkeypatch, tmp_path)
+    zero_phase = PreprocessingSpec(
+        **{
+            **profile.__dict__,
+            "filter_phase": "zero",
+            "causal_iir_initial_state": "not_applicable",
+        }
+    )
+    with pytest.raises(ValueError, match="only for forward causal"):
+        adapter_module.prepare_moabb_p300(
+            "ParallelP300",
+            raw_artifact_attestation=attestation,
+            subjects=[1],
+            preprocessing=zero_phase,
+            subject_workers=2,
+        )
+
+
+def test_subject_executor_uses_spawn_context_and_worker_initializer(monkeypatch) -> None:
+    from data import moabb as adapter_module
+
+    captured: dict[str, object] = {}
+
+    class CapturedExecutor:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    monkeypatch.setattr(adapter_module, "ProcessPoolExecutor", CapturedExecutor)
+    executor = adapter_module._create_subject_executor(4)
+
+    assert isinstance(executor, CapturedExecutor)
+    assert captured["max_workers"] == 4
+    assert captured["mp_context"].get_start_method() == "spawn"
+    assert captured["initializer"] is adapter_module._initialize_moabb_subject_worker
+
+
+def test_subject_executor_spawn_initializer_bounds_native_thread_env() -> None:
+    from data import moabb as adapter_module
+
+    profile = PreprocessingSpec(
+        name="spawn_pickle_contract",
+        sfreq=100.0,
+        l_freq=2.0,
+        h_freq=30.0,
+        tmin_ms=0.0,
+        tmax_ms=100.0,
+        n_times=10,
+        baseline_mode="none",
+        filter_phase="forward",
+        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
+    )
+    task = adapter_module._CausalSubjectTask(
+        dataset_class="SpawnRoundTrip",
+        subject=7,
+        loader_contracts=(
+            adapter_module._MaterializedLoaderContract(
+                path="/machine/materialized/subject-7.mat",
+                relative_path="subject-7.mat",
+                size_bytes=123,
+                sha256="a" * 64,
+            ),
+        ),
+        parser_snapshot_root="/machine/shards/parser-snapshots/subject-7",
+        shard_path="/machine/shards/7.npz",
+        persist_shard=True,
+        channels=("Fz", "Cz"),
+        montage="standard_1005",
+        preprocessing=profile,
+        target_label="Target",
+        source_reference="right earlobe",
+        source_sample_rate_hz=100.0,
+        raw_artifact_provenance={"nested": {"digests": ["b" * 64]}},
+    )
+    result = adapter_module._CausalSubjectResult(
+        subject=7,
+        shard_path=task.shard_path,
+        n_epochs=4,
+        session_runs=(("2", "10"),),
+        loader_path_resolutions=({"subject": 7},),
+        runtime_resolver={"schema": "roundtrip"},
+    )
+    executor = adapter_module._create_subject_executor(1)
+    try:
+        assert executor.submit(os.getenv, "OMP_NUM_THREADS").result(timeout=30) == "1"
+        assert executor.submit(os.getenv, "MKL_NUM_THREADS").result(timeout=30) == "1"
+        assert executor.submit(os.getenv, "OPENBLAS_NUM_THREADS").result(timeout=30) == "1"
+        assert executor.submit(os.getenv, "NUMEXPR_NUM_THREADS").result(timeout=30) == "1"
+        assert executor.submit(_spawn_roundtrip, task).result(timeout=30) == task
+        assert executor.submit(_spawn_roundtrip, result).result(timeout=30) == result
+    finally:
+        executor.shutdown(wait=True, cancel_futures=True)
+
+
+def test_moabb_session_and_run_keys_use_natural_stable_order() -> None:
+    from data.moabb import _sorted_mapping_items
+
+    values = {"session-10": 10, "session-2": 2, "session-01": 1, "session-1": 11}
+    ordered = _sorted_mapping_items(values, label="session")
+
+    assert [key for key, _ in ordered] == [
+        "session-01",
+        "session-1",
+        "session-2",
+        "session-10",
+    ]
+
+
+def test_private_parser_snapshot_cleanup_does_not_follow_symlinks(tmp_path: Path) -> None:
+    from data.moabb import _remove_private_parser_snapshot
+
+    outside = tmp_path / "outside.bin"
+    outside.write_bytes(b"must-survive")
+    outside_mode = outside.stat().st_mode
+    snapshot_root = tmp_path / "private-snapshot"
+    snapshot_root.mkdir(mode=0o700)
+    link = snapshot_root / "escape-link"
+    try:
+        link.symlink_to(outside)
+    except OSError as error:
+        pytest.skip(f"symlink creation is unavailable: {error}")
+
+    _remove_private_parser_snapshot(snapshot_root)
+
+    assert not snapshot_root.exists()
+    assert outside.read_bytes() == b"must-survive"
+    assert outside.stat().st_mode == outside_mode
 
 
 def test_moabb_adapter_rejects_retired_fixed_artifact_threshold(
@@ -823,7 +1520,7 @@ def test_moabb_adapter_uses_explicit_candidates_not_binary_event_codes(
     assert timeline.supports_full_candidate_chain is False
 
 
-def test_moabb_adapter_rejects_loader_mutation_during_third_party_parse(
+def test_moabb_adapter_rejects_transient_loader_replacement_and_restore(
     monkeypatch, tmp_path: Path
 ) -> None:
     from data import moabb as adapter_module
@@ -844,6 +1541,9 @@ def test_moabb_adapter_rejects_loader_mutation_during_third_party_parse(
         def get_data(self):
             return np.zeros((2, 2, 10), dtype=np.float64)
 
+    forged = tmp_path / "forged-loader.bin"
+    forged.write_bytes(b"forged-parser-input")
+
     class MutatingP300:
         def __init__(self, **kwargs):
             del kwargs
@@ -851,8 +1551,15 @@ def test_moabb_adapter_rejects_loader_mutation_during_third_party_parse(
         def get_data(self, *, dataset, subjects, **kwargs):
             del kwargs
             loader = Path(dataset.data_path(subjects[0])[0])
-            loader.chmod(0o600)
-            loader.write_bytes(b"mutated-during-parser")
+            backup = loader.with_name(f".{loader.name}.canonical")
+            try:
+                loader.replace(backup)
+                forged.replace(loader)
+                loader.read_bytes()
+            finally:
+                if backup.exists():
+                    loader.unlink(missing_ok=True)
+                    backup.replace(loader)
             return (
                 FakeEpochs(),
                 np.array(["NonTarget", "Target"]),
@@ -878,13 +1585,132 @@ def test_moabb_adapter_rejects_loader_mutation_during_third_party_parse(
         reject_threshold_v=None,
     )
 
-    with pytest.raises(ValueError, match="Materialized MOABB loader.*mismatch"):
+    with pytest.raises(RuntimeError, match="Filesystem mutation 'os.rename' is forbidden"):
         prepare_moabb_p300(
             "MutatingP300",
             raw_artifact_attestation=attestation,
             subjects=[1],
             preprocessing=profile,
         )
+
+
+def test_private_parser_snapshot_ignores_parallel_source_path_replace_restore(
+    monkeypatch, tmp_path: Path
+) -> None:
+    (
+        _adapter_module,
+        attestation,
+        source_path,
+        canonical,
+        observed,
+        parser_action,
+        profile,
+    ) = _source_race_fixture(monkeypatch, tmp_path, "ThreadRaceP300")
+    parser_started = threading.Event()
+    source_replaced = threading.Event()
+    parser_read = threading.Event()
+    backup = source_path.with_name(f".{source_path.name}.canonical")
+    forged = source_path.with_name(f".{source_path.name}.forged")
+    forged.write_bytes(b"forged-source-path")
+    attacker_errors: list[BaseException] = []
+
+    def attack_source_path() -> None:
+        try:
+            assert parser_started.wait(timeout=10)
+            source_path.chmod(0o600)
+            source_path.replace(backup)
+            forged.replace(source_path)
+            source_replaced.set()
+            assert parser_read.wait(timeout=10)
+        except BaseException as error:
+            attacker_errors.append(error)
+            source_replaced.set()
+        finally:
+            if backup.exists():
+                if source_path.exists():
+                    source_path.chmod(0o600)
+                    source_path.unlink()
+                backup.replace(source_path)
+                source_path.chmod(0o444)
+
+    attacker = threading.Thread(target=attack_source_path)
+    attacker.start()
+
+    def wait_for_source_replacement() -> None:
+        parser_started.set()
+        assert source_replaced.wait(timeout=10)
+
+    parser_action["before"] = wait_for_source_replacement
+    parser_action["after"] = parser_read.set
+    try:
+        prepared = prepare_moabb_p300(
+            "ThreadRaceP300",
+            raw_artifact_attestation=attestation,
+            subjects=[1],
+            preprocessing=profile,
+        )
+    finally:
+        parser_started.set()
+        parser_read.set()
+        attacker.join(timeout=10)
+
+    assert not attacker.is_alive()
+    assert attacker_errors == []
+    assert observed == [canonical]
+    assert source_path.read_bytes() == canonical
+    snapshot = prepared.provenance["parser_loader_snapshots"][0]
+    assert snapshot["schema"] == "n2p3_private_moabb_parser_snapshot/1"
+    assert snapshot["removed_after_preload"] is True
+    assert snapshot["files"][0]["sha256"] == hashlib.sha256(canonical).hexdigest()
+
+
+def test_private_parser_snapshot_ignores_preopened_source_fd_write_restore(
+    monkeypatch, tmp_path: Path
+) -> None:
+    (
+        _adapter_module,
+        attestation,
+        source_path,
+        canonical,
+        observed,
+        parser_action,
+        profile,
+    ) = _source_race_fixture(monkeypatch, tmp_path, "PreopenedFdP300")
+    forged = b"F" * len(canonical)
+    source_path.chmod(0o600)
+    source_handle = source_path.open("r+b")
+
+    def write_forged_source() -> None:
+        source_handle.seek(0)
+        source_handle.write(forged)
+        source_handle.flush()
+        os.fsync(source_handle.fileno())
+
+    def restore_source() -> None:
+        source_handle.seek(0)
+        source_handle.write(canonical)
+        source_handle.flush()
+        os.fsync(source_handle.fileno())
+
+    parser_action["before"] = write_forged_source
+    parser_action["after"] = restore_source
+    try:
+        prepared = prepare_moabb_p300(
+            "PreopenedFdP300",
+            raw_artifact_attestation=attestation,
+            subjects=[1],
+            preprocessing=profile,
+        )
+    finally:
+        restore_source()
+        source_handle.close()
+        source_path.chmod(0o444)
+
+    assert observed == [canonical]
+    assert source_path.read_bytes() == canonical
+    snapshot = prepared.provenance["parser_loader_snapshots"][0]
+    assert snapshot["byte_authority"] == ("single_pass_hash_and_copy_from_stable_source_descriptor")
+    assert snapshot["removed_after_preload"] is True
 
 
 def test_extensionless_moabb_path_is_materialized_from_exact_zip_member(
