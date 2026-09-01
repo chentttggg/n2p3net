@@ -19,6 +19,7 @@ from data.contract import CAUSAL_IIR_INITIAL_STATE  # noqa: E402
 from data.epochs import P300_PERFORMANCE_PREPROCESSING, save_epoch_dataset  # noqa: E402
 from data.manifest import build_manifest_dataset, load_manifest  # noqa: E402
 from data.moabb import prepare_moabb_p300  # noqa: E402
+from data.raw_artifacts import verify_raw_artifact_manifest  # noqa: E402
 
 
 def _parse_int_list(value: str | None) -> list[int] | None:
@@ -80,17 +81,28 @@ def main() -> None:
 
     moabb_parser = subparsers.add_parser("moabb", help="Prepare any installed MOABB P300 dataset")
     moabb_parser.add_argument("--dataset-class", required=True)
+    moabb_parser.add_argument(
+        "--raw-artifact-manifest",
+        required=True,
+        help="Strict physical source manifest for the selected MOABB dataset class.",
+    )
+    moabb_parser.add_argument(
+        "--raw-artifact-root",
+        required=True,
+        help="Physical root beneath which every manifested source file is verified.",
+    )
+    moabb_parser.add_argument(
+        "--raw-artifact-snapshot-root",
+        required=True,
+        help="Dedicated immutable snapshot directory beneath the output cache workspace.",
+    )
     moabb_parser.add_argument("--subjects", default=None, help="Comma/range list, e.g. 1-8,12")
     moabb_parser.add_argument("--channels", default="native")
     moabb_parser.add_argument("--montage", default="standard_1005")
     moabb_parser.add_argument("--target-label", default="Target")
     moabb_parser.add_argument("--sfreq", type=float, default=None)
-    moabb_parser.add_argument(
-        "--l-freq", type=_parse_optional_float, default=argparse.SUPPRESS
-    )
-    moabb_parser.add_argument(
-        "--h-freq", type=_parse_optional_float, default=argparse.SUPPRESS
-    )
+    moabb_parser.add_argument("--l-freq", type=_parse_optional_float, default=argparse.SUPPRESS)
+    moabb_parser.add_argument("--h-freq", type=_parse_optional_float, default=argparse.SUPPRESS)
     moabb_parser.add_argument("--tmin-ms", type=float, default=None)
     moabb_parser.add_argument("--tmax-ms", type=float, default=None)
     moabb_parser.add_argument("--n-times", type=int, default=None)
@@ -192,8 +204,18 @@ def main() -> None:
         elif preprocessing.filter_phase == "zero":
             preprocessing = replace(preprocessing, causal_iir_initial_state="not_applicable")
         preprocessing.validate()
+        cache_workspace = Path(args.output).expanduser().resolve(strict=False).parent
+        cache_workspace.mkdir(parents=True, exist_ok=True)
+        raw_artifact_attestation = verify_raw_artifact_manifest(
+            args.raw_artifact_manifest,
+            args.raw_artifact_root,
+            snapshot_root=args.raw_artifact_snapshot_root,
+            cache_workspace_root=cache_workspace,
+            expected_dataset_class=args.dataset_class,
+        )
         dataset = prepare_moabb_p300(
             args.dataset_class,
+            raw_artifact_attestation=raw_artifact_attestation,
             subjects=_parse_int_list(args.subjects),
             channels=_parse_channels(args.channels),
             montage=args.montage,

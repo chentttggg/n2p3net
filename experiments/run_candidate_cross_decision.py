@@ -1,4 +1,4 @@
-"""Evaluate known early BI2014a decisions -> later unknown character decisions."""
+"""Evaluate known early decisions -> later unknown candidate-task decisions."""
 
 from __future__ import annotations
 
@@ -22,16 +22,23 @@ from baselines.calibration import (  # noqa: E402
     fit_weighted_logit_temperature,
 )
 from data.artifact import FoldLocalArtifactPolicy, apply_fold_local_artifact_policy  # noqa: E402
-from data.bi2014a_schedule import BI2014A_FLASH_SCHEDULE  # noqa: E402
+from data.candidate_task import (  # noqa: E402
+    CandidateTaskContract,
+    candidate_task_contract_from_provenance,
+    validate_candidate_membership_metadata,
+)
 from data.contract import assert_causal_p300_input_contract  # noqa: E402
 from data.epochs import load_epoch_dataset, read_epoch_cache_attestation  # noqa: E402
 from data.identity import IdentityExclusionPolicy  # noqa: E402
 from data.qc_features import compute_epoch_qc_features  # noqa: E402
 from models.n2p3net import N2P3Net  # noqa: E402
 from research.contracts import (  # noqa: E402
+    MIN_PROMOTION_HIT_AT_R,
     DecisionPlanContract,
     DecisionPlanEntry,
     ParticipantSelectionFailure,
+    assert_promotion_evidence_gate,
+    semantic_sha256,
 )
 from research.evaluation import (  # noqa: E402
     build_evaluation_run_contract,
@@ -41,12 +48,16 @@ from research.evaluation import (  # noqa: E402
 )
 from research.execution import ExpectedSubjectError  # noqa: E402
 from train.device import get_device  # noqa: E402
-from transfer.bi_decision import (  # noqa: E402
-    bi2014a_expected_candidate_counts,
-    decision_outcomes_at_repetition_6x6,
+from transfer.candidate_decision import (  # noqa: E402
+    decision_outcomes_at_repetition,
+    expected_candidate_counts,
+    row_column_target,
 )
-from transfer.bi_within_subject import bi2014a_calibration_decision_split  # noqa: E402
+from transfer.candidate_within_subject import (  # noqa: E402
+    candidate_calibration_decision_split,
+)
 from transfer.checkpoint import (  # noqa: E402
+    assert_checkpoint_target_identity_excluded,
     checkpoint_classifier_is_trained,
     checkpoint_input_stats,
     checkpoint_scores_to_llr,
@@ -98,6 +109,7 @@ def _failed_decision_outcomes(
     failure_reasons: dict[str, str],
     target_by_decision: dict[str, str],
     test_repetitions: int,
+    candidate_task: CandidateTaskContract,
 ) -> tuple[DecisionOutcome, ...]:
     outcomes: list[DecisionOutcome] = []
     for decision in requested_decisions:
@@ -110,7 +122,7 @@ def _failed_decision_outcomes(
                     evidence_level=repetition,
                     status=DecisionStatus.INCOMPLETE,
                     coverage=CandidateCoverage.from_mappings(
-                        bi2014a_expected_candidate_counts(repetition), {}
+                        expected_candidate_counts(candidate_task, repetition), {}
                     ),
                     target_candidate=target_by_decision[decision],
                     failure_reason=failure_reasons[decision],
@@ -126,13 +138,16 @@ def _fit_failure_decision_outcomes(
     test_repetitions: int,
     failure: ExpectedSubjectError,
     target_by_decision: dict[str, str],
+    candidate_task: CandidateTaskContract,
 ) -> tuple[DecisionOutcome, ...]:
     return tuple(
         DecisionOutcome(
             key=DecisionKey(subject, decision),
             evidence_level=level,
             status=DecisionStatus.FIT_FAILURE,
-            coverage=CandidateCoverage.from_mappings(bi2014a_expected_candidate_counts(level), {}),
+            coverage=CandidateCoverage.from_mappings(
+                expected_candidate_counts(candidate_task, level), {}
+            ),
             target_candidate=target_by_decision[decision],
             failure_reason=f"{failure.stage}:{failure.code.value}",
         )
@@ -172,6 +187,7 @@ def _accounting_record(
 def _build_decision_plan(
     dataset,
     *,
+    candidate_task: CandidateTaskContract,
     requested_subjects: tuple[str, ...],
     requested_decisions_by_subject: dict[str, tuple[str, ...]],
     participant_by_subject: dict[str, str],
@@ -179,7 +195,7 @@ def _build_decision_plan(
     target_cache_sha256: str,
 ) -> tuple[DecisionPlanContract, dict[str, dict[str, str]]]:
     if dataset.metadata is None or dataset.identity_table is None:
-        raise ValueError("BI decision plan requires metadata and participant identity.")
+        raise ValueError("Candidate decision plan requires metadata and participant identity.")
     selection_ids = dataset.metadata["selection_id"].astype(str).to_numpy()
     subjects = np.asarray(dataset.subject_ids).astype(str)
     target_rows = dataset.metadata["target_row"].to_numpy(dtype=np.int64)
@@ -190,20 +206,24 @@ def _build_decision_plan(
     for subject in requested_subjects:
         local_targets[subject] = {}
         requested_decisions = requested_decisions_by_subject.get(subject, ())
-        if not requested_decisions:
-            reason = participant_failure_reasons.get(subject)
-            if not reason:
+        failure_reason = participant_failure_reasons.get(subject)
+        if failure_reason is not None:
+            if not failure_reason:
                 raise ValueError(
-                    f"requested BI participant {subject!r} has neither a decision nor a failure."
+                    f"requested participant {subject!r} has an empty selection failure reason."
                 )
             participant_failures.append(
                 ParticipantSelectionFailure(
                     participant_key=participant_by_subject[subject],
                     stage="decision_selection",
-                    reason=reason,
+                    reason=failure_reason,
                 )
             )
             continue
+        if not requested_decisions:
+            raise ValueError(
+                f"requested participant {subject!r} has neither a decision nor a failure."
+            )
         for decision in requested_decisions:
             rows = (subjects == subject) & (selection_ids == decision)
             unique_rows = np.unique(target_rows[rows])
@@ -211,13 +231,13 @@ def _build_decision_plan(
             if (
                 len(unique_rows) != 1
                 or len(unique_cols) != 1
-                or not 0 <= int(unique_rows[0]) < BI2014A_FLASH_SCHEDULE.grid_size
-                or not 0 <= int(unique_cols[0]) < BI2014A_FLASH_SCHEDULE.grid_size
+                or not 0 <= int(unique_rows[0]) < candidate_task.n_rows
+                or not 0 <= int(unique_cols[0]) < candidate_task.n_columns
             ):
                 raise ValueError(
-                    f"BI decision {subject!r}/{decision!r} lacks one valid frozen target."
+                    f"Candidate decision {subject!r}/{decision!r} lacks one valid frozen target."
                 )
-            target = f"row:{int(unique_rows[0])}|column:{int(unique_cols[0])}"
+            target = row_column_target(int(unique_rows[0]), int(unique_cols[0]))
             local_targets[subject][decision] = target
             entries.append(
                 DecisionPlanEntry(
@@ -238,31 +258,16 @@ def _build_decision_plan(
     return plan, local_targets
 
 
-def _validate_cached_bi_labels(dataset) -> None:
-    if dataset.metadata is None or "flash_code" not in dataset.metadata:
-        raise ValueError("BI candidate cache lacks flash_code metadata.")
-    flash_codes = dataset.metadata["flash_code"].to_numpy(dtype=np.int64)
-    derived = BI2014A_FLASH_SCHEDULE.target_mask(flash_codes)
-    cached_labels = np.asarray(dataset.y, dtype=np.int64)
-    mismatches = np.flatnonzero(cached_labels != derived.astype(np.int64))
-    if len(mismatches):
-        raise ValueError(
-            "BI cache labels disagree with flash-code semantics at epoch rows "
-            f"{mismatches[:16].astype(int).tolist()}."
-        )
-    if "is_target" in dataset.metadata and not np.array_equal(
-        dataset.metadata["is_target"].to_numpy(dtype=bool), derived
-    ):
-        raise ValueError("BI cache is_target metadata disagrees with flash-code semantics.")
-    if dataset.provenance.get("source") == "bi2014a_raw_csv":
-        if "raw_target_label" not in dataset.metadata:
-            raise ValueError("BI raw-CSV cache lacks raw_target_label cross-check metadata.")
-        BI2014A_FLASH_SCHEDULE.audit_raw_labels(
-            flash_codes,
-            dataset.metadata["raw_target_label"].to_numpy(),
-            flash_samples=dataset.metadata.index.to_numpy(dtype=np.int64),
-            stage="loaded_cache_before_evaluation",
-        )
+def _validate_cached_candidate_labels(dataset) -> CandidateTaskContract:
+    if dataset.metadata is None or dataset.y is None:
+        raise ValueError("Candidate cache requires metadata and binary labels.")
+    contract = candidate_task_contract_from_provenance(dataset.provenance)
+    validate_candidate_membership_metadata(
+        dataset.metadata,
+        contract,
+        labels=np.asarray(dataset.y),
+    )
+    return contract
 
 
 def main() -> None:
@@ -279,7 +284,7 @@ def main() -> None:
         choices=("source", "source_or_global", "global"),
     )
     parser.add_argument("--calibration-selections", type=int, default=5)
-    parser.add_argument("--test-reps", type=int, default=2)
+    parser.add_argument("--test-reps", type=int, default=MIN_PROMOTION_HIT_AT_R)
     parser.add_argument("--max-test-selections", type=int, default=None)
     parser.add_argument(
         "--head",
@@ -321,6 +326,10 @@ def main() -> None:
     parser.add_argument("--device", default="auto")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
+    try:
+        assert_promotion_evidence_gate(args.test_reps, name="candidate promotion runner")
+    except ValueError as error:
+        parser.error(str(error))
     source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
         args.source_snapshot_manifest
     )
@@ -334,8 +343,8 @@ def main() -> None:
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
     target_cache_sha256 = str(read_epoch_cache_attestation(args.dataset_cache)["sha256"])
     assert_causal_p300_input_contract(dataset.preprocessing)
-    _validate_cached_bi_labels(dataset)
-    split = bi2014a_calibration_decision_split(
+    candidate_task = _validate_cached_candidate_labels(dataset)
+    split = candidate_calibration_decision_split(
         dataset,
         calibration_selections=args.calibration_selections,
         test_repetitions=args.test_reps,
@@ -357,7 +366,7 @@ def main() -> None:
         parser.error(str(error))
     requested_subjects = set(requested_order)
     if dataset.identity_table is None:
-        raise ValueError("BI cache lacks the current participant identity table.")
+        raise ValueError("Candidate cache lacks the current participant identity table.")
     participant_by_subject = {
         subject: dataset.identity_table.record_for(subject).authority_key(
             args.identity_exclusion_policy
@@ -366,6 +375,7 @@ def main() -> None:
     }
     decision_plan, target_by_subject = _build_decision_plan(
         dataset,
+        candidate_task=candidate_task,
         requested_subjects=tuple(requested_order),
         requested_decisions_by_subject=split.requested_test_selections_by_subject,
         participant_by_subject=participant_by_subject,
@@ -373,8 +383,6 @@ def main() -> None:
         target_cache_sha256=target_cache_sha256,
     )
     subjects = np.asarray(usable_order)
-    if not len(subjects):
-        raise ValueError("No usable BI target subjects remain in the requested cohort.")
 
     checkpoint_payload = load_checkpoint_payload(args.checkpoint) if args.checkpoint else None
     if (
@@ -386,6 +394,22 @@ def main() -> None:
             "checkpoint TrainingRunContract source snapshot disagrees with the "
             "verified physical source freeze."
         )
+    if checkpoint_payload is not None:
+        if not requested_order:
+            raise AssertionError("validated target scope unexpectedly has no participant")
+        _load_trunk(
+            checkpoint_payload,
+            dataset,
+            target_subject=requested_order[0],
+            identity_exclusion_policy=args.identity_exclusion_policy,
+        )
+        for target_subject in requested_order[1:]:
+            assert_checkpoint_target_identity_excluded(
+                checkpoint_payload,
+                dataset,
+                target_subject=target_subject,
+                identity_exclusion_policy=args.identity_exclusion_policy,
+            )
     checkpoint_stats = (
         checkpoint_input_stats(checkpoint_payload, dataset.n_channels)
         if checkpoint_payload is not None
@@ -459,7 +483,9 @@ def main() -> None:
         pre_rows = subject_rows[split.calibration_mask[subject_rows]]
         post_rows = subject_rows[split.test_mask[subject_rows]]
         if not len(pre_rows) or not len(post_rows):
-            raise AssertionError(f"usable BI subject {subject!s} lacks calibration or test rows.")
+            raise AssertionError(
+                f"usable candidate-task subject {subject!s} lacks calibration or test rows."
+            )
         local_rows = np.concatenate((pre_rows, post_rows))
         local_train = np.zeros(len(local_rows), dtype=bool)
         local_train[: len(pre_rows)] = True
@@ -581,6 +607,7 @@ def main() -> None:
                         test_repetitions=args.test_reps,
                         failure=failure,
                         target_by_decision=target_by_subject[str(subject)],
+                        candidate_task=candidate_task,
                     ),
                     *_failed_decision_outcomes(
                         subject=str(subject),
@@ -588,6 +615,7 @@ def main() -> None:
                         failure_reasons=failed_test,
                         test_repetitions=args.test_reps,
                         target_by_decision=target_by_subject[str(subject)],
+                        candidate_task=candidate_task,
                     ),
                 )
                 outcomes_by_subject[str(subject)] = tuple(subject_outcomes)
@@ -668,13 +696,14 @@ def main() -> None:
         if len(np.unique(y_post)) == 2:
             auc = float(roc_auc_score(y_post, suffix_logits))
         meta = dataset.metadata.iloc[post_rows]
-        evaluated_outcomes = decision_outcomes_at_repetition_6x6(
+        evaluated_outcomes = decision_outcomes_at_repetition(
             suffix_llr,
-            meta["flash_code"].to_numpy(dtype=np.int64),
+            meta["candidate_id"].to_numpy(dtype=np.int64),
             meta["target_row"].to_numpy(dtype=np.int64),
             meta["target_col"].to_numpy(dtype=np.int64),
             meta["selection_id"].astype(str).to_numpy(),
             split.test_repetition_indices[post_rows],
+            contract=candidate_task,
             subject_ids=np.repeat(str(subject), len(post_rows)),
             onset_times_s=onset_by_epoch[post_rows],
             evidence_available_times_s=available_by_epoch[post_rows],
@@ -689,6 +718,7 @@ def main() -> None:
             failure_reasons=failed_test,
             test_repetitions=args.test_reps,
             target_by_decision=target_by_subject[str(subject)],
+            candidate_task=candidate_task,
         )
         indexed_outcomes = {
             (outcome.key.decision_id, outcome.evidence_level): outcome
@@ -750,7 +780,7 @@ def main() -> None:
                     "raw_logits": suffix_logits.tolist(),
                     "llr_scores": suffix_llr.tolist(),
                     "labels": y_post.astype(int).tolist(),
-                    "flash_codes": meta["flash_code"].to_numpy(dtype=np.int64).tolist(),
+                    "candidate_ids": meta["candidate_id"].to_numpy(dtype=np.int64).tolist(),
                     "selection_ids": meta["selection_id"].astype(str).tolist(),
                     "repetition_indices": (
                         split.test_repetition_indices[post_rows].astype(int).tolist()
@@ -763,10 +793,15 @@ def main() -> None:
         print(json.dumps(records[-1], ensure_ascii=False), flush=True)
 
     subject_decision_ledger = []
-    for subject in sorted(requested_subjects):
-        requested = split.requested_test_selections_by_subject.get(subject, ())
-        eligible = split.test_selections_by_subject.get(subject, ())
-        failed = split.failed_test_selections_by_subject.get(subject, {})
+    for subject in sorted(requested_subjects, key=lambda value: participant_by_subject[value]):
+        selection_failed = subject in split.excluded_subjects
+        requested = (
+            () if selection_failed else split.requested_test_selections_by_subject.get(subject, ())
+        )
+        eligible = () if selection_failed else split.test_selections_by_subject.get(subject, ())
+        failed = (
+            {} if selection_failed else split.failed_test_selections_by_subject.get(subject, {})
+        )
         if subject not in outcomes_by_subject:
             outcomes_by_subject[subject] = _failed_decision_outcomes(
                 subject=subject,
@@ -774,6 +809,7 @@ def main() -> None:
                 failure_reasons=failed,
                 test_repetitions=args.test_reps,
                 target_by_decision=target_by_subject[subject],
+                candidate_task=candidate_task,
             )
         subject_outcomes = outcomes_by_subject[subject]
         accounting = _accounting_record(
@@ -808,6 +844,7 @@ def main() -> None:
         requested_decisions=[
             DecisionKey(subject, decision)
             for subject in sorted(requested_subjects)
+            if subject not in split.excluded_subjects
             for decision in split.requested_test_selections_by_subject.get(subject, ())
         ],
         evidence_levels=range(1, args.test_reps + 1),
@@ -822,6 +859,39 @@ def main() -> None:
         "decision_planned": len(decision_plan.participant_keys),
         "selection_failed": len(decision_plan.participant_selection_failures),
     }
+    participant_operational_endpoints = []
+    selection_failed_keys = {
+        failure.participant_key for failure in decision_plan.participant_selection_failures
+    }
+    for subject in sorted(requested_subjects):
+        participant_key = participant_by_subject[subject]
+        planned_decisions = sum(
+            entry.participant_key == participant_key for entry in decision_plan.entries
+        )
+        correct_at_r = sum(
+            outcome.key.subject_id == subject
+            and outcome.evidence_level == args.test_reps
+            and outcome.status is DecisionStatus.CORRECT
+            for outcome in all_outcomes
+        )
+        if participant_key in selection_failed_keys:
+            if planned_decisions:
+                raise AssertionError("selection-failed participant has planned decisions")
+            endpoint = 0.0
+        else:
+            if planned_decisions < 1:
+                raise AssertionError("planned participant has no decision denominator")
+            endpoint = correct_at_r / planned_decisions
+        participant_operational_endpoints.append(
+            {
+                "participant_key": participant_key,
+                "evidence_level": args.test_reps,
+                "planned_decisions": planned_decisions,
+                "correct_decisions": correct_at_r,
+                "selection_failed": participant_key in selection_failed_keys,
+                "requested_participant_operational_hit_rate": endpoint,
+            }
+        )
     checkpoint_sha256 = _sha256_file(args.checkpoint) if args.checkpoint else None
     model_origin = (
         checkpoint_model_origin(
@@ -876,18 +946,18 @@ def main() -> None:
             },
         },
         decision={
-            "task": "BI2014a_6x6_row_column",
-            "schedule": BI2014A_FLASH_SCHEDULE.record(),
-            "schedule_digest": BI2014A_FLASH_SCHEDULE.digest(),
-            "aggregation": "cumulative_row_column_llr",
+            "candidate_task_contract": candidate_task.record(),
+            "candidate_task_contract_digest": semantic_sha256(candidate_task.record()),
+            "aggregation": "cumulative_candidate_membership_llr",
             "tie_policy": "abstain",
             "test_repetitions": args.test_reps,
         },
         evidence_scope={
-            "stage": "development",
-            "population": "BI2014a_public_adult",
-            "task": "6x6_character",
-            "product_confirmation": False,
+            "stage": candidate_task.evidence_scope["stage"],
+            "population": dict(candidate_task.population),
+            "task": candidate_task.task_id,
+            "dataset_id": candidate_task.dataset_id,
+            "product_confirmation": candidate_task.evidence_scope["product_confirmation"],
         },
     )
     data_eligible_keys = {
@@ -918,8 +988,12 @@ def main() -> None:
             },
         )
     summary = {
-        "schema": "n2p3_bi2014a_cross_decision_result/2",
-        "run_status": "completed",
+        "schema": "n2p3_candidate_cross_decision_result/1",
+        "run_status": (
+            "completed_with_selection_failures"
+            if decision_plan.participant_selection_failures
+            else "completed"
+        ),
         "arm_name": args.arm_name,
         "training_replicate_key": args.training_replicate_key,
         "partition_key": args.partition_key,
@@ -934,6 +1008,8 @@ def main() -> None:
         "checkpoint": str(Path(args.checkpoint).resolve()) if args.checkpoint else None,
         "checkpoint_sha256": checkpoint_sha256,
         "target_cache_sha256": target_cache_sha256,
+        "candidate_task_contract": candidate_task.record(),
+        "candidate_task_contract_digest": semantic_sha256(candidate_task.record()),
         "calibration_selections": args.calibration_selections,
         "test_reps": args.test_reps,
         "head": head_mode,
@@ -952,9 +1028,9 @@ def main() -> None:
         },
         "estimand": "known_early_decisions_to_later_unknown_decisions",
         "excluded_subjects": split.excluded_subjects,
-        "excluded_selections": split.excluded_selections,
         "decision_accounting": decision_accounting,
         "participant_accounting": participant_accounting,
+        "participant_operational_endpoints": participant_operational_endpoints,
         "decision_failures": list(decision_failures_by_key.values()),
         "decision_outcomes": [
             {
@@ -963,14 +1039,23 @@ def main() -> None:
             }
             for outcome in all_outcomes
         ],
-        "binary_auc_mean": float(
-            np.nanmean([rec["binary_auc"] for rec in records if rec["binary_auc"] is not None])
+        "binary_auc_mean": (
+            float(np.mean(auc_values))
+            if (
+                auc_values := [
+                    rec["binary_auc"] for rec in records if rec["binary_auc"] is not None
+                ]
+            )
+            else None
         ),
         "records": records,
     }
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    output.write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False),
+        encoding="utf-8",
+    )
     print(f"[summary] {output}", flush=True)
 
 

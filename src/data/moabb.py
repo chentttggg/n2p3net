@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from types import MethodType
 
 import mne
 import moabb
@@ -19,6 +22,7 @@ from data.epochs import (
 )
 from data.events import observed_only_timeline, selection_group_id
 from data.preprocess import apply_trial_baseline
+from data.raw_artifacts import RawArtifactAttestation
 
 CANDIDATE_METADATA_ALIASES = (
     "candidate_id",
@@ -35,6 +39,120 @@ REPETITION_METADATA_ALIASES = (
     "repetition_id",
     "sequence_index",
 )
+
+
+@dataclass(frozen=True)
+class _MoabbLoaderPathResolution:
+    subject: int
+    reported_path: Path
+    resolved_loader_path: Path
+    appendmat_resolution: bool
+
+    def record(self, artifact_root: Path) -> dict[str, object]:
+        def display(path: Path) -> str:
+            absolute = path.resolve(strict=False)
+            try:
+                return absolute.relative_to(artifact_root).as_posix()
+            except ValueError:
+                return str(absolute)
+
+        return {
+            "subject": self.subject,
+            "reported_path": display(self.reported_path),
+            "resolved_loader_path": display(self.resolved_loader_path),
+            "appendmat_resolution": self.appendmat_resolution,
+        }
+
+
+def _resolve_reported_moabb_path(value: str | Path, *, subject: int) -> _MoabbLoaderPathResolution:
+    reported = Path(value)
+    appended_mat = Path(f"{reported}.mat") if reported.suffix == "" else None
+    if reported.exists():
+        if appended_mat is not None and appended_mat.exists():
+            raise ValueError(
+                "MOABB reported an ambiguous extensionless loader path because both the "
+                f"reported path and its .mat form exist: {reported}."
+            )
+        resolved = reported.resolve(strict=True)
+        appendmat_resolution = False
+    elif appended_mat is not None:
+        if not appended_mat.is_file():
+            raise FileNotFoundError(
+                f"MOABB extensionless loader path and its .mat form are both missing: {reported}."
+            )
+        resolved = appended_mat.resolve(strict=True)
+        appendmat_resolution = True
+    else:
+        raise FileNotFoundError(f"MOABB reported loader path is missing: {reported}.")
+    return _MoabbLoaderPathResolution(
+        subject=subject,
+        reported_path=reported,
+        resolved_loader_path=resolved,
+        appendmat_resolution=appendmat_resolution,
+    )
+
+
+def _reported_moabb_loader_paths(
+    dataset: object, subjects: Sequence[int]
+) -> tuple[_MoabbLoaderPathResolution, ...]:
+    data_path = getattr(dataset, "data_path", None)
+    if not callable(data_path):
+        raise TypeError("An attested MOABB dataset must expose the BaseDataset.data_path API.")
+    reported: list[_MoabbLoaderPathResolution] = []
+    for subject in subjects:
+        values = data_path(
+            subject,
+            path=None,
+            force_update=False,
+            update_path=False,
+            verbose=False,
+        )
+        if isinstance(values, (str, Path)):
+            values = [values]
+        if not isinstance(values, Sequence) or isinstance(values, (bytes, bytearray)):
+            raise TypeError("MOABB data_path must return a sequence of physical paths.")
+        reported.extend(_resolve_reported_moabb_path(value, subject=subject) for value in values)
+    if not reported:
+        raise ValueError("MOABB data_path returned no physical paths for selected subjects.")
+    return tuple(reported)
+
+
+def _install_attested_data_path(
+    dataset: object,
+    paths_by_subject: dict[int, tuple[Path, ...]],
+) -> None:
+    """Bind one dataset instance to verified local files without upstream I/O."""
+
+    def data_path(
+        _dataset: object,
+        subject: int,
+        path: str | Path | None = None,
+        force_update: bool = False,
+        update_path: bool | None = None,
+        verbose: object = None,
+    ) -> list[str]:
+        del verbose
+        if path is not None or force_update or update_path not in {None, False}:
+            raise ValueError("Attested MOABB data_path is read-only and accepts no overrides.")
+        try:
+            paths = paths_by_subject[subject]
+        except KeyError as exc:
+            raise ValueError(f"No attested loader mapping exists for subject {subject}.") from exc
+        return [str(value) for value in paths]
+
+    dataset.data_path = MethodType(data_path, dataset)  # type: ignore[attr-defined]
+
+
+def _available_mne_source_paths(instances: Sequence[object]) -> tuple[Path, ...]:
+    paths: list[Path] = []
+    for instance in instances:
+        filenames = getattr(instance, "filenames", None)
+        if filenames is None:
+            raw = getattr(instance, "_raw", None)
+            filenames = getattr(raw, "filenames", None)
+        if filenames:
+            paths.extend(Path(value) for value in filenames if value is not None)
+    return tuple(paths)
 
 
 def _optional_metadata_column(
@@ -101,17 +219,21 @@ def encode_binary_labels(values: np.ndarray, *, target_label: str = "Target") ->
 def prepare_moabb_p300(
     dataset_class: str,
     *,
+    raw_artifact_attestation: RawArtifactAttestation,
     subjects: Sequence[int] | None = None,
     channels: Sequence[str] | None = None,
     montage: str = DEFAULT_MONTAGE,
     preprocessing: PreprocessingSpec = P300_PERFORMANCE_PREPROCESSING,
     target_label: str = "Target",
 ) -> EpochDataset:
-    """Download/process an installed MOABB P300 dataset without dataset-specific branches."""
+    """Process an attested MOABB P300 dataset without dataset-specific branches."""
 
     from moabb.paradigms import P300
 
     preprocessing.validate()
+    if not isinstance(raw_artifact_attestation, RawArtifactAttestation):
+        raise TypeError("raw_artifact_attestation must be a verified RawArtifactAttestation.")
+    raw_artifact_attestation.assert_dataset_class(dataset_class)
     if preprocessing.reject_threshold_v is not None:
         raise ValueError(
             "Fixed absolute-voltage artifact rejection is retired; set reject_threshold_v=None "
@@ -133,6 +255,14 @@ def prepare_moabb_p300(
     unknown_subjects = set(selected_subjects) - set(dataset.subject_list)
     if unknown_subjects:
         raise ValueError(f"Unknown subjects for {dataset_class}: {sorted(unknown_subjects)}.")
+    materialization = raw_artifact_attestation.materialize_moabb_loaders(selected_subjects)
+    _install_attested_data_path(
+        dataset,
+        dict(materialization.paths_by_subject),
+    )
+    loader_path_resolutions = _reported_moabb_loader_paths(dataset, selected_subjects)
+    reported_loader_paths = tuple(item.resolved_loader_path for item in loader_path_resolutions)
+    materialization.verify_loader_paths(reported_loader_paths)
     if preprocessing.filter_phase == "forward":
         event_id = getattr(dataset, "event_id", None)
         if not isinstance(event_id, dict) or target_label not in event_id:
@@ -140,10 +270,22 @@ def prepare_moabb_p300(
                 f"MOABB dataset {dataset_class} does not expose target event {target_label!r}."
             )
         label_map = {
-            str(description): int(str(description) == target_label)
-            for description in event_id
+            str(description): int(str(description) == target_label) for description in event_id
         }
         runs = dataset.get_data(subjects=selected_subjects)
+        raw_instances = [
+            raw
+            for subject_runs in runs.values()
+            for session_runs in subject_runs.values()
+            for raw in session_runs.values()
+        ]
+        loader_paths = reported_loader_paths + _available_mne_source_paths(raw_instances)
+        materialization.verify_loader_paths(loader_paths)
+        raw_artifact_provenance = materialization.attestation.provenance_record()
+        raw_artifact_provenance["raw_artifact_loader_path_resolutions"] = [
+            item.record(Path(materialization.expected_mne_data_root))
+            for item in loader_path_resolutions
+        ]
         datasets: list[EpochDataset] = []
         for subject in selected_subjects:
             for session_id, session_runs in runs[subject].items():
@@ -207,6 +349,7 @@ def prepare_moabb_p300(
                             provenance={
                                 "source": "moabb_raw_causal_p300",
                                 "dataset_class": dataset_class,
+                                **raw_artifact_provenance,
                                 "source_reference": source_reference,
                                 "source_sample_rate_hz": float(raw.info["sfreq"]),
                                 "model_input_sample_rate_hz": preprocessing.sfreq,
@@ -221,6 +364,7 @@ def prepare_moabb_p300(
             provenance={
                 "source": "moabb_raw_causal_p300",
                 "dataset_class": dataset_class,
+                **raw_artifact_provenance,
                 "subjects": selected_subjects,
                 "source_reference": source_reference,
                 "source_sample_rate_hz": float(source_sample_rate),
@@ -244,6 +388,13 @@ def prepare_moabb_p300(
         subjects=selected_subjects,
         return_epochs=True,
     )
+    loader_paths = reported_loader_paths + _available_mne_source_paths([epochs])
+    materialization.verify_loader_paths(loader_paths)
+    raw_artifact_provenance = materialization.attestation.provenance_record()
+    raw_artifact_provenance["raw_artifact_loader_path_resolutions"] = [
+        item.record(Path(materialization.expected_mne_data_root))
+        for item in loader_path_resolutions
+    ]
     expected_tmin = preprocessing.tmin_ms / 1000.0
     if not np.isclose(float(epochs.times[0]), expected_tmin, atol=0.5 / preprocessing.sfreq):
         raise ValueError(
@@ -265,8 +416,7 @@ def prepare_moabb_p300(
     missing_before_rejection = requested_subject_keys - returned_subject_keys
     if missing_before_rejection:
         raise ValueError(
-            "MOABB returned no epochs for selected subjects "
-            f"{sorted(missing_before_rejection)}."
+            f"MOABB returned no epochs for selected subjects {sorted(missing_before_rejection)}."
         )
     if X.shape[2] < preprocessing.n_times:
         raise ValueError(
@@ -322,16 +472,13 @@ def prepare_moabb_p300(
         session_ids=np.asarray(sessions, dtype=str),
         run_ids=np.asarray(runs, dtype=str),
         candidate_ids=_optional_metadata_column(metadata, CANDIDATE_METADATA_ALIASES),
-        target_candidate_ids=_optional_metadata_column(
-            metadata, TARGET_CANDIDATE_METADATA_ALIASES
-        ),
+        target_candidate_ids=_optional_metadata_column(metadata, TARGET_CANDIDATE_METADATA_ALIASES),
         repetition_indices=_optional_metadata_column(
             metadata, REPETITION_METADATA_ALIASES, integer=True
         ),
         online_causal=False,
         timing_source=(
-            "moabb_post_resample_epoch_events;observed_epochs_only;"
-            "preprocessing_not_online_causal"
+            "moabb_post_resample_epoch_events;observed_epochs_only;preprocessing_not_online_causal"
         ),
     )
     result = EpochDataset(
@@ -348,6 +495,7 @@ def prepare_moabb_p300(
         provenance={
             "source": "moabb_p300",
             "dataset_class": dataset_class,
+            **raw_artifact_provenance,
             "subjects": selected_subjects,
             "moabb_version": moabb.__version__,
             "mne_version": mne.__version__,

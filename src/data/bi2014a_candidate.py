@@ -21,6 +21,10 @@ import numpy as np
 import pandas as pd
 
 from data.bi2014a_schedule import BI2014A_FLASH_SCHEDULE, BIFlashLabelAudit
+from data.candidate_task import (
+    CandidateTaskContract,
+    validate_candidate_membership_metadata,
+)
 from data.channel import build_channel_identity
 from data.epochs import EpochDataset, PreprocessingSpec
 from data.events import observed_only_timeline
@@ -54,8 +58,22 @@ _LABEL_COLUMN = 18
 # the next level happens to use the same target row/column pair.
 _SESSION_START_CODE = 100
 _LEVEL_OR_RESTART_BOUNDARY_CODE = 104
-_SELECTION_BOUNDARY_CODES = frozenset(
-    {_SESSION_START_CODE, _LEVEL_OR_RESTART_BOUNDARY_CODE}
+_SELECTION_BOUNDARY_CODES = frozenset({_SESSION_START_CODE, _LEVEL_OR_RESTART_BOUNDARY_CODE})
+BI2014A_CANDIDATE_TASK_CONTRACT = CandidateTaskContract(
+    dataset_id="BI2014a",
+    task_id="p300_row_column_speller_6x6",
+    population={
+        "label": "public_dataset_participants",
+        "age_scope": "not_asserted_by_cache_producer",
+    },
+    evidence_scope={"stage": "development", "product_confirmation": False},
+    membership_kind="row_column",
+    grid_shape=(6, 6),
+    candidate_ids=tuple(range(12)),
+    row_candidate_ids=tuple(range(6)),
+    column_candidate_ids=tuple(range(6, 12)),
+    target_representation="row_column_intersection",
+    raw_target_label_is_target={"1": False, "2": True},
 )
 
 
@@ -100,18 +118,12 @@ def recover_bi2014a_candidates(
         raise ValueError(f"{csv_path} lacks the BI2014a event columns.")
     raw_flash_code = table[_FLASH_COLUMN].to_numpy(dtype=np.float64)
     raw_target_label = table[_LABEL_COLUMN].to_numpy(dtype=np.float64)
-    possible_flash = (
-        np.isfinite(raw_flash_code)
-        & (raw_flash_code >= 20)
-        & (raw_flash_code <= 85)
-    )
+    possible_flash = np.isfinite(raw_flash_code) & (raw_flash_code >= 20) & (raw_flash_code <= 85)
     flash_samples = np.flatnonzero(possible_flash)
     if np.any(raw_flash_code[flash_samples] != np.floor(raw_flash_code[flash_samples])):
         raise ValueError(f"{subject_dir.name}: non-integer BI flash code.")
     flash_code = np.zeros(len(raw_flash_code), dtype=np.int64)
-    integer_event_codes = np.isfinite(raw_flash_code) & (
-        raw_flash_code == np.floor(raw_flash_code)
-    )
+    integer_event_codes = np.isfinite(raw_flash_code) & (raw_flash_code == np.floor(raw_flash_code))
     flash_code[integer_event_codes] = raw_flash_code[integer_event_codes].astype(np.int64)
     all_codes = flash_code[flash_samples]
     all_labels = raw_target_label[flash_samples]
@@ -173,10 +185,8 @@ def recover_bi2014a_candidates(
         if (
             len(target_row_events) != 1
             or len(target_col_events) != 1
-            or tuple(sorted(event.candidate_index for event in row_events))
-            != valid_candidates
-            or tuple(sorted(event.candidate_index for event in col_events))
-            != valid_candidates
+            or tuple(sorted(event.candidate_index for event in row_events)) != valid_candidates
+            or tuple(sorted(event.candidate_index for event in col_events)) != valid_candidates
         ):
             raise ValueError(f"{subject_dir.name}: repetition {rep} has invalid flash structure.")
 
@@ -313,9 +323,7 @@ def build_bi2014a_subject_dataset(
     ordered = available[np.argsort(evidence[available], kind="stable")]
     if len(ordered) != result.n_epochs:
         raise AssertionError("preprocess evidence mapping is not bijective.")
-    post_is_target = BI2014A_FLASH_SCHEDULE.target_mask(
-        recovered.flash_code[ordered]
-    )
+    post_is_target = BI2014A_FLASH_SCHEDULE.target_mask(recovered.flash_code[ordered])
     if not np.array_equal(post_is_target, recovered.is_target[ordered]):
         raise AssertionError("preprocessing changed BI flash-code label semantics.")
     post_label_audit = BI2014A_FLASH_SCHEDULE.audit_raw_labels(
@@ -336,7 +344,12 @@ def build_bi2014a_subject_dataset(
             "subject": np.repeat(subject_id, result.n_epochs),
             "flash_sample": recovered.flash_sample[ordered],
             "flash_code": recovered.flash_code[ordered],
-            "is_target": post_is_target,
+            "candidate_id": np.where(
+                recovered.row_code[ordered] >= 0,
+                recovered.row_code[ordered],
+                BI2014A_CANDIDATE_TASK_CONTRACT.n_rows + recovered.col_code[ordered],
+            ),
+            "raw_is_target": recovered.target_label[ordered] == 2,
             "raw_target_label": recovered.target_label[ordered],
             "row_code": recovered.row_code[ordered],
             "col_code": recovered.col_code[ordered],
@@ -379,6 +392,7 @@ def build_bi2014a_subject_dataset(
             "model_input_sample_rate_hz": preprocessing.sfreq,
             "source_reference": "right earlobe",
             "signal_unit": "V",
+            "candidate_task_contract": BI2014A_CANDIDATE_TASK_CONTRACT.record(),
             "flash_schedule": {
                 "n_flashes": int(len(recovered.flash_sample)),
                 "n_targets": int(np.count_nonzero(recovered.is_target)),
@@ -387,9 +401,7 @@ def build_bi2014a_subject_dataset(
                 "candidate_grid": "6x6",
                 "label_source": "derived_from_flash_code",
                 "raw_label_role": "per_event_cross_check_only",
-                "raw_label_audit": recovered.raw_label_audit.to_record(
-                    BI2014A_FLASH_SCHEDULE
-                ),
+                "raw_label_audit": recovered.raw_label_audit.to_record(BI2014A_FLASH_SCHEDULE),
                 "post_preprocessing_label_audit": post_label_audit.to_record(
                     BI2014A_FLASH_SCHEDULE
                 ),
@@ -399,6 +411,11 @@ def build_bi2014a_subject_dataset(
                 "n_explicit_boundaries": recovered.n_explicit_boundaries,
             },
         },
+    )
+    validate_candidate_membership_metadata(
+        metadata,
+        BI2014A_CANDIDATE_TASK_CONTRACT,
+        labels=post_is_target.astype(np.int64),
     )
     dataset.validate(require_labels=True)
     return dataset

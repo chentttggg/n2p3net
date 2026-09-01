@@ -1,4 +1,4 @@
-"""Analyze manifest-bound BI2014a cross-decision result artifacts."""
+"""Analyze manifest-bound candidate cross-decision result artifacts."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from data.bi2014a_schedule import BI2014A_FLASH_SCHEDULE  # noqa: E402
+from data.candidate_task import CandidateTaskContract  # noqa: E402
 from research.contracts import (  # noqa: E402
     ArmContract,
     DecisionPlanContract,
@@ -27,6 +27,7 @@ from research.contracts import (  # noqa: E402
     StatisticalDesignContract,
     TrainingRunContract,
     assert_contract_digest,
+    assert_promotion_evidence_gate,
     canonical_json_bytes,
     scratch_procedure_record,
     semantic_sha256,
@@ -34,7 +35,10 @@ from research.contracts import (  # noqa: E402
 )
 from research.evaluation import source_snapshot_sha256_from_archive_manifest  # noqa: E402
 from stats.hierarchical import paired_interval  # noqa: E402
-from transfer.bi_decision import bi2014a_expected_candidate_counts  # noqa: E402
+from transfer.candidate_decision import (  # noqa: E402
+    expected_candidate_counts,
+    parse_row_column_target,
+)
 from transfer.outcomes import (  # noqa: E402
     CandidateCoverage,
     DecisionKey,
@@ -43,9 +47,9 @@ from transfer.outcomes import (  # noqa: E402
     build_decision_outcome_accounting,
 )
 
-MANIFEST_SCHEMA = "n2p3_bi2014a_cross_decision_experiment/2"
-RESULT_SCHEMA = "n2p3_bi2014a_cross_decision_result/2"
-ANALYSIS_SCHEMA = "n2p3_bi2014a_cross_decision_analysis/2"
+MANIFEST_SCHEMA = "n2p3_candidate_cross_decision_experiment/1"
+RESULT_SCHEMA = "n2p3_candidate_cross_decision_result/1"
+ANALYSIS_SCHEMA = "n2p3_candidate_cross_decision_analysis/1"
 POWER_PLAN_SCHEMA = "n2p3_power_plan_contract/1"
 SUPPORTED_METRIC = "requested_participant_operational_hit_rate"
 
@@ -89,6 +93,7 @@ class ManifestSpec:
     source_snapshot: Artifact
     target_cache_sha256: str
     target_identity_digest: str
+    candidate_task: CandidateTaskContract
     participants: tuple[str, ...]
     evidence_level: int
     replicate_aggregation: str
@@ -193,26 +198,20 @@ def _contract(
         raise ValueError(f"invalid {name}: {error}") from error
 
 
-def _character(value: object, name: str) -> str:
-    raw = _text(value, name)
-    decoded: dict[str, int] = {}
-    for part in raw.split("|"):
-        axis, separator, index_text = part.partition(":")
-        if not separator or axis in decoded:
-            raise ValueError(f"{name} must contain one BI row and one column.")
-        try:
-            index = int(index_text)
-        except ValueError as error:
-            raise ValueError(f"{name} has a non-integer index.") from error
-        if str(index) != index_text or not 0 <= index < BI2014A_FLASH_SCHEDULE.grid_size:
-            raise ValueError(f"{name} index is outside the BI grid.")
-        decoded[axis] = index
-    if set(decoded) != {"row", "column"}:
-        raise ValueError(f"{name} must contain one BI row and one column.")
-    return f"row:{decoded['row']}|column:{decoded['column']}"
+def _candidate_task(record: object, digest: object, name: str) -> CandidateTaskContract:
+    values = dict(_mapping(record, name))
+    expected = _sha(digest, f"{name}_digest")
+    assert_contract_digest(values, expected, name=name)
+    contract = CandidateTaskContract.from_record(values)
+    if semantic_sha256(contract.record()) != expected:
+        raise ValueError(f"{name} typed contract disagrees with its digest.")
+    return contract
 
 
-def _validate_protocol(evaluation: EvaluationRunContract) -> None:
+def _validate_protocol(
+    evaluation: EvaluationRunContract,
+    candidate_task: CandidateTaskContract,
+) -> int:
     protocol = evaluation.target_protocol
     required_protocol = {
         "estimand": "known_early_decisions_to_later_unknown_decisions",
@@ -221,19 +220,29 @@ def _validate_protocol(evaluation: EvaluationRunContract) -> None:
         "test_truth_access": "scorer_only",
     }
     if any(protocol.get(key) != value for key, value in required_protocol.items()):
-        raise ValueError("target protocol does not implement the BI early-to-later estimand.")
+        raise ValueError("target protocol does not implement the early-to-later estimand.")
     _integer(protocol.get("calibration_selections"), "calibration_selections", 1)
     repetitions = _integer(protocol.get("test_repetitions"), "test_repetitions", 1)
+    assert_promotion_evidence_gate(repetitions, name="candidate promotion protocol")
     required_decision = {
-        "task": "BI2014a_6x6_row_column",
-        "schedule": BI2014A_FLASH_SCHEDULE.record(),
-        "schedule_digest": BI2014A_FLASH_SCHEDULE.digest(),
-        "aggregation": "cumulative_row_column_llr",
+        "candidate_task_contract": candidate_task.record(),
+        "candidate_task_contract_digest": semantic_sha256(candidate_task.record()),
+        "aggregation": "cumulative_candidate_membership_llr",
         "tie_policy": "abstain",
         "test_repetitions": repetitions,
     }
-    if any(evaluation.decision.get(key) != value for key, value in required_decision.items()):
-        raise ValueError("decision contract disagrees with BI2014a row/column semantics.")
+    if dict(evaluation.decision) != required_decision:
+        raise ValueError("decision contract disagrees with candidate-membership semantics.")
+    expected_scope = {
+        "stage": candidate_task.evidence_scope["stage"],
+        "population": dict(candidate_task.population),
+        "task": candidate_task.task_id,
+        "dataset_id": candidate_task.dataset_id,
+        "product_confirmation": candidate_task.evidence_scope["product_confirmation"],
+    }
+    if evaluation.evidence_scope != expected_scope:
+        raise ValueError("evidence scope disagrees with candidate task provenance.")
+    return repetitions
 
 
 def _parse_checkpoints(value: object, base: Path) -> dict[str, CheckpointSpec]:
@@ -280,6 +289,7 @@ def _parse_plan(
     value: object,
     digest: object,
     participants: tuple[str, ...],
+    candidate_task: CandidateTaskContract,
     name: str,
 ) -> DecisionPlanContract:
     record = _mapping(value, f"{name}.decision_plan")
@@ -291,7 +301,7 @@ def _parse_plan(
     if plan.requested_participant_keys != participants:
         raise ValueError(f"{name} decision plan requested cohort mismatch.")
     for entry in plan.entries:
-        _character(entry.target_candidate, "target_candidate")
+        parse_row_column_target(entry.target_candidate, candidate_task, name="target_candidate")
     return plan
 
 
@@ -351,6 +361,7 @@ def _parse_run(
     target_identity_digest: str,
     source_snapshot_sha256: str,
     evidence_level: int,
+    candidate_task: CandidateTaskContract,
 ) -> RunSpec:
     record = _mapping(value, "run")
     run_id = _text(record.get("run_id"), "run_id")
@@ -371,12 +382,12 @@ def _parse_run(
         or evaluation.source_snapshot_sha256 != source_snapshot_sha256
     ):
         raise ValueError(f"run {run_id!r} dataset/source identity disagrees with manifest.")
-    _validate_protocol(evaluation)
-    repetitions = _integer(
-        evaluation.target_protocol.get("test_repetitions"), "test_repetitions", 1
+    repetitions = _validate_protocol(evaluation, candidate_task)
+    assert_promotion_evidence_gate(
+        repetitions,
+        primary_evidence_level=evidence_level,
+        name=f"run {run_id!r} promotion",
     )
-    if evidence_level > repetitions:
-        raise ValueError(f"run {run_id!r} does not reach the requested evidence level.")
     checkpoint = _validate_origin(run_id, evaluation, record.get("checkpoint_id"), checkpoints)
     if evaluation.arm_name not in arm_contracts:
         raise ValueError(f"run {run_id!r} references an undeclared arm contract.")
@@ -411,6 +422,7 @@ def _parse_run(
             record.get("decision_plan"),
             record.get("decision_plan_digest"),
             evaluation.requested_participant_keys,
+            candidate_task,
             run_id,
         ),
         arm_contract=arm_contract,
@@ -598,7 +610,9 @@ def _parse_manifest(path: str | Path) -> ManifestSpec:
     manifest_path = Path(path).resolve()
     raw = _read_json(manifest_path, "experiment manifest")
     if raw.get("schema") != MANIFEST_SCHEMA:
-        raise ValueError(f"manifest schema must be {MANIFEST_SCHEMA!r}; v1 is unsupported.")
+        raise ValueError(
+            f"manifest schema must be {MANIFEST_SCHEMA!r}; BI-specific schemas are unsupported."
+        )
     base = manifest_path.parent
     source_manifest = _artifact(
         _mapping(raw.get("source_snapshot"), "source_snapshot"),
@@ -612,6 +626,11 @@ def _parse_manifest(path: str | Path) -> ManifestSpec:
     source_archive = (source_manifest.path.parent / str(source_payload["archive"])).resolve()
     source = Artifact(source_archive, source_sha256)
     target = _mapping(raw.get("target_dataset"), "target_dataset")
+    candidate_task = _candidate_task(
+        target.get("candidate_task_contract"),
+        target.get("candidate_task_contract_digest"),
+        "target candidate_task_contract",
+    )
     participants = tuple(
         sorted(
             _text(item, "participant_key")
@@ -624,6 +643,11 @@ def _parse_manifest(path: str | Path) -> ManifestSpec:
     if metric.get("name") != SUPPORTED_METRIC:
         raise ValueError(f"metric.name must be {SUPPORTED_METRIC!r}.")
     evidence_level = _integer(metric.get("evidence_level"), "metric evidence_level", 1)
+    assert_promotion_evidence_gate(
+        evidence_level,
+        primary_evidence_level=evidence_level,
+        name="manifest primary metric",
+    )
     design = _contract(
         StatisticalDesignContract,
         raw.get("statistical_design"),
@@ -656,6 +680,7 @@ def _parse_manifest(path: str | Path) -> ManifestSpec:
             target_identity_digest=target_identity,
             source_snapshot_sha256=source.sha256,
             evidence_level=evidence_level,
+            candidate_task=candidate_task,
         )
         for item in _sequence(raw.get("runs"), "runs")
     )
@@ -668,6 +693,7 @@ def _parse_manifest(path: str | Path) -> ManifestSpec:
         source,
         target_cache,
         target_identity,
+        candidate_task,
         participants,
         evidence_level,
         expected_aggregation,
@@ -742,24 +768,29 @@ def _validate_progression(series: Sequence[DecisionOutcome]) -> None:
                 raise ValueError("decision time decreases with more evidence.")
 
 
-def _validate_bi_outcomes(
+def _validate_candidate_outcomes(
     outcomes: tuple[DecisionOutcome, ...],
     plan: DecisionPlanContract,
     levels: tuple[int, ...],
+    candidate_task: CandidateTaskContract,
 ) -> None:
     plan_by_key = {
         DecisionKey(item.participant_key, item.decision_id): item for item in plan.entries
     }
     for outcome in outcomes:
-        if dict(outcome.coverage.expected_event_counts) != bi2014a_expected_candidate_counts(
-            outcome.evidence_level
+        if dict(outcome.coverage.expected_event_counts) != expected_candidate_counts(
+            candidate_task, outcome.evidence_level
         ):
-            raise ValueError("outcome coverage disagrees with the BI schedule.")
+            raise ValueError("outcome coverage disagrees with the candidate task contract.")
         planned = plan_by_key.get(outcome.key)
         if planned is None or outcome.target_candidate != planned.target_candidate:
             raise ValueError("outcome target disagrees with the frozen decision plan.")
         if outcome.predicted_candidate is not None:
-            _character(outcome.predicted_candidate, "predicted_candidate")
+            parse_row_column_target(
+                outcome.predicted_candidate,
+                candidate_task,
+                name="predicted_candidate",
+            )
     for key in plan_by_key:
         series = sorted(
             (outcome for outcome in outcomes if outcome.key == key),
@@ -810,8 +841,15 @@ def _parse_failures(
 
 def _validate_result(manifest: ManifestSpec, spec: RunSpec) -> ValidatedRun:
     result = _read_json(spec.result.path, f"run {spec.run_id} result")
-    if result.get("schema") != RESULT_SCHEMA or result.get("run_status") != "completed":
-        raise ValueError(f"run {spec.run_id!r} is not a completed v2 result.")
+    expected_status = (
+        "completed_with_selection_failures"
+        if spec.plan.participant_selection_failures
+        else "completed"
+    )
+    if result.get("schema") != RESULT_SCHEMA or result.get("run_status") != expected_status:
+        raise ValueError(
+            f"run {spec.run_id!r} schema/status disagrees with participant selection outcomes."
+        )
     if "subject_decision_ledger" in result:
         raise ValueError("subject_decision_ledger is obsolete; primary outcomes are authoritative.")
     evaluation = _contract(
@@ -823,10 +861,18 @@ def _validate_result(manifest: ManifestSpec, spec: RunSpec) -> ValidatedRun:
     assert isinstance(evaluation, EvaluationRunContract)
     if canonical_json_bytes(evaluation.record()) != canonical_json_bytes(spec.evaluation.record()):
         raise ValueError("result evaluation contract disagrees with manifest.")
+    result_task = _candidate_task(
+        result.get("candidate_task_contract"),
+        result.get("candidate_task_contract_digest"),
+        f"run {spec.run_id} result candidate_task_contract",
+    )
+    if result_task.record() != manifest.candidate_task.record():
+        raise ValueError("result candidate task contract disagrees with manifest.")
     result_plan = _parse_plan(
         result.get("decision_plan"),
         result.get("decision_plan_digest"),
         spec.participants,
+        manifest.candidate_task,
         f"run {spec.run_id} result",
     )
     if result_plan.digest() != spec.plan.digest():
@@ -857,12 +903,25 @@ def _validate_result(manifest: ManifestSpec, spec: RunSpec) -> ValidatedRun:
         or result.get("checkpoint_sha256") != expected_checkpoint
     ):
         raise ValueError("result participant/cache/checkpoint provenance mismatch.")
-    levels = tuple(range(1, int(evaluation.target_protocol["test_repetitions"]) + 1))
+    repetitions = _integer(
+        evaluation.target_protocol.get("test_repetitions"), "test_repetitions", 1
+    )
+    if result.get("test_reps") != repetitions:
+        raise ValueError("result test_reps disagrees with evaluation contract.")
+    levels = tuple(range(1, repetitions + 1))
     outcomes = tuple(
         _parse_outcome(raw, manifest.design.participant_cluster_key)
         for raw in _sequence(result.get("decision_outcomes"), "decision_outcomes")
     )
-    _validate_bi_outcomes(outcomes, spec.plan, levels)
+    assert_promotion_evidence_gate(
+        repetitions,
+        primary_evidence_level=manifest.evidence_level,
+        evidence_levels=(
+            tuple(outcome.evidence_level for outcome in outcomes) if spec.plan.entries else None
+        ),
+        name=f"run {spec.run_id} result",
+    )
+    _validate_candidate_outcomes(outcomes, spec.plan, levels, manifest.candidate_task)
     failures = _parse_failures(result.get("decision_failures"), outcomes)
     plan_keys = tuple(
         DecisionKey(item.participant_key, item.decision_id) for item in spec.plan.entries
@@ -902,6 +961,43 @@ def _validate_result(manifest: ManifestSpec, spec: RunSpec) -> ValidatedRun:
             if requested < 1:
                 raise ValueError("planned participant has no decision denominator.")
             rates[participant] = correct / requested
+    expected_endpoints = [
+        {
+            "participant_key": participant,
+            "evidence_level": repetitions,
+            "planned_decisions": sum(key.subject_id == participant for key in plan_keys),
+            "correct_decisions": sum(
+                outcome.key.subject_id == participant
+                and outcome.evidence_level == repetitions
+                and outcome.status == DecisionStatus.CORRECT
+                for outcome in outcomes
+            ),
+            "selection_failed": participant in selection_failed,
+            "requested_participant_operational_hit_rate": (
+                0.0
+                if participant in selection_failed
+                else sum(
+                    outcome.key.subject_id == participant
+                    and outcome.evidence_level == repetitions
+                    and outcome.status == DecisionStatus.CORRECT
+                    for outcome in outcomes
+                )
+                / sum(key.subject_id == participant for key in plan_keys)
+            ),
+        }
+        for participant in spec.participants
+    ]
+    if canonical_json_bytes(
+        result.get("participant_operational_endpoints")
+    ) != canonical_json_bytes(expected_endpoints):
+        raise ValueError("participant operational endpoints disagree with primary outcomes.")
+    if not plan_keys and (
+        outcomes
+        or result.get("decision_failures") != []
+        or result.get("records") != []
+        or result.get("binary_auc_mean") is not None
+    ):
+        raise ValueError("empty decision plan must not fabricate evaluation evidence.")
     return ValidatedRun(spec, rates, accounting)
 
 
@@ -982,13 +1078,32 @@ def _analysis_records(
                 for label in labels
             ]
         )
-        interval = paired_interval(
-            differences,
-            inference_scope=manifest.design.inference_scope,
-            iterations=manifest.iterations,
-            seed=manifest.seed + index,
-            confidence_level=manifest.confidence_level,
-        )
+        if len(differences) >= 2:
+            interval_record: dict[str, Any] = {
+                "status": "estimated",
+                **paired_interval(
+                    differences,
+                    inference_scope=manifest.design.inference_scope,
+                    iterations=manifest.iterations,
+                    seed=manifest.seed + index,
+                    confidence_level=manifest.confidence_level,
+                ).record(),
+            }
+        else:
+            interval_record = {
+                "status": "not_estimable",
+                "reason": "fewer_than_two_independent_units",
+                "inference_scope": manifest.design.inference_scope,
+                "sampling_unit": (
+                    "participant" if conditional else "independent_training_replicate"
+                ),
+                "n_units": len(differences),
+                "mean_difference": (float(differences.mean()) if len(differences) else None),
+                "confidence_level": manifest.confidence_level,
+                "bootstrap_interval": None,
+                "bootstrap_iterations": 0,
+                "bootstrap_seed": manifest.seed + index,
+            }
         contrasts.append(
             {
                 "left": left,
@@ -997,7 +1112,7 @@ def _analysis_records(
                 "paired_unit_differences": dict(
                     zip(labels, differences.astype(float).tolist(), strict=True)
                 ),
-                "paired_bootstrap_interval": interval.record(),
+                "paired_bootstrap_interval": interval_record,
             }
         )
     claim = (
@@ -1043,6 +1158,13 @@ def analyze_manifest(path: str | Path) -> dict[str, Any]:
             "archive_path": str(manifest.source_snapshot.path),
             "archive_sha256": manifest.source_snapshot.sha256,
             "verified": True,
+        },
+        "target_dataset": {
+            "dataset_id": manifest.candidate_task.dataset_id,
+            "task_id": manifest.candidate_task.task_id,
+            "population": dict(manifest.candidate_task.population),
+            "candidate_task_contract": manifest.candidate_task.record(),
+            "candidate_task_contract_digest": semantic_sha256(manifest.candidate_task.record()),
         },
         "statistical_design_digest": manifest.design_digest,
         "inference": {

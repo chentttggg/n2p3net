@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from data.bi2014a_schedule import BI2014A_FLASH_SCHEDULE
-from experiments.analyze_bi2014a_cross_decision import (
+from data.candidate_task import CandidateTaskContract
+from experiments.analyze_candidate_cross_decision import (
     MANIFEST_SCHEMA,
     POWER_PLAN_SCHEMA,
     RESULT_SCHEMA,
@@ -26,7 +26,7 @@ from research.contracts import (
     semantic_sha256,
     training_procedure_record,
 )
-from transfer.bi_decision import bi2014a_expected_candidate_counts
+from transfer.candidate_decision import expected_candidate_counts
 from transfer.outcomes import (
     CandidateCoverage,
     DecisionKey,
@@ -40,22 +40,37 @@ def _digest(label: str) -> str:
     return hashlib.sha256(label.encode("ascii")).hexdigest()
 
 
+def _task_contract() -> CandidateTaskContract:
+    return CandidateTaskContract(
+        dataset_id="synthetic-BNCI2014-008",
+        task_id="p300_row_column_speller_6x6",
+        population={"label": "synthetic_test_population"},
+        evidence_scope={"stage": "development", "product_confirmation": False},
+        membership_kind="row_column",
+        grid_shape=(6, 6),
+        candidate_ids=tuple(range(12)),
+        row_candidate_ids=tuple(range(6)),
+        column_candidate_ids=tuple(range(6, 12)),
+        target_representation="row_column_intersection",
+    )
+
+
 def _write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
 
-def _outcome(participant: str, *, correct: bool) -> DecisionOutcome:
-    expected_counts = bi2014a_expected_candidate_counts(1)
+def _outcome(participant: str, *, correct: bool, evidence_level: int) -> DecisionOutcome:
+    expected_counts = expected_candidate_counts(_task_contract(), evidence_level)
     return DecisionOutcome(
         key=DecisionKey(participant, "decision-1"),
-        evidence_level=1,
+        evidence_level=evidence_level,
         status=DecisionStatus.CORRECT if correct else DecisionStatus.INCORRECT,
         coverage=CandidateCoverage.from_mappings(expected_counts, expected_counts),
         target_candidate="row:0|column:0",
         predicted_candidate=("row:0|column:0" if correct else "row:1|column:1"),
         onset_start_s=1.0,
-        onset_end_s=2.0,
-        evidence_available_s=2.25,
+        onset_end_s=float(evidence_level * 2),
+        evidence_available_s=float(evidence_level * 2) + 0.25,
     )
 
 
@@ -82,9 +97,11 @@ def _result_record(
             _outcome(
                 local_subject_by_participant[participant],
                 correct=correct_by_participant[participant],
+                evidence_level=evidence_level,
             ),
         )
         for participant in participants
+        for evidence_level in range(1, 9)
     )
     outcomes = tuple(outcome for _, outcome in paired_outcomes)
     requested_keys = [
@@ -94,7 +111,7 @@ def _result_record(
     global_accounting = build_decision_outcome_accounting(
         outcomes,
         requested_decisions=requested_keys,
-        evidence_levels=(1,),
+        evidence_levels=tuple(range(1, 9)),
     ).to_record()
     global_accounting["data_eligible"] = len(participants)
     global_accounting["data_ineligible"] = 0
@@ -112,9 +129,25 @@ def _result_record(
             "decision_planned": len(participants),
             "selection_failed": 0,
         },
+        "participant_operational_endpoints": [
+            {
+                "participant_key": participant,
+                "evidence_level": 8,
+                "planned_decisions": 1,
+                "correct_decisions": int(correct_by_participant[participant]),
+                "selection_failed": False,
+                "requested_participant_operational_hit_rate": float(
+                    correct_by_participant[participant]
+                ),
+            }
+            for participant in participants
+        ],
         "requested_participant_keys": list(participants),
         "target_cache_sha256": evaluation.target_cache_sha256,
         "checkpoint_sha256": checkpoint_sha256,
+        "candidate_task_contract": _task_contract().record(),
+        "candidate_task_contract_digest": semantic_sha256(_task_contract().record()),
+        "test_reps": 8,
         "decision_outcomes": [
             {**outcome.to_record(), "participant_key": participant}
             for participant, outcome in paired_outcomes
@@ -130,11 +163,11 @@ def _make_fixture(
     inference_scope: str = "conditional_frozen_models",
     replicate_count: int = 2,
 ) -> tuple[Path, dict[str, object]]:
-    participants = ("BI:P01", "BI:P02", "BI:P03")
+    participants = ("BNCI:P01", "BNCI:P02", "BNCI:P03")
     local_subject_by_participant = {
-        "BI:P01": "s01",
-        "BI:P02": "s02",
-        "BI:P03": "s03",
+        "BNCI:P01": "s01",
+        "BNCI:P02": "s02",
+        "BNCI:P03": "s03",
     }
     partitions = {
         "partition:a": participants[:2],
@@ -164,7 +197,7 @@ def _make_fixture(
     )
     metric = {
         "name": "requested_participant_operational_hit_rate",
-        "evidence_level": 1,
+        "evidence_level": 8,
         "replicate_aggregation": (
             "mean_across_declared_frozen_models"
             if inference_scope == "conditional_frozen_models"
@@ -252,7 +285,7 @@ def _make_fixture(
                         "estimand": "known_early_decisions_to_later_unknown_decisions",
                         "calibration_decisions": 2,
                         "calibration_selections": 2,
-                        "test_repetitions": 1,
+                        "test_repetitions": 8,
                         "split_axis": "decision_time",
                         "calibration_truth_access": "adapter_visible",
                         "test_truth_access": "scorer_only",
@@ -268,24 +301,28 @@ def _make_fixture(
                         },
                     },
                     decision={
-                        "task": "BI2014a_6x6_row_column",
-                        "schedule": BI2014A_FLASH_SCHEDULE.record(),
-                        "schedule_digest": BI2014A_FLASH_SCHEDULE.digest(),
-                        "aggregation": "cumulative_row_column_llr",
+                        "candidate_task_contract": _task_contract().record(),
+                        "candidate_task_contract_digest": semantic_sha256(
+                            _task_contract().record()
+                        ),
+                        "aggregation": "cumulative_candidate_membership_llr",
                         "tie_policy": "abstain",
-                        "test_repetitions": 1,
+                        "test_repetitions": 8,
                     },
                     requested_participant_keys=requested,
                     evidence_scope={
-                        "phase": "development",
-                        "estimand": "early_known_to_later_unknown_decisions",
+                        "stage": "development",
+                        "population": {"label": "synthetic_test_population"},
+                        "task": "p300_row_column_speller_6x6",
+                        "dataset_id": "synthetic-BNCI2014-008",
+                        "product_confirmation": False,
                     },
                 )
                 run_id = f"{arm}-{replicate}-{partition}"
                 result_path = tmp_path / f"run-{_digest(run_id)[:16]}.json"
                 correct = {
                     participant: (
-                        arm == "adapted" or (participant == "BI:P03" and replicate_index % 2 == 0)
+                        arm == "adapted" or (participant == "BNCI:P03" and replicate_index % 2 == 0)
                     )
                     for participant in requested
                 }
@@ -337,6 +374,8 @@ def _make_fixture(
             "target_cache_sha256": target_cache,
             "target_identity_digest": target_identity,
             "requested_participant_keys": list(participants),
+            "candidate_task_contract": _task_contract().record(),
+            "candidate_task_contract_digest": semantic_sha256(_task_contract().record()),
         },
         "metric": metric,
         "bootstrap": {"iterations": 1000, "seed": 17, "confidence_level": 0.95},
@@ -374,6 +413,45 @@ def test_conditional_analysis_is_dynamic_and_only_bootstraps_participants(
     assert contrast["paired_unit"] == "participant"
     assert contrast["paired_bootstrap_interval"]["n_units"] == 3
     assert "paired_sign_flip_p" not in json.dumps(analysis)
+
+
+def test_promotion_manifest_rejects_primary_metric_below_hit_at_8(
+    tmp_path: Path,
+) -> None:
+    manifest_path, manifest = _make_fixture(tmp_path)
+    manifest["metric"]["evidence_level"] = 7  # type: ignore[index]
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(ValueError, match="requires test_repetitions >= 8"):
+        analyze_manifest(manifest_path)
+
+
+def test_promotion_protocol_rejects_seven_repetitions(tmp_path: Path) -> None:
+    manifest_path, manifest = _make_fixture(tmp_path)
+    for run in manifest["runs"]:  # type: ignore[union-attr]
+        evaluation = run["evaluation_contract"]
+        evaluation["target_protocol"]["test_repetitions"] = 7
+        evaluation["decision"]["test_repetitions"] = 7
+        run["evaluation_contract_digest"] = semantic_sha256(evaluation)
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(ValueError, match="requires test_repetitions >= 8"):
+        analyze_manifest(manifest_path)
+
+
+def test_completed_result_missing_hit_at_8_is_rejected(tmp_path: Path) -> None:
+    manifest_path, manifest = _make_fixture(tmp_path)
+    run = manifest["runs"][0]  # type: ignore[index]
+    result_path = tmp_path / run["result_path"]  # type: ignore[index]
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    result["decision_outcomes"] = [
+        outcome for outcome in result["decision_outcomes"] if outcome["evidence_level"] != 8
+    ]
+    _rewrite_result(tmp_path, run, result)
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(ValueError, match="missing hit@8"):
+        analyze_manifest(manifest_path)
 
 
 def test_swapped_result_artifacts_fail_the_manifest_contract(tmp_path: Path) -> None:
@@ -586,7 +664,7 @@ def test_training_contract_source_identity_tampering_is_detected(tmp_path: Path)
         analyze_manifest(manifest_path)
 
 
-def test_non_bi_candidate_coverage_is_rejected_even_when_its_summary_is_consistent(
+def test_non_contract_candidate_coverage_is_rejected_even_when_summary_is_consistent(
     tmp_path: Path,
 ) -> None:
     manifest_path, manifest = _make_fixture(tmp_path)
@@ -598,7 +676,7 @@ def test_non_bi_candidate_coverage_is_rejected_even_when_its_summary_is_consiste
     _rewrite_result(tmp_path, run, result)
     _write_json(manifest_path, manifest)
 
-    with pytest.raises(ValueError, match="BI schedule"):
+    with pytest.raises(ValueError, match="candidate task contract"):
         analyze_manifest(manifest_path)
 
 
@@ -607,25 +685,39 @@ def test_typed_fit_failure_remains_in_the_operational_denominator(tmp_path: Path
     run = manifest["runs"][0]  # type: ignore[index]
     result_path = tmp_path / run["result_path"]  # type: ignore[index]
     result = json.loads(result_path.read_text(encoding="utf-8"))
-    outcome = result["decision_outcomes"][0]
-    outcome["status"] = "fit_failure"
-    outcome["predicted_candidate"] = None
-    outcome["failure_reason"] = "nonfinite_optimization"
+    first = result["decision_outcomes"][0]
+    failed_outcomes = [
+        outcome
+        for outcome in result["decision_outcomes"]
+        if outcome["participant_key"] == first["participant_key"]
+        and outcome["decision_id"] == first["decision_id"]
+    ]
+    for outcome in failed_outcomes:
+        outcome["status"] = "fit_failure"
+        outcome["predicted_candidate"] = None
+        outcome["failure_reason"] = "nonfinite_optimization"
+        counts = result["decision_accounting"]["by_evidence_level"][str(outcome["evidence_level"])]
+        counts["correct"] -= 1
+        counts["fit_failure"] += 1
+        counts["operational_hit_rate"] = counts["correct"] / counts["requested"]
     result["decision_failures"] = [
         {
-            "participant_key": outcome["participant_key"],
-            "decision_id": outcome["decision_id"],
+            "participant_key": first["participant_key"],
+            "decision_id": first["decision_id"],
             "status": "fit_failure",
             "stage": "adapter_fit",
             "reason": "nonfinite_optimization",
         }
     ]
-    counts = result["decision_accounting"]["by_evidence_level"]["1"]
-    counts["correct"] -= 1
-    counts["fit_failure"] += 1
-    counts["operational_hit_rate"] = counts["correct"] / counts["requested"]
     result["decision_accounting"]["evaluation_successful"] -= 1
     result["decision_accounting"]["evaluation_failed"] += 1
+    endpoint = next(
+        item
+        for item in result["participant_operational_endpoints"]
+        if item["participant_key"] == first["participant_key"]
+    )
+    endpoint["correct_decisions"] = 0
+    endpoint["requested_participant_operational_hit_rate"] = 0.0
     _rewrite_result(tmp_path, run, result)
     _write_json(manifest_path, manifest)
 
@@ -764,8 +856,8 @@ def test_scratch_origin_is_explicit_and_does_not_need_a_fake_checkpoint(
     assert analysis["metrics"]["adapted"]
 
 
-def test_legacy_v1_manifest_is_not_accepted(tmp_path: Path) -> None:
+def test_legacy_bi_manifest_is_not_accepted(tmp_path: Path) -> None:
     path = tmp_path / "legacy.json"
     _write_json(path, {"schema": "n2p3_bi2014a_cross_decision_experiment/1"})
-    with pytest.raises(ValueError, match="v1 is unsupported"):
+    with pytest.raises(ValueError, match="BI-specific schemas are unsupported"):
         analyze_manifest(path)

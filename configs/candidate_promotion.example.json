@@ -1,0 +1,96 @@
+{
+  "schema": "n2p3_candidate_promotion_plan/1",
+  "stage": "development",
+  "source_snapshot_manifest": "../frozen/current-source-freeze.manifest.json",
+  "target_cache": "../experiments/cache/target_candidate_causal_v3.npz",
+  "target_subjects": [
+    {
+      "target_subject": "subject-01",
+      "source_holdout_subject": "SOURCE::subject-01",
+      "partition_key": "participant-01"
+    },
+    {
+      "target_subject": "subject-02",
+      "source_holdout_subject": "SOURCE::subject-02",
+      "partition_key": "participant-02"
+    }
+  ],
+  "source_arms": [
+    {
+      "name": "single_domain",
+      "cache": "../experiments/cache/source_single_causal_v3.npz",
+      "subject_prefix_repeat": {},
+      "input_stats_prefix": null
+    },
+    {
+      "name": "multidomain_balanced",
+      "cache": "../experiments/cache/source_multidomain_causal_v3.npz",
+      "subject_prefix_repeat": {
+        "DOMAIN_A::": 1,
+        "DOMAIN_B::": 1
+      },
+      "input_stats_prefix": null
+    }
+  ],
+  "training_replicates": [
+    {
+      "key": "seed-01",
+      "seed": 20260901
+    },
+    {
+      "key": "seed-02",
+      "seed": 20260902
+    }
+  ],
+  "evaluation_arms": [
+    {
+      "name": "zero_shot",
+      "head": "zero_shot",
+      "normalization": "source",
+      "epoch_selection": "fixed_budget",
+      "epochs": null,
+      "batch_size": null,
+      "lr": null,
+      "target_stat_weight": 0.0,
+      "fold_local_qc": false
+    },
+    {
+      "name": "linear_time_split",
+      "head": "linear",
+      "normalization": "source",
+      "epoch_selection": "target_time_split",
+      "epochs": 30,
+      "batch_size": 64,
+      "lr": 0.001,
+      "target_stat_weight": 0.0,
+      "fold_local_qc": false
+    }
+  ],
+  "training": {
+    "pooling_mode": "full_unfold",
+    "temporal_kernel_size": 35,
+    "epochs": 30,
+    "batch_size": 512
+  },
+  "calibration_selections": 5,
+  "test_reps": 8,
+  "identity_exclusion_policy": "source_or_global",
+  "output_root": "../experiments/runs/candidate_promotion_development",
+  "statistical_design": {
+    "inference_scope": "conditional_frozen_models",
+    "planned_contrasts": [
+      [
+        "single_domain__zero_shot",
+        "multidomain_balanced__zero_shot"
+      ],
+      [
+        "single_domain__linear_time_split",
+        "multidomain_balanced__linear_time_split"
+      ]
+    ],
+    "evidence_level": 8,
+    "bootstrap_iterations": 10000,
+    "bootstrap_seed": 20260901,
+    "confidence_level": 0.95
+  }
+}

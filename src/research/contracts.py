@@ -19,6 +19,7 @@ EVALUATION_RUN_CONTRACT_SCHEMA = "n2p3_evaluation_run_contract/2"
 STATISTICAL_DESIGN_SCHEMA = "n2p3_statistical_design_contract/1"
 DECISION_PLAN_SCHEMA = "n2p3_decision_plan_contract/1"
 ARM_CONTRACT_SCHEMA = "n2p3_arm_contract/1"
+MIN_PROMOTION_HIT_AT_R = 8
 
 _SHA256_LENGTH = 64
 
@@ -68,6 +69,34 @@ def canonical_json_bytes(value: Any) -> bytes:
 
 def semantic_sha256(value: Any) -> str:
     return hashlib.sha256(canonical_json_bytes(value)).hexdigest()
+
+
+def assert_promotion_evidence_gate(
+    test_repetitions: int,
+    *,
+    primary_evidence_level: int | None = None,
+    evidence_levels: Sequence[int] | None = None,
+    name: str = "promotion",
+) -> None:
+    """Enforce the predeclared minimum evidence horizon for promotion claims."""
+
+    if isinstance(test_repetitions, bool) or not isinstance(test_repetitions, int):
+        raise ValueError(f"{name} test_repetitions must be an integer.")
+    if test_repetitions < MIN_PROMOTION_HIT_AT_R:
+        raise ValueError(f"{name} requires test_repetitions >= {MIN_PROMOTION_HIT_AT_R}.")
+    if primary_evidence_level is not None:
+        if isinstance(primary_evidence_level, bool) or not isinstance(primary_evidence_level, int):
+            raise ValueError(f"{name} primary evidence level must be an integer.")
+        if not MIN_PROMOTION_HIT_AT_R <= primary_evidence_level <= test_repetitions:
+            raise ValueError(
+                f"{name} primary hit@R must use {MIN_PROMOTION_HIT_AT_R} <= R <= test_repetitions."
+            )
+    if evidence_levels is not None:
+        normalized = tuple(int(value) for value in evidence_levels)
+        if MIN_PROMOTION_HIT_AT_R not in normalized:
+            raise ValueError(f"{name} evidence is missing hit@{MIN_PROMOTION_HIT_AT_R}.")
+        if primary_evidence_level is not None and primary_evidence_level not in normalized:
+            raise ValueError(f"{name} evidence is missing its primary hit@R level.")
 
 
 def _string_tuple(

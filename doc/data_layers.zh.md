@@ -19,6 +19,21 @@
 7. 新实验 evidence：必须绑定 source archive SHA、cache SHA、identity/lineage digest、
    TrainingRunContract、EvaluationRunContract、checkpoint registry 和完整 DecisionOutcome。
 
+## 原始制品到 cache
+
+公开数据 cache 不能只记录 dataset class 或下载目录。每套原始数据必须先通过
+`n2p3_raw_artifact_manifest/1`，逐文件绑定官方来源、大小、MD5（若官方提供）、本地与
+远端 SHA-256，以及实际 loader mapping。cache builder 将认证文件从单一打开的 descriptor
+复制到只读、content-addressed snapshot，再只从该 snapshot 解析；原始路径在 hash 与解析
+之间变化不会改变输入。ZIP 只抽取 manifest 明确指定且通过 CRC、成员路径和内容摘要检查的
+loader member。
+
+MOABB 仅用于已验证的信号解释，不再负责下载或解压。项目在 dataset instance 上安装只读
+`data_path` proxy，指向 snapshot 物化目录，从而绕过 MOABB 1.6.1 中 BI2015a 的错误
+`str.strip()` 路径推导，也避免 dataset-specific MNE config 将“验证 A”悄悄切换成“读取 B”。
+BNCI2014-008 MAT 同样从认证 snapshot descriptor 读取，并显式记录 MATLAB 1-based trial
+索引到内部 0-based sample 的转换。
+
 ## 旧数据启示
 
 - causal-v2 BI cross-decision 曾显示 source normalization 优于 target-prefix，轻量
@@ -36,22 +51,29 @@
 这些结论必须以“旧合同下的开发启示”引用，不得复制旧 checkpoint、结果数字或
 manifest 到新 promotion 目录冒充当前证据。
 
-## 当前 BI promotion 链
+## 当前 candidate promotion 链
 
-当前 BI cross-decision 只允许以下物理链：
+当前 BI2014a 与 BNCI2014-008 cross-decision 共用以下物理链：
 
 1. runner 必须接收 `--source-snapshot-manifest`，该 manifest/相邻 tar.gz 必须通过
    `n2p3_source_freeze/1` 的完整 40 位 source commit、byte size、member count 和
    SHA-256 复核；禁止传裸 source SHA。
-2. `run_bi2014a_candidate.py` 的 `/2` result 必须携带中央
+2. cache provenance 必须携带 `n2p3_candidate_task_contract/1`；活动 row-column
+   producer 统一写 `candidate_id=0..11`、`row_code/col_code`、`target_row/target_col`、
+   `selection_id` 与 `repetition_index`。训练标签从 candidate-membership 推导；
+   `raw_is_target` 或 `raw_target_label` 只要存在就必须交叉审计，不因 cache 是 CAR
+   等派生层而跳过。
+3. `run_candidate_cross_decision.py` 的 `/1` result 必须携带中央
    `DecisionPlanContract`、`EvaluationRunContract`、authority participant keys、primary
-   `DecisionOutcome` 和 typed `decision_failures`。失败 decision 仍保存冻结 target truth。
-3. `build_bi2014a_cross_decision_manifest.py` 从真实 result 和 checkpoint 内嵌
+   `DecisionOutcome` 和 typed `decision_failures`。失败 decision 仍保存冻结 target truth；
+   promotion 的 `test_reps` 不得小于 8。
+4. `build_candidate_cross_decision_manifest.py` 从真实 result 和 checkpoint 内嵌
    `TrainingRunContract` 构造 manifest，现场核 source/result/checkpoint 文件 hash，并为
-   每个 arm 生成中央 `ArmContract`。禁止人工复制旧 block JSON。
-4. `analyze_bi2014a_cross_decision.py` 只接受 builder 生成的 `/2` manifest；同一 arm 的
+   每个 arm 生成中央 `ArmContract`。主指标的 R 不得小于 8，禁止人工复制旧 partition
+   JSON。
+5. `analyze_candidate_cross_decision.py` 只接受 builder 生成的 `/1` manifest；同一 arm 的
    source training procedure 与 target adaptation procedure 不得改变，只允许显式的
-   training replicate 和 participant partition 轴变化。
+   training replicate 和 participant partition 轴变化；result 必须完整包含 level 8。
 
 decision accounting 分为 `data_eligible/data_ineligible` 和
 `evaluation_successful/evaluation_failed`。前一组回答数据能否进入评估，后一组回答
@@ -65,3 +87,9 @@ participant 与 decision 是两个不同 estimand。完整用户请求 cohort �
 `requested_participant_operational_hit_rate` 中作为 0 保留，但不进入 planned-decision
 accuracy 的 decision denominator。analyzer 分别输出 participant operational interval 和
 显式 denominator 的 decision endpoints，禁止用同一个“accuracy”名称混报。
+
+若一个 participant 没有任何完整 R8 test decision，runner 仍须完成 checkpoint 的目标域、
+权重和逐 participant 身份排除验证，然后写出
+`completed_with_selection_failures`：participant endpoint 为 0、decision denominator 为 0、
+且不生成伪 decision。单个独立 participant 只能给点估计，区间必须标为
+`not_estimable`，不得用退化 bootstrap 区间冒充不确定性证据。

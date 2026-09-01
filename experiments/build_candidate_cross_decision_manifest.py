@@ -1,4 +1,4 @@
-"""Build one strict BI2014a experiment manifest from real runner results."""
+"""Build one strict candidate cross-decision manifest from runner results."""
 
 from __future__ import annotations
 
@@ -16,12 +16,15 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from data.candidate_task import CandidateTaskContract  # noqa: E402
 from research.contracts import (  # noqa: E402
+    MIN_PROMOTION_HIT_AT_R,
     ArmContract,
     DecisionPlanContract,
     EvaluationRunContract,
     StatisticalDesignContract,
     assert_contract_digest,
+    assert_promotion_evidence_gate,
     canonical_json_bytes,
     scratch_procedure_record,
     semantic_sha256,
@@ -33,8 +36,58 @@ from transfer.checkpoint import (  # noqa: E402
     load_checkpoint_payload,
 )
 
-MANIFEST_SCHEMA = "n2p3_bi2014a_cross_decision_experiment/2"
-RESULT_SCHEMA = "n2p3_bi2014a_cross_decision_result/2"
+MANIFEST_SCHEMA = "n2p3_candidate_cross_decision_experiment/1"
+RESULT_SCHEMA = "n2p3_candidate_cross_decision_result/1"
+
+
+def _validate_completion_state(
+    result: Mapping[str, Any], plan: DecisionPlanContract, name: str
+) -> None:
+    expected_status = (
+        "completed_with_selection_failures" if plan.participant_selection_failures else "completed"
+    )
+    if result.get("run_status") != expected_status:
+        raise ValueError(f"{name} run_status disagrees with participant selection outcomes.")
+    if plan.entries:
+        return
+    outcomes = result.get("decision_outcomes")
+    failures = result.get("decision_failures")
+    records = result.get("records")
+    accounting = result.get("decision_accounting")
+    endpoints = result.get("participant_operational_endpoints")
+    if outcomes != [] or failures != [] or records != []:
+        raise ValueError(f"{name} empty decision plan must not fabricate decision evidence.")
+    expected_zero = {
+        "requested": 0,
+        "data_eligible": 0,
+        "data_ineligible": 0,
+        "evaluation_successful": 0,
+        "evaluation_failed": 0,
+    }
+    if not isinstance(accounting, Mapping) or any(
+        accounting.get(key) != value for key, value in expected_zero.items()
+    ):
+        raise ValueError(f"{name} empty decision plan requires zero decision denominators.")
+    if result.get("binary_auc_mean") is not None:
+        raise ValueError(f"{name} empty decision plan must use null binary_auc_mean.")
+    if not isinstance(endpoints, Sequence) or isinstance(endpoints, (str, bytes)):
+        raise ValueError(f"{name} participant_operational_endpoints must be a sequence.")
+    endpoint_by_participant = {
+        item.get("participant_key"): item for item in endpoints if isinstance(item, Mapping)
+    }
+    if set(endpoint_by_participant) != set(plan.requested_participant_keys):
+        raise ValueError(f"{name} empty decision endpoints do not cover the requested cohort.")
+    for participant, endpoint in endpoint_by_participant.items():
+        expected = {
+            "participant_key": participant,
+            "evidence_level": result.get("test_reps"),
+            "planned_decisions": 0,
+            "correct_decisions": 0,
+            "selection_failed": True,
+            "requested_participant_operational_hit_rate": 0.0,
+        }
+        if dict(endpoint) != expected:
+            raise ValueError(f"{name} selection-failed participant endpoint must be zero.")
 
 
 def _sha256(path: Path) -> str:
@@ -80,6 +133,83 @@ def _decision_plan(result: Mapping[str, Any], name: str) -> DecisionPlanContract
     return plan
 
 
+def _candidate_task(
+    result: Mapping[str, Any],
+    evaluation: EvaluationRunContract,
+    plan: DecisionPlanContract,
+    name: str,
+) -> CandidateTaskContract:
+    record = result.get("candidate_task_contract")
+    digest = result.get("candidate_task_contract_digest")
+    if not isinstance(record, Mapping) or not isinstance(digest, str):
+        raise ValueError(f"{name} lacks a candidate task contract.")
+    assert_contract_digest(record, digest, name=f"{name} candidate_task_contract")
+    contract = CandidateTaskContract.from_record(record)
+    decision = evaluation.decision
+    if (
+        decision.get("candidate_task_contract") != contract.record()
+        or decision.get("candidate_task_contract_digest") != digest
+        or decision.get("aggregation") != "cumulative_candidate_membership_llr"
+        or decision.get("tie_policy") != "abstain"
+    ):
+        raise ValueError(f"{name} evaluation disagrees with its candidate task contract.")
+    repetitions = decision.get("test_repetitions")
+    if isinstance(repetitions, bool) or not isinstance(repetitions, int):
+        raise ValueError(f"{name} test_repetitions must be an integer.")
+    if result.get("test_reps") != repetitions:
+        raise ValueError(f"{name} result test_reps disagrees with its evaluation contract.")
+    if evaluation.target_protocol.get("test_repetitions") != repetitions:
+        raise ValueError(f"{name} target protocol test horizon disagrees with decision contract.")
+    assert_promotion_evidence_gate(
+        repetitions,
+        name=f"{name} promotion result",
+    )
+    outcomes = result.get("decision_outcomes")
+    if not isinstance(outcomes, Sequence) or isinstance(outcomes, (str, bytes)):
+        raise ValueError(f"{name} decision_outcomes must be a sequence.")
+    observed_levels: dict[tuple[str, str], list[int]] = {}
+    for item in outcomes:
+        if not isinstance(item, Mapping):
+            raise ValueError(f"{name} decision_outcomes contains a non-mapping item.")
+        participant = item.get("participant_key")
+        decision_id = item.get("decision_id")
+        level = item.get("evidence_level")
+        if (
+            not isinstance(participant, str)
+            or not participant.strip()
+            or not isinstance(decision_id, str)
+            or not decision_id.strip()
+            or isinstance(level, bool)
+            or not isinstance(level, int)
+        ):
+            raise ValueError(f"{name} decision outcome identity/level is invalid.")
+        observed_levels.setdefault((participant, decision_id), []).append(level)
+    planned_keys = {(entry.participant_key, entry.decision_id) for entry in plan.entries}
+    if set(observed_levels) != planned_keys:
+        raise ValueError(f"{name} decision outcomes disagree with its frozen plan.")
+    expected_levels = list(range(1, repetitions + 1))
+    if any(sorted(levels) != expected_levels for levels in observed_levels.values()):
+        raise ValueError(
+            f"{name} every planned decision must contain exactly levels 1..{repetitions}."
+        )
+    if planned_keys:
+        assert_promotion_evidence_gate(
+            repetitions,
+            evidence_levels=tuple(level for levels in observed_levels.values() for level in levels),
+            name=f"{name} promotion result",
+        )
+    expected_scope = {
+        "stage": contract.evidence_scope["stage"],
+        "population": dict(contract.population),
+        "task": contract.task_id,
+        "dataset_id": contract.dataset_id,
+        "product_confirmation": contract.evidence_scope["product_confirmation"],
+    }
+    if evaluation.evidence_scope != expected_scope:
+        raise ValueError(f"{name} evidence scope disagrees with candidate task provenance.")
+    return contract
+
+
 def build_manifest(
     *,
     result_paths: Sequence[str | Path],
@@ -90,7 +220,7 @@ def build_manifest(
     bootstrap_iterations: int = 10_000,
     bootstrap_seed: int = 0,
     confidence_level: float = 0.95,
-    evidence_level: int = 2,
+    evidence_level: int = MIN_PROMOTION_HIT_AT_R,
     power_plan_contract: Mapping[str, Any] | None = None,
 ) -> Path:
     output_path = Path(output).resolve()
@@ -98,14 +228,24 @@ def build_manifest(
     source_manifest_path = Path(source_snapshot_manifest).resolve()
     source_sha256 = source_snapshot_sha256_from_archive_manifest(source_manifest_path)
 
-    loaded: list[tuple[Path, dict[str, Any], EvaluationRunContract, DecisionPlanContract]] = []
+    loaded: list[
+        tuple[
+            Path,
+            dict[str, Any],
+            EvaluationRunContract,
+            DecisionPlanContract,
+            CandidateTaskContract,
+        ]
+    ] = []
     for raw_path in result_paths:
         path = Path(raw_path).resolve()
         result = _read_json(path, f"result {path}")
-        if result.get("schema") != RESULT_SCHEMA or result.get("run_status") != "completed":
-            raise ValueError(f"{path} is not a completed BI result/2 artifact.")
+        if result.get("schema") != RESULT_SCHEMA:
+            raise ValueError(f"{path} is not a current candidate result/1 artifact.")
         evaluation = _evaluation(result, str(path))
         plan = _decision_plan(result, str(path))
+        _validate_completion_state(result, plan, str(path))
+        candidate_task = _candidate_task(result, evaluation, plan, str(path))
         if evaluation.source_snapshot_sha256 != source_sha256:
             raise ValueError(f"{path} source snapshot disagrees with physical freeze.")
         if Path(str(result.get("source_snapshot_manifest"))).resolve() != source_manifest_path:
@@ -118,7 +258,12 @@ def build_manifest(
             or plan.requested_participant_keys != evaluation.requested_participant_keys
         ):
             raise ValueError(f"{path} decision plan disagrees with evaluation identity.")
-        loaded.append((path, result, evaluation, plan))
+        assert_promotion_evidence_gate(
+            int(evaluation.target_protocol.get("test_repetitions", -1)),
+            primary_evidence_level=evidence_level,
+            name=f"{path} manifest promotion",
+        )
+        loaded.append((path, result, evaluation, plan, candidate_task))
     if not loaded:
         raise ValueError("at least one runner result is required.")
 
@@ -126,11 +271,15 @@ def build_manifest(
     target_identity_values = {item[2].target_identity_digest for item in loaded}
     if len(target_cache_values) != 1 or len(target_identity_values) != 1:
         raise ValueError("runner results disagree on target dataset identity.")
+    candidate_task_records = {canonical_json_bytes(item[4].record()) for item in loaded}
+    if len(candidate_task_records) != 1:
+        raise ValueError("runner results disagree on candidate task identity.")
+    candidate_task = loaded[0][4]
 
     checkpoint_registry: dict[str, dict[str, Any]] = {}
     checkpoint_by_result: dict[Path, str | None] = {}
     training_by_checkpoint: dict[str, Any] = {}
-    for path, result, evaluation, _ in loaded:
+    for path, result, evaluation, _, _ in loaded:
         if evaluation.model_origin.get("kind") == "scratch":
             if result.get("checkpoint") is not None or result.get("checkpoint_sha256") is not None:
                 raise ValueError(f"scratch result {path} carries checkpoint provenance.")
@@ -169,7 +318,7 @@ def build_manifest(
         kinds = {row[2].model_origin.get("kind") for row in arm_rows}
         procedures = {canonical_json_bytes(row[2].adaptation["procedure"]) for row in arm_rows}
         source_procedures = set()
-        for path, _, evaluation, _ in arm_rows:
+        for path, _, evaluation, _, _ in arm_rows:
             checkpoint_id = checkpoint_by_result[path]
             source = (
                 scratch_procedure_record(evaluation.model_origin["initialization"])
@@ -213,7 +362,7 @@ def build_manifest(
         else "independent_training_replicates"
     )
     runs = []
-    for path, result, evaluation, plan in loaded:
+    for path, result, evaluation, plan, _ in loaded:
         replicate = str(result["training_replicate_key"])
         partition = str(result["partition_key"])
         runs.append(
@@ -231,7 +380,7 @@ def build_manifest(
             }
         )
     participants = tuple(
-        sorted({key for _, _, _, plan in loaded for key in plan.requested_participant_keys})
+        sorted({key for _, _, _, plan, _ in loaded for key in plan.requested_participant_keys})
     )
     manifest: dict[str, Any] = {
         "schema": MANIFEST_SCHEMA,
@@ -243,6 +392,8 @@ def build_manifest(
             "target_cache_sha256": next(iter(target_cache_values)),
             "target_identity_digest": next(iter(target_identity_values)),
             "requested_participant_keys": list(participants),
+            "candidate_task_contract": candidate_task.record(),
+            "candidate_task_contract_digest": semantic_sha256(candidate_task.record()),
         },
         "metric": {
             "name": "requested_participant_operational_hit_rate",
@@ -278,7 +429,7 @@ def main() -> None:
         required=True,
     )
     parser.add_argument("--planned-contrast", nargs=2, action="append", required=True)
-    parser.add_argument("--evidence-level", type=int, default=2)
+    parser.add_argument("--evidence-level", type=int, default=MIN_PROMOTION_HIT_AT_R)
     parser.add_argument("--bootstrap-iterations", type=int, default=10_000)
     parser.add_argument("--bootstrap-seed", type=int, default=0)
     parser.add_argument("--confidence-level", type=float, default=0.95)

@@ -4,7 +4,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from data.bi2014a_candidate import recover_bi2014a_candidates
+from data.bi2014a_candidate import (
+    BI2014A_CANDIDATE_TASK_CONTRACT,
+    recover_bi2014a_candidates,
+)
 from data.bi2014a_schedule import (
     BI2014A_FLASH_SCHEDULE,
     BIFlashLabelContractError,
@@ -65,8 +68,23 @@ def test_recover_bi2014a_synthetic_schedule(tmp_path) -> None:
         )
     target_rows = record.target_label == 2
     target_cols = target_rows
-    assert np.all(record.row_code[target_rows & (record.row_code >= 0)] == record.target_row[target_rows & (record.row_code >= 0)])
-    assert np.all(record.col_code[target_cols & (record.col_code >= 0)] == record.target_col[target_cols & (record.col_code >= 0)])
+    assert np.all(
+        record.row_code[target_rows & (record.row_code >= 0)]
+        == record.target_row[target_rows & (record.row_code >= 0)]
+    )
+    assert np.all(
+        record.col_code[target_cols & (record.col_code >= 0)]
+        == record.target_col[target_cols & (record.col_code >= 0)]
+    )
+
+
+def test_bi_candidate_task_contract_uses_canonical_candidate_membership() -> None:
+    contract = BI2014A_CANDIDATE_TASK_CONTRACT
+
+    assert contract.candidate_ids == tuple(range(12))
+    assert contract.row_candidate_ids == tuple(range(6))
+    assert contract.column_candidate_ids == tuple(range(6, 12))
+    assert contract.raw_target_label_is_target == {"1": False, "2": True}
 
 
 def test_recover_bi2014a_splits_same_target_at_raw_level_boundary(tmp_path) -> None:
@@ -93,19 +111,16 @@ def test_recover_bi2014a_splits_same_target_at_raw_level_boundary(tmp_path) -> N
             boundary = np.zeros(19, dtype=float)
             boundary[17] = 104
             raw_rows.append(boundary)
-    pd.DataFrame(raw_rows).to_csv(
-        subject_dir / "subject_01.csv", index=False, header=False
-    )
+    pd.DataFrame(raw_rows).to_csv(subject_dir / "subject_01.csv", index=False, header=False)
 
     record = recover_bi2014a_candidates(subject_dir)
 
     assert record.n_explicit_boundaries == 1
     assert len(np.unique(record.selection_id)) == 2
     assert record.repetition_index.reshape(3, 12)[:, 0].tolist() == [0, 1, 0]
-    assert (
-        np.unique(record.selection_boundary_reason.reshape(3, 12)[2]).tolist()
-        == ["raw_level_or_restart_code_104"]
-    )
+    assert np.unique(record.selection_boundary_reason.reshape(3, 12)[2]).tolist() == [
+        "raw_level_or_restart_code_104"
+    ]
 
 
 def test_recover_bi2014a_keeps_complete_repetitions_and_drops_tail(tmp_path) -> None:
@@ -138,8 +153,7 @@ def test_recover_bi2014a_rejects_invalid_flash_structure(tmp_path) -> None:
 
 def test_flash_schedule_decoder_is_the_label_source() -> None:
     decoded = {
-        code: BI2014A_FLASH_SCHEDULE.decode(code)
-        for code in (20, 25, 40, 45, 60, 65, 80, 85)
+        code: BI2014A_FLASH_SCHEDULE.decode(code) for code in (20, 25, 40, 45, 60, 65, 80, 85)
     }
 
     assert decoded[20].candidate_key == "row:0"

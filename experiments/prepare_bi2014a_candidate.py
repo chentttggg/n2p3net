@@ -20,6 +20,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from data.bi2014a_candidate import (  # noqa: E402
+    BI2014A_CANDIDATE_TASK_CONTRACT,
     BI2014A_CHANNELS,
     build_bi2014a_subject_dataset,
     recover_bi2014a_candidates,
@@ -39,9 +40,7 @@ DEFAULT_BI_ROOT = ROOT / "mne_data" / "MNE-braininvaders2014a-data" / "zenodo" /
 
 
 def _preprocessing() -> PreprocessingSpec:
-    return preprocessing_spec_from_contract(
-        SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
-    )
+    return preprocessing_spec_from_contract(SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT)
 
 
 def main() -> None:
@@ -61,9 +60,9 @@ def main() -> None:
     if not root.is_dir():
         raise FileNotFoundError(root)
     subject_dirs = sorted(
-    (p for p in root.glob("subject_*") if p.is_dir()),
-    key=lambda p: int(p.name.rsplit("_", 1)[1]),
-)
+        (p for p in root.glob("subject_*") if p.is_dir()),
+        key=lambda p: int(p.name.rsplit("_", 1)[1]),
+    )
     if args.subjects:
         selected: set[int] = set()
         for token in args.subjects.split(","):
@@ -89,7 +88,10 @@ def main() -> None:
     for subject_dir in subject_dirs:
         recovered = recover_bi2014a_candidates(subject_dir)
         expected_targets = 2 * recovered.n_repetitions
-        if not (len(recovered.flash_sample) == 12 * recovered.n_repetitions and np.count_nonzero(recovered.target_label == 2) == expected_targets):
+        if not (
+            len(recovered.flash_sample) == 12 * recovered.n_repetitions
+            and np.count_nonzero(recovered.target_label == 2) == expected_targets
+        ):
             raise ValueError(f"{subject_dir.name} failed its complete-repetition check.")
         datasets.append(build_bi2014a_subject_dataset(subject_dir, preprocessing=preprocessing))
         audit.append(
@@ -119,6 +121,7 @@ def main() -> None:
             "subject_dirs": [str(p.resolve()) for p in subject_dirs],
             "channels": list(BI2014A_CHANNELS),
             "candidate_grid": "6x6",
+            "candidate_task_contract": BI2014A_CANDIDATE_TASK_CONTRACT.record(),
             "source_reference": "right earlobe",
             "source_sample_rate_hz": 512.0,
         },

@@ -58,6 +58,43 @@ def checkpoint_training_contract(
     return contract
 
 
+def checkpoint_training_identity_ledger(
+    payload: Mapping[str, object],
+) -> DatasetIdentityTable:
+    """Validate and return the participant ledger bound to a checkpoint."""
+
+    training_contract = checkpoint_training_contract(payload)
+    ledger_payload = payload.get("training_identity_ledger")
+    if not isinstance(ledger_payload, Mapping):
+        raise ValueError("pretraining checkpoint lacks a structured training_identity_ledger.")
+    ledger = DatasetIdentityTable.from_payload(ledger_payload)
+    if payload.get("training_identity_ledger_digest") != ledger.digest():
+        raise ValueError("checkpoint training identity ledger digest disagrees with its records.")
+    if set(training_contract.training_participant_keys) != set(ledger.authority_keys()):
+        raise ValueError("training_contract participant keys disagree with the identity ledger.")
+    return ledger
+
+
+def assert_checkpoint_target_identity_excluded(
+    payload: Mapping[str, object],
+    dataset: object,
+    *,
+    target_subject: str,
+    identity_exclusion_policy: IdentityExclusionPolicy = "source_or_global",
+) -> None:
+    """Require one requested target identity to be absent from checkpoint training."""
+
+    target_identity_table = getattr(dataset, "identity_table", None)
+    if not isinstance(target_identity_table, DatasetIdentityTable):
+        raise ValueError("target dataset lacks a structured identity table; regenerate its cache.")
+    target_identity = target_identity_table.record_for(str(target_subject))
+    assert_target_identity_excluded(
+        checkpoint_training_identity_ledger(payload),
+        target_identity,
+        policy=identity_exclusion_policy,
+    )
+
+
 def _architecture_from_payload(
     payload: Mapping[str, object],
 ) -> tuple[N2P3ArchitectureConfig, str]:
@@ -121,24 +158,8 @@ def _validate_metadata(
 
     training_contract = checkpoint_training_contract(payload)
     if payload.get("source_cache_sha256") != training_contract.source_cache_sha256:
-        raise ValueError(
-            "checkpoint source_cache_sha256 disagrees with its training contract."
-        )
-    ledger_payload = payload.get("training_identity_ledger")
-    if not isinstance(ledger_payload, Mapping):
-        raise ValueError(
-            "pretraining checkpoint lacks a structured training_identity_ledger."
-        )
-    training_identity_ledger = DatasetIdentityTable.from_payload(ledger_payload)
-    declared_ledger_digest = payload.get("training_identity_ledger_digest")
-    if declared_ledger_digest != training_identity_ledger.digest():
-        raise ValueError("checkpoint training identity ledger digest disagrees with its records.")
-    if set(training_contract.training_participant_keys) != set(
-        training_identity_ledger.authority_keys()
-    ):
-        raise ValueError(
-            "training_contract participant keys disagree with the identity ledger."
-        )
+        raise ValueError("checkpoint source_cache_sha256 disagrees with its training contract.")
+    training_identity_ledger = checkpoint_training_identity_ledger(payload)
 
     architecture_record = payload.get("architecture")
     if not isinstance(architecture_record, Mapping) or semantic_sha256(
@@ -152,9 +173,7 @@ def _validate_metadata(
         "source_reference": payload.get("input_source_reference"),
     }
     if semantic_sha256(input_signature) != semantic_sha256(contract_preprocessing):
-        raise ValueError(
-            "checkpoint input signature disagrees with its training contract."
-        )
+        raise ValueError("checkpoint input signature disagrees with its training contract.")
     checkpoint_classifier_is_trained(payload)
     checkpoint_input_stats(payload, int(dataset.n_channels))
 
@@ -278,9 +297,7 @@ def checkpoint_scores_to_llr(
     values = np.asarray(logits, dtype=np.float64)
     if values.ndim != 1 or not np.isfinite(values).all():
         raise ValueError("checkpoint logits must be a finite one-dimensional array.")
-    obsolete = [
-        key for key in ("training_pos_weight", "training_prior") if key in payload
-    ]
+    obsolete = [key for key in ("training_pos_weight", "training_prior") if key in payload]
     if obsolete:
         raise ValueError(
             f"checkpoint uses obsolete top-level calibration fields {obsolete}; "
@@ -332,9 +349,7 @@ def predict_n2p3_checkpoint(
 
     values = np.asarray(X, dtype=np.float32)
     if values.ndim != 3 or values.shape[1:] != (trunk.n_channels, trunk.n_times):
-        raise ValueError(
-            f"checkpoint input must be (N,{trunk.n_channels},{trunk.n_times})."
-        )
+        raise ValueError(f"checkpoint input must be (N,{trunk.n_channels},{trunk.n_times}).")
     if not np.isfinite(values).all() or len(values) == 0:
         raise ValueError("checkpoint input must be finite and non-empty.")
     if trial_channel_mask is None:
@@ -385,7 +400,9 @@ def load_n2p3_trunk_checkpoint(
     try:
         missing, unexpected = trunk.load_state_dict(state, strict=False)
     except RuntimeError as exc:
-        raise ValueError(f"checkpoint weights do not match its declared architecture: {exc}") from exc
+        raise ValueError(
+            f"checkpoint weights do not match its declared architecture: {exc}"
+        ) from exc
     if missing or unexpected:
         raise ValueError(
             f"checkpoint does not match the target trunk: missing={missing} unexpected={unexpected}."
@@ -412,10 +429,12 @@ def checkpoint_architecture_record(payload: Mapping[str, object]) -> dict[str, o
 
 __all__ = [
     "CHECKPOINT_SCHEMA",
+    "assert_checkpoint_target_identity_excluded",
     "checkpoint_architecture_record",
     "checkpoint_classifier_is_trained",
     "checkpoint_input_stats",
     "checkpoint_training_contract",
+    "checkpoint_training_identity_ledger",
     "checkpoint_scores_to_llr",
     "load_checkpoint_payload",
     "load_n2p3_trunk_checkpoint",
