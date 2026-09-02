@@ -89,7 +89,8 @@
     "pooling_mode": "full_unfold",
     "temporal_kernel_size": 35,
     "epochs": 30,
-    "batch_size": 512
+    "batch_size": 512,
+    "precision": "auto"
   },
   "calibration_selections": 5,
   "test_reps": 8,

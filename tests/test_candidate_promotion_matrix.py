@@ -90,6 +90,7 @@ def _plan_record(*, output_root: str = "outputs") -> dict[str, Any]:
             "temporal_kernel_size": 35,
             "epochs": 2,
             "batch_size": 16,
+            "precision": "auto",
         },
         "calibration_selections": 5,
         "test_reps": 8,
@@ -266,6 +267,20 @@ def test_training_rejects_even_kernel_but_accepts_explicit_k65(tmp_path: Path) -
     broad = _plan_record()
     broad["training"]["temporal_kernel_size"] = 65
     assert _load(tmp_path, broad).training.temporal_kernel_size == 65
+
+
+def test_training_precision_is_explicit_and_validated(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["training"]["precision"] = "bf16"
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+    checkpoint = next(task for task in dag.tasks if task.kind == "checkpoint")
+
+    assert checkpoint.argv[checkpoint.argv.index("--precision") + 1] == "bf16"
+
+    record["training"]["precision"] = "tf32"
+    with pytest.raises(ValueError, match="training.precision"):
+        _load(tmp_path, record)
 
 
 @pytest.mark.parametrize(

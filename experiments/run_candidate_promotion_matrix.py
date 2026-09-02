@@ -71,6 +71,7 @@ ORCHESTRATOR_LOCK_SCHEMA = "n2p3_candidate_promotion_orchestrator_lock/1"
 _PRETRAIN_POOLING_MODES = frozenset(
     {"ms_flatten", "full_unfold", "mlp_full_unfold", "quadratic_full_unfold"}
 )
+_TRAINING_PRECISIONS = frozenset({"auto", "bf16", "fp32"})
 _EVALUATION_HEADS = frozenset(
     {"auto", "zero_shot", "linear", "mlp16", "classifier_fine", "full_fine"}
 )
@@ -126,6 +127,7 @@ class TrainingConfig:
     temporal_kernel_size: int
     epochs: int
     batch_size: int
+    precision: str
 
 
 @dataclass(frozen=True)
@@ -556,7 +558,7 @@ def _parse_training(value: object) -> TrainingConfig:
     record = _mapping(value, "training")
     _keys(
         record,
-        required={"pooling_mode", "temporal_kernel_size", "epochs", "batch_size"},
+        required={"pooling_mode", "temporal_kernel_size", "epochs", "batch_size", "precision"},
         name="training",
     )
     pooling = _text(record["pooling_mode"], "training.pooling_mode")
@@ -568,11 +570,15 @@ def _parse_training(value: object) -> TrainingConfig:
     kernel = _integer(record["temporal_kernel_size"], "training.temporal_kernel_size", minimum=3)
     if kernel % 2 == 0:
         raise ValueError("training.temporal_kernel_size must be odd.")
+    precision = _text(record["precision"], "training.precision")
+    if precision not in _TRAINING_PRECISIONS:
+        raise ValueError(f"training.precision must be one of {sorted(_TRAINING_PRECISIONS)}.")
     return TrainingConfig(
         pooling_mode=pooling,
         temporal_kernel_size=kernel,
         epochs=_integer(record["epochs"], "training.epochs", minimum=1),
         batch_size=_integer(record["batch_size"], "training.batch_size", minimum=1),
+        precision=precision,
     )
 
 
@@ -790,6 +796,8 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                     str(plan.training.epochs),
                     "--batch-size",
                     str(plan.training.batch_size),
+                    "--precision",
+                    plan.training.precision,
                     "--seed",
                     str(replicate.seed),
                     "--checkpoint",

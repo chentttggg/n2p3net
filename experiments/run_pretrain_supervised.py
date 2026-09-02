@@ -108,6 +108,12 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--seed", type=int, default=20260828)
     parser.add_argument(
+        "--precision",
+        choices=("auto", "bf16", "fp32"),
+        default="auto",
+        help="Requested training precision; auto selects BF16 on supported accelerators.",
+    )
+    parser.add_argument(
         "--source-domain-mass",
         action="append",
         default=[],
@@ -207,8 +213,18 @@ def main() -> None:
     elif domain_mass or selection_domain is not None:
         raise ValueError("domain-risk options require an explicit source-domain axis.")
 
-    runtime = GpuPerformanceScheduler(device, precision="fp32")
-    config = DeepConfig(epochs=args.epochs, batch_size=args.batch_size, seed=args.seed)
+    config = DeepConfig(
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        seed=args.seed,
+        precision=args.precision,
+    )
+    runtime = GpuPerformanceScheduler(
+        device,
+        precision=config.precision,
+        batch_memory_fraction=config.batch_memory_fraction,
+        preload_memory_fraction=config.preload_memory_fraction,
+    )
     architecture = N2P3ArchitectureConfig(temporal_kernel_size=args.temporal_kernel_size)
     baseline = N2P3NetBaseline(
         dataset.n_channels,

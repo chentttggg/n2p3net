@@ -208,6 +208,8 @@ def test_supervised_runner_records_verified_physical_source_snapshot(
     assert contract.source_snapshot_sha256 == source_digest
     assert payload["source_snapshot_sha256"] == source_digest
     assert payload["source_snapshot_manifest"] == str(source_manifest.resolve())
+    assert contract.optimizer["selection_config"]["precision"] == "auto"
+    assert contract.optimizer["refit_config"]["precision"] == "auto"
 
 
 def test_supervised_runner_rejects_tampered_source_archive(
