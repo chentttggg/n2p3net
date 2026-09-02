@@ -10,13 +10,18 @@ unknown during calibration.
 - Compact MS-EEGNet-style trunk; the linear `full_unfold` readout with K35 is
   the provisional engineering default (`ms_flatten + K65` remains the explicit
   MS-EEGNet baseline control).
+
 - GTN development benchmark (245 subjects, child/3-channel, one selection per
-  subject): the frozen all-evidence count-neutral endpoint reaches **71.43%**
-  9-choice digit-selection accuracy (trial AUC 0.694). GTN is a development
-  cohort; this is a development result, not a confirmatory or deployment claim.
+  subject): with target-block-excluded zero-shot checkpoints
+  (leave-one-block-out, 3 seeds), the all-evidence count-neutral endpoint
+  reaches **71.43%** 9-choice digit-selection accuracy (trial AUC 0.694).
+  This is a cross-subject development result — not a per-subject LOSO
+  estimate and not a deployment claim.
+
 - Feature-domain transfer research (2026-09): identity-initialized per-domain
   residual feature adapters, class-conditional source alignment, a unified
   candidate-evidence decision core, and leakage-safe domain LODO/ceiling folds.
+
 - The living evidence ledger, preregistered single-axis arms, and promotion
   gates are in `doc/research_program.zh.md`. No deployment champion is
   confirmed yet; read it before running experiments.
