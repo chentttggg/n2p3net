@@ -130,6 +130,7 @@ block 仍只表示调度/休息分段，不证明 target-switch；显式公共�
 | BI2014a+BNCI2014_008 common-CAR5 source | 物理归档：`0.1300/0.0967/0.1239/0.0974` hit@2；2026-09-02 对旧 cache 只读机制复审 | 负迁移来自条件 ERP 冲突、epoch/participant 风险错位和 validation 域漂移；旧 128-sample cache 不可续用 |
 | BNCI-target causal-v3 CAR5 正式矩阵（295942e） | 96/96 checkpoint+result 完成；manifest 两次失败已定位修复（`ab6c8e7`）；本地独立复算完成，待云端 checkpoint 下载后重建 manifest 并物理冻结 | hit@8 `bnci_only 0.3417 > bnci80_epoch 0.2736 > bnci80_participant 0.2667 > joint_natural 0.1222`；联合臂不晋升；J2≈J1 关闭统计单元轴；预注册梯度冲突门已触发 |
 | GTN 2 Hz/800 ms assets | 仅存在物理压缩归档 | 不提供活跃降级接口 |
+| GTN v3 契约 zero-phase LOSO 开发线 | 冻结归档审计文档 `d1db8e4`（`gtn_accuracy_gap_audit_20260830.zh.md`）：修订契约 0.1 Hz/1200 ms、245 折、seed 20260828：hit_all fu-K33 `0.804`、fu-K65 `0.800`、eegnet `0.792`、ms_eegnet `0.788`；K33 hit@8 `0.759`；run 记录在云端 `gtn128rev_*` | 单 seed 开发点估计：四深度臂统计打平（fu−ms p=0.64、fu−eegnet p=0.53），0.804 不足以选择核长（后继 causal 多 seed 选 K35）；zero-phase 离线协议，在线排序以 steady-state Z0 为准，不作产品估计量 |
 | GTN steady-state causal 2x2 bundle | 4 cache records、32 checkpoints、120 eval JSON 已本地独立复算 | 0.1 Hz/1200 ms 是当前开发 signal winner；不作产品确认 |
 | GTN Z0 最佳固定-R baseline | hit@5 coverage 230/245；conditional 0.578；operational 0.543；AUC 0.709 | 未达到 0.90；15 人仅因 R_s=2--4 无法到 @5，仍进入 all-evidence 主分析 |
 | source QC 100 uV vs none | operational +0.118，95% CI [+0.053,+0.184]；覆盖相同 | 冻结 source QC=100 uV，target-prefix QC 仍关闭 |

@@ -19,6 +19,12 @@ unknown during calibration.
     across two seeds, versus MS-EEGNet 71.0%/64.1%, EEGNet 69.0%/69.4%,
     SWLDA 14.7%, and xDAWN-RG 29.4%.
 
+    The historical peak was `full_unfold + K33` at **80.4%** **`hit_all`**
+    (`hit@8` 75.9%) in the 20260828 seed. `hit_all` scores each held-out
+    subject after aggregating all available candidate evidence. This is a
+    single-seed, zero-phase offline development observation, not a causal or
+    online result, and does not supersede the multi-seed aggregate above.
+
   - Target-block-excluded **zero-shot** (leave-one-block-out, 3 seeds,
     current contract): the all-evidence count-neutral endpoint reaches
     **71.43%** (trial AUC 0.694).
