@@ -5,31 +5,21 @@ is adult BrainSync 9-choice subject-macro `hit@R >= 0.90` after a fixed labelled
 calibration budget, on later independent decisions whose target digit was
 unknown during calibration.
 
-GTN is a child/3-channel, one-selection-per-subject development benchmark. Its
-same-selection labelled prefix/suffix path is an oracle proxy, not an
-unknown-number calibration estimate. BI2014a is used for the legal mechanism
-test: early known character decisions -> later unknown character decisions.
-Linear `full_unfold` is the adopted N2P3-Net readout and K35 is the provisional
-engineering default; `ms_flatten + K65` remains the explicit MS-EEGNet baseline.
-On the current all-evidence, count-neutral endpoint, the unchanged v4 K35
-checkpoint reaches 71.43% versus 68.30% for K65. The paired difference is
-+3.13 points (95% CI +0.41 to +5.85), but seed direction reverses and the
-eight-contrast Holm result is not significant. K35 therefore remains a smaller
-development default, not a confirmatory or deployment champion.
+## Status
 
-Legacy causal records used a zero-state forward IIR and reused the same suffix
-for recipe selection; their numeric rankings have been removed from current
-guidance. Four steady-state causal GTN caches have now been rebuilt and
-independently audited. The current best audited fixed-budget Z0 baseline is
-0.1 Hz/1200 ms, source QC 100 uV, with `hit@5` coverage `230/245` and operational
-accuracy `0.543`; it remains far below 0.90. The kernel experiment now uses all
-245 subjects. For unequal candidate counts, the current development default uses
-every available trial and compares candidate means (`count_power=0`); balanced
-truncation and raw sum remain compatibility endpoints. A 24-checkpoint,
-30-epoch end-to-end listwise fine-tune was completed and did not improve this
-frozen-backbone mean baseline, so that training recipe is not adopted. Read
-`doc/research_program.zh.md`
-before running experiments.
+- Compact MS-EEGNet-style trunk; the linear `full_unfold` readout with K35 is
+  the provisional engineering default (`ms_flatten + K65` remains the explicit
+  MS-EEGNet baseline control).
+- GTN development benchmark (245 subjects, child/3-channel, one selection per
+  subject): the frozen all-evidence count-neutral endpoint reaches **71.43%**
+  9-choice digit-selection accuracy (trial AUC 0.694). GTN is a development
+  cohort; this is a development result, not a confirmatory or deployment claim.
+- Feature-domain transfer research (2026-09): identity-initialized per-domain
+  residual feature adapters, class-conditional source alignment, a unified
+  candidate-evidence decision core, and leakage-safe domain LODO/ceiling folds.
+- The living evidence ledger, preregistered single-axis arms, and promotion
+  gates are in `doc/research_program.zh.md`. No deployment champion is
+  confirmed yet; read it before running experiments.
 
 ## Environment
 
