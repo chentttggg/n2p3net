@@ -1,9 +1,9 @@
 # N2P3-Net 科研总纲：未知数字、多决策与 90% 目标
 
-日期：2026-09-01
+日期：2026-09-02
 状态：living research guide
 适用范围：oddball/P300 单试次检测、多试次候选聚合、跨被试预训练和单被试校准。
-阶段结果摘要见 [`research_status_report_20260831.zh.md`](research_status_report_20260831.zh.md)。
+阶段结果摘要见 [`research_status_report_20260902.zh.md`](research_status_report_20260902.zh.md)。
 
 ## 0. 权威边界
 
@@ -128,6 +128,7 @@ block 仍只表示调度/休息分段，不证明 target-switch；显式公共�
 | BI2014a 128 Hz zero-phase LOSO assets | 已进入物理压缩归档 | 只作架构开发；不可作为当前 checkpoint |
 | BI2014a causal-v2 cross-decision | 物理归档：64 人、12 checkpoints、13 arms x 3 seeds | 只保留机制结论；v3 必须重建重训 |
 | BI2014a+BNCI2014_008 common-CAR5 source | 物理归档：`0.1300/0.0967/0.1239/0.0974` hit@2；2026-09-02 对旧 cache 只读机制复审 | 负迁移来自条件 ERP 冲突、epoch/participant 风险错位和 validation 域漂移；旧 128-sample cache 不可续用 |
+| BNCI-target causal-v3 CAR5 正式矩阵（295942e） | 96/96 checkpoint+result 完成；manifest 两次失败已定位修复（`ab6c8e7`）；本地独立复算完成，待云端 checkpoint 下载后重建 manifest 并物理冻结 | hit@8 `bnci_only 0.3417 > bnci80_epoch 0.2736 > bnci80_participant 0.2667 > joint_natural 0.1222`；联合臂不晋升；J2≈J1 关闭统计单元轴；预注册梯度冲突门已触发 |
 | GTN 2 Hz/800 ms assets | 仅存在物理压缩归档 | 不提供活跃降级接口 |
 | GTN steady-state causal 2x2 bundle | 4 cache records、32 checkpoints、120 eval JSON 已本地独立复算 | 0.1 Hz/1200 ms 是当前开发 signal winner；不作产品确认 |
 | GTN Z0 最佳固定-R baseline | hit@5 coverage 230/245；conditional 0.578；operational 0.543；AUC 0.709 | 未达到 0.90；15 人仅因 R_s=2--4 无法到 @5，仍进入 all-evidence 主分析 |
@@ -177,6 +178,7 @@ gtn_paper_causal_v2
 | online/offline | forward steady-state vs split-local zero-phase | 机制敏感性；禁止 whole-record zero-phase |
 | normalization | source stats / target-prefix stats / shrinkage | 旧 causal-v2 归档观察：source≈shrinkage、target-prefix 下降；v3 尚未重跑 |
 | multi-source normalization | all-source stats / target-dataset source stats | 已完成且等效：BI-source stats 相对 all-source `+0.07 pp`，CI 跨 0 |
+| multi-source 域质量/统计单元 | B0 单域 / J0 natural / J1 80-20 epoch / J2 80-20 participant | 两方向已完成：BI-target 归档 `-3.33 pp`（uniform）、`-0.61 pp`（3x/1x）；BNCI-target v3 `J0-B0 -21.94 pp`、`J1-B0 -6.81 pp`、`J2-J1 -0.69 pp` hit@8；联合不晋升，单元轴关闭 |
 | target QC | none / prefix-fit fold-local | source QC100 已冻结；target QC 待独立 decision 消融 |
 | epoch budget | source/fixed budget / real-time target holdout + full-prefix refit | 代码闭合，性能待独立 decision |
 | adaptation | zero-shot / pretrained-classifier fine / scratch head / full fine | 旧 causal-v2 归档观察：fine 无可靠增益、scratch 更差；v3 与 BrainSync 待真实数据 |
@@ -315,6 +317,28 @@ J2  joint BI/BNCI=80/20 participant-macro mass，BI selection
 只有 J2 仍低于 B0，才测量 matched BI/BNCI gradient cosine 并进入梯度冲突或
 dataset-specific stem；不能引用 ERP 余弦直接声称 PCGrad 已被验证。
 
+2026-09-02：该轴的 BNCI-target 方向已按同一设计在 causal-v3 CAR5 正式执行
+（295942e；6 域联合源 = 5xBI + BNCI，selection-domain=BNCI，3 seeds x
+8 ALS 被试 x 30 未知 decisions，100% 覆盖）。hit@8（chance=1/36）：
+`B0 0.3417 / J1 0.2736 / J2 0.2667 / J0 0.1222`，三 seed 臂序一致。
+预注册对照：`J0-B0 -21.94 pp`（CI `[-37.50,-6.25]`）、`J1-J0 +15.14 pp`
+（CI `[+4.17,+27.36]`）、`J2-J1 -0.69 pp`（CI `[-1.94,+0.97]`）；Holm 后
+hit@8 均不显著（n=8 欠功效），但 AUC `J0-B0 -9.62 pp`、`J1-J0 +7.95 pp`
+均 `p=0.008` 且 8 个 evidence level 全部同号。J1/J2 仍低于 B0
+（`-6.81/-7.50 pp`）。
+
+两方向合成裁决：质量校正确为最大恢复项（两方向一致），统计单元无差异，
+但校正后联合源在任何方向都未胜单域。带域质量 `alpha` 的 pooled CE 只能在
+各域最优判别面的妥协段上取点；归档 ERP 余弦近正交说明该妥协成本不可由
+标量 `alpha` 消除。**J2<B0 的预注册门已触发**：下一动作是 matched
+BI/BNCI gradient cosine 诊断（无新训练），若确认冲突则单轴测试
+per-domain classifier head（共享 trunk + 域专属头），不足再上 per-domain
+stem；BI-target 方向的 v3 J 臂复跑降级为可选项，仅当梯度诊断显示方向
+不对称时执行。BI-target v3 的 B0/checkpoint 仍随 Gate 3 缓存重建产生。
+该正式运行的 manifest 步骤曾因合同投影缺陷两次失败，修复见 `ab6c8e7`；
+数值待 manifest 重建后以归档产物为准（详见
+[`research_status_report_20260902.zh.md`](research_status_report_20260902.zh.md)）。
+
 ### Gate 3：合法单被试校准
 
 先用 BI2014a cross-decision 协议验证机制，再进入 BrainSync 9 选：
@@ -372,16 +396,25 @@ primary 为 subject-macro `hit@R`，并给 subject-cluster CI、coverage、absta
 
 ## 8. 立即执行顺序
 
-1. 已完成证据已物理压缩归档，活跃树不再包含旧合同 runner/manifest；
-2. 从 raw 重建统一 v3 的 BI/BNCI/GTN cache、common-CAR source 和 checkpoint；
-3. v3 继续采用 `full_unfold + K35` 与 candidate mean，K65 保留强对照；
-4. 归档 BI 结果不支持 5-decision personalization；新 v3 保留 zero-shot/source stats 基线；
-5. 归档 BI+BNCI 结果提示条件 ERP 冲突与层级风险错位；v3 按 B0/J0/J1/J2 固定
-   rows/batch/steps 逐轴裁决，活动 CLI 已删除行重复和 subject-prefix stats；
-6. decision-aligned 全参数 30-epoch recipe 已否决；后继只研究保护 backbone 的
+1. **闭合 295942e 证据链**：下载云端 96 个 checkpoint、
+   `frozen/source_training_295942e9e94d.manifest.json`（含 tar.gz）与
+   manifest 失败日志，用修复后代码（`ab6c8e7`）独立执行 manifest/analysis
+   argv 重建产物，物理冻结为 `frozen/research_evidence_295942e_*.tar.gz`；
+2. 已完成证据已物理压缩归档，活跃树不再包含旧合同 runner/manifest；
+3. 从 raw 重建统一 v3 的 BI/GTN cache、common-CAR source 和 checkpoint
+   （BNCI target/source/6 域联合 cache 已随 295942e 建成）；
+4. v3 继续采用 `full_unfold + K35` 与 candidate mean，K65 保留强对照；
+5. 归档 BI 结果不支持 5-decision personalization；新 v3 保留 zero-shot/source stats 基线；
+6. 多源域质量/统计单元轴已在两方向裁决：联合不晋升、单元轴关闭；
+   下一动作是 matched BI/BNCI gradient cosine 诊断，确认冲突后单轴测试
+   per-domain head（不足再 stem）；BI-target v3 J 臂仅在诊断显示方向
+   不对称时补跑；
+7. decision-aligned 全参数 30-epoch recipe 已否决；后继只研究保护 backbone 的
    分阶段单轴策略、无真值 adaptation 与 target-switch personalization；
-7. 使用统一 v3 causal multi-session/target-switch 入口重新采集成人 BrainSync 数据；
-8. 不把 O5 当未知数字校准。
+8. BI2014a v3 缓存就绪后推进 Gate 3 校准开放轴（BN adapt、time-heldout
+   selection + full-prefix refit、fold-local target QC、shrinkage）；
+9. 使用统一 v3 causal multi-session/target-switch 入口重新采集成人 BrainSync 数据；
+10. 不把 O5 当未知数字校准。
 
 ## 9. 本轮外部依据与边界
 
