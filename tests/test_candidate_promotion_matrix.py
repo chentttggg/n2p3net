@@ -567,6 +567,8 @@ def test_attested_inputs_are_bound_to_journal_and_cache_tamper_blocks_resume(
         resolved["target_cache"]["cache_sha256"]
     )
     assert set(resolved["source_caches"]) == {"source_a", "source_ab"}
+    assert resolved["preflight_loading"]["task_count"] == 3
+    assert resolved["preflight_loading"]["effective_workers"] == 3
     assert resolved["power_plan"]["sha256"] == hashlib.sha256(power_plan.read_bytes()).hexdigest()
     assert journal["dag_digest"] == matrix._dag_digest(dag, resolved)
 
@@ -581,6 +583,44 @@ def test_attested_inputs_are_bound_to_journal_and_cache_tamper_blocks_resume(
     with pytest.raises(ValueError, match="journal inputs changed"):
         matrix.execute_dag(dag, resume=True, subprocess_runner=succeed)
     assert calls == []
+
+
+def test_preflight_deduplicates_shared_cache_and_loads_unique_paths_in_parallel(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _write_preflight_inputs(tmp_path)
+    record = _plan_record()
+    shared = record["source_arms"][1]
+    shared["cache"] = "source-a.npz"
+    shared["source_domain_mass"] = None
+    shared["risk_within_domain_unit"] = None
+    shared["selection_domain"] = None
+    dag = matrix.build_dag(_load(tmp_path, record))
+    original_load = matrix._load_attested_cache_input
+    barrier = threading.Barrier(2)
+    calls: list[Path] = []
+    worker_names: list[str] = []
+
+    def concurrent_load(cache_path, *, name, dag):
+        calls.append(Path(cache_path).resolve())
+        worker_names.append(threading.current_thread().name)
+        barrier.wait(timeout=5)
+        return original_load(cache_path, name=name, dag=dag)
+
+    monkeypatch.setattr(matrix, "_load_attested_cache_input", concurrent_load)
+
+    resolved = matrix._verify_inputs(dag)
+
+    assert len(calls) == 2
+    assert len(set(calls)) == 2
+    assert len(set(worker_names)) == 2
+    assert all(name.startswith("promotion-preflight") for name in worker_names)
+    assert resolved["preflight_loading"]["task_count"] == 2
+    assert resolved["preflight_loading"]["effective_workers"] == 2
+    assert (
+        resolved["source_caches"]["source_a"]["cache_sha256"]
+        == resolved["source_caches"]["source_ab"]["cache_sha256"]
+    )
 
 
 def test_identity_mismatch_is_rejected_before_any_subprocess(tmp_path: Path) -> None:

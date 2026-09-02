@@ -106,6 +106,12 @@ class _FastSupervisedBaseline:
         self.calibration_source_ = None
         self.last_history: dict[str, object] = {}
         self.last_source_risk = None
+        self.last_runtime = {
+            "device": "cpu",
+            "precision": "fp32",
+            "batch_size": 16,
+            "oom_retries": 0,
+        }
         self._input_mean = np.zeros((1, n_channels, 1), dtype=np.float32)
         self._input_std = np.ones((1, n_channels, 1), dtype=np.float32)
 
@@ -210,6 +216,10 @@ def test_supervised_runner_records_verified_physical_source_snapshot(
     assert payload["source_snapshot_manifest"] == str(source_manifest.resolve())
     assert contract.optimizer["selection_config"]["precision"] == "auto"
     assert contract.optimizer["refit_config"]["precision"] == "auto"
+    assert contract.optimizer["selection_runtime"]["precision"] == "fp32"
+    assert contract.optimizer["refit_runtime"]["precision"] == "fp32"
+    assert payload["runtime"]["selection"]["precision"] == "fp32"
+    assert payload["runtime"]["refit"]["precision"] == "fp32"
 
 
 def test_supervised_runner_rejects_tampered_source_archive(

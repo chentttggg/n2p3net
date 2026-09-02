@@ -57,6 +57,7 @@ from research.contracts import (  # noqa: E402
 from research.evaluation import (  # noqa: E402
     source_snapshot_sha256_from_archive_manifest,
 )
+from train.runtime import cpu_thread_budget, resolve_cpu_worker_plan  # noqa: E402
 from transfer.checkpoint import (  # noqa: E402
     CHECKPOINT_SCHEMA,
     checkpoint_training_contract,
@@ -1324,10 +1325,35 @@ def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
     source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
         plan.source_snapshot_manifest
     )
-    target = _load_attested_cache_input(plan.target_cache, name="target cache", dag=dag)
+    unique_cache_paths: dict[Path, str] = {
+        plan.target_cache.resolve(): "target cache",
+    }
+    for arm in plan.source_arms:
+        unique_cache_paths.setdefault(
+            arm.cache.resolve(),
+            f"source cache for arm {arm.name!r}",
+        )
+    cache_tasks = tuple(unique_cache_paths.items())
+    worker_plan = resolve_cpu_worker_plan(len(cache_tasks))
+
+    def load_cache(task: tuple[Path, str]) -> tuple[Path, _AttestedCacheInput]:
+        path, name = task
+        return path, _load_attested_cache_input(path, name=name, dag=dag)
+
+    with cpu_thread_budget(worker_plan.threads_per_worker):
+        if worker_plan.effective_workers == 1:
+            loaded = tuple(load_cache(task) for task in cache_tasks)
+        else:
+            with ThreadPoolExecutor(
+                max_workers=worker_plan.effective_workers,
+                thread_name_prefix="promotion-preflight",
+            ) as executor:
+                loaded = tuple(executor.map(load_cache, cache_tasks))
+    cache_by_path = dict(loaded)
+    target = cache_by_path[plan.target_cache.resolve()]
     source_by_arm: dict[str, _AttestedCacheInput] = {}
     for arm in plan.source_arms:
-        source = _load_attested_cache_input(arm.cache, name=f"source arm {arm.name!r}", dag=dag)
+        source = cache_by_path[arm.cache.resolve()]
         _assert_cache_compatibility(target, source, source_arm=arm.name)
         planned_domains = {domain for domain, _ in arm.source_domain_mass}
         observed_domains = set(source.source_domains)
@@ -1374,6 +1400,7 @@ def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
         "source_caches": {
             arm.name: dict(source_by_arm[arm.name].resolved_record) for arm in plan.source_arms
         },
+        "preflight_loading": worker_plan.record(),
         "identity_exclusion_policy": plan.identity_exclusion_policy,
         "target_holdout_authority_keys": {
             target_spec.partition_key: target.identity_table.record_for(

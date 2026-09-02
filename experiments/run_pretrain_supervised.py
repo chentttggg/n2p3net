@@ -344,6 +344,8 @@ def main() -> None:
             "refit_config": asdict(refit_config),
             "selection_execution": selection_baseline.optimizer_execution.record(),
             "refit_execution": baseline.optimizer_execution.record(),
+            "selection_runtime": selection_baseline.last_runtime,
+            "refit_runtime": baseline.last_runtime,
             "optimizer_rows_per_epoch": int(len(X)),
         },
         validation={
@@ -426,7 +428,11 @@ def main() -> None:
         "refit_seconds": refit_sec,
         "best_epoch": history.get("best_epoch"),
         "final_task_val_auc": history.get("final_task_val_auc"),
-        "runtime": {"device": str(device)},
+        "runtime": {
+            "device": str(device),
+            "selection": selection_baseline.last_runtime,
+            "refit": baseline.last_runtime,
+        },
     }
     torch.save(payload, checkpoint)
     print(
@@ -437,6 +443,7 @@ def main() -> None:
                 "n_source_epochs_used": payload["n_source_epochs_used"],
                 "source_input_stats_scope": source_input_stats_scope,
                 "source_risk": payload["source_risk_selection"],
+                "runtime": payload["runtime"],
                 "training_participant_count": len(
                     training_identity_ledger.local_subject_ids
                 ),
