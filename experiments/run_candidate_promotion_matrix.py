@@ -76,7 +76,7 @@ _PRETRAIN_POOLING_MODES = frozenset(
 )
 _TRAINING_PRECISIONS = frozenset({"auto", "bf16", "fp32"})
 _EVALUATION_HEADS = frozenset(
-    {"auto", "zero_shot", "linear", "mlp16", "classifier_fine", "full_fine"}
+    {"auto", "zero_shot", "linear", "mlp16", "classifier_fine", "full_fine", "adapter"}
 )
 _NORMALIZATION_MODES = frozenset({"source", "target_prefix", "shrinkage"})
 _EPOCH_SELECTION_MODES = frozenset({"fixed_budget", "target_time_split"})

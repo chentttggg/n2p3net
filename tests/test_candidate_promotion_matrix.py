@@ -351,7 +351,7 @@ def test_plan_supports_natural_ce_with_target_domain_selection(tmp_path: Path) -
     assert checkpoint.argv[checkpoint.argv.index("--selection-domain") + 1] == "A"
 
 
-@pytest.mark.parametrize("head", ["linear", "mlp16", "classifier_fine", "full_fine"])
+@pytest.mark.parametrize("head", ["linear", "mlp16", "classifier_fine", "full_fine", "adapter"])
 def test_plan_supports_current_fitted_runner_heads(tmp_path: Path, head: str) -> None:
     record = _plan_record()
     record["evaluation_arms"][1]["head"] = head

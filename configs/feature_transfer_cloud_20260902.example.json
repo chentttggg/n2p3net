@@ -1,0 +1,98 @@
+{
+  "schema": "n2p3_candidate_promotion_plan/2",
+  "stage": "development",
+  "source_snapshot_manifest": "../frozen/source_feature_transfer_c5d670d.manifest.json",
+  "target_cache": "../cloud_inputs/brainsync_target_causal_v3.npz",
+  "target_subjects": [
+    {
+      "target_subject": "TARGET_01",
+      "source_holdout_subject": "SOURCE_TARGET_01",
+      "partition_key": "target-01"
+    },
+    {
+      "target_subject": "TARGET_02",
+      "source_holdout_subject": "SOURCE_TARGET_02",
+      "partition_key": "target-02"
+    }
+  ],
+  "source_arms": [
+    {
+      "name": "multidomain_feature_transfer",
+      "cache": "../cloud_inputs/source_multidomain_causal_v3.npz",
+      "source_domain_mass": null,
+      "risk_within_domain_unit": null,
+      "selection_domain": null
+    }
+  ],
+  "training_replicates": [
+    {
+      "key": "seed-20260901",
+      "seed": 20260901
+    },
+    {
+      "key": "seed-20260902",
+      "seed": 20260902
+    },
+    {
+      "key": "seed-20260903",
+      "seed": 20260903
+    }
+  ],
+  "evaluation_arms": [
+    {
+      "name": "zero_shot",
+      "head": "zero_shot",
+      "normalization": "source",
+      "epoch_selection": "fixed_budget",
+      "epochs": null,
+      "batch_size": null,
+      "lr": null,
+      "target_stat_weight": 0.0,
+      "fold_local_qc": false
+    },
+    {
+      "name": "target_adapter",
+      "head": "adapter",
+      "normalization": "source",
+      "epoch_selection": "fixed_budget",
+      "epochs": 5,
+      "batch_size": 16,
+      "lr": 0.0005,
+      "target_stat_weight": 0.0,
+      "fold_local_qc": false
+    }
+  ],
+  "training": {
+    "pooling_mode": "full_unfold",
+    "temporal_kernel_size": 35,
+    "epochs": 30,
+    "batch_size": 512,
+    "precision": "auto",
+    "feature_transfer_invariant_bottleneck": 4,
+    "feature_transfer_private_channels": 4,
+    "feature_transfer_target_bottleneck": 4,
+    "feature_transfer_target_kernel": 9,
+    "feature_transfer_max_invariant_residual": 0.25,
+    "feature_transfer_max_target_residual": 0.25,
+    "feature_alignment_weight": 0.05,
+    "private_domain_weight": 0.05,
+    "orthogonality_weight": 0.01
+  },
+  "calibration_selections": 5,
+  "test_reps": 8,
+  "identity_exclusion_policy": "source_or_global",
+  "output_root": "../experiments/runs/feature_transfer_cloud_20260902",
+  "statistical_design": {
+    "inference_scope": "conditional_frozen_models",
+    "planned_contrasts": [
+      [
+        "multidomain_feature_transfer__target_adapter",
+        "multidomain_feature_transfer__zero_shot"
+      ]
+    ],
+    "evidence_level": 8,
+    "bootstrap_iterations": 10000,
+    "bootstrap_seed": 20260910,
+    "confidence_level": 0.95
+  }
+}
