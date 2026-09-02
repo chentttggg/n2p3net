@@ -370,6 +370,7 @@ def _validate_folds(
     n_rows: int,
     *,
     group_ids: np.ndarray | None = None,
+    domain_ids: np.ndarray | None = None,
     fold_protocol: str | None = None,
 ) -> list[tuple[np.ndarray, np.ndarray]]:
     if not folds:
@@ -411,6 +412,36 @@ def _validate_folds(
             raise ValueError(f"{fold_protocol} test folds must not repeat held-out groups or rows.")
         if fold_protocol == "loso" and np.any(test_counts != 1):
             raise ValueError("loso test folds must cover every row exactly once.")
+    if fold_protocol in {"domain_lodo", "domain_ceiling"}:
+        if domain_ids is None:
+            raise ValueError(f"{fold_protocol} validation requires domain_ids.")
+        domains = np.asarray(domain_ids).astype(str)
+        if domains.shape != (n_rows,) or np.any(np.char.strip(domains) == ""):
+            raise ValueError("fold domain_ids must contain one non-empty domain per row.")
+        selected_test_domains: list[str] = []
+        for index, (train, test) in enumerate(output):
+            train_domains = set(np.unique(domains[train]).tolist())
+            test_domains = set(np.unique(domains[test]).tolist())
+            if not train_domains or not test_domains:
+                raise ValueError(f"Fold {index} must contain train and test domains.")
+            if fold_protocol == "domain_lodo":
+                if len(test_domains) != 1 or train_domains & test_domains:
+                    raise ValueError(
+                        f"Fold {index} in domain_lodo must hold out one complete domain."
+                    )
+                selected_test_domains.append(next(iter(test_domains)))
+            else:
+                if len(test_domains) != 1 or train_domains != test_domains:
+                    raise ValueError(
+                        f"Fold {index} in domain_ceiling must train and test within one domain."
+                    )
+                selected_test_domains.append(next(iter(test_domains)))
+        if fold_protocol == "domain_lodo" and len(set(selected_test_domains)) != len(
+            selected_test_domains
+        ):
+            raise ValueError("domain_lodo test folds must not repeat held-out domains.")
+        if np.any(test_counts != 1):
+            raise ValueError(f"{fold_protocol} test folds must cover every selected row exactly once.")
     return output
 
 
@@ -1228,6 +1259,7 @@ def evaluate_binary(
     folds: Sequence[tuple[np.ndarray, np.ndarray]],
     *,
     fit_group_ids: np.ndarray | None = None,
+    domain_ids: np.ndarray | None = None,
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
     artifact_policy: FoldLocalArtifactPolicy | None = None,
@@ -1252,6 +1284,10 @@ def evaluate_binary(
     )
     if fit_groups.shape != (len(X),) or np.any(np.char.strip(fit_groups) == ""):
         raise ValueError("fit_group_ids must contain one non-empty group per epoch.")
+    if domain_ids is not None:
+        domain_ids = np.asarray(domain_ids).astype(str)
+        if domain_ids.shape != (len(X),) or np.any(np.char.strip(domain_ids) == ""):
+            raise ValueError("domain_ids must contain one non-empty domain per epoch.")
     if trial_channel_mask is not None:
         trial_channel_mask = np.asarray(trial_channel_mask, dtype=bool)
         if trial_channel_mask.shape != X.shape[:2] or not trial_channel_mask.any(axis=1).all():
@@ -1277,6 +1313,7 @@ def evaluate_binary(
             folds,
             len(X),
             group_ids=subject_ids,
+            domain_ids=domain_ids,
             fold_protocol=fold_protocol,
         ),
         trial_channel_mask=trial_channel_mask,
@@ -1323,6 +1360,7 @@ def evaluate_candidate_selection(
     candidate_vocab: Sequence[int],
     *,
     fit_group_ids: np.ndarray | None = None,
+    domain_ids: np.ndarray | None = None,
     event_timeline: object | None = None,
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
@@ -1351,6 +1389,10 @@ def evaluate_candidate_selection(
     _validate_binary_inputs(X, y, group_ids)
     if fit_groups.shape != (len(X),) or np.any(np.char.strip(fit_groups) == ""):
         raise ValueError("fit_group_ids must contain one non-empty group per epoch.")
+    if domain_ids is not None:
+        domain_ids = np.asarray(domain_ids).astype(str)
+        if domain_ids.shape != (len(X),) or np.any(np.char.strip(domain_ids) == ""):
+            raise ValueError("domain_ids must contain one non-empty domain per epoch.")
     if codes.shape != (len(X),):
         raise ValueError("candidate_codes must align with X.")
     if trial_channel_mask is not None:
@@ -1367,6 +1409,7 @@ def evaluate_candidate_selection(
         folds,
         len(X),
         group_ids=fit_groups,
+        domain_ids=domain_ids,
         fold_protocol=fold_protocol,
     )
     (
