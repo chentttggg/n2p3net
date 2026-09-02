@@ -12,11 +12,17 @@ unknown during calibration.
   MS-EEGNet baseline control).
 
 - GTN development benchmark (245 subjects, child/3-channel, one selection per
-  subject): with target-block-excluded zero-shot checkpoints
-  (leave-one-block-out, 3 seeds), the all-evidence count-neutral endpoint
-  reaches **71.43%** 9-choice digit-selection accuracy (trial AUC 0.694).
-  This is a cross-subject development result — not a per-subject LOSO
-  estimate and not a deployment claim.
+  subject), two archived cross-subject protocols:
+
+  - Per-subject **LOSO** (245 folds, legacy 128-sample cache, frozen evidence
+    `d1db8e4`): N2P3Net `full_unfold` reaches **71.0% / 64.1%** 9-choice hit
+    across two seeds, versus MS-EEGNet 71.0%/64.1%, EEGNet 69.0%/69.4%,
+    SWLDA 14.7%, and xDAWN-RG 29.4%.
+
+  - Target-block-excluded **zero-shot** (leave-one-block-out, 3 seeds,
+    current contract): the all-evidence count-neutral endpoint reaches
+    **71.43%** (trial AUC 0.694).
+    These are cross-subject development results, not deployment claims.
 
 - Feature-domain transfer research (2026-09): identity-initialized per-domain
   residual feature adapters, class-conditional source alignment, a unified
