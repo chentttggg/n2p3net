@@ -14,6 +14,7 @@ from collections.abc import Sequence
 import numpy as np
 
 from data.candidate_task import CandidateTaskContract
+from models.candidate_evidence import candidate_evidence_scores
 from transfer.outcomes import (
     CandidateCoverage,
     DecisionKey,
@@ -217,26 +218,26 @@ def decision_outcomes_at_repetition(
                 )
                 continue
 
-            row_scores = np.zeros(contract.n_rows, dtype=float)
-            column_scores = np.zeros(contract.n_columns, dtype=float)
-            for event_index in np.flatnonzero(selected):
-                candidate_id = int(candidate_ids[event_index])
-                if candidate_id < contract.n_rows:
-                    row_scores[candidate_id] += logits[event_index]
-                else:
-                    column_scores[candidate_id - contract.n_rows] += logits[event_index]
-            row_winners = np.flatnonzero(
-                np.isclose(row_scores, float(row_scores.max()), rtol=1e-12, atol=1e-12)
+            # Row and column are two independent candidate sets sharing one
+            # evidence stream; both go through the unified scoring core with
+            # raw-sum accumulation, and a non-unique maximum on either axis
+            # abstains as a tie.
+            selected_codes = candidate_ids[selected]
+            selected_values = logits[selected]
+            row_mask = selected_codes < contract.n_rows
+            row_result = candidate_evidence_scores(
+                selected_values[row_mask],
+                selected_codes[row_mask],
+                np.arange(contract.n_rows),
+                aggregation="sum",
             )
-            column_winners = np.flatnonzero(
-                np.isclose(
-                    column_scores,
-                    float(column_scores.max()),
-                    rtol=1e-12,
-                    atol=1e-12,
-                )
+            column_result = candidate_evidence_scores(
+                selected_values[~row_mask],
+                selected_codes[~row_mask] - contract.n_rows,
+                np.arange(contract.n_columns),
+                aggregation="sum",
             )
-            if len(row_winners) != 1 or len(column_winners) != 1:
+            if row_result.predicted is None or column_result.predicted is None:
                 outcomes.append(
                     DecisionOutcome(
                         key=key,
@@ -249,7 +250,9 @@ def decision_outcomes_at_repetition(
                     )
                 )
                 continue
-            predicted = row_column_target(int(row_winners[0]), int(column_winners[0]))
+            predicted = row_column_target(
+                int(row_result.predicted), int(column_result.predicted)
+            )
             outcomes.append(
                 DecisionOutcome(
                     key=key,

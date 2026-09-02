@@ -4,6 +4,10 @@ These functions evaluate a **held-out chronological suffix** only. Repetition
 indices may retain their original scheduled origin (for example, 8, 9, ...
 after an eight-repetition prefix); the validated contiguous suffix is normalized
 internally for the 1..R curve. Do not pass training prefix trials here.
+
+All candidate scoring goes through the unified
+:func:`models.candidate_evidence.candidate_evidence_scores` core; this module
+only owns the suffix/hit@R/outcome bookkeeping around it.
 """
 
 from __future__ import annotations
@@ -12,78 +16,12 @@ from collections.abc import Mapping, Sequence
 
 import numpy as np
 
-from models.decision import (
-    COUNT_AGGREGATIONS,
+from models.candidate_evidence import (
     DEFAULT_EVIDENCE_AGGREGATION,
     DEFAULT_EVIDENCE_COUNT_POWER,
-    count_tempered_evidence_scores,
+    candidate_evidence_scores,
 )
 from transfer.outcomes import CandidateCoverage, DecisionKey, DecisionOutcome, DecisionStatus
-
-
-def _aggregate_scores(
-    logits: np.ndarray,
-    digits: np.ndarray,
-    *,
-    aggregation: str,
-    vocabulary: np.ndarray | None = None,
-    logit_variances: np.ndarray | None = None,
-    evidence_count_power: float = DEFAULT_EVIDENCE_COUNT_POWER,
-) -> tuple[dict[int, float], int | None]:
-    valid_aggregations = COUNT_AGGREGATIONS | {"trim0.2", "precision"}
-    if aggregation not in valid_aggregations:
-        raise ValueError(f"aggregation must be one of {sorted(valid_aggregations)}.")
-    logits = np.asarray(logits, dtype=float)
-    digits = np.asarray(digits, dtype=np.int64)
-    variances = None if logit_variances is None else np.asarray(logit_variances, dtype=float)
-    if variances is not None and variances.shape != logits.shape:
-        raise ValueError("logit_variances must align with logits.")
-    if aggregation == "precision" and variances is None:
-        raise ValueError("precision aggregation requires per-trial predictive variances.")
-    if vocabulary is None:
-        vocabulary = np.unique(digits)
-    vocabulary = np.asarray(vocabulary, dtype=np.int64)
-    if vocabulary.ndim != 1 or len(vocabulary) == 0:
-        raise ValueError("candidate vocabulary must be a non-empty one-dimensional array.")
-    scores: dict[int, float] = {}
-    counts: dict[int, int] = {}
-    for digit in vocabulary:
-        sel = digits == digit
-        counts[int(digit)] = int(sel.sum())
-        if not sel.any():
-            scores[int(digit)] = -np.inf
-            continue
-        values = logits[sel]
-        if aggregation == "sum":
-            scores[int(digit)] = float(values.sum())
-        elif aggregation == "mean":
-            scores[int(digit)] = float(values.mean())
-        elif aggregation == "tempered_evidence":
-            scores[int(digit)] = float(
-                count_tempered_evidence_scores(
-                    np.asarray([values.sum()]),
-                    np.asarray([len(values)], dtype=float),
-                    np.asarray([len(values)], dtype=float),
-                    count_power=evidence_count_power,
-                )[0]
-            )
-        elif aggregation == "trim0.2":
-            ordered = np.sort(values)
-            trim = int(np.floor(0.2 * len(ordered)))
-            kept = ordered[trim : len(ordered) - trim] if trim else ordered
-            scores[int(digit)] = float(kept.sum())
-        elif aggregation == "precision":
-            assert variances is not None
-            candidate_variances = variances[sel]
-            if not np.isfinite(candidate_variances).all() or np.any(candidate_variances <= 0.0):
-                raise ValueError("predictive variances must be finite and positive.")
-            weights = 1.0 / candidate_variances
-            scores[int(digit)] = float(np.dot(weights, values) / weights.sum())
-    finite_scores = np.asarray([scores[int(digit)] for digit in vocabulary], dtype=float)
-    maximum = float(np.max(finite_scores))
-    tied = np.flatnonzero(np.isclose(finite_scores, maximum, rtol=1e-12, atol=1e-12))
-    predicted = int(vocabulary[tied[0]]) if len(tied) == 1 else None
-    return scores, predicted
 
 
 def hit_at_repetition(
@@ -159,15 +97,14 @@ def hit_at_repetition(
             if not all(np.any(digits[sel] == candidate) for candidate in vocabulary):
                 total += 1
                 continue
-            scores, predicted = _aggregate_scores(
+            predicted = candidate_evidence_scores(
                 logits[sel],
                 digits[sel],
+                vocabulary,
                 aggregation=aggregation,
-                vocabulary=vocabulary,
                 logit_variances=None if variances is None else variances[sel],
                 evidence_count_power=evidence_count_power,
-            )
-            del scores
+            ).predicted
             correct += int(predicted is not None and predicted == int(truth))
             total += 1
         hits[r] = float(correct / total) if total else float("nan")
@@ -269,13 +206,13 @@ def candidate_decision_outcomes(
                     )
                 )
                 continue
-            _, predicted = _aggregate_scores(
+            predicted = candidate_evidence_scores(
                 values[selected],
                 candidates[selected],
+                vocabulary,
                 aggregation=aggregation,
-                vocabulary=vocabulary,
                 evidence_count_power=evidence_count_power,
-            )
+            ).predicted
             if predicted is None:
                 status = DecisionStatus.TIE
             elif int(predicted) == int(truth):
@@ -376,21 +313,21 @@ def candidate_evidence_endpoints(
             raw_predictions[group] = None
             balanced_predictions[group] = None
             continue
-        _, raw_predicted = _aggregate_scores(
+        raw_predicted = candidate_evidence_scores(
             values[rows],
             candidates[rows],
+            vocabulary,
             aggregation=aggregation,
-            vocabulary=vocabulary,
             evidence_count_power=evidence_count_power,
-        )
+        ).predicted
         balanced_rows = rows[repetitions[rows] < balanced_repetitions]
-        _, balanced_predicted = _aggregate_scores(
+        balanced_predicted = candidate_evidence_scores(
             values[balanced_rows],
             candidates[balanced_rows],
+            vocabulary,
             aggregation=aggregation,
-            vocabulary=vocabulary,
             evidence_count_power=evidence_count_power,
-        )
+        ).predicted
         raw_predictions[group] = raw_predicted
         balanced_predictions[group] = balanced_predicted
         raw_correct += int(raw_predicted is not None and raw_predicted == int(truth))
@@ -416,13 +353,13 @@ def candidate_evidence_endpoints(
             if any(count < repetition_count for count in counts.values()):
                 continue
             selected = rows[repetitions[rows] < repetition_count]
-            _, predicted = _aggregate_scores(
+            predicted = candidate_evidence_scores(
                 values[selected],
                 candidates[selected],
+                vocabulary,
                 aggregation=aggregation,
-                vocabulary=vocabulary,
                 evidence_count_power=evidence_count_power,
-            )
+            ).predicted
             eligible += 1
             correct += int(
                 predicted is not None and predicted == int(truth_by_group[group])

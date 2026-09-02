@@ -76,6 +76,7 @@ from train.runtime import (
     is_oom_error,
     resolve_optimizer_execution,
 )
+from transfer.alignment import conditional_mean_alignment_loss
 
 # 模型名（lowercase）→ 构造类
 _MODEL_FACTORIES = {
@@ -390,6 +391,10 @@ class DeepBaseline(Baseline):
         self.training_prior_: float | None = None
         self.last_runtime: dict[str, object] = {}
         self.last_source_risk: dict[str, object] | None = None
+        self._feature_alignment_weight = 0.0
+        self._adapter_routing_active = False
+        self._alignment_domain_vocabulary: tuple[str, ...] = ()
+        self.last_feature_alignment: dict[str, object] | None = None
 
     # ---------------- 模型构造 ----------------
 
@@ -624,17 +629,16 @@ class DeepBaseline(Baseline):
         label_parts: list[torch.Tensor] = []
         total_loss: torch.Tensor | None = None
         n_rows = 0
+        routing_active = self._adapter_routing_active
         self.model_.eval()
         with torch.inference_mode():
-            batches = (
-                source.batches_with_weights(batch_size)
-                if source.has_row_weights
-                else ((xb, yb, None) for xb, yb in source.batches(batch_size))
-            )
-            for xb, yb, row_weights in batches:
+            for xb, yb, row_weights, domain_batch in source.iter_batches(batch_size):
                 assert yb is not None
                 with self._autocast_ctx():
-                    logits = self.model_(xb)
+                    if routing_active:
+                        logits = self.model_(xb, domain_ids=domain_batch)
+                    else:
+                        logits = self.model_(xb)
                     loss = (
                         None
                         if loss_fn is None
@@ -702,9 +706,23 @@ class DeepBaseline(Baseline):
         risk_unit_ids: np.ndarray | None = None,
         risk_within_domain_unit: str = "participant",
         selection_domain: str | None = None,
+        feature_alignment_weight: float = 0.0,
     ) -> DeepBaseline:
         """Fit with a bounded OOM retry that never accumulates gradients."""
 
+        if not np.isfinite(feature_alignment_weight) or feature_alignment_weight < 0.0:
+            raise ValueError("feature_alignment_weight must be finite and non-negative.")
+        if feature_alignment_weight > 0.0:
+            if source_domain_ids is None:
+                raise ValueError(
+                    "feature alignment requires an explicit source-domain axis."
+                )
+            if not getattr(self, "supports_feature_alignment", False):
+                raise ValueError(
+                    "feature alignment requires a model exposing adapted trunk "
+                    "features (N2P3NetBaseline)."
+                )
+        self._feature_alignment_weight = float(feature_alignment_weight)
         # Dropping Python references returns prior tensors to the caching
         # allocator. Emptying the CUDA cache here would create a gap before
         # every healthy fold; reserve that expensive cleanup for actual OOMs.
@@ -923,6 +941,71 @@ class DeepBaseline(Baseline):
             X[stats_mask],
             stats_channel_mask,
         )
+        # Per-domain residual-adapter routing and the cross-domain alignment
+        # objective share one domain axis but are independent mechanisms:
+        # routing requires a DomainAdapterBank with every observed domain in
+        # its frozen vocabulary (fail-closed), while alignment only requires
+        # the source-domain axis so the A1 (align-only) arm stays available on
+        # a bankless shared trunk.
+        adapter_domains = tuple(getattr(self, "adapter_domains", None) or ())
+        self._adapter_routing_active = bool(
+            adapter_domains
+            and risk_domains is not None
+            and getattr(self, "supports_domain_adapters", False)
+        )
+        alignment_weight = self._feature_alignment_weight
+        alignment_active = bool(alignment_weight > 0.0 and risk_domains is not None)
+        train_domain_tensor: torch.Tensor | None = None
+        val_domain_tensor: torch.Tensor | None = None
+        if self._adapter_routing_active or alignment_active:
+            assert risk_domains is not None
+            if self._adapter_routing_active:
+                domain_vocabulary = adapter_domains
+                unknown = sorted(set(risk_domains.tolist()) - set(adapter_domains))
+                if unknown:
+                    raise ValueError(
+                        "source rows contain domains absent from the adapter "
+                        f"vocabulary: {unknown}."
+                    )
+            else:
+                domain_vocabulary = tuple(sorted(set(risk_domains.tolist())))
+            domain_to_index = {
+                domain: index for index, domain in enumerate(domain_vocabulary)
+            }
+            self._alignment_domain_vocabulary = domain_vocabulary
+            train_domain_tensor = torch.from_numpy(
+                np.ascontiguousarray(
+                    np.array(
+                        [domain_to_index[domain] for domain in risk_domains[train_mask]],
+                        dtype=np.int64,
+                    )
+                )
+            )
+            if len(X_val):
+                val_domain_tensor = torch.from_numpy(
+                    np.ascontiguousarray(
+                        np.array(
+                            [domain_to_index[domain] for domain in risk_domains[val_mask]],
+                            dtype=np.int64,
+                        )
+                    )
+                )
+        elif adapter_domains:
+            # A bank exists but routing is impossible (no source-domain axis,
+            # or the model class cannot route): silently ignoring it would
+            # train dead adapter parameters and deploy a different model than
+            # the one described by the architecture record.
+            raise ValueError(
+                "adapter_domains were configured but domain-adapter routing is "
+                "inactive; supply source_domain_ids with a routing-capable model."
+            )
+        self.last_feature_alignment = {
+            "weight": alignment_weight,
+            "routing_active": self._adapter_routing_active,
+            "alignment_active": alignment_active,
+            "adapter_domains": list(adapter_domains),
+            "epoch_mean_squared_distance": [],
+        }
         X_train = self._prepare_input(X_train, train_channel_mask)
         if len(X_val):
             X_val = self._prepare_input(X_val, val_channel_mask)
@@ -955,6 +1038,7 @@ class DeepBaseline(Baseline):
                 if train_row_weights is None
                 else torch.from_numpy(np.ascontiguousarray(train_row_weights))
             ),
+            row_domains=train_domain_tensor,
         )
         val_source = (
             MatrixBatchSource(
@@ -967,6 +1051,7 @@ class DeepBaseline(Baseline):
                     if val_row_weights is None
                     else torch.from_numpy(np.ascontiguousarray(val_row_weights))
                 ),
+                row_domains=val_domain_tensor,
             )
             if len(X_val)
             else None
@@ -1020,18 +1105,45 @@ class DeepBaseline(Baseline):
         early_stop_triggered = False
         epoch_progress_callback = self.epoch_progress_callback()
 
+        domain_count = len(
+            getattr(self, "_alignment_domain_vocabulary", ()) or ()
+        )
+
         def train_step(
             xb: torch.Tensor,
             yb: torch.Tensor,
             row_weights: torch.Tensor | None,
-        ) -> torch.Tensor:
+            domain_batch: torch.Tensor | None,
+        ) -> tuple[torch.Tensor, dict[str, float] | None]:
             opt.zero_grad(set_to_none=True)
+            alignment_diagnostics: dict[str, float] | None = None
             with self._autocast_ctx():
-                logits = self.model_(xb)
-                loss = loss_fn(logits, yb, row_weights)
+                if alignment_active:
+                    assert domain_batch is not None
+                    routed_ids = (
+                        domain_batch if self._adapter_routing_active else None
+                    )
+                    logits, features = self.model_.forward_with_features(
+                        xb, domain_ids=routed_ids
+                    )
+                    ce_loss = loss_fn(logits, yb, row_weights)
+                    alignment_loss, alignment_diagnostics = conditional_mean_alignment_loss(
+                        features,
+                        yb,
+                        domain_batch,
+                        domain_count,
+                    )
+                    loss = ce_loss + alignment_weight * alignment_loss
+                elif self._adapter_routing_active:
+                    assert domain_batch is not None
+                    logits = self.model_(xb, domain_ids=domain_batch)
+                    loss = loss_fn(logits, yb, row_weights)
+                else:
+                    logits = self.model_(xb)
+                    loss = loss_fn(logits, yb, row_weights)
             loss.backward()
             opt.step()
-            return loss.detach()
+            return loss.detach(), alignment_diagnostics
 
         if self.optimizer_execution.compile_mode is not None:
             train_step = torch.compile(
@@ -1044,20 +1156,25 @@ class DeepBaseline(Baseline):
             self.model_.train()
             epoch_loss: torch.Tensor | None = None
             n_seen = 0
-            batches = (
-                train_source.shuffled_batches_with_weights(batch_size, perm_gen)
-                if train_source.has_row_weights
-                else (
-                    (xb, yb, None)
-                    for xb, yb in train_source.shuffled_batches(batch_size, perm_gen)
-                )
-            )
-            for xb, yb, row_weights in batches:
+            epoch_alignment_sum = 0.0
+            epoch_alignment_batches = 0
+            for xb, yb, row_weights, domain_batch in train_source.iter_batches(
+                batch_size, generator=perm_gen
+            ):
                 assert yb is not None
-                loss = train_step(xb, yb, row_weights)
+                loss, alignment_diagnostics = train_step(xb, yb, row_weights, domain_batch)
                 weighted_loss = loss.float() * len(xb)
                 epoch_loss = weighted_loss if epoch_loss is None else epoch_loss + weighted_loss
                 n_seen += len(xb)
+                if alignment_diagnostics is not None:
+                    epoch_alignment_sum += alignment_diagnostics["mean_squared_distance"]
+                    epoch_alignment_batches += 1
+            assert self.last_feature_alignment is not None
+            self.last_feature_alignment["epoch_mean_squared_distance"].append(
+                epoch_alignment_sum / epoch_alignment_batches
+                if epoch_alignment_batches
+                else None
+            )
             if epoch_loss is None:
                 raise RuntimeError("Deep training produced no optimizer batches.")
             train_losses.append(float(epoch_loss.cpu()) / max(n_seen, 1))
@@ -1152,6 +1269,7 @@ class DeepBaseline(Baseline):
             "best_task_epoch": best_epoch,
             "best_task_val_loss": best_val_loss if best_val_loss != float("inf") else None,
             "task_patience_exhausted": early_stop_triggered,
+            "feature_alignment": dict(self.last_feature_alignment or {}),
         }
         self._fitted = True
 

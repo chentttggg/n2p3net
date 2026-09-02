@@ -8,7 +8,7 @@ the GTN and BI runners cannot silently disagree about what was pretrained.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict
 from pathlib import Path
 
@@ -20,6 +20,7 @@ from data.identity import (
     IdentityExclusionPolicy,
     assert_target_identity_excluded,
 )
+from models.adapters import FeatureAdapterConfig
 from models.n2p3net import (
     POOLING_MODES,
     N2P3ArchitectureConfig,
@@ -97,7 +98,7 @@ def assert_checkpoint_target_identity_excluded(
 
 def _architecture_from_payload(
     payload: Mapping[str, object],
-) -> tuple[N2P3ArchitectureConfig, str]:
+) -> tuple[N2P3ArchitectureConfig, str, FeatureAdapterConfig | None, tuple[str, ...] | None]:
     """Resolve the complete architecture record required by the current schema."""
 
     record = payload.get("architecture")
@@ -140,7 +141,29 @@ def _architecture_from_payload(
     except (TypeError, ValueError) as exc:
         raise ValueError(f"checkpoint architecture is invalid: {exc}") from exc
 
-    return architecture, pooling
+    feature_adapter = None
+    adapter_domains: tuple[str, ...] | None = None
+    adapter_record = record.get("domain_adapters")
+    if isinstance(adapter_record, Mapping):
+        config_record = adapter_record.get("adapter_config")
+        if not isinstance(config_record, Mapping):
+            raise ValueError("checkpoint domain_adapters lacks its adapter_config mapping.")
+        try:
+            feature_adapter = FeatureAdapterConfig(
+                bottleneck_channels=int(config_record["bottleneck_channels"]),
+                kernel_size=int(config_record["kernel_size"]),
+                max_residual=float(config_record["max_residual"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"checkpoint adapter config is invalid: {exc}") from exc
+        domains = adapter_record.get("domains")
+        if not isinstance(domains, Sequence) or any(
+            not isinstance(domain, str) or not domain.strip() for domain in domains
+        ):
+            raise ValueError("checkpoint domain_adapters lacks a valid domain vocabulary.")
+        adapter_domains = tuple(str(domain) for domain in domains)
+
+    return architecture, pooling, feature_adapter, adapter_domains
 
 
 def _validate_metadata(
@@ -387,13 +410,15 @@ def load_n2p3_trunk_checkpoint(
         target_subject=target_subject,
         identity_exclusion_policy=identity_exclusion_policy,
     )
-    architecture, pooling = _architecture_from_payload(payload)
+    architecture, pooling, feature_adapter, adapter_domains = _architecture_from_payload(payload)
     trunk = N2P3Net(
         int(dataset.n_channels),
         n_times=int(dataset.n_times),
         sfreq=float(dataset.preprocessing.sfreq),
         tmin_s=float(dataset.preprocessing.tmin_ms) / 1000.0,
         pooling_mode=pooling,
+        feature_adapter=feature_adapter,
+        adapter_domains=adapter_domains,
         **architecture.model_kwargs(),
     )
     state = payload["trunk_state_dict"]
@@ -413,18 +438,32 @@ def load_n2p3_trunk_checkpoint(
 def checkpoint_architecture_record(payload: Mapping[str, object]) -> dict[str, object]:
     """Return a normalized architecture summary for run ledgers and diagnostics."""
 
-    architecture, pooling = _architecture_from_payload(payload)
+    architecture, pooling, feature_adapter, adapter_domains = _architecture_from_payload(payload)
     required = ("input_tmin_s", "input_sample_rate_hz", "n_times")
     missing = [field for field in required if payload.get(field) is None]
     if missing:
         raise ValueError(f"checkpoint lacks required input geometry {missing}.")
-    return N2P3Net.default_architecture_record(
+    record = N2P3Net.default_architecture_record(
         pooling_mode=pooling,
         tmin_s=float(payload["input_tmin_s"]),
         sfreq=float(payload["input_sample_rate_hz"]),
         n_times=int(payload["n_times"]),
         architecture=architecture,
     )
+    if feature_adapter is not None:
+        assert adapter_domains is not None
+        record["domain_adapters"] = {
+            "feature_channels": (
+                len(architecture.mst_kernel_sizes) * architecture.mst_features_per_scale
+            ),
+            "adapter_config": {
+                "bottleneck_channels": feature_adapter.bottleneck_channels,
+                "kernel_size": feature_adapter.kernel_size,
+                "max_residual": feature_adapter.max_residual,
+            },
+            "domains": list(adapter_domains),
+        }
+    return record
 
 
 __all__ = [

@@ -185,7 +185,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--head",
-        choices=("zero_shot", "classifier_fine", "linear", "mlp16", "full_fine"),
+        choices=("zero_shot", "classifier_fine", "linear", "mlp16", "full_fine", "adapter"),
         default="zero_shot",
     )
     parser.add_argument(

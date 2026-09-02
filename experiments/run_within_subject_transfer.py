@@ -39,7 +39,7 @@ from data.contract import (  # noqa: E402
 from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from data.identity import IdentityExclusionPolicy  # noqa: E402
 from data.qc_features import compute_epoch_qc_features  # noqa: E402
-from models.decision import (  # noqa: E402
+from models.candidate_evidence import (  # noqa: E402
     COUNT_AGGREGATIONS,
     DEFAULT_EVIDENCE_AGGREGATION,
     DEFAULT_EVIDENCE_COUNT_POWER,
@@ -166,7 +166,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--head",
-        choices=("auto", "zero_shot", "classifier_fine", "linear", "mlp16", "full_fine"),
+        choices=("auto", "zero_shot", "classifier_fine", "linear", "mlp16", "full_fine", "adapter"),
         default="auto",
         help=(
             "auto keeps a supervised checkpoint classifier unchanged (zero_shot), "

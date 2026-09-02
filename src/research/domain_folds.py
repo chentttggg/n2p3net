@@ -11,7 +11,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-
 DOMAIN_LODO_PROTOCOL = "domain_lodo"
 DOMAIN_CEILING_PROTOCOL = "domain_ceiling"
 

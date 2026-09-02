@@ -14,6 +14,7 @@ import torch
 from torch import nn
 
 from baselines.validation import group_disjoint_validation_split
+from models.adapters import RESERVED_TARGET_DOMAIN, FeatureResidualAdapter
 from models.n2p3net import N2P3Net
 from research.execution import ExpectedSubjectError, SubjectFailureCode
 from transfer.within_subject import chronological_validation_split
@@ -50,9 +51,15 @@ class SubjectAdapterConfig:
     input_std: np.ndarray | None = None
 
     def __post_init__(self) -> None:
-        if self.head_kind not in {"linear", "mlp16", "classifier_fine", "full_fine"}:
+        if self.head_kind not in {
+            "linear",
+            "mlp16",
+            "classifier_fine",
+            "full_fine",
+            "adapter",
+        }:
             raise ValueError(
-                "head_kind must be linear, mlp16, classifier_fine, or full_fine."
+                "head_kind must be linear, mlp16, classifier_fine, full_fine, or adapter."
             )
         if self.epochs < 1 or self.batch_size < 1 or self.lr <= 0.0:
             raise ValueError("invalid optimization settings.")
@@ -96,6 +103,33 @@ class SubjectAdapter:
             )
         self.trunk = trunk.to(self.device)
         self.feature_dim = trunk.classifier_features
+        # Inner-loop target adapter: one reserved residual slot on the trunk's
+        # adapter bank. Only these parameters train during ``fit``; the trunk
+        # and the source classifier stay frozen, so calibration data can move
+        # domain-specific morphology but not the shared representation.
+        if self.config.head_kind == "adapter":
+            bank = self.trunk.domain_adapters
+            if bank is None:
+                raise ValueError(
+                    "head_kind='adapter' requires a trunk constructed with a "
+                    "FeatureAdapterConfig (DomainAdapterBank); rebuild the trunk "
+                    "with feature_adapter enabled before subject adaptation."
+                )
+            if RESERVED_TARGET_DOMAIN in bank.adapters:
+                raise ValueError(
+                    "the reserved target adapter slot is already registered on "
+                    "this trunk; use a fresh trunk per subject."
+                )
+            bank.register(
+                RESERVED_TARGET_DOMAIN,
+                FeatureResidualAdapter(
+                    bank.feature_channels, config=bank.adapter_config
+                ),
+                reserved=True,
+            )
+            self._target_domain_index = bank.domain_index(RESERVED_TARGET_DOMAIN)
+        else:
+            self._target_domain_index = None
         self.head: nn.Module
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(self.config.seed)
@@ -124,8 +158,23 @@ class SubjectAdapter:
         self._input_std_t: torch.Tensor | None = None
 
     def _features(self, X: torch.Tensor) -> torch.Tensor:
-        with torch.set_grad_enabled(self.training):
-            features = self.trunk.forward_features(X)
+        # Gradient enablement follows trainable parameters, not train/eval
+        # mode: the adapter path keeps the trunk in eval mode (frozen source
+        # statistics, no dropout) while still backpropagating into the target
+        # adapter registered on the bank.
+        trunk_requires_grad = any(
+            parameter.requires_grad for parameter in self.trunk.parameters()
+        )
+        with torch.set_grad_enabled(trunk_requires_grad):
+            domain_ids = None
+            if self._target_domain_index is not None:
+                domain_ids = torch.full(
+                    (X.shape[0],),
+                    self._target_domain_index,
+                    dtype=torch.long,
+                    device=X.device,
+                )
+            features = self.trunk.forward_features(X, domain_ids=domain_ids)
             pooled = self.trunk.pool(features)
             # AdaptiveAvgPool1d(1) retains a singleton temporal axis, whereas
             # the other readouts already return (B,D).  Normalize the feature
@@ -212,6 +261,12 @@ class SubjectAdapter:
     def _set_trainable(self, *, trunk_trainable: bool) -> None:
         for parameter in self.trunk.parameters():
             parameter.requires_grad = trunk_trainable
+        if self.config.head_kind == "adapter":
+            assert self.trunk.domain_adapters is not None
+            for parameter in self.trunk.domain_adapters.adapters[
+                RESERVED_TARGET_DOMAIN
+            ].parameters():
+                parameter.requires_grad = True
         if self.head is not None:
             for parameter in self.head.parameters():
                 parameter.requires_grad = True
@@ -221,6 +276,12 @@ class SubjectAdapter:
         return self.trunk.training
 
     def _set_training_mode(self, *, trunk_trainable: bool) -> None:
+        if self.config.head_kind == "adapter":
+            # Deterministic frozen trunk: source BatchNorm statistics and no
+            # dropout. The target adapter has no train/eval-dependent layers,
+            # so eval-mode forward with enabled gradients is exact.
+            self.trunk.eval()
+            return
         self.trunk.train(trunk_trainable)
         if trunk_trainable and self.config.freeze_batchnorm_stats:
             for module in self.trunk.modules():
@@ -402,7 +463,10 @@ class SubjectAdapter:
 
         train_inputs = Xt_train
         val_inputs = Xt_val
-        if not trunk_trainable:
+        # The adapter path cannot cache trunk features: they change with the
+        # target adapter parameters on every optimizer step.
+        cache_features = not trunk_trainable and self.config.head_kind != "adapter"
+        if cache_features:
             # A frozen trunk is a fixed feature transform. Keeping it in train
             # mode would update BatchNorm and apply fresh dropout every epoch;
             # caching eval-mode features is both the intended contract and the
@@ -412,6 +476,7 @@ class SubjectAdapter:
                 train_inputs = self._features(Xt_train)
                 val_inputs = self._features(Xt_val) if len(Xt_val) else train_inputs[:0]
             del Xt, Xt_train, Xt_val
+        live_forward = trunk_trainable or self.config.head_kind == "adapter"
 
         best_state = None
         best_epoch_count = None
@@ -427,7 +492,7 @@ class SubjectAdapter:
                 rows = permutation[start : start + self.config.batch_size]
                 xb = train_inputs.index_select(0, rows)
                 yb = yt_train.index_select(0, rows)
-                logits = self._forward_head(xb) if trunk_trainable else self.head(xb)
+                logits = self._forward_head(xb) if live_forward else self.head(xb)
                 loss = loss_fn(logits, yb)
                 if not bool(torch.isfinite(loss)):
                     raise ExpectedSubjectError(
@@ -448,7 +513,7 @@ class SubjectAdapter:
                 with torch.inference_mode():
                     logits = (
                         self._forward_head(val_inputs)
-                        if trunk_trainable
+                        if live_forward
                         else self.head(val_inputs)
                     )
                     val_loss_tensor = loss_fn(logits, yt_val).detach().float()
@@ -479,7 +544,9 @@ class SubjectAdapter:
         if val_mask.any():
             with torch.inference_mode():
                 logits = (
-                    self._forward_head(val_inputs) if trunk_trainable else self.head(val_inputs)
+                    self._forward_head(val_inputs)
+                    if live_forward
+                    else self.head(val_inputs)
                 )
             self.calibration_logits_ = (
                 (logits[:, 1] - logits[:, 0]).detach().cpu().numpy().astype(np.float64)
@@ -551,10 +618,11 @@ class SubjectAdapter:
 
         trunk_trainable = self.config.head_kind == "full_fine"
         self._set_trainable(trunk_trainable=trunk_trainable)
-        if not trunk_trainable:
+        if not trunk_trainable and self.config.head_kind != "adapter":
             self.trunk.eval()
             with torch.no_grad():
                 inputs = self._features(inputs)
+        live_forward = trunk_trainable or self.config.head_kind == "adapter"
         parameters = [parameter for parameter in self.trunk.parameters() if parameter.requires_grad]
         if self.head is not None:
             parameters.extend(parameter for parameter in self.head.parameters() if parameter.requires_grad)
@@ -584,7 +652,7 @@ class SubjectAdapter:
                 rows = permutation[start : start + self.config.batch_size]
                 xb = inputs.index_select(0, rows)
                 yb = labels.index_select(0, rows)
-                logits = self._forward_head(xb) if trunk_trainable else self.head(xb)
+                logits = self._forward_head(xb) if live_forward else self.head(xb)
                 loss = loss_fn(logits, yb)
                 if not bool(torch.isfinite(loss)):
                     raise ExpectedSubjectError(

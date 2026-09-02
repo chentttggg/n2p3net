@@ -181,8 +181,9 @@ gtn_paper_causal_v2
 | multi-source 域质量/统计单元 | B0 单域 / J0 natural / J1 80-20 epoch / J2 80-20 participant | 两方向已完成：BI-target 归档 `-3.33 pp`（uniform）、`-0.61 pp`（3x/1x）；BNCI-target v3 `J0-B0 -21.94 pp`、`J1-B0 -6.81 pp`、`J2-J1 -0.69 pp` hit@8；联合不晋升，单元轴关闭 |
 | target QC | none / prefix-fit fold-local | source QC100 已冻结；target QC 待独立 decision 消融 |
 | epoch budget | source/fixed budget / real-time target holdout + full-prefix refit | 代码闭合，性能待独立 decision |
-| adaptation | zero-shot / pretrained-classifier fine / scratch head / full fine | 旧 causal-v2 归档观察：fine 无可靠增益、scratch 更差；v3 与 BrainSync 待真实数据 |
+| adaptation | zero-shot / pretrained-classifier fine / scratch head / full fine / adapter-only inner loop | 2026-09-02 机制闭合：`SubjectAdapter(head_kind="adapter")` 在冻结 trunk+classifier 上只训练保留槽 `__target__` 的零初始化残差 adapter（eval-mode 确定性前向、无 BN 统计更新）；性能待 BI/BNCI v3 cross-decision |
 | BatchNorm | frozen running stats / target adapt | 待合法 cross-decision |
+| feature-domain mechanism | none / S1 per-domain residual adapters / A1 class-conditional mean alignment / AS1 两者 | 2026-09-02 机制闭合（见 Gate 2 预注册）；单轴实验待跑 |
 | aggregation | all-evidence mean / tempered effective count / sum / fixed-count trim | mean 当前领先；all/R/cost 共同报告；precision 仅有预测方差时启用 |
 | decision objective | trial CE / 9-candidate listwise + trial CE | 30-epoch全参数实验已完成且不晋升；保护 backbone 的分阶段策略待新实验 |
 
@@ -339,6 +340,45 @@ stem；BI-target 方向的 v3 J 臂复跑降级为可选项，仅当梯度诊断
 数值待 manifest 重建后以归档产物为准（详见
 [`research_status_report_20260902.zh.md`](research_status_report_20260902.zh.md)）。
 
+### Gate 2-F：特征域迁移机制（2026-09-02 落地，预注册）
+
+针对审计 F-01（当前没有 feature-domain alignment）实现的可执行机制，
+全部为单轴臂，与既有 B0/J0/J1/J2 保持相同 rows、batch、optimizer step、
+seed 与 selection-domain：
+
+```text
+S1   共享 trunk + per-domain identity-initialized residual adapter
+A1   共享 trunk + class-conditional feature mean alignment（无 adapter）
+AS1  S1 + A1 同时启用
+```
+
+机制合同（[`src/models/adapters.py`](../src/models/adapters.py)）：
+
+- adapter 位置在 MST 拼接特征之后、pooling 之前（保留时空结构，不做
+  展平伪卷积）；
+- `H' = H + rho*tanh(a)*A(H)`，`A = W_up(ELU(W_down(DWConv(H))))`，
+  `a=0` 零初始化使初始行为与 source trunk 严格逐位相等；`|alpha|<rho`
+  有界；默认 rho=0.5、bottleneck=4、kernel=9（feature rate 32 Hz 下
+  约 281 ms）；
+- 无归一化状态：target 前向不估计任何 BN 统计；
+- 域词表构造时冻结，未知域 fail-closed；保留槽 `__target__` 只允许
+  subject adapter 内层注册；
+- A1 的对齐损失是源域间**类条件**均值差的均方（真实标签、无
+  pseudo-label），在 adapted 特征上计算，稀疏 cell（<8 行）跳过并记录
+  active_terms 诊断。
+
+反例不变量（已进测试，[`tests/test_domain_adapters.py`](../tests/test_domain_adapters.py)）：
+identity-at-init 逐位相等、gate 有界、未知域 fail-closed、混合 batch 路由
+保序、对齐损失对域重命名不变、`head_kind="adapter"` 内层环结束后 trunk 与
+classifier 参数逐位不变（只有 `__target__` 残差变化）、bank checkpoint 的
+strict 加载与 bankless 拒载。
+
+裁决规则：任何臂的 latent 对齐距离下降而 target hit@R/AUC 下降，判负迁移
+不得晋升；S1/A1/AS1 各自单独与 J1（当前最强联合臂）和 B0 比较，报告
+subject-macro hit@R 与 AUC 的配对差与 CI。CLI 入口：
+`run_pretrain_supervised.py --adapter-bottleneck N --feature-alignment-weight W`，
+目标内层环 `--head adapter`（三个 transfer runner 均已暴露）。
+
 ### Gate 3：合法单被试校准
 
 先用 BI2014a cross-decision 协议验证机制，再进入 BrainSync 9 选：
@@ -409,6 +449,20 @@ primary 为 subject-macro `hit@R`，并给 subject-cluster CI、coverage、absta
    下一动作是 matched BI/BNCI gradient cosine 诊断，确认冲突后单轴测试
    per-domain head（不足再 stem）；BI-target v3 J 臂仅在诊断显示方向
    不对称时补跑；
+6a. 特征域迁移机制已闭合（Gate 2-F）：在 295942e 同款 6 域联合源上
+   预注册执行 S1/A1/AS1 单轴臂（与 J1 同 rows/batch/step/seed/
+   selection-domain），主指标 BNCI-target hit@8 与 AUC；负迁移门：
+   latent 对齐改善但决策指标下降的臂不得晋升；目标侧用
+   `--head adapter` 内层环（只训练 `__target__` 残差）与
+   zero_shot/classifier_fine 对照；
+6b. 决策聚合分叉（审计 F-03）已消除：`models/decision.py`（旧
+   subject-digit 后处理，含无人消费的 z-score 输出）删除，三套路径
+   （subject-digit / generic candidate / row-column）统一到
+   [`src/models/candidate_evidence.py`](../src/models/candidate_evidence.py)
+   的单一聚合核心，语义含 fail-closed 词表与显式
+   `missing_candidate_policy`（exclude=空候选仅不获胜；
+   abstain=空候选判 incomplete miss，hit@R 分母语义）；冻结归档
+   `source_before_feature_alignment_aa4b6af` 保留统一前行为；
 7. decision-aligned 全参数 30-epoch recipe 已否决；后继只研究保护 backbone 的
    分阶段单轴策略、无真值 adaptation 与 target-switch personalization；
 8. BI2014a v3 缓存就绪后推进 Gate 3 校准开放轴（BN adapt、time-heldout

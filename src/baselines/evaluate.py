@@ -31,7 +31,7 @@ from data.artifact_sidecar import (
     save_fold_artifact_sidecar,
 )
 from data.qc_features import EpochQCFeatures
-from models.decision import decide
+from models.candidate_evidence import candidate_evidence_scores, decide_by_group
 from train.runtime import (
     available_cpu_threads,
     configure_spawned_worker_threads,
@@ -234,28 +234,17 @@ def hit_correct_total_by_repetition(
                 continue
             selected_codes = group_codes[sel]
             selected_logits = aligned_logits[rows[sel]]
-            scores = {
-                int(d): float(selected_logits[selected_codes == d].sum())
-                if np.any(selected_codes == d)
-                else -np.inf
-                for d in vocabulary
-            }
             # A missing candidate is not evidence against that candidate.  It
             # is an incomplete decision and therefore a miss, rather than an
             # opportunity to select from the surviving subset.
-            predicted = None
-            if all(np.isfinite(value) for value in scores.values()):
-                score_values = np.asarray(list(scores.values()), dtype=float)
-                tied = np.flatnonzero(
-                    np.isclose(
-                        score_values,
-                        float(score_values.max()),
-                        rtol=1e-12,
-                        atol=1e-12,
-                    )
-                )
-                if len(tied) == 1:
-                    predicted = int(vocabulary[tied[0]])
+            result = candidate_evidence_scores(
+                selected_logits,
+                selected_codes,
+                vocabulary,
+                aggregation="sum",
+                missing_candidate_policy="abstain",
+            )
+            predicted = result.predicted
             key = str(r)
             total[key] = total.get(key, 0) + 1
             correct[key] = correct.get(key, 0) + int(
@@ -1438,7 +1427,7 @@ def evaluate_candidate_selection(
         cpu_threads=cpu_threads,
     )
     for fold_index, binary, llr, test_effective, _ in fold_results:
-        decision = decide(
+        decision = decide_by_group(
             llr,
             codes[test_effective],
             group_ids[test_effective],
@@ -1447,7 +1436,7 @@ def evaluate_candidate_selection(
         )
         fold_records = [
             (predicted, truth_by_group[str(group)], str(group))
-            for predicted, group in zip(decision.predicted, decision.subject_ids, strict=True)
+            for predicted, group in zip(decision.predicted, decision.group_ids, strict=True)
             if str(group) in truth_by_group
         ]
         hit_rate = (

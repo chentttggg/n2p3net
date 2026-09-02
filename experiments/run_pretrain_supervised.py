@@ -39,6 +39,7 @@ from data.epochs import (  # noqa: E402
     loaded_epoch_cache_attestation,
 )
 from data.identity import training_identity_ledger_from_rows  # noqa: E402
+from models.adapters import FeatureAdapterConfig  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
     DEFAULT_N2P3_POOLING_MODE,
@@ -161,6 +162,14 @@ def _single_job_argv(
         args.risk_within_domain_unit,
         "--qc-ptp-uv",
         str(args.qc_ptp_uv),
+        "--adapter-bottleneck",
+        str(args.adapter_bottleneck),
+        "--adapter-kernel",
+        str(args.adapter_kernel),
+        "--adapter-max-residual",
+        str(args.adapter_max_residual),
+        "--feature-alignment-weight",
+        str(args.feature_alignment_weight),
         "--checkpoint",
         str(job.checkpoint),
         "--device",
@@ -292,6 +301,37 @@ def main(argv: list[str] | None = None) -> None:
         help="Exact source domain used for group-disjoint epoch selection and calibration.",
     )
     parser.add_argument(
+        "--adapter-bottleneck",
+        type=int,
+        default=0,
+        help=(
+            "Enable identity-initialized per-domain residual feature adapters with "
+            "this bottleneck width; 0 disables the adapter bank (single-axis arm S1)."
+        ),
+    )
+    parser.add_argument(
+        "--adapter-kernel",
+        type=int,
+        default=9,
+        help="Temporal kernel of the residual feature adapters (odd, >=3).",
+    )
+    parser.add_argument(
+        "--adapter-max-residual",
+        type=float,
+        default=0.5,
+        help="Bound rho on the tanh-gated adapter residual scale.",
+    )
+    parser.add_argument(
+        "--feature-alignment-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "Weight of the class-conditional feature mean-alignment loss across "
+            "source domains; 0 disables alignment (single-axis arm A1 when used "
+            "without adapters)."
+        ),
+    )
+    parser.add_argument(
         "--qc-ptp-uv",
         type=float,
         default=0.0,
@@ -399,6 +439,28 @@ def main(argv: list[str] | None = None) -> None:
     elif domain_mass or selection_domain is not None:
         raise ValueError("domain-risk options require an explicit source-domain axis.")
 
+    feature_adapter = None
+    adapter_domains = None
+    if args.adapter_bottleneck > 0:
+        if source_domains is None or len(set(source_domains.tolist())) < 2:
+            raise ValueError(
+                "--adapter-bottleneck requires a genuinely multi-domain source cache "
+                "with an explicit source-domain axis."
+            )
+        feature_adapter = FeatureAdapterConfig(
+            bottleneck_channels=args.adapter_bottleneck,
+            kernel_size=args.adapter_kernel,
+            max_residual=args.adapter_max_residual,
+        )
+        adapter_domains = sorted(set(source_domains.tolist()))
+    if args.feature_alignment_weight > 0.0 and (
+        source_domains is None or len(set(source_domains.tolist())) < 2
+    ):
+        raise ValueError(
+            "--feature-alignment-weight requires a genuinely multi-domain source "
+            "cache with an explicit source-domain axis."
+        )
+
     config = DeepConfig(
         epochs=args.epochs,
         batch_size=args.batch_size,
@@ -422,6 +484,8 @@ def main(argv: list[str] | None = None) -> None:
         tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
         pooling_mode=args.pooling_mode,
         architecture=architecture,
+        feature_adapter=feature_adapter,
+        adapter_domains=adapter_domains,
     )
 
     X = np.ascontiguousarray(dataset.X[source_rows])
@@ -452,6 +516,7 @@ def main(argv: list[str] | None = None) -> None:
         X,
         y,
         group_ids=src_subjects,
+        feature_alignment_weight=args.feature_alignment_weight,
         **risk_fit_kwargs,
     )
     fit_sec = time.perf_counter() - started
@@ -472,12 +537,15 @@ def main(argv: list[str] | None = None) -> None:
         tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
         pooling_mode=args.pooling_mode,
         architecture=architecture,
+        feature_adapter=feature_adapter,
+        adapter_domains=adapter_domains,
     )
     refit_started = time.perf_counter()
     baseline.fit(
         X,
         y,
         group_ids=None,
+        feature_alignment_weight=args.feature_alignment_weight,
         **risk_fit_kwargs,
     )
     refit_sec = time.perf_counter() - refit_started
@@ -552,6 +620,30 @@ def main(argv: list[str] | None = None) -> None:
             "label_counts": np.bincount(y, minlength=2).astype(int).tolist(),
             "source_risk_selection": selection_baseline.last_source_risk,
             "source_risk_refit": baseline.last_source_risk,
+            "feature_adapter": (
+                {
+                    "bottleneck_channels": feature_adapter.bottleneck_channels,
+                    "kernel_size": feature_adapter.kernel_size,
+                    "max_residual": feature_adapter.max_residual,
+                    "domains": adapter_domains,
+                }
+                if feature_adapter is not None
+                else None
+            ),
+            "feature_alignment": {
+                "weight": float(args.feature_alignment_weight),
+                "loss": (
+                    "class_conditional_mean_alignment"
+                    if args.feature_alignment_weight > 0.0
+                    else None
+                ),
+                "selection_epoch_mean_squared_distance": (
+                    selection_baseline.last_history.get("feature_alignment") or {}
+                ).get("epoch_mean_squared_distance"),
+                "refit_epoch_mean_squared_distance": (
+                    baseline.last_history.get("feature_alignment") or {}
+                ).get("epoch_mean_squared_distance"),
+            },
         },
         seed=int(args.seed),
         training_participant_keys=training_identity_ledger.authority_keys(),
@@ -571,6 +663,17 @@ def main(argv: list[str] | None = None) -> None:
             "source_domain_mass": domain_mass or None,
             "risk_within_domain_unit": args.risk_within_domain_unit if domain_mass else None,
             "selection_domain": selection_domain,
+            "feature_adapter": (
+                {
+                    "bottleneck_channels": feature_adapter.bottleneck_channels,
+                    "kernel_size": feature_adapter.kernel_size,
+                    "max_residual": feature_adapter.max_residual,
+                    "domains": adapter_domains,
+                }
+                if feature_adapter is not None
+                else None
+            ),
+            "feature_alignment_weight": float(args.feature_alignment_weight),
             "training": "N2P3NetBaseline supervised (LOSO-identical path)",
         },
         "architecture": model.architecture_record(),
