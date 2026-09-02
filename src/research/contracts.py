@@ -347,22 +347,78 @@ class DecisionPlanContract:
         )
 
 
-def training_procedure_record(contract: TrainingRunContract) -> dict[str, Any]:
-    """Project a training run onto fields that define the source procedure.
+_SOURCE_PROCEDURE_FIELDS: dict[str, frozenset[str] | None] = {
+    "architecture": None,
+    "preprocessing": None,
+    "optimizer": frozenset(
+        {"name", "selection_config", "selection_execution", "refit_execution"}
+    ),
+    "validation": frozenset(
+        {
+            "strategy",
+            "group_key",
+            "selection_calibration_source",
+            "selection_domain",
+            "full_source_refit",
+        }
+    ),
+    "objective": frozenset({"name", "qc_ptp_uv", "input_statistics_scope"}),
+}
 
-    Seed, fitted participant identities, cache identity, and source snapshot are
-    declared experiment axes/provenance. Everything that controls architecture,
-    preprocessing, fitting, validation, and objective remains invariant per arm.
+
+def _project_procedure_section(section: Mapping[str, Any], allowed: frozenset[str]) -> dict[str, Any]:
+    selected = sorted(allowed & section.keys())
+    if not selected:
+        return dict(section)
+    return {key: section[key] for key in selected}
+
+
+def _without_replicate_randomness(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {
+            key: _without_replicate_randomness(item)
+            for key, item in value.items()
+            if key not in {"seed", "random_seed"}
+        }
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return [_without_replicate_randomness(item) for item in value]
+    return value
+
+
+def training_procedure_record(contract: TrainingRunContract) -> dict[str, Any]:
+    """Project a training run onto the fields that define the source procedure.
+
+    The projection is an explicit allowlist of procedure *controls*. Realized
+    fit outcomes (selected epoch and refit length, label counts, class priors,
+    source risk) and runtime telemetry legitimately vary across the declared
+    ``allowed_variation_axes`` because every target partition reruns inner
+    validation on its own holdout; they must not reject an otherwise uniform
+    arm. Seed, fitted participant identities, cache identity, and source
+    snapshot are declared experiment axes/provenance and stay out as well. A
+    new contract field defaults out of the procedure; a new control must be
+    registered in ``_SOURCE_PROCEDURE_FIELDS`` explicitly. A section whose
+    shape shares no allowlisted key projects whole rather than collapsing to
+    an empty record that could equate different unknown schemes. Replicate
+    seed fields are stripped wherever they appear: seed is a declared
+    variation axis, not a procedure control.
     """
 
     return _canonical_value(
-        {
+        _without_replicate_randomness(
+            {
             "architecture": contract.architecture,
             "preprocessing": contract.preprocessing,
-            "optimizer": contract.optimizer,
-            "validation": contract.validation,
-            "objective": contract.objective,
-        }
+            "optimizer": _project_procedure_section(
+                contract.optimizer, _SOURCE_PROCEDURE_FIELDS["optimizer"]
+            ),
+            "validation": _project_procedure_section(
+                contract.validation, _SOURCE_PROCEDURE_FIELDS["validation"]
+            ),
+                "objective": _project_procedure_section(
+                    contract.objective, _SOURCE_PROCEDURE_FIELDS["objective"]
+                ),
+            }
+        )
     )
 
 

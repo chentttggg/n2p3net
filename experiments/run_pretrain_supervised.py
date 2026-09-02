@@ -9,10 +9,12 @@ that actually reach fitting.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import sys
 import time
-from dataclasses import asdict, replace
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 import numpy as np
@@ -31,7 +33,11 @@ from data.contract import (  # noqa: E402
     assert_p300_input_contract,
 )
 from data.domain import source_domain_ids  # noqa: E402
-from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
+from data.epochs import (  # noqa: E402
+    EpochDataset,
+    load_epoch_dataset,
+    loaded_epoch_cache_attestation,
+)
 from data.identity import training_identity_ledger_from_rows  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
@@ -42,9 +48,67 @@ from research.contracts import TrainingRunContract  # noqa: E402
 from research.evaluation import (  # noqa: E402
     source_snapshot_sha256_from_archive_manifest,
 )
-from train.device import get_device  # noqa: E402
+from train.device import get_device, release_device_memory  # noqa: E402
 from train.runtime import GpuPerformanceScheduler  # noqa: E402
-from transfer.checkpoint import CHECKPOINT_SCHEMA  # noqa: E402
+from transfer.checkpoint import (  # noqa: E402
+    CHECKPOINT_SCHEMA,
+    checkpoint_training_contract,
+    load_checkpoint_payload,
+)
+
+SOURCE_PRETRAIN_BATCH_SCHEMA = "n2p3_source_pretrain_batch/1"
+
+
+@dataclass(frozen=True)
+class SourcePretrainJob:
+    holdout_subjects: str
+    checkpoint: Path
+
+
+_SOURCE_DATASET_CACHE: dict[Path, tuple[EpochDataset, dict[str, object]]] = {}
+_SOURCE_SNAPSHOT_CACHE: dict[Path, str] = {}
+
+
+def _load_source_dataset_once(path: str | Path) -> tuple[EpochDataset, dict[str, object]]:
+    resolved = Path(path).resolve()
+    cached = _SOURCE_DATASET_CACHE.get(resolved)
+    if cached is None:
+        dataset = load_epoch_dataset(resolved, require_labels=True, validation="attested")
+        cached = (dataset, dict(loaded_epoch_cache_attestation(dataset)))
+        _SOURCE_DATASET_CACHE[resolved] = cached
+    return cached
+
+
+def _source_snapshot_sha256_once(path: Path) -> str:
+    resolved = path.resolve()
+    cached = _SOURCE_SNAPSHOT_CACHE.get(resolved)
+    if cached is None:
+        cached = source_snapshot_sha256_from_archive_manifest(resolved)
+        _SOURCE_SNAPSHOT_CACHE[resolved] = cached
+    return cached
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _write_json_atomic(path: Path, value: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp")
+    try:
+        with temporary.open("w", encoding="utf-8", newline="\n") as stream:
+            json.dump(value, stream, sort_keys=True, indent=2, ensure_ascii=True)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
 
 
 def parse_source_domain_mass(values: list[str]) -> dict[str, float]:
@@ -68,7 +132,99 @@ def parse_source_domain_mass(values: list[str]) -> dict[str, float]:
     return masses
 
 
-def main() -> None:
+def _single_job_argv(
+    args: argparse.Namespace,
+    job: SourcePretrainJob,
+) -> list[str]:
+    argv = [
+        "--source-cache",
+        str(args.source_cache),
+        "--source-snapshot-manifest",
+        str(args.source_snapshot_manifest),
+        "--holdout-subjects",
+        job.holdout_subjects,
+        "--cohort",
+        args.cohort,
+        "--pooling-mode",
+        args.pooling_mode,
+        "--temporal-kernel-size",
+        str(args.temporal_kernel_size),
+        "--epochs",
+        str(args.epochs),
+        "--batch-size",
+        str(args.batch_size),
+        "--seed",
+        str(args.seed),
+        "--precision",
+        args.precision,
+        "--risk-within-domain-unit",
+        args.risk_within_domain_unit,
+        "--qc-ptp-uv",
+        str(args.qc_ptp_uv),
+        "--checkpoint",
+        str(job.checkpoint),
+        "--device",
+        args.device,
+    ]
+    if args.tmax_ms is not None:
+        argv.extend(["--tmax-ms", str(args.tmax_ms)])
+    for value in args.source_domain_mass:
+        argv.extend(["--source-domain-mass", value])
+    if args.selection_domain:
+        argv.extend(["--selection-domain", args.selection_domain])
+    return argv
+
+
+def _run_batch(args: argparse.Namespace, jobs: tuple[SourcePretrainJob, ...]) -> None:
+    checkpoints = [job.checkpoint.resolve() for job in jobs]
+    if len(set(checkpoints)) != len(checkpoints):
+        raise ValueError("source pretrain batch checkpoint paths must be unique.")
+    device = torch.device(args.device) if args.device != "auto" else get_device()
+    records: list[dict[str, object]] = []
+    for job in jobs:
+        main(_single_job_argv(args, job))
+        checkpoint = job.checkpoint.resolve()
+        payload = load_checkpoint_payload(checkpoint)
+        training = checkpoint_training_contract(payload)
+        records.append(
+            {
+                "holdout_subjects": sorted(
+                    item.strip() for item in job.holdout_subjects.split(",") if item.strip()
+                ),
+                "checkpoint": str(checkpoint),
+                "checkpoint_sha256": _sha256_file(checkpoint),
+                "checkpoint_byte_size": checkpoint.stat().st_size,
+                "training_contract_digest": training.digest(),
+            }
+        )
+        release_device_memory(device)
+    first = load_checkpoint_payload(checkpoints[0])
+    batch_record = {
+        "schema": SOURCE_PRETRAIN_BATCH_SCHEMA,
+        "completed": True,
+        "source_cache": str(Path(args.source_cache).resolve()),
+        "source_cache_sha256": first["source_cache_sha256"],
+        "source_snapshot_manifest": str(Path(args.source_snapshot_manifest).resolve()),
+        "source_snapshot_sha256": first["source_snapshot_sha256"],
+        "seed": int(args.seed),
+        "job_count": len(records),
+        "jobs": records,
+    }
+    _write_json_atomic(args.batch_record.resolve(), batch_record)
+    print(
+        json.dumps(
+            {
+                "batch_record": str(args.batch_record.resolve()),
+                "job_count": len(records),
+                "source_cache_sha256": batch_record["source_cache_sha256"],
+                "source_snapshot_sha256": batch_record["source_snapshot_sha256"],
+            }
+        ),
+        flush=True,
+    )
+
+
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-cache", required=True)
     parser.add_argument(
@@ -77,7 +233,11 @@ def main() -> None:
         required=True,
         help="Manifest for the physical source archive used for this training run.",
     )
-    parser.add_argument("--holdout-subjects", default="", help="comma separated; never pretrain on these")
+    parser.add_argument(
+        "--holdout-subjects",
+        default="",
+        help="comma separated; never pretrain on these",
+    )
     parser.add_argument(
         "--cohort",
         choices=tuple(SOURCE_COHORT_DATA_CONTRACTS),
@@ -141,17 +301,43 @@ def main() -> None:
             "0 disables QC; applies to pretraining rows only."
         ),
     )
-    parser.add_argument("--checkpoint", required=True)
-    parser.add_argument("--device", default="auto")
-    args = parser.parse_args()
-    source_snapshot_manifest = args.source_snapshot_manifest.resolve()
-    source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
-        source_snapshot_manifest
+    parser.add_argument("--checkpoint")
+    parser.add_argument(
+        "--job",
+        action="append",
+        nargs=2,
+        default=[],
+        metavar=("HOLDOUTS", "CHECKPOINT"),
+        help="Batch mode job; repeat to train several holdouts after one cache load.",
     )
+    parser.add_argument(
+        "--batch-record",
+        type=Path,
+        help="Completed batch sentinel with checkpoint hashes and contract digests.",
+    )
+    parser.add_argument("--device", default="auto")
+    args = parser.parse_args(argv)
+    if args.job:
+        if args.checkpoint is not None or args.holdout_subjects:
+            parser.error("--job cannot be combined with --checkpoint/--holdout-subjects")
+        if args.batch_record is None:
+            parser.error("--job requires --batch-record")
+        jobs = tuple(
+            SourcePretrainJob(holdout_subjects=holdout, checkpoint=Path(checkpoint))
+            for holdout, checkpoint in args.job
+        )
+        _run_batch(args, jobs)
+        return
+    if args.checkpoint is None:
+        parser.error("single-job mode requires --checkpoint")
+    if args.batch_record is not None:
+        parser.error("--batch-record requires at least one --job")
+    source_snapshot_manifest = args.source_snapshot_manifest.resolve()
+    source_snapshot_sha256 = _source_snapshot_sha256_once(source_snapshot_manifest)
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
-    dataset = load_epoch_dataset(args.source_cache, require_labels=True, validation="attested")
-    source_cache_sha256 = str(loaded_epoch_cache_attestation(dataset)["sha256"])
+    dataset, source_cache_attestation = _load_source_dataset_once(args.source_cache)
+    source_cache_sha256 = str(source_cache_attestation["sha256"])
     expected_contract = SOURCE_COHORT_DATA_CONTRACTS[args.cohort]
     if args.tmax_ms is not None:
         expected_contract = replace(expected_contract, tmax_ms=float(args.tmax_ms))

@@ -318,6 +318,7 @@ def build_manifest(
         kinds = {row[2].model_origin.get("kind") for row in arm_rows}
         procedures = {canonical_json_bytes(row[2].adaptation["procedure"]) for row in arm_rows}
         source_procedures = set()
+        source_caches = set()
         for path, _, evaluation, _, _ in arm_rows:
             checkpoint_id = checkpoint_by_result[path]
             source = (
@@ -326,7 +327,14 @@ def build_manifest(
                 else training_procedure_record(training_by_checkpoint[checkpoint_id])
             )
             source_procedures.add(canonical_json_bytes(source))
-        if len(kinds) != 1 or len(procedures) != 1 or len(source_procedures) != 1:
+            if checkpoint_id is not None:
+                source_caches.add(training_by_checkpoint[checkpoint_id].source_cache_sha256)
+        if (
+            len(kinds) != 1
+            or len(procedures) != 1
+            or len(source_procedures) != 1
+            or len(source_caches) > 1
+        ):
             raise ValueError(f"arm {arm_name!r} changes model or training/adaptation procedure.")
         contract = ArmContract(
             arm_name=arm_name,

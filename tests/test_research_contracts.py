@@ -166,3 +166,74 @@ def test_arm_contract_freezes_source_and_target_procedures() -> None:
     assert training_procedure_record(changed) != arm.source_training_procedure
     with pytest.raises(ValueError, match="exactly"):
         replace(arm, allowed_variation_axes=("training_replicate",))
+
+
+def test_training_procedure_record_separates_controls_from_fit_outcomes() -> None:
+    base = _training_contract()
+    base = replace(
+        base,
+        optimizer={
+            "name": "torch.optim.Adam",
+            "selection_config": {"epochs": 30, "batch_size": 256, "lr": 0.001},
+            "refit_config": {"epochs": 8, "batch_size": 256, "lr": 0.001},
+            "selection_execution": {"fused_adam": False, "compile_mode": None},
+            "refit_execution": {"fused_adam": False, "compile_mode": None},
+            "selection_runtime": {"elapsed_s": 41.5},
+            "refit_runtime": {"elapsed_s": 12.25},
+            "optimizer_rows_per_epoch": 45712,
+        },
+        validation={
+            "strategy": "group_disjoint_epoch_selection_then_full_source_refit",
+            "group_key": "local_subject_id",
+            "selected_epoch_zero_based": 7,
+            "refit_epochs": 8,
+            "selection_calibration_source": "source_group_validation",
+            "selection_domain": None,
+            "full_source_refit": True,
+        },
+        objective={
+            "name": "weighted_binary_cross_entropy",
+            "effective_pos_weight": 1.1377,
+            "training_prior": 0.1667,
+            "qc_ptp_uv": 100.0,
+            "input_statistics_scope": "all_source_rows",
+            "label_counts": [38060, 7652],
+            "source_risk_selection": 0.2311,
+            "source_risk_refit": 0.2298,
+        },
+    )
+    # A different target partition reruns inner validation on its own holdout:
+    # the realized epoch count, label balance, risk, and telemetry all move.
+    other = replace(
+        base,
+        holdout_participant_keys=("BI:04",),
+        optimizer={
+            **base.optimizer,
+            "refit_config": {"epochs": 7, "batch_size": 256, "lr": 0.001},
+            "selection_runtime": {"elapsed_s": 39.75},
+            "refit_runtime": {"elapsed_s": 11.5},
+            "optimizer_rows_per_epoch": 43218,
+        },
+        validation={
+            **base.validation,
+            "selected_epoch_zero_based": 6,
+            "refit_epochs": 7,
+        },
+        objective={
+            **base.objective,
+            "effective_pos_weight": 1.1422,
+            "training_prior": 0.1663,
+            "label_counts": [36011, 7207],
+            "source_risk_selection": 0.2442,
+            "source_risk_refit": 0.2401,
+        },
+    )
+    assert training_procedure_record(other) == training_procedure_record(base)
+    # But a genuine control change must move the procedure.
+    control = replace(
+        base,
+        objective={**base.objective, "qc_ptp_uv": 120.0},
+    )
+    assert training_procedure_record(control) != training_procedure_record(base)
+    assert training_procedure_record(base)["optimizer"]["selection_config"]["epochs"] == 30
+    assert "refit_config" not in training_procedure_record(base)["optimizer"]

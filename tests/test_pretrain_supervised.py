@@ -17,10 +17,13 @@ from data.identity import (
     training_identity_ledger_from_rows,
 )
 from experiments.run_pretrain_supervised import (
-    main as run_pretrain_supervised_main,
+    _SOURCE_DATASET_CACHE,
+    _SOURCE_SNAPSHOT_CACHE,
+    SOURCE_PRETRAIN_BATCH_SCHEMA,
+    parse_source_domain_mass,
 )
 from experiments.run_pretrain_supervised import (
-    parse_source_domain_mass,
+    main as run_pretrain_supervised_main,
 )
 from models.n2p3net import N2P3Net
 from transfer.checkpoint import checkpoint_training_contract
@@ -220,6 +223,100 @@ def test_supervised_runner_records_verified_physical_source_snapshot(
     assert contract.optimizer["refit_runtime"]["precision"] == "fp32"
     assert payload["runtime"]["selection"]["precision"] == "fp32"
     assert payload["runtime"]["refit"]["precision"] == "fp32"
+
+
+def test_supervised_batch_loads_source_once_and_attests_each_checkpoint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = _supervised_source_dataset()
+    source_manifest, source_digest, _ = _write_source_snapshot_manifest(tmp_path)
+    checkpoints = [tmp_path / "first.pt", tmp_path / "second.pt"]
+    batch_record = tmp_path / "batch.json"
+    load_calls = 0
+
+    def load_once(*_args, **_kwargs):
+        nonlocal load_calls
+        load_calls += 1
+        return dataset
+
+    _SOURCE_DATASET_CACHE.clear()
+    _SOURCE_SNAPSHOT_CACHE.clear()
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.load_epoch_dataset",
+        load_once,
+    )
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.loaded_epoch_cache_attestation",
+        lambda *_args, **_kwargs: {"sha256": "1" * 64},
+    )
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.N2P3NetBaseline",
+        _FastSupervisedBaseline,
+    )
+
+    run_pretrain_supervised_main(
+        [
+            "--source-cache",
+            str(tmp_path / "synthetic.npz"),
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--epochs",
+            "1",
+            "--device",
+            "cpu",
+            "--job",
+            "",
+            str(checkpoints[0]),
+            "--job",
+            "",
+            str(checkpoints[1]),
+            "--batch-record",
+            str(batch_record),
+        ]
+    )
+
+    assert load_calls == 1
+    record = json.loads(batch_record.read_text(encoding="utf-8"))
+    assert record["schema"] == SOURCE_PRETRAIN_BATCH_SCHEMA
+    assert record["completed"] is True
+    assert record["job_count"] == 2
+    assert record["source_snapshot_sha256"] == source_digest
+    assert [Path(job["checkpoint"]) for job in record["jobs"]] == [
+        path.resolve() for path in checkpoints
+    ]
+    for job, checkpoint in zip(record["jobs"], checkpoints, strict=True):
+        assert job["checkpoint_sha256"] == hashlib.sha256(checkpoint.read_bytes()).hexdigest()
+        assert job["training_contract_digest"] == checkpoint_training_contract(
+            torch.load(checkpoint, map_location="cpu", weights_only=False)
+        ).digest()
+
+    from experiments import run_candidate_promotion_matrix as matrix
+
+    task = matrix.MatrixTask(
+        task_id="checkpoint_batch/source/seed",
+        kind="checkpoint_batch",
+        argv=(
+            "python",
+            "run_pretrain_supervised.py",
+            "--job",
+            "",
+            str(checkpoints[0]),
+            "--job",
+            "",
+            str(checkpoints[1]),
+            "--batch-record",
+            str(batch_record),
+        ),
+        output=batch_record,
+        dependencies=(),
+    )
+    embedded = matrix._embedded_artifact_record(task)
+    assert embedded["schema"] == SOURCE_PRETRAIN_BATCH_SCHEMA
+    assert embedded["job_count"] == 2
+
+    checkpoints[0].write_bytes(checkpoints[0].read_bytes() + b"tampered")
+    with pytest.raises(ValueError, match="bytes changed"):
+        matrix._embedded_artifact_record(task)
 
 
 def test_supervised_runner_rejects_tampered_source_archive(

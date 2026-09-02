@@ -46,6 +46,9 @@ from experiments.build_candidate_cross_decision_manifest import (  # noqa: E402
     MANIFEST_SCHEMA,
     RESULT_SCHEMA,
 )
+from experiments.run_pretrain_supervised import (  # noqa: E402
+    SOURCE_PRETRAIN_BATCH_SCHEMA,
+)
 from research.contracts import (  # noqa: E402
     MIN_PROMOTION_HIT_AT_R,
     EvaluationRunContract,
@@ -59,7 +62,6 @@ from research.evaluation import (  # noqa: E402
 )
 from train.runtime import cpu_thread_budget, resolve_cpu_worker_plan  # noqa: E402
 from transfer.checkpoint import (  # noqa: E402
-    CHECKPOINT_SCHEMA,
     checkpoint_training_contract,
     load_checkpoint_payload,
 )
@@ -83,7 +85,7 @@ _INFERENCE_SCOPES = frozenset({"conditional_frozen_models", "training_procedure"
 _SAFE_COMPONENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
-TaskKind = Literal["checkpoint", "result", "manifest", "analysis"]
+TaskKind = Literal["checkpoint_batch", "result", "manifest", "analysis"]
 
 
 @dataclass(frozen=True)
@@ -755,6 +757,21 @@ def _within_output(path: Path, output_root: Path) -> Path:
     return resolved
 
 
+def _checkpoint_batch_outputs(task: MatrixTask) -> tuple[Path, ...]:
+    if task.kind != "checkpoint_batch":
+        return ()
+    outputs: list[Path] = []
+    for index, value in enumerate(task.argv):
+        if value == "--job":
+            try:
+                outputs.append(Path(task.argv[index + 2]).resolve())
+            except IndexError as error:
+                raise ValueError("checkpoint batch argv contains an incomplete job.") from error
+    if not outputs or len(set(outputs)) != len(outputs):
+        raise ValueError("checkpoint batch must declare unique checkpoint outputs.")
+    return tuple(outputs)
+
+
 def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
     """Materialize the complete sequential subprocess DAG without writing files."""
 
@@ -770,9 +787,8 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
     result_tasks: list[MatrixTask] = []
     for arm in plan.source_arms:
         for replicate in plan.training_replicates:
-            for target in plan.target_subjects:
-                checkpoint_id = f"checkpoint/{arm.name}/{replicate.key}/{target.partition_key}"
-                checkpoint_path = _within_output(
+            checkpoint_paths = {
+                target.partition_key: _within_output(
                     output_root
                     / "checkpoints"
                     / arm.name
@@ -780,56 +796,68 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                     / f"{target.partition_key}.pt",
                     output_root,
                 )
-                checkpoint_argv = [
-                    sys.executable,
-                    str((ROOT / "experiments" / "run_pretrain_supervised.py").resolve()),
-                    "--source-cache",
-                    str(arm.cache),
-                    "--source-snapshot-manifest",
-                    str(plan.source_snapshot_manifest),
-                    "--holdout-subjects",
-                    target.source_holdout_subject,
-                    "--pooling-mode",
-                    plan.training.pooling_mode,
-                    "--temporal-kernel-size",
-                    str(plan.training.temporal_kernel_size),
-                    "--epochs",
-                    str(plan.training.epochs),
-                    "--batch-size",
-                    str(plan.training.batch_size),
-                    "--precision",
-                    plan.training.precision,
-                    "--seed",
-                    str(replicate.seed),
-                    "--checkpoint",
-                    str(checkpoint_path),
-                    "--device",
-                    device_name,
-                ]
-                for domain, mass in arm.source_domain_mass:
-                    checkpoint_argv.extend(
-                        ["--source-domain-mass", f"{domain}={mass!r}"]
-                    )
-                if arm.source_domain_mass:
-                    assert arm.risk_within_domain_unit is not None
-                    checkpoint_argv.extend(
-                        [
-                            "--risk-within-domain-unit",
-                            arm.risk_within_domain_unit,
-                        ]
-                    )
-                if arm.selection_domain is not None:
-                    checkpoint_argv.extend(
-                        ["--selection-domain", arm.selection_domain]
-                    )
-                checkpoint_task = MatrixTask(
-                    task_id=checkpoint_id,
-                    kind="checkpoint",
+                for target in plan.target_subjects
+            }
+            checkpoint_batch_id = f"checkpoint_batch/{arm.name}/{replicate.key}"
+            checkpoint_batch_path = _within_output(
+                output_root
+                / "checkpoint_batches"
+                / arm.name
+                / f"{replicate.key}.json",
+                output_root,
+            )
+            checkpoint_argv = [
+                sys.executable,
+                str((ROOT / "experiments" / "run_pretrain_supervised.py").resolve()),
+                "--source-cache",
+                str(arm.cache),
+                "--source-snapshot-manifest",
+                str(plan.source_snapshot_manifest),
+                "--pooling-mode",
+                plan.training.pooling_mode,
+                "--temporal-kernel-size",
+                str(plan.training.temporal_kernel_size),
+                "--epochs",
+                str(plan.training.epochs),
+                "--batch-size",
+                str(plan.training.batch_size),
+                "--precision",
+                plan.training.precision,
+                "--seed",
+                str(replicate.seed),
+                "--device",
+                device_name,
+                "--batch-record",
+                str(checkpoint_batch_path),
+            ]
+            for target in plan.target_subjects:
+                checkpoint_argv.extend(
+                    [
+                        "--job",
+                        target.source_holdout_subject,
+                        str(checkpoint_paths[target.partition_key]),
+                    ]
+                )
+            for domain, mass in arm.source_domain_mass:
+                checkpoint_argv.extend(["--source-domain-mass", f"{domain}={mass!r}"])
+            if arm.source_domain_mass:
+                assert arm.risk_within_domain_unit is not None
+                checkpoint_argv.extend(
+                    ["--risk-within-domain-unit", arm.risk_within_domain_unit]
+                )
+            if arm.selection_domain is not None:
+                checkpoint_argv.extend(["--selection-domain", arm.selection_domain])
+            tasks.append(
+                MatrixTask(
+                    task_id=checkpoint_batch_id,
+                    kind="checkpoint_batch",
                     argv=tuple(checkpoint_argv),
-                    output=checkpoint_path,
+                    output=checkpoint_batch_path,
                     dependencies=(),
                 )
-                tasks.append(checkpoint_task)
+            )
+            for target in plan.target_subjects:
+                checkpoint_path = checkpoint_paths[target.partition_key]
                 for evaluation_arm in plan.evaluation_arms:
                     arm_name = evaluation_arm_name(arm.name, evaluation_arm.name)
                     result_id = f"result/{arm_name}/{replicate.key}/{target.partition_key}"
@@ -909,7 +937,7 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                         kind="result",
                         argv=tuple(result_argv),
                         output=result_path,
-                        dependencies=(checkpoint_id,),
+                        dependencies=(checkpoint_batch_id,),
                     )
                     tasks.append(result_task)
                     result_tasks.append(result_task)
@@ -975,6 +1003,8 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
     task_ids = [task.task_id for task in tasks]
     _assert_unique(task_ids, "DAG task ids")
     output_paths = [task.output for task in tasks]
+    for task in tasks:
+        output_paths.extend(_checkpoint_batch_outputs(task))
     _assert_unique(output_paths, "DAG task outputs")
     known = set(task_ids)
     completed: set[str] = set()
@@ -1040,7 +1070,7 @@ def dag_record(
 ) -> dict[str, Any]:
     counts = {
         kind: sum(task.kind == kind for task in dag.tasks)
-        for kind in ("checkpoint", "result", "manifest", "analysis")
+        for kind in ("checkpoint_batch", "result", "manifest", "analysis")
     }
     record = {
         "schema": DRY_RUN_SCHEMA,
@@ -1162,12 +1192,72 @@ def _validate_sha(value: object, name: str) -> str:
 def _embedded_artifact_record(task: MatrixTask) -> dict[str, Any]:
     """Validate the minimum embedded schema and semantic contract linkage."""
 
-    if task.kind == "checkpoint":
-        payload = load_checkpoint_payload(task.output)
-        training = checkpoint_training_contract(payload)
+    if task.kind == "checkpoint_batch":
+        record = _read_json_mapping(task.output, "checkpoint batch output")
+        if record.get("schema") != SOURCE_PRETRAIN_BATCH_SCHEMA or record.get(
+            "completed"
+        ) is not True:
+            raise ValueError("checkpoint batch is not a completed current-schema artifact.")
+        raw_jobs = record.get("jobs")
+        if not isinstance(raw_jobs, Sequence) or isinstance(
+            raw_jobs, (str, bytes, bytearray)
+        ):
+            raise ValueError("checkpoint batch jobs must be a sequence.")
+        expected_jobs: dict[Path, str] = {}
+        for index, value in enumerate(task.argv):
+            if value == "--job":
+                try:
+                    holdout = task.argv[index + 1]
+                    checkpoint = Path(task.argv[index + 2]).resolve()
+                except IndexError as error:
+                    raise ValueError("checkpoint batch argv contains an incomplete job.") from error
+                if checkpoint in expected_jobs:
+                    raise ValueError("checkpoint batch argv repeats a checkpoint path.")
+                expected_jobs[checkpoint] = holdout
+        if len(raw_jobs) != len(expected_jobs) or record.get("job_count") != len(expected_jobs):
+            raise ValueError("checkpoint batch job count disagrees with its task contract.")
+        embedded_jobs: list[dict[str, object]] = []
+        for raw_job in raw_jobs:
+            job = _mapping(raw_job, "checkpoint batch job")
+            checkpoint = Path(_text(job.get("checkpoint"), "checkpoint batch path")).resolve()
+            if checkpoint not in expected_jobs or not checkpoint.is_file():
+                raise ValueError("checkpoint batch references an unexpected or missing checkpoint.")
+            expected_holdout = sorted(
+                value.strip()
+                for value in expected_jobs[checkpoint].split(",")
+                if value.strip()
+            )
+            if job.get("holdout_subjects") != expected_holdout:
+                raise ValueError("checkpoint batch holdout subjects disagree with task argv.")
+            byte_size = _integer(
+                job.get("checkpoint_byte_size"),
+                "checkpoint batch checkpoint_byte_size",
+                minimum=1,
+            )
+            digest = _validate_sha(
+                job.get("checkpoint_sha256"), "checkpoint batch checkpoint_sha256"
+            )
+            if checkpoint.stat().st_size != byte_size or _sha256_file(checkpoint) != digest:
+                raise ValueError("checkpoint batch checkpoint bytes changed after completion.")
+            payload = load_checkpoint_payload(checkpoint)
+            training = checkpoint_training_contract(payload)
+            training_digest = _validate_sha(
+                job.get("training_contract_digest"),
+                "checkpoint batch training_contract_digest",
+            )
+            if training.digest() != training_digest:
+                raise ValueError("checkpoint batch training contract digest changed.")
+            embedded_jobs.append(
+                {
+                    "checkpoint_name": checkpoint.name,
+                    "checkpoint_sha256": digest,
+                    "training_contract_digest": training_digest,
+                }
+            )
         return {
-            "schema": CHECKPOINT_SCHEMA,
-            "training_contract_digest": training.digest(),
+            "schema": SOURCE_PRETRAIN_BATCH_SCHEMA,
+            "job_count": len(embedded_jobs),
+            "checkpoint_set_digest": semantic_sha256(embedded_jobs),
         }
     record = _read_json_mapping(task.output, f"{task.kind} output")
     if task.kind == "result":
@@ -1472,6 +1562,8 @@ def _load_or_create_state(
 ) -> dict[str, Any]:
     journal = _journal_path(dag)
     known_outputs = [task.output for task in dag.tasks]
+    for task in dag.tasks:
+        known_outputs.extend(_checkpoint_batch_outputs(task))
     known_outputs.extend(dag.subject_scope_paths.values())
     known_outputs.append(dag.plan.output_root / "logs")
     if journal.exists():
