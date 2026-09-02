@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "source_feature_transfer_c7bf860.source-only.tar.gz",
+  "archive_sha256": "fe2e4ccdf7ffd3cbc8c1a1a7a7d4b4dba8fc9cdce61893689fec7e62d0040a9d",
+  "source_commit": "c7bf8605d4aa676a5e86be9457fdc8cfabc94aa8",
+  "member_count": 238,
+  "byte_size": 370676566,
+  "scope": "Feature-domain transfer implementation, promotion-DAG forwarding, adapter evaluation head, active research guidance, tests, and declared dependency lock",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "Cloud execution must verify this archive and execute only the unpacked physical snapshot with an explicit Python environment and data/cache attestations."
+}

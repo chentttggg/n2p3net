@@ -1,7 +1,7 @@
 {
   "schema": "n2p3_candidate_promotion_plan/2",
   "stage": "development",
-  "source_snapshot_manifest": "../frozen/source_feature_transfer_c5d670d.manifest.json",
+  "source_snapshot_manifest": "../frozen/source_feature_transfer_c7bf860.manifest.json",
   "target_cache": "../cloud_inputs/brainsync_target_causal_v3.npz",
   "target_subjects": [
     {

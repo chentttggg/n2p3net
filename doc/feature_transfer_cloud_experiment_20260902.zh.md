@@ -1,6 +1,6 @@
 # 特征域迁移云端实验设计与启动门禁
 
-_版本：2026-09-02 · 绑定源提交 `c5d670d` · 用途：云端开发验证，不是产品确认实验_
+_版本：2026-09-02 · 绑定源提交 `c7bf860` · 用途：云端开发验证，不是产品确认实验_
 
 ---
 
@@ -94,8 +94,8 @@ flowchart LR
 
 ```bash
 mkdir -p n2p3_feature_transfer/{source,cloud_inputs,configs}
-tar -xzf source_feature_transfer_c5d670d.source-only.tar.gz -C n2p3_feature_transfer/source
-cp source_feature_transfer_c5d670d.manifest.json n2p3_feature_transfer/
+tar -xzf source_feature_transfer_c7bf860.source-only.tar.gz -C n2p3_feature_transfer/source
+cp source_feature_transfer_c7bf860.manifest.json n2p3_feature_transfer/
 cp feature_transfer_cloud_20260902.example.json n2p3_feature_transfer/configs/
 ```
 
@@ -121,8 +121,8 @@ python experiments/run_candidate_promotion_matrix.py \
 
 `dry_run.json` 必须显示：
 
-- source archive commit `c5d670d2037c81ab642cecd33da2111ad3f303cf`；
-- archive SHA-256 `11e60378934ed6b48ca17b33fd7bb066aaa13ee3b0c7c75954462ee898a23a5b`；
+- source archive commit `c7bf8605d4aa676a5e86be9457fdc8cfabc94aa8`；
+- archive SHA-256 `fe2e4ccdf7ffd3cbc8c1a1a7a7d4b4dba8fc9cdce61893689fec7e62d0040a9d`；
 - checkpoint argv 含全部 `feature-transfer-*`、`feature-alignment-weight`、`private-domain-weight` 和 `orthogonality-weight`；
 - evaluation argv 含 `--head adapter`；
 - source/target cache attestation、decoded dataset digest 和 identity mapping 均已解析；
