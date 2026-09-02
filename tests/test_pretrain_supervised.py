@@ -17,10 +17,11 @@ from data.identity import (
     training_identity_ledger_from_rows,
 )
 from experiments.run_pretrain_supervised import (
-    build_subject_prefix_exposure,
-    parse_subject_prefix_repeats,
+    main as run_pretrain_supervised_main,
 )
-from experiments.run_pretrain_supervised import main as run_pretrain_supervised_main
+from experiments.run_pretrain_supervised import (
+    parse_source_domain_mass,
+)
 from models.n2p3net import N2P3Net
 from transfer.checkpoint import checkpoint_training_contract
 
@@ -104,80 +105,39 @@ class _FastSupervisedBaseline:
         self.calibration_labels_ = None
         self.calibration_source_ = None
         self.last_history: dict[str, object] = {}
+        self.last_source_risk = None
         self._input_mean = np.zeros((1, n_channels, 1), dtype=np.float32)
         self._input_std = np.ones((1, n_channels, 1), dtype=np.float32)
 
-    def fit(self, X, y, *, group_ids, input_stats_row_mask) -> None:
-        del X, y, input_stats_row_mask
+    def fit(self, X, y, *, group_ids, **_) -> None:
+        del X, y
         self.last_history = {
             "best_epoch": 0 if group_ids is not None else None,
             "final_task_val_auc": 0.5 if group_ids is not None else None,
         }
 
 
-def test_parse_subject_prefix_repeats_preserves_explicit_prefixes() -> None:
-    assert parse_subject_prefix_repeats("BI::=3, BNCI::=1") == {
-        "BI::": 3,
-        "BNCI::": 1,
+def test_parse_source_domain_mass_preserves_exact_domains() -> None:
+    assert parse_source_domain_mass(["BI=0.8", "BNCI=0.2"]) == {
+        "BI": 0.8,
+        "BNCI": 0.2,
     }
-    assert parse_subject_prefix_repeats("") == {}
+    assert parse_source_domain_mass([]) == {}
 
 
-@pytest.mark.parametrize("value", ["BI::", "=3", "BI::=0", "BI::=1.5", "BI::=2,BI::=3"])
-def test_parse_subject_prefix_repeats_rejects_invalid_contracts(value: str) -> None:
+@pytest.mark.parametrize(
+    "value",
+    [
+        ["BI"],
+        ["=0.8", "BNCI=0.2"],
+        ["BI=0", "BNCI=1"],
+        ["BI=0.8", "BI=0.2"],
+        ["BI=0.7", "BNCI=0.2"],
+    ],
+)
+def test_parse_source_domain_mass_rejects_invalid_contracts(value: list[str]) -> None:
     with pytest.raises(ValueError):
-        parse_subject_prefix_repeats(value)
-
-
-def test_subject_prefix_exposure_retains_rows_and_accounts_optimizer_rows() -> None:
-    subjects = np.asarray(["BI::01", "BI::01", "BI::02", "BNCI::01", "other"])
-    indices, report = build_subject_prefix_exposure(
-        subjects,
-        {"BI::": 3, "BNCI::": 1},
-    )
-
-    assert np.bincount(indices, minlength=len(subjects)).tolist() == [3, 3, 3, 1, 1]
-    physical_values = np.arange(len(subjects), dtype=float)
-    assert physical_values[indices].mean() == pytest.approx(
-        (physical_values[:3].sum() * 3 + physical_values[3:].sum()) / 11
-    )
-    assert report["unique_physical_rows"] == 5
-    assert report["optimizer_rows_per_epoch"] == 11
-    assert report["all_unique_rows_retained"] is True
-    assert report["prefixes"] == [
-        {
-            "prefix": "BI::",
-            "repeat": 3,
-            "unique_physical_rows": 3,
-            "optimizer_rows": 9,
-            "unique_subjects": 2,
-            "optimizer_fraction": 9 / 11,
-        },
-        {
-            "prefix": "BNCI::",
-            "repeat": 1,
-            "unique_physical_rows": 1,
-            "optimizer_rows": 1,
-            "unique_subjects": 1,
-            "optimizer_fraction": 1 / 11,
-        },
-        {
-            "prefix": None,
-            "repeat": 1,
-            "unique_physical_rows": 1,
-            "optimizer_rows": 1,
-            "unique_subjects": 1,
-            "optimizer_fraction": 1 / 11,
-        },
-    ]
-
-
-def test_subject_prefix_exposure_rejects_unknown_and_overlapping_prefixes() -> None:
-    subjects = np.asarray(["BI::01", "BNCI::01"])
-    with pytest.raises(ValueError, match="matches no retained source rows"):
-        build_subject_prefix_exposure(subjects, {"GTN::": 2})
-    with pytest.raises(ValueError, match="prefixes overlap"):
-        build_subject_prefix_exposure(subjects, {"BI": 2, "BI::": 3})
+        parse_source_domain_mass(value)
 
 
 def test_training_identity_ledger_uses_only_rows_retained_after_all_gates() -> None:
@@ -287,6 +247,34 @@ def test_supervised_runner_rejects_legacy_naked_snapshot_digest(
             "a" * 64,
             "--checkpoint",
             str(tmp_path / "unused.pt"),
+        ],
+    )
+
+    with pytest.raises(SystemExit):
+        run_pretrain_supervised_main()
+
+
+@pytest.mark.parametrize(
+    "obsolete_option",
+    ["--subject-prefix-repeat", "--input-stats-subject-prefix"],
+)
+def test_supervised_runner_rejects_obsolete_prefix_contracts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    obsolete_option: str,
+) -> None:
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_pretrain_supervised.py",
+            "--source-cache",
+            str(tmp_path / "unused.npz"),
+            "--source-snapshot-manifest",
+            str(tmp_path / "unused.json"),
+            "--checkpoint",
+            str(tmp_path / "unused.pt"),
+            obsolete_option,
+            "BI=3",
         ],
     )
 

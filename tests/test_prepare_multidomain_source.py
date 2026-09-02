@@ -12,6 +12,7 @@ from data.domain import (
     adapt_common_channel_average_reference,
     ensure_common_channel_average_reference,
     namespace_epoch_dataset,
+    source_domain_ids,
 )
 from data.epochs import (
     EpochDataset,
@@ -152,6 +153,7 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
     np.testing.assert_array_equal(merged.X[: first.n_epochs], first.X)
     np.testing.assert_array_equal(merged.X[first.n_epochs :], second.X)
     assert merged.subject_ids.tolist() == ["A::01", "A::01", "B::02", "B::02"]
+    assert source_domain_ids(merged).tolist() == ["A", "A", "B", "B"]
     assert not any("A::A::" in value or "B::B::" in value for value in merged.subject_ids)
     operations = [entity.operation for entity in merged.lineage.entities]
     assert operations.count("common_channel_average_reference") == 2

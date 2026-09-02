@@ -35,6 +35,7 @@ for search_path in (ROOT, SRC):
     if str(search_path) not in sys.path:
         sys.path.insert(0, str(search_path))
 
+from data.domain import source_domain_ids  # noqa: E402
 from data.epochs import (  # noqa: E402
     load_epoch_dataset,
     loaded_epoch_cache_attestation,
@@ -62,7 +63,7 @@ from transfer.checkpoint import (  # noqa: E402
     load_checkpoint_payload,
 )
 
-PLAN_SCHEMA = "n2p3_candidate_promotion_plan/1"
+PLAN_SCHEMA = "n2p3_candidate_promotion_plan/2"
 JOURNAL_SCHEMA = "n2p3_candidate_promotion_journal/1"
 DRY_RUN_SCHEMA = "n2p3_candidate_promotion_dag/1"
 ORCHESTRATOR_LOCK_SCHEMA = "n2p3_candidate_promotion_orchestrator_lock/1"
@@ -94,8 +95,9 @@ class TargetSubjectSpec:
 class SourceArmSpec:
     name: str
     cache: Path
-    subject_prefix_repeat: tuple[tuple[str, int], ...]
-    input_stats_prefix: str | None
+    source_domain_mass: tuple[tuple[str, float], ...]
+    risk_within_domain_unit: str | None
+    selection_domain: str | None
 
 
 @dataclass(frozen=True)
@@ -186,6 +188,7 @@ class _AttestedCacheInput:
     channel_mask: tuple[bool, ...]
     preprocessing: Mapping[str, Any]
     source_reference: str
+    source_domains: tuple[str, ...]
     resolved_record: Mapping[str, Any]
 
 
@@ -362,36 +365,56 @@ def _parse_source_arms(value: object, root: Path) -> tuple[SourceArmSpec, ...]:
         record = _mapping(raw_record, name)
         _keys(
             record,
-            required={"name", "cache", "subject_prefix_repeat", "input_stats_prefix"},
+            required={
+                "name",
+                "cache",
+                "source_domain_mass",
+                "risk_within_domain_unit",
+                "selection_domain",
+            },
             name=name,
         )
-        repeats = _mapping(record["subject_prefix_repeat"], f"{name}.subject_prefix_repeat")
-        parsed_repeats: list[tuple[str, int]] = []
-        for raw_prefix, raw_repeat in repeats.items():
-            prefix = _text(raw_prefix, f"{name}.subject_prefix_repeat prefix")
-            if "," in prefix or "=" in prefix:
+        raw_masses = record["source_domain_mass"]
+        parsed_masses: list[tuple[str, float]] = []
+        if raw_masses is not None:
+            masses = _mapping(raw_masses, f"{name}.source_domain_mass")
+            for raw_domain, raw_mass in masses.items():
+                domain = _text(raw_domain, f"{name}.source_domain_mass domain")
+                if "=" in domain:
+                    raise ValueError(
+                        f"{name}.source_domain_mass domain {domain!r} cannot be encoded by the CLI."
+                    )
+                mass = _number(raw_mass, f"{name}.source_domain_mass[{domain!r}]")
+                if mass <= 0.0:
+                    raise ValueError(f"{name}.source domain masses must be positive.")
+                parsed_masses.append((domain, mass))
+            if len(parsed_masses) < 2 or not np.isclose(
+                sum(mass for _, mass in parsed_masses), 1.0, rtol=0.0, atol=1e-9
+            ):
                 raise ValueError(
-                    f"{name}.subject_prefix_repeat prefix {prefix!r} cannot be encoded by the CLI."
+                    f"{name}.source_domain_mass must contain at least two domains summing to one."
                 )
-            parsed_repeats.append(
-                (
-                    prefix,
-                    _integer(
-                        raw_repeat,
-                        f"{name}.subject_prefix_repeat[{prefix!r}]",
-                        minimum=1,
-                    ),
-                )
-            )
-        input_stats = record["input_stats_prefix"]
-        if input_stats is not None:
-            input_stats = _text(input_stats, f"{name}.input_stats_prefix")
+        risk_unit = record["risk_within_domain_unit"]
+        selection_domain = record["selection_domain"]
+        if parsed_masses:
+            risk_unit = _text(risk_unit, f"{name}.risk_within_domain_unit")
+            if risk_unit not in {"epoch", "participant"}:
+                raise ValueError(f"{name}.risk_within_domain_unit must be epoch or participant.")
+            selection_domain = _text(selection_domain, f"{name}.selection_domain")
+            if selection_domain not in {domain for domain, _ in parsed_masses}:
+                raise ValueError(f"{name}.selection_domain must name one weighted domain.")
+        else:
+            if risk_unit is not None:
+                raise ValueError(f"{name} cannot set risk unit without source domain mass.")
+            if selection_domain is not None:
+                selection_domain = _text(selection_domain, f"{name}.selection_domain")
         arms.append(
             SourceArmSpec(
                 name=_component(record["name"], f"{name}.name"),
                 cache=_resolve_plan_path(record["cache"], f"{name}.cache", root),
-                subject_prefix_repeat=tuple(sorted(parsed_repeats)),
-                input_stats_prefix=input_stats,
+                source_domain_mass=tuple(sorted(parsed_masses)),
+                risk_within_domain_unit=risk_unit,
+                selection_domain=selection_domain,
             )
         )
     _assert_unique([item.name for item in arms], "source arm names")
@@ -725,10 +748,6 @@ def _within_output(path: Path, output_root: Path) -> Path:
     return resolved
 
 
-def _prefix_repeat_cli(values: Sequence[tuple[str, int]]) -> str:
-    return ",".join(f"{prefix}={repeat}" for prefix, repeat in values)
-
-
 def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
     """Materialize the complete sequential subprocess DAG without writing files."""
 
@@ -778,15 +797,22 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                     "--device",
                     device_name,
                 ]
-                if arm.subject_prefix_repeat:
+                for domain, mass in arm.source_domain_mass:
+                    checkpoint_argv.extend(
+                        ["--source-domain-mass", f"{domain}={mass!r}"]
+                    )
+                if arm.source_domain_mass:
+                    assert arm.risk_within_domain_unit is not None
                     checkpoint_argv.extend(
                         [
-                            "--subject-prefix-repeat",
-                            _prefix_repeat_cli(arm.subject_prefix_repeat),
+                            "--risk-within-domain-unit",
+                            arm.risk_within_domain_unit,
                         ]
                     )
-                if arm.input_stats_prefix is not None:
-                    checkpoint_argv.extend(["--input-stats-subject-prefix", arm.input_stats_prefix])
+                if arm.selection_domain is not None:
+                    checkpoint_argv.extend(
+                        ["--selection-domain", arm.selection_domain]
+                    )
                 checkpoint_task = MatrixTask(
                     task_id=checkpoint_id,
                     kind="checkpoint",
@@ -1218,6 +1244,11 @@ def _load_attested_cache_input(
     if not isinstance(source_reference, str) or not source_reference.strip():
         raise ValueError(f"{name} lacks a non-empty source_reference contract.")
     positions = np.asarray(dataset.channel_positions_m, dtype=np.float64)
+    domains = (
+        tuple(sorted(set(source_domain_ids(dataset).tolist())))
+        if dataset.provenance.get("source_domain_axis") is not None
+        else ()
+    )
     resolved_record = {
         "path": _portable_path(cache_path, dag),
         "cache_sha256": cache_sha256,
@@ -1233,6 +1264,7 @@ def _load_attested_cache_input(
         ),
         "preprocessing_digest": semantic_sha256(asdict(dataset.preprocessing)),
         "source_reference": source_reference.strip(),
+        "source_domains": list(domains),
     }
     return _AttestedCacheInput(
         identity_table=dataset.identity_table,
@@ -1241,6 +1273,7 @@ def _load_attested_cache_input(
         channel_mask=tuple(bool(value) for value in dataset.channel_mask),
         preprocessing=asdict(dataset.preprocessing),
         source_reference=source_reference.strip(),
+        source_domains=domains,
         resolved_record=resolved_record,
     )
 
@@ -1288,6 +1321,21 @@ def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
     for arm in plan.source_arms:
         source = _load_attested_cache_input(arm.cache, name=f"source arm {arm.name!r}", dag=dag)
         _assert_cache_compatibility(target, source, source_arm=arm.name)
+        planned_domains = {domain for domain, _ in arm.source_domain_mass}
+        observed_domains = set(source.source_domains)
+        if planned_domains and planned_domains != observed_domains:
+            raise ValueError(
+                f"source arm {arm.name!r} domain risk disagrees with cache: "
+                f"planned={sorted(planned_domains)}, observed={sorted(observed_domains)}."
+            )
+        if len(observed_domains) > 1 and arm.selection_domain is None:
+            raise ValueError(
+                f"source arm {arm.name!r} multi-domain cache requires selection_domain."
+            )
+        if arm.selection_domain is not None and arm.selection_domain not in observed_domains:
+            raise ValueError(
+                f"source arm {arm.name!r} selection_domain is absent from cache."
+            )
         source_by_arm[arm.name] = source
 
     for target_spec in plan.target_subjects:

@@ -69,6 +69,24 @@ def test_matrix_batch_source_preserves_row_label_alignment() -> None:
     assert torch.equal(observed_y, y[permutation])
 
 
+def test_matrix_batch_source_preserves_row_weight_alignment() -> None:
+    runtime = GpuPerformanceScheduler(torch.device("cpu"))
+    X = torch.arange(30, dtype=torch.float32).reshape(5, 2, 3)
+    y = torch.arange(5, dtype=torch.int64)
+    weights = torch.tensor([0.5, 1.0, 1.5, 2.0, 2.5])
+    source = MatrixBatchSource(X, y, runtime, preload=False, row_weights=weights)
+    generator = torch.Generator().manual_seed(11)
+    rows = list(source.shuffled_batches_with_weights(2, generator))
+    observed_X = torch.cat([xb for xb, _, _ in rows])
+    observed_y = torch.cat([yb for _, yb, _ in rows if yb is not None])
+    observed_weights = torch.cat([wb for _, _, wb in rows])
+    permutation = torch.randperm(5, generator=torch.Generator().manual_seed(11))
+
+    assert torch.equal(observed_X, X[permutation])
+    assert torch.equal(observed_y, y[permutation])
+    assert torch.equal(observed_weights, weights[permutation])
+
+
 def test_shared_worker_budget_is_explicit_and_oom_detection_is_narrow() -> None:
     runtime = GpuPerformanceScheduler(torch.device("cpu"))
     runtime.configure_shared_worker_budget(2)

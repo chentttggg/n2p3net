@@ -14,7 +14,7 @@
 | Source transfer | source full refit/checkpoint signature 已实现；full-unfold+K35 临时默认；强联合微调有负迁移 | 进入合法 cross-decision personalization，并把 full-fine 作为高风险对照 |
 | Unlabelled target adaptation | 未开始 | pseudo/latent target 胜 zero-shot 且过反例 |
 | BrainSync adult 9-choice | v3 causal multi-session/multi-decision loader、target-switch split/runner 已实现；现有 4 sessions 均非 analysis-ready | 按 v3 重新采集后 subject-macro hit@R >=0.90，失败进入分母 |
-| Cross-dataset domain path | BI+BNCI 5 导 common-CAR 已实训；uniform=0.0967 显著低于 BI-only=0.1300；BI3x/BNCI1x=0.1239；BI-source stats=0.0974，与 uniform 等效 | 固定唯一行/batch/steps，用 normalized per-row loss weight 隔离 80/20 域梯度；仍负再做 gradient/stem |
+| Cross-dataset domain path | BI+BNCI 5 导 common-CAR 已实训；uniform=0.0967 显著低于 BI-only=0.1300；两域 prior 同为 1/6，但 ERP contrast 近正交，且 BNCI 长记录使 epoch/participant 风险错位 | v3 固定唯一行/batch/steps，依次跑 B0/J0/J1/J2：隔离 target-domain selection、80/20 域质量、participant-macro；J2 仍负再测 gradient/stem |
 | Confirmation/deployment | 未开始 | untouched cohort CI、覆盖、鲁棒、延迟、内存全部通过 |
 
 当前没有确认冠军或部署冠军。GTN 是儿童 3 导、每人一次 selection 的开发集；

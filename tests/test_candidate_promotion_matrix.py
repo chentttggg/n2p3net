@@ -11,10 +11,12 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from data.channel import build_channel_identity
 from data.contract import SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
+from data.domain import SOURCE_DOMAIN_AXIS_SCHEMA, SOURCE_DOMAIN_COLUMN
 from data.epochs import EpochDataset, preprocessing_spec_from_contract, save_epoch_dataset
 from data.events import observed_only_timeline
 from data.identity import DatasetIdentityTable, ParticipantIdentityRecord, origin_subject_key
@@ -43,14 +45,16 @@ def _plan_record(*, output_root: str = "outputs") -> dict[str, Any]:
             {
                 "name": "source_a",
                 "cache": "source-a.npz",
-                "subject_prefix_repeat": {"A::": 1},
-                "input_stats_prefix": "A::",
+                "source_domain_mass": None,
+                "risk_within_domain_unit": None,
+                "selection_domain": None,
             },
             {
                 "name": "source_ab",
                 "cache": "source-ab.npz",
-                "subject_prefix_repeat": {"A::": 1, "B::": 1},
-                "input_stats_prefix": None,
+                "source_domain_mass": {"A": 0.8, "B": 0.2},
+                "risk_within_domain_unit": "participant",
+                "selection_domain": "A",
             },
         ],
         "training_replicates": [
@@ -121,11 +125,14 @@ def _cache_dataset(
     local_subjects: tuple[str, ...],
     authority_subjects: tuple[str, ...],
     position_offset: float = 0.0,
+    source_domains: tuple[str, ...] | None = None,
 ) -> EpochDataset:
     identity = build_channel_identity(("Fz", "Cz", "Pz"), allow_missing_positions=False)
     positions = np.asarray(identity.coords, dtype=float).copy()
     positions[0, 0] += position_offset
     subjects = np.asarray(local_subjects)
+    if source_domains is not None and len(source_domains) != len(subjects):
+        raise ValueError("source_domains must align with subjects.")
     timeline = observed_only_timeline(
         dataset_id=name,
         subject_ids=subjects,
@@ -153,7 +160,31 @@ def _cache_dataset(
         channel_mask=np.ones(len(identity.names), dtype=bool),
         preprocessing=preprocessing_spec_from_contract(SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT),
         event_timeline=timeline,
-        provenance={"source": "unit_test", "source_reference": "average"},
+        metadata=(
+            pd.DataFrame(
+                {
+                    "subject": subjects,
+                    SOURCE_DOMAIN_COLUMN: np.asarray(source_domains),
+                }
+            )
+            if source_domains is not None
+            else pd.DataFrame({"subject": subjects})
+        ),
+        provenance={
+            "source": "unit_test",
+            "source_reference": "average",
+            **(
+                {
+                    "source_domain_axis": {
+                        "schema": SOURCE_DOMAIN_AXIS_SCHEMA,
+                        "column": SOURCE_DOMAIN_COLUMN,
+                        "domains": sorted(set(source_domains)),
+                    }
+                }
+                if source_domains is not None
+                else {}
+            ),
+        },
         identity_table=DatasetIdentityTable(
             tuple(
                 ParticipantIdentityRecord(
@@ -213,6 +244,7 @@ def _write_preflight_inputs(
                 local_subjects=source_subjects,
                 authority_subjects=tuple(source_authorities),
                 position_offset=(0.001 if geometry_mismatch and index == 0 else 0.0),
+                source_domains=(("A", "B") if index == 1 else None),
             ),
         )
 
@@ -234,6 +266,45 @@ def test_training_rejects_even_kernel_but_accepts_explicit_k65(tmp_path: Path) -
     broad = _plan_record()
     broad["training"]["temporal_kernel_size"] = 65
     assert _load(tmp_path, broad).training.temporal_kernel_size == 65
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "match"),
+    [
+        ("source_domain_mass", {"A": 0.7, "B": 0.2}, "summing to one"),
+        ("risk_within_domain_unit", "row_repeat", "epoch or participant"),
+        ("selection_domain", "UNKNOWN", "weighted domain"),
+    ],
+)
+def test_plan_rejects_invalid_multisource_risk(
+    tmp_path: Path,
+    field: str,
+    value: object,
+    match: str,
+) -> None:
+    record = _plan_record()
+    record["source_arms"][1][field] = value
+
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, record)
+
+
+def test_plan_supports_natural_ce_with_target_domain_selection(tmp_path: Path) -> None:
+    record = _plan_record()
+    arm = record["source_arms"][1]
+    arm["source_domain_mass"] = None
+    arm["risk_within_domain_unit"] = None
+    arm["selection_domain"] = "A"
+
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+    checkpoint = next(
+        task for task in dag.tasks if task.task_id == "checkpoint/source_ab/rep01/p01"
+    )
+
+    assert "--source-domain-mass" not in checkpoint.argv
+    assert "--risk-within-domain-unit" not in checkpoint.argv
+    assert checkpoint.argv[checkpoint.argv.index("--selection-domain") + 1] == "A"
 
 
 @pytest.mark.parametrize("head", ["linear", "mlp16", "classifier_fine", "full_fine"])
@@ -369,6 +440,22 @@ def test_dag_passes_explicit_time_split_linear_configuration(tmp_path: Path) -> 
     for flag, value in expected.items():
         assert argv[argv.index(flag) + 1] == value
     assert "--no-fold-local-qc" in argv
+
+    weighted_checkpoint = next(
+        task
+        for task in dag.tasks
+        if task.task_id == "checkpoint/source_ab/rep01/p01"
+    )
+    checkpoint_argv = list(weighted_checkpoint.argv)
+    masses = [
+        checkpoint_argv[index + 1]
+        for index, value in enumerate(checkpoint_argv)
+        if value == "--source-domain-mass"
+    ]
+    assert masses == ["A=0.8", "B=0.2"]
+    assert checkpoint_argv[checkpoint_argv.index("--risk-within-domain-unit") + 1] == "participant"
+    assert checkpoint_argv[checkpoint_argv.index("--selection-domain") + 1] == "A"
+    assert "--subject-prefix-repeat" not in checkpoint_argv
 
     zero_shot = next(
         task for task in dag.tasks if task.task_id == "result/source_a__zero_shot/rep01/p01"

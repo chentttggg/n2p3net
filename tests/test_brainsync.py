@@ -66,7 +66,7 @@ def _write_bids_session(
     blocks: tuple[tuple[int, ...], ...] = (tuple(range(1, 10)),),
     source_rate_hz: float = 250.0,
 ) -> Path:
-    """Write a self-contained workstation v3 BIDS raw session."""
+    """Write a self-contained workstation v4 BIDS raw session."""
 
     subject_label = "P001"
     session_label = "session"
@@ -124,6 +124,10 @@ def _write_bids_session(
             "subject_id": subject_id,
             "age": age,
             "sex": "F",
+            "blocks": len(blocks),
+            "digits_per_block": len(blocks[0]),
+            "sequence_policy": "balanced_random_permutation_cycles",
+            "repetitions_per_digit": len(blocks[0]) // 9,
             "thought_digit": target,
             "target_label_status": "confirmed_post_experiment",
         },
@@ -351,7 +355,7 @@ def test_rest_overlap_uses_half_open_epoch_and_rest_intervals() -> None:
     assert overlaps == (False, True, True, False)
 
 
-def test_v3_bids_session_is_one_decision_and_blocks_preserve_schedule_metadata(
+def test_v4_bids_session_is_one_decision_and_blocks_preserve_schedule_metadata(
     tmp_path: Path,
 ) -> None:
     session_dir = _write_bids_session(
@@ -381,9 +385,13 @@ def test_v3_bids_session_is_one_decision_and_blocks_preserve_schedule_metadata(
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     [
-        ("schema", "brainsync-gtn-session/2", "Unsupported BrainSync session schema"),
+        ("schema", "brainsync-gtn-session/3", "Unsupported BrainSync session schema"),
         ("status", "running", "status is not a model input"),
+        ("status", "aborted", "status is not a model input"),
         ("target_label.status", "pending", "post-experiment confirmed"),
+        ("experiment.sequence_policy", "independent_with_replacement", "sequence_policy"),
+        ("experiment.digits_per_block", 10, "complete candidate cycles"),
+        ("experiment.repetitions_per_digit", 2, "conflicts with digits_per_block"),
         ("recording.stage", "rest_removed_recording", "stage must be bids_raw"),
         ("recording.preprocessing_status", "completed", "must be pending"),
         ("recording.timeline.time_base", "rest_removed_recording", "continuous_recording"),
@@ -391,7 +399,7 @@ def test_v3_bids_session_is_one_decision_and_blocks_preserve_schedule_metadata(
         ("quality.eeg_continuity.passed", False, "continuity quality"),
     ],
 )
-def test_v3_manifest_gate_fails_before_binary_eeg_read(
+def test_v4_manifest_gate_fails_before_binary_eeg_read(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     field: str,
@@ -413,6 +421,45 @@ def test_v3_manifest_gate_fails_before_binary_eeg_read(
     )
 
     with pytest.raises(ValueError, match=message):
+        load_brainsync_session(session_dir)
+
+
+def test_v4_rejects_unbalanced_actual_events_before_epoch_loading(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session_dir = _write_bids_session(
+        tmp_path / "unbalanced",
+        session_id="P001_unbalanced",
+        target=1,
+        started_utc="2026-09-01T00:00:00+00:00",
+    )
+    manifest = _read_manifest(session_dir)
+    events_path = session_dir / manifest["recording"]["bids"]["events_tsv"]
+    lines = events_path.read_text(encoding="utf-8").splitlines()
+    fields = lines[-1].split("\t")
+    fields[4] = "1"
+    fields[9] = "1"
+    lines[-1] = "\t".join(fields)
+    events_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "data.brainsync.read_raw",
+        lambda *_args, **_kwargs: pytest.fail("epoch EEG reader ran before schedule gate"),
+    )
+
+    with pytest.raises(ValueError, match="does not balance every candidate"):
+        load_brainsync_session(session_dir)
+
+
+def test_v4_rejects_block_balanced_but_non_permutation_cycles(tmp_path: Path) -> None:
+    session_dir = _write_bids_session(
+        tmp_path / "bad_cycles",
+        session_id="P001_bad_cycles",
+        target=1,
+        started_utc="2026-09-01T00:00:00+00:00",
+        blocks=(tuple(value for digit in range(1, 10) for value in (digit, digit)),),
+    )
+
+    with pytest.raises(ValueError, match="not a complete candidate permutation"):
         load_brainsync_session(session_dir)
 
 

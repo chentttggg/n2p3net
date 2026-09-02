@@ -8,13 +8,19 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
 import torch
 from sklearn.metrics import roc_auc_score
 
-from baselines.deep import DeepBaseline, DeepConfig
+from baselines.deep import (
+    DeepBaseline,
+    DeepConfig,
+    _CrossEntropyObjective,
+    resolve_source_risk_weights,
+)
 from baselines.features import time_to_index
 from data.contract import DEFAULT_P300_DATA_CONTRACT
 
@@ -94,6 +100,65 @@ def test_cpu_runtime_record_uses_bounded_matrix_batches() -> None:
     assert clf.last_runtime["compile_mode"] is None
     assert clf.last_runtime["host_sync_policy"] == "epoch_boundary"
     assert clf.last_runtime["memory"]["device"] == "cpu"
+
+
+def test_source_risk_natural_epoch_mass_is_exact_unweighted_counterexample() -> None:
+    y = np.asarray([0, 1, 0, 1, 0, 0, 1, 0], dtype=np.int64)
+    domains = np.asarray(["A"] * 4 + ["B"] * 4)
+    units = np.asarray(["a1"] * 2 + ["a2"] * 2 + ["b1"] * 4)
+    class_weight = np.where(y == 1, 8.0, 1.0)
+    natural_mass = {
+        domain: float(class_weight[domains == domain].sum() / class_weight.sum())
+        for domain in ("A", "B")
+    }
+
+    weights, report = resolve_source_risk_weights(
+        y,
+        domains,
+        units,
+        domain_mass=natural_mass,
+        within_domain_unit="epoch",
+        pos_weight=8.0,
+    )
+
+    np.testing.assert_allclose(weights, 1.0)
+    assert sum(item["achieved_class_weighted_mass"] for item in report["domains"]) == pytest.approx(1.0)
+
+
+def test_source_risk_duplicate_epochs_do_not_increase_participant_mass() -> None:
+    y = np.asarray([0, 1, 0, 1] + [0, 1] * 10, dtype=np.int64)
+    domains = np.asarray(["TARGET"] * 4 + ["AUX"] * 20)
+    units = np.asarray(["t1", "t1", "t2", "t2"] + ["a1"] * 20)
+
+    weights, report = resolve_source_risk_weights(
+        y,
+        domains,
+        units,
+        domain_mass={"TARGET": 0.8, "AUX": 0.2},
+        within_domain_unit="participant",
+        pos_weight=8.0,
+    )
+    class_weight = np.where(y == 1, 8.0, 1.0)
+    coefficient = weights * class_weight
+
+    assert coefficient[domains == "TARGET"].sum() / coefficient.sum() == pytest.approx(0.8)
+    assert coefficient[domains == "AUX"].sum() / coefficient.sum() == pytest.approx(0.2)
+    target_units = [item for item in report["domains"] if item["domain_id"] == "TARGET"][0]
+    assert target_units["units"] == 2
+
+
+def test_row_weighted_ce_preserves_original_reduction_when_weights_are_one() -> None:
+    logits = torch.tensor([[1.0, -1.0], [0.0, 2.0], [0.5, 0.25]])
+    labels = torch.tensor([0, 1, 1])
+    objective = _CrossEntropyObjective(8.0, torch.device("cpu"))
+    expected = torch.nn.CrossEntropyLoss(weight=torch.tensor([1.0, 8.0]))(
+        logits,
+        labels,
+    )
+
+    actual = objective(logits, labels, torch.ones(3))
+
+    assert torch.allclose(actual, expected)
 
 
 # ---------------- 冒烟（三模型） ----------------
@@ -277,6 +342,53 @@ def test_group_disjoint_early_stopping_and_calibration(monkeypatch):
     assert clf.calibration_source_ == "group_disjoint_validation"
     assert len(clf.calibration_logits_) == len(clf.calibration_labels_) == 32
     assert np.isfinite(clf.calibration_logits_).all()
+
+
+def test_multisource_selection_uses_only_declared_target_domain(monkeypatch) -> None:
+    X, _ = make_p300_data(n_target=16, n_nontarget=48, seed=31)
+    y = np.tile([0, 1], 32).astype(np.int64)
+    groups = np.repeat(np.asarray([f"s{index}" for index in range(8)]), 8)
+    domains = np.repeat(np.asarray(["TARGET"] * 6 + ["AUX"] * 2), 8)
+
+    def split_target_groups(target_groups, **_):
+        validation = target_groups == "s0"
+        return SimpleNamespace(
+            train_mask=~validation,
+            validation_mask=validation,
+            n_validation_groups=1,
+        )
+
+    monkeypatch.setattr(
+        "baselines.deep.group_disjoint_validation_split",
+        split_target_groups,
+    )
+    clf = DeepBaseline(
+        "eegnet",
+        config=DeepConfig(epochs=1, batch_size=16),
+        device=_cpu_device(),
+    )
+
+    clf.fit(
+        X,
+        y,
+        group_ids=groups,
+        source_domain_ids=domains,
+        source_domain_mass={"TARGET": 0.8, "AUX": 0.2},
+        risk_unit_ids=groups,
+        risk_within_domain_unit="participant",
+        selection_domain="TARGET",
+    )
+
+    assert clf.last_source_risk is not None
+    assert clf.last_source_risk["selection_domain"] == "TARGET"
+    assert clf.last_source_risk["selection_rows"] == 8
+    assert clf.last_val_groups == 1
+    assert len(clf.calibration_labels_) == 8
+    domain_rows = {
+        item["domain_id"]: item["rows"]
+        for item in clf.last_source_risk["training"]["domains"]
+    }
+    assert domain_rows == {"AUX": 16, "TARGET": 40}
 
 
 def test_group_disjoint_history_records_validation_auc(tmp_path):

@@ -342,32 +342,52 @@ class MatrixBatchSource:
         runtime: GpuPerformanceScheduler,
         *,
         preload: bool,
+        row_weights: torch.Tensor | None = None,
     ) -> None:
         if X.device.type != "cpu" or X.ndim < 2:
             raise ValueError("MatrixBatchSource requires a CPU tensor with a row axis.")
         if y is not None and (y.device.type != "cpu" or y.shape != (len(X),)):
             raise ValueError("Labels must be a CPU vector aligned with X.")
+        if row_weights is not None and (
+            row_weights.device.type != "cpu"
+            or row_weights.shape != (len(X),)
+            or not row_weights.is_floating_point()
+        ):
+            raise ValueError("Row weights must be a floating CPU vector aligned with X.")
+        if row_weights is not None and (
+            not bool(torch.isfinite(row_weights).all()) or not bool((row_weights > 0).all())
+        ):
+            raise ValueError("Row weights must be finite and positive.")
         self.runtime = runtime
         self.cpu_X = X.contiguous()
         self.cpu_y = None if y is None else y.contiguous()
+        self.cpu_row_weights = None if row_weights is None else row_weights.contiguous()
         self.device_X: torch.Tensor | None = None
         self.device_y: torch.Tensor | None = None
+        self.device_row_weights: torch.Tensor | None = None
         self.preloaded = False
         self.transfer_fallback = False
         self.shuffle_each_epoch = False
         self._shuffle_x: torch.Tensor | None = None
         self._shuffle_y: torch.Tensor | None = None
+        self._shuffle_row_weights: torch.Tensor | None = None
 
         if preload and runtime.can_preload(self.nbytes):
             try:
                 self.device_X = runtime.to_device(self.cpu_X)
                 self.device_y = None if self.cpu_y is None else runtime.to_device(self.cpu_y)
+                self.device_row_weights = (
+                    None
+                    if self.cpu_row_weights is None
+                    else runtime.to_device(self.cpu_row_weights)
+                )
                 self.preloaded = True
             except RuntimeError as error:
                 if not is_oom_error(error):
                     raise
                 self.device_X = None
                 self.device_y = None
+                self.device_row_weights = None
                 self.transfer_fallback = True
                 runtime.release_temporary_memory()
 
@@ -375,6 +395,8 @@ class MatrixBatchSource:
             self.cpu_X = runtime.pin_memory(self.cpu_X)
             if self.cpu_y is not None:
                 self.cpu_y = runtime.pin_memory(self.cpu_y)
+            if self.cpu_row_weights is not None:
+                self.cpu_row_weights = runtime.pin_memory(self.cpu_row_weights)
 
     @property
     def n_rows(self) -> int:
@@ -383,7 +405,16 @@ class MatrixBatchSource:
     @property
     def nbytes(self) -> int:
         label_bytes = 0 if self.cpu_y is None else self.cpu_y.numel() * self.cpu_y.element_size()
-        return self.cpu_X.numel() * self.cpu_X.element_size() + label_bytes
+        weight_bytes = (
+            0
+            if self.cpu_row_weights is None
+            else self.cpu_row_weights.numel() * self.cpu_row_weights.element_size()
+        )
+        return self.cpu_X.numel() * self.cpu_X.element_size() + label_bytes + weight_bytes
+
+    @property
+    def has_row_weights(self) -> bool:
+        return self.cpu_row_weights is not None
 
     def make_generator(self, seed: int) -> torch.Generator:
         if self.preloaded:
@@ -458,6 +489,60 @@ class MatrixBatchSource:
             yb = None if shuffled_y is None else shuffled_y[start:stop]
             yield xb, yb
 
+    def shuffled_batches_with_weights(
+        self,
+        batch_size: int,
+        generator: torch.Generator,
+    ) -> Iterator[tuple[torch.Tensor, torch.Tensor | None, torch.Tensor]]:
+        """Yield the same shuffled rows with one aligned positive weight per row."""
+
+        if self.cpu_row_weights is None:
+            raise ValueError("MatrixBatchSource has no row weights.")
+        permutation = self.random_permutation(generator)
+        if not self.preloaded or not self.shuffle_each_epoch:
+            yield from self.batches_with_weights(batch_size, indices=permutation)
+            return
+        assert self.device_X is not None and self.device_row_weights is not None
+        try:
+            if self._shuffle_x is None or self._shuffle_x.shape != self.device_X.shape:
+                self._shuffle_x = torch.empty_like(self.device_X)
+            torch.index_select(self.device_X, 0, permutation, out=self._shuffle_x)
+            shuffled_y: torch.Tensor | None = None
+            if self.device_y is not None:
+                if self._shuffle_y is None or self._shuffle_y.shape != self.device_y.shape:
+                    self._shuffle_y = torch.empty_like(self.device_y)
+                torch.index_select(self.device_y, 0, permutation, out=self._shuffle_y)
+                shuffled_y = self._shuffle_y
+            if (
+                self._shuffle_row_weights is None
+                or self._shuffle_row_weights.shape != self.device_row_weights.shape
+            ):
+                self._shuffle_row_weights = torch.empty_like(self.device_row_weights)
+            torch.index_select(
+                self.device_row_weights,
+                0,
+                permutation,
+                out=self._shuffle_row_weights,
+            )
+        except RuntimeError as error:
+            if not is_oom_error(error):
+                raise
+            self.shuffle_each_epoch = False
+            self._shuffle_x = None
+            self._shuffle_y = None
+            self._shuffle_row_weights = None
+            self.runtime.release_temporary_memory()
+            yield from self.batches_with_weights(batch_size, indices=permutation)
+            return
+
+        for start in range(0, self.n_rows, batch_size):
+            stop = min(start + batch_size, self.n_rows)
+            yield (
+                self._shuffle_x[start:stop],
+                None if shuffled_y is None else shuffled_y[start:stop],
+                self._shuffle_row_weights[start:stop],
+            )
+
     def batches(
         self,
         batch_size: int,
@@ -497,6 +582,49 @@ class MatrixBatchSource:
                     assert selected_y is not None
                     yb = self.runtime.to_device(selected_y)
             yield xb, yb
+
+    def batches_with_weights(
+        self,
+        batch_size: int,
+        *,
+        indices: torch.Tensor | None = None,
+    ) -> Iterator[tuple[torch.Tensor, torch.Tensor | None, torch.Tensor]]:
+        if self.cpu_row_weights is None:
+            raise ValueError("MatrixBatchSource has no row weights.")
+        if batch_size < 1:
+            raise ValueError("batch_size must be positive.")
+        if indices is not None and (indices.ndim != 1 or len(indices) != self.n_rows):
+            raise ValueError("indices must be a complete one-dimensional row permutation.")
+
+        for start in range(0, self.n_rows, batch_size):
+            stop = min(start + batch_size, self.n_rows)
+            if self.preloaded:
+                assert self.device_X is not None and self.device_row_weights is not None
+                if indices is None:
+                    xb = self.device_X[start:stop]
+                    yb = None if self.device_y is None else self.device_y[start:stop]
+                    wb = self.device_row_weights[start:stop]
+                else:
+                    rows = indices[start:stop]
+                    xb = self.device_X.index_select(0, rows)
+                    yb = None if self.device_y is None else self.device_y.index_select(0, rows)
+                    wb = self.device_row_weights.index_select(0, rows)
+            else:
+                if indices is None:
+                    selected_x = self.cpu_X[start:stop]
+                    selected_y = None if self.cpu_y is None else self.cpu_y[start:stop]
+                    selected_w = self.cpu_row_weights[start:stop]
+                else:
+                    cpu_rows = indices[start:stop].cpu()
+                    selected_x = self.cpu_X.index_select(0, cpu_rows)
+                    selected_y = (
+                        None if self.cpu_y is None else self.cpu_y.index_select(0, cpu_rows)
+                    )
+                    selected_w = self.cpu_row_weights.index_select(0, cpu_rows)
+                xb = self.runtime.to_device(selected_x)
+                yb = None if selected_y is None else self.runtime.to_device(selected_y)
+                wb = self.runtime.to_device(selected_w)
+            yield xb, yb, wb
 
 
 class GpuPerformanceScheduler:

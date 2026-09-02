@@ -26,7 +26,8 @@ online causal profile 另声明 `filter_phase=forward` 和
 
 ### 2.0 BIDS raw 时间轴与休息段
 
-BrainSync v3 输入只接受连续 BIDS raw。设刺激时刻为 `t_i`，模型 epoch 为
+BrainSync session v4 输入只接受 `completed` 的连续 BIDS raw，并要求每个 block
+由完整 9 候选随机排列循环组成。设刺激时刻为 `t_i`，模型 epoch 为
 半开区间 `[t_i+t_min, t_i+t_max)`，第 `k` 个休息段为 `[r_k0,r_k1)`。
 缓存保留该刺激当且仅当对所有休息段都有：
 
@@ -178,7 +179,7 @@ x_c(t) = s_c(t) - r(t).
 data.contract.EEGDataContract
   -> epochs.PreprocessingSpec.validate
   -> BIDS EEG validator | MOABB | BrainSync | GTN | raw manifest adapter
-  -> BrainSync session v3 + events/channels/electrodes/coordsystem consistency gates
+  -> BrainSync session v4 + completed/balanced-cycle + events/channels/electrodes/coordsystem gates
   -> preprocess: continuous IIR + declared phase/state -> source epoch -> FFT resample -> mean baseline
   -> EpochDataset.validate + QC features + SHA-256 attestation
   -> run_eeg_loso: physical contract + source provenance fail-closed

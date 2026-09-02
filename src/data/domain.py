@@ -18,6 +18,8 @@ from data.qc_features import compute_epoch_qc_features
 
 DOMAIN_ADAPTER_SCHEMA = "n2p3_common_channel_car/1"
 BINARY_EVIDENCE_PROJECTION_SCHEMA = "n2p3_binary_evidence_source_view/1"
+SOURCE_DOMAIN_AXIS_SCHEMA = "n2p3_source_domain_axis/1"
+SOURCE_DOMAIN_COLUMN = "source_domain"
 NAMESPACE_SEPARATOR = "::"
 CAR_FLOAT32_ROUNDOFF_FACTOR = 4.0
 CAR_VALIDATION_BLOCK_BYTES = 64 * 1024 * 1024
@@ -276,6 +278,79 @@ def project_binary_evidence_source_view(dataset: EpochDataset) -> EpochDataset:
     )
     projected.validate(require_labels=True)
     return projected
+
+
+def annotate_source_domain(dataset: EpochDataset, domain_id: str) -> EpochDataset:
+    """Attach one explicit training-domain value to every epoch row."""
+
+    dataset.validate(require_labels=dataset.y is not None)
+    domain = str(domain_id).strip()
+    if not domain or "\0" in domain:
+        raise ValueError("source domain id must be non-empty and cannot contain NUL.")
+    existing = dataset.provenance.get("source_domain_axis")
+    has_column = SOURCE_DOMAIN_COLUMN in dataset.metadata
+    if existing is not None or has_column:
+        if not isinstance(existing, Mapping) or existing != {
+            "schema": SOURCE_DOMAIN_AXIS_SCHEMA,
+            "column": SOURCE_DOMAIN_COLUMN,
+            "domains": [domain],
+        }:
+            raise ValueError("existing source-domain metadata is absent, forged, or conflicting.")
+        values = dataset.metadata[SOURCE_DOMAIN_COLUMN].astype(str).to_numpy()
+        if values.shape != (dataset.n_epochs,) or not bool((values == domain).all()):
+            raise ValueError("source-domain metadata column disagrees with its provenance.")
+        return dataset
+
+    metadata = dataset.metadata.copy()
+    if metadata.empty:
+        metadata = metadata.reindex(range(dataset.n_epochs))
+        metadata["subject"] = np.asarray(dataset.subject_ids).astype(str)
+    if len(metadata) != dataset.n_epochs:
+        raise ValueError("metadata must align with epoch rows before domain annotation.")
+    metadata[SOURCE_DOMAIN_COLUMN] = domain
+    record = {
+        "schema": SOURCE_DOMAIN_AXIS_SCHEMA,
+        "column": SOURCE_DOMAIN_COLUMN,
+        "domains": [domain],
+    }
+    annotated = replace(
+        dataset,
+        metadata=metadata,
+        provenance={**dataset.provenance, "source_domain_axis": record},
+        lineage=DataLineage.derive(
+            [materialize_dataset_lineage(dataset)],
+            operation="annotate_source_domain",
+            parameters=record,
+        ),
+        verified_cache_attestation=None,
+    )
+    annotated.validate(require_labels=dataset.y is not None)
+    return annotated
+
+
+def source_domain_ids(dataset: EpochDataset) -> np.ndarray:
+    """Return the validated explicit row-domain axis of a prepared source cache."""
+
+    dataset.validate(require_labels=dataset.y is not None)
+    record = dataset.provenance.get("source_domain_axis")
+    if not isinstance(record, Mapping) or record.get("schema") != SOURCE_DOMAIN_AXIS_SCHEMA:
+        raise ValueError("dataset lacks the explicit source-domain axis contract.")
+    if record.get("column") != SOURCE_DOMAIN_COLUMN:
+        raise ValueError("source-domain axis declares an unsupported metadata column.")
+    raw_domains = record.get("domains")
+    if not isinstance(raw_domains, Sequence) or isinstance(
+        raw_domains, (str, bytes, bytearray)
+    ):
+        raise ValueError("source-domain axis domains must be a sequence.")
+    domains = tuple(str(value).strip() for value in raw_domains)
+    if not domains or any(not value for value in domains) or len(set(domains)) != len(domains):
+        raise ValueError("source-domain axis domains must be unique non-empty strings.")
+    if SOURCE_DOMAIN_COLUMN not in dataset.metadata:
+        raise ValueError("source-domain axis metadata column is missing.")
+    values = dataset.metadata[SOURCE_DOMAIN_COLUMN].astype(str).to_numpy()
+    if values.shape != (dataset.n_epochs,) or set(values.tolist()) != set(domains):
+        raise ValueError("source-domain row values disagree with declared domains.")
+    return values
 
 
 def namespace_epoch_dataset(

@@ -42,7 +42,11 @@ BNCI2014-008 MAT 同样从认证 snapshot descriptor 读取，并显式记录 MA
 - causal-v2 BI cross-decision 曾显示 source normalization 优于 target-prefix，轻量
   personalization 没有可靠净收益。它只决定 v3 首轮保留哪些对照，不提供 v3 数值。
 - BI+BNCI common-CAR v2 曾出现负迁移，说明物理通道可加载不代表梯度有益；v3 首轮
-  必须保留 single-domain source，不直接采用联合源。
+  必须保留 single-domain source，不直接采用联合源。2026-09-02 只读复审还发现两域
+  prior 同为约 1/6，但 5 导 class-conditional ERP contrast 近正交，且 BNCI 每 participant
+  4200 行远高于 BI 平均 953 行；旧 mixed validation 的辅助域行比例随 seed 跳变。
+  这些是旧 cache 的机制启示，不是 v3 性能。v3 builder 写入精确 `source_domain` 行轴，
+  训练按 B0/J0/J1/J2 区分域质量与 participant/epoch 风险，不再用行重复。
 - 旧 8-subject baseline 与 BI head ablation 只说明旧 cache/QC/训练合同下哪些 baseline
   和 head 值得保留为 v3 对照；它们缺少当前 identity、lineage、TrainingRunContract、
   EvaluationRunContract 和 DecisionOutcome，不能与 v3 指标直接合并。

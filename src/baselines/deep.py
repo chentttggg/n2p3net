@@ -53,13 +53,14 @@ from __future__ import annotations
 
 import threading
 import warnings
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from braindecode.models import EEGConformer, EEGInceptionERP, EEGNet
 from sklearn.metrics import roc_auc_score
 
@@ -90,6 +91,144 @@ _INIT_LOCK = threading.Lock()
 
 DEFAULT_DEEP_EPOCHS = 32
 DEFAULT_EARLY_STOP_PATIENCE = 6
+
+
+def resolve_source_risk_weights(
+    labels: np.ndarray,
+    domain_ids: np.ndarray,
+    unit_ids: np.ndarray,
+    *,
+    domain_mass: Mapping[str, float],
+    within_domain_unit: str,
+    pos_weight: float,
+) -> tuple[np.ndarray, dict[str, object]]:
+    """Resolve fixed-row multipliers for a hierarchical multi-source CE risk."""
+
+    y = np.asarray(labels, dtype=np.int64)
+    domains = np.asarray(domain_ids).astype(str)
+    units = np.asarray(unit_ids).astype(str)
+    if y.ndim != 1 or domains.shape != y.shape or units.shape != y.shape:
+        raise ValueError("labels, domain_ids, and risk unit ids must be aligned vectors.")
+    if set(np.unique(y).tolist()) != {0, 1}:
+        raise ValueError("source risk requires both binary labels {0,1}.")
+    if np.any(np.char.strip(domains) == "") or np.any(np.char.strip(units) == ""):
+        raise ValueError("source risk domain and unit ids must be non-empty.")
+    if within_domain_unit not in {"epoch", "participant"}:
+        raise ValueError("within_domain_unit must be epoch or participant.")
+    masses = {str(key).strip(): float(value) for key, value in domain_mass.items()}
+    if (
+        set(masses) != set(domains.tolist())
+        or any(not key or not np.isfinite(value) or value <= 0.0 for key, value in masses.items())
+        or not np.isclose(sum(masses.values()), 1.0, rtol=0.0, atol=1e-9)
+    ):
+        raise ValueError(
+            "domain_mass must cover retained domains exactly with finite positive masses "
+            "summing to one."
+        )
+    unit_domain: dict[str, str] = {}
+    for unit_id, domain in zip(units, domains, strict=True):
+        previous = unit_domain.setdefault(unit_id, domain)
+        if previous != domain:
+            raise ValueError(f"risk unit {unit_id!r} appears in multiple domains.")
+
+    class_weight = np.where(y == 1, float(pos_weight), 1.0)
+    total_class_mass = float(class_weight.sum())
+    multipliers = np.empty(len(y), dtype=np.float64)
+    domain_records: list[dict[str, object]] = []
+    for domain, target_mass in sorted(masses.items()):
+        domain_mask = domains == domain
+        domain_units = (
+            ["all_epochs"]
+            if within_domain_unit == "epoch"
+            else sorted(set(units[domain_mask].tolist()))
+        )
+        for unit_id in domain_units:
+            unit_mask = domain_mask if unit_id == "all_epochs" else domain_mask & (units == unit_id)
+            class_mass = float(class_weight[unit_mask].sum())
+            multipliers[unit_mask] = (
+                total_class_mass * target_mass / (len(domain_units) * class_mass)
+            )
+        achieved = float(
+            np.sum(multipliers[domain_mask] * class_weight[domain_mask])
+            / total_class_mass
+        )
+        domain_records.append(
+            {
+                "domain_id": domain,
+                "target_mass": target_mass,
+                "achieved_class_weighted_mass": achieved,
+                "rows": int(domain_mask.sum()),
+                "units": len(domain_units),
+                "label_counts": np.bincount(y[domain_mask], minlength=2).astype(int).tolist(),
+            }
+        )
+    if not np.isclose(
+        np.sum(multipliers * class_weight) / total_class_mass,
+        1.0,
+        rtol=0.0,
+        atol=1e-10,
+    ):
+        raise RuntimeError("source risk weights do not preserve weighted-CE objective scale.")
+    report = {
+        "domain_mass": dict(sorted(masses.items())),
+        "within_domain_unit": within_domain_unit,
+        "domains": domain_records,
+        "row_multiplier_min": float(multipliers.min()),
+        "row_multiplier_max": float(multipliers.max()),
+        "effective_positive_prior": float(
+            np.sum(multipliers * y) / np.sum(multipliers)
+        ),
+    }
+    return multipliers.astype(np.float32), report
+
+
+def _selection_row_weights(
+    labels: np.ndarray,
+    unit_ids: np.ndarray,
+    *,
+    within_domain_unit: str,
+    pos_weight: float,
+) -> np.ndarray:
+    if within_domain_unit == "epoch":
+        return np.ones(len(labels), dtype=np.float32)
+    y = np.asarray(labels, dtype=np.int64)
+    units = np.asarray(unit_ids).astype(str)
+    class_weight = np.where(y == 1, float(pos_weight), 1.0)
+    total = float(class_weight.sum())
+    unique_units = sorted(set(units.tolist()))
+    output = np.empty(len(y), dtype=np.float64)
+    for unit_id in unique_units:
+        mask = units == unit_id
+        output[mask] = total / (len(unique_units) * float(class_weight[mask].sum()))
+    return output.astype(np.float32)
+
+
+class _CrossEntropyObjective(nn.Module):
+    """Weighted CE that preserves PyTorch's class-weight denominator."""
+
+    def __init__(self, pos_weight: float, device: torch.device) -> None:
+        super().__init__()
+        self.register_buffer(
+            "class_weights",
+            torch.tensor([1.0, float(pos_weight)], device=device),
+        )
+
+    def forward(
+        self,
+        logits: torch.Tensor,
+        labels: torch.Tensor,
+        row_weights: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        rows = F.cross_entropy(
+            logits,
+            labels,
+            weight=self.class_weights,
+            reduction="none",
+        )
+        if row_weights is not None:
+            rows = rows * row_weights
+        denominator = self.class_weights.index_select(0, labels).sum()
+        return rows.sum() / denominator
 
 
 @dataclass
@@ -168,6 +307,7 @@ class DeepBaseline(Baseline):
     fit_accepts_group_ids = True
     fit_accepts_trial_channel_mask = True
     fit_accepts_input_stats_row_mask = True
+    fit_accepts_source_risk = True
     predict_accepts_trial_channel_mask = True
     accepts_unmaterialized_trial_channel_mask = True
     runtime_requires_exclusive_lease = True
@@ -249,6 +389,7 @@ class DeepBaseline(Baseline):
         self.training_pos_weight_: float | None = None
         self.training_prior_: float | None = None
         self.last_runtime: dict[str, object] = {}
+        self.last_source_risk: dict[str, object] | None = None
 
     # ---------------- 模型构造 ----------------
 
@@ -474,7 +615,7 @@ class DeepBaseline(Baseline):
     def _validation_pass(
         self,
         source: MatrixBatchSource,
-        loss_fn: nn.Module | None,
+        loss_fn: _CrossEntropyObjective | None,
         batch_size: int,
     ) -> tuple[float | None, np.ndarray, np.ndarray]:
         """Run a vectorized batch pass and return CPU scores/labels once."""
@@ -485,11 +626,20 @@ class DeepBaseline(Baseline):
         n_rows = 0
         self.model_.eval()
         with torch.inference_mode():
-            for xb, yb in source.batches(batch_size):
+            batches = (
+                source.batches_with_weights(batch_size)
+                if source.has_row_weights
+                else ((xb, yb, None) for xb, yb in source.batches(batch_size))
+            )
+            for xb, yb, row_weights in batches:
                 assert yb is not None
                 with self._autocast_ctx():
                     logits = self.model_(xb)
-                    loss = None if loss_fn is None else loss_fn(logits, yb)
+                    loss = (
+                        None
+                        if loss_fn is None
+                        else loss_fn(logits, yb, row_weights)
+                    )
                 score_parts.append((logits[:, 1] - logits[:, 0]).float())
                 label_parts.append(yb)
                 if loss is not None:
@@ -514,7 +664,7 @@ class DeepBaseline(Baseline):
     def _validation_pass_with_oom_retry(
         self,
         source: MatrixBatchSource,
-        loss_fn: nn.Module | None,
+        loss_fn: _CrossEntropyObjective | None,
         batch_size: int,
     ) -> tuple[tuple[float | None, np.ndarray, np.ndarray], int]:
         """Retry an inference-only pass without restarting completed training."""
@@ -547,6 +697,11 @@ class DeepBaseline(Baseline):
         group_ids: np.ndarray | None = None,
         trial_channel_mask: np.ndarray | None = None,
         input_stats_row_mask: np.ndarray | None = None,
+        source_domain_ids: np.ndarray | None = None,
+        source_domain_mass: Mapping[str, float] | None = None,
+        risk_unit_ids: np.ndarray | None = None,
+        risk_within_domain_unit: str = "participant",
+        selection_domain: str | None = None,
     ) -> DeepBaseline:
         """Fit with a bounded OOM retry that never accumulates gradients."""
 
@@ -565,6 +720,11 @@ class DeepBaseline(Baseline):
                         group_ids=group_ids,
                         trial_channel_mask=trial_channel_mask,
                         input_stats_row_mask=input_stats_row_mask,
+                        source_domain_ids=source_domain_ids,
+                        source_domain_mass=source_domain_mass,
+                        risk_unit_ids=risk_unit_ids,
+                        risk_within_domain_unit=risk_within_domain_unit,
+                        selection_domain=selection_domain,
                         requested_batch_size=requested_batch_size,
                     )
                 self.last_runtime = {
@@ -610,6 +770,11 @@ class DeepBaseline(Baseline):
         group_ids: np.ndarray | None,
         trial_channel_mask: np.ndarray | None,
         input_stats_row_mask: np.ndarray | None,
+        source_domain_ids: np.ndarray | None,
+        source_domain_mass: Mapping[str, float] | None,
+        risk_unit_ids: np.ndarray | None,
+        risk_within_domain_unit: str,
+        selection_domain: str | None,
         requested_batch_size: int,
     ) -> None:
         X = np.asarray(X)
@@ -636,6 +801,28 @@ class DeepBaseline(Baseline):
             if not bool(requested_stats_rows.any()):
                 raise ValueError("input_stats_row_mask must retain at least one row.")
 
+        if (source_domain_ids is None) != (selection_domain is None):
+            raise ValueError(
+                "multi-source selection requires source_domain_ids and selection_domain together."
+            )
+        if (source_domain_mass is None) != (risk_unit_ids is None):
+            raise ValueError("weighted source risk requires domain mass and risk unit ids together.")
+        if source_domain_mass is not None and source_domain_ids is None:
+            raise ValueError("weighted source risk requires an explicit source-domain axis.")
+        risk_domains = None
+        risk_units = None
+        if source_domain_ids is not None:
+            risk_domains = np.asarray(source_domain_ids).astype(str)
+            if risk_domains.shape != (len(X),):
+                raise ValueError("source_domain_ids must align with X.")
+            if str(selection_domain) not in set(risk_domains.tolist()):
+                raise ValueError("selection_domain is absent from source rows.")
+        if risk_unit_ids is not None:
+            risk_units = np.asarray(risk_unit_ids).astype(str)
+            if risk_units.shape != (len(X),):
+                raise ValueError("risk_unit_ids must align with X.")
+        self.last_source_risk = None
+
         if group_ids is None:
             train_mask = np.ones(len(X), dtype=bool)
             val_mask = np.zeros(len(X), dtype=bool)
@@ -644,14 +831,22 @@ class DeepBaseline(Baseline):
             group_ids = np.asarray(group_ids)
             if group_ids.shape != (len(X),):
                 raise ValueError("group_ids must align with X.")
+            split_scope = (
+                np.ones(len(X), dtype=bool)
+                if risk_domains is None
+                else risk_domains == str(selection_domain)
+            )
             split = group_disjoint_validation_split(
-                group_ids,
+                group_ids[split_scope],
                 fraction=self.cfg.val_group_frac,
                 min_groups=self.cfg.val_groups_min,
                 max_groups=self.cfg.val_groups_max,
                 seed=self.cfg.seed,
             )
-            train_mask, val_mask = split.train_mask, split.validation_mask
+            train_mask = np.ones(len(X), dtype=bool)
+            val_mask = np.zeros(len(X), dtype=bool)
+            train_mask[split_scope] = split.train_mask
+            val_mask[split_scope] = split.validation_mask
             self.last_val_groups = split.n_validation_groups
         X_train, y_train = X[train_mask], y[train_mask]
         X_val, y_val = X[val_mask], y[val_mask]
@@ -681,8 +876,48 @@ class DeepBaseline(Baseline):
             raise ValueError("Deep training split must contain both binary classes.")
         if len(y_val) and set(np.unique(y_val).tolist()) != {0, 1}:
             raise ValueError("Deep validation split must contain both binary classes.")
+        train_row_weights = None
+        val_row_weights = None
         self.training_pos_weight_ = float(self.cfg.pos_weight)
-        self.training_prior_ = float(y_train.mean())
+        if risk_domains is not None and risk_units is not None and source_domain_mass is not None:
+            train_row_weights, train_risk_record = resolve_source_risk_weights(
+                y_train,
+                risk_domains[train_mask],
+                risk_units[train_mask],
+                domain_mass=source_domain_mass,
+                within_domain_unit=risk_within_domain_unit,
+                pos_weight=self.cfg.pos_weight,
+            )
+            if len(y_val):
+                val_row_weights = _selection_row_weights(
+                    y_val,
+                    risk_units[val_mask],
+                    within_domain_unit=risk_within_domain_unit,
+                    pos_weight=self.cfg.pos_weight,
+                )
+            self.training_prior_ = float(train_risk_record["effective_positive_prior"])
+            self.last_source_risk = {
+                "training": train_risk_record,
+                "selection_domain": str(selection_domain),
+                "selection_rows": int(val_mask.sum()),
+                "selection_units": int(len(set(risk_units[val_mask].tolist())))
+                if bool(val_mask.any())
+                else 0,
+            }
+        else:
+            self.training_prior_ = float(y_train.mean())
+            if risk_domains is not None:
+                self.last_source_risk = {
+                    "training": {
+                        "mode": "natural_epoch_ce",
+                        "rows": int(train_mask.sum()),
+                    },
+                    "selection_domain": str(selection_domain),
+                    "selection_rows": int(val_mask.sum()),
+                    "selection_units": int(len(set(group_ids[val_mask].tolist())))
+                    if group_ids is not None and bool(val_mask.any())
+                    else 0,
+                }
 
         self._input_mean, self._input_std = self._masked_input_stats(
             X[stats_mask],
@@ -705,12 +940,21 @@ class DeepBaseline(Baseline):
         )
         self._active_batch_size = batch_size
         total_matrix_bytes = X_train.nbytes + y_train.nbytes + X_val.nbytes + y_val.nbytes
+        if train_row_weights is not None:
+            total_matrix_bytes += train_row_weights.nbytes
+        if val_row_weights is not None:
+            total_matrix_bytes += val_row_weights.nbytes
         preload = self.runtime.can_preload(total_matrix_bytes)
         train_source = MatrixBatchSource(
             torch.from_numpy(np.ascontiguousarray(X_train)),
             torch.from_numpy(np.ascontiguousarray(y_train)),
             self.runtime,
             preload=preload,
+            row_weights=(
+                None
+                if train_row_weights is None
+                else torch.from_numpy(np.ascontiguousarray(train_row_weights))
+            ),
         )
         val_source = (
             MatrixBatchSource(
@@ -718,6 +962,11 @@ class DeepBaseline(Baseline):
                 torch.from_numpy(np.ascontiguousarray(y_val)),
                 self.runtime,
                 preload=preload,
+                row_weights=(
+                    None
+                    if val_row_weights is None
+                    else torch.from_numpy(np.ascontiguousarray(val_row_weights))
+                ),
             )
             if len(X_val)
             else None
@@ -759,9 +1008,7 @@ class DeepBaseline(Baseline):
         if self.optimizer_execution.uses_cuda_graphs:
             adam_kwargs["capturable"] = True
         opt = torch.optim.Adam(trainable_params, **adam_kwargs)
-        loss_fn = nn.CrossEntropyLoss(
-            weight=torch.tensor([1.0, self.cfg.pos_weight], device=self.device)
-        )
+        loss_fn = _CrossEntropyObjective(self.cfg.pos_weight, self.device)
         perm_gen = train_source.make_generator(seed)
         train_losses: list[float] = []
         val_losses: list[float] = []
@@ -773,11 +1020,15 @@ class DeepBaseline(Baseline):
         early_stop_triggered = False
         epoch_progress_callback = self.epoch_progress_callback()
 
-        def train_step(xb: torch.Tensor, yb: torch.Tensor) -> torch.Tensor:
+        def train_step(
+            xb: torch.Tensor,
+            yb: torch.Tensor,
+            row_weights: torch.Tensor | None,
+        ) -> torch.Tensor:
             opt.zero_grad(set_to_none=True)
             with self._autocast_ctx():
                 logits = self.model_(xb)
-                loss = loss_fn(logits, yb)
+                loss = loss_fn(logits, yb, row_weights)
             loss.backward()
             opt.step()
             return loss.detach()
@@ -793,9 +1044,17 @@ class DeepBaseline(Baseline):
             self.model_.train()
             epoch_loss: torch.Tensor | None = None
             n_seen = 0
-            for xb, yb in train_source.shuffled_batches(batch_size, perm_gen):
+            batches = (
+                train_source.shuffled_batches_with_weights(batch_size, perm_gen)
+                if train_source.has_row_weights
+                else (
+                    (xb, yb, None)
+                    for xb, yb in train_source.shuffled_batches(batch_size, perm_gen)
+                )
+            )
+            for xb, yb, row_weights in batches:
                 assert yb is not None
-                loss = train_step(xb, yb)
+                loss = train_step(xb, yb, row_weights)
                 weighted_loss = loss.float() * len(xb)
                 epoch_loss = weighted_loss if epoch_loss is None else epoch_loss + weighted_loss
                 n_seen += len(xb)

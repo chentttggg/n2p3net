@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
 from datetime import datetime
@@ -17,12 +18,13 @@ from data.bids_eeg import (
     validate_bids_eeg_recording,
 )
 
-BRAIN_SYNC_SESSION_SCHEMA = "brainsync-gtn-session/3"
+BRAIN_SYNC_SESSION_SCHEMA = "brainsync-gtn-session/4"
 BRAIN_SYNC_CHANNEL_COUNT = 8
 BRAIN_SYNC_RAW_STAGE = "bids_raw"
 BRAIN_SYNC_RAW_TIME_BASE = "continuous_recording"
 BRAIN_SYNC_PREPROCESSING_STATUS = "pending"
-BRAIN_SYNC_INPUT_STATUSES = frozenset({"completed", "aborted"})
+BRAIN_SYNC_INPUT_STATUSES = frozenset({"completed"})
+BRAIN_SYNC_SEQUENCE_POLICY = "balanced_random_permutation_cycles"
 DEFAULT_ADULT_MIN_AGE_YEARS = 18.0
 BRAIN_SYNC_BIDS_CONTRACT = BidsEEGInputContract(
     minimum_bids_version=(1, 11, 0),
@@ -60,7 +62,7 @@ class PopulationScopePolicy(StrEnum):
 
 @dataclass(frozen=True)
 class ValidatedBrainSyncSession:
-    """A completed v3 session whose BIDS raw boundary passed validation."""
+    """A completed v4 session whose BIDS raw boundary passed validation."""
 
     root: Path
     session_path: Path
@@ -135,6 +137,12 @@ def _digit(value: Any, field_name: str) -> int:
     return value
 
 
+def _positive_integer(value: Any, field_name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ValueError(f"BrainSync {field_name} must be a positive integer.")
+    return value
+
+
 def _finite_nonnegative(value: Any, field_name: str) -> float:
     if isinstance(value, bool):
         raise ValueError(f"BrainSync {field_name} must be a finite non-negative number.")
@@ -196,6 +204,60 @@ def _validate_manifest_rest_intervals(
         raise ValueError("BrainSync timeline rest segments conflict with BIDS events.tsv.")
 
 
+def _validate_protocol_declaration(experiment: dict[str, Any]) -> tuple[int, int, int]:
+    if experiment.get("sequence_policy") != BRAIN_SYNC_SEQUENCE_POLICY:
+        raise ValueError(
+            f"BrainSync experiment.sequence_policy must be {BRAIN_SYNC_SEQUENCE_POLICY!r}."
+        )
+    blocks = _positive_integer(experiment.get("blocks"), "experiment.blocks")
+    digits_per_block = _positive_integer(
+        experiment.get("digits_per_block"), "experiment.digits_per_block"
+    )
+    candidate_count = len(BRAIN_SYNC_BIDS_CONTRACT.candidate_vocabulary)
+    if digits_per_block % candidate_count:
+        raise ValueError(
+            "BrainSync experiment.digits_per_block must contain complete candidate cycles."
+        )
+    repetitions = _positive_integer(
+        experiment.get("repetitions_per_digit"), "experiment.repetitions_per_digit"
+    )
+    if repetitions != digits_per_block // candidate_count:
+        raise ValueError(
+            "BrainSync experiment.repetitions_per_digit conflicts with digits_per_block."
+        )
+    return blocks, digits_per_block, repetitions
+
+
+def _validate_balanced_schedule(
+    experiment: dict[str, Any], bids: ValidatedBidsEEGRecording
+) -> None:
+    blocks, digits_per_block, repetitions = _validate_protocol_declaration(experiment)
+    if len(bids.stimuli) != blocks * digits_per_block:
+        raise ValueError("BrainSync BIDS stimulus count conflicts with the experiment schedule.")
+
+    expected_counts = {
+        candidate: repetitions
+        for candidate in BRAIN_SYNC_BIDS_CONTRACT.candidate_vocabulary
+    }
+    for block_id in range(1, blocks + 1):
+        block = [event for event in bids.stimuli if event.block_id == block_id]
+        if [event.trial_index for event in block] != list(range(1, digits_per_block + 1)):
+            raise ValueError(
+                f"BrainSync block {block_id} trial indices do not match the declared schedule."
+            )
+        if dict(Counter(event.candidate_id for event in block)) != expected_counts:
+            raise ValueError(
+                f"BrainSync block {block_id} does not balance every candidate exactly {repetitions} times."
+            )
+        for cycle_index in range(repetitions):
+            start = cycle_index * len(expected_counts)
+            cycle = block[start : start + len(expected_counts)]
+            if {event.candidate_id for event in cycle} != set(expected_counts):
+                raise ValueError(
+                    f"BrainSync block {block_id} cycle {cycle_index + 1} is not a complete candidate permutation."
+                )
+
+
 def validate_brainsync_bids_session(session_dir: str | Path) -> ValidatedBrainSyncSession:
     """Validate session and BIDS metadata before an EEG binary reader is invoked."""
 
@@ -249,6 +311,7 @@ def validate_brainsync_bids_session(session_dir: str | Path) -> ValidatedBrainSy
         raise ValueError("BrainSync experiment and confirmed target labels conflict.")
     if experiment.get("target_label_status") != "confirmed_post_experiment":
         raise ValueError("BrainSync experiment.target_label_status must be confirmed_post_experiment.")
+    _validate_protocol_declaration(experiment)
 
     session_id = _nonempty_string(manifest.get("session_id"), "session_id")
     started_utc, started_timestamp_s = _parse_timestamp(manifest.get("started_utc"), "started_utc")
@@ -260,6 +323,7 @@ def validate_brainsync_bids_session(session_dir: str | Path) -> ValidatedBrainSy
         raise ValueError("BrainSync timestamps must satisfy start <= confirmation <= end.")
 
     bids = validate_bids_eeg_recording(root, bids_files, contract=BRAIN_SYNC_BIDS_CONTRACT)
+    _validate_balanced_schedule(experiment, bids)
     recording_path = recording.get("path")
     if not isinstance(recording_path, str) or (root / recording_path).resolve() != bids.raw_path:
         raise ValueError("BrainSync recording.path must identify the BIDS EEG recording.")

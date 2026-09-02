@@ -13,6 +13,9 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from data.domain import (  # noqa: E402
+    SOURCE_DOMAIN_AXIS_SCHEMA,
+    SOURCE_DOMAIN_COLUMN,
+    annotate_source_domain,
     ensure_common_channel_average_reference,
     ensure_epoch_dataset_namespace,
     project_binary_evidence_source_view,
@@ -76,6 +79,7 @@ def main() -> None:
             channels,
         )
         aligned = ensure_epoch_dataset_namespace(aligned, namespace)
+        aligned = annotate_source_domain(aligned, namespace)
         candidate_metadata_projected = False
         if args.event_contract == "binary_evidence":
             source_aligned = aligned
@@ -116,6 +120,11 @@ def main() -> None:
             "domain_adapter": dict(domain_adapter),
             "target_channels": list(adapted[0].channel_names),
             "event_contract": args.event_contract,
+            "source_domain_axis": {
+                "schema": SOURCE_DOMAIN_AXIS_SCHEMA,
+                "column": SOURCE_DOMAIN_COLUMN,
+                "domains": namespaces,
+            },
             "sources": source_records,
         },
     )

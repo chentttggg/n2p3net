@@ -25,9 +25,10 @@ The active interfaces expose one achieved-best physical recipe:
 
 BrainSync uses the canonical 0.1-30 Hz / 1200 ms causal profile. Multiple
 sessions are ordered by timezone-aware `started_utc`; marker `selection_id` or
-`block_id` never defines a decision in the v2 producer. One v2 session is one
-decision; a target-sequence policy is declared by evaluation. Multi-session
-input without a unique timestamp fails closed.
+`block_id` never defines a decision in the active v4 producer. One completed v4
+session is one decision. Each declared block contains complete random-permutation
+cycles over all candidates, while target-switch remains an evaluation policy.
+Multi-session input without a unique timestamp fails closed.
 
 All profiles execute per-trial, per-channel `[-200,0) ms` mean correction.
 Native acquisition remains first-class (250 Hz for BrainSync); raw samples and
@@ -51,7 +52,12 @@ average in every domain. This cancels the original common reference offset
 algebraically and regenerates QC features. It does not solve missing selected
 channels, incompatible filtering/windows, or learned spatial alignment; those
 remain fail-closed. A dataset-specific spatial stem is still a research arm,
-not an implemented default.
+not an implemented default. A prepared multi-source cache also writes one exact
+`source_domain` value per epoch. Multi-source training must declare domain risk
+mass and a target-source selection domain; it cannot infer domains from subject
+prefixes or repeat physical rows to simulate weights. Participant-macro risk is
+the primary hierarchical arm, with epoch-micro risk retained as the matched
+mechanism control.
 
 The executable equations, discrete-time conventions, counterexamples, and
 source-to-decision code chain are specified in `doc/input_contract_math.zh.md`.

@@ -113,8 +113,9 @@ BrainSync 成人 8 导、多数字、多 session 数据是 90% 的最终裁决�
 - session 边界、真实 `block_id`、事件 onset 和 evidence-available time。
 
 工程入口现已支持 causal steady-state、严格 analysis-ready、多 session
-`started_utc` 排序和显式 target-policy split/runner。v2 中一 session 是一个
-decision，block 只表示调度/休息分段；显式公共通道 CAR 域适配另行记录。当前
+`started_utc` 排序和显式 target-policy split/runner。活动 session v4 只接受
+`completed`，一 session 是一个 decision；每个 block 是完整 9 候选随机排列循环，
+block 仍只表示调度/休息分段，不证明 target-switch；显式公共通道 CAR 域适配另行记录。当前
 默认固定为 128 Hz、0.1--30 Hz、`[-200,1200) ms`、179 samples；没有 2/800
 降级选项。当前
 本机 4 个历史 sessions 分别缺 recording、recording_error 或仍为
@@ -126,7 +127,7 @@ decision，block 只表示调度/休息分段；显式公共通道 CAR 域适配
 |---|---|---|
 | BI2014a 128 Hz zero-phase LOSO assets | 已进入物理压缩归档 | 只作架构开发；不可作为当前 checkpoint |
 | BI2014a causal-v2 cross-decision | 物理归档：64 人、12 checkpoints、13 arms x 3 seeds | 只保留机制结论；v3 必须重建重训 |
-| BI2014a+BNCI2014_008 common-CAR5 source | 物理归档：`0.1300/0.0967/0.1239/0.0974` hit@2 | 负迁移机制证据；旧 128-sample cache 不可续用 |
+| BI2014a+BNCI2014_008 common-CAR5 source | 物理归档：`0.1300/0.0967/0.1239/0.0974` hit@2；2026-09-02 对旧 cache 只读机制复审 | 负迁移来自条件 ERP 冲突、epoch/participant 风险错位和 validation 域漂移；旧 128-sample cache 不可续用 |
 | GTN 2 Hz/800 ms assets | 仅存在物理压缩归档 | 不提供活跃降级接口 |
 | GTN steady-state causal 2x2 bundle | 4 cache records、32 checkpoints、120 eval JSON 已本地独立复算 | 0.1 Hz/1200 ms 是当前开发 signal winner；不作产品确认 |
 | GTN Z0 最佳固定-R baseline | hit@5 coverage 230/245；conditional 0.578；operational 0.543；AUC 0.709 | 未达到 0.90；15 人仅因 R_s=2--4 无法到 @5，仍进入 all-evidence 主分析 |
@@ -209,6 +210,28 @@ raw sum。当前 GTN all-evidence 开发结果选择 `beta=0`；它使用全部 
 正温度保证不反转排序。固定完整 R、每候选计数相等时，公共正仿射变换不改变
 argmax；普通 Platt 在极小 validation 上可能学到负 slope，因此不得用于候选排序。
 
+### 5.1 多源训练风险
+
+共同通道和 CAR 只定义可比较输入，不保证 `P(X|Y,D)` 相同。设域质量为
+`alpha_d`，类别 CE 权重为 `c_y`，域 `d` 的合法 source participants 为
+`S_d`。与 subject-macro 外层目标一致的主风险是：
+
+```text
+L_subject = sum_d alpha_d / |S_d| * sum_(s in S_d)
+              [sum_(i in d,s) c_(y_i) CE_i / sum_(i in d,s) c_(y_i)]
+sum_d alpha_d = 1.
+```
+
+`epoch` 控制臂把 `S_d` 替换为一个包含该域全部 epoch 的单元。实现不重复、不删除
+任何物理行；逐行 multiplier 在 inner-train split 与 full refit 内分别重算，使每域
+class-weighted coefficient mass 精确等于 `alpha_d`。mini-batch 仍保留原
+`CrossEntropyLoss(weight=[1,pos_weight])` 的类别权重分母，因此当 `epoch` 臂的
+`alpha_d` 等于自然 class-weighted 行比例时，所有 multiplier 严格为 1，退化回原 CE。
+
+多源 inner validation/calibration 只允许读取显式 `selection_domain` 的 group-disjoint
+participants。辅助域长记录不得因一个 participant 有更多 epoch 而占据模型选择目标。
+域 ID 来自多源 builder 写入的精确 `source_domain` 行轴，不再从 subject 字符串前缀猜测。
+
 `trim0.2` 固定按排序裁 `floor(0.2*n)` 个两端值；`n<5` 不裁。旧 quantile
 实现会在 R=2 时删除两个不同值并产生编码依赖 tie，已废弃。任何并列最高分都
 abstain，不按最小数字破 tie。
@@ -269,8 +292,28 @@ uniform joint hit@2=`0.0967`，相对 BI-only `0.1300` 为 `-3.33 pp`，95% CI
 域权重。固定 uniform rows/steps、只用非 holdout BI source rows 拟合 input mean/std
 后，hit@2=`0.0974`，相对 all-source 仅 `+0.07 pp`，95% CI
 `[-0.36,+0.62] pp`；相对 BI-only 仍显著 `-3.26 pp`。因此负迁移不是公共统计主导。
-下一臂必须保持唯一行、batch 和 step 不变，用归一化 per-row CE weight 实现约
-80/20 域梯度质量，之后才判断是否需要 gradient conflict/stem。
+2026-09-02 对归档旧 cache 的只读机制复审进一步发现：两域 target prior 都约
+`1/6`，排除 label-prior shift；BI/BNCI 的 `target - nontarget` ERP 在完整 5 导张量
+上的余弦为 `-0.0173`，subject-macro 后为 `-0.0787`，P3/Pz/P4 通道余弦分别约
+`-0.247/-0.304/-0.220`。BNCI 每人固定 4200 行，BI 每人平均 953 行
+（范围 420--1788），所以逐 epoch CE 让 8 个 BNCI participants 获得与 64 个 BI
+participants 不成比例的梯度质量。旧 group split 在 seed 20260901/02/03 的 validation
+中分别选到 0/1/1 个 BNCI participant；后两次该一人 4200 行接近 validation 行数一半，
+模型选择目标随 seed 改变。binary AUC 与 decision hit 同时下降，故问题发生在 trial
+表征/选择层，不是候选聚合层。
+
+因此 v3 不直接跳到 GRL/PCGrad/stem。保持唯一行、batch、step 和 seed 不变，预注册：
+
+```text
+B0  BI-only，BI selection
+J0  joint natural class-weighted epoch mass，BI selection
+J1  joint BI/BNCI=80/20 epoch mass，BI selection
+J2  joint BI/BNCI=80/20 participant-macro mass，BI selection
+```
+
+`J0-B0` 复核联合源净效应，`J1-J0` 隔离域质量，`J2-J1` 隔离统计单元。
+只有 J2 仍低于 B0，才测量 matched BI/BNCI gradient cosine 并进入梯度冲突或
+dataset-specific stem；不能引用 ERP 余弦直接声称 PCGrad 已被验证。
 
 ### Gate 3：合法单被试校准
 
@@ -324,6 +367,8 @@ primary 为 subject-macro `hit@R`，并给 subject-cluster CI、coverage、absta
 8. normalization：suffix 极值不能改变 source/prefix fitted statistics；
 9. group objective：一个错误候选极端 logit 应被 candidate loss 明确惩罚；
 10. target distribution：报告 uniform `1/9` 与 empirical-majority baseline，最终采集目标平衡。
+11. source-risk duplication：复制同一辅助 participant 的 epoch 不得增加其域/participant
+    coefficient mass；natural epoch mass 必须严格退化为原 CE。
 
 ## 8. 立即执行顺序
 
@@ -331,8 +376,23 @@ primary 为 subject-macro `hit@R`，并给 subject-cluster CI、coverage、absta
 2. 从 raw 重建统一 v3 的 BI/BNCI/GTN cache、common-CAR source 和 checkpoint；
 3. v3 继续采用 `full_unfold + K35` 与 candidate mean，K65 保留强对照；
 4. 归档 BI 结果不支持 5-decision personalization；新 v3 保留 zero-shot/source stats 基线；
-5. 归档 BI+BNCI 结果提示负迁移；v3 下一次固定 rows/steps，只改 normalized per-row domain loss weight；
+5. 归档 BI+BNCI 结果提示条件 ERP 冲突与层级风险错位；v3 按 B0/J0/J1/J2 固定
+   rows/batch/steps 逐轴裁决，活动 CLI 已删除行重复和 subject-prefix stats；
 6. decision-aligned 全参数 30-epoch recipe 已否决；后继只研究保护 backbone 的
    分阶段单轴策略、无真值 adaptation 与 target-switch personalization；
 7. 使用统一 v3 causal multi-session/target-switch 入口重新采集成人 BrainSync 数据；
 8. 不把 O5 当未知数字校准。
+
+## 9. 本轮外部依据与边界
+
+2026-09-02 通过 OpenAlex/Crossref 公共 API 定向复核，不是系统综述。检索支持以下
+工程判断，但不替代本项目实测：Ben-David et al. 的 domain-adaptation bound
+（DOI `10.1007/s10994-009-5152-4`）要求同时考虑域差异与不可共同最优误差；
+Wang et al. 的 negative-transfer 定义与 source 选择（DOI
+`10.1109/CVPR.2019.01155`）支持必须保留 no-transfer 强基线；P300 cross-dataset
+signal alignment（DOI `10.1088/1741-2552/ad430d`）支持显式信号对齐，但不证明
+common-CAR 或联合训练必然增益；negative-transfer survey（DOI
+`10.1109/JAS.2022.106004`）把 domain similarity、safe transfer 和 mitigation 分开。
+PCGrad（arXiv `2001.06782`）只作为梯度冲突候选，不在未测真实 gradient 前实施。
+Semantic Scholar 对部分 DOI 返回 429；P300 signal-alignment 本轮只核到可复核元数据，
+不得写成完成摘要或全文系统审阅。

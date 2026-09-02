@@ -30,6 +30,7 @@ from data.contract import (  # noqa: E402
     SOURCE_COHORT_DATA_CONTRACTS,
     assert_p300_input_contract,
 )
+from data.domain import source_domain_ids  # noqa: E402
 from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from data.identity import training_identity_ledger_from_rows  # noqa: E402
 from models.n2p3net import (  # noqa: E402
@@ -46,101 +47,25 @@ from train.runtime import GpuPerformanceScheduler  # noqa: E402
 from transfer.checkpoint import CHECKPOINT_SCHEMA  # noqa: E402
 
 
-def parse_subject_prefix_repeats(value: str) -> dict[str, int]:
-    """Parse explicit subject-prefix exposure repeats from a CLI value."""
+def parse_source_domain_mass(values: list[str]) -> dict[str, float]:
+    """Parse exact DOMAIN=MASS entries without subject-prefix aliases."""
 
-    if not value.strip():
-        return {}
-    repeats: dict[str, int] = {}
-    for raw_item in value.split(","):
-        item = raw_item.strip()
-        prefix, separator, raw_repeat = item.partition("=")
-        prefix = prefix.strip()
-        raw_repeat = raw_repeat.strip()
-        if not separator or not prefix or not raw_repeat:
-            raise ValueError(
-                "subject-prefix-repeat entries must use PREFIX=INTEGER, "
-                "for example BI::=3,BNCI::=1."
-            )
-        if prefix in repeats:
-            raise ValueError(f"duplicate subject-prefix-repeat prefix: {prefix!r}")
+    masses: dict[str, float] = {}
+    for value in values:
+        domain, separator, raw_mass = value.rpartition("=")
+        domain = domain.strip()
+        if not separator or not domain or domain in masses:
+            raise ValueError("source-domain-mass must use unique DOMAIN=FLOAT entries.")
         try:
-            repeat = int(raw_repeat)
+            mass = float(raw_mass)
         except ValueError as error:
-            raise ValueError(
-                f"subject-prefix-repeat for {prefix!r} must be an integer."
-            ) from error
-        if repeat < 1:
-            raise ValueError(
-                f"subject-prefix-repeat for {prefix!r} must be at least 1."
-            )
-        repeats[prefix] = repeat
-    return repeats
-
-
-def build_subject_prefix_exposure(
-    subjects: np.ndarray,
-    prefix_repeats: dict[str, int],
-) -> tuple[np.ndarray, dict[str, object]]:
-    """Expand row indices without splitting repeats across subject groups."""
-
-    subjects = np.asarray(subjects).astype(str)
-    if subjects.ndim != 1 or len(subjects) == 0:
-        raise ValueError("subjects must be a non-empty one-dimensional array.")
-    row_repeats = np.ones(len(subjects), dtype=np.int64)
-    matched = np.zeros(len(subjects), dtype=bool)
-    records: list[dict[str, object]] = []
-    for prefix, repeat in prefix_repeats.items():
-        prefix_mask = np.fromiter(
-            (subject.startswith(prefix) for subject in subjects),
-            dtype=bool,
-            count=len(subjects),
-        )
-        if not bool(prefix_mask.any()):
-            raise ValueError(
-                f"subject-prefix-repeat prefix {prefix!r} matches no retained source rows."
-            )
-        if bool((matched & prefix_mask).any()):
-            overlapping = sorted(set(subjects[matched & prefix_mask].tolist()))
-            raise ValueError(
-                "subject-prefix-repeat prefixes overlap for retained subjects: "
-                f"{overlapping[:5]}"
-            )
-        matched |= prefix_mask
-        row_repeats[prefix_mask] = repeat
-        unique_rows = int(prefix_mask.sum())
-        records.append(
-            {
-                "prefix": prefix,
-                "repeat": repeat,
-                "unique_physical_rows": unique_rows,
-                "optimizer_rows": unique_rows * repeat,
-                "unique_subjects": int(len(np.unique(subjects[prefix_mask]))),
-            }
-        )
-    unmatched_rows = int((~matched).sum())
-    if unmatched_rows:
-        records.append(
-            {
-                "prefix": None,
-                "repeat": 1,
-                "unique_physical_rows": unmatched_rows,
-                "optimizer_rows": unmatched_rows,
-                "unique_subjects": int(len(np.unique(subjects[~matched]))),
-            }
-        )
-    indices = np.repeat(np.arange(len(subjects), dtype=np.int64), row_repeats)
-    optimizer_rows = int(len(indices))
-    for record in records:
-        record["optimizer_fraction"] = float(record["optimizer_rows"] / optimizer_rows)
-    report: dict[str, object] = {
-        "method": "deterministic_full_row_repeat",
-        "unique_physical_rows": int(len(subjects)),
-        "optimizer_rows_per_epoch": optimizer_rows,
-        "all_unique_rows_retained": bool(len(np.unique(indices)) == len(subjects)),
-        "prefixes": records,
-    }
-    return indices, report
+            raise ValueError("source-domain-mass values must be numeric.") from error
+        if not np.isfinite(mass) or mass <= 0.0:
+            raise ValueError("source-domain-mass values must be finite and positive.")
+        masses[domain] = mass
+    if masses and not np.isclose(sum(masses.values()), 1.0, rtol=0.0, atol=1e-9):
+        raise ValueError("source-domain-mass values must sum to one.")
+    return masses
 
 
 def main() -> None:
@@ -183,21 +108,22 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--seed", type=int, default=20260828)
     parser.add_argument(
-        "--subject-prefix-repeat",
-        default="",
-        help=(
-            "Optional comma-separated PREFIX=INTEGER exposure contract. Every unique row is "
-            "retained; matching rows are deterministically repeated before group-disjoint "
-            "selection and full refit. Example: BI::=3,BNCI::=1."
-        ),
+        "--source-domain-mass",
+        action="append",
+        default=[],
+        metavar="DOMAIN=FLOAT",
+        help="Exact source-domain risk mass; repeat once for every prepared source domain.",
     )
     parser.add_argument(
-        "--input-stats-subject-prefix",
+        "--risk-within-domain-unit",
+        choices=("epoch", "participant"),
+        default="participant",
+        help="Statistical unit receiving equal mass inside each source domain.",
+    )
+    parser.add_argument(
+        "--selection-domain",
         default="",
-        help=(
-            "Optional subject prefix whose training-fold rows alone fit checkpoint input "
-            "mean/std. All source rows still train the classifier. Example: BI::."
-        ),
+        help="Exact source domain used for group-disjoint epoch selection and calibration.",
     )
     parser.add_argument(
         "--qc-ptp-uv",
@@ -257,12 +183,29 @@ def main() -> None:
         dataset.subject_ids,
         source_rows,
     )
-    prefix_repeats = parse_subject_prefix_repeats(args.subject_prefix_repeat)
-    physical_subjects = subjects[source_rows]
-    exposure_indices, source_exposure = build_subject_prefix_exposure(
-        physical_subjects,
-        prefix_repeats,
-    )
+    src_subjects = subjects[source_rows]
+    domain_mass = parse_source_domain_mass(args.source_domain_mass)
+    source_domains = None
+    selection_domain = args.selection_domain.strip() or None
+    if dataset.provenance.get("source_domain_axis") is not None:
+        source_domains = source_domain_ids(dataset)[source_rows]
+        observed_domains = set(source_domains.tolist())
+        if len(observed_domains) > 1:
+            if selection_domain is None:
+                raise ValueError(
+                    "multi-domain source training requires an explicit selection-domain."
+                )
+            if domain_mass and set(domain_mass) != observed_domains:
+                raise ValueError(
+                    "source-domain-mass keys must equal retained source domains: "
+                    f"{sorted(observed_domains)}."
+                )
+            if selection_domain not in observed_domains:
+                raise ValueError("selection-domain is absent from retained source rows.")
+        elif domain_mass or selection_domain is not None:
+            raise ValueError("domain-risk options require a genuinely multi-domain source cache.")
+    elif domain_mass or selection_domain is not None:
+        raise ValueError("domain-risk options require an explicit source-domain axis.")
 
     runtime = GpuPerformanceScheduler(device, precision="fp32")
     config = DeepConfig(epochs=args.epochs, batch_size=args.batch_size, seed=args.seed)
@@ -279,51 +222,35 @@ def main() -> None:
         architecture=architecture,
     )
 
-    X_physical = np.asarray(dataset.X[source_rows])
-    y_physical = np.asarray(dataset.y)[source_rows]
-    X = np.ascontiguousarray(X_physical[exposure_indices])
-    y = y_physical[exposure_indices]
-    src_subjects = physical_subjects[exposure_indices]
-    input_stats_prefix = args.input_stats_subject_prefix.strip()
-    input_stats_row_mask = None
-    if input_stats_prefix:
-        input_stats_row_mask = np.fromiter(
-            (subject.startswith(input_stats_prefix) for subject in src_subjects),
-            dtype=bool,
-            count=len(src_subjects),
+    X = np.ascontiguousarray(dataset.X[source_rows])
+    y = np.asarray(dataset.y, dtype=np.int64)[source_rows]
+    source_input_stats_scope = {
+        "mode": "all_source_rows",
+        "rows": int(len(X)),
+        "unique_subjects": int(len(np.unique(src_subjects))),
+    }
+    risk_fit_kwargs = {}
+    if source_domains is not None and selection_domain is not None:
+        risk_fit_kwargs.update(
+            {
+                "source_domain_ids": source_domains,
+                "selection_domain": selection_domain,
+            }
         )
-        if not bool(input_stats_row_mask.any()):
-            raise ValueError(
-                f"input-stats-subject-prefix {input_stats_prefix!r} matches no optimizer rows."
-            )
-        physical_stats_mask = np.fromiter(
-            (subject.startswith(input_stats_prefix) for subject in physical_subjects),
-            dtype=bool,
-            count=len(physical_subjects),
+    if domain_mass:
+        risk_fit_kwargs.update(
+            {
+                "source_domain_mass": domain_mass,
+                "risk_unit_ids": src_subjects,
+                "risk_within_domain_unit": args.risk_within_domain_unit,
+            }
         )
-        source_input_stats_scope = {
-            "mode": "subject_prefix",
-            "subject_prefix": input_stats_prefix,
-            "unique_physical_rows": int(physical_stats_mask.sum()),
-            "optimizer_rows": int(input_stats_row_mask.sum()),
-            "unique_subjects": int(len(np.unique(src_subjects[input_stats_row_mask]))),
-            "optimizer_fraction": float(input_stats_row_mask.mean()),
-        }
-    else:
-        source_input_stats_scope = {
-            "mode": "all_source_rows",
-            "subject_prefix": None,
-            "unique_physical_rows": int(len(X_physical)),
-            "optimizer_rows": int(len(X)),
-            "unique_subjects": int(len(np.unique(src_subjects))),
-            "optimizer_fraction": 1.0,
-        }
     started = time.perf_counter()
     baseline.fit(
         X,
         y,
         group_ids=src_subjects,
-        input_stats_row_mask=input_stats_row_mask,
+        **risk_fit_kwargs,
     )
     fit_sec = time.perf_counter() - started
     selection_baseline = baseline
@@ -349,7 +276,7 @@ def main() -> None:
         X,
         y,
         group_ids=None,
-        input_stats_row_mask=input_stats_row_mask,
+        **risk_fit_kwargs,
     )
     refit_sec = time.perf_counter() - refit_started
     model = baseline.model_
@@ -402,7 +329,6 @@ def main() -> None:
             "selection_execution": selection_baseline.optimizer_execution.record(),
             "refit_execution": baseline.optimizer_execution.record(),
             "optimizer_rows_per_epoch": int(len(X)),
-            "source_exposure": source_exposure,
         },
         validation={
             "strategy": "group_disjoint_epoch_selection_then_full_source_refit",
@@ -410,6 +336,7 @@ def main() -> None:
             "selected_epoch_zero_based": int(selected_epoch),
             "refit_epochs": int(refit_epochs),
             "selection_calibration_source": selection_baseline.calibration_source_,
+            "selection_domain": selection_domain,
             "full_source_refit": True,
         },
         objective={
@@ -418,10 +345,9 @@ def main() -> None:
             "training_prior": float(baseline.training_prior_),
             "qc_ptp_uv": float(args.qc_ptp_uv),
             "input_statistics_scope": source_input_stats_scope,
-            "unique_label_counts": np.bincount(
-                y_physical, minlength=2
-            ).astype(int).tolist(),
-            "optimizer_label_counts": np.bincount(y, minlength=2).astype(int).tolist(),
+            "label_counts": np.bincount(y, minlength=2).astype(int).tolist(),
+            "source_risk_selection": selection_baseline.last_source_risk,
+            "source_risk_refit": baseline.last_source_risk,
         },
         seed=int(args.seed),
         training_participant_keys=training_identity_ledger.authority_keys(),
@@ -438,8 +364,9 @@ def main() -> None:
             "epochs": args.epochs,
             "batch_size": args.batch_size,
             "seed": args.seed,
-            "subject_prefix_repeat": prefix_repeats,
-            "input_stats_subject_prefix": input_stats_prefix or None,
+            "source_domain_mass": domain_mass or None,
+            "risk_within_domain_unit": args.risk_within_domain_unit if domain_mass else None,
+            "selection_domain": selection_domain,
             "training": "N2P3NetBaseline supervised (LOSO-identical path)",
         },
         "architecture": model.architecture_record(),
@@ -467,16 +394,10 @@ def main() -> None:
         "training_contract": training_contract.record(),
         "training_contract_digest": training_contract.digest(),
         "n_source_epochs_used": int(len(X)),
-        "n_unique_source_epochs_used": int(len(X_physical)),
-        "n_optimizer_source_rows_per_epoch": int(len(X)),
-        "source_exposure": source_exposure,
         "source_input_stats_scope": source_input_stats_scope,
-        "source_label_counts_unique_after_qc": np.bincount(
-            y_physical, minlength=2
-        ).astype(int).tolist(),
-        "source_label_counts_optimizer_rows": np.bincount(
-            y, minlength=2
-        ).astype(int).tolist(),
+        "source_label_counts_after_qc": np.bincount(y, minlength=2).astype(int).tolist(),
+        "source_risk_selection": selection_baseline.last_source_risk,
+        "source_risk_refit": baseline.last_source_risk,
         "qc_ptp_uv": float(args.qc_ptp_uv),
         "qc_dropped_source_epochs": qc_dropped,
         "source_label_counts_before_qc": source_label_counts_before_qc.tolist(),
@@ -498,9 +419,8 @@ def main() -> None:
                 "checkpoint": str(checkpoint),
                 "fit_seconds": fit_sec,
                 "n_source_epochs_used": payload["n_source_epochs_used"],
-                "n_unique_source_epochs_used": payload["n_unique_source_epochs_used"],
-                "source_exposure": source_exposure,
                 "source_input_stats_scope": source_input_stats_scope,
+                "source_risk": payload["source_risk_selection"],
                 "training_participant_count": len(
                     training_identity_ledger.local_subject_ids
                 ),
