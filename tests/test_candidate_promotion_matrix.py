@@ -283,6 +283,35 @@ def test_training_precision_is_explicit_and_validated(tmp_path: Path) -> None:
         _load(tmp_path, record)
 
 
+def test_training_forwards_feature_transfer_contract_to_pretraining(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["source_arms"][1]["source_domain_mass"] = None
+    record["source_arms"][1]["risk_within_domain_unit"] = None
+    record["source_arms"][1]["selection_domain"] = None
+    record["training"].update(
+        {
+            "feature_transfer_invariant_bottleneck": 2,
+            "feature_transfer_private_channels": 3,
+            "feature_transfer_target_bottleneck": 2,
+            "feature_transfer_target_kernel": 5,
+            "feature_transfer_max_invariant_residual": 0.2,
+            "feature_transfer_max_target_residual": 0.3,
+            "feature_alignment_weight": 0.1,
+            "private_domain_weight": 0.05,
+            "orthogonality_weight": 0.01,
+        }
+    )
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+    checkpoint = next(task for task in dag.tasks if task.kind == "checkpoint_batch")
+    assert checkpoint.argv[checkpoint.argv.index("--feature-transfer-invariant-bottleneck") + 1] == "2"
+    assert checkpoint.argv[checkpoint.argv.index("--feature-transfer-private-channels") + 1] == "3"
+    assert checkpoint.argv[checkpoint.argv.index("--feature-transfer-target-kernel") + 1] == "5"
+    assert checkpoint.argv[checkpoint.argv.index("--feature-alignment-weight") + 1] == "0.1"
+    assert checkpoint.argv[checkpoint.argv.index("--private-domain-weight") + 1] == "0.05"
+    assert plan.source_arms[1].selection_domain is None
+
+
 @pytest.mark.parametrize(
     ("field", "value", "match"),
     [

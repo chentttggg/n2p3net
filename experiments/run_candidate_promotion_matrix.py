@@ -131,6 +131,15 @@ class TrainingConfig:
     epochs: int
     batch_size: int
     precision: str
+    feature_transfer_invariant_bottleneck: int = 0
+    feature_transfer_private_channels: int = 4
+    feature_transfer_target_bottleneck: int = 4
+    feature_transfer_target_kernel: int = 9
+    feature_transfer_max_invariant_residual: float = 0.25
+    feature_transfer_max_target_residual: float = 0.25
+    feature_alignment_weight: float = 0.0
+    private_domain_weight: float = 0.0
+    orthogonality_weight: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -290,6 +299,22 @@ def _number(value: object, name: str) -> float:
     result = float(value)
     if not 0.0 < result < 1.0:
         raise ValueError(f"{name} must lie strictly between 0 and 1.")
+    return result
+
+
+def _nonnegative_number(value: object, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{name} must be numeric.")
+    result = float(value)
+    if not np.isfinite(result) or result < 0.0:
+        raise ValueError(f"{name} must be finite and non-negative.")
+    return result
+
+
+def _positive_number(value: object, name: str) -> float:
+    result = _nonnegative_number(value, name)
+    if result <= 0.0:
+        raise ValueError(f"{name} must be positive.")
     return result
 
 
@@ -562,6 +587,17 @@ def _parse_training(value: object) -> TrainingConfig:
     _keys(
         record,
         required={"pooling_mode", "temporal_kernel_size", "epochs", "batch_size", "precision"},
+        optional={
+            "feature_transfer_invariant_bottleneck",
+            "feature_transfer_private_channels",
+            "feature_transfer_target_bottleneck",
+            "feature_transfer_target_kernel",
+            "feature_transfer_max_invariant_residual",
+            "feature_transfer_max_target_residual",
+            "feature_alignment_weight",
+            "private_domain_weight",
+            "orthogonality_weight",
+        },
         name="training",
     )
     pooling = _text(record["pooling_mode"], "training.pooling_mode")
@@ -576,12 +612,69 @@ def _parse_training(value: object) -> TrainingConfig:
     precision = _text(record["precision"], "training.precision")
     if precision not in _TRAINING_PRECISIONS:
         raise ValueError(f"training.precision must be one of {sorted(_TRAINING_PRECISIONS)}.")
+    invariant_bottleneck = _integer(
+        record.get("feature_transfer_invariant_bottleneck", 0),
+        "training.feature_transfer_invariant_bottleneck",
+        minimum=0,
+    )
+    private_channels = _integer(
+        record.get("feature_transfer_private_channels", 4),
+        "training.feature_transfer_private_channels",
+        minimum=1,
+    )
+    target_bottleneck = _integer(
+        record.get("feature_transfer_target_bottleneck", 4),
+        "training.feature_transfer_target_bottleneck",
+        minimum=1,
+    )
+    target_kernel = _integer(
+        record.get("feature_transfer_target_kernel", 9),
+        "training.feature_transfer_target_kernel",
+        minimum=3,
+    )
+    if target_kernel % 2 == 0:
+        raise ValueError("training.feature_transfer_target_kernel must be odd.")
+    max_invariant_residual = _positive_number(
+        record.get("feature_transfer_max_invariant_residual", 0.25),
+        "training.feature_transfer_max_invariant_residual",
+    )
+    max_target_residual = _positive_number(
+        record.get("feature_transfer_max_target_residual", 0.25),
+        "training.feature_transfer_max_target_residual",
+    )
+    feature_alignment_weight = _nonnegative_number(
+        record.get("feature_alignment_weight", 0.0),
+        "training.feature_alignment_weight",
+    )
+    private_domain_weight = _nonnegative_number(
+        record.get("private_domain_weight", 0.0),
+        "training.private_domain_weight",
+    )
+    orthogonality_weight = _nonnegative_number(
+        record.get("orthogonality_weight", 0.0),
+        "training.orthogonality_weight",
+    )
+    if min(feature_alignment_weight, private_domain_weight, orthogonality_weight) < 0.0:
+        raise ValueError("feature-transfer loss weights must be non-negative.")
+    if (private_domain_weight > 0.0 or orthogonality_weight > 0.0) and invariant_bottleneck == 0:
+        raise ValueError(
+            "private/orthogonality training weights require feature-transfer invariant bottleneck > 0."
+        )
     return TrainingConfig(
         pooling_mode=pooling,
         temporal_kernel_size=kernel,
         epochs=_integer(record["epochs"], "training.epochs", minimum=1),
         batch_size=_integer(record["batch_size"], "training.batch_size", minimum=1),
         precision=precision,
+        feature_transfer_invariant_bottleneck=invariant_bottleneck,
+        feature_transfer_private_channels=private_channels,
+        feature_transfer_target_bottleneck=target_bottleneck,
+        feature_transfer_target_kernel=target_kernel,
+        feature_transfer_max_invariant_residual=max_invariant_residual,
+        feature_transfer_max_target_residual=max_target_residual,
+        feature_alignment_weight=feature_alignment_weight,
+        private_domain_weight=private_domain_weight,
+        orthogonality_weight=orthogonality_weight,
     )
 
 
@@ -823,6 +916,24 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                 str(plan.training.batch_size),
                 "--precision",
                 plan.training.precision,
+                "--feature-transfer-invariant-bottleneck",
+                str(plan.training.feature_transfer_invariant_bottleneck),
+                "--feature-transfer-private-channels",
+                str(plan.training.feature_transfer_private_channels),
+                "--feature-transfer-target-bottleneck",
+                str(plan.training.feature_transfer_target_bottleneck),
+                "--feature-transfer-target-kernel",
+                str(plan.training.feature_transfer_target_kernel),
+                "--feature-transfer-max-invariant-residual",
+                str(plan.training.feature_transfer_max_invariant_residual),
+                "--feature-transfer-max-target-residual",
+                str(plan.training.feature_transfer_max_target_residual),
+                "--feature-alignment-weight",
+                str(plan.training.feature_alignment_weight),
+                "--private-domain-weight",
+                str(plan.training.private_domain_weight),
+                "--orthogonality-weight",
+                str(plan.training.orthogonality_weight),
                 "--seed",
                 str(replicate.seed),
                 "--device",
@@ -1452,9 +1563,9 @@ def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
                 f"source arm {arm.name!r} domain risk disagrees with cache: "
                 f"planned={sorted(planned_domains)}, observed={sorted(observed_domains)}."
             )
-        if len(observed_domains) > 1 and arm.selection_domain is None:
+        if len(observed_domains) > 1 and arm.selection_domain is None and arm.source_domain_mass:
             raise ValueError(
-                f"source arm {arm.name!r} multi-domain cache requires selection_domain."
+                f"source arm {arm.name!r} weighted multi-domain cache requires selection_domain."
             )
         if arm.selection_domain is not None and arm.selection_domain not in observed_domains:
             raise ValueError(

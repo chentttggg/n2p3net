@@ -11,7 +11,6 @@ from torch import nn
 from torch.nn import functional as F
 
 from data.contract import DEFAULT_P300_DATA_CONTRACT
-from models.adapters import DomainAdapterBank, FeatureAdapterConfig
 
 POOLING_MODES = frozenset(
     {
@@ -534,8 +533,6 @@ class N2P3Net(nn.Module):
         latency_temperature: float = 0.5,
         interaction_rank: int = DEFAULT_INTERACTION_RANK,
         mlp_hidden_features: int = DEFAULT_MLP_HIDDEN_FEATURES,
-        feature_adapter: FeatureAdapterConfig | None = None,
-        adapter_domains: Sequence[str] | None = None,
     ) -> None:
         super().__init__()
         if n_channels < 1:
@@ -699,21 +696,6 @@ class N2P3Net(nn.Module):
             )
         else:
             self.classifier = nn.Linear(self.classifier_features, 2)
-        # Optional identity-initialized per-domain residual adapters on the
-        # structured trunk features, constructed after every trunk parameter
-        # so a fixed seed yields identical trunk/classifier initialization
-        # with and without the bank. ``None`` keeps the exact shared-trunk
-        # behavior; an empty vocabulary is allowed for target-side trunks
-        # whose only adapter is registered by the subject adapter at runtime.
-        self.domain_adapters: DomainAdapterBank | None = (
-            None
-            if feature_adapter is None
-            else DomainAdapterBank(
-                feature_channels,
-                config=feature_adapter,
-                domains=() if adapter_domains is None else adapter_domains,
-            )
-        )
 
     @staticmethod
     def _pooled_time_samples(n_times: int, pool_size: int) -> int:
@@ -932,8 +914,6 @@ class N2P3Net(nn.Module):
                 "classifier_features": self.classifier_features,
             }
         )
-        if self.domain_adapters is not None:
-            record["domain_adapters"] = self.domain_adapters.record()
         if self.pooling_mode in {
             "full_unfold",
             "mlp_full_unfold",
@@ -973,15 +953,8 @@ class N2P3Net(nn.Module):
                 f"got {x.shape[-1]}."
             )
 
-    def forward_features(
-        self, x: torch.Tensor, *, domain_ids: object = None
-    ) -> torch.Tensor:
+    def forward_features(self, x: torch.Tensor) -> torch.Tensor:
         """Return concatenated post-MST trunk features without the readout.
-
-        ``domain_ids`` routes rows through the per-domain residual adapters
-        when a :class:`~models.adapters.DomainAdapterBank` is configured.
-        ``None`` is the explicit no-adaptation path (zero-shot inference);
-        unknown domain ids fail closed inside the bank.
 
         ``forward`` remains unchanged in its public contract: it consumes these
         features through the configured pooling/classification head.
@@ -993,10 +966,7 @@ class N2P3Net(nn.Module):
         x = self.st_spatial_norm(self.st_spatial(x))
         x = self.st_dropout(self.st_pool(self.st_activation(x))).squeeze(2)
         branch_features = [branch(x) for branch in self.mst_branches]
-        features = torch.cat(branch_features, dim=1)
-        if self.domain_adapters is not None:
-            features = self.domain_adapters(features, domain_ids=domain_ids)
-        return features
+        return torch.cat(branch_features, dim=1)
 
     def _pool_features(self, features: torch.Tensor) -> torch.Tensor:
         if self.pooling_mode == "global_average":
@@ -1014,9 +984,7 @@ class N2P3Net(nn.Module):
             dim=1,
         )
 
-    def forward_with_features(
-        self, x: torch.Tensor, *, domain_ids: object = None
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward_with_features(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Return ``(logits, adapted_trunk_features)`` in one pass.
 
         The feature-alignment objective consumes the adapted features while
@@ -1024,11 +992,16 @@ class N2P3Net(nn.Module):
         decision risk can never observe different representations.
         """
 
-        features = self.forward_features(x, domain_ids=domain_ids)
+        features = self.forward_features(x)
         return self.classifier(self._pool_features(features)), features
 
-    def forward(self, x: torch.Tensor, *, domain_ids: object = None) -> torch.Tensor:
-        return self.forward_with_features(x, domain_ids=domain_ids)[0]
+    def pool_features(self, features: torch.Tensor) -> torch.Tensor:
+        """Pool an externally adapted structured feature map."""
+
+        return self._pool_features(features)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.forward_with_features(x)[0]
 
     def parameter_count(self) -> int:
         return sum(parameter.numel() for parameter in self.parameters() if parameter.requires_grad)

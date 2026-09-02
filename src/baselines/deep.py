@@ -392,7 +392,8 @@ class DeepBaseline(Baseline):
         self.last_runtime: dict[str, object] = {}
         self.last_source_risk: dict[str, object] | None = None
         self._feature_alignment_weight = 0.0
-        self._adapter_routing_active = False
+        self._feature_private_domain_weight = 0.0
+        self._feature_orthogonality_weight = 0.0
         self._alignment_domain_vocabulary: tuple[str, ...] = ()
         self.last_feature_alignment: dict[str, object] | None = None
 
@@ -629,16 +630,12 @@ class DeepBaseline(Baseline):
         label_parts: list[torch.Tensor] = []
         total_loss: torch.Tensor | None = None
         n_rows = 0
-        routing_active = self._adapter_routing_active
         self.model_.eval()
         with torch.inference_mode():
-            for xb, yb, row_weights, domain_batch in source.iter_batches(batch_size):
+            for xb, yb, row_weights, _domain_batch in source.iter_batches(batch_size):
                 assert yb is not None
                 with self._autocast_ctx():
-                    if routing_active:
-                        logits = self.model_(xb, domain_ids=domain_batch)
-                    else:
-                        logits = self.model_(xb)
+                    logits = self.model_(xb)
                     loss = (
                         None
                         if loss_fn is None
@@ -707,22 +704,48 @@ class DeepBaseline(Baseline):
         risk_within_domain_unit: str = "participant",
         selection_domain: str | None = None,
         feature_alignment_weight: float = 0.0,
+        feature_private_domain_weight: float = 0.0,
+        feature_orthogonality_weight: float = 0.0,
     ) -> DeepBaseline:
         """Fit with a bounded OOM retry that never accumulates gradients."""
 
         if not np.isfinite(feature_alignment_weight) or feature_alignment_weight < 0.0:
             raise ValueError("feature_alignment_weight must be finite and non-negative.")
-        if feature_alignment_weight > 0.0:
+        for name, value in (
+            ("feature_private_domain_weight", feature_private_domain_weight),
+            ("feature_orthogonality_weight", feature_orthogonality_weight),
+        ):
+            if not np.isfinite(value) or value < 0.0:
+                raise ValueError(f"{name} must be finite and non-negative.")
+        transfer = getattr(self, "feature_transfer", None)
+        if feature_private_domain_weight > 0.0 and (
+            transfer is None or int(getattr(transfer, "private_domain_count", 0)) < 2
+        ):
+            raise ValueError(
+                "feature_private_domain_weight requires FeatureDomainTransfer "
+                "with private_domain_count >= 2."
+            )
+        if feature_orthogonality_weight > 0.0 and transfer is None:
+            raise ValueError(
+                "feature_orthogonality_weight requires FeatureDomainTransfer."
+            )
+        if (
+            feature_alignment_weight > 0.0
+            or feature_private_domain_weight > 0.0
+            or feature_orthogonality_weight > 0.0
+        ):
             if source_domain_ids is None:
                 raise ValueError(
-                    "feature alignment requires an explicit source-domain axis."
+                    "feature-transfer auxiliary losses require an explicit source-domain axis."
                 )
             if not getattr(self, "supports_feature_alignment", False):
                 raise ValueError(
-                    "feature alignment requires a model exposing adapted trunk "
+                    "feature-transfer auxiliary losses require a model exposing structured trunk "
                     "features (N2P3NetBaseline)."
                 )
         self._feature_alignment_weight = float(feature_alignment_weight)
+        self._feature_private_domain_weight = float(feature_private_domain_weight)
+        self._feature_orthogonality_weight = float(feature_orthogonality_weight)
         # Dropping Python references returns prior tensors to the caching
         # allocator. Emptying the CUDA cache here would create a gap before
         # every healthy fold; reserve that expensive cleanup for actual OOMs.
@@ -819,9 +842,9 @@ class DeepBaseline(Baseline):
             if not bool(requested_stats_rows.any()):
                 raise ValueError("input_stats_row_mask must retain at least one row.")
 
-        if (source_domain_ids is None) != (selection_domain is None):
+        if selection_domain is not None and source_domain_ids is None:
             raise ValueError(
-                "multi-source selection requires source_domain_ids and selection_domain together."
+                "selection_domain requires an explicit source_domain_ids axis."
             )
         if (source_domain_mass is None) != (risk_unit_ids is None):
             raise ValueError("weighted source risk requires domain mass and risk unit ids together.")
@@ -833,7 +856,7 @@ class DeepBaseline(Baseline):
             risk_domains = np.asarray(source_domain_ids).astype(str)
             if risk_domains.shape != (len(X),):
                 raise ValueError("source_domain_ids must align with X.")
-            if str(selection_domain) not in set(risk_domains.tolist()):
+            if selection_domain is not None and str(selection_domain) not in set(risk_domains.tolist()):
                 raise ValueError("selection_domain is absent from source rows.")
         if risk_unit_ids is not None:
             risk_units = np.asarray(risk_unit_ids).astype(str)
@@ -851,7 +874,7 @@ class DeepBaseline(Baseline):
                 raise ValueError("group_ids must align with X.")
             split_scope = (
                 np.ones(len(X), dtype=bool)
-                if risk_domains is None
+                if selection_domain is None
                 else risk_domains == str(selection_domain)
             )
             split = group_disjoint_validation_split(
@@ -916,7 +939,7 @@ class DeepBaseline(Baseline):
             self.training_prior_ = float(train_risk_record["effective_positive_prior"])
             self.last_source_risk = {
                 "training": train_risk_record,
-                "selection_domain": str(selection_domain),
+                "selection_domain": selection_domain,
                 "selection_rows": int(val_mask.sum()),
                 "selection_units": int(len(set(risk_units[val_mask].tolist())))
                 if bool(val_mask.any())
@@ -930,7 +953,7 @@ class DeepBaseline(Baseline):
                         "mode": "natural_epoch_ce",
                         "rows": int(train_mask.sum()),
                     },
-                    "selection_domain": str(selection_domain),
+                    "selection_domain": selection_domain,
                     "selection_rows": int(val_mask.sum()),
                     "selection_units": int(len(set(group_ids[val_mask].tolist())))
                     if group_ids is not None and bool(val_mask.any())
@@ -941,34 +964,24 @@ class DeepBaseline(Baseline):
             X[stats_mask],
             stats_channel_mask,
         )
-        # Per-domain residual-adapter routing and the cross-domain alignment
-        # objective share one domain axis but are independent mechanisms:
-        # routing requires a DomainAdapterBank with every observed domain in
-        # its frozen vocabulary (fail-closed), while alignment only requires
-        # the source-domain axis so the A1 (align-only) arm stays available on
-        # a bankless shared trunk.
-        adapter_domains = tuple(getattr(self, "adapter_domains", None) or ())
-        self._adapter_routing_active = bool(
-            adapter_domains
-            and risk_domains is not None
-            and getattr(self, "supports_domain_adapters", False)
-        )
+        # Domain ids are supervision/diagnostic metadata only. They never route
+        # source rows through a domain-specific inference module.
         alignment_weight = self._feature_alignment_weight
+        private_weight = self._feature_private_domain_weight
+        orthogonality_weight = self._feature_orthogonality_weight
         alignment_active = bool(alignment_weight > 0.0 and risk_domains is not None)
+        private_active = bool(private_weight > 0.0 and risk_domains is not None)
+        orthogonality_active = bool(orthogonality_weight > 0.0)
+        feature_objective_active = alignment_active or private_active or orthogonality_active
+        if private_active and len(set(risk_domains.tolist())) < 2:
+            raise ValueError(
+                "private domain supervision requires at least two source domains."
+            )
         train_domain_tensor: torch.Tensor | None = None
         val_domain_tensor: torch.Tensor | None = None
-        if self._adapter_routing_active or alignment_active:
+        if feature_objective_active:
             assert risk_domains is not None
-            if self._adapter_routing_active:
-                domain_vocabulary = adapter_domains
-                unknown = sorted(set(risk_domains.tolist()) - set(adapter_domains))
-                if unknown:
-                    raise ValueError(
-                        "source rows contain domains absent from the adapter "
-                        f"vocabulary: {unknown}."
-                    )
-            else:
-                domain_vocabulary = tuple(sorted(set(risk_domains.tolist())))
+            domain_vocabulary = tuple(sorted(set(risk_domains.tolist())))
             domain_to_index = {
                 domain: index for index, domain in enumerate(domain_vocabulary)
             }
@@ -990,21 +1003,17 @@ class DeepBaseline(Baseline):
                         )
                     )
                 )
-        elif adapter_domains:
-            # A bank exists but routing is impossible (no source-domain axis,
-            # or the model class cannot route): silently ignoring it would
-            # train dead adapter parameters and deploy a different model than
-            # the one described by the architecture record.
-            raise ValueError(
-                "adapter_domains were configured but domain-adapter routing is "
-                "inactive; supply source_domain_ids with a routing-capable model."
-            )
         self.last_feature_alignment = {
             "weight": alignment_weight,
-            "routing_active": self._adapter_routing_active,
             "alignment_active": alignment_active,
-            "adapter_domains": list(adapter_domains),
+            "private_domain_weight": private_weight,
+            "private_domain_active": private_active,
+            "orthogonality_weight": orthogonality_weight,
+            "orthogonality_active": orthogonality_active,
+            "domain_vocabulary": list(self._alignment_domain_vocabulary),
             "epoch_mean_squared_distance": [],
+            "epoch_private_domain_loss": [],
+            "epoch_orthogonality_loss": [],
         }
         X_train = self._prepare_input(X_train, train_channel_mask)
         if len(X_val):
@@ -1109,6 +1118,21 @@ class DeepBaseline(Baseline):
             getattr(self, "_alignment_domain_vocabulary", ()) or ()
         )
 
+        def _orthogonality_loss(
+            invariant_features: torch.Tensor,
+            private_summary: torch.Tensor,
+        ) -> torch.Tensor:
+            if invariant_features.ndim != 3 or private_summary.ndim != 2:
+                raise RuntimeError("feature-transfer views have invalid ranks.")
+            invariant_summary = invariant_features.mean(dim=-1)
+            if invariant_summary.shape[0] < 2:
+                return invariant_summary.new_zeros(())
+            invariant_centered = invariant_summary - invariant_summary.mean(dim=0, keepdim=True)
+            private_centered = private_summary - private_summary.mean(dim=0, keepdim=True)
+            cross_cov = invariant_centered.transpose(0, 1) @ private_centered
+            cross_cov = cross_cov / max(invariant_summary.shape[0] - 1, 1)
+            return cross_cov.square().mean()
+
         def train_step(
             xb: torch.Tensor,
             yb: torch.Tensor,
@@ -1118,26 +1142,45 @@ class DeepBaseline(Baseline):
             opt.zero_grad(set_to_none=True)
             alignment_diagnostics: dict[str, float] | None = None
             with self._autocast_ctx():
-                if alignment_active:
+                if feature_objective_active:
                     assert domain_batch is not None
-                    routed_ids = (
-                        domain_batch if self._adapter_routing_active else None
-                    )
-                    logits, features = self.model_.forward_with_features(
-                        xb, domain_ids=routed_ids
-                    )
+                    forwarded = self.model_.forward_with_features(xb)
+                    if not isinstance(forwarded, tuple) or len(forwarded) < 2:
+                        raise RuntimeError(
+                            "feature-transfer model must return logits and adapted features."
+                        )
+                    logits, features = forwarded[:2]
                     ce_loss = loss_fn(logits, yb, row_weights)
-                    alignment_loss, alignment_diagnostics = conditional_mean_alignment_loss(
-                        features,
-                        yb,
-                        domain_batch,
-                        domain_count,
-                    )
-                    loss = ce_loss + alignment_weight * alignment_loss
-                elif self._adapter_routing_active:
-                    assert domain_batch is not None
-                    logits = self.model_(xb, domain_ids=domain_batch)
-                    loss = loss_fn(logits, yb, row_weights)
+                    loss = ce_loss
+                    if alignment_active:
+                        alignment_loss, alignment_diagnostics = conditional_mean_alignment_loss(
+                            features,
+                            yb,
+                            domain_batch,
+                            domain_count,
+                        )
+                        loss = loss + alignment_weight * alignment_loss
+                    if private_active:
+                        if len(forwarded) < 3 or not hasattr(self.model_, "private_domain_logits"):
+                            raise RuntimeError(
+                                "private domain loss requires FeatureDomainTransfer with a private head."
+                            )
+                        private_logits = self.model_.private_domain_logits(forwarded[2])
+                        private_loss = F.cross_entropy(private_logits, domain_batch)
+                        loss = loss + private_weight * private_loss
+                        if alignment_diagnostics is None:
+                            alignment_diagnostics = {}
+                        alignment_diagnostics["private_domain_loss"] = float(private_loss.detach())
+                    if orthogonality_active:
+                        if len(forwarded) < 3:
+                            raise RuntimeError(
+                                "orthogonality loss requires FeatureDomainTransfer private features."
+                            )
+                        orthogonality_loss = _orthogonality_loss(features, forwarded[2])
+                        loss = loss + orthogonality_weight * orthogonality_loss
+                        if alignment_diagnostics is None:
+                            alignment_diagnostics = {}
+                        alignment_diagnostics["orthogonality_loss"] = float(orthogonality_loss.detach())
                 else:
                     logits = self.model_(xb)
                     loss = loss_fn(logits, yb, row_weights)
@@ -1158,6 +1201,8 @@ class DeepBaseline(Baseline):
             n_seen = 0
             epoch_alignment_sum = 0.0
             epoch_alignment_batches = 0
+            epoch_private_sum = 0.0
+            epoch_orthogonality_sum = 0.0
             for xb, yb, row_weights, domain_batch in train_source.iter_batches(
                 batch_size, generator=perm_gen
             ):
@@ -1167,12 +1212,27 @@ class DeepBaseline(Baseline):
                 epoch_loss = weighted_loss if epoch_loss is None else epoch_loss + weighted_loss
                 n_seen += len(xb)
                 if alignment_diagnostics is not None:
-                    epoch_alignment_sum += alignment_diagnostics["mean_squared_distance"]
+                    if "mean_squared_distance" in alignment_diagnostics:
+                        epoch_alignment_sum += alignment_diagnostics["mean_squared_distance"]
+                    if "private_domain_loss" in alignment_diagnostics:
+                        epoch_private_sum += alignment_diagnostics["private_domain_loss"]
+                    if "orthogonality_loss" in alignment_diagnostics:
+                        epoch_orthogonality_sum += alignment_diagnostics["orthogonality_loss"]
                     epoch_alignment_batches += 1
             assert self.last_feature_alignment is not None
             self.last_feature_alignment["epoch_mean_squared_distance"].append(
                 epoch_alignment_sum / epoch_alignment_batches
                 if epoch_alignment_batches
+                else None
+            )
+            self.last_feature_alignment["epoch_private_domain_loss"].append(
+                epoch_private_sum / epoch_alignment_batches
+                if private_active and epoch_alignment_batches
+                else None
+            )
+            self.last_feature_alignment["epoch_orthogonality_loss"].append(
+                epoch_orthogonality_sum / epoch_alignment_batches
+                if orthogonality_active and epoch_alignment_batches
                 else None
             )
             if epoch_loss is None:

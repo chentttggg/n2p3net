@@ -1,36 +1,11 @@
-"""Identity-initialized residual feature adapters for cross-domain P300 transfer.
+"""Feature-domain transfer modules kept outside the plain N2P3Net core.
 
-Mathematical contract
----------------------
-The trunk produces structured features ``H = f_theta(X)`` of shape
-``(B, C_f, T_f)`` after the MST branches and before pooling. Each domain
-adapter learns a bounded, low-capacity residual
-
-    A_eta(H) = W_up( ELU( W_down( DWConv(H) ) ) )
-
-    H' = H + alpha * A_eta(H),    alpha = rho * tanh(a),    a = 0 at init.
-
-``alpha = 0`` at initialization makes the adapted model exactly equal to the
-source trunk (identity initialization), so adapter capacity can only act
-after the data moves the gate; ``|alpha| < rho`` bounds the residual
-amplitude by construction. The depthwise/pointwise bottleneck keeps the
-parameter count small (a low-rank, spatiotemporally structured correction
-that preserves the MST channel/time axes rather than flattening them).
-
-The adapter carries no normalization states: no BatchNorm statistics are
-estimated on target prefixes (constitution P4 and the 2026-09-02 alignment
-audit), and the trunk's own source-frozen statistics remain the only
-normalization in the adapted path.
-
-``DomainAdapterBank`` routes rows to per-domain adapters with a fail-closed
-vocabulary and reserves a target slot (``RESERVED_TARGET_DOMAIN``) for the
-subject-level inner loop, which trains only the adapter while the trunk and
-classifier stay frozen.
+The core model is intentionally domain agnostic. This module owns a shared
+task path, a private style path, and a target-only residual adapter.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from dataclasses import dataclass
 from math import isfinite
 
@@ -38,237 +13,268 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-RESERVED_DOMAIN_PREFIX = "__"
-RESERVED_TARGET_DOMAIN = "__target__"
+from models.n2p3net import N2P3Net
 
-DEFAULT_ADAPTER_BOTTLENECK_CHANNELS = 4
-DEFAULT_ADAPTER_KERNEL_SIZE = 9
-DEFAULT_ADAPTER_MAX_RESIDUAL = 0.5
+FEATURE_TRANSFER_SCHEMA = "n2p3_feature_domain_transfer/1"
 
 
 @dataclass(frozen=True)
-class FeatureAdapterConfig:
-    """Serializable structure contract for one residual feature adapter."""
+class FeatureTransferConfig:
+    """Serializable configuration for the transfer wrapper."""
 
-    bottleneck_channels: int = DEFAULT_ADAPTER_BOTTLENECK_CHANNELS
-    kernel_size: int = DEFAULT_ADAPTER_KERNEL_SIZE
-    max_residual: float = DEFAULT_ADAPTER_MAX_RESIDUAL
+    invariant_bottleneck_channels: int = 4
+    private_channels: int = 4
+    target_bottleneck_channels: int = 4
+    target_kernel_size: int = 9
+    max_invariant_residual: float = 0.25
+    max_target_residual: float = 0.25
+    private_domain_count: int = 0
 
     def __post_init__(self) -> None:
-        if self.bottleneck_channels < 1:
-            raise ValueError("bottleneck_channels must be positive.")
-        if self.kernel_size < 3 or self.kernel_size % 2 == 0:
-            raise ValueError("kernel_size must be an odd integer of at least three.")
-        if not isfinite(self.max_residual) or not 0.0 < self.max_residual:
-            raise ValueError("max_residual must be finite and positive.")
-
-
-class FeatureResidualAdapter(nn.Module):
-    """A zero-initialized, amplitude-bounded residual on structured features.
-
-    Parameters
-    ----------
-    channels : int
-        ``C_f`` of the trunk feature map the adapter corrects.
-    config : FeatureAdapterConfig
-        Bottleneck width, temporal kernel, and residual bound ``rho``.
-    """
-
-    def __init__(self, channels: int, *, config: FeatureAdapterConfig) -> None:
-        super().__init__()
-        if channels < 1:
-            raise ValueError("channels must be positive.")
-        self.channels = int(channels)
-        self.config = config
-        self.depthwise = nn.Conv1d(
-            channels,
-            channels,
-            kernel_size=config.kernel_size,
-            padding=(config.kernel_size - 1) // 2,
-            groups=channels,
-            bias=False,
-        )
-        self.down = nn.Conv1d(channels, config.bottleneck_channels, kernel_size=1)
-        self.up = nn.Conv1d(config.bottleneck_channels, channels, kernel_size=1)
-        # ReZero-style gate: tanh(0) = 0 makes the adapter an exact identity
-        # at initialization while leaving a nonzero gradient path into the
-        # gate, so capacity activates only when the data supports it.
-        self.gate = nn.Parameter(torch.zeros((), dtype=torch.float32))
-
-    def residual(self, h: torch.Tensor) -> torch.Tensor:
-        return self.up(F.elu(self.down(self.depthwise(h))))
-
-    def residual_scale(self) -> float:
-        return float(self.config.max_residual * torch.tanh(self.gate.detach()).item())
-
-    def forward(self, h: torch.Tensor) -> torch.Tensor:
-        if h.ndim != 3 or h.shape[1] != self.channels:
-            raise ValueError(
-                f"Expected trunk features (B,{self.channels},T), got {tuple(h.shape)}."
-            )
-        alpha = self.config.max_residual * torch.tanh(self.gate.to(h.dtype))
-        return h + alpha * self.residual(h)
-
-    def adapter_parameter_count(self) -> int:
-        return sum(parameter.numel() for parameter in self.parameters())
-
-
-class DomainAdapterBank(nn.Module):
-    """Route trunk-feature rows to per-domain residual adapters.
-
-    ``forward`` semantics (fail-closed):
-
-    - ``domain_ids=None`` returns the features unchanged. This is the explicit
-      no-adaptation deployment path (zero-shot target inference), not an error.
-    - Integer indices (``torch.Tensor``/sequence) must lie in ``[0, len(vocab))``.
-    - String ids must be present in the frozen vocabulary.
-    - Post-hoc ``register`` is only allowed for reserved names (the subject
-      adapter target slot); the source vocabulary is frozen at construction.
-    """
-
-    def __init__(
-        self,
-        feature_channels: int,
-        *,
-        config: FeatureAdapterConfig,
-        domains: Sequence[str] = (),
-    ) -> None:
-        super().__init__()
-        if feature_channels < 1:
-            raise ValueError("feature_channels must be positive.")
-        if not isinstance(config, FeatureAdapterConfig):
-            raise TypeError("config must be a FeatureAdapterConfig.")
-        vocabulary = tuple(str(domain) for domain in domains)
-        if len(set(vocabulary)) != len(vocabulary):
-            raise ValueError("adapter domains must be unique.")
-        if any(not domain.strip() for domain in vocabulary):
-            raise ValueError("adapter domains must be non-empty strings.")
-        reserved = [d for d in vocabulary if d.startswith(RESERVED_DOMAIN_PREFIX)]
-        if reserved:
-            raise ValueError(
-                f"adapter domain names starting with {RESERVED_DOMAIN_PREFIX!r} are "
-                f"reserved for runtime slots: {reserved}."
-            )
-        self.feature_channels = int(feature_channels)
-        self.adapter_config = config
-        self.adapters = nn.ModuleDict(
-            {domain: FeatureResidualAdapter(feature_channels, config=config)
-             for domain in vocabulary}
-        )
-
-    @property
-    def vocab(self) -> tuple[str, ...]:
-        return tuple(self.adapters.keys())
-
-    def domain_index(self, domain: str) -> int:
-        vocabulary = self.vocab
-        try:
-            return vocabulary.index(str(domain))
-        except ValueError as error:
-            raise ValueError(
-                f"domain {domain!r} is absent from the frozen adapter vocabulary "
-                f"{list(vocabulary)}."
-            ) from error
-
-    def register(self, domain: str, adapter: FeatureResidualAdapter, *, reserved: bool = False) -> None:
-        name = str(domain)
-        if not name.strip():
-            raise ValueError("adapter domain names must be non-empty.")
-        if name in self.adapters:
-            raise ValueError(f"adapter domain {name!r} is already registered.")
-        if not name.startswith(RESERVED_DOMAIN_PREFIX):
-            raise ValueError(
-                "non-reserved adapter domains are frozen at construction; post-hoc "
-                "register is only allowed for reserved runtime slots."
-            )
-        if not reserved:
-            raise ValueError(
-                f"adapter domain names starting with {RESERVED_DOMAIN_PREFIX!r} "
-                "require reserved=True."
-            )
-        if adapter.channels != self.feature_channels:
-            raise ValueError(
-                f"adapter channel contract {adapter.channels} does not match the "
-                f"bank feature channels {self.feature_channels}."
-            )
-        if adapter.config != self.adapter_config:
-            raise ValueError("adapter configuration does not match the bank contract.")
-        self.adapters[name] = adapter
-
-    def _normalize_indices(
-        self, domain_ids: torch.Tensor | Sequence[int] | Sequence[str], batch: int
-    ) -> torch.Tensor:
-        if isinstance(domain_ids, torch.Tensor):
-            if domain_ids.numel() != batch or domain_ids.ndim > 1:
-                raise ValueError(
-                    f"domain_ids must provide one entry per row ({batch}), "
-                    f"got {tuple(domain_ids.shape)}."
-                )
-            if domain_ids.dtype.is_floating_point:
-                raise ValueError("integer domain indices are required.")
-            indices = domain_ids.reshape(-1).to(torch.long)
-        elif len(domain_ids) != batch:
-            raise ValueError(
-                f"domain_ids must provide one entry per row ({batch}), "
-                f"got {len(domain_ids)}."
-            )
-        elif isinstance(domain_ids[0], str):
-            indices = torch.tensor(
-                [self.domain_index(domain) for domain in domain_ids], dtype=torch.long
-            )
-        else:
-            indices = torch.as_tensor(domain_ids, dtype=torch.long).reshape(-1)
-        if batch and bool((indices < 0).any()):
-            raise ValueError("domain indices must be non-negative.")
-        if batch and bool((indices >= len(self.adapters)).any()):
-            raise ValueError(
-                f"domain indices must lie in [0,{len(self.adapters)}) for vocabulary "
-                f"{list(self.vocab)}."
-            )
-        return indices
-
-    def forward(
-        self,
-        features: torch.Tensor,
-        *,
-        domain_ids: torch.Tensor | Sequence[int] | Sequence[str] | None = None,
-    ) -> torch.Tensor:
-        if domain_ids is None:
-            return features
-        if features.ndim != 3 or features.shape[1] != self.feature_channels:
-            raise ValueError(
-                f"Expected trunk features (B,{self.feature_channels},T), "
-                f"got {tuple(features.shape)}."
-            )
-        if features.shape[0] == 0:
-            return features
-        indices = self._normalize_indices(domain_ids, features.shape[0]).to(features.device)
-        vocabulary = self.vocab
-        unique = torch.unique(indices).tolist()
-        if len(unique) == 1:
-            return self.adapters[vocabulary[unique[0]]](features)
-        # Mixed-domain batch: route each slice through its own adapter and
-        # scatter the corrected rows back in place. index_put_ on a cloned
-        # tensor keeps the operation differentiable without reordering rows.
-        output = features.clone()
-        for domain_index in unique:
-            rows = indices == domain_index
-            output[rows] = self.adapters[vocabulary[domain_index]](features[rows])
-        return output
-
-    def adapter_parameter_count(self) -> int:
-        return sum(
-            adapter.adapter_parameter_count() for adapter in self.adapters.values()
-        )
+        if (
+            self.invariant_bottleneck_channels < 1
+            or self.private_channels < 1
+            or self.target_bottleneck_channels < 1
+        ):
+            raise ValueError("feature-transfer channel counts must be positive.")
+        if self.target_kernel_size < 3 or self.target_kernel_size % 2 == 0:
+            raise ValueError("target_kernel_size must be odd and at least three.")
+        if not isfinite(self.max_invariant_residual) or self.max_invariant_residual <= 0.0:
+            raise ValueError("max_invariant_residual must be finite and positive.")
+        if not isfinite(self.max_target_residual) or self.max_target_residual <= 0.0:
+            raise ValueError("max_target_residual must be finite and positive.")
+        if self.private_domain_count < 0:
+            raise ValueError("private_domain_count must be non-negative.")
 
     def record(self) -> dict[str, object]:
         return {
-            "feature_channels": self.feature_channels,
-            "adapter_config": {
-                "bottleneck_channels": self.adapter_config.bottleneck_channels,
-                "kernel_size": self.adapter_config.kernel_size,
-                "max_residual": self.adapter_config.max_residual,
-            },
-            "domains": list(self.vocab),
-            "adapter_parameter_count": self.adapter_parameter_count(),
+            "schema": FEATURE_TRANSFER_SCHEMA,
+            "invariant_bottleneck_channels": self.invariant_bottleneck_channels,
+            "private_channels": self.private_channels,
+            "target_bottleneck_channels": self.target_bottleneck_channels,
+            "target_kernel_size": self.target_kernel_size,
+            "max_invariant_residual": self.max_invariant_residual,
+            "max_target_residual": self.max_target_residual,
+            "private_domain_count": self.private_domain_count,
         }
+
+
+class FeatureResidualAdapter(nn.Module):
+    """Identity-initialized bounded residual on structured ``(B,C,T)`` maps."""
+
+    def __init__(
+        self,
+        channels: int,
+        *,
+        bottleneck_channels: int,
+        kernel_size: int,
+        max_residual: float,
+    ) -> None:
+        super().__init__()
+        if channels < 1 or bottleneck_channels < 1:
+            raise ValueError("residual adapter channels must be positive.")
+        if kernel_size < 1 or kernel_size % 2 == 0:
+            raise ValueError("residual adapter kernel_size must be positive and odd.")
+        if not isfinite(max_residual) or max_residual <= 0.0:
+            raise ValueError("residual adapter max_residual must be finite and positive.")
+        self.channels = int(channels)
+        self.bottleneck_channels = int(bottleneck_channels)
+        self.kernel_size = int(kernel_size)
+        self.max_residual = float(max_residual)
+        self.depthwise = nn.Conv1d(
+            channels,
+            channels,
+            kernel_size=kernel_size,
+            padding=(kernel_size - 1) // 2,
+            groups=channels,
+            bias=False,
+        )
+        self.down = nn.Conv1d(channels, bottleneck_channels, kernel_size=1)
+        self.up = nn.Conv1d(bottleneck_channels, channels, kernel_size=1)
+        self.gate = nn.Parameter(torch.zeros((), dtype=torch.float32))
+
+    def residual(self, features: torch.Tensor) -> torch.Tensor:
+        return self.up(F.elu(self.down(self.depthwise(features))))
+
+    def forward(self, features: torch.Tensor) -> torch.Tensor:
+        if features.ndim != 3 or features.shape[1] != self.channels:
+            raise ValueError(
+                f"Expected feature map (B,{self.channels},T), got {tuple(features.shape)}."
+            )
+        scale = self.scale_tensor(features.dtype)
+        return features + scale * self.residual(features)
+
+    def scale_tensor(self, dtype: torch.dtype = torch.float32) -> torch.Tensor:
+        """Return the bounded scalar gate in the requested computation dtype."""
+
+        return self.max_residual * torch.tanh(self.gate.to(dtype))
+
+    def scale_value(self) -> float:
+        return float(self.scale_tensor().detach().item())
+
+    def parameter_count(self) -> int:
+        return sum(parameter.numel() for parameter in self.parameters())
+
+
+class FeatureDomainTransfer(nn.Module):
+    """Wrap a plain N2P3Net with invariant/private and target-adapter paths."""
+
+    def __init__(self, core: N2P3Net, *, config: FeatureTransferConfig) -> None:
+        super().__init__()
+        if not isinstance(core, N2P3Net):
+            raise TypeError("FeatureDomainTransfer requires a plain N2P3Net core.")
+        if not isinstance(config, FeatureTransferConfig):
+            raise TypeError("config must be a FeatureTransferConfig.")
+        self.core = core
+        self.config = config
+        self.feature_channels = len(core.mst_branches) * core.mst_features_per_scale
+        self.invariant_adapter = FeatureResidualAdapter(
+            self.feature_channels,
+            bottleneck_channels=config.invariant_bottleneck_channels,
+            kernel_size=1,
+            max_residual=config.max_invariant_residual,
+        )
+        self.private_projection = nn.Conv1d(
+            self.feature_channels,
+            config.private_channels,
+            kernel_size=1,
+            bias=True,
+        )
+        self.private_domain_head = (
+            nn.Linear(config.private_channels, config.private_domain_count)
+            if config.private_domain_count >= 2
+            else None
+        )
+        self.target_adapter = FeatureResidualAdapter(
+            self.feature_channels,
+            bottleneck_channels=config.target_bottleneck_channels,
+            kernel_size=config.target_kernel_size,
+            max_residual=config.max_target_residual,
+        )
+        self._target_adapter_enabled = False
+        self.set_target_adapter_trainable(False)
+
+    @property
+    def n_channels(self) -> int:
+        return self.core.n_channels
+
+    @property
+    def n_times(self) -> int | None:
+        return self.core.n_times
+
+    @property
+    def sfreq(self) -> float:
+        return self.core.sfreq
+
+    @property
+    def tmin_s(self) -> float:
+        return self.core.tmin_s
+
+    @property
+    def pooling_mode(self) -> str:
+        return self.core.pooling_mode
+
+    @property
+    def classifier(self) -> nn.Module:
+        return self.core.classifier
+
+    @property
+    def classifier_features(self) -> int:
+        return self.core.classifier_features
+
+    def set_target_adapter_trainable(self, enabled: bool) -> None:
+        for parameter in self.target_adapter_parameters():
+            parameter.requires_grad = bool(enabled)
+
+    def set_target_adapter_enabled(self, enabled: bool) -> None:
+        """Select the target residual path without changing parameter scopes."""
+
+        self._target_adapter_enabled = bool(enabled)
+
+    def target_adapter_parameters(self) -> tuple[nn.Parameter, ...]:
+        return tuple(self.target_adapter.parameters())
+
+    def feature_views(
+        self,
+        x: torch.Tensor,
+        *,
+        use_target_adapter: bool | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        base = self.core.forward_features(x)
+        invariant = self.invariant_adapter(base)
+        private = F.elu(self.private_projection(base))
+        private_summary = private.mean(dim=-1)
+        enabled = (
+            self._target_adapter_enabled
+            if use_target_adapter is None
+            else bool(use_target_adapter)
+        )
+        if enabled:
+            adapted = self.target_adapter(invariant)
+        else:
+            adapted = invariant
+        return adapted, invariant, private_summary
+
+    def forward_features(
+        self,
+        x: torch.Tensor,
+        *,
+        use_target_adapter: bool | None = None,
+    ) -> torch.Tensor:
+        """Return the structured feature map consumed by the classifier."""
+
+        adapted, _, _ = self.feature_views(x, use_target_adapter=use_target_adapter)
+        return adapted
+
+    def forward_with_features(
+        self,
+        x: torch.Tensor,
+        *,
+        use_target_adapter: bool | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return ``(logits, invariant_features, private_summary)``.
+
+        The classifier consumes the target-adapted feature map internally;
+        exposing the invariant map separately keeps source alignment from
+        accidentally aligning a target-specific residual.
+        """
+        adapted, invariant, private_summary = self.feature_views(
+            x,
+            use_target_adapter=use_target_adapter,
+        )
+        logits = self.core.classifier(self.core.pool_features(adapted))
+        return logits, invariant, private_summary
+
+    def private_domain_logits(self, private_summary: torch.Tensor) -> torch.Tensor:
+        if self.private_domain_head is None:
+            raise RuntimeError("private domain head is disabled by the transfer contract.")
+        return self.private_domain_head(private_summary)
+
+    def pool_features(self, features: torch.Tensor) -> torch.Tensor:
+        """Pool a structured feature map with the core's declared readout."""
+
+        return self.core.pool_features(features)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.forward_with_features(x)[0]
+
+    def architecture_record(self) -> dict[str, object]:
+        return {
+            **self.core.architecture_record(),
+            "feature_transfer": self.feature_transfer_record(),
+        }
+
+    def feature_transfer_record(self) -> dict[str, object]:
+        """Return only the wrapper contract for checkpoint/runner ledgers."""
+
+        return {
+            **self.config.record(),
+            "feature_channels": self.feature_channels,
+            "target_style_conditioning": "not_in_default_path",
+        }
+
+    def parameter_count(self) -> int:
+        return sum(parameter.numel() for parameter in self.parameters() if parameter.requires_grad)
+
+
+__all__ = ["FEATURE_TRANSFER_SCHEMA", "FeatureDomainTransfer", "FeatureResidualAdapter", "FeatureTransferConfig"]

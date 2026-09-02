@@ -30,9 +30,12 @@ unknown during calibration.
     **71.43%** (trial AUC 0.694).
     These are cross-subject development results, not deployment claims.
 
-- Feature-domain transfer research (2026-09): identity-initialized per-domain
-  residual feature adapters, class-conditional source alignment, a unified
-  candidate-evidence decision core, and leakage-safe domain LODO/ceiling folds.
+- Feature-domain transfer research (2026-09): the first active implementation
+  now wraps the plain N2P3Net with invariant/private feature paths and a
+  target-only low-rank residual adapter. Source-domain IDs are auxiliary
+  training/diagnostic metadata only; the earlier per-domain adapter prototype is
+  retired and must not be used for new experiments. No target hit@R gain is
+  claimed until the cross-decision protocol is run.
 
 - The living evidence ledger, preregistered single-axis arms, and promotion
   gates are in `doc/research_program.zh.md`. No deployment champion is
@@ -67,8 +70,9 @@ The LOSO runner requires the signal and baseline extras. The living research
 guide is `doc/research_program.zh.md`; frozen ablations and evidence are physically
 isolated in `frozen/research_evidence_through_20260901-d1db8e4.tar.gz`.
 The current concise research briefing is `doc/research_status_report_20260831.zh.md`.
-The current project-wide critical review is `doc/project_critical_review_20260901.zh.md`.
-`doc/constitution.md` and `doc/blueprint.md` contain stable engineering principles.
+The current feature-transfer research report is
+`doc/feature_domain_transfer_research_20260902.zh.md`. The only active guidance
+is `doc/research_program.zh.md`; historical guidance files were retired.
 
 ## Data Contract
 
@@ -137,7 +141,7 @@ and checkpoints must be rebuilt under `p300_single_subject_causal_v3` before new
 promotion experiments.
 
 Raw, active-derived, legacy-derived, frozen-code, and evidence layers are defined
-in `doc/data_layers.zh.md`. Active loaders contain no legacy schema flags,
+in `doc/research_program.zh.md`. Active loaders contain no legacy schema flags,
 checkpoint aliases, or downgrade paths.
 
 The discrete-time equations, physical receptive-field convention, and

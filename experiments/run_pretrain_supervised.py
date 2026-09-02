@@ -1,4 +1,4 @@
-"""Supervised source pretraining for the N2P3 trunk (Gate 3-S1).
+"""Supervised source pretraining for the N2P3 trunk and feature-transfer wrapper.
 
 Trains N2P3NetBaseline (the exact LOSO-floor training path) on every source
 subject except the holdout block. The saved checkpoint carries the full model
@@ -39,7 +39,7 @@ from data.epochs import (  # noqa: E402
     loaded_epoch_cache_attestation,
 )
 from data.identity import training_identity_ledger_from_rows  # noqa: E402
-from models.adapters import FeatureAdapterConfig  # noqa: E402
+from models.adapters import FeatureTransferConfig  # noqa: E402
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
     DEFAULT_N2P3_POOLING_MODE,
@@ -162,12 +162,22 @@ def _single_job_argv(
         args.risk_within_domain_unit,
         "--qc-ptp-uv",
         str(args.qc_ptp_uv),
-        "--adapter-bottleneck",
-        str(args.adapter_bottleneck),
-        "--adapter-kernel",
-        str(args.adapter_kernel),
-        "--adapter-max-residual",
-        str(args.adapter_max_residual),
+        "--feature-transfer-invariant-bottleneck",
+        str(args.feature_transfer_invariant_bottleneck),
+        "--feature-transfer-private-channels",
+        str(args.feature_transfer_private_channels),
+        "--feature-transfer-target-bottleneck",
+        str(args.feature_transfer_target_bottleneck),
+        "--feature-transfer-target-kernel",
+        str(args.feature_transfer_target_kernel),
+        "--feature-transfer-max-invariant-residual",
+        str(args.feature_transfer_max_invariant_residual),
+        "--feature-transfer-max-target-residual",
+        str(args.feature_transfer_max_target_residual),
+        "--private-domain-weight",
+        str(args.private_domain_weight),
+        "--orthogonality-weight",
+        str(args.orthogonality_weight),
         "--feature-alignment-weight",
         str(args.feature_alignment_weight),
         "--checkpoint",
@@ -301,35 +311,61 @@ def main(argv: list[str] | None = None) -> None:
         help="Exact source domain used for group-disjoint epoch selection and calibration.",
     )
     parser.add_argument(
-        "--adapter-bottleneck",
+        "--feature-transfer-invariant-bottleneck",
         type=int,
         default=0,
-        help=(
-            "Enable identity-initialized per-domain residual feature adapters with "
-            "this bottleneck width; 0 disables the adapter bank (single-axis arm S1)."
-        ),
+        help="Enable the shared invariant feature path with this residual bottleneck width; 0 keeps the plain core.",
     )
     parser.add_argument(
-        "--adapter-kernel",
+        "--feature-transfer-private-channels",
+        type=int,
+        default=4,
+        help="Private style representation width when feature transfer is enabled.",
+    )
+    parser.add_argument(
+        "--feature-transfer-target-bottleneck",
+        type=int,
+        default=4,
+        help="Target-only residual adapter bottleneck width.",
+    )
+    parser.add_argument(
+        "--feature-transfer-target-kernel",
         type=int,
         default=9,
-        help="Temporal kernel of the residual feature adapters (odd, >=3).",
+        help="Target-only residual adapter temporal kernel (odd, >=3).",
     )
     parser.add_argument(
-        "--adapter-max-residual",
+        "--feature-transfer-max-invariant-residual",
         type=float,
-        default=0.5,
-        help="Bound rho on the tanh-gated adapter residual scale.",
+        default=0.25,
+        help="Bound on the shared invariant residual scale.",
+    )
+    parser.add_argument(
+        "--feature-transfer-max-target-residual",
+        type=float,
+        default=0.25,
+        help="Bound on the target-only residual scale.",
     )
     parser.add_argument(
         "--feature-alignment-weight",
         type=float,
         default=0.0,
         help=(
-            "Weight of the class-conditional feature mean-alignment loss across "
-            "source domains; 0 disables alignment (single-axis arm A1 when used "
-            "without adapters)."
+            "Weight of the class-conditional invariant-feature mean-alignment loss "
+            "across source domains; 0 disables this auxiliary objective."
         ),
+    )
+    parser.add_argument(
+        "--private-domain-weight",
+        type=float,
+        default=0.0,
+        help="Weight of private-style source-domain supervision; requires feature transfer and multiple domains.",
+    )
+    parser.add_argument(
+        "--orthogonality-weight",
+        type=float,
+        default=0.0,
+        help="Weight of invariant/private cross-covariance penalty; requires feature transfer.",
     )
     parser.add_argument(
         "--qc-ptp-uv",
@@ -423,9 +459,9 @@ def main(argv: list[str] | None = None) -> None:
         source_domains = source_domain_ids(dataset)[source_rows]
         observed_domains = set(source_domains.tolist())
         if len(observed_domains) > 1:
-            if selection_domain is None:
+            if selection_domain is None and domain_mass:
                 raise ValueError(
-                    "multi-domain source training requires an explicit selection-domain."
+                    "weighted multi-domain source training requires an explicit selection-domain."
                 )
             if domain_mass and set(domain_mass) != observed_domains:
                 raise ValueError(
@@ -439,20 +475,31 @@ def main(argv: list[str] | None = None) -> None:
     elif domain_mass or selection_domain is not None:
         raise ValueError("domain-risk options require an explicit source-domain axis.")
 
-    feature_adapter = None
-    adapter_domains = None
-    if args.adapter_bottleneck > 0:
-        if source_domains is None or len(set(source_domains.tolist())) < 2:
-            raise ValueError(
-                "--adapter-bottleneck requires a genuinely multi-domain source cache "
-                "with an explicit source-domain axis."
-            )
-        feature_adapter = FeatureAdapterConfig(
-            bottleneck_channels=args.adapter_bottleneck,
-            kernel_size=args.adapter_kernel,
-            max_residual=args.adapter_max_residual,
+    feature_transfer = None
+    if args.feature_transfer_invariant_bottleneck > 0:
+        feature_transfer = FeatureTransferConfig(
+            invariant_bottleneck_channels=args.feature_transfer_invariant_bottleneck,
+            private_channels=args.feature_transfer_private_channels,
+            target_bottleneck_channels=args.feature_transfer_target_bottleneck,
+            target_kernel_size=args.feature_transfer_target_kernel,
+            max_invariant_residual=args.feature_transfer_max_invariant_residual,
+            max_target_residual=args.feature_transfer_max_target_residual,
+            private_domain_count=(
+                len(set(source_domains.tolist())) if source_domains is not None else 0
+            ),
         )
-        adapter_domains = sorted(set(source_domains.tolist()))
+    elif args.private_domain_weight > 0.0 or args.orthogonality_weight > 0.0:
+        raise ValueError(
+            "private-domain and orthogonality losses require "
+            "--feature-transfer-invariant-bottleneck > 0."
+        )
+    if args.private_domain_weight > 0.0 and (
+        source_domains is None or len(set(source_domains.tolist())) < 2
+    ):
+        raise ValueError(
+            "--private-domain-weight requires a genuinely multi-domain source cache "
+            "with an explicit source-domain axis."
+        )
     if args.feature_alignment_weight > 0.0 and (
         source_domains is None or len(set(source_domains.tolist())) < 2
     ):
@@ -484,8 +531,7 @@ def main(argv: list[str] | None = None) -> None:
         tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
         pooling_mode=args.pooling_mode,
         architecture=architecture,
-        feature_adapter=feature_adapter,
-        adapter_domains=adapter_domains,
+        feature_transfer=feature_transfer,
     )
 
     X = np.ascontiguousarray(dataset.X[source_rows])
@@ -517,6 +563,8 @@ def main(argv: list[str] | None = None) -> None:
         y,
         group_ids=src_subjects,
         feature_alignment_weight=args.feature_alignment_weight,
+        feature_private_domain_weight=args.private_domain_weight,
+        feature_orthogonality_weight=args.orthogonality_weight,
         **risk_fit_kwargs,
     )
     fit_sec = time.perf_counter() - started
@@ -537,8 +585,7 @@ def main(argv: list[str] | None = None) -> None:
         tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
         pooling_mode=args.pooling_mode,
         architecture=architecture,
-        feature_adapter=feature_adapter,
-        adapter_domains=adapter_domains,
+        feature_transfer=feature_transfer,
     )
     refit_started = time.perf_counter()
     baseline.fit(
@@ -546,6 +593,8 @@ def main(argv: list[str] | None = None) -> None:
         y,
         group_ids=None,
         feature_alignment_weight=args.feature_alignment_weight,
+        feature_private_domain_weight=args.private_domain_weight,
+        feature_orthogonality_weight=args.orthogonality_weight,
         **risk_fit_kwargs,
     )
     refit_sec = time.perf_counter() - refit_started
@@ -620,16 +669,7 @@ def main(argv: list[str] | None = None) -> None:
             "label_counts": np.bincount(y, minlength=2).astype(int).tolist(),
             "source_risk_selection": selection_baseline.last_source_risk,
             "source_risk_refit": baseline.last_source_risk,
-            "feature_adapter": (
-                {
-                    "bottleneck_channels": feature_adapter.bottleneck_channels,
-                    "kernel_size": feature_adapter.kernel_size,
-                    "max_residual": feature_adapter.max_residual,
-                    "domains": adapter_domains,
-                }
-                if feature_adapter is not None
-                else None
-            ),
+            "feature_transfer": feature_transfer.record() if feature_transfer is not None else None,
             "feature_alignment": {
                 "weight": float(args.feature_alignment_weight),
                 "loss": (
@@ -643,6 +683,20 @@ def main(argv: list[str] | None = None) -> None:
                 "refit_epoch_mean_squared_distance": (
                     baseline.last_history.get("feature_alignment") or {}
                 ).get("epoch_mean_squared_distance"),
+                "private_domain_weight": float(args.private_domain_weight),
+                "orthogonality_weight": float(args.orthogonality_weight),
+                "selection_epoch_private_domain_loss": (
+                    selection_baseline.last_history.get("feature_alignment") or {}
+                ).get("epoch_private_domain_loss"),
+                "refit_epoch_private_domain_loss": (
+                    baseline.last_history.get("feature_alignment") or {}
+                ).get("epoch_private_domain_loss"),
+                "selection_epoch_orthogonality_loss": (
+                    selection_baseline.last_history.get("feature_alignment") or {}
+                ).get("epoch_orthogonality_loss"),
+                "refit_epoch_orthogonality_loss": (
+                    baseline.last_history.get("feature_alignment") or {}
+                ).get("epoch_orthogonality_loss"),
             },
         },
         seed=int(args.seed),
@@ -663,17 +717,10 @@ def main(argv: list[str] | None = None) -> None:
             "source_domain_mass": domain_mass or None,
             "risk_within_domain_unit": args.risk_within_domain_unit if domain_mass else None,
             "selection_domain": selection_domain,
-            "feature_adapter": (
-                {
-                    "bottleneck_channels": feature_adapter.bottleneck_channels,
-                    "kernel_size": feature_adapter.kernel_size,
-                    "max_residual": feature_adapter.max_residual,
-                    "domains": adapter_domains,
-                }
-                if feature_adapter is not None
-                else None
-            ),
+            "feature_transfer": feature_transfer.record() if feature_transfer is not None else None,
             "feature_alignment_weight": float(args.feature_alignment_weight),
+            "private_domain_weight": float(args.private_domain_weight),
+            "orthogonality_weight": float(args.orthogonality_weight),
             "training": "N2P3NetBaseline supervised (LOSO-identical path)",
         },
         "architecture": model.architecture_record(),

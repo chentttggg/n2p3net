@@ -14,7 +14,7 @@ import torch
 from torch import nn
 
 from baselines.validation import group_disjoint_validation_split
-from models.adapters import RESERVED_TARGET_DOMAIN, FeatureResidualAdapter
+from models.adapters import FeatureDomainTransfer
 from models.n2p3net import N2P3Net
 from research.execution import ExpectedSubjectError, SubjectFailureCode
 from transfer.within_subject import chronological_validation_split
@@ -86,7 +86,7 @@ class SubjectAdapter:
 
     def __init__(
         self,
-        trunk: N2P3Net,
+        trunk: N2P3Net | FeatureDomainTransfer,
         *,
         config: SubjectAdapterConfig | None = None,
         device: torch.device | None = None,
@@ -103,33 +103,21 @@ class SubjectAdapter:
             )
         self.trunk = trunk.to(self.device)
         self.feature_dim = trunk.classifier_features
-        # Inner-loop target adapter: one reserved residual slot on the trunk's
-        # adapter bank. Only these parameters train during ``fit``; the trunk
-        # and the source classifier stay frozen, so calibration data can move
-        # domain-specific morphology but not the shared representation.
+        # Inner-loop target adapter is a single explicit module owned by the
+        # transfer wrapper. There is deliberately no source-domain vocabulary
+        # or runtime registration here: an unseen target is not a source-domain
+        # lookup problem.
         if self.config.head_kind == "adapter":
-            bank = self.trunk.domain_adapters
-            if bank is None:
+            if not isinstance(self.trunk, FeatureDomainTransfer):
                 raise ValueError(
-                    "head_kind='adapter' requires a trunk constructed with a "
-                    "FeatureAdapterConfig (DomainAdapterBank); rebuild the trunk "
-                    "with feature_adapter enabled before subject adaptation."
+                    "head_kind='adapter' requires a FeatureDomainTransfer wrapper "
+                    "with an explicit target_adapter."
                 )
-            if RESERVED_TARGET_DOMAIN in bank.adapters:
-                raise ValueError(
-                    "the reserved target adapter slot is already registered on "
-                    "this trunk; use a fresh trunk per subject."
-                )
-            bank.register(
-                RESERVED_TARGET_DOMAIN,
-                FeatureResidualAdapter(
-                    bank.feature_channels, config=bank.adapter_config
-                ),
-                reserved=True,
-            )
-            self._target_domain_index = bank.domain_index(RESERVED_TARGET_DOMAIN)
+            self.trunk.set_target_adapter_enabled(True)
+            self.trunk.set_target_adapter_trainable(False)
         else:
-            self._target_domain_index = None
+            if isinstance(self.trunk, FeatureDomainTransfer):
+                self.trunk.set_target_adapter_enabled(False)
         self.head: nn.Module
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(self.config.seed)
@@ -166,16 +154,15 @@ class SubjectAdapter:
             parameter.requires_grad for parameter in self.trunk.parameters()
         )
         with torch.set_grad_enabled(trunk_requires_grad):
-            domain_ids = None
-            if self._target_domain_index is not None:
-                domain_ids = torch.full(
-                    (X.shape[0],),
-                    self._target_domain_index,
-                    dtype=torch.long,
-                    device=X.device,
+            if isinstance(self.trunk, FeatureDomainTransfer):
+                features, _, _ = self.trunk.feature_views(
+                    X,
+                    use_target_adapter=self.config.head_kind == "adapter",
                 )
-            features = self.trunk.forward_features(X, domain_ids=domain_ids)
-            pooled = self.trunk.pool(features)
+                pooled = self.trunk.pool_features(features)
+            else:
+                features = self.trunk.forward_features(X)
+                pooled = self.trunk.pool_features(features)
             # AdaptiveAvgPool1d(1) retains a singleton temporal axis, whereas
             # the other readouts already return (B,D).  Normalize the feature
             # shape at this boundary so every head sees the same contract.
@@ -262,11 +249,13 @@ class SubjectAdapter:
         for parameter in self.trunk.parameters():
             parameter.requires_grad = trunk_trainable
         if self.config.head_kind == "adapter":
-            assert self.trunk.domain_adapters is not None
-            for parameter in self.trunk.domain_adapters.adapters[
-                RESERVED_TARGET_DOMAIN
-            ].parameters():
-                parameter.requires_grad = True
+            if not isinstance(self.trunk, FeatureDomainTransfer):
+                raise RuntimeError("adapter mode requires FeatureDomainTransfer.")
+            self.trunk.set_target_adapter_enabled(True)
+            self.trunk.set_target_adapter_trainable(True)
+        elif isinstance(self.trunk, FeatureDomainTransfer):
+            self.trunk.set_target_adapter_enabled(False)
+            self.trunk.set_target_adapter_trainable(False)
         if self.head is not None:
             for parameter in self.head.parameters():
                 parameter.requires_grad = True

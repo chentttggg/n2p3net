@@ -8,7 +8,7 @@ the GTN and BI runners cannot silently disagree about what was pretrained.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import asdict
 from pathlib import Path
 
@@ -20,7 +20,7 @@ from data.identity import (
     IdentityExclusionPolicy,
     assert_target_identity_excluded,
 )
-from models.adapters import FeatureAdapterConfig
+from models.adapters import FeatureDomainTransfer, FeatureTransferConfig
 from models.n2p3net import (
     POOLING_MODES,
     N2P3ArchitectureConfig,
@@ -98,7 +98,7 @@ def assert_checkpoint_target_identity_excluded(
 
 def _architecture_from_payload(
     payload: Mapping[str, object],
-) -> tuple[N2P3ArchitectureConfig, str, FeatureAdapterConfig | None, tuple[str, ...] | None]:
+) -> tuple[N2P3ArchitectureConfig, str, FeatureTransferConfig | None]:
     """Resolve the complete architecture record required by the current schema."""
 
     record = payload.get("architecture")
@@ -141,29 +141,38 @@ def _architecture_from_payload(
     except (TypeError, ValueError) as exc:
         raise ValueError(f"checkpoint architecture is invalid: {exc}") from exc
 
-    feature_adapter = None
-    adapter_domains: tuple[str, ...] | None = None
-    adapter_record = record.get("domain_adapters")
-    if isinstance(adapter_record, Mapping):
-        config_record = adapter_record.get("adapter_config")
-        if not isinstance(config_record, Mapping):
-            raise ValueError("checkpoint domain_adapters lacks its adapter_config mapping.")
+    if "domain_adapters" in record:
+        raise ValueError(
+            "checkpoint uses the retired source-domain adapter bank; regenerate it "
+            "with the feature_transfer architecture."
+        )
+    transfer_record = record.get("feature_transfer")
+    transfer_config = None
+    if transfer_record is not None:
+        if not isinstance(transfer_record, Mapping):
+            raise ValueError("checkpoint feature_transfer must be a mapping.")
+        if transfer_record.get("schema") != "n2p3_feature_domain_transfer/1":
+            raise ValueError("checkpoint feature_transfer schema is unsupported.")
         try:
-            feature_adapter = FeatureAdapterConfig(
-                bottleneck_channels=int(config_record["bottleneck_channels"]),
-                kernel_size=int(config_record["kernel_size"]),
-                max_residual=float(config_record["max_residual"]),
+            transfer_config = FeatureTransferConfig(
+                invariant_bottleneck_channels=int(
+                    transfer_record["invariant_bottleneck_channels"]
+                ),
+                private_channels=int(transfer_record["private_channels"]),
+                target_bottleneck_channels=int(
+                    transfer_record["target_bottleneck_channels"]
+                ),
+                target_kernel_size=int(transfer_record["target_kernel_size"]),
+                max_invariant_residual=float(
+                    transfer_record["max_invariant_residual"]
+                ),
+                max_target_residual=float(transfer_record["max_target_residual"]),
+                private_domain_count=int(transfer_record.get("private_domain_count", 0)),
             )
         except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(f"checkpoint adapter config is invalid: {exc}") from exc
-        domains = adapter_record.get("domains")
-        if not isinstance(domains, Sequence) or any(
-            not isinstance(domain, str) or not domain.strip() for domain in domains
-        ):
-            raise ValueError("checkpoint domain_adapters lacks a valid domain vocabulary.")
-        adapter_domains = tuple(str(domain) for domain in domains)
+            raise ValueError(f"checkpoint feature_transfer config is invalid: {exc}") from exc
 
-    return architecture, pooling, feature_adapter, adapter_domains
+    return architecture, pooling, transfer_config
 
 
 def _validate_metadata(
@@ -361,7 +370,7 @@ def checkpoint_scores_to_llr(
 
 
 def predict_n2p3_checkpoint(
-    trunk: N2P3Net,
+    trunk: N2P3Net | FeatureDomainTransfer,
     X: np.ndarray,
     *,
     input_stats: tuple[np.ndarray, np.ndarray],
@@ -400,7 +409,7 @@ def load_n2p3_trunk_checkpoint(
     *,
     target_subject: str | None = None,
     identity_exclusion_policy: IdentityExclusionPolicy = "source_or_global",
-) -> tuple[N2P3Net, dict[str, object]]:
+) -> tuple[N2P3Net | FeatureDomainTransfer, dict[str, object]]:
     """Load one target-excluded trunk using its declared architecture contract."""
 
     payload = dict(path) if isinstance(path, Mapping) else load_checkpoint_payload(path)
@@ -410,17 +419,18 @@ def load_n2p3_trunk_checkpoint(
         target_subject=target_subject,
         identity_exclusion_policy=identity_exclusion_policy,
     )
-    architecture, pooling, feature_adapter, adapter_domains = _architecture_from_payload(payload)
-    trunk = N2P3Net(
+    architecture, pooling, transfer_config = _architecture_from_payload(payload)
+    core = N2P3Net(
         int(dataset.n_channels),
         n_times=int(dataset.n_times),
         sfreq=float(dataset.preprocessing.sfreq),
         tmin_s=float(dataset.preprocessing.tmin_ms) / 1000.0,
         pooling_mode=pooling,
-        feature_adapter=feature_adapter,
-        adapter_domains=adapter_domains,
         **architecture.model_kwargs(),
     )
+    trunk: N2P3Net | FeatureDomainTransfer = core
+    if transfer_config is not None:
+        trunk = FeatureDomainTransfer(core, config=transfer_config)
     state = payload["trunk_state_dict"]
     try:
         missing, unexpected = trunk.load_state_dict(state, strict=False)
@@ -432,13 +442,15 @@ def load_n2p3_trunk_checkpoint(
         raise ValueError(
             f"checkpoint does not match the target trunk: missing={missing} unexpected={unexpected}."
         )
+    if transfer_config is not None and not isinstance(trunk, FeatureDomainTransfer):
+        raise RuntimeError("feature_transfer checkpoint did not reconstruct its wrapper.")
     return trunk, payload
 
 
 def checkpoint_architecture_record(payload: Mapping[str, object]) -> dict[str, object]:
     """Return a normalized architecture summary for run ledgers and diagnostics."""
 
-    architecture, pooling, feature_adapter, adapter_domains = _architecture_from_payload(payload)
+    architecture, pooling, transfer_config = _architecture_from_payload(payload)
     required = ("input_tmin_s", "input_sample_rate_hz", "n_times")
     missing = [field for field in required if payload.get(field) is None]
     if missing:
@@ -450,18 +462,12 @@ def checkpoint_architecture_record(payload: Mapping[str, object]) -> dict[str, o
         n_times=int(payload["n_times"]),
         architecture=architecture,
     )
-    if feature_adapter is not None:
-        assert adapter_domains is not None
-        record["domain_adapters"] = {
+    if transfer_config is not None:
+        record["feature_transfer"] = {
+            **transfer_config.record(),
             "feature_channels": (
                 len(architecture.mst_kernel_sizes) * architecture.mst_features_per_scale
             ),
-            "adapter_config": {
-                "bottleneck_channels": feature_adapter.bottleneck_channels,
-                "kernel_size": feature_adapter.kernel_size,
-                "max_residual": feature_adapter.max_residual,
-            },
-            "domains": list(adapter_domains),
         }
     return record
 
