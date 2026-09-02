@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pickle
 
+import pytest
 import torch
 
 import train.runtime as runtime_module
@@ -11,6 +12,7 @@ from train.runtime import (
     cpu_thread_budget,
     is_oom_error,
     resolve_cpu_threads,
+    resolve_cpu_worker_plan,
     resolve_optimizer_execution,
     resolve_precision,
 )
@@ -126,6 +128,43 @@ def test_cpu_budget_is_divided_per_worker_and_restored() -> None:
     with cpu_thread_budget(1):
         assert torch.get_num_threads() == 1
     assert torch.get_num_threads() == previous
+
+
+def test_cpu_worker_plan_respects_tasks_quota_and_explicit_budget() -> None:
+    automatic = resolve_cpu_worker_plan(6, available_threads=25)
+    assert automatic.record() == {
+        "task_count": 6,
+        "requested_workers": "auto",
+        "effective_workers": 6,
+        "available_threads": 25,
+        "total_thread_budget": 25,
+        "threads_per_worker": 4,
+    }
+
+    bounded = resolve_cpu_worker_plan(
+        20,
+        requested_workers=8,
+        total_threads=12,
+        max_workers=4,
+        available_threads=25,
+    )
+    assert bounded.effective_workers == 4
+    assert bounded.total_thread_budget == 12
+    assert bounded.threads_per_worker == 3
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"task_count": 0},
+        {"task_count": 1, "requested_workers": 0},
+        {"task_count": 1, "total_threads": 0},
+        {"task_count": 1, "max_workers": 0},
+    ],
+)
+def test_cpu_worker_plan_rejects_invalid_limits(kwargs) -> None:
+    with pytest.raises(ValueError):
+        resolve_cpu_worker_plan(**kwargs)
 
 
 def test_available_cpu_threads_respects_cgroup_quota(monkeypatch) -> None:

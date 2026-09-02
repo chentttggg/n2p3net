@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import threading
 from pathlib import Path
 
 import numpy as np
@@ -127,6 +128,22 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
     first_path = save_epoch_dataset(tmp_path / "first.npz", first)
     second_path = save_epoch_dataset(tmp_path / "second.npz", second)
     output_path = tmp_path / "merged.npz"
+    from experiments import prepare_multidomain_source as module
+
+    original_prepare = module._prepare_source
+    barrier = threading.Barrier(2)
+    worker_names: list[str] = []
+
+    def concurrent_prepare(source, *, channels, event_contract):
+        worker_names.append(threading.current_thread().name)
+        barrier.wait(timeout=5)
+        return original_prepare(
+            source,
+            channels=channels,
+            event_contract=event_contract,
+        )
+
+    monkeypatch.setattr(module, "_prepare_source", concurrent_prepare)
     monkeypatch.setattr(
         sys,
         "argv",
@@ -140,6 +157,10 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
             "Cz,P3,Pz,P4,Oz",
             "--output",
             str(output_path),
+            "--source-workers",
+            "2",
+            "--cpu-threads",
+            "2",
         ],
     )
 
@@ -154,6 +175,15 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
     np.testing.assert_array_equal(merged.X[first.n_epochs :], second.X)
     assert merged.subject_ids.tolist() == ["A::01", "A::01", "B::02", "B::02"]
     assert source_domain_ids(merged).tolist() == ["A", "A", "B", "B"]
+    assert len(set(worker_names)) == 2
+    assert all(name.startswith("multidomain-source") for name in worker_names)
+    source_loading = merged.provenance["source_loading"]
+    assert source_loading["task_count"] == 2
+    assert source_loading["requested_workers"] == 2
+    assert source_loading["effective_workers"] == 2
+    assert source_loading["available_threads"] >= 2
+    assert source_loading["total_thread_budget"] == 2
+    assert source_loading["threads_per_worker"] == 1
     assert not any("A::A::" in value or "B::B::" in value for value in merged.subject_ids)
     operations = [entity.operation for entity in merged.lineage.entities]
     assert operations.count("common_channel_average_reference") == 2

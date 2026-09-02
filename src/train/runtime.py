@@ -109,6 +109,71 @@ def resolve_cpu_threads(
     return max(1, budget // worker_count)
 
 
+@dataclass(frozen=True)
+class CpuWorkerPlan:
+    """Resolved process-wide CPU budget for independent parallel tasks."""
+
+    task_count: int
+    requested_workers: int | None
+    effective_workers: int
+    available_threads: int
+    total_thread_budget: int
+    threads_per_worker: int
+
+    def record(self) -> dict[str, int | str]:
+        return {
+            "task_count": self.task_count,
+            "requested_workers": (
+                "auto" if self.requested_workers is None else self.requested_workers
+            ),
+            "effective_workers": self.effective_workers,
+            "available_threads": self.available_threads,
+            "total_thread_budget": self.total_thread_budget,
+            "threads_per_worker": self.threads_per_worker,
+        }
+
+
+def resolve_cpu_worker_plan(
+    task_count: int,
+    *,
+    requested_workers: int | None = None,
+    total_threads: int | None = None,
+    max_workers: int | None = None,
+    available_threads: int | None = None,
+) -> CpuWorkerPlan:
+    """Resolve bounded task workers and native threads from one CPU budget."""
+
+    if task_count < 1:
+        raise ValueError("task_count must be positive.")
+    available = available_cpu_threads() if available_threads is None else int(available_threads)
+    if available < 1:
+        raise ValueError("available_threads must be positive.")
+    if requested_workers is not None and requested_workers < 1:
+        raise ValueError("requested_workers must be positive or None.")
+    if total_threads is not None and total_threads < 1:
+        raise ValueError("total_threads must be positive or None.")
+    if max_workers is not None and max_workers < 1:
+        raise ValueError("max_workers must be positive or None.")
+    budget = available if total_threads is None else min(int(total_threads), available)
+    requested = task_count if requested_workers is None else int(requested_workers)
+    effective = min(task_count, requested, budget)
+    if max_workers is not None:
+        effective = min(effective, int(max_workers))
+    threads_per_worker = resolve_cpu_threads(
+        effective,
+        total_threads=budget,
+        available_threads=available,
+    )
+    return CpuWorkerPlan(
+        task_count=int(task_count),
+        requested_workers=requested_workers,
+        effective_workers=int(effective),
+        available_threads=int(available),
+        total_thread_budget=int(budget),
+        threads_per_worker=int(threads_per_worker),
+    )
+
+
 @contextmanager
 def cpu_thread_budget(threads: int) -> Iterator[None]:
     """Apply one CPU budget to PyTorch and native numeric thread pools.

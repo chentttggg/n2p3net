@@ -101,3 +101,12 @@ divides it across the effective fold workers and applies the result to PyTorch,
 BLAS, and OpenMP pools. On a 16-vCPU host with two active folds this yields
 eight CPU threads per worker, allowing one fold's CPU preprocessing to overlap
 the other fold's GPU work without native thread oversubscription.
+
+Independent CPU task builders use the same `train.runtime.resolve_cpu_worker_plan`
+policy rather than reading host `os.cpu_count()` directly. The plan intersects
+task count, requested workers, cgroup-aware available threads, an optional total
+thread budget, and an optional cap; `cpu_thread_budget` then bounds PyTorch,
+BLAS, and OpenMP inside the executor. Every persisted builder records requested
+and effective workers, total CPU budget, and threads per worker. Multi-source
+cache loading follows this policy in parallel, while final concatenate/save
+remains serial to bound large-array copies.
