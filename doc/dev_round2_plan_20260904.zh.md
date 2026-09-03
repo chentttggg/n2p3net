@@ -111,7 +111,7 @@ contrast），chance = BI2014a v3 字符任务的随机水平（10 选 1 speller
 - plan digest：ca5b444f（r1）→ 见发射记录（statistical_design digest
   66423956 不变）。
 
-### 3.6 r1 AUC 全量配对分析（2026-09-04 04:20，31/64 有效子集）
+### 3.5 r1 AUC 全量配对分析（2026-09-04 04:20，31/64 有效子集）
 
 `binary_auc_mean` 依赖 eligible test evidence：99/192 result 为 null
 （data_eligible=0），两臂 null 集合对称 → 仅 31/64 被试有有效 AUC
@@ -131,7 +131,7 @@ contrast），chance = BI2014a v3 字符任务的随机水平（10 选 1 speller
 （剂量效应）；adapter−zs 的 AUC 差异预期仍近零（秩不敏感），不以 AUC 差异
 否定 adapter 机制。
 
-### 3.5 待 T 拍板的新决策点（D-10，不阻塞 r2）
+### 3.6 待 T 拍板的新决策点（D-10，不阻塞 r2）
 
 **BI2014a dev 轮的 hit@R 语义**：
 - (a) **R_dev 降级**（合同变更）：development 轮允许 test_reps ∈ [2,8]（如
@@ -164,3 +164,35 @@ contrast），chance = BI2014a v3 字符任务的随机水平（10 选 1 speller
 | D7 | C2b / C6 / plan-parse fail-fast 代码批次排期 | 与 r2 并行或 r2 后 |
 | D8 | ULP 容差裁决（r1 前遗留）：放宽 ≥2e-7 vs pin torch 2.11 | 待拍板 |
 | D9 | 实例密码轮换（凭据进过聊天记录） | 待 T 操作 |
+
+## 6. r2 收割结果（2026-09-04 04:26 退出，wall ≈ 45 min）
+
+389/389 任务 completed，0 失败，attempt 全 1。pretrain batch 1965/1908/1947 s
+（E=8；r1 E=2 为 ~1002 s → 时间 ×1.96，与"固定开销主导、E 只放大行边际"
+一致）。产物 SHA：analysis `39f8a1e3…` / manifest `1bb06cfa…`。
+
+### 6.1 核心数字
+
+| 量 | r1 (E=2) | r2 (E=8) | 解读 |
+|---|---|---|---|
+| zs AUC（31 人有效配对子集） | 0.5623 | **0.6371**（seed 0.618/0.642/0.652） | **剂量效应 +0.075**，向历史全量 0.74 靠拢，欠训练假设验证 |
+| adapter − zs AUC | +0.00007（p=0.119） | −0.00000（p=0.93，15/31 严格为 0） | 与 §3.6 预期一致：AUC 秩不敏感，不以 AUC 差异否定 adapter |
+| hit@R=8 | 0.00717 | 0.01891 | 绝对值升 2.6× 但仍低于 chance 0.0278，**分母仍被 5.2% eligibility 卡死**，两臂配对差仍全 0——结构性失配不变 |
+
+### 6.2 r2 判读
+
+1. **E 剂量效应成立**（0.562→0.637），但 hit@R=8 的信息量瓶颈不在 E——在
+   D-10。继续堆 E 只能看到 AUC 单维度缓涨（且单 decision 判定 evidence 不变），
+   **在 D-10 裁决前不自主发射 r3**（无信息训练烧实例成本）；
+2. adapter 机制的两个观察维度（hit@R 决策翻转、AUC 秩）在 BI2014a 单域 +
+   R=8 组合下均无显示力——这不是 adapter 无效的证据，是**测量面缺失**；
+3. r2 的 E=8 checkpoint 是 r3（D-10 裁决后：R_dev 降级重评 hit 或换数据）的
+   直接前驱资产，已留在云端 `dev64_cuda_r2_e8/checkpoints/`。
+
+### 6.3 r3 候选方案（等 D-10）
+
+| D-10 分支 | r3 形态 | 前置 |
+|---|---|---|
+| (a) R_dev 降级 | 合同补丁（dev 轮 test_reps∈[2,8]）→ r3 = r2 checkpoint 复用 + test_reps=2 重评 result 层（wall ≈ 30 min，pretrain 免重跑） | 代码改动需 T 审批 |
+| (b) 换数据 | GTN 242 人 rep 结构普查 → 若支持 R≥8 则建 GTN causal cache（L0 批次） | 数据工程，需 T 拍板域定义 |
+| (c) AUC-only | E=16/24 剂量轮或转 L2 合同闭合批次 | 与 T 议程 |
