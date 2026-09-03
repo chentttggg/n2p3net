@@ -351,7 +351,13 @@ _SOURCE_PROCEDURE_FIELDS: dict[str, frozenset[str] | None] = {
     "architecture": None,
     "preprocessing": None,
     "optimizer": frozenset(
-        {"name", "selection_config", "selection_execution", "refit_execution"}
+        {
+            "name",
+            "selection_config",
+            "selection_execution",
+            "refit_execution",
+            "effective_batch_contract",
+        }
     ),
     "validation": frozenset(
         {
@@ -362,7 +368,18 @@ _SOURCE_PROCEDURE_FIELDS: dict[str, frozenset[str] | None] = {
             "full_source_refit",
         }
     ),
-    "objective": frozenset({"name", "qc_ptp_uv", "input_statistics_scope"}),
+    "objective": frozenset(
+        {
+            "name",
+            "qc_ptp_uv",
+            "input_statistics_scope",
+            "source_risk_contract",
+            "source_domain_axis",
+            "feature_transfer",
+            "feature_alignment_contract",
+            "decision_loss",
+        }
+    ),
 }
 
 

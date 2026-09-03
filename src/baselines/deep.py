@@ -67,6 +67,15 @@ from sklearn.metrics import roc_auc_score
 from baselines.classic import Baseline
 from baselines.validation import group_disjoint_validation_split
 from data.contract import DEFAULT_P300_DATA_CONTRACT
+from models.adapters import (
+    SOURCE_RESIDUAL_LEDGER_SCHEMA,
+    FeatureDomainTransfer,
+    SourceResidualContractError,
+    source_domain_axis_record,
+    source_residual_loss_ledger,
+    source_residual_ratio_contract,
+)
+from models.splitbn import SPLITBN_SOURCE_DOMAIN_BUFFER
 from train.device import get_device
 from train.runtime import (
     DEFAULT_COMPILE_MODE,
@@ -77,6 +86,16 @@ from train.runtime import (
     resolve_optimizer_execution,
 )
 from transfer.alignment import conditional_mean_alignment_loss
+from transfer.decision_loss import (
+    DECISION_TRAINING_LEDGER_SCHEMA,
+    DecisionBatchPlan,
+    DecisionLevelLoss,
+    DecisionLossConfig,
+    DirectDecisionContractError,
+    DirectDecisionMetadata,
+    build_decision_batch_plan,
+    invalid_decision_ledger,
+)
 
 # 模型名（lowercase）→ 构造类
 _MODEL_FACTORIES = {
@@ -220,6 +239,17 @@ class _CrossEntropyObjective(nn.Module):
         labels: torch.Tensor,
         row_weights: torch.Tensor | None = None,
     ) -> torch.Tensor:
+        numerator, denominator = self.components(logits, labels, row_weights)
+        return numerator / denominator
+
+    def components(
+        self,
+        logits: torch.Tensor,
+        labels: torch.Tensor,
+        row_weights: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return additive sufficient statistics for split-independent validation."""
+
         rows = F.cross_entropy(
             logits,
             labels,
@@ -229,7 +259,7 @@ class _CrossEntropyObjective(nn.Module):
         if row_weights is not None:
             rows = rows * row_weights
         denominator = self.class_weights.index_select(0, labels).sum()
-        return rows.sum() / denominator
+        return rows.sum(), denominator
 
 
 @dataclass
@@ -309,6 +339,7 @@ class DeepBaseline(Baseline):
     fit_accepts_trial_channel_mask = True
     fit_accepts_input_stats_row_mask = True
     fit_accepts_source_risk = True
+    fit_accepts_decision_metadata = True
     predict_accepts_trial_channel_mask = True
     accepts_unmaterialized_trial_channel_mask = True
     runtime_requires_exclusive_lease = True
@@ -377,7 +408,7 @@ class DeepBaseline(Baseline):
         self.strict_load = bool(strict_load)
         self.load_report: list[dict] = []
         self._fitted = False
-        self.last_history: dict[str, list[float] | int | None] = {
+        self.last_history: dict[str, object] = {
             "train_losses": [],
             "val_losses": [],
             "best_epoch": None,
@@ -396,6 +427,11 @@ class DeepBaseline(Baseline):
         self._feature_orthogonality_weight = 0.0
         self._alignment_domain_vocabulary: tuple[str, ...] = ()
         self.last_feature_alignment: dict[str, object] | None = None
+        self._source_residual_active = False
+        self.last_source_residual: dict[str, object] | None = None
+        self._decision_loss_config: DecisionLossConfig | None = None
+        self._decision_context_active = False
+        self.last_decision_loss: dict[str, object] | None = None
 
     # ---------------- 模型构造 ----------------
 
@@ -632,10 +668,21 @@ class DeepBaseline(Baseline):
         n_rows = 0
         self.model_.eval()
         with torch.inference_mode():
-            for xb, yb, row_weights, _domain_batch in source.iter_batches(batch_size):
+            for xb, yb, row_weights, domain_batch in source.iter_batches(batch_size):
                 assert yb is not None
                 with self._autocast_ctx():
-                    logits = self.model_(xb)
+                    if getattr(self, "splitbn_config", None) is not None:
+                        if domain_batch is None:
+                            raise RuntimeError(
+                                "SplitBN source validation lacks per-row domain indices."
+                            )
+                        logits = self.model_(
+                            xb,
+                            domain_indices=domain_batch,
+                            eval_buffer_source=SPLITBN_SOURCE_DOMAIN_BUFFER,
+                        )
+                    else:
+                        logits = self.model_(xb)
                     loss = (
                         None
                         if loss_fn is None
@@ -682,6 +729,117 @@ class DeepBaseline(Baseline):
             # handler exits, so failed-pass tensors can actually be reclaimed.
             self.runtime.release_temporary_memory()
 
+    def _decision_validation_pass(
+        self,
+        source: MatrixBatchSource,
+        loss_fn: _CrossEntropyObjective,
+        decision_module: DecisionLevelLoss,
+        decision_plan: DecisionBatchPlan,
+        config: DecisionLossConfig,
+    ) -> dict[str, object]:
+        """Evaluate the exact registered P2 objective using additive denominators."""
+
+        score_parts: list[torch.Tensor] = []
+        label_parts: list[torch.Tensor] = []
+        trial_numerator: torch.Tensor | None = None
+        trial_denominator: torch.Tensor | None = None
+        candidate_sum: torch.Tensor | None = None
+        prefix_sum: torch.Tensor | None = None
+        requested_decisions = 0
+        batches = decision_plan.batches(seed=None)
+        index_batches = tuple(
+            torch.from_numpy(np.array(batch.row_indices, dtype=np.int64, copy=True))
+            for batch in batches
+        )
+        self.model_.eval()
+        with torch.inference_mode():
+            for decision_batch, (xb, yb, row_weights, domain_batch) in zip(
+                batches,
+                source.iter_index_batches(index_batches),
+                strict=True,
+            ):
+                assert yb is not None
+                with self._autocast_ctx():
+                    if getattr(self, "splitbn_config", None) is not None:
+                        if domain_batch is None:
+                            raise RuntimeError(
+                                "SplitBN source validation lacks per-row domain indices."
+                            )
+                        logits = self.model_(
+                            xb,
+                            domain_indices=domain_batch,
+                            eval_buffer_source=SPLITBN_SOURCE_DOMAIN_BUFFER,
+                        )
+                    else:
+                        logits = self.model_(xb)
+                    numerator, denominator = loss_fn.components(logits, yb, row_weights)
+                    targets = self.runtime.to_device(
+                        torch.from_numpy(
+                            np.array(
+                                decision_batch.target_indices,
+                                dtype=np.int64,
+                                copy=True,
+                            )
+                        )
+                    )
+                    candidate_loss, prefix_losses = decision_module.packed_loss(
+                        logits[:, 1] - logits[:, 0],
+                        targets,
+                        max_repetitions=config.max_repetitions,
+                        prefix_weights=config.prefix_weights,
+                        validate=False,
+                    )
+                detached_numerator = numerator.detach().float()
+                detached_denominator = denominator.detach().float()
+                decision_count = len(decision_batch.decision_ids)
+                detached_candidate_sum = candidate_loss.detach().float() * decision_count
+                detached_prefix_sum = prefix_losses.detach().float() * decision_count
+                trial_numerator = (
+                    detached_numerator
+                    if trial_numerator is None
+                    else trial_numerator + detached_numerator
+                )
+                trial_denominator = (
+                    detached_denominator
+                    if trial_denominator is None
+                    else trial_denominator + detached_denominator
+                )
+                candidate_sum = (
+                    detached_candidate_sum
+                    if candidate_sum is None
+                    else candidate_sum + detached_candidate_sum
+                )
+                prefix_sum = (
+                    detached_prefix_sum
+                    if prefix_sum is None
+                    else prefix_sum + detached_prefix_sum
+                )
+                requested_decisions += decision_count
+                score_parts.append((logits[:, 1] - logits[:, 0]).detach().float())
+                label_parts.append(yb.detach())
+        if (
+            trial_numerator is None
+            or trial_denominator is None
+            or candidate_sum is None
+            or prefix_sum is None
+            or requested_decisions != len(decision_plan.decision_ids)
+        ):
+            raise RuntimeError("P2 validation did not cover the registered decision plan.")
+        trial_mean = trial_numerator / trial_denominator
+        candidate_mean = candidate_sum / requested_decisions
+        objective = trial_mean + config.lambda_candidate * candidate_mean
+        return {
+            "objective_loss": float(objective.cpu()),
+            "trial_loss": float(trial_mean.cpu()),
+            "candidate_loss": float(candidate_mean.cpu()),
+            "candidate_loss_by_prefix": [
+                float(value) for value in (prefix_sum / requested_decisions).cpu().tolist()
+            ],
+            "requested_decisions": requested_decisions,
+            "scores": torch.cat(score_parts).cpu().numpy().astype(np.float64),
+            "labels": torch.cat(label_parts).cpu().numpy().astype(np.int64),
+        }
+
     def _clear_failed_fit(self, *, release_memory: bool = True) -> None:
         self.model_ = None
         self._fitted = False
@@ -706,6 +864,8 @@ class DeepBaseline(Baseline):
         feature_alignment_weight: float = 0.0,
         feature_private_domain_weight: float = 0.0,
         feature_orthogonality_weight: float = 0.0,
+        decision_metadata: DirectDecisionMetadata | None = None,
+        decision_loss_config: DecisionLossConfig | None = None,
     ) -> DeepBaseline:
         """Fit with a bounded OOM retry that never accumulates gradients."""
 
@@ -717,7 +877,60 @@ class DeepBaseline(Baseline):
         ):
             if not np.isfinite(value) or value < 0.0:
                 raise ValueError(f"{name} must be finite and non-negative.")
+        if decision_loss_config is not None and not isinstance(
+            decision_loss_config, DecisionLossConfig
+        ):
+            raise TypeError("decision_loss_config must be DecisionLossConfig or None.")
+        if decision_metadata is not None and not isinstance(
+            decision_metadata, DirectDecisionMetadata
+        ):
+            raise TypeError("decision_metadata must be DirectDecisionMetadata or None.")
+        if decision_metadata is not None and decision_loss_config is None:
+            raise ValueError("decision_metadata requires an explicit DecisionLossConfig.")
+        if decision_loss_config is not None and decision_metadata is None:
+            ledger = invalid_decision_ledger(
+                phase="fit",
+                reason="decision_loss_config_requires_direct_decision_metadata",
+                metadata=None,
+                config=decision_loss_config,
+            )
+            self.last_decision_loss = ledger.record()
+            raise DirectDecisionContractError(ledger)
+        decision_context_active = bool(
+            decision_loss_config is not None and decision_metadata is not None
+        )
+        if decision_context_active and source_domain_mass is not None:
+            assert decision_loss_config is not None
+            ledger = invalid_decision_ledger(
+                phase="fit",
+                reason=(
+                    "row_weighted_source_risk_has_no_preregistered_decision_level_"
+                    "domain_or_participant_weighting_estimand"
+                ),
+                metadata=decision_metadata,
+                config=decision_loss_config,
+            )
+            self.last_decision_loss = ledger.record()
+            raise DirectDecisionContractError(ledger)
+        if decision_loss_config is not None and decision_loss_config.active and any(
+            value > 0.0
+            for value in (
+                feature_alignment_weight,
+                feature_private_domain_weight,
+                feature_orthogonality_weight,
+            )
+        ):
+            raise ValueError(
+                "active P2 admits only L_trial + lambda_candidate*L_candidate; "
+                "feature auxiliary losses require a separate experiment arm."
+            )
         transfer = getattr(self, "feature_transfer", None)
+        splitbn_config = getattr(self, "splitbn_config", None)
+        splitbn_active = splitbn_config is not None
+        source_residual_active = bool(
+            transfer is not None
+            and int(getattr(transfer, "source_domain_count", 0)) >= 2
+        )
         if feature_private_domain_weight > 0.0 and (
             transfer is None or int(getattr(transfer, "private_domain_count", 0)) < 2
         ):
@@ -728,6 +941,29 @@ class DeepBaseline(Baseline):
         if feature_orthogonality_weight > 0.0 and transfer is None:
             raise ValueError(
                 "feature_orthogonality_weight requires FeatureDomainTransfer."
+            )
+        if source_residual_active and source_domain_ids is None:
+            raise ValueError(
+                "source residual training requires an explicit source_domain_ids axis."
+            )
+        if splitbn_active and source_domain_ids is None:
+            raise ValueError(
+                "SplitBN training requires an explicit source_domain_ids axis."
+            )
+        indexed_domain_active = (
+            source_residual_active
+            or splitbn_active
+            or feature_private_domain_weight > 0.0
+        )
+        declared_domain_vocabulary = getattr(self, "source_domain_vocabulary", None)
+        if indexed_domain_active and declared_domain_vocabulary is None:
+            raise ValueError(
+                "indexed domain mechanisms require the baseline's explicit ordered "
+                "source_domain_vocabulary."
+            )
+        if source_residual_active and not getattr(self, "supports_feature_transfer", False):
+            raise ValueError(
+                "source residual training requires a FeatureDomainTransfer model."
             )
         if (
             feature_alignment_weight > 0.0
@@ -746,6 +982,32 @@ class DeepBaseline(Baseline):
         self._feature_alignment_weight = float(feature_alignment_weight)
         self._feature_private_domain_weight = float(feature_private_domain_weight)
         self._feature_orthogonality_weight = float(feature_orthogonality_weight)
+        self._source_residual_active = source_residual_active
+        self._decision_loss_config = decision_loss_config
+        self._decision_context_active = decision_context_active
+        self.last_decision_loss = (
+            {
+                "schema": DECISION_TRAINING_LEDGER_SCHEMA,
+                "status": "pending" if decision_context_active else "disabled",
+                "valid": True,
+                "reason": None,
+                "config": (
+                    None
+                    if decision_loss_config is None
+                    else decision_loss_config.record()
+                ),
+                "metadata": (
+                    None
+                    if decision_metadata is None
+                    else decision_metadata.record(include_rows=False)
+                ),
+                "loss_scope": "trial_plus_lambda_candidate",
+                "trial_weight": 1.0,
+                "candidate_component_active": bool(
+                    decision_loss_config is not None and decision_loss_config.active
+                ),
+            }
+        )
         # Dropping Python references returns prior tensors to the caching
         # allocator. Emptying the CUDA cache here would create a gap before
         # every healthy fold; reserve that expensive cleanup for actual OOMs.
@@ -766,6 +1028,8 @@ class DeepBaseline(Baseline):
                         risk_unit_ids=risk_unit_ids,
                         risk_within_domain_unit=risk_within_domain_unit,
                         selection_domain=selection_domain,
+                        decision_metadata=decision_metadata,
+                        decision_loss_config=decision_loss_config,
                         requested_batch_size=requested_batch_size,
                     )
                 self.last_runtime = {
@@ -779,6 +1043,13 @@ class DeepBaseline(Baseline):
                     **self.optimizer_execution.record(),
                     "host_sync_policy": "epoch_boundary",
                     "oom_retries": retries,
+                    "decision_grouped_batches": self._decision_context_active,
+                    "decision_batch_contract": (
+                        None
+                        if not self._decision_context_active
+                        or self.last_decision_loss is None
+                        else self.last_decision_loss.get("training_batch_plan")
+                    ),
                     "shared_worker_count": self.runtime.shared_worker_count,
                     "memory": self.runtime.memory_record(),
                 }
@@ -787,6 +1058,22 @@ class DeepBaseline(Baseline):
                 if not is_oom_error(error):
                     self._clear_failed_fit(release_memory=False)
                     raise
+                if self._decision_context_active:
+                    assert self._decision_loss_config is not None
+                    ledger = invalid_decision_ledger(
+                        phase="fit",
+                        reason="oom_cannot_change_complete_decision_batch_contract",
+                        metadata=decision_metadata,
+                        config=self._decision_loss_config,
+                        batch_plan=(
+                            None
+                            if self.last_decision_loss is None
+                            else self.last_decision_loss.get("training_batch_plan")
+                        ),
+                    )
+                    self.last_decision_loss = ledger.record()
+                    self._clear_failed_fit(release_memory=False)
+                    raise DirectDecisionContractError(ledger) from error
                 attempted_batch_size = getattr(self, "_active_batch_size", requested_batch_size)
                 if attempted_batch_size <= 1:
                     self._clear_failed_fit(release_memory=False)
@@ -816,6 +1103,8 @@ class DeepBaseline(Baseline):
         risk_unit_ids: np.ndarray | None,
         risk_within_domain_unit: str,
         selection_domain: str | None,
+        decision_metadata: DirectDecisionMetadata | None,
+        decision_loss_config: DecisionLossConfig | None,
         requested_batch_size: int,
     ) -> None:
         X = np.asarray(X)
@@ -832,6 +1121,31 @@ class DeepBaseline(Baseline):
             raise ValueError(f"X 须为 (N,{self.n_chans},T)，得到 {X.shape}。")
         if X.shape[2] != self.n_times:
             raise ValueError(f"X 时间点数 {X.shape[2]} 与模型契约 n_times={self.n_times} 不一致。")
+        decision_context_active = self._decision_context_active
+        full_decision_ledger: dict[str, object] | None = None
+        if decision_context_active:
+            assert decision_metadata is not None and decision_loss_config is not None
+            if decision_metadata.n_rows != len(X):
+                ledger = invalid_decision_ledger(
+                    phase="all_rows_preflight",
+                    reason="decision_metadata_rows_do_not_align_with_X",
+                    metadata=decision_metadata,
+                    config=decision_loss_config,
+                )
+                self.last_decision_loss = ledger.record()
+                raise DirectDecisionContractError(ledger)
+            try:
+                _, preflight = build_decision_batch_plan(
+                    decision_metadata,
+                    y,
+                    decision_loss_config,
+                    max_batch_rows=max(len(X), decision_loss_config.min_rows_per_batch),
+                    phase="all_rows_preflight",
+                )
+            except DirectDecisionContractError as error:
+                self.last_decision_loss = error.record
+                raise
+            full_decision_ledger = preflight.record()
         trial_mask = self._effective_trial_channel_mask(X, trial_channel_mask)
         if input_stats_row_mask is None:
             requested_stats_rows = np.ones(len(X), dtype=bool)
@@ -864,6 +1178,30 @@ class DeepBaseline(Baseline):
                 raise ValueError("risk_unit_ids must align with X.")
         self.last_source_risk = None
 
+        if decision_context_active and risk_domains is not None:
+            assert decision_metadata is not None and decision_loss_config is not None
+            domain_records: list[dict[str, object]] = []
+            invalid_domain_decisions = False
+            for decision_index, decision_id in enumerate(
+                decision_metadata.requested_decision_ids
+            ):
+                rows = decision_metadata.decision_indices == decision_index
+                domains = sorted(set(risk_domains[rows].tolist()))
+                domain_records.append(
+                    {"decision_id": decision_id, "source_domains": domains}
+                )
+                invalid_domain_decisions = invalid_domain_decisions or len(domains) != 1
+            if invalid_domain_decisions:
+                ledger = invalid_decision_ledger(
+                    phase="source_domain_axis",
+                    reason="each_direct_decision_must_belong_to_exactly_one_source_domain",
+                    metadata=decision_metadata,
+                    config=decision_loss_config,
+                    decisions=domain_records,
+                )
+                self.last_decision_loss = ledger.record()
+                raise DirectDecisionContractError(ledger)
+
         if group_ids is None:
             train_mask = np.ones(len(X), dtype=bool)
             val_mask = np.zeros(len(X), dtype=bool)
@@ -872,6 +1210,32 @@ class DeepBaseline(Baseline):
             group_ids = np.asarray(group_ids)
             if group_ids.shape != (len(X),):
                 raise ValueError("group_ids must align with X.")
+            if decision_context_active:
+                assert decision_metadata is not None and decision_loss_config is not None
+                validation_unit_records: list[dict[str, object]] = []
+                invalid_validation_units = False
+                for decision_index, decision_id in enumerate(
+                    decision_metadata.requested_decision_ids
+                ):
+                    rows = decision_metadata.decision_indices == decision_index
+                    units = sorted(set(group_ids[rows].astype(str).tolist()))
+                    validation_unit_records.append(
+                        {"decision_id": decision_id, "validation_units": units}
+                    )
+                    invalid_validation_units = invalid_validation_units or len(units) != 1
+                if invalid_validation_units:
+                    ledger = invalid_decision_ledger(
+                        phase="validation_group_axis",
+                        reason=(
+                            "each_direct_decision_must_belong_to_exactly_one_"
+                            "validation_group"
+                        ),
+                        metadata=decision_metadata,
+                        config=decision_loss_config,
+                        decisions=validation_unit_records,
+                    )
+                    self.last_decision_loss = ledger.record()
+                    raise DirectDecisionContractError(ledger)
             split_scope = (
                 np.ones(len(X), dtype=bool)
                 if selection_domain is None
@@ -891,6 +1255,52 @@ class DeepBaseline(Baseline):
             self.last_val_groups = split.n_validation_groups
         X_train, y_train = X[train_mask], y[train_mask]
         X_val, y_val = X[val_mask], y[val_mask]
+        train_decision_metadata: DirectDecisionMetadata | None = None
+        val_decision_metadata: DirectDecisionMetadata | None = None
+        if decision_context_active:
+            assert decision_metadata is not None and decision_loss_config is not None
+            train_decisions: list[str] = []
+            val_decisions: list[str] = []
+            split_records: list[dict[str, object]] = []
+            split_invalid = False
+            for decision_index, decision_id in enumerate(
+                decision_metadata.requested_decision_ids
+            ):
+                rows = decision_metadata.decision_indices == decision_index
+                in_train = bool(np.any(rows & train_mask))
+                in_validation = bool(np.any(rows & val_mask))
+                if in_train and in_validation:
+                    split_invalid = True
+                    status = "split_across_train_and_validation"
+                elif in_train:
+                    train_decisions.append(decision_id)
+                    status = "train"
+                elif in_validation:
+                    val_decisions.append(decision_id)
+                    status = "validation"
+                else:
+                    split_invalid = True
+                    status = "absent_after_split"
+                split_records.append(
+                    {"decision_id": decision_id, "split_status": status}
+                )
+            if split_invalid:
+                ledger = invalid_decision_ledger(
+                    phase="train_validation_split",
+                    reason="a_complete_decision_was_split_or_removed",
+                    metadata=decision_metadata,
+                    config=decision_loss_config,
+                    decisions=split_records,
+                )
+                self.last_decision_loss = ledger.record()
+                raise DirectDecisionContractError(ledger)
+            train_decision_metadata = decision_metadata.subset_for_decisions(
+                train_decisions
+            )
+            if val_decisions:
+                val_decision_metadata = decision_metadata.subset_for_decisions(
+                    val_decisions
+                )
         train_channel_mask = trial_mask[train_mask]
         val_channel_mask = trial_mask[val_mask]
         unobserved_train_channels = self.channel_mask & ~train_channel_mask.any(axis=0)
@@ -964,24 +1374,105 @@ class DeepBaseline(Baseline):
             X[stats_mask],
             stats_channel_mask,
         )
-        # Domain ids are supervision/diagnostic metadata only. They never route
-        # source rows through a domain-specific inference module.
+        # Domain ids remain metadata at inference. During an explicitly
+        # configured source-training arm they also select the matching
+        # drop-to-consensus residual; target/eval paths never use that route.
         alignment_weight = self._feature_alignment_weight
         private_weight = self._feature_private_domain_weight
         orthogonality_weight = self._feature_orthogonality_weight
+        splitbn_config = getattr(self, "splitbn_config", None)
+        splitbn_active = splitbn_config is not None
+        source_residual_active = self._source_residual_active
         alignment_active = bool(alignment_weight > 0.0 and risk_domains is not None)
         private_active = bool(private_weight > 0.0 and risk_domains is not None)
         orthogonality_active = bool(orthogonality_weight > 0.0)
-        feature_objective_active = alignment_active or private_active or orthogonality_active
+        feature_objective_active = (
+            alignment_active
+            or private_active
+            or orthogonality_active
+            or source_residual_active
+        )
+        domain_axis_active = feature_objective_active or splitbn_active
         if private_active and len(set(risk_domains.tolist())) < 2:
             raise ValueError(
                 "private domain supervision requires at least two source domains."
             )
         train_domain_tensor: torch.Tensor | None = None
         val_domain_tensor: torch.Tensor | None = None
-        if feature_objective_active:
+        self._alignment_domain_vocabulary = ()
+        if domain_axis_active:
             assert risk_domains is not None
-            domain_vocabulary = tuple(sorted(set(risk_domains.tolist())))
+            observed_domains = set(risk_domains.tolist())
+            indexed_domain_active = (
+                source_residual_active or splitbn_active or private_active
+            )
+            declared_domain_vocabulary = getattr(
+                self,
+                "source_domain_vocabulary",
+                None,
+            )
+            if indexed_domain_active:
+                if declared_domain_vocabulary is None:
+                    raise ValueError(
+                        "indexed domain mechanisms require the baseline's explicit "
+                        "ordered source_domain_vocabulary."
+                    )
+                axis_record = source_domain_axis_record(
+                    tuple(declared_domain_vocabulary)
+                )
+                domain_vocabulary = tuple(axis_record["vocabulary"])
+                if observed_domains != set(domain_vocabulary):
+                    raise ValueError(
+                        "observed source domains must exactly match the declared "
+                        "source_domain_vocabulary."
+                    )
+                if private_active and len(domain_vocabulary) != int(
+                    self.feature_transfer.private_domain_count
+                ):
+                    raise ValueError(
+                        "private_domain_count must exactly match the declared "
+                        "source_domain_vocabulary."
+                    )
+            else:
+                domain_vocabulary = tuple(sorted(observed_domains))
+            if source_residual_active:
+                configured_count = int(self.feature_transfer.source_domain_count)
+                if len(domain_vocabulary) != configured_count:
+                    raise ValueError(
+                        "source_domain_count must exactly match the observed source-domain "
+                        f"vocabulary ({configured_count} configured, "
+                        f"{len(domain_vocabulary)} observed)."
+                    )
+                training_vocabulary = set(risk_domains[train_mask].tolist())
+                if training_vocabulary != set(domain_vocabulary):
+                    missing = sorted(set(domain_vocabulary) - training_vocabulary)
+                    raise ValueError(
+                        "source residual training split omits configured domains "
+                        f"{missing}."
+                    )
+            if splitbn_active:
+                configured_count = int(splitbn_config.domain_count)
+                if len(domain_vocabulary) != configured_count:
+                    raise ValueError(
+                        "SplitBN domain_count must exactly match the observed source-domain "
+                        f"vocabulary ({configured_count} configured, "
+                        f"{len(domain_vocabulary)} observed)."
+                    )
+                splitbn_vocabulary = getattr(
+                    splitbn_config,
+                    "domain_vocabulary",
+                    domain_vocabulary,
+                )
+                if tuple(splitbn_vocabulary) != domain_vocabulary:
+                    raise ValueError(
+                        "SplitBN vocabulary disagrees with the baseline model-domain axis."
+                    )
+                training_vocabulary = set(risk_domains[train_mask].tolist())
+                if training_vocabulary != set(domain_vocabulary):
+                    missing = sorted(set(domain_vocabulary) - training_vocabulary)
+                    raise ValueError(
+                        f"SplitBN training split omits configured domains {missing}."
+                    )
             domain_to_index = {
                 domain: index for index, domain in enumerate(domain_vocabulary)
             }
@@ -1015,6 +1506,40 @@ class DeepBaseline(Baseline):
             "epoch_private_domain_loss": [],
             "epoch_orthogonality_loss": [],
         }
+        self.last_source_residual = {
+            "schema": SOURCE_RESIDUAL_LEDGER_SCHEMA,
+            "active": source_residual_active,
+            "status": "active" if source_residual_active else "disabled",
+            "valid": True,
+            "domain_vocabulary": list(self._alignment_domain_vocabulary),
+            "source_domain_count": (
+                int(self.feature_transfer.source_domain_count)
+                if source_residual_active
+                else 0
+            ),
+            "source_drop_p": (
+                float(self.feature_transfer.source_drop_p)
+                if source_residual_active
+                else None
+            ),
+            "source_drop_mode": (
+                self.feature_transfer.source_drop_mode
+                if source_residual_active
+                else None
+            ),
+            "ratio_contract": source_residual_ratio_contract(),
+            "epoch_loss_m0": [],
+            "epoch_loss_m1": [],
+            "epoch_loss_delta_m1_minus_m0": [],
+            "epoch_trial_loss_m0": [],
+            "epoch_trial_loss_m1": [],
+            "epoch_trial_loss_delta_m1_minus_m0": [],
+            "epoch_ratio_forwards": [],
+            "epoch_domain_scales": [],
+            "run_max_ratio": 0.0 if source_residual_active else None,
+            "counterfactual_loss_scope": "trial_component",
+            "counterfactual_excludes_candidate_component": True,
+        }
         X_train = self._prepare_input(X_train, train_channel_mask)
         if len(X_val):
             X_val = self._prepare_input(X_val, val_channel_mask)
@@ -1030,6 +1555,31 @@ class DeepBaseline(Baseline):
             model=self.model_,
             max_update_batch_size=self.cfg.max_update_batch_size,
         )
+        decision_module: DecisionLevelLoss | None = None
+        train_decision_plan: DecisionBatchPlan | None = None
+        val_decision_plan: DecisionBatchPlan | None = None
+        train_decision_ledger: dict[str, object] | None = None
+        val_decision_ledger: dict[str, object] | None = None
+        if decision_context_active:
+            assert decision_loss_config is not None
+            assert train_decision_metadata is not None
+            try:
+                train_decision_plan, train_ledger = build_decision_batch_plan(
+                    train_decision_metadata,
+                    y_train,
+                    decision_loss_config,
+                    max_batch_rows=batch_size,
+                    phase="training",
+                )
+            except DirectDecisionContractError as error:
+                self.last_decision_loss = error.record
+                raise
+            train_decision_ledger = train_ledger.record()
+            batch_size = train_decision_plan.max_batch_rows
+            decision_module = DecisionLevelLoss(
+                candidate_vocabulary=decision_loss_config.candidate_vocabulary,
+                temperature=decision_loss_config.temperature,
+            )
         self._active_batch_size = batch_size
         total_matrix_bytes = X_train.nbytes + y_train.nbytes + X_val.nbytes + y_val.nbytes
         if train_row_weights is not None:
@@ -1076,6 +1626,8 @@ class DeepBaseline(Baseline):
         # reserves an extra full training-matrix copy. Row order and label
         # alignment are identical to the per-batch path.
         self._shuffle_each_epoch = (
+            not decision_context_active
+            and
             self.cfg.shuffle_each_epoch
             and self._preloaded_batches
             and self.runtime.can_preload(train_source.nbytes)
@@ -1091,7 +1643,60 @@ class DeepBaseline(Baseline):
                 X_train.shape[1:],
                 model=self.model_,
             )
+        if decision_context_active and val_source is not None:
+            assert decision_loss_config is not None
+            assert val_decision_metadata is not None
+            try:
+                val_decision_plan, val_ledger = build_decision_batch_plan(
+                    val_decision_metadata,
+                    y_val,
+                    decision_loss_config,
+                    max_batch_rows=validation_batch_size,
+                    phase="validation",
+                )
+            except DirectDecisionContractError as error:
+                self.last_decision_loss = error.record
+                raise
+            val_decision_ledger = val_ledger.record()
+            validation_batch_size = val_decision_plan.max_batch_rows
         self._validation_batch_size = validation_batch_size
+
+        if decision_context_active:
+            assert self.last_decision_loss is not None
+            self.last_decision_loss.update(
+                {
+                    "status": "valid",
+                    "valid": True,
+                    "all_rows_preflight": full_decision_ledger,
+                    "training_preflight": train_decision_ledger,
+                    "validation_preflight": val_decision_ledger,
+                    "training_batch_plan": (
+                        None
+                        if train_decision_plan is None
+                        else train_decision_plan.record()
+                    ),
+                    "validation_batch_plan": (
+                        None
+                        if val_decision_plan is None
+                        else val_decision_plan.record()
+                    ),
+                    "requested_training_row_batch_size": int(self.cfg.batch_size),
+                    "scheduler_training_row_budget": int(
+                        train_decision_plan.requested_max_rows
+                    ),
+                    "effective_training_row_batch_size": int(
+                        train_decision_plan.max_batch_rows
+                    ),
+                    "epoch_train_components": [],
+                    "epoch_validation_components": [],
+                    "early_stopping_objective": (
+                        "trial_plus_lambda_candidate"
+                        if val_decision_plan is not None
+                        else None
+                    ),
+                    "p1_counterfactual_loss_scope": "trial_component",
+                }
+            )
 
         adam_kwargs: dict[str, object] = {
             "lr": self.cfg.lr,
@@ -1104,12 +1709,29 @@ class DeepBaseline(Baseline):
         opt = torch.optim.Adam(trainable_params, **adam_kwargs)
         loss_fn = _CrossEntropyObjective(self.cfg.pos_weight, self.device)
         perm_gen = train_source.make_generator(seed)
+        source_residual_mask_seed = seed + 1_000_003
+        source_residual_generator = (
+            train_source.make_generator(source_residual_mask_seed)
+            if source_residual_active
+            else None
+        )
+        if source_residual_active:
+            assert self.last_source_residual is not None
+            self.last_source_residual.update(
+                {
+                    "mask_rng": "explicit_torch_generator",
+                    "mask_rng_seed": source_residual_mask_seed,
+                }
+            )
         train_losses: list[float] = []
         val_losses: list[float] = []
+        val_objective_losses: list[float] = []
         task_val_aucs: list[float | None] = []
         best_state = None
         best_epoch = None
+        best_task_epoch = None
         best_val_loss = float("inf")
+        best_task_val_loss = float("inf")
         patience_left = int(self.cfg.early_stop_patience)
         early_stop_triggered = False
         epoch_progress_callback = self.epoch_progress_callback()
@@ -1138,20 +1760,41 @@ class DeepBaseline(Baseline):
             yb: torch.Tensor,
             row_weights: torch.Tensor | None,
             domain_batch: torch.Tensor | None,
-        ) -> tuple[torch.Tensor, dict[str, float] | None]:
+            decision_targets: torch.Tensor | None,
+            source_residual_mask: torch.Tensor | None,
+        ) -> tuple[
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor | None,
+            torch.Tensor | None,
+            dict[str, object] | None,
+        ]:
             opt.zero_grad(set_to_none=True)
-            alignment_diagnostics: dict[str, float] | None = None
+            alignment_diagnostics: dict[str, object] | None = None
             with self._autocast_ctx():
                 if feature_objective_active:
                     assert domain_batch is not None
-                    forwarded = self.model_.forward_with_features(xb)
+                    forwarded = self.model_.forward_with_features(
+                        xb,
+                        use_source_residual=source_residual_active,
+                        source_residual_mask=source_residual_mask,
+                        domain_indices=(
+                            domain_batch
+                            if source_residual_active or splitbn_active
+                            else None
+                        ),
+                    )
                     if not isinstance(forwarded, tuple) or len(forwarded) < 2:
                         raise RuntimeError(
                             "feature-transfer model must return logits and adapted features."
                         )
                     logits, features = forwarded[:2]
-                    ce_loss = loss_fn(logits, yb, row_weights)
-                    loss = ce_loss
+                    trial_numerator, trial_denominator = loss_fn.components(
+                        logits, yb, row_weights
+                    )
+                    trial_loss = trial_numerator / trial_denominator
+                    loss = trial_loss
                     if alignment_active:
                         alignment_loss, alignment_diagnostics = conditional_mean_alignment_loss(
                             features,
@@ -1181,12 +1824,86 @@ class DeepBaseline(Baseline):
                         if alignment_diagnostics is None:
                             alignment_diagnostics = {}
                         alignment_diagnostics["orthogonality_loss"] = float(orthogonality_loss.detach())
+                    if source_residual_active:
+                        if not isinstance(self.model_, FeatureDomainTransfer):
+                            raise RuntimeError(
+                                "source residual training requires FeatureDomainTransfer."
+                            )
+                        with torch.no_grad():
+                            consensus, residual, ratio_record = (
+                                self.model_.source_residual_counterfactual_views(
+                                    features.detach(),
+                                    domain_batch,
+                                )
+                            )
+                            logits_m0 = self.model_.classifier(
+                                self.model_.pool_features(consensus)
+                            )
+                            logits_m1 = self.model_.classifier(
+                                self.model_.pool_features(residual)
+                            )
+                            source_ledger = source_residual_loss_ledger(
+                                loss_fn(logits_m0, yb, row_weights),
+                                loss_fn(logits_m1, yb, row_weights),
+                                ratio_record=ratio_record,
+                            )
+                            source_ledger["loss_scope"] = "trial_component"
+                            source_ledger["trial_loss_m0"] = source_ledger["loss_m0"]
+                            source_ledger["trial_loss_m1"] = source_ledger["loss_m1"]
+                            source_ledger["trial_loss_delta_m1_minus_m0"] = source_ledger[
+                                "loss_delta_m1_minus_m0"
+                            ]
+                        if alignment_diagnostics is None:
+                            alignment_diagnostics = {}
+                        alignment_diagnostics["source_residual"] = source_ledger
                 else:
-                    logits = self.model_(xb)
-                    loss = loss_fn(logits, yb, row_weights)
+                    logits = (
+                        self.model_(xb, domain_indices=domain_batch)
+                        if splitbn_active
+                        else self.model_(xb)
+                    )
+                    trial_numerator, trial_denominator = loss_fn.components(
+                        logits, yb, row_weights
+                    )
+                    trial_loss = trial_numerator / trial_denominator
+                    loss = trial_loss
+                candidate_loss: torch.Tensor | None = None
+                prefix_losses: torch.Tensor | None = None
+                if decision_context_active:
+                    assert decision_module is not None
+                    assert decision_loss_config is not None
+                    assert decision_targets is not None
+                    candidate_loss, prefix_losses = decision_module.packed_loss(
+                        logits[:, 1] - logits[:, 0],
+                        decision_targets,
+                        max_repetitions=decision_loss_config.max_repetitions,
+                        prefix_weights=decision_loss_config.prefix_weights,
+                        validate=False,
+                    )
+                    loss = loss + decision_loss_config.lambda_candidate * candidate_loss
             loss.backward()
             opt.step()
-            return loss.detach(), alignment_diagnostics
+            if source_residual_active:
+                if not isinstance(self.model_, FeatureDomainTransfer):
+                    raise RuntimeError(
+                        "source residual training requires FeatureDomainTransfer."
+                    )
+                with torch.no_grad(), self._autocast_ctx():
+                    # The pre-update ledger above diagnoses the actual loss
+                    # point. Re-check after the optimizer step so the final
+                    # batch cannot move a gate beyond r_max unnoticed.
+                    self.model_.source_residual_counterfactual_views(
+                        features.detach(),
+                        domain_batch,
+                    )
+            return (
+                loss.detach(),
+                trial_numerator.detach(),
+                trial_denominator.detach(),
+                None if candidate_loss is None else candidate_loss.detach(),
+                None if prefix_losses is None else prefix_losses.detach(),
+                alignment_diagnostics,
+            )
 
         if self.optimizer_execution.compile_mode is not None:
             train_step = torch.compile(
@@ -1195,29 +1912,198 @@ class DeepBaseline(Baseline):
                 fullgraph=False,
             )
 
+        def _training_batches(
+            epoch: int,
+        ):
+            if train_decision_plan is None:
+                for xb, yb, row_weights, domain_batch in train_source.iter_batches(
+                    batch_size, generator=perm_gen
+                ):
+                    source_mask = None
+                    if source_residual_active:
+                        assert isinstance(self.model_, FeatureDomainTransfer)
+                        assert source_residual_generator is not None
+                        generator_device = getattr(
+                            source_residual_generator,
+                            "device",
+                            torch.device("cpu"),
+                        )
+                        reference = (
+                            xb
+                            if torch.device(generator_device).type == xb.device.type
+                            else torch.empty(
+                                (len(xb),),
+                                device=generator_device,
+                                dtype=xb.dtype,
+                            )
+                        )
+                        source_mask = self.model_.sample_source_residual_mask(
+                            reference,
+                            generator=source_residual_generator,
+                        ).to(device=xb.device, dtype=xb.dtype)
+                    yield xb, yb, row_weights, domain_batch, None, 0, source_mask
+                return
+            decision_batches = train_decision_plan.batches(seed=seed + epoch)
+            index_batches = tuple(
+                torch.from_numpy(np.array(batch.row_indices, dtype=np.int64, copy=True))
+                for batch in decision_batches
+            )
+            for decision_batch, (xb, yb, row_weights, domain_batch) in zip(
+                decision_batches,
+                train_source.iter_index_batches(index_batches),
+                strict=True,
+            ):
+                targets = self.runtime.to_device(
+                    torch.from_numpy(
+                        np.array(
+                            decision_batch.target_indices,
+                            dtype=np.int64,
+                            copy=True,
+                        )
+                    )
+                )
+                source_mask = None
+                if source_residual_active:
+                    assert isinstance(self.model_, FeatureDomainTransfer)
+                    assert source_residual_generator is not None
+                    generator_device = getattr(
+                        source_residual_generator,
+                        "device",
+                        torch.device("cpu"),
+                    )
+                    reference = (
+                        xb
+                        if torch.device(generator_device).type == xb.device.type
+                        else torch.empty(
+                            (len(xb),),
+                            device=generator_device,
+                            dtype=xb.dtype,
+                        )
+                    )
+                    source_mask = self.model_.sample_source_residual_mask(
+                        reference,
+                        generator=source_residual_generator,
+                    ).to(device=xb.device, dtype=xb.dtype)
+                yield (
+                    xb,
+                    yb,
+                    row_weights,
+                    domain_batch,
+                    targets,
+                    len(decision_batch.decision_ids),
+                    source_mask,
+                )
+
         for epoch in range(self.cfg.epochs):
             self.model_.train()
             epoch_loss: torch.Tensor | None = None
             n_seen = 0
+            epoch_trial_numerator: torch.Tensor | None = None
+            epoch_trial_denominator: torch.Tensor | None = None
+            epoch_candidate_sum: torch.Tensor | None = None
+            epoch_candidate_prefix_sum: torch.Tensor | None = None
+            epoch_decision_count = 0
             epoch_alignment_sum = 0.0
             epoch_alignment_batches = 0
             epoch_private_sum = 0.0
             epoch_orthogonality_sum = 0.0
-            for xb, yb, row_weights, domain_batch in train_source.iter_batches(
-                batch_size, generator=perm_gen
-            ):
+            epoch_source_loss_m0 = 0.0
+            epoch_source_loss_m1 = 0.0
+            epoch_source_rows = 0
+            epoch_source_ratio_forwards: list[dict[str, object]] = []
+            for (
+                xb,
+                yb,
+                row_weights,
+                domain_batch,
+                decision_targets,
+                batch_decision_count,
+                source_residual_mask,
+            ) in _training_batches(epoch):
                 assert yb is not None
-                loss, alignment_diagnostics = train_step(xb, yb, row_weights, domain_batch)
+                try:
+                    (
+                        loss,
+                        trial_numerator,
+                        trial_denominator,
+                        candidate_loss,
+                        candidate_prefix_losses,
+                        alignment_diagnostics,
+                    ) = train_step(
+                        xb,
+                        yb,
+                        row_weights,
+                        domain_batch,
+                        decision_targets,
+                        source_residual_mask,
+                    )
+                except SourceResidualContractError as error:
+                    assert self.last_source_residual is not None
+                    self.last_source_residual.update(
+                        {
+                            "status": "evaluation_failed",
+                            "valid": False,
+                            "failure": dict(error.record),
+                        }
+                    )
+                    raise
                 weighted_loss = loss.float() * len(xb)
                 epoch_loss = weighted_loss if epoch_loss is None else epoch_loss + weighted_loss
                 n_seen += len(xb)
+                detached_trial_numerator = trial_numerator.float()
+                detached_trial_denominator = trial_denominator.float()
+                epoch_trial_numerator = (
+                    detached_trial_numerator
+                    if epoch_trial_numerator is None
+                    else epoch_trial_numerator + detached_trial_numerator
+                )
+                epoch_trial_denominator = (
+                    detached_trial_denominator
+                    if epoch_trial_denominator is None
+                    else epoch_trial_denominator + detached_trial_denominator
+                )
+                if decision_context_active:
+                    if candidate_loss is None or candidate_prefix_losses is None:
+                        raise RuntimeError("P2 training batch omitted candidate loss components.")
+                    candidate_batch_sum = candidate_loss.float() * batch_decision_count
+                    candidate_prefix_batch_sum = (
+                        candidate_prefix_losses.float() * batch_decision_count
+                    )
+                    epoch_candidate_sum = (
+                        candidate_batch_sum
+                        if epoch_candidate_sum is None
+                        else epoch_candidate_sum + candidate_batch_sum
+                    )
+                    epoch_candidate_prefix_sum = (
+                        candidate_prefix_batch_sum
+                        if epoch_candidate_prefix_sum is None
+                        else epoch_candidate_prefix_sum + candidate_prefix_batch_sum
+                    )
+                    epoch_decision_count += batch_decision_count
                 if alignment_diagnostics is not None:
                     if "mean_squared_distance" in alignment_diagnostics:
-                        epoch_alignment_sum += alignment_diagnostics["mean_squared_distance"]
+                        epoch_alignment_sum += float(
+                            alignment_diagnostics["mean_squared_distance"]
+                        )
                     if "private_domain_loss" in alignment_diagnostics:
-                        epoch_private_sum += alignment_diagnostics["private_domain_loss"]
+                        epoch_private_sum += float(
+                            alignment_diagnostics["private_domain_loss"]
+                        )
                     if "orthogonality_loss" in alignment_diagnostics:
-                        epoch_orthogonality_sum += alignment_diagnostics["orthogonality_loss"]
+                        epoch_orthogonality_sum += float(
+                            alignment_diagnostics["orthogonality_loss"]
+                        )
+                    source_ledger = alignment_diagnostics.get("source_residual")
+                    if source_ledger is not None:
+                        if not isinstance(source_ledger, Mapping):
+                            raise RuntimeError("source residual diagnostics must be a mapping.")
+                        ratio_record = source_ledger.get("ratio")
+                        if not isinstance(ratio_record, Mapping):
+                            raise RuntimeError("source residual diagnostics lack ratio record.")
+                        epoch_source_loss_m0 += float(source_ledger["loss_m0"]) * len(xb)
+                        epoch_source_loss_m1 += float(source_ledger["loss_m1"]) * len(xb)
+                        epoch_source_rows += len(xb)
+                        epoch_source_ratio_forwards.append(dict(ratio_record))
                     epoch_alignment_batches += 1
             assert self.last_feature_alignment is not None
             self.last_feature_alignment["epoch_mean_squared_distance"].append(
@@ -1235,30 +2121,145 @@ class DeepBaseline(Baseline):
                 if orthogonality_active and epoch_alignment_batches
                 else None
             )
+            assert self.last_source_residual is not None
+            if source_residual_active:
+                if epoch_source_rows != n_seen or not epoch_source_ratio_forwards:
+                    raise RuntimeError(
+                        "source residual training failed to produce complete counterfactual ledger."
+                    )
+                mean_m0 = epoch_source_loss_m0 / epoch_source_rows
+                mean_m1 = epoch_source_loss_m1 / epoch_source_rows
+                self.last_source_residual["epoch_loss_m0"].append(mean_m0)
+                self.last_source_residual["epoch_loss_m1"].append(mean_m1)
+                self.last_source_residual["epoch_loss_delta_m1_minus_m0"].append(
+                    mean_m1 - mean_m0
+                )
+                self.last_source_residual["epoch_trial_loss_m0"].append(mean_m0)
+                self.last_source_residual["epoch_trial_loss_m1"].append(mean_m1)
+                self.last_source_residual[
+                    "epoch_trial_loss_delta_m1_minus_m0"
+                ].append(mean_m1 - mean_m0)
+                self.last_source_residual["epoch_ratio_forwards"].append(
+                    epoch_source_ratio_forwards
+                )
+                assert isinstance(self.model_, FeatureDomainTransfer)
+                self.last_source_residual["epoch_domain_scales"].append(
+                    self.model_.source_residual_scale_record()
+                )
+                epoch_max = max(
+                    float(record["max"])
+                    for record in epoch_source_ratio_forwards
+                    if record["max"] is not None
+                )
+                self.last_source_residual["run_max_ratio"] = max(
+                    float(self.last_source_residual["run_max_ratio"]),
+                    epoch_max,
+                )
             if epoch_loss is None:
                 raise RuntimeError("Deep training produced no optimizer batches.")
-            train_losses.append(float(epoch_loss.cpu()) / max(n_seen, 1))
+            if epoch_trial_numerator is None or epoch_trial_denominator is None:
+                raise RuntimeError("Deep training omitted trial-loss sufficient statistics.")
+            if decision_context_active:
+                assert decision_loss_config is not None
+                assert train_decision_plan is not None
+                if (
+                    epoch_candidate_sum is None
+                    or epoch_candidate_prefix_sum is None
+                    or epoch_decision_count != len(train_decision_plan.decision_ids)
+                ):
+                    raise RuntimeError("P2 training did not cover every planned decision.")
+                epoch_trial_mean = epoch_trial_numerator / epoch_trial_denominator
+                epoch_candidate_mean = epoch_candidate_sum / epoch_decision_count
+                epoch_objective = (
+                    epoch_trial_mean
+                    + decision_loss_config.lambda_candidate * epoch_candidate_mean
+                )
+                train_losses.append(float(epoch_objective.cpu()))
+                assert self.last_decision_loss is not None
+                train_component = {
+                    "epoch": epoch + 1,
+                    "trial_component_loss": float(epoch_trial_mean.cpu()),
+                    "candidate_component_loss": float(epoch_candidate_mean.cpu()),
+                    "candidate_component_by_prefix": [
+                        float(value)
+                        for value in (
+                            epoch_candidate_prefix_sum / epoch_decision_count
+                        ).cpu().tolist()
+                    ],
+                    "lambda_candidate": decision_loss_config.lambda_candidate,
+                    "full_objective_loss": float(epoch_objective.cpu()),
+                    "requested_decisions": epoch_decision_count,
+                    "trial_denominator": float(epoch_trial_denominator.cpu()),
+                }
+                self.last_decision_loss["epoch_train_components"].append(
+                    train_component
+                )
+            else:
+                train_component = None
+                train_losses.append(float(epoch_loss.cpu()) / max(n_seen, 1))
             mean_val = None
+            objective_val = None
             task_val_auc = None
             will_early_stop = False
 
             if val_source is not None:
-                (
-                    (mean_val, val_scores, val_labels),
-                    validation_batch_size,
-                ) = self._validation_pass_with_oom_retry(
-                    val_source,
-                    loss_fn,
-                    validation_batch_size,
-                )
-                self._validation_batch_size = validation_batch_size
+                if decision_context_active:
+                    assert decision_module is not None
+                    assert decision_loss_config is not None
+                    assert val_decision_plan is not None
+                    validation_result = self._decision_validation_pass(
+                        val_source,
+                        loss_fn,
+                        decision_module,
+                        val_decision_plan,
+                        decision_loss_config,
+                    )
+                    mean_val = float(validation_result["trial_loss"])
+                    objective_val = float(validation_result["objective_loss"])
+                    val_scores = np.asarray(validation_result["scores"])
+                    val_labels = np.asarray(validation_result["labels"])
+                    assert self.last_decision_loss is not None
+                    validation_component = {
+                        "epoch": epoch + 1,
+                        "trial_component_loss": mean_val,
+                        "candidate_component_loss": float(
+                            validation_result["candidate_loss"]
+                        ),
+                        "candidate_component_by_prefix": list(
+                            validation_result["candidate_loss_by_prefix"]
+                        ),
+                        "lambda_candidate": decision_loss_config.lambda_candidate,
+                        "full_objective_loss": objective_val,
+                        "requested_decisions": int(
+                            validation_result["requested_decisions"]
+                        ),
+                    }
+                    self.last_decision_loss["epoch_validation_components"].append(
+                        validation_component
+                    )
+                else:
+                    (
+                        (mean_val, val_scores, val_labels),
+                        validation_batch_size,
+                    ) = self._validation_pass_with_oom_retry(
+                        val_source,
+                        loss_fn,
+                        validation_batch_size,
+                    )
+                    self._validation_batch_size = validation_batch_size
+                    objective_val = mean_val
                 assert mean_val is not None
+                assert objective_val is not None
                 val_losses.append(mean_val)
+                val_objective_losses.append(objective_val)
                 if len(np.unique(val_labels)) == 2:
                     task_val_auc = float(roc_auc_score(val_labels, val_scores))
                 task_val_aucs.append(task_val_auc)
-                if mean_val < best_val_loss - self.cfg.early_stop_min_delta:
-                    best_val_loss = mean_val
+                if mean_val < best_task_val_loss - self.cfg.early_stop_min_delta:
+                    best_task_val_loss = mean_val
+                    best_task_epoch = epoch
+                if objective_val < best_val_loss - self.cfg.early_stop_min_delta:
+                    best_val_loss = objective_val
                     best_epoch = epoch
                     best_state = {
                         key: value.detach().clone()
@@ -1275,19 +2276,27 @@ class DeepBaseline(Baseline):
                         "epoch": epoch + 1,
                         "epoch_limit": self.cfg.epochs,
                         "train_loss": train_losses[-1],
-                        "train_loss_components": {},
+                        "train_loss_components": (
+                            {} if train_component is None else dict(train_component)
+                        ),
                         "task_val_loss": mean_val,
                         "task_val_auc": task_val_auc,
-                        "objective_val_loss": mean_val,
+                        "objective_val_loss": objective_val,
                         "phase": "joint",
                         "optimizer_steps": None,
                         "selection_active": mean_val is not None,
                         "patience_left": patience_left if mean_val is not None else None,
                         "early_stop_patience": self.cfg.early_stop_patience,
                         "best_epoch": best_epoch + 1 if best_epoch is not None else None,
-                        "best_task_epoch": best_epoch + 1 if best_epoch is not None else None,
+                        "best_task_epoch": (
+                            best_task_epoch + 1 if best_task_epoch is not None else None
+                        ),
                         "best_val_loss": best_val_loss if best_val_loss != float("inf") else None,
-                        "best_task_val_loss": best_val_loss if best_val_loss != float("inf") else None,
+                        "best_task_val_loss": (
+                            best_task_val_loss
+                            if best_task_val_loss != float("inf")
+                            else None
+                        ),
                         "will_early_stop": will_early_stop,
                     }
                 )
@@ -1299,15 +2308,29 @@ class DeepBaseline(Baseline):
             self.model_.load_state_dict(best_state)
         final_task_val_auc = None
         if val_source is not None:
-            (
-                (_, final_scores, final_labels),
-                validation_batch_size,
-            ) = self._validation_pass_with_oom_retry(
-                val_source,
-                None,
-                validation_batch_size,
-            )
-            self._validation_batch_size = validation_batch_size
+            if decision_context_active:
+                assert decision_module is not None
+                assert decision_loss_config is not None
+                assert val_decision_plan is not None
+                final_validation = self._decision_validation_pass(
+                    val_source,
+                    loss_fn,
+                    decision_module,
+                    val_decision_plan,
+                    decision_loss_config,
+                )
+                final_scores = np.asarray(final_validation["scores"])
+                final_labels = np.asarray(final_validation["labels"])
+            else:
+                (
+                    (_, final_scores, final_labels),
+                    validation_batch_size,
+                ) = self._validation_pass_with_oom_retry(
+                    val_source,
+                    None,
+                    validation_batch_size,
+                )
+                self._validation_batch_size = validation_batch_size
             if len(np.unique(final_labels)) == 2:
                 final_task_val_auc = float(roc_auc_score(final_labels, final_scores))
             self.calibration_logits_ = final_scores
@@ -1318,18 +2341,45 @@ class DeepBaseline(Baseline):
             self.calibration_logits_ = None
             self.calibration_labels_ = None
             self.calibration_source_ = None
+        assert self.last_source_residual is not None
+        if source_residual_active:
+            assert isinstance(self.model_, FeatureDomainTransfer)
+            self.last_source_residual.update(
+                {
+                    "status": "valid",
+                    "valid": True,
+                    "final_domain_scales": self.model_.source_residual_scale_record(),
+                }
+            )
+        if decision_context_active:
+            assert self.last_decision_loss is not None
+            self.last_decision_loss.update(
+                {
+                    "status": "valid",
+                    "valid": True,
+                    "fit_completed": True,
+                    "selected_epoch": best_epoch,
+                    "selected_objective": "trial_plus_lambda_candidate",
+                    "oom_batch_repacking": "forbidden",
+                }
+            )
         self.last_history = {
             "train_losses": train_losses,
             "val_losses": val_losses,
-            "val_objective_losses": list(val_losses),
+            "val_objective_losses": val_objective_losses,
             "task_val_aucs": task_val_aucs,
             "final_task_val_auc": final_task_val_auc,
             "phases": ["joint"] * len(train_losses),
             "best_epoch": best_epoch,
-            "best_task_epoch": best_epoch,
-            "best_task_val_loss": best_val_loss if best_val_loss != float("inf") else None,
+            "best_task_epoch": best_task_epoch,
+            "best_val_loss": best_val_loss if best_val_loss != float("inf") else None,
+            "best_task_val_loss": (
+                best_task_val_loss if best_task_val_loss != float("inf") else None
+            ),
             "task_patience_exhausted": early_stop_triggered,
             "feature_alignment": dict(self.last_feature_alignment or {}),
+            "source_residual": dict(self.last_source_residual),
+            "decision_loss": dict(self.last_decision_loss or {}),
         }
         self._fitted = True
 
@@ -1374,7 +2424,14 @@ class DeepBaseline(Baseline):
             with torch.inference_mode():
                 for xb, _ in source.batches(chunk_size):
                     with self._autocast_ctx():
-                        logits = self.model_(xb)
+                        splitbn_config = getattr(self, "splitbn_config", None)
+                        if splitbn_config is None:
+                            logits = self.model_(xb)
+                        else:
+                            logits = self.model_(
+                                xb,
+                                eval_buffer_source=splitbn_config.target_buffer_source,
+                            )
                     out_chunks.append((logits[:, 1] - logits[:, 0]).float())
             output = torch.cat(out_chunks).cpu().numpy().astype(np.float64)
         self.last_inference_runtime = {

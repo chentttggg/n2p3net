@@ -2,13 +2,28 @@
 
 from __future__ import annotations
 
+import json
+from dataclasses import replace
+
 import numpy as np
 import pytest
 import torch
 
 from baselines.deep import DeepConfig
 from baselines.n2p3net import N2P3NetBaseline
-from models.adapters import FeatureDomainTransfer, FeatureTransferConfig
+from models.adapters import (
+    MODEL_SOURCE_DOMAIN_AXIS_SCHEMA,
+    SOURCE_RESIDUAL_EPS,
+    SOURCE_RESIDUAL_LEDGER_SCHEMA,
+    SOURCE_RESIDUAL_R_MAX,
+    FeatureDomainTransfer,
+    FeatureTransferConfig,
+    SourceResidualContractError,
+    feature_transfer_config_from_record,
+    source_domain_axis_from_record,
+    source_domain_axis_record,
+    source_residual_loss_ledger,
+)
 from models.n2p3net import N2P3Net
 from transfer.alignment import conditional_mean_alignment_loss
 from transfer.checkpoint import checkpoint_architecture_record
@@ -31,6 +46,41 @@ def _core() -> N2P3Net:
 
 def _wrapper() -> FeatureDomainTransfer:
     return FeatureDomainTransfer(_core(), config=CONFIG)
+
+
+def _source_wrapper(
+    *,
+    source_drop_p: float = 0.3,
+    source_drop_mode: str = "sample",
+) -> FeatureDomainTransfer:
+    return FeatureDomainTransfer(
+        _core(),
+        config=replace(
+            CONFIG,
+            source_domain_count=2,
+            source_drop_p=source_drop_p,
+            source_drop_mode=source_drop_mode,
+        ),
+    )
+
+
+def _set_constant_source_residuals(
+    wrapped: FeatureDomainTransfer,
+    *,
+    output_biases: tuple[float, float] = (1.0, 2.0),
+) -> None:
+    with torch.no_grad():
+        for adapter, output_bias in zip(
+            wrapped.source_domain_residuals,
+            output_biases,
+            strict=True,
+        ):
+            adapter.depthwise.weight.zero_()
+            adapter.down.weight.zero_()
+            adapter.down.bias.fill_(1.0)
+            adapter.up.weight.zero_()
+            adapter.up.bias.fill_(output_bias)
+            adapter.gate.fill_(0.5)
 
 
 def test_wrapper_is_exact_source_identity_before_target_adaptation() -> None:
@@ -60,13 +110,260 @@ def test_target_residual_scale_is_zero_and_bounded() -> None:
     assert torch.all((output - features).abs() <= CONFIG.max_target_residual * residual.abs() + 1e-6)
 
 
-def test_wrapper_has_no_source_domain_routing_surface() -> None:
-    wrapped = _wrapper()
-    x = torch.randn(2, 3, 64)
-    with pytest.raises(TypeError):
-        wrapped(x, domain_ids=torch.zeros(2, dtype=torch.long))  # type: ignore[call-arg]
+def test_wrapper_has_only_explicit_source_training_routing_surface() -> None:
+    wrapped = _source_wrapper()
+    assert wrapped.source_residual_enabled is True
     assert not hasattr(wrapped, "domain_adapters")
     assert not hasattr(wrapped.core, "domain_adapters")
+    with pytest.raises(ValueError, match="explicit domain_indices"):
+        wrapped.source_domain_view(
+            torch.ones(2, wrapped.feature_channels, 8),
+            None,
+        )
+
+
+@pytest.mark.parametrize(
+    ("changes", "match"),
+    [
+        ({"private_domain_count": 1}, "zero or at least two"),
+        ({"source_domain_count": -1}, "zero or at least two"),
+        ({"source_domain_count": 1}, "zero or at least two"),
+        ({"source_drop_p": -0.1}, "preregistered"),
+        ({"source_drop_p": 0.1}, "preregistered"),
+        ({"source_drop_p": 0.6}, "preregistered"),
+        ({"source_drop_p": 1.0}, "preregistered"),
+        ({"source_drop_p": float("nan")}, "preregistered"),
+        ({"source_drop_mode": "channel"}, "source_drop_mode"),
+        (
+            {"private_domain_count": 2, "source_domain_count": 3},
+            "must match",
+        ),
+    ],
+)
+def test_source_residual_config_rejects_ambiguous_contracts(
+    changes: dict[str, object],
+    match: str,
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        replace(CONFIG, **changes)
+
+
+def test_source_residual_config_and_ratio_contract_are_recorded() -> None:
+    wrapped = _source_wrapper(source_drop_p=0.5, source_drop_mode="batch")
+    record = wrapped.feature_transfer_record()
+    assert record["schema"] == "n2p3_feature_domain_transfer/2"
+    assert record["source_domain_count"] == 2
+    assert record["source_drop_p"] == 0.5
+    assert record["source_drop_mode"] == "batch"
+    assert record["source_residual_ledger_schema"] == SOURCE_RESIDUAL_LEDGER_SCHEMA
+    ratio = record["source_residual_ratio_contract"]
+    assert ratio["eps_res"] == SOURCE_RESIDUAL_EPS
+    assert ratio["r_max"] == SOURCE_RESIDUAL_R_MAX
+    assert ratio["source_gate"] == "counterfactual_m=1"
+    assert feature_transfer_config_from_record(record) == wrapped.config
+    incomplete = dict(record)
+    incomplete.pop("source_drop_mode")
+    with pytest.raises(ValueError, match="fields mismatch"):
+        feature_transfer_config_from_record(incomplete)
+    forged = {**record, "source_domain_alias": "legacy"}
+    with pytest.raises(ValueError, match="unknown=.*source_domain_alias"):
+        feature_transfer_config_from_record(forged)
+
+
+def test_model_source_domain_axis_freezes_order_and_keyed_weights() -> None:
+    record = source_domain_axis_record(
+        ("BNCI", "BI"),
+        {"BI": 0.3, "BNCI": 0.7},
+    )
+    assert record == {
+        "schema": MODEL_SOURCE_DOMAIN_AXIS_SCHEMA,
+        "vocabulary": ["BNCI", "BI"],
+        "domain_to_index": {"BNCI": 0, "BI": 1},
+        "source_weights_by_domain": {"BNCI": 0.7, "BI": 0.3},
+    }
+    vocabulary, weights = source_domain_axis_from_record(record)
+    assert vocabulary == ("BNCI", "BI")
+    assert weights == {"BNCI": 0.7, "BI": 0.3}
+
+
+@pytest.mark.parametrize(
+    "record",
+    [
+        {
+            "schema": MODEL_SOURCE_DOMAIN_AXIS_SCHEMA,
+            "vocabulary": ["A", "B"],
+            "domain_to_index": {"A": 1, "B": 0},
+            "source_weights_by_domain": None,
+        },
+        {
+            "schema": MODEL_SOURCE_DOMAIN_AXIS_SCHEMA,
+            "vocabulary": ["A", "B"],
+            "domain_to_index": {"A": 0, "B": 1},
+            "source_weights_by_domain": None,
+            "domain_alias": "legacy",
+        },
+    ],
+)
+def test_model_source_domain_axis_parser_rejects_forged_records(
+    record: dict[str, object],
+) -> None:
+    with pytest.raises(ValueError, match="mismatch|non-canonical"):
+        source_domain_axis_from_record(record)
+
+
+@pytest.mark.parametrize(
+    ("vocabulary", "weights"),
+    [
+        (("A", "A"), None),
+        ((" A", "B"), None),
+        (("A", "B"), {"A": 1.0}),
+        (("A", "B"), {"A": 0.5, "B": float("nan")}),
+        (("A", "B"), {"A": 0.2, "B": 0.2}),
+    ],
+)
+def test_model_source_domain_axis_rejects_ambiguous_vocabulary_or_weights(
+    vocabulary: tuple[str, ...],
+    weights: dict[str, float] | None,
+) -> None:
+    with pytest.raises(ValueError):
+        source_domain_axis_record(vocabulary, weights)
+
+
+def test_source_residual_zero_init_is_bitwise_identity_without_double_add() -> None:
+    wrapped = _source_wrapper(source_drop_p=0.0)
+    wrapped.train()
+    features = torch.randn(6, wrapped.feature_channels, 11)
+    domains = torch.tensor([0, 1, 0, 1, 0, 1])
+    observed = wrapped.source_domain_view(
+        features,
+        domains,
+        source_residual_mask=torch.ones(6),
+    )
+    assert torch.equal(observed, features)
+
+    _set_constant_source_residuals(wrapped)
+    mask = torch.tensor([0, 1, 0, 1, 1, 0], dtype=torch.float32)[:, None, None]
+    delta = wrapped.source_residual_delta(features, domains)
+    observed = wrapped.source_domain_view(
+        features,
+        domains,
+        source_residual_mask=mask,
+    )
+    assert torch.equal(observed, features + mask * delta)
+
+
+def test_all_zero_mask_and_eval_are_exact_consensus_paths() -> None:
+    wrapped = _source_wrapper()
+    _set_constant_source_residuals(wrapped)
+    features = torch.ones(8, wrapped.feature_channels, 9)
+    domains = torch.tensor([0, 1] * 4)
+
+    wrapped.train()
+    dropped = wrapped.source_domain_view(
+        features,
+        domains,
+        source_residual_mask=torch.zeros(8),
+    )
+    assert torch.equal(dropped, features)
+
+    wrapped.eval()
+    eval_view = wrapped.source_domain_view(
+        features,
+        domains,
+        source_residual_mask=torch.ones(8),
+    )
+    assert torch.equal(eval_view, features)
+    x = torch.randn(8, 3, 64)
+    with torch.no_grad():
+        consensus = wrapped.forward_features(x)
+        requested_source = wrapped.forward_features(
+            x,
+            use_source_residual=True,
+        )
+    assert torch.equal(requested_source, consensus)
+
+
+@pytest.mark.parametrize("drop_p", [0.0, 0.3, 0.5])
+def test_sample_drop_mask_has_bernoulli_one_minus_p_semantics(drop_p: float) -> None:
+    wrapped = _source_wrapper(source_drop_p=drop_p)
+    features = torch.ones(50_000, wrapped.feature_channels, 1)
+    torch.manual_seed(123)
+    mask = wrapped.sample_source_residual_mask(features)
+    keep_rate = float(mask[:, 0, 0].mean())
+    assert keep_rate == pytest.approx(1.0 - drop_p, abs=0.01)
+
+
+def test_batch_drop_mode_samples_one_shared_mask() -> None:
+    wrapped = _source_wrapper(source_drop_p=0.3, source_drop_mode="batch")
+    mask = wrapped.sample_source_residual_mask(
+        torch.ones(128, wrapped.feature_channels, 1)
+    )
+    assert torch.unique(mask).numel() == 1
+
+
+def test_source_ratio_zero_denominator_and_counterfactual_gate() -> None:
+    wrapped = _source_wrapper(source_drop_p=0.5)
+    features = torch.zeros(4, wrapped.feature_channels, 7)
+    domains = torch.tensor([0, 1, 0, 1])
+    ratios = wrapped.source_residual_ratios(features, domains)
+    assert torch.equal(ratios, torch.zeros_like(ratios))
+
+    _set_constant_source_residuals(
+        wrapped,
+        output_biases=(1e-8, 1e-8),
+    )
+    torch.manual_seed(0)
+    sampled_mask = wrapped.sample_source_residual_mask(features)
+    assert bool((sampled_mask == 0).any())
+    _, _, record = wrapped.source_residual_counterfactual_views(
+        features,
+        domains,
+        fail_closed=False,
+    )
+    assert record["source_gate"] == "counterfactual_m=1"
+    assert record["status"] == "evaluation_failed"
+    assert record["max"] is None
+    assert record["zero_denominator_nonzero_count"] == len(features)
+    json.dumps(record, allow_nan=False)
+    with pytest.raises(SourceResidualContractError, match="zero feature denominator"):
+        wrapped.source_residual_counterfactual_views(features, domains)
+
+
+def test_source_ratio_reports_all_statistics_and_fails_on_any_excess() -> None:
+    wrapped = _source_wrapper()
+    _set_constant_source_residuals(wrapped, output_biases=(1.0, 10.0))
+    features = torch.ones(4, wrapped.feature_channels, 7)
+    domains = torch.tensor([0, 0, 0, 1])
+    _, _, record = wrapped.source_residual_counterfactual_views(
+        features,
+        domains,
+        fail_closed=False,
+    )
+    for key in ("mean", "q50", "q95", "q99", "max"):
+        assert isinstance(record[key], float)
+    assert record["valid"] is False
+    with pytest.raises(SourceResidualContractError):
+        wrapped.source_residual_counterfactual_views(features, domains)
+
+
+def test_counterfactual_loss_ledger_preserves_both_paths() -> None:
+    wrapped = _source_wrapper()
+    features = torch.ones(4, wrapped.feature_channels, 7)
+    domains = torch.tensor([0, 1, 0, 1])
+    _, _, ratio_record = wrapped.source_residual_counterfactual_views(
+        features,
+        domains,
+    )
+    ledger = source_residual_loss_ledger(
+        torch.tensor(0.4),
+        torch.tensor(0.7),
+        ratio_record=ratio_record,
+    )
+    assert ledger["schema"] == SOURCE_RESIDUAL_LEDGER_SCHEMA
+    assert ledger["loss_m0"] == pytest.approx(0.4)
+    assert ledger["loss_m1"] == pytest.approx(0.7)
+    assert ledger["loss_delta_m1_minus_m0"] == pytest.approx(0.3)
+    assert ledger["ratio"]["source_gate"] == "counterfactual_m=1"
 
 
 def test_conditional_alignment_has_active_gradient_and_sparse_cell_guard() -> None:
@@ -88,7 +385,7 @@ def test_conditional_alignment_has_active_gradient_and_sparse_cell_guard() -> No
 
 def test_subject_adapter_updates_only_target_adapter() -> None:
     torch.manual_seed(17)
-    wrapped = _wrapper()
+    wrapped = _source_wrapper()
     rng = np.random.default_rng(23)
     x = rng.standard_normal((60, 3, 64)).astype(np.float32)
     y = (rng.random(60) < 0.5).astype(np.int64)
@@ -139,6 +436,7 @@ def test_pretraining_wrapper_records_new_schema_and_private_losses() -> None:
         device=torch.device("cpu"),
         tmin_s=-0.2,
         feature_transfer=CONFIG,
+        source_domain_vocabulary=("b", "a"),
     )
     rng = np.random.default_rng(11)
     x = rng.standard_normal((64, 3, 64)).astype(np.float32)
@@ -160,7 +458,106 @@ def test_pretraining_wrapper_records_new_schema_and_private_losses() -> None:
     assert "routing_active" not in record
     assert len(record["epoch_private_domain_loss"]) == 1
     architecture = baseline.model_.architecture_record()
-    assert architecture["feature_transfer"]["schema"] == "n2p3_feature_domain_transfer/1"
+    assert architecture["feature_transfer"]["schema"] == "n2p3_feature_domain_transfer/2"
+
+
+def test_pretraining_routes_source_residual_and_records_counterfactual_losses() -> None:
+    config = DeepConfig(
+        epochs=1,
+        batch_size=16,
+        val_group_frac=0.25,
+        val_groups_min=2,
+        val_groups_max=4,
+        compile_mode=None,
+        fused_adam=False,
+        seed=0,
+    )
+    baseline = N2P3NetBaseline(
+        3,
+        64,
+        128.0,
+        config=config,
+        device=torch.device("cpu"),
+        tmin_s=-0.2,
+        feature_transfer=replace(CONFIG, source_domain_count=2, source_drop_p=0.3),
+        source_domain_vocabulary=("b", "a"),
+        splitbn_domain_count=2,
+        splitbn_target_buffer_source="pooled_source",
+    )
+    rng = np.random.default_rng(101)
+    x = rng.standard_normal((64, 3, 64)).astype(np.float32)
+    y = np.tile([0, 1], 32).astype(np.int64)
+    domains = np.repeat(["a", "b"], 32)
+    groups = np.array([f"{domain}-{i // 4}" for i, domain in enumerate(domains)])
+    baseline.fit(x, y, group_ids=groups, source_domain_ids=domains)
+
+    ledger = baseline.last_history["source_residual"]
+    assert ledger["schema"] == SOURCE_RESIDUAL_LEDGER_SCHEMA
+    assert ledger["status"] == "valid"
+    assert ledger["source_drop_p"] == 0.3
+    assert ledger["source_drop_mode"] == "sample"
+    assert ledger["domain_vocabulary"] == ["b", "a"]
+    assert len(ledger["epoch_loss_m0"]) == 1
+    assert len(ledger["epoch_loss_m1"]) == 1
+    assert len(ledger["epoch_loss_delta_m1_minus_m0"]) == 1
+    assert ledger["epoch_ratio_forwards"][0]
+    assert len(ledger["final_domain_scales"]) == 2
+
+
+def test_splitbn_source_validation_uses_per_row_source_buffers() -> None:
+    baseline = N2P3NetBaseline(
+        3,
+        64,
+        128.0,
+        config=DeepConfig(
+            epochs=1,
+            batch_size=16,
+            val_group_frac=0.25,
+            val_groups_min=2,
+            val_groups_max=4,
+            compile_mode=None,
+            fused_adam=False,
+            seed=3,
+        ),
+        device=torch.device("cpu"),
+        tmin_s=-0.2,
+        source_domain_vocabulary=("a", "b"),
+        splitbn_domain_count=2,
+        # This target buffer is deliberately uninitialized. Source validation
+        # can succeed only by selecting per-row source-domain buffers.
+        splitbn_target_buffer_source="target_calibration",
+    )
+    rng = np.random.default_rng(103)
+    x = rng.standard_normal((64, 3, 64)).astype(np.float32)
+    y = np.tile([0, 1], 32).astype(np.int64)
+    domains = np.repeat(["a", "b"], 32)
+    groups = np.array([f"{domain}-{i // 4}" for i, domain in enumerate(domains)])
+
+    baseline.fit(x, y, group_ids=groups, source_domain_ids=domains)
+
+    assert baseline.calibration_source_ == "group_disjoint_validation"
+    assert baseline.calibration_logits_ is not None
+    assert np.isfinite(baseline.calibration_logits_).all()
+
+
+def test_pretraining_source_residual_requires_exact_domain_contract() -> None:
+    baseline = N2P3NetBaseline(
+        3,
+        64,
+        128.0,
+        config=DeepConfig(epochs=1, compile_mode=None, fused_adam=False),
+        device=torch.device("cpu"),
+        tmin_s=-0.2,
+        feature_transfer=replace(CONFIG, source_domain_count=2),
+        source_domain_vocabulary=("a", "b"),
+    )
+    rng = np.random.default_rng(107)
+    x = rng.standard_normal((32, 3, 64)).astype(np.float32)
+    y = np.tile([0, 1], 16).astype(np.int64)
+    with pytest.raises(ValueError, match="explicit source_domain_ids"):
+        baseline.fit(x, y)
+    with pytest.raises(ValueError, match="exactly match"):
+        baseline.fit(x, y, source_domain_ids=np.repeat("only", len(x)))
 
 
 def test_checkpoint_record_rejects_retired_domain_bank() -> None:

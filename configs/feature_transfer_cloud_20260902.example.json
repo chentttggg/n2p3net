@@ -1,27 +1,28 @@
 {
   "schema": "n2p3_candidate_promotion_plan/2",
   "stage": "development",
-  "source_snapshot_manifest": "../frozen/source_feature_transfer_c7bf860.manifest.json",
-  "target_cache": "../cloud_inputs/brainsync_target_causal_v3.npz",
+  "source_snapshot_manifest": "../frozen/ROW_COLUMN_P0_P1_SOURCE_SNAPSHOT_PLACEHOLDER.manifest.json",
+  "target_cache": "../cloud_inputs/ROW_COLUMN_TARGET_CAUSAL_V3_PLACEHOLDER.npz",
   "target_subjects": [
     {
-      "target_subject": "TARGET_01",
-      "source_holdout_subject": "SOURCE_TARGET_01",
+      "target_subject": "ROW_COLUMN_TARGET_01",
+      "source_holdout_subject": "ROW_COLUMN_SOURCE_TARGET_01",
       "partition_key": "target-01"
     },
     {
-      "target_subject": "TARGET_02",
-      "source_holdout_subject": "SOURCE_TARGET_02",
+      "target_subject": "ROW_COLUMN_TARGET_02",
+      "source_holdout_subject": "ROW_COLUMN_SOURCE_TARGET_02",
       "partition_key": "target-02"
     }
   ],
   "source_arms": [
     {
-      "name": "multidomain_feature_transfer",
-      "cache": "../cloud_inputs/source_multidomain_causal_v3.npz",
+      "name": "row_column_multidomain_p0_p1",
+      "cache": "../cloud_inputs/ROW_COLUMN_SOURCE_MULTIDOMAIN_CAUSAL_V3_PLACEHOLDER.npz",
       "source_domain_mass": null,
       "risk_within_domain_unit": null,
-      "selection_domain": null
+      "selection_domain": null,
+      "splitbn_source_weights": null
     }
   ],
   "training_replicates": [
@@ -76,18 +77,21 @@
     "feature_transfer_max_target_residual": 0.25,
     "feature_alignment_weight": 0.05,
     "private_domain_weight": 0.05,
-    "orthogonality_weight": 0.01
+    "orthogonality_weight": 0.01,
+    "splitbn_target_buffer_source": "pooled_source",
+    "source_residual_drop_p": 0.3,
+    "source_residual_drop_mode": "sample"
   },
   "calibration_selections": 5,
   "test_reps": 8,
   "identity_exclusion_policy": "source_or_global",
-  "output_root": "../experiments/runs/feature_transfer_cloud_20260902",
+  "output_root": "../experiments/runs/row_column_p0_p1_development_placeholder",
   "statistical_design": {
     "inference_scope": "conditional_frozen_models",
     "planned_contrasts": [
       [
-        "multidomain_feature_transfer__target_adapter",
-        "multidomain_feature_transfer__zero_shot"
+        "row_column_multidomain_p0_p1__target_adapter",
+        "row_column_multidomain_p0_p1__zero_shot"
       ]
     ],
     "evidence_level": 8,

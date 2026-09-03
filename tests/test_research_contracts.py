@@ -237,3 +237,86 @@ def test_training_procedure_record_separates_controls_from_fit_outcomes() -> Non
     assert training_procedure_record(control) != training_procedure_record(base)
     assert training_procedure_record(base)["optimizer"]["selection_config"]["epochs"] == 30
     assert "refit_config" not in training_procedure_record(base)["optimizer"]
+
+
+def test_training_procedure_record_binds_transfer_decision_and_effective_batch() -> None:
+    base = _training_contract()
+    base = replace(
+        base,
+        optimizer={
+            "name": "torch.optim.Adam",
+            "selection_config": {"epochs": 30, "batch_size": 256},
+            "selection_execution": {"fused_adam": True, "compile_mode": "default"},
+            "refit_execution": {"fused_adam": True, "compile_mode": "default"},
+            "effective_batch_contract": {
+                "requested_batch_size": 256,
+                "selection_batch_size": 256,
+                "refit_batch_size": 256,
+                "selection_oom_retries": 0,
+                "refit_oom_retries": 0,
+            },
+        },
+        objective={
+            "name": "weighted_binary_cross_entropy",
+            "qc_ptp_uv": 100.0,
+            "input_statistics_scope": "all_source_rows",
+            "feature_transfer": {
+                "schema": "n2p3_feature_domain_transfer/2",
+                "source_domain_count": 2,
+                "source_drop_p": 0.3,
+                "source_drop_mode": "sample",
+            },
+            "feature_alignment_contract": {"weight": 0.05},
+            "decision_loss": {
+                "schema": "n2p3_decision_loss_config/1",
+                "lambda_candidate": 0.2,
+                "temperature": 1.0,
+            },
+            "source_residual_diagnostics": {"run_max_ratio": 0.1},
+        },
+    )
+    baseline = training_procedure_record(base)
+
+    changed_drop = replace(
+        base,
+        objective={
+            **base.objective,
+            "feature_transfer": {
+                **base.objective["feature_transfer"],
+                "source_drop_p": 0.5,
+            },
+        },
+    )
+    changed_decision = replace(
+        base,
+        objective={
+            **base.objective,
+            "decision_loss": {
+                **base.objective["decision_loss"],
+                "temperature": 0.7,
+            },
+        },
+    )
+    changed_batch = replace(
+        base,
+        optimizer={
+            **base.optimizer,
+            "effective_batch_contract": {
+                **base.optimizer["effective_batch_contract"],
+                "selection_batch_size": 128,
+                "selection_oom_retries": 1,
+            },
+        },
+    )
+    changed_diagnostics = replace(
+        base,
+        objective={
+            **base.objective,
+            "source_residual_diagnostics": {"run_max_ratio": 0.4},
+        },
+    )
+
+    assert training_procedure_record(changed_drop) != baseline
+    assert training_procedure_record(changed_decision) != baseline
+    assert training_procedure_record(changed_batch) != baseline
+    assert training_procedure_record(changed_diagnostics) == baseline

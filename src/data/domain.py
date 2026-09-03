@@ -328,8 +328,8 @@ def annotate_source_domain(dataset: EpochDataset, domain_id: str) -> EpochDatase
     return annotated
 
 
-def source_domain_ids(dataset: EpochDataset) -> np.ndarray:
-    """Return the validated explicit row-domain axis of a prepared source cache."""
+def source_domain_vocabulary(dataset: EpochDataset) -> tuple[str, ...]:
+    """Return the cache-declared domain order used to encode model indices."""
 
     dataset.validate(require_labels=dataset.y is not None)
     record = dataset.provenance.get("source_domain_axis")
@@ -345,6 +345,13 @@ def source_domain_ids(dataset: EpochDataset) -> np.ndarray:
     domains = tuple(str(value).strip() for value in raw_domains)
     if not domains or any(not value for value in domains) or len(set(domains)) != len(domains):
         raise ValueError("source-domain axis domains must be unique non-empty strings.")
+    return domains
+
+
+def source_domain_ids(dataset: EpochDataset) -> np.ndarray:
+    """Return the validated explicit row-domain axis of a prepared source cache."""
+
+    domains = source_domain_vocabulary(dataset)
     if SOURCE_DOMAIN_COLUMN not in dataset.metadata:
         raise ValueError("source-domain axis metadata column is missing.")
     values = dataset.metadata[SOURCE_DOMAIN_COLUMN].astype(str).to_numpy()

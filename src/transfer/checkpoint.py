@@ -20,15 +20,26 @@ from data.identity import (
     IdentityExclusionPolicy,
     assert_target_identity_excluded,
 )
-from models.adapters import FeatureDomainTransfer, FeatureTransferConfig
+from models.adapters import (
+    FEATURE_TRANSFER_SCHEMA,
+    SOURCE_RESIDUAL_LEDGER_SCHEMA,
+    SOURCE_RESIDUAL_R_MAX,
+    FeatureDomainTransfer,
+    FeatureTransferConfig,
+    feature_transfer_architecture_record,
+    feature_transfer_config_from_record,
+    source_domain_axis_from_record,
+)
 from models.n2p3net import (
     POOLING_MODES,
     N2P3ArchitectureConfig,
     N2P3Net,
 )
+from models.splitbn import SplitBNConfig, splitbn_config_from_record
 from research.contracts import TrainingRunContract, semantic_sha256
+from transfer.decision_loss import DecisionLossConfig
 
-CHECKPOINT_SCHEMA = "n2p3_transfer_checkpoint/1"
+CHECKPOINT_SCHEMA = "n2p3_transfer_checkpoint/2"
 
 
 def load_checkpoint_payload(path: str | Path) -> dict[str, object]:
@@ -98,12 +109,20 @@ def assert_checkpoint_target_identity_excluded(
 
 def _architecture_from_payload(
     payload: Mapping[str, object],
-) -> tuple[N2P3ArchitectureConfig, str, FeatureTransferConfig | None]:
+) -> tuple[
+    N2P3ArchitectureConfig,
+    str,
+    SplitBNConfig | None,
+    FeatureTransferConfig | None,
+    dict[str, object] | None,
+    dict[str, object],
+]:
     """Resolve the complete architecture record required by the current schema."""
 
     record = payload.get("architecture")
     if not isinstance(record, Mapping):
         raise ValueError("checkpoint architecture must be a mapping.")
+    splitbn_config = splitbn_config_from_record(record.get("normalization"))
     pooling = record.get("pooling_mode")
     if not isinstance(pooling, str) or pooling not in POOLING_MODES:
         raise ValueError(f"checkpoint pooling_mode must be one of {sorted(POOLING_MODES)}.")
@@ -141,6 +160,38 @@ def _architecture_from_payload(
     except (TypeError, ValueError) as exc:
         raise ValueError(f"checkpoint architecture is invalid: {exc}") from exc
 
+    pooling_kwargs: dict[str, object] = {}
+    if pooling == "latency_marginal_contrast":
+        required_pooling = (
+            "evidence_window_ms",
+            "reference_window_ms",
+            "latency_offsets_ms",
+            "latency_temperature",
+        )
+        missing_pooling = [name for name in required_pooling if name not in record]
+        if missing_pooling:
+            raise ValueError(
+                "checkpoint latency pooling lacks current fields "
+                f"{missing_pooling}."
+            )
+        try:
+            pooling_kwargs = {
+                "evidence_window_ms": tuple(
+                    float(value) for value in record["evidence_window_ms"]
+                ),
+                "reference_window_ms": tuple(
+                    float(value) for value in record["reference_window_ms"]
+                ),
+                "latency_offsets_ms": tuple(
+                    float(value) for value in record["latency_offsets_ms"]
+                ),
+                "latency_temperature": float(record["latency_temperature"]),
+            }
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"checkpoint latency pooling contract is invalid: {exc}"
+            ) from exc
+
     if "domain_adapters" in record:
         raise ValueError(
             "checkpoint uses the retired source-domain adapter bank; regenerate it "
@@ -151,28 +202,101 @@ def _architecture_from_payload(
     if transfer_record is not None:
         if not isinstance(transfer_record, Mapping):
             raise ValueError("checkpoint feature_transfer must be a mapping.")
-        if transfer_record.get("schema") != "n2p3_feature_domain_transfer/1":
+        if transfer_record.get("schema") != FEATURE_TRANSFER_SCHEMA:
             raise ValueError("checkpoint feature_transfer schema is unsupported.")
         try:
-            transfer_config = FeatureTransferConfig(
-                invariant_bottleneck_channels=int(
-                    transfer_record["invariant_bottleneck_channels"]
-                ),
-                private_channels=int(transfer_record["private_channels"]),
-                target_bottleneck_channels=int(
-                    transfer_record["target_bottleneck_channels"]
-                ),
-                target_kernel_size=int(transfer_record["target_kernel_size"]),
-                max_invariant_residual=float(
-                    transfer_record["max_invariant_residual"]
-                ),
-                max_target_residual=float(transfer_record["max_target_residual"]),
-                private_domain_count=int(transfer_record.get("private_domain_count", 0)),
-            )
-        except (KeyError, TypeError, ValueError) as exc:
+            transfer_config = feature_transfer_config_from_record(transfer_record)
+        except (TypeError, ValueError) as exc:
             raise ValueError(f"checkpoint feature_transfer config is invalid: {exc}") from exc
+        feature_channels = (
+            len(architecture.mst_kernel_sizes) * architecture.mst_features_per_scale
+        )
+        if dict(transfer_record) != feature_transfer_architecture_record(
+            transfer_config,
+            feature_channels=feature_channels,
+        ):
+            raise ValueError(
+                "checkpoint feature_transfer wrapper contract is incomplete or inconsistent."
+            )
 
-    return architecture, pooling, transfer_config
+    axis_record = _model_source_domain_axis_from_payload(
+        payload,
+        architecture_record=record,
+        splitbn_config=splitbn_config,
+        transfer_config=transfer_config,
+    )
+    return (
+        architecture,
+        pooling,
+        splitbn_config,
+        transfer_config,
+        axis_record,
+        pooling_kwargs,
+    )
+
+
+def _model_source_domain_axis_from_payload(
+    payload: Mapping[str, object],
+    *,
+    architecture_record: Mapping[str, object],
+    splitbn_config: SplitBNConfig | None,
+    transfer_config: FeatureTransferConfig | None,
+) -> dict[str, object] | None:
+    indexed_counts = tuple(
+        count
+        for count in (
+            None if splitbn_config is None else splitbn_config.domain_count,
+            None if transfer_config is None else transfer_config.source_domain_count,
+            None if transfer_config is None else transfer_config.private_domain_count,
+        )
+        if count is not None and count > 0
+    )
+    axis_payload = payload.get("source_domain_axis")
+    payload_digest = payload.get("source_domain_axis_digest")
+    architecture_digest = architecture_record.get("source_domain_axis_digest")
+    if not indexed_counts:
+        if (
+            axis_payload is not None
+            or payload_digest is not None
+            or architecture_digest is not None
+        ):
+            raise ValueError(
+                "checkpoint has a model source-domain axis without an indexed mechanism."
+            )
+        return None
+    if not isinstance(axis_payload, Mapping):
+        raise ValueError("checkpoint indexed model lacks a source_domain_axis mapping.")
+    try:
+        vocabulary, weights_by_domain = source_domain_axis_from_record(axis_payload)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"checkpoint source_domain_axis is invalid: {exc}") from exc
+    axis_record = dict(axis_payload)
+    digest = semantic_sha256(axis_record)
+    if payload_digest != digest or architecture_digest != digest:
+        raise ValueError(
+            "checkpoint source_domain_axis digest is absent or disagrees with its records."
+        )
+    if any(count != len(vocabulary) for count in indexed_counts):
+        raise ValueError(
+            "checkpoint indexed domain counts disagree with source_domain_axis."
+        )
+    expected_weights = None if splitbn_config is None else splitbn_config.source_weights
+    if expected_weights is None:
+        if weights_by_domain is not None:
+            raise ValueError(
+                "checkpoint source_domain_axis contains weights unused by its SplitBN contract."
+            )
+    else:
+        if weights_by_domain is None:
+            raise ValueError(
+                "checkpoint source_weighted SplitBN lacks domain-keyed source weights."
+            )
+        positional_weights = tuple(weights_by_domain[domain] for domain in vocabulary)
+        if positional_weights != expected_weights:
+            raise ValueError(
+                "checkpoint keyed source weights disagree with SplitBN buffer order."
+            )
+    return axis_record
 
 
 def _validate_metadata(
@@ -191,6 +315,152 @@ def _validate_metadata(
     training_contract = checkpoint_training_contract(payload)
     if payload.get("source_cache_sha256") != training_contract.source_cache_sha256:
         raise ValueError("checkpoint source_cache_sha256 disagrees with its training contract.")
+    contract_domain_axis = training_contract.objective.get("source_domain_axis")
+    payload_domain_axis = payload.get("source_domain_axis")
+    if semantic_sha256(contract_domain_axis) != semantic_sha256(payload_domain_axis):
+        raise ValueError(
+            "checkpoint source_domain_axis disagrees with its training contract."
+        )
+    contract_residual = training_contract.objective.get(
+        "source_residual_diagnostics"
+    )
+    if contract_residual is not None:
+        if not isinstance(contract_residual, Mapping):
+            raise ValueError(
+                "training contract source_residual_diagnostics must be a mapping."
+            )
+        durable_residual = {
+            "selection": payload.get("source_residual_selection"),
+            "refit": payload.get("source_residual_refit"),
+        }
+        if semantic_sha256(contract_residual) != semantic_sha256(durable_residual):
+            raise ValueError(
+                "checkpoint source residual ledger disagrees with its training contract."
+            )
+        architecture_record = payload.get("architecture")
+        transfer_record = (
+            architecture_record.get("feature_transfer")
+            if isinstance(architecture_record, Mapping)
+            else None
+        )
+        source_residual_expected = False
+        if isinstance(transfer_record, Mapping):
+            try:
+                source_residual_expected = (
+                    feature_transfer_config_from_record(transfer_record).source_domain_count
+                    >= 2
+                )
+            except (TypeError, ValueError) as error:
+                raise ValueError(
+                    f"checkpoint feature_transfer config is invalid: {error}"
+                ) from error
+        for phase, ledger in durable_residual.items():
+            if ledger is None:
+                if source_residual_expected:
+                    raise ValueError(
+                        f"checkpoint {phase} source residual ledger is missing."
+                    )
+                continue
+            if not isinstance(ledger, Mapping):
+                raise ValueError(
+                    f"checkpoint {phase} source residual ledger must be a mapping."
+                )
+            if ledger.get("schema") != SOURCE_RESIDUAL_LEDGER_SCHEMA:
+                raise ValueError(
+                    f"checkpoint {phase} source residual ledger has an unsupported schema."
+                )
+            active = ledger.get("active")
+            if not isinstance(active, bool):
+                raise ValueError(
+                    f"checkpoint {phase} source residual ledger lacks an active flag."
+                )
+            if source_residual_expected and active is not True:
+                raise ValueError(
+                    f"checkpoint {phase} source residual ledger is inactive."
+                )
+            if active and not source_residual_expected:
+                raise ValueError(
+                    f"checkpoint {phase} source residual ledger is active but architecture disables it."
+                )
+            if active:
+                maximum = ledger.get("run_max_ratio")
+                if (
+                    isinstance(maximum, (bool, np.bool_))
+                    or not isinstance(maximum, (int, float, np.integer, np.floating))
+                    or not np.isfinite(float(maximum))
+                    or float(maximum) > SOURCE_RESIDUAL_R_MAX
+                ):
+                    raise ValueError(
+                        f"checkpoint {phase} source residual maximum ratio is invalid."
+                    )
+                if ledger.get("status") != "valid" or ledger.get("valid") is not True:
+                    raise ValueError(
+                        f"checkpoint {phase} source residual ledger is not a valid completed fit."
+                    )
+            elif ledger.get("status") != "disabled" or ledger.get("valid") is not True:
+                raise ValueError(
+                    f"checkpoint {phase} disabled source residual ledger is inconsistent."
+                )
+    elif (
+        "source_residual_selection" in payload
+        or "source_residual_refit" in payload
+    ):
+        raise ValueError(
+            "checkpoint source residual ledger is absent from its training contract."
+        )
+    contract_decision_loss = training_contract.objective.get("decision_loss")
+    payload_decision_loss = payload.get("decision_loss")
+    if semantic_sha256(contract_decision_loss) != semantic_sha256(
+        payload_decision_loss
+    ):
+        raise ValueError("checkpoint decision loss disagrees with its training contract.")
+    if payload_decision_loss is not None:
+        try:
+            decision_config = DecisionLossConfig.from_record(payload_decision_loss)
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"checkpoint decision loss is invalid: {error}") from error
+        if decision_config.record() != dict(payload_decision_loss):
+            raise ValueError("checkpoint decision loss record is non-canonical.")
+        decision_metadata = payload.get("decision_metadata")
+        if not isinstance(decision_metadata, Mapping):
+            raise ValueError("checkpoint decision loss lacks direct decision metadata.")
+        if payload.get("decision_metadata_digest") != semantic_sha256(
+            decision_metadata
+        ):
+            raise ValueError("checkpoint direct decision metadata digest disagrees.")
+        if semantic_sha256(
+            training_contract.objective.get("decision_metadata")
+        ) != semantic_sha256(decision_metadata):
+            raise ValueError(
+                "checkpoint direct decision metadata disagrees with its training contract."
+            )
+        durable_decision_diagnostics = {
+            "selection": payload.get("decision_loss_selection"),
+            "refit": payload.get("decision_loss_refit"),
+        }
+        if semantic_sha256(
+            training_contract.objective.get("decision_loss_diagnostics")
+        ) != semantic_sha256(durable_decision_diagnostics):
+            raise ValueError(
+                "checkpoint decision loss ledger disagrees with its training contract."
+            )
+        for phase, ledger in durable_decision_diagnostics.items():
+            if not isinstance(ledger, Mapping):
+                raise ValueError(f"checkpoint {phase} decision ledger must be a mapping.")
+            if ledger.get("status") != "valid" or ledger.get("valid") is not True:
+                raise ValueError(
+                    f"checkpoint {phase} decision ledger is not a valid completed fit."
+                )
+    elif any(
+        payload.get(name) is not None
+        for name in (
+            "decision_metadata",
+            "decision_metadata_digest",
+            "decision_loss_selection",
+            "decision_loss_refit",
+        )
+    ):
+        raise ValueError("checkpoint carries decision metadata without a decision loss contract.")
     training_identity_ledger = checkpoint_training_identity_ledger(payload)
 
     architecture_record = payload.get("architecture")
@@ -376,6 +646,8 @@ def predict_n2p3_checkpoint(
     input_stats: tuple[np.ndarray, np.ndarray],
     device: torch.device,
     trial_channel_mask: np.ndarray | None = None,
+    eval_buffer_source: str | None = None,
+    eval_buffer_index: int | None = None,
 ) -> np.ndarray:
     """Run a small target suffix through a pretrained classifier unchanged."""
 
@@ -397,9 +669,26 @@ def predict_n2p3_checkpoint(
     np.copyto(standardized, 0.0, where=~mask[:, :, None])
     trunk = trunk.to(device)
     trunk.eval()
+    core = trunk.core if isinstance(trunk, FeatureDomainTransfer) else trunk
+    splitbn_config = core.splitbn_config
+    if splitbn_config is not None:
+        declared_source = splitbn_config.target_buffer_source
+        if eval_buffer_source is not None and eval_buffer_source != declared_source:
+            raise ValueError(
+                "checkpoint target prediction cannot override its declared SplitBN buffer."
+            )
+        if eval_buffer_index is not None:
+            raise ValueError(
+                "checkpoint target prediction cannot select a source-domain buffer index."
+            )
+        eval_buffer_source = declared_source
     with torch.inference_mode():
         tensor = torch.from_numpy(np.ascontiguousarray(standardized)).to(device)
-        output = trunk(tensor)
+        output = trunk(
+            tensor,
+            eval_buffer_source=eval_buffer_source,
+            eval_buffer_index=eval_buffer_index,
+        )
     return (output[:, 1] - output[:, 0]).detach().cpu().numpy().astype(np.float64)
 
 
@@ -419,7 +708,14 @@ def load_n2p3_trunk_checkpoint(
         target_subject=target_subject,
         identity_exclusion_policy=identity_exclusion_policy,
     )
-    architecture, pooling, transfer_config = _architecture_from_payload(payload)
+    (
+        architecture,
+        pooling,
+        splitbn_config,
+        transfer_config,
+        axis_record,
+        pooling_kwargs,
+    ) = _architecture_from_payload(payload)
     core = N2P3Net(
         int(dataset.n_channels),
         n_times=int(dataset.n_times),
@@ -427,10 +723,33 @@ def load_n2p3_trunk_checkpoint(
         tmin_s=float(dataset.preprocessing.tmin_ms) / 1000.0,
         pooling_mode=pooling,
         **architecture.model_kwargs(),
+        **({} if splitbn_config is None else splitbn_config.model_kwargs()),
+        **pooling_kwargs,
     )
     trunk: N2P3Net | FeatureDomainTransfer = core
     if transfer_config is not None:
         trunk = FeatureDomainTransfer(core, config=transfer_config)
+    reconstructed_architecture = core.architecture_record()
+    if transfer_config is not None:
+        reconstructed_architecture["feature_transfer"] = (
+            feature_transfer_architecture_record(
+                transfer_config,
+                feature_channels=(
+                    len(architecture.mst_kernel_sizes)
+                    * architecture.mst_features_per_scale
+                ),
+            )
+        )
+    if axis_record is not None:
+        reconstructed_architecture["source_domain_axis_digest"] = semantic_sha256(
+            axis_record
+        )
+    if semantic_sha256(reconstructed_architecture) != semantic_sha256(
+        payload["architecture"]
+    ):
+        raise ValueError(
+            "checkpoint architecture record does not exactly match the reconstructed model."
+        )
     state = payload["trunk_state_dict"]
     try:
         missing, unexpected = trunk.load_state_dict(state, strict=False)
@@ -450,25 +769,43 @@ def load_n2p3_trunk_checkpoint(
 def checkpoint_architecture_record(payload: Mapping[str, object]) -> dict[str, object]:
     """Return a normalized architecture summary for run ledgers and diagnostics."""
 
-    architecture, pooling, transfer_config = _architecture_from_payload(payload)
-    required = ("input_tmin_s", "input_sample_rate_hz", "n_times")
+    (
+        architecture,
+        pooling,
+        splitbn_config,
+        transfer_config,
+        axis_record,
+        pooling_kwargs,
+    ) = _architecture_from_payload(payload)
+    required = ("n_channels", "input_tmin_s", "input_sample_rate_hz", "n_times")
     missing = [field for field in required if payload.get(field) is None]
     if missing:
         raise ValueError(f"checkpoint lacks required input geometry {missing}.")
-    record = N2P3Net.default_architecture_record(
+    reconstructed = N2P3Net(
+        int(payload["n_channels"]),
         pooling_mode=pooling,
         tmin_s=float(payload["input_tmin_s"]),
         sfreq=float(payload["input_sample_rate_hz"]),
         n_times=int(payload["n_times"]),
-        architecture=architecture,
+        **architecture.model_kwargs(),
+        **({} if splitbn_config is None else splitbn_config.model_kwargs()),
+        **pooling_kwargs,
     )
+    record = reconstructed.architecture_record()
     if transfer_config is not None:
-        record["feature_transfer"] = {
-            **transfer_config.record(),
-            "feature_channels": (
+        record["feature_transfer"] = feature_transfer_architecture_record(
+            transfer_config,
+            feature_channels=(
                 len(architecture.mst_kernel_sizes) * architecture.mst_features_per_scale
             ),
-        }
+        )
+    if axis_record is not None:
+        record["source_domain_axis_digest"] = semantic_sha256(axis_record)
+    declared = payload.get("architecture")
+    if semantic_sha256(record) != semantic_sha256(declared):
+        raise ValueError(
+            "checkpoint architecture record does not exactly match the reconstructed model."
+        )
     return record
 
 

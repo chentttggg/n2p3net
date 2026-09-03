@@ -11,6 +11,13 @@ from torch import nn
 from torch.nn import functional as F
 
 from data.contract import DEFAULT_P300_DATA_CONTRACT
+from models.splitbn import (
+    SplitBN1d,
+    SplitBN2d,
+    SplitBNConfig,
+    normalization_record,
+    resolve_splitbn_config,
+)
 
 POOLING_MODES = frozenset(
     {
@@ -270,6 +277,7 @@ class _MSTBranch(nn.Module):
         dilation: int,
         output_features: int,
         dropout: float,
+        splitbn: SplitBNConfig | None = None,
     ) -> None:
         super().__init__()
         self.depthwise = nn.Conv1d(
@@ -282,14 +290,45 @@ class _MSTBranch(nn.Module):
             bias=False,
         )
         self.pointwise = nn.Conv1d(channels, output_features, kernel_size=1, bias=False)
-        self.norm = nn.BatchNorm1d(output_features)
+        self.norm: nn.Module
+        if splitbn is None:
+            self.norm = nn.BatchNorm1d(output_features)
+        else:
+            self.norm = SplitBN1d(
+                output_features,
+                domain_count=splitbn.domain_count,
+                target_buffer_source=splitbn.target_buffer_source,
+                source_weights=splitbn.source_weights,
+            )
         self.activation = nn.ELU()
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        x: torch.Tensor,
+        *,
+        domain_indices: torch.Tensor | None = None,
+        eval_buffer_source: str | None = None,
+        eval_buffer_index: int | None = None,
+    ) -> torch.Tensor:
         x = self.depthwise(x)
         x = self.pointwise(x)
-        return self.dropout(self.activation(self.norm(x)))
+        if isinstance(self.norm, SplitBN1d):
+            x = self.norm(
+                x,
+                domain_indices=domain_indices,
+                eval_buffer_source=eval_buffer_source,
+                eval_buffer_index=eval_buffer_index,
+            )
+        else:
+            if (
+                domain_indices is not None
+                or eval_buffer_source is not None
+                or eval_buffer_index is not None
+            ):
+                raise ValueError("ordinary BatchNorm cannot consume SplitBN selectors.")
+            x = self.norm(x)
+        return self.dropout(self.activation(x))
 
 
 class MSFlattenPool(nn.Module):
@@ -533,6 +572,9 @@ class N2P3Net(nn.Module):
         latency_temperature: float = 0.5,
         interaction_rank: int = DEFAULT_INTERACTION_RANK,
         mlp_hidden_features: int = DEFAULT_MLP_HIDDEN_FEATURES,
+        splitbn_domain_count: int | None = None,
+        splitbn_target_buffer_source: str | None = None,
+        splitbn_source_weights: Sequence[float] | None = None,
     ) -> None:
         super().__init__()
         if n_channels < 1:
@@ -579,6 +621,11 @@ class N2P3Net(nn.Module):
             and n_times is None
         ):
             raise ValueError(f"{pooling_mode} pooling requires n_times.")
+        splitbn_config = resolve_splitbn_config(
+            domain_count=splitbn_domain_count,
+            target_buffer_source=splitbn_target_buffer_source,
+            source_weights=splitbn_source_weights,
+        )
 
         self.n_channels = int(n_channels)
         self.n_times = int(n_times) if n_times is not None else None
@@ -598,6 +645,7 @@ class N2P3Net(nn.Module):
         self.spatial_max_norm = float(spatial_max_norm)
         self.interaction_rank = int(interaction_rank)
         self.mlp_hidden_features = int(mlp_hidden_features)
+        self.splitbn_config = splitbn_config
         spatial_features = self.temporal_filters * self.spatial_depth_multiplier
         self.spatial_features = spatial_features
 
@@ -612,7 +660,15 @@ class N2P3Net(nn.Module):
             dilation=(1, self.st_temporal_dilation),
             bias=False,
         )
-        self.st_temporal_norm = nn.BatchNorm2d(self.temporal_filters)
+        if self.splitbn_config is None:
+            self.st_temporal_norm: nn.Module = nn.BatchNorm2d(self.temporal_filters)
+        else:
+            self.st_temporal_norm = SplitBN2d(
+                self.temporal_filters,
+                domain_count=self.splitbn_config.domain_count,
+                target_buffer_source=self.splitbn_config.target_buffer_source,
+                source_weights=self.splitbn_config.source_weights,
+            )
         self.st_spatial = _MaxNormSpatialConv(
             self.temporal_filters,
             spatial_features,
@@ -621,7 +677,15 @@ class N2P3Net(nn.Module):
             bias=False,
             max_norm=self.spatial_max_norm,
         )
-        self.st_spatial_norm = nn.BatchNorm2d(spatial_features)
+        if self.splitbn_config is None:
+            self.st_spatial_norm: nn.Module = nn.BatchNorm2d(spatial_features)
+        else:
+            self.st_spatial_norm = SplitBN2d(
+                spatial_features,
+                domain_count=self.splitbn_config.domain_count,
+                target_buffer_source=self.splitbn_config.target_buffer_source,
+                source_weights=self.splitbn_config.source_weights,
+            )
         self.st_activation = nn.ELU()
         self.st_pool = nn.AvgPool2d((1, self.st_pool_size), stride=(1, self.st_pool_size))
         self.st_dropout = nn.Dropout(self.dropout_probability)
@@ -632,6 +696,7 @@ class N2P3Net(nn.Module):
                 dilation=dilation,
                 output_features=self.mst_features_per_scale,
                 dropout=self.dropout_probability,
+                splitbn=self.splitbn_config,
             )
             for kernel, dilation in zip(
                 self.mst_kernel_sizes,
@@ -713,11 +778,14 @@ class N2P3Net(nn.Module):
         sfreq: float = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz,
         n_times: int | None = DEFAULT_P300_DATA_CONTRACT.n_times,
         architecture: N2P3ArchitectureConfig = DEFAULT_N2P3_ARCHITECTURE,
+        splitbn: SplitBNConfig | None = None,
     ) -> dict[str, object]:
         if pooling_mode not in POOLING_MODES:
             raise ValueError(f"pooling_mode must be one of {sorted(POOLING_MODES)}.")
         if not isinstance(architecture, N2P3ArchitectureConfig):
             raise TypeError("architecture must be an N2P3ArchitectureConfig.")
+        if splitbn is not None and not isinstance(splitbn, SplitBNConfig):
+            raise TypeError("splitbn must be a SplitBNConfig or None.")
         record: dict[str, object] = {
             "trunk": "ms_eegnet_style",
             "pooling_mode": pooling_mode,
@@ -785,6 +853,7 @@ class N2P3Net(nn.Module):
             "mst_pool_size": architecture.mst_pool_size,
             "dropout": architecture.dropout,
             "spatial_max_norm": architecture.spatial_max_norm,
+            "normalization": normalization_record(splitbn),
         }
         if (
             pooling_mode
@@ -810,6 +879,22 @@ class N2P3Net(nn.Module):
                         "quadratic_full_unfold": "residual_factorized_quadratic",
                     }[pooling_mode],
                 }
+            )
+            record["classifier_features"] = (
+                len(architecture.mst_kernel_sizes)
+                * architecture.mst_features_per_scale
+                * st_times
+            )
+        elif pooling_mode == "ms_flatten" and n_times is not None:
+            st_times = cls._pooled_time_samples(int(n_times), architecture.st_pool_size)
+            record["classifier_features"] = (
+                len(architecture.mst_kernel_sizes)
+                * architecture.mst_features_per_scale
+                * cls._pooled_time_samples(st_times, architecture.mst_pool_size)
+            )
+        elif pooling_mode in {"global_average", "latency_marginal_contrast"}:
+            record["classifier_features"] = (
+                len(architecture.mst_kernel_sizes) * architecture.mst_features_per_scale
             )
         if pooling_mode == "quadratic_full_unfold":
             record["interaction_rank"] = architecture.interaction_rank
@@ -848,6 +933,7 @@ class N2P3Net(nn.Module):
             sfreq=self.sfreq,
             n_times=self.n_times,
             architecture=architecture,
+            splitbn=self.splitbn_config,
         )
         record.update(
             {
@@ -953,7 +1039,38 @@ class N2P3Net(nn.Module):
                 f"got {x.shape[-1]}."
             )
 
-    def forward_features(self, x: torch.Tensor) -> torch.Tensor:
+    @staticmethod
+    def _apply_norm(
+        norm: nn.Module,
+        x: torch.Tensor,
+        *,
+        domain_indices: torch.Tensor | None,
+        eval_buffer_source: str | None,
+        eval_buffer_index: int | None,
+    ) -> torch.Tensor:
+        if isinstance(norm, SplitBN2d):
+            return norm(
+                x,
+                domain_indices=domain_indices,
+                eval_buffer_source=eval_buffer_source,
+                eval_buffer_index=eval_buffer_index,
+            )
+        if (
+            domain_indices is not None
+            or eval_buffer_source is not None
+            or eval_buffer_index is not None
+        ):
+            raise ValueError("ordinary BatchNorm cannot consume SplitBN selectors.")
+        return norm(x)
+
+    def forward_features(
+        self,
+        x: torch.Tensor,
+        *,
+        domain_indices: torch.Tensor | None = None,
+        eval_buffer_source: str | None = None,
+        eval_buffer_index: int | None = None,
+    ) -> torch.Tensor:
         """Return concatenated post-MST trunk features without the readout.
 
         ``forward`` remains unchanged in its public contract: it consumes these
@@ -962,10 +1079,30 @@ class N2P3Net(nn.Module):
 
         self._validate_input(x)
         x = x.unsqueeze(1)
-        x = self.st_temporal_norm(self.st_temporal(x))
-        x = self.st_spatial_norm(self.st_spatial(x))
+        x = self._apply_norm(
+            self.st_temporal_norm,
+            self.st_temporal(x),
+            domain_indices=domain_indices,
+            eval_buffer_source=eval_buffer_source,
+            eval_buffer_index=eval_buffer_index,
+        )
+        x = self._apply_norm(
+            self.st_spatial_norm,
+            self.st_spatial(x),
+            domain_indices=domain_indices,
+            eval_buffer_source=eval_buffer_source,
+            eval_buffer_index=eval_buffer_index,
+        )
         x = self.st_dropout(self.st_pool(self.st_activation(x))).squeeze(2)
-        branch_features = [branch(x) for branch in self.mst_branches]
+        branch_features = [
+            branch(
+                x,
+                domain_indices=domain_indices,
+                eval_buffer_source=eval_buffer_source,
+                eval_buffer_index=eval_buffer_index,
+            )
+            for branch in self.mst_branches
+        ]
         return torch.cat(branch_features, dim=1)
 
     def _pool_features(self, features: torch.Tensor) -> torch.Tensor:
@@ -984,7 +1121,14 @@ class N2P3Net(nn.Module):
             dim=1,
         )
 
-    def forward_with_features(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward_with_features(
+        self,
+        x: torch.Tensor,
+        *,
+        domain_indices: torch.Tensor | None = None,
+        eval_buffer_source: str | None = None,
+        eval_buffer_index: int | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Return ``(logits, adapted_trunk_features)`` in one pass.
 
         The feature-alignment objective consumes the adapted features while
@@ -992,7 +1136,12 @@ class N2P3Net(nn.Module):
         decision risk can never observe different representations.
         """
 
-        features = self.forward_features(x)
+        features = self.forward_features(
+            x,
+            domain_indices=domain_indices,
+            eval_buffer_source=eval_buffer_source,
+            eval_buffer_index=eval_buffer_index,
+        )
         return self.classifier(self._pool_features(features)), features
 
     def pool_features(self, features: torch.Tensor) -> torch.Tensor:
@@ -1000,8 +1149,20 @@ class N2P3Net(nn.Module):
 
         return self._pool_features(features)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.forward_with_features(x)[0]
+    def forward(
+        self,
+        x: torch.Tensor,
+        *,
+        domain_indices: torch.Tensor | None = None,
+        eval_buffer_source: str | None = None,
+        eval_buffer_index: int | None = None,
+    ) -> torch.Tensor:
+        return self.forward_with_features(
+            x,
+            domain_indices=domain_indices,
+            eval_buffer_source=eval_buffer_source,
+            eval_buffer_index=eval_buffer_index,
+        )[0]
 
     def parameter_count(self) -> int:
         return sum(parameter.numel() for parameter in self.parameters() if parameter.requires_grad)

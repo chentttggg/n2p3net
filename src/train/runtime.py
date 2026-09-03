@@ -866,6 +866,103 @@ class MatrixBatchSource:
                 db = None if selected_d is None else self.runtime.to_device(selected_d)
             yield xb, yb, wb, db
 
+    def gather_indices(
+        self,
+        indices: torch.Tensor,
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor | None,
+        torch.Tensor | None,
+        torch.Tensor | None,
+    ]:
+        """Gather one validated row-index batch across every carried row axis."""
+
+        if not isinstance(indices, torch.Tensor) or indices.ndim != 1:
+            raise ValueError("indices must be a one-dimensional torch tensor.")
+        if indices.dtype != torch.long:
+            raise ValueError("indices must have dtype torch.long.")
+        if indices.device.type != "cpu":
+            raise ValueError("indices must be a CPU tensor before device-aware gathering.")
+        if len(indices) == 0:
+            raise ValueError("indices cannot be empty.")
+        if len(torch.unique(indices)) != len(indices):
+            raise ValueError("indices within one batch must be unique.")
+        if bool(((indices < 0) | (indices >= self.n_rows)).any()):
+            raise ValueError("indices contain an out-of-range row.")
+
+        if self.preloaded:
+            assert self.device_X is not None
+            device_indices = indices.to(self.runtime.device)
+            xb = self.device_X.index_select(0, device_indices)
+            yb = (
+                None
+                if self.device_y is None
+                else self.device_y.index_select(0, device_indices)
+            )
+            wb = (
+                None
+                if self.device_row_weights is None
+                else self.device_row_weights.index_select(0, device_indices)
+            )
+            db = (
+                None
+                if self.device_row_domains is None
+                else self.device_row_domains.index_select(0, device_indices)
+            )
+            return xb, yb, wb, db
+
+        selected_x = self.cpu_X.index_select(0, indices)
+        selected_y = None if self.cpu_y is None else self.cpu_y.index_select(0, indices)
+        selected_w = (
+            None
+            if self.cpu_row_weights is None
+            else self.cpu_row_weights.index_select(0, indices)
+        )
+        selected_d = (
+            None
+            if self.cpu_row_domains is None
+            else self.cpu_row_domains.index_select(0, indices)
+        )
+        return (
+            self.runtime.to_device(selected_x),
+            None if selected_y is None else self.runtime.to_device(selected_y),
+            None if selected_w is None else self.runtime.to_device(selected_w),
+            None if selected_d is None else self.runtime.to_device(selected_d),
+        )
+
+    def iter_index_batches(
+        self,
+        index_batches: Sequence[torch.Tensor],
+        *,
+        require_full_coverage: bool = True,
+    ) -> Iterator[
+        tuple[
+            torch.Tensor,
+            torch.Tensor | None,
+            torch.Tensor | None,
+            torch.Tensor | None,
+        ]
+    ]:
+        """Yield explicit row-index batches, optionally proving exact epoch coverage."""
+
+        batches = tuple(index_batches)
+        if not batches:
+            raise ValueError("index_batches cannot be empty.")
+        for indices in batches:
+            if not isinstance(indices, torch.Tensor) or indices.ndim != 1:
+                raise ValueError("each index batch must be a one-dimensional torch tensor.")
+            if indices.dtype != torch.long or indices.device.type != "cpu":
+                raise ValueError("each index batch must be a CPU torch.long tensor.")
+        if require_full_coverage:
+            flattened = torch.cat(batches)
+            if len(flattened) != self.n_rows or not torch.equal(
+                torch.sort(flattened).values,
+                torch.arange(self.n_rows, dtype=torch.long),
+            ):
+                raise ValueError("index_batches must cover every source row exactly once.")
+        for indices in batches:
+            yield self.gather_indices(indices)
+
 
 class GpuPerformanceScheduler:
     """Own accelerator policy and serialize conflicting in-process workloads.

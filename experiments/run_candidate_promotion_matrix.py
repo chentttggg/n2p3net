@@ -49,6 +49,8 @@ from experiments.build_candidate_cross_decision_manifest import (  # noqa: E402
 from experiments.run_pretrain_supervised import (  # noqa: E402
     SOURCE_PRETRAIN_BATCH_SCHEMA,
 )
+from models.adapters import SOURCE_DROP_MODES  # noqa: E402
+from models.splitbn import SPLITBN_TARGET_BUFFER_SOURCES  # noqa: E402
 from research.contracts import (  # noqa: E402
     MIN_PROMOTION_HIT_AT_R,
     EvaluationRunContract,
@@ -102,6 +104,7 @@ class SourceArmSpec:
     source_domain_mass: tuple[tuple[str, float], ...]
     risk_within_domain_unit: str | None
     selection_domain: str | None
+    splitbn_source_weights: tuple[tuple[str, float], ...]
 
 
 @dataclass(frozen=True)
@@ -140,6 +143,9 @@ class TrainingConfig:
     feature_alignment_weight: float = 0.0
     private_domain_weight: float = 0.0
     orthogonality_weight: float = 0.0
+    splitbn_target_buffer_source: str | None = None
+    source_residual_drop_p: float | None = None
+    source_residual_drop_mode: str | None = None
 
 
 @dataclass(frozen=True)
@@ -402,6 +408,7 @@ def _parse_source_arms(value: object, root: Path) -> tuple[SourceArmSpec, ...]:
                 "risk_within_domain_unit",
                 "selection_domain",
             },
+            optional={"splitbn_source_weights"},
             name=name,
         )
         raw_masses = record["source_domain_mass"]
@@ -438,6 +445,50 @@ def _parse_source_arms(value: object, root: Path) -> tuple[SourceArmSpec, ...]:
                 raise ValueError(f"{name} cannot set risk unit without source domain mass.")
             if selection_domain is not None:
                 selection_domain = _text(selection_domain, f"{name}.selection_domain")
+        raw_splitbn_weights = record.get("splitbn_source_weights")
+        parsed_splitbn_weights: list[tuple[str, float]] = []
+        if raw_splitbn_weights is not None:
+            splitbn_weights = _mapping(
+                raw_splitbn_weights, f"{name}.splitbn_source_weights"
+            )
+            if len(splitbn_weights) < 2:
+                raise ValueError(
+                    f"{name}.splitbn_source_weights must name at least two source domains."
+                )
+            for raw_domain, raw_weight in splitbn_weights.items():
+                domain = _text(
+                    raw_domain, f"{name}.splitbn_source_weights domain"
+                )
+                if "=" in domain:
+                    raise ValueError(
+                        f"{name}.splitbn_source_weights domain {domain!r} "
+                        "cannot be encoded by the CLI."
+                    )
+                weight = _nonnegative_number(
+                    raw_weight,
+                    f"{name}.splitbn_source_weights[{domain!r}]",
+                )
+                parsed_splitbn_weights.append((domain, weight))
+            _assert_unique(
+                [domain for domain, _ in parsed_splitbn_weights],
+                f"{name}.splitbn_source_weights domains",
+            )
+            if not np.isclose(
+                sum(weight for _, weight in parsed_splitbn_weights),
+                1.0,
+                rtol=0.0,
+                atol=1e-9,
+            ):
+                raise ValueError(
+                    f"{name}.splitbn_source_weights must sum to one."
+                )
+            if parsed_masses and {
+                domain for domain, _ in parsed_splitbn_weights
+            } != {domain for domain, _ in parsed_masses}:
+                raise ValueError(
+                    f"{name}.splitbn_source_weights keys must equal the arm's "
+                    "source_domain_mass keys when both are declared."
+                )
         arms.append(
             SourceArmSpec(
                 name=_component(record["name"], f"{name}.name"),
@@ -445,6 +496,7 @@ def _parse_source_arms(value: object, root: Path) -> tuple[SourceArmSpec, ...]:
                 source_domain_mass=tuple(sorted(parsed_masses)),
                 risk_within_domain_unit=risk_unit,
                 selection_domain=selection_domain,
+                splitbn_source_weights=tuple(sorted(parsed_splitbn_weights)),
             )
         )
     _assert_unique([item.name for item in arms], "source arm names")
@@ -597,6 +649,9 @@ def _parse_training(value: object) -> TrainingConfig:
             "feature_alignment_weight",
             "private_domain_weight",
             "orthogonality_weight",
+            "splitbn_target_buffer_source",
+            "source_residual_drop_p",
+            "source_residual_drop_mode",
         },
         name="training",
     )
@@ -654,6 +709,63 @@ def _parse_training(value: object) -> TrainingConfig:
         record.get("orthogonality_weight", 0.0),
         "training.orthogonality_weight",
     )
+    raw_splitbn_source = record.get("splitbn_target_buffer_source")
+    splitbn_target_buffer_source = (
+        None
+        if raw_splitbn_source is None
+        else _text(raw_splitbn_source, "training.splitbn_target_buffer_source")
+    )
+    if (
+        splitbn_target_buffer_source is not None
+        and splitbn_target_buffer_source not in SPLITBN_TARGET_BUFFER_SOURCES
+    ):
+        raise ValueError(
+            "training.splitbn_target_buffer_source must be null or one of "
+            f"{sorted(SPLITBN_TARGET_BUFFER_SOURCES)}."
+        )
+    raw_source_drop_p = record.get("source_residual_drop_p")
+    source_residual_drop_p = (
+        None
+        if raw_source_drop_p is None
+        else _nonnegative_number(
+            raw_source_drop_p, "training.source_residual_drop_p"
+        )
+    )
+    if source_residual_drop_p is not None and not (
+        source_residual_drop_p == 0.0
+        or 0.2 <= source_residual_drop_p <= 0.5
+    ):
+        raise ValueError(
+            "training.source_residual_drop_p must be null, D0 p=0, or lie in "
+            "the preregistered [0.2, 0.5]."
+        )
+    raw_source_drop_mode = record.get("source_residual_drop_mode")
+    source_residual_drop_mode = (
+        None
+        if raw_source_drop_mode is None
+        else _text(raw_source_drop_mode, "training.source_residual_drop_mode")
+    )
+    if source_residual_drop_p is None:
+        if source_residual_drop_mode is not None:
+            raise ValueError(
+                "training.source_residual_drop_mode requires source_residual_drop_p."
+            )
+    else:
+        if source_residual_drop_mode is None:
+            raise ValueError(
+                "training.source_residual_drop_p requires an explicit "
+                "source_residual_drop_mode."
+            )
+        if source_residual_drop_mode not in SOURCE_DROP_MODES:
+            raise ValueError(
+                "training.source_residual_drop_mode must be one of "
+                f"{sorted(SOURCE_DROP_MODES)}."
+            )
+        if invariant_bottleneck == 0:
+            raise ValueError(
+                "source residual training requires "
+                "feature_transfer_invariant_bottleneck > 0."
+            )
     if min(feature_alignment_weight, private_domain_weight, orthogonality_weight) < 0.0:
         raise ValueError("feature-transfer loss weights must be non-negative.")
     if (private_domain_weight > 0.0 or orthogonality_weight > 0.0) and invariant_bottleneck == 0:
@@ -675,7 +787,28 @@ def _parse_training(value: object) -> TrainingConfig:
         feature_alignment_weight=feature_alignment_weight,
         private_domain_weight=private_domain_weight,
         orthogonality_weight=orthogonality_weight,
+        splitbn_target_buffer_source=splitbn_target_buffer_source,
+        source_residual_drop_p=source_residual_drop_p,
+        source_residual_drop_mode=source_residual_drop_mode,
     )
+
+
+def _validate_training_source_arms(
+    training: TrainingConfig,
+    source_arms: Sequence[SourceArmSpec],
+) -> None:
+    weighted_splitbn = training.splitbn_target_buffer_source == "source_weighted"
+    for arm in source_arms:
+        if weighted_splitbn and not arm.splitbn_source_weights:
+            raise ValueError(
+                "source_weighted Split-BN requires domain-keyed "
+                f"source_arms[{arm.name!r}].splitbn_source_weights."
+            )
+        if not weighted_splitbn and arm.splitbn_source_weights:
+            raise ValueError(
+                f"source_arms[{arm.name!r}].splitbn_source_weights are only valid "
+                "when training.splitbn_target_buffer_source is source_weighted."
+            )
 
 
 def _parse_statistical_design(
@@ -790,6 +923,8 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
     resolution_root = Path(root).resolve() if root is not None else plan_path.parent.resolve()
     targets = _parse_targets(record["target_subjects"])
     source_arms = _parse_source_arms(record["source_arms"], resolution_root)
+    training = _parse_training(record["training"])
+    _validate_training_source_arms(training, source_arms)
     replicates = _parse_replicates(record["training_replicates"])
     evaluation_arms = _parse_evaluation_arms(record["evaluation_arms"])
     expanded_arm_names = [
@@ -825,7 +960,7 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
         source_arms=source_arms,
         training_replicates=replicates,
         evaluation_arms=evaluation_arms,
-        training=_parse_training(record["training"]),
+        training=training,
         calibration_selections=_integer(
             record["calibration_selections"], "calibration_selections", minimum=1
         ),
@@ -941,6 +1076,27 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                 "--batch-record",
                 str(checkpoint_batch_path),
             ]
+            if plan.training.splitbn_target_buffer_source is not None:
+                checkpoint_argv.extend(
+                    [
+                        "--splitbn-target-buffer-source",
+                        plan.training.splitbn_target_buffer_source,
+                    ]
+                )
+                for domain, weight in arm.splitbn_source_weights:
+                    checkpoint_argv.extend(
+                        ["--splitbn-source-weight", f"{domain}={weight!r}"]
+                    )
+            if plan.training.source_residual_drop_p is not None:
+                assert plan.training.source_residual_drop_mode is not None
+                checkpoint_argv.extend(
+                    [
+                        "--source-residual-drop-p",
+                        str(plan.training.source_residual_drop_p),
+                        "--source-residual-drop-mode",
+                        plan.training.source_residual_drop_mode,
+                    ]
+                )
             for target in plan.target_subjects:
                 checkpoint_argv.extend(
                     [
@@ -1553,15 +1709,33 @@ def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
     cache_by_path = dict(loaded)
     target = cache_by_path[plan.target_cache.resolve()]
     source_by_arm: dict[str, _AttestedCacheInput] = {}
+    indexed_domain_requested = (
+        plan.training.splitbn_target_buffer_source is not None
+        or plan.training.source_residual_drop_p is not None
+    )
     for arm in plan.source_arms:
         source = cache_by_path[arm.cache.resolve()]
         _assert_cache_compatibility(target, source, source_arm=arm.name)
         planned_domains = {domain for domain, _ in arm.source_domain_mass}
+        splitbn_weight_domains = {
+            domain for domain, _ in arm.splitbn_source_weights
+        }
         observed_domains = set(source.source_domains)
+        if indexed_domain_requested and len(observed_domains) < 2:
+            raise ValueError(
+                f"source arm {arm.name!r} enables Split-BN/source residual training "
+                "but its cache does not declare at least two source domains."
+            )
         if planned_domains and planned_domains != observed_domains:
             raise ValueError(
                 f"source arm {arm.name!r} domain risk disagrees with cache: "
                 f"planned={sorted(planned_domains)}, observed={sorted(observed_domains)}."
+            )
+        if splitbn_weight_domains and splitbn_weight_domains != observed_domains:
+            raise ValueError(
+                f"source arm {arm.name!r} Split-BN weights disagree with cache domains: "
+                f"planned={sorted(splitbn_weight_domains)}, "
+                f"observed={sorted(observed_domains)}."
             )
         if len(observed_domains) > 1 and arm.selection_domain is None and arm.source_domain_mass:
             raise ValueError(

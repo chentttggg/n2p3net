@@ -16,6 +16,7 @@ from torch import nn
 from baselines.validation import group_disjoint_validation_split
 from models.adapters import FeatureDomainTransfer
 from models.n2p3net import N2P3Net
+from models.splitbn import SplitBN1d, SplitBN2d
 from research.execution import ExpectedSubjectError, SubjectFailureCode
 from transfer.within_subject import chronological_validation_split
 
@@ -153,15 +154,17 @@ class SubjectAdapter:
         trunk_requires_grad = any(
             parameter.requires_grad for parameter in self.trunk.parameters()
         )
+        splitbn_eval_kwargs = self._splitbn_eval_kwargs()
         with torch.set_grad_enabled(trunk_requires_grad):
             if isinstance(self.trunk, FeatureDomainTransfer):
                 features, _, _ = self.trunk.feature_views(
                     X,
                     use_target_adapter=self.config.head_kind == "adapter",
+                    **splitbn_eval_kwargs,
                 )
                 pooled = self.trunk.pool_features(features)
             else:
-                features = self.trunk.forward_features(X)
+                features = self.trunk.forward_features(X, **splitbn_eval_kwargs)
                 pooled = self.trunk.pool_features(features)
             # AdaptiveAvgPool1d(1) retains a singleton temporal axis, whereas
             # the other readouts already return (B,D).  Normalize the feature
@@ -264,6 +267,15 @@ class SubjectAdapter:
     def training(self) -> bool:
         return self.trunk.training
 
+    def _splitbn_eval_kwargs(self) -> dict[str, str]:
+        """Return the checkpoint-declared unseen-target normalization selector."""
+
+        core = self.trunk.core if isinstance(self.trunk, FeatureDomainTransfer) else self.trunk
+        splitbn_config = getattr(core, "splitbn_config", None)
+        if splitbn_config is None:
+            return {}
+        return {"eval_buffer_source": splitbn_config.target_buffer_source}
+
     def _set_training_mode(self, *, trunk_trainable: bool) -> None:
         if self.config.head_kind == "adapter":
             # Deterministic frozen trunk: source BatchNorm statistics and no
@@ -272,9 +284,21 @@ class SubjectAdapter:
             self.trunk.eval()
             return
         self.trunk.train(trunk_trainable)
+        splitbn_modules = (SplitBN1d, SplitBN2d)
+        if trunk_trainable and not self.config.freeze_batchnorm_stats and any(
+            isinstance(module, splitbn_modules) for module in self.trunk.modules()
+        ):
+            raise ValueError(
+                "full_fine cannot update SplitBN on an unseen target domain; "
+                "use frozen predeclared target buffers or an explicit target-calibration "
+                "buffer procedure."
+            )
         if trunk_trainable and self.config.freeze_batchnorm_stats:
             for module in self.trunk.modules():
-                if isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d)):
+                if isinstance(
+                    module,
+                    (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d, *splitbn_modules),
+                ):
                     module.eval()
         if self.head is not None:
             self.head.train()

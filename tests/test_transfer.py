@@ -35,8 +35,9 @@ from experiments.run_within_subject_transfer import (
     _target_fixed_budget_calibration_payload,
 )
 from experiments.run_within_subject_transfer import main as run_transfer_main
+from models.adapters import source_domain_axis_record
 from models.n2p3net import N2P3Net
-from research.contracts import TrainingRunContract
+from research.contracts import TrainingRunContract, semantic_sha256
 from transfer.checkpoint import (
     CHECKPOINT_SCHEMA,
     checkpoint_architecture_record,
@@ -1107,6 +1108,47 @@ def test_current_checkpoint_rejects_incomplete_architecture() -> None:
     payload["training_contract_digest"] = contract.digest()
 
     with pytest.raises(ValueError, match="lacks current fields"):
+        load_n2p3_trunk_checkpoint(payload, dataset, target_subject="g1")
+
+
+def test_checkpoint_rejects_splitbn_architecture_with_pooled_bn_weights() -> None:
+    dataset = _causal_candidate_dataset()
+    materialize_dataset_identity(dataset)
+    pooled = _dataset_trunk(dataset)
+    split = N2P3Net(
+        n_channels=dataset.n_channels,
+        n_times=dataset.n_times,
+        sfreq=dataset.preprocessing.sfreq,
+        tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
+        pooling_mode="ms_flatten",
+        splitbn_domain_count=2,
+        splitbn_target_buffer_source="pooled_source",
+    )
+    axis_record = source_domain_axis_record(("dataset-a", "dataset-b"))
+    axis_digest = semantic_sha256(axis_record)
+    architecture = {
+        **split.architecture_record(),
+        "source_domain_axis_digest": axis_digest,
+    }
+    payload = {
+        "trunk_state_dict": pooled.state_dict(),
+        **_checkpoint_identity_fields(
+            _identity_ledger("independent-study", "other"), dataset
+        ),
+        "architecture": architecture,
+        "source_domain_axis": axis_record,
+        "source_domain_axis_digest": axis_digest,
+    }
+    contract = checkpoint_training_contract(payload)
+    contract = replace(
+        contract,
+        architecture=architecture,
+        objective={**contract.objective, "source_domain_axis": axis_record},
+    )
+    payload["training_contract"] = contract.record()
+    payload["training_contract_digest"] = contract.digest()
+
+    with pytest.raises(ValueError, match="weights do not match its declared architecture"):
         load_n2p3_trunk_checkpoint(payload, dataset, target_subject="g1")
 
 

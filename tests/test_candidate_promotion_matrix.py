@@ -110,6 +110,15 @@ def _plan_record(*, output_root: str = "outputs") -> dict[str, Any]:
     }
 
 
+def _single_multidomain_arm_record() -> dict[str, Any]:
+    record = _plan_record()
+    record["source_arms"] = [record["source_arms"][1]]
+    record["statistical_design"]["planned_contrasts"] = [
+        ["source_ab__linear_time_split", "source_ab__zero_shot"]
+    ]
+    return record
+
+
 def _write_plan(tmp_path: Path, record: dict[str, Any]) -> Path:
     path = tmp_path / "plan.json"
     path.write_text(json.dumps(record), encoding="utf-8")
@@ -310,6 +319,191 @@ def test_training_forwards_feature_transfer_contract_to_pretraining(tmp_path: Pa
     assert checkpoint.argv[checkpoint.argv.index("--feature-alignment-weight") + 1] == "0.1"
     assert checkpoint.argv[checkpoint.argv.index("--private-domain-weight") + 1] == "0.05"
     assert plan.source_arms[1].selection_domain is None
+
+
+def test_plan_round_trips_named_splitbn_and_source_residual_contract(
+    tmp_path: Path,
+) -> None:
+    record = _single_multidomain_arm_record()
+    record["source_arms"][0]["splitbn_source_weights"] = {"B": 0.7, "A": 0.3}
+    record["training"].update(
+        {
+            "feature_transfer_invariant_bottleneck": 2,
+            "splitbn_target_buffer_source": "source_weighted",
+            "source_residual_drop_p": 0.2,
+            "source_residual_drop_mode": "batch",
+        }
+    )
+
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+    checkpoint = next(task for task in dag.tasks if task.kind == "checkpoint_batch")
+
+    assert plan.raw_record == record
+    assert plan.training.splitbn_target_buffer_source == "source_weighted"
+    assert plan.training.source_residual_drop_p == 0.2
+    assert plan.training.source_residual_drop_mode == "batch"
+    assert dict(plan.source_arms[0].splitbn_source_weights) == {"A": 0.3, "B": 0.7}
+    assert checkpoint.argv[
+        checkpoint.argv.index("--splitbn-target-buffer-source") + 1
+    ] == "source_weighted"
+    weights = [
+        checkpoint.argv[index + 1]
+        for index, value in enumerate(checkpoint.argv)
+        if value == "--splitbn-source-weight"
+    ]
+    assert weights == ["A=0.3", "B=0.7"]
+    assert checkpoint.argv[
+        checkpoint.argv.index("--source-residual-drop-p") + 1
+    ] == "0.2"
+    assert checkpoint.argv[
+        checkpoint.argv.index("--source-residual-drop-mode") + 1
+    ] == "batch"
+
+
+def test_default_training_omits_p0_p1_cli_flags(tmp_path: Path) -> None:
+    plan = _load(tmp_path)
+    checkpoint = next(
+        task for task in matrix.build_dag(plan).tasks if task.kind == "checkpoint_batch"
+    )
+
+    assert plan.training.splitbn_target_buffer_source is None
+    assert plan.training.source_residual_drop_p is None
+    assert plan.training.source_residual_drop_mode is None
+    assert not {
+        "--splitbn-target-buffer-source",
+        "--splitbn-source-weight",
+        "--source-residual-drop-p",
+        "--source-residual-drop-mode",
+    } & set(checkpoint.argv)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "match"),
+    [
+        ("unknown_buffer", "splitbn_target_buffer_source"),
+        ("missing_weights", "requires domain-keyed"),
+        ("positional_weights", "must be a JSON mapping"),
+        ("inactive_weights", "only valid"),
+        ("weight_sum", "must sum to one"),
+        ("weight_domain_mismatch", "source_domain_mass keys"),
+        ("drop_gap", "preregistered"),
+        ("drop_without_feature_transfer", "feature_transfer_invariant_bottleneck"),
+        ("drop_without_mode", "requires an explicit"),
+        ("mode_without_drop", "requires source_residual_drop_p"),
+        ("unknown_drop_mode", "source_residual_drop_mode"),
+    ],
+)
+def test_plan_rejects_invalid_p0_p1_combinations(
+    tmp_path: Path,
+    mutation: str,
+    match: str,
+) -> None:
+    record = _single_multidomain_arm_record()
+    arm = record["source_arms"][0]
+    training = record["training"]
+    if mutation == "unknown_buffer":
+        training["splitbn_target_buffer_source"] = "implicit_target"
+    elif mutation == "missing_weights":
+        training["splitbn_target_buffer_source"] = "source_weighted"
+    elif mutation == "positional_weights":
+        training["splitbn_target_buffer_source"] = "source_weighted"
+        arm["splitbn_source_weights"] = [0.5, 0.5]
+    elif mutation == "inactive_weights":
+        arm["splitbn_source_weights"] = {"A": 0.5, "B": 0.5}
+    elif mutation == "weight_sum":
+        training["splitbn_target_buffer_source"] = "source_weighted"
+        arm["splitbn_source_weights"] = {"A": 0.6, "B": 0.5}
+    elif mutation == "weight_domain_mismatch":
+        training["splitbn_target_buffer_source"] = "source_weighted"
+        arm["splitbn_source_weights"] = {"A": 0.5, "C": 0.5}
+    elif mutation == "drop_gap":
+        training.update(
+            {
+                "feature_transfer_invariant_bottleneck": 2,
+                "source_residual_drop_p": 0.1,
+                "source_residual_drop_mode": "sample",
+            }
+        )
+    elif mutation == "drop_without_feature_transfer":
+        training.update(
+            {
+                "source_residual_drop_p": 0.2,
+                "source_residual_drop_mode": "sample",
+            }
+        )
+    elif mutation == "drop_without_mode":
+        training.update(
+            {
+                "feature_transfer_invariant_bottleneck": 2,
+                "source_residual_drop_p": 0.2,
+            }
+        )
+    elif mutation == "mode_without_drop":
+        training["source_residual_drop_mode"] = "sample"
+    else:
+        training.update(
+            {
+                "feature_transfer_invariant_bottleneck": 2,
+                "source_residual_drop_p": 0.2,
+                "source_residual_drop_mode": "epoch",
+            }
+        )
+
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, record)
+
+
+@pytest.mark.parametrize("drop_p", [0.0, 0.2, 0.5])
+def test_plan_accepts_preregistered_source_residual_drop_arms(
+    tmp_path: Path,
+    drop_p: float,
+) -> None:
+    record = _single_multidomain_arm_record()
+    record["training"].update(
+        {
+            "feature_transfer_invariant_bottleneck": 2,
+            "source_residual_drop_p": drop_p,
+            "source_residual_drop_mode": "sample",
+        }
+    )
+
+    plan = _load(tmp_path, record)
+
+    assert plan.training.source_residual_drop_p == drop_p
+
+
+@pytest.mark.parametrize("buffer_source", ["pooled_source", "target_calibration"])
+def test_plan_accepts_unweighted_splitbn_buffer_sources(
+    tmp_path: Path,
+    buffer_source: str,
+) -> None:
+    record = _single_multidomain_arm_record()
+    record["training"]["splitbn_target_buffer_source"] = buffer_source
+
+    plan = _load(tmp_path, record)
+    checkpoint = next(
+        task for task in matrix.build_dag(plan).tasks if task.kind == "checkpoint_batch"
+    )
+
+    assert plan.training.splitbn_target_buffer_source == buffer_source
+    assert "--splitbn-source-weight" not in checkpoint.argv
+
+
+def test_cloud_example_is_explicitly_row_column_development_not_brainsync() -> None:
+    example = (
+        Path(matrix.__file__).resolve().parent.parent
+        / "configs"
+        / "feature_transfer_cloud_20260902.example.json"
+    )
+    raw = example.read_text(encoding="utf-8")
+    plan = matrix.load_plan(example)
+
+    assert "ROW_COLUMN" in raw
+    assert "PLACEHOLDER" in raw
+    assert "brainsync" not in raw.casefold()
+    assert plan.training.splitbn_target_buffer_source == "pooled_source"
+    assert plan.training.source_residual_drop_p == 0.3
 
 
 @pytest.mark.parametrize(
@@ -655,6 +849,81 @@ def test_preflight_deduplicates_shared_cache_and_loads_unique_paths_in_parallel(
         resolved["source_caches"]["source_a"]["cache_sha256"]
         == resolved["source_caches"]["source_ab"]["cache_sha256"]
     )
+
+
+def test_splitbn_weights_are_independent_of_risk_mass_and_checked_against_cache(
+    tmp_path: Path,
+) -> None:
+    _write_preflight_inputs(tmp_path)
+    record = _single_multidomain_arm_record()
+    arm = record["source_arms"][0]
+    arm["source_domain_mass"] = None
+    arm["risk_within_domain_unit"] = None
+    arm["selection_domain"] = None
+    arm["splitbn_source_weights"] = {"A": 0.4, "B": 0.6}
+    record["training"]["splitbn_target_buffer_source"] = "source_weighted"
+
+    plan = _load(tmp_path, record)
+    resolved = matrix._verify_inputs(matrix.build_dag(plan))
+
+    assert plan.source_arms[0].source_domain_mass == ()
+    assert resolved["source_caches"]["source_ab"]["source_domains"] == ["A", "B"]
+
+    arm["splitbn_source_weights"] = {"A": 0.4, "C": 0.6}
+    mismatched = _load(tmp_path, record)
+    with pytest.raises(ValueError, match="Split-BN weights disagree with cache domains"):
+        matrix._verify_inputs(matrix.build_dag(mismatched))
+
+
+def test_p1_without_selection_domain_uses_cache_domain_axis(tmp_path: Path) -> None:
+    _write_preflight_inputs(tmp_path)
+    record = _single_multidomain_arm_record()
+    arm = record["source_arms"][0]
+    arm["source_domain_mass"] = None
+    arm["risk_within_domain_unit"] = None
+    arm["selection_domain"] = None
+    record["training"].update(
+        {
+            "feature_transfer_invariant_bottleneck": 2,
+            "source_residual_drop_p": 0.5,
+            "source_residual_drop_mode": "sample",
+        }
+    )
+
+    dag = matrix.build_dag(_load(tmp_path, record))
+    matrix._verify_inputs(dag)
+    checkpoint = next(task for task in dag.tasks if task.kind == "checkpoint_batch")
+
+    assert "--selection-domain" not in checkpoint.argv
+    assert checkpoint.argv[
+        checkpoint.argv.index("--source-residual-drop-p") + 1
+    ] == "0.5"
+
+
+@pytest.mark.parametrize("mechanism", ["splitbn", "source_residual"])
+def test_p0_p1_preflight_rejects_cache_without_multidomain_axis(
+    tmp_path: Path,
+    mechanism: str,
+) -> None:
+    _write_preflight_inputs(tmp_path)
+    record = _plan_record()
+    record["source_arms"] = [record["source_arms"][0]]
+    record["statistical_design"]["planned_contrasts"] = [
+        ["source_a__linear_time_split", "source_a__zero_shot"]
+    ]
+    if mechanism == "splitbn":
+        record["training"]["splitbn_target_buffer_source"] = "pooled_source"
+    else:
+        record["training"].update(
+            {
+                "feature_transfer_invariant_bottleneck": 2,
+                "source_residual_drop_p": 0.2,
+                "source_residual_drop_mode": "sample",
+            }
+        )
+
+    with pytest.raises(ValueError, match="does not declare at least two source domains"):
+        matrix._verify_inputs(matrix.build_dag(_load(tmp_path, record)))
 
 
 def test_identity_mismatch_is_rejected_before_any_subprocess(tmp_path: Path) -> None:

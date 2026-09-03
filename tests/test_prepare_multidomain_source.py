@@ -14,6 +14,7 @@ from data.domain import (
     ensure_common_channel_average_reference,
     namespace_epoch_dataset,
     source_domain_ids,
+    source_domain_vocabulary,
 )
 from data.epochs import (
     EpochDataset,
@@ -175,6 +176,7 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
     np.testing.assert_array_equal(merged.X[first.n_epochs :], second.X)
     assert merged.subject_ids.tolist() == ["A::01", "A::01", "B::02", "B::02"]
     assert source_domain_ids(merged).tolist() == ["A", "A", "B", "B"]
+    assert source_domain_vocabulary(merged) == ("A", "B")
     assert len(set(worker_names)) == 2
     assert all(name.startswith("multidomain-source") for name in worker_names)
     source_loading = merged.provenance["source_loading"]

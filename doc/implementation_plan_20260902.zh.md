@@ -115,6 +115,31 @@ class N2P3Net(nn.Module):
 4. 反例 17 只能检验推理时 running buffer 的选择：buffer-swap 后结果不变可否定“推理 buffer 选择是主要机制”，但不能否定 Split-BN 在训练期改变 batch 归一化梯度、优化轨迹或正则化的作用；swap 后结果变化也不能单独确认因果。
 5. unseen target 的 buffer 来源必须预注册并写入 ledger：`pooled_source`（source 合并统计，estimand 是 source-mixture）、`source_weighted`（按声明权重组合 source buffer，estimand 是该 source composition），或 `target_calibration`（只用 calibration 数据构建并在 test 前冻结，estimand 是 calibration-defined target）。没有 target calibration 时禁止临时创建 target buffer；不同来源必须作为不同 arm。
 
+### 0.4 实施状态（2026-09-03）
+
+P0 代码框架已落地，但尚无真实 EEG 成效结论：
+
+- `src/models/splitbn.py` 实现 `SplitBN1d/2d`；affine 参数共享，source running
+  statistics 按整数 domain index 隔离，另维护真实 pooled-source buffer。
+- `N2P3Net` 默认仍使用原 `BatchNorm2d/1d`；启用 SplitBN 时同时替换 temporal
+  2d、spatial 2d 和全部 MST branch 1d normalization。训练缺 `domain_indices`
+  直接失败；eval 缺显式 buffer selector 直接失败。
+- unseen-target 来源只接受 `pooled_source`、`source_weighted`、
+  `target_calibration`。`source_weighted` 使用
+  `sum w_d(var_d + mean_d^2) - mean^2`，权重必须是按冻结 domain vocabulary
+  命名的有限、非负、和为 1 的 mapping；`target_calibration` 未显式安装并冻结
+  buffer 时不可评估，普通 target forward 不更新任何 running state。
+- core 只接收 integer index/count，不持有 domain 名称。通用
+  `n2p3_model_source_domain_axis/1` 在 baseline/checkpoint 层绑定 ordered vocabulary、
+  `domain_to_index` 和 keyed weights；任一 indexed P0/P1/private mechanism 的 count
+  必须与该轴一致。
+- checkpoint schema 升为 `n2p3_transfer_checkpoint/2`；normalization mode、domain
+  count、buffer source、weights、estimand、model-domain-axis digest 及 P1 wrapper v2
+  record 任一缺失或不一致均 fail-closed。旧 `/1` checkpoint 必须重建。
+- 当前验证属于 synthetic/contract evidence，只证明隔离、透传和拒绝规则按实现执行；
+  SplitBN 是否改善 held-out operational `hit@R`，仍须按 0.3.5 的 paired
+  fold/seed 与 participant-cluster CI 实验裁决。
+
 ---
 
 # P1：drop-to-consensus 源域残差
