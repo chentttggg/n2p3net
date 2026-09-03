@@ -20,3 +20,4 @@ experiments/runs/
 experiments/results*/
 mne_data/
 aux_smoke/
+cloud_inputs/

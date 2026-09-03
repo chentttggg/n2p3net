@@ -2037,6 +2037,26 @@ class DeepBaseline(Baseline):
                         decision_targets,
                         source_residual_mask,
                     )
+                    # CUDA-graph contract (compile mode "reduce-overhead"):
+                    # outputs of a compiled region live in static buffers that
+                    # the NEXT invocation overwrites. Cloning inside the
+                    # compiled region only produces another static buffer —
+                    # the snapshot must be taken here, in eager code, so every
+                    # tensor that reaches cross-step accumulation owns its
+                    # storage. clone() is value-exact on every device.
+                    loss = loss.detach().clone()
+                    trial_numerator = trial_numerator.detach().clone()
+                    trial_denominator = trial_denominator.detach().clone()
+                    candidate_loss = (
+                        None
+                        if candidate_loss is None
+                        else candidate_loss.detach().clone()
+                    )
+                    candidate_prefix_losses = (
+                        None
+                        if candidate_prefix_losses is None
+                        else candidate_prefix_losses.detach().clone()
+                    )
                 except SourceResidualContractError as error:
                     assert self.last_source_residual is not None
                     self.last_source_residual.update(

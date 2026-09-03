@@ -41,7 +41,12 @@ _更新（22:15）：本地 CPU mini-smoke 全链通过（§3.3）；L0 三证 a
   `c7bf860`/`e9b7a5e` 旧归档。
 - 该 manifest 是 `run_pretrain_supervised.py --source-snapshot-manifest` 的必选输入，
   也会被 C1 的 `verified_source_snapshot` 全量校验。
-- **状态：等待 T 提交 C1–C4 改动后执行**（生成命令已备好，见工作日志）。
+- **✅ 已完成（2026-09-04 00:45，commit `3aa0e17` 落定后）**：
+  `frozen/active_source_3aa0e17.source-only.tar.gz`（187 members，947,751 B，
+  `git archive` 于 HEAD，scope=src/experiments/configs/tests/doc/build env，
+  零数据/缓存/二进制泄漏）+ `frozen/active_source_3aa0e17.manifest.json`。
+  C1 校验器三重身份互证通过：archive `8733fed7…` + manifest `1447920c…` +
+  commit `3aa0e170c425bc2b…`。归档/清单未提交（留 T 下一批次）。
 
 ### 2.2 causal-v3 source/target cache 重建
 
@@ -167,6 +172,41 @@ eager 执行——record-vs-executed 不忠实，按记录纪律不采用。两�
 云端 Linux 不受影响（torch 官方轮子自带 triton），D3 算力数据由云端 smoke
 实测取得。
 
+**✅ 云端 CUDA smoke 全链通过（2026-09-04 01:45，AutoDL westc RTX 5090 32GB，cuda_smoke3）**。
+环境：208 核 / 754 GB RAM / CUDA 12.8 toolkit；venv 复用旧架构时期 site-packages
+（torch 2.8.0+cu128——5090 sm_120 CUDA 实测可用；np 2.5.2 / sp 1.18.1 / mne 1.12.1 /
+sk 1.9.0 / pd 3.0.5 全部满足 requirements 下限），`PYTHONPATH=src` 导入项目包。
+上传 10 文件（归档+清单+64 人 cache+sidecar+12 人 cache+2 plan）双端 SHA-256 全对
+（630 MB 上行 8m14s ≈ 1.3 MB/s，本地上行瓶颈）。云端布局：
+`/root/autodl-tmp/{n2p3-frozen, n2p3-cloud-inputs, n2p3-runs, n2p3-3aa0e17}`。
+
+**smoke 抓出第三个真 bug（已源头修复，deep.py）**：`torch.compile` 默认
+`reduce-overhead` 在 CUDA 上启用 CUDA Graphs——编译区输出驻留**静态 buffer**，
+下一次 invocation 即覆盖。train_step 返回的 metric 分量仅 `.detach()`（不拷
+存储），`.float()` 在同 dtype 时返回别名 → 跨 step 累加链直接引用静态 buffer →
+`RuntimeError: accessing tensor output of CUDAGraphs ... overwritten`。
+排障路径：区内 clone 无效（torch 明示 "clone the tensor outside of
+torch.compile()"——区内 clone 产物仍是静态 buffer，cuda_smoke2 实证）；
+`cudagraph_mark_step_begin()` 更不可用（允许 buffer 复用 → 静默读到被覆盖的
+旧值 = 数学腐蚀）。**正确修法：train_step 调用点之后的 eager 层对 5 个返回
+张量 `detach().clone()` 快照**（值完全一致，仅取得存储所有权；CPU 路径无感）。
+本地回归 test_deep + test_decision_loss 绿；cuda_smoke3 exit=0（全链 1m22s），
+result C1–C3 核验通过（source_commit=`3aa0e170…`、device=cuda、
+environment_digest、snapshot SHA `8733fed7…`、splitbn digest）。
+⚠ deep.py 变更晚于 commit 3aa0e17 → **正式 run 前需新 commit + 新归档 + 重传**
+（归档 <1 MB，分钟级）。
+
+**CUDA vs CPU 实测（同 12 人 cache、epochs=2、1 seed、2 partition、2 arm）**：
+
+| 阶段 | CPU（dev_smoke5） | CUDA 5090（cuda_smoke3） | 结论 |
+|---|---|---|---|
+| pretrain（checkpoint_batch） | 17.5 s/job | 24.8 s/job | GPU 慢 1.4×（模型太小，launch/compile 主导） |
+| result | 10.4 s/单元 | 5.3 s/单元 | GPU 快 2.0× |
+| manifest+analysis | ~12 s | 3.5 s | 聚合便宜 |
+
+→ 单卡 CUDA 对该模型**不是整体加速**；真正的杠杆是 208 核 host 的
+`--max-workers` 并行度（D3 一并拍板）。
+
 ### 3.4 development 全跑
 
 - 实例化 [`configs/feature_transfer_cloud_20260902.example.json`](../configs/feature_transfer_cloud_20260902.example.json)：
@@ -187,17 +227,32 @@ T_results  ≈ A×S×F × 10.4s × (64/12) × (E/2)
 T_aggregation ≈ 12s × 轮数（可忽略）
 ```
 
-模板 epochs=null（**待 D3 一起拍板**）；CUDA 加速倍数本地测不了（§3.3 阻塞），
-CPU 数字按保守上界使用；云端 smoke 取得实测倍率后再替换。数据 IO 占比高，
-倍率可能不随设备线性，以云端实测为准。
+模板 epochs=null（**待 D3 一起拍板**）。
 
-**模板 PLACEHOLDER → 实际产物映射（2026-09-03 核对）**：
+**云端实测替换（2026-09-04 cuda_smoke3，5090 + 208 核 host）**：分阶段实测
+见 §3.3 表——pretrain 用 CPU 数字更优（17.5 s/job），result 用 CUDA 数字
+（5.3 s/单元）。dev64（F=64、S=3、A=2、E）串行量级：pretrain ≈ 192 job ×
+17.5s × (63/10 行比) ≈ 5.9 h；results ≈ 384 单元 × 5.3s ×（行比 1–6，待实测）
+≈ 0.6–3.5 h。**`--max-workers 8` 并行后 wall 预计 ≈ 1–2.5 h（E=2）**，E 近似
+线性放大；AutoDL 5090 时价折算成本为个位数人民币。**D3 的真正决策点是
+epochs 终值与 workers 数，不是预算。**
+
+**模板 PLACEHOLDER → 实际产物映射（2026-09-04 00:50 全部就位）**：
 
 | 模板字段 | 产物 | 状态 |
 |---|---|---|
-| `source_snapshot_manifest` | §2.1 source-only archive manifest | ⏳ 等提交后生成 |
-| `target_cache` | 64 人 v3 cache（`tmp/l0_bi2014a_causal_v3_64subj.npz`，SHA `842466e4…`） | ⏳ 等正式位置迁 cloud_inputs/ |
-| `source_arms[].cache` | 同一 64 人 cache（单域 P0/P1 双 null）或未来多域 cache（P0/P1 激活） | 单域即用；多域依赖域定义决策 |
+| `source_snapshot_manifest` | `frozen/active_source_3aa0e17.manifest.json` | ✅ 已生成并 C1 验证 |
+| `target_cache` | `cloud_inputs/l0_bi2014a_causal_v3_64subj.npz`（SHA `842466e4…` 迁移复验一致） | ✅ 已迁正式位置 |
+| `source_arms[].cache` | 同一 64 人 cache（单域 P0/P1 双 null） | ✅ 单域即用；多域待域定义 |
+
+**实例化 plan 已就绪并通过本地 dry-run（2026-09-04 00:55）**：
+`tmp/l1_cloud/plan_l1_development_single_domain.json`（64 partitions × 3 seeds ×
+{zero_shot, target_adapter}，单域 P0/P1 双 null，digest `6f5b30d2…`）。
+注：`training.epochs=2` 为**占位值**（smoke 实证值）——D3 拍板终值后替换
+（替换即改 plan digest，属预期设计）；云端实例化将 `output_root` 换为云端
+日期+commit 目录（同理重算 digest）。上传集见
+`cloud_inputs/l0_cloud_inputs_manifest.json`（4 文件含 record.json sidecar，
+全 SHA-256 复验；`cloud_inputs/` 已入 .gitignore 防大文件入库）。
 
 注意：模板默认臂（multidomain + P0 `pooled_source` + P1 `drop_p=0.3`）只有在
 多域 cache 存在时才可实例化；单域第一轮须按 §3.2(b) 改写 arm（P0/P1 双 null）。
