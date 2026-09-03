@@ -111,6 +111,26 @@ contrast），chance = BI2014a v3 字符任务的随机水平（10 选 1 speller
 - plan digest：ca5b444f（r1）→ 见发射记录（statistical_design digest
   66423956 不变）。
 
+### 3.6 r1 AUC 全量配对分析（2026-09-04 04:20，31/64 有效子集）
+
+`binary_auc_mean` 依赖 eligible test evidence：99/192 result 为 null
+（data_eligible=0），两臂 null 集合对称 → 仅 31/64 被试有有效 AUC
+（**选择偏差子集** = 恰好有 8-rep selection 的被试，如实标注）。
+
+| 量 | 值 |
+|---|---|
+| zs 绝对 AUC（valid 子集） | seed1 0.5798 / seed2 0.5699 / seed3 0.5371（历史全量 0.74 → E=2 欠训练实锤） |
+| 配对差 adapter − zs | **+0.00007**，sd 0.00024，方向 15 >/ 8 < / 8 =（31 人） |
+| sign-flip 检验 | p = 0.119（B=10000，participant cluster）——不显著 |
+
+**方法论要点**：8 个被试 diff 严格为 0 → AUC 是秩统计量，adapter 校准的
+近似单调变换不改变秩；5 epochs @ lr 5e-4 的 target 微调对分数秩扰动极小。
+**adapter 效应天然要在 hit@R（决策翻转）维度显现，而该维度正被 R=8 失配
+卡死**——BI2014a 单域组合下两指标都难以显示 adapter 效应，这正是 D-10
+需要 T 拍板的根本原因。r2（E=8）的可检验预期：AUC 绝对水平向 0.74 靠拢
+（剂量效应）；adapter−zs 的 AUC 差异预期仍近零（秩不敏感），不以 AUC 差异
+否定 adapter 机制。
+
 ### 3.5 待 T 拍板的新决策点（D-10，不阻塞 r2）
 
 **BI2014a dev 轮的 hit@R 语义**：
