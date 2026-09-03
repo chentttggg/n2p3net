@@ -196,3 +196,30 @@ contrast），chance = BI2014a v3 字符任务的随机水平（10 选 1 speller
 | (a) R_dev 降级 | 合同补丁（dev 轮 test_reps∈[2,8]）→ r3 = r2 checkpoint 复用 + test_reps=2 重评 result 层（wall ≈ 30 min，pretrain 免重跑） | 代码改动需 T 审批 |
 | (b) 换数据 | GTN 242 人 rep 结构普查 → 若支持 R≥8 则建 GTN causal cache（L0 批次） | 数据工程，需 T 拍板域定义 |
 | (c) AUC-only | E=16/24 剂量轮或转 L2 合同闭合批次 | 与 T 议程 |
+
+### 6.4 GTN 242 人 rep 结构普查（2026-09-04 05:20，D-10(b) 前置完成）
+
+只读普查（`tmp/l1_cloud/gtn_rep_census.py`，h5py 轻读事件+元数据、不载 EEG；
+解析语义严格复刻 `src/data/gtn.py`），原始数据在本地
+`mne_data/MNE-P3-data/`（248 个 Experiment 目录）：
+
+| 量 | 值 |
+|---|---|
+| cohort 完整性 | **247/248 可读**（唯一失败 = 缺 thought .txt；cohort 干净） |
+| **R_design ≥ 8**（9 candidate 齐备的最小层数） | **214/247 = 88.4%**（BI2014a 只有 5.2%） |
+| R_design 分布 | R≥12 72.3%、R≥16 50.8%、最深 R=34；中位 > 16 |
+| evidence 量级 | 每 events 58–372（中位 204）；每 candidate 计数不对称（随机序列本性，非固定轮次） |
+| thought number | 1–9 自由选择分布偏斜（3/5/7 多、9 少），自然行为 |
+
+**判定**：GTN 数据结构**完全支持 hit@R=8 estimand**（88.4% 被试可进 R=8
+分母，且 evidence 深度中位 >16，可做 R 剂量曲线）。D-10(b) 的真实成本不在
+数据，在**框架语义**：GTN 是 9-choice direct 任务，而 candidate 框架硬门仅
+row_column（`candidate_task.py` L88）→ 需要 direct 语义支持（中–大代码改动，
+即原 D2 重述里的"direct 路线"，同时是 BrainSync multi-session 产品线的必经
+之路），外加 GTN causal cache L0 批次（构建器 `build_gtn_epoch_dataset` 已
+存在且 timeline 语义正确：`complete=True` + 显式 rep 链）。
+
+**D-10 权重更新**：(b) 的数据风险已排除，成本 = direct 语义（一次性，产品线
+复用）；(a) 是小补丁但只能救 BI2014a 的 dev 观察（R=2 下 68% eligible），
+且 hit@2 的字符判定 evidence 弱。若 T 认可 direct 路线优先，(a) 可降为
+BI2014a 侧的可选补丁。
