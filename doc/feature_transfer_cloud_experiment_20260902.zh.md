@@ -76,7 +76,78 @@ flowchart LR
 
 ## 📐 统计与停止规则
 
-每个 participant 使用固定 `test_reps=8`，主报告为 evidence level 8 的 operational `hit@R`。同时报告 levels 1--8 的轨迹、coverage、tie、abstain、fit failure、stimuli、seconds 和 latency。
+每个 participant 使用固定 `test_reps=8`。对 decision `j`、prefix `r`，先按冻结
+candidate vocabulary 产生候选分数 `S_{j,d,r}`，再定义：
+
+\[
+\hat d_{j,r}=\arg\max_{d\in V}S_{j,d,r},
+\qquad
+H^{\mathrm{op}}_{u,r}
+=\frac{1}{|\mathcal J_u|}\sum_{j\in\mathcal J_u}1[\text{status}_{j,r}=\text{correct}],
+\qquad
+H^{\mathrm{op}}_r=\frac{1}{|\mathcal U|}\sum_uH^{\mathrm{op}}_{u,r}.
+\]
+
+主报告为 `r=8` 的 subject-macro operational `H^op_8`；incomplete、tie、
+abstain、fit failure 和 participant failure 都留在 requested denominator。
+同时报告 levels 1--8 的 `H^op_r` 曲线、conditional eligible accuracy、
+coverage、tie、abstain、fit failure、stimuli、seconds 和 latency。这里的
+`hit@R` 是固定重复预算后的 top-1 candidate-selection accuracy，不是 top-R
+ranking accuracy。
+
+动态停止作为独立 arm 定义：
+
+\[
+\tau_j=\min\left(\{r\in[1,8]:C_{j,r}=1\land
+g(P_{j,r},M_{j,r},H_{j,r})=1\}\cup\{8\}\right),
+\]
+
+没有 prefix 满足条件时取 `tau_j=8` 并保留 unresolved/abstain。报告
+`mean(tau)`, `early_stop_rate`, `mean(seconds)`, `mean(stimuli)`, operational
+stop accuracy、`selections/min`、`correct selections/min` 和 ITR；停止阈值只能由
+calibration/meta-validation 冻结。Wolpaw 型 ITR 仅作 nominal 辅助指标；有
+abstain 或非均匀错误时不得用它替代真实吞吐。
+
+可靠性轨道对完整且成功的 prefix 报告：
+
+\[
+\mathrm{NLL}_r=-\frac{1}{N_{\mathrm{eligible},r}}
+\sum_{j:I^{\mathrm{eligible}}_{j,r}=1}\log P_{j,r}(d_j^*),
+\quad
+\mathrm{Brier}_r=\frac{1}{N_{\mathrm{eligible},r}}
+\sum_{j:I^{\mathrm{eligible}}_{j,r}=1}
+\sum_{d\in V}(P_{j,r}(d)-1[d=d_j^*])^2.
+\]
+
+若 `N_eligible,r=0`，NLL/Brier/ECE 记为 `NA` 并显式报告零分母。
+
+以 `p_j=max_d P_{j,r}(d)`、`y_j=1[status=correct]` 分箱报告：
+
+\[
+\mathrm{ECE}_r=\sum_b\frac{|B_b|}{N_{\mathrm{eligible},r}}
+\left|\operatorname{mean}_{B_b}(y_j)-\operatorname{mean}_{B_b}(p_j)\right|.
+\]
+
+机制轨道至少保存 conditional feature distance 和 domain-gradient cosine：
+
+\[
+D_\mu=\sum_c\sum_{a<b}\|\mu_{a,c}-\mu_{b,c}\|_2^2,
+\qquad
+\operatorname{cos}(g_a,g_b)=
+\frac{g_a^\top g_b}{\|g_a\|_2\|g_b\|_2+\epsilon}.
+\]
+
+统计轨道使用 participant-paired 差值：
+
+\[
+\Delta_{u,8}=H^{\mathrm{op,T1}}_{u,8}-H^{\mathrm{op,Z0}}_{u,8},
+\qquad
+\mathrm{CI}_{95\%}(\bar\Delta_8)=
+\left[q_{0.025}(\bar\Delta_8^*),q_{0.975}(\bar\Delta_8^*)\right].
+\]
+
+bootstrap 以 participant（必要时 participant/session）为 cluster；同时保存
+requested、eligible、successful counts 和完整 failure ledger。
 
 三枚训练 seed 是开发阶段最小重复，不构成确认性 power 证明。分析单位是 participant/decision，不是 trial。跨 seed 的模型不做事后挑选；选择规则在计划文件中冻结。
 

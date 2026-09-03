@@ -433,7 +433,18 @@ P(d\mid E_{1:r})
 \right).
 \]
 
-第一版 `rho` 应是线性/温度模型，避免小数据下任意 MLP 学会 candidate code。`mean` 可以作为 count-neutral score，但不得继续把它写成严格 LLR。
+这里的温度必须显式进入 `rho` 或其外部参数化：\(\rho_\omega=\tilde\rho_\omega/\tau_r\)，
+\(\tau_r>0\)；不能在梯度推导中省略对应的 \(1/\tau_r\) 因子。
+
+第一版 `rho` 应是线性/温度模型，避免小数据下任意 MLP 学会 candidate code。`mean` 可以作为 count-neutral score，但不得继续把它写成严格 LLR。若引入 Split-BN，unseen target 的 buffer 来源必须预注册为 `pooled_source`、`source_weighted` 或 `target_calibration`，并记录各自 estimand；buffer-swap 仅检验推理 buffer 选择，不能否定训练期统计对梯度、优化轨迹和正则化的作用。
+
+覆盖门禁先于 posterior：
+\[
+C_{j,r}=\mathbb 1[\forall d\in V:B_{j,d,r}>0].
+\]
+若 `C=0`，空桶可在诊断表中记为 `-inf`，但整个 decision 状态为 `incomplete`，
+posterior 记为未定义 `\bot`，不执行 softmax、CE、argmax 或 stopping；该状态进入
+完整 ledger。只有 `C=1` 才允许计算上式。
 
 ### 6.3 Candidate-set loss
 
@@ -443,6 +454,16 @@ P(d\mid E_{1:r})
 \mathcal L_{\mathrm{set},r}
 =-\log P(d^*\mid E_{1:r}).
 \]
+
+若训练整条 repetition 曲线，使用
+\[
+\mathcal L_{\mathrm{prefix}}=\sum_{r=1}^{R_{max}}\alpha_r\mathcal L_{\mathrm{set},r},
+\quad \alpha_r\ge0,\quad\sum_r\alpha_r=1,
+\]
+并预注册固定预算 `alpha_8=1` 或曲线 arm `alpha_r=1/R_max`。mean 聚合不自动
+表达 evidence 数量；evidence-aware arm 需预注册 `n_eff=B^2/Q`、
+`s_r=(A/B)*n_eff^beta`（`beta=0.5`；mean 对照 `beta=0`）或
+`tau_r=tau_0/r^beta`，参数仅由 calibration/meta-validation 冻结。
 
 row/column 任务有两个选择，必须由 contract 固定：
 
@@ -458,10 +479,10 @@ row/column 任务有两个选择，必须由 contract 固定：
 每个 prefix 输出：
 
 \[
-(P_r,\ m_r,\ H_r,\ c_r,\ a_r),
+(P_r,\ m_r,\ \mathcal E_r,\ c_r,\ a_r),
 \]
 
-其中 (m_r) 是 top-1 margin，(H_r) 是 entropy，(c_r) 是 coverage，(a_r) 是 abstain/continue 状态。状态机至少区分：
+其中 (m_r) 是 top-1 margin，(\mathcal E_r) 是 entropy，(c_r) 是 coverage，(a_r) 是 abstain/continue 状态。状态机至少区分：
 
 ```text
 incomplete -> wait/abstain
@@ -470,15 +491,78 @@ complete + unique confident winner -> accept
 fit failure -> evaluation_failed
 ```
 
-dynamic stopping 只有在有足够独立 decisions 时进入；其目标是：
+dynamic stopping 只有在有足够独立 decisions 时进入；停止轮数必须定义为：
+
+\[
+\tau_j=\min\left(\{r\in[1,R_{\max}]:
+C_{j,r}=1\land g(P_{j,r},M_{j,r},\mathcal E_{j,r})=1\}\cup\{R_{\max}\}\right),
+\]
+
+没有 prefix 满足条件时取 `tau_j=R_max`，并保留 unresolved/abstain 状态。
+`C_{j,r}=1` 表示冻结 vocabulary 中每个 candidate 都有有效 evidence；缺失
+candidate 不能通过把 posterior 分母缩小来提前接受。
+
+动态停止同时报告固定请求分母下的：
+
+\[
+\bar\tau=\frac{1}{N_{\mathrm{requested}}}\sum_j\tau_j,
+\quad
+\bar T=\frac{1}{N_{\mathrm{requested}}}\sum_jT_j,
+\quad
+\bar S=\frac{1}{N_{\mathrm{requested}}}\sum_jS_j,
+\quad
+H^{\mathrm{op}}_{\mathrm{stop}}
+=\frac{1}{N_{\mathrm{requested}}}\sum_j1[\text{final status=correct}].
+\]
+
+另报不依赖对称错误假设的真实吞吐：
+
+\[
+\mathrm{selections/min}=\frac{60N_{\mathrm{requested}}}{\sum_jT_j},
+\qquad
+\mathrm{correct\ selections/min}
+=\frac{60\sum_j1[\text{final status=correct}]}{\sum_jT_j}.
+\]
+
+可选的 cost-sensitive 训练/分析目标为：
 
 \[
 \mathcal L_{\mathrm{stop}}
 =\mathbb 1[\text{wrong}] + \lambda_t\,\text{seconds}
- +\lambda_s\,\text{stimuli}.
+ +\lambda_s\,\text{stimuli}+\lambda_a\mathbb 1[\text{abstain}].
 \]
 
-阈值只能由 calibration/meta-validation 冻结。
+若向传统 P300 文献报告 bitrate，使用统一候选数 `K=|V|` 和真实平均决策时间：
+
+\[
+\mathrm{ITR}=\frac{60}{\bar T}
+\left[\log_2K+P\log_2P
++(1-P)\log_2\frac{1-P}{K-1}\right],
+\qquad P=H^{\mathrm{op}}_{\mathrm{stop}}.
+\]
+
+ITR、character/selection accuracy、trial AUC 和 `hit@R` 是不同 estimand；
+其中约定 `0 log 0 = 0`。Wolpaw 型 ITR 假设固定候选数和平稳、近似对称的
+K-class channel；有 abstain 或非均匀混淆时只能标为 nominal ITR，并与真实
+吞吐分开报告。不同候选数、刺激间隔和时间口径的文献不能直接横比。阈值、temperature、
+abstain cost 和 stopping policy 只能由 calibration/meta-validation 冻结。
+
+### 6.5 五轨道报告矩阵
+
+行业对齐边界：固定 repetition 后报告 character/selection accuracy 曲线，见
+Lee 等的真实在线 zero-training P300 研究以及 multi-trial P300 工作[^8][^9]；
+动态停止论文通常同时报告 accuracy、平均 iterations 和 bitrate[^10]。本项目在此
+基础上增加 requested-denominator、tie/abstain/incomplete/failure ledger、
+participant-macro 和严格 calibration/test 分离；这些是更严格的 operational
+扩展，不应误称为所有论文已经统一采用的标准。
+
+| 轨道 | 主指标 | 必报辅助指标 | 解释边界 |
+|---|---|---|---|
+| 固定预算选择 | subject-macro operational `H^op_r` | `H^cond_r`、完整 `r=1..R_max` 曲线 | `hit@R` 是固定重复后的 top-1 selection accuracy |
+| 动态停止 | operational stop accuracy | `tau`、seconds、stimuli、early-stop、selections/min、correct selections/min、ITR | 不能只以 accuracy 比较速度策略 |
+| 可靠性/覆盖 | coverage、failure ledger | NLL、Brier、ECE、margin、entropy、tie、abstain | 不得删除低覆盖或失败 decision |
+| 机制 | conditional distance、gradient cosine、residual ratio | trial AUC/BACC、invariant/private probes、ERP morphology | 机制改善不等于 task gain |
+| 统计/证据 | paired delta vs B0、cluster CI | requested/eligible/success counts、multiplicity | participant 是主要 cluster，不是 trial |
 
 ## 7. 实施路线与门禁
 
@@ -642,5 +726,9 @@ style-to-task 参数；后者必须另立消融实验。
 [^7]: Hong J, et al. SpellerSSL: Self-Supervised Learning with P300 Aggregation for Speller BCIs. arXiv:2509.19401. 本地全文：`Paper/SpellerSSL_arXiv_2509.19401.pdf`。
 
 [^8]: Shukla PK, Cecotti H, Meena YK. Towards Effective Deep Neural Network Approach for Multi-Trial P300-based Character Recognition in Brain-Computer Interfaces. arXiv:2410.08561. 本地全文：`Paper/MultiTrial_P300_Character_arXiv_2410.08561.pdf`。
+
+[^9]: Lee J, Won K, Kwon M, et al. CNN With Large Data Achieves True Zero-Training in Online P300 Brain-Computer Interface. IEEE Access, 2020. DOI: <https://doi.org/10.1109/ACCESS.2020.2988057>。本地全文：`Paper/Zero_Training_Online_P300_CNN_ACCESS_2020.pdf`。
+
+[^10]: Vo K, Nguyen DN, Kha HH, Dutkiewicz E. Subject-Independent P300 BCI Using Ensemble Classifier, Dynamic Stopping and Adaptive Learning. IEEE GLOBECOM, 2017. DOI: <https://doi.org/10.1109/GLOCOM.2017.8255030>。本地全文：`Paper/Dynamic_Stopping_Subject_Independent_P300_GLOBECOM_2017.pdf`。
 
 _本报告替代旧的域迁移指导；它不把新增文献的结果写成本项目结果，也不把当前初步 adapter 代码写成最终架构。_
