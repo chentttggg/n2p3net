@@ -1003,6 +1003,20 @@ def test_parallel_scheduler_respects_limit_dependencies_and_main_thread_writes(
     dependency_violations: list[tuple[str, str]] = []
     worker_threads: set[int] = set()
     guard = threading.Lock()
+    # Deterministic overlap gate (replaces the load-sensitive 15 ms sleep
+    # window): the first wave of dependency-free tasks rendezvous until two
+    # are concurrently in flight, so ``peak >= 2`` holds by construction
+    # whenever the scheduler truly dispatches concurrently. The gate is
+    # sticky (``overlap_confirmed``) because pairing tasks leave immediately
+    # and a bare in-flight counter would starve the earliest waiter; once
+    # confirmed, everyone passes without waiting. If a rendezvous never
+    # happens (scheduler regressed to serial dispatch) a single bounded
+    # attempt sets ``overlap_expired`` so the final ``1 < peak`` assert
+    # fails fast instead of stalling once per task or hanging.
+    overlap_gate = threading.Condition()
+    inflight = 0
+    overlap_confirmed = False
+    overlap_expired = False
 
     original_atomic = matrix._atomic_write_json
     original_dependencies = matrix._dependency_digests
@@ -1020,7 +1034,7 @@ def test_parallel_scheduler_respects_limit_dependencies_and_main_thread_writes(
         return _fake_artifact_attestation(task)
 
     def succeed(argv: list[str], **_: Any) -> None:
-        nonlocal active, peak
+        nonlocal active, peak, inflight, overlap_confirmed, overlap_expired
         output = _output_from_argv(argv).resolve()
         task = task_by_output[output]
         with guard:
@@ -1033,7 +1047,21 @@ def test_parallel_scheduler_respects_limit_dependencies_and_main_thread_writes(
                 if not dependency_task.output.is_file():
                     dependency_violations.append((task.task_id, dependency))
         try:
-            time.sleep(0.015)
+            if not task.dependencies and not (overlap_confirmed or overlap_expired):
+                with overlap_gate:
+                    if not (overlap_confirmed or overlap_expired):
+                        inflight += 1
+                        overlap_gate.notify_all()
+                        overlap_gate.wait_for(
+                            lambda: overlap_confirmed or inflight >= 2,
+                            timeout=10,
+                        )
+                        if inflight >= 2 or overlap_confirmed:
+                            overlap_confirmed = True
+                        else:
+                            overlap_expired = True
+                        inflight -= 1
+                        overlap_gate.notify_all()
             output.write_text(f"artifact:{task.task_id}", encoding="utf-8")
         finally:
             with guard:

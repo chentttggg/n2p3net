@@ -70,8 +70,14 @@ def build_evaluation_run_contract(
     )
 
 
-def source_snapshot_sha256_from_archive_manifest(path: str | Path) -> str:
-    """Verify a physical source freeze and return its archive SHA-256."""
+def verified_source_snapshot(path: str | Path) -> dict[str, object]:
+    """Verify a physical source freeze and return its full executed identity.
+
+    The returned mapping binds the archive bytes (``archive_sha256``), the
+    manifest document itself (``manifest_sha256``), and the source commit the
+    freeze was taken from, so a result record can restate *which source
+    execution* produced a model without re-reading the archive.
+    """
 
     manifest_path = Path(path).resolve()
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -117,7 +123,21 @@ def source_snapshot_sha256_from_archive_manifest(path: str | Path) -> str:
     actual = hasher.hexdigest()
     if actual != digest:
         raise ValueError("source snapshot archive hash disagrees with its manifest.")
-    return digest
+    manifest_hasher = hashlib.sha256()
+    manifest_hasher.update(manifest_path.read_bytes())
+    return {
+        "archive_sha256": digest,
+        "manifest_sha256": manifest_hasher.hexdigest(),
+        "source_commit": source_commit,
+        "byte_size": byte_size,
+        "member_count": member_count,
+    }
+
+
+def source_snapshot_sha256_from_archive_manifest(path: str | Path) -> str:
+    """Verify a physical source freeze and return its archive SHA-256."""
+
+    return str(verified_source_snapshot(path)["archive_sha256"])
 
 
 __all__ = [
@@ -125,4 +145,5 @@ __all__ = [
     "checkpoint_model_origin",
     "scratch_model_origin",
     "source_snapshot_sha256_from_archive_manifest",
+    "verified_source_snapshot",
 ]

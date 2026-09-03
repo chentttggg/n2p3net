@@ -39,6 +39,7 @@ from research.contracts import (
     assert_promotion_evidence_gate,
     semantic_sha256,
 )
+from research.evaluation import verified_source_snapshot
 from transfer.candidate_decision import (
     decision_outcomes_at_repetition,
     expected_candidate_counts,
@@ -55,6 +56,7 @@ from transfer.outcomes import (
     DecisionStatus,
     build_decision_outcome_accounting,
 )
+from transfer.subject_adapter import SubjectAdapter
 
 
 def _task_contract(
@@ -944,6 +946,24 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
 
     summary = json.loads(output.read_text(encoding="utf-8"))
     assert summary["schema"] == "n2p3_candidate_cross_decision_result/1"
+    # C1: the executed-source identity is restated from the verified manifest.
+    assert summary["source_snapshot_sha256"] == source_snapshot_sha256
+    assert (
+        summary["source_snapshot_manifest_sha256"]
+        == hashlib.sha256(source_manifest.read_bytes()).hexdigest()
+    )
+    assert summary["source_commit"] == "a" * 40
+    # C2: environment identity is recorded fail-closed with a self-digest.
+    environment = summary["environment"]
+    assert len(environment["lockfiles"]["uv.lock"]) == 64
+    assert environment["environment_digest"]
+    assert environment["device"] == "cpu"
+    # C3: Split-BN provenance is restated from the checkpoint payload.
+    splitbn = summary["splitbn"]
+    assert splitbn["present"] is True
+    assert splitbn["effective_target_buffer_source"] is None
+    assert splitbn["buffer_estimand"] is None
+    assert len(splitbn["bn_buffer_digest"]) == 64
     assert summary["decision_accounting"]["requested"] == 4
     assert summary["decision_accounting"]["data_eligible"] == 3
     assert summary["decision_accounting"]["data_ineligible"] == 1
@@ -1080,3 +1100,196 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
     assert analysis["planned_contrasts"][0]["paired_unit"] == "participant"
     assert analysis["planned_contrasts"][0]["paired_bootstrap_interval"]["n_units"] == 3
     assert analysis["runs"][0]["decision_endpoints"]["denominators"]["planned_decisions"] == 4
+
+
+def _bi_runner_linear_fixture(tmp_path, name: str) -> tuple[object, object]:
+    """Two-subject dataset cache plus a valid source freeze for linear-head runs."""
+
+    dataset = concatenate_epoch_datasets(
+        [
+            _candidate_cross_decision_dataset("s1", repetitions_per_selection=8),
+            _candidate_cross_decision_dataset("s2", repetitions_per_selection=8),
+        ],
+        name=name,
+        provenance={
+            "source_reference": "average",
+            "source_sample_rate_hz": 128.0,
+            "candidate_task_contract": _task_contract().record(),
+        },
+    )
+    dataset.provenance["source_reference"] = "average"
+    cache = save_epoch_dataset(tmp_path / f"{name}.npz", dataset)
+    source_member = tmp_path / "source.txt"
+    source_member.write_text("runner source fixture", encoding="utf-8")
+    source_archive = tmp_path / "source.tar.gz"
+    with tarfile.open(source_archive, mode="w:gz") as archive:
+        archive.add(source_member, arcname="source.txt")
+    source_manifest = tmp_path / "source.manifest.json"
+    source_manifest.write_text(
+        json.dumps(
+            {
+                "schema": "n2p3_source_freeze/1",
+                "archive": source_archive.name,
+                "archive_sha256": hashlib.sha256(source_archive.read_bytes()).hexdigest(),
+                "source_commit": "a" * 40,
+                "member_count": 1,
+                "byte_size": source_archive.stat().st_size,
+            }
+        ),
+        encoding="utf-8",
+    )
+    return cache, source_manifest
+
+
+def test_bi_runner_converts_subject_fit_oom_to_fit_failure_with_preserved_denominator(
+    tmp_path, monkeypatch
+) -> None:
+    cache, source_manifest = _bi_runner_linear_fixture(tmp_path, "synthetic-bi-runner-oom")
+
+    def _raise_oom(self, *args, **kwargs):
+        raise RuntimeError("CUDA out of memory. Tried to allocate 2.00 GiB")
+
+    monkeypatch.setattr(SubjectAdapter, "fit", _raise_oom)
+    output = tmp_path / "bi-summary-oom.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_candidate_cross_decision.py",
+            "--dataset-cache",
+            str(cache),
+            "--arm-name",
+            "linear_oom_probe",
+            "--training-replicate-key",
+            "seed:0",
+            "--partition-key",
+            "partition:0",
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--identity-exclusion-policy",
+            "source",
+            "--calibration-selections",
+            "3",
+            "--test-reps",
+            "8",
+            "--max-test-selections",
+            "2",
+            "--head",
+            "linear",
+            "--device",
+            "cpu",
+            "--output",
+            str(output),
+        ],
+    )
+
+    run_candidate_main()
+
+    summary = json.loads(output.read_text(encoding="utf-8"))
+    assert summary["run_status"] == "completed"
+    assert summary["decision_accounting"]["requested"] == 4
+    assert summary["decision_accounting"]["data_eligible"] == 4
+    assert summary["decision_accounting"]["data_ineligible"] == 0
+    assert summary["decision_accounting"]["evaluation_successful"] == 0
+    assert summary["decision_accounting"]["evaluation_failed"] == 4
+    assert summary["participant_accounting"] == {
+        "requested": 2,
+        "decision_planned": 2,
+        "selection_failed": 0,
+    }
+    assert summary["oom_accounting"] == {
+        "oom_fit_failure_subjects": ["s1", "s2"],
+        "oom_fit_failure_decisions": 4,
+        "requested_decision_slots": 4,
+        "ledger_decision_slots": 4,
+        "requested_denominator_preserved": True,
+    }
+    assert len(summary["decision_outcomes"]) == 32
+    assert all(outcome["status"] == "fit_failure" for outcome in summary["decision_outcomes"])
+    assert {outcome["failure_reason"] for outcome in summary["decision_outcomes"]} == {
+        "subject_fit:accelerator_oom"
+    }
+    for repetition in (str(level) for level in range(1, 9)):
+        status_counts = summary["decision_accounting"]["by_evidence_level"][repetition]
+        assert status_counts["fit_failure"] == 4
+        assert status_counts["requested"] == status_counts["accounted"] == 4
+    # No checkpoint was provided, so the Split-BN summary records absence.
+    assert summary["splitbn"]["present"] is False
+    assert summary["splitbn"]["bn_buffer_digest"] is None
+    records = {record["subject"]: record for record in summary["records"]}
+    assert set(records) == {"s1", "s2"}
+
+
+def test_bi_runner_reraises_non_oom_runtime_error(tmp_path, monkeypatch) -> None:
+    cache, source_manifest = _bi_runner_linear_fixture(tmp_path, "synthetic-bi-runner-reraise")
+
+    def _raise_non_oom(self, *args, **kwargs):
+        raise RuntimeError("weight tensor is not contiguous")
+
+    monkeypatch.setattr(SubjectAdapter, "fit", _raise_non_oom)
+    output = tmp_path / "bi-summary-reraise.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_candidate_cross_decision.py",
+            "--dataset-cache",
+            str(cache),
+            "--arm-name",
+            "linear_reraise_probe",
+            "--training-replicate-key",
+            "seed:0",
+            "--partition-key",
+            "partition:0",
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--identity-exclusion-policy",
+            "source",
+            "--calibration-selections",
+            "3",
+            "--test-reps",
+            "8",
+            "--max-test-selections",
+            "2",
+            "--head",
+            "linear",
+            "--device",
+            "cpu",
+            "--output",
+            str(output),
+        ],
+    )
+
+    with pytest.raises(RuntimeError, match="weight tensor is not contiguous"):
+        run_candidate_main()
+    assert not output.exists()
+
+
+def test_verified_source_snapshot_returns_full_identity(tmp_path) -> None:
+    source_member = tmp_path / "source.txt"
+    source_member.write_text("identity fixture", encoding="utf-8")
+    source_archive = tmp_path / "source.tar.gz"
+    with tarfile.open(source_archive, mode="w:gz") as archive:
+        archive.add(source_member, arcname="source.txt")
+    manifest = tmp_path / "source.manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema": "n2p3_source_freeze/1",
+                "archive": source_archive.name,
+                "archive_sha256": hashlib.sha256(source_archive.read_bytes()).hexdigest(),
+                "source_commit": "b" * 40,
+                "member_count": 1,
+                "byte_size": source_archive.stat().st_size,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    identity = verified_source_snapshot(manifest)
+
+    assert identity["archive_sha256"] == hashlib.sha256(source_archive.read_bytes()).hexdigest()
+    assert identity["manifest_sha256"] == hashlib.sha256(manifest.read_bytes()).hexdigest()
+    assert identity["source_commit"] == "b" * 40
+    assert identity["byte_size"] == source_archive.stat().st_size
+    assert identity["member_count"] == 1

@@ -276,6 +276,11 @@ def test_snapshot_root_escape_and_symlink_are_rejected(tmp_path: Path) -> None:
         link.symlink_to(physical, target_is_directory=True)
     except OSError:
         pytest.skip("The platform does not permit a test directory symlink.")
+    if not link.is_symlink():
+        pytest.skip(
+            "Symlink creation was silently dropped or degraded by the environment "
+            "(hijacked filesystem shim); the attack scenario cannot be constructed here."
+        )
     with pytest.raises(ValueError, match="symlinks/reparse"):
         verify_raw_artifact_manifest(
             manifest,

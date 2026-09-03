@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import platform
 import sys
 from pathlib import Path
 
@@ -44,10 +45,11 @@ from research.evaluation import (  # noqa: E402
     build_evaluation_run_contract,
     checkpoint_model_origin,
     scratch_model_origin,
-    source_snapshot_sha256_from_archive_manifest,
+    verified_source_snapshot,
 )
-from research.execution import ExpectedSubjectError  # noqa: E402
+from research.execution import ExpectedSubjectError, SubjectFailureCode  # noqa: E402
 from train.device import get_device  # noqa: E402
+from train.runtime import is_oom_error  # noqa: E402
 from transfer.candidate_decision import (  # noqa: E402
     decision_outcomes_at_repetition,
     expected_candidate_counts,
@@ -67,6 +69,7 @@ from transfer.checkpoint import (  # noqa: E402
     predict_n2p3_checkpoint,
 )
 from transfer.cohort import read_subject_manifest, resolve_subject_scope  # noqa: E402
+from transfer.decision_loss import DirectDecisionContractError  # noqa: E402
 from transfer.outcomes import (  # noqa: E402
     CandidateCoverage,
     DecisionKey,
@@ -100,6 +103,75 @@ def _sha256_file(path: str | Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+BUFFER_ESTIMAND_BY_BUFFER_SOURCE = {
+    "pooled_source": "source_mixture",
+    "source_weighted": "declared_source_composition",
+    "target_calibration": "calibration_defined_target",
+}
+
+_ENV_LOCKFILE_NAMES = ("uv.lock", "requirements.txt", "requirements-minimal.txt")
+
+
+def _lockfile_digests() -> dict[str, str]:
+    lockfiles = {
+        name: _sha256_file(ROOT / name) for name in _ENV_LOCKFILE_NAMES if (ROOT / name).is_file()
+    }
+    if "uv.lock" not in lockfiles:
+        raise ValueError("uv.lock is missing; the environment identity cannot be recorded.")
+    return lockfiles
+
+
+def _environment_record(device: object) -> dict[str, object]:
+    record: dict[str, object] = {
+        "python": sys.version,
+        "numpy": np.__version__,
+        "torch": torch.__version__,
+        "device": str(device),
+        "platform": platform.platform(),
+        "cuda_runtime": torch.version.cuda,
+        "cudnn": (torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else None),
+        "gpu": (
+            torch.cuda.get_device_name(device)
+            if torch.cuda.is_available() and str(device).startswith("cuda")
+            else None
+        ),
+        "lockfiles": _lockfile_digests(),
+    }
+    record["environment_digest"] = semantic_sha256(record)
+    return record
+
+
+def _bn_buffer_digest(payload: dict[str, object] | None) -> str | None:
+    """Semantic digest over every BatchNorm buffer in the checkpoint trunk."""
+
+    if not isinstance(payload, dict) or not isinstance(payload.get("trunk_state_dict"), dict):
+        return None
+    buffers: dict[str, object] = {}
+    for key, tensor in payload["trunk_state_dict"].items():
+        name = str(key)
+        if name.endswith(("running_mean", "running_var")):
+            buffers[name] = torch.asarray(tensor).detach().cpu().float().tolist()
+        elif name.endswith("num_batches_tracked"):
+            buffers[name] = int(torch.asarray(tensor).reshape(-1)[0].item())
+    return semantic_sha256(buffers)
+
+
+def _splitbn_summary_from_checkpoint(payload: dict[str, object] | None) -> dict[str, object]:
+    config: dict[str, object] = {}
+    if isinstance(payload, dict) and isinstance(payload.get("config"), dict):
+        config = payload["config"]
+    buffer_source = config.get("splitbn_target_buffer_source")
+    return {
+        "present": payload is not None,
+        "effective_target_buffer_source": buffer_source,
+        "buffer_estimand": (
+            None if buffer_source is None else BUFFER_ESTIMAND_BY_BUFFER_SOURCE.get(buffer_source)
+        ),
+        "source_weights": config.get("splitbn_source_weights"),
+        "bn_buffer_digest": _bn_buffer_digest(payload),
+    }
 
 
 def _failed_decision_outcomes(
@@ -330,9 +402,8 @@ def main() -> None:
         assert_promotion_evidence_gate(args.test_reps, name="candidate promotion runner")
     except ValueError as error:
         parser.error(str(error))
-    source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
-        args.source_snapshot_manifest
-    )
+    source_snapshot_identity = verified_source_snapshot(args.source_snapshot_manifest)
+    source_snapshot_sha256 = str(source_snapshot_identity["archive_sha256"])
     if args.target_subjects_file is not None and args.max_subjects is not None:
         parser.error(
             "--target-subjects-file defines the exact denominator; do not combine it "
@@ -477,6 +548,7 @@ def main() -> None:
     )[available_events]
 
     records = []
+    oom_fit_failure_subjects: list[str] = []
     outcomes_by_subject: dict[str, tuple[DecisionOutcome, ...]] = {}
     for subject in subjects:
         subject_rows = np.flatnonzero(dataset.subject_ids == subject)
@@ -574,6 +646,7 @@ def main() -> None:
             )
             calibration_rows = local_rows[effective_train]
             inner = None
+            subject_failure: ExpectedSubjectError | None = None
             try:
                 if args.epoch_selection == "target_time_split":
                     inner = chronological_time_validation_split(
@@ -597,6 +670,25 @@ def main() -> None:
                     )
                 suffix_logits = adapter.predict_logit(suffix_X, trial_channel_mask=suffix_mask)
             except ExpectedSubjectError as failure:
+                subject_failure = failure
+            except DirectDecisionContractError:
+                # A P2 contract violation invalidates the whole run; it is never
+                # downgraded to a subject-local failure.
+                raise
+            except RuntimeError as error:
+                if not is_oom_error(error):
+                    raise
+                # Accelerator OOM that survives the batch-size retry ladder is a
+                # predeclared subject-local failure: it enters the ledger as
+                # accelerator_oom and keeps the full requested denominator.
+                subject_failure = ExpectedSubjectError(
+                    SubjectFailureCode.ACCELERATOR_OOM,
+                    stage="subject_fit",
+                    detail=str(error),
+                )
+                oom_fit_failure_subjects.append(str(subject))
+            if subject_failure is not None:
+                failure = subject_failure
                 requested_test = split.requested_test_selections_by_subject[str(subject)]
                 eligible_test = split.test_selections_by_subject[str(subject)]
                 failed_test = split.failed_test_selections_by_subject[str(subject)]
@@ -987,6 +1079,14 @@ def main() -> None:
                 "reason": outcome.failure_reason,
             },
         )
+    environment_record = _environment_record(device)
+    splitbn_record = _splitbn_summary_from_checkpoint(checkpoint_payload)
+    requested_decision_slots = sum(
+        len(decisions) for decisions in split.requested_test_selections_by_subject.values()
+    )
+    ledger_decision_slots = len(
+        {(outcome.key.subject_id, outcome.key.decision_id) for outcome in all_outcomes}
+    )
     summary = {
         "schema": "n2p3_candidate_cross_decision_result/1",
         "run_status": (
@@ -999,6 +1099,8 @@ def main() -> None:
         "partition_key": args.partition_key,
         "source_snapshot_manifest": str(args.source_snapshot_manifest.resolve()),
         "source_snapshot_sha256": source_snapshot_sha256,
+        "source_snapshot_manifest_sha256": str(source_snapshot_identity["manifest_sha256"]),
+        "source_commit": str(source_snapshot_identity["source_commit"]),
         "evaluation_contract": evaluation_contract.record(),
         "evaluation_contract_digest": evaluation_contract.digest(),
         "decision_plan": decision_plan.record(),
@@ -1020,18 +1122,24 @@ def main() -> None:
         "normalization": normalization,
         "target_stat_weight": args.target_stat_weight,
         "seed": args.seed,
-        "environment": {
-            "python": sys.version,
-            "numpy": np.__version__,
-            "torch": torch.__version__,
-            "device": str(device),
-        },
+        "environment": environment_record,
+        "splitbn": splitbn_record,
         "estimand": "known_early_decisions_to_later_unknown_decisions",
         "excluded_subjects": split.excluded_subjects,
         "decision_accounting": decision_accounting,
         "participant_accounting": participant_accounting,
         "participant_operational_endpoints": participant_operational_endpoints,
         "decision_failures": list(decision_failures_by_key.values()),
+        "oom_accounting": {
+            "oom_fit_failure_subjects": sorted(oom_fit_failure_subjects),
+            "oom_fit_failure_decisions": sum(
+                len(split.requested_test_selections_by_subject.get(subject, ()))
+                for subject in oom_fit_failure_subjects
+            ),
+            "requested_decision_slots": requested_decision_slots,
+            "ledger_decision_slots": ledger_decision_slots,
+            "requested_denominator_preserved": (ledger_decision_slots == requested_decision_slots),
+        },
         "decision_outcomes": [
             {
                 **outcome.to_record(),

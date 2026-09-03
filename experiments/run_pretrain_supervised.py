@@ -14,6 +14,7 @@ import json
 import os
 import sys
 import time
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
@@ -842,11 +843,12 @@ def main(argv: list[str] | None = None) -> None:
 
     X = np.ascontiguousarray(dataset.X[source_rows])
     y = np.asarray(dataset.y, dtype=np.int64)[source_rows]
-    source_input_stats_scope = {
-        "mode": "all_source_rows",
-        "rows": int(len(X)),
-        "unique_subjects": int(len(np.unique(src_subjects))),
-    }
+    # ``input_statistics_scope`` declares *which rows* normalization statistics
+    # may be computed from; it must stay a pure control declaration. Realized
+    # counts (rows/unique_subjects) vary with every partition's holdout, so
+    # embedding them here would make the arm procedure disagree with itself
+    # across partitions and get rejected by the manifest arm check.
+    source_input_stats_scope = "all_source_rows"
     risk_fit_kwargs = {}
     if source_domains is not None:
         risk_fit_kwargs["source_domain_ids"] = source_domains
@@ -958,9 +960,29 @@ def main(argv: list[str] | None = None) -> None:
         if decision_metadata is None
         else decision_metadata.record(include_rows=False)
     )
+    def _durable_decision_ledger(
+        history_ledger: object,
+    ) -> dict[str, object] | None:
+        """Keep only durable P2 evidence for the checkpoint payload.
+
+        The trainer emits a ``status="disabled"`` ledger when the P2 decision
+        loss never trained; that is a process diagnostic, not evidence, and the
+        checkpoint validator correctly requires a decision-loss contract for
+        any decision payload it carries. Passing the disabled ledger through
+        would therefore render every P2-free checkpoint unreadable. An active
+        ledger (valid or otherwise) is preserved untouched so the validator
+        keeps enforcing its full contract on it.
+        """
+
+        if not isinstance(history_ledger, Mapping) or history_ledger.get("status") == "disabled":
+            return None
+        return history_ledger
+
     decision_training_diagnostics = {
-        "selection": selection_baseline.last_history.get("decision_loss"),
-        "refit": baseline.last_history.get("decision_loss"),
+        "selection": _durable_decision_ledger(
+            selection_baseline.last_history.get("decision_loss")
+        ),
+        "refit": _durable_decision_ledger(baseline.last_history.get("decision_loss")),
     }
     source_domain_axis = baseline.source_domain_axis_record()
     source_domain_axis_digest = architecture_record.get(

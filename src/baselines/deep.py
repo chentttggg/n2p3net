@@ -2379,7 +2379,12 @@ class DeepBaseline(Baseline):
             "task_patience_exhausted": early_stop_triggered,
             "feature_alignment": dict(self.last_feature_alignment or {}),
             "source_residual": dict(self.last_source_residual),
-            "decision_loss": dict(self.last_decision_loss or {}),
+            # ``last_decision_loss`` is None exactly when the P2 decision loss is
+            # disabled; serializing it as an empty dict would fabricate a P2
+            # ledger and make the checkpoint unreadable by the candidate runner.
+            "decision_loss": (
+                None if self.last_decision_loss is None else dict(self.last_decision_loss)
+            ),
         }
         self._fitted = True
 
