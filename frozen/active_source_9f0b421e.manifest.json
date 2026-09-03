@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "active_source_9f0b421e.source-only.tar.gz",
+  "archive_sha256": "648789a9a99e2fd27d43b08d8f746a6828815b8f923be49d147c2b91b3e79c2a",
+  "source_commit": "9f0b421ee367431e1e15fbcdeab375a430950849",
+  "member_count": 187,
+  "byte_size": 949300,
+  "scope": "Active source tree at 9f0b421e (CUDA-graph output snapshot fix at train_step call boundary; supersedes 3aa0e17 archive): src, experiments, configs, tests, doc, and build/env files; excludes Paper PDFs, frozen historical archives, and all data/caches",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "executed-source identity anchor for cloud runs of commit 9f0b421e; a new commit requires a new archive+manifest pair, never overwrite"
+}
