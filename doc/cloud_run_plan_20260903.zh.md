@@ -193,8 +193,11 @@ torch.compile()"——区内 clone 产物仍是静态 buffer，cuda_smoke2 实�
 本地回归 test_deep + test_decision_loss 绿；cuda_smoke3 exit=0（全链 1m22s），
 result C1–C3 核验通过（source_commit=`3aa0e170…`、device=cuda、
 environment_digest、snapshot SHA `8733fed7…`、splitbn digest）。
-⚠ deep.py 变更晚于 commit 3aa0e17 → **正式 run 前需新 commit + 新归档 + 重传**
-（归档 <1 MB，分钟级）。
+⚠→✅ deep.py 变更已闭合（2026-09-04 02:00）：commit `9f0b421`（fix）+
+`838a39c`（冻结对 `frozen/active_source_9f0b421e.*`，C1 三重互证
+archive `648789a9…` / manifest `e9fdf682…` / commit `9f0b421e…`），已上传云端
+并在新树 `/root/autodl-tmp/n2p3-9f0b421e` 完成端到端探针验证。3aa0e17 旧对
+留在 frozen/ 未跟踪（D5 裁决去留）。
 
 **CUDA vs CPU 实测（同 12 人 cache、epochs=2、1 seed、2 partition、2 arm）**：
 
@@ -229,13 +232,15 @@ T_aggregation ≈ 12s × 轮数（可忽略）
 
 模板 epochs=null（**待 D3 一起拍板**）。
 
-**云端实测替换（2026-09-04 cuda_smoke3，5090 + 208 核 host）**：分阶段实测
-见 §3.3 表——pretrain 用 CPU 数字更优（17.5 s/job），result 用 CUDA 数字
-（5.3 s/单元）。dev64（F=64、S=3、A=2、E）串行量级：pretrain ≈ 192 job ×
-17.5s × (63/10 行比) ≈ 5.9 h；results ≈ 384 单元 × 5.3s ×（行比 1–6，待实测）
-≈ 0.6–3.5 h。**`--max-workers 8` 并行后 wall 预计 ≈ 1–2.5 h（E=2）**，E 近似
-线性放大；AutoDL 5090 时价折算成本为个位数人民币。**D3 的真正决策点是
-epochs 终值与 workers 数，不是预算。**
+**dev64 规模实测（2026-09-04 02:15 cuda_probe1，64 人 cache、2 partition、1 seed、
+E=2、CUDA 串行，树 = 9f0b421e 新归档）**：pretrain **33.9 s/job**（63 人 holdout
+行；固定开销主导——行数 ×6.3 只贵 1.37×）、result **28.4 s/单元**（64 人 cache，
+≈线性于行数）、聚合 3.7 s。result 合同核验：source_commit=`9f0b421ee367…`、
+snapshot SHA=`648789a9…`（新归档链闭合）。dev64 外推（F=64、S=3、A=2）：
+pretrain 192 job ≈ **1.81 h 串行**、results 384 单元 ≈ **3.03 h 串行**（E=2 实测）。
+workers 并行：**W=8 → wall ≈ 40 min（E=2）**；E 增大只放大 pretrain 行边际
+（E=8 上界 ≈ 线性 ×4 → wall ≤ 2 h @W=8）。成本 = 实例小时数 × 5090 时价，
+个位数人民币。**D3 的真正决策点是 epochs 终值与 workers 数，不是预算。**
 
 **模板 PLACEHOLDER → 实际产物映射（2026-09-04 00:50 全部就位）**：
 
