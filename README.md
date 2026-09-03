@@ -30,12 +30,13 @@ unknown during calibration.
     **71.43%** (trial AUC 0.694).
     These are cross-subject development results, not deployment claims.
 
-- Feature-domain transfer research (2026-09): the first active implementation
-  now wraps the plain N2P3Net with invariant/private feature paths and a
-  target-only low-rank residual adapter. Source-domain IDs are auxiliary
-  training/diagnostic metadata only; the earlier per-domain adapter prototype is
-  retired and must not be used for new experiments. No target hit@R gain is
-  claimed until the cross-decision protocol is run.
+- Feature-domain transfer research (2026-09): the active framework wraps the
+  plain N2P3Net with invariant/private feature paths, a target-only low-rank
+  residual adapter, P0 Split-BN, and P1 source residuals. The declared ordered
+  source-domain axis is used only during source training for these explicit
+  mechanisms; unknown targets never route through a source residual, and
+  Split-BN target evaluation requires a declared buffer source. No target
+  hit@R gain is claimed until the cross-decision protocol is run.
 
 - The living evidence ledger, preregistered single-axis arms, and promotion
   gates are in `doc/research_program.zh.md`. No deployment champion is
@@ -66,13 +67,23 @@ Use `--no-fused-adam --compile-mode none` for the matched eager ablation. The
 full settings, requested/effective record fields, and cold-start boundaries are
 documented in `doc/device-portability.md`.
 
-The LOSO runner requires the signal and baseline extras. The living research
-guide is `doc/research_program.zh.md`; frozen ablations and evidence are physically
-isolated in `frozen/research_evidence_through_20260901-d1db8e4.tar.gz`.
-The current concise research briefing is `doc/research_status_report_20260831.zh.md`.
-The current feature-transfer research report is
-`doc/feature_domain_transfer_research_20260902.zh.md`. The only active guidance
-is `doc/research_program.zh.md`; historical guidance files were retired.
+The LOSO runner requires the signal and baseline extras. Start with the document
+controller at `doc/README.md`; the binding activity guide is
+`doc/research_program.zh.md`, with `doc/input_contract_math.zh.md` as its input
+contract companion. The current framework acceptance record is
+`doc/framework_acceptance_20260903.zh.md`, and the latest dated status briefing is
+`doc/research_status_report_20260902.zh.md`. Frozen ablations and evidence are
+physically isolated in `frozen/research_evidence_through_20260901-d1db8e4.tar.gz`.
+The 20260831 report, former agent dispatch, `c7bf860` cloud plan, and the
+pre-integration audit are physically isolated in
+`frozen/document_history_through_ef7a40e_20260903.tar.gz` with a manifest; they
+must not be used as an active plan.
+The independent full audit has fully attributed the load-sensitive pytest
+failures to the WorkBuddy session shims/guards and a load-sensitive test timing
+window, not to product code. Do not use high-load pytest inside WorkBuddy as an
+acceptance signal; use an idle independent shell/cloud run or the documented
+guard-variable workaround. The protected `%TEMP%\pytest-of-chent` directory is
+an optional manual cleanup item.
 
 ## Data Contract
 

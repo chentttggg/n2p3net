@@ -1,10 +1,15 @@
 # N2P3-Net 架构重构实施方案：P0 / P1 / P2
 
-_版本：2026-09-02（r2，含反例修正）· 绑定活动规范 `research_program.zh.md`（2026-09-02b）· 决策依据 [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md) · 数学验证 [`math_verification_20260902.zh.md`](math_verification_20260902.zh.md)_
+_版本：2026-09-03（r3，含反例修正）· 文档角色：实施与验收记录 · 绑定活动规范 [`research_program.zh.md`](research_program.zh.md) · 决策依据 [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md) · 数学验证 [`math_verification_20260902.zh.md`](math_verification_20260902.zh.md)_
 
 > r3 修订（2026-09-03 数学闭合复核）：修正 hit@R 的 top-1 repetition 语义；将缺失候选的 `-inf` 与 incomplete 状态门禁分离；补全 `alpha_r` repetition loss、temperature 梯度、residual epsilon/max/source `m=1` 规则；降级横向集成的表达力/塌缩断言；补全 Split-BN buffer 来源与训练期作用边界。r2 的 A-D 修正保留。
 
-本文档给出三项机制（P0 Split-BN、P1 drop-to-consensus、P2 可微决策损失）的完整数学公式、实现代码清单、反例与验收标准。按 P0→P1→P2 顺序实施，每项独立可回退。**实施者：你按此清单推进；总监角色负责契约一致性审查。**
+> 📌 **当前状态：** P0/P1/P2 的框架合同和反例测试已在 `ef7a40e` 实现并验收；本文件中的
+> “实施”措辞保留为设计与可追溯验收依据，不是待执行派工。真实数据、CUDA 与 confirmation
+> evidence 仍未获得，当前门禁见 [`research_program.zh.md`](research_program.zh.md)。
+
+本文档给出三项机制（P0 Split-BN、P1 drop-to-consensus、P2 可微决策损失）的数学公式、实现清单、反例与验收标准。其实现结果与开放边界以
+[`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md) 的集成验收为准。
 
 ---
 
@@ -328,6 +333,10 @@ $$
 
 ### 2.4.1 新增 `DecisionLevelLoss` 模块（修正 A：绑定冻结 vocabulary，覆盖不完整 fail-closed）
 
+以下代码块是设计伪代码，用于说明数学接口；当前实现以
+`src/transfer/decision_loss.py` 的 `DecisionLossResult`、`DirectDecisionMetadata` 和
+显式 ledger 为准，不以 `None` 作为训练状态。
+
 ```python
 class DecisionLevelLoss(nn.Module):
     """Differentiable candidate-decision loss over within-decision trial groups."""
@@ -446,4 +455,4 @@ P2 (可微决策)     →   依赖 decision 分组 batch sampler，配置到训�
 
 ---
 
-**实施者**：按 P0→P1→P2 顺序推进，每项独立验证并记录。**总监**：契约一致性审查，确保不偏离活动规范。
+**历史实施记录**：P0→P1→P2 已按此顺序完成 framework/contract 集成；当前不再按本文末尾重新派工。新工作必须先更新 [`research_program.zh.md`](research_program.zh.md)，再补充实现和验收记录。

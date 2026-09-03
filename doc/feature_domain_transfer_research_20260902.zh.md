@@ -1,6 +1,11 @@
 # 特征域迁移科研报告：从 pooled CE 到条件不变证据表示
 
-_研究日期：2026-09-02 · 范围：N2P3-Net EEG/P300 域迁移与候选决策 · 类型：定向深度科研，不是系统综述_
+_研究日期：2026-09-02 · 范围：N2P3-Net EEG/P300 域迁移与候选决策 · 文档角色：研究依据与机制假设，不是活动规范或系统综述_
+
+> 📌 **当前使用方式：** 本报告的文献与机制推理仍可复核，但 P0/P1/P2 的实现状态、开放
+> 门禁和下一步由 [`research_program.zh.md`](research_program.zh.md) 控制。代码验收见
+> [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md)。不得把本报告中
+> 的历史路线图或候选实验写成当前已验证结果。
 
 ## 摘要
 
@@ -595,7 +600,7 @@ style-to-task 参数；后者必须另立消融实验。
 - per-domain gradient cosine diagnosis；
 - domain probe、ERP morphology、target hit@R 一起报告。
 
-### Phase 3：目标 inner loop（target-only residual 已接入，candidate-set loss 待接入）
+### Phase 3：目标 inner loop（target-only residual 已接入；candidate-set loss 的 direct source-training 组件已实现，目标 inner-loop 仍未闭合）
 
 - `target_adapter` only；
 - calibration decision CE + candidate-set loss；
@@ -731,4 +736,4 @@ style-to-task 参数；后者必须另立消融实验。
 
 [^10]: Vo K, Nguyen DN, Kha HH, Dutkiewicz E. Subject-Independent P300 BCI Using Ensemble Classifier, Dynamic Stopping and Adaptive Learning. IEEE GLOBECOM, 2017. DOI: <https://doi.org/10.1109/GLOCOM.2017.8255030>。本地全文：`Paper/Dynamic_Stopping_Subject_Independent_P300_GLOBECOM_2017.pdf`。
 
-_本报告替代旧的域迁移指导；它不把新增文献的结果写成本项目结果，也不把当前初步 adapter 代码写成最终架构。_
+_本报告是研究依据与机制假设记录，不是活动规范；不把新增文献的结果写成本项目结果，也不把当前 framework 代码写成最终性能结论。P0/P1/P2 的状态以 [`research_program.zh.md`](research_program.zh.md) 和 [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md) 为准。_

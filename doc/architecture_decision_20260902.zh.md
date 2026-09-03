@@ -1,6 +1,10 @@
 # N2P3-Net 架构决策：从横向嵌套到纵向分层
 
-_版本：2026-09-03 数学闭合修订 · 决策类型：架构重构 · 状态：待实施_
+_版本：2026-09-03 数学闭合修订 · 决策类型：架构重构 · 状态：框架已在 `ef7a40e` 落地，性能证据未完成_
+
+> 📌 **文档角色：** 本文件保留架构裁决及其理由。新任务、实验门禁和当前结论以
+> [`research_program.zh.md`](research_program.zh.md) 为准；P0/P1/P2 的代码链验收见
+> [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md)。
 
 ---
 
@@ -210,16 +214,16 @@ doc 第 8 节反例 8 的理由是训练启用 source adapter 而推理未 route
 
 ---
 
-## 五、立即可做的三件事（优先级排序）
+## 五、已执行机制与后续待验证项
 
-### P0：BatchNorm 混合统计诊断
+### P0：BatchNorm 混合统计诊断（框架已实现）
 ```python
 # 在 src/models/n2p3net.py 加 Split-BN 实验臂
 # st_temporal_norm / st_spatial_norm 改为 per-domain BN
 # 贡献大小待通过成对实验与机制诊断验证，不预设恢复幅度
 ```
 
-### P1：可丢弃域残差修正
+### P1：可丢弃域残差修正（框架已实现）
 ```python
 # 在 src/models/adapters.py 的 FeatureDomainTransfer
 # 训练时以概率 p 丢弃 source domain 残差
@@ -227,7 +231,7 @@ doc 第 8 节反例 8 的理由是训练启用 source adapter 而推理未 route
 # 这修正了 doc 第 8 节反例 8 的缺陷
 ```
 
-### P2：决策层可微化
+### P2：决策层可微化（direct framework 已实现）
 ```python
 # 在 src/models/candidate_evidence.py
 # 把 CandidateAccumulator 从后处理聚合改为可学习模块
@@ -332,9 +336,9 @@ $$
 
 ---
 
-## 八、待第三路结果补充
+## 八、待第三路结果补充（历史研究记录）
 
-等待少样本适配机制（MAML / MoE / Prototypical / LoRA / RNN over trials）的完整文献综述。预计补充：
+少样本适配机制（MAML / MoE / Prototypical / LoRA / RNN over trials）的完整文献综述仍是候选研究方向，不是当前实现门禁。预计补充：
 - MAML 在 EEG 的稳定性证据
 - 序列决策层联合可微训练的先例
 - 参数效率与过拟合风险的最优解
@@ -354,4 +358,4 @@ $$
 
 ---
 
-**文档状态**：架构决策已定，等待第三路文献结果补充后进入实施清单阶段。
+**文档状态**：架构决策已定；P0/P1/P2 framework 已在 `ef7a40e` 落地。真实数据效果和后续 target inner/outer 机制仍须按活动规范单独验收。

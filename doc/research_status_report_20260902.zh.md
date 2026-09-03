@@ -1,6 +1,12 @@
 # N2P3-Net 科研状态汇报
 
-_更新至 2026-09-02；BNCI-target 多源正式矩阵（295942e）云端结果对比分析与下一轮方向_
+_更新至 2026-09-02；文档角色：历史 development/evidence 状态报告；BNCI-target 多源正式矩阵（295942e）云端结果对比分析与下一轮方向_
+
+> 📌 **当前状态边界：** 本报告只描述截至 2026-09-02 的结果与证据链，不覆盖
+> `ef7a40e` 的 P0/P1/P2 framework 提交，也不替代当前活动规范。最新代码链验收、开放风险
+> 和测试稳定性记录见 [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md)、
+> [`supervisor_full_audit_20260903.zh.md`](supervisor_full_audit_20260903.zh.md)；新任务入口见
+> [`README.md`](README.md)。
 
 ***
 

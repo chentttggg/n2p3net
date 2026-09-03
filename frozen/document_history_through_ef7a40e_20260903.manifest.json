@@ -1,0 +1,16 @@
+{
+  "schema": "n2p3_frozen_document_archive/1",
+  "archive": "document_history_through_ef7a40e_20260903.tar.gz",
+  "archive_sha256": "43b719d7b94f7ea9faf75b74cd158a5d0af1c7032d655610350a712665fec450",
+  "source_commit": "ef7a40e3f8c9872f6d12fa1566f95ec221c0cdf9",
+  "archive_member_count": 4,
+  "document_count": 3,
+  "scope": "Superseded dispatch, cloud staging plan, and mixed pre-integration audit snapshot",
+  "physical_isolation": true,
+  "active_replacements": {
+    "doc/next_agent_dispatch_20260903.zh.md": "doc/README.md and doc/research_program.zh.md",
+    "doc/feature_transfer_cloud_experiment_20260902.zh.md": "a newly attested plan required by doc/research_program.zh.md",
+    "doc/next_agent_audit_20260903.zh.md": "doc/framework_acceptance_20260903.zh.md"
+  },
+  "replacement_policy": "The archive is evidence of the historical document state only; it must not be executed as a current research plan or used to override the active guide."
+}

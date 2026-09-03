@@ -1,8 +1,13 @@
 # 数学严格推导与反例验证记录：P0 / P1 / P2
 
-_版本：2026-09-03 闭合修订 · 验证脚本：`tmp/counterexample_verification_20260902.py` · 运行环境：.venv torch 2.13.0+cpu · 结果：14/14 通过_
+_版本：2026-09-03 闭合修订 · 文档角色：数学与反例记录 · 验证脚本：`tmp/counterexample_verification_20260902.py` · 运行环境：.venv torch 2.13.0+cpu · 结果：14/14 通过_
 
-本文档做两件事：(1) 从第一性原理给出三项机制的严格推导；(2) 记录数值反例验证结果，其中三项"通过"实际暴露了实施清单 v1 的缺陷，对应修正已回写 [`implementation_plan_20260902.zh.md`](implementation_plan_20260902.zh.md)。
+> 📌 **当前状态：** 推导已用于 `ef7a40e` 的 P0/P1/P2 framework/contract 实现；本文件记录
+> 数学与反例边界，不独立证明真实数据增益。活动实验门禁以
+> [`research_program.zh.md`](research_program.zh.md) 为准，代码验收以
+> [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md) 为准。
+
+本文档做两件事：(1) 从第一性原理给出三项机制的严格推导；(2) 记录数值反例验证结果，其中三项"通过"实际暴露了实施清单 v1 的缺陷，对应修正已回写 [`implementation_plan_20260902.zh.md`](implementation_plan_20260902.zh.md)。正式测试映射与当前实现状态见 [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md)。
 
 ---
 
