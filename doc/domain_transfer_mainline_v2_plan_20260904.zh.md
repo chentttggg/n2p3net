@@ -9,10 +9,10 @@
 > 实施进度（2026-09-04 代码工作同步）：
 > - ✅ **WP0 完成**：ACW 命名/schema（`n2p3_ajd_congruence_whitening/1`、`n2p3_acw_fit/1`）、solver 版本、`ajd_offdiag_residual`、fast-output 真实 target 行、AJD TypeError fail-closed、mean 模式 `alignment_inactive`、RBF-MMD 负值 ledger（不 clamp）、TSD log-quality + 有尺度 tie-break（含远距离反例测试）、`row_identity_digest` 绑定。
 > - ✅ **WP1 完成**：`src/data/euclidean_alignment.py`（不减均值、`R̄^{-1/2}X`、四类 fit-scope、条件数门禁）+ `experiments/prepare_euclidean_alignment_cache.py`（attested cache 进、shape-preserving EA cache 出、`--reference-mode` 与上游 native/CAR provenance 强校验）+ 测试。
-> - 🟡 **WP2 部分完成**：`src/transfer/asmmd.py`（Eq 1–9：target-weight、warmup 调度、logit-level marginal 无偏 RBF-MMD²、joint loss）；`SubjectAdapter` 已支持冻结 source logits/labels 的 joint adapter 训练；`run_candidate_cross_decision.py` 已加 `--as-mmd-*`/source-logits 并写入 adaptation procedure。**未完成**：live source-stream + SplitBN source/target 双 buffer 的完整 joint trunk 训练，以及 matrix plan 的 `as_mmd` 字段与 result_batch 下传。
-> - 🟡 **WP3 部分完成**：TSD schema `n2p3_source_selection/2` + `sampler_kind="target_similarity_diverse"`、legacy schema 只读兼容、source_selection_record 的 row-identity 校验、checkpoint 新写 `tsd_dropped_source_epochs[_by_label]`（旧 `pds_dropped_*` 字段保留兼容）。**未完成**：`dense_pds` 独立采样器与 `--sampler` 开关。
-> - 🟡 **WP4 部分完成**：matrix plan 已解析 `source_selection_record` 并写入 checkpoint batch argv；**未完成**：EA/`as_mmd`/`sampler_kind` plan 字段、`prepare_ea`/`prepare_selection` DAG 节点、result_batch 下传 `--source-stream-cache`/`--as-mmd-*`。
-> - 🟡 **WP5 进行中**：四份指导文档已对齐至 EA/ACW/AS-MMD/TSD，旧 GALIA/PDS 描述标为历史；全量测试与 ruff 通过；新 source-only freeze `frozen/active_source_ae2706e.*` 已生成并提交（冻结对提交 `c3b7d10`；前序批次 `active_source_326c8fd.*`/`active_source_352932b.*` 保留）；云端 dry-run/CUDA smoke 未做（E2 不启动）。
+> - ✅ **WP2 完成**：`src/transfer/asmmd.py`（Eq 1–9：target-weight、warmup 调度、logit-level marginal 无偏 RBF-MMD²、joint loss）；`SubjectAdapter` 同时支持 frozen source logits 与 live source-stream 两种输入；`run_candidate_cross_decision.py` 支持 `--source-stream-cache`/`--source-selection-record`，live 模式做 source-batch→source SplitBN buffer、target-batch→predeclared target buffer 的显式双 buffer 训练，`target_calibration` buffer 支持自动安装并冻结，ledger 记录 source/target buffer digest 与负 MMD 诊断。
+> - ✅ **WP3 完成**：TSD schema `n2p3_source_selection/2` + `sampler_kind`、legacy schema 只读兼容、row-identity 校验、checkpoint `tsd_dropped_*`；`dense_pds` 忠实 dart-throwing 采样器与 `--sampler/--pds-*` CLI；新增 `prepare_target_calibration_cache.py`（禁止 target-test 行进入 sampler）与 `prepare_source_selection_vectors.py`（labels/groups provenance）。
+> - ✅ **WP4 完成**：matrix plan 支持 source-arm `euclidean_alignment`/`acw_state`/`sampler_kind`、evaluation-arm `as_mmd`（source_stream/frozen_logits）、EA provenance gate、selection-record schema 交叉校验；checkpoint/result argv 全链转发。
+> - 🟡 **WP5 进行中**：指导文档已对齐并新增 [`cloud_ablation_plan_20260904.zh.md`](cloud_ablation_plan_20260904.zh.md)（L1 dry-run/CUDA smoke/L2 64-fold 臂矩阵）；全量测试与 ruff 通过；待提交后生成新 source-only freeze；云端执行未做（E2 不启动）。
 
 ---
 

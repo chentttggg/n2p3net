@@ -1,0 +1,163 @@
+{
+  "schema": "n2p3_candidate_promotion_plan/2",
+  "stage": "development",
+  "source_snapshot_manifest": "../frozen/DOMAIN_TRANSFER_V2_SOURCE_SNAPSHOT_PLACEHOLDER.manifest.json",
+  "target_cache": "../cloud_inputs/l0_bi2014a_causal_v3_64subj.npz",
+  "target_subjects": [
+    {
+      "target_subject": "01",
+      "source_holdout_subject": "01",
+      "partition_key": "dev-01"
+    },
+    {
+      "target_subject": "02",
+      "source_holdout_subject": "02",
+      "partition_key": "dev-02"
+    }
+  ],
+  "source_arms": [
+    {
+      "name": "bi2014a_native",
+      "cache": "../cloud_inputs/l0_bi2014a_causal_v3_64subj.npz",
+      "source_domain_mass": null,
+      "risk_within_domain_unit": null,
+      "selection_domain": null,
+      "splitbn_source_weights": null,
+      "euclidean_alignment": {
+        "mode": "none"
+      },
+      "sampler_kind": "uniform"
+    },
+    {
+      "name": "bi2014a_calibration_native",
+      "cache": "../cloud_inputs/BI2014A_TARGET_CALIBRATION_PLACEHOLDER.npz",
+      "source_domain_mass": null,
+      "risk_within_domain_unit": null,
+      "selection_domain": null,
+      "splitbn_source_weights": null,
+      "euclidean_alignment": {
+        "mode": "none"
+      },
+      "sampler_kind": "uniform"
+    },
+    {
+      "name": "bi2014a_ea_target_calibration",
+      "cache": "../cloud_inputs/BI2014A_EA_TARGET_CALIBRATION_PLACEHOLDER.npz",
+      "source_domain_mass": null,
+      "risk_within_domain_unit": null,
+      "selection_domain": null,
+      "splitbn_source_weights": null,
+      "euclidean_alignment": {
+        "mode": "target_calibration",
+        "reference_mode": "native_preserve"
+      },
+      "sampler_kind": "uniform"
+    },
+    {
+      "name": "bi2014a_tsd_native",
+      "cache": "../cloud_inputs/l0_bi2014a_causal_v3_64subj.npz",
+      "source_domain_mass": null,
+      "risk_within_domain_unit": null,
+      "selection_domain": null,
+      "splitbn_source_weights": null,
+      "euclidean_alignment": {
+        "mode": "none"
+      },
+      "sampler_kind": "target_similarity_diverse",
+      "source_selection_record": "../cloud_inputs/BI2014A_TSD_SELECTION_PLACEHOLDER.json"
+    },
+    {
+      "name": "bi2014a_dense_pds_native",
+      "cache": "../cloud_inputs/l0_bi2014a_causal_v3_64subj.npz",
+      "source_domain_mass": null,
+      "risk_within_domain_unit": null,
+      "selection_domain": null,
+      "splitbn_source_weights": null,
+      "euclidean_alignment": {
+        "mode": "none"
+      },
+      "sampler_kind": "dense_pds",
+      "source_selection_record": "../cloud_inputs/BI2014A_DENSE_PDS_SELECTION_PLACEHOLDER.json"
+    }
+  ],
+  "training_replicates": [
+    {
+      "key": "seed-20260904",
+      "seed": 20260904
+    }
+  ],
+  "evaluation_arms": [
+    {
+      "name": "zero_shot",
+      "head": "zero_shot",
+      "normalization": "source",
+      "epoch_selection": "fixed_budget",
+      "epochs": null,
+      "batch_size": null,
+      "lr": null,
+      "target_stat_weight": 0.0,
+      "fold_local_qc": false
+    },
+    {
+      "name": "linear_target",
+      "head": "linear",
+      "normalization": "shrinkage",
+      "epoch_selection": "target_time_split",
+      "epochs": 30,
+      "batch_size": 64,
+      "lr": 0.0005,
+      "target_stat_weight": 0.25,
+      "fold_local_qc": false
+    },
+    {
+      "name": "full_fine_no_mmd",
+      "head": "full_fine",
+      "normalization": "source",
+      "epoch_selection": "fixed_budget",
+      "epochs": 15,
+      "batch_size": 32,
+      "lr": 0.0001,
+      "target_stat_weight": 0.0,
+      "fold_local_qc": false
+    }
+  ],
+  "training": {
+    "pooling_mode": "full_unfold",
+    "temporal_kernel_size": 35,
+    "epochs": 16,
+    "batch_size": 512,
+    "precision": "auto",
+    "feature_transfer_invariant_bottleneck": 0,
+    "feature_transfer_private_channels": 4,
+    "feature_transfer_target_bottleneck": 4,
+    "feature_transfer_target_kernel": 9,
+    "feature_transfer_max_invariant_residual": 0.25,
+    "feature_transfer_max_target_residual": 0.25,
+    "feature_alignment_weight": 0.0,
+    "feature_alignment_mode": "mean",
+    "feature_alignment_min_cell_count": 8,
+    "feature_alignment_inactive_policy": "record",
+    "private_domain_weight": 0.0,
+    "orthogonality_weight": 0.0,
+    "splitbn_target_buffer_source": null,
+    "source_residual_drop_p": null,
+    "source_residual_drop_mode": null
+  },
+  "calibration_selections": 5,
+  "test_reps": 8,
+  "identity_exclusion_policy": "source_or_global",
+  "output_root": "../experiments/runs/domain_transfer_v2_ablation_development_placeholder",
+  "statistical_design": {
+    "inference_scope": "conditional_frozen_models",
+    "planned_contrasts": [
+      ["bi2014a_ea_target_calibration__zero_shot", "bi2014a_calibration_native__zero_shot"],
+      ["bi2014a_ea_target_calibration__full_fine_no_mmd", "bi2014a_calibration_native__full_fine_no_mmd"],
+      ["bi2014a_tsd_native__linear_target", "bi2014a_native__linear_target"],
+      ["bi2014a_dense_pds_native__linear_target", "bi2014a_tsd_native__linear_target"]
+    ],
+    "evidence_level": 8,
+    "bootstrap_iterations": 1000,
+    "bootstrap_seed": 20260904,
+    "confidence_level": 0.95
+  }
+}

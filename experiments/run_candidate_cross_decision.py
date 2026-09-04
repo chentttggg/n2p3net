@@ -9,7 +9,7 @@ import os
 import platform
 import sys
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from functools import lru_cache
 from pathlib import Path
 
@@ -33,11 +33,18 @@ from data.candidate_task import (  # noqa: E402
     validate_candidate_membership_metadata,
 )
 from data.contract import assert_causal_p300_input_contract  # noqa: E402
-from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
+from data.domain import source_domain_ids, source_domain_vocabulary  # noqa: E402
+from data.epochs import (  # noqa: E402
+    epoch_row_identity_digest,
+    load_epoch_dataset,
+    loaded_epoch_cache_attestation,
+)
 from data.identity import IdentityExclusionPolicy  # noqa: E402
 from data.qc_features import compute_epoch_qc_features  # noqa: E402
 from experiments.result_batch_contract import ZERO_SHOT_FEATURE_CACHE_SCHEMA  # noqa: E402
+from models.adapters import source_domain_axis_from_record  # noqa: E402
 from models.n2p3net import N2P3Net  # noqa: E402
+from models.splitbn import splitbn_config_from_record  # noqa: E402
 from research.contracts import (  # noqa: E402
     MIN_PROMOTION_HIT_AT_R,
     DecisionPlanContract,
@@ -55,6 +62,10 @@ from research.evaluation import (  # noqa: E402
 from research.execution import ExpectedSubjectError, SubjectFailureCode  # noqa: E402
 from train.device import get_device  # noqa: E402
 from train.runtime import is_oom_error  # noqa: E402
+from train.source_sampling import (  # noqa: E402
+    load_pds_selection_record,
+    pds_selection_from_record,
+)
 from transfer.candidate_decision import (  # noqa: E402
     decision_outcomes_at_repetition,
     expected_candidate_counts,
@@ -65,6 +76,7 @@ from transfer.candidate_within_subject import (  # noqa: E402
 )
 from transfer.checkpoint import (  # noqa: E402
     assert_checkpoint_target_identity_excluded,
+    checkpoint_architecture_record,
     checkpoint_classifier_is_trained,
     checkpoint_input_stats,
     checkpoint_scores_to_llr,
@@ -117,6 +129,37 @@ def _cached_attested_dataset(cache_path: str) -> object:
 @lru_cache(maxsize=8)
 def _cached_sha256_file(path: str) -> str:
     return _sha256_file(path)
+
+
+def _load_source_selection(
+    path: str | Path,
+    *,
+    source_cache_sha256: str,
+    row_identity_digest: str | None = None,
+) -> tuple[object, dict[str, object]]:
+    """Load a PDS selection record bound to the attested source cache.
+
+    Mirrors ``run_pretrain_supervised._load_source_selection`` so the live
+    AS-MMD source-stream path verifies the exact same cache identity and row
+    identity fields before applying selected indices.
+    """
+
+    _, record = load_pds_selection_record(path)
+    selection = pds_selection_from_record(
+        record,
+        expected_source_cache_sha256=source_cache_sha256,
+    )
+    if row_identity_digest is not None:
+        feature_record = record.get("source_feature_record")
+        if not isinstance(feature_record, Mapping):
+            raise ValueError("source-selection record lacks its source_feature_record.")
+        feature_row_digest = feature_record.get("row_identity_digest")
+        if feature_row_digest != row_identity_digest:
+            raise ValueError(
+                "source-selection feature row_identity_digest disagrees with "
+                "the loaded source cache."
+            )
+    return selection, record
 
 
 @lru_cache(maxsize=8)
@@ -540,6 +583,21 @@ def main(argv: Sequence[str] | None = None) -> None:
         default=None,
         help="Optional .npz with keys logits/labels from the frozen source checkpoint.",
     )
+    parser.add_argument(
+        "--source-stream-cache",
+        type=Path,
+        default=None,
+        help=(
+            "Attested EpochDataset source cache used as a live AS-MMD source "
+            "stream instead of frozen checkpoint logits."
+        ),
+    )
+    parser.add_argument(
+        "--source-selection-record",
+        type=Path,
+        default=None,
+        help="Optional PDS source-selection JSON bound to --source-stream-cache.",
+    )
 
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
@@ -586,6 +644,18 @@ def main(argv: Sequence[str] | None = None) -> None:
         parser.error("--as-mmd-warmup-epochs must be at least one")
     if not 0.0 < args.as_mmd_target_weight_min <= args.as_mmd_target_weight_max:
         parser.error("AS-MMD target-weight bounds must satisfy 0 < min <= max")
+    if args.source_stream_cache is not None and args.as_mmd_lambda0 == 0.0:
+        parser.error("--source-stream-cache is only valid with --as-mmd-lambda0 > 0")
+    if args.as_mmd_lambda0 > 0.0:
+        supplied_source_inputs = sum(
+            value is not None
+            for value in (args.as_mmd_source_logits, args.source_stream_cache)
+        )
+        if supplied_source_inputs != 1:
+            parser.error(
+                "--as-mmd-lambda0 > 0 requires exactly one of "
+                "--as-mmd-source-logits or --source-stream-cache"
+            )
 
     try:
         assert_promotion_evidence_gate(
@@ -691,20 +761,39 @@ def main(argv: Sequence[str] | None = None) -> None:
         if args.checkpoint
         else None
     )
+    as_mmd_input_mode = "none"
     as_mmd_source_logits = None
     as_mmd_source_labels = None
+    source_stream_sha256: str | None = None
+    source_selection_record_path = (
+        str(Path(args.source_selection_record).resolve())
+        if args.source_selection_record is not None
+        else None
+    )
+    source_vocabulary: tuple[str, ...] | None = None
+    source_X_stream: np.ndarray | None = None
+    source_labels_stream: np.ndarray | None = None
+    source_domain_indices_stream: np.ndarray | None = None
     if args.as_mmd_lambda0 > 0.0:
-        if args.as_mmd_source_logits is None:
-            raise ValueError("as_mmd_lambda0 > 0 requires --as-mmd-source-logits.")
-        with np.load(args.as_mmd_source_logits, allow_pickle=False) as archive:
-            if "logits" not in archive.files or "labels" not in archive.files:
-                raise ValueError("as-mmd source logits npz requires logits/labels.")
-            as_mmd_source_logits = np.asarray(archive["logits"], dtype=np.float32)
-            as_mmd_source_labels = np.asarray(archive["labels"], dtype=np.int64)
-        if as_mmd_source_logits.ndim != 2 or as_mmd_source_labels.shape != (as_mmd_source_logits.shape[0],):
-            raise ValueError("as-mmd source logits/labels must be aligned (N,classes)/(N,).")
-        if bool(((as_mmd_source_labels < 0) | (as_mmd_source_labels > 1)).any()):
-            raise ValueError("as-mmd source labels must be binary 0/1.")
+        if args.source_stream_cache is not None:
+            as_mmd_input_mode = "source_stream"
+        else:
+            assert args.as_mmd_source_logits is not None
+            as_mmd_input_mode = "frozen_logits"
+            with np.load(args.as_mmd_source_logits, allow_pickle=False) as archive:
+                if "logits" not in archive.files or "labels" not in archive.files:
+                    raise ValueError("as-mmd source logits npz requires logits/labels.")
+                as_mmd_source_logits = np.asarray(archive["logits"], dtype=np.float32)
+                as_mmd_source_labels = np.asarray(archive["labels"], dtype=np.int64)
+            if (
+                as_mmd_source_logits.ndim != 2
+                or as_mmd_source_labels.shape != (as_mmd_source_logits.shape[0],)
+            ):
+                raise ValueError(
+                    "as-mmd source logits/labels must be aligned (N,classes)/(N,)."
+                )
+            if bool(((as_mmd_source_labels < 0) | (as_mmd_source_labels > 1)).any()):
+                raise ValueError("as-mmd source labels must be binary 0/1.")
     head_mode = args.head
     if head_mode == "auto":
         head_mode = "zero_shot" if checkpoint_payload is not None else "linear"
@@ -723,6 +812,84 @@ def main(argv: Sequence[str] | None = None) -> None:
         parser.error(f"--normalization {normalization} requires --checkpoint")
     if head_mode == "zero_shot" and normalization != "source":
         parser.error("zero_shot uses source checkpoint statistics")
+    if as_mmd_input_mode == "source_stream":
+        if checkpoint_payload is None:
+            parser.error("--source-stream-cache requires a SplitBN checkpoint")
+        if head_mode != "full_fine":
+            parser.error("live AS-MMD source-stream adaptation requires --head full_fine")
+        normalization_record = checkpoint_architecture_record(checkpoint_payload)["normalization"]
+        source_splitbn_config = splitbn_config_from_record(normalization_record)
+        if source_splitbn_config is None:
+            parser.error("live AS-MMD source-stream adaptation requires a SplitBN checkpoint")
+        source_cache_path = Path(args.source_stream_cache).resolve()
+        source_dataset = _cached_attested_dataset_memo(str(source_cache_path))
+        source_stream_sha256 = str(loaded_epoch_cache_attestation(source_dataset)["sha256"])
+        if source_dataset.n_channels != dataset.n_channels or source_dataset.n_times != dataset.n_times:
+            raise ValueError(
+                "source-stream cache must match the target cache n_channels/n_times."
+            )
+        if tuple(source_dataset.channel_names) != tuple(dataset.channel_names):
+            raise ValueError("source-stream cache channel names disagree with the target cache.")
+        training_contract = checkpoint_training_contract(checkpoint_payload)
+        contract_channels = training_contract.preprocessing.get("channel_names")
+        if contract_channels is not None and list(contract_channels) != list(
+            source_dataset.channel_names
+        ):
+            raise ValueError(
+                "checkpoint training-contract channel names disagree with the source cache."
+            )
+        axis_record = checkpoint_payload.get("source_domain_axis")
+        if not isinstance(axis_record, Mapping):
+            raise ValueError("checkpoint lacks a source_domain_axis vocabulary.")
+        try:
+            checkpoint_vocabulary, _ = source_domain_axis_from_record(axis_record)
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                f"checkpoint source_domain_axis is invalid: {error}"
+            ) from error
+        source_vocabulary = source_domain_vocabulary(source_dataset)
+        if checkpoint_vocabulary != source_vocabulary:
+            raise ValueError(
+                "checkpoint SplitBN domain vocabulary must exactly match the "
+                f"source-stream cache vocabulary: {checkpoint_vocabulary} != "
+                f"{source_vocabulary}."
+            )
+        if len(checkpoint_vocabulary) != source_splitbn_config.domain_count:
+            raise ValueError(
+                "checkpoint SplitBN domain count disagrees with its source-domain "
+                "vocabulary."
+            )
+        domain_to_index = {
+            domain: domain_index
+            for domain_index, domain in enumerate(checkpoint_vocabulary)
+        }
+        raw_domain_ids = source_domain_ids(source_dataset)
+        source_domain_indices_stream = np.asarray(
+            [domain_to_index[str(domain)] for domain in raw_domain_ids],
+            dtype=np.int64,
+        )
+        source_X_stream = np.asarray(source_dataset.X, dtype=np.float32)
+        source_labels_stream = np.asarray(source_dataset.y, dtype=np.int64)
+        if args.source_selection_record is not None:
+            assert source_selection_record_path is not None
+            selection_path = Path(source_selection_record_path)
+            selection, _ = _load_source_selection(
+                selection_path,
+                source_cache_sha256=source_stream_sha256,
+                row_identity_digest=epoch_row_identity_digest(source_dataset),
+            )
+            if selection.source_count != source_dataset.n_epochs:
+                raise ValueError(
+                    "PDS source-selection source_count disagrees with the loaded "
+                    f"source cache ({selection.source_count} vs {source_dataset.n_epochs})."
+                )
+            selection_mask = np.zeros(source_dataset.n_epochs, dtype=bool)
+            selection_mask[selection.selected_indices] = True
+            source_X_stream = source_X_stream[selection_mask]
+            source_labels_stream = source_labels_stream[selection_mask]
+            source_domain_indices_stream = source_domain_indices_stream[selection_mask]
+        if len(source_X_stream) < 2:
+            raise ValueError("live AS-MMD source stream must retain at least two rows.")
     epochs = (
         0
         if head_mode == "zero_shot"
@@ -914,10 +1081,16 @@ def main(argv: Sequence[str] | None = None) -> None:
                 }
 
             as_mmd_fit_kwargs: dict[str, object] = {}
-            if args.as_mmd_lambda0 > 0.0:
+            if as_mmd_input_mode == "frozen_logits":
                 as_mmd_fit_kwargs = {
                     "source_logits": as_mmd_source_logits,
                     "source_labels": as_mmd_source_labels,
+                }
+            elif as_mmd_input_mode == "source_stream":
+                as_mmd_fit_kwargs = {
+                    "source_X": source_X_stream,
+                    "source_labels": source_labels_stream,
+                    "source_domain_indices": source_domain_indices_stream,
                 }
 
             inner = None
@@ -1314,6 +1487,17 @@ def main(argv: Sequence[str] | None = None) -> None:
                 "as_mmd_warmup_epochs": args.as_mmd_warmup_epochs,
                 "as_mmd_target_weight_min": args.as_mmd_target_weight_min,
                 "as_mmd_target_weight_max": args.as_mmd_target_weight_max,
+                "as_mmd_input_mode": as_mmd_input_mode,
+                "source_stream_cache": (
+                    str(Path(args.source_stream_cache).resolve())
+                    if args.source_stream_cache is not None
+                    else None
+                ),
+                "source_stream_sha256": source_stream_sha256,
+                "source_selection_record": source_selection_record_path,
+                "source_domain_vocabulary": (
+                    None if source_vocabulary is None else list(source_vocabulary)
+                ),
 
                 "fold_local_qc": bool(args.fold_local_qc),
                 "identity_exclusion_policy": args.identity_exclusion_policy,

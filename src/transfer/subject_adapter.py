@@ -7,6 +7,7 @@ can hold out complete temporal groups for early stopping and calibration.
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 
 import numpy as np
@@ -16,7 +17,11 @@ from torch import nn
 from baselines.validation import group_disjoint_validation_split
 from models.adapters import FeatureDomainTransfer
 from models.n2p3net import N2P3Net
-from models.splitbn import SplitBN1d, SplitBN2d
+from models.splitbn import (
+    SplitBN1d,
+    SplitBN2d,
+    install_splitbn_target_calibration_buffers,
+)
 from research.execution import ExpectedSubjectError, SubjectFailureCode
 from transfer.asmmd import asmmd_joint_loss
 from transfer.candidate_set_loss import row_column_candidate_loss
@@ -164,7 +169,12 @@ class SubjectAdapter:
         self._input_mean_t: torch.Tensor | None = None
         self._input_std_t: torch.Tensor | None = None
 
-    def _features(self, X: torch.Tensor) -> torch.Tensor:
+    def _features(
+        self,
+        X: torch.Tensor,
+        *,
+        domain_indices: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         # Gradient enablement follows trainable parameters, not train/eval
         # mode: the adapter path keeps the trunk in eval mode (frozen source
         # statistics, no dropout) while still backpropagating into the target
@@ -172,17 +182,23 @@ class SubjectAdapter:
         trunk_requires_grad = any(
             parameter.requires_grad for parameter in self.trunk.parameters()
         )
-        splitbn_eval_kwargs = self._splitbn_eval_kwargs()
+        if domain_indices is None:
+            forward_kwargs: dict[str, object] = self._splitbn_eval_kwargs()
+        else:
+            # Live source-stream forward: explicit domain routing updates the
+            # source-domain SplitBN buffers and must not consume a target
+            # buffer selector.
+            forward_kwargs = {"domain_indices": domain_indices}
         with torch.set_grad_enabled(trunk_requires_grad):
             if isinstance(self.trunk, FeatureDomainTransfer):
                 features, _, _ = self.trunk.feature_views(
                     X,
                     use_target_adapter=self.config.head_kind == "adapter",
-                    **splitbn_eval_kwargs,
+                    **forward_kwargs,
                 )
                 pooled = self.trunk.pool_features(features)
             else:
-                features = self.trunk.forward_features(X, **splitbn_eval_kwargs)
+                features = self.trunk.forward_features(X, **forward_kwargs)
                 pooled = self.trunk.pool_features(features)
             # AdaptiveAvgPool1d(1) retains a singleton temporal axis, whereas
             # the other readouts already return (B,D).  Normalize the feature
@@ -285,21 +301,187 @@ class SubjectAdapter:
     def training(self) -> bool:
         return self.trunk.training
 
+    def _core_trunk(self) -> N2P3Net:
+        return self.trunk.core if isinstance(self.trunk, FeatureDomainTransfer) else self.trunk
+
+    def _splitbn_config(self):
+        return getattr(self._core_trunk(), "splitbn_config", None)
+
+    def _splitbn_modules(self) -> tuple[nn.Module, ...]:
+        return tuple(
+            module
+            for module in self.trunk.modules()
+            if isinstance(module, (SplitBN1d, SplitBN2d))
+        )
+
     def _splitbn_eval_kwargs(self) -> dict[str, str]:
         """Return the checkpoint-declared unseen-target normalization selector."""
 
-        core = self.trunk.core if isinstance(self.trunk, FeatureDomainTransfer) else self.trunk
-        splitbn_config = getattr(core, "splitbn_config", None)
+        splitbn_config = self._splitbn_config()
         if splitbn_config is None:
             return {}
         return {"eval_buffer_source": splitbn_config.target_buffer_source}
 
-    def _set_training_mode(self, *, trunk_trainable: bool) -> None:
+    def _splitbn_digest(self, *, target: bool) -> str | None:
+        """Deterministic SHA-256 over the SplitBN buffers selected by *target*."""
+
+        modules = self._splitbn_modules()
+        if not modules:
+            return None
+        if target:
+            names = (
+                "pooled_running_mean",
+                "pooled_running_var",
+                "pooled_num_batches_tracked",
+                "target_running_mean",
+                "target_running_var",
+                "target_buffer_initialized",
+            )
+        else:
+            names = ("running_mean", "running_var", "num_batches_tracked")
+        digest = hashlib.sha256()
+        for path, module in self.trunk.named_modules():
+            if not isinstance(module, (SplitBN1d, SplitBN2d)):
+                continue
+            digest.update(path.encode("utf-8"))
+            digest.update(b"\0")
+            for name in names:
+                tensor = getattr(module, name)
+                digest.update(name.encode("utf-8"))
+                digest.update(b"\0")
+                digest.update(str(tuple(tensor.shape)).encode("ascii"))
+                digest.update(b"\0")
+                digest.update(str(tensor.dtype).encode("ascii"))
+                digest.update(b"\0")
+                digest.update(tensor.detach().cpu().contiguous().numpy().tobytes())
+                digest.update(b"\0")
+        return digest.hexdigest()
+
+    def _prepare_live_source_stream(
+        self,
+        source_X: np.ndarray,
+        source_labels: np.ndarray,
+        source_domain_indices: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, int, np.ndarray, np.ndarray]:
+        """Validate live source rows and return normalized-ready arrays plus stats."""
+
+        splitbn_config = self._splitbn_config()
+        if splitbn_config is None:
+            raise ValueError("live AS-MMD requires a SplitBN checkpoint.")
+        if self.config.head_kind != "full_fine":
+            raise ValueError("live AS-MMD requires head_kind='full_fine'.")
+        if self.config.input_mean is None or self.config.input_std is None:
+            raise ValueError("live AS-MMD requires checkpoint input statistics.")
+        source_X = np.asarray(source_X, dtype=np.float32)
+        if source_X.ndim != 3 or source_X.shape[1:] != (
+            self.trunk.n_channels,
+            self.trunk.n_times,
+        ):
+            raise ValueError(
+                "source_X must have shape "
+                f"(N,{self.trunk.n_channels},{self.trunk.n_times}), got {source_X.shape}."
+            )
+        if not np.isfinite(source_X).all():
+            raise ValueError("source_X contains NaN/inf.")
+        if len(source_X) < 2:
+            raise ValueError("live AS-MMD requires at least two source rows.")
+        source_labels = np.asarray(source_labels).astype(np.int64)
+        if source_labels.ndim != 1 or source_labels.shape != (len(source_X),):
+            raise ValueError("source_labels must be a 1D vector aligned with source_X.")
+        if bool(((source_labels < 0) | (source_labels > 1)).any()):
+            raise ValueError("source_labels must be binary 0/1.")
+        source_domain_indices = np.asarray(source_domain_indices)
+        if source_domain_indices.dtype != np.int64:
+            raise ValueError("source_domain_indices must use int64.")
+        if source_domain_indices.ndim != 1 or source_domain_indices.shape != (len(source_X),):
+            raise ValueError(
+                "source_domain_indices must be a 1D vector aligned with source_X."
+            )
+        domain_count = int(splitbn_config.domain_count)
+        if bool(
+            ((source_domain_indices < 0) | (source_domain_indices >= domain_count)).any()
+        ):
+            raise ValueError(
+                "source_domain_indices must lie in [0, domain_count) for the "
+                "checkpoint SplitBN contract."
+            )
+        source_mean = self._validated_external_stats(
+            self.config.input_mean, name="input_mean"
+        )
+        source_std = self._validated_external_stats(
+            self.config.input_std, name="input_std", require_positive=True
+        )
+        return (
+            source_X,
+            source_labels,
+            source_domain_indices,
+            domain_count,
+            source_mean,
+            source_std,
+        )
+
+    def _forward_source_batch(
+        self,
+        X: torch.Tensor,
+        domain_indices: torch.Tensor,
+    ) -> torch.Tensor:
+        """Forward source rows while updating only per-domain SplitBN buffers.
+
+        Live AS-MMD declares source-domain SplitBN updates as its adaptation
+        mechanism. The predeclared target buffer must stay frozen, so the
+        pooled running statistics are suppressed for ``pooled_source``
+        checkpoints. Ordinary BatchNorm is kept in eval mode by
+        ``_set_training_mode`` and is never touched here.
+        """
+
+        modules = self._splitbn_modules()
+        if not modules:
+            raise RuntimeError("live source-stream forward requires SplitBN modules.")
+        previous_flags = [getattr(module, "_freeze_pooled_buffer", False) for module in modules]
+        previous_modes = [module.training for module in modules]
+        try:
+            for module in modules:
+                module._freeze_pooled_buffer = True
+                module.train()
+            return self._forward_head(X, domain_indices=domain_indices)
+        finally:
+            for module, previous_flag, previous_mode in zip(
+                modules, previous_flags, previous_modes, strict=True
+            ):
+                module._freeze_pooled_buffer = previous_flag
+                module.train(previous_mode)
+
+    def _set_training_mode(self, *, trunk_trainable: bool, live_splitbn: bool = False) -> None:
         if self.config.head_kind == "adapter":
             # Deterministic frozen trunk: source BatchNorm statistics and no
             # dropout. The target adapter has no train/eval-dependent layers,
             # so eval-mode forward with enabled gradients is exact.
             self.trunk.eval()
+            return
+        if live_splitbn:
+            if not trunk_trainable:
+                raise RuntimeError("live SplitBN training requires a trainable trunk.")
+            # Live AS-MMD uses the predeclared target buffer for every target
+            # batch and explicit source-domain updates for every source batch.
+            # Ordinary BatchNorm therefore always stays in eval mode, while the
+            # SplitBN modules are put in eval mode here and are only toggled to
+            # train mode inside ``_forward_source_batch``. This is independent
+            # of ``freeze_batchnorm_stats`` by design.
+            self.trunk.train(True)
+            for module in self.trunk.modules():
+                if isinstance(
+                    module,
+                    (
+                        nn.BatchNorm1d,
+                        nn.BatchNorm2d,
+                        nn.BatchNorm3d,
+                        SplitBN1d,
+                        SplitBN2d,
+                    ),
+                ):
+                    module.eval()
+            if self.head is not None:
+                self.head.train()
             return
         self.trunk.train(trunk_trainable)
         splitbn_modules = (SplitBN1d, SplitBN2d)
@@ -337,6 +519,8 @@ class SubjectAdapter:
         target_columns: np.ndarray | None = None,
         candidate_loss_num_rows: int = 6,
         candidate_loss_num_columns: int = 6,
+        source_X: np.ndarray | None = None,
+        source_domain_indices: np.ndarray | None = None,
         source_logits: np.ndarray | torch.Tensor | None = None,
         source_labels: np.ndarray | None = None,
     ) -> SubjectAdapter:
@@ -493,25 +677,82 @@ class SubjectAdapter:
         yt = torch.from_numpy(np.ascontiguousarray(y)).to(self.device)
 
         asmmd_active = bool(self.config.as_mmd_lambda0 > 0.0)
+        as_mmd_input_mode = "none"
+        source_logits_t: torch.Tensor | None = None
+        source_labels_t: torch.Tensor | None = None
+        source_Xt: torch.Tensor | None = None
+        source_domain_t: torch.Tensor | None = None
+        source_count = 0
+        source_domain_count: int | None = None
         if asmmd_active:
-            if source_logits is None or source_labels is None:
-                raise ValueError("as_mmd_lambda0 > 0 requires source_logits and source_labels.")
-            source_logits_t = torch.as_tensor(source_logits, device=self.device).float().detach()
-            source_labels_t = torch.as_tensor(source_labels, device=self.device).long()
-            if source_logits_t.ndim != 2 or source_labels_t.shape != (source_logits_t.shape[0],):
-                raise ValueError("source_logits/source_labels must be aligned (N, classes)/(N,).")
-            if bool(((source_labels_t < 0) | (source_labels_t > 1)).any()):
-                raise ValueError("source_labels must be binary 0/1.")
-            source_count = source_logits_t.shape[0]
-        else:
-            source_logits_t = source_labels_t = None
-            source_count = 0
+            frozen_supplied = (
+                source_logits is not None
+                and source_labels is not None
+                and source_X is None
+                and source_domain_indices is None
+            )
+            live_supplied = (
+                source_logits is None
+                and source_labels is not None
+                and source_X is not None
+                and source_domain_indices is not None
+            )
+            if frozen_supplied == live_supplied:
+                raise ValueError(
+                    "as_mmd_lambda0 > 0 requires exactly one AS-MMD input mode: "
+                    "frozen source_logits/source_labels or live "
+                    "source_X/source_labels/source_domain_indices."
+                )
+            if frozen_supplied:
+                as_mmd_input_mode = "frozen_logits"
+                source_logits_t = (
+                    torch.as_tensor(source_logits, device=self.device).float().detach()
+                )
+                source_labels_t = torch.as_tensor(source_labels, device=self.device).long()
+                if (
+                    source_logits_t.ndim != 2
+                    or source_labels_t.shape != (source_logits_t.shape[0],)
+                ):
+                    raise ValueError(
+                        "source_logits/source_labels must be aligned (N, classes)/(N,)."
+                    )
+                if bool(((source_labels_t < 0) | (source_labels_t > 1)).any()):
+                    raise ValueError("source_labels must be binary 0/1.")
+                source_count = source_logits_t.shape[0]
+            else:
+                as_mmd_input_mode = "source_stream"
+                (
+                    source_X,
+                    source_labels,
+                    source_domain_indices,
+                    source_domain_count,
+                    live_source_mean,
+                    live_source_std,
+                ) = self._prepare_live_source_stream(
+                    source_X,
+                    source_labels,
+                    source_domain_indices,
+                )
+                source_count = len(source_X)
+                standardized_source = (
+                    (source_X - live_source_mean) / live_source_std
+                ).astype(np.float32, copy=False)
+                source_Xt = torch.from_numpy(
+                    np.ascontiguousarray(standardized_source)
+                ).to(self.device)
+                source_labels_t = torch.from_numpy(
+                    np.ascontiguousarray(source_labels)
+                ).to(self.device)
+                source_domain_t = torch.from_numpy(
+                    np.ascontiguousarray(source_domain_indices)
+                ).to(self.device)
 
         torch.manual_seed(self.config.seed)
         if self.device.type == "cuda":
             with torch.cuda.device(self.device):
                 torch.cuda.manual_seed(self.config.seed)
         trunk_trainable = self.config.head_kind == "full_fine"
+        live_splitbn = as_mmd_input_mode == "source_stream"
         self._set_trainable(trunk_trainable=trunk_trainable)
         initial_state = self._clone_state()
         parameters = [p for p in self.trunk.parameters() if p.requires_grad]
@@ -545,6 +786,38 @@ class SubjectAdapter:
         Xt_val = Xt.index_select(0, val_rows) if len(val_rows) else Xt[:0]
         yt_val = yt.index_select(0, val_rows) if len(val_rows) else yt[:0]
 
+        splitbn_config = self._splitbn_config()
+        if (
+            live_splitbn
+            and splitbn_config is not None
+            and splitbn_config.target_buffer_source == "target_calibration"
+            and any(
+                not bool(module.target_buffer_initialized)
+                for module in self._splitbn_modules()
+            )
+        ):
+            install_splitbn_target_calibration_buffers(
+                self.trunk,
+                Xt_train,
+                device=self.device,
+                eval_buffer_source="source_domain",
+                domain_index=0,
+            )
+        if (
+            live_splitbn
+            and splitbn_config is not None
+            and splitbn_config.target_buffer_source == "target_calibration"
+            and any(
+                not bool(module.target_buffer_initialized)
+                for module in self._splitbn_modules()
+            )
+        ):
+            raise RuntimeError(
+                "target_calibration SplitBN buffers were not installed and frozen."
+            )
+        splitbn_source_buffer_digest_before = self._splitbn_digest(target=False)
+        splitbn_target_buffer_digest_before = self._splitbn_digest(target=True)
+
         train_inputs = Xt_train
         val_inputs = Xt_val
         # The adapter path cannot cache trunk features: they change with the
@@ -574,21 +847,47 @@ class SubjectAdapter:
 
         val_losses: list[float] = []
         for epoch_index in range(self.config.epochs):
-            self._set_training_mode(trunk_trainable=trunk_trainable)
+            self._set_training_mode(
+                trunk_trainable=trunk_trainable,
+                live_splitbn=live_splitbn,
+            )
             permutation = torch.randperm(n_train, device=self.device)
             epoch_loss = torch.zeros((), dtype=torch.float32, device=self.device)
             for start in range(0, n_train, self.config.batch_size):
                 rows = permutation[start : start + self.config.batch_size]
                 xb = train_inputs.index_select(0, rows)
                 yb = yt_train.index_select(0, rows)
+                # Target batches always consume the predeclared target buffer.
+                # In live mode the trunk is in train mode for its parameters
+                # and dropout, while SplitBN modules stay in eval mode here and
+                # therefore do not update any running statistics.
                 logits = self._forward_head(xb) if live_forward else self.head(xb)
-                if asmmd_active:
+                if live_splitbn:
+                    assert (
+                        source_Xt is not None
+                        and source_labels_t is not None
+                        and source_domain_t is not None
+                    )
+                    source_rows = torch.randperm(source_count, device=self.device)[
+                        : self.config.batch_size
+                    ]
+                    source_batch_logits = self._forward_source_batch(
+                        source_Xt.index_select(0, source_rows),
+                        source_domain_t.index_select(0, source_rows),
+                    )
+                    source_batch_labels = source_labels_t.index_select(0, source_rows)
+                elif asmmd_active:
                     assert source_logits_t is not None and source_labels_t is not None
                     source_rows = torch.randperm(source_count, device=self.device)[
                         : self.config.batch_size
                     ]
                     source_batch_logits = source_logits_t.index_select(0, source_rows)
                     source_batch_labels = source_labels_t.index_select(0, source_rows)
+                else:
+                    source_batch_logits = None
+                    source_batch_labels = None
+                if asmmd_active:
+                    assert source_batch_logits is not None and source_batch_labels is not None
                     loss, asmmd_diag = asmmd_joint_loss(
                         source_batch_logits,
                         source_batch_labels,
@@ -707,7 +1006,10 @@ class SubjectAdapter:
                 target_columns=target_columns,
                 candidate_loss_num_rows=candidate_loss_num_rows,
                 candidate_loss_num_columns=candidate_loss_num_columns,
+                live_splitbn=live_splitbn,
             )
+        splitbn_source_buffer_digest_after = self._splitbn_digest(target=False)
+        splitbn_target_buffer_digest_after = self._splitbn_digest(target=True)
         self.last_history = {
             "train_losses": train_losses,
             "val_losses": val_losses,
@@ -722,9 +1024,20 @@ class SubjectAdapter:
             "candidate_losses": candidate_losses,
             "refit_candidate_losses": refit_candidate_losses,
             "as_mmd_active": bool(asmmd_active),
+            "as_mmd_input_mode": as_mmd_input_mode,
             "as_mmd_losses": asmmd_losses,
             "as_mmd_lambda0": self.config.as_mmd_lambda0,
             "as_mmd_warmup_epochs": self.config.as_mmd_warmup_epochs,
+            "source_stream_count": (
+                int(source_count) if as_mmd_input_mode == "source_stream" else None
+            ),
+            "source_domain_count": (
+                source_domain_count if as_mmd_input_mode == "source_stream" else None
+            ),
+            "splitbn_source_buffer_digest_before": splitbn_source_buffer_digest_before,
+            "splitbn_source_buffer_digest_after": splitbn_source_buffer_digest_after,
+            "splitbn_target_buffer_digest_before": splitbn_target_buffer_digest_before,
+            "splitbn_target_buffer_digest_after": splitbn_target_buffer_digest_after,
         }
         self._fitted = True
         return self
@@ -744,6 +1057,7 @@ class SubjectAdapter:
         target_columns: np.ndarray | None,
         candidate_loss_num_rows: int,
         candidate_loss_num_columns: int,
+        live_splitbn: bool = False,
     ) -> tuple[list[float], list[dict[str, object]]]:
         """Refit from the same initialization on every chronological prefix row."""
 
@@ -767,6 +1081,27 @@ class SubjectAdapter:
         np.copyto(standardized, 0.0, where=~observed_mask[:, :, None])
         inputs = torch.from_numpy(np.ascontiguousarray(standardized)).to(self.device)
         labels = torch.from_numpy(np.ascontiguousarray(y)).to(self.device)
+
+        splitbn_config = self._splitbn_config()
+        if (
+            live_splitbn
+            and splitbn_config is not None
+            and splitbn_config.target_buffer_source == "target_calibration"
+            and any(
+                not bool(module.target_buffer_initialized)
+                for module in self._splitbn_modules()
+            )
+        ):
+            # ``initial_state`` predates the frozen target-calibration install,
+            # so the full-prefix refit must reinstall it before its first
+            # target-buffer forward.
+            install_splitbn_target_calibration_buffers(
+                self.trunk,
+                inputs,
+                device=self.device,
+                eval_buffer_source="source_domain",
+                domain_index=0,
+            )
 
         trunk_trainable = self.config.head_kind == "full_fine"
         self._set_trainable(trunk_trainable=trunk_trainable)
@@ -804,7 +1139,10 @@ class SubjectAdapter:
             raise ValueError("candidate-loss refit requires complete candidate metadata.")
         row_indices = np.arange(len(y), dtype=np.int64)
         for _ in range(int(epochs)):
-            self._set_training_mode(trunk_trainable=trunk_trainable)
+            self._set_training_mode(
+                trunk_trainable=trunk_trainable,
+                live_splitbn=live_splitbn,
+            )
             permutation = torch.randperm(len(y), device=self.device)
             epoch_loss = torch.zeros((), dtype=torch.float32, device=self.device)
             for start in range(0, len(y), self.config.batch_size):
@@ -925,8 +1263,13 @@ class SubjectAdapter:
         }
 
 
-    def _forward_head(self, X: torch.Tensor) -> torch.Tensor:
-        features = self._features(X)
+    def _forward_head(
+        self,
+        X: torch.Tensor,
+        *,
+        domain_indices: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        features = self._features(X, domain_indices=domain_indices)
         if self.head is not None:
             return self.head(features)
         return self.trunk.classifier(features)

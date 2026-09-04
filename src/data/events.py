@@ -419,6 +419,15 @@ class ScheduledEventTimeline:
         mask = np.isin(np.asarray(self.group_ids).astype(str), tuple(selected))
         if not bool(mask.any()):
             raise ValueError("Scheduled-event subset contains no events.")
+        return self.subset_rows(mask)
+
+    def subset_rows(self, mask: np.ndarray) -> ScheduledEventTimeline:
+        """Return the timeline restricted to the rows selected by *mask*."""
+        mask = np.asarray(mask, dtype=bool)
+        if mask.ndim != 1 or len(mask) != self.n_events:
+            raise ValueError("Scheduled-event row mask must align with n_events.")
+        if not bool(mask.any()):
+            raise ValueError("Scheduled-event row subset contains no events.")
         old_evidence = np.asarray(self.evidence_indices, dtype=np.int64)[mask]
         available_old = old_evidence[old_evidence >= 0]
         remap = {int(old): new for new, old in enumerate(sorted(available_old.tolist()))}

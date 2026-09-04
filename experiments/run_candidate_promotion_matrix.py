@@ -76,6 +76,7 @@ from train.runtime import (  # noqa: E402
     cpu_thread_budget,
     resolve_cpu_worker_plan,
 )
+from train.source_sampling import SOURCE_SELECTION_SCHEMA  # noqa: E402
 from transfer.checkpoint import (  # noqa: E402
     checkpoint_training_contract,
     load_checkpoint_payload,
@@ -97,6 +98,10 @@ _NORMALIZATION_MODES = frozenset({"source", "target_prefix", "shrinkage"})
 _EPOCH_SELECTION_MODES = frozenset({"fixed_budget", "target_time_split"})
 _IDENTITY_POLICIES = frozenset({"source", "source_or_global", "global"})
 _INFERENCE_SCOPES = frozenset({"conditional_frozen_models", "training_procedure"})
+_EUCLIDEAN_ALIGNMENT_MODES = frozenset({"none", "source", "target_calibration"})
+_EUCLIDEAN_REFERENCE_MODES = frozenset({"native_preserve", "common_average"})
+_EUCLIDEAN_ALIGNMENT_FIT_SCHEMA = "n2p3_euclidean_alignment_fit/1"
+_SOURCE_SAMPLER_KINDS = frozenset({"uniform", "target_similarity_diverse", "dense_pds"})
 _SAFE_COMPONENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -111,6 +116,13 @@ class TargetSubjectSpec:
 
 
 @dataclass(frozen=True)
+class EuclideanAlignmentSpec:
+    mode: str
+    cache: Path | None
+    reference_mode: str | None
+
+
+@dataclass(frozen=True)
 class SourceArmSpec:
     name: str
     cache: Path
@@ -119,6 +131,9 @@ class SourceArmSpec:
     selection_domain: str | None
     splitbn_source_weights: tuple[tuple[str, float], ...]
     source_selection_record: Path | None = None
+    euclidean_alignment: EuclideanAlignmentSpec | None = None
+    acw_state: Path | None = None
+    sampler_kind: str | None = None
 
 
 @dataclass(frozen=True)
@@ -141,6 +156,12 @@ class EvaluationArmSpec:
     candidate_loss_temperature: float
     fold_local_qc: bool
     adapt_batchnorm: bool
+    as_mmd_lambda0: float = 0.0
+    as_mmd_warmup_epochs: int = 1
+    as_mmd_target_weight_min: float = 1.0
+    as_mmd_target_weight_max: float = 6.0
+    as_mmd_input: str | None = None
+    as_mmd_source_logits: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -237,6 +258,8 @@ class _AttestedCacheInput:
     source_reference: str
     source_domains: tuple[str, ...]
     resolved_record: Mapping[str, Any]
+    data_alignment: Mapping[str, Any] | None = None
+    ea_reference_mode: str | None = None
 
 
 @dataclass(frozen=True)
@@ -435,7 +458,13 @@ def _parse_source_arms(value: object, root: Path) -> tuple[SourceArmSpec, ...]:
                 "risk_within_domain_unit",
                 "selection_domain",
             },
-            optional={"splitbn_source_weights", "source_selection_record"},
+            optional={
+                "splitbn_source_weights",
+                "source_selection_record",
+                "euclidean_alignment",
+                "acw_state",
+                "sampler_kind",
+            },
             name=name,
         )
         raw_masses = record["source_domain_mass"]
@@ -516,23 +545,145 @@ def _parse_source_arms(value: object, root: Path) -> tuple[SourceArmSpec, ...]:
                     f"{name}.splitbn_source_weights keys must equal the arm's "
                     "source_domain_mass keys when both are declared."
                 )
+        arm_name = _component(record["name"], f"{name}.name")
+        arm_cache = _resolve_plan_path(record["cache"], f"{name}.cache", root)
+        raw_selection_record = record.get("source_selection_record")
+        source_selection_record = (
+            None
+            if raw_selection_record is None
+            else _resolve_plan_path(
+                raw_selection_record, f"{name}.source_selection_record", root
+            )
+        )
+
+        raw_euclidean_alignment = record.get("euclidean_alignment")
+        if raw_euclidean_alignment is None:
+            euclidean_alignment = None
+        else:
+            alignment = _mapping(raw_euclidean_alignment, f"{name}.euclidean_alignment")
+            _keys(
+                alignment,
+                required={"mode"},
+                optional={"cache", "reference_mode"},
+                name=f"{name}.euclidean_alignment",
+            )
+            alignment_mode = _text(
+                alignment["mode"], f"{name}.euclidean_alignment.mode"
+            )
+            if alignment_mode not in _EUCLIDEAN_ALIGNMENT_MODES:
+                raise ValueError(
+                    f"{name}.euclidean_alignment.mode must be one of "
+                    f"{sorted(_EUCLIDEAN_ALIGNMENT_MODES)}."
+                )
+            raw_alignment_cache = alignment.get("cache")
+            raw_reference_mode = alignment.get("reference_mode")
+            reference_mode = (
+                None
+                if raw_reference_mode is None
+                else _text(raw_reference_mode, f"{name}.euclidean_alignment.reference_mode")
+            )
+            if reference_mode is not None and reference_mode not in _EUCLIDEAN_REFERENCE_MODES:
+                raise ValueError(
+                    f"{name}.euclidean_alignment.reference_mode must be one of "
+                    f"{sorted(_EUCLIDEAN_REFERENCE_MODES)}."
+                )
+            if alignment_mode == "none":
+                if raw_alignment_cache is not None:
+                    raise ValueError(
+                        f"{name}.euclidean_alignment.cache must be null/absent "
+                        "when mode is 'none'."
+                    )
+                if reference_mode is not None:
+                    raise ValueError(
+                        f"{name}.euclidean_alignment.reference_mode must be null/absent "
+                        "when mode is 'none'."
+                    )
+                alignment_cache = None
+            else:
+                alignment_cache = (
+                    arm_cache
+                    if raw_alignment_cache is None
+                    else _resolve_plan_path(
+                        raw_alignment_cache, f"{name}.euclidean_alignment.cache", root
+                    )
+                )
+                if alignment_cache != arm_cache:
+                    raise ValueError(
+                        f"{name}.euclidean_alignment.cache must resolve to the source "
+                        f"arm cache {arm_cache}."
+                    )
+            euclidean_alignment = EuclideanAlignmentSpec(
+                mode=alignment_mode,
+                cache=alignment_cache,
+                reference_mode=reference_mode,
+            )
+
+        raw_acw_state = record.get("acw_state")
+        acw_state = (
+            None
+            if raw_acw_state is None
+            else _resolve_plan_path(raw_acw_state, f"{name}.acw_state", root)
+        )
+
+        raw_sampler_kind = record.get("sampler_kind")
+        sampler_kind = (
+            None if raw_sampler_kind is None else _text(raw_sampler_kind, f"{name}.sampler_kind")
+        )
+        if sampler_kind is not None and sampler_kind not in _SOURCE_SAMPLER_KINDS:
+            raise ValueError(
+                f"{name}.sampler_kind must be one of {sorted(_SOURCE_SAMPLER_KINDS)}."
+            )
+        if sampler_kind == "uniform":
+            if source_selection_record is not None:
+                raise ValueError(
+                    f"{name}.sampler_kind='uniform' cannot be combined with "
+                    "source_selection_record."
+                )
+        elif sampler_kind in {"target_similarity_diverse", "dense_pds"}:
+            if source_selection_record is None:
+                raise ValueError(
+                    f"{name}.sampler_kind={sampler_kind!r} requires source_selection_record."
+                )
+            if source_selection_record.is_file():
+                try:
+                    raw_selection = json.loads(
+                        source_selection_record.read_text(encoding="utf-8")
+                    )
+                except (OSError, UnicodeError, json.JSONDecodeError) as error:
+                    raise ValueError(
+                        f"{name}.source_selection_record could not be parsed: {error}"
+                    ) from error
+                selection = _mapping(
+                    raw_selection, f"{name}.source_selection_record"
+                )
+                if selection.get("schema") != SOURCE_SELECTION_SCHEMA:
+                    raise ValueError(
+                        f"{name}.source_selection_record has unsupported schema "
+                        f"{selection.get('schema')!r}; expected {SOURCE_SELECTION_SCHEMA!r}."
+                    )
+                record_sampler_kind = selection.get("sampler_kind")
+                if (
+                    not isinstance(record_sampler_kind, str)
+                    or record_sampler_kind != sampler_kind
+                ):
+                    raise ValueError(
+                        f"{name}.source_selection_record sampler_kind "
+                        f"{record_sampler_kind!r} disagrees with declared "
+                        f"sampler_kind {sampler_kind!r}."
+                    )
+
         arms.append(
             SourceArmSpec(
-                name=_component(record["name"], f"{name}.name"),
-                cache=_resolve_plan_path(record["cache"], f"{name}.cache", root),
+                name=arm_name,
+                cache=arm_cache,
                 source_domain_mass=tuple(sorted(parsed_masses)),
                 risk_within_domain_unit=risk_unit,
                 selection_domain=selection_domain,
                 splitbn_source_weights=tuple(sorted(parsed_splitbn_weights)),
-                source_selection_record=(
-                    None
-                    if record.get("source_selection_record") is None
-                    else _resolve_plan_path(
-                        record["source_selection_record"],
-                        f"{name}.source_selection_record",
-                        root,
-                    )
-                ),
+                source_selection_record=source_selection_record,
+                euclidean_alignment=euclidean_alignment,
+                acw_state=acw_state,
+                sampler_kind=sampler_kind,
             )
         )
     _assert_unique([item.name for item in arms], "source arm names")
@@ -559,7 +710,12 @@ def _parse_replicates(value: object) -> tuple[TrainingReplicateSpec, ...]:
     return tuple(replicates)
 
 
-def _parse_evaluation_arms(value: object) -> tuple[EvaluationArmSpec, ...]:
+def _parse_evaluation_arms(
+    value: object,
+    root: Path,
+    *,
+    training_splitbn_target_buffer_source: str | None,
+) -> tuple[EvaluationArmSpec, ...]:
     records = _sequence(value, "evaluation_arms")
     if not records:
         raise ValueError("evaluation_arms must not be empty.")
@@ -580,7 +736,12 @@ def _parse_evaluation_arms(value: object) -> tuple[EvaluationArmSpec, ...]:
                 "target_stat_weight",
                 "fold_local_qc",
             },
-            optional={"adapt_batchnorm", "candidate_loss_weight", "candidate_loss_temperature"},
+            optional={
+                "adapt_batchnorm",
+                "candidate_loss_weight",
+                "candidate_loss_temperature",
+                "as_mmd",
+            },
             name=name,
         )
         head = _text(record["head"], f"{name}.head")
@@ -620,6 +781,108 @@ def _parse_evaluation_arms(value: object) -> tuple[EvaluationArmSpec, ...]:
         )
         fold_local_qc = _boolean(record["fold_local_qc"], f"{name}.fold_local_qc")
         adapt_batchnorm = _boolean(record.get("adapt_batchnorm", False), f"{name}.adapt_batchnorm")
+        raw_as_mmd = record.get("as_mmd")
+        if raw_as_mmd is None:
+            as_mmd_lambda0 = 0.0
+            as_mmd_warmup_epochs = 1
+            as_mmd_target_weight_min = 1.0
+            as_mmd_target_weight_max = 6.0
+            as_mmd_input = None
+            as_mmd_source_logits = None
+        else:
+            as_mmd = _mapping(raw_as_mmd, f"{name}.as_mmd")
+            _keys(
+                as_mmd,
+                required={"lambda0"},
+                optional={
+                    "warmup_epochs",
+                    "target_weight_min",
+                    "target_weight_max",
+                    "input",
+                    "source_logits",
+                    "splitbn_target_buffer_source",
+                },
+                name=f"{name}.as_mmd",
+            )
+            as_mmd_lambda0 = _nonnegative_number(
+                as_mmd["lambda0"], f"{name}.as_mmd.lambda0"
+            )
+            as_mmd_warmup_epochs = _integer(
+                as_mmd.get("warmup_epochs", 1),
+                f"{name}.as_mmd.warmup_epochs",
+                minimum=1,
+            )
+            as_mmd_target_weight_min = _positive_number(
+                as_mmd.get("target_weight_min", 1.0),
+                f"{name}.as_mmd.target_weight_min",
+            )
+            as_mmd_target_weight_max = _nonnegative_number(
+                as_mmd.get("target_weight_max", 6.0),
+                f"{name}.as_mmd.target_weight_max",
+            )
+            if as_mmd_target_weight_max < as_mmd_target_weight_min:
+                raise ValueError(
+                    f"{name}.as_mmd.target_weight_max must be at least "
+                    "target_weight_min."
+                )
+            raw_as_mmd_splitbn = as_mmd.get("splitbn_target_buffer_source")
+            if raw_as_mmd_splitbn is not None:
+                as_mmd_splitbn = _text(
+                    raw_as_mmd_splitbn,
+                    f"{name}.as_mmd.splitbn_target_buffer_source",
+                )
+                if as_mmd_splitbn != training_splitbn_target_buffer_source:
+                    raise ValueError(
+                        f"{name}.as_mmd.splitbn_target_buffer_source must equal "
+                        "training.splitbn_target_buffer_source "
+                        f"(got {as_mmd_splitbn!r}, expected "
+                        f"{training_splitbn_target_buffer_source!r})."
+                    )
+            raw_as_mmd_input = as_mmd.get("input")
+            raw_as_mmd_source_logits = as_mmd.get("source_logits")
+            if as_mmd_lambda0 == 0.0:
+                if raw_as_mmd_input is not None:
+                    raise ValueError(
+                        f"{name}.as_mmd.input must be null/absent when lambda0 is 0."
+                    )
+                if raw_as_mmd_source_logits is not None:
+                    raise ValueError(
+                        f"{name}.as_mmd.source_logits must be null/absent when lambda0 is 0."
+                    )
+                as_mmd_input = None
+                as_mmd_source_logits = None
+            else:
+                as_mmd_input = _text(
+                    as_mmd.get("input", "source_stream"), f"{name}.as_mmd.input"
+                )
+                if as_mmd_input not in {"source_stream", "frozen_logits"}:
+                    raise ValueError(
+                        f"{name}.as_mmd.input must be 'source_stream' or 'frozen_logits'."
+                    )
+                if as_mmd_input == "source_stream":
+                    if raw_as_mmd_source_logits is not None:
+                        raise ValueError(
+                            f"{name}.as_mmd.source_logits must be null/absent when "
+                            "input is 'source_stream'."
+                        )
+                    as_mmd_source_logits = None
+                else:
+                    if raw_as_mmd_source_logits is None:
+                        raise ValueError(
+                            f"{name}.as_mmd.source_logits is required when input is "
+                            "'frozen_logits'."
+                        )
+                    as_mmd_source_logits = _resolve_plan_path(
+                        raw_as_mmd_source_logits,
+                        f"{name}.as_mmd.source_logits",
+                        root,
+                    )
+                if as_mmd_input == "source_stream" and head != "full_fine":
+                    raise ValueError(
+                        f"{name}.as_mmd source_stream input requires head='full_fine'."
+                    )
+                if head in {"auto", "zero_shot"}:
+                    raise ValueError(f"{name}.as_mmd requires a fitted evaluation head.")
         zero_fit = head in {"auto", "zero_shot"}
         if zero_fit:
             invalid: list[str] = []
@@ -675,6 +938,12 @@ def _parse_evaluation_arms(value: object) -> tuple[EvaluationArmSpec, ...]:
                 candidate_loss_temperature=candidate_loss_temperature,
                 fold_local_qc=fold_local_qc,
                 adapt_batchnorm=adapt_batchnorm,
+                as_mmd_lambda0=as_mmd_lambda0,
+                as_mmd_warmup_epochs=as_mmd_warmup_epochs,
+                as_mmd_target_weight_min=as_mmd_target_weight_min,
+                as_mmd_target_weight_max=as_mmd_target_weight_max,
+                as_mmd_input=as_mmd_input,
+                as_mmd_source_logits=as_mmd_source_logits,
             )
         )
     _assert_unique([arm.name for arm in arms], "evaluation arm names")
@@ -1005,7 +1274,11 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
     training = _parse_training(record["training"])
     _validate_training_source_arms(training, source_arms)
     replicates = _parse_replicates(record["training_replicates"])
-    evaluation_arms = _parse_evaluation_arms(record["evaluation_arms"])
+    evaluation_arms = _parse_evaluation_arms(
+        record["evaluation_arms"],
+        resolution_root,
+        training_splitbn_target_buffer_source=training.splitbn_target_buffer_source,
+    )
     expanded_arm_names = [
         evaluation_arm_name(source_arm.name, evaluation_arm.name)
         for source_arm in source_arms
@@ -1383,6 +1656,38 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                             [
                                 "--zero-shot-feature-cache",
                                 str(zero_shot_feature_path),
+                            ]
+                        )
+                    if evaluation_arm.as_mmd_lambda0 > 0.0:
+                        result_argv.extend(
+                            [
+                                "--as-mmd-lambda0",
+                                str(evaluation_arm.as_mmd_lambda0),
+                                "--as-mmd-warmup-epochs",
+                                str(evaluation_arm.as_mmd_warmup_epochs),
+                                "--as-mmd-target-weight-min",
+                                str(evaluation_arm.as_mmd_target_weight_min),
+                                "--as-mmd-target-weight-max",
+                                str(evaluation_arm.as_mmd_target_weight_max),
+                            ]
+                        )
+                        if evaluation_arm.as_mmd_input == "source_stream":
+                            result_argv.extend(
+                                ["--source-stream-cache", str(arm.cache)]
+                            )
+                        elif evaluation_arm.as_mmd_input == "frozen_logits":
+                            assert evaluation_arm.as_mmd_source_logits is not None
+                            result_argv.extend(
+                                [
+                                    "--as-mmd-source-logits",
+                                    str(evaluation_arm.as_mmd_source_logits),
+                                ]
+                            )
+                    if arm.source_selection_record is not None:
+                        result_argv.extend(
+                            [
+                                "--source-selection-record",
+                                str(arm.source_selection_record),
                             ]
                         )
                     result_argv.extend(
@@ -1997,6 +2302,21 @@ def _load_attested_cache_input(
         if dataset.provenance.get("source_domain_axis") is not None
         else ()
     )
+    raw_data_alignment = dataset.provenance.get("data_alignment")
+    if raw_data_alignment is None:
+        data_alignment = None
+        ea_reference_mode = None
+    elif not isinstance(raw_data_alignment, Mapping):
+        raise ValueError(f"{name} data_alignment provenance must be a JSON mapping.")
+    else:
+        data_alignment = dict(raw_data_alignment)
+        raw_reference_mode = data_alignment.get("reference_mode")
+        if raw_reference_mode is None:
+            ea_reference_mode = None
+        elif not isinstance(raw_reference_mode, str):
+            raise ValueError(f"{name} data_alignment.reference_mode must be a string.")
+        else:
+            ea_reference_mode = raw_reference_mode
     resolved_record = {
         "path": _portable_path(cache_path, dag),
         "cache_sha256": cache_sha256,
@@ -2023,6 +2343,8 @@ def _load_attested_cache_input(
         source_reference=source_reference.strip(),
         source_domains=domains,
         resolved_record=resolved_record,
+        data_alignment=data_alignment,
+        ea_reference_mode=ea_reference_mode,
     )
 
 
@@ -2046,6 +2368,54 @@ def _assert_cache_compatibility(
     if mismatched:
         raise ValueError(
             f"source arm {source_arm!r} cache contract disagrees with target cache: {mismatched}."
+        )
+
+
+def _assert_euclidean_alignment_attestation(
+    arm_name: str,
+    alignment: EuclideanAlignmentSpec,
+    source: _AttestedCacheInput,
+) -> None:
+    field = f"source_arms[{arm_name!r}].euclidean_alignment"
+    if alignment.mode == "none":
+        if source.data_alignment is not None:
+            raise ValueError(
+                f"{field} declares mode='none' but cache {arm_name!r} carries "
+                "data_alignment provenance; a raw cache is required."
+            )
+        return
+    if source.data_alignment is None:
+        raise ValueError(
+            f"{field} declares mode={alignment.mode!r} but cache {arm_name!r} has no "
+            "data_alignment provenance."
+        )
+    schema = source.data_alignment.get("schema")
+    if schema != _EUCLIDEAN_ALIGNMENT_FIT_SCHEMA:
+        raise ValueError(
+            f"{field} requires cache {arm_name!r} data_alignment schema "
+            f"{_EUCLIDEAN_ALIGNMENT_FIT_SCHEMA!r}, got {schema!r}."
+        )
+    scope = source.data_alignment.get("scope")
+    if alignment.mode == "source":
+        if scope not in {"source_rows", "per_domain"}:
+            raise ValueError(
+                f"{field} mode='source' requires cache {arm_name!r} "
+                f"data_alignment.scope in ['source_rows', 'per_domain'], got {scope!r}."
+            )
+    else:
+        if scope != "target_calibration":
+            raise ValueError(
+                f"{field} mode='target_calibration' requires cache {arm_name!r} "
+                f"data_alignment.scope='target_calibration', got {scope!r}."
+            )
+    if (
+        alignment.reference_mode is not None
+        and source.ea_reference_mode != alignment.reference_mode
+    ):
+        raise ValueError(
+            f"{field} reference_mode={alignment.reference_mode!r} disagrees with "
+            f"cache {arm_name!r} data_alignment.reference_mode="
+            f"{source.ea_reference_mode!r}."
         )
 
 
@@ -2098,6 +2468,10 @@ def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
     for arm in plan.source_arms:
         source = cache_by_path[arm.cache.resolve()]
         _assert_cache_compatibility(target, source, source_arm=arm.name)
+        if arm.euclidean_alignment is not None:
+            _assert_euclidean_alignment_attestation(
+                arm.name, arm.euclidean_alignment, source
+            )
         planned_domains = {domain for domain, _ in arm.source_domain_mass}
         splitbn_weight_domains = {
             domain for domain, _ in arm.splitbn_source_weights

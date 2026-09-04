@@ -6,9 +6,11 @@ import numpy as np
 import pytest
 
 from train.source_sampling import (
+    PDSSelection,
     array_digest,
     load_pds_selection_record,
     pds_selection_from_record,
+    select_dense_pds_rows,
     select_pds_rows,
 )
 
@@ -209,3 +211,406 @@ def test_pds_selection_record_rejects_edited_indices_and_source_digest(tmp_path)
             selection.record(),
             expected_source_digest="0" * 64,
         )
+
+def test_tsd_record_keeps_additive_dense_pds_fields_neutral(tmp_path) -> None:
+    source = np.arange(12, dtype=float).reshape(6, 2)
+    target = np.asarray([[5.0, 0.0], [6.0, 0.0]])
+    selection = select_pds_rows(
+        source,
+        target,
+        n_select=3,
+        selection_scope="target_calibration",
+        seed=3,
+    )
+    record = selection.record()
+    assert record["sampler_kind"] == "target_similarity_diverse"
+    assert record["pds_radius"] is None
+    assert record["pds_mingling_mixture"] is None
+    assert record["pds_attempts"] == 0
+    assert record["pds_fallback_count"] == 0
+
+    path = tmp_path / "tsd_selection.json"
+    path.write_text(json.dumps(record), encoding="utf-8")
+    loaded, _ = load_pds_selection_record(path)
+    assert loaded.pds_radius is None
+    assert loaded.pds_mingling_mixture is None
+    assert loaded.pds_attempts == 0
+    assert loaded.pds_fallback_count == 0
+
+
+def test_dense_pds_hard_disk_accepts_beyond_and_rejects_within_radius() -> None:
+    source = np.asarray([[0.0], [0.4], [1.0]])
+    target = np.asarray([[2.0]])
+    labels = np.asarray([0, 0, 1])
+
+    accepted = select_dense_pds_rows(
+        source,
+        target,
+        n_select=2,
+        selection_scope="target_calibration",
+        seed=0,
+        labels=labels,
+        pds_radius=0.5,
+        pds_mingling_mixture=(0.5, 0.5),
+    )
+    assert accepted.selected_indices.tolist() == [2, 0]
+    assert accepted.pds_attempts == 2
+    assert accepted.pds_fallback_count == 0
+    assert float(np.linalg.norm(source[2] - source[0])) > 0.5
+
+    with_fallback = select_dense_pds_rows(
+        source,
+        target,
+        n_select=3,
+        selection_scope="target_calibration",
+        seed=0,
+        labels=labels,
+        pds_radius=0.5,
+        pds_mingling_mixture=(0.5, 0.5),
+        pds_max_attempts=5,
+    )
+    assert with_fallback.selected_indices.tolist() == [2, 0, 1]
+    assert with_fallback.pds_attempts == 5
+    assert with_fallback.pds_fallback_count == 1
+    assert len(np.unique(with_fallback.selected_indices)) == 3
+    assert with_fallback.sampler_kind == "dense_pds"
+    assert with_fallback.bandwidth == 1.0
+    assert with_fallback.bandwidth_estimator == "explicit"
+    assert with_fallback.target_temperature == 1.0
+    assert with_fallback.diversity_weight == 0.0
+
+    tiny_budget = select_dense_pds_rows(
+        source,
+        target,
+        n_select=3,
+        selection_scope="target_calibration",
+        seed=0,
+        labels=labels,
+        pds_radius=0.5,
+        pds_mingling_mixture=(0.5, 0.5),
+        pds_max_attempts=1,
+    )
+    assert tiny_budget.selected_indices.tolist() == [2, 0, 1]
+    assert tiny_budget.pds_attempts == 2
+    assert tiny_budget.pds_fallback_count == 2
+
+
+def test_dense_pds_fallback_breaks_ties_with_rng_permutation() -> None:
+    source = np.asarray([[0.0], [1.0], [1.0]])
+    target = np.asarray([[0.0]])
+    selection = select_dense_pds_rows(
+        source,
+        target,
+        n_select=3,
+        selection_scope="target_calibration",
+        seed=0,
+        labels=np.asarray([0, 1, 2]),
+        pds_radius=0.5,
+        pds_mingling_mixture=(1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0),
+        pds_max_attempts=1,
+    )
+
+    assert selection.selected_indices.tolist() == [1, 0, 2]
+    assert selection.pds_fallback_count == 2
+    assert selection.pds_attempts == 2
+
+
+def test_dense_pds_extreme_coordinates_do_not_cancel_or_underflow() -> None:
+    source = np.asarray([[1e8], [1e8 + 1e-3], [0.0]])
+    target = np.asarray([[0.0]])
+    selection = select_dense_pds_rows(
+        source,
+        target,
+        n_select=2,
+        selection_scope="target_calibration",
+        seed=0,
+        labels=np.asarray([0, 0, 1]),
+        pds_radius=5e-4,
+        pds_mingling_mixture=(1.0 - 1e-12, 1e-12),
+    )
+
+    assert selection.selected_indices.tolist() == [1, 0]
+    assert selection.pds_attempts == 2
+    assert selection.pds_fallback_count == 0
+    assert np.linalg.norm(source[1] - source[0]) > 5e-4
+
+    tiny_source = np.asarray([[0.0], [1e-200]])
+    tiny = select_dense_pds_rows(
+        tiny_source,
+        target,
+        n_select=2,
+        selection_scope="target_calibration",
+        seed=0,
+        labels=np.asarray([0, 1]),
+        pds_radius=1e-201,
+        pds_mingling_mixture=(0.5, 0.5),
+    )
+    assert tiny.selected_indices.tolist() == [1, 0]
+    assert tiny.pds_attempts == 2
+    assert tiny.pds_fallback_count == 0
+
+
+def test_dense_pds_default_mixture_is_empirical_frequency() -> None:
+    source = np.zeros((5, 2))
+    target = np.zeros((1, 2))
+    labels = np.asarray([0, 0, 0, 1, 2])
+
+    selection = select_dense_pds_rows(
+        source,
+        target,
+        n_select=1,
+        selection_scope="target_calibration",
+        seed=11,
+        labels=labels,
+        pds_radius=0.1,
+    )
+
+    assert selection.pds_mingling_mixture is not None
+    np.testing.assert_allclose(
+        selection.pds_mingling_mixture,
+        np.asarray([0.6, 0.2, 0.2]),
+        rtol=1e-12,
+        atol=1e-12,
+    )
+
+
+def test_dense_pds_custom_mixture_is_honored_across_deterministic_seeds() -> None:
+    source = np.zeros((200, 2))
+    target = np.zeros((1, 2))
+    labels = np.asarray([0] * 50 + [1] * 150)
+
+    selected_class_zero = 0
+    for seed in range(1200):
+        selection = select_dense_pds_rows(
+            source,
+            target,
+            n_select=1,
+            selection_scope="target_calibration",
+            seed=seed,
+            labels=labels,
+            pds_radius=0.5,
+            pds_mingling_mixture=(0.8, 0.2),
+        )
+        selected_class_zero += int(labels[selection.selected_indices[0]] == 0)
+
+    assert 850 <= selected_class_zero <= 1050
+
+
+def test_dense_pds_target_features_only_bind_provenance() -> None:
+    source = np.asarray([[0.0], [0.5], [1.0], [2.0]])
+    labels = np.asarray([0, 0, 1, 1])
+    first = select_dense_pds_rows(
+        source,
+        np.asarray([[10.0]]),
+        n_select=3,
+        selection_scope="target_calibration",
+        seed=4,
+        labels=labels,
+        pds_radius=0.25,
+        pds_mingling_mixture=(0.5, 0.5),
+        pds_max_attempts=100,
+    )
+    second = select_dense_pds_rows(
+        source,
+        np.asarray([[-10.0]]),
+        n_select=3,
+        selection_scope="target_calibration",
+        seed=4,
+        labels=labels,
+        pds_radius=0.25,
+        pds_mingling_mixture=(0.5, 0.5),
+        pds_max_attempts=100,
+    )
+
+    np.testing.assert_array_equal(first.selected_indices, second.selected_indices)
+    assert first.target_digest != second.target_digest
+
+
+def test_dense_pds_selection_record_round_trip_and_legacy(tmp_path) -> None:
+    source = np.asarray([[0.0], [0.4], [1.0]])
+    target = np.asarray([[2.0]])
+    selection = select_dense_pds_rows(
+        source,
+        target,
+        n_select=3,
+        selection_scope="target_calibration",
+        seed=0,
+        labels=np.asarray([0, 0, 1]),
+        pds_radius=0.5,
+        pds_mingling_mixture=(0.5, 0.5),
+        pds_max_attempts=5,
+    )
+    record = selection.record()
+    assert record["sampler_kind"] == "dense_pds"
+    assert record["pds_radius"] == 0.5
+    assert record["pds_mingling_mixture"] == [0.5, 0.5]
+    assert record["pds_attempts"] == 5
+    assert record["pds_fallback_count"] == 1
+
+    path = tmp_path / "dense_pds_selection.json"
+    path.write_text(json.dumps(record), encoding="utf-8")
+    loaded, raw = load_pds_selection_record(path)
+
+    np.testing.assert_array_equal(loaded.selected_indices, selection.selected_indices)
+    assert loaded.record() == selection.record()
+    assert raw["pds_radius"] == 0.5
+
+    legacy_record = dict(record)
+    legacy_record["schema"] = "n2p3_pds_source_selection/1"
+    legacy = pds_selection_from_record(legacy_record)
+    assert legacy.sampler_kind == "target_similarity_diverse"
+    assert legacy.pds_radius is None
+    assert legacy.pds_mingling_mixture is None
+    assert legacy.pds_attempts == 0
+    assert legacy.pds_fallback_count == 0
+
+    malformed = dict(record)
+    malformed["pds_attempts"] = float("inf")
+    with pytest.raises(ValueError, match="invalid PDS source-selection dense fields"):
+        pds_selection_from_record(malformed)
+    malformed["pds_attempts"] = 1.5
+    with pytest.raises(ValueError, match="invalid PDS source-selection dense fields"):
+        pds_selection_from_record(malformed)
+
+
+def test_dense_pds_validation_errors() -> None:
+    source = np.zeros((4, 2))
+    target = np.zeros((2, 2))
+    labels = np.asarray([0, 0, 1, 1])
+
+    with pytest.raises(ValueError, match="labels"):
+        select_dense_pds_rows(
+            source,
+            target,
+            n_select=2,
+            selection_scope="target_calibration",
+            labels=None,
+        )
+    with pytest.raises(ValueError, match="align"):
+        select_dense_pds_rows(
+            source,
+            target,
+            n_select=2,
+            selection_scope="target_calibration",
+            labels=np.asarray([0, 1]),
+        )
+    with pytest.raises(ValueError, match="integer"):
+        select_dense_pds_rows(
+            source,
+            target,
+            n_select=2,
+            selection_scope="target_calibration",
+            labels=np.asarray(["a", "b", "c", "d"]),
+        )
+    with pytest.raises(ValueError, match="at least two"):
+        select_dense_pds_rows(
+            source,
+            target,
+            n_select=2,
+            selection_scope="target_calibration",
+            labels=np.zeros(4, dtype=int),
+        )
+    with pytest.raises(ValueError, match="pds_radius"):
+        select_dense_pds_rows(
+            source,
+            target,
+            n_select=2,
+            selection_scope="target_calibration",
+            labels=labels,
+            pds_radius=0.0,
+        )
+    with pytest.raises(ValueError, match="pds_radius"):
+        select_dense_pds_rows(
+            source,
+            target,
+            n_select=2,
+            selection_scope="target_calibration",
+            labels=labels,
+            pds_radius=np.inf,
+        )
+    with pytest.raises(ValueError, match="pds_max_attempts"):
+        select_dense_pds_rows(
+            source,
+            target,
+            n_select=2,
+            selection_scope="target_calibration",
+            labels=labels,
+            pds_max_attempts=0,
+        )
+    with pytest.raises(ValueError, match="align"):
+        select_dense_pds_rows(
+            source,
+            target,
+            n_select=2,
+            selection_scope="target_calibration",
+            labels=labels,
+            pds_mingling_mixture=(0.5, 0.25, 0.25),
+        )
+    with pytest.raises(ValueError, match="positive"):
+        select_dense_pds_rows(
+            source,
+            target,
+            n_select=2,
+            selection_scope="target_calibration",
+            labels=labels,
+            pds_mingling_mixture=(0.0, 1.0),
+        )
+    with pytest.raises(ValueError, match="sum"):
+        select_dense_pds_rows(
+            source,
+            target,
+            n_select=2,
+            selection_scope="target_calibration",
+            labels=labels,
+            pds_mingling_mixture=(0.5, 0.4),
+        )
+
+    valid_kwargs = dict(
+        selected_indices=np.asarray([0, 2]),
+        source_count=4,
+        target_count=2,
+        selection_scope="target_calibration",
+        seed=0,
+        target_temperature=1.0,
+        diversity_weight=1.0,
+        bandwidth=1.0,
+        source_digest="1" * 64,
+        target_digest="2" * 64,
+        selected_digest=array_digest(np.asarray([0, 2])),
+    )
+    with pytest.raises(ValueError, match="pds_radius"):
+        PDSSelection(
+            **valid_kwargs,
+            sampler_kind="dense_pds",
+            pds_mingling_mixture=(0.5, 0.5),
+            pds_attempts=1,
+        )
+    with pytest.raises(ValueError, match="mixture"):
+        PDSSelection(
+            **valid_kwargs,
+            sampler_kind="dense_pds",
+            pds_radius=1.0,
+            pds_mingling_mixture=[0.5, 0.5],
+            pds_attempts=1,
+        )
+    with pytest.raises(ValueError, match="pds_attempts"):
+        PDSSelection(
+            **valid_kwargs,
+            sampler_kind="dense_pds",
+            pds_radius=1.0,
+            pds_mingling_mixture=(0.5, 0.5),
+            pds_attempts=0,
+        )
+    with pytest.raises(ValueError, match="fallback"):
+        PDSSelection(
+            **valid_kwargs,
+            sampler_kind="dense_pds",
+            pds_radius=1.0,
+            pds_mingling_mixture=(0.5, 0.5),
+            pds_attempts=1,
+            pds_fallback_count=2,
+        )
+    with pytest.raises(ValueError, match="radius"):
+        PDSSelection(**valid_kwargs, pds_radius=1.0)
+    with pytest.raises(ValueError, match="attempt"):
+        PDSSelection(**valid_kwargs, pds_attempts=1)

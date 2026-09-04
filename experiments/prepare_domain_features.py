@@ -1,8 +1,11 @@
-"""Build an explicit feature matrix from an attested EpochDataset for GALIA/PDS.
+"""Build an explicit feature matrix from an attested EpochDataset for ACW/TSD.
 
 The default lift is identity flattening ``(N,C,T) -> (N,C*T)``, recorded
 explicitly.  Optional spatial/temporal basis files may be supplied later;
-missing channels are never padded implicitly.
+missing channels are never padded implicitly.  The adjacent record carries the
+source cache's declared row scope (for example the target-calibration scope
+written by ``prepare_target_calibration_cache.py``) so downstream samplers can
+fail closed instead of trusting an unrestricted target cache.
 """
 
 from __future__ import annotations
@@ -75,6 +78,7 @@ def main() -> None:
         "source_cache": str(args.dataset_cache.resolve(strict=True)),
         "source_cache_sha256": str(loaded_epoch_cache_attestation(dataset)["sha256"]),
         "row_identity_digest": epoch_row_identity_digest(dataset),
+        "dataset_scope": dict(dataset.provenance.get("target_calibration_scope") or {}),
         "shape": list(features.shape),
         "spatial_lift": {
             "kind": spatial_kind,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from math import isclose, isfinite
@@ -247,6 +248,11 @@ class _SplitBatchNorm(nn.Module):
         self.register_buffer("target_running_mean", torch.zeros(self.num_features))
         self.register_buffer("target_running_var", torch.ones(self.num_features))
         self.register_buffer("target_buffer_initialized", torch.zeros((), dtype=torch.bool))
+        # Live source-stream training may suppress the pooled running-statistics
+        # update so the predeclared pooled-source target buffer stays frozen while
+        # the per-domain source buffers continue to adapt. The flag is a plain
+        # runtime attribute (not a buffer) and never appears in ``state_dict``.
+        self._freeze_pooled_buffer = False
 
     def reset_running_stats(self) -> None:
         self.running_mean.zero_()
@@ -473,7 +479,8 @@ class _SplitBatchNorm(nn.Module):
             if inputs.shape[0] == 0:
                 raise ValueError("SplitBN training requires a non-empty batch.")
             self._validate_training_observations(inputs, indices)
-            self._update_pooled_buffer(inputs)
+            if not getattr(self, "_freeze_pooled_buffer", False):
+                self._update_pooled_buffer(inputs)
             return self._normalize_domains(inputs, indices, update=True)
 
         if eval_buffer_source is None:
@@ -540,6 +547,214 @@ class SplitBN2d(_SplitBatchNorm):
     _expected_dims = (4,)
 
 
+
+def install_splitbn_target_calibration_buffers(
+    model: nn.Module,
+    inputs: torch.Tensor | list[torch.Tensor],
+    *,
+    device: torch.device | str,
+    batch_size: int = 256,
+    eval_buffer_source: str = SPLITBN_SOURCE_DOMAIN_BUFFER,
+    domain_index: int = 0,
+) -> dict[str, dict[str, float | int | str]]:
+    """Compute and install frozen target-calibration buffers for every SplitBN site.
+
+    The calibration forward runs in eval mode so neither source-domain nor target
+    running statistics are mutated while the pre-normalization activations are
+    captured. By default the forward normalizes with the source-domain buffer at
+    ``domain_index`` (``eval_buffer_source="source_domain"``); pass
+    ``eval_buffer_source="target_calibration"`` to normalize with target buffers
+    when they have already been installed. If every target buffer is already
+    frozen, the returned statistics are diagnostic only and the installed values
+    are left untouched.
+    """
+
+    if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
+        raise ValueError("batch_size must be a positive integer.")
+    if isinstance(domain_index, bool) or not isinstance(domain_index, int) or domain_index < 0:
+        raise ValueError("domain_index must be a non-negative integer.")
+    if not isinstance(eval_buffer_source, str):
+        raise TypeError("eval_buffer_source must be a string.")
+    if eval_buffer_source not in {SPLITBN_SOURCE_DOMAIN_BUFFER, "target_calibration"}:
+        raise ValueError(
+            "target-calibration helper supports eval_buffer_source in "
+            f"{sorted({SPLITBN_SOURCE_DOMAIN_BUFFER, 'target_calibration'})}."
+        )
+    splitbn_modules = [
+        (path, module)
+        for path, module in model.named_modules()
+        if isinstance(module, (SplitBN1d, SplitBN2d))
+    ]
+    if not splitbn_modules:
+        raise ValueError("model contains no SplitBN1d/SplitBN2d modules.")
+    mismatched = [
+        path for path, module in splitbn_modules if module.target_buffer_source != "target_calibration"
+    ]
+    if mismatched:
+        raise ValueError(
+            "install_splitbn_target_calibration_buffers requires every SplitBN module "
+            "to declare target_buffer_source='target_calibration'; found "
+            f"{mismatched}."
+        )
+    if domain_index >= min(module.domain_count for _, module in splitbn_modules):
+        raise ValueError("domain_index is outside the SplitBN source-domain contract.")
+    initialized = {path: bool(module.target_buffer_initialized) for path, module in splitbn_modules}
+    any_initialized = any(initialized.values())
+    if any_initialized and not all(initialized.values()):
+        raise ValueError("SplitBN target calibration buffers are partially initialized.")
+
+    if isinstance(inputs, torch.Tensor):
+        raw_chunks: list[torch.Tensor] = [inputs]
+    else:
+        try:
+            raw_chunks = list(inputs)
+        except TypeError as error:
+            raise TypeError("inputs must be a torch.Tensor or a list of torch.Tensors.") from error
+    if not raw_chunks:
+        raise ValueError("inputs must contain at least one calibration batch.")
+    for chunk_index, chunk in enumerate(raw_chunks):
+        if not isinstance(chunk, torch.Tensor):
+            raise TypeError(f"calibration batch {chunk_index} must be a torch.Tensor.")
+        if chunk.ndim < 2:
+            raise ValueError(
+                f"calibration batch {chunk_index} must have a channel axis, got {tuple(chunk.shape)}."
+            )
+        if chunk.shape[0] == 0:
+            raise ValueError(f"calibration batch {chunk_index} is empty.")
+    resolved_device = torch.device(device)
+    chunks = [chunk.detach().to(resolved_device) for chunk in raw_chunks]
+
+    forward = getattr(model, "forward_features", None)
+    if not callable(forward):
+        forward = model.forward
+
+    captured: dict[str, torch.Tensor | None] = {path: None for path, _ in splitbn_modules}
+
+    def capture_hook(
+        module: nn.Module,
+        args: tuple[torch.Tensor, ...],
+        *,
+        module_path: str,
+    ) -> None:
+        if not args or not isinstance(args[0], torch.Tensor):
+            raise RuntimeError(f"SplitBN module {module_path!r} received no tensor input.")
+        captured[module_path] = args[0].detach()
+
+    handles = [
+        module.register_forward_pre_hook(
+            lambda _module, _args, _path=path: capture_hook(
+                _module, _args, module_path=_path
+            )
+        )
+        for path, module in splitbn_modules
+    ]
+    means: dict[str, torch.Tensor] = {}
+    variances: dict[str, torch.Tensor] = {}
+    second_moments: dict[str, torch.Tensor] = {}
+    counts: dict[str, int] = {}
+    calibration_rows = 0
+    was_training = bool(model.training)
+    model.eval()
+    try:
+        with torch.no_grad():
+            for chunk in chunks:
+                for path in captured:
+                    captured[path] = None
+                for start in range(0, chunk.shape[0], batch_size):
+                    batch = chunk[start : start + batch_size]
+                    if eval_buffer_source == SPLITBN_SOURCE_DOMAIN_BUFFER:
+                        domain_indices = torch.full(
+                            (batch.shape[0],),
+                            int(domain_index),
+                            device=batch.device,
+                            dtype=torch.long,
+                        )
+                        forward_kwargs: dict[str, object] = {
+                            "eval_buffer_source": SPLITBN_SOURCE_DOMAIN_BUFFER,
+                            "domain_indices": domain_indices,
+                        }
+                    else:
+                        forward_kwargs = {"eval_buffer_source": eval_buffer_source}
+                    forward(batch, **forward_kwargs)
+                    calibration_rows += int(batch.shape[0])
+                    for path, module in splitbn_modules:
+                        value = captured[path]
+                        if value is None:
+                            raise RuntimeError(
+                                f"SplitBN module {path!r} was not reached during the "
+                                "calibration forward; the model architecture is unsupported."
+                            )
+                        if value.ndim < 2 or value.shape[1] != module.num_features:
+                            raise RuntimeError(
+                                f"SplitBN module {path!r} captured malformed pre-normalization "
+                                f"input {tuple(value.shape)}."
+                            )
+                        reduction = (0, *tuple(range(2, value.ndim)))
+                        count = value.numel() // int(module.num_features)
+                        chunk_mean = value.double().mean(dim=reduction)
+                        chunk_variance = value.double().var(dim=reduction, unbiased=False)
+                        previous_count = counts.get(path, 0)
+                        total_count = previous_count + count
+                        if path not in means:
+                            means[path] = chunk_mean.clone()
+                            second_moments[path] = chunk_variance * count
+                        else:
+                            previous_mean = means[path]
+                            delta = chunk_mean - previous_mean
+                            updated_mean = previous_mean + delta * (count / total_count)
+                            delta_after = chunk_mean - updated_mean
+                            second_moments[path] = (
+                                second_moments[path]
+                                + chunk_variance * count
+                                + delta * delta_after * count
+                            )
+                            means[path] = updated_mean
+                        counts[path] = total_count
+        for path, _module in splitbn_modules:
+            count = counts.get(path, 0)
+            if count <= 0:
+                raise RuntimeError(f"SplitBN module {path!r} observed no calibration rows.")
+            variances[path] = second_moments[path] / count
+        if not any_initialized:
+            for path, module in splitbn_modules:
+                module.install_target_calibration_buffer(
+                    means[path].to(
+                        device=module.target_running_mean.device,
+                        dtype=module.target_running_mean.dtype,
+                    ),
+                    variances[path].to(
+                        device=module.target_running_var.device,
+                        dtype=module.target_running_var.dtype,
+                    ),
+                    frozen=True,
+                )
+    finally:
+        for handle in handles:
+            handle.remove()
+        model.train(was_training)
+
+    def _tensor_digest(*tensors: torch.Tensor) -> str:
+        digest = hashlib.sha256()
+        for tensor in tensors:
+            digest.update(str(tuple(tensor.shape)).encode("ascii"))
+            digest.update(b"\0")
+            digest.update(str(tensor.dtype).encode("ascii"))
+            digest.update(b"\0")
+            digest.update(tensor.detach().cpu().contiguous().numpy().tobytes())
+        return digest.hexdigest()
+
+    return {
+        path: {
+            "mean_digest": _tensor_digest(means[path]),
+            "variance_digest": _tensor_digest(variances[path]),
+            "shape": list(means[path].shape),
+            "sample_count": int(calibration_rows),
+            "observation_count": int(counts[path]),
+        }
+        for path, _ in splitbn_modules
+    }
+
+
 __all__ = [
     "NORMALIZATION_SCHEMA",
     "SPLITBN_SOURCE_DOMAIN_BUFFER",
@@ -549,6 +764,7 @@ __all__ = [
     "SplitBN2d",
     "SplitBNConfig",
     "batchnorm_record",
+    "install_splitbn_target_calibration_buffers",
     "normalization_record",
     "resolve_splitbn_config",
     "splitbn_config_from_record",

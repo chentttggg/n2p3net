@@ -137,6 +137,7 @@ def _cache_dataset(
     authority_subjects: tuple[str, ...],
     position_offset: float = 0.0,
     source_domains: tuple[str, ...] | None = None,
+    data_alignment: dict[str, Any] | None = None,
 ) -> EpochDataset:
     identity = build_channel_identity(("Fz", "Cz", "Pz"), allow_missing_positions=False)
     positions = np.asarray(identity.coords, dtype=float).copy()
@@ -195,6 +196,7 @@ def _cache_dataset(
                 if source_domains is not None
                 else {}
             ),
+            **({"data_alignment": data_alignment} if data_alignment is not None else {}),
         },
         identity_table=DatasetIdentityTable(
             tuple(
@@ -484,6 +486,22 @@ def test_plan_round_trips_source_selection_record_and_forwards_to_pretraining(
     assert selected.argv[selected.argv.index("--source-selection-record") + 1] == str(expected)
     assert "--source-selection-record" not in unselected.argv
 
+    selected_result_batch = next(
+        task
+        for task in dag.tasks
+        if task.task_id == "result_batch/source_a/rep01/p01"
+    )
+    unselected_result_batch = next(
+        task
+        for task in dag.tasks
+        if task.task_id == "result_batch/source_ab/rep01/p01"
+    )
+    for job in dag.result_batch_job_records[selected_result_batch.task_id]["jobs"]:
+        argv = list(job["argv"])
+        assert argv[argv.index("--source-selection-record") + 1] == str(expected)
+    for job in dag.result_batch_job_records[unselected_result_batch.task_id]["jobs"]:
+        assert "--source-selection-record" not in job["argv"]
+
 
 def test_plan_rejects_invalid_source_selection_record(tmp_path: Path) -> None:
     record = _plan_record()
@@ -637,6 +655,28 @@ def test_cloud_example_is_explicitly_row_column_development_not_brainsync() -> N
     assert "brainsync" not in raw.casefold()
     assert plan.training.splitbn_target_buffer_source == "pooled_source"
     assert plan.training.source_residual_drop_p == 0.3
+
+
+
+def test_domain_transfer_v2_ablation_example_parses_new_fields() -> None:
+    example = (
+        Path(matrix.__file__).resolve().parent.parent
+        / "configs"
+        / "domain_transfer_v2_ablation.example.json"
+    )
+    plan = matrix.load_plan(example)
+
+    assert len(plan.source_arms) == 5
+    assert plan.source_arms[0].euclidean_alignment is not None
+    assert plan.source_arms[0].euclidean_alignment.mode == "none"
+    assert plan.source_arms[0].sampler_kind == "uniform"
+    assert plan.source_arms[2].euclidean_alignment is not None
+    assert plan.source_arms[2].euclidean_alignment.mode == "target_calibration"
+    assert plan.source_arms[2].euclidean_alignment.reference_mode == "native_preserve"
+    assert plan.source_arms[3].sampler_kind == "target_similarity_diverse"
+    assert plan.source_arms[3].source_selection_record is not None
+    assert plan.source_arms[4].sampler_kind == "dense_pds"
+    assert all(arm.as_mmd_lambda0 == 0.0 for arm in plan.evaluation_arms)
 
 
 @pytest.mark.parametrize(
@@ -1761,3 +1801,359 @@ def test_plan_supports_result_worker_and_thread_tuning(tmp_path: Path) -> None:
     )
     assert "--cpu-threads" in argv
     assert argv[argv.index("--cpu-threads") + 1] == "1"
+
+
+def test_plan_round_trips_euclidean_alignment_acw_state_and_sampler_kind(
+    tmp_path: Path,
+) -> None:
+    record = _plan_record()
+    arm = record["source_arms"][0]
+    arm["euclidean_alignment"] = {
+        "mode": "source",
+        "cache": "source-a.npz",
+        "reference_mode": "native_preserve",
+    }
+    arm["acw_state"] = "offline/source-a.acw.json"
+    arm["sampler_kind"] = "uniform"
+
+    plan = _load(tmp_path, record)
+    parsed = plan.source_arms[0]
+
+    assert parsed.sampler_kind == "uniform"
+    assert parsed.acw_state == (tmp_path / "offline" / "source-a.acw.json").resolve()
+    assert parsed.euclidean_alignment is not None
+    assert parsed.euclidean_alignment.mode == "source"
+    assert parsed.euclidean_alignment.cache == (tmp_path / "source-a.npz").resolve()
+    assert parsed.euclidean_alignment.reference_mode == "native_preserve"
+
+    # An omitted alignment cache defaults to the source arm cache.
+    arm["euclidean_alignment"] = {"mode": "source", "reference_mode": "common_average"}
+    plan = _load(tmp_path, record)
+    alignment = plan.source_arms[0].euclidean_alignment
+    assert alignment is not None
+    assert alignment.cache == plan.source_arms[0].cache
+    assert alignment.reference_mode == "common_average"
+
+    arm["euclidean_alignment"] = {"mode": "none"}
+    plan = _load(tmp_path, record)
+    alignment = plan.source_arms[0].euclidean_alignment
+    assert alignment is not None
+    assert alignment.mode == "none"
+    assert alignment.cache is None
+    assert alignment.reference_mode is None
+
+
+@pytest.mark.parametrize(
+    ("alignment", "match"),
+    [
+        ({"mode": "bogus"}, "euclidean_alignment.mode"),
+        ({"mode": "source", "cache": "source-ab.npz"}, "must resolve to the source arm cache"),
+        ({"mode": "source", "reference_mode": "identity"}, "reference_mode must be one of"),
+        ({"mode": "none", "cache": "source-a.npz"}, "cache must be null/absent"),
+        (
+            {"mode": "none", "reference_mode": "native_preserve"},
+            "reference_mode must be null/absent",
+        ),
+    ],
+)
+def test_plan_rejects_invalid_euclidean_alignment_fields(
+    tmp_path: Path,
+    alignment: dict[str, Any],
+    match: str,
+) -> None:
+    record = _plan_record()
+    record["source_arms"][0]["euclidean_alignment"] = alignment
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, record)
+
+
+def test_sampler_kind_is_cross_checked_against_existing_selection_record(
+    tmp_path: Path,
+) -> None:
+    selection_dir = tmp_path / "selection"
+    selection_dir.mkdir()
+    selection_path = selection_dir / "source-a.json"
+    selection_path.write_text(
+        json.dumps(
+            {
+                "schema": "n2p3_source_selection/2",
+                "sampler_kind": "target_similarity_diverse",
+            }
+        ),
+        encoding="utf-8",
+    )
+    record = _plan_record()
+    arm = record["source_arms"][0]
+    arm["source_selection_record"] = "selection/source-a.json"
+    arm["sampler_kind"] = "target_similarity_diverse"
+
+    assert _load(tmp_path, record).source_arms[0].sampler_kind == (
+        "target_similarity_diverse"
+    )
+
+    selection_path.write_text(
+        json.dumps(
+            {"schema": "n2p3_source_selection/2", "sampler_kind": "dense_pds"}
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="disagrees with declared"):
+        _load(tmp_path, record)
+
+    selection_path.write_text(
+        json.dumps(
+            {"schema": "n2p3_source_selection/1", "sampler_kind": "target_similarity_diverse"}
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="unsupported schema"):
+        _load(tmp_path, record)
+
+
+def test_sampler_kind_record_combinations_and_missing_files(tmp_path: Path) -> None:
+    record = _plan_record()
+    arm = record["source_arms"][0]
+    arm["sampler_kind"] = "uniform"
+    arm["source_selection_record"] = "selection/source-a.json"
+    with pytest.raises(ValueError, match="cannot be combined"):
+        _load(tmp_path, record)
+
+    arm.pop("source_selection_record")
+    arm["sampler_kind"] = "dense_pds"
+    with pytest.raises(ValueError, match="requires source_selection_record"):
+        _load(tmp_path, record)
+
+    arm["source_selection_record"] = "selection/missing.json"
+    plan = _load(tmp_path, record)
+    assert plan.source_arms[0].sampler_kind == "dense_pds"
+    assert plan.source_arms[0].source_selection_record == (
+        tmp_path / "selection" / "missing.json"
+    ).resolve()
+
+
+def test_plan_parses_as_mmd_source_stream_full_fine(tmp_path: Path) -> None:
+    record = _plan_record()
+    arm = record["evaluation_arms"][1]
+    arm["head"] = "full_fine"
+    arm["as_mmd"] = {
+        "lambda0": 0.25,
+        "warmup_epochs": 3,
+        "target_weight_min": 2.0,
+        "target_weight_max": 8.0,
+        "input": "source_stream",
+    }
+
+    plan = _load(tmp_path, record)
+    parsed = plan.evaluation_arms[1]
+
+    assert parsed.as_mmd_lambda0 == 0.25
+    assert parsed.as_mmd_warmup_epochs == 3
+    assert parsed.as_mmd_target_weight_min == 2.0
+    assert parsed.as_mmd_target_weight_max == 8.0
+    assert parsed.as_mmd_input == "source_stream"
+    assert parsed.as_mmd_source_logits is None
+
+    arm["as_mmd"] = {"lambda0": 0.1}
+    parsed = _load(tmp_path, record).evaluation_arms[1]
+    assert parsed.as_mmd_warmup_epochs == 1
+    assert parsed.as_mmd_target_weight_min == 1.0
+    assert parsed.as_mmd_target_weight_max == 6.0
+    assert parsed.as_mmd_input == "source_stream"
+
+
+def test_plan_parses_frozen_logits_as_mmd_and_requires_source_logits(
+    tmp_path: Path,
+) -> None:
+    record = _plan_record()
+    arm = record["evaluation_arms"][1]
+    arm["as_mmd"] = {
+        "lambda0": 0.5,
+        "input": "frozen_logits",
+        "source_logits": "offline/logits.npz",
+    }
+
+    plan = _load(tmp_path, record)
+    parsed = plan.evaluation_arms[1]
+    assert parsed.head == "linear"
+    assert parsed.as_mmd_input == "frozen_logits"
+    assert parsed.as_mmd_source_logits == (tmp_path / "offline" / "logits.npz").resolve()
+
+    arm["as_mmd"].pop("source_logits")
+    with pytest.raises(ValueError, match="source_logits is required"):
+        _load(tmp_path, record)
+
+    arm["as_mmd"] = {"lambda0": 0.5, "source_logits": "offline/logits.npz"}
+    with pytest.raises(ValueError, match="source_logits must be null/absent"):
+        _load(tmp_path, record)
+
+
+def test_as_mmd_zero_lambda_forbids_input_and_source_logits(tmp_path: Path) -> None:
+    record = _plan_record()
+    arm = record["evaluation_arms"][1]
+    arm["head"] = "full_fine"
+    arm["as_mmd"] = {"lambda0": 0.0, "input": "source_stream"}
+    with pytest.raises(ValueError, match="input must be null/absent when lambda0 is 0"):
+        _load(tmp_path, record)
+
+    arm["as_mmd"] = {"lambda0": 0.0, "source_logits": "offline/logits.npz"}
+    with pytest.raises(ValueError, match="source_logits must be null/absent when lambda0 is 0"):
+        _load(tmp_path, record)
+
+    arm["as_mmd"] = {"lambda0": 0.0}
+    parsed = _load(tmp_path, record).evaluation_arms[1]
+    assert parsed.as_mmd_lambda0 == 0.0
+    assert parsed.as_mmd_input is None
+    assert parsed.as_mmd_source_logits is None
+
+
+def test_as_mmd_source_stream_requires_full_fine(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["evaluation_arms"][1]["as_mmd"] = {"lambda0": 0.1}
+    with pytest.raises(ValueError, match="requires head='full_fine'"):
+        _load(tmp_path, record)
+
+
+def test_as_mmd_splitbn_target_buffer_source_must_match_training(
+    tmp_path: Path,
+) -> None:
+    record = _plan_record()
+    record["training"]["splitbn_target_buffer_source"] = "pooled_source"
+    arm = record["evaluation_arms"][1]
+    arm["head"] = "full_fine"
+    arm["as_mmd"] = {
+        "lambda0": 0.1,
+        "splitbn_target_buffer_source": "target_calibration",
+    }
+    with pytest.raises(ValueError, match="must equal training.splitbn_target_buffer_source"):
+        _load(tmp_path, record)
+
+    arm["as_mmd"]["splitbn_target_buffer_source"] = "pooled_source"
+    plan = _load(tmp_path, record)
+    assert plan.training.splitbn_target_buffer_source == "pooled_source"
+
+
+def test_build_dag_forwards_as_mmd_and_source_selection_to_result_argv(
+    tmp_path: Path,
+) -> None:
+    record = _plan_record()
+    source_arm = record["source_arms"][0]
+    source_arm["source_selection_record"] = "selection/source-a.json"
+    evaluation_arm = record["evaluation_arms"][1]
+    evaluation_arm["head"] = "full_fine"
+    evaluation_arm["as_mmd"] = {
+        "lambda0": 0.25,
+        "warmup_epochs": 5,
+        "target_weight_min": 2.0,
+        "target_weight_max": 8.0,
+    }
+
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+    batch_task = next(
+        task for task in dag.tasks if task.task_id == "result_batch/source_a/rep01/p01"
+    )
+    jobs = dag.result_batch_job_records[batch_task.task_id]["jobs"]
+    argv = next(
+        list(job["argv"])
+        for job in jobs
+        if job["arm_name"] == "source_a__linear_time_split"
+    )
+
+    assert argv[argv.index("--as-mmd-lambda0") + 1] == "0.25"
+    assert argv[argv.index("--as-mmd-warmup-epochs") + 1] == "5"
+    assert argv[argv.index("--as-mmd-target-weight-min") + 1] == "2.0"
+    assert argv[argv.index("--as-mmd-target-weight-max") + 1] == "8.0"
+    assert argv[argv.index("--source-stream-cache") + 1] == str(plan.source_arms[0].cache)
+    assert argv[argv.index("--source-selection-record") + 1] == str(
+        plan.source_arms[0].source_selection_record
+    )
+    assert argv.index("--as-mmd-lambda0") < argv.index("--source-stream-cache")
+    assert argv.index("--source-stream-cache") < argv.index("--source-selection-record")
+    assert argv.index("--source-selection-record") < argv.index("--seed")
+
+    zero_shot_argv = next(
+        list(job["argv"]) for job in jobs if job["arm_name"] == "source_a__zero_shot"
+    )
+    assert not {
+        "--as-mmd-lambda0",
+        "--as-mmd-warmup-epochs",
+        "--as-mmd-target-weight-min",
+        "--as-mmd-target-weight-max",
+        "--source-stream-cache",
+        "--as-mmd-source-logits",
+    } & set(zero_shot_argv)
+    assert "--source-selection-record" in zero_shot_argv
+
+
+def test_build_dag_forwards_frozen_logits_as_mmd_source_logits(tmp_path: Path) -> None:
+    record = _plan_record()
+    arm = record["evaluation_arms"][1]
+    arm["as_mmd"] = {
+        "lambda0": 0.5,
+        "input": "frozen_logits",
+        "source_logits": "offline/logits.npz",
+    }
+
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+    batch_task = next(
+        task for task in dag.tasks if task.task_id == "result_batch/source_a/rep01/p01"
+    )
+    argv = next(
+        list(job["argv"])
+        for job in dag.result_batch_job_records[batch_task.task_id]["jobs"]
+        if job["arm_name"] == "source_a__linear_time_split"
+    )
+    assert "--source-stream-cache" not in argv
+    assert argv[argv.index("--as-mmd-source-logits") + 1] == str(
+        plan.evaluation_arms[1].as_mmd_source_logits
+    )
+
+
+def test_euclidean_alignment_provenance_gate(tmp_path: Path) -> None:
+    _write_preflight_inputs(tmp_path)
+    record = _plan_record()
+    record["source_arms"][0]["euclidean_alignment"] = {
+        "mode": "source",
+        "reference_mode": "native_preserve",
+    }
+    dag = matrix.build_dag(_load(tmp_path, record))
+
+    with pytest.raises(ValueError, match="mode='source'.*no data_alignment"):
+        matrix._verify_inputs(dag)
+
+    save_epoch_dataset(
+        tmp_path / "source-a.npz",
+        _cache_dataset(
+            name="source-a",
+            local_subjects=("SOURCE::01", "SOURCE::02"),
+            authority_subjects=("01", "02"),
+            data_alignment={
+                "schema": "n2p3_euclidean_alignment_fit/1",
+                "scope": "source_rows",
+                "reference_mode": "native_preserve",
+            },
+        ),
+    )
+    resolved = matrix._verify_inputs(dag)
+    assert resolved["source_caches"]["source_a"]["cache_sha256"]
+
+    record["source_arms"][0]["euclidean_alignment"]["mode"] = "target_calibration"
+    mismatched = matrix.build_dag(_load(tmp_path, record))
+    with pytest.raises(ValueError, match="scope='target_calibration'"):
+        matrix._verify_inputs(mismatched)
+
+    record["source_arms"][0]["euclidean_alignment"] = {
+        "mode": "source",
+        "reference_mode": "common_average",
+    }
+    reference_mismatch = matrix.build_dag(_load(tmp_path, record))
+    with pytest.raises(ValueError, match="reference_mode=.*disagrees"):
+        matrix._verify_inputs(reference_mismatch)
+
+
+def test_euclidean_alignment_mode_none_accepts_raw_cache(tmp_path: Path) -> None:
+    _write_preflight_inputs(tmp_path)
+    record = _plan_record()
+    record["source_arms"][0]["euclidean_alignment"] = {"mode": "none"}
+    matrix._verify_inputs(matrix.build_dag(_load(tmp_path, record)))

@@ -3,7 +3,9 @@
 Inputs are the ``*.npz`` matrices written by ``prepare_domain_features.py``.
 The output JSON carries the full :class:`PDSSelection` record plus the source
 and target feature-matrix records, so downstream training can bind the
-selection to the exact cache/feature artifacts that produced it.
+selection to the exact cache/feature artifacts that produced it.  The default
+sampler is ``target_similarity_diverse``; ``--sampler dense_pds`` selects the
+faithful Flores et al. (2024) dart-throwing sampler instead.
 """
 
 from __future__ import annotations
@@ -21,9 +23,11 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from data.epochs import TARGET_CALIBRATION_SCOPE_SCHEMA  # noqa: E402
 from train.source_sampling import (  # noqa: E402
     VALID_SELECTION_SCOPES,
     array_digest,
+    select_dense_pds_rows,
     select_pds_rows,
 )
 
@@ -84,6 +88,50 @@ def _load_vector(
     return values
 
 
+def _parse_pds_mixture(
+    text: str,
+    unique_labels: list[object],
+) -> tuple[float, ...]:
+    """Parse ``--pds-mixture`` as JSON or comma-separated sorted-label weights."""
+    stripped = text.strip()
+    try:
+        parsed: object = json.loads(stripped)
+    except json.JSONDecodeError:
+        parsed = None
+    if isinstance(parsed, dict):
+        expected_keys = {str(label) for label in unique_labels}
+        if set(parsed) != expected_keys:
+            raise ValueError(
+                "JSON object keys must be exactly the sorted unique source labels "
+                f"{expected_keys!r}."
+            )
+        raw_weights: list[object] = [parsed[str(label)] for label in unique_labels]
+    elif isinstance(parsed, list):
+        raw_weights = parsed
+    elif parsed is None:
+        raw_weights = [part.strip() for part in stripped.split(",")]
+    else:
+        raise ValueError("expected a JSON list/object or comma-separated weights.")
+    if not raw_weights or any(
+        not isinstance(part, str) and not np.isscalar(part) for part in raw_weights
+    ):
+        raise ValueError("expected non-empty numeric mixture weights.")
+    try:
+        weights = tuple(float(part) for part in raw_weights)
+    except (TypeError, ValueError) as error:
+        raise ValueError("expected numeric mixture weights.") from error
+    if len(weights) != len(unique_labels):
+        raise ValueError(
+            f"expected {len(unique_labels)} weights aligned to sorted unique labels "
+            f"{[str(label) for label in unique_labels]!r}."
+        )
+    if any(not np.isfinite(value) or value <= 0.0 for value in weights):
+        raise ValueError("mixture weights must be finite and positive.")
+    if not np.isclose(sum(weights), 1.0, rtol=1e-9, atol=1e-9):
+        raise ValueError("mixture weights must sum to one.")
+    return weights
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-features", type=Path, required=True)
@@ -96,10 +144,41 @@ def main() -> None:
         default="target_calibration",
         help="Declared target buffer used by the sampler; target test scope is forbidden.",
     )
+    parser.add_argument(
+        "--sampler",
+        choices=["target_similarity_diverse", "dense_pds"],
+        default="target_similarity_diverse",
+        help=(
+            "Source-row sampler.  target_similarity_diverse is the default TSD "
+            "greedy sampler; dense_pds is the faithful Flores et al. dart-throwing "
+            "sampler and ignores all TSD tuning flags."
+        ),
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--target-temperature", type=float, default=1.0)
     parser.add_argument("--diversity-weight", type=float, default=1.0)
     parser.add_argument("--bandwidth", type=float, default=None)
+    parser.add_argument(
+        "--pds-radius",
+        type=float,
+        default=None,
+        help="Dense PDS hard-disk rejection radius; required for --sampler dense_pds.",
+    )
+    parser.add_argument(
+        "--pds-mixture",
+        default=None,
+        help=(
+            "Dense PDS mingling-mixture.  Comma-separated weights are aligned with "
+            "sorted unique source labels, e.g. 0.5,0.5; JSON list/object is also "
+            "accepted.  Default is the empirical label frequency."
+        ),
+    )
+    parser.add_argument(
+        "--pds-max-attempts",
+        type=int,
+        default=10000,
+        help="Maximum dart-throwing attempts before dense_pds falls back to max-min rows.",
+    )
     parser.add_argument(
         "--feature-key",
         default="features",
@@ -125,6 +204,17 @@ def main() -> None:
     target_features, target_record = _load_feature_matrix(
         args.target_features, feature_key=args.feature_key
     )
+
+    target_scope = target_record.get("dataset_scope")
+    if args.selection_scope == "target_calibration" and target_scope:
+        if target_scope.get("schema") != TARGET_CALIBRATION_SCOPE_SCHEMA:
+            raise ValueError(
+                "selection_scope='target_calibration' requires target features derived "
+                "from a target-calibration-scoped cache "
+                f"({TARGET_CALIBRATION_SCOPE_SCHEMA}); target feature record declares "
+                f"{target_scope.get('schema')!r}."
+            )
+
     if source_features.shape[1] != target_features.shape[1]:
         raise ValueError(
             "source and target feature dimensions must match: "
@@ -148,20 +238,57 @@ def main() -> None:
         if bool((groups == "").any()):
             raise ValueError("source groups must be non-empty strings.")
 
-    selection = select_pds_rows(
-        source_features,
-        target_features,
-        n_select=args.n_select,
-        selection_scope=args.selection_scope,
-        seed=args.seed,
-        target_temperature=args.target_temperature,
-        diversity_weight=args.diversity_weight,
-        bandwidth=args.bandwidth,
-        labels=labels,
-        groups=groups,
-        min_per_label=args.min_per_label,
-        min_per_group=args.min_per_group,
-    )
+    dense_pds = args.sampler == "dense_pds"
+    if dense_pds:
+        if args.pds_radius is None:
+            parser.error("--sampler dense_pds requires --pds-radius")
+        if args.pds_max_attempts < 1:
+            parser.error("--pds-max-attempts must be a positive integer")
+        if labels is None:
+            parser.error("--sampler dense_pds requires --source-labels")
+        if args.min_per_label != 0:
+            parser.error("--min-per-label is TSD-only and cannot be used with dense_pds")
+        if args.min_per_group != 0:
+            parser.error("--min-per-group is TSD-only and cannot be used with dense_pds")
+        if args.target_temperature != 1.0:
+            parser.error("--target-temperature is TSD-only and cannot be set for dense_pds")
+        if args.diversity_weight != 1.0:
+            parser.error("--diversity-weight is TSD-only and cannot be set for dense_pds")
+        if args.bandwidth is not None:
+            parser.error("--bandwidth is TSD-only and cannot be set for dense_pds")
+        mixture = None
+        if args.pds_mixture is not None:
+            unique_labels = sorted(np.unique(labels).tolist())
+            try:
+                mixture = _parse_pds_mixture(args.pds_mixture, unique_labels)
+            except ValueError as error:
+                parser.error(f"invalid --pds-mixture: {error}")
+        selection = select_dense_pds_rows(
+            source_features,
+            target_features,
+            n_select=args.n_select,
+            selection_scope=args.selection_scope,
+            seed=args.seed,
+            labels=labels,
+            pds_radius=args.pds_radius,
+            pds_mingling_mixture=mixture,
+            pds_max_attempts=args.pds_max_attempts,
+        )
+    else:
+        selection = select_pds_rows(
+            source_features,
+            target_features,
+            n_select=args.n_select,
+            selection_scope=args.selection_scope,
+            seed=args.seed,
+            target_temperature=args.target_temperature,
+            diversity_weight=args.diversity_weight,
+            bandwidth=args.bandwidth,
+            labels=labels,
+            groups=groups,
+            min_per_label=args.min_per_label,
+            min_per_group=args.min_per_group,
+        )
 
     record = selection.record()
     record.update(
@@ -212,6 +339,7 @@ def main() -> None:
         json.dumps(
             {
                 "selection_record": str(output),
+                "sampler_kind": selection.sampler_kind,
                 "n_select": int(len(selection.selected_indices)),
                 "source_count": int(selection.source_count),
                 "target_count": int(selection.target_count),

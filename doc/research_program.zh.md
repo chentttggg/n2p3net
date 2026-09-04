@@ -734,7 +734,7 @@ result-optimization 的 partition 级 result batching、zero-shot feature memo
 feature MMD 只作安全对照。2026-09-04 已批准的新主线为 **EA 默认数据对齐 → N2P3Net trunk →
 faithful AS-MMD → TSD**，实施方案、arm 矩阵与门禁见
 [`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)；
-该计划 WP0/WP1 已完成，WP2–WP4 部分完成（进度见计划头部）；在全部 WP 与云端验收闭合前，不得声称新主线已实现或具有性能证据。
+该计划 WP0–WP4 已完成（进度见计划头部）；在云端验收闭合前，不得声称新主线已实现或具有性能证据。
 
 | 机制 | 当前实现 | 不可静默降级的规则 |
 |---|---|---|
@@ -742,7 +742,7 @@ faithful AS-MMD → TSD**，实施方案、arm 矩阵与门禁见
 | P0 Split-BN | ordered source-domain axis、temporal/spatial/MST 三处 buffer、checkpoint 和 target selector 已贯通 | 训练缺 domain index、评估缺 buffer source、buffer/axis/weight 不一致均失败；target eval 不更新 buffer |
 | P1 drop-to-consensus | source-only residual、Bernoulli drop、`m=0/m=1` counterfactual ledger 与 checkpoint record 已贯通 | target/评估永不 route source residual；固定 `m=1` ratio gate 超过 `r_max=0.5` 时整次 run invalid |
 | P2 direct-decision loss | direct-membership metadata、完整 decision sampler、prefix loss 与 training contract 已贯通 | vocabulary/coverage/membership 不完整时失败；每 batch 至少 128 rows；即使 `lambda_candidate=0` 也不得回退 flat batching |
-| P3 域迁移主线（EA + ACW + AS-MMD + TSD） | 历史 P3 实现（`prepare_domain_features.py`、`fit_galia_alignment.py`、`conditional_rbf_mmd`、旧 PDS sampler 等）已按新命名继续审计：本地 AJD 白化=ACW 辅助、旧 sampler=TSD、conditional feature MMD=安全对照；新主线已实现 EA 模块/EA cache（WP1）、faithful AS-MMD 公式组件与 SubjectAdapter 冻结源 logits 适配路径（WP2 部分）、TSD `n2p3_source_selection/2` + row-identity digest（WP3 部分）；live source-stream + SplitBN 双 buffer 完整 joint training 与 Dense PDS 仍未实现 | 只接受显式同维 feature matrices；EA/ACW/MMD bandwidth/TSD 的任何 target 统计只能来自 `target_calibration` 或 unlabelled buffer；`rank/condition/offdiag residual`、row-identity digest、buffer digest 缺失或篡改时 fail-closed；旧 “GALIA/PDS/conditional AS-MMD” 名称不得用于新 arm；无真实跨域性能证据 |
+| P3 域迁移主线（EA + ACW + AS-MMD + TSD） | 历史 P3 实现（`prepare_domain_features.py`、`fit_galia_alignment.py`、`conditional_rbf_mmd`、旧 PDS sampler 等）已按新命名继续审计：本地 AJD 白化=ACW 辅助、旧 sampler=TSD、conditional feature MMD=安全对照；新主线已实现 EA 模块/EA cache（WP1）、faithful AS-MMD frozen-logits 与 live source-stream + SplitBN 双 buffer joint training（WP2）、TSD schema/row-identity/`tsd_dropped_*` + Dense PDS + target-calibration cache（WP3）、matrix plan EA/AS-MMD/sampler 字段与 argv 全链（WP4） | 只接受显式同维 feature matrices；EA/ACW/MMD bandwidth/TSD 的任何 target 统计只能来自 `target_calibration` 或 unlabelled buffer；`rank/condition/offdiag residual`、row-identity digest、buffer digest 缺失或篡改时 fail-closed；旧 “GALIA/PDS/conditional AS-MMD” 名称不得用于新 arm；无真实跨域性能证据 |
 
 N2P3Net core、causal-v3 输入合同和统一 candidate-evidence core 继续保留。
 `FeatureDomainTransfer` 仍负责 invariant/private、目标 residual 与 source residual；source-domain
@@ -756,7 +756,7 @@ CAR 不是活动跨域默认变换，旧 CAR cache 只能留在冻结历史层�
 - P2 只接受 direct candidate membership；row/column promotion runner 不能把 9-choice direct loss 伪装为 row/column 任务，需先实现 typed protocol dispatch
 - target result/manifest 尚未重复写入 P0/P1 effective buffer source、estimand 与 buffer digest；executed-source identity、lockfile/environment digest 与 target OOM requested-denominator 也未闭合
 - 尚无 active real source/target cache、真实 CUDA、成人 BrainSync multi-session/target-switch 或 matched fold/seed paired CI
-- 新主线部分闭合：EA cache/provenance（WP1）、faithful AS-MMD 公式组件与 adapter-level 冻结源 logits 适配（WP2 部分）、`n2p3_source_selection/2`（TSD）row-identity digest（WP3 部分）已实现并测试；**未闭合**：live source-stream + SplitBN 双 buffer 完整 joint training、Dense PDS、matrix plan 的 EA/`as_mmd`/`sampler_kind` 字段与 result_batch 下传，以及 `as_mmd`/`cond_mmd_features`/`no_mmd` 正式 arm
+- 新主线代码链已闭合：EA cache/provenance（WP1）、faithful AS-MMD frozen-logits 与 live source-stream + SplitBN 双 buffer（WP2）、TSD/Dense PDS/target-calibration cache（WP3）、matrix plan EA/AS-MMD/sampler 字段与 argv（WP4）均已实现并测试；**未闭合**：云端 dry-run/CUDA smoke/64-fold、L2b 多域 source cache、以及 `as_mmd`/`cond_mmd_features`/`no_mmd` 正式臂的实证运行
 - 历史本地 AJD 白化（旧名 GALIA，已更名 ACW）的默认 lift 是 identity flatten 并可选 spatial/temporal basis；原始异构 `EpochDataset` 的逐域语义 lift（xDAWN/CSP 等）尚未默认自动构建，真实缓存上的 rank/condition/offdiag residual 验收也未完成；ACW 只允许作为 TSD 坐标/经典解码辅助
 - WorkBuddy 会话内的高负载测试异常已定性为环境层故障，不归责于项目代码；独立 shell/云端复跑纪律仍是开放工程门禁，15ms 并发测试窗口改进属于可选测试维护
 
@@ -769,9 +769,9 @@ CAR 不是活动跨域默认变换，旧 CAR cache 只能留在冻结历史层�
 2. 对 active cache 做 protocol 和 identity attestation；direct 与 row/column 数据不得混用 P2 合同
 3. ✅ 按 v2 计划 WP0 已修 B1–B5 与命名/合同/provenance 项：本地 GALIA→ACW、旧 PDS→TSD、conditional feature MMD 降级为安全对照，solver 版本/offdiag residual/row-identity digest 纳入记录，负 MMD ledger 与远距离 tie-break 反例测试入库
 4. ✅ 按 WP1 已建立 EA 数据对齐 cache（`none`/`ea_source`/`ea_target_calibration` 消融入口，`--reference-mode` 与上游 native/CAR provenance 强校验）并过 reference covariance≈I、条件数与 provenance 门；GTN 3 导路线暂不绕过 rank gate
-5. 🟡 按 WP2 已实现 faithful AS-MMD 公式组件（target-weighted CE + logit marginal RBF-MMD）与 SubjectAdapter 冻结源 logits 适配路径；**剩余**：live source-stream + SplitBN 双 buffer 完整 joint training 与 `as_mmd`/`cond_mmd_features`/`no_mmd` 正式 arm
-6. 🟡 按 WP3 已正式化 TSD（`sampler_kind="target_similarity_diverse"` 与 checkpoint `tsd_dropped_source_epochs[_by_label]`）；ACW 只作 TSD 坐标/经典解码辅助；**剩余**：Dense PDS 独立忠实对照臂，per-target 动态 selection 必须另行预注册
-7. 🟡 按 WP4 已解析 matrix plan `source_selection_record` 并下传 checkpoint batch；**剩余**：EA/AS-MMD/TSD/ACW 的 plan 字段、`prepare_ea`/`prepare_selection` DAG 节点、result_batch 下传后再做 attestation/dry-run 与单 worker CUDA smoke
+5. ✅ 按 WP2 已实现 faithful AS-MMD（target-weighted CE + logit marginal RBF-MMD）：frozen-logits 与 live source-stream 双输入，SplitBN source/target 双 buffer，`target_calibration` buffer 安装冻结，buffer digest ledger
+6. ✅ 按 WP3 已正式化 TSD（`sampler_kind` 与 `tsd_dropped_*`）、Dense PDS 忠实采样、target-calibration cache 与 labels/groups provenance；per-target 动态 selection 必须另行预注册
+7. ✅ 按 WP4 已闭合 matrix plan 的 EA/AS-MMD/TSD/ACW provenance 字段与 checkpoint/result argv；下一步按 [`cloud_ablation_plan_20260904.zh.md`](cloud_ablation_plan_20260904.zh.md) 做 attestation/dry-run 与单 worker CUDA smoke
 8. 仅在预声明的 matched fold/seed 下运行 pooled-BN、P0、P1、EA/AS-MMD/TSD 主线和允许的 P2 direct arms，并报告 participant-cluster CI
 9. 在 target-calibration、row/column dispatch 与 target failure ledger 各自闭合前，不扩大主张或启动不受合同支持的 arm
 

@@ -33,6 +33,7 @@ from data.lineage import DataLineage
 from data.qc_features import EpochQCFeatures
 
 EPOCH_DATASET_SCHEMA = "n2p3net_epoch_dataset/5"
+TARGET_CALIBRATION_SCOPE_SCHEMA = "n2p3_target_calibration_scope/1"
 DECODED_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 DEFAULT_SAMPLE_RATE_HZ = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz
 
