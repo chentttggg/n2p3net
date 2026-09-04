@@ -1,0 +1,11 @@
+﻿{
+    "schema":  "n2p3_source_freeze/1",
+    "archive":  "active_source_f2ee195.source-only.tar.gz",
+    "archive_sha256":  "858ee6a8b8619dd256cfe165600871efa3aacb83af3b2605faffe37e47be4a33",
+    "source_commit":  "f2ee1952f272a6931e5dd52a55075177a421828b",
+    "member_count":  223,
+    "byte_size":  1098529,
+    "scope":  "Integrated main at f2ee195: complete domain-transfer v2 WP0-WP4 (EA, faithful AS-MMD live source-stream + SplitBN dual buffers, TSD + Dense PDS, target-calibration cache, matrix plan fields) with cloud ablation plan. Excludes Paper PDFs, frozen archives, and all data/caches.",
+    "contains_raw_eeg_cache_or_model_checkpoint":  false,
+    "replacement_policy":  "integrated-workspace source anchor for v2 mainline; do not overwrite; E1 execution freezes b96a6af/b86d558 and prior freezes 6fc1df1/352932b/326c8fd/ae2706e remain unchanged"
+}
