@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "active_source_b86d558.source-only.tar.gz",
+  "archive_sha256": "ab484d16fd8e547abd0213b9b9ede20e81d7b2735c5e0a0ff31d9d5e93e826fc",
+  "source_commit": "b86d5584dc4b0e5e638f4d1ba63cea4e7f75dfab",
+  "member_count": 199,
+  "byte_size": 1002245,
+  "scope": "Performance-only branch perf/domain-transfer-20260904 at b86d558: reference-aware caches, candidate-ranking adapter ablation, chunked checkpoint batches, and adaptation-only epoch_selection moved out of the matched evidence contract",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "executed-source identity anchor for E=32 E1 native/CAR analysis and reruns; never overwrite"
+}
