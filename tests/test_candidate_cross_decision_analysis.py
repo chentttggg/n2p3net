@@ -896,6 +896,51 @@ def test_scratch_origin_is_explicit_and_does_not_need_a_fake_checkpoint(
     assert analysis["metrics"]["adapted"]
 
 
+def test_failure_ledger_allows_mixed_valid_and_incomplete_levels() -> None:
+    import experiments.analyze_candidate_cross_decision as analysis_module
+
+    key = DecisionKey("s1", "decision-1")
+    coverage = CandidateCoverage.from_mappings({"c:0": 1}, {"c:0": 1})
+    outcomes = (
+        DecisionOutcome(
+            key=key,
+            evidence_level=1,
+            status=DecisionStatus.CORRECT,
+            coverage=coverage,
+            target_candidate="c:0",
+            predicted_candidate="c:0",
+        ),
+        DecisionOutcome(
+            key=key,
+            evidence_level=2,
+            status=DecisionStatus.INCORRECT,
+            coverage=coverage,
+            target_candidate="c:0",
+            predicted_candidate="c:1",
+        ),
+        DecisionOutcome(
+            key=key,
+            evidence_level=3,
+            status=DecisionStatus.INCOMPLETE,
+            coverage=CandidateCoverage.from_mappings({"c:0": 3}, {"c:0": 2}),
+            failure_reason="incomplete_candidate_coverage",
+        ),
+    )
+    failures = analysis_module._parse_failures(
+        [
+            {
+                "participant_key": "s1",
+                "decision_id": "decision-1",
+                "status": "incomplete",
+                "stage": "decision_evaluation",
+                "reason": "incomplete_candidate_coverage",
+            }
+        ],
+        outcomes,
+    )
+    assert failures[key]["stage"] == "decision_evaluation"
+
+
 def test_legacy_bi_manifest_is_not_accepted(tmp_path: Path) -> None:
     path = tmp_path / "legacy.json"
     _write_json(path, {"schema": "n2p3_bi2014a_cross_decision_experiment/1"})

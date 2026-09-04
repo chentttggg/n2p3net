@@ -854,11 +854,25 @@ def _parse_failures(
             "reason": _text(record.get("reason"), "failure reason"),
         }
         matching = tuple(outcome for outcome in outcomes if outcome.key == key)
-        if not matching or any(
-            outcome.status != status or outcome.failure_reason != failure["reason"]
-            for outcome in matching
-        ):
+        if not matching:
             raise ValueError("decision failure disagrees with primary outcomes.")
+        if status is DecisionStatus.FIT_FAILURE:
+            if any(
+                outcome.status != status or outcome.failure_reason != failure["reason"]
+                for outcome in matching
+            ):
+                raise ValueError("decision failure disagrees with primary outcomes.")
+        else:
+            # A decision carrying fewer complete repetitions is valid at shallow
+            # evidence levels and incomplete at deeper levels, so the failure
+            # ledger only needs to agree with its incomplete prefixes.
+            incomplete = tuple(
+                outcome for outcome in matching if outcome.status is DecisionStatus.INCOMPLETE
+            )
+            if not incomplete or any(
+                outcome.failure_reason != failure["reason"] for outcome in incomplete
+            ):
+                raise ValueError("decision failure disagrees with primary outcomes.")
         failures[key] = failure
     failed_outcome_keys = {
         outcome.key
