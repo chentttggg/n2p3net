@@ -412,6 +412,46 @@ def test_subject_adapter_updates_only_target_adapter() -> None:
     assert all(torch.equal(after[key], before[key]) for key in after if key not in target_keys)
 
 
+def test_subject_adapter_candidate_loss_updates_adapter_and_records_diagnostics() -> None:
+    torch.manual_seed(19)
+    wrapped = _wrapper()
+    rng = np.random.default_rng(29)
+    n_rows = 8
+    x = rng.standard_normal((n_rows, 3, 64)).astype(np.float32)
+    y = np.asarray([0, 1, 0, 1, 0, 1, 0, 1], dtype=np.int64)
+    before = {key: value.detach().clone() for key, value in wrapped.target_adapter.state_dict().items()}
+    adapter = SubjectAdapter(
+        wrapped,
+        config=SubjectAdapterConfig(
+            head_kind="adapter",
+            epochs=2,
+            batch_size=4,
+            val_group_fraction=None,
+            refit_full_prefix=False,
+            input_statistics="target_prefix",
+            candidate_loss_weight=0.5,
+            candidate_loss_temperature=1.0,
+        ),
+        device=torch.device("cpu"),
+    )
+    adapter.fit(
+        x,
+        y,
+        candidate_ids=np.asarray([0, 1, 2, 3, 0, 1, 2, 3], dtype=np.int64),
+        selection_ids=np.asarray(["d1"] * 4 + ["d2"] * 4),
+        target_rows=np.asarray([0, 0, 0, 0, 1, 1, 1, 1], dtype=np.int64),
+        target_columns=np.asarray([1, 1, 1, 1, 0, 0, 0, 0], dtype=np.int64),
+        candidate_loss_num_rows=2,
+        candidate_loss_num_columns=2,
+    )
+    after = wrapped.target_adapter.state_dict()
+    assert any(not torch.equal(after[key], before[key]) for key in before)
+    assert adapter.last_history["candidate_loss_active"] is True
+    assert len(adapter.last_history["candidate_losses"]) == 2
+    assert adapter.last_history["candidate_losses"][0]["complete_count"] == 2
+
+
+
 def test_subject_adapter_rejects_plain_core_for_target_mode() -> None:
     with pytest.raises(ValueError, match="FeatureDomainTransfer"):
         SubjectAdapter(_core(), config=SubjectAdapterConfig(head_kind="adapter"))
@@ -459,6 +499,49 @@ def test_pretraining_wrapper_records_new_schema_and_private_losses() -> None:
     assert len(record["epoch_private_domain_loss"]) == 1
     architecture = baseline.model_.architecture_record()
     assert architecture["feature_transfer"]["schema"] == "n2p3_feature_domain_transfer/2"
+
+
+def test_pretraining_wrapper_supports_conditional_rbf_mmd_alignment() -> None:
+    config = DeepConfig(
+        epochs=1,
+        batch_size=16,
+        val_group_frac=0.25,
+        val_groups_min=2,
+        val_groups_max=4,
+        compile_mode=None,
+        fused_adam=False,
+        seed=0,
+    )
+    baseline = N2P3NetBaseline(
+        3,
+        64,
+        128.0,
+        config=config,
+        device=torch.device("cpu"),
+        tmin_s=-0.2,
+        feature_transfer=CONFIG,
+        source_domain_vocabulary=("a", "b"),
+    )
+    rng = np.random.default_rng(23)
+    x = rng.standard_normal((96, 3, 64)).astype(np.float32)
+    y = np.tile([0, 1], 48).astype(np.int64)
+    domains = np.repeat(["a", "b"], 48)
+    groups = np.array([f"{domain}-{i // 4}" for i, domain in enumerate(domains)])
+
+    baseline.fit(
+        x,
+        y,
+        group_ids=groups,
+        source_domain_ids=domains,
+        feature_alignment_weight=0.1,
+        feature_alignment_mode="conditional_rbf_mmd",
+        feature_alignment_min_cell_count=2,
+    )
+
+    record = baseline.last_history["feature_alignment"]
+    assert record["mode"] == "conditional_rbf_mmd"
+    assert record["alignment_active"] is True
+    assert len(record["epoch_mmd_squared"]) == 1
 
 
 def test_pretraining_routes_source_residual_and_records_counterfactual_losses() -> None:

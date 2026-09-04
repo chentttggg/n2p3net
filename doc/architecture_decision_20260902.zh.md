@@ -15,7 +15,7 @@ _版本：2026-09-03 数学闭合修订 · 决策类型：架构重构 · 状态
 **三路文献调研核心发现**：
 1. 嵌套网络/hypernetwork/FiLM：FiLM 在 EEG 上有实证（Défossez 2024, Brain's Bitter Lesson），hypernetwork 需额外静息态数据（P300 不适用），子网络当神经元无任何领域先例
 2. EEG 基础模型端到端 vs 分阶段：SpellerSSL（arXiv:2509.19401, NeurIPS 2025）分阶段范式达 94% 准确率，基础模型在 P300 任务无优势证据且存在 identity trap 和低频偏置
-3. 少样本适配机制：（等待第三路结果，但已有 MetaSleepLearner / MUPS-EEG 证据显示 MAML 可行）
+3. 少样本适配机制：现有证据来自非 P300 EEG/生理信号任务，只支持后续候选假设，不足以排序本项目方案
 
 **负迁移根因**：
 - 不同域 class-conditional ERP direction 不一致，共享滤波器被迫取折中面
@@ -140,7 +140,8 @@ P = softmax(s)                          # 外层：9 选 1 posterior
 - **MetaSleepLearner**（arXiv:2004.04157, IEEE JBHI 2021）：MAML 在生理信号少样本适配可行
 - **MUPS-EEG**（arXiv:2003.06113, 2020）：结合 MAML 和 meta learner，仅需 10-20 个目标被试样本
 
-等待第三路完整结果补充。
+第三路完整结果仍作为候选研究记录保留；其证据与当前工程结果已汇总至
+[`research_evidence_ledger_20260903.zh.md`](research_evidence_ledger_20260903.zh.md)。
 
 ---
 
@@ -180,32 +181,36 @@ doc 第 8 节反例 8 的理由是训练启用 source adapter 而推理未 route
 
 **2. 决策层可微化（candidate ranking surrogate）**
 
-当前 candidate_evidence.py 是后处理聚合（mean / tempered_evidence），没有梯度回传到编码器。
-
-新设计：ρ_ω(A_d,r, B_d,r, Q_d,r, N_d,r, coverage_d,r) 成为可学习模块，第一版用线性/温度模型。L_candidate 是 hit@R 的 top-1 ranking surrogate，不是 hit@R 的直接可微形式；晋升只看 operational hit@R。
+`candidate_evidence.py` 保持统一的推理/评估聚合、coverage、tie 和 fail-closed 状态核心，
+不承担训练期私有聚合。当前 P2 framework 位于 `src/transfer/decision_loss.py`：
+`DirectDecisionMetadata` 冻结 direct timeline 的 vocabulary、truth 和 repetition 轴，
+complete-decision batch plan 再将 `DecisionLevelLoss` 接入 `DeepBaseline.fit`。
+第一版固定 count-neutral mean 与 constant temperature；任意 `rho_omega` MLP、
+evidence-aware schedule 和 row/column factorized objective 尚未实现。`L_candidate` 是
+hit@R 的 top-1 ranking surrogate，不是 hit@R 的直接可微形式；晋升只看 operational hit@R。
 
 **数学约束（必须写进契约）**：
 - 决策级损失是加项不是替代：`L = L_trial + λ·L_decision`。membership 与目标候选已能确定全部 trial binary labels，因此保留 trial CE 是优化稳定性、局部监督、有限样本正则化和校准需求的预注册设计选择，不是标签数量导致的数学必然；`L_decision` 单独训练仍不作为晋升 arm。
 - λ ∈ [0.1, 0.5] 是预注册搜索范围，不是理论推导上界
 
-**3. BatchNorm 混合统计诊断（P0 优先级）**
+**3. BatchNorm 混合统计诊断（P0，框架已实现）**
 
 代码里确认了 st_temporal_norm / st_spatial_norm 用 batch 统计，混合多域时每个域被错误归一化。Split-BN 在跨数据集 P300 上被反复提出正是针对这层。
 
-建议做 Split-BN 实验臂；其对 21.94pp 差距的贡献必须通过成对实验和机制诊断检验，不能预先宣称会恢复其中相当部分。
+Split-BN 实验臂已在 `ef7a40e` 实现；其对 21.94pp 差距的贡献仍必须通过成对实验和机制诊断检验，不能预先宣称会恢复其中相当部分。
 
 ### 4.3 分阶段训练（折中方案）
 
-**Phase 1：源域多域训练（联合可微）**
-- 编码器 + 可丢弃域残差 + 决策层**端到端联合训练**
+**Phase 1：源域多域训练（目标架构；direct framework 已闭合）**
+- 编码器 + 可丢弃域残差 + direct decision loss 的联合训练链已接入；完整 learned evidence head 仍是后续目标
 - 损失：L_trial + λ_set·L_candidate_set + λ_align·L_conditional_align + λ_priv·L_domain_probe + λ_orth·L_orthogonality
 - **关键**：决策层必须接进可微链条，优化 decision 级 ranking surrogate 而非仅 trial 代理量（surrogate ≠ hit@R，晋升仍只看 operational hit@R）
 
-**Phase 2：冻结主干训决策层**
+**Phase 2：冻结主干训决策层（后续目标，未纳入 `ef7a40e`）**
 - trunk 冻结
 - 只训练决策层的 ρ_ω 参数（候选 posterior 网络）
 
-**Phase 3：目标 inner-loop 适配**
+**Phase 3：目标 inner-loop 适配（后续目标）**
 - 冻结 trunk + shared invariant map + source classifier
 - 只更新 target 低秩残差 + evidence calibration
 - 几十个标注 decision 只撑得起这个参数规模
@@ -218,25 +223,23 @@ doc 第 8 节反例 8 的理由是训练启用 source adapter 而推理未 route
 
 ### P0：BatchNorm 混合统计诊断（框架已实现）
 ```python
-# 在 src/models/n2p3net.py 加 Split-BN 实验臂
-# st_temporal_norm / st_spatial_norm 改为 per-domain BN
-# 贡献大小待通过成对实验与机制诊断验证，不预设恢复幅度
+# 已实现：src/models/splitbn.py + src/models/n2p3net.py
+# temporal / spatial / MST normalization 共用 ordered source-domain axis
+# 后续以 paired fold/seed、cluster CI 和 buffer-swap 机制证据裁决贡献大小
 ```
 
 ### P1：可丢弃域残差修正（框架已实现）
 ```python
-# 在 src/models/adapters.py 的 FeatureDomainTransfer
-# 训练时以概率 p 丢弃 source domain 残差
-# trunk 单独工作成为合法操作点
-# 这修正了 doc 第 8 节反例 8 的缺陷
+# 已实现：FeatureDomainTransfer source residual + counterfactual m=0/m=1 ledger
+# source training 按声明概率 p 丢弃残差；评估/target 永不 route source residual
+# 后续在 attested real cache 上比较 pooled、D0 和 drop-to-consensus arm
 ```
 
 ### P2：决策层可微化（direct framework 已实现）
 ```python
-# 在 src/models/candidate_evidence.py
-# 把 CandidateAccumulator 从后处理聚合改为可学习模块
-# ρ_ω(A_d,r, B_d,r, Q_d,r, N_d,r, coverage_d,r)
-# 第一版用线性/温度模型，避免小数据下任意 MLP
+# 已实现：src/transfer/decision_loss.py + DeepBaseline.fit
+# direct timeline -> DirectDecisionMetadata -> complete-decision batches -> DecisionLevelLoss
+# candidate_evidence.py 仍负责统一推理/评估状态；row/column loss 另行实现
 ```
 
 ---
@@ -323,7 +326,7 @@ $$
 - EEG-FM-Bench 明确指出与下游任务梯度冲突
 - 低频偏置损害 P300 瞬态成分
 
-## 九、外部依据与证据边界
+## 八、外部依据与证据边界
 
 - Gneiting & Raftery, “Strictly Proper Scoring Rules, Prediction, and Estimation”,
   JASA (2007), DOI: [10.1198/016214506000001437](https://doi.org/10.1198/016214506000001437)。该文支持 proper scoring rule 与分类决策损失的概念区分；本项目的 NLL/0-1 反例仍是本地构造，不是该文的实验结果。
@@ -336,7 +339,7 @@ $$
 
 ---
 
-## 八、待第三路结果补充（历史研究记录）
+## 九、待第三路结果补充（历史研究记录）
 
 少样本适配机制（MAML / MoE / Prototypical / LoRA / RNN over trials）的完整文献综述仍是候选研究方向，不是当前实现门禁。预计补充：
 - MAML 在 EEG 的稳定性证据

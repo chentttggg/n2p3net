@@ -256,6 +256,15 @@ def source_domain_view(self, features, domain_idx):
    $r_j=\|m_j\rho\tanh(a)\Delta(Z_j)\|_2/\max(\|Z_j\|_2,\epsilon_{res})$，报告 mean/q50/q95/q99/max，并以 max 与预声明 `r_max=0.5` 判定。source residual 检查固定 $m_j=1$ 的 counterfactual，不得让 dropout 零 mask 稀释比例。任一 $r_j>r_{max}$ 时整次 run 记为 `evaluation_failed`/invalid，禁止删除样本后继续汇报；零分母且零分子定义为 0，零分母而分子非零必超限。对 Δ 输出显式 norm-clamp 作为独立 arm。zero-init 位级等价 identity 的要求保留；
 4. **验收**：目标 hit@8 不低于 B0，且 `D1` 大于 `D0` — 不能只报告域 probe 下降。
 
+### 1.4 实施状态（2026-09-03）
+
+P1 framework 已随 `ef7a40e` 落地：
+
+- `FeatureTransferConfig` 冻结 `source_domain_count`、`source_drop_p` 和 `source_drop_mode`，启用 P1 时要求显式多 source-domain axis
+- `FeatureDomainTransfer` 只在 source training route 残差并在 evaluation/target 强制 consensus path；`m=0/m=1` counterfactual 与 ratio summary 写入 durable ledger
+- `DeepBaseline.fit` 在固定 `m=1` ratio gate 超过 `r_max=0.5` 时写 invalid run record，不删除样本继续汇报；checkpoint loader 会重新验证 selection/refit ledger
+- 这些检查证明合同和拒绝语义，不证明 D0/D1 在真实 held-out target `hit@R` 上有效
+
 ---
 
 # P2：可微决策级损失
@@ -400,17 +409,29 @@ if self._candidate_loss_weight > 0.0:
 3. **反例 11**：inner loop 不能访问 outer later decision；
 4. **验收**：`C0` 的目标 hit@8 不低于 `B0`，且 trial AUC 与 hit@R 方向一致。
 
+### 2.5 实施状态（2026-09-03）
+
+P2 direct framework 已随 `ef7a40e` 落地：
+
+- `DirectDecisionMetadata` 从 direct scheduled timeline 冻结 vocabulary、truth、coverage、repetition 和来源行；row/column contract、binary-evidence projection、缺 slot 或错误 `y_i=1[c_i=d*]` 关系均 fail-closed
+- `DecisionLevelLoss` 返回显式 `DecisionLossResult` 与 ledger；complete-decision sampler 要求每 batch 至少 128 rows
+- `lambda_candidate=0` 的 matched control 仍必须提供 metadata 和 grouped-batch contract；OOM 不允许通过缩小 batch 静默改变合同
+- 当前只覆盖 direct membership；row/column factorized objective、target inner-loop 和真实 direct timeline 实验仍未闭合
+
 ---
 
 # 三、实施顺序与依赖
 
-## 依赖图
+## Framework 实施历史
 
 ```
-P0 (Split-BN)    →   独立，可先行
-P1 (drop-to-consensus) → 依赖 FeatureDomainTransfer 已有模块
-P2 (可微决策)     →   依赖 decision 分组 batch sampler，配置到训练循环
+
+P0 (Split-BN) → P1 (drop-to-consensus) → P2 (direct-decision loss)
+                 均已在 ef7a40e 完成 framework/contract 集成
 ```
+
+真实实验仍依赖 current source freeze、attested cache、environment/plan binding 和独立
+shell/云端测试验收；这些门禁以 [`research_program.zh.md`](research_program.zh.md) 为准。
 
 ## 各阶段日志记录要求
 

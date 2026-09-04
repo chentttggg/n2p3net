@@ -253,6 +253,8 @@ def _single_job_argv(
         str(args.orthogonality_weight),
         "--feature-alignment-weight",
         str(args.feature_alignment_weight),
+        "--feature-alignment-mode",
+        args.feature_alignment_mode,
         "--checkpoint",
         str(job.checkpoint),
         "--device",
@@ -518,6 +520,15 @@ def main(argv: list[str] | None = None) -> None:
         help=(
             "Weight of the class-conditional invariant-feature mean-alignment loss "
             "across source domains; 0 disables this auxiliary objective."
+        ),
+    )
+    parser.add_argument(
+        "--feature-alignment-mode",
+        choices=("mean", "conditional_rbf_mmd"),
+        default="mean",
+        help=(
+            "Feature alignment objective: class-conditional mean distance or "
+            "conditional RBF-MMD across source domains."
         ),
     )
     parser.add_argument(
@@ -877,6 +888,7 @@ def main(argv: list[str] | None = None) -> None:
             y,
             group_ids=src_subjects,
             feature_alignment_weight=args.feature_alignment_weight,
+            feature_alignment_mode=args.feature_alignment_mode,
             feature_private_domain_weight=args.private_domain_weight,
             feature_orthogonality_weight=args.orthogonality_weight,
             **risk_fit_kwargs,
@@ -929,6 +941,7 @@ def main(argv: list[str] | None = None) -> None:
             y,
             group_ids=None,
             feature_alignment_weight=args.feature_alignment_weight,
+            feature_alignment_mode=args.feature_alignment_mode,
             feature_private_domain_weight=args.private_domain_weight,
             feature_orthogonality_weight=args.orthogonality_weight,
             **risk_fit_kwargs,
@@ -1090,8 +1103,13 @@ def main(argv: list[str] | None = None) -> None:
             "decision_loss_diagnostics": decision_training_diagnostics,
             "feature_alignment_contract": {
                 "weight": float(args.feature_alignment_weight),
+                "mode": args.feature_alignment_mode,
                 "loss": (
-                    "class_conditional_mean_alignment"
+                    (
+                        "class_conditional_rbf_mmd"
+                        if args.feature_alignment_mode == "conditional_rbf_mmd"
+                        else "class_conditional_mean_alignment"
+                    )
                     if args.feature_alignment_weight > 0.0
                     else None
                 ),
@@ -1102,9 +1120,15 @@ def main(argv: list[str] | None = None) -> None:
                 "selection_epoch_mean_squared_distance": (
                     selection_baseline.last_history.get("feature_alignment") or {}
                 ).get("epoch_mean_squared_distance"),
+                "selection_epoch_mmd_squared": (
+                    selection_baseline.last_history.get("feature_alignment") or {}
+                ).get("epoch_mmd_squared"),
                 "refit_epoch_mean_squared_distance": (
                     baseline.last_history.get("feature_alignment") or {}
                 ).get("epoch_mean_squared_distance"),
+                "refit_epoch_mmd_squared": (
+                    baseline.last_history.get("feature_alignment") or {}
+                ).get("epoch_mmd_squared"),
                 "selection_epoch_private_domain_loss": (
                     selection_baseline.last_history.get("feature_alignment") or {}
                 ).get("epoch_private_domain_loss"),
@@ -1149,6 +1173,7 @@ def main(argv: list[str] | None = None) -> None:
             "decision_loss": decision_loss_record,
             "feature_transfer": feature_transfer.record() if feature_transfer is not None else None,
             "feature_alignment_weight": float(args.feature_alignment_weight),
+            "feature_alignment_mode": args.feature_alignment_mode,
             "private_domain_weight": float(args.private_domain_weight),
             "orthogonality_weight": float(args.orthogonality_weight),
             "training": "N2P3NetBaseline supervised (LOSO-identical path)",

@@ -1,6 +1,6 @@
 # N2P3-Net 文献综述：面向跨被试 P300 解码的工程化证据
 
-> 版本：2026-09-03。本文是论文 Related Work/Introduction 的证据底稿，不是 PRISMA 系统综述。检索与全文边界见 [`literature_manifest_20260828.md`](literature_manifest_20260828.md)；本项目实现和实验状态以 [`../doc/research_program.zh.md`](../doc/research_program.zh.md) 与 [`../doc/research_status_report_20260902.zh.md`](../doc/research_status_report_20260902.zh.md) 为准。
+> 版本：2026-09-03。本文是论文 Related Work/Introduction 的证据底稿，不是 PRISMA 系统综述。检索与全文边界见 [`literature_manifest_20260828.md`](literature_manifest_20260828.md)；本项目实现和实验状态以 [`../doc/research_program.zh.md`](../doc/research_program.zh.md) 与 [`../doc/research_evidence_ledger_20260903.zh.md`](../doc/research_evidence_ledger_20260903.zh.md) 为准。
 
 ## 1. 范围与证据规则
 
@@ -55,7 +55,7 @@ P300 的单 trial 形态和 latency jitter 会削弱简单平均、固定时间�
 
 第二条是传统或几何迁移：xDAWN+Riemannian 方法和 Riemannian transfer 可作为低容量 classical floor，说明协方差几何、空间滤波和 recentering 在少校准下有价值（E1/E2，`xDAWN_Riemannian_Transfer_P300_2020.pdf`、`Riemannian_Transfer_Minimal_Calibration_arXiv_2111.12071.pdf`）。但这些方法不替代本项目的 fold-local artifact QC、通道/坐标合同和候选证据状态。
 
-第三条是显式 domain adaptation。跨数据集 variability 研究显示采样率、通道、参考、刺激设计和设备差异会形成非平凡 domain shift（T，DOI `10.3389/fnhum.2020.00103`，`EEG_Cross_Dataset_Variability_2020.pdf`）。P300 的 Split-MMD 预印本将 target weighting、Split-BN 和 MMD 组合起来，但其主要实验是同批被试的随机 trial split，不能证明 unknown-subject/unknown-decision transfer（E2，`Adaptive_Split_MMD_P300_arXiv_2510.21969.pdf`）。MS-MDA 和 RSVP domain-rectified Transformer 说明 domain-specific normalization、conditional alignment 和 shared/private decomposition 是可研究机制，但它们不是 GTN candidate decision 证据（T，`CrossScale_Transformer_Domain_Rectified_RSVP_TNSRE_2024.pdf` 及 `doc/feature_domain_transfer_research_20260902.zh.md`）。
+第三条是显式 domain adaptation。跨数据集 variability 研究显示采样率、通道、参考、刺激设计和设备差异会形成非平凡 domain shift（T，DOI `10.3389/fnhum.2020.00103`，`EEG_Cross_Dataset_Variability_2020.pdf`）。P300 的 Split-MMD 预印本将 target weighting、Split-BN 和 MMD 组合起来，但其主要实验是同批被试的随机 trial split，不能证明 unknown-subject/unknown-decision transfer（E2，`Adaptive_Split_MMD_P300_arXiv_2510.21969.pdf`）。MS-MDA 和 RSVP domain-rectified Transformer 说明 domain-specific normalization、conditional alignment 和 shared/private decomposition 是可研究机制；本项目已将相关机制与结果边界收敛到 [`../doc/research_evidence_ledger_20260903.zh.md`](../doc/research_evidence_ledger_20260903.zh.md)。
 
 本项目工程裁决因此不是“加一个 adapter 就完成迁移”：
 
@@ -65,13 +65,13 @@ P300 的单 trial 形态和 latency jitter 会削弱简单平均、固定时间�
 - `no-transfer`、domain ceiling、domain LODO 和 cross-decision 是必要对照；
 - domain probe 或 feature distance 下降只是机制证据，不能替代 operational candidate hit@R。
 
-当前 BNCI-target development matrix 观察到 pooled multi-source CE 的负迁移：`joint_natural` 的 hit@8 低于 `bnci_only`，80/20 域权重只能恢复而未超过单域基线（详见 [`research_status_report_20260902.zh.md`](../doc/research_status_report_20260902.zh.md)）。该矩阵的证据链仍需按冻结 manifest 重建，因此这里将其作为探索性/开发证据，而不是确认性结论或对所有 P300 数据集的普遍定理；它支持继续研究条件对齐和梯度冲突，而不支持直接宣称“多源预训练有效”。
+当前 BNCI-target development matrix 观察到 pooled multi-source CE 的负迁移：`joint_natural` 的 hit@8 低于 `bnci_only`，80/20 域权重只能恢复而未超过单域基线（详见 [`../doc/research_evidence_ledger_20260903.zh.md`](../doc/research_evidence_ledger_20260903.zh.md)）。该矩阵仍是探索性/开发证据，而不是确认性结论或对所有 P300 数据集的普遍定理；它支持继续研究条件对齐和梯度冲突，而不支持直接宣称“多源预训练有效”。
 
 ## 6. 少校准适配：哪些证据可以迁移
 
 P300 零校准与短校准工作（`Calibration_Free_P300_2022_Accepted.pdf`、`Bayesian_Signal_Matching_ERP_Transfer_arXiv_2401.07111.pdf`）共同指出：新被试的少量信息应被用于 source matching、校准或不确定性估计，而不是默认解冻整个网络。Bayesian signal matching 还提示，当没有可靠 source 时应允许 reference/no-borrow fallback；这一点与本项目的 fail-closed 迁移策略一致。
 
-MAML、Reptile、原型网络和 LoRA 是一般 few-shot 方法，但现有证据主要来自睡眠分期、运动想象或大模型，不能被写成 P300 已验证方案。`doc/literature/literature_review_few_shot_adaptation.md` 的候选排序应理解为工程假设而非结论：本仓库尚无 matched P300 LOSO 证据证明 FiLM、Reptile 或 LoRA 优于当前 B0。尤其是 N2P3Net 只有紧凑规模，LoRA 的大模型参数效率优势不能直接外推；原型均值也未解决 P300 trial-to-trial latency/morphology variance。
+MAML、Reptile、原型网络和 LoRA 是一般 few-shot 方法，但现有证据主要来自睡眠分期、运动想象或大模型，不能被写成 P300 已验证方案。候选排序已收敛进 [`../doc/research_evidence_ledger_20260903.zh.md`](../doc/research_evidence_ledger_20260903.zh.md)，应理解为工程假设而非结论：本仓库尚无 matched P300 LOSO 证据证明 FiLM、Reptile 或 LoRA 优于当前 B0。尤其是 N2P3Net 只有紧凑规模，LoRA 的大模型参数效率优势不能直接外推；原型均值也未解决 P300 trial-to-trial latency/morphology variance。
 
 因此当前可接受的适配研究是低容量、可回退和可审计的 residual adapter：identity initialization、显式残差上界、target-only update、无 target BN running-state 漂移、无 source-domain ID 依赖。只有在合法 target calibration/cross-decision 协议中相对 B0 稳定提升 operational hit@R，才可将其写成迁移增益。
 

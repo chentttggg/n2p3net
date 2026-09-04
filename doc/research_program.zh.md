@@ -1,6 +1,6 @@
 # N2P3-Net 特征域迁移活动科研规范
 
-_版本：2026-09-03 · 活动基线：`ef7a40e` · 唯一活动指导文件 · 适用范围：N2P3-Net P300/ERP 域迁移、目标校准与候选决策_
+_版本：2026-09-04 · 活动基线：`ef7a40e` · 唯一活动指导文件 · 适用范围：N2P3-Net P300/ERP 域迁移、目标校准与候选决策_
 
 > 2026-09-02b 架构裁决（见 [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)）：
 > 横向嵌套（多个 N2P3Net 当外层网络神经元）被否决；活动方向改为纵向分层——
@@ -21,10 +21,9 @@ P0/P1/P2 的 framework/contract 链已落地并通过本地测试，但没有 ac
 
 总监复跑的 9 次全量测试已将高负载异常定性为 WorkBuddy 会话环境故障，而不是源码缺陷：
 bulk-delete、trash、symlink shim 和一个被负载放大的 15ms 并发测试窗口共同造成异常。
-WorkBuddy 会话内的高负载 pytest 结果不作为验收信号；应使用独立 shell/云端，或按审计记录
-unset 守卫变量后复跑。详见
-[`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md) 和
-[`supervisor_full_audit_20260903.zh.md`](supervisor_full_audit_20260903.zh.md)。
+WorkBuddy 会话内的高负载 pytest 结果不作为验收信号；应使用独立 shell/云端，或按验收记录
+unset 守卫变量后复跑。详见 [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md)
+和 [`research_evidence_ledger_20260903.zh.md`](research_evidence_ledger_20260903.zh.md)。
 
 ## 1. 目标与不可偷换的估计量
 
@@ -156,7 +155,11 @@ source 有真实 binary labels 时，对 `Z_inv` 做 class-conditional alignment
  +\kappa\left\|C_{d_1,c}-C_{d_2,c}\right\|_F^2.
 \]
 
-第一版只启用均值项，CORAL covariance 项作为独立 ablation。marginal `P(Z)` alignment、无条件 GRL 和伪标签 alignment 不得进入默认 recipe。
+均值项继续作为默认；`conditional_rbf_mmd` 已作为显式实验 arm 接入 runner，要求每个
+域/类别 cell 达到最小样本数并把 bandwidth、active cells 和 MMD diagnostics 写入 ledger。
+CORAL covariance 项作为独立 ablation。marginal `P(Z)` alignment、无条件 GRL 和伪标签
+alignment 不得进入默认 recipe；论文 faithful 的 marginal logit MMD 只能作为 exploratory
+对照，不能仅凭 MMD 降低晋升。
 
 有效 cell 数、样本数、每域质量、alignment distance 和 task loss 必须保存。cell 不足时标记 `alignment_inactive` 或 fail-closed，不能把缺项当零距离。
 
@@ -646,10 +649,13 @@ cluster CI，以及 source/cache/checkpoint/environment/plan 的 digest。
 | P0 Split-BN | ordered source-domain axis、temporal/spatial/MST 三处 buffer、checkpoint 和 target selector 已贯通 | 训练缺 domain index、评估缺 buffer source、buffer/axis/weight 不一致均失败；target eval 不更新 buffer |
 | P1 drop-to-consensus | source-only residual、Bernoulli drop、`m=0/m=1` counterfactual ledger 与 checkpoint record 已贯通 | target/评估永不 route source residual；固定 `m=1` ratio gate 超过 `r_max=0.5` 时整次 run invalid |
 | P2 direct-decision loss | direct-membership metadata、完整 decision sampler、prefix loss 与 training contract 已贯通 | vocabulary/coverage/membership 不完整时失败；每 batch 至少 128 rows；即使 `lambda_candidate=0` 也不得回退 flat batching |
+| P3 GALIA/AS-MMD | GALIA state、Fast Alignment scope gate、conditional RBF-MMD、PDS-style source sampler 与 promotion 参数已实现 | 只接受显式同维 feature matrices；`rank/condition/AJD residual`、target buffer scope、MMD active cells 和 selected-row digest 缺失时 fail-closed；无真实跨域性能证据 |
 
 N2P3Net core、causal-v3 输入合同和统一 candidate-evidence core 继续保留。
 `FeatureDomainTransfer` 仍负责 invariant/private、目标 residual 与 source residual；source-domain
 axis 只在 source training 中驱动 P0/P1 等声明机制，未知 target 永不伪装为 source domain。
+新 P3 路线默认保留 native reference；CAR 不再是活动跨域默认变换，旧 CAR cache 只能留在
+冻结历史层。
 
 ### 9.2 未闭合的科研与产物门禁
 
@@ -657,6 +663,7 @@ axis 只在 source training 中驱动 P0/P1 等声明机制，未知 target 永�
 - P2 只接受 direct candidate membership；row/column promotion runner 不能把 9-choice direct loss 伪装为 row/column 任务，需先实现 typed protocol dispatch
 - target result/manifest 尚未重复写入 P0/P1 effective buffer source、estimand 与 buffer digest；executed-source identity、lockfile/environment digest 与 target OOM requested-denominator 也未闭合
 - 尚无 active real source/target cache、真实 CUDA、成人 BrainSync multi-session/target-switch 或 matched fold/seed paired CI
+- GALIA 当前只接收显式同维 feature matrices；原始异构 `EpochDataset` 的 domain-specific feature lift 尚未默认自动构建
 - WorkBuddy 会话内的高负载测试异常已定性为环境层故障，不归责于项目代码；独立 shell/云端复跑纪律仍是开放工程门禁，15ms 并发测试窗口改进属于可选测试维护
 
 因此，当前只能声称 framework/contract 已实现。不得声称 feature transfer、decision learning、
@@ -666,11 +673,12 @@ axis 只在 source training 中驱动 P0/P1 等声明机制，未知 target 永�
 
 1. 生成当前执行树的 source-only archive 和 manifest，不能复用 `c7bf860` 的旧 source archive
 2. 对 active cache 做 protocol 和 identity attestation；direct 与 row/column 数据不得混用 P2 合同
-3. 建立绑定 source、environment、cache、plan 与 checkpoint 的 dry-run，再做单 worker CUDA smoke
-4. 仅在预声明的 matched fold/seed 下运行 pooled-BN、P0、P1 与允许的 P2 direct arms，并报告 participant-cluster CI
-5. 在 target-calibration、row/column dispatch 与 target failure ledger 各自闭合前，不扩大主张或启动不受合同支持的 arm
+3. 为 BI 家族构造并核验 domain-specific feature lift，再生成 GALIA state/aligned artifact；GTN 3 导路线暂不绕过 rank gate
+4. 建立绑定 source、environment、cache、plan 与 checkpoint 的 dry-run，再做单 worker CUDA smoke
+5. 仅在预声明的 matched fold/seed 下运行 pooled-BN、P0、P1、P3 和允许的 P2 direct arms，并报告 participant-cluster CI
+6. 在 target-calibration、row/column dispatch 与 target failure ledger 各自闭合前，不扩大主张或启动不受合同支持的 arm
 
 架构裁决与文献依据见 [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)；
 实施与数学记录见 [`implementation_plan_20260902.zh.md`](implementation_plan_20260902.zh.md) 和
 [`math_verification_20260902.zh.md`](math_verification_20260902.zh.md)；研究背景见
-[`feature_domain_transfer_research_20260902.zh.md`](feature_domain_transfer_research_20260902.zh.md)。
+[`research_evidence_ledger_20260903.zh.md`](research_evidence_ledger_20260903.zh.md)。

@@ -1,4 +1,4 @@
-"""Apply an explicit common-channel average-reference domain contract."""
+"""Select a declared domain montage without silently re-referencing it."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ if str(SRC) not in sys.path:
 
 from data.domain import (  # noqa: E402
     adapt_common_channel_average_reference,
+    ensure_native_reference_selection,
     namespace_epoch_dataset,
 )
 from data.epochs import (  # noqa: E402
@@ -57,6 +58,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-cache", required=True)
     parser.add_argument("--target-channels", required=True, help="Comma-separated canonical EEG channels.")
+    parser.add_argument(
+        "--reference-mode",
+        choices=("native_preserve", "common_average"),
+        default="native_preserve",
+        help=(
+            "Preserve the source reference by default; common_average is an explicit "
+            "legacy/control transform."
+        ),
+    )
+    parser.add_argument(
+        "--min-common-channels",
+        type=int,
+        default=3,
+        help="Minimum selected channels allowed for common_average mode.",
+    )
     parser.add_argument("--name", default=None)
     parser.add_argument("--subject-namespace", default=None)
     parser.add_argument("--output", required=True)
@@ -64,18 +80,25 @@ def main() -> None:
     args = parser.parse_args()
 
     channels = tuple(value.strip() for value in args.target_channels.split(",") if value.strip())
+    if args.min_common_channels < 2:
+        parser.error("--min-common-channels must be at least two")
+    if args.reference_mode == "common_average" and len(channels) < args.min_common_channels:
+        parser.error(
+            "common_average mode requires at least "
+            f"{args.min_common_channels} selected channels; use native_preserve for the "
+            "active route."
+        )
     source_path = Path(args.dataset_cache).resolve(strict=True)
     dataset = load_epoch_dataset(source_path, validation="attested")
     dataset = _bind_loaded_parent_cache(dataset, source_path)
-    adapted = adapt_common_channel_average_reference(
-        dataset,
-        channels,
-        name=args.name,
-    )
+    if args.reference_mode == "common_average":
+        adapted = adapt_common_channel_average_reference(dataset, channels, name=args.name)
+    else:
+        adapted = ensure_native_reference_selection(dataset, channels, name=args.name)
     if args.subject_namespace is not None:
         adapted = namespace_epoch_dataset(adapted, args.subject_namespace, name=args.name)
     output = save_epoch_dataset(args.output, adapted, compressed=not args.uncompressed)
-    print(f"[adapted] {output}", flush=True)
+    print(f"[adapted] {output} reference_mode={args.reference_mode}", flush=True)
 
 
 if __name__ == "__main__":

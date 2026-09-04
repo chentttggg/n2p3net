@@ -25,6 +25,7 @@ from data.epochs import (
 )
 from data.events import ScheduledEventTimeline
 from experiments.prepare_multidomain_source import main
+from experiments.prepare_reference_cache import main as derive_reference_cache_main
 
 
 def _source_dataset(
@@ -135,13 +136,14 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
     barrier = threading.Barrier(2)
     worker_names: list[str] = []
 
-    def concurrent_prepare(source, *, channels, event_contract):
+    def concurrent_prepare(source, *, channels, event_contract, reference_mode):
         worker_names.append(threading.current_thread().name)
         barrier.wait(timeout=5)
         return original_prepare(
             source,
             channels=channels,
             event_contract=event_contract,
+            reference_mode=reference_mode,
         )
 
     monkeypatch.setattr(module, "_prepare_source", concurrent_prepare)
@@ -156,6 +158,8 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
             f"B={second_path}",
             "--target-channels",
             "Cz,P3,Pz,P4,Oz",
+            "--reference-mode",
+            "common_average",
             "--output",
             str(output_path),
             "--source-workers",
@@ -237,6 +241,8 @@ def test_multidomain_builder_requires_explicit_binary_view_for_mixed_event_metad
             f"BINARY={binary_path}",
             "--target-channels",
             "Cz,P3,Pz,P4,Oz",
+            "--reference-mode",
+            "common_average",
             "--output",
             str(rejected_path),
         ],
@@ -258,6 +264,8 @@ def test_multidomain_builder_requires_explicit_binary_view_for_mixed_event_metad
             "Cz,P3,Pz,P4,Oz",
             "--event-contract",
             "binary_evidence",
+            "--reference-mode",
+            "common_average",
             "--output",
             str(output_path),
         ],
@@ -278,3 +286,125 @@ def test_multidomain_builder_requires_explicit_binary_view_for_mixed_event_metad
     assert reloaded_candidate.event_timeline.supports_full_candidate_chain is True
     np.testing.assert_array_equal(merged.X[: candidate.n_epochs], candidate.X)
     np.testing.assert_array_equal(merged.X[candidate.n_epochs :], binary.X)
+
+
+def test_multidomain_builder_preserves_native_reference_by_default(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    first = _source_dataset(source_id="A", subject="01", offset=0.0)
+    second = _source_dataset(source_id="B", subject="02", offset=100.0)
+    first_path = save_epoch_dataset(tmp_path / "first.npz", first)
+    second_path = save_epoch_dataset(tmp_path / "second.npz", second)
+    output_path = tmp_path / "native-merged.npz"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prepare_multidomain_source.py",
+            "--source",
+            f"A={first_path}",
+            "--source",
+            f"B={second_path}",
+            "--target-channels",
+            "Cz,P3,Pz,P4,Oz",
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    main()
+
+    merged = load_epoch_dataset(output_path, require_labels=True, validation="attested")
+    assert merged.provenance["source_reference"] == "native:earlobe"
+    assert merged.provenance["domain_adapter"]["schema"] == "n2p3_native_reference_selection/1"
+    assert merged.provenance["reference_mode"] == "native_preserve"
+    assert all(
+        record["reference_mode"] == "native_preserve"
+        for record in merged.provenance["sources"]
+    )
+    np.testing.assert_array_equal(merged.X[: first.n_epochs], first.X)
+    np.testing.assert_array_equal(merged.X[first.n_epochs :], second.X)
+
+
+def test_multidomain_builder_rejects_two_channel_car_when_requested(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    first = _source_dataset(source_id="A", subject="01", offset=0.0)
+    second = _source_dataset(source_id="B", subject="02", offset=100.0)
+    first_path = save_epoch_dataset(tmp_path / "first.npz", first)
+    second_path = save_epoch_dataset(tmp_path / "second.npz", second)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prepare_multidomain_source.py",
+            "--source",
+            f"A={first_path}",
+            "--source",
+            f"B={second_path}",
+            "--target-channels",
+            "Cz,P3",
+            "--reference-mode",
+            "common_average",
+            "--output",
+            str(tmp_path / "two-channel.npz"),
+        ],
+    )
+
+
+
+def test_reference_cache_derivation_builds_native_and_car_views(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = _source_dataset(source_id="RAW", subject="01", offset=0.0)
+    source_path = save_epoch_dataset(tmp_path / "raw.npz", source)
+    native_path = tmp_path / "native.npz"
+    car_path = tmp_path / "car.npz"
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prepare_reference_cache.py",
+            "--dataset-cache",
+            str(source_path),
+            "--target-channels",
+            "Cz,P3,Pz,P4,Oz",
+            "--reference-mode",
+            "native_preserve",
+            "--output",
+            str(native_path),
+        ],
+    )
+    derive_reference_cache_main()
+    native = load_epoch_dataset(native_path, require_labels=True, validation="attested")
+    assert native.provenance["source_reference"] == "native:earlobe"
+    np.testing.assert_array_equal(native.X, source.X)
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prepare_reference_cache.py",
+            "--dataset-cache",
+            str(source_path),
+            "--target-channels",
+            "Cz,P3,Pz,P4,Oz",
+            "--reference-mode",
+            "common_average",
+            "--output",
+            str(car_path),
+        ],
+    )
+    derive_reference_cache_main()
+    car = load_epoch_dataset(car_path, require_labels=True, validation="attested")
+    assert car.provenance["domain_adapter"]["schema"] == "n2p3_common_channel_car/1"
+    np.testing.assert_allclose(car.X.sum(axis=1), 0.0, atol=1e-6)
+
+    with pytest.raises(SystemExit) as exc_info:
+        main()
+    assert exc_info.value.code == 2
+

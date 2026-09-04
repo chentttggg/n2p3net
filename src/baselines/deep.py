@@ -85,7 +85,10 @@ from train.runtime import (
     is_oom_error,
     resolve_optimizer_execution,
 )
-from transfer.alignment import conditional_mean_alignment_loss
+from transfer.alignment import (
+    conditional_domain_rbf_mmd_loss,
+    conditional_mean_alignment_loss,
+)
 from transfer.decision_loss import (
     DECISION_TRAINING_LEDGER_SCHEMA,
     DecisionBatchPlan,
@@ -423,6 +426,8 @@ class DeepBaseline(Baseline):
         self.last_runtime: dict[str, object] = {}
         self.last_source_risk: dict[str, object] | None = None
         self._feature_alignment_weight = 0.0
+        self._feature_alignment_mode = "mean"
+        self._feature_alignment_min_cell_count = 8
         self._feature_private_domain_weight = 0.0
         self._feature_orthogonality_weight = 0.0
         self._alignment_domain_vocabulary: tuple[str, ...] = ()
@@ -862,6 +867,8 @@ class DeepBaseline(Baseline):
         risk_within_domain_unit: str = "participant",
         selection_domain: str | None = None,
         feature_alignment_weight: float = 0.0,
+        feature_alignment_mode: str = "mean",
+        feature_alignment_min_cell_count: int = 8,
         feature_private_domain_weight: float = 0.0,
         feature_orthogonality_weight: float = 0.0,
         decision_metadata: DirectDecisionMetadata | None = None,
@@ -871,6 +878,15 @@ class DeepBaseline(Baseline):
 
         if not np.isfinite(feature_alignment_weight) or feature_alignment_weight < 0.0:
             raise ValueError("feature_alignment_weight must be finite and non-negative.")
+        if feature_alignment_mode not in {"mean", "conditional_rbf_mmd"}:
+            raise ValueError(
+                "feature_alignment_mode must be 'mean' or 'conditional_rbf_mmd'."
+            )
+        if (
+            isinstance(feature_alignment_min_cell_count, bool)
+            or feature_alignment_min_cell_count < 2
+        ):
+            raise ValueError("feature_alignment_min_cell_count must be at least two.")
         for name, value in (
             ("feature_private_domain_weight", feature_private_domain_weight),
             ("feature_orthogonality_weight", feature_orthogonality_weight),
@@ -980,6 +996,8 @@ class DeepBaseline(Baseline):
                     "features (N2P3NetBaseline)."
                 )
         self._feature_alignment_weight = float(feature_alignment_weight)
+        self._feature_alignment_mode = feature_alignment_mode
+        self._feature_alignment_min_cell_count = int(feature_alignment_min_cell_count)
         self._feature_private_domain_weight = float(feature_private_domain_weight)
         self._feature_orthogonality_weight = float(feature_orthogonality_weight)
         self._source_residual_active = source_residual_active
@@ -1028,6 +1046,8 @@ class DeepBaseline(Baseline):
                         risk_unit_ids=risk_unit_ids,
                         risk_within_domain_unit=risk_within_domain_unit,
                         selection_domain=selection_domain,
+                        feature_alignment_mode=feature_alignment_mode,
+                        feature_alignment_min_cell_count=feature_alignment_min_cell_count,
                         decision_metadata=decision_metadata,
                         decision_loss_config=decision_loss_config,
                         requested_batch_size=requested_batch_size,
@@ -1103,6 +1123,8 @@ class DeepBaseline(Baseline):
         risk_unit_ids: np.ndarray | None,
         risk_within_domain_unit: str,
         selection_domain: str | None,
+        feature_alignment_mode: str,
+        feature_alignment_min_cell_count: int,
         decision_metadata: DirectDecisionMetadata | None,
         decision_loss_config: DecisionLossConfig | None,
         requested_batch_size: int,
@@ -1496,6 +1518,8 @@ class DeepBaseline(Baseline):
                 )
         self.last_feature_alignment = {
             "weight": alignment_weight,
+            "mode": self._feature_alignment_mode,
+            "min_cell_count": self._feature_alignment_min_cell_count,
             "alignment_active": alignment_active,
             "private_domain_weight": private_weight,
             "private_domain_active": private_active,
@@ -1503,6 +1527,7 @@ class DeepBaseline(Baseline):
             "orthogonality_active": orthogonality_active,
             "domain_vocabulary": list(self._alignment_domain_vocabulary),
             "epoch_mean_squared_distance": [],
+            "epoch_mmd_squared": [],
             "epoch_private_domain_loss": [],
             "epoch_orthogonality_loss": [],
         }
@@ -1796,12 +1821,23 @@ class DeepBaseline(Baseline):
                     trial_loss = trial_numerator / trial_denominator
                     loss = trial_loss
                     if alignment_active:
-                        alignment_loss, alignment_diagnostics = conditional_mean_alignment_loss(
-                            features,
-                            yb,
-                            domain_batch,
-                            domain_count,
-                        )
+                        if self._feature_alignment_mode == "conditional_rbf_mmd":
+                            alignment_loss, alignment_diagnostics = (
+                                conditional_domain_rbf_mmd_loss(
+                                    features,
+                                    yb,
+                                    domain_batch,
+                                    domain_count,
+                                    min_cell_count=self._feature_alignment_min_cell_count,
+                                )
+                            )
+                        else:
+                            alignment_loss, alignment_diagnostics = conditional_mean_alignment_loss(
+                                features,
+                                yb,
+                                domain_batch,
+                                domain_count,
+                            )
                         loss = loss + alignment_weight * alignment_loss
                     if private_active:
                         if len(forwarded) < 3 or not hasattr(self.model_, "private_domain_logits"):
@@ -2004,6 +2040,7 @@ class DeepBaseline(Baseline):
             epoch_candidate_prefix_sum: torch.Tensor | None = None
             epoch_decision_count = 0
             epoch_alignment_sum = 0.0
+            epoch_mmd_sum = 0.0
             epoch_alignment_batches = 0
             epoch_private_sum = 0.0
             epoch_orthogonality_sum = 0.0
@@ -2105,6 +2142,8 @@ class DeepBaseline(Baseline):
                         epoch_alignment_sum += float(
                             alignment_diagnostics["mean_squared_distance"]
                         )
+                    if "mmd_squared" in alignment_diagnostics:
+                        epoch_mmd_sum += float(alignment_diagnostics["mmd_squared"])
                     if "private_domain_loss" in alignment_diagnostics:
                         epoch_private_sum += float(
                             alignment_diagnostics["private_domain_loss"]
@@ -2129,6 +2168,12 @@ class DeepBaseline(Baseline):
             self.last_feature_alignment["epoch_mean_squared_distance"].append(
                 epoch_alignment_sum / epoch_alignment_batches
                 if epoch_alignment_batches
+                else None
+            )
+            self.last_feature_alignment["epoch_mmd_squared"].append(
+                epoch_mmd_sum / epoch_alignment_batches
+                if self._feature_alignment_mode == "conditional_rbf_mmd"
+                and epoch_alignment_batches
                 else None
             )
             self.last_feature_alignment["epoch_private_domain_loss"].append(

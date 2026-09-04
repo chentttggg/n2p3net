@@ -17,6 +17,7 @@ from data.lineage import DataLineage
 from data.qc_features import compute_epoch_qc_features
 
 DOMAIN_ADAPTER_SCHEMA = "n2p3_common_channel_car/1"
+NATIVE_REFERENCE_SCHEMA = "n2p3_native_reference_selection/1"
 BINARY_EVIDENCE_PROJECTION_SCHEMA = "n2p3_binary_evidence_source_view/1"
 SOURCE_DOMAIN_AXIS_SCHEMA = "n2p3_source_domain_axis/1"
 SOURCE_DOMAIN_COLUMN = "source_domain"
@@ -119,6 +120,182 @@ def adapt_common_channel_average_reference(
     )
     adapted.validate(require_labels=dataset.y is not None)
     return adapted
+
+
+def adapt_native_reference_selection(
+    dataset: EpochDataset,
+    target_channels: Sequence[str],
+    *,
+    name: str | None = None,
+) -> EpochDataset:
+    """Select a complete common montage without changing the reference.
+
+    CAR is a reference *normalization*, not a lossless alignment. When two
+    sources already declare the same physical reference, forcing CAR removes a
+    spatial degree of freedom and has been observed to hurt task information in
+    local ablations. This transform is the explicit ``preserve_native`` arm:
+    it only selects the common channels and records that no re-referencing was
+    performed, so downstream code can never silently mislabel CARed tensors as
+    native.
+    """
+
+    dataset.validate(require_labels=dataset.y is not None)
+    identity_table = materialize_dataset_identity(dataset)
+    parent_lineage = materialize_dataset_lineage(dataset)
+    channels = tuple(canonical_channel_name(value) for value in target_channels)
+    if len(channels) < 2 or len(set(channels)) != len(channels):
+        raise ValueError("target_channels must contain at least two unique channels.")
+    adapter = dataset.provenance.get("domain_adapter")
+    if adapter is not None:
+        if not isinstance(adapter, Mapping):
+            raise ValueError("dataset declares an unsupported or malformed domain_adapter contract.")
+        raise ValueError(
+            "native reference selection cannot consume an already domain-adapted dataset; "
+            f"found adapter schema {adapter.get('schema')!r}."
+        )
+    parent_reference = dataset.provenance.get("source_reference")
+    if not isinstance(parent_reference, str) or not parent_reference.strip():
+        raise ValueError(
+            "native reference selection requires an explicit non-empty source_reference "
+            "in the parent provenance."
+        )
+    indices_by_name = {name: index for index, name in enumerate(dataset.channel_names)}
+    missing = [channel for channel in channels if channel not in indices_by_name]
+    if missing:
+        raise ValueError(f"dataset {dataset.name!r} lacks common channels {missing}.")
+    indices = np.asarray([indices_by_name[channel] for channel in channels], dtype=np.int64)
+    if dataset.trial_channel_mask is None:
+        observed = np.broadcast_to(dataset.channel_mask, dataset.X.shape[:2])[:, indices]
+    else:
+        observed = np.asarray(dataset.trial_channel_mask, dtype=bool)[:, indices]
+        observed &= np.asarray(dataset.channel_mask, dtype=bool)[indices][None, :]
+    if not bool(observed.all()):
+        unavailable = np.argwhere(~observed)
+        first = unavailable[0].tolist()
+        raise ValueError(
+            "native common-channel selection requires every selected channel in every trial; "
+            f"first missing trial/channel index={first}."
+        )
+
+    values = np.ascontiguousarray(dataset.X[:, indices, :], dtype=np.float32)
+    reference = f"native:{parent_reference}"
+    adapted = EpochDataset(
+        name=name or f"{dataset.name}-native-selection",
+        X=values,
+        y=None if dataset.y is None else np.asarray(dataset.y, dtype=np.int64),
+        subject_ids=np.asarray(dataset.subject_ids).astype(str),
+        channel_names=channels,
+        channel_positions_m=np.asarray(dataset.channel_positions_m[indices], dtype=np.float32),
+        channel_mask=np.ones(len(channels), dtype=bool),
+        preprocessing=dataset.preprocessing,
+        event_timeline=dataset.event_timeline,
+        metadata=dataset.metadata.copy(),
+        provenance={
+            **dataset.provenance,
+            "source": "explicit_native_reference_channel_selection",
+            "parent_dataset_name": dataset.name,
+            "parent_source_reference": parent_reference,
+            "source_reference": reference,
+            "domain_adapter": {
+                "schema": NATIVE_REFERENCE_SCHEMA,
+                "target_channels": list(channels),
+                "operation": "select channels without re-referencing",
+                "preserved_source_reference": parent_reference,
+                "preprocessing_identity": dataset.preprocessing.name,
+            },
+        },
+        trial_channel_mask=None,
+        qc_features=compute_epoch_qc_features(
+            values,
+            channel_mask=np.ones(len(channels), dtype=bool),
+        ),
+        identity_table=identity_table,
+        lineage=DataLineage.derive(
+            [parent_lineage],
+            operation="native_reference_channel_selection",
+            parameters={
+                "target_channels": list(channels),
+                "reference": reference,
+            },
+        ),
+    )
+    adapted.validate(require_labels=dataset.y is not None)
+    return adapted
+
+
+def _existing_native_selection_matches(
+    dataset: EpochDataset,
+    channels: tuple[str, ...],
+) -> bool:
+    adapter = dataset.provenance.get("domain_adapter")
+    if adapter is None:
+        return False
+    if not isinstance(adapter, Mapping) or adapter.get("schema") != NATIVE_REFERENCE_SCHEMA:
+        raise ValueError("dataset declares an unsupported or malformed domain_adapter contract.")
+    raw_claimed_channels = adapter.get("target_channels")
+    if not isinstance(raw_claimed_channels, Sequence) or isinstance(
+        raw_claimed_channels,
+        (str, bytes, bytearray),
+    ):
+        raise ValueError("domain_adapter.target_channels must be a channel-name sequence.")
+    claimed_channels = tuple(
+        canonical_channel_name(value) for value in raw_claimed_channels
+    )
+    parent_reference = adapter.get("preserved_source_reference")
+    if not isinstance(parent_reference, str) or not parent_reference.strip():
+        raise ValueError("native reference adapter lacks its preserved source reference.")
+    reference = f"native:{parent_reference}"
+    mismatches: list[str] = []
+    if claimed_channels != channels:
+        return False
+    if dataset.channel_names != channels:
+        mismatches.append("channel_names")
+    if not bool(np.asarray(dataset.channel_mask, dtype=bool).all()):
+        mismatches.append("channel_mask")
+    if dataset.trial_channel_mask is not None:
+        mismatches.append("trial_channel_mask")
+    if dataset.provenance.get("source_reference") != reference:
+        mismatches.append("source_reference")
+    if adapter.get("preprocessing_identity") != dataset.preprocessing.name:
+        mismatches.append("preprocessing_identity")
+    expected_lineage_parameters = {
+        "target_channels": list(channels),
+        "reference": reference,
+    }
+    lineage = materialize_dataset_lineage(dataset)
+    if not any(
+        entity.operation == "native_reference_channel_selection"
+        and dict(entity.parameters) == expected_lineage_parameters
+        for entity in lineage.entities
+    ):
+        mismatches.append("lineage")
+    if mismatches:
+        raise ValueError(
+            "native reference selection provenance disagrees with the dataset contract: "
+            f"{mismatches}."
+        )
+    return True
+
+
+def ensure_native_reference_selection(
+    dataset: EpochDataset,
+    target_channels: Sequence[str],
+    *,
+    name: str | None = None,
+) -> EpochDataset:
+    """Apply native channel selection once, or prove an existing one is complete."""
+
+    dataset.validate(require_labels=dataset.y is not None)
+    channels = tuple(canonical_channel_name(value) for value in target_channels)
+    if len(channels) < 2 or len(set(channels)) != len(channels):
+        raise ValueError("target_channels must contain at least two unique channels.")
+    if _existing_native_selection_matches(dataset, channels):
+        if name is not None and dataset.name != name:
+            raise ValueError(
+                "an already-adapted dataset cannot be renamed by an idempotent native check."
+            )
+        return dataset
+    return adapt_native_reference_selection(dataset, channels, name=name)
 
 
 def _existing_common_car_matches(

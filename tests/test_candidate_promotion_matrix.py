@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import json
@@ -385,6 +385,29 @@ def test_training_forwards_feature_transfer_contract_to_pretraining(tmp_path: Pa
     assert plan.source_arms[1].selection_domain is None
 
 
+def test_training_forwards_conditional_rbf_mmd_alignment_mode(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["source_arms"][1]["source_domain_mass"] = None
+    record["source_arms"][1]["risk_within_domain_unit"] = None
+    record["source_arms"][1]["selection_domain"] = None
+    record["training"].update(
+        {
+            "feature_transfer_invariant_bottleneck": 2,
+            "feature_alignment_weight": 0.1,
+            "feature_alignment_mode": "conditional_rbf_mmd",
+        }
+    )
+
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+    checkpoint = next(task for task in dag.tasks if task.kind == "checkpoint_batch")
+
+    assert plan.training.feature_alignment_mode == "conditional_rbf_mmd"
+    assert checkpoint.argv[checkpoint.argv.index("--feature-alignment-mode") + 1] == (
+        "conditional_rbf_mmd"
+    )
+
+
 def test_plan_round_trips_named_splitbn_and_source_residual_contract(
     tmp_path: Path,
 ) -> None:
@@ -607,6 +630,32 @@ def test_plan_supports_natural_ce_with_target_domain_selection(tmp_path: Path) -
     assert "--source-domain-mass" not in checkpoint.argv
     assert "--risk-within-domain-unit" not in checkpoint.argv
     assert checkpoint.argv[checkpoint.argv.index("--selection-domain") + 1] == "A"
+
+
+
+def test_plan_supports_candidate_loss_ablation_interface(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["evaluation_arms"][1]["candidate_loss_weight"] = 0.25
+    record["evaluation_arms"][1]["candidate_loss_temperature"] = 2.0
+    plan = _load(tmp_path, record)
+    assert plan.evaluation_arms[1].candidate_loss_weight == 0.25
+    assert plan.evaluation_arms[1].candidate_loss_temperature == 2.0
+    dag = matrix.build_dag(plan)
+    result = next(
+        task
+        for task in dag.tasks
+        if task.task_id
+        == "result/source_a__linear_time_split/rep01/p01"
+    )
+    assert "--candidate-loss-weight" in result.argv
+    assert "--candidate-loss-temperature" in result.argv
+
+
+def test_plan_rejects_candidate_loss_on_zero_shot_arm(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["evaluation_arms"][0]["candidate_loss_weight"] = 0.1
+    with pytest.raises(ValueError, match="candidate_loss_weight must be 0"):
+        _load(tmp_path, record)
 
 
 @pytest.mark.parametrize("head", ["linear", "mlp16", "classifier_fine", "full_fine", "adapter"])

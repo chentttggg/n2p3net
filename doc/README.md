@@ -51,12 +51,15 @@ flowchart TB
 |---|---|---|---|
 | 活动规范 | [`research_program.zh.md`](research_program.zh.md) | 研究问题、估计量、门禁、反例和下一步 | 唯一活动指导文件 |
 | 绑定合同 | [`input_contract_math.zh.md`](input_contract_math.zh.md) | EEG 时间轴、单位、预处理和分组 | 不得以实验便利绕过 |
+| 项目章程 | [`mission.md`](mission.md) | 产品目标、适用人群和 GTN 边界 | 不作性能证明 |
+| 工程环境 | [`techstack.md`](techstack.md)、[`device-portability.md`](device-portability.md) | 依赖、设备、调度与运行时约定 | 运行证据仍需 manifest |
 | 工程流程 | [`CODING_WORKFLOW.md`](CODING_WORKFLOW.md) | 本地开发、测试与提交习惯 | 与活动规范冲突时以后者为准 |
-| 决策与推导 | [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)、[`implementation_plan_20260902.zh.md`](implementation_plan_20260902.zh.md)、[`math_verification_20260902.zh.md`](math_verification_20260902.zh.md) | 方案为何成立、如何落实、反例为何必须保留 | 记录，不是新的派工单 |
-| 框架验收 | [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md)、[`supervisor_full_audit_20260903.zh.md`](supervisor_full_audit_20260903.zh.md) | `ef7a40e` 的代码链、测试、独立复跑和开放风险 | 仅 framework/contract evidence |
-| 研究依据 | [`feature_domain_transfer_research_20260902.zh.md`](feature_domain_transfer_research_20260902.zh.md)、[`literature/`](literature) | 文献与机制假设 | 不替代当前性能证据 |
+| 决策与推导 | [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)、[`implementation_plan_20260902.zh.md`](implementation_plan_20260902.zh.md)、[`math_verification_20260902.zh.md`](math_verification_20260902.zh.md)、[`car_math_audit_20260904.zh.md`](car_math_audit_20260904.zh.md)、[`domain_alignment_replacement_20260904.zh.md`](domain_alignment_replacement_20260904.zh.md)、[`domain_transfer_revision_20260904.zh.md`](domain_transfer_revision_20260904.zh.md) | 方案为何成立、如何落实、反例为何必须保留；CAR 边界与 GALIA/AS-MMD 替代方案；域迁移机制批判与 adapter 剂量诊断 | 记录，不是新的派工单 |
+| 框架验收 | [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md) | `ef7a40e` 的代码链、测试和开放风险 | 仅 framework/contract evidence |
+| 实证与外部依据 | [`research_evidence_ledger_20260903.zh.md`](research_evidence_ledger_20260903.zh.md) | 历史结果、机制推理、文献和统计/来源合同 | 不替代当前性能证据 |
+| 论文文献底稿 | [`../Paper/literature_review_n2p3net_20260903.zh.md`](../Paper/literature_review_n2p3net_20260903.zh.md) | 论文 Related Work 与引用纪律 | 不作为活动规范 |
 | 历史文档 | [`../frozen/document_history_through_ef7a40e_20260903.manifest.json`](../frozen/document_history_through_ef7a40e_20260903.manifest.json) | 已完成派工、旧 cloud staging 计划和集成前审计 | 仅证据，不得直接执行 |
-| 历史结果 | [`research_status_report_20260902.zh.md`](research_status_report_20260902.zh.md)、[`research_status_report_20260831.zh.md`](research_status_report_20260831.zh.md) | 既有 development/evidence 边界 | 不得升级为 confirmation |
+| 已收敛报告 | [`../frozen/document_reports_through_6c4abe8_20260903.manifest.json`](../frozen/document_reports_through_6c4abe8_20260903.manifest.json) | 被台账吸收的 dated report、审计和候选综述 | 需要原文时从归档恢复 |
 
 ## 🎯 当前活动基线
 
@@ -68,22 +71,25 @@ flowchart TB
 | P0 Split-BN | source-domain buffer、目标 buffer selector 和 checkpoint 绑定已实现 | 成对 fold/seed、cluster CI 和 buffer-swap 机制证据 |
 | P1 drop-to-consensus | source-only residual、counterfactual ledger 和 invalid-run gate 已实现 | 真实 source/target 迁移与 held-out operational hit@R |
 | P2 direct-decision loss | direct-membership metadata、完整 decision batch 与训练合同已实现 | 真实 direct timeline 训练；row/column protocol dispatch 仍未实现 |
+| P3 GALIA/AS-MMD | GALIA/AJD state、Fast Alignment scope gate、conditional RBF-MMD、PDS sampler 和 plan mode 已实现 | 原始异构 EpochDataset 的 feature lift、真实跨域数据和 paired operational hit@R |
 
-以下结论仍不得作出：feature transfer 有效、decision learning 有效、成人 BrainSync 达到 90%，或 target-calibration 已可运行。
+以下结论仍不得作出：feature transfer 有效、GALIA/AS-MMD 有效、decision learning 有效、成人 BrainSync 达到 90%，或 target-calibration 已可运行。
 
-高负载测试异常已由受控实验定性为 WorkBuddy 会话环境故障，不是 EEG/契约源码缺陷：
+高负载测试异常已由受控实验定性为 WorkBuddy 会话环境故障，不是 EEG/契约源码缺陷；
 bulk-delete、trash、symlink shim，以及被负载放大的 15ms 并发测试窗口共同造成异常。
 因此 WorkBuddy 会话内的高负载 pytest 结果不作为验收信号；独立 shell/云端或 unset 守卫变量
-后的复跑才可采信。详见 [`supervisor_full_audit_20260903.zh.md`](supervisor_full_audit_20260903.zh.md)。
+后的复跑才可采信。详见 [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md)
+和 [`research_evidence_ledger_20260903.zh.md`](research_evidence_ledger_20260903.zh.md)。
 
 ## 🔄 下一步门禁
 
 1. 为实际执行树生成新的 source-only archive 与 manifest；Git commit 不是物理冻结
 2. 人工决定是否清理 `%TEMP%\pytest-of-chent`；WorkBuddy 会话内不采信高负载测试，清理前后的验收均使用空闲、单任务或独立 shell
 3. 准备经验证的 active source/target cache，并按 direct 与 row/column protocol 分流
-4. 先完成 plan、environment、cache 与 checkpoint 的 attestation/dry-run，再启动单 worker CUDA smoke
-5. 只在预声明的 matched fold/seed 后报告 paired operational `hit@R` 与 participant-cluster CI
-6. 在模型级 target-calibration collector、buffer provenance 与结果 ledger 闭合前，保持该 arm fail-closed
+4. 为异构通道显式构造 feature lift，生成 GALIA state/aligned artifact，并检查 rank/condition/AJD residual
+5. 先完成 plan、environment、cache 与 checkpoint 的 attestation/dry-run，再启动单 worker CUDA smoke
+6. 只在预声明的 matched fold/seed 后报告 paired operational `hit@R` 与 participant-cluster CI
+7. 在模型级 target-calibration collector、buffer provenance 与结果 ledger 闭合前，保持该 arm fail-closed
 
 ## 🗂️ 文档维护规则
 

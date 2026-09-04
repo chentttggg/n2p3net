@@ -71,13 +71,14 @@ The LOSO runner requires the signal and baseline extras. Start with the document
 controller at `doc/README.md`; the binding activity guide is
 `doc/research_program.zh.md`, with `doc/input_contract_math.zh.md` as its input
 contract companion. The current framework acceptance record is
-`doc/framework_acceptance_20260903.zh.md`, and the latest dated status briefing is
-`doc/research_status_report_20260902.zh.md`. Frozen ablations and evidence are
+`doc/framework_acceptance_20260903.zh.md`, and the consolidated evidence ledger is
+`doc/research_evidence_ledger_20260903.zh.md`. Frozen ablations and evidence are
 physically isolated in `frozen/research_evidence_through_20260901-d1db8e4.tar.gz`.
-The 20260831 report, former agent dispatch, `c7bf860` cloud plan, and the
-pre-integration audit are physically isolated in
-`frozen/document_history_through_ef7a40e_20260903.tar.gz` with a manifest; they
-must not be used as an active plan.
+The former agent dispatch, `c7bf860` cloud plan, and pre-integration audit are
+physically isolated in `frozen/document_history_through_ef7a40e_20260903.tar.gz`
+with a manifest; they must not be used as an active plan. The absorbed dated
+reports, detailed audit, and candidate reviews are in
+`frozen/document_reports_through_6c4abe8_20260903.tar.gz` with its manifest.
 The independent full audit has fully attributed the load-sensitive pytest
 failures to the WorkBuddy session shims/guards and a load-sensitive test timing
 window, not to product code. Do not use high-load pytest inside WorkBuddy as an
@@ -110,20 +111,34 @@ Use the adapter to preserve the frontend's raw recording boundary while applying
   --invalid-session error
 ```
 
-Cross-dataset checkpoints remain fail-closed. The implemented deterministic
-domain route is an explicit common channel subset followed by CAR on that same
-subset in every domain:
+Cross-dataset checkpoints remain fail-closed. The active domain route preserves
+each cache's declared native reference and selects an explicitly declared
+channel subset. CAR is no longer the default; it remains only as an explicit
+legacy/control transform with at least three selected channels:
 
 ```powershell
 .\.venv\Scripts\python.exe experiments\adapt_eeg_domain.py `
   --dataset-cache source.npz --target-channels "Cz,P3,Pz,P4,Oz" `
-  --output source_common_car.npz
+  --reference-mode native_preserve --output source_native_selected.npz
 ```
 
-Source and target caches must then share preprocessing, channel order, CAR
+Source and target caches must then share preprocessing, channel order, native
 provenance and a newly trained checkpoint. Existing 128-sample BI/BNCI caches
 cannot be renamed or reused; they must be rebuilt from raw data. Missing channels
 are not padded.
+
+For heterogeneous feature-space experiments, fit GALIA only after each domain
+has supplied an explicit same-dimensional feature matrix. The CLI writes a
+digest-bound alignment state and optionally an aligned matrix:
+
+```powershell
+.\.venv\Scripts\python.exe experiments\fit_galia_alignment.py `
+  --source BI=bi_features.npz --source GTN=gtn_features.npz `
+  --output galia_state.json --aligned-output aligned_features.npz
+```
+
+Raw epoch caches are rejected by this command until their domain-specific
+feature lifts are explicitly constructed and recorded.
 
 The adapter validates the v4 session plus BIDS 1.11 raw dataset, reads stimulus
 and retained-rest rows from `events.tsv`, derives labels only from the confirmed

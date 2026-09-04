@@ -1,0 +1,12 @@
+{
+  "schema": "n2p3_frozen_document_archive/1",
+  "archive": "document_reports_through_6c4abe8_20260903.tar.gz",
+  "archive_sha256": "7ffe7bde08508c903a5310532c967cd479545ec57d341e93f21debd4a5c72556",
+  "source_commit": "6c4abe86e22f6fb69fd647f6ebb748bfb955bc3b",
+  "archive_member_count": 9,
+  "document_count": 7,
+  "scope": "Historical status reports, feature-domain research, contract basis, supervisor audit, and superseded literature candidate drafts",
+  "physical_isolation": true,
+  "integrated_into": "doc/research_evidence_ledger_20260903.zh.md",
+  "replacement_policy": "The archive preserves source documents for audit and citation recovery. It is not an active research plan and cannot override doc/research_program.zh.md."
+}

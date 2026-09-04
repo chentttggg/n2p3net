@@ -18,6 +18,7 @@ from models.adapters import FeatureDomainTransfer
 from models.n2p3net import N2P3Net
 from models.splitbn import SplitBN1d, SplitBN2d
 from research.execution import ExpectedSubjectError, SubjectFailureCode
+from transfer.candidate_set_loss import row_column_candidate_loss
 from transfer.within_subject import chronological_validation_split
 
 ADAPTER_POOLING_MODES = frozenset(
@@ -48,6 +49,8 @@ class SubjectAdapterConfig:
     freeze_batchnorm_stats: bool = True
     input_statistics: str = "auto"
     target_stat_weight: float = 0.25
+    candidate_loss_weight: float = 0.0
+    candidate_loss_temperature: float = 1.0
     input_mean: np.ndarray | None = None
     input_std: np.ndarray | None = None
 
@@ -80,6 +83,10 @@ class SubjectAdapterConfig:
             )
         if not 0.0 <= self.target_stat_weight <= 1.0:
             raise ValueError("target_stat_weight must be in [0,1].")
+        if not 0.0 <= self.candidate_loss_weight:
+            raise ValueError("candidate_loss_weight must be non-negative.")
+        if not 0.0 < self.candidate_loss_temperature:
+            raise ValueError("candidate_loss_temperature must be positive.")
 
 
 class SubjectAdapter:
@@ -313,6 +320,12 @@ class SubjectAdapter:
         validation_mask: np.ndarray | None = None,
         repetition_indices: np.ndarray | None = None,
         trial_channel_mask: np.ndarray | None = None,
+        candidate_ids: np.ndarray | None = None,
+        selection_ids: np.ndarray | None = None,
+        target_rows: np.ndarray | None = None,
+        target_columns: np.ndarray | None = None,
+        candidate_loss_num_rows: int = 6,
+        candidate_loss_num_columns: int = 6,
     ) -> SubjectAdapter:
         X = np.asarray(X, dtype=np.float32)
         y = np.asarray(y).astype(np.int64)
@@ -324,6 +337,36 @@ class SubjectAdapter:
             raise ValueError("X contains NaN/inf.")
         if y.ndim != 1 or len(y) != len(X) or set(np.unique(y).tolist()) != {0, 1}:
             raise ValueError("subject adapter requires binary labels {0,1} aligned with X.")
+        candidate_metadata = (
+            candidate_ids,
+            selection_ids,
+            target_rows,
+            target_columns,
+        )
+        if self.config.candidate_loss_weight > 0.0:
+            if any(value is None for value in candidate_metadata):
+                raise ValueError(
+                    "candidate_loss_weight > 0 requires candidate_ids, selection_ids, "
+                    "target_rows, and target_columns."
+                )
+            candidate_ids = np.asarray(candidate_ids)
+            selection_ids = np.asarray(selection_ids)
+            target_rows = np.asarray(target_rows).astype(np.int64)
+            target_columns = np.asarray(target_columns).astype(np.int64)
+            if candidate_ids.ndim != 1 or candidate_ids.shape != (len(X),):
+                raise ValueError("candidate_ids must align with X.")
+            if selection_ids.ndim != 1 or selection_ids.shape != (len(X),):
+                raise ValueError("selection_ids must align with X.")
+            if target_rows.shape != (len(X),) or target_columns.shape != (len(X),):
+                raise ValueError("target_rows/target_columns must align with X.")
+            if candidate_loss_num_rows < 2 or candidate_loss_num_columns < 2:
+                raise ValueError("candidate_loss_num_rows/columns must be at least two.")
+            if not np.isfinite(target_rows).all() or not np.isfinite(target_columns).all():
+                raise ValueError("target_rows/target_columns must be finite.")
+        elif any(value is not None for value in candidate_metadata):
+            raise ValueError(
+                "candidate metadata requires candidate_loss_weight > 0."
+            )
         has_input_mean = self.config.input_mean is not None
         has_input_std = self.config.input_std is not None
         if has_input_mean != has_input_std:
@@ -496,6 +539,10 @@ class SubjectAdapter:
         best_val = float("inf")
         patience = self.config.early_stop_patience
         train_losses: list[float] = []
+        candidate_losses: list[dict[str, object]] = []
+        candidate_active = self.config.candidate_loss_weight > 0.0
+        train_row_indices = np.flatnonzero(train_mask)
+
         val_losses: list[float] = []
         for epoch_index in range(self.config.epochs):
             self._set_training_mode(trunk_trainable=trunk_trainable)
@@ -517,6 +564,24 @@ class SubjectAdapter:
                 loss.backward()
                 optimizer.step()
                 epoch_loss += loss.detach().float() * len(xb)
+
+            if candidate_active:
+                candidate_losses.append(
+                    self._candidate_loss_update(
+                        train_inputs,
+                        row_indices=train_row_indices,
+                        candidate_ids=candidate_ids,
+                        selection_ids=selection_ids,
+                        target_rows=target_rows,
+                        target_columns=target_columns,
+                        num_rows=candidate_loss_num_rows,
+                        num_columns=candidate_loss_num_columns,
+                        live_forward=live_forward,
+                        optimizer=optimizer,
+                        stage="adapter_fit_candidate_loss",
+                    )
+                )
+
 
             val_loss = None
             if val_mask.any():
@@ -571,18 +636,25 @@ class SubjectAdapter:
             self.calibration_labels_ = None
             self.calibration_source_ = None
         refit_losses: list[float] = []
+        refit_candidate_losses: list[dict[str, object]] = []
         if (
             validation_source == "chronological_prefix_validation"
             and self.config.refit_full_prefix
             and best_epoch_count is not None
         ):
-            refit_losses = self._refit_full_prefix(
+            refit_losses, refit_candidate_losses = self._refit_full_prefix(
                 X,
                 y,
                 observed_mask,
                 initial_state=initial_state,
                 epochs=best_epoch_count,
                 statistics_mode=statistics_mode,
+                candidate_ids=candidate_ids,
+                selection_ids=selection_ids,
+                target_rows=target_rows,
+                target_columns=target_columns,
+                candidate_loss_num_rows=candidate_loss_num_rows,
+                candidate_loss_num_columns=candidate_loss_num_columns,
             )
         self.last_history = {
             "train_losses": train_losses,
@@ -592,6 +664,11 @@ class SubjectAdapter:
             "refit_full_prefix": bool(refit_losses),
             "refit_epochs": len(refit_losses),
             "refit_train_losses": refit_losses,
+            "candidate_loss_active": bool(candidate_active),
+            "candidate_loss_weight": self.config.candidate_loss_weight,
+            "candidate_loss_temperature": self.config.candidate_loss_temperature,
+            "candidate_losses": candidate_losses,
+            "refit_candidate_losses": refit_candidate_losses,
         }
         self._fitted = True
         return self
@@ -605,7 +682,13 @@ class SubjectAdapter:
         initial_state: dict[str, dict[str, torch.Tensor]],
         epochs: int,
         statistics_mode: str,
-    ) -> list[float]:
+        candidate_ids: np.ndarray | None,
+        selection_ids: np.ndarray | None,
+        target_rows: np.ndarray | None,
+        target_columns: np.ndarray | None,
+        candidate_loss_num_rows: int,
+        candidate_loss_num_columns: int,
+    ) -> tuple[list[float], list[dict[str, object]]]:
         """Refit from the same initialization on every chronological prefix row."""
 
         self._load_state_dict(initial_state)
@@ -657,6 +740,13 @@ class SubjectAdapter:
             with torch.cuda.device(self.device):
                 torch.cuda.manual_seed(self.config.seed)
         losses: list[float] = []
+        candidate_losses: list[dict[str, object]] = []
+        candidate_active = self.config.candidate_loss_weight > 0.0
+        if candidate_active and any(
+            value is None for value in (candidate_ids, selection_ids, target_rows, target_columns)
+        ):
+            raise ValueError("candidate-loss refit requires complete candidate metadata.")
+        row_indices = np.arange(len(y), dtype=np.int64)
         for _ in range(int(epochs)):
             self._set_training_mode(trunk_trainable=trunk_trainable)
             permutation = torch.randperm(len(y), device=self.device)
@@ -677,11 +767,107 @@ class SubjectAdapter:
                 loss.backward()
                 optimizer.step()
                 epoch_loss += loss.detach().float() * len(xb)
+            if candidate_active:
+                candidate_losses.append(
+                    self._candidate_loss_update(
+                        inputs,
+                        row_indices=row_indices,
+                        candidate_ids=candidate_ids,
+                        selection_ids=selection_ids,
+                        target_rows=target_rows,
+                        target_columns=target_columns,
+                        num_rows=candidate_loss_num_rows,
+                        num_columns=candidate_loss_num_columns,
+                        live_forward=live_forward,
+                        optimizer=optimizer,
+                        stage="adapter_refit_candidate_loss",
+                    )
+                )
             losses.append(float(epoch_loss.cpu()) / len(y))
         self.trunk.eval()
         if self.head is not None:
             self.head.eval()
-        return losses
+        return losses, candidate_losses
+
+    def _candidate_loss_update(
+        self,
+        inputs: torch.Tensor,
+        *,
+        row_indices: np.ndarray,
+        candidate_ids: np.ndarray,
+        selection_ids: np.ndarray,
+        target_rows: np.ndarray,
+        target_columns: np.ndarray,
+        num_rows: int,
+        num_columns: int,
+        live_forward: bool,
+        optimizer: torch.optim.Optimizer,
+        stage: str,
+    ) -> dict[str, object]:
+        """One full-batch row/column decision step on the selected rows."""
+
+        if len(row_indices) == 0:
+            raise ExpectedSubjectError(
+                SubjectFailureCode.NUMERICAL_FAILURE,
+                stage=stage,
+                detail="candidate loss received an empty training row set",
+            )
+        candidate_tensor = torch.as_tensor(
+            np.asarray(candidate_ids[row_indices], dtype=np.int64),
+            device=inputs.device,
+        )
+        target_row_tensor = torch.as_tensor(
+            target_rows[row_indices].astype(np.int64),
+            device=inputs.device,
+        )
+        target_column_tensor = torch.as_tensor(
+            target_columns[row_indices].astype(np.int64),
+            device=inputs.device,
+        )
+        selection_values = np.asarray(selection_ids[row_indices]).astype(str).tolist()
+        logits = self._forward_head(inputs) if live_forward else self.head(inputs)
+        if logits.ndim != 2 or logits.shape[1] != 2:
+            raise ExpectedSubjectError(
+                SubjectFailureCode.NUMERICAL_FAILURE,
+                stage=stage,
+                detail="candidate loss requires two-class logits",
+            )
+        evidence = logits[:, 1] - logits[:, 0]
+        loss, diagnostics = row_column_candidate_loss(
+            evidence,
+            candidate_tensor,
+            selection_values,
+            target_row_tensor,
+            target_column_tensor,
+            num_rows=num_rows,
+            num_columns=num_columns,
+            temperature=self.config.candidate_loss_temperature,
+        )
+        if diagnostics.complete_count == 0:
+            raise ExpectedSubjectError(
+                SubjectFailureCode.NUMERICAL_FAILURE,
+                stage=stage,
+                detail=(
+                    "candidate loss found no complete row/column calibration decision: "
+                    f"{diagnostics.record()}"
+                ),
+            )
+        weighted = self.config.candidate_loss_weight * loss
+        if not bool(torch.isfinite(weighted)):
+            raise ExpectedSubjectError(
+                SubjectFailureCode.NONFINITE_OPTIMIZATION,
+                stage=stage,
+                detail="candidate decision loss became non-finite",
+            )
+        optimizer.zero_grad(set_to_none=True)
+        weighted.backward()
+        optimizer.step()
+        return {
+            "loss": float(weighted.detach().cpu()),
+            "unweighted_loss": float(loss.detach().cpu()),
+            **diagnostics.record(),
+        }
+
 
     def _forward_head(self, X: torch.Tensor) -> torch.Tensor:
         features = self._features(X)

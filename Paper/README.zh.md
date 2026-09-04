@@ -8,6 +8,7 @@
 - [`literature_manifest_20260828.md`](literature_manifest_20260828.md)：68 个去重来源、检索台账、访问边界和失败记录。
 - [`pdf_validation_20260828.json`](pdf_validation_20260828.json)：本地 PDF 的页数、SHA-256、可读性和首段文本校验。
 - [`receptive_field_literature_ledger_20260828.md`](receptive_field_literature_ledger_20260828.md)：感受野、padding、stride、dilation 与时序 CNN 的定向检索补充。
+- 本项目历史实测与外部方法边界汇总于 [`../doc/research_evidence_ledger_20260903.zh.md`](../doc/research_evidence_ledger_20260903.zh.md)；代码合同验收见 [`../doc/framework_acceptance_20260903.zh.md`](../doc/framework_acceptance_20260903.zh.md)。
 
 ## 证据边界
 
@@ -27,4 +28,4 @@
 | self-supervision / foundation models | `SpellerSSL_arXiv_2509.19401.pdf`, `EEG_FM_Compass_arXiv_2601.17883.pdf`, `NeuralBench_arXiv_2605.08495.pdf`, `OmniEEG_Bench_arXiv_2606.00815.pdf` |
 | negative controls / reproducibility | `EEG_Deep_Learning_Data_Leakage_2024.pdf`, `Identity_Trap_in_EEG_Foundation_Models_arXiv_2606.06647.pdf`, `MOABB_Reproducibility_Benchmark_arXiv_2404.15319.pdf` |
 
-完整科研路线与当前证据状态见 [`../doc/research_program.zh.md`](../doc/research_program.zh.md)。
+完整科研路线与当前证据状态见 [`../doc/research_program.zh.md`](../doc/research_program.zh.md)。被吸收的 dated reports 和候选综述保存在 `../frozen/document_reports_through_6c4abe8_20260903.tar.gz`，不再作为活动写作入口。

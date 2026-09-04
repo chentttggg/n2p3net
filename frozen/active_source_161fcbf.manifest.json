@@ -1,0 +1,11 @@
+{
+    "schema": "n2p3_source_freeze/1",
+    "archive": "active_source_161fcbf.source-only.tar.gz",
+    "archive_sha256": "129bcc5e97a27e9010bd13f7cc375e6bb9d2c9a8c2a22078bed4ab294e08b17f",
+    "source_commit": "161fcbfe79162aee82f32ef3776a418f5a3551ad",
+    "member_count": 193,
+    "byte_size": 982378,
+    "scope": "Active source tree at 161fcbf (parameterized evidence horizon + decoupled selection gate; supersedes 9f0b421e archive): src, experiments, configs, tests, doc, and build/env files; excludes Paper PDFs, frozen historical archives, and all data/caches",
+    "contains_raw_eeg_cache_or_model_checkpoint": false,
+    "replacement_policy": "executed-source identity anchor for cloud runs of commit 161fcbf; a new commit requires a new archive+manifest pair, never overwrite"
+}

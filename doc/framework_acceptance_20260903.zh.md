@@ -63,7 +63,7 @@ flowchart LR
 bulk-delete guard 的 `SystemExit(1)`、genie-trash 并发 abort、symlink shim 劫持，以及被
 系统负载放大的 15ms 并发测试窗口。首个可见失败为
 `test_load_synthetic_bnci_candidate_schedule`，回溯显示进程终止源是 WorkBuddy guard；
-具体证据见 [`supervisor_full_audit_20260903.zh.md`](supervisor_full_audit_20260903.zh.md) 和
+具体证据见 [`research_evidence_ledger_20260903.zh.md`](research_evidence_ledger_20260903.zh.md) 和
 `tmp/flaky_hunt1.log`、`tmp/flaky_hunt2.log`。
 
 当前验收规则是：WorkBuddy 会话内的高负载 pytest 结果不作为代码验收信号；使用云端/独立
@@ -85,5 +85,5 @@ shell，或按审计记录 unset `CODEBUDDY_SAFE_DELETE_BULK_STATE_DIR`、
 - 活动规范：[`research_program.zh.md`](research_program.zh.md)
 - 文档控制索引：[`README.md`](README.md)
 - 实施与数学记录：[`implementation_plan_20260902.zh.md`](implementation_plan_20260902.zh.md)、[`math_verification_20260902.zh.md`](math_verification_20260902.zh.md)
-- 架构与研究依据：[`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)、[`feature_domain_transfer_research_20260902.zh.md`](feature_domain_transfer_research_20260902.zh.md)
+- 架构与实证依据：[`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)、[`research_evidence_ledger_20260903.zh.md`](research_evidence_ledger_20260903.zh.md)
 - 历史审计/派工/云端计划归档：[`../frozen/document_history_through_ef7a40e_20260903.manifest.json`](../frozen/document_history_through_ef7a40e_20260903.manifest.json)
