@@ -1,0 +1,11 @@
+{
+    "schema": "n2p3_source_freeze/1",
+    "archive": "active_source_e02e752.source-only.tar.gz",
+    "archive_sha256": "dd26cef8f11f3ab2c6873ab030bfd270b5f70424461b4c1cdbfb31d06c8b6ae2",
+    "source_commit": "e02e752ffe4f32acdf2257fae9f0db9d4c4e8526",
+    "member_count": 224,
+    "byte_size": 1100737,
+    "scope": "v2 mainline at e02e752: candidate split removes hard 8-complete-repetition eligibility gate; every later decision eligible with incomplete hit@R levels recorded.",
+    "contains_raw_eeg_cache_or_model_checkpoint": false,
+    "replacement_policy": "v2 mainline cloud training source anchor for relaxed-gate 64-fold rerun; do not overwrite; prior freezes unchanged"
+}
