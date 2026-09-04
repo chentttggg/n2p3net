@@ -1,6 +1,6 @@
 # N2P3-Net 特征域迁移活动科研规范
 
-_版本：2026-09-04 · 活动基线：`326c8fd`（分支 `main`，v2 主线首轮实施含 EA reference-mode 门；前批次 `352932b` 与历史集成基线 `6fc1df1` 保留）· 唯一活动指导文件 · 适用范围：N2P3-Net P300/ERP 域迁移、目标校准与候选决策_
+_版本：2026-09-04 · 活动基线：`ae2706e`（分支 `main`，v2 主线首轮实施含 WP0 ledger 闭合与 EA reference-mode 门；前序批次 `326c8fd`/`352932b` 与历史集成基线 `6fc1df1` 保留）· 唯一活动指导文件 · 适用范围：N2P3-Net P300/ERP 域迁移、目标校准与候选决策_
 
 > 2026-09-02b 架构裁决（见 [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)）：
 > 横向嵌套（多个 N2P3Net 当外层网络神经元）被否决；活动方向改为纵向分层——
@@ -765,12 +765,12 @@ CAR 不是活动跨域默认变换，旧 CAR cache 只能留在冻结历史层�
 
 ### 9.3 下一步执行顺序
 
-1. ✅ 集成工作区（`main`）最新冻结为 `frozen/active_source_326c8fd.*`（source_commit `326c8fd`，archive SHA-256 `a0889f0c…`，冻结对提交 `af9cd8a`；历史 `active_source_352932b.*`/`active_source_6fc1df1.*` 保留）；任何后续代码变更都要求新 archive+manifest，且不得覆盖 E1 训练使用的 `b96a6af` / `b86d558`
+1. ✅ 集成工作区（`main`）最新冻结为 `frozen/active_source_ae2706e.*`（source_commit `ae2706e`，archive SHA-256 `cca169ed…`，冻结对提交 `c3b7d10`；历史 `active_source_326c8fd.*`/`active_source_352932b.*`/`active_source_6fc1df1.*` 保留）；任何后续代码变更都要求新 archive+manifest，且不得覆盖 E1 训练使用的 `b96a6af` / `b86d558`
 2. 对 active cache 做 protocol 和 identity attestation；direct 与 row/column 数据不得混用 P2 合同
-3. ✅ 按 v2 计划 WP0 已修 B1–B5 与命名/合同/provenance 项：本地 GALIA→ACW、旧 PDS→TSD、conditional feature MMD 降级为安全对照，solver 版本/offdiag residual/row-identity digest 纳入记录（测试随本次变更入库）
-4. ✅ 按 WP1 已建立 EA 数据对齐 cache（`none`/`ea_source`/`ea_target_calibration` 消融入口）并过 reference covariance≈I、条件数与 provenance 门；GTN 3 导路线暂不绕过 rank gate
+3. ✅ 按 v2 计划 WP0 已修 B1–B5 与命名/合同/provenance 项：本地 GALIA→ACW、旧 PDS→TSD、conditional feature MMD 降级为安全对照，solver 版本/offdiag residual/row-identity digest 纳入记录，负 MMD ledger 与远距离 tie-break 反例测试入库
+4. ✅ 按 WP1 已建立 EA 数据对齐 cache（`none`/`ea_source`/`ea_target_calibration` 消融入口，`--reference-mode` 与上游 native/CAR provenance 强校验）并过 reference covariance≈I、条件数与 provenance 门；GTN 3 导路线暂不绕过 rank gate
 5. 🟡 按 WP2 已实现 faithful AS-MMD 公式组件（target-weighted CE + logit marginal RBF-MMD）与 SubjectAdapter 冻结源 logits 适配路径；**剩余**：live source-stream + SplitBN 双 buffer 完整 joint training 与 `as_mmd`/`cond_mmd_features`/`no_mmd` 正式 arm
-6. 🟡 按 WP3 已正式化 TSD（`sampler_kind="target_similarity_diverse"`）；ACW 只作 TSD 坐标/经典解码辅助；**剩余**：Dense PDS 独立忠实对照臂，per-target 动态 selection 必须另行预注册
+6. 🟡 按 WP3 已正式化 TSD（`sampler_kind="target_similarity_diverse"` 与 checkpoint `tsd_dropped_source_epochs[_by_label]`）；ACW 只作 TSD 坐标/经典解码辅助；**剩余**：Dense PDS 独立忠实对照臂，per-target 动态 selection 必须另行预注册
 7. 🟡 按 WP4 已解析 matrix plan `source_selection_record` 并下传 checkpoint batch；**剩余**：EA/AS-MMD/TSD/ACW 的 plan 字段、`prepare_ea`/`prepare_selection` DAG 节点、result_batch 下传后再做 attestation/dry-run 与单 worker CUDA smoke
 8. 仅在预声明的 matched fold/seed 下运行 pooled-BN、P0、P1、EA/AS-MMD/TSD 主线和允许的 P2 direct arms，并报告 participant-cluster CI
 9. 在 target-calibration、row/column dispatch 与 target failure ledger 各自闭合前，不扩大主张或启动不受合同支持的 arm

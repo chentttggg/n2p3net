@@ -7,12 +7,12 @@
 > 配套原始来源核验：`domain_transfer_chain_primary_source_audit_20260904.zh.md`（后台研究代理已完成；本文 §2–§3 已合并其结论）。
 
 > 实施进度（2026-09-04 代码工作同步）：
-> - ✅ **WP0 完成**：ACW 命名/schema（`n2p3_ajd_congruence_whitening/1`、`n2p3_acw_fit/1`）、solver 版本、`ajd_offdiag_residual`、fast-output 真实 target 行、AJD TypeError fail-closed、mean 模式 `alignment_inactive`、TSD log-quality + 有尺度 tie-break、`row_identity_digest` 绑定。
-> - ✅ **WP1 完成**：`src/data/euclidean_alignment.py`（不减均值、`R̄^{-1/2}X`、四类 fit-scope、条件数门禁）+ `experiments/prepare_euclidean_alignment_cache.py`（attested cache 进、shape-preserving EA cache 出）+ 测试。
+> - ✅ **WP0 完成**：ACW 命名/schema（`n2p3_ajd_congruence_whitening/1`、`n2p3_acw_fit/1`）、solver 版本、`ajd_offdiag_residual`、fast-output 真实 target 行、AJD TypeError fail-closed、mean 模式 `alignment_inactive`、RBF-MMD 负值 ledger（不 clamp）、TSD log-quality + 有尺度 tie-break（含远距离反例测试）、`row_identity_digest` 绑定。
+> - ✅ **WP1 完成**：`src/data/euclidean_alignment.py`（不减均值、`R̄^{-1/2}X`、四类 fit-scope、条件数门禁）+ `experiments/prepare_euclidean_alignment_cache.py`（attested cache 进、shape-preserving EA cache 出、`--reference-mode` 与上游 native/CAR provenance 强校验）+ 测试。
 > - 🟡 **WP2 部分完成**：`src/transfer/asmmd.py`（Eq 1–9：target-weight、warmup 调度、logit-level marginal 无偏 RBF-MMD²、joint loss）；`SubjectAdapter` 已支持冻结 source logits/labels 的 joint adapter 训练；`run_candidate_cross_decision.py` 已加 `--as-mmd-*`/source-logits 并写入 adaptation procedure。**未完成**：live source-stream + SplitBN source/target 双 buffer 的完整 joint trunk 训练，以及 matrix plan 的 `as_mmd` 字段与 result_batch 下传。
-> - 🟡 **WP3 部分完成**：TSD schema `n2p3_source_selection/2` + `sampler_kind="target_similarity_diverse"`、legacy schema 只读兼容、source_selection_record 的 row-identity 校验。**未完成**：`dense_pds` 独立采样器与 `--sampler` 开关。
+> - 🟡 **WP3 部分完成**：TSD schema `n2p3_source_selection/2` + `sampler_kind="target_similarity_diverse"`、legacy schema 只读兼容、source_selection_record 的 row-identity 校验、checkpoint 新写 `tsd_dropped_source_epochs[_by_label]`（旧 `pds_dropped_*` 字段保留兼容）。**未完成**：`dense_pds` 独立采样器与 `--sampler` 开关。
 > - 🟡 **WP4 部分完成**：matrix plan 已解析 `source_selection_record` 并写入 checkpoint batch argv；**未完成**：EA/`as_mmd`/`sampler_kind` plan 字段、`prepare_ea`/`prepare_selection` DAG 节点、result_batch 下传 `--source-stream-cache`/`--as-mmd-*`。
-> - 🟡 **WP5 进行中**：四份指导文档已对齐至 EA/ACW/AS-MMD/TSD，旧 GALIA/PDS 描述标为历史；全量测试与 ruff 通过；新 source-only freeze `frozen/active_source_326c8fd.*` 已生成并提交（冻结对提交 `af9cd8a`；前批次 `active_source_352932b.*` 保留）；云端 dry-run/CUDA smoke 未做（E2 不启动）。
+> - 🟡 **WP5 进行中**：四份指导文档已对齐至 EA/ACW/AS-MMD/TSD，旧 GALIA/PDS 描述标为历史；全量测试与 ruff 通过；新 source-only freeze `frozen/active_source_ae2706e.*` 已生成并提交（冻结对提交 `c3b7d10`；前序批次 `active_source_326c8fd.*`/`active_source_352932b.*` 保留）；云端 dry-run/CUDA smoke 未做（E2 不启动）。
 
 ---
 
