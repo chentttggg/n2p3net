@@ -559,7 +559,11 @@ def _validate_run_grid(
     protocol_digests = {
         semantic_sha256(
             {
-                "target_protocol": run.evaluation.target_protocol,
+                "target_protocol": {
+                    key: value
+                    for key, value in run.evaluation.target_protocol.items()
+                    if key != "epoch_selection"
+                },
                 "decision": run.evaluation.decision,
                 "evidence_scope": run.evaluation.evidence_scope,
             }
