@@ -1,6 +1,21 @@
 # CAR 退役后的异构域迁移方案
 
-*N2P3-Net · 2026-09-04 · 方案记录；用于替换当前 common-CAR 活动路线，不直接授权性能晋升*
+*N2P3-Net · 2026-09-04 · 历史方案/决策背景记录；该提案已由 v2 主线取代，见下方状态块；原用于替换 common-CAR 活动路线，不直接授权性能晋升*
+
+> ## ⚠️ 状态（2026-09-04）：本提案已被 v2 主线取代，仅作历史/决策背景
+>
+> 本文提出的 “GALIA/AJD → conditional AS-MMD → PDS” 主线已由
+> [`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)
+> 取代；当前权威主线为 **EA 默认数据对齐 → N2P3Net trunk → faithful AS-MMD →
+> TSD 选样**。
+> - 本地 “GALIA” 实现不是论文 GALIA，已更名为 **AJD congruence whitening（ACW）**，
+>   只作 TSD 坐标/经典特征解码的辅助，不作为模型输入对齐；真 GALIA（Altındış et al.
+>   2023 式 3–10）为可选对照。
+> - 本文旧公式与求解器错配（Frobenius 目标 vs `ajd_pham` 的 log-likelihood/KL 准则）
+>   及本地实现名不副实的逐项核验见
+>   [`domain_transfer_chain_primary_source_audit_20260904.zh.md`](domain_transfer_chain_primary_source_audit_20260904.zh.md)。
+> - 本文此后所有方案结论、公式、调用链和 G1–G6 arm 名均为**历史/决策背景**，不得当作
+>   当前实现方向或新实验派工单；引用本文时应同时引用上述 v2 计划与审计文档。
 
 ---
 
@@ -350,7 +365,7 @@ class DomainAlignmentAdapter(Protocol):
 ## 🧪 分阶段实验矩阵
 
 所有 arm 使用同一 outer participant/session/decision split、同一 seed 集合和同一
-requested denominator：
+requested denominator。下表 `B0_native` 与 `G1_galia`–`G6_latency` 是本文写作时的历史 arm 名（已退役），当前 arm 名以 [`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md) §6 为准：
 
 | Arm | 数据变换 | 深度机制 | 目的 |
 |---|---|---|---|

@@ -45,7 +45,6 @@ from experiments.analyze_candidate_cross_decision import (  # noqa: E402
     ANALYSIS_SCHEMA,
     REQUESTED_METRIC,
     SUPPORTED_METRICS,
-    VALID_SUBJECT_METRIC,
 )
 from experiments.build_candidate_cross_decision_manifest import (  # noqa: E402
     MANIFEST_SCHEMA,
@@ -119,6 +118,7 @@ class SourceArmSpec:
     risk_within_domain_unit: str | None
     selection_domain: str | None
     splitbn_source_weights: tuple[tuple[str, float], ...]
+    source_selection_record: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -435,7 +435,7 @@ def _parse_source_arms(value: object, root: Path) -> tuple[SourceArmSpec, ...]:
                 "risk_within_domain_unit",
                 "selection_domain",
             },
-            optional={"splitbn_source_weights"},
+            optional={"splitbn_source_weights", "source_selection_record"},
             name=name,
         )
         raw_masses = record["source_domain_mass"]
@@ -524,6 +524,15 @@ def _parse_source_arms(value: object, root: Path) -> tuple[SourceArmSpec, ...]:
                 risk_within_domain_unit=risk_unit,
                 selection_domain=selection_domain,
                 splitbn_source_weights=tuple(sorted(parsed_splitbn_weights)),
+                source_selection_record=(
+                    None
+                    if record.get("source_selection_record") is None
+                    else _resolve_plan_path(
+                        record["source_selection_record"],
+                        f"{name}.source_selection_record",
+                        root,
+                    )
+                ),
             )
         )
     _assert_unique([item.name for item in arms], "source arm names")
@@ -1215,6 +1224,13 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                     "--batch-record",
                     str(checkpoint_batch_path),
                 ]
+                if arm.source_selection_record is not None:
+                    checkpoint_argv.extend(
+                        [
+                            "--source-selection-record",
+                            str(arm.source_selection_record),
+                        ]
+                    )
                 if plan.training.splitbn_target_buffer_source is not None:
                     checkpoint_argv.extend(
                         [

@@ -13,7 +13,11 @@ from pathlib import Path
 
 import numpy as np
 
-from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation
+from data.epochs import (
+    epoch_row_identity_digest,
+    load_epoch_dataset,
+    loaded_epoch_cache_attestation,
+)
 
 
 def _load_basis(path: Path | None, *, name: str) -> np.ndarray | None:
@@ -70,6 +74,7 @@ def main() -> None:
         "schema": "n2p3_domain_feature_matrix/1",
         "source_cache": str(args.dataset_cache.resolve(strict=True)),
         "source_cache_sha256": str(loaded_epoch_cache_attestation(dataset)["sha256"]),
+        "row_identity_digest": epoch_row_identity_digest(dataset),
         "shape": list(features.shape),
         "spatial_lift": {
             "kind": spatial_kind,

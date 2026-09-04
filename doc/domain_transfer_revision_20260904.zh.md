@@ -1,7 +1,19 @@
 # 域迁移机制批判与第一轮修订（2026-09-04）
 
 _日期：2026-09-04 · 触发：T 指出当前域迁移不及预期，“adapter 与 CAR 都不太好”_
-_状态：已实施 reference policy、GALIA 候选缺陷修复、target adapter 剂量与 row/column 候选排序损失（含 plan/runner 消融接口）_
+_状态：已实施 reference policy、GALIA 候选缺陷修复、target adapter 剂量与 row/column 候选排序损失（含 plan/runner 消融接口）；这些实施记录保留为历史，不再描述当前域迁移主线_
+
+> **⚠️ 状态更新（2026-09-04，归档说明）**
+>
+> 本文 §2.4、§4.2b、§5 中提出的 “GALIA/AJD → conditional AS-MMD → PDS” 候选链已被
+> [`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)
+> 取代，不再是当前实现方向。当前权威主线为：**EA 默认数据对齐（`X̃_n = R̄^{-1/2} X_n`，
+> 不减均值）→ N2P3Net trunk → faithful AS-MMD（target-weighted CE + logit marginal
+> RBF-MMD + Split-BN 双 buffer）→ TSD 选样**；本地 “GALIA” 实现更名 **ACW** 并只作
+> 辅助坐标/经典解码，真 GALIA 与 Dense PDS 为可选对照。
+> 旧公式/求解器错配与本地实现名不副实的原始来源核验见
+> [`domain_transfer_chain_primary_source_audit_20260904.zh.md`](domain_transfer_chain_primary_source_audit_20260904.zh.md)。
+> 本文其余内容（CAR/adapter 剂量证据、反例、文献和 worktree 留痕）作为历史决策背景保留。
 
 ---
 
@@ -105,13 +117,13 @@ _状态：已实施 reference policy、GALIA 候选缺陷修复、target adapter
   未跑之前仍是合同，不是疗效。
 - `conditional_mean_alignment` 只在 source 有标签时可用；它对 batch 内的
   (domain,class) cell 做 pair 均值差，二阶 CORAL 尚未启用。当前多源负迁移证据
-  指向“域梯度暴露 + 判别方向冲突”，单一均值对齐预计不足以解决；应加
+  指向“域梯度暴露 + 判别方向冲突”，单一均值对齐预计不足以解决；应加 **source 选择/加权**与 **logit MMD** 对照。
 
 
 ### 2.4 对同目录 `domain_alignment_replacement` 提案的批判（不照单全收）
 
 [`domain_alignment_replacement_20260904.zh.md`](domain_alignment_replacement_20260904.zh.md)
-提出 CAR 退役 → GALIA/AJD → conditional AS-MMD → PDS 的路线。方向有外部先例，但
+提出 CAR 退役 → GALIA/AJD → conditional AS-MMD → PDS 的路线（历史提案，已被 v2 主线取代）。方向有外部先例，但
 把 GALIA 写成下一默认实现之前，必须先承认以下未闭合问题：
 
 1. **GALIA 不是 raw `(C,T)` 变换，它的输入是已经存在的 feature vector。**
@@ -127,16 +139,16 @@ _状态：已实施 reference policy、GALIA 候选缺陷修复、target adapter
    放在 AS-MMD 之前；应反过来：先验证**条件监督对齐**（AS-MMD/class-conditional
    MMD 或 EA + 条件校正），再决定是否值得引入 AJD 的复杂度和 solver 依赖。
 4. **更简单、更低风险的二阶候选是 Euclidean Alignment（EA）**：
-   每试次 `X_tilde = R^{-1/2}(X-mu)`，`R` 为域内平均协方差。它对 `(C,T)`
+   每试次 `X_tilde = R^{-1/2}(X-mu)`（本文当时的提议式；当前主线按 v2 计划为 `X̃_n = R̄^{-1/2} X_n`，**不减均值**），`R` 为域内平均协方差。它对 `(C,T)`
    raw tensor 直接可定义、无迭代 solver、有跨被试 EEG 先例；其旋转不唯一性
    和“可能洗掉幅值”的边界也清楚。应把 EA 作为 GALIA 之前的廉价对照，而不是
    跳过高维 AJD。
 5. **“native reference + GALIA”并不解决参考不一致**：native 门只能拒绝不同参考，
    GALIA 也不是参考恢复定理。不同参考的数据仍必须先显式统一参考或按参考分层。
 
-结论：现有 GALIA 提案保留为**候选方案记录**，本轮只落地其中无争议的
-“native 默认 + CAR opt-in + 秩门”；GALIA/AJD 必须与 EA 和 AS-MMD 成对预注册，
-不能未经反例测试替换 builder。
+结论（按 2026-09-04 归档说明）：现有 GALIA 提案保留为**历史候选方案记录**，本轮只落地其中无争议的
+“native 默认 + CAR opt-in + 秩门”。后续实施不再按本节的候选顺序推进，而以
+[`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md) 为准：EA 默认数据对齐、ACW 辅助、faithful AS-MMD、TSD 选样；真 GALIA 与 Dense PDS 仅作可选对照。“不能未经反例测试替换 builder”的要求由 v2 计划的消融矩阵与门禁承接。
 
 对已落盘的 `src/data/domain_alignment.py` 通读还发现并修复两个实现缺陷：
 
@@ -147,7 +159,6 @@ _状态：已实施 reference policy、GALIA 候选缺陷修复、target adapter
   未加 `regularization`，秩亏 source 可产生爆炸条件数。现在统一加 epsilon。
 - 测试：`tests/test_domain_alignment.py` 新增两个反例（7/7 通过）。
 
-  **source 选择/加权**与**logit MMD** 对照。
 
 ---
 
@@ -198,8 +209,8 @@ Laplacian，报告 large Laplacian > CAR > no re-reference。该结论支持
 - [Revisiting Euclidean Alignment for EEG transfer (arXiv:2502.09203)](https://ar5iv.labs.arxiv.org/html/2502.09203v1)：
   复核 EA 的旋转不唯一、与黎曼几何的关系等边界。EA 计算简单、可直接用于
   `(C,T)`，应作为 GALIA 之前的廉价数据级对照；不能把它当成理论最优。
-- 因此数据级对齐的推荐顺序是：`native_preserve`（已落地）→ EA 对照 → GALIA
-  仅当 EA 不足且 feature-lift 维度与条件数可审计时再上。
+- 因此数据级对齐的当前方向以 [`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md) 为准：`native_preserve`（已落地）保持 reference 层，**EA 为默认数据对齐**；本地 “GALIA” 已更名 ACW 并只作辅助坐标/经典解码，真 GALIA
+  仅当 EA 不足且 feature-lift 维度与条件数可审计时作为可选对照。
 
 
 ### 4.3 少校准 P300 迁移
@@ -229,10 +240,10 @@ Laplacian，报告 large Laplacian > CAR > no re-reference。该结论支持
 
 ---
 
-## 5. 建议的下一轮机制对照（预注册骨架）
+## 5. 历史建议的下一轮机制对照（预注册骨架；已被 v2 主线取代）
 
-在 BI2015b（source，湿 32 导）→ BI2014a（target，干 16 导）或 GTN 被试群域
-上，一次只变一个机制轴：
+下表是本文写作时的历史预注册骨架，仅作决策背景保留；当前权威 arm 矩阵以
+[`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md) §6 为准（EA 默认、faithful AS-MMD、TSD 为主线，ACW 辅助，Dense PDS/真 GALIA 为可选对照）。
 
 | Arm | 输入/参考 | 源训练 | target 校准 | 说明 |
 |---|---|---|---|---|
@@ -247,8 +258,8 @@ Laplacian，报告 large Laplacian > CAR > no re-reference。该结论支持
 | Adapter-D | 同 A1 | frozen source | adapter 30–50 epochs, time-split, decision loss | 剂量修正 + 目标函数修正 |
 | Riemannian | 同 A1 | xDAWN+RG per domain or tangent | 最小校准 | 强基线对照 |
 
-主判读不变：matched fold/seed、participant-cluster CI、operational `hit@R`
-（valid-subject 口径并存），AUC 只作支持。
+主判读不变：matched fold/seed、participant-cluster CI、主指标 `valid_subject_operational_hit_rate`
+，operational `hit@R` 作为部署诊断并存，AUC 只作支持。
 
 ---
 

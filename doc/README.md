@@ -54,7 +54,7 @@ flowchart TB
 | 项目章程 | [`mission.md`](mission.md) | 产品目标、适用人群和 GTN 边界 | 不作性能证明 |
 | 工程环境 | [`techstack.md`](techstack.md)、[`device-portability.md`](device-portability.md) | 依赖、设备、调度与运行时约定 | 运行证据仍需 manifest |
 | 工程流程 | [`CODING_WORKFLOW.md`](CODING_WORKFLOW.md) | 本地开发、测试与提交习惯 | 与活动规范冲突时以后者为准 |
-| 决策与推导 | [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)、[`implementation_plan_20260902.zh.md`](implementation_plan_20260902.zh.md)、[`math_verification_20260902.zh.md`](math_verification_20260902.zh.md)、[`car_math_audit_20260904.zh.md`](car_math_audit_20260904.zh.md)、[`domain_alignment_replacement_20260904.zh.md`](domain_alignment_replacement_20260904.zh.md)、[`domain_transfer_revision_20260904.zh.md`](domain_transfer_revision_20260904.zh.md)、[`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)、[`domain_transfer_chain_primary_source_audit_20260904.zh.md`](domain_transfer_chain_primary_source_audit_20260904.zh.md) | 方案为何成立、如何落实、反例为何必须保留；CAR 边界与 GALIA/AS-MMD 替代方案；域迁移机制批判与 adapter 剂量诊断；v2 主线实施/消融方案 | 记录，不是新的派工单 |
+| 决策与推导 | [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)、[`implementation_plan_20260902.zh.md`](implementation_plan_20260902.zh.md)、[`math_verification_20260902.zh.md`](math_verification_20260902.zh.md)、[`car_math_audit_20260904.zh.md`](car_math_audit_20260904.zh.md)、[`domain_alignment_replacement_20260904.zh.md`](domain_alignment_replacement_20260904.zh.md)、[`domain_transfer_revision_20260904.zh.md`](domain_transfer_revision_20260904.zh.md)、[`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)、[`domain_transfer_chain_primary_source_audit_20260904.zh.md`](domain_transfer_chain_primary_source_audit_20260904.zh.md) | 方案为何成立、如何落实、反例为何必须保留；CAR 边界与旧 GALIA/AS-MMD/PDS 替代方案（历史背景）；域迁移机制批判与 adapter 剂量诊断（历史）；v2 主线实施/消融方案（当前权威） | 记录，不是新的派工单 |
 | 框架验收 | [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md) | `ef7a40e` 的代码链、测试和开放风险 | 仅 framework/contract evidence |
 | 实证与外部依据 | [`research_evidence_ledger_20260903.zh.md`](research_evidence_ledger_20260903.zh.md) | 历史结果、机制推理、文献和统计/来源合同 | 不替代当前性能证据 |
 | 论文文献底稿 | [`../Paper/literature_review_n2p3net_20260903.zh.md`](../Paper/literature_review_n2p3net_20260903.zh.md) | 论文 Related Work 与引用纪律 | 不作为活动规范 |
@@ -63,12 +63,18 @@ flowchart TB
 
 ## 🎯 当前活动基线
 
-代码框架活动基线为 `6fc1df1`（分支 `main`，集成工作区）：domain-transfer-v2 的 P3
-主链（feature lift、GALIA Fast Alignment、conditional RBF-MMD inactive policy、
-checkpoint 分块、PDS source selection、valid-subject hit@R 主口径）已与
-result-optimization（按 partition 的 result batching、zero-shot feature memo、
+代码框架活动基线为 `6fc1df1`（分支 `main`，集成工作区）：domain-transfer-v2 的历史 P3
+链（feature lift、本地 AJD 白化（旧名 GALIA Fast Alignment）、conditional RBF-MMD
+inactive policy、checkpoint 分块、source selection（旧名 PDS）、valid-subject hit@R
+主口径）已与 result-optimization（按 partition 的 result batching、zero-shot feature memo、
 CPU result-phase worker 预算）合并，且 `epoch_selection` 合同已归位到 adaptation。
 这不是跨域性能或产品效果证据。
+2026-09-04 起，域迁移主线的权威实施方向改为
+[`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)：
+**EA 默认数据对齐 + ACW 辅助（仅 TSD 坐标/经典解码）+ faithful AS-MMD
+（target-weighted CE + logit marginal RBF-MMD + Split-BN）+ TSD 选样**；旧的
+GALIA/PDS 实现描述与旧 “conditional AS-MMD” 提法已退役（本地实现按 ACW/TSD/安全对照处理，
+真 GALIA 与 Dense PDS 为可选对照）。
 该集成树的物理冻结为 `frozen/active_source_6fc1df1.*`（archive SHA-256
 `4ad1aee5d26bba6a92fb74710bbc83532240f62a962fb3b1ca99fda1aa54b3de`）。
 E1 的训练/评估 source 不变：native=`b96a6af`、CAR=`b86d558`；valid-subject
@@ -77,11 +83,12 @@ E1 的训练/评估 source 不变：native=`b96a6af`、CAR=`b86d558`；valid-sub
 | 机制 | 当前软件状态 | 仍需的科研证据 |
 |---|---|---|
 | P0 Split-BN | source-domain buffer、目标 buffer selector 和 checkpoint 绑定已实现 | 成对 fold/seed、cluster CI 和 buffer-swap 机制证据 |
-| P1 drop-to-consensus | source-only residual、counterfactual ledger 和 invalid-run gate 已实现 | 真实 source/target 迁移与 held-out operational hit@R |
+| P1 drop-to-consensus | source-only residual、counterfactual ledger 和 invalid-run gate 已实现 | 真实 source/target 迁移与 held-out valid-subject hit@R（operational 诊断并存） |
 | P2 direct-decision loss | direct-membership metadata、完整 decision batch 与训练合同已实现 | 真实 direct timeline 训练；row/column protocol dispatch 仍未实现 |
-| P3 GALIA/AS-MMD | `prepare_domain_features.py`、`fit_galia_alignment.py`（target calibration / Fast-Alignment scope）、conditional RBF-MMD + inactive-policy、`prepare_source_selection.py` + pretrain 绑定、checkpoint batch 分块已实现 | 真实异构缓存上的 lift 验收、rank/condition/AJD residual、真实跨域数据和 paired operational hit@R |
+| P3 域迁移主线（EA 默认 + ACW 辅助 + faithful AS-MMD + TSD） | 旧 GALIA/PDS 实现描述已退役；`6fc1df1` 仍含历史实现（本地 AJD 白化、conditional feature MMD、source sampling），只按 ACW/TSD/安全对照使用。新主线按 v2 计划实施：EA 默认数据对齐（不减均值，`(N,C,T)` 输出）、ACW 仅辅助坐标、faithful AS-MMD（target-weighted CE + logit marginal RBF-MMD + Split-BN 双 buffer）、TSD 选样 | 真实 cache 上的 EA/AS-MMD/TSD 验收、rank/condition/offdiag residual、row-identity/buffer digest、真实跨域数据和 paired valid-subject hit@R（operational 诊断并存） |
 
-以下结论仍不得作出：feature transfer 有效、GALIA/AS-MMD 有效、decision learning 有效、成人 BrainSync 达到 90%，或 target-calibration 已可运行。
+以下结论仍不得作出：feature transfer 有效、EA/ACW/faithful AS-MMD/TSD 主线有效、
+旧 GALIA/PDS 链有效、decision learning 有效、成人 BrainSync 达到 90%，或 target-calibration 已可运行。
 
 高负载测试异常已由受控实验定性为 WorkBuddy 会话环境故障，不是 EEG/契约源码缺陷；
 bulk-delete、trash、symlink shim，以及被负载放大的 15ms 并发测试窗口共同造成异常。
@@ -94,9 +101,9 @@ bulk-delete、trash、symlink shim，以及被负载放大的 15ms 并发测试�
 1. ✅ 已生成并跟踪 `frozen/active_source_a102467.*`；任何后续代码变更都必须生成新的 archive+manifest，且不得覆盖 `b96a6af`
 2. 人工决定是否清理 `%TEMP%\pytest-of-chent`；WorkBuddy 会话内不采信高负载测试，清理前后的验收均使用空闲、单任务或独立 shell
 3. 准备经验证的 active source/target cache，并按 direct 与 row/column protocol 分流
-4. 用 `prepare_domain_features.py` 为异构通道显式构造 feature lift，再用 `fit_galia_alignment.py` 生成 GALIA state/aligned artifact，并检查 rank/condition/AJD residual；需要 source 子集时用 `prepare_source_selection.py` 预生成 arm 共用的 PDS record
+4. 按 [`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md) 依次执行 WP0（修 bug/命名：本地 GALIA→ACW、旧 PDS→TSD）、WP1（EA 数据对齐 cache）、WP2（faithful AS-MMD）、WP3（TSD 正式化 + ACW 辅助 + Dense PDS 对照）、WP4（matrix plan 字段/DAG）；未按该计划闭合前，不把旧 GALIA/PDS 实现描述当主线
 5. 先完成 plan、environment、cache 与 checkpoint 的 attestation/dry-run，再启动单 worker CUDA smoke
-6. 只在预声明的 matched fold/seed 后报告 paired operational `hit@R` 与 participant-cluster CI
+6. 只在预声明的 matched fold/seed 后报告 paired `valid_subject_operational_hit_rate`（主指标）与 operational `hit@R`（部署诊断）及 participant-cluster CI
 7. 在模型级 target-calibration collector、buffer provenance 与结果 ledger 闭合前，保持该 arm fail-closed
 
 ## 🗂️ 文档维护规则

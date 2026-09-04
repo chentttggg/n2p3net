@@ -4,9 +4,9 @@ import numpy as np
 import pytest
 
 from data.domain_alignment import (
-    GaliaAdapter,
-    GaliaConfig,
-    GaliaState,
+    AcwConfig,
+    AcwState,
+    AjdCongruenceWhitening,
     apply_feature_lift,
     feature_lift_rank,
     flatten_feature_epochs,
@@ -43,16 +43,16 @@ def test_galia_aligns_shared_eigenbasis_and_round_trips_state() -> None:
         "target": _domain_features(2, covariances[1]),
     }
 
-    state = GaliaAdapter(GaliaConfig(regularization=1e-8)).fit(domains)
+    state = AjdCongruenceWhitening(AcwConfig(regularization=1e-8)).fit(domains)
     transformed_covariances = []
     for index, name in enumerate(state.domain_order):
         transformed = state.transform(domains[name], name)
         transformed_covariances.append(np.cov(transformed, rowvar=False, bias=True))
         assert state.diagonal_scales[index].min() > 0.0
     assert all(np.isfinite(value).all() for value in transformed_covariances)
-    assert 0.0 <= state.ajd_residual < 0.1
+    assert 0.0 <= state.ajd_offdiag_residual < 0.1
 
-    restored = GaliaState.from_record(state.record())
+    restored = AcwState.from_record(state.record())
     assert restored.state_digest == state.state_digest
     np.testing.assert_array_equal(restored.transform(domains["source"], "source"), state.transform(domains["source"], "source"))
 
@@ -61,13 +61,13 @@ def test_galia_requires_equal_dimensions_and_rejects_bad_domain_weight_vocabular
     first = np.zeros((4, 3), dtype=np.float64)
     second = np.zeros((4, 2), dtype=np.float64)
     with pytest.raises(ValueError, match="equal feature dimensions"):
-        GaliaAdapter().fit({"a": first, "b": second})
+        AjdCongruenceWhitening().fit({"a": first, "b": second})
 
     with pytest.raises(ValueError, match="exactly the frozen domain vocabulary"):
-        GaliaAdapter().fit({"a": first, "b": first.copy()}, weights={"a": 1.0})
+        AjdCongruenceWhitening().fit({"a": first, "b": first.copy()}, weights={"a": 1.0})
 
     with pytest.raises(ValueError, match="require method='ajd_pham'"):
-        GaliaAdapter(GaliaConfig(method="rjd")).fit(
+        AjdCongruenceWhitening(AcwConfig(method="rjd")).fit(
             {"a": first, "b": first.copy()}, weights={"a": 0.9, "b": 0.1}
         )
 
@@ -77,7 +77,7 @@ def test_galia_rejects_explicit_weights_for_solvers_that_ignore_them() -> None:
     rng = np.random.default_rng(12)
     domains = {"a": rng.normal(size=(20, 3)), "b": rng.normal(size=(20, 3))}
     with pytest.raises(ValueError, match="require method='ajd_pham'"):
-        GaliaAdapter(GaliaConfig(method="uwedge")).fit(
+        AjdCongruenceWhitening(AcwConfig(method="uwedge")).fit(
             domains,
             weights={"a": 0.25, "b": 0.75},
         )
@@ -92,7 +92,7 @@ def test_galia_fast_alignment_regularizes_source_weighted_mixture() -> None:
     second = np.column_stack(
         (np.arange(8.0), np.ones(8), np.zeros(8))
     )
-    state = GaliaAdapter(GaliaConfig(regularization=1e-3)).fit(
+    state = AjdCongruenceWhitening(AcwConfig(regularization=1e-3)).fit(
         {"a": first, "b": second},
         weights={"a": 0.5, "b": 0.5},
     )
@@ -108,7 +108,7 @@ def test_galia_fast_alignment_regularizes_source_weighted_mixture() -> None:
 def test_galia_fast_alignment_rejects_test_scope_and_detects_parent_state_mismatch() -> None:
     rng = np.random.default_rng(5)
     domains = {"a": rng.normal(size=(20, 2)), "b": rng.normal(size=(20, 2))}
-    state = GaliaAdapter().fit(domains)
+    state = AjdCongruenceWhitening().fit(domains)
 
     with pytest.raises(ValueError, match="target test is forbidden"):
         state.fast_alignment(domains["a"], fit_scope="target_test")
@@ -121,16 +121,17 @@ def test_galia_fast_alignment_rejects_test_scope_and_detects_parent_state_mismat
         mean=fast.mean,
         scales=fast.scales,
         covariance_condition_number=fast.covariance_condition_number,
+        target_offdiag_residual=fast.target_offdiag_residual,
         buffer_digest=fast.buffer_digest,
     )
-    with pytest.raises(ValueError, match="different GALIA state"):
+    with pytest.raises(ValueError, match="different ACW state"):
         state.transform_fast(domains["a"], changed)
 
 
 def test_galia_state_record_tampering_is_rejected() -> None:
     rng = np.random.default_rng(9)
-    state = GaliaAdapter().fit({"a": rng.normal(size=(10, 2)), "b": rng.normal(size=(10, 2))})
+    state = AjdCongruenceWhitening().fit({"a": rng.normal(size=(10, 2)), "b": rng.normal(size=(10, 2))})
     record = state.record()
     record["diagonal_scales"][0][0] *= 2.0
     with pytest.raises(ValueError, match="digest"):
-        GaliaState.from_record(record)
+        AcwState.from_record(record)

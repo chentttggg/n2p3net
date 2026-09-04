@@ -533,6 +533,26 @@ def _array_content_sha256(value: np.ndarray) -> str:
         digest.update(content[offset : offset + 16 * 1024 * 1024])
     return digest.hexdigest()
 
+def epoch_row_identity_digest(dataset: EpochDataset) -> str:
+    """Return a digest over subject+event row identity, independent of X/y.
+
+    Feature builders and row-selection runners both call this so that an
+    index produced from one feature matrix can never be silently applied to
+    a cache whose rows are in a different order.
+    """
+
+    validate = getattr(dataset, "validate", None)
+    if validate is not None:
+        validate(require_labels=False)
+    subjects = np.asarray(dataset.subject_ids).astype(str)
+    timeline = getattr(dataset, "event_timeline", None)
+    if timeline is None:
+        return _array_content_sha256(subjects)
+    events = np.asarray(timeline.event_ids).astype(str)
+    paired = np.stack((subjects, events), axis=1)
+    return _array_content_sha256(paired)
+
+
 
 def _dataset_content_invariants(dataset: EpochDataset) -> dict[str, object]:
     identity = materialize_dataset_identity(dataset)

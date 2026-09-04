@@ -1855,6 +1855,7 @@ class DeepBaseline(Baseline):
                                 yb,
                                 domain_batch,
                                 domain_count,
+                                min_cell_count=self._feature_alignment_min_cell_count,
                             )
                         loss = loss + alignment_weight * alignment_loss
                         if (

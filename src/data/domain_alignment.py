@@ -18,7 +18,7 @@ from typing import Any
 
 import numpy as np
 
-GALIA_ALIGNMENT_SCHEMA = "n2p3_galia_alignment/1"
+ACW_ALIGNMENT_SCHEMA = "n2p3_ajd_congruence_whitening/1"
 FAST_ALIGNMENT_SCHEMA = "n2p3_galia_fast_alignment/1"
 VALID_AJD_METHODS = frozenset({"ajd_pham", "rjd", "uwedge"})
 VALID_FAST_SCOPES = frozenset({"target_calibration", "source_weighted"})
@@ -66,7 +66,7 @@ def _validate_domains(
     min_samples: int,
 ) -> tuple[tuple[str, ...], tuple[np.ndarray, ...]]:
     if not isinstance(domains, Mapping) or len(domains) < 2:
-        raise ValueError("GALIA requires at least two named domains.")
+        raise ValueError("ACW requires at least two named domains.")
     order: list[str] = []
     matrices: list[np.ndarray] = []
     feature_dim: int | None = None
@@ -81,7 +81,7 @@ def _validate_domains(
             feature_dim = matrix.shape[1]
         elif matrix.shape[1] != feature_dim:
             raise ValueError(
-                "GALIA requires equal feature dimensions after explicit domain lifts; "
+                "ACW requires equal feature dimensions after explicit domain lifts; "
                 f"domain {name!r} has {matrix.shape[1]} and expected {feature_dim}."
             )
         order.append(name)
@@ -155,7 +155,7 @@ def feature_lift_rank(spatial_lift: np.ndarray, *, tolerance: float = 1e-10) -> 
 
 
 @dataclass(frozen=True)
-class GaliaConfig:
+class AcwConfig:
     """Numerical and provenance settings for one GALIA fit."""
 
     regularization: float = 1e-6
@@ -190,6 +190,7 @@ class FastAlignmentState:
     mean: np.ndarray
     scales: np.ndarray
     covariance_condition_number: float
+    target_offdiag_residual: float
     buffer_digest: str
 
     def __post_init__(self) -> None:
@@ -208,6 +209,11 @@ class FastAlignmentState:
             raise ValueError("mean/scales must be finite and scales must be positive.")
         if not np.isfinite(self.covariance_condition_number) or self.covariance_condition_number <= 0:
             raise ValueError("covariance_condition_number must be finite and positive.")
+        if (
+            not np.isfinite(self.target_offdiag_residual)
+            or self.target_offdiag_residual < 0.0
+        ):
+            raise ValueError("target_offdiag_residual must be finite and non-negative.")
         if not isinstance(self.buffer_digest, str) or len(self.buffer_digest) != 64:
             raise ValueError("buffer_digest must be a SHA-256 digest.")
         object.__setattr__(self, "domain_id", domain)
@@ -223,6 +229,7 @@ class FastAlignmentState:
             "mean": self.mean.tolist(),
             "scales": self.scales.tolist(),
             "covariance_condition_number": float(self.covariance_condition_number),
+            "target_offdiag_residual": float(self.target_offdiag_residual),
             "buffer_digest": self.buffer_digest,
         }
         return {**semantic, "state_digest": _digest(semantic)}
@@ -233,7 +240,8 @@ class FastAlignmentState:
             raise ValueError("Fast Alignment state record must be a mapping.")
         expected = {
             "schema", "parent_state_digest", "domain_id", "fit_scope", "mean",
-            "scales", "covariance_condition_number", "buffer_digest", "state_digest",
+            "scales", "covariance_condition_number", "target_offdiag_residual",
+            "buffer_digest", "state_digest",
         }
         if set(value) != expected or value.get("schema") != FAST_ALIGNMENT_SCHEMA:
             raise ValueError("Fast Alignment state record fields or schema are invalid.")
@@ -247,13 +255,14 @@ class FastAlignmentState:
             mean=np.asarray(value["mean"], dtype=np.float64),
             scales=np.asarray(value["scales"], dtype=np.float64),
             covariance_condition_number=float(value["covariance_condition_number"]),
+            target_offdiag_residual=float(value["target_offdiag_residual"]),
             buffer_digest=str(value["buffer_digest"]),
         )
 
 
 @dataclass(frozen=True)
-class GaliaState:
-    """Frozen GALIA state shared by source domains."""
+class AcwState:
+    """Frozen AJD congruence-whitening state shared by source domains."""
 
     domain_order: tuple[str, ...]
     means: np.ndarray
@@ -266,10 +275,12 @@ class GaliaState:
     regularization: float
     tolerance: float
     max_iter: int
-    ajd_residual: float
+    ajd_offdiag_residual: float
     covariance_condition_numbers: tuple[float, ...]
     max_condition_number: float = 1e12
     lift_ranks: tuple[int, ...] | None = None
+    solver_name: str = "pyriemann"
+    solver_version: str = "unknown"
 
     def __post_init__(self) -> None:
         domains = tuple(str(value).strip() for value in self.domain_order)
@@ -291,9 +302,9 @@ class GaliaState:
             raise ValueError("diagonal_scales must have shape (domain_count, feature_dim).")
         arrays = (means, covariances, diagonalizer, scales)
         if any(not np.isfinite(array).all() for array in arrays):
-            raise ValueError("GALIA state arrays must be finite.")
+            raise ValueError("ACW state arrays must be finite.")
         if bool((scales <= 0.0).any()):
-            raise ValueError("GALIA diagonal scales must be positive.")
+            raise ValueError("ACW diagonal scales must be positive.")
         if len(self.sample_counts) != domain_count or any(int(value) < 2 for value in self.sample_counts):
             raise ValueError("sample_counts must contain at least two rows per domain.")
         weights = tuple(float(value) for value in self.domain_weights)
@@ -309,8 +320,8 @@ class GaliaState:
             raise ValueError("tolerance must be finite and positive.")
         if isinstance(self.max_iter, bool) or self.max_iter < 1:
             raise ValueError("max_iter must be a positive integer.")
-        if not np.isfinite(self.ajd_residual) or self.ajd_residual < 0.0:
-            raise ValueError("ajd_residual must be finite and non-negative.")
+        if not np.isfinite(self.ajd_offdiag_residual) or self.ajd_offdiag_residual < 0.0:
+            raise ValueError("ajd_offdiag_residual must be finite and non-negative.")
         conditions = tuple(float(value) for value in self.covariance_condition_numbers)
         if len(conditions) != domain_count or any(
             not np.isfinite(value) or value <= 0.0 for value in conditions
@@ -327,9 +338,9 @@ class GaliaState:
             covariances.transpose(0, 2, 1),
             atol=10 * self.tolerance,
         ):
-            raise ValueError("GALIA covariances must be symmetric.")
+            raise ValueError("ACW covariances must be symmetric.")
         if any(float(np.linalg.eigvalsh(covariance).min()) <= 0.0 for covariance in covariances):
-            raise ValueError("GALIA covariances must be positive definite after regularization.")
+            raise ValueError("ACW covariances must be positive definite after regularization.")
         ranks = (
             tuple(int(value) for value in self.lift_ranks)
             if self.lift_ranks is not None
@@ -337,6 +348,12 @@ class GaliaState:
         )
         if len(ranks) != domain_count or any(value < 1 or value > feature_dim for value in ranks):
             raise ValueError("lift_ranks must be positive and bounded by feature_dim.")
+        solver_name = str(self.solver_name).strip()
+        solver_version = str(self.solver_version).strip()
+        if not solver_name or not solver_version or "\0" in solver_name + solver_version:
+            raise ValueError("solver_name and solver_version must be non-empty strings.")
+        object.__setattr__(self, "solver_name", solver_name)
+        object.__setattr__(self, "solver_version", solver_version)
         object.__setattr__(self, "domain_order", domains)
         object.__setattr__(self, "means", _readonly(means))
         object.__setattr__(self, "covariances", _readonly(covariances))
@@ -399,7 +416,6 @@ class GaliaState:
             ):
                 delta = source_mean - mean
                 covariance += weight * (source_cov + np.outer(delta, delta))
-            covariance += self.regularization * np.eye(self.feature_dim, dtype=np.float64)
         else:
             mean = values.mean(axis=0)
             centered = values - mean
@@ -407,8 +423,6 @@ class GaliaState:
         epsilon = self.regularization if regularization is None else float(regularization)
         if not np.isfinite(epsilon) or epsilon <= 0.0:
             raise ValueError("regularization must be finite and positive.")
-        if fit_scope == "source_weighted" and regularization is None:
-            epsilon = 0.0
         covariance = covariance + epsilon * np.eye(self.feature_dim)
         transformed = self.joint_diagonalizer @ covariance @ self.joint_diagonalizer.T
         scales = np.diag(transformed)
@@ -417,8 +431,15 @@ class GaliaState:
         condition_number = float(np.linalg.cond(covariance))
         if not np.isfinite(condition_number) or condition_number > self.max_condition_number:
             raise ValueError(
-                "Fast Alignment covariance condition number exceeds the parent GALIA limit."
+                "Fast Alignment covariance condition number exceeds the parent ACW limit."
             )
+        offdiag = transformed - np.diag(scales)
+        transformed_norm = float(np.linalg.norm(transformed, ord="fro"))
+        target_offdiag_residual = (
+            0.0
+            if transformed_norm == 0.0
+            else float(np.linalg.norm(offdiag, ord="fro") / transformed_norm)
+        )
         return FastAlignmentState(
             parent_state_digest=self.state_digest,
             domain_id=domain_id,
@@ -426,12 +447,13 @@ class GaliaState:
             mean=mean,
             scales=scales,
             covariance_condition_number=condition_number,
+            target_offdiag_residual=target_offdiag_residual,
             buffer_digest=_array_digest(values),
         )
 
     def transform_fast(self, features: object, fast_state: FastAlignmentState) -> np.ndarray:
         if fast_state.parent_state_digest != self.state_digest:
-            raise ValueError("Fast Alignment state belongs to a different GALIA state.")
+            raise ValueError("Fast Alignment state belongs to a different ACW state.")
         values = _validate_feature_matrix(features, name="features", min_samples=1)
         if values.shape[1] != self.feature_dim:
             raise ValueError(
@@ -446,7 +468,7 @@ class GaliaState:
 
     def _semantic_record(self) -> dict[str, object]:
         return {
-            "schema": GALIA_ALIGNMENT_SCHEMA,
+            "schema": ACW_ALIGNMENT_SCHEMA,
             "domain_order": list(self.domain_order),
             "means": self.means.tolist(),
             "covariances": self.covariances.tolist(),
@@ -458,10 +480,12 @@ class GaliaState:
             "regularization": self.regularization,
             "tolerance": self.tolerance,
             "max_iter": self.max_iter,
-            "ajd_residual": self.ajd_residual,
+            "ajd_offdiag_residual": self.ajd_offdiag_residual,
             "covariance_condition_numbers": list(self.covariance_condition_numbers),
             "max_condition_number": self.max_condition_number,
             "lift_ranks": list(self.lift_ranks or ()),
+            "solver_name": self.solver_name,
+            "solver_version": self.solver_version,
         }
 
     def record(self) -> dict[str, object]:
@@ -469,18 +493,18 @@ class GaliaState:
         return {**semantic, "state_digest": self.state_digest}
 
     @classmethod
-    def from_record(cls, value: Mapping[str, object]) -> GaliaState:
+    def from_record(cls, value: Mapping[str, object]) -> AcwState:
         if not isinstance(value, Mapping):
-            raise ValueError("GALIA state record must be a mapping.")
+            raise ValueError("ACW state record must be a mapping.")
         expected_keys = set(cls._record_keys()) | {"state_digest"}
         if set(value) != expected_keys:
-            raise ValueError("GALIA state record fields are invalid.")
+            raise ValueError("ACW state record fields are invalid.")
         semantic = {key: value[key] for key in cls._record_keys()}
         expected_digest = _digest(semantic)
         if value["state_digest"] != expected_digest:
-            raise ValueError("GALIA state digest does not match its semantic record.")
-        if semantic["schema"] != GALIA_ALIGNMENT_SCHEMA:
-            raise ValueError("GALIA state schema is unsupported.")
+            raise ValueError("ACW state digest does not match its semantic record.")
+        if semantic["schema"] != ACW_ALIGNMENT_SCHEMA:
+            raise ValueError("ACW state schema is unsupported.")
         state = cls(
             domain_order=tuple(str(item) for item in semantic["domain_order"]),
             means=np.asarray(semantic["means"], dtype=np.float64),
@@ -493,15 +517,17 @@ class GaliaState:
             regularization=float(semantic["regularization"]),
             tolerance=float(semantic["tolerance"]),
             max_iter=int(semantic["max_iter"]),
-            ajd_residual=float(semantic["ajd_residual"]),
+            ajd_offdiag_residual=float(semantic["ajd_offdiag_residual"]),
             covariance_condition_numbers=tuple(
                 float(item) for item in semantic["covariance_condition_numbers"]
             ),
             max_condition_number=float(semantic["max_condition_number"]),
             lift_ranks=tuple(int(item) for item in semantic["lift_ranks"]),
+            solver_name=str(semantic["solver_name"]),
+            solver_version=str(semantic["solver_version"]),
         )
         if state.state_digest != value["state_digest"]:
-            raise ValueError("GALIA state digest changed while decoding.")
+            raise ValueError("ACW state digest changed while decoding.")
         return state
 
     @staticmethod
@@ -519,20 +545,22 @@ class GaliaState:
             "regularization",
             "tolerance",
             "max_iter",
-            "ajd_residual",
+            "ajd_offdiag_residual",
             "covariance_condition_numbers",
             "max_condition_number",
             "lift_ranks",
+            "solver_name",
+            "solver_version",
         )
 
 
-class GaliaAdapter:
+class AjdCongruenceWhitening:
     """Fit and apply a GALIA state over explicit same-dimensional feature vectors."""
 
-    def __init__(self, config: GaliaConfig | None = None) -> None:
-        self.config = GaliaConfig() if config is None else config
-        if not isinstance(self.config, GaliaConfig):
-            raise TypeError("config must be a GaliaConfig.")
+    def __init__(self, config: AcwConfig | None = None) -> None:
+        self.config = AcwConfig() if config is None else config
+        if not isinstance(self.config, AcwConfig):
+            raise TypeError("config must be a AcwConfig.")
 
     def fit(
         self,
@@ -540,7 +568,7 @@ class GaliaAdapter:
         *,
         weights: Mapping[str, float] | None = None,
         lift_ranks: Mapping[str, int] | None = None,
-    ) -> GaliaState:
+    ) -> AcwState:
         order, matrices = _validate_domains(domains, min_samples=self.config.min_samples)
         domain_count = len(order)
         feature_dim = matrices[0].shape[1]
@@ -596,7 +624,13 @@ class GaliaAdapter:
         numerator = float(np.sum(offdiag * offdiag))
         denominator = float(np.sum(transformed * transformed))
         residual = 0.0 if denominator == 0.0 else numerator / denominator
-        return GaliaState(
+        try:
+            from importlib.metadata import PackageNotFoundError, version
+
+            solver_version = version("pyriemann")
+        except PackageNotFoundError:
+            solver_version = "unknown"
+        return AcwState(
             domain_order=order,
             means=means,
             covariances=covariance_stack,
@@ -608,10 +642,12 @@ class GaliaAdapter:
             regularization=self.config.regularization,
             tolerance=self.config.tolerance,
             max_iter=self.config.max_iter,
-            ajd_residual=residual,
+            ajd_offdiag_residual=residual,
             covariance_condition_numbers=tuple(conditions),
             max_condition_number=self.config.max_condition_number,
             lift_ranks=ranks,
+            solver_name=f"pyriemann.{self.config.method}",
+            solver_version=solver_version,
         )
 
     def _fit_ajd(
@@ -641,7 +677,14 @@ class GaliaAdapter:
             kwargs["sample_weight"] = weights
         try:
             diagonalizer, transformed = function(covariance_stack, **kwargs)
-        except TypeError:
+        except TypeError as error:
+            if kwargs.get("sample_weight") is not None and not np.allclose(
+                weights, uniform, atol=1e-12
+            ):
+                raise RuntimeError(
+                    "ajd_pham rejected sample_weight; refusing to silently "
+                    "downgrade a weighted AJD fit to a uniform fit."
+                ) from error
             kwargs.pop("sample_weight", None)
             diagonalizer, transformed = function(covariance_stack, **kwargs)
         diagonalizer = np.asarray(diagonalizer, dtype=np.float64)
@@ -665,11 +708,11 @@ class GaliaAdapter:
 
 __all__ = [
     "FAST_ALIGNMENT_SCHEMA",
-    "GALIA_ALIGNMENT_SCHEMA",
+    "ACW_ALIGNMENT_SCHEMA",
     "FastAlignmentState",
-    "GaliaAdapter",
-    "GaliaConfig",
-    "GaliaState",
+    "AjdCongruenceWhitening",
+    "AcwConfig",
+    "AcwState",
     "apply_feature_lift",
     "feature_lift_rank",
     "flatten_feature_epochs",

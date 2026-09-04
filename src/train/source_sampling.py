@@ -16,6 +16,9 @@ from pathlib import Path
 import numpy as np
 
 VALID_SELECTION_SCOPES = frozenset({"target_calibration", "target_unlabelled_buffer"})
+SOURCE_SELECTION_SCHEMA = "n2p3_source_selection/2"
+LEGACY_SOURCE_SELECTION_SCHEMA = "n2p3_pds_source_selection/1"
+VALID_SAMPLER_KINDS = frozenset({"target_similarity_diverse", "dense_pds"})
 
 
 def _array_digest(value: np.ndarray) -> str:
@@ -42,6 +45,7 @@ class PDSSelection:
     target_digest: str
     selected_digest: str
     bandwidth_estimator: str = "all_pairs_median"
+    sampler_kind: str = "target_similarity_diverse"
 
     def __post_init__(self) -> None:
         indices = np.asarray(self.selected_indices, dtype=np.int64)
@@ -68,6 +72,10 @@ class PDSSelection:
                 "bandwidth_estimator must be all_pairs_median, "
                 "subsampled_median_512, or explicit."
             )
+        if self.sampler_kind not in VALID_SAMPLER_KINDS:
+            raise ValueError(
+                f"sampler_kind must be one of {sorted(VALID_SAMPLER_KINDS)!r}."
+            )
         for name, digest in (
             ("source_digest", self.source_digest),
             ("target_digest", self.target_digest),
@@ -80,7 +88,8 @@ class PDSSelection:
 
     def record(self) -> dict[str, object]:
         return {
-            "schema": "n2p3_pds_source_selection/1",
+            "schema": SOURCE_SELECTION_SCHEMA,
+            "sampler_kind": self.sampler_kind,
             "selected_indices": self.selected_indices.tolist(),
             "selected_count": int(len(self.selected_indices)),
             "source_count": int(self.source_count),
@@ -115,8 +124,13 @@ def pds_selection_from_record(
     a selection file without silently trusting a stale or edited artifact.
     """
 
-    if record.get("schema") != "n2p3_pds_source_selection/1":
-        raise ValueError("unsupported PDS source-selection record schema.")
+    schema = record.get("schema")
+    if schema == SOURCE_SELECTION_SCHEMA:
+        sampler_kind = str(record.get("sampler_kind", "target_similarity_diverse"))
+    elif schema == LEGACY_SOURCE_SELECTION_SCHEMA:
+        sampler_kind = "target_similarity_diverse"
+    else:
+        raise ValueError("unsupported source-selection record schema.")
     if expected_source_cache_sha256 is not None:
         record_cache_sha256 = record.get("source_cache_sha256")
         if (
@@ -145,6 +159,7 @@ def pds_selection_from_record(
             bandwidth_estimator=str(
                 record.get("bandwidth_estimator", "all_pairs_median")
             ),
+            sampler_kind=sampler_kind,
         )
     except (KeyError, TypeError, ValueError) as error:
         raise ValueError(f"invalid PDS source-selection record: {error}") from error
@@ -306,10 +321,10 @@ def select_pds_rows(
 
     prototype = target.mean(axis=0)
     distances = np.sum((source - prototype[None, :]) ** 2, axis=1)
-    quality = np.exp(-distances / (2.0 * target_temperature**2))
+    log_quality = -distances / (2.0 * target_temperature**2)
     source_sq = np.einsum("np,np->n", source, source)
     rng = np.random.default_rng(int(seed))
-    tie_break = rng.uniform(0.0, np.finfo(np.float64).eps, len(source))
+    tie_break = rng.uniform(0.0, 1e-9, len(source))
 
     selected: list[int] = []
     eligible = np.ones(len(source), dtype=bool)
@@ -322,7 +337,7 @@ def select_pds_rows(
         if not len(candidates):
             raise ValueError("source quotas cannot be satisfied by available rows.")
         score = (
-            np.log(np.maximum(quality[candidates], 1e-300))
+            log_quality[candidates]
             - diversity_weight * penalty[candidates]
             + tie_break[candidates]
         )

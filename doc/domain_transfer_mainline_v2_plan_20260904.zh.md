@@ -1,10 +1,18 @@
 # 域迁移新主线 v2 具体实施方案（2026-09-04）
 
-> 状态：**待批准实施**。
+> 状态：**已批准，正在实施**（4 个决策点已由 T 全部同意）。
 > 触发：T 要求对
 > `native reference → domain-specific feature lift → GALIA/AJD → conditional AS-MMD → PDS source sampling`
 > 进行公式/数值在线核验，自行科研确认，并给出最优解和可执行方案。
 > 配套原始来源核验：`domain_transfer_chain_primary_source_audit_20260904.zh.md`（后台研究代理已完成；本文 §2–§3 已合并其结论）。
+
+> 实施进度（2026-09-04 代码工作同步）：
+> - ✅ **WP0 完成**：ACW 命名/schema（`n2p3_ajd_congruence_whitening/1`、`n2p3_acw_fit/1`）、solver 版本、`ajd_offdiag_residual`、fast-output 真实 target 行、AJD TypeError fail-closed、mean 模式 `alignment_inactive`、TSD log-quality + 有尺度 tie-break、`row_identity_digest` 绑定。
+> - ✅ **WP1 完成**：`src/data/euclidean_alignment.py`（不减均值、`R̄^{-1/2}X`、四类 fit-scope、条件数门禁）+ `experiments/prepare_euclidean_alignment_cache.py`（attested cache 进、shape-preserving EA cache 出）+ 测试。
+> - 🟡 **WP2 部分完成**：`src/transfer/asmmd.py`（Eq 1–9：target-weight、warmup 调度、logit-level marginal 无偏 RBF-MMD²、joint loss）；`SubjectAdapter` 已支持冻结 source logits/labels 的 joint adapter 训练；`run_candidate_cross_decision.py` 已加 `--as-mmd-*`/source-logits 并写入 adaptation procedure。**未完成**：live source-stream + SplitBN source/target 双 buffer 的完整 joint trunk 训练，以及 matrix plan 的 `as_mmd` 字段与 result_batch 下传。
+> - 🟡 **WP3 部分完成**：TSD schema `n2p3_source_selection/2` + `sampler_kind="target_similarity_diverse"`、legacy schema 只读兼容、source_selection_record 的 row-identity 校验。**未完成**：`dense_pds` 独立采样器与 `--sampler` 开关。
+> - 🟡 **WP4 部分完成**：matrix plan 已解析 `source_selection_record` 并写入 checkpoint batch argv；**未完成**：EA/`as_mmd`/`sampler_kind` plan 字段、`prepare_ea`/`prepare_selection` DAG 节点、result_batch 下传 `--source-stream-cache`/`--as-mmd-*`。
+> - 🟡 **WP5 进行中**：四份指导文档已对齐至 EA/ACW/AS-MMD/TSD，旧 GALIA/PDS 描述标为历史；全量测试与 ruff 通过；新 source-only freeze、云端 dry-run/CUDA smoke 未做（E2 不启动）。
 
 ---
 
@@ -36,7 +44,7 @@
 }
 \]
 
-   真 GALIA/AJD **不退出项目**，降级为：可选 feature-decoder 对照；本地现有 AJD 白化更名 ACW，只作 PDS 坐标/经典解码辅助，不冒充模型输入对齐。
+   真 GALIA/AJD **不退出项目**，降级为：可选 feature-decoder 对照；本地现有 AJD 白化更名 ACW，只作 TSD 坐标/经典解码辅助，不冒充模型输入对齐。
    Dense PDS 保留为“论文忠实复现臂”，另立名称，不与 TSD 混用。
 
 ---
@@ -192,7 +200,7 @@ CAR 数学 `x_c − mean_c(x)` 与标准平均参考一致，rank 降 1 是预�
 1. EA 保持 `(N,C,T)` 形状，**N2P3Net 可以直接消费**；论文 EA 是 `R̄^{-1/2} x`（不减均值），有 He & Wu 2020、Wu 2025、MOABB 三方一致。
 2. EA 无训练参数、计算成本低，便于 64-fold 消融；本地 `(N,P)` ACW 特征矩阵没有现有模型消费端。
 3. 后台代理已确认本地 “GALIA” 不是论文算法；在论文全文未实现前，把它当默认会引入 solver 目标错配和 dead-end。把本地实现更名 `AJD congruence whitening (ACW)`，论文 GALIA 留作独立 feature-decoder 对照。
-4. 决策规则：`EA = 默认数据对齐`；`ACW = PDS 坐标 + 经典特征解码对照`；`真 GALIA = 可选、不阻塞主线`；若未来要 N2P3Net 吃对齐特征，必须先把输出重新组织成 `(N,C,T)` 或换 decoder，不能静默伪装。
+4. 决策规则：`EA = 默认数据对齐`；`ACW = TSD 坐标 + 经典特征解码对照`；`真 GALIA = 可选、不阻塞主线`；若未来要 N2P3Net 吃对齐特征，必须先把输出重新组织成 `(N,C,T)` 或换 decoder，不能静默伪装。
 
 ### 4.2 为什么深度适配默认用 faithful AS-MMD，而不是本地 conditional feature MMD
 
@@ -344,12 +352,12 @@ DAG 任务新增：`prepare_ea`（或要求离线 cache）、`prepare_selection`
 
 ---
 
-## 8. 需要 T 拍板的 4 个决策
+## 8. 已批准决策（2026-09-04）
 
-1. **接受“EA 默认、ACW 辅助、真 GALIA 不进入主线”**（推荐接受；本地现有实现必须从 `GALIA` 更名为 ACW）。
-2. **AS-MMD 是否按论文忠实用 logit marginal MMD**（推荐接受），条件 feature MMD 仅保留为安全对照。
-3. **PDS 命名拆分**：TSD 为主线，Dense PDS 为忠实对照（推荐接受）。
-4. **是否把负 MMD 的 biased V-statistic 作为额外 loss 臂**（推荐：主线保留无偏式，V-statistic 仅作 exploratory）。
+1. ✅ **EA 默认、ACW 辅助、真 GALIA 不进入主线**（本地现有实现已从 `GALIA` 更名为 ACW）。
+2. ✅ **AS-MMD 按论文忠实用 logit marginal MMD**；条件 feature MMD 仅保留为安全对照。
+3. ✅ **PDS 命名拆分**：TSD 为主线，Dense PDS 为忠实对照。
+4. ✅ **负 MMD 的 biased V-statistic 仅作 exploratory loss 臂**；主线保留无偏式并记账。
 
 ---
 

@@ -36,6 +36,7 @@ from data.contract import (  # noqa: E402
 from data.domain import source_domain_ids, source_domain_vocabulary  # noqa: E402
 from data.epochs import (  # noqa: E402
     EpochDataset,
+    epoch_row_identity_digest,
     load_epoch_dataset,
     loaded_epoch_cache_attestation,
 )
@@ -169,6 +170,7 @@ def _load_source_selection(
     path: str | Path,
     *,
     source_cache_sha256: str,
+    row_identity_digest: str | None = None,
 ) -> tuple[PDSSelection, dict[str, object]]:
     """Load a PDS selection record bound to the attested source cache.
 
@@ -182,6 +184,16 @@ def _load_source_selection(
         record,
         expected_source_cache_sha256=source_cache_sha256,
     )
+    if row_identity_digest is not None:
+        feature_record = record.get("source_feature_record")
+        if not isinstance(feature_record, Mapping):
+            raise ValueError("source-selection record lacks its source_feature_record.")
+        feature_row_digest = feature_record.get("row_identity_digest")
+        if feature_row_digest != row_identity_digest:
+            raise ValueError(
+                "source-selection feature row_identity_digest disagrees with "
+                "the loaded source cache."
+            )
     return selection, record
 
 
@@ -681,6 +693,7 @@ def main(argv: list[str] | None = None) -> None:
         source_selection, source_selection_record = _load_source_selection(
             args.source_selection_record,
             source_cache_sha256=source_cache_sha256,
+            row_identity_digest=epoch_row_identity_digest(dataset),
         )
         if source_selection.source_count != dataset.n_epochs:
             raise ValueError(

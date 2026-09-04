@@ -291,7 +291,12 @@ def conditional_mean_alignment_loss(
 
     if batch == 0 or domain_count < 2:
         zero = stats.new_zeros(())
-        return zero, {"active_terms": 0.0, "mean_squared_distance": 0.0, "max_squared_distance": 0.0}
+        return zero, {
+            "active_terms": 0.0,
+            "mean_squared_distance": 0.0,
+            "max_squared_distance": 0.0,
+            "alignment_inactive": True,
+        }
 
     cell_means: dict[tuple[int, int], torch.Tensor] = {}
     cell_counts: dict[tuple[int, int], int] = {}
@@ -319,7 +324,12 @@ def conditional_mean_alignment_loss(
 
     if not squared_distances:
         zero = stats.new_zeros(())
-        return zero, {"active_terms": 0.0, "mean_squared_distance": 0.0, "max_squared_distance": 0.0}
+        return zero, {
+            "active_terms": 0.0,
+            "mean_squared_distance": 0.0,
+            "max_squared_distance": 0.0,
+            "alignment_inactive": True,
+        }
 
     stacked = torch.stack(squared_distances)
     loss = stacked.mean()
@@ -327,5 +337,6 @@ def conditional_mean_alignment_loss(
         "active_terms": float(len(squared_distances)),
         "mean_squared_distance": float(stacked.detach().mean()),
         "max_squared_distance": float(stacked.detach().max()),
+        "alignment_inactive": False,
     }
     return loss, diagnostics

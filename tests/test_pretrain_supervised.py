@@ -13,7 +13,7 @@ import torch
 
 from baselines.n2p3net import N2P3NetBaseline as ContractN2P3NetBaseline
 from data.contract import SOURCE_COHORT_DATA_CONTRACTS
-from data.epochs import preprocessing_spec_from_contract
+from data.epochs import epoch_row_identity_digest, preprocessing_spec_from_contract
 from data.events import observed_only_timeline
 from data.identity import (
     DatasetIdentityTable,
@@ -326,6 +326,9 @@ def test_supervised_runner_binds_pds_source_selection_record(
     )
     selection_record = selection.record()
     selection_record["source_cache_sha256"] = cache_sha256
+    selection_record["source_feature_record"] = {
+        "row_identity_digest": epoch_row_identity_digest(dataset)
+    }
     selection_path = tmp_path / "selection.json"
     selection_path.write_text(json.dumps(selection_record), encoding="utf-8")
 
@@ -403,6 +406,9 @@ def test_supervised_runner_rejects_selection_from_another_source_cache(
     )
     selection_record = selection.record()
     selection_record["source_cache_sha256"] = "f" * 64
+    selection_record["source_feature_record"] = {
+        "row_identity_digest": epoch_row_identity_digest(dataset)
+    }
     selection_path = tmp_path / "selection.json"
     selection_path.write_text(json.dumps(selection_record), encoding="utf-8")
 

@@ -6,6 +6,12 @@ _版本：2026-09-04 · 活动基线：`6fc1df1`（分支 `main`，集成工作�
 > 横向嵌套（多个 N2P3Net 当外层网络神经元）被否决；活动方向改为纵向分层——
 > 共享 trunk + 可丢弃源域残差 + invariant/private 分解 + target 残差 + 可微决策集合层。
 > 三项新增强制机制：Split-BN 诊断（P0）、drop-to-consensus 域残差（P1）、决策级可微损失（P2）。
+>
+> 2026-09-04 域迁移主线裁决（已批准）：主线改为 **EA 默认数据对齐 → N2P3Net trunk →
+> faithful AS-MMD（target-weighted CE + logit marginal RBF-MMD + Split-BN）→ TSD 选样**；
+> 本地 “GALIA” 实现更名 **AJD congruence whitening (ACW)** 并只作辅助坐标/经典解码，
+> 真 GALIA 与 Dense PDS 为可选对照。实施、arm 命名与门禁以
+> [`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md) 为准。
 
 ## 📋 0. 文档控制与活动基线
 
@@ -132,7 +138,7 @@ H_{d}=Z_{inv}+m\,\rho_d\tanh(a_d)\Delta_d(Z_{inv}),
 \qquad m\sim\operatorname{Bernoulli}(1-p),\ p\in[0.2,0.5].
 \]
 
-裁决理由：旧 `DomainAdapterBank` 被退役的直接原因（反例 8：训练启用 source adapter、推理未 route 则无效）证明的是旧实现缺陷，不是方向错误。旧实现在未见目标上取 Δ=0，而 trunk 从未在 Δ=0 下训练过，Δ=0 是 off-manifold 操作点。drop-to-consensus 用随机置零使 m=0 路径进入训练分布，消除"推理操作点从未被训练"这一缺陷。
+裁决理由：旧 `DomainAdapterBank`（历史/已退役）被退役的直接原因（反例 8：训练启用 source adapter、推理未 route 则无效）证明的是旧实现缺陷，不是方向错误。旧实现在未见目标上取 Δ=0，而 trunk 从未在 Δ=0 下训练过，Δ=0 是 off-manifold 操作点。drop-to-consensus 用随机置零使 m=0 路径进入训练分布，消除"推理操作点从未被训练"这一缺陷。
 
 效力边界：训练目标是混合 \((1-p)\mathbb E[L\mid m{=}1]+p\,\mathbb E[L\mid m{=}0]\)，推理只用 m=0 分量；"路径被训练过"不等于训练/推理分布一致，也不保证 trunk 收敛到最优共识。p 只控制共识路径被训练的频率，不控制残差幅度（幅度由 \(\rho_d\tanh(a_d)\|\Delta_d(Z)\|\) 决定）。
 
@@ -144,9 +150,41 @@ H_{d}=Z_{inv}+m\,\rho_d\tanh(a_d)\Delta_d(Z_{inv}),
 - 域残差范数比与 target adapter 同规：按样本计算 \(r_j\)，source residual 检查固定 \(m_j=1\) counterfactual；报告 mean/q50/q95/q99/max，任一超限则整次 run invalid；
 - 反例 8 仍然有效：推理路径必须显式验证不含 source Δ_d。
 
-### 2.5 Feature alignment
+### 2.5 数据级对齐与深度适配
 
-source 有真实 binary labels 时，对 `Z_inv` 做 class-conditional alignment：
+**数据级默认对齐为 Euclidean Alignment（EA）**：
+
+\[
+\tilde X_n=\bar R^{-1/2}X_n,\qquad
+\bar R=\frac1N\sum_n X_n X_n^\top.
+\]
+
+该式按 He & Wu 2020 / Wu 2025 **不减均值**，输出保持 `(N,C,T)`，N2P3Net 可直接消费。
+EA reference 只能由声明的 source scope 或 `target_calibration`/unlabelled buffer 估计，
+`target test` 不得进入；消融臂为 `none`（原 cache）、`ea_source`、`ea_target_calibration`。
+
+本地 “GALIA” 实现不是 Altındış et al. 2023 的论文 GALIA，已更名为
+**AJD congruence whitening（ACW）**。它输出 `(N,P)` 特征矩阵、当前没有 N2P3Net
+消费端，因此不作为模型输入对齐，只作 TSD source-selection 坐标与经典特征解码
+（xDAWN/LDA/Ridge）的辅助。真 GALIA（论文式 3–10）为可选 feature-decoder 对照，不进入主线。
+
+**深度适配默认是 faithful AS-MMD**：source 与 target calibration joint training 中，
+
+\[
+w_T=1+\alpha_e\left(\operatorname{clip}\left(\sqrt{N_s/N_t},1,6\right)-1\right),
+\qquad
+\alpha_e=\min(1,e/W),
+\qquad
+\lambda_{MMD}(e)=\alpha_e\lambda_0,
+\]
+
+并在 **logits** 上做 **marginal** RBF-MMD，配合 Split-BN source/target 双 buffer
+（eval 只用 target buffer）。每个 epoch 的 `w_T(e)`、`λ_MMD(e)`、MMD²、负值计数、
+bandwidth 与 buffer digest 必须写 ledger；负 MMD 不 clamp（保持无偏定义），只记账与诊断。
+
+本地已有 source-source conditional feature MMD **仅保留为安全对照**（防 marginal 类别塌缩），
+不得再称 AS-MMD。source 有真实 binary labels 时，class-conditional alignment 继续作为
+安全诊断与消融：
 
 \[
 \mathcal L_{c-align}
@@ -155,29 +193,30 @@ source 有真实 binary labels 时，对 `Z_inv` 做 class-conditional alignment
  +\kappa\left\|C_{d_1,c}-C_{d_2,c}\right\|_F^2.
 \]
 
-均值项继续作为默认；`conditional_rbf_mmd` 已作为显式实验 arm 接入 runner。runner
+均值项继续作为默认；`conditional_rbf_mmd` 作为显式安全对照 arm 接入 runner。runner
 暴露 `--feature-alignment-min-cell-count` 与 `--feature-alignment-inactive-policy`；
 `record` 把 inactive 批次写入 ledger 后继续（开发默认），`fail_closed` 在含 alignment
 weight 的 batch 没有 active cell 时终止本 fold。两者都不允许把缺项写成零距离。
 bandwidth、active cells 和 MMD diagnostics 必须写入 ledger。CORAL covariance 项作为独立
 ablation。marginal `P(Z)` alignment、无条件 GRL 和伪标签
-alignment 不得进入默认 recipe；论文 faithful 的 marginal logit MMD 只能作为 exploratory
-对照，不能仅凭 MMD 降低晋升。
+alignment 不得进入默认 recipe；任何 MMD 下降都不能仅凭数值降低晋升。
 
 有效 cell 数、样本数、每域质量、alignment distance 和 task loss 必须保存。cell 不足时标记 `alignment_inactive` 或 fail-closed，不能把缺项当零距离。
 
 
-### 2.5b Source-row selection（PDS 选样）
+### 2.5b Source-row selection（TSD 选样，PDS-inspired）
 
-PDS 选样是**训练数据子集控制**，不是 alignment。它只用声明的 target calibration 或
-target unlabelled buffer 计算 source 行与 target prototype 的相似度与行间排斥项；
-`target test` 永远不得进入 sampler。当前实现合同（`509946c`）：
+TSD（Target-Similarity Diverse sampling）是**训练数据子集控制**，不是 alignment。它只用声明的
+target calibration 或 target unlabelled buffer 计算 source 行与 target prototype 的相似度与行间
+排斥项；`target test` 永远不得进入 sampler。本地实现合同（`509946c`）的旧 schema
+`n2p3_pds_source_selection/1` 已退役为只读兼容；v2 计划 WP3 正式化 TSD 合同如下：
 
 - `experiments/prepare_domain_features.py` 先把 `EpochDataset` 构造为显式同维 feature matrix（默认 identity flatten，可选 spatial/temporal basis），并写 feature-matrix record；
-- `experiments/prepare_source_selection.py` 输出 `n2p3_pds_source_selection/1` JSON：selection scope、seed、`target_temperature`、`diversity_weight`、bandwidth 与 bandwidth estimator、source/target/selected 三个 digest、label/group quota 必须落盘；
-- `run_pretrain_supervised.py --source-selection-record` 绑定 source cache SHA-256；selected rows 与 holdout/QC mask 取交集；checkpoint 携带 `source_selection_contract`、`pds_dropped_source_epochs[_by_label]`；
+- `experiments/prepare_source_selection.py` 输出 `n2p3_source_selection/2` JSON（WP3 目标合同），字段 `sampler_kind="target_similarity_diverse"`：selection scope、seed、`target_temperature`、`diversity_weight`、bandwidth 与 bandwidth estimator、source/target/selected 三个 digest、label/group quota 必须落盘；
+- `run_pretrain_supervised.py --source-selection-record` 绑定 source cache SHA-256；selected rows 与 holdout/QC mask 取交集；checkpoint 携带 `source_selection_contract`、`tsd_dropped_source_epochs[_by_label]`（旧 `pds_dropped_source_epochs` 字段名保留只读兼容，不用于新声明）；
 - 批量 LOSO 必须为全部 job 共用同一个 selection record。按单个 target subject 拟合的 per-target selection 会让 source training procedure 在 fold 间不同，arm manifest 必须拒绝；此类设计只能作为独立 per-participant 方案另行预注册，不能伪装为统一 arm；
-- bandwidth 默认估计在小池为 all-pairs median，大池为确定性 512 行 subsample median（record 显式声明 estimator）；diversity 排斥项用增量 O(N·P) 更新替代 O(N²·P) 全 kernel，避免真实 cache 尺寸下 OOM。
+- bandwidth 默认估计在小池为 all-pairs median，大池为确定性 512 行 subsample median（record 显式声明 estimator）；diversity 排斥项用增量 O(N·P) 更新替代 O(N²·P) 全 kernel，避免真实 cache 尺寸下 OOM；
+- Dense PDS（Flores et al. 2024 的 mingling-index + disk-radius 拒绝采样）是**独立可选忠实复现臂**，命名/schema 与 TSD 分开，只与 `uniform`/TSD 对照，不进入主线声明。
 
 
 ## 3. 三种训练 regime
@@ -337,6 +376,15 @@ L_{stop}=1[wrong]+\lambda_t seconds+\lambda_s stimuli.
 | private-enabled | 检查 style 分支是否泄漏 task |
 | target adapter | 合法 calibration inner loop |
 | no-borrow fallback | source selection 失败控制 |
+| EA data alignment | 默认数据对齐；`none`/`ea_source`/`ea_target_calibration` 消融 |
+| faithful AS-MMD | 首选深度适配；`no_mmd` 与 conditional feature MMD 安全对照 |
+| TSD source selection | 目标相似 + 多样性选样；`uniform` 与 `dense_pds` 忠实对照 |
+| ACW（auxiliary） | 仅作 TSD 坐标/经典特征解码辅助，不得称 GALIA |
+
+域迁移主线按 [`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)
+的 arm 矩阵执行：EA 默认、faithful AS-MMD、TSD 为主线；旧 “GALIA/PDS/conditional AS-MMD”
+链及旧 G1–G6 arm 名只作历史记录。主指标保持 `valid_subject_operational_hit_rate`，
+operational `hit@R` 是部署诊断，两者必须同时报告。
 
 `domain_lodo` 与 `domain_ceiling` 当前只定义并校验外层 fold 的域/被试隔离，
 不会自动把 domain ID 注入模型损失或推理路径。只有显式传入 source-domain
@@ -653,8 +701,10 @@ cluster CI，以及 source/cache/checkpoint/environment/plan 的 digest。
 
 以下内容不再是活动指导，也不应生成新的实验：
 
-- source-domain `DomainAdapterBank`（永久绑定、无置零训练的旧实现；drop-to-consensus 域残差是其修正后继，不受此条限制）；
+- source-domain `DomainAdapterBank`（历史/已退役：永久绑定、无置零训练的旧实现；drop-to-consensus 域残差是其修正后继，不受此条限制）；
 - S1/A1/AS1 原型组合；
+- 旧 “P3 GALIA/AS-MMD” 链与旧 “PDS 选样” 命名（历史/已退役）：本地 GALIA 更名 ACW、旧 PDS 更名 TSD、旧 source-source conditional feature MMD 降级为安全对照；真 GALIA 与 Dense PDS 只作可选对照臂；
+- 旧 G1–G6 arm 名（`G1_galia`、`G2_fast`、`G3_galia_splitbn`、`G4_galia_cond_mmd`、`G5_galia_pds`、`G6_latency`，源自 [`domain_alignment_replacement_20260904.zh.md`](domain_alignment_replacement_20260904.zh.md)）（历史/已退役）；
 - 横向嵌套网络（多个 N2P3Net 作为外层网络的隐藏神经元）：2026-09-02b 暂不采纳，理由是参数/推理成本、few-shot 方差和缺少预注册专家多样性约束；其函数表达力与是否塌缩必须以独立实验检验，不能写成数学否证；
 - 仅 source-source conditional mean 就宣称 target feature alignment；
 - pooled natural CE 作为默认迁移方法；
@@ -670,8 +720,8 @@ cluster CI，以及 source/cache/checkpoint/environment/plan 的 digest。
 ### 9.1 已闭合的框架合同
 
 截至 2026-09-04，`6fc1df1`（`main`，集成工作区）在 `ef7a40e` 框架基础上闭合
-P3 主链：feature-matrix 构造、standalone GALIA/Fast-Alignment fit、conditional
-RBF-MMD inactive policy、checkpoint batch 分块、PDS source selection 的
+历史 P3 链：feature-matrix 构造、standalone local-AJD/fast-alignment fit、conditional
+RBF-MMD inactive policy、checkpoint batch 分块、source selection 的
 prepare/runner/contract 全链，并把 hit 主口径切换为 plan 可选的
 `valid_subject_operational_hit_rate`（requested operational 保留为部署诊断），
 adaptation 的 `epoch_selection` 归入 adaptation procedure；同时合并
@@ -679,19 +729,26 @@ result-optimization 的 partition 级 result batching、zero-shot feature memo
 与 CPU result-phase worker 预算。完整链和反例测试见
 [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md)。
 
+该历史 P3 链中的旧 “GALIA/AS-MMD/PDS” 命名已退役（文档/账本层；代码 schema 迁移已完成，见 WP0）：本地 AJD 白化更名为 **ACW**（仅辅助），
+本地 target-prototype + RBF repulsion 采样更名 **TSD**，旧 source-source conditional
+feature MMD 只作安全对照。2026-09-04 已批准的新主线为 **EA 默认数据对齐 → N2P3Net trunk →
+faithful AS-MMD → TSD**，实施方案、arm 矩阵与门禁见
+[`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)；
+该计划 WP0/WP1 已完成，WP2–WP4 部分完成（进度见计划头部）；在全部 WP 与云端验收闭合前，不得声称新主线已实现或具有性能证据。
+
 | 机制 | 当前实现 | 不可静默降级的规则 |
 |---|---|---|
 | M0 hit 口径 | manifest/plan 显式 `metric_name`；analyzer 同时支持 `valid_subject_operational_hit_rate` 与 `requested_participant_operational_hit_rate`；builder 默认 valid-subject，旧 plan 缺省保持 requested | valid 分母只含 correct/incorrect/tie；无 valid 被试时 arm 不估值并失败；requested 分母不得删除任何失败；plan/metric/power-plan 三者不一致时 fail-closed |
 | P0 Split-BN | ordered source-domain axis、temporal/spatial/MST 三处 buffer、checkpoint 和 target selector 已贯通 | 训练缺 domain index、评估缺 buffer source、buffer/axis/weight 不一致均失败；target eval 不更新 buffer |
 | P1 drop-to-consensus | source-only residual、Bernoulli drop、`m=0/m=1` counterfactual ledger 与 checkpoint record 已贯通 | target/评估永不 route source residual；固定 `m=1` ratio gate 超过 `r_max=0.5` 时整次 run invalid |
 | P2 direct-decision loss | direct-membership metadata、完整 decision sampler、prefix loss 与 training contract 已贯通 | vocabulary/coverage/membership 不完整时失败；每 batch 至少 128 rows；即使 `lambda_candidate=0` 也不得回退 flat batching |
-| P3 GALIA/AS-MMD | `prepare_domain_features.py`（identity/spatial/temporal lift）、`fit_galia_alignment.py`（standalone fit + target Fast Alignment scope/state record）、`conditional_rbf_mmd` 及 inactive-policy、`prepare_source_selection.py` 与 pretrain `--source-selection-record` 绑定、checkpoint batch 分块已贯通 | 只接受显式同维 feature matrices；`rank/condition/AJD residual`、target buffer scope、MMD active cells 和 selected-row digest 缺失或篡改时 fail-closed；无真实跨域性能证据 |
+| P3 域迁移主线（EA + ACW + AS-MMD + TSD） | 历史 P3 实现（`prepare_domain_features.py`、`fit_galia_alignment.py`、`conditional_rbf_mmd`、旧 PDS sampler 等）已按新命名继续审计：本地 AJD 白化=ACW 辅助、旧 sampler=TSD、conditional feature MMD=安全对照；新主线已实现 EA 模块/EA cache（WP1）、faithful AS-MMD 公式组件与 SubjectAdapter 冻结源 logits 适配路径（WP2 部分）、TSD `n2p3_source_selection/2` + row-identity digest（WP3 部分）；live source-stream + SplitBN 双 buffer 完整 joint training 与 Dense PDS 仍未实现 | 只接受显式同维 feature matrices；EA/ACW/MMD bandwidth/TSD 的任何 target 统计只能来自 `target_calibration` 或 unlabelled buffer；`rank/condition/offdiag residual`、row-identity digest、buffer digest 缺失或篡改时 fail-closed；旧 “GALIA/PDS/conditional AS-MMD” 名称不得用于新 arm；无真实跨域性能证据 |
 
 N2P3Net core、causal-v3 输入合同和统一 candidate-evidence core 继续保留。
 `FeatureDomainTransfer` 仍负责 invariant/private、目标 residual 与 source residual；source-domain
 axis 只在 source training 中驱动 P0/P1 等声明机制，未知 target 永不伪装为 source domain。
-新 P3 路线默认保留 native reference；CAR 不再是活动跨域默认变换，旧 CAR cache 只能留在
-冻结历史层。
+域迁移主线的默认数据对齐为 EA；reference policy 保持 native 默认 + CAR 显式 opt-in，
+CAR 不是活动跨域默认变换，旧 CAR cache 只能留在冻结历史层。
 
 ### 9.2 未闭合的科研与产物门禁
 
@@ -699,7 +756,8 @@ axis 只在 source training 中驱动 P0/P1 等声明机制，未知 target 永�
 - P2 只接受 direct candidate membership；row/column promotion runner 不能把 9-choice direct loss 伪装为 row/column 任务，需先实现 typed protocol dispatch
 - target result/manifest 尚未重复写入 P0/P1 effective buffer source、estimand 与 buffer digest；executed-source identity、lockfile/environment digest 与 target OOM requested-denominator 也未闭合
 - 尚无 active real source/target cache、真实 CUDA、成人 BrainSync multi-session/target-switch 或 matched fold/seed paired CI
-- GALIA 的默认 lift 是 identity flatten 并可选 spatial/temporal basis；原始异构 `EpochDataset` 的逐域语义 lift（xDAWN/CSP 等）尚未默认自动构建，真实缓存上的 rank/condition/AJD 验收也未完成
+- 新主线部分闭合：EA cache/provenance（WP1）、faithful AS-MMD 公式组件与 adapter-level 冻结源 logits 适配（WP2 部分）、`n2p3_source_selection/2`（TSD）row-identity digest（WP3 部分）已实现并测试；**未闭合**：live source-stream + SplitBN 双 buffer 完整 joint training、Dense PDS、matrix plan 的 EA/`as_mmd`/`sampler_kind` 字段与 result_batch 下传，以及 `as_mmd`/`cond_mmd_features`/`no_mmd` 正式 arm
+- 历史本地 AJD 白化（旧名 GALIA，已更名 ACW）的默认 lift 是 identity flatten 并可选 spatial/temporal basis；原始异构 `EpochDataset` 的逐域语义 lift（xDAWN/CSP 等）尚未默认自动构建，真实缓存上的 rank/condition/offdiag residual 验收也未完成；ACW 只允许作为 TSD 坐标/经典解码辅助
 - WorkBuddy 会话内的高负载测试异常已定性为环境层故障，不归责于项目代码；独立 shell/云端复跑纪律仍是开放工程门禁，15ms 并发测试窗口改进属于可选测试维护
 
 因此，当前只能声称 framework/contract 已实现。不得声称 feature transfer、decision learning、
@@ -709,13 +767,19 @@ axis 只在 source training 中驱动 P0/P1 等声明机制，未知 target 永�
 
 1. ✅ 集成工作区（`main`）最新冻结为 `frozen/active_source_6fc1df1.*`（`b7af84e` 纳入 git；`domain-transfer-v2`/`result-optimization` 分支保留为历史）；任何后续代码变更都要求新 archive+manifest，且不得覆盖 E1 训练使用的 `b96a6af` / `b86d558`
 2. 对 active cache 做 protocol 和 identity attestation；direct 与 row/column 数据不得混用 P2 合同
-3. 用 `prepare_domain_features.py` 对 BI 源/目标缓存构造并核验 feature lift，再用 `fit_galia_alignment.py` 生成 GALIA state/aligned artifact 并过 rank/condition/AJD 门；GTN 3 导路线暂不绕过 rank gate
-4. 需要 source 子集时用 `prepare_source_selection.py` 预生成一个全 arm 共用的 PDS record，再在 `run_pretrain_supervised.py` 绑定；per-target 动态 selection 必须另行预注册
-5. 建立绑定 source、environment、cache、plan 与 checkpoint 的 dry-run，再做单 worker CUDA smoke
-6. 仅在预声明的 matched fold/seed 下运行 pooled-BN、P0、P1、P3 和允许的 P2 direct arms，并报告 participant-cluster CI
-7. 在 target-calibration、row/column dispatch 与 target failure ledger 各自闭合前，不扩大主张或启动不受合同支持的 arm
+3. ✅ 按 v2 计划 WP0 已修 B1–B5 与命名/合同/provenance 项：本地 GALIA→ACW、旧 PDS→TSD、conditional feature MMD 降级为安全对照，solver 版本/offdiag residual/row-identity digest 纳入记录（测试随本次变更入库）
+4. ✅ 按 WP1 已建立 EA 数据对齐 cache（`none`/`ea_source`/`ea_target_calibration` 消融入口）并过 reference covariance≈I、条件数与 provenance 门；GTN 3 导路线暂不绕过 rank gate
+5. 🟡 按 WP2 已实现 faithful AS-MMD 公式组件（target-weighted CE + logit marginal RBF-MMD）与 SubjectAdapter 冻结源 logits 适配路径；**剩余**：live source-stream + SplitBN 双 buffer 完整 joint training 与 `as_mmd`/`cond_mmd_features`/`no_mmd` 正式 arm
+6. 🟡 按 WP3 已正式化 TSD（`sampler_kind="target_similarity_diverse"`）；ACW 只作 TSD 坐标/经典解码辅助；**剩余**：Dense PDS 独立忠实对照臂，per-target 动态 selection 必须另行预注册
+7. 🟡 按 WP4 已解析 matrix plan `source_selection_record` 并下传 checkpoint batch；**剩余**：EA/AS-MMD/TSD/ACW 的 plan 字段、`prepare_ea`/`prepare_selection` DAG 节点、result_batch 下传后再做 attestation/dry-run 与单 worker CUDA smoke
+8. 仅在预声明的 matched fold/seed 下运行 pooled-BN、P0、P1、EA/AS-MMD/TSD 主线和允许的 P2 direct arms，并报告 participant-cluster CI
+9. 在 target-calibration、row/column dispatch 与 target failure ledger 各自闭合前，不扩大主张或启动不受合同支持的 arm
 
 架构裁决与文献依据见 [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)；
 实施与数学记录见 [`implementation_plan_20260902.zh.md`](implementation_plan_20260902.zh.md) 和
 [`math_verification_20260902.zh.md`](math_verification_20260902.zh.md)；研究背景见
 [`research_evidence_ledger_20260903.zh.md`](research_evidence_ledger_20260903.zh.md)。
+域迁移新主线实施见
+[`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)，
+其原始来源核验见
+[`domain_transfer_chain_primary_source_audit_20260904.zh.md`](domain_transfer_chain_primary_source_audit_20260904.zh.md)。

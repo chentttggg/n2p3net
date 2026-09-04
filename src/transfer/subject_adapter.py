@@ -18,6 +18,7 @@ from models.adapters import FeatureDomainTransfer
 from models.n2p3net import N2P3Net
 from models.splitbn import SplitBN1d, SplitBN2d
 from research.execution import ExpectedSubjectError, SubjectFailureCode
+from transfer.asmmd import asmmd_joint_loss
 from transfer.candidate_set_loss import row_column_candidate_loss
 from transfer.within_subject import chronological_validation_split
 
@@ -51,6 +52,10 @@ class SubjectAdapterConfig:
     target_stat_weight: float = 0.25
     candidate_loss_weight: float = 0.0
     candidate_loss_temperature: float = 1.0
+    as_mmd_lambda0: float = 0.0
+    as_mmd_warmup_epochs: int = 1
+    as_mmd_target_weight_min: float = 1.0
+    as_mmd_target_weight_max: float = 6.0
     input_mean: np.ndarray | None = None
     input_std: np.ndarray | None = None
 
@@ -87,6 +92,12 @@ class SubjectAdapterConfig:
             raise ValueError("candidate_loss_weight must be non-negative.")
         if not 0.0 < self.candidate_loss_temperature:
             raise ValueError("candidate_loss_temperature must be positive.")
+        if not 0.0 <= self.as_mmd_lambda0:
+            raise ValueError("as_mmd_lambda0 must be non-negative.")
+        if self.as_mmd_warmup_epochs < 1:
+            raise ValueError("as_mmd_warmup_epochs must be at least one.")
+        if not 0.0 < self.as_mmd_target_weight_min <= self.as_mmd_target_weight_max:
+            raise ValueError("invalid AS-MMD target-weight bounds.")
 
 
 class SubjectAdapter:
@@ -326,6 +337,8 @@ class SubjectAdapter:
         target_columns: np.ndarray | None = None,
         candidate_loss_num_rows: int = 6,
         candidate_loss_num_columns: int = 6,
+        source_logits: np.ndarray | torch.Tensor | None = None,
+        source_labels: np.ndarray | None = None,
     ) -> SubjectAdapter:
         X = np.asarray(X, dtype=np.float32)
         y = np.asarray(y).astype(np.int64)
@@ -479,6 +492,21 @@ class SubjectAdapter:
         Xt = torch.from_numpy(np.ascontiguousarray(standardized)).to(self.device)
         yt = torch.from_numpy(np.ascontiguousarray(y)).to(self.device)
 
+        asmmd_active = bool(self.config.as_mmd_lambda0 > 0.0)
+        if asmmd_active:
+            if source_logits is None or source_labels is None:
+                raise ValueError("as_mmd_lambda0 > 0 requires source_logits and source_labels.")
+            source_logits_t = torch.as_tensor(source_logits, device=self.device).float().detach()
+            source_labels_t = torch.as_tensor(source_labels, device=self.device).long()
+            if source_logits_t.ndim != 2 or source_labels_t.shape != (source_logits_t.shape[0],):
+                raise ValueError("source_logits/source_labels must be aligned (N, classes)/(N,).")
+            if bool(((source_labels_t < 0) | (source_labels_t > 1)).any()):
+                raise ValueError("source_labels must be binary 0/1.")
+            source_count = source_logits_t.shape[0]
+        else:
+            source_logits_t = source_labels_t = None
+            source_count = 0
+
         torch.manual_seed(self.config.seed)
         if self.device.type == "cuda":
             with torch.cuda.device(self.device):
@@ -540,6 +568,7 @@ class SubjectAdapter:
         patience = self.config.early_stop_patience
         train_losses: list[float] = []
         candidate_losses: list[dict[str, object]] = []
+        asmmd_losses: list[dict[str, object]] = []
         candidate_active = self.config.candidate_loss_weight > 0.0
         train_row_indices = np.flatnonzero(train_mask)
 
@@ -553,7 +582,30 @@ class SubjectAdapter:
                 xb = train_inputs.index_select(0, rows)
                 yb = yt_train.index_select(0, rows)
                 logits = self._forward_head(xb) if live_forward else self.head(xb)
-                loss = loss_fn(logits, yb)
+                if asmmd_active:
+                    assert source_logits_t is not None and source_labels_t is not None
+                    source_rows = torch.randperm(source_count, device=self.device)[
+                        : self.config.batch_size
+                    ]
+                    source_batch_logits = source_logits_t.index_select(0, source_rows)
+                    source_batch_labels = source_labels_t.index_select(0, source_rows)
+                    loss, asmmd_diag = asmmd_joint_loss(
+                        source_batch_logits,
+                        source_batch_labels,
+                        logits,
+                        yb,
+                        epoch=epoch_index,
+                        warmup_epochs=self.config.as_mmd_warmup_epochs,
+                        base_weight=self.config.as_mmd_lambda0,
+                        source_count=source_count,
+                        target_count=n_train,
+                        target_weight_min=self.config.as_mmd_target_weight_min,
+                        target_weight_max=self.config.as_mmd_target_weight_max,
+                        pos_weight=pos_weight,
+                    )
+                    asmmd_losses.append(asmmd_diag)
+                else:
+                    loss = loss_fn(logits, yb)
                 if not bool(torch.isfinite(loss)):
                     raise ExpectedSubjectError(
                         SubjectFailureCode.NONFINITE_OPTIMIZATION,
@@ -669,6 +721,10 @@ class SubjectAdapter:
             "candidate_loss_temperature": self.config.candidate_loss_temperature,
             "candidate_losses": candidate_losses,
             "refit_candidate_losses": refit_candidate_losses,
+            "as_mmd_active": bool(asmmd_active),
+            "as_mmd_losses": asmmd_losses,
+            "as_mmd_lambda0": self.config.as_mmd_lambda0,
+            "as_mmd_warmup_epochs": self.config.as_mmd_warmup_epochs,
         }
         self._fitted = True
         return self

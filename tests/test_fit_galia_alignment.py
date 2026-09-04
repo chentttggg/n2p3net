@@ -32,15 +32,15 @@ def test_fit_galia_cli_writes_state_and_aligned_feature_matrix(tmp_path: Path) -
     )
 
     record = json.loads(state_path.read_text(encoding="utf-8"))
-    assert record["schema"] == "n2p3_galia_fit/1"
+    assert record["schema"] == "n2p3_acw_fit/1"
     assert record["fit_scope"] == "source_only"
     state = record["state"]
-    assert state["schema"] == "n2p3_galia_alignment/1"
+    assert state["schema"] == "n2p3_ajd_congruence_whitening/1"
     with np.load(aligned_path, allow_pickle=False) as archive:
         assert archive["schema"].item() == "n2p3_aligned_feature_matrix/1"
         assert archive["aligned_features"].shape == (40, 3)
         assert archive["domain_ids"].tolist() == ["A"] * 20 + ["B"] * 20
-        assert archive["galia_state_digest"].item() == state["state_digest"]
+        assert archive["acw_state_digest"].item() == state["state_digest"]
 
 
 def test_fit_galia_cli_rejects_raw_epoch_tensor_and_duplicate_domains(tmp_path: Path) -> None:

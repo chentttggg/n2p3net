@@ -463,6 +463,37 @@ def test_plan_round_trips_named_splitbn_and_source_residual_contract(
     ] == "batch"
 
 
+def test_plan_round_trips_source_selection_record_and_forwards_to_pretraining(
+    tmp_path: Path,
+) -> None:
+    record = _plan_record()
+    record["source_arms"][0]["source_selection_record"] = "selection/source-a.json"
+
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+
+    expected = (tmp_path / "selection" / "source-a.json").resolve()
+    assert plan.source_arms[0].source_selection_record == expected
+    assert plan.source_arms[1].source_selection_record is None
+    selected = next(
+        task for task in dag.tasks if task.task_id == "checkpoint_batch/source_a/rep01"
+    )
+    unselected = next(
+        task for task in dag.tasks if task.task_id == "checkpoint_batch/source_ab/rep01"
+    )
+    assert selected.argv[selected.argv.index("--source-selection-record") + 1] == str(expected)
+    assert "--source-selection-record" not in unselected.argv
+
+
+def test_plan_rejects_invalid_source_selection_record(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["source_arms"][0]["source_selection_record"] = 7
+
+    with pytest.raises(ValueError, match="source_selection_record must be a non-empty string"):
+        _load(tmp_path, record)
+
+
+
 def test_default_training_omits_p0_p1_cli_flags(tmp_path: Path) -> None:
     plan = _load(tmp_path)
     checkpoint = next(

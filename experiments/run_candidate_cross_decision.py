@@ -36,6 +36,7 @@ from data.contract import assert_causal_p300_input_contract  # noqa: E402
 from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from data.identity import IdentityExclusionPolicy  # noqa: E402
 from data.qc_features import compute_epoch_qc_features  # noqa: E402
+from experiments.result_batch_contract import ZERO_SHOT_FEATURE_CACHE_SCHEMA  # noqa: E402
 from models.n2p3net import N2P3Net  # noqa: E402
 from research.contracts import (  # noqa: E402
     MIN_PROMOTION_HIT_AT_R,
@@ -62,7 +63,6 @@ from transfer.candidate_decision import (  # noqa: E402
 from transfer.candidate_within_subject import (  # noqa: E402
     candidate_calibration_decision_split,
 )
-from experiments.result_batch_contract import ZERO_SHOT_FEATURE_CACHE_SCHEMA  # noqa: E402
 from transfer.checkpoint import (  # noqa: E402
     assert_checkpoint_target_identity_excluded,
     checkpoint_classifier_is_trained,
@@ -71,7 +71,6 @@ from transfer.checkpoint import (  # noqa: E402
     checkpoint_training_contract,
     load_checkpoint_payload,
     load_n2p3_trunk_checkpoint,
-    predict_n2p3_checkpoint,
     predict_n2p3_checkpoint_with_features,
 )
 from transfer.cohort import read_subject_manifest, resolve_subject_scope  # noqa: E402
@@ -526,6 +525,21 @@ def main(argv: Sequence[str] | None = None) -> None:
         default=1.0,
         help="Temperature of the row/column candidate ranking softmax.",
     )
+    parser.add_argument(
+        "--as-mmd-lambda0",
+        type=float,
+        default=0.0,
+        help="Base weight of logit-level marginal AS-MMD during target adaptation.",
+    )
+    parser.add_argument("--as-mmd-warmup-epochs", type=int, default=1)
+    parser.add_argument("--as-mmd-target-weight-min", type=float, default=1.0)
+    parser.add_argument("--as-mmd-target-weight-max", type=float, default=6.0)
+    parser.add_argument(
+        "--as-mmd-source-logits",
+        type=Path,
+        default=None,
+        help="Optional .npz with keys logits/labels from the frozen source checkpoint.",
+    )
 
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
@@ -566,6 +580,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         parser.error("--candidate-loss-weight must be non-negative")
     if args.candidate_loss_temperature <= 0.0:
         parser.error("--candidate-loss-temperature must be positive")
+    if args.as_mmd_lambda0 < 0.0:
+        parser.error("--as-mmd-lambda0 must be non-negative")
+    if args.as_mmd_warmup_epochs < 1:
+        parser.error("--as-mmd-warmup-epochs must be at least one")
+    if not 0.0 < args.as_mmd_target_weight_min <= args.as_mmd_target_weight_max:
+        parser.error("AS-MMD target-weight bounds must satisfy 0 < min <= max")
 
     try:
         assert_promotion_evidence_gate(
@@ -671,6 +691,20 @@ def main(argv: Sequence[str] | None = None) -> None:
         if args.checkpoint
         else None
     )
+    as_mmd_source_logits = None
+    as_mmd_source_labels = None
+    if args.as_mmd_lambda0 > 0.0:
+        if args.as_mmd_source_logits is None:
+            raise ValueError("as_mmd_lambda0 > 0 requires --as-mmd-source-logits.")
+        with np.load(args.as_mmd_source_logits, allow_pickle=False) as archive:
+            if "logits" not in archive.files or "labels" not in archive.files:
+                raise ValueError("as-mmd source logits npz requires logits/labels.")
+            as_mmd_source_logits = np.asarray(archive["logits"], dtype=np.float32)
+            as_mmd_source_labels = np.asarray(archive["labels"], dtype=np.int64)
+        if as_mmd_source_logits.ndim != 2 or as_mmd_source_labels.shape != (as_mmd_source_logits.shape[0],):
+            raise ValueError("as-mmd source logits/labels must be aligned (N,classes)/(N,).")
+        if bool(((as_mmd_source_labels < 0) | (as_mmd_source_labels > 1)).any()):
+            raise ValueError("as-mmd source labels must be binary 0/1.")
     head_mode = args.head
     if head_mode == "auto":
         head_mode = "zero_shot" if checkpoint_payload is not None else "linear"
@@ -851,9 +885,12 @@ def main(argv: Sequence[str] | None = None) -> None:
                     freeze_batchnorm_stats=not args.adapt_batchnorm,
                     input_statistics=normalization,
                     target_stat_weight=args.target_stat_weight,
-                      candidate_loss_weight=args.candidate_loss_weight,
-                      candidate_loss_temperature=args.candidate_loss_temperature,
-
+                    candidate_loss_weight=args.candidate_loss_weight,
+                    candidate_loss_temperature=args.candidate_loss_temperature,
+                    as_mmd_lambda0=args.as_mmd_lambda0,
+                    as_mmd_warmup_epochs=args.as_mmd_warmup_epochs,
+                    as_mmd_target_weight_min=args.as_mmd_target_weight_min,
+                    as_mmd_target_weight_max=args.as_mmd_target_weight_max,
                     input_mean=None if checkpoint_stats is None else checkpoint_stats[0],
                     input_std=None if checkpoint_stats is None else checkpoint_stats[1],
                 ),
@@ -876,6 +913,13 @@ def main(argv: Sequence[str] | None = None) -> None:
                     "candidate_loss_num_columns": candidate_task.n_columns,
                 }
 
+            as_mmd_fit_kwargs: dict[str, object] = {}
+            if args.as_mmd_lambda0 > 0.0:
+                as_mmd_fit_kwargs = {
+                    "source_logits": as_mmd_source_logits,
+                    "source_labels": as_mmd_source_labels,
+                }
+
             inner = None
             subject_failure: ExpectedSubjectError | None = None
             try:
@@ -893,6 +937,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         validation_mask=inner.validation_mask,
                         trial_channel_mask=local_mask[effective_train],
                         **candidate_fit_kwargs,
+                        **as_mmd_fit_kwargs,
                     )
                 else:
                     adapter.fit(
@@ -900,6 +945,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         local_y[effective_train],
                         trial_channel_mask=local_mask[effective_train],
                         **candidate_fit_kwargs,
+                        **as_mmd_fit_kwargs,
                     )
                 suffix_logits = adapter.predict_logit(suffix_X, trial_channel_mask=suffix_mask)
             except ExpectedSubjectError as failure:
@@ -1264,6 +1310,10 @@ def main(argv: Sequence[str] | None = None) -> None:
                 "target_stat_weight": args.target_stat_weight,
                 "candidate_loss_weight": args.candidate_loss_weight,
                 "candidate_loss_temperature": args.candidate_loss_temperature,
+                "as_mmd_lambda0": args.as_mmd_lambda0,
+                "as_mmd_warmup_epochs": args.as_mmd_warmup_epochs,
+                "as_mmd_target_weight_min": args.as_mmd_target_weight_min,
+                "as_mmd_target_weight_max": args.as_mmd_target_weight_max,
 
                 "fold_local_qc": bool(args.fold_local_qc),
                 "identity_exclusion_policy": args.identity_exclusion_policy,
