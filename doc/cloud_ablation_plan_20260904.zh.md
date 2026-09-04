@@ -22,7 +22,7 @@ _主线：EA 默认数据对齐 → N2P3Net trunk → faithful AS-MMD → TSD/De
 
 | 输入 | 位置 | SHA-256 |
 |---|---|---|
-| 当前源码冻结 | 提交后生成 `frozen/active_source_<commit>.*` | 待定（每次提交后 C1 三重互证） |
+| 当前源码冻结 | `frozen/active_source_f2ee195.*`（source_commit `f2ee195`，冻结对提交 `03ff7c6`，C1 三重互证） | `858ee6a8b8619dd256cfe165600871efa3aacb83af3b2605faffe37e47be4a33` |
 | BI2014a causal-v3 64 人 cache | `tmp/l0_bi2014a_causal_v3_64subj.npz` | `842466e45d63e017704a2fe4ebc1ee550c54eff7b400bdd27c7454bb4ae69fff` |
 | BI2014a causal-v3 CAR16 cache | `tmp/l0_bi2014a_causal_v3_64subj_car16.npz` | `37710abb94255b53c9e2df478e642c688095ac93b23be627fa01abdedda4ef2b` |
 

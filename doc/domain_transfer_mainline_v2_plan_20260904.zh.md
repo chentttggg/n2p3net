@@ -12,7 +12,7 @@
 > - ✅ **WP2 完成**：`src/transfer/asmmd.py`（Eq 1–9：target-weight、warmup 调度、logit-level marginal 无偏 RBF-MMD²、joint loss）；`SubjectAdapter` 同时支持 frozen source logits 与 live source-stream 两种输入；`run_candidate_cross_decision.py` 支持 `--source-stream-cache`/`--source-selection-record`，live 模式做 source-batch→source SplitBN buffer、target-batch→predeclared target buffer 的显式双 buffer 训练，`target_calibration` buffer 支持自动安装并冻结，ledger 记录 source/target buffer digest 与负 MMD 诊断。
 > - ✅ **WP3 完成**：TSD schema `n2p3_source_selection/2` + `sampler_kind`、legacy schema 只读兼容、row-identity 校验、checkpoint `tsd_dropped_*`；`dense_pds` 忠实 dart-throwing 采样器与 `--sampler/--pds-*` CLI；新增 `prepare_target_calibration_cache.py`（禁止 target-test 行进入 sampler）与 `prepare_source_selection_vectors.py`（labels/groups provenance）。
 > - ✅ **WP4 完成**：matrix plan 支持 source-arm `euclidean_alignment`/`acw_state`/`sampler_kind`、evaluation-arm `as_mmd`（source_stream/frozen_logits）、EA provenance gate、selection-record schema 交叉校验；checkpoint/result argv 全链转发。
-> - 🟡 **WP5 进行中**：指导文档已对齐并新增 [`cloud_ablation_plan_20260904.zh.md`](cloud_ablation_plan_20260904.zh.md)（L1 dry-run/CUDA smoke/L2 64-fold 臂矩阵）；全量测试与 ruff 通过；待提交后生成新 source-only freeze；云端执行未做（E2 不启动）。
+> - 🟡 **WP5 进行中**：指导文档已对齐并新增 [`cloud_ablation_plan_20260904.zh.md`](cloud_ablation_plan_20260904.zh.md)（L1 dry-run/CUDA smoke/L2 64-fold 臂矩阵）；全量测试与 ruff 通过；新 source-only freeze `frozen/active_source_f2ee195.*` 已生成并提交（冻结对提交 `03ff7c6`）；云端执行未做（E2 不启动）。
 
 ---
 
