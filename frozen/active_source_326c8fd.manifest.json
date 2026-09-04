@@ -1,0 +1,11 @@
+﻿{
+    "schema":  "n2p3_source_freeze/1",
+    "archive":  "active_source_326c8fd.source-only.tar.gz",
+    "archive_sha256":  "a0889f0cc7d45b15fae00c5b113cedf7dd910147a62629087aacace3a28a0bc6",
+    "source_commit":  "326c8fdae10736701c4dd19ea7b5a9727827f4ca",
+    "member_count":  217,
+    "byte_size":  1069424,
+    "scope":  "Integrated main at 326c8fd: approved domain-transfer v2 mainline implementation plus EA cache reference-mode provenance gate (WP0 complete; WP1 EA complete; WP2 faithful AS-MMD partial; WP3 TSD partial; WP4 plan source_selection_record partial; docs aligned). Excludes Paper PDFs, frozen archives, and all data/caches.",
+    "contains_raw_eeg_cache_or_model_checkpoint":  false,
+    "replacement_policy":  "integrated-workspace source anchor for v2 mainline implementation; do not overwrite; E1 execution freezes b96a6af/b86d558 and prior integrated freezes 6fc1df1/352932b remain unchanged"
+}
