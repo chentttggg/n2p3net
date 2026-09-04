@@ -691,7 +691,7 @@ axis 只在 source training 中驱动 P0/P1 等声明机制，未知 target 永�
 
 ### 9.3 下一步执行顺序
 
-1. 为 `domain-transfer-v2` 生成新的 source-only archive 与 manifest，不能复用 `b96a6af`（性能分支 E1 在用）或任何旧 source archive
+1. ✅ `domain-transfer-v2` 已生成 `frozen/active_source_a102467.*` 并在 `b524b69` 纳入 git；任何后续代码变更都要求新 archive+manifest，且不得覆盖 E1 正在使用的 `b96a6af`
 2. 对 active cache 做 protocol 和 identity attestation；direct 与 row/column 数据不得混用 P2 合同
 3. 用 `prepare_domain_features.py` 对 BI 源/目标缓存构造并核验 feature lift，再用 `fit_galia_alignment.py` 生成 GALIA state/aligned artifact 并过 rank/condition/AJD 门；GTN 3 导路线暂不绕过 rank gate
 4. 需要 source 子集时用 `prepare_source_selection.py` 预生成一个全 arm 共用的 PDS record，再在 `run_pretrain_supervised.py` 绑定；per-target 动态 selection 必须另行预注册

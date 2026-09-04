@@ -66,6 +66,8 @@ flowchart TB
 代码框架活动基线已提交为 `509946c feat: domain-transfer v2 chain (…)`（分支 `domain-transfer-v2`）。
 该提交闭合的是 P3 主链软件/合同（feature lift、GALIA Fast Alignment、conditional RBF-MMD
 inactive policy、checkpoint 分块、PDS source selection），不是跨域性能或产品效果证据。
+该树的物理冻结为 `frozen/active_source_a102467.*`（archive SHA-256
+`ec9b4c31f4f1f570d5c20876db58f58a9c600fef7d6de1d2d0065b62e0a90421`）。
 云上 E1 native/CAR 运行继续使用性能分支冻结 `b96a6af`，不得被新 v2 freeze 覆盖。
 
 | 机制 | 当前软件状态 | 仍需的科研证据 |
@@ -85,7 +87,7 @@ bulk-delete、trash、symlink shim，以及被负载放大的 15ms 并发测试�
 
 ## 🔄 下一步门禁
 
-1. 为 `domain-transfer-v2` 生成新的 source-only archive 与 manifest；Git commit 不是物理冻结，且不得覆盖云上 E1 正在使用的 `b96a6af` freeze
+1. ✅ 已生成并跟踪 `frozen/active_source_a102467.*`；任何后续代码变更都必须生成新的 archive+manifest，且不得覆盖 `b96a6af`
 2. 人工决定是否清理 `%TEMP%\pytest-of-chent`；WorkBuddy 会话内不采信高负载测试，清理前后的验收均使用空闲、单任务或独立 shell
 3. 准备经验证的 active source/target cache，并按 direct 与 row/column protocol 分流
 4. 用 `prepare_domain_features.py` 为异构通道显式构造 feature lift，再用 `fit_galia_alignment.py` 生成 GALIA state/aligned artifact，并检查 rank/condition/AJD residual；需要 source 子集时用 `prepare_source_selection.py` 预生成 arm 共用的 PDS record
