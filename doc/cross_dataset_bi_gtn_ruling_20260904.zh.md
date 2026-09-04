@@ -116,7 +116,28 @@
 
 ---
 
-## 7. 附：本次未做的事（避免误解）
+## 7. dev64 两轮实际测的是什么（澄清：不是跨域）
+
+T 追问「昨天晚上的训练用到跨域了吗？是不是用其他 BI 数据集来训练，剩下的一个 BI 集推理？」——
+**都没有**。实际是**同一数据集内部的被试级留一（LOSO）**。
+
+| 事实 | 证据 |
+|---|---|
+| 源与目标是同一个 cache 文件 | `target_cache` 与 `source_arms[0].cache` 同为 `l0_bi2014a_causal_v3_64subj.npz`（BI 只有这一个 64 人 cache，不存在"其他 BI 集"） |
+| 每个 fold 训练时排除目标被试 | `target_subjects[i] = {target_subject: '01', source_holdout_subject: '01'}`，两者恒等 |
+| 每个 fold **独立**训练一个模型 | `checkpoints/bi2014a_v3_dev/seed-*/` 每 seed **64 个 `.pt`**（dev-01…dev-64），3 seeds 共 **192 个**——非"训一次复用" |
+| 有防泄漏策略 | `identity_exclusion_policy: "source_or_global"` |
+| 跨域机制全关 | `source_domain_mass` / `splitbn_source_weights` / `selection_domain` 全 `null`；plan 名即 `single_domain` |
+
+两臂（zero_shot / target_adapter）**共享同一个 source 训练**，差异只在目标侧：adapter 臂用目标被试的 5 个校准 selection（`calibration_selections: 5`）微调 adapter 头，5 epochs / lr 5e-4 / batch 16。
+
+**含义**：这两轮测的是**跨被试泛化（within-dataset cross-subject）**，不是域漂移（domain shift）。
+因此它们对 P0 Split-BN / P1 source residual 的验证价值为零（单域下这些机制连 `p=0` 都被 gate 拦掉）；
+但 E=8 的 AUC 0.637 作为「跨被试 LOSO 基线」本身有效，可用于将来与域适应臂对照。
+
+---
+
+## 8. 附：本次未做的事（避免误解）
 
 - 未改动任何 `src/` 代码，未改动 BI/GTN cache；
 - 未验证 GTN 侧的实际 ERP 质量（无 GTN cache，需 L0 构建后才能做对称的蒙太奇诊断）；
