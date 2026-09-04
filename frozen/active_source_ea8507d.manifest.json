@@ -1,0 +1,11 @@
+﻿{
+    "schema":  "n2p3_source_freeze/1",
+    "archive":  "active_source_ea8507d.source-only.tar.gz",
+    "archive_sha256":  "b19a37b0a099bcb752bf2e4ba70d98ff2632b95e920bae17e877437d360a14de",
+    "source_commit":  "ea8507d24d1fd0907c23c3714956ace8f997a811",
+    "member_count":  223,
+    "byte_size":  1098906,
+    "scope":  "Integrated main at ea8507d: f2ee195 WP0-WP4 complete plus scalable Dense PDS lazy chunked distance updates (hypot-based, preserves tiny distances). Excludes Paper PDFs, frozen archives, and all data/caches.",
+    "contains_raw_eeg_cache_or_model_checkpoint":  false,
+    "replacement_policy":  "integrated-workspace source anchor for v2 mainline cloud training; do not overwrite; E1 freezes b96a6af/b86d558 and prior freezes remain unchanged"
+}
