@@ -1,6 +1,6 @@
 # N2P3-Net 特征域迁移活动科研规范
 
-_版本：2026-09-04 · 活动基线：`6fc1df1`（分支 `main`，集成工作区）· 唯一活动指导文件 · 适用范围：N2P3-Net P300/ERP 域迁移、目标校准与候选决策_
+_版本：2026-09-04 · 活动基线：`352932b`（分支 `main`，v2 主线首轮实施；历史集成基线 `6fc1df1` 保留）· 唯一活动指导文件 · 适用范围：N2P3-Net P300/ERP 域迁移、目标校准与候选决策_
 
 > 2026-09-02b 架构裁决（见 [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)）：
 > 横向嵌套（多个 N2P3Net 当外层网络神经元）被否决；活动方向改为纵向分层——
@@ -765,7 +765,7 @@ CAR 不是活动跨域默认变换，旧 CAR cache 只能留在冻结历史层�
 
 ### 9.3 下一步执行顺序
 
-1. ✅ 集成工作区（`main`）最新冻结为 `frozen/active_source_6fc1df1.*`（`b7af84e` 纳入 git；`domain-transfer-v2`/`result-optimization` 分支保留为历史）；任何后续代码变更都要求新 archive+manifest，且不得覆盖 E1 训练使用的 `b96a6af` / `b86d558`
+1. ✅ 集成工作区（`main`）最新冻结为 `frozen/active_source_352932b.*`（source_commit `352932b`，archive SHA-256 `a762a9ae…`，冻结对提交 `ab25c96`；历史 `active_source_6fc1df1.*` 保留）；任何后续代码变更都要求新 archive+manifest，且不得覆盖 E1 训练使用的 `b96a6af` / `b86d558`
 2. 对 active cache 做 protocol 和 identity attestation；direct 与 row/column 数据不得混用 P2 合同
 3. ✅ 按 v2 计划 WP0 已修 B1–B5 与命名/合同/provenance 项：本地 GALIA→ACW、旧 PDS→TSD、conditional feature MMD 降级为安全对照，solver 版本/offdiag residual/row-identity digest 纳入记录（测试随本次变更入库）
 4. ✅ 按 WP1 已建立 EA 数据对齐 cache（`none`/`ea_source`/`ea_target_calibration` 消融入口）并过 reference covariance≈I、条件数与 provenance 门；GTN 3 导路线暂不绕过 rank gate
