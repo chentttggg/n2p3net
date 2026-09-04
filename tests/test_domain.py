@@ -8,10 +8,13 @@ import pytest
 
 from data.channel import build_channel_identity
 from data.domain import (
+    NATIVE_REFERENCE_SCHEMA,
     adapt_common_channel_average_reference,
+    adapt_native_reference_selection,
     common_channel_intersection,
     ensure_common_channel_average_reference,
     ensure_epoch_dataset_namespace,
+    ensure_native_reference_selection,
     namespace_epoch_dataset,
     project_binary_evidence_source_view,
 )
@@ -85,6 +88,122 @@ def test_common_car_cancels_different_original_reference_offsets() -> None:
     assert first_car.channel_names == second_car.channel_names == ("FZ", "CZ", "PZ")
     assert first_car.preprocessing is first.preprocessing
     assert second_car.preprocessing is second.preprocessing
+
+
+def test_common_car_is_invariant_to_time_varying_additive_reference() -> None:
+    underlying = np.asarray(
+        [
+            [[1, 2, 3, 4], [3, 4, 5, 6], [7, 8, 9, 10]],
+            [[2, 4, 6, 8], [1, 3, 5, 7], [9, 11, 13, 15]],
+        ],
+        dtype=np.float32,
+    )
+    offset_a = np.asarray([[[10, 20, 30, 40]], [[-5, -4, -3, -2]]], dtype=np.float32)
+    offset_b = np.asarray([[[100, 70, 40, 10]], [[8, 6, 4, 2]]], dtype=np.float32)
+
+    first = _dataset(underlying + offset_a, reference="time-varying-A")
+    second = _dataset(underlying + offset_b, reference="time-varying-B")
+
+    first_car = adapt_common_channel_average_reference(first, ("Fz", "Cz", "Pz"))
+    second_car = adapt_common_channel_average_reference(second, ("Fz", "Cz", "Pz"))
+
+    np.testing.assert_allclose(first_car.X, second_car.X, atol=1e-6)
+
+
+@pytest.mark.parametrize("n_channels", (2, 3, 5))
+def test_common_car_projection_matrix_has_expected_subspace_properties(n_channels: int) -> None:
+    one = np.ones((n_channels, 1), dtype=np.float64)
+    projection = np.eye(n_channels) - (one @ one.T) / n_channels
+
+    np.testing.assert_allclose(projection.T, projection)
+    np.testing.assert_allclose(projection @ projection, projection)
+    np.testing.assert_allclose(projection @ one, 0.0, atol=1e-15)
+    assert np.linalg.matrix_rank(projection) == n_channels - 1
+
+
+def test_two_channel_car_is_rank_one_contrast_and_removes_selected_mean() -> None:
+    values = np.asarray(
+        [[[11, 12, 13, 14], [3, 5, 7, 9]], [[-2, 0, 2, 4], [8, 6, 4, 2]]],
+        dtype=np.float32,
+    )
+    dataset = _dataset(values, reference="A1", channels=("Cz", "Pz"))
+
+    adapted = adapt_common_channel_average_reference(dataset, ("Cz", "Pz"))
+
+    np.testing.assert_allclose(adapted.X.sum(axis=1), 0.0, atol=1e-6)
+    np.testing.assert_allclose(adapted.X[:, 0, :], (values[:, 0, :] - values[:, 1, :]) / 2.0)
+    np.testing.assert_allclose(adapted.X[:, 1, :], -adapted.X[:, 0, :])
+
+
+def test_two_channel_car_cannot_distinguish_vectors_differing_only_in_common_mode() -> None:
+    base = np.asarray([[[1, 2, 3, 4], [4, 3, 2, 1]]], dtype=np.float32)
+    common_mode = np.asarray([[[100, -20, 7, 11], [100, -20, 7, 11]]], dtype=np.float32)
+    first = _dataset(base, reference="A1", channels=("Cz", "Pz"))
+    second = _dataset(base + common_mode, reference="A2", channels=("Cz", "Pz"))
+
+    first_car = adapt_common_channel_average_reference(first, ("Cz", "Pz"))
+    second_car = adapt_common_channel_average_reference(second, ("Cz", "Pz"))
+
+    np.testing.assert_array_equal(first_car.X, second_car.X)
+
+
+
+def test_native_reference_selection_preserves_tensor_and_records_reference() -> None:
+    values = np.asarray([[[1, 2, 3, 4], [3, 4, 5, 6], [7, 8, 9, 10]]], dtype=np.float32)
+    dataset = _dataset(values, reference="right_mastoid", channels=("Fz", "Cz", "Pz"))
+
+    selected = adapt_native_reference_selection(dataset, ("Cz", "Pz"))
+
+    np.testing.assert_array_equal(selected.X, values[:, 1:, :])
+    assert selected.channel_names == ("CZ", "PZ")
+    assert selected.provenance["source_reference"] == "native:right_mastoid"
+    assert selected.provenance["domain_adapter"] == {
+        "schema": NATIVE_REFERENCE_SCHEMA,
+        "target_channels": ["CZ", "PZ"],
+        "operation": "select channels without re-referencing",
+        "preserved_source_reference": "right_mastoid",
+        "preprocessing_identity": dataset.preprocessing.name,
+    }
+
+
+def test_native_reference_selection_rejects_car_input_and_missing_reference() -> None:
+    values = np.asarray([[[1, 2, 3, 4], [3, 4, 5, 6], [7, 8, 9, 10]]], dtype=np.float32)
+    dataset = _dataset(values, reference="right_mastoid")
+    car = adapt_common_channel_average_reference(dataset, ("Fz", "Cz", "Pz"))
+    with pytest.raises(ValueError, match="already domain-adapted"):
+        adapt_native_reference_selection(car, ("Fz", "Cz", "Pz"))
+
+    missing = replace(dataset, provenance={"source": "toy"})
+    with pytest.raises(ValueError, match="non-empty source_reference"):
+        adapt_native_reference_selection(missing, ("Fz", "Cz", "Pz"))
+
+
+def test_native_reference_selection_ensure_reuses_complete_contract() -> None:
+    source = _dataset(
+        np.asarray([[[1, 2, 3, 4], [3, 4, 5, 6], [7, 8, 9, 10]]]),
+        reference="A1",
+    )
+    selected = adapt_native_reference_selection(source, ("Fz", "Cz", "Pz"))
+    reused = ensure_native_reference_selection(selected, ("Fz", "Cz", "Pz"))
+    assert reused is selected
+    forged = replace(
+        selected,
+        provenance={**selected.provenance, "source_reference": "native:forged"},
+    )
+    with pytest.raises(ValueError, match="disagrees|mismatch"):
+        ensure_native_reference_selection(forged, ("Fz", "Cz", "Pz"))
+
+
+def test_native_selection_requires_complete_selected_channels() -> None:
+    values = np.ones((1, 3, 4), dtype=np.float32)
+    values[:, 1, :] = 0.0
+    dataset = _dataset(values, reference="A1")
+    masked = replace(
+        dataset,
+        trial_channel_mask=np.asarray([[True, False, True]]),
+    )
+    with pytest.raises(ValueError, match="requires every selected channel"):
+        adapt_native_reference_selection(masked, ("Fz", "Cz", "Pz"))
 
 
 def test_common_car_rejects_missing_trial_channel() -> None:

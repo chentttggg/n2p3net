@@ -19,6 +19,7 @@ from data.domain import (  # noqa: E402
     annotate_source_domain,
     ensure_common_channel_average_reference,
     ensure_epoch_dataset_namespace,
+    ensure_native_reference_selection,
     project_binary_evidence_source_view,
 )
 from data.epochs import (  # noqa: E402
@@ -46,12 +47,16 @@ def _prepare_source(
     *,
     channels: tuple[str, ...],
     event_contract: str,
+    reference_mode: str,
 ) -> tuple[EpochDataset, dict[str, object]]:
     namespace, path = source
     dataset = load_epoch_dataset(path, require_labels=True, validation="attested")
     cache_attestation = loaded_epoch_cache_attestation(dataset)
     namespace_preexisting = dataset.provenance.get("subject_namespace") is not None
-    aligned = ensure_common_channel_average_reference(dataset, channels)
+    if reference_mode == "common_average":
+        aligned = ensure_common_channel_average_reference(dataset, channels)
+    else:
+        aligned = ensure_native_reference_selection(dataset, channels)
     aligned = ensure_epoch_dataset_namespace(aligned, namespace)
     aligned = annotate_source_domain(aligned, namespace)
     candidate_metadata_projected = False
@@ -63,6 +68,7 @@ def _prepare_source(
         "namespace": namespace,
         "namespace_preexisting": namespace_preexisting,
         "candidate_metadata_projected": candidate_metadata_projected,
+        "reference_mode": reference_mode,
         "cache": str(path.resolve()),
         "cache_sha256": str(cache_attestation["sha256"]),
         "verified_cache_attestation": cache_attestation,
@@ -86,6 +92,21 @@ def main() -> None:
         default="preserve",
         help="Explicit common event view; binary_evidence drops candidate-only source fields.",
     )
+    parser.add_argument(
+        "--reference-mode",
+        choices=("common_average", "native_preserve"),
+        default="native_preserve",
+        help=(
+            "native_preserve selects channels without re-referencing (default, requires "
+            "an explicit shared parent reference); common_average applies one shared CAR."
+        ),
+    )
+    parser.add_argument(
+        "--min-common-channels",
+        type=int,
+        default=3,
+        help="Minimum common channels required for the common_average reference mode.",
+    )
     parser.add_argument("--name", default="MultiSource-P300")
     parser.add_argument("--output", required=True)
     parser.add_argument("--uncompressed", action="store_true")
@@ -108,6 +129,15 @@ def main() -> None:
     if len(set(namespaces)) != len(namespaces):
         parser.error("source namespaces must be unique")
     channels = tuple(value.strip() for value in args.target_channels.split(",") if value.strip())
+    if args.min_common_channels < 2:
+        parser.error("--min-common-channels must be at least two")
+    if args.reference_mode == "common_average" and len(channels) < args.min_common_channels:
+        parser.error(
+            "common_average reference mode requires at least "
+            f"{args.min_common_channels} common channels; got {len(channels)}. "
+            "Use native_preserve for same-reference sources or choose a larger montage."
+        )
+
     output_path = Path(args.output).resolve(strict=False)
     output_artifacts = (
         output_path,
@@ -132,6 +162,7 @@ def main() -> None:
                     source,
                     channels=channels,
                     event_contract=args.event_contract,
+                    reference_mode=args.reference_mode,
                 )
                 for source in args.source
             )
@@ -146,6 +177,7 @@ def main() -> None:
                             source,
                             channels=channels,
                             event_contract=args.event_contract,
+                            reference_mode=args.reference_mode,
                         ),
                         args.source,
                     )
@@ -162,11 +194,16 @@ def main() -> None:
         adapted,
         name=args.name,
         provenance={
-            "source": "explicit_multidomain_common_channel_car",
+            "source": (
+                "explicit_multidomain_common_channel_car"
+                if args.reference_mode == "common_average"
+                else "explicit_multidomain_native_reference_selection"
+            ),
             "source_reference": reference,
             "domain_adapter": dict(domain_adapter),
             "target_channels": list(adapted[0].channel_names),
             "event_contract": args.event_contract,
+            "reference_mode": args.reference_mode,
             "source_loading": worker_plan.record(),
             "source_domain_axis": {
                 "schema": SOURCE_DOMAIN_AXIS_SCHEMA,
@@ -183,6 +220,7 @@ def main() -> None:
     print(
         f"[multidomain] {output} X={merged.X.shape} "
         f"subjects={len(set(merged.subject_ids))} "
+        f"reference_mode={args.reference_mode} "
         f"workers={worker_plan.effective_workers} "
         f"threads_per_worker={worker_plan.threads_per_worker}",
         flush=True,

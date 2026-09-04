@@ -124,6 +124,9 @@ class EvaluationArmSpec:
     batch_size: int | None
     lr: float | None
     target_stat_weight: float
+    candidate_loss_weight: float
+    candidate_loss_temperature: float
+
     fold_local_qc: bool
     adapt_batchnorm: bool
 
@@ -546,7 +549,7 @@ def _parse_evaluation_arms(value: object) -> tuple[EvaluationArmSpec, ...]:
                 "target_stat_weight",
                 "fold_local_qc",
             },
-            optional={"adapt_batchnorm"},
+            optional={"adapt_batchnorm", "candidate_loss_weight", "candidate_loss_temperature"},
             name=name,
         )
         head = _text(record["head"], f"{name}.head")
@@ -577,6 +580,14 @@ def _parse_evaluation_arms(value: object) -> tuple[EvaluationArmSpec, ...]:
         target_stat_weight = _unit_interval(
             record["target_stat_weight"], f"{name}.target_stat_weight"
         )
+        candidate_loss_weight = _unit_interval(
+            record.get("candidate_loss_weight", 0.0), f"{name}.candidate_loss_weight"
+        )
+        candidate_loss_temperature = _positive_number(
+            record.get("candidate_loss_temperature", 1.0),
+            f"{name}.candidate_loss_temperature",
+        )
+
         fold_local_qc = _boolean(record["fold_local_qc"], f"{name}.fold_local_qc")
         adapt_batchnorm = _boolean(record.get("adapt_batchnorm", False), f"{name}.adapt_batchnorm")
         zero_fit = head in {"auto", "zero_shot"}
@@ -594,6 +605,9 @@ def _parse_evaluation_arms(value: object) -> tuple[EvaluationArmSpec, ...]:
                 invalid.append("lr must be null")
             if target_stat_weight != 0.0:
                 invalid.append("target_stat_weight must be 0")
+            if candidate_loss_weight != 0.0:
+                invalid.append("candidate_loss_weight must be 0")
+
             if fold_local_qc:
                 invalid.append("fold_local_qc must be false")
             if adapt_batchnorm:
@@ -628,6 +642,9 @@ def _parse_evaluation_arms(value: object) -> tuple[EvaluationArmSpec, ...]:
                 batch_size=batch_size,
                 lr=lr,
                 target_stat_weight=target_stat_weight,
+                candidate_loss_weight=candidate_loss_weight,
+                candidate_loss_temperature=candidate_loss_temperature,
+
                 fold_local_qc=fold_local_qc,
                 adapt_batchnorm=adapt_batchnorm,
             )
@@ -1194,6 +1211,11 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                                 evaluation_arm.epoch_selection,
                                 "--target-stat-weight",
                                 str(evaluation_arm.target_stat_weight),
+                                "--candidate-loss-weight",
+                                str(evaluation_arm.candidate_loss_weight),
+                                "--candidate-loss-temperature",
+                                str(evaluation_arm.candidate_loss_temperature),
+
                                 "--epochs",
                                 str(evaluation_arm.epochs),
                                 "--batch-size",

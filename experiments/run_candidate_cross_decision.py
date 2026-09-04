@@ -392,6 +392,19 @@ def main() -> None:
         default="auto",
     )
     parser.add_argument("--target-stat-weight", type=float, default=0.25)
+    parser.add_argument(
+        "--candidate-loss-weight",
+        type=float,
+        default=0.0,
+        help="Weight of the differentiable row/column candidate ranking loss.",
+    )
+    parser.add_argument(
+        "--candidate-loss-temperature",
+        type=float,
+        default=1.0,
+        help="Temperature of the row/column candidate ranking softmax.",
+    )
+
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
         "--fold-local-qc",
@@ -408,6 +421,11 @@ def main() -> None:
     parser.add_argument("--device", default="auto")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
+    if args.candidate_loss_weight < 0.0:
+        parser.error("--candidate-loss-weight must be non-negative")
+    if args.candidate_loss_temperature <= 0.0:
+        parser.error("--candidate-loss-temperature must be positive")
+
     try:
         assert_promotion_evidence_gate(
             args.test_reps,
@@ -654,12 +672,31 @@ def main() -> None:
                     freeze_batchnorm_stats=not args.adapt_batchnorm,
                     input_statistics=normalization,
                     target_stat_weight=args.target_stat_weight,
+                      candidate_loss_weight=args.candidate_loss_weight,
+                      candidate_loss_temperature=args.candidate_loss_temperature,
+
                     input_mean=None if checkpoint_stats is None else checkpoint_stats[0],
                     input_std=None if checkpoint_stats is None else checkpoint_stats[1],
                 ),
                 device=device,
             )
             calibration_rows = local_rows[effective_train]
+            candidate_fit_kwargs: dict[str, object] = {}
+            if args.candidate_loss_weight > 0.0:
+                candidate_fit_kwargs = {
+                    "candidate_ids": local_meta["candidate_id"]
+                    .to_numpy(dtype=np.int64)[effective_train],
+                    "selection_ids": local_meta["selection_id"]
+                    .astype(str)
+                    .to_numpy()[effective_train],
+                    "target_rows": local_meta["target_row"]
+                    .to_numpy(dtype=np.int64)[effective_train],
+                    "target_columns": local_meta["target_col"]
+                    .to_numpy(dtype=np.int64)[effective_train],
+                    "candidate_loss_num_rows": candidate_task.n_rows,
+                    "candidate_loss_num_columns": candidate_task.n_columns,
+                }
+
             inner = None
             subject_failure: ExpectedSubjectError | None = None
             try:
@@ -676,12 +713,14 @@ def main() -> None:
                         training_mask=inner.train_mask,
                         validation_mask=inner.validation_mask,
                         trial_channel_mask=local_mask[effective_train],
+                        **candidate_fit_kwargs,
                     )
                 else:
                     adapter.fit(
                         local_X[effective_train],
                         local_y[effective_train],
                         trial_channel_mask=local_mask[effective_train],
+                        **candidate_fit_kwargs,
                     )
                 suffix_logits = adapter.predict_logit(suffix_X, trial_channel_mask=suffix_mask)
             except ExpectedSubjectError as failure:
@@ -1045,6 +1084,9 @@ def main() -> None:
                 "adapt_batchnorm": bool(args.adapt_batchnorm),
                 "normalization": normalization,
                 "target_stat_weight": args.target_stat_weight,
+                  "candidate_loss_weight": args.candidate_loss_weight,
+                  "candidate_loss_temperature": args.candidate_loss_temperature,
+
                 "fold_local_qc": bool(args.fold_local_qc),
                 "identity_exclusion_policy": args.identity_exclusion_policy,
             },
@@ -1137,6 +1179,9 @@ def main() -> None:
         "adapt_batchnorm": bool(args.adapt_batchnorm),
         "normalization": normalization,
         "target_stat_weight": args.target_stat_weight,
+          "candidate_loss_weight": args.candidate_loss_weight,
+          "candidate_loss_temperature": args.candidate_loss_temperature,
+
         "seed": args.seed,
         "environment": environment_record,
         "splitbn": splitbn_record,

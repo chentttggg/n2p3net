@@ -1445,3 +1445,27 @@ def test_execute_rejects_invalid_max_workers(tmp_path: Path, workers: object) ->
             verify_inputs=False,
             max_workers=workers,
         )
+
+
+def test_plan_supports_candidate_loss_ablation_interface(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["evaluation_arms"][1]["candidate_loss_weight"] = 0.25
+    record["evaluation_arms"][1]["candidate_loss_temperature"] = 2.0
+    plan = _load(tmp_path, record)
+    assert plan.evaluation_arms[1].candidate_loss_weight == 0.25
+    assert plan.evaluation_arms[1].candidate_loss_temperature == 2.0
+    dag = matrix.build_dag(plan)
+    result = next(
+        task
+        for task in dag.tasks
+        if task.task_id == "result/source_a__linear_time_split/rep01/p01"
+    )
+    assert "--candidate-loss-weight" in result.argv
+    assert "--candidate-loss-temperature" in result.argv
+
+
+def test_plan_rejects_candidate_loss_on_zero_shot_arm(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["evaluation_arms"][0]["candidate_loss_weight"] = 0.1
+    with pytest.raises(ValueError, match="candidate_loss_weight must be 0"):
+        _load(tmp_path, record)

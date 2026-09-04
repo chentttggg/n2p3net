@@ -590,3 +590,42 @@ def test_wrapper_state_roundtrip_preserves_all_transfer_paths() -> None:
         expected = first(x)
         observed = second(x)
     assert torch.equal(expected, observed)
+
+
+def test_subject_adapter_candidate_loss_updates_adapter_and_records_diagnostics() -> None:
+    torch.manual_seed(19)
+    wrapped = _wrapper()
+    rng = np.random.default_rng(29)
+    n_rows = 8
+    x = rng.standard_normal((n_rows, 3, 64)).astype(np.float32)
+    y = np.asarray([0, 1, 0, 1, 0, 1, 0, 1], dtype=np.int64)
+    before = {key: value.detach().clone() for key, value in wrapped.target_adapter.state_dict().items()}
+    adapter = SubjectAdapter(
+        wrapped,
+        config=SubjectAdapterConfig(
+            head_kind="adapter",
+            epochs=2,
+            batch_size=4,
+            val_group_fraction=None,
+            refit_full_prefix=False,
+            input_statistics="target_prefix",
+            candidate_loss_weight=0.5,
+            candidate_loss_temperature=1.0,
+        ),
+        device=torch.device("cpu"),
+    )
+    adapter.fit(
+        x,
+        y,
+        candidate_ids=np.asarray([0, 1, 2, 3, 0, 1, 2, 3], dtype=np.int64),
+        selection_ids=np.asarray(["d1"] * 4 + ["d2"] * 4),
+        target_rows=np.asarray([0, 0, 0, 0, 1, 1, 1, 1], dtype=np.int64),
+        target_columns=np.asarray([1, 1, 1, 1, 0, 0, 0, 0], dtype=np.int64),
+        candidate_loss_num_rows=2,
+        candidate_loss_num_columns=2,
+    )
+    after = wrapped.target_adapter.state_dict()
+    assert any(not torch.equal(after[key], before[key]) for key in before)
+    assert adapter.last_history["candidate_loss_active"] is True
+    assert len(adapter.last_history["candidate_losses"]) == 2
+    assert adapter.last_history["candidate_losses"][0]["complete_count"] == 2
