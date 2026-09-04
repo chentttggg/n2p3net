@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import stat
 import tempfile
@@ -32,6 +33,7 @@ from data.lineage import DataLineage
 from data.qc_features import EpochQCFeatures
 
 EPOCH_DATASET_SCHEMA = "n2p3net_epoch_dataset/5"
+DECODED_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 DEFAULT_SAMPLE_RATE_HZ = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz
 
 
@@ -759,6 +761,7 @@ def save_epoch_dataset(
             if dataset.y is not None
             else np.empty(0, dtype=np.int64)
         ),
+        "decoded_dataset_sha256": np.asarray(_decoded_dataset_sha256(dataset)),
     }
     writer = np.savez_compressed if compressed else np.savez
     temporary = path.with_suffix(path.suffix + ".tmp.npz")
@@ -1137,6 +1140,18 @@ def load_epoch_dataset(
         for field_name in ("event_complete", "event_online_causal", "has_labels"):
             if np.asarray(archive[field_name]).dtype != np.dtype(bool):
                 raise ValueError(f"{path} field {field_name} must be a strict boolean.")
+        stored_decoded_dataset_sha256 = None
+        if "decoded_dataset_sha256" in archive.files:
+            stored_value = np.asarray(archive["decoded_dataset_sha256"])
+            if stored_value.ndim != 0:
+                raise ValueError(
+                    f"{path} field decoded_dataset_sha256 must be a scalar string."
+                )
+            stored_decoded_dataset_sha256 = str(stored_value.item()).strip()
+            if DECODED_SHA256.fullmatch(stored_decoded_dataset_sha256) is None:
+                raise ValueError(
+                    f"{path} field decoded_dataset_sha256 is not a valid SHA-256 digest."
+                )
         # NpzFile does not memoize member reads. Retain the decoded tensor so
         # the dtype validation below does not decompress the full EEG cache a
         # second time while constructing the dataset.
@@ -1249,7 +1264,11 @@ def load_epoch_dataset(
                 "full_contract_validated": True,
                 "sha256": verified_attestation["sha256"],
                 "byte_size": verified_attestation["byte_size"],
-                "decoded_dataset_sha256": _decoded_dataset_sha256(dataset),
+                "decoded_dataset_sha256": (
+                    stored_decoded_dataset_sha256
+                    if stored_decoded_dataset_sha256 is not None
+                    else _decoded_dataset_sha256(dataset)
+                ),
             }
         )
         if require_labels and dataset.y is None:

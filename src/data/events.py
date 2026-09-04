@@ -364,6 +364,10 @@ class ScheduledEventTimeline:
             )
         if len(mapped) != expected_epochs:
             raise ValueError("Scheduled-event availability does not match the epoch count.")
+        group_string_fields = {
+            field_name: np.asarray(getattr(self, field_name)).astype(str)
+            for field_name in ("dataset_ids", "session_ids", "run_ids", "selection_ids")
+        }
         for group in np.unique(groups):
             rows = np.flatnonzero(groups == group)
             if np.any(np.diff(onset[rows]) < 0.0):
@@ -371,7 +375,7 @@ class ScheduledEventTimeline:
             if len(np.unique(subjects[rows])) != 1:
                 raise ValueError(f"Selection group {group!r} spans multiple subjects.")
             for field_name in ("dataset_ids", "session_ids", "run_ids", "selection_ids"):
-                values = np.asarray(getattr(self, field_name)).astype(str)[rows]
+                values = group_string_fields[field_name][rows]
                 if len(np.unique(values)) != 1:
                     raise ValueError(f"Selection group {group!r} spans multiple {field_name}.")
             if target_present.all():

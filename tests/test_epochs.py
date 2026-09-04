@@ -130,6 +130,52 @@ def test_epoch_dataset_safe_round_trip(tmp_path) -> None:
     assert loaded.identity_table.payload() == source.identity_table.payload()
 
 
+def test_saved_cache_embeds_decoded_dataset_sha256_and_attested_load_reuses_it(
+    tmp_path,
+) -> None:
+    source = _dataset()
+    path = save_epoch_dataset(tmp_path / "embedded-sha.npz", source)
+    expected = epochs_module._decoded_dataset_sha256(source)
+    with np.load(path, allow_pickle=False) as archive:
+        embedded = str(np.asarray(archive["decoded_dataset_sha256"]).item())
+    assert embedded == expected
+
+    loaded = load_epoch_dataset(path, require_labels=True, validation="attested")
+    attestation = loaded_epoch_cache_attestation(loaded)
+    assert attestation["decoded_dataset_sha256"] == embedded
+    assert attestation["decoded_dataset_sha256"] == expected
+
+
+def test_legacy_cache_without_embedded_decoded_sha_recomputes_it(tmp_path) -> None:
+    source = _dataset()
+    canonical = save_epoch_dataset(tmp_path / "canonical.npz", source)
+    legacy = tmp_path / "legacy.npz"
+    with np.load(canonical, allow_pickle=False) as archive:
+        payload = {key: np.asarray(archive[key]) for key in archive.files}
+    payload.pop("decoded_dataset_sha256")
+    np.savez(legacy, **payload)
+    write_epoch_dataset_record(legacy, source)
+
+    loaded = load_epoch_dataset(legacy, require_labels=True, validation="attested")
+    assert loaded_epoch_cache_attestation(loaded)["decoded_dataset_sha256"] == (
+        epochs_module._decoded_dataset_sha256(source)
+    )
+
+
+def test_attested_load_rejects_malformed_embedded_decoded_sha(tmp_path) -> None:
+    source = _dataset()
+    canonical = save_epoch_dataset(tmp_path / "canonical.npz", source)
+    malformed = tmp_path / "malformed.npz"
+    with np.load(canonical, allow_pickle=False) as archive:
+        payload = {key: np.asarray(archive[key]) for key in archive.files}
+    payload["decoded_dataset_sha256"] = np.asarray("not-a-sha256")
+    np.savez(malformed, **payload)
+    write_epoch_dataset_record(malformed, source)
+
+    with pytest.raises(ValueError, match="decoded_dataset_sha256 is not a valid SHA-256"):
+        load_epoch_dataset(malformed, require_labels=True, validation="attested")
+
+
 def test_attested_load_rejects_a_substituted_physical_object(
     tmp_path: Path, monkeypatch
 ) -> None:
