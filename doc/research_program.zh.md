@@ -1,6 +1,6 @@
 # N2P3-Net 特征域迁移活动科研规范
 
-_版本：2026-09-04 · 活动基线：`509946c`（分支 `domain-transfer-v2`）· 唯一活动指导文件 · 适用范围：N2P3-Net P300/ERP 域迁移、目标校准与候选决策_
+_版本：2026-09-04 · 活动基线：`6ec71b0`（分支 `domain-transfer-v2`）· 唯一活动指导文件 · 适用范围：N2P3-Net P300/ERP 域迁移、目标校准与候选决策_
 
 > 2026-09-02b 架构裁决（见 [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)）：
 > 横向嵌套（多个 N2P3Net 当外层网络神经元）被否决；活动方向改为纵向分层——
@@ -669,10 +669,12 @@ cluster CI，以及 source/cache/checkpoint/environment/plan 的 digest。
 
 ### 9.1 已闭合的框架合同
 
-截至 2026-09-04，`509946c`（`domain-transfer-v2`）在 `ef7a40e` 框架基础上闭合
+截至 2026-09-04，`6ec71b0`（`domain-transfer-v2`）在 `ef7a40e` 框架基础上闭合
 P3 主链：feature-matrix 构造、standalone GALIA/Fast-Alignment fit、conditional
-RBF-MMD inactive policy、checkpoint batch 分块，以及 PDS source selection 的
-prepare/runner/contract 全链。完整链和反例测试见
+RBF-MMD inactive policy、checkpoint batch 分块、PDS source selection 的
+prepare/runner/contract 全链，并把 hit 主口径切换为 plan 可选的
+`valid_subject_operational_hit_rate`（requested operational 保留为部署诊断），
+adaptation 的 `epoch_selection` 归入 adaptation procedure。完整链和反例测试见
 [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md)。
 
 | 机制 | 当前实现 | 不可静默降级的规则 |
@@ -703,7 +705,7 @@ axis 只在 source training 中驱动 P0/P1 等声明机制，未知 target 永�
 
 ### 9.3 下一步执行顺序
 
-1. ✅ `domain-transfer-v2` 已生成 `frozen/active_source_a102467.*` 并在 `b524b69` 纳入 git；任何后续代码变更都要求新 archive+manifest，且不得覆盖 E1 正在使用的 `b96a6af`
+1. ✅ `domain-transfer-v2` 最新冻结为 `frozen/active_source_6ec71b0.*`（`62a55d7` 纳入 git；旧 `a102467` 保留为历史）；任何后续代码变更都要求新 archive+manifest，且不得覆盖 E1 训练使用的 `b96a6af` / `b86d558`
 2. 对 active cache 做 protocol 和 identity attestation；direct 与 row/column 数据不得混用 P2 合同
 3. 用 `prepare_domain_features.py` 对 BI 源/目标缓存构造并核验 feature lift，再用 `fit_galia_alignment.py` 生成 GALIA state/aligned artifact 并过 rank/condition/AJD 门；GTN 3 导路线暂不绕过 rank gate
 4. 需要 source 子集时用 `prepare_source_selection.py` 预生成一个全 arm 共用的 PDS record，再在 `run_pretrain_supervised.py` 绑定；per-target 动态 selection 必须另行预注册
