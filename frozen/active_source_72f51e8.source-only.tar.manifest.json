@@ -1,0 +1,11 @@
+{
+  "schema": "n2p3_source_freeze/1",
+  "archive": "active_source_72f51e8.source-only.tar.gz",
+  "archive_sha256": "deb004e737cb879de9664b2a0e88e85e0a60c077a8b77e4efac49bcba35849e1",
+  "source_commit": "72f51e8e9ab50bb1ce0aae3581527c1742ec9b12",
+  "member_count": 199,
+  "byte_size": 1051889,
+  "scope": "Integrated main at 72f51e8e9ab50bb1ce0aae3581527c1742ec9b12: previous integrated main plus performance P0 (timeline string-cast hoist) and P1 (embedded decoded cache digest). Excludes Paper PDFs, frozen archives, and all data/caches.",
+  "contains_raw_eeg_cache_or_model_checkpoint": false,
+  "replacement_policy": "integrated-workspace source anchor; do not overwrite; E1 execution freezes b96a6af/b86d558 remain unchanged"
+}
