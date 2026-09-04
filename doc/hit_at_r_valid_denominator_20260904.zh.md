@@ -259,3 +259,27 @@ rep=1 占 31.9%、rep=2 占 23.8%、rep=3 占 17.3%、**rep≥8 仅 5.2%**，
 | `tmp/l1_cloud/r2_sample/dev-01.json` | 单 result 样本，用于结构核对与交叉验证 |
 
 未改动任何 `src/` 或 `experiments/` 代码。
+
+---
+
+## 9. r3 预注册（发射前冻结，2026-09-04）
+
+在 D-11 获批前，先发射**候选 B**（E 剂量轮）：它是唯一不触碰合同常量、
+且与 r2 同口径可直接对比的实验。参数在发射前写死如下。
+
+| 项 | 值 |
+|---|---|
+| 代码冻结 | `9f0b421e`（与 r1/r2 同一冻结树，零改动） |
+| 唯一变量 | `training.epochs` 8 → **16** |
+| 冻结项 | seeds = 20260901 / 20260902 / 20260903；64 partitions；2 arms（zero_shot / target_adapter）；test_reps = 8；bootstrap = 1000；cache / manifest / 通道 / 预处理全部不变 |
+| plan digest | `8243c158`（r2 为 `a3161042`） |
+| statistical_design digest | `fc201a66`（**未变**，与 r1/r2 同一统计合同） |
+| output_root | `/root/autodl-tmp/n2p3-runs/dev64_cuda_r3_e16` |
+| 预期 wall | 约 90 min（pretrain 近线性于 E；r2/E=8 为 45 min） |
+| 主判读 | 与 §3.1 同口径比较 R=8 的 hit：若继续上升 ⇒ 训练仍是瓶颈；若平台 ⇒ 瓶颈转移到数据/功效（指向候选 A） |
+| 不做的事 | 不在结果出来后回头改 epochs / seeds / test_reps；不因 E=16 结果改写 §3 的任何数字 |
+
+**功效声明**：本轮仍在 11.9% 的 eligible 子集上（31 被试 × 平均 2.35 判定），
+CI 宽度约 ±0.13。因此本轮**只能检测大效应**；若 E=8 与 E=16 的差小于约 0.10，
+本轮无法给出判读，届时结论应记为「不可区分」而非「无差异」——这正是候选 A
+需要优先的原因。
