@@ -18,6 +18,11 @@ from pathlib import Path
 
 import numpy as np
 
+try:
+    import torch as _torch
+except Exception:  # pragma: no cover - torch is optional at import time
+    _torch = None
+
 VALID_SELECTION_SCOPES = frozenset({"target_calibration", "target_unlabelled_buffer"})
 SOURCE_SELECTION_SCHEMA = "n2p3_source_selection/2"
 LEGACY_SOURCE_SELECTION_SCHEMA = "n2p3_pds_source_selection/1"
@@ -65,6 +70,7 @@ class PDSSelection:
     pds_mingling_mixture: tuple[float, ...] | None = None
     pds_attempts: int = 0
     pds_fallback_count: int = 0
+    pds_distance_backend: str = "cpu_f64"
 
     def __post_init__(self) -> None:
         indices = np.asarray(self.selected_indices, dtype=np.int64)
@@ -135,6 +141,8 @@ class PDSSelection:
                 raise ValueError(
                     "pds_fallback_count must be a non-negative integer no larger than pds_attempts."
                 )
+            if self.pds_distance_backend not in {"cpu_f64", "gpu_f64"}:
+                raise ValueError("pds_distance_backend must be cpu_f64 or gpu_f64.")
         else:
             if self.pds_radius is not None or self.pds_mingling_mixture is not None:
                 raise ValueError(
@@ -184,6 +192,7 @@ class PDSSelection:
             ),
             "pds_attempts": int(self.pds_attempts),
             "pds_fallback_count": int(self.pds_fallback_count),
+            "pds_distance_backend": self.pds_distance_backend,
         }
 
 
@@ -226,6 +235,9 @@ def pds_selection_from_record(
             pds_fallback_count = _record_integer(
                 record.get("pds_fallback_count", 0), name="pds_fallback_count"
             )
+            pds_distance_backend = str(
+                record.get("pds_distance_backend", "cpu_f64")
+            )
         except (TypeError, ValueError, OverflowError) as error:
             raise ValueError(
                 f"invalid PDS source-selection dense fields: {error}"
@@ -236,6 +248,7 @@ def pds_selection_from_record(
         pds_mingling_mixture = None
         pds_attempts = 0
         pds_fallback_count = 0
+        pds_distance_backend = "cpu_f64"
     else:
         raise ValueError("unsupported source-selection record schema.")
     if expected_source_cache_sha256 is not None:
@@ -271,6 +284,7 @@ def pds_selection_from_record(
             pds_mingling_mixture=pds_mingling_mixture,
             pds_attempts=pds_attempts,
             pds_fallback_count=pds_fallback_count,
+            pds_distance_backend=pds_distance_backend,
         )
     except (KeyError, TypeError, ValueError) as error:
         raise ValueError(f"invalid PDS source-selection record: {error}") from error
@@ -642,15 +656,45 @@ def select_dense_pds_rows(
 
     rng = np.random.default_rng(seed)
     selected: list[int] = []
-    selected_vectors: list[np.ndarray] = []
+    selected_count = 0
     eligible = np.ones(len(source), dtype=bool)
     pds_attempts = 0
     pds_fallback_count = 0
 
+    use_gpu = bool(
+        _torch is not None
+        and getattr(_torch, "cuda", None) is not None
+        and _torch.cuda.is_available()
+    )
+    if use_gpu:
+        device = _torch.device("cuda")
+        source_tensor = _torch.as_tensor(source, dtype=_torch.float64, device=device)
+        selected_tensor = _torch.empty(
+            (n_select, source.shape[1]), dtype=_torch.float64, device=device
+        )
+        backend = "gpu_f64"
+    else:
+        selected_vectors: list[np.ndarray] = []
+        backend = "cpu_f64"
+
     def min_distances(indices: np.ndarray) -> np.ndarray:
-        """Chunked min distance to every selected row (O(k*P) per block pair)."""
+        """Chunked minimum Euclidean distance to every selected row."""
         output = np.full(len(indices), np.inf, dtype=np.float64)
-        if not selected_vectors:
+        if selected_count == 0:
+            return output
+        if use_gpu:
+            index_tensor = _torch.as_tensor(indices, dtype=_torch.long, device=device)
+            selected_slab = selected_tensor[:selected_count]
+            for index_start in range(0, len(indices), 128):
+                index_slab = index_tensor[index_start : index_start + 128]
+                distances = _torch.cdist(
+                    source_tensor.index_select(0, index_slab),
+                    selected_slab,
+                    p=2.0,
+                )
+                output[index_start : index_start + len(index_slab)] = (
+                    distances.min(dim=1).values.detach().cpu().numpy()
+                )
             return output
         selected_block = np.asarray(selected_vectors, dtype=np.float64)
         for selected_start in range(0, len(selected_block), 128):
@@ -667,8 +711,13 @@ def select_dense_pds_rows(
         return output
 
     def accept(index: int) -> None:
+        nonlocal selected_count
         selected.append(int(index))
-        selected_vectors.append(source[index])
+        if use_gpu:
+            selected_tensor[selected_count] = source_tensor[index]
+        else:
+            selected_vectors.append(source[index])
+        selected_count += 1
         eligible[index] = False
 
     while len(selected) < n_select:
@@ -717,6 +766,7 @@ def select_dense_pds_rows(
         pds_mingling_mixture=mixture,
         pds_attempts=pds_attempts,
         pds_fallback_count=pds_fallback_count,
+        pds_distance_backend=backend,
     )
 
 __all__ = [
