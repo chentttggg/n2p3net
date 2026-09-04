@@ -642,15 +642,34 @@ def select_dense_pds_rows(
 
     rng = np.random.default_rng(seed)
     selected: list[int] = []
+    selected_vectors: list[np.ndarray] = []
     eligible = np.ones(len(source), dtype=bool)
-    minimum_distance = np.full(len(source), np.inf, dtype=np.float64)
     pds_attempts = 0
     pds_fallback_count = 0
 
+    def min_distances(indices: np.ndarray) -> np.ndarray:
+        """Chunked min distance to every selected row (O(k*P) per block pair)."""
+        output = np.full(len(indices), np.inf, dtype=np.float64)
+        if not selected_vectors:
+            return output
+        selected_block = np.asarray(selected_vectors, dtype=np.float64)
+        for selected_start in range(0, len(selected_block), 128):
+            selected_slab = selected_block[selected_start : selected_start + 128]
+            for index_start in range(0, len(indices), 16):
+                index_slab = indices[index_start : index_start + 16]
+                delta = source[index_slab, None, :] - selected_slab[None, :, :]
+                distances = np.hypot.reduce(delta, axis=2)
+                np.minimum(
+                    output[index_start : index_start + len(index_slab)],
+                    distances.min(axis=1),
+                    out=output[index_start : index_start + len(index_slab)],
+                )
+        return output
+
     def accept(index: int) -> None:
         selected.append(int(index))
+        selected_vectors.append(source[index])
         eligible[index] = False
-        _update_min_distances(minimum_distance, source, source[index])
 
     while len(selected) < n_select:
         if pds_attempts >= pds_max_attempts:
@@ -660,7 +679,7 @@ def select_dense_pds_rows(
                     "dense_pds cannot select the requested rows from the remaining source pool."
                 )
             permuted = rng.permutation(candidates)
-            chosen = int(permuted[int(np.argmax(minimum_distance[permuted]))])
+            chosen = int(permuted[int(np.argmax(min_distances(permuted)))])
             accept(chosen)
             pds_fallback_count += 1
             continue
@@ -669,9 +688,12 @@ def select_dense_pds_rows(
         mingling_class = int(classes[mixture_position])
         candidates = np.flatnonzero(eligible & (labels == mingling_class))
         if not len(candidates):
+            # An empty mingling class is a degenerate proposal, not a
+            # dart-throwing attempt; keep sampling the declared mixture.
+            pds_attempts -= 1
             continue
         candidate = int(rng.choice(candidates))
-        if float(minimum_distance[candidate]) > pds_radius:
+        if float(min_distances(np.asarray([candidate], dtype=np.int64))[0]) > pds_radius:
             accept(candidate)
 
     indices = np.asarray(selected, dtype=np.int64)
