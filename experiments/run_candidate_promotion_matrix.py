@@ -51,6 +51,10 @@ from experiments.build_candidate_cross_decision_manifest import (  # noqa: E402
     MANIFEST_SCHEMA,
     RESULT_SCHEMA,
 )
+from experiments.result_batch_contract import (  # noqa: E402
+    RESULT_BATCH_JOBS_SCHEMA,
+    RESULT_BATCH_LEDGER_SCHEMA,
+)
 from experiments.run_pretrain_supervised import (  # noqa: E402
     SOURCE_PRETRAIN_BATCH_SCHEMA,
 )
@@ -68,7 +72,11 @@ from research.contracts import (  # noqa: E402
 from research.evaluation import (  # noqa: E402
     source_snapshot_sha256_from_archive_manifest,
 )
-from train.runtime import cpu_thread_budget, resolve_cpu_worker_plan  # noqa: E402
+from train.runtime import (  # noqa: E402
+    available_cpu_threads,
+    cpu_thread_budget,
+    resolve_cpu_worker_plan,
+)
 from transfer.checkpoint import (  # noqa: E402
     checkpoint_training_contract,
     load_checkpoint_payload,
@@ -93,7 +101,7 @@ _INFERENCE_SCOPES = frozenset({"conditional_frozen_models", "training_procedure"
 _SAFE_COMPONENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
-TaskKind = Literal["checkpoint_batch", "result", "manifest", "analysis"]
+TaskKind = Literal["checkpoint_batch", "result", "result_batch", "manifest", "analysis"]
 
 
 @dataclass(frozen=True)
@@ -181,6 +189,8 @@ class PromotionPlan:
     target_cache: Path
     target_subjects: tuple[TargetSubjectSpec, ...]
     checkpoint_batch_size: int | None
+    result_max_workers: int | None
+    result_threads: int | None
     source_arms: tuple[SourceArmSpec, ...]
     training_replicates: tuple[TrainingReplicateSpec, ...]
     evaluation_arms: tuple[EvaluationArmSpec, ...]
@@ -209,6 +219,8 @@ class PromotionDag:
     device: str
     tasks: tuple[MatrixTask, ...]
     subject_scope_paths: Mapping[str, Path]
+    result_batch_job_paths: Mapping[str, Path]
+    result_batch_job_records: Mapping[str, Mapping[str, Any]]
 
     @property
     def task_by_id(self) -> dict[str, MatrixTask]:
@@ -971,7 +983,7 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
             "output_root",
             "statistical_design",
         },
-        optional={"evidence_floor", "checkpoint_batch_size", "metric_name"},
+        optional={"evidence_floor", "checkpoint_batch_size", "metric_name", "result_max_workers", "result_threads"},
         name="plan",
     )
     if record["schema"] != PLAN_SCHEMA:
@@ -1013,6 +1025,17 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
         if record.get("checkpoint_batch_size") is None
         else _integer(record["checkpoint_batch_size"], "checkpoint_batch_size", minimum=1)
     )
+    result_max_workers = (
+        None
+        if record.get("result_max_workers") is None
+        else _integer(record["result_max_workers"], "result_max_workers", minimum=1)
+    )
+    result_threads = (
+        None
+        if record.get("result_threads") is None
+        else _integer(record["result_threads"], "result_threads", minimum=1)
+    )
+
     assert_promotion_evidence_gate(
         test_reps,
         minimum_evidence_level=evidence_floor,
@@ -1029,6 +1052,9 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
             raise ValueError("output_root escapes the explicit --root boundary.") from error
     return PromotionPlan(
         path=plan_path,
+        result_max_workers=result_max_workers,
+        result_threads=result_threads,
+
         resolution_root=resolution_root,
         raw_record=record,
         digest=semantic_sha256(record),
@@ -1098,7 +1124,10 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
         for target in plan.target_subjects
     }
     tasks: list[MatrixTask] = []
-    result_tasks: list[MatrixTask] = []
+    result_batch_tasks: list[MatrixTask] = []
+    result_output_paths: list[Path] = []
+    result_batch_job_paths: dict[str, Path] = {}
+    result_batch_job_records: dict[str, Mapping[str, Any]] = {}
     checkpoint_batch_size = (
         len(plan.target_subjects)
         if plan.checkpoint_batch_size is None
@@ -1238,9 +1267,36 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
 
             for target in plan.target_subjects:
                 checkpoint_path = checkpoint_paths[target.partition_key]
+                result_batch_task_id = (
+                    f"result_batch/{arm.name}/{replicate.key}/{target.partition_key}"
+                )
+                result_batch_jobs_path = _within_output(
+                    output_root
+                    / "result_batches"
+                    / arm.name
+                    / replicate.key
+                    / f"{target.partition_key}.jobs.json",
+                    output_root,
+                )
+                result_batch_ledger_path = _within_output(
+                    output_root
+                    / "result_batches"
+                    / arm.name
+                    / replicate.key
+                    / f"{target.partition_key}.ledger.json",
+                    output_root,
+                )
+                zero_shot_feature_path = _within_output(
+                    output_root
+                    / "zero_shot_features"
+                    / arm.name
+                    / replicate.key
+                    / f"{target.partition_key}.npz",
+                    output_root,
+                )
+                batch_jobs: list[dict[str, object]] = []
                 for evaluation_arm in plan.evaluation_arms:
                     arm_name = evaluation_arm_name(arm.name, evaluation_arm.name)
-                    result_id = f"result/{arm_name}/{replicate.key}/{target.partition_key}"
                     result_path = _within_output(
                         output_root
                         / "results"
@@ -1306,6 +1362,13 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                         )
                         if evaluation_arm.adapt_batchnorm:
                             result_argv.append("--adapt-batchnorm")
+                    if evaluation_arm.head in {"auto", "zero_shot"}:
+                        result_argv.extend(
+                            [
+                                "--zero-shot-feature-cache",
+                                str(zero_shot_feature_path),
+                            ]
+                        )
                     result_argv.extend(
                         [
                             "--seed",
@@ -1314,29 +1377,60 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                             str(scope_paths[target.partition_key]),
                             "--device",
                             device_name,
+                            "--cpu-threads",
+                            str(plan.result_threads or 1),
+
                             "--output",
                             str(result_path),
                         ]
                     )
-                    result_task = MatrixTask(
-                        task_id=result_id,
-                        kind="result",
-                        argv=tuple(result_argv),
-                        output=result_path,
-                        dependencies=(
-                            checkpoint_batch_id_by_partition[target.partition_key],
-                        ),
+                    batch_jobs.append(
+                        {
+                            "arm_name": arm_name,
+                            "argv": [str(value) for value in result_argv[2:]],
+                        }
                     )
-                    tasks.append(result_task)
-                    result_tasks.append(result_task)
+                    result_output_paths.append(result_path)
+                batch_jobs_record = {
+                    "schema": RESULT_BATCH_JOBS_SCHEMA,
+                    "job_count": len(batch_jobs),
+                    "partition_key": target.partition_key,
+                    "dataset_cache": str(plan.target_cache.resolve()),
+                    "checkpoint": str(checkpoint_path.resolve()),
+                    "jobs": batch_jobs,
+                }
+                result_batch_job_paths[result_batch_task_id] = result_batch_jobs_path
+                result_batch_job_records[result_batch_task_id] = batch_jobs_record
+                result_batch_task = MatrixTask(
+                    task_id=result_batch_task_id,
+                    kind="result_batch",
+                    argv=(
+                        sys.executable,
+                        str(
+                            (
+                                ROOT / "experiments" / "run_candidate_result_batch.py"
+                            ).resolve()
+                        ),
+                        "--jobs-file",
+                        str(result_batch_jobs_path),
+                        "--output",
+                        str(result_batch_ledger_path),
+                    ),
+                    output=result_batch_ledger_path,
+                    dependencies=(
+                        checkpoint_batch_id_by_partition[target.partition_key],
+                    ),
+                )
+                tasks.append(result_batch_task)
+                result_batch_tasks.append(result_batch_task)
 
     manifest_path = _within_output(output_root / "manifest.json", output_root)
     manifest_argv = [
         sys.executable,
         str((ROOT / "experiments" / "build_candidate_cross_decision_manifest.py").resolve()),
     ]
-    for result_task in result_tasks:
-        manifest_argv.extend(["--result", str(result_task.output)])
+    for result_path in result_output_paths:
+        manifest_argv.extend(["--result", str(result_path)])
     manifest_argv.extend(
         [
             "--source-snapshot-manifest",
@@ -1369,7 +1463,7 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
         kind="manifest",
         argv=tuple(manifest_argv),
         output=manifest_path,
-        dependencies=tuple(task.task_id for task in result_tasks),
+        dependencies=tuple(task.task_id for task in result_batch_tasks),
     )
     tasks.append(manifest_task)
 
@@ -1410,6 +1504,8 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
         device=device_name,
         tasks=tuple(tasks),
         subject_scope_paths=scope_paths,
+        result_batch_job_paths=result_batch_job_paths,
+        result_batch_job_records=result_batch_job_records,
     )
 
 
@@ -1429,12 +1525,17 @@ def _portable_path(path: Path, dag: PromotionDag) -> str:
     return f"$EXTERNAL/{resolved.name}"
 
 
-def _journal_argv(argv: Sequence[str], dag: PromotionDag) -> list[str]:
+def _journal_argv(
+    argv: Sequence[str],
+    dag: PromotionDag,
+    *,
+    executable_first: bool = True,
+) -> list[str]:
     sensitive_flags = {"--password", "--secret", "--token", "--api-key"}
     result: list[str] = []
     redact_next = False
     for index, raw in enumerate(argv):
-        if index == 0:
+        if executable_first and index == 0:
             result.append("$PYTHON")
             continue
         if redact_next:
@@ -1460,7 +1561,13 @@ def dag_record(
 ) -> dict[str, Any]:
     counts = {
         kind: sum(task.kind == kind for task in dag.tasks)
-        for kind in ("checkpoint_batch", "result", "manifest", "analysis")
+        for kind in (
+            "checkpoint_batch",
+            "result",
+            "result_batch",
+            "manifest",
+            "analysis",
+        )
     }
     record = {
         "schema": DRY_RUN_SCHEMA,
@@ -1481,6 +1588,38 @@ def dag_record(
             }
             for task in dag.tasks
         ],
+        "result_batch_records": {
+            task_id: {
+                "jobs_file": _portable_path(jobs_path, dag),
+                "record": {
+                    **{
+                        key: value
+                        for key, value in dag.result_batch_job_records[task_id].items()
+                        if key != "jobs"
+                    },
+                    "dataset_cache": _portable_path(
+                        Path(str(dag.result_batch_job_records[task_id]["dataset_cache"])),
+                        dag,
+                    ),
+                    "checkpoint": _portable_path(
+                        Path(str(dag.result_batch_job_records[task_id]["checkpoint"])),
+                        dag,
+                    ),
+                    "jobs": [
+                        {
+                            "arm_name": job["arm_name"],
+                            "argv": _journal_argv(
+                                tuple(str(value) for value in job["argv"]),
+                                dag,
+                                executable_first=False,
+                            ),
+                        }
+                        for job in dag.result_batch_job_records[task_id]["jobs"]
+                    ],
+                },
+            }
+            for task_id, jobs_path in dag.result_batch_job_paths.items()
+        },
     }
     if resolved_inputs is not None:
         record["resolved_inputs"] = dict(resolved_inputs)
@@ -1579,6 +1718,48 @@ def _validate_sha(value: object, name: str) -> str:
     return value
 
 
+def _argv_flag_value(argv: Sequence[str], flag: str) -> str:
+    if flag not in argv:
+        raise ValueError(f"task argv lacks required flag {flag}.")
+    index = argv.index(flag)
+    if index + 1 >= len(argv):
+        raise ValueError(f"task argv contains an incomplete flag {flag}.")
+    return argv[index + 1]
+
+
+def _result_embedded_record(path: Path, name: str) -> dict[str, Any]:
+    record = _read_json_mapping(path, name)
+    if record.get("schema") != RESULT_SCHEMA or record.get("run_status") not in {
+        "completed",
+        "completed_with_selection_failures",
+    }:
+        raise ValueError(f"{name} is not a completed current-schema artifact.")
+    evaluation_record = _mapping(
+        record.get("evaluation_contract"), f"{name} evaluation_contract"
+    )
+    evaluation_digest = _validate_sha(
+        record.get("evaluation_contract_digest"), f"{name} evaluation_contract_digest"
+    )
+    assert_contract_digest(
+        evaluation_record, evaluation_digest, name=f"{name} evaluation_contract"
+    )
+    evaluation = EvaluationRunContract(**evaluation_record)
+    if evaluation.digest() != evaluation_digest:
+        raise ValueError(f"{name} evaluation contract digest disagrees after parsing.")
+    decision_record = _mapping(record.get("decision_plan"), f"{name} decision_plan")
+    decision_digest = _validate_sha(
+        record.get("decision_plan_digest"), f"{name} decision_plan_digest"
+    )
+    assert_contract_digest(
+        decision_record, decision_digest, name=f"{name} decision plan"
+    )
+    return {
+        "schema": RESULT_SCHEMA,
+        "evaluation_contract_digest": evaluation_digest,
+        "decision_plan_digest": decision_digest,
+    }
+
+
 def _embedded_artifact_record(task: MatrixTask) -> dict[str, Any]:
     """Validate the minimum embedded schema and semantic contract linkage."""
 
@@ -1649,33 +1830,95 @@ def _embedded_artifact_record(task: MatrixTask) -> dict[str, Any]:
             "job_count": len(embedded_jobs),
             "checkpoint_set_digest": semantic_sha256(embedded_jobs),
         }
-    record = _read_json_mapping(task.output, f"{task.kind} output")
     if task.kind == "result":
-        if record.get("schema") != RESULT_SCHEMA or record.get("run_status") not in {
-            "completed",
-            "completed_with_selection_failures",
-        }:
-            raise ValueError("result output is not a completed current-schema artifact.")
-        evaluation_record = _mapping(
-            record.get("evaluation_contract"), "result evaluation_contract"
+        return _result_embedded_record(task.output, "result output")
+    if task.kind == "result_batch":
+        record = _read_json_mapping(task.output, "result batch ledger")
+        if record.get("schema") != RESULT_BATCH_LEDGER_SCHEMA or record.get(
+            "completed"
+        ) is not True:
+            raise ValueError("result batch ledger is not a completed current-schema artifact.")
+        jobs_path = Path(_argv_flag_value(task.argv, "--jobs-file")).resolve()
+        jobs_record = _read_json_mapping(jobs_path, "result batch jobs")
+        if jobs_record.get("schema") != RESULT_BATCH_JOBS_SCHEMA:
+            raise ValueError("result batch jobs file has an unsupported schema.")
+        raw_jobs = jobs_record.get("jobs")
+        raw_ledger_jobs = record.get("jobs")
+        if not isinstance(raw_jobs, Sequence) or isinstance(
+            raw_jobs, (str, bytes, bytearray)
+        ):
+            raise ValueError("result batch jobs must be a sequence.")
+        if not isinstance(raw_ledger_jobs, Sequence) or isinstance(
+            raw_ledger_jobs, (str, bytes, bytearray)
+        ):
+            raise ValueError("result batch ledger jobs must be a sequence.")
+        job_count = len(raw_jobs)
+        if (
+            job_count < 1
+            or jobs_record.get("job_count") != job_count
+            or record.get("job_count") != job_count
+            or len(raw_ledger_jobs) != job_count
+        ):
+            raise ValueError("result batch job counts disagree across jobs and ledger.")
+        ledger_jobs_file_sha = _validate_sha(
+            record.get("jobs_file_sha256"), "result batch jobs_file_sha256"
         )
-        evaluation_digest = _validate_sha(
-            record.get("evaluation_contract_digest"), "evaluation_contract_digest"
-        )
-        assert_contract_digest(
-            evaluation_record, evaluation_digest, name="result evaluation_contract"
-        )
-        evaluation = EvaluationRunContract(**evaluation_record)
-        if evaluation.digest() != evaluation_digest:
-            raise ValueError("result evaluation contract digest disagrees after parsing.")
-        decision_record = _mapping(record.get("decision_plan"), "result decision_plan")
-        decision_digest = _validate_sha(record.get("decision_plan_digest"), "decision_plan_digest")
-        assert_contract_digest(decision_record, decision_digest, name="result decision plan")
+        if _sha256_file(jobs_path) != ledger_jobs_file_sha:
+            raise ValueError("result batch jobs file changed after completion.")
+        embedded_jobs: list[dict[str, object]] = []
+        for raw_job, raw_ledger_job in zip(raw_jobs, raw_ledger_jobs, strict=True):
+            job = _mapping(raw_job, "result batch job")
+            ledger_job = _mapping(raw_ledger_job, "result batch ledger job")
+            arm_name = _text(job.get("arm_name"), "result batch arm_name")
+            if ledger_job.get("arm_name") != arm_name:
+                raise ValueError("result batch ledger arm_name disagrees with jobs file.")
+            raw_argv = job.get("argv")
+            if not isinstance(raw_argv, Sequence) or isinstance(
+                raw_argv, (str, bytes, bytearray)
+            ):
+                raise ValueError("result batch job argv must be a sequence.")
+            argv = tuple(_text(value, "result batch argv item") for value in raw_argv)
+            result_path = Path(_argv_flag_value(argv, "--output")).resolve()
+            ledger_result_path = Path(
+                _text(ledger_job.get("output"), "result batch ledger output")
+            ).resolve()
+            if ledger_result_path != result_path:
+                raise ValueError("result batch ledger output disagrees with job argv.")
+            result_embedded = _result_embedded_record(
+                result_path, f"result batch arm {arm_name!r}"
+            )
+            byte_size = _integer(
+                ledger_job.get("byte_size"), "result batch ledger byte_size", minimum=1
+            )
+            result_sha256 = _validate_sha(
+                ledger_job.get("sha256"), "result batch ledger sha256"
+            )
+            if result_path.stat().st_size != byte_size or _sha256_file(result_path) != result_sha256:
+                raise ValueError("result batch result bytes changed after completion.")
+            if (
+                ledger_job.get("evaluation_contract_digest")
+                != result_embedded["evaluation_contract_digest"]
+                or ledger_job.get("decision_plan_digest")
+                != result_embedded["decision_plan_digest"]
+            ):
+                raise ValueError("result batch ledger contract digest disagrees with result.")
+            embedded_jobs.append(
+                {
+                    "result_name": result_path.name,
+                    "result_sha256": result_sha256,
+                    "evaluation_contract_digest": result_embedded[
+                        "evaluation_contract_digest"
+                    ],
+                    "decision_plan_digest": result_embedded["decision_plan_digest"],
+                }
+            )
         return {
-            "schema": RESULT_SCHEMA,
-            "evaluation_contract_digest": evaluation_digest,
-            "decision_plan_digest": decision_digest,
+            "schema": RESULT_BATCH_LEDGER_SCHEMA,
+            "job_count": job_count,
+            "jobs_file_sha256": ledger_jobs_file_sha,
+            "result_set_digest": semantic_sha256(embedded_jobs),
         }
+    record = _read_json_mapping(task.output, f"{task.kind} output")
     if task.kind == "manifest":
         if record.get("schema") != MANIFEST_SCHEMA:
             raise ValueError("manifest output has an unsupported schema.")
@@ -2054,7 +2297,21 @@ def _materialize_subject_scopes(dag: PromotionDag, state: dict[str, Any]) -> Non
             "byte_size": path.stat().st_size,
             "target_subject": targets[partition_key].target_subject,
         }
-    state["derived_inputs"] = {"target_subject_scopes": records}
+    batch_records: dict[str, Any] = {}
+    for task_id, path in dag.result_batch_job_paths.items():
+        _within_output(path, dag.plan.output_root)
+        record = dict(dag.result_batch_job_records[task_id])
+        _atomic_write_json(path, record)
+        batch_records[task_id] = {
+            "path": _portable_path(path, dag),
+            "sha256": _sha256_file(path),
+            "byte_size": path.stat().st_size,
+            "job_count": int(record.get("job_count", 0)),
+        }
+    state["derived_inputs"] = {
+        "target_subject_scopes": records,
+        "result_batch_records": batch_records,
+    }
     state["updated_at"] = _now()
     _atomic_write_json(_journal_path(dag), state)
 
@@ -2474,10 +2731,24 @@ def execute_dag(
     subprocess_runner: Callable[..., Any] | None = None,
     verify_inputs: bool = True,
     max_workers: int = 1,
+    result_max_workers: int | None = None,
 ) -> Path:
-    """Execute one dependency-aware DAG with one main-thread state writer."""
+    """Execute one dependency-aware DAG with one main-thread state writer.
 
-    workers = _validate_max_workers(max_workers)
+    Checkpoint tasks and result tasks run as distinct capacity phases: the
+    checkpoint phase drains completely before any result task is dispatched,
+    then result tasks may use a larger, CPU-friendly worker budget.
+    """
+
+    checkpoint_workers = _validate_max_workers(max_workers)
+    requested_result_workers = _validate_max_workers(
+        max_workers if result_max_workers is None else result_max_workers
+    )
+    cpu_quota = max(1, int(available_cpu_threads()))
+    # The result phase is CPU/cache-decompression bound; never let its
+    # subprocess budget exceed the Linux cgroup CPU quota actually available
+    # to the instance (25 cores on the current cloud host).
+    result_workers = min(requested_result_workers, cpu_quota)
     resolved_inputs = (
         _verify_inputs(dag)
         if verify_inputs
@@ -2498,8 +2769,12 @@ def execute_dag(
             resolved_inputs=resolved_inputs,
         )
         state["execution"] = {
-            "max_workers": workers,
+            "max_workers": checkpoint_workers,
+            "result_max_workers": result_workers,
+            "requested_result_max_workers": requested_result_workers,
+            "available_cpu_threads": cpu_quota,
             "scheduler": "dependency_aware_threadpool_subprocess_only",
+            "phase_policy": "checkpoint_phase_then_result_phase",
             "state_writer": "orchestrator_main_thread_only",
             "orchestrator_lock": {
                 "schema": lock_owner["schema"],
@@ -2511,7 +2786,11 @@ def execute_dag(
                 "stop_dispatch;cancel_not_started;wait_active;mark_unattested_outputs_orphaned"
             ),
         }
-        _materialize_subject_scopes(dag, state)
+        # Derived inputs are canonicalized once on the initial run.  On resume
+        # they are left untouched so a tampered jobs/scope file is detected by
+        # resume validation before the orchestrator overwrites the evidence.
+        if not resume:
+            _materialize_subject_scopes(dag, state)
         state_tasks = _prepare_execution_records(dag, state, resume=resume)
         journal = _journal_path(dag)
         task_order = {task.task_id: index for index, task in enumerate(dag.tasks)}
@@ -2526,7 +2805,8 @@ def execute_dag(
         in_flight: dict[Future[_SubprocessOutcome], _SubprocessInvocation] = {}
         primary_error: BaseException | None = None
         executor = ThreadPoolExecutor(
-            max_workers=workers, thread_name_prefix="promotion-subprocess"
+            max_workers=max(checkpoint_workers, result_workers),
+            thread_name_prefix="promotion-subprocess",
         )
 
         def write_state() -> None:
@@ -2551,19 +2831,47 @@ def execute_dag(
 
         try:
             while pending or in_flight:
-                while primary_error is None and len(in_flight) < workers:
-                    ready = next(
-                        (
-                            task
-                            for task in dag.tasks
-                            if task.task_id in pending
-                            and all(
-                                state_tasks[dependency].get("status") == "completed"
-                                for dependency in task.dependencies
-                            )
-                        ),
-                        None,
+                while primary_error is None:
+                    checkpoint_active = sum(
+                        invocation.task.kind == "checkpoint_batch"
+                        for invocation in in_flight.values()
                     )
+                    result_active = sum(
+                        invocation.task.kind in {"result", "result_batch"}
+                        for invocation in in_flight.values()
+                    )
+                    checkpoints_remain = (
+                        any(
+                            task.task_id in pending and task.kind == "checkpoint_batch"
+                            for task in dag.tasks
+                        )
+                        or checkpoint_active > 0
+                    )
+                    ready = None
+                    for task in dag.tasks:
+                        if task.task_id not in pending:
+                            continue
+                        if not all(
+                            state_tasks[dependency].get("status") == "completed"
+                            for dependency in task.dependencies
+                        ):
+                            continue
+                        if checkpoints_remain:
+                            if task.kind == "checkpoint_batch":
+                                ready = task
+                                break
+                            continue
+                        if task.kind in {"result", "result_batch"}:
+                            if result_active < result_workers:
+                                ready = task
+                                break
+                            continue
+                        # Manifest and analysis tasks become ready only after
+                        # their full dependency set has completed; allow one
+                        # bounded in-flight slot for the downstream phase.
+                        if len(in_flight) < max(checkpoint_workers, result_workers):
+                            ready = task
+                            break
                     if ready is None:
                         break
                     pending.remove(ready.task_id)
@@ -2764,6 +3072,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--max-workers", type=_positive_int_argument, default=1)
+    parser.add_argument(
+        "--result-workers",
+        type=_positive_int_argument,
+        default=None,
+        help="Override worker count for the CPU-bound result phase.",
+    )
+
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
@@ -2779,7 +3094,13 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
         )
         return
-    output = execute_dag(dag, resume=args.resume, max_workers=args.max_workers)
+    result_workers = plan.result_max_workers or args.result_workers or args.max_workers
+    output = execute_dag(
+        dag,
+        resume=args.resume,
+        max_workers=args.max_workers,
+        result_max_workers=result_workers,
+    )
     print(
         json.dumps(
             {

@@ -46,6 +46,8 @@ from transfer.checkpoint import (
     checkpoint_scores_to_llr,
     checkpoint_training_contract,
     load_n2p3_trunk_checkpoint,
+    predict_n2p3_checkpoint,
+    predict_n2p3_checkpoint_with_features,
 )
 from transfer.evaluation import candidate_evidence_endpoints, hit_at_repetition
 from transfer.heads import SubjectProbeHead, WaveDecoderHead
@@ -188,6 +190,31 @@ def test_n2p3net_exposes_trunk_features_without_changing_logits() -> None:
     assert logits.shape == (2, 2)
     # forward_features is part of forward, so repeated calls are finite.
     assert torch.isfinite(features).all()
+
+
+def test_checkpoint_prediction_with_features_matches_unchanged_scores() -> None:
+    trunk = _trunk()
+    x = np.random.default_rng(4).normal(size=(2, 3, 128)).astype(np.float32)
+    stats = (
+        np.zeros((1, 3, 1), dtype=np.float32),
+        np.ones((1, 3, 1), dtype=np.float32),
+    )
+    scores, features = predict_n2p3_checkpoint_with_features(
+        trunk,
+        x,
+        input_stats=stats,
+        device=torch.device("cpu"),
+    )
+    expected = predict_n2p3_checkpoint(
+        trunk,
+        x,
+        input_stats=stats,
+        device=torch.device("cpu"),
+    )
+    assert features is not None and features.ndim == 2
+    assert features.shape[0] == len(x)
+    assert np.allclose(scores, expected)
+    assert np.isfinite(features).all()
 
 
 def test_temporal_mask_is_deterministic_and_nonempty() -> None:
