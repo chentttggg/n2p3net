@@ -74,6 +74,7 @@ from research.evaluation import (  # noqa: E402
 from train.runtime import (  # noqa: E402
     available_cpu_threads,
     cpu_thread_budget,
+    resolve_cpu_threads,
     resolve_cpu_worker_plan,
 )
 from train.source_sampling import SOURCE_SELECTION_SCHEMA  # noqa: E402
@@ -1435,10 +1436,21 @@ def _checkpoint_batch_outputs(task: MatrixTask) -> tuple[Path, ...]:
     return tuple(outputs)
 
 
-def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
+def build_dag(
+    plan: PromotionPlan,
+    *,
+    device: str = "cuda",
+    result_max_workers: int | None = None,
+) -> PromotionDag:
     """Materialize the complete sequential subprocess DAG without writing files."""
 
     device_name = _text(device, "device")
+    result_cpu_threads = (
+        plan.result_threads
+        if plan.result_threads is not None
+        else resolve_cpu_threads(max(1, result_max_workers or 1))
+    )
+
     output_root = plan.output_root.resolve()
     scope_paths = {
         target.partition_key: _within_output(
@@ -1770,7 +1782,7 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                             "--device",
                             device_name,
                             "--cpu-threads",
-                            str(plan.result_threads or 1),
+                            str(result_cpu_threads),
 
                             "--output",
                             str(result_path),
@@ -3544,7 +3556,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
     plan = load_plan(args.plan, root=args.root)
-    dag = build_dag(plan, device=args.device)
+    result_workers = plan.result_max_workers or args.result_workers or args.max_workers
+    dag = build_dag(
+        plan,
+        device=args.device,
+        result_max_workers=result_workers,
+    )
     if args.dry_run:
         resolved_inputs = _verify_inputs(dag)
         print(
@@ -3555,7 +3572,6 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
         )
         return
-    result_workers = plan.result_max_workers or args.result_workers or args.max_workers
     output = execute_dag(
         dag,
         resume=args.resume,

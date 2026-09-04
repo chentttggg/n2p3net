@@ -1803,6 +1803,26 @@ def test_plan_supports_result_worker_and_thread_tuning(tmp_path: Path) -> None:
     assert argv[argv.index("--cpu-threads") + 1] == "1"
 
 
+    record = _plan_record()
+    record["result_max_workers"] = 8
+    record.pop("result_threads", None)
+    auto_plan = _load(tmp_path, record)
+    auto_dag = matrix.build_dag(auto_plan, result_max_workers=8)
+    auto_task = next(
+        task
+        for task in auto_dag.tasks
+        if task.task_id == "result_batch/source_a/rep01/p01"
+    )
+    auto_argv = next(
+        list(job["argv"])
+        for job in auto_dag.result_batch_job_records[auto_task.task_id]["jobs"]
+        if job["arm_name"] == "source_a__zero_shot"
+    )
+    assert auto_argv[auto_argv.index("--cpu-threads") + 1] == str(
+        matrix.resolve_cpu_threads(8)
+    )
+
+
 def test_plan_round_trips_euclidean_alignment_acw_state_and_sampler_kind(
     tmp_path: Path,
 ) -> None:
