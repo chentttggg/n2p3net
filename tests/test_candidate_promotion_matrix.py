@@ -1486,3 +1486,20 @@ def test_plan_supports_chunked_checkpoint_batches(tmp_path: Path) -> None:
         task for task in dag.tasks if task.task_id == "result/source_a__zero_shot/rep01/p01"
     )
     assert result.dependencies == ("checkpoint_batch/source_a/rep01/chunk-00",)
+
+
+def test_plan_supports_result_worker_and_thread_tuning(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["result_max_workers"] = 16
+    record["result_threads"] = 1
+    plan = _load(tmp_path, record)
+    assert plan.result_max_workers == 16
+    assert plan.result_threads == 1
+    dag = matrix.build_dag(plan)
+    result = next(
+        task
+        for task in dag.tasks
+        if task.task_id == "result/source_a__zero_shot/rep01/p01"
+    )
+    assert "--cpu-threads" in result.argv
+    assert result.argv[result.argv.index("--cpu-threads") + 1] == "1"

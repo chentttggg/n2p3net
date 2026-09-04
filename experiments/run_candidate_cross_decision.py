@@ -1,9 +1,11 @@
-﻿"""Evaluate known early decisions -> later unknown candidate-task decisions."""
+"""Evaluate known early decisions -> later unknown candidate-task decisions."""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
+import os
+
 import json
 import platform
 import sys
@@ -419,6 +421,21 @@ def main() -> None:
         help="JSON list or newline-delimited target subjects assigned to this checkpoint.",
     )
     parser.add_argument("--device", default="auto")
+    parser.add_argument(
+        "--cpu-threads",
+        type=int,
+        default=None,
+        help="Pin this result worker to a fixed native thread budget.",
+    )
+    if args.cpu_threads is not None:
+        if args.cpu_threads < 1:
+            parser.error("--cpu-threads must be at least one")
+        os.environ["OMP_NUM_THREADS"] = str(args.cpu_threads)
+        os.environ["MKL_NUM_THREADS"] = str(args.cpu_threads)
+        os.environ["OPENBLAS_NUM_THREADS"] = str(args.cpu_threads)
+        torch.set_num_threads(args.cpu_threads)
+
+
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     if args.candidate_loss_weight < 0.0:

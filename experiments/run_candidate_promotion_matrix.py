@@ -1,4 +1,4 @@
-﻿"""Execute a strict, resumable candidate-promotion experiment matrix.
+"""Execute a strict, resumable candidate-promotion experiment matrix.
 
 The versioned JSON plan is the authority for the scientific matrix.  This
 orchestrator only composes the existing supervised pretrainer, candidate
@@ -173,6 +173,8 @@ class PromotionPlan:
     target_cache: Path
     target_subjects: tuple[TargetSubjectSpec, ...]
     checkpoint_batch_size: int | None
+    result_max_workers: int | None
+    result_threads: int | None
     source_arms: tuple[SourceArmSpec, ...]
     training_replicates: tuple[TrainingReplicateSpec, ...]
     evaluation_arms: tuple[EvaluationArmSpec, ...]
@@ -936,7 +938,7 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
             "output_root",
             "statistical_design",
         },
-        optional={"evidence_floor", "checkpoint_batch_size"},
+        optional={"evidence_floor", "checkpoint_batch_size", "result_max_workers", "result_threads"},
         name="plan",
     )
     if record["schema"] != PLAN_SCHEMA:
@@ -972,6 +974,17 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
         if record.get("checkpoint_batch_size") is None
         else _integer(record["checkpoint_batch_size"], "checkpoint_batch_size", minimum=1)
     )
+    result_max_workers = (
+        None
+        if record.get("result_max_workers") is None
+        else _integer(record["result_max_workers"], "result_max_workers", minimum=1)
+    )
+    result_threads = (
+        None
+        if record.get("result_threads") is None
+        else _integer(record["result_threads"], "result_threads", minimum=1)
+    )
+
     assert_promotion_evidence_gate(
         test_reps,
         minimum_evidence_level=evidence_floor,
@@ -988,6 +1001,9 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
             raise ValueError("output_root escapes the explicit --root boundary.") from error
     return PromotionPlan(
         path=plan_path,
+        result_max_workers=result_max_workers,
+        result_threads=result_threads,
+
         resolution_root=resolution_root,
         raw_record=record,
         digest=semantic_sha256(record),
@@ -1267,6 +1283,9 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                             str(scope_paths[target.partition_key]),
                             "--device",
                             device_name,
+                            "--cpu-threads",
+                            str(plan.result_threads or 1),
+
                             "--output",
                             str(result_path),
                         ]
@@ -2715,6 +2734,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--max-workers", type=_positive_int_argument, default=1)
+    parser.add_argument(
+        "--result-workers",
+        type=_positive_int_argument,
+        default=None,
+        help="Override worker count for the CPU-bound result phase.",
+    )
+
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
@@ -2730,7 +2756,10 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
         )
         return
-    output = execute_dag(dag, resume=args.resume, max_workers=args.max_workers)
+    execution_workers = (
+        plan.result_max_workers or args.result_workers or args.max_workers
+    )
+    output = execute_dag(dag, resume=args.resume, max_workers=execution_workers)
     print(
         json.dumps(
             {
