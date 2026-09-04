@@ -63,24 +63,25 @@ flowchart TB
 
 ## 🎯 当前活动基线
 
-当前代码活动基线为 `352932b`（分支 `main`）：已批准 v2 主线的首轮实施批次
-（WP0/WP1 完成，WP2 faithful AS-MMD 适配路径、WP3 TSD schema、WP4
-`source_selection_record` 部分完成，进度见 v2 计划文档头部）。
-历史集成基线 `6fc1df1`（domain-transfer-v2 的历史 P3
-链：feature lift、本地 AJD 白化（旧名 GALIA Fast Alignment）、conditional RBF-MMD
-inactive policy、checkpoint 分块、source selection（旧名 PDS）、valid-subject hit@R
-主口径；与 result-optimization 的 partition result batching、zero-shot feature memo、
-CPU result-phase worker 预算合并，且 `epoch_selection` 合同已归位到 adaptation）保留为
-历史记录，不因此重新训练或改写 E1 证据。
+当前代码活动基线为 `326c8fd`（分支 `main`）：已批准 v2 主线的首轮实施批次
+（WP0/WP1 完成，其中 EA cache 带 `--reference-mode` 上游 provenance 门；WP2 faithful
+AS-MMD 适配路径、WP3 TSD schema、WP4 `source_selection_record` 部分完成，进度见
+v2 计划文档头部）。前一批次 `352932b` 与历史集成基线 `6fc1df1`（domain-transfer-v2
+的历史 P3 链：feature lift、本地 AJD 白化（旧名 GALIA Fast Alignment）、conditional
+RBF-MMD inactive policy、checkpoint 分块、source selection（旧名 PDS）、valid-subject
+hit@R 主口径；与 result-optimization 的 partition result batching、zero-shot feature
+memo、CPU result-phase worker 预算合并，且 `epoch_selection` 合同已归位到 adaptation）
+保留为历史记录，不因此重新训练或改写 E1 证据。
 2026-09-04 起，域迁移主线的权威实施方向改为
 [`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)：
 **EA 默认数据对齐 + ACW 辅助（仅 TSD 坐标/经典解码）+ faithful AS-MMD
 （target-weighted CE + logit marginal RBF-MMD + Split-BN）+ TSD 选样**；旧的
 GALIA/PDS 实现描述与旧 “conditional AS-MMD” 提法已退役（本地实现按 ACW/TSD/安全对照处理，
 真 GALIA 与 Dense PDS 为可选对照）。
-当前代码树物理冻结为 `frozen/active_source_352932b.*`（archive SHA-256
-`a762a9ae6c060310102dcef63419d53795652dd0c86a4e510af87974152b2ba7`；
-source_commit `352932b`，冻结对提交 `ab25c96`）；历史集成基线冻结
+当前代码树物理冻结为 `frozen/active_source_326c8fd.*`（archive SHA-256
+`a0889f0cc7d45b15fae00c5b113cedf7dd910147a62629087aacace3a28a0bc6`；
+source_commit `326c8fd`，冻结对提交 `af9cd8a`）；前一批次
+`frozen/active_source_352932b.*` 与历史集成基线冻结
 `frozen/active_source_6fc1df1.*` 保留不覆盖。
 E1 的训练/评估 source 不变：native=`b96a6af`、CAR=`b86d558`；valid-subject
 官方 analysis 由分析源码 `6ec71b0` 生成，均不因本次实施重训或改写。

@@ -12,7 +12,7 @@
 > - 🟡 **WP2 部分完成**：`src/transfer/asmmd.py`（Eq 1–9：target-weight、warmup 调度、logit-level marginal 无偏 RBF-MMD²、joint loss）；`SubjectAdapter` 已支持冻结 source logits/labels 的 joint adapter 训练；`run_candidate_cross_decision.py` 已加 `--as-mmd-*`/source-logits 并写入 adaptation procedure。**未完成**：live source-stream + SplitBN source/target 双 buffer 的完整 joint trunk 训练，以及 matrix plan 的 `as_mmd` 字段与 result_batch 下传。
 > - 🟡 **WP3 部分完成**：TSD schema `n2p3_source_selection/2` + `sampler_kind="target_similarity_diverse"`、legacy schema 只读兼容、source_selection_record 的 row-identity 校验。**未完成**：`dense_pds` 独立采样器与 `--sampler` 开关。
 > - 🟡 **WP4 部分完成**：matrix plan 已解析 `source_selection_record` 并写入 checkpoint batch argv；**未完成**：EA/`as_mmd`/`sampler_kind` plan 字段、`prepare_ea`/`prepare_selection` DAG 节点、result_batch 下传 `--source-stream-cache`/`--as-mmd-*`。
-> - 🟡 **WP5 进行中**：四份指导文档已对齐至 EA/ACW/AS-MMD/TSD，旧 GALIA/PDS 描述标为历史；全量测试与 ruff 通过；新 source-only freeze `frozen/active_source_352932b.*` 已生成并提交（冻结对提交 `ab25c96`）；云端 dry-run/CUDA smoke 未做（E2 不启动）。
+> - 🟡 **WP5 进行中**：四份指导文档已对齐至 EA/ACW/AS-MMD/TSD，旧 GALIA/PDS 描述标为历史；全量测试与 ruff 通过；新 source-only freeze `frozen/active_source_326c8fd.*` 已生成并提交（冻结对提交 `af9cd8a`；前批次 `active_source_352932b.*` 保留）；云端 dry-run/CUDA smoke 未做（E2 不启动）。
 
 ---
 
