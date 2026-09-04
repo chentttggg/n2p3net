@@ -25,7 +25,10 @@ from data.epochs import (
 )
 from data.events import observed_only_timeline
 from data.identity import DatasetIdentityTable
-from experiments.analyze_candidate_cross_decision import analyze_manifest
+from experiments.analyze_candidate_cross_decision import (
+    REQUESTED_METRIC,
+    analyze_manifest,
+)
 from experiments.build_candidate_cross_decision_manifest import build_manifest
 from experiments.run_candidate_cross_decision import (
     _validate_cached_candidate_labels,
@@ -738,6 +741,7 @@ def test_runner_records_all_empty_r8_partition_without_fabricated_decisions(
         output=tmp_path / "empty-manifest.json",
         bootstrap_iterations=1000,
         evidence_level=8,
+        metric_name=REQUESTED_METRIC,
     )
     analysis = analyze_manifest(manifest_path)
     assert analysis["requested_participants"] == 1
@@ -1207,6 +1211,7 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
         output=tmp_path / "experiment.json",
         bootstrap_iterations=1000,
         evidence_level=8,
+        metric_name=REQUESTED_METRIC,
     )
     analysis = analyze_manifest(manifest_path)
     assert analysis["requested_participants"] == 3

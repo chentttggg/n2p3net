@@ -66,6 +66,10 @@ flowchart TB
 代码框架活动基线已提交为 `509946c feat: domain-transfer v2 chain (…)`（分支 `domain-transfer-v2`）。
 该提交闭合的是 P3 主链软件/合同（feature lift、GALIA Fast Alignment、conditional RBF-MMD
 inactive policy、checkpoint 分块、PDS source selection），不是跨域性能或产品效果证据。
+分析链已支持 `valid_subject_operational_hit_rate`（方法学主指标：被试分母只含
+correct/incorrect/tie，无有效判定者剔除）与 `requested_participant_operational_hit_rate`
+（部署诊断：所有失败计入）两种口径，manifest builder 默认 valid-subject，旧 plan 缺
+`metric_name` 时保持 requested 以不回溯改写历史。
 该树的物理冻结为 `frozen/active_source_a102467.*`（archive SHA-256
 `ec9b4c31f4f1f570d5c20876db58f58a9c600fef7d6de1d2d0065b62e0a90421`）。
 云上 E1 native/CAR 运行继续使用性能分支冻结 `b96a6af`，不得被新 v2 freeze 覆盖。

@@ -41,7 +41,12 @@ from data.epochs import (  # noqa: E402
     loaded_epoch_cache_attestation,
 )
 from data.identity import DatasetIdentityTable  # noqa: E402
-from experiments.analyze_candidate_cross_decision import ANALYSIS_SCHEMA  # noqa: E402
+from experiments.analyze_candidate_cross_decision import (  # noqa: E402
+    ANALYSIS_SCHEMA,
+    REQUESTED_METRIC,
+    SUPPORTED_METRICS,
+    VALID_SUBJECT_METRIC,
+)
 from experiments.build_candidate_cross_decision_manifest import (  # noqa: E402
     MANIFEST_SCHEMA,
     RESULT_SCHEMA,
@@ -186,6 +191,7 @@ class PromotionPlan:
     identity_exclusion_policy: str
     output_root: Path
     statistical_design: StatisticalDesignSpec
+    metric_name: str
 
 
 @dataclass(frozen=True)
@@ -965,7 +971,7 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
             "output_root",
             "statistical_design",
         },
-        optional={"evidence_floor", "checkpoint_batch_size"},
+        optional={"evidence_floor", "checkpoint_batch_size", "metric_name"},
         name="plan",
     )
     if record["schema"] != PLAN_SCHEMA:
@@ -995,6 +1001,12 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
         "evidence_floor",
         minimum=MIN_EVIDENCE_LEVEL,
     )
+    metric_name = _text(
+        record.get("metric_name", REQUESTED_METRIC),
+        "metric_name",
+    )
+    if metric_name not in SUPPORTED_METRICS:
+        raise ValueError(f"metric_name must be one of {sorted(SUPPORTED_METRICS)!r}.")
     test_reps = _integer(record["test_reps"], "test_reps", minimum=evidence_floor)
     checkpoint_batch_size = (
         None
@@ -1046,6 +1058,7 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
             test_reps=test_reps,
             evidence_floor=evidence_floor,
         ),
+        metric_name=metric_name,
     )
 
 
@@ -1338,6 +1351,8 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
         [
             "--evidence-level",
             str(plan.statistical_design.evidence_level),
+            "--metric-name",
+            plan.metric_name,
             "--bootstrap-iterations",
             str(plan.statistical_design.bootstrap_iterations),
             "--bootstrap-seed",

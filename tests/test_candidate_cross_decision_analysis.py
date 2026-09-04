@@ -162,6 +162,7 @@ def _make_fixture(
     *,
     inference_scope: str = "conditional_frozen_models",
     replicate_count: int = 2,
+    metric_name: str = "requested_participant_operational_hit_rate",
 ) -> tuple[Path, dict[str, object]]:
     participants = ("BNCI:P01", "BNCI:P02", "BNCI:P03")
     local_subject_by_participant = {
@@ -196,7 +197,7 @@ def _make_fixture(
         },
     )
     metric = {
-        "name": "requested_participant_operational_hit_rate",
+        "name": metric_name,
         "evidence_level": 8,
         "replicate_aggregation": (
             "mean_across_declared_frozen_models"
@@ -413,6 +414,36 @@ def test_conditional_analysis_is_dynamic_and_only_bootstraps_participants(
     assert contrast["paired_unit"] == "participant"
     assert contrast["paired_bootstrap_interval"]["n_units"] == 3
     assert "paired_sign_flip_p" not in json.dumps(analysis)
+
+
+def test_valid_subject_metric_excludes_missing_denominators_and_renames_keys(
+    tmp_path: Path,
+) -> None:
+    manifest_path, _ = _make_fixture(
+        tmp_path,
+        metric_name="valid_subject_operational_hit_rate",
+    )
+    analysis = analyze_manifest(manifest_path)
+
+    assert analysis["metric"]["name"] == "valid_subject_operational_hit_rate"
+    assert analysis["metric"]["estimand_unit"] == "valid_participant"
+    assert analysis["metric"]["selection_failed_participant_value"] == "excluded"
+    assert analysis["metric"]["all_noncorrect_statuses_remain_in_the_denominator"] is False
+    assert analysis["metric"]["valid_denominator_statuses"] == [
+        "correct",
+        "incorrect",
+        "tie",
+    ]
+    for arm, metric in analysis["metrics"].items():
+        assert (
+            metric["conditional_frozen_model_valid_subject_operational_hit_rate"]
+            >= 0.0
+        )
+        assert metric["valid_participant_counts"][arm] == 3
+        assert "requested_participant_operational_hit_rate" not in metric
+    contrast = analysis["planned_contrasts"][0]
+    assert contrast["paired_unit"] == "participant"
+    assert contrast["paired_bootstrap_interval"]["n_units"] == 3
 
 
 def test_promotion_manifest_rejects_primary_metric_below_hit_at_8(

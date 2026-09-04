@@ -53,7 +53,14 @@ MANIFEST_SCHEMA = "n2p3_candidate_cross_decision_experiment/1"
 RESULT_SCHEMA = "n2p3_candidate_cross_decision_result/1"
 ANALYSIS_SCHEMA = "n2p3_candidate_cross_decision_analysis/1"
 POWER_PLAN_SCHEMA = "n2p3_power_plan_contract/1"
-SUPPORTED_METRIC = "requested_participant_operational_hit_rate"
+REQUESTED_METRIC = "requested_participant_operational_hit_rate"
+VALID_SUBJECT_METRIC = "valid_subject_operational_hit_rate"
+SUPPORTED_METRICS = frozenset({REQUESTED_METRIC, VALID_SUBJECT_METRIC})
+SUPPORTED_METRIC = REQUESTED_METRIC  # legacy alias; new manifests select a metric explicitly
+DEFAULT_METRIC = VALID_SUBJECT_METRIC
+VALID_SUBJECT_STATUSES = frozenset(
+    {DecisionStatus.CORRECT, DecisionStatus.INCORRECT, DecisionStatus.TIE}
+)
 
 
 @dataclass(frozen=True)
@@ -98,6 +105,7 @@ class ManifestSpec:
     candidate_task: CandidateTaskContract
     participants: tuple[str, ...]
     evidence_level: int
+    metric_name: str
     replicate_aggregation: str
     iterations: int
     seed: int
@@ -113,6 +121,7 @@ class ManifestSpec:
 class ValidatedRun:
     spec: RunSpec
     participant_rates: Mapping[str, float]
+    valid_participant_rates: Mapping[str, float]
     accounting: Mapping[str, Any]
 
 
@@ -654,8 +663,11 @@ def _parse_manifest(path: str | Path) -> ManifestSpec:
     if not participants or len(participants) != len(set(participants)):
         raise ValueError("target participants must be non-empty and unique.")
     metric = _mapping(raw.get("metric"), "metric")
-    if metric.get("name") != SUPPORTED_METRIC:
-        raise ValueError(f"metric.name must be {SUPPORTED_METRIC!r}.")
+    metric_name = _text(metric.get("name"), "metric name")
+    if metric_name not in SUPPORTED_METRICS:
+        raise ValueError(
+            f"metric.name must be one of {sorted(SUPPORTED_METRICS)!r}."
+        )
     evidence_level = _integer(metric.get("evidence_level"), "metric evidence_level", 1)
     assert_promotion_evidence_gate(
         evidence_level,
@@ -710,6 +722,7 @@ def _parse_manifest(path: str | Path) -> ManifestSpec:
         candidate_task,
         participants,
         evidence_level,
+        metric_name,
         expected_aggregation,
         iterations,
         seed,
@@ -956,6 +969,7 @@ def _validate_result(manifest: ManifestSpec, spec: RunSpec) -> ValidatedRun:
     if canonical_json_bytes(result.get("decision_accounting")) != canonical_json_bytes(accounting):
         raise ValueError("decision_accounting disagrees with primary outcomes and failure ledger.")
     rates = {}
+    valid_rates = {}
     selection_failed = {
         failure.participant_key for failure in spec.plan.participant_selection_failures
     }
@@ -967,6 +981,12 @@ def _validate_result(manifest: ManifestSpec, spec: RunSpec) -> ValidatedRun:
             and outcome.status == DecisionStatus.CORRECT
             for outcome in outcomes
         )
+        valid = sum(
+            outcome.key.subject_id == participant
+            and outcome.evidence_level == manifest.evidence_level
+            and outcome.status in VALID_SUBJECT_STATUSES
+            for outcome in outcomes
+        )
         if participant in selection_failed:
             if requested:
                 raise AssertionError("selection-failed participant has planned decisions")
@@ -975,6 +995,8 @@ def _validate_result(manifest: ManifestSpec, spec: RunSpec) -> ValidatedRun:
             if requested < 1:
                 raise ValueError("planned participant has no decision denominator.")
             rates[participant] = correct / requested
+            if valid > 0:
+                valid_rates[participant] = correct / valid
     expected_endpoints = [
         {
             "participant_key": participant,
@@ -1012,7 +1034,7 @@ def _validate_result(manifest: ManifestSpec, spec: RunSpec) -> ValidatedRun:
         or result.get("binary_auc_mean") is not None
     ):
         raise ValueError("empty decision plan must not fabricate evaluation evidence.")
-    return ValidatedRun(spec, rates, accounting)
+    return ValidatedRun(spec, rates, valid_rates, accounting)
 
 
 def _cell_values(
@@ -1029,10 +1051,19 @@ def _cell_values(
             participant_values = {
                 participant: value
                 for partition in manifest.design.partition_keys
-                for participant, value in indexed[
-                    (arm, replicate, partition)
-                ].participant_rates.items()
+                for participant, value in (
+                    indexed[(arm, replicate, partition)].participant_rates.items()
+                    if manifest.metric_name == REQUESTED_METRIC
+                    else indexed[
+                        (arm, replicate, partition)
+                    ].valid_participant_rates.items()
+                )
             }
+            if not participant_values:
+                raise ValueError(
+                    f"{manifest.metric_name} is not estimable for arm {arm!r} "
+                    f"replicate {replicate!r}: no participant has a valid denominator."
+                )
             values.update(
                 {
                     (arm, replicate, participant): value
@@ -1050,48 +1081,89 @@ def _analysis_records(
     replicate_means: Mapping[str, Mapping[str, float]],
 ) -> tuple[dict[str, Any], list[dict[str, Any]], str]:
     conditional = manifest.design.inference_scope == "conditional_frozen_models"
-    participant_means = {
-        (arm, participant): float(
-            np.mean(
-                [
+    metric_prefix = (
+        "conditional_frozen_model"
+        if conditional
+        else "training_randomness"
+    )
+    if manifest.metric_name == REQUESTED_METRIC:
+        participant_means = {
+            (arm, participant): float(
+                np.mean(
+                    [
+                        values[(arm, replicate, participant)]
+                        for replicate in manifest.design.training_replicate_keys
+                    ]
+                )
+            )
+            for arm in arms
+            for participant in manifest.participants
+        }
+        metric_suffix = "requested_participant_operational_hit_rate"
+        metric_kwargs: dict[str, Any] = {}
+    else:
+        participant_means = {}
+        for arm in arms:
+            for participant in manifest.participants:
+                observed = [
                     values[(arm, replicate, participant)]
                     for replicate in manifest.design.training_replicate_keys
+                    if (arm, replicate, participant) in values
                 ]
-            )
-        )
-        for arm in arms
-        for participant in manifest.participants
-    }
+                if observed:
+                    participant_means[(arm, participant)] = float(np.mean(observed))
+        metric_suffix = "valid_subject_operational_hit_rate"
+        metric_kwargs = {
+            "valid_participant_counts": {
+                arm: len(
+                    {
+                        participant
+                        for (key_arm, _, participant) in values
+                        if key_arm == arm
+                    }
+                )
+                for arm in arms
+            }
+        }
     metrics = {
         arm: {
-            (
-                "conditional_frozen_model_requested_participant_operational_hit_rate"
-                if conditional
-                else "training_randomness_requested_participant_operational_hit_rate"
-            ): float(
+            f"{metric_prefix}_{metric_suffix}": float(
                 np.mean(
-                    [participant_means[(arm, participant)] for participant in manifest.participants]
+                    [
+                        value
+                        for (key_arm, participant), value in participant_means.items()
+                        if key_arm == arm
+                    ]
                 )
             ),
-            "per_training_replicate_requested_participant_operational_hit_rate": dict(
-                replicate_means[arm]
-            ),
+            f"per_training_replicate_{metric_suffix}": dict(replicate_means[arm]),
+            **metric_kwargs,
         }
         for arm in arms
     }
     contrasts = []
     for index, (left, right) in enumerate(manifest.design.planned_contrasts):
-        labels = manifest.participants if conditional else manifest.design.training_replicate_keys
-        differences = np.asarray(
-            [
-                (
+        if conditional:
+            labels = tuple(
+                participant
+                for participant in manifest.participants
+                if (left, participant) in participant_means
+                and (right, participant) in participant_means
+            )
+            differences = np.asarray(
+                [
                     participant_means[(left, label)] - participant_means[(right, label)]
-                    if conditional
-                    else replicate_means[left][label] - replicate_means[right][label]
-                )
-                for label in labels
-            ]
-        )
+                    for label in labels
+                ]
+            )
+        else:
+            labels = manifest.design.training_replicate_keys
+            differences = np.asarray(
+                [
+                    replicate_means[left][label] - replicate_means[right][label]
+                    for label in labels
+                ]
+            )
         if len(differences) >= 2:
             interval_record: dict[str, Any] = {
                 "status": "estimated",
@@ -1190,12 +1262,30 @@ def analyze_manifest(path: str | Path) -> dict[str, Any]:
             "intervals_are_pointwise": True,
         },
         "metric": {
-            "name": SUPPORTED_METRIC,
+            "name": manifest.metric_name,
             "evidence_level": manifest.evidence_level,
             "replicate_aggregation": manifest.replicate_aggregation,
-            "estimand_unit": "requested_participant",
-            "selection_failed_participant_value": 0.0,
-            "all_noncorrect_statuses_remain_in_the_denominator": True,
+            "estimand_unit": (
+                "requested_participant"
+                if manifest.metric_name == REQUESTED_METRIC
+                else "valid_participant"
+            ),
+            "selection_failed_participant_value": (
+                0.0 if manifest.metric_name == REQUESTED_METRIC else "excluded"
+            ),
+            "all_noncorrect_statuses_remain_in_the_denominator": (
+                manifest.metric_name == REQUESTED_METRIC
+            ),
+            "valid_denominator_statuses": (
+                None
+                if manifest.metric_name == REQUESTED_METRIC
+                else ["correct", "incorrect", "tie"]
+            ),
+            "excluded_statuses": (
+                None
+                if manifest.metric_name == REQUESTED_METRIC
+                else ["incomplete", "abstain", "fit_failure", "selection_failed"]
+            ),
         },
         "requested_participants": len(manifest.participants),
         "training_replicates": list(manifest.design.training_replicate_keys),

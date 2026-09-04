@@ -296,6 +296,21 @@ def test_plan_rejects_evidence_floor_below_one(tmp_path: Path) -> None:
             _load(tmp_path, record)
 
 
+
+def test_plan_metric_name_defaults_requested_and_validates(tmp_path: Path) -> None:
+    legacy = _load(tmp_path, _plan_record())
+    assert legacy.metric_name == "requested_participant_operational_hit_rate"
+
+    record = _plan_record()
+    record["metric_name"] = "valid_subject_operational_hit_rate"
+    plan = _load(tmp_path, record)
+    assert plan.metric_name == "valid_subject_operational_hit_rate"
+    assert "metric_name" in plan.raw_record
+
+    record["metric_name"] = "made_up_metric"
+    with pytest.raises(ValueError, match="metric_name must be one of"):
+        _load(tmp_path, record)
+
 def test_plan_rejects_non_integer_evidence_floor(tmp_path: Path) -> None:
     for floor in (True, 2.5, "2"):
         record = _plan_record()

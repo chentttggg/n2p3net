@@ -27,7 +27,7 @@ unset 守卫变量后复跑。详见 [`framework_acceptance_20260903.zh.md`](fra
 
 ## 1. 目标与不可偷换的估计量
 
-最终产品目标是成人 BrainSync：同一被试完成预声明的已知 calibration decisions，随后在目标数字未知且目标发生变化的 later independent decisions 中，以固定最大证据预算完成 9 选 1。主指标是 subject-macro operational `hit@R`；缺 candidate、tie、abstain、fit failure 和 participant selection failure 都必须进入预声明分母。
+最终产品目标是成人 BrainSync：同一被试完成预声明的已知 calibration decisions，随后在目标数字未知且目标发生变化的 later independent decisions 中，以固定最大证据预算完成 9 选 1。方法学主指标是 subject-macro valid-subject `hit@R`：每个被试的分母只含状态为 correct/incorrect/tie 的判定，无有效判定的被试整体排除；部署口径 requested-participant operational `hit@R`（缺 candidate、tie、abstain、fit failure、selection failure 都计入失败）必须作为诊断轨道同时报告，不得删除。
 
 下面三个估计量严格分开：
 
@@ -230,7 +230,7 @@ y_i=\mathbb 1[c_i=d^*],
 \]
 因此一个 decision label 与 membership 一起会确定全部 trial labels；“decision 标签较少所以 `L_candidate` 数学上只能加项”并非信息论定理。保留 `L_trial` 的理由是预注册的优化稳定性、局部监督、有限样本正则化和 trial-level 校准需求；`L_candidate` 仍不得单独作为晋升 arm。\(\lambda_{set}\in[0.1,0.5]\) 是预注册搜索范围而非理论上界，实际比例还取决于 temperature、pos_weight、candidate count、logit 尺度、decision 间方差与 batch 组成。聚合算子第一版固定为 count-neutral mean（与 `candidate_evidence` 的冻结语义一致），可学习 ρ_ω 仍限线性/温度参数。
 
-命名纪律：`L_candidate` 是 candidate top-1 ranking surrogate，不是 hit@R 的直接可微形式；任何 arm 的晋升只看 operational hit@R（反例 14），surrogate 改善只作机制证据。
+命名纪律：`L_candidate` 是 candidate top-1 ranking surrogate，不是 hit@R 的直接可微形式；任何 arm 的晋升只看 valid-subject `hit@R`，并同时报告 operational `hit@R`（反例 14），surrogate 改善只作机制证据。
 
 它只能证明 held-out domain generalization，不能声称已经对齐到一个未观测 target。
 
@@ -348,13 +348,11 @@ private-domain loss；因此 fold 合法性不应被误报为已经完成特征�
 评价必须同时保留五条轨道。固定预算选择准确率是模型主比较；动态停止是
 在线策略评价；可靠性、机制和统计轨道不能被压缩成一个分数。记
 `\mathcal U` 为预请求 participant 集合（包含 participant selection failure），
-`\mathcal J_u` 为 participant `u` 的预请求 decision 集合；若 participant failure
-导致 `|\mathcal J_u|=0`，定义其 `H^{op}_{u,r}=0`，不能从 subject-macro 分母删除。
-`V` 为冻结 candidate vocabulary，`R_max` 为最大 evidence budget。对每个 decision
-`j` 和 prefix `r`，`I^correct_{j,r}` 仅在状态为 `correct` 时取 1，所有
-incomplete、tie、abstain、fit failure 和 participant failure 取 0。
+`\mathcal J_u` 为 participant `u` 的预请求 decision 集合。`V` 为冻结 candidate
+vocabulary，`R_max` 为最大 evidence budget。对每个 decision `j` 和 prefix `r`，
+`I^correct_{j,r}` 仅在状态为 `correct` 时取 1。
 
-#### 轨道 1：固定证据预算的 operational 选择准确率
+#### 轨道 1：固定证据预算的选择准确率
 
 每个 prefix 的候选选择为：
 
@@ -365,7 +363,31 @@ S_{j,d,r}=\operatorname{Aggregate}\{e_i:q_i=1,\ c_i=d,\ \operatorname{rep}_i\le 
 \]
 
 若是 row/column 协议，`d` 必须由 contract 指定为 row-column 交点，不能把
-row accuracy 当成 character accuracy。定义 participant-level operational accuracy：
+row accuracy 当成 character accuracy。
+
+**valid-subject 口径（方法学主指标）**：valid decision 状态集合只含
+`correct`、`incorrect`、`tie`；incomplete、abstain、fit failure 和 participant
+selection failure 都不进入该被试的分母。
+
+\[
+\mathcal J^{val}_{u,r}=\{j\in\mathcal J_u:\ \text{status}_{j,r}\in\{correct, incorrect, tie\}\},
+\]
+
+\[
+H^{\mathrm{val}}_{u,r}
+=\frac{1}{|\mathcal J^{val}_{u,r}|}\sum_{j\in\mathcal J^{val}_{u,r}}
+I^{\mathrm{correct}}_{j,r}
+\quad(|\mathcal J^{val}_{u,r}|>0),
+\qquad
+H^{\mathrm{val}}_r
+=\frac{1}{|\{u:|\mathcal J^{val}_{u,r}|>0\}|}
+\sum_{u:|\mathcal J^{val}_{u,r}|>0}H^{\mathrm{val}}_{u,r}.
+\]
+
+`H^val_r` 是 subject-macro 主指标；没有任何 valid decision 的被试整体剔除。
+paired contrast 只使用两侧 arm 都有 valid 率的被试。
+
+**operational 口径（部署诊断，必须同时报告）**：
 
 \[
 H^{\mathrm{op}}_{u,r}
@@ -378,22 +400,11 @@ H^{\mathrm{op}}_r
 =\frac{1}{|\mathcal U|}\sum_{u\in\mathcal U}H^{\mathrm{op}}_{u,r}.
 \]
 
-`H^op_r` 是 subject-macro 主指标；decision-level 请求分母固定为
-`N_requested = sum_u |J_u|`，participant-level 分母为 `N_participant_requested=|U|`。
-两者都不能删除失败 decision 或 participant。另报诊断性的 eligible
-准确率：
-
-\[
-H^{\mathrm{cond}}_r
-=\frac{\sum_j I^{\mathrm{correct}}_{j,r}}
-{\sum_j I^{\mathrm{eligible}}_{j,r}},
-\qquad
-I^{\mathrm{eligible}}_{j,r}=1[\text{coverage complete}\land\text{fit succeeded}].
-\]
-
-`H^cond_r` 不能替代 `H^op_r`。主报告预先指定 `r=R_max`，同时保存
-`r=1,...,R_max` 的整条曲线；这里的 `hit@R` 是固定重复预算后的 top-1
-selection accuracy，不是 top-R ranking accuracy。
+`H^op_r` 的 decision-level 请求分母固定为 `N_requested = sum_u |J_u|`，
+participant-level 分母为 `N_participant_requested=|U|`；不能删除失败 decision
+或 participant，也不能用 `H^val_r` 替代部署诊断。主报告预先指定 `r=R_max`，
+同时保存 `r=1,...,R_max` 的整条曲线；这里的 `hit@R` 是固定重复预算后的
+top-1 selection accuracy，不是 top-R ranking accuracy。
 
 #### 轨道 2：动态停止和在线成本
 
@@ -546,7 +557,7 @@ run contract 以 max 判定，默认 `r_max=0.5`。任一样本 `r_j>r_max` 时�
 \(\delta_j\ne0\) 自动超限，\(Z_j=\delta_j=0\) 的比值定义为 0。
 
 `r_j` 的 reduction、范数、分位数和超限处理必须在 run contract 中冻结；
-`D_\mu` 下降或 domain probe 下降而 `H^op_r` 下降时，判为 negative transfer。
+`D_\mu` 下降或 domain probe 下降而 `H^val_r` 下降（并核对 `H^op_r`）时，判为 negative transfer。
 
 #### 轨道 5：统计推断和证据边界
 
@@ -666,6 +677,7 @@ prepare/runner/contract 全链。完整链和反例测试见
 
 | 机制 | 当前实现 | 不可静默降级的规则 |
 |---|---|---|
+| M0 hit 口径 | manifest/plan 显式 `metric_name`；analyzer 同时支持 `valid_subject_operational_hit_rate` 与 `requested_participant_operational_hit_rate`；builder 默认 valid-subject，旧 plan 缺省保持 requested | valid 分母只含 correct/incorrect/tie；无 valid 被试时 arm 不估值并失败；requested 分母不得删除任何失败；plan/metric/power-plan 三者不一致时 fail-closed |
 | P0 Split-BN | ordered source-domain axis、temporal/spatial/MST 三处 buffer、checkpoint 和 target selector 已贯通 | 训练缺 domain index、评估缺 buffer source、buffer/axis/weight 不一致均失败；target eval 不更新 buffer |
 | P1 drop-to-consensus | source-only residual、Bernoulli drop、`m=0/m=1` counterfactual ledger 与 checkpoint record 已贯通 | target/评估永不 route source residual；固定 `m=1` ratio gate 超过 `r_max=0.5` 时整次 run invalid |
 | P2 direct-decision loss | direct-membership metadata、完整 decision sampler、prefix loss 与 training contract 已贯通 | vocabulary/coverage/membership 不完整时失败；每 batch 至少 128 rows；即使 `lambda_candidate=0` 也不得回退 flat batching |

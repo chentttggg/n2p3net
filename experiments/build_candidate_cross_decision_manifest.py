@@ -32,6 +32,10 @@ from research.contracts import (  # noqa: E402
     training_procedure_record,
 )
 from research.evaluation import source_snapshot_sha256_from_archive_manifest  # noqa: E402
+from experiments.analyze_candidate_cross_decision import (  # noqa: E402
+    DEFAULT_METRIC,
+    SUPPORTED_METRICS,
+)
 from transfer.checkpoint import (  # noqa: E402
     checkpoint_training_contract,
     load_checkpoint_payload,
@@ -234,8 +238,19 @@ def build_manifest(
     bootstrap_seed: int = 0,
     confidence_level: float = 0.95,
     evidence_level: int = MIN_PROMOTION_HIT_AT_R,
+    metric_name: str = DEFAULT_METRIC,
     power_plan_contract: Mapping[str, Any] | None = None,
 ) -> Path:
+    if metric_name not in SUPPORTED_METRICS:
+        raise ValueError(f"metric_name must be one of {sorted(SUPPORTED_METRICS)!r}.")
+    if power_plan_contract is not None:
+        primary_metric = (
+            power_plan_contract.get("primary_metric")
+            if isinstance(power_plan_contract, Mapping)
+            else None
+        )
+        if not isinstance(primary_metric, Mapping) or primary_metric.get("name") != metric_name:
+            raise ValueError("power plan primary metric disagrees with requested metric_name.")
     output_path = Path(output).resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     source_manifest_path = Path(source_snapshot_manifest).resolve()
@@ -417,7 +432,7 @@ def build_manifest(
             "candidate_task_contract_digest": semantic_sha256(candidate_task.record()),
         },
         "metric": {
-            "name": "requested_participant_operational_hit_rate",
+            "name": metric_name,
             "evidence_level": evidence_level,
             "replicate_aggregation": aggregation,
         },
@@ -451,6 +466,12 @@ def main() -> None:
     )
     parser.add_argument("--planned-contrast", nargs=2, action="append", required=True)
     parser.add_argument("--evidence-level", type=int, default=MIN_PROMOTION_HIT_AT_R)
+    parser.add_argument(
+        "--metric-name",
+        choices=tuple(sorted(SUPPORTED_METRICS)),
+        default=DEFAULT_METRIC,
+        help="Primary manifest/analysis metric; valid_subject_operational_hit_rate is the default.",
+    )
     parser.add_argument("--bootstrap-iterations", type=int, default=10_000)
     parser.add_argument("--bootstrap-seed", type=int, default=0)
     parser.add_argument("--confidence-level", type=float, default=0.95)
@@ -468,6 +489,7 @@ def main() -> None:
         bootstrap_seed=args.bootstrap_seed,
         confidence_level=args.confidence_level,
         evidence_level=args.evidence_level,
+        metric_name=args.metric_name,
         power_plan_contract=power,
     )
 
