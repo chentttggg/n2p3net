@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import json
@@ -1469,3 +1469,20 @@ def test_plan_rejects_candidate_loss_on_zero_shot_arm(tmp_path: Path) -> None:
     record["evaluation_arms"][0]["candidate_loss_weight"] = 0.1
     with pytest.raises(ValueError, match="candidate_loss_weight must be 0"):
         _load(tmp_path, record)
+
+
+def test_plan_supports_chunked_checkpoint_batches(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["checkpoint_batch_size"] = 1
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+    checkpoints = [task for task in dag.tasks if task.kind == "checkpoint_batch"]
+    assert len(checkpoints) == 8
+    assert {
+        "checkpoint_batch/source_a/rep01/chunk-00",
+        "checkpoint_batch/source_a/rep01/chunk-01",
+    } <= {task.task_id for task in checkpoints}
+    result = next(
+        task for task in dag.tasks if task.task_id == "result/source_a__zero_shot/rep01/p01"
+    )
+    assert result.dependencies == ("checkpoint_batch/source_a/rep01/chunk-00",)
