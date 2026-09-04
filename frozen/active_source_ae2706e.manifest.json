@@ -1,0 +1,11 @@
+﻿{
+    "schema":  "n2p3_source_freeze/1",
+    "archive":  "active_source_ae2706e.source-only.tar.gz",
+    "archive_sha256":  "cca169eda15cef9783e80557f00bf191a8c64f47f285d25d8bc6d854a74d6fa2",
+    "source_commit":  "ae2706e72e78d7c769c6774d55aa7044c62b2c98",
+    "member_count":  217,
+    "byte_size":  1070058,
+    "scope":  "Integrated main at ae2706e: approved domain-transfer v2 mainline implementation (WP0 complete incl. negative-MMD ledger and far-distance tie-break test; WP1 EA complete incl. reference-mode gate; WP2 faithful AS-MMD partial; WP3 TSD partial incl. tsd_dropped_* checkpoint counters; WP4 plan source_selection_record partial; docs aligned). Excludes Paper PDFs, frozen archives, and all data/caches.",
+    "contains_raw_eeg_cache_or_model_checkpoint":  false,
+    "replacement_policy":  "integrated-workspace source anchor for v2 mainline implementation; do not overwrite; E1 execution freezes b96a6af/b86d558 and prior integrated freezes 6fc1df1/352932b/326c8fd remain unchanged"
+}
