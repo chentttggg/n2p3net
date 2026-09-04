@@ -1556,6 +1556,32 @@ def test_result_phase_uses_declared_result_worker_budget(
     )
 
 
+def test_result_workers_are_clamped_to_available_cpu_quota(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dag = matrix.build_dag(_load(tmp_path))
+    monkeypatch.setattr(matrix, "available_cpu_threads", lambda: 25)
+
+    def succeed(argv: list[str], **_: Any) -> None:
+        output = _output_from_argv(argv)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(f"artifact:{output.name}", encoding="utf-8")
+
+    monkeypatch.setattr(matrix, "_artifact_attestation", _fake_artifact_attestation)
+    monkeypatch.setattr(matrix, "_embedded_artifact_record", _fake_embedded)
+    matrix.execute_dag(
+        dag,
+        subprocess_runner=succeed,
+        verify_inputs=False,
+        max_workers=1,
+        result_max_workers=100,
+    )
+    journal = json.loads(matrix._journal_path(dag).read_text(encoding="utf-8"))
+    assert journal["execution"]["requested_result_max_workers"] == 100
+    assert journal["execution"]["result_max_workers"] == 25
+    assert journal["execution"]["available_cpu_threads"] == 25
+
+
 @pytest.mark.parametrize("workers", [0, -1, True, 1.5])
 def test_execute_rejects_invalid_max_workers(tmp_path: Path, workers: object) -> None:
     dag = matrix.build_dag(_load(tmp_path))

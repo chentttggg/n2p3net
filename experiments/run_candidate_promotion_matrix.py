@@ -67,7 +67,11 @@ from research.contracts import (  # noqa: E402
 from research.evaluation import (  # noqa: E402
     source_snapshot_sha256_from_archive_manifest,
 )
-from train.runtime import cpu_thread_budget, resolve_cpu_worker_plan  # noqa: E402
+from train.runtime import (  # noqa: E402
+    available_cpu_threads,
+    cpu_thread_budget,
+    resolve_cpu_worker_plan,
+)
 from transfer.checkpoint import (  # noqa: E402
     checkpoint_training_contract,
     load_checkpoint_payload,
@@ -2688,9 +2692,14 @@ def execute_dag(
     """
 
     checkpoint_workers = _validate_max_workers(max_workers)
-    result_workers = _validate_max_workers(
+    requested_result_workers = _validate_max_workers(
         max_workers if result_max_workers is None else result_max_workers
     )
+    cpu_quota = max(1, int(available_cpu_threads()))
+    # The result phase is CPU/cache-decompression bound; never let its
+    # subprocess budget exceed the Linux cgroup CPU quota actually available
+    # to the instance (25 cores on the current cloud host).
+    result_workers = min(requested_result_workers, cpu_quota)
     resolved_inputs = (
         _verify_inputs(dag)
         if verify_inputs
@@ -2713,6 +2722,8 @@ def execute_dag(
         state["execution"] = {
             "max_workers": checkpoint_workers,
             "result_max_workers": result_workers,
+            "requested_result_max_workers": requested_result_workers,
+            "available_cpu_threads": cpu_quota,
             "scheduler": "dependency_aware_threadpool_subprocess_only",
             "phase_policy": "checkpoint_phase_then_result_phase",
             "state_writer": "orchestrator_main_thread_only",
