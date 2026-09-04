@@ -1,4 +1,4 @@
-"""Evaluate known early decisions -> later unknown candidate-task decisions."""
+﻿"""Evaluate known early decisions -> later unknown candidate-task decisions."""
 
 from __future__ import annotations
 
@@ -1073,19 +1073,19 @@ def main() -> None:
             "test_repetitions": args.test_reps,
             "minimum_evidence_level": args.min_evidence_level,
             "max_test_selections": args.max_test_selections,
-            "epoch_selection": args.epoch_selection,
         },
         adaptation={
             "procedure": {
                 "head": head_mode,
                 "epochs": epochs,
+                "epoch_selection": args.epoch_selection,
                 "learning_rate": lr,
                 "batch_size": args.batch_size,
                 "adapt_batchnorm": bool(args.adapt_batchnorm),
                 "normalization": normalization,
                 "target_stat_weight": args.target_stat_weight,
-                  "candidate_loss_weight": args.candidate_loss_weight,
-                  "candidate_loss_temperature": args.candidate_loss_temperature,
+                "candidate_loss_weight": args.candidate_loss_weight,
+                "candidate_loss_temperature": args.candidate_loss_temperature,
 
                 "fold_local_qc": bool(args.fold_local_qc),
                 "identity_exclusion_policy": args.identity_exclusion_policy,
