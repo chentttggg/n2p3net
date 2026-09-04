@@ -1,6 +1,6 @@
 # N2P3-Net 特征域迁移活动科研规范
 
-_版本：2026-09-04 · 活动基线：`ef7a40e` · 唯一活动指导文件 · 适用范围：N2P3-Net P300/ERP 域迁移、目标校准与候选决策_
+_版本：2026-09-04 · 活动基线：`509946c`（分支 `domain-transfer-v2`）· 唯一活动指导文件 · 适用范围：N2P3-Net P300/ERP 域迁移、目标校准与候选决策_
 
 > 2026-09-02b 架构裁决（见 [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)）：
 > 横向嵌套（多个 N2P3Net 当外层网络神经元）被否决；活动方向改为纵向分层——
@@ -155,13 +155,30 @@ source 有真实 binary labels 时，对 `Z_inv` 做 class-conditional alignment
  +\kappa\left\|C_{d_1,c}-C_{d_2,c}\right\|_F^2.
 \]
 
-均值项继续作为默认；`conditional_rbf_mmd` 已作为显式实验 arm 接入 runner，要求每个
-域/类别 cell 达到最小样本数并把 bandwidth、active cells 和 MMD diagnostics 写入 ledger。
-CORAL covariance 项作为独立 ablation。marginal `P(Z)` alignment、无条件 GRL 和伪标签
+均值项继续作为默认；`conditional_rbf_mmd` 已作为显式实验 arm 接入 runner。runner
+暴露 `--feature-alignment-min-cell-count` 与 `--feature-alignment-inactive-policy`；
+`record` 把 inactive 批次写入 ledger 后继续（开发默认），`fail_closed` 在含 alignment
+weight 的 batch 没有 active cell 时终止本 fold。两者都不允许把缺项写成零距离。
+bandwidth、active cells 和 MMD diagnostics 必须写入 ledger。CORAL covariance 项作为独立
+ablation。marginal `P(Z)` alignment、无条件 GRL 和伪标签
 alignment 不得进入默认 recipe；论文 faithful 的 marginal logit MMD 只能作为 exploratory
 对照，不能仅凭 MMD 降低晋升。
 
 有效 cell 数、样本数、每域质量、alignment distance 和 task loss 必须保存。cell 不足时标记 `alignment_inactive` 或 fail-closed，不能把缺项当零距离。
+
+
+### 2.5b Source-row selection（PDS 选样）
+
+PDS 选样是**训练数据子集控制**，不是 alignment。它只用声明的 target calibration 或
+target unlabelled buffer 计算 source 行与 target prototype 的相似度与行间排斥项；
+`target test` 永远不得进入 sampler。当前实现合同（`509946c`）：
+
+- `experiments/prepare_domain_features.py` 先把 `EpochDataset` 构造为显式同维 feature matrix（默认 identity flatten，可选 spatial/temporal basis），并写 feature-matrix record；
+- `experiments/prepare_source_selection.py` 输出 `n2p3_pds_source_selection/1` JSON：selection scope、seed、`target_temperature`、`diversity_weight`、bandwidth 与 bandwidth estimator、source/target/selected 三个 digest、label/group quota 必须落盘；
+- `run_pretrain_supervised.py --source-selection-record` 绑定 source cache SHA-256；selected rows 与 holdout/QC mask 取交集；checkpoint 携带 `source_selection_contract`、`pds_dropped_source_epochs[_by_label]`；
+- 批量 LOSO 必须为全部 job 共用同一个 selection record。按单个 target subject 拟合的 per-target selection 会让 source training procedure 在 fold 间不同，arm manifest 必须拒绝；此类设计只能作为独立 per-participant 方案另行预注册，不能伪装为统一 arm；
+- bandwidth 默认估计在小池为 all-pairs median，大池为确定性 512 行 subsample median（record 显式声明 estimator）；diversity 排斥项用增量 O(N·P) 更新替代 O(N²·P) 全 kernel，避免真实 cache 尺寸下 OOM。
+
 
 ## 3. 三种训练 regime
 
@@ -641,7 +658,10 @@ cluster CI，以及 source/cache/checkpoint/environment/plan 的 digest。
 
 ### 9.1 已闭合的框架合同
 
-截至 2026-09-03，以下实现随 `ef7a40e` 提交；完整链和反例测试见
+截至 2026-09-04，`509946c`（`domain-transfer-v2`）在 `ef7a40e` 框架基础上闭合
+P3 主链：feature-matrix 构造、standalone GALIA/Fast-Alignment fit、conditional
+RBF-MMD inactive policy、checkpoint batch 分块，以及 PDS source selection 的
+prepare/runner/contract 全链。完整链和反例测试见
 [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md)。
 
 | 机制 | 当前实现 | 不可静默降级的规则 |
@@ -649,7 +669,7 @@ cluster CI，以及 source/cache/checkpoint/environment/plan 的 digest。
 | P0 Split-BN | ordered source-domain axis、temporal/spatial/MST 三处 buffer、checkpoint 和 target selector 已贯通 | 训练缺 domain index、评估缺 buffer source、buffer/axis/weight 不一致均失败；target eval 不更新 buffer |
 | P1 drop-to-consensus | source-only residual、Bernoulli drop、`m=0/m=1` counterfactual ledger 与 checkpoint record 已贯通 | target/评估永不 route source residual；固定 `m=1` ratio gate 超过 `r_max=0.5` 时整次 run invalid |
 | P2 direct-decision loss | direct-membership metadata、完整 decision sampler、prefix loss 与 training contract 已贯通 | vocabulary/coverage/membership 不完整时失败；每 batch 至少 128 rows；即使 `lambda_candidate=0` 也不得回退 flat batching |
-| P3 GALIA/AS-MMD | GALIA state、Fast Alignment scope gate、conditional RBF-MMD、PDS-style source sampler 与 promotion 参数已实现 | 只接受显式同维 feature matrices；`rank/condition/AJD residual`、target buffer scope、MMD active cells 和 selected-row digest 缺失时 fail-closed；无真实跨域性能证据 |
+| P3 GALIA/AS-MMD | `prepare_domain_features.py`（identity/spatial/temporal lift）、`fit_galia_alignment.py`（standalone fit + target Fast Alignment scope/state record）、`conditional_rbf_mmd` 及 inactive-policy、`prepare_source_selection.py` 与 pretrain `--source-selection-record` 绑定、checkpoint batch 分块已贯通 | 只接受显式同维 feature matrices；`rank/condition/AJD residual`、target buffer scope、MMD active cells 和 selected-row digest 缺失或篡改时 fail-closed；无真实跨域性能证据 |
 
 N2P3Net core、causal-v3 输入合同和统一 candidate-evidence core 继续保留。
 `FeatureDomainTransfer` 仍负责 invariant/private、目标 residual 与 source residual；source-domain
@@ -663,7 +683,7 @@ axis 只在 source training 中驱动 P0/P1 等声明机制，未知 target 永�
 - P2 只接受 direct candidate membership；row/column promotion runner 不能把 9-choice direct loss 伪装为 row/column 任务，需先实现 typed protocol dispatch
 - target result/manifest 尚未重复写入 P0/P1 effective buffer source、estimand 与 buffer digest；executed-source identity、lockfile/environment digest 与 target OOM requested-denominator 也未闭合
 - 尚无 active real source/target cache、真实 CUDA、成人 BrainSync multi-session/target-switch 或 matched fold/seed paired CI
-- GALIA 当前只接收显式同维 feature matrices；原始异构 `EpochDataset` 的 domain-specific feature lift 尚未默认自动构建
+- GALIA 的默认 lift 是 identity flatten 并可选 spatial/temporal basis；原始异构 `EpochDataset` 的逐域语义 lift（xDAWN/CSP 等）尚未默认自动构建，真实缓存上的 rank/condition/AJD 验收也未完成
 - WorkBuddy 会话内的高负载测试异常已定性为环境层故障，不归责于项目代码；独立 shell/云端复跑纪律仍是开放工程门禁，15ms 并发测试窗口改进属于可选测试维护
 
 因此，当前只能声称 framework/contract 已实现。不得声称 feature transfer、decision learning、
@@ -671,12 +691,13 @@ axis 只在 source training 中驱动 P0/P1 等声明机制，未知 target 永�
 
 ### 9.3 下一步执行顺序
 
-1. 生成当前执行树的 source-only archive 和 manifest，不能复用 `c7bf860` 的旧 source archive
+1. 为 `domain-transfer-v2` 生成新的 source-only archive 与 manifest，不能复用 `b96a6af`（性能分支 E1 在用）或任何旧 source archive
 2. 对 active cache 做 protocol 和 identity attestation；direct 与 row/column 数据不得混用 P2 合同
-3. 为 BI 家族构造并核验 domain-specific feature lift，再生成 GALIA state/aligned artifact；GTN 3 导路线暂不绕过 rank gate
-4. 建立绑定 source、environment、cache、plan 与 checkpoint 的 dry-run，再做单 worker CUDA smoke
-5. 仅在预声明的 matched fold/seed 下运行 pooled-BN、P0、P1、P3 和允许的 P2 direct arms，并报告 participant-cluster CI
-6. 在 target-calibration、row/column dispatch 与 target failure ledger 各自闭合前，不扩大主张或启动不受合同支持的 arm
+3. 用 `prepare_domain_features.py` 对 BI 源/目标缓存构造并核验 feature lift，再用 `fit_galia_alignment.py` 生成 GALIA state/aligned artifact 并过 rank/condition/AJD 门；GTN 3 导路线暂不绕过 rank gate
+4. 需要 source 子集时用 `prepare_source_selection.py` 预生成一个全 arm 共用的 PDS record，再在 `run_pretrain_supervised.py` 绑定；per-target 动态 selection 必须另行预注册
+5. 建立绑定 source、environment、cache、plan 与 checkpoint 的 dry-run，再做单 worker CUDA smoke
+6. 仅在预声明的 matched fold/seed 下运行 pooled-BN、P0、P1、P3 和允许的 P2 direct arms，并报告 participant-cluster CI
+7. 在 target-calibration、row/column dispatch 与 target failure ledger 各自闭合前，不扩大主张或启动不受合同支持的 arm
 
 架构裁决与文献依据见 [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)；
 实施与数学记录见 [`implementation_plan_20260902.zh.md`](implementation_plan_20260902.zh.md) 和
