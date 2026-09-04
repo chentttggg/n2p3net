@@ -76,6 +76,39 @@ esult_max_workers=8。
   checkpoint 4 chunks GPU 100%，result 阶段 8 workers × 3 threads = 24/25 CPU 配额。
 - CAR16 smoke 与 full 均 completed，0 failed。
 
+## 6.5 参与者级 valid-hit 配对照（R8，bootstrap 2000）
+
+| Contrast | mean diff | 95% CI | n |
+|---|---:|---:|---:|
+| EA-target-cal full vs calibration-native full | -0.0164 | [-0.0602, +0.0215] | 31 |
+| TSD linear vs native linear | -0.0341 | [-0.1459, +0.0522] | 31 |
+| Dense linear vs TSD linear | +0.0932 | [-0.0046, +0.2158] | 31 |
+| TSD full vs native full | -0.0272 | [-0.0694, +0.0054] | 31 |
+| Dense full vs native full | -0.0261 | [-0.0699, +0.0054] | 31 |
+| CAR16 full vs native full（valid hit） | -0.0541 | [-0.1559, +0.0535] | 31 |
+| CAR16 full vs native full（AUC） | **-0.0255** | **[-0.0381, -0.0139]** | 64 |
+| native full vs native zero（valid hit） | **+0.0541** | **[+0.0138, +0.1046]** | 31 |
+
+- 参与者级 native full valid-hit mean=0.4576（31 人），native zero=0.4035。
+- 只有 native full vs zero 与 CAR16 vs native 的 AUC 差异排除了 0；其余含 0。
+- 所有 CI 为条件于冻结模型/cohort 的参与者 bootstrap，不覆盖训练随机性。
+
+## 6.6 hit@R 曲线（native full_fine）
+
+| R | requested | valid | correct | requested hit | valid hit |
+|---|---:|---:|---:|---:|---:|
+| 1 | 1416 | 1413 | 276 | 19.5% | 19.5% |
+| 2 | 1416 | 964 | 308 | 21.8% | 32.0% |
+| 3 | 1416 | 628 | 222 | 15.7% | 35.4% |
+| 4 | 1416 | 383 | 138 | 9.8% | 36.0% |
+| 5 | 1416 | 258 | 114 | 8.1% | 44.2% |
+| 6 | 1416 | 176 | 76 | 5.4% | 43.2% |
+| 7 | 1416 | 111 | 48 | 3.4% | 43.2% |
+| 8 | 1416 | 73 | 32 | 2.3% | 43.8% |
+
+- 随机 36 选 1 基线 = 2.78%；R1 已有 19.5%，R2-R4 升到 32-36%，R5 起 plateau 在 ~43-44%。
+- R8 虽然协议主层，但 valid denominator 只有 73；R5 有 258 个 valid decisions，是更稳定的诊断层。
+
 ## 7. 统计完整性
 
 - 官方 p_values_computed=false；bootstrap CI 为 pointwise。
