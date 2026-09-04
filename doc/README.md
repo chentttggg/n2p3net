@@ -1,6 +1,6 @@
 # N2P3-Net 文档控制索引
 
-_版本：2026-09-04 · 活动源提交：`6ec71b0`（分支 `domain-transfer-v2`）· 用途：统一研究、工程与证据文档的权威层级_
+_版本：2026-09-04 · 活动源提交：`6fc1df1`（分支 `main`，集成工作区）· 用途：统一研究、工程与证据文档的权威层级_
 
 ---
 
@@ -63,17 +63,16 @@ flowchart TB
 
 ## 🎯 当前活动基线
 
-代码框架活动基线为 `6ec71b0`（分支 `domain-transfer-v2`）：P3 主链（feature lift、
-GALIA Fast Alignment、conditional RBF-MMD inactive policy、checkpoint 分块、PDS source
-selection）加上 plan 可选 `metric_name`（默认 `valid_subject_operational_hit_rate`）与
-adaptation `epoch_selection` 合同归位，不是跨域性能或产品效果证据。
-该分析源码的物理冻结为 `frozen/active_source_6ec71b0.*`（archive SHA-256
-`1e66cf2cdfddad18b4ed999dc113578b653b75a08ccc4d26a0ce1dc837c15005`）。
-E1 的训练/评估 source 保持不变：native=`b96a6af`、CAR=`b86d558`，只允许
-用 6ec71b0 重新生成 valid-subject 主口径的 manifest/analysis，不重训、不改结果文件。
-该树的物理冻结为 `frozen/active_source_a102467.*`（archive SHA-256
-`ec9b4c31f4f1f570d5c20876db58f58a9c600fef7d6de1d2d0065b62e0a90421`）。
-云上 E1 native/CAR 运行继续使用性能分支冻结 `b96a6af`，不得被新 v2 freeze 覆盖。
+代码框架活动基线为 `6fc1df1`（分支 `main`，集成工作区）：domain-transfer-v2 的 P3
+主链（feature lift、GALIA Fast Alignment、conditional RBF-MMD inactive policy、
+checkpoint 分块、PDS source selection、valid-subject hit@R 主口径）已与
+result-optimization（按 partition 的 result batching、zero-shot feature memo、
+CPU result-phase worker 预算）合并，且 `epoch_selection` 合同已归位到 adaptation。
+这不是跨域性能或产品效果证据。
+该集成树的物理冻结为 `frozen/active_source_6fc1df1.*`（archive SHA-256
+`4ad1aee5d26bba6a92fb74710bbc83532240f62a962fb3b1ca99fda1aa54b3de`）。
+E1 的训练/评估 source 不变：native=`b96a6af`、CAR=`b86d558`；valid-subject
+官方 analysis 由分析源码 `6ec71b0` 生成，均不因本次集成重训或改写。
 
 | 机制 | 当前软件状态 | 仍需的科研证据 |
 |---|---|---|
