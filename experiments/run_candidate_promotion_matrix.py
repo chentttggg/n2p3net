@@ -145,6 +145,9 @@ class TrainingConfig:
     feature_transfer_max_target_residual: float = 0.25
     feature_alignment_weight: float = 0.0
     feature_alignment_mode: str = "mean"
+    feature_alignment_min_cell_count: int = 8
+    feature_alignment_inactive_policy: str = "record"
+
     private_domain_weight: float = 0.0
     orthogonality_weight: float = 0.0
     splitbn_target_buffer_source: str | None = None
@@ -172,6 +175,7 @@ class PromotionPlan:
     source_snapshot_manifest: Path
     target_cache: Path
     target_subjects: tuple[TargetSubjectSpec, ...]
+    checkpoint_batch_size: int | None
     source_arms: tuple[SourceArmSpec, ...]
     training_replicates: tuple[TrainingReplicateSpec, ...]
     evaluation_arms: tuple[EvaluationArmSpec, ...]
@@ -664,6 +668,9 @@ def _parse_training(value: object) -> TrainingConfig:
             "feature_transfer_max_target_residual",
             "feature_alignment_weight",
             "feature_alignment_mode",
+              "feature_alignment_min_cell_count",
+              "feature_alignment_inactive_policy",
+
             "private_domain_weight",
             "orthogonality_weight",
             "splitbn_target_buffer_source",
@@ -725,6 +732,19 @@ def _parse_training(value: object) -> TrainingConfig:
     if feature_alignment_mode not in {"mean", "conditional_rbf_mmd"}:
         raise ValueError(
             "training.feature_alignment_mode must be 'mean' or 'conditional_rbf_mmd'."
+        )
+    feature_alignment_min_cell_count = _integer(
+        record.get("feature_alignment_min_cell_count", 8),
+        "training.feature_alignment_min_cell_count",
+        minimum=2,
+    )
+    feature_alignment_inactive_policy = _text(
+        record.get("feature_alignment_inactive_policy", "record"),
+        "training.feature_alignment_inactive_policy",
+    )
+    if feature_alignment_inactive_policy not in {"record", "fail_closed"}:
+        raise ValueError(
+            "training.feature_alignment_inactive_policy must be 'record' or 'fail_closed'."
         )
     private_domain_weight = _nonnegative_number(
         record.get("private_domain_weight", 0.0),
@@ -811,6 +831,9 @@ def _parse_training(value: object) -> TrainingConfig:
         feature_transfer_max_target_residual=max_target_residual,
         feature_alignment_weight=feature_alignment_weight,
         feature_alignment_mode=feature_alignment_mode,
+        feature_alignment_min_cell_count=feature_alignment_min_cell_count,
+        feature_alignment_inactive_policy=feature_alignment_inactive_policy,
+
         private_domain_weight=private_domain_weight,
         orthogonality_weight=orthogonality_weight,
         splitbn_target_buffer_source=splitbn_target_buffer_source,
@@ -942,7 +965,7 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
             "output_root",
             "statistical_design",
         },
-        optional={"evidence_floor"},
+        optional={"evidence_floor", "checkpoint_batch_size"},
         name="plan",
     )
     if record["schema"] != PLAN_SCHEMA:
@@ -973,6 +996,11 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
         minimum=MIN_EVIDENCE_LEVEL,
     )
     test_reps = _integer(record["test_reps"], "test_reps", minimum=evidence_floor)
+    checkpoint_batch_size = (
+        None
+        if record.get("checkpoint_batch_size") is None
+        else _integer(record["checkpoint_batch_size"], "checkpoint_batch_size", minimum=1)
+    )
     assert_promotion_evidence_gate(
         test_reps,
         minimum_evidence_level=evidence_floor,
@@ -999,6 +1027,7 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
         ),
         target_cache=_resolve_plan_path(record["target_cache"], "target_cache", resolution_root),
         target_subjects=targets,
+        checkpoint_batch_size=checkpoint_batch_size,
         source_arms=source_arms,
         training_replicates=replicates,
         evaluation_arms=evaluation_arms,
@@ -1057,6 +1086,12 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
     }
     tasks: list[MatrixTask] = []
     result_tasks: list[MatrixTask] = []
+    checkpoint_batch_size = (
+        len(plan.target_subjects)
+        if plan.checkpoint_batch_size is None
+        else plan.checkpoint_batch_size
+    )
+    checkpoint_batch_id_by_partition: dict[str, str] = {}
     for arm in plan.source_arms:
         for replicate in plan.training_replicates:
             checkpoint_paths = {
@@ -1070,105 +1105,124 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                 )
                 for target in plan.target_subjects
             }
-            checkpoint_batch_id = f"checkpoint_batch/{arm.name}/{replicate.key}"
-            checkpoint_batch_path = _within_output(
-                output_root
-                / "checkpoint_batches"
-                / arm.name
-                / f"{replicate.key}.json",
-                output_root,
-            )
-            checkpoint_argv = [
-                sys.executable,
-                str((ROOT / "experiments" / "run_pretrain_supervised.py").resolve()),
-                "--source-cache",
-                str(arm.cache),
-                "--source-snapshot-manifest",
-                str(plan.source_snapshot_manifest),
-                "--pooling-mode",
-                plan.training.pooling_mode,
-                "--temporal-kernel-size",
-                str(plan.training.temporal_kernel_size),
-                "--epochs",
-                str(plan.training.epochs),
-                "--batch-size",
-                str(plan.training.batch_size),
-                "--precision",
-                plan.training.precision,
-                "--feature-transfer-invariant-bottleneck",
-                str(plan.training.feature_transfer_invariant_bottleneck),
-                "--feature-transfer-private-channels",
-                str(plan.training.feature_transfer_private_channels),
-                "--feature-transfer-target-bottleneck",
-                str(plan.training.feature_transfer_target_bottleneck),
-                "--feature-transfer-target-kernel",
-                str(plan.training.feature_transfer_target_kernel),
-                "--feature-transfer-max-invariant-residual",
-                str(plan.training.feature_transfer_max_invariant_residual),
-                "--feature-transfer-max-target-residual",
-                str(plan.training.feature_transfer_max_target_residual),
-                "--feature-alignment-weight",
-                str(plan.training.feature_alignment_weight),
-                "--feature-alignment-mode",
-                plan.training.feature_alignment_mode,
-                "--private-domain-weight",
-                str(plan.training.private_domain_weight),
-                "--orthogonality-weight",
-                str(plan.training.orthogonality_weight),
-                "--seed",
-                str(replicate.seed),
-                "--device",
-                device_name,
-                "--batch-record",
-                str(checkpoint_batch_path),
-            ]
-            if plan.training.splitbn_target_buffer_source is not None:
-                checkpoint_argv.extend(
-                    [
-                        "--splitbn-target-buffer-source",
-                        plan.training.splitbn_target_buffer_source,
-                    ]
-                )
-                for domain, weight in arm.splitbn_source_weights:
-                    checkpoint_argv.extend(
-                        ["--splitbn-source-weight", f"{domain}={weight!r}"]
+            chunk_count = (len(plan.target_subjects) + checkpoint_batch_size - 1) // checkpoint_batch_size
+            for chunk_index in range(chunk_count):
+                chunk_targets = plan.target_subjects[
+                    chunk_index * checkpoint_batch_size : (chunk_index + 1) * checkpoint_batch_size
+                ]
+                if chunk_count == 1:
+                    checkpoint_batch_id = f"checkpoint_batch/{arm.name}/{replicate.key}"
+                    record_suffix = ""
+                else:
+                    checkpoint_batch_id = (
+                        f"checkpoint_batch/{arm.name}/{replicate.key}/chunk-{chunk_index:02d}"
                     )
-            if plan.training.source_residual_drop_p is not None:
-                assert plan.training.source_residual_drop_mode is not None
-                checkpoint_argv.extend(
-                    [
-                        "--source-residual-drop-p",
-                        str(plan.training.source_residual_drop_p),
-                        "--source-residual-drop-mode",
-                        plan.training.source_residual_drop_mode,
-                    ]
+                    record_suffix = f"-chunk-{chunk_index:02d}"
+                checkpoint_batch_path = _within_output(
+                    output_root
+                    / "checkpoint_batches"
+                    / arm.name
+                    / f"{replicate.key}{record_suffix}.json",
+                    output_root,
                 )
-            for target in plan.target_subjects:
-                checkpoint_argv.extend(
-                    [
-                        "--job",
-                        target.source_holdout_subject,
-                        str(checkpoint_paths[target.partition_key]),
-                    ]
+                checkpoint_argv = [
+                    sys.executable,
+                    str((ROOT / "experiments" / "run_pretrain_supervised.py").resolve()),
+                    "--source-cache",
+                    str(arm.cache),
+                    "--source-snapshot-manifest",
+                    str(plan.source_snapshot_manifest),
+                    "--pooling-mode",
+                    plan.training.pooling_mode,
+                    "--temporal-kernel-size",
+                    str(plan.training.temporal_kernel_size),
+                    "--epochs",
+                    str(plan.training.epochs),
+                    "--batch-size",
+                    str(plan.training.batch_size),
+                    "--precision",
+                    plan.training.precision,
+                    "--feature-transfer-invariant-bottleneck",
+                    str(plan.training.feature_transfer_invariant_bottleneck),
+                    "--feature-transfer-private-channels",
+                    str(plan.training.feature_transfer_private_channels),
+                    "--feature-transfer-target-bottleneck",
+                    str(plan.training.feature_transfer_target_bottleneck),
+                    "--feature-transfer-target-kernel",
+                    str(plan.training.feature_transfer_target_kernel),
+                    "--feature-transfer-max-invariant-residual",
+                    str(plan.training.feature_transfer_max_invariant_residual),
+                    "--feature-transfer-max-target-residual",
+                    str(plan.training.feature_transfer_max_target_residual),
+                    "--feature-alignment-weight",
+                    str(plan.training.feature_alignment_weight),
+                    "--feature-alignment-mode",
+                    plan.training.feature_alignment_mode,
+                    "--feature-alignment-min-cell-count",
+                    str(plan.training.feature_alignment_min_cell_count),
+                    "--feature-alignment-inactive-policy",
+                    plan.training.feature_alignment_inactive_policy,
+                    "--private-domain-weight",
+                    str(plan.training.private_domain_weight),
+                    "--orthogonality-weight",
+                    str(plan.training.orthogonality_weight),
+                    "--seed",
+                    str(replicate.seed),
+                    "--device",
+                    device_name,
+                    "--batch-record",
+                    str(checkpoint_batch_path),
+                ]
+                if plan.training.splitbn_target_buffer_source is not None:
+                    checkpoint_argv.extend(
+                        [
+                            "--splitbn-target-buffer-source",
+                            plan.training.splitbn_target_buffer_source,
+                        ]
+                    )
+                    for domain, weight in arm.splitbn_source_weights:
+                        checkpoint_argv.extend(
+                            ["--splitbn-source-weight", f"{domain}={weight!r}"]
+                        )
+                if plan.training.source_residual_drop_p is not None:
+                    assert plan.training.source_residual_drop_mode is not None
+                    checkpoint_argv.extend(
+                        [
+                            "--source-residual-drop-p",
+                            str(plan.training.source_residual_drop_p),
+                            "--source-residual-drop-mode",
+                            plan.training.source_residual_drop_mode,
+                        ]
+                    )
+                for target in chunk_targets:
+                    checkpoint_argv.extend(
+                        [
+                            "--job",
+                            target.source_holdout_subject,
+                            str(checkpoint_paths[target.partition_key]),
+                        ]
+                    )
+                for domain, mass in arm.source_domain_mass:
+                    checkpoint_argv.extend(["--source-domain-mass", f"{domain}={mass!r}"])
+                if arm.source_domain_mass:
+                    assert arm.risk_within_domain_unit is not None
+                    checkpoint_argv.extend(
+                        ["--risk-within-domain-unit", arm.risk_within_domain_unit]
+                    )
+                if arm.selection_domain is not None:
+                    checkpoint_argv.extend(["--selection-domain", arm.selection_domain])
+                tasks.append(
+                    MatrixTask(
+                        task_id=checkpoint_batch_id,
+                        kind="checkpoint_batch",
+                        argv=tuple(checkpoint_argv),
+                        output=checkpoint_batch_path,
+                        dependencies=(),
+                    )
                 )
-            for domain, mass in arm.source_domain_mass:
-                checkpoint_argv.extend(["--source-domain-mass", f"{domain}={mass!r}"])
-            if arm.source_domain_mass:
-                assert arm.risk_within_domain_unit is not None
-                checkpoint_argv.extend(
-                    ["--risk-within-domain-unit", arm.risk_within_domain_unit]
-                )
-            if arm.selection_domain is not None:
-                checkpoint_argv.extend(["--selection-domain", arm.selection_domain])
-            tasks.append(
-                MatrixTask(
-                    task_id=checkpoint_batch_id,
-                    kind="checkpoint_batch",
-                    argv=tuple(checkpoint_argv),
-                    output=checkpoint_batch_path,
-                    dependencies=(),
-                )
-            )
+                for target in chunk_targets:
+                    checkpoint_batch_id_by_partition[target.partition_key] = checkpoint_batch_id
+
             for target in plan.target_subjects:
                 checkpoint_path = checkpoint_paths[target.partition_key]
                 for evaluation_arm in plan.evaluation_arms:
@@ -1256,7 +1310,9 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                         kind="result",
                         argv=tuple(result_argv),
                         output=result_path,
-                        dependencies=(checkpoint_batch_id,),
+                        dependencies=(
+                            checkpoint_batch_id_by_partition[target.partition_key],
+                        ),
                     )
                     tasks.append(result_task)
                     result_tasks.append(result_task)

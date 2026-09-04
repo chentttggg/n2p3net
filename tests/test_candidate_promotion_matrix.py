@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import hashlib
 import json
@@ -1494,3 +1494,42 @@ def test_execute_rejects_invalid_max_workers(tmp_path: Path, workers: object) ->
             verify_inputs=False,
             max_workers=workers,
         )
+
+
+def test_training_forwards_alignment_cell_and_inactive_policy(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["training"].update(
+        {
+            "feature_transfer_invariant_bottleneck": 2,
+            "feature_alignment_weight": 0.1,
+            "feature_alignment_mode": "conditional_rbf_mmd",
+            "feature_alignment_min_cell_count": 6,
+            "feature_alignment_inactive_policy": "fail_closed",
+        }
+    )
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+    checkpoint = next(task for task in dag.tasks if task.kind == "checkpoint_batch")
+    assert plan.training.feature_alignment_min_cell_count == 6
+    assert plan.training.feature_alignment_inactive_policy == "fail_closed"
+    assert "--feature-alignment-min-cell-count" in checkpoint.argv
+    assert checkpoint.argv[checkpoint.argv.index("--feature-alignment-inactive-policy") + 1] == (
+        "fail_closed"
+    )
+
+
+def test_plan_supports_chunked_checkpoint_batches(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["checkpoint_batch_size"] = 1
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+    checkpoints = [task for task in dag.tasks if task.kind == "checkpoint_batch"]
+    assert len(checkpoints) == 8
+    assert {
+        "checkpoint_batch/source_a/rep01/chunk-00",
+        "checkpoint_batch/source_a/rep01/chunk-01",
+    } <= {task.task_id for task in checkpoints}
+    result = next(
+        task for task in dag.tasks if task.task_id == "result/source_a__zero_shot/rep01/p01"
+    )
+    assert result.dependencies == ("checkpoint_batch/source_a/rep01/chunk-00",)

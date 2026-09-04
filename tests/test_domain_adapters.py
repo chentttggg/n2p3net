@@ -673,3 +673,42 @@ def test_wrapper_state_roundtrip_preserves_all_transfer_paths() -> None:
         expected = first(x)
         observed = second(x)
     assert torch.equal(expected, observed)
+
+
+def test_pretraining_fail_closed_when_conditional_mmd_is_inactive() -> None:
+    config = DeepConfig(
+        epochs=1,
+        batch_size=16,
+        val_group_frac=0.25,
+        val_groups_min=2,
+        val_groups_max=4,
+        compile_mode=None,
+        fused_adam=False,
+        seed=0,
+    )
+    baseline = N2P3NetBaseline(
+        3,
+        64,
+        128.0,
+        config=config,
+        device=torch.device("cpu"),
+        tmin_s=-0.2,
+        feature_transfer=CONFIG,
+        source_domain_vocabulary=("a", "b"),
+    )
+    rng = np.random.default_rng(31)
+    x = rng.standard_normal((64, 3, 64)).astype(np.float32)
+    y = np.tile([0, 1], 32).astype(np.int64)
+    domains = np.repeat(["a", "b"], 32)
+    groups = np.array([f"{domain}-{i // 4}" for i, domain in enumerate(domains)])
+    with pytest.raises(RuntimeError, match="feature alignment became inactive"):
+        baseline.fit(
+            x,
+            y,
+            group_ids=groups,
+            source_domain_ids=domains,
+            feature_alignment_weight=0.1,
+            feature_alignment_mode="conditional_rbf_mmd",
+            feature_alignment_min_cell_count=100,
+            feature_alignment_inactive_policy="fail_closed",
+        )

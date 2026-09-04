@@ -72,3 +72,38 @@ def test_fit_galia_cli_rejects_raw_epoch_tensor_and_duplicate_domains(tmp_path: 
                 str(tmp_path / "duplicate.json"),
             ]
         )
+
+
+def test_fit_galia_cli_fast_aligns_target_calibration(tmp_path: Path) -> None:
+    rng = np.random.default_rng(43)
+    source_a = tmp_path / "a.npz"
+    source_b = tmp_path / "b.npz"
+    target = tmp_path / "target.npz"
+    np.savez(source_a, features=rng.normal(size=(30, 4)))
+    np.savez(source_b, features=rng.normal(size=(30, 4)))
+    np.savez(target, features=rng.normal(size=(12, 4)))
+    state_path = tmp_path / "state.json"
+    fast_path = tmp_path / "target-fast.npz"
+
+    main(
+        [
+            "--source", f"A={source_a}",
+            "--source", f"B={source_b}",
+            "--output", str(state_path),
+            "--target-calibration", str(target),
+            "--target-domain", "T",
+            "--fast-fit-scope", "target_calibration",
+            "--fast-output", str(fast_path),
+        ]
+    )
+
+    record = json.loads(state_path.read_text(encoding="utf-8"))
+    fast = record["fast_alignment"]
+    assert fast["schema"] == "n2p3_galia_fast_alignment/1"
+    assert fast["fit_scope"] == "target_calibration"
+    assert fast["domain_id"] == "T"
+    assert len(fast["buffer_digest"]) == 64
+    with np.load(fast_path, allow_pickle=False) as archive:
+        assert archive["aligned_features"].shape == (12, 4)
+        assert archive["domain_ids"].tolist() == ["T"] * 12
+        assert archive["fast_alignment_state_digest"].item() == fast["state_digest"]

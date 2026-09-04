@@ -56,6 +56,11 @@ from research.evaluation import (  # noqa: E402
 )
 from train.device import get_device, release_device_memory  # noqa: E402
 from train.runtime import GpuPerformanceScheduler  # noqa: E402
+from train.source_sampling import (  # noqa: E402
+    PDSSelection,
+    load_pds_selection_record,
+    pds_selection_from_record,
+)
 from transfer.checkpoint import (  # noqa: E402
     CHECKPOINT_SCHEMA,
     checkpoint_training_contract,
@@ -160,6 +165,26 @@ def _write_contract_failure(
     return output
 
 
+def _load_source_selection(
+    path: str | Path,
+    *,
+    source_cache_sha256: str,
+) -> tuple[PDSSelection, dict[str, object]]:
+    """Load a PDS selection record bound to the attested source cache.
+
+    The returned raw record is embedded in the training contract unchanged
+    (except by the contract's canonical serializer), so the checkpoint carries
+    the exact selection provenance rather than a reconstructed summary.
+    """
+
+    _, record = load_pds_selection_record(path)
+    selection = pds_selection_from_record(
+        record,
+        expected_source_cache_sha256=source_cache_sha256,
+    )
+    return selection, record
+
+
 def parse_source_domain_mass(values: list[str]) -> dict[str, float]:
     """Parse exact DOMAIN=MASS entries without subject-prefix aliases."""
 
@@ -255,11 +280,20 @@ def _single_job_argv(
         str(args.feature_alignment_weight),
         "--feature-alignment-mode",
         args.feature_alignment_mode,
+        "--feature-alignment-min-cell-count",
+        str(args.feature_alignment_min_cell_count),
+        "--feature-alignment-inactive-policy",
+        args.feature_alignment_inactive_policy,
+
         "--checkpoint",
         str(job.checkpoint),
         "--device",
         args.device,
     ]
+    if args.source_selection_record is not None:
+        argv.extend(
+            ["--source-selection-record", str(args.source_selection_record)]
+        )
     if args.tmax_ms is not None:
         argv.extend(["--tmax-ms", str(args.tmax_ms)])
     for value in args.source_domain_mass:
@@ -362,6 +396,16 @@ def main(argv: list[str] | None = None) -> None:
         "--holdout-subjects",
         default="",
         help="comma separated; never pretrain on these",
+    )
+    parser.add_argument(
+        "--source-selection-record",
+        type=Path,
+        default=None,
+        help=(
+            "PDS source-row selection JSON from prepare_source_selection.py; "
+            "selected rows are intersected with holdout/QC masks. Batch mode "
+            "requires one record shared by every job so the arm procedure stays uniform."
+        ),
     )
     parser.add_argument(
         "--cohort",
@@ -532,6 +576,22 @@ def main(argv: list[str] | None = None) -> None:
         ),
     )
     parser.add_argument(
+        "--feature-alignment-min-cell-count",
+        type=int,
+        default=8,
+        help="Minimum (domain, class) cell rows required for an active alignment term.",
+    )
+    parser.add_argument(
+        "--feature-alignment-inactive-policy",
+        choices=("record", "fail_closed"),
+        default="record",
+        help=(
+            "record logs inactive batches and continues; fail_closed aborts the fold "
+            "when an alignment-weighted batch has no active cell pair."
+        ),
+    )
+
+    parser.add_argument(
         "--private-domain-weight",
         type=float,
         default=0.0,
@@ -615,6 +675,18 @@ def main(argv: list[str] | None = None) -> None:
     if args.tmax_ms is not None:
         expected_contract = replace(expected_contract, tmax_ms=float(args.tmax_ms))
     assert_p300_input_contract(dataset.preprocessing, expected_contract)
+    source_selection = None
+    source_selection_record: dict[str, object] | None = None
+    if args.source_selection_record is not None:
+        source_selection, source_selection_record = _load_source_selection(
+            args.source_selection_record,
+            source_cache_sha256=source_cache_sha256,
+        )
+        if source_selection.source_count != dataset.n_epochs:
+            raise ValueError(
+                "PDS source-selection source_count disagrees with the loaded cache "
+                f"({source_selection.source_count} vs {dataset.n_epochs})."
+            )
     holdout = {item.strip() for item in args.holdout_subjects.split(",") if item.strip()}
     subjects = np.asarray(dataset.subject_ids).astype(str)
     all_subjects = set(subjects.tolist())
@@ -639,6 +711,17 @@ def main(argv: list[str] | None = None) -> None:
             labels_all[source_rows & bad], minlength=2
         ).astype(np.int64)
         source_rows = source_rows & ~bad
+    pds_dropped_source_epochs = 0
+    pds_dropped_by_label = np.zeros(2, dtype=np.int64)
+    if source_selection is not None:
+        selection_mask = np.zeros(dataset.n_epochs, dtype=bool)
+        selection_mask[source_selection.selected_indices] = True
+        pds_dropped_mask = source_rows & ~selection_mask
+        pds_dropped_source_epochs = int(pds_dropped_mask.sum())
+        pds_dropped_by_label = np.bincount(
+            labels_all[pds_dropped_mask], minlength=2
+        ).astype(np.int64)
+        source_rows = source_rows & selection_mask
     decision_metadata = None
     decision_loss_config = None
     p2_budget_dropped_rows = 0
@@ -889,6 +972,9 @@ def main(argv: list[str] | None = None) -> None:
             group_ids=src_subjects,
             feature_alignment_weight=args.feature_alignment_weight,
             feature_alignment_mode=args.feature_alignment_mode,
+            feature_alignment_min_cell_count=args.feature_alignment_min_cell_count,
+            feature_alignment_inactive_policy=args.feature_alignment_inactive_policy,
+
             feature_private_domain_weight=args.private_domain_weight,
             feature_orthogonality_weight=args.orthogonality_weight,
             **risk_fit_kwargs,
@@ -942,6 +1028,9 @@ def main(argv: list[str] | None = None) -> None:
             group_ids=None,
             feature_alignment_weight=args.feature_alignment_weight,
             feature_alignment_mode=args.feature_alignment_mode,
+            feature_alignment_min_cell_count=args.feature_alignment_min_cell_count,
+            feature_alignment_inactive_policy=args.feature_alignment_inactive_policy,
+
             feature_private_domain_weight=args.private_domain_weight,
             feature_orthogonality_weight=args.orthogonality_weight,
             **risk_fit_kwargs,
@@ -1039,6 +1128,9 @@ def main(argv: list[str] | None = None) -> None:
         if holdout
         else ()
     )
+    source_selection_contract = (
+        None if source_selection_record is None else dict(source_selection_record)
+    )
     training_contract = TrainingRunContract(
         source_cache_sha256=source_cache_sha256,
         source_identity_digest=dataset.identity_table.digest(),
@@ -1113,9 +1205,13 @@ def main(argv: list[str] | None = None) -> None:
                     if args.feature_alignment_weight > 0.0
                     else None
                 ),
+                "min_cell_count": int(args.feature_alignment_min_cell_count),
+                "inactive_policy": args.feature_alignment_inactive_policy,
+
                 "private_domain_weight": float(args.private_domain_weight),
                 "orthogonality_weight": float(args.orthogonality_weight),
             },
+            "source_selection_contract": source_selection_contract,
             "feature_alignment_diagnostics": {
                 "selection_epoch_mean_squared_distance": (
                     selection_baseline.last_history.get("feature_alignment") or {}
@@ -1173,9 +1269,13 @@ def main(argv: list[str] | None = None) -> None:
             "decision_loss": decision_loss_record,
             "feature_transfer": feature_transfer.record() if feature_transfer is not None else None,
             "feature_alignment_weight": float(args.feature_alignment_weight),
+            "feature_alignment_min_cell_count": int(args.feature_alignment_min_cell_count),
+            "feature_alignment_inactive_policy": args.feature_alignment_inactive_policy,
+
             "feature_alignment_mode": args.feature_alignment_mode,
             "private_domain_weight": float(args.private_domain_weight),
             "orthogonality_weight": float(args.orthogonality_weight),
+            "source_selection_contract": source_selection_contract,
             "training": "N2P3NetBaseline supervised (LOSO-identical path)",
         },
         "architecture": architecture_record,
@@ -1229,6 +1329,9 @@ def main(argv: list[str] | None = None) -> None:
         ),
         "source_residual_refit": baseline.last_history.get("source_residual"),
         "p2_budget_dropped_source_epochs": p2_budget_dropped_rows,
+        "source_selection_contract": source_selection_contract,
+        "pds_dropped_source_epochs": pds_dropped_source_epochs,
+        "pds_dropped_source_epochs_by_label": pds_dropped_by_label.tolist(),
         "qc_ptp_uv": float(args.qc_ptp_uv),
         "qc_dropped_source_epochs": qc_dropped,
         "source_label_counts_before_qc": source_label_counts_before_qc.tolist(),
@@ -1254,6 +1357,7 @@ def main(argv: list[str] | None = None) -> None:
                 "checkpoint": str(checkpoint),
                 "fit_seconds": fit_sec,
                 "n_source_epochs_used": payload["n_source_epochs_used"],
+                "pds_dropped_source_epochs": pds_dropped_source_epochs,
                 "source_input_stats_scope": source_input_stats_scope,
                 "source_risk": payload["source_risk_selection"],
                 "runtime": payload["runtime"],

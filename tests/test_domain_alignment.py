@@ -121,6 +121,7 @@ def test_galia_fast_alignment_rejects_test_scope_and_detects_parent_state_mismat
         mean=fast.mean,
         scales=fast.scales,
         covariance_condition_number=fast.covariance_condition_number,
+        buffer_digest=fast.buffer_digest,
     )
     with pytest.raises(ValueError, match="different GALIA state"):
         state.transform_fast(domains["a"], changed)

@@ -410,6 +410,7 @@ _SOURCE_PROCEDURE_FIELDS: dict[str, frozenset[str] | None] = {
             "feature_transfer",
             "feature_alignment_contract",
             "decision_loss",
+            "source_selection_contract",
         }
     ),
 }

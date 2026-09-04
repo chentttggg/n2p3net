@@ -59,6 +59,29 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="Optional .npz containing concatenated aligned_features and domain_ids.",
     )
+    parser.add_argument(
+        "--target-calibration",
+        type=Path,
+        default=None,
+        help="Optional feature .npz for target calibration fast alignment.",
+    )
+    parser.add_argument(
+        "--target-domain",
+        default="target",
+        help="Domain label used by the fast-aligned target transform.",
+    )
+    parser.add_argument(
+        "--fast-fit-scope",
+        choices=("target_calibration", "source_weighted"),
+        default="target_calibration",
+    )
+    parser.add_argument(
+        "--fast-output",
+        type=Path,
+        default=None,
+        help="Optional .npz containing fast-aligned target features.",
+    )
+
     args = parser.parse_args(argv)
     if len(args.source) < 2:
         parser.error("GALIA requires at least two --source values")
@@ -79,6 +102,41 @@ def main(argv: list[str] | None = None) -> None:
         )
     )
     state = adapter.fit(domains)
+    if (args.target_calibration is None) != (args.fast_output is None):
+        parser.error("--target-calibration and --fast-output must be supplied together")
+    if args.target_calibration is not None and args.fast_output is not None:
+        if args.fast_output.suffix.lower() != ".npz":
+            parser.error("--fast-output must end with .npz")
+        if args.fast_fit_scope == "target_calibration":
+            target = _load_features(args.target_calibration, args.feature_key)
+        else:
+            target = np.zeros((2, state.feature_dim), dtype=np.float64)
+        fast = state.fast_alignment(
+            target,
+            domain_id=args.target_domain,
+            fit_scope=args.fast_fit_scope,
+            regularization=args.regularization,
+        )
+        fast_output = args.fast_output.resolve(strict=False)
+        if fast_output.exists():
+            raise FileExistsError(f"fast-aligned output already exists: {fast_output}")
+        if args.fast_fit_scope == "target_calibration":
+            aligned_target = state.transform_fast(target, fast)
+        else:
+            aligned_target = state.transform_fast(target, fast)
+        fast_output.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(
+            fast_output,
+            schema=np.asarray("n2p3_aligned_feature_matrix/1"),
+            aligned_features=aligned_target.astype(np.float32),
+            domain_ids=np.repeat(args.target_domain, len(target)),
+            galia_state_digest=np.asarray(state.state_digest),
+            fast_alignment_state_digest=np.asarray(fast.record()["state_digest"]),
+        )
+        fast_record = fast.record()
+    else:
+        fast_record = None
+
     output = args.output.resolve(strict=False)
     if output.exists():
         raise FileExistsError(f"GALIA output already exists: {output}")
@@ -98,6 +156,7 @@ def main(argv: list[str] | None = None) -> None:
             }
             for domain, path in args.source
         },
+        "fast_alignment": fast_record,
         "feature_key": args.feature_key,
         "fit_scope": "source_only",
         "raw_epoch_input": False,

@@ -428,6 +428,8 @@ class DeepBaseline(Baseline):
         self._feature_alignment_weight = 0.0
         self._feature_alignment_mode = "mean"
         self._feature_alignment_min_cell_count = 8
+        self._feature_alignment_inactive_policy = "record"
+
         self._feature_private_domain_weight = 0.0
         self._feature_orthogonality_weight = 0.0
         self._alignment_domain_vocabulary: tuple[str, ...] = ()
@@ -869,6 +871,8 @@ class DeepBaseline(Baseline):
         feature_alignment_weight: float = 0.0,
         feature_alignment_mode: str = "mean",
         feature_alignment_min_cell_count: int = 8,
+        feature_alignment_inactive_policy: str = "record",
+
         feature_private_domain_weight: float = 0.0,
         feature_orthogonality_weight: float = 0.0,
         decision_metadata: DirectDecisionMetadata | None = None,
@@ -887,6 +891,11 @@ class DeepBaseline(Baseline):
             or feature_alignment_min_cell_count < 2
         ):
             raise ValueError("feature_alignment_min_cell_count must be at least two.")
+        if feature_alignment_inactive_policy not in {"record", "fail_closed"}:
+            raise ValueError(
+                "feature_alignment_inactive_policy must be 'record' or 'fail_closed'."
+            )
+
         for name, value in (
             ("feature_private_domain_weight", feature_private_domain_weight),
             ("feature_orthogonality_weight", feature_orthogonality_weight),
@@ -998,6 +1007,8 @@ class DeepBaseline(Baseline):
         self._feature_alignment_weight = float(feature_alignment_weight)
         self._feature_alignment_mode = feature_alignment_mode
         self._feature_alignment_min_cell_count = int(feature_alignment_min_cell_count)
+        self._feature_alignment_inactive_policy = feature_alignment_inactive_policy
+
         self._feature_private_domain_weight = float(feature_private_domain_weight)
         self._feature_orthogonality_weight = float(feature_orthogonality_weight)
         self._source_residual_active = source_residual_active
@@ -1048,6 +1059,8 @@ class DeepBaseline(Baseline):
                         selection_domain=selection_domain,
                         feature_alignment_mode=feature_alignment_mode,
                         feature_alignment_min_cell_count=feature_alignment_min_cell_count,
+                          feature_alignment_inactive_policy=feature_alignment_inactive_policy,
+
                         decision_metadata=decision_metadata,
                         decision_loss_config=decision_loss_config,
                         requested_batch_size=requested_batch_size,
@@ -1125,6 +1138,8 @@ class DeepBaseline(Baseline):
         selection_domain: str | None,
         feature_alignment_mode: str,
         feature_alignment_min_cell_count: int,
+          feature_alignment_inactive_policy: str,
+
         decision_metadata: DirectDecisionMetadata | None,
         decision_loss_config: DecisionLossConfig | None,
         requested_batch_size: int,
@@ -1520,6 +1535,9 @@ class DeepBaseline(Baseline):
             "weight": alignment_weight,
             "mode": self._feature_alignment_mode,
             "min_cell_count": self._feature_alignment_min_cell_count,
+            "inactive_policy": self._feature_alignment_inactive_policy,
+            "inactive_batch_count": 0,
+
             "alignment_active": alignment_active,
             "private_domain_weight": private_weight,
             "private_domain_active": private_active,
@@ -1839,6 +1857,15 @@ class DeepBaseline(Baseline):
                                 domain_count,
                             )
                         loss = loss + alignment_weight * alignment_loss
+                        if (
+                            self._feature_alignment_inactive_policy == "fail_closed"
+                            and bool(alignment_diagnostics.get("alignment_inactive"))
+                        ):
+                            raise RuntimeError(
+                                "feature alignment became inactive in a training batch "
+                                f"under fail_closed policy: {alignment_diagnostics}"
+                            )
+
                     if private_active:
                         if len(forwarded) < 3 or not hasattr(self.model_, "private_domain_logits"):
                             raise RuntimeError(
@@ -2144,6 +2171,11 @@ class DeepBaseline(Baseline):
                         )
                     if "mmd_squared" in alignment_diagnostics:
                         epoch_mmd_sum += float(alignment_diagnostics["mmd_squared"])
+                    if alignment_diagnostics.get("alignment_inactive"):
+                        self.last_feature_alignment["inactive_batch_count"] = int(
+                            self.last_feature_alignment.get("inactive_batch_count", 0)
+                        ) + 1
+
                     if "private_domain_loss" in alignment_diagnostics:
                         epoch_private_sum += float(
                             alignment_diagnostics["private_domain_loss"]

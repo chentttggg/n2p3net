@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pytest
 
-from train.source_sampling import select_pds_rows
+from train.source_sampling import (
+    array_digest,
+    load_pds_selection_record,
+    pds_selection_from_record,
+    select_pds_rows,
+)
 
 
 def test_pds_selection_is_deterministic_and_respects_label_group_quotas() -> None:
@@ -87,4 +94,108 @@ def test_pds_rejects_test_scope_and_unsatisfied_quota() -> None:
             selection_scope="target_calibration",
             labels=np.asarray([0, 0, 1, 1]),
             min_per_label=1,
+        )
+
+
+def test_pds_incremental_repulsion_matches_full_kernel_reference() -> None:
+    rng = np.random.default_rng(11)
+    source = rng.normal(size=(10, 4))
+    target = rng.normal(size=(3, 4))
+    bandwidth = 1.4
+    seed = 5
+
+    selection = select_pds_rows(
+        source,
+        target,
+        n_select=4,
+        selection_scope="target_calibration",
+        seed=seed,
+        diversity_weight=1.0,
+        bandwidth=bandwidth,
+    )
+
+    quality = np.exp(
+        -np.sum((source - target.mean(axis=0)[None, :]) ** 2, axis=1) / 2.0
+    )
+    squared = source[:, None, :] - source[None, :, :]
+    kernel = np.exp(-np.sum(squared * squared, axis=2) / (2.0 * bandwidth**2))
+    tie_break = np.random.default_rng(seed).uniform(
+        0.0, np.finfo(np.float64).eps, len(source)
+    )
+    selected: list[int] = []
+    penalty = np.zeros(len(source), dtype=float)
+    while len(selected) < 4:
+        candidates = [index for index in range(len(source)) if index not in selected]
+        score = (
+            np.log(np.maximum(quality[candidates], 1e-300))
+            - penalty[candidates]
+            + tie_break[candidates]
+        )
+        chosen = candidates[int(np.argmax(score))]
+        selected.append(chosen)
+        penalty += kernel[chosen]
+    np.testing.assert_array_equal(selection.selected_indices, np.asarray(selected))
+
+
+def test_pds_bandwidth_subsamples_large_pools_without_quadratic_kernel() -> None:
+    rng = np.random.default_rng(13)
+    source = rng.normal(size=(600, 3))
+    target = rng.normal(size=(9, 3))
+
+    selection = select_pds_rows(
+        source,
+        target,
+        n_select=5,
+        selection_scope="target_calibration",
+        seed=0,
+        diversity_weight=1.0,
+    )
+
+    assert selection.bandwidth_estimator == "subsampled_median_512"
+    assert len(selection.selected_indices) == 5
+    assert selection.record()["bandwidth_estimator"] == "subsampled_median_512"
+
+
+def test_pds_selection_record_round_trip(tmp_path) -> None:
+    source = np.arange(12, dtype=float).reshape(6, 2)
+    target = np.asarray([[5.0, 0.0], [6.0, 0.0]])
+    selection = select_pds_rows(
+        source,
+        target,
+        n_select=3,
+        selection_scope="target_calibration",
+        seed=3,
+    )
+    path = tmp_path / "selection.json"
+    path.write_text(json.dumps(selection.record()), encoding="utf-8")
+
+    loaded, raw = load_pds_selection_record(path)
+
+    np.testing.assert_array_equal(loaded.selected_indices, selection.selected_indices)
+    assert loaded.record() == selection.record()
+    assert raw["selected_digest"] == array_digest(selection.selected_indices)
+
+
+def test_pds_selection_record_rejects_edited_indices_and_source_digest(tmp_path) -> None:
+    source = np.arange(12, dtype=float).reshape(6, 2)
+    target = np.asarray([[5.0, 0.0], [6.0, 0.0]])
+    selection = select_pds_rows(
+        source,
+        target,
+        n_select=3,
+        selection_scope="target_calibration",
+        seed=3,
+    )
+    record = selection.record()
+    replacement = next(index for index in range(len(source)) if index not in selection.selected_indices)
+    record["selected_indices"][0] = replacement
+    path = tmp_path / "tampered.json"
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(ValueError, match="selected_indices digest"):
+        load_pds_selection_record(path)
+
+    with pytest.raises(ValueError, match="source_digest"):
+        pds_selection_from_record(
+            selection.record(),
+            expected_source_digest="0" * 64,
         )

@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import json
+import sys
+
+
 
 import numpy as np
 import pandas as pd
@@ -22,6 +26,8 @@ from data.epochs import (
     EpochDataset,
     PreprocessingSpec,
     concatenate_epoch_datasets,
+    save_epoch_dataset,
+
     materialize_dataset_identity,
 )
 from data.events import ScheduledEventTimeline
@@ -435,3 +441,31 @@ def test_sampling_authority_key_rejects_ambiguous_source_aliases() -> None:
 
     with pytest.raises(ValueError, match="exactly one"):
         record.authority_key("source_or_global")
+
+
+def test_prepare_domain_features_identity_flatten(tmp_path: Path, monkeypatch) -> None:
+    from experiments.prepare_domain_features import main
+
+    values = np.arange(2 * 3 * 4, dtype=np.float32).reshape(2, 3, 4) * 1e-7
+    dataset = _dataset(values, reference="A1")
+    cache = save_epoch_dataset(tmp_path / "source.npz", dataset)
+    output = tmp_path / "features.npz"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prepare_domain_features.py",
+            "--dataset-cache",
+            str(cache),
+            "--output",
+            str(output),
+        ],
+    )
+    main()
+
+    with np.load(output, allow_pickle=False) as archive:
+        assert archive["features"].shape == (2, 12)
+        assert archive["schema"].item() == "n2p3_domain_feature_matrix/1"
+    record = json.loads(output.with_suffix(".record.json").read_text(encoding="utf-8"))
+    assert record["spatial_lift"]["kind"] == "identity"
+    assert record["temporal_basis"]["kind"] == "identity"

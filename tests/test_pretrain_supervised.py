@@ -30,9 +30,12 @@ from experiments.run_pretrain_supervised import (
 )
 from models.adapters import FeatureDomainTransfer
 from models.n2p3net import N2P3Net
+from research.contracts import training_procedure_record
+from train.source_sampling import PDSSelection, array_digest
 from transfer.checkpoint import (
     checkpoint_architecture_record,
     checkpoint_training_contract,
+    checkpoint_training_identity_ledger,
     load_n2p3_trunk_checkpoint,
 )
 
@@ -65,7 +68,7 @@ def _write_source_snapshot_manifest(
 
 def _supervised_source_dataset() -> SimpleNamespace:
     contract = SOURCE_COHORT_DATA_CONTRACTS["causal"]
-    subjects = np.repeat(np.asarray(["s1", "s2", "s3", "s4"]), 250)
+    subjects = np.repeat(np.asarray(["s1", "s2", "s3", "s4", "s5", "s6"]), 250)
     identity = DatasetIdentityTable.from_source_rows(
         subjects.tolist(),
         ["synthetic-source"] * len(subjects),
@@ -75,6 +78,7 @@ def _supervised_source_dataset() -> SimpleNamespace:
         y=np.tile(np.asarray([0, 1], dtype=np.int64), len(subjects) // 2),
         subject_ids=subjects,
         identity_table=identity,
+        n_epochs=len(subjects),
         n_channels=3,
         n_times=contract.n_times,
         preprocessing=preprocessing_spec_from_contract(contract),
@@ -297,6 +301,144 @@ def test_supervised_runner_records_verified_physical_source_snapshot(
     assert contract.optimizer["refit_runtime"]["precision"] == "fp32"
     assert payload["runtime"]["selection"]["precision"] == "fp32"
     assert payload["runtime"]["refit"]["precision"] == "fp32"
+
+
+def test_supervised_runner_binds_pds_source_selection_record(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = _supervised_source_dataset()
+    source_manifest, _, _ = _write_source_snapshot_manifest(tmp_path)
+    checkpoint = tmp_path / "pds.pt"
+    cache_sha256 = "1" * 64
+    selected_indices = np.arange(250, len(dataset.X), dtype=np.int64)
+    selection = PDSSelection(
+        selected_indices=selected_indices,
+        source_count=len(dataset.X),
+        target_count=64,
+        selection_scope="target_calibration",
+        seed=7,
+        target_temperature=1.0,
+        diversity_weight=1.0,
+        bandwidth=1.0,
+        source_digest="2" * 64,
+        target_digest="3" * 64,
+        selected_digest=array_digest(selected_indices),
+    )
+    selection_record = selection.record()
+    selection_record["source_cache_sha256"] = cache_sha256
+    selection_path = tmp_path / "selection.json"
+    selection_path.write_text(json.dumps(selection_record), encoding="utf-8")
+
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.load_epoch_dataset",
+        lambda *_args, **_kwargs: dataset,
+    )
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.loaded_epoch_cache_attestation",
+        lambda *_args, **_kwargs: {"sha256": cache_sha256},
+    )
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.N2P3NetBaseline",
+        _FastSupervisedBaseline,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_pretrain_supervised.py",
+            "--source-cache",
+            str(tmp_path / "synthetic.npz"),
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--source-selection-record",
+            str(selection_path),
+            "--checkpoint",
+            str(checkpoint),
+            "--epochs",
+            "1",
+            "--device",
+            "cpu",
+        ],
+    )
+
+    run_pretrain_supervised_main()
+
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    contract = checkpoint_training_contract(payload)
+    assert payload["n_source_epochs_used"] == len(dataset.X) - 250
+    assert payload["pds_dropped_source_epochs"] == 250
+    assert payload["pds_dropped_source_epochs_by_label"] == [125, 125]
+    assert payload["source_selection_contract"] == selection_record
+    assert contract.objective["source_selection_contract"] == selection_record
+    procedure = training_procedure_record(contract)
+    expected_procedure_selection = {
+        key: value for key, value in selection_record.items() if key != "seed"
+    }
+    assert (
+        procedure["objective"]["source_selection_contract"]
+        == expected_procedure_selection
+    )
+    ledger = checkpoint_training_identity_ledger(payload)
+    assert ledger.local_subject_ids == ("s2", "s3", "s4", "s5", "s6")
+
+
+def test_supervised_runner_rejects_selection_from_another_source_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = _supervised_source_dataset()
+    source_manifest, _, _ = _write_source_snapshot_manifest(tmp_path)
+    checkpoint = tmp_path / "wrong-selection.pt"
+    selected_indices = np.arange(0, len(dataset.X), dtype=np.int64)
+    selection = PDSSelection(
+        selected_indices=selected_indices,
+        source_count=len(dataset.X),
+        target_count=2,
+        selection_scope="target_calibration",
+        seed=0,
+        target_temperature=1.0,
+        diversity_weight=1.0,
+        bandwidth=1.0,
+        source_digest="2" * 64,
+        target_digest="3" * 64,
+        selected_digest=array_digest(selected_indices),
+    )
+    selection_record = selection.record()
+    selection_record["source_cache_sha256"] = "f" * 64
+    selection_path = tmp_path / "selection.json"
+    selection_path.write_text(json.dumps(selection_record), encoding="utf-8")
+
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.load_epoch_dataset",
+        lambda *_args, **_kwargs: dataset,
+    )
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.loaded_epoch_cache_attestation",
+        lambda *_args, **_kwargs: {"sha256": "1" * 64},
+    )
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.N2P3NetBaseline",
+        _FastSupervisedBaseline,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_pretrain_supervised.py",
+            "--source-cache",
+            str(tmp_path / "synthetic.npz"),
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--source-selection-record",
+            str(selection_path),
+            "--checkpoint",
+            str(checkpoint),
+            "--epochs",
+            "1",
+            "--device",
+            "cpu",
+        ],
+    )
+
+    with pytest.raises(ValueError, match="source_cache_sha256"):
+        run_pretrain_supervised_main()
 
 
 def test_supervised_batch_loads_source_once_and_attests_each_checkpoint(
