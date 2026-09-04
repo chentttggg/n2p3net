@@ -410,6 +410,11 @@ def test_conditional_analysis_is_dynamic_and_only_bootstraps_participants(
     assert analysis["inference"]["scope"] == "conditional_frozen_models"
     assert analysis["inference"]["sampling_unit"] == "participant"
     assert analysis["inference"]["p_values_computed"] is False
+    level8 = analysis["decision_curve"]["adapted"]["8"]
+    assert level8["requested"] == 6
+    assert level8["valid"] == 6
+    assert level8["requested_hit_rate"] == level8["correct"] / level8["requested"]
+    assert level8["valid_hit_rate"] == level8["correct"] / level8["valid"]
     contrast = analysis["planned_contrasts"][0]
     assert contrast["paired_unit"] == "participant"
     assert contrast["paired_bootstrap_interval"]["n_units"] == 3
@@ -731,6 +736,10 @@ def test_typed_fit_failure_remains_in_the_operational_denominator(tmp_path: Path
         counts["correct"] -= 1
         counts["fit_failure"] += 1
         counts["operational_hit_rate"] = counts["correct"] / counts["requested"]
+        counts["valid"] = counts["correct"] + counts["incorrect"] + counts["tie"]
+        counts["valid_hit_rate"] = (
+            counts["correct"] / counts["valid"] if counts["valid"] else 0.0
+        )
     result["decision_failures"] = [
         {
             "participant_key": first["participant_key"],

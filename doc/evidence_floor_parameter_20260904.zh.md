@@ -1,6 +1,14 @@
 # 证据深度参数化（D-11 落地）
 
-日期：2026-09-04 · 作者：傻福 · 状态：**已实现，全量测试绿，待云端重评**
+日期：2026-09-04 · 作者：傻福 · 状态：**历史文档——selection 硬门槛已在 `e02e752` 移除**
+
+> **2026-09-04 晚间更新（commit `e02e752`）**：T 裁决「直接把凑够 8 个完整
+> repetition 的机制删掉，hit@R 曲线照记但不作为硬性要求」。本节描述的
+> `selection_repetition_floor` 筛选门槛已不再执行；该参数仅为 API 兼容保留。
+> 现行为：每个后续且不重叠的 test selection 都进账本，深度超过其实际
+> repetition 数的层记 `incomplete`。实施细节见
+> `src/transfer/candidate_within_subject.py` 与
+> `tests/test_candidate_transfer.py`。
 
 ## 1. 背景与裁决
 
@@ -46,7 +54,13 @@ fail-closed 拒绝一切 `test_reps < 8` 的计划。T 的裁决：
 与 `test_repetitions`、`calibration_selections` 同类，放 `target_protocol`。
 附带好处：老 result 无此字段 → 缺省 8，**向后兼容**。
 
-## 4. 关键发现：只改下界不够
+## 4. 关键发现：只改下界不够（历史记录；门槛已整体删除）
+
+> **以下为当时发现的历史记录，不再是现行实现**。现行实现见 `e02e752`：
+> `candidate_calibration_decision_split` 不再调用
+> `_complete_repetition_block` 判定 test selection 门槛，仅保留
+> `len(selected) == 0` 与 target 一致性/时间重叠三道数据卫生检查。
+
 
 第一版只做了 plan/CLI 下界参数化，验证时发现**达不到 T 的诉求**。
 `candidate_calibration_decision_split` 里两道闸都绑死 `test_repetitions`：

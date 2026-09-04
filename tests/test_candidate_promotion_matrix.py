@@ -2157,3 +2157,59 @@ def test_euclidean_alignment_mode_none_accepts_raw_cache(tmp_path: Path) -> None
     record = _plan_record()
     record["source_arms"][0]["euclidean_alignment"] = {"mode": "none"}
     matrix._verify_inputs(matrix.build_dag(_load(tmp_path, record)))
+
+
+
+def _selected_arm_record(initial_checkpoint_arm: str | None = "source_a") -> dict[str, Any]:
+    record = _plan_record()
+    record["source_arms"][1] = {
+        "name": "source_sel",
+        "cache": "source-a.npz",
+        "source_domain_mass": None,
+        "risk_within_domain_unit": None,
+        "selection_domain": None,
+        "splitbn_source_weights": None,
+        "euclidean_alignment": {"mode": "none"},
+        "sampler_kind": "target_similarity_diverse",
+        "source_selection_record": "selection-does-not-need-to-exist.json",
+        "initial_checkpoint_arm": initial_checkpoint_arm,
+    }
+    record["statistical_design"]["planned_contrasts"] = [
+        ["source_a__zero_shot", "source_sel__zero_shot"],
+        ["source_a__linear_time_split", "source_sel__linear_time_split"],
+    ]
+    return record
+
+
+def test_selection_arm_declares_uniform_pretrain_checkpoint_dependency(tmp_path: Path) -> None:
+    plan = _load(tmp_path, _selected_arm_record())
+    assert plan.source_arms[1].initial_checkpoint_arm == "source_a"
+    dag = matrix.build_dag(plan)
+    selected = next(
+        task for task in dag.tasks if task.task_id.startswith("checkpoint_batch/source_sel/")
+    )
+    initial = next(
+        task for task in dag.tasks if task.task_id.startswith("checkpoint_batch/source_a/")
+    )
+    assert selected.dependencies == (initial.task_id,)
+    assert "--initial-checkpoint" in selected.argv
+    assert "--source-selection-record" in selected.argv
+
+
+def test_selection_initial_checkpoint_requires_earlier_uniform_same_cache_arm(
+    tmp_path: Path,
+) -> None:
+    record = _selected_arm_record()
+    record["source_arms"][1]["initial_checkpoint_arm"] = "source_sel"
+    with pytest.raises(ValueError, match="earlier source arm"):
+        _load(tmp_path, record)
+
+    record = _selected_arm_record()
+    record["source_arms"][1]["initial_checkpoint_arm"] = "missing"
+    with pytest.raises(ValueError, match="unknown arm"):
+        _load(tmp_path, record)
+
+    record = _selected_arm_record()
+    record["source_arms"][1]["cache"] = "source-ab.npz"
+    with pytest.raises(ValueError, match="share its source cache"):
+        _load(tmp_path, record)

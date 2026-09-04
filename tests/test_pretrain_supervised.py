@@ -386,6 +386,100 @@ def test_supervised_runner_binds_pds_source_selection_record(
     assert ledger.local_subject_ids == ("s2", "s3", "s4", "s5", "s6")
 
 
+
+def test_supervised_runner_records_uniform_initial_checkpoint_for_selected_stage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = _supervised_source_dataset()
+    source_manifest, _, _ = _write_source_snapshot_manifest(tmp_path)
+    cache_sha256 = "1" * 64
+    initial_checkpoint = tmp_path / "uniform.pt"
+    selected_checkpoint = tmp_path / "selected-from-uniform.pt"
+    selected_indices = np.arange(250, len(dataset.X), dtype=np.int64)
+    selection = PDSSelection(
+        selected_indices=selected_indices,
+        source_count=len(dataset.X),
+        target_count=64,
+        selection_scope="target_calibration",
+        seed=7,
+        target_temperature=1.0,
+        diversity_weight=1.0,
+        bandwidth=1.0,
+        source_digest="2" * 64,
+        target_digest="3" * 64,
+        selected_digest=array_digest(selected_indices),
+    )
+    selection_record = selection.record()
+    selection_record["source_cache_sha256"] = cache_sha256
+    selection_record["source_feature_record"] = {
+        "row_identity_digest": epoch_row_identity_digest(dataset)
+    }
+    selection_path = tmp_path / "selection.json"
+    selection_path.write_text(json.dumps(selection_record), encoding="utf-8")
+
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.load_epoch_dataset",
+        lambda *_args, **_kwargs: dataset,
+    )
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.loaded_epoch_cache_attestation",
+        lambda *_args, **_kwargs: {"sha256": cache_sha256},
+    )
+    monkeypatch.setattr(
+        "experiments.run_pretrain_supervised.N2P3NetBaseline",
+        _FastSupervisedBaseline,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_pretrain_supervised.py",
+            "--source-cache",
+            str(tmp_path / "synthetic.npz"),
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--checkpoint",
+            str(initial_checkpoint),
+            "--epochs",
+            "1",
+            "--device",
+            "cpu",
+        ],
+    )
+    run_pretrain_supervised_main()
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_pretrain_supervised.py",
+            "--source-cache",
+            str(tmp_path / "synthetic.npz"),
+            "--source-snapshot-manifest",
+            str(source_manifest),
+            "--source-selection-record",
+            str(selection_path),
+            "--initial-checkpoint",
+            str(initial_checkpoint),
+            "--checkpoint",
+            str(selected_checkpoint),
+            "--epochs",
+            "1",
+            "--device",
+            "cpu",
+        ],
+    )
+    run_pretrain_supervised_main()
+
+    payload = torch.load(selected_checkpoint, map_location="cpu", weights_only=False)
+    contract = checkpoint_training_contract(payload)
+    expected_sha = hashlib.sha256(initial_checkpoint.read_bytes()).hexdigest()
+    assert payload["initial_checkpoint"] == str(initial_checkpoint.resolve())
+    assert payload["initial_checkpoint_sha256"] == expected_sha
+    assert contract.objective["initial_checkpoint"] == {
+        "path": str(initial_checkpoint.resolve()),
+        "sha256": expected_sha,
+    }
+
+
 def test_supervised_runner_rejects_selection_from_another_source_cache(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

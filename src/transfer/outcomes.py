@@ -244,6 +244,7 @@ class EvidenceOutcomeCounts:
                 f"evidence level {self.evidence_level}: accounted={self.accounted} "
                 f"does not equal requested={requested}."
             )
+        valid = self.correct + self.incorrect + self.tie
         return {
             "requested": requested,
             "accounted": self.accounted,
@@ -253,7 +254,9 @@ class EvidenceOutcomeCounts:
             "abstain": self.abstain,
             "incomplete": self.incomplete,
             "fit_failure": self.fit_failure,
+            "valid": valid,
             "operational_hit_rate": self.correct / requested if requested else 0.0,
+            "valid_hit_rate": self.correct / valid if valid else 0.0,
         }
 
 

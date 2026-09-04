@@ -134,6 +134,7 @@ class SourceArmSpec:
     euclidean_alignment: EuclideanAlignmentSpec | None = None
     acw_state: Path | None = None
     sampler_kind: str | None = None
+    initial_checkpoint_arm: str | None = None
 
 
 @dataclass(frozen=True)
@@ -464,6 +465,7 @@ def _parse_source_arms(value: object, root: Path) -> tuple[SourceArmSpec, ...]:
                 "euclidean_alignment",
                 "acw_state",
                 "sampler_kind",
+                "initial_checkpoint_arm",
             },
             name=name,
         )
@@ -672,6 +674,16 @@ def _parse_source_arms(value: object, root: Path) -> tuple[SourceArmSpec, ...]:
                         f"sampler_kind {sampler_kind!r}."
                     )
 
+        initial_checkpoint_arm = (
+            None
+            if record.get("initial_checkpoint_arm") is None
+            else _text(record["initial_checkpoint_arm"], f"{name}.initial_checkpoint_arm")
+        )
+        if initial_checkpoint_arm is not None and sampler_kind not in {
+            "target_similarity_diverse",
+            "dense_pds",
+        }:
+            raise ValueError(f"{name}.initial_checkpoint_arm requires a source-selection arm.")
         arms.append(
             SourceArmSpec(
                 name=arm_name,
@@ -684,9 +696,38 @@ def _parse_source_arms(value: object, root: Path) -> tuple[SourceArmSpec, ...]:
                 euclidean_alignment=euclidean_alignment,
                 acw_state=acw_state,
                 sampler_kind=sampler_kind,
+                initial_checkpoint_arm=initial_checkpoint_arm,
             )
         )
     _assert_unique([item.name for item in arms], "source arm names")
+    arm_by_name = {item.name: item for item in arms}
+    for arm in arms:
+        if arm.initial_checkpoint_arm is None:
+            continue
+        initial = arm_by_name.get(arm.initial_checkpoint_arm)
+        if initial is None:
+            raise ValueError(
+                f"source arm {arm.name!r} initial_checkpoint_arm references "
+                f"unknown arm {arm.initial_checkpoint_arm!r}."
+            )
+        if initial not in arms[: arms.index(arm)]:
+            raise ValueError(
+                f"source arm {arm.name!r} initial_checkpoint_arm must reference "
+                "an earlier source arm in the plan."
+            )
+        if initial.cache != arm.cache:
+            raise ValueError(
+                f"source arm {arm.name!r} initial_checkpoint_arm must share its "
+                "source cache with the initial arm."
+            )
+        if initial.source_selection_record is not None or initial.sampler_kind not in (
+            None,
+            "uniform",
+        ):
+            raise ValueError(
+                f"source arm {arm.name!r} initial_checkpoint_arm must be a "
+                "uniform full-source arm without its own selection record."
+            )
     return tuple(arms)
 
 
@@ -1416,6 +1457,8 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
         else plan.checkpoint_batch_size
     )
     checkpoint_batch_id_by_partition: dict[str, str] = {}
+    checkpoint_paths_by_arm: dict[str, dict[str, Path]] = {}
+    checkpoint_batch_task_ids: dict[tuple[str, str, int], str] = {}
     for arm in plan.source_arms:
         for replicate in plan.training_replicates:
             checkpoint_paths = {
@@ -1429,6 +1472,7 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                 )
                 for target in plan.target_subjects
             }
+            checkpoint_paths_by_arm[arm.name] = checkpoint_paths
             chunk_count = (len(plan.target_subjects) + checkpoint_batch_size - 1) // checkpoint_batch_size
             for chunk_index in range(chunk_count):
                 chunk_targets = plan.target_subjects[
@@ -1448,6 +1492,16 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                     / arm.name
                     / f"{replicate.key}{record_suffix}.json",
                     output_root,
+                )
+                initial_task_id = (
+                    checkpoint_batch_task_ids.get(
+                        (arm.initial_checkpoint_arm, replicate.key, chunk_index)
+                    )
+                    if arm.initial_checkpoint_arm is not None
+                    else None
+                )
+                initial_paths_by_partition = (
+                    checkpoint_paths_by_arm.get(arm.initial_checkpoint_arm or "", {})
                 )
                 checkpoint_argv = [
                     sys.executable,
@@ -1533,6 +1587,18 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                             str(checkpoint_paths[target.partition_key]),
                         ]
                     )
+                if initial_task_id is not None:
+                    for target in chunk_targets:
+                        initial_path = initial_paths_by_partition.get(target.partition_key)
+                        if initial_path is None:
+                            raise AssertionError(
+                                f"source arm {arm.name!r} initial checkpoint arm "
+                                f"{arm.initial_checkpoint_arm!r} lacks partition "
+                                f"{target.partition_key!r}."
+                            )
+                        checkpoint_argv.extend(
+                            ["--initial-checkpoint", str(initial_path)]
+                        )
                 for domain, mass in arm.source_domain_mass:
                     checkpoint_argv.extend(["--source-domain-mass", f"{domain}={mass!r}"])
                 if arm.source_domain_mass:
@@ -1548,9 +1614,14 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                         kind="checkpoint_batch",
                         argv=tuple(checkpoint_argv),
                         output=checkpoint_batch_path,
-                        dependencies=(),
+                        dependencies=(
+                            () if initial_task_id is None else (initial_task_id,)
+                        ),
                     )
                 )
+                checkpoint_batch_task_ids[
+                    (arm.name, replicate.key, chunk_index)
+                ] = checkpoint_batch_id
                 for target in chunk_targets:
                     checkpoint_batch_id_by_partition[target.partition_key] = checkpoint_batch_id
 

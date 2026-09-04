@@ -81,6 +81,7 @@ SOURCE_PRETRAIN_INVALID_SCHEMA = "n2p3_source_pretrain_invalid/1"
 class SourcePretrainJob:
     holdout_subjects: str
     checkpoint: Path
+    initial_checkpoint: Path | None = None
 
 
 _SOURCE_DATASET_CACHE: dict[Path, tuple[EpochDataset, dict[str, object]]] = {}
@@ -299,6 +300,11 @@ def _single_job_argv(
 
         "--checkpoint",
         str(job.checkpoint),
+        *(
+            []
+            if job.initial_checkpoint is None
+            else ["--initial-checkpoint", str(job.initial_checkpoint)]
+        ),
         "--device",
         args.device,
     ]
@@ -627,6 +633,13 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument("--checkpoint")
     parser.add_argument(
+        "--initial-checkpoint",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="Optional pretrained checkpoint used to initialize this training run.",
+    )
+    parser.add_argument(
         "--job",
         action="append",
         nargs=2,
@@ -662,17 +675,35 @@ def main(argv: list[str] | None = None) -> None:
         parser.error(
             "candidate loss temperature/prefix options require --candidate-loss-weight"
         )
+    initial_checkpoint_paths = tuple(
+        Path(value).resolve() for value in args.initial_checkpoint
+    )
     if args.job:
         if args.checkpoint is not None or args.holdout_subjects:
             parser.error("--job cannot be combined with --checkpoint/--holdout-subjects")
         if args.batch_record is None:
             parser.error("--job requires --batch-record")
+        if initial_checkpoint_paths and len(initial_checkpoint_paths) != len(args.job):
+            parser.error(
+                "--initial-checkpoint must be omitted or given once per --job in batch mode"
+            )
         jobs = tuple(
-            SourcePretrainJob(holdout_subjects=holdout, checkpoint=Path(checkpoint))
-            for holdout, checkpoint in args.job
+            SourcePretrainJob(
+                holdout_subjects=holdout,
+                checkpoint=Path(checkpoint),
+                initial_checkpoint=(
+                    initial_checkpoint_paths[index]
+                    if initial_checkpoint_paths
+                    else None
+                ),
+            )
+            for index, (holdout, checkpoint) in enumerate(args.job)
         )
         _run_batch(args, jobs)
         return
+    if len(initial_checkpoint_paths) > 1:
+        parser.error("single-job mode accepts at most one --initial-checkpoint")
+    initial_checkpoint = initial_checkpoint_paths[0] if initial_checkpoint_paths else None
     if args.checkpoint is None:
         parser.error("single-job mode requires --checkpoint")
     if args.batch_record is not None:
@@ -683,6 +714,34 @@ def main(argv: list[str] | None = None) -> None:
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset, source_cache_attestation = _load_source_dataset_once(args.source_cache)
     source_cache_sha256 = str(source_cache_attestation["sha256"])
+    initial_checkpoint_sha256 = None
+    initial_state_dict = None
+    if initial_checkpoint is not None:
+        if not initial_checkpoint.is_file():
+            raise FileNotFoundError(
+                f"--initial-checkpoint does not exist: {initial_checkpoint}"
+            )
+        initial_payload = load_checkpoint_payload(initial_checkpoint)
+        initial_contract = checkpoint_training_contract(initial_payload)
+        if initial_contract.source_cache_sha256 != source_cache_sha256:
+            raise ValueError(
+                "--initial-checkpoint was trained on a different source cache; "
+                "two-stage source selection requires the same source cache."
+            )
+        if initial_contract.source_snapshot_sha256 != source_snapshot_sha256:
+            raise ValueError(
+                "--initial-checkpoint source snapshot disagrees with this run."
+            )
+        if initial_payload.get("source_selection_contract") is not None:
+            raise ValueError(
+                "--initial-checkpoint must come from the uniform full-source arm; "
+                "selected-to-selected chaining is not a declared procedure."
+            )
+        state = initial_payload.get("trunk_state_dict")
+        if not isinstance(state, Mapping) or not state:
+            raise ValueError("--initial-checkpoint lacks a non-empty trunk_state_dict.")
+        initial_state_dict = dict(state)
+        initial_checkpoint_sha256 = _sha256_file(initial_checkpoint)
     expected_contract = SOURCE_COHORT_DATA_CONTRACTS[args.cohort]
     if args.tmax_ms is not None:
         expected_contract = replace(expected_contract, tmax_ms=float(args.tmax_ms))
@@ -946,6 +1005,7 @@ def main(argv: list[str] | None = None) -> None:
         ),
         splitbn_target_buffer_source=args.splitbn_target_buffer_source,
         splitbn_source_weights=splitbn_source_weights or None,
+    pretrained_state_dict=initial_state_dict,
     )
 
     X = np.ascontiguousarray(dataset.X[source_rows])
@@ -1032,6 +1092,7 @@ def main(argv: list[str] | None = None) -> None:
         ),
         splitbn_target_buffer_source=args.splitbn_target_buffer_source,
         splitbn_source_weights=splitbn_source_weights or None,
+    pretrained_state_dict=initial_state_dict,
     )
     refit_started = time.perf_counter()
     try:
@@ -1225,6 +1286,14 @@ def main(argv: list[str] | None = None) -> None:
                 "orthogonality_weight": float(args.orthogonality_weight),
             },
             "source_selection_contract": source_selection_contract,
+            "initial_checkpoint": (
+                None
+                if initial_checkpoint is None
+                else {
+                    "path": str(initial_checkpoint),
+                    "sha256": initial_checkpoint_sha256,
+                }
+            ),
             "feature_alignment_diagnostics": {
                 "selection_epoch_mean_squared_distance": (
                     selection_baseline.last_history.get("feature_alignment") or {}
@@ -1289,6 +1358,10 @@ def main(argv: list[str] | None = None) -> None:
             "private_domain_weight": float(args.private_domain_weight),
             "orthogonality_weight": float(args.orthogonality_weight),
             "source_selection_contract": source_selection_contract,
+            "initial_checkpoint": (
+                None if initial_checkpoint is None else str(initial_checkpoint)
+            ),
+            "initial_checkpoint_sha256": initial_checkpoint_sha256,
             "training": "N2P3NetBaseline supervised (LOSO-identical path)",
         },
         "architecture": architecture_record,
@@ -1343,6 +1416,10 @@ def main(argv: list[str] | None = None) -> None:
         "source_residual_refit": baseline.last_history.get("source_residual"),
         "p2_budget_dropped_source_epochs": p2_budget_dropped_rows,
         "source_selection_contract": source_selection_contract,
+        "initial_checkpoint": (
+            None if initial_checkpoint is None else str(initial_checkpoint)
+        ),
+        "initial_checkpoint_sha256": initial_checkpoint_sha256,
         "tsd_dropped_source_epochs": pds_dropped_source_epochs,
         "tsd_dropped_source_epochs_by_label": pds_dropped_by_label.tolist(),
         "pds_dropped_source_epochs": pds_dropped_source_epochs,

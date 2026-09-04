@@ -1234,6 +1234,53 @@ def _decision_endpoints(accounting: Mapping[str, Any], evidence_level: int) -> d
     }
 
 
+def _decision_curve(validated: tuple[ValidatedRun, ...]) -> dict[str, dict[str, dict[str, Any]]]:
+    """Aggregate per-R requested and valid-denominator hit rates across runs."""
+    arms = tuple(dict.fromkeys(run.spec.arm for run in validated))
+    levels = tuple(
+        str(level)
+        for level in range(
+            1,
+            max(
+                (
+                    int(key)
+                    for run in validated
+                    for key in run.accounting["by_evidence_level"]
+                ),
+                default=0,
+            )
+            + 1,
+        )
+    )
+    curve: dict[str, dict[str, dict[str, Any]]] = {arm: {} for arm in arms}
+    for arm in arms:
+        totals = {
+            level: {"requested": 0, "correct": 0, "valid": 0, "incomplete": 0, "fit_failure": 0}
+            for level in levels
+        }
+        for run in validated:
+            if run.spec.arm != arm:
+                continue
+            by_level = run.accounting["by_evidence_level"]
+            for level in levels:
+                counts = by_level[level]
+                totals[level]["requested"] += int(counts["requested"])
+                totals[level]["correct"] += int(counts["correct"])
+                totals[level]["valid"] += int(counts["correct"]) + int(counts["incorrect"]) + int(
+                    counts["tie"]
+                )
+                totals[level]["incomplete"] += int(counts["incomplete"])
+                totals[level]["fit_failure"] += int(counts["fit_failure"])
+        for level in levels:
+            total = totals[level]
+            requested = total["requested"]
+            valid = total["valid"]
+            total["requested_hit_rate"] = total["correct"] / requested if requested else None
+            total["valid_hit_rate"] = total["correct"] / valid if valid else None
+            curve[arm][level] = total
+    return curve
+
+
 def analyze_manifest(path: str | Path) -> dict[str, Any]:
     manifest = _parse_manifest(path)
     validated = tuple(_validate_result(manifest, run) for run in manifest.runs)
@@ -1295,6 +1342,7 @@ def analyze_manifest(path: str | Path) -> dict[str, Any]:
         "training_replicates": list(manifest.design.training_replicate_keys),
         "participant_partitions": list(manifest.design.partition_keys),
         "metrics": metrics,
+        "decision_curve": _decision_curve(validated),
         "planned_contrasts": contrasts,
         "runs": [
             {

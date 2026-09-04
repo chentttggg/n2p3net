@@ -169,9 +169,14 @@ E=2 在 R=1~3 上 CI 下界为 0，即**与 chance 不可区分**——欠训练
 ⇒ per-subject rate 退化成近乎 0/1 的伯努利，这就是 macro sd 高达 0.27~0.39、
 CI 宽度 ±0.13 的直接原因。**31 次伯努利试验，SE ≈ 0.085。**
 
-### 5.2 根因：split 层用 `test_repetitions` 而非 level R 做过滤
+### 5.2 根因：split 层用 `test_repetitions` 而非 level R 做过滤（已修复）
 
-`src/transfer/candidate_within_subject.py` L194-203：
+> **修复记录（commit `e02e752`）**：第二道硬闸已删除；下文的旧实现片段只作
+> 历史存档。现行 `candidate_calibration_decision_split` 对每个时间上不重叠的
+> later selection 只做 `len(selected) == 0`、target 一致性检查，不再调用
+> `_complete_repetition_block`；深 R 层由 `candidate_decision` 记 `incomplete`。
+
+`src/transfer/candidate_within_subject.py`（`e02e752` 之前）L194-203：
 
 ```python
 selected = rows[metadata.repetition_indices[rows] < test_repetitions]

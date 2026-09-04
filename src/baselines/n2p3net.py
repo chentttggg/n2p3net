@@ -53,6 +53,7 @@ class N2P3NetBaseline(DeepBaseline):
         splitbn_domain_count: int | None = None,
         splitbn_target_buffer_source: str | None = None,
         splitbn_source_weights: Mapping[str, float] | None = None,
+        pretrained_state_dict: Mapping[str, torch.Tensor] | None = None,
     ) -> None:
         if not math.isfinite(tmin_s):
             raise ValueError("tmin_s must be finite.")
@@ -74,6 +75,7 @@ class N2P3NetBaseline(DeepBaseline):
             device=device,
             runtime=runtime,
             channel_mask=channel_mask,
+            pretrained_state_dict=pretrained_state_dict,
         )
         self.model_name = "n2p3net"
         self.tmin_s = float(tmin_s)

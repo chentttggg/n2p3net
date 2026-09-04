@@ -64,7 +64,8 @@
         "mode": "none"
       },
       "sampler_kind": "target_similarity_diverse",
-      "source_selection_record": "../cloud_inputs/BI2014A_TSD_SELECTION_PLACEHOLDER.json"
+      "source_selection_record": "../cloud_inputs/BI2014A_TSD_SELECTION_PLACEHOLDER.json",
+      "initial_checkpoint_arm": "bi2014a_native"
     },
     {
       "name": "bi2014a_dense_pds_native",
@@ -77,7 +78,8 @@
         "mode": "none"
       },
       "sampler_kind": "dense_pds",
-      "source_selection_record": "../cloud_inputs/BI2014A_DENSE_PDS_SELECTION_PLACEHOLDER.json"
+      "source_selection_record": "../cloud_inputs/BI2014A_DENSE_PDS_SELECTION_PLACEHOLDER.json",
+      "initial_checkpoint_arm": "bi2014a_native"
     }
   ],
   "training_replicates": [

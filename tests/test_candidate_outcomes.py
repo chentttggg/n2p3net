@@ -30,6 +30,9 @@ def test_candidate_outcomes_make_ties_and_missing_evidence_explicit() -> None:
         evidence_levels=(1, 2),
     )
     assert accounting.to_record()["by_evidence_level"]["1"]["tie"] == 1
+    record = accounting.to_record()["by_evidence_level"]["1"]
+    assert record["valid"] == 1
+    assert record["valid_hit_rate"] == 0.0
 
 
 def test_candidate_outcome_does_not_drop_incomplete_candidate() -> None:

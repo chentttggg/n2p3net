@@ -14,7 +14,8 @@ _主线：EA 默认数据对齐 → N2P3Net trunk → faithful AS-MMD → TSD/De
    - **L2 development 全跑**：64 target × 1 seed，按 §5 臂矩阵；AS-MMD live 臂要求多域 source cache，未就绪前**整臂 fail-closed 不启动**。
 3. 单域 BI2014a 的 L2 臂**不含** live AS-MMD（需要 `splitbn_domain_count>=2`）；AS-MMD 的公式/双 buffer 行为先在本地合成测试与 CUDA smoke 中验收，再等 §6 多域 source cache 就绪后上 64-fold。
 4. 所有 source-selection 的 target 统计必须来自 `target_calibration` cache；本方案新增 `prepare_target_calibration_cache.py`，从根上禁止 target-test 行进入 sampler。
-5. 本轮不启动 E2 wet-dry 比较；不覆盖 E1 冻结 `b96a6af`/`b86d558`。
+5. **test-selection 硬门槛已删除（commit `e02e752`，冻结 `e02e752`）**：不再要求凑够 8 个完整 repetition；每个后续且时间不重叠的 decision 一律进入账本，hit@R 曲线照记 R=1..8，深度不足的层记 `incomplete`。旧 1-seed 开发跑（31/64 有可评 decision）作废重跑。
+6. 本轮不启动 E2 wet-dry 比较；不覆盖 E1 冻结 `b96a6af`/`b86d558`。
 
 ---
 
@@ -22,7 +23,8 @@ _主线：EA 默认数据对齐 → N2P3Net trunk → faithful AS-MMD → TSD/De
 
 | 输入 | 位置 | SHA-256 |
 |---|---|---|
-| 当前源码冻结 | `frozen/active_source_f2ee195.*`（source_commit `f2ee195`，冻结对提交 `03ff7c6`，C1 三重互证） | `858ee6a8b8619dd256cfe165600871efa3aacb83af3b2605faffe37e47be4a33` |
+| 当前源码冻结 | `frozen/active_source_e02e752.*`（source_commit `e02e752ffe4f32acdf2257fae9f0db9d4c4e8526`，C1 三重互证；archive member_count=224，byte_size=1,100,737） | `dd26cef8f11f3ab2c6873ab030bfd270b5f70424461b4c1cdbfb31d06c8b6ae2` |
+| 上一冻结（已由 `e02e752` 取代） | `frozen/active_source_ec2a9cb.*`（source_commit `ec2a9cb`） | `7900582da556c3caf1eff359245702713c422bdabc511a63d18ba8a4dcebbe76` |
 | BI2014a causal-v3 64 人 cache | `tmp/l0_bi2014a_causal_v3_64subj.npz` | `842466e45d63e017704a2fe4ebc1ee550c54eff7b400bdd27c7454bb4ae69fff` |
 | BI2014a causal-v3 CAR16 cache | `tmp/l0_bi2014a_causal_v3_64subj_car16.npz` | `37710abb94255b53c9e2df478e642c688095ac93b23be627fa01abdedda4ef2b` |
 
@@ -36,50 +38,52 @@ E1 训练/评估锚点 `b96a6af`（native）/`b86d558`（CAR）只读，不复�
 
 ```bash
 # (1) target calibration-only cache（禁止 target test 行进入任何 sampler）
+# 松弛门槛后：64/64 受试都有 calibration 行，usable_subjects=64。
 python experiments/prepare_target_calibration_cache.py \
   --dataset-cache tmp/l0_bi2014a_causal_v3_64subj.npz \
-  --output cloud_inputs/bi2014a_target_calibration_c5_t8.npz \
+  --output cloud_inputs/bi2014a_target_calibration_c5_t8_relaxed.npz \
   --calibration-selections 5 --test-repetitions 8
 
 # (2) EA(target_calibration) source cache：EA 参考只来自已声明 calibration 行
 python experiments/prepare_euclidean_alignment_cache.py \
-  --dataset-cache cloud_inputs/bi2014a_target_calibration_c5_t8.npz \
-  --output cloud_inputs/bi2014a_ea_target_calibration.npz \
+  --dataset-cache cloud_inputs/bi2014a_target_calibration_c5_t8_relaxed.npz \
+  --output cloud_inputs/bi2014a_ea_target_calibration_relaxed.npz \
   --fit-scope target_calibration --reference-mode native_preserve
 
 # (3) 对齐特征矩阵
 python experiments/prepare_domain_features.py \
-  --dataset-cache cloud_inputs/bi2014a_target_calibration_c5_t8.npz \
-  --output cloud_inputs/bi2014a_target_cal_features.npz
+  --dataset-cache cloud_inputs/bi2014a_target_calibration_c5_t8_relaxed.npz \
+  --output cloud_inputs/bi2014a_target_cal_features_relaxed.npz
 python experiments/prepare_domain_features.py \
   --dataset-cache tmp/l0_bi2014a_causal_v3_64subj.npz \
-  --output cloud_inputs/bi2014a_source_features.npz
+  --output cloud_inputs/bi2014a_source_features_relaxed.npz
 
 # (4) 选样所需的 label/group 向量
 python experiments/prepare_source_selection_vectors.py \
   --dataset-cache tmp/l0_bi2014a_causal_v3_64subj.npz \
-  --output-labels cloud_inputs/bi2014a_source_labels.npz \
-  --output-groups cloud_inputs/bi2014a_source_subject_groups.npz
+  --output-labels cloud_inputs/bi2014a_source_labels_relaxed.npz \
+  --output-groups cloud_inputs/bi2014a_source_subject_groups_relaxed.npz
 
 # (5) TSD 选样（shared per-arm record；target 只来自 calibration features）
 python experiments/prepare_source_selection.py \
-  --source-features cloud_inputs/bi2014a_source_features.npz \
-  --target-features cloud_inputs/bi2014a_target_cal_features.npz \
-  --output cloud_inputs/bi2014a_tsd_selection.json \
-  --n-select <N_TSD> --seed 20260904 --sampler target_similarity_diverse \
+  --source-features cloud_inputs/bi2014a_source_features_relaxed.npz \
+  --target-features cloud_inputs/bi2014a_target_cal_features_relaxed.npz \
+  --output cloud_inputs/bi2014a_tsd_selection_n2000_relaxed.json \
+  --n-select 2000 --seed 20260904 --sampler target_similarity_diverse \
   --selection-scope target_calibration
 
 # (6) Dense PDS 忠实选样：r0 用 source 特征最近邻中位数离线估计并冻结
 python experiments/prepare_source_selection.py \
-  --source-features cloud_inputs/bi2014a_source_features.npz \
-  --target-features cloud_inputs/bi2014a_target_cal_features.npz \
-  --output cloud_inputs/bi2014a_dense_pds_selection.json \
-  --n-select <N_DENSE> --seed 20260904 --sampler dense_pds \
-  --source-labels cloud_inputs/bi2014a_source_labels.npz \
+  --source-features cloud_inputs/bi2014a_source_features_relaxed.npz \
+  --target-features cloud_inputs/bi2014a_target_cal_features_relaxed.npz \
+  --output cloud_inputs/bi2014a_dense_pds_selection_n2000_relaxed.json \
+  --n-select 2000 --seed 20260904 --sampler dense_pds \
+  --source-labels cloud_inputs/bi2014a_source_labels_relaxed.npz \
   --pds-radius <r0_frozen> --selection-scope target_calibration
 ```
 
-- `<N_TSD>`/`<N_DENSE>` 与 `r0` 在本地 dry-run 前用同一 source-freeze 计算，并把值写回本方案后冻结；未冻结不得启动 L2。
+- 本消融采用 `N_TSD=N_DENSE=2000`；`r0` 以 source 特征最近邻中位数离线估计并在发射前写回本方案后冻结；未冻结不得启动 L2。
+- 缓存生成必须带 CPU/GPU 利用率监测（云端按 Linux `%CPU` 计，>1000% 为 10+ 核；峰值 <1000% 要书面反思并决定是否分片并行）。
 - CAR 对照臂使用 CAR16 cache 走同一 reference CLI，`--reference-mode common_average`。
 - 每个派生 cache 的 `data_alignment`/`target_calibration_scope`/row-identity digest 必须由 matrix `_verify_inputs` 门禁复核。
 
@@ -114,7 +118,7 @@ smoke plan 与 example 同构，但 `training.epochs=2`、各 fitted evaluation 
 
 ## 5. L2 64-fold 臂矩阵（1 seed × 64 target）
 
-`target_cache` 统一为 BI2014a causal-v3 64 人；每个 source arm 复用一个 checkpoint 批次，所有 evaluation arm 在同一 checkpoint 上评估。主指标 `valid_subject_operational_hit_rate`，operational `hit@R` 为诊断。
+`target_cache` 统一为 BI2014a causal-v3 64 人；每个 source arm 复用一个 checkpoint 批次，所有 evaluation arm 在同一 checkpoint 上评估。主指标 `valid_subject_operational_hit_rate`；`requested` hit@R 与 analysis 新增 `decision_curve` 的每层 `valid_hit_rate` 为诊断。**松弛门槛后 `requested` 口径固定为全部时间上可评的 later decisions；`incomplete` 只出现在单 decision 的深 R 层，不再整 decision 剔除。**
 
 | Arm | source arm | depth adaptation | 主对照 |
 |---|---|---|---|
@@ -123,10 +127,11 @@ smoke plan 与 example 同构，但 `training.epochs=2`、各 fitted evaluation 
 | `A1-cal` | bi2014a_calibration_native | full_fine_no_mmd | calibration 数据量匹配控制 |
 | `EA-target-cal` | bi2014a_ea_target_calibration | full_fine_no_mmd | EA 主效应（对 `A1-cal`） |
 | `S0` | bi2014a_native | linear_target | 选样对照 |
-| `S1` | bi2014a_tsd_native | linear_target | TSD 主效应 |
-| `S2` | bi2014a_dense_pds_native | linear_target | Dense PDS 忠实对照 |
+| `S1` | bi2014a_tsd_n2000（uniform 预训练→selected 继续训练） | linear_target | TSD 主效应 |
+| `S2` | bi2014a_dense_pds_n2000（uniform 预训练→selected 继续训练） | linear_target | Dense PDS 忠实对照 |
 
 优先 contrasts：`EA-target-cal vs A1-cal`、`S1 vs S0`、`S2 vs S1`。其余 exploratory。
+CAR16 预处理对照用独立 plan（native CAR16 对 native 逐参与者比较）。
 
 **AS-MMD live 臂（L2b，待多域 source cache）**：
 
@@ -183,7 +188,7 @@ smoke plan 与 example 同构，但 `training.epochs=2`、各 fitted evaluation 
 
 ## 8. 冻结与上传
 
-1. 全部代码/测试提交后生成新 source-only freeze + manifest，C1 三重互证（archive SHA ↔ manifest ↔ source_commit）。
+1. 代码/测试提交并生成新 source-only freeze + manifest，C1 三重互证（archive SHA ↔ manifest ↔ source_commit）。**已完成：`e02e752`，archive `dd26cef8…`，member_count 224。**
 2. 派生 cache 上传后云端逐文件 SHA-256 复验，未复验不跑。
 3. 冻结 `b96a6af`/`b86d558` 与历史 `6fc1df1`/`352932b`/`326c8fd`/`ae2706e` 只读。
 4. 本轮不启动 E2 wet-dry 比较；L2b 只有在 §6 多域缓存与 T 裁决完成后才预注册发射。
