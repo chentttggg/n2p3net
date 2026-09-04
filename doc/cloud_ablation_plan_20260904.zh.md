@@ -23,7 +23,7 @@ _主线：EA 默认数据对齐 → N2P3Net trunk → faithful AS-MMD → TSD/De
 
 | 输入 | 位置 | SHA-256 |
 |---|---|---|
-| 当前源码冻结 | `frozen/active_source_e02e752.*`（source_commit `e02e752ffe4f32acdf2257fae9f0db9d4c4e8526`，C1 三重互证；archive member_count=224，byte_size=1,100,737） | `dd26cef8f11f3ab2c6873ab030bfd270b5f70424461b4c1cdbfb31d06c8b6ae2` |
+| 当前源码冻结 | `frozen/active_source_e3a9a33.*`（source_commit `e3a9a336d2e1ea52cef83c1d4ff9580671a8088d`，C1 三重互证；archive member_count=225，byte_size=1,106,315） | `2794c8fd5e1869676720ae7f4a4c2cee6173fb3b7349be252362f111da19363a` |
 | 上一冻结（已由 `e02e752` 取代） | `frozen/active_source_ec2a9cb.*`（source_commit `ec2a9cb`） | `7900582da556c3caf1eff359245702713c422bdabc511a63d18ba8a4dcebbe76` |
 | BI2014a causal-v3 64 人 cache | `tmp/l0_bi2014a_causal_v3_64subj.npz` | `842466e45d63e017704a2fe4ebc1ee550c54eff7b400bdd27c7454bb4ae69fff` |
 | BI2014a causal-v3 CAR16 cache | `tmp/l0_bi2014a_causal_v3_64subj_car16.npz` | `37710abb94255b53c9e2df478e642c688095ac93b23be627fa01abdedda4ef2b` |
@@ -188,7 +188,7 @@ CAR16 预处理对照用独立 plan（native CAR16 对 native 逐参与者比较
 
 ## 8. 冻结与上传
 
-1. 代码/测试提交并生成新 source-only freeze + manifest，C1 三重互证（archive SHA ↔ manifest ↔ source_commit）。**已完成：`e02e752`，archive `dd26cef8…`，member_count 224。**
+1. 代码/测试提交并生成新 source-only freeze + manifest，C1 三重互证（archive SHA ↔ manifest ↔ source_commit）。**已完成：`e3a9a33`，archive `2794c8fd…`，member_count 225。**
 2. 派生 cache 上传后云端逐文件 SHA-256 复验，未复验不跑。
 3. 冻结 `b96a6af`/`b86d558` 与历史 `6fc1df1`/`352932b`/`326c8fd`/`ae2706e` 只读。
 4. 本轮不启动 E2 wet-dry 比较；L2b 只有在 §6 多域缓存与 T 裁决完成后才预注册发射。

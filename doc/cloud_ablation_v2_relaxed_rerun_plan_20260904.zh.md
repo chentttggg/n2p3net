@@ -1,6 +1,6 @@
 # v2.1 松弛门槛 + 三项机制修复重跑方案（2026-09-04 深夜）
 
-_状态：代码已实现、全量 pytest 绿；待生成新 freeze、上传云端、smoke、64-fold 发射。_
+_状态：代码已实现、全量 pytest 绿；freeze e3a9a33 已生成并 C1 互证；下一步上传云端、smoke、64-fold 发射。_
 _所有产出仅限 development/机制证据。_
 
 ## 1. 变更总览
@@ -61,5 +61,5 @@ equested、alid、correct、两个 rate。
 
 ## 6. 冻结与已知状态
 
-- 本版代码冻结 commit 与 archive 会在提交后生成，并替换 e02e752 作为唯一执行锚点。
+- 本版代码冻结 commit e3a9a33，archive SHA 2794c8fd…，member_count 225，byte_size 1,106,315，已替换 e02e752 作为唯一执行锚点。
 - 旧 ec2a9cb 1-seed 结果仅作历史诊断，不作性能证据。
