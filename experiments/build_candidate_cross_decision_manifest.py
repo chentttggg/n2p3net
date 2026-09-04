@@ -13,10 +13,15 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
+for search_path in (ROOT, SRC):
+    if str(search_path) not in sys.path:
+        sys.path.insert(0, str(search_path))
 
 from data.candidate_task import CandidateTaskContract  # noqa: E402
+from experiments.analyze_candidate_cross_decision import (  # noqa: E402
+    DEFAULT_METRIC,
+    SUPPORTED_METRICS,
+)
 from research.contracts import (  # noqa: E402
     MIN_EVIDENCE_LEVEL,
     MIN_PROMOTION_HIT_AT_R,
@@ -32,10 +37,6 @@ from research.contracts import (  # noqa: E402
     training_procedure_record,
 )
 from research.evaluation import source_snapshot_sha256_from_archive_manifest  # noqa: E402
-from experiments.analyze_candidate_cross_decision import (  # noqa: E402
-    DEFAULT_METRIC,
-    SUPPORTED_METRICS,
-)
 from transfer.checkpoint import (  # noqa: E402
     checkpoint_training_contract,
     load_checkpoint_payload,
