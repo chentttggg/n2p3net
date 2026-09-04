@@ -1537,6 +1537,7 @@ class DeepBaseline(Baseline):
             "min_cell_count": self._feature_alignment_min_cell_count,
             "inactive_policy": self._feature_alignment_inactive_policy,
             "inactive_batch_count": 0,
+              "negative_mmd_batch_count": 0,
 
             "alignment_active": alignment_active,
             "private_domain_weight": private_weight,
@@ -1546,6 +1547,7 @@ class DeepBaseline(Baseline):
             "domain_vocabulary": list(self._alignment_domain_vocabulary),
             "epoch_mean_squared_distance": [],
             "epoch_mmd_squared": [],
+              "epoch_negative_mmd_terms": [],
             "epoch_private_domain_loss": [],
             "epoch_orthogonality_loss": [],
         }
@@ -2069,6 +2071,7 @@ class DeepBaseline(Baseline):
             epoch_decision_count = 0
             epoch_alignment_sum = 0.0
             epoch_mmd_sum = 0.0
+            epoch_negative_mmd_terms = 0.0
             epoch_alignment_batches = 0
             epoch_private_sum = 0.0
             epoch_orthogonality_sum = 0.0
@@ -2172,6 +2175,17 @@ class DeepBaseline(Baseline):
                         )
                     if "mmd_squared" in alignment_diagnostics:
                         epoch_mmd_sum += float(alignment_diagnostics["mmd_squared"])
+                    negative_terms = float(
+                        alignment_diagnostics.get("negative_mmd_terms", 0.0)
+                    )
+                    if negative_terms > 0.0:
+                        epoch_negative_mmd_terms += negative_terms
+                        self.last_feature_alignment["negative_mmd_batch_count"] = int(
+                            self.last_feature_alignment.get(
+                                "negative_mmd_batch_count", 0
+                            )
+                        ) + 1
+
                     if alignment_diagnostics.get("alignment_inactive"):
                         self.last_feature_alignment["inactive_batch_count"] = int(
                             self.last_feature_alignment.get("inactive_batch_count", 0)
@@ -2205,6 +2219,12 @@ class DeepBaseline(Baseline):
             )
             self.last_feature_alignment["epoch_mmd_squared"].append(
                 epoch_mmd_sum / epoch_alignment_batches
+                if self._feature_alignment_mode == "conditional_rbf_mmd"
+                and epoch_alignment_batches
+                else None
+            )
+            self.last_feature_alignment["epoch_negative_mmd_terms"].append(
+                epoch_negative_mmd_terms / epoch_alignment_batches
                 if self._feature_alignment_mode == "conditional_rbf_mmd"
                 and epoch_alignment_batches
                 else None

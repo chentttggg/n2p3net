@@ -99,6 +99,7 @@ def rbf_mmd_loss(
         "source_count": float(n_source),
         "target_count": float(n_target),
         "mmd_squared": float(loss.detach()),
+        "negative_mmd": bool(loss.detach() < 0.0),
     }
 
 
@@ -132,6 +133,7 @@ def conditional_rbf_mmd_loss(
     active_labels: list[int] = []
     bandwidths: dict[str, float] = {}
     counts: dict[str, dict[str, int]] = {}
+    negative_labels: list[int] = []
     for label in (0, 1):
         source_rows = source_labels == label
         target_rows = target_labels == label
@@ -148,6 +150,8 @@ def conditional_rbf_mmd_loss(
         losses.append(loss)
         active_labels.append(label)
         bandwidths[str(label)] = diagnostics["bandwidth"]
+        if diagnostics.get("negative_mmd"):
+            negative_labels.append(label)
     if losses:
         output = torch.stack(losses).mean()
     else:
@@ -159,6 +163,9 @@ def conditional_rbf_mmd_loss(
         "bandwidths": bandwidths,
         "mmd_squared": float(output.detach()),
         "alignment_inactive": not bool(losses),
+        "negative_mmd": bool(negative_labels),
+        "negative_mmd_labels": tuple(negative_labels),
+        "negative_mmd_terms": float(len(negative_labels)),
     }
 
 
@@ -190,6 +197,7 @@ def conditional_domain_rbf_mmd_loss(
     losses: list[torch.Tensor] = []
     active_pairs: list[tuple[int, int, int]] = []
     bandwidths: dict[str, float] = {}
+    negative_pairs: list[tuple[int, int, int]] = []
     for first in range(domain_count):
         for second in range(first + 1, domain_count):
             for label in (0, 1):
@@ -201,6 +209,8 @@ def conditional_domain_rbf_mmd_loss(
                 losses.append(loss)
                 active_pairs.append((first, second, label))
                 bandwidths[f"{first}:{second}:{label}"] = diagnostics["bandwidth"]
+                if diagnostics.get("negative_mmd"):
+                    negative_pairs.append((first, second, label))
     output = torch.stack(losses).mean() if losses else features_flat.new_zeros(())
     return output, {
         "active_pairs": tuple(active_pairs),
@@ -208,6 +218,9 @@ def conditional_domain_rbf_mmd_loss(
         "bandwidths": bandwidths,
         "mmd_squared": float(output.detach()),
         "alignment_inactive": not bool(losses),
+        "negative_mmd": bool(negative_pairs),
+        "negative_mmd_pairs": tuple(negative_pairs),
+        "negative_mmd_terms": float(len(negative_pairs)),
     }
 
 

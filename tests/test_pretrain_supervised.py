@@ -368,6 +368,8 @@ def test_supervised_runner_binds_pds_source_selection_record(
     payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
     contract = checkpoint_training_contract(payload)
     assert payload["n_source_epochs_used"] == len(dataset.X) - 250
+    assert payload["tsd_dropped_source_epochs"] == 250
+    assert payload["tsd_dropped_source_epochs_by_label"] == [125, 125]
     assert payload["pds_dropped_source_epochs"] == 250
     assert payload["pds_dropped_source_epochs_by_label"] == [125, 125]
     assert payload["source_selection_contract"] == selection_record

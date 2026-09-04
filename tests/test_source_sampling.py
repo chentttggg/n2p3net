@@ -114,27 +114,37 @@ def test_pds_incremental_repulsion_matches_full_kernel_reference() -> None:
         bandwidth=bandwidth,
     )
 
-    quality = np.exp(
+    log_quality = (
         -np.sum((source - target.mean(axis=0)[None, :]) ** 2, axis=1) / 2.0
     )
     squared = source[:, None, :] - source[None, :, :]
     kernel = np.exp(-np.sum(squared * squared, axis=2) / (2.0 * bandwidth**2))
-    tie_break = np.random.default_rng(seed).uniform(
-        0.0, np.finfo(np.float64).eps, len(source)
-    )
+    tie_break = np.random.default_rng(seed).uniform(0.0, 1e-9, len(source))
     selected: list[int] = []
     penalty = np.zeros(len(source), dtype=float)
     while len(selected) < 4:
         candidates = [index for index in range(len(source)) if index not in selected]
-        score = (
-            np.log(np.maximum(quality[candidates], 1e-300))
-            - penalty[candidates]
-            + tie_break[candidates]
-        )
+        score = log_quality[candidates] - penalty[candidates] + tie_break[candidates]
         chosen = candidates[int(np.argmax(score))]
         selected.append(chosen)
         penalty += kernel[chosen]
     np.testing.assert_array_equal(selection.selected_indices, np.asarray(selected))
+
+
+def test_tsd_far_distance_quality_does_not_underflow_before_tie_break() -> None:
+    source = np.asarray([[1e6, 0.0], [1e6 + 1e-3, 0.0]])
+    target = np.asarray([[0.0, 0.0]])
+
+    for seed in (0, 1):
+        selection = select_pds_rows(
+            source,
+            target,
+            n_select=1,
+            selection_scope="target_calibration",
+            seed=seed,
+        )
+        assert selection.selected_indices.tolist() == [0]
+
 
 
 def test_pds_bandwidth_subsamples_large_pools_without_quadratic_kernel() -> None:

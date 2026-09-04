@@ -24,6 +24,37 @@ def test_rbf_mmd_is_near_zero_for_identical_samples_and_positive_for_shift() -> 
     assert shifted_record["source_count"] == shifted_record["target_count"] == 12.0
 
 
+def test_rbf_mmd_records_negative_unbiased_estimate_without_clamping() -> None:
+    source = torch.tensor([[0.0, 0.0], [10.0, 10.0]])
+    target = source.clone()
+
+    loss, record = rbf_mmd_loss(source, target, bandwidth=1.0)
+
+    assert float(loss.detach()) < 0.0
+    assert record["negative_mmd"] is True
+    assert record["mmd_squared"] == pytest.approx(float(loss.detach()))
+
+
+def test_conditional_mmd_counts_negative_label_terms() -> None:
+    source = torch.tensor([[0.0], [10.0], [0.0], [10.0]])
+    target = source.clone()
+    labels = torch.tensor([0, 0, 1, 1])
+
+    _, record = conditional_rbf_mmd_loss(
+        source,
+        labels,
+        target,
+        labels,
+        min_cell_count=2,
+        bandwidth=1.0,
+    )
+
+    assert record["negative_mmd"] is True
+    assert record["negative_mmd_labels"] == (0, 1)
+    assert record["negative_mmd_terms"] == 2.0
+
+
+
 def test_conditional_mmd_does_not_hide_reversed_class_conditionals() -> None:
     source = torch.tensor([[-2.0], [-1.0], [1.0], [2.0], [-2.2], [2.2], [-1.8], [1.8]])
     target = torch.tensor([[1.0], [2.0], [-1.0], [-2.0], [2.2], [-2.2], [1.8], [-1.8]])
