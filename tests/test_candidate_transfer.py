@@ -514,21 +514,15 @@ def test_generic_bnci_contract_uses_early_decisions_and_tests_new_targets() -> N
         "s1:selection3",
         "s1:selection4",
     )
-    assert capped.test_selections_by_subject["s1"] == ("s1:selection4",)
-    assert capped.failed_test_selections_by_subject["s1"] == {
-        "s1:selection3": "insufficient_complete_test_repetitions"
-    }
-    assert "s1:selection5" not in capped.test_selections_by_subject["s1"]
+    assert capped.test_selections_by_subject["s1"] == (
+        "s1:selection3",
+        "s1:selection4",
+    )
+    assert capped.failed_test_selections_by_subject["s1"] == {}
 
 
-def test_selection_floor_decouples_eligibility_from_evidence_horizon() -> None:
-    """A shallow floor admits shallow selections without truncating the curve.
-
-    Selections carry 1..8 repetitions. With the historical behaviour (the floor
-    follows ``test_repetitions``) only the 8-deep selection is scorable; with a
-    declared floor of 2 every selection that can support R=2 enters the ledger,
-    while the evidence curve is still scored out to R=8.
-    """
+def test_selection_floor_no_longer_gates_test_eligibility() -> None:
+    """Shallow selections now enter the ledger and record incomplete levels."""
 
     # Three deep selections calibrate; the five test selections carry 1, 2, 3,
     # 4 and 8 repetitions.
@@ -536,39 +530,28 @@ def test_selection_floor_decouples_eligibility_from_evidence_horizon() -> None:
         "s1", n_selections=8, repetitions_per_selection=(4, 4, 4, 1, 2, 3, 4, 8)
     )
 
-    historical = candidate_calibration_decision_split(
-        dataset,
-        calibration_selections=3,
-        test_repetitions=8,
-    )
-    assert historical.requested_test_selections_by_subject["s1"] == tuple(
-        f"s1:selection{index}" for index in range(3, 8)
-    )
-    assert historical.test_selections_by_subject["s1"] == ("s1:selection7",)
-    assert historical.failed_test_selections_by_subject["s1"] == {
-        f"s1:selection{index}": "insufficient_complete_test_repetitions"
-        for index in range(3, 7)
-    }
-
-    shallow_floor = candidate_calibration_decision_split(
-        dataset,
-        calibration_selections=3,
-        test_repetitions=8,
-        selection_repetition_floor=2,
-    )
-    # Only the single-repetition selection is still refused; every selection
-    # that can support R=2 now contributes to the shallower levels.
-    assert shallow_floor.test_selections_by_subject["s1"] == tuple(
-        f"s1:selection{index}" for index in range(4, 8)
-    )
-    assert shallow_floor.failed_test_selections_by_subject["s1"] == {
-        "s1:selection3": "insufficient_complete_test_repetitions"
-    }
-    # The horizon is unchanged: all eight repetitions of the deepest selection
-    # remain available for the R=1..8 curve.
+    for floor in (None, 2):
+        kwargs = {} if floor is None else {"selection_repetition_floor": floor}
+        split = candidate_calibration_decision_split(
+            dataset,
+            calibration_selections=3,
+            test_repetitions=8,
+            **kwargs,
+        )
+        assert split.test_selections_by_subject["s1"] == tuple(
+            f"s1:selection{index}" for index in range(3, 8)
+        )
+        assert split.failed_test_selections_by_subject["s1"] == {}
+    # The evidence horizon remains R=1..8; shallow selections contribute rows
+    # for their observed levels and later levels are recorded incomplete.
     deepest = (dataset.metadata["selection_id"] == "s1:selection7").to_numpy()
     assert int(dataset.metadata.loc[deepest, "repetition_index"].max()) == 7
-    assert int(shallow_floor.test_mask[deepest].sum()) == 8 * 12
+    split = candidate_calibration_decision_split(
+        dataset,
+        calibration_selections=3,
+        test_repetitions=8,
+    )
+    assert int(split.test_mask[deepest].sum()) == 8 * 12
 
 
 def test_selection_floor_defaults_to_the_evidence_horizon() -> None:
@@ -591,11 +574,9 @@ def test_selection_floor_defaults_to_the_evidence_horizon() -> None:
     assert (
         default.test_selections_by_subject["s1"]
         == explicit.test_selections_by_subject["s1"]
-        == ("s1:selection4", "s1:selection5")
+        == ("s1:selection3", "s1:selection4", "s1:selection5")
     )
-    assert default.failed_test_selections_by_subject["s1"] == {
-        "s1:selection3": "insufficient_complete_test_repetitions"
-    }
+    assert default.failed_test_selections_by_subject["s1"] == {}
 
 
 def test_selection_floor_rejects_invalid_values() -> None:
@@ -628,7 +609,7 @@ def test_selection_floor_rejects_invalid_values() -> None:
         )
 
 
-def test_candidate_split_returns_typed_empty_selection_failure() -> None:
+def test_candidate_split_keeps_shallow_test_decisions_without_complete_gate() -> None:
     dataset = _candidate_cross_decision_dataset("s1", n_selections=4, repetitions_per_selection=7)
 
     split = candidate_calibration_decision_split(
@@ -637,13 +618,29 @@ def test_candidate_split_returns_typed_empty_selection_failure() -> None:
         test_repetitions=8,
     )
 
-    assert split.usable_subjects == ()
+    assert split.usable_subjects == ("s1",)
     assert split.requested_test_selections_by_subject == {"s1": ("s1:selection3",)}
+    assert split.test_selections_by_subject == {"s1": ("s1:selection3",)}
+    assert split.failed_test_selections_by_subject == {"s1": {}}
+    assert split.excluded_subjects == {}
+    assert int(split.calibration_mask.sum()) == 3 * 7 * 12
+    assert int(split.test_mask.sum()) == 7 * 12
+
+
+def test_candidate_split_typed_failure_when_no_later_decisions_exist() -> None:
+    dataset = _candidate_cross_decision_dataset("s1", n_selections=3, repetitions_per_selection=7)
+
+    split = candidate_calibration_decision_split(
+        dataset,
+        calibration_selections=3,
+        test_repetitions=8,
+    )
+
+    assert split.usable_subjects == ()
+    assert split.requested_test_selections_by_subject == {}
     assert split.test_selections_by_subject == {}
-    assert split.failed_test_selections_by_subject == {
-        "s1": {"s1:selection3": "insufficient_complete_test_repetitions"}
-    }
-    assert split.excluded_subjects == {"s1": "no_eligible_unknown_test_decision"}
+    assert split.failed_test_selections_by_subject == {}
+    assert split.excluded_subjects == {"s1": "insufficient_decisions"}
     assert not split.calibration_mask.any()
     assert not split.test_mask.any()
 
@@ -651,7 +648,7 @@ def test_candidate_split_returns_typed_empty_selection_failure() -> None:
 def test_runner_records_all_empty_r8_partition_without_fabricated_decisions(
     tmp_path, monkeypatch
 ) -> None:
-    dataset = _candidate_cross_decision_dataset("s1", n_selections=4, repetitions_per_selection=7)
+    dataset = _candidate_cross_decision_dataset("s1", n_selections=3, repetitions_per_selection=7)
     cache = save_epoch_dataset(tmp_path / "target.npz", dataset)
     source_member = tmp_path / "source.txt"
     source_member.write_text("runner source fixture", encoding="utf-8")
@@ -713,7 +710,7 @@ def test_runner_records_all_empty_r8_partition_without_fabricated_decisions(
     }
     assert result["decision_plan"]["entries"] == []
     assert result["decision_plan"]["participant_selection_failures"][0]["reason"] == (
-        "no_eligible_unknown_test_decision"
+        "insufficient_decisions"
     )
     assert result["decision_outcomes"] == []
     assert result["decision_failures"] == []
@@ -1082,10 +1079,10 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
     assert splitbn["buffer_estimand"] is None
     assert len(splitbn["bn_buffer_digest"]) == 64
     assert summary["decision_accounting"]["requested"] == 4
-    assert summary["decision_accounting"]["data_eligible"] == 3
-    assert summary["decision_accounting"]["data_ineligible"] == 1
+    assert summary["decision_accounting"]["data_eligible"] == 4
+    assert summary["decision_accounting"]["data_ineligible"] == 0
     assert summary["decision_accounting"]["evaluation_successful"] == 3
-    assert summary["decision_accounting"]["evaluation_failed"] == 0
+    assert summary["decision_accounting"]["evaluation_failed"] == 1
     assert summary["participant_accounting"] == {
         "requested": 3,
         "decision_planned": 2,
@@ -1113,11 +1110,15 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
         )
     assert summary["decision_failures"] == [
         {
-            "participant_key": summary["requested_participant_keys"][0],
+            "participant_key": next(
+                key
+                for key in summary["requested_participant_keys"]
+                if key.endswith("/participant/s1")
+            ),
             "decision_id": "s1:selection3",
             "status": "incomplete",
-            "stage": "decision_eligibility",
-            "reason": "insufficient_complete_test_repetitions",
+            "stage": "decision_evaluation",
+            "reason": "incomplete_candidate_coverage",
         }
     ]
     assert summary["decision_plan_digest"]
@@ -1146,7 +1147,7 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
     ]
     assert {outcome["status"] for outcome in failed_outcomes} == {"incomplete"}
     assert {outcome["failure_reason"] for outcome in failed_outcomes} == {
-        "insufficient_complete_test_repetitions"
+        "incomplete_candidate_coverage"
     }
     assert all(not outcome["candidate_coverage"]["complete"] for outcome in failed_outcomes)
     s3_key = summary["decision_plan"]["participant_selection_failures"][0]["participant_key"]

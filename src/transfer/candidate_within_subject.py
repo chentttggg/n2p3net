@@ -116,13 +116,10 @@ def candidate_calibration_decision_split(
 ) -> CandidateCalibrationDecisionSplit:
     """Split known early selections from later, truth-hidden test selections.
 
-    ``selection_repetition_floor`` decouples selection eligibility from the
-    evaluation horizon. A selection enters the ledger once it carries that many
-    complete repetition blocks, while the evidence curve is still scored out to
-    ``test_repetitions``; levels deeper than a selection's own depth record
-    ``incomplete``, which the eligible-denominator estimators already handle per
-    level. It defaults to ``test_repetitions``, preserving the historical
-    behaviour where only selections supporting the deepest level are scored.
+    ``selection_repetition_floor`` is retained for API compatibility but is no
+    longer a hard eligibility gate.  Every later non-overlapping decision is
+    eligible; levels deeper than its observed repetitions are recorded as
+    ``incomplete`` in the hit@R curve instead of excluding the decision.
     """
 
     contract, metadata = _validated_metadata(dataset)
@@ -217,14 +214,8 @@ def candidate_calibration_decision_split(
                 failed_test[str(selection)] = reason
                 continue
             selected = rows[metadata.repetition_indices[rows] < test_repetitions]
-            if not _complete_repetition_block(
-                selected,
-                metadata,
-                contract,
-                count=floor,
-                at_least=True,
-            ):
-                reason = "insufficient_complete_test_repetitions"
+            if len(selected) == 0:
+                reason = "no_test_repetitions"
                 failed_test[str(selection)] = reason
                 continue
             if (
