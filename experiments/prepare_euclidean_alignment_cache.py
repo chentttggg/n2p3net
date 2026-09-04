@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 import numpy as np
@@ -14,7 +15,11 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from data.domain import source_domain_ids  # noqa: E402
+from data.domain import (  # noqa: E402
+    DOMAIN_ADAPTER_SCHEMA,
+    NATIVE_REFERENCE_SCHEMA,
+    source_domain_ids,
+)
 from data.epochs import (  # noqa: E402
     DataLineage,
     EpochDataset,
@@ -33,6 +38,44 @@ from data.euclidean_alignment import (  # noqa: E402
 from data.qc_features import compute_epoch_qc_features  # noqa: E402
 
 
+def _assert_reference_mode(dataset: EpochDataset, declared: str) -> None:
+    """Verify the upstream cache reference mode declared on the CLI.
+
+    EA never re-references channels; it must consume a cache whose reference
+    provenance agrees with the arm definition, otherwise a native arm could
+    silently run on CARed data (or vice versa) and inherit the wrong claim.
+    """
+
+    adapter = dataset.provenance.get("domain_adapter")
+    reference = str(dataset.provenance.get("source_reference", "")).strip()
+    if declared == "common_average":
+        if (
+            not isinstance(adapter, Mapping)
+            or adapter.get("schema") != DOMAIN_ADAPTER_SCHEMA
+            or not reference.startswith("common_average[")
+        ):
+            raise ValueError(
+                "--reference-mode common_average requires a provenance-verified "
+                "common-average-referenced cache."
+            )
+        return
+    if adapter is not None:
+        if (
+            not isinstance(adapter, Mapping)
+            or adapter.get("schema") != NATIVE_REFERENCE_SCHEMA
+            or not reference.startswith("native:")
+        ):
+            raise ValueError(
+                "--reference-mode native_preserve disagrees with the cache's "
+                "explicit reference adapter."
+            )
+    elif not reference or reference == "unspecified" or reference.startswith("common_average["):
+        raise ValueError(
+            "--reference-mode native_preserve requires an explicit non-CAR "
+            "source_reference in the parent cache provenance."
+        )
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-cache", type=Path, required=True)
@@ -41,6 +84,12 @@ def main(argv: list[str] | None = None) -> None:
         "--fit-scope",
         choices=("source_rows", "target_calibration", "unlabelled_buffer", "per_domain"),
         required=True,
+    )
+    parser.add_argument(
+        "--reference-mode",
+        choices=("native_preserve", "common_average"),
+        required=True,
+        help="Required declaration that must match the upstream cache reference provenance.",
     )
     parser.add_argument("--shrinkage", type=float, default=0.0)
     parser.add_argument("--regularization", type=float, default=1e-6)
@@ -55,6 +104,7 @@ def main(argv: list[str] | None = None) -> None:
         raise FileExistsError("EA cache derivation requires a new output path.")
 
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
+    _assert_reference_mode(dataset, args.reference_mode)
     if args.fit_scope == "per_domain":
         if dataset.provenance.get("source_domain_axis") is None:
             parser.error("--fit-scope per_domain requires a source_domain_axis provenance.")
@@ -76,6 +126,7 @@ def main(argv: list[str] | None = None) -> None:
         alignment_record = {
             "schema": "n2p3_euclidean_alignment_fit/1",
             "scope": "per_domain",
+            "reference_mode": args.reference_mode,
             "states": {domain: state.record() for domain, state in states.items()},
             "row_identity_digest": epoch_row_identity_digest(dataset),
         }
@@ -85,6 +136,7 @@ def main(argv: list[str] | None = None) -> None:
         alignment_record = {
             "schema": "n2p3_euclidean_alignment_fit/1",
             "scope": args.fit_scope,
+            "reference_mode": args.reference_mode,
             "state": state.record(),
             "row_identity_digest": epoch_row_identity_digest(dataset),
         }
@@ -120,7 +172,13 @@ def main(argv: list[str] | None = None) -> None:
         lineage=DataLineage.derive(
             [materialize_dataset_lineage(dataset)],
             operation="euclidean_alignment",
-            parameters={"fit_scope": args.fit_scope, "shrinkage": args.shrinkage},
+            parameters={
+                "fit_scope": args.fit_scope,
+                "reference_mode": args.reference_mode,
+                "shrinkage": args.shrinkage,
+                "regularization": args.regularization,
+                "max_condition_number": args.max_condition_number,
+            },
         ),
     )
     adapted.validate(require_labels=True)
@@ -130,6 +188,7 @@ def main(argv: list[str] | None = None) -> None:
             {
                 "output": str(saved),
                 "fit_scope": args.fit_scope,
+                  "reference_mode": args.reference_mode,
                 "shape": list(transformed.shape),
                 "row_identity_digest": alignment_record["row_identity_digest"],
             }
