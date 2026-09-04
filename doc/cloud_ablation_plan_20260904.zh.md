@@ -23,7 +23,7 @@ _主线：EA 默认数据对齐 → N2P3Net trunk → faithful AS-MMD → TSD/De
 
 | 输入 | 位置 | SHA-256 |
 |---|---|---|
-| 当前源码冻结 | `frozen/active_source_e3a9a33.*`（source_commit `e3a9a336d2e1ea52cef83c1d4ff9580671a8088d`，C1 三重互证；archive member_count=225，byte_size=1,106,315） | `2794c8fd5e1869676720ae7f4a4c2cee6173fb3b7349be252362f111da19363a` |
+| 当前源码冻结 | `frozen/active_source_8ddab10.*`（source_commit `8ddab103d93e913628026f57b526eba7f225b960`，C1 三重互证；archive member_count=225，byte_size=1,106,315） | `fcbc6c11bced1271ca6235348c83b142c63eb4c540af6fbf6d2f6458b360d698` |
 | 上一冻结（已由 `e02e752` 取代） | `frozen/active_source_ec2a9cb.*`（source_commit `ec2a9cb`） | `7900582da556c3caf1eff359245702713c422bdabc511a63d18ba8a4dcebbe76` |
 | BI2014a causal-v3 64 人 cache | `tmp/l0_bi2014a_causal_v3_64subj.npz` | `842466e45d63e017704a2fe4ebc1ee550c54eff7b400bdd27c7454bb4ae69fff` |
 | BI2014a causal-v3 CAR16 cache | `tmp/l0_bi2014a_causal_v3_64subj_car16.npz` | `37710abb94255b53c9e2df478e642c688095ac93b23be627fa01abdedda4ef2b` |

@@ -61,5 +61,5 @@ equested、alid、correct、两个 rate。
 
 ## 6. 冻结与已知状态
 
-- 本版代码冻结 commit e3a9a33，archive SHA 2794c8fd…，member_count 225，byte_size 1,106,315，已替换 e02e752 作为唯一执行锚点。
+- 本版代码冻结 commit e3a9a33，archive SHA 2794c8fd…，member_count 225，byte_size 1,106,798，已替换 e02e752 作为唯一执行锚点。
 - 旧 ec2a9cb 1-seed 结果仅作历史诊断，不作性能证据。
