@@ -1,4 +1,4 @@
-﻿"""Analyze manifest-bound candidate cross-decision result artifacts."""
+"""Analyze manifest-bound candidate cross-decision result artifacts."""
 
 from __future__ import annotations
 

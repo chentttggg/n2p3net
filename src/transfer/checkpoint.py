@@ -639,18 +639,17 @@ def checkpoint_scores_to_llr(
     }
 
 
-def predict_n2p3_checkpoint(
+def _checkpoint_prediction_input(
     trunk: N2P3Net | FeatureDomainTransfer,
     X: np.ndarray,
     *,
     input_stats: tuple[np.ndarray, np.ndarray],
     device: torch.device,
-    trial_channel_mask: np.ndarray | None = None,
-    eval_buffer_source: str | None = None,
-    eval_buffer_index: int | None = None,
-) -> np.ndarray:
-    """Run a small target suffix through a pretrained classifier unchanged."""
-
+    trial_channel_mask: np.ndarray | None,
+    eval_buffer_source: str | None,
+    eval_buffer_index: int | None,
+) -> tuple[np.ndarray, str | None]:
+    """Validate one unchanged-checkpoint suffix and return standardized input."""
     values = np.asarray(X, dtype=np.float32)
     if values.ndim != 3 or values.shape[1:] != (trunk.n_channels, trunk.n_times):
         raise ValueError(f"checkpoint input must be (N,{trunk.n_channels},{trunk.n_times}).")
@@ -667,8 +666,6 @@ def predict_n2p3_checkpoint(
     mean, std = input_stats
     standardized = ((values - mean) / std).astype(np.float32, copy=False)
     np.copyto(standardized, 0.0, where=~mask[:, :, None])
-    trunk = trunk.to(device)
-    trunk.eval()
     core = trunk.core if isinstance(trunk, FeatureDomainTransfer) else trunk
     splitbn_config = core.splitbn_config
     if splitbn_config is not None:
@@ -682,14 +679,82 @@ def predict_n2p3_checkpoint(
                 "checkpoint target prediction cannot select a source-domain buffer index."
             )
         eval_buffer_source = declared_source
+    return standardized, eval_buffer_source
+
+
+def predict_n2p3_checkpoint_with_features(
+    trunk: N2P3Net | FeatureDomainTransfer,
+    X: np.ndarray,
+    *,
+    input_stats: tuple[np.ndarray, np.ndarray],
+    device: torch.device,
+    trial_channel_mask: np.ndarray | None = None,
+    eval_buffer_source: str | None = None,
+    eval_buffer_index: int | None = None,
+) -> tuple[np.ndarray, np.ndarray | None]:
+    """Return unchanged-checkpoint scores and the pooled trunk features.
+
+    The features are returned only for plain ``N2P3Net`` trunks whose
+    classifier consumes the same adapted map that ``forward_with_features``
+    exposes; wrapped feature-transfer trunks keep their existing consensus
+    path and report ``None`` features.
+    """
+
+    standardized, resolved_buffer_source = _checkpoint_prediction_input(
+        trunk,
+        X,
+        input_stats=input_stats,
+        device=device,
+        trial_channel_mask=trial_channel_mask,
+        eval_buffer_source=eval_buffer_source,
+        eval_buffer_index=eval_buffer_index,
+    )
+    trunk = trunk.to(device)
+    trunk.eval()
     with torch.inference_mode():
         tensor = torch.from_numpy(np.ascontiguousarray(standardized)).to(device)
-        output = trunk(
-            tensor,
-            eval_buffer_source=eval_buffer_source,
-            eval_buffer_index=eval_buffer_index,
-        )
-    return (output[:, 1] - output[:, 0]).detach().cpu().numpy().astype(np.float64)
+        if isinstance(trunk, N2P3Net):
+            output, features = trunk.forward_with_features(
+                tensor,
+                eval_buffer_source=resolved_buffer_source,
+                eval_buffer_index=eval_buffer_index,
+            )
+            features_value = (
+                trunk.pool_features(features).detach().cpu().numpy().astype(np.float32)
+            )
+        else:
+            output = trunk(
+                tensor,
+                eval_buffer_source=resolved_buffer_source,
+                eval_buffer_index=eval_buffer_index,
+            )
+            features_value = None
+    scores = (output[:, 1] - output[:, 0]).detach().cpu().numpy().astype(np.float64)
+    return scores, features_value
+
+
+def predict_n2p3_checkpoint(
+    trunk: N2P3Net | FeatureDomainTransfer,
+    X: np.ndarray,
+    *,
+    input_stats: tuple[np.ndarray, np.ndarray],
+    device: torch.device,
+    trial_channel_mask: np.ndarray | None = None,
+    eval_buffer_source: str | None = None,
+    eval_buffer_index: int | None = None,
+) -> np.ndarray:
+    """Run a small target suffix through a pretrained classifier unchanged."""
+
+    scores, _ = predict_n2p3_checkpoint_with_features(
+        trunk,
+        X,
+        input_stats=input_stats,
+        device=device,
+        trial_channel_mask=trial_channel_mask,
+        eval_buffer_source=eval_buffer_source,
+        eval_buffer_index=eval_buffer_index,
+    )
+    return scores
 
 
 def load_n2p3_trunk_checkpoint(

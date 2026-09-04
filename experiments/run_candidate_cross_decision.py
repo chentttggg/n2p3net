@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import os
-
 import json
+import os
 import platform
 import sys
+import tempfile
+from collections.abc import Sequence
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -60,6 +62,7 @@ from transfer.candidate_decision import (  # noqa: E402
 from transfer.candidate_within_subject import (  # noqa: E402
     candidate_calibration_decision_split,
 )
+from experiments.result_batch_contract import ZERO_SHOT_FEATURE_CACHE_SCHEMA  # noqa: E402
 from transfer.checkpoint import (  # noqa: E402
     assert_checkpoint_target_identity_excluded,
     checkpoint_classifier_is_trained,
@@ -69,6 +72,7 @@ from transfer.checkpoint import (  # noqa: E402
     load_checkpoint_payload,
     load_n2p3_trunk_checkpoint,
     predict_n2p3_checkpoint,
+    predict_n2p3_checkpoint_with_features,
 )
 from transfer.cohort import read_subject_manifest, resolve_subject_scope  # noqa: E402
 from transfer.decision_loss import DirectDecisionContractError  # noqa: E402
@@ -105,6 +109,122 @@ def _sha256_file(path: str | Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _cached_attested_dataset(cache_path: str) -> object:
+    return load_epoch_dataset(cache_path, require_labels=True, validation="attested")
+
+
+@lru_cache(maxsize=8)
+def _cached_sha256_file(path: str) -> str:
+    return _sha256_file(path)
+
+
+@lru_cache(maxsize=8)
+def _cached_candidate_split(
+    dataset_cache_path: str,
+    calibration_selections: int,
+    test_repetitions: int,
+    selection_repetition_floor: int,
+    max_test_selections: int | None,
+) -> object:
+    return candidate_calibration_decision_split(
+        _cached_attested_dataset_memo(dataset_cache_path),
+        calibration_selections=calibration_selections,
+        test_repetitions=test_repetitions,
+        selection_repetition_floor=selection_repetition_floor,
+        max_test_selections=max_test_selections,
+    )
+
+
+@lru_cache(maxsize=2)
+def _cached_attested_dataset_memo(cache_path: str) -> object:
+    return _cached_attested_dataset(cache_path)
+
+
+@lru_cache(maxsize=8)
+def _cached_checkpoint_payload(checkpoint_path: str) -> dict[str, object]:
+    return load_checkpoint_payload(Path(checkpoint_path))
+
+
+@lru_cache(maxsize=8)
+def _cached_verified_source_snapshot(manifest_path: str) -> dict[str, object]:
+    return verified_source_snapshot(Path(manifest_path))
+
+
+def _zero_shot_cache_header(
+    *,
+    checkpoint_sha256: str,
+    target_cache_sha256: str,
+    partition_key: str,
+    epoch_rows: np.ndarray,
+    test_reps: int,
+) -> dict[str, object]:
+    return {
+        "schema": ZERO_SHOT_FEATURE_CACHE_SCHEMA,
+        "checkpoint_sha256": checkpoint_sha256,
+        "target_cache_sha256": target_cache_sha256,
+        "partition_key": partition_key,
+        "epoch_rows": np.asarray(epoch_rows, dtype=np.int64).tolist(),
+        "test_reps": int(test_reps),
+    }
+
+
+def _read_zero_shot_feature_cache(
+    cache_path: str | Path | None,
+    header: dict[str, object],
+) -> dict[str, np.ndarray] | None:
+    if cache_path is None:
+        return None
+    path = Path(cache_path)
+    if not path.is_file():
+        return None
+    try:
+        payload = np.load(path, allow_pickle=False)
+        if "header" not in payload or "scores" not in payload or "features" not in payload:
+            return None
+        stored = str(payload["header"][0])
+        stored_header = json.loads(stored)
+        if stored_header != header:
+            return None
+        features = np.asarray(payload["features"], dtype=np.float32)
+        scores = np.asarray(payload["scores"], dtype=np.float64)
+    except (OSError, ValueError, TypeError, IndexError, json.JSONDecodeError):
+        # The memo is derived, not a scientific input: a corrupt cache is
+        # recomputed rather than failing an otherwise valid result run.
+        return None
+    if scores.ndim != 1 or features.ndim != 2 or len(features) != len(scores):
+        return None
+    return {"features": features, "scores": scores}
+
+
+def _write_zero_shot_feature_cache(
+    cache_path: str | Path,
+    *,
+    header: dict[str, object],
+    features: np.ndarray,
+    scores: np.ndarray,
+) -> None:
+    path = Path(cache_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, raw_temp = tempfile.mkstemp(
+        prefix=f".{path.name}.", suffix=".tmp", dir=path.parent
+    )
+    temp = Path(raw_temp)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            np.savez(
+                stream,
+                header=np.asarray([json.dumps(header, ensure_ascii=False, sort_keys=True)]),
+                features=np.asarray(features, dtype=np.float32),
+                scores=np.asarray(scores, dtype=np.float64),
+            )
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp, path)
+    except BaseException:
+        temp.unlink(missing_ok=True)
+        raise
 
 
 BUFFER_ESTIMAND_BY_BUFFER_SOURCE = {
@@ -344,7 +464,7 @@ def _validate_cached_candidate_labels(dataset) -> CandidateTaskContract:
     return contract
 
 
-def main() -> None:
+def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-cache", required=True)
     parser.add_argument("--checkpoint", default=None)
@@ -427,6 +547,14 @@ def main() -> None:
         default=None,
         help="Pin this result worker to a fixed native thread budget.",
     )
+    parser.add_argument(
+        "--zero-shot-feature-cache",
+        type=Path,
+        default=None,
+        help="Optional per-partition feature/logit memo for zero_shot arms.",
+    )
+    parser.add_argument("--output", required=True)
+    args = parser.parse_args(argv)
     if args.cpu_threads is not None:
         if args.cpu_threads < 1:
             parser.error("--cpu-threads must be at least one")
@@ -434,10 +562,6 @@ def main() -> None:
         os.environ["MKL_NUM_THREADS"] = str(args.cpu_threads)
         os.environ["OPENBLAS_NUM_THREADS"] = str(args.cpu_threads)
         torch.set_num_threads(args.cpu_threads)
-
-
-    parser.add_argument("--output", required=True)
-    args = parser.parse_args()
     if args.candidate_loss_weight < 0.0:
         parser.error("--candidate-loss-weight must be non-negative")
     if args.candidate_loss_temperature <= 0.0:
@@ -451,7 +575,9 @@ def main() -> None:
         )
     except ValueError as error:
         parser.error(str(error))
-    source_snapshot_identity = verified_source_snapshot(args.source_snapshot_manifest)
+    source_snapshot_identity = _cached_verified_source_snapshot(
+        str(args.source_snapshot_manifest.resolve())
+    )
     source_snapshot_sha256 = str(source_snapshot_identity["archive_sha256"])
     if args.target_subjects_file is not None and args.max_subjects is not None:
         parser.error(
@@ -460,16 +586,16 @@ def main() -> None:
         )
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
-    dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
+    dataset = _cached_attested_dataset_memo(str(Path(args.dataset_cache).resolve()))
     target_cache_sha256 = str(loaded_epoch_cache_attestation(dataset)["sha256"])
     assert_causal_p300_input_contract(dataset.preprocessing)
     candidate_task = _validate_cached_candidate_labels(dataset)
-    split = candidate_calibration_decision_split(
-        dataset,
-        calibration_selections=args.calibration_selections,
-        test_repetitions=args.test_reps,
-        selection_repetition_floor=args.min_evidence_level,
-        max_test_selections=args.max_test_selections,
+    split = _cached_candidate_split(
+        str(Path(args.dataset_cache).resolve()),
+        args.calibration_selections,
+        args.test_reps,
+        args.min_evidence_level,
+        args.max_test_selections,
     )
     manifest_subjects = (
         read_subject_manifest(args.target_subjects_file)
@@ -505,7 +631,11 @@ def main() -> None:
     )
     subjects = np.asarray(usable_order)
 
-    checkpoint_payload = load_checkpoint_payload(args.checkpoint) if args.checkpoint else None
+    checkpoint_payload = (
+        _cached_checkpoint_payload(str(Path(args.checkpoint).resolve()))
+        if args.checkpoint
+        else None
+    )
     if (
         checkpoint_payload is not None
         and checkpoint_training_contract(checkpoint_payload).source_snapshot_sha256
@@ -534,6 +664,11 @@ def main() -> None:
     checkpoint_stats = (
         checkpoint_input_stats(checkpoint_payload, dataset.n_channels)
         if checkpoint_payload is not None
+        else None
+    )
+    checkpoint_sha256 = (
+        _cached_sha256_file(str(Path(args.checkpoint).resolve()))
+        if args.checkpoint
         else None
     )
     head_mode = args.head
@@ -662,13 +797,40 @@ def main() -> None:
         y_post = local_y[local_test]
         if head_mode == "zero_shot":
             assert checkpoint_payload is not None and checkpoint_stats is not None
-            suffix_logits = predict_n2p3_checkpoint(
-                trunk,
-                suffix_X,
-                input_stats=checkpoint_stats,
-                device=device,
-                trial_channel_mask=suffix_mask,
+            assert checkpoint_sha256 is not None
+            feature_cache_header = _zero_shot_cache_header(
+                checkpoint_sha256=checkpoint_sha256,
+                target_cache_sha256=target_cache_sha256,
+                partition_key=args.partition_key,
+                epoch_rows=post_rows,
+                test_reps=args.test_reps,
             )
+            feature_cache = _read_zero_shot_feature_cache(
+                args.zero_shot_feature_cache,
+                feature_cache_header,
+            )
+            if feature_cache is not None:
+                if feature_cache["scores"].shape != (len(post_rows),):
+                    raise AssertionError("cached zero-shot scores disagree with row scope")
+                suffix_logits = feature_cache["scores"].astype(np.float64, copy=False)
+            else:
+                suffix_logits, zero_shot_features = predict_n2p3_checkpoint_with_features(
+                    trunk,
+                    suffix_X,
+                    input_stats=checkpoint_stats,
+                    device=device,
+                    trial_channel_mask=suffix_mask,
+                )
+                if (
+                    args.zero_shot_feature_cache is not None
+                    and zero_shot_features is not None
+                ):
+                    _write_zero_shot_feature_cache(
+                        args.zero_shot_feature_cache,
+                        header=feature_cache_header,
+                        features=zero_shot_features,
+                        scores=suffix_logits,
+                    )
             suffix_llr, calibration_record = checkpoint_scores_to_llr(
                 checkpoint_payload, suffix_logits
             )
@@ -1055,7 +1217,6 @@ def main() -> None:
                 "requested_participant_operational_hit_rate": endpoint,
             }
         )
-    checkpoint_sha256 = _sha256_file(args.checkpoint) if args.checkpoint else None
     model_origin = (
         checkpoint_model_origin(
             checkpoint_payload,

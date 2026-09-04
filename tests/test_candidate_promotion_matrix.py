@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import hashlib
 import json
@@ -714,22 +714,39 @@ def test_dry_run_emits_full_matrix_without_writing_outputs(
     output = json.loads(capsys.readouterr().out)
     assert output["task_counts"] == {
         "checkpoint_batch": 4,
-        "result": 16,
+        "result": 0,
+        "result_batch": 8,
         "manifest": 1,
         "analysis": 1,
     }
-    assert output["task_count"] == 22
+    assert output["task_count"] == 14
     assert output["resolved_inputs"] == resolved_inputs
     assert all(task["argv"][0] == "$PYTHON" for task in output["tasks"])
+    assert len(output["result_batch_records"]) == 8
+    batch_record = next(
+        record["record"]
+        for record in output["result_batch_records"].values()
+        if record["record"]["job_count"] == 2
+    )
+    assert batch_record["jobs"][0]["argv"][0] == "--dataset-cache"
     assert not (tmp_path / "outputs").exists()
 
 
 def test_dag_passes_explicit_time_split_linear_configuration(tmp_path: Path) -> None:
     dag = matrix.build_dag(_load(tmp_path))
-    linear = next(
-        task for task in dag.tasks if task.task_id == "result/source_a__linear_time_split/rep01/p01"
+    batch_task = next(
+        task
+        for task in dag.tasks
+        if task.task_id == "result_batch/source_a/rep01/p01"
     )
-    argv = list(linear.argv)
+    assert batch_task.kind == "result_batch"
+    assert dag.result_batch_job_paths[batch_task.task_id].is_absolute()
+    jobs = {
+        job["arm_name"]: list(job["argv"])
+        for job in dag.result_batch_job_records[batch_task.task_id]["jobs"]
+    }
+    assert set(jobs) == {"source_a__zero_shot", "source_a__linear_time_split"}
+    linear = jobs["source_a__linear_time_split"]
     expected = {
         "--head": "linear",
         "--normalization": "source",
@@ -740,8 +757,8 @@ def test_dag_passes_explicit_time_split_linear_configuration(tmp_path: Path) -> 
         "--target-stat-weight": "0.0",
     }
     for flag, value in expected.items():
-        assert argv[argv.index(flag) + 1] == value
-    assert "--no-fold-local-qc" in argv
+        assert linear[linear.index(flag) + 1] == value
+    assert "--no-fold-local-qc" in linear
 
     weighted_checkpoint = next(
         task
@@ -759,9 +776,8 @@ def test_dag_passes_explicit_time_split_linear_configuration(tmp_path: Path) -> 
     assert checkpoint_argv[checkpoint_argv.index("--selection-domain") + 1] == "A"
     assert "--subject-prefix-repeat" not in checkpoint_argv
 
-    zero_shot = next(
-        task for task in dag.tasks if task.task_id == "result/source_a__zero_shot/rep01/p01"
-    )
+    zero_shot = jobs["source_a__zero_shot"]
+    assert "--zero-shot-feature-cache" in zero_shot
     assert not {
         "--epochs",
         "--batch-size",
@@ -771,7 +787,80 @@ def test_dag_passes_explicit_time_split_linear_configuration(tmp_path: Path) -> 
         "--adapt-batchnorm",
         "--epoch-selection",
         "--target-stat-weight",
-    } & set(zero_shot.argv)
+    } & set(zero_shot)
+
+
+def test_result_batch_embedded_record_validates_ledger_and_member_results(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dag = matrix.build_dag(_load(tmp_path))
+    batch_task = next(task for task in dag.tasks if task.kind == "result_batch")
+    jobs_path = dag.result_batch_job_paths[batch_task.task_id]
+    jobs_path.parent.mkdir(parents=True, exist_ok=True)
+    jobs_record = json.loads(json.dumps(dag.result_batch_job_records[batch_task.task_id]))
+    jobs_path.write_text(json.dumps(jobs_record), encoding="utf-8")
+    outputs: list[Path] = []
+    for job in jobs_record["jobs"]:
+        output = Path(job["argv"][job["argv"].index("--output") + 1])
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(
+            json.dumps(
+                {
+                    "schema": matrix.RESULT_SCHEMA,
+                    "run_status": "completed",
+                    "evaluation_contract": {"probe": True},
+                    "evaluation_contract_digest": "a" * 64,
+                    "decision_plan": {"probe": True},
+                    "decision_plan_digest": "b" * 64,
+                }
+            ),
+            encoding="utf-8",
+        )
+        outputs.append(output)
+
+    class DummyEvaluation:
+        def __init__(self, **_: Any) -> None:
+            pass
+
+        def digest(self) -> str:
+            return "a" * 64
+
+    monkeypatch.setattr(matrix, "EvaluationRunContract", DummyEvaluation)
+    monkeypatch.setattr(
+        matrix,
+        "assert_contract_digest",
+        lambda *_args, **_kwargs: None,
+    )
+    ledger_jobs = []
+    for job, output in zip(jobs_record["jobs"], outputs, strict=True):
+        ledger_jobs.append(
+            {
+                "arm_name": job["arm_name"],
+                "output": str(output.resolve()),
+                "sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
+                "byte_size": output.stat().st_size,
+                "evaluation_contract_digest": "a" * 64,
+                "decision_plan_digest": "b" * 64,
+            }
+        )
+    ledger = {
+        "schema": matrix.RESULT_BATCH_LEDGER_SCHEMA,
+        "completed": True,
+        "jobs_file": str(jobs_path.resolve()),
+        "jobs_file_sha256": hashlib.sha256(jobs_path.read_bytes()).hexdigest(),
+        "job_count": len(ledger_jobs),
+        "jobs": ledger_jobs,
+    }
+    batch_task.output.parent.mkdir(parents=True, exist_ok=True)
+    batch_task.output.write_text(json.dumps(ledger), encoding="utf-8")
+    embedded = matrix._embedded_artifact_record(batch_task)
+    assert embedded["schema"] == matrix.RESULT_BATCH_LEDGER_SCHEMA
+    assert embedded["job_count"] == len(outputs)
+    assert embedded["jobs_file_sha256"] == ledger["jobs_file_sha256"]
+
+    outputs[0].write_text("tampered", encoding="utf-8")
+    with pytest.raises(ValueError, match="Expecting value"):
+        matrix._embedded_artifact_record(batch_task)
 
 
 def _fake_artifact_attestation(task: matrix.MatrixTask) -> dict[str, Any]:
@@ -816,12 +905,12 @@ def test_resume_reruns_tampered_output_and_transitive_dependents(
     monkeypatch.setattr(matrix, "_artifact_attestation", _fake_artifact_attestation)
     monkeypatch.setattr(matrix, "_embedded_artifact_record", _fake_embedded)
     matrix.execute_dag(dag, subprocess_runner=succeed, verify_inputs=False)
-    assert len(calls) == 22
+    assert len(calls) == 14
     first_checkpoint = dag.tasks[0].output
     first_checkpoint.write_text("tampered", encoding="utf-8")
     calls.clear()
     matrix.execute_dag(dag, resume=True, subprocess_runner=succeed, verify_inputs=False)
-    assert len(calls) == 7
+    assert len(calls) == 5
     assert str(first_checkpoint) in calls
     assert str(dag.tasks[-2].output) in calls
     assert str(dag.tasks[-1].output) in calls
@@ -1155,7 +1244,7 @@ def test_parallel_scheduler_respects_limit_dependencies_and_main_thread_writes(
     first_ready = [task.task_id for task in dag.tasks if not task.dependencies][:4]
     assert journal["dispatch_sequence"][:4] == first_ready
     assert set(journal["dispatch_sequence"]) == set(calls)
-    assert len(journal["dispatch_sequence"]) == len(set(journal["dispatch_sequence"])) == 22
+    assert len(journal["dispatch_sequence"]) == len(set(journal["dispatch_sequence"])) == 14
     assert all(record["status"] == "completed" for record in journal["tasks"].values())
     assert all(len(record["attempts"]) == 1 for record in journal["tasks"].values())
     for record in journal["tasks"].values():
@@ -1240,7 +1329,7 @@ def test_parallel_failure_stops_dispatch_drains_and_resumes_strictly(
     assert dag.tasks[0].task_id in resume_calls
     initial_successes = set(initial_calls) - {dag.tasks[0].task_id}
     assert not initial_successes & set(resume_calls)
-    assert len(resume_calls) == 19
+    assert len(resume_calls) == 11
     assert all(record["status"] == "completed" for record in resumed["tasks"].values())
 
 
@@ -1285,7 +1374,7 @@ def test_resume_marks_old_running_attempt_orphaned_and_invalidates_dependents(
     first = resumed["tasks"][dag.tasks[0].task_id]
     assert first["attempts"][-2]["status"] == "orphaned"
     assert first["resume_validation"]["status"] == "rerun"
-    assert len(calls) == 7
+    assert len(calls) == 5
     assert str(dag.tasks[0].task_id) in calls
     assert all(record["status"] == "completed" for record in resumed["tasks"].values())
 
@@ -1325,7 +1414,7 @@ def test_resume_reruns_log_tamper_and_transitive_dependents(
     )
 
     resumed = json.loads(matrix._journal_path(dag).read_text(encoding="utf-8"))
-    assert len(calls) == 7
+    assert len(calls) == 5
     assert resumed["tasks"][dag.tasks[0].task_id]["resume_validation"]["reason"] == (
         "stdout log is missing or changed size"
     )
@@ -1436,6 +1525,37 @@ def test_keyboard_interrupt_retains_lock_when_worker_drain_cannot_be_confirmed(
     )
 
 
+def test_result_phase_uses_declared_result_worker_budget(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dag = matrix.build_dag(_load(tmp_path))
+
+    def succeed(argv: list[str], **_: Any) -> None:
+        output = _output_from_argv(argv)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(f"artifact:{output.name}", encoding="utf-8")
+
+    monkeypatch.setattr(matrix, "_artifact_attestation", _fake_artifact_attestation)
+    monkeypatch.setattr(matrix, "_embedded_artifact_record", _fake_embedded)
+    matrix.execute_dag(
+        dag,
+        subprocess_runner=succeed,
+        verify_inputs=False,
+        max_workers=1,
+        result_max_workers=16,
+    )
+    journal = json.loads(matrix._journal_path(dag).read_text(encoding="utf-8"))
+    assert journal["execution"]["max_workers"] == 1
+    assert journal["execution"]["result_max_workers"] == 16
+    assert journal["execution"]["phase_policy"] == "checkpoint_phase_then_result_phase"
+    checkpoints = [task.task_id for task in dag.tasks if task.kind == "checkpoint_batch"]
+    result_batches = [task.task_id for task in dag.tasks if task.kind == "result_batch"]
+    sequence = journal["dispatch_sequence"]
+    assert max(sequence.index(task_id) for task_id in checkpoints) < min(
+        sequence.index(task_id) for task_id in result_batches
+    )
+
+
 @pytest.mark.parametrize("workers", [0, -1, True, 1.5])
 def test_execute_rejects_invalid_max_workers(tmp_path: Path, workers: object) -> None:
     dag = matrix.build_dag(_load(tmp_path))
@@ -1455,13 +1575,20 @@ def test_plan_supports_candidate_loss_ablation_interface(tmp_path: Path) -> None
     assert plan.evaluation_arms[1].candidate_loss_weight == 0.25
     assert plan.evaluation_arms[1].candidate_loss_temperature == 2.0
     dag = matrix.build_dag(plan)
-    result = next(
+    batch_task = next(
         task
         for task in dag.tasks
-        if task.task_id == "result/source_a__linear_time_split/rep01/p01"
+        if task.task_id == "result_batch/source_a/rep01/p01"
     )
-    assert "--candidate-loss-weight" in result.argv
-    assert "--candidate-loss-temperature" in result.argv
+    argv = next(
+        list(job["argv"])
+        for job in dag.result_batch_job_records[batch_task.task_id]["jobs"]
+        if job["arm_name"] == "source_a__linear_time_split"
+    )
+    assert "--candidate-loss-weight" in argv
+    assert "--candidate-loss-temperature" in argv
+    assert argv[argv.index("--candidate-loss-weight") + 1] == "0.25"
+    assert argv[argv.index("--candidate-loss-temperature") + 1] == "2.0"
 
 
 def test_plan_rejects_candidate_loss_on_zero_shot_arm(tmp_path: Path) -> None:
@@ -1482,10 +1609,18 @@ def test_plan_supports_chunked_checkpoint_batches(tmp_path: Path) -> None:
         "checkpoint_batch/source_a/rep01/chunk-00",
         "checkpoint_batch/source_a/rep01/chunk-01",
     } <= {task.task_id for task in checkpoints}
-    result = next(
-        task for task in dag.tasks if task.task_id == "result/source_a__zero_shot/rep01/p01"
+    result_batch = next(
+        task
+        for task in dag.tasks
+        if task.task_id == "result_batch/source_a/rep01/p01"
     )
-    assert result.dependencies == ("checkpoint_batch/source_a/rep01/chunk-00",)
+    assert result_batch.dependencies == ("checkpoint_batch/source_a/rep01/chunk-00",)
+    zero_shot_argv = next(
+        list(job["argv"])
+        for job in dag.result_batch_job_records[result_batch.task_id]["jobs"]
+        if job["arm_name"] == "source_a__zero_shot"
+    )
+    assert "--zero-shot-feature-cache" in zero_shot_argv
 
 
 def test_plan_supports_result_worker_and_thread_tuning(tmp_path: Path) -> None:
@@ -1496,10 +1631,15 @@ def test_plan_supports_result_worker_and_thread_tuning(tmp_path: Path) -> None:
     assert plan.result_max_workers == 16
     assert plan.result_threads == 1
     dag = matrix.build_dag(plan)
-    result = next(
+    batch_task = next(
         task
         for task in dag.tasks
-        if task.task_id == "result/source_a__zero_shot/rep01/p01"
+        if task.task_id == "result_batch/source_a/rep01/p01"
     )
-    assert "--cpu-threads" in result.argv
-    assert result.argv[result.argv.index("--cpu-threads") + 1] == "1"
+    argv = next(
+        list(job["argv"])
+        for job in dag.result_batch_job_records[batch_task.task_id]["jobs"]
+        if job["arm_name"] == "source_a__zero_shot"
+    )
+    assert "--cpu-threads" in argv
+    assert argv[argv.index("--cpu-threads") + 1] == "1"
