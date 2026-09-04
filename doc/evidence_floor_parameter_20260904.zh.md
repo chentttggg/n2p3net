@@ -132,3 +132,31 @@ r3（E=16）跑完即获得最深 checkpoint。用新参数**只重评 result �
 | 被试级 SE | 0.085 | ≈0.045 |
 
 **注意**：此表为按 rep 分布的外推，非实测。实测值以重评结果为准。
+
+---
+
+## 8. r4 预注册（2026-09-04 发射前冻结）
+
+**定位**：不是单变量消融，而是「正确测量面 + 更深训练」的合并产出。消融已由
+r1/r2/r3（E 剂量）与逐位交叉验证（向量化）分别闭合。
+
+| 项 | 值 |
+|---|---|
+| 代码冻结 | `a21266e`（向量化 result）+ `161fcbf`（floor 参数化） |
+| source manifest | `active_source_a21266e.manifest.json`（archive sha `d0f3d5f3…`） |
+| plan digest | `f84e6cd3`（SD 合同 `66423956`，evidence_level=8 不变） |
+| epochs | 45（上限；早停 patience=6 已默认启用，best_epoch+1 refit） |
+| evidence_floor | 2（selection 门槛，rep≥2 占 68.1%） |
+| test_reps | 8（曲线深度，保留 R=1..8） |
+| seeds / arms / bootstrap | 3 / zero_shot+target_adapter / 1000（冻结） |
+| output_root | `/root/autodl-tmp/n2p3-runs/dev64_cuda_r4_f2` |
+
+**三个变化叠加（非单变量）**：① 向量化 result 层（交叉验证 158/158 逐位一致，
+不改变数学）；② epochs 16→45（r3 证明剂量未饱和）；③ floor 8→2（测量面从 31 人
+扩到 ~64 人）。
+
+**预期**：有效被试 31→~64，被试级 SE 0.085→~0.045，CI 减半。hit@R=8 若落在
+0.4 附近，与 r3 的 0.407 直接可比（口径变宽后可能略降，因浅 selection 加入）。
+
+**功效声明**：floor=2 下 CI 仍约 ±0.09，E=45 相对 E=16 的增量若 <0.10，结论记为
+「不可区分」，不得记为「无差异」。
