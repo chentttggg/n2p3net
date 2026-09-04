@@ -21,6 +21,7 @@ from data.epochs import EpochDataset, preprocessing_spec_from_contract, save_epo
 from data.events import observed_only_timeline
 from data.identity import DatasetIdentityTable, ParticipantIdentityRecord, origin_subject_key
 from experiments import run_candidate_promotion_matrix as matrix
+from research.contracts import MIN_PROMOTION_HIT_AT_R
 
 
 def _plan_record(*, output_root: str = "outputs") -> dict[str, Any]:
@@ -264,6 +265,69 @@ def test_plan_rejects_hit_at_r_below_promotion_floor(tmp_path: Path) -> None:
     record["test_reps"] = 7
     record["statistical_design"]["evidence_level"] = 7
     with pytest.raises(ValueError, match="at least 8"):
+        _load(tmp_path, record)
+
+
+def test_omitted_evidence_floor_keeps_promotion_default(tmp_path: Path) -> None:
+    """Predeclared plans that never mention the floor keep the promotion depth."""
+
+    assert "evidence_floor" not in _plan_record()
+    assert _load(tmp_path).evidence_floor == MIN_PROMOTION_HIT_AT_R
+
+
+def test_plan_accepts_declared_evidence_floor_below_promotion_default(tmp_path: Path) -> None:
+    """A development estimand may target a shallower hit@R, but must say so."""
+
+    record = _plan_record()
+    record["evidence_floor"] = 2
+    record["test_reps"] = 2
+    record["statistical_design"]["evidence_level"] = 2
+    plan = _load(tmp_path, record)
+    assert plan.evidence_floor == 2
+    assert plan.test_reps == 2
+    assert plan.statistical_design.evidence_level == 2
+
+
+def test_plan_rejects_evidence_floor_below_one(tmp_path: Path) -> None:
+    for floor in (0, -3):
+        record = _plan_record()
+        record["evidence_floor"] = floor
+        with pytest.raises(ValueError, match="at least 1"):
+            _load(tmp_path, record)
+
+
+def test_plan_rejects_non_integer_evidence_floor(tmp_path: Path) -> None:
+    for floor in (True, 2.5, "2"):
+        record = _plan_record()
+        record["evidence_floor"] = floor
+        with pytest.raises(ValueError, match="must be an integer"):
+            _load(tmp_path, record)
+
+
+def test_plan_rejects_test_reps_below_declared_floor(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["evidence_floor"] = 4
+    record["test_reps"] = 3
+    record["statistical_design"]["evidence_level"] = 3
+    with pytest.raises(ValueError, match="at least 4"):
+        _load(tmp_path, record)
+
+
+def test_plan_rejects_evidence_level_below_declared_floor(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["evidence_floor"] = 4
+    record["test_reps"] = 8
+    record["statistical_design"]["evidence_level"] = 2
+    with pytest.raises(ValueError, match="at least 4"):
+        _load(tmp_path, record)
+
+
+def test_plan_rejects_evidence_level_above_test_reps(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["evidence_floor"] = 2
+    record["test_reps"] = 4
+    record["statistical_design"]["evidence_level"] = 5
+    with pytest.raises(ValueError, match=r"2 <= R <= 4 \(got 5\)"):
         _load(tmp_path, record)
 
 

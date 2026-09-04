@@ -52,6 +52,7 @@ from experiments.run_pretrain_supervised import (  # noqa: E402
 from models.adapters import SOURCE_DROP_MODES  # noqa: E402
 from models.splitbn import SPLITBN_TARGET_BUFFER_SOURCES  # noqa: E402
 from research.contracts import (  # noqa: E402
+    MIN_EVIDENCE_LEVEL,
     MIN_PROMOTION_HIT_AT_R,
     EvaluationRunContract,
     StatisticalDesignContract,
@@ -174,6 +175,7 @@ class PromotionPlan:
     training: TrainingConfig
     calibration_selections: int
     test_reps: int
+    evidence_floor: int
     identity_exclusion_policy: str
     output_root: Path
     statistical_design: StatisticalDesignSpec
@@ -817,6 +819,7 @@ def _parse_statistical_design(
     root: Path,
     available_arms: frozenset[str],
     test_reps: int,
+    evidence_floor: int,
 ) -> StatisticalDesignSpec:
     record = _mapping(value, "statistical_design")
     _keys(
@@ -859,11 +862,12 @@ def _parse_statistical_design(
     evidence_level = _integer(
         record["evidence_level"],
         "statistical_design.evidence_level",
-        minimum=MIN_PROMOTION_HIT_AT_R,
+        minimum=evidence_floor,
     )
     assert_promotion_evidence_gate(
         test_reps,
         primary_evidence_level=evidence_level,
+        minimum_evidence_level=evidence_floor,
         name="candidate promotion plan",
     )
     power_plan = (
@@ -914,6 +918,7 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
             "output_root",
             "statistical_design",
         },
+        optional={"evidence_floor"},
         name="plan",
     )
     if record["schema"] != PLAN_SCHEMA:
@@ -934,8 +939,21 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
     ]
     _assert_unique(expanded_arm_names, "expanded source/evaluation arm names")
     available_arms = frozenset(expanded_arm_names)
-    test_reps = _integer(record["test_reps"], "test_reps", minimum=MIN_PROMOTION_HIT_AT_R)
-    assert_promotion_evidence_gate(test_reps, name="candidate promotion plan")
+    # The evidence horizon is a declared plan parameter, not a hardcoded
+    # constant: a development estimand may legitimately target a shallower
+    # hit@R than the promotion default. Omitting "evidence_floor" keeps the
+    # promotion default, so predeclared plans are unaffected.
+    evidence_floor = _integer(
+        record.get("evidence_floor", MIN_PROMOTION_HIT_AT_R),
+        "evidence_floor",
+        minimum=MIN_EVIDENCE_LEVEL,
+    )
+    test_reps = _integer(record["test_reps"], "test_reps", minimum=evidence_floor)
+    assert_promotion_evidence_gate(
+        test_reps,
+        minimum_evidence_level=evidence_floor,
+        name="candidate promotion plan",
+    )
     identity_policy = _text(record["identity_exclusion_policy"], "identity_exclusion_policy")
     if identity_policy not in _IDENTITY_POLICIES:
         raise ValueError(f"identity_exclusion_policy must be one of {sorted(_IDENTITY_POLICIES)}.")
@@ -965,6 +983,7 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
             record["calibration_selections"], "calibration_selections", minimum=1
         ),
         test_reps=test_reps,
+        evidence_floor=evidence_floor,
         identity_exclusion_policy=identity_policy,
         output_root=output_root,
         statistical_design=_parse_statistical_design(
@@ -972,6 +991,7 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
             root=resolution_root,
             available_arms=available_arms,
             test_reps=test_reps,
+            evidence_floor=evidence_floor,
         ),
     )
 
@@ -1157,6 +1177,8 @@ def build_dag(plan: PromotionPlan, *, device: str = "cuda") -> PromotionDag:
                         str(plan.calibration_selections),
                         "--test-reps",
                         str(plan.test_reps),
+                        "--min-evidence-level",
+                        str(plan.evidence_floor),
                         "--head",
                         evaluation_arm.head,
                         "--normalization",

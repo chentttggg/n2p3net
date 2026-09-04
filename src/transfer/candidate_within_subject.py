@@ -61,8 +61,18 @@ def _complete_repetition_block(
     contract: CandidateTaskContract,
     *,
     count: int,
+    at_least: bool = False,
 ) -> bool:
-    if len(rows) != len(contract.candidate_ids) * count:
+    """True when ``rows`` holds ``count`` complete repetition blocks.
+
+    ``at_least`` relaxes the size test to "carries at least ``count`` complete
+    blocks", so a deeper selection can satisfy a shallower floor. The default
+    keeps the historical exact-size behaviour; callers that pass pre-sliced
+    rows are unaffected either way.
+    """
+
+    expected_rows = len(contract.candidate_ids) * count
+    if len(rows) < expected_rows or (not at_least and len(rows) != expected_rows):
         return False
     expected = set(contract.candidate_ids)
     for repetition in range(count):
@@ -101,13 +111,28 @@ def candidate_calibration_decision_split(
     *,
     calibration_selections: int,
     test_repetitions: int,
+    selection_repetition_floor: int | None = None,
     max_test_selections: int | None = None,
 ) -> CandidateCalibrationDecisionSplit:
-    """Split known early selections from later, truth-hidden test selections."""
+    """Split known early selections from later, truth-hidden test selections.
+
+    ``selection_repetition_floor`` decouples selection eligibility from the
+    evaluation horizon. A selection enters the ledger once it carries that many
+    complete repetition blocks, while the evidence curve is still scored out to
+    ``test_repetitions``; levels deeper than a selection's own depth record
+    ``incomplete``, which the eligible-denominator estimators already handle per
+    level. It defaults to ``test_repetitions``, preserving the historical
+    behaviour where only selections supporting the deepest level are scored.
+    """
 
     contract, metadata = _validated_metadata(dataset)
     if calibration_selections < 1 or test_repetitions < 1:
         raise ValueError("calibration_selections and test_repetitions must be positive.")
+    floor = test_repetitions if selection_repetition_floor is None else selection_repetition_floor
+    if isinstance(floor, bool) or not isinstance(floor, int) or floor < 1:
+        raise ValueError("selection_repetition_floor must be a positive integer.")
+    if floor > test_repetitions:
+        raise ValueError("selection_repetition_floor must not exceed test_repetitions.")
     if max_test_selections is not None and max_test_selections < 1:
         raise ValueError("max_test_selections must be positive or None.")
     subject_ids = np.asarray(dataset.subject_ids).astype(str)
@@ -196,7 +221,8 @@ def candidate_calibration_decision_split(
                 selected,
                 metadata,
                 contract,
-                count=test_repetitions,
+                count=floor,
+                at_least=True,
             ):
                 reason = "insufficient_complete_test_repetitions"
                 failed_test[str(selection)] = reason

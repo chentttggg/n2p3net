@@ -20,6 +20,7 @@ STATISTICAL_DESIGN_SCHEMA = "n2p3_statistical_design_contract/1"
 DECISION_PLAN_SCHEMA = "n2p3_decision_plan_contract/1"
 ARM_CONTRACT_SCHEMA = "n2p3_arm_contract/1"
 MIN_PROMOTION_HIT_AT_R = 8
+MIN_EVIDENCE_LEVEL = 1
 
 _SHA256_LENGTH = 64
 
@@ -71,30 +72,61 @@ def semantic_sha256(value: Any) -> str:
     return hashlib.sha256(canonical_json_bytes(value)).hexdigest()
 
 
+def resolve_evidence_floor(minimum_evidence_level: int | None, name: str = "promotion") -> int:
+    """Resolve the declared minimum evidence horizon, defaulting to promotion depth.
+
+    ``MIN_PROMOTION_HIT_AT_R`` is the *default* promotion horizon, not a physical
+    constant: a run may declare a shallower horizon for a development estimand,
+    but it must do so explicitly. Omitting the declaration keeps the promotion
+    default, so existing plans and CLIs are unaffected.
+    """
+
+    if minimum_evidence_level is None:
+        return MIN_PROMOTION_HIT_AT_R
+    if isinstance(minimum_evidence_level, bool) or not isinstance(minimum_evidence_level, int):
+        raise ValueError(f"{name} minimum evidence level must be an integer.")
+    if minimum_evidence_level < MIN_EVIDENCE_LEVEL:
+        raise ValueError(
+            f"{name} minimum evidence level must be at least {MIN_EVIDENCE_LEVEL} "
+            f"(got {minimum_evidence_level}); R < 1 cannot support a decision."
+        )
+    return minimum_evidence_level
+
+
 def assert_promotion_evidence_gate(
     test_repetitions: int,
     *,
     primary_evidence_level: int | None = None,
     evidence_levels: Sequence[int] | None = None,
+    minimum_evidence_level: int | None = None,
     name: str = "promotion",
 ) -> None:
-    """Enforce the predeclared minimum evidence horizon for promotion claims."""
+    """Enforce the predeclared minimum evidence horizon for promotion claims.
 
+    The horizon is ``minimum_evidence_level`` when a caller declares one and
+    ``MIN_PROMOTION_HIT_AT_R`` otherwise. Declaring a shallower horizon is a
+    scientific choice that must be visible in the plan or CLI, never a default.
+    """
+
+    floor = resolve_evidence_floor(minimum_evidence_level, name=name)
     if isinstance(test_repetitions, bool) or not isinstance(test_repetitions, int):
         raise ValueError(f"{name} test_repetitions must be an integer.")
-    if test_repetitions < MIN_PROMOTION_HIT_AT_R:
-        raise ValueError(f"{name} requires test_repetitions >= {MIN_PROMOTION_HIT_AT_R}.")
+    if test_repetitions < floor:
+        raise ValueError(
+            f"{name} requires test_repetitions >= {floor} (got {test_repetitions})."
+        )
     if primary_evidence_level is not None:
         if isinstance(primary_evidence_level, bool) or not isinstance(primary_evidence_level, int):
             raise ValueError(f"{name} primary evidence level must be an integer.")
-        if not MIN_PROMOTION_HIT_AT_R <= primary_evidence_level <= test_repetitions:
+        if not floor <= primary_evidence_level <= test_repetitions:
             raise ValueError(
-                f"{name} primary hit@R must use {MIN_PROMOTION_HIT_AT_R} <= R <= test_repetitions."
+                f"{name} primary hit@R must use {floor} <= R <= {test_repetitions} "
+                f"(got {primary_evidence_level})."
             )
     if evidence_levels is not None:
         normalized = tuple(int(value) for value in evidence_levels)
-        if MIN_PROMOTION_HIT_AT_R not in normalized:
-            raise ValueError(f"{name} evidence is missing hit@{MIN_PROMOTION_HIT_AT_R}.")
+        if floor not in normalized:
+            raise ValueError(f"{name} evidence is missing hit@{floor}.")
         if primary_evidence_level is not None and primary_evidence_level not in normalized:
             raise ValueError(f"{name} evidence is missing its primary hit@R level.")
 

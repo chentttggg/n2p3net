@@ -5,6 +5,7 @@ from dataclasses import replace
 import pytest
 
 from research.contracts import (
+    MIN_PROMOTION_HIT_AT_R,
     ArmContract,
     DecisionPlanContract,
     DecisionPlanEntry,
@@ -13,6 +14,8 @@ from research.contracts import (
     StatisticalDesignContract,
     TrainingRunContract,
     assert_contract_digest,
+    assert_promotion_evidence_gate,
+    resolve_evidence_floor,
     semantic_sha256,
     training_procedure_record,
 )
@@ -320,3 +323,73 @@ def test_training_procedure_record_binds_transfer_decision_and_effective_batch()
     assert training_procedure_record(changed_decision) != baseline
     assert training_procedure_record(changed_batch) != baseline
     assert training_procedure_record(changed_diagnostics) == baseline
+
+
+# --------------------------------------------------------------------------
+# Promotion evidence gate: the horizon is a declared parameter, not a constant.
+# --------------------------------------------------------------------------
+
+
+def test_resolve_evidence_floor_defaults_to_promotion_depth() -> None:
+    assert resolve_evidence_floor(None) == MIN_PROMOTION_HIT_AT_R
+    assert resolve_evidence_floor(8) == 8
+    assert resolve_evidence_floor(2) == 2
+
+
+def test_resolve_evidence_floor_rejects_values_below_one() -> None:
+    for floor in (0, -1):
+        with pytest.raises(ValueError, match="at least 1"):
+            resolve_evidence_floor(floor)
+
+
+def test_resolve_evidence_floor_rejects_non_integers() -> None:
+    for floor in (True, 2.0, "2"):
+        with pytest.raises(ValueError, match="must be an integer"):
+            resolve_evidence_floor(floor)
+
+
+def test_gate_default_horizon_is_promotion_depth() -> None:
+    """Callers that declare nothing keep the promotion requirement."""
+
+    assert_promotion_evidence_gate(8)
+    with pytest.raises(ValueError, match=r"test_repetitions >= 8"):
+        assert_promotion_evidence_gate(7)
+
+
+def test_gate_accepts_declared_shallower_horizon() -> None:
+    assert_promotion_evidence_gate(2, minimum_evidence_level=2)
+    assert_promotion_evidence_gate(8, minimum_evidence_level=2)
+
+
+def test_gate_rejects_test_reps_below_declared_horizon() -> None:
+    with pytest.raises(ValueError, match=r"test_repetitions >= 3"):
+        assert_promotion_evidence_gate(2, minimum_evidence_level=3)
+
+
+def test_gate_primary_level_must_clear_declared_horizon() -> None:
+    assert_promotion_evidence_gate(
+        8, primary_evidence_level=2, minimum_evidence_level=2
+    )
+    for level in (1, 9):
+        with pytest.raises(ValueError, match=r"2 <= R <= 8 \(got \d+\)"):
+            assert_promotion_evidence_gate(
+                8, primary_evidence_level=level, minimum_evidence_level=2
+            )
+
+
+def test_gate_evidence_levels_must_contain_declared_horizon() -> None:
+    assert_promotion_evidence_gate(
+        8,
+        evidence_levels=(1, 2, 4, 8),
+        primary_evidence_level=4,
+        minimum_evidence_level=2,
+    )
+    with pytest.raises(ValueError, match="missing hit@2"):
+        assert_promotion_evidence_gate(
+            8, evidence_levels=(1, 4, 8), minimum_evidence_level=2
+        )
+
+
+def test_gate_still_requires_promotion_level_when_undeclared() -> None:
+    with pytest.raises(ValueError, match="missing hit@8"):
+        assert_promotion_evidence_gate(8, evidence_levels=(1, 2, 4))

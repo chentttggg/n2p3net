@@ -18,6 +18,7 @@ if str(SRC) not in sys.path:
 
 from data.candidate_task import CandidateTaskContract  # noqa: E402
 from research.contracts import (  # noqa: E402
+    MIN_EVIDENCE_LEVEL,
     MIN_PROMOTION_HIT_AT_R,
     ArmContract,
     DecisionPlanContract,
@@ -160,8 +161,20 @@ def _candidate_task(
         raise ValueError(f"{name} result test_reps disagrees with its evaluation contract.")
     if evaluation.target_protocol.get("test_repetitions") != repetitions:
         raise ValueError(f"{name} target protocol test horizon disagrees with decision contract.")
+    # The horizon is declared by the run's protocol, defaulting to promotion
+    # depth for results written before the level became a parameter.
+    declared_floor = evaluation.target_protocol.get("minimum_evidence_level")
+    if declared_floor is None:
+        declared_floor = MIN_PROMOTION_HIT_AT_R
+    if (
+        isinstance(declared_floor, bool)
+        or not isinstance(declared_floor, int)
+        or declared_floor < MIN_EVIDENCE_LEVEL
+    ):
+        raise ValueError(f"{name} minimum_evidence_level must be a positive integer.")
     assert_promotion_evidence_gate(
         repetitions,
+        minimum_evidence_level=declared_floor,
         name=f"{name} promotion result",
     )
     outcomes = result.get("decision_outcomes")

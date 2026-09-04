@@ -21,6 +21,8 @@ if str(SRC) not in sys.path:
 
 from data.candidate_task import CandidateTaskContract  # noqa: E402
 from research.contracts import (  # noqa: E402
+    MIN_EVIDENCE_LEVEL,
+    MIN_PROMOTION_HIT_AT_R,
     ArmContract,
     DecisionPlanContract,
     EvaluationRunContract,
@@ -223,7 +225,19 @@ def _validate_protocol(
         raise ValueError("target protocol does not implement the early-to-later estimand.")
     _integer(protocol.get("calibration_selections"), "calibration_selections", 1)
     repetitions = _integer(protocol.get("test_repetitions"), "test_repetitions", 1)
-    assert_promotion_evidence_gate(repetitions, name="candidate promotion protocol")
+    # Development runs may declare a shallower evidence horizon than the
+    # promotion default; results that never declared one keep the default.
+    declared_floor = protocol.get("minimum_evidence_level")
+    if declared_floor is None:
+        declared_floor = MIN_PROMOTION_HIT_AT_R
+    declared_floor = _integer(
+        declared_floor, "minimum_evidence_level", MIN_EVIDENCE_LEVEL
+    )
+    assert_promotion_evidence_gate(
+        repetitions,
+        minimum_evidence_level=declared_floor,
+        name="candidate promotion protocol",
+    )
     required_decision = {
         "candidate_task_contract": candidate_task.record(),
         "candidate_task_contract_digest": semantic_sha256(candidate_task.record()),

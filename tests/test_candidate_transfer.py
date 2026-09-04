@@ -333,8 +333,14 @@ def _candidate_cross_decision_dataset(
     subject: str = "s1",
     *,
     n_selections: int = 7,
-    repetitions_per_selection: int = 3,
+    repetitions_per_selection: int | tuple[int, ...] = 3,
 ) -> EpochDataset:
+    if isinstance(repetitions_per_selection, tuple):
+        reps = repetitions_per_selection
+        if len(reps) != n_selections:
+            raise ValueError("per-selection repetition counts must match n_selections.")
+    else:
+        reps = (repetitions_per_selection,) * n_selections
     rows: list[dict[str, object]] = []
     labels: list[int] = []
     subject_ids: list[str] = []
@@ -343,7 +349,7 @@ def _candidate_cross_decision_dataset(
     for selection in range(n_selections):
         target_row = selection % 6
         target_col = (selection + 2) % 6
-        for repetition in range(repetitions_per_selection):
+        for repetition in range(reps[selection]):
             for candidate_id in range(12):
                 row_code = candidate_id if candidate_id < 6 else -1
                 col_code = candidate_id - 6 if candidate_id >= 6 else -1
@@ -510,6 +516,113 @@ def test_generic_bnci_contract_uses_early_decisions_and_tests_new_targets() -> N
         "s1:selection3": "insufficient_complete_test_repetitions"
     }
     assert "s1:selection5" not in capped.test_selections_by_subject["s1"]
+
+
+def test_selection_floor_decouples_eligibility_from_evidence_horizon() -> None:
+    """A shallow floor admits shallow selections without truncating the curve.
+
+    Selections carry 1..8 repetitions. With the historical behaviour (the floor
+    follows ``test_repetitions``) only the 8-deep selection is scorable; with a
+    declared floor of 2 every selection that can support R=2 enters the ledger,
+    while the evidence curve is still scored out to R=8.
+    """
+
+    # Three deep selections calibrate; the five test selections carry 1, 2, 3,
+    # 4 and 8 repetitions.
+    dataset = _candidate_cross_decision_dataset(
+        "s1", n_selections=8, repetitions_per_selection=(4, 4, 4, 1, 2, 3, 4, 8)
+    )
+
+    historical = candidate_calibration_decision_split(
+        dataset,
+        calibration_selections=3,
+        test_repetitions=8,
+    )
+    assert historical.requested_test_selections_by_subject["s1"] == tuple(
+        f"s1:selection{index}" for index in range(3, 8)
+    )
+    assert historical.test_selections_by_subject["s1"] == ("s1:selection7",)
+    assert historical.failed_test_selections_by_subject["s1"] == {
+        f"s1:selection{index}": "insufficient_complete_test_repetitions"
+        for index in range(3, 7)
+    }
+
+    shallow_floor = candidate_calibration_decision_split(
+        dataset,
+        calibration_selections=3,
+        test_repetitions=8,
+        selection_repetition_floor=2,
+    )
+    # Only the single-repetition selection is still refused; every selection
+    # that can support R=2 now contributes to the shallower levels.
+    assert shallow_floor.test_selections_by_subject["s1"] == tuple(
+        f"s1:selection{index}" for index in range(4, 8)
+    )
+    assert shallow_floor.failed_test_selections_by_subject["s1"] == {
+        "s1:selection3": "insufficient_complete_test_repetitions"
+    }
+    # The horizon is unchanged: all eight repetitions of the deepest selection
+    # remain available for the R=1..8 curve.
+    deepest = (dataset.metadata["selection_id"] == "s1:selection7").to_numpy()
+    assert int(dataset.metadata.loc[deepest, "repetition_index"].max()) == 7
+    assert int(shallow_floor.test_mask[deepest].sum()) == 8 * 12
+
+
+def test_selection_floor_defaults_to_the_evidence_horizon() -> None:
+    """Omitting the floor preserves the historical eligibility gate."""
+
+    # Three deep selections calibrate; the test selections carry 3, 4 and 5
+    # repetitions, so a horizon of 4 still refuses the shallowest one.
+    dataset = _candidate_cross_decision_dataset(
+        "s1", n_selections=6, repetitions_per_selection=(4, 4, 4, 3, 4, 5)
+    )
+    default = candidate_calibration_decision_split(
+        dataset, calibration_selections=3, test_repetitions=4
+    )
+    explicit = candidate_calibration_decision_split(
+        dataset,
+        calibration_selections=3,
+        test_repetitions=4,
+        selection_repetition_floor=4,
+    )
+    assert (
+        default.test_selections_by_subject["s1"]
+        == explicit.test_selections_by_subject["s1"]
+        == ("s1:selection4", "s1:selection5")
+    )
+    assert default.failed_test_selections_by_subject["s1"] == {
+        "s1:selection3": "insufficient_complete_test_repetitions"
+    }
+
+
+def test_selection_floor_rejects_invalid_values() -> None:
+    dataset = _candidate_cross_decision_dataset("s1", n_selections=5, repetitions_per_selection=4)
+
+    for floor in (0, -1):
+        with pytest.raises(ValueError, match="positive integer"):
+            candidate_calibration_decision_split(
+                dataset,
+                calibration_selections=3,
+                test_repetitions=4,
+                selection_repetition_floor=floor,
+            )
+
+    for floor in (True, 2.0, "2"):
+        with pytest.raises(ValueError, match="positive integer"):
+            candidate_calibration_decision_split(
+                dataset,
+                calibration_selections=3,
+                test_repetitions=4,
+                selection_repetition_floor=floor,
+            )
+
+    with pytest.raises(ValueError, match="must not exceed"):
+        candidate_calibration_decision_split(
+            dataset,
+            calibration_selections=3,
+            test_repetitions=4,
+            selection_repetition_floor=5,
+        )
 
 
 def test_candidate_split_returns_typed_empty_selection_failure() -> None:

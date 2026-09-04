@@ -357,6 +357,16 @@ def main() -> None:
     )
     parser.add_argument("--calibration-selections", type=int, default=5)
     parser.add_argument("--test-reps", type=int, default=MIN_PROMOTION_HIT_AT_R)
+    parser.add_argument(
+        "--min-evidence-level",
+        type=int,
+        default=MIN_PROMOTION_HIT_AT_R,
+        help=(
+            "Declared minimum evidence horizon for this run's hit@R claim. "
+            f"Defaults to {MIN_PROMOTION_HIT_AT_R} (promotion depth); a development "
+            "estimand may declare a shallower horizon explicitly."
+        ),
+    )
     parser.add_argument("--max-test-selections", type=int, default=None)
     parser.add_argument(
         "--head",
@@ -399,7 +409,11 @@ def main() -> None:
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     try:
-        assert_promotion_evidence_gate(args.test_reps, name="candidate promotion runner")
+        assert_promotion_evidence_gate(
+            args.test_reps,
+            minimum_evidence_level=args.min_evidence_level,
+            name="candidate promotion runner",
+        )
     except ValueError as error:
         parser.error(str(error))
     source_snapshot_identity = verified_source_snapshot(args.source_snapshot_manifest)
@@ -419,6 +433,7 @@ def main() -> None:
         dataset,
         calibration_selections=args.calibration_selections,
         test_repetitions=args.test_reps,
+        selection_repetition_floor=args.min_evidence_level,
         max_test_selections=args.max_test_selections,
     )
     manifest_subjects = (
@@ -1017,6 +1032,7 @@ def main() -> None:
             "test_truth_access": "scorer_only",
             "calibration_selections": args.calibration_selections,
             "test_repetitions": args.test_reps,
+            "minimum_evidence_level": args.min_evidence_level,
             "max_test_selections": args.max_test_selections,
             "epoch_selection": args.epoch_selection,
         },
