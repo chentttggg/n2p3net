@@ -1,0 +1,11 @@
+﻿{
+    "schema":  "n2p3_source_freeze/1",
+    "archive":  "active_source_352932b.source-only.tar.gz",
+    "archive_sha256":  "a762a9ae6c060310102dcef63419d53795652dd0c86a4e510af87974152b2ba7",
+    "source_commit":  "352932b6a19f5eea74191829f28952e44c7e7980",
+    "member_count":  217,
+    "byte_size":  1068427,
+    "scope":  "Integrated main at 352932b: approved domain-transfer v2 mainline implementation (WP0 complete; WP1 EA complete; WP2 faithful AS-MMD partial; WP3 TSD partial; WP4 plan source_selection_record partial; docs aligned). Excludes Paper PDFs, frozen archives, and all data/caches.",
+    "contains_raw_eeg_cache_or_model_checkpoint":  false,
+    "replacement_policy":  "integrated-workspace source anchor for v2 mainline implementation; do not overwrite; E1 execution freezes b96a6af/b86d558 and prior integrated freeze 6fc1df1 remain unchanged"
+}
