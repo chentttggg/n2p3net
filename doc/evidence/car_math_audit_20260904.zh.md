@@ -7,10 +7,10 @@
 > `experiments/cache/history/tmp_20260906/`；原命令仅为历史记录。
 > 结果与原路径索引见[清理与数据保留](workspace_cleanup_20260906.zh.md)。
 
-日期：2026-09-04  
+日期：2026-09-04\
 范围：`src/data/domain.py` 的 `n2p3_common_channel_car/1`、
 `experiments/prepare_multidomain_source.py`、`tmp/l1_cloud/montage_ablation.py`，以及
-`doc/cross_dataset_bi_gtn_ruling_20260904.zh.md` 中的 BI2014a → GTN 裁决。  
+`doc/cross_dataset_bi_gtn_ruling_20260904.zh.md` 中的 BI2014a → GTN 裁决。\
 状态：**CAR 的代数定义成立；“CAR 已完成跨域特征对齐”不成立；BI2014a → GTN 的
 2 导路径仍不进入活动迁移实验。**
 

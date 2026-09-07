@@ -3,11 +3,11 @@
 > 历史证据：正文保留写作时的实验口径、状态和路径，不作为当前执行指令。
 > 当前任务以[执行计划](../roadmap.zh.md)为准；原文压缩快照和迁移说明见[证据索引](README.md)。
 
-日期：2026-09-04  
+日期：2026-09-04\
 本记录按当时源码与文献解释。被审计的旧`domain_alignment_replacement`等方案现已
 [物理归档](../../frozen/technical_audit_before_20260906.manifest.json)，其中“主链”不再指当前默认路线。
-触发：审计主链 `native reference → domain-specific feature lift → GALIA/AJD → conditional AS-MMD → PDS source sampling` 中每个关键公式与数值选择是否有一手来源支持，并与 `src/` 当前实现逐项比对。  
-范围：`src/data/domain.py`、`src/data/domain_alignment.py`、`experiments/fit_galia_alignment.py`、`experiments/prepare_domain_features.py`、`src/transfer/alignment.py`、`src/baselines/deep.py`、`src/train/source_sampling.py`、`experiments/prepare_source_selection.py`、`doc/domain_alignment_replacement_20260904.zh.md`，以及 `.venv` 中 `pyriemann 0.12` 的安装源码与 sdist 测试。  
+触发：审计主链 `native reference → domain-specific feature lift → GALIA/AJD → conditional AS-MMD → PDS source sampling` 中每个关键公式与数值选择是否有一手来源支持，并与 `src/` 当前实现逐项比对。\
+范围：`src/data/domain.py`、`src/data/domain_alignment.py`、`experiments/fit_galia_alignment.py`、`experiments/prepare_domain_features.py`、`src/transfer/alignment.py`、`src/baselines/deep.py`、`src/train/source_sampling.py`、`experiments/prepare_source_selection.py`、`doc/domain_alignment_replacement_20260904.zh.md`，以及 `.venv` 中 `pyriemann 0.12` 的安装源码与 sdist 测试。\
 状态：本文只审计公式/数值选择，不修改任何代码，不提交任何内容，不授权性能结论。
 
 ---
@@ -161,57 +161,57 @@ weights_silently_dropped = True
 
 ### 5.1 论文（已获取并阅读全文 PDF）
 
-1. Altındış F, Banerjee A, Phlypo R, Yılmaz B, Congedo M. *Transfer Learning for P300 Brain-Computer Interfaces by Joint Alignment of Feature Vectors.* IEEE Journal of Biomedical and Health Informatics, 27(10):4696–4706, 2023.  
-   DOI: https://doi.org/10.1109/JBHI.2023.3299837  
-   开放获取全文（HAL）：https://hal.science/hal-04255249/file/Altindis%20et%20al.pdf  
+1. Altındış F, Banerjee A, Phlypo R, Yılmaz B, Congedo M. *Transfer Learning for P300 Brain-Computer Interfaces by Joint Alignment of Feature Vectors.* IEEE Journal of Biomedical and Health Informatics, 27(10):4696–4706, 2023.\
+   DOI: https://doi.org/10.1109/JBHI.2023.3299837\
+   开放获取全文（HAL）：https://hal.science/hal-04255249/file/Altindis%20et%20al.pdf\
    已核公式：式 (1)–(10)、Algorithm 1、A=25/P=16、六库 333 sessions/177 subjects、平均提升 2.12±1.88%。
-2. Gretton A, Borgwardt KM, Rasch MJ, Schölkopf B, Smola A. *A Kernel Two-Sample Test.* Journal of Machine Learning Research, 13:723–773, 2012.  
-   URL: https://www.jmlr.org/papers/volume13/gretton12a/gretton12a.pdf  
+2. Gretton A, Borgwardt KM, Rasch MJ, Schölkopf B, Smola A. *A Kernel Two-Sample Test.* Journal of Machine Learning Research, 13:723–773, 2012.\
+   URL: https://www.jmlr.org/papers/volume13/gretton12a/gretton12a.pdf\
    已核公式：unbiased 式 (3)、biased V-statistic 式 (5)、`MMD_u^2` 可为负、median heuristic（第 8 节）。
-3. Long M, Cao Y, Wang J, Jordan MI. *Learning Transferable Features with Deep Adaptation Networks.* ICML 2015, PMLR 37:97–105.  
-   URL: https://proceedings.mlr.press/v37/long15.pdf  
+3. Long M, Cao Y, Wang J, Jordan MI. *Learning Transferable Features with Deep Adaptation Networks.* ICML 2015, PMLR 37:97–105.\
+   URL: https://proceedings.mlr.press/v37/long15.pdf\
    已核：DAN 采用配对四元组的 linear-time unbiased MK-MMD，与完整 U-statistic 不同。
-4. Chen W, Delorme A. *Adaptive Split-MMD Training for Small-Sample Cross-Dataset P300 EEG Classification.* arXiv:2510.21969；IEEE BIBM 2025.  
-   arXiv PDF: https://arxiv.org/pdf/2510.21969  
-   DOI: https://doi.org/10.1109/BIBM66473.2025.11356119  
+4. Chen W, Delorme A. *Adaptive Split-MMD Training for Small-Sample Cross-Dataset P300 EEG Classification.* arXiv:2510.21969；IEEE BIBM 2025.\
+   arXiv PDF: https://arxiv.org/pdf/2510.21969\
+   DOI: https://doi.org/10.1109/BIBM66473.2025.11356119\
    已核公式：式 (1)–(9)、Algorithm 1、Table I（`W=40, λ0=0.4, batch 32, 5×5 CV, seeds {42,123,456,789,321}`）；MMD 在 logits 上、marginal。
-5. Flores C, Contreras M, Macedo I, Andreu-Perez J. *Transfer Learning with Active Sampling for Rapid Training and Calibration in BCI-P300 Across Health States and Multi-centre Data.* arXiv:2412.17833 (eess.SP), 2024.  
-   URL: https://arxiv.org/pdf/2412.17833  
+5. Flores C, Contreras M, Macedo I, Andreu-Perez J. *Transfer Learning with Active Sampling for Rapid Training and Calibration in BCI-P300 Across Health States and Multi-centre Data.* arXiv:2412.17833 (eess.SP), 2024.\
+   URL: https://arxiv.org/pdf/2412.17833\
    已核：Section III-B（PDS 定义）、Section IV-C 与 Algorithm 1（`k, r0, M, π0`；`distance≤r0 → reject`；Dense PDS 采样 mingling index）。
-6. He H, Wu D. *Transfer Learning for Brain–Computer Interfaces: A Euclidean Space Data Alignment Approach.* IEEE Transactions on Biomedical Engineering, 67(2):399–410, 2020.  
-   DOI: https://doi.org/10.1109/TBME.2019.2913914  
-   arXiv PDF: https://arxiv.org/pdf/1808.05464  
+6. He H, Wu D. *Transfer Learning for Brain–Computer Interfaces: A Euclidean Space Data Alignment Approach.* IEEE Transactions on Biomedical Engineering, 67(2):399–410, 2020.\
+   DOI: https://doi.org/10.1109/TBME.2019.2913914\
+   arXiv PDF: https://arxiv.org/pdf/1808.05464\
    已核公式：式 (10) `R̄=(1/n)Σ X_iX_i^T`，式 (11) `X̃_i=R̄^{-1/2}X_i`，式 (12) 均值协方差 `=I`；原文无均值相减。
-7. Wu D. *Revisiting Euclidean Alignment for Transfer Learning in EEG-Based Brain-Computer Interfaces.* arXiv:2502.09203 (v2), 2025.  
-   URL: https://arxiv.org/pdf/2502.09203  
+7. Wu D. *Revisiting Euclidean Alignment for Transfer Learning in EEG-Based Brain-Computer Interfaces.* arXiv:2502.09203 (v2), 2025.\
+   URL: https://arxiv.org/pdf/2502.09203\
    已核公式：式 (1)–(3)，与 He & Wu 2020 一致（无均值相减）。
-8. Kim H, Luo J, Chu S, Cannard C, Hoffmann S, Miyakoshi M. *ICA's bug: How ghost ICs emerge from effective rank deficiency caused by EEG electrode interpolation and incorrect re-referencing.* Frontiers in Signal Processing, 3:1064138, 2023.  
-   DOI: https://doi.org/10.3389/frsip.2023.1064138  
-   PDF: https://www.frontiersin.org/journals/signal-processing/articles/10.3389/frsip.2023.1064138/pdf  
+8. Kim H, Luo J, Chu S, Cannard C, Hoffmann S, Miyakoshi M. *ICA's bug: How ghost ICs emerge from effective rank deficiency caused by EEG electrode interpolation and incorrect re-referencing.* Frontiers in Signal Processing, 3:1064138, 2023.\
+   DOI: https://doi.org/10.3389/frsip.2023.1064138\
+   PDF: https://www.frontiersin.org/journals/signal-processing/articles/10.3389/frsip.2023.1064138/pdf\
    已核：直接平均参考的秩亏 1 结论与 method A/B/C/D 讨论。
-9. Rivet B, Souloumiac A, Attina V, Gibert G. *xDAWN Algorithm to Enhance Evoked Potentials: Application to Brain-Computer Interface.* IEEE Transactions on Biomedical Engineering, 56(8):2035–2043, 2009.  
-   DOI: https://doi.org/10.1109/TBME.2009.2012869  
-   HAL PDF: https://hal.science/hal-00454568/file/2009_IEEE_BME.pdf  
+9. Rivet B, Souloumiac A, Attina V, Gibert G. *xDAWN Algorithm to Enhance Evoked Potentials: Application to Brain-Computer Interface.* IEEE Transactions on Biomedical Engineering, 56(8):2035–2043, 2009.\
+   DOI: https://doi.org/10.1109/TBME.2009.2012869\
+   HAL PDF: https://hal.science/hal-00454568/file/2009_IEEE_BME.pdf\
    已核公式：式 (1)–(2) `X=DA+N` 与最小二乘 `Â`，式 (9) SSNR trace quotient，式 (11)–(12) `Q_D^TQ_X=ΦΛΨ^T`、`Û=R_X^{-1}Ψ_s`。
-10. Pham D-T. *Joint Approximate Diagonalization of Positive Definite Hermitian Matrices.* SIAM Journal on Matrix Analysis and Applications, 22(4):1136–1152, 2000.  
-    DOI: https://doi.org/10.1137/S089547980035689X  
+10. Pham D-T. *Joint Approximate Diagonalization of Positive Definite Hermitian Matrices.* SIAM Journal on Matrix Analysis and Applications, 22(4):1136–1152, 2000.\
+    DOI: https://doi.org/10.1137/S089547980035689X\
     说明：本审计以 pyriemann 0.12 源码 docstring 对该文献的引用与实现为准，未单独解析其全文。
 
 ### 5.2 包源码 / 测试
 
-- pyriemann 0.12（安装于 `.venv`）：  
-  - `D:\bci\n2p3-net\.venv\Lib\site-packages\pyriemann\geometry\ajd.py`（`rjd` L23-115；`ajd_pham` L118-240；`uwedge` L243-347；`ajd` L360-415）  
-  - `D:\bci\n2p3-net\.venv\Lib\site-packages\pyriemann\geometry\_check.py`（`check_weights` L81-129）  
+- pyriemann 0.12（安装于 `.venv`）：\
+  - `D:\bci\n2p3-net\.venv\Lib\site-packages\pyriemann\geometry\ajd.py`（`rjd` L23-115；`ajd_pham` L118-240；`uwedge` L243-347；`ajd` L360-415）\
+  - `D:\bci\n2p3-net\.venv\Lib\site-packages\pyriemann\geometry\_check.py`（`check_weights` L81-129）\
   - 安装 wheel 未携带 `tests/`；从 PyPI 下载的 sdist `pyriemann-0.12.tar.gz` 中阅读了 `tests/test_geometry_ajd.py`（本审计解压于 `%TEMP%\pyriemann_src\pyriemann-0.12`）。
-- 本地仓库文件（行号为 2026-09-04 当前 checkout）：  
-  - `D:\bci\n2p3-net\src\data\domain.py`：CAR L79-80；native L180-181；CAR 验证 L301-360。  
-  - `D:\bci\n2p3-net\src\data\domain_alignment.py`：模块声明 L1-9；lift L92-153；`GaliaConfig` L160-198；`transform` L361-370；`fast_alignment` L372-430；`transform_fast` L432-441；`GaliaAdapter.fit` L537-615；`_fit_ajd` L617-663。  
-  - `D:\bci\n2p3-net\experiments\fit_galia_alignment.py`：source_weighted 假 target L110-135。  
-  - `D:\bci\n2p3-net\experiments\prepare_domain_features.py`：默认 identity lift L61-68、record L69-104。  
-  - `D:\bci\n2p3-net\src\transfer\alignment.py`：median bandwidth L45-52；`rbf_mmd_loss` L55-102；`conditional_rbf_mmd_loss` L105-162；`conditional_domain_rbf_mmd_loss` L165-211；`adaptive_target_weight` L214-235；条件均值对齐 L238-330。  
-  - `D:\bci\n2p3-net\src\baselines\deep.py`：import L88-91；训练步调用 L1842-1859。全仓库搜索 `adaptive_target_weight|conditional_rbf_mmd_loss|rbf_mmd_loss` 结果：仅 `deep.py` 调用 `conditional_domain_rbf_mmd_loss`；`adaptive_target_weight` 与 `conditional_rbf_mmd_loss` 无调用点。  
-  - `D:\bci\n2p3-net\src\train\source_sampling.py`：带宽估计 L197-221；软排斥 L224-243；`select_pds_rows` L245-373；质量/score L307-329。  
-  - `D:\bci\n2p3-net\experiments\prepare_source_selection.py`：默认参数 L99-102；调用 L151-164。  
+- 本地仓库文件（行号为 2026-09-04 当前 checkout）：\
+  - `D:\bci\n2p3-net\src\data\domain.py`：CAR L79-80；native L180-181；CAR 验证 L301-360。\
+  - `D:\bci\n2p3-net\src\data\domain_alignment.py`：模块声明 L1-9；lift L92-153；`GaliaConfig` L160-198；`transform` L361-370；`fast_alignment` L372-430；`transform_fast` L432-441；`GaliaAdapter.fit` L537-615；`_fit_ajd` L617-663。\
+  - `D:\bci\n2p3-net\experiments\fit_galia_alignment.py`：source_weighted 假 target L110-135。\
+  - `D:\bci\n2p3-net\experiments\prepare_domain_features.py`：默认 identity lift L61-68、record L69-104。\
+  - `D:\bci\n2p3-net\src\transfer\alignment.py`：median bandwidth L45-52；`rbf_mmd_loss` L55-102；`conditional_rbf_mmd_loss` L105-162；`conditional_domain_rbf_mmd_loss` L165-211；`adaptive_target_weight` L214-235；条件均值对齐 L238-330。\
+  - `D:\bci\n2p3-net\src\baselines\deep.py`：import L88-91；训练步调用 L1842-1859。全仓库搜索 `adaptive_target_weight|conditional_rbf_mmd_loss|rbf_mmd_loss` 结果：仅 `deep.py` 调用 `conditional_domain_rbf_mmd_loss`；`adaptive_target_weight` 与 `conditional_rbf_mmd_loss` 无调用点。\
+  - `D:\bci\n2p3-net\src\train\source_sampling.py`：带宽估计 L197-221；软排斥 L224-243；`select_pds_rows` L245-373；质量/score L307-329。\
+  - `D:\bci\n2p3-net\experiments\prepare_source_selection.py`：默认参数 L99-102；调用 L151-164。\
   - `D:\bci\n2p3-net\doc\domain_alignment_replacement_20260904.zh.md`：被审计的本地数学声称（GALIA/AJD、Fast Alignment、AS-MMD、PDS 合同）。
   - `D:\bci\n2p3-net\doc\car_math_audit_20260904.zh.md`：CAR 的本地严格推导（`H_k=I-11^T/k`、rank k-1）。
 

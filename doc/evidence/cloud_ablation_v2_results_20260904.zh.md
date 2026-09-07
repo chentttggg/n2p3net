@@ -8,7 +8,7 @@ _运行：domain_transfer_v2_dev64_relaxed_1seed（代码冻结 8ddab10）与 do
 
 ## 1. 口径
 
-- 
+-
 equested_hit_rate：correct / requested，incomplete/fit_failure 保留在分母（旧主口径）。
 - alid_hit_rate：correct / (correct + incorrect + tie)，排除 incomplete/fit_failure。
 - 本批 requested=1416，R=8 完整可判 decisions=73；**valid 口径是机制读数**，requested 口径用于保持历史可比。
@@ -69,11 +69,11 @@ equested_hit_rate：correct / requested，incomplete/fit_failure 保留在分母
 ## 6. 性能调度修复
 
 - 问题：result 阶段 4 workers × 1 thread，只用了 25 CPU 配额中的 4 个；GPU 0%。
-- 修复（commit 2a75407）：uild_dag 在未显式 
+- 修复（commit 2a75407）：uild_dag 在未显式
 esult_threads 时按
-  
+
 esolve_cpu_threads(result_max_workers) 自动填满 cgroup CPU 配额；计划新增
-  checkpoint_batch_size=16 与 
+  checkpoint_batch_size=16 与
 esult_max_workers=8。
 - 实测：native 5-arm run 65.0 min（旧调度）；CAR16 单臂 run 15.9 min（新调度），
   checkpoint 4 chunks GPU 100%，result 阶段 8 workers × 3 threads = 24/25 CPU 配额。
