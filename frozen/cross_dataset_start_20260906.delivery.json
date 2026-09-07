@@ -1,0 +1,55 @@
+{
+  "schema": "n2p3_cross_study_delivery/1",
+  "status": "complete_first_diagnostic",
+  "scientific_scope": "single-seed public cross-study binary development; not product confirmation",
+  "source_manifest": "frozen/cross_dataset_start_20260906b.manifest.json",
+  "source_archive_sha256": "d902c1663f261a6c4530a6661c72bc8c78697a3340001629e029e934107c1304",
+  "result_archives": {
+    "experiments/runs/cross_dataset_start_20260906/cross_dataset_start_20260906.results.tar.gz": {
+      "sha256": "62e0c51bd266a736580e4ccbf524e2f640deed6f9f1857dc0761e9f72922271b",
+      "bytes": 10059390
+    },
+    "experiments/runs/cross_dataset_start_20260906/cross_dataset_start_20260906.with_prefix.results.tar.gz": {
+      "sha256": "7720182e6033644f9a5b57d5a52e83e7c52fb97e7359e54412b37ec37531a022",
+      "bytes": 13025536
+    },
+    "experiments/runs/cross_dataset_start_20260906/cross_dataset_start_20260906.benchmark.tar.gz": {
+      "sha256": "66e5e0e30a9fd887fa69b9ee064f70dd571423031f05315b0ce98262fe93ae83",
+      "bytes": 96619
+    }
+  },
+  "evidence_archive": "frozen/cross_dataset_start_20260906.evidence.zip",
+  "evidence_sha256": "8c202581bf5c43c05a5627f6856ef9a1dc3729e503953ffe8cad4a3efc8e76d2",
+  "members": {
+    "doc/evidence/cross_dataset_start_20260906.zh.md": "45eec80caaceaa7ff99f5465418033d559108cf987270fcb71fac77d45721232",
+    "experiments/runs/cross_dataset_start_20260906/analyze_run.py": "a4c7f79613af61a0d160b55988f45b32de6855d07e297408fa0be342a684f6e4",
+    "experiments/runs/cross_dataset_start_20260906/batch_driver.py": "91ef6c9bebae62b7890cb6dbbf478693c45002c1d4b88e1f8d636cd91e9dc39b",
+    "experiments/runs/cross_dataset_start_20260906/benchmark_retrieved/device_benchmark/summary.json": "f7f4de2d66e3521a9719cd501b02b8fc5827aeee7dddb4ab15ff5c72ccdcce54",
+    "experiments/runs/cross_dataset_start_20260906/benchmark_target_device.py": "5cdc3975ea52503c8843e0f258d01b9ac4bba4a299fca536e29a1aeed87bd4d1",
+    "experiments/runs/cross_dataset_start_20260906/finalize_delivery.py": "44fc339cb4fec456e366e21bfcb03f5ae43a66a2f36d11de0a9c4495ae3f0cae",
+    "experiments/runs/cross_dataset_start_20260906/prepare_run.py": "27a942994eb3fe4b5494f7dabc9edfb38790854e427af675c3806ee9a7fb84d0",
+    "experiments/runs/cross_dataset_start_20260906/retrieved/cross_dataset_start_20260906/analysis.json": "03999458a1a4acce6d24a046f7bfaa74b2b8632888ead4ac76583339a3a054ab",
+    "experiments/runs/cross_dataset_start_20260906/retrieved/cross_dataset_start_20260906/prediction_integrity.json": "3888eeec5af7ae098a163c1311fa3886dc626c080912b8fef2e75faf9e43fb5c",
+    "experiments/runs/cross_dataset_start_20260906/retrieved_with_prefix/cross_dataset_start_20260906/analysis_with_prefix.json": "2055425ce60d3120e210bb11d62d62d7a0fc15e29e75e6dcbeca2ddaba3407ee",
+    "experiments/runs/cross_dataset_start_20260906/retrieved_with_prefix/cross_dataset_start_20260906/evaluate_plan.journal.json": "26a6c20279f3a898b7f94f655353519b6e8b923d75ec5afd556fabb2d8692bcd",
+    "experiments/runs/cross_dataset_start_20260906/retrieved_with_prefix/cross_dataset_start_20260906/evaluate_plan.json": "5cc9a984a174202553c1f240f7549b95033ccc0d58d84b3ce68612870f82dfa1",
+    "experiments/runs/cross_dataset_start_20260906/retrieved_with_prefix/cross_dataset_start_20260906/prediction_integrity_with_prefix.json": "f815132e66cb0156613e476ad39efcedd6441dc9c014ccd249a14eb2ccc4af49",
+    "experiments/runs/cross_dataset_start_20260906/retrieved_with_prefix/cross_dataset_start_20260906/prefix_followup_plan.journal.json": "4af8a2d3ee5db6ce937f230ab8f971956380309563bc1a304e3ef2265f01a6ac",
+    "experiments/runs/cross_dataset_start_20260906/retrieved_with_prefix/cross_dataset_start_20260906/prefix_followup_plan.json": "9d460cdf919492a4846978ff62258b13440159fd544e97c93c3a922c997bf400",
+    "experiments/runs/cross_dataset_start_20260906/retrieved_with_prefix/cross_dataset_start_20260906/preflight.json": "28430445b2b331d98b48d0e9cf2976fb903dd1bb65249353247079b185bae384",
+    "experiments/runs/cross_dataset_start_20260906/retrieved_with_prefix/cross_dataset_start_20260906/source_plan.journal.json": "108122598a66dfad85bf8576e40befc45869498dfa8fae3acfd22d3d1868da90",
+    "experiments/runs/cross_dataset_start_20260906/retrieved_with_prefix/cross_dataset_start_20260906/source_plan.json": "b6b659486a4479f5f8b60e9702c888db21bf7ea1ab7644273fba010012665bc5",
+    "experiments/runs/cross_dataset_start_20260906/run_prefix_followup.py": "259c4c6932480cdd038651b63b5fce97ef73bfcbbe8906f7a6107519ff045afe",
+    "experiments/runs/cross_dataset_start_20260906/run_stages.py": "5f170db7e7ad116ced413d0aa224416b61807f8efae98ffe8b32cc555e33466c"
+  },
+  "validation": {
+    "predictions_verified": 2160,
+    "initial_predictions_unchanged": 1728,
+    "focused_contract_tests_passed": 30,
+    "target_device_benchmark_cells": 12
+  },
+  "source_checkpoints": {
+    "BI": "7e420b9eb9c07089d15006659436c875603912b2143b62161a2d9042c74dedbe",
+    "BNCI": "00d47f6bbcea8efa5934078a3ddb25d72d6bc93ead0fbb82727624a1898a2d6d"
+  }
+}

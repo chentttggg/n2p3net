@@ -71,12 +71,12 @@ def build_evaluation_run_contract(
 
 
 def verified_source_snapshot(path: str | Path) -> dict[str, object]:
-    """Verify a physical source freeze and return its full executed identity.
+    """Verify a declared physical source archive and return its recorded identity.
 
     The returned mapping binds the archive bytes (``archive_sha256``), the
     manifest document itself (``manifest_sha256``), and the source commit the
-    freeze was taken from, so a result record can restate *which source
-    execution* produced a model without re-reading the archive.
+    manifest declares. It does not compare the archive with the running
+    checkout; establishing which files executed requires a separate audit.
     """
 
     manifest_path = Path(path).resolve()
@@ -125,12 +125,23 @@ def verified_source_snapshot(path: str | Path) -> dict[str, object]:
         raise ValueError("source snapshot archive hash disagrees with its manifest.")
     manifest_hasher = hashlib.sha256()
     manifest_hasher.update(manifest_path.read_bytes())
+    working_tree = payload.get("working_tree_snapshot", False)
+    if not isinstance(working_tree, bool):
+        raise ValueError("working_tree_snapshot must be boolean when declared.")
+    source_role = payload.get("source_commit_role", "exact_commit")
+    if working_tree and source_role != "base_commit_only":
+        raise ValueError("working-tree freezes must identify source_commit as base_commit_only.")
     return {
         "archive_sha256": digest,
         "manifest_sha256": manifest_hasher.hexdigest(),
         "source_commit": source_commit,
         "byte_size": byte_size,
         "member_count": member_count,
+        **(
+            {"working_tree_snapshot": True, "source_commit_role": source_role}
+            if working_tree
+            else {}
+        ),
     }
 
 

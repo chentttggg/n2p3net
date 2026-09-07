@@ -1,0 +1,9 @@
+{
+  "schema": "n2p3_document_link_audit/1",
+  "generated_utc": "2026-09-06T10:53:03.365071+00:00",
+  "scope": "README.md and doc/**/*.md; local link paths only, not fragments or code references",
+  "parser": "markdown_it.MarkdownIt",
+  "documents": 35,
+  "local_links": 111,
+  "broken_links": []
+}

@@ -17,11 +17,14 @@ from data.bids_eeg import (
     ValidatedBidsEEGRecording,
     validate_bids_eeg_recording,
 )
+from data.channel import canonical_channel_name
+from data.contract import BRAIN_SYNC_ACQUISITION_CHANNELS, BRAIN_SYNC_ACQUISITION_TYPES
 
 BRAIN_SYNC_SESSION_SCHEMA = "brainsync-gtn-session/4"
-BRAIN_SYNC_CHANNEL_COUNT = 8
+BRAIN_SYNC_CHANNEL_COUNT = len(BRAIN_SYNC_ACQUISITION_CHANNELS)
 BRAIN_SYNC_RAW_STAGE = "bids_raw"
 BRAIN_SYNC_RAW_TIME_BASE = "continuous_recording"
+BRAIN_SYNC_SEGMENTED_TIME_BASE = "segmented_recording"
 BRAIN_SYNC_PREPROCESSING_STATUS = "pending"
 BRAIN_SYNC_INPUT_STATUSES = frozenset({"completed"})
 BRAIN_SYNC_SEQUENCE_POLICY = "balanced_random_permutation_cycles"
@@ -34,6 +37,9 @@ BRAIN_SYNC_BIDS_CONTRACT = BidsEEGInputContract(
     candidate_column="digit",
     candidate_vocabulary=tuple(str(value) for value in range(1, 10)),
     coordinate_units="m",
+    allowed_channel_types=("EEG", "EOG"),
+    boundary_trial_type="acquisition_boundary",
+    excluded_trial_types=("interrupted_stimulus",),
 )
 
 
@@ -61,24 +67,35 @@ class PopulationScopePolicy(StrEnum):
 
 
 @dataclass(frozen=True)
-class ValidatedBrainSyncSession:
-    """A completed v4 session whose BIDS raw boundary passed validation."""
+class ValidatedBrainSyncRecording:
+    """A completed v4 BIDS recording with no target supervision attached."""
 
     root: Path
     session_path: Path
     manifest: dict[str, Any]
     session_id: str
     subject_id: str
-    thought_digit: int
     started_utc: str
     started_timestamp_s: float
     ended_utc: str
     ended_timestamp_s: float
-    target_confirmed_utc: str
-    target_confirmed_timestamp_s: float
     age_years: float | None
     sex: Any
     bids: ValidatedBidsEEGRecording
+
+
+@dataclass(frozen=True)
+class ValidatedBrainSyncSession(ValidatedBrainSyncRecording):
+    """A completed recording with independently validated confirmed supervision."""
+
+    thought_digit: int
+    target_confirmed_utc: str
+    target_confirmed_timestamp_s: float
+
+    @property
+    def calibration_available_timestamp_s(self) -> float:
+        """Both finalized recording and confirmed supervision must be available."""
+        return max(self.ended_timestamp_s, self.target_confirmed_timestamp_s)
 
 
 @dataclass(frozen=True)
@@ -188,7 +205,9 @@ def _validate_manifest_rest_intervals(
     for index, item in enumerate(declared):
         if not isinstance(item, dict):
             raise ValueError("BrainSync timeline rest segment must be an object.")
-        start = _finite_nonnegative(item.get("start_seconds"), f"rest_segments[{index}].start_seconds")
+        start = _finite_nonnegative(
+            item.get("start_seconds"), f"rest_segments[{index}].start_seconds"
+        )
         end = _finite_nonnegative(item.get("end_seconds"), f"rest_segments[{index}].end_seconds")
         duration = _finite_nonnegative(
             item.get("duration_seconds"), f"rest_segments[{index}].duration_seconds"
@@ -236,8 +255,7 @@ def _validate_balanced_schedule(
         raise ValueError("BrainSync BIDS stimulus count conflicts with the experiment schedule.")
 
     expected_counts = {
-        candidate: repetitions
-        for candidate in BRAIN_SYNC_BIDS_CONTRACT.candidate_vocabulary
+        candidate: repetitions for candidate in BRAIN_SYNC_BIDS_CONTRACT.candidate_vocabulary
     }
     for block_id in range(1, blocks + 1):
         block = [event for event in bids.stimuli if event.block_id == block_id]
@@ -261,6 +279,21 @@ def _validate_balanced_schedule(
 def validate_brainsync_bids_session(session_dir: str | Path) -> ValidatedBrainSyncSession:
     """Validate session and BIDS metadata before an EEG binary reader is invoked."""
 
+    session = _validate_brainsync_recording(session_dir, require_target=True)
+    assert isinstance(session, ValidatedBrainSyncSession)
+    return session
+
+
+def validate_brainsync_bids_recording(session_dir: str | Path) -> ValidatedBrainSyncRecording:
+    """Validate finalized raw for inference without reading any target-label fields."""
+
+    return _validate_brainsync_recording(session_dir, require_target=False)
+
+
+def _validate_brainsync_recording(
+    session_dir: str | Path, *, require_target: bool
+) -> ValidatedBrainSyncRecording:
+
     root = Path(session_dir).expanduser().resolve()
     session_path = root / "session.json"
     manifest = _load_json_object(session_path)
@@ -273,12 +306,13 @@ def validate_brainsync_bids_session(session_dir: str | Path) -> ValidatedBrainSy
     if status not in BRAIN_SYNC_INPUT_STATUSES:
         raise ValueError(f"BrainSync session status is not a model input: {status!r}.")
 
-    target_label = manifest.get("target_label")
-    if not isinstance(target_label, dict) or target_label.get("status") != "confirmed":
-        raise ValueError("BrainSync session target_label must be post-experiment confirmed.")
-    if target_label.get("source") != "post_experiment_confirmation":
-        raise ValueError("BrainSync target_label source must be post_experiment_confirmation.")
-    thought_digit = _digit(target_label.get("thought_digit"), "target_label.thought_digit")
+    if require_target:
+        target_label = manifest.get("target_label")
+        if not isinstance(target_label, dict) or target_label.get("status") != "confirmed":
+            raise ValueError("BrainSync session target_label must be post-experiment confirmed.")
+        if target_label.get("source") != "post_experiment_confirmation":
+            raise ValueError("BrainSync target_label source must be post_experiment_confirmation.")
+        thought_digit = _digit(target_label.get("thought_digit"), "target_label.thought_digit")
 
     recording = manifest.get("recording")
     if not isinstance(recording, dict):
@@ -290,7 +324,7 @@ def validate_brainsync_bids_session(session_dir: str | Path) -> ValidatedBrainSy
     timeline = recording.get("timeline")
     if not isinstance(timeline, dict) or timeline.get("status") != "finalized":
         raise ValueError("BrainSync BIDS raw timeline must be finalized.")
-    if timeline.get("time_base") != BRAIN_SYNC_RAW_TIME_BASE:
+    if timeline.get("time_base") not in {BRAIN_SYNC_RAW_TIME_BASE, BRAIN_SYNC_SEGMENTED_TIME_BASE}:
         raise ValueError("BrainSync BIDS raw timeline must use continuous_recording time.")
     if timeline.get("rest_segments_retained") is not True:
         raise ValueError("BrainSync BIDS raw must retain rest segments.")
@@ -307,20 +341,26 @@ def validate_brainsync_bids_session(session_dir: str | Path) -> ValidatedBrainSy
     if not isinstance(experiment, dict):
         raise ValueError("BrainSync session.experiment must be an object.")
     subject_id = _nonempty_string(experiment.get("subject_id"), "experiment.subject_id")
-    if _digit(experiment.get("thought_digit"), "experiment.thought_digit") != thought_digit:
-        raise ValueError("BrainSync experiment and confirmed target labels conflict.")
-    if experiment.get("target_label_status") != "confirmed_post_experiment":
-        raise ValueError("BrainSync experiment.target_label_status must be confirmed_post_experiment.")
+    if require_target:
+        if _digit(experiment.get("thought_digit"), "experiment.thought_digit") != thought_digit:
+            raise ValueError("BrainSync experiment and confirmed target labels conflict.")
+        if experiment.get("target_label_status") != "confirmed_post_experiment":
+            raise ValueError(
+                "BrainSync experiment.target_label_status must be confirmed_post_experiment."
+            )
     _validate_protocol_declaration(experiment)
 
     session_id = _nonempty_string(manifest.get("session_id"), "session_id")
     started_utc, started_timestamp_s = _parse_timestamp(manifest.get("started_utc"), "started_utc")
-    target_confirmed_utc, target_confirmed_timestamp_s = _parse_timestamp(
-        target_label.get("confirmed_utc"), "target_label.confirmed_utc"
-    )
     ended_utc, ended_timestamp_s = _parse_timestamp(manifest.get("ended_utc"), "ended_utc")
-    if not started_timestamp_s <= target_confirmed_timestamp_s <= ended_timestamp_s:
-        raise ValueError("BrainSync timestamps must satisfy start <= confirmation <= end.")
+    if started_timestamp_s > ended_timestamp_s:
+        raise ValueError("BrainSync timestamps require start <= end.")
+    if require_target:
+        target_confirmed_utc, target_confirmed_timestamp_s = _parse_timestamp(
+            target_label.get("confirmed_utc"), "target_label.confirmed_utc"
+        )
+        if started_timestamp_s > target_confirmed_timestamp_s:
+            raise ValueError("BrainSync timestamps require start <= confirmation.")
 
     bids = validate_bids_eeg_recording(root, bids_files, contract=BRAIN_SYNC_BIDS_CONTRACT)
     _validate_balanced_schedule(experiment, bids)
@@ -328,7 +368,17 @@ def validate_brainsync_bids_session(session_dir: str | Path) -> ValidatedBrainSy
     if not isinstance(recording_path, str) or (root / recording_path).resolve() != bids.raw_path:
         raise ValueError("BrainSync recording.path must identify the BIDS EEG recording.")
     if len(bids.channel_names) != BRAIN_SYNC_CHANNEL_COUNT:
-        raise ValueError(f"BrainSync BIDS raw must declare {BRAIN_SYNC_CHANNEL_COUNT} EEG channels.")
+        raise ValueError(
+            f"BrainSync BIDS raw must declare {BRAIN_SYNC_CHANNEL_COUNT} acquisition channels."
+        )
+    if (
+        tuple(canonical_channel_name(name) for name in bids.channel_names)
+        != tuple(canonical_channel_name(name) for name in BRAIN_SYNC_ACQUISITION_CHANNELS)
+        or bids.channel_types != BRAIN_SYNC_ACQUISITION_TYPES
+    ):
+        raise ValueError(
+            "BrainSync requires the declared seven EEG plus independent EOG slot layout."
+        )
     recording_rate = _finite_nonnegative(
         recording.get("source_sample_rate_hz"), "recording.source_sample_rate_hz"
     )
@@ -346,27 +396,63 @@ def validate_brainsync_bids_session(session_dir: str | Path) -> ValidatedBrainSy
     if not math.isclose(timeline_duration, bids.duration_seconds, rel_tol=0.0, abs_tol=1e-6):
         raise ValueError("BrainSync timeline and BIDS recording durations conflict.")
     _validate_manifest_rest_intervals(timeline, bids)
-    if bids.stimuli[-1].onset_seconds > target_confirmed_timestamp_s - started_timestamp_s:
+    pauses = timeline.get("acquisition_pauses", [])
+    if not isinstance(pauses, list):
+        raise ValueError("Acquisition pauses must be an array.")
+    boundaries = []
+    previous_wall_end = 0.0
+    previous_sample = -1
+    for pause in pauses:
+        if not isinstance(pause, dict):
+            raise ValueError("Acquisition pause must be an object.")
+        start = _finite_nonnegative(pause.get("start_wall_seconds"), "pause.start")
+        end = _finite_nonnegative(pause.get("end_wall_seconds"), "pause.end")
+        sample = pause.get("boundary_sample")
+        if type(sample) is not int or sample < 0 or sample < previous_sample or start < previous_wall_end or end < start:
+            raise ValueError("Acquisition pauses must have ordered wall times and sample boundaries.")
+        if sample != previous_sample:
+            boundaries.append(sample / bids.sample_rate_hz)
+        previous_wall_end, previous_sample = end, sample
+    if len(boundaries) != len(bids.acquisition_boundaries) or any(
+        not math.isclose(left, right, abs_tol=1e-8, rel_tol=0.0)
+        for left, right in zip(boundaries, bids.acquisition_boundaries, strict=True)
+    ):
+        raise ValueError("Pause sample boundaries conflict with BIDS events.")
+    segmented = timeline.get("time_base") == BRAIN_SYNC_SEGMENTED_TIME_BASE
+    if segmented != bool(pauses) or (segmented and timeline.get("pause_samples_retained") is not False):
+        raise ValueError("Segmented recordings must explicitly declare omitted pause samples.")
+    sidecar = json.loads(bids.eeg_json_path.read_text(encoding="utf-8"))
+    if segmented and (sidecar.get("RecordingType") != "discontinuous" or sidecar.get("AcquisitionPauses") != pauses):
+        raise ValueError("BIDS sidecar must agree with the segmented acquisition timeline.")
+    if (
+        require_target
+        and bids.stimuli[-1].onset_seconds > target_confirmed_timestamp_s - started_timestamp_s
+    ):
         raise ValueError("BrainSync target confirmation precedes a BIDS stimulus onset.")
     if bids.duration_seconds > ended_timestamp_s - started_timestamp_s:
         raise ValueError("BrainSync BIDS recording duration exceeds the session lifetime.")
 
-    return ValidatedBrainSyncSession(
+    common = dict(
         root=root,
         session_path=session_path,
         manifest=manifest,
         session_id=session_id,
         subject_id=subject_id,
-        thought_digit=thought_digit,
         started_utc=started_utc,
         started_timestamp_s=started_timestamp_s,
         ended_utc=ended_utc,
         ended_timestamp_s=ended_timestamp_s,
-        target_confirmed_utc=target_confirmed_utc,
-        target_confirmed_timestamp_s=target_confirmed_timestamp_s,
         age_years=_optional_age(experiment.get("age")),
         sex=experiment.get("sex"),
         bids=bids,
+    )
+    if not require_target:
+        return ValidatedBrainSyncRecording(**common)
+    return ValidatedBrainSyncSession(
+        **common,
+        thought_digit=thought_digit,
+        target_confirmed_utc=target_confirmed_utc,
+        target_confirmed_timestamp_s=target_confirmed_timestamp_s,
     )
 
 

@@ -1,6 +1,6 @@
 # N2P3-Net 文献与证据库
 
-更新：2026-09-03
+更新：2026-09-07
 
 ## 论文写作入口
 
@@ -8,7 +8,7 @@
 - [`literature_manifest_20260828.md`](literature_manifest_20260828.md)：68 个去重来源、检索台账、访问边界和失败记录。
 - [`pdf_validation_20260828.json`](pdf_validation_20260828.json)：本地 PDF 的页数、SHA-256、可读性和首段文本校验。
 - [`receptive_field_literature_ledger_20260828.md`](receptive_field_literature_ledger_20260828.md)：感受野、padding、stride、dilation 与时序 CNN 的定向检索补充。
-- 本项目历史实测与外部方法边界汇总于 [`../doc/research_evidence_ledger_20260903.zh.md`](../doc/research_evidence_ledger_20260903.zh.md)；代码合同验收见 [`../doc/framework_acceptance_20260903.zh.md`](../doc/framework_acceptance_20260903.zh.md)。
+- 项目实测与外部方法边界见[证据索引](../doc/evidence/README.md)，代码合同与验证规则见[工程指南](../doc/engineering.zh.md)。旧证据账本和框架验收正文已退役，原路径与哈希见[归档清单](../frozen/technical_audit_before_20260906.manifest.json)。
 
 ## 证据边界
 

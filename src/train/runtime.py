@@ -11,7 +11,7 @@ import os
 import sys
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from math import ceil, prod
 from pathlib import Path
 from threading import Lock, RLock
@@ -233,7 +233,11 @@ class PrecisionPolicy:
     def name(self) -> str:
         if not self.amp_enabled or self.amp_dtype is None:
             return "fp32"
-        return "bf16" if self.amp_dtype is torch.bfloat16 else str(self.amp_dtype).removeprefix("torch.")
+        return (
+            "bf16"
+            if self.amp_dtype is torch.bfloat16
+            else str(self.amp_dtype).removeprefix("torch.")
+        )
 
 
 @dataclass(frozen=True)
@@ -249,6 +253,14 @@ class OptimizerExecutionPolicy:
     @property
     def uses_cuda_graphs(self) -> bool:
         return self.compile_mode in {"reduce-overhead", "max-autotune"}
+
+    def without_cuda_graphs(self, *, reason: str) -> OptimizerExecutionPolicy:
+        """Keep requested controls while avoiding unsupported graph state replay."""
+        if not reason.strip():
+            raise ValueError("a CUDA Graph fallback requires a concrete reason.")
+        if not self.uses_cuda_graphs:
+            return self
+        return replace(self, compile_mode="default", fallback_reason=reason)
 
     def record(self) -> dict[str, bool | str | None]:
         return {
@@ -441,7 +453,7 @@ class MatrixBatchSource:
         self.device_row_domains: torch.Tensor | None = None
         self.preloaded = False
         self.transfer_fallback = False
-        self.shuffle_each_epoch = False
+        self.materialize_shuffled_epoch = False
         self._shuffle_x: torch.Tensor | None = None
         self._shuffle_y: torch.Tensor | None = None
         self._shuffle_row_weights: torch.Tensor | None = None
@@ -498,7 +510,12 @@ class MatrixBatchSource:
             if self.cpu_row_domains is None
             else self.cpu_row_domains.numel() * self.cpu_row_domains.element_size()
         )
-        return self.cpu_X.numel() * self.cpu_X.element_size() + label_bytes + weight_bytes + domain_bytes
+        return (
+            self.cpu_X.numel() * self.cpu_X.element_size()
+            + label_bytes
+            + weight_bytes
+            + domain_bytes
+        )
 
     @property
     def has_row_weights(self) -> bool:
@@ -523,9 +540,7 @@ class MatrixBatchSource:
         if self.preloaded:
             generator_device = getattr(generator, "device", None)
             if generator_device is not None and generator_device.type == self.runtime.device.type:
-                return torch.randperm(
-                    self.n_rows, generator=generator, device=self.runtime.device
-                )
+                return torch.randperm(self.n_rows, generator=generator, device=self.runtime.device)
             # A backend without accelerator Generator support received a CPU
             # fallback generator. Generate on CPU and move the permutation once;
             # row order and label alignment are unchanged.
@@ -548,7 +563,7 @@ class MatrixBatchSource:
         """
 
         permutation = self.random_permutation(generator)
-        if not self.preloaded or not self.shuffle_each_epoch:
+        if not self.preloaded or not self.materialize_shuffled_epoch:
             yield from self.batches(batch_size, indices=permutation)
             return
         assert self.device_X is not None
@@ -568,7 +583,7 @@ class MatrixBatchSource:
             # Keep the exact row order; only lose the one-shot shuffle
             # optimization. Releasing buffers at this boundary is safe because
             # no batch from the failed shuffle has been yielded yet.
-            self.shuffle_each_epoch = False
+            self.materialize_shuffled_epoch = False
             self._shuffle_x = None
             self._shuffle_y = None
             self.runtime.release_temporary_memory()
@@ -591,7 +606,7 @@ class MatrixBatchSource:
         if self.cpu_row_weights is None:
             raise ValueError("MatrixBatchSource has no row weights.")
         permutation = self.random_permutation(generator)
-        if not self.preloaded or not self.shuffle_each_epoch:
+        if not self.preloaded or not self.materialize_shuffled_epoch:
             yield from self.batches_with_weights(batch_size, indices=permutation)
             return
         assert self.device_X is not None and self.device_row_weights is not None
@@ -619,7 +634,7 @@ class MatrixBatchSource:
         except RuntimeError as error:
             if not is_oom_error(error):
                 raise
-            self.shuffle_each_epoch = False
+            self.materialize_shuffled_epoch = False
             self._shuffle_x = None
             self._shuffle_y = None
             self._shuffle_row_weights = None
@@ -745,9 +760,7 @@ class MatrixBatchSource:
         if batch_size < 1:
             raise ValueError("batch_size must be positive.")
         permutation = None if generator is None else self.random_permutation(generator)
-        fast_path = (
-            self.preloaded and self.shuffle_each_epoch and permutation is not None
-        )
+        fast_path = self.preloaded and self.materialize_shuffled_epoch and permutation is not None
         if fast_path:
             assert self.device_X is not None and permutation is not None
             try:
@@ -791,7 +804,7 @@ class MatrixBatchSource:
             except RuntimeError as error:
                 if not is_oom_error(error):
                     raise
-                self.shuffle_each_epoch = False
+                self.materialize_shuffled_epoch = False
                 self._shuffle_x = None
                 self._shuffle_y = None
                 self._shuffle_row_weights = None
@@ -816,14 +829,20 @@ class MatrixBatchSource:
                 if permutation is None:
                     xb = self.device_X[start:stop]
                     yb = None if self.device_y is None else self.device_y[start:stop]
-                    wb = None if self.device_row_weights is None else self.device_row_weights[start:stop]
-                    db = None if self.device_row_domains is None else self.device_row_domains[start:stop]
+                    wb = (
+                        None
+                        if self.device_row_weights is None
+                        else self.device_row_weights[start:stop]
+                    )
+                    db = (
+                        None
+                        if self.device_row_domains is None
+                        else self.device_row_domains[start:stop]
+                    )
                 else:
                     rows = permutation[start:stop]
                     xb = self.device_X.index_select(0, rows)
-                    yb = (
-                        None if self.device_y is None else self.device_y.index_select(0, rows)
-                    )
+                    yb = None if self.device_y is None else self.device_y.index_select(0, rows)
                     wb = (
                         None
                         if self.device_row_weights is None
@@ -894,11 +913,7 @@ class MatrixBatchSource:
             assert self.device_X is not None
             device_indices = indices.to(self.runtime.device)
             xb = self.device_X.index_select(0, device_indices)
-            yb = (
-                None
-                if self.device_y is None
-                else self.device_y.index_select(0, device_indices)
-            )
+            yb = None if self.device_y is None else self.device_y.index_select(0, device_indices)
             wb = (
                 None
                 if self.device_row_weights is None
@@ -914,14 +929,10 @@ class MatrixBatchSource:
         selected_x = self.cpu_X.index_select(0, indices)
         selected_y = None if self.cpu_y is None else self.cpu_y.index_select(0, indices)
         selected_w = (
-            None
-            if self.cpu_row_weights is None
-            else self.cpu_row_weights.index_select(0, indices)
+            None if self.cpu_row_weights is None else self.cpu_row_weights.index_select(0, indices)
         )
         selected_d = (
-            None
-            if self.cpu_row_domains is None
-            else self.cpu_row_domains.index_select(0, indices)
+            None if self.cpu_row_domains is None else self.cpu_row_domains.index_select(0, indices)
         )
         return (
             self.runtime.to_device(selected_x),
@@ -1136,7 +1147,9 @@ class GpuPerformanceScheduler:
         free_bytes, _ = _memory_info(self.device)
         if free_bytes is None:
             return cap
-        parameter_bytes = sum(parameter.numel() * parameter.element_size() for parameter in model.parameters())
+        parameter_bytes = sum(
+            parameter.numel() * parameter.element_size() for parameter in model.parameters()
+        )
         # Parameters, gradients, and Adam moments are persistent. Activation
         # memory is model dependent; use a deliberately conservative multiplier.
         persistent_bytes = parameter_bytes * 5

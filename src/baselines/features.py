@@ -31,9 +31,6 @@ from collections.abc import Sequence
 import numpy as np
 from scipy.signal import resample
 
-# 标准 8 导顺序（与 data.channel.STANDARD_CHANNELS 一致）：Fz,Cz,P3,Pz,P4,PO7,PO8,Oz。
-STANDARD_CHANNELS: tuple[str, ...] = ("Fz", "Cz", "P3", "Pz", "P4", "PO7", "PO8", "Oz")
-
 
 def time_to_index(ms: float, sfreq: float, tmin: float) -> int:
     """物理时间 ms → 采样点索引（四舍五入，D-time-index）。

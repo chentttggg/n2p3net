@@ -1,19 +1,64 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pytest
 
-from experiments import run_candidate_result_batch as batch
 from experiments import run_candidate_cross_decision as result_runner
+from experiments import run_candidate_result_batch as batch
 from experiments.result_batch_contract import (
     RESULT_BATCH_JOBS_SCHEMA,
     RESULT_BATCH_LEDGER_SCHEMA,
-    ZERO_SHOT_FEATURE_CACHE_SCHEMA,
 )
+
+
+def test_candidate_runner_starts_directly_outside_repository(tmp_path: Path) -> None:
+    runner = Path(result_runner.__file__).resolve()
+    result = subprocess.run(
+        [sys.executable, "-I", str(runner), "--help"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "--calibration-selections" in result.stdout
+
+
+@pytest.mark.parametrize("runner_name", ["run_candidate_cross_decision", "run_within_subject_transfer"])
+def test_inner_selection_rejects_outer_qc_before_input_access(tmp_path: Path, runner_name: str) -> None:
+    runner = Path(result_runner.__file__).resolve().with_name(f"{runner_name}.py")
+    arguments = [
+        "--dataset-cache", str(tmp_path / "absent.npz"),
+        "--source-snapshot-manifest", str(tmp_path / "absent.manifest.json"),
+        "--identity-exclusion-policy", "source",
+        "--arm-name", "qc-scope",
+        "--head", "linear",
+        "--fold-local-qc",
+        "--epoch-selection", "target_time_split",
+        "--output", str(tmp_path / "result.json"),
+    ]
+    if runner_name == "run_candidate_cross_decision":
+        arguments.extend([
+            "--training-replicate-key", "r1", "--partition-key", "p1"
+        ])
+    result = subprocess.run(
+        [sys.executable, "-I", str(runner), *arguments],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 2
+    assert "separate inner-training scopes" in result.stderr
+    assert "FileNotFoundError" not in result.stderr
+    assert list(tmp_path.iterdir()) == []
 
 
 def _argv(
@@ -102,6 +147,13 @@ def test_batch_jobs_record_requires_shared_flags_and_unique_outputs(tmp_path: Pa
     validated = batch._validate_jobs_record(batch._read_json_mapping(jobs_path, "jobs"), jobs_path)
     assert [job["arm_name"] for job in validated] == ["a", "b"]
 
+    jobs["jobs"][1]["argv"].extend(["--evaluation-snapshot-manifest", "different.manifest.json"])
+    with pytest.raises(ValueError, match="shared evaluation snapshot"):
+        batch._validate_jobs_record(jobs, jobs_path)
+
+    jobs["jobs"][0]["argv"].extend(["--evaluation-snapshot-manifest", "different.manifest.json"])
+    assert len(batch._validate_jobs_record(jobs, jobs_path)) == 2
+
 
 def test_batch_main_writes_ledger_and_delegates_each_arm(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -142,15 +194,18 @@ def test_batch_main_writes_ledger_and_delegates_each_arm(
     assert len(calls) == 2
 
 
-def test_zero_shot_feature_cache_round_trip_and_header_mismatch(tmp_path: Path) -> None:
-    header = {
-        "schema": ZERO_SHOT_FEATURE_CACHE_SCHEMA,
-        "checkpoint_sha256": "c" * 64,
-        "target_cache_sha256": "d" * 64,
-        "partition_key": "p01",
-        "epoch_rows": [4, 9],
-        "test_reps": 8,
-    }
+@pytest.mark.parametrize("mismatch_field", ["partition_key", "evaluation_snapshot_sha256"])
+def test_zero_shot_feature_cache_round_trip_and_header_mismatch(
+    tmp_path: Path, mismatch_field: str
+) -> None:
+    header = result_runner._zero_shot_cache_header(
+        checkpoint_sha256="c" * 64,
+        target_cache_sha256="d" * 64,
+        evaluation_snapshot_sha256="e" * 64,
+        partition_key="p01",
+        epoch_rows=np.asarray([4, 9]),
+        test_reps=8,
+    )
     path = tmp_path / "features.npz"
     features = np.arange(20, dtype=np.float32).reshape(2, 10)
     scores = np.asarray([0.25, -0.5], dtype=np.float64)
@@ -161,5 +216,5 @@ def test_zero_shot_feature_cache_round_trip_and_header_mismatch(tmp_path: Path) 
     assert loaded is not None
     assert np.array_equal(loaded["features"], features)
     assert np.array_equal(loaded["scores"], scores)
-    header["partition_key"] = "p02"
+    header[mismatch_field] = "p02" if mismatch_field == "partition_key" else "f" * 64
     assert result_runner._read_zero_shot_feature_cache(path, header) is None

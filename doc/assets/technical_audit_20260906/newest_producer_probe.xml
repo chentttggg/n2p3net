@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="6.233" timestamp="2026-09-06T16:43:29.655152+08:00" hostname="Tonger"><testcase classname="tests.test_brainsync" name="test_actual_workstation_producer_roundtrips_seven_eeg_one_eog" time="0.788"><failure message="ValueError: BIDS raw channel order does not match the BrainSync montage.">tmp_path = WindowsPath('C:/Users/chent/AppData/Local/Temp/pytest-of-chent/pytest-253/test_actual_workstation_produc0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000002CC46D17A80&gt;
+
+    def test_actual_workstation_producer_roundtrips_seven_eeg_one_eog(tmp_path, monkeypatch):
+        producer_root = os.environ.get("BRAIN_SYNC_WORKSTATION_ROOT")
+        if not producer_root:
+            pytest.skip("set BRAIN_SYNC_WORKSTATION_ROOT for the independent producer integration")
+        monkeypatch.syspath_prepend(producer_root)
+        from gtn_workstation.bids import BidsRawInfo, make_bids_session_layout, write_bids_eeg_sidecars
+        from gtn_workstation.models import ChannelMontage, ExperimentConfig
+    
+        session = _write_bids_session(
+            tmp_path / "session",
+            session_id="producer-consumer",
+            target=4,
+            started_utc="2026-09-06T00:00:00Z",
+        )
+        manifest = _read_manifest(session)
+        raw_path = session / manifest["recording"]["path"]
+        raw = mne.io.read_raw_edf(raw_path, verbose=False)
+        info = BidsRawInfo(
+            tuple(raw.ch_names), float(raw.info["sfreq"]), raw.n_times / raw.info["sfreq"], "uV"
+        )
+        layout = make_bids_session_layout(session, "P001", "session")
+        montage = ChannelMontage(ref_label="A2", gnd_label="M1")
+&gt;       write_bids_eeg_sidecars(
+            layout,
+            info,
+            montage,
+            ExperimentConfig(),
+            sdk_version="synthetic-integration",
+            impedance_values=[],
+        )
+
+tests\test_brainsync.py:518: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+layout = BidsSessionLayout(root=WindowsPath('C:/Users/chent/AppData/Local/Temp/pytest-of-chent/pytest-253/test_actual_workstati...st-253/test_actual_workstation_produc0/session/sub-P001/ses-session/eeg'), stem='sub-P001_ses-session_task-gtn_run-01')
+raw_info = BidsRawInfo(channel_names=('Fz', 'Cz', 'P3', 'Pz', 'P4', 'PO8', 'EOG', 'Oz'), sample_rate_hz=250.0, duration_seconds=np.float64(16.0), units='uV')
+montage = ChannelMontage(eeg=('Fz', 'Cz', 'P3', 'Pz', 'P4', 'PO8', 'PO7', 'Oz'), ref_label='A2', gnd_label='M1', active_mask=255..., 0.002792), (0.0001076, -0.114892, 0.014657)), channel_types=('eeg', 'eeg', 'eeg', 'eeg', 'eeg', 'eeg', 'eog', 'eeg'))
+config = ExperimentConfig(subject_id='P001', age='', sex='unknown', birthdate='', blocks=10, digits_per_block=45, stimulus_ms=3...4, screen_index=1, save_dir='data', model_profile='未选择模型', notes='', instruction_text='请注视屏幕中央的数字。看到目标数字时保持专注，不要移动身体。')
+sdk_version = 'synthetic-integration', impedance_values = []
+
+    def write_bids_eeg_sidecars(
+        layout: BidsSessionLayout,
+        raw_info: BidsRawInfo,
+        montage: ChannelMontage,
+        config: ExperimentConfig,
+        *,
+        sdk_version: str,
+        impedance_values: list[float],
+    ) -&gt; None:
+        """Write EEG/EOG JSON, channels, electrodes, and coordinate sidecars."""
+    
+        montage.validate()
+        if tuple(label.casefold() for label in raw_info.channel_names) != tuple(
+            label.casefold() for label in montage.eeg
+        ):
+&gt;           raise ValueError("BIDS raw channel order does not match the BrainSync montage.")
+E           ValueError: BIDS raw channel order does not match the BrainSync montage.
+
+..\BrainSync_Tool_newest\BrainSync_Tool\gtn_workstation\bids.py:201: ValueError</failure></testcase></testsuite></testsuites>

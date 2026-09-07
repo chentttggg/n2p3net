@@ -11,10 +11,12 @@ from typing import Any
 import mne
 import numpy as np
 
+from data.contract import BRAIN_SYNC_EEG_CHANNELS
+
 HEAD_RADIUS: float = 0.1
 DEFAULT_N_FREQS: int = 8
 DEFAULT_MONTAGE: str = "standard_1005"
-STANDARD_CHANNELS: tuple[str, ...] = ("Fz", "Cz", "P3", "Pz", "P4", "PO7", "PO8", "Oz")
+STANDARD_CHANNELS: tuple[str, ...] = BRAIN_SYNC_EEG_CHANNELS
 
 _LEGACY_1020_ALIASES = {"T3": "T7", "T4": "T8", "T5": "P7", "T6": "P8"}
 _REFERENCE_SUFFIX = re.compile(

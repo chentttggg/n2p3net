@@ -12,10 +12,8 @@ import argparse
 import gc
 import hashlib
 import json
-import os
 import re
 import sys
-import tempfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -28,12 +26,13 @@ for search_path in (ROOT, SRC):
     if str(search_path) not in sys.path:
         sys.path.insert(0, str(search_path))
 
+from experiments import run_candidate_cross_decision as result_runner  # noqa: E402
 from experiments.build_candidate_cross_decision_manifest import RESULT_SCHEMA  # noqa: E402
 from experiments.result_batch_contract import (  # noqa: E402
     RESULT_BATCH_JOBS_SCHEMA,
     RESULT_BATCH_LEDGER_SCHEMA,
 )
-from experiments import run_candidate_cross_decision as result_runner  # noqa: E402
+from research.execution import atomic_write_json  # noqa: E402
 
 _COMMON_FLAGS = (
     "--dataset-cache",
@@ -120,26 +119,16 @@ def _validate_jobs_record(record: Mapping[str, Any], path: Path) -> tuple[dict[s
                 raise ValueError(
                     f"result-batch job {arm_name!r} disagrees on shared flag {flag}."
                 )
+        evaluation_manifest = _flag_value(raw_argv, "--evaluation-snapshot-manifest") or (
+            common["--source-snapshot-manifest"]
+        )
+        previous_evaluation = common.setdefault("--evaluation-snapshot-manifest", evaluation_manifest)
+        if evaluation_manifest != previous_evaluation:
+            raise ValueError(
+                f"result-batch job {arm_name!r} disagrees on shared evaluation snapshot."
+            )
         jobs.append({"arm_name": arm_name, "argv": tuple(raw_argv), "output": output})
     return tuple(jobs)
-
-
-def _atomic_write_json(path: Path, value: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, raw_temp = tempfile.mkstemp(
-        prefix=f".{path.name}.", suffix=".tmp", dir=path.parent
-    )
-    temp = Path(raw_temp)
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
-            json.dump(value, stream, ensure_ascii=False, indent=2, allow_nan=False)
-            stream.write("\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temp, path)
-    except BaseException:
-        temp.unlink(missing_ok=True)
-        raise
 
 
 def _validated_digest(value: object, name: str) -> str:
@@ -203,7 +192,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "job_count": len(ledger_jobs),
         "jobs": ledger_jobs,
     }
-    _atomic_write_json(output_path, ledger)
+    atomic_write_json(output_path, ledger)
     print(f"[summary] {output_path}", flush=True)
 
 

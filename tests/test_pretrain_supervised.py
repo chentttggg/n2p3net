@@ -36,6 +36,7 @@ from transfer.checkpoint import (
     checkpoint_architecture_record,
     checkpoint_training_contract,
     checkpoint_training_identity_ledger,
+    load_checkpoint_payload,
     load_n2p3_trunk_checkpoint,
 )
 
@@ -83,6 +84,8 @@ def _supervised_source_dataset() -> SimpleNamespace:
         n_times=contract.n_times,
         preprocessing=preprocessing_spec_from_contract(contract),
         channel_names=("Fz", "Cz", "Pz"),
+        channel_mask=np.ones(3, dtype=bool),
+        trial_channel_mask=None,
         provenance={"source_reference": "synthetic-source"},
         name="synthetic_supervised_source",
     )
@@ -140,6 +143,8 @@ def _direct_supervised_source_dataset() -> SimpleNamespace:
         n_times=contract.n_times,
         preprocessing=preprocessing_spec_from_contract(contract),
         channel_names=("Fz", "Cz", "Pz"),
+        channel_mask=np.ones(3, dtype=bool),
+        trial_channel_mask=None,
         provenance={
             "source_reference": "synthetic-source",
             "event_contract": "preserve",
@@ -378,13 +383,9 @@ def test_supervised_runner_binds_pds_source_selection_record(
     expected_procedure_selection = {
         key: value for key, value in selection_record.items() if key != "seed"
     }
-    assert (
-        procedure["objective"]["source_selection_contract"]
-        == expected_procedure_selection
-    )
+    assert procedure["objective"]["source_selection_contract"] == expected_procedure_selection
     ledger = checkpoint_training_identity_ledger(payload)
     assert ledger.local_subject_ids == ("s2", "s3", "s4", "s5", "s6")
-
 
 
 def test_supervised_runner_records_uniform_initial_checkpoint_for_selected_stage(
@@ -547,6 +548,8 @@ def test_supervised_batch_loads_source_once_and_attests_each_checkpoint(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     dataset = _supervised_source_dataset()
+    dataset.trial_channel_mask = np.ones(dataset.X.shape[:2], dtype=bool)
+    dataset.trial_channel_mask[:750, 2] = False
     source_manifest, source_digest, _ = _write_source_snapshot_manifest(tmp_path)
     checkpoints = [tmp_path / "first.pt", tmp_path / "second.pt"]
     batch_record = tmp_path / "batch.json"
@@ -559,6 +562,12 @@ def test_supervised_batch_loads_source_once_and_attests_each_checkpoint(
 
     _SOURCE_DATASET_CACHE.clear()
     _SOURCE_SNAPSHOT_CACHE.clear()
+
+    class MaskCheckingBaseline(_FastSupervisedBaseline):
+        def fit(self, X, y, *, group_ids, **kwargs):
+            np.testing.assert_array_equal(kwargs["trial_channel_mask"], dataset.trial_channel_mask)
+            return super().fit(X, y, group_ids=group_ids, **kwargs)
+
     monkeypatch.setattr(
         "experiments.run_pretrain_supervised.load_epoch_dataset",
         load_once,
@@ -569,7 +578,7 @@ def test_supervised_batch_loads_source_once_and_attests_each_checkpoint(
     )
     monkeypatch.setattr(
         "experiments.run_pretrain_supervised.N2P3NetBaseline",
-        _FastSupervisedBaseline,
+        MaskCheckingBaseline,
     )
 
     run_pretrain_supervised_main(
@@ -590,6 +599,8 @@ def test_supervised_batch_loads_source_once_and_attests_each_checkpoint(
             str(checkpoints[1]),
             "--batch-record",
             str(batch_record),
+            "--mst-features-per-scale",
+            "4",
         ]
     )
 
@@ -604,9 +615,22 @@ def test_supervised_batch_loads_source_once_and_attests_each_checkpoint(
     ]
     for job, checkpoint in zip(record["jobs"], checkpoints, strict=True):
         assert job["checkpoint_sha256"] == hashlib.sha256(checkpoint.read_bytes()).hexdigest()
-        assert job["training_contract_digest"] == checkpoint_training_contract(
-            torch.load(checkpoint, map_location="cpu", weights_only=False)
-        ).digest()
+        assert load_checkpoint_payload(checkpoint)["architecture"]["mst_features_per_scale"] == 4
+        assert load_checkpoint_payload(checkpoint)["source_observed_trial_counts"] == [
+            1500,
+            1500,
+            750,
+        ]
+        assert (
+            load_checkpoint_payload(checkpoint)["source_input_stats_scope"]
+            == "observed_source_rows"
+        )
+        assert (
+            job["training_contract_digest"]
+            == checkpoint_training_contract(
+                torch.load(checkpoint, map_location="cpu", weights_only=False)
+            ).digest()
+        )
 
     from experiments import run_candidate_promotion_matrix as matrix
 
@@ -743,8 +767,7 @@ def test_supervised_runner_round_trips_p0_p1_domain_contract(
 
     assert len(init_records) == 2
     assert all(
-        record["source_domain_vocabulary"] == ("domain-b", "domain-a")
-        for record in init_records
+        record["source_domain_vocabulary"] == ("domain-b", "domain-a") for record in init_records
     )
     assert all(record["splitbn_domain_count"] == 2 for record in init_records)
     assert len(fit_records) == 2
@@ -759,9 +782,10 @@ def test_supervised_runner_round_trips_p0_p1_domain_contract(
     ]
     contract = checkpoint_training_contract(payload)
     assert contract.objective["source_domain_axis"] == payload["source_domain_axis"]
-    assert contract.objective["source_residual_diagnostics"]["refit"] == payload[
-        "source_residual_refit"
-    ]
+    assert (
+        contract.objective["source_residual_diagnostics"]["refit"]
+        == payload["source_residual_refit"]
+    )
     restored, _ = load_n2p3_trunk_checkpoint(payload, dataset)
     assert isinstance(restored, FeatureDomainTransfer)
 

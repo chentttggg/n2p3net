@@ -40,6 +40,7 @@ from data.epochs import (
     save_epoch_dataset,
 )
 from data.events import observed_only_timeline, selection_group_id
+from data.exclusions import select_allowed_subjects
 from data.preprocess import apply_trial_baseline
 from data.raw_artifacts import MoabbLoaderMaterialization, RawArtifactAttestation
 
@@ -1762,6 +1763,9 @@ def prepare_moabb_p300(
             f"MOABB dataset {dataset_class} lacks acquisition reference/sample-rate metadata."
         )
     selected_subjects = list(subjects) if subjects is not None else list(dataset.subject_list)
+    selected_subjects = select_allowed_subjects(
+        dataset_class, selected_subjects, explicit=subjects is not None
+    )
     if not selected_subjects:
         raise ValueError("At least one MOABB subject must be selected.")
     if len(set(selected_subjects)) != len(selected_subjects):

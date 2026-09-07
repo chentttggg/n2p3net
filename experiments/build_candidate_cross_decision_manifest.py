@@ -235,6 +235,7 @@ def build_manifest(
     inference_scope: str,
     planned_contrasts: Sequence[Sequence[str]],
     output: str | Path,
+    evaluation_snapshot_manifest: str | Path | None = None,
     bootstrap_iterations: int = 10_000,
     bootstrap_seed: int = 0,
     confidence_level: float = 0.95,
@@ -256,6 +257,10 @@ def build_manifest(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     source_manifest_path = Path(source_snapshot_manifest).resolve()
     source_sha256 = source_snapshot_sha256_from_archive_manifest(source_manifest_path)
+    evaluation_manifest_path = Path(
+        evaluation_snapshot_manifest or source_snapshot_manifest
+    ).resolve()
+    evaluation_sha256 = source_snapshot_sha256_from_archive_manifest(evaluation_manifest_path)
 
     loaded: list[
         tuple[
@@ -275,12 +280,21 @@ def build_manifest(
         plan = _decision_plan(result, str(path))
         _validate_completion_state(result, plan, str(path))
         candidate_task = _candidate_task(result, evaluation, plan, str(path))
-        if evaluation.source_snapshot_sha256 != source_sha256:
-            raise ValueError(f"{path} source snapshot disagrees with physical freeze.")
+        if evaluation.source_snapshot_sha256 != evaluation_sha256:
+            raise ValueError(f"{path} evaluation snapshot disagrees with physical freeze.")
         if Path(str(result.get("source_snapshot_manifest"))).resolve() != source_manifest_path:
             raise ValueError(f"{path} source snapshot manifest path mismatch.")
         if result.get("source_snapshot_sha256") != source_sha256:
             raise ValueError(f"{path} source snapshot digest mismatch.")
+        result_evaluation_manifest = result.get(
+            "evaluation_snapshot_manifest", result.get("source_snapshot_manifest")
+        )
+        if Path(str(result_evaluation_manifest)).resolve() != evaluation_manifest_path:
+            raise ValueError(f"{path} evaluation snapshot manifest path mismatch.")
+        if result.get("evaluation_snapshot_sha256", result.get("source_snapshot_sha256")) != (
+            evaluation_sha256
+        ):
+            raise ValueError(f"{path} evaluation snapshot digest mismatch.")
         if (
             plan.target_cache_sha256 != evaluation.target_cache_sha256
             or plan.target_identity_digest != evaluation.target_identity_digest
@@ -425,6 +439,10 @@ def build_manifest(
             "manifest_path": _relative(source_manifest_path, output_path.parent),
             "manifest_sha256": _sha256(source_manifest_path),
         },
+        "evaluation_snapshot": {
+            "manifest_path": _relative(evaluation_manifest_path, output_path.parent),
+            "manifest_sha256": _sha256(evaluation_manifest_path),
+        },
         "target_dataset": {
             "target_cache_sha256": next(iter(target_cache_values)),
             "target_identity_digest": next(iter(target_identity_values)),
@@ -460,6 +478,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--result", type=Path, action="append", required=True)
     parser.add_argument("--source-snapshot-manifest", type=Path, required=True)
+    parser.add_argument("--evaluation-snapshot-manifest", type=Path)
     parser.add_argument(
         "--inference-scope",
         choices=("conditional_frozen_models", "training_procedure"),
@@ -483,6 +502,7 @@ def main() -> None:
     build_manifest(
         result_paths=args.result,
         source_snapshot_manifest=args.source_snapshot_manifest,
+        evaluation_snapshot_manifest=args.evaluation_snapshot_manifest,
         inference_scope=args.inference_scope,
         planned_contrasts=args.planned_contrast,
         output=args.output,

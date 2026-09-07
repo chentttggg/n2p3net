@@ -55,3 +55,14 @@ def test_unknown_failure_aborts_instead_of_becoming_a_subject_miss(tmp_path) -> 
     loaded = json.loads(output.read_text(encoding="utf-8"))
     assert loaded["run_status"] == "aborted"
     assert loaded["fatal_error"]["type"] == "RuntimeError"
+
+
+def test_atomic_result_serialization_failure_preserves_previous_record(tmp_path) -> None:
+    output = atomic_write_json(tmp_path / "result.json", {"status": "completed", "auc": 0.8})
+    previous = output.read_bytes()
+
+    with pytest.raises(ValueError, match="Out of range float"):
+        atomic_write_json(output, {"status": "completed", "auc": float("nan")})
+
+    assert output.read_bytes() == previous
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["result.json"]

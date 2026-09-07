@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 
 import numpy as np
@@ -27,6 +28,42 @@ class SubjectAuditSplit:
     @property
     def n_audit_subjects(self) -> int:
         return len(self.audit_subjects)
+
+
+def domain_stratified_group_validation_split(
+    group_ids: np.ndarray,
+    domain_ids: np.ndarray,
+    *,
+    fraction: float | None,
+    min_groups: int = 2,
+    max_groups: int = 12,
+    seed: int = 0,
+) -> GroupValidationSplit:
+    """Hold out complete participants in every source domain, with stable seeds."""
+    groups, domains = np.asarray(group_ids), np.asarray(domain_ids).astype(str)
+    if groups.ndim != 1 or domains.shape != groups.shape or not len(groups):
+        raise ValueError("groups and domains must be nonempty aligned vectors")
+    ownership: dict[object, str] = {}
+    for group, domain in zip(groups, domains, strict=True):
+        if not domain.strip() or ownership.setdefault(group, domain) != domain:
+            raise ValueError("each validation group must belong to exactly one named domain")
+    validation_mask = np.zeros(len(groups), dtype=bool)
+    selected: list[object] = []
+    for domain in sorted(set(domains.tolist())):
+        rows = domains == domain
+        domain_seed = int.from_bytes(
+            hashlib.sha256(f"{seed}:{domain}".encode()).digest()[:4], "little"
+        )
+        split = group_disjoint_validation_split(
+            groups[rows],
+            fraction=fraction,
+            min_groups=min_groups,
+            max_groups=max_groups,
+            seed=domain_seed,
+        )
+        validation_mask[rows] = split.validation_mask
+        selected.extend(split.validation_groups)
+    return GroupValidationSplit(~validation_mask, validation_mask, tuple(selected))
 
 
 def group_disjoint_validation_split(

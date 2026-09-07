@@ -1,5 +1,15 @@
 # P300 模型输入合同：离散时间、单位与分组
 
+## 0. BrainSync 采集角色（2026-09-06）
+
+唯一产品布局由 `data.contract` 的 `BRAIN_SYNC_ACQUISITION_CHANNELS` 与
+`BRAIN_SYNC_ACQUISITION_TYPES` 定义：Fz/Cz/P3/Pz/P4/PO8/EOG/Oz，共8采集槽。
+原PO7槽改采PO8，原PO8槽用于独立EOG；模型只用七路Fz/Cz/P3/Pz/P4/PO8/Oz。
+EOG保持原raw/BIDS通道类型，不进入EEG卷积、head输入或头皮CAR，不伪造头皮坐标。
+单路EOG的放置/参考尚未声明时不标作VEOG/HEOG。未启用经校准拟合的清理器时，
+provenance必须写 `ocular_artifact_processing.status=not_applied`，不能称已去伪迹。
+公共数据保留原始电极名/类型；该槽位调整不是全局PO7/PO8别名或历史数据重标规则。
+
 ## 1. 证据边界
 
 设源记录的采样率为 `f_src`，第 `c` 个物理 EEG 通道为
@@ -26,7 +36,7 @@ online causal profile 另声明 `filter_phase=forward` 和
 
 ### 2.0 BIDS raw 时间轴与休息段
 
-BrainSync session v4 输入只接受 `completed` 的连续 BIDS raw，并要求每个 block
+BrainSync session v4 输入只接受 `completed` 的连续或显式分段 BIDS raw，并要求每个 block
 由完整 9 候选随机排列循环组成。设刺激时刻为 `t_i`，模型 epoch 为
 半开区间 `[t_i+t_min, t_i+t_max)`，第 `k` 个休息段为 `[r_k0,r_k1)`。
 缓存保留该刺激当且仅当对所有休息段都有：
@@ -46,6 +56,17 @@ t_i + t_max <= r_k0  or  t_i + t_min >= r_k1
 `x(r_k0-) != x(r_k1+)`，会制造非生理阶跃及 IIR 瞬态。反例测试同时验证：
 跨休息事件仍保持原始秒数、相交 epoch 的 `evidence_index=-1`、未相交 epoch
 继续生成缓存。
+
+2026-09-06新增手动暂停的显式变体：`time_base=segmented_recording`。
+暂停时停止追加样本，恢复时从`boundary_sample`继续；每次暂停同时声明
+`start_wall_seconds/end_wall_seconds`，因此文件内时间不能直接当成连续墙钟时间。
+导出按各段起始sample与恢复时刻映射软件marker，段末以已写样本边界截断。
+这是软件/回调时间映射，仍不是硬件触发或光学校准证据。
+
+BIDS `acquisition_boundary`与session断点sample必须一致。读取后生成`BAD boundary`
+和`EDGE boundary`：跨边界epoch不可用，因果IIR在每段首样本重新初始化，
+零相位滤波也逐段执行。`interrupted_stimulus`保留被打断attempt的记录但不作为有效刺激。
+正常block休息仍遵循上面的连续raw规则。无断点声明的拼接仍被禁止。
 
 ### 2.1 连续域滤波
 

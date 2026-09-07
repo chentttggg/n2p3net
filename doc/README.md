@@ -1,124 +1,36 @@
-# N2P3-Net 文档控制索引
+# 项目文档
 
-_版本：2026-09-04 · 活动源提交：`6fc1df1`（分支 `main`，集成工作区）· 用途：统一研究、工程与证据文档的权威层级_
+日常只维护以下六份正文。先按任务阅读对应指导，再读实际源码；历史记录不覆盖当前规范。
 
----
+| 文档 | 负责的问题 |
+|---|---|
+| [研究规范](research_program.zh.md) | 研究目标、本人校准与测试隔离、指标和科学判断边界 |
+| [技术结构](technical_structure.zh.md) | 数据到模型再到工作站的真实模块、接口与目录职责 |
+| [输入合同](input_contract_math.zh.md) | 单位、通道、参考、滤波、时间支持与因果性 |
+| [执行计划](roadmap.zh.md) | 已完成什么、下一步顺序、实验配方、准入条件与验收 |
+| [工程指南](engineering.zh.md) | 项目环境、设备与性能策略、开发测试、数据与文档维护 |
+| [工作站指南](workstation.zh.md) | 启动、采集、校准、保存模型、未知目标推理与实机检查 |
 
-## 📋 唯一活动入口
+查AUC、实验细节、文献依据或历史修复时，再进入[证据索引](evidence/README.md)。
+原始日志、预测、图像和结构化记录留在原数据目录及`assets/`，不复制到指导正文。
 
-从本文件进入文档集合后，唯一可以改变新研究设计、代码任务或结论边界的规范是
-[`research_program.zh.md`](research_program.zh.md)。
-[`input_contract_math.zh.md`](input_contract_math.zh.md) 是其输入/时间轴的绑定补充合同。
-其余文档提供决策理由、数学推导、实施验收或历史证据，不能单独授权新的实验或覆盖活动规范。
+## 当前状态
 
-新工作按以下顺序阅读：
+公开ERP预训练用于辅助成人BrainSync猜数字。本人校准预算4050次闪烁，新测试每次45次，
+九选一主指标为`hit@R5`。软件链已有模拟端到端证据；实机、光学时钟和真人准确率未验证。
+BI↔BNCI首轮及前缀统计/BN归因已完成2,160单元。2026-09-07的执行记录显示四库
+123人单seed开发已启动、BI2014a目标评估完成；其余矩阵尚未有完整验收结论。
+Mainsah参考与转换准入已核验，仍未评分。阶段与后续验收统一见执行计划。
 
-1. 本索引，确认文档角色与活动基线
-2. 活动规范和输入合同，确认 estimand、数据边界与不可违反的约束
-3. 与任务相关的决策、实施、数学或验收记录
-4. 当前源码、测试和配置，核对文档陈述是否仍与实现一致
+GitHub分发后端源码、文档与校验清单；数据、模型、运行结果及历史压缩归档留在本地，
+见[归档分发说明](../frozen/README.md)。工作站采集端须单独部署。
 
-## 🔗 文档权威关系
+## 文档维护
 
-```mermaid
-flowchart TB
-    accTitle: N2P3 Documentation Authority
-    accDescr: The active research program and input contract govern new work, while decision, implementation, audit, and historical documents supply traceable supporting evidence.
+研究约束写入研究规范，实施状态只更新执行计划，使用方式写入工作站指南。
+小改动原处更新，不再为每次对话新增顶层报告；需要保存独立实验或推导时放入`evidence/`
+并更新索引。被替代的指导先物理压缩并校验，再移除原件，不保留重复入口。
 
-    doc_index([📚 Read document index]) --> research_program[📋 Read active research program]
-    research_program --> input_contract[⚙️ Apply input contract]
-    research_program --> decision_records[📝 Consult decision records]
-    decision_records --> implementation_records[🔧 Consult implementation and math]
-    implementation_records --> source_tests[🧪 Inspect source and tests]
-    source_tests --> acceptance_record[✅ Check framework acceptance]
-    acceptance_record --> experiment_plan[📦 Create new attested plan]
-    historical_records[🗂️ Historical records] -.->|evidence only| research_program
-
-    classDef authority fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a5f
-    classDef record fill:#f3f4f6,stroke:#6b7280,stroke-width:2px,color:#1f2937
-    classDef evidence fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d
-    classDef action fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#713f12
-
-    class doc_index,research_program,input_contract authority
-    class decision_records,implementation_records,historical_records record
-    class acceptance_record evidence
-    class source_tests,experiment_plan action
-```
-
-## 📚 文档角色
-
-| 类别 | 文件 | 权威范围 | 使用限制 |
-|---|---|---|---|
-| 活动规范 | [`research_program.zh.md`](research_program.zh.md) | 研究问题、估计量、门禁、反例和下一步 | 唯一活动指导文件 |
-| 绑定合同 | [`input_contract_math.zh.md`](input_contract_math.zh.md) | EEG 时间轴、单位、预处理和分组 | 不得以实验便利绕过 |
-| 项目章程 | [`mission.md`](mission.md) | 产品目标、适用人群和 GTN 边界 | 不作性能证明 |
-| 工程环境 | [`techstack.md`](techstack.md)、[`device-portability.md`](device-portability.md) | 依赖、设备、调度与运行时约定 | 运行证据仍需 manifest |
-| 工程流程 | [`CODING_WORKFLOW.md`](CODING_WORKFLOW.md) | 本地开发、测试与提交习惯 | 与活动规范冲突时以后者为准 |
-| 决策与推导 | [`architecture_decision_20260902.zh.md`](architecture_decision_20260902.zh.md)、[`implementation_plan_20260902.zh.md`](implementation_plan_20260902.zh.md)、[`math_verification_20260902.zh.md`](math_verification_20260902.zh.md)、[`car_math_audit_20260904.zh.md`](car_math_audit_20260904.zh.md)、[`domain_alignment_replacement_20260904.zh.md`](domain_alignment_replacement_20260904.zh.md)、[`domain_transfer_revision_20260904.zh.md`](domain_transfer_revision_20260904.zh.md)、[`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)、[`domain_transfer_chain_primary_source_audit_20260904.zh.md`](domain_transfer_chain_primary_source_audit_20260904.zh.md) | 方案为何成立、如何落实、反例为何必须保留；CAR 边界与旧 GALIA/AS-MMD/PDS 替代方案（历史背景）；域迁移机制批判与 adapter 剂量诊断（历史）；v2 主线实施/消融方案（当前权威） | 记录，不是新的派工单 |
-| 云端执行 | [`cloud_ablation_plan_20260904.zh.md`](cloud_ablation_plan_20260904.zh.md) | v2 主线 EA/AS-MMD/TSD/Dense PDS 的 dry-run、CUDA smoke 与 64-fold development 臂矩阵 | 须在本地 dry-run 与输入 hash 复验后执行 |
-
-| 框架验收 | [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md) | `ef7a40e` 的代码链、测试和开放风险 | 仅 framework/contract evidence |
-| 实证与外部依据 | [`research_evidence_ledger_20260903.zh.md`](research_evidence_ledger_20260903.zh.md) | 历史结果、机制推理、文献和统计/来源合同 | 不替代当前性能证据 |
-| 论文文献底稿 | [`../Paper/literature_review_n2p3net_20260903.zh.md`](../Paper/literature_review_n2p3net_20260903.zh.md) | 论文 Related Work 与引用纪律 | 不作为活动规范 |
-| 历史文档 | [`../frozen/document_history_through_ef7a40e_20260903.manifest.json`](../frozen/document_history_through_ef7a40e_20260903.manifest.json) | 已完成派工、旧 cloud staging 计划和集成前审计 | 仅证据，不得直接执行 |
-| 已收敛报告 | [`../frozen/document_reports_through_6c4abe8_20260903.manifest.json`](../frozen/document_reports_through_6c4abe8_20260903.manifest.json) | 被台账吸收的 dated report、审计和候选综述 | 需要原文时从归档恢复 |
-
-## 🎯 当前活动基线
-
-当前代码活动基线为 `f2ee195`（分支 `main`）：已批准 v2 主线 WP0–WP4 全部完成
-（EA 数据对齐与 reference-mode gate、faithful AS-MMD live source-stream + SplitBN
-双 buffer、TSD + Dense PDS + target-calibration cache、matrix plan 字段与 argv 全链），
-云端消融执行见 [`cloud_ablation_plan_20260904.zh.md`](cloud_ablation_plan_20260904.zh.md)。
-前序批次 `ae2706e`/`326c8fd`/`352932b` 与历史集成基线 `6fc1df1`（domain-transfer-v2
-的历史 P3 链：feature lift、本地 AJD 白化（旧名 GALIA Fast Alignment）、conditional
-RBF-MMD inactive policy、checkpoint 分块、source selection（旧名 PDS）、valid-subject
-hit@R 主口径；与 result-optimization 的 partition result batching、zero-shot feature
-memo、CPU result-phase worker 预算合并，且 `epoch_selection` 合同已归位到 adaptation）
-保留为历史记录，不因此重新训练或改写 E1 证据。
-2026-09-04 起，域迁移主线的权威实施方向改为
-[`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md)：
-**EA 默认数据对齐 + ACW 辅助（仅 TSD 坐标/经典解码）+ faithful AS-MMD
-（target-weighted CE + logit marginal RBF-MMD + Split-BN）+ TSD 选样**；旧的
-GALIA/PDS 实现描述与旧 “conditional AS-MMD” 提法已退役（本地实现按 ACW/TSD/安全对照处理，
-真 GALIA 与 Dense PDS 为可选对照）。
-当前代码树物理冻结为 `frozen/active_source_f2ee195.*`（archive SHA-256
-`858ee6a8b8619dd256cfe165600871efa3aacb83af3b2605faffe37e47be4a33`；
-source_commit `f2ee195`，冻结对提交 `03ff7c6`）；前序批次
-`frozen/active_source_ae2706e.*`、`frozen/active_source_326c8fd.*`、
-`frozen/active_source_352932b.*` 与历史集成基线冻结
-`frozen/active_source_6fc1df1.*` 保留不覆盖。
-E1 的训练/评估 source 不变：native=`b96a6af`、CAR=`b86d558`；valid-subject
-官方 analysis 由分析源码 `6ec71b0` 生成，均不因本次实施重训或改写。
-
-| 机制 | 当前软件状态 | 仍需的科研证据 |
-|---|---|---|
-| P0 Split-BN | source-domain buffer、目标 buffer selector 和 checkpoint 绑定已实现 | 成对 fold/seed、cluster CI 和 buffer-swap 机制证据 |
-| P1 drop-to-consensus | source-only residual、counterfactual ledger 和 invalid-run gate 已实现 | 真实 source/target 迁移与 held-out valid-subject hit@R（operational 诊断并存） |
-| P2 direct-decision loss | direct-membership metadata、完整 decision batch 与训练合同已实现 | 真实 direct timeline 训练；row/column protocol dispatch 仍未实现 |
-| P3 域迁移主线（EA 默认 + ACW 辅助 + faithful AS-MMD + TSD） | 旧 GALIA/PDS 实现描述已退役；`6fc1df1` 仍含历史实现（本地 AJD 白化、conditional feature MMD、source sampling），只按 ACW/TSD/安全对照使用。新主线按 v2 计划实施：EA 默认数据对齐（不减均值，`(N,C,T)` 输出）、ACW 仅辅助坐标、faithful AS-MMD（target-weighted CE + logit marginal RBF-MMD + Split-BN 双 buffer）、TSD 选样 | 真实 cache 上的 EA/AS-MMD/TSD 验收、rank/condition/offdiag residual、row-identity/buffer digest、真实跨域数据和 paired valid-subject hit@R（operational 诊断并存） |
-
-以下结论仍不得作出：feature transfer 有效、EA/ACW/faithful AS-MMD/TSD 主线有效、
-旧 GALIA/PDS 链有效、decision learning 有效、成人 BrainSync 达到 90%，或 target-calibration 已可运行。
-
-高负载测试异常已由受控实验定性为 WorkBuddy 会话环境故障，不是 EEG/契约源码缺陷；
-bulk-delete、trash、symlink shim，以及被负载放大的 15ms 并发测试窗口共同造成异常。
-因此 WorkBuddy 会话内的高负载 pytest 结果不作为验收信号；独立 shell/云端或 unset 守卫变量
-后的复跑才可采信。详见 [`framework_acceptance_20260903.zh.md`](framework_acceptance_20260903.zh.md)
-和 [`research_evidence_ledger_20260903.zh.md`](research_evidence_ledger_20260903.zh.md)。
-
-## 🔄 下一步门禁
-
-1. ✅ 已生成并跟踪 `frozen/active_source_a102467.*`；任何后续代码变更都必须生成新的 archive+manifest，且不得覆盖 `b96a6af`
-2. 人工决定是否清理 `%TEMP%\pytest-of-chent`；WorkBuddy 会话内不采信高负载测试，清理前后的验收均使用空闲、单任务或独立 shell
-3. 准备经验证的 active source/target cache，并按 direct 与 row/column protocol 分流
-4. 按 [`domain_transfer_mainline_v2_plan_20260904.zh.md`](domain_transfer_mainline_v2_plan_20260904.zh.md) 依次执行 WP0（修 bug/命名：本地 GALIA→ACW、旧 PDS→TSD）、WP1（EA 数据对齐 cache）、WP2（faithful AS-MMD）、WP3（TSD 正式化 + ACW 辅助 + Dense PDS 对照）、WP4（matrix plan 字段/DAG）；未按该计划闭合前，不把旧 GALIA/PDS 实现描述当主线
-5. 先完成 plan、environment、cache 与 checkpoint 的 attestation/dry-run，再启动单 worker CUDA smoke
-6. 只在预声明的 matched fold/seed 后报告 paired `valid_subject_operational_hit_rate`（主指标）与 operational `hit@R`（部署诊断）及 participant-cluster CI
-7. 在模型级 target-calibration collector、buffer provenance 与结果 ledger 闭合前，保持该 arm fail-closed
-
-## 🗂️ 文档维护规则
-
-- 重大架构或合同变动同时更新活动规范、实现/验收记录和本索引
-- 新实验计划必须绑定当前 source archive、环境、cache、checkpoint 与计划 digest
-- 过往派工、审计和结果保留为可复核证据，但不得以其旧状态覆盖当前规范
-- 需要冻结的代码或结果使用 `frozen/` 下带 manifest 的压缩包；仅有文字标签不构成冻结
+2026-09-06整合将36份顶层文件收敛为本索引和六份正文，25份独立证据集中保留，
+7份重复或过时指导从活动路径移除。原文与迁移对应关系见
+[归档清单](../frozen/docs_consolidation_20260906.manifest.json)。

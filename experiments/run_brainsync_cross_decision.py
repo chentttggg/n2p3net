@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -28,13 +27,16 @@ from data.brainsync_contract import (  # noqa: E402
 )
 from data.contract import assert_causal_p300_input_contract  # noqa: E402
 from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
+from data.ocular import validate_eog_calibration_budget  # noqa: E402
 from research.evaluation import (  # noqa: E402
     build_evaluation_run_contract,
     checkpoint_model_origin,
+    scratch_model_origin,
     source_snapshot_sha256_from_archive_manifest,
 )
-from research.execution import ExpectedSubjectError  # noqa: E402
+from research.execution import ExpectedSubjectError, atomic_write_json  # noqa: E402
 from train.device import get_device  # noqa: E402
+from transfer.binary import scratch_like_trunk, target_shrinkage_scores  # noqa: E402
 from transfer.checkpoint import (  # noqa: E402
     checkpoint_classifier_is_trained,
     checkpoint_input_stats,
@@ -122,31 +124,23 @@ def _session_population_rows(dataset) -> tuple[tuple[str, ...], tuple[float | No
     required = {"session", "subject", "age_years", "age_source"}
     missing = sorted(required.difference(dataset.metadata.columns))
     if missing:
-        raise ValueError(
-            "BrainSync cache lacks population evidence columns: " + ", ".join(missing)
-        )
+        raise ValueError("BrainSync cache lacks population evidence columns: " + ", ".join(missing))
     subjects: list[str] = []
     ages: list[float | None] = []
     for session_id, rows in dataset.metadata.groupby("session", sort=False):
         subject_values = {str(value).strip() for value in rows["subject"]}
         if len(subject_values) != 1 or "" in subject_values:
-            raise ValueError(
-                f"BrainSync session {session_id!r} has inconsistent subject metadata."
-            )
+            raise ValueError(f"BrainSync session {session_id!r} has inconsistent subject metadata.")
         sources = {str(value) for value in rows["age_source"]}
         if sources != {"session.experiment.age"}:
-            raise ValueError(
-                f"BrainSync session {session_id!r} has unsupported age provenance."
-            )
+            raise ValueError(f"BrainSync session {session_id!r} has unsupported age provenance.")
         nonmissing_ages = {
             float(value)
             for value in rows["age_years"]
             if value is not None and not (isinstance(value, float) and np.isnan(value))
         }
         if len(nonmissing_ages) > 1:
-            raise ValueError(
-                f"BrainSync session {session_id!r} has inconsistent age metadata."
-            )
+            raise ValueError(f"BrainSync session {session_id!r} has inconsistent age metadata.")
         subjects.append(next(iter(subject_values)))
         ages.append(next(iter(nonmissing_ages)) if nonmissing_ages else None)
     return tuple(subjects), tuple(ages)
@@ -158,6 +152,7 @@ def main() -> None:
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--arm-name", required=True)
     parser.add_argument("--source-snapshot-manifest", type=Path, required=True)
+    parser.add_argument("--evaluation-snapshot-manifest", type=Path)
     parser.add_argument(
         "--identity-exclusion-policy",
         required=True,
@@ -185,7 +180,16 @@ def main() -> None:
     )
     parser.add_argument(
         "--head",
-        choices=("zero_shot", "classifier_fine", "linear", "mlp16", "full_fine", "adapter"),
+        choices=(
+            "zero_shot",
+            "classifier_fine",
+            "linear",
+            "mlp16",
+            "full_fine",
+            "adapter",
+            "target_only_tuned",
+            "target_shrinkage_lda",
+        ),
         default="zero_shot",
     )
     parser.add_argument(
@@ -203,6 +207,9 @@ def main() -> None:
     parser.add_argument("--device", default="auto")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
+    target_only = args.head in {"target_only_tuned", "target_shrinkage_lda"}
+    if target_only and args.normalization != "target_prefix":
+        parser.error("target-only controls require --normalization target_prefix")
     if args.target_subjects_file is not None and args.max_subjects is not None:
         parser.error("--target-subjects-file cannot be combined with --max-subjects")
     if args.head == "zero_shot" and args.normalization != "source":
@@ -211,11 +218,15 @@ def main() -> None:
     source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
         args.source_snapshot_manifest
     )
+    evaluation_manifest = args.evaluation_snapshot_manifest or args.source_snapshot_manifest
+    evaluation_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(evaluation_manifest)
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
     assert_causal_p300_input_contract(dataset.preprocessing)
     if dataset.provenance.get("session_schema") != BRAIN_SYNC_SESSION_SCHEMA:
-        raise ValueError("BrainSync cache does not declare the exact v2 session schema.")
+        raise ValueError(
+            f"BrainSync cache must declare session schema {BRAIN_SYNC_SESSION_SCHEMA!r}."
+        )
     if dataset.provenance.get("decision_unit") != "session":
         raise ValueError("BrainSync cache must declare session as its decision unit.")
     population_subjects, population_ages = _session_population_rows(dataset)
@@ -260,6 +271,29 @@ def main() -> None:
         )
         for subject in requested_order
     }
+    ocular_processing = dataset.provenance.get(
+        "ocular_artifact_processing", {"status": "not_applied"}
+    )
+    timeline = dataset.event_timeline
+    calibration_events = np.isin(
+        np.asarray(timeline.evidence_indices), np.flatnonzero(split.calibration_mask)
+    )
+    event_subjects = np.asarray(timeline.subject_ids).astype(str)
+    event_sessions = np.asarray(timeline.session_ids).astype(str)
+    validate_eog_calibration_budget(
+        ocular_processing,
+        {
+            participant_by_subject[subject]: tuple(
+                np.unique(event_sessions[calibration_events & (event_subjects == subject)]).tolist()
+            )
+            for subject in requested_order
+        },
+    )
+    evidence_scope_record = evidence_scope.to_dict()
+    if ocular_processing.get("status") == "applied":
+        evidence_scope_record.update(
+            target_preprocessing_calibrated=True, zero_target_fit_claim=False
+        )
     payload = load_checkpoint_payload(args.checkpoint)
     training_contract = checkpoint_training_contract(payload)
     if training_contract.source_snapshot_sha256 != source_snapshot_sha256:
@@ -283,16 +317,18 @@ def main() -> None:
         parser.error(f"--head {args.head} requires a supervised source classifier")
     epochs = (
         0
-        if args.head == "zero_shot"
+        if args.head in {"zero_shot", "target_shrinkage_lda"}
         else args.epochs
         if args.epochs is not None
+        else 60
+        if args.head == "target_only_tuned"
         else 5
         if args.head in {"classifier_fine", "full_fine"}
         else 30
     )
     lr = (
         0.0
-        if args.head == "zero_shot"
+        if args.head in {"zero_shot", "target_shrinkage_lda"}
         else args.lr
         if args.lr is not None
         else 1e-4
@@ -331,6 +367,7 @@ def main() -> None:
         )
         suffix_X = np.asarray(dataset.X[test_rows], dtype=np.float32)
         suffix_mask = trial_mask[test_rows]
+        fit_history = None
         if args.head == "zero_shot":
             raw_logits = predict_n2p3_checkpoint(
                 trunk,
@@ -341,22 +378,47 @@ def main() -> None:
             )
             llr, calibration = checkpoint_scores_to_llr(payload, raw_logits)
             trainable_parameters = 0
+        elif args.head == "target_shrinkage_lda":
+            if not bool(trial_mask[np.r_[calibration_rows, test_rows]].all()):
+                raise ValueError(
+                    "the target shrinkage baseline requires fully observed EEG channels"
+                )
+            raw_logits = target_shrinkage_scores(
+                dataset.X[calibration_rows],
+                dataset.y[calibration_rows],
+                suffix_X,
+                sfreq=dataset.preprocessing.sfreq,
+            )
+            llr, calibration = checkpoint_scores_to_llr(
+                {
+                    "source_calibration": {
+                        "pos_weight": 1.0,
+                        "train_prior": float(dataset.y[calibration_rows].mean()),
+                        "temperature": 1.0,
+                        "source": "target_shrinkage_lda_analytic_prior",
+                    }
+                },
+                raw_logits,
+            )
+            trainable_parameters = None
         else:
+            if target_only:
+                trunk = scratch_like_trunk(trunk, seed=args.seed)
             adapter = SubjectAdapter(
                 trunk,
                 config=SubjectAdapterConfig(
-                    head_kind=args.head,
+                    head_kind="full_fine" if target_only else args.head,
                     epochs=int(epochs),
                     batch_size=args.batch_size,
                     lr=float(lr),
                     seed=args.seed,
                     val_group_fraction=None,
                     refit_full_prefix=False,
-                    freeze_batchnorm_stats=True,
+                    freeze_batchnorm_stats=not target_only,
                     input_statistics=args.normalization,
                     target_stat_weight=args.target_stat_weight,
-                    input_mean=checkpoint_stats[0],
-                    input_std=checkpoint_stats[1],
+                    input_mean=None if target_only else checkpoint_stats[0],
+                    input_std=None if target_only else checkpoint_stats[1],
                 ),
                 device=device,
             )
@@ -366,9 +428,7 @@ def main() -> None:
                     np.asarray(dataset.y[calibration_rows], dtype=np.int64),
                     trial_channel_mask=trial_mask[calibration_rows],
                 )
-                raw_logits = adapter.predict_logit(
-                    suffix_X, trial_channel_mask=suffix_mask
-                )
+                raw_logits = adapter.predict_logit(suffix_X, trial_channel_mask=suffix_mask)
             except ExpectedSubjectError as failure:
                 requested = split.requested_test_groups_by_subject[subject]
                 eligible = split.test_groups_by_subject[subject]
@@ -416,6 +476,7 @@ def main() -> None:
                 raw_logits,
             )
             trainable_parameters = adapter.parameter_count()
+            fit_history = adapter.last_history
 
         groups = split.group_ids[test_rows]
         truth = {group: split.truth_by_group[group] for group in np.unique(groups)}
@@ -436,12 +497,15 @@ def main() -> None:
             onset_times_s=onset_by_epoch[test_rows],
             evidence_available_times_s=available_by_epoch[test_rows],
         )
-        subject_outcomes = (*evaluated_outcomes, *_failed_outcomes(
-            subject=subject,
-            requested=requested,
-            failures=failed,
-            test_repetitions=args.test_reps,
-        ))
+        subject_outcomes = (
+            *evaluated_outcomes,
+            *_failed_outcomes(
+                subject=subject,
+                requested=requested,
+                failures=failed,
+                test_repetitions=args.test_reps,
+            ),
+        )
         outcomes_by_subject[subject] = tuple(subject_outcomes)
         subject_accounting = build_decision_outcome_accounting(
             subject_outcomes,
@@ -451,12 +515,16 @@ def main() -> None:
         records.append(
             {
                 "subject": subject,
+                "participant_key": participant_by_subject[subject],
+                "calibration_trials": len(calibration_rows),
+                "calibration_positives": int(dataset.y[calibration_rows].sum()),
                 "calibration_groups": split.calibration_groups_by_subject[subject],
                 "requested_test_groups": requested,
                 "test_groups": eligible,
                 "failed_test_groups": failed,
                 "binary_auc": auc,
                 "trainable_parameters": trainable_parameters,
+                "fit_history": fit_history,
                 "calibration": calibration,
                 "decision_accounting": subject_accounting,
                 "decision_outcomes": [
@@ -522,19 +590,31 @@ def main() -> None:
         evidence_levels=range(1, args.test_reps + 1),
     )
     checkpoint_sha256 = _sha256(args.checkpoint)
+    model_origin = (
+        scratch_model_origin(
+            {
+                "algorithm": "shrinkage_lda",
+                "features": "20Hz_fft_flatten",
+                "scaler_scope": "calibration_only",
+            }
+        )
+        if args.head == "target_shrinkage_lda"
+        else scratch_model_origin({"architecture": payload["architecture"], "seed": args.seed})
+        if target_only
+        else checkpoint_model_origin(payload, checkpoint_sha256=checkpoint_sha256)
+    )
     evaluation_contract = build_evaluation_run_contract(
         arm_name=args.arm_name,
-        model_origin=checkpoint_model_origin(
-            payload, checkpoint_sha256=checkpoint_sha256
-        ),
+        model_origin=model_origin,
         dataset=dataset,
         target_cache_sha256=target_cache_sha,
-        source_snapshot_sha256=source_snapshot_sha256,
+        source_snapshot_sha256=evaluation_snapshot_sha256,
         requested_subjects=requested_order,
         identity_policy=args.identity_exclusion_policy,
         target_protocol={
             "decision_unit": "session",
             "calibration_selections": args.calibration_selections,
+            "calibration_availability_rule": "max_finalized_session_end_target_confirmation_and_eeg_evidence",
             "test_repetitions": args.test_reps,
             "max_test_selections": args.max_test_selections,
             "target_policy": split.target_policy,
@@ -543,11 +623,16 @@ def main() -> None:
         },
         adaptation={
             "head": args.head,
+            "ocular_artifact_processing": ocular_processing,
             "normalization": args.normalization,
             "target_stat_weight": args.target_stat_weight,
             "epochs": epochs,
             "learning_rate": lr,
             "batch_size": args.batch_size,
+            "seed": args.seed,
+            "freeze_batchnorm_stats": not target_only,
+            "source_statistics_used": args.normalization in {"source", "shrinkage"},
+            "epoch_selection": "fixed_budget",
             "identity_exclusion_policy": args.identity_exclusion_policy,
         },
         decision={
@@ -556,7 +641,7 @@ def main() -> None:
             "tie_policy": "abstain",
             "test_repetitions": args.test_reps,
         },
-        evidence_scope=evidence_scope.to_dict(),
+        evidence_scope=evidence_scope_record,
     )
     decision_accounting = global_accounting.to_record()
     decision_accounting["eligible"] = eligible_decisions
@@ -567,13 +652,13 @@ def main() -> None:
         "arm_name": args.arm_name,
         "evaluation_contract": evaluation_contract.record(),
         "evaluation_contract_digest": evaluation_contract.digest(),
-        "requested_participant_keys": list(
-            evaluation_contract.requested_participant_keys
-        ),
+        "requested_participant_keys": list(evaluation_contract.requested_participant_keys),
         "dataset_cache": str(Path(args.dataset_cache).resolve()),
         "target_cache_sha256": target_cache_sha,
         "source_snapshot_manifest": str(args.source_snapshot_manifest.resolve()),
         "source_snapshot_sha256": source_snapshot_sha256,
+        "evaluation_snapshot_manifest": str(evaluation_manifest.resolve()),
+        "evaluation_snapshot_sha256": evaluation_snapshot_sha256,
         "input_preprocessing": asdict(dataset.preprocessing),
         "checkpoint": str(Path(args.checkpoint).resolve()),
         "checkpoint_sha256": checkpoint_sha256,
@@ -594,9 +679,7 @@ def main() -> None:
             str(repetition): float(
                 np.mean(
                     [
-                        record["by_evidence_level"][str(repetition)][
-                            "operational_hit_rate"
-                        ]
+                        record["by_evidence_level"][str(repetition)]["operational_hit_rate"]
                         for record in ledger
                     ]
                 )
@@ -618,11 +701,10 @@ def main() -> None:
             for outcome in all_outcomes
         ],
         "records": records,
-        "evidence_scope": evidence_scope.to_dict(),
+        "evidence_scope": evidence_scope_record,
     }
     output = Path(args.output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    atomic_write_json(output, summary)
     print(f"[summary] {output}", flush=True)
 
 

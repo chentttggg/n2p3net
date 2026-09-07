@@ -1,0 +1,15 @@
+{
+  "archive": "brainsync_producer_final_20260906.zip",
+  "archive_sha256": "2094be4b47f0e47b4527072da80dfb5f3f5bc3c3038354050cd57cf779310774",
+  "original_root": "D:\\BCI\\BrainSync_Tool_0cb0_V2.2.5_20260729\\BrainSync_Tool",
+  "files": {
+    "gtn_workstation/models.py": "2202e317c557d8074b5e97a766c527cef7d14ea1f9990a642dcb1e5d15ab6ae5",
+    "gtn_workstation/bids.py": "6223b3ce71b68336080547fda9b9715ca1a04251f5770a7696aee7c1ca1dc799",
+    "channel_assignments.json": "c1b497402174a5f623038699ee5249ff78477f3ebeb30c3783b243709816f88b",
+    "tests/test_models.py": "b9c658b1e5164528f414fea297ee42cfa0da777ff410f5acc6d716962983925c",
+    "tests/test_timeline.py": "14c6a22923df5195c0f4edebb665913a22190b7ba1097024fb8275a51de0e203",
+    "RUN_GTN_WORKSTATION.md": "a55755afb0326244937da61ab135f1b46aa2bdcd9bc44771c815cb74836e2bd1"
+  },
+  "coordinate_template": "MNE standard_1005 fiducial-registered head frame in metres; not individual digitization",
+  "scope": "source only; no EXE rebuild or real acquisition"
+}

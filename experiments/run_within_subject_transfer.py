@@ -117,7 +117,9 @@ def _parse_test_repetitions(value: str) -> int | None:
     try:
         repetitions = int(value)
     except ValueError as error:
-        raise argparse.ArgumentTypeError("test repetitions must be a positive integer or 'all'") from error
+        raise argparse.ArgumentTypeError(
+            "test repetitions must be a positive integer or 'all'"
+        ) from error
     if repetitions < 1:
         raise argparse.ArgumentTypeError("test repetitions must be a positive integer or 'all'")
     return repetitions
@@ -139,6 +141,7 @@ def main() -> None:
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--arm-name", required=True)
     parser.add_argument("--source-snapshot-manifest", type=Path, required=True)
+    parser.add_argument("--evaluation-snapshot-manifest", type=Path)
     parser.add_argument(
         "--identity-exclusion-policy",
         required=True,
@@ -280,6 +283,12 @@ def main() -> None:
     parser.add_argument("--device", default="auto")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
+    if args.fold_local_qc and args.epoch_selection == "target_time_split":
+        parser.error(
+            "target_time_split cannot use outer-calibration fold-local QC; "
+            "use --no-fold-local-qc or --epoch-selection fixed_budget until "
+            "QC fitting and refit support separate inner-training scopes"
+        )
     if not np.isfinite(args.evidence_count_power) or not 0.0 <= args.evidence_count_power <= 1.0:
         parser.error("--evidence-count-power must be finite and in [0, 1]")
     if args.target_subjects_file is not None and (
@@ -290,9 +299,11 @@ def main() -> None:
             "do not combine it with --subject-offset/--max-subjects"
         )
     source_snapshot_manifest = args.source_snapshot_manifest.resolve()
-    source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
-        source_snapshot_manifest
-    )
+    source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(source_snapshot_manifest)
+    evaluation_manifest = (
+        args.evaluation_snapshot_manifest or args.source_snapshot_manifest
+    ).resolve()
+    evaluation_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(evaluation_manifest)
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
@@ -337,7 +348,9 @@ def main() -> None:
     if checkpoint_payload is None and normalization in {"source", "shrinkage"}:
         parser.error(f"--normalization {normalization} requires --checkpoint")
     if head_mode == "zero_shot" and normalization != "source":
-        parser.error("zero_shot uses source checkpoint statistics; target normalization is adaptation")
+        parser.error(
+            "zero_shot uses source checkpoint statistics; target normalization is adaptation"
+        )
     if head_mode != "zero_shot" and not args.allow_oracle_same_selection_adaptation:
         parser.error(
             "GTN supervised prefix adaptation uses the same hidden digit as the suffix. "
@@ -356,7 +369,9 @@ def main() -> None:
         else (0 if head_mode == "zero_shot" else 5)
     )
     if head_mode != "zero_shot" and prefix_reps < 3:
-        parser.error("supervised adaptation requires at least three prefix evidence rows per candidate")
+        parser.error(
+            "supervised adaptation requires at least three prefix evidence rows per candidate"
+        )
     epochs = (
         0
         if head_mode == "zero_shot"
@@ -423,10 +438,7 @@ def main() -> None:
         requested_groups = {
             group
             for group in requested_groups
-            if len(
-                np.unique(scheduled_subjects[scheduled_groups == group])
-            )
-            == 1
+            if len(np.unique(scheduled_subjects[scheduled_groups == group])) == 1
             and str(np.unique(scheduled_subjects[scheduled_groups == group])[0])
             in target_subject_filter
         }
@@ -499,18 +511,22 @@ def main() -> None:
         y_pre = local_y[effective_train]
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(args.seed)
-            trunk = _load_trunk(
-                checkpoint_payload,
-                dataset,
-                target_subject=target_subject,
-                identity_exclusion_policy=args.identity_exclusion_policy,
-            ) if args.checkpoint else N2P3Net(
-                dataset.n_channels,
-                n_times=dataset.n_times,
-                sfreq=dataset.preprocessing.sfreq,
-                tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
-                pooling_mode=args.pooling_mode,
-                temporal_kernel_size=args.temporal_kernel_size,
+            trunk = (
+                _load_trunk(
+                    checkpoint_payload,
+                    dataset,
+                    target_subject=target_subject,
+                    identity_exclusion_policy=args.identity_exclusion_policy,
+                )
+                if args.checkpoint
+                else N2P3Net(
+                    dataset.n_channels,
+                    n_times=dataset.n_times,
+                    sfreq=dataset.preprocessing.sfreq,
+                    tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
+                    pooling_mode=args.pooling_mode,
+                    temporal_kernel_size=args.temporal_kernel_size,
+                )
             )
         suffix_X = local_X[local_test]
         suffix_mask = local_mask[local_test]
@@ -539,9 +555,7 @@ def main() -> None:
                     batch_size=args.batch_size,
                     lr=lr,
                     seed=args.seed,
-                    val_group_fraction=(
-                        None if args.epoch_selection == "fixed_budget" else 0.1
-                    ),
+                    val_group_fraction=(None if args.epoch_selection == "fixed_budget" else 0.1),
                     refit_full_prefix=args.epoch_selection == "target_time_split",
                     freeze_batchnorm_stats=not args.adapt_batchnorm,
                     input_statistics=normalization,
@@ -566,6 +580,7 @@ def main() -> None:
                     y_pre,
                     training_mask=inner_split.train_mask,
                     validation_mask=inner_split.validation_mask,
+                    prefix_mask=np.ones(len(X_pre), dtype=bool),
                     trial_channel_mask=local_mask[effective_train],
                 )
             else:
@@ -574,12 +589,10 @@ def main() -> None:
                     y_pre,
                     trial_channel_mask=local_mask[effective_train],
                 )
-            suffix_logits = adapter.predict_logit(
-                suffix_X, trial_channel_mask=suffix_mask
-            )
+            suffix_logits = adapter.predict_logit(suffix_X, trial_channel_mask=suffix_mask)
             if inner_split is not None:
-                calibration_logits, calibration_y, calibration_source = (
-                    calibration_data_from_model(adapter, X_pre, y_pre)
+                calibration_logits, calibration_y, calibration_source = calibration_data_from_model(
+                    adapter, X_pre, y_pre
                 )
                 calibration = fit_weighted_logit_temperature(
                     calibration_logits,
@@ -614,6 +627,7 @@ def main() -> None:
                 "enabled": bool(adapter.last_history.get("refit_full_prefix")),
                 "selected_epochs": adapter.last_history.get("best_epoch"),
                 "refit_epochs": adapter.last_history.get("refit_epochs"),
+                "fit_scope": dict(adapter.last_history["fit_scope"]),
                 "inner_embargo_trials": int(
                     np.count_nonzero(inner_split.embargo_mask)
                     if inner_split is not None and inner_split.embargo_mask is not None
@@ -645,44 +659,26 @@ def main() -> None:
                 "n_suffix": int(n_post),
                 "binary_auc": auc,
                 "hit_by_repetition": hits,
-                "hit_eligible_by_repetition": endpoints[
-                    "eligible_by_repetition"
-                ],
-                "hit_correct_by_repetition": endpoints[
-                    "correct_by_repetition"
-                ],
+                "hit_eligible_by_repetition": endpoints["eligible_by_repetition"],
+                "hit_correct_by_repetition": endpoints["correct_by_repetition"],
                 "raw_hit_at_all": endpoints["raw_all_hit_rate"],
                 "hit_at_all_balanced": endpoints["balanced_all_hit_rate"],
                 "all_endpoint_scope": (
-                    "all_post_boundary"
-                    if args.test_reps is None
-                    else "fixed_budget_suffix"
+                    "all_post_boundary" if args.test_reps is None else "fixed_budget_suffix"
                 ),
-                "raw_prediction_at_all": endpoints[
-                    "raw_predictions_by_group"
-                ].get(group),
-                "balanced_prediction_at_all": endpoints[
-                    "balanced_predictions_by_group"
-                ].get(group),
-                "suffix_candidate_counts": endpoints[
-                    "candidate_counts_by_group"
-                ].get(group),
-                "balanced_all_repetitions": endpoints[
-                    "balanced_repetitions_by_group"
-                ].get(group),
+                "raw_prediction_at_all": endpoints["raw_predictions_by_group"].get(group),
+                "balanced_prediction_at_all": endpoints["balanced_predictions_by_group"].get(group),
+                "suffix_candidate_counts": endpoints["candidate_counts_by_group"].get(group),
+                "balanced_all_repetitions": endpoints["balanced_repetitions_by_group"].get(group),
                 "total_parameters": total_parameters,
                 "trainable_parameters": trainable_parameters,
                 "head": head_mode,
                 "calibration": calibration_record,
                 "prefix_refit": refit_record,
                 "artifact_quality": artifact_audit,
-                "selected_scheduled_repetitions": (
-                    split.selected_scheduled_repetitions.get(group)
-                ),
+                "selected_scheduled_repetitions": (split.selected_scheduled_repetitions.get(group)),
                 "evidence_cost": split.evidence_cost_by_group.get(group),
-                "evidence_cost_by_repetition": (
-                    split.evidence_cost_by_repetition.get(group)
-                ),
+                "evidence_cost_by_repetition": (split.evidence_cost_by_repetition.get(group)),
                 "suffix_predictions": {
                     "epoch_rows": post_rows.astype(int).tolist(),
                     "raw_logits": suffix_logits.tolist(),
@@ -704,27 +700,17 @@ def main() -> None:
         )
         print(json.dumps(records[-1], ensure_ascii=False), flush=True)
 
-    curve_limit = max(
-        int(record["balanced_all_repetitions"]) for record in records
-    )
+    curve_limit = max(int(record["balanced_all_repetitions"]) for record in records)
     operational_successes = {
-        r: sum(
-            int(record["hit_correct_by_repetition"].get(r, 0))
-            for record in records
-        )
+        r: sum(int(record["hit_correct_by_repetition"].get(r, 0)) for record in records)
         for r in range(1, curve_limit + 1)
     }
     eligible_by_repetition = {
-        r: sum(
-            int(record["hit_eligible_by_repetition"].get(r, 0))
-            for record in records
-        )
+        r: sum(int(record["hit_eligible_by_repetition"].get(r, 0)) for record in records)
         for r in range(1, curve_limit + 1)
     }
     raw_all_successes = sum(int(record["raw_hit_at_all"]) for record in records)
-    balanced_all_successes = sum(
-        int(record["hit_at_all_balanced"]) for record in records
-    )
+    balanced_all_successes = sum(int(record["hit_at_all_balanced"]) for record in records)
     evidence_by_repetition = {}
     for repetition in range(1, curve_limit + 1):
         costs = [
@@ -735,15 +721,10 @@ def main() -> None:
         evidence_by_repetition[str(repetition)] = {
             "eligible_groups": eligible_by_repetition[repetition],
             "requested_groups": len(requested_groups),
-            "coverage": eligible_by_repetition[repetition]
-            / max(len(requested_groups), 1),
-            "available_trials_mean": float(
-                np.mean([cost["available_trials"] for cost in costs])
-            ),
+            "coverage": eligible_by_repetition[repetition] / max(len(requested_groups), 1),
+            "available_trials_mean": float(np.mean([cost["available_trials"] for cost in costs])),
             "scheduled_events_through_evidence_mean": float(
-                np.mean(
-                    [cost["scheduled_events_through_evidence"] for cost in costs]
-                )
+                np.mean([cost["scheduled_events_through_evidence"] for cost in costs])
             ),
             "elapsed_seconds_after_prefix_mean": float(
                 np.mean([cost["elapsed_seconds_after_prefix"] for cost in costs])
@@ -790,7 +771,7 @@ def main() -> None:
         model_origin=model_origin,
         dataset=dataset,
         target_cache_sha256=target_cache_sha256,
-        source_snapshot_sha256=source_snapshot_sha256,
+        source_snapshot_sha256=evaluation_snapshot_sha256,
         requested_subjects=requested_subjects,
         identity_policy=args.identity_exclusion_policy,
         target_protocol={
@@ -831,11 +812,11 @@ def main() -> None:
         "arm_name": args.arm_name,
         "evaluation_contract": evaluation_contract.record(),
         "evaluation_contract_digest": evaluation_contract.digest(),
-        "requested_participant_keys": list(
-            evaluation_contract.requested_participant_keys
-        ),
+        "requested_participant_keys": list(evaluation_contract.requested_participant_keys),
         "source_snapshot_manifest": str(source_snapshot_manifest),
         "source_snapshot_sha256": source_snapshot_sha256,
+        "evaluation_snapshot_manifest": str(evaluation_manifest),
+        "evaluation_snapshot_sha256": evaluation_snapshot_sha256,
         "dataset_cache": str(Path(args.dataset_cache).resolve()),
         "checkpoint": str(Path(args.checkpoint).resolve()) if args.checkpoint else None,
         "checkpoint_sha256": checkpoint_sha256,
@@ -870,9 +851,7 @@ def main() -> None:
             for group, reason in split.excluded_groups.items()
             if group in requested_groups
         },
-        "eligible_coverage": float(
-            len(records) / max(len(requested_groups), 1)
-        ),
+        "eligible_coverage": float(len(records) / max(len(requested_groups), 1)),
         "aggregation": args.aggregation,
         "evidence_count_power": args.evidence_count_power,
         "fold_local_qc": bool(args.fold_local_qc),
@@ -884,13 +863,13 @@ def main() -> None:
             if args.target_subjects_file is not None
             else None
         ),
-        "binary_auc_mean": float(np.nanmean([rec["binary_auc"] for rec in records if rec["binary_auc"] is not None])),
+        "binary_auc_mean": float(
+            np.nanmean([rec["binary_auc"] for rec in records if rec["binary_auc"] is not None])
+        ),
         "raw_hit_at_all": raw_all_successes / max(len(records), 1),
-        "raw_hit_at_all_operational": raw_all_successes
-        / max(len(requested_groups), 1),
+        "raw_hit_at_all_operational": raw_all_successes / max(len(requested_groups), 1),
         "hit_at_all_balanced": balanced_all_successes / max(len(records), 1),
-        "hit_at_all_balanced_operational": balanced_all_successes
-        / max(len(requested_groups), 1),
+        "hit_at_all_balanced_operational": balanced_all_successes / max(len(requested_groups), 1),
         "raw_hit_at_all_wilson95_operational": _wilson_interval(
             raw_all_successes, len(requested_groups)
         ),

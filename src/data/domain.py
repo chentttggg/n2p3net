@@ -7,7 +7,7 @@ from dataclasses import replace
 
 import numpy as np
 
-from data.channel import canonical_channel_name
+from data.channel import build_channel_identity, canonical_channel_name
 from data.epochs import (
     EpochDataset,
     materialize_dataset_identity,
@@ -18,7 +18,8 @@ from data.qc_features import compute_epoch_qc_features
 
 DOMAIN_ADAPTER_SCHEMA = "n2p3_common_channel_car/1"
 NATIVE_REFERENCE_SCHEMA = "n2p3_native_reference_selection/1"
-BINARY_EVIDENCE_PROJECTION_SCHEMA = "n2p3_binary_evidence_source_view/1"
+OBSERVED_MONTAGE_SCHEMA = "n2p3_observed_montage/1"
+BINARY_EVIDENCE_PROJECTION_SCHEMA = "n2p3_binary_evidence_source_view/2"
 SOURCE_DOMAIN_AXIS_SCHEMA = "n2p3_source_domain_axis/1"
 SOURCE_DOMAIN_COLUMN = "source_domain"
 NAMESPACE_SEPARATOR = "::"
@@ -148,7 +149,9 @@ def adapt_native_reference_selection(
     adapter = dataset.provenance.get("domain_adapter")
     if adapter is not None:
         if not isinstance(adapter, Mapping):
-            raise ValueError("dataset declares an unsupported or malformed domain_adapter contract.")
+            raise ValueError(
+                "dataset declares an unsupported or malformed domain_adapter contract."
+            )
         raise ValueError(
             "native reference selection cannot consume an already domain-adapted dataset; "
             f"found adapter schema {adapter.get('schema')!r}."
@@ -238,9 +241,7 @@ def _existing_native_selection_matches(
         (str, bytes, bytearray),
     ):
         raise ValueError("domain_adapter.target_channels must be a channel-name sequence.")
-    claimed_channels = tuple(
-        canonical_channel_name(value) for value in raw_claimed_channels
-    )
+    claimed_channels = tuple(canonical_channel_name(value) for value in raw_claimed_channels)
     parent_reference = adapter.get("preserved_source_reference")
     if not isinstance(parent_reference, str) or not parent_reference.strip():
         raise ValueError("native reference adapter lacks its preserved source reference.")
@@ -313,9 +314,7 @@ def _existing_common_car_matches(
         (str, bytes, bytearray),
     ):
         raise ValueError("domain_adapter.target_channels must be a channel-name sequence.")
-    claimed_channels = tuple(
-        canonical_channel_name(value) for value in raw_claimed_channels
-    )
+    claimed_channels = tuple(canonical_channel_name(value) for value in raw_claimed_channels)
     if claimed_channels != channels:
         return False
 
@@ -344,8 +343,7 @@ def _existing_common_car_matches(
         mismatches.append("lineage")
     if mismatches:
         raise ValueError(
-            "common-channel CAR provenance disagrees with the dataset contract: "
-            f"{mismatches}."
+            f"common-channel CAR provenance disagrees with the dataset contract: {mismatches}."
         )
 
     maximum_relative_channel_mean = 0.0
@@ -369,11 +367,7 @@ def _existing_common_car_matches(
             maximum_relative_channel_mean,
             float(np.max(relative_mean)),
         )
-    tolerance = (
-        CAR_FLOAT32_ROUNDOFF_FACTOR
-        * np.finfo(np.float32).eps
-        * len(channels)
-    )
+    tolerance = CAR_FLOAT32_ROUNDOFF_FACTOR * np.finfo(np.float32).eps * len(channels)
     if maximum_relative_channel_mean > tolerance:
         raise ValueError(
             "common-channel CAR provenance is contradicted by non-zero channel means: "
@@ -403,6 +397,155 @@ def ensure_common_channel_average_reference(
     return adapt_common_channel_average_reference(dataset, channels, name=name)
 
 
+def adapt_observed_montage(
+    dataset: EpochDataset,
+    target_channels: Sequence[str],
+    *,
+    name: str | None = None,
+    reference_channel: str | None = None,
+) -> EpochDataset:
+    """Project observed EEG, optionally using a common measured reference."""
+    dataset.validate(require_labels=dataset.y is not None)
+    identity = build_channel_identity(target_channels, allow_missing_positions=False)
+    channels = identity.names
+    anchor = None if reference_channel is None else canonical_channel_name(reference_channel)
+    if (
+        anchor is not None
+        and dataset.provenance.get("ocular_artifact_processing", {}).get("status") == "applied"
+    ):
+        raise ValueError(
+            "choose the final reference before fitting and applying ocular regression."
+        )
+    if (
+        anchor is not None
+        and dataset.preprocessing.baseline_mode == "trial_reference"
+        and dataset.preprocessing.trial_reference_center != "mean"
+    ):
+        raise ValueError(
+            "measured reference invariance requires linear baseline preprocessing or raw rebuilding."
+        )
+    if len(channels) < 2:
+        raise ValueError("a masked montage requires at least two declared channels.")
+    previous = dataset.provenance.get("domain_adapter")
+    if previous is not None:
+        previous_reference = previous.get("reference", {}) if isinstance(previous, Mapping) else {}
+        if not isinstance(previous_reference, Mapping):
+            raise ValueError("the existing montage reference record is malformed.")
+        reference_matches = (
+            previous_reference == {"mode": "measured_channel", "channel": anchor}
+            if anchor is not None
+            else isinstance(previous_reference, Mapping)
+            and previous_reference.get("mode") == "native_preserve"
+            and isinstance(previous_reference.get("source_reference"), str)
+            and bool(previous_reference["source_reference"].strip())
+        )
+        expected_reference = (
+            "measured_channel:" + anchor
+            if anchor is not None
+            else "native:" + str(previous_reference.get("source_reference"))
+        )
+        if (
+            isinstance(previous, Mapping)
+            and previous.get("schema") == OBSERVED_MONTAGE_SCHEMA
+            and previous.get("target_channels") == list(channels)
+            and previous.get("operation") == "select_reference_and_observation_mask"
+            and previous.get("preprocessing_identity") == dataset.preprocessing.name
+            and reference_matches
+            and dataset.channel_names == channels
+            and np.allclose(dataset.channel_positions_m, identity.coords, atol=1e-6)
+            and dataset.provenance.get("source_reference") == expected_reference
+            and any(
+                entity.operation == "observed_montage_projection"
+                and dict(entity.parameters) == dict(previous)
+                for entity in materialize_dataset_lineage(dataset).entities
+            )
+        ):
+            if name is not None and name != dataset.name:
+                raise ValueError("an existing masked montage cannot be implicitly renamed.")
+            return dataset
+        raise ValueError("masked montage requires raw native input or an identical projection.")
+    reference = dataset.provenance.get("source_reference")
+    if not isinstance(reference, str) or not reference.strip():
+        raise ValueError("masked montage requires an explicit native reference.")
+    source_positions = {channel: index for index, channel in enumerate(dataset.channel_names)}
+    source_mask = (
+        np.broadcast_to(dataset.channel_mask, dataset.X.shape[:2])
+        if dataset.trial_channel_mask is None
+        else dataset.trial_channel_mask
+    )
+    reference_signal = None
+    if anchor is not None:
+        anchor_index = source_positions.get(anchor)
+        if anchor_index is None or not bool(source_mask[:, anchor_index].all()):
+            raise ValueError("the measured reference must be observed in every projected trial.")
+        reference_signal = dataset.X[:, anchor_index]
+    values = np.zeros((dataset.n_epochs, len(channels), dataset.n_times), dtype=np.float32)
+    observed = np.zeros(values.shape[:2], dtype=bool)
+    for destination, channel in enumerate(channels):
+        index = source_positions.get(channel)
+        if index is None:
+            continue
+        if bool(source_mask[:, index].any()) and not np.allclose(
+            dataset.channel_positions_m[index], identity.coords[destination], atol=1e-6
+        ):
+            raise ValueError(
+                "observed source coordinates differ from the declared standard montage."
+            )
+        values[:, destination] = dataset.X[:, index]
+        if reference_signal is not None:
+            values[:, destination] -= reference_signal
+        observed[:, destination] = source_mask[:, index]
+    if not bool(observed.any(axis=1).all()):
+        raise ValueError("each projected trial must retain a measured EEG channel.")
+    static_mask = observed.any(axis=0)
+    np.copyto(values, 0.0, where=~observed[:, :, None])
+    reference_record = (
+        {"mode": "native_preserve", "source_reference": reference}
+        if anchor is None
+        else {"mode": "measured_channel", "channel": anchor}
+    )
+    output_reference = "native:" + reference if anchor is None else "measured_channel:" + anchor
+    adapter = {
+        "schema": OBSERVED_MONTAGE_SCHEMA,
+        "target_channels": list(channels),
+        "operation": "select_reference_and_observation_mask",
+        "reference": reference_record,
+        "preprocessing_identity": dataset.preprocessing.name,
+    }
+    output = replace(
+        dataset,
+        name=name or dataset.name + "-masked-montage",
+        X=values,
+        channel_names=channels,
+        channel_positions_m=identity.coords,
+        channel_mask=static_mask,
+        trial_channel_mask=observed,
+        qc_features=compute_epoch_qc_features(
+            values, channel_mask=static_mask, trial_channel_mask=observed
+        ),
+        identity_table=materialize_dataset_identity(dataset),
+        provenance={
+            **dataset.provenance,
+            "source_reference": output_reference,
+            "parent_source_reference": reference,
+            "domain_adapter": adapter,
+            "source_acquisition_channels": list(dataset.channel_names),
+            "missing_target_channels": [
+                channel for index, channel in enumerate(channels) if not static_mask[index]
+            ],
+            "unobserved_values_are_placeholders": True,
+        },
+        lineage=DataLineage.derive(
+            [materialize_dataset_lineage(dataset)],
+            operation="observed_montage_projection",
+            parameters=adapter,
+        ),
+        verified_cache_attestation=None,
+    )
+    output.validate(require_labels=dataset.y is not None)
+    return output
+
+
 def project_binary_evidence_source_view(dataset: EpochDataset) -> EpochDataset:
     """Drop candidate-only fields explicitly for binary supervised source pretraining."""
 
@@ -411,10 +554,29 @@ def project_binary_evidence_source_view(dataset: EpochDataset) -> EpochDataset:
     if not labels <= {0, 1}:
         raise ValueError("binary evidence projection requires labels encoded as 0/1.")
     timeline = dataset.event_timeline
-    if not (
-        timeline.has_candidate_ids
-        or timeline.has_candidate_sets
-        or timeline.has_repetition_structure
+    candidate_columns = (
+        "candidate_id",
+        "candidate_ids",
+        "target_candidate_id",
+        "target_candidate_ids",
+        "row_code",
+        "col_code",
+        "target_row",
+        "target_col",
+        "repetition_index",
+        "repetition_indices",
+    )
+    dropped_columns = [column for column in candidate_columns if column in dataset.metadata]
+    previous = dataset.provenance.get("binary_evidence_projection")
+    if (
+        isinstance(previous, Mapping)
+        and previous.get("schema") == BINARY_EVIDENCE_PROJECTION_SCHEMA
+        and dataset.provenance.get("event_contract") == "binary_evidence"
+        and "candidate_task_contract" not in dataset.provenance
+        and not dropped_columns
+        and not timeline.has_candidate_ids
+        and not timeline.has_candidate_sets
+        and not timeline.has_repetition_structure
     ):
         return dataset
 
@@ -430,20 +592,32 @@ def project_binary_evidence_source_view(dataset: EpochDataset) -> EpochDataset:
         "schema": BINARY_EVIDENCE_PROJECTION_SCHEMA,
         "purpose": "binary_supervised_source_pretraining",
         "dropped_fields": [
-            "candidate_ids",
-            "target_candidate_ids",
-            "repetition_indices",
+            name
+            for name, present in (
+                ("candidate_ids", timeline.has_candidate_ids),
+                ("target_candidate_ids", timeline.has_candidate_sets),
+                ("repetition_indices", timeline.has_repetition_structure),
+            )
+            if present
         ],
         "source_event_fingerprint": source_fingerprint,
         "projected_event_fingerprint": projected_timeline.fingerprint(),
         "tensor_unchanged": True,
         "labels_unchanged": True,
+        "dropped_metadata_columns": dropped_columns,
+        "source_candidate_task_contract": dataset.provenance.get("candidate_task_contract"),
+        "source_event_contract": dataset.provenance.get("event_contract"),
+        "grouping_scope": "preserved_acquisition_provenance_not_candidate_supervision",
     }
+    provenance = dict(dataset.provenance)
+    provenance.pop("candidate_task_contract", None)
     projected = replace(
         dataset,
         event_timeline=projected_timeline,
+        metadata=dataset.metadata.drop(columns=dropped_columns).copy(),
         provenance={
-            **dataset.provenance,
+            **provenance,
+            "event_contract": "binary_evidence",
             "binary_evidence_projection": projection_record,
         },
         lineage=DataLineage.derive(
@@ -515,9 +689,7 @@ def source_domain_vocabulary(dataset: EpochDataset) -> tuple[str, ...]:
     if record.get("column") != SOURCE_DOMAIN_COLUMN:
         raise ValueError("source-domain axis declares an unsupported metadata column.")
     raw_domains = record.get("domains")
-    if not isinstance(raw_domains, Sequence) or isinstance(
-        raw_domains, (str, bytes, bytearray)
-    ):
+    if not isinstance(raw_domains, Sequence) or isinstance(raw_domains, (str, bytes, bytearray)):
         raise ValueError("source-domain axis domains must be a sequence.")
     domains = tuple(str(value).strip() for value in raw_domains)
     if not domains or any(not value for value in domains) or len(set(domains)) != len(domains):
@@ -564,22 +736,15 @@ def namespace_epoch_dataset(
         ]
     )
     subject_mapping = {
-        value: f"{prefix}{NAMESPACE_SEPARATOR}{value}"
-        for value in identity_table.local_subject_ids
+        value: f"{prefix}{NAMESPACE_SEPARATOR}{value}" for value in identity_table.local_subject_ids
     }
     timeline = replace(
         dataset.event_timeline,
         event_ids=np.asarray(
-            [
-                f"{prefix}{NAMESPACE_SEPARATOR}{value}"
-                for value in dataset.event_timeline.event_ids
-            ]
+            [f"{prefix}{NAMESPACE_SEPARATOR}{value}" for value in dataset.event_timeline.event_ids]
         ),
         group_ids=np.asarray(
-            [
-                f"{prefix}{NAMESPACE_SEPARATOR}{value}"
-                for value in dataset.event_timeline.group_ids
-            ]
+            [f"{prefix}{NAMESPACE_SEPARATOR}{value}" for value in dataset.event_timeline.group_ids]
         ),
         subject_ids=np.asarray(
             [

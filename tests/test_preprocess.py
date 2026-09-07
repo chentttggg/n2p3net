@@ -11,10 +11,8 @@ import pytest
 from data.channel import STANDARD_CHANNELS
 from data.contract import CAUSAL_IIR_INITIAL_STATE, DEFAULT_P300_DATA_CONTRACT
 from data.preprocess import (
-    _canonical,
     apply_trial_baseline,
     filter_continuous,
-    highpass,
     map_channels,
     preprocess,
     resample,
@@ -35,6 +33,23 @@ def make_raw(sfreq=512.0, n_seconds=20.0, ch_names=None, amp=10e-6, dc=0.0, seed
     return mne.io.RawArray(data, info, verbose=False)
 
 
+@pytest.mark.parametrize("phase", ["forward", "zero"])
+def test_discontinuity_filter_matches_independent_segments(phase):
+    left = make_raw(sfreq=250.0, n_seconds=4, ch_names=["Cz"], dc=1e-3)
+    right = make_raw(sfreq=250.0, n_seconds=4, ch_names=["Cz"], dc=-2e-3, seed=4)
+    combined = mne.concatenate_raws([left.copy(), right.copy()], verbose=False)
+    options = dict(
+        l_freq=0.1, h_freq=30, phase=phase,
+        causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE if phase == "forward" else "not_applicable",
+    )
+    expected = np.concatenate([
+        filter_continuous(left, **options).get_data(),
+        filter_continuous(right, **options).get_data(),
+    ], axis=1)
+    actual = filter_continuous(combined, **options).get_data()
+    np.testing.assert_allclose(actual, expected, atol=1e-15, rtol=0)
+
+
 def make_events(sfreq=512.0, n_seconds=20.0, first=2.0, step=1.0):
     """构造刺激 events（单一类型 id=1），保证每个 epoch 都落在数据范围内。"""
     times = np.arange(first, n_seconds - 1.0, step)  # final event still leaves >1.2 s
@@ -42,17 +57,6 @@ def make_events(sfreq=512.0, n_seconds=20.0, first=2.0, step=1.0):
     return np.column_stack(
         [samples, np.zeros(len(samples), dtype=int), np.ones(len(samples), dtype=int)]
     )
-
-
-# --------------------------------------------------------------------------- #
-# 单元测试：通道名规范化
-# --------------------------------------------------------------------------- #
-def test_canonical_channel_name():
-    assert _canonical("Fz") == "FZ"
-    assert _canonical(" pz ") == "PZ"
-    assert _canonical("Pz-A2") == "PZ"
-    assert _canonical("PO7") == "PO7"
-    assert _canonical("Cz_ref") == "CZ"
 
 
 # --------------------------------------------------------------------------- #
@@ -64,15 +68,17 @@ def test_preprocess_smoke_shape_dtype():
     res = preprocess(raw, events, channels=STANDARD_CHANNELS)
 
     assert res.data.ndim == 3
-    assert res.data.shape[1] == 8
+    assert res.data.shape[1] == len(STANDARD_CHANNELS)
     assert res.data.shape[2] == DEFAULT_P300_DATA_CONTRACT.n_times
     assert res.data.dtype == np.float32
     assert res.channel_mask.dtype == bool
-    assert res.channel_mask.all()  # 合成数据含全部 8 通道
+    assert res.channel_mask.all()
     assert res.sfreq == 128.0
     assert res.tmin == -0.2
     assert res.data.shape[0] >= 1  # 至少切出一个 epoch
     assert isinstance(res.n_epochs, int) and isinstance(res.n_times, int)
+
+
 def test_preprocess_forward_phase_marks_causal_and_zero_phase_does_not():
     raw = make_raw(sfreq=512.0)
     events = make_events(sfreq=512.0)
@@ -89,9 +95,6 @@ def test_preprocess_forward_phase_marks_causal_and_zero_phase_does_not():
     )
     assert causal.online_causal is True
     assert np.isfinite(causal.data).all()
-
-
-
 
 
 def test_preprocess_prefers_embedded_digitization_over_default_template():
@@ -185,7 +188,7 @@ def test_highpass_removes_dc():
     info = mne.create_info(["Fz"], 512.0, ch_types="eeg")
     raw = mne.io.RawArray(data, info, verbose=False)
 
-    raw = highpass(raw, l_freq=0.1)
+    raw = filter_continuous(raw, l_freq=0.1, h_freq=None)
 
     d = raw.get_data()[0]
     mid = d[n_times // 4 : 3 * n_times // 4]  # 避开滤波边界
@@ -213,9 +216,7 @@ def test_filter_continuous_applies_declared_lowpass():
 def test_forward_iir_steady_state_does_not_turn_dc_offset_into_startup_artifact():
     sfreq = 128.0
     data = np.full((1, int(sfreq * 12)), 3e-3, dtype=np.float64)
-    raw = mne.io.RawArray(
-        data, mne.create_info(["Cz"], sfreq, ch_types="eeg"), verbose=False
-    )
+    raw = mne.io.RawArray(data, mne.create_info(["Cz"], sfreq, ch_types="eeg"), verbose=False)
 
     filtered = filter_continuous(
         raw,
@@ -234,9 +235,7 @@ def test_forward_iir_never_uses_a_future_impulse():
     data = np.zeros((1, int(sfreq * 8)), dtype=np.float64)
     impulse = int(5 * sfreq)
     data[0, impulse] = 1.0
-    raw = mne.io.RawArray(
-        data, mne.create_info(["Cz"], sfreq, ch_types="eeg"), verbose=False
-    )
+    raw = mne.io.RawArray(data, mne.create_info(["Cz"], sfreq, ch_types="eeg"), verbose=False)
 
     filtered = filter_continuous(
         raw,
@@ -363,7 +362,7 @@ def test_preprocess_event_indices_preserve_artifact_rows_for_fold_local_qc():
     n_seconds = 20.0
     rng = np.random.default_rng(0)
     n_times = int(n_seconds * sfreq)
-    data = rng.standard_normal((8, n_times)) * 10e-6
+    data = rng.standard_normal((len(STANDARD_CHANNELS), n_times)) * 10e-6
     info = mne.create_info(list(STANDARD_CHANNELS), sfreq, ch_types="eeg")
     raw = mne.io.RawArray(data, info, verbose=False)
     events = make_events(sfreq, n_seconds)

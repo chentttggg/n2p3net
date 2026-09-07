@@ -1,0 +1,64 @@
+{
+  "schema": "reviewed-dataset-acquisition-overlay/1",
+  "dataset": "Mainsah2025-S2",
+  "derivative": "nm000313/v1.0.3",
+  "admission": "metadata_and_signal_event_integrity_passed",
+  "research_role": "sealed_external_target",
+  "evaluation_started": false,
+  "participant_count": 24,
+  "file_count": 288,
+  "acquisition": {
+    "reference": "right mastoid",
+    "ground": "left mastoid",
+    "nominal_sample_rate_hz": 256.0,
+    "edf_sample_rate_hz": 256.0000766323896,
+    "acquired_bandpass_hz": [0.5, 30.0],
+    "edf_notch_header_edges_hz": [58.0, 62.0],
+    "electrode_material_discrepancy": {
+      "thesis": "tin",
+      "edf_transducer": "AgAgCl electrode"
+    }
+  },
+  "derivative_import": {
+    "sample_rate_hz": 256.0,
+    "event_time_authority": "verified integer BIDS event.sample divided by actual BDF rate",
+    "source_samples": 42760,
+    "retained_samples": 42752,
+    "tail_crop_samples": 8,
+    "raw_sidecars_modified": false
+  },
+  "product_channels": ["Fz", "Cz", "P3", "Pz", "P4", "PO8", "Oz"],
+  "product_channel_observed_mask": [true, true, true, true, true, true, true],
+  "role_mapping_authority": {
+    "path": "experiments/runs/four_dataset_20260907/mainsah_integrity.json",
+    "sha256": "b2ee59f150f9fbc085ed10272b2854cc2d4a9d718f22e90a793906f285a437f9",
+    "verified_events": 207360,
+    "calibration_role": "Train",
+    "evaluation_role": "Test",
+    "cross_condition_order": "unknown; anonymized acquisition times cannot establish it"
+  },
+  "reference_authority": {
+    "title": "Faces, Locations, and Tools: A Proposed Two-Stimulus P300 Brain Computer Interface",
+    "author": "Marissa R. Jones",
+    "year": 2017,
+    "institution": "East Tennessee State University",
+    "landing_url": "https://dc.etsu.edu/etd/3268/",
+    "archive_url": "https://web.archive.org/web/20240414104610id_/https://dc.etsu.edu/cgi/viewcontent.cgi?article=4706&context=etd",
+    "archive_timestamp": "20240414104610",
+    "pdf_sha256": "ff3e62c3964238ca87317f1212523c8363f61512071e0a792423316f76a99222",
+    "methods_pdf_pages": [27, 28, 42, 43],
+    "scope": "Experiment 3 inherits Experiment 2 acquisition; 24 participants, House and Tool",
+    "journal_full_text_verified": false
+  },
+  "condition_semantics": {
+    "House_calibration_instruction": "count image flashes at the attended character",
+    "Tool_calibration_instruction": "imagine using the object at the attended character",
+    "test": "mixed image categories; directory condition identifies attended target category"
+  },
+  "remaining_evaluation_requirements": [
+    "freeze development recipe and checkpoints before external predictions",
+    "declare calibration budget and House/Tool composition using original Train roles",
+    "use original Test roles as the shared evaluation endpoint",
+    "report condition differences and keep BrainSync nine-choice confirmation separate"
+  ]
+}

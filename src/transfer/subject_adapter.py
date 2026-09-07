@@ -38,6 +38,21 @@ ADAPTER_POOLING_MODES = frozenset(
 )
 
 
+def _validated_prefix_mask(mask: np.ndarray, n_rows: int) -> np.ndarray:
+    scope = np.asarray(mask)
+    if scope.dtype != np.dtype(bool) or scope.shape != (n_rows,) or not bool(scope.any()):
+        raise ValueError("prefix_mask must be a non-empty boolean vector aligned with X.")
+    return scope.copy()
+
+
+@dataclass(frozen=True)
+class _AdaptationSource:
+    labels: torch.Tensor
+    logits: torch.Tensor | None = None
+    inputs: torch.Tensor | None = None
+    domain_indices: torch.Tensor | None = None
+
+
 @dataclass
 class SubjectAdapterConfig:
     head_kind: str = "linear"
@@ -88,9 +103,7 @@ class SubjectAdapterConfig:
         if not isinstance(self.freeze_batchnorm_stats, bool):
             raise ValueError("freeze_batchnorm_stats must be boolean.")
         if self.input_statistics not in {"auto", "source", "target_prefix", "shrinkage"}:
-            raise ValueError(
-                "input_statistics must be auto, source, target_prefix, or shrinkage."
-            )
+            raise ValueError("input_statistics must be auto, source, target_prefix, or shrinkage.")
         if not 0.0 <= self.target_stat_weight <= 1.0:
             raise ValueError("target_stat_weight must be in [0,1].")
         if not 0.0 <= self.candidate_loss_weight:
@@ -99,6 +112,8 @@ class SubjectAdapterConfig:
             raise ValueError("candidate_loss_temperature must be positive.")
         if not 0.0 <= self.as_mmd_lambda0:
             raise ValueError("as_mmd_lambda0 must be non-negative.")
+        if self.as_mmd_lambda0 > 0.0 and self.batch_size < 2:
+            raise ValueError("AS-MMD requires batch_size >= 2 for its unbiased MMD loss.")
         if self.as_mmd_warmup_epochs < 1:
             raise ValueError("as_mmd_warmup_epochs must be at least one.")
         if not 0.0 < self.as_mmd_target_weight_min <= self.as_mmd_target_weight_max:
@@ -179,9 +194,7 @@ class SubjectAdapter:
         # mode: the adapter path keeps the trunk in eval mode (frozen source
         # statistics, no dropout) while still backpropagating into the target
         # adapter registered on the bank.
-        trunk_requires_grad = any(
-            parameter.requires_grad for parameter in self.trunk.parameters()
-        )
+        trunk_requires_grad = any(parameter.requires_grad for parameter in self.trunk.parameters())
         if domain_indices is None:
             forward_kwargs: dict[str, object] = self._splitbn_eval_kwargs()
         else:
@@ -200,15 +213,6 @@ class SubjectAdapter:
             else:
                 features = self.trunk.forward_features(X, **forward_kwargs)
                 pooled = self.trunk.pool_features(features)
-            # AdaptiveAvgPool1d(1) retains a singleton temporal axis, whereas
-            # the other readouts already return (B,D).  Normalize the feature
-            # shape at this boundary so every head sees the same contract.
-            if self.trunk.pooling_mode == "global_average":
-                if pooled.ndim != 3 or pooled.shape[-1] != 1:
-                    raise RuntimeError(
-                        "global_average pooling must return features shaped (B,D,1)."
-                    )
-                pooled = pooled.squeeze(-1)
             if pooled.ndim != 2 or pooled.shape[1] != self.feature_dim:
                 raise RuntimeError(
                     f"trunk pooling must return (B,{self.feature_dim}) features, "
@@ -243,9 +247,7 @@ class SubjectAdapter:
         return torch.from_numpy(np.ascontiguousarray(prepared)).to(self.device)
 
     @staticmethod
-    def _masked_stats(
-        X: np.ndarray, mask: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+    def _masked_stats(X: np.ndarray, mask: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         observed = np.asarray(mask, dtype=bool)[:, :, None]
         counts = np.asarray(mask, dtype=np.float64).sum(axis=0)[None, :, None] * X.shape[2]
         sums = np.sum(X, axis=(0, 2), where=observed, dtype=np.float64, keepdims=True)
@@ -309,9 +311,7 @@ class SubjectAdapter:
 
     def _splitbn_modules(self) -> tuple[nn.Module, ...]:
         return tuple(
-            module
-            for module in self.trunk.modules()
-            if isinstance(module, (SplitBN1d, SplitBN2d))
+            module for module in self.trunk.modules() if isinstance(module, (SplitBN1d, SplitBN2d))
         )
 
     def _splitbn_eval_kwargs(self) -> dict[str, str]:
@@ -394,20 +394,14 @@ class SubjectAdapter:
         if source_domain_indices.dtype != np.int64:
             raise ValueError("source_domain_indices must use int64.")
         if source_domain_indices.ndim != 1 or source_domain_indices.shape != (len(source_X),):
-            raise ValueError(
-                "source_domain_indices must be a 1D vector aligned with source_X."
-            )
+            raise ValueError("source_domain_indices must be a 1D vector aligned with source_X.")
         domain_count = int(splitbn_config.domain_count)
-        if bool(
-            ((source_domain_indices < 0) | (source_domain_indices >= domain_count)).any()
-        ):
+        if bool(((source_domain_indices < 0) | (source_domain_indices >= domain_count)).any()):
             raise ValueError(
                 "source_domain_indices must lie in [0, domain_count) for the "
                 "checkpoint SplitBN contract."
             )
-        source_mean = self._validated_external_stats(
-            self.config.input_mean, name="input_mean"
-        )
+        source_mean = self._validated_external_stats(self.config.input_mean, name="input_mean")
         source_std = self._validated_external_stats(
             self.config.input_std, name="input_std", require_positive=True
         )
@@ -485,8 +479,10 @@ class SubjectAdapter:
             return
         self.trunk.train(trunk_trainable)
         splitbn_modules = (SplitBN1d, SplitBN2d)
-        if trunk_trainable and not self.config.freeze_batchnorm_stats and any(
-            isinstance(module, splitbn_modules) for module in self.trunk.modules()
+        if (
+            trunk_trainable
+            and not self.config.freeze_batchnorm_stats
+            and any(isinstance(module, splitbn_modules) for module in self.trunk.modules())
         ):
             raise ValueError(
                 "full_fine cannot update SplitBN on an unseen target domain; "
@@ -511,6 +507,7 @@ class SubjectAdapter:
         group_ids: np.ndarray | None = None,
         training_mask: np.ndarray | None = None,
         validation_mask: np.ndarray | None = None,
+        prefix_mask: np.ndarray | None = None,
         repetition_indices: np.ndarray | None = None,
         trial_channel_mask: np.ndarray | None = None,
         candidate_ids: np.ndarray | None = None,
@@ -524,6 +521,11 @@ class SubjectAdapter:
         source_logits: np.ndarray | torch.Tensor | None = None,
         source_labels: np.ndarray | None = None,
     ) -> SubjectAdapter:
+        """Fit within a calibration scope; chronological refit requires its explicit mask.
+
+        The prefix can include inner embargo rows, but never an outer test row.
+        Its membership must come from the caller's calibration split.
+        """
         X = np.asarray(X, dtype=np.float32)
         y = np.asarray(y).astype(np.int64)
         if X.ndim != 3 or X.shape[1:] != (self.trunk.n_channels, self.trunk.n_times):
@@ -561,16 +563,12 @@ class SubjectAdapter:
             if not np.isfinite(target_rows).all() or not np.isfinite(target_columns).all():
                 raise ValueError("target_rows/target_columns must be finite.")
         elif any(value is not None for value in candidate_metadata):
-            raise ValueError(
-                "candidate metadata requires candidate_loss_weight > 0."
-            )
+            raise ValueError("candidate metadata requires candidate_loss_weight > 0.")
         has_input_mean = self.config.input_mean is not None
         has_input_std = self.config.input_std is not None
         if has_input_mean != has_input_std:
             raise ValueError("input_mean and input_std must be supplied together.")
-        supplied_splits = sum(
-            value is not None for value in (group_ids, repetition_indices)
-        )
+        supplied_splits = sum(value is not None for value in (group_ids, repetition_indices))
         if validation_mask is not None:
             supplied_splits += 1
         if supplied_splits > 1:
@@ -588,28 +586,39 @@ class SubjectAdapter:
             if not bool(observed_mask.any(axis=1).all()):
                 raise ValueError("Every trial must retain at least one observed channel.")
 
-        train_mask = np.ones(len(X), dtype=bool)
+        prefix_scope = (
+            np.ones(len(X), dtype=bool)
+            if prefix_mask is None
+            else _validated_prefix_mask(prefix_mask, len(X))
+        )
+        prefix_rows = np.flatnonzero(prefix_scope)
+        train_mask = prefix_scope.copy()
         val_mask = np.zeros(len(X), dtype=bool)
         validation_source = None
         if repetition_indices is not None:
+            repetition_indices = np.asarray(repetition_indices)
+            if repetition_indices.shape != (len(X),):
+                raise ValueError("repetition_indices must align with X.")
             chronological = chronological_validation_split(
-                repetition_indices,
-                y,
+                repetition_indices[prefix_rows],
+                y[prefix_rows],
                 fraction=self.config.val_group_fraction,
                 min_repetitions=self.config.val_groups_min,
                 max_repetitions=self.config.val_groups_max,
             )
-            train_mask, val_mask = (
-                chronological.train_mask,
-                chronological.validation_mask,
-            )
+            train_mask[prefix_rows] = chronological.train_mask
+            val_mask[prefix_rows] = chronological.validation_mask
             validation_source = "chronological_prefix_validation"
         elif validation_mask is not None:
             validation_mask = np.asarray(validation_mask)
             if validation_mask.dtype != np.dtype(bool) or validation_mask.shape != (len(X),):
                 raise ValueError("validation_mask must be boolean and align with X.")
             val_mask = validation_mask.copy()
-            train_mask = ~val_mask if training_mask is None else np.asarray(training_mask).copy()
+            train_mask = (
+                prefix_scope & ~val_mask
+                if training_mask is None
+                else np.asarray(training_mask).copy()
+            )
             if train_mask.dtype != np.dtype(bool) or train_mask.shape != (len(X),):
                 raise ValueError("training_mask must be boolean and align with X.")
             if bool((train_mask & val_mask).any()):
@@ -622,14 +631,24 @@ class SubjectAdapter:
             if group_ids.shape != (len(X),):
                 raise ValueError("group_ids must align with X.")
             split = group_disjoint_validation_split(
-                group_ids,
+                group_ids[prefix_rows],
                 fraction=self.config.val_group_fraction,
                 min_groups=self.config.val_groups_min,
                 max_groups=self.config.val_groups_max,
                 seed=self.config.seed,
             )
-            train_mask, val_mask = split.train_mask, split.validation_mask
+            train_mask[prefix_rows] = split.train_mask
+            val_mask[prefix_rows] = split.validation_mask
             validation_source = "group_disjoint_prefix_validation"
+        if bool(((train_mask | val_mask) & ~prefix_scope).any()):
+            raise ValueError("training_mask and validation_mask must stay inside prefix_mask.")
+        if (
+            validation_source == "chronological_prefix_validation"
+            and self.config.refit_full_prefix
+            and bool(val_mask.any())
+            and prefix_mask is None
+        ):
+            raise ValueError("chronological refit requires an explicit prefix_mask before fitting.")
         if len(np.unique(y[train_mask])) != 2:
             raise ExpectedSubjectError(
                 SubjectFailureCode.INSUFFICIENT_CLASSES,
@@ -637,20 +656,16 @@ class SubjectAdapter:
                 detail="training split does not contain both binary classes",
             )
 
-        target_mean, target_std = self._masked_stats(
-            X[train_mask], observed_mask[train_mask]
-        )
+        target_mean, target_std = self._masked_stats(X[train_mask], observed_mask[train_mask])
         statistics_mode = self.config.input_statistics
         if statistics_mode == "auto":
             statistics_mode = "source" if has_input_mean and has_input_std else "target_prefix"
-        if statistics_mode in {"source", "shrinkage"} and not (
-            has_input_mean and has_input_std
-        ):
-            raise ValueError(f"input_statistics={statistics_mode!r} requires checkpoint statistics.")
-        if statistics_mode in {"source", "shrinkage"}:
-            source_mean = self._validated_external_stats(
-                self.config.input_mean, name="input_mean"
+        if statistics_mode in {"source", "shrinkage"} and not (has_input_mean and has_input_std):
+            raise ValueError(
+                f"input_statistics={statistics_mode!r} requires checkpoint statistics."
             )
+        if statistics_mode in {"source", "shrinkage"}:
+            source_mean = self._validated_external_stats(self.config.input_mean, name="input_mean")
             source_std = self._validated_external_stats(
                 self.config.input_std, name="input_std", require_positive=True
             )
@@ -709,9 +724,8 @@ class SubjectAdapter:
                     torch.as_tensor(source_logits, device=self.device).float().detach()
                 )
                 source_labels_t = torch.as_tensor(source_labels, device=self.device).long()
-                if (
-                    source_logits_t.ndim != 2
-                    or source_labels_t.shape != (source_logits_t.shape[0],)
+                if source_logits_t.ndim != 2 or source_labels_t.shape != (
+                    source_logits_t.shape[0],
                 ):
                     raise ValueError(
                         "source_logits/source_labels must be aligned (N, classes)/(N,)."
@@ -734,19 +748,29 @@ class SubjectAdapter:
                     source_domain_indices,
                 )
                 source_count = len(source_X)
-                standardized_source = (
-                    (source_X - live_source_mean) / live_source_std
-                ).astype(np.float32, copy=False)
-                source_Xt = torch.from_numpy(
-                    np.ascontiguousarray(standardized_source)
-                ).to(self.device)
-                source_labels_t = torch.from_numpy(
-                    np.ascontiguousarray(source_labels)
-                ).to(self.device)
-                source_domain_t = torch.from_numpy(
-                    np.ascontiguousarray(source_domain_indices)
-                ).to(self.device)
+                standardized_source = ((source_X - live_source_mean) / live_source_std).astype(
+                    np.float32, copy=False
+                )
+                source_Xt = torch.from_numpy(np.ascontiguousarray(standardized_source)).to(
+                    self.device
+                )
+                source_labels_t = torch.from_numpy(np.ascontiguousarray(source_labels)).to(
+                    self.device
+                )
+                source_domain_t = torch.from_numpy(np.ascontiguousarray(source_domain_indices)).to(
+                    self.device
+                )
 
+        adaptation_source = (
+            _AdaptationSource(
+                labels=source_labels_t,
+                logits=source_logits_t,
+                inputs=source_Xt,
+                domain_indices=source_domain_t,
+            )
+            if asmmd_active
+            else None
+        )
         torch.manual_seed(self.config.seed)
         if self.device.type == "cuda":
             with torch.cuda.device(self.device):
@@ -770,16 +794,16 @@ class SubjectAdapter:
         pos_weight = float(train_counts[0] / max(train_counts[1], 1))
         self.training_pos_weight_ = pos_weight
         self.training_prior_ = float(y[train_mask].mean())
-        loss_fn = nn.CrossEntropyLoss(
-            weight=torch.tensor([1.0, pos_weight], device=self.device)
-        )
+        loss_fn = nn.CrossEntropyLoss(weight=torch.tensor([1.0, pos_weight], device=self.device))
 
         # Materialize train/validation row blocks once. The training loop then
         # uses device-side index_select with the same permutation values, so the
         # epoch batches are identical to the previous numpy-indexed path without
         # any per-batch host synchronization.
         n_train = int(train_mask.sum())
-        train_rows = torch.as_tensor(np.flatnonzero(train_mask), dtype=torch.long, device=self.device)
+        train_rows = torch.as_tensor(
+            np.flatnonzero(train_mask), dtype=torch.long, device=self.device
+        )
         Xt_train = Xt.index_select(0, train_rows)
         yt_train = yt.index_select(0, train_rows)
         val_rows = torch.as_tensor(np.flatnonzero(val_mask), dtype=torch.long, device=self.device)
@@ -792,8 +816,7 @@ class SubjectAdapter:
             and splitbn_config is not None
             and splitbn_config.target_buffer_source == "target_calibration"
             and any(
-                not bool(module.target_buffer_initialized)
-                for module in self._splitbn_modules()
+                not bool(module.target_buffer_initialized) for module in self._splitbn_modules()
             )
         ):
             install_splitbn_target_calibration_buffers(
@@ -808,13 +831,10 @@ class SubjectAdapter:
             and splitbn_config is not None
             and splitbn_config.target_buffer_source == "target_calibration"
             and any(
-                not bool(module.target_buffer_initialized)
-                for module in self._splitbn_modules()
+                not bool(module.target_buffer_initialized) for module in self._splitbn_modules()
             )
         ):
-            raise RuntimeError(
-                "target_calibration SplitBN buffers were not installed and frozen."
-            )
+            raise RuntimeError("target_calibration SplitBN buffers were not installed and frozen.")
         splitbn_source_buffer_digest_before = self._splitbn_digest(target=False)
         splitbn_target_buffer_digest_before = self._splitbn_digest(target=True)
 
@@ -851,10 +871,8 @@ class SubjectAdapter:
                 trunk_trainable=trunk_trainable,
                 live_splitbn=live_splitbn,
             )
-            permutation = torch.randperm(n_train, device=self.device)
             epoch_loss = torch.zeros((), dtype=torch.float32, device=self.device)
-            for start in range(0, n_train, self.config.batch_size):
-                rows = permutation[start : start + self.config.batch_size]
+            for rows in self._training_batches(n_train):
                 xb = train_inputs.index_select(0, rows)
                 yb = yt_train.index_select(0, rows)
                 # Target batches always consume the predeclared target buffer.
@@ -862,49 +880,17 @@ class SubjectAdapter:
                 # and dropout, while SplitBN modules stay in eval mode here and
                 # therefore do not update any running statistics.
                 logits = self._forward_head(xb) if live_forward else self.head(xb)
-                if live_splitbn:
-                    assert (
-                        source_Xt is not None
-                        and source_labels_t is not None
-                        and source_domain_t is not None
-                    )
-                    source_rows = torch.randperm(source_count, device=self.device)[
-                        : self.config.batch_size
-                    ]
-                    source_batch_logits = self._forward_source_batch(
-                        source_Xt.index_select(0, source_rows),
-                        source_domain_t.index_select(0, source_rows),
-                    )
-                    source_batch_labels = source_labels_t.index_select(0, source_rows)
-                elif asmmd_active:
-                    assert source_logits_t is not None and source_labels_t is not None
-                    source_rows = torch.randperm(source_count, device=self.device)[
-                        : self.config.batch_size
-                    ]
-                    source_batch_logits = source_logits_t.index_select(0, source_rows)
-                    source_batch_labels = source_labels_t.index_select(0, source_rows)
-                else:
-                    source_batch_logits = None
-                    source_batch_labels = None
-                if asmmd_active:
-                    assert source_batch_logits is not None and source_batch_labels is not None
-                    loss, asmmd_diag = asmmd_joint_loss(
-                        source_batch_logits,
-                        source_batch_labels,
-                        logits,
-                        yb,
-                        epoch=epoch_index,
-                        warmup_epochs=self.config.as_mmd_warmup_epochs,
-                        base_weight=self.config.as_mmd_lambda0,
-                        source_count=source_count,
-                        target_count=n_train,
-                        target_weight_min=self.config.as_mmd_target_weight_min,
-                        target_weight_max=self.config.as_mmd_target_weight_max,
-                        pos_weight=pos_weight,
-                    )
+                loss, asmmd_diag = self._training_loss(
+                    logits,
+                    yb,
+                    loss_fn=loss_fn,
+                    source=adaptation_source,
+                    epoch=epoch_index,
+                    target_count=n_train,
+                    pos_weight=pos_weight,
+                )
+                if asmmd_diag is not None:
                     asmmd_losses.append(asmmd_diag)
-                else:
-                    loss = loss_fn(logits, yb)
                 if not bool(torch.isfinite(loss)):
                     raise ExpectedSubjectError(
                         SubjectFailureCode.NONFINITE_OPTIMIZATION,
@@ -933,7 +919,6 @@ class SubjectAdapter:
                     )
                 )
 
-
             val_loss = None
             if val_mask.any():
                 self.trunk.eval()
@@ -941,14 +926,12 @@ class SubjectAdapter:
                     self.head.eval()
                 with torch.inference_mode():
                     logits = (
-                        self._forward_head(val_inputs)
-                        if live_forward
-                        else self.head(val_inputs)
+                        self._forward_head(val_inputs) if live_forward else self.head(val_inputs)
                     )
                     val_loss_tensor = loss_fn(logits, yt_val).detach().float()
-                train_value, val_loss = torch.stack(
-                    (epoch_loss / max(n_train, 1), val_loss_tensor)
-                ).cpu().tolist()
+                train_value, val_loss = (
+                    torch.stack((epoch_loss / max(n_train, 1), val_loss_tensor)).cpu().tolist()
+                )
                 train_losses.append(float(train_value))
                 val_loss = float(val_loss)
                 val_losses.append(val_loss)
@@ -972,11 +955,7 @@ class SubjectAdapter:
             self.head.eval()
         if val_mask.any():
             with torch.inference_mode():
-                logits = (
-                    self._forward_head(val_inputs)
-                    if live_forward
-                    else self.head(val_inputs)
-                )
+                logits = self._forward_head(val_inputs) if live_forward else self.head(val_inputs)
             self.calibration_logits_ = (
                 (logits[:, 1] - logits[:, 0]).detach().cpu().numpy().astype(np.float64)
             )
@@ -988,15 +967,17 @@ class SubjectAdapter:
             self.calibration_source_ = None
         refit_losses: list[float] = []
         refit_candidate_losses: list[dict[str, object]] = []
+        refit_asmmd_losses: list[dict[str, object]] = []
         if (
             validation_source == "chronological_prefix_validation"
             and self.config.refit_full_prefix
             and best_epoch_count is not None
         ):
-            refit_losses, refit_candidate_losses = self._refit_full_prefix(
+            refit_losses, refit_candidate_losses, refit_asmmd_losses = self._refit_full_prefix(
                 X,
                 y,
                 observed_mask,
+                prefix_mask=prefix_scope,
                 initial_state=initial_state,
                 epochs=best_epoch_count,
                 statistics_mode=statistics_mode,
@@ -1007,6 +988,7 @@ class SubjectAdapter:
                 candidate_loss_num_rows=candidate_loss_num_rows,
                 candidate_loss_num_columns=candidate_loss_num_columns,
                 live_splitbn=live_splitbn,
+                adaptation_source=adaptation_source,
             )
         splitbn_source_buffer_digest_after = self._splitbn_digest(target=False)
         splitbn_target_buffer_digest_after = self._splitbn_digest(target=True)
@@ -1018,6 +1000,17 @@ class SubjectAdapter:
             "refit_full_prefix": bool(refit_losses),
             "refit_epochs": len(refit_losses),
             "refit_train_losses": refit_losses,
+            "fit_scope": {
+                "input_rows": len(X),
+                "prefix_mask_explicit": prefix_mask is not None,
+                "prefix_rows": int(prefix_scope.sum()),
+                "prefix_mask_sha256": hashlib.sha256(prefix_scope.tobytes()).hexdigest(),
+                "training_rows": int(train_mask.sum()),
+                "validation_rows": int(val_mask.sum()),
+                "inner_excluded_prefix_rows": int((prefix_scope & ~(train_mask | val_mask)).sum()),
+                "outside_prefix_rows": int((~prefix_scope).sum()),
+                "refit_rows": int(prefix_scope.sum()) if refit_losses else 0,
+            },
             "candidate_loss_active": bool(candidate_active),
             "candidate_loss_weight": self.config.candidate_loss_weight,
             "candidate_loss_temperature": self.config.candidate_loss_temperature,
@@ -1026,6 +1019,7 @@ class SubjectAdapter:
             "as_mmd_active": bool(asmmd_active),
             "as_mmd_input_mode": as_mmd_input_mode,
             "as_mmd_losses": asmmd_losses,
+            "refit_as_mmd_losses": refit_asmmd_losses,
             "as_mmd_lambda0": self.config.as_mmd_lambda0,
             "as_mmd_warmup_epochs": self.config.as_mmd_warmup_epochs,
             "source_stream_count": (
@@ -1048,6 +1042,7 @@ class SubjectAdapter:
         y: np.ndarray,
         observed_mask: np.ndarray,
         *,
+        prefix_mask: np.ndarray,
         initial_state: dict[str, dict[str, torch.Tensor]],
         epochs: int,
         statistics_mode: str,
@@ -1058,9 +1053,16 @@ class SubjectAdapter:
         candidate_loss_num_rows: int,
         candidate_loss_num_columns: int,
         live_splitbn: bool = False,
-    ) -> tuple[list[float], list[dict[str, object]]]:
-        """Refit from the same initialization on every chronological prefix row."""
+        adaptation_source: _AdaptationSource | None = None,
+    ) -> tuple[list[float], list[dict[str, object]], list[dict[str, object]]]:
+        """Refit only explicitly authorized calibration rows, including inner embargo."""
 
+        scope = _validated_prefix_mask(prefix_mask, len(X))
+        X, y, observed_mask = X[scope], y[scope], observed_mask[scope]
+        candidate_ids, selection_ids, target_rows, target_columns = (
+            None if values is None else np.asarray(values)[scope]
+            for values in (candidate_ids, selection_ids, target_rows, target_columns)
+        )
         self._load_state_dict(initial_state)
         if statistics_mode != "source":
             target_mean, target_std = self._masked_stats(X, observed_mask)
@@ -1088,8 +1090,7 @@ class SubjectAdapter:
             and splitbn_config is not None
             and splitbn_config.target_buffer_source == "target_calibration"
             and any(
-                not bool(module.target_buffer_initialized)
-                for module in self._splitbn_modules()
+                not bool(module.target_buffer_initialized) for module in self._splitbn_modules()
             )
         ):
             # ``initial_state`` predates the frozen target-calibration install,
@@ -1112,7 +1113,9 @@ class SubjectAdapter:
         live_forward = trunk_trainable or self.config.head_kind == "adapter"
         parameters = [parameter for parameter in self.trunk.parameters() if parameter.requires_grad]
         if self.head is not None:
-            parameters.extend(parameter for parameter in self.head.parameters() if parameter.requires_grad)
+            parameters.extend(
+                parameter for parameter in self.head.parameters() if parameter.requires_grad
+            )
         parameters = list({id(parameter): parameter for parameter in parameters}.values())
         optimizer = torch.optim.AdamW(
             parameters,
@@ -1123,34 +1126,41 @@ class SubjectAdapter:
         pos_weight = float(counts[0] / max(counts[1], 1))
         self.training_pos_weight_ = pos_weight
         self.training_prior_ = float(y.mean())
-        loss_fn = nn.CrossEntropyLoss(
-            weight=torch.tensor([1.0, pos_weight], device=self.device)
-        )
+        loss_fn = nn.CrossEntropyLoss(weight=torch.tensor([1.0, pos_weight], device=self.device))
         torch.manual_seed(self.config.seed)
         if self.device.type == "cuda":
             with torch.cuda.device(self.device):
                 torch.cuda.manual_seed(self.config.seed)
         losses: list[float] = []
         candidate_losses: list[dict[str, object]] = []
+        asmmd_losses: list[dict[str, object]] = []
         candidate_active = self.config.candidate_loss_weight > 0.0
         if candidate_active and any(
             value is None for value in (candidate_ids, selection_ids, target_rows, target_columns)
         ):
             raise ValueError("candidate-loss refit requires complete candidate metadata.")
         row_indices = np.arange(len(y), dtype=np.int64)
-        for _ in range(int(epochs)):
+        for epoch_index in range(int(epochs)):
             self._set_training_mode(
                 trunk_trainable=trunk_trainable,
                 live_splitbn=live_splitbn,
             )
-            permutation = torch.randperm(len(y), device=self.device)
             epoch_loss = torch.zeros((), dtype=torch.float32, device=self.device)
-            for start in range(0, len(y), self.config.batch_size):
-                rows = permutation[start : start + self.config.batch_size]
+            for rows in self._training_batches(len(y)):
                 xb = inputs.index_select(0, rows)
                 yb = labels.index_select(0, rows)
                 logits = self._forward_head(xb) if live_forward else self.head(xb)
-                loss = loss_fn(logits, yb)
+                loss, asmmd_diag = self._training_loss(
+                    logits,
+                    yb,
+                    loss_fn=loss_fn,
+                    source=adaptation_source,
+                    epoch=epoch_index,
+                    target_count=len(y),
+                    pos_weight=pos_weight,
+                )
+                if asmmd_diag is not None:
+                    asmmd_losses.append(asmmd_diag)
                 if not bool(torch.isfinite(loss)):
                     raise ExpectedSubjectError(
                         SubjectFailureCode.NONFINITE_OPTIMIZATION,
@@ -1181,7 +1191,56 @@ class SubjectAdapter:
         self.trunk.eval()
         if self.head is not None:
             self.head.eval()
-        return losses, candidate_losses
+        return losses, candidate_losses, asmmd_losses
+
+    def _training_batches(self, count: int) -> tuple[torch.Tensor, ...]:
+        permutation = torch.randperm(count, device=self.device)
+        batches = permutation.split(self.config.batch_size)
+        # Unbiased MMD cannot estimate a singleton tail. Keep every row by
+        # joining that tail to the previous batch in both selection and refit.
+        if self.config.as_mmd_lambda0 > 0.0 and len(batches) > 1 and len(batches[-1]) == 1:
+            batches = (*batches[:-2], torch.cat(batches[-2:]))
+        return batches
+
+    def _training_loss(
+        self,
+        logits: torch.Tensor,
+        labels: torch.Tensor,
+        *,
+        loss_fn: nn.Module,
+        source: _AdaptationSource | None,
+        epoch: int,
+        target_count: int,
+        pos_weight: float,
+    ) -> tuple[torch.Tensor, dict[str, object] | None]:
+        if source is None:
+            if self.config.as_mmd_lambda0 > 0.0:
+                raise RuntimeError("AS-MMD training requires its validated source context.")
+            return loss_fn(logits, labels), None
+        source_count = len(source.labels)
+        rows = torch.randperm(source_count, device=self.device)[: self.config.batch_size]
+        if source.inputs is not None:
+            assert source.domain_indices is not None
+            source_logits = self._forward_source_batch(
+                source.inputs.index_select(0, rows), source.domain_indices.index_select(0, rows)
+            )
+        else:
+            assert source.logits is not None
+            source_logits = source.logits.index_select(0, rows)
+        return asmmd_joint_loss(
+            source_logits,
+            source.labels.index_select(0, rows),
+            logits,
+            labels,
+            epoch=epoch,
+            warmup_epochs=self.config.as_mmd_warmup_epochs,
+            base_weight=self.config.as_mmd_lambda0,
+            source_count=source_count,
+            target_count=target_count,
+            target_weight_min=self.config.as_mmd_target_weight_min,
+            target_weight_max=self.config.as_mmd_target_weight_max,
+            pos_weight=pos_weight,
+        )
 
     def _candidate_loss_update(
         self,
@@ -1262,7 +1321,6 @@ class SubjectAdapter:
             **diagnostics.record(),
         }
 
-
     def _forward_head(
         self,
         X: torch.Tensor,
@@ -1282,9 +1340,7 @@ class SubjectAdapter:
 
     def _clone_state(self) -> dict[str, dict[str, torch.Tensor]]:
         return {
-            scope: {
-                key: value.detach().clone() for key, value in state.items()
-            }
+            scope: {key: value.detach().clone() for key, value in state.items()}
             for scope, state in self._state_dict().items()
         }
 
@@ -1292,6 +1348,29 @@ class SubjectAdapter:
         self.trunk.load_state_dict(state["trunk"])
         if self.head is not None and "head" in state:
             self.head.load_state_dict(state["head"])
+
+    def predict_features(
+        self,
+        X: np.ndarray,
+        trial_channel_mask: np.ndarray | None = None,
+    ) -> np.ndarray:
+        """Expose fitted head inputs without updating normalization or BN state."""
+        if not self._fitted:
+            raise RuntimeError("fit before predict_features.")
+        self.trunk.eval()
+        if self.head is not None:
+            self.head.eval()
+        Xt = self._prepare_input(X, trial_channel_mask)
+        with torch.inference_mode():
+            features = self._features(Xt)
+        values = features.cpu().numpy().astype(np.float32)
+        if not np.isfinite(values).all():
+            raise ExpectedSubjectError(
+                SubjectFailureCode.NUMERICAL_FAILURE,
+                stage="adapter_predict_features",
+                detail="adapter produced non-finite features",
+            )
+        return values
 
     def predict_logit(
         self,
@@ -1320,7 +1399,9 @@ class SubjectAdapter:
     def parameter_count(self) -> int:
         parameters = [parameter for parameter in self.trunk.parameters() if parameter.requires_grad]
         if self.head is not None:
-            parameters.extend(parameter for parameter in self.head.parameters() if parameter.requires_grad)
+            parameters.extend(
+                parameter for parameter in self.head.parameters() if parameter.requires_grad
+            )
         unique = {id(parameter): parameter for parameter in parameters}
         return sum(parameter.numel() for parameter in unique.values())
 

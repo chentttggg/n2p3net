@@ -311,9 +311,9 @@ def main() -> None:
         default="none" if defaults.compile_mode is None else defaults.compile_mode,
     )
     parser.add_argument(
-        "--shuffle-each-epoch",
+        "--materialize-shuffled-epoch",
         action=argparse.BooleanOptionalAction,
-        default=defaults.shuffle_each_epoch,
+        default=defaults.materialize_shuffled_epoch,
     )
     parser.add_argument("--device", default="auto")
     args = parser.parse_args()
@@ -345,9 +345,7 @@ def main() -> None:
         else np.broadcast_to(np.asarray(dataset.channel_mask, dtype=bool), X.shape[:2]).copy()
     )
     qc_features = dataset.qc_features
-    selected_subjects = np.asarray(
-        sorted(np.unique(subject_ids).tolist(), key=_subject_sort_key)
-    )
+    selected_subjects = np.asarray(sorted(np.unique(subject_ids).tolist(), key=_subject_sort_key))
     if args.subjects is not None:
         selected_subjects = selected_subjects[: args.subjects]
         keep = np.isin(subject_ids, selected_subjects)
@@ -445,7 +443,7 @@ def main() -> None:
             "precision": args.precision,
             "fused_adam": args.fused_adam,
             "compile_mode": None if args.compile_mode == "none" else args.compile_mode,
-            "shuffle_each_epoch": args.shuffle_each_epoch,
+            "materialize_shuffled_epoch": args.materialize_shuffled_epoch,
             "max_update_batch_size": candidate.batch_size,
             **candidate.deep_overrides,
         }
@@ -482,9 +480,7 @@ def main() -> None:
         inner_losses = np.asarray(
             [fold.best_task_val_loss for fold in summary.per_fold], dtype=float
         )
-        inner_aucs = np.asarray(
-            [fold.final_task_val_auc for fold in summary.per_fold], dtype=float
-        )
+        inner_aucs = np.asarray([fold.final_task_val_auc for fold in summary.per_fold], dtype=float)
         if not np.isfinite(inner_losses).all() or not np.isfinite(inner_aucs).all():
             raise RuntimeError(f"Candidate {candidate.name} produced non-finite inner metrics.")
         record = {

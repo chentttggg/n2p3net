@@ -28,6 +28,7 @@ from data.candidate_task import (
 from data.channel import build_channel_identity
 from data.epochs import EpochDataset, PreprocessingSpec
 from data.events import observed_only_timeline
+from data.exclusions import select_allowed_subjects
 from data.preprocess import preprocess
 
 BI2014A_SFREQ = 512.0
@@ -274,6 +275,7 @@ def build_bi2014a_subject_dataset(
 ) -> EpochDataset:
     subject_dir = Path(subject_dir)
     subject_id = subject_dir.name.removeprefix("subject_")
+    select_allowed_subjects("BI2014a", [int(subject_id)], explicit=True)
     recovered = recover_bi2014a_candidates(subject_dir)
 
     csv_path = _require_csv(subject_dir)

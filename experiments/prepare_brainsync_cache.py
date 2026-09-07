@@ -17,6 +17,7 @@ from data.brainsync import (  # noqa: E402
     load_brainsync_sessions_resilient,
 )
 from data.epochs import save_epoch_dataset  # noqa: E402
+from data.ocular import load_eog_regression  # noqa: E402
 
 
 def _environment_path(name: str) -> str | None:
@@ -43,6 +44,9 @@ def main() -> None:
         default=InvalidSessionPolicy.ERROR.value,
     )
     parser.add_argument("--uncompressed", action="store_true")
+    parser.add_argument(
+        "--ocular-model", type=Path, help="Frozen calibration-fitted EOG regression JSON."
+    )
     args = parser.parse_args()
 
     session_dirs = args.session_dir or [_environment_path("BRAIN_SYNC_SESSION_DIR")]
@@ -59,6 +63,7 @@ def main() -> None:
     result = load_brainsync_sessions_resilient(
         [str(value) for value in session_dirs],
         invalid_session_policy=args.invalid_session,
+        ocular_model=None if args.ocular_model is None else load_eog_regression(args.ocular_model),
     )
     print("PROGRESS 85", flush=True)
     output = save_epoch_dataset(
@@ -68,8 +73,7 @@ def main() -> None:
     )
     for failure in result.failures:
         print(
-            f"[skipped-session] {failure.session_dir}: "
-            f"{failure.error_type}: {failure.message}",
+            f"[skipped-session] {failure.session_dir}: {failure.error_type}: {failure.message}",
             flush=True,
         )
     print(f"[prepared] {output} X={result.dataset.X.shape}", flush=True)

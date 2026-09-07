@@ -1,0 +1,16 @@
+{
+  "schema": "n2p3_posthoc_decision_evidence/1",
+  "archive": "frozen/bnci_hit_20260907.zip",
+  "archive_sha256": "e4201d9313c853a951b872c35894c5e739fd2c403c18176a624adc73a997ea7a",
+  "members": {
+    "experiments/runs/lda_head_bi61_20260906/retrieved/lda_head_bi61_20260906/bnci_hit_20260907.json": "cc1a4f579599b0db905a6fcb5a11193abee1a73715279f46d79fab6e6582adfc",
+    "experiments/runs/lda_head_bi61_20260906/retrieved/lda_head_bi61_20260906/bnci_hit_outcomes_20260907.json": "64a6ca9bfe9673798db2db3009297f058b3cbabab22735ed977cef707a37f368",
+    "experiments/runs/lda_head_order_20260906/score_bnci_hit.py": "ee6b11b920c6fc2954796413be399f6b3d8638979bdad8a1afb46f39bb73820e",
+    "doc/evidence/lda_head_order_20260906.zh.md": "deab188320b312e5a739a4991a60180fb70de35fdf6101e51ef59f3d8c691795"
+  },
+  "source_training_sha256": "edd48dd6e60f0b8ab7e79127b75b8f0b77035263b9b55fc81b88de8b0535c4b5",
+  "candidate_cache_sha256": "d366a85d88e9e0f7729d5e4aa0c3c086f3ecf35e837922e876a617669d25eac1",
+  "binary_cache_sha256": "2efd14b447c8cc426d350c4030c4774a4aecf3be9187858294179997f9f65297",
+  "complete_later_decisions": 120,
+  "scope": "posthoc BNCI 36-choice development; not BrainSync nine-choice"
+}

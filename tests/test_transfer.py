@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
+import sys
 import tarfile
 from dataclasses import asdict, replace
 from pathlib import Path
@@ -157,9 +159,11 @@ def _checkpoint_identity_fields(
 
 def _write_source_snapshot_manifest(
     directory: Path,
+    *,
+    source_value: int = 1,
 ) -> tuple[Path, str, Path]:
     source = directory / "snapshot_source.py"
-    source.write_text("SNAPSHOT_VALUE = 1\n", encoding="utf-8")
+    source.write_text(f"SNAPSHOT_VALUE = {source_value}\n", encoding="utf-8")
     archive = directory / "source_snapshot.tar.gz"
     with tarfile.open(archive, mode="w:gz") as stream:
         stream.add(source, arcname="snapshot_source.py")
@@ -284,14 +288,15 @@ def test_band_balanced_loss_is_invariant_to_repeated_batch_rows() -> None:
 @pytest.mark.parametrize("shape", [(3, 128), (2, 3, 128)])
 def test_cached_band_projection_matches_direct_slices_and_has_gradient(shape) -> None:
     x = torch.randn(*shape, dtype=torch.float64, requires_grad=True)
-    actual = torch.stack(
-        band_magnitudes(x, sfreq=128.0, bands_hz=DEFAULT_BANDS_HZ)
-    )
+    actual = torch.stack(band_magnitudes(x, sfreq=128.0, bands_hz=DEFAULT_BANDS_HZ))
     window = torch.hann_window(128, periodic=False, dtype=x.dtype)
     spectrum = torch.fft.rfft((x - x.mean(dim=-1, keepdim=True)) * window, dim=-1).abs()
     freqs = torch.fft.rfftfreq(128, d=1.0 / 128.0, dtype=x.dtype)
     expected = torch.stack(
-        [spectrum[..., (freqs >= start) & (freqs < end)].mean(dim=-1) for start, end in DEFAULT_BANDS_HZ]
+        [
+            spectrum[..., (freqs >= start) & (freqs < end)].mean(dim=-1)
+            for start, end in DEFAULT_BANDS_HZ
+        ]
     )
     assert torch.allclose(actual, expected, rtol=1e-10, atol=1e-12)
     actual.sum().backward()
@@ -399,9 +404,7 @@ def test_pretraining_runner_records_trained_stop_gradient_subject_probe(
     assert contract.source_snapshot_sha256 == source_digest
     assert payload["source_snapshot_sha256"] == source_digest
     assert payload["source_snapshot_manifest"] == str(source_manifest.resolve())
-    assert set(contract.training_participant_keys) == set(
-        ledger.authority_keys()
-    )
+    assert set(contract.training_participant_keys) == set(ledger.authority_keys())
     assert origin_subject_key("synthetic", "g3") in contract.holdout_participant_keys
     changed = replace(
         contract,
@@ -416,9 +419,7 @@ def test_pretraining_runner_records_trained_stop_gradient_subject_probe(
         checkpoint_training_contract(mutated_payload)
 
 
-def test_pretraining_runner_requires_source_snapshot_manifest(
-    tmp_path, monkeypatch
-) -> None:
+def test_pretraining_runner_requires_source_snapshot_manifest(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(
         "sys.argv",
         [
@@ -434,9 +435,7 @@ def test_pretraining_runner_requires_source_snapshot_manifest(
         run_pretrain_main()
 
 
-def test_pretraining_runner_rejects_legacy_naked_snapshot_digest(
-    tmp_path, monkeypatch
-) -> None:
+def test_pretraining_runner_rejects_legacy_naked_snapshot_digest(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(
         "sys.argv",
         [
@@ -454,9 +453,7 @@ def test_pretraining_runner_rejects_legacy_naked_snapshot_digest(
         run_pretrain_main()
 
 
-def test_pretraining_runner_rejects_tampered_source_archive(
-    tmp_path, monkeypatch
-) -> None:
+def test_pretraining_runner_rejects_tampered_source_archive(tmp_path, monkeypatch) -> None:
     source_manifest, _, archive = _write_source_snapshot_manifest(tmp_path)
     tampered = bytearray(archive.read_bytes())
     tampered[4] ^= 1
@@ -554,8 +551,14 @@ def test_full_fine_batchnorm_adaptation_is_an_explicit_arm() -> None:
     frozen._set_training_mode(trunk_trainable=True)
     adaptive._set_training_mode(trunk_trainable=True)
 
-    frozen_bn = [module.training for module in frozen.trunk.modules() if "BatchNorm" in type(module).__name__]
-    adaptive_bn = [module.training for module in adaptive.trunk.modules() if "BatchNorm" in type(module).__name__]
+    frozen_bn = [
+        module.training for module in frozen.trunk.modules() if "BatchNorm" in type(module).__name__
+    ]
+    adaptive_bn = [
+        module.training
+        for module in adaptive.trunk.modules()
+        if "BatchNorm" in type(module).__name__
+    ]
     assert frozen_bn and not any(frozen_bn)
     assert adaptive_bn and all(adaptive_bn)
 
@@ -599,7 +602,13 @@ def test_chronological_refit_uses_every_prefix_row_after_epoch_selection() -> No
         config=SubjectAdapterConfig(epochs=2, batch_size=16, early_stop_patience=2),
     )
 
-    adapter.fit(X, y, training_mask=train, validation_mask=validation)
+    adapter.fit(
+        X,
+        y,
+        training_mask=train,
+        validation_mask=validation,
+        prefix_mask=np.ones(len(X), dtype=bool),
+    )
 
     assert adapter.last_history["refit_full_prefix"] is True
     assert 1 <= int(adapter.last_history["refit_epochs"]) <= 2
@@ -609,6 +618,181 @@ def test_chronological_refit_uses_every_prefix_row_after_epoch_selection() -> No
         rtol=1e-6,
         atol=1e-6,
     )
+
+
+def test_chronological_refit_requires_declared_prefix_before_fitting() -> None:
+    rng = np.random.default_rng(119)
+    X = rng.normal(size=(42, 3, 128)).astype(np.float32)
+    y = np.arange(42) % 2
+    train = np.arange(42) < 18
+    validation = (np.arange(42) >= 22) & (np.arange(42) < 30)
+    adapter = SubjectAdapter(_trunk(), config=SubjectAdapterConfig(epochs=1, batch_size=16))
+    with pytest.raises(ValueError, match="prefix_mask"):
+        adapter.fit(X, y, training_mask=train, validation_mask=validation)
+
+
+@pytest.mark.parametrize("statistics", ["source", "target_prefix", "shrinkage"])
+@pytest.mark.parametrize("freeze_bn", [True, False])
+def test_refit_ignores_unassigned_test_values_and_labels(statistics, freeze_bn) -> None:
+    rng = np.random.default_rng(120)
+    X = rng.normal(size=(42, 3, 128)).astype(np.float32)
+    y = np.arange(42) % 2
+    changed_X, changed_y = X.copy(), y.copy()
+    changed_X[30:] += 500.0
+    changed_y[30:] = 1 - changed_y[30:]
+    prefix = np.arange(42) < 30
+    train = np.arange(42) < 18
+    validation = (np.arange(42) >= 22) & prefix
+    config = SubjectAdapterConfig(
+        head_kind="full_fine",
+        epochs=2,
+        batch_size=16,
+        seed=13,
+        freeze_batchnorm_stats=freeze_bn,
+        input_statistics=statistics,
+        input_mean=np.zeros((1, 3, 1), dtype=np.float32) if statistics != "target_prefix" else None,
+        input_std=np.ones((1, 3, 1), dtype=np.float32) if statistics != "target_prefix" else None,
+    )
+    initial = _trunk()
+    first = SubjectAdapter(copy.deepcopy(initial), config=config)
+    second = SubjectAdapter(copy.deepcopy(initial), config=config)
+    for adapter, values, labels in ((first, X, y), (second, changed_X, changed_y)):
+        adapter.fit(
+            values, labels, training_mask=train, validation_mask=validation, prefix_mask=prefix
+        )
+        assert adapter.last_history["refit_full_prefix"]
+        assert adapter.last_history["fit_scope"]["refit_rows"] == 30
+        assert adapter.last_history["fit_scope"]["inner_excluded_prefix_rows"] == 4
+        assert adapter.last_history["fit_scope"]["outside_prefix_rows"] == 12
+        assert adapter.training_prior_ == y[:30].mean()
+    for key, value in first.trunk.state_dict().items():
+        assert torch.equal(value, second.trunk.state_dict()[key]), key
+    np.testing.assert_array_equal(first._input_mean, second._input_mean)
+    np.testing.assert_array_equal(first._input_std, second._input_std)
+    np.testing.assert_array_equal(first.predict_logit(X[:6]), second.predict_logit(X[:6]))
+    if statistics == "target_prefix":
+        np.testing.assert_allclose(
+            first._input_mean, X[:30].mean(axis=(0, 2), keepdims=True), atol=1e-6
+        )
+
+
+@pytest.mark.parametrize(
+    "bad_mask",
+    [np.ones(30), np.ones((30, 1), dtype=bool), np.ones(29, dtype=bool), np.zeros(30, dtype=bool)],
+)
+def test_refit_rejects_malformed_or_empty_prefix_scope(bad_mask) -> None:
+    X = np.ones((30, 3, 128), dtype=np.float32)
+    y = np.arange(30) % 2
+    adapter = SubjectAdapter(_trunk(), config=SubjectAdapterConfig(epochs=1))
+    with pytest.raises(ValueError, match="prefix_mask"):
+        adapter.fit(X, y, prefix_mask=bad_mask)
+
+
+@pytest.mark.parametrize("outside_role", ["training", "validation"])
+def test_inner_masks_cannot_authorize_rows_outside_prefix(outside_role) -> None:
+    X = np.ones((40, 3, 128), dtype=np.float32)
+    y = np.arange(40) % 2
+    prefix = np.arange(40) < 30
+    training = np.arange(40) < 18
+    validation = (np.arange(40) >= 22) & prefix
+    (training if outside_role == "training" else validation)[35] = True
+    adapter = SubjectAdapter(_trunk(), config=SubjectAdapterConfig(epochs=1))
+    with pytest.raises(ValueError, match="inside prefix_mask"):
+        adapter.fit(X, y, prefix_mask=prefix, training_mask=training, validation_mask=validation)
+
+
+def test_refit_slices_candidate_metadata_and_retains_calibration_embargo() -> None:
+    rng = np.random.default_rng(121)
+    X = rng.normal(size=(40, 3, 128)).astype(np.float32)
+    codes = np.tile(np.arange(4), 10)
+    groups = np.repeat(np.arange(10).astype(str), 4)
+    y = np.isin(codes, [0, 3]).astype(np.int64)
+    prefix = np.arange(40) < 32
+    train = np.arange(40) < 16
+    validation = (np.arange(40) >= 20) & prefix
+    initial = _trunk()
+    config = SubjectAdapterConfig(
+        head_kind="full_fine", epochs=1, batch_size=16, candidate_loss_weight=0.1
+    )
+    with_context = SubjectAdapter(copy.deepcopy(initial), config=config)
+    calibration_only = SubjectAdapter(copy.deepcopy(initial), config=config)
+    original_codes = codes.copy()
+    codes[32:] = 99
+    with_context.fit(
+        X,
+        y,
+        prefix_mask=prefix,
+        training_mask=train,
+        validation_mask=validation,
+        candidate_ids=codes,
+        selection_ids=groups,
+        target_rows=np.zeros(40),
+        target_columns=np.ones(40),
+        candidate_loss_num_rows=2,
+        candidate_loss_num_columns=2,
+    )
+    calibration_only.fit(
+        X[:32],
+        y[:32],
+        prefix_mask=np.ones(32, dtype=bool),
+        training_mask=train[:32],
+        validation_mask=validation[:32],
+        candidate_ids=original_codes[:32],
+        selection_ids=groups[:32],
+        target_rows=np.zeros(32),
+        target_columns=np.ones(32),
+        candidate_loss_num_rows=2,
+        candidate_loss_num_columns=2,
+    )
+    assert with_context.last_history["refit_candidate_losses"]
+    for key, value in with_context.trunk.state_dict().items():
+        assert torch.equal(value, calibration_only.trunk.state_dict()[key]), key
+
+
+@pytest.mark.parametrize("split_argument", ["group_ids", "repetition_indices"])
+def test_automatic_inner_split_is_restricted_to_declared_prefix(split_argument) -> None:
+    rng = np.random.default_rng(122)
+    X = rng.normal(size=(40, 3, 128)).astype(np.float32)
+    y = np.arange(40) % 2
+    groups = np.repeat(np.arange(10), 4)
+    config = SubjectAdapterConfig(
+        head_kind="full_fine",
+        epochs=1,
+        batch_size=16,
+        val_group_fraction=0.25,
+        val_groups_min=2,
+        val_groups_max=2,
+    )
+    initial = _trunk()
+    context = SubjectAdapter(copy.deepcopy(initial), config=config)
+    prefix_only = SubjectAdapter(copy.deepcopy(initial), config=config)
+    context.fit(X, y, prefix_mask=np.arange(40) < 32, **{split_argument: groups})
+    prefix_only.fit(
+        X[:32], y[:32], prefix_mask=np.ones(32, dtype=bool), **{split_argument: groups[:32]}
+    )
+    assert context.last_history["fit_scope"]["outside_prefix_rows"] == 8
+    for key, value in context.trunk.state_dict().items():
+        assert torch.equal(value, prefix_only.trunk.state_dict()[key]), key
+
+
+def test_refit_entry_rejects_empty_scope_before_restoring_weights() -> None:
+    adapter = SubjectAdapter(_trunk(), config=SubjectAdapterConfig(epochs=1))
+    with pytest.raises(ValueError, match="prefix_mask"):
+        adapter._refit_full_prefix(
+            np.zeros((8, 3, 128), dtype=np.float32),
+            np.arange(8) % 2,
+            np.ones((8, 3), dtype=bool),
+            prefix_mask=np.zeros(8, dtype=bool),
+            initial_state={},
+            epochs=1,
+            statistics_mode="source",
+            candidate_ids=None,
+            selection_ids=None,
+            target_rows=None,
+            target_columns=None,
+            candidate_loss_num_rows=6,
+            candidate_loss_num_columns=6,
+        )
 
 
 def test_hit_at_repetition_sums_target_logits() -> None:
@@ -910,12 +1094,14 @@ def _causal_candidate_dataset() -> EpochDataset:
         channel_names=identity.names,
         channel_positions_m=identity.coords,
         channel_mask=np.ones(3, dtype=bool),
-        preprocessing=preprocessing_spec_from_contract(
-            SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
-        ),
+        preprocessing=preprocessing_spec_from_contract(SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT),
         event_timeline=timeline,
         metadata=pd.DataFrame({"subject": groups.astype(str)}),
-        provenance={"source": "unit_test", "source_reference": "average", "source_sample_rate_hz": 128.0},
+        provenance={
+            "source": "unit_test",
+            "source_reference": "average",
+            "source_sample_rate_hz": 128.0,
+        },
     )
 
 
@@ -953,7 +1139,9 @@ def test_causal_split_supports_session_start_zero_calibration() -> None:
 
     assert not split.prefix_mask.any()
     assert int(split.suffix_mask.sum()) == 3 * 4 * 2
-    assert all(record["prefix_available_trials"] == 0 for record in split.evidence_cost_by_group.values())
+    assert all(
+        record["prefix_available_trials"] == 0 for record in split.evidence_cost_by_group.values()
+    )
 
 
 def test_operational_split_allows_unequal_available_candidate_counts() -> None:
@@ -961,9 +1149,7 @@ def test_operational_split_allows_unequal_available_candidate_counts() -> None:
     timeline = dataset.event_timeline
     scheduled_group = np.asarray(timeline.group_ids).astype(str)
     scheduled_candidate = np.asarray(timeline.candidate_ids).astype(str)
-    remove_event = np.flatnonzero(
-        (scheduled_group == "g1") & (scheduled_candidate == "1")
-    )[-1]
+    remove_event = np.flatnonzero((scheduled_group == "g1") & (scheduled_candidate == "1"))[-1]
     remove_epoch = int(timeline.evidence_indices[remove_event])
     evidence = np.asarray(timeline.evidence_indices, dtype=np.int64).copy()
     evidence[remove_event] = -1
@@ -994,12 +1180,8 @@ def test_operational_split_allows_unequal_available_candidate_counts() -> None:
     selected = split.selected_scheduled_repetitions["g1"]["suffix"]
     assert len({len(values) for values in selected.values()}) == 1
 
-    all_split = causal_prefix_suffix_split(
-        dataset, prefix_repetitions=0, test_repetitions=None
-    )
-    all_counts = all_split.evidence_cost_by_group["g1"][
-        "suffix_available_trials_by_candidate"
-    ]
+    all_split = causal_prefix_suffix_split(dataset, prefix_repetitions=0, test_repetitions=None)
+    all_counts = all_split.evidence_cost_by_group["g1"]["suffix_available_trials_by_candidate"]
     assert len(set(all_counts.values())) == 2
     assert all_split.evidence_cost_by_group["g1"]["balanced_all_repetitions"] == 5
     assert set(all_split.evidence_cost_by_repetition["g1"]) == {
@@ -1092,9 +1274,7 @@ def test_pretrained_trunk_rejects_target_subject_overlap(tmp_path) -> None:
             identity_exclusion_policy="source",
         )
 
-    payload.update(
-        _checkpoint_identity_fields(_identity_ledger("synthetic", "other"), dataset)
-    )
+    payload.update(_checkpoint_identity_fields(_identity_ledger("synthetic", "other"), dataset))
     torch.save(payload, checkpoint)
     loaded = _load_trunk(
         checkpoint,
@@ -1159,9 +1339,7 @@ def test_checkpoint_rejects_splitbn_architecture_with_pooled_bn_weights() -> Non
     }
     payload = {
         "trunk_state_dict": pooled.state_dict(),
-        **_checkpoint_identity_fields(
-            _identity_ledger("independent-study", "other"), dataset
-        ),
+        **_checkpoint_identity_fields(_identity_ledger("independent-study", "other"), dataset),
         "architecture": architecture,
         "source_domain_axis": axis_record,
         "source_domain_axis_digest": axis_digest,
@@ -1297,14 +1475,69 @@ def test_checkpoint_identity_digest_tampering_fails_closed() -> None:
         load_n2p3_trunk_checkpoint(payload, dataset, target_subject="g1")
 
 
-def test_session_start_zero_shot_runner_never_requires_prefix_training(
+def test_within_subject_runner_declares_prefix_for_chronological_refit(
     tmp_path, monkeypatch
+) -> None:
+    dataset = _causal_candidate_dataset()
+    cache = save_epoch_dataset(tmp_path / "refit-cache.npz", dataset)
+    manifest, _, _ = _write_source_snapshot_manifest(tmp_path)
+    output = tmp_path / "refit-result.json"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_within_subject_transfer.py",
+            "--dataset-cache",
+            str(cache),
+            "--source-snapshot-manifest",
+            str(manifest),
+            "--identity-exclusion-policy",
+            "source",
+            "--arm-name",
+            "refit-scope-test",
+            "--head",
+            "linear",
+            "--prefix-reps",
+            "4",
+            "--test-reps",
+            "1",
+            "--allow-oracle-same-selection-adaptation",
+            "--epoch-selection",
+            "target_time_split",
+            "--epochs",
+            "1",
+            "--device",
+            "cpu",
+            "--output",
+            str(output),
+        ],
+    )
+    run_transfer_main()
+    result = json.loads(output.read_text())
+    assert result["records"]
+    for record in result["records"]:
+        scope = record["prefix_refit"]["fit_scope"]
+        assert record["prefix_refit"]["enabled"]
+        assert scope["prefix_mask_explicit"]
+        assert scope["refit_rows"] == record["n_prefix_after_qc"]
+        assert scope["outside_prefix_rows"] == 0
+
+
+@pytest.mark.parametrize("separate_evaluation_snapshot", [False, True])
+def test_session_start_zero_shot_runner_never_requires_prefix_training(
+    tmp_path, monkeypatch, separate_evaluation_snapshot
 ) -> None:
     dataset = _causal_candidate_dataset()
     cache = save_epoch_dataset(tmp_path / "causal.npz", dataset)
     trunk = _dataset_trunk(dataset)
     checkpoint = tmp_path / "supervised.pt"
     source_manifest, source_digest, _ = _write_source_snapshot_manifest(tmp_path)
+    evaluation_manifest, evaluation_digest = source_manifest, source_digest
+    if separate_evaluation_snapshot:
+        evaluation_directory = tmp_path / "evaluation"
+        evaluation_directory.mkdir()
+        evaluation_manifest, evaluation_digest, _ = _write_source_snapshot_manifest(
+            evaluation_directory, source_value=2
+        )
     torch.save(
         {
             "trunk_state_dict": trunk.state_dict(),
@@ -1362,6 +1595,10 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
         ],
     )
 
+    if separate_evaluation_snapshot:
+        monkeypatch.setattr(
+            sys, "argv", [*sys.argv, "--evaluation-snapshot-manifest", str(evaluation_manifest)]
+        )
     run_transfer_main()
 
     record = json.loads(output.read_text(encoding="utf-8"))
@@ -1370,7 +1607,9 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
     assert record["n_groups"] == 3
     assert record["source_snapshot_manifest"] == str(source_manifest.resolve())
     assert record["source_snapshot_sha256"] == source_digest
-    assert record["evaluation_contract"]["source_snapshot_sha256"] == source_digest
+    assert record["evaluation_snapshot_manifest"] == str(evaluation_manifest.resolve())
+    assert record["evaluation_snapshot_sha256"] == evaluation_digest
+    assert record["evaluation_contract"]["source_snapshot_sha256"] == evaluation_digest
 
     all_output = tmp_path / "zero-shot-all.json"
     monkeypatch.setattr(
@@ -1441,9 +1680,7 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
         run_transfer_main()
 
 
-def test_transfer_runner_rejects_checkpoint_snapshot_mismatch(
-    tmp_path, monkeypatch
-) -> None:
+def test_transfer_runner_rejects_checkpoint_snapshot_mismatch(tmp_path, monkeypatch) -> None:
     dataset = _causal_candidate_dataset()
     cache = save_epoch_dataset(tmp_path / "causal.npz", dataset)
     source_manifest, _, _ = _write_source_snapshot_manifest(tmp_path)
@@ -1451,9 +1688,7 @@ def test_transfer_runner_rejects_checkpoint_snapshot_mismatch(
     torch.save(
         {
             "trunk_state_dict": _dataset_trunk(dataset).state_dict(),
-            **_checkpoint_identity_fields(
-                _identity_ledger("synthetic", "other"), dataset
-            ),
+            **_checkpoint_identity_fields(_identity_ledger("synthetic", "other"), dataset),
         },
         checkpoint,
     )
@@ -1484,9 +1719,7 @@ def test_transfer_runner_rejects_checkpoint_snapshot_mismatch(
     assert not output.exists()
 
 
-def test_transfer_runner_rejects_legacy_naked_snapshot_digest(
-    tmp_path, monkeypatch
-) -> None:
+def test_transfer_runner_rejects_legacy_naked_snapshot_digest(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(
         "sys.argv",
         [
@@ -1508,9 +1741,7 @@ def test_transfer_runner_rejects_legacy_naked_snapshot_digest(
         run_transfer_main()
 
 
-def test_target_subject_file_rejects_ambiguous_offset_or_limit(
-    tmp_path, monkeypatch
-) -> None:
+def test_target_subject_file_rejects_ambiguous_offset_or_limit(tmp_path, monkeypatch) -> None:
     source_manifest, _, _ = _write_source_snapshot_manifest(tmp_path)
     monkeypatch.setattr(
         "sys.argv",

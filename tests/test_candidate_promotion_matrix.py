@@ -641,44 +641,6 @@ def test_plan_accepts_unweighted_splitbn_buffer_sources(
     assert "--splitbn-source-weight" not in checkpoint.argv
 
 
-def test_cloud_example_is_explicitly_row_column_development_not_brainsync() -> None:
-    example = (
-        Path(matrix.__file__).resolve().parent.parent
-        / "configs"
-        / "feature_transfer_cloud_20260902.example.json"
-    )
-    raw = example.read_text(encoding="utf-8")
-    plan = matrix.load_plan(example)
-
-    assert "ROW_COLUMN" in raw
-    assert "PLACEHOLDER" in raw
-    assert "brainsync" not in raw.casefold()
-    assert plan.training.splitbn_target_buffer_source == "pooled_source"
-    assert plan.training.source_residual_drop_p == 0.3
-
-
-
-def test_domain_transfer_v2_ablation_example_parses_new_fields() -> None:
-    example = (
-        Path(matrix.__file__).resolve().parent.parent
-        / "configs"
-        / "domain_transfer_v2_ablation.example.json"
-    )
-    plan = matrix.load_plan(example)
-
-    assert len(plan.source_arms) == 5
-    assert plan.source_arms[0].euclidean_alignment is not None
-    assert plan.source_arms[0].euclidean_alignment.mode == "none"
-    assert plan.source_arms[0].sampler_kind == "uniform"
-    assert plan.source_arms[2].euclidean_alignment is not None
-    assert plan.source_arms[2].euclidean_alignment.mode == "target_calibration"
-    assert plan.source_arms[2].euclidean_alignment.reference_mode == "native_preserve"
-    assert plan.source_arms[3].sampler_kind == "target_similarity_diverse"
-    assert plan.source_arms[3].source_selection_record is not None
-    assert plan.source_arms[4].sampler_kind == "dense_pds"
-    assert all(arm.as_mmd_lambda0 == 0.0 for arm in plan.evaluation_arms)
-
-
 @pytest.mark.parametrize(
     ("field", "value", "match"),
     [
@@ -1404,6 +1366,7 @@ def test_parallel_failure_stops_dispatch_drains_and_resumes_strictly(
     initial_calls: list[str] = []
     journal_snapshot: dict[str, Any] = {}
     journal_path = dag.plan.output_root / "promotion.journal.json"
+    original_atomic = matrix._atomic_write_json
 
     def fail_first_and_block_siblings(argv: list[str], **_: Any) -> None:
         output = _output_from_argv(argv).resolve()
@@ -1414,21 +1377,19 @@ def test_parallel_failure_stops_dispatch_drains_and_resumes_strictly(
         assert release_siblings.wait(timeout=10)
         output.write_text(f"initial:{task.task_id}", encoding="utf-8")
 
-    def observe_failure() -> None:
-        deadline = time.monotonic() + 10
-        while time.monotonic() < deadline:
-            if journal_path.is_file():
-                current = json.loads(journal_path.read_text(encoding="utf-8"))
-                if current.get("status") == "failed":
-                    journal_snapshot.update(current)
-                    failure_journal_seen.set()
-                    release_siblings.set()
-                    return
-            time.sleep(0.01)
-        release_siblings.set()
+    def observe_completed_write(path: Path, value: object) -> None:
+        original_atomic(path, value)
+        if (
+            path == journal_path
+            and isinstance(value, dict)
+            and value.get("status") == "failed"
+            and not failure_journal_seen.is_set()
+        ):
+            journal_snapshot.update(json.loads(json.dumps(value)))
+            failure_journal_seen.set()
+            release_siblings.set()
 
-    observer = threading.Thread(target=observe_failure, daemon=True)
-    observer.start()
+    monkeypatch.setattr(matrix, "_atomic_write_json", observe_completed_write)
     monkeypatch.setattr(matrix, "_artifact_attestation", _fake_artifact_attestation)
     monkeypatch.setattr(matrix, "_embedded_artifact_record", _fake_embedded)
 
@@ -1439,8 +1400,6 @@ def test_parallel_failure_stops_dispatch_drains_and_resumes_strictly(
             verify_inputs=False,
             max_workers=4,
         )
-    observer.join(timeout=10)
-
     assert failure_journal_seen.is_set()
     assert journal_snapshot["tasks"][dag.tasks[0].task_id]["status"] == "failed"
     first_ready = [task.task_id for task in dag.tasks if not task.dependencies][:4]
@@ -2233,3 +2192,60 @@ def test_selection_initial_checkpoint_requires_earlier_uniform_same_cache_arm(
     record["source_arms"][1]["cache"] = "source-ab.npz"
     with pytest.raises(ValueError, match="share its source cache"):
         _load(tmp_path, record)
+
+
+def test_plan_rejects_outer_qc_with_inner_epoch_selection(tmp_path: Path) -> None:
+    record = _plan_record()
+    record["evaluation_arms"][1]["fold_local_qc"] = True
+    with pytest.raises(ValueError, match="separate inner-training fit scopes"):
+        _load(tmp_path, record)
+
+
+@pytest.mark.parametrize("separate_evaluation_snapshot", [False, True])
+def test_dag_binds_training_and_evaluation_snapshots_separately(
+    tmp_path: Path, separate_evaluation_snapshot: bool
+) -> None:
+    _write_preflight_inputs(tmp_path)
+    record = _plan_record()
+    if separate_evaluation_snapshot:
+        member = tmp_path / "evaluation.txt"
+        member.write_text("separate evaluation source", encoding="utf-8")
+        archive_path = tmp_path / "evaluation.tar.gz"
+        with tarfile.open(archive_path, "w:gz") as archive:
+            archive.add(member, arcname=member.name)
+        manifest = tmp_path / "evaluation.manifest.json"
+        manifest.write_text(
+            json.dumps({
+                "schema": "n2p3_source_freeze/1",
+                "archive": archive_path.name,
+                "archive_sha256": hashlib.sha256(archive_path.read_bytes()).hexdigest(),
+                "source_commit": "b" * 40,
+                "member_count": 1,
+                "byte_size": archive_path.stat().st_size,
+            }),
+            encoding="utf-8",
+        )
+        record["evaluation_snapshot_manifest"] = manifest.name
+    plan = _load(tmp_path, record)
+    dag = matrix.build_dag(plan)
+    for task in dag.tasks:
+        if task.kind == "checkpoint_batch":
+            assert task.argv[task.argv.index("--source-snapshot-manifest") + 1] == str(
+                plan.source_snapshot_manifest
+            )
+            assert "--evaluation-snapshot-manifest" not in task.argv
+        elif task.kind == "manifest":
+            assert task.argv[task.argv.index("--evaluation-snapshot-manifest") + 1] == str(
+                plan.evaluation_snapshot_manifest
+            )
+    for batch_record in dag.result_batch_job_records.values():
+        for job in batch_record["jobs"]:
+            argv = job["argv"]
+            assert argv[argv.index("--evaluation-snapshot-manifest") + 1] == str(
+                plan.evaluation_snapshot_manifest
+            )
+    resolved = matrix._verify_inputs(dag)
+    assert (
+        resolved["source_snapshot"]["archive_sha256"]
+        != resolved["evaluation_snapshot"]["archive_sha256"]
+    ) is separate_evaluation_snapshot

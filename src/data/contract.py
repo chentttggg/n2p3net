@@ -5,6 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import floor
 
+BRAIN_SYNC_LAYOUT_SCHEMA = "brainsync-scalp-eog-layout/1"
+BRAIN_SYNC_ACQUISITION_CHANNELS = ("Fz", "Cz", "P3", "Pz", "P4", "PO8", "EOG", "Oz")
+BRAIN_SYNC_ACQUISITION_TYPES = ("EEG", "EEG", "EEG", "EEG", "EEG", "EEG", "EOG", "EEG")
+BRAIN_SYNC_EEG_CHANNELS = tuple(
+    name
+    for name, kind in zip(
+        BRAIN_SYNC_ACQUISITION_CHANNELS, BRAIN_SYNC_ACQUISITION_TYPES, strict=True
+    )
+    if kind == "EEG"
+)
+
 
 @dataclass(frozen=True)
 class EEGDataContract:

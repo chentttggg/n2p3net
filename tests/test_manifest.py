@@ -112,20 +112,38 @@ def test_manifest_executes_declared_mean_baseline(tmp_path) -> None:
     np.testing.assert_allclose(dataset.X[:, :, :20].mean(axis=2), 0.0, atol=1e-10)
 
 
+def test_manifest_forward_filter_uses_declared_initial_state(tmp_path) -> None:
+    path = _write_manifest(tmp_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["preprocessing"].update(
+        l_freq=0.1,
+        h_freq=30.0,
+        filter_phase="forward",
+        causal_iir_initial_state="steady_state_first_sample",
+        baseline_mode="mean_only",
+    )
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    dataset = build_manifest_dataset(load_manifest(path))
+    assert dataset.X.shape == (12, 2, 100)
+    assert np.isfinite(dataset.X).all()
+    assert dataset.preprocessing.causal_iir_initial_state == "steady_state_first_sample"
+    np.testing.assert_allclose(dataset.X[:, :, :20].mean(axis=2), 0.0, atol=1e-10)
+
+
 def test_manifest_explicit_channel_positions_are_used(tmp_path) -> None:
     path = _write_manifest(tmp_path)
     payload = json.loads(path.read_text(encoding="utf-8"))
     payload["records"] = [payload["records"][0]]
     payload["channels"] = ["X1", "X2", "X3"]
     payload["montage"] = None
-    payload["channel_positions_m"] = {
-        name: list(POSITIONS[name]) for name in ("X1", "X2", "X3")
-    }
+    payload["channel_positions_m"] = {name: list(POSITIONS[name]) for name in ("X1", "X2", "X3")}
     path.write_text(json.dumps(payload), encoding="utf-8")
 
     dataset = build_manifest_dataset(load_manifest(path))
 
-    assert np.allclose(dataset.channel_positions_m, np.asarray([POSITIONS[name] for name in ("X1", "X2", "X3")]))
+    assert np.allclose(
+        dataset.channel_positions_m, np.asarray([POSITIONS[name] for name in ("X1", "X2", "X3")])
+    )
     assert all(
         registration["source"] == "manifest"
         for registration in dataset.provenance["coordinate_registration"]["per_subject"].values()

@@ -227,17 +227,13 @@ def parse_splitbn_source_weights(values: list[str]) -> dict[str, float]:
         domain, separator, raw_weight = value.rpartition("=")
         domain = domain.strip()
         if not separator or not domain or domain in weights:
-            raise ValueError(
-                "splitbn-source-weight must use unique DOMAIN=FLOAT entries."
-            )
+            raise ValueError("splitbn-source-weight must use unique DOMAIN=FLOAT entries.")
         try:
             weight = float(raw_weight)
         except ValueError as error:
             raise ValueError("splitbn-source-weight values must be numeric.") from error
         if not np.isfinite(weight) or weight < 0.0:
-            raise ValueError(
-                "splitbn-source-weight values must be finite and non-negative."
-            )
+            raise ValueError("splitbn-source-weight values must be finite and non-negative.")
         weights[domain] = weight
     if weights and not np.isclose(sum(weights.values()), 1.0, rtol=0.0, atol=1e-9):
         raise ValueError("splitbn-source-weight values must sum to one.")
@@ -261,14 +257,21 @@ def _single_job_argv(
         args.pooling_mode,
         "--temporal-kernel-size",
         str(args.temporal_kernel_size),
+        "--mst-features-per-scale",
+        str(args.mst_features_per_scale),
+        *(["--materialize-shuffled-epoch"] if args.materialize_shuffled_epoch else []),
         "--epochs",
         str(args.epochs),
         "--batch-size",
         str(args.batch_size),
+        "--pos-weight",
+        str(args.pos_weight),
         "--seed",
         str(args.seed),
         "--precision",
         args.precision,
+        "--compile-mode",
+        args.compile_mode,
         "--risk-within-domain-unit",
         args.risk_within_domain_unit,
         "--qc-ptp-uv",
@@ -297,7 +300,6 @@ def _single_job_argv(
         str(args.feature_alignment_min_cell_count),
         "--feature-alignment-inactive-policy",
         args.feature_alignment_inactive_policy,
-
         "--checkpoint",
         str(job.checkpoint),
         *(
@@ -309,9 +311,7 @@ def _single_job_argv(
         args.device,
     ]
     if args.source_selection_record is not None:
-        argv.extend(
-            ["--source-selection-record", str(args.source_selection_record)]
-        )
+        argv.extend(["--source-selection-record", str(args.source_selection_record)])
     if args.tmax_ms is not None:
         argv.extend(["--tmax-ms", str(args.tmax_ms)])
     for value in args.source_domain_mass:
@@ -349,6 +349,8 @@ def _single_job_argv(
         )
     if args.selection_domain:
         argv.extend(["--selection-domain", args.selection_domain])
+    if args.selection_all_domains:
+        argv.append("--selection-all-domains")
     return argv
 
 
@@ -451,9 +453,28 @@ def main(argv: list[str] | None = None) -> None:
         default=DEFAULT_N2P3_ARCHITECTURE.temporal_kernel_size,
         help="ST temporal kernel width for the trunk (odd, >=3).",
     )
+    parser.add_argument(
+        "--mst-features-per-scale",
+        type=int,
+        default=DEFAULT_N2P3_ARCHITECTURE.mst_features_per_scale,
+    )
+    parser.add_argument(
+        "--materialize-shuffled-epoch",
+        action="store_true",
+        help="Materialize one shuffled epoch on device; batch order is unchanged.",
+    )
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=512)
+    parser.add_argument("--pos-weight", type=float, default=8.0)
+    parser.add_argument("--selection-all-domains", action="store_true",
+                        help="Hold out participants within every source domain and use matching hierarchical validation risk.")
     parser.add_argument("--seed", type=int, default=20260828)
+    parser.add_argument(
+        "--compile-mode",
+        choices=("none", "default", "reduce-overhead", "max-autotune"),
+        default="reduce-overhead",
+        help="Explicit compiler mode, including eager diagnostics.",
+    )
     parser.add_argument(
         "--precision",
         choices=("auto", "bf16", "fp32"),
@@ -654,30 +675,15 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument("--device", default="auto")
     args = parser.parse_args(argv)
-    if (
-        args.candidate_loss_weight is None
-        and args.candidate_loss_max_repetitions is not None
-    ):
-        parser.error(
-            "--candidate-loss-max-repetitions requires --candidate-loss-weight"
-        )
-    if (
-        args.candidate_loss_weight is not None
-        and args.candidate_loss_max_repetitions is None
-    ):
-        parser.error(
-            "--candidate-loss-weight requires --candidate-loss-max-repetitions"
-        )
+    if args.candidate_loss_weight is None and args.candidate_loss_max_repetitions is not None:
+        parser.error("--candidate-loss-max-repetitions requires --candidate-loss-weight")
+    if args.candidate_loss_weight is not None and args.candidate_loss_max_repetitions is None:
+        parser.error("--candidate-loss-weight requires --candidate-loss-max-repetitions")
     if args.candidate_loss_weight is None and (
-        args.candidate_loss_temperature != 1.0
-        or args.candidate_loss_prefix_mode != "final"
+        args.candidate_loss_temperature != 1.0 or args.candidate_loss_prefix_mode != "final"
     ):
-        parser.error(
-            "candidate loss temperature/prefix options require --candidate-loss-weight"
-        )
-    initial_checkpoint_paths = tuple(
-        Path(value).resolve() for value in args.initial_checkpoint
-    )
+        parser.error("candidate loss temperature/prefix options require --candidate-loss-weight")
+    initial_checkpoint_paths = tuple(Path(value).resolve() for value in args.initial_checkpoint)
     if args.job:
         if args.checkpoint is not None or args.holdout_subjects:
             parser.error("--job cannot be combined with --checkpoint/--holdout-subjects")
@@ -692,9 +698,7 @@ def main(argv: list[str] | None = None) -> None:
                 holdout_subjects=holdout,
                 checkpoint=Path(checkpoint),
                 initial_checkpoint=(
-                    initial_checkpoint_paths[index]
-                    if initial_checkpoint_paths
-                    else None
+                    initial_checkpoint_paths[index] if initial_checkpoint_paths else None
                 ),
             )
             for index, (holdout, checkpoint) in enumerate(args.job)
@@ -718,9 +722,7 @@ def main(argv: list[str] | None = None) -> None:
     initial_state_dict = None
     if initial_checkpoint is not None:
         if not initial_checkpoint.is_file():
-            raise FileNotFoundError(
-                f"--initial-checkpoint does not exist: {initial_checkpoint}"
-            )
+            raise FileNotFoundError(f"--initial-checkpoint does not exist: {initial_checkpoint}")
         initial_payload = load_checkpoint_payload(initial_checkpoint)
         initial_contract = checkpoint_training_contract(initial_payload)
         if initial_contract.source_cache_sha256 != source_cache_sha256:
@@ -729,9 +731,7 @@ def main(argv: list[str] | None = None) -> None:
                 "two-stage source selection requires the same source cache."
             )
         if initial_contract.source_snapshot_sha256 != source_snapshot_sha256:
-            raise ValueError(
-                "--initial-checkpoint source snapshot disagrees with this run."
-            )
+            raise ValueError("--initial-checkpoint source snapshot disagrees with this run.")
         if initial_payload.get("source_selection_contract") is not None:
             raise ValueError(
                 "--initial-checkpoint must come from the uniform full-source arm; "
@@ -768,9 +768,7 @@ def main(argv: list[str] | None = None) -> None:
     source_rows = ~np.isin(subjects, list(holdout))
     requested_source_rows = source_rows.copy()
     labels_all = np.asarray(dataset.y, dtype=np.int64)
-    source_label_counts_before_qc = np.bincount(
-        labels_all[source_rows], minlength=2
-    ).astype(int)
+    source_label_counts_before_qc = np.bincount(labels_all[source_rows], minlength=2).astype(int)
     qc_dropped = 0
     qc_dropped_by_label = np.zeros(2, dtype=np.int64)
     if args.qc_ptp_uv > 0:
@@ -779,9 +777,9 @@ def main(argv: list[str] | None = None) -> None:
         ptp = X_all.max(axis=2) - X_all.min(axis=2)  # (N, C)
         bad = (ptp >= threshold).any(axis=1)
         qc_dropped = int((source_rows & bad).sum())
-        qc_dropped_by_label = np.bincount(
-            labels_all[source_rows & bad], minlength=2
-        ).astype(np.int64)
+        qc_dropped_by_label = np.bincount(labels_all[source_rows & bad], minlength=2).astype(
+            np.int64
+        )
         source_rows = source_rows & ~bad
     pds_dropped_source_epochs = 0
     pds_dropped_by_label = np.zeros(2, dtype=np.int64)
@@ -790,9 +788,9 @@ def main(argv: list[str] | None = None) -> None:
         selection_mask[source_selection.selected_indices] = True
         pds_dropped_mask = source_rows & ~selection_mask
         pds_dropped_source_epochs = int(pds_dropped_mask.sum())
-        pds_dropped_by_label = np.bincount(
-            labels_all[pds_dropped_mask], minlength=2
-        ).astype(np.int64)
+        pds_dropped_by_label = np.bincount(labels_all[pds_dropped_mask], minlength=2).astype(
+            np.int64
+        )
         source_rows = source_rows & selection_mask
     decision_metadata = None
     decision_loss_config = None
@@ -803,9 +801,7 @@ def main(argv: list[str] | None = None) -> None:
                 "direct decision batching cannot use epoch-level source-domain risk; "
                 "define a decision-level weighting estimand first."
             )
-        candidate_task_contract = dataset.provenance.get(
-            "candidate_task_contract"
-        )
+        candidate_task_contract = dataset.provenance.get("candidate_task_contract")
         try:
             decision_metadata = DirectDecisionMetadata.from_timeline(
                 dataset.event_timeline,
@@ -851,27 +847,25 @@ def main(argv: list[str] | None = None) -> None:
     )
     src_subjects = subjects[source_rows]
     domain_mass = parse_source_domain_mass(args.source_domain_mass)
-    splitbn_source_weights = parse_splitbn_source_weights(
-        args.splitbn_source_weight
-    )
+    splitbn_source_weights = parse_splitbn_source_weights(args.splitbn_source_weight)
     if args.splitbn_target_buffer_source == "source_weighted":
         if not splitbn_source_weights:
             raise ValueError(
                 "source_weighted Split-BN requires --splitbn-source-weight for every domain."
             )
     elif splitbn_source_weights:
-        raise ValueError(
-            "--splitbn-source-weight is only valid with source_weighted Split-BN."
-        )
+        raise ValueError("--splitbn-source-weight is only valid with source_weighted Split-BN.")
     source_domains = None
     source_vocabulary: tuple[str, ...] | None = None
     selection_domain = args.selection_domain.strip() or None
+    if args.selection_all_domains and (selection_domain is not None or not domain_mass):
+        raise ValueError("selection-all-domains requires source-domain masses and no selection-domain")
     if dataset.provenance.get("source_domain_axis") is not None:
         source_vocabulary = source_domain_vocabulary(dataset)
         source_domains = source_domain_ids(dataset)[source_rows]
         observed_domains = set(source_domains.tolist())
         if len(observed_domains) > 1:
-            if selection_domain is None and domain_mass:
+            if selection_domain is None and domain_mass and not args.selection_all_domains:
                 raise ValueError(
                     "weighted multi-domain source training requires an explicit selection-domain."
                 )
@@ -880,22 +874,16 @@ def main(argv: list[str] | None = None) -> None:
                     "source-domain-mass keys must equal retained source domains: "
                     f"{sorted(observed_domains)}."
                 )
-            if (
-                selection_domain is not None
-                and selection_domain not in observed_domains
-            ):
+            if selection_domain is not None and selection_domain not in observed_domains:
                 raise ValueError("selection-domain is absent from retained source rows.")
         elif domain_mass or selection_domain is not None:
             raise ValueError("domain-risk options require a genuinely multi-domain source cache.")
     elif domain_mass or selection_domain is not None:
         raise ValueError("domain-risk options require an explicit source-domain axis.")
     if splitbn_source_weights and (
-        source_vocabulary is None
-        or set(splitbn_source_weights) != set(source_vocabulary)
+        source_vocabulary is None or set(splitbn_source_weights) != set(source_vocabulary)
     ):
-        raise ValueError(
-            "splitbn-source-weight keys must equal the cache-declared source domains."
-        )
+        raise ValueError("splitbn-source-weight keys must equal the cache-declared source domains.")
     indexed_domain_requested = (
         args.splitbn_target_buffer_source is not None
         or args.source_residual_drop_p is not None
@@ -905,9 +893,7 @@ def main(argv: list[str] | None = None) -> None:
             and len(source_vocabulary) >= 2
         )
     )
-    if indexed_domain_requested and (
-        source_vocabulary is None or len(source_vocabulary) < 2
-    ):
+    if indexed_domain_requested and (source_vocabulary is None or len(source_vocabulary) < 2):
         raise ValueError(
             "Split-BN/source residual training requires at least two declared source domains."
         )
@@ -937,14 +923,11 @@ def main(argv: list[str] | None = None) -> None:
             ),
             source_domain_count=(
                 len(source_vocabulary)
-                if args.source_residual_drop_p is not None
-                and source_vocabulary is not None
+                if args.source_residual_drop_p is not None and source_vocabulary is not None
                 else 0
             ),
             source_drop_p=(
-                args.source_residual_drop_p
-                if args.source_residual_drop_p is not None
-                else 0.3
+                args.source_residual_drop_p if args.source_residual_drop_p is not None else 0.3
             ),
             source_drop_mode=args.source_residual_drop_mode,
         )
@@ -975,8 +958,12 @@ def main(argv: list[str] | None = None) -> None:
     config = DeepConfig(
         epochs=args.epochs,
         batch_size=args.batch_size,
+        pos_weight=args.pos_weight,
+        source_validation_all_domains=args.selection_all_domains,
         seed=args.seed,
         precision=args.precision,
+        compile_mode=None if args.compile_mode == "none" else args.compile_mode,
+        materialize_shuffled_epoch=args.materialize_shuffled_epoch,
     )
     runtime = GpuPerformanceScheduler(
         device,
@@ -984,7 +971,10 @@ def main(argv: list[str] | None = None) -> None:
         batch_memory_fraction=config.batch_memory_fraction,
         preload_memory_fraction=config.preload_memory_fraction,
     )
-    architecture = N2P3ArchitectureConfig(temporal_kernel_size=args.temporal_kernel_size)
+    architecture = N2P3ArchitectureConfig(
+        temporal_kernel_size=args.temporal_kernel_size,
+        mst_features_per_scale=args.mst_features_per_scale,
+    )
     baseline = N2P3NetBaseline(
         dataset.n_channels,
         dataset.n_times,
@@ -992,6 +982,7 @@ def main(argv: list[str] | None = None) -> None:
         config=config,
         device=device,
         runtime=runtime,
+        channel_mask=dataset.channel_mask,
         tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
         pooling_mode=args.pooling_mode,
         architecture=architecture,
@@ -999,24 +990,35 @@ def main(argv: list[str] | None = None) -> None:
         source_domain_vocabulary=source_vocabulary,
         splitbn_domain_count=(
             len(source_vocabulary)
-            if args.splitbn_target_buffer_source is not None
-            and source_vocabulary is not None
+            if args.splitbn_target_buffer_source is not None and source_vocabulary is not None
             else None
         ),
         splitbn_target_buffer_source=args.splitbn_target_buffer_source,
         splitbn_source_weights=splitbn_source_weights or None,
-    pretrained_state_dict=initial_state_dict,
+        pretrained_state_dict=initial_state_dict,
     )
 
     X = np.ascontiguousarray(dataset.X[source_rows])
     y = np.asarray(dataset.y, dtype=np.int64)[source_rows]
+    source_observed = (
+        np.broadcast_to(dataset.channel_mask, X.shape[:2]).copy()
+        if dataset.trial_channel_mask is None
+        else dataset.trial_channel_mask[source_rows]
+    )
+    observed_counts = source_observed.sum(axis=0)
+    if not bool((observed_counts > 0).all()):
+        raise ValueError(
+            "every model input channel must have observed source trials after holdout exclusion."
+        )
     # ``input_statistics_scope`` declares *which rows* normalization statistics
     # may be computed from; it must stay a pure control declaration. Realized
     # counts (rows/unique_subjects) vary with every partition's holdout, so
     # embedding them here would make the arm procedure disagree with itself
     # across partitions and get rejected by the manifest arm check.
-    source_input_stats_scope = "all_source_rows"
-    risk_fit_kwargs = {}
+    source_input_stats_scope = (
+        "all_source_rows" if bool(source_observed.all()) else "observed_source_rows"
+    )
+    risk_fit_kwargs = {"trial_channel_mask": source_observed}
     if source_domains is not None:
         risk_fit_kwargs["source_domain_ids"] = source_domains
     if selection_domain is not None:
@@ -1047,7 +1049,6 @@ def main(argv: list[str] | None = None) -> None:
             feature_alignment_mode=args.feature_alignment_mode,
             feature_alignment_min_cell_count=args.feature_alignment_min_cell_count,
             feature_alignment_inactive_policy=args.feature_alignment_inactive_policy,
-
             feature_private_domain_weight=args.private_domain_weight,
             feature_orthogonality_weight=args.orthogonality_weight,
             **risk_fit_kwargs,
@@ -1079,6 +1080,7 @@ def main(argv: list[str] | None = None) -> None:
         config=refit_config,
         device=device,
         runtime=runtime,
+        channel_mask=dataset.channel_mask,
         tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
         pooling_mode=args.pooling_mode,
         architecture=architecture,
@@ -1086,13 +1088,12 @@ def main(argv: list[str] | None = None) -> None:
         source_domain_vocabulary=source_vocabulary,
         splitbn_domain_count=(
             len(source_vocabulary)
-            if args.splitbn_target_buffer_source is not None
-            and source_vocabulary is not None
+            if args.splitbn_target_buffer_source is not None and source_vocabulary is not None
             else None
         ),
         splitbn_target_buffer_source=args.splitbn_target_buffer_source,
         splitbn_source_weights=splitbn_source_weights or None,
-    pretrained_state_dict=initial_state_dict,
+        pretrained_state_dict=initial_state_dict,
     )
     refit_started = time.perf_counter()
     try:
@@ -1104,7 +1105,6 @@ def main(argv: list[str] | None = None) -> None:
             feature_alignment_mode=args.feature_alignment_mode,
             feature_alignment_min_cell_count=args.feature_alignment_min_cell_count,
             feature_alignment_inactive_policy=args.feature_alignment_inactive_policy,
-
             feature_private_domain_weight=args.private_domain_weight,
             feature_orthogonality_weight=args.orthogonality_weight,
             **risk_fit_kwargs,
@@ -1128,14 +1128,11 @@ def main(argv: list[str] | None = None) -> None:
         architecture_record
     ):
         raise RuntimeError("selection and refit models disagree on architecture contract.")
-    decision_loss_record = (
-        None if decision_loss_config is None else decision_loss_config.record()
-    )
+    decision_loss_record = None if decision_loss_config is None else decision_loss_config.record()
     decision_metadata_record = (
-        None
-        if decision_metadata is None
-        else decision_metadata.record(include_rows=False)
+        None if decision_metadata is None else decision_metadata.record(include_rows=False)
     )
+
     def _durable_decision_ledger(
         history_ledger: object,
     ) -> dict[str, object] | None:
@@ -1155,15 +1152,11 @@ def main(argv: list[str] | None = None) -> None:
         return history_ledger
 
     decision_training_diagnostics = {
-        "selection": _durable_decision_ledger(
-            selection_baseline.last_history.get("decision_loss")
-        ),
+        "selection": _durable_decision_ledger(selection_baseline.last_history.get("decision_loss")),
         "refit": _durable_decision_ledger(baseline.last_history.get("decision_loss")),
     }
     source_domain_axis = baseline.source_domain_axis_record()
-    source_domain_axis_digest = architecture_record.get(
-        "source_domain_axis_digest"
-    )
+    source_domain_axis_digest = architecture_record.get("source_domain_axis_digest")
     if source_domain_axis_digest is None:
         source_domain_axis = None
     elif source_domain_axis is None or source_domain_axis_digest != semantic_sha256(
@@ -1185,9 +1178,7 @@ def main(argv: list[str] | None = None) -> None:
                 selection_baseline.calibration_labels_,
                 pos_weight=float(selection_baseline.training_pos_weight_),
                 train_prior=float(selection_baseline.training_prior_),
-                source=str(
-                    selection_baseline.calibration_source_ or "source_group_validation"
-                ),
+                source=str(selection_baseline.calibration_source_ or "source_group_validation"),
             )
         )
     source_calibration = {
@@ -1198,9 +1189,7 @@ def main(argv: list[str] | None = None) -> None:
     }
     assert dataset.identity_table is not None
     holdout_participant_keys = (
-        dataset.identity_table.subset(holdout).authority_keys()
-        if holdout
-        else ()
+        dataset.identity_table.subset(holdout).authority_keys() if holdout else ()
     )
     source_selection_contract = (
         None if source_selection_record is None else dict(source_selection_record)
@@ -1226,13 +1215,9 @@ def main(argv: list[str] | None = None) -> None:
             "optimizer_rows_per_epoch": int(len(X)),
             "effective_batch_contract": {
                 "requested_batch_size": int(args.batch_size),
-                "selection_batch_size": selection_baseline.last_runtime.get(
-                    "batch_size"
-                ),
+                "selection_batch_size": selection_baseline.last_runtime.get("batch_size"),
                 "refit_batch_size": baseline.last_runtime.get("batch_size"),
-                "selection_oom_retries": selection_baseline.last_runtime.get(
-                    "oom_retries"
-                ),
+                "selection_oom_retries": selection_baseline.last_runtime.get("oom_retries"),
                 "refit_oom_retries": baseline.last_runtime.get("oom_retries"),
                 "matched_procedure_policy": "effective_batch_and_oom_must_match",
             },
@@ -1244,6 +1229,7 @@ def main(argv: list[str] | None = None) -> None:
             "refit_epochs": int(refit_epochs),
             "selection_calibration_source": selection_baseline.calibration_source_,
             "selection_domain": selection_domain,
+            "selection_all_domains": args.selection_all_domains,
             "full_source_refit": True,
         },
         objective={
@@ -1257,10 +1243,9 @@ def main(argv: list[str] | None = None) -> None:
             "source_risk_refit": baseline.last_source_risk,
             "source_risk_contract": {
                 "domain_mass": domain_mass or None,
-                "within_domain_unit": (
-                    args.risk_within_domain_unit if domain_mass else None
-                ),
+                "within_domain_unit": (args.risk_within_domain_unit if domain_mass else None),
                 "selection_domain": selection_domain,
+                "selection_all_domains": args.selection_all_domains,
             },
             "source_domain_axis": source_domain_axis,
             "feature_transfer": feature_transfer.record() if feature_transfer is not None else None,
@@ -1281,7 +1266,6 @@ def main(argv: list[str] | None = None) -> None:
                 ),
                 "min_cell_count": int(args.feature_alignment_min_cell_count),
                 "inactive_policy": args.feature_alignment_inactive_policy,
-
                 "private_domain_weight": float(args.private_domain_weight),
                 "orthogonality_weight": float(args.orthogonality_weight),
             },
@@ -1341,6 +1325,8 @@ def main(argv: list[str] | None = None) -> None:
             "batch_size": args.batch_size,
             "seed": args.seed,
             "source_domain_mass": domain_mass or None,
+            "source_validation_all_domains": args.selection_all_domains,
+            "pos_weight": args.pos_weight,
             "risk_within_domain_unit": args.risk_within_domain_unit if domain_mass else None,
             "selection_domain": selection_domain,
             "source_domain_vocabulary": (
@@ -1353,14 +1339,11 @@ def main(argv: list[str] | None = None) -> None:
             "feature_alignment_weight": float(args.feature_alignment_weight),
             "feature_alignment_min_cell_count": int(args.feature_alignment_min_cell_count),
             "feature_alignment_inactive_policy": args.feature_alignment_inactive_policy,
-
             "feature_alignment_mode": args.feature_alignment_mode,
             "private_domain_weight": float(args.private_domain_weight),
             "orthogonality_weight": float(args.orthogonality_weight),
             "source_selection_contract": source_selection_contract,
-            "initial_checkpoint": (
-                None if initial_checkpoint is None else str(initial_checkpoint)
-            ),
+            "initial_checkpoint": (None if initial_checkpoint is None else str(initial_checkpoint)),
             "initial_checkpoint_sha256": initial_checkpoint_sha256,
             "training": "N2P3NetBaseline supervised (LOSO-identical path)",
         },
@@ -1376,9 +1359,7 @@ def main(argv: list[str] | None = None) -> None:
         "decision_loss": decision_loss_record,
         "decision_metadata": decision_metadata_record,
         "decision_metadata_digest": (
-            None
-            if decision_metadata_record is None
-            else semantic_sha256(decision_metadata_record)
+            None if decision_metadata_record is None else semantic_sha256(decision_metadata_record)
         ),
         "decision_loss_selection": decision_training_diagnostics["selection"],
         "decision_loss_refit": decision_training_diagnostics["refit"],
@@ -1407,18 +1388,16 @@ def main(argv: list[str] | None = None) -> None:
         "training_contract_digest": training_contract.digest(),
         "n_source_epochs_used": int(len(X)),
         "source_input_stats_scope": source_input_stats_scope,
+        "source_observed_trial_counts": observed_counts.astype(int).tolist(),
         "source_label_counts_after_qc": np.bincount(y, minlength=2).astype(int).tolist(),
         "source_risk_selection": selection_baseline.last_source_risk,
         "source_risk_refit": baseline.last_source_risk,
-        "source_residual_selection": selection_baseline.last_history.get(
-            "source_residual"
-        ),
+        "source_selection_history": dict(selection_baseline.last_history),
+        "source_residual_selection": selection_baseline.last_history.get("source_residual"),
         "source_residual_refit": baseline.last_history.get("source_residual"),
         "p2_budget_dropped_source_epochs": p2_budget_dropped_rows,
         "source_selection_contract": source_selection_contract,
-        "initial_checkpoint": (
-            None if initial_checkpoint is None else str(initial_checkpoint)
-        ),
+        "initial_checkpoint": (None if initial_checkpoint is None else str(initial_checkpoint)),
         "initial_checkpoint_sha256": initial_checkpoint_sha256,
         "tsd_dropped_source_epochs": pds_dropped_source_epochs,
         "tsd_dropped_source_epochs_by_label": pds_dropped_by_label.tolist(),
@@ -1454,9 +1433,7 @@ def main(argv: list[str] | None = None) -> None:
                 "source_input_stats_scope": source_input_stats_scope,
                 "source_risk": payload["source_risk_selection"],
                 "runtime": payload["runtime"],
-                "training_participant_count": len(
-                    training_identity_ledger.local_subject_ids
-                ),
+                "training_participant_count": len(training_identity_ledger.local_subject_ids),
                 "best_epoch": history.get("best_epoch"),
                 "final_task_val_auc": history.get("final_task_val_auc"),
             }

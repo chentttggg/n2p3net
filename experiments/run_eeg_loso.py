@@ -81,7 +81,9 @@ def _validate_run_name(value: str) -> str:
     if not RUN_NAME.fullmatch(normalized) or any(
         part in {"", ".", ".."} for part in normalized.split("/")
     ):
-        raise ValueError("run name must contain safe relative path components using letters, digits, ._-")
+        raise ValueError(
+            "run name must contain safe relative path components using letters, digits, ._-"
+        )
     return normalized
 
 
@@ -133,7 +135,11 @@ def _resolve_device(choice: str) -> torch.device:
         raise RuntimeError("--device cuda was requested, but CUDA is unavailable.")
     if device.type == "xpu" and not (hasattr(torch, "xpu") and torch.xpu.is_available()):
         raise RuntimeError("--device xpu was requested, but XPU is unavailable.")
-    if device.type == "cuda" and device.index is not None and device.index >= torch.cuda.device_count():
+    if (
+        device.type == "cuda"
+        and device.index is not None
+        and device.index >= torch.cuda.device_count()
+    ):
         raise ValueError(f"CUDA device index {device.index} is unavailable.")
     if device.type == "cpu" and device.index is not None:
         raise ValueError("CPU device indices are not supported.")
@@ -201,9 +207,9 @@ def main() -> None:
         help="torch.compile mode; reduce-overhead is the CUDA default",
     )
     parser.add_argument(
-        "--shuffle-each-epoch",
+        "--materialize-shuffled-epoch",
         action=argparse.BooleanOptionalAction,
-        default=deep_defaults.shuffle_each_epoch,
+        default=deep_defaults.materialize_shuffled_epoch,
         help="optional one-shot device shuffle per epoch; off by default",
     )
     parser.add_argument("--validation-group-fraction", type=float, default=0.1)
@@ -421,7 +427,7 @@ def main() -> None:
         "precision": args.precision,
         "fused_adam": args.fused_adam,
         "compile_mode": None if args.compile_mode == "none" else args.compile_mode,
-        "shuffle_each_epoch": args.shuffle_each_epoch,
+        "materialize_shuffled_epoch": args.materialize_shuffled_epoch,
         "max_update_batch_size": args.max_update_batch_size,
         "batch_memory_fraction": args.batch_memory_fraction,
         "preload_memory_fraction": args.preload_memory_fraction,
@@ -498,7 +504,9 @@ def main() -> None:
     trial_channel_mask = (
         np.asarray(dataset.trial_channel_mask, dtype=bool)
         if dataset.trial_channel_mask is not None
-        else np.broadcast_to(np.asarray(dataset.channel_mask, dtype=bool), dataset.X.shape[:2]).copy()
+        else np.broadcast_to(
+            np.asarray(dataset.channel_mask, dtype=bool), dataset.X.shape[:2]
+        ).copy()
     )
     X, y, subject_ids = dataset.X, dataset.y, dataset.subject_ids
     if dataset.qc_features is None:
@@ -515,7 +523,9 @@ def main() -> None:
         qc_features = qc_features.subset(keep)
         timeline_subjects = np.asarray(timeline.subject_ids).astype(str)
         timeline_groups = np.asarray(timeline.group_ids).astype(str)
-        selected_groups = set(timeline_groups[np.isin(timeline_subjects, selected_subjects)].tolist())
+        selected_groups = set(
+            timeline_groups[np.isin(timeline_subjects, selected_subjects)].tolist()
+        )
         timeline = timeline.subset_groups(selected_groups)
 
     folds = loso_folds(subject_ids)[args.fold_offset :]
@@ -576,7 +586,9 @@ def main() -> None:
             "model": describe_binary_model(model_name, model),
             "dataset": dataset_record,
             "fold_protocol": "partial_loso" if args.fold_offset or args.max_folds else "loso",
-            "selection_mode": "candidate_selection" if candidate_selection is not None else "binary_oddball",
+            "selection_mode": "candidate_selection"
+            if candidate_selection is not None
+            else "binary_oddball",
             "total_folds": args.fold_offset + len(folds),
             "batch_total_folds": len(folds),
             "batch_fold_offset": args.fold_offset,
@@ -622,12 +634,10 @@ def main() -> None:
                 "fold_auc": float(fold_result.auc),
                 "hit": None if hit_rate is None else float(hit_rate),
                 "epochs_ran": int(fold_result.epochs_ran),
-                "train_losses": [
-                    round(float(value), 6) for value in fold_result.train_losses
-                ][-12:],
-                "val_losses": [
-                    round(float(value), 6) for value in fold_result.val_losses
-                ][-12:],
+                "train_losses": [round(float(value), 6) for value in fold_result.train_losses][
+                    -12:
+                ],
+                "val_losses": [round(float(value), 6) for value in fold_result.val_losses][-12:],
                 "best_epoch": fold_result.best_epoch,
                 "fit_sec": fold_result.fit_sec,
                 "fit_peak_allocated_mb": fold_result.fit_peak_allocated_mb,

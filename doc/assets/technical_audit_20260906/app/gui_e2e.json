@@ -1,0 +1,206 @@
+{
+  "schema": "brainsync_gui_e2e/1",
+  "evidence": "declared_mock_software_only",
+  "recordings": [
+    "D:\\BCI\\n2p3-net\\tmp\\brainsync_gui_e2e_20260906\\SIM-CHECK_20260906_175846_01",
+    "D:\\BCI\\n2p3-net\\tmp\\brainsync_gui_e2e_20260906\\SIM-CHECK_20260906_175856_01",
+    "D:\\BCI\\n2p3-net\\tmp\\brainsync_gui_e2e_20260906\\SIM-CHECK_20260906_175921_01"
+  ],
+  "jobs": [
+    "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\models\\runs\\20260906_095907_calibrate_5aef4a5b",
+    "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\models\\runs\\20260906_095916_inspect_1b1391d4",
+    "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\models\\runs\\20260906_095931_infer_8f320254"
+  ],
+  "confirmations": [
+    {
+      "session_id": "SIM-CHECK_20260906_175846_01",
+      "target": 2
+    },
+    {
+      "session_id": "SIM-CHECK_20260906_175856_01",
+      "target": 7
+    },
+    {
+      "session_id": "SIM-CHECK_20260906_175921_01",
+      "target": 5
+    }
+  ],
+  "model_artifact": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\models\\runs\\20260906_095907_calibrate_5aef4a5b\\personal_model.pt",
+  "source_pretraining_used": true,
+  "ocular_correction_applied": true,
+  "reloaded_subject": "SIM-CHECK",
+  "inference": {
+    "schema": "n2p3_brainsync_model_task/1",
+    "task": "infer",
+    "artifact_path": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\models\\runs\\20260906_095907_calibrate_5aef4a5b\\personal_model.pt",
+    "model_artifact": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\models\\runs\\20260906_095907_calibrate_5aef4a5b\\personal_model.pt",
+    "session_id": "SIM-CHECK_20260906_175921_01",
+    "requested_repetitions": 5,
+    "prediction": 2,
+    "status": "predicted",
+    "candidate_scores": {
+      "1": -0.3355881795287132,
+      "2": 0.222846719622612,
+      "3": 0.05192262679338455,
+      "4": -0.06844028830528259,
+      "5": 0.19831897020339967,
+      "6": -0.13079334199428558,
+      "7": -0.0074368719011545185,
+      "8": -0.2911434769630432,
+      "9": 0.16560051441192628
+    },
+    "by_repetition": [
+      {
+        "repetition": 1,
+        "prediction": 9,
+        "status": "predicted",
+        "scores": {
+          "1": -0.3548503518104553,
+          "2": 0.3987056016921997,
+          "3": 0.25351205468177795,
+          "4": -0.1545071005821228,
+          "5": 0.205650195479393,
+          "6": -0.8185076713562012,
+          "7": 0.337667852640152,
+          "8": -0.41482552886009216,
+          "9": 0.5703620910644531
+        },
+        "counts": {
+          "1": 1,
+          "2": 1,
+          "3": 1,
+          "4": 1,
+          "5": 1,
+          "6": 1,
+          "7": 1,
+          "8": 1,
+          "9": 1
+        },
+        "reason": null
+      },
+      {
+        "repetition": 2,
+        "prediction": 9,
+        "status": "predicted",
+        "scores": {
+          "1": -0.1250070072710514,
+          "2": 0.284760944545269,
+          "3": 0.07524321600794792,
+          "4": -0.29764288663864136,
+          "5": 0.256360299885273,
+          "6": -0.5276889652013779,
+          "7": 0.1644345074892044,
+          "8": -0.5770647674798965,
+          "9": 0.451320618391037
+        },
+        "counts": {
+          "1": 2,
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 2,
+          "6": 2,
+          "7": 2,
+          "8": 2,
+          "9": 2
+        },
+        "reason": null
+      },
+      {
+        "repetition": 3,
+        "prediction": 5,
+        "status": "predicted",
+        "scores": {
+          "1": -0.24021905908981958,
+          "2": 0.216668630639712,
+          "3": -0.10475892076889674,
+          "4": -0.13807707031567892,
+          "5": 0.37856543560822803,
+          "6": -0.49295809864997864,
+          "7": 0.14313883831103644,
+          "8": -0.17785057425498962,
+          "9": 0.15661088625590006
+        },
+        "counts": {
+          "1": 3,
+          "2": 3,
+          "3": 3,
+          "4": 3,
+          "5": 3,
+          "6": 3,
+          "7": 3,
+          "8": 3,
+          "9": 3
+        },
+        "reason": null
+      },
+      {
+        "repetition": 4,
+        "prediction": 5,
+        "status": "predicted",
+        "scores": {
+          "1": -0.3857393581420183,
+          "2": 0.2315472848713398,
+          "3": 0.0330598559230566,
+          "4": -0.03975217789411545,
+          "5": 0.2323625311255455,
+          "6": -0.19815603643655777,
+          "7": 0.1054074908606708,
+          "8": -0.1992732286453247,
+          "9": 0.04197998344898224
+        },
+        "counts": {
+          "1": 4,
+          "2": 4,
+          "3": 4,
+          "4": 4,
+          "5": 4,
+          "6": 4,
+          "7": 4,
+          "8": 4,
+          "9": 4
+        },
+        "reason": null
+      },
+      {
+        "repetition": 5,
+        "prediction": 2,
+        "status": "predicted",
+        "scores": {
+          "1": -0.3355881795287132,
+          "2": 0.222846719622612,
+          "3": 0.05192262679338455,
+          "4": -0.06844028830528259,
+          "5": 0.19831897020339967,
+          "6": -0.13079334199428558,
+          "7": -0.0074368719011545185,
+          "8": -0.2911434769630432,
+          "9": 0.16560051441192628
+        },
+        "counts": {
+          "1": 5,
+          "2": 5,
+          "3": 5,
+          "4": 5,
+          "5": 5,
+          "6": 5,
+          "7": 5,
+          "8": 5,
+          "9": 5
+        },
+        "reason": null
+      }
+    ],
+    "reason": null,
+    "evidence_trials": 45,
+    "scheduled_trials": 45,
+    "target_labels_used": false,
+    "score_kind": "mean_binary_evidence_not_probability",
+    "mode": "completed_recording_inference",
+    "model_kind": "source_initialized_n2p3",
+    "participant_key": "n2p3-origin://BrainSync-GTN/participant/SIM-CHECK",
+    "simulation_status": "declared_mock",
+    "artifact_sha256": "71771efc0b5ac61f879201e47f3c773c109c6840062977dc5dc2d20d928be5a6"
+  },
+  "checks": "actual Qt -> recording -> BIDS -> source calibration -> save/load -> pending-target R5 -> feedback"
+}

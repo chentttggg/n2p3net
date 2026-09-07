@@ -1,198 +1,120 @@
 # N2P3-Net
 
-Accuracy-first oddball P300 decoding research framework. The product endpoint
-is adult BrainSync 9-choice subject-macro `hit@R >= 0.90` after a fixed labelled
-calibration budget, on later independent decisions whose target digit was
-unknown during calibration.
+Public ERP pretraining and participant-specific calibration for BrainSync
+nine-choice P300 decoding. The acquisition layout is seven scalp EEG channels
+(`Fz,Cz,P3,Pz,P4,PO8,Oz`) and one independent EOG channel.
 
-## Status
+Read [the active research guide](doc/research_program.zh.md) first, then the
+[verified technical map](doc/technical_structure.zh.md) and
+[document index](doc/README.md). Historical experiment results are development
+evidence. The integrated workstation's block-completion prediction path has
+been tested with declared mock data; real-device decoding accuracy is not validated.
 
-- Compact MS-EEGNet-style trunk; the linear `full_unfold` readout with K35 is
-  the provisional engineering default (`ms_flatten + K65` remains the explicit
-  MS-EEGNet baseline control).
+## Current Chain
 
-- GTN development benchmark (245 subjects, child/3-channel, one selection per
-  subject), two archived cross-subject protocols:
+1. Validate raw source data, participant identity, physical channels and timing.
+2. Build attested causal epoch caches and explicit binary ERP source views.
+3. Train a supervised N2P3Net source model with participant exclusion.
+4. Calibrate on the participant's declared earlier labelled recordings.
+5. Score independent later EEG and aggregate evidence over the declared candidates.
 
-  - Per-subject **LOSO** (245 folds, legacy 128-sample cache, frozen evidence
-    `d1db8e4`): N2P3Net `full_unfold` reaches **71.0% / 64.1%** 9-choice hit
-    across two seeds, versus MS-EEGNet 71.0%/64.1%, EEGNet 69.0%/69.4%,
-    SWLDA 14.7%, and xDAWN-RG 29.4%.
+The default research path uses ordinary supervised source training and retained
+source-head adaptation. EA, AS-MMD, Split-BN, source selection and other existing
+mechanisms remain explicit research controls, with their own fit scopes.
 
-    The historical peak was `full_unfold + K33` at **80.4%** **`hit_all`**
-    (`hit@8` 75.9%) in the 20260828 seed. `hit_all` scores each held-out
-    subject after aggregating all available candidate evidence. This is a
-    single-seed, zero-phase offline development observation, not a causal or
-    online result, and does not supersede the multi-seed aggregate above.
+The requested product budget is 9 calibration targets x 10 blocks x 45 flashes
+= 4,050 flashes, followed by a new 45-flash test decision. Each balanced block
+contains five repetitions of all nine candidates, so the product endpoint is
+`hit@R5`. Trial AUC is a separate diagnostic. See the prospective
+[collection plan](configs/brainsync_collection_plan.json).
 
-  - Target-block-excluded **zero-shot** (leave-one-block-out, 3 seeds,
-    current contract): the all-evidence count-neutral endpoint reaches
-    **71.43%** (trial AUC 0.694).
-    These are cross-subject development results, not deployment claims.
+The integrated BrainSync workstation (a separate acquisition application)
+now provides calibration record selection, internal neural recipe selection,
+frozen EOG correction, personal model save/load and automatic prediction after
+a new 45-flash block. The target is confirmed only after prediction. The backend
+reuses the existing checkpoint, preprocessing, adaptation and candidate modules.
+This is completed-recording inference, not per-SDK-chunk streaming prediction.
 
-- Feature-domain transfer research (2026-09): the active framework wraps the
-  plain N2P3Net with invariant/private feature paths, a target-only low-rank
-  residual adapter, P0 Split-BN, and P1 source residuals. The declared ordered
-  source-domain axis is used only during source training for these explicit
-  mechanisms; unknown targets never route through a source residual, and
-  Split-BN target evaluation requires a declared buffer source. No target
-  hit@R gain is claimed until the cross-decision protocol is run.
-
-- The living evidence ledger, preregistered single-axis arms, and promotion
-  gates are in `doc/research_program.zh.md`. No deployment champion is
-  confirmed yet; read it before running experiments.
+This repository contains the model backend, not the acquisition application or
+its SDK. Local launch paths and operation are described in the
+[workstation guide](doc/workstation.zh.md).
 
 ## Environment
 
-Use the repository-local Python environment. Bootstrap pip first when the
-bundled environment does not include it:
+Python 3.11 or later is required. From the repository root, create the environment
+with [uv](https://docs.astral.sh/uv/). `pyproject.toml` is the dependency authority and
+`uv.lock` records the resolved environment. See the [engineering guide](doc/engineering.zh.md)
+for installation, validation and CPU/CUDA behavior.
 
 ```powershell
-.\.venv\Scripts\python.exe -m ensurepip --upgrade
-.\.venv\Scripts\python.exe -m pip install -e ".[signals,baselines,dev]"
-.\.venv\Scripts\python.exe -m pytest -q
+uv sync --locked --extra signals --extra baselines --extra dev
+.\.venv\Scripts\python.exe -m ruff check src experiments tests
+.\.venv\Scripts\python.exe -m pytest
+git diff --check
 ```
 
-## CUDA Training Defaults
+On Linux, use `.venv/bin/python`. For an unlocked pip installation, create a
+virtual environment with `python -m venv .venv`, then run its Python with
+`-m pip install -r requirements.txt`. Accelerator wheel selection and validated
+hardware are separate from dependency resolution; see the engineering guide.
 
-All supervised models built from `DeepConfig` default to fused Adam and
-`torch.compile(mode="reduce-overhead")` on CUDA. This covers N2P3Net and every
-registered pooling head, EEGNet, EEG-Inception, and EEG Conformer through the
-LOSO, sensitivity, and model-factory entrypoints. CPU and XPU retain the same
-requested config in audit metadata but automatically execute eager, non-fused
-training.
+Tests should exercise the changed interface and counterexamples. A full-suite
+pass does not establish scientific validity or real-device performance.
 
-Use `--no-fused-adam --compile-mode none` for the matched eager ablation. The
-64-subject / 8-fold RTX 5090 check reduced wall time from 72.161 s to 46.875 s;
-full settings, requested/effective record fields, and cold-start boundaries are
-documented in `doc/device-portability.md`.
+## Entrypoints
 
-The LOSO runner requires the signal and baseline extras. Start with the document
-controller at `doc/README.md`; the binding activity guide is
-`doc/research_program.zh.md`, with `doc/input_contract_math.zh.md` as its input
-contract companion. The current framework acceptance record is
-`doc/framework_acceptance_20260903.zh.md`, and the consolidated evidence ledger is
-`doc/research_evidence_ledger_20260903.zh.md`. Frozen ablations and evidence are
-physically isolated in `frozen/research_evidence_through_20260901-d1db8e4.tar.gz`.
-The former agent dispatch, `c7bf860` cloud plan, and pre-integration audit are
-physically isolated in `frozen/document_history_through_ef7a40e_20260903.tar.gz`
-with a manifest; they must not be used as an active plan. The absorbed dated
-reports, detailed audit, and candidate reviews are in
-`frozen/document_reports_through_6c4abe8_20260903.tar.gz` with its manifest.
-The independent full audit has fully attributed the load-sensitive pytest
-failures to the WorkBuddy session shims/guards and a load-sensitive test timing
-window, not to product code. Do not use high-load pytest inside WorkBuddy as an
-acceptance signal; use an idle independent shell/cloud run or the documented
-guard-variable workaround. The protected `%TEMP%\pytest-of-chent` directory is
-an optional manual cleanup item.
+| Task | Script |
+|---|---|
+| Public EEG / candidate cache | `prepare_eeg_dataset.py`, `prepare_bnci2014_008_candidate.py`, `prepare_bi2014a_candidate.py` |
+| Source channel/reference/binary view | `adapt_eeg_domain.py`, `prepare_multidomain_source.py` |
+| Supervised source pretraining | `run_pretrain_supervised.py` |
+| Public binary calibration comparison | `run_binary_subject_transfer.py` |
+| Whole-dataset held-out transfer | `run_cross_dataset_transfer.py` |
+| External Mainsah source admission audit | `audit_mainsah_s2.py` |
+| Completed BrainSync recordings to cache | `prepare_brainsync_cache.py` |
+| Calibration-only EOG regression | `fit_brainsync_eog.py` |
+| Offline BrainSync later-decision evaluation | `run_brainsync_cross_decision.py` |
+| Personal calibration / model inspection / unlabelled prediction | `brainsync_model_task.py` |
+| Candidate experiment orchestration | `run_candidate_promotion_matrix.py`, `run_candidate_result_batch.py` |
+| Generic LOSO / sensitivity | `run_eeg_loso.py`, `run_n2p3_sensitivity.py` |
 
-## Data Contract
-
-Executable profiles are defined in `src/data/contract.py`. The single active
-default is 128 Hz, 0.1-30 Hz and `[-200,1200) ms` (`179` samples). Offline
-analysis uses zero-phase IIR; chronological analysis uses forward IIR with
-`causal_iir_initial_state=steady_state_first_sample`; legacy zero-state forward
-caches are rejected. BrainSync acquisition and raw event indices remain at the
-device-native 250 Hz; only the derived model tensor is resampled. BrainSync,
-BI and GTN chronological builders all derive from this same causal contract.
-Repeated BIDS raw BrainSync sessions are accepted; each active v4 session is one
-decision and `block_id` is scheduling metadata only. Only `completed` sessions
-enter model input. Every block must contain declared complete random-permutation
-cycles over all nine candidates; this acquisition balance does not itself prove
-target-switch calibration. Target-sequence behavior remains an explicit evaluation
-policy. The paper-aligned 0.5 Hz contract is a named anchor, not a fallback default.
-Use the adapter to preserve the frontend's raw recording boundary while applying preprocessing:
+Scripts live under `experiments/`; use their `--help` for actual accepted
+arguments. Source training and evaluation must identify the code snapshot that
+executed each stage. A new evaluation does not rename an old source checkpoint.
 
 ```powershell
 .\.venv\Scripts\python.exe experiments\prepare_brainsync_cache.py `
-  --session-dir "D:\path\to\calibration-session" `
-  --session-dir "D:\path\to\test-session" `
-  --output "D:\path\to\epochs.npz" `
-  --invalid-session error
+  --session-dir "D:\path\to\completed-session" `
+  --output "D:\path\to\epochs.npz" --invalid-session error
 ```
 
-Cross-dataset checkpoints remain fail-closed. The active domain route preserves
-each cache's declared native reference and selects an explicitly declared
-channel subset. CAR is no longer the default; it remains only as an explicit
-legacy/control transform with at least three selected channels:
+The default causal input contract is 128 Hz, volts, continuous 0.1-30 Hz forward
+IIR filtering, `[-200,1200)` ms and mean-only baseline correction. Native raw
+BrainSync acquisition remains 250 Hz. Reference changes, missing channels and
+EOG cleaning are explicit, provenance-bound operations; EOG is never a scalp
+classifier input. See [the input contract](doc/input_contract_math.zh.md).
 
-```powershell
-.\.venv\Scripts\python.exe experiments\adapt_eeg_domain.py `
-  --dataset-cache source.npz --target-channels "Cz,P3,Pz,P4,Oz" `
-  --reference-mode native_preserve --output source_native_selected.npz
-```
+## Data And History
 
-Source and target caches must then share preprocessing, channel order, native
-provenance and a newly trained checkpoint. Existing 128-sample BI/BNCI caches
-cannot be renamed or reused; they must be rebuilt from raw data. Missing channels
-are not padded.
-
-For heterogeneous feature-space experiments, fit GALIA only after each domain
-has supplied an explicit same-dimensional feature matrix. The CLI writes a
-digest-bound alignment state and optionally an aligned matrix:
-
-```powershell
-.\.venv\Scripts\python.exe experiments\fit_galia_alignment.py `
-  --source BI=bi_features.npz --source GTN=gtn_features.npz `
-  --output galia_state.json --aligned-output aligned_features.npz
-```
-
-Raw epoch caches are rejected by this command until their domain-specific
-feature lifts are explicitly constructed and recorded.
-
-The adapter validates the v4 session plus BIDS 1.11 raw dataset, reads stimulus
-and retained-rest rows from `events.tsv`, derives labels only from the confirmed
-post-experiment target digit, and reads channel geometry from `electrodes.tsv`
-plus `coordsystem.json`. Filtering runs on the intact continuous recording.
-Epochs intersecting a half-open rest interval are excluded when the cache is
-generated; event times after rest are never shifted. `--invalid-session skip`
-is available only as an explicit batch policy and records every skipped session
-and error in cache provenance.
-
-Historical v1/v2/v3 BrainSync sessions may remain as acquisition evidence, but they
-are not accepted by the active loader and must not be mixed with v4 BIDS raw.
-The removed v2 source contract is physically isolated in
-`frozen/brainsync_rest_removed_adapter_bb70dfe.source-only.tar.gz`; its adjacent
-manifest records the source commit and archive hash.
-
-All standard ingress paths execute a half-open `[-200,0) ms` per-trial,
-per-channel mean baseline correction and record `baseline_mode=mean_only`.
-Versioned QC caches contain only fold-independent epoch statistics; thresholds
-remain source/calibration-fold parameters. Target-prefix QC is an accuracy
-ablation and is off in zero-shot. Checkpoints bind ordered channels, reference,
-preprocessing, cache identity and training subjects. Legacy zero-state, 2 Hz/800 ms,
-GTN-v4 and BI candidate-v1/v2 caches are rejected by the active contract. Their
-audit snapshot is compressed under `frozen/`. Current BI/BNCI/GTN source caches
-and checkpoints must be rebuilt under `p300_single_subject_causal_v3` before new
-promotion experiments.
-
-Raw, active-derived, legacy-derived, frozen-code, and evidence layers are defined
-in `doc/research_program.zh.md`. Active loaders contain no legacy schema flags,
-checkpoint aliases, or downgrade paths.
-
-The discrete-time equations, physical receptive-field convention, and
-counterexamples are documented in `doc/input_contract_math.zh.md`.
+Raw datasets, cache/run directories and frozen evidence have different roles;
+see [the workspace map](doc/technical_structure.zh.md#目录与数据层级).
+GitHub contains source, tests, guidance and evidence manifests. Historical archive
+payloads remain local; see [archive distribution](frozen/README.md). A clone does
+not include datasets, pretrained checkpoints, run outputs or the BrainSync app.
+Superseded planning documents, examples and the incompatible legacy `patch.sh`
+were physically frozen before removal. Their hashes and original paths are in
+the [audit snapshot](frozen/technical_audit_before_20260906.manifest.json).
+The [technical audit](doc/evidence/technical_audit_20260906.zh.md) records fixes, tests
+and remaining integration work. Existing data and measured scores retain their
+original provenance.
 
 ## Dashboard
-
-The training runner writes the dashboard protocol beside each model under
-`experiments/runs/<run>/<model>/`: flushed `progress.jsonl`, per-fold epoch
-JSONL, and the final `record.json`. Start the local dashboard with:
 
 ```powershell
 .\.venv\Scripts\python.exe experiments\dashboard_server.py `
   --port 8812 --bind 127.0.0.1 --directory experiments
 ```
 
-Open `http://127.0.0.1:8812/dashboard.html`. To start the dashboard together
-with a training command, use the companion runner:
-
-```powershell
-.\.venv\Scripts\python.exe experiments\run_with_dashboard.py -- `
-  .\.venv\Scripts\python.exe experiments\run_eeg_loso.py `
-  --dataset-cache experiments\cache\dataset.npz --run-name smoke --max-folds 2
-```
-
-The previous cloud workflow is also available through `open_dashboard.ps1` or
-`open_dashboard.cmd`; it creates the SSH tunnel and opens the same page without
-affecting the remote training process.
+Open [the local dashboard](http://127.0.0.1:8812/dashboard.html). Only runners emitting the dashboard
+`progress.jsonl`/`record.json` protocol appear there; completed JSON results from
+other entrypoints are not live dashboard telemetry.

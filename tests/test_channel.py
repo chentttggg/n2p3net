@@ -8,6 +8,7 @@ from data.channel import (
     STANDARD_CHANNELS,
     ChannelIdentity,
     build_channel_identity,
+    canonical_channel_name,
     channel_coords,
     fiducial_head_transform,
     register_sensor_positions,
@@ -27,26 +28,26 @@ def _cosine(a: np.ndarray, b: np.ndarray) -> float:
 # --------------------------------------------------------------------------- #
 def test_standard_coords_shape():
     c = standard_coords()
-    assert c.shape == (8, 3)
+    assert c.shape == (len(STANDARD_CHANNELS), 3)
     assert c.dtype == np.float64
 
 
 def test_sinusoidal_embedding_shape_dtype():
     coords = standard_coords()
     e = sinusoidal_embedding(coords)  # 默认 n_freqs=8 → 6*8=48 维
-    assert e.shape == (8, 48)
+    assert e.shape == (len(STANDARD_CHANNELS), 48)
     assert e.dtype == np.float32
 
 
 def test_build_channel_identity_default():
     ident = build_channel_identity()
     assert isinstance(ident, ChannelIdentity)
-    assert ident.n_channels == 8
+    assert ident.n_channels == len(STANDARD_CHANNELS)
     assert ident.dim == 48
-    assert ident.embedding.shape == (8, 48)
+    assert ident.embedding.shape == (len(STANDARD_CHANNELS), 48)
     assert ident.embedding.dtype == np.float32
     assert ident.mask.all()  # 默认全部存在
-    assert ident.coords.shape == (8, 3)
+    assert ident.coords.shape == (len(STANDARD_CHANNELS), 3)
 
 
 # --------------------------------------------------------------------------- #
@@ -145,6 +146,14 @@ def test_unit_sphere_is_only_an_explicit_fallback():
     assert spec.spherical_fallback
 
 
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [("Fz", "FZ"), (" pz ", "PZ"), ("Pz-A2", "PZ"), ("PO7", "PO7"), ("Cz_ref", "CZ")],
+)
+def test_canonical_channel_name(name: str, expected: str) -> None:
+    assert canonical_channel_name(name) == expected
+
+
 def test_channel_coords_canonical():
     """通道名规范化：参考后缀不改变电极的物理位置。"""
     coords, mask = channel_coords(["Pz-A2", "PO7"])
@@ -152,7 +161,7 @@ def test_channel_coords_canonical():
 
     std = standard_coords()
     pz = std[STANDARD_CHANNELS.index("Pz")]
-    po7 = std[STANDARD_CHANNELS.index("PO7")]
+    po7 = resolve_channel_layout(("PO7",)).positions_m[0]
     assert np.allclose(coords[0], pz)
     assert np.allclose(coords[1], po7)
 
@@ -240,13 +249,13 @@ def test_sinusoidal_embedding_invalid_coords():
 
 def test_build_channel_identity_mask():
     """缺失通道：mask 标记 False，嵌入置全 0，存在通道嵌入非 0。"""
-    mask = np.array([True, True, False, True, False, True, False, True])  # 缺 P3/P4/PO8
+    mask = np.array([True, True, False, True, False, True, False])
     ident = build_channel_identity(channel_mask=mask)
 
     assert np.array_equal(ident.mask, mask)
     for idx in (2, 4, 6):  # 缺失
         assert np.all(ident.embedding[idx] == 0)
-    for idx in (0, 1, 3, 5, 7):  # 存在
+    for idx in (0, 1, 3, 5):  # 存在
         assert np.any(ident.embedding[idx] != 0)
 
 

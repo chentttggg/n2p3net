@@ -23,12 +23,29 @@ def test_cpu_runtime_uses_fp32_and_respects_update_batch_cap() -> None:
     model = torch.nn.Linear(8, 2)
 
     assert resolve_precision(torch.device("cpu")).name == "fp32"
-    assert runtime.choose_batch_size(
-        64,
-        (2, 4),
-        model=model,
-        max_update_batch_size=16,
-    ) == 16
+    assert (
+        runtime.choose_batch_size(
+            64,
+            (2, 4),
+            model=model,
+            max_update_batch_size=16,
+        )
+        == 16
+    )
+
+
+def test_stateful_graph_fallback_keeps_requested_policy_and_non_graph_compile() -> None:
+    original = resolve_optimizer_execution(torch.device("cuda"), compile_mode="reduce-overhead")
+    effective = original.without_cuda_graphs(reason="tested_stateful_buffer_failure")
+    assert effective.requested_compile_mode == "reduce-overhead"
+    assert effective.compile_mode == "default"
+    assert effective.fused_adam is True
+    assert effective.fallback_reason == "tested_stateful_buffer_failure"
+    assert original.compile_mode == "reduce-overhead"
+    default = resolve_optimizer_execution(torch.device("cuda"), compile_mode="default")
+    assert default.without_cuda_graphs(reason="not_applicable") is default
+    cpu = resolve_optimizer_execution(torch.device("cpu"))
+    assert cpu.without_cuda_graphs(reason="not_applicable") is cpu
 
 
 def test_optimizer_execution_defaults_to_cuda_and_audits_cpu_fallback() -> None:
@@ -44,14 +61,10 @@ def test_optimizer_execution_defaults_to_cuda_and_audits_cpu_fallback() -> None:
     assert cpu_record["compile_mode"] is None
     assert cpu_record["optimizer_fallback_reason"] == "compile_and_fused_adam_require_cuda"
 
-    compile_only = resolve_optimizer_execution(
-        torch.device("cpu"), fused_adam=False
-    ).record()
+    compile_only = resolve_optimizer_execution(torch.device("cpu"), fused_adam=False).record()
     assert compile_only["optimizer_fallback_reason"] == "compile_requires_cuda"
 
-    fused_only = resolve_optimizer_execution(
-        torch.device("cpu"), compile_mode=None
-    ).record()
+    fused_only = resolve_optimizer_execution(torch.device("cpu"), compile_mode=None).record()
     assert fused_only["optimizer_fallback_reason"] == "fused_adam_requires_cuda"
 
 
@@ -179,6 +192,7 @@ def test_available_cpu_threads_respects_cgroup_quota(monkeypatch) -> None:
 
     assert runtime_module.available_cpu_threads() == 16
 
+
 def test_matrix_batch_source_one_shot_shuffle_preserves_permutation() -> None:
     runtime = GpuPerformanceScheduler(torch.device("cpu"))
     X = torch.arange(30, dtype=torch.float32).reshape(5, 2, 3)
@@ -189,7 +203,7 @@ def test_matrix_batch_source_one_shot_shuffle_preserves_permutation() -> None:
     source.preloaded = True
     source.device_X = X
     source.device_y = y
-    source.shuffle_each_epoch = True
+    source.materialize_shuffled_epoch = True
     generator = torch.Generator().manual_seed(7)
     rows = list(source.shuffled_batches(2, generator))
     observed_X = torch.cat([xb for xb, _ in rows])

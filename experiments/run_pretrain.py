@@ -3,7 +3,7 @@
 The decoder is discardable and is never saved in the deployed checkpoint.
 Source data may use either the offline zero-phase contract (cross-subject
 sources) or the causal contract; target fine-tuning still requires a causal
-cache produced by ``run_within_subject_transfer.py``.
+cache prepared by the matching dataset preparation entrypoint.
 """
 
 from __future__ import annotations

@@ -90,12 +90,6 @@ class PreprocessResult:
         return int(self.channel_mask.sum())
 
 
-def _canonical(name: str) -> str:
-    """Backward name for tests and small utilities; use canonical_channel_name in new code."""
-
-    return canonical_channel_name(name)
-
-
 def _eeg_channel_names(raw: mne.io.BaseRaw) -> list[str]:
     picks = mne.pick_types(raw.info, eeg=True, meg=False, eog=False, ecg=False, exclude=[])
     if len(picks) == 0:
@@ -224,10 +218,18 @@ def filter_continuous(
         )
         sos = np.asarray(designed["sos"], dtype=np.float64)
         steady_state = sosfilt_zi(sos)
+        boundaries = sorted({
+            int(round((float(onset) - raw.first_time) * float(raw.info["sfreq"])))
+            for onset, description in zip(raw.annotations.onset, raw.annotations.description, strict=True)
+            if str(description).lower().startswith("edge")
+        })
+        cuts = [0, *[index for index in boundaries if 0 < index < raw.n_times], raw.n_times]
 
         def causal_filter(channel: np.ndarray) -> np.ndarray:
-            initial_state = steady_state * float(channel[0])
-            filtered, _ = sosfilt(sos, channel, zi=initial_state)
+            filtered = np.empty_like(channel)
+            for start, stop in zip(cuts, cuts[1:], strict=False):
+                initial_state = steady_state * float(channel[start])
+                filtered[start:stop], _ = sosfilt(sos, channel[start:stop], zi=initial_state)
             return filtered
 
         raw.apply_function(
@@ -246,46 +248,6 @@ def filter_continuous(
             verbose=verbose,
         )
     return raw
-
-
-def highpass(
-    raw: mne.io.BaseRaw,
-    l_freq: float = 0.1,
-    *,
-    method: str = "iir",
-    phase: str = "zero",
-    causal_iir_initial_state: str = "not_applicable",
-    copy: bool = False,
-    verbose: bool = False,
-) -> mne.io.BaseRaw:
-    """Backward-compatible high-pass wrapper around :func:`filter_continuous`."""
-
-    if l_freq <= 0:
-        raise ValueError("l_freq must be positive.")
-    return filter_continuous(
-        raw,
-        l_freq=l_freq,
-        h_freq=None,
-        method=method,
-        phase=phase,
-        causal_iir_initial_state=causal_iir_initial_state,
-        copy=copy,
-        verbose=verbose,
-    )
-
-
-def reject_epochs(
-    data: np.ndarray,
-    threshold: float | None = DEFAULT_REJECT_THRESHOLD,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Reject the retired fixed-threshold artifact path explicitly."""
-
-    del data
-    if threshold is not None:
-        raise ValueError(
-            "Fixed absolute-voltage epoch rejection is retired; use fold-local artifact QC."
-        )
-    raise ValueError("reject_epochs is retired; cache all finite epochs for fold-local QC.")
 
 
 def apply_trial_baseline(

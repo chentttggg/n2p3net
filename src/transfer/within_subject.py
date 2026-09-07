@@ -34,13 +34,13 @@ class PrefixSuffixSplit:
     usable_groups: tuple[str, ...]
     candidate_vocab: tuple[int, ...]
     excluded_groups: dict[str, str]
-    selected_scheduled_repetitions: dict[
-        str, dict[str, dict[str, tuple[int, ...]]]
-    ] = field(default_factory=dict)
+    selected_scheduled_repetitions: dict[str, dict[str, dict[str, tuple[int, ...]]]] = field(
+        default_factory=dict
+    )
     evidence_cost_by_group: dict[str, dict[str, object]] = field(default_factory=dict)
-    evidence_cost_by_repetition: dict[
-        str, dict[str, dict[str, float | int]]
-    ] = field(default_factory=dict)
+    evidence_cost_by_repetition: dict[str, dict[str, dict[str, float | int]]] = field(
+        default_factory=dict
+    )
 
 
 @dataclass(frozen=True)
@@ -95,9 +95,7 @@ def calibration_decision_split(
     """Split early decisions from a frozen later set under an explicit target policy."""
 
     dataset.validate(require_labels=True)
-    assert_p300_input_contract(
-        dataset.preprocessing, SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
-    )
+    assert_p300_input_contract(dataset.preprocessing, SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT)
     if calibration_selections < 1 or test_repetitions < 1:
         raise ValueError("calibration_selections and test_repetitions must be positive.")
     if max_test_selections is not None and max_test_selections < 1:
@@ -131,10 +129,10 @@ def calibration_decision_split(
             raise ValueError("one BrainSync session cannot belong to multiple subjects.")
         if len(np.unique(scheduled_groups[session_rows])) != 1:
             raise ValueError(
-                "BrainSync v2 defines one decision per session; blocks cannot form decisions."
+                "BrainSync v4 defines one decision per session; blocks cannot form decisions."
             )
         if len(np.unique(scheduled_targets[session_rows])) != 1:
-            raise ValueError("one BrainSync v2 session cannot contain multiple targets.")
+            raise ValueError("one BrainSync v4 session cannot contain multiple targets.")
     vocabulary = (
         tuple(sorted(np.unique(candidate_values).tolist()))
         if candidate_vocabulary is None
@@ -161,18 +159,50 @@ def calibration_decision_split(
         available_by_epoch[epoch] = float(scheduled_available[event])
         session_by_epoch[epoch] = scheduled_sessions[event]
 
-    session_start = np.zeros(n_epochs, dtype=float)
-    if "session_start_timestamp_s" in dataset.metadata:
-        raw_starts = dataset.metadata["session_start_timestamp_s"].to_numpy()
-        session_start = np.asarray(
-            [np.nan if value is None else float(value) for value in raw_starts], dtype=float
-        )
-    unique_sessions = np.unique(session_by_epoch.astype(str))
-    if len(unique_sessions) > 1 and not np.isfinite(session_start).all():
+    timing_fields = (
+        "session_start_timestamp_s",
+        "session_end_timestamp_s",
+        "target_confirmed_timestamp_s",
+        "calibration_available_timestamp_s",
+    )
+    if dataset.metadata is None or any(
+        field_name not in dataset.metadata for field_name in timing_fields
+    ):
         raise ValueError(
-            "multi-session decision splitting requires session_start_timestamp_s metadata."
+            "BrainSync calibration availability requires explicit session start/end, "
+            "target confirmation and calibration_available_timestamp_s metadata; rebuild the cache."
         )
-    session_start = np.where(np.isfinite(session_start), session_start, 0.0)
+    session_timing = {}
+    for field_name in timing_fields:
+        raw_values = dataset.metadata[field_name].to_numpy()
+        if any(isinstance(value, (bool, np.bool_)) for value in raw_values):
+            raise ValueError("BrainSync calibration availability timestamps must be numeric.")
+        try:
+            values = np.asarray(raw_values, dtype=float)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "BrainSync calibration availability timestamps must be numeric."
+            ) from exc
+        if values.shape != (n_epochs,) or not np.isfinite(values).all():
+            raise ValueError("BrainSync calibration availability timestamps must be finite.")
+        session_timing[field_name] = values
+    session_start, session_end, label_confirmed, calibration_available = (
+        session_timing[field_name] for field_name in timing_fields
+    )
+    unique_sessions = np.unique(session_by_epoch.astype(str))
+    for session in unique_sessions:
+        rows = session_by_epoch == session
+        if any(len(np.unique(values[rows])) != 1 for values in session_timing.values()):
+            raise ValueError(
+                "BrainSync calibration availability must be constant within a session."
+            )
+    if np.any(session_start > np.minimum(session_end, label_confirmed)) or not np.array_equal(
+        calibration_available, np.maximum(session_end, label_confirmed)
+    ):
+        raise ValueError(
+            "BrainSync calibration availability must equal max(session end, target confirmation) "
+            "with both timestamps at or after session start."
+        )
     absolute_onset = session_start + onset_by_epoch
     absolute_available = session_start + available_by_epoch
 
@@ -226,13 +256,12 @@ def calibration_decision_split(
             continue
         calibration = ordered[:calibration_selections]
         later = ordered[calibration_selections:]
-        requested = tuple(
-            later if max_test_selections is None else later[:max_test_selections]
-        )
+        requested = tuple(later if max_test_selections is None else later[:max_test_selections])
         requested_by_subject[subject] = requested
         calibration_rows = [group_rows(group) for group in calibration]
         invalid_calibration = [
-            group for group, rows in zip(calibration, calibration_rows, strict=True)
+            group
+            for group, rows in zip(calibration, calibration_rows, strict=True)
             if not complete(rows, None)
         ]
         if invalid_calibration:
@@ -244,7 +273,12 @@ def calibration_decision_split(
             excluded_groups.update(failed)
             continue
         calibration_rows_array = np.concatenate(calibration_rows)
+        calibration_mask[calibration_rows_array] = True
+        calibration_by_subject[subject] = calibration
         boundary = float(np.max(absolute_available[calibration_rows_array]))
+        calibration_boundary = max(
+            boundary, float(np.max(calibration_available[calibration_rows_array]))
+        )
         calibration_targets = {
             int(np.unique(target_by_epoch[rows])[0]) for rows in calibration_rows
         }
@@ -256,6 +290,8 @@ def calibration_decision_split(
             group_targets = np.unique(target_by_epoch[rows])
             if float(np.min(absolute_onset[rows] + epoch_start_offset_s)) <= boundary:
                 reason = "selection_overlaps_calibration_evidence"
+            elif float(np.min(absolute_onset[rows] + epoch_start_offset_s)) <= calibration_boundary:
+                reason = "selection_precedes_calibration_availability"
             elif not complete(rows, test_repetitions):
                 reason = "insufficient_complete_test_repetitions"
             elif (
@@ -264,8 +300,7 @@ def calibration_decision_split(
             ):
                 reason = "target_policy_same_as_previous_decision"
             elif (
-                resolved_target_policy
-                is DecisionTargetPolicy.UNSEEN_CALIBRATION_CODES
+                resolved_target_policy is DecisionTargetPolicy.UNSEEN_CALIBRATION_CODES
                 and int(group_targets[0]) in calibration_targets
             ):
                 reason = "target_policy_seen_in_calibration"
@@ -289,9 +324,7 @@ def calibration_decision_split(
         if not eligible:
             excluded_subjects[subject] = "no_eligible_unknown_test_decision"
             continue
-        calibration_mask[calibration_rows_array] = True
         usable_subjects.append(subject)
-        calibration_by_subject[subject] = calibration
         test_by_subject[subject] = tuple(eligible)
 
     return CalibrationDecisionSplit(
@@ -434,9 +467,10 @@ def chronological_validation_split(
             train_repetitions=tuple(int(value) for value in unique_repetitions),
             validation_repetitions=(),
         )
-    if not isinstance(fraction, (int, float, np.integer, np.floating)) or not 0.0 < float(
-        fraction
-    ) < 1.0:
+    if (
+        not isinstance(fraction, (int, float, np.integer, np.floating))
+        or not 0.0 < float(fraction) < 1.0
+    ):
         raise ValueError("fraction must be in (0,1) or None.")
     if (
         isinstance(min_repetitions, bool)
@@ -497,9 +531,7 @@ def causal_prefix_suffix_split(
     assert_p300_input_contract(
         dataset.preprocessing, contract or SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
     )
-    if prefix_repetitions < 0 or (
-        test_repetitions is not None and test_repetitions < 1
-    ):
+    if prefix_repetitions < 0 or (test_repetitions is not None and test_repetitions < 1):
         raise ValueError(
             "prefix repetitions must be non-negative and test repetitions positive or None."
         )
@@ -513,9 +545,7 @@ def causal_prefix_suffix_split(
     scheduled_targets = np.asarray(timeline.target_candidate_ids).astype(str)
     scheduled_repetitions = np.asarray(timeline.repetition_indices, dtype=np.int64)
     scheduled_onsets = np.asarray(timeline.onset_times_s, dtype=np.float64)
-    scheduled_available_at = np.asarray(
-        timeline.evidence_available_times_s, dtype=np.float64
-    )
+    scheduled_available_at = np.asarray(timeline.evidence_available_times_s, dtype=np.float64)
     evidence_indices = np.asarray(timeline.evidence_indices, dtype=np.int64)
     if len(scheduled_groups) != timeline.n_events:
         raise ValueError("scheduled event fields are not aligned.")
@@ -555,9 +585,7 @@ def causal_prefix_suffix_split(
     excluded: dict[str, str] = {}
     selected_schedule: dict[str, dict[str, dict[str, tuple[int, ...]]]] = {}
     evidence_cost: dict[str, dict[str, object]] = {}
-    evidence_cost_by_repetition: dict[
-        str, dict[str, dict[str, float | int]]
-    ] = {}
+    evidence_cost_by_repetition: dict[str, dict[str, dict[str, float | int]]] = {}
     for group in np.unique(scheduled_groups):
         group = str(group)
         scheduled_rows = np.flatnonzero(scheduled_groups == group)
@@ -577,7 +605,9 @@ def causal_prefix_suffix_split(
         for code in candidate_vocab:
             code_rows = epoch_rows[candidates[epoch_rows] == code]
             code_rows = code_rows[np.argsort(onset_times_s[code_rows], kind="stable")]
-            minimum = max(prefix_repetitions, min_candidate_repetitions if prefix_repetitions else 0)
+            minimum = max(
+                prefix_repetitions, min_candidate_repetitions if prefix_repetitions else 0
+            )
             if len(code_rows) < minimum:
                 insufficient = True
                 break
@@ -633,9 +663,7 @@ def causal_prefix_suffix_split(
         first_onset = float(np.min(group_scheduled_onsets))
         prefix_end = boundary_s if prefix_repetitions else first_onset
         suffix_end = float(np.max(evidence_available_times_s[post_epoch]))
-        candidate_counts = {
-            str(code): int(len(rows)) for code, rows in suffix_by_code.items()
-        }
+        candidate_counts = {str(code): int(len(rows)) for code, rows in suffix_by_code.items()}
         balanced_repetitions = min(candidate_counts.values())
         evidence_cost[group] = {
             "prefix_available_trials": int(len(pre_epoch)),
@@ -653,20 +681,13 @@ def causal_prefix_suffix_split(
             balanced_rows = np.concatenate(
                 [rows[:repetition_count] for rows in suffix_by_code.values()]
             )
-            balanced_end = float(
-                np.max(evidence_available_times_s[balanced_rows])
-            )
+            balanced_end = float(np.max(evidence_available_times_s[balanced_rows]))
             evidence_cost_by_repetition[group][str(repetition_count)] = {
                 "available_trials": int(len(balanced_rows)),
                 "scheduled_events_through_evidence": int(
-                    np.count_nonzero(
-                        group_scheduled_onsets
-                        <= np.max(onset_times_s[balanced_rows])
-                    )
+                    np.count_nonzero(group_scheduled_onsets <= np.max(onset_times_s[balanced_rows]))
                 ),
-                "elapsed_seconds_after_prefix": float(
-                    max(0.0, balanced_end - prefix_end)
-                ),
+                "elapsed_seconds_after_prefix": float(max(0.0, balanced_end - prefix_end)),
             }
         usable.append(group)
 
@@ -677,7 +698,11 @@ def causal_prefix_suffix_split(
             "within-subject folds."
         )
     truth_by_group = {
-        group: int(code_by_candidate[np.unique(scheduled_targets[np.asarray(scheduled_groups) == group])[0]])
+        group: int(
+            code_by_candidate[
+                np.unique(scheduled_targets[np.asarray(scheduled_groups) == group])[0]
+            ]
+        )
         for group in np.unique(scheduled_groups).astype(str)
     }
     return PrefixSuffixSplit(

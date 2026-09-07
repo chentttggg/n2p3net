@@ -100,6 +100,7 @@ class RunSpec:
 class ManifestSpec:
     path: Path
     source_snapshot: Artifact
+    evaluation_snapshot: Artifact
     target_cache_sha256: str
     target_identity_digest: str
     candidate_task: CandidateTaskContract
@@ -364,8 +365,6 @@ def _validate_origin(
     }
     if dict(origin) != expected:
         raise ValueError(f"run {run_id!r} model origin disagrees with checkpoint registry.")
-    if evaluation.source_snapshot_sha256 != checkpoint.training.source_snapshot_sha256:
-        raise ValueError(f"run {run_id!r} source snapshot disagrees with training contract.")
     if set(evaluation.requested_participant_keys) != set(
         checkpoint.training.holdout_participant_keys
     ):
@@ -382,7 +381,7 @@ def _parse_run(
     arm_contracts: Mapping[str, ArmContract],
     target_cache_sha256: str,
     target_identity_digest: str,
-    source_snapshot_sha256: str,
+    evaluation_snapshot_sha256: str,
     evidence_level: int,
     candidate_task: CandidateTaskContract,
 ) -> RunSpec:
@@ -402,7 +401,7 @@ def _parse_run(
     if (
         evaluation.target_cache_sha256 != target_cache_sha256
         or evaluation.target_identity_digest != target_identity_digest
-        or evaluation.source_snapshot_sha256 != source_snapshot_sha256
+        or evaluation.source_snapshot_sha256 != evaluation_snapshot_sha256
     ):
         raise ValueError(f"run {run_id!r} dataset/source identity disagrees with manifest.")
     repetitions = _validate_protocol(evaluation, candidate_task)
@@ -652,6 +651,19 @@ def _parse_manifest(path: str | Path) -> ManifestSpec:
     source_payload = _read_json(source_manifest.path, "source snapshot manifest")
     source_archive = (source_manifest.path.parent / str(source_payload["archive"])).resolve()
     source = Artifact(source_archive, source_sha256)
+    evaluation_manifest = _artifact(
+        _mapping(raw.get("evaluation_snapshot", raw.get("source_snapshot")), "evaluation_snapshot"),
+        base=base,
+        path_field="manifest_path",
+        sha_field="manifest_sha256",
+        name="evaluation snapshot manifest",
+    )
+    evaluation_sha256 = source_snapshot_sha256_from_archive_manifest(evaluation_manifest.path)
+    evaluation_payload = _read_json(evaluation_manifest.path, "evaluation snapshot manifest")
+    evaluation_archive = (
+        evaluation_manifest.path.parent / str(evaluation_payload["archive"])
+    ).resolve()
+    evaluation_source = Artifact(evaluation_archive, evaluation_sha256)
     target = _mapping(raw.get("target_dataset"), "target_dataset")
     candidate_task = _candidate_task(
         target.get("candidate_task_contract"),
@@ -708,7 +720,7 @@ def _parse_manifest(path: str | Path) -> ManifestSpec:
             arm_contracts=arm_contracts,
             target_cache_sha256=target_cache,
             target_identity_digest=target_identity,
-            source_snapshot_sha256=source.sha256,
+            evaluation_snapshot_sha256=evaluation_source.sha256,
             evidence_level=evidence_level,
             candidate_task=candidate_task,
         )
@@ -721,6 +733,7 @@ def _parse_manifest(path: str | Path) -> ManifestSpec:
     return ManifestSpec(
         manifest_path,
         source,
+        evaluation_source,
         target_cache,
         target_identity,
         candidate_task,
@@ -1308,6 +1321,11 @@ def analyze_manifest(path: str | Path) -> dict[str, Any]:
         "source_snapshot": {
             "archive_path": str(manifest.source_snapshot.path),
             "archive_sha256": manifest.source_snapshot.sha256,
+            "verified": True,
+        },
+        "evaluation_snapshot": {
+            "archive_path": str(manifest.evaluation_snapshot.path),
+            "archive_sha256": manifest.evaluation_snapshot.sha256,
             "verified": True,
         },
         "target_dataset": {

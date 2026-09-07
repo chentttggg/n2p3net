@@ -23,6 +23,9 @@ class BidsEEGInputContract:
     candidate_vocabulary: tuple[str, ...]
     coordinate_units: str = "m"
     raw_extensions: tuple[str, ...] = (".edf", ".bdf", ".vhdr", ".set")
+    allowed_channel_types: tuple[str, ...] = ("EEG",)
+    boundary_trial_type: str | None = None
+    excluded_trial_types: tuple[str, ...] = ()
 
     @property
     def required_event_columns(self) -> tuple[str, ...]:
@@ -77,11 +80,14 @@ class ValidatedBidsEEGRecording:
     sample_rate_hz: float
     duration_seconds: float
     channel_names: tuple[str, ...]
+    channel_types: tuple[str, ...]
     channel_statuses: tuple[str, ...]
-    channel_positions_m: tuple[tuple[float, float, float], ...]
+    channel_positions_m: tuple[tuple[float, float, float] | None, ...]
     source_reference: str
     stimuli: tuple[BidsStimulusEvent, ...]
     rest_intervals: tuple[BidsRestInterval, ...]
+    acquisition_boundaries: tuple[float, ...] = ()
+    excluded_intervals: tuple[BidsRestInterval, ...] = ()
 
 
 _REQUIRED_PATH_FIELDS = (
@@ -119,7 +125,14 @@ def _read_tsv(path: Path, label: str) -> tuple[tuple[str, ...], list[dict[str, s
             raise ValueError(f"BIDS {label} has no valid header.")
         if len(set(fields)) != len(fields):
             raise ValueError(f"BIDS {label} has duplicate columns.")
-        rows = list(reader)
+        rows: list[dict[str, str]] = []
+        for row in reader:
+            if None in row or any(value is None for value in row.values()):
+                raise ValueError(
+                    f"BIDS {label} row {reader.line_num} has a field count "
+                    "that differs from its header."
+                )
+            rows.append(row)
     if not rows:
         raise ValueError(f"BIDS {label} contains no data rows.")
     return fields, rows
@@ -189,7 +202,11 @@ def epoch_rest_overlap_mask(
 ) -> tuple[bool, ...]:
     """Return half-open interval intersections between epochs and retained rests."""
 
-    if not math.isfinite(tmin_seconds) or not math.isfinite(tmax_seconds) or tmin_seconds >= tmax_seconds:
+    if (
+        not math.isfinite(tmin_seconds)
+        or not math.isfinite(tmax_seconds)
+        or tmin_seconds >= tmax_seconds
+    ):
         raise ValueError("Epoch bounds must be finite and strictly increasing.")
     output: list[bool] = []
     for onset in onset_seconds:
@@ -197,7 +214,10 @@ def epoch_rest_overlap_mask(
         epoch_start = value + tmin_seconds
         epoch_end = value + tmax_seconds
         output.append(
-            any(epoch_start < rest.end_seconds and epoch_end > rest.onset_seconds for rest in rest_intervals)
+            any(
+                epoch_start < rest.end_seconds and epoch_end > rest.onset_seconds
+                for rest in rest_intervals
+            )
         )
     return tuple(output)
 
@@ -213,7 +233,9 @@ def validate_bids_eeg_recording(
     root = Path(dataset_root).expanduser().resolve()
     paths = _contained_files(root, files)
     if paths["recording"].suffix.casefold() not in contract.raw_extensions:
-        raise ValueError(f"Unsupported BIDS EEG recording extension: {paths['recording'].suffix!r}.")
+        raise ValueError(
+            f"Unsupported BIDS EEG recording extension: {paths['recording'].suffix!r}."
+        )
 
     dataset_description = _read_json_object(paths["dataset_description"], "dataset_description")
     version = _version_tuple(dataset_description.get("BIDSVersion"))
@@ -227,7 +249,9 @@ def validate_bids_eeg_recording(
     eeg_json = _read_json_object(paths["eeg_json"], "EEG sidecar")
     if eeg_json.get("TaskName") != contract.task_name:
         raise ValueError(f"BIDS TaskName must be {contract.task_name!r}.")
-    sample_rate = _finite_number(eeg_json.get("SamplingFrequency"), "SamplingFrequency", minimum=1e-12)
+    sample_rate = _finite_number(
+        eeg_json.get("SamplingFrequency"), "SamplingFrequency", minimum=1e-12
+    )
     duration = _finite_number(eeg_json.get("RecordingDuration"), "RecordingDuration", minimum=1e-12)
     reference = eeg_json.get("EEGReference")
     if not isinstance(reference, str) or not reference.strip():
@@ -236,14 +260,23 @@ def validate_bids_eeg_recording(
     channel_fields, channel_rows = _read_tsv(paths["channels_tsv"], "channels.tsv")
     required_channel_fields = {"name", "type", "units", "sampling_frequency", "status"}
     if not required_channel_fields.issubset(channel_fields):
-        raise ValueError(f"BIDS channels.tsv lacks columns {sorted(required_channel_fields - set(channel_fields))}.")
+        raise ValueError(
+            f"BIDS channels.tsv lacks columns {sorted(required_channel_fields - set(channel_fields))}."
+        )
     channel_names = tuple(row["name"].strip() for row in channel_rows)
-    if any(not value for value in channel_names) or len(set(value.casefold() for value in channel_names)) != len(channel_names):
+    if any(not value for value in channel_names) or len(
+        set(value.casefold() for value in channel_names)
+    ) != len(channel_names):
         raise ValueError("BIDS channels.tsv names must be unique and non-empty.")
-    if any(row["type"].strip().upper() != "EEG" for row in channel_rows):
-        raise ValueError("BrainSync BIDS input can contain EEG channels only.")
+    channel_types = tuple(row["type"].strip().upper() for row in channel_rows)
+    if any(kind not in contract.allowed_channel_types for kind in channel_types):
+        raise ValueError(f"BIDS channel types must belong to {contract.allowed_channel_types}.")
+    if "EEG" not in channel_types:
+        raise ValueError("BIDS input must include at least one EEG channel.")
     for row in channel_rows:
-        row_rate = _finite_number(row["sampling_frequency"], "channels.sampling_frequency", minimum=1e-12)
+        row_rate = _finite_number(
+            row["sampling_frequency"], "channels.sampling_frequency", minimum=1e-12
+        )
         if not math.isclose(row_rate, sample_rate, rel_tol=0.0, abs_tol=1e-6):
             raise ValueError("BIDS channel and EEG sidecar sampling frequencies conflict.")
     channel_statuses = tuple(row["status"].strip().casefold() for row in channel_rows)
@@ -256,22 +289,43 @@ def validate_bids_eeg_recording(
     coordinate_system = coordinate_json.get("EEGCoordinateSystem")
     if not isinstance(coordinate_system, str) or not coordinate_system.strip():
         raise ValueError("BIDS EEGCoordinateSystem must be declared.")
-    if coordinate_system == "Other" and not str(
-        coordinate_json.get("EEGCoordinateSystemDescription", "")
-    ).strip():
+    if (
+        coordinate_system == "Other"
+        and not str(coordinate_json.get("EEGCoordinateSystemDescription", "")).strip()
+    ):
         raise ValueError("BIDS EEGCoordinateSystem=Other requires a description.")
 
     electrode_fields, electrode_rows = _read_tsv(paths["electrodes_tsv"], "electrodes.tsv")
     required_electrode_fields = {"name", "x", "y", "z"}
     if not required_electrode_fields.issubset(electrode_fields):
-        raise ValueError(f"BIDS electrodes.tsv lacks columns {sorted(required_electrode_fields - set(electrode_fields))}.")
-    if tuple(row["name"].strip() for row in electrode_rows) != channel_names:
-        raise ValueError("BIDS electrodes.tsv must align exactly with channels.tsv names.")
-    positions: list[tuple[float, float, float]] = []
-    for row in electrode_rows:
-        position = tuple(_finite_number(row[axis], f"electrodes.{axis}") for axis in ("x", "y", "z"))
-        if math.sqrt(sum(value * value for value in position)) <= 0.0 or max(abs(value) for value in position) > 0.5:
-            raise ValueError("BIDS electrode positions must be non-zero head coordinates in metres.")
+        raise ValueError(
+            f"BIDS electrodes.tsv lacks columns {sorted(required_electrode_fields - set(electrode_fields))}."
+        )
+    electrode_by_name = {row["name"].strip(): row for row in electrode_rows}
+    if len(electrode_by_name) != len(electrode_rows) or not set(electrode_by_name) <= set(
+        channel_names
+    ):
+        raise ValueError("BIDS electrodes.tsv names must be unique and match recorded channels.")
+    positions: list[tuple[float, float, float] | None] = []
+    for channel, kind in zip(channel_names, channel_types, strict=True):
+        row = electrode_by_name.get(channel)
+        if kind != "EEG" and (
+            row is None or all(row[axis].strip() == "n/a" for axis in ("x", "y", "z"))
+        ):
+            positions.append(None)
+            continue
+        if row is None:
+            raise ValueError(f"BIDS EEG channel {channel!r} lacks electrode coordinates.")
+        position = tuple(
+            _finite_number(row[axis], f"electrodes.{axis}") for axis in ("x", "y", "z")
+        )
+        if (
+            math.sqrt(sum(value * value for value in position)) <= 0.0
+            or max(abs(value) for value in position) > 0.5
+        ):
+            raise ValueError(
+                "BIDS electrode positions must be non-zero head coordinates in metres."
+            )
         positions.append(position)
 
     event_fields, event_rows = _read_tsv(paths["events_tsv"], "events.tsv")
@@ -280,6 +334,8 @@ def validate_bids_eeg_recording(
         raise ValueError(f"BIDS events.tsv lacks columns {sorted(missing_event_fields)}.")
     stimuli: list[BidsStimulusEvent] = []
     rests: list[BidsRestInterval] = []
+    boundaries: list[float] = []
+    excluded: list[BidsRestInterval] = []
     previous_onset = -math.inf
     trial_ids: set[str] = set()
     schedule_ids: set[tuple[int, int]] = set()
@@ -287,7 +343,9 @@ def validate_bids_eeg_recording(
     rest_ids: set[str] = set()
     for row_number, row in enumerate(event_rows, start=2):
         onset = _finite_number(row["onset"], f"events.tsv row {row_number} onset", minimum=0.0)
-        duration_value = _finite_number(row["duration"], f"events.tsv row {row_number} duration", minimum=0.0)
+        duration_value = _finite_number(
+            row["duration"], f"events.tsv row {row_number} duration", minimum=0.0
+        )
         sample = _integer_text(row["sample"], f"events.tsv row {row_number} sample")
         if onset < previous_onset:
             raise ValueError("BIDS events.tsv rows must be chronological.")
@@ -297,12 +355,18 @@ def validate_bids_eeg_recording(
         if onset + duration_value > duration + 1e-9:
             raise ValueError("BIDS event interval extends beyond RecordingDuration.")
         if abs(sample / sample_rate - onset) > (0.5 / sample_rate + 1e-9):
-            raise ValueError("BIDS event sample and onset columns disagree by more than half a sample.")
+            raise ValueError(
+                "BIDS event sample and onset columns disagree by more than half a sample."
+            )
         trial_type = row["trial_type"].strip()
-        block_id = _integer_text(row["block_id"], f"events.tsv row {row_number} block_id", minimum=1)
+        block_id = _integer_text(
+            row["block_id"], f"events.tsv row {row_number} block_id", minimum=1
+        )
         if trial_type == contract.stimulus_trial_type:
             trial_id = row["trial_id"].strip()
-            trial_index = _integer_text(row["trial_index"], f"events.tsv row {row_number} trial_index", minimum=1)
+            trial_index = _integer_text(
+                row["trial_index"], f"events.tsv row {row_number} trial_index", minimum=1
+            )
             candidate = row[contract.candidate_column].strip()
             if not trial_id or trial_id == "n/a" or candidate not in contract.candidate_vocabulary:
                 raise ValueError("BIDS stimulus row has an invalid trial or candidate identity.")
@@ -314,13 +378,36 @@ def validate_bids_eeg_recording(
             trial_ids.add(trial_id)
             schedule_ids.add(schedule)
             previous_schedule = schedule
-            stimuli.append(BidsStimulusEvent(onset, duration_value, sample, candidate, trial_id, block_id, trial_index, row_number))
+            stimuli.append(
+                BidsStimulusEvent(
+                    onset,
+                    duration_value,
+                    sample,
+                    candidate,
+                    trial_id,
+                    block_id,
+                    trial_index,
+                    row_number,
+                )
+            )
+        elif trial_type == contract.boundary_trial_type:
+            if duration_value != 0.0 or onset in boundaries:
+                raise ValueError("Acquisition boundaries must be unique zero-duration events.")
+            boundaries.append(onset)
+        elif trial_type in contract.excluded_trial_types:
+            if duration_value <= 0.0:
+                raise ValueError("Excluded intervals must have positive duration.")
+            excluded.append(BidsRestInterval(
+                onset, duration_value, sample, row["trial_id"], block_id, row_number,
+            ))
         elif trial_type == contract.rest_trial_type:
             rest_id = row["rest_segment_id"].strip()
             if not rest_id or rest_id == "n/a" or rest_id in rest_ids or duration_value <= 0.0:
                 raise ValueError("BIDS rest rows require unique IDs and positive durations.")
             rest_ids.add(rest_id)
-            rests.append(BidsRestInterval(onset, duration_value, sample, rest_id, block_id, row_number))
+            rests.append(
+                BidsRestInterval(onset, duration_value, sample, rest_id, block_id, row_number)
+            )
         else:
             raise ValueError(f"Unsupported BIDS trial_type {trial_type!r} at row {row_number}.")
     if not stimuli:
@@ -330,7 +417,10 @@ def validate_bids_eeg_recording(
         if left.end_seconds > right.onset_seconds:
             raise ValueError("BIDS rest intervals must not overlap.")
     for stimulus in stimuli:
-        if any(rest.onset_seconds <= stimulus.onset_seconds < rest.end_seconds for rest in ordered_rests):
+        if any(
+            rest.onset_seconds <= stimulus.onset_seconds < rest.end_seconds
+            for rest in ordered_rests
+        ):
             raise ValueError("BIDS stimulus onset cannot occur inside a rest interval.")
 
     return ValidatedBidsEEGRecording(
@@ -344,9 +434,12 @@ def validate_bids_eeg_recording(
         sample_rate_hz=sample_rate,
         duration_seconds=duration,
         channel_names=channel_names,
+        channel_types=channel_types,
         channel_statuses=channel_statuses,
         channel_positions_m=tuple(positions),
         source_reference=reference.strip(),
         stimuli=tuple(stimuli),
         rest_intervals=ordered_rests,
+        acquisition_boundaries=tuple(boundaries),
+        excluded_intervals=tuple(excluded),
     )

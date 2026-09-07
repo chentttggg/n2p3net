@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import copy
+from dataclasses import replace
+
 import numpy as np
 import pytest
 import torch
@@ -265,6 +268,76 @@ def test_frozen_asmmd_path_remains_available() -> None:
     assert adapter.last_history["as_mmd_input_mode"] == "frozen_logits"
     assert adapter.last_history["as_mmd_losses"]
     assert np.isfinite(adapter.predict_logit(target_X[:4])).all()
+
+
+@pytest.mark.parametrize("source_mode", ["frozen_logits", "pooled_source", "target_calibration"])
+@pytest.mark.parametrize("prefix_count", [24, 25])
+def test_asmmd_refit_matches_fixed_training_on_authorized_prefix(
+    source_mode: str, prefix_count: int
+) -> None:
+    source_X, source_labels, domains, target_X, target_y = _live_stream_data(26)
+    initial = (
+        N2P3Net(3, n_times=64, sfreq=128.0, tmin_s=-0.2)
+        if source_mode == "frozen_logits"
+        else _initialized_splitbn_core(source_mode)
+    )
+    config = replace(
+        _live_config(epochs=2),
+        head_kind="linear" if source_mode == "frozen_logits" else "full_fine",
+        refit_full_prefix=True,
+    )
+    source = (
+        {"source_logits": source_X[:, 0, :2], "source_labels": source_labels}
+        if source_mode == "frozen_logits"
+        else {
+            "source_X": source_X,
+            "source_labels": source_labels,
+            "source_domain_indices": domains,
+        }
+    )
+    rows = np.arange(len(target_y))
+    prefix = rows < prefix_count
+    train = rows < prefix_count - 8
+    validation = prefix & ~train
+    with_context = target_X.copy()
+    with_context[~prefix] += 500.0
+    adapter = SubjectAdapter(copy.deepcopy(initial), config=config)
+    adapter.fit(
+        with_context,
+        target_y,
+        prefix_mask=prefix,
+        training_mask=train,
+        validation_mask=validation,
+        **source,
+    )
+    history = adapter.last_history
+    assert history["refit_full_prefix"]
+    refit_epochs = int(history["refit_epochs"])
+    direct = SubjectAdapter(
+        copy.deepcopy(initial),
+        config=replace(config, epochs=refit_epochs, refit_full_prefix=False),
+    )
+    direct.fit(target_X[prefix], target_y[prefix], **source)
+
+    for scope, state in adapter._state_dict().items():
+        for name, value in state.items():
+            assert torch.equal(value, direct._state_dict()[scope][name]), (scope, name)
+    np.testing.assert_array_equal(
+        adapter.predict_logit(target_X[~prefix]), direct.predict_logit(target_X[~prefix])
+    )
+    assert history["refit_as_mmd_losses"] == direct.last_history["as_mmd_losses"]
+    assert history["refit_train_losses"] == direct.last_history["train_losses"]
+    for diagnostic in history["refit_as_mmd_losses"]:
+        assert diagnostic["target_count"] == prefix_count
+        assert diagnostic["batch_target_count"] >= 2
+    assert sum(d["batch_target_count"] for d in history["refit_as_mmd_losses"]) == (
+        prefix_count * refit_epochs
+    )
+
+
+def test_asmmd_rejects_single_sample_batch_configuration() -> None:
+    with pytest.raises(ValueError, match="AS-MMD.*batch_size"):
+        SubjectAdapterConfig(as_mmd_lambda0=0.2, batch_size=1)
 
 
 class _SingleSplitBNProbe(nn.Module):

@@ -8,6 +8,7 @@ from research.evaluation import (
     checkpoint_model_origin,
     scratch_model_origin,
     source_snapshot_sha256_from_archive_manifest,
+    verified_source_snapshot,
 )
 
 SHA_A = "a" * 64
@@ -95,6 +96,16 @@ def test_physical_snapshot_manifest_verifies_archive(tmp_path) -> None:
     )
     assert source_snapshot_sha256_from_archive_manifest(manifest) == digest
     payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload.update(working_tree_snapshot=True, source_commit_role="base_commit_only")
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    verified = verified_source_snapshot(manifest)
+    assert verified["working_tree_snapshot"] is True
+    assert verified["source_commit_role"] == "base_commit_only"
+    payload["source_commit_role"] = "exact_commit"
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="base_commit_only"):
+        verified_source_snapshot(manifest)
+    payload["source_commit_role"] = "base_commit_only"
     payload["member_count"] = 2
     manifest.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="member_count"):

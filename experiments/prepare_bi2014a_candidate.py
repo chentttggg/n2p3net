@@ -35,6 +35,7 @@ from data.epochs import (  # noqa: E402
     preprocessing_spec_from_contract,
     save_epoch_dataset,
 )
+from data.exclusions import select_allowed_subjects  # noqa: E402
 
 DEFAULT_BI_ROOT = ROOT / "mne_data" / "MNE-braininvaders2014a-data" / "zenodo" / "3266223"
 
@@ -50,7 +51,7 @@ def main() -> None:
     parser.add_argument(
         "--subjects",
         default="",
-        help="comma/range list, e.g. 1-8,12; default is all 64",
+        help="comma/range list, e.g. 1-8,12; default is eligible subjects 01-61",
     )
     parser.add_argument("--max-subjects", type=int, default=None)
     parser.add_argument("--uncompressed", action="store_true")
@@ -74,7 +75,12 @@ def main() -> None:
                 selected.update(range(start, end + 1))
             else:
                 selected.add(int(token))
+        selected = set(select_allowed_subjects("BI2014a", sorted(selected), explicit=True))
         subject_dirs = [p for p in subject_dirs if int(p.name.rsplit("_", 1)[1]) in selected]
+    allowed = set(select_allowed_subjects(
+        "BI2014a", [int(p.name.rsplit("_", 1)[1]) for p in subject_dirs], explicit=False
+    ))
+    subject_dirs = [p for p in subject_dirs if int(p.name.rsplit("_", 1)[1]) in allowed]
     if args.max_subjects is not None:
         subject_dirs = subject_dirs[: args.max_subjects]
     if not subject_dirs:

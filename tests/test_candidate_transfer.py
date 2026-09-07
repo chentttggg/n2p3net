@@ -906,8 +906,9 @@ def test_invalid_calibration_keeps_frozen_later_decisions_as_failures() -> None:
     assert not split.test_mask[np.asarray(dataset.subject_ids) == "s1"].any()
 
 
+@pytest.mark.parametrize("separate_evaluation_snapshot", [False, True])
 def test_bi_runner_counts_failed_requested_decision_without_replacement(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, separate_evaluation_snapshot
 ) -> None:
     dataset = concatenate_epoch_datasets(
         [
@@ -956,6 +957,27 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
         ),
         encoding="utf-8",
     )
+    evaluation_manifest = source_manifest
+    evaluation_sha256 = source_snapshot_sha256
+    if separate_evaluation_snapshot:
+        evaluation_member = tmp_path / "evaluation.txt"
+        evaluation_member.write_text("new evaluation code fixture", encoding="utf-8")
+        evaluation_archive = tmp_path / "evaluation.tar.gz"
+        with tarfile.open(evaluation_archive, mode="w:gz") as archive:
+            archive.add(evaluation_member, arcname="evaluation.txt")
+        evaluation_sha256 = hashlib.sha256(evaluation_archive.read_bytes()).hexdigest()
+        evaluation_manifest = tmp_path / "evaluation.manifest.json"
+        evaluation_manifest.write_text(
+            json.dumps({
+                "schema": "n2p3_source_freeze/1",
+                "archive": evaluation_archive.name,
+                "archive_sha256": evaluation_sha256,
+                "source_commit": "b" * 40,
+                "member_count": 1,
+                "byte_size": evaluation_archive.stat().st_size,
+            }),
+            encoding="utf-8",
+        )
     training_identity_ledger = DatasetIdentityTable.from_source_rows(["other"], [dataset.name])
     target_identities = [
         dataset.identity_table.record_for(subject) for subject in ("s1", "s2", "s3")
@@ -1056,12 +1078,18 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
         ],
     )
 
+    if separate_evaluation_snapshot:
+        monkeypatch.setattr(
+            sys, "argv", [*sys.argv, "--evaluation-snapshot-manifest", str(evaluation_manifest)]
+        )
     run_candidate_main()
 
     summary = json.loads(output.read_text(encoding="utf-8"))
     assert summary["schema"] == "n2p3_candidate_cross_decision_result/1"
-    # C1: the executed-source identity is restated from the verified manifest.
+    # C1: source training and evaluation each retain their physical source identity.
     assert summary["source_snapshot_sha256"] == source_snapshot_sha256
+    assert summary["evaluation_snapshot_sha256"] == evaluation_sha256
+    assert summary["evaluation_contract"]["source_snapshot_sha256"] == evaluation_sha256
     assert (
         summary["source_snapshot_manifest_sha256"]
         == hashlib.sha256(source_manifest.read_bytes()).hexdigest()
@@ -1171,6 +1199,7 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
         build_manifest(
             result_paths=(rejected_result, second_output),
             source_snapshot_manifest=source_manifest,
+            evaluation_snapshot_manifest=evaluation_manifest,
             inference_scope="conditional_frozen_models",
             planned_contrasts=(("zero_shot_source", "zero_shot_reference"),),
             output=tmp_path / "rejected-experiment.json",
@@ -1197,6 +1226,7 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
         build_manifest(
             result_paths=(missing_level_result, second_output),
             source_snapshot_manifest=source_manifest,
+            evaluation_snapshot_manifest=evaluation_manifest,
             inference_scope="conditional_frozen_models",
             planned_contrasts=(("zero_shot_source", "zero_shot_reference"),),
             output=tmp_path / "missing-level-experiment.json",
@@ -1207,6 +1237,7 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
     manifest_path = build_manifest(
         result_paths=(output, second_output),
         source_snapshot_manifest=source_manifest,
+        evaluation_snapshot_manifest=evaluation_manifest,
         inference_scope="conditional_frozen_models",
         planned_contrasts=(("zero_shot_source", "zero_shot_reference"),),
         output=tmp_path / "experiment.json",
@@ -1219,6 +1250,24 @@ def test_bi_runner_counts_failed_requested_decision_without_replacement(
     assert analysis["planned_contrasts"][0]["paired_unit"] == "participant"
     assert analysis["planned_contrasts"][0]["paired_bootstrap_interval"]["n_units"] == 3
     assert analysis["runs"][0]["decision_endpoints"]["denominators"]["planned_decisions"] == 4
+    assert analysis["source_snapshot"]["archive_sha256"] == source_snapshot_sha256
+    assert analysis["evaluation_snapshot"]["archive_sha256"] == evaluation_sha256
+
+    if separate_evaluation_snapshot:
+        with pytest.raises(ValueError, match="evaluation snapshot disagrees"):
+            build_manifest(
+                result_paths=(output, second_output),
+                source_snapshot_manifest=source_manifest,
+                inference_scope="conditional_frozen_models",
+                planned_contrasts=(("zero_shot_source", "zero_shot_reference"),),
+                output=tmp_path / "wrong-evaluation.json",
+                bootstrap_iterations=1000,
+            )
+        manifest_record = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest_record["source_snapshot"] = manifest_record["evaluation_snapshot"]
+        manifest_path.write_text(json.dumps(manifest_record), encoding="utf-8")
+        with pytest.raises(ValueError, match="checkpoint source snapshot disagrees"):
+            analyze_manifest(manifest_path)
 
 
 def _bi_runner_linear_fixture(tmp_path, name: str) -> tuple[object, object]:
@@ -1258,6 +1307,55 @@ def _bi_runner_linear_fixture(tmp_path, name: str) -> tuple[object, object]:
         encoding="utf-8",
     )
     return cache, source_manifest
+
+
+def test_candidate_runner_declares_prefix_for_chronological_refit(tmp_path, monkeypatch) -> None:
+    cache, manifest = _bi_runner_linear_fixture(tmp_path, "refit-scope")
+    output = tmp_path / "refit-result.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_candidate_cross_decision.py",
+            "--dataset-cache",
+            str(cache),
+            "--source-snapshot-manifest",
+            str(manifest),
+            "--identity-exclusion-policy",
+            "source",
+            "--arm-name",
+            "refit-scope-test",
+            "--training-replicate-key",
+            "seed:0",
+            "--partition-key",
+            "scope",
+            "--head",
+            "linear",
+            "--calibration-selections",
+            "1",
+            "--test-reps",
+            "8",
+            "--epoch-selection",
+            "target_time_split",
+            "--epochs",
+            "1",
+            "--device",
+            "cpu",
+            "--output",
+            str(output),
+        ],
+    )
+    run_candidate_main()
+    result = json.loads(output.read_text())
+    assert result["records"]
+    for record in result["records"]:
+        scope = record["prefix_refit"]["fit_scope"]
+        assert record["prefix_refit"]["enabled"]
+        assert scope["prefix_mask_explicit"]
+        assert scope["refit_rows"] == record["n_prefix_after_qc"]
+        assert scope["outside_prefix_rows"] == 0
+        assert record["prefix_refit"]["as_mmd_losses"] == []
+        assert record["prefix_refit"]["initial_fit_as_mmd_losses"] == []
 
 
 def test_bi_runner_converts_subject_fit_oom_to_fit_failure_with_preserved_denominator(

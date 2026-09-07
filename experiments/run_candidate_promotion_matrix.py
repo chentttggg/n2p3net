@@ -209,6 +209,7 @@ class PromotionPlan:
     raw_record: Mapping[str, Any]
     digest: str
     source_snapshot_manifest: Path
+    evaluation_snapshot_manifest: Path
     target_cache: Path
     target_subjects: tuple[TargetSubjectSpec, ...]
     checkpoint_batch_size: int | None
@@ -822,6 +823,11 @@ def _parse_evaluation_arms(
             f"{name}.candidate_loss_temperature",
         )
         fold_local_qc = _boolean(record["fold_local_qc"], f"{name}.fold_local_qc")
+        if fold_local_qc and epoch_selection == "target_time_split":
+            raise ValueError(
+                f"{name}: target_time_split QC requires separate inner-training fit scopes; "
+                "disable fold_local_qc or use fixed_budget until that lifecycle is implemented."
+            )
         adapt_batchnorm = _boolean(record.get("adapt_batchnorm", False), f"{name}.adapt_batchnorm")
         raw_as_mmd = record.get("as_mmd")
         if raw_as_mmd is None:
@@ -1303,7 +1309,10 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
             "output_root",
             "statistical_design",
         },
-        optional={"evidence_floor", "checkpoint_batch_size", "metric_name", "result_max_workers", "result_threads"},
+        optional={
+            "evidence_floor", "checkpoint_batch_size", "metric_name", "result_max_workers",
+            "result_threads", "evaluation_snapshot_manifest",
+        },
         name="plan",
     )
     if record["schema"] != PLAN_SCHEMA:
@@ -1385,6 +1394,11 @@ def load_plan(path: str | Path, *, root: str | Path | None = None) -> PromotionP
         source_snapshot_manifest=_resolve_plan_path(
             record["source_snapshot_manifest"],
             "source_snapshot_manifest",
+            resolution_root,
+        ),
+        evaluation_snapshot_manifest=_resolve_plan_path(
+            record.get("evaluation_snapshot_manifest", record["source_snapshot_manifest"]),
+            "evaluation_snapshot_manifest",
             resolution_root,
         ),
         target_cache=_resolve_plan_path(record["target_cache"], "target_cache", resolution_root),
@@ -1692,6 +1706,8 @@ def build_dag(
                         target.partition_key,
                         "--source-snapshot-manifest",
                         str(plan.source_snapshot_manifest),
+                        "--evaluation-snapshot-manifest",
+                        str(plan.evaluation_snapshot_manifest),
                         "--identity-exclusion-policy",
                         plan.identity_exclusion_policy,
                         "--calibration-selections",
@@ -1839,6 +1855,8 @@ def build_dag(
         [
             "--source-snapshot-manifest",
             str(plan.source_snapshot_manifest),
+            "--evaluation-snapshot-manifest",
+            str(plan.evaluation_snapshot_manifest),
             "--inference-scope",
             plan.statistical_design.inference_scope,
         ]
@@ -2506,6 +2524,7 @@ def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
     plan = dag.plan
     inputs = {
         "source_snapshot_manifest": plan.source_snapshot_manifest,
+        "evaluation_snapshot_manifest": plan.evaluation_snapshot_manifest,
         "target_cache": plan.target_cache,
         **{f"source_arm[{arm.name}].cache": arm.cache for arm in plan.source_arms},
     }
@@ -2516,6 +2535,9 @@ def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
         raise FileNotFoundError("promotion plan inputs do not exist:\n" + "\n".join(missing))
     source_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
         plan.source_snapshot_manifest
+    )
+    evaluation_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(
+        plan.evaluation_snapshot_manifest
     )
     unique_cache_paths: dict[Path, str] = {
         plan.target_cache.resolve(): "target cache",
@@ -2609,6 +2631,11 @@ def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
             "manifest_path": _portable_path(plan.source_snapshot_manifest, dag),
             "manifest_sha256": _sha256_file(plan.source_snapshot_manifest),
             "archive_sha256": source_snapshot_sha256,
+        },
+        "evaluation_snapshot": {
+            "manifest_path": _portable_path(plan.evaluation_snapshot_manifest, dag),
+            "manifest_sha256": _sha256_file(plan.evaluation_snapshot_manifest),
+            "archive_sha256": evaluation_snapshot_sha256,
         },
         "target_cache": dict(target.resolved_record),
         "source_caches": {

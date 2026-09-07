@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import replace
 import json
 import sys
-
-
+from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -15,6 +14,7 @@ from data.domain import (
     NATIVE_REFERENCE_SCHEMA,
     adapt_common_channel_average_reference,
     adapt_native_reference_selection,
+    adapt_observed_montage,
     common_channel_intersection,
     ensure_common_channel_average_reference,
     ensure_epoch_dataset_namespace,
@@ -26,9 +26,8 @@ from data.epochs import (
     EpochDataset,
     PreprocessingSpec,
     concatenate_epoch_datasets,
-    save_epoch_dataset,
-
     materialize_dataset_identity,
+    save_epoch_dataset,
 )
 from data.events import ScheduledEventTimeline
 from data.identity import DatasetIdentityTable, ParticipantIdentityRecord
@@ -151,7 +150,6 @@ def test_two_channel_car_cannot_distinguish_vectors_differing_only_in_common_mod
     second_car = adapt_common_channel_average_reference(second, ("Cz", "Pz"))
 
     np.testing.assert_array_equal(first_car.X, second_car.X)
-
 
 
 def test_native_reference_selection_preserves_tensor_and_records_reference() -> None:
@@ -313,6 +311,84 @@ def test_common_channel_intersection_preserves_first_dataset_order() -> None:
     )
 
     assert common_channel_intersection(first, second) == ("CZ", "PZ")
+
+
+def test_binary_source_projects_candidate_metadata_without_timeline_candidates() -> None:
+    source = _dataset(np.ones((2, 3, 4)), reference="A1")
+    source.metadata["candidate_id"] = [0, 1]
+    source.metadata["target_row"] = [1, 1]
+    source.metadata["repetition_index"] = [0, 0]
+    source.metadata["selection_id"] = ["source-episode", "source-episode"]
+    source.provenance["candidate_task_contract"] = {"membership_kind": "row_column"}
+    source.provenance["event_contract"] = "candidate_source"
+    source.validate(require_labels=True)
+    assert not source.event_timeline.has_candidate_ids
+
+    projected = project_binary_evidence_source_view(source)
+
+    assert projected.provenance["event_contract"] == "binary_evidence"
+    assert "candidate_task_contract" not in projected.provenance
+    assert set(projected.metadata) == {"subject", "selection_id"}
+    assert projected.X is source.X
+    assert projected.y is source.y
+    assert "candidate_id" in source.metadata
+    assert "candidate_task_contract" in source.provenance
+    assert projected.provenance["binary_evidence_projection"]["source_candidate_task_contract"]
+    assert project_binary_evidence_source_view(projected) is projected
+
+
+def test_already_binary_source_still_records_explicit_training_purpose() -> None:
+    source = _dataset(np.ones((2, 3, 4)), reference="A1")
+    projected = project_binary_evidence_source_view(source)
+    assert projected.provenance["event_contract"] == "binary_evidence"
+    assert projected.provenance["binary_evidence_projection"]["labels_unchanged"]
+    assert project_binary_evidence_source_view(projected) is projected
+
+
+def test_masked_montage_never_promotes_absent_electrodes_to_observed_data() -> None:
+    source = _dataset(np.arange(24).reshape(2, 3, 4), reference="A1")
+    projected = adapt_observed_montage(source, ("Fz", "Cz", "Pz", "Oz"))
+    assert projected.X.shape == (2, 4, 4)
+    np.testing.assert_array_equal(projected.X[:, :3], source.X)
+    assert not projected.channel_mask[3]
+    assert not projected.trial_channel_mask[:, 3].any()
+    assert np.all(projected.X[:, 3] == 0)
+    assert projected.provenance["missing_target_channels"] == ["OZ"]
+    assert projected.identity_table.digest() == materialize_dataset_identity(source).digest()
+    assert adapt_observed_montage(projected, projected.channel_names) is projected
+
+
+def test_measured_reference_cancels_unknown_time_varying_original_reference() -> None:
+    underlying = np.arange(24).reshape(2, 3, 4)
+    first = _dataset(
+        underlying - np.array([100.0, 30.0, -20.0, 80.0])[None, None, :], reference="A1"
+    )
+    second = _dataset(underlying + np.array([7.0, -19.0, 23.0, 1.0])[None, None, :], reference="T7")
+    a = adapt_observed_montage(first, ("Fz", "Pz", "Oz"), reference_channel="Cz")
+    b = adapt_observed_montage(second, ("Fz", "Pz", "Oz"), reference_channel="Cz")
+    np.testing.assert_array_equal(a.X, b.X)
+    assert (
+        a.provenance["source_reference"]
+        == b.provenance["source_reference"]
+        == "measured_channel:CZ"
+    )
+    assert not a.trial_channel_mask[:, 2].any()
+    assert np.all(a.X[:, 2] == 0.0)
+    assert adapt_observed_montage(a, a.channel_names, reference_channel="Cz") is a
+
+
+def test_missing_measurement_is_not_replaced_with_negative_reference_waveform() -> None:
+    source = _dataset(np.arange(24).reshape(2, 3, 4), reference="A1")
+    source.trial_channel_mask = np.ones(source.X.shape[:2], dtype=bool)
+    source.trial_channel_mask[0, 0] = False
+    source.X[0, 0] = 0.0
+    output = adapt_observed_montage(source, ("Fz", "Pz"), reference_channel="Cz")
+    assert not output.trial_channel_mask[0, 0]
+    assert np.all(output.X[0, 0] == 0.0)
+    source.trial_channel_mask[0, 1] = False
+    source.X[0, 1] = 0.0
+    with pytest.raises(ValueError, match="reference must be observed"):
+        adapt_observed_montage(source, ("Fz", "Pz"), reference_channel="Cz")
 
 
 def test_namespace_qualifies_subject_and_event_identity() -> None:

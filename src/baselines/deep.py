@@ -65,7 +65,10 @@ from braindecode.models import EEGConformer, EEGInceptionERP, EEGNet
 from sklearn.metrics import roc_auc_score
 
 from baselines.classic import Baseline
-from baselines.validation import group_disjoint_validation_split
+from baselines.validation import (
+    domain_stratified_group_validation_split,
+    group_disjoint_validation_split,
+)
 from data.contract import DEFAULT_P300_DATA_CONTRACT
 from models.adapters import (
     SOURCE_RESIDUAL_LEDGER_SCHEMA,
@@ -172,8 +175,7 @@ def resolve_source_risk_weights(
                 total_class_mass * target_mass / (len(domain_units) * class_mass)
             )
         achieved = float(
-            np.sum(multipliers[domain_mask] * class_weight[domain_mask])
-            / total_class_mass
+            np.sum(multipliers[domain_mask] * class_weight[domain_mask]) / total_class_mass
         )
         domain_records.append(
             {
@@ -198,9 +200,7 @@ def resolve_source_risk_weights(
         "domains": domain_records,
         "row_multiplier_min": float(multipliers.min()),
         "row_multiplier_max": float(multipliers.max()),
-        "effective_positive_prior": float(
-            np.sum(multipliers * y) / np.sum(multipliers)
-        ),
+        "effective_positive_prior": float(np.sum(multipliers * y) / np.sum(multipliers)),
     }
     return multipliers.astype(np.float32), report
 
@@ -280,22 +280,29 @@ class DeepConfig:
     val_group_frac: float | None = 0.08
     val_groups_min: int = 2
     val_groups_max: int = 12
+    source_validation_all_domains: bool = False
     early_stop_min_delta: float = 1e-6
     precision: str = "auto"
     fused_adam: bool = DEFAULT_FUSED_ADAM
     compile_mode: str | None = DEFAULT_COMPILE_MODE
-    shuffle_each_epoch: bool = False
+    materialize_shuffled_epoch: bool = False
     max_update_batch_size: int | None = 512
     batch_memory_fraction: float = 0.55
     preload_memory_fraction: float = 0.30
 
     def __post_init__(self) -> None:
+        if not isinstance(self.source_validation_all_domains, bool):
+            raise ValueError("source_validation_all_domains must be boolean")
         if self.epochs < 1 or self.batch_size < 1:
             raise ValueError("DeepConfig epochs and batch_size must be positive.")
         if self.lr <= 0.0 or self.weight_decay < 0.0 or self.pos_weight <= 0.0:
-            raise ValueError("DeepConfig lr/pos_weight must be positive and weight_decay non-negative.")
+            raise ValueError(
+                "DeepConfig lr/pos_weight must be positive and weight_decay non-negative."
+            )
         if self.early_stop_patience < 1 or self.early_stop_min_delta < 0.0:
-            raise ValueError("DeepConfig early-stop patience must be positive and delta non-negative.")
+            raise ValueError(
+                "DeepConfig early-stop patience must be positive and delta non-negative."
+            )
         if self.val_groups_min < 1 or self.val_groups_max < self.val_groups_min:
             raise ValueError("DeepConfig validation group bounds are invalid.")
         if self.val_group_frac is not None and not 0.0 < self.val_group_frac < 1.0:
@@ -304,8 +311,8 @@ class DeepConfig:
             raise ValueError("DeepConfig precision must be 'auto', 'bf16', or 'fp32'.")
         if not isinstance(self.fused_adam, bool):
             raise ValueError("DeepConfig fused_adam must be boolean.")
-        if not isinstance(self.shuffle_each_epoch, bool):
-            raise ValueError("DeepConfig shuffle_each_epoch must be boolean.")
+        if not isinstance(self.materialize_shuffled_epoch, bool):
+            raise ValueError("DeepConfig materialize_shuffled_epoch must be boolean.")
         if self.compile_mode is not None and self.compile_mode not in {
             "default",
             "reduce-overhead",
@@ -375,12 +382,9 @@ class DeepBaseline(Baseline):
         self.cfg = config if config is not None else DeepConfig()
         requested_device = torch.device(device) if device is not None else get_device()
         if runtime is not None:
-            if (
-                runtime.device.type != requested_device.type
-                or (
-                    requested_device.index is not None
-                    and runtime.device.index != requested_device.index
-                )
+            if runtime.device.type != requested_device.type or (
+                requested_device.index is not None
+                and runtime.device.index != requested_device.index
             ):
                 raise ValueError("runtime device must match the requested model device.")
             self.runtime = runtime
@@ -458,7 +462,9 @@ class DeepBaseline(Baseline):
 
         fitted = getattr(self, "model_", None)
         if fitted is not None:
-            return sum(parameter.numel() for parameter in fitted.parameters() if parameter.requires_grad)
+            return sum(
+                parameter.numel() for parameter in fitted.parameters() if parameter.requires_grad
+            )
         with _INIT_LOCK:
             with torch.random.fork_rng(devices=[]):
                 torch.manual_seed(self.cfg.seed)
@@ -690,26 +696,16 @@ class DeepBaseline(Baseline):
                         )
                     else:
                         logits = self.model_(xb)
-                    loss = (
-                        None
-                        if loss_fn is None
-                        else loss_fn(logits, yb, row_weights)
-                    )
+                    loss = None if loss_fn is None else loss_fn(logits, yb, row_weights)
                 score_parts.append((logits[:, 1] - logits[:, 0]).float())
                 label_parts.append(yb)
                 if loss is not None:
                     weighted_loss = loss.detach().float() * len(xb)
-                    total_loss = (
-                        weighted_loss if total_loss is None else total_loss + weighted_loss
-                    )
+                    total_loss = weighted_loss if total_loss is None else total_loss + weighted_loss
                 n_rows += len(xb)
         scores = torch.cat(score_parts).cpu().numpy().astype(np.float64)
         labels = torch.cat(label_parts).cpu().numpy().astype(np.int64)
-        mean_loss = (
-            None
-            if total_loss is None
-            else float(total_loss.cpu()) / max(n_rows, 1)
-        )
+        mean_loss = None if total_loss is None else float(total_loss.cpu()) / max(n_rows, 1)
         return (
             mean_loss,
             scores,
@@ -817,9 +813,7 @@ class DeepBaseline(Baseline):
                     else candidate_sum + detached_candidate_sum
                 )
                 prefix_sum = (
-                    detached_prefix_sum
-                    if prefix_sum is None
-                    else prefix_sum + detached_prefix_sum
+                    detached_prefix_sum if prefix_sum is None else prefix_sum + detached_prefix_sum
                 )
                 requested_decisions += decision_count
                 score_parts.append((logits[:, 1] - logits[:, 0]).detach().float())
@@ -872,7 +866,6 @@ class DeepBaseline(Baseline):
         feature_alignment_mode: str = "mean",
         feature_alignment_min_cell_count: int = 8,
         feature_alignment_inactive_policy: str = "record",
-
         feature_private_domain_weight: float = 0.0,
         feature_orthogonality_weight: float = 0.0,
         decision_metadata: DirectDecisionMetadata | None = None,
@@ -883,18 +876,14 @@ class DeepBaseline(Baseline):
         if not np.isfinite(feature_alignment_weight) or feature_alignment_weight < 0.0:
             raise ValueError("feature_alignment_weight must be finite and non-negative.")
         if feature_alignment_mode not in {"mean", "conditional_rbf_mmd"}:
-            raise ValueError(
-                "feature_alignment_mode must be 'mean' or 'conditional_rbf_mmd'."
-            )
+            raise ValueError("feature_alignment_mode must be 'mean' or 'conditional_rbf_mmd'.")
         if (
             isinstance(feature_alignment_min_cell_count, bool)
             or feature_alignment_min_cell_count < 2
         ):
             raise ValueError("feature_alignment_min_cell_count must be at least two.")
         if feature_alignment_inactive_policy not in {"record", "fail_closed"}:
-            raise ValueError(
-                "feature_alignment_inactive_policy must be 'record' or 'fail_closed'."
-            )
+            raise ValueError("feature_alignment_inactive_policy must be 'record' or 'fail_closed'.")
 
         for name, value in (
             ("feature_private_domain_weight", feature_private_domain_weight),
@@ -937,12 +926,16 @@ class DeepBaseline(Baseline):
             )
             self.last_decision_loss = ledger.record()
             raise DirectDecisionContractError(ledger)
-        if decision_loss_config is not None and decision_loss_config.active and any(
-            value > 0.0
-            for value in (
-                feature_alignment_weight,
-                feature_private_domain_weight,
-                feature_orthogonality_weight,
+        if (
+            decision_loss_config is not None
+            and decision_loss_config.active
+            and any(
+                value > 0.0
+                for value in (
+                    feature_alignment_weight,
+                    feature_private_domain_weight,
+                    feature_orthogonality_weight,
+                )
             )
         ):
             raise ValueError(
@@ -952,9 +945,12 @@ class DeepBaseline(Baseline):
         transfer = getattr(self, "feature_transfer", None)
         splitbn_config = getattr(self, "splitbn_config", None)
         splitbn_active = splitbn_config is not None
+        if splitbn_active:
+            self.optimizer_execution = self.optimizer_execution.without_cuda_graphs(
+                reason="splitbn_cuda_graph_domain_buffer_updates_not_preserved"
+            )
         source_residual_active = bool(
-            transfer is not None
-            and int(getattr(transfer, "source_domain_count", 0)) >= 2
+            transfer is not None and int(getattr(transfer, "source_domain_count", 0)) >= 2
         )
         if feature_private_domain_weight > 0.0 and (
             transfer is None or int(getattr(transfer, "private_domain_count", 0)) < 2
@@ -964,21 +960,15 @@ class DeepBaseline(Baseline):
                 "with private_domain_count >= 2."
             )
         if feature_orthogonality_weight > 0.0 and transfer is None:
-            raise ValueError(
-                "feature_orthogonality_weight requires FeatureDomainTransfer."
-            )
+            raise ValueError("feature_orthogonality_weight requires FeatureDomainTransfer.")
         if source_residual_active and source_domain_ids is None:
             raise ValueError(
                 "source residual training requires an explicit source_domain_ids axis."
             )
         if splitbn_active and source_domain_ids is None:
-            raise ValueError(
-                "SplitBN training requires an explicit source_domain_ids axis."
-            )
+            raise ValueError("SplitBN training requires an explicit source_domain_ids axis.")
         indexed_domain_active = (
-            source_residual_active
-            or splitbn_active
-            or feature_private_domain_weight > 0.0
+            source_residual_active or splitbn_active or feature_private_domain_weight > 0.0
         )
         declared_domain_vocabulary = getattr(self, "source_domain_vocabulary", None)
         if indexed_domain_active and declared_domain_vocabulary is None:
@@ -987,9 +977,7 @@ class DeepBaseline(Baseline):
                 "source_domain_vocabulary."
             )
         if source_residual_active and not getattr(self, "supports_feature_transfer", False):
-            raise ValueError(
-                "source residual training requires a FeatureDomainTransfer model."
-            )
+            raise ValueError("source residual training requires a FeatureDomainTransfer model.")
         if (
             feature_alignment_weight > 0.0
             or feature_private_domain_weight > 0.0
@@ -1014,29 +1002,21 @@ class DeepBaseline(Baseline):
         self._source_residual_active = source_residual_active
         self._decision_loss_config = decision_loss_config
         self._decision_context_active = decision_context_active
-        self.last_decision_loss = (
-            {
-                "schema": DECISION_TRAINING_LEDGER_SCHEMA,
-                "status": "pending" if decision_context_active else "disabled",
-                "valid": True,
-                "reason": None,
-                "config": (
-                    None
-                    if decision_loss_config is None
-                    else decision_loss_config.record()
-                ),
-                "metadata": (
-                    None
-                    if decision_metadata is None
-                    else decision_metadata.record(include_rows=False)
-                ),
-                "loss_scope": "trial_plus_lambda_candidate",
-                "trial_weight": 1.0,
-                "candidate_component_active": bool(
-                    decision_loss_config is not None and decision_loss_config.active
-                ),
-            }
-        )
+        self.last_decision_loss = {
+            "schema": DECISION_TRAINING_LEDGER_SCHEMA,
+            "status": "pending" if decision_context_active else "disabled",
+            "valid": True,
+            "reason": None,
+            "config": (None if decision_loss_config is None else decision_loss_config.record()),
+            "metadata": (
+                None if decision_metadata is None else decision_metadata.record(include_rows=False)
+            ),
+            "loss_scope": "trial_plus_lambda_candidate",
+            "trial_weight": 1.0,
+            "candidate_component_active": bool(
+                decision_loss_config is not None and decision_loss_config.active
+            ),
+        }
         # Dropping Python references returns prior tensors to the caching
         # allocator. Emptying the CUDA cache here would create a gap before
         # every healthy fold; reserve that expensive cleanup for actual OOMs.
@@ -1059,8 +1039,7 @@ class DeepBaseline(Baseline):
                         selection_domain=selection_domain,
                         feature_alignment_mode=feature_alignment_mode,
                         feature_alignment_min_cell_count=feature_alignment_min_cell_count,
-                          feature_alignment_inactive_policy=feature_alignment_inactive_policy,
-
+                        feature_alignment_inactive_policy=feature_alignment_inactive_policy,
                         decision_metadata=decision_metadata,
                         decision_loss_config=decision_loss_config,
                         requested_batch_size=requested_batch_size,
@@ -1071,7 +1050,10 @@ class DeepBaseline(Baseline):
                     "batch_size": self._active_batch_size,
                     "validation_batch_size": self._validation_batch_size,
                     "preloaded": self._preloaded_batches,
-                    "shuffle_each_epoch": self._shuffle_each_epoch,
+                    "materialize_shuffled_epoch": self._materialize_shuffled_epoch,
+                    "training_order": "complete_decision_batches"
+                    if self._decision_context_active
+                    else "per_epoch_random_permutation",
                     "transfer_fallback": self._transfer_fallback,
                     **self.optimizer_execution.record(),
                     "host_sync_policy": "epoch_boundary",
@@ -1079,8 +1061,7 @@ class DeepBaseline(Baseline):
                     "decision_grouped_batches": self._decision_context_active,
                     "decision_batch_contract": (
                         None
-                        if not self._decision_context_active
-                        or self.last_decision_loss is None
+                        if not self._decision_context_active or self.last_decision_loss is None
                         else self.last_decision_loss.get("training_batch_plan")
                     ),
                     "shared_worker_count": self.runtime.shared_worker_count,
@@ -1138,8 +1119,7 @@ class DeepBaseline(Baseline):
         selection_domain: str | None,
         feature_alignment_mode: str,
         feature_alignment_min_cell_count: int,
-          feature_alignment_inactive_policy: str,
-
+        feature_alignment_inactive_policy: str,
         decision_metadata: DirectDecisionMetadata | None,
         decision_loss_config: DecisionLossConfig | None,
         requested_batch_size: int,
@@ -1194,11 +1174,11 @@ class DeepBaseline(Baseline):
                 raise ValueError("input_stats_row_mask must retain at least one row.")
 
         if selection_domain is not None and source_domain_ids is None:
-            raise ValueError(
-                "selection_domain requires an explicit source_domain_ids axis."
-            )
+            raise ValueError("selection_domain requires an explicit source_domain_ids axis.")
         if (source_domain_mass is None) != (risk_unit_ids is None):
-            raise ValueError("weighted source risk requires domain mass and risk unit ids together.")
+            raise ValueError(
+                "weighted source risk requires domain mass and risk unit ids together."
+            )
         if source_domain_mass is not None and source_domain_ids is None:
             raise ValueError("weighted source risk requires an explicit source-domain axis.")
         risk_domains = None
@@ -1207,7 +1187,9 @@ class DeepBaseline(Baseline):
             risk_domains = np.asarray(source_domain_ids).astype(str)
             if risk_domains.shape != (len(X),):
                 raise ValueError("source_domain_ids must align with X.")
-            if selection_domain is not None and str(selection_domain) not in set(risk_domains.tolist()):
+            if selection_domain is not None and str(selection_domain) not in set(
+                risk_domains.tolist()
+            ):
                 raise ValueError("selection_domain is absent from source rows.")
         if risk_unit_ids is not None:
             risk_units = np.asarray(risk_unit_ids).astype(str)
@@ -1219,14 +1201,10 @@ class DeepBaseline(Baseline):
             assert decision_metadata is not None and decision_loss_config is not None
             domain_records: list[dict[str, object]] = []
             invalid_domain_decisions = False
-            for decision_index, decision_id in enumerate(
-                decision_metadata.requested_decision_ids
-            ):
+            for decision_index, decision_id in enumerate(decision_metadata.requested_decision_ids):
                 rows = decision_metadata.decision_indices == decision_index
                 domains = sorted(set(risk_domains[rows].tolist()))
-                domain_records.append(
-                    {"decision_id": decision_id, "source_domains": domains}
-                )
+                domain_records.append({"decision_id": decision_id, "source_domains": domains})
                 invalid_domain_decisions = invalid_domain_decisions or len(domains) != 1
             if invalid_domain_decisions:
                 ledger = invalid_decision_ledger(
@@ -1263,10 +1241,7 @@ class DeepBaseline(Baseline):
                 if invalid_validation_units:
                     ledger = invalid_decision_ledger(
                         phase="validation_group_axis",
-                        reason=(
-                            "each_direct_decision_must_belong_to_exactly_one_"
-                            "validation_group"
-                        ),
+                        reason=("each_direct_decision_must_belong_to_exactly_one_validation_group"),
                         metadata=decision_metadata,
                         config=decision_loss_config,
                         decisions=validation_unit_records,
@@ -1278,13 +1253,22 @@ class DeepBaseline(Baseline):
                 if selection_domain is None
                 else risk_domains == str(selection_domain)
             )
-            split = group_disjoint_validation_split(
-                group_ids[split_scope],
-                fraction=self.cfg.val_group_frac,
-                min_groups=self.cfg.val_groups_min,
-                max_groups=self.cfg.val_groups_max,
-                seed=self.cfg.seed,
-            )
+            if self.cfg.source_validation_all_domains:
+                if risk_domains is None or source_domain_mass is None or selection_domain is not None:
+                    raise ValueError("all-domain validation requires domain risk and no single selection domain")
+                split = domain_stratified_group_validation_split(
+                    group_ids[split_scope], risk_domains[split_scope],
+                    fraction=self.cfg.val_group_frac, min_groups=self.cfg.val_groups_min,
+                    max_groups=self.cfg.val_groups_max, seed=self.cfg.seed,
+                )
+            else:
+                split = group_disjoint_validation_split(
+                    group_ids[split_scope],
+                    fraction=self.cfg.val_group_frac,
+                    min_groups=self.cfg.val_groups_min,
+                    max_groups=self.cfg.val_groups_max,
+                    seed=self.cfg.seed,
+                )
             train_mask = np.ones(len(X), dtype=bool)
             val_mask = np.zeros(len(X), dtype=bool)
             train_mask[split_scope] = split.train_mask
@@ -1300,9 +1284,7 @@ class DeepBaseline(Baseline):
             val_decisions: list[str] = []
             split_records: list[dict[str, object]] = []
             split_invalid = False
-            for decision_index, decision_id in enumerate(
-                decision_metadata.requested_decision_ids
-            ):
+            for decision_index, decision_id in enumerate(decision_metadata.requested_decision_ids):
                 rows = decision_metadata.decision_indices == decision_index
                 in_train = bool(np.any(rows & train_mask))
                 in_validation = bool(np.any(rows & val_mask))
@@ -1318,9 +1300,7 @@ class DeepBaseline(Baseline):
                 else:
                     split_invalid = True
                     status = "absent_after_split"
-                split_records.append(
-                    {"decision_id": decision_id, "split_status": status}
-                )
+                split_records.append({"decision_id": decision_id, "split_status": status})
             if split_invalid:
                 ledger = invalid_decision_ledger(
                     phase="train_validation_split",
@@ -1331,13 +1311,9 @@ class DeepBaseline(Baseline):
                 )
                 self.last_decision_loss = ledger.record()
                 raise DirectDecisionContractError(ledger)
-            train_decision_metadata = decision_metadata.subset_for_decisions(
-                train_decisions
-            )
+            train_decision_metadata = decision_metadata.subset_for_decisions(train_decisions)
             if val_decisions:
-                val_decision_metadata = decision_metadata.subset_for_decisions(
-                    val_decisions
-                )
+                val_decision_metadata = decision_metadata.subset_for_decisions(val_decisions)
         train_channel_mask = trial_mask[train_mask]
         val_channel_mask = trial_mask[val_mask]
         unobserved_train_channels = self.channel_mask & ~train_channel_mask.any(axis=0)
@@ -1376,16 +1352,26 @@ class DeepBaseline(Baseline):
                 within_domain_unit=risk_within_domain_unit,
                 pos_weight=self.cfg.pos_weight,
             )
+            validation_risk_record = None
             if len(y_val):
-                val_row_weights = _selection_row_weights(
-                    y_val,
-                    risk_units[val_mask],
-                    within_domain_unit=risk_within_domain_unit,
-                    pos_weight=self.cfg.pos_weight,
-                )
+                if self.cfg.source_validation_all_domains:
+                    val_row_weights, validation_risk_record = resolve_source_risk_weights(
+                        y_val, risk_domains[val_mask], risk_units[val_mask],
+                        domain_mass=source_domain_mass, within_domain_unit=risk_within_domain_unit,
+                        pos_weight=self.cfg.pos_weight,
+                    )
+                else:
+                    val_row_weights = _selection_row_weights(
+                        y_val,
+                        risk_units[val_mask],
+                        within_domain_unit=risk_within_domain_unit,
+                        pos_weight=self.cfg.pos_weight,
+                    )
             self.training_prior_ = float(train_risk_record["effective_positive_prior"])
             self.last_source_risk = {
                 "training": train_risk_record,
+                "validation": validation_risk_record,
+                "selection_scope": "all_domains" if self.cfg.source_validation_all_domains else "selected_domain",
                 "selection_domain": selection_domain,
                 "selection_rows": int(val_mask.sum()),
                 "selection_units": int(len(set(risk_units[val_mask].tolist())))
@@ -1424,25 +1410,18 @@ class DeepBaseline(Baseline):
         private_active = bool(private_weight > 0.0 and risk_domains is not None)
         orthogonality_active = bool(orthogonality_weight > 0.0)
         feature_objective_active = (
-            alignment_active
-            or private_active
-            or orthogonality_active
-            or source_residual_active
+            alignment_active or private_active or orthogonality_active or source_residual_active
         )
         domain_axis_active = feature_objective_active or splitbn_active
         if private_active and len(set(risk_domains.tolist())) < 2:
-            raise ValueError(
-                "private domain supervision requires at least two source domains."
-            )
+            raise ValueError("private domain supervision requires at least two source domains.")
         train_domain_tensor: torch.Tensor | None = None
         val_domain_tensor: torch.Tensor | None = None
         self._alignment_domain_vocabulary = ()
         if domain_axis_active:
             assert risk_domains is not None
             observed_domains = set(risk_domains.tolist())
-            indexed_domain_active = (
-                source_residual_active or splitbn_active or private_active
-            )
+            indexed_domain_active = source_residual_active or splitbn_active or private_active
             declared_domain_vocabulary = getattr(
                 self,
                 "source_domain_vocabulary",
@@ -1454,9 +1433,7 @@ class DeepBaseline(Baseline):
                         "indexed domain mechanisms require the baseline's explicit "
                         "ordered source_domain_vocabulary."
                     )
-                axis_record = source_domain_axis_record(
-                    tuple(declared_domain_vocabulary)
-                )
+                axis_record = source_domain_axis_record(tuple(declared_domain_vocabulary))
                 domain_vocabulary = tuple(axis_record["vocabulary"])
                 if observed_domains != set(domain_vocabulary):
                     raise ValueError(
@@ -1484,8 +1461,7 @@ class DeepBaseline(Baseline):
                 if training_vocabulary != set(domain_vocabulary):
                     missing = sorted(set(domain_vocabulary) - training_vocabulary)
                     raise ValueError(
-                        "source residual training split omits configured domains "
-                        f"{missing}."
+                        f"source residual training split omits configured domains {missing}."
                     )
             if splitbn_active:
                 configured_count = int(splitbn_config.domain_count)
@@ -1507,12 +1483,8 @@ class DeepBaseline(Baseline):
                 training_vocabulary = set(risk_domains[train_mask].tolist())
                 if training_vocabulary != set(domain_vocabulary):
                     missing = sorted(set(domain_vocabulary) - training_vocabulary)
-                    raise ValueError(
-                        f"SplitBN training split omits configured domains {missing}."
-                    )
-            domain_to_index = {
-                domain: index for index, domain in enumerate(domain_vocabulary)
-            }
+                    raise ValueError(f"SplitBN training split omits configured domains {missing}.")
+            domain_to_index = {domain: index for index, domain in enumerate(domain_vocabulary)}
             self._alignment_domain_vocabulary = domain_vocabulary
             train_domain_tensor = torch.from_numpy(
                 np.ascontiguousarray(
@@ -1537,8 +1509,7 @@ class DeepBaseline(Baseline):
             "min_cell_count": self._feature_alignment_min_cell_count,
             "inactive_policy": self._feature_alignment_inactive_policy,
             "inactive_batch_count": 0,
-              "negative_mmd_batch_count": 0,
-
+            "negative_mmd_batch_count": 0,
             "alignment_active": alignment_active,
             "private_domain_weight": private_weight,
             "private_domain_active": private_active,
@@ -1547,7 +1518,7 @@ class DeepBaseline(Baseline):
             "domain_vocabulary": list(self._alignment_domain_vocabulary),
             "epoch_mean_squared_distance": [],
             "epoch_mmd_squared": [],
-              "epoch_negative_mmd_terms": [],
+            "epoch_negative_mmd_terms": [],
             "epoch_private_domain_loss": [],
             "epoch_orthogonality_loss": [],
         }
@@ -1558,19 +1529,13 @@ class DeepBaseline(Baseline):
             "valid": True,
             "domain_vocabulary": list(self._alignment_domain_vocabulary),
             "source_domain_count": (
-                int(self.feature_transfer.source_domain_count)
-                if source_residual_active
-                else 0
+                int(self.feature_transfer.source_domain_count) if source_residual_active else 0
             ),
             "source_drop_p": (
-                float(self.feature_transfer.source_drop_p)
-                if source_residual_active
-                else None
+                float(self.feature_transfer.source_drop_p) if source_residual_active else None
             ),
             "source_drop_mode": (
-                self.feature_transfer.source_drop_mode
-                if source_residual_active
-                else None
+                self.feature_transfer.source_drop_mode if source_residual_active else None
             ),
             "ratio_contract": source_residual_ratio_contract(),
             "epoch_loss_m0": [],
@@ -1591,9 +1556,13 @@ class DeepBaseline(Baseline):
 
         seed = self._model_seed()
         self._initialize_model(seed)
-        trainable_params = [parameter for parameter in self.model_.parameters() if parameter.requires_grad]
+        trainable_params = [
+            parameter for parameter in self.model_.parameters() if parameter.requires_grad
+        ]
         if not trainable_params:
-            raise RuntimeError("freeze_prefixes froze every parameter; no optimizer update is possible.")
+            raise RuntimeError(
+                "freeze_prefixes froze every parameter; no optimizer update is possible."
+            )
         batch_size = self.runtime.choose_batch_size(
             requested_batch_size,
             X_train.shape[1:],
@@ -1670,14 +1639,13 @@ class DeepBaseline(Baseline):
         # it uses one device gather per epoch instead of one per batch, but it
         # reserves an extra full training-matrix copy. Row order and label
         # alignment are identical to the per-batch path.
-        self._shuffle_each_epoch = (
+        self._materialize_shuffled_epoch = (
             not decision_context_active
-            and
-            self.cfg.shuffle_each_epoch
+            and self.cfg.materialize_shuffled_epoch
             and self._preloaded_batches
             and self.runtime.can_preload(train_source.nbytes)
         )
-        train_source.shuffle_each_epoch = self._shuffle_each_epoch
+        train_source.materialize_shuffled_epoch = self._materialize_shuffled_epoch
         # Inference and validation do not retain activations or gradients.
         # After an OOM-induced training-batch reduction, give them their own
         # memory-safe batch budget so validation does not inherit batch_size=1.
@@ -1716,28 +1684,18 @@ class DeepBaseline(Baseline):
                     "training_preflight": train_decision_ledger,
                     "validation_preflight": val_decision_ledger,
                     "training_batch_plan": (
-                        None
-                        if train_decision_plan is None
-                        else train_decision_plan.record()
+                        None if train_decision_plan is None else train_decision_plan.record()
                     ),
                     "validation_batch_plan": (
-                        None
-                        if val_decision_plan is None
-                        else val_decision_plan.record()
+                        None if val_decision_plan is None else val_decision_plan.record()
                     ),
                     "requested_training_row_batch_size": int(self.cfg.batch_size),
-                    "scheduler_training_row_budget": int(
-                        train_decision_plan.requested_max_rows
-                    ),
-                    "effective_training_row_batch_size": int(
-                        train_decision_plan.max_batch_rows
-                    ),
+                    "scheduler_training_row_budget": int(train_decision_plan.requested_max_rows),
+                    "effective_training_row_batch_size": int(train_decision_plan.max_batch_rows),
                     "epoch_train_components": [],
                     "epoch_validation_components": [],
                     "early_stopping_objective": (
-                        "trial_plus_lambda_candidate"
-                        if val_decision_plan is not None
-                        else None
+                        "trial_plus_lambda_candidate" if val_decision_plan is not None else None
                     ),
                     "p1_counterfactual_loss_scope": "trial_component",
                 }
@@ -1781,9 +1739,7 @@ class DeepBaseline(Baseline):
         early_stop_triggered = False
         epoch_progress_callback = self.epoch_progress_callback()
 
-        domain_count = len(
-            getattr(self, "_alignment_domain_vocabulary", ()) or ()
-        )
+        domain_count = len(getattr(self, "_alignment_domain_vocabulary", ()) or ())
 
         def _orthogonality_loss(
             invariant_features: torch.Tensor,
@@ -1825,9 +1781,7 @@ class DeepBaseline(Baseline):
                         use_source_residual=source_residual_active,
                         source_residual_mask=source_residual_mask,
                         domain_indices=(
-                            domain_batch
-                            if source_residual_active or splitbn_active
-                            else None
+                            domain_batch if source_residual_active or splitbn_active else None
                         ),
                     )
                     if not isinstance(forwarded, tuple) or len(forwarded) < 2:
@@ -1835,21 +1789,17 @@ class DeepBaseline(Baseline):
                             "feature-transfer model must return logits and adapted features."
                         )
                     logits, features = forwarded[:2]
-                    trial_numerator, trial_denominator = loss_fn.components(
-                        logits, yb, row_weights
-                    )
+                    trial_numerator, trial_denominator = loss_fn.components(logits, yb, row_weights)
                     trial_loss = trial_numerator / trial_denominator
                     loss = trial_loss
                     if alignment_active:
                         if self._feature_alignment_mode == "conditional_rbf_mmd":
-                            alignment_loss, alignment_diagnostics = (
-                                conditional_domain_rbf_mmd_loss(
-                                    features,
-                                    yb,
-                                    domain_batch,
-                                    domain_count,
-                                    min_cell_count=self._feature_alignment_min_cell_count,
-                                )
+                            alignment_loss, alignment_diagnostics = conditional_domain_rbf_mmd_loss(
+                                features,
+                                yb,
+                                domain_batch,
+                                domain_count,
+                                min_cell_count=self._feature_alignment_min_cell_count,
                             )
                         else:
                             alignment_loss, alignment_diagnostics = conditional_mean_alignment_loss(
@@ -1860,9 +1810,8 @@ class DeepBaseline(Baseline):
                                 min_cell_count=self._feature_alignment_min_cell_count,
                             )
                         loss = loss + alignment_weight * alignment_loss
-                        if (
-                            self._feature_alignment_inactive_policy == "fail_closed"
-                            and bool(alignment_diagnostics.get("alignment_inactive"))
+                        if self._feature_alignment_inactive_policy == "fail_closed" and bool(
+                            alignment_diagnostics.get("alignment_inactive")
                         ):
                             raise RuntimeError(
                                 "feature alignment became inactive in a training batch "
@@ -1889,7 +1838,9 @@ class DeepBaseline(Baseline):
                         loss = loss + orthogonality_weight * orthogonality_loss
                         if alignment_diagnostics is None:
                             alignment_diagnostics = {}
-                        alignment_diagnostics["orthogonality_loss"] = float(orthogonality_loss.detach())
+                        alignment_diagnostics["orthogonality_loss"] = float(
+                            orthogonality_loss.detach()
+                        )
                     if source_residual_active:
                         if not isinstance(self.model_, FeatureDomainTransfer):
                             raise RuntimeError(
@@ -1902,12 +1853,8 @@ class DeepBaseline(Baseline):
                                     domain_batch,
                                 )
                             )
-                            logits_m0 = self.model_.classifier(
-                                self.model_.pool_features(consensus)
-                            )
-                            logits_m1 = self.model_.classifier(
-                                self.model_.pool_features(residual)
-                            )
+                            logits_m0 = self.model_.classifier(self.model_.pool_features(consensus))
+                            logits_m1 = self.model_.classifier(self.model_.pool_features(residual))
                             source_ledger = source_residual_loss_ledger(
                                 loss_fn(logits_m0, yb, row_weights),
                                 loss_fn(logits_m1, yb, row_weights),
@@ -1928,9 +1875,7 @@ class DeepBaseline(Baseline):
                         if splitbn_active
                         else self.model_(xb)
                     )
-                    trial_numerator, trial_denominator = loss_fn.components(
-                        logits, yb, row_weights
-                    )
+                    trial_numerator, trial_denominator = loss_fn.components(logits, yb, row_weights)
                     trial_loss = trial_numerator / trial_denominator
                     loss = trial_loss
                 candidate_loss: torch.Tensor | None = None
@@ -1951,9 +1896,7 @@ class DeepBaseline(Baseline):
             opt.step()
             if source_residual_active:
                 if not isinstance(self.model_, FeatureDomainTransfer):
-                    raise RuntimeError(
-                        "source residual training requires FeatureDomainTransfer."
-                    )
+                    raise RuntimeError("source residual training requires FeatureDomainTransfer.")
                 with torch.no_grad(), self._autocast_ctx():
                     # The pre-update ledger above diagnoses the actual loss
                     # point. Re-check after the optimizer step so the final
@@ -2116,9 +2059,7 @@ class DeepBaseline(Baseline):
                     trial_numerator = trial_numerator.detach().clone()
                     trial_denominator = trial_denominator.detach().clone()
                     candidate_loss = (
-                        None
-                        if candidate_loss is None
-                        else candidate_loss.detach().clone()
+                        None if candidate_loss is None else candidate_loss.detach().clone()
                     )
                     candidate_prefix_losses = (
                         None
@@ -2170,31 +2111,23 @@ class DeepBaseline(Baseline):
                     epoch_decision_count += batch_decision_count
                 if alignment_diagnostics is not None:
                     if "mean_squared_distance" in alignment_diagnostics:
-                        epoch_alignment_sum += float(
-                            alignment_diagnostics["mean_squared_distance"]
-                        )
+                        epoch_alignment_sum += float(alignment_diagnostics["mean_squared_distance"])
                     if "mmd_squared" in alignment_diagnostics:
                         epoch_mmd_sum += float(alignment_diagnostics["mmd_squared"])
-                    negative_terms = float(
-                        alignment_diagnostics.get("negative_mmd_terms", 0.0)
-                    )
+                    negative_terms = float(alignment_diagnostics.get("negative_mmd_terms", 0.0))
                     if negative_terms > 0.0:
                         epoch_negative_mmd_terms += negative_terms
-                        self.last_feature_alignment["negative_mmd_batch_count"] = int(
-                            self.last_feature_alignment.get(
-                                "negative_mmd_batch_count", 0
-                            )
-                        ) + 1
+                        self.last_feature_alignment["negative_mmd_batch_count"] = (
+                            int(self.last_feature_alignment.get("negative_mmd_batch_count", 0)) + 1
+                        )
 
                     if alignment_diagnostics.get("alignment_inactive"):
-                        self.last_feature_alignment["inactive_batch_count"] = int(
-                            self.last_feature_alignment.get("inactive_batch_count", 0)
-                        ) + 1
+                        self.last_feature_alignment["inactive_batch_count"] = (
+                            int(self.last_feature_alignment.get("inactive_batch_count", 0)) + 1
+                        )
 
                     if "private_domain_loss" in alignment_diagnostics:
-                        epoch_private_sum += float(
-                            alignment_diagnostics["private_domain_loss"]
-                        )
+                        epoch_private_sum += float(alignment_diagnostics["private_domain_loss"])
                     if "orthogonality_loss" in alignment_diagnostics:
                         epoch_orthogonality_sum += float(
                             alignment_diagnostics["orthogonality_loss"]
@@ -2213,20 +2146,16 @@ class DeepBaseline(Baseline):
                     epoch_alignment_batches += 1
             assert self.last_feature_alignment is not None
             self.last_feature_alignment["epoch_mean_squared_distance"].append(
-                epoch_alignment_sum / epoch_alignment_batches
-                if epoch_alignment_batches
-                else None
+                epoch_alignment_sum / epoch_alignment_batches if epoch_alignment_batches else None
             )
             self.last_feature_alignment["epoch_mmd_squared"].append(
                 epoch_mmd_sum / epoch_alignment_batches
-                if self._feature_alignment_mode == "conditional_rbf_mmd"
-                and epoch_alignment_batches
+                if self._feature_alignment_mode == "conditional_rbf_mmd" and epoch_alignment_batches
                 else None
             )
             self.last_feature_alignment["epoch_negative_mmd_terms"].append(
                 epoch_negative_mmd_terms / epoch_alignment_batches
-                if self._feature_alignment_mode == "conditional_rbf_mmd"
-                and epoch_alignment_batches
+                if self._feature_alignment_mode == "conditional_rbf_mmd" and epoch_alignment_batches
                 else None
             )
             self.last_feature_alignment["epoch_private_domain_loss"].append(
@@ -2249,14 +2178,12 @@ class DeepBaseline(Baseline):
                 mean_m1 = epoch_source_loss_m1 / epoch_source_rows
                 self.last_source_residual["epoch_loss_m0"].append(mean_m0)
                 self.last_source_residual["epoch_loss_m1"].append(mean_m1)
-                self.last_source_residual["epoch_loss_delta_m1_minus_m0"].append(
-                    mean_m1 - mean_m0
-                )
+                self.last_source_residual["epoch_loss_delta_m1_minus_m0"].append(mean_m1 - mean_m0)
                 self.last_source_residual["epoch_trial_loss_m0"].append(mean_m0)
                 self.last_source_residual["epoch_trial_loss_m1"].append(mean_m1)
-                self.last_source_residual[
-                    "epoch_trial_loss_delta_m1_minus_m0"
-                ].append(mean_m1 - mean_m0)
+                self.last_source_residual["epoch_trial_loss_delta_m1_minus_m0"].append(
+                    mean_m1 - mean_m0
+                )
                 self.last_source_residual["epoch_ratio_forwards"].append(
                     epoch_source_ratio_forwards
                 )
@@ -2289,8 +2216,7 @@ class DeepBaseline(Baseline):
                 epoch_trial_mean = epoch_trial_numerator / epoch_trial_denominator
                 epoch_candidate_mean = epoch_candidate_sum / epoch_decision_count
                 epoch_objective = (
-                    epoch_trial_mean
-                    + decision_loss_config.lambda_candidate * epoch_candidate_mean
+                    epoch_trial_mean + decision_loss_config.lambda_candidate * epoch_candidate_mean
                 )
                 train_losses.append(float(epoch_objective.cpu()))
                 assert self.last_decision_loss is not None
@@ -2300,18 +2226,16 @@ class DeepBaseline(Baseline):
                     "candidate_component_loss": float(epoch_candidate_mean.cpu()),
                     "candidate_component_by_prefix": [
                         float(value)
-                        for value in (
-                            epoch_candidate_prefix_sum / epoch_decision_count
-                        ).cpu().tolist()
+                        for value in (epoch_candidate_prefix_sum / epoch_decision_count)
+                        .cpu()
+                        .tolist()
                     ],
                     "lambda_candidate": decision_loss_config.lambda_candidate,
                     "full_objective_loss": float(epoch_objective.cpu()),
                     "requested_decisions": epoch_decision_count,
                     "trial_denominator": float(epoch_trial_denominator.cpu()),
                 }
-                self.last_decision_loss["epoch_train_components"].append(
-                    train_component
-                )
+                self.last_decision_loss["epoch_train_components"].append(train_component)
             else:
                 train_component = None
                 train_losses.append(float(epoch_loss.cpu()) / max(n_seen, 1))
@@ -2340,17 +2264,13 @@ class DeepBaseline(Baseline):
                     validation_component = {
                         "epoch": epoch + 1,
                         "trial_component_loss": mean_val,
-                        "candidate_component_loss": float(
-                            validation_result["candidate_loss"]
-                        ),
+                        "candidate_component_loss": float(validation_result["candidate_loss"]),
                         "candidate_component_by_prefix": list(
                             validation_result["candidate_loss_by_prefix"]
                         ),
                         "lambda_candidate": decision_loss_config.lambda_candidate,
                         "full_objective_loss": objective_val,
-                        "requested_decisions": int(
-                            validation_result["requested_decisions"]
-                        ),
+                        "requested_decisions": int(validation_result["requested_decisions"]),
                     }
                     self.last_decision_loss["epoch_validation_components"].append(
                         validation_component
@@ -2411,9 +2331,7 @@ class DeepBaseline(Baseline):
                         ),
                         "best_val_loss": best_val_loss if best_val_loss != float("inf") else None,
                         "best_task_val_loss": (
-                            best_task_val_loss
-                            if best_task_val_loss != float("inf")
-                            else None
+                            best_task_val_loss if best_task_val_loss != float("inf") else None
                         ),
                         "will_early_stop": will_early_stop,
                     }

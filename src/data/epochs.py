@@ -28,6 +28,7 @@ from data.events import (
     ScheduledEventTimeline,
     concatenate_event_timelines,
 )
+from data.exclusions import assert_identity_participants_allowed, source_participant_excluded
 from data.identity import DatasetIdentityTable
 from data.lineage import DataLineage
 from data.qc_features import EpochQCFeatures
@@ -99,9 +100,7 @@ class PreprocessingSpec:
                 f"floor({expected:g})={expected_n_times} samples, not n_times={self.n_times}."
             )
         if self.baseline_mode not in {"trial", "mean_only", "none", "trial_reference"}:
-            raise ValueError(
-                "baseline_mode must be trial, mean_only, none, or trial_reference."
-            )
+            raise ValueError("baseline_mode must be trial, mean_only, none, or trial_reference.")
         if self.signal_unit != "V":
             raise ValueError("Model-ready EEG samples must declare signal_unit='V'.")
         if (
@@ -171,9 +170,7 @@ class PreprocessingSpec:
                 raise ValueError("trial_reference window must contain at least two samples.")
         for field_name in ("l_freq", "h_freq", "reject_threshold_v"):
             value = getattr(self, field_name)
-            if value is not None and (
-                isinstance(value, bool) or not isinstance(value, Real)
-            ):
+            if value is not None and (isinstance(value, bool) or not isinstance(value, Real)):
                 raise ValueError(f"{field_name} must be numeric or None.")
         if self.l_freq is not None and (not np.isfinite(self.l_freq) or self.l_freq <= 0):
             raise ValueError("l_freq must be finite and positive or None.")
@@ -217,9 +214,7 @@ def preprocessing_spec_from_contract(contract: EEGDataContract) -> Preprocessing
     )
 
 
-P300_PERFORMANCE_PREPROCESSING = preprocessing_spec_from_contract(
-    DEFAULT_P300_DATA_CONTRACT
-)
+P300_PERFORMANCE_PREPROCESSING = preprocessing_spec_from_contract(DEFAULT_P300_DATA_CONTRACT)
 
 
 def _json_default(value: Any) -> Any:
@@ -258,12 +253,21 @@ class EpochDataset:
     )
 
     def validate(self, *, require_labels: bool = False) -> None:
+        if self.identity_table is not None:
+            assert_identity_participants_allowed(self.identity_table)
+        if any(
+            source_participant_excluded(source, subject)
+            for source, subject in set(zip(
+                self.event_timeline.dataset_ids.astype(str),
+                self.event_timeline.subject_ids.astype(str), strict=True,
+            ))
+        ):
+            raise ValueError("Excluded BI2014a/BI2015a participants cannot enter an active dataset.")
         self.preprocessing.validate()
         expected_online = self.preprocessing.filter_phase == "forward"
         if bool(self.event_timeline.online_causal) != expected_online:
             raise ValueError(
-                "event_timeline.online_causal must equal "
-                "(preprocessing.filter_phase == 'forward')."
+                "event_timeline.online_causal must equal (preprocessing.filter_phase == 'forward')."
             )
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError("EpochDataset.name must be a non-empty string.")
@@ -371,7 +375,9 @@ class EpochDataset:
                 trial_channel_mask=self.trial_channel_mask,
             )
             if not np.array_equal(self.qc_features.observed_mask, expected_observed):
-                raise ValueError("QC features must use the dataset's effective channel-availability mask.")
+                raise ValueError(
+                    "QC features must use the dataset's effective channel-availability mask."
+                )
         if not isinstance(self.metadata, pd.DataFrame):
             raise ValueError("metadata must be a pandas DataFrame.")
         if not self.metadata.empty and len(self.metadata) != n_epochs:
@@ -382,9 +388,7 @@ class EpochDataset:
             identity_subjects = set(self.identity_table.local_subject_ids)
             dataset_subjects = set(subject_ids.astype(str).tolist())
             if identity_subjects != dataset_subjects:
-                raise ValueError(
-                    "identity_table must cover exactly the EpochDataset subject_ids."
-                )
+                raise ValueError("identity_table must cover exactly the EpochDataset subject_ids.")
         if self.lineage is not None and not isinstance(self.lineage, DataLineage):
             raise ValueError("lineage must be a DataLineage record.")
         if self.verified_cache_attestation is not None:
@@ -438,9 +442,7 @@ class EpochDataset:
                 "fingerprint": self.event_timeline.fingerprint(),
             },
             "qc_features": (
-                self.qc_features.record()
-                if self.qc_features is not None
-                else {"available": False}
+                self.qc_features.record() if self.qc_features is not None else {"available": False}
             ),
             "provenance": self.provenance,
         }
@@ -453,18 +455,14 @@ def materialize_dataset_identity(dataset: EpochDataset) -> DatasetIdentityTable:
         identity_subjects = set(dataset.identity_table.local_subject_ids)
         dataset_subjects = set(np.asarray(dataset.subject_ids).astype(str).tolist())
         if identity_subjects != dataset_subjects:
-            raise ValueError(
-                "identity_table must cover exactly the EpochDataset subject_ids."
-            )
+            raise ValueError("identity_table must cover exactly the EpochDataset subject_ids.")
         return dataset.identity_table
 
     timeline = dataset.event_timeline.validate(n_epochs=dataset.n_epochs)
     evidence = np.asarray(timeline.evidence_indices, dtype=np.int64)
     available = evidence >= 0
     aligned_sources = np.empty(dataset.n_epochs, dtype=object)
-    aligned_sources[evidence[available]] = np.asarray(timeline.dataset_ids).astype(str)[
-        available
-    ]
+    aligned_sources[evidence[available]] = np.asarray(timeline.dataset_ids).astype(str)[available]
     table = DatasetIdentityTable.from_source_rows(
         np.asarray(dataset.subject_ids).astype(str).tolist(),
         aligned_sources.astype(str).tolist(),
@@ -534,6 +532,7 @@ def _array_content_sha256(value: np.ndarray) -> str:
         digest.update(content[offset : offset + 16 * 1024 * 1024])
     return digest.hexdigest()
 
+
 def epoch_row_identity_digest(dataset: EpochDataset) -> str:
     """Return a digest over subject+event row identity, independent of X/y.
 
@@ -554,17 +553,12 @@ def epoch_row_identity_digest(dataset: EpochDataset) -> str:
     return _array_content_sha256(paired)
 
 
-
 def _dataset_content_invariants(dataset: EpochDataset) -> dict[str, object]:
     identity = materialize_dataset_identity(dataset)
     return {
         "X_sha256": _array_content_sha256(dataset.X),
-        "y_sha256": (
-            _array_content_sha256(dataset.y) if dataset.y is not None else None
-        ),
-        "subject_ids_sha256": _array_content_sha256(
-            np.asarray(dataset.subject_ids).astype(str)
-        ),
+        "y_sha256": (_array_content_sha256(dataset.y) if dataset.y is not None else None),
+        "subject_ids_sha256": _array_content_sha256(np.asarray(dataset.subject_ids).astype(str)),
         "channel_names": list(dataset.channel_names),
         "channel_positions_sha256": _array_content_sha256(dataset.channel_positions_m),
         "channel_mask_sha256": _array_content_sha256(dataset.channel_mask),
@@ -581,18 +575,10 @@ def _dataset_content_invariants(dataset: EpochDataset) -> dict[str, object]:
         "qc_features": (
             {
                 "schema": dataset.qc_features.schema,
-                "relative_ptp_sha256": _array_content_sha256(
-                    dataset.qc_features.relative_ptp
-                ),
-                "channel_std_v_sha256": _array_content_sha256(
-                    dataset.qc_features.channel_std_v
-                ),
-                "epoch_scale_v_sha256": _array_content_sha256(
-                    dataset.qc_features.epoch_scale_v
-                ),
-                "observed_mask_sha256": _array_content_sha256(
-                    dataset.qc_features.observed_mask
-                ),
+                "relative_ptp_sha256": _array_content_sha256(dataset.qc_features.relative_ptp),
+                "channel_std_v_sha256": _array_content_sha256(dataset.qc_features.channel_std_v),
+                "epoch_scale_v_sha256": _array_content_sha256(dataset.qc_features.epoch_scale_v),
+                "observed_mask_sha256": _array_content_sha256(dataset.qc_features.observed_mask),
             }
             if dataset.qc_features is not None
             else None
@@ -893,10 +879,7 @@ def _validate_verified_cache_load_fields(
     if (
         not isinstance(decoded_dataset_sha256, str)
         or len(decoded_dataset_sha256) != 64
-        or any(
-            character not in "0123456789abcdef"
-            for character in decoded_dataset_sha256
-        )
+        or any(character not in "0123456789abcdef" for character in decoded_dataset_sha256)
     ):
         raise ValueError("verified cache load decoded dataset SHA-256 is invalid.")
     return {
@@ -914,9 +897,7 @@ def loaded_epoch_cache_attestation(dataset: EpochDataset) -> dict[str, object]:
 
     value = dataset.verified_cache_attestation
     if value is None:
-        raise ValueError(
-            "operation requires a cache loaded with validation='attested'."
-        )
+        raise ValueError("operation requires a cache loaded with validation='attested'.")
     return _validate_verified_cache_load_fields(value)
 
 
@@ -992,9 +973,7 @@ def _epoch_cache_archive_source(
                 if not stat.S_ISREG(before.st_mode):
                     raise ValueError(f"{path} must be a regular cache file.")
                 if before.st_size != attestation["byte_size"]:
-                    raise ValueError(
-                        f"{path} byte size no longer matches its cache attestation."
-                    )
+                    raise ValueError(f"{path} byte size no longer matches its cache attestation.")
                 observed_sha256, observed_size = _copy_and_sha256_stream(
                     stream,
                     snapshot,
@@ -1042,9 +1021,7 @@ def _validate_attested_cache(
     *,
     record_path: Path,
 ) -> None:
-    expected_record = json.loads(
-        json.dumps(dataset.record(validate=False), default=_json_default)
-    )
+    expected_record = json.loads(json.dumps(dataset.record(validate=False), default=_json_default))
     stored_preprocessing = record.get("preprocessing")
     if (
         isinstance(stored_preprocessing, dict)
@@ -1053,9 +1030,7 @@ def _validate_attested_cache(
     ):
         # Backward-compatible audit normalization for unaffected offline caches.
         stored_preprocessing["causal_iir_initial_state"] = "not_applicable"
-    mismatched = [
-        key for key, expected in expected_record.items() if record.get(key) != expected
-    ]
+    mismatched = [key for key, expected in expected_record.items() if record.get(key) != expected]
     if mismatched:
         raise ValueError(
             f"{record_path} fields do not match the decoded cache: {sorted(mismatched)}."
@@ -1076,11 +1051,14 @@ def load_epoch_dataset(
         raise FileNotFoundError(path)
     if validation not in {"full", "attested"}:
         raise ValueError("validation must be 'full' or 'attested'.")
-    with _epoch_cache_archive_source(path, validation=validation) as (
-        archive_source,
-        attested_record,
-        verified_attestation,
-    ), np.load(archive_source, allow_pickle=False) as archive:
+    with (
+        _epoch_cache_archive_source(path, validation=validation) as (
+            archive_source,
+            attested_record,
+            verified_attestation,
+        ),
+        np.load(archive_source, allow_pickle=False) as archive,
+    ):
         required = {
             "schema",
             "name",
@@ -1132,8 +1110,7 @@ def load_epoch_dataset(
         missing_candidate_fields = candidate_fields - set(archive.files)
         if missing_candidate_fields:
             raise ValueError(
-                f"{path} lacks current candidate fields "
-                f"{sorted(missing_candidate_fields)}."
+                f"{path} lacks current candidate fields {sorted(missing_candidate_fields)}."
             )
         qc_fields = {
             "qc_feature_schema",
@@ -1165,9 +1142,7 @@ def load_epoch_dataset(
         if "decoded_dataset_sha256" in archive.files:
             stored_value = np.asarray(archive["decoded_dataset_sha256"])
             if stored_value.ndim != 0:
-                raise ValueError(
-                    f"{path} field decoded_dataset_sha256 must be a scalar string."
-                )
+                raise ValueError(f"{path} field decoded_dataset_sha256 must be a scalar string.")
             stored_decoded_dataset_sha256 = str(stored_value.item()).strip()
             if DECODED_SHA256.fullmatch(stored_decoded_dataset_sha256) is None:
                 raise ValueError(
@@ -1186,9 +1161,7 @@ def load_epoch_dataset(
         if "trial_channel_mask" in archive.files:
             trial_mask_field = np.asarray(archive["trial_channel_mask"])
             if trial_mask_field.dtype != np.dtype(bool):
-                raise ValueError(
-                    f"{path} field trial_channel_mask must be a strict boolean array."
-                )
+                raise ValueError(f"{path} field trial_channel_mask must be a strict boolean array.")
         from data.qc_features import QC_FEATURE_SCHEMA
 
         if str(np.asarray(archive["qc_feature_schema"]).item()) != QC_FEATURE_SCHEMA:
@@ -1242,12 +1215,8 @@ def load_epoch_dataset(
                 complete=bool(np.asarray(archive["event_complete"]).item()),
                 online_causal=bool(np.asarray(archive["event_online_causal"]).item()),
                 timing_source=str(np.asarray(archive["event_timing_source"]).item()),
-                candidate_ids=(
-                    np.asarray(archive["event_candidate_ids"], dtype=str)
-                ),
-                target_candidate_ids=(
-                    np.asarray(archive["event_target_candidate_ids"], dtype=str)
-                ),
+                candidate_ids=(np.asarray(archive["event_candidate_ids"], dtype=str)),
+                target_candidate_ids=(np.asarray(archive["event_target_candidate_ids"], dtype=str)),
                 repetition_indices=(
                     np.asarray(archive["event_repetition_indices"], dtype=np.int64)
                 ),
@@ -1299,6 +1268,8 @@ def load_epoch_dataset(
             f"{path} preprocessing {dataset.preprocessing} does not match the required "
             f"contract {expected_preprocessing}."
         )
+    if dataset.identity_table is not None:
+        assert_identity_participants_allowed(dataset.identity_table)
     return dataset
 
 
@@ -1338,9 +1309,7 @@ def select_epoch_channels(
             dataset.trial_channel_mask[:, picks] if dataset.trial_channel_mask is not None else None
         ),
         qc_features=(
-            dataset.qc_features.select_channels(picks)
-            if dataset.qc_features is not None
-            else None
+            dataset.qc_features.select_channels(picks) if dataset.qc_features is not None else None
         ),
         identity_table=materialize_dataset_identity(dataset),
         lineage=DataLineage.derive(
@@ -1359,7 +1328,7 @@ def concatenate_epoch_datasets(
     name: str,
     provenance: Mapping[str, Any] | None = None,
 ) -> EpochDataset:
-    """Concatenate records only when their physical tensor contracts are identical."""
+    """Concatenate one physical grid, retaining per-trial observation differences."""
 
     if not datasets:
         raise ValueError("At least one EpochDataset is required.")
@@ -1382,7 +1351,6 @@ def concatenate_epoch_datasets(
         if (
             dataset.channel_names != first.channel_names
             or dataset.preprocessing != first.preprocessing
-            or not np.array_equal(dataset.channel_mask, first.channel_mask)
             or not np.allclose(dataset.channel_positions_m, first.channel_positions_m, atol=1e-6)
         ):
             raise ValueError(
@@ -1411,7 +1379,7 @@ def concatenate_epoch_datasets(
         subject_ids=np.concatenate([dataset.subject_ids for dataset in datasets]),
         channel_names=first.channel_names,
         channel_positions_m=first.channel_positions_m,
-        channel_mask=first.channel_mask,
+        channel_mask=np.logical_or.reduce([dataset.channel_mask for dataset in datasets]),
         preprocessing=first.preprocessing,
         event_timeline=concatenate_event_timelines(
             [dataset.event_timeline for dataset in datasets]
@@ -1431,6 +1399,9 @@ def concatenate_epoch_datasets(
                 axis=0,
             )
             if any(dataset.trial_channel_mask is not None for dataset in datasets)
+            or any(
+                not np.array_equal(dataset.channel_mask, first.channel_mask) for dataset in datasets
+            )
             else None
         ),
         qc_features=qc_features,
@@ -1440,7 +1411,11 @@ def concatenate_epoch_datasets(
         lineage=DataLineage.derive(
             [materialize_dataset_lineage(dataset) for dataset in datasets],
             operation="concatenate_epoch_datasets",
-            parameters={"name": name, "parent_count": len(datasets)},
+            parameters={
+                "name": name,
+                "parent_count": len(datasets),
+                "observation_merge": "union_with_per_trial_mask",
+            },
         ),
     )
     merged.validate()

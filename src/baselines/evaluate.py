@@ -108,7 +108,7 @@ class BinaryFoldResult:
     batch_size: int | None = None
     validation_batch_size: int | None = None
     preloaded: bool | None = None
-    shuffle_each_epoch: bool | None = None
+    materialize_shuffled_epoch: bool | None = None
     fused_adam_requested: bool | None = None
     compile_mode_requested: str | None = None
     fused_adam: bool = False
@@ -191,7 +191,9 @@ def hit_correct_total_by_repetition(
         raise ValueError("repetitions must use an integer dtype.")
     vocabulary = np.asarray(candidate_vocab)
     if vocabulary.ndim != 1 or len(vocabulary) < 2 or len(np.unique(vocabulary)) != len(vocabulary):
-        raise ValueError("candidate_vocab must be a unique one-dimensional array with at least two codes.")
+        raise ValueError(
+            "candidate_vocab must be a unique one-dimensional array with at least two codes."
+        )
     if len(repetitions) == 0:
         raise ValueError("repetitions cannot be empty.")
     if np.any(repetitions < 0):
@@ -201,7 +203,9 @@ def hit_correct_total_by_repetition(
         unique_repetitions,
         np.arange(unique_repetitions[0], unique_repetitions[-1] + 1, dtype=np.int64),
     ):
-        raise ValueError("repetitions must be contiguous; missing repetitions cannot be compressed.")
+        raise ValueError(
+            "repetitions must be contiguous; missing repetitions cannot be compressed."
+        )
     repetitions = repetitions.astype(np.int64, copy=False) - int(unique_repetitions[0])
     if max_repetitions is None:
         max_repetitions = int(repetitions.max()) + 1
@@ -430,13 +434,18 @@ def _validate_folds(
         ):
             raise ValueError("domain_lodo test folds must not repeat held-out domains.")
         if np.any(test_counts != 1):
-            raise ValueError(f"{fold_protocol} test folds must cover every selected row exactly once.")
+            raise ValueError(
+                f"{fold_protocol} test folds must cover every selected row exactly once."
+            )
     return output
 
 
 def _predict(model: object, X: np.ndarray, trial_channel_mask: np.ndarray | None) -> np.ndarray:
     kwargs = {}
-    if getattr(model, "predict_accepts_trial_channel_mask", False) and trial_channel_mask is not None:
+    if (
+        getattr(model, "predict_accepts_trial_channel_mask", False)
+        and trial_channel_mask is not None
+    ):
         kwargs["trial_channel_mask"] = trial_channel_mask
     logits = np.asarray(model.predict_logit(X, **kwargs), dtype=float)
     if logits.shape != (len(X),) or not np.isfinite(logits).all():
@@ -456,7 +465,10 @@ def _fit(
         setattr(model, name, None)
     if getattr(model, "fit_accepts_group_ids", False):
         kwargs = {"group_ids": subject_ids[train]}
-        if getattr(model, "fit_accepts_trial_channel_mask", False) and trial_channel_mask is not None:
+        if (
+            getattr(model, "fit_accepts_trial_channel_mask", False)
+            and trial_channel_mask is not None
+        ):
             kwargs["trial_channel_mask"] = trial_channel_mask[train]
         model.fit(X[train], y[train], **kwargs)
         return
@@ -554,7 +566,9 @@ def _fold_result(
     started = time.perf_counter()
     _fit(model, X, y, subject_ids, train, trial_channel_mask)
     fit_sec = time.perf_counter() - started
-    calibration_logits, calibration_y, source = calibration_data_from_model(model, X[train], y[train])
+    calibration_logits, calibration_y, source = calibration_data_from_model(
+        model, X[train], y[train]
+    )
     pos_weight = getattr(model, "training_pos_weight_", None)
     train_prior = getattr(model, "training_prior_", None)
     calibration = fit_logit_calibration(
@@ -589,14 +603,20 @@ def _fold_result(
         test_subjects = [str(v) for v in np.unique(subject_ids[test_effective])]
         inner = getattr(model, "model_", model)
         stats = {
-            "input_mean": np.asarray(getattr(model, "_input_mean", np.zeros((1, 1, 1))), dtype=np.float32).squeeze().tolist(),
-            "input_std": np.asarray(getattr(model, "_input_std", np.ones((1, 1, 1))), dtype=np.float32).squeeze().tolist(),
+            "input_mean": np.asarray(
+                getattr(model, "_input_mean", np.zeros((1, 1, 1))), dtype=np.float32
+            )
+            .squeeze()
+            .tolist(),
+            "input_std": np.asarray(
+                getattr(model, "_input_std", np.ones((1, 1, 1))), dtype=np.float32
+            )
+            .squeeze()
+            .tolist(),
         }
         _torch.save(
             {
-                "model_state_dict": {
-                    k: v.detach().cpu() for k, v in inner.state_dict().items()
-                },
+                "model_state_dict": {k: v.detach().cpu() for k, v in inner.state_dict().items()},
                 "input_stats": stats,
                 "fold_id": fold_id,
                 "test_subjects": test_subjects,
@@ -631,7 +651,7 @@ def _fold_result(
         if isinstance(runtime, dict)
         else None,
         preloaded=runtime.get("preloaded") if isinstance(runtime, dict) else None,
-        shuffle_each_epoch=runtime.get("shuffle_each_epoch")
+        materialize_shuffled_epoch=runtime.get("materialize_shuffled_epoch")
         if isinstance(runtime, dict)
         else None,
         fused_adam_requested=(
@@ -649,9 +669,7 @@ def _fold_result(
         fit_peak_allocated_mb=(
             memory.get("peak_allocated_mb") if isinstance(memory, dict) else None
         ),
-        fit_peak_reserved_mb=(
-            memory.get("peak_reserved_mb") if isinstance(memory, dict) else None
-        ),
+        fit_peak_reserved_mb=(memory.get("peak_reserved_mb") if isinstance(memory, dict) else None),
         oom_retries=int(runtime.get("oom_retries", 0)) if isinstance(runtime, dict) else 0,
         shared_worker_count=(
             int(runtime.get("shared_worker_count", 1)) if isinstance(runtime, dict) else 1
@@ -1114,8 +1132,11 @@ def _run_fold_tasks(
     fold_id_offset: int,
     max_gpu_jobs: int | None,
     cpu_threads: int | None,
-    on_fold_result: Callable[[tuple[int, BinaryFoldResult, np.ndarray, np.ndarray, object]], None] | None = None,
-) -> tuple[list[tuple[int, BinaryFoldResult, np.ndarray, np.ndarray, object]], str, int, str, int, int, int]:
+    on_fold_result: Callable[[tuple[int, BinaryFoldResult, np.ndarray, np.ndarray, object]], None]
+    | None = None,
+) -> tuple[
+    list[tuple[int, BinaryFoldResult, np.ndarray, np.ndarray, object]], str, int, str, int, int, int
+]:
     backend, effective_n_jobs = _resolve_fold_execution(
         prototype,
         n_jobs=n_jobs,
@@ -1266,11 +1287,7 @@ def evaluate_binary(
 
     X, y, subject_ids = np.asarray(X), np.asarray(y), np.asarray(subject_ids).astype(str)
     _validate_binary_inputs(X, y, subject_ids)
-    fit_groups = (
-        subject_ids
-        if fit_group_ids is None
-        else np.asarray(fit_group_ids).astype(str)
-    )
+    fit_groups = subject_ids if fit_group_ids is None else np.asarray(fit_group_ids).astype(str)
     if fit_groups.shape != (len(X),) or np.any(np.char.strip(fit_groups) == ""):
         raise ValueError("fit_group_ids must contain one non-empty group per epoch.")
     if domain_ids is not None:
@@ -1371,9 +1388,7 @@ def evaluate_candidate_selection(
     del event_timeline  # Candidate-chain validation remains an ingress responsibility.
     X, y = np.asarray(X), np.asarray(y)
     group_ids = np.asarray(selection_group_ids).astype(str)
-    fit_groups = (
-        group_ids if fit_group_ids is None else np.asarray(fit_group_ids).astype(str)
-    )
+    fit_groups = group_ids if fit_group_ids is None else np.asarray(fit_group_ids).astype(str)
     codes = np.asarray(candidate_codes)
     _validate_binary_inputs(X, y, group_ids)
     if fit_groups.shape != (len(X),) or np.any(np.char.strip(fit_groups) == ""):
@@ -1474,7 +1489,11 @@ def evaluate_candidate_selection(
     bacc = np.asarray([fold.balanced_acc for fold in results], dtype=float)
     auc = np.asarray([fold.auc for fold in results], dtype=float)
     hit = np.asarray([fold.hit_rate for fold in results], dtype=float)
-    overall = float(np.mean([predicted == truth for predicted, truth, _ in records])) if records else float("nan")
+    overall = (
+        float(np.mean([predicted == truth for predicted, truth, _ in records]))
+        if records
+        else float("nan")
+    )
     macro_hits: dict[str, float] | None = None
     if repetition_indices is not None and results:
         sum_correct: dict[str, int] = {}

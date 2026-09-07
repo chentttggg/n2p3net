@@ -14,8 +14,10 @@ if str(SRC) not in sys.path:
 
 from data.domain import (  # noqa: E402
     adapt_common_channel_average_reference,
+    adapt_observed_montage,
     ensure_native_reference_selection,
     namespace_epoch_dataset,
+    project_binary_evidence_source_view,
 )
 from data.epochs import (  # noqa: E402
     load_epoch_dataset,
@@ -57,10 +59,12 @@ def _bind_loaded_parent_cache(dataset, source_path: Path):
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-cache", required=True)
-    parser.add_argument("--target-channels", required=True, help="Comma-separated canonical EEG channels.")
+    parser.add_argument(
+        "--target-channels", required=True, help="Comma-separated canonical EEG channels."
+    )
     parser.add_argument(
         "--reference-mode",
-        choices=("native_preserve", "common_average"),
+        choices=("native_preserve", "common_average", "measured_channel"),
         default="native_preserve",
         help=(
             "Preserve the source reference by default; common_average is an explicit "
@@ -75,9 +79,23 @@ def main() -> None:
     )
     parser.add_argument("--name", default=None)
     parser.add_argument("--subject-namespace", default=None)
+    parser.add_argument("--missing-channel-policy", choices=("require", "mask"), default="require")
+    parser.add_argument("--reference-channel", default=None)
+    parser.add_argument(
+        "--event-contract",
+        choices=("preserve", "binary_evidence"),
+        default="preserve",
+        help="Use binary_evidence for source ERP learning without candidate-task assumptions.",
+    )
     parser.add_argument("--output", required=True)
     parser.add_argument("--uncompressed", action="store_true")
     args = parser.parse_args()
+    if args.missing_channel_policy == "mask" and args.reference_mode == "common_average":
+        parser.error(
+            "masked montage requires native_preserve; variable observed-channel CAR is not a common reference"
+        )
+    if (args.reference_mode == "measured_channel") != (args.reference_channel is not None):
+        parser.error("measured_channel mode requires exactly one explicit --reference-channel")
 
     channels = tuple(value.strip() for value in args.target_channels.split(",") if value.strip())
     if args.min_common_channels < 2:
@@ -93,10 +111,20 @@ def main() -> None:
     dataset = _bind_loaded_parent_cache(dataset, source_path)
     if args.reference_mode == "common_average":
         adapted = adapt_common_channel_average_reference(dataset, channels, name=args.name)
+    elif args.missing_channel_policy == "mask" or args.reference_mode == "measured_channel":
+        adapted = adapt_observed_montage(
+            dataset, channels, name=args.name, reference_channel=args.reference_channel
+        )
+        if args.missing_channel_policy == "require" and not bool(adapted.trial_channel_mask.all()):
+            raise ValueError(
+                "the requested montage contains unobserved channels; declare mask policy explicitly"
+            )
     else:
         adapted = ensure_native_reference_selection(dataset, channels, name=args.name)
     if args.subject_namespace is not None:
         adapted = namespace_epoch_dataset(adapted, args.subject_namespace, name=args.name)
+    if args.event_contract == "binary_evidence":
+        adapted = project_binary_evidence_source_view(adapted)
     output = save_epoch_dataset(args.output, adapted, compressed=not args.uncompressed)
     print(f"[adapted] {output} reference_mode={args.reference_mode}", flush=True)
 

@@ -11,13 +11,22 @@ build/
 /Data/
 /tmp/
 .workbuddy/
+.env
+.env.*
+!.env.example
 
-
-
-# GLM: 数据与实验产物不入库（大文件/运行记录）
+# Local datasets and experiment outputs.
 experiments/cache/
 experiments/runs/
 experiments/results*/
 mne_data/
 aux_smoke/
 cloud_inputs/
+# Large local scratch-history archives remain local; hashes are indexed.
+/frozen/local_history/
+# Historical archives remain local; their manifests stay in Git.
+/frozen/**/*.zip
+/frozen/**/*.gz
+/frozen/**/*.tar
+/frozen/**/*.7z
+/frozen/**/*.bundle

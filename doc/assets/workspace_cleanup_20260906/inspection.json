@@ -1,0 +1,1211 @@
+{
+  "schema": "n2p3_workspace_cleanup/1",
+  "status": "inventoried",
+  "created_utc": "2026-09-06T12:18:04.600252+00:00",
+  "original_root": "D:\\BCI\\n2p3-net\\tmp",
+  "original_files": 16389,
+  "original_bytes": 3025297843,
+  "top_level_files": 240,
+  "storage_counts": {
+    "archive": 16011,
+    "result": 368,
+    "dataset": 10
+  },
+  "storage_bytes": {
+    "archive": 1377043079,
+    "result": 192882571,
+    "dataset": 1455372193
+  },
+  "groups": {
+    "top_level": {
+      "files": 240,
+      "bytes": 2467678750
+    },
+    "__pycache__": {
+      "files": 2,
+      "bytes": 48251
+    },
+    "candidate_set_literature_20260828": {
+      "files": 63,
+      "bytes": 4159638
+    },
+    "cloud_manifest_fix": {
+      "files": 3,
+      "bytes": 14485
+    },
+    "cloud_upload_20260901_bb70dfe": {
+      "files": 3,
+      "bytes": 474981
+    },
+    "contract_research_20260901": {
+      "files": 15,
+      "bytes": 4634989
+    },
+    "e1_car_e32": {
+      "files": 1,
+      "bytes": 886397
+    },
+    "e1_reference_pair_20260904": {
+      "files": 17,
+      "bytes": 10535455
+    },
+    "feature_transfer_research_20260902": {
+      "files": 43,
+      "bytes": 34989272
+    },
+    "generated_manifests_final": {
+      "files": 8,
+      "bytes": 301491
+    },
+    "generated_manifests_stable": {
+      "files": 4,
+      "bytes": 76568
+    },
+    "generated_partial": {
+      "files": 3,
+      "bytes": 149651
+    },
+    "l0_dryrun": {
+      "files": 138,
+      "bytes": 9193564
+    },
+    "l1_cloud": {
+      "files": 61,
+      "bytes": 31296122
+    },
+    "listwise_research_20260828": {
+      "files": 13,
+      "bytes": 5216464
+    },
+    "literature_search_20260828": {
+      "files": 97,
+      "bytes": 37054608
+    },
+    "merge3": {
+      "files": 5,
+      "bytes": 620729
+    },
+    "n2p3-training-295942e-formal": {
+      "files": 105,
+      "bytes": 130662718
+    },
+    "pdfs": {
+      "files": 13,
+      "bytes": 1126573
+    },
+    "perf_audit": {
+      "files": 4,
+      "bytes": 2019667
+    },
+    "pytest-c14": {
+      "files": 25,
+      "bytes": 902856
+    },
+    "pytest-c14-full": {
+      "files": 2000,
+      "bytes": 38130982
+    },
+    "pytest-c14-retry": {
+      "files": 3,
+      "bytes": 984
+    },
+    "pytest-c14-symfix": {
+      "files": 2,
+      "bytes": 955
+    },
+    "pytest-clean-0903": {
+      "files": 1999,
+      "bytes": 38130672
+    },
+    "pytest-clean-0904": {
+      "files": 1999,
+      "bytes": 38134136
+    },
+    "pytest-cudagraph-fix": {
+      "files": 1,
+      "bytes": 1084
+    },
+    "pytest-cudagraph-fix2": {
+      "files": 1,
+      "bytes": 1086
+    },
+    "pytest-flaky-hunt-1": {
+      "files": 10,
+      "bytes": 444588
+    },
+    "pytest-flaky-hunt-2": {
+      "files": 1986,
+      "bytes": 37911944
+    },
+    "pytest-local-improve": {
+      "files": 710,
+      "bytes": 2448616
+    },
+    "pytest-p2fix": {
+      "files": 1,
+      "bytes": 1083
+    },
+    "pytest-rawiso-0904": {
+      "files": 83,
+      "bytes": 28896
+    },
+    "pytest_floor": {
+      "files": 629,
+      "bytes": 1092182
+    },
+    "pytest_floor2": {
+      "files": 11,
+      "bytes": 687156
+    },
+    "pytest_full": {
+      "files": 2008,
+      "bytes": 38160884
+    },
+    "pytest_full2": {
+      "files": 2017,
+      "bytes": 38237970
+    },
+    "pytest_split": {
+      "files": 58,
+      "bytes": 1137805
+    },
+    "pytest_vec": {
+      "files": 570,
+      "bytes": 9075756
+    },
+    "pytest_vec3": {
+      "files": 1394,
+      "bytes": 37156857
+    },
+    "receptive_field_research_20260828": {
+      "files": 41,
+      "bytes": 2437069
+    },
+    "remote_manifests": {
+      "files": 3,
+      "bytes": 33909
+    }
+  },
+  "inventory": "experiments/results_history/tmp_20260906/inventory.jsonl",
+  "inventory_sha256": "9df7fed4b9d8c4fee94271f265aba62a4187baf78ee36555d02e47bc17638545",
+  "archive": "frozen/local_history/tmp_20260906.zip",
+  "all_data_and_results_byte_preserved": true,
+  "redacted_historical_scripts": [
+    "tmp/cloud_ssh.py",
+    "tmp/cloud_upload.py"
+  ],
+  "dataset_probes": [
+    {
+      "file": "l0_bi2014a_causal_v3_64subj_car16.npz",
+      "arrays": {
+        "schema.npy": {
+          "shape": [],
+          "dtype": "<U23"
+        },
+        "name.npy": {
+          "shape": [],
+          "dtype": "<U23"
+        },
+        "X.npy": {
+          "shape": [
+            61011,
+            16,
+            179
+          ],
+          "dtype": "float32"
+        },
+        "subject_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U2"
+        },
+        "channel_names.npy": {
+          "shape": [
+            16
+          ],
+          "dtype": "<U3"
+        },
+        "channel_positions_m.npy": {
+          "shape": [
+            16,
+            3
+          ],
+          "dtype": "float32"
+        },
+        "channel_mask.npy": {
+          "shape": [
+            16
+          ],
+          "dtype": "bool"
+        },
+        "trial_channel_mask.npy": {
+          "shape": [
+            0,
+            16
+          ],
+          "dtype": "bool"
+        },
+        "qc_feature_schema.npy": {
+          "shape": [],
+          "dtype": "<U27"
+        },
+        "qc_relative_ptp.npy": {
+          "shape": [
+            61011,
+            16
+          ],
+          "dtype": "float32"
+        },
+        "qc_channel_std_v.npy": {
+          "shape": [
+            61011,
+            16
+          ],
+          "dtype": "float32"
+        },
+        "qc_epoch_scale_v.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "float32"
+        },
+        "qc_observed_mask.npy": {
+          "shape": [
+            61011,
+            16
+          ],
+          "dtype": "bool"
+        },
+        "event_schema.npy": {
+          "shape": [],
+          "dtype": "<U26"
+        },
+        "event_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U25"
+        },
+        "event_group_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U23"
+        },
+        "event_subject_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U2"
+        },
+        "event_stimulus_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "int64"
+        },
+        "event_onset_samples.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "int64"
+        },
+        "event_onset_times_s.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "float64"
+        },
+        "event_evidence_available_times_s.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "float64"
+        },
+        "event_evidence_indices.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "int64"
+        },
+        "event_statuses.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U9"
+        },
+        "event_status_details.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U35"
+        },
+        "event_dataset_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U20"
+        },
+        "event_session_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U1"
+        },
+        "event_run_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U1"
+        },
+        "event_selection_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U23"
+        },
+        "event_candidate_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U1"
+        },
+        "event_target_candidate_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U1"
+        },
+        "event_repetition_indices.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "int64"
+        },
+        "event_complete.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "event_online_causal.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "event_timing_source.npy": {
+          "shape": [],
+          "dtype": "<U44"
+        },
+        "preprocessing_json.npy": {
+          "shape": [],
+          "dtype": "<U581"
+        },
+        "metadata_json.npy": {
+          "shape": [],
+          "dtype": "<U20082571"
+        },
+        "provenance_json.npy": {
+          "shape": [],
+          "dtype": "<U7136"
+        },
+        "identity_json.npy": {
+          "shape": [],
+          "dtype": "<U11145"
+        },
+        "lineage_json.npy": {
+          "shape": [],
+          "dtype": "<U80147"
+        },
+        "has_labels.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "y.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "int64"
+        }
+      },
+      "name.npy": "BI2014a-causal-v3-CAR16",
+      "channel_names.npy": [
+        "FP1",
+        "FP2",
+        "F3",
+        "AFZ",
+        "F4",
+        "T7",
+        "CZ",
+        "T8",
+        "P7",
+        "P3",
+        "PZ",
+        "P4",
+        "P8",
+        "O1",
+        "OZ",
+        "O2"
+      ],
+      "preprocessing_json.npy": "{\"baseline_mode\": \"mean_only\", \"causal_iir_initial_state\": \"steady_state_first_sample\", \"filter_method\": \"iir\", \"filter_order\": 4, \"filter_phase\": \"forward\", \"h_freq\": 30.0, \"l_freq\": 0.1, \"n_times\": 179, \"name\": \"p300_single_subject_causal_v3\", \"reject_threshold_v\": null, \"resample_domain\": \"epoched\", \"resample_method\": \"fft\", \"resample_npad\": \"auto\", \"resample_pad\": \"edge\", \"resample_window\": \"auto\", \"sfreq\": 128.0, \"signal_unit\": \"V\", \"tmax_ms\": 1200.0, \"tmin_ms\": -200.0, \"trial_reference_center\": \"mean\", \"trial_reference_scale\": \"none\", \"trial_reference_window_ms\": null}"
+    },
+    {
+      "file": "l0_bi2014a_causal_v3_64subj_car16_embedded_v1.npz",
+      "arrays": {
+        "schema.npy": {
+          "shape": [],
+          "dtype": "<U23"
+        },
+        "name.npy": {
+          "shape": [],
+          "dtype": "<U23"
+        },
+        "X.npy": {
+          "shape": [
+            61011,
+            16,
+            179
+          ],
+          "dtype": "float32"
+        },
+        "subject_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U2"
+        },
+        "channel_names.npy": {
+          "shape": [
+            16
+          ],
+          "dtype": "<U3"
+        },
+        "channel_positions_m.npy": {
+          "shape": [
+            16,
+            3
+          ],
+          "dtype": "float32"
+        },
+        "channel_mask.npy": {
+          "shape": [
+            16
+          ],
+          "dtype": "bool"
+        },
+        "trial_channel_mask.npy": {
+          "shape": [
+            0,
+            16
+          ],
+          "dtype": "bool"
+        },
+        "qc_feature_schema.npy": {
+          "shape": [],
+          "dtype": "<U27"
+        },
+        "qc_relative_ptp.npy": {
+          "shape": [
+            61011,
+            16
+          ],
+          "dtype": "float32"
+        },
+        "qc_channel_std_v.npy": {
+          "shape": [
+            61011,
+            16
+          ],
+          "dtype": "float32"
+        },
+        "qc_epoch_scale_v.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "float32"
+        },
+        "qc_observed_mask.npy": {
+          "shape": [
+            61011,
+            16
+          ],
+          "dtype": "bool"
+        },
+        "event_schema.npy": {
+          "shape": [],
+          "dtype": "<U26"
+        },
+        "event_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U25"
+        },
+        "event_group_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U23"
+        },
+        "event_subject_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U2"
+        },
+        "event_stimulus_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "int64"
+        },
+        "event_onset_samples.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "int64"
+        },
+        "event_onset_times_s.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "float64"
+        },
+        "event_evidence_available_times_s.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "float64"
+        },
+        "event_evidence_indices.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "int64"
+        },
+        "event_statuses.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U9"
+        },
+        "event_status_details.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U35"
+        },
+        "event_dataset_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U20"
+        },
+        "event_session_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U1"
+        },
+        "event_run_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U1"
+        },
+        "event_selection_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U23"
+        },
+        "event_candidate_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U1"
+        },
+        "event_target_candidate_ids.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "<U1"
+        },
+        "event_repetition_indices.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "int64"
+        },
+        "event_complete.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "event_online_causal.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "event_timing_source.npy": {
+          "shape": [],
+          "dtype": "<U44"
+        },
+        "preprocessing_json.npy": {
+          "shape": [],
+          "dtype": "<U581"
+        },
+        "metadata_json.npy": {
+          "shape": [],
+          "dtype": "<U20082571"
+        },
+        "provenance_json.npy": {
+          "shape": [],
+          "dtype": "<U7136"
+        },
+        "identity_json.npy": {
+          "shape": [],
+          "dtype": "<U11145"
+        },
+        "lineage_json.npy": {
+          "shape": [],
+          "dtype": "<U80147"
+        },
+        "has_labels.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "y.npy": {
+          "shape": [
+            61011
+          ],
+          "dtype": "int64"
+        },
+        "decoded_dataset_sha256.npy": {
+          "shape": [],
+          "dtype": "<U64"
+        }
+      },
+      "name.npy": "BI2014a-causal-v3-CAR16",
+      "channel_names.npy": [
+        "FP1",
+        "FP2",
+        "F3",
+        "AFZ",
+        "F4",
+        "T7",
+        "CZ",
+        "T8",
+        "P7",
+        "P3",
+        "PZ",
+        "P4",
+        "P8",
+        "O1",
+        "OZ",
+        "O2"
+      ],
+      "preprocessing_json.npy": "{\"baseline_mode\": \"mean_only\", \"causal_iir_initial_state\": \"steady_state_first_sample\", \"filter_method\": \"iir\", \"filter_order\": 4, \"filter_phase\": \"forward\", \"h_freq\": 30.0, \"l_freq\": 0.1, \"n_times\": 179, \"name\": \"p300_single_subject_causal_v3\", \"reject_threshold_v\": null, \"resample_domain\": \"epoched\", \"resample_method\": \"fft\", \"resample_npad\": \"auto\", \"resample_pad\": \"edge\", \"resample_window\": \"auto\", \"sfreq\": 128.0, \"signal_unit\": \"V\", \"tmax_ms\": 1200.0, \"tmin_ms\": -200.0, \"trial_reference_center\": \"mean\", \"trial_reference_scale\": \"none\", \"trial_reference_window_ms\": null}"
+    },
+    {
+      "file": "l0_cache_bi2014a_v3_s12.npz",
+      "arrays": {
+        "schema.npy": {
+          "shape": [],
+          "dtype": "<U23"
+        },
+        "name.npy": {
+          "shape": [],
+          "dtype": "<U17"
+        },
+        "X.npy": {
+          "shape": [
+            10884,
+            16,
+            179
+          ],
+          "dtype": "float32"
+        },
+        "subject_ids.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U2"
+        },
+        "channel_names.npy": {
+          "shape": [
+            16
+          ],
+          "dtype": "<U3"
+        },
+        "channel_positions_m.npy": {
+          "shape": [
+            16,
+            3
+          ],
+          "dtype": "float32"
+        },
+        "channel_mask.npy": {
+          "shape": [
+            16
+          ],
+          "dtype": "bool"
+        },
+        "trial_channel_mask.npy": {
+          "shape": [
+            0,
+            16
+          ],
+          "dtype": "bool"
+        },
+        "qc_feature_schema.npy": {
+          "shape": [],
+          "dtype": "<U27"
+        },
+        "qc_relative_ptp.npy": {
+          "shape": [
+            10884,
+            16
+          ],
+          "dtype": "float32"
+        },
+        "qc_channel_std_v.npy": {
+          "shape": [
+            10884,
+            16
+          ],
+          "dtype": "float32"
+        },
+        "qc_epoch_scale_v.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "float32"
+        },
+        "qc_observed_mask.npy": {
+          "shape": [
+            10884,
+            16
+          ],
+          "dtype": "bool"
+        },
+        "event_schema.npy": {
+          "shape": [],
+          "dtype": "<U26"
+        },
+        "event_ids.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U25"
+        },
+        "event_group_ids.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U22"
+        },
+        "event_subject_ids.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U2"
+        },
+        "event_stimulus_ids.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "int64"
+        },
+        "event_onset_samples.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "int64"
+        },
+        "event_onset_times_s.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "float64"
+        },
+        "event_evidence_available_times_s.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "float64"
+        },
+        "event_evidence_indices.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "int64"
+        },
+        "event_statuses.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U9"
+        },
+        "event_status_details.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U35"
+        },
+        "event_dataset_ids.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U20"
+        },
+        "event_session_ids.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U1"
+        },
+        "event_run_ids.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U1"
+        },
+        "event_selection_ids.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U22"
+        },
+        "event_candidate_ids.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U1"
+        },
+        "event_target_candidate_ids.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "<U1"
+        },
+        "event_repetition_indices.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "int64"
+        },
+        "event_complete.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "event_online_causal.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "event_timing_source.npy": {
+          "shape": [],
+          "dtype": "<U44"
+        },
+        "preprocessing_json.npy": {
+          "shape": [],
+          "dtype": "<U581"
+        },
+        "metadata_json.npy": {
+          "shape": [],
+          "dtype": "<U3589311"
+        },
+        "provenance_json.npy": {
+          "shape": [],
+          "dtype": "<U2038"
+        },
+        "identity_json.npy": {
+          "shape": [],
+          "dtype": "<U2201"
+        },
+        "lineage_json.npy": {
+          "shape": [],
+          "dtype": "<U15303"
+        },
+        "has_labels.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "y.npy": {
+          "shape": [
+            10884
+          ],
+          "dtype": "int64"
+        }
+      },
+      "name.npy": "BI2014a-candidate",
+      "channel_names.npy": [
+        "FP1",
+        "FP2",
+        "F3",
+        "AFZ",
+        "F4",
+        "T7",
+        "CZ",
+        "T8",
+        "P7",
+        "P3",
+        "PZ",
+        "P4",
+        "P8",
+        "O1",
+        "OZ",
+        "O2"
+      ],
+      "preprocessing_json.npy": "{\"baseline_mode\": \"mean_only\", \"causal_iir_initial_state\": \"steady_state_first_sample\", \"filter_method\": \"iir\", \"filter_order\": 4, \"filter_phase\": \"forward\", \"h_freq\": 30.0, \"l_freq\": 0.1, \"n_times\": 179, \"name\": \"p300_single_subject_causal_v3\", \"reject_threshold_v\": null, \"resample_domain\": \"epoched\", \"resample_method\": \"fft\", \"resample_npad\": \"auto\", \"resample_pad\": \"edge\", \"resample_window\": \"auto\", \"sfreq\": 128.0, \"signal_unit\": \"V\", \"tmax_ms\": 1200.0, \"tmin_ms\": -200.0, \"trial_reference_center\": \"mean\", \"trial_reference_scale\": \"none\", \"trial_reference_window_ms\": null}"
+    },
+    {
+      "file": "l0_cache_probe_bi2014a_v3_s2.npz",
+      "arrays": {
+        "schema.npy": {
+          "shape": [],
+          "dtype": "<U23"
+        },
+        "name.npy": {
+          "shape": [],
+          "dtype": "<U17"
+        },
+        "X.npy": {
+          "shape": [
+            1680,
+            16,
+            179
+          ],
+          "dtype": "float32"
+        },
+        "subject_ids.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U2"
+        },
+        "channel_names.npy": {
+          "shape": [
+            16
+          ],
+          "dtype": "<U3"
+        },
+        "channel_positions_m.npy": {
+          "shape": [
+            16,
+            3
+          ],
+          "dtype": "float32"
+        },
+        "channel_mask.npy": {
+          "shape": [
+            16
+          ],
+          "dtype": "bool"
+        },
+        "trial_channel_mask.npy": {
+          "shape": [
+            0,
+            16
+          ],
+          "dtype": "bool"
+        },
+        "qc_feature_schema.npy": {
+          "shape": [],
+          "dtype": "<U27"
+        },
+        "qc_relative_ptp.npy": {
+          "shape": [
+            1680,
+            16
+          ],
+          "dtype": "float32"
+        },
+        "qc_channel_std_v.npy": {
+          "shape": [
+            1680,
+            16
+          ],
+          "dtype": "float32"
+        },
+        "qc_epoch_scale_v.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "float32"
+        },
+        "qc_observed_mask.npy": {
+          "shape": [
+            1680,
+            16
+          ],
+          "dtype": "bool"
+        },
+        "event_schema.npy": {
+          "shape": [],
+          "dtype": "<U26"
+        },
+        "event_ids.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U25"
+        },
+        "event_group_ids.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U22"
+        },
+        "event_subject_ids.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U2"
+        },
+        "event_stimulus_ids.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "int64"
+        },
+        "event_onset_samples.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "int64"
+        },
+        "event_onset_times_s.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "float64"
+        },
+        "event_evidence_available_times_s.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "float64"
+        },
+        "event_evidence_indices.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "int64"
+        },
+        "event_statuses.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U9"
+        },
+        "event_status_details.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U35"
+        },
+        "event_dataset_ids.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U20"
+        },
+        "event_session_ids.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U1"
+        },
+        "event_run_ids.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U1"
+        },
+        "event_selection_ids.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U22"
+        },
+        "event_candidate_ids.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U1"
+        },
+        "event_target_candidate_ids.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "<U1"
+        },
+        "event_repetition_indices.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "int64"
+        },
+        "event_complete.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "event_online_causal.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "event_timing_source.npy": {
+          "shape": [],
+          "dtype": "<U44"
+        },
+        "preprocessing_json.npy": {
+          "shape": [],
+          "dtype": "<U581"
+        },
+        "metadata_json.npy": {
+          "shape": [],
+          "dtype": "<U554370"
+        },
+        "provenance_json.npy": {
+          "shape": [],
+          "dtype": "<U1148"
+        },
+        "identity_json.npy": {
+          "shape": [],
+          "dtype": "<U481"
+        },
+        "lineage_json.npy": {
+          "shape": [],
+          "dtype": "<U2919"
+        },
+        "has_labels.npy": {
+          "shape": [],
+          "dtype": "bool"
+        },
+        "y.npy": {
+          "shape": [
+            1680
+          ],
+          "dtype": "int64"
+        }
+      },
+      "name.npy": "BI2014a-candidate",
+      "channel_names.npy": [
+        "FP1",
+        "FP2",
+        "F3",
+        "AFZ",
+        "F4",
+        "T7",
+        "CZ",
+        "T8",
+        "P7",
+        "P3",
+        "PZ",
+        "P4",
+        "P8",
+        "O1",
+        "OZ",
+        "O2"
+      ],
+      "preprocessing_json.npy": "{\"baseline_mode\": \"mean_only\", \"causal_iir_initial_state\": \"steady_state_first_sample\", \"filter_method\": \"iir\", \"filter_order\": 4, \"filter_phase\": \"forward\", \"h_freq\": 30.0, \"l_freq\": 0.1, \"n_times\": 179, \"name\": \"p300_single_subject_causal_v3\", \"reject_threshold_v\": null, \"resample_domain\": \"epoched\", \"resample_method\": \"fft\", \"resample_npad\": \"auto\", \"resample_pad\": \"edge\", \"resample_window\": \"auto\", \"sfreq\": 128.0, \"signal_unit\": \"V\", \"tmax_ms\": 1200.0, \"tmin_ms\": -200.0, \"trial_reference_center\": \"mean\", \"trial_reference_scale\": \"none\", \"trial_reference_window_ms\": null}"
+    }
+  ]
+}

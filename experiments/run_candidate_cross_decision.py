@@ -19,8 +19,9 @@ from sklearn.metrics import roc_auc_score
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
+for search_path in (ROOT, SRC):
+    if str(search_path) not in sys.path:
+        sys.path.insert(0, str(search_path))
 
 from baselines.calibration import (  # noqa: E402
     calibration_data_from_model,
@@ -59,7 +60,11 @@ from research.evaluation import (  # noqa: E402
     scratch_model_origin,
     verified_source_snapshot,
 )
-from research.execution import ExpectedSubjectError, SubjectFailureCode  # noqa: E402
+from research.execution import (  # noqa: E402
+    ExpectedSubjectError,
+    SubjectFailureCode,
+    atomic_write_json,
+)
 from train.device import get_device  # noqa: E402
 from train.runtime import is_oom_error  # noqa: E402
 from train.source_sampling import (  # noqa: E402
@@ -198,6 +203,7 @@ def _zero_shot_cache_header(
     *,
     checkpoint_sha256: str,
     target_cache_sha256: str,
+    evaluation_snapshot_sha256: str,
     partition_key: str,
     epoch_rows: np.ndarray,
     test_reps: int,
@@ -206,6 +212,7 @@ def _zero_shot_cache_header(
         "schema": ZERO_SHOT_FEATURE_CACHE_SCHEMA,
         "checkpoint_sha256": checkpoint_sha256,
         "target_cache_sha256": target_cache_sha256,
+        "evaluation_snapshot_sha256": evaluation_snapshot_sha256,
         "partition_key": partition_key,
         "epoch_rows": np.asarray(epoch_rows, dtype=np.int64).tolist(),
         "test_reps": int(test_reps),
@@ -249,9 +256,7 @@ def _write_zero_shot_feature_cache(
 ) -> None:
     path = Path(cache_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd, raw_temp = tempfile.mkstemp(
-        prefix=f".{path.name}.", suffix=".tmp", dir=path.parent
-    )
+    fd, raw_temp = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     temp = Path(raw_temp)
     try:
         with os.fdopen(fd, "wb") as stream:
@@ -514,6 +519,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--training-replicate-key", required=True)
     parser.add_argument("--partition-key", required=True)
     parser.add_argument("--source-snapshot-manifest", type=Path, required=True)
+    parser.add_argument("--evaluation-snapshot-manifest", type=Path)
     parser.add_argument(
         "--identity-exclusion-policy",
         required=True,
@@ -627,6 +633,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     parser.add_argument("--output", required=True)
     args = parser.parse_args(argv)
+    if args.fold_local_qc and args.epoch_selection == "target_time_split":
+        parser.error(
+            "target_time_split cannot use outer-calibration fold-local QC; "
+            "use --no-fold-local-qc or --epoch-selection fixed_budget until "
+            "QC fitting and refit support separate inner-training scopes"
+        )
     if args.cpu_threads is not None:
         if args.cpu_threads < 1:
             parser.error("--cpu-threads must be at least one")
@@ -648,8 +660,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         parser.error("--source-stream-cache is only valid with --as-mmd-lambda0 > 0")
     if args.as_mmd_lambda0 > 0.0:
         supplied_source_inputs = sum(
-            value is not None
-            for value in (args.as_mmd_source_logits, args.source_stream_cache)
+            value is not None for value in (args.as_mmd_source_logits, args.source_stream_cache)
         )
         if supplied_source_inputs != 1:
             parser.error(
@@ -669,6 +680,11 @@ def main(argv: Sequence[str] | None = None) -> None:
         str(args.source_snapshot_manifest.resolve())
     )
     source_snapshot_sha256 = str(source_snapshot_identity["archive_sha256"])
+    evaluation_manifest = args.evaluation_snapshot_manifest or args.source_snapshot_manifest
+    evaluation_snapshot_identity = _cached_verified_source_snapshot(
+        str(evaluation_manifest.resolve())
+    )
+    evaluation_snapshot_sha256 = str(evaluation_snapshot_identity["archive_sha256"])
     if args.target_subjects_file is not None and args.max_subjects is not None:
         parser.error(
             "--target-subjects-file defines the exact denominator; do not combine it "
@@ -757,9 +773,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         else None
     )
     checkpoint_sha256 = (
-        _cached_sha256_file(str(Path(args.checkpoint).resolve()))
-        if args.checkpoint
-        else None
+        _cached_sha256_file(str(Path(args.checkpoint).resolve())) if args.checkpoint else None
     )
     as_mmd_input_mode = "none"
     as_mmd_source_logits = None
@@ -785,13 +799,10 @@ def main(argv: Sequence[str] | None = None) -> None:
                     raise ValueError("as-mmd source logits npz requires logits/labels.")
                 as_mmd_source_logits = np.asarray(archive["logits"], dtype=np.float32)
                 as_mmd_source_labels = np.asarray(archive["labels"], dtype=np.int64)
-            if (
-                as_mmd_source_logits.ndim != 2
-                or as_mmd_source_labels.shape != (as_mmd_source_logits.shape[0],)
+            if as_mmd_source_logits.ndim != 2 or as_mmd_source_labels.shape != (
+                as_mmd_source_logits.shape[0],
             ):
-                raise ValueError(
-                    "as-mmd source logits/labels must be aligned (N,classes)/(N,)."
-                )
+                raise ValueError("as-mmd source logits/labels must be aligned (N,classes)/(N,).")
             if bool(((as_mmd_source_labels < 0) | (as_mmd_source_labels > 1)).any()):
                 raise ValueError("as-mmd source labels must be binary 0/1.")
     head_mode = args.head
@@ -824,10 +835,11 @@ def main(argv: Sequence[str] | None = None) -> None:
         source_cache_path = Path(args.source_stream_cache).resolve()
         source_dataset = _cached_attested_dataset_memo(str(source_cache_path))
         source_stream_sha256 = str(loaded_epoch_cache_attestation(source_dataset)["sha256"])
-        if source_dataset.n_channels != dataset.n_channels or source_dataset.n_times != dataset.n_times:
-            raise ValueError(
-                "source-stream cache must match the target cache n_channels/n_times."
-            )
+        if (
+            source_dataset.n_channels != dataset.n_channels
+            or source_dataset.n_times != dataset.n_times
+        ):
+            raise ValueError("source-stream cache must match the target cache n_channels/n_times.")
         if tuple(source_dataset.channel_names) != tuple(dataset.channel_names):
             raise ValueError("source-stream cache channel names disagree with the target cache.")
         training_contract = checkpoint_training_contract(checkpoint_payload)
@@ -844,9 +856,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         try:
             checkpoint_vocabulary, _ = source_domain_axis_from_record(axis_record)
         except (TypeError, ValueError) as error:
-            raise ValueError(
-                f"checkpoint source_domain_axis is invalid: {error}"
-            ) from error
+            raise ValueError(f"checkpoint source_domain_axis is invalid: {error}") from error
         source_vocabulary = source_domain_vocabulary(source_dataset)
         if checkpoint_vocabulary != source_vocabulary:
             raise ValueError(
@@ -856,12 +866,10 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
         if len(checkpoint_vocabulary) != source_splitbn_config.domain_count:
             raise ValueError(
-                "checkpoint SplitBN domain count disagrees with its source-domain "
-                "vocabulary."
+                "checkpoint SplitBN domain count disagrees with its source-domain vocabulary."
             )
         domain_to_index = {
-            domain: domain_index
-            for domain_index, domain in enumerate(checkpoint_vocabulary)
+            domain: domain_index for domain_index, domain in enumerate(checkpoint_vocabulary)
         }
         raw_domain_ids = source_domain_ids(source_dataset)
         source_domain_indices_stream = np.asarray(
@@ -1002,6 +1010,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             feature_cache_header = _zero_shot_cache_header(
                 checkpoint_sha256=checkpoint_sha256,
                 target_cache_sha256=target_cache_sha256,
+                evaluation_snapshot_sha256=evaluation_snapshot_sha256,
                 partition_key=args.partition_key,
                 epoch_rows=post_rows,
                 test_reps=args.test_reps,
@@ -1022,10 +1031,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                     device=device,
                     trial_channel_mask=suffix_mask,
                 )
-                if (
-                    args.zero_shot_feature_cache is not None
-                    and zero_shot_features is not None
-                ):
+                if args.zero_shot_feature_cache is not None and zero_shot_features is not None:
                     _write_zero_shot_feature_cache(
                         args.zero_shot_feature_cache,
                         header=feature_cache_header,
@@ -1067,15 +1073,18 @@ def main(argv: Sequence[str] | None = None) -> None:
             candidate_fit_kwargs: dict[str, object] = {}
             if args.candidate_loss_weight > 0.0:
                 candidate_fit_kwargs = {
-                    "candidate_ids": local_meta["candidate_id"]
-                    .to_numpy(dtype=np.int64)[effective_train],
+                    "candidate_ids": local_meta["candidate_id"].to_numpy(dtype=np.int64)[
+                        effective_train
+                    ],
                     "selection_ids": local_meta["selection_id"]
                     .astype(str)
                     .to_numpy()[effective_train],
-                    "target_rows": local_meta["target_row"]
-                    .to_numpy(dtype=np.int64)[effective_train],
-                    "target_columns": local_meta["target_col"]
-                    .to_numpy(dtype=np.int64)[effective_train],
+                    "target_rows": local_meta["target_row"].to_numpy(dtype=np.int64)[
+                        effective_train
+                    ],
+                    "target_columns": local_meta["target_col"].to_numpy(dtype=np.int64)[
+                        effective_train
+                    ],
                     "candidate_loss_num_rows": candidate_task.n_rows,
                     "candidate_loss_num_columns": candidate_task.n_columns,
                 }
@@ -1108,6 +1117,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         local_y[effective_train],
                         training_mask=inner.train_mask,
                         validation_mask=inner.validation_mask,
+                        prefix_mask=np.ones(len(calibration_rows), dtype=bool),
                         trial_channel_mask=local_mask[effective_train],
                         **candidate_fit_kwargs,
                         **as_mmd_fit_kwargs,
@@ -1229,6 +1239,9 @@ def main(argv: Sequence[str] | None = None) -> None:
                 "enabled": bool(adapter.last_history.get("refit_full_prefix")),
                 "selected_epochs": adapter.last_history.get("best_epoch"),
                 "refit_epochs": adapter.last_history.get("refit_epochs"),
+                "fit_scope": dict(adapter.last_history["fit_scope"]),
+                "as_mmd_losses": list(adapter.last_history["refit_as_mmd_losses"]),
+                "initial_fit_as_mmd_losses": list(adapter.last_history["as_mmd_losses"]),
                 "inner_embargo_trials": int(
                     np.count_nonzero(inner.embargo_mask)
                     if inner is not None and inner.embargo_mask is not None
@@ -1458,7 +1471,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         model_origin=model_origin,
         dataset=dataset,
         target_cache_sha256=target_cache_sha256,
-        source_snapshot_sha256=source_snapshot_sha256,
+        source_snapshot_sha256=evaluation_snapshot_sha256,
         requested_subjects=tuple(sorted(requested_subjects)),
         identity_policy=args.identity_exclusion_policy,
         target_protocol={
@@ -1498,7 +1511,6 @@ def main(argv: Sequence[str] | None = None) -> None:
                 "source_domain_vocabulary": (
                     None if source_vocabulary is None else list(source_vocabulary)
                 ),
-
                 "fold_local_qc": bool(args.fold_local_qc),
                 "identity_exclusion_policy": args.identity_exclusion_policy,
             },
@@ -1571,6 +1583,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         "source_snapshot_sha256": source_snapshot_sha256,
         "source_snapshot_manifest_sha256": str(source_snapshot_identity["manifest_sha256"]),
         "source_commit": str(source_snapshot_identity["source_commit"]),
+        "evaluation_snapshot_manifest": str(evaluation_manifest.resolve()),
+        "evaluation_snapshot_sha256": evaluation_snapshot_sha256,
+        "evaluation_snapshot_manifest_sha256": str(
+            evaluation_snapshot_identity["manifest_sha256"]
+        ),
+        "evaluation_source_commit": str(evaluation_snapshot_identity["source_commit"]),
         "evaluation_contract": evaluation_contract.record(),
         "evaluation_contract_digest": evaluation_contract.digest(),
         "decision_plan": decision_plan.record(),
@@ -1593,7 +1611,6 @@ def main(argv: Sequence[str] | None = None) -> None:
         "target_stat_weight": args.target_stat_weight,
         "candidate_loss_weight": args.candidate_loss_weight,
         "candidate_loss_temperature": args.candidate_loss_temperature,
-
         "seed": args.seed,
         "environment": environment_record,
         "splitbn": splitbn_record,
@@ -1632,11 +1649,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "records": records,
     }
     output = Path(args.output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(
-        json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False),
-        encoding="utf-8",
-    )
+    atomic_write_json(output, summary)
     print(f"[summary] {output}", flush=True)
 
 

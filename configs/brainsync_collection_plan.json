@@ -1,0 +1,46 @@
+{
+  "schema": "n2p3_brainsync_collection_plan/1",
+  "status": "prospective_not_collected",
+  "acquisition_layout_schema": "brainsync-scalp-eog-layout/1",
+  "source_purpose": "public_binary_ERP_pretraining_reduces_target_calibration_cost",
+  "calibration": {
+    "decisions_per_participant": 9,
+    "experiment": {"blocks": 10, "digits_per_block": 45, "stimulus_ms": 300, "soa_ms": 1500, "rest_sec": 0},
+    "target_switch_required": true,
+    "target_vocabulary": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "target_sequence": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "target_sequence_role": "example_order_permute_and_record_before_each_participants_collection",
+    "stimulus_trials": 4050,
+    "target_trials": 450,
+    "nominal_soa_budget_seconds": 6075.0,
+    "labels_available_before_later_test": true
+  },
+  "test": {
+    "decisions_per_participant": 27,
+    "experiment": {"blocks": 1, "digits_per_block": 45, "stimulus_ms": 300, "soa_ms": 1500, "rest_sec": 0},
+    "target_policy": "observed_sequence",
+    "target_vocabulary": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "decisions_per_target": 3,
+    "novelty_scope": "new_independent_recordings_with_target_hidden_from_inference",
+    "candidate_vocabulary": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "primary_repetitions": 5,
+    "diagnostic_repetitions": [1, 2, 3, 4],
+    "trial_input": "one_stimulus_locked_EEG_epoch",
+    "labels_required_for_inference": false,
+    "requested_failures_remain_in_denominator": true,
+    "model_and_recipe_frozen_before_test": true,
+    "test_labels_for_scoring_only": true
+  },
+  "eog": {
+    "classifier_input": false,
+    "placement_axis": "not_yet_declared",
+    "fit_scope": "declared_calibration_sessions_only",
+    "candidate_recipes": ["native_without_correction", "native_calibration_regression", "measured_reference_then_calibration_regression"]
+  },
+  "confirmation": {
+    "new_participants_or_sessions_not_used_for_model_selection": true,
+    "participant_count": null,
+    "sample_size_status": "requires_real_development_variance_and_predeclared_minimum_effect",
+    "healthy_adult_scope_requires_age_evidence": true
+  }
+}

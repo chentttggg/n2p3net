@@ -1,0 +1,6 @@
+{
+  "data": "experiments/runs/p300_mainline_20260906/analysis/verified_summary.json",
+  "aggregation": "participant mean of seed-specific AUC, then participant mean; deterministic LDA shared across seeds where declared",
+  "uncertainty": "curves show means only; paired participant resampling intervals are in the report and JSON",
+  "scope": "development; source populations and montage differ; no product confirmation"
+}

@@ -1,0 +1,507 @@
+{
+  "scope": "design_census_not_cache_attestation_or_performance",
+  "versions": {
+    "torch": "2.13.0+cpu",
+    "mne": "1.12.1"
+  },
+  "datasets": {
+    "huebner2017_nemar_nm000199_v1.0.2": {
+      "files": 2595,
+      "bytes": 5528956671,
+      "extensions": {
+        "": 2,
+        ".json": 1145,
+        ".tsv": 761,
+        ".md": 2,
+        ".yaml": 1,
+        ".bdf": 342,
+        ".vhdr": 342
+      },
+      "zip_directory_valid": 0,
+      "zip_directory_invalid": [],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash",
+      "dataset_description": {
+        "Name": "Learning from label proportions for a visual matrix speller (ERP)",
+        "BIDSVersion": "1.9.0",
+        "HEDVersion": "8.4.0",
+        "DatasetType": "derivative",
+        "License": "CC-BY-4.0",
+        "Authors": [
+          "David Hübner",
+          "Thibault Verhoeven",
+          "Konstantin Schmid",
+          "Klaus-Robert Müller",
+          "Michael Tangermann",
+          "Pieter-Jan Kindermans"
+        ],
+        "Funding": [
+          "BrainLinks-BrainTools Cluster of Excellence funded by the German Research Foundation (DFG), grant number EXC 1086",
+          "bwHPC initiative, grant INST 39/963-1 FUGG",
+          "European Union's Horizon 2020 research and innovation programme under the Marie Sklodowska-Curie grant agreement No 657679",
+          "Special Research Fund from Ghent University",
+          "BK21 program funded by Korean National Research Foundation grant No. 2012-005741"
+        ],
+        "EthicsApprovals": [
+          "Ethics Committee of the University Medical Center Freiburg",
+          "Declaration of Helsinki"
+        ],
+        "ReferencesAndLinks": [
+          "http://doi.org/10.5281/zenodo.192684"
+        ],
+        "GeneratedBy": [
+          {
+            "CodeURL": "https://github.com/NeuroTechX/moabb",
+            "Name": "moabb",
+            "Description": "Mother of All BCI Benchmarks",
+            "Version": "1.5.0"
+          }
+        ],
+        "SourceDatasets": [
+          {
+            "DOI": "10.1371/journal.pone.0175856",
+            "URL": "http://doi.org/10.5281/zenodo.192684"
+          }
+        ],
+        "Keywords": [
+          "brain-computer interface",
+          "BCI",
+          "event-related potentials",
+          "ERP",
+          "P300",
+          "learning from label proportions",
+          "LLP",
+          "unsupervised learning",
+          "calibrationless",
+          "visual speller"
+        ],
+        "PublicationYear": 2017,
+        "DatasetDOI": "10.82901/nemar.nm000199",
+        "Version": "1.0.2"
+      },
+      "participant_rows": 13,
+      "eeg_layouts": [
+        {
+          "channels": [
+            "Fp1",
+            "Fp2",
+            "F3",
+            "F4",
+            "C3",
+            "C4",
+            "P3",
+            "P4",
+            "O1",
+            "O2",
+            "F7",
+            "F8",
+            "T7",
+            "T8",
+            "P7",
+            "P8",
+            "Fz",
+            "Cz",
+            "Pz",
+            "FC1",
+            "FC2",
+            "CP1",
+            "CP2",
+            "FC5",
+            "FC6",
+            "CP5",
+            "CP6",
+            "F9",
+            "F10",
+            "P9",
+            "P10"
+          ],
+          "recordings": 342
+        }
+      ],
+      "references": {
+        "nose": 342
+      },
+      "sfreq_range": [
+        1000.0,
+        1000.0
+      ],
+      "event_files": 342,
+      "event_rows": 162757,
+      "labels": [
+        {
+          "trial_type": "Target",
+          "value": "2",
+          "count": 38297
+        },
+        {
+          "trial_type": "NonTarget",
+          "value": "1",
+          "count": 124460
+        }
+      ],
+      "sample_signal": {
+        "path": "mne_data\\huebner2017_nemar_nm000199_v1.0.2\\sub-1\\ses-0\\eeg\\sub-1_ses-0_task-p300_run-0_eeg.bdf",
+        "sha256": "c4e72cb9d5693215b602fb9864129742121ca2ffd07ccaec61728d785877afb5",
+        "channels": [
+          "Fp1",
+          "Fp2",
+          "F3",
+          "F4",
+          "C3",
+          "C4",
+          "P3",
+          "P4",
+          "O1",
+          "O2",
+          "F7",
+          "F8",
+          "T7",
+          "T8",
+          "P7",
+          "P8",
+          "Fz",
+          "Cz",
+          "Pz",
+          "FC1",
+          "FC2",
+          "CP1",
+          "CP2",
+          "FC5",
+          "FC6",
+          "CP5",
+          "CP6",
+          "F9",
+          "F10",
+          "P9",
+          "P10"
+        ],
+        "sfreq": 1000.0,
+        "samples": 173000,
+        "finite": true,
+        "peak_to_peak_v": 0.0019964000794470407
+      }
+    },
+    "mainsah2025_s2_nemar_v1.0.3": {
+      "files": 2147,
+      "bytes": 4018255723,
+      "extensions": {
+        "": 2,
+        ".json": 941,
+        ".tsv": 625,
+        ".md": 2,
+        ".yaml": 1,
+        ".bdf": 288,
+        ".edf": 288
+      },
+      "zip_directory_valid": 0,
+      "zip_directory_invalid": [],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash",
+      "dataset_description": {
+        "Name": "Mainsah et al. 2025 — bigP3BCI: An Open, Diverse and Machine Learning Ready P300-based Brain-Computer Interface Dataset (Study S2)",
+        "BIDSVersion": "1.9.0",
+        "HEDVersion": "8.4.0",
+        "DatasetType": "derivative",
+        "License": "CC-BY-4.0",
+        "Authors": [
+          "Boyla Mainsah",
+          "Chance Fleeting",
+          "Thomas Balmat",
+          "Eric Sellers",
+          "Leslie Collins"
+        ],
+        "ReferencesAndLinks": [
+          "https://physionet.org/content/bigp3bci/1.0.0/"
+        ],
+        "DatasetDOI": "10.82901/nemar.nm000313",
+        "GeneratedBy": [
+          {
+            "CodeURL": "https://github.com/NeuroTechX/moabb",
+            "Name": "moabb",
+            "Description": "Mother of All BCI Benchmarks",
+            "Version": "1.5.0"
+          }
+        ],
+        "SourceDatasets": [
+          {
+            "DOI": "10.13026/0byy-ry86",
+            "URL": "https://physionet.org/content/bigp3bci/1.0.0/"
+          },
+          {
+            "DOI": "doi:10.13026/0byy-ry86"
+          }
+        ],
+        "Keywords": [
+          "visual",
+          "perception",
+          "p300",
+          "speller"
+        ],
+        "PublicationYear": 2025,
+        "Version": "1.0.3"
+      },
+      "participant_rows": 24,
+      "eeg_layouts": [
+        {
+          "channels": [
+            "F3",
+            "Fz",
+            "F4",
+            "T7",
+            "C3",
+            "Cz",
+            "C4",
+            "T8",
+            "CP3",
+            "CP4",
+            "P3",
+            "Pz",
+            "P4",
+            "PO7",
+            "PO8",
+            "Oz",
+            "Fp1",
+            "Fp2",
+            "F7",
+            "F8",
+            "FC5",
+            "FC1",
+            "FC2",
+            "FC6",
+            "CPz",
+            "P7",
+            "P5",
+            "PO3",
+            "POz",
+            "PO4",
+            "O1",
+            "O2"
+          ],
+          "recordings": 288
+        }
+      ],
+      "references": {
+        "n/a": 288
+      },
+      "sfreq_range": [
+        256.0000766323896,
+        256.0000766323896
+      ],
+      "event_files": 288,
+      "event_rows": 207360,
+      "labels": [
+        {
+          "trial_type": "NonTarget",
+          "value": "1",
+          "count": 190080
+        },
+        {
+          "trial_type": "Target",
+          "value": "2",
+          "count": 17280
+        }
+      ],
+      "sample_signal": {
+        "path": "mne_data\\mainsah2025_s2_nemar_v1.0.3\\sub-1\\ses-0\\eeg\\sub-1_ses-0_task-p300_run-0_eeg.bdf",
+        "sha256": "8c1ef6d8dd75fef9e52c8bdc9798b51699dc02a225d937f29ee5f8999a2dfcf7",
+        "channels": [
+          "F3",
+          "Fz",
+          "F4",
+          "T7",
+          "C3",
+          "Cz",
+          "C4",
+          "T8",
+          "CP3",
+          "CP4",
+          "P3",
+          "Pz",
+          "P4",
+          "PO7",
+          "PO8",
+          "Oz",
+          "Fp1",
+          "Fp2",
+          "F7",
+          "F8",
+          "FC5",
+          "FC1",
+          "FC2",
+          "FC6",
+          "CPz",
+          "P7",
+          "P5",
+          "PO3",
+          "POz",
+          "PO4",
+          "O1",
+          "O2"
+        ],
+        "sfreq": 256.0,
+        "samples": 42752,
+        "finite": true,
+        "peak_to_peak_v": 0.0002619780080029974
+      }
+    },
+    "MNE-bnci-data": {
+      "files": 8,
+      "bytes": 172688772,
+      "extensions": {
+        ".mat": 8
+      },
+      "zip_directory_valid": 0,
+      "zip_directory_invalid": [],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash"
+    },
+    "MNE-braininvaders2012-data": {
+      "files": 1730,
+      "bytes": 1328730792,
+      "extensions": {
+        ".zip": 25,
+        ".part": 1658,
+        ".attempt": 47
+      },
+      "zip_directory_valid": 25,
+      "zip_directory_invalid": [],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash",
+      "zip_example": {
+        "path": "mne_data\\MNE-braininvaders2012-data\\zenodo\\2649069\\subject_01.zip",
+        "members": 12
+      }
+    },
+    "MNE-braininvaders2013-data": {
+      "files": 36533,
+      "bytes": 19290524444,
+      "extensions": {
+        ".zip": 73,
+        ".part": 36459,
+        ".attempt": 1
+      },
+      "zip_directory_valid": 73,
+      "zip_directory_invalid": [],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash",
+      "zip_example": {
+        "path": "mne_data\\MNE-braininvaders2013-data\\zenodo\\2669187\\subject01_session01.zip",
+        "members": 16
+      }
+    },
+    "MNE-braininvaders2014a-data": {
+      "files": 192,
+      "bytes": 8556559511,
+      "extensions": {
+        ".zip": 64,
+        ".csv": 64,
+        ".mat": 64
+      },
+      "zip_directory_valid": 64,
+      "zip_directory_invalid": [],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash",
+      "zip_example": {
+        "path": "mne_data\\MNE-braininvaders2014a-data\\zenodo\\3266223\\subject_01.zip",
+        "members": 2
+      }
+    },
+    "MNE-braininvaders2014b-data": {
+      "files": 8959,
+      "bytes": 4682269622,
+      "extensions": {
+        ".zip": 19,
+        ".part": 8940
+      },
+      "zip_directory_valid": 19,
+      "zip_directory_invalid": [],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash",
+      "zip_example": {
+        "path": "mne_data\\MNE-braininvaders2014b-data\\zenodo\\3267302\\group_01_mat.zip",
+        "members": 3
+      }
+    },
+    "MNE-braininvaders2015a-data": {
+      "files": 20224,
+      "bytes": 10568295850,
+      "extensions": {
+        ".zip": 43,
+        ".part": 20181
+      },
+      "zip_directory_valid": 43,
+      "zip_directory_invalid": [],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash",
+      "zip_example": {
+        "path": "mne_data\\MNE-braininvaders2015a-data\\zenodo\\3266930\\subject_01_mat.zip",
+        "members": 7
+      }
+    },
+    "MNE-braininvaders2015b-data": {
+      "files": 17376,
+      "bytes": 9092161086,
+      "extensions": {
+        ".zip": 22,
+        ".part": 17354
+      },
+      "zip_directory_valid": 22,
+      "zip_directory_invalid": [],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash",
+      "zip_example": {
+        "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_01_mat.zip",
+        "members": 4
+      }
+    },
+    "MNE-llp-data": {
+      "files": 8,
+      "bytes": 1324904448,
+      "extensions": {
+        ".zip": 8
+      },
+      "zip_directory_valid": 0,
+      "zip_directory_invalid": [
+        "mne_data\\MNE-llp-data\\subject01.zip",
+        "mne_data\\MNE-llp-data\\subject02.zip",
+        "mne_data\\MNE-llp-data\\subject03.zip",
+        "mne_data\\MNE-llp-data\\subject04.zip",
+        "mne_data\\MNE-llp-data\\subject05.zip",
+        "mne_data\\MNE-llp-data\\subject06.zip",
+        "mne_data\\MNE-llp-data\\subject07.zip",
+        "mne_data\\MNE-llp-data\\subject08.zip"
+      ],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash"
+    },
+    "MNE-Mainsah2025-data": {
+      "files": 0,
+      "bytes": 0,
+      "extensions": {},
+      "zip_directory_valid": 0,
+      "zip_directory_invalid": [],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash"
+    },
+    "MNE-P3-data": {
+      "files": 751,
+      "bytes": 2234420229,
+      "extensions": {
+        ".yml": 1,
+        "": 1,
+        ".md": 1,
+        ".nix": 248,
+        ".txt": 249,
+        ".zip": 248,
+        ".exp": 1,
+        ".sce": 1,
+        ".log": 1
+      },
+      "zip_directory_valid": 248,
+      "zip_directory_invalid": [],
+      "zip_validation_scope": "central_directory_only_not_crc_or_official_hash",
+      "zip_example": {
+        "path": "mne_data\\MNE-P3-data\\Experiment_731_P3_Numbers\\Scenario\\numbers.zip",
+        "members": 4
+      }
+    }
+  },
+  "counterexamples": {
+    "hierarchical_risk_and_autograd": "PASS",
+    "marginal_alignment_can_reverse_labels": "PASS",
+    "distillation_cannot_recover_unobserved_information": "PASS",
+    "common_reference_invariance_and_common_mode_loss": "PASS",
+    "real_binary_split_fixed_test_and_purge": "PASS",
+    "prior_shift_changes_unconditional_moments": "PASS",
+    "full_dataset_risk_is_not_exact_minibatch_ratio_risk": "PASS"
+  }
+}

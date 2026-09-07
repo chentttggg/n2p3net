@@ -34,8 +34,8 @@ def _source_dataset(
     subject: str,
     offset: float,
     candidate_metadata: bool = False,
+    channels: tuple[str, ...] = ("Cz", "P3", "Pz", "P4", "Oz"),
 ) -> EpochDataset:
-    channels = ("Cz", "P3", "Pz", "P4", "Oz")
     identity = build_channel_identity(channels, allow_missing_positions=False)
     n_epochs = 2
     timeline = ScheduledEventTimeline(
@@ -65,12 +65,8 @@ def _source_dataset(
         online_causal=True,
         timing_source="synthetic",
         candidate_ids=(np.asarray(["left", "right"]) if candidate_metadata else None),
-        target_candidate_ids=(
-            np.asarray(["right", "right"]) if candidate_metadata else None
-        ),
-        repetition_indices=(
-            np.asarray([0, 0], dtype=np.int64) if candidate_metadata else None
-        ),
+        target_candidate_ids=(np.asarray(["right", "right"]) if candidate_metadata else None),
+        repetition_indices=(np.asarray([0, 0], dtype=np.int64) if candidate_metadata else None),
     )
     values = np.arange(n_epochs * len(channels) * 4, dtype=np.float32).reshape(
         n_epochs,
@@ -136,7 +132,15 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
     barrier = threading.Barrier(2)
     worker_names: list[str] = []
 
-    def concurrent_prepare(source, *, channels, event_contract, reference_mode):
+    def concurrent_prepare(
+        source,
+        *,
+        channels,
+        event_contract,
+        reference_mode,
+        missing_channel_policy="require",
+        reference_channel=None,
+    ):
         worker_names.append(threading.current_thread().name)
         barrier.wait(timeout=5)
         return original_prepare(
@@ -144,6 +148,8 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
             channels=channels,
             event_contract=event_contract,
             reference_mode=reference_mode,
+            missing_channel_policy=missing_channel_policy,
+            reference_channel=reference_channel,
         )
 
     monkeypatch.setattr(module, "_prepare_source", concurrent_prepare)
@@ -172,10 +178,13 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
     main()
 
     merged = load_epoch_dataset(output_path, require_labels=True, validation="attested")
-    assert ensure_common_channel_average_reference(
-        merged,
-        ("Cz", "P3", "Pz", "P4", "Oz"),
-    ) is merged
+    assert (
+        ensure_common_channel_average_reference(
+            merged,
+            ("Cz", "P3", "Pz", "P4", "Oz"),
+        )
+        is merged
+    )
     np.testing.assert_array_equal(merged.X[: first.n_epochs], first.X)
     np.testing.assert_array_equal(merged.X[first.n_epochs :], second.X)
     assert merged.subject_ids.tolist() == ["A::01", "A::01", "B::02", "B::02"]
@@ -197,22 +206,31 @@ def test_multidomain_builder_reuses_prepared_car_and_namespace(
     assert operations.count("concatenate_epoch_datasets") == 1
     source_records = merged.provenance["sources"]
     assert [record["namespace_preexisting"] for record in source_records] == [True, True]
-    assert source_records[0]["verified_cache_attestation"]["sha256"] == (
-        loaded_epoch_cache_attestation(
-            load_epoch_dataset(first_path, validation="attested")
-        )["sha256"]
+    assert (
+        source_records[0]["verified_cache_attestation"]["sha256"]
+        == (
+            loaded_epoch_cache_attestation(load_epoch_dataset(first_path, validation="attested"))[
+                "sha256"
+            ]
+        )
     )
-    assert source_records[1]["verified_cache_attestation"]["sha256"] == (
-        loaded_epoch_cache_attestation(
-            load_epoch_dataset(second_path, validation="attested")
-        )["sha256"]
+    assert (
+        source_records[1]["verified_cache_attestation"]["sha256"]
+        == (
+            loaded_epoch_cache_attestation(load_epoch_dataset(second_path, validation="attested"))[
+                "sha256"
+            ]
+        )
     )
     output_sha256 = loaded_epoch_cache_attestation(merged)["sha256"]
     with pytest.raises(FileExistsError, match="requires a new output path"):
         main()
-    assert loaded_epoch_cache_attestation(
-        load_epoch_dataset(output_path, validation="attested")
-    )["sha256"] == output_sha256
+    assert (
+        loaded_epoch_cache_attestation(load_epoch_dataset(output_path, validation="attested"))[
+            "sha256"
+        ]
+        == output_sha256
+    )
 
 
 def test_multidomain_builder_requires_explicit_binary_view_for_mixed_event_metadata(
@@ -320,8 +338,7 @@ def test_multidomain_builder_preserves_native_reference_by_default(
     assert merged.provenance["domain_adapter"]["schema"] == "n2p3_native_reference_selection/1"
     assert merged.provenance["reference_mode"] == "native_preserve"
     assert all(
-        record["reference_mode"] == "native_preserve"
-        for record in merged.provenance["sources"]
+        record["reference_mode"] == "native_preserve" for record in merged.provenance["sources"]
     )
     np.testing.assert_array_equal(merged.X[: first.n_epochs], first.X)
     np.testing.assert_array_equal(merged.X[first.n_epochs :], second.X)
@@ -352,7 +369,6 @@ def test_multidomain_builder_rejects_two_channel_car_when_requested(
             str(tmp_path / "two-channel.npz"),
         ],
     )
-
 
 
 def test_reference_cache_derivation_builds_native_and_car_views(
@@ -408,3 +424,46 @@ def test_reference_cache_derivation_builds_native_and_car_views(
         main()
     assert exc_info.value.code == 2
 
+
+def test_multidomain_builder_preserves_sparse_source_observations_in_full_montage(
+    tmp_path, monkeypatch
+):
+    channels = ("Fz", "Cz", "P3", "Pz", "P4", "PO8", "Oz")
+    sparse = _source_dataset(source_id="SPARSE", subject="01", offset=0.0)
+    full = _source_dataset(source_id="FULL", subject="02", offset=100.0, channels=channels)
+    sparse_path = save_epoch_dataset(tmp_path / "sparse.npz", sparse)
+    full_path = save_epoch_dataset(tmp_path / "full.npz", full)
+    output = tmp_path / "union.npz"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prepare_multidomain_source",
+            "--source",
+            f"SPARSE={sparse_path}",
+            "--source",
+            f"FULL={full_path}",
+            "--target-channels",
+            ",".join(channels),
+            "--event-contract",
+            "binary_evidence",
+            "--reference-mode",
+            "native_preserve",
+            "--missing-channel-policy",
+            "mask",
+            "--output",
+            str(output),
+            "--source-workers",
+            "1",
+        ],
+    )
+    main()
+    combined = load_epoch_dataset(output, require_labels=True, validation="attested")
+    assert combined.channel_mask.all()
+    assert combined.X.shape == (4, 7, 4)
+    assert not combined.trial_channel_mask[:2, [0, 5]].any()
+    assert np.all(combined.X[:2, [0, 5], :] == 0.0)
+    assert combined.trial_channel_mask[2:].all()
+    np.testing.assert_array_equal(combined.y, np.r_[sparse.y, full.y])
+    assert combined.identity_table is not None
+    assert len(combined.identity_table.records) == 2

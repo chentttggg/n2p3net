@@ -304,6 +304,7 @@ def build_manifest_dataset(manifest: DatasetManifest) -> EpochDataset:
                     "filter_method": spec.filter_method,
                     "filter_order": spec.filter_order,
                     "filter_phase": spec.filter_phase,
+                    "causal_iir_initial_state": spec.causal_iir_initial_state,
                     "resample_domain": spec.resample_domain,
                     "resample_method": spec.resample_method,
                     "resample_npad": spec.resample_npad,

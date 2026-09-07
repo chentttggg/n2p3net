@@ -15,6 +15,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from data.exclusions import assert_identity_participants_allowed
 from data.identity import (
     DatasetIdentityTable,
     IdentityExclusionPolicy,
@@ -50,6 +51,9 @@ def load_checkpoint_payload(path: str | Path) -> dict[str, object]:
         raise ValueError(f"{path} is not a mapping checkpoint payload.")
     if payload.get("schema") != CHECKPOINT_SCHEMA:
         raise ValueError("checkpoint schema is unsupported; regenerate the checkpoint.")
+    ledger = payload.get("training_identity_ledger")
+    if isinstance(ledger, Mapping):
+        assert_identity_participants_allowed(DatasetIdentityTable.from_payload(ledger))
     return payload
 
 
@@ -80,6 +84,7 @@ def checkpoint_training_identity_ledger(
     if not isinstance(ledger_payload, Mapping):
         raise ValueError("pretraining checkpoint lacks a structured training_identity_ledger.")
     ledger = DatasetIdentityTable.from_payload(ledger_payload)
+    assert_identity_participants_allowed(ledger)
     if payload.get("training_identity_ledger_digest") != ledger.digest():
         raise ValueError("checkpoint training identity ledger digest disagrees with its records.")
     if set(training_contract.training_participant_keys) != set(ledger.authority_keys()):

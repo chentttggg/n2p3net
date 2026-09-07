@@ -1,2 +1,6 @@
 *.sh text eol=lf
 *.pdf binary
+# Preserve the bytes of captured evidence and its recorded checksums.
+doc/assets/** -text whitespace=cr-at-eol
+# Captured test output can include whitespace from the original failure.
+doc/assets/**/*.xml -whitespace

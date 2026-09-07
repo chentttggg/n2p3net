@@ -16,6 +16,7 @@ if str(SRC) not in sys.path:
 from data.domain import (  # noqa: E402
     SOURCE_DOMAIN_AXIS_SCHEMA,
     SOURCE_DOMAIN_COLUMN,
+    adapt_observed_montage,
     annotate_source_domain,
     ensure_common_channel_average_reference,
     ensure_epoch_dataset_namespace,
@@ -48,6 +49,8 @@ def _prepare_source(
     channels: tuple[str, ...],
     event_contract: str,
     reference_mode: str,
+    missing_channel_policy: str = "require",
+    reference_channel: str | None = None,
 ) -> tuple[EpochDataset, dict[str, object]]:
     namespace, path = source
     dataset = load_epoch_dataset(path, require_labels=True, validation="attested")
@@ -55,15 +58,23 @@ def _prepare_source(
     namespace_preexisting = dataset.provenance.get("subject_namespace") is not None
     if reference_mode == "common_average":
         aligned = ensure_common_channel_average_reference(dataset, channels)
+    elif missing_channel_policy == "mask" or reference_mode == "measured_channel":
+        aligned = adapt_observed_montage(dataset, channels, reference_channel=reference_channel)
+        if missing_channel_policy == "require" and not bool(aligned.trial_channel_mask.all()):
+            raise ValueError("unobserved source channels require an explicit mask policy")
     else:
         aligned = ensure_native_reference_selection(dataset, channels)
     aligned = ensure_epoch_dataset_namespace(aligned, namespace)
     aligned = annotate_source_domain(aligned, namespace)
     candidate_metadata_projected = False
     if event_contract == "binary_evidence":
-        source_aligned = aligned
         aligned = project_binary_evidence_source_view(aligned)
-        candidate_metadata_projected = aligned is not source_aligned
+        projection = aligned.provenance["binary_evidence_projection"]
+        candidate_metadata_projected = bool(
+            projection["dropped_fields"]
+            or projection["dropped_metadata_columns"]
+            or projection["source_candidate_task_contract"] is not None
+        )
     return aligned, {
         "namespace": namespace,
         "namespace_preexisting": namespace_preexisting,
@@ -94,7 +105,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--reference-mode",
-        choices=("common_average", "native_preserve"),
+        choices=("common_average", "native_preserve", "measured_channel"),
         default="native_preserve",
         help=(
             "native_preserve selects channels without re-referencing (default, requires "
@@ -108,6 +119,8 @@ def main() -> None:
         help="Minimum common channels required for the common_average reference mode.",
     )
     parser.add_argument("--name", default="MultiSource-P300")
+    parser.add_argument("--missing-channel-policy", choices=("require", "mask"), default="require")
+    parser.add_argument("--reference-channel", default=None)
     parser.add_argument("--output", required=True)
     parser.add_argument("--uncompressed", action="store_true")
     parser.add_argument(
@@ -123,6 +136,12 @@ def main() -> None:
         help="Total native CPU thread budget shared by source workers.",
     )
     args = parser.parse_args()
+    if args.missing_channel_policy == "mask" and args.reference_mode == "common_average":
+        parser.error(
+            "masked montage cannot claim one shared CAR over different observed electrodes"
+        )
+    if (args.reference_mode == "measured_channel") != (args.reference_channel is not None):
+        parser.error("measured_channel mode requires an explicit --reference-channel")
     if len(args.source) < 2:
         parser.error("multi-domain source preparation requires at least two --source values")
     namespaces = [namespace for namespace, _ in args.source]
@@ -163,6 +182,8 @@ def main() -> None:
                     channels=channels,
                     event_contract=args.event_contract,
                     reference_mode=args.reference_mode,
+                    missing_channel_policy=args.missing_channel_policy,
+                    reference_channel=args.reference_channel,
                 )
                 for source in args.source
             )
@@ -178,6 +199,8 @@ def main() -> None:
                             channels=channels,
                             event_contract=args.event_contract,
                             reference_mode=args.reference_mode,
+                            missing_channel_policy=args.missing_channel_policy,
+                            reference_channel=args.reference_channel,
                         ),
                         args.source,
                     )
@@ -197,13 +220,15 @@ def main() -> None:
             "source": (
                 "explicit_multidomain_common_channel_car"
                 if args.reference_mode == "common_average"
-                else "explicit_multidomain_native_reference_selection"
+                else "explicit_multidomain_" + args.reference_mode + "_selection"
             ),
             "source_reference": reference,
             "domain_adapter": dict(domain_adapter),
             "target_channels": list(adapted[0].channel_names),
             "event_contract": args.event_contract,
             "reference_mode": args.reference_mode,
+            "missing_channel_policy": args.missing_channel_policy,
+            "reference_channel": args.reference_channel,
             "source_loading": worker_plan.record(),
             "source_domain_axis": {
                 "schema": SOURCE_DOMAIN_AXIS_SCHEMA,
