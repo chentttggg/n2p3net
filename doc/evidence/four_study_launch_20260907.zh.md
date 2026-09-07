@@ -63,3 +63,7 @@ b清单经生产验证器通过，输入复用a已完整生成的缓存和哈希
 当前CUDA训练未启用严格确定性，因此不能将单seed解释为逐bit可重放，
 也不能将这两种神经训练的变化作为额外机制效应。原始差异保留在
 `parallel_performance_verified.json`的`numerically_equivalent=false`记录中。
+额外同seed重复再次复现全网微调和scratch差异，而其他四臂仍逐值相同；
+因此不将数值差异直接归因于worker数量或作为性能优化保持逐bit结果的证据。
+完整运行归档为`experiments/runs/four_dataset_20260907/four_study_development_20260907b.results.tar.gz`，
+云端SHA256为`4b311349f18c9f487d8ea9ec80bdc1834a6dfd4fcc335212b02dd61587bb93c8`。
