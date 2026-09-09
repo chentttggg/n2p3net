@@ -41,6 +41,39 @@ from transfer.checkpoint import (
 )
 
 
+@pytest.mark.parametrize("argv", [
+    ["--output", "unused", "--source-chain-plan", "missing.json", "--help"],
+    ["--source-chain-plan=missing.json", "--output", "unused", "--help"],
+    ["--source-chain-plan", "--help"],
+])
+def test_source_chain_dispatch_accepts_argument_order_and_equals_form(argv, capsys) -> None:
+    with pytest.raises(SystemExit) as error:
+        run_pretrain_supervised_main(argv)
+    assert error.value.code == 0
+    assert "--evaluate-outer" in capsys.readouterr().out
+
+
+def test_source_chain_help_is_advertised_by_legacy_entry(capsys) -> None:
+    with pytest.raises(SystemExit) as error:
+        run_pretrain_supervised_main(["--help"])
+    assert error.value.code == 0
+    assert "--source-chain-plan" in capsys.readouterr().out
+
+
+def test_source_chain_reordered_cli_help_from_outside_project(tmp_path) -> None:
+    import subprocess
+    import sys
+
+    entry = Path(__file__).resolve().parents[1] / "experiments" / "run_pretrain_supervised.py"
+    result = subprocess.run(
+        [sys.executable, str(entry), "--output", "unused", "--source-chain-plan=missing.json", "--help"],
+        cwd=tmp_path, capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "--evaluate-outer" in result.stdout
+    assert not (tmp_path / "unused").exists()
+
+
 def _write_source_snapshot_manifest(
     directory: Path,
 ) -> tuple[Path, str, Path]:
@@ -197,6 +230,9 @@ class _FastSupervisedBaseline:
 
     def architecture_record(self) -> dict[str, object]:
         return self.model_.architecture_record()
+
+    def fitted_input_statistics(self):
+        return self._input_mean.copy(), self._input_std.copy()
 
     def source_domain_axis_record(self) -> None:
         return None

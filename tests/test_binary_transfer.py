@@ -110,7 +110,7 @@ def test_shrinkage_baseline_does_not_fit_test_statistics():
     np.testing.assert_allclose(first, second[:6], atol=1e-10)
 
 
-@pytest.mark.parametrize("budget,maximum", [(0, 3), (4, 3), (3, 10)])
+@pytest.mark.parametrize("budget,maximum", [(-1, 3), (4, 3), (3, 10)])
 def test_invalid_calibration_does_not_shift_or_empty_test(budget, maximum):
     onset = np.arange(10, dtype=float)
     with pytest.raises(ValueError, match="calibration budgets"):

@@ -1,0 +1,1113 @@
+{
+  "scope": "read_only_timing_diagnostic_no_fitting_or_model_selection",
+  "cache_sha256": "0e27bd0d74098fa28df96142e9ae5b66632ea2ce577667c1608b60eadc9e60f9",
+  "preprocessing": {
+    "name": "p300_single_subject_causal_v3",
+    "sfreq": 128.0,
+    "l_freq": 0.1,
+    "h_freq": 30.0,
+    "tmin_ms": -200.0,
+    "tmax_ms": 1200.0,
+    "n_times": 179,
+    "baseline_mode": "mean_only",
+    "signal_unit": "V",
+    "filter_method": "iir",
+    "filter_order": 4,
+    "filter_phase": "forward",
+    "causal_iir_initial_state": "steady_state_first_sample",
+    "resample_domain": "epoched",
+    "resample_method": "fft",
+    "resample_npad": "auto",
+    "resample_window": "auto",
+    "resample_pad": "edge",
+    "trial_reference_window_ms": null,
+    "trial_reference_center": "mean",
+    "trial_reference_scale": "none",
+    "reject_threshold_v": null
+  },
+  "script_sha256": "e4c87472baebabf07776152d09b3053fa2a0bd8e3d8bbc6b76471f065faabba4",
+  "current_source_sha256": {
+    "D:\\BCI\\n2p3-net\\src\\data\\contract.py": "2f34bb5dbf94230053cd40dc7e3a67e122e9c1cbfe6038567a2f5c89930f881d",
+    "D:\\BCI\\n2p3-net\\src\\data\\preprocess.py": "9862aa16ebdd6d404e238a9c55086c7341548eb75247271fab53d73fa061325d",
+    "D:\\BCI\\n2p3-net\\src\\data\\brainsync.py": "6c44865d50f298950b7b4478b687979288d1a983966c34f0202f93e39fb03f99",
+    "D:\\BCI\\n2p3-net\\src\\models\\n2p3net.py": "886d53058d3dea1ec79cbbae3103c9ff5071ccd38d09e700465b771a2ab6346f",
+    "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\gtn_workstation\\runtime.py": "6aaa685c40fb9772ceeef9a44dfdbd9d2838aafcd5ba71074ea4f85df82d86ca",
+    "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\gtn_workstation\\ui.py": "66ce03c0b50b15b51d9f74e0798d9f01ce8e5a8e93c889fe1b34020e5a240046",
+    "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\gtn_workstation\\bids.py": "0864cfb8af61c01eddac0d295c92534248fd76b313d973cbe59dac62ce7fd426",
+    "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\gtn_workstation\\recording_clock.py": "591bdd02274e6d1e7ee1e03c5b94d9a3ca18310d07fce664025199d65499b83e"
+  },
+  "original_acquisition_executed_source_bound": false,
+  "pulse_checks": [
+    {
+      "requested_ms": 0.0,
+      "source_ms": 0.0,
+      "phase": "none",
+      "recovered_ms": 3.125,
+      "n_times": 179
+    },
+    {
+      "requested_ms": 0.0,
+      "source_ms": 0.0,
+      "phase": "zero",
+      "recovered_ms": 3.125,
+      "n_times": 179
+    },
+    {
+      "requested_ms": 0.0,
+      "source_ms": 0.0,
+      "phase": "forward",
+      "recovered_ms": 18.75,
+      "n_times": 179
+    },
+    {
+      "requested_ms": 150.0,
+      "source_ms": 152.0,
+      "phase": "none",
+      "recovered_ms": 151.5625,
+      "n_times": 179
+    },
+    {
+      "requested_ms": 150.0,
+      "source_ms": 152.0,
+      "phase": "zero",
+      "recovered_ms": 151.5625,
+      "n_times": 179
+    },
+    {
+      "requested_ms": 150.0,
+      "source_ms": 152.0,
+      "phase": "forward",
+      "recovered_ms": 167.1875,
+      "n_times": 179
+    },
+    {
+      "requested_ms": 350.0,
+      "source_ms": 352.0,
+      "phase": "none",
+      "recovered_ms": 354.6875,
+      "n_times": 179
+    },
+    {
+      "requested_ms": 350.0,
+      "source_ms": 352.0,
+      "phase": "zero",
+      "recovered_ms": 354.6875,
+      "n_times": 179
+    },
+    {
+      "requested_ms": 350.0,
+      "source_ms": 352.0,
+      "phase": "forward",
+      "recovered_ms": 370.3125,
+      "n_times": 179
+    },
+    {
+      "requested_ms": 600.0,
+      "source_ms": 600.0,
+      "phase": "none",
+      "recovered_ms": 596.875,
+      "n_times": 179
+    },
+    {
+      "requested_ms": 600.0,
+      "source_ms": 600.0,
+      "phase": "zero",
+      "recovered_ms": 596.875,
+      "n_times": 179
+    },
+    {
+      "requested_ms": 600.0,
+      "source_ms": 600.0,
+      "phase": "forward",
+      "recovered_ms": 612.5,
+      "n_times": 179
+    }
+  ],
+  "clock_counterexamples": {
+    "exact_current_methods_executed_without_qt_or_device": true,
+    "readiness_example": {
+      "actual_sample_zero_s": 100.0,
+      "observation_s": 101.05,
+      "returned_zero_s": 101.05,
+      "true_latency_ms": 350.0,
+      "apparent_latency_ms": 1400.0,
+      "direction": "later_not_earlier",
+      "actual_recording_estimate": false
+    },
+    "malformed_batch_example": {
+      "input_samples": 250,
+      "buffered_samples": 0,
+      "emitted_errors": 1,
+      "actual_recording_event": false
+    }
+  },
+  "sessions": [
+    {
+      "session": "P001_20260903_170721_01",
+      "original_directory": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\data\\P001_20260903_170721_01",
+      "source_raw_sha256": "81d63d006cd263745a5bbc50907532643f9e92604ce7faf750bb1b2e29236a69",
+      "prepared_raw_sha256": "4a16a318618b99a0c2c2f78b1ca5de841364ab2cfadc60cc7e8d125b02172c58",
+      "ledger_sha256": "8082141179b7c2de26ab36eba41d1a46db8cfe8ffa79d412be63063197908826",
+      "events_sha256": "6d0a1b32f405142e0c3ee05110685777232e48396653911dcd36310b2d658ffa",
+      "original_and_prepared_samples_equal": true,
+      "source_sfreq": 250.0,
+      "source_samples": 216000,
+      "raw_duration_s": 864.0,
+      "recording_log_duration_s": 863.899915,
+      "log_duration_minus_raw_s": -0.1000850000000355,
+      "duration_comparison_is_not_clock_calibration": true,
+      "continuity": {
+        "warning_threshold_seconds": 12.0,
+        "max_gap_seconds": 0.0,
+        "gap_event_count": 0,
+        "passed": true
+      },
+      "device_errors": [],
+      "scheduled": 450,
+      "retained": 441,
+      "positives": 49,
+      "marker_to_bids_max_error_ms": 9.208633855450898e-09,
+      "bids_sample_rounding_max_error_ms": 2.000000000066393,
+      "manual_pipeline_max_error_v": 1.8617769270701245e-09,
+      "cache_cz_rereference_bitwise_equal": true,
+      "peaks_descriptive_only": [
+        {
+          "channel": "FZ",
+          "curve": "target",
+          "peak_ms": 3.125,
+          "amplitude_uv": -17.628292083740234
+        },
+        {
+          "channel": "FZ",
+          "curve": "target_minus_other",
+          "peak_ms": 3.125,
+          "amplitude_uv": -34.895469665527344
+        },
+        {
+          "channel": "CZ",
+          "curve": "target",
+          "peak_ms": 3.125,
+          "amplitude_uv": -19.609363555908203
+        },
+        {
+          "channel": "CZ",
+          "curve": "target_minus_other",
+          "peak_ms": 3.125,
+          "amplitude_uv": -36.79679870605469
+        },
+        {
+          "channel": "P3",
+          "curve": "target",
+          "peak_ms": 3.125,
+          "amplitude_uv": -24.383935928344727
+        },
+        {
+          "channel": "P3",
+          "curve": "target_minus_other",
+          "peak_ms": 3.125,
+          "amplitude_uv": -40.71928787231445
+        },
+        {
+          "channel": "PZ",
+          "curve": "target",
+          "peak_ms": 3.125,
+          "amplitude_uv": -21.899627685546875
+        },
+        {
+          "channel": "PZ",
+          "curve": "target_minus_other",
+          "peak_ms": 3.125,
+          "amplitude_uv": -39.46058654785156
+        },
+        {
+          "channel": "P4",
+          "curve": "target",
+          "peak_ms": 3.125,
+          "amplitude_uv": -24.88714599609375
+        },
+        {
+          "channel": "P4",
+          "curve": "target_minus_other",
+          "peak_ms": 3.125,
+          "amplitude_uv": -39.2297477722168
+        },
+        {
+          "channel": "PO8",
+          "curve": "target",
+          "peak_ms": 3.125,
+          "amplitude_uv": -28.02029037475586
+        },
+        {
+          "channel": "PO8",
+          "curve": "target_minus_other",
+          "peak_ms": 3.125,
+          "amplitude_uv": -39.55852508544922
+        },
+        {
+          "channel": "OZ",
+          "curve": "target",
+          "peak_ms": 3.125,
+          "amplitude_uv": -27.509275436401367
+        },
+        {
+          "channel": "OZ",
+          "curve": "target_minus_other",
+          "peak_ms": 3.125,
+          "amplitude_uv": -42.81551742553711
+        }
+      ]
+    },
+    {
+      "session": "P001_20260903_172410_01",
+      "original_directory": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\data\\P001_20260903_172410_01",
+      "source_raw_sha256": "fc0e7ed0f02b7c3cbbc2d990dc98697e0266a7f11d0ccb0efe4e22593140c991",
+      "prepared_raw_sha256": "5dc803c0a855aba3d4f16929461314380427c91348b04ee7b58ef75d27bb0b47",
+      "ledger_sha256": "ffc00717f78a01d4b51c0c7bac547120d3197778c74349f7b7c1b685be541de6",
+      "events_sha256": "0c13c62214606b008e238ac69755556724f5bdc61fa727daa3d6484f75885aa3",
+      "original_and_prepared_samples_equal": true,
+      "source_sfreq": 250.0,
+      "source_samples": 216000,
+      "raw_duration_s": 864.0,
+      "recording_log_duration_s": 863.896493,
+      "log_duration_minus_raw_s": -0.10350700000003599,
+      "duration_comparison_is_not_clock_calibration": true,
+      "continuity": {
+        "warning_threshold_seconds": 12.0,
+        "max_gap_seconds": 0.0,
+        "gap_event_count": 0,
+        "passed": true
+      },
+      "device_errors": [],
+      "scheduled": 450,
+      "retained": 441,
+      "positives": 49,
+      "marker_to_bids_max_error_ms": 8.640199666842818e-09,
+      "bids_sample_rounding_max_error_ms": 2.000000000066393,
+      "manual_pipeline_max_error_v": 2.3274350936103305e-10,
+      "cache_cz_rereference_bitwise_equal": true,
+      "peaks_descriptive_only": [
+        {
+          "channel": "FZ",
+          "curve": "target",
+          "peak_ms": 167.1875,
+          "amplitude_uv": 29.886564254760742
+        },
+        {
+          "channel": "FZ",
+          "curve": "target_minus_other",
+          "peak_ms": 800.0,
+          "amplitude_uv": 14.824118614196777
+        },
+        {
+          "channel": "CZ",
+          "curve": "target",
+          "peak_ms": 167.1875,
+          "amplitude_uv": 23.639545440673828
+        },
+        {
+          "channel": "CZ",
+          "curve": "target_minus_other",
+          "peak_ms": 167.1875,
+          "amplitude_uv": 10.121459007263184
+        },
+        {
+          "channel": "P3",
+          "curve": "target",
+          "peak_ms": 42.1875,
+          "amplitude_uv": -1.512034296989441
+        },
+        {
+          "channel": "P3",
+          "curve": "target_minus_other",
+          "peak_ms": 50.0,
+          "amplitude_uv": -0.16860711574554443
+        },
+        {
+          "channel": "PZ",
+          "curve": "target",
+          "peak_ms": 167.1875,
+          "amplitude_uv": 20.18145751953125
+        },
+        {
+          "channel": "PZ",
+          "curve": "target_minus_other",
+          "peak_ms": 167.1875,
+          "amplitude_uv": 8.760610580444336
+        },
+        {
+          "channel": "P4",
+          "curve": "target",
+          "peak_ms": 760.9375,
+          "amplitude_uv": -1.4287867546081543
+        },
+        {
+          "channel": "P4",
+          "curve": "target_minus_other",
+          "peak_ms": 50.0,
+          "amplitude_uv": -2.027162790298462
+        },
+        {
+          "channel": "PO8",
+          "curve": "target",
+          "peak_ms": 50.0,
+          "amplitude_uv": 84.25273895263672
+        },
+        {
+          "channel": "PO8",
+          "curve": "target_minus_other",
+          "peak_ms": 50.0,
+          "amplitude_uv": 93.55086517333984
+        },
+        {
+          "channel": "OZ",
+          "curve": "target",
+          "peak_ms": 182.8125,
+          "amplitude_uv": 3.982449531555176
+        },
+        {
+          "channel": "OZ",
+          "curve": "target_minus_other",
+          "peak_ms": 50.0,
+          "amplitude_uv": 4.546034812927246
+        }
+      ]
+    },
+    {
+      "session": "P001_20260903_173947_01",
+      "original_directory": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\data\\P001_20260903_173947_01",
+      "source_raw_sha256": "ca494959621496fc0a2bb30f0884f465784f31ca5ecf4886da24ba56d973ea7e",
+      "prepared_raw_sha256": "f689457bc1b5064727b8d8d4f21c5b7a896f1e8cfb12a32ad35d2481837928be",
+      "ledger_sha256": "6f0e3f68ecfe92ec630899f11321f05f56d347ce98016a7fb7fd12a5edcd92a5",
+      "events_sha256": "f4e2fa7ba3470b25e66caca707297ce0c33d8530ae7d1cfba003b27b4f8c39c0",
+      "original_and_prepared_samples_equal": true,
+      "source_sfreq": 250.0,
+      "source_samples": 215750,
+      "raw_duration_s": 863.0,
+      "recording_log_duration_s": 863.616493,
+      "log_duration_minus_raw_s": 0.6164929999999913,
+      "duration_comparison_is_not_clock_calibration": true,
+      "continuity": {
+        "warning_threshold_seconds": 12.0,
+        "max_gap_seconds": 0.0,
+        "gap_event_count": 0,
+        "passed": true
+      },
+      "device_errors": [],
+      "scheduled": 450,
+      "retained": 441,
+      "positives": 50,
+      "marker_to_bids_max_error_ms": 1.1311840353300795e-08,
+      "bids_sample_rounding_max_error_ms": 2.000000000066393,
+      "manual_pipeline_max_error_v": 2.306764657761251e-10,
+      "cache_cz_rereference_bitwise_equal": true,
+      "peaks_descriptive_only": [
+        {
+          "channel": "FZ",
+          "curve": "target",
+          "peak_ms": 237.5,
+          "amplitude_uv": 25.80475425720215
+        },
+        {
+          "channel": "FZ",
+          "curve": "target_minus_other",
+          "peak_ms": 245.3125,
+          "amplitude_uv": -1.275777816772461
+        },
+        {
+          "channel": "CZ",
+          "curve": "target",
+          "peak_ms": 245.3125,
+          "amplitude_uv": 10.646204948425293
+        },
+        {
+          "channel": "CZ",
+          "curve": "target_minus_other",
+          "peak_ms": 3.125,
+          "amplitude_uv": -5.772540092468262
+        },
+        {
+          "channel": "P3",
+          "curve": "target",
+          "peak_ms": 237.5,
+          "amplitude_uv": 1.4119869470596313
+        },
+        {
+          "channel": "P3",
+          "curve": "target_minus_other",
+          "peak_ms": 292.1875,
+          "amplitude_uv": -1.8474466800689697
+        },
+        {
+          "channel": "PZ",
+          "curve": "target",
+          "peak_ms": 245.3125,
+          "amplitude_uv": 9.563034057617188
+        },
+        {
+          "channel": "PZ",
+          "curve": "target_minus_other",
+          "peak_ms": 10.9375,
+          "amplitude_uv": -3.6750328540802
+        },
+        {
+          "channel": "P4",
+          "curve": "target",
+          "peak_ms": 18.75,
+          "amplitude_uv": -3.214571714401245
+        },
+        {
+          "channel": "P4",
+          "curve": "target_minus_other",
+          "peak_ms": 10.9375,
+          "amplitude_uv": -3.794172525405884
+        },
+        {
+          "channel": "PO8",
+          "curve": "target",
+          "peak_ms": 253.125,
+          "amplitude_uv": -1.5141721963882446
+        },
+        {
+          "channel": "PO8",
+          "curve": "target_minus_other",
+          "peak_ms": 18.75,
+          "amplitude_uv": -2.5867176055908203
+        },
+        {
+          "channel": "OZ",
+          "curve": "target",
+          "peak_ms": 253.125,
+          "amplitude_uv": 5.895849704742432
+        },
+        {
+          "channel": "OZ",
+          "curve": "target_minus_other",
+          "peak_ms": 604.6875,
+          "amplitude_uv": 3.3299367427825928
+        }
+      ]
+    },
+    {
+      "session": "P001_20260904_171926_01",
+      "original_directory": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\data\\P001_20260904_171926_01",
+      "source_raw_sha256": "558ae9ca3bb512d1fea175e81844f11c34838612c469220b1213d528902c9262",
+      "prepared_raw_sha256": "68ee4bcb69028ec34b95579f220f0f03f98f45ff3bdb4bb3d790f6f5eb91a7ac",
+      "ledger_sha256": "d679aeb8844a1acf480da279d69e48220a7d3d21a5b5cd7668846af03ab9017c",
+      "events_sha256": "4e0f465c63de48df46bead3eeeca86f1c43801e51e8ddf970b9e3247583be47c",
+      "original_and_prepared_samples_equal": true,
+      "source_sfreq": 250.0,
+      "source_samples": 204750,
+      "raw_duration_s": 819.0,
+      "recording_log_duration_s": 819.809118,
+      "log_duration_minus_raw_s": 0.8091180000000122,
+      "duration_comparison_is_not_clock_calibration": true,
+      "continuity": {
+        "warning_threshold_seconds": 12.0,
+        "max_gap_seconds": 0.0,
+        "gap_event_count": 0,
+        "passed": true
+      },
+      "device_errors": [],
+      "scheduled": 450,
+      "retained": 441,
+      "positives": 50,
+      "marker_to_bids_max_error_ms": 1.7280399333685637e-08,
+      "bids_sample_rounding_max_error_ms": 2.000000000066393,
+      "manual_pipeline_max_error_v": 2.8607291882587482e-11,
+      "cache_cz_rereference_bitwise_equal": true,
+      "peaks_descriptive_only": [
+        {
+          "channel": "FZ",
+          "curve": "target",
+          "peak_ms": 307.8125,
+          "amplitude_uv": 56.66788101196289
+        },
+        {
+          "channel": "FZ",
+          "curve": "target_minus_other",
+          "peak_ms": 323.4375,
+          "amplitude_uv": 35.35948181152344
+        },
+        {
+          "channel": "CZ",
+          "curve": "target",
+          "peak_ms": 307.8125,
+          "amplitude_uv": 45.9927978515625
+        },
+        {
+          "channel": "CZ",
+          "curve": "target_minus_other",
+          "peak_ms": 331.25,
+          "amplitude_uv": 29.060909271240234
+        },
+        {
+          "channel": "P3",
+          "curve": "target",
+          "peak_ms": 307.8125,
+          "amplitude_uv": 13.059483528137207
+        },
+        {
+          "channel": "P3",
+          "curve": "target_minus_other",
+          "peak_ms": 362.5,
+          "amplitude_uv": 10.780810356140137
+        },
+        {
+          "channel": "PZ",
+          "curve": "target",
+          "peak_ms": 307.8125,
+          "amplitude_uv": 30.767732620239258
+        },
+        {
+          "channel": "PZ",
+          "curve": "target_minus_other",
+          "peak_ms": 331.25,
+          "amplitude_uv": 20.174468994140625
+        },
+        {
+          "channel": "P4",
+          "curve": "target",
+          "peak_ms": 362.5,
+          "amplitude_uv": 11.5211181640625
+        },
+        {
+          "channel": "P4",
+          "curve": "target_minus_other",
+          "peak_ms": 370.3125,
+          "amplitude_uv": 13.59224796295166
+        },
+        {
+          "channel": "PO8",
+          "curve": "target",
+          "peak_ms": 370.3125,
+          "amplitude_uv": 1.2220262289047241
+        },
+        {
+          "channel": "PO8",
+          "curve": "target_minus_other",
+          "peak_ms": 370.3125,
+          "amplitude_uv": 7.501928329467773
+        },
+        {
+          "channel": "OZ",
+          "curve": "target",
+          "peak_ms": 307.8125,
+          "amplitude_uv": 3.8470730781555176
+        },
+        {
+          "channel": "OZ",
+          "curve": "target_minus_other",
+          "peak_ms": 370.3125,
+          "amplitude_uv": 5.05434513092041
+        }
+      ]
+    },
+    {
+      "session": "P001_20260907_150258_01",
+      "original_directory": "D:\\BCI\\BrainSync_Tool_newest\\BrainSync_Tool\\data\\P001_20260907_150258_01",
+      "source_raw_sha256": "add7041cd9e3eccae761f028b6026115879530ab1322e451a30a2a4b37d20921",
+      "prepared_raw_sha256": "add7041cd9e3eccae761f028b6026115879530ab1322e451a30a2a4b37d20921",
+      "ledger_sha256": "47e8125d644c621d87c7cd79fba51a309b6c8d2988fc3030870df077b6391d14",
+      "events_sha256": "1020102ac6628c861fbc170078fc056888013ae2589c43f8333798eb79ef89c5",
+      "original_and_prepared_samples_equal": true,
+      "source_sfreq": 250.0,
+      "source_samples": 204750,
+      "raw_duration_s": 819.0,
+      "recording_log_duration_s": 819.84016,
+      "log_duration_minus_raw_s": 0.8401599999999689,
+      "duration_comparison_is_not_clock_calibration": true,
+      "continuity": {
+        "warning_threshold_seconds": 12.0,
+        "max_gap_seconds": 0.0,
+        "gap_event_count": 0,
+        "passed": true
+      },
+      "device_errors": [],
+      "scheduled": 450,
+      "retained": 441,
+      "positives": 49,
+      "marker_to_bids_max_error_ms": 9.663381206337363e-10,
+      "bids_sample_rounding_max_error_ms": 2.000000000066393,
+      "manual_pipeline_max_error_v": 4.856199231802194e-11,
+      "cache_cz_rereference_bitwise_equal": true,
+      "peaks_descriptive_only": [
+        {
+          "channel": "FZ",
+          "curve": "target",
+          "peak_ms": 214.0625,
+          "amplitude_uv": 10.593281745910645
+        },
+        {
+          "channel": "FZ",
+          "curve": "target_minus_other",
+          "peak_ms": 409.375,
+          "amplitude_uv": 14.487340927124023
+        },
+        {
+          "channel": "CZ",
+          "curve": "target",
+          "peak_ms": 214.0625,
+          "amplitude_uv": 10.277048110961914
+        },
+        {
+          "channel": "CZ",
+          "curve": "target_minus_other",
+          "peak_ms": 409.375,
+          "amplitude_uv": 14.813607215881348
+        },
+        {
+          "channel": "P3",
+          "curve": "target",
+          "peak_ms": 3.125,
+          "amplitude_uv": 0.4159453809261322
+        },
+        {
+          "channel": "P3",
+          "curve": "target_minus_other",
+          "peak_ms": 34.375,
+          "amplitude_uv": 3.7638862133026123
+        },
+        {
+          "channel": "PZ",
+          "curve": "target",
+          "peak_ms": 409.375,
+          "amplitude_uv": 9.20199966430664
+        },
+        {
+          "channel": "PZ",
+          "curve": "target_minus_other",
+          "peak_ms": 417.1875,
+          "amplitude_uv": 16.73222541809082
+        },
+        {
+          "channel": "P4",
+          "curve": "target",
+          "peak_ms": 800.0,
+          "amplitude_uv": 0.5066530108451843
+        },
+        {
+          "channel": "P4",
+          "curve": "target_minus_other",
+          "peak_ms": 409.375,
+          "amplitude_uv": 5.208942413330078
+        },
+        {
+          "channel": "PO8",
+          "curve": "target",
+          "peak_ms": 800.0,
+          "amplitude_uv": 10.467278480529785
+        },
+        {
+          "channel": "PO8",
+          "curve": "target_minus_other",
+          "peak_ms": 721.875,
+          "amplitude_uv": 13.330220222473145
+        },
+        {
+          "channel": "OZ",
+          "curve": "target",
+          "peak_ms": 800.0,
+          "amplitude_uv": 11.511821746826172
+        },
+        {
+          "channel": "OZ",
+          "curve": "target_minus_other",
+          "peak_ms": 721.875,
+          "amplitude_uv": 15.490764617919922
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_p001_20260907\\sources\\bnci6_cz_source.pt",
+      "sha256": "2c88dc6f6a7d2aadf7fa267a237c010d54c2c764d764848e251ed0e4cb791e39",
+      "architecture": {
+        "trunk": "ms_eegnet_style",
+        "pooling_mode": "full_unfold",
+        "tmin_s": -0.2,
+        "input_sample_rate_hz": 128.0,
+        "feature_sample_rate_hz": 32.0,
+        "st_temporal_filters": 8,
+        "st_temporal_kernel_samples": 35,
+        "st_temporal_dilation": 1,
+        "st_temporal_receptive_span_ms": 265.625,
+        "spatial_depth_multiplier": 2,
+        "st_pool_size": 4,
+        "mst_kernel_samples": [
+          5,
+          17
+        ],
+        "mst_dilations": [
+          1,
+          1
+        ],
+        "mst_receptive_span_ms": [
+          125.0,
+          500.0
+        ],
+        "mst_total_receptive_field_samples": [
+          54,
+          102
+        ],
+        "mst_total_receptive_span_ms": [
+          414.0625,
+          789.0625
+        ],
+        "mst_features_per_scale": 2,
+        "mst_pool_size": 8,
+        "dropout": 0.25,
+        "spatial_max_norm": 1.0,
+        "normalization": {
+          "schema": "n2p3_normalization/1",
+          "mode": "batchnorm",
+          "domain_count": null,
+          "buffer_source": "pooled_training",
+          "buffer_index": null,
+          "source_weights": null,
+          "estimand": "pooled_training_distribution"
+        },
+        "unfold_time_samples": 44,
+        "unfold_features": 176,
+        "classifier": "linear_full_resolution",
+        "classifier_features": 176
+      },
+      "preprocessing": {
+        "name": "p300_single_subject_causal_v3",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      }
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_p001_20260907\\sources\\source_BI2014a_20260906.pt",
+      "sha256": "89a4f31af91dcfb259fe1bf57aae865e7f305a5be1216bfea8681080c05e88b5",
+      "architecture": {
+        "trunk": "ms_eegnet_style",
+        "pooling_mode": "full_unfold",
+        "tmin_s": -0.2,
+        "input_sample_rate_hz": 128.0,
+        "feature_sample_rate_hz": 32.0,
+        "st_temporal_filters": 8,
+        "st_temporal_kernel_samples": 35,
+        "st_temporal_dilation": 1,
+        "st_temporal_receptive_span_ms": 265.625,
+        "spatial_depth_multiplier": 2,
+        "st_pool_size": 4,
+        "mst_kernel_samples": [
+          5,
+          17
+        ],
+        "mst_dilations": [
+          1,
+          1
+        ],
+        "mst_receptive_span_ms": [
+          125.0,
+          500.0
+        ],
+        "mst_total_receptive_field_samples": [
+          54,
+          102
+        ],
+        "mst_total_receptive_span_ms": [
+          414.0625,
+          789.0625
+        ],
+        "mst_features_per_scale": 2,
+        "mst_pool_size": 8,
+        "dropout": 0.25,
+        "spatial_max_norm": 1.0,
+        "normalization": {
+          "schema": "n2p3_normalization/1",
+          "mode": "batchnorm",
+          "domain_count": null,
+          "buffer_source": "pooled_training",
+          "buffer_index": null,
+          "source_weights": null,
+          "estimand": "pooled_training_distribution"
+        },
+        "unfold_time_samples": 44,
+        "unfold_features": 176,
+        "classifier": "linear_full_resolution",
+        "classifier_features": 176
+      },
+      "preprocessing": {
+        "name": "p300_single_subject_causal_v3",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      }
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_p001_20260907\\sources\\source_BI2015a_20260906.pt",
+      "sha256": "47dc5911452a0860661757d37ad345f446cbd213653d92679be0ef5f4fcbba04",
+      "architecture": {
+        "trunk": "ms_eegnet_style",
+        "pooling_mode": "full_unfold",
+        "tmin_s": -0.2,
+        "input_sample_rate_hz": 128.0,
+        "feature_sample_rate_hz": 32.0,
+        "st_temporal_filters": 8,
+        "st_temporal_kernel_samples": 35,
+        "st_temporal_dilation": 1,
+        "st_temporal_receptive_span_ms": 265.625,
+        "spatial_depth_multiplier": 2,
+        "st_pool_size": 4,
+        "mst_kernel_samples": [
+          5,
+          17
+        ],
+        "mst_dilations": [
+          1,
+          1
+        ],
+        "mst_receptive_span_ms": [
+          125.0,
+          500.0
+        ],
+        "mst_total_receptive_field_samples": [
+          54,
+          102
+        ],
+        "mst_total_receptive_span_ms": [
+          414.0625,
+          789.0625
+        ],
+        "mst_features_per_scale": 2,
+        "mst_pool_size": 8,
+        "dropout": 0.25,
+        "spatial_max_norm": 1.0,
+        "normalization": {
+          "schema": "n2p3_normalization/1",
+          "mode": "batchnorm",
+          "domain_count": null,
+          "buffer_source": "pooled_training",
+          "buffer_index": null,
+          "source_weights": null,
+          "estimand": "pooled_training_distribution"
+        },
+        "unfold_time_samples": 44,
+        "unfold_features": 176,
+        "classifier": "linear_full_resolution",
+        "classifier_features": 176
+      },
+      "preprocessing": {
+        "name": "p300_single_subject_causal_v3",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      }
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_p001_20260907\\sources\\source_BNCI2014-008_20260906.pt",
+      "sha256": "f6f4c7aa17c20c85e31d56a26386d1b15f75b92a4e7f9448285d971ec9802c63",
+      "architecture": {
+        "trunk": "ms_eegnet_style",
+        "pooling_mode": "full_unfold",
+        "tmin_s": -0.2,
+        "input_sample_rate_hz": 128.0,
+        "feature_sample_rate_hz": 32.0,
+        "st_temporal_filters": 8,
+        "st_temporal_kernel_samples": 35,
+        "st_temporal_dilation": 1,
+        "st_temporal_receptive_span_ms": 265.625,
+        "spatial_depth_multiplier": 2,
+        "st_pool_size": 4,
+        "mst_kernel_samples": [
+          5,
+          17
+        ],
+        "mst_dilations": [
+          1,
+          1
+        ],
+        "mst_receptive_span_ms": [
+          125.0,
+          500.0
+        ],
+        "mst_total_receptive_field_samples": [
+          54,
+          102
+        ],
+        "mst_total_receptive_span_ms": [
+          414.0625,
+          789.0625
+        ],
+        "mst_features_per_scale": 2,
+        "mst_pool_size": 8,
+        "dropout": 0.25,
+        "spatial_max_norm": 1.0,
+        "normalization": {
+          "schema": "n2p3_normalization/1",
+          "mode": "batchnorm",
+          "domain_count": null,
+          "buffer_source": "pooled_training",
+          "buffer_index": null,
+          "source_weights": null,
+          "estimand": "pooled_training_distribution"
+        },
+        "unfold_time_samples": 44,
+        "unfold_features": 176,
+        "classifier": "linear_full_resolution",
+        "classifier_features": 176
+      },
+      "preprocessing": {
+        "name": "p300_single_subject_causal_v3",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      }
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_p001_20260907\\sources\\source_Huebner2017_20260906.pt",
+      "sha256": "5cbf8565a4b124d623a05085d7cde18513c8a5eebbe17b64df24c692ae56152c",
+      "architecture": {
+        "trunk": "ms_eegnet_style",
+        "pooling_mode": "full_unfold",
+        "tmin_s": -0.2,
+        "input_sample_rate_hz": 128.0,
+        "feature_sample_rate_hz": 32.0,
+        "st_temporal_filters": 8,
+        "st_temporal_kernel_samples": 35,
+        "st_temporal_dilation": 1,
+        "st_temporal_receptive_span_ms": 265.625,
+        "spatial_depth_multiplier": 2,
+        "st_pool_size": 4,
+        "mst_kernel_samples": [
+          5,
+          17
+        ],
+        "mst_dilations": [
+          1,
+          1
+        ],
+        "mst_receptive_span_ms": [
+          125.0,
+          500.0
+        ],
+        "mst_total_receptive_field_samples": [
+          54,
+          102
+        ],
+        "mst_total_receptive_span_ms": [
+          414.0625,
+          789.0625
+        ],
+        "mst_features_per_scale": 2,
+        "mst_pool_size": 8,
+        "dropout": 0.25,
+        "spatial_max_norm": 1.0,
+        "normalization": {
+          "schema": "n2p3_normalization/1",
+          "mode": "batchnorm",
+          "domain_count": null,
+          "buffer_source": "pooled_training",
+          "buffer_index": null,
+          "source_weights": null,
+          "estimand": "pooled_training_distribution"
+        },
+        "unfold_time_samples": 44,
+        "unfold_features": 176,
+        "classifier": "linear_full_resolution",
+        "classifier_features": 176
+      },
+      "preprocessing": {
+        "name": "p300_single_subject_causal_v3",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "mean_only",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "forward",
+        "causal_iir_initial_state": "steady_state_first_sample",
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      }
+    }
+  ]
+}

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import mne
 import numpy as np
-from scipy.signal import sosfilt, sosfilt_zi
+from scipy.signal import iirnotch, sosfilt, sosfilt_zi, sosfiltfilt, tf2sos
 
 from data.channel import (
     DEFAULT_MONTAGE,
@@ -16,9 +16,14 @@ from data.channel import (
     canonical_channel_name,
     resolve_channel_layout,
 )
-from data.contract import CAUSAL_IIR_INITIAL_STATE, DEFAULT_P300_DATA_CONTRACT
+from data.contract import (
+    CAUSAL_IIR_INITIAL_STATE,
+    DEFAULT_P300_DATA_CONTRACT,
+    validate_notch_parameters,
+)
 
 DEFAULT_REJECT_THRESHOLD: float | None = None
+FILTER_SKIP_ANNOTATIONS = ("edge", "bad_acq_skip", "bad_continuous_artifact")
 
 
 @dataclass(frozen=True)
@@ -164,6 +169,59 @@ def resample(
     return raw, scaled
 
 
+def continuous_filter_segments(raw: mne.io.BaseRaw, channel: str | None = None) -> tuple[tuple[int, int], ...]:
+    """Return clean half-open spans, preserving zero-duration reset boundaries."""
+    changes: dict[int, int] = {0: 0, int(raw.n_times): 0}
+    rate = float(raw.info["sfreq"])
+    for onset, duration, description, channels in zip(
+        raw.annotations.onset, raw.annotations.duration, raw.annotations.description,
+        raw.annotations.ch_names, strict=True
+    ):
+        local = str(description).lower().startswith("quality_local_artifact")
+        if local and (channel is None or channel not in channels):
+            continue
+        if channels and channel is not None and channel not in channels:
+            continue
+        if not local and not str(description).lower().startswith(FILTER_SKIP_ANNOTATIONS):
+            continue
+        start = int(np.clip(round((float(onset) - raw.first_time) * rate), 0, raw.n_times))
+        stop = int(np.clip(round((float(onset) + float(duration) - raw.first_time) * rate),
+                           0, raw.n_times))
+        changes.setdefault(start, 0)
+        changes.setdefault(stop, 0)
+        if stop > start:
+            changes[start] += 1
+            changes[stop] -= 1
+    segments = []
+    previous = 0
+    active = 0
+    for sample, change in sorted(changes.items()):
+        if previous < sample and active == 0:
+            segments.append((previous, sample))
+        active += change
+        previous = sample
+    return tuple(segments)
+
+
+def design_continuous_sos(sample_rate_hz, *, l_freq, h_freq, order=4,
+                          notch_freqs_hz=(), notch_quality_factor=30.0):
+    """One executable SOS cascade shared by filtering and recovery certificates."""
+    validate_notch_parameters(notch_freqs_hz, notch_quality_factor, sample_rate_hz=sample_rate_hz)
+    sections = [tf2sos(*iirnotch(f, notch_quality_factor, fs=sample_rate_hz))
+                for f in notch_freqs_hz]
+    if l_freq is not None or h_freq is not None:
+        if l_freq is not None and h_freq is not None:
+            f_pass, btype = [float(l_freq), float(h_freq)], "bandpass"
+        elif l_freq is not None:
+            f_pass, btype = float(l_freq), "highpass"
+        else:
+            f_pass, btype = float(h_freq), "lowpass"
+        sections.append(mne.filter.construct_iir_filter(
+            dict(order=order, ftype="butter", output="sos"), f_pass=f_pass,
+            sfreq=sample_rate_hz, btype=btype, phase="forward", verbose=False)["sos"])
+    return np.concatenate(sections, axis=0) if sections else np.empty((0, 6), dtype=float)
+
+
 def filter_continuous(
     raw: mne.io.BaseRaw,
     l_freq: float | None = 0.1,
@@ -173,12 +231,18 @@ def filter_continuous(
     phase: str = "zero",
     causal_iir_initial_state: str = "not_applicable",
     order: int = 4,
+    notch_freqs_hz: Sequence[float] = (),
+    notch_quality_factor: float = 30.0,
     copy: bool = False,
     verbose: bool = False,
 ) -> mne.io.BaseRaw:
     """Apply a declared continuous-domain high/low/band-pass before epoching."""
 
-    if l_freq is None and h_freq is None:
+    validate_notch_parameters(notch_freqs_hz, notch_quality_factor,
+                              sample_rate_hz=float(raw.info["sfreq"]))
+    if notch_freqs_hz and (method != "iir" or phase not in {"forward", "zero"}):
+        raise ValueError("notch filtering requires IIR with forward or zero phase")
+    if l_freq is None and h_freq is None and not notch_freqs_hz:
         return raw.copy() if copy else raw
     if l_freq is not None and l_freq <= 0:
         raise ValueError("l_freq must be positive or None.")
@@ -197,54 +261,38 @@ def filter_continuous(
         )
     if phase != "forward" and causal_iir_initial_state != "not_applicable":
         raise ValueError("non-causal filtering requires causal_iir_initial_state='not_applicable'.")
-    if method == "iir" and phase == "forward":
-        if l_freq is not None and h_freq is not None:
-            f_pass: float | list[float] = [float(l_freq), float(h_freq)]
-            btype = "bandpass"
-        elif l_freq is not None:
-            f_pass = float(l_freq)
-            btype = "highpass"
-        else:
-            assert h_freq is not None
-            f_pass = float(h_freq)
-            btype = "lowpass"
-        designed = mne.filter.construct_iir_filter(
-            dict(order=order, ftype="butter", output="sos"),
-            f_pass=f_pass,
-            sfreq=float(raw.info["sfreq"]),
-            btype=btype,
-            phase="forward",
-            verbose=verbose,
-        )
-        sos = np.asarray(designed["sos"], dtype=np.float64)
+    if method == "iir" and (phase == "forward" or notch_freqs_hz):
+        if phase != "forward" and any(str(value).lower().startswith("quality_local_artifact")
+                                      for value in raw.annotations.description):
+            raise ValueError("channel-local artifact state handling currently requires forward IIR")
+        sos = design_continuous_sos(float(raw.info["sfreq"]), l_freq=l_freq, h_freq=h_freq,
+            order=order, notch_freqs_hz=notch_freqs_hz, notch_quality_factor=notch_quality_factor)
         steady_state = sosfilt_zi(sos)
-        boundaries = sorted({
-            int(round((float(onset) - raw.first_time) * float(raw.info["sfreq"])))
-            for onset, description in zip(raw.annotations.onset, raw.annotations.description, strict=True)
-            if str(description).lower().startswith("edge")
-        })
-        cuts = [0, *[index for index in boundaries if 0 < index < raw.n_times], raw.n_times]
+        for name in _eeg_channel_names(raw):
+            segments = continuous_filter_segments(raw, name)
 
-        def causal_filter(channel: np.ndarray) -> np.ndarray:
-            filtered = np.empty_like(channel)
-            for start, stop in zip(cuts, cuts[1:], strict=False):
-                initial_state = steady_state * float(channel[start])
-                filtered[start:stop], _ = sosfilt(sos, channel[start:stop], zi=initial_state)
-            return filtered
+            def causal_filter(channel: np.ndarray, segments=segments) -> np.ndarray:
+                filtered = channel.copy()
+                for start, stop in segments:
+                    if phase == "forward":
+                        initial_state = steady_state * float(channel[start])
+                        filtered[start:stop], _ = sosfilt(sos, channel[start:stop], zi=initial_state)
+                    else:
+                        padding = 3 * (2 * len(sos) + 1 - min((sos[:, 2] == 0).sum(), (sos[:, 5] == 0).sum()))
+                        filtered[start:stop] = sosfiltfilt(sos, channel[start:stop], padlen=min(padding, stop - start - 1))
+                return filtered
 
-        raw.apply_function(
-            causal_filter,
-            picks="eeg",
-            channel_wise=True,
-            verbose=verbose,
-        )
+            raw.apply_function(causal_filter, picks=[name], channel_wise=True, verbose=verbose)
     else:
+        if any(str(value).lower().startswith("quality_local_artifact") for value in raw.annotations.description):
+            raise ValueError("channel-local artifact state handling currently requires forward IIR")
         raw.filter(
             l_freq=l_freq,
             h_freq=h_freq,
             method=method,
             iir_params=dict(order=order, ftype="butter") if method == "iir" else None,
             phase=phase,
+            skip_by_annotation=FILTER_SKIP_ANNOTATIONS,
             verbose=verbose,
         )
     return raw
@@ -328,6 +376,8 @@ def preprocess(
     trial_reference_scale: str = "none",
     filter_method: str = DEFAULT_P300_DATA_CONTRACT.filter_method,
     filter_order: int = DEFAULT_P300_DATA_CONTRACT.filter_order,
+    notch_freqs_hz: Sequence[float] = (),
+    notch_quality_factor: float = 30.0,
     filter_phase: str = DEFAULT_P300_DATA_CONTRACT.filter_phase,
     causal_iir_initial_state: str = DEFAULT_P300_DATA_CONTRACT.causal_iir_initial_state,
     resample_domain: str = DEFAULT_P300_DATA_CONTRACT.resample_domain,
@@ -370,6 +420,8 @@ def preprocess(
         raise ValueError(
             "MNE baseline= is not part of the executable contract; use baseline_mode instead."
         )
+    validate_notch_parameters(notch_freqs_hz, notch_quality_factor,
+                              sample_rate_hz=float(raw.info["sfreq"]))
     if resample_domain != "epoched":
         raise ValueError("Executable preprocessing requires resample_domain='epoched'.")
     if (
@@ -411,13 +463,15 @@ def preprocess(
             f"Selected EEG channels contain {count} non-finite samples; repair or reject "
             "the source recording explicitly. The standard ingress never imputes samples."
         )
-    if l_freq is not None or h_freq is not None:
+    if l_freq is not None or h_freq is not None or notch_freqs_hz:
         raw = filter_continuous(
             raw,
             l_freq=l_freq,
             h_freq=h_freq,
             method=filter_method,
             order=filter_order,
+            notch_freqs_hz=notch_freqs_hz,
+            notch_quality_factor=notch_quality_factor,
             phase=filter_phase,
             causal_iir_initial_state=causal_iir_initial_state,
             copy=False,

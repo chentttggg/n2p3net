@@ -1,0 +1,39 @@
+{
+  "schema": "dataset_expansion_channel_exclusions/1",
+  "scope": "recording_specific_input_views_not_raw_file_deletion",
+  "selection_basis": "waveform_diagnostics_without_model_predictions_or_calibration_success_selection",
+  "BrainForm": [
+    {
+      "source_member": "group_2/EXP_P02/cb/failied-trainings/20241021_120406__ERPAutotrainingPipeline_raw_data0.csv",
+      "exclude_channels": ["Fz", "Pz"],
+      "reason": "gross_channel_specific_discontinuities_in_calibration_support",
+      "maximum_native_adjacent_jump_uV": {"Fz": 312562.4, "Pz": 173182.5}
+    },
+    {
+      "source_member": "group_2/EXP_P14/cb/failed-trainings/20241105_125757__ERPAutotrainingPipeline_raw_data0.csv",
+      "exclude_channels": ["Pz"],
+      "reason": "conservative_exclusion_of_large_localized_channel_artifact_after_published_startup_trim",
+      "Cz_difference_epoch_peak_to_peak_q95_uV": {"Pz": 812.7532836914058}
+    },
+    {
+      "source_member": "group_1/EXP_P03/grain/failed-training/20241021_130354__ERPAutotrainingPipeline_raw_data0.csv",
+      "exclude_channels": ["Oz"],
+      "reason": "conservative_exclusion_of_large_localized_channel_artifact_after_published_startup_trim",
+      "Cz_difference_epoch_peak_to_peak_q95_uV": {"Oz": 509.87450408935445}
+    }
+  ],
+  "Chailloux2020": {
+    "exclude_recordings": [
+      "sub-019/ses-01/eeg/sub-019_ses-01_task-ctos_run-5H_eeg.vhdr",
+      "sub-019/ses-03/eeg/sub-019_ses-03_task-ctos_run-5H_eeg.vhdr"
+    ],
+    "reason": "all_chan001_to_chan010_physical_electrode_identities_unresolved_no_guessed_mapping"
+  },
+  "Cattan2019_VR": {
+    "file": "subject_01_VR.mat",
+    "valid_samples_exclusive_end": 289814,
+    "action": "exclude_incomplete_final_sample_in_future_ingress_not_whole_channels",
+    "original_MAT_modified": false
+  },
+  "remaining_gate": "fold_local_artifact_QC_and_runner_consumption_of_explicit_masks; unlisted_channels_are_not_certified_artifact_free"
+}

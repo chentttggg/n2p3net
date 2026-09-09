@@ -51,7 +51,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import threading
+import time
 import warnings
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -79,6 +81,7 @@ from models.adapters import (
     source_residual_ratio_contract,
 )
 from models.splitbn import SPLITBN_SOURCE_DOMAIN_BUFFER
+from research.execution import ExpectedSubjectError, SubjectFailureCode
 from train.device import get_device
 from train.runtime import (
     DEFAULT_COMPILE_MODE,
@@ -88,6 +91,7 @@ from train.runtime import (
     is_oom_error,
     resolve_optimizer_execution,
 )
+from train.source_sampling import observed_source_statistics, source_sampling_probabilities
 from transfer.alignment import (
     conditional_domain_rbf_mmd_loss,
     conditional_mean_alignment_loss,
@@ -289,8 +293,34 @@ class DeepConfig:
     max_update_batch_size: int | None = 512
     batch_memory_fraction: float = 0.55
     preload_memory_fraction: float = 0.30
+    fixed_updates: int | None = None
+    snapshot_updates: tuple[int, ...] = ()
+    input_statistics: str = "observed_rows"
+    sampling: str = "epoch_permutation"
 
     def __post_init__(self) -> None:
+        if self.fixed_updates is not None and (
+            isinstance(self.fixed_updates, bool) or not isinstance(self.fixed_updates, int)
+            or self.fixed_updates < 1
+        ):
+            raise ValueError("fixed_updates must be a positive integer or None")
+        if self.input_statistics not in {"observed_rows", "observed_domain_participant"}:
+            raise ValueError("unknown source input_statistics")
+        if self.sampling not in {"epoch_permutation", "uniform_rows", "domain_participant"}:
+            raise ValueError("unknown source sampling")
+        if self.fixed_updates is None and (
+            self.snapshot_updates or self.sampling != "epoch_permutation"
+            or self.input_statistics != "observed_rows"
+        ):
+            raise ValueError("source sampling/statistics/snapshots require fixed_updates")
+        if self.fixed_updates is not None and self.materialize_shuffled_epoch:
+            raise ValueError("materialize_shuffled_epoch is unsupported for fixed source trajectories")
+        if any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 1
+            or self.fixed_updates is None or value > self.fixed_updates
+            for value in self.snapshot_updates
+        ) or tuple(sorted(set(self.snapshot_updates))) != tuple(self.snapshot_updates):
+            raise ValueError("snapshot_updates must be unique increasing updates within the budget")
         if not isinstance(self.source_validation_all_domains, bool):
             raise ValueError("source_validation_all_domains must be boolean")
         if self.epochs < 1 or self.batch_size < 1:
@@ -634,13 +664,22 @@ class DeepBaseline(Baseline):
         )
         return mean.astype(np.float32), std.astype(np.float32)
 
+    def _set_input_statistics(self, mean: np.ndarray, std: np.ndarray) -> None:
+        if self.cfg.standardize_input:
+            self._input_mean, self._input_std = mean, std
+        else:
+            self._input_mean, self._input_std = np.zeros_like(mean), np.ones_like(std)
+
+    def fitted_input_statistics(self) -> tuple[np.ndarray, np.ndarray]:
+        """Return the executed affine transform, including identity when disabled."""
+        if not self._fitted:
+            raise RuntimeError("fit before exporting input statistics")
+        return self._input_mean.copy(), self._input_std.copy()
+
     def _prepare_input(self, X: np.ndarray, mask: np.ndarray) -> np.ndarray:
         prepared = np.empty(X.shape, dtype=np.float32)
-        if self.cfg.standardize_input:
-            np.subtract(X, self._input_mean, out=prepared, casting="unsafe")
-            np.divide(prepared, self._input_std, out=prepared)
-        else:
-            np.copyto(prepared, X, casting="unsafe")
+        np.subtract(X, self._input_mean, out=prepared, casting="unsafe")
+        np.divide(prepared, self._input_std, out=prepared)
         # Standardization turns zero-filled missing channels into non-zero
         # values unless the mask is re-applied after the transform.
         np.copyto(prepared, 0.0, where=~mask[:, :, None])
@@ -873,6 +912,19 @@ class DeepBaseline(Baseline):
     ) -> DeepBaseline:
         """Fit with a bounded OOM retry that never accumulates gradients."""
 
+        if self.cfg.fixed_updates is not None:
+            if any((feature_alignment_weight, feature_private_domain_weight,
+                    feature_orthogonality_weight)) or decision_loss_config is not None or decision_metadata is not None:
+                raise ValueError("fixed-update source experiments require plain trial CE")
+            if selection_domain is not None or group_ids is not None:
+                raise ValueError("fixed-update fit accepts only already selected source training rows")
+            return self._fit_fixed_updates(
+                X, y, trial_channel_mask=trial_channel_mask,
+                input_stats_row_mask=input_stats_row_mask,
+                source_domain_ids=source_domain_ids, source_domain_mass=source_domain_mass,
+                risk_unit_ids=risk_unit_ids, risk_within_domain_unit=risk_within_domain_unit,
+            )
+
         if not np.isfinite(feature_alignment_weight) or feature_alignment_weight < 0.0:
             raise ValueError("feature_alignment_weight must be finite and non-negative.")
         if feature_alignment_mode not in {"mean", "conditional_rbf_mmd"}:
@@ -1103,6 +1155,178 @@ class DeepBaseline(Baseline):
             # Leave the OOM handler first so its traceback no longer owns the
             # failed model, optimizer, source matrices, or activation tensors.
             self._clear_failed_fit()
+
+    def _fit_fixed_updates(
+        self, X, y, *, trial_channel_mask, input_stats_row_mask,
+        source_domain_ids, source_domain_mass, risk_unit_ids, risk_within_domain_unit,
+    ) -> DeepBaseline:
+        """Fit one immutable source trajectory without validation or batch fallback."""
+        X = np.asarray(X)
+        y = np.asarray(y)
+        if X.ndim != 3 or X.shape[1:] != (self.n_chans, self.n_times):
+            raise ValueError("source X shape disagrees with model input contract")
+        if not np.issubdtype(X.dtype, np.floating):
+            raise ValueError("source X must have floating dtype")
+        if y.shape != (len(X),) or not np.issubdtype(y.dtype, np.integer):
+            raise ValueError("source labels must be an aligned integer vector")
+        if set(np.unique(y).tolist()) != {0, 1}:
+            raise ValueError("source fit requires both binary classes")
+        if getattr(self, "splitbn_config", None) is not None or getattr(self, "feature_transfer", None):
+            raise ValueError("fixed-update source experiments require the plain architecture")
+        observed = self._effective_trial_channel_mask(X, trial_channel_mask)
+        stats_rows = np.ones(len(X), bool) if input_stats_row_mask is None else np.asarray(input_stats_row_mask)
+        if stats_rows.shape != (len(X),) or stats_rows.dtype != bool or not stats_rows.any():
+            raise ValueError("input statistics rows must be a nonempty boolean training subset")
+        needs_identity = self.cfg.input_statistics == "observed_domain_participant" or self.cfg.sampling == "domain_participant"
+        if needs_identity and (source_domain_ids is None or risk_unit_ids is None):
+            raise ValueError("hierarchical source fit requires authoritative domains and participants")
+        domains = np.full(len(X), "source") if source_domain_ids is None else np.asarray(source_domain_ids).astype(str)
+        people = np.full(len(X), "source") if risk_unit_ids is None else np.asarray(risk_unit_ids).astype(str)
+        probability = source_sampling_probabilities(
+            domains, people, sampling="uniform_rows" if self.cfg.sampling == "epoch_permutation" else self.cfg.sampling,
+        )
+        if source_domain_mass is not None:
+            multipliers, self.last_source_risk = resolve_source_risk_weights(
+                y, domains, people, domain_mass=source_domain_mass,
+                within_domain_unit=risk_within_domain_unit, pos_weight=self.cfg.pos_weight,
+            )
+        else:
+            multipliers = np.ones(len(X), np.float64)
+            self.last_source_risk = None
+        class_mass = np.where(y == 1, self.cfg.pos_weight, 1.0)
+        target_mass = np.asarray(multipliers, np.float64) * class_mass / class_mass.sum()
+        importance = target_mass / probability
+        active = np.flatnonzero(self.channel_mask)
+        mean, std, ledger = observed_source_statistics(
+            X[stats_rows][:, active], observed[stats_rows][:, active],
+            domain_ids=domains[stats_rows], participant_keys=people[stats_rows],
+            weighting=self.cfg.input_statistics,
+        )
+        input_mean = np.zeros((1, self.n_chans, 1), np.float32)
+        input_std = np.ones((1, self.n_chans, 1), np.float32)
+        input_mean[:, active] = mean
+        input_std[:, active] = std
+        self._set_input_statistics(input_mean, input_std)
+        for channel in ledger["channels"]:
+            channel["channel_index"] = int(active[channel["channel_index"]])
+        ledger["fit_row_indices"] = np.flatnonzero(stats_rows).tolist()
+        self.source_statistics_ = ledger
+        self.sampling_ledger_ = {
+            "sampling": self.cfg.sampling, "replacement": self.cfg.sampling != "epoch_permutation",
+            "row_probability": probability.tolist(), "target_risk_mass": target_mass.tolist(),
+            "importance_weight": importance.tolist(), "risk_mass_sum": float(target_mass.sum()),
+            "loss": "mean((r_i/p_i)*unweighted_CE_i)",
+            "bn_context": "batch_dependent_importance_correction_does_not_equalize_bn_context",
+        }
+        self._clear_failed_fit(release_memory=False)
+        self.candidate_snapshots_ = {}
+        started = time.perf_counter()
+        order_digest = hashlib.sha256()
+        rng = np.random.default_rng(self.cfg.seed)
+        draws = 0
+        batch_sizes = []
+        losses = []
+        updates = int(self.cfg.fixed_updates)
+        rng_devices = ([self.device.index if self.device.index is not None else torch.cuda.current_device()]
+                       if self.device.type == "cuda" else [])
+        with torch.random.fork_rng(devices=rng_devices), self.runtime.lease():
+            try:
+                torch.manual_seed(self._model_seed())
+                self._initialize_model(self._model_seed())
+                source = MatrixBatchSource(
+                    torch.from_numpy(self._prepare_input(X, observed)),
+                    torch.from_numpy(y.astype(np.int64)), self.runtime,
+                    preload=self.runtime.can_preload(X.nbytes + y.nbytes + importance.nbytes),
+                    row_weights=torch.from_numpy(importance.astype(np.float32)),
+                )
+                adam_kwargs = {"lr": self.cfg.lr, "weight_decay": self.cfg.weight_decay}
+                if self.optimizer_execution.fused_adam:
+                    adam_kwargs["fused"] = True
+                if self.optimizer_execution.uses_cuda_graphs:
+                    adam_kwargs["capturable"] = True
+                optimizer = torch.optim.Adam(self.model_.parameters(), **adam_kwargs)
+
+                def train_step(xb, yb, weights):
+                    optimizer.zero_grad(set_to_none=True)
+                    with self._autocast_ctx():
+                        logits = self.model_(xb)
+                        loss = (F.cross_entropy(logits, yb, reduction="none") * weights).mean()
+                    loss.backward()
+                    finite = torch.isfinite(loss.detach())
+                    for parameter in self.model_.parameters():
+                        if parameter.grad is not None:
+                            finite = finite & torch.isfinite(parameter.grad).all()
+                    optimizer.step()
+                    return loss.detach(), finite
+
+                if self.optimizer_execution.compile_mode is not None:
+                    train_step = torch.compile(train_step, mode=self.optimizer_execution.compile_mode, fullgraph=False)
+                permutation = np.empty(0, np.int64)
+                cursor = 0
+                self.model_.train()
+                loss_sum = torch.zeros((), device=self.device)
+                finite_updates = torch.ones((), device=self.device, dtype=torch.bool)
+                for update in range(1, updates + 1):
+                    if self.cfg.sampling == "epoch_permutation":
+                        if cursor >= len(permutation):
+                            permutation, cursor = rng.permutation(len(X)), 0
+                        rows = permutation[cursor:cursor + self.cfg.batch_size]
+                        cursor += len(rows)
+                    else:
+                        rows = rng.choice(len(X), size=self.cfg.batch_size, replace=True, p=probability)
+                    rows = np.ascontiguousarray(rows, dtype=np.int64)
+                    order_digest.update(rows.tobytes())
+                    batch_sizes.append(len(rows))
+                    xb, yb, weights, _ = next(source.iter_index_batches(
+                        (torch.from_numpy(rows),), require_full_coverage=False,
+                        allow_repeated_rows=self.cfg.sampling != "epoch_permutation",
+                    ))
+                    loss, finite = train_step(xb, yb, weights)
+                    loss_sum += loss.clone().float()
+                    finite_updates.logical_and_(finite)
+                    del loss, finite
+                    draws += len(rows)
+                    report_due = update % 100 == 0 or update == updates
+                    if report_due or update in self.cfg.snapshot_updates:
+                        state_finite = torch.stack([
+                            torch.isfinite(value).all() for value in self.model_.state_dict().values()
+                        ]).all()
+                        if not bool(finite_updates & state_finite & torch.isfinite(loss_sum)):
+                            raise ExpectedSubjectError(
+                                SubjectFailureCode.NONFINITE_OPTIMIZATION, stage="source_fixed_updates",
+                                detail=f"nonfinite loss, gradient or model state by update {update}",
+                            )
+                    if update in self.cfg.snapshot_updates:
+                        self.candidate_snapshots_[update] = {
+                            "model_state_dict": {key: value.detach().cpu().clone() for key, value in self.model_.state_dict().items()},
+                            "input_mean": self._input_mean.copy(), "input_std": self._input_std.copy(),
+                            "optimizer_updates": update, "trial_draws": draws,
+                            "batch_sequence_sha256": order_digest.hexdigest(),
+                        }
+                    if report_due:
+                        losses.append({"update": update, "mean_loss": float(loss_sum.cpu()) / update})
+                self.model_.eval()
+                self.last_runtime = {
+                    "device": str(self.device), "precision": self.runtime.precision.name,
+                    "batch_size": self.cfg.batch_size, "requested_batch_size": self.cfg.batch_size,
+                    "oom_retries": 0, "batch_fallback": "forbidden", "fit_seconds": time.perf_counter() - started,
+                    "preloaded": source.preloaded, "transfer_fallback": source.transfer_fallback,
+                    "memory": self.runtime.memory_record(), **self.optimizer_execution.record(),
+                }
+            except BaseException:
+                self.candidate_snapshots_ = {}
+                self._clear_failed_fit(release_memory=False)
+                raise
+        self.training_pos_weight_ = float(self.cfg.pos_weight)
+        self.training_prior_ = float(np.sum(multipliers * y) / np.sum(multipliers))
+        self.last_history = {
+            "optimizer_updates": updates, "trial_draws": draws, "batch_sizes": batch_sizes,
+            "batch_sequence_sha256": order_digest.hexdigest(), "update_losses": losses,
+            "best_epoch": None, "selection": "fixed_updates_no_validation",
+            "source_statistics": self.source_statistics_, "source_sampling": self.sampling_ledger_,
+        }
+        self._fitted = True
+        return self
 
     def _fit_attempt(
         self,
@@ -1393,10 +1617,10 @@ class DeepBaseline(Baseline):
                     else 0,
                 }
 
-        self._input_mean, self._input_std = self._masked_input_stats(
+        self._set_input_statistics(*self._masked_input_stats(
             X[stats_mask],
             stats_channel_mask,
-        )
+        ))
         # Domain ids remain metadata at inference. During an explicitly
         # configured source-training arm they also select the matching
         # drop-to-consensus residual; target/eval paths never use that route.

@@ -56,7 +56,36 @@ def default_fold_artifact_sidecar_path(cache_path: str | Path, fingerprint: str)
     return cache.with_name(f"{cache.name}.fold-qc-{fingerprint[:16]}.json")
 
 
-def _model_from_record(record: dict[str, Any]) -> FoldLocalArtifactModel:
+def artifact_model_from_record(record: dict[str, Any]) -> FoldLocalArtifactModel:
+    """Restore the canonical model record, including optional modern fit evidence."""
+    if not isinstance(record, dict) or (
+        record.get("method") != "fold_local_ptp_cv"
+        or record.get("ptp_normalization") != "within_epoch_observed_channel_median"
+        or "schema" in record
+    ):
+        raise ValueError("unsupported fold artifact model method or normalization")
+    ptp = np.asarray(record["ptp_thresholds"], dtype=float)
+    flat = np.asarray(record["flat_std_thresholds"], dtype=float)
+    if "fit_observed_channel_mask" in record:
+        observed = np.asarray(record["fit_observed_channel_mask"])
+        if (
+            observed.dtype != np.dtype(bool)
+            or observed.ndim != 1
+            or observed.shape != ptp.shape
+            or observed.shape != flat.shape
+        ):
+            raise ValueError("Fold-QC sidecar contains an invalid artifact model channel mask.")
+        ptp_null = np.asarray([value is None for value in record["ptp_thresholds"]])
+        flat_null = np.asarray([value is None for value in record["flat_std_thresholds"]])
+        if (
+            not np.array_equal(ptp_null, ~observed)
+            or not np.array_equal(flat_null, ~observed)
+            or not np.isfinite(ptp[observed]).all()
+            or not np.isfinite(flat[observed]).all()
+        ):
+            raise ValueError("Fold-QC sidecar contains invalid artifact model null thresholds.")
+        ptp[~observed] = np.inf
+        flat[~observed] = -np.inf
     policy_data = dict(record["policy"])
     policy_data["candidate_quantiles"] = tuple(policy_data["candidate_quantiles"])
     policy_data["candidate_bad_channel_fractions"] = tuple(
@@ -67,22 +96,48 @@ def _model_from_record(record: dict[str, Any]) -> FoldLocalArtifactModel:
     calibration = record["global_scale_calibration"]
     model = FoldLocalArtifactModel(
         policy=policy,
-        ptp_thresholds=np.asarray(record["ptp_thresholds"], dtype=float),
-        flat_std_thresholds=np.asarray(record["flat_std_thresholds"], dtype=float),
+        ptp_thresholds=ptp,
+        flat_std_thresholds=flat,
         selected_quantiles=np.asarray(record["selected_quantiles"], dtype=float),
         selected_bad_channel_fraction=float(record["selected_bad_channel_fraction"]),
         global_scale_log_center=float(calibration["log_center"]),
         global_scale_log_robust_std=float(calibration["log_robust_std"]),
         fit_n_epochs=int(record["fit_n_epochs"]),
         fit_groups=tuple(str(group) for group in record["fit_groups"]),
+        fit_subject_ids=tuple(str(subject) for subject in record.get("fit_subject_ids", ())),
+        fit_group_source=str(record.get("fit_group_source", "subject_ids")),
+        cv_evidence=dict(record.get("cv_evidence", {"status": "unavailable_legacy_record"})),
+        fit_data_digest=record.get("fit_data_digest"),
+        fit_provenance=dict(record.get("fit_provenance", {})),
     )
     shape = model.ptp_thresholds.shape
     if (
         model.ptp_thresholds.ndim != 1
         or model.flat_std_thresholds.shape != shape
         or model.selected_quantiles.shape != shape
+        or not len(model.ptp_thresholds)
+        or not ((np.isfinite(model.ptp_thresholds) & np.isfinite(model.flat_std_thresholds))
+                | (np.isposinf(model.ptp_thresholds) & np.isneginf(model.flat_std_thresholds))).all()
+        or np.isnan(model.ptp_thresholds).any()
+        or np.any(model.ptp_thresholds < 0)
+        or np.isnan(model.flat_std_thresholds).any()
+        or not np.isfinite(model.selected_quantiles).all()
+        or np.any((model.selected_quantiles <= 0.5) | (model.selected_quantiles >= 1.0))
+        or not np.isfinite([
+            model.selected_bad_channel_fraction,
+            model.global_scale_log_center,
+            model.global_scale_log_robust_std,
+        ]).all()
+        or not 0.0 <= model.selected_bad_channel_fraction < 1.0
+        or model.global_scale_log_robust_std <= 0.0
         or model.fit_n_epochs < 1
         or not model.fit_groups
+        or model.fit_group_source not in {"subject_ids", "explicit_fit_groups"}
+        or (model.fit_data_digest is not None and (
+            not isinstance(model.fit_data_digest, str)
+            or len(model.fit_data_digest) != 64
+            or any(char not in "0123456789abcdef" for char in model.fit_data_digest)
+        ))
     ):
         raise ValueError("Fold-QC sidecar contains an invalid artifact model geometry.")
     return model
@@ -106,7 +161,7 @@ def load_fold_artifact_sidecar(
         records = payload["models"]
         if set(records) != {str(index) for index in range(expected_fold_count)}:
             return None
-        return {int(index): _model_from_record(record) for index, record in records.items()}
+        return {int(index): artifact_model_from_record(record) for index, record in records.items()}
     except (KeyError, TypeError, ValueError, json.JSONDecodeError):
         return None
 

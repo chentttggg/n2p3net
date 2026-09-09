@@ -16,6 +16,20 @@ Use the repository virtual environment. Dependencies are declared in
 counterexample tests, and `git diff --check`; use the full suite for broad changes.
 Keep builders, callers, checkpoint gates, tests and active guidance consistent.
 
+Before every cloud training launch or resume, apply the
+`performance-optimization` and `get-available-resources` skills and follow the
+[cloud throughput procedure](doc/engineering.zh.md#云端训练性能优先).
+Default to resource-aware parallel execution across preparation, source fits,
+target calibration and evaluation. The user prioritizes measured training
+throughput over low code complexity: implement the scheduling, caching and
+parallelism needed to remove bottlenecks. Preserve scientific contracts and
+completed artifacts; verify actual utilization and progress after launch.
+
+When the user requests training, execute the full agreed matrix unless they
+explicitly limit the run. Perform necessary tests and short probes autonomously,
+then continue directly to full training without another approval round. Do not
+stop at a pilot, dry-run, execution plan, or an unfavorable pilot result.
+
 Preserve concurrent work and original data. Participant identity, channel roles,
 fit scope and time boundaries come from the shared contracts, never guessed
 aliases. Distinguish software tests, public-data development and adult/device

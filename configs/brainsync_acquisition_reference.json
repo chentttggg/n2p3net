@@ -1,0 +1,7 @@
+{
+  "schema": "brainsync-acquisition-reference/1",
+  "label": "left earlobe",
+  "side": "left",
+  "site": "earlobe",
+  "electrode": "ear_clip"
+}

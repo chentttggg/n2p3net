@@ -1,0 +1,124 @@
+{
+  "schema": "n2p3_user_requested_dataset_removal/1",
+  "dataset": "BI2015b",
+  "reason": "User explicitly requested deletion; excluded from the active expansion pool",
+  "target": "D:\\BCI\\n2p3-net\\mne_data\\MNE-braininvaders2015b-data",
+  "removed": true,
+  "file_count": 17376,
+  "total_bytes": 9092161086.0,
+  "archives": [
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_01_mat.zip",
+      "bytes": 213101340,
+      "sha256": "87c54bd30269fc79c4a7526fa783040d1ec730dd787af14458eec04113dd87d4"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_02_mat.zip",
+      "bytes": 207305885,
+      "sha256": "88757bda4f9f51fc811f8e32306c998524bf498a1e20c87bb8ad3cbf24c5b0f1"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_03_mat.zip",
+      "bytes": 195316289,
+      "sha256": "6aa1926b83988c9bdd4d361b211c4b92b314d87002b8a6a32100b305227af674"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_04_mat.zip",
+      "bytes": 201744460,
+      "sha256": "b0141f50f6fb5053c21f003b3bc5da3df3f0c53dc66bc8212c6598d196e76efc"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_05_mat.zip",
+      "bytes": 194907022,
+      "sha256": "2522ced539a0a50b209a90cfc471f83176bde7ff95291d8e43ef969a0a12a83a"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_06_mat.zip",
+      "bytes": 191235774,
+      "sha256": "45c58b0af87dd9b7c0c1c91c16a3371ff8b6be2c49cb7def84de15dd2842cf2d"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_07_mat.zip",
+      "bytes": 211965083,
+      "sha256": "ac963a033da3536ca06550de22b1e4a793778c898ad19959b337d8215062991b"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_08_mat.zip",
+      "bytes": 227494951,
+      "sha256": "5ab0058e086a5a460c0ea84ccbc3d8562d16682be5b00dc1fb451bc210c291ff"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_09_mat.zip",
+      "bytes": 212458286,
+      "sha256": "1b74c5d9cb6a9c0eb636d42fce9d64410945bd5df334a0312dbaf974a26e44c7"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_10_mat.zip",
+      "bytes": 192878399,
+      "sha256": "ee8fc0b1a06bc737da4414e6062ac7b3aaa18f9cb965343183701c7d8a0b8d98"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_11_mat.zip",
+      "bytes": 216803970,
+      "sha256": "336be8820041ad83ed65b179190915271451826aacad5252a95d4562840c31d5"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_12_mat.zip",
+      "bytes": 210052022,
+      "sha256": "5e48f7ffb971eb2cfd4783eb04688192524211195b8fb88490ccb07c34b45d32"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_13_mat.zip",
+      "bytes": 209221147,
+      "sha256": "6cfaf4b12ab52dfb17f95b08f1434fc55af500688ea0a000a549626a4ae7759d"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_14_mat.zip",
+      "bytes": 207493485,
+      "sha256": "c9e9616476dc8ca4eecf5cb0247da3c6cd3d7f949c8ea1603dec1248112e2f64"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_15_mat.zip",
+      "bytes": 208615074,
+      "sha256": "ea7b63666624fbfee632ecd392501648e6ece59fab8ec14a4ad9f381aea997cd"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_16_mat.zip",
+      "bytes": 212913734,
+      "sha256": "df10078cf8cc7bcb16025fb030d973ed98cd6685b7aeaaee610573772ed23afe"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_17_mat.zip",
+      "bytes": 205564514,
+      "sha256": "7db584a4720842cb26a05f97219f5b271f21982356a743b828bb0f26863deb2e"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_18_mat.zip",
+      "bytes": 208849680,
+      "sha256": "e799e3f31c61e65dcb34dce0790840da852b4299878ed1cdb248ddb410b4b41c"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_19_mat.zip",
+      "bytes": 203700827,
+      "sha256": "9eb87ebb51898c77a7cc3bb47aac5d1a79d00c2727657df90a48b2e094771a0e"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_20_mat.zip",
+      "bytes": 202984501,
+      "sha256": "a460c5ea08ad65adaf438d935c35a959538a2452b4c3261f7b7c520de60692d3"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_21_mat.zip",
+      "bytes": 197548924,
+      "sha256": "c47c0f3721a02ff16979b418010871277462308eac20d28b895ef1f9b76d2e8a"
+    },
+    {
+      "path": "mne_data\\MNE-braininvaders2015b-data\\zenodo\\3268762\\group_22_mat.zip",
+      "bytes": 213925176,
+      "sha256": "20cf569ea397af437998576da28ad1b83241a183225bcf667b368f21f0632ee0"
+    }
+  ],
+  "retained_raw_copy": false,
+  "status": "removed_and_absence_verified",
+  "completed_utc": "2026-09-08T08:27:14.0696971Z"
+}

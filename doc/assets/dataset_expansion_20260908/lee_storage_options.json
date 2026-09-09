@@ -1,0 +1,1127 @@
+{
+  "schema": "lee_erp_storage_audit/1",
+  "EEG_files_downloaded": false,
+  "download_status": "paused_by_user",
+  "download_progress": "experiments/runs/dataset_expansion_audit_20260908/lee_download_progress.json",
+  "source_doi": "https://doi.org/10.5524/100542",
+  "mirror": "https://github.com/nemarDatasets/nm000323/tree/v1.0.4",
+  "mirror_commit": "717134bbf458dfd79e97b939f63ed3a9c03282ec",
+  "official_ERP_MAT": {
+    "files": 108,
+    "bytes": 99909771701,
+    "per_session_file_count_and_bytes": {
+      "session1": [
+        54,
+        49998882139
+      ],
+      "session2": [
+        54,
+        49910889562
+      ]
+    }
+  },
+  "mirror_continuous_ERP_BDF": {
+    "files": 216,
+    "bytes": 41462816664,
+    "per_session_file_count_and_bytes": {
+      "ses-1": [
+        108,
+        20797616031
+      ],
+      "ses-2": [
+        108,
+        20665200633
+      ]
+    },
+    "metadata_and_other_non_sourcedata_bytes": 15730912,
+    "conversion_validation": "not_yet_waveform_or_event_comparison_validated"
+  },
+  "six_slot_epoch_signal_only_estimate": {
+    "bytes": 1920827520,
+    "formula": "54 subjects * 2 sessions * (1980+2160) flashes * 6 slots * 179 samples * 4 bytes",
+    "measured_cache": false,
+    "excludes": "metadata_masks_QC_rejections_boundary_losses_compression"
+  },
+  "files": [
+    {
+      "path": "sub-1/ses-1/eeg/sub-1_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 194787062,
+      "sha256": "354d78e0c36c105283371a8b19e538eb6dc6a558bbabb9f40299e71c541ece08"
+    },
+    {
+      "path": "sub-1/ses-1/eeg/sub-1_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 199146098,
+      "sha256": "301919fd39ea094f8e21b6eac663190032722dd1a78e81c430c69cd1d898e3b0"
+    },
+    {
+      "path": "sub-1/ses-2/eeg/sub-1_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 194588924,
+      "sha256": "967a1d7aa3e8f5c44c76a1f0545bce1f916df96450aaba3f18cff8ae52582842"
+    },
+    {
+      "path": "sub-1/ses-2/eeg/sub-1_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 226496000,
+      "sha256": "762f27d912e3dc9395814427dcbbf4373b21e7c1ba2251ce25cc09a2e336a003"
+    },
+    {
+      "path": "sub-10/ses-1/eeg/sub-10_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 195381476,
+      "sha256": "f3e9e33bb461f9af390e16045182ec68757206c43efc1f12f44965ee7b84dd4d"
+    },
+    {
+      "path": "sub-10/ses-1/eeg/sub-10_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 188446646,
+      "sha256": "ec9251886a4379e429cc35c5fb114aa495baa36c62e3e339f030ab6f634fda59"
+    },
+    {
+      "path": "sub-10/ses-2/eeg/sub-10_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 196372166,
+      "sha256": "07ce07d95a4a69a574c8f1105e0db6a04bf331e999b255d6455506eb64b9eb54"
+    },
+    {
+      "path": "sub-10/ses-2/eeg/sub-10_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 180124850,
+      "sha256": "ed5a0d352ac72feb65b555c372c0d61ead3c1979a69a8fd980173b266592af12"
+    },
+    {
+      "path": "sub-11/ses-1/eeg/sub-11_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 205879673,
+      "sha256": "a5c140c59bee60a76b37c8e21ae3196bb31036dce2f74f3fcdb80f03818ab417"
+    },
+    {
+      "path": "sub-11/ses-1/eeg/sub-11_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 189437336,
+      "sha256": "98b66af308eccf9678bbf4a086e8317550ba3b7418f3a065393053392e3b0db5"
+    },
+    {
+      "path": "sub-11/ses-2/eeg/sub-11_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 189833612,
+      "sha256": "4311a37a4fc36baedd0dd7edf7931d455f90cb5290aec9a0c25e960454f6adab"
+    },
+    {
+      "path": "sub-11/ses-2/eeg/sub-11_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 184285748,
+      "sha256": "7ec470916d471af5ff73aa1a769a6c5a65eca0a4323819ff8f18fa8a4b16169d"
+    },
+    {
+      "path": "sub-12/ses-1/eeg/sub-12_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 194787062,
+      "sha256": "5c62f9838e948e78533797b3f95b065fa160b143c49e89639be42bdc340d70cf"
+    },
+    {
+      "path": "sub-12/ses-1/eeg/sub-12_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 186465266,
+      "sha256": "9beb1bd1be937221c6069fa9019dc82637853178aa5ca642a52a180e7f6f8edf"
+    },
+    {
+      "path": "sub-12/ses-2/eeg/sub-12_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 189833612,
+      "sha256": "0bd93663fc6dbc08d611c153ae8944765eb3631fe65bb5af5ff69618fd9e0d23"
+    },
+    {
+      "path": "sub-12/ses-2/eeg/sub-12_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 187651253,
+      "sha256": "ce37546bb47ea2a563ddc64913fe9339a61a95d4700ff18a1ebfb3047d895be6"
+    },
+    {
+      "path": "sub-13/ses-1/eeg/sub-13_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 200929340,
+      "sha256": "c450a763fcd61544163737210bf3e2e2cb9677f39562aeb1abe421996b8af95d"
+    },
+    {
+      "path": "sub-13/ses-1/eeg/sub-13_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 197560994,
+      "sha256": "88a2ce542a173c9dfb7cf8e872644fd2bf27bea397bd857ac22a896de32a4238"
+    },
+    {
+      "path": "sub-13/ses-2/eeg/sub-13_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 195381476,
+      "sha256": "cff9829b55521acc0053222a47e0091dab8e0ce9dc8f81520069dbd4be106149"
+    },
+    {
+      "path": "sub-13/ses-2/eeg/sub-13_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 184682024,
+      "sha256": "b42345958dc3d8e1e7243016dd0ff19f21681bc28b5df2a9210e237284bff0d1"
+    },
+    {
+      "path": "sub-14/ses-1/eeg/sub-14_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 196570304,
+      "sha256": "9f4c88a330ff54fba46217eaa3c1e33a24a992e4c35f6e7081a87c8fbff8040f"
+    },
+    {
+      "path": "sub-14/ses-1/eeg/sub-14_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 186663404,
+      "sha256": "b910e0b5cb7c26da5bf68e3e3c469d49a6b0172a47154094860f3debf73bf096"
+    },
+    {
+      "path": "sub-14/ses-2/eeg/sub-14_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 192805682,
+      "sha256": "fa3edd3c5fd301b858513d8992c66068c4d2ef4e4b2b929f21d33fc167f9c5f4"
+    },
+    {
+      "path": "sub-14/ses-2/eeg/sub-14_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 189635474,
+      "sha256": "b7502cfcd716c407b1a82339af01f31aab3dad37e6e7252243a4c1ae53bb4781"
+    },
+    {
+      "path": "sub-15/ses-1/eeg/sub-15_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190031750,
+      "sha256": "ce86b71620d9fd377fd7dacc19c9ce4beb9d9863fcd058a9028596063b8a61a1"
+    },
+    {
+      "path": "sub-15/ses-1/eeg/sub-15_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 181908092,
+      "sha256": "5fe2f26d68fd008f52fde1c4c20c696cfea00597a6a199b5483b65db022db354"
+    },
+    {
+      "path": "sub-15/ses-2/eeg/sub-15_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 219554312,
+      "sha256": "7edbb9c86fb21e8565e0d7c9c007c1ee043beb259e5891384ffd3f95fe040a0c"
+    },
+    {
+      "path": "sub-15/ses-2/eeg/sub-15_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 193796372,
+      "sha256": "8d31447d14b95d261a6094a4c44414955cfa652e541fb738fcd0e6eed9b15e88"
+    },
+    {
+      "path": "sub-16/ses-1/eeg/sub-16_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 192409406,
+      "sha256": "d1c0c6085ff0bf86e0506104b1d087d2e7b967fd9bbd7c944e742a49b0506a9f"
+    },
+    {
+      "path": "sub-16/ses-1/eeg/sub-16_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 184483886,
+      "sha256": "b000c8a2fddf56d7661bd034513c0fbbf70dca8cf150f7bddc940af8a5dddb4f"
+    },
+    {
+      "path": "sub-16/ses-2/eeg/sub-16_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 192013130,
+      "sha256": "c29205340762fb207f4e1f2f3dd5b6dd60951d16f3fe6da59268255937695b7b"
+    },
+    {
+      "path": "sub-16/ses-2/eeg/sub-16_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 179332298,
+      "sha256": "e1aede24ff129fbe0a7163a38812084c5053c3db4771c6df2e3321ddac3ce550"
+    },
+    {
+      "path": "sub-17/ses-1/eeg/sub-17_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 191616854,
+      "sha256": "30866a51f2abd6845d77ba376f0ddb6e436cbb1b0d66ac0b50c3b32fac36951b"
+    },
+    {
+      "path": "sub-17/ses-1/eeg/sub-17_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 192805682,
+      "sha256": "94870a3965b255528d3bdb985e7d3eb905a1347f451c3408498fb941c91ba89e"
+    },
+    {
+      "path": "sub-17/ses-2/eeg/sub-17_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 189437336,
+      "sha256": "5baa1863c6029c5f9a481152daa6d4f8981634b66319eea7855886d88a646e13"
+    },
+    {
+      "path": "sub-17/ses-2/eeg/sub-17_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 177152780,
+      "sha256": "f315344dfdaa148159a7d67992bc5c80fbf57caa1613c31c7448d04af6596569"
+    },
+    {
+      "path": "sub-18/ses-1/eeg/sub-18_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 199146098,
+      "sha256": "d78b44dc333aa51b87d01e09c2bb82205ce2c2a933750048437f897a59ca4c00"
+    },
+    {
+      "path": "sub-18/ses-1/eeg/sub-18_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 187849388,
+      "sha256": "88d1eff438f3daa988a799554a3f3c64bbea72bc435afb9ee027ff120749d313"
+    },
+    {
+      "path": "sub-18/ses-2/eeg/sub-18_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 194390786,
+      "sha256": "c905f8936988df65e63924e66b602ba04b1007f826f420f93be5db9dd16d78a7"
+    },
+    {
+      "path": "sub-18/ses-2/eeg/sub-18_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 184285748,
+      "sha256": "ca432d050caa7121a8868328b768290d99c9abdb5de658372cae98b480a6ff95"
+    },
+    {
+      "path": "sub-19/ses-1/eeg/sub-19_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190229888,
+      "sha256": "4ce9b20dbde4fd4216aace873d7f2e1b194b83eec1fcfc5ef10e13aed9039538"
+    },
+    {
+      "path": "sub-19/ses-1/eeg/sub-19_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 189041060,
+      "sha256": "74df98e1e25dce7d8f2af238d01768c7045868b921a1866798db2c394028f571"
+    },
+    {
+      "path": "sub-19/ses-2/eeg/sub-19_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190031750,
+      "sha256": "31a26859223089ed0dce5ffbadf2db67f0bbed779d27929b1e28432ad92e1530"
+    },
+    {
+      "path": "sub-19/ses-2/eeg/sub-19_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 192211268,
+      "sha256": "4cf468d3caa3fc8577b6ede68b1b790ead5c4947c18f1445d547c18578c46417"
+    },
+    {
+      "path": "sub-2/ses-1/eeg/sub-2_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 197759132,
+      "sha256": "463f82812bac8c577e31a1bcf48bab089d5b12677e08c0372ab266436c1d08f5"
+    },
+    {
+      "path": "sub-2/ses-1/eeg/sub-2_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 187852232,
+      "sha256": "bf1af83ea8760212a02df315d35f5d12927372c028da869565b576a5df5d1746"
+    },
+    {
+      "path": "sub-2/ses-2/eeg/sub-2_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 198944948,
+      "sha256": "e4fdb1f9b859a81e6c0254d76468a686e394d958f601345ae6cb7b4b060a5ebb"
+    },
+    {
+      "path": "sub-2/ses-2/eeg/sub-2_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 183889472,
+      "sha256": "ad087bebbcf626c4558ac3aa73f2ff5febf24fdcea0ea4534af5ec2764bef099"
+    },
+    {
+      "path": "sub-20/ses-1/eeg/sub-20_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 195579614,
+      "sha256": "0a21bc4a0778153de6be1c45ebbadfdcd7b1a144e052d996607eda05bc6334b7"
+    },
+    {
+      "path": "sub-20/ses-1/eeg/sub-20_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 182700644,
+      "sha256": "833ffb89825fb63647c8cd27d0b756e15710f5acb2a3e7798eb4d885e82ab730"
+    },
+    {
+      "path": "sub-20/ses-2/eeg/sub-20_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 191022440,
+      "sha256": "c0a554f8f2b510c525010ccd4693b0fe20447742d9c9282fdcc80f2766f2bbce"
+    },
+    {
+      "path": "sub-20/ses-2/eeg/sub-20_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 179926712,
+      "sha256": "d9d441c08e244e495b53f1229c5348631cf69810b0c2456bd5b0a0e771c791ce"
+    },
+    {
+      "path": "sub-21/ses-1/eeg/sub-21_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 193598234,
+      "sha256": "61c4069d2676bbce2401daff0189d66ba12661d1a837a9e317c5ac2f37b113d4"
+    },
+    {
+      "path": "sub-21/ses-1/eeg/sub-21_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 185474576,
+      "sha256": "1d4f327a4b5f856cf2ae8ef2507183be5abc1c16b9c3a7ff12388f7fa9347b20"
+    },
+    {
+      "path": "sub-21/ses-2/eeg/sub-21_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 217179944,
+      "sha256": "01915885be6e835db4cdd781fd4404604edf0c98859840ba20a5056c5f498ef6"
+    },
+    {
+      "path": "sub-21/ses-2/eeg/sub-21_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 185078300,
+      "sha256": "82adc2ef2f7a339e0c3fd578e996b0ce57e4b24258a95003841c3adaa1ca7477"
+    },
+    {
+      "path": "sub-22/ses-1/eeg/sub-22_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190428026,
+      "sha256": "870b701d709cf6a99044e3383c588e418c4d01ef3e6ad43e182a12b3b26c1f88"
+    },
+    {
+      "path": "sub-22/ses-1/eeg/sub-22_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 176756504,
+      "sha256": "d772fb59d53e8a2891ba5872820deb364264f241fdf0ea142c6177a21758ed23"
+    },
+    {
+      "path": "sub-22/ses-2/eeg/sub-22_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 191814992,
+      "sha256": "ff971403d6f3189e72af8dbd767a89440596b769cc78f529584ee8105d13829a"
+    },
+    {
+      "path": "sub-22/ses-2/eeg/sub-22_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 177747194,
+      "sha256": "7c6af6eddaf821e68be169f41d3b880c70ba764006789f771ea4808b49457388"
+    },
+    {
+      "path": "sub-23/ses-1/eeg/sub-23_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 193994510,
+      "sha256": "c320d46980e8e9fd398885d59e95183ba79911b8f48e017594f440242c133860"
+    },
+    {
+      "path": "sub-23/ses-1/eeg/sub-23_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 190031750,
+      "sha256": "ecd38beb71c490ecb26b706dab6e4a3cb7217fa1eb75bf322f0dac2f6aa538dd"
+    },
+    {
+      "path": "sub-23/ses-2/eeg/sub-23_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 188644784,
+      "sha256": "5a0cbccd921428083e3201fd7d935945c753d3f2e94e48b1b8dad3710718ea96"
+    },
+    {
+      "path": "sub-23/ses-2/eeg/sub-23_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 179134160,
+      "sha256": "034e35627eb5e521abfe5a0a82dfe66a928472e890b801ae34e72dd9e0b24f9b"
+    },
+    {
+      "path": "sub-24/ses-1/eeg/sub-24_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 200334926,
+      "sha256": "beed6aeb2b35c0032ba54784fd42d9961552e4221b5febd2f97d2e0b1dd04971"
+    },
+    {
+      "path": "sub-24/ses-1/eeg/sub-24_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 192013130,
+      "sha256": "76b5f3208ba4fa63045a4f4af0d5b2e789de550f7629d6b52979b73f47a524cf"
+    },
+    {
+      "path": "sub-24/ses-2/eeg/sub-24_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 191022440,
+      "sha256": "f5163c151cb65d0a6d84c5bbffeba05668e209e77a4a3c876366a0653dfd6c33"
+    },
+    {
+      "path": "sub-24/ses-2/eeg/sub-24_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 184483886,
+      "sha256": "5c3e34c720907d91a2d066a61f40b77a9e7229b6b79d2b7519d92a790e693c2c"
+    },
+    {
+      "path": "sub-25/ses-1/eeg/sub-25_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 192211268,
+      "sha256": "a962a5fd872f096958414109ef8dded700bce0cd531b0194887947dd7df7e43b"
+    },
+    {
+      "path": "sub-25/ses-1/eeg/sub-25_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 180719264,
+      "sha256": "4a60f974de92626844ff74571257d7cf1e3b73c483da98b46515de18d2543379"
+    },
+    {
+      "path": "sub-25/ses-2/eeg/sub-25_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 195579614,
+      "sha256": "ddc6e20642366ea9261096ee9c11b4ea7fdaf62564dcc7dd5282e697c6823074"
+    },
+    {
+      "path": "sub-25/ses-2/eeg/sub-25_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 179926712,
+      "sha256": "ec062ac19bf25da066b6316dec99c42a5f31792e4f052ca7b8d17148fe56b3c4"
+    },
+    {
+      "path": "sub-26/ses-1/eeg/sub-26_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 194390786,
+      "sha256": "913a2e6e8afae35c1e324262c0feee5b37db166fcb897bf47de6336f95808a30"
+    },
+    {
+      "path": "sub-26/ses-1/eeg/sub-26_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 202313243,
+      "sha256": "aebc22be32b752a11b83dbe4523346dfaa4270addbbcbf3bd86e679dcc7e1d98"
+    },
+    {
+      "path": "sub-26/ses-2/eeg/sub-26_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 194588924,
+      "sha256": "7bb332d0d2b4304420604abb809dde52056cc906fce97cf5acfba5c1ad816eae"
+    },
+    {
+      "path": "sub-26/ses-2/eeg/sub-26_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 183691334,
+      "sha256": "52777f27d1932cd3736f2a93f6a9d77e23151968d73aface84efd84ff3c84611"
+    },
+    {
+      "path": "sub-27/ses-1/eeg/sub-27_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190031750,
+      "sha256": "e437d6a90482552f8359528e1cb299b91a25fd9c3ab701ced5980f9edff3ebe0"
+    },
+    {
+      "path": "sub-27/ses-1/eeg/sub-27_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 181115540,
+      "sha256": "3a9b683477e81663b02eedafe5dd02395b26e0207d06defe8d3db50c548ea926"
+    },
+    {
+      "path": "sub-27/ses-2/eeg/sub-27_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 192211268,
+      "sha256": "d0ffe48d1c6a96c44385c6182a5572559509fc0ea6859e0669a17b599545d6a8"
+    },
+    {
+      "path": "sub-27/ses-2/eeg/sub-27_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 176954642,
+      "sha256": "f13e41f443d2bc455038f40ad11d79fa195a83b9756e0cff6daf793af319a9c0"
+    },
+    {
+      "path": "sub-28/ses-1/eeg/sub-28_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 195381476,
+      "sha256": "8868e8aba1c7ecc49a3f457757c6e0de4e8119c9082d87429624de5e6715c53a"
+    },
+    {
+      "path": "sub-28/ses-1/eeg/sub-28_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 191418716,
+      "sha256": "241c199d94220cb6986d075fda5f0339c8d4ad4085a467d007490b333176f89f"
+    },
+    {
+      "path": "sub-28/ses-2/eeg/sub-28_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190626164,
+      "sha256": "e1ab84fd3adaf77103ace8875541292378bf47cd75c8e70840b1a918fa658159"
+    },
+    {
+      "path": "sub-28/ses-2/eeg/sub-28_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 182700644,
+      "sha256": "cfbe073da972a46d1e1d54c002f6b6baec0ad3179aee82db469a3d423aefa793"
+    },
+    {
+      "path": "sub-29/ses-1/eeg/sub-29_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 191418716,
+      "sha256": "0ddd8b4e8b5d66e988e7ede733e3febb09a78da4ea3e0b58ae95eca5f8207493"
+    },
+    {
+      "path": "sub-29/ses-1/eeg/sub-29_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 182502506,
+      "sha256": "577142e50eec9655f717f289618c61f48e9957aea441693e980288e292357d65"
+    },
+    {
+      "path": "sub-29/ses-2/eeg/sub-29_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 189833612,
+      "sha256": "29c45c01c2b5c70110c18d9b95382de45ac0dc0178d831ec3f5f6adeef5589a5"
+    },
+    {
+      "path": "sub-29/ses-2/eeg/sub-29_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 185276438,
+      "sha256": "30ddd7c1010ea6d18e48b4115ada436186ea07911349bf3a45c94aef6eea55e8"
+    },
+    {
+      "path": "sub-3/ses-1/eeg/sub-3_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 191616854,
+      "sha256": "1c7769dfcfb9db88b9abd4cd6229fb810c5dc50d1caa5fb72edf477a1cfcc69b"
+    },
+    {
+      "path": "sub-3/ses-1/eeg/sub-3_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 188644784,
+      "sha256": "a66c392e7a999a6a46d5f6adedeff62bf90086786ecf40cc19ac1722ee328355"
+    },
+    {
+      "path": "sub-3/ses-2/eeg/sub-3_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 191616854,
+      "sha256": "85df414e795b163ee8e9c733e0803f8957c72bb7eaf9b1e81d56695f8fb599c8"
+    },
+    {
+      "path": "sub-3/ses-2/eeg/sub-3_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 177549056,
+      "sha256": "2822886a377a4fa90f87363d79cec928eff8dee0251a75c1f78ceb714ccee2bb"
+    },
+    {
+      "path": "sub-30/ses-1/eeg/sub-30_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 189635474,
+      "sha256": "59d666a51a377a5ae3fc97739cbb1222055fc4e86b0220c0ef1f8c411d4a1f02"
+    },
+    {
+      "path": "sub-30/ses-1/eeg/sub-30_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 179926712,
+      "sha256": "073091abc38ef5c39f343b0145b1a1c24ea4f8aec3aaa84806f65f550a5cb3fc"
+    },
+    {
+      "path": "sub-30/ses-2/eeg/sub-30_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190229888,
+      "sha256": "b7a79995049009d8cdc0093fa422c7b986312b716cfbda75a6bf07f97e8b9109"
+    },
+    {
+      "path": "sub-30/ses-2/eeg/sub-30_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 181511816,
+      "sha256": "38e8d566d8be659d5ccec2f2eeb40c1f196037c8a6f026f3e430d45575dd05ad"
+    },
+    {
+      "path": "sub-31/ses-1/eeg/sub-31_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 197560994,
+      "sha256": "ef4b5b898bd7af018c105e729227cb3309da589f64cf40ed40ac0a39f5da945a"
+    },
+    {
+      "path": "sub-31/ses-1/eeg/sub-31_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 187059680,
+      "sha256": "aee4936deb34c4cfcde7db224b92c7f4614e63a5476ce766513b03b6f17db3f1"
+    },
+    {
+      "path": "sub-31/ses-2/eeg/sub-31_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 191022440,
+      "sha256": "778b76367efdc7f6bc92956990fd7c04e79c3d3e991ccd078396f4329a1933d3"
+    },
+    {
+      "path": "sub-31/ses-2/eeg/sub-31_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 180124850,
+      "sha256": "fc6e79606cf35fb7bb8905a909bf3728b980e6aeacfa4844e3b4184044d3401c"
+    },
+    {
+      "path": "sub-32/ses-1/eeg/sub-32_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 197957270,
+      "sha256": "de2508e08e40562d5bcca0089d738e87a09ceb175b10e3f48239cdf523f7d0fd"
+    },
+    {
+      "path": "sub-32/ses-1/eeg/sub-32_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 190428026,
+      "sha256": "0fb1762ec31744d2ecd7496d17a40a334872b7613f6e1f1eed36c133fa00e4ed"
+    },
+    {
+      "path": "sub-32/ses-2/eeg/sub-32_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 193400096,
+      "sha256": "59cab2a547121753ddeb01468e26c2645b12913b03e78f1065a0a5f8afb4ba66"
+    },
+    {
+      "path": "sub-32/ses-2/eeg/sub-32_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 183691334,
+      "sha256": "d8ad0f68d629f89a8a45212eacb0d0a510d546ff55691d1fe7deb89d160086c2"
+    },
+    {
+      "path": "sub-33/ses-1/eeg/sub-33_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 197164718,
+      "sha256": "8f70e9941c769e62c62633e582863300e28f6c0e4c7ef06739b18803ef58f617"
+    },
+    {
+      "path": "sub-33/ses-1/eeg/sub-33_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 188050370,
+      "sha256": "a54bee30f31b3701dd560e3a3ca589b70b622f7e7d4b9f78a27f271212bb9574"
+    },
+    {
+      "path": "sub-33/ses-2/eeg/sub-33_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 194390786,
+      "sha256": "e64c2070eb8f1e2e71352fa0be30ef563898a774fa965126e5e201dee3ee7522"
+    },
+    {
+      "path": "sub-33/ses-2/eeg/sub-33_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 181313678,
+      "sha256": "20bd5c9dad3189b233fa0597f1f26bf4b1f1b9bee55e40c62f13dc93cf1ff973"
+    },
+    {
+      "path": "sub-34/ses-1/eeg/sub-34_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 189041060,
+      "sha256": "9e7b1b3c5e6511b9d8d9f3a84035e9e92c785d1e9f257936a6a3fd188a86b71e"
+    },
+    {
+      "path": "sub-34/ses-1/eeg/sub-34_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 177350918,
+      "sha256": "0c1de5c649c76ca7364374133f01852dea3ba64133320fd2c438824220901367"
+    },
+    {
+      "path": "sub-34/ses-2/eeg/sub-34_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190824302,
+      "sha256": "f1c7ab160a82df095462a9dbfb394507cb6d2709d8ff8f0cb9c473d3c8270c09"
+    },
+    {
+      "path": "sub-34/ses-2/eeg/sub-34_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 186267128,
+      "sha256": "7c90bf5884dffc0ed7766416d5fc30031dc328e539bc3f4635a375725e723c5c"
+    },
+    {
+      "path": "sub-35/ses-1/eeg/sub-35_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 189635474,
+      "sha256": "e63e309b9df34760f1fe23b77ba3357f8182bbc0fbcfefdd8ce88adf23a1d2bd"
+    },
+    {
+      "path": "sub-35/ses-1/eeg/sub-35_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 179332298,
+      "sha256": "dc8bdd541fe57b459252a293401171e5e738bdc083cd882f7436da8ce4631f8e"
+    },
+    {
+      "path": "sub-35/ses-2/eeg/sub-35_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 192805682,
+      "sha256": "5ee4b7f6358eee11333619e9ebc501b1ec5138d101c1db5906469614a8e7457b"
+    },
+    {
+      "path": "sub-35/ses-2/eeg/sub-35_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 187257818,
+      "sha256": "3a7253ebb5739c0b54e1f9fc9bfecef9825110c1707468d8ed5dc7a7fdaa20d9"
+    },
+    {
+      "path": "sub-36/ses-1/eeg/sub-36_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190031750,
+      "sha256": "aabaab0a827ff4ce7441992d6af711cb0ec55a214cdd026d605ddb12c3b6246c"
+    },
+    {
+      "path": "sub-36/ses-1/eeg/sub-36_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 177549056,
+      "sha256": "a61e8586d63b842c98d3a37c14447a176681f4279d4cc3b04ee618399dd9306b"
+    },
+    {
+      "path": "sub-36/ses-2/eeg/sub-36_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 202910720,
+      "sha256": "244ab2f1f68302df4b3731a7c18dd0c815f23c5bf8bc9704bfbf219419557e41"
+    },
+    {
+      "path": "sub-36/ses-2/eeg/sub-36_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 177152780,
+      "sha256": "32473832dca706297bcdbebc2a45f6d324084c46c21f5f0c7c739b4cead07091"
+    },
+    {
+      "path": "sub-37/ses-1/eeg/sub-37_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 213015758,
+      "sha256": "f140a6da65039b6a2cd571e1fc3423ad1cab55c5b8d8341280122633471cc9ae"
+    },
+    {
+      "path": "sub-37/ses-1/eeg/sub-37_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 190031750,
+      "sha256": "fdcc8db0f437795693f0250492535093a1042e3defeeeddd2837482fae3470ed"
+    },
+    {
+      "path": "sub-37/ses-2/eeg/sub-37_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190031750,
+      "sha256": "b5370892cac0c0a6bd2cb17af3bd6aefbb814ecd65d15058017cbb9487555604"
+    },
+    {
+      "path": "sub-37/ses-2/eeg/sub-37_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 180521126,
+      "sha256": "3774f230937650f4906be95496043298abde5b4ede1b665c604ffe6a7f64f775"
+    },
+    {
+      "path": "sub-38/ses-1/eeg/sub-38_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 198947960,
+      "sha256": "badbecd7db33f015bd5f1b4f80a3819e8bb5e53328e6c0b68c38ad06ae1a4add"
+    },
+    {
+      "path": "sub-38/ses-1/eeg/sub-38_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 188842922,
+      "sha256": "2427af359fd9295640f1fea6bfe80677a09b1e5f37a8acdcfceb71cdf7f18546"
+    },
+    {
+      "path": "sub-38/ses-2/eeg/sub-38_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 206257205,
+      "sha256": "b47f4fdc109015c8555a837be0c0c7c369d27e18f5ad3c5472d5451f9ab6a880"
+    },
+    {
+      "path": "sub-38/ses-2/eeg/sub-38_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 187237973,
+      "sha256": "c228a5c4b83f08c43875424989ef73543aaa2def57f77f13caf396939c8fd1ba"
+    },
+    {
+      "path": "sub-39/ses-1/eeg/sub-39_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 205090238,
+      "sha256": "b12e9995df6c90383dcd8ff03a7ba4e03385b43cc1a69c30158d8a3fc138e494"
+    },
+    {
+      "path": "sub-39/ses-1/eeg/sub-39_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 177350918,
+      "sha256": "571293b17b3b89cb97ccb54cebdd9270f3d2d26c114eba9322fe1dbae9bf53b2"
+    },
+    {
+      "path": "sub-39/ses-2/eeg/sub-39_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 201898631,
+      "sha256": "8d9f504420dcf42e45961218236dffa634abbf708c9dbb8b360973434ac69197"
+    },
+    {
+      "path": "sub-39/ses-2/eeg/sub-39_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 184068101,
+      "sha256": "1d2ec1c81187b44f582d7b510dbfee75c4e248153c8b8c2f02f68c56aae6371f"
+    },
+    {
+      "path": "sub-4/ses-1/eeg/sub-4_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190626164,
+      "sha256": "7c4b357bddf9900ba2d0512397b4914e5e76c6df6b9bee322164f8babe9c00a4"
+    },
+    {
+      "path": "sub-4/ses-1/eeg/sub-4_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 177549056,
+      "sha256": "c6309d5376f7b6be2af7bcd3930f669b7082c66a26dfd06f26ec691e2185f5b4"
+    },
+    {
+      "path": "sub-4/ses-2/eeg/sub-4_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 192805682,
+      "sha256": "aa01ef47fa2dbe812056675e921a2bcd47fecdb06600a5025fae3d7db32df62a"
+    },
+    {
+      "path": "sub-4/ses-2/eeg/sub-4_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 181313678,
+      "sha256": "894fa8177597c22b2276c137c6ad3c20f0e61165e1f71876387b8dee616003bd"
+    },
+    {
+      "path": "sub-40/ses-1/eeg/sub-40_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 191022440,
+      "sha256": "4a91afb990cbe008db94992d7f7c0f48b17ae3f668ace8b9fb19b6bbb5601547"
+    },
+    {
+      "path": "sub-40/ses-1/eeg/sub-40_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 190428026,
+      "sha256": "041e7d15e076d816800757000831e6b74c5b0e2d04b809b769d0b557475c2de2"
+    },
+    {
+      "path": "sub-40/ses-2/eeg/sub-40_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 197341940,
+      "sha256": "2faa732814d82489a40256a1c415e550cc688c4d5267ae6accad05779897fedd"
+    },
+    {
+      "path": "sub-40/ses-2/eeg/sub-40_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 185454920,
+      "sha256": "37031306eb84ca9edae236d710b9f2773c34557ff721afd3bf1904972ee15802"
+    },
+    {
+      "path": "sub-41/ses-1/eeg/sub-41_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 208634609,
+      "sha256": "a9d4475934b6b6114579dd7d6d3b95475fc3d8e8dce083cbbf9c27267f415e7d"
+    },
+    {
+      "path": "sub-41/ses-1/eeg/sub-41_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 189219143,
+      "sha256": "c7764fa5ae5a409d767fa7d5011e4824d236df953c97961b7ab0108caf14ea9a"
+    },
+    {
+      "path": "sub-41/ses-2/eeg/sub-41_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 200908046,
+      "sha256": "379e14c3f140f012c050ef9a682fe9a1223e4a7280f9f08070da396a5f31f450"
+    },
+    {
+      "path": "sub-41/ses-2/eeg/sub-41_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 187237973,
+      "sha256": "9af7638872eaaf44ca4c51f01e755e1d61522e518df7529a7fb1e83417a22363"
+    },
+    {
+      "path": "sub-42/ses-1/eeg/sub-42_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 199521227,
+      "sha256": "9236a7c141e1ca9cc9bfb5aae8a98e6ea4bb8aaab1c6d40173e6f887a31054b3"
+    },
+    {
+      "path": "sub-42/ses-1/eeg/sub-42_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 192190898,
+      "sha256": "759075a811a22238e80530fd46385c390707855c1675f9317ba7740cbb64d9d8"
+    },
+    {
+      "path": "sub-42/ses-2/eeg/sub-42_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 220528307,
+      "sha256": "8ac5a434e2e2edce8767bac19a1857db7477a607074d30019be63056a9631b30"
+    },
+    {
+      "path": "sub-42/ses-2/eeg/sub-42_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 185256803,
+      "sha256": "468081812e57b377e68816f59cc4ba42217c17db2b8b5648f3ffdddc4344d7c9"
+    },
+    {
+      "path": "sub-43/ses-1/eeg/sub-43_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 206059088,
+      "sha256": "2cd955c7601497077bc01dd4777553f9163537da2d15722a73e97d2c08353460"
+    },
+    {
+      "path": "sub-43/ses-1/eeg/sub-43_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 196747589,
+      "sha256": "64114b8cc3fb1ecdbd66b7b83b7cd81660a5bec164783049b331c8c1112e5297"
+    },
+    {
+      "path": "sub-43/ses-2/eeg/sub-43_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 202691099,
+      "sha256": "ac85167120dd2489a37ca933ad433bdc635c49d7a5431bec9a8436f9b4d7bb20"
+    },
+    {
+      "path": "sub-43/ses-2/eeg/sub-43_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 185256803,
+      "sha256": "29f995da596c57553ad0577e551eabe303cf368015b408f4771dfecf390cd3a0"
+    },
+    {
+      "path": "sub-44/ses-1/eeg/sub-44_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 201502397,
+      "sha256": "b8e6f847546dd2c60024d9ff6381efe03e6b39143a12c08212f24423db89f258"
+    },
+    {
+      "path": "sub-44/ses-1/eeg/sub-44_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 201304280,
+      "sha256": "89220ca50581f5fd0565fa221ae2864badc6683dfd2b94fbe9724274942a3d4e"
+    },
+    {
+      "path": "sub-44/ses-2/eeg/sub-44_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 197738174,
+      "sha256": "1a55c337cfd8fbd82d27b7b8acba33f715590db78f7830d733696753991b4f6a"
+    },
+    {
+      "path": "sub-44/ses-2/eeg/sub-44_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 184464335,
+      "sha256": "900259e0323df60d9bfaca7187313fd21c60b539ccfa61efface9e055fa89ced"
+    },
+    {
+      "path": "sub-45/ses-1/eeg/sub-45_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 202096748,
+      "sha256": "446c1672967eac74176853e34e641e4261c5fc0b6b6f1fbf22018e7a1dd5b48b"
+    },
+    {
+      "path": "sub-45/ses-1/eeg/sub-45_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 191398430,
+      "sha256": "1189ccce10e9e6279bad79b7c361c758d67d005a9fcf21582cfa4c0afafa84e9"
+    },
+    {
+      "path": "sub-45/ses-2/eeg/sub-45_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 209427077,
+      "sha256": "f381f7fedb8ec1c0b62ba77ea5b4908c7ce3c33338c80b20f4ebf8da25e2d8b3"
+    },
+    {
+      "path": "sub-45/ses-2/eeg/sub-45_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 189021026,
+      "sha256": "01e53da7a7c2204c853efc77592098fd80c3186349c60de868f06f5f6a2dfd15"
+    },
+    {
+      "path": "sub-46/ses-1/eeg/sub-46_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 200115578,
+      "sha256": "2aaacdd71a8e976c061a0f2f1f85661640273237d99032632fc9ebddaff0283f"
+    },
+    {
+      "path": "sub-46/ses-1/eeg/sub-46_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 188822909,
+      "sha256": "c6f8f028d2a1459afe37bd33bfec7608bd20cb0c8275d45253150f7c4f90c778"
+    },
+    {
+      "path": "sub-46/ses-2/eeg/sub-46_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 204870386,
+      "sha256": "b0589fcfb930db2ec3ad1d1e9d6392dc4b8b3a6f47acf0415792805aa6380030"
+    },
+    {
+      "path": "sub-46/ses-2/eeg/sub-46_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 190804079,
+      "sha256": "d87b96325d20750616342c2d667aa555e6d2d27cef95e3fedc212dc06760c3fb"
+    },
+    {
+      "path": "sub-47/ses-1/eeg/sub-47_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 202294865,
+      "sha256": "7d1ca9a90ce276780bb6818c7165e4e6de88966176c2200c2ae88e1bf5ab9ca4"
+    },
+    {
+      "path": "sub-47/ses-1/eeg/sub-47_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 186247388,
+      "sha256": "e8c2cee704059151f04c00c7ed69c5dc9baf528acb08f22402c27c48096efa71"
+    },
+    {
+      "path": "sub-47/ses-2/eeg/sub-47_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 198530642,
+      "sha256": "9deb5547609bf7a4819ad71fd9ed74dec865dca0febc46a63253f0f4921235d0"
+    },
+    {
+      "path": "sub-47/ses-2/eeg/sub-47_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 184860569,
+      "sha256": "31066aac958284d64a459f0c3c17dc53d6b0dc7b28fd1bf635f147a0a884dd87"
+    },
+    {
+      "path": "sub-48/ses-1/eeg/sub-48_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 203879801,
+      "sha256": "27ee8c9bcd1d8d48f6a875013c66a83b707b7b443d1888f4a929f100a8fff380"
+    },
+    {
+      "path": "sub-48/ses-1/eeg/sub-48_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 184860569,
+      "sha256": "505d75225d793fd60d381be0c2e6e1b5398cf54e34195b91ca7a3bf1386c9ff0"
+    },
+    {
+      "path": "sub-48/ses-2/eeg/sub-48_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 213389417,
+      "sha256": "24c097eb9e1cdb2a2968eb26dde97905cf5dbc3ec40ec9f24ab179925bcef56f"
+    },
+    {
+      "path": "sub-48/ses-2/eeg/sub-48_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 185653037,
+      "sha256": "081a266b46ac6292ca3c621df54dd0d00de187537ddb41ac2fafc649a7388d62"
+    },
+    {
+      "path": "sub-49/ses-1/eeg/sub-49_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190626164,
+      "sha256": "a5fc6893004671203c531ce012abf7dcfb2ac518a03d6671dc40d787b0b27052"
+    },
+    {
+      "path": "sub-49/ses-1/eeg/sub-49_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 178737884,
+      "sha256": "54904fc51e3a6c156b49154e33891e7ddd67a13985093ad6e3e54d1e26bb028b"
+    },
+    {
+      "path": "sub-49/ses-2/eeg/sub-49_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 195955121,
+      "sha256": "4b1c55ee31aa461378daf11e17cb3c48d1240f5e9ea675dcb733993e20e07b78"
+    },
+    {
+      "path": "sub-49/ses-2/eeg/sub-49_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 186841739,
+      "sha256": "5183ff4eff6ce5dfb8203318ef7ad9d3c3a80dfd69c936d0135ed60fc1c408c6"
+    },
+    {
+      "path": "sub-5/ses-1/eeg/sub-5_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 197759132,
+      "sha256": "4434bf82bce9ea7a0acc2d5443499ed8cb3ff3868415ec76a386daa9bc52d24d"
+    },
+    {
+      "path": "sub-5/ses-1/eeg/sub-5_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 187059680,
+      "sha256": "5dd9dd254fe94a436d553ccddcd092aefbc59446ab7edee4fc6b2c5053e7f97b"
+    },
+    {
+      "path": "sub-5/ses-2/eeg/sub-5_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 192211268,
+      "sha256": "57c28efeefffed16e81a648ab88e9c42ee03d8dff07e4092eb491171caa6438e"
+    },
+    {
+      "path": "sub-5/ses-2/eeg/sub-5_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 186465266,
+      "sha256": "af5b5995e7540d83fb30cc89aaa89b315aba315a41b805299d3877fa0524897b"
+    },
+    {
+      "path": "sub-50/ses-1/eeg/sub-50_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 201700514,
+      "sha256": "8a57255ce19fbc7fd647a337c32acb0ccf46296496e1e42a57cc974c56fe3183"
+    },
+    {
+      "path": "sub-50/ses-1/eeg/sub-50_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 185653037,
+      "sha256": "9fd289db801814b8f0768695bf7ef32353840f783325095a2d02fb63ad1a9f96"
+    },
+    {
+      "path": "sub-50/ses-2/eeg/sub-50_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 198530642,
+      "sha256": "0a1e811af4e91602f233e5e72c4e3feff1b0cacb6e333124c11994b0fd728922"
+    },
+    {
+      "path": "sub-50/ses-2/eeg/sub-50_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 192389015,
+      "sha256": "bd5f9f25e2a164d1f485c98d8e1e116f796c55cc3ecd2ea3d72cd1b8ab194508"
+    },
+    {
+      "path": "sub-51/ses-1/eeg/sub-51_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 191814992,
+      "sha256": "a7b8c5dbec14076e6016c78d818074c632784a76543e3b3d7f11fe8a974dcee3"
+    },
+    {
+      "path": "sub-51/ses-1/eeg/sub-51_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 182106230,
+      "sha256": "6824a89bfdb3eb850f765aabee940d0e2e0872c44326df793afbe3669293e237"
+    },
+    {
+      "path": "sub-51/ses-2/eeg/sub-51_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 200313695,
+      "sha256": "4998e0115287070a5586161c94bd59e1ce97fe325d663890ebb9e4a01012c4d8"
+    },
+    {
+      "path": "sub-51/ses-2/eeg/sub-51_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 184068101,
+      "sha256": "87a874694c8ac355d79cde0d3eb8f9856c06a69b908202d7e2707e9afd81054b"
+    },
+    {
+      "path": "sub-52/ses-1/eeg/sub-52_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 211232516,
+      "sha256": "d61bb47128578fd5cf7ca3c7098e7ec0463d8e1a86323dfe5e7a3f9d7d19e0d1"
+    },
+    {
+      "path": "sub-52/ses-1/eeg/sub-52_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 163679396,
+      "sha256": "8396738351d511ef5dd373ba2dd9043b05b931aff27565bc05e3d6a59aac01af"
+    },
+    {
+      "path": "sub-52/ses-2/eeg/sub-52_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 200115578,
+      "sha256": "1702e1bb3563798bcdd9f30a3208ff5e379df07bc31d0ee6e41e23ad64d8c783"
+    },
+    {
+      "path": "sub-52/ses-2/eeg/sub-52_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 188822909,
+      "sha256": "b6c2a1638c189ead51b8921035dd0d9f4bdc87690a31106e4b7853151bcb555e"
+    },
+    {
+      "path": "sub-53/ses-1/eeg/sub-53_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 195579614,
+      "sha256": "3ed7b91e836c95d48412490f7a08f49a3aa2bc2fa5df70d7c5905c7a3d8c126e"
+    },
+    {
+      "path": "sub-53/ses-1/eeg/sub-53_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 182304368,
+      "sha256": "5f076195fe8861e2137937e7ebff0ab20be0c826e3c48b9fc375679887154eba"
+    },
+    {
+      "path": "sub-53/ses-2/eeg/sub-53_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 221915168,
+      "sha256": "740a029ef35a32959116892ec25171c6457a62059d161bec44322ff13ea44d29"
+    },
+    {
+      "path": "sub-53/ses-2/eeg/sub-53_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 186643622,
+      "sha256": "24f32467b6686849f2ee5dfa2e832f82c0f15915f15d44e3548ffbdfc7cda433"
+    },
+    {
+      "path": "sub-54/ses-1/eeg/sub-54_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 203681684,
+      "sha256": "a3a7f68b5810ce882b8e5eb65ca5247cae7f7c7733ddd2ff848faf5024255727"
+    },
+    {
+      "path": "sub-54/ses-1/eeg/sub-54_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 247069307,
+      "sha256": "26c3246489fbe3be39251060b490787fd31bfb5074f99835912b61adadd40db0"
+    },
+    {
+      "path": "sub-54/ses-2/eeg/sub-54_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 200908046,
+      "sha256": "a1cc492ba76cef1cd6c8f95bf5ead77dfec02bb798598b99d742eb4f25d77b0e"
+    },
+    {
+      "path": "sub-54/ses-2/eeg/sub-54_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 187634207,
+      "sha256": "1ac9d56681b5bda73cd63e5aaffea2521458fe7108332c2e8b83b0045d29e3a3"
+    },
+    {
+      "path": "sub-6/ses-1/eeg/sub-6_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 194787062,
+      "sha256": "f792d70000fb7495e054e6e090a0144691b8fba80d8729779bd54800d4f882a5"
+    },
+    {
+      "path": "sub-6/ses-1/eeg/sub-6_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 207071618,
+      "sha256": "9c7e9d309aa8a9828674e6ca2df1f390ad65ccc893175930c064f37b3d7586e2"
+    },
+    {
+      "path": "sub-6/ses-2/eeg/sub-6_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 201127478,
+      "sha256": "1e1ccb512537de75f3762a51583ab33bead40dfbcce536d27c1cb27be82cdcad"
+    },
+    {
+      "path": "sub-6/ses-2/eeg/sub-6_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 194390786,
+      "sha256": "156cd3fa20f23c0d50a6eb5b1dc7030d5bf411a8ff754d92ff1bd94c9958588b"
+    },
+    {
+      "path": "sub-7/ses-1/eeg/sub-7_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 192409406,
+      "sha256": "90fcf02cf40993d6c94ccf433cb5495e0b48be8dac54e8d91cfcaa3775776a07"
+    },
+    {
+      "path": "sub-7/ses-1/eeg/sub-7_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 181908092,
+      "sha256": "3d7e653578bd2341a6be4cacdf44d417e8ffcef65626f6b4805face07041ba6c"
+    },
+    {
+      "path": "sub-7/ses-2/eeg/sub-7_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 197957270,
+      "sha256": "bb334bbf75952ee45e3e7afb11bc693cd8fe871fb7b20e0bb94d8677500c3761"
+    },
+    {
+      "path": "sub-7/ses-2/eeg/sub-7_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 183094148,
+      "sha256": "9a25f37c9e960b2b4d36a435ec355afad6252cec050673a997c5c2c242b312e4"
+    },
+    {
+      "path": "sub-8/ses-1/eeg/sub-8_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 212817620,
+      "sha256": "b45a6c549eeb7b29c981edcdf78c0e48f7bd9fde9ffe06d9a84da9d8ddfcfc4b"
+    },
+    {
+      "path": "sub-8/ses-1/eeg/sub-8_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 178539746,
+      "sha256": "70a3c68133ce3925f93e33a2f0547a2e1ebe584f8bd1f3c36ed2eeb3194c973a"
+    },
+    {
+      "path": "sub-8/ses-2/eeg/sub-8_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 190031750,
+      "sha256": "0236d8d8c21bf222b787f18dc674b5d1fd10ad9ec5bab8d63ba27f87f6be7f2b"
+    },
+    {
+      "path": "sub-8/ses-2/eeg/sub-8_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 179530436,
+      "sha256": "9144cb63cb3c737aba8d6254d18b6083095684c576ad6e39cb448b09c88be68d"
+    },
+    {
+      "path": "sub-9/ses-1/eeg/sub-9_ses-1_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 201523754,
+      "sha256": "1d6901b9ce08ccb1d23f0dc747e809afaf176f0a88772de71c59b17765e78220"
+    },
+    {
+      "path": "sub-9/ses-1/eeg/sub-9_ses-1_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 197164718,
+      "sha256": "adc1fe9adf685f3631d220312b097eec7f14c82b41498e79bd9c87ee2b9a0204"
+    },
+    {
+      "path": "sub-9/ses-2/eeg/sub-9_ses-2_task-p300_acq-test_run-4_eeg.bdf",
+      "size": 195381476,
+      "sha256": "f92b5ffb87e815c610057b6aa218aec5935a357ad6061fd14d489dc02ac09b70"
+    },
+    {
+      "path": "sub-9/ses-2/eeg/sub-9_ses-2_task-p300_acq-train_run-1_eeg.bdf",
+      "size": 187059680,
+      "sha256": "a3a3ead9fd20aed236de258a266d660fbc422197c215d11df1a72bda94c90e65"
+    }
+  ]
+}

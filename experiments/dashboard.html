@@ -226,8 +226,16 @@ function releaseResourceMonitor() {
 window.addEventListener("pagehide", releaseResourceMonitor);
 
 function finiteNumber(value) {
+  if (typeof value !== "number" && typeof value !== "string") return null;
+  if (typeof value === "string" && value.trim() === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function processMemoryGiB(row, field) {
+  const values = (row?.processes || []).map(process => finiteNumber(process[field]));
+  return values.length && values.every(Number.isFinite)
+    ? values.reduce((sum, value) => sum + value, 0) / 1024 : null;
 }
 
 function normalizeEpoch(row) {
@@ -610,7 +618,10 @@ async function tick() {
     const text = await r.text();
     const lines = parseJsonl(text);
     const manifest = [...lines].reverse().find(l => l.type === "manifest") || {};
-    let folds = lines.filter(l => l.type === "fold");
+    let folds = lines.filter(l => l.type === "fold").map(row => ({
+      ...row, hit: finiteNumber(row.hit), fold_auc: finiteNumber(row.fold_auc),
+      fold_bacc: finiteNumber(row.fold_bacc),
+    }));
     const done = lines.length > 0 && lines[lines.length - 1].type === "done";
     // Current runners write record.json atomically before done. Keep reading
     // the immutable final record to support historical runs and fill genuinely
@@ -678,8 +689,8 @@ async function tick() {
     document.getElementById("barfill").style.width = pct + "%";
 
     // KPI
-    const hits = folds.filter(f => f.hit !== null).map(f => f.hit);
-    const aucs = folds.map(f => f.fold_auc).filter(v => isFinite(v));
+    const hits = folds.map(f => f.hit).filter(Number.isFinite);
+    const aucs = folds.map(f => f.fold_auc).filter(Number.isFinite);
     const fit = folds.map(f => f.fit_sec).filter(v => v);
     const mean = a => a.length ? (a.reduce((x, y) => x + y, 0) / a.length) : NaN;
     let eta = "—";
@@ -695,8 +706,7 @@ async function tick() {
     const gpuText = latestResource && latestResource.gpu_util_pct != null
       ? `GPU ${formatValue(latestResource.gpu_util_pct, 0)}% · VRAM ${formatValue(latestResource.gpu_memory_used_mib, 0)}/${formatValue(latestResource.gpu_memory_total_mib, 0)} MiB`
       : "GPU 监测等待中";
-    const processRows = latestResource?.processes || [];
-    const privateGiB = processRows.reduce((sum, process) => sum + Number(process.private_mib || 0), 0) / 1024;
+    const privateGiB = processMemoryGiB(latestResource, "private_mib");
     const monitorStateNow = monitor?.state || monitorState;
     const monitorLive = monitorStateNow === "running" || monitorStateNow === "started";
     const monitorText = monitorLive ? "monitor 在线" :
@@ -739,8 +749,8 @@ async function tick() {
         idx.push(i + 1);
         if (f.hit !== null) { hs += f.hit; hn++; }
         runHit.push(hn ? hs / hn : null);
-        aucWin.push(f.fold_auc);
-        runAuc.push(mean(aucWin));
+        if (f.fold_auc !== null) aucWin.push(f.fold_auc);
+        runAuc.push(aucWin.length ? mean(aucWin) : null);
       });
       const trendBounds = dynamicAxisBounds([...runHit, ...runAuc]);
       mkChart("c1", {
@@ -758,7 +768,7 @@ async function tick() {
         data: { labels: folds.map(f => f.fold + 1), datasets: [
           { label: "测试 fold AUC", data: folds.map(f => f.fold_auc), backgroundColor: "#85b7eb" },
           { label: "验证 task AUC（末 epoch）", data: folds.map(f => {
-            const values = (f.task_val_aucs || []).filter(value => value != null && isFinite(value));
+            const values = (f.task_val_aucs || []).map(finiteNumber).filter(Number.isFinite);
             return values.length ? values[values.length - 1] : null;
           }), backgroundColor: "#c0ddff" },
           { label: "fold hit", data: folds.map(f => f.hit), backgroundColor: "#5dcaa5" },
@@ -843,9 +853,9 @@ async function tick() {
         } }
     });
     const resourceLabels = resources.map(row => new Date(row.ts).toLocaleTimeString());
-    const workerRss = resources.map(row => (row.processes || []).reduce((sum, process) => sum + Number(process.rss_mib || 0), 0) / 1024);
-    const workerPss = resources.map(row => (row.processes || []).reduce((sum, process) => sum + Number(process.pss_mib || 0), 0) / 1024);
-    const workerPrivate = resources.map(row => (row.processes || []).reduce((sum, process) => sum + Number(process.private_mib || 0), 0) / 1024);
+    const workerRss = resources.map(row => processMemoryGiB(row, "rss_mib"));
+    const workerPss = resources.map(row => processMemoryGiB(row, "pss_mib"));
+    const workerPrivate = resources.map(row => processMemoryGiB(row, "private_mib"));
     mkChart("c7", {
       type: "line",
       data: { labels: resourceLabels, datasets: [

@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from math import floor
+from dataclasses import dataclass, replace
+from math import floor, isfinite
+from numbers import Real
 
 BRAIN_SYNC_LAYOUT_SCHEMA = "brainsync-scalp-eog-layout/1"
 BRAIN_SYNC_ACQUISITION_CHANNELS = ("Fz", "Cz", "P3", "Pz", "P4", "PO8", "EOG", "Oz")
 BRAIN_SYNC_ACQUISITION_TYPES = ("EEG", "EEG", "EEG", "EEG", "EEG", "EEG", "EOG", "EEG")
+BRAIN_SYNC_ACQUISITION_REFERENCE = "left earlobe"
+BRAIN_SYNC_REFERENCE_SCHEMA = "brainsync-acquisition-reference/1"
 BRAIN_SYNC_EEG_CHANNELS = tuple(
     name
     for name, kind in zip(
@@ -15,6 +18,35 @@ BRAIN_SYNC_EEG_CHANNELS = tuple(
     )
     if kind == "EEG"
 )
+
+
+def brainsync_reference_record() -> dict[str, str]:
+    """Physical REF placement, independent of any software rereferencing."""
+    return {
+        "schema": BRAIN_SYNC_REFERENCE_SCHEMA,
+        "label": BRAIN_SYNC_ACQUISITION_REFERENCE,
+        "side": "left",
+        "site": "earlobe",
+        "electrode": "ear_clip",
+    }
+
+
+def validate_notch_parameters(frequencies, quality_factor, *, sample_rate_hz=None) -> None:
+    """Validate an explicit notch declaration against the source rate when known."""
+    if (not isinstance(frequencies, (tuple, list))
+            or any(isinstance(f, bool) or not isinstance(f, Real) or not isfinite(f) or f <= 0
+                   for f in frequencies)
+            or len(set(frequencies)) != len(frequencies)):
+        raise ValueError("notch_freqs_hz must contain distinct positive finite frequencies")
+    if (isinstance(quality_factor, bool) or not isinstance(quality_factor, Real)
+            or not isfinite(quality_factor) or quality_factor <= 0):
+        raise ValueError("notch_quality_factor must be positive and finite")
+    if sample_rate_hz is not None:
+        if not isfinite(sample_rate_hz) or sample_rate_hz <= 0:
+            raise ValueError("notch source sample rate must be positive and finite")
+        if any(f >= sample_rate_hz / 2 for f in frequencies):
+            raise ValueError("notch frequencies must be below the source Nyquist frequency")
+
 
 
 @dataclass(frozen=True)
@@ -37,6 +69,8 @@ class EEGDataContract:
     filter_order: int = 4
     filter_phase: str = "zero"
     causal_iir_initial_state: str = "not_applicable"
+    notch_freqs_hz: tuple[float, ...] = ()
+    notch_quality_factor: float = 30.0
     resample_domain: str = "epoched"
     resample_method: str = "fft"
     resample_npad: str = "auto"
@@ -70,6 +104,11 @@ SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT = EEGDataContract(
     filter_phase="forward",
     causal_iir_initial_state=CAUSAL_IIR_INITIAL_STATE,
 )
+BRAIN_SYNC_CAUSAL_DATA_CONTRACT = replace(
+    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+    name="brainsync_causal_notch_v1",
+    notch_freqs_hz=(50.0,),
+)
 # Paper-aligned GTN causal contract (the source study high-passes at 0.5 Hz);
 # used only for SOTA-comparison anchors, not for our performance claims.
 PAPER_GTN_CAUSAL_DATA_CONTRACT = EEGDataContract(
@@ -84,6 +123,19 @@ SOURCE_COHORT_DATA_CONTRACTS = {
     "causal": SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     "gtn_paper": PAPER_GTN_CAUSAL_DATA_CONTRACT,
 }
+
+
+def epoch_support_record(
+    contract: EEGDataContract = SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
+) -> dict[str, str | float | int]:
+    """Export the model geometry for an independently packaged acquisition app."""
+    return {
+        "schema": "n2p3-epoch-support/1",
+        "tmin_ms": contract.tmin_ms,
+        "tmax_ms": contract.tmax_ms,
+        "model_sample_rate_hz": contract.sample_rate_hz,
+        "n_times": contract.n_times,
+    }
 
 
 def assert_p300_input_contract(
@@ -105,6 +157,8 @@ def assert_p300_input_contract(
         "filter_order": expected.filter_order,
         "filter_phase": expected.filter_phase,
         "causal_iir_initial_state": expected.causal_iir_initial_state,
+        "notch_freqs_hz": expected.notch_freqs_hz,
+        "notch_quality_factor": expected.notch_quality_factor,
         "resample_domain": expected.resample_domain,
         "resample_method": expected.resample_method,
         "resample_npad": expected.resample_npad,
@@ -138,6 +192,13 @@ def assert_causal_p300_input_contract(preprocessing: object) -> None:
     """Assert the causal contract required for chronological single-subject folds."""
 
     assert_p300_input_contract(preprocessing, SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT)
+
+
+def assert_personal_p300_input_contract(preprocessing: object) -> None:
+    """Accept either declared causal recipe; never add/remove a notch on supplied data."""
+    expected = (BRAIN_SYNC_CAUSAL_DATA_CONTRACT if getattr(preprocessing, "notch_freqs_hz", ())
+                else SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT)
+    assert_p300_input_contract(preprocessing, expected)
 
 
 def assert_paper_gtn_causal_input_contract(preprocessing: object) -> None:

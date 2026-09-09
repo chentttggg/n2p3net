@@ -20,7 +20,7 @@ import tempfile
 import time
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from math import isfinite
 from pathlib import Path
@@ -2431,7 +2431,7 @@ def _load_attested_cache_input(
                 "channel_mask": np.asarray(dataset.channel_mask, dtype=bool).tolist(),
             }
         ),
-        "preprocessing_digest": semantic_sha256(asdict(dataset.preprocessing)),
+        "preprocessing_digest": semantic_sha256(dataset.preprocessing.record()),
         "source_reference": source_reference.strip(),
         "source_domains": list(domains),
     }
@@ -2440,7 +2440,7 @@ def _load_attested_cache_input(
         channel_names=tuple(dataset.channel_names),
         channel_positions_m=tuple(tuple(float(value) for value in row) for row in positions),
         channel_mask=tuple(bool(value) for value in dataset.channel_mask),
-        preprocessing=asdict(dataset.preprocessing),
+        preprocessing=dataset.preprocessing.record(),
         source_reference=source_reference.strip(),
         source_domains=domains,
         resolved_record=resolved_record,

@@ -1,0 +1,7 @@
+{
+  "schema": "n2p3-epoch-support/1",
+  "tmin_ms": -200.0,
+  "tmax_ms": 1200.0,
+  "model_sample_rate_hz": 128.0,
+  "n_times": 179
+}

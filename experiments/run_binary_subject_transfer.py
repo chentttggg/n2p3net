@@ -6,6 +6,7 @@ import argparse
 import copy
 import gc
 import hashlib
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -29,10 +30,17 @@ from research.evaluation import (  # noqa: E402
 )
 from research.execution import ExpectedSubjectError, atomic_write_json  # noqa: E402
 from transfer.binary import (  # noqa: E402
+    STANDARD_CALIBRATION_TRIALS,
     binary_time_split,
+    calibration_arms,
+    matched_split_digests,
+    paired_transfer_effects,
+    resolve_calibration_splits,
     scratch_like_trunk,
     shrinkage_feature_scores,
     target_shrinkage_scores,
+    validate_calibration_budgets,
+    validate_matched_transfer_controls,
 )
 from transfer.checkpoint import (  # noqa: E402
     checkpoint_classifier_is_trained,
@@ -56,15 +64,16 @@ ARMS = (
 )
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--dataset-cache", type=Path, required=True)
-    parser.add_argument("--checkpoint", type=Path, required=True)
-    parser.add_argument("--source-snapshot-manifest", type=Path, required=True)
+    parser.add_argument("--dataset-cache", type=Path)
+    parser.add_argument("--checkpoint", type=Path)
+    parser.add_argument("--source-snapshot-manifest", type=Path)
     parser.add_argument("--evaluation-snapshot-manifest", type=Path)
     parser.add_argument("--arms", default=",".join(ARMS))
     parser.add_argument("--target-subjects", required=True)
-    parser.add_argument("--calibration-trials", default="48,96,192")
+    parser.add_argument("--calibration-trials", default=",".join(map(str, STANDARD_CALIBRATION_TRIALS)))
+    parser.add_argument("--minimum-test-trials", type=int, default=200)
     parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--scratch-epochs", type=int, default=60)
@@ -80,14 +89,44 @@ def main() -> None:
     parser.add_argument("--cpu-threads", type=int, default=4)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--output", type=Path, required=True)
-    args = parser.parse_args()
+    parser.add_argument("--training-plan", type=Path)
+    parser.add_argument("--stage", choices=("B0", "B0_score", "E1", "E3", "compact", "ES"))
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--batch-rule", type=Path)
+    parser.add_argument("--batch-cohort", type=Path)
+    args = parser.parse_args(argv)
+    if args.stage:
+        if args.training_plan is None:
+            parser.error("training-chain stages require --training-plan with whole-study source exclusion")
+        command = [sys.executable, str(ROOT / "experiments/run_cross_dataset_transfer.py"),
+                   "--plan", str(args.training_plan.resolve()), "--subjects", args.target_subjects,
+                   "--output", str(args.output.resolve()), "--stage", args.stage,
+                   "--device", args.device, "--cpu-threads", str(args.cpu_threads),
+                   "--target-seed", str(args.seed)]
+        if args.dry_run:
+            command.append("--dry-run")
+        if args.batch_rule:
+            command.extend(["--batch-rule", str(args.batch_rule.resolve())])
+        if args.batch_cohort:
+            command.extend(["--batch-cohort", str(args.batch_cohort.resolve())])
+        subprocess.run(command, check=True)
+        return
+    if args.training_plan or args.dry_run or args.batch_rule or args.batch_cohort:
+        parser.error("training-plan, batch-rule and dry-run require --stage")
+    if args.dataset_cache is None or args.checkpoint is None or args.source_snapshot_manifest is None:
+        parser.error("dataset-cache, checkpoint and source-snapshot-manifest are required")
     arms = tuple(args.arms.split(","))
     if not arms or len(set(arms)) != len(arms) or not set(arms) <= set(ARMS):
         parser.error("arms must be unique supported baseline names")
     subjects = tuple(value.strip() for value in args.target_subjects.split(",") if value.strip())
-    budgets = tuple(sorted({int(value) for value in args.calibration_trials.split(",")}))
-    if not subjects or len(set(subjects)) != len(subjects) or not budgets or budgets[0] < 1:
-        parser.error("unique target subjects and positive calibration budgets are required")
+    try:
+        budgets = tuple(int(value) for value in args.calibration_trials.split(","))
+        validate_calibration_budgets(budgets)
+        validate_matched_transfer_controls(arms, budgets)
+    except ValueError as error:
+        parser.error(str(error))
+    if not subjects or len(set(subjects)) != len(subjects) or args.minimum_test_trials < 1:
+        parser.error("unique target subjects and positive minimum test size are required")
     if args.cpu_threads < 1 or args.output.exists():
         parser.error("positive cpu threads and a new output directory are required")
     torch.set_num_threads(args.cpu_threads)
@@ -130,6 +169,7 @@ def main() -> None:
     # Validate every requested identity and split before starting any fit.
     splits = {}
     reference_trunks = {}
+    unavailable_budgets = []
     for subject in subjects:
         trunk, _ = load_n2p3_trunk_checkpoint(payload, dataset, target_subject=subject)
         if type(trunk) is not N2P3Net:
@@ -153,19 +193,24 @@ def main() -> None:
             raise ValueError(
                 f"{subject}: explicitly select one recording stream before this protocol."
             )
-        splits[subject] = (
-            rows,
-            {
-                budget: binary_time_split(
+        resolved, unavailable = resolve_calibration_splits(
+            budgets,
+            lambda budget, maximum, ev=ev: binary_time_split(
                     timeline.onset_times_s[ev],
                     timeline.evidence_available_times_s[ev],
                     calibration_trials=budget,
-                    maximum_calibration_trials=max(budgets),
+                    maximum_calibration_trials=maximum,
                     tmin_s=dataset.preprocessing.tmin_ms / 1000.0,
-                )
-                for budget in budgets
-            },
+                ),
+            minimum_test_trials=args.minimum_test_trials,
+            available_trials=len(rows),
         )
+        splits[subject] = (rows, resolved)
+        unavailable_budgets.extend({"participant_key": dataset.identity_table.record_for(subject).authority_key("source_or_global"),
+                                    "local_subject_id": subject, "requested_calibration_trials": budget,
+                                    "effective_calibration_trials": max(resolved),
+                                    "status": "budget_reduced" if max(resolved) else "unavailable", "reason": reason}
+                                   for budget, reason in unavailable.items())
     args.output.mkdir(parents=True)
     report = {
         "schema": "n2p3_binary_subject_transfer/2",
@@ -177,6 +222,7 @@ def main() -> None:
         "target_protocol": protocol,
         "evidence_scope": scope,
         "seed": args.seed,
+        "budget_adjustments": unavailable_budgets,
         "cells": [],
     }
     result_path = args.output / "record.json"
@@ -186,7 +232,8 @@ def main() -> None:
         for budget, split in subject_splits.items():
             train_rows, test_rows = rows[split.calibration_rows], rows[split.test_rows]
             y_train, y_test = dataset.y[train_rows], dataset.y[test_rows]
-            for arm in arms:
+            split_digests = matched_split_digests(train_rows, test_rows)
+            for arm in calibration_arms(arms, budget, budgets):
                 started = time.perf_counter()
                 trunk = copy.deepcopy(reference_trunks[subject])
                 target_only = arm.startswith("target_")
@@ -241,12 +288,13 @@ def main() -> None:
                     source_snapshot_sha256=evaluation_snapshot["archive_sha256"],
                     requested_subjects=[subject],
                     identity_policy="source_or_global",
-                    target_protocol=protocol,
+                    target_protocol={**protocol, "maximum_calibration_trials": max(subject_splits)},
                     adaptation=adaptation,
                     decision={"kind": "none_binary_trial_evaluation"},
                     evidence_scope=scope,
                 )
                 cell = {
+                    **split_digests,
                     "participant_key": participant,
                     "local_subject_id": subject,
                     "arm": arm,
@@ -258,7 +306,7 @@ def main() -> None:
                     "evaluation_contract_digest": contract.digest(),
                 }
                 try:
-                    if len(np.unique(y_train)) != 2 or len(np.unique(y_test)) != 2:
+                    if (arm != "zero_shot" and len(np.unique(y_train)) != 2) or len(np.unique(y_test)) != 2:
                         cell.update(status="insufficient_classes", auc=None)
                     else:
                         if arm == "target_shrinkage_lda":
@@ -365,6 +413,7 @@ def main() -> None:
                 )
                 del trunk
                 gc.collect()
+    report["paired_transfer_effects"] = paired_transfer_effects(report["cells"], budget_field="calibration_trials")
     report["status"] = "completed"
     report["summary"] = [
         {
@@ -374,8 +423,8 @@ def main() -> None:
             "requested_participants": len(subjects),
             "subject_macro_auc": float(np.mean(values)) if values else None,
         }
-        for budget in budgets
-        for arm in arms
+        for budget in sorted({k for _, resolved in splits.values() for k in resolved})
+        for arm in calibration_arms(arms, budget, budgets)
         for values in [
             [
                 cell["auc"]

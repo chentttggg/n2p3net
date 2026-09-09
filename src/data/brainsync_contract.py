@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import math
 from collections import Counter
@@ -18,7 +19,11 @@ from data.bids_eeg import (
     validate_bids_eeg_recording,
 )
 from data.channel import canonical_channel_name
-from data.contract import BRAIN_SYNC_ACQUISITION_CHANNELS, BRAIN_SYNC_ACQUISITION_TYPES
+from data.contract import (
+    BRAIN_SYNC_ACQUISITION_CHANNELS,
+    BRAIN_SYNC_ACQUISITION_TYPES,
+    brainsync_reference_record,
+)
 
 BRAIN_SYNC_SESSION_SCHEMA = "brainsync-gtn-session/4"
 BRAIN_SYNC_CHANNEL_COUNT = len(BRAIN_SYNC_ACQUISITION_CHANNELS)
@@ -146,6 +151,25 @@ def _nonempty_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"BrainSync {field_name} must be a non-empty string.")
     return value.strip()
+
+
+def _validate_reference_metadata(manifest: dict, bids: ValidatedBidsEEGRecording) -> None:
+    """Keep the physical REF declaration consistent across acquisition exports."""
+    montage = manifest.get("montage", {})
+    if not isinstance(montage, dict):
+        raise ValueError("BrainSync montage must be an object.")
+    declared = montage.get("ref_label")
+    if declared is not None and declared != bids.source_reference:
+        raise ValueError("BrainSync montage REF conflicts with BIDS EEGReference.")
+    details = montage.get("reference_details", {})
+    if details != dict(bids.source_reference_details):
+        raise ValueError("BrainSync acquisition reference details conflict across records.")
+    if details and details != brainsync_reference_record():
+        raise ValueError("BrainSync reference details do not match the declared left-earlobe contract.")
+    with bids.channels_path.open(encoding="utf-8", newline="") as stream:
+        for row in csv.DictReader(stream, delimiter="\t"):
+            if row["type"].upper() == "EEG" and row.get("reference", bids.source_reference) != bids.source_reference:
+                raise ValueError("BrainSync EEG channels must share the declared acquisition reference.")
 
 
 def _digit(value: Any, field_name: str) -> int:
@@ -363,6 +387,7 @@ def _validate_brainsync_recording(
             raise ValueError("BrainSync timestamps require start <= confirmation.")
 
     bids = validate_bids_eeg_recording(root, bids_files, contract=BRAIN_SYNC_BIDS_CONTRACT)
+    _validate_reference_metadata(manifest, bids)
     _validate_balanced_schedule(experiment, bids)
     recording_path = recording.get("path")
     if not isinstance(recording_path, str) or (root / recording_path).resolve() != bids.raw_path:
@@ -382,6 +407,9 @@ def _validate_brainsync_recording(
     recording_rate = _finite_nonnegative(
         recording.get("source_sample_rate_hz"), "recording.source_sample_rate_hz"
     )
+    from data.recording_clock import validate_recording_clock
+    clock = validate_recording_clock(root, recording, sample_rate_hz=bids.sample_rate_hz,
+                                     duration_seconds=bids.duration_seconds)
     timeline_rate = _finite_nonnegative(
         timeline.get("source_sample_rate_hz"), "recording.timeline.source_sample_rate_hz"
     )
@@ -418,6 +446,15 @@ def _validate_brainsync_recording(
         for left, right in zip(boundaries, bids.acquisition_boundaries, strict=True)
     ):
         raise ValueError("Pause sample boundaries conflict with BIDS events.")
+    if recording.get("clock") is not None:
+        acquired = clock["acquired_samples"]
+        if any(pause["boundary_sample"] > acquired for pause in pauses):
+            raise ValueError("Pause boundary exceeds the clock's actual acquired samples.")
+        clock_boundaries = [segment["stored_start"] for segment in clock["segments"][1:]]
+        pause_boundaries = sorted({pause["boundary_sample"] for pause in pauses
+                                   if 0 < pause["boundary_sample"] < acquired})
+        if clock_boundaries != pause_boundaries:
+            raise ValueError("Clock acquisition segment boundaries conflict with the declared pause/BIDS boundaries.")
     segmented = timeline.get("time_base") == BRAIN_SYNC_SEGMENTED_TIME_BASE
     if segmented != bool(pauses) or (segmented and timeline.get("pause_samples_retained") is not False):
         raise ValueError("Segmented recordings must explicitly declare omitted pause samples.")

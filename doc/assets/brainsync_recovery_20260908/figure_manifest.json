@@ -1,0 +1,91 @@
+{
+  "plan_sha256": "5d195f11038994e6def912e2ce5ed920f7dbe7828c327abf9e3b2365918cd6e4",
+  "quality_model_digest": "f7aa678e0f4c0013a645efc9b349c72ade3210dfa4ada555388893396012eea6",
+  "rows": [
+    {
+      "session_id": "P001_20260903_173947_01",
+      "scheduled_events": 450,
+      "retained_epochs": 247,
+      "retained_channel_epochs": 1199,
+      "matched_channel_events": [
+        {
+          "channel": "FZ",
+          "targets": 27,
+          "nontargets": 215
+        },
+        {
+          "channel": "P3",
+          "targets": 17,
+          "nontargets": 153
+        },
+        {
+          "channel": "PZ",
+          "targets": 16,
+          "nontargets": 139
+        },
+        {
+          "channel": "P4",
+          "targets": 26,
+          "nontargets": 215
+        },
+        {
+          "channel": "PO8",
+          "targets": 24,
+          "nontargets": 182
+        },
+        {
+          "channel": "OZ",
+          "targets": 19,
+          "nontargets": 166
+        }
+      ]
+    },
+    {
+      "session_id": "P001_20260907_150258_01",
+      "scheduled_events": 450,
+      "retained_epochs": 229,
+      "retained_channel_epochs": 1102,
+      "matched_channel_events": [
+        {
+          "channel": "FZ",
+          "targets": 21,
+          "nontargets": 176
+        },
+        {
+          "channel": "P3",
+          "targets": 17,
+          "nontargets": 154
+        },
+        {
+          "channel": "PZ",
+          "targets": 19,
+          "nontargets": 139
+        },
+        {
+          "channel": "P4",
+          "targets": 20,
+          "nontargets": 186
+        },
+        {
+          "channel": "PO8",
+          "targets": 17,
+          "nontargets": 164
+        },
+        {
+          "channel": "OZ",
+          "targets": 17,
+          "nontargets": 172
+        }
+      ]
+    }
+  ],
+  "script_sha256": "c4703f3ad59e8bb1bf47de72827bc23ab2d644ede3361f688a823cd89a11e725",
+  "estimand": "same retained event set per channel; descriptive target-minus-nontarget mean",
+  "smoothing": "none beyond declared preprocessing",
+  "uncertainty": "not estimated; one observed participant",
+  "axes": "per-panel data limits; no clipping; numeric y ticks retained",
+  "not_evidence_of": [
+    "total physiological cleanliness",
+    "independent adult P300 confirmation"
+  ]
+}

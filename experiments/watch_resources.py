@@ -11,6 +11,8 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
+import psutil
+
 ROOT = Path(__file__).resolve().parent.parent
 RUNS_ROOT = ROOT / "experiments" / "runs"
 
@@ -27,11 +29,7 @@ def _resolve_run(value: str) -> Path:
 
 
 def _pid_alive(pid: int) -> bool:
-    try:
-        os.kill(pid, 0)
-        return True
-    except (OSError, ProcessLookupError):
-        return False
+    return pid > 0 and psutil.pid_exists(pid)
 
 
 def _process_rows(root_pid: int) -> list[dict[str, object]]:

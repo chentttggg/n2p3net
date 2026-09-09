@@ -1,6 +1,7 @@
-"""Auditable source-row sampling.
+"""Auditable source-row sampling and observed-channel population statistics.
 
-The module exposes two independent samplers.  ``select_pds_rows`` is the
+Ordinary replacement sampling exposes its actual row probabilities, separately
+from the two selection samplers below. ``select_pds_rows`` is the
 target-similarity diverse (TSD) greedy sampler already used by the training
 pipeline.  ``select_dense_pds_rows`` is a faithful implementation of the
 dataset-internal dart-throwing Dense PDS sampler (Flores et al. 2024,
@@ -27,6 +28,88 @@ VALID_SELECTION_SCOPES = frozenset({"target_calibration", "target_unlabelled_buf
 SOURCE_SELECTION_SCHEMA = "n2p3_source_selection/2"
 LEGACY_SOURCE_SELECTION_SCHEMA = "n2p3_pds_source_selection/1"
 VALID_SAMPLER_KINDS = frozenset({"target_similarity_diverse", "dense_pds"})
+
+
+def source_sampling_probabilities(
+    domain_ids: np.ndarray,
+    participant_keys: np.ndarray,
+    *,
+    sampling: str,
+) -> np.ndarray:
+    """Return the actual row probability for ordinary replacement sampling."""
+    domains = np.asarray(domain_ids).astype(str)
+    people = np.asarray(participant_keys).astype(str)
+    if domains.ndim != 1 or people.shape != domains.shape or not len(domains):
+        raise ValueError("source domains and participant keys must be aligned nonempty vectors")
+    if np.any(np.char.strip(domains) == "") or np.any(np.char.strip(people) == ""):
+        raise ValueError("source domains and participant keys must be nonempty")
+    ownership = {}
+    for domain, person in zip(domains, people, strict=True):
+        if ownership.setdefault(person, domain) != domain:
+            raise ValueError("one participant authority key appears in multiple source domains")
+    if sampling == "uniform_rows":
+        return np.full(len(domains), 1.0 / len(domains), dtype=np.float64)
+    if sampling != "domain_participant":
+        raise ValueError("probability sampling must be uniform_rows or domain_participant")
+    unique_domains = np.unique(domains)
+    probability = np.empty(len(domains), dtype=np.float64)
+    for domain in unique_domains:
+        members = np.unique(people[domains == domain])
+        for person in members:
+            rows = (domains == domain) & (people == person)
+            probability[rows] = 1.0 / (len(unique_domains) * len(members) * rows.sum())
+    return probability
+
+
+def observed_source_statistics(
+    values: np.ndarray,
+    observed: np.ndarray,
+    *,
+    domain_ids: np.ndarray,
+    participant_keys: np.ndarray,
+    weighting: str = "observed_rows",
+) -> tuple[np.ndarray, np.ndarray, dict[str, object]]:
+    """Fit observed-channel population moments without any class weighting."""
+    values = np.asarray(values)
+    observed = np.asarray(observed)
+    domains = np.asarray(domain_ids).astype(str)
+    people = np.asarray(participant_keys).astype(str)
+    if values.ndim != 3 or observed.shape != values.shape[:2] or observed.dtype != bool:
+        raise ValueError("source statistics require (N,C,T) values and boolean (N,C) observations")
+    if not np.isfinite(values).all() or domains.shape != (len(values),):
+        raise ValueError("source statistics require finite values and aligned identities")
+    source_sampling_probabilities(domains, people, sampling="uniform_rows")
+    if weighting not in {"observed_rows", "observed_domain_participant"}:
+        raise ValueError("unknown source input statistics weighting")
+    mean = np.empty((1, values.shape[1], 1), dtype=np.float64)
+    std = np.empty_like(mean)
+    channels = []
+    for channel in range(values.shape[1]):
+        rows = np.flatnonzero(observed[:, channel])
+        if not len(rows):
+            raise ValueError(f"source statistics never observe channel {channel}")
+        weights = source_sampling_probabilities(
+            domains[rows], people[rows],
+            sampling="uniform_rows" if weighting == "observed_rows" else "domain_participant",
+        )
+        channel_values = np.asarray(values[rows, channel], dtype=np.float64)
+        first = float(weights @ channel_values.mean(axis=1))
+        # Centered population moments include within-person and between-person variation.
+        variance = float(weights @ np.square(channel_values - first).mean(axis=1))
+        mean[0, channel, 0] = first
+        std[0, channel, 0] = np.sqrt(max(0.0, variance)) + 1e-6
+        channels.append({
+            "channel_index": channel, "observed_rows": len(rows),
+            "observed_domains": len(np.unique(domains[rows])),
+            "observed_participants": len(np.unique(people[rows])),
+            "rows": rows.tolist(), "row_mass": weights.tolist(),
+            "time_points_per_row": values.shape[2], "mean": first,
+            "population_variance": variance,
+        })
+    return mean.astype(np.float32), std.astype(np.float32), {
+        "weighting": weighting, "class_weighting": "none",
+        "variance_convention": "population", "channels": channels,
+    }
 
 
 def _array_digest(value: np.ndarray) -> str:
@@ -661,8 +744,17 @@ def select_dense_pds_rows(
     pds_attempts = 0
     pds_fallback_count = 0
 
+    # Direct cdist avoids cancellation but still squares coordinate deltas.
+    # Outside its safe exponent range, reuse the existing stable hypot path.
+    limits = np.finfo(np.float64)
+    magnitudes = np.abs(source)
+    smallest = np.min(magnitudes, where=magnitudes > 0, initial=np.inf)
+    largest = np.max(magnitudes)
+    cdist_safe = (smallest >= 2 * np.sqrt(limits.tiny) / limits.eps
+                  and largest <= np.sqrt(limits.max / source.shape[1]) / 2)
     use_gpu = bool(
-        _torch is not None
+        cdist_safe
+        and _torch is not None
         and getattr(_torch, "cuda", None) is not None
         and _torch.cuda.is_available()
     )
@@ -691,6 +783,7 @@ def select_dense_pds_rows(
                     source_tensor.index_select(0, index_slab),
                     selected_slab,
                     p=2.0,
+                    compute_mode="donot_use_mm_for_euclid_dist",
                 )
                 output[index_start : index_start + len(index_slab)] = (
                     distances.min(dim=1).values.detach().cpu().numpy()

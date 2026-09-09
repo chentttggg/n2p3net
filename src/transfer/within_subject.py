@@ -13,8 +13,8 @@ import numpy as np
 
 from data.brainsync_contract import DecisionTargetPolicy
 from data.contract import (  # noqa: E402
-    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     assert_p300_input_contract,
+    assert_personal_p300_input_contract,
 )
 from data.epochs import EpochDataset  # noqa: E402
 
@@ -95,7 +95,7 @@ def calibration_decision_split(
     """Split early decisions from a frozen later set under an explicit target policy."""
 
     dataset.validate(require_labels=True)
-    assert_p300_input_contract(dataset.preprocessing, SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT)
+    assert_personal_p300_input_contract(dataset.preprocessing)
     if calibration_selections < 1 or test_repetitions < 1:
         raise ValueError("calibration_selections and test_repetitions must be positive.")
     if max_test_selections is not None and max_test_selections < 1:
@@ -528,9 +528,10 @@ def causal_prefix_suffix_split(
     """
 
     dataset.validate(require_labels=True)
-    assert_p300_input_contract(
-        dataset.preprocessing, contract or SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
-    )
+    if contract is None:
+        assert_personal_p300_input_contract(dataset.preprocessing)
+    else:
+        assert_p300_input_contract(dataset.preprocessing, contract)
     if prefix_repetitions < 0 or (test_repetitions is not None and test_repetitions < 1):
         raise ValueError(
             "prefix repetitions must be non-negative and test repetitions positive or None."

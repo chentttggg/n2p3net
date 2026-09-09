@@ -13,7 +13,7 @@ import json
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
-from urllib.parse import quote
+from urllib.parse import quote, unquote, urlsplit
 
 import numpy as np
 
@@ -45,6 +45,20 @@ def origin_subject_key(source_dataset_id: object, source_subject_id: object) -> 
         "n2p3-origin://"
         f"{quote(source, safe='')}/participant/{quote(subject, safe='')}"
     )
+
+
+def source_dataset_ids_from_identity(table: DatasetIdentityTable) -> tuple[str, ...]:
+    """Read original acquisition libraries from canonical provenance identities."""
+    libraries = set()
+    for record in table.records:
+        if not record.origin_subject_keys:
+            raise ValueError("source library identity requires canonical origin keys")
+        for origin in record.origin_subject_keys:
+            parsed = urlsplit(origin)
+            if parsed.scheme != "n2p3-origin" or not parsed.netloc or not parsed.path.startswith("/participant/"):
+                raise ValueError("source library identity requires a canonical origin key")
+            libraries.add(unquote(parsed.netloc))
+    return tuple(sorted(libraries))
 
 
 @dataclass(frozen=True)

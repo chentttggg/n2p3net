@@ -303,6 +303,8 @@ def build_manifest_dataset(manifest: DatasetManifest) -> EpochDataset:
                     "trial_reference_scale": spec.trial_reference_scale,
                     "filter_method": spec.filter_method,
                     "filter_order": spec.filter_order,
+                    "notch_freqs_hz": spec.notch_freqs_hz,
+                    "notch_quality_factor": spec.notch_quality_factor,
                     "filter_phase": spec.filter_phase,
                     "causal_iir_initial_state": spec.causal_iir_initial_state,
                     "resample_domain": spec.resample_domain,

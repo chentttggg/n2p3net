@@ -542,6 +542,8 @@ def build_bnci2014_008_subject_dataset(
         trial_reference_scale=preprocessing.trial_reference_scale,
         filter_method=preprocessing.filter_method,
         filter_order=preprocessing.filter_order,
+        notch_freqs_hz=preprocessing.notch_freqs_hz,
+        notch_quality_factor=preprocessing.notch_quality_factor,
         filter_phase=preprocessing.filter_phase,
         causal_iir_initial_state=preprocessing.causal_iir_initial_state,
         resample_domain=preprocessing.resample_domain,

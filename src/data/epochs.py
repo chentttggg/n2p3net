@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 from data.channel import canonical_channel_name
-from data.contract import DEFAULT_P300_DATA_CONTRACT, EEGDataContract
+from data.contract import DEFAULT_P300_DATA_CONTRACT, EEGDataContract, validate_notch_parameters
 from data.events import (
     EVENT_TIMELINE_SCHEMA,
     ScheduledEventTimeline,
@@ -54,6 +54,9 @@ class PreprocessingSpec:
     filter_order: int = DEFAULT_P300_DATA_CONTRACT.filter_order
     filter_phase: str = DEFAULT_P300_DATA_CONTRACT.filter_phase
     causal_iir_initial_state: str = DEFAULT_P300_DATA_CONTRACT.causal_iir_initial_state
+    # Missing fields in historical records mean no notch, never today's product default.
+    notch_freqs_hz: tuple[float, ...] = ()
+    notch_quality_factor: float = 30.0
     resample_domain: str = DEFAULT_P300_DATA_CONTRACT.resample_domain
     resample_method: str = DEFAULT_P300_DATA_CONTRACT.resample_method
     resample_npad: str = DEFAULT_P300_DATA_CONTRACT.resample_npad
@@ -67,6 +70,8 @@ class PreprocessingSpec:
     reject_threshold_v: float | None = None
 
     def __post_init__(self) -> None:
+        if isinstance(self.notch_freqs_hz, (list, tuple)):
+            object.__setattr__(self, "notch_freqs_hz", tuple(self.notch_freqs_hz))
         # JSON round-trips tuples as lists; normalize valid windows so the
         # physical contract compares identically before and after saving.
         window = self.trial_reference_window_ms
@@ -78,6 +83,7 @@ class PreprocessingSpec:
             )
 
     def validate(self) -> None:
+        validate_notch_parameters(self.notch_freqs_hz, self.notch_quality_factor)
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError("Preprocessing name must be non-empty.")
         for field_name in ("sfreq", "tmin_ms", "tmax_ms"):
@@ -188,6 +194,26 @@ class PreprocessingSpec:
         ):
             raise ValueError("reject_threshold_v must be finite and positive or None.")
 
+    def record(self) -> dict[str, Any]:
+        """Serialize the executed operator, preserving historical no-notch signatures."""
+        result = asdict(self)
+        if not self.notch_freqs_hz and self.notch_quality_factor == 30.0:
+            result.pop("notch_freqs_hz")
+            result.pop("notch_quality_factor")
+        else:
+            result["notch_freqs_hz"] = list(self.notch_freqs_hz)
+        return result
+
+
+def load_preprocessing_spec(path: str | Path) -> PreprocessingSpec:
+    """Load an explicit processing declaration shared by cache and model CLIs."""
+    record = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(record, dict):
+        raise ValueError("preprocessing config must contain a complete PreprocessingSpec object")
+    spec = PreprocessingSpec(**record)
+    spec.validate()
+    return spec
+
 
 def preprocessing_spec_from_contract(contract: EEGDataContract) -> PreprocessingSpec:
     """Materialize one canonical data contract without restating coupled fields."""
@@ -206,6 +232,8 @@ def preprocessing_spec_from_contract(contract: EEGDataContract) -> Preprocessing
         filter_order=contract.filter_order,
         filter_phase=contract.filter_phase,
         causal_iir_initial_state=contract.causal_iir_initial_state,
+        notch_freqs_hz=contract.notch_freqs_hz,
+        notch_quality_factor=contract.notch_quality_factor,
         resample_domain=contract.resample_domain,
         resample_method=contract.resample_method,
         resample_npad=contract.resample_npad,
@@ -423,7 +451,7 @@ class EpochDataset:
                 if self.trial_channel_mask is not None
                 else self.channel_mask.mean()
             ),
-            "preprocessing": asdict(self.preprocessing),
+            "preprocessing": self.preprocessing.record(),
             "n_subjects": int(len(np.unique(self.subject_ids))),
             "identity": identity_table.payload(),
             "lineage": lineage.payload(),
@@ -497,7 +525,7 @@ def materialize_dataset_lineage(dataset: EpochDataset) -> DataLineage:
             ),
             "event_fingerprint": timeline.fingerprint(),
             "identity_digest": identity.digest(),
-            "preprocessing": asdict(dataset.preprocessing),
+            "preprocessing": dataset.preprocessing.record(),
             "shape": list(dataset.X.shape),
             "source_provenance": stable_provenance,
         }
@@ -646,8 +674,8 @@ def bind_named_preprocessing_contract(
         }
     binding_record = {
         "schema": "n2p3_preprocessing_contract_binding/1",
-        "from": current_record,
-        "to": target_record,
+        "from": dataset.preprocessing.record(),
+        "to": target.record(),
         "output_dataset_name": output_name,
         "source_cache_attestation": source_attestation,
         "content_invariants": content_invariants,
@@ -750,7 +778,7 @@ def save_epoch_dataset(
         "event_online_causal": np.asarray(dataset.event_timeline.online_causal),
         "event_timing_source": np.asarray(dataset.event_timeline.timing_source),
         "preprocessing_json": np.asarray(
-            json.dumps(asdict(dataset.preprocessing), sort_keys=True, default=_json_default)
+            json.dumps(dataset.preprocessing.record(), sort_keys=True, default=_json_default)
         ),
         "metadata_json": np.asarray(metadata.to_json(orient="table", index=False)),
         "provenance_json": np.asarray(

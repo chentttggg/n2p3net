@@ -350,6 +350,23 @@ def test_dense_pds_extreme_coordinates_do_not_cancel_or_underflow() -> None:
     assert tiny.pds_fallback_count == 0
 
 
+def test_dense_pds_large_close_coordinate_gpu_path_matches_stable_cpu(monkeypatch):
+    from train import source_sampling
+
+    source = np.concatenate((1e8 + np.arange(30) * 1e-3, [0.0]))[:, None]
+    target = np.zeros((1, 1))
+    options = dict(n_select=28, selection_scope="target_calibration", seed=0,
+                   labels=np.concatenate((np.zeros(30, dtype=int), [1])), pds_radius=5e-4,
+                   pds_mingling_mixture=(1.0 - 1e-12, 1e-12), pds_max_attempts=100)
+    with monkeypatch.context() as cpu:
+        cpu.setattr(source_sampling, "_torch", None)
+        expected = select_dense_pds_rows(source, target, **options)
+    actual = select_dense_pds_rows(source, target, **options)
+    np.testing.assert_array_equal(actual.selected_indices, expected.selected_indices)
+    assert actual.pds_attempts == expected.pds_attempts == 28
+    assert actual.pds_fallback_count == expected.pds_fallback_count == 0
+
+
 def test_dense_pds_default_mixture_is_empirical_frequency() -> None:
     source = np.zeros((5, 2))
     target = np.zeros((1, 2))

@@ -8,6 +8,25 @@
 
 | 问题 | 证据 | 解释边界 |
 |---|---|---|
+| 工频陷波是否真正加入算法 | [陷波实施与验证](brainsync_notch_20260909.zh.md) | BrainSync默认50Hz/Q30；实际滤波、恢复证书和模型签名联动，真实残留及已知ERP保真核验；未测识别率收益 |
+| P001新增两份数据质量如何 | [六份记录质量复核](brainsync_p001_quality_20260909.zh.md) | 新100906原生QC保留340/450、七导齐全300；新103053存在同步瞬态、P003身份待核；无训练或QC重拟合 |
+| 全库代码质量与 Module 设计是否可靠 | [代码质量核查与修复](code_quality_audit_20260908.zh.md) | 核查发现的七项问题已在原模块修复；追加CPU/CUDA、产物完整性和浏览器反例，最终验收见报告 |
+| GTN和更多公开数据能否扩入域迁移 | [扩源审计与新增下载](dataset_expansion_audit_20260908.zh.md) | 四套新分发4.22 GiB及Speier原始DAT 483.4 MiB已核；BrainForm 24人99953个完整窗口与通道排除视图；BI2015b已删除；Lee两会话BDF及元数据38.63 GiB已启动下载，完整校验见账本；仍需逐折QC与接入 |
+| 相对幅度是否把会话差异当作坏信号 | [QC重设计与验证](brainsync_qc_redesign_20260908.zh.md) | 已修正个人硬拒语义，57拟合/114预测复核通过；Pz保留恢复，R5准确率仍弱 |
+| 其余四项前置质量问题 | [持续趋势、采样支持与处理对照](brainsync_qc_remaining_20260908.zh.md) | 已联动并完成12条件72拟合/144预测核验；趋势不作伪迹认证，恢复等待不任意缩短 |
+| REF实际接法是什么，是否继续Cz重参考 | [左耳垂更正与算法裁决](brainsync_reference_20260908.zh.md) | 用户确认左耳耳垂耳夹；9目录/24元数据更正、18 EDF不变；原生七导本人基准与显式Cz迁移分开，未宣称七导已胜出 |
+| 四库新源用于第二、第四次校准，第三、第五次分别测试 | [新源校准结果](brainsync_s1_calibration_20260908.zh.md) | 云端19拟合/38预测；独立会话留出、675训练epoch；新源未稳定优于scratch，严格R5均拒判 |
+| BrainSync为何AUC低，迁移负效应来自什么 | [原始数据与模型归因核查](brainsync_auc_cause_audit_20260908.zh.md) | 35模型/56预测重载、四份EDF/六份源MAT；尺度与跨会话变化实测，单人负差不等于公开或成人总体负迁移 |
+| 第三、第五份能保留多少，补充训练如何避免放宽质量标准 | [局部恢复与补充训练](brainsync_recovery_20260908.zh.md) | 247/450、229/450 epoch；逐导掩码、冻结QC、原R5分母；62反例中六个慢斜坡仍漏检 |
+| 提高目标轮数到90遍是否改善结果 | [60对90遍结果](target_epoch90_20260908.zh.md) | 610拟合0失败，1525产物复核；全网K200/K800 AUC增0.0086/0.0096，K2000收益很小 |
+| 早停全量是否改善准确率、是否减少总工作 | [早停全量结果](target_early_stopping_results_20260908.zh.md) | 123人3173评分/3050模型复核；当前CE选轮与patience降低AUC，含refit总更新增加；单seed公开开发 |
+| 时钟、分段、连续污染与单 HEOG 如何处理 | [本次实施与验证](brainsync_quality_implementation_20260907.zh.md) | 软件及旧 P001 开发；450/450 排程支持已验证，恢复阈值/实机光学时钟/成人效能未确认 |
+| 目标早停在哪一阶段做、是否节省总成本 | [早停消融实现与试跑](target_early_stopping_20260907.zh.md) | ES三模型×三策略，8人218评分复核；含refit总更新未减少，不能把试跑当总体结论 |
+| P001 真实记录与云端本人迁移 | [P001 先导训练](brainsync_p001_pilot_20260907.zh.md) | 旧5会话pilot含已拒绝的0903_170721，缓存与个体模型已撤下；分数仅保留历史含义 |
+| batch512全量各组件是否值得保留 | [完成结果与分析](training_chain_results_20260907.zh.md) | 95源任务、45134外层+7050内层预测复核；六导完整微调有小K收益，复杂源统计/选模增益有限；单seed开发 |
+| compact512及后续优化全量实现 | [训练链条实现与验证](training_chain_implementation_20260907.zh.md) | compact1953/1953复核；扩展全量也已完成，历次快照、并发调度及精确复用见记录 |
+| 新标准K0/200/800/2000完成结果 | [标准预算完整分析](four_study_standard_budgets_20260907.zh.md) | 123人1648单元逐预测复算；标准K、共同被试和回退档分开；单seed开发 |
+| 四库迁移在各校准预算下有多少收益 | [单seed完整结果分析](four_study_results_20260907.zh.md)；[逐人详细矩阵](../../experiments/runs/four_dataset_20260907/analysis/detailed/report.zh.md) | 123×18矩阵、分布尾部、重复负迁移、漏检/误报与目标训练曲线；逐预测复算 |
 | 四库整库留出及并发性能 | [四库运行](four_study_launch_20260907.zh.md) | 123人、单seed、六臂、2214单元完成；开发结果，非成人确认 |
 | Mainsah参考和EDF/BDF转换是否可信 | [Mainsah准入](mainsah_s2_admission_20260907.md) | 288份完整SHA/波形/标签核验，24人仍封存未评分 |
 | BI62-64 是否为作者拒收数据，后续是否使用 | [作者依据与删除记录](bi61_author_exclusion_20260906.zh.md) | 官方报告第4/9页明确拒收；活动队列永久01-61，旧64人结果不重标 |
@@ -42,14 +61,24 @@ BI/BNCI网格行数和混合均值，比较时以具体报告的真实队列为�
 
 | 材料 | 用途 |
 |---|---|
+| [BrainSync 窗口与时轴核查](brainsync_epoch_timing_audit_20260907.zh.md) | 五份自采会话、2205 epoch 复算；固定输入、整段读出与 LMBC，采样零点和连续性缺口 |
+| [第三、第五会话瞬态诊断与第一份撤回](brainsync_transient_quality_20260907.zh.md) | 第三份14.2 mV启动阶跃与IIR长尾；第五份局部污染/共同参考；保留两份待QC，旧模型物理归档 |
+| [连续质量与滤波状态研究方案](brainsync_signal_quality_design_20260907.zh.md) | 文献/10组反例/实施顺序；原始污染区间、状态恢复、时钟和个人QC；更正休息后首trial基线缺口，方案尚未部署 |
 | [技术审计](technical_audit_20260906.zh.md) | 结构、合同、调用链修复及阶段测试证据 |
 | [BrainSync版本比较](brainsync_versions_20260906.zh.md) | 整合前两份源码优缺点与历史raw候选记录 |
 | [工作站整合验收](brainsync_app_integration_20260906.zh.md) | Qt模拟全链、截图、前后端测试及交付快照 |
 | [阻抗显示核查](impedance_display_review_20260906.zh.md) | 模拟范围与质量语义修正，真实设备测量仍待核实 |
 | [设备与性能测量](device-portability.md) | 历史5090冷/热编译、并发和搬运记录；当前策略见工程指南 |
 | [工作树清理与数据保留](workspace_cleanup_20260906.zh.md) | 16,389份历史文件、四份cache和结果的实际去向及SHA-256 |
+| [工作树与BCI目录整理](workspace_cleanup_20260908.zh.md) | 4,816份临时/缓存文件压缩校验，16份旧传输文件集中保留；活动脚本及三个工作树原位保全 |
+| [云端数据盘清理与保全](cloud_disk_cleanup_20260908.zh.md) | 释放16.843 GiB；62,256份历史文件压缩校验后退役，当前输入、模型与结果保全 |
 
 ## 被合并或退役的指导
+
+2026-09-07用户将巨大训练链矩阵精简为compact512。替换前的九份活动文档已逐成员SHA-256核验，
+见[归档清单](../../frozen/compact512_redesign_20260907/manifest.json)，本地压缩包为
+`frozen/compact512_redesign_20260907/active_documents_before_compact512.zip`。
+旧S1的32次、S2的33次及E2源训练/选模任务已取消本轮排程；能力保留不等于正式完成。
 
 本轮修改前的37份文档（含项目根README）完整保存在
 本地原文压缩包`frozen/docs_before_consolidation_20260906.zip`（[分发说明](../../frozen/README.md)），

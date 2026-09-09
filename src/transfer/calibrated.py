@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import io
 import json
 import os
+import pickle
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -16,8 +18,9 @@ import numpy as np
 import torch
 from sklearn.metrics import roc_auc_score
 
-from data.contract import assert_causal_p300_input_contract
-from data.epochs import EpochDataset, materialize_dataset_identity
+from data.continuous_qc import minimum_usable_channel_count, validate_continuous_calibration_budget
+from data.contract import assert_personal_p300_input_contract
+from data.epochs import EpochDataset, PreprocessingSpec, materialize_dataset_identity
 from data.exclusions import assert_origin_keys_allowed
 from data.ocular import validate_eog_calibration_budget
 from models.n2p3net import N2P3ArchitectureConfig, N2P3Net
@@ -27,6 +30,19 @@ from transfer.binary import (
     plain_trunk_configuration,
     target_shrinkage_features,
 )
+from transfer.calibration_candidates import (  # noqa: F401
+    SELECTOR_MODES,
+    CalibrationCandidateFitCache,
+    FittedCalibrationCandidate,
+    calibration_candidate_recipes,
+    fit_calibration_candidate,
+    score_calibration_candidate,
+    select_calibration_candidate,
+    validate_calibration_quality_ingress,
+    waveform_lda_recipe,
+    waveform_lda_training_selection,
+)
+from transfer.calibration_split import dataset_calibration_inner_split
 from transfer.checkpoint import (
     CHECKPOINT_SCHEMA,
     checkpoint_classifier_is_trained,
@@ -35,9 +51,19 @@ from transfer.checkpoint import (
     load_n2p3_trunk_checkpoint,
     predict_n2p3_checkpoint,
 )
+from transfer.quality import (
+    EpochQualityModel,
+    EpochQualityPolicy,
+    PersonalEpochRawQualityError,
+    epoch_quality_channel_count,
+    epoch_quality_from_record,
+    validate_epoch_quality_fit_scope,
+    validate_personal_epoch_raw_quality,
+)
+from transfer.recipes import TargetRecipe
 from transfer.subject_adapter import SubjectAdapter, SubjectAdapterConfig
 
-CALIBRATED_PREDICTOR_SCHEMA = "n2p3_calibrated_predictor/1"
+CALIBRATED_PREDICTOR_SCHEMA = "n2p3_calibrated_predictor/4"
 
 
 @dataclass(frozen=True)
@@ -45,12 +71,25 @@ class CalibrationRecipe:
     name: str
     epochs: int
     learning_rate: float
+    initialization: str = "source"
+    input_statistics: str = "target_prefix"
+    bn_buffers: str = "online"
+    bn_affine: str = "trainable"
+    dropout: str = "checkpoint"
 
     def __post_init__(self) -> None:
         if not self.name.strip() or self.epochs < 1 or not np.isfinite(self.learning_rate):
             raise ValueError("calibration recipe requires a name and positive finite budget")
         if self.learning_rate <= 0:
             raise ValueError("calibration learning rate must be positive")
+
+    def target_recipe(self, *, batch_size: int, seed: int) -> TargetRecipe:
+        return TargetRecipe(
+            self.name, initialization=self.initialization, input_statistics=self.input_statistics,
+            bn_buffers=self.bn_buffers, bn_affine=self.bn_affine, dropout=self.dropout,
+            epochs=self.epochs, lr=self.learning_rate, batch_size=batch_size, seed=seed,
+            weights="none" if self.initialization == "waveform_lda" else "non_bn",
+        )
 
 
 DEFAULT_CALIBRATION_RECIPES = (
@@ -59,8 +98,239 @@ DEFAULT_CALIBRATION_RECIPES = (
 )
 
 
+def _load_calibration_checkpoint(source):
+    # NumPy-written source identity ledgers can contain Unicode scalar keys.
+    scalar_constructor = np.str_("").__reduce__()[0]
+    with torch.serialization.safe_globals([scalar_constructor, np.dtype, type(np.dtype("U"))]):
+        return torch.load(source, map_location="cpu", weights_only=True)
+
+
+def load_calibration_source_checkpoint(dataset: EpochDataset, source_checkpoint: str | Path | None):
+    """Read the common source gate without fitting target statistics or weights."""
+    if source_checkpoint is None:
+        return None, None, None, {"status": "not_supplied"}
+    source_path = Path(source_checkpoint)
+    source_hash, payload = None, None
+    try:
+        source_bytes = source_path.read_bytes()
+        source_hash = hashlib.sha256(source_bytes).hexdigest()
+        payload = _load_calibration_checkpoint(io.BytesIO(source_bytes))
+        if not isinstance(payload, dict) or payload.get("schema") != CHECKPOINT_SCHEMA:
+            raise ValueError("source checkpoint must use the current audited transfer schema")
+        if not checkpoint_classifier_is_trained(payload):
+            raise ValueError("source checkpoint needs a supervised source classifier")
+        subject, _ = _participant(dataset)
+        source, _ = load_n2p3_trunk_checkpoint(payload, dataset, target_subject=subject)
+        stats = checkpoint_input_stats(payload, dataset.n_channels)
+        return source, payload, stats, {"status": "compatible", "checkpoint_sha256": source_hash}
+    except (OSError, EOFError, pickle.UnpicklingError) as error:
+        status = "unreadable"
+        failure = {"type": type(error).__name__, "message": str(error)}
+    except (ValueError, RuntimeError) as error:
+        status = "incompatible"
+        failure = {"type": type(error).__name__, "message": str(error)}
+    return None, payload, None, {"status": status, "checkpoint_sha256": source_hash,
+                                **failure}
+
+
+def _resolve_calibration_batch_rule(selector_mode, batch_size, batch_rule):
+    if selector_mode == "legacy_product":
+        if batch_size not in {None, 64} or batch_rule is not None:
+            raise ValueError("legacy product replay uses fixed batch64 independently of B0")
+        return 64, {"schema": "n2p3_legacy_product_batch/1", "batch_size": 64,
+                    "selection_evidence": False, "reason": "historical_product_replay_independent_of_B0"}
+    from transfer.target_experiments import resolve_target_batch_rule
+
+    plan = {} if batch_rule is None else {"batch_rule": dict(batch_rule)}
+    return resolve_target_batch_rule(plan, requested_batch=batch_size)
+
+
+def _calibration_source_failure(gate, selector_mode):
+    if gate["status"] == "unreadable":
+        return f"source checkpoint cannot be read: {gate['message']}"
+    if selector_mode == "legacy_product" and gate["status"] == "incompatible":
+        return f"source checkpoint is incompatible: {gate['message']}"
+    return None
+
+
+def _lda_calibration_gate(dataset, training, *, require_all_channels=False):
+    requested = int(np.asarray(training).sum())
+    try:
+        channels, usable, policy = waveform_lda_training_selection(dataset, training)
+    except ValueError as error:
+        return {"legal": False, "requested_training_rows": requested, "training_rows": 0,
+                "observed_channel_indices": [], "observed_channel_count": 0,
+                "feature_count": 0, "waveform_training_policy": None, "reason": str(error)}
+    reason = None
+    if int(usable.sum()) <= 2 or set(np.unique(dataset.y[usable])) != {0, 1} or not len(channels):
+        reason = "waveform LDA requires >2 usable rows, both classes and observed channels"
+    if require_all_channels and not bool(_observed(dataset)[training].all()):
+        reason = "LDA fallback needs all selected EEG channels; correct channel QC first"
+    feature_count = (int(target_shrinkage_features(
+        np.zeros((1, len(channels), dataset.n_times), dtype=dataset.X.dtype),
+        sfreq=dataset.preprocessing.sfreq,
+    ).shape[1]) if len(channels) else 0)
+    return {"legal": reason is None, "requested_training_rows": requested,
+            "training_rows": int(usable.sum()), "observed_channel_indices": channels.tolist(),
+            "observed_channel_count": len(channels), "feature_count": feature_count,
+            "waveform_training_policy": policy,
+            "reason": reason}
+
+
+def _validate_calibration_preprocessing(dataset, declared_preprocessing):
+    if declared_preprocessing is None:
+        assert_personal_p300_input_contract(dataset.preprocessing)
+        return
+    declared_preprocessing.validate()
+    if declared_preprocessing.filter_phase != "forward":
+        raise ValueError("personal calibration controls require causal forward preprocessing")
+    if dataset.preprocessing != declared_preprocessing:
+        raise ValueError("calibration data differ from the explicitly declared preprocessing")
+
+
+def preflight_calibrated_predictor(
+    dataset: EpochDataset, *, source_checkpoint: str | Path | None = None,
+    selector_mode: str = "legacy_product", selection_protocol: str = "binary_auc",
+    batch_size: int | None = None, seed: int = 20260906, planned_ocular: bool = False,
+    batch_rule: Mapping[str, object] | None = None,
+    epoch_quality_policy: EpochQualityPolicy | None = None,
+    epoch_quality_model: EpochQualityModel | None = None,
+    declared_preprocessing: PreprocessingSpec | None = None,
+) -> dict[str, object]:
+    """Return actual input gates and candidate scopes with no learned fitting."""
+    validate_calibration_quality_ingress(dataset)
+    raw_quality_failure = None
+    try:
+        validate_epoch_quality_fit_scope(dataset, np.ones(dataset.n_epochs, dtype=bool),
+                                         policy=epoch_quality_policy, model=epoch_quality_model)
+    except PersonalEpochRawQualityError as error:
+        raw_quality_failure = str(error)
+    batch_size, applied_batch_rule = _resolve_calibration_batch_rule(selector_mode, batch_size, batch_rule)
+    dataset.validate(require_labels=True)
+    _validate_calibration_preprocessing(dataset, declared_preprocessing)
+    subject, participant = _participant(dataset)
+    sessions = _session_scope(dataset, calibration=True)
+    source, _, _, gate = load_calibration_source_checkpoint(dataset, source_checkpoint)
+    del source
+    candidates = calibration_candidate_recipes(selector_mode, batch_size=batch_size, seed=seed)
+    fixed_lda = selector_mode == "legacy_product" and source_checkpoint is None
+    if fixed_lda:
+        candidates = (waveform_lda_recipe(batch_size=batch_size, seed=seed),)
+    split = dataset_calibration_inner_split(dataset)
+    inner = split.record()
+    if len(sessions) < 2:
+        inner.update(legal=False, reason="product selection requires separate complete calibration sessions")
+    selection_planned = bool(inner["legal"] and not fixed_lda)
+    continuous = dataset.provenance.get("continuous_artifact_processing", {})
+    local_quality = (continuous.get("status") == "applied"
+                     and continuous.get("model", {}).get("spec", {}).get("channel_local") is True)
+    strict_legacy_lda = fixed_lda and not local_quality
+    lda_gate = _lda_calibration_gate(
+        dataset, np.ones(dataset.n_epochs, dtype=bool), require_all_channels=strict_legacy_lda,
+    )
+    lda_legal = lda_gate["legal"]
+    data_failures = [] if raw_quality_failure is None else [raw_quality_failure]
+    if selector_mode == "legacy_product":
+        session_ids = dataset.metadata["session"].astype(str).to_numpy()
+        if any(set(np.unique(dataset.y[session_ids == record["session_id"]])) != {0, 1} for record in sessions):
+            data_failures.append("every legacy calibration session must retain target and non-target trials")
+    scoring_gate = {"status": "not_required_without_inner_selection"}
+    if selection_planned:
+        if selector_mode == "legacy_product":
+            scoring_gate = {"status": "compatible", "protocol": "legacy_epoch_validation_cross_entropy"}
+        else:
+            try:
+                score_calibration_candidate(dataset, np.zeros(int(split.validation_mask.sum())),
+                                            split.validation_mask, protocol=selection_protocol)
+                scoring_gate = {"status": "compatible", "protocol": selection_protocol}
+            except ValueError as error:
+                scoring_gate = {"status": "incompatible", "protocol": selection_protocol, "message": str(error)}
+                data_failures.append(str(error))
+    source_failure = _calibration_source_failure(gate, selector_mode)
+    if source_failure is not None:
+        data_failures.append(source_failure)
+    if selector_mode == "legacy_product" and source_checkpoint is not None and not inner["legal"]:
+        data_failures.append(inner["reason"])
+    eligible = []
+    for recipe in candidates:
+        source_eligible = recipe.initialization != "source" or gate["status"] == "compatible"
+        train = np.ones(dataset.n_epochs, dtype=bool) if fixed_lda else split.training_mask
+        legal = source_eligible and int(train.sum()) > 2 and (selection_planned or fixed_lda)
+        fit_gate = {}
+        if recipe.initialization == "waveform_lda":
+            fit_gate = _lda_calibration_gate(dataset, train, require_all_channels=strict_legacy_lda)
+            legal = legal and fit_gate["legal"]
+        eligible.append({"candidate_id": recipe.name, "fit_eligible": bool(legal),
+                         "training_rows": int(train.sum()), "validation_rows": int(split.validation_mask.sum()) if selection_planned else 0,
+                         **{key: value for key, value in fit_gate.items() if key not in {"legal", "reason"}},
+                         "reason": None if legal else (fit_gate.get("reason") or "source_gate_or_no_legal_inner_training_scope")})
+    fallback_planned = not any(row["fit_eligible"] for row in eligible) and not fixed_lda
+    if (fallback_planned or fixed_lda) and not lda_legal:
+        data_failures.append(lda_gate["reason"])
+    ocular_scope = split.training_mask if selection_planned else np.ones(dataset.n_epochs, dtype=bool)
+    ocular_ids = set(dataset.metadata.loc[ocular_scope, "session"].astype(str))
+    ocular_sessions = tuple(record["session_id"] for record in sessions if record["session_id"] in ocular_ids)
+    for field, validator in (
+        ("ocular_artifact_processing", validate_eog_calibration_budget),
+        ("continuous_artifact_processing", validate_continuous_calibration_budget),
+    ):
+        processing = dataset.provenance.get(field, {})
+        if processing.get("status") != "applied":
+            continue
+        try:
+            validator(processing, {participant: ocular_sessions})
+        except ValueError as error:
+            data_failures.append(str(error))
+    try:
+        validate_epoch_quality_fit_scope(dataset, ocular_scope,
+                                         policy=epoch_quality_policy, model=epoch_quality_model)
+    except ValueError as error:
+        if str(error) not in data_failures:
+            data_failures.append(str(error))
+    return {
+        "status": "dry_run", "data_fitted": False, "model_written": False,
+        "selector_mode": selector_mode, "selection_protocol": (
+            "legacy_epoch_validation_cross_entropy" if selector_mode == "legacy_product" else selection_protocol
+        ),
+        "participant_key": participant, "subject_id": subject,
+        "candidate_count": len(candidates), "candidates": [recipe.record() for recipe in candidates],
+        "batch_rule": applied_batch_rule,
+        "candidate_fit_gates": eligible, "inner_split": inner,
+        "inner_training_rows": np.flatnonzero(split.training_mask).tolist(),
+        "inner_validation_rows": np.flatnonzero(split.validation_mask).tolist(),
+        "inner_selection_planned": selection_planned,
+        "full_refit_rows": dataset.n_epochs, "full_calibration_lda_gate": lda_gate,
+        "source_checkpoint_supplied": source_checkpoint is not None, "source_checkpoint_gate": gate,
+        "scoring_gate": scoring_gate, "execution_ready": not data_failures,
+        "execution_blockers": data_failures, "fallback_planned": fallback_planned,
+        "fallback": "full_calibration_waveform_lda_without_selection_evidence",
+        "calibration_sessions": [record["session_id"] for record in sessions],
+        "calibration_data_sha256": _calibration_data_digest(dataset), "input_contract": _input_contract(dataset),
+        "planned_ocular": {"requested": planned_ocular, "fitted": False,
+                           "fit_sessions": list(ocular_sessions), "fit_rows": int(ocular_scope.sum()),
+                           "lifecycle": "freeze_after_inner_training_fit_through_refit_and_inference"},
+        "input_gate_basis": "deterministic_preprocessing_without_planned_eog" if planned_ocular else "actual_deterministic_input",
+        "repeat_input_gates_after_planned_eog": planned_ocular,
+        "planned_epoch_quality": {
+            "requested": epoch_quality_policy is not None or epoch_quality_model is not None,
+            "method": (epoch_quality_model.record()["method"] if epoch_quality_model is not None else
+                       getattr(epoch_quality_policy, "method", "fold_local_ptp_cv")
+                       if epoch_quality_policy is not None else None),
+            "lifecycle": "frozen_explicit" if epoch_quality_model is not None else
+                         "fit_inside_calibration" if epoch_quality_policy is not None else "not_applied",
+            "fitted": False,
+        },
+        "evidence_scope": "software_plan_no_device_or_accuracy_evidence",
+    }
+
+
 def _json_record(value: object) -> dict[str, object]:
     return json.loads(json.dumps(value, ensure_ascii=True, allow_nan=False))
+
+
+def _validate_raw_input_request(request: dict, supplied: Mapping | None) -> None:
+    if supplied is not None and any(request.get(key) != value for key, value in supplied.items()):
+        raise ValueError("raw input request disagrees with the actual calibrated preprocessing")
 
 
 def _input_contract(dataset: EpochDataset) -> dict[str, object]:
@@ -70,7 +340,7 @@ def _input_contract(dataset: EpochDataset) -> dict[str, object]:
     return _json_record({
         "channel_names": list(dataset.channel_names),
         "channel_positions_m": np.asarray(dataset.channel_positions_m).tolist(),
-        "preprocessing": asdict(dataset.preprocessing),
+        "preprocessing": dataset.preprocessing.record(),
         "source_reference": reference,
         "n_channels": dataset.n_channels,
         "n_times": dataset.n_times,
@@ -78,6 +348,8 @@ def _input_contract(dataset: EpochDataset) -> dict[str, object]:
         "ocular_artifact_processing": dataset.provenance.get(
             "ocular_artifact_processing", {"status": "not_applied"}
         ),
+        "continuous_artifact_processing": dataset.provenance.get(
+            "continuous_artifact_processing", {"status": "not_applied"}),
     })
 
 
@@ -150,11 +422,31 @@ class CalibratedPredictor:
         self.metadata = _json_record(metadata)
         self.state = {name: value.detach().cpu().clone() for name, value in state.items()}
         self.device = torch.device(device)
+        self.epoch_quality = None
+        quality = self.metadata.get("epoch_quality")
+        if quality is not None:
+            if quality.get("model_digest") != semantic_sha256(quality.get("model")):
+                raise ValueError("calibrated epoch QC digest is invalid")
+            self.epoch_quality = epoch_quality_from_record(quality["model"])
         contract = self.metadata["input_contract"]
         if not isinstance(contract, dict) or not self.metadata.get("participant_key"):
             raise ValueError("calibrated model lacks participant and input contracts")
+        if self.epoch_quality is not None:
+            fitted = self.epoch_quality
+            validate_personal_epoch_raw_quality(contract.get("continuous_artifact_processing", {}), fitted)
+            expected = {"participant_key": self.metadata["participant_key"],
+                        "source_reference": contract["source_reference"],
+                        "channel_names": contract["channel_names"], "preprocessing": contract["preprocessing"]}
+            if any(_json_record({"value": fitted.fit_provenance.get(key)}) != _json_record({"value": value})
+                   for key, value in expected.items()):
+                raise ValueError("calibrated epoch QC participant or input contract differs")
+            if epoch_quality_channel_count(fitted) != contract["n_channels"]:
+                raise ValueError("calibrated epoch QC channel geometry differs")
+            calibration_ids = {row["session_id"] for row in self.metadata["calibration_sessions"]}
+            if not set(fitted.fit_provenance.get("session_ids", [])) <= calibration_ids:
+                raise ValueError("calibrated epoch QC exceeds the calibration session budget")
         self.trunk = None
-        if self.metadata["model_kind"] == "source_initialized_n2p3":
+        if self.metadata["model_kind"] in {"source_initialized_n2p3", "scratch_n2p3"}:
             assert_origin_keys_allowed(
                 self.metadata.get("source_training_contract", {}).get("training_participant_keys", [])
             )
@@ -180,6 +472,13 @@ class CalibratedPredictor:
         elif self.metadata["model_kind"] != "target_only_shrinkage_lda":
             raise ValueError("unsupported calibrated predictor kind")
         else:
+            selected = self.state.get("waveform_channels")
+            if selected is not None and (
+                selected.dtype != torch.int64 or selected.ndim != 1 or not selected.numel()
+                or selected.unique().numel() != selected.numel()
+                or bool((selected < 0).any()) or bool((selected >= contract["n_channels"]).any())
+            ):
+                raise ValueError("calibrated LDA channel selection is invalid")
             feature_shape = self.state["coefficient"].shape
             if len(feature_shape) != 1 or self.state["feature_mean"].shape != feature_shape or (
                 self.state["feature_scale"].shape != feature_shape
@@ -190,7 +489,8 @@ class CalibratedPredictor:
         if any(not bool(torch.isfinite(value).all()) for value in self.state.values()):
             raise ValueError("calibrated predictor contains nonfinite state")
 
-    def predict_logit(self, dataset: EpochDataset) -> np.ndarray:
+    def validate_input(self, dataset: EpochDataset) -> None:
+        """Check a recording against this frozen model without evaluating a classifier."""
         dataset.validate(require_labels=False)
         if _input_contract(dataset) != self.metadata["input_contract"]:
             raise ValueError(
@@ -199,21 +499,50 @@ class CalibratedPredictor:
         _, participant = _participant(dataset)
         if participant != self.metadata["participant_key"]:
             raise ValueError("personalized model belongs to a different participant")
+
+    def predict_logit(self, dataset: EpochDataset) -> np.ndarray:
+        self.validate_input(dataset)
         observed = _observed(dataset)
+        values = dataset.X
+        available = np.ones(dataset.n_epochs, dtype=bool)
+        if self.epoch_quality is not None:
+            if dataset.provenance.get("epoch_artifact_processing", {}).get("status") == "applied":
+                raise ValueError("epoch QC must not be applied twice")
+            transformed = self.epoch_quality.transform(values, observed)
+            values, observed = transformed.X, transformed.trial_channel_mask
+            available &= ~transformed.drop_epoch_mask & ~transformed.all_channels_bad
+        logits = np.full(dataset.n_epochs, np.nan)
+        available &= observed.sum(axis=1) >= minimum_usable_channel_count(
+            self.metadata["input_contract"].get("continuous_artifact_processing", {}), dataset.n_channels)
         if self.trunk is not None:
-            return predict_n2p3_checkpoint(
-                self.trunk, dataset.X,
+            if not available.any():
+                return logits
+            logits[available] = predict_n2p3_checkpoint(
+                self.trunk, values[available],
                 input_stats=(self.state["input_mean"].numpy(), self.state["input_std"].numpy()),
-                trial_channel_mask=observed, device=self.device,
+                trial_channel_mask=observed[available], device=self.device,
             )
-        if not bool(observed.all()):
+            return logits
+        selected_channels = self.state.get("waveform_channels")
+        selected_channels = np.arange(dataset.n_channels) if selected_channels is None else selected_channels.numpy()
+        continuous = self.metadata["input_contract"].get("continuous_artifact_processing", {})
+        channel_quality_availability = (
+            continuous.get("status") == "applied"
+            and continuous.get("model", {}).get("spec", {}).get("channel_local") is True
+        )
+        if self.epoch_quality is not None or channel_quality_availability:
+            available &= observed[:, selected_channels].all(axis=1)
+        elif not bool(observed[:, selected_channels].all()):
             raise ValueError("target-only LDA requires every selected EEG channel to be usable")
-        features = target_shrinkage_features(dataset.X, sfreq=dataset.preprocessing.sfreq)
+        if not available.any():
+            return logits
+        features = target_shrinkage_features(values[available][:, selected_channels], sfreq=dataset.preprocessing.sfreq)
         standardized = (features - self.state["feature_mean"].numpy()) / self.state["feature_scale"].numpy()
-        return np.asarray(
+        logits[available] = np.asarray(
             standardized @ self.state["coefficient"].numpy() + self.state["intercept"].item(),
             dtype=np.float64,
         )
+        return logits
 
     def validate_inference_scope(self, dataset: EpochDataset) -> None:
         sessions = _session_scope(dataset, calibration=False)
@@ -225,16 +554,65 @@ class CalibratedPredictor:
             raise ValueError("inference recording starts before calibration labels were available")
 
 
+def _reference_request_mode(input_request: Mapping[str, object] | None, reference_channel: str | None) -> str:
+    mode = (input_request or {}).get("reference_mode", "auto")
+    if mode not in {"auto", "native"}:
+        raise ValueError("unknown calibration reference mode")
+    if mode == "native" and reference_channel is not None:
+        raise ValueError("native acquisition reference conflicts with measured-reference preprocessing")
+    return str(mode)
+
+
 def fit_calibrated_predictor(
     dataset: EpochDataset, *, source_checkpoint: str | Path | None = None,
-    recipes: Sequence[CalibrationRecipe] = DEFAULT_CALIBRATION_RECIPES,
-    device: str = "cpu", seed: int = 20260906, batch_size: int = 64,
+    recipes: Sequence[CalibrationRecipe | TargetRecipe] = DEFAULT_CALIBRATION_RECIPES,
+    device: str = "cpu", seed: int = 20260906, batch_size: int | None = None,
     input_request: Mapping[str, object] | None = None,
     progress: Callable[[int, str], None] | None = None,
+    selector_mode: str = "legacy_product", selection_protocol: str = "binary_auc",
+    transfer_policy: TargetRecipe | None = None,
+    batch_rule: Mapping[str, object] | None = None,
+    epoch_quality_policy: EpochQualityPolicy | None = None,
+    epoch_quality_model: EpochQualityModel | None = None,
+    declared_preprocessing: PreprocessingSpec | None = None,
 ) -> CalibratedPredictor:
     """Choose source adaptation only inside calibration, then refit its full scope."""
+    validate_calibration_quality_ingress(dataset)
+    validate_epoch_quality_fit_scope(dataset, np.ones(dataset.n_epochs, dtype=bool),
+                                     policy=epoch_quality_policy, model=epoch_quality_model)
+    if selector_mode not in SELECTOR_MODES:
+        raise ValueError(f"unknown calibration selector mode: {selector_mode}")
+    batch_size, applied_batch_rule = _resolve_calibration_batch_rule(selector_mode, batch_size, batch_rule)
+    continuous = dataset.provenance.get("continuous_artifact_processing", {})
+    local_quality = continuous.get("status") == "applied" and continuous.get("model", {}).get("spec", {}).get("channel_local") is True
+    if selector_mode != "legacy_product" or epoch_quality_policy is not None or epoch_quality_model is not None or local_quality:
+        return _fit_candidate_predictor(
+            dataset, source_checkpoint=source_checkpoint, recipes=recipes, device=device,
+            seed=seed, batch_size=batch_size, input_request=input_request, progress=progress,
+            selector_mode=selector_mode, selection_protocol=selection_protocol,
+            transfer_policy=transfer_policy,
+            batch_rule=applied_batch_rule,
+            epoch_quality_policy=epoch_quality_policy,
+            epoch_quality_model=epoch_quality_model,
+            declared_preprocessing=declared_preprocessing,
+        )
+    if transfer_policy is not None:
+        raise ValueError("legacy product replay has a fixed statistics/BN policy")
+    legacy_recipes = []
+    for recipe in recipes:
+        if isinstance(recipe, TargetRecipe):
+            if (
+                recipe.initialization != "source" or recipe.input_statistics != "source"
+                or recipe.bn_buffers != "source" or recipe.bn_affine != "trainable"
+                or recipe.dropout != "checkpoint" or recipe.weights != "non_bn"
+                or recipe.batch_size != batch_size or recipe.seed != seed or recipe.max_updates is not None
+            ):
+                raise ValueError("TargetRecipe conflicts with the explicit legacy product replay configuration")
+            recipe = CalibrationRecipe(recipe.name, recipe.epochs, recipe.lr)
+        legacy_recipes.append(recipe)
+    recipes = tuple(legacy_recipes)
     dataset.validate(require_labels=True)
-    assert_causal_p300_input_contract(dataset.preprocessing)
+    _validate_calibration_preprocessing(dataset, declared_preprocessing)
     subject, participant = _participant(dataset)
     sessions = _session_scope(dataset, calibration=True)
     if not sessions:
@@ -249,16 +627,21 @@ def fit_calibrated_predictor(
     ocular = dataset.provenance.get("ocular_artifact_processing", {"status": "not_applied"})
     validate_eog_calibration_budget(ocular, {participant: tuple(row["session_id"] for row in sessions)})
     ocular_record = ocular.get("model") if ocular.get("status") == "applied" else None
+    continuous_record = _continuous_record(dataset, participant, sessions)
     reference_record = dataset.provenance.get("domain_adapter", {}).get("reference", {})
     inferred_reference = (
         ocular_record.get("reference_channel") if ocular_record is not None
         else reference_record.get("channel") if reference_record.get("mode") == "measured_channel"
         else None
     )
+    if continuous_record is not None and continuous_record["spec"].get("reference_channel") is not None:
+        inferred_reference = continuous_record["spec"]["reference_channel"]
     request = {"reference_channel": inferred_reference, "ocular_model": ocular_record,
                "channel_names": list(dataset.channel_names)}
-    if input_request is not None and any(request.get(key) != value for key, value in input_request.items()):
-        raise ValueError("raw input request disagrees with the actual calibrated preprocessing")
+    request["acquisition_references"] = copy.deepcopy(dataset.provenance.get("acquisition_references", []))
+    request["reference_mode"] = _reference_request_mode(input_request, inferred_reference)
+    request["continuous_qc_model"] = continuous_record
+    _validate_raw_input_request(request, input_request)
     metadata = {
         "created_utc": datetime.now(UTC).isoformat(),
         "participant_key": participant, "subject_id": subject, "calibration_sessions": sessions,
@@ -270,6 +653,7 @@ def fit_calibrated_predictor(
         "candidate_vocabulary": list(range(1, 10)),
         "evidence_scope": "personalized_development_not_independent_performance_confirmation",
         "seed": seed,
+        "batch_rule": applied_batch_rule,
     }
     notify = progress or (lambda _percent, _message: None)
     if source_checkpoint is None:
@@ -289,7 +673,7 @@ def fit_calibrated_predictor(
         }
         return CalibratedPredictor(metadata, state, device=device)
 
-    payload = torch.load(source_checkpoint, map_location="cpu", weights_only=True)
+    payload = _load_calibration_checkpoint(source_checkpoint)
     if not isinstance(payload, dict) or payload.get("schema") != CHECKPOINT_SCHEMA:
         raise ValueError("source checkpoint must use the current audited transfer schema")
     if not checkpoint_classifier_is_trained(payload):
@@ -334,8 +718,11 @@ def fit_calibrated_predictor(
             raise ValueError("internal validation did not select a finite training epoch")
         recipe_records.append({
             **asdict(recipe), "selected_epochs": int(history["best_epoch"]),
+            "input_statistics": "source", "bn_buffers": "source",
+            "bn_affine": "trainable", "dropout": "checkpoint", "batch_size": batch_size,
             "validation_loss": float(history["best_val_loss"]),
             "validation_auc": float(roc_auc_score(dataset.y[validation_mask], adapter.calibration_logits_)),
+            "fit_history": copy.deepcopy(history),
         })
     selected = min(recipe_records, key=lambda item: item["validation_loss"])
     notify(78, "refit_full_authorized_calibration")
@@ -355,14 +742,137 @@ def fit_calibrated_predictor(
         source_checkpoint_sha256=hashlib.sha256(Path(source_checkpoint).read_bytes()).hexdigest(),
         source_training_contract=checkpoint_training_contract(payload).record(),
         selection={"mode": "chronological_calibration_decisions_then_full_refit",
+                   "scoring_protocol": "legacy_epoch_validation_cross_entropy",
                    "training_sessions": [row["session_id"] for row in training_sessions],
                    "validation_sessions": [row["session_id"] for row in validation_sessions],
                    "recipes": recipe_records, "selected": selected,
-                   "refit_rows": dataset.n_epochs, "fit_scope": adapter.last_history["fit_scope"]},
+                   "refit_rows": dataset.n_epochs, "fit_scope": adapter.last_history["fit_scope"],
+                   "refit_history": copy.deepcopy(adapter.last_history)},
     )
     state = {f"trunk.{name}": value.detach().cpu() for name, value in adapter.trunk.state_dict().items()}
-    state.update(input_mean=torch.as_tensor(source_mean), input_std=torch.as_tensor(source_std))
+    fitted_mean, fitted_std = adapter.fitted_input_statistics()
+    state.update(input_mean=torch.as_tensor(fitted_mean), input_std=torch.as_tensor(fitted_std))
     return CalibratedPredictor(metadata, state, device=device)
+
+
+def _fit_candidate_predictor(
+    dataset: EpochDataset, *, source_checkpoint, recipes, device, seed, batch_size,
+    input_request, progress, selector_mode, selection_protocol, transfer_policy, batch_rule,
+    epoch_quality_policy=None,
+    epoch_quality_model=None,
+    declared_preprocessing=None,
+) -> CalibratedPredictor:
+    dataset.validate(require_labels=True)
+    _validate_calibration_preprocessing(dataset, declared_preprocessing)
+    subject, participant = _participant(dataset)
+    sessions = _session_scope(dataset, calibration=True)
+    if not sessions:
+        raise ValueError("calibration requires labelled recording sessions")
+    ocular = dataset.provenance.get("ocular_artifact_processing", {"status": "not_applied"})
+    validate_eog_calibration_budget(ocular, {participant: tuple(row["session_id"] for row in sessions)})
+    ocular_record = ocular.get("model") if ocular.get("status") == "applied" else None
+    continuous_record = _continuous_record(dataset, participant, sessions)
+    reference = dataset.provenance.get("domain_adapter", {}).get("reference", {})
+    reference_channel = ocular_record.get("reference_channel") if ocular_record is not None else (
+        reference.get("channel") if reference.get("mode") == "measured_channel" else None
+    )
+    if continuous_record is not None and continuous_record["spec"].get("reference_channel") is not None:
+        reference_channel = continuous_record["spec"]["reference_channel"]
+    request = {"reference_channel": reference_channel, "ocular_model": ocular_record,
+               "channel_names": list(dataset.channel_names)}
+    request["acquisition_references"] = copy.deepcopy(dataset.provenance.get("acquisition_references", []))
+    request["reference_mode"] = _reference_request_mode(input_request, reference_channel)
+    request["continuous_qc_model"] = continuous_record
+    _validate_raw_input_request(request, input_request)
+    source, payload, stats, source_gate = load_calibration_source_checkpoint(dataset, source_checkpoint)
+    source_failure = _calibration_source_failure(source_gate, selector_mode)
+    if source_failure is not None:
+        raise ValueError(source_failure)
+    if selector_mode == "legacy_product":
+        session_ids = dataset.metadata["session"].astype(str).to_numpy()
+        if any(set(np.unique(dataset.y[session_ids == row["session_id"]])) != {0, 1} for row in sessions):
+            raise ValueError("every calibration session must retain target and non-target trials")
+        if source_checkpoint is not None:
+            if len(sessions) < 2:
+                raise ValueError("source recipe selection requires at least two separate labelled recording sessions")
+            split = dataset_calibration_inner_split(dataset)
+            if not split.legal:
+                raise ValueError(split.reason)
+    notify = progress or (lambda _percent, _message: None)
+    if selector_mode == "legacy_product" and source_checkpoint is None:
+        notify(45, "fit_target_only_shrinkage_lda")
+        fitted = fit_calibration_candidate(
+            dataset, waveform_lda_recipe(batch_size=batch_size, seed=seed),
+            np.ones(dataset.n_epochs, dtype=bool), device=device,
+            epoch_quality_policy=epoch_quality_policy, epoch_quality_model=epoch_quality_model,
+        )
+        selection = {
+            "mode": "fixed_fallback_no_recipe_selection", "selector_mode": selector_mode,
+            "scoring_protocol": "not_applicable_fixed_recipe", "selection_evidence": False,
+            "recipes": [], "selected": None, "validation_auc": None,
+            "refit_rows": dataset.n_epochs, "refit_recipe": fitted.recipe.record(),
+            "fit_scope": fitted.fit_history["fit_scope"], "refit_history": fitted.fit_history,
+            "refit_state_sha256": _state_digest(fitted.state),
+            "fit_execution": {"requested_fits": 1, "fit_calls": 1, "cache_hits": 0},
+        }
+    else:
+        candidates = (
+            calibration_candidate_recipes(selector_mode, batch_size=batch_size, seed=seed,
+                                          transfer_policy=transfer_policy)
+            if recipes is DEFAULT_CALIBRATION_RECIPES else
+            tuple(recipe if isinstance(recipe, TargetRecipe) else recipe.target_recipe(batch_size=batch_size, seed=seed)
+                  for recipe in recipes)
+        )
+        allowed = {"source", "scratch", "waveform_lda"} if selector_mode == "five_candidates" else (
+            {"source"} if selector_mode in {"transfer_only", "legacy_product"} else {"scratch", "waveform_lda"}
+        )
+        if any(recipe.initialization not in allowed for recipe in candidates):
+            raise ValueError("recipe initialization conflicts with the declared selector mode")
+        if any(recipe.batch_size != batch_size for recipe in candidates):
+            raise ValueError("candidate recipe batch differs from the frozen B0 rule")
+        notify(20, "select_inside_authorized_calibration_then_fresh_refit")
+        fitted, selection = select_calibration_candidate(
+            dataset, candidates, calibration_mask=np.ones(dataset.n_epochs, dtype=bool),
+            source_trunk=source, source_input_stats=stats, device=device,
+            protocol="binary_auc" if selector_mode == "legacy_product" else selection_protocol,
+            selector_mode=selector_mode, allow_within_recording=False,
+            epoch_quality_policy=epoch_quality_policy, epoch_quality_model=epoch_quality_model,
+        )
+    selection["source_checkpoint_gate"] = source_gate
+    transferred = fitted.recipe.initialization == "source"
+    metadata = {
+        "created_utc": datetime.now(UTC).isoformat(), "participant_key": participant,
+        "subject_id": subject, "calibration_sessions": sessions,
+        "calibration_available_timestamp_s": max(row["calibration_available_timestamp_s"] for row in sessions),
+        "calibration_trials": dataset.n_epochs, "calibration_positives": int(dataset.y.sum()),
+        "calibration_data_sha256": _calibration_data_digest(dataset),
+        "input_contract": _input_contract(dataset), "input_request": request,
+        "candidate_vocabulary": list(range(1, 10)), "seed": fitted.recipe.seed, "batch_rule": batch_rule,
+        "evidence_scope": "personalized_development_not_independent_performance_confirmation",
+        "model_kind": "source_initialized_n2p3" if transferred else (
+            "scratch_n2p3" if fitted.adapter is not None else "target_only_shrinkage_lda"
+        ),
+        "source_pretraining_used": transferred, "selection": selection,
+        "recipe": fitted.recipe.record(), "actual_fitted_state_sha256": selection["refit_state_sha256"],
+        "epoch_quality": fitted.fit_history.get("epoch_quality"),
+    }
+    if fitted.adapter is not None:
+        trunk = fitted.adapter.trunk
+        metadata.update(architecture=trunk.architecture_record(),
+                        architecture_configuration=asdict(plain_trunk_configuration(trunk)),
+                        pooling_mode=trunk.pooling_mode,
+                        fitted_input_statistics=fitted.adapter.input_statistics_record())
+    if transferred:
+        metadata.update(source_checkpoint_sha256=source_gate["checkpoint_sha256"],
+                        source_training_contract=checkpoint_training_contract(payload).record())
+    notify(95, "frozen_calibrated_model_ready")
+    return CalibratedPredictor(metadata, fitted.state, device=device)
+
+
+def _continuous_record(dataset, participant, sessions):
+    processing = dataset.provenance.get("continuous_artifact_processing", {"status": "not_applied"})
+    validate_continuous_calibration_budget(processing, {participant: tuple(row["session_id"] for row in sessions)})
+    return processing.get("model") if processing.get("status") == "applied" else None
 
 
 def save_calibrated_predictor(path: str | Path, predictor: CalibratedPredictor) -> Path:
@@ -389,10 +899,17 @@ def save_calibrated_predictor(path: str | Path, predictor: CalibratedPredictor) 
 
 def load_calibrated_predictor(path: str | Path, *, device: str = "cpu") -> CalibratedPredictor:
     payload = torch.load(path, map_location="cpu", weights_only=True)
-    if not isinstance(payload, dict) or payload.get("schema") != CALIBRATED_PREDICTOR_SCHEMA:
+    if not isinstance(payload, dict) or payload.get("schema") not in {
+        CALIBRATED_PREDICTOR_SCHEMA, "n2p3_calibrated_predictor/3", "n2p3_calibrated_predictor/1",
+    }:
         raise ValueError("unsupported calibrated model artifact")
     if payload.get("metadata_digest") != semantic_sha256(payload["metadata"]):
         raise ValueError("calibrated model metadata digest mismatch")
     if payload.get("state_digest") != _state_digest(payload["state"]):
         raise ValueError("calibrated model state digest mismatch")
+    quality = payload["metadata"].get("epoch_quality")
+    if payload["schema"] != CALIBRATED_PREDICTOR_SCHEMA and quality is not None and (
+        quality["model"].get("method") != "fold_local_ptp_cv"
+    ):
+        raise ValueError("legacy calibrated artifact cannot declare a new epoch quality method")
     return CalibratedPredictor(payload["metadata"], payload["state"], device=device)

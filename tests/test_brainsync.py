@@ -35,6 +35,7 @@ from data.brainsync_contract import (
 from data.contract import (
     BRAIN_SYNC_ACQUISITION_CHANNELS,
     BRAIN_SYNC_ACQUISITION_TYPES,
+    BRAIN_SYNC_CAUSAL_DATA_CONTRACT,
     BRAIN_SYNC_EEG_CHANNELS,
     SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     SOURCE_COHORT_DATA_CONTRACTS,
@@ -62,6 +63,35 @@ POSITIONS = [
     None,
     [-0.002060251543, -0.082782991230, 0.060736630111],
 ]
+
+
+def test_continuous_qc_preserves_scheduled_events_and_binds_cache(tmp_path):
+    from data.brainsync_contract import validate_brainsync_bids_session
+    from data.continuous_qc import ContinuousQCSpec, fit_continuous_qc
+    from data.epochs import materialize_dataset_identity
+
+    root = _write_bids_session(tmp_path / "continuous", session_id="qc-recording", target=4,
+                               started_utc="2026-09-06T00:00:00Z")
+    before = load_brainsync_session(root)
+    session = validate_brainsync_bids_session(root)
+    raw = mne.io.read_raw_edf(session.bids.raw_path, preload=True, verbose=False)
+    raw.set_channel_types(dict(zip(raw.ch_names, [kind.lower() for kind in session.bids.channel_types], strict=True)))
+    participant = materialize_dataset_identity(before).record_for("P001").authority_key("source_or_global")
+    fitted = fit_continuous_qc(raw, spec=ContinuousQCSpec(12, 1e-7, 10),
+        fit_sample_mask=np.arange(raw.n_times) < 1000,
+        fit_provenance={"participant_key": participant, "source_reference": session.bids.source_reference,
+                        "calibration_session_ids": [session.session_id],
+                        "calibration_end_timestamp_s": session.ended_timestamp_s})
+    raw._data[3, 2000:] += .0142
+    raw.export(session.bids.raw_path, overwrite=True, physical_range="auto", verbose=False)
+    dataset = load_brainsync_session(root, continuous_qc_model=fitted)
+    assert dataset.n_epochs == 4
+    assert len(dataset.event_timeline.event_ids) == 9
+    assert np.sum(dataset.event_timeline.evidence_indices < 0) == 5
+    assert np.all(dataset.event_timeline.evidence_available_times_s[:4] == raw.n_times / 250)
+    cached = load_epoch_dataset(save_epoch_dataset(tmp_path / "qc.npz", dataset))
+    np.testing.assert_array_equal(cached.X, dataset.X)
+    assert cached.provenance["continuous_artifact_processing"]["model_digest"] == dataset.provenance["continuous_artifact_processing"]["model_digest"]
 
 
 def _write_bids_session(
@@ -225,7 +255,8 @@ def _write_bids_session(
                 "TaskName": "gtn",
                 "SamplingFrequency": source_rate_hz,
                 "RecordingDuration": n_samples / source_rate_hz,
-                "EEGReference": "A2",
+            "EEGReference": "A2",
+            "EOGDerivation": {"EOG": {"kind": "single_ended", "placement": "left_eye_corner", "reference": "A2"}},
             }
         ),
         encoding="utf-8",
@@ -800,7 +831,10 @@ def _set_nested(payload: dict[str, object], path: str, value: object) -> None:
 
 
 def test_brainsync_uses_the_canonical_causal_profile() -> None:
-    assert BRAIN_SYNC_PREPROCESSING.name == SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.name
+    assert BRAIN_SYNC_PREPROCESSING.name == BRAIN_SYNC_CAUSAL_DATA_CONTRACT.name
+    assert BRAIN_SYNC_PREPROCESSING.notch_freqs_hz == (50.0,)
+    assert BRAIN_SYNC_PREPROCESSING.notch_quality_factor == 30.0
+    assert SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT.notch_freqs_hz == ()
     assert BRAIN_SYNC_PREPROCESSING.l_freq == 0.1
     assert BRAIN_SYNC_PREPROCESSING.h_freq == 30.0
     assert BRAIN_SYNC_PREPROCESSING.tmax_ms == 1200.0

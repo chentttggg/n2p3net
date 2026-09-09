@@ -5,6 +5,9 @@ source and evidence snapshots. Historical archive payloads (`*.zip`, `*.tar.gz`,
 `*.tar`, `*.7z`, `*.bundle`) stay local and are not distributed through GitHub.
 `local_history/` also stays local. A fresh clone therefore does not contain these
 archives, raw datasets, experiment caches, model checkpoints or run outputs.
+Materialized `checkout/` directories also stay local; only their source manifests
+are tracked. Per-event figure data (`doc/assets/**/*.npz`) stays local alongside
+the published report figures and metadata.
 
 Manifest archive paths refer to separately retained files. Obtain the matching
 archive from its custodian and verify its recorded SHA-256 before inspection or

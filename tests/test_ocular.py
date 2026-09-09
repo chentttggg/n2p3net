@@ -106,6 +106,7 @@ def test_common_reference_precedes_regression_for_eeg_and_eog():
         source_reference="A2",
         fit_provenance={"role": "calibration"},
         reference_channel="Cz",
+        eog_derivation={"EOG": {"kind": "single_ended", "placement": "left_eye_corner", "reference": "A2"}},
     )
     b = fit_eog_regression(
         second,
@@ -113,12 +114,33 @@ def test_common_reference_precedes_regression_for_eeg_and_eog():
         source_reference="T7",
         fit_provenance={"role": "calibration"},
         reference_channel="Cz",
+        eog_derivation={"EOG": {"kind": "single_ended", "placement": "left_eye_corner", "reference": "T7"}},
     )
     assert a.eeg_channels == ("Pz",)
     assert a.source_reference == b.source_reference == "measured_channel:CZ"
     np.testing.assert_allclose(a.coefficients, b.coefficients, atol=1e-12)
     np.testing.assert_allclose(
-        a.apply(first, source_reference="A2").get_data(),
-        b.apply(second, source_reference="T7").get_data(),
+        a.apply(first, source_reference="A2", eog_derivation=a.eog_derivation).get_data(),
+        b.apply(second, source_reference="T7", eog_derivation=b.eog_derivation).get_data(),
         atol=1e-12,
     )
+
+
+def test_masked_ocular_fit_ignores_contaminated_samples_and_binds_heog():
+    raw = _raw(1)
+    mask = np.arange(raw.n_times) < 1000
+    kwargs = dict(participant_key="test:P001", source_reference="A2",
+                  fit_provenance={"role": "calibration"}, fit_sample_mask=mask,
+                  eog_derivation={"EOG": {"kind": "single_ended", "placement": "left_eye_corner", "reference": "A2"}})
+    first = fit_eog_regression(raw, **kwargs)
+    raw._data[:, 1000:] += np.arange(1000)[None, :]
+    second = fit_eog_regression(raw, **kwargs)
+    assert first.record() == second.record()
+    assert first.fit_provenance["samples"] == 1000
+    assert first.eog_derivation["EOG"]["placement"] == "left_eye_corner"
+
+
+def test_ocular_rereference_requires_shared_reference_declaration():
+    with pytest.raises(ValueError, match="derivation"):
+        fit_eog_regression(_raw(), participant_key="test:P001", source_reference="A2",
+                           reference_channel="Cz", fit_provenance={"role": "calibration"})

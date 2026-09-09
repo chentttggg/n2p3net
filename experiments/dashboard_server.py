@@ -87,10 +87,10 @@ def _matching_pids(script_name: str, option: str, values: set[str]) -> list[int]
     for entry in Path("/proc").glob("[0-9]*"):
         try:
             pid = int(entry.name)
-            command = " ".join(_command_line(pid))
+            command = _command_line(pid)
         except (OSError, ValueError):
             continue
-        if not any(script_name in part for part in command):
+        if not any(Path(part).name == script_name for part in command):
             continue
         if _argument_value(command, option) in values:
             matches.append(pid)
@@ -413,25 +413,27 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         run_dir = _run_dir(cls.runs_root, run, cls.extra_run_roots)
         project_root = cls.runs_root.parent.resolve()
         cls._reap_monitors()
-        existing_pid = _monitor_pid(run_dir, project_root)
-        state = "running"
-        if existing_pid is None:
-            root_pid = _training_pid(run_dir, project_root)
-            script = Path(__file__).with_name("watch_resources.py")
-            process = subprocess.Popen(
-                [sys.executable, str(script), "--run", str(run_dir), "--pid", str(root_pid)],
-                cwd=str(project_root),
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-            )
-            with cls.monitor_lock:
-                cls.monitor_workers[run] = process
-            existing_pid = process.pid
-            state = "started"
-        token = secrets.token_urlsafe(24)
         with cls.monitor_lock:
+            process = cls.monitor_workers.get(run)
+            existing_pid = process.pid if process is not None and process.poll() is None else None
+            if existing_pid is None:
+                existing_pid = _monitor_pid(run_dir, project_root)
+            state = "running"
+            if existing_pid is None:
+                root_pid = _training_pid(run_dir, project_root)
+                script = Path(__file__).with_name("watch_resources.py")
+                process = subprocess.Popen(
+                    [sys.executable, str(script), "--run", str(run_dir), "--pid", str(root_pid)],
+                    cwd=str(project_root),
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+                cls.monitor_workers[run] = process
+                existing_pid = process.pid
+                state = "started"
+            token = secrets.token_urlsafe(24)
             cls.monitor_clients[token] = {"run": run, "last_seen": time.monotonic()}
         return token, {
             "state": state,

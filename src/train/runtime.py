@@ -888,6 +888,8 @@ class MatrixBatchSource:
     def gather_indices(
         self,
         indices: torch.Tensor,
+        *,
+        allow_repeated_rows: bool = False,
     ) -> tuple[
         torch.Tensor,
         torch.Tensor | None,
@@ -904,7 +906,7 @@ class MatrixBatchSource:
             raise ValueError("indices must be a CPU tensor before device-aware gathering.")
         if len(indices) == 0:
             raise ValueError("indices cannot be empty.")
-        if len(torch.unique(indices)) != len(indices):
+        if not allow_repeated_rows and len(torch.unique(indices)) != len(indices):
             raise ValueError("indices within one batch must be unique.")
         if bool(((indices < 0) | (indices >= self.n_rows)).any()):
             raise ValueError("indices contain an out-of-range row.")
@@ -946,6 +948,7 @@ class MatrixBatchSource:
         index_batches: Sequence[torch.Tensor],
         *,
         require_full_coverage: bool = True,
+        allow_repeated_rows: bool = False,
     ) -> Iterator[
         tuple[
             torch.Tensor,
@@ -972,7 +975,7 @@ class MatrixBatchSource:
             ):
                 raise ValueError("index_batches must cover every source row exactly once.")
         for indices in batches:
-            yield self.gather_indices(indices)
+            yield self.gather_indices(indices, allow_repeated_rows=allow_repeated_rows)
 
 
 class GpuPerformanceScheduler:

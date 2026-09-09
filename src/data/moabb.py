@@ -1058,6 +1058,8 @@ def _causal_run_dataset(
         trial_reference_scale=task.preprocessing.trial_reference_scale,
         filter_method=task.preprocessing.filter_method,
         filter_order=task.preprocessing.filter_order,
+        notch_freqs_hz=task.preprocessing.notch_freqs_hz,
+        notch_quality_factor=task.preprocessing.notch_quality_factor,
         filter_phase=task.preprocessing.filter_phase,
         causal_iir_initial_state=task.preprocessing.causal_iir_initial_state,
         resample_domain=task.preprocessing.resample_domain,
@@ -1738,6 +1740,8 @@ def prepare_moabb_p300(
     from moabb.paradigms import P300
 
     preprocessing.validate()
+    if preprocessing.notch_freqs_hz and preprocessing.filter_phase != "forward":
+        raise ValueError("MOABB notch filtering requires the native causal raw ingress; the offline P300 paradigm cannot execute this declaration")
     if not isinstance(raw_artifact_attestation, RawArtifactAttestation):
         raise TypeError("raw_artifact_attestation must be a verified RawArtifactAttestation.")
     raw_artifact_attestation.assert_dataset_class(dataset_class)

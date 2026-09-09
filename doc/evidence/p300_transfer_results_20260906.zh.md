@@ -20,7 +20,8 @@ trial替代selection的共同test增益约0.003，16导实际优于5导。以新
    随机线性头不能作为证明迁移有效的唯一对照。BrainSync runner已加入完整scratch和收缩LDA。
 3. **暂不加宽主干或默认使用ERP先平均。** 当前宽度扩大没有稳定收益，ERP平均探针也未优于
    sum-logit。已有迁移模块保留为有条件对照，没有被本轮证明无效，也没有默认叠加。
-4. **参考电极是明确的部署问题。** BrainSync配置REF=T7(T3)，公开BNCI声明right earlobe。
+4. **参考电极是明确的部署问题。** BrainSync实际REF为左耳耳垂耳夹，公开BNCI为right earlobe。
+   原执行配置误记T7(T3)，2026-09-08用户证言更正见[参考记录](brainsync_reference_20260908.zh.md)；历史分数不改写。
    共同实测Cz可消除共同采集参考，但损失一维共模信息，BNCI内有实测代价；保留为研究桥接。
 5. **真实目标数据是下一阶段的信息瓶颈。** EOG读取/校准回归、七导及六差分模型接口、
    source权重前向链已经可用；伪迹清理收益、成人准确率、跨日与停止阈值都尚未验证。
@@ -181,7 +182,7 @@ source/短目标任务GPU利用率间歇性较低，启动、解压、CPU估计�
 分析脚本与JSON/CSV在`experiments/runs/p300_mainline_20260906/analysis`及其上级目录。
 
 6个全8人公开source候选命名为`public_candidate_bnci8_{native7,cz6}_s{20260906,20260907,20260908}.pt`。
-没有按test选最佳seed，没有声称ensemble验证；当前T7 BrainSync只可经明确参考适配后尝试。
+没有按test选最佳seed，没有声称ensemble验证；BrainSync左耳垂参考只可经明确参考适配后尝试。
 训练源码冻结A–E保留各自身份；E的SHA为
 `f3267cd466efac946ee4a79ababa11a79472ba78119694e641cc592940ac05e4`。
 本轮最后的runner对照和坐标修正属于收尾源码快照，不改写先前模型的执行身份。

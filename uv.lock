@@ -1782,6 +1782,7 @@ source = { editable = "." }
 dependencies = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "psutil" },
     { name = "scikit-learn" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -1801,6 +1802,7 @@ dev = [
     { name = "ruff" },
 ]
 signals = [
+    { name = "matplotlib" },
     { name = "mne" },
     { name = "moabb" },
     { name = "pandas" },
@@ -1809,11 +1811,13 @@ signals = [
 [package.metadata]
 requires-dist = [
     { name = "braindecode", marker = "extra == 'baselines'", specifier = ">=1.7" },
+    { name = "matplotlib", marker = "extra == 'signals'", specifier = ">=3.9" },
     { name = "mne", marker = "extra == 'signals'", specifier = ">=1.8" },
     { name = "moabb", marker = "extra == 'signals'", specifier = "==1.6.1" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "packaging", marker = "extra == 'dev'", specifier = ">=24" },
     { name = "pandas", marker = "extra == 'signals'", specifier = ">=2.2" },
+    { name = "psutil", specifier = ">=5.9" },
     { name = "pyriemann", marker = "extra == 'baselines'", specifier = ">=0.6" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.14" },

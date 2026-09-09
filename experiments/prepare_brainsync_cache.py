@@ -13,10 +13,12 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from data.brainsync import (  # noqa: E402
+    BRAIN_SYNC_PREPROCESSING,
     InvalidSessionPolicy,
     load_brainsync_sessions_resilient,
 )
-from data.epochs import save_epoch_dataset  # noqa: E402
+from data.continuous_qc import load_continuous_qc  # noqa: E402
+from data.epochs import load_preprocessing_spec, save_epoch_dataset  # noqa: E402
 from data.ocular import load_eog_regression  # noqa: E402
 
 
@@ -44,6 +46,9 @@ def main() -> None:
         default=InvalidSessionPolicy.ERROR.value,
     )
     parser.add_argument("--uncompressed", action="store_true")
+    parser.add_argument("--continuous-qc-model", type=Path)
+    parser.add_argument("--preprocessing-config", type=Path,
+                        help="Complete preprocessing JSON; defaults to BrainSync with 50 Hz notch")
     parser.add_argument(
         "--ocular-model", type=Path, help="Frozen calibration-fitted EOG regression JSON."
     )
@@ -63,7 +68,9 @@ def main() -> None:
     result = load_brainsync_sessions_resilient(
         [str(value) for value in session_dirs],
         invalid_session_policy=args.invalid_session,
+        preprocessing=BRAIN_SYNC_PREPROCESSING if args.preprocessing_config is None else load_preprocessing_spec(args.preprocessing_config),
         ocular_model=None if args.ocular_model is None else load_eog_regression(args.ocular_model),
+        continuous_qc_model=None if args.continuous_qc_model is None else load_continuous_qc(args.continuous_qc_model),
     )
     print("PROGRESS 85", flush=True)
     output = save_epoch_dataset(

@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import sys
-from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -25,7 +24,7 @@ from data.brainsync_contract import (  # noqa: E402
     derive_brainsync_evidence_scope,
     derive_population_scope,
 )
-from data.contract import assert_causal_p300_input_contract  # noqa: E402
+from data.contract import assert_personal_p300_input_contract  # noqa: E402
 from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from data.ocular import validate_eog_calibration_budget  # noqa: E402
 from research.evaluation import (  # noqa: E402
@@ -222,7 +221,7 @@ def main() -> None:
     evaluation_snapshot_sha256 = source_snapshot_sha256_from_archive_manifest(evaluation_manifest)
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset = load_epoch_dataset(args.dataset_cache, require_labels=True, validation="attested")
-    assert_causal_p300_input_contract(dataset.preprocessing)
+    assert_personal_p300_input_contract(dataset.preprocessing)
     if dataset.provenance.get("session_schema") != BRAIN_SYNC_SESSION_SCHEMA:
         raise ValueError(
             f"BrainSync cache must declare session schema {BRAIN_SYNC_SESSION_SCHEMA!r}."
@@ -659,7 +658,7 @@ def main() -> None:
         "source_snapshot_sha256": source_snapshot_sha256,
         "evaluation_snapshot_manifest": str(evaluation_manifest.resolve()),
         "evaluation_snapshot_sha256": evaluation_snapshot_sha256,
-        "input_preprocessing": asdict(dataset.preprocessing),
+        "input_preprocessing": dataset.preprocessing.record(),
         "checkpoint": str(Path(args.checkpoint).resolve()),
         "checkpoint_sha256": checkpoint_sha256,
         "head": args.head,

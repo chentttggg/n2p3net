@@ -7,8 +7,10 @@ channel, and are then frozen before the held-out subject is inspected.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 
 import numpy as np
 
@@ -108,7 +110,14 @@ class FoldLocalArtifactPolicy:
         subject_ids: np.ndarray,
         trial_channel_mask: np.ndarray | None = None,
         qc_features: EpochQCFeatures | None = None,
+        *,
+        fit_groups: np.ndarray | None = None,
     ) -> FoldLocalArtifactModel:
+        """Fit with participant groups by default, or explicit session/block groups.
+
+        Explicit groups control CV only; subject identity remains independently
+        recorded. The digest binds the actual rows, masks, and physical QC input.
+        """
         self.validate()
         X = np.asarray(X)
         subject_ids = np.asarray(subject_ids)
@@ -120,7 +129,9 @@ class FoldLocalArtifactPolicy:
             raise ValueError("Artifact fitting does not accept NaN/inf samples.")
         observed = _observed_mask(X, trial_channel_mask)
         features = _resolve_qc_features(X, observed, qc_features)
-        chosen_quantiles = self._choose_quantiles(X, features, subject_ids)
+        groups = _fit_groups(subject_ids, fit_groups)
+        evidence: dict[str, object] = {"n_groups": int(len(np.unique(groups)))}
+        chosen_quantiles = self._choose_quantiles(X, features, groups, evidence=evidence)
         ptp_thresholds = _per_channel_quantile(
             features.relative_ptp,
             observed,
@@ -137,8 +148,24 @@ class FoldLocalArtifactPolicy:
         selected_kappa = self._choose_bad_channel_fraction(
             X,
             features,
-            subject_ids,
+            groups,
             chosen_quantiles,
+            evidence=evidence,
+        )
+        quantile_valid = np.asarray(evidence["quantile_valid_fold_counts"]).max(axis=1) > 0
+        kappa_valid = bool(np.any(evidence["bad_fraction_valid_fold_counts"]))
+        if quantile_valid.all() and kappa_valid:
+            evidence["status"] = "group_cross_validated"
+        elif quantile_valid.any() or kappa_valid:
+            evidence["status"] = "partially_cross_validated"
+        else:
+            evidence["status"] = "fallback_no_valid_cv"
+        evidence["fallback_channels"] = np.flatnonzero(~quantile_valid).tolist()
+        evidence["bad_fraction_fallback"] = not kappa_valid
+        evidence["fallback_reason"] = (
+            "fewer_than_two_fit_groups" if evidence["n_groups"] < 2
+            else "insufficient_valid_clean_rows" if not quantile_valid.all() or not kappa_valid
+            else None
         )
         return FoldLocalArtifactModel(
             policy=self,
@@ -149,7 +176,11 @@ class FoldLocalArtifactPolicy:
             global_scale_log_center=global_center,
             global_scale_log_robust_std=global_scale,
             fit_n_epochs=int(len(X)),
-            fit_groups=tuple(sorted(np.unique(subject_ids.astype(str)).tolist())),
+            fit_groups=tuple(sorted(np.unique(groups).tolist())),
+            fit_subject_ids=tuple(sorted(np.unique(subject_ids.astype(str)).tolist())),
+            fit_group_source="subject_ids" if fit_groups is None else "explicit_fit_groups",
+            cv_evidence=evidence,
+            fit_data_digest=_fit_data_digest(X, subject_ids, groups, observed, features),
         )
 
     def _choose_quantile(
@@ -179,10 +210,12 @@ class FoldLocalArtifactPolicy:
         X: np.ndarray,
         features: EpochQCFeatures,
         subject_ids: np.ndarray,
+        *,
+        evidence: dict[str, object] | None = None,
     ) -> np.ndarray:
         """Fit candidate cleaning on training rows against a fixed validation target.
 
-        For every inner subject split, candidate thresholds are estimated from
+        For every inner group split, candidate thresholds are estimated from
         training rows only.  Each candidate cleans *training* rows before its
         ERP mean is formed, while the validation target remains the unfiltered
         channel-wise robust median.  Letting the candidate filter validation
@@ -194,11 +227,13 @@ class FoldLocalArtifactPolicy:
         subjects = np.unique(subject_keys)
         n_channels = X.shape[1]
         selected = np.full(n_channels, self.candidate_quantiles[-1], dtype=float)
+        counts = np.zeros((n_channels, len(self.candidate_quantiles)), dtype=np.int64)
+        if evidence is not None:
+            evidence["quantile_valid_fold_counts"] = counts.tolist()
         if len(subjects) < 2:
             return selected
         folds = np.array_split(subjects, min(self.cv_splits, len(subjects)))
         errors = np.zeros((n_channels, len(self.candidate_quantiles)), dtype=float)
-        counts = np.zeros_like(errors, dtype=np.int64)
         for held_out_subjects in folds:
             validation_subjects = np.isin(subject_keys, held_out_subjects)
             training_subjects = ~validation_subjects
@@ -268,6 +303,8 @@ class FoldLocalArtifactPolicy:
             counts[valid] += 1
 
         valid = counts > 0
+        if evidence is not None:
+            evidence["quantile_valid_fold_counts"] = counts.tolist()
         mean_errors = np.full_like(errors, np.inf)
         np.divide(errors, counts, out=mean_errors, where=valid)
         has_valid = valid.any(axis=1)
@@ -288,22 +325,26 @@ class FoldLocalArtifactPolicy:
         features: EpochQCFeatures,
         subject_ids: np.ndarray,
         selected_quantiles: np.ndarray,
+        *,
+        evidence: dict[str, object] | None = None,
     ) -> float:
-        """Select the epoch-level local-mask tolerance with subject-CV.
+        """Select the epoch-level local-mask tolerance with group-disjoint CV.
 
         Threshold quantiles are channel-local and selected first.  This second
         stage selects the shared epoch tolerance ``kappa`` while enforcing a
-        training retention floor and per-subject coverage, preventing a trivial
+        training retention floor and per-group coverage, preventing a trivial
         optimum that discards difficult epochs.
         """
 
         candidates = self._kappa_candidates()
         subject_keys = np.asarray(subject_ids).astype(str)
         subjects = np.unique(subject_keys)
+        counts = np.zeros(len(candidates), dtype=np.int64)
+        if evidence is not None:
+            evidence["bad_fraction_valid_fold_counts"] = counts.tolist()
         if len(subjects) < 2:
             return candidates[-1]
         errors = np.zeros(len(candidates), dtype=float)
-        counts = np.zeros(len(candidates), dtype=np.int64)
         folds = np.array_split(subjects, min(self.cv_splits, len(subjects)))
         for held_out_subjects in folds:
             validation_rows = np.isin(subject_keys, held_out_subjects)
@@ -360,6 +401,8 @@ class FoldLocalArtifactPolicy:
                 errors[index] += float(np.mean((mean[valid] - target[valid]) ** 2))
                 counts[index] += 1
         valid = counts > 0
+        if evidence is not None:
+            evidence["bad_fraction_valid_fold_counts"] = counts.tolist()
         if not valid.any():
             return candidates[-1]
         mean_errors = np.full(len(candidates), np.inf)
@@ -486,6 +529,13 @@ class FoldLocalArtifactModel:
     global_scale_log_robust_std: float
     fit_n_epochs: int
     fit_groups: tuple[str, ...]
+    fit_subject_ids: tuple[str, ...] = ()
+    fit_group_source: str = "subject_ids"
+    cv_evidence: dict[str, object] = field(
+        default_factory=lambda: {"status": "unavailable_legacy_record"}
+    )
+    fit_data_digest: str | None = None
+    fit_provenance: dict[str, object] = field(default_factory=dict)
 
     def transform(
         self,
@@ -535,14 +585,32 @@ class FoldLocalArtifactModel:
         )
 
     def record(self) -> dict[str, object]:
+        unobserved = np.isposinf(self.ptp_thresholds) & np.isneginf(self.flat_std_thresholds)
+        if not (
+            np.isfinite(self.ptp_thresholds[~unobserved]).all()
+            and np.isfinite(self.flat_std_thresholds[~unobserved]).all()
+        ):
+            raise ValueError("Artifact model contains invalid observed-channel thresholds.")
         return {
             "method": "fold_local_ptp_cv",
             "ptp_normalization": "within_epoch_observed_channel_median",
             "policy": asdict(self.policy),
             "fit_n_epochs": self.fit_n_epochs,
             "fit_groups": list(self.fit_groups),
-            "ptp_thresholds": self.ptp_thresholds.tolist(),
-            "flat_std_thresholds": self.flat_std_thresholds.tolist(),
+            "fit_subject_ids": list(self.fit_subject_ids),
+            "fit_group_source": self.fit_group_source,
+            "fit_data_digest": self.fit_data_digest,
+            "fit_provenance": self.fit_provenance,
+            "cv_evidence": self.cv_evidence,
+            "fit_observed_channel_mask": (~unobserved).tolist(),
+            "ptp_thresholds": [
+                None if missing else float(value)
+                for missing, value in zip(unobserved, self.ptp_thresholds, strict=True)
+            ],
+            "flat_std_thresholds": [
+                None if missing else float(value)
+                for missing, value in zip(unobserved, self.flat_std_thresholds, strict=True)
+            ],
             "selected_quantiles": self.selected_quantiles.tolist(),
             "selected_bad_channel_fraction": self.selected_bad_channel_fraction,
             "global_scale_calibration": {
@@ -585,6 +653,7 @@ def apply_fold_local_artifact_policy(
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
     *,
+    fit_groups: np.ndarray | None = None,
     materialize_masked_data: bool = True,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, object]]:
     """Fit on train only; mask local bad channels and drop only train epochs."""
@@ -595,6 +664,7 @@ def apply_fold_local_artifact_policy(
         np.asarray(subject_ids)[train_mask],
         _subset_mask(trial_channel_mask, train_mask),
         train_features,
+        fit_groups=None if fit_groups is None else np.asarray(fit_groups)[train_mask],
     )
     return apply_fitted_artifact_model(
         fitted,
@@ -604,6 +674,7 @@ def apply_fold_local_artifact_policy(
         test_mask,
         trial_channel_mask,
         qc_features,
+        fit_groups=fit_groups,
         materialize_masked_data=materialize_masked_data,
     )
 
@@ -617,6 +688,7 @@ def apply_fitted_artifact_model(
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
     *,
+    fit_groups: np.ndarray | None = None,
     materialize_masked_data: bool = True,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, object]]:
     """Apply a policy already fitted on this fold's outer-training rows.
@@ -635,9 +707,7 @@ def apply_fitted_artifact_model(
         raise ValueError("Artifact train/test masks must align with X.")
     if labels.shape != (len(X),):
         raise ValueError("Artifact subject_ids must align with X.")
-    expected_subjects = tuple(sorted(np.unique(labels[train_mask].astype(str)).tolist()))
-    if fitted.fit_groups != expected_subjects:
-        raise ValueError("Frozen artifact policy was not fitted on this outer-training group set.")
+    _validate_fit_scope(fitted, X, labels, train_mask, trial_channel_mask, qc_features, fit_groups)
     transformed = fitted.transform(
         X,
         trial_channel_mask,
@@ -654,7 +724,7 @@ def apply_fitted_artifact_model(
     if not effective_train_mask.any():
         raise ValueError("Fold-local artifact policy removed every training epoch.")
     remaining_subjects = np.unique(labels[effective_train_mask])
-    if len(remaining_subjects) < 2:
+    if fit_groups is None and len(remaining_subjects) < 2:
         raise ValueError("Artifact policy left fewer than two training subjects for validation.")
     audit = fitted.record()
     audit["train"] = transformed_summary(transformed, train_mask)
@@ -671,6 +741,7 @@ def apply_fitted_artifact_model_with_test_exclusion(
     trial_channel_mask: np.ndarray | None = None,
     qc_features: EpochQCFeatures | None = None,
     *,
+    fit_groups: np.ndarray | None = None,
     materialize_masked_data: bool = True,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict[str, object]]:
     """Apply a frozen policy and exclude unusable held-out epochs with a ledger.
@@ -690,9 +761,7 @@ def apply_fitted_artifact_model_with_test_exclusion(
         raise ValueError("Artifact train/test masks must align with X.")
     if labels.shape != (len(X),):
         raise ValueError("Artifact subject_ids must align with X.")
-    expected_subjects = tuple(sorted(np.unique(labels[train_mask].astype(str)).tolist()))
-    if fitted.fit_groups != expected_subjects:
-        raise ValueError("Frozen artifact policy was not fitted on this outer-training group set.")
+    _validate_fit_scope(fitted, X, labels, train_mask, trial_channel_mask, qc_features, fit_groups)
     transformed = fitted.transform(
         X,
         trial_channel_mask,
@@ -710,7 +779,7 @@ def apply_fitted_artifact_model_with_test_exclusion(
     if not effective_train_mask.any():
         raise ValueError("Fold-local artifact policy removed every training epoch.")
     remaining_subjects = np.unique(labels[effective_train_mask])
-    if len(remaining_subjects) < 2:
+    if fit_groups is None and len(remaining_subjects) < 2:
         raise ValueError("Artifact policy left fewer than two training subjects for validation.")
     audit = fitted.record()
     audit["test_all_channels_bad_policy"] = "exclude"
@@ -755,6 +824,52 @@ def _observed_mask(X: np.ndarray, trial_channel_mask: np.ndarray | None) -> np.n
     if observed.dtype != np.dtype(bool) or observed.shape != X.shape[:2]:
         raise ValueError("trial_channel_mask must be boolean and match X.shape[:2].")
     return observed
+
+
+def _fit_groups(subject_ids: np.ndarray, fit_groups: np.ndarray | None) -> np.ndarray:
+    groups = np.asarray(subject_ids if fit_groups is None else fit_groups)
+    if groups.shape != np.asarray(subject_ids).shape or groups.ndim != 1:
+        raise ValueError("fit_groups must align with X and subject_ids.")
+    if any(value is None or (
+        isinstance(value, (float, np.floating)) and not np.isfinite(value)
+    ) for value in groups):
+        raise ValueError("fit_groups must contain non-empty declared identities.")
+    groups = groups.astype(str)
+    if np.any(np.char.strip(groups) == ""):
+        raise ValueError("fit_groups must contain non-empty declared identities.")
+    return groups
+
+
+def _fit_data_digest(X, subjects, groups, observed, features) -> str:
+    digest = hashlib.sha256()
+    for value in (X, np.asarray(subjects).astype(str), groups, observed,
+                  features.relative_ptp, features.channel_std_v, features.epoch_scale_v):
+        array = np.asarray(value)
+        digest.update(json.dumps([array.shape, array.dtype.str]).encode("utf-8"))
+        if array.dtype.kind in "UOS":
+            digest.update(json.dumps(array.tolist(), ensure_ascii=True).encode("utf-8"))
+        else:
+            digest.update(memoryview(np.ascontiguousarray(array)).cast("B"))
+    return digest.hexdigest()
+
+
+def _validate_fit_scope(fitted, X, subjects, train, trial_mask, features, fit_groups) -> None:
+    groups = _fit_groups(subjects, fit_groups)
+    expected = tuple(sorted(np.unique(groups[train]).tolist()))
+    if fitted.fit_groups != expected:
+        raise ValueError("Frozen artifact policy was not fitted on this outer-training group set.")
+    if fitted.fit_subject_ids and fitted.fit_subject_ids != tuple(
+        sorted(np.unique(subjects[train].astype(str)).tolist())
+    ):
+        raise ValueError("Frozen artifact policy was not fitted on these training subject identities.")
+    if fitted.fit_data_digest is not None:
+        observed = _observed_mask(X[train], _subset_mask(trial_mask, train))
+        training_features = _resolve_qc_features(
+            X[train], observed, None if features is None else features.subset(train)
+        )
+        actual = _fit_data_digest(X[train], subjects[train], groups[train], observed, training_features)
+        if actual != fitted.fit_data_digest:
+            raise ValueError("Frozen artifact training data/mask/QC fit digest does not match.")
 
 
 def _subset_mask(mask: np.ndarray | None, rows: np.ndarray) -> np.ndarray | None:

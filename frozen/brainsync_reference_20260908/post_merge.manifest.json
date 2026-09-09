@@ -1,0 +1,28 @@
+{
+  "tests": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "42",
+    "time": "22.758",
+    "timestamp": "2026-09-08T10:34:53.994273+08:00",
+    "hostname": "Tonger"
+  },
+  "native_model_unchanged": true,
+  "reference": "left earlobe",
+  "physical_electrode": "left earlobe ear clip",
+  "files": {
+    "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_reference_20260908\\post_merge_tests.xml": "97d2f079c46f71cab4a26f58719929f3fb97cdcb1dc2ad5e434249f7c385f6d9",
+    "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_reference_20260908\\post_merge_tests.log": "27d9c0eace019be83deacbd63a1387d7d9efd16b700968abfe1197325a35e654",
+    "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_reference_20260908\\native_infer_post_merge\\summary.json": "aad29f2d0170e481cb49eb226e13223256878415f84dba212bb943fd53d7401e",
+    "D:\\BCI\\n2p3-net\\src\\data\\contract.py": "4d37612fa0ee69243feec9dc2cfe2ff09c9907d4c9166eb40e6326fda0be9f04",
+    "D:\\BCI\\n2p3-net\\src\\data\\brainsync.py": "205dc6babc5a22b6c147c49609acd38a52bd73930fc27d04298619466bf3f0c6",
+    "D:\\BCI\\n2p3-net\\src\\data\\brainsync_contract.py": "d0c84e8040b2254e49d1ff998fc460aacd521abdeb778d0eb8c70229ad33b9b9",
+    "D:\\BCI\\n2p3-net\\src\\data\\bids_eeg.py": "3dccc9f955be3009ffad5eeb27ca5fa3bb35e6b64d094f81124ef79367a7067b",
+    "D:\\BCI\\n2p3-net\\src\\transfer\\calibrated.py": "1e46a45fcb452770a0c9785d19a236b979ac449499b1ae093f6b4c438a5bcbae",
+    "D:\\BCI\\n2p3-net\\experiments\\brainsync_model_task.py": "63e9c027b626e665af33331db4cad3ca008516e4e44731cbab1c27a0240cd931",
+    "D:\\BCI\\n2p3-net\\experiments\\correct_brainsync_reference.py": "90d9318b6be3078c235dc71f21e996bae99f2875057847b75975c043ffabd6e3",
+    "D:\\BCI\\n2p3-net\\doc\\evidence\\brainsync_reference_20260908.zh.md": "882376ad24cd0f2f072f2810546e5d0ed41e79a7dc61833d2353bf643d3e2bc4"
+  }
+}

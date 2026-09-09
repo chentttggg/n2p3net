@@ -30,3 +30,6 @@ cloud_inputs/
 /frozen/**/*.tar
 /frozen/**/*.7z
 /frozen/**/*.bundle
+# Materialized source snapshots and per-event figure data remain local.
+/frozen/**/checkout/
+/doc/assets/**/*.npz

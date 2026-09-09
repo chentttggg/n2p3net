@@ -41,6 +41,7 @@ from data.epochs import (  # noqa: E402
     loaded_epoch_cache_attestation,
 )
 from data.identity import training_identity_ledger_from_rows  # noqa: E402
+from data.study import dataset_study_membership  # noqa: E402
 from models.adapters import (  # noqa: E402
     FeatureTransferConfig,
     SourceResidualContractError,
@@ -351,6 +352,13 @@ def _single_job_argv(
         argv.extend(["--selection-domain", args.selection_domain])
     if args.selection_all_domains:
         argv.append("--selection-all-domains")
+    if getattr(args, "fixed_updates", None) is not None:
+        argv.extend(["--fixed-updates", str(args.fixed_updates),
+                     "--input-statistics", args.input_statistics, "--sampling", args.sampling])
+        if args.snapshot_updates:
+            argv.extend(["--snapshot-updates", *map(str, args.snapshot_updates)])
+    if getattr(args, "dry_run", False):
+        argv.append("--dry-run")
     return argv
 
 
@@ -404,7 +412,22 @@ def _run_batch(args: argparse.Namespace, jobs: tuple[SourcePretrainJob, ...]) ->
 
 
 def main(argv: list[str] | None = None) -> None:
+    actual_argv = list(sys.argv[1:] if argv is None else argv)
+    dispatch_parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    dispatch_parser.add_argument("--source-chain-plan", nargs="?", const="", default=None)
+    dispatch, remaining = dispatch_parser.parse_known_args(actual_argv)
+    if dispatch.source_chain_plan is not None:
+        if not dispatch.source_chain_plan and not {"--help", "-h"}.intersection(remaining):
+            dispatch_parser.error("--source-chain-plan requires a plan path")
+        if str(ROOT) not in sys.path:
+            sys.path.insert(0, str(ROOT))
+        from experiments.run_source_training_chain import main as source_chain_main
+        source_chain_main(["--plan", dispatch.source_chain_plan, *remaining]
+                          if dispatch.source_chain_plan else ["--help"])
+        return
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source-chain-plan", metavar="PLAN",
+                        help="Run the S1/E2/S2 source chain; combine with --help for chain options.")
     parser.add_argument("--source-cache", required=True)
     parser.add_argument(
         "--source-snapshot-manifest",
@@ -464,6 +487,11 @@ def main(argv: list[str] | None = None) -> None:
         help="Materialize one shuffled epoch on device; batch order is unchanged.",
     )
     parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--fixed-updates", type=int)
+    parser.add_argument("--snapshot-updates", type=int, nargs="*", default=[])
+    parser.add_argument("--input-statistics", choices=("observed_rows", "observed_domain_participant"), default="observed_rows")
+    parser.add_argument("--sampling", choices=("epoch_permutation", "uniform_rows", "domain_participant"), default="epoch_permutation")
+    parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--pos-weight", type=float, default=8.0)
     parser.add_argument("--selection-all-domains", action="store_true",
@@ -703,7 +731,14 @@ def main(argv: list[str] | None = None) -> None:
             )
             for index, (holdout, checkpoint) in enumerate(args.job)
         )
-        _run_batch(args, jobs)
+        if args.dry_run:
+            for job in jobs:
+                main(_single_job_argv(args, job))
+            _write_json_atomic(Path(args.batch_record), {"schema": SOURCE_PRETRAIN_BATCH_SCHEMA,
+                "dry_run": True, "fitting_performed": False,
+                "jobs": [{"argv": _single_job_argv(args, job)} for job in jobs]})
+        else:
+            _run_batch(args, jobs)
         return
     if len(initial_checkpoint_paths) > 1:
         parser.error("single-job mode accepts at most one --initial-checkpoint")
@@ -714,6 +749,9 @@ def main(argv: list[str] | None = None) -> None:
         parser.error("--batch-record requires at least one --job")
     source_snapshot_manifest = args.source_snapshot_manifest.resolve()
     source_snapshot_sha256 = _source_snapshot_sha256_once(source_snapshot_manifest)
+    if args.fixed_updates is not None and not args.dry_run:
+        from research.evaluation import verified_executed_snapshot
+        verified_executed_snapshot(source_snapshot_manifest, root=ROOT)
 
     device = torch.device(args.device) if args.device != "auto" else get_device()
     dataset, source_cache_attestation = _load_source_dataset_once(args.source_cache)
@@ -865,7 +903,7 @@ def main(argv: list[str] | None = None) -> None:
         source_domains = source_domain_ids(dataset)[source_rows]
         observed_domains = set(source_domains.tolist())
         if len(observed_domains) > 1:
-            if selection_domain is None and domain_mass and not args.selection_all_domains:
+            if selection_domain is None and domain_mass and not args.selection_all_domains and args.fixed_updates is None:
                 raise ValueError(
                     "weighted multi-domain source training requires an explicit selection-domain."
                 )
@@ -876,7 +914,7 @@ def main(argv: list[str] | None = None) -> None:
                 )
             if selection_domain is not None and selection_domain not in observed_domains:
                 raise ValueError("selection-domain is absent from retained source rows.")
-        elif domain_mass or selection_domain is not None:
+        elif (domain_mass or selection_domain is not None) and args.fixed_updates is None:
             raise ValueError("domain-risk options require a genuinely multi-domain source cache.")
     elif domain_mass or selection_domain is not None:
         raise ValueError("domain-risk options require an explicit source-domain axis.")
@@ -964,7 +1002,27 @@ def main(argv: list[str] | None = None) -> None:
         precision=args.precision,
         compile_mode=None if args.compile_mode == "none" else args.compile_mode,
         materialize_shuffled_epoch=args.materialize_shuffled_epoch,
+        fixed_updates=args.fixed_updates,
+        snapshot_updates=tuple(args.snapshot_updates),
+        input_statistics=args.input_statistics,
+        sampling=args.sampling,
     )
+    study_membership = dataset_study_membership(dataset) if args.fixed_updates is not None else None
+    if args.fixed_updates is not None and (
+        initial_checkpoint is not None or source_selection is not None
+        or args.selection_all_domains or selection_domain is not None
+    ):
+        raise ValueError("fixed source trajectories require scratch initialization and explicit fit rows")
+    if args.dry_run:
+        print(json.dumps({
+            "dry_run": True, "source_cache_sha256": source_cache_sha256,
+            "source_snapshot_sha256": source_snapshot_sha256,
+            "source_rows": int(source_rows.sum()),
+            "training_participant_keys": list(training_identity_ledger.authority_keys()),
+            "config": asdict(config), "checkpoint": str(args.checkpoint),
+            "fitting_performed": False,
+        }, indent=2))
+        return
     runtime = GpuPerformanceScheduler(
         device,
         precision=config.precision,
@@ -1031,6 +1089,11 @@ def main(argv: list[str] | None = None) -> None:
                 "risk_within_domain_unit": args.risk_within_domain_unit,
             }
         )
+    if args.fixed_updates is not None:
+        dataset.identity_table.authority_keys()
+        risk_fit_kwargs["risk_unit_ids"] = np.asarray([
+            dataset.identity_table.record_for(local).authority_key() for local in src_subjects
+        ])
     decision_fit_kwargs = (
         {}
         if decision_metadata is None or decision_loss_config is None
@@ -1041,19 +1104,20 @@ def main(argv: list[str] | None = None) -> None:
     )
     started = time.perf_counter()
     try:
-        baseline.fit(
-            X,
-            y,
-            group_ids=src_subjects,
-            feature_alignment_weight=args.feature_alignment_weight,
-            feature_alignment_mode=args.feature_alignment_mode,
-            feature_alignment_min_cell_count=args.feature_alignment_min_cell_count,
-            feature_alignment_inactive_policy=args.feature_alignment_inactive_policy,
-            feature_private_domain_weight=args.private_domain_weight,
-            feature_orthogonality_weight=args.orthogonality_weight,
-            **risk_fit_kwargs,
-            **decision_fit_kwargs,
-        )
+        if config.fixed_updates is None:
+            baseline.fit(
+                X,
+                y,
+                group_ids=src_subjects,
+                feature_alignment_weight=args.feature_alignment_weight,
+                feature_alignment_mode=args.feature_alignment_mode,
+                feature_alignment_min_cell_count=args.feature_alignment_min_cell_count,
+                feature_alignment_inactive_policy=args.feature_alignment_inactive_policy,
+                feature_private_domain_weight=args.private_domain_weight,
+                feature_orthogonality_weight=args.orthogonality_weight,
+                **risk_fit_kwargs,
+                **decision_fit_kwargs,
+            )
     except (SourceResidualContractError, DirectDecisionContractError) as error:
         _write_contract_failure(
             args.checkpoint,
@@ -1069,9 +1133,9 @@ def main(argv: list[str] | None = None) -> None:
     selection_baseline = baseline
     selection_history = getattr(selection_baseline, "last_history", {}) or {}
     selected_epoch = selection_history.get("best_epoch")
-    if selected_epoch is None:
+    if selected_epoch is None and config.fixed_updates is None:
         raise RuntimeError("source pretraining did not select an inner-validation epoch.")
-    refit_epochs = int(selected_epoch) + 1
+    refit_epochs = int(selected_epoch) + 1 if selected_epoch is not None else args.epochs
     refit_config = replace(config, epochs=refit_epochs, val_group_frac=None)
     baseline = N2P3NetBaseline(
         dataset.n_channels,
@@ -1122,6 +1186,9 @@ def main(argv: list[str] | None = None) -> None:
         )
         raise
     refit_sec = time.perf_counter() - refit_started
+    if config.fixed_updates is not None:
+        selection_baseline = baseline
+        selection_history = baseline.last_history
     model = baseline.model_
     architecture_record = baseline.architecture_record()
     if semantic_sha256(selection_baseline.architecture_record()) != semantic_sha256(
@@ -1200,7 +1267,7 @@ def main(argv: list[str] | None = None) -> None:
         source_snapshot_sha256=source_snapshot_sha256,
         architecture=architecture_record,
         preprocessing={
-            "epoch": asdict(dataset.preprocessing),
+            "epoch": dataset.preprocessing.record(),
             "channel_names": list(dataset.channel_names),
             "source_reference": dataset.provenance.get("source_reference"),
         },
@@ -1223,10 +1290,11 @@ def main(argv: list[str] | None = None) -> None:
             },
         },
         validation={
-            "strategy": "group_disjoint_epoch_selection_then_full_source_refit",
+            "strategy": "fixed_updates_full_source_fit" if config.fixed_updates is not None else "group_disjoint_epoch_selection_then_full_source_refit",
             "group_key": "local_subject_id",
-            "selected_epoch_zero_based": int(selected_epoch),
-            "refit_epochs": int(refit_epochs),
+            "selected_epoch_zero_based": None if selected_epoch is None else int(selected_epoch),
+            "fixed_updates": config.fixed_updates,
+            "refit_epochs": int(refit_epochs) if config.fixed_updates is None else None,
             "selection_calibration_source": selection_baseline.calibration_source_,
             "selection_domain": selection_domain,
             "selection_all_domains": args.selection_all_domains,
@@ -1234,6 +1302,7 @@ def main(argv: list[str] | None = None) -> None:
         },
         objective={
             "name": "weighted_binary_cross_entropy",
+            **({"source_study_membership": study_membership} if study_membership is not None else {}),
             "effective_pos_weight": float(baseline.training_pos_weight_),
             "training_prior": float(baseline.training_prior_),
             "qc_ptp_uv": float(args.qc_ptp_uv),
@@ -1313,11 +1382,13 @@ def main(argv: list[str] | None = None) -> None:
         training_participant_keys=training_identity_ledger.authority_keys(),
         holdout_participant_keys=holdout_participant_keys,
     )
+    input_mean, input_std = baseline.fitted_input_statistics()
     payload = {
         "schema": CHECKPOINT_SCHEMA,
+        **({"source_study_membership": study_membership} if study_membership is not None else {}),
         "trunk_state_dict": {k: v.detach().cpu() for k, v in model.state_dict().items()},
-        "input_mean": np.asarray(baseline._input_mean, dtype=np.float32).squeeze().tolist(),
-        "input_std": np.asarray(baseline._input_std, dtype=np.float32).squeeze().tolist(),
+        "input_mean": input_mean.reshape(-1).tolist(),
+        "input_std": input_std.reshape(-1).tolist(),
         "config": {
             "pooling_mode": args.pooling_mode,
             "temporal_kernel_size": args.temporal_kernel_size,
@@ -1367,7 +1438,7 @@ def main(argv: list[str] | None = None) -> None:
         "n_times": int(dataset.n_times),
         "input_sample_rate_hz": float(dataset.preprocessing.sfreq),
         "input_tmin_s": float(dataset.preprocessing.tmin_ms) / 1000.0,
-        "input_preprocessing": asdict(dataset.preprocessing),
+        "input_preprocessing": dataset.preprocessing.record(),
         "input_channel_names": list(dataset.channel_names),
         "input_source_reference": dataset.provenance.get("source_reference"),
         "source_cache_sha256": source_cache_sha256,
@@ -1375,7 +1446,11 @@ def main(argv: list[str] | None = None) -> None:
         "source_calibration": source_calibration,
         "source_selection_calibration": source_selection_calibration,
         "source_full_refit": True,
-        "source_refit_epochs": refit_epochs,
+        "source_refit_epochs": refit_epochs if config.fixed_updates is None else None,
+        "source_fixed_updates": config.fixed_updates,
+        "source_training_history": baseline.last_history,
+        "source_statistics": getattr(baseline, "source_statistics_", None),
+        "source_sampling": getattr(baseline, "sampling_ledger_", None),
         "source_cache": str(Path(args.source_cache).resolve()),
         "source_snapshot_manifest": str(source_snapshot_manifest),
         "source_snapshot_sha256": source_snapshot_sha256,
@@ -1422,6 +1497,32 @@ def main(argv: list[str] | None = None) -> None:
         },
     }
     torch.save(payload, checkpoint)
+    if config.fixed_updates is not None:
+        for update, snapshot in baseline.candidate_snapshots_.items():
+            candidate_config = replace(config, fixed_updates=update, snapshot_updates=())
+            candidate_contract = replace(
+                training_contract,
+                optimizer={**training_contract.optimizer, "refit_config": asdict(candidate_config),
+                           "actual_optimizer_updates": update, "trial_draws": snapshot["trial_draws"]},
+                validation={**training_contract.validation, "fixed_updates": update,
+                            "trajectory_max_updates": config.fixed_updates},
+            )
+            candidate = {**payload,
+                "trunk_state_dict": snapshot["model_state_dict"],
+                "input_mean": snapshot["input_mean"].reshape(-1).tolist(),
+                "input_std": snapshot["input_std"].reshape(-1).tolist(),
+                "training_contract": candidate_contract.record(),
+                "training_contract_digest": candidate_contract.digest(),
+                "source_fixed_updates": update,
+                "source_training_history": {**baseline.last_history,
+                    "optimizer_updates": update, "trial_draws": snapshot["trial_draws"],
+                    "batch_sequence_sha256": snapshot["batch_sequence_sha256"],
+                    "batch_sizes": baseline.last_history["batch_sizes"][:update],
+                    "update_losses": [row for row in baseline.last_history["update_losses"] if row["update"] <= update]},
+                "source_candidate_trajectory": {key: value for key, value in snapshot.items()
+                                                if key not in {"model_state_dict", "input_mean", "input_std"}},
+            }
+            torch.save(candidate, checkpoint.with_name(f"{checkpoint.stem}.u{update}{checkpoint.suffix}"))
     print(
         json.dumps(
             {

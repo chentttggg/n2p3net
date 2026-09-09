@@ -7,6 +7,7 @@ import json
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from pathlib import Path
 from typing import Any
 
@@ -88,6 +89,8 @@ class ValidatedBidsEEGRecording:
     rest_intervals: tuple[BidsRestInterval, ...]
     acquisition_boundaries: tuple[float, ...] = ()
     excluded_intervals: tuple[BidsRestInterval, ...] = ()
+    eog_derivation: Mapping[str, Any] = dataclass_field(default_factory=dict)
+    source_reference_details: Mapping[str, Any] = dataclass_field(default_factory=dict)
 
 
 _REQUIRED_PATH_FIELDS = (
@@ -256,6 +259,11 @@ def validate_bids_eeg_recording(
     reference = eeg_json.get("EEGReference")
     if not isinstance(reference, str) or not reference.strip():
         raise ValueError("BIDS EEGReference must be a non-empty string.")
+    reference_details = eeg_json.get("EEGReferenceDetails", {})
+    if not isinstance(reference_details, dict) or (
+        reference_details and reference_details.get("label") != reference.strip()
+    ):
+        raise ValueError("BIDS EEGReferenceDetails must agree with EEGReference.")
 
     channel_fields, channel_rows = _read_tsv(paths["channels_tsv"], "channels.tsv")
     required_channel_fields = {"name", "type", "units", "sampling_frequency", "status"}
@@ -269,6 +277,11 @@ def validate_bids_eeg_recording(
     ) != len(channel_names):
         raise ValueError("BIDS channels.tsv names must be unique and non-empty.")
     channel_types = tuple(row["type"].strip().upper() for row in channel_rows)
+    from data.ocular import validate_eog_derivation
+    eog_derivation = eeg_json.get("EOGDerivation", {})
+    validate_eog_derivation(eog_derivation,
+        tuple(name for name, kind in zip(channel_names, channel_types, strict=True) if kind == "EOG"),
+        reference.strip())
     if any(kind not in contract.allowed_channel_types for kind in channel_types):
         raise ValueError(f"BIDS channel types must belong to {contract.allowed_channel_types}.")
     if "EEG" not in channel_types:
@@ -438,6 +451,8 @@ def validate_bids_eeg_recording(
         channel_statuses=channel_statuses,
         channel_positions_m=tuple(positions),
         source_reference=reference.strip(),
+        source_reference_details=dict(reference_details),
+        eog_derivation=eog_derivation,
         stimuli=tuple(stimuli),
         rest_intervals=ordered_rests,
         acquisition_boundaries=tuple(boundaries),

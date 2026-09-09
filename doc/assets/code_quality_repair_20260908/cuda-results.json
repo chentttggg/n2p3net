@@ -1,0 +1,24 @@
+{
+  "torch": "2.13.0+cu130",
+  "cuda": "13.0",
+  "triton_available": false,
+  "scope": "software_validation_not_throughput_or_population_evidence",
+  "checks": [
+    {
+      "backend": "eager",
+      "status": "passed",
+      "seconds_including_cold_start": 5.351378799998201,
+      "precision": "bf16",
+      "fused_adam": true,
+      "optimizer_updates": 2
+    },
+    {
+      "backend": "aot_eager",
+      "status": "passed",
+      "seconds_including_cold_start": 4.813654700003099,
+      "precision": "bf16",
+      "fused_adam": true,
+      "optimizer_updates": 2
+    }
+  ]
+}

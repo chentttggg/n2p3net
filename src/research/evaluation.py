@@ -151,10 +151,42 @@ def source_snapshot_sha256_from_archive_manifest(path: str | Path) -> str:
     return str(verified_source_snapshot(path)["archive_sha256"])
 
 
+def verified_executed_snapshot(
+    path: str | Path, *, root: str | Path, required_files: Sequence[str] = (),
+) -> dict[str, object]:
+    """Bind the executing backend, including newly added runtime modules."""
+    result = verified_source_snapshot(path)
+    root = Path(root).resolve()
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    recorded = payload.get("files")
+    if not isinstance(recorded, dict) or not recorded:
+        raise ValueError("executed snapshot requires a nonempty files digest mapping")
+    required = set(required_files) | {"pyproject.toml", "uv.lock"}
+    required.update(item.relative_to(root).as_posix() for item in (root / "src").rglob("*.py"))
+    required.update(item.relative_to(root).as_posix() for item in (root / "experiments").glob("*.py"))
+    missing = required - set(recorded)
+    if missing:
+        raise ValueError(f"executed snapshot missing runtime files: {sorted(missing)}")
+    for name, digest in recorded.items():
+        actual_path = (root / name).resolve()
+        if not actual_path.is_relative_to(root):
+            raise ValueError("snapshot file path escapes executing checkout")
+        if not actual_path.is_file() or hashlib.sha256(actual_path.read_bytes()).hexdigest() != digest:
+            raise ValueError(f"executed source differs from snapshot: {name}")
+    with tarfile.open(Path(path).resolve().parent / payload["archive"], "r:gz") as archive:
+        members = {member.name: member for member in archive if member.isfile()}
+        for name, digest in recorded.items():
+            member = members.get(name)
+            if member is None or hashlib.sha256(archive.extractfile(member).read()).hexdigest() != digest:
+                raise ValueError(f"snapshot file digest disagrees with physical archive: {name}")
+    return {**result, "executed_files_verified": len(recorded)}
+
+
 __all__ = [
     "build_evaluation_run_contract",
     "checkpoint_model_origin",
     "scratch_model_origin",
     "source_snapshot_sha256_from_archive_manifest",
     "verified_source_snapshot",
+    "verified_executed_snapshot",
 ]

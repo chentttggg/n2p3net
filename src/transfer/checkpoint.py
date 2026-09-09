@@ -8,8 +8,8 @@ the GTN and BI runners cannot silently disagree about what was pretrained.
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping
-from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +20,7 @@ from data.identity import (
     DatasetIdentityTable,
     IdentityExclusionPolicy,
     assert_target_identity_excluded,
+    source_dataset_ids_from_identity,
 )
 from models.adapters import (
     FEATURE_TRANSFER_SCHEMA,
@@ -89,7 +90,41 @@ def checkpoint_training_identity_ledger(
         raise ValueError("checkpoint training identity ledger digest disagrees with its records.")
     if set(training_contract.training_participant_keys) != set(ledger.authority_keys()):
         raise ValueError("training_contract participant keys disagree with the identity ledger.")
+    membership = payload.get("source_study_membership")
+    declared_membership = training_contract.objective.get("source_study_membership")
+    if membership is not None or declared_membership is not None:
+        if membership is None or declared_membership is None or (
+            semantic_sha256(membership) != semantic_sha256(declared_membership)
+        ):
+            raise ValueError("checkpoint study membership disagrees with its bound training contract")
+        from data.study import study_ids_for_identity
+
+        study_ids_for_identity(ledger, membership)
     return ledger
+
+
+def assert_checkpoint_library_exclusion(
+    payload: Mapping[str, object], target_identity: DatasetIdentityTable, *,
+    excluded_source_datasets: tuple[str, ...] = (),
+    source_membership: Mapping[str, object] | None = None,
+    target_membership: Mapping[str, object] | None = None,
+) -> None:
+    """Reject the entire target library, including people absent from its cache."""
+    training = checkpoint_training_identity_ledger(payload)
+    if source_membership is None and target_membership is None:
+        actual_source = set(source_dataset_ids_from_identity(training))
+        target_studies = set(source_dataset_ids_from_identity(target_identity))
+    elif source_membership is None or target_membership is None:
+        raise ValueError("whole-study exclusion requires both source and target membership proofs")
+    else:
+        from data.study import study_ids_for_identity
+
+        actual_source = set(study_ids_for_identity(training, source_membership))
+        target_studies = set(study_ids_for_identity(target_identity, target_membership))
+    forbidden = target_studies | set(excluded_source_datasets)
+    overlap = actual_source & forbidden
+    if overlap:
+        raise ValueError(f"checkpoint source contains excluded target libraries: {sorted(overlap)}")
 
 
 def assert_checkpoint_target_identity_excluded(
@@ -482,7 +517,11 @@ def _validate_metadata(
     if semantic_sha256(input_signature) != semantic_sha256(contract_preprocessing):
         raise ValueError("checkpoint input signature disagrees with its training contract.")
     checkpoint_classifier_is_trained(payload)
-    checkpoint_input_stats(payload, int(dataset.n_channels))
+    input_mean, input_std = checkpoint_input_stats(payload, int(dataset.n_channels))
+    optimizer_config = training_contract.optimizer.get("config", {})
+    if isinstance(optimizer_config, Mapping) and optimizer_config.get("standardize_input") is False:
+        if np.any(input_mean != 0) or np.any(input_std != 1):
+            raise ValueError("checkpoint with disabled standardization requires an identity input transform")
 
     if target_subject is not None:
         target = str(target_subject)
@@ -538,12 +577,15 @@ def _validate_metadata(
     if not isinstance(declared_preprocessing, Mapping):
         raise ValueError("checkpoint input_preprocessing must be a mapping.")
     target_channels = list(getattr(dataset, "channel_names", ()))
-    target_preprocessing = asdict(dataset.preprocessing)
+    target_preprocessing = dataset.preprocessing.record()
     target_reference = getattr(dataset, "provenance", {}).get("source_reference")
     input_mismatches = []
     if declared_channels != target_channels:
         input_mismatches.append("channel_names/order")
-    if dict(declared_preprocessing) != target_preprocessing:
+    from data.epochs import PreprocessingSpec
+    declared_spec = PreprocessingSpec(**declared_preprocessing)
+    declared_spec.validate()
+    if declared_spec.record() != target_preprocessing:
         input_mismatches.append("preprocessing")
     if declared_reference != target_reference:
         input_mismatches.append("source_reference")
@@ -836,6 +878,33 @@ def load_n2p3_trunk_checkpoint(
     return trunk, payload
 
 
+class PreparedTransferCheckpoint:
+    """Validate one immutable checkpoint/dataset pair, then check each target cheaply."""
+
+    def __init__(self, path, dataset):
+        if not isinstance(getattr(dataset, "identity_table", None), DatasetIdentityTable):
+            raise ValueError("prepared checkpoint requires a structured target identity table")
+        self._trunk, payload = load_n2p3_trunk_checkpoint(path, dataset)
+        self._training_identity = DatasetIdentityTable.from_payload(payload["training_identity_ledger"])
+        self._target_identity = dataset.identity_table
+        self.source_seed = int(payload["training_contract"]["seed"])
+        self.training_contract_digest = str(payload["training_contract_digest"])
+        self.input_statistics = checkpoint_input_stats(payload, dataset.n_channels)
+        self.payload = payload
+
+    def assert_target_excluded(self, subject):
+        assert_target_identity_excluded(self._training_identity,
+            self._target_identity.record_for(str(subject)), policy="source_or_global")
+
+    def trunk_for_target(self, subject):
+        self.assert_target_excluded(subject)
+        return copy.deepcopy(self._trunk)
+
+    def model_origin(self, checkpoint_sha256):
+        return {"kind": "checkpoint", "checkpoint_sha256": checkpoint_sha256,
+                "training_contract_digest": self.training_contract_digest}
+
+
 def checkpoint_architecture_record(payload: Mapping[str, object]) -> dict[str, object]:
     """Return a normalized architecture summary for run ledgers and diagnostics."""
 
@@ -881,6 +950,7 @@ def checkpoint_architecture_record(payload: Mapping[str, object]) -> dict[str, o
 
 __all__ = [
     "CHECKPOINT_SCHEMA",
+    "PreparedTransferCheckpoint",
     "assert_checkpoint_target_identity_excluded",
     "checkpoint_architecture_record",
     "checkpoint_classifier_is_trained",

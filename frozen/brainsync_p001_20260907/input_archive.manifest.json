@@ -1,0 +1,399 @@
+{
+  "schema": "brainsync_original_input_archive/1",
+  "archive": "experiments\\runs\\brainsync_p001_20260907\\original_p001_before_preparation.tar.gz",
+  "archive_sha256": "fe5b9ee40a61f4c56e8d84d91f93af9b25e3b0ebd2b5b5bf6e74942538b773bb",
+  "member_files_verified": 96,
+  "purpose": "original_eight_P001_recordings_before_explicit_identity_and_metadata_preparation",
+  "members": {
+    "P001_20260903_170721_01/.bidsignore": {
+      "bytes": 48,
+      "sha256": "a3d8f94a6b399561b2063a271ce92cfec389315f9077079bb666860fc2f65149"
+    },
+    "P001_20260903_170721_01/dataset_description.json": {
+      "bytes": 292,
+      "sha256": "e5fcf7dafb3473a9a7f45f99f09e7297481db61a4adca71f97ca36bee552761d"
+    },
+    "P001_20260903_170721_01/participants.json": {
+      "bytes": 248,
+      "sha256": "a1ab61012ec947104e7a19a3c243fbffa445346bf06c3a04d1e8b0f43fb12363"
+    },
+    "P001_20260903_170721_01/participants.tsv": {
+      "bytes": 40,
+      "sha256": "f32b2b53dd728a4703dfdd3b496422c39f43b7e196fd10d10d97d1a1abb910c2"
+    },
+    "P001_20260903_170721_01/session.json": {
+      "bytes": 11320,
+      "sha256": "6f7ec9b18d72d5ae8c28bd3198c91d9fc9994d9a0ae1f6f7cc8e373266d30ea8"
+    },
+    "P001_20260903_170721_01/events/events.jsonl": {
+      "bytes": 519620,
+      "sha256": "8082141179b7c2de26ab36eba41d1a46db8cfe8ffa79d412be63063197908826"
+    },
+    "P001_20260903_170721_01/sub-P001/ses-20260903T17072101/eeg/sub-P001_ses-20260903T17072101_space-BrainSyncHead_coordsystem.json": {
+      "bytes": 242,
+      "sha256": "57dfad4bdddba2675fea2e0cedc9aae5125aa7ad11b310daadc008dfb28aa67c"
+    },
+    "P001_20260903_170721_01/sub-P001/ses-20260903T17072101/eeg/sub-P001_ses-20260903T17072101_space-BrainSyncHead_electrodes.tsv": {
+      "bytes": 392,
+      "sha256": "b1b995fa3df674753ce7e519e3282175c8b87fa71a1b3289736781bec3d276b1"
+    },
+    "P001_20260903_170721_01/sub-P001/ses-20260903T17072101/eeg/sub-P001_ses-20260903T17072101_task-gtn_run-01_channels.json": {
+      "bytes": 193,
+      "sha256": "0c3cefe44915ae20645603971aab7a9702bed0cdd3ed22db94c4f185ebf93492"
+    },
+    "P001_20260903_170721_01/sub-P001/ses-20260903T17072101/eeg/sub-P001_ses-20260903T17072101_task-gtn_run-01_channels.tsv": {
+      "bytes": 1054,
+      "sha256": "44485307f074557da73b8baab6e418302321a3c00dff2dcfbc6e5abcc887b8d0"
+    },
+    "P001_20260903_170721_01/sub-P001/ses-20260903T17072101/eeg/sub-P001_ses-20260903T17072101_task-gtn_run-01_eeg.edf": {
+      "bytes": 3557056,
+      "sha256": "81d63d006cd263745a5bbc50907532643f9e92604ce7faf750bb1b2e29236a69"
+    },
+    "P001_20260903_170721_01/sub-P001/ses-20260903T17072101/eeg/sub-P001_ses-20260903T17072101_task-gtn_run-01_eeg.json": {
+      "bytes": 870,
+      "sha256": "ceb8c1a2b217d3c93451e49c54e7ac23a64548ee5cdf6679041f7775bbaaf6c2"
+    },
+    "P001_20260903_170721_01/sub-P001/ses-20260903T17072101/eeg/sub-P001_ses-20260903T17072101_task-gtn_run-01_events.json": {
+      "bytes": 1119,
+      "sha256": "08aa505d92cb4dd7ff8b0bd7ce945e772d03f0f50a1362af7ca0196899fd5878"
+    },
+    "P001_20260903_170721_01/sub-P001/ses-20260903T17072101/eeg/sub-P001_ses-20260903T17072101_task-gtn_run-01_events.tsv": {
+      "bytes": 28080,
+      "sha256": "6d0a1b32f405142e0c3ee05110685777232e48396653911dcd36310b2d658ffa"
+    },
+    "P001_20260903_170721_01/sourcedata/brainsync/streaming_EEG_20260903_170721_954584.edf": {
+      "bytes": 3557056,
+      "sha256": "81d63d006cd263745a5bbc50907532643f9e92604ce7faf750bb1b2e29236a69"
+    },
+    "P001_20260903_172410_01/.bidsignore": {
+      "bytes": 48,
+      "sha256": "a3d8f94a6b399561b2063a271ce92cfec389315f9077079bb666860fc2f65149"
+    },
+    "P001_20260903_172410_01/dataset_description.json": {
+      "bytes": 292,
+      "sha256": "e5fcf7dafb3473a9a7f45f99f09e7297481db61a4adca71f97ca36bee552761d"
+    },
+    "P001_20260903_172410_01/participants.json": {
+      "bytes": 248,
+      "sha256": "a1ab61012ec947104e7a19a3c243fbffa445346bf06c3a04d1e8b0f43fb12363"
+    },
+    "P001_20260903_172410_01/participants.tsv": {
+      "bytes": 40,
+      "sha256": "054b1b8b0a13b026a98d804b73078e2a5255fec290354c7732061c1981e06ed3"
+    },
+    "P001_20260903_172410_01/session.json": {
+      "bytes": 11346,
+      "sha256": "16f6bb6b2b8cfbfde393b9d7f5fd776eef31a17ce3b7de21248d2ec8c88d22fd"
+    },
+    "P001_20260903_172410_01/events/events.jsonl": {
+      "bytes": 519735,
+      "sha256": "ffc00717f78a01d4b51c0c7bac547120d3197778c74349f7b7c1b685be541de6"
+    },
+    "P001_20260903_172410_01/sub-P002/ses-20260903T17241001/eeg/sub-P002_ses-20260903T17241001_space-BrainSyncHead_coordsystem.json": {
+      "bytes": 242,
+      "sha256": "57dfad4bdddba2675fea2e0cedc9aae5125aa7ad11b310daadc008dfb28aa67c"
+    },
+    "P001_20260903_172410_01/sub-P002/ses-20260903T17241001/eeg/sub-P002_ses-20260903T17241001_space-BrainSyncHead_electrodes.tsv": {
+      "bytes": 392,
+      "sha256": "b1b995fa3df674753ce7e519e3282175c8b87fa71a1b3289736781bec3d276b1"
+    },
+    "P001_20260903_172410_01/sub-P002/ses-20260903T17241001/eeg/sub-P002_ses-20260903T17241001_task-gtn_run-01_channels.json": {
+      "bytes": 193,
+      "sha256": "0c3cefe44915ae20645603971aab7a9702bed0cdd3ed22db94c4f185ebf93492"
+    },
+    "P001_20260903_172410_01/sub-P002/ses-20260903T17241001/eeg/sub-P002_ses-20260903T17241001_task-gtn_run-01_channels.tsv": {
+      "bytes": 1054,
+      "sha256": "44485307f074557da73b8baab6e418302321a3c00dff2dcfbc6e5abcc887b8d0"
+    },
+    "P001_20260903_172410_01/sub-P002/ses-20260903T17241001/eeg/sub-P002_ses-20260903T17241001_task-gtn_run-01_eeg.edf": {
+      "bytes": 3557056,
+      "sha256": "fc0e7ed0f02b7c3cbbc2d990dc98697e0266a7f11d0ccb0efe4e22593140c991"
+    },
+    "P001_20260903_172410_01/sub-P002/ses-20260903T17241001/eeg/sub-P002_ses-20260903T17241001_task-gtn_run-01_eeg.json": {
+      "bytes": 870,
+      "sha256": "ceb8c1a2b217d3c93451e49c54e7ac23a64548ee5cdf6679041f7775bbaaf6c2"
+    },
+    "P001_20260903_172410_01/sub-P002/ses-20260903T17241001/eeg/sub-P002_ses-20260903T17241001_task-gtn_run-01_events.json": {
+      "bytes": 1119,
+      "sha256": "08aa505d92cb4dd7ff8b0bd7ce945e772d03f0f50a1362af7ca0196899fd5878"
+    },
+    "P001_20260903_172410_01/sub-P002/ses-20260903T17241001/eeg/sub-P002_ses-20260903T17241001_task-gtn_run-01_events.tsv": {
+      "bytes": 28093,
+      "sha256": "0c13c62214606b008e238ac69755556724f5bdc61fa727daa3d6484f75885aa3"
+    },
+    "P001_20260903_172410_01/sourcedata/brainsync/streaming_EEG_20260903_172410_366354.edf": {
+      "bytes": 3557056,
+      "sha256": "fc0e7ed0f02b7c3cbbc2d990dc98697e0266a7f11d0ccb0efe4e22593140c991"
+    },
+    "P001_20260903_173947_01/.bidsignore": {
+      "bytes": 48,
+      "sha256": "a3d8f94a6b399561b2063a271ce92cfec389315f9077079bb666860fc2f65149"
+    },
+    "P001_20260903_173947_01/dataset_description.json": {
+      "bytes": 292,
+      "sha256": "e5fcf7dafb3473a9a7f45f99f09e7297481db61a4adca71f97ca36bee552761d"
+    },
+    "P001_20260903_173947_01/participants.json": {
+      "bytes": 248,
+      "sha256": "a1ab61012ec947104e7a19a3c243fbffa445346bf06c3a04d1e8b0f43fb12363"
+    },
+    "P001_20260903_173947_01/participants.tsv": {
+      "bytes": 40,
+      "sha256": "6d3aa039821a69bbf2c7e0d14f7e7bc4346e7a1b6f4ddc4fddc7cfbad451db05"
+    },
+    "P001_20260903_173947_01/session.json": {
+      "bytes": 11299,
+      "sha256": "a27f16fcaf4bf1feae49c16ee2d4d7ddbe9b6699350f72d901387b6fb5a7a572"
+    },
+    "P001_20260903_173947_01/events/events.jsonl": {
+      "bytes": 519595,
+      "sha256": "6f0e3f68ecfe92ec630899f11321f05f56d347ce98016a7fb7fd12a5edcd92a5"
+    },
+    "P001_20260903_173947_01/sub-P003/ses-20260903T17394701/eeg/sub-P003_ses-20260903T17394701_space-BrainSyncHead_coordsystem.json": {
+      "bytes": 242,
+      "sha256": "57dfad4bdddba2675fea2e0cedc9aae5125aa7ad11b310daadc008dfb28aa67c"
+    },
+    "P001_20260903_173947_01/sub-P003/ses-20260903T17394701/eeg/sub-P003_ses-20260903T17394701_space-BrainSyncHead_electrodes.tsv": {
+      "bytes": 392,
+      "sha256": "b1b995fa3df674753ce7e519e3282175c8b87fa71a1b3289736781bec3d276b1"
+    },
+    "P001_20260903_173947_01/sub-P003/ses-20260903T17394701/eeg/sub-P003_ses-20260903T17394701_task-gtn_run-01_channels.json": {
+      "bytes": 193,
+      "sha256": "0c3cefe44915ae20645603971aab7a9702bed0cdd3ed22db94c4f185ebf93492"
+    },
+    "P001_20260903_173947_01/sub-P003/ses-20260903T17394701/eeg/sub-P003_ses-20260903T17394701_task-gtn_run-01_channels.tsv": {
+      "bytes": 1054,
+      "sha256": "44485307f074557da73b8baab6e418302321a3c00dff2dcfbc6e5abcc887b8d0"
+    },
+    "P001_20260903_173947_01/sub-P003/ses-20260903T17394701/eeg/sub-P003_ses-20260903T17394701_task-gtn_run-01_eeg.edf": {
+      "bytes": 3552942,
+      "sha256": "ca494959621496fc0a2bb30f0884f465784f31ca5ecf4886da24ba56d973ea7e"
+    },
+    "P001_20260903_173947_01/sub-P003/ses-20260903T17394701/eeg/sub-P003_ses-20260903T17394701_task-gtn_run-01_eeg.json": {
+      "bytes": 870,
+      "sha256": "4201bce7a6383c8629228c801b910108a8a94cbd7f0d23a73824f0a7eb9ce398"
+    },
+    "P001_20260903_173947_01/sub-P003/ses-20260903T17394701/eeg/sub-P003_ses-20260903T17394701_task-gtn_run-01_events.json": {
+      "bytes": 1119,
+      "sha256": "08aa505d92cb4dd7ff8b0bd7ce945e772d03f0f50a1362af7ca0196899fd5878"
+    },
+    "P001_20260903_173947_01/sub-P003/ses-20260903T17394701/eeg/sub-P003_ses-20260903T17394701_task-gtn_run-01_events.tsv": {
+      "bytes": 28087,
+      "sha256": "f4e2fa7ba3470b25e66caca707297ce0c33d8530ae7d1cfba003b27b4f8c39c0"
+    },
+    "P001_20260903_173947_01/sourcedata/brainsync/streaming_EEG_20260903_173947_896426.edf": {
+      "bytes": 3552942,
+      "sha256": "ca494959621496fc0a2bb30f0884f465784f31ca5ecf4886da24ba56d973ea7e"
+    },
+    "P001_20260904_153652_01/.bidsignore": {
+      "bytes": 43,
+      "sha256": "9172dba62e24c050fbdf30830c6ab0a3683a63130ea08c8ca8ddc3f27ac0f0f3"
+    },
+    "P001_20260904_153652_01/dataset_description.json": {
+      "bytes": 292,
+      "sha256": "e5fcf7dafb3473a9a7f45f99f09e7297481db61a4adca71f97ca36bee552761d"
+    },
+    "P001_20260904_153652_01/participants.json": {
+      "bytes": 248,
+      "sha256": "a1ab61012ec947104e7a19a3c243fbffa445346bf06c3a04d1e8b0f43fb12363"
+    },
+    "P001_20260904_153652_01/participants.tsv": {
+      "bytes": 40,
+      "sha256": "bcd26610cdb32fd2e8ff9ec986ea94607e1302c0bb36788a44d592f1b698d126"
+    },
+    "P001_20260904_153652_01/session.json": {
+      "bytes": 8760,
+      "sha256": "9aedfafeabb2c2e626ecfb4ce840189f280e3b38154918e5580371d5cc453719"
+    },
+    "P001_20260904_153652_01/events/events.jsonl": {
+      "bytes": 518510,
+      "sha256": "0d39a0d18506dae4b72b2b5ac4bbd3525cc4e8e8a44a18e0e51b1f7fba502995"
+    },
+    "P001_20260904_153652_01/sub-P004/ses-20260904T15365201/eeg/sub-P004_ses-20260904T15365201_task-gtn_run-01_eeg.edf": {
+      "bytes": 500354,
+      "sha256": "fa1b3627dc1f653a90c6a24a2186f0eb1ac550c9c4e525e9e2014d29decb3daf"
+    },
+    "P001_20260904_153652_01/sourcedata/brainsync/streaming_EEG_20260904_153653_004392.edf": {
+      "bytes": 500354,
+      "sha256": "fa1b3627dc1f653a90c6a24a2186f0eb1ac550c9c4e525e9e2014d29decb3daf"
+    },
+    "P001_20260904_155726_01/.bidsignore": {
+      "bytes": 43,
+      "sha256": "9172dba62e24c050fbdf30830c6ab0a3683a63130ea08c8ca8ddc3f27ac0f0f3"
+    },
+    "P001_20260904_155726_01/dataset_description.json": {
+      "bytes": 292,
+      "sha256": "e5fcf7dafb3473a9a7f45f99f09e7297481db61a4adca71f97ca36bee552761d"
+    },
+    "P001_20260904_155726_01/participants.json": {
+      "bytes": 248,
+      "sha256": "a1ab61012ec947104e7a19a3c243fbffa445346bf06c3a04d1e8b0f43fb12363"
+    },
+    "P001_20260904_155726_01/participants.tsv": {
+      "bytes": 40,
+      "sha256": "94b206a814cd123cd597949abe0796b3891aee288a8c56bd46426fd8bffb0784"
+    },
+    "P001_20260904_155726_01/session.json": {
+      "bytes": 8763,
+      "sha256": "db0755ba99654c779868ccb5e468bf282f816bdf67cf38d6a33ad2dd15145cd3"
+    },
+    "P001_20260904_155726_01/events/events.jsonl": {
+      "bytes": 518162,
+      "sha256": "2148f6467632b0d1861bcb5e697e64ef875f2972132761ed5cb038689cf12025"
+    },
+    "P001_20260904_155726_01/sub-P005/ses-20260904T15572601/eeg/sub-P005_ses-20260904T15572601_task-gtn_run-01_eeg.edf": {
+      "bytes": 520924,
+      "sha256": "5847e944d57c9bd4f51435bf29203c35d2eef4bd31a050891c22b06a761581b1"
+    },
+    "P001_20260904_155726_01/sourcedata/brainsync/streaming_EEG_20260904_155726_985106.edf": {
+      "bytes": 520924,
+      "sha256": "5847e944d57c9bd4f51435bf29203c35d2eef4bd31a050891c22b06a761581b1"
+    },
+    "P001_20260904_161756_01/.bidsignore": {
+      "bytes": 43,
+      "sha256": "9172dba62e24c050fbdf30830c6ab0a3683a63130ea08c8ca8ddc3f27ac0f0f3"
+    },
+    "P001_20260904_161756_01/dataset_description.json": {
+      "bytes": 292,
+      "sha256": "e5fcf7dafb3473a9a7f45f99f09e7297481db61a4adca71f97ca36bee552761d"
+    },
+    "P001_20260904_161756_01/participants.json": {
+      "bytes": 248,
+      "sha256": "a1ab61012ec947104e7a19a3c243fbffa445346bf06c3a04d1e8b0f43fb12363"
+    },
+    "P001_20260904_161756_01/participants.tsv": {
+      "bytes": 40,
+      "sha256": "bc2755d4883d85125fd8ce9f41f6f6dcf03e11ac330daaea358861058f9e653f"
+    },
+    "P001_20260904_161756_01/session.json": {
+      "bytes": 8762,
+      "sha256": "fd5245d819d6a9ae3b297c4a26cd656d33ce79174e23cfeed16cb4f6f2187bf8"
+    },
+    "P001_20260904_161756_01/events/events.jsonl": {
+      "bytes": 518417,
+      "sha256": "60ba598772e3838935e6c494cd441ce2ae0a28920f01a3121790b72cc10ec71b"
+    },
+    "P001_20260904_161756_01/sub-P006/ses-20260904T16175601/eeg/sub-P006_ses-20260904T16175601_task-gtn_run-01_eeg.edf": {
+      "bytes": 545608,
+      "sha256": "292780f08a8b21ab8014302a47f04a44cc826f51cc49a6341ba30b076d68883e"
+    },
+    "P001_20260904_161756_01/sourcedata/brainsync/streaming_EEG_20260904_161756_082788.edf": {
+      "bytes": 545608,
+      "sha256": "292780f08a8b21ab8014302a47f04a44cc826f51cc49a6341ba30b076d68883e"
+    },
+    "P001_20260904_171926_01/.bidsignore": {
+      "bytes": 43,
+      "sha256": "9172dba62e24c050fbdf30830c6ab0a3683a63130ea08c8ca8ddc3f27ac0f0f3"
+    },
+    "P001_20260904_171926_01/dataset_description.json": {
+      "bytes": 292,
+      "sha256": "e5fcf7dafb3473a9a7f45f99f09e7297481db61a4adca71f97ca36bee552761d"
+    },
+    "P001_20260904_171926_01/participants.json": {
+      "bytes": 248,
+      "sha256": "a1ab61012ec947104e7a19a3c243fbffa445346bf06c3a04d1e8b0f43fb12363"
+    },
+    "P001_20260904_171926_01/participants.tsv": {
+      "bytes": 41,
+      "sha256": "dcdf751392622321f43021957bb5f341b39b485818a5c571727170710393ad68"
+    },
+    "P001_20260904_171926_01/session.json": {
+      "bytes": 11387,
+      "sha256": "eb600adb8464c0676ffde9004b78c94a4ec4f4b7f1eee649ec3c5c8eb7550b9b"
+    },
+    "P001_20260904_171926_01/events/events.jsonl": {
+      "bytes": 519730,
+      "sha256": "d679aeb8844a1acf480da279d69e48220a7d3d21a5b5cd7668846af03ab9017c"
+    },
+    "P001_20260904_171926_01/sub-P0041/ses-20260904T17192601/eeg/sub-P0041_ses-20260904T17192601_space-BrainSyncHead_coordsystem.json": {
+      "bytes": 242,
+      "sha256": "57dfad4bdddba2675fea2e0cedc9aae5125aa7ad11b310daadc008dfb28aa67c"
+    },
+    "P001_20260904_171926_01/sub-P0041/ses-20260904T17192601/eeg/sub-P0041_ses-20260904T17192601_space-BrainSyncHead_electrodes.tsv": {
+      "bytes": 424,
+      "sha256": "2afafc7974040a516d79ebb242423c813b8069e94b3eecb5fdde7145b8326309"
+    },
+    "P001_20260904_171926_01/sub-P0041/ses-20260904T17192601/eeg/sub-P0041_ses-20260904T17192601_task-gtn_run-01_channels.json": {
+      "bytes": 193,
+      "sha256": "0c3cefe44915ae20645603971aab7a9702bed0cdd3ed22db94c4f185ebf93492"
+    },
+    "P001_20260904_171926_01/sub-P0041/ses-20260904T17192601/eeg/sub-P0041_ses-20260904T17192601_task-gtn_run-01_channels.tsv": {
+      "bytes": 1054,
+      "sha256": "44485307f074557da73b8baab6e418302321a3c00dff2dcfbc6e5abcc887b8d0"
+    },
+    "P001_20260904_171926_01/sub-P0041/ses-20260904T17192601/eeg/sub-P0041_ses-20260904T17192601_task-gtn_run-01_eeg.edf": {
+      "bytes": 3371926,
+      "sha256": "558ae9ca3bb512d1fea175e81844f11c34838612c469220b1213d528902c9262"
+    },
+    "P001_20260904_171926_01/sub-P0041/ses-20260904T17192601/eeg/sub-P0041_ses-20260904T17192601_task-gtn_run-01_eeg.json": {
+      "bytes": 870,
+      "sha256": "5901d2b0fe5c73ca021919a6a04b7c2616ff5ab0df095964af2610ac2d33a2df"
+    },
+    "P001_20260904_171926_01/sub-P0041/ses-20260904T17192601/eeg/sub-P0041_ses-20260904T17192601_task-gtn_run-01_events.json": {
+      "bytes": 1119,
+      "sha256": "08aa505d92cb4dd7ff8b0bd7ce945e772d03f0f50a1362af7ca0196899fd5878"
+    },
+    "P001_20260904_171926_01/sub-P0041/ses-20260904T17192601/eeg/sub-P0041_ses-20260904T17192601_task-gtn_run-01_events.tsv": {
+      "bytes": 28081,
+      "sha256": "4e0f465c63de48df46bead3eeeca86f1c43801e51e8ddf970b9e3247583be47c"
+    },
+    "P001_20260904_171926_01/sourcedata/brainsync/streaming_EEG_20260904_171926_851640.edf": {
+      "bytes": 3371926,
+      "sha256": "558ae9ca3bb512d1fea175e81844f11c34838612c469220b1213d528902c9262"
+    },
+    "P001_20260907_150258_01/.bidsignore": {
+      "bytes": 43,
+      "sha256": "9172dba62e24c050fbdf30830c6ab0a3683a63130ea08c8ca8ddc3f27ac0f0f3"
+    },
+    "P001_20260907_150258_01/dataset_description.json": {
+      "bytes": 292,
+      "sha256": "e5fcf7dafb3473a9a7f45f99f09e7297481db61a4adca71f97ca36bee552761d"
+    },
+    "P001_20260907_150258_01/participants.json": {
+      "bytes": 248,
+      "sha256": "a1ab61012ec947104e7a19a3c243fbffa445346bf06c3a04d1e8b0f43fb12363"
+    },
+    "P001_20260907_150258_01/participants.tsv": {
+      "bytes": 40,
+      "sha256": "94b206a814cd123cd597949abe0796b3891aee288a8c56bd46426fd8bffb0784"
+    },
+    "P001_20260907_150258_01/session.json": {
+      "bytes": 11907,
+      "sha256": "7b38169a91bf3fcc07bb28f2b2749a3e779025ac031ecaeba72b1b56a176127f"
+    },
+    "P001_20260907_150258_01/events/events.jsonl": {
+      "bytes": 602825,
+      "sha256": "47e8125d644c621d87c7cd79fba51a309b6c8d2988fc3030870df077b6391d14"
+    },
+    "P001_20260907_150258_01/sub-P005/ses-20260907T15025801/eeg/sub-P005_ses-20260907T15025801_space-BrainSyncHead_coordsystem.json": {
+      "bytes": 242,
+      "sha256": "57dfad4bdddba2675fea2e0cedc9aae5125aa7ad11b310daadc008dfb28aa67c"
+    },
+    "P001_20260907_150258_01/sub-P005/ses-20260907T15025801/eeg/sub-P005_ses-20260907T15025801_space-BrainSyncHead_electrodes.tsv": {
+      "bytes": 483,
+      "sha256": "90e6cdc9fa15774ceff82d184b0fdbf16a167f517348c671f05d1ad5a9fa09d4"
+    },
+    "P001_20260907_150258_01/sub-P005/ses-20260907T15025801/eeg/sub-P005_ses-20260907T15025801_task-gtn_run-01_channels.json": {
+      "bytes": 193,
+      "sha256": "0c3cefe44915ae20645603971aab7a9702bed0cdd3ed22db94c4f185ebf93492"
+    },
+    "P001_20260907_150258_01/sub-P005/ses-20260907T15025801/eeg/sub-P005_ses-20260907T15025801_task-gtn_run-01_channels.tsv": {
+      "bytes": 1054,
+      "sha256": "6de0b670e17c0317016415fac9244e3bb96026c96cf5cfa0eb27fe0d2f86a8d0"
+    },
+    "P001_20260907_150258_01/sub-P005/ses-20260907T15025801/eeg/sub-P005_ses-20260907T15025801_task-gtn_run-01_eeg.edf": {
+      "bytes": 3465548,
+      "sha256": "add7041cd9e3eccae761f028b6026115879530ab1322e451a30a2a4b37d20921"
+    },
+    "P001_20260907_150258_01/sourcedata/brainsync/streaming_EEG_20260907_150258_878140.edf": {
+      "bytes": 3465548,
+      "sha256": "add7041cd9e3eccae761f028b6026115879530ab1322e451a30a2a4b37d20921"
+    }
+  },
+  "active_invalid_record_disposition": "moved_to_excluded_recordings_recursive_delete_denied_by_tool_policy",
+  "invalid_recordings": [
+    "P001_20260904_153652_01",
+    "P001_20260904_155726_01",
+    "P001_20260904_161756_01"
+  ]
+}

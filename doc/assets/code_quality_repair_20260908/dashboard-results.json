@@ -1,0 +1,80 @@
+[
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "values": [
+      "1/1",
+      "—",
+      "—",
+      "—",
+      "—",
+      "—%",
+      "— MiB",
+      "—",
+      "—"
+    ],
+    "labels": [
+      "folds 完成",
+      "最新 epoch",
+      "运行 hit（digit 级）",
+      "运行测试 fold-AUC 均值",
+      "预计剩余",
+      "GPU 利用率",
+      "GPU 显存",
+      "最终 hit",
+      "最终测试 AUC"
+    ],
+    "trends": [
+      [
+        null
+      ],
+      [
+        null
+      ]
+    ],
+    "sources": "progress 已连接 · epoch 无记录 · resource 已连接 · monitor 未连接 · GPU 监测等待中 · worker private — GiB · 最近采样 16:08:32",
+    "textFits": true,
+    "errors": []
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "values": [
+      "1/1",
+      "—",
+      "—",
+      "—",
+      "—",
+      "—%",
+      "— MiB",
+      "—",
+      "—"
+    ],
+    "labels": [
+      "folds 完成",
+      "最新 epoch",
+      "运行 hit（digit 级）",
+      "运行测试 fold-AUC 均值",
+      "预计剩余",
+      "GPU 利用率",
+      "GPU 显存",
+      "最终 hit",
+      "最终测试 AUC"
+    ],
+    "trends": [
+      [
+        null
+      ],
+      [
+        null
+      ]
+    ],
+    "sources": "progress 已连接 · epoch 无记录 · resource 已连接 · monitor 未连接 · GPU 监测等待中 · worker private — GiB · 最近采样 16:08:33",
+    "textFits": true,
+    "errors": []
+  }
+]

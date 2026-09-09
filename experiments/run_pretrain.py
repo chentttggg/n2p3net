@@ -392,7 +392,7 @@ def main() -> None:
         source_snapshot_sha256=source_snapshot_sha256,
         architecture=trunk.architecture_record(),
         preprocessing={
-            "epoch": asdict(dataset.preprocessing),
+            "epoch": dataset.preprocessing.record(),
             "channel_names": list(dataset.channel_names),
             "source_reference": dataset.provenance.get("source_reference"),
         },
@@ -448,7 +448,7 @@ def main() -> None:
         "n_times": int(dataset.n_times),
         "input_sample_rate_hz": float(dataset.preprocessing.sfreq),
         "input_tmin_s": float(dataset.preprocessing.tmin_ms) / 1000.0,
-        "input_preprocessing": asdict(dataset.preprocessing),
+        "input_preprocessing": dataset.preprocessing.record(),
         "input_channel_names": list(dataset.channel_names),
         "input_source_reference": dataset.provenance.get("source_reference"),
         "source_cache_sha256": source_cache_sha256,

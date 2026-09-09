@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 from pathlib import Path
 
@@ -24,7 +24,12 @@ from data.brainsync_contract import (
     validate_brainsync_bids_session,
 )
 from data.channel import canonical_channel_name
-from data.contract import BRAIN_SYNC_LAYOUT_SCHEMA, SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
+from data.continuous_qc import (
+    FittedContinuousQC,
+    signal_dependency_matrix,
+    validate_recovery_contract,
+)
+from data.contract import BRAIN_SYNC_CAUSAL_DATA_CONTRACT, BRAIN_SYNC_LAYOUT_SCHEMA
 from data.dataset import build_subject, read_raw
 from data.epochs import (
     EpochDataset,
@@ -33,17 +38,49 @@ from data.epochs import (
     materialize_dataset_identity,
     preprocessing_spec_from_contract,
 )
+from data.identity import DatasetIdentityTable
 from data.ocular import FittedEOGRegression
+from data.preprocess import continuous_filter_segments
+from data.qc_features import compute_epoch_qc_features
 from research.contracts import semantic_sha256
 
 BRAIN_SYNC_PREPROCESSING = preprocessing_spec_from_contract(
-    SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT
+    BRAIN_SYNC_CAUSAL_DATA_CONTRACT
 )
 
 
 class InvalidSessionPolicy(StrEnum):
     ERROR = "error"
     SKIP = "skip"
+
+
+@dataclass(frozen=True)
+class IndependentRecordingScope:
+    """Declare complete calibration and held-out recordings without time ordering."""
+
+    calibration_session_ids: tuple[str, ...]
+    evaluation_session_ids: tuple[str, ...]
+
+    def __post_init__(self):
+        for name in ("calibration_session_ids", "evaluation_session_ids"):
+            values = tuple(getattr(self, name))
+            if (not values or any(not isinstance(value, str) or not value.strip() for value in values)
+                    or len(set(values)) != len(values)):
+                raise ValueError("independent recording scope requires unique named sessions")
+            object.__setattr__(self, name, values)
+        if set(self.calibration_session_ids) & set(self.evaluation_session_ids):
+            raise ValueError("independent calibration and evaluation recordings must be disjoint")
+
+    def validate_application(self, session_id, fit_sessions=()):
+        if session_id not in self.calibration_session_ids + self.evaluation_session_ids:
+            raise ValueError("recording is outside the declared independent scope")
+        if not set(fit_sessions) <= set(self.calibration_session_ids):
+            raise ValueError("raw preprocessing fit exceeds the declared independent calibration scope")
+
+    def record(self):
+        return {"mode": "independent_recording_holdout",
+                "calibration_session_ids": list(self.calibration_session_ids),
+                "evaluation_session_ids": list(self.evaluation_session_ids)}
 
 
 @dataclass(frozen=True)
@@ -59,12 +96,27 @@ class BrainSyncLoadResult:
     failures: tuple[BrainSyncSessionFailure, ...]
 
 
+class BrainSyncNoUsableEvidenceError(ValueError):
+    """A valid requested recording whose entire epoch support failed raw QC."""
+
+    def __init__(self, validated, ledger):
+        super().__init__("continuous QC left no usable evidence; retain the requested recording as abstention")
+        self.session_id = validated.session_id
+        self.participant_key = DatasetIdentityTable.from_source_rows(
+            [validated.subject_id], ["BrainSync-GTN"]).record_for(validated.subject_id).authority_key("source_or_global")
+        self.started_timestamp_s = validated.started_timestamp_s
+        self.scheduled_trials = len(validated.bids.stimuli)
+        self.ledger = ledger
+
+
 def load_brainsync_session(
     session_dir: str | Path,
     *,
     preprocessing: PreprocessingSpec = BRAIN_SYNC_PREPROCESSING,
     channels: Sequence[str] | None = None,
     ocular_model: FittedEOGRegression | None = None,
+    continuous_qc_model: FittedContinuousQC | None = None,
+    recording_scope: IndependentRecordingScope | None = None,
 ) -> EpochDataset:
     """Load a BrainSync raw session and apply the standard n2p3 preprocessing."""
 
@@ -75,6 +127,8 @@ def load_brainsync_session(
         preprocessing=preprocessing,
         channels=channels,
         ocular_model=ocular_model,
+        continuous_qc_model=continuous_qc_model,
+        recording_scope=recording_scope,
     )
 
 
@@ -84,7 +138,11 @@ def _build_validated_brainsync_session(
     preprocessing: PreprocessingSpec,
     channels: Sequence[str] | None,
     ocular_model: FittedEOGRegression | None = None,
+    continuous_qc_model: FittedContinuousQC | None = None,
+    recording_scope: IndependentRecordingScope | None = None,
 ) -> EpochDataset:
+    if recording_scope is not None:
+        recording_scope.validate_application(validated.session_id)
     labelled = isinstance(validated, ValidatedBrainSyncSession)
     device = validated.manifest.get("device")
     transport = device.get("transport") if isinstance(device, dict) else None
@@ -111,6 +169,10 @@ def _build_validated_brainsync_session(
         raise ValueError(
             "BrainSync classifier inputs may contain declared EEG channels only, never EOG."
         )
+    raw_names = {canonical_channel_name(name): name for name in eeg_labels}
+    selected_channels = tuple(raw_names[canonical_channel_name(name)] for name in selected_channels)
+    if len(set(selected_channels)) != len(selected_channels):
+        raise ValueError("BrainSync selected EEG channels must be unique")
     positions = {
         name: position
         for name, kind, position in zip(
@@ -137,6 +199,11 @@ def _build_validated_brainsync_session(
 
     raw = read_raw(raw_path, preload=False)
     source_rate = float(raw.info["sfreq"])
+    clock = validated.manifest["recording"].get("clock")
+    acquired_samples = int(raw.n_times) if clock is None else clock["acquired_samples"]
+    if acquired_samples < raw.n_times:
+        raw.annotations.append(acquired_samples / source_rate,
+            (raw.n_times - acquired_samples) / source_rate, "BAD_acq_skip_edf_padding")
     if not np.isclose(
         bids.sample_rate_hz,
         source_rate,
@@ -164,6 +231,27 @@ def _build_validated_brainsync_session(
             + ["EDGE boundary"] * len(bids.acquisition_boundaries),
             orig_time=raw.annotations.orig_time,
         ))
+    continuous_result = None
+    signal_diagnostics = None
+    local_qc = continuous_qc_model is not None and continuous_qc_model.spec.channel_local
+    qc_anchor = None if not local_qc else continuous_qc_model.spec.reference_channel
+    if ocular_model is not None and qc_anchor is not None and ocular_model.reference_channel != qc_anchor:
+        raise ValueError("QC and ocular preprocessing declare different final references")
+    global_resets = [start for start, _ in continuous_filter_segments(raw) if start]
+    if continuous_qc_model is not None:
+        _validate_raw_fit_scope(continuous_qc_model.fit_provenance, session_id, session_start_timestamp_s,
+                                recording_scope=recording_scope)
+        if continuous_qc_model.fit_provenance.get("source_reference") != source_reference:
+            raise ValueError("continuous QC native reference differs from calibration")
+        participant = DatasetIdentityTable.from_source_rows([subject_id], ["BrainSync-GTN"]).record_for(subject_id).authority_key("source_or_global")
+        if participant != continuous_qc_model.fit_provenance.get("participant_key"):
+            raise ValueError("continuous QC calibration belongs to a different participant_key")
+        validate_recovery_contract(continuous_qc_model, preprocessing,
+                                  source_reference=source_reference, ocular_model=ocular_model)
+        continuous_result = continuous_qc_model.detect(raw)
+        signal_diagnostics = continuous_qc_model.signal_diagnostics(raw)
+        if not local_qc:
+            raw = continuous_result.annotate(raw)
     if ocular_model is not None:
         fit_sessions = ocular_model.fit_provenance.get("calibration_session_ids", [])
         fit_end = ocular_model.fit_provenance.get("calibration_end_timestamp_s")
@@ -171,9 +259,12 @@ def _build_validated_brainsync_session(
             raise ValueError(
                 "BrainSync ocular model requires explicit calibration sessions and end time."
             )
-        if session_id not in fit_sessions and session_start_timestamp_s < fit_end:
+        if recording_scope is not None:
+            recording_scope.validate_application(session_id, fit_sessions)
+        elif session_id not in fit_sessions and session_start_timestamp_s < fit_end:
             raise ValueError("ocular calibration includes future data relative to this session.")
-        raw = ocular_model.apply(raw, source_reference=source_reference)
+        raw = ocular_model.apply(raw, source_reference=source_reference,
+                                eog_derivation=bids.eog_derivation)
         source_reference = ocular_model.source_reference
         if ocular_model.reference_channel is not None:
             anchor = ocular_model.reference_channel
@@ -183,11 +274,29 @@ def _build_validated_brainsync_session(
                 )
             elif anchor in set(map(canonical_channel_name, selected_channels)):
                 raise ValueError("the ocular reference channel is not an independent model input.")
+    elif qc_anchor is not None:
+        matches = [name for name in eeg_labels if canonical_channel_name(name) == qc_anchor]
+        if len(matches) != 1 or matches[0] in raw.info["bads"]:
+            raise ValueError("QC-owned reference must be a usable measured EEG channel")
+        raw = raw.copy().load_data()
+        raw.set_eeg_reference([matches[0]], projection=False, verbose=False)
+        raw.set_channel_types({matches[0]: "misc"}, on_unit_change="ignore")
+        source_reference = "measured_channel:" + qc_anchor
+        if channels is None:
+            selected_channels = tuple(name for name in eeg_labels if canonical_channel_name(name) != qc_anchor)
+        elif qc_anchor in set(map(canonical_channel_name, selected_channels)):
+            raise ValueError("the QC reference channel is not an independent classifier input")
+    if local_qc:
+        mixing = signal_dependency_matrix(continuous_qc_model.channel_names, selected_channels,
+                                           reference_channel=qc_anchor, ocular_model=ocular_model)
+        continuous_result = continuous_qc_model.project_result(continuous_result, mixing, selected_channels,
+                                                               boundaries=global_resets)
+        raw = continuous_result.annotate(raw)
     source_samples = np.asarray([marker.sample for marker in markers], dtype=np.int64)
     mne_samples = source_samples + int(raw.first_samp)
     if len(np.unique(source_samples)) != len(source_samples):
         raise ValueError("BrainSync onset markers map to duplicate source EEG samples.")
-    if np.any(source_samples < 0) or np.any(source_samples >= int(raw.n_times)):
+    if np.any(source_samples < 0) or np.any(source_samples >= acquired_samples):
         raise ValueError("BrainSync BIDS stimulus sample lies outside the recording.")
     observed_duration = float(raw.n_times) / source_rate
     if not np.isclose(
@@ -206,6 +315,29 @@ def _build_validated_brainsync_session(
             orig_time=raw.annotations.orig_time,
         )
         raw.set_annotations(raw.annotations + rest_annotations)
+    if continuous_result is not None and not local_qc:
+        rejected = ~continuous_result.valid_sample_mask
+        for interval in excluded_intervals:
+            start = int(np.floor(interval.onset_seconds * source_rate))
+            stop = int(np.ceil((interval.onset_seconds + interval.duration_seconds) * source_rate))
+            rejected[max(0, start):min(len(rejected), stop)] = True
+        starts = source_samples + round(preprocessing.tmin_ms / 1000 * source_rate)
+        stops = source_samples + round(preprocessing.tmax_ms / 1000 * source_rate) + 1
+        if not any(0 <= start < stop <= raw.n_times and not rejected[start:stop].any()
+                   for start, stop in zip(starts, stops, strict=True)):
+            raise BrainSyncNoUsableEvidenceError(validated, {
+                **continuous_result.record(), "signal_diagnostics": signal_diagnostics})
+    channel_quality = None
+    if local_qc:
+        channel_quality = continuous_result.epoch_channel_mask(source_samples, channels=selected_channels,
+            tmin_s=preprocessing.tmin_ms / 1000, tmax_s=preprocessing.tmax_ms / 1000)
+        active = {canonical_channel_name(name): status == "good"
+                  for name, status in zip(labels, bids.channel_statuses, strict=True)}
+        channel_quality &= np.array([active[canonical_channel_name(name)] for name in selected_channels])[None, :]
+        minimum = int(np.ceil(len(selected_channels) * continuous_qc_model.spec.minimum_channel_fraction))
+        if not (channel_quality.sum(axis=1) >= minimum).any():
+            raise BrainSyncNoUsableEvidenceError(validated, {
+                **continuous_result.record(), "signal_diagnostics": signal_diagnostics})
     events = np.column_stack((mne_samples, np.zeros(len(source_samples), dtype=np.int64), digits))
     subject = build_subject(
         raw,
@@ -239,6 +371,8 @@ def _build_validated_brainsync_session(
         trial_reference_scale=preprocessing.trial_reference_scale,
         filter_method=preprocessing.filter_method,
         filter_order=preprocessing.filter_order,
+        notch_freqs_hz=preprocessing.notch_freqs_hz,
+        notch_quality_factor=preprocessing.notch_quality_factor,
         filter_phase=preprocessing.filter_phase,
         causal_iir_initial_state=preprocessing.causal_iir_initial_state,
         resample_domain=preprocessing.resample_domain,
@@ -251,6 +385,36 @@ def _build_validated_brainsync_session(
         montage=None,
         coordinate_source="bids_electrodes_tsv",
     )
+    continuous_trial_mask = None
+    if channel_quality is not None:
+        event_rows = np.flatnonzero(subject.event_timeline.evidence_indices >= 0)
+        event_rows = event_rows[np.argsort(subject.event_timeline.evidence_indices[event_rows])]
+        trial_masks = channel_quality[event_rows]
+        retained = trial_masks.sum(axis=1) >= minimum
+        if not retained.any():
+            raise BrainSyncNoUsableEvidenceError(validated, continuous_result.record())
+        timeline = subject.event_timeline
+        evidence = np.array(timeline.evidence_indices, copy=True)
+        statuses, details = np.array(timeline.statuses, dtype=object), np.array(timeline.status_details, dtype=object)
+        available = np.array(timeline.evidence_available_times_s, copy=True)
+        evidence[event_rows] = -1
+        evidence[event_rows[retained]] = np.arange(retained.sum())
+        statuses[event_rows[~retained]] = "artifact_rejected"
+        details[event_rows[~retained]] = "continuous_quality_insufficient_observed_channels"
+        available[event_rows[~retained]] = np.nan
+        subject = replace(subject, data=subject.data[retained],
+            labels=None if subject.labels is None else subject.labels[retained],
+            event_timeline=replace(timeline, evidence_indices=evidence, statuses=statuses.astype(str),
+                                   status_details=details.astype(str), evidence_available_times_s=available))
+        continuous_trial_mask = trial_masks[retained]
+    # Complete recordings are batch inputs. Future interval confirmation and
+    # callback delivery cannot be represented as onset+tmax availability.
+    if continuous_result is not None or validated.manifest["recording"].get("clock") is not None:
+        available = np.array(subject.event_timeline.evidence_available_times_s, copy=True)
+        available[np.isfinite(available)] = observed_duration
+        subject = replace(subject, event_timeline=replace(subject.event_timeline,
+            evidence_available_times_s=available,
+            timing_source=subject.event_timeline.timing_source + ";continuous_qc_complete_recording"))
 
     rest_overlap = np.asarray(
         epoch_rest_overlap_mask(
@@ -316,6 +480,10 @@ def _build_validated_brainsync_session(
         dtype=bool,
     )
     values = np.asarray(subject.data, dtype=np.float32).copy()
+    effective_mask = np.broadcast_to(output_active, values.shape[:2]).copy()
+    if continuous_trial_mask is not None:
+        effective_mask &= continuous_trial_mask
+        np.copyto(values, 0., where=~effective_mask[:, :, None])
     if not output_active.all():
         values[:, ~output_active, :] = 0.0
     dataset = EpochDataset(
@@ -343,13 +511,29 @@ def _build_validated_brainsync_session(
             "target_sample_rate_hz": float(preprocessing.sfreq),
             "source_reference": source_reference,
             "acquisition_source_reference": bids.source_reference,
+            "acquisition_reference_details": dict(bids.source_reference_details),
+            "reference_correction": validated.manifest.get("reference_correction"),
             "signal_unit": preprocessing.signal_unit,
             "acquisition_layout": {
                 "schema": BRAIN_SYNC_LAYOUT_SCHEMA,
                 "channel_names": list(labels),
                 "channel_types": list(bids.channel_types),
                 "model_eeg_channels": list(subject.channel_names),
+                "eog_derivation": dict(bids.eog_derivation),
             },
+            "continuous_artifact_processing": {
+                "status": "not_applied" if continuous_qc_model is None else "applied",
+                **({} if continuous_qc_model is None else {
+                    "model": continuous_qc_model.record(),
+                    "model_digest": semantic_sha256(continuous_qc_model.record()),
+                    "operator": "channel_local_final_signal_filter_reset_with_epoch_uncertainty" if local_qc else "clean_segment_filter_reset_with_state_uncertainty",
+                    "availability": "complete_recording_batch",
+                }),
+            },
+            "continuous_quality_ledger": None if continuous_result is None else {
+                **continuous_result.record(), "signal_diagnostics": signal_diagnostics},
+            "sample_clock": validated.manifest["recording"].get("clock", {"alignment_level": "legacy_host_only"}),
+            "acquisition_runtime": validated.manifest.get("runtime", {}),
             "ocular_artifact_processing": {
                 "status": "not_applied" if ocular_model is None else "applied",
                 "eog_retained_in_raw": True,
@@ -398,12 +582,16 @@ def _build_validated_brainsync_session(
             "rest_overlapping_stimulus_count": int(np.count_nonzero(rest_overlap)),
         },
         trial_channel_mask=(
-            np.broadcast_to(output_active, values.shape[:2]).copy()
-            if not output_active.all()
+            effective_mask
+            if not effective_mask.all()
             else None
         ),
+        qc_features=compute_epoch_qc_features(values, channel_mask=output_active, trial_channel_mask=effective_mask)
+        if local_qc else None,
     )
     dataset.validate(require_labels=labelled)
+    if recording_scope is not None:
+        dataset.provenance["raw_calibration_scope"] = recording_scope.record()
     if ocular_model is not None:
         participant = (
             materialize_dataset_identity(dataset)
@@ -412,7 +600,22 @@ def _build_validated_brainsync_session(
         )
         if participant != ocular_model.participant_key:
             raise ValueError("ocular model calibration belongs to a different participant_key.")
+    if continuous_qc_model is not None:
+        participant = materialize_dataset_identity(dataset).record_for(subject_id).authority_key("source_or_global")
+        if participant != continuous_qc_model.fit_provenance.get("participant_key"):
+            raise ValueError("continuous QC calibration belongs to a different participant_key")
     return dataset
+
+
+def _validate_raw_fit_scope(provenance, session_id, started_timestamp_s, *, recording_scope=None):
+    sessions = provenance.get("calibration_session_ids", [])
+    end = provenance.get("calibration_end_timestamp_s")
+    if not sessions or not isinstance(end, (int, float)) or not np.isfinite(end):
+        raise ValueError("raw QC requires calibration session identities and end timestamp")
+    if recording_scope is not None:
+        recording_scope.validate_application(session_id, sessions)
+    elif session_id not in sessions and started_timestamp_s < end:
+        raise ValueError("raw QC calibration includes future data relative to this session")
 
 
 def load_brainsync_inference_session(
@@ -421,6 +624,8 @@ def load_brainsync_inference_session(
     preprocessing: PreprocessingSpec = BRAIN_SYNC_PREPROCESSING,
     channels: Sequence[str] | None = None,
     ocular_model: FittedEOGRegression | None = None,
+    continuous_qc_model: FittedContinuousQC | None = None,
+    recording_scope: IndependentRecordingScope | None = None,
 ) -> EpochDataset:
     """Read completed raw as target-free evidence, including before label confirmation."""
     preprocessing.validate()
@@ -429,6 +634,8 @@ def load_brainsync_inference_session(
         preprocessing=preprocessing,
         channels=channels,
         ocular_model=ocular_model,
+        continuous_qc_model=continuous_qc_model,
+        recording_scope=recording_scope,
     )
 
 
@@ -438,6 +645,8 @@ def load_brainsync_sessions(
     preprocessing: PreprocessingSpec = BRAIN_SYNC_PREPROCESSING,
     channels: Sequence[str] | None = None,
     ocular_model: FittedEOGRegression | None = None,
+    continuous_qc_model: FittedContinuousQC | None = None,
+    recording_scope: IndependentRecordingScope | None = None,
 ) -> EpochDataset:
     """Load multiple v4 BIDS raw sessions, one decision per session."""
 
@@ -453,6 +662,8 @@ def load_brainsync_sessions(
             preprocessing=preprocessing,
             channels=channels,
             ocular_model=ocular_model,
+            continuous_qc_model=continuous_qc_model,
+            recording_scope=recording_scope,
         )
         for session in validated_sessions
     ]
@@ -520,17 +731,28 @@ def _merge_brainsync_sessions(
             "simulation_status": next(iter(simulation_statuses)),
             "simulation_status_source": "session.device.transport",
             "session_dirs": [str(root) for root in roots],
+            "acquisition_references": [
+                {"session_id": session.session_id, "label": session.bids.source_reference,
+                 "details": dict(session.bids.source_reference_details)}
+                for session in validated_sessions
+            ],
             "source_reference": next(iter(references)),
             "source_sample_rate_hz": source_rates[0] if len(source_rates) == 1 else source_rates,
             "target_sample_rate_hz": float(preprocessing.sfreq),
             "signal_unit": preprocessing.signal_unit,
             "acquisition_layout": datasets[0].provenance["acquisition_layout"],
             "ocular_artifact_processing": datasets[0].provenance["ocular_artifact_processing"],
+            "continuous_artifact_processing": datasets[0].provenance["continuous_artifact_processing"],
+            "continuous_quality_ledgers": [dataset.provenance["continuous_quality_ledger"] for dataset in datasets],
+            "sample_clocks": [dataset.provenance["sample_clock"] for dataset in datasets],
+            "acquisition_runtimes": [dataset.provenance["acquisition_runtime"] for dataset in datasets],
             "n_sessions": len(datasets),
             "session_schema": BRAIN_SYNC_SESSION_SCHEMA,
             "session_ids": [session.session_id for session in validated_sessions],
             "decision_unit": "session",
             "population_scope": population_scope.to_dict(),
+            **({"raw_calibration_scope": datasets[0].provenance["raw_calibration_scope"]}
+               if "raw_calibration_scope" in datasets[0].provenance else {}),
         },
     )
 
@@ -541,7 +763,9 @@ def load_brainsync_sessions_resilient(
     preprocessing: PreprocessingSpec = BRAIN_SYNC_PREPROCESSING,
     channels: Sequence[str] | None = None,
     ocular_model: FittedEOGRegression | None = None,
+    continuous_qc_model: FittedContinuousQC | None = None,
     invalid_session_policy: InvalidSessionPolicy | str = InvalidSessionPolicy.ERROR,
+    recording_scope: IndependentRecordingScope | None = None,
 ) -> BrainSyncLoadResult:
     """Load a batch with an explicit fail-fast or skip-and-report policy."""
 
@@ -553,7 +777,9 @@ def load_brainsync_sessions_resilient(
     if policy is InvalidSessionPolicy.ERROR:
         return BrainSyncLoadResult(
             load_brainsync_sessions(
-                roots, preprocessing=preprocessing, channels=channels, ocular_model=ocular_model
+                roots, preprocessing=preprocessing, channels=channels, ocular_model=ocular_model,
+                continuous_qc_model=continuous_qc_model,
+                recording_scope=recording_scope,
             ),
             (),
         )
@@ -569,6 +795,8 @@ def load_brainsync_sessions_resilient(
                 preprocessing=preprocessing,
                 channels=channels,
                 ocular_model=ocular_model,
+                continuous_qc_model=continuous_qc_model,
+                recording_scope=recording_scope,
             )
         except (OSError, RuntimeError, ValueError) as exc:
             failures.append(BrainSyncSessionFailure(str(root), type(exc).__name__, str(exc)))
