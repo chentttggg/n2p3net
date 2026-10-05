@@ -6,10 +6,10 @@
 
 ## 主链与接口
 
-2026-10-05 [分块科研规格](evidence/deep_research_plan_20261005.zh.md)计划由一个`transfer.ensemble`
+2026-10-05 [分块科研规格](evidence/deep_research_plan_20261005.zh.md)主线由`transfer.ensemble`
 Module组织现有NN/经典trial/raw连续Adapter，`candidate_evidence`继续持有membership数学，
 `calibrated`继续持有原个人包和只读推理；后续已通过`ensemble_fit.FittedEnsemble`接真实fit/score/save/load与研究CLI，
-见[代码实施](evidence/ensemble_implementation_20261005.zh.md)。共同DecisionViews保存物理支持，
+见[代码实施](evidence/ensemble_implementation_20261005.zh.md)与[独立质量验收](evidence/ensemble_quality_20261005.zh.md)。共同DecisionViews保存物理支持，
 各专家保留自己的数值身份，不要求raw与Toeplitz使用相同预处理。B02–B04的调用链、失败行为、
 重放与匹配scratch清单见规格；高阶OperatorGLS目前仍是doc/assets研究helper，不当作src生产能力。
 参数量随实际架构、pooling和残差recipe记录，历史1279含残差值不泛化到默认N2P3Net构造。

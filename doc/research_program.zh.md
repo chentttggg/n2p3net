@@ -50,6 +50,7 @@ GTN儿童三导且固定thought digit，只能作声明限制下的开发研究�
 ## 2. 活动算法路径
 
 [多专家代码实施](evidence/ensemble_implementation_20261005.zh.md)已兑现固定算术池、严格requested风险、C内完整组OOF温度和source排除。
+本轮[Spec/Standards独立软件验收](evidence/ensemble_quality_20261005.zh.md)均通过；这只验证实现及信息边界，完整公共配对矩阵、三个完整流程seed和成人确认继续按执行计划验收。
 新AR为一次可行GLS、条件于已估noise，概率校准为开发程序而非认证后验；source-only K0经典/连续专家仍不可估。
 新179输入使用预声明共同raw支持，不能与历史178路线直接相减；target-only seed不称完整source→target seed。
 

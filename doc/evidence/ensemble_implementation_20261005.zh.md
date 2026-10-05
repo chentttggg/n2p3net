@@ -35,10 +35,26 @@ plan schema为`n2p3_candidate_ensemble_study/1`，显式声明records/path/SHA�
 - 单臂或配对宏NLL原过滤全缺概率的人/seed；红例得到错误的部分宏风险，修后完整requested宏风险为None，coverage与缺失仍保存。
 - log-probability保留真实零和数值下溢的区别；不以消费端tiny clip美化NLL。
 - 公共view/内部数组无法重新打开write flag；held truth变化不改变score，raw/record/participant范围错配拒绝。
+- 实际模型内绑定expert配方/fit授权/source角色，重签manifest仍不能替换AR阶数、参与者或数值state；校验后的同一bytes直接解码，source一次冻结贯穿outer fold及OOF。
+- 公共scorer/participant/temperature/state只读；完整微调必须在首次fit前绑定同结构scratch及waveform控制。具名不可识别数值失败只影响相关expert/mixture，合同错误保存父/子failed进度后传播。
 - AR dense oracle、row/voltage gauge、候选置换、原MAT真实解析、旧接口、实际fit/save/load/CLI分别举证，不能以新测试数量替代真实入口。
 
-## 当前验收阶段
+## 已完成的软件验收
 
-首批core集成95项通过；后续温度/source/CLI和质量回归仍持续加入。源/目标NN同结构、整包重放及真实MAT容器测试已通过，Ruff和diff check通过。最终软件全集、独立Spec/Standards两轴评估、真实公开诊断及源码归档在收尾时追加；未通过的阶段不得写成“全部完成”。
+最终实施提交为`d3e602701716748d0ca561400699204268d4f8d6`，评审基线为`a6a3da5`。以下为不同范围的独立记录，不能相加为不同测试数量，也不能把早先完整测试包装成最终提交上重新执行。
+
+| 验证 | 实际版本/范围 | 结果 |
+|---|---|---|
+| 完整pytest | `0f8074a`，2444项 | 2425通过、19跳过、0失败/错误，335.754秒 |
+| 质量修复回归 | 测后提交为`0f8074a`，58项 | 全部通过 |
+| 最终只读字段调整 | 测后提交为`d3e6027`，55项 | 全部通过，10.882秒 |
+| 独立Standards复验 | `d3e6027`，8个相关测试文件及行为探针 | 117通过、0跳过/失败/错误；144文件摘要前后不变 |
+| 独立Spec复验 | `d3e6027`，6个真实fit/score/保存/CLI探针 | 6命令退出0、13行为判定通过；129文件摘要前后不变 |
+
+Ruff与`git diff --check`通过；最终软件评审时隔离树clean。完整测试的19项跳过为独立前端运行时8项、可选数据5项、Windows symlink权限2项和CUDA运行时4项，不记作这些集成已通过。
+
+[独立质量报告](ensemble_quality_20261005.zh.md)分别保存Spec/Standards结论、已修缺口与检测范围；[机器可读验证收据](../assets/ensemble_implementation_20261005/validation_receipt.json)记录原JUnit摘要/哈希、复现命令、已记录命令的来源及退出码。原A01只读入库探针完成6组/720用/80不用和`[120,8,179]`，不含新的公开数据训练。
+
+实际source/tests/configs/入口、六指南、科研规格与验证收据由[最终源码清单](../../frozen/ensemble_implementation_20261005/manifest.json)绑定物理压缩包并逐成员核验；[原始质量证据清单](../../frozen/ensemble_implementation_20261005/quality_manifest.json)独立保留两路探针、过程RED、原始日志和synthetic模型。压缩包及镜像留在本地，清单进入Git；源码身份按实际工作字节而非规范化Git blob认定。
 
 本轮尚未运行完整四库/十二库三seed新矩阵，未取得成人独立确认；工作站生产默认未切换。继续优化以原123项/15块依赖图为准，不以这批core实现重定义整项目优化完成。

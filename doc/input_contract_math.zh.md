@@ -3,6 +3,7 @@
 [代码实施](evidence/ensemble_implementation_20261005.zh.md)以`ensemble_views`分开无标签物理view与授权CalSelection；
 真实359 source点经FFT180保留179，358点仍诚实输出178。每组FiniteFilterOperator/共享resample/baseline执行receipt和lineage保留。
 AR显式阶数使用stationary innovations且同步Y/D；fixed32条件前缀是另一个待实施估计量，不能把当前新AR称公平阶数矩阵。
+最终[独立软件反例](evidence/ensemble_quality_20261005.zh.md)核对错参考/布局/候选顺序先拒绝，合法物理缺失保留概率不可用状态；本轮共同支持、拟合授权和模型内数值绑定在保存重载后仍一致。
 
 2026-10-05 [分块研究合同](evidence/deep_research_plan_20261005.zh.md)要求共同物理decision与
 各专家独立数值view分开绑定；MAT上游分发信号不称ADC raw。AR0/1/4/8/16/32按共同hold-back=32

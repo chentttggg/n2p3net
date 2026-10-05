@@ -1,6 +1,7 @@
 # 研究与工程证据
 
-- [候选多专家主线：代码实施与质量验收](ensemble_implementation_20261005.zh.md)：实际概率/评价、合法MAT/epoch view、AR/ERP/NN、source与scratch、C内OOF温度、保存重放和研究CLI；质量与整体验收推进中，完整公共矩阵和成人确认另记。
+- [候选多专家主线：代码实施与质量验收](ensemble_implementation_20261005.zh.md)：实际概率/评价、合法MAT/epoch view、AR/ERP/NN、source与scratch、C内OOF温度、保存重放和研究CLI；本轮软件完成，完整公共矩阵和成人确认另记。
+- [候选多专家独立代码质量评估](ensemble_quality_20261005.zh.md)：Spec和Standards分轴通过，保留实际RED→GREEN、精确受审源码及测试版本区别；原始日志/探针/模型物理归档，公共效能和云吞吐未验证。
 
 - [愿望清单与优先任务：分块深度科研方案](deep_research_plan_20261005.zh.md)：恢复123项原清单，15块任务依赖与四周里程碑；三路独立文献/数学反例、Phase4保存预测复算与来源缺口、完整公共矩阵合同和工程精简；方案层完成，新训练与成人确认未执行。
 

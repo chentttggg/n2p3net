@@ -4,7 +4,8 @@
 
 2026-10-05 [候选多专家代码实施](evidence/ensemble_implementation_20261005.zh.md)已接通合法view、raw高阶AR/经典ERP/NN、
 固定概率混合、C内分组温度、整包重载及MAT实验入口；严格requested风险与producer身份反例已修。
-当前仍在代码质量与整体验收阶段，完整公共矩阵/成人确认分别继续。
+本轮软件验收与[独立Spec/Standards评估](evidence/ensemble_quality_20261005.zh.md)已完成：完整测试2425通过、19跳过，最终只读调整55项及独立质量117项通过。
+完整公共矩阵、三完整流程seed和成人确认分别继续；软件通过不代表新的效能结论。
 
 2026-10-05 [愿望清单分块科研方案](evidence/deep_research_plan_20261005.zh.md)已将原清单123项映射到15块，
 核对专家混合、AR条件化、g-prior、边界均值和失败分母的独立反例。当前交付研究设计与验证，

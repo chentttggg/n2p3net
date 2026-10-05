@@ -1,0 +1,245 @@
+{
+  "schema": "n2p3_ensemble_validation_receipt/1",
+  "evidence_scope": "software_correctness",
+  "review_baseline": "a6a3da5b292b1c70fcfad82ba169efd9bd90ae34",
+  "reviewed_implementation_head": "d3e602701716748d0ca561400699204268d4f8d6",
+  "python_executable": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+  "test_environment": {
+    "PYTHONPATH": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\src",
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "tests": [
+    {
+      "artifact": "tmp/ensemble_implementation_20261005/full_suite.xml",
+      "artifact_sha256": "c4831e34485913db8dcfe208947a66dd3b7fb4ff34ee47c30c97a3d82b4da448",
+      "tested_source_commit": "0f8074a419d2a9e1dfafd3ec2f5034f19d23a072",
+      "source_binding_role": "recorded full-suite invocation; no separate per-byte full-suite snapshot",
+      "counts": {
+        "tests": 2444,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 19,
+        "passed": 2425
+      },
+      "duration_seconds": 335.754,
+      "skip_categories": {
+        "separate_frontend_runtime": 8,
+        "optional_dataset_not_in_isolated_checkout": 5,
+        "windows_symlink_permission": 2,
+        "cuda_runtime_unavailable": 4
+      },
+      "reproduction_command": [
+        "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "--junitxml=tmp/ensemble_implementation_20261005/full_suite.xml"
+      ],
+      "reproduction_command_role": "derived_from_actual_junit_module_list; recorded original invocations preserved separately"
+    },
+    {
+      "artifact": "tmp/ensemble_implementation_20261005/quality_regressions.xml",
+      "artifact_sha256": "e7623d0d79b2bce294bcaafa9707307a0f5e40354e545435f5194f29b3e30cc4",
+      "tested_source_commit": "0f8074a419d2a9e1dfafd3ec2f5034f19d23a072",
+      "source_binding_role": "tested changes committed immediately after successful quality regressions",
+      "counts": {
+        "tests": 58,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 58
+      },
+      "duration_seconds": 10.567,
+      "skip_categories": {},
+      "reproduction_command": [
+        "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/models/test_candidate_probability_evidence.py",
+        "tests/research/test_candidate_ensemble_study.py",
+        "tests/transfer/test_ensemble_fit.py",
+        "tests/transfer/test_temporal_noise.py",
+        "--junitxml=tmp/ensemble_implementation_20261005/quality_regressions.xml"
+      ],
+      "reproduction_command_role": "derived_from_actual_junit_module_list; recorded original invocations preserved separately"
+    },
+    {
+      "artifact": "tmp/ensemble_implementation_20261005/final_followup.xml",
+      "artifact_sha256": "31a0928714520c6f93326c5aa36d8f2f59602c31c334665bbc457bec6c964202",
+      "tested_source_commit": "d3e602701716748d0ca561400699204268d4f8d6",
+      "source_binding_role": "tested read-only followup committed immediately after successful tests",
+      "counts": {
+        "tests": 55,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 55
+      },
+      "duration_seconds": 10.882,
+      "skip_categories": {},
+      "reproduction_command": [
+        "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/research/test_candidate_ensemble_study.py",
+        "tests/research/test_candidate_probability_metrics.py",
+        "tests/transfer/test_ensemble.py",
+        "tests/transfer/test_ensemble_fit.py",
+        "--junitxml=tmp/ensemble_implementation_20261005/final_followup.xml"
+      ],
+      "reproduction_command_role": "derived_from_actual_junit_module_list; recorded original invocations preserved separately"
+    },
+    {
+      "artifact": "tmp/ensemble_implementation_20261005/standards_review/final_d3e6027_tests.xml",
+      "artifact_sha256": "14f47b081cb639b6226465d8f54f5ee0610fc17147dd21d3eed88d787f0427ee",
+      "tested_source_commit": "d3e602701716748d0ca561400699204268d4f8d6",
+      "source_binding_role": "independent per-byte source guard unchanged through probes and tests",
+      "counts": {
+        "tests": 117,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 117
+      },
+      "duration_seconds": 12.33,
+      "skip_categories": {},
+      "reproduction_command": [
+        "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/models/test_candidate_probability_evidence.py",
+        "tests/research/test_candidate_ensemble_study.py",
+        "tests/research/test_candidate_probability_metrics.py",
+        "tests/transfer/test_calibration_state.py",
+        "tests/transfer/test_continuous_ar_expert.py",
+        "tests/transfer/test_ensemble.py",
+        "tests/transfer/test_ensemble_fit.py",
+        "tests/transfer/test_ensemble_views.py",
+        "--junitxml=tmp/ensemble_implementation_20261005/standards_review/final_d3e6027_tests.xml"
+      ],
+      "reproduction_command_role": "derived_from_actual_junit_module_list; recorded original invocations preserved separately"
+    }
+  ],
+  "recorded_command_provenance": {
+    "quality_regressions": {
+      "call_id": "call_dCYb1jCZl1nTWk7BBpdPMld2",
+      "timestamp": "2026-10-05T11:54:43.705Z",
+      "command_sha256": "7e8743fddc86cdb449e1f03d32f0bd9e33b741ad9639d264ef61af3d74b3004b",
+      "tool_input_sha256": "8525d90e5fc523b8a471916a51efa51197adecc3f7fe7fec88d077557c6fbf0c",
+      "process_session_id": 16873,
+      "completion": {
+        "call_id": "call_l8pYIkJpCSpcN6MokXyJjHK8",
+        "timestamp": "2026-10-05T11:56:16.129Z",
+        "exit_code": 0
+      }
+    },
+    "full_suite": {
+      "call_id": "call_tefeLvmAR0PFa6kB0vOP2TsH",
+      "timestamp": "2026-10-05T11:58:21.875Z",
+      "command_sha256": "4141023d9672724ee6d21b445934d6149bc643212642ba7227a7739e5f62c427",
+      "tool_input_sha256": "cd0ec0b6f5877d32a51b002e3bcd65a9d2d96cb5de9ad2a0ba7b7acf8ebd38d7",
+      "process_session_id": 70484,
+      "completion": {
+        "call_id": "call_flPAJYzET0PHdHf8P1Lyswd1",
+        "timestamp": "2026-10-05T12:05:25.109Z",
+        "exit_code": 0
+      }
+    },
+    "final_followup": {
+      "call_id": "call_y8BtNLnNS58X1l9nPzYeFXNT",
+      "timestamp": "2026-10-05T12:06:34.700Z",
+      "command_sha256": "743561be31ed46e52e7ad918564ed961430deca18c422cc8b17efcb754cd6b99",
+      "tool_input_sha256": "703d707eb6f3d19f5e80244b09bfeb5c5bf9949e235f5c548ab29662560fe70f",
+      "process_session_id": 31364,
+      "completion": {
+        "call_id": "call_uun9qb1IqkQW9iaDbwU9JPRO",
+        "timestamp": "2026-10-05T12:09:40.166Z",
+        "exit_code": 0
+      }
+    }
+  },
+  "independent_axes": {
+    "Spec": {
+      "result": "passed",
+      "unresolved_findings": [],
+      "source_file_count": 129,
+      "source_bytes_verified": true,
+      "behavior_checks": {
+        "normal_fit_score": true,
+        "incomplete_evidence_kept": true,
+        "contract_errors_prioritized": true,
+        "public_state_and_recipe_readonly": true,
+        "waveform_exact_in_both_dtypes": true,
+        "neural_binding_reconstructs": true,
+        "fixed_source_across_outer_folds": true,
+        "expected_failures_keep_requested_matrix": true,
+        "real_external_cwd_cli": true,
+        "manifest_cannot_relabel_or_replace_actual_model": true,
+        "entire_target_study_and_person_excluded": true,
+        "fixed_source_across_real_grouped_oof": true,
+        "oof_groups_disjoint_from_held": true
+      },
+      "probes": [
+        {
+          "script": "probe_contracts.py",
+          "script_sha256": "22b1a526f0fd74bcb36cf1eae0cfdd2623e65d4c462ff4ff108b327f711317f1",
+          "exit_code": 0
+        },
+        {
+          "script": "probe_fixed_source.py",
+          "script_sha256": "f918010bafc49798d4b6e0bddd06c4ab164275b62c950bf8d3309339fdfcab51",
+          "exit_code": 0
+        },
+        {
+          "script": "probe_expected_failure.py",
+          "script_sha256": "e8ba319ce717ff4f14f8c87aa1eec3a03403eafd1ba68cf3379e568ba6aabeb8",
+          "exit_code": 0
+        },
+        {
+          "script": "probe_runner.py",
+          "script_sha256": "5348ed04fc44aace8bdfe4a44ef7c485330fdb704c930fcaa9c1538cb5a05ebd",
+          "exit_code": 0
+        },
+        {
+          "script": "probe_artifact_binding.py",
+          "script_sha256": "3b3f11503c04a3f2f743f6f8ce6145a24f6417f9721bfbc98a9a10142e2d11e0",
+          "exit_code": 0
+        },
+        {
+          "script": "probe_source_oof.py",
+          "script_sha256": "953f5bc5484624d83f7e32479650086ca088d4fe6d93a44b5755763468aef697",
+          "exit_code": 0
+        }
+      ],
+      "raw_manifest": "tmp/ensemble_implementation_20261005/spec_review/final_d3e6027/review_manifest.json"
+    },
+    "Standards": {
+      "result": "passed",
+      "unresolved_findings": [],
+      "judgement_smells": [],
+      "source_file_count": 144,
+      "source_bytes_verified": true,
+      "raw_manifest": "tmp/ensemble_implementation_20261005/standards_review/final_standards_d3e6027.json"
+    }
+  },
+  "source_freeze": "frozen/ensemble_implementation_20261005/manifest.json",
+  "local_raw_evidence_freeze": "frozen/ensemble_implementation_20261005/quality_manifest.json",
+  "new_public_training_executed": false,
+  "cloud_training_executed": false,
+  "adult_confirmation_executed": false,
+  "software_wave_status": "complete",
+  "broader_goal_status": "active",
+  "remaining": [
+    "full public-data matrix and three complete source-to-target seeds",
+    "fixed holdback32 AR comparison",
+    "quality gating and latent-model/boundary extensions",
+    "source-only K0 experts and workstation integration",
+    "cloud throughput",
+    "adult/device confirmation"
+  ]
+}
