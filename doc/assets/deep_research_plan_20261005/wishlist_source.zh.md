@@ -213,5 +213,3 @@ NLL 的作用像一个“诚实度检查”：
 - [Phase 4 结构化结果](/D:/BCI/n2p3-net/doc/assets/operator_research_20261004/phase4_report.json)
 - [Phase 4 结果清单](/D:/BCI/n2p3-net/doc/assets/operator_research_20261004/phase4_manifest.json)
 - [完整算子科研报告](/D:/BCI/n2p3-net/doc/evidence/operator_research_20261004.zh.md)
-
-
