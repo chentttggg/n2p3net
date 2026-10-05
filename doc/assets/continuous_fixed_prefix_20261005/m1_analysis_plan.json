@@ -1,0 +1,34 @@
+{
+  "schema": "n2p3_m1_analysis_plan/1",
+  "evidence_scope": "public_calibration_development",
+  "inferential_role": "descriptive exploratory paired analysis; no production selection or adult confirmation",
+  "unit": "participant",
+  "requested_participants": 8,
+  "requested_decisions_per_participant": 6,
+  "baseline": "ar8_burg",
+  "primary": "participant_macro_operational_hit_with_unavailable_as_incorrect",
+  "secondary": [
+    "prediction_coverage",
+    "probability_coverage",
+    "conditional_NLL_and_Brier_with_exact_support",
+    "full_requested_NLL_and_Brier_only_if_all_48_probabilities_available",
+    "paired_probability_risk_with_missing_probability_ledger",
+    "rescued_harmed_lost_baseline_predictions_and_probabilities"
+  ],
+  "bootstrap": {
+    "type": "percentile participant-cluster bootstrap on fixed completed fit outcomes",
+    "resamples": 20000,
+    "seed": 20261006,
+    "interval_probability": 0.95,
+    "shared_resampled_participant_indices_across_all_arms": true,
+    "refit": false
+  },
+  "limits": [
+    "8 participants; six overlapping-calibration CV folds are not independent replicates",
+    "one deterministic target-only seed does not estimate source training randomness",
+    "conditional risk has a smaller decision denominator when probabilities are missing",
+    "no missing imputation, outlier deletion, significance shopping, or unseen-population certification",
+    "all twelve declared arms are reported; no best-arm-only plot",
+    "bootstrap intervals describe conditional participant resampling uncertainty and do not establish adult efficacy"
+  ]
+}
