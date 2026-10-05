@@ -1,0 +1,392 @@
+{
+  "schema": "n2p3_fixed_prefix_quality_receipt/1",
+  "evidence_scope": "software_correctness",
+  "review_baseline": "6c7c930a3881360f1a57d0e71ddc51b242dba4e6",
+  "final_runtime_core_sha256": {
+    "src/transfer/continuous_decision.py": "e982d26da8b0658d0ccb5895903bcc930c4286b01a5a5e24f8c495c1218f71a7",
+    "src/transfer/continuous_gradient.py": "6c03c259a9536c8111f875903cf341b2f697f78eaa5e45b9b6d59a440f385da5",
+    "src/transfer/temporal_noise.py": "9fc7d12238a4d9bfd79bffbf2b7d6ab27f4cecdd33d9c2caa505ee9d03110b49",
+    "src/transfer/ensemble_fit.py": "029a8cd1e3dabe7b783f6e18c474022b3543fc3884c5e4005d4f7d966a84e4e4",
+    "experiments/run_candidate_ensemble_study.py": "1eb997833cf19ee891b7c922ac03d5909eb50db69045cb707ed72037609e5212"
+  },
+  "full_suite_before_counter_delta": {
+    "counts": {
+      "tests": 2559,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 19,
+      "passed": 2540
+    },
+    "raw_xml_sha256": "2f210d6c3a794653af815cfb6cf38db05c94c3b59934c0bf969deba5289c8867",
+    "raw_log_sha256": "a2553fbcebed3835559b83704d21f0bc114417020b1cfa7bcf7d6db279fd6e35",
+    "source_file_count": 393,
+    "source_sha256": {
+      "src/transfer/continuous_decision.py": "4b99ddc11c2f29bc330f75b59d5f3f870dcde10b6268c73e5c9aedc038cfd20f",
+      "src/transfer/continuous_gradient.py": "6c03c259a9536c8111f875903cf341b2f697f78eaa5e45b9b6d59a440f385da5",
+      "src/transfer/temporal_noise.py": "9fc7d12238a4d9bfd79bffbf2b7d6ab27f4cecdd33d9c2caa505ee9d03110b49",
+      "src/transfer/ensemble_fit.py": "029a8cd1e3dabe7b783f6e18c474022b3543fc3884c5e4005d4f7d966a84e4e4",
+      "experiments/run_candidate_ensemble_study.py": "1eb997833cf19ee891b7c922ac03d5909eb50db69045cb707ed72037609e5212"
+    },
+    "source_unchanged": true,
+    "time_seconds": 455.052,
+    "process_exit_code": 0
+  },
+  "counter_delta_verification": {
+    "counts": {
+      "tests": 86,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 86
+    },
+    "raw_xml_sha256": "557305e3e1307b9945eff1503784592d23977f3eecbab32a9fa132cffb966532",
+    "raw_log_sha256": "3855e10b45ab26386c1495c460550e2e6d9132bd9129afdfdcf80df6fd51baf9"
+  },
+  "linked_verification_before_counter_delta": {
+    "counts": {
+      "tests": 190,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 190
+    },
+    "raw_xml_sha256": "3ef340d3f590f6f9f3ff6e17160386b66295b629fd7aed24550aca1a0c7b84a6",
+    "raw_log_sha256": "7aba6c3715a05f1e5b4536f51a2b4103d1a081e9cef18f5aecb8b1a317275d82"
+  },
+  "Standards": {
+    "result": "passed",
+    "unresolved_findings": [],
+    "judgement_smells": [],
+    "tests": {
+      "tests": 173,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "source_snapshot_sha256": "6157765a0f7accc1177763a935e225ef7bf4c67f73444a1b81127f9325dae8b8",
+    "source_unchanged_through_tests": true,
+    "maximum_independent_gradient_absolute_error": 7.073575059024506e-11,
+    "resolved_issue": "Gaussian evaluation ledger omitted initial/final Torch endpoint calls; monitored total 10 now equals record 10"
+  },
+  "standards_raw_receipt_sha256": "0afde89a416acd12e613a55e1a69ec561c1771396c7ece81a438e50ccec07ccd",
+  "topology": {
+    "two_x4_throughput_ratio_vs_one_x4": 1.23421349931703,
+    "two_x4_throughput_ratio_vs_two_x2": 1.1877699991054838,
+    "recommended_threads_per_worker": 4,
+    "recommended_local_workers": 2,
+    "recommended_total_local_cpu_threads": 8,
+    "minimum_free_memory_before_admitting_two_workers_bytes": 3000000000,
+    "source_sha256": {
+      "src/transfer/continuous_gradient.py": "6c03c259a9536c8111f875903cf341b2f697f78eaa5e45b9b6d59a440f385da5",
+      "src/transfer/continuous_decision.py": "e982d26da8b0658d0ccb5895903bcc930c4286b01a5a5e24f8c495c1218f71a7",
+      "src/train/runtime.py": "570b82c5f31b7f23e7d4f3813e90e888b58fc6c2eaebdb4e8ef25693b59aee3e"
+    },
+    "evidence_scope": "actual_calibration_numerical_worker_throughput"
+  },
+  "topology_raw_receipt_sha256": "c727de2e7867e09c20dbefe4cf1af221e70149a70a4687aff8eaed56386cf75e",
+  "limits": [
+    "test sets overlap; do not sum",
+    "full suite precedes counter-only delta",
+    "software and local throughput do not establish M1 efficacy",
+    "no cloud launch"
+  ],
+  "Spec_math_final_delta": {
+    "result": "passed",
+    "runs": {
+      "delta_run_20261005T160415468106Z": {
+        "raw_receipt_sha256": "14f9245e1b7acd60a658f54f9f2df2bd48f32a3ccf346768420d5c628db2f376",
+        "script_sha256": "bd4025319e3750c4444c29c3cb5b02be6b88c6a0f47d9dc60f9d86cc30b6b27f",
+        "source_sha256": {
+          "src/transfer/continuous_decision.py": "4b99ddc11c2f29bc330f75b59d5f3f870dcde10b6268c73e5c9aedc038cfd20f",
+          "src/transfer/continuous_gradient.py": "6c03c259a9536c8111f875903cf341b2f697f78eaa5e45b9b6d59a440f385da5",
+          "src/transfer/temporal_noise.py": "9fc7d12238a4d9bfd79bffbf2b7d6ab27f4cecdd33d9c2caa505ee9d03110b49",
+          "src/transfer/ensemble_fit.py": "029a8cd1e3dabe7b783f6e18c474022b3543fc3884c5e4005d4f7d966a84e4e4",
+          "experiments/run_candidate_ensemble_study.py": "1eb997833cf19ee891b7c922ac03d5909eb50db69045cb707ed72037609e5212"
+        },
+        "checks": [
+          {
+            "name": "executed source is the preserved candidate, not the baseline or current counter-only source",
+            "passed": true,
+            "source_count": 198,
+            "numerical_source_sha256": "4b99ddc11c2f29bc330f75b59d5f3f870dcde10b6268c73e5c9aedc038cfd20f"
+          },
+          {
+            "name": "AR0: exact CPU/f64 value and every eta derivative equal independent dense Gaussian",
+            "passed": true,
+            "value_error": -4.440892098500626e-16,
+            "max_derivative_error": 0.0,
+            "eta_dimension": 0,
+            "shared_kernel_width": 4,
+            "independent_drift_slots": 4,
+            "objective_rows": 79
+          },
+          {
+            "name": "AR1: exact CPU/f64 value and every eta derivative equal independent dense Gaussian",
+            "passed": true,
+            "value_error": -4.440892098500626e-16,
+            "max_derivative_error": 2.622541073193929e-12,
+            "eta_dimension": 1,
+            "shared_kernel_width": 4,
+            "independent_drift_slots": 4,
+            "objective_rows": 79
+          },
+          {
+            "name": "AR4: exact CPU/f64 value and every eta derivative equal independent dense Gaussian",
+            "passed": true,
+            "value_error": 1.1102230246251565e-16,
+            "max_derivative_error": 3.687515570671707e-12,
+            "eta_dimension": 4,
+            "shared_kernel_width": 4,
+            "independent_drift_slots": 4,
+            "objective_rows": 79
+          },
+          {
+            "name": "AR8: exact CPU/f64 value and every eta derivative equal independent dense Gaussian",
+            "passed": true,
+            "value_error": -5.551115123125783e-16,
+            "max_derivative_error": 1.01853872558344e-11,
+            "eta_dimension": 8,
+            "shared_kernel_width": 4,
+            "independent_drift_slots": 4,
+            "objective_rows": 79
+          },
+          {
+            "name": "AR16: exact CPU/f64 value and every eta derivative equal independent dense Gaussian",
+            "passed": true,
+            "value_error": 3.3029134982598407e-15,
+            "max_derivative_error": 6.982847633452138e-11,
+            "eta_dimension": 16,
+            "shared_kernel_width": 4,
+            "independent_drift_slots": 4,
+            "objective_rows": 79
+          },
+          {
+            "name": "AR32: exact CPU/f64 value and every eta derivative equal independent dense Gaussian",
+            "passed": true,
+            "value_error": -1.5987211554602254e-14,
+            "max_derivative_error": 1.995387799436088e-09,
+            "eta_dimension": 32,
+            "shared_kernel_width": 4,
+            "independent_drift_slots": 4,
+            "objective_rows": 79
+          },
+          {
+            "name": "Torch profile voltage coordinates preserve gradient and add only c log(unit scale)",
+            "passed": true,
+            "value_jacobian_error": 0.0,
+            "gradient_error": 1.249000902703301e-16
+          },
+          {
+            "name": "fixed scalar-ridge interface has orthogonal basis gauge with matching prior",
+            "passed": true,
+            "value_error": -2.220446049250313e-16,
+            "gradient_error": 2.220446049250313e-16
+          },
+          {
+            "name": "general basis change with unchanged ridge is a changed prior, not a promised gauge",
+            "passed": true,
+            "profile_difference": -0.002695411828705363
+          },
+          {
+            "name": "objective owns calibration copies",
+            "passed": true
+          },
+          {
+            "name": "actual fitted AR8: high-precision Yule-Walker ACF and startup independently verify PARCOR model",
+            "passed": true,
+            "marginal_variance": 148082.20319007168,
+            "startup_factor_condition": 22429.3069910746,
+            "startup_relative_error": 7.078953883095317e-17,
+            "acf_first_6": [
+              1.0,
+              0.9337532945883292,
+              0.7540721859601536,
+              0.5109768377480866,
+              0.2671323801781267,
+              0.07626570541941138
+            ],
+            "fitted_artifact_source": "429c9df78c0792615532dff371548f6ecda3e05119fc5b0bbc610e407e97023b",
+            "artifact_sha256": "b2cebfebe91bbdf0346922cbdbdf5191f2e291f3a15f3584c13c93c035172739"
+          },
+          {
+            "name": "actual high-correlation AR8: NumPy/Torch value equals 80-digit Gaussian profile",
+            "passed": true,
+            "high_precision_profile": 7.802979019872428,
+            "value_error": 4.440892098500626e-15
+          },
+          {
+            "name": "actual high-correlation AR8: first/last/random directional derivatives agree with independent 80-digit oracle",
+            "passed": true,
+            "absolute_derivative_errors": [
+              3.774758283725532e-15,
+              1.887379141862766e-14,
+              4.274358644806853e-15
+            ]
+          },
+          {
+            "name": "old AR8 package is not silently re-signed for the 1000/maxcor32 source",
+            "passed": true
+          },
+          {
+            "name": "actual high-correlation AR8: public score agrees with high-precision Gaussian and leaves state frozen",
+            "passed": true,
+            "tested_candidate_indices": [
+              0,
+              18,
+              35
+            ],
+            "absolute_density_errors": [
+              1.3096723705530167e-10,
+              1.2369127944111824e-10,
+              1.3096723705530167e-10
+            ],
+            "reference_log_densities": [
+              43238.45659857234,
+              43238.50434559964,
+              43238.42979068503
+            ],
+            "source_handling": "explicit_analytic_reference_from_old_numeric_state",
+            "n_samples": 351,
+            "synthetic_noise": "independent_draw_from_declared_stationary_AR"
+          },
+          {
+            "name": "high-correlation AR8: public save/load/replay is identical",
+            "passed": true
+          },
+          {
+            "name": "actual fitted AR32: high-precision Yule-Walker ACF and startup independently verify PARCOR model",
+            "passed": true,
+            "marginal_variance": 11492538.842435082,
+            "startup_factor_condition": 219795901.78795025,
+            "startup_relative_error": 1.0625560813928442e-16,
+            "acf_first_6": [
+              1.0,
+              0.9320906594617537,
+              0.7477192982437638,
+              0.49774750413422203,
+              0.24607990574058455,
+              0.04783946047655805
+            ],
+            "fitted_artifact_source": "4b99ddc11c2f29bc330f75b59d5f3f870dcde10b6268c73e5c9aedc038cfd20f",
+            "artifact_sha256": "1d42efbec664e9faa5f90cb1d01ff1662c2ace7b4ff356238c0a1fed81d5fe7d"
+          },
+          {
+            "name": "actual high-correlation AR32: NumPy/Torch value equals 80-digit Gaussian profile",
+            "passed": true,
+            "high_precision_profile": 19.43729523689836,
+            "value_error": -7.043610139589873e-11
+          },
+          {
+            "name": "actual high-correlation AR32: first/last/random directional derivatives agree with independent 80-digit oracle",
+            "passed": true,
+            "absolute_derivative_errors": [
+              1.1152750944987133e-10,
+              9.43245481721533e-12,
+              4.334710368425476e-11
+            ]
+          },
+          {
+            "name": "actual high-correlation AR32: public score agrees with high-precision Gaussian and leaves state frozen",
+            "passed": true,
+            "tested_candidate_indices": [
+              0,
+              18,
+              35
+            ],
+            "absolute_density_errors": [
+              1.6601552488282323e-07,
+              1.6860576579347253e-07,
+              1.734442776069045e-07
+            ],
+            "reference_log_densities": [
+              48746.70859537286,
+              48746.91868888114,
+              48746.25562455202
+            ],
+            "source_handling": "public_current_source_load",
+            "n_samples": 351,
+            "synthetic_noise": "independent_draw_from_declared_stationary_AR"
+          },
+          {
+            "name": "high-correlation AR32: public save/load/replay is identical",
+            "passed": true
+          },
+          {
+            "name": "preserved executed-source guard stable",
+            "passed": true
+          }
+        ],
+        "all_passed": true
+      },
+      "current_run_20261005T160739977431Z": {
+        "raw_receipt_sha256": "d0bdb584702c1af8ccbcb8a3bda981c1b6f7f0db0932404daee2ab922677716d",
+        "script_sha256": "94103ede5d886c5da33f596c85c14fe1d96d13b39d0b6ca3b891781792b1bea3",
+        "source_sha256": {
+          "src/transfer/continuous_decision.py": "e982d26da8b0658d0ccb5895903bcc930c4286b01a5a5e24f8c495c1218f71a7",
+          "src/transfer/continuous_gradient.py": "6c03c259a9536c8111f875903cf341b2f697f78eaa5e45b9b6d59a440f385da5",
+          "src/transfer/temporal_noise.py": "9fc7d12238a4d9bfd79bffbf2b7d6ab27f4cecdd33d9c2caa505ee9d03110b49",
+          "src/transfer/ensemble_fit.py": "029a8cd1e3dabe7b783f6e18c474022b3543fc3884c5e4005d4f7d966a84e4e4",
+          "experiments/run_candidate_ensemble_study.py": "1eb997833cf19ee891b7c922ac03d5909eb50db69045cb707ed72037609e5212"
+        },
+        "checks": [
+          {
+            "name": "current evaluation ledger includes both Torch endpoints and NumPy evaluations",
+            "passed": true,
+            "published": 6,
+            "actual_numpy": 3,
+            "actual_torch": 3
+          },
+          {
+            "name": "success flag and ftol-style stopping do not prove a local minimum or global MLE",
+            "passed": true,
+            "stopped_gradient_norm": 0.09317843889143186,
+            "stopped_value": -1.3946748744554789,
+            "nearby_lower_value": -1.3947670906987413,
+            "note": "deliberately injected optimizer stopping; not a real optimization result"
+          },
+          {
+            "name": "current solver identity binds exact producer SHA and actual conditional strategy",
+            "passed": true,
+            "source_sha256": "e982d26da8b0658d0ccb5895903bcc930c4286b01a5a5e24f8c495c1218f71a7",
+            "solver": {
+              "method": "L-BFGS-B",
+              "parameterization": "actual_PARCOR_tanh_eta",
+              "eta_max": 8.0,
+              "max_iterations": 1000,
+              "curvature_history": 32,
+              "ftol": 1e-10,
+              "gtol": 1e-06,
+              "jacobian": "torch_CPU_float64_exact_autograd",
+              "gradient_implementation_sha256": "6c03c259a9536c8111f875903cf341b2f697f78eaa5e45b9b6d59a440f385da5",
+              "optimized_objective_scale": "per_scored_row_centered_at_Burg"
+            }
+          },
+          {
+            "name": "latest counter source public save/load/held score preserves exact state",
+            "passed": true
+          },
+          {
+            "name": "optimizer failure preserves requested outcomes but actual score calls/rows are zero",
+            "passed": true,
+            "score_calls": 0,
+            "actual_scored_rows": [
+              0,
+              0
+            ],
+            "failure_kinds": [
+              "fit_failure",
+              "fit_failure"
+            ],
+            "evidence_scope": "software_correctness"
+          },
+          {
+            "name": "latest source guard stable",
+            "passed": true
+          }
+        ],
+        "all_passed": true
+      }
+    },
+    "no_confirmed_formula_defect": true
+  }
+}

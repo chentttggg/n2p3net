@@ -1,0 +1,10 @@
+{
+  "archive": "previous_program.zip",
+  "archive_sha256": "d9cb4d86e25ba27ed78a78995db46dceb1c62d6c80e927c1ea6b573cfe7c22f2",
+  "verified_members": 2,
+  "files": {
+    "doc/evidence/unified_model_plan_20260916.zh.md": "32fb1ff0c075d6b00ab836433002cc0d5399b860616641ac6f4b7593070a2b81",
+    "doc/assets/unified_model_research_20260916/factorial_design.csv": "87803d143de862f48c30b053c19b13cab844b605715f81797238f02220fd486e"
+  },
+  "reason": "User permits stage-specific stopping and asks for a compact training design."
+}

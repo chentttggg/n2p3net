@@ -1,0 +1,95 @@
+{
+  "schema": "n2p3_research_contrast_design/1",
+  "status": "design_only_not_an_executable_training_plan",
+  "date": "2026-10-04",
+  "evidence_scope": "public_development",
+  "goal": "Improve identifiable ERP and operational decision evidence across the entire legal input-to-result chain",
+  "primary_binary_population": ["BI2014a", "BI2015a", "BNCI2014-008", "Huebner2017"],
+  "source_population_policy": "retain all requested twelve-source records in the inventory; admit each algorithm by explicit observed support without silent source removal",
+  "target_protocol": {
+    "requested_K": [0, 200, 800],
+    "same_physical_test_schedule": true,
+    "fallback": "declared_actual_K_with_TestBudget_and_failure_ledger",
+    "target_only_K0": "not_estimable_without_calibration",
+    "fit_scope": "source_only_selection_then_explicit_target_calibration",
+    "test_state_updates": "forbidden_unless_a_separate_transductive_protocol_is_declared",
+    "labels": "test_truth_scorer_only"
+  },
+  "identity_relations": {
+    "evidence_cohort": ["authority_participant", "raw_bytes", "physical_event_clock", "truth", "candidate_schedule", "authorized_raw_and_label_support"],
+    "materialized_input": ["evidence_cohort", "operator_source_and_config", "fitted_state", "actual_X", "observed_mask", "column_roles", "time_grid"],
+    "reuse": "same_fit_and_score_materialization_and_original_execution_identity",
+    "contrast": "same_physical_evidence_and_budget; only_explicit_treatment_axes_may_differ"
+  },
+  "stages": [
+    {
+      "id": "S0",
+      "kind": "engineering_relationship_acceptance",
+      "dependencies": [],
+      "required_rejections": ["old_scores_with_new_input_identity", "unauthorized_EA_fit_buffer", "unassigned_domain_output", "nonphysical_EA_as_physical_checkpoint_input"],
+      "required_admissions": ["same_physical_event_new_operator_comparison", "valid_raw_support_ledger_preserved_before_analysis_intersection", "normal_frozen_model_replay"],
+      "performance_training": false
+    },
+    {
+      "id": "S1",
+      "kind": "mature_ERP_comparators",
+      "dependencies": ["S0"],
+      "arms": ["current_input_waveform_SLDA", "current_input_ERP_prototype_covariance", "no_baseline_input_waveform_SLDA", "no_baseline_input_standard_ToeplitzLDA", "matched_A0Q0", "matched_N2P3_scratch"],
+      "contrasts": [
+        {"left": "current_input_ERP_prototype_covariance", "right": "current_input_waveform_SLDA", "allowed_axes": ["classifier"]},
+        {"left": "no_baseline_input_waveform_SLDA", "right": "current_input_waveform_SLDA", "allowed_axes": ["baseline_operator"]},
+        {"left": "no_baseline_input_standard_ToeplitzLDA", "right": "no_baseline_input_waveform_SLDA", "allowed_axes": ["covariance_estimator"]},
+        {"left": "matched_A0Q0", "right": "matched_N2P3_scratch", "allowed_axes": ["source_initialization"]}
+      ],
+      "channel_policy": "target_native_and_transfer_matched_layout_panels_are_separate",
+      "selection_opportunity": "equal_predeclared_source_inner_or_legal_calibration_inner_budget"
+    },
+    {
+      "id": "S2",
+      "kind": "finite_input_operator",
+      "dependencies": ["S0"],
+      "current_candidates_not_admitted": ["staged_odd", "staged_even", "harmonic_fixed50"],
+      "next_candidates": ["robust_short_window_harmonic_regression_with_declared_frequency_rule", "finite_lowpass_plus_explicit_drift_nuisance_model"],
+      "admission_challenges": ["line_frequency_drift", "amplitude_phase_modulation", "glitch", "ERP_increment_and_clean_ERP", "slow_ERP_trend_confounding", "weak_and_persistent_real_contamination", "no_external_context_reads"],
+      "window_design": {"fixed_support": "true_epoch_and_resample_600_800_1200ms_from_one_longest_authorized_scope", "latency_route": "different_raw_cutoff_must_be_a_separate_treatment"}
+    },
+    {
+      "id": "S3",
+      "kind": "operator_aware_and_temporal_transfer_research",
+      "dependencies": ["S0", "S1"],
+      "contrasts": [
+        {"left": "propagated_covariance", "right": "ordinary_shrinkage_covariance", "allowed_axes": ["noise_structure"]},
+        {"left": "propagated_covariance_plus_soft_boundary_uncertainty", "right": "propagated_covariance", "allowed_axes": ["boundary_state_uncertainty"]},
+        {"left": "source_temporal_basis_target_native_shrinkage_head", "right": "fixed_smooth_basis_target_native_shrinkage_head", "allowed_axes": ["source_temporal_information"]}
+      ],
+      "must_test": ["Gamma_zero_identity", "misspecified_Gamma_negative_case", "shared_state_and_raw_overlap_cross_epoch_covariance", "raw_noise_state_cross_covariance_Omega", "no_double_counted_noise", "covariance_PSD_and_identifiable_rank", "reference_role", "no_missing_channel_fabrication", "frozen_state_replay"]
+    },
+    {
+      "id": "S4",
+      "kind": "decision_structure_and_information_budget",
+      "dependencies": ["S0", "S1"],
+      "candidate_data_only": true,
+      "arms": ["sum_evidence", "frozen_low_dimensional_GLS", "continuous_candidate_conditional_likelihood"],
+      "BNCI_attribution": ["trial_only", "trial_plus_prior", "trial_plus_decision", "trial_plus_prior_and_decision"],
+      "attribution_policy": "reuse_valid_executed_A0_A1_cells_where_identity_matches; fit_only_missing_matched_cells; do_not_rescan_all_losses",
+      "independent_unit": "physical_decision_or_participant_as_declared_not_repeated_prefix",
+      "G1_policy_candidate": "trial_only_or_source_frozen_decision_rule",
+      "primary_metric": "requested_participant_operational_hit_at_all",
+      "secondary_metrics": ["NLL", "coverage", "calibration_and_decoding_time"],
+      "candidate_effect_margin": {"value": null, "status": "must_be_declared_before_performance_execution_not_copied_from_trial_AUC_gate"},
+      "negative_controls": ["uniform_correlated_noise_ranking_equivalence", "kernel_estimation_uncertainty_and_C_q_logdet", "target_truth_scramble_cannot_change_predictions", "periodic_design_rank_deficiency", "neighboring_unknown_decision_truth_not_available"]
+    },
+    {
+      "id": "S5",
+      "kind": "complete_route_replication",
+      "dependencies": ["S1", "selected_research_route_admitted"],
+      "proposed_paired_pipeline_seeds": [20261004, 20261005, 20261006],
+      "retrain_whole_source_target_pipeline": true,
+      "BI_family_sensitivity": "separate_panel_not_extra_independent_people",
+      "posthoc_participant_winner_selection": false,
+      "external_and_adult_confirmation": "not_executed_in_this_research_design"
+    }
+  ],
+  "stopping_rules": ["no_performance_training_until_S0_relationship_acceptance", "oracle_only_gain_does_not_admit_route", "do_not_promote_if_real_calibration_cannot_estimate_required_structure", "retain_simpler_valid_anchor_when_candidate_fails"],
+  "claims_not_made": ["A1_Q1_unique_cause_identified", "new_route_has_higher_public_AUC", "adult_device_accuracy_confirmed", "full_EA_model_consumer_implemented"]
+}

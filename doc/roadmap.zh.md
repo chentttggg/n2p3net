@@ -6,7 +6,9 @@
 方案阶段已完成；[后续代码实施](evidence/ensemble_implementation_20261005.zh.md)已经接通B00/B01/B02核心与B03分组温度、
 B04source/scratch及B05显式AR研究入口，[独立质量评估](evidence/ensemble_quality_20261005.zh.md)及本轮软件验收已完成。
 复杂gating与完整公共矩阵/成人确认仍待各自验收，不能将旧design JSON的not_started当当前软件状态，也不能将本轮软件交付当全部15块研究完成。
-后续[B05 fixed32实施](evidence/continuous_fixed_prefix_20261005.zh.md)已接真实joint条件模型及M1匹配入口；数学/软件通过与真实PARCOR收敛、完整M1执行分开验收，当前实际优化瓶颈正在处理。
+后续[B05 fixed32实施](evidence/continuous_fixed_prefix_20261005.zh.md)已接真实joint条件模型、稳定QR、精确梯度及M1匹配入口；真实A01的AR8/32拟合及重放已通过，完整矩阵另验收。
+M1使用[冻结计划](assets/continuous_fixed_prefix_20261005/m1_plan.json)：8人×6完整selection folds×6阶×2估计器，共576fit；C800中720标签形成六组，每fold600训练/120held，80标签不用。
+本地测得2participant workers×4threads为可行拓扑；所有12臂均执行、失败保留requested分母，不从单次探针选阶。该单seed target-only校准开发不称三完整source→target seed或成人确认。
 
 1. B00评价/选择、B01信号/支持先固定；B02专家Interface、B03C内概率校准、B04神经/matched scratch构成主线。
 2. B05AR、B06边界、B07字典、B08先验、B09空间、B10输入算子在B00/B01后并行；B11动态/稳健模型按识别前置进入。

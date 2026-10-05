@@ -15,6 +15,8 @@ ERP保真与white-noise gain来自完整T映射；输出重叠率和0/2/8秒距�
 fixed32同一个full-record W作用于Y/D/Z，所有C prefix联合更新共享kernel及各record drift，再只以tail的条件joint密度优化AR/Σ；Σ profile分母为实际tail行数，不减旧GLS df。
 最终kernel posterior读完整授权C，不能写成kernel只用tail。AR0只是不使用noise Markov history，仍可通过prefix更新kernel/drift。
 同一nuisance坐标与测度用于full/prefix；固定candidate prior乘conditional-tail likelihood是声明的评分程序，prefix含候选信息时不自动等于full-data Bayes posterior。
+drift使用共同prefix居中尺度；prefix和tail顺序augmented QR计算信息root，scatter保留为残差及参数差的正平方和，避免大数相减与Gram平方条件数。
+精确梯度对应同一个每tail行profile目标，η→tanhκ有有限声明搜索域；初末点须与实际NumPy高斯目标一致，数值停止不等于最优性证明。
 
 ## 0. BrainSync 采集角色（2026-09-06）
 

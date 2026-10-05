@@ -40,7 +40,7 @@ from transfer.temporal_noise import TemporalNoise
 _IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _STATE_KEYS = ("basis", "kernel_mean", "kernel_row_covariance", "innovation_covariance")
 _COMPUTE_DTYPE = np.dtype(np.float64).str
-_CONDITIONAL_SOLVER_SETTINGS = freeze_metadata({"eta_max": 8., "maxiter": 200, "ftol": 1e-10, "gtol": 1e-6})
+_CONDITIONAL_SOLVER_SETTINGS = freeze_metadata({"eta_max": 8., "maxiter": 1000, "maxcor": 32, "ftol": 1e-10, "gtol": 1e-6})
 
 
 @dataclass(frozen=True)
@@ -167,27 +167,24 @@ def _joint_posterior(design, samples, prior_mean, prior_root):
     Q, root = np.linalg.qr(np.vstack((design, prior)), mode="reduced")
     rhs = np.vstack((samples, prior_root @ prior_mean))
     mean = solve_triangular(root, Q.T @ rhs)
-    inverse_root = solve_triangular(root, np.eye(width))
-    return mean, inverse_root
-
-
-def _gaussian_quadratic(residual, lowrank):
-    """Scatter and logdet for I+UU', using positive sums of squares."""
-    root = np.linalg.cholesky(np.eye(lowrank.shape[1]) + lowrank.T @ lowrank)
-    projected = solve_triangular(root, lowrank.T @ residual, lower=True)
-    coefficients = solve_triangular(root.T, projected, lower=False)
-    remainder = residual - lowrank @ coefficients
-    return remainder.T @ remainder + coefficients.T @ coefficients, 2 * float(np.log(np.diag(root)).sum())
+    return mean, root
 
 
 def _conditional_solver_record(noise):
     optimization = noise.provenance["optimization"]
     method = ("none" if optimization["strategy"] == "burg_only" else
               "no_AR_shape_parameters" if not noise.order else "L-BFGS-B")
+    gradient_source = None
+    if method == "L-BFGS-B":
+        from transfer.continuous_gradient import IMPLEMENTATION_SHA256
+        gradient_source = IMPLEMENTATION_SHA256
     return {"method": method, "parameterization": "actual_PARCOR_tanh_eta",
             "eta_max": optimization["eta_max"], "max_iterations": _CONDITIONAL_SOLVER_SETTINGS["maxiter"],
+            "curvature_history": _CONDITIONAL_SOLVER_SETTINGS["maxcor"],
             "ftol": _CONDITIONAL_SOLVER_SETTINGS["ftol"], "gtol": _CONDITIONAL_SOLVER_SETTINGS["gtol"],
-            "jacobian": "forward_finite_difference", "optimized_objective_scale": "per_scored_row_centered_at_Burg"}
+            "jacobian": "torch_CPU_float64_exact_autograd" if gradient_source else None,
+            "gradient_implementation_sha256": gradient_source,
+            "optimized_objective_scale": "per_scored_row_centered_at_Burg"}
 
 
 def _conditional_prediction(samples, designs, noise, prefix, prior_mean, prior_covariance, *, posterior=False):
@@ -201,7 +198,10 @@ def _conditional_prediction(samples, designs, noise, prefix, prior_mean, prior_c
     width = kernel_width + 2 * len(samples)
     prefix_design, prefix_y, tail_design, tail_y = [], [], [], []
     for index, (y, design) in enumerate(zip(samples, designs, strict=True)):
-        drift = np.column_stack((np.ones(len(y)), np.linspace(-1, 1, len(y))))
+        # One affine coordinate system for both prefix and tail. Centering its
+        # observed prefix keeps drift information well scaled on long records.
+        # The same diffuse measure change cancels in the conditional density.
+        drift = np.column_stack((np.ones(len(y)), (2 * np.arange(len(y)) - (prefix - 1)) / (prefix - 1)))
         transformed = noise.whiten(np.column_stack((y, design, drift)))
         matrix = np.zeros((len(y), width))
         matrix[:, :kernel_width] = transformed[:, channels:channels + kernel_width]
@@ -212,11 +212,18 @@ def _conditional_prediction(samples, designs, noise, prefix, prior_mean, prior_c
         tail_y.append(transformed[prefix:, :channels])
     A_u, Y_u, A_s, Y_s = map(np.vstack, (prefix_design, prefix_y, tail_design, tail_y))
     prior_root = solve_triangular(np.linalg.cholesky(prior_covariance), np.eye(kernel_width), lower=True)
-    prefix_mean, prefix_root = _joint_posterior(A_u, Y_u, prior_mean, prior_root)
-    scatter, logdet = _gaussian_quadratic(Y_s - A_s @ prefix_mean, A_s @ prefix_root)
+    prefix_mean, prefix_information_root = _joint_posterior(A_u, Y_u, prior_mean, prior_root)
+    tail_q, full_information_root = np.linalg.qr(np.vstack((A_s, prefix_information_root)), mode="reduced")
+    full_mean = solve_triangular(full_information_root,
+        tail_q.T @ np.vstack((Y_s, prefix_information_root @ prefix_mean)))
+    remainder = Y_s - A_s @ full_mean
+    parameter_residual = prefix_information_root @ (full_mean - prefix_mean)
+    scatter = remainder.T @ remainder + parameter_residual.T @ parameter_residual
+    logdet = 2 * float(np.log(np.abs(np.diag(full_information_root))).sum()
+                      - np.log(np.abs(np.diag(prefix_information_root))).sum())
     mean = covariance = None
     if posterior:
-        full_mean, full_root = _joint_posterior(np.vstack((A_u, A_s)), np.vstack((Y_u, Y_s)), prior_mean, prior_root)
+        full_root = solve_triangular(full_information_root, np.eye(width))
         mean = full_mean[:kernel_width]
         covariance = full_root[:kernel_width] @ full_root[:kernel_width].T
     return scatter, logdet, len(Y_s), mean, covariance
@@ -261,15 +268,36 @@ def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge,
                     "converged": True, "iterations": 0, "evaluations": 1, "eta_max": eta_max,
                     "status": 0, "message": "actual Burg reflections retained"}
     if strategy == "conditional_profile" and order:
+        from transfer.continuous_gradient import ConditionalGaussianObjective
+
         eta = np.arctanh(reflections)
         if np.any(np.abs(eta) > eta_max):
             raise UnidentifiableFitError("Burg initializer is outside the declared conditional PARCOR search domain")
-        result = minimize(lambda point: (evaluate(np.tanh(point))[0] - initial_objective) / objective_rows, eta,
+        gradient_objective = ConditionalGaussianObjective(samples, designs, conditioning_samples=prefix, ridge=ridge)
+        evaluations += 1
+        initial_torch, _ = gradient_objective.value_gradient(eta)
+        if gradient_objective.objective_rows != objective_rows or not np.isclose(
+            initial_torch * objective_rows, initial_objective, rtol=1e-11, atol=1e-8
+        ):
+            raise UnidentifiableFitError("exact-gradient and frozen Gaussian objectives disagree at initialization")
+
+        def value_gradient(point):
+            nonlocal evaluations
+            evaluations += 1
+            value, gradient = gradient_objective.value_gradient(point)
+            return value - initial_torch, gradient
+
+        result = minimize(value_gradient, eta, jac=True,
             method="L-BFGS-B", bounds=[(-eta_max, eta_max)] * order,
-            options={name: _CONDITIONAL_SOLVER_SETTINGS[name] for name in ("maxiter", "ftol", "gtol")})
+            options={name: _CONDITIONAL_SOLVER_SETTINGS[name] for name in ("maxiter", "maxcor", "ftol", "gtol")})
         if not result.success:
             raise UnidentifiableFitError(f"conditional PARCOR optimization did not converge: {result.message}")
         reflections = np.tanh(result.x)
+        evaluations += 1
+        final_torch, _ = gradient_objective.value_gradient(result.x)
+        final_numpy = evaluate(reflections)[0]
+        if not np.isclose(final_torch * objective_rows, final_numpy, rtol=1e-11, atol=1e-8):
+            raise UnidentifiableFitError("exact-gradient optimum differs from the frozen Gaussian objective")
         optimization.update(converged=bool(result.success), iterations=int(result.nit),
                             status=int(result.status), message=str(result.message))
     elif strategy == "conditional_profile":
@@ -529,7 +557,7 @@ class ContinuousDecisionModel:
                 "kernel_observation_support": "all_authorized_prefix_and_tail",
                 "kernel_uncertainty": "joint_matrix_normal_posterior_given_all_authorized_C",
                 "noise": "fixed_prefix_conditional_spatial_profile_after_Burg_initialization",
-                "noise_estimator": noise_estimator, "nuisance": "per_record_diffuse_constant_and_full_record_linear_trend",
+                "noise_estimator": noise_estimator, "nuisance": "per_record_diffuse_constant_and_prefix_centered_linear_trend",
                 "noise_solver": _conditional_solver_record(noise_model),
                 "score_estimand": "conditional_tail_with_fixed_candidate_prior",
                 "hyperparameter_uncertainty_integrated": False, "global_MLE_claimed": False,

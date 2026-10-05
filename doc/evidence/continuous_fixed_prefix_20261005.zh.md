@@ -1,6 +1,6 @@
-# 固定前缀条件AR：数学、实施与真实路径诊断
+# 固定前缀条件AR：数学、梯度实施与代码质量
 
-日期：2026-10-05。承接[15块科研方案](deep_research_plan_20261005.zh.md)的B05及[多专家主线](ensemble_implementation_20261005.zh.md)。实施起点为`096bd2a`的干净隔离树，改前源码已有本地物理冻结。原`D:/BCI/n2p3-net`并发工作、数据和历史产物保留。本记录随真实验收补充，不把软件或吞吐探针写成M1效能结果。
+更新：2026-10-06。承接[15块科研方案](deep_research_plan_20261005.zh.md)的B05及[多专家主线](ensemble_implementation_20261005.zh.md)。实施起点为`096bd2a`的干净隔离树，joint条件模型已在`6c7c930`提交；后续稳定QR与精确梯度见下文。改前源码已有本地物理冻结。原`D:/BCI/n2p3-net`并发工作、数据和历史产物保留。本记录随真实验收补充，不把软件或吞吐探针写成M1效能结果。
 
 ## 数学合同与代码落点
 
@@ -13,7 +13,7 @@ P_u=P_0+A_u^\top A_u,\quad M_u=P_u^{-1}(P_0M_0+A_u^\top Y_u),\quad
 Y_s\mid Y_u,C\sim MN(A_sM_u,I+A_sP_u^{-1}A_s^\top,\Sigma).
 \]
 
-prefix nuisance必须满列秩，使joint posterior proper。通过augmented QR求M_u和row root，以Woodbury正平方和求conditional scatter Q及row logdet；`Σ_profile=Q/n_tail`。AR目标为`0.5[n_tail log|Σ_profile|+C log|V_tail|]`，最终B posterior块来自全部授权C-prefix和tail。只计tail密度不等于只从tail估kernel；C-prefix标签/事件仍必须授权。
+prefix nuisance必须满列秩，使joint posterior proper。drift在prefix居中尺度且full/prefix共用坐标；prefix→tail顺序augmented QR计算信息root，conditional scatter Q为最终残差平方和加prefix到full参数差平方和，避免Gram平方条件数和full/prefix二次型相减。row logdet来自两root的log对角差；`Σ_profile=Q/n_tail`。AR目标为`0.5[n_tail log|Σ_profile|+C log|V_tail|]`，最终B posterior块来自全部授权C-prefix和tail。只计tail密度不等于只从tail估kernel；C-prefix标签/事件仍必须授权。
 
 held评分重新条件化其真实prefix，但不修改冻结C模型、noise、温度或其它统计。AR0的Markov noise没有past依赖，未知kernel/drift仍可利用prefix；原设计对此的过强措辞以此合同更正。固定π(q)乘conditional-tail likelihood是明确的候选程序；若prefix design依q变化，它不同于full-data Bayes posterior，后者还需要π(q|prefix,C)。当前BNCI pre-roll51点，decision首onset51，prefix32内该decision设计无候选差异；外部history由原MAT完整flashledger的邻域准入负责，不能泛化为任意录制的证明。
 
@@ -21,20 +21,39 @@ held评分重新条件化其真实prefix，但不修改冻结C模型、noise、�
 
 ## 实际入口与失败账本
 
-现有MAT runner接受`comparison_role=fixed_prefix_ar_order`，要求六阶×`burg`/`conditional_profile`完整roster、prefix32及相同basis、ridge和response support。Burg-only保留实际初始化shape；另一臂以η→tanhκ优化同一个精确条件目标。代码当前使用声明的有限L-BFGS-B搜索域/预算，记录local convergence，不称全局MLE。
+现有MAT runner接受`comparison_role=fixed_prefix_ar_order`，要求六阶×`burg`/`conditional_profile`完整roster、prefix32及相同basis、ridge和response support。Burg-only保留实际初始化shape；另一臂以η→tanhκ优化同一个精确条件目标。L-BFGS-B固定`eta_max=8, maxiter=1000, maxcor=32, ftol=1e-10, gtol=1e-6`，使用CPU/float64精确autograd，不放宽原停止门限。达到数值停止条件不证明局部或全局最优。
+
+`continuous_gradient.ConditionalGaussianObjective`拥有输入常量，保留独立record lattice、缓存zero drift块，不修改global threads/device。它返回每tail行原始profile目标与精确η梯度；调用者只在优化时减去Burg起点常数，初末点与独立NumPy实际Gaussian目标核对。生产solver声明绑定helper实际源码SHA。求值账本包含初始化、每次value/gradient、终点核对和最终posterior，最后计数遗漏经RED复现后修复；一次AR1例的实际10次与记录10次一致。
 
 模型/包/recipe/source与实际noise strategy一致；solver method从实际strategy与order派生，AR0不伪称调用非线性shape optimizer。合法不可识别、未收敛保存fit_failure并保留requested分母；合同错误传播并落父/子failed。每cell分别保存planned tail与实际read/condition/scored字段，失败时实际tail为None、实际scored样本0。
 
-## 当前证据与尚未关闭项
+## 软件验证与独立代码质量
 
 - 独立理论oracle55项通过；joint-state、分层条件公式和dense full/prefix ratio三路一致，六阶最大density误差`1.42e-13`。
 - 独立public Interface61项通过：六阶多record kernel/Σ、不同N与record置换、AR0 prefix、单位/gauge、right-censored C与held拒绝、readonly状态和保存重放。复数basis静默丢虚部已先复现再修复，均值与covariance也在同一real入口拒绝。
 - noise producer新/旧64项通过；15种旧order/startup组合与基线数值位级一致。linked集成148项通过。
 - 第一轮完整pytest2498通过、19跳过、0失败/错误，328.417秒；391文件在完整测试前后逐byte守卫不变。其实际source为`c058aec0...` continuous与`9fc7d122...` temporal，后续estimator/solver关系修复另做定向复验，不能把此全集包装成后续源上重跑。
-- Standards独立确认estimator自述与actual noise optimization strategy可错贴；实际AR0又误称L-BFGS-B。现已统一派生/载入核对，完整最后复验随候选稳定追加。
+- Standards独立确认estimator自述与actual noise optimization strategy可错贴；实际AR0又误称L-BFGS-B。已统一派生/载入核对；Burg与AR0不伪称调用gradient或保存helper身份。
+- 稳定QR定向56项、gradient正式39项与fixed-prefix关联21项均通过；190项linked集成通过。独立梯度误差常规不超过`2.32e-15`，真实Burg8/32不超过`9.59e-11`，高精度中心差分不超过`4.56e-8`。
+- 后续完整pytest为2540通过、19跳过、0失败/错误，共2559项，455.052秒；393文件前后byte守卫不变。实际continuous SHA为`4b99ddc11c2f29bc330f75b59d5f3f870dcde10b6268c73e5c9aedc038cfd20f`，helper为`6c03c259a9536c8111f875903cf341b2f697f78eaa5e45b9b6d59a440f385da5`。
+- 最后的求值计数修复将continuous SHA改为`e982d26da8b0658d0ccb5895903bcc930c4286b01a5a5e24f8c495c1218f71a7`，86项定向通过。未在此delta后重跑全集；独立Standards另在提前物理捕获且运行中不变的最终源码上通过173项关联测试。
+- Standards最终通过：剩余发现0、判断性smells 0。核对λ/Σ关系、记录边界、只读并发、helper SHA/wrong-tag拒绝、Burg/AR0自述、整包同字节重放与真实求值数；不能据此宣称M1效能或整体项目已完成。Spec与高相关AR数值检验独立保留，不用Standards代替数学结论。
+- Spec/math最终通过，当前审查范围无剩余确认公式或模型缺陷。重新执行的公开生命周期61项、dense/Schur/80位高精度23项、当前计数源6项分别留源；真实κ8/32方向导数差不超过`1.12e-10`，匹配AR32平稳样本的logevidence绝对误差不超过`1.73e-7`（reference约48746）。
 
-原始证据在本地`tmp/continuous_fixed_prefix_20261005/`：theory_review、callchain_review、noise_state、standards_review、各JUnit/log与`full_suite_source.json`/`full_suite_receipt.json`。原始报告、src执行副本、RED脚本/结果保留；交付时物理封存和清单另记。以上测试范围有重叠，不相加。
+独立Spec保留一个通过numeric ingress的off-model iid尺度压力失败：reference density约`−7.9e12`，float64 absolute误差24.72–259.58，relative不超过`3.30e-11`；原固定absolute断言仍false。所测三个候选虽给相同概率`[0,1,0]`，log-BF误差约235，不能据relative小认证任意近tie或极端输入的NLL。该限制与匹配生成样本的验证分列，没有用合法样本通过抹去原失败。
 
-真实A01路径仅是吞吐/重放探针：600授权labels、5×7975×8 raw fit，held一组只供无标签score/reload。单线程Burg AR0/8的fit约0.228/0.341秒，含保存/评分/重载约0.686/1.538秒（含profile仪器，不是正式跨环境速度承诺）。优化AR8触达200次迭代上限，进程exit1；失败收据与原log保留，未被当成完成或效能收益。
+文档链接核查另发现隔离树遗漏六份原有设计/manifest附件；已从原树按同字节复制补齐并逐SHA核对，原件未改动。这是导航修复，不重标历史设计或执行身份。
 
-独立诊断已定位默认forward-FD在δ=1e-8时的gradient误差超过gtol；等价prefix居中尺度可改善drift/root条件数，exact autograd路线正在与同数据/预算/目标核对。当前未执行完整8人×6fold×六阶×两估计器M1矩阵，不从该探针选择算法或宣布泛化提升。下一步先稳定数值梯度和实测总墙钟，再冻结执行源、运行完整M1；四库/完整source→target seed、gating、其它机制与成人确认仍继续原依赖图。
+原始证据在本地`tmp/continuous_fixed_prefix_20261005/`：theory_review、callchain_review、noise_state、gradient_module、optimizer_diagnosis、standards_review、各JUnit/log与完整source/receipt。原始报告、src执行副本、RED脚本/结果保留；[紧凑验收账本](../assets/continuous_fixed_prefix_20261005/quality_receipt.json)保存版本/范围，原始证据物理封存与清单另记。以上测试范围有重叠，不相加。
+
+## 真实路径性能与M1执行合同
+
+真实A01路径仅是吞吐/重放探针：600授权labels、5×7975×8 raw fit，held一组只供无标签score/reload。单线程Burg AR0/8含保存/评分/重载约0.686/1.538秒。原forward-FD AR8触达200次上限、exit1，失败收据保留。精确梯度AR8在136迭代达到停止条件，fit50.955秒、总54.014秒；最终1000/maxcor32生产AR32在261迭代达到停止条件，fit258.400秒、总264.035秒，保存重放精确一致。此AR32探针对应4b99源码，不重签为最后计数修复后的模型。
+
+独立诊断确认默认forward-FD在δ=1e-8时gradient误差超过gtol；中心FD200也未收敛，AR8约4658次/417.8秒、AR32约15600次/4664秒，属于独立仪器窗口。独立exact-gradient AR32约308次/215.7秒达到ftol，projected gradient约`5.32e-5`且有微小负Hessian特征值，不能称最小值已证。exact-HVP trust-region更贵且失败、峰值约3.25GB，已否决该性能实现。不同source、callback、profile和并发窗口分别保存，不宣称统一倍速。
+
+按`performance-optimization`与`get-available-resources`复核本地拓扑。数值窗口2workers×4threads为8.575次/秒，1×4为6.948、2×2为7.219；实际CPU约7.47核，双worker峰值1.939GB，数值差异最大`5.95e-14`。因此[完整M1计划](../assets/continuous_fixed_prefix_20261005/m1_plan.json)采用2个participant进程×4线程，入场available至少3GB；完整participant内存与总吞吐另由真实运行验收。
+
+M1固定8人×6fold×六阶×两估计器，共576fit、每臂48个requested decisions；C800中720labels组成6个完整selection，fold内600训练/120held、80不用。共同prefix32、response1.2秒、basis8、ridge1；固定温度，baseline为ar8_burg。原MAT由canonical parser按八份原SHA准入，源码/计划由`n2p3_source_freeze/1`物理冻结并核对，从materialized源码执行，成功包逐cell保存重放，失败保留requested分母与未执行支持。全部12臂执行，不因pilot不利而减少。
+
+本轮为单seed、target-only、公开校准开发。Windows本机venv为CPU-only Torch，未云端启动；云端25CPU/4GPU下限不改写成本地声明。M1需完整结束、核实际source/输入/覆盖/失败与participant-macro配对hit/NLL/Brier后另更新实测结论；四库/完整source→target seed、gating、其它机制与成人确认继续原依赖图。

@@ -253,6 +253,29 @@ def test_conditional_ar0_records_zero_shape_solver_instead_of_claiming_optimizer
     assert model.noise.provenance["optimization"]["iterations"] == 0
 
 
+def test_gaussian_evaluation_count_includes_both_gradient_endpoint_checks(monkeypatch):
+    import transfer.continuous_decision as continuous
+    from transfer.continuous_gradient import ConditionalGaussianObjective
+
+    calls = {"numpy": 0, "gradient": 0}
+    original_prediction = continuous._conditional_prediction
+    original_gradient = ConditionalGaussianObjective.value_gradient
+
+    def prediction(*args, **kwargs):
+        calls["numpy"] += 1
+        return original_prediction(*args, **kwargs)
+
+    def gradient(self, *args, **kwargs):
+        calls["gradient"] += 1
+        return original_gradient(self, *args, **kwargs)
+
+    monkeypatch.setattr(continuous, "_conditional_prediction", prediction)
+    monkeypatch.setattr(ConditionalGaussianObjective, "value_gradient", gradient)
+    basis, records = calibration()
+    model = fit(records, basis, 1, "conditional_profile")
+    assert model.noise.provenance["optimization"]["evaluations"] == sum(calls.values())
+
+
 @pytest.mark.parametrize("prefix", [True, 1, 31, 212])
 def test_conditional_support_refuses_unidentified_or_order_short_prefix(prefix):
     basis, records = calibration()

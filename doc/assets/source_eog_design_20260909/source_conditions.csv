@@ -1,0 +1,154 @@
+﻿group,pool,target,source_members,layout,notch,source_eog,dose,seed,source_updates
+A,GTN_only,P001,GTN,cz2_FZ_PZ,True,False,full_pool_fixed_updates,20260909,4000
+A,GTN_only,P001,GTN,cz2_FZ_PZ,True,False,full_pool_fixed_updates,20260910,4000
+A,GTN_only,P001,GTN,cz2_FZ_PZ,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B0,BI2014a,BI2015a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B0,BI2014a,BI2015a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B0,BI2014a,BI2015a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B0,BI2015a,BI2014a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B0,BI2015a,BI2014a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B0,BI2015a,BI2014a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B0,BNCI2014-008,BI2014a + BI2015a + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B0,BNCI2014-008,BI2014a + BI2015a + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B0,BNCI2014-008,BI2014a + BI2015a + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B0,Huebner2017,BI2014a + BI2015a + BNCI2014-008,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B0,Huebner2017,BI2014a + BI2015a + BNCI2014-008,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B0,Huebner2017,BI2014a + BI2015a + BNCI2014-008,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B1,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B1,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B1,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B1,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B1,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B1,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B1,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B1,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B1,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B1,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B1,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B1,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B2,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B2,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B2,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B2,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B2,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B2,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B2,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B2,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B2,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B2,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B2,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B2,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B3,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B3,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B3,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B3,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B3,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B3,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B3,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B3,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B3,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B3,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B3,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B3,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + EPFLP300,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B4,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B4,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B4,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B4,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B4,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B4,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B4,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B4,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B4,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B4,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B4,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B4,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + Chailloux2020,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B5,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B5,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B5,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B5,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B5,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B5,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B5,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B5,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B5,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B5,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B5,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B5,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B6,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B6,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B6,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B6,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B6,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B6,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B6,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B6,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B6,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B6,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B6,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B6,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B7,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B7,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B7,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B7,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B7,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B7,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B7,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B7,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B7,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_public,B7,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_public,B7,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_public,B7,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_dose,B0,BI2014a,BI2015a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B0,BI2014a,BI2015a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B0,BI2014a,BI2015a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B0,BI2015a,BI2014a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B0,BI2015a,BI2014a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B0,BI2015a,BI2014a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B0,BNCI2014-008,BI2014a + BI2015a + Huebner2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B0,BNCI2014-008,BI2014a + BI2015a + Huebner2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B0,BNCI2014-008,BI2014a + BI2015a + Huebner2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B0,Huebner2017,BI2014a + BI2015a + BNCI2014-008,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B0,Huebner2017,BI2014a + BI2015a + BNCI2014-008,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B0,Huebner2017,BI2014a + BI2015a + BNCI2014-008,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B1,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B1,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B1,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B1,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B1,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B1,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B1,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B1,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B1,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B1,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B1,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B1,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B6,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B6,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B6,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B6,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B6,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B6,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B6,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B6,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B6,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B6,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B6,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B6,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B7,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B7,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B7,BI2014a,BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B7,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B7,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B7,BI2015a,BI2014a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B7,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B7,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B7,BNCI2014-008,BI2014a + BI2015a + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_dose,B7,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260909,4000
+B_dose,B7,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260910,4000
+B_dose,B7,Huebner2017,BI2014a + BI2015a + BNCI2014-008 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,matched_participants_unique_trials_updates,20260911,4000
+B_product,B0,P001,BI2014a + BI2015a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_product,B0,P001,BI2014a + BI2015a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_product,B0,P001,BI2014a + BI2015a + BNCI2014-008 + Huebner2017,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000
+B_product,B7,P001,BI2014a + BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260909,4000
+B_product,B7,P001,BI2014a + BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260910,4000
+B_product,B7,P001,BI2014a + BI2015a + BNCI2014-008 + Huebner2017 + BI2013a + EPFLP300 + Chailloux2020 + Speier2017 + GTN,cz6_masked,True,False,full_pool_fixed_updates,20260911,4000

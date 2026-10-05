@@ -1,0 +1,21 @@
+{
+  "status": "passed_design_checks_not_training",
+  "source_templates": 153,
+  "target_templates": 99,
+  "counts": {
+    "A": 7,
+    "B_dose": 12,
+    "B_product": 10,
+    "B_public": 28,
+    "C": 42
+  },
+  "factorial_ranks": {
+    "C_initialization_x_EOG_strength": 6
+  },
+  "no_heldout_source_overlap": true,
+  "no_fake_GTN_six_channel_source": true,
+  "no_duplicate_source_independent_controls": true,
+  "no_external_Mainsah_or_incomplete_Lee": true,
+  "EOG_uses_fixed_B0_source_dependency": true,
+  "EOG_strength_algebra_counterexamples_passed": true
+}

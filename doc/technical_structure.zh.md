@@ -9,6 +9,8 @@
 [固定前缀条件AR](evidence/continuous_fixed_prefix_20261005.zh.md)深化现有`ContinuousDecisionModel`的同一fit/score/save/load Interface：
 `conditioning_samples`与`noise_estimator`在recipe、实际noise/model与包内binding一致；model/noise `/4`保存真实初始化、优化和支持来源。
 共享B与各record diffuse drift在prefix联合更新，冻结B posterior来自完整授权C；同tail目标独立profile空间Σ。
+`continuous_gradient.ConditionalGaussianObjective`只消费已授权、已验证的C数组，拥有不可变常量；record-local lattice与prefix→tail augmented QR给出CPU/float64目标及精确η梯度。
+优化器由`continuous_decision`持有线程外的科学边界、初末NumPy目标核对与真实求值账本；`noise_solver`绑定实际gradient源码SHA，Burg/AR0不伪称调用梯度。
 旧`/2` clipped AR1与`/3` stationary仍是各自估计量。历史source绑定包继续按原frozen执行源重放，不自动移除implementation门禁。
 
 2026-10-05 [分块科研规格](evidence/deep_research_plan_20261005.zh.md)主线由`transfer.ensemble`
