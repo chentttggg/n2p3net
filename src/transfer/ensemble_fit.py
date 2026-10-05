@@ -35,7 +35,7 @@ from transfer.ensemble_views import (
     SelectionEpochProfile,
     build_calibration_epoch_dataset,
 )
-from transfer.noise_model import array_digest, freeze_metadata
+from transfer.noise_model import freeze_metadata
 from transfer.recipes import TargetRecipe
 
 FITTED_ENSEMBLE_SCHEMA = "n2p3_fitted_candidate_ensemble/2"
@@ -66,11 +66,7 @@ def _temperature_nll(log_temperature, log_probability, targets):
 
 
 def _predictor_digest(predictor):
-    if isinstance(predictor, FrozenTrialPredictor):
-        return predictor.digest()
-    return semantic_sha256({"basis_kernel_noise_arrays": array_digest(predictor.basis,
-        predictor.kernel_mean, predictor.kernel_row_covariance, predictor.innovation_covariance),
-        "noise": predictor.noise.record(), "provenance": predictor.provenance})
+    return predictor.digest()
 
 
 def _native_observation_contract(view):
@@ -87,6 +83,8 @@ class CalibrationExpertProgram:
     ridge: float = 1.
     response_seconds: float = 1.2
     n_basis: int = 8
+    conditioning_samples: int = 0
+    noise_estimator: str = "burg"
 
     def __post_init__(self):
         if not self.expert_id or self.family not in {"trial", "continuous_ar"}:
@@ -95,13 +93,27 @@ class CalibrationExpertProgram:
             raise ValueError("trial expert requires one target recipe and actual epoch profile")
         if self.family == "continuous_ar" and (self.recipe is not None or self.profile is not None):
             raise ValueError("continuous expert consumes native raw, without an epoch recipe or profile")
+        if (type(self.conditioning_samples) is not int or self.conditioning_samples < 0
+                or self.noise_estimator not in {"burg", "conditional_profile"}):
+            raise ValueError("expert requires a declared conditioning prefix and noise estimator")
+        if self.family == "trial" and (self.conditioning_samples or self.noise_estimator != "burg"):
+            raise ValueError("conditional raw likelihood settings cannot be assigned to a trial expert")
+        if self.family == "continuous_ar" and (
+            type(self.noise_order) is not int or not 0 <= self.noise_order <= 128
+            or (self.conditioning_samples and self.conditioning_samples < max(2, self.noise_order))
+            or (not self.conditioning_samples and self.noise_estimator != "burg")
+        ):
+            raise ValueError("raw conditioning prefix must cover its AR order and noise estimator")
 
     def record(self):
-        return {"expert_id": self.expert_id, "family": self.family,
+        record = {"expert_id": self.expert_id, "family": self.family,
                 "recipe": None if self.recipe is None else self.recipe.record(),
                 "profile": None if self.profile is None else self.profile.record(),
                 "noise_order": self.noise_order, "ridge": self.ridge,
                 "response_seconds": self.response_seconds, "n_basis": self.n_basis}
+        if self.conditioning_samples:
+            record.update(conditioning_samples=self.conditioning_samples, noise_estimator=self.noise_estimator)
+        return record
 
     @classmethod
     def from_record(cls, record):
@@ -119,6 +131,18 @@ class _FittedExpert:
     fit_digest: str
     source_digest: str | None
     logit_offset: float
+
+    def __post_init__(self):
+        if self.program.family == "continuous_ar":
+            model = self.predictor
+            expected_basis = smooth_erp_basis(model.sfreq, response_seconds=self.program.response_seconds,
+                                              n_basis=self.program.n_basis)
+            if (model.noise_order != self.program.noise_order
+                    or model.conditioning_samples != self.program.conditioning_samples
+                    or model.provenance["ridge"] != self.program.ridge
+                    or model.provenance.get("noise_estimator", "burg") != self.program.noise_estimator
+                    or not np.array_equal(model.basis, expected_basis)):
+                raise ValueError("frozen continuous recipe differs from its actual numerical model")
 
     def unavailable(self, view, reason):
         counts = tuple(int(value) for value in view.decision.membership.sum(axis=0))
@@ -148,8 +172,15 @@ class _FittedExpert:
             operator_identity="native_unfiltered_volts/1", sfreq=view.sample_rate_hz,
             channels=view.channel_names, candidate_ids=view.decision.candidate_vocabulary,
             record_id=view.record_id)
-        identity = CandidateExpertIdentity(self.program.expert_id, view.raw_input_digest,
-            self.model_digest, self.source_digest, self.fit_digest, "continuous_candidate_log_evidence", False)
+        numerical_digest = view.raw_input_digest
+        score_kind = "continuous_candidate_log_evidence"
+        if self.program.conditioning_samples:
+            numerical_digest = semantic_sha256({"raw_input": view.raw_input_digest,
+                "conditioning_sample_support": [0, self.program.conditioning_samples],
+                "score_sample_support": [self.program.conditioning_samples, len(view.samples)]})
+            score_kind = "continuous_conditional_tail_log_density_fixed_candidate_prior/1"
+        identity = CandidateExpertIdentity(self.program.expert_id, numerical_digest,
+            self.model_digest, self.source_digest, self.fit_digest, score_kind, False)
         counts = tuple(int(value) for value in view.decision.membership.sum(axis=0))
         observed = tuple(int(value) for value in view.decision.membership[view.decision.evidence_indices >= 0].sum(axis=0))
         return CandidateEvidence.from_log_evidence(result.log_evidence,
@@ -354,7 +385,8 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
             predictor = ContinuousDecisionModel.fit(records, sfreq=view.sample_rate_hz,
                 channels=view.channel_names, candidate_ids=vocabulary,
                 operator_identity="native_unfiltered_volts/1", noise_order=spec.noise_order,
-                ridge=spec.ridge, basis=smooth_erp_basis(view.sample_rate_hz,
+                ridge=spec.ridge, conditioning_samples=spec.conditioning_samples, noise_estimator=spec.noise_estimator,
+                basis=smooth_erp_basis(view.sample_rate_hz,
                     response_seconds=spec.response_seconds, n_basis=spec.n_basis))
             offset = 0.
         fit_digest = semantic_sha256({"program": spec.record(), "authorized_calibration": fit_inputs,

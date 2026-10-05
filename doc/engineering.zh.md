@@ -78,6 +78,10 @@ CUDA实际拟合、保存重载及CLI推理验证见[执行计划](roadmap.zh.md
 完整测试对应`0f8074a`，最后只读调整对应`d3e6027`并另有定向及独立复验；精确命令/退出码、跳过原因和两轴结论见[质量验收](evidence/ensemble_quality_20261005.zh.md)。
 最终源码与原始质量证据分别物理封存，Git仅分发清单；执行新公开比较时使用已核验的实际源码归档，不用历史成绩或测试通过替代训练吞吐证据。
 
+[fixed32实施](evidence/continuous_fixed_prefix_20261005.zh.md)的solver/estimator由实际noise strategy与AR阶数统一派生并在载入处核对。
+`comparison_role=fixed_prefix_ar_order`要求六阶×Burg/conditional-profile、共同32点prefix及相同basis/ridge；实际scored字段与planned字段分开，未收敛是具名fit_failure。
+真实路径先测fit/save/score/reload总墙钟，再优化矩阵/梯度热点；开发数据吞吐探针不能代替完整公共配对矩阵。当前CLI仍需绑定新执行源码冻结。
+
 2026-10-05 [分块方案](evidence/deep_research_plan_20261005.zh.md)将123愿望映射到15块，
 实际研究入口/helper须一并冻结；旧Phase4凭证遗漏不能消费端补签。
 减少防御代码按“外部ingress/fit/load一次验证、不可变内部状态、纯数值核”实施，

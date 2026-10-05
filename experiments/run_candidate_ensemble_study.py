@@ -94,6 +94,28 @@ def _executing_source():
             for path in sorted(paths)}
 
 
+def _fixed_prefix_ar_panel(experts, role):
+    if role == "candidate_ensemble":
+        return None
+    if role != "fixed_prefix_ar_order":
+        raise ValueError("unknown candidate comparison role")
+    orders = (0, 1, 4, 8, 16, 32)
+    estimators = ("burg", "conditional_profile")
+    expected = {(order, estimator) for order in orders for estimator in estimators}
+    actual = {(spec.noise_order, spec.noise_estimator) for spec in experts}
+    matched = {(spec.conditioning_samples, spec.ridge, spec.response_seconds, spec.n_basis) for spec in experts}
+    if (len(experts) != len(expected) or actual != expected or len(matched) != 1
+            or any(spec.family != "continuous_ar" or spec.conditioning_samples != 32 for spec in experts)):
+        raise ValueError("fixed-prefix AR panel requires all six orders and both estimators on the same prefix, basis and prior")
+    first = experts[0]
+    return {"schema": "n2p3_fixed_prefix_ar_panel/1", "orders": list(orders), "noise_estimators": list(estimators),
+        "conditioning_samples": 32, "ridge": first.ridge, "response_seconds": first.response_seconds,
+        "n_basis": first.n_basis, "kernel_information": "all_authorized_prefix_and_tail",
+        "score_estimand": "conditional_tail_with_fixed_candidate_prior",
+        "initialization": "full_record_segmented_Burg_with_order_dependent_lag_pairs",
+        "conditional_objective": "common_tail_joint_shared_kernel_and_independent_diffuse_record_drift"}
+
+
 def _subject_impl(row, plan, directory, expected_source, source_snapshots):
     directory = Path(directory)
     directory.mkdir()
@@ -144,6 +166,15 @@ def _subject_impl(row, plan, directory, expected_source, source_snapshots):
                     result = EnsembleScorer(mixture).score({name: evidence[name] for name in mixture.expert_ids})
                     predictions.append({"seed": seed, "mixture": mixture.name, "fold": fold,
                         "evidence": result.record(), "truth": held.target_candidate,
+                        "continuous_score_support": {spec.expert_id: {
+                            "planned_score_sample_support": [spec.conditioning_samples, len(held.view.samples)],
+                            "score_executed": evidence[spec.expert_id].probability_available,
+                            "read_sample_support": [0, len(held.view.samples)] if evidence[spec.expert_id].probability_available else None,
+                            "conditioning_sample_support": [0, spec.conditioning_samples] if evidence[spec.expert_id].probability_available else None,
+                            "score_sample_support": [spec.conditioning_samples, len(held.view.samples)] if evidence[spec.expert_id].probability_available else None,
+                            "n_scored_samples": len(held.view.samples) - spec.conditioning_samples if evidence[spec.expert_id].probability_available else 0,
+                            "noise_order": spec.noise_order, "noise_estimator": spec.noise_estimator}
+                            for spec in specs if spec.family == "continuous_ar" and spec.expert_id in mixture.expert_ids},
                         "training_labels": sum(len(group.labels) for group in training),
                         "requested_authorized_labels": plan["authorized_labels"],
                         "saved_replay_exact": all(evidence[name].probability_available for name in mixture.expert_ids),
@@ -188,6 +219,8 @@ def run_study(plan_path: str | Path, output: str | Path):
     if not seeds or len(set(seeds)) != len(seeds) or any(type(seed) is not int or seed < 0 for seed in seeds):
         raise ValueError("target-only seeds must be explicit unique nonnegative integers")
     expert_programs = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
+    comparison_role = plan.get("comparison_role", "candidate_ensemble")
+    ar_panel = _fixed_prefix_ar_panel(expert_programs, comparison_role)
     names = {spec.expert_id for spec in expert_programs}
     if len(names) != len(expert_programs):
         raise ValueError("candidate expert roster contains duplicate names")
@@ -205,6 +238,7 @@ def run_study(plan_path: str | Path, output: str | Path):
     if set(plan["source_checkpoints"]) - names:
         raise ValueError("source checkpoint names differ from the expert roster")
     normalized = dict(plan)
+    normalized.update(comparison_role=comparison_role, ar_panel=ar_panel)
     normalized["records"] = [{**row, "path": str((plan_path.parent / row["path"]).resolve())}
                               for row in plan["records"]]
     normalized["source_checkpoints"] = {name: str((plan_path.parent / path).resolve())
@@ -258,6 +292,7 @@ def run_study(plan_path: str | Path, output: str | Path):
         baseline = metrics[plan["baseline_mixture"]]
         report = {"schema": "n2p3_candidate_ensemble_report/1", "status": "completed",
                   "evidence_scope": plan["evidence_scope"], "randomness_scope": "target_only_fixed_source",
+                  "comparison_role": comparison_role, "ar_panel": ar_panel,
                   "decision_plan": decision_plan.record(), "source_digest": semantic_sha256(source),
                   "participants": completed, "metrics": {name: value.record() for name, value in metrics.items()},
                   "contrasts": {name: compare_candidate_probability_metrics(baseline, value).record()

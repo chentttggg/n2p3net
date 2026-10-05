@@ -59,6 +59,47 @@ def programs():
                 epochs=1, batch_size=32, bn_buffers="calibration", dropout="off"), baseline))
 
 
+def test_fixed_prefix_raw_ensemble_preserves_program_support_and_exact_replay(tmp_path):
+    groups = selections()
+    spec = replace(programs()[0], conditioning_samples=32)
+    mixture = EnsembleProgram.equal_weights("conditional", (spec.expert_id,))
+    fitted = fit_calibration_ensemble(groups[:3], (spec,), mixture)
+    before = fitted.score(groups[3].view)
+    assert before.expert_identities[0].score_kind == "continuous_conditional_tail_log_density_fixed_candidate_prior/1"
+    assert before.expert_identities[0].numerical_input_digest != groups[3].view.raw_input_digest
+    package = fitted.save(tmp_path / "conditional")
+    restored = FittedEnsemble.load(package)
+    after = restored.score(groups[3].view)
+    np.testing.assert_array_equal(before.log_probability, after.log_probability)
+    assert before.record() == after.record()
+
+
+def test_actual_raw_support_rejects_a_relabelled_program_even_when_shell_binding_agrees():
+    from transfer.ensemble_fit import _FittedExpert
+
+    groups = selections()
+    spec = replace(programs()[0], conditioning_samples=32)
+    mixture = EnsembleProgram.equal_weights("conditional", (spec.expert_id,))
+    fitted = fit_calibration_ensemble(groups[:3], (spec,), mixture)
+    actual = fitted._experts[0]
+    changed = replace(spec, conditioning_samples=31)
+    with pytest.raises(ValueError, match="actual numerical model"):
+        _FittedExpert(changed, actual.predictor, actual.model_digest, actual.fit_digest, actual.source_digest, 0.)
+
+
+def test_grouped_temperature_keeps_conditional_program_through_inner_fits_and_reload(tmp_path):
+    groups = selections()
+    spec = replace(programs()[0], conditioning_samples=32)
+    mixture = EnsembleProgram.equal_weights("conditional", (spec.expert_id,))
+    fitted = fit_calibration_ensemble(groups[:3], (spec,), mixture, calibration_strategy="grouped_temperature")
+    assert fitted.temperature_record["strategy"] == "grouped_temperature"
+    before = fitted.score(groups[3].view)
+    package = fitted.save(tmp_path / "conditional_oof")
+    after = FittedEnsemble.load(package).score(groups[3].view)
+    assert before.record() == after.record()
+    assert all(expert.program.conditioning_samples == 32 for expert in fitted._experts)
+
+
 @pytest.fixture(scope="module")
 def frozen_raw_classic():
     groups = selections()

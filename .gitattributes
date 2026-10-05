@@ -20,3 +20,5 @@ tests/transfer/test_calibration_state.py text eol=lf
 tests/transfer/test_ensemble.py text eol=lf
 tests/transfer/test_ensemble_fit.py text eol=lf
 tests/transfer/test_ensemble_views.py text eol=lf
+tests/transfer/test_continuous_fixed_prefix.py text eol=lf
+tests/transfer/test_conditional_noise_state.py text eol=lf

@@ -51,6 +51,8 @@ GTN儿童三导且固定thought digit，只能作声明限制下的开发研究�
 
 [多专家代码实施](evidence/ensemble_implementation_20261005.zh.md)已兑现固定算术池、严格requested风险、C内完整组OOF温度和source排除。
 本轮[Spec/Standards独立软件验收](evidence/ensemble_quality_20261005.zh.md)均通过；这只验证实现及信息边界，完整公共配对矩阵、三个完整流程seed和成人确认继续按执行计划验收。
+后续[fixed32条件AR研究](evidence/continuous_fixed_prefix_20261005.zh.md)保留完整授权C的kernel信息，只以共同tail评价/优化；Burg初始化、有限数值优化及全局MLE是不同证据。
+真实A01优化尚未收敛，先处理梯度和数值条件，再执行预声明完整M1；不凭软件通过或残差改善晋升。
 新AR为一次可行GLS、条件于已估noise，概率校准为开发程序而非认证后验；source-only K0经典/连续专家仍不可估。
 新179输入使用预声明共同raw支持，不能与历史178路线直接相减；target-only seed不称完整source→target seed。
 

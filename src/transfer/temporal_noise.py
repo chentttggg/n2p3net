@@ -36,6 +36,56 @@ _IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _SCHEMA = "n2p3_temporal_noise/1"
 _SCALE_CONVENTION = "unit_innovation_temporal_shape_preserve_data_units"
 _MODES = {"stationary", "conditional_prefix", "stationary_innovations"}
+_BURG_METHOD = "segmented_multichannel_burg_no_pole_clipping"
+_CONDITIONAL_METHOD = "fixed_prefix_conditional_profile_after_segmented_burg"
+_CONDITIONAL_SCHEMA = "n2p3_temporal_noise/4"
+_FIT_FIELDS = {"fit_scope", "records", "method", "assume_centered", "available_lag_rows",
+               "minimum_lag_rows", "minimum_samples_per_parameter", "n_columns", "implementation_sha256"}
+
+
+def _real_vector(value, name):
+    raw = np.asarray(value)
+    if raw.dtype.kind not in "fiu" or raw.ndim != 1:
+        raise ValueError(f"{name} must be a real numeric vector")
+    result = np.asarray(raw, dtype=np.float64)
+    if len(result) > 128 or not np.isfinite(result).all():
+        raise ValueError(f"{name} must be a finite vector of order at most 128")
+    return result
+
+
+def _real_scalar(value, name, *, positive=False):
+    raw = np.asarray(value)
+    if raw.ndim != 0 or raw.dtype.kind not in "fiu" or not np.isfinite(raw):
+        raise ValueError(f"{name} must be a finite real scalar")
+    result = float(raw)
+    if positive and result <= 0:
+        raise ValueError(f"{name} must be positive and finite")
+    return result
+
+
+def _optimization_record(value):
+    required = {"strategy", "initial_objective", "final_objective", "converged",
+                "iterations", "evaluations", "eta_max", "status", "message"}
+    if (not isinstance(value, dict) or set(value) != required
+            or value["strategy"] not in {"burg_only", "conditional_profile"}):
+        raise ValueError("conditional optimization requires its complete strategy and result")
+    result = dict(value)
+    for name in ("initial_objective", "final_objective", "eta_max"):
+        result[name] = _real_scalar(value[name], f"optimization {name}", positive=name == "eta_max")
+    if result["converged"] is not True:
+        raise ValueError("conditional optimization must have converged before state publication")
+    if (type(result["iterations"]) is not int or result["iterations"] < 0
+            or type(result["evaluations"]) is not int or result["evaluations"] < 1
+            or type(result["status"]) is not int or result["status"] < 0
+            or not isinstance(result["message"], str) or not result["message"].strip()):
+        raise ValueError("conditional optimization requires actual counts, status and message")
+    tolerance = 1e-10*max(1., abs(result["initial_objective"]), abs(result["final_objective"]))
+    if result["final_objective"] > result["initial_objective"] + tolerance:
+        raise ValueError("conditional optimization objective worsened")
+    if result["strategy"] == "burg_only" and (
+            result["iterations"] != 0 or result["initial_objective"] != result["final_objective"]):
+        raise ValueError("retained Burg shape requires an unchanged objective and zero iterations")
+    return result
 
 
 def _values(value, *, minimum_samples=1):
@@ -158,17 +208,14 @@ class TemporalNoise:
     def __post_init__(self, reflection_state):
         if self.startup_mode not in _MODES:
             raise ValueError("unsupported temporal startup mode")
-        coefficients = np.asarray(self.coefficients, dtype=float)
-        if coefficients.ndim != 1 or len(coefficients) > 128 or not np.isfinite(coefficients).all():
-            raise ValueError("AR coefficients must be a finite vector of order at most 128")
-        if (isinstance(self.innovation_variance, bool) or not np.isfinite(self.innovation_variance)
-                or self.innovation_variance <= 0):
-            raise ValueError("innovation variance must be positive and finite")
+        coefficients = _real_vector(self.coefficients, "AR coefficients")
+        innovation_variance = _real_scalar(self.innovation_variance, "innovation variance", positive=True)
         factor, log_variances, factor_condition = np.empty((0, 0)), np.empty(0), None
         if self.startup_mode == "stationary_innovations":
             if reflection_state is None and self.provenance.get("fit_scope") != "analytic_reference":
                 raise ValueError("fitted stationary innovations requires the actual Burg reflection sequence")
-            reflection = _reflections(coefficients) if reflection_state is None else np.asarray(reflection_state, dtype=float)
+            reflection = (_reflections(coefficients) if reflection_state is None
+                          else _real_vector(reflection_state, "actual PARCOR sequence"))
             if (reflection.shape != coefficients.shape or not np.isfinite(reflection).all()
                     or np.any(np.abs(reflection) >= 1-1e-12)):
                 raise ValueError("actual PARCOR sequence does not establish strict stability")
@@ -188,15 +235,56 @@ class TemporalNoise:
                 raise ValueError("explicit PARCOR state belongs to stationary innovations mode")
             reflection = _reflections(coefficients)
             covariance, radius, condition = _startup(coefficients, conditional=self.startup_mode == "conditional_prefix")
-        provenance = json.loads(json.dumps(self.provenance, allow_nan=False))
-        if provenance.get("fit_scope") == "analytic_reference":
+        if not isinstance(self.provenance, dict):
+            raise ValueError("temporal noise requires its provenance record")
+        provenance = dict(self.provenance)
+        conditional_fit = provenance.get("method") == _CONDITIONAL_METHOD
+        if conditional_fit:
+            provenance["optimization"] = _optimization_record(provenance.get("optimization"))
+        provenance = json.loads(json.dumps(provenance, allow_nan=False))
+        if provenance.get("fit_scope") == "analytic_reference" and not conditional_fit:
             if set(provenance) != {"fit_scope", "reference_id", "records"} or not isinstance(provenance["reference_id"], str) or not provenance["reference_id"].strip() or provenance["records"]:
                 raise ValueError("analytic temporal reference must be named without a training ledger")
+        elif conditional_fit:
+            required = _FIT_FIELDS | {"initialization", "conditioning_samples", "objective_rows",
+                                      "optimization", "training_input_sha256"}
+            if (set(provenance) != required
+                    or provenance.get("fit_scope") not in {"source_training", "target_calibration"}
+                    or self.startup_mode != "stationary_innovations"):
+                raise ValueError("conditional temporal noise requires its training scope and complete ledger")
+            initialization = provenance["initialization"]
+            if (not isinstance(initialization, dict)
+                    or initialization.get("schema") != "n2p3_temporal_noise/3"
+                    or initialization.get("startup_mode") != "stationary_innovations"
+                    or initialization.get("provenance", {}).get("method") != _BURG_METHOD):
+                raise ValueError("conditional noise initialization must be an actual fitted segmented Burg lattice")
+            initializer = TemporalNoise.from_record(initialization)
+            if initializer.order != len(coefficients) or any(
+                    provenance[name] != initialization["provenance"][name]
+                    for name in _FIT_FIELDS - {"method"}):
+                raise ValueError("conditional noise scope, records and columns must preserve its Burg initialization")
+            h = provenance["conditioning_samples"]
+            if (type(h) is not int or h < max(2, len(coefficients))
+                    or any(record["n_samples"] <= h for record in provenance["records"])):
+                raise ValueError("conditioning samples must leave a positive tail in every actual fit record")
+            actual_rows = sum(record["n_samples"]-h for record in provenance["records"])
+            if (type(provenance["objective_rows"]) is not int
+                    or provenance["objective_rows"] != actual_rows or actual_rows <= 0):
+                raise ValueError("conditional objective rows disagree with the fixed-prefix training tails")
+            require_sha256(provenance["training_input_sha256"], "conditional training input")
+            optimization = provenance["optimization"]
+            if optimization["strategy"] == "burg_only":
+                if array_digest(reflection) != array_digest(initializer.reflection_coefficients):
+                    raise ValueError("retained Burg reflections differ from the actual initialization")
+            else:
+                eta_max = optimization["eta_max"]
+                tolerance = 2e-14*max(1., eta_max)
+                if any(np.any(np.abs(np.arctanh(values)) > eta_max+tolerance)
+                       for values in (reflection, initializer.reflection_coefficients)):
+                    raise ValueError("conditional optimization PARCOR is outside its declared eta domain")
         else:
-            required = {"fit_scope", "records", "method", "assume_centered", "available_lag_rows",
-                        "minimum_lag_rows", "minimum_samples_per_parameter", "n_columns", "implementation_sha256"}
-            if (set(provenance) != required or provenance.get("fit_scope") not in {"source_training", "target_calibration"}
-                    or provenance.get("method") != "segmented_multichannel_burg_no_pole_clipping"
+            if (set(provenance) != _FIT_FIELDS or provenance.get("fit_scope") not in {"source_training", "target_calibration"}
+                    or provenance.get("method") != _BURG_METHOD
                     or provenance.get("assume_centered") is not True or not provenance.get("records")):
                 raise ValueError("temporal noise requires its complete training scope and records ledger")
             require_identifiers([r["record_id"] for r in provenance["records"]], "temporal fit record IDs")
@@ -221,7 +309,7 @@ class TemporalNoise:
                 raise ValueError("temporal noise artifact was fitted by a different implementation")
         object.__setattr__(self, "coefficients", frozen_array(coefficients))
         object.__setattr__(self, "reflection_coefficients", frozen_array(reflection))
-        object.__setattr__(self, "innovation_variance", float(self.innovation_variance))
+        object.__setattr__(self, "innovation_variance", innovation_variance)
         object.__setattr__(self, "startup_covariance", frozen_array(covariance))
         object.__setattr__(self, "_startup_root", frozen_array(np.linalg.cholesky(covariance)))
         object.__setattr__(self, "startup_whitening_factor", frozen_array(factor))
@@ -319,7 +407,7 @@ class TemporalNoise:
         if not np.isfinite(variance) or variance <= 0:
             raise UnidentifiableFitError("degenerate pooled innovation variance")
         return cls(coefficients, variance, {
-            "fit_scope": fit_scope, "method": "segmented_multichannel_burg_no_pole_clipping",
+            "fit_scope": fit_scope, "method": _BURG_METHOD,
             "assume_centered": True, "available_lag_rows": available, "minimum_lag_rows": minimum,
             "minimum_samples_per_parameter": minimum_samples_per_parameter, "n_columns": arrays[0].shape[1],
             "implementation_sha256": _IMPLEMENTATION_SHA256,
@@ -338,11 +426,40 @@ class TemporalNoise:
     @classmethod
     def from_reflections(cls, reflections, *, innovation_variance, reference_id):
         """Analytic stable lattice reference without inverse polynomial stepdown."""
-        values = np.asarray(reflections, dtype=float)
+        values = _real_vector(reflections, "analytic PARCOR")
         if values.ndim != 1 or not np.isfinite(values).all() or np.any(np.abs(values) >= 1-1e-12):
             raise ValueError("analytic PARCOR requires a finite strictly stable vector")
         return cls(_parcor_coefficients(values), innovation_variance,
                    {"fit_scope": "analytic_reference", "reference_id": reference_id, "records": []},
+                   startup_mode="stationary_innovations", reflection_state=values)
+
+    @classmethod
+    def from_conditional_fit(cls, initializer, reflections, *, innovation_variance,
+                             conditioning_samples, objective_rows, optimization,
+                             training_input_sha256):
+        """Publish a caller-owned fixed-prefix conditional fit as immutable shape.
+
+        The caller owns residual means, prefix/tail Gaussian objectives and the
+        channel covariance whose trace supplies ``innovation_variance``. This
+        owner retains the actual segmented Burg initializer and final PARCOR;
+        it performs no label access, mean fit or likelihood optimization. Its
+        whitening remains the full unit-innovation lattice, leaving conditional
+        predictive calculations and fixed-prefix slicing to that caller.
+
+        A published conditional-profile result must be converged and no worse
+        than initialization. ``burg_only`` instead retains the actual Burg
+        sequence with an unchanged objective and zero optimizer iterations.
+        Unconverged numerical attempts belong to the caller's failure ledger.
+        """
+        if not isinstance(initializer, TemporalNoise):
+            raise ValueError("conditional noise initialization must be a fitted TemporalNoise")
+        initialization = initializer.record()
+        values = _real_vector(reflections, "conditional fitted PARCOR")
+        provenance = dict(initializer.provenance)
+        provenance.update(method=_CONDITIONAL_METHOD, initialization=initialization,
+                          conditioning_samples=conditioning_samples, objective_rows=objective_rows,
+                          optimization=optimization, training_input_sha256=training_input_sha256)
+        return cls(_parcor_coefficients(values), innovation_variance, provenance,
                    startup_mode="stationary_innovations", reflection_state=values)
 
     def whiten(self, values):
@@ -376,7 +493,9 @@ class TemporalNoise:
     def _state(self):
         stationary = self.startup_mode == "stationary"
         lattice = self.startup_mode == "stationary_innovations"
-        schema = _SCHEMA if stationary else "n2p3_temporal_noise/3" if lattice else "n2p3_temporal_noise/2"
+        conditional_fit = self.provenance.get("method") == _CONDITIONAL_METHOD
+        schema = (_CONDITIONAL_SCHEMA if conditional_fit else _SCHEMA if stationary
+                  else "n2p3_temporal_noise/3" if lattice else "n2p3_temporal_noise/2")
         result = {"schema": schema, "coefficients": self.coefficients.tolist(),
                 "innovation_variance": self.innovation_variance, "provenance": self.provenance,
                 "scale_convention": _SCALE_CONVENTION,
@@ -386,6 +505,13 @@ class TemporalNoise:
                 "reflection_coefficients": self.reflection_coefficients.tolist(),
                 "pole_radius": self.pole_radius, "startup_condition": self.startup_condition}
         if lattice:
+            if conditional_fit:
+                reflection_origin = ("actual_Burg_recursion_retained"
+                                     if self.provenance["optimization"]["strategy"] == "burg_only"
+                                     else "conditional_profile_optimized_PARCOR")
+            else:
+                reflection_origin = ("analytic_reference" if self.provenance["fit_scope"] == "analytic_reference"
+                                     else "actual_Burg_recursion")
             result.update(startup_mode=self.startup_mode, marginal_variance_per_unit_innovation=self._marginal_variance(),
                 startup_whitening_factor_sha256=array_digest(self.startup_whitening_factor),
                 startup_innovation_variances=self.startup_innovation_variances.tolist(),
@@ -393,7 +519,7 @@ class TemporalNoise:
                 startup_factor_condition=self.startup_factor_condition,
                 floating_precision_condition_indicator=float(np.finfo(float).eps*self.startup_factor_condition),
                 stability_certificate="actual_PARCOR_strictly_inside_unit_interval",
-                reflection_origin="analytic_reference" if self.provenance["fit_scope"] == "analytic_reference" else "actual_Burg_recursion",
+                reflection_origin=reflection_origin,
                 expanded_polynomial_radius_role="diagnostic_only_not_lattice_stability_test")
         elif not stationary:
             result.update(startup_mode=self.startup_mode, conditioning_prefix_samples=self.order,
@@ -420,11 +546,15 @@ class TemporalNoise:
         expected_assumption = {"stationary": "stationary_AR_latent_initial_state",
                                "conditional_prefix": "conditional_on_observed_first_p_samples",
                                "stationary_innovations": "stationary_AR_latent_initial_state"}.get(mode)
-        if (payload.get("schema") not in {_SCHEMA, "n2p3_temporal_noise/2", "n2p3_temporal_noise/3"}
+        conditional_fit = payload.get("schema") == _CONDITIONAL_SCHEMA
+        if (payload.get("schema") not in {_SCHEMA, "n2p3_temporal_noise/2", "n2p3_temporal_noise/3", _CONDITIONAL_SCHEMA}
                 or payload.get("scale_convention") != _SCALE_CONVENTION or expected_assumption is None
                 or payload.get("startup_assumption") != expected_assumption
+                or conditional_fit != (payload["provenance"].get("method") == _CONDITIONAL_METHOD)
                 or (payload.get("schema") == "n2p3_temporal_noise/2" and mode != "conditional_prefix")
-                or (payload.get("schema") == "n2p3_temporal_noise/3" and mode != "stationary_innovations")):
+                or (payload.get("schema") == "n2p3_temporal_noise/3" and mode != "stationary_innovations")
+                or (conditional_fit and (mode != "stationary_innovations"
+                                        or payload["provenance"].get("method") != _CONDITIONAL_METHOD))):
             raise ValueError("unsupported temporal noise contract")
         model = cls(payload["coefficients"], payload["innovation_variance"], payload["provenance"], startup_mode=mode,
                     reflection_state=payload["reflection_coefficients"] if mode == "stationary_innovations" else None)

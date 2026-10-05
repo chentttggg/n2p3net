@@ -1,5 +1,7 @@
 # 研究与工程证据
 
+- [固定前缀条件AR：数学、实现与真实路径诊断](continuous_fixed_prefix_20261005.zh.md)：32点联合kernel/drift条件更新、空间协方差tail profile、Burg初始化与PARCOR优化分开绑定、六阶×两估计器入口；完整软件验证与实际优化未收敛分别记账，M1公共矩阵仍待执行。
+
 - [候选多专家主线：代码实施与质量验收](ensemble_implementation_20261005.zh.md)：实际概率/评价、合法MAT/epoch view、AR/ERP/NN、source与scratch、C内OOF温度、保存重放和研究CLI；本轮软件完成，完整公共矩阵和成人确认另记。
 - [候选多专家独立代码质量评估](ensemble_quality_20261005.zh.md)：Spec和Standards分轴通过，保留实际RED→GREEN、精确受审源码及测试版本区别；原始日志/探针/模型物理归档，公共效能和云吞吐未验证。
 

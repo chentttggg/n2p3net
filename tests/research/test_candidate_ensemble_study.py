@@ -11,7 +11,11 @@ from scipy.io import savemat
 from data.bnci2014_008_candidate import BNCI2014_008_CHANNELS, BNCI2014_008_SOURCE_REFERENCE
 from data.contract import BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT
 from data.epochs import preprocessing_spec_from_contract
-from experiments.run_candidate_ensemble_study import _matched_source_controls, run_study
+from experiments.run_candidate_ensemble_study import (
+    _fixed_prefix_ar_panel,
+    _matched_source_controls,
+    run_study,
+)
 from tests.support.bnci import bnci_mat_fields
 from tests.support.checkpoints import write_checkpoint
 from transfer.calibration_candidates import waveform_lda_recipe
@@ -63,6 +67,86 @@ def test_mat_real_experts_saved_replay_and_requested_metrics_execute(tmp_path):
     assert report["contrasts"]["with-scratch"]["paired_probability_count"] == 2
     assert "experiments/run_candidate_ensemble_study.py" in json.loads((tmp_path / "result/executed_source.json").read_bytes())
     assert json.loads((tmp_path / "result/progress.json").read_bytes())["status"] == "completed"
+
+
+def test_mat_conditional_program_executes_actual_fit_and_preserves_scored_support(tmp_path):
+    path = study_plan(tmp_path)
+    plan = json.loads(path.read_bytes())
+    raw = CalibrationExpertProgram.from_record(plan["experts"][0])
+    raw = replace(raw, conditioning_samples=32, noise_estimator="conditional_profile")
+    plan["experts"] = [raw.record()]
+    plan["mixtures"] = [EnsembleProgram.equal_weights("conditional", (raw.expert_id,)).record()]
+    plan["baseline_mixture"] = "conditional"
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    result = run_study(path, tmp_path / "conditional")
+    rows = result["participants"][0]["predictions"]
+    assert result["status"] == "completed" and len(rows) == 2
+    for row in rows:
+        support = row["continuous_score_support"]["raw"]
+        assert support["conditioning_sample_support"] == [0, 32]
+        assert support["score_sample_support"][0] == 32
+        assert support["n_scored_samples"] == support["read_sample_support"][1] - 32
+        assert row["saved_replay_exact"]
+        assert row["evidence"]["log_probability"] is not None
+        assert row["evidence"]["expert_identities"][0]["score_kind"].startswith("continuous_conditional_tail")
+
+
+def fixed_prefix_panel_programs():
+    return tuple(CalibrationExpertProgram(f"ar{order}_{strategy}", "continuous_ar",
+        noise_order=order, conditioning_samples=32, noise_estimator=strategy)
+        for strategy in ("burg", "conditional_profile") for order in (0, 1, 4, 8, 16, 32))
+
+
+@pytest.mark.parametrize("change", ["missing_order", "prefix", "basis", "ridge", "estimator"])
+def test_ar_order_comparison_panel_rejects_unmatched_or_incomplete_matrix(change):
+    experts = list(fixed_prefix_panel_programs())
+    if change == "missing_order":
+        experts.pop()
+    elif change == "prefix":
+        experts[0] = replace(experts[0], conditioning_samples=33)
+    elif change == "basis":
+        experts[0] = replace(experts[0], n_basis=9)
+    elif change == "ridge":
+        experts[0] = replace(experts[0], ridge=2.)
+    else:
+        experts[-1] = replace(experts[-1], noise_estimator="burg")
+    with pytest.raises(ValueError, match="all six orders"):
+        _fixed_prefix_ar_panel(tuple(experts), "fixed_prefix_ar_order")
+
+
+def test_ar_order_comparison_panel_declares_burg_initialization_and_conditional_program():
+    panel = _fixed_prefix_ar_panel(fixed_prefix_panel_programs(), "fixed_prefix_ar_order")
+    assert panel["orders"] == [0, 1, 4, 8, 16, 32]
+    assert panel["noise_estimators"] == ["burg", "conditional_profile"]
+    assert panel["kernel_information"] == "all_authorized_prefix_and_tail"
+    assert panel["score_estimand"] == "conditional_tail_with_fixed_candidate_prior"
+
+
+def test_unconverged_conditional_fit_keeps_requested_failures_and_zero_executed_tail(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    import transfer.continuous_decision as continuous
+
+    path = study_plan(tmp_path)
+    plan = json.loads(path.read_bytes())
+    raw = replace(CalibrationExpertProgram.from_record(plan["experts"][0]),
+                  noise_order=1, conditioning_samples=32, noise_estimator="conditional_profile")
+    plan["experts"] = [raw.record()]
+    plan["mixtures"] = [EnsembleProgram.equal_weights("conditional", (raw.expert_id,)).record()]
+    plan["baseline_mixture"] = "conditional"
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    monkeypatch.setattr(continuous, "minimize", lambda *args, **kwargs:
+                        SimpleNamespace(success=False, fun=0., message="iteration limit"))
+    result = run_study(path, tmp_path / "failed_fits")
+    metric = result["metrics"]["conditional"]
+    assert result["status"] == "completed" and metric["requested_participant_count"] == 1
+    assert metric["requested_participant_operational_hit_rate"] == 0
+    for row in result["participants"][0]["predictions"]:
+        assert row["evidence"]["failure_kind"] == "fit_failure"
+        support = row["continuous_score_support"]["raw"]
+        assert support["planned_score_sample_support"][0] == 32
+        assert support["n_scored_samples"] == 0 and not support["score_executed"]
+        assert support["score_sample_support"] is None
 
 
 def test_expected_failure_keeps_requested_cells_and_only_affects_its_mixture(tmp_path, monkeypatch):

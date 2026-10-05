@@ -2,6 +2,9 @@
 
 日常只维护以下六份正文。先按任务阅读对应指导，再读实际源码；历史记录不覆盖当前规范。
 
+2026-10-05 [固定前缀条件AR](evidence/continuous_fixed_prefix_20261005.zh.md)已接真实joint fit/score、状态/配方/重放与六阶×两估计器入口。
+独立数学与公开Interface验证通过；真实A01优化探针触达迭代上限，正在核对梯度与数值条件，完整M1矩阵尚未执行。
+
 2026-10-05 [候选多专家代码实施](evidence/ensemble_implementation_20261005.zh.md)已接通合法view、raw高阶AR/经典ERP/NN、
 固定概率混合、C内分组温度、整包重载及MAT实验入口；严格requested风险与producer身份反例已修。
 本轮软件验收与[独立Spec/Standards评估](evidence/ensemble_quality_20261005.zh.md)已完成：完整测试2425通过、19跳过，最终只读调整55项及独立质量117项通过。

@@ -2,7 +2,7 @@
 
 [代码实施](evidence/ensemble_implementation_20261005.zh.md)以`ensemble_views`分开无标签物理view与授权CalSelection；
 真实359 source点经FFT180保留179，358点仍诚实输出178。每组FiniteFilterOperator/共享resample/baseline执行receipt和lineage保留。
-AR显式阶数使用stationary innovations且同步Y/D；fixed32条件前缀是另一个待实施估计量，不能把当前新AR称公平阶数矩阵。
+AR显式阶数使用stationary innovations且同步Y/D；[fixed32条件估计量](evidence/continuous_fixed_prefix_20261005.zh.md)已另以`/4`实施，不能把旧stationary程序称公平tail矩阵。
 最终[独立软件反例](evidence/ensemble_quality_20261005.zh.md)核对错参考/布局/候选顺序先拒绝，合法物理缺失保留概率不可用状态；本轮共同支持、拟合授权和模型内数值绑定在保存重载后仍一致。
 
 2026-10-05 [分块研究合同](evidence/deep_research_plan_20261005.zh.md)要求共同物理decision与
@@ -11,6 +11,10 @@ AR显式阶数使用stationary innovations且同步Y/D；fixed32条件前缀是�
 g-prior信息矩阵来自授权C，不逐held候选重建。外部状态Gaussian条件模型同时使用候选相关均值
 与Schur协方差；确定padding和F(X)不能当新增独立噪声/观测。
 ERP保真与white-noise gain来自完整T映射；输出重叠率和0/2/8秒距离仅作研究分层，不是启用规则。
+
+fixed32同一个full-record W作用于Y/D/Z，所有C prefix联合更新共享kernel及各record drift，再只以tail的条件joint密度优化AR/Σ；Σ profile分母为实际tail行数，不减旧GLS df。
+最终kernel posterior读完整授权C，不能写成kernel只用tail。AR0只是不使用noise Markov history，仍可通过prefix更新kernel/drift。
+同一nuisance坐标与测度用于full/prefix；固定candidate prior乘conditional-tail likelihood是声明的评分程序，prefix含候选信息时不自动等于full-data Bayes posterior。
 
 ## 0. BrainSync 采集角色（2026-09-06）
 
