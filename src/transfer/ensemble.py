@@ -62,7 +62,11 @@ class EnsembleProgram:
 
 
 class EnsembleScorer:
-    """Combine frozen expert evidence; fitting and truth stay outside scoring."""
+    """Pool declared individual experts; fitting and truth stay outside scoring.
+
+    An aggregate is an output, not a silently relabelled input expert. Hierarchical
+    weights are declared directly over the same flat producer roster.
+    """
 
     def __init__(self, program: EnsembleProgram):
         self.program = program
@@ -71,6 +75,9 @@ class EnsembleScorer:
         if set(expert_evidence) != set(self.program.expert_ids):
             raise ValueError("evidence must cover exactly the declared expert roster")
         evidence = tuple(expert_evidence[name] for name in self.program.expert_ids)
+        for name, item in zip(self.program.expert_ids, evidence, strict=True):
+            if len(item.expert_identities) != 1 or item.expert_identities[0].expert_id != name:
+                raise ValueError("expert evidence producer differs from its declared roster key")
         first = evidence[0]
         common = (first.participant_key, first.decision_id, first.physical_support_digest,
                   first.candidate_vocabulary, first.evidence_level, first.expected_event_counts)

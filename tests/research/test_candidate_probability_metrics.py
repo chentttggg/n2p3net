@@ -225,3 +225,53 @@ def test_requested_physical_coverage_mismatch_is_not_swallowed_as_fit_failure():
     with pytest.raises(ValueError, match="physical schedule"):
         evaluate_candidate_evidence({1: [_evidence()]}, decision_plan=_plan(), seeds=(1,),
             candidate_vocabulary=("a", "b"), evidence_level=2, requested_coverage=coverage)
+
+
+@pytest.mark.parametrize("risk", ["available_probability_nll", "available_probability_brier"])
+def test_requested_macro_probability_risk_is_unavailable_when_any_participant_has_no_probability(risk):
+    metrics = _evaluate({1: [_evidence()]})
+    assert metrics.probability_coverage == .5
+    assert metrics.participants[0].available_probability_seed_count == 1
+    assert metrics.participants[1].available_probability_seed_count == 0
+    assert getattr(metrics, risk) is None
+    assert metrics.record()[risk] is None
+
+
+@pytest.mark.parametrize("risk", ["available_probability_nll", "available_probability_brier"])
+def test_requested_macro_probability_risk_requires_all_requested_seeds_inside_each_participant(risk):
+    plan = _plan(entries=(("p1", "d1", "a"),))
+    metrics = _evaluate({1: [_evidence()], 2: []}, plan, seeds=(1, 2))
+    assert metrics.probability_coverage == .5
+    assert metrics.participants[0].available_probability_seed_count == 1
+    assert getattr(metrics.participants[0], risk) is None
+    assert getattr(metrics, risk) is None
+
+
+def test_partial_decision_probability_coverage_keeps_conditional_risk_when_every_participant_seed_is_present():
+    plan = _plan(entries=(("p1", "d1", "a"), ("p1", "d2", "a"),
+                          ("p2", "d3", "a"), ("p2", "d4", "a")))
+    metrics = _evaluate({1: [_evidence("p1", "d1", (.8, .2)), _evidence("p2", "d3", (.6, .4))],
+                         2: [_evidence("p1", "d2", (.4, .6)), _evidence("p2", "d4", (.2, .8))]},
+                        plan, seeds=(1, 2))
+    assert metrics.probability_coverage == .5
+    assert metrics.available_probability_nll == pytest.approx(-np.log([.8, .4, .6, .2]).mean())
+    assert metrics.available_probability_brier == pytest.approx(np.mean([.08, .72, .32, 1.28]))
+    assert all(row.available_probability_seed_count == 2 for row in metrics.participants)
+
+
+@pytest.mark.parametrize("missing_unit", ["participant", "seed"])
+def test_paired_macro_risks_do_not_silently_drop_an_entire_requested_probability_unit(missing_unit):
+    if missing_unit == "participant":
+        baseline = _evaluate({1: [_evidence(), _evidence("p2", "d2")]})
+        candidate = _evaluate({1: [_evidence(probability=(.9, .1))]})
+    else:
+        plan = _plan(entries=(("p1", "d1", "a"),))
+        baseline = _evaluate({1: [_evidence()], 2: [_evidence()]}, plan, seeds=(1, 2))
+        candidate = _evaluate({1: [_evidence(probability=(.9, .1))], 2: []}, plan, seeds=(1, 2))
+    comparison = compare_candidate_probability_metrics(baseline, candidate)
+    assert comparison.paired_probability_count == 1
+    assert len(comparison.missing_probability_ledger) == 1
+    assert comparison.paired_baseline_nll is None
+    assert comparison.paired_candidate_nll is None
+    assert comparison.delta_paired_nll is None
+    assert not comparison.development_gate_passed

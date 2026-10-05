@@ -4,17 +4,20 @@ from dataclasses import replace
 
 import numpy as np
 import pytest
+import torch
 
 from data.candidate_task import MembershipDecision
 from data.contract import BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT
 from data.epochs import preprocessing_spec_from_contract
 from data.identity import origin_subject_key
+from tests.support.checkpoints import write_checkpoint
 from transfer.ensemble import EnsembleProgram
 from transfer.ensemble_fit import CalibrationExpertProgram, FittedEnsemble, fit_calibration_ensemble
 from transfer.ensemble_views import (
     CalibrationSelection,
     PredictionDecisionView,
     SelectionEpochProfile,
+    build_calibration_epoch_dataset,
 )
 from transfer.recipes import TargetRecipe, erp_target_recipe
 
@@ -82,3 +85,51 @@ def test_real_four_expert_fit_scores_without_held_labels_and_reloads(tmp_path):
     model.write_bytes(model.read_bytes() + b"tampered")
     with pytest.raises(ValueError, match="model bytes"):
         FittedEnsemble.load(path)
+
+
+def test_temperature_uses_only_actual_grouped_oof_and_survives_save(tmp_path):
+    groups = selections()
+    specs = programs()[1:2]
+    program = EnsembleProgram.equal_weights("toeplitz-temperature", ("toeplitz",))
+    fitted = fit_calibration_ensemble(groups[:3], specs, program, calibration_strategy="grouped_temperature")
+    record = fitted.temperature_record
+    assert record["strategy"] == "grouped_temperature"
+    assert len(record["OOF_groups"]) == 3
+    for row in record["OOF_groups"]:
+        assert row["held_record_id"] not in row["training_record_ids"]
+        assert "record3" not in row["training_record_ids"]
+    assert .05 <= record["temperatures"]["toeplitz"] <= 20
+    prediction = fitted.score(groups[3].view)
+    assert prediction.expert_identities[0].probability_calibrated
+    path = tmp_path / "calibrated"
+    fitted.save(path)
+    np.testing.assert_array_equal(FittedEnsemble.load(path).score(groups[3].view).log_probability,
+                                  prediction.log_probability)
+    with pytest.raises(ValueError, match="three complete groups"):
+        fit_calibration_ensemble(groups[:1], specs, program, calibration_strategy="grouped_temperature")
+
+
+def test_source_admission_and_matched_scratch_never_inherit_source_values(tmp_path):
+    groups = selections()
+    scratch = programs()[-1]
+    source = replace(scratch, expert_id="source", recipe=replace(scratch.recipe, name="source", initialization="source"))
+    data = build_calibration_epoch_dataset(groups[:3], source.profile)
+    checkpoint = write_checkpoint(tmp_path / "source.pt", data, source_snapshot_sha256="c" * 64)
+    specs = (source, scratch)
+    program = EnsembleProgram.equal_weights("source-and-scratch", ("source", "scratch"))
+    fitted = fit_calibration_ensemble(groups[:3], specs, program,
+        source_checkpoints={"source": checkpoint, "scratch": checkpoint})
+    before = fitted.score_experts(groups[3].view)
+    assert before["source"].expert_identities[0].source_digest is not None
+    assert before["scratch"].expert_identities[0].source_digest is None
+    payload = torch.load(checkpoint, weights_only=True)
+    for value in payload["trunk_state_dict"].values():
+        if value.dtype.is_floating_point:
+            value.add_(1.)
+    payload["input_mean"] = [99.] * data.n_channels
+    altered = tmp_path / "altered.pt"
+    torch.save(payload, altered)
+    fresh = fit_calibration_ensemble(groups[:3], specs, program,
+        source_checkpoints={"source": altered, "scratch": altered}).score_experts(groups[3].view)
+    np.testing.assert_array_equal(fresh["scratch"].log_probability, before["scratch"].log_probability)
+    assert not np.array_equal(fresh["source"].log_probability, before["source"].log_probability)

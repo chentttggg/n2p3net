@@ -28,8 +28,9 @@ from transfer.outcomes import (
 )
 
 
-def _mean(values: Sequence[float]) -> float | None:
-    return float(np.mean(values)) if values else None
+def _mean(values: Sequence[float | None]) -> float | None:
+    """Average a fixed roster; missing units cannot silently change its denominator."""
+    return float(np.mean(values)) if values and all(value is not None for value in values) else None
 
 
 def _risk_record(value: float | None) -> float | str | None:
@@ -115,13 +116,12 @@ class CandidateProbabilityMetrics:
 
     @property
     def available_probability_nll(self) -> float | None:
-        return _mean([row.available_probability_nll for row in self.participants
-                      if row.available_probability_nll is not None])
+        """Conditional decision NLL on the complete requested participant/seed roster."""
+        return _mean([row.available_probability_nll for row in self.participants])
 
     @property
     def available_probability_brier(self) -> float | None:
-        return _mean([row.available_probability_brier for row in self.participants
-                      if row.available_probability_brier is not None])
+        return _mean([row.available_probability_brier for row in self.participants])
 
     @property
     def tie_count(self) -> int:
@@ -147,8 +147,9 @@ class CandidateProbabilityMetrics:
                 "probability_coverage": self.probability_coverage,
                 "available_probability_nll": _risk_record(self.available_probability_nll),
                 "available_probability_brier": self.available_probability_brier,
-                "probability_diagnostics_scope": "available probabilities, decisions then seeds within participant",
-                "probability_participant_count": sum(row.available_probability_nll is not None for row in self.participants),
+                "probability_diagnostics_scope": "conditional on available decisions; all requested seeds and participants required",
+                "probability_participant_count": sum(row.available_probability_seed_count > 0 for row in self.participants),
+                "probability_complete_seed_participant_count": sum(row.available_probability_seed_count == len(self.seeds) for row in self.participants),
                 "tie_count": self.tie_count, "not_available_count": self.not_available_count,
                 "selection_failure_count": self.selection_failure_count,
                 "participants": [row.record() for row in self.participants],
@@ -288,14 +289,13 @@ def evaluate_candidate_evidence(
         nll_by_seed, brier_by_seed = [], []
         for seed in seeds:
             available = [row for row in rows if row.seed == seed and row.probability_available]
-            if available:
-                nll_by_seed.append(float(_mean([row.nll for row in available])))
-                brier_by_seed.append(float(_mean([row.brier for row in available])))
+            nll_by_seed.append(_mean([row.nll for row in available]))
+            brier_by_seed.append(_mean([row.brier for row in available]))
         participants.append(ParticipantCandidateMetrics(
             participant, requested, sum(row.correct for row in rows) / denominator if denominator else 0.,
             sum(row.operational_available for row in rows) / denominator if denominator else 0.,
             sum(row.probability_available for row in rows) / denominator if denominator else 0.,
-            _mean(nll_by_seed), _mean(brier_by_seed), len(nll_by_seed), sum(row.correct for row in rows),
+            _mean(nll_by_seed), _mean(brier_by_seed), sum(value is not None for value in nll_by_seed), sum(row.correct for row in rows),
             sum(row.outcome.status == DecisionStatus.TIE for row in rows),
             sum(row.failure_kind == "fit_failure" for row in rows),
             sum(row.failure_kind == "not_available" for row in rows),
@@ -382,12 +382,13 @@ def compare_candidate_probability_metrics(
     complete_support = all((participant, seed) in paired for participant in participant_keys for seed in baseline.seeds)
     before_risk, after_risk = [], []
     for participant in participant_keys:
-        seed_risks = [np.mean(paired[(participant, seed)], axis=0) for seed in baseline.seeds
-                      if (participant, seed) in paired]
-        if seed_risks:
-            risks = np.mean(seed_risks, axis=0)
-            before_risk.append(float(risks[0]))
-            after_risk.append(float(risks[1]))
+        before_seeds, after_seeds = [], []
+        for seed in baseline.seeds:
+            pairs = paired.get((participant, seed), ())
+            before_seeds.append(_mean([pair[0] for pair in pairs]))
+            after_seeds.append(_mean([pair[1] for pair in pairs]))
+        before_risk.append(_mean(before_seeds))
+        after_risk.append(_mean(after_seeds))
     baseline_nll, candidate_nll = _mean(before_risk), _mean(after_risk)
     delta_nll = None
     if complete_support and not (baseline_nll == math.inf and candidate_nll == math.inf):

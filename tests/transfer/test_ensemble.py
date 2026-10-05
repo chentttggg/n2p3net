@@ -70,6 +70,14 @@ def test_probability_tie_expert_can_contribute_to_a_unique_mixture():
     assert scorer.score({"a": tied, "b": useful}).predicted == "left"
 
 
+def test_roster_keys_cannot_swap_expert_producers_under_unequal_weights():
+    scorer = EnsembleScorer(EnsembleProgram("weighted", ("raw", "xdawn"), (.9, .1)))
+    raw, xdawn = evidence("raw", [.9, .1]), evidence("xdawn", [.1, .9])
+    assert scorer.score({"raw": raw, "xdawn": xdawn}).predicted == "left"
+    with pytest.raises(ValueError, match="producer"):
+        scorer.score({"raw": xdawn, "xdawn": raw})
+
+
 def test_log_pool_preserves_finite_underflow_nll_and_roundtrips(tmp_path):
     first = evidence("a", [.5, .5])
     first = replace(first, log_probability=np.array([0., -1000.]))

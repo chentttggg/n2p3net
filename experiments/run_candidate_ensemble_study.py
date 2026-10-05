@@ -1,0 +1,219 @@
+"""Execute declared candidate ensembles on calibration-group development folds."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import replace
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "src"))
+
+import numpy as np  # noqa: E402
+
+from models.candidate_evidence import CandidateEvidence, CandidateExpertIdentity  # noqa: E402
+from research.candidate_metrics import (  # noqa: E402
+    compare_candidate_probability_metrics,
+    evaluate_candidate_evidence,
+)
+from research.contracts import (  # noqa: E402
+    DecisionPlanContract,
+    DecisionPlanEntry,
+    semantic_sha256,
+)
+from research.evaluation import verified_executed_snapshot  # noqa: E402
+from research.execution import ExpectedSubjectError, atomic_write_json  # noqa: E402
+from train.runtime import cpu_thread_budget  # noqa: E402
+from transfer.ensemble import EnsembleProgram, EnsembleScorer  # noqa: E402
+from transfer.ensemble_fit import (  # noqa: E402
+    CalibrationExpertProgram,
+    FittedEnsemble,
+    fit_calibration_ensemble,
+)
+from transfer.ensemble_views import prepare_bnci_calibration_groups  # noqa: E402
+from transfer.outcomes import CandidateCoverage, DecisionKey  # noqa: E402
+
+SCHEMA = "n2p3_candidate_ensemble_study/1"
+
+
+def _executing_source():
+    paths = [*ROOT.joinpath("src").rglob("*.py"), Path(__file__)]
+    return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(paths)}
+
+
+def _subject(row, plan, directory, expected_source):
+    directory = Path(directory)
+    directory.mkdir()
+    if _executing_source() != expected_source:
+        raise ValueError("candidate ensemble execution differs from its frozen source")
+    grouped = prepare_bnci_calibration_groups(row["path"], source_sha256=row["sha256"],
+        authorized_labels=plan["authorized_labels"], group_count=plan["group_count"],
+        response_seconds=plan["observation_response_seconds"], pre_roll_seconds=plan["pre_roll_seconds"])
+    atomic_write_json(directory / "scopes.json", grouped.ledger)
+    groups = grouped.groups
+    declared = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
+    mixtures = tuple(EnsembleProgram.from_record(value) for value in plan["mixtures"])
+    predictions = []
+    with cpu_thread_budget(plan["cpu_threads_per_worker"]):
+        for seed in plan["seeds"]:
+            specs = tuple(replace(spec, recipe=None if spec.recipe is None else replace(spec.recipe, seed=seed))
+                          for spec in declared)
+            for fold, held in enumerate(groups):
+                training = [group for index, group in enumerate(groups) if index != fold]
+                evidence, calibrations = {}, {}
+                for expert_index, spec in enumerate(specs):
+                    one = EnsembleProgram.equal_weights(spec.expert_id, (spec.expert_id,))
+                    sources = {spec.expert_id: plan["source_checkpoints"][spec.expert_id]} if spec.expert_id in plan["source_checkpoints"] else {}
+                    try:
+                        fitted = fit_calibration_ensemble(training, (spec,), one,
+                            source_checkpoints=sources, device=plan["device"],
+                            calibration_strategy=plan["calibration_strategy"])
+                        package = directory / f"seed{seed}_fold{fold}_expert{expert_index}"
+                        fitted.save(package)
+                        value = fitted.score(held.view)
+                        replay = FittedEnsemble.load(package).score(held.view)
+                        if value.record() != replay.record():
+                            raise ValueError("saved expert prediction differs from the fitted state")
+                        evidence[spec.expert_id] = value
+                        calibrations[spec.expert_id] = fitted.temperature_record
+                    except (ExpectedSubjectError, np.linalg.LinAlgError) as error:
+                        view = held.view
+                        counts = tuple(int(value) for value in view.decision.membership.sum(axis=0))
+                        fit_digest = semantic_sha256({"declared_program": spec.record(), "training": [group.record() for group in training]})
+                        identity = CandidateExpertIdentity(spec.expert_id, view.raw_input_digest,
+                            None, None, fit_digest, "failed_declared_expert_fit", False)
+                        evidence[spec.expert_id] = CandidateEvidence(view.decision.candidate_vocabulary,
+                            None, view.participant_key, view.decision_id, view.physical_support_digest,
+                            (identity,), view.decision.repetitions, counts, counts,
+                            failure_reason=f"{type(error).__name__}: {error}", failure_kind="fit_failure")
+                        calibrations[spec.expert_id] = {"strategy": plan["calibration_strategy"], "status": "fit_failure"}
+                for mixture in mixtures:
+                    result = EnsembleScorer(mixture).score({name: evidence[name] for name in mixture.expert_ids})
+                    predictions.append({"seed": seed, "mixture": mixture.name, "fold": fold,
+                        "evidence": result.record(), "truth": held.target_candidate,
+                        "training_labels": sum(len(group.labels) for group in training),
+                        "requested_authorized_labels": plan["authorized_labels"],
+                        "saved_replay_exact": all(evidence[name].probability_available for name in mixture.expert_ids),
+                        "temperature_calibration": {name: calibrations[name] for name in mixture.expert_ids}})
+                atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions),
+                    "seed": seed, "fold": fold, "status": "running"})
+    requested = []
+    coverage = []
+    for group in groups:
+        view = group.view
+        requested.append(DecisionPlanEntry(view.participant_key, view.decision_id, group.target_candidate).record())
+        counts = tuple(int(value) for value in view.decision.membership.sum(axis=0))
+        coverage.append({"participant_key": view.participant_key, "decision_id": view.decision_id,
+                         "counts": dict(zip(view.decision.candidate_vocabulary, counts, strict=True))})
+    result = {"status": "completed", "predictions": predictions, "requested": requested,
+              "coverage": coverage, "candidate_vocabulary": list(groups[0].view.decision.candidate_vocabulary),
+              "evidence_level": groups[0].view.decision.repetitions, "participant_key": groups[0].view.participant_key}
+    atomic_write_json(directory / "result.json", result)
+    atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions), "status": "completed"})
+    return result
+
+
+def run_study(plan_path: str | Path, output: str | Path):
+    plan_path, output = Path(plan_path).resolve(), Path(output).resolve()
+    plan = json.loads(plan_path.read_bytes())
+    if plan["schema"] != SCHEMA or plan["evidence_scope"] not in {"software_correctness", "public_calibration_development"}:
+        raise ValueError("candidate ensemble plan needs an explicit supported evidence scope")
+    if plan["evidence_scope"] == "public_calibration_development":
+        verified_executed_snapshot(plan["source_snapshot_manifest"], root=ROOT)
+    seeds = plan["seeds"]
+    if not seeds or len(set(seeds)) != len(seeds) or any(type(seed) is not int or seed < 0 for seed in seeds):
+        raise ValueError("target-only seeds must be explicit unique nonnegative integers")
+    expert_programs = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
+    names = {spec.expert_id for spec in expert_programs}
+    if len(names) != len(expert_programs):
+        raise ValueError("candidate expert roster contains duplicate names")
+    mixtures = tuple(EnsembleProgram.from_record(value) for value in plan["mixtures"])
+    if not mixtures or len({value.name for value in mixtures}) != len(mixtures) or any(
+        not set(value.expert_ids) <= names for value in mixtures
+    ):
+        raise ValueError("candidate mixtures require unique names and declared expert producers")
+    if plan["baseline_mixture"] not in {value.name for value in mixtures}:
+        raise ValueError("baseline mixture is not declared")
+    if type(plan["workers"]) is not int or plan["workers"] < 1 or type(plan["cpu_threads_per_worker"]) is not int or plan["cpu_threads_per_worker"] < 1:
+        raise ValueError("candidate execution workers and thread budgets must be explicit positive integers")
+    # A caller may declare a fixed source for target-only seed probes; these are
+    # never labeled as independent full source-to-target pipeline replicates.
+    if set(plan["source_checkpoints"]) - names:
+        raise ValueError("source checkpoint names differ from the expert roster")
+    normalized = dict(plan)
+    normalized["records"] = [{**row, "path": str((plan_path.parent / row["path"]).resolve())}
+                              for row in plan["records"]]
+    normalized["source_checkpoints"] = {name: str((plan_path.parent / path).resolve())
+                                        for name, path in plan["source_checkpoints"].items()}
+    if not normalized["records"] or len({row["path"] for row in normalized["records"]}) != len(normalized["records"]):
+        raise ValueError("candidate study requires unique nonempty physical source records")
+    if len({row["sha256"] for row in normalized["records"]}) != len(normalized["records"]):
+        raise ValueError("one original raw artifact cannot count as several independent participants")
+    source = _executing_source()
+    output.mkdir(parents=True, exist_ok=False)
+    atomic_write_json(output / "plan.json", normalized)
+    atomic_write_json(output / "executed_source.json", source)
+    atomic_write_json(output / "progress.json", {"status": "running", "completed_subjects": 0})
+    completed = []
+    try:
+        if plan["workers"] == 1:
+            for index, row in enumerate(normalized["records"]):
+                completed.append(_subject(row, normalized, output / f"participant_{index:03d}", source))
+        else:
+            with ProcessPoolExecutor(max_workers=plan["workers"]) as pool:
+                futures = [pool.submit(_subject, row, normalized, output / f"participant_{index:03d}", source)
+                           for index, row in enumerate(normalized["records"])]
+                for future in as_completed(futures):
+                    completed.append(future.result())
+                    atomic_write_json(output / "progress.json", {"status": "running", "completed_subjects": len(completed)})
+        completed.sort(key=lambda row: row["participant_key"])
+        requested = tuple(DecisionPlanEntry(**entry) for row in completed for entry in row["requested"])
+        roster = tuple(row["participant_key"] for row in completed)
+        cache_identity = semantic_sha256(normalized["records"])
+        decision_plan = DecisionPlanContract(cache_identity, semantic_sha256([row.record() for row in requested]), roster, requested)
+        coverage = {DecisionKey(item["participant_key"], item["decision_id"]): CandidateCoverage.from_mappings(item["counts"], item["counts"])
+                    for row in completed for item in row["coverage"]}
+        vocabularies = {tuple(row["candidate_vocabulary"]) for row in completed}
+        levels = {row["evidence_level"] for row in completed}
+        if len(vocabularies) != 1 or len(levels) != 1:
+            raise ValueError("candidate study mixes different physical vocabularies or evidence levels")
+        metrics = {}
+        for mixture in mixtures:
+            scores = {seed: [CandidateEvidence.from_record(cell["evidence"]) for row in completed
+                            for cell in row["predictions"] if cell["mixture"] == mixture.name and cell["seed"] == seed]
+                      for seed in seeds}
+            metrics[mixture.name] = evaluate_candidate_evidence(scores, decision_plan=decision_plan,
+                seeds=seeds, candidate_vocabulary=next(iter(vocabularies)), evidence_level=next(iter(levels)),
+                requested_coverage=coverage)
+        baseline = metrics[plan["baseline_mixture"]]
+        report = {"schema": "n2p3_candidate_ensemble_report/1", "status": "completed",
+                  "evidence_scope": plan["evidence_scope"], "randomness_scope": "target_only_fixed_source",
+                  "decision_plan": decision_plan.record(), "source_digest": semantic_sha256(source),
+                  "participants": completed, "metrics": {name: value.record() for name, value in metrics.items()},
+                  "contrasts": {name: compare_candidate_probability_metrics(baseline, value).record()
+                                for name, value in metrics.items() if name != plan["baseline_mixture"]}}
+        atomic_write_json(output / "result.json", report)
+        atomic_write_json(output / "progress.json", {"status": "completed", "completed_subjects": len(completed)})
+        return report
+    except Exception as error:
+        atomic_write_json(output / "progress.json", {"status": "failed", "completed_subjects": len(completed),
+                          "error": f"{type(error).__name__}: {error}"})
+        raise
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--plan", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    report = run_study(args.plan, args.output)
+    print(json.dumps({"status": report["status"], "output": str(args.output.resolve())}))
+
+
+if __name__ == "__main__":
+    main()
