@@ -46,6 +46,9 @@ held评分重新条件化其真实prefix，但不修改冻结C模型、noise、�
 
 原始证据在本地`tmp/continuous_fixed_prefix_20261005/`：theory_review、callchain_review、noise_state、gradient_module、optimizer_diagnosis、standards_review、各JUnit/log与完整source/receipt。原始报告、src执行副本、RED脚本/结果保留；[紧凑验收账本](../assets/continuous_fixed_prefix_20261005/quality_receipt.json)保存版本/范围，原始证据物理封存与清单另记。以上测试范围有重叠，不相加。
 
+最终独立数学出口另见[61/23/6分组凭证](../assets/continuous_fixed_prefix_20261005/final_math_receipt.json)。代码与指南提交`fe993c8033368f8b9b5849980751c328d6b420fc`；[物理执行源清单](../../frozen/continuous_fixed_prefix_20261005_delivery/manifest.json)的477成员已对照实际bytes、解包副本与镜像逐个验证。
+[质量归档清单](../../frozen/continuous_fixed_prefix_20261005_delivery/quality_manifest.json)包含647成员、73012848压缩字节；每成员、原件前后与镜像SHA均一致，活动M1输出明确排除。Git只跟踪清单，原日志、模型与压缩包继续本地保留。
+
 ## 真实路径性能与M1执行合同
 
 真实A01路径仅是吞吐/重放探针：600授权labels、5×7975×8 raw fit，held一组只供无标签score/reload。单线程Burg AR0/8含保存/评分/重载约0.686/1.538秒。原forward-FD AR8触达200次上限、exit1，失败收据保留。精确梯度AR8在136迭代达到停止条件，fit50.955秒、总54.014秒；最终1000/maxcor32生产AR32在261迭代达到停止条件，fit258.400秒、总264.035秒，保存重放精确一致。此AR32探针对应4b99源码，不重签为最后计数修复后的模型。
@@ -57,3 +60,5 @@ held评分重新条件化其真实prefix，但不修改冻结C模型、noise、�
 M1固定8人×6fold×六阶×两估计器，共576fit、每臂48个requested decisions；C800中720labels组成6个完整selection，fold内600训练/120held、80不用。共同prefix32、response1.2秒、basis8、ridge1；固定温度，baseline为ar8_burg。原MAT由canonical parser按八份原SHA准入，源码/计划由`n2p3_source_freeze/1`物理冻结并核对，从materialized源码执行，成功包逐cell保存重放，失败保留requested分母与未执行支持。全部12臂执行，不因pilot不利而减少。
 
 本轮为单seed、target-only、公开校准开发。Windows本机venv为CPU-only Torch，未云端启动；云端25CPU/4GPU下限不改写成本地声明。M1需完整结束、核实际source/输入/覆盖/失败与participant-macro配对hit/NLL/Brier后另更新实测结论；四库/完整source→target seed、gating、其它机制与成人确认继续原依赖图。
+
+M1已从上述materialized源码启动，命令/venv/原输入/plan SHA、资源快照与actual worker采样保存在本地`tmp/continuous_fixed_prefix_20261005/m1_20261006/`。该目录的完整终态、失败与风险结果另更新，进程启动不算矩阵验收。

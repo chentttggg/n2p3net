@@ -1,0 +1,29 @@
+{
+  "schema": "n2p3_fixed_prefix_independent_math_receipt/1",
+  "evidence_scope": "independent_software_and_math_no_real_training",
+  "raw_receipt_sha256": "be80cebddd29e19aac175f761027a1555ff710ba1a11e9b02c9549482ac0c9a1",
+  "groups": {
+    "public_lifecycle": {
+      "exit_code": 0,
+      "check_count": 61,
+      "all_passed": true,
+      "receipt_sha256": "3a559f8576573e0c886b7a19c1b36ae0a7c9020ca746b5e8e44871e987b5647b"
+    },
+    "dense_high_precision_delta": {
+      "exit_code": 0,
+      "check_count": 23,
+      "all_passed": true,
+      "receipt_sha256": "14f9245e1b7acd60a658f54f9f2df2bd48f32a3ccf346768420d5c628db2f376"
+    },
+    "current_counter_and_failure": {
+      "exit_code": 0,
+      "check_count": 6,
+      "all_passed": true,
+      "receipt_sha256": "d0bdb584702c1af8ccbcb8a3bda981c1b6f7f0db0932404daee2ab922677716d"
+    }
+  },
+  "formula_or_model_defects_remaining": 0,
+  "pressure_original_absolute_assertion_passed": false,
+  "pressure_limit": "off-model iid finite ingress: absolute log-density and log-BF precision not universally certified",
+  "quality_archive_sha256": "50017eea53e4ef3ae7d3fca3cf2f563c42a3e4d02385a401d94b03ed5ad04048"
+}
