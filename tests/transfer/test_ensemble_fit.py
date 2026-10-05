@@ -1,5 +1,6 @@
 """Actual expert fitting, shared physical input and frozen label-free replay."""
 
+import json
 from dataclasses import replace
 
 import numpy as np
@@ -10,6 +11,7 @@ from data.candidate_task import MembershipDecision
 from data.contract import BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT
 from data.epochs import preprocessing_spec_from_contract
 from data.identity import origin_subject_key
+from research.contracts import semantic_sha256
 from tests.support.checkpoints import write_checkpoint
 from transfer.ensemble import EnsembleProgram
 from transfer.ensemble_fit import CalibrationExpertProgram, FittedEnsemble, fit_calibration_ensemble
@@ -55,6 +57,69 @@ def programs():
             CalibrationExpertProgram("xdawn", "trial", erp_target_recipe("xdawn_erp", bin_width=8), baseline),
             CalibrationExpertProgram("scratch", "trial", TargetRecipe("scratch", initialization="scratch",
                 epochs=1, batch_size=32, bn_buffers="calibration", dropout="off"), baseline))
+
+
+@pytest.fixture(scope="module")
+def frozen_raw_classic():
+    groups = selections()
+    specs = programs()[:2]
+    program = EnsembleProgram.equal_weights("raw-and-toeplitz", tuple(spec.expert_id for spec in specs))
+    return groups, specs, program, fit_calibration_ensemble(groups[:3], specs, program)
+
+
+def test_incomplete_physical_groups_retain_outcomes_after_contract_validation(frozen_raw_classic):
+    groups, _, _, fitted = frozen_raw_classic
+    view = groups[3].view
+    missing = view.decision.evidence_indices.copy()
+    missing[0] = -1
+    for decision in (replace(view.decision, timeline_complete=False), replace(view.decision, evidence_indices=missing)):
+        output = fitted.score_experts(replace(view, decision=decision))
+        assert all(value.failure_kind == "incomplete" and not value.probability_available for value in output.values())
+    with pytest.raises(ValueError, match="reference"):
+        fitted.score(replace(view, decision=replace(view.decision, evidence_indices=missing), reference="left earlobe"))
+    reordered = replace(view.decision, candidate_vocabulary=tuple(reversed(view.decision.candidate_vocabulary)),
+                         membership=view.decision.membership[:, ::-1])
+    with pytest.raises(ValueError, match="vocabulary"):
+        fitted.score(replace(view, decision=reordered))
+
+
+def test_raw_calibration_rejects_mixed_native_reference(frozen_raw_classic):
+    groups, specs, program, _ = frozen_raw_classic
+    other = replace(groups[2], view=replace(groups[2].view, reference="left earlobe"))
+    with pytest.raises(ValueError, match="layout/reference"):
+        fit_calibration_ensemble((groups[0], groups[1], other), specs, program)
+
+
+@pytest.mark.parametrize("changed", ["raw_order", "trial_kind", "fit_participant"])
+def test_model_bytes_bind_recipe_and_fit_authority(frozen_raw_classic, tmp_path, changed):
+    _, _, _, fitted = frozen_raw_classic
+    path = tmp_path / "package"
+    fitted.save(path)
+    manifest = path / "ensemble.json"
+    payload = json.loads(manifest.read_bytes())
+    if changed == "raw_order":
+        payload["record"]["experts"][0]["program"]["noise_order"] = 16
+    elif changed == "trial_kind":
+        payload["record"]["experts"][1]["program"]["recipe"]["initialization"] = "scratch"
+        payload["record"]["experts"][1]["program"]["recipe"].pop("erp_bin_width")
+    else:
+        payload["record"]["training_receipts"][0]["participant_key"] = origin_subject_key("fixture", "other")
+    payload["record_sha256"] = semantic_sha256(payload["record"])
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="recipe and fit authority"):
+        FittedEnsemble.load(path)
+
+
+def test_frozen_programme_temperature_and_trial_state_cannot_be_mutated(frozen_raw_classic):
+    _, _, _, fitted = frozen_raw_classic
+    with pytest.raises(TypeError):
+        fitted.temperature_record["temperatures"]["toeplitz"] = 100
+    with pytest.raises(AttributeError):
+        fitted.scorer.program = EnsembleProgram.equal_weights("other", ("toeplitz",))
+    trial = fitted._experts[1].predictor
+    assert not hasattr(trial, "state")
+    with pytest.raises(TypeError):
+        trial.record["kind"] = "n2p3"
 
 
 def test_real_four_expert_fit_scores_without_held_labels_and_reloads(tmp_path):

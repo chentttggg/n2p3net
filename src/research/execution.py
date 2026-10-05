@@ -12,6 +12,10 @@ from typing import Any
 from uuid import uuid4
 
 
+class UnidentifiableFitError(ValueError):
+    """Valid observations cannot identify the declared fitted numerical state."""
+
+
 class SubjectFailureCode(StrEnum):
     INSUFFICIENT_CLASSES = "insufficient_classes"
     NONFINITE_OPTIMIZATION = "nonfinite_optimization"

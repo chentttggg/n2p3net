@@ -319,8 +319,8 @@ class SelectionEpochProfile:
             raise ValueError("saved epoch geometry differs from the actual preprocessing contract")
         return result
 
-    def transform(self, view: PredictionDecisionView):
-        """Return actual epochs, their observation masks and an execution receipt."""
+    def validate_observation(self, view: PredictionDecisionView):
+        """Check the frozen physical projection before deciding data availability."""
         if not isinstance(view, PredictionDecisionView):
             raise TypeError("epoch prediction transforms consume unlabeled PredictionDecisionView inputs")
         if view.sample_rate_hz != self.source_sample_rate_hz or view.reference != self.reference:
@@ -331,6 +331,10 @@ class SelectionEpochProfile:
             required += (self.reference_channel,)
         if set(required) - set(native):
             raise ValueError("epoch projection requests EEG or measured-reference channels absent from actual observations")
+
+    def transform(self, view: PredictionDecisionView):
+        """Return actual epochs, their observation masks and an execution receipt."""
+        self.validate_observation(view)
         starts, stops = view.onsets + self._source_start, view.onsets + self._source_stop
         if starts.min() < 0 or stops.max() > len(view.samples):
             raise ValueError("declared epoch endpoints extend beyond observed raw support")

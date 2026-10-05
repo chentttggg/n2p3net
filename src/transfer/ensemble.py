@@ -69,7 +69,11 @@ class EnsembleScorer:
     """
 
     def __init__(self, program: EnsembleProgram):
-        self.program = program
+        self._program = program
+
+    @property
+    def program(self):
+        return self._program
 
     def score(self, expert_evidence: Mapping[str, CandidateEvidence]) -> CandidateEvidence:
         if set(expert_evidence) != set(self.program.expert_ids):

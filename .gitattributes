@@ -2,11 +2,14 @@
 .gitattributes text eol=lf
 src/models/candidate_evidence.py text eol=lf
 src/research/candidate_metrics.py text eol=lf
+src/research/execution.py text eol=lf
+src/baselines/structured_erp.py text eol=lf
 src/transfer/continuous_decision.py text eol=lf
 src/transfer/calibration_state.py text eol=lf
 src/transfer/ensemble.py text eol=lf
 src/transfer/ensemble_fit.py text eol=lf
 src/transfer/ensemble_views.py text eol=lf
+src/transfer/temporal_noise.py text eol=lf
 experiments/run_erp_comparator.py text eol=lf
 experiments/run_candidate_ensemble_study.py text eol=lf
 tests/models/test_candidate_probability_evidence.py text eol=lf

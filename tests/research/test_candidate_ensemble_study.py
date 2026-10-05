@@ -11,11 +11,17 @@ from scipy.io import savemat
 from data.bnci2014_008_candidate import BNCI2014_008_CHANNELS, BNCI2014_008_SOURCE_REFERENCE
 from data.contract import BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT
 from data.epochs import preprocessing_spec_from_contract
-from experiments.run_candidate_ensemble_study import run_study
+from experiments.run_candidate_ensemble_study import _matched_source_controls, run_study
 from tests.support.bnci import bnci_mat_fields
+from tests.support.checkpoints import write_checkpoint
+from transfer.calibration_candidates import waveform_lda_recipe
 from transfer.ensemble import EnsembleProgram
-from transfer.ensemble_fit import CalibrationExpertProgram
-from transfer.ensemble_views import SelectionEpochProfile
+from transfer.ensemble_fit import CalibrationExpertProgram, FrozenSourceCheckpoint
+from transfer.ensemble_views import (
+    SelectionEpochProfile,
+    build_calibration_epoch_dataset,
+    prepare_bnci_calibration_groups,
+)
 from transfer.recipes import TargetRecipe, erp_target_recipe
 
 
@@ -89,3 +95,45 @@ def test_contract_error_is_recorded_failed_and_propagates(tmp_path, monkeypatch)
         run_study(study_plan(tmp_path), tmp_path / "result")
     state = json.loads((tmp_path / "result/progress.json").read_bytes())
     assert state["status"] == "failed" and "untrusted source" in state["error"]
+    child = json.loads((tmp_path / "result/participant_000/progress.json").read_bytes())
+    assert child["status"] == "failed" and "untrusted source" in child["error"]
+
+
+def test_valid_flat_record_keeps_each_requested_expected_fit_failure(tmp_path):
+    path = study_plan(tmp_path)
+    plan = json.loads(path.read_bytes())
+    fields = bnci_mat_fields()
+    savemat(tmp_path / "A01.mat", {"data": fields})
+    plan["records"][0]["sha256"] = hashlib.sha256((tmp_path / "A01.mat").read_bytes()).hexdigest()
+    plan["experts"] = plan["experts"][:2]
+    plan["mixtures"] = [EnsembleProgram.equal_weights("raw-only", ("raw",)).record(),
+                        EnsembleProgram.equal_weights("toeplitz-only", ("toeplitz",)).record()]
+    plan["baseline_mixture"] = "raw-only"
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    report = run_study(path, tmp_path / "result")
+    assert report["status"] == "completed"
+    for metric in report["metrics"].values():
+        assert metric["requested_participant_count"] == 1
+        assert metric["probability_coverage"] == 0
+        assert metric["requested_participant_operational_hit_rate"] == 0
+
+
+def test_matched_source_controls_bind_frozen_architecture_before_any_fit(tmp_path):
+    path = study_plan(tmp_path)
+    plan = json.loads(path.read_bytes())
+    groups = prepare_bnci_calibration_groups(plan["records"][0]["path"],
+        source_sha256=plan["records"][0]["sha256"], response_seconds=308 / 256, group_count=2).groups
+    scratch = CalibrationExpertProgram.from_record(plan["experts"][-1])
+    source = replace(scratch, expert_id="source", recipe=replace(scratch.recipe, name="source", initialization="source"))
+    data = build_calibration_epoch_dataset(groups[:1], source.profile)
+    checkpoint = write_checkpoint(tmp_path / "source.pt", data, source_snapshot_sha256="c" * 64)
+    snapshot = FrozenSourceCheckpoint.from_path(checkpoint)
+    with pytest.raises(ValueError, match="matched scratch and waveform"):
+        _matched_source_controls((source,), {"source": snapshot})
+    waveform = CalibrationExpertProgram("waveform", "trial", waveform_lda_recipe(), source.profile)
+    frozen, bindings = _matched_source_controls((source, scratch, waveform), {"source": snapshot})
+    assert frozen["scratch"] is snapshot
+    assert bindings[0]["source"] == "source" and bindings[0]["scratch"] == "scratch"
+    checkpoint.write_bytes(b"replaced after freeze")
+    assert snapshot.digest == hashlib.sha256(snapshot.content).hexdigest()
+    assert snapshot.content != checkpoint.read_bytes()

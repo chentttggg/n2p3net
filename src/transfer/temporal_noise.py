@@ -22,6 +22,7 @@ from pathlib import Path
 import numpy as np
 from scipy.linalg import solve_discrete_lyapunov, solve_triangular
 
+from research.execution import UnidentifiableFitError
 from transfer.noise_model import (
     array_digest,
     freeze_metadata,
@@ -286,7 +287,7 @@ class TemporalNoise:
         available = sum(len(x)-order for x in arrays)
         minimum = max(32, minimum_samples_per_parameter*max(1, order))
         if available < minimum:
-            raise ValueError("insufficient lag rows to identify requested AR order")
+            raise UnidentifiableFitError("insufficient lag rows to identify requested AR order")
         polynomial = np.empty(0)
         actual_reflections = []
         forward, backward = [x[1:].copy() for x in arrays], [x[:-1].copy() for x in arrays]
@@ -294,10 +295,10 @@ class TemporalNoise:
             numerator = 2*sum(float(np.sum(f*b)) for f, b in zip(forward, backward, strict=True))
             denominator = sum(float(np.sum(f*f)+np.sum(b*b)) for f, b in zip(forward, backward, strict=True))
             if not np.isfinite(denominator) or denominator <= 0:
-                raise ValueError("degenerate Burg noise energy")
+                raise UnidentifiableFitError("degenerate Burg noise energy")
             reflection = -numerator/denominator
             if not np.isfinite(reflection) or abs(reflection) >= 1-1e-12:
-                raise ValueError("degenerate Burg reflection cannot establish strict stability")
+                raise UnidentifiableFitError("degenerate Burg reflection cannot establish strict stability")
             actual_reflections.append(reflection)
             polynomial = np.r_[polynomial + reflection*polynomial[::-1], reflection]
             pairs = [(f+reflection*b, b+reflection*f) for f, b in zip(forward, backward, strict=True)]
@@ -316,7 +317,7 @@ class TemporalNoise:
             count += innovation.size
         variance = squared/count
         if not np.isfinite(variance) or variance <= 0:
-            raise ValueError("degenerate pooled innovation variance")
+            raise UnidentifiableFitError("degenerate pooled innovation variance")
         return cls(coefficients, variance, {
             "fit_scope": fit_scope, "method": "segmented_multichannel_burg_no_pole_clipping",
             "assume_centered": True, "available_lag_rows": available, "minimum_lag_rows": minimum,

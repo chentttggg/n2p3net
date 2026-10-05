@@ -39,6 +39,15 @@ def _decision():
     )
 
 
+def test_complex_log_evidence_and_probabilities_are_rejected_at_ingress():
+    args = _arguments(("a", "b"))
+    values = np.log([.8, .2]) + np.array([123j, 456j])
+    with pytest.raises(ValueError, match="real"):
+        CandidateEvidence(log_probability=values, **args)
+    with pytest.raises(ValueError, match="real"):
+        CandidateEvidence.from_log_evidence(values, **args)
+
+
 def test_membership_probability_matches_independent_bernoulli_enumeration():
     decision = _decision()
     trial_odds = np.array([-.2, .6, -.3, .1, .8, -.1])

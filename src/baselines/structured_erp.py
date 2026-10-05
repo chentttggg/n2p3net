@@ -14,6 +14,7 @@ from sklearn.preprocessing import StandardScaler
 
 from baselines.classic import Baseline
 from baselines.temporal_transfer import TemporalBasis
+from research.execution import UnidentifiableFitError
 
 ERP_FAMILIES = frozenset({"xdawn_erp", "toeplitz_lda", "pooled_lda", "temporal_lda"})
 ERP_SCHEMA = "n2p3_structured_erp/1"
@@ -111,7 +112,7 @@ class StructuredERP(Baseline):
             try:
                 factor = cho_factor(covariance)
             except np.linalg.LinAlgError as exc:
-                raise ValueError("ERP covariance is not positive definite; inspect constant/missing channels") from exc
+                raise UnidentifiableFitError("ERP covariance is not positive definite; inspect constant/missing channels") from exc
             coefficient = cho_solve(factor, means[1] - means[0])
             prior_log_odds = np.log(np.mean(y == 1) / np.mean(y == 0))
             intercept = -0.5 * (means[1] + means[0]) @ coefficient + prior_log_odds

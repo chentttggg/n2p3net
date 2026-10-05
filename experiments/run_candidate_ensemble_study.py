@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -26,12 +27,21 @@ from research.contracts import (  # noqa: E402
     semantic_sha256,
 )
 from research.evaluation import verified_executed_snapshot  # noqa: E402
-from research.execution import ExpectedSubjectError, atomic_write_json  # noqa: E402
+from research.execution import (  # noqa: E402
+    ExpectedSubjectError,
+    UnidentifiableFitError,
+    atomic_write_json,
+)
 from train.runtime import cpu_thread_budget  # noqa: E402
+from transfer.checkpoint import (  # noqa: E402
+    checkpoint_architecture_record,
+    load_checkpoint_payload,
+)
 from transfer.ensemble import EnsembleProgram, EnsembleScorer  # noqa: E402
 from transfer.ensemble_fit import (  # noqa: E402
     CalibrationExpertProgram,
     FittedEnsemble,
+    FrozenSourceCheckpoint,
     fit_calibration_ensemble,
 )
 from transfer.ensemble_views import prepare_bnci_calibration_groups  # noqa: E402
@@ -40,13 +50,51 @@ from transfer.outcomes import CandidateCoverage, DecisionKey  # noqa: E402
 SCHEMA = "n2p3_candidate_ensemble_study/1"
 
 
+def _matched_source_controls(experts, source_snapshots):
+    bindings = []
+    resolved_sources = dict(source_snapshots)
+    for source in experts:
+        if source.family != "trial" or source.recipe.initialization != "source":
+            continue
+        if source.expert_id not in resolved_sources:
+            raise ValueError("source expert lacks a declared checkpoint")
+        recipe = source.recipe.record()
+        recipe.pop("name")
+        recipe.pop("initialization")
+        if recipe["input_statistics"] == "source":
+            recipe["input_statistics"] = "target_prefix"
+        scratch = None
+        waveform = None
+        for control in experts:
+            if control.family != "trial" or control.profile.digest != source.profile.digest:
+                continue
+            if control.recipe.initialization == "waveform_lda":
+                waveform = control
+            if control.recipe.initialization == "scratch":
+                actual = control.recipe.record()
+                actual.pop("name")
+                actual.pop("initialization")
+                if actual == recipe:
+                    scratch = control
+        if scratch is None or waveform is None:
+            raise ValueError("full-fine requires matched scratch and waveform LDA controls before fitting")
+        resolved_sources.setdefault(scratch.expert_id, resolved_sources[source.expert_id])
+        first = checkpoint_architecture_record(load_checkpoint_payload(io.BytesIO(resolved_sources[source.expert_id].content)))
+        second = checkpoint_architecture_record(load_checkpoint_payload(io.BytesIO(resolved_sources[scratch.expert_id].content)))
+        if semantic_sha256(first) != semantic_sha256(second):
+            raise ValueError("source and matched scratch must use the same actual checkpoint architecture")
+        bindings.append({"source": source.expert_id, "scratch": scratch.expert_id,
+                         "waveform_lda": waveform.expert_id, "architecture_digest": semantic_sha256(first)})
+    return resolved_sources, bindings
+
+
 def _executing_source():
     paths = [*ROOT.joinpath("src").rglob("*.py"), Path(__file__)]
     return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sorted(paths)}
 
 
-def _subject(row, plan, directory, expected_source):
+def _subject_impl(row, plan, directory, expected_source, source_snapshots):
     directory = Path(directory)
     directory.mkdir()
     if _executing_source() != expected_source:
@@ -68,7 +116,7 @@ def _subject(row, plan, directory, expected_source):
                 evidence, calibrations = {}, {}
                 for expert_index, spec in enumerate(specs):
                     one = EnsembleProgram.equal_weights(spec.expert_id, (spec.expert_id,))
-                    sources = {spec.expert_id: plan["source_checkpoints"][spec.expert_id]} if spec.expert_id in plan["source_checkpoints"] else {}
+                    sources = {spec.expert_id: source_snapshots[spec.expert_id]} if spec.expert_id in source_snapshots else {}
                     try:
                         fitted = fit_calibration_ensemble(training, (spec,), one,
                             source_checkpoints=sources, device=plan["device"],
@@ -81,7 +129,7 @@ def _subject(row, plan, directory, expected_source):
                             raise ValueError("saved expert prediction differs from the fitted state")
                         evidence[spec.expert_id] = value
                         calibrations[spec.expert_id] = fitted.temperature_record
-                    except (ExpectedSubjectError, np.linalg.LinAlgError) as error:
+                    except (ExpectedSubjectError, UnidentifiableFitError, np.linalg.LinAlgError) as error:
                         view = held.view
                         counts = tuple(int(value) for value in view.decision.membership.sum(axis=0))
                         fit_digest = semantic_sha256({"declared_program": spec.record(), "training": [group.record() for group in training]})
@@ -116,6 +164,17 @@ def _subject(row, plan, directory, expected_source):
     atomic_write_json(directory / "result.json", result)
     atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions), "status": "completed"})
     return result
+
+
+def _subject(row, plan, directory, expected_source, source_snapshots):
+    directory = Path(directory)
+    try:
+        return _subject_impl(row, plan, directory, expected_source, source_snapshots)
+    except Exception as error:
+        progress = directory / "progress.json"
+        previous = json.loads(progress.read_bytes()) if progress.exists() else {"completed_prediction_cells": 0}
+        atomic_write_json(progress, {**previous, "status": "failed", "error": f"{type(error).__name__}: {error}"})
+        raise
 
 
 def run_study(plan_path: str | Path, output: str | Path):
@@ -154,6 +213,12 @@ def run_study(plan_path: str | Path, output: str | Path):
         raise ValueError("candidate study requires unique nonempty physical source records")
     if len({row["sha256"] for row in normalized["records"]}) != len(normalized["records"]):
         raise ValueError("one original raw artifact cannot count as several independent participants")
+    source_snapshots = {name: FrozenSourceCheckpoint.from_path(path)
+                        for name, path in normalized["source_checkpoints"].items()}
+    source_snapshots, normalized["matched_controls"] = _matched_source_controls(expert_programs, source_snapshots)
+    for binding in normalized["matched_controls"]:
+        normalized["source_checkpoints"].setdefault(binding["scratch"], normalized["source_checkpoints"][binding["source"]])
+    normalized["source_checkpoint_sha256"] = {name: snapshot.digest for name, snapshot in source_snapshots.items()}
     source = _executing_source()
     output.mkdir(parents=True, exist_ok=False)
     atomic_write_json(output / "plan.json", normalized)
@@ -163,10 +228,10 @@ def run_study(plan_path: str | Path, output: str | Path):
     try:
         if plan["workers"] == 1:
             for index, row in enumerate(normalized["records"]):
-                completed.append(_subject(row, normalized, output / f"participant_{index:03d}", source))
+                completed.append(_subject(row, normalized, output / f"participant_{index:03d}", source, source_snapshots))
         else:
             with ProcessPoolExecutor(max_workers=plan["workers"]) as pool:
-                futures = [pool.submit(_subject, row, normalized, output / f"participant_{index:03d}", source)
+                futures = [pool.submit(_subject, row, normalized, output / f"participant_{index:03d}", source, source_snapshots)
                            for index, row in enumerate(normalized["records"])]
                 for future in as_completed(futures):
                     completed.append(future.result())

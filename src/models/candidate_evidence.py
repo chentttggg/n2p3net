@@ -71,6 +71,13 @@ def _log_normalize(values: np.ndarray) -> np.ndarray:
             raise ValueError("log evidence differences exceed floating-point support") from error
 
 
+def _real_evidence_values(value):
+    values = np.asarray(value)
+    if np.iscomplexobj(values):
+        raise ValueError("candidate log evidence and probabilities require real values")
+    return np.asarray(values, dtype=np.float64)
+
+
 @dataclass(frozen=True)
 class CandidateExpertIdentity:
     """An expert's own input and fitted state, independent of common raw support.
@@ -171,7 +178,7 @@ class CandidateEvidence:
                 raise ValueError("candidate probability requires complete physical coverage")
             if any(value.model_digest is None for value in identities):
                 raise ValueError("candidate probabilities require each fitted model identity")
-            values = np.asarray(self.log_probability, dtype=np.float64)
+            values = _real_evidence_values(self.log_probability)
             if values.shape != (len(vocabulary),):
                 raise ValueError("log probability shape must align with the frozen vocabulary")
             if np.isnan(values).any() or np.isposinf(values).any() or not np.isfinite(values).any():
@@ -214,7 +221,7 @@ class CandidateEvidence:
     def from_log_evidence(cls, log_evidence, *, temperature=1., prior=None, **identity):
         """Normalize a continuous joint likelihood once, without trial reaggregation."""
         count = len(identity["candidate_vocabulary"])
-        values = np.asarray(log_evidence, dtype=np.float64)
+        values = _real_evidence_values(log_evidence)
         if values.shape != (count,) or np.isnan(values).any() or np.isposinf(values).any() or not np.isfinite(values).any():
             raise ValueError("log evidence must cover the frozen candidate vocabulary")
         if isinstance(temperature, bool) or not isinstance(temperature, Real) or not np.isfinite(temperature) or temperature <= 0:
@@ -222,7 +229,7 @@ class CandidateEvidence:
         if prior is None:
             log_prior = np.zeros(count)
         else:
-            prior = np.asarray(prior, dtype=np.float64)
+            prior = _real_evidence_values(prior)
             if prior.shape != (count,) or not np.isfinite(prior).all() or np.any(prior < 0) or not np.isclose(prior.sum(), 1., rtol=0., atol=1e-10):
                 raise ValueError("candidate prior must sum to one on the frozen vocabulary")
             log_prior = np.full(count, -np.inf)
