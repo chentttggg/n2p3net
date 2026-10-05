@@ -31,6 +31,13 @@ def brainsync_reference_record() -> dict[str, str]:
     }
 
 
+def validate_zero_phase_edge_policy(policy: str, method: str, phase: str) -> None:
+    if not isinstance(policy, str) or policy not in {"legacy", "mne_reflect_limited"}:
+        raise ValueError("unknown zero_phase_edge_policy")
+    if policy != "legacy" and (method != "iir" or phase != "zero"):
+        raise ValueError("zero_phase_edge_policy requires zero-phase IIR")
+
+
 def validate_notch_parameters(frequencies, quality_factor, *, sample_rate_hz=None) -> None:
     """Validate an explicit notch declaration against the source rate when known."""
     if (not isinstance(frequencies, (tuple, list))
@@ -71,6 +78,7 @@ class EEGDataContract:
     causal_iir_initial_state: str = "not_applicable"
     notch_freqs_hz: tuple[float, ...] = ()
     notch_quality_factor: float = 30.0
+    zero_phase_edge_policy: str = "legacy"
     resample_domain: str = "epoched"
     resample_method: str = "fft"
     resample_npad: str = "auto"
@@ -82,13 +90,17 @@ class EEGDataContract:
         return int(floor((self.tmax_ms - self.tmin_ms) * self.sample_rate_hz / 1000.0 + 1e-9))
 
 
+# Retained execution recipe, not an independently validated optimal epoch end.
+# Window changes require paired development evidence and new cache/model identity;
+# cropping an epoch-FFT cache does not shorten its original raw-time support.
 DEFAULT_P300_DATA_CONTRACT = EEGDataContract(name="p300_ms_eegnet_input_v3")
 CAUSAL_IIR_INITIAL_STATE = "steady_state_first_sample"
-# GTN is a 7-17 year-old, 3-channel cohort: its P300 energy sits at 1-4 Hz and
-# its positive component can extend to ~1000 ms. The controlled LOSO ablation
-# of 2026-08-30 (doc/gtn_accuracy_gap_audit_20260830.zh.md) measured the
-# previous 2 Hz / 800 ms defaults at dAUC -0.066 / dHit -0.102 versus 0.1 Hz /
-# 1200 ms, so this cohort contract restores the literature-supported values.
+# GTN is a 7-17 year-old, 3-channel cohort. The historical 2 Hz / 800 ms
+# versus 0.1 Hz / 1200 ms comparison changed two factors together: it cannot
+# isolate a window-length benefit or establish an adult cross-dataset optimum.
+# This paper-comparison profile uses 0.5 Hz, distinct from that joint recipe.
+# Current evidence boundaries: doc/input_contract_math.zh.md and
+# doc/evidence/input_contract_review_20260922.zh.md.
 PAPER_GTN_DATA_CONTRACT = EEGDataContract(
     name="gtn_paper_offline_v1",
     l_freq=0.5,
@@ -108,6 +120,13 @@ BRAIN_SYNC_CAUSAL_DATA_CONTRACT = replace(
     SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     name="brainsync_causal_notch_v1",
     notch_freqs_hz=(50.0,),
+)
+BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT = replace(
+    BRAIN_SYNC_CAUSAL_DATA_CONTRACT,
+    name="brainsync_bidirectional_v1",
+    filter_phase="zero",
+    causal_iir_initial_state="not_applicable",
+    zero_phase_edge_policy="mne_reflect_limited",
 )
 # Paper-aligned GTN causal contract (the source study high-passes at 0.5 Hz);
 # used only for SOTA-comparison anchors, not for our performance claims.
@@ -159,6 +178,7 @@ def assert_p300_input_contract(
         "causal_iir_initial_state": expected.causal_iir_initial_state,
         "notch_freqs_hz": expected.notch_freqs_hz,
         "notch_quality_factor": expected.notch_quality_factor,
+        "zero_phase_edge_policy": expected.zero_phase_edge_policy,
         "resample_domain": expected.resample_domain,
         "resample_method": expected.resample_method,
         "resample_npad": expected.resample_npad,
@@ -195,7 +215,10 @@ def assert_causal_p300_input_contract(preprocessing: object) -> None:
 
 
 def assert_personal_p300_input_contract(preprocessing: object) -> None:
-    """Accept either declared causal recipe; never add/remove a notch on supplied data."""
+    """Accept the complete-recording product recipe and frozen historical causal inputs."""
+    if getattr(preprocessing, "filter_phase", None) == "zero":
+        assert_p300_input_contract(preprocessing, BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT)
+        return
     expected = (BRAIN_SYNC_CAUSAL_DATA_CONTRACT if getattr(preprocessing, "notch_freqs_hz", ())
                 else SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT)
     assert_p300_input_contract(preprocessing, expected)

@@ -25,6 +25,8 @@ active so a silently-degenerate alignment weight is detectable in ledgers.
 
 from __future__ import annotations
 
+from math import isfinite
+
 import torch
 
 DEFAULT_ALIGNMENT_MIN_CELL_COUNT = 8
@@ -58,10 +60,12 @@ def rbf_mmd_loss(
     *,
     bandwidth: float | None = None,
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    """Return an unbiased RBF-MMD estimate and frozen-bandwidth diagnostics.
+    """Return an off-diagonal RBF-MMD estimate and bandwidth diagnostics.
 
     The bandwidth is computed from detached samples with the median heuristic
     when omitted, so the heuristic itself does not create a gradient path.
+    Fixed-kernel unbiasedness requires a fixed/independent bandwidth and the
+    appropriate sampling assumptions; detachment alone does not supply them.
     ``source`` and ``target`` may be structured feature maps; axis zero is the
     sample axis.
     """
@@ -180,13 +184,30 @@ def conditional_domain_rbf_mmd_loss(
 ) -> tuple[torch.Tensor, dict[str, object]]:
     """Apply conditional RBF-MMD to every eligible source-domain pair."""
 
-    if domain_count < 2:
+    if type(domain_count) is not int or domain_count < 2:
         raise ValueError("conditional domain MMD requires at least two domains.")
-    features_flat = _flatten_samples(features, name="features")
+    if type(min_cell_count) is not int or min_cell_count < 2:
+        raise ValueError("min_cell_count must be an integer of at least two.")
+    if bandwidth is not None and (isinstance(bandwidth, bool)
+            or not isinstance(bandwidth, (int, float)) or not isfinite(bandwidth) or bandwidth <= 0):
+        raise ValueError("bandwidth must be finite and positive.")
+    if features.ndim < 2 or not features.is_floating_point():
+        raise ValueError("features must be floating point with shape (N, ...).")
+    if len(features) < 2:
+        features_flat = features.float().flatten(start_dim=1)
+        if not bool(torch.isfinite(features_flat).all()):
+            raise ValueError("features must be finite.")
+    else:
+        features_flat = _flatten_samples(features, name="features")
+    if features_flat.shape[1] == 0:
+        raise ValueError("features require a nonempty feature dimension.")
     if labels.ndim != 1 or labels.shape[0] != features_flat.shape[0]:
         raise ValueError("labels must align with features.")
     if domain_indices.ndim != 1 or domain_indices.shape[0] != features_flat.shape[0]:
         raise ValueError("domain_indices must align with features.")
+    for name, values in (("labels", labels), ("domain_indices", domain_indices)):
+        if values.dtype == torch.bool or values.is_floating_point() or values.is_complex():
+            raise ValueError(f"{name} must contain integer codes.")
     labels = labels.to(device=features_flat.device, dtype=torch.long)
     domains = domain_indices.to(device=features_flat.device, dtype=torch.long)
     if bool(((labels < 0) | (labels > 1)).any()):
@@ -211,7 +232,7 @@ def conditional_domain_rbf_mmd_loss(
                 bandwidths[f"{first}:{second}:{label}"] = diagnostics["bandwidth"]
                 if diagnostics.get("negative_mmd"):
                     negative_pairs.append((first, second, label))
-    output = torch.stack(losses).mean() if losses else features_flat.new_zeros(())
+    output = torch.stack(losses).mean() if losses else features_flat.reshape(-1)[:0].sum()
     return output, {
         "active_pairs": tuple(active_pairs),
         "active_terms": float(len(losses)),

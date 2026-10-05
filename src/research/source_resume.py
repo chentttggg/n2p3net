@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 from research.contracts import semantic_sha256
@@ -70,23 +71,29 @@ class SourceChainResume:
             self._verified[key] = version
         return expected
 
-    def acquire(self, key, config, ledger, cache_sha256, *, refit_key=None):
+    def acquire(self, key, config, ledger, cache_sha256, *, refit_key=None, architecture_record=None):
         task = (self.tasks.get(key) if refit_key is None else next((task for task in self.tasks.values()
                 if task.get("refit_key") == list(refit_key)), None))
         if task is None:
             return None
-        if (semantic_sha256(task["config"]) != semantic_sha256(config.__dict__)
+        if (semantic_sha256(task["config"]) != semantic_sha256(asdict(config))
                 or semantic_sha256(task["fit_ledger"]) != semantic_sha256(ledger)
                 or task.get("source_cache_sha256", cache_sha256) != cache_sha256):
             raise ValueError("resumed source task configuration, rows or cache changed")
-        updates = sorted(set(config.snapshot_updates) | {config.fixed_updates})
+        selecting = config.global_early_stopping is not None
+        updates = (sorted(int(value) for value in task["checkpoints"]) if selecting else
+                   sorted(set(config.snapshot_updates) | {config.fixed_updates}))
         paths = {update: (Path(task["checkpoints"][str(update)]) if task.get("checkpoints") else
                           self.root / key / f"source.u{update}.pt") if refit_key is None
                  else Path(task["checkpoint"]) for update in updates}
         for path in paths.values():
             self.verify(path)
-        payload = load_checkpoint_payload(paths[config.fixed_updates])
+        payload = load_checkpoint_payload(paths[updates[0] if selecting else config.fixed_updates])
+        if selecting and payload.get("global_early_stopping") != config.global_early_stopping.record():
+            raise ValueError("resumed checkpoint has a different global early-stopping policy")
         contract = checkpoint_training_contract(payload)
+        if architecture_record is not None and semantic_sha256(contract.architecture) != semantic_sha256(architecture_record):
+            raise ValueError("resumed checkpoint architecture differs from the requested source model")
         if (contract.source_cache_sha256 != cache_sha256
                 or contract.source_snapshot_sha256 not in self._source_snapshots
                 or set(contract.training_participant_keys) != set(ledger["training_participant_keys"])):

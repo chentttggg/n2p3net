@@ -25,6 +25,13 @@ throughput over low code complexity: implement the scheduling, caching and
 parallelism needed to remove bottlenecks. Preserve scientific contracts and
 completed artifacts; verify actual utilization and progress after launch.
 
+Cloud training uses at least CPU threads = 25 and GPU workers = 4, as explicitly
+required by the user on 2026-09-18. Start from
+`configs/cloud_training_resources.json`; pass the total CPU budget through to
+actual workers and verify effective concurrency. Remove redundant memory copies
+and schedule ready work to meet the floor; do not silently downgrade it to a
+single worker. Dependency tails may have fewer ready fits; record that distinction.
+
 When the user requests training, execute the full agreed matrix unless they
 explicitly limit the run. Perform necessary tests and short probes autonomously,
 then continue directly to full training without another approval round. Do not

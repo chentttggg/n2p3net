@@ -81,6 +81,9 @@ class ScheduledEventTimeline:
 
     ``evidence_index`` maps an available event to the model-ready epoch tensor and is
     ``-1`` for every unavailable event.  It must be a bijection onto ``range(n_epochs)``.
+    ``complete`` attests the scheduled ledger for its declared scope. A cropped
+    scope can retain original nonzero repetition indices; completeness of each
+    physical decision is checked separately by its candidate membership contract.
     """
 
     event_ids: np.ndarray
@@ -225,10 +228,16 @@ class ScheduledEventTimeline:
             return False
         candidates = np.asarray(self.candidate_ids).astype(str)
         groups = np.asarray(self.group_ids).astype(str)
-        vocabularies = {
-            tuple(sorted(np.unique(candidates[groups == group]).tolist()))
-            for group in np.unique(groups)
-        }
+        repetitions = np.asarray(self.repetition_indices)
+        vocabularies = set()
+        for group in np.unique(groups):
+            rows = groups == group
+            vocabulary = tuple(np.unique(candidates[rows]).tolist())
+            vocabularies.add(vocabulary)
+            for candidate in vocabulary:
+                values = repetitions[rows & (candidates == candidate)]
+                if not np.array_equal(values, np.arange(len(values))):
+                    return False
         return len(vocabularies) == 1 and bool(next(iter(vocabularies), ()))
 
     def encoded_candidate_selection(
@@ -272,18 +281,18 @@ class ScheduledEventTimeline:
         )
 
     def validate(self, *, n_epochs: int | None = None) -> ScheduledEventTimeline:
-        event_ids = np.asarray(self.event_ids).astype(str)
-        groups = np.asarray(self.group_ids).astype(str)
-        subjects = np.asarray(self.subject_ids).astype(str)
-        statuses = np.asarray(self.statuses).astype(str)
-        details = np.asarray(self.status_details).astype(str)
+        event_ids = np.asarray(self.event_ids).astype(str, copy=False)
+        groups = np.asarray(self.group_ids).astype(str, copy=False)
+        subjects = np.asarray(self.subject_ids).astype(str, copy=False)
+        statuses = np.asarray(self.statuses).astype(str, copy=False)
+        details = np.asarray(self.status_details).astype(str, copy=False)
         stimulus = np.asarray(self.stimulus_ids)
         samples = np.asarray(self.onset_samples)
         onset = np.asarray(self.onset_times_s, dtype=float)
         available_at = np.asarray(self.evidence_available_times_s, dtype=float)
         evidence = np.asarray(self.evidence_indices)
-        candidates = np.asarray(self.candidate_ids).astype(str)
-        targets = np.asarray(self.target_candidate_ids).astype(str)
+        candidates = np.asarray(self.candidate_ids).astype(str, copy=False)
+        targets = np.asarray(self.target_candidate_ids).astype(str, copy=False)
         repetitions = np.asarray(self.repetition_indices)
 
         if self.n_events == 0:
@@ -358,27 +367,31 @@ class ScheduledEventTimeline:
             raise ValueError("Evidence cannot become available before its scheduled onset.")
         mapped = evidence[available].astype(np.int64)
         expected_epochs = len(mapped) if n_epochs is None else int(n_epochs)
-        if sorted(mapped.tolist()) != list(range(expected_epochs)):
+        if not np.array_equal(np.sort(mapped), np.arange(expected_epochs, dtype=np.int64)):
             raise ValueError(
                 "Available evidence_indices must be a bijection onto the epoch tensor rows."
             )
         if len(mapped) != expected_epochs:
             raise ValueError("Scheduled-event availability does not match the epoch count.")
         group_string_fields = {
-            field_name: np.asarray(getattr(self, field_name)).astype(str)
+            field_name: np.asarray(getattr(self, field_name)).astype(str, copy=False)
             for field_name in ("dataset_ids", "session_ids", "run_ids", "selection_ids")
         }
-        for group in np.unique(groups):
-            rows = np.flatnonzero(groups == group)
+        unique_groups, inverse = np.unique(groups, return_inverse=True)
+        grouped_order = np.argsort(inverse, kind="stable")
+        boundaries = np.r_[0, np.flatnonzero(np.diff(inverse[grouped_order])) + 1, len(groups)]
+        all_targets, all_repetitions = target_present.all(), repetition_present.all()
+        for group, start, stop in zip(unique_groups, boundaries[:-1], boundaries[1:], strict=True):
+            rows = grouped_order[start:stop]
             if np.any(np.diff(onset[rows]) < 0.0):
                 raise ValueError(f"Events for group {group!r} are not chronological.")
-            if len(np.unique(subjects[rows])) != 1:
+            if not np.all(subjects[rows] == subjects[rows[0]]):
                 raise ValueError(f"Selection group {group!r} spans multiple subjects.")
             for field_name in ("dataset_ids", "session_ids", "run_ids", "selection_ids"):
                 values = group_string_fields[field_name][rows]
-                if len(np.unique(values)) != 1:
+                if not np.all(values == values[0]):
                     raise ValueError(f"Selection group {group!r} spans multiple {field_name}.")
-            if target_present.all():
+            if all_targets:
                 group_targets = np.unique(targets[rows])
                 if len(group_targets) != 1:
                     raise ValueError(
@@ -393,7 +406,7 @@ class ScheduledEventTimeline:
                     raise ValueError(
                         f"Selection group {group!r} target is absent from its candidates."
                     )
-            if repetition_present.all():
+            if all_repetitions:
                 for candidate in np.unique(candidates[rows]):
                     candidate_rows = rows[candidates[rows] == candidate]
                     candidate_repetitions = repetitions[candidate_rows]
@@ -404,11 +417,11 @@ class ScheduledEventTimeline:
                         )
                     if self.complete and not np.array_equal(
                         candidate_repetitions,
-                        np.arange(len(candidate_repetitions), dtype=np.int64),
+                        np.arange(len(candidate_repetitions), dtype=np.int64) + candidate_repetitions[0],
                     ):
                         raise ValueError(
                             f"Complete selection group {group!r} candidate {candidate!r} "
-                            "must use contiguous repetition_indices starting at zero."
+                            "must retain contiguous original repetition_indices."
                         )
         return self
 

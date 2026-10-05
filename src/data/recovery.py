@@ -4,15 +4,19 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from functools import cached_property
+from functools import cached_property, lru_cache
+from numbers import Real
 from typing import Any
 
-import mne
 import numpy as np
 from scipy.signal import sosfilt, sosfilt_zi
 
 from data.epochs import PreprocessingSpec
-from data.preprocess import apply_trial_baseline, continuous_filter_segments, design_continuous_sos
+from data.preprocess import (
+    continuous_filter_segments,
+    design_continuous_sos,
+    transform_epoch_samples,
+)
 from research.contracts import semantic_sha256
 
 
@@ -43,18 +47,33 @@ def modal_system(sos):
     return poles, vectors, np.linalg.inv(vectors), output, condition
 
 
-def _epoch_map(values, source_rate, preprocessing):
-    data = np.asarray(values, dtype=float)
-    if source_rate != preprocessing.sfreq:
-        data = mne.filter.resample(data, up=preprocessing.sfreq, down=source_rate,
-            npad=preprocessing.resample_npad, window=preprocessing.resample_window,
-            pad=preprocessing.resample_pad, method=preprocessing.resample_method, verbose=False)
-    return apply_trial_baseline(data[None, :, :preprocessing.n_times],
-        sfreq=preprocessing.sfreq, tmin=preprocessing.tmin_ms / 1000,
-        baseline_mode=preprocessing.baseline_mode,
-        trial_reference_window_ms=preprocessing.trial_reference_window_ms,
-        trial_reference_center=preprocessing.trial_reference_center,
-        trial_reference_scale=preprocessing.trial_reference_scale)[0]
+_EPOCH_BASIS_BYTES = 8 * 1024 * 1024
+
+
+@lru_cache(maxsize=4, typed=True)
+def epoch_linear_projection(source_rate: float, preprocessing: PreprocessingSpec) -> np.ndarray:
+    """Freeze the shared linear epoch transform for repeated state-error bounds."""
+    preprocessing.validate()
+    if (isinstance(source_rate, bool) or not isinstance(source_rate, Real)
+            or not np.isfinite(source_rate) or source_rate <= 0):
+        raise ValueError("epoch projection requires a finite positive source sample rate")
+    samples = (round(preprocessing.tmax_ms / 1000 * source_rate)
+               - round(preprocessing.tmin_ms / 1000 * source_rate) + 1)
+    # Check the executable transform even when there is no data to transform.
+    transform_epoch_samples(np.empty((0, samples)), source_rate, preprocessing, require_linear=True)
+    row_bytes = samples * np.dtype(np.float64).itemsize
+    if row_bytes > _EPOCH_BASIS_BYTES:
+        raise ValueError("source epoch exceeds the bounded linear projection basis budget")
+    matrix = np.empty((samples, preprocessing.n_times))
+    chunk = min(samples, _EPOCH_BASIS_BYTES // row_bytes)
+    for start in range(0, samples, chunk):
+        count = min(chunk, samples - start)
+        basis = np.zeros((count, samples))
+        basis[np.arange(count), start + np.arange(count)] = 1
+        matrix[start:start + count] = transform_epoch_samples(
+            basis, source_rate, preprocessing, require_linear=True)
+    matrix.setflags(write=False)
+    return matrix
 
 
 @dataclass(frozen=True)
@@ -82,8 +101,10 @@ class EpochStateRecovery:
         if (envelope.shape != (len(self.channel_names), 2 * len(sos))
                 or not np.isfinite(envelope).all() or (envelope < 0).any()):
             raise ValueError("epoch recovery modal envelope has invalid shape or values")
-        if self.preprocessing.trial_reference_center != "mean":
-            raise ValueError("modal epoch recovery requires linear mean-baseline preprocessing")
+        samples = (round(self.preprocessing.tmax_ms / 1000 * self.sample_rate_hz)
+                   - round(self.preprocessing.tmin_ms / 1000 * self.sample_rate_hz) + 1)
+        transform_epoch_samples(np.empty((0, samples)), self.sample_rate_hz,
+                                self.preprocessing, require_linear=True)
         if self.serialized_mode_identity is not None:
             identity = np.asarray(self.serialized_mode_identity, dtype=float)
             poles = modal_system(self.sos)[0]
@@ -106,8 +127,10 @@ class EpochStateRecovery:
         samples = (round(self.preprocessing.tmax_ms / 1000 * self.sample_rate_hz)
                    - round(self.preprocessing.tmin_ms / 1000 * self.sample_rate_hz) + 1)
         observable = (output @ vectors)[:, None] * poles[:, None] ** np.arange(samples)
-        epoch = (_epoch_map(observable.real, self.sample_rate_hz, self.preprocessing)
-                 + 1j * _epoch_map(observable.imag, self.sample_rate_hz, self.preprocessing))
+        epoch = (transform_epoch_samples(observable.real, self.sample_rate_hz,
+                                        self.preprocessing, require_linear=True)
+                 + 1j * transform_epoch_samples(observable.imag, self.sample_rate_hz,
+                                               self.preprocessing, require_linear=True))
         safety = 1 + condition * np.finfo(float).eps * 100
         return np.abs(poles), inverse, np.abs(epoch) * safety
 
@@ -227,6 +250,16 @@ class EpochStateRecovery:
 
 
 def epoch_recovery_from_record(record):
+    from data.bidirectional import BIDIRECTIONAL_RECOVERY_SCHEMA, BidirectionalStateRecovery
+
+    if record.get("schema") == BIDIRECTIONAL_RECOVERY_SCHEMA:
+        model = BidirectionalStateRecovery.from_envelope(record["sos"], record["sample_rate_hz"],
+            PreprocessingSpec(**record["preprocessing"]), record["channel_names"], record["modal_envelope"],
+            tolerance_v=record["tolerance_v"], fit_provenance=record["fit_provenance"],
+            mode_identity=record.get("mode_identity"))
+        if semantic_sha256(model.record()) != semantic_sha256(record):
+            raise ValueError("invalid bidirectional state recovery record")
+        return model
     model = EpochStateRecovery.from_envelope(record["sos"], record["sample_rate_hz"],
         PreprocessingSpec(**record["preprocessing"]), record["channel_names"], record["modal_envelope"],
         tolerance_v=record["tolerance_v"], fit_provenance=record["fit_provenance"],
@@ -239,6 +272,12 @@ def epoch_recovery_from_record(record):
 def fit_epoch_state_recovery(raw, *, preprocessing, channels, fit_sample_mask,
                              tolerance_v, inflation, warmup_samples, probe_step_samples,
                              fit_provenance):
+    if preprocessing.filter_phase == "zero":
+        from data.bidirectional import fit_bidirectional_state_recovery
+
+        return fit_bidirectional_state_recovery(raw, preprocessing=preprocessing, channels=channels,
+            fit_sample_mask=fit_sample_mask, tolerance_v=tolerance_v, inflation=inflation,
+            warmup_samples=warmup_samples, probe_step_samples=probe_step_samples, fit_provenance=fit_provenance)
     mask = np.asarray(fit_sample_mask)
     if (mask.dtype != bool or mask.shape != (raw.n_times,) or inflation < 1
             or not np.isfinite(inflation) or type(warmup_samples) is not int or warmup_samples < 0

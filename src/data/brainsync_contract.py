@@ -320,6 +320,8 @@ def _validate_brainsync_recording(
 
     root = Path(session_dir).expanduser().resolve()
     session_path = root / "session.json"
+    if (root / ".target-confirmation.pending.json").exists():
+        raise ValueError("BrainSync target confirmation is pending recovery; session is not committed.")
     manifest = _load_json_object(session_path)
     if manifest.get("schema") != BRAIN_SYNC_SESSION_SCHEMA:
         raise ValueError(

@@ -25,7 +25,7 @@ CLI使用argparse与显式JSON合同；Hydra不在依赖中。配置优先来自
 uv sync --locked --extra signals --extra baselines --extra dev
 .\.venv\Scripts\python.exe experiments\brainsync_model_task.py --help
 .\.venv\Scripts\python.exe -m ruff check src experiments tests
-.\.venv\Scripts\python.exe -m pytest tests/test_calibrated_predictor.py tests/test_brainsync.py
+.\.venv\Scripts\python.exe -m pytest tests/brainsync/test_calibrated_predictor.py tests/brainsync/test_brainsync.py
 git diff --check
 ```
 
@@ -33,10 +33,34 @@ git diff --check
 BrainSync原生SDK/Qt使用采集端自己的Python3.10环境，通过结构化进程参数调用后端；
 不向后端注入另一minor版本的原生扩展，实际启动方式见[工作站指南](workstation.zh.md)。
 
+采集端自2026-09-15使用自身`pyproject.toml`及`uv.lock`：在采集端目录执行`uv sync --locked`。
+默认不扫描D:/Temp或其他项目；仅显式SDK路径覆盖允许注入外部环境，并写入日志。
+SDK发行包版本0.3.0的运行时自报0.2.0，来源记录分别保存，不能互相替代；迁移时已核对入口与原生二进制字节。
+采集端Ruff目标为Python3.10；运行`python tests/run_headless.py`及相关TEMP模拟验收脚本。
+两种传输均按250 Hz运行；`test_transport_sample_contract.py`覆盖相同回调/样本时钟/暂停/BIDS及
+拒绝非250请求，`test_transport_connection.py`覆盖迟到连接、旧回调、断开重试与阻抗后配置恢复。
+`tests/verify_transport_ui.py <TEMP输出目录>`在真实qasync下使用FakeSdk检验串口/BLE启动与预览，
+不扫描或连接硬件。测试证据见[连接统一验收](evidence/brainsync_transport_unification_20260917.zh.md)。
+2026-09-20发布构建位于`D:/BCI/BrainSync_Release_20260920`，使用PyInstaller onedir并随附`_internal`运行时；
+构建时排除未使用的Qt WebEngine/Qt3D/Quick等模块，排除`_internal`后的发布载荷128.319 MiB，小于200 MiB，
+不复制`.venv`、源码、测试、开发入口或历史数据。启动探针使用`BrainSync.exe --mock`，
+不代表真实设备验收。完整清单见[发布版EXE验收](evidence/brainsync_release_20260920.zh.md)。
+Qt测试必须注入临时`app_root`，在同一qasync循环内完成`window.shutdown()`，不得读取操作员设置或
+以强制`_close_ready`跳过进程回收。应用直接quit与启动中的模型任务须有真实子进程回归。
+
+前端异步测试要区分“请求已取消/超时”和“原生命令已结束”：未结束的worker不得与新任务并行操作同一设备。
+测试超时恢复时使用可释放的worker，先证明重试被拒，再释放并验证恢复；不能以修改布尔值伪造原生命令完成。
+活动会话租约由OS随进程退出释放；恢复测试覆盖真实子进程崩溃及journal关闭失败。
+滤波数值回归包含250/500/1000Hz预览，不能只用有限值断言，须检查幅度和分批连续性。
+
 工作站计算设备通过结构化`--device`传入，`auto`复用`train.device.get_device`，
 显式CUDA先检查后端可用性和设备编号；LDA计算仍在CPU，不能按GPU选项声称LDA加速。
 修改个体入口时覆盖QC开关下的源失败、固定LDA全范围EOG/冻结QC、dry-run与真实执行一致性，
 并验证模型重载及无标签推理不改写个体包。采集端设备设置也须测试持久化与忙碌状态互斥。
+冻结输入重放改动同时运行`test_brainsync_input_replay.py`、`test_recording_quality_report.py`、
+`test_calibrated_predictor.py`及BrainSync/参考/EOG/连续QC接入测试。用真实合成BIDS覆盖原生参考、
+epoch后Cz、EOG和QC拥有Cz参考、保存的通道子集/顺序、旧无陷波包；按实际张量与事件账本比较。
+零epoch路径先核验录制准入，普通合同失败不能降级为拒判；报告禁止分类器执行，原始文件和模型只读。
 2026-09-08本轮入口修复在当前后端环境全套1539通过、4跳过；前端35项通过。
 CUDA实际拟合、保存重载及CLI推理验证见[执行计划](roadmap.zh.md#已完成与未完成)，
 该合成验证不构成CPU/GPU吞吐比较或成人效能结果。
@@ -47,12 +71,129 @@ CUDA实际拟合、保存重载及CLI推理验证见[执行计划](roadmap.zh.md
 
 ## 开发与验证
 
-工频陷波的回归入口为`tests/test_notch_filter.py`，覆盖50/60Hz抑制、通带保真、因果性、
+2026-10-04按实际dirty tree先物理冻结，再实施和独立双轴复审，见[实施与验收](evidence/system_implementation_20261004.zh.md)。
+`experiments/freeze_source_snapshot.py`包含源码、测试、配置、六指南及运行JSON/HTML/CSS/JS和许可证；
+逐成员核对archive与当前字节。已有脏改动用改前快照区分，不能拿Git HEAD差异替代本轮范围。
+历史RED探针保留，修后结果另记；全套通过也不能替代真实输入、失败分母和数学反例审查。
+
+新研究CLI使用显式plan、全新output目录和`evidence_scope`；合成fixture必须标为`software_correctness`。
+运行绑定实际读取的同一份输入字节和实际执行源码；任务异常要保存failed状态，不能留下伪running完成记录。
+成熟ERP比较逐subject处理全部arm，保留请求但不可达的K及独立fallback账本；source checkpoint必须按真实库/参与者排除和输入合同准入。
+每个可执行full-fine在拟合前绑定同输入、实际K、seed、架构和训练配方的scratch及原waveform LDA；
+`matched_controls`/`matched_transfer_effects`保存对应关系和失败配对。显式统计contrast也不能换用不匹配scratch冒充迁移效应。
+连续BNCI入口为`experiments/run_bnci_continuous_study.py --plan <plan> --output <new-directory>`，
+计划示例及真实执行源见实施证据；运行前据本机可用内存确定线程，不能同时物化全四库数组。
+
+2026-09-18源池配置与准备验证集中化，详情见[源模块验收](evidence/source_modules_20260918.zh.md)。
+新研究使用`configs/source_pool_expansion.example.json`描述source_pools、targets的整库排除、seed、
+matched_pools、product_pools和独立输入布局。示例默认三seed、四个已用开发目标，不代表准入已完成。
+`run_source_pool_matrix.py --matrix-plan <JSON> --prepared <目录> --snapshot <源码清单> --output <新目录> --dry-run`
+只核对计划和准备产物。`--preprocessing-config`消费完整PreprocessingSpec，省略时保持旧单向陷波；
+固定checkpoint与输入合同仍不得混用。去掉`--dry-run`才执行训练；云端仍先按下节实测资源与吞吐。
+准备与拟合重叠时声明`--wait-for-preparation-seconds <秒>`，超时/failed写明相关未执行任务；默认缺输入立即失败。
+准备完成数据在`input_bindings.json`绑定manifest、NPZ、record和处理方法；变更需新输出目录，
+旧153任务方案及已有产物继续保持原执行身份。新运行记录使用`n2p3_explicit_source_matrix/2`，不覆盖旧/1目录。
+公共评估`run_public_pool_targets.py`消费同一`--matrix-plan`；每目标的第一个声明池为full对照，
+所有配对seed带scratch，第一seed带确定性LDA。`--target-protocols`为额外目标显式声明记录顺序，
+不按文件名猜新库会话次序；`--wait-for-input-seconds`允许有截止时间的源/目标流水执行。
+`verify_pool_matrix.py`继续按实际结果中的source_task、配方和保存模型重放，无额外池名表。
+
+原始入口继续使用`prepare_source_records.py --manifest <JSON> --output <新目录>`。
+`n2p3_source_records/1`每份manifest只含一个真实study，逐record声明subject/session/run、raw相对path、
+sha256、sample_rate_hz与reference；压缩成员另给member及成员摘要。整个manifest先验唯一性检查后才启动worker。
+BrainForm使用原CSV、study=`BrainForm`、subject=`Pxx`、run=文件时间戳；显式传入既有审计的
+excluded_channels及channel_exclusion_reason，输入文件保持完整。Cattan使用study=`Cattan2019_VR`、
+原MAT、subject数字、session=`PC`或`VR`；已知subject_01_VR的损坏末采样显式声明
+valid_samples_exclusive_end=289814，其余不裁。BI2012直接消费training/online原MAT或ZIP成员，
+角色和Fz ground由实际reader保留。Lee不因下载状态或更换名称而获得未实现的格式/转换认证。
+
+2026-09-16统一模型研究资产位于`doc/assets/unified_model_research_20260916/`，
+四个独立数学脚本及JSON检验参数/梯度、membership、输入信息和因素设计；主链实施证据另存
+`doc/assets/unified_model_implementation_20260916/`。真实raw三记录探针验证输入范围，不推断识别效能。
+实施按[分段验收清单](evidence/unified_model_plan_20260916.zh.md#71-必过反例不以旧全套替代)推进：
+先对应合同/反例与Ruff，跨主链最终集成再做完整套件。新架构、loss组合、采样风险、源中心尺度、
+BN状态或score定义变化均进入checkpoint/cache/resume身份；旧归档不重标。
+每个较大模块完成后用`experiments/freeze_source_snapshot.py --output <新目录>`物理压缩源码并核验逐文件摘要；
+阶段快照可以包含其他尚未验收的并行模块，整体完成后另存最终验收快照。证据文档和日志另作压缩清单，
+不依赖源码helper递归收录`doc/evidence/`。整理仅处理本次临时材料，不通过reset清空并行dirty工作。
+统一主链最终全套2095通过、4跳过，定向反例及六份阶段源码校验见
+[统一程序实施与验收](evidence/unified_model_implementation_20260916.zh.md)；最终源码与验证证据已分别物理冻结。
+
+2026-09-16算法链修复以失败反例先行，最终全套1936通过、4跳过，Ruff及diff检查通过，见
+[验收记录](evidence/algorithm_chain_repairs_20260916.zh.md)。修复前后源码均物理归档，已有dirty改动保留。
+源MMD/SupCon在normalize/dedup前验证原特征和索引，CUDA采用一次设备断言，保留批量MMD；
+合法无项返回图连通零，CE批序、draws、BN、optimizer及RNG不变，基础双样本MMD仍严格。
+新source准备目录使用`n2p3_source_preparation/2`；方法、raw或sidecar改变以及缓存record缺失/篡改均拒绝旧completed复用，
+历史目录保留，新建输出。sidecar未预声明时只绑定本次`preparation_start`，不补写旧冻结来源。
+P1/P2分析优先读取执行声明；旧结果须显式提供`--seed-pair`或`--seed-design`，P2另声明`--source-arms`，
+不得根据已完成行猜完整设计。局部CUDA验证使用Dynamo eager后端，不冒称Linux Inductor吞吐复测。
+
+2026-09-16域迁移首批重点测试：`tests/transfer/test_structural_adaptation.py`、
+`tests/train/test_source_objectives.py`以及个人模型重载、source registry/resume、预训练CLI和checkpoint门禁。
+P1的残差处理必须核对实际保存架构；P2候选更新点必须保存当时累计诊断，不能填入轨迹末尾诊断。
+固定更新辅助项当前显式关闭CUDA Graph重放并记录原因，仍允许普通compile；正式云训练前需实测这一配方吞吐。
+静态目标处理通过`TargetResultReuse`复用已核验产物，源初始化处理键绑定权重和统计，scratch/LDA不依赖源权重。
+请求次数、实际fit调用和cache命中分别报告，复用不算新的科学重复。
+
+测试按职责分组，可直接对目录运行`python -m pytest tests/<目录>`：
+
+| 目录 | 验证内容 |
+|---|---|
+| `tests/data/` | 数据接入、事件和身份、预处理、连续质量及恢复 |
+| `tests/models/` | 网络、特征、重建和经典/深度基线 |
+| `tests/train/` | 训练循环、源拟合、采样、资源及进程执行 |
+| `tests/transfer/` | 校准划分、适配、checkpoint、迁移损失和目标实验 |
+| `tests/brainsync/` | 采集合同、个体模型、冻结输入重放和工作站报告 |
+| `tests/research/` | 评价、统计、研究合同与实验编排；`promotion/`按声明、输入核验和执行恢复分组 |
+| `tests/environment/` | 依赖声明、轻量导入与Python兼容性 |
+
+跨组造数显式导入`tests/support/`；仅在一个测试模块使用的fixture留在本模块，
+前端运行时fixture由`tests/brainsync/conftest.py`持有。项目路径统一使用`tests.PROJECT_ROOT`，
+不按测试文件所在层数推算。源码快照由`support/snapshots.py`构造，模型权重和身份账本由
+`support/checkpoints.py`构造，源码归档不加载模型依赖。旧平铺入口已移除，按新目录定位测试。
+
+滤波相位/边界改动检查`tests/data/test_filter_phase.py`、`test_bidirectional_recovery.py`、
+`test_preprocess.py`、`test_notch_filter.py`及个人保存/推理/QC入口；共享默认改变后运行全套。
+完整记录先划分再滤波，zero禁止同raw内校准前缀/验证后缀；保存逐事件分数、质量掩码与分母。
+双端状态界须包含第二遍耦合，固定epoch映射缓存用真实线性算子生成并核验数值；所有缓存有界。
+Windows原子JSON替换对短暂PermissionError最多等待0.63秒重试，失败仍保留旧文件并清理临时文件。
+源码、性能基准及重载分别绑定实际执行版本，见[双向联合验证](evidence/bidirectional_qc_20260909.zh.md)。
+
+测试共享造数放在`tests/support/`，复用dataset、candidate、BrainSync、quality、checkpoint及物理artifact；
+测试文件不互相导入。辅助函数直接构造当前合同，不加兼容别名、异常吞并或猜测字段的兜底。
+相同操作的不同输入用参数化用例；一次拟合可覆盖学习效果、logit和概率，避免为重复断言重训。
+2026-09-16按此原则合并数据与统一适配测试：测试文件144→135，相关个人NN拟合105→89，
+重复prefix准备和EOG拟合均5→1；完整映射及最终验证见[精简方案](evidence/unified_compact_training_20260916.zh.md#8-测试整理)。
+测试数量不是质量目标；删除项必须由同接口的独立行为检查覆盖，先归档，再移除旧入口和无用途的假拟合层。
+删除没有独立行为价值的退役状态断言、不可达fake与重复构造，不保留空壳；净删减统计包含辅助代码。
+参数案例直接声明输入变更与预期，避免用同一个场景名分别驱动造数和断言的分支链。
+成功、输入拒绝、更新失败、验证失败和refit失败按实际阶段组织；夹具按具名通道、会话和时间生成，
+不依赖参数位置、全流程第几次调用或散落的维度常量。独立数学预期与被测合同常量仍须显式核验。
+保留身份/时间/fit隔离、数学反例、失败分母、产物完整性及保存重载。外部数据或独立前端
+缺失时明确skip，不能跳过断言后计为通过。全套运行用`python -m pytest`；pytest缓存支持
+`--lf`重跑失败项，不能代替改动结束后的相关测试或大范围改动后的全套验证。
+Python兼容检查覆盖`src/`、`tests/`、根配置和`experiments/`直接入口，不递归扫描历史运行快照。
+全套验收独立运行；根`conftest.py`在导入数值库前默认设`OPENBLAS_NUM_THREADS=1`、
+`OMP_NUM_THREADS=1`、`MKL_NUM_THREADS=1`，避免多个解释器导入时各自铺满线程；显式环境设置优先。
+子进程线程预算仍由相应测试显式指定；资源不足不能通过重试或跳过行为断言来掩盖。
+定位耗时用`python -m pytest --durations=20`。真实spawn、快照校验、模型拟合与重载继续执行；
+源训练进程池在组间复用worker，Manager和CLI参数入口不提前导入训练依赖，
+Braindecode仅在构造其对照模型时加载。调度日志直接格式化plan/builder已解析的路径，
+文件读写边界仍做物理路径与产物校验，每次执行或恢复重新核验输入并计算DAG摘要。
+
+工频陷波的回归入口为`tests/data/test_notch_filter.py`，覆盖50/60Hz抑制、通带保真、因果性、
 断点及chunk状态、EEG/EOG角色、原始Nyquist、恢复误差、缓存/模型重载及旧源不兼容。
 新增陷波频率或Q须同步实际SOS及恢复证书，不能只向滤波器追加调用而保留旧恢复时间。
 历史缓存签名由`PreprocessingSpec.record()`保持无陷波原义；元数据不得重标成新处理。
 
 每轮依次完成理念、数学概念、公式、反例、调用链联动和文档/产物整理。
+预处理合同执行的科研探针、14项数学/软件反例与93项现有基线测试已归档，
+见[2026-09-15裁决](evidence/preprocessing_contract_research_20260915.zh.md)。七处实际入口已统一，
+新显式JSON必须包含完整`PreprocessingSpec.record()`（或全部dataclass字段），空/局部配置拒绝；
+旧record省略notch/edge仍按原义解码。低层`n_times=None`不自动产生严格执行凭证。
+验收须比较X、事件/拒绝分母、源支持、旧record和模型重放，不能只比较kwargs。
+实际模块加载时源码摘要随凭证保存；参数改变不能复用旧凭证。先冻结源码，完整测试期间停止
+源码和文档修改；本轮归档与测试记录见[执行器验收](evidence/preprocessing_execution_20260915.zh.md)。
 模块明确shape、dtype、metadata、fitted状态、失败语义；复用已实现的合同和算法。
 数据合同、划分和评价工具先能服务同一比较，再添加模型；不能因追求速度省去真实builder。
 
@@ -64,6 +205,10 @@ CUDA实际拟合、保存重载及CLI推理验证见[执行计划](roadmap.zh.md
 
 source、内部校准train/validation、完整calibration refit、final test的状态来源分开。
 QC、EOG、EA、BN及阈值选择服从同一范围，不能只查模型优化器。
+EA变换后的坐标由`data.ea_artifact`依据调用者`EAFitPlan`集中完成授权fit、state、transform和产物发布；
+10-04复审发现的关系缺口已在本轮实施通过实际父输入重放关闭，旧物理EA普通模型入口拒绝，历史审计用独立loader。
+活动统计区分物理证据和数值输入：复用须核fit/score/执行身份，算子实验允许ContrastPlan声明的变化轴；
+只有行号相同不构成同一输入。相关组合反例及修复证据见[本轮实施](evidence/system_implementation_20261004.zh.md)。
 连续质量改动还须运行`test_continuous_qc`、`test_recording_clock`、`test_acquisition_contract`、
 `test_personal_quality`、`test_ocular`和个体保存/推理测试；大范围改动运行全量。
 逐导恢复另覆盖`test_epoch_state_recovery`、`test_local_recovery_pipeline`、`test_recovery_contamination`、
@@ -84,6 +229,11 @@ loader/参考/重采样/基线和后续QC，不只检验简化滤波脚本。总
 完成目标结果由`transfer.result_reuse`封存`n2p3_result_integrity/1`：record/cell语义摘要绑定
 预测和完整模型文件摘要。读取后直接解码同一份已验证字节；产物损坏或缺少原始声明时明确
 中止复用，不计作被试拟合失败，也不在消费时补算摘要来重标旧结果。
+矩阵续跑使用`admit_completed_result`一次核验完整生产声明和必需产物；不能只读顶层record后标记reused。
+本人新结果在生产时封存全套session预测和可选模型；旧未封存结果保持历史用途，不在消费时补签。
+当前入口计划保存在`plan.<digest>.json`，首份`plan.json`保持原字节；progress指明当前队列计划。
+对准入改动运行`tests/transfer/test_completed_result_admission.py`及现有训练结果复用、目标实验、
+个体包保存加载测试。覆盖真实CLI缺件/篡改拒绝、任务改变、失败cell、K0、完整排程NaN及验证后路径替换。
 源模型保存实际执行的输入变换；声明关闭标准化而携带非恒等推理统计的checkpoint被拒绝。
 固定更新源训练在设备端累计数值健康状态，snapshot/进度点/结束时检查，避免逐步CPU同步；
 适配器任何阶段失败后均拒绝推理和统计导出。回归包括NaN loss、非有限梯度/参数和refit中断。
@@ -118,7 +268,65 @@ ES轮数读取`epoch_selection.epochs`，缺省60；普通非stage入口的`targ
 
 ## 设备与性能
 
+### 统一模型的分阶段训练预算
+
+用户最新允许按阶段采用不同停止规则。当前[精简设计](evidence/unified_compact_training_20260916.zh.md)只在每外折一个源内参考上早停：
+patience3、min_delta1e-4、最多12曝光周期。reference inner与refit的范围和成本分别记录；
+主源两种配方/三个seed消费同一个冻结e*，每次直接拟合全部合法源。个人迁移和scratch固定90轮，完整C一次拟合。
+输入统计、BN重估和LDA为一次估计；K0/只读推理没有停止轮数。主K0/200/800，不默认展开更高K或模块大笛卡尔积。
+
+当前代码已由`UnifiedTrainingBudget`路由新预算，默认文件`configs/unified_training_budget.json`。
+复用`PatienceStopper`、source fit/refit及直接target fit；`GlobalEarlyStoppingPolicy`和`EpochSelectionPolicy`保留为其它显式研究能力。
+来源与反例见[实施验收](evidence/unified_budget_execution_20260916.zh.md)，没有新增每算法一个runner。参考source范围/配置、e*、λ、实际模式、目标轮数均进入checkpoint、计划和cache身份。
+相同e*对应不同fit行数时按曝光周期换算updates；固定个人模式不请求或生成无用途的inner raw缓存。
+确定性LDA按实际输入和数值程序复用，seed标签不能触发相同的重新拟合。
+
+代表吞吐探针需包含observed pack、两个联合源辅助项、个人完整group、输入统计和保存；
+GPU计时同步，冷启动/编译与热运行分列。缓存就绪的训练时间按阶段估算；首次raw准备和传输没有实测时单列未知项。
+参考源触顶仍在改善时记录预算受限，外层test不用于扩预算或改停止规则。
+`experiments/benchmark_unified_training.py`可在项目环境测A0/A1、Q0/Q1及prior独立oracle，输出冷/热计时与实际预算；
+本地5070 Laptop的Q1热拟合+预测由逐tensor prior的0.702s降到pack的0.498s，loss/gradient容差核验通过。
+它是合成prepared-array探针；云端正式4/8worker及真实raw吞吐需在当前实例重新测量。
+
 ### 云端训练性能优先
+
+用户于2026-09-18明确要求今后云端统一CPU总线程预算至少25、GPU worker容量至少4。
+集中配置为`configs/cloud_training_resources.json`；源/目标worker须消费资源解析器给出的实际原生线程预算，
+不能只在plan里写25而在调用处固定1。四worker时每worker分配6个数值线程，另保留调度线程；
+源内子worker同时受GPU任务容量限制，避免嵌套进程超额争抢CPU。合同或内存无法满足声明下限时显式失败，不能静默串行。
+依赖末端只有一两个可执行拟合时记录就绪任务数，不通过重复拟合伪造四路工作量。
+大源路径同序通道采用显式只读共享视图；全行source refit避免再次复制X；成功GPU预加载释放归一化CPU副本；
+统计量保留原逐行float64归约与最终加权内积，只将临时矩阵分块。父调度器给每worker显式GPU常驻字节预算；
+大cache加载与归一化暂存共用峰值门禁，GPU拟合继续四路并行；配置单列共享暂存预算，不将其误当四份常驻副本。
+旧checkpoint仍绑定原执行快照。
+
+
+2026-09-18十二库合并暴露单个NumPy Unicode标量的itemsize上限；新cache的metadata_json改用一维UTF-8 uint8，
+解码兼容历史Unicode标量，解码后数据摘要不变。原始record准备保留原数据模块快照，新合并/训练绑定后续快照；
+不把cache容器编码变化误记为重滤波，也不倒填已有准备凭证。
+
+
+2026-09-16统一精简矩阵总执行器实测52.1分钟，6138个正式目标NN拟合、246个LDA拟合、4416个拟合请求复用。
+该墙钟不含此前补传及提前源折；完整计数、保存模型重放、数值规则及压缩结果验证见
+[结果与核验](evidence/unified_results_20260916.zh.md)。旧200-update重放器不能直接验证新90-epoch程序；
+预算须包含D0/D1匹配的decision工作集，LDA重放须还原实际数值dtype及标准化次序，不靠放宽容差通过。
+
+2026-09-16新统一预算的5090部署、真实输入吞吐和归档删除证据见[云端运行记录](evidence/unified_cloud_20260916.zh.md)。
+同机短测与154723行真实源输入均未显示default编译收益，本轮使用eager；输入准备可与已就绪的完整源折并行，
+完成模型经现有摘要准入复用。tmpfs计算输入须另存持久压缩包及恢复根路径，不能仅依赖实例内存保存。
+
+2026-09-16 P1/P2统一入口为`run_domain_transfer_matrix.py`；按cache/被试分片把两个阶段与所有
+源处理交给同一目标worker，复用已验证的相同拟合。源端条件MMD用固定掩码批量计算，
+保持各domain-pair/class独立中位数带宽和无偏公式；真实热运行约3.25倍改善，见
+[运行记录](evidence/domain_transfer_cloud_20260916.zh.md)。三个完整流程seed的统计须用
+`analyze_training_chain.py --seed-pair SOURCE TARGET`逐对声明，未指定时仍是原Cartesian设计。
+
+2026-09-09源池矩阵已将大源账本向量无损压缩、固定采样CDF预计算和排程分组验证集中到原模块。
+不要在逐update重建不变CDF，不要把百万行统计权重重复展开为JSON列表。
+内存规划同时计入原始cache、合并视图、float64统计临时数组及CPU验证进程；
+关注cgroup `memory.high`节流与`memory.max`，不能只看宿主机可用内存。
+大cache的私有校验副本可通过`N2P3_VERIFIED_CACHE_SNAPSHOT_DIR`放到经配额核验的私有tmpfs，
+其占用仍计入内存预算。迁移已完成产物必须先校验副本，再保留原逻辑路径；不得丢弃其原执行快照。
 
 用户明确偏好：**优先缩短实际训练墙钟，不以保持代码简单为由保留性能瓶颈**。
 必要的任务图、进程调度、缓存、共享登记表和资源准入复杂度可以增加；以端到端吞吐和正确性验收。

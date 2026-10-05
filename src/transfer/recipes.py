@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass, replace
 from itertools import product
 from math import ceil
 
 import numpy as np
 
+from baselines.structured_erp import ERP_FAMILIES
+from models.adapters import FeatureTransferConfig
 from transfer.subject_adapter import SubjectAdapterConfig
 
 
@@ -27,14 +30,41 @@ class TargetRecipe:
     max_updates: int | None = None
     seed: int = 0
     refit_full_prefix: bool = False
+    target_adapter_config: FeatureTransferConfig | dict | None = None
+    candidate_loss_weight: float | None = None
+    candidate_loss_temperature: float = 1.0
+    source_prior_weight: float = 0.0
+    erp_bin_width: int = 1
+    temporal_basis_kind: str | None = None
+    temporal_rank: int | None = None
 
     def __post_init__(self) -> None:
+        adapter = self.target_adapter_config
+        if isinstance(adapter, dict):
+            adapter = FeatureTransferConfig(**adapter)
+        if self.weights == "adapter":
+            adapter = FeatureTransferConfig() if adapter is None else adapter
+            if not isinstance(adapter, FeatureTransferConfig) or (
+                adapter.source_domain_count or adapter.private_domain_count
+            ):
+                raise ValueError("target residual recipes require an unindexed FeatureTransferConfig")
+        elif adapter is not None:
+            raise ValueError("target_adapter_config requires adapter weights")
+        object.__setattr__(self, "target_adapter_config", adapter)
+        for name in ("candidate_loss_weight", "candidate_loss_temperature", "source_prior_weight"):
+            value = getattr(self, name)
+            if name == "candidate_loss_weight" and value is None:
+                continue
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not np.isfinite(value) or value < 0:
+                raise ValueError(f"{name} must be a finite nonnegative scalar")
+        if self.candidate_loss_temperature <= 0:
+            raise ValueError("candidate_loss_temperature must be positive")
         options = {
-            "initialization": {"source", "scratch", "waveform_lda", "source_feature_lda"},
+            "initialization": {"source", "scratch", "waveform_lda", "source_feature_lda"} | ERP_FAMILIES,
             "input_statistics": {"source", "target_prefix"},
             "bn_buffers": {"source", "calibration", "online"},
             "bn_affine": {"frozen", "trainable"},
-            "weights": {"none", "head", "non_bn"},
+            "weights": {"none", "head", "non_bn", "spatial", "temporal", "adapter"},
             "dropout": {"off", "checkpoint"},
         }
         for name, values in options.items():
@@ -44,10 +74,23 @@ class TargetRecipe:
             raise ValueError("target recipe requires a name")
         if self.initialization == "scratch" and self.input_statistics != "target_prefix":
             raise ValueError("scratch must fit its own calibration input statistics")
-        if self.initialization in {"waveform_lda", "source_feature_lda"} and (
+        if self.initialization in {"waveform_lda", "source_feature_lda"} | ERP_FAMILIES and (
             self.weights != "none" or self.bn_affine != "frozen" or self.dropout != "off"
         ):
             raise ValueError("LDA feature transforms must have frozen parameters and dropout off")
+        if self.initialization in {"waveform_lda", "source_feature_lda"} | ERP_FAMILIES and (
+            self.candidate_loss_weight is not None or self.source_prior_weight != 0
+        ):
+            raise ValueError("LDA does not optimize decision or source-prior losses")
+        if isinstance(self.erp_bin_width, bool) or not isinstance(self.erp_bin_width, int) or self.erp_bin_width < 1:
+            raise ValueError("erp_bin_width must be a positive integer")
+        if self.erp_bin_width != 1 and self.initialization not in ERP_FAMILIES:
+            raise ValueError("erp_bin_width belongs only to the explicit ERP families")
+        if self.initialization == "temporal_lda":
+            if self.temporal_basis_kind not in {"fixed_cosine", "source_supervised"} or type(self.temporal_rank) is not int or self.temporal_rank < 1 or self.erp_bin_width != 1:
+                raise ValueError("temporal LDA requires a declared basis kind, positive rank and bin_width=1")
+        elif self.temporal_basis_kind is not None or self.temporal_rank is not None:
+            raise ValueError("temporal basis declarations belong only to temporal_lda")
         if self.weights == "none" and (
             self.bn_affine != "frozen" or self.bn_buffers == "online" or self.dropout != "off"
         ):
@@ -55,13 +98,30 @@ class TargetRecipe:
         self.adapter_config()
 
     def record(self) -> dict[str, object]:
-        return asdict(self)
+        record = asdict(self)
+        if self.target_adapter_config is None:
+            record.pop("target_adapter_config")
+        if self.candidate_loss_weight is None:
+            record.pop("candidate_loss_weight")
+            if self.candidate_loss_temperature == 1.0:
+                record.pop("candidate_loss_temperature")
+        if self.source_prior_weight == 0:
+            record.pop("source_prior_weight")
+        if self.erp_bin_width == 1:
+            record.pop("erp_bin_width")
+        if self.temporal_basis_kind is None:
+            record.pop("temporal_basis_kind")
+            record.pop("temporal_rank")
+        return record
+
 
     def adapter_config(
         self, *, input_mean: np.ndarray | None = None, input_std: np.ndarray | None = None
     ) -> SubjectAdapterConfig:
         return SubjectAdapterConfig(
-            head_kind="full_fine" if self.weights == "non_bn" else "classifier_fine",
+            head_kind=("adapter" if self.weights == "adapter" else
+                       "full_fine" if self.weights in {"non_bn", "spatial", "temporal"}
+                       else "classifier_fine"),
             input_statistics=self.input_statistics,
             input_mean=input_mean,
             input_std=input_std,
@@ -78,19 +138,32 @@ class TargetRecipe:
             seed=self.seed,
             val_group_fraction=None,
             refit_full_prefix=self.refit_full_prefix,
+            candidate_loss_weight=0. if self.candidate_loss_weight is None else self.candidate_loss_weight,
+            candidate_loss_temperature=self.candidate_loss_temperature,
+            source_prior_weight=self.source_prior_weight,
         )
+
+
+def erp_target_recipe(family: str, *, bin_width: int = 1, batch_size: int = 64, seed: int = 0,
+                      temporal_basis_kind: str | None = None, temporal_rank: int | None = None) -> TargetRecipe:
+    if family not in ERP_FAMILIES:
+        raise ValueError("unknown target-only ERP family")
+    return TargetRecipe(family, initialization=family, weights="none", bn_buffers="source",
+                        bn_affine="frozen", dropout="off", epochs=1, batch_size=batch_size,
+                        seed=seed, erp_bin_width=bin_width, temporal_basis_kind=temporal_basis_kind,
+                        temporal_rank=temporal_rank)
 
 
 def actual_batch_recipes(recipes: tuple[TargetRecipe, ...], n_fit: int) -> tuple[TargetRecipe, ...]:
     """Keep the first requested cap for otherwise identical actual treatments."""
     if n_fit < 1:
         raise ValueError("n_fit must be positive")
-    unique: dict[tuple[tuple[str, object], ...], TargetRecipe] = {}
+    unique: dict[str, TargetRecipe] = {}
     for recipe in recipes:
         fields = recipe.record()
         fields.pop("name")
         fields["batch_size"] = min(recipe.batch_size, n_fit)
-        unique.setdefault(tuple(fields.items()), recipe)
+        unique.setdefault(json.dumps(fields, sort_keys=True), recipe)
     return tuple(unique.values())
 
 
@@ -122,6 +195,55 @@ def batch_size_aliases(
     if n_fit < 1 or batch_size < 1 or any(value < 1 for value in batch_sizes):
         raise ValueError("row counts and batches must be positive")
     return tuple(value for value in batch_sizes if min(value, n_fit) == min(batch_size, n_fit))
+
+
+def p1_target_recipes(
+    *, batch_size: int = 512, seed: int = 0, max_updates: int = 200
+) -> tuple[TargetRecipe, ...]:
+    """Spatial x temporal adaptation, with independent BN and strong controls."""
+    base = TargetRecipe("p1_full_fine", batch_size=batch_size, seed=seed,
+                        max_updates=max_updates)
+    modes = {(0, 0): "head", (1, 0): "spatial", (0, 1): "temporal", (1, 1): "non_bn"}
+    factorial = tuple(replace(base, name=f"p1_s{s}t{t}", weights=mode,
+                              bn_affine="frozen", dropout="off")
+                      for (s, t), mode in modes.items())
+    return (base, replace(base, name="p1_scratch", initialization="scratch"), *factorial,
+            replace(base, name="p1_affine_head", weights="head", dropout="off"),
+            replace(base, name="p1_residual_head", weights="adapter",
+                    bn_affine="frozen", dropout="off"),
+            replace(base, name="p1_waveform_lda", initialization="waveform_lda",
+                    weights="none", bn_buffers="source", bn_affine="frozen",
+                    dropout="off", max_updates=None))
+
+
+def p2_target_recipes(*, batch_size: int = 512, seed: int = 0) -> tuple[TargetRecipe, ...]:
+    """Matched full/scratch/LDA controls for each declared source objective."""
+    return tuple(replace(recipe, name=recipe.name.replace("p1_", "p2_", 1))
+                 for recipe in p1_target_recipes(batch_size=batch_size, seed=seed)
+                 if recipe.name in {"p1_full_fine", "p1_scratch", "p1_waveform_lda"})
+
+
+def unified_target_recipes(
+    *, membership_available: bool, source_prior_weight: float,
+    batch_size: int = 512, seed: int = 0, max_updates: int | None = None,
+    decision_weight: float = 1., epochs: int = 90,
+) -> tuple[TargetRecipe, ...]:
+    """Two adaptation packages, supervision-matched scratch, and waveform LDA."""
+    if not isinstance(membership_available, bool):
+        raise ValueError("membership_available must be an explicit boolean admission")
+    if isinstance(decision_weight, bool) or not np.isfinite(decision_weight) or decision_weight <= 0:
+        raise ValueError("unified decision_weight must be finite and positive")
+    base = TargetRecipe("unified_q0", batch_size=batch_size, seed=seed, max_updates=max_updates, epochs=epochs,
+                        input_statistics="target_prefix", bn_buffers="calibration",
+                        bn_affine="trainable", dropout="off", source_prior_weight=0.,
+                        candidate_loss_weight=0. if membership_available else None)
+    joint = replace(base, name="unified_q1", source_prior_weight=source_prior_weight,
+                    candidate_loss_weight=decision_weight if membership_available else None)
+    ce_control = (replace(base, name="unified_scratch_ce", initialization="scratch"),) if membership_available else ()
+    return (base, joint, replace(joint, name="unified_scratch", initialization="scratch", source_prior_weight=0.),
+            *ce_control,
+            TargetRecipe("unified_waveform_lda", initialization="waveform_lda", weights="none",
+                         bn_buffers="source", bn_affine="frozen", dropout="off", epochs=1, batch_size=batch_size, seed=0))
 
 
 def b0_target_recipes(

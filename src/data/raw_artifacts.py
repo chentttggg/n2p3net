@@ -45,6 +45,20 @@ def _unlink_with_retry(path: Path, *, attempts: int = 20, delay_s: float = 0.01)
             time.sleep(delay_s)
 
 
+def _publish_without_replace(temporary: Path, target: Path) -> None:
+    """Atomically publish without sharing Windows read-only state with a temp link.
+
+    Windows rename refuses an existing destination. POSIX rename replaces it,
+    so POSIX retains link-based no-replace publication; unlinking a read-only
+    inode is legal there. A concurrent reader may mark the target read-only
+    immediately after publication without preventing the winner's temp cleanup.
+    """
+    if os.name == "nt":
+        os.rename(temporary, target)
+    else:
+        os.link(temporary, target)
+
+
 _MANIFEST_FIELDS = {
     "schema",
     "dataset_class",
@@ -469,7 +483,7 @@ def _publish_verified_stream(
                 f"expected {checksum}, got {md5}."
             )
         try:
-            os.link(temporary, target)
+            _publish_without_replace(temporary, target)
         except FileExistsError:
             pass
         else:
@@ -1290,7 +1304,7 @@ def _materialize_snapshot(
         if size_bytes != snapshot.size_bytes or sha256 != snapshot.sha256:
             raise RuntimeError("Verified snapshot changed while it was materialized.")
         try:
-            os.link(temporary, target)
+            _publish_without_replace(temporary, target)
         except FileExistsError:
             descriptor = _open_regular_nofollow(target)
             with os.fdopen(descriptor, "rb") as handle:
@@ -1407,7 +1421,7 @@ def _publish_content_stream(
             )
         target = object_dir / digest
         try:
-            os.link(temporary, target)
+            _publish_without_replace(temporary, target)
         except FileExistsError:
             pass
         else:

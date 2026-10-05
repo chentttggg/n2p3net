@@ -1,36 +1,13 @@
-"""模块：经典 / 地板基线（Classic Baselines）。
+"""经典特征基线：SWLDA近似、窗口逻辑回归与模板匹配。
 
-职责（roadmap Phase 1 + constitution P8）：
-    三个基于手工特征的基线，均输出逐试次 target 的「判别 logit」（供 decision 层对数似然比累积）：
-        - SWLDA：downsample 特征 + 逐步特征选择 + LDA（P300 speller 经典方法）
-        - WindowLogisticRegression：手工窗均值特征 + 逻辑回归（免费地板）
-        - TemplateMatching：grand-average target 模板 + Pearson 相关（免费地板）
+统一接口为fit(X, y)及predict_logit(X)，输入(N,C,T)，输出逐trial target判别分数。
+SWLDA采用降采样后单变量t检验筛选与LDA，不等价于经典多变量逐步回归。
+窗口逻辑回归使用类平衡权重；模板匹配使用target均值模板与Pearson相关。
+所有特征选择、标准化和模板仅在合法fit范围内拟合，预测复用保存状态。
+空间几何基线见riemann.py，深度基线见deep.py，公共特征见features.py。
 
-明确「不做」：
-    - xDAWN + Riemannian（riemann.py，pyriemann 实现）
-    - EEGNet / EEG-Inception / EEG Conformer（deep.py，braindecode 实现）
-    - 三层评估协议 / 配对置换检验（evaluate.py，Phase 1 后续）
-
-三思决策记录（供后续会话追溯）：
-    D-unified-iface  统一接口 fit(X,y) / predict_logit(X)→(N,)。predict_logit 返回「判别分数」作 logit，
-                     因 decision 层做 z-score 再 argmax，logit 绝对尺度不重要（z-score 单调）。与 heads
-                     输出 logit 的契约一致（decision.py 直接消费）。
-    D-swdla-topk     SWLDA 的特征选择用「单变量 t 检验 p 值」的 top-k 筛选（cap max_features），非经典
-                     多变量 F 统计量逐步回归。理由：P300 判别信息集中在少数时间点，单变量近似已能选到；
-                     且单变量实现简单、可测试、不易错。后向删除在单变量 p 独立假设下恒不触发（因
-                     p_entry < p_removal），已移除死代码（review P2）。若 Phase 1 命中率低于 Vařeka
-                     77.2% 再升级多变量判据。
-    D-swdla-down     SWLDA 输入 downsample 到 ~20Hz 后 flatten（经典 Krusienski 2006 做法），标准化后
-                     逐步选择；预测时复用训练期的 mean/std。
-    D-lr-balanced    手工窗逻辑回归用 class_weight="balanced" 处理 1/9 不平衡（sklearn 无 pos_weight，
-                     等价方向是加重 target）；对应 blueprint pos_weight≈8 的意图。
-    D-template-cor   模板匹配用 flatten 后 Pearson 相关（中心化点积），即「试次波形与 target 模板的
-                     形状相似度」；target 相关高、non-target 低。可限制 window_ms 到 P300 窗增强判别。
-
-契约（输入 → 输出）：
-    X ∈ R^{N×C×T}（float32）+ y ∈ {0,1}^N → fit 后 predict_logit(X) ∈ R^N（target 判别分数）。
-
-依赖的决策：roadmap Phase 1、constitution P8（免费地板）、baselines/features.py。
+评估与拟合边界见doc/research_program.zh.md；执行配方见doc/roadmap.zh.md；
+模块接口见doc/technical_structure.zh.md，输入单位和时间支持见doc/input_contract_math.zh.md。
 """
 
 from __future__ import annotations

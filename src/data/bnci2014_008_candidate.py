@@ -9,6 +9,8 @@ the source of the candidate-membership labels used for training.
 
 from __future__ import annotations
 
+import hashlib
+import io
 import re
 from dataclasses import dataclass
 from pathlib import PurePosixPath
@@ -26,7 +28,7 @@ from data.candidate_task import (
 from data.channel import build_channel_identity
 from data.epochs import EpochDataset, PreprocessingSpec
 from data.events import ScheduledEventTimeline
-from data.preprocess import preprocess
+from data.preprocess import RawSampleScope, execute_preprocessing
 from data.raw_artifacts import RawArtifactAttestation
 
 BNCI2014_008_DATASET_ID = "BNCI2014-008"
@@ -369,10 +371,32 @@ def load_bnci2014_008_candidate_record(
     source_name = PurePosixPath(source_relative_path).name
     if not _SUBJECT_FILE.fullmatch(source_name):
         raise ValueError("BNCI2014-008 source files must be named A01.mat through A08.mat.")
-    subject_id = PurePosixPath(source_name).stem
     snapshot = raw_artifact_attestation.snapshot_for(source_relative_path)
     with snapshot.open_verified() as handle:
-        record = _read_level5_struct(handle, source_name=source_name)
+        return read_bnci2014_008_candidate_record(
+            handle, source_relative_path=source_relative_path, source_sha256=snapshot.sha256,
+            source_provenance=raw_artifact_attestation.source_provenance_record(source_relative_path),
+        )
+
+
+def read_bnci2014_008_candidate_record(
+    handle: BinaryIO, *, source_relative_path: str, source_sha256: str,
+    source_provenance: dict[str, object] | None = None,
+) -> BNCI2014008CandidateRecord:
+    """Decode one declared MAT byte identity, retaining its physical selections.
+
+    The source-record preparation path and immutable-artifact loader share this
+    parser. All decoding uses the exact in-memory bytes whose digest is checked.
+    """
+    source_name = PurePosixPath(source_relative_path).name
+    if not _SUBJECT_FILE.fullmatch(source_name):
+        raise ValueError("BNCI2014-008 source files must be named A01.mat through A08.mat.")
+    handle.seek(0)
+    payload = handle.read()
+    if hashlib.sha256(payload).hexdigest() != source_sha256:
+        raise ValueError("BNCI2014-008 MAT bytes differ from their declared source SHA256.")
+    subject_id = PurePosixPath(source_name).stem
+    record = _read_level5_struct(io.BytesIO(payload), source_name=source_name)
     channels = _plain_strings(
         record["channels"], field="channels", count=len(BNCI2014_008_CHANNELS)
     )
@@ -428,8 +452,8 @@ def load_bnci2014_008_candidate_record(
     )
     return BNCI2014008CandidateRecord(
         source_relative_path=source_relative_path,
-        source_sha256=snapshot.sha256,
-        source_provenance=raw_artifact_attestation.source_provenance_record(source_relative_path),
+        source_sha256=source_sha256,
+        source_provenance=dict(source_provenance or {}),
         subject_id=subject_id,
         eeg_uv=eeg_uv,
         flash_sample=flash_sample,
@@ -502,17 +526,11 @@ def discover_bnci2014_008_files(
     return tuple(by_name[name] for name in expected_names)
 
 
-def build_bnci2014_008_subject_dataset(
-    record: BNCI2014008CandidateRecord,
-    *,
-    preprocessing: PreprocessingSpec,
-) -> EpochDataset:
-    """Build one strict causal-v3 EpochDataset/5 subject cache."""
-
+def bnci2014_008_raw(record: BNCI2014008CandidateRecord):
+    """Expose the verified native signal and original chronological event axis."""
     if not isinstance(record, BNCI2014008CandidateRecord):
         raise TypeError("record must be a verified BNCI2014008CandidateRecord.")
-    recovered = record
-    eeg_v = (recovered.eeg_uv.astype(np.float64, copy=False) * 1e-6).T
+    eeg_v = (record.eeg_uv.astype(np.float64, copy=False) * 1e-6).T
     info = mne.create_info(
         list(BNCI2014_008_CHANNELS),
         BNCI2014_008_SOURCE_SAMPLE_RATE_HZ,
@@ -521,42 +539,44 @@ def build_bnci2014_008_subject_dataset(
     raw = mne.io.RawArray(eeg_v, info, verbose=False)
     events = np.column_stack(
         (
-            recovered.flash_sample,
-            np.zeros(BNCI2014_008_FLASH_COUNT, dtype=np.int64),
-            recovered.raw_stimulus_code,
+            record.flash_sample,
+            np.zeros(len(record.flash_sample), dtype=np.int64),
+            record.raw_stimulus_code,
         )
     ).astype(np.int64, copy=False)
-    result = preprocess(
+    return raw, events, record.raw_is_target.astype(np.int64)
+
+
+def build_bnci2014_008_subject_dataset(
+    record: BNCI2014008CandidateRecord, *, preprocessing: PreprocessingSpec,
+    raw_scope: RawSampleScope | None = None, raw: mne.io.BaseRaw | None = None,
+) -> EpochDataset:
+    """Execute the declared profile on a whole record or an independent raw scope."""
+    if not isinstance(record, BNCI2014008CandidateRecord):
+        raise TypeError("record must be a verified BNCI2014008CandidateRecord.")
+    recovered = record
+    if raw is None:
+        raw, events, _ = bnci2014_008_raw(record)
+    else:
+        if (tuple(raw.ch_names) != BNCI2014_008_CHANNELS
+                or float(raw.info["sfreq"]) != BNCI2014_008_SOURCE_SAMPLE_RATE_HZ
+                or int(raw.first_samp) != 0 or raw.n_times != len(record.eeg_uv)):
+            raise ValueError("shared BNCI raw differs from the verified native recording geometry")
+        events = np.column_stack((record.flash_sample, np.zeros(len(record.flash_sample), dtype=np.int64),
+                                  record.raw_stimulus_code))
+    result = execute_preprocessing(
         raw,
         events,
-        sfreq=preprocessing.sfreq,
-        l_freq=preprocessing.l_freq,
-        h_freq=preprocessing.h_freq,
-        tmin=preprocessing.tmin_ms / 1000.0,
-        tmax=preprocessing.tmax_ms / 1000.0,
-        n_times=preprocessing.n_times,
-        reject_threshold=preprocessing.reject_threshold_v,
-        baseline_mode=preprocessing.baseline_mode,
-        trial_reference_window_ms=preprocessing.trial_reference_window_ms,
-        trial_reference_center=preprocessing.trial_reference_center,
-        trial_reference_scale=preprocessing.trial_reference_scale,
-        filter_method=preprocessing.filter_method,
-        filter_order=preprocessing.filter_order,
-        notch_freqs_hz=preprocessing.notch_freqs_hz,
-        notch_quality_factor=preprocessing.notch_quality_factor,
-        filter_phase=preprocessing.filter_phase,
-        causal_iir_initial_state=preprocessing.causal_iir_initial_state,
-        resample_domain=preprocessing.resample_domain,
-        resample_method=preprocessing.resample_method,
-        resample_npad=preprocessing.resample_npad,
-        resample_window=preprocessing.resample_window,
-        resample_pad=preprocessing.resample_pad,
+        preprocessing,
+        raw_scope=raw_scope,
         channels=BNCI2014_008_CHANNELS,
         montage="standard_1005",
     )
     evidence = np.asarray(result.event_evidence_indices, dtype=np.int64)
+    scheduled = result.scheduled_event_indices
     available = np.flatnonzero(evidence >= 0)
-    ordered = available[np.argsort(evidence[available], kind="stable")]
+    local_ordered = available[np.argsort(evidence[available], kind="stable")]
+    ordered = scheduled[local_ordered]
     if len(ordered) != result.n_epochs:
         raise AssertionError("Preprocessing evidence mapping is not bijective.")
     derived_labels = recovered.raw_is_target[ordered].astype(np.int64)
@@ -565,6 +585,7 @@ def build_bnci2014_008_subject_dataset(
             "subject": np.repeat(recovered.subject_id, result.n_epochs),
             "selection_id": recovered.selection_id[ordered],
             "selection_index": recovered.selection_index[ordered],
+            "selection_repetitions": np.full(result.n_epochs, BNCI2014_008_REPETITIONS_PER_SELECTION),
             "repetition_index": recovered.repetition_index[ordered],
             "candidate_id": recovered.candidate_id[ordered],
             "row_code": recovered.row_code[ordered],
@@ -576,7 +597,7 @@ def build_bnci2014_008_subject_dataset(
             "raw_target_label": recovered.raw_target_label[ordered],
             "raw_stimulus_code": recovered.raw_stimulus_code[ordered],
             "flash_sample_matlab_1based": recovered.flash_sample_matlab_1based[ordered],
-            "acquisition_time_s": result.event_times_s[ordered],
+            "acquisition_time_s": result.event_times_s[local_ordered],
         }
     )
     validate_candidate_membership_metadata(
@@ -594,29 +615,29 @@ def build_bnci2014_008_subject_dataset(
         event_ids=np.asarray(
             [
                 f"{BNCI2014_008_DATASET_ID}:{recovered.subject_id}:{index}"
-                for index in range(BNCI2014_008_FLASH_COUNT)
+                for index in scheduled
             ]
         ),
-        group_ids=recovered.selection_id,
-        subject_ids=np.repeat(recovered.subject_id, BNCI2014_008_FLASH_COUNT),
-        stimulus_ids=recovered.raw_stimulus_code.astype(np.int64),
-        onset_samples=recovered.flash_sample.astype(np.int64),
+        group_ids=recovered.selection_id[scheduled],
+        subject_ids=np.repeat(recovered.subject_id, len(scheduled)),
+        stimulus_ids=recovered.raw_stimulus_code[scheduled].astype(np.int64),
+        onset_samples=recovered.flash_sample[scheduled].astype(np.int64),
         onset_times_s=result.event_times_s,
         evidence_available_times_s=result.evidence_available_times_s,
         evidence_indices=evidence,
         statuses=result.event_statuses,
         status_details=result.event_status_details,
-        dataset_ids=np.repeat(BNCI2014_008_DATASET_ID, BNCI2014_008_FLASH_COUNT),
-        session_ids=np.repeat("0", BNCI2014_008_FLASH_COUNT),
-        run_ids=np.repeat("0", BNCI2014_008_FLASH_COUNT),
-        selection_ids=recovered.selection_id,
-        candidate_ids=recovered.candidate_id.astype(str),
-        repetition_indices=recovered.repetition_index,
+        dataset_ids=np.repeat(BNCI2014_008_DATASET_ID, len(scheduled)),
+        session_ids=np.repeat("0", len(scheduled)),
+        run_ids=np.repeat("0", len(scheduled)),
+        selection_ids=recovered.selection_id[scheduled],
+        candidate_ids=recovered.candidate_id[scheduled].astype(str),
+        repetition_indices=recovered.repetition_index[scheduled],
         complete=True,
         online_causal=result.online_causal,
         timing_source=(
             "bnci2014_008_mat_y_stim_zero_to_nonzero;"
-            "matlab_trial_1based_to_internal_0based;epoched_resample"
+            "matlab_trial_1based_to_internal_0based;" + result.timing_source
         ),
     )
     dataset = EpochDataset(
@@ -631,6 +652,8 @@ def build_bnci2014_008_subject_dataset(
         event_timeline=timeline,
         metadata=metadata,
         provenance={
+            **({"preprocessing_execution": result.execution_receipt}
+               if result.execution_receipt is not None else {}),
             "source": "bnci_horizon_008_2014_mat_level5",
             "source_relative_path": recovered.source_relative_path,
             "source_file_sha256": recovered.source_sha256,

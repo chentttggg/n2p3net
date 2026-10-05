@@ -415,7 +415,19 @@ def feature_transfer_architecture_record(
 
 
 class FeatureResidualAdapter(nn.Module):
-    """Identity-initialized bounded residual on structured ``(B,C,T)`` maps."""
+    """Identity-initialized residual with a bounded scalar gate on ``(B,C,T)`` maps."""
+
+    @staticmethod
+    def validate_configuration(channels, *, bottleneck_channels, kernel_size, max_residual):
+        if any(isinstance(value, bool) or not isinstance(value, Integral) or value < 1
+               for value in (channels, bottleneck_channels)):
+            raise ValueError("residual adapter channels must be positive integers.")
+        if (isinstance(kernel_size, bool) or not isinstance(kernel_size, Integral)
+                or kernel_size < 1 or kernel_size % 2 == 0):
+            raise ValueError("residual adapter kernel_size must be positive and odd.")
+        if (isinstance(max_residual, bool) or not isinstance(max_residual, Real)
+                or not isfinite(max_residual) or max_residual <= 0.0):
+            raise ValueError("residual adapter max_residual must be finite and positive.")
 
     def __init__(
         self,
@@ -426,12 +438,8 @@ class FeatureResidualAdapter(nn.Module):
         max_residual: float,
     ) -> None:
         super().__init__()
-        if channels < 1 or bottleneck_channels < 1:
-            raise ValueError("residual adapter channels must be positive.")
-        if kernel_size < 1 or kernel_size % 2 == 0:
-            raise ValueError("residual adapter kernel_size must be positive and odd.")
-        if not isfinite(max_residual) or max_residual <= 0.0:
-            raise ValueError("residual adapter max_residual must be finite and positive.")
+        self.validate_configuration(channels, bottleneck_channels=bottleneck_channels,
+                                    kernel_size=kernel_size, max_residual=max_residual)
         self.channels = int(channels)
         self.bottleneck_channels = int(bottleneck_channels)
         self.kernel_size = int(kernel_size)
@@ -547,6 +555,22 @@ class FeatureDomainTransfer(nn.Module):
     @property
     def classifier_features(self) -> int:
         return self.core.classifier_features
+
+    def adaptation_parameter_groups(self) -> dict[str, tuple[nn.Parameter, ...]]:
+        """Expose core ownership while keeping source extensions distinct."""
+        groups = self.core.adaptation_parameter_groups()
+        groups["target_adapter"] = tuple(self.target_adapter.parameters())
+        groups["source_extensions"] = tuple(
+            p for module in (self.invariant_adapter, self.private_projection,
+                             self.private_domain_head, self.source_domain_residuals)
+            if module is not None for p in module.parameters()
+        )
+        values = [p for group in groups.values() for p in group]
+        if len(values) != len({id(p) for p in values}) or (
+            {id(p) for p in values} != {id(p) for p in self.parameters()}
+        ):
+            raise ValueError("parameter groups must own every model parameter exactly once")
+        return groups
 
     def set_target_adapter_trainable(self, enabled: bool) -> None:
         for parameter in self.target_adapter_parameters():
@@ -763,6 +787,7 @@ class FeatureDomainTransfer(nn.Module):
         domain_indices: torch.Tensor | None = None,
         eval_buffer_source: str | None = None,
         eval_buffer_index: int | None = None,
+        channel_mask: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         core_domain_indices = domain_indices
         if self.core.splitbn_config is None and use_source_residual:
@@ -774,6 +799,7 @@ class FeatureDomainTransfer(nn.Module):
             domain_indices=core_domain_indices,
             eval_buffer_source=eval_buffer_source,
             eval_buffer_index=eval_buffer_index,
+            channel_mask=channel_mask,
         )
         invariant = self.invariant_adapter(base)
         private = F.elu(self.private_projection(base))
@@ -813,6 +839,7 @@ class FeatureDomainTransfer(nn.Module):
         domain_indices: torch.Tensor | None = None,
         eval_buffer_source: str | None = None,
         eval_buffer_index: int | None = None,
+        channel_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Return the structured feature map consumed by the classifier."""
 
@@ -824,6 +851,7 @@ class FeatureDomainTransfer(nn.Module):
             domain_indices=domain_indices,
             eval_buffer_source=eval_buffer_source,
             eval_buffer_index=eval_buffer_index,
+            channel_mask=channel_mask,
         )
         return adapted
 
@@ -837,6 +865,7 @@ class FeatureDomainTransfer(nn.Module):
         domain_indices: torch.Tensor | None = None,
         eval_buffer_source: str | None = None,
         eval_buffer_index: int | None = None,
+        channel_mask: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Return ``(logits, invariant_features, private_summary)``.
 
@@ -852,6 +881,7 @@ class FeatureDomainTransfer(nn.Module):
             domain_indices=domain_indices,
             eval_buffer_source=eval_buffer_source,
             eval_buffer_index=eval_buffer_index,
+            channel_mask=channel_mask,
         )
         logits = self.core.classifier(self.core.pool_features(adapted))
         return logits, invariant, private_summary
@@ -876,6 +906,7 @@ class FeatureDomainTransfer(nn.Module):
         domain_indices: torch.Tensor | None = None,
         eval_buffer_source: str | None = None,
         eval_buffer_index: int | None = None,
+        channel_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         return self.forward_with_features(
             x,
@@ -885,6 +916,7 @@ class FeatureDomainTransfer(nn.Module):
             domain_indices=domain_indices,
             eval_buffer_source=eval_buffer_source,
             eval_buffer_index=eval_buffer_index,
+            channel_mask=channel_mask,
         )[0]
 
     def architecture_record(self) -> dict[str, object]:

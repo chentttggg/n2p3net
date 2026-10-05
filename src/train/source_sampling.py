@@ -12,8 +12,10 @@ the declared calibration scope and binding provenance digests.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -28,6 +30,55 @@ VALID_SELECTION_SCOPES = frozenset({"target_calibration", "target_unlabelled_buf
 SOURCE_SELECTION_SCHEMA = "n2p3_source_selection/2"
 LEGACY_SOURCE_SELECTION_SCHEMA = "n2p3_pds_source_selection/1"
 VALID_SAMPLER_KINDS = frozenset({"target_similarity_diverse", "dense_pds"})
+
+
+def encode_source_vector(values: np.ndarray) -> list | dict:
+    """Lossless source-ledger vectors; keep small records directly readable."""
+    values = np.asarray(values)
+    if values.ndim != 1 or values.dtype.kind not in "if" or not np.isfinite(values).all():
+        raise ValueError("source ledger vectors require finite one-dimensional numeric values")
+    values = np.ascontiguousarray(values, dtype="<i8" if values.dtype.kind == "i" else "<f8")
+    if len(values) <= 1024:
+        return values.tolist()
+    raw = values.tobytes()
+    result = {"schema": "n2p3_source_vector/1", "dtype": values.dtype.str,
+              "length": len(values), "raw_sha256": hashlib.sha256(raw).hexdigest()}
+    same_bits = np.all(values.view(np.uint64) == values.view(np.uint64)[0])
+    negative_zero = values.dtype.kind == "f" and values[0] == 0 and np.signbit(values[0])
+    if same_bits and not negative_zero:
+        return {**result, "encoding": "constant", "value": values[0].item()}
+    if values.dtype.kind == "i" and np.all(np.diff(values) == 1):
+        return {**result, "encoding": "consecutive_indices", "start": int(values[0])}
+    return {**result, "encoding": "zlib_base64", "payload": base64.b64encode(zlib.compress(raw, 1)).decode("ascii")}
+
+
+def decode_source_vector(record: list | dict) -> np.ndarray:
+    """Expand a current or historical source audit vector with digest validation."""
+    if isinstance(record, list):
+        values = np.asarray(record)
+        if values.ndim != 1 or values.dtype.kind not in "if" or not np.isfinite(values).all():
+            raise ValueError("invalid explicit source vector")
+        return values
+    if (not isinstance(record, dict) or record.get("schema") != "n2p3_source_vector/1"
+            or record.get("dtype") not in {"<i8", "<f8"}
+            or type(record.get("length")) is not int or record["length"] < 1):
+        raise ValueError("invalid encoded source vector")
+    dtype, length = np.dtype(record["dtype"]), record["length"]
+    if record.get("encoding") == "constant":
+        values = np.full(length, record["value"], dtype=dtype)
+    elif record.get("encoding") == "consecutive_indices" and dtype.kind == "i":
+        values = np.arange(length, dtype=dtype) + record["start"]
+    elif record.get("encoding") == "zlib_base64":
+        raw = zlib.decompress(base64.b64decode(record["payload"], validate=True))
+        if len(raw) != length * dtype.itemsize:
+            raise ValueError("source vector byte count changed")
+        values = np.frombuffer(raw, dtype=dtype).copy()
+    else:
+        raise ValueError("unsupported source vector encoding")
+    if (not np.isfinite(values).all()
+            or hashlib.sha256(values.tobytes()).hexdigest() != record["raw_sha256"]):
+        raise ValueError("source vector digest changed")
+    return values
 
 
 def source_sampling_probabilities(
@@ -61,6 +112,24 @@ def source_sampling_probabilities(
     return probability
 
 
+def source_sampling_cdf(probability: np.ndarray) -> np.ndarray:
+    """Prepare NumPy choice's replacement CDF once for an unchanged proposal."""
+    probability = np.asarray(probability, dtype=np.float64)
+    if (probability.ndim != 1 or not len(probability) or not np.isfinite(probability).all()
+            or (probability < 0).any()
+            or abs(float(probability.sum()) - 1.) > np.sqrt(np.finfo(np.float64).eps)):
+        raise ValueError("source sampling requires a normalized finite probability vector")
+    cumulative = probability.cumsum()
+    cumulative /= cumulative[-1]
+    return cumulative
+
+
+def sample_source_rows(rng: np.random.Generator, probability: np.ndarray, size: int,
+                       *, cumulative: np.ndarray) -> np.ndarray:
+    """Match Generator.choice(p=...) draws and RNG consumption without repeated scans."""
+    return cumulative.searchsorted(rng.random(size), side="right")
+
+
 def observed_source_statistics(
     values: np.ndarray,
     observed: np.ndarray,
@@ -92,22 +161,33 @@ def observed_source_statistics(
             domains[rows], people[rows],
             sampling="uniform_rows" if weighting == "observed_rows" else "domain_participant",
         )
-        channel_values = np.asarray(values[rows, channel], dtype=np.float64)
-        first = float(weights @ channel_values.mean(axis=1))
+        # Keep the same row reductions and final weighted dot product, with
+        # bounded temporaries rather than several full float64 channel copies.
+        row_moments = np.empty(len(rows), dtype=np.float64)
+        chunk_rows = 32768
+        for start in range(0, len(rows), chunk_rows):
+            stop = min(start + chunk_rows, len(rows))
+            block = np.asarray(values[rows[start:stop], channel], dtype=np.float64)
+            row_moments[start:stop] = block.mean(axis=1)
+        first = float(weights @ row_moments)
         # Centered population moments include within-person and between-person variation.
-        variance = float(weights @ np.square(channel_values - first).mean(axis=1))
+        for start in range(0, len(rows), chunk_rows):
+            stop = min(start + chunk_rows, len(rows))
+            block = np.asarray(values[rows[start:stop], channel], dtype=np.float64)
+            row_moments[start:stop] = np.square(block - first).mean(axis=1)
+        variance = float(weights @ row_moments)
         mean[0, channel, 0] = first
         std[0, channel, 0] = np.sqrt(max(0.0, variance)) + 1e-6
         channels.append({
             "channel_index": channel, "observed_rows": len(rows),
             "observed_domains": len(np.unique(domains[rows])),
             "observed_participants": len(np.unique(people[rows])),
-            "rows": rows.tolist(), "row_mass": weights.tolist(),
+            "rows": encode_source_vector(rows), "row_mass": encode_source_vector(weights),
             "time_points_per_row": values.shape[2], "mean": first,
             "population_variance": variance,
         })
     return mean.astype(np.float32), std.astype(np.float32), {
-        "weighting": weighting, "class_weighting": "none",
+        "weighting": weighting, "class_weighting": "none", "vector_encoding": "n2p3_source_vector/1",
         "variance_convention": "population", "channels": channels,
     }
 

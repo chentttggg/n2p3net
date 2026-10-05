@@ -33,10 +33,16 @@ def fit_brainsync_continuous_manifest(path: str | Path):
     manifest = json.loads(path.read_text(encoding="utf-8"))
     if manifest.get("schema") != "brainsync_continuous_qc_calibration/1":
         raise ValueError("explicit continuous QC calibration manifest is required")
-    spec = ContinuousQCSpec(**manifest["spec"])
     preprocessing = (PreprocessingSpec(**manifest["preprocessing"])
                      if "preprocessing" in manifest else BRAIN_SYNC_PREPROCESSING)
     preprocessing.validate()
+    specification = dict(manifest["spec"])
+    if preprocessing.filter_phase == "zero":
+        specification.setdefault("range_action", "diagnostic")
+        specification.setdefault("boundary_action", "artifact_edges")
+        if manifest.get("epoch_recovery") is None:
+            raise ValueError("zero-phase QC fitting requires explicit epoch_recovery calibration parameters")
+    spec = ContinuousQCSpec(**specification)
     raws, masks, sessions, participants, references, records = [], [], [], set(), set(), []
     for item in manifest["sessions"]:
         root = (path.parent / item["session_dir"]).resolve()

@@ -57,7 +57,7 @@ REQUESTED_METRIC = "requested_participant_operational_hit_rate"
 VALID_SUBJECT_METRIC = "valid_subject_operational_hit_rate"
 SUPPORTED_METRICS = frozenset({REQUESTED_METRIC, VALID_SUBJECT_METRIC})
 SUPPORTED_METRIC = REQUESTED_METRIC  # legacy alias; new manifests select a metric explicitly
-DEFAULT_METRIC = VALID_SUBJECT_METRIC
+DEFAULT_METRIC = REQUESTED_METRIC
 VALID_SUBJECT_STATUSES = frozenset(
     {DecisionStatus.CORRECT, DecisionStatus.INCORRECT, DecisionStatus.TIE}
 )
@@ -1076,32 +1076,22 @@ def _cell_values(
     arms = tuple(dict.fromkeys(run.spec.arm for run in runs))
     values: dict[tuple[str, str, str], float] = {}
     replicate_means: dict[str, dict[str, float]] = {}
+    # Preserve every observed cell. Common-cohort selection belongs to the
+    # reducer; filtering here would erase the original missingness evidence.
     for arm in arms:
         replicate_means[arm] = {}
         for replicate in manifest.design.training_replicate_keys:
-            participant_values = {
-                participant: value
-                for partition in manifest.design.partition_keys
-                for participant, value in (
-                    indexed[(arm, replicate, partition)].participant_rates.items()
-                    if manifest.metric_name == REQUESTED_METRIC
-                    else indexed[
-                        (arm, replicate, partition)
-                    ].valid_participant_rates.items()
-                )
-            }
-            if not participant_values:
-                raise ValueError(
-                    f"{manifest.metric_name} is not estimable for arm {arm!r} "
-                    f"replicate {replicate!r}: no participant has a valid denominator."
-                )
-            values.update(
-                {
-                    (arm, replicate, participant): value
-                    for participant, value in participant_values.items()
-                }
-            )
-            replicate_means[arm][replicate] = float(np.mean(list(participant_values.values())))
+            participant_values = {}
+            for partition in manifest.design.partition_keys:
+                run = indexed[(arm, replicate, partition)]
+                rates = (run.participant_rates if manifest.metric_name == REQUESTED_METRIC
+                         else run.valid_participant_rates)
+                if set(participant_values).intersection(rates):
+                    raise ValueError("participant appears in multiple declared partitions")
+                participant_values.update(rates)
+            values.update({(arm, replicate, person): value for person, value in participant_values.items()})
+            replicate_means[arm][replicate] = (float(np.mean(list(participant_values.values())))
+                                                if participant_values else None)
     return arms, values, replicate_means
 
 
@@ -1133,9 +1123,20 @@ def _analysis_records(
         metric_suffix = "requested_participant_operational_hit_rate"
         metric_kwargs: dict[str, Any] = {}
     else:
+        valid_complete_participants = {
+            participant
+            for participant in manifest.participants
+            if all(
+                (arm, replicate, participant) in values
+                for arm in arms
+                for replicate in manifest.design.training_replicate_keys
+            )
+        }
         participant_means = {}
         for arm in arms:
             for participant in manifest.participants:
+                if participant not in valid_complete_participants:
+                    continue
                 observed = [
                     values[(arm, replicate, participant)]
                     for replicate in manifest.design.training_replicate_keys
@@ -1145,16 +1146,15 @@ def _analysis_records(
                     participant_means[(arm, participant)] = float(np.mean(observed))
         metric_suffix = "valid_subject_operational_hit_rate"
         metric_kwargs = {
-            "valid_participant_counts": {
-                arm: len(
-                    {
-                        participant
-                        for (key_arm, _, participant) in values
-                        if key_arm == arm
-                    }
-                )
-                for arm in arms
-            }
+            "valid_participant_counts": {arm: len(valid_complete_participants) for arm in arms},
+            "valid_cohort_policy": "complete_all_declared_arms_and_replicates",
+        }
+        replicate_means = {
+            arm: {replicate: (float(np.mean([values[arm, replicate, participant]
+                                            for participant in valid_complete_participants]))
+                              if valid_complete_participants else None)
+                  for replicate in manifest.design.training_replicate_keys}
+            for arm in arms
         }
     metrics = {
         arm: {
@@ -1166,7 +1166,7 @@ def _analysis_records(
                         if key_arm == arm
                     ]
                 )
-            ),
+            ) if any(key_arm == arm for key_arm, _ in participant_means) else None,
             f"per_training_replicate_{metric_suffix}": dict(replicate_means[arm]),
             **metric_kwargs,
         }
@@ -1174,6 +1174,7 @@ def _analysis_records(
     }
     contrasts = []
     for index, (left, right) in enumerate(manifest.design.planned_contrasts):
+        support = {"included_participants": [], "excluded_participants": []}
         if conditional:
             labels = tuple(
                 participant
@@ -1188,13 +1189,35 @@ def _analysis_records(
                 ]
             )
         else:
-            labels = manifest.design.training_replicate_keys
-            differences = np.asarray(
-                [
-                    replicate_means[left][label] - replicate_means[right][label]
-                    for label in labels
-                ]
-            )
+            cohort = (tuple(sorted(valid_complete_participants))
+                      if manifest.metric_name == VALID_SUBJECT_METRIC else manifest.participants)
+            labels = manifest.design.training_replicate_keys if cohort else ()
+            differences = np.asarray([
+                float(np.mean([values[left, label, participant]-values[right, label, participant]
+                               for participant in cohort])) for label in labels
+            ])
+        if manifest.metric_name == VALID_SUBJECT_METRIC:
+            included = tuple(sorted(valid_complete_participants))
+            support["cohort_policy"] = "complete_all_declared_arms_and_replicates"
+            support["observed_support"] = [
+                {"participant": participant, "arm": arm,
+                 "observed_replicates": [replicate for replicate in manifest.design.training_replicate_keys
+                                         if (arm, replicate, participant) in values],
+                 "missing_replicates": [replicate for replicate in manifest.design.training_replicate_keys
+                                        if (arm, replicate, participant) not in values]}
+                for participant in manifest.participants for arm in arms]
+            support["included_participants"] = list(included)
+            support["excluded_participants"] = [
+                {
+                    "participant": participant,
+                    "analysis_exclusion": "incomplete_global_grid",
+                    "missing_left_replicates": [replicate for replicate in manifest.design.training_replicate_keys
+                                                 if (left, replicate, participant) not in values],
+                    "missing_right_replicates": [replicate for replicate in manifest.design.training_replicate_keys
+                                                  if (right, replicate, participant) not in values],
+                }
+                for participant in manifest.participants if participant not in included
+            ]
         if len(differences) >= 2:
             interval_record: dict[str, Any] = {
                 "status": "estimated",
@@ -1230,6 +1253,7 @@ def _analysis_records(
                     zip(labels, differences.astype(float).tolist(), strict=True)
                 ),
                 "paired_bootstrap_interval": interval_record,
+                "paired_support": support,
             }
         )
     claim = (

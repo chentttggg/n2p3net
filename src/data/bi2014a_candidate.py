@@ -29,7 +29,7 @@ from data.channel import build_channel_identity
 from data.epochs import EpochDataset, PreprocessingSpec
 from data.events import observed_only_timeline
 from data.exclusions import select_allowed_subjects
-from data.preprocess import preprocess
+from data.preprocess import execute_preprocessing
 
 BI2014A_SFREQ = 512.0
 BI2014A_CHANNELS = (
@@ -294,31 +294,10 @@ def build_bi2014a_subject_dataset(
             recovered.flash_code.astype(np.int64),
         ]
     )
-    result = preprocess(
+    result = execute_preprocessing(
         raw,
         events,
-        sfreq=preprocessing.sfreq,
-        l_freq=preprocessing.l_freq,
-        h_freq=preprocessing.h_freq,
-        tmin=preprocessing.tmin_ms / 1000.0,
-        tmax=preprocessing.tmax_ms / 1000.0,
-        n_times=preprocessing.n_times,
-        reject_threshold=preprocessing.reject_threshold_v,
-        baseline_mode=preprocessing.baseline_mode,
-        trial_reference_window_ms=preprocessing.trial_reference_window_ms,
-        trial_reference_center=preprocessing.trial_reference_center,
-        trial_reference_scale=preprocessing.trial_reference_scale,
-        filter_method=preprocessing.filter_method,
-        filter_order=preprocessing.filter_order,
-        notch_freqs_hz=preprocessing.notch_freqs_hz,
-        notch_quality_factor=preprocessing.notch_quality_factor,
-        filter_phase=preprocessing.filter_phase,
-        causal_iir_initial_state=preprocessing.causal_iir_initial_state,
-        resample_domain=preprocessing.resample_domain,
-        resample_method=preprocessing.resample_method,
-        resample_npad=preprocessing.resample_npad,
-        resample_window=preprocessing.resample_window,
-        resample_pad=preprocessing.resample_pad,
+        preprocessing,
         channels=BI2014A_CHANNELS,
         montage="standard_1005",
     )
@@ -373,7 +352,7 @@ def build_bi2014a_subject_dataset(
         evidence_available_times_s=result.evidence_available_times_s[ordered],
         group_ids=np.asarray(recovered.selection_id[ordered]),
         online_causal=result.online_causal,
-        timing_source="bi2014a_raw_csv_flash_codes;epoched_resample",
+        timing_source="bi2014a_raw_csv_flash_codes;" + result.timing_source,
         selection_ids=np.asarray(recovered.selection_id[ordered]),
         session_ids=np.repeat("0", result.n_epochs),
         run_ids=np.repeat("0", result.n_epochs),
@@ -390,6 +369,8 @@ def build_bi2014a_subject_dataset(
         event_timeline=timeline,
         metadata=metadata,
         provenance={
+            **({"preprocessing_execution": result.execution_receipt}
+               if result.execution_receipt is not None else {}),
             "source": "bi2014a_raw_csv",
             "subject_dir": str(subject_dir.resolve()),
             "source_sample_rate_hz": BI2014A_SFREQ,

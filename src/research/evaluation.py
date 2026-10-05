@@ -8,17 +8,20 @@ import re
 import tarfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from data.epochs import EpochDataset
-from data.identity import IdentityExclusionPolicy
 from research.contracts import EvaluationRunContract, semantic_sha256
-from transfer.checkpoint import checkpoint_training_contract
+
+if TYPE_CHECKING:
+    from data.epochs import EpochDataset
+    from data.identity import IdentityExclusionPolicy
 
 
 def checkpoint_model_origin(
     payload: Mapping[str, object], *, checkpoint_sha256: str
 ) -> dict[str, object]:
+    from transfer.checkpoint import checkpoint_training_contract
+
     contract = checkpoint_training_contract(payload)
     return {
         "kind": "checkpoint",

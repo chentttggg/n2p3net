@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from math import isfinite
 
@@ -11,6 +11,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from data.contract import DEFAULT_P300_DATA_CONTRACT
+from models.parameter_groups import parameter_groups
 from models.splitbn import (
     SplitBN1d,
     SplitBN2d,
@@ -64,8 +65,18 @@ class N2P3ArchitectureConfig:
     spatial_max_norm: float = DEFAULT_SPATIAL_MAX_NORM
     interaction_rank: int = DEFAULT_INTERACTION_RANK
     mlp_hidden_features: int = DEFAULT_MLP_HIDDEN_FEATURES
+    observed_channel_norm: bool = False
+    feature_residual: dict[str, int | float] | None = None
 
     def __post_init__(self) -> None:
+        if type(self.observed_channel_norm) is not bool:
+            raise ValueError("observed_channel_norm must be boolean.")
+        if self.feature_residual is not None:
+            if not isinstance(self.feature_residual, Mapping) or set(self.feature_residual) != {
+                "bottleneck_channels", "kernel_size", "max_residual"
+            }:
+                raise ValueError("feature_residual requires bottleneck_channels, kernel_size and max_residual.")
+            object.__setattr__(self, "feature_residual", dict(self.feature_residual))
         kernels = tuple(int(kernel) for kernel in self.mst_kernel_sizes)
         dilations = (
             tuple(DEFAULT_MST_DILATION for _ in kernels)
@@ -94,9 +105,17 @@ class N2P3ArchitectureConfig:
             raise ValueError("spatial_max_norm must be positive.")
         if self.interaction_rank < 1 or self.mlp_hidden_features < 1:
             raise ValueError("interaction_rank and mlp_hidden_features must be positive.")
+        if self.feature_residual is not None:
+            from models.adapters import FeatureResidualAdapter
+
+            FeatureResidualAdapter.validate_configuration(
+                len(kernels) * self.mst_features_per_scale, **self.feature_residual
+            )
 
     def model_kwargs(self) -> dict[str, object]:
         return {
+            "observed_channel_norm": self.observed_channel_norm,
+            "feature_residual": self.feature_residual,
             "temporal_filters": self.temporal_filters,
             "temporal_kernel_size": self.temporal_kernel_size,
             "st_temporal_dilation": self.st_temporal_dilation,
@@ -111,6 +130,18 @@ class N2P3ArchitectureConfig:
             "interaction_rank": self.interaction_rank,
             "mlp_hidden_features": self.mlp_hidden_features,
         }
+
+    @classmethod
+    def unified(cls, *, residual: bool = True) -> N2P3ArchitectureConfig:
+        """The shared observed-channel graph, reusing the existing residual defaults."""
+        from models.adapters import FeatureTransferConfig
+
+        settings = FeatureTransferConfig()
+        return cls(observed_channel_norm=True, feature_residual=(
+            {"bottleneck_channels": settings.target_bottleneck_channels,
+             "kernel_size": settings.target_kernel_size,
+             "max_residual": settings.max_target_residual} if residual else None
+        ))
 
 
 DEFAULT_N2P3_ARCHITECTURE = N2P3ArchitectureConfig()
@@ -575,6 +606,8 @@ class N2P3Net(nn.Module):
         splitbn_domain_count: int | None = None,
         splitbn_target_buffer_source: str | None = None,
         splitbn_source_weights: Sequence[float] | None = None,
+        observed_channel_norm: bool = False,
+        feature_residual: Mapping[str, int | float] | None = None,
     ) -> None:
         super().__init__()
         if n_channels < 1:
@@ -646,6 +679,10 @@ class N2P3Net(nn.Module):
         self.interaction_rank = int(interaction_rank)
         self.mlp_hidden_features = int(mlp_hidden_features)
         self.splitbn_config = splitbn_config
+        if type(observed_channel_norm) is not bool:
+            raise ValueError("observed_channel_norm must be boolean.")
+        self.observed_channel_norm = observed_channel_norm
+        self.feature_residual_config = None if feature_residual is None else dict(feature_residual)
         spatial_features = self.temporal_filters * self.spatial_depth_multiplier
         self.spatial_features = spatial_features
 
@@ -761,6 +798,14 @@ class N2P3Net(nn.Module):
             )
         else:
             self.classifier = nn.Linear(self.classifier_features, 2)
+        # Create after the core so enabling the identity residual preserves core RNG initialization.
+        self.feature_residual: nn.Module = nn.Identity()
+        if self.feature_residual_config is not None:
+            from models.adapters import FeatureResidualAdapter
+
+            self.feature_residual = FeatureResidualAdapter(
+                feature_channels, **self.feature_residual_config
+            )
 
     @staticmethod
     def _pooled_time_samples(n_times: int, pool_size: int) -> int:
@@ -855,6 +900,10 @@ class N2P3Net(nn.Module):
             "spatial_max_norm": architecture.spatial_max_norm,
             "normalization": normalization_record(splitbn),
         }
+        if architecture.observed_channel_norm:
+            record["channel_masking"] = "observed_temporal_bn/1"
+        if architecture.feature_residual is not None:
+            record["feature_residual"] = dict(architecture.feature_residual)
         if (
             pooling_mode
             in {
@@ -926,6 +975,8 @@ class N2P3Net(nn.Module):
             spatial_max_norm=self.spatial_max_norm,
             interaction_rank=self.interaction_rank,
             mlp_hidden_features=self.mlp_hidden_features,
+            observed_channel_norm=self.observed_channel_norm,
+            feature_residual=self.feature_residual_config,
         )
         record = self.default_architecture_record(
             pooling_mode=self.pooling_mode,
@@ -1063,6 +1114,55 @@ class N2P3Net(nn.Module):
             raise ValueError("ordinary BatchNorm cannot consume SplitBN selectors.")
         return norm(x)
 
+    def adaptation_parameter_groups(self) -> dict[str, tuple[nn.Parameter, ...]]:
+        """Declare spatial projection, temporal/MST, readout and BN ownership."""
+        return parameter_groups(self, {
+            "spatial": (self.st_spatial,),
+            "temporal": (self.st_temporal, *(module for branch in self.mst_branches
+                for module in (branch.depthwise, branch.pointwise))),
+            "readout": (self.pool, self.classifier),
+            "normalization": (self.st_temporal_norm, self.st_spatial_norm,
+                              *(branch.norm for branch in self.mst_branches)),
+            **({"feature_residual": (self.feature_residual,)}
+               if self.feature_residual_config is not None else {}),
+        })
+
+    def _observed_temporal_features(
+        self, x: torch.Tensor, channel_mask: torch.Tensor | None, *,
+        domain_indices: torch.Tensor | None, eval_buffer_source: str | None,
+        eval_buffer_index: int | None,
+    ) -> torch.Tensor:
+        """Pack measured electrode traces through the existing convolution and BN.
+
+        BN reduces the same observed slot/time population as masked moments. Its
+        native momentum, unbiased running variance and calibration hooks are reused.
+        Missing traces never enter the convolution or its weight-gradient products.
+        """
+        if channel_mask is None:
+            channel_mask = torch.ones(x.shape[:2], dtype=torch.bool, device=x.device)
+        if (channel_mask.dtype != torch.bool or channel_mask.shape != x.shape[:2]
+                or channel_mask.device != x.device):
+            raise ValueError("channel_mask must be boolean (B,C) on the input device.")
+        selected = x[channel_mask]
+        valid = channel_mask.any(dim=1).all() & torch.isfinite(selected).all()
+        message = "Every trial requires an observed channel with finite measured samples."
+        if not len(x):
+            raise ValueError(message)
+        if x.is_cuda:
+            torch._assert_async(valid, message)
+        elif not bool(valid):
+            raise ValueError(message)
+        domains = (None if domain_indices is None else
+                   domain_indices[:, None].expand_as(channel_mask)[channel_mask])
+        encoded = self._apply_norm(
+            self.st_temporal_norm, self.st_temporal(selected[:, None, None, :]),
+            domain_indices=domains, eval_buffer_source=eval_buffer_source,
+            eval_buffer_index=eval_buffer_index,
+        ).squeeze(2)
+        restored = encoded.new_zeros((x.shape[0], x.shape[1], self.temporal_filters, x.shape[2]))
+        restored[channel_mask] = encoded
+        return restored.permute(0, 2, 1, 3).contiguous()
+
     def forward_features(
         self,
         x: torch.Tensor,
@@ -1070,6 +1170,7 @@ class N2P3Net(nn.Module):
         domain_indices: torch.Tensor | None = None,
         eval_buffer_source: str | None = None,
         eval_buffer_index: int | None = None,
+        channel_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Return concatenated post-MST trunk features without the readout.
 
@@ -1078,14 +1179,19 @@ class N2P3Net(nn.Module):
         """
 
         self._validate_input(x)
-        x = x.unsqueeze(1)
-        x = self._apply_norm(
-            self.st_temporal_norm,
-            self.st_temporal(x),
-            domain_indices=domain_indices,
-            eval_buffer_source=eval_buffer_source,
-            eval_buffer_index=eval_buffer_index,
-        )
+        if self.observed_channel_norm:
+            x = self._observed_temporal_features(
+                x, channel_mask, domain_indices=domain_indices,
+                eval_buffer_source=eval_buffer_source, eval_buffer_index=eval_buffer_index,
+            )
+        else:
+            if channel_mask is not None:
+                x = torch.where(channel_mask[:, :, None], x, 0.0)
+            x = self._apply_norm(
+                self.st_temporal_norm, self.st_temporal(x.unsqueeze(1)),
+                domain_indices=domain_indices, eval_buffer_source=eval_buffer_source,
+                eval_buffer_index=eval_buffer_index,
+            )
         x = self._apply_norm(
             self.st_spatial_norm,
             self.st_spatial(x),
@@ -1103,7 +1209,7 @@ class N2P3Net(nn.Module):
             )
             for branch in self.mst_branches
         ]
-        return torch.cat(branch_features, dim=1)
+        return self.feature_residual(torch.cat(branch_features, dim=1))
 
     def _pool_features(self, features: torch.Tensor) -> torch.Tensor:
         if self.pooling_mode == "global_average":
@@ -1128,6 +1234,7 @@ class N2P3Net(nn.Module):
         domain_indices: torch.Tensor | None = None,
         eval_buffer_source: str | None = None,
         eval_buffer_index: int | None = None,
+        channel_mask: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Return ``(logits, adapted_trunk_features)`` in one pass.
 
@@ -1138,6 +1245,7 @@ class N2P3Net(nn.Module):
 
         features = self.forward_features(
             x,
+            channel_mask=channel_mask,
             domain_indices=domain_indices,
             eval_buffer_source=eval_buffer_source,
             eval_buffer_index=eval_buffer_index,
@@ -1156,9 +1264,11 @@ class N2P3Net(nn.Module):
         domain_indices: torch.Tensor | None = None,
         eval_buffer_source: str | None = None,
         eval_buffer_index: int | None = None,
+        channel_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         return self.forward_with_features(
             x,
+            channel_mask=channel_mask,
             domain_indices=domain_indices,
             eval_buffer_source=eval_buffer_source,
             eval_buffer_index=eval_buffer_index,

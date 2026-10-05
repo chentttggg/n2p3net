@@ -17,7 +17,8 @@ Semantics (frozen with the archived v3 evidence chain):
 - ``trim0.2`` drops ``floor(0.2 n)`` extreme values per candidate before
   summing (no trim below five trials); ``precision`` is an inverse-variance
   weighted mean requiring finite positive per-trial variances.
-- Empty candidates score ``-inf`` and never win.
+- Empty or zero-effective-weight candidates make the decision abstain; the
+  frozen vocabulary never shrinks to the surviving evidence.
 - Exact ties (``rtol=atol=1e-12``) abstain: the winner is ``None``. Nothing
   may break ties by candidate label.
 - Candidate codes outside the declared vocabulary fail closed instead of
@@ -31,17 +32,177 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from numbers import Real
 
 import numpy as np
+import torch
+
+from data.candidate_task import MembershipDecision
 
 EVIDENCE_AGGREGATIONS = frozenset({"sum", "mean", "tempered_evidence"})
 EXTENDED_EVIDENCE_AGGREGATIONS = EVIDENCE_AGGREGATIONS | {"trim0.2", "precision"}
 DEFAULT_EVIDENCE_AGGREGATION = "mean"
 DEFAULT_EVIDENCE_COUNT_POWER = 0.5
-MISSING_CANDIDATE_POLICIES = frozenset({"exclude", "abstain"})
 
 # Retained alias: callers that only accept the three count-based modes.
 COUNT_AGGREGATIONS = EVIDENCE_AGGREGATIONS
+MEMBERSHIP_SCORE_METHOD = "membership_llr_sum/1"
+
+
+def aggregate_membership_sums(sums, counts, *, aggregation="sum"):
+    """Shared sum/legacy-mean arithmetic, including packed prefix reductions."""
+    if aggregation == "sum":
+        return sums
+    if aggregation != "mean":
+        raise ValueError("membership aggregation must be sum or explicit legacy mean")
+    if isinstance(sums, torch.Tensor):
+        denominator = torch.where(counts > 0, counts, torch.ones_like(counts))
+        return torch.where(counts > 0, sums / denominator, sums.new_full((), -torch.inf))
+    sums, counts = np.asarray(sums), np.asarray(counts)
+    return np.where(counts > 0, sums / np.where(counts > 0, counts, 1), -np.inf)
+
+
+def membership_evidence(evidence, membership, *, available=None, logit_offset=0., aggregation="sum"):
+    """Compute A.T @ where(available, evidence-offset, 0), preserving autograd.
+
+    This numeric kernel does not invent schedules. New decisions must also pass
+    MembershipDecision's physical identity and coverage contract. ``mean`` is
+    reserved for explicitly identified historical scorers.
+    """
+    if isinstance(evidence, torch.Tensor):
+        if evidence.ndim != 1 or not evidence.is_floating_point():
+            raise ValueError("membership evidence must be a floating vector")
+        dtype = torch.float64 if evidence.dtype == torch.float64 else torch.float32
+        values = evidence.to(dtype=dtype)
+        if isinstance(membership, torch.Tensor) and membership.requires_grad:
+            raise ValueError("physical membership cannot be learned")
+        matrix = torch.as_tensor(np.array(membership, copy=True) if isinstance(membership, np.ndarray)
+                                 else membership, device=values.device)
+        observed = (torch.ones(len(values), dtype=torch.bool, device=values.device) if available is None
+                    else torch.as_tensor(np.array(available, copy=True) if isinstance(available, np.ndarray)
+                                         else available, device=values.device))
+        if (matrix.ndim != 2 or matrix.shape[0] != len(values) or matrix.shape[1] < 2
+                or not bool(((matrix == 0) | (matrix == 1)).all())):
+            raise ValueError("membership must be an aligned binary matrix with a frozen vocabulary")
+        if observed.dtype != torch.bool or observed.shape != values.shape:
+            raise ValueError("availability must be an aligned boolean vector")
+        offset = torch.as_tensor(logit_offset, device=values.device, dtype=dtype)
+        if offset.requires_grad or offset.shape not in {torch.Size([]), values.shape} or not bool(torch.isfinite(offset).all()):
+            raise ValueError("logit offset must be finite, frozen and scalar or aligned")
+        if not bool(torch.isfinite(values[observed]).all()):
+            raise ValueError("available membership evidence must be finite")
+        with torch.autocast(device_type=values.device.type, enabled=False):
+            matrix = matrix.to(dtype=dtype)
+            selected = torch.where(observed, values - offset, torch.zeros_like(values))
+            sums = matrix.T @ selected
+            counts = matrix.T @ observed.to(dtype=dtype)
+            return aggregate_membership_sums(sums, counts, aggregation=aggregation)
+    values = np.asarray(evidence, dtype=float)
+    matrix = np.asarray(membership)
+    if values.ndim != 1 or matrix.ndim != 2 or matrix.shape[0] != len(values) or matrix.shape[1] < 2 or not (
+            (matrix == 0) | (matrix == 1)).all():
+        raise ValueError("membership must align a floating vector with a binary candidate matrix")
+    observed = np.ones(len(values), dtype=bool) if available is None else np.asarray(available)
+    if observed.dtype != bool or observed.shape != values.shape:
+        raise ValueError("availability must be an aligned boolean vector")
+    offset = np.asarray(logit_offset, dtype=float)
+    if offset.shape not in {(), values.shape} or not np.isfinite(offset).all():
+        raise ValueError("logit offset must be finite and scalar or aligned")
+    if not np.isfinite(values[observed]).all():
+        raise ValueError("available membership evidence must be finite")
+    selected = np.where(observed, values - offset, 0.)
+    return aggregate_membership_sums(matrix.T @ selected, matrix.T @ observed.astype(float),
+                                     aggregation=aggregation)
+
+
+@dataclass(frozen=True)
+class MembershipScores:
+    candidate_vocabulary: tuple[str, ...]
+    scores: np.ndarray | torch.Tensor
+    posterior: np.ndarray | torch.Tensor
+    counts: np.ndarray
+    stimulus_counts: np.ndarray
+    complete: bool
+    identifiable: bool
+    predicted: str | None
+    reason: str | None
+    score_kind: str = MEMBERSHIP_SCORE_METHOD
+
+    @property
+    def eligible(self):
+        return self.complete and self.identifiable
+
+    def record(self):
+        def values(array):
+            return array.detach().cpu().tolist() if isinstance(array, torch.Tensor) else array.tolist()
+
+        return {"schema": "n2p3_membership_scores/1", "score_kind": self.score_kind,
+                "candidate_vocabulary": list(self.candidate_vocabulary),
+                "scores": values(self.scores), "posterior": values(self.posterior),
+                "probability_calibrated": False, "counts": self.counts.tolist(),
+                "stimulus_counts": self.stimulus_counts.tolist(), "complete": self.complete,
+                "identifiable": self.identifiable, "eligible": self.eligible,
+                "prediction": self.predicted, "reason": self.reason}
+
+
+def membership_decision_scores(evidence, decision: MembershipDecision, *, available=None,
+                               temperature=1., prior=None, logit_offset=0.) -> MembershipScores:
+    """Versioned sum scorer for direct, row/column and declared set membership.
+
+    The normalized scores have no automatic calibration claim. Even a finite
+    prior-only posterior cannot produce an operational EEG prediction.
+    """
+    if not isinstance(decision, MembershipDecision):
+        raise ValueError("a physical MembershipDecision is required")
+    if isinstance(temperature, bool) or not isinstance(temperature, Real) or not np.isfinite(temperature) or temperature <= 0:
+        raise ValueError("temperature must be a positive finite frozen scalar")
+    observed = decision.evidence_indices >= 0
+    if available is not None:
+        supplied = available.detach().cpu().numpy() if isinstance(available, torch.Tensor) else np.asarray(available)
+        if supplied.dtype != bool or supplied.shape != observed.shape:
+            raise ValueError("availability must align with the physical event ledger")
+        if np.any(supplied & ~observed):
+            raise ValueError("availability cannot restore a physically unavailable event")
+        observed = observed & supplied
+    count = len(decision.candidate_vocabulary)
+    if isinstance(prior, torch.Tensor):
+        if prior.requires_grad:
+            raise ValueError("candidate prior must be frozen, not a learned code bias")
+        prior = prior.detach().cpu().numpy()
+    probability = np.full(count, 1. / count) if prior is None else np.asarray(prior, dtype=float)
+    if (probability.shape != (count,) or not np.isfinite(probability).all()
+            or np.any(probability <= 0) or not np.isclose(probability.sum(), 1., rtol=0, atol=1e-8)):
+        raise ValueError("candidate prior must be strictly positive and sum to one on the frozen vocabulary")
+    total = membership_evidence(evidence, decision.membership, available=observed, logit_offset=logit_offset)
+    if isinstance(total, torch.Tensor):
+        scores = total / temperature + total.new_tensor(np.log(probability))
+        if not bool(torch.isfinite(scores).all()):
+            raise ValueError("membership scores must remain finite")
+        posterior = torch.softmax(scores, dim=0)
+        detached = scores.detach().cpu().numpy()
+    else:
+        scores = total / temperature + np.log(probability)
+        if not np.isfinite(scores).all():
+            raise ValueError("membership scores must remain finite")
+        unnormalized = np.exp(scores - scores.max())
+        posterior = unnormalized / unnormalized.sum()
+        detached = scores
+    counts = decision.membership[observed].sum(axis=0, dtype=np.int64)
+    stimulus_counts = np.bincount(decision.stimulus_indices[observed], minlength=len(decision.stimulus_vocabulary))
+    complete = decision.schedule_complete and bool(observed.all())
+    identifiable = len(np.unique(decision.membership[observed].T, axis=0)) == count
+    reason = ("no_usable_evidence" if not observed.any() else
+              "incomplete_candidate_coverage" if not complete else
+              "unidentifiable_candidates" if not identifiable else None)
+    predicted = None
+    if reason is None:
+        winners = np.flatnonzero(np.isclose(detached, detached.max(), rtol=1e-12, atol=1e-12))
+        if len(winners) == 1:
+            predicted = decision.candidate_vocabulary[int(winners[0])]
+        else:
+            reason = "tie"
+    return MembershipScores(decision.candidate_vocabulary, scores, posterior, counts,
+                            stimulus_counts, complete, identifiable, predicted, reason)
 
 
 def count_tempered_evidence_scores(
@@ -116,7 +277,6 @@ def candidate_evidence_scores(
     evidence_count_power: float = DEFAULT_EVIDENCE_COUNT_POWER,
     logit_variances: Sequence[float] | None = None,
     trial_weights: Sequence[float] | None = None,
-    missing_candidate_policy: str = "exclude",
 ) -> CandidateScores:
     """Aggregate one decision's trial evidence into per-candidate scores.
 
@@ -128,11 +288,10 @@ def candidate_evidence_scores(
     evidence_count_power : ``beta`` for ``tempered_evidence`` in ``[0,1]``.
     logit_variances : per-trial predictive variances (``precision`` only).
     trial_weights : optional non-negative label-free reliability weights.
-    missing_candidate_policy : ``"exclude"`` lets candidates with no surviving
-        trial simply never win (the ``decide``/endpoint semantics);
-        ``"abstain"`` makes any missing candidate void the whole decision
-        (the hit@R requested-denominator semantics: a missing candidate is
-        incomplete evidence, not evidence against that candidate).
+        Precision aggregation uses reliability divided by predictive variance.
+        The count-based ``trim0.2`` estimator does not support external weights
+        and rejects that combination. Missing or zero-weight candidates always
+        make the whole decision abstain.
 
     Returns
     -------
@@ -143,10 +302,8 @@ def candidate_evidence_scores(
 
     if aggregation not in EXTENDED_EVIDENCE_AGGREGATIONS:
         raise ValueError(f"aggregation must be one of {sorted(EXTENDED_EVIDENCE_AGGREGATIONS)}.")
-    if missing_candidate_policy not in MISSING_CANDIDATE_POLICIES:
-        raise ValueError(
-            f"missing_candidate_policy must be one of {sorted(MISSING_CANDIDATE_POLICIES)}."
-        )
+    if aggregation == "trim0.2" and trial_weights is not None:
+        raise ValueError("trim0.2 does not support trial_weights; declare a weighted aggregation")
     values = np.asarray(logits, dtype=float)
     membership = np.asarray(codes)
     if values.ndim != 1 or membership.ndim != 1 or len(values) != len(membership):
@@ -208,18 +365,18 @@ def candidate_evidence_scores(
             scores[int(candidate)] = float(np.sum(kept))
         else:
             assert aggregation == "precision" and variances is not None
-            candidate_variances = variances[selected]
+            candidate_variances = variances[selected][positive]
             if not np.isfinite(candidate_variances).all() or np.any(
                 candidate_variances <= 0.0
             ):
                 raise ValueError("predictive variances must be finite and positive.")
-            inverse = 1.0 / candidate_variances
+            inverse = selected_weights[positive] / candidate_variances
             scores[int(candidate)] = float(
-                np.dot(inverse, selected_values) / inverse.sum()
+                np.dot(inverse, selected_values[positive]) / inverse.sum()
             )
 
     finite_scores = np.asarray([scores[int(candidate)] for candidate in vocab.tolist()], dtype=float)
-    if missing_candidate_policy == "abstain" and bool(np.isneginf(finite_scores).any()):
+    if bool(np.isneginf(finite_scores).any()):
         predicted = None
     else:
         maximum = float(np.max(finite_scores))

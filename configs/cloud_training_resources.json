@@ -1,0 +1,13 @@
+{
+  "cpu_budget": 25,
+  "gpu_workers": 4,
+  "source_workers": 4,
+  "source_load_workers": 1,
+  "target_workers": 4,
+  "source_worker_memory_gib": 18,
+  "shared_staging_memory_gib": 10,
+  "host_memory_fraction": 0.95,
+  "target_worker_memory_gib": 4,
+  "gpu_task_memory_gib": 4,
+  "cloud_resource_floor": {"cpu_threads": 25, "gpu_workers": 4}
+}

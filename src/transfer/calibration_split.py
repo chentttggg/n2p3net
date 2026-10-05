@@ -155,6 +155,17 @@ def dataset_calibration_inner_split(
         recordings[:] = row_runs
     else:
         recordings[:] = row_sessions
+    if dataset.preprocessing.filter_phase == "zero":
+        reason = None
+        for recording in np.unique(recordings[allowed]):
+            if not allowed[recordings == recording].all():
+                reason = "zero-phase calibration cannot select a prefix of an already filtered recording"
+        if len(np.unique(recordings[allowed])) < 2:
+            reason = "zero-phase inner validation requires independent complete recordings"
+        if reason is not None:
+            empty = np.zeros(dataset.n_epochs, dtype=bool)
+            return CalibrationInnerSplit(empty, empty.copy(), empty.copy(),
+                "complete_recording_zero_phase", reason)
     starts, labels_ready = {}, {}
     for recording in np.unique(recordings[allowed]):
         metadata = dataset.metadata.loc[allowed & (recordings == recording)]

@@ -17,65 +17,24 @@ import time
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
-
-import numpy as np
-import torch
+from typing import TYPE_CHECKING
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from baselines.calibration import fit_weighted_logit_temperature  # noqa: E402
-from baselines.deep import DeepConfig  # noqa: E402
-from baselines.n2p3net import N2P3NetBaseline  # noqa: E402
-from data.contract import (  # noqa: E402
-    SOURCE_COHORT_DATA_CONTRACTS,
-    assert_p300_input_contract,
-)
-from data.domain import source_domain_ids, source_domain_vocabulary  # noqa: E402
-from data.epochs import (  # noqa: E402
-    EpochDataset,
-    epoch_row_identity_digest,
-    load_epoch_dataset,
-    loaded_epoch_cache_attestation,
-)
-from data.identity import training_identity_ledger_from_rows  # noqa: E402
-from data.study import dataset_study_membership  # noqa: E402
-from models.adapters import (  # noqa: E402
-    FeatureTransferConfig,
-    SourceResidualContractError,
-)
-from models.n2p3net import (  # noqa: E402
-    DEFAULT_N2P3_ARCHITECTURE,
-    DEFAULT_N2P3_POOLING_MODE,
-    N2P3ArchitectureConfig,
-)
-from models.splitbn import SPLITBN_TARGET_BUFFER_SOURCES  # noqa: E402
 from research.contracts import TrainingRunContract, semantic_sha256  # noqa: E402
-from research.evaluation import (  # noqa: E402
-    source_snapshot_sha256_from_archive_manifest,
-)
-from train.device import get_device, release_device_memory  # noqa: E402
-from train.runtime import GpuPerformanceScheduler  # noqa: E402
-from train.source_sampling import (  # noqa: E402
-    PDSSelection,
-    load_pds_selection_record,
-    pds_selection_from_record,
-)
-from transfer.checkpoint import (  # noqa: E402
-    CHECKPOINT_SCHEMA,
-    checkpoint_training_contract,
-    load_checkpoint_payload,
-)
-from transfer.decision_loss import (  # noqa: E402
-    DecisionLossConfig,
-    DirectDecisionContractError,
-    DirectDecisionMetadata,
-)
 
 SOURCE_PRETRAIN_BATCH_SCHEMA = "n2p3_source_pretrain_batch/1"
 SOURCE_PRETRAIN_INVALID_SCHEMA = "n2p3_source_pretrain_invalid/1"
+
+
+if TYPE_CHECKING:
+    from data.epochs import EpochDataset
+    from models.adapters import SourceResidualContractError
+    from train.source_sampling import PDSSelection
+    from transfer.decision_loss import DirectDecisionContractError
 
 
 @dataclass(frozen=True)
@@ -90,6 +49,8 @@ _SOURCE_SNAPSHOT_CACHE: dict[Path, str] = {}
 
 
 def _load_source_dataset_once(path: str | Path) -> tuple[EpochDataset, dict[str, object]]:
+    from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation
+
     resolved = Path(path).resolve()
     cached = _SOURCE_DATASET_CACHE.get(resolved)
     if cached is None:
@@ -100,6 +61,8 @@ def _load_source_dataset_once(path: str | Path) -> tuple[EpochDataset, dict[str,
 
 
 def _source_snapshot_sha256_once(path: Path) -> str:
+    from research.evaluation import source_snapshot_sha256_from_archive_manifest
+
     resolved = path.resolve()
     cached = _SOURCE_SNAPSHOT_CACHE.get(resolved)
     if cached is None:
@@ -181,6 +144,9 @@ def _load_source_selection(
     the exact selection provenance rather than a reconstructed summary.
     """
 
+    from train.source_sampling import load_pds_selection_record, pds_selection_from_record
+
+
     _, record = load_pds_selection_record(path)
     selection = pds_selection_from_record(
         record,
@@ -202,6 +168,9 @@ def _load_source_selection(
 def parse_source_domain_mass(values: list[str]) -> dict[str, float]:
     """Parse exact DOMAIN=MASS entries without subject-prefix aliases."""
 
+    import numpy as np
+
+
     masses: dict[str, float] = {}
     for value in values:
         domain, separator, raw_mass = value.rpartition("=")
@@ -222,6 +191,9 @@ def parse_source_domain_mass(values: list[str]) -> dict[str, float]:
 
 def parse_splitbn_source_weights(values: list[str]) -> dict[str, float]:
     """Parse a named Split-BN source composition independently of CE risk."""
+
+    import numpy as np
+
 
     weights: dict[str, float] = {}
     for value in values:
@@ -297,6 +269,10 @@ def _single_job_argv(
         str(args.feature_alignment_weight),
         "--feature-alignment-mode",
         args.feature_alignment_mode,
+        "--source-supcon-weight", str(args.source_supcon_weight),
+        "--source-mmd-weight", str(args.source_mmd_weight),
+        "--source-objective-temperature", str(args.source_objective_temperature),
+        "--source-objective-min-cell-count", str(args.source_objective_min_cell_count),
         "--feature-alignment-min-cell-count",
         str(args.feature_alignment_min_cell_count),
         "--feature-alignment-inactive-policy",
@@ -313,6 +289,12 @@ def _single_job_argv(
     ]
     if args.source_selection_record is not None:
         argv.extend(["--source-selection-record", str(args.source_selection_record)])
+    if args.source_feature_location is not None:
+        argv.extend(["--source-feature-location", args.source_feature_location])
+    if args.observed_channel_norm:
+        argv.append("--observed-channel-norm")
+    if args.feature_residual_config is not None:
+        argv.extend(["--feature-residual-config", args.feature_residual_config])
     if args.tmax_ms is not None:
         argv.extend(["--tmax-ms", str(args.tmax_ms)])
     for value in args.source_domain_mass:
@@ -363,6 +345,11 @@ def _single_job_argv(
 
 
 def _run_batch(args: argparse.Namespace, jobs: tuple[SourcePretrainJob, ...]) -> None:
+    import torch
+
+    from train.device import get_device, release_device_memory
+    from transfer.checkpoint import checkpoint_training_contract, load_checkpoint_payload
+
     checkpoints = [job.checkpoint.resolve() for job in jobs]
     if len(set(checkpoints)) != len(checkpoints):
         raise ValueError("source pretrain batch checkpoint paths must be unique.")
@@ -425,6 +412,38 @@ def main(argv: list[str] | None = None) -> None:
         source_chain_main(["--plan", dispatch.source_chain_plan, *remaining]
                           if dispatch.source_chain_plan else ["--help"])
         return
+
+    import numpy as np
+    import torch
+
+    from baselines.calibration import fit_weighted_logit_temperature
+    from baselines.deep import DeepConfig
+    from baselines.n2p3net import N2P3NetBaseline
+    from data.contract import SOURCE_COHORT_DATA_CONTRACTS, assert_p300_input_contract
+    from data.domain import source_domain_ids, source_domain_vocabulary
+    from data.epochs import epoch_row_identity_digest, preprocessing_execution_binding
+    from data.identity import training_identity_ledger_from_rows
+    from data.study import dataset_study_membership
+    from models.adapters import FeatureTransferConfig, SourceResidualContractError
+    from models.n2p3net import (
+        DEFAULT_N2P3_ARCHITECTURE,
+        DEFAULT_N2P3_POOLING_MODE,
+        N2P3ArchitectureConfig,
+    )
+    from models.splitbn import SPLITBN_TARGET_BUFFER_SOURCES
+    from train.device import get_device
+    from train.runtime import GpuPerformanceScheduler
+    from transfer.checkpoint import (
+        CHECKPOINT_SCHEMA,
+        checkpoint_training_contract,
+        load_checkpoint_payload,
+    )
+    from transfer.decision_loss import (
+        DecisionLossConfig,
+        DirectDecisionContractError,
+        DirectDecisionMetadata,
+    )
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-chain-plan", metavar="PLAN",
                         help="Run the S1/E2/S2 source chain; combine with --help for chain options.")
@@ -642,6 +661,14 @@ def main(argv: list[str] | None = None) -> None:
             "conditional RBF-MMD across source domains."
         ),
     )
+    parser.add_argument("--source-supcon-weight", type=float, default=0.0)
+    parser.add_argument("--source-mmd-weight", type=float, default=0.0)
+    parser.add_argument("--source-feature-location", choices=("post_mst", "post_residual"),
+                        help="Must match the actual model feature output; inferred from architecture when omitted.")
+    parser.add_argument("--observed-channel-norm", action="store_true")
+    parser.add_argument("--feature-residual-config", help="JSON object with bottleneck_channels, kernel_size and max_residual.")
+    parser.add_argument("--source-objective-temperature", type=float, default=0.1)
+    parser.add_argument("--source-objective-min-cell-count", type=int, default=2)
     parser.add_argument(
         "--feature-alignment-min-cell-count",
         type=int,
@@ -993,6 +1020,21 @@ def main(argv: list[str] | None = None) -> None:
             "cache with an explicit source-domain axis."
         )
 
+    from transfer.source_objective import SourceObjectiveConfig
+
+    architecture = N2P3ArchitectureConfig(
+        temporal_kernel_size=args.temporal_kernel_size,
+        mst_features_per_scale=args.mst_features_per_scale,
+        observed_channel_norm=args.observed_channel_norm,
+        feature_residual=None if args.feature_residual_config is None else json.loads(args.feature_residual_config),
+    )
+    feature_location = "post_residual" if architecture.feature_residual is not None else "post_mst"
+    if args.source_feature_location is not None and args.source_feature_location != feature_location:
+        raise ValueError("source objective feature location differs from the model architecture")
+    source_objective = SourceObjectiveConfig(
+        supcon_weight=args.source_supcon_weight, mmd_weight=args.source_mmd_weight,
+        temperature=args.source_objective_temperature, min_cell_count=args.source_objective_min_cell_count,
+        feature_location=feature_location)
     config = DeepConfig(
         epochs=args.epochs,
         batch_size=args.batch_size,
@@ -1006,6 +1048,7 @@ def main(argv: list[str] | None = None) -> None:
         snapshot_updates=tuple(args.snapshot_updates),
         input_statistics=args.input_statistics,
         sampling=args.sampling,
+        source_objective=source_objective if source_objective.enabled else None,
     )
     study_membership = dataset_study_membership(dataset) if args.fixed_updates is not None else None
     if args.fixed_updates is not None and (
@@ -1020,6 +1063,7 @@ def main(argv: list[str] | None = None) -> None:
             "source_rows": int(source_rows.sum()),
             "training_participant_keys": list(training_identity_ledger.authority_keys()),
             "config": asdict(config), "checkpoint": str(args.checkpoint),
+            "architecture_configuration": asdict(architecture),
             "fitting_performed": False,
         }, indent=2))
         return
@@ -1028,10 +1072,6 @@ def main(argv: list[str] | None = None) -> None:
         precision=config.precision,
         batch_memory_fraction=config.batch_memory_fraction,
         preload_memory_fraction=config.preload_memory_fraction,
-    )
-    architecture = N2P3ArchitectureConfig(
-        temporal_kernel_size=args.temporal_kernel_size,
-        mst_features_per_scale=args.mst_features_per_scale,
     )
     baseline = N2P3NetBaseline(
         dataset.n_channels,
@@ -1267,6 +1307,7 @@ def main(argv: list[str] | None = None) -> None:
         source_snapshot_sha256=source_snapshot_sha256,
         architecture=architecture_record,
         preprocessing={
+            **preprocessing_execution_binding(dataset.provenance.get("preprocessing_execution"), dataset.preprocessing),
             "epoch": dataset.preprocessing.record(),
             "channel_names": list(dataset.channel_names),
             "source_reference": dataset.provenance.get("source_reference"),
@@ -1302,6 +1343,8 @@ def main(argv: list[str] | None = None) -> None:
         },
         objective={
             "name": "weighted_binary_cross_entropy",
+            **({"source_auxiliary": baseline.last_history["source_objective"]}
+               if "source_objective" in baseline.last_history else {}),
             **({"source_study_membership": study_membership} if study_membership is not None else {}),
             "effective_pos_weight": float(baseline.training_pos_weight_),
             "training_prior": float(baseline.training_prior_),
@@ -1439,6 +1482,7 @@ def main(argv: list[str] | None = None) -> None:
         "input_sample_rate_hz": float(dataset.preprocessing.sfreq),
         "input_tmin_s": float(dataset.preprocessing.tmin_ms) / 1000.0,
         "input_preprocessing": dataset.preprocessing.record(),
+        "input_preprocessing_execution": dataset.provenance.get("preprocessing_execution"),
         "input_channel_names": list(dataset.channel_names),
         "input_source_reference": dataset.provenance.get("source_reference"),
         "source_cache_sha256": source_cache_sha256,
@@ -1502,6 +1546,9 @@ def main(argv: list[str] | None = None) -> None:
             candidate_config = replace(config, fixed_updates=update, snapshot_updates=())
             candidate_contract = replace(
                 training_contract,
+                objective={**training_contract.objective,
+                           **({"source_auxiliary": snapshot["source_objective"]}
+                              if "source_objective" in snapshot else {})},
                 optimizer={**training_contract.optimizer, "refit_config": asdict(candidate_config),
                            "actual_optimizer_updates": update, "trial_draws": snapshot["trial_draws"]},
                 validation={**training_contract.validation, "fixed_updates": update,
@@ -1515,6 +1562,8 @@ def main(argv: list[str] | None = None) -> None:
                 "training_contract_digest": candidate_contract.digest(),
                 "source_fixed_updates": update,
                 "source_training_history": {**baseline.last_history,
+                    **({"source_objective": snapshot["source_objective"]}
+                       if "source_objective" in snapshot else {}),
                     "optimizer_updates": update, "trial_draws": snapshot["trial_draws"],
                     "batch_sequence_sha256": snapshot["batch_sequence_sha256"],
                     "batch_sizes": baseline.last_history["batch_sizes"][:update],

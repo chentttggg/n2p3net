@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Callable
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, replace
 
 import numpy as np
 import torch
@@ -16,11 +16,73 @@ from sklearn.utils.validation import check_is_fitted
 
 from baselines.features import downsample_epochs
 from models.n2p3net import N2P3ArchitectureConfig, N2P3Net
+from research.comparison import assert_matched_cells
 
 STANDARD_CALIBRATION_TRIALS = (0, 200, 800, 2000)
 LIMITED_CALIBRATION_FRACTION = 0.8
 CALIBRATED_TRANSFER_ARMS = frozenset({"classifier_fine", "full_fine", "feature_shrinkage_lda"})
 SCRATCH_CONTROL_ARMS = frozenset({"target_only", "target_only_tuned"})
+TEST_SIZE_POLICIES = frozenset({"limited_data_80_percent", "strict_minimum"})
+
+
+@dataclass(frozen=True)
+class TestBudget:
+    """Resolved test-size policy, including an explicit limited-data exception."""
+
+    policy: str
+    requested_minimum_test_trials: int
+    planned_test_trials: int
+    actual_test_trials: int
+    separate_test_recordings: bool
+
+    def __post_init__(self) -> None:
+        if self.policy not in TEST_SIZE_POLICIES:
+            raise ValueError("unknown test-size policy")
+        for field in ("requested_minimum_test_trials", "planned_test_trials", "actual_test_trials"):
+            if type(getattr(self, field)) is not int or getattr(self, field) < 1:
+                raise ValueError(f"{field} must be a positive integer")
+        if self.actual_test_trials > self.planned_test_trials:
+            raise ValueError("actual test rows exceed the resolved test scope")
+        if type(self.separate_test_recordings) is not bool:
+            raise ValueError("separate_test_recordings must be boolean")
+        if self.policy == "strict_minimum" and not self.minimum_satisfied:
+            raise ValueError("strict test minimum is not satisfied")
+
+    @property
+    def minimum_satisfied(self) -> bool:
+        return self.actual_test_trials >= self.requested_minimum_test_trials
+
+    def with_actual_count(self, count: int) -> TestBudget:
+        if type(count) is not int:
+            raise ValueError("actual test count must be an integer")
+        return replace(self, actual_test_trials=count)
+
+    def record(self) -> dict:
+        return {
+            "schema": "n2p3_test_budget/1", "policy": self.policy,
+            "requested_minimum_test_trials": self.requested_minimum_test_trials,
+            "planned_test_trials": self.planned_test_trials,
+            "actual_test_trials": self.actual_test_trials,
+            "separate_test_recordings": self.separate_test_recordings,
+            "minimum_satisfied": self.minimum_satisfied,
+            "relaxation_reason": (None if self.minimum_satisfied else
+                "explicit_limited_data_policy_preserves_nonempty_original_test_scope"),
+            "removed_after_scope_resolution": self.planned_test_trials - self.actual_test_trials,
+        }
+
+    @classmethod
+    def from_record(cls, record: dict, *, actual_test_trials: int | None = None) -> TestBudget:
+        if not isinstance(record, dict):
+            raise ValueError("resolved test budget is required")
+        try:
+            value = cls(**{field.name: record[field.name] for field in fields(cls)})
+        except (KeyError, TypeError) as error:
+            raise ValueError("resolved test budget fields are invalid") from error
+        if value.record() != record:
+            raise ValueError("resolved test budget record is inconsistent")
+        if actual_test_trials is not None and value.actual_test_trials != actual_test_trials:
+            raise ValueError("resolved test budget differs from actual retained test rows")
+        return value
 
 
 def validate_matched_transfer_controls(arms: tuple[str, ...], budgets: tuple[int, ...]) -> None:
@@ -34,6 +96,73 @@ def matched_split_digests(calibration_rows: np.ndarray, test_rows: np.ndarray) -
         name: hashlib.sha256(np.ascontiguousarray(rows, dtype="<i8").tobytes()).hexdigest()
         for name, rows in (("calibration_rows_sha256", calibration_rows), ("test_rows_sha256", test_rows))
     }
+
+
+def _array_identity(value: np.ndarray) -> str:
+    """Hash an array together with its geometry and exact storage dtype."""
+    array = np.ascontiguousarray(np.asarray(value))
+    digest = hashlib.sha256()
+    digest.update(json.dumps({"dtype": array.dtype.str, "shape": list(array.shape)},
+                             sort_keys=True, separators=(",", ":")).encode("utf-8"))
+    digest.update(memoryview(array).cast("B"))
+    return digest.hexdigest()
+
+
+def matched_input_digests(
+    X: np.ndarray,
+    y: np.ndarray,
+    test_rows: np.ndarray,
+    trial_channel_mask: np.ndarray | None,
+    preprocessing,
+) -> dict[str, str]:
+    """Bind a scored test cohort to the bytes and physical preprocessing contract.
+
+    Row indices alone are insufficient: a participant's queue can change while
+    retaining the same participant and K labels.  This digest therefore covers
+    the actual scored samples, labels, observed-channel mask and preprocessing
+    declaration.  The label digest is kept separate so a changed target queue
+    cannot be hidden inside an unchanged feature cache identity.
+    """
+    values = np.asarray(X)
+    labels = np.asarray(y)
+    raw_rows = np.asarray(test_rows)
+    if raw_rows.ndim != 1 or (len(raw_rows) and raw_rows.dtype.kind not in "iu"):
+        raise ValueError("test_rows must contain integer indices")
+    rows = raw_rows.astype(np.int64)
+    if values.ndim != 3 or labels.ndim != 1 or values.shape[0] != labels.shape[0]:
+        raise ValueError("scored X/y must be aligned (N,C,T) and (N,)")
+    if rows.ndim != 1 or rows.size == 0 or np.any(rows < 0) or np.any(rows >= len(labels)):
+        raise ValueError("test_rows must be a nonempty in-range vector")
+    if len(np.unique(rows)) != len(rows):
+        raise ValueError("test_rows cannot repeat physical evidence")
+    if not np.isfinite(values[rows]).all() or not np.isin(labels[rows], (0, 1)).all():
+        raise ValueError("scored values must be finite and labels must be binary")
+    if trial_channel_mask is None:
+        mask_digest = None
+    else:
+        mask = np.asarray(trial_channel_mask)
+        if mask.shape != values.shape[:2] or mask.dtype != bool:
+            raise ValueError("trial_channel_mask must be boolean and aligned with dataset rows/channels")
+        mask_digest = _array_identity(mask[rows].astype(bool, copy=False))
+    if hasattr(preprocessing, "record"):
+        declaration = preprocessing.record()
+    elif isinstance(preprocessing, dict):
+        declaration = preprocessing
+    else:
+        raise TypeError("preprocessing must provide a record() or be a mapping")
+    label_digest = _array_identity(labels[rows])
+    semantic = {
+        "schema": "n2p3_scored_input/1",
+        "rows": _array_identity(rows),
+        "X": _array_identity(values[rows]),
+        "labels": label_digest,
+        "trial_channel_mask": mask_digest,
+        "preprocessing": declaration,
+    }
+    input_digest = hashlib.sha256(json.dumps(
+        semantic, sort_keys=True, separators=(",", ":"), allow_nan=False
+    ).encode("utf-8")).hexdigest()
+    return {"input_sha256": input_digest, "test_labels_sha256": label_digest}
 
 
 def paired_transfer_effects(cells: list[dict], *, budget_field: str) -> list[dict]:
@@ -53,9 +182,7 @@ def paired_transfer_effects(cells: list[dict], *, budget_field: str) -> list[dic
         if not controls:
             raise ValueError("missing same-K scratch outcome for calibrated transfer")
         for control in controls:
-            for field in ("calibration_rows_sha256", "test_rows_sha256"):
-                if not cell.get(field) or cell[field] != control.get(field):
-                    raise ValueError("transfer and scratch must use the same calibration and test rows")
+            assert_matched_cells((cell, control))
             complete = cell["status"] == control["status"] == "completed"
             if complete and not all(isinstance(value, (int, float)) and np.isfinite(value)
                                     for value in (cell.get("auc"), control.get("auc"))):
@@ -93,6 +220,7 @@ def resolve_calibration_splits(
     minimum_test_trials: int,
     available_trials: int,
     separate_test_recordings: bool = False,
+    test_size_policy: str = "limited_data_80_percent",
 ) -> tuple[dict[int, BinaryTimeSplit], dict[int, str]]:
     """Cap scarce data at an 80% chronological calibration allocation.
 
@@ -101,25 +229,32 @@ def resolve_calibration_splits(
     Returned adjustment keys are requested budgets, never mislabeled fit sizes.
     """
     validate_calibration_budgets(budgets)
-    if minimum_test_trials < 1:
+    if type(minimum_test_trials) is not int or minimum_test_trials < 1:
         raise ValueError("minimum_test_trials must be positive")
+    if test_size_policy not in TEST_SIZE_POLICIES:
+        raise ValueError("unknown test-size policy")
     if type(available_trials) is not int or available_trials < 1:
         raise ValueError("available_trials must be a positive integer")
     # Validate chronology independently so fallback cannot hide malformed data.
     baseline = builder(0, 0)
     if not len(baseline.test_rows):
         raise ValueError("no independent test evidence")
+    strict = test_size_policy == "strict_minimum"
+    if strict and len(baseline.test_rows) < minimum_test_trials:
+        raise ValueError("even zero calibration cannot satisfy the strict test minimum")
     maximum = max(budgets)
     adjustments = {}
     try:
-        if not separate_test_recordings and maximum > int(available_trials * LIMITED_CALIBRATION_FRACTION):
+        if (not strict and not separate_test_recordings
+                and maximum > int(available_trials * LIMITED_CALIBRATION_FRACTION)):
             raise ValueError("requested calibration would leave less than about 20% for testing")
         split = builder(maximum, maximum)
-        if len(split.test_rows) < minimum_test_trials:
+        if len(split.test_rows) < (minimum_test_trials if strict else 1):
             raise ValueError("too few later test rows after reserving calibration and purge")
     except ValueError as error:
         reason = str(error)
-        maximum = min(maximum, int(available_trials * LIMITED_CALIBRATION_FRACTION))
+        maximum = min(maximum, available_trials if strict else
+                      int(available_trials * LIMITED_CALIBRATION_FRACTION))
         # If epoch support is unusually long, reduce the cap further to retain
         # test evidence. Never move test rows into calibration after scoring.
         low, high = 0, maximum
@@ -127,7 +262,7 @@ def resolve_calibration_splits(
             candidate = (low + high + 1) // 2
             try:
                 candidate_split = builder(candidate, candidate)
-                feasible = len(candidate_split.test_rows) > 0
+                feasible = len(candidate_split.test_rows) >= (minimum_test_trials if strict else 1)
             except ValueError:
                 feasible = False
             if feasible:
@@ -136,15 +271,17 @@ def resolve_calibration_splits(
                 high = candidate - 1
         maximum = low
         adjustments = {
-            budget: f"{reason}; limited-data 80% policy: requested={budget}, effective={maximum}"
+            budget: f"{reason}; {test_size_policy}: requested={budget}, effective={maximum}"
             for budget in budgets if budget > maximum
         }
     effective_budgets = sorted({budget for budget in budgets if budget <= maximum} | {maximum})
     splits = {budget: builder(budget, maximum) for budget in effective_budgets}
     common = splits[maximum].test_rows
+    budget = TestBudget(test_size_policy, minimum_test_trials, len(common), len(common),
+                        separate_test_recordings)
     for split in splits.values():
         np.testing.assert_array_equal(split.test_rows, common)
-    return splits, adjustments
+    return {key: replace(split, test_budget=budget) for key, split in splits.items()}, adjustments
 
 
 def dataset_calibration_splits(dataset, subject: str, protocol: dict, budgets: tuple[int, ...], *, unavailable=None):
@@ -197,6 +334,7 @@ def dataset_calibration_splits(dataset, subject: str, protocol: dict, budgets: t
         budgets, builder, minimum_test_trials=protocol.get("minimum_test_trials", 200),
         available_trials=available_trials,
         separate_test_recordings=protocol["kind"] == "last_session_holdout",
+        test_size_policy=protocol.get("test_size_policy", "limited_data_80_percent"),
     )
     if unavailable is not None:
         unavailable.update(missing)
@@ -208,6 +346,7 @@ class BinaryTimeSplit:
     calibration_rows: np.ndarray
     test_rows: np.ndarray
     purged_rows: np.ndarray
+    test_budget: TestBudget | None = None
 
 
 def binary_time_split(
@@ -294,11 +433,10 @@ def plain_trunk_configuration(trunk: N2P3Net) -> N2P3ArchitectureConfig:
     """Return the validated constructor configuration of a plain source core."""
     if type(trunk) is not N2P3Net or trunk.splitbn_config is not None:
         raise ValueError("the matched scratch baseline requires a plain N2P3Net core.")
+    attributes = {"dropout": "dropout_probability", "feature_residual": "feature_residual_config"}
     return N2P3ArchitectureConfig(
         **{
-            field.name: getattr(
-                trunk, "dropout_probability" if field.name == "dropout" else field.name
-            )
+            field.name: getattr(trunk, attributes.get(field.name, field.name))
             for field in fields(N2P3ArchitectureConfig)
         }
     )

@@ -15,6 +15,12 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from data.epochs import (
+    PreprocessingSpec,
+    assert_physical_epoch_dataset,
+    preprocessing_execution_binding,
+    preprocessing_execution_identity,
+)
 from data.exclusions import assert_identity_participants_allowed
 from data.identity import (
     DatasetIdentityTable,
@@ -72,6 +78,9 @@ def checkpoint_training_contract(
         raise ValueError(f"checkpoint training_contract is invalid: {error}") from error
     if payload.get("training_contract_digest") != contract.digest():
         raise ValueError("checkpoint training_contract_digest disagrees with its record.")
+    from transfer.source_objective import validate_source_objective_contract
+
+    validate_source_objective_contract(dict(contract.optimizer), dict(contract.objective))
     return contract
 
 
@@ -190,6 +199,12 @@ def _architecture_from_payload(
         raise ValueError(f"checkpoint architecture lacks current fields {missing}.")
     for destination, source in aliases.items():
         values[destination] = record[source]
+    if "channel_masking" in record:
+        if record["channel_masking"] != "observed_temporal_bn/1":
+            raise ValueError("checkpoint channel masking is unsupported.")
+        values["observed_channel_norm"] = True
+    if "feature_residual" in record:
+        values["feature_residual"] = record["feature_residual"]
 
     if "mst_kernel_sizes" in values:
         values["mst_kernel_sizes"] = tuple(int(item) for item in values["mst_kernel_sizes"])
@@ -346,6 +361,7 @@ def _validate_metadata(
     target_subject: str | None,
     identity_exclusion_policy: IdentityExclusionPolicy,
 ) -> None:
+    assert_physical_epoch_dataset(dataset)
     if payload.get("schema") != CHECKPOINT_SCHEMA:
         raise ValueError("checkpoint schema is unsupported; regenerate the checkpoint.")
     state = payload.get("trunk_state_dict")
@@ -509,13 +525,19 @@ def _validate_metadata(
     ) != semantic_sha256(training_contract.architecture):
         raise ValueError("checkpoint architecture disagrees with its training contract.")
     contract_preprocessing = training_contract.preprocessing
+    execution_binding = preprocessing_execution_binding(
+        payload.get("input_preprocessing_execution"), PreprocessingSpec(**payload.get("input_preprocessing", {})))
     input_signature = {
+        **execution_binding,
         "epoch": payload.get("input_preprocessing"),
         "channel_names": payload.get("input_channel_names"),
         "source_reference": payload.get("input_source_reference"),
     }
     if semantic_sha256(input_signature) != semantic_sha256(contract_preprocessing):
         raise ValueError("checkpoint input signature disagrees with its training contract.")
+    expected_execution = execution_binding.get("execution_identity")
+    if expected_execution is not None and preprocessing_execution_identity(dataset) != expected_execution:
+        raise ValueError("checkpoint requires compatible preprocessing execution evidence")
     checkpoint_classifier_is_trained(payload)
     input_mean, input_std = checkpoint_input_stats(payload, int(dataset.n_channels))
     optimizer_config = training_contract.optimizer.get("config", {})
@@ -578,11 +600,15 @@ def _validate_metadata(
         raise ValueError("checkpoint input_preprocessing must be a mapping.")
     target_channels = list(getattr(dataset, "channel_names", ()))
     target_preprocessing = dataset.preprocessing.record()
+    required_fields = set(target_preprocessing) - {"notch_freqs_hz", "notch_quality_factor"}
+    if not required_fields <= set(declared_preprocessing):
+        raise ValueError("checkpoint preprocessing lacks required physical fields")
+    if declared_preprocessing.get("notch_freqs_hz") and "notch_quality_factor" not in declared_preprocessing:
+        raise ValueError("checkpoint with notch filtering must declare notch_quality_factor")
     target_reference = getattr(dataset, "provenance", {}).get("source_reference")
     input_mismatches = []
     if declared_channels != target_channels:
         input_mismatches.append("channel_names/order")
-    from data.epochs import PreprocessingSpec
     declared_spec = PreprocessingSpec(**declared_preprocessing)
     declared_spec.validate()
     if declared_spec.record() != target_preprocessing:
@@ -695,12 +721,12 @@ def _checkpoint_prediction_input(
     trial_channel_mask: np.ndarray | None,
     eval_buffer_source: str | None,
     eval_buffer_index: int | None,
-) -> tuple[np.ndarray, str | None]:
+) -> tuple[np.ndarray, str | None, np.ndarray]:
     """Validate one unchanged-checkpoint suffix and return standardized input."""
     values = np.asarray(X, dtype=np.float32)
     if values.ndim != 3 or values.shape[1:] != (trunk.n_channels, trunk.n_times):
         raise ValueError(f"checkpoint input must be (N,{trunk.n_channels},{trunk.n_times}).")
-    if not np.isfinite(values).all() or len(values) == 0:
+    if len(values) == 0:
         raise ValueError("checkpoint input must be finite and non-empty.")
     if trial_channel_mask is None:
         mask = np.ones(values.shape[:2], dtype=bool)
@@ -710,6 +736,8 @@ def _checkpoint_prediction_input(
             raise ValueError("trial_channel_mask must be boolean and match X.shape[:2].")
         if not bool(mask.any(axis=1).all()):
             raise ValueError("Every checkpoint trial must retain one observed channel.")
+    if not np.isfinite(values[mask]).all():
+        raise ValueError("checkpoint observed input must be finite and non-empty.")
     mean, std = input_stats
     standardized = ((values - mean) / std).astype(np.float32, copy=False)
     np.copyto(standardized, 0.0, where=~mask[:, :, None])
@@ -726,7 +754,7 @@ def _checkpoint_prediction_input(
                 "checkpoint target prediction cannot select a source-domain buffer index."
             )
         eval_buffer_source = declared_source
-    return standardized, eval_buffer_source
+    return standardized, eval_buffer_source, mask
 
 
 def predict_n2p3_checkpoint_with_features(
@@ -747,7 +775,7 @@ def predict_n2p3_checkpoint_with_features(
     path and report ``None`` features.
     """
 
-    standardized, resolved_buffer_source = _checkpoint_prediction_input(
+    standardized, resolved_buffer_source, mask = _checkpoint_prediction_input(
         trunk,
         X,
         input_stats=input_stats,
@@ -760,9 +788,11 @@ def predict_n2p3_checkpoint_with_features(
     trunk.eval()
     with torch.inference_mode():
         tensor = torch.from_numpy(np.ascontiguousarray(standardized)).to(device)
+        channel_mask = torch.tensor(mask, device=device)
         if isinstance(trunk, N2P3Net):
             output, features = trunk.forward_with_features(
                 tensor,
+                channel_mask=channel_mask,
                 eval_buffer_source=resolved_buffer_source,
                 eval_buffer_index=eval_buffer_index,
             )
@@ -772,6 +802,7 @@ def predict_n2p3_checkpoint_with_features(
         else:
             output = trunk(
                 tensor,
+                channel_mask=channel_mask,
                 eval_buffer_source=resolved_buffer_source,
                 eval_buffer_index=eval_buffer_index,
             )

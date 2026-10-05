@@ -22,7 +22,12 @@ import numpy as np
 import pandas as pd
 
 from data.channel import canonical_channel_name
-from data.contract import DEFAULT_P300_DATA_CONTRACT, EEGDataContract, validate_notch_parameters
+from data.contract import (
+    DEFAULT_P300_DATA_CONTRACT,
+    EEGDataContract,
+    validate_notch_parameters,
+    validate_zero_phase_edge_policy,
+)
 from data.events import (
     EVENT_TIMELINE_SCHEMA,
     ScheduledEventTimeline,
@@ -37,6 +42,14 @@ EPOCH_DATASET_SCHEMA = "n2p3net_epoch_dataset/5"
 TARGET_CALIBRATION_SCOPE_SCHEMA = "n2p3_target_calibration_scope/1"
 DECODED_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 DEFAULT_SAMPLE_RATE_HZ = DEFAULT_P300_DATA_CONTRACT.sample_rate_hz
+# Capture when this module is loaded, not after a possibly concurrent disk edit.
+PREPROCESSING_DECLARATION_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+PREPROCESSING_OPERATOR_IDENTITY = {
+    "schema": "n2p3_preprocessing_operator/1", "backend": "mne_raw",
+    "operations": ["continuous_filter", "source_grid_closed_epoch", "epoch_fft_resample",
+                   "first_T_crop", "half_open_baseline", "float32"],
+    "availability": "max_nominal_and_source_endpoint_or_record_end/1",
+}
 
 
 @dataclass(frozen=True)
@@ -57,6 +70,8 @@ class PreprocessingSpec:
     # Missing fields in historical records mean no notch, never today's product default.
     notch_freqs_hz: tuple[float, ...] = ()
     notch_quality_factor: float = 30.0
+    # Omitted historical field preserves the actual producer's original edge handling.
+    zero_phase_edge_policy: str = "legacy"
     resample_domain: str = DEFAULT_P300_DATA_CONTRACT.resample_domain
     resample_method: str = DEFAULT_P300_DATA_CONTRACT.resample_method
     resample_npad: str = DEFAULT_P300_DATA_CONTRACT.resample_npad
@@ -84,6 +99,7 @@ class PreprocessingSpec:
 
     def validate(self) -> None:
         validate_notch_parameters(self.notch_freqs_hz, self.notch_quality_factor)
+        validate_zero_phase_edge_policy(self.zero_phase_edge_policy, self.filter_method, self.filter_phase)
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError("Preprocessing name must be non-empty.")
         for field_name in ("sfreq", "tmin_ms", "tmax_ms"):
@@ -195,8 +211,14 @@ class PreprocessingSpec:
             raise ValueError("reject_threshold_v must be finite and positive or None.")
 
     def record(self) -> dict[str, Any]:
-        """Serialize the executed operator, preserving historical no-notch signatures."""
+        """Serialize the declaration, preserving historical no-notch signatures.
+
+        Actual execution evidence lives separately in preprocessing_execution.
+        Reading or naming a declaration never certifies a historical producer.
+        """
         result = asdict(self)
+        if self.zero_phase_edge_policy == "legacy":
+            result.pop("zero_phase_edge_policy")
         if not self.notch_freqs_hz and self.notch_quality_factor == 30.0:
             result.pop("notch_freqs_hz")
             result.pop("notch_quality_factor")
@@ -205,14 +227,31 @@ class PreprocessingSpec:
         return result
 
 
-def load_preprocessing_spec(path: str | Path) -> PreprocessingSpec:
-    """Load an explicit processing declaration shared by cache and model CLIs."""
-    record = json.loads(Path(path).read_text(encoding="utf-8"))
-    if not isinstance(record, dict):
+def parse_preprocessing_spec(record: Mapping[str, Any]) -> PreprocessingSpec:
+    """Parse a complete new declaration; historical decoding uses the dataclass.
+
+    The canonical record deliberately omits legacy edges and an empty notch.
+    These omissions retain their historical meaning, never a product default.
+    """
+    if not isinstance(record, Mapping):
         raise ValueError("preprocessing config must contain a complete PreprocessingSpec object")
+    required = set(PreprocessingSpec().record())
+    missing = required - set(record)
+    if missing:
+        raise ValueError(f"preprocessing config must be complete; missing fields: {sorted(missing)}")
+    if ("notch_freqs_hz" in record) != ("notch_quality_factor" in record):
+        raise ValueError("explicit notch declaration requires both frequencies and quality factor")
+    unknown = set(record) - set(PreprocessingSpec.__dataclass_fields__)
+    if unknown:
+        raise ValueError(f"unknown preprocessing fields: {sorted(unknown)}")
     spec = PreprocessingSpec(**record)
     spec.validate()
     return spec
+
+
+def load_preprocessing_spec(path: str | Path) -> PreprocessingSpec:
+    """Load an explicit complete processing declaration shared by ingress CLIs."""
+    return parse_preprocessing_spec(json.loads(Path(path).read_text(encoding="utf-8")))
 
 
 def preprocessing_spec_from_contract(contract: EEGDataContract) -> PreprocessingSpec:
@@ -234,6 +273,7 @@ def preprocessing_spec_from_contract(contract: EEGDataContract) -> Preprocessing
         causal_iir_initial_state=contract.causal_iir_initial_state,
         notch_freqs_hz=contract.notch_freqs_hz,
         notch_quality_factor=contract.notch_quality_factor,
+        zero_phase_edge_policy=contract.zero_phase_edge_policy,
         resample_domain=contract.resample_domain,
         resample_method=contract.resample_method,
         resample_npad=contract.resample_npad,
@@ -279,8 +319,11 @@ class EpochDataset:
         repr=False,
         compare=False,
     )
+    _historical_audit_only: bool = field(default=False, init=False, repr=False, compare=False)
 
-    def validate(self, *, require_labels: bool = False) -> None:
+    def validate(self, *, require_labels: bool = False, _historical_audit: bool = False) -> None:
+        if not _historical_audit:
+            assert_physical_epoch_dataset(self)
         if self.identity_table is not None:
             assert_identity_participants_allowed(self.identity_table)
         if any(
@@ -412,6 +455,7 @@ class EpochDataset:
             raise ValueError("metadata must have one row per epoch or be empty.")
         if not isinstance(self.provenance, dict):
             raise ValueError("provenance must be a dictionary.")
+        preprocessing_execution_identity(self)
         if self.identity_table is not None:
             identity_subjects = set(self.identity_table.local_subject_ids)
             dataset_subjects = set(subject_ids.astype(str).tolist())
@@ -476,6 +520,189 @@ class EpochDataset:
         }
 
 
+def validate_preprocessing_execution(record, preprocessing: PreprocessingSpec) -> list[dict]:
+    """Validate recorded evidence without claiming today's code produced old data.
+
+    Recording lengths, rates, source bytes and fitted states are provenance,
+    not cross-recording compatibility requirements. Derived channel/row subsets
+    retain their parent's execution evidence and describe selection in lineage.
+    """
+    if not isinstance(record, dict):
+        raise ValueError("preprocessing execution receipt must be a dictionary")
+    if record.get("schema") == "n2p3_preprocessing_execution_bundle/1":
+        recordings, unknown = record.get("recordings"), record.get("unverified_inputs")
+        if (not isinstance(recordings, list) or type(unknown) is not int or unknown < 0
+                or (not recordings and not unknown)):
+            raise ValueError("invalid preprocessing execution bundle")
+        output = []
+        for child in recordings:
+            if not isinstance(child, dict) or child.get("schema") != "n2p3_preprocessing_execution/1":
+                raise ValueError("execution bundles must contain individual recording receipts")
+            output.extend(validate_preprocessing_execution(child, preprocessing))
+        return output
+    if record.get("schema") != "n2p3_preprocessing_execution/1":
+        raise ValueError("unsupported preprocessing execution receipt schema")
+    if record.get("receipt_sha256") != _semantic_sha256({key: value for key, value in record.items()
+                                                         if key != "receipt_sha256"}):
+        raise ValueError("preprocessing execution receipt digest mismatch")
+    declaration = parse_preprocessing_spec(record.get("declaration"))
+    expected, executed = asdict(preprocessing), asdict(declaration)
+    expected.pop("name")
+    executed.pop("name")
+    if expected != executed:
+        raise ValueError("preprocessing execution declaration differs from dataset physical contract")
+    if record.get("semantic_identity") != PREPROCESSING_OPERATOR_IDENTITY:
+        raise ValueError("unsupported preprocessing execution operator identity")
+    implementation = record.get("implementation")
+    if not isinstance(implementation, dict) or any(not isinstance(implementation.get(key), str)
+            or not implementation[key] for key in ("python", "mne", "numpy", "scipy")):
+        raise ValueError("preprocessing execution lacks implementation versions")
+    hashes = implementation.get("source_sha256")
+    if not isinstance(hashes, dict) or set(hashes) != {"preprocess.py", "epochs.py"} or any(
+            not isinstance(value, str) or DECODED_SHA256.fullmatch(value) is None for value in hashes.values()):
+        raise ValueError("preprocessing execution lacks source digests")
+    context, grid, output, filtering = (record.get(key) for key in ("source_context", "epoch_grid", "output", "filter"))
+    if not all(isinstance(value, dict) for value in (context, grid, output, filtering)):
+        raise ValueError("preprocessing execution lacks resolved source/operator context")
+    rate = context.get("sample_rate_hz")
+    if (isinstance(rate, bool) or not isinstance(rate, Real) or not np.isfinite(rate) or rate <= 0
+            or type(context.get("first_samp")) is not int or type(context.get("n_times")) is not int
+            or context["n_times"] < 1):
+        raise ValueError("invalid preprocessing execution source grid")
+    for frequency in (declaration.l_freq, declaration.h_freq):
+        if frequency is not None and frequency >= rate / 2:
+            raise ValueError("preprocessing execution filter exceeds source Nyquist")
+    validate_notch_parameters(declaration.notch_freqs_hz, declaration.notch_quality_factor,
+                              sample_rate_hz=rate)
+    start, end = (round(value / 1000 * rate) for value in (preprocessing.tmin_ms, preprocessing.tmax_ms))
+    samples = end - start + 1
+    do_resample = not np.isclose(rate, preprocessing.sfreq)
+    resampled = round(samples * preprocessing.sfreq / rate) if do_resample else samples
+    expected_grid = {"start_offset_samples": start, "end_offset_samples": end,
+                     "source_n_times": samples, "resampled_n_times": resampled,
+                     "output_n_times": preprocessing.n_times,
+                     "requested_tmin_s": preprocessing.tmin_ms / 1000,
+                     "actual_source_tmin_s": start / rate, "resampled": do_resample}
+    if grid != expected_grid or resampled < preprocessing.n_times:
+        raise ValueError("preprocessing execution epoch grid disagrees with its declaration")
+    names, shape = output.get("channel_names"), output.get("shape")
+    if (not isinstance(names, list) or not names or len(set(names)) != len(names)
+            or not isinstance(shape, list) or len(shape) != 3
+            or any(type(value) is not int or value < 0 for value in shape)
+            or shape[1:] != [len(names), preprocessing.n_times] or output.get("dtype") != "float32"
+            or type(output.get("scheduled_events")) is not int or output["scheduled_events"] < shape[0]):
+        raise ValueError("invalid preprocessing execution output geometry")
+    for key in ("event_samples_sha256", "selected_event_indices_sha256"):
+        if not isinstance(output.get(key), str) or DECODED_SHA256.fullmatch(output[key]) is None:
+            raise ValueError("preprocessing execution lacks event mapping digests")
+    if "scheduled_event_indices_sha256" in output and (
+            not isinstance(output["scheduled_event_indices_sha256"], str)
+            or DECODED_SHA256.fullmatch(output["scheduled_event_indices_sha256"]) is None):
+        raise ValueError("invalid preprocessing scheduled event identity digest")
+    if "raw_scope" in context:
+        from data.preprocess import RawSampleScope
+
+        scope_record = context["raw_scope"]
+        if not isinstance(scope_record, dict):
+            raise ValueError("invalid preprocessing raw scope record")
+        scope = RawSampleScope.from_record(scope_record.get("declaration"))
+        parent_first = scope_record.get("parent_first_samp")
+        parent_length = scope_record.get("parent_n_times")
+        parent_events = scope_record.get("parent_event_count")
+        if (type(parent_first) is not int or type(parent_length) is not int or parent_length < 1
+                or type(parent_events) is not int or parent_events < 1
+                or not parent_first <= scope.start_sample < scope.stop_sample <= parent_first + parent_length
+                or context["first_samp"] != scope.start_sample
+                or context["n_times"] != scope.stop_sample - scope.start_sample
+                or scope.event_indices[-1] >= parent_events
+                or len(scope.event_indices) != output["scheduled_events"]
+                or output.get("scheduled_event_indices_sha256") != _semantic_sha256(list(scope.event_indices))
+                or scope_record.get("operator_order") != "crop_original_raw_before_filtering_and_epoching"):
+            raise ValueError("preprocessing raw scope contradicts source support or event identities")
+    segments = context.get("filter_segments")
+    if not isinstance(segments, dict) or set(segments) != set(names):
+        raise ValueError("preprocessing execution lacks per-channel filter support")
+    for spans in segments.values():
+        previous = 0
+        if not isinstance(spans, list):
+            raise ValueError("invalid preprocessing filter segments")
+        for span in spans:
+            if (not isinstance(span, list) or len(span) != 2 or any(type(value) is not int for value in span)
+                    or not previous <= span[0] < span[1] <= context["n_times"]):
+                raise ValueError("invalid preprocessing filter support interval")
+            previous = span[1]
+    boundaries = context.get("filter_segment_boundaries")
+    if "filter_segment_boundaries" in context:
+        allowed_causes = {"record_start", "record_end", "acquisition_discontinuity",
+                          "artifact", "unclassified_reset"}
+        if not isinstance(boundaries, dict) or set(boundaries) != set(names):
+            raise ValueError("invalid preprocessing filter boundary channels")
+        for name, rows in boundaries.items():
+            if not isinstance(rows, list) or len(rows) != len(segments[name]):
+                raise ValueError("invalid preprocessing filter boundary count")
+            for row, span in zip(rows, segments[name], strict=True):
+                if (not isinstance(row, dict)
+                        or set(row) != {"start_sample", "stop_sample", "left_causes", "right_causes"}
+                        or type(row["start_sample"]) is not int or type(row["stop_sample"]) is not int
+                        or [row["start_sample"], row["stop_sample"]] != span):
+                    raise ValueError("preprocessing filter boundaries disagree with support")
+                for side, sample in (("left_causes", span[0]), ("right_causes", span[1])):
+                    causes = row[side]
+                    if (not isinstance(causes, list) or not causes
+                            or any(not isinstance(cause, str) or cause not in allowed_causes for cause in causes)
+                            or causes != sorted(set(causes))
+                            or ("record_start" in causes) != (sample == 0)
+                            or ("record_end" in causes) != (sample == context["n_times"])):
+                        raise ValueError("invalid preprocessing filter boundary causes")
+    sos = np.asarray(filtering.get("sos"), dtype=float)
+    if sos.size and (sos.ndim != 2 or sos.shape[1] != 6 or not np.isfinite(sos).all() or not np.all(sos[:, 3] == 1)):
+        raise ValueError("invalid preprocessing execution SOS")
+    active = declaration.l_freq is not None or declaration.h_freq is not None or bool(declaration.notch_freqs_hz)
+    expected_backend = ("identity" if not active else "scipy.sosfilt" if declaration.filter_phase == "forward"
+        else "mne_reflect_limited" if declaration.zero_phase_edge_policy == "mne_reflect_limited"
+        or not declaration.notch_freqs_hz else "scipy.sosfiltfilt_odd")
+    if (bool(sos.size) != active or filtering.get("backend") != expected_backend
+            or (expected_backend in {"identity", "scipy.sosfilt"} and filtering.get("padding_limit_samples") != 0)):
+        raise ValueError("preprocessing execution filter contradicts its declaration")
+    if (type(filtering.get("padding_limit_samples")) is not int or filtering["padding_limit_samples"] < 0
+            or filtering.get("initial_state") != preprocessing.causal_iir_initial_state
+            or not isinstance(record.get("timing_source"), str) or not record["timing_source"]):
+        raise ValueError("invalid preprocessing execution boundary policy")
+    return [record]
+
+
+def preprocessing_execution_identity(dataset: EpochDataset) -> dict | None:
+    """Return a supported operator identity only for fully evidenced inputs."""
+    return preprocessing_execution_binding(
+        dataset.provenance.get("preprocessing_execution"), dataset.preprocessing).get("execution_identity")
+
+
+def preprocessing_execution_binding(record, preprocessing: PreprocessingSpec) -> dict:
+    """Bind provenance separately from the transferable operator identity."""
+    if record is None:
+        return {}
+    receipts = validate_preprocessing_execution(record, preprocessing)
+    identity = (None if record.get("unverified_inputs", 0) or not receipts
+                else json.loads(json.dumps(PREPROCESSING_OPERATOR_IDENTITY)))
+    return {"execution_identity": identity, "execution_provenance_sha256": _semantic_sha256(record)}
+
+
+def merge_preprocessing_executions(datasets: Sequence[EpochDataset]) -> dict | None:
+    receipts, unknown = {}, 0
+    for dataset in datasets:
+        record = dataset.provenance.get("preprocessing_execution")
+        if record is None:
+            unknown += 1
+            continue
+        for receipt in validate_preprocessing_execution(record, dataset.preprocessing):
+            receipts[receipt["receipt_sha256"]] = receipt
+        unknown += record.get("unverified_inputs", 0)
+    if not receipts:
+        return None
+    return {"schema": "n2p3_preprocessing_execution_bundle/1",
+            "recordings": [receipts[key] for key in sorted(receipts)], "unverified_inputs": unknown}
+
+
 def materialize_dataset_identity(dataset: EpochDataset) -> DatasetIdentityTable:
     """Attach source-scoped identities before any representation-changing step."""
 
@@ -511,6 +738,7 @@ def materialize_dataset_lineage(dataset: EpochDataset) -> DataLineage:
         "source_reference",
         "source_sample_rate_hz",
         "session_schema",
+        "preprocessing_execution",
     }
     stable_provenance = {
         key: value
@@ -576,7 +804,12 @@ def epoch_row_identity_digest(dataset: EpochDataset) -> str:
     timeline = getattr(dataset, "event_timeline", None)
     if timeline is None:
         return _array_content_sha256(subjects)
-    events = np.asarray(timeline.event_ids).astype(str)
+    indices = np.asarray(timeline.evidence_indices)
+    available = np.flatnonzero(indices >= 0)
+    if not np.array_equal(np.sort(indices[available]), np.arange(len(subjects))):
+        raise ValueError("row identity requires one physical event per evidence row")
+    ordered = available[np.argsort(indices[available], kind="stable")]
+    events = np.asarray(timeline.event_ids).astype(str)[ordered]
     paired = np.stack((subjects, events), axis=1)
     return _array_content_sha256(paired)
 
@@ -780,7 +1013,9 @@ def save_epoch_dataset(
         "preprocessing_json": np.asarray(
             json.dumps(dataset.preprocessing.record(), sort_keys=True, default=_json_default)
         ),
-        "metadata_json": np.asarray(metadata.to_json(orient="table", index=False)),
+        # A scalar NumPy Unicode dtype has a signed 32-bit itemsize limit.
+        # Large multi-study tables exceed it even when RAM is sufficient.
+        "metadata_json": np.frombuffer(metadata.to_json(orient="table", index=False).encode("utf-8"), dtype=np.uint8),
         "provenance_json": np.asarray(
             json.dumps(dataset.provenance, sort_keys=True, default=_json_default)
         ),
@@ -1065,12 +1300,13 @@ def _validate_attested_cache(
         )
 
 
-def load_epoch_dataset(
+def _load_epoch_dataset(
     path: str | Path,
     *,
     expected_preprocessing: PreprocessingSpec | None = None,
     require_labels: bool = False,
     validation: Literal["full", "attested"] = "full",
+    _historical_audit: bool = False,
 ) -> EpochDataset:
     """Load a cache with full validation or an immutable cache attestation."""
 
@@ -1203,7 +1439,13 @@ def load_epoch_dataset(
             **json.loads(str(np.asarray(archive["preprocessing_json"]).item()))
         )
         has_labels = bool(np.asarray(archive["has_labels"]).item())
-        metadata_json = str(np.asarray(archive["metadata_json"]).item())
+        metadata_payload = np.asarray(archive["metadata_json"])
+        if metadata_payload.dtype == np.uint8 and metadata_payload.ndim == 1:
+            metadata_json = metadata_payload.tobytes().decode("utf-8")
+        elif metadata_payload.ndim == 0 and metadata_payload.dtype.kind == "U":
+            metadata_json = str(metadata_payload.item())  # Earlier scalar-Unicode caches.
+        else:
+            raise ValueError("metadata_json must be UTF-8 bytes or a legacy Unicode scalar")
         qc_features = None
         from data.qc_features import EpochQCFeatures
 
@@ -1266,7 +1508,7 @@ def load_epoch_dataset(
             ),
         )
     if validation == "full":
-        dataset.validate(require_labels=require_labels)
+        dataset.validate(require_labels=require_labels, _historical_audit=_historical_audit)
     else:
         assert attested_record is not None
         assert verified_attestation is not None
@@ -1298,7 +1540,98 @@ def load_epoch_dataset(
         )
     if dataset.identity_table is not None:
         assert_identity_participants_allowed(dataset.identity_table)
+    if _historical_audit:
+        dataset._historical_audit_only = True
+    else:
+        assert_physical_epoch_dataset(dataset)
     return dataset
+
+
+def assert_physical_epoch_dataset(dataset: object) -> None:
+    """Reject historical or transformed coordinates at physical model ingress."""
+    if getattr(dataset, "_historical_audit_only", False):
+        raise ValueError("Historical audit datasets cannot enter active physical model paths.")
+    if getattr(dataset, "coordinate_system", "physical_electrode_voltages") != "physical_electrode_voltages":
+        raise ValueError("Dimensionless EA coordinates are not physical electrode voltages.")
+    provenance = getattr(dataset, "provenance", {})
+    if isinstance(provenance, Mapping) and provenance.get("data_alignment") is not None:
+        raise ValueError(
+            "EA data_alignment coordinates are not physical electrode voltages; "
+            "use an EAFeatureArtifact or the explicit historical audit loader."
+        )
+
+
+def assert_attested_epoch_dataset(dataset: EpochDataset) -> dict[str, object]:
+    """Verify the actual in-memory parent still equals the attested decoded bytes."""
+    dataset.validate(require_labels=False)
+    attestation = loaded_epoch_cache_attestation(dataset)
+    if attestation["decoded_dataset_sha256"] != _decoded_dataset_sha256(dataset):
+        raise ValueError("Actual parent dataset content changed since attested loading.")
+    return attestation
+
+
+def load_epoch_dataset(
+    path: str | Path, *, expected_preprocessing: PreprocessingSpec | None = None,
+    require_labels: bool = False, validation: Literal["full", "attested"] = "full",
+) -> EpochDataset:
+    """Load physical electrode voltages for active processing and modelling."""
+    return _load_epoch_dataset(path, expected_preprocessing=expected_preprocessing,
+                               require_labels=require_labels, validation=validation)
+
+
+def load_historical_epoch_dataset(
+    path: str | Path, *, require_labels: bool = False,
+    validation: Literal["full", "attested"] = "full",
+) -> EpochDataset:
+    """Inspect old cache bytes; the returned dataset is rejected by active ingress."""
+    return _load_epoch_dataset(path, require_labels=require_labels,
+                               validation=validation, _historical_audit=True)
+
+
+def select_scheduled_events(dataset: EpochDataset, event_mask: np.ndarray, *, reason: str,
+                            preserve_schedule: bool = False) -> EpochDataset:
+    """Select an explicit scheduled scope while preserving unavailable events inside it."""
+    event_mask = np.asarray(event_mask)
+    if event_mask.dtype != bool or event_mask.shape != (dataset.event_timeline.n_events,) or not event_mask.any():
+        raise ValueError("scheduled selection requires a nonempty aligned boolean event mask")
+    if not reason.strip():
+        raise ValueError("scheduled selection requires an explicit scientific scope")
+    evidence = np.asarray(dataset.event_timeline.evidence_indices)[event_mask]
+    rows = np.sort(evidence[evidence >= 0])
+    if not len(rows):
+        raise ValueError("scheduled scope contains no usable evidence")
+    if preserve_schedule:
+        original = dataset.event_timeline
+        indices = np.full(original.n_events, -1, dtype=np.int64)
+        remap = np.full(dataset.n_epochs, -1, dtype=np.int64)
+        remap[rows] = np.arange(len(rows))
+        available = original.evidence_indices >= 0
+        indices[available] = remap[original.evidence_indices[available]]
+        rejected = available & (indices < 0)
+        statuses = np.array(original.statuses, dtype=object)
+        details = np.array(original.status_details, dtype=object)
+        times = np.array(original.evidence_available_times_s, copy=True)
+        statuses[rejected], details[rejected], times[rejected] = "boundary_dropped", reason, np.nan
+        timeline = replace(original, evidence_indices=indices, statuses=statuses.astype(str),
+                           status_details=details.astype(str), evidence_available_times_s=times)
+    else:
+        timeline = dataset.event_timeline.subset_rows(event_mask)
+    subjects = np.asarray(dataset.subject_ids)[rows]
+    selection = {"reason": reason, "parent_scheduled_events": dataset.event_timeline.n_events,
+                 "selected_event_ids": np.asarray(dataset.event_timeline.event_ids)[event_mask].astype(str).tolist(),
+                 "preserve_schedule": preserve_schedule}
+    result = replace(dataset, X=dataset.X[rows], y=None if dataset.y is None else dataset.y[rows],
+        subject_ids=subjects, event_timeline=timeline,
+        metadata=dataset.metadata.iloc[rows].reset_index(drop=True).copy() if not dataset.metadata.empty else dataset.metadata.copy(),
+        trial_channel_mask=None if dataset.trial_channel_mask is None else dataset.trial_channel_mask[rows],
+        qc_features=None if dataset.qc_features is None else dataset.qc_features.subset(rows),
+        identity_table=materialize_dataset_identity(dataset).subset(np.unique(subjects)),
+        lineage=DataLineage.derive([materialize_dataset_lineage(dataset)],
+            operation="select_scheduled_events", parameters=selection),
+        provenance={**dataset.provenance, "scheduled_scope_selection": selection},
+        verified_cache_attestation=None)
+    result.validate(require_labels=dataset.y is not None)
+    return result
 
 
 def select_epoch_channels(
@@ -1306,6 +1639,7 @@ def select_epoch_channels(
     target_channels: Sequence[str],
     *,
     aliases: Mapping[str, str] | None = None,
+    copy: bool = True,
 ) -> EpochDataset:
     """Select an exact channel subset; never pad or substitute a different electrode."""
 
@@ -1321,9 +1655,13 @@ def select_epoch_channels(
             f"Dataset {dataset.name!r} cannot supply channels {missing}; available={list(present)}."
         )
     picks = np.asarray([present[name] for name in targets], dtype=np.int64)
+    same_order = np.array_equal(picks, np.arange(dataset.n_channels))
+    values = dataset.X[:, picks, :] if copy or not same_order else dataset.X.view()
+    if not copy:
+        values.flags.writeable = False
     selected = EpochDataset(
         name=dataset.name,
-        X=dataset.X[:, picks, :],
+        X=values,
         y=dataset.y,
         subject_ids=dataset.subject_ids,
         channel_names=targets,
@@ -1396,6 +1734,13 @@ def concatenate_epoch_datasets(
         from data.qc_features import EpochQCFeatures
 
         qc_features = EpochQCFeatures.concatenate([dataset.qc_features for dataset in datasets])
+    merged_provenance = dict(provenance or {})
+    executions = merge_preprocessing_executions(datasets)
+    if executions is not None:
+        merged_provenance["preprocessing_execution"] = executions
+    else:
+        # A caller cannot certify historical children by supplying fresh metadata.
+        merged_provenance.pop("preprocessing_execution", None)
     merged = EpochDataset(
         name=name,
         X=np.concatenate([dataset.X for dataset in datasets], axis=0),
@@ -1413,7 +1758,7 @@ def concatenate_epoch_datasets(
             [dataset.event_timeline for dataset in datasets]
         ),
         metadata=metadata,
-        provenance=dict(provenance or {}),
+        provenance=merged_provenance,
         trial_channel_mask=(
             np.concatenate(
                 [

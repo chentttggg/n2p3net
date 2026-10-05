@@ -13,9 +13,10 @@ import numpy as np
 import pandas as pd
 
 from data.channel import DEFAULT_N_FREQS, CoordinateRegistrationSpec
+from data.epochs import PreprocessingSpec
 from data.events import ScheduledEventTimeline, selection_group_id
 from data.metadata import build_subject_embedding, normalize_sex
-from data.preprocess import PreprocessResult, preprocess
+from data.preprocess import PreprocessResult, execute_preprocessing, preprocess
 
 
 def _normalize_label_map(label_map: Mapping[str, int]) -> dict[str, int]:
@@ -253,10 +254,18 @@ def build_subject(
     repetition_indices: Sequence[int] | None = None,
     selection_ids: Sequence[object] | None = None,
     n_freqs: int = DEFAULT_N_FREQS,
+    preprocessing: PreprocessingSpec | None = None,
     **preprocess_kwargs,
 ) -> SubjectData:
-    result: PreprocessResult = preprocess(raw, events, **preprocess_kwargs)
+    if preprocessing is None and preprocess_kwargs.get("raw_scope") is not None:
+        raise ValueError("raw scope execution requires a complete PreprocessingSpec")
+    result: PreprocessResult = (
+        preprocess(raw, events, **preprocess_kwargs) if preprocessing is None else
+        execute_preprocessing(raw, events, preprocessing, **preprocess_kwargs)
+    )
     data = result.data
+    scheduled_indices = result.scheduled_event_indices
+    scheduled_count = len(scheduled_indices)
     aligned_labels: np.ndarray | None = None
     if labels is not None:
         labels_array = np.asarray(labels)
@@ -280,11 +289,13 @@ def build_subject(
     )
     subject = build_subject_embedding(age, sex, n_freqs=n_freqs)
     subject_metadata = dict(metadata or {})
+    if result.execution_receipt is not None:
+        subject_metadata["preprocessing_execution"] = result.execution_receipt
     subject_metadata["source_sample_rate_hz"] = float(raw.info["sfreq"])
     subject_metadata["model_input_sample_rate_hz"] = float(result.sfreq)
-    subject_metadata["acquisition_time_s"] = np.asarray(result.event_times_s)[
-        result.event_indices
-    ].astype(float)
+    retained_events = np.flatnonzero(result.event_evidence_indices >= 0)
+    retained_events = retained_events[np.argsort(result.event_evidence_indices[retained_events])]
+    subject_metadata["acquisition_time_s"] = np.asarray(result.event_times_s)[retained_events].astype(float)
     dataset_id = str(subject_metadata.get("dataset_id", "manifest"))
     session_id = str(subject_metadata.get("session", ""))
     run_id = str(subject_metadata.get("run", ""))
@@ -298,7 +309,7 @@ def build_subject(
             raw = np.repeat(raw.item(), len(events))
         if raw.shape != (len(events),):
             raise ValueError(f"{name} must be scalar or contain one value per scheduled event.")
-        output = raw.astype(str)
+        output = raw[scheduled_indices].astype(str)
         if np.any(np.char.strip(output) == ""):
             raise ValueError(f"{name} cannot contain empty identifiers.")
         return output
@@ -307,7 +318,7 @@ def build_subject(
     event_targets = _event_strings(target_candidate_ids, "target_candidate_ids")
     event_selections = _event_strings(selection_ids, "selection_ids")
     if event_selections is None:
-        event_selections = np.repeat(selection_id, len(events)).astype(str)
+        event_selections = np.repeat(selection_id, scheduled_count).astype(str)
     event_groups = np.asarray(
         [
             selection_group_id(dataset_id, subject_id, session_id, run_id, value)
@@ -324,30 +335,30 @@ def build_subject(
             raise ValueError(
                 "repetition_indices must be an integer array aligned with scheduled events."
             )
-        event_repetitions = raw_repetitions.astype(np.int64, copy=False)
+        event_repetitions = raw_repetitions[scheduled_indices].astype(np.int64, copy=False)
     event_timeline = ScheduledEventTimeline(
         event_ids=np.asarray(
             [
                 f"{dataset_id}:{subject_id}:{session_id}:{run_id}:{index}"
-                for index in range(len(events))
+                for index in scheduled_indices
             ]
         ),
         group_ids=event_groups,
-        subject_ids=np.repeat(str(subject_id), len(events)),
-        stimulus_ids=np.asarray(events[:, 2], dtype=np.int64),
+        subject_ids=np.repeat(str(subject_id), scheduled_count),
+        stimulus_ids=np.asarray(events[scheduled_indices, 2], dtype=np.int64),
         onset_samples=result.event_samples,
         onset_times_s=result.event_times_s,
         evidence_available_times_s=result.evidence_available_times_s,
         evidence_indices=result.event_evidence_indices,
         statuses=result.event_statuses,
         status_details=result.event_status_details,
-        dataset_ids=np.repeat(dataset_id, len(events)),
-        session_ids=np.repeat(session_id, len(events)),
-        run_ids=np.repeat(run_id, len(events)),
+        dataset_ids=np.repeat(dataset_id, scheduled_count),
+        session_ids=np.repeat(session_id, scheduled_count),
+        run_ids=np.repeat(run_id, scheduled_count),
         selection_ids=event_selections,
         complete=True,
         online_causal=result.online_causal,
-        timing_source="source_mne_event_samples;epoched_resample;epoch_right_edge",
+        timing_source=result.timing_source,
         candidate_ids=event_candidates,
         target_candidate_ids=event_targets,
         repetition_indices=event_repetitions,
@@ -376,6 +387,7 @@ def load_dataset(
     records: Sequence[EEGRecord],
     *,
     n_freqs: int = DEFAULT_N_FREQS,
+    preprocessing: PreprocessingSpec | None = None,
     preprocess_kwargs: Mapping[str, Any] | None = None,
 ) -> list[SubjectData]:
     """Load typed recording specifications without dataset-name branches."""
@@ -398,6 +410,7 @@ def load_dataset(
                 target_candidate_ids=record.target_candidate_ids,
                 repetition_indices=record.repetition_indices,
                 n_freqs=n_freqs,
+                preprocessing=preprocessing,
                 **kwargs,
             )
         )

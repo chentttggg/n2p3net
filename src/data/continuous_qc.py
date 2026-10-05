@@ -19,9 +19,10 @@ import numpy as np
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy.signal import sosfilt
 
+from data.bidirectional import BidirectionalStateRecovery
 from data.channel import canonical_channel_name
 from data.preprocess import continuous_filter_segments
-from data.recovery import EpochStateRecovery, epoch_recovery_from_record
+from data.recovery import EpochStateRecovery, epoch_linear_projection, epoch_recovery_from_record
 from research.contracts import semantic_sha256
 from research.execution import atomic_write_json
 
@@ -88,26 +89,10 @@ class FilterStateRecovery:
         return low
 
 
-@lru_cache(maxsize=16)
+@lru_cache(maxsize=16, typed=True)
 def epoch_operator_gain(sample_rate_hz: float, preprocessing) -> float:
-    """Induced infinity norm of the actual resampling + mean-baseline operator."""
-    from data.preprocess import apply_trial_baseline
-    if preprocessing.trial_reference_center != "mean":
-        raise ValueError("recovery certificate requires a linear mean-baseline epoch operator")
-    tmin, tmax = preprocessing.tmin_ms / 1000, preprocessing.tmax_ms / 1000
-    samples = round(tmax * sample_rate_hz) - round(tmin * sample_rate_hz) + 1
-    basis = mne.EpochsArray(np.eye(samples)[:, None, :],
-        mne.create_info(["Cz"], sample_rate_hz, "eeg"), tmin=tmin, baseline=None, verbose=False)
-    if sample_rate_hz != preprocessing.sfreq:
-        basis.resample(preprocessing.sfreq, method=preprocessing.resample_method,
-            npad=preprocessing.resample_npad, window=preprocessing.resample_window,
-            pad=preprocessing.resample_pad, verbose=False)
-    transformed = apply_trial_baseline(basis.get_data()[:, :, :preprocessing.n_times],
-        sfreq=preprocessing.sfreq, tmin=tmin, baseline_mode=preprocessing.baseline_mode,
-        trial_reference_window_ms=preprocessing.trial_reference_window_ms,
-        trial_reference_center=preprocessing.trial_reference_center,
-        trial_reference_scale=preprocessing.trial_reference_scale)
-    return float(np.abs(transformed[:, 0, :]).sum(axis=0).max())
+    """Induced infinity norm of the shared linear epoch transform."""
+    return float(np.abs(epoch_linear_projection(sample_rate_hz, preprocessing)).sum(axis=0).max())
 
 
 def validate_recovery_contract(model, preprocessing, *, source_reference, ocular_model=None):
@@ -116,6 +101,8 @@ def validate_recovery_contract(model, preprocessing, *, source_reference, ocular
             raise ValueError("empirical recovery epoch operator differs from executed preprocessing")
         return
     recovery = model.recovery
+    if preprocessing.filter_phase == "zero":
+        raise ValueError("channel-local zero-phase QC requires fitted bidirectional boundary recovery")
     if recovery is None:
         return
     if preprocessing.filter_method != "iir" or preprocessing.filter_phase != "forward":
@@ -147,8 +134,14 @@ class ContinuousQCSpec:
     range_floor_v: float = 50e-6
     artifact_pre_guard_samples: int = 0
     flatline_min_duration_s: float | None = None
+    range_action: str = "reject"
+    boundary_action: str = "all_edges"
 
     def __post_init__(self) -> None:
+        if self.range_action not in {"reject", "diagnostic"}:
+            raise ValueError("range_action must be reject or diagnostic")
+        if self.boundary_action not in {"all_edges", "artifact_edges"}:
+            raise ValueError("boundary_action must be all_edges or artifact_edges")
         for value in (self.difference_z, self.difference_floor_v):
             if not np.isfinite(value) or value <= 0:
                 raise ValueError("continuous QC thresholds must be finite and positive")
@@ -257,7 +250,7 @@ class FittedContinuousQC:
     difference_scale_v: tuple[float, ...]
     fit_provenance: Mapping[str, Any]
     recovery: FilterStateRecovery | None = None
-    epoch_recovery: EpochStateRecovery | None = None
+    epoch_recovery: EpochStateRecovery | BidirectionalStateRecovery | None = None
     range_threshold_v: tuple[float, ...] | None = None
 
     def __post_init__(self) -> None:
@@ -295,6 +288,10 @@ class FittedContinuousQC:
 
     def record(self) -> dict[str, Any]:
         spec = asdict(self.spec)
+        if self.spec.range_action == "reject":
+            spec.pop("range_action")
+        if self.spec.boundary_action == "all_edges":
+            spec.pop("boundary_action")
         schema = CONTINUOUS_QC_CONSTANT_SCHEMA
         if self.spec.flatline_min_duration_s is None:
             spec.pop("flatline_min_duration_s")
@@ -304,7 +301,9 @@ class FittedContinuousQC:
                 "difference_center_v": list(self.difference_center_v),
                 "difference_scale_v": list(self.difference_scale_v),
                 "fit_provenance": dict(self.fit_provenance),
-                "recovery_policy": "calibration_empirical_epoch_modal_envelope" if self.epoch_recovery is not None else
+                "recovery_policy": ("calibration_empirical_bidirectional_boundary_envelope"
+                    if self.epoch_recovery is not None and self.epoch_recovery.preprocessing.filter_phase == "zero" else
+                    "calibration_empirical_epoch_modal_envelope") if self.epoch_recovery is not None else
                     "reject_unbounded_state_error" if self.recovery is None else "declared_state_box_modal_tail_bound",
                 "recovery": None if self.recovery is None else asdict(self.recovery),
                 "epoch_recovery": None if self.epoch_recovery is None else self.epoch_recovery.record(),
@@ -314,7 +313,8 @@ class FittedContinuousQC:
 
     @property
     def detection_lookahead_samples(self):
-        previous = (0 if self.spec.range_window_samples is None else self.spec.range_window_samples - 1) + self.spec.artifact_pre_guard_samples
+        previous = (0 if self.spec.range_window_samples is None or self.spec.range_action == "diagnostic"
+                    else self.spec.range_window_samples - 1) + self.spec.artifact_pre_guard_samples
         return max(previous, 0 if self.flatline_min_samples is None else self.flatline_min_samples - 1)
 
     @property
@@ -332,6 +332,19 @@ class FittedContinuousQC:
         record = analyze_slow_trends(raw, channels=self.channel_names)
         record["quality_model_digest"] = semantic_sha256(self.record())
         record["continuing_input_quality_certified"] = False
+        if self.spec.range_window_samples is not None and self.spec.range_action == "diagnostic":
+            width = self.spec.range_window_samples
+            values = raw.get_data(picks=list(self.channel_names))
+            counts, windows = np.zeros(len(self.channel_names), dtype=int), 0
+            for start, end in continuous_filter_segments(raw):
+                if end-start >= width:
+                    measured = trailing_range(values[:, start:end], width)[:, width-1:]
+                    counts += (measured > np.asarray(self.range_threshold_v)[:, None]).sum(axis=1)
+                    windows += measured.shape[1]
+            record["raw_range_monitor"] = dict(action="diagnostic", window_samples=width,
+                complete_windows=windows, exceeded_by_channel=counts.tolist(),
+                channel_names=list(self.channel_names), threshold_v=list(self.range_threshold_v),
+                interpretation="large_raw_range_may_be_removable_drift; not_a_standalone_rejection")
         if not include_windows:
             windows = record.pop("windows")
             record["window_metrics_sha256"] = semantic_sha256(windows)
@@ -357,7 +370,7 @@ class FittedContinuousQC:
             if self.spec.channel_local:
                 flags = np.pad(bad, ((0, 0), (1, 0)))
                 width = self.spec.range_window_samples
-                if width is not None and end - start >= width:
+                if width is not None and self.spec.range_action == "reject" and end - start >= width:
                     ranges = trailing_range(values[:, start:end], width)
                     range_bad = ranges > np.asarray(self.range_threshold_v)[:, None]
                     range_bad[:, :width-1] = False
@@ -366,8 +379,8 @@ class FittedContinuousQC:
                 for channel, name in enumerate(self.channel_names):
                     indices = np.flatnonzero(flags[channel]) + start
                     detected = _cluster_intervals(indices, end, self.spec.settle_samples, (name,),
-                        "raw_difference_or_range_outlier" if width is not None else "raw_difference_outlier",
-                        lookahead=0 if width is None else width-1)
+                        "raw_difference_or_range_outlier" if width is not None and self.spec.range_action == "reject" else "raw_difference_outlier",
+                        lookahead=0 if width is None or self.spec.range_action == "diagnostic" else width-1)
                     # Threshold crossing may follow the physical onset. This
                     # finite guard is explicit precaution, not an onset bound.
                     intervals.extend(ContinuousQCInterval(
@@ -418,7 +431,8 @@ class FittedContinuousQC:
         if mixing.shape != (len(channels), len(self.channel_names)) or not np.isfinite(mixing).all():
             raise ValueError("QC dependencies must map native channels to final signal channels")
         recovery = None if self.epoch_recovery is None else self.epoch_recovery.project(mixing, channels)
-        waits = None if recovery is None else recovery.recovery_samples()
+        bidirectional = recovery is not None and recovery.preprocessing.filter_phase == "zero"
+        waits = None if recovery is None or bidirectional else recovery.recovery_samples()
         intervals = []
         exact_constant_enabled = self.spec.flatline_min_duration_s is not None
         boundary_samples = tuple(sorted(set(int(sample) for sample in boundaries)))
@@ -450,6 +464,10 @@ class FittedContinuousQC:
                 merged.append(row)
             # Keep v4 raw evidence reasons separate; merge only for recovery.
             intervals.extend(evidence if exact_constant_enabled else merged)
+            if bidirectional:
+                # Finite double-pass bounds depend on both segment ends. The
+                # loader evaluates each actual epoch after final mixing/segmentation.
+                continue
             resets = [(row.end_sample, row.confirmed_sample) for row in merged]
             resets.extend((int(sample), int(sample)) for sample in boundaries)
             for start, confirmation in resets:
@@ -511,7 +529,7 @@ def signal_dependency_matrix(native_channels, output_channels, *, reference_chan
             matrix[row, positions[anchor]] -= 1
         if ocular_model is not None:
             ocular_row = tuple(map(canonical_channel_name, ocular_model.eeg_channels)).index(name)
-            for eye, coefficient in zip(ocular_model.eog_channels, ocular_model.coefficients[ocular_row], strict=True):
+            for eye, coefficient in zip(ocular_model.eog_channels, ocular_model.effective_coefficients[ocular_row], strict=True):
                 if coefficient == 0:
                     continue
                 if canonical_channel_name(eye) not in positions:
@@ -535,7 +553,7 @@ def fit_continuous_qc(
     calibration_raw: mne.io.BaseRaw, *, spec: ContinuousQCSpec,
     fit_sample_mask: np.ndarray, fit_provenance: Mapping[str, Any],
     recovery: FilterStateRecovery | None = None,
-    epoch_recovery: EpochStateRecovery | None = None,
+    epoch_recovery: EpochStateRecovery | BidirectionalStateRecovery | None = None,
 ) -> FittedContinuousQC:
     mask = np.asarray(fit_sample_mask)
     if mask.dtype != bool or mask.shape != (calibration_raw.n_times,):

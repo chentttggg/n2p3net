@@ -1,0 +1,29 @@
+{
+  "name": "brainsync_bidirectional_v1",
+  "sfreq": 128.0,
+  "l_freq": 0.1,
+  "h_freq": 30.0,
+  "tmin_ms": -200.0,
+  "tmax_ms": 1200.0,
+  "n_times": 179,
+  "baseline_mode": "mean_only",
+  "signal_unit": "V",
+  "filter_method": "iir",
+  "filter_order": 4,
+  "filter_phase": "zero",
+  "causal_iir_initial_state": "not_applicable",
+  "notch_freqs_hz": [
+    50.0
+  ],
+  "notch_quality_factor": 30.0,
+  "zero_phase_edge_policy": "mne_reflect_limited",
+  "resample_domain": "epoched",
+  "resample_method": "fft",
+  "resample_npad": "auto",
+  "resample_window": "auto",
+  "resample_pad": "edge",
+  "trial_reference_window_ms": null,
+  "trial_reference_center": "mean",
+  "trial_reference_scale": "none",
+  "reject_threshold_v": null
+}

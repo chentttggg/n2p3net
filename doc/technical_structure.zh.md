@@ -6,6 +6,88 @@
 
 ## 主链与接口
 
+2026-10-05 `experiments/boundary_state_research.py` 是独立数学/计划框架，无生产调用者：长短有限算子先映射到共同输出网格，ERP 模板行基按样本优先展平，诊断不选择 held penalty；dense Gaussian 参考检验协方差 gauge 而不拟合 AR。完整 E1–E3 与 Kalman 尚未执行，接口边界见[设计核对](evidence/boundary_state_redesign_20261005.zh.md)。
+
+2026-10-04的[实施记录](evidence/system_implementation_20261004.zh.md)把研究能力放在以下已有职责及新Module中：
+
+- `research.comparison`统一物理证据、fit/score数值输入与显式`ContrastPlan`；executor复用另绑定实际inner输入、完整decision上下文和原执行身份。inline与完整统计共用配对门禁。
+- `data.ea_artifact.EAFitPlan`集中授权、算子与reference，fit/save/load核实际attested parent并数值重放；新输入只能用已冻结state transform。普通物理cache与checkpoint拒绝旧EA伪电压。
+- `baselines.riemann`提供ERP原型增广；`structured_erp`提供Toeplitz/pooled/temporal等纯数值状态；`temporal_transfer`区别固定cosine与参与者等权源时间基。通过`TargetRecipe`、`fit_calibration_candidate`、`CalibratedPredictor(selector_mode="fixed_erp")`连接个人未知标签推理。
+- `data.harmonic`是独立segment的离线自适应工频研究处理；`transfer.noise_model`与`operator_lda`承担联合raw/state协方差和固定A/B传播，尚不自动识别真实Γ/Ω。
+- `transfer.continuous_decision`封装连续ERP核拟合、条件核不确定性、候选似然和冻结重放；`raw_continuous`适配BNCI原始字节与合法C/T，`run_bnci_continuous_study.py`连接requested outcomes、coverage、NLL和真实可用时间。
+- `transfer.decision_experiments`在声明的统一scope上扩展prior/decision/head/scratch有限归因，记录独立物理组数；不改变默认Q1配方。
+
+各Module的Interface由fit范围、数值状态与失败行为共同定义，不能只靠metadata自摘要替代关系核验。
+R1与R2仍是独立研究路线；将自适应harmonic串到固定A/B之后会遗漏估参不确定性，当前不自动组合。
+
+2026-09-18云端资源预算由`research.source_execution`统一解析并传递至source、源内λ和outer target worker。
+`cloud_resource_floor`约束CPU/GPU容量，`HostMemoryAdmission`同时限制嵌套worker占用。
+缓存输入的显式只读通道视图、统计分块与`MatrixBatchSource`成功预加载后的CPU释放保持在原owner内。
+
+2026-09-18 `SourceCatalog.validate_fold`集中区分evaluation和deployment源组，部署组必须显式完整成员且不得生成外层目标。
+`source_prior_development_fold`接受显式development_domains，未选域全量留在源拟合；source链检查开发域与逐域排除原因完整分割实际source。
+源内选方记录包含声明及所有prefix摘要，改变开发支持不能沿用原选择身份。`unified_target_recipes`集中产生按监督匹配的scratch，
+有真实membership时增加CE-only对照，无membership时保留单个等价scratch。调用者统一从recipe派生处理名和decision因子。
+
+2026-09-17采集端`transport.py`集中串口/BLE连接入口、地址及固件能力差异；
+`DeviceAdapter`共用连接所有权、预览、阻抗、回调录制和清理，删除串口SDK原生EDF分支。
+采集端数据合同的250 Hz为两传输及模拟模式唯一采样率，SDK回调batch独立为250包的正整数倍。
+`LocalEdfRecorder`统一电压/样本时钟检查点，`RecordingSession`继续持有暂停和EDF/BIDS收尾。
+BLE回调按连接generation隔离，固件应答后再次核验句柄；关闭等待原生连接请求与迟到句柄清理。
+调用链、反例及验证见[连接统一记录](evidence/brainsync_transport_unification_20260917.zh.md)。
+
+2026-09-20发布层将上述采集端模块封装为PyInstaller onedir `BrainSync.exe`及`_internal`运行时；
+发布目录只保留用户配置、默认源模型、空数据/日志目录、运行时和发布说明。开发Python入口、测试、
+缓存、历史数据与后端worktree不属于发布结构；算法任务仍通过用户配置的后端环境调用。
+发布内容及体积边界见[发布版EXE验收](evidence/brainsync_release_20260920.zh.md)。
+
+2026-09-16统一程序在既有owner内实现：`N2P3Net`先pack实测通道经原temporal Conv/BN，scatter后继续空间/MST，
+post-MST直接复用`FeatureResidualAdapter`，六导含残差共1279参数。`models.parameter_groups.SourceParameterPrior`
+保存固定源中心/尺度；`SourceObjective`组合CE外的SupCon和条件MMD，`SubjectAdapter`在一次step内联合trial、decision和prior。
+`MembershipDecision`保存物理归属、完整词表和缺失证据，NumPy/Torch共享评分核；不另建候选神经网络。
+`data.source_records`准备逐K独立raw校准、inner T/V及固定test，`prepare_source_records.py`输出受核验的prefix manifest。
+`unified_source`与目标`unified`复用源调度和目标worker；λ由`source_prior_selection`的源内开发manifest选择。
+个人`selector_mode=unified`消费单份显式recipe和固定目标预算，保存完整参数、统计、质量状态及membership评分声明。
+调用和反例见[实施记录](evidence/unified_model_implementation_20260916.zh.md)。
+
+2026-09-16统一预算由`train.early_stopping.UnifiedTrainingBudget`集中解释，`PatienceStopper`继续负责独立早停计数。
+`source_selection.fit_source_trajectory`执行参考源的参与者选轮/refit，source chain每折只调用一次，
+正式源训练消费带reference摘要的`source_budget`并按e*换算固定更新。λ开发和目标worker直接全C拟合。
+`transfer.epoch_selection`保留其它显式早停研究；新unified默认不消费个人inner视图。
+`source_records`可按是否需要inner准备/读取实际视图；新CLI默认只准备C_K/test。
+模块、复用和性能记录见[预算执行器](evidence/unified_budget_execution_20260916.zh.md)。
+
+2026-09-16 `run_domain_transfer_matrix.py`组合既有source chain及共享目标worker，统一执行P1/P2
+并复用相同输入/配方/权重的结果；不复制训练循环。`SourceObjective`集中source-only配对、
+去重与批量条件MMD；`analyze_transfer_contrasts(seed_pairs=...)`显式区分完整流程配对和交叉seed设计。
+
+2026-09-16前端运行时增加单录制启动owner及通用SDK清理worker终态门禁，禁止超时后的迟到操作
+影响新会话。任务完成通知在coroutine清理后发送；`RecordingSession`持有暂停幂等和失败收尾，
+`SessionStore`用OS租约排除外部修改活动会话，并在成功发布manifest后更新内存。
+预览滤波使用SOS实现并消费实际设备采样率；仅作用于显示。
+解码结果部分解析失败会撤销可见数字/模型就绪；反馈按请求身份及已保存目标记录，无判定为`correct=null`。
+质量报告重试保留原冻结请求，失败显示与进程回收独立。见[逻辑修复](evidence/brainsync_frontend_logic_20260916.zh.md)。
+
+2026-09-15工作站架构修复将采集上下文、样本支持、暂停账本及EDF/BIDS收尾集中到采集端
+`recording.RecordingSession`；主窗口处理显示与操作者动作。真实/模拟device adapter共用该interface，
+并发finish等待同一次提交。`backend.ModelTask`持有结构化命令和结果准入：schema、状态、请求编号、
+会话路径/身份、受试者、模拟声明及模型摘要共同核对；后端从同一次读取的模型字节加载并生成摘要。
+`SessionStore`以待提交记录协调确认标签和事件日志，前后端拒绝消费未完成确认；恢复不重复追加事件，
+历史前缀冲突则保留现场并拒绝自动恢复。`ModelJobRunner.shutdown()`统一关闭入口和进程树回收，
+`MainWindow.shutdown()`及应用退出finally等待它完成。详见[架构实施](evidence/brainsync_architecture_20260915.zh.md)。
+
+device adapter在采集启动取消时保持原生申请Future，由同一清理owner等待其终态后释放资源；
+超时保持recovery并阻止与迟到申请并行退订或断开。已有样本仍先通过EDF持久化路径保存。
+
+`data.contract.BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT`与`configs/brainsync_bidirectional_preprocessing.json`
+声明BrainSync新默认；`zero_phase_edge_policy`经PreprocessingSpec、raw builder及模型签名传递。
+`data.preprocess.filter_bidirectional_segment`统一实际SOS双遍和两端有效状态，
+`data.bidirectional.BidirectionalStateRecovery`负责校准包络、参考投影及逐epoch条件界。
+固定epoch线性映射和有限段响应采用有界缓存；zero可用时间保守取完整raw结束。
+`continuous_qc`保留原始检测及自然/伪迹端点区分；`transfer.quality`检查缓存中的滤波/QC匹配。
+个人入口支持新默认、旧模型按冻结合同重放；MOABB高层无法执行新声明时仍拒绝。
+比较入口为`run_bidirectional_qc_study.py`，见[联合优化证据](evidence/bidirectional_qc_20260909.zh.md)。
+
 | 阶段 | 实际模块与入口 | 交付与边界 |
 |---|---|---|
 | 原始数据 | `data.raw_artifacts`、`data.moabb`、`data.bids_eeg`、`data.brainsync` | 字节来源、真实participant、时间轴、电极角色；校准要求confirmed，推理只要求completed且raw就绪 |
@@ -49,7 +131,14 @@ pyqtgraph展示校准曲线、候选内部AUC及九数字证据。报告消费`b
 采集后报告由独立前端`quality_reports.py`排队，通过`report_brainsync_quality.py`调用
 `research.recording_quality`生成JSON、HTML和PNG。它复用无标签BrainSync接入、共享预处理及
 `transfer.quality.transform_epoch_quality`，零可用epoch也保留完整账本；不执行QC拟合。
-个体包报告通过`CalibratedPredictor.validate_input`和时间/身份门禁核对输入，不运行分类器。
+个体包的“冻结输入重放”由`CalibratedPredictor.load_inference_session(session_dir)`持有：
+从包内原合同恢复预处理、EOG和连续QC，返回已通过输入与前瞻时间门禁的无标签数据；不拟合、不预测。
+推理和个体包质量报告共同使用这个interface，不在CLI重建包内处理步骤。
+`data.brainsync`集中参考协调与最终通道选择：EOG/连续QC已执行参考时直接选择保存的通道子集；
+epoch后执行参考时先保留实测参考通道，完成相减后再选最终通道。
+无标签loader对同一次核验的录制对象执行`recording_validator`，再进入信号处理；个体包先核验
+人员、校准会话排除、标签就绪时间、模拟声明及已有采集参考声明，零可用epoch也不能绕过。
+软件回归与改动前归档见[冻结输入重放验证](evidence/brainsync_input_replay_20260909.zh.md)。
 前端仅写派生分析目录，报告指针与会话归属交叉核验，取消及应用关闭沿用ModelJobRunner进程树清理。
 legacy与候选选择器均保存每个候选的`fit_history`及独立`refit_history`，
 通过个体模型的`selection`与任务结果`internal_validation`恢复曲线；旧包不补造历史。
@@ -58,6 +147,46 @@ legacy与候选选择器均保存每个候选的`fit_history`及独立`refit_his
 新目录现已合入旧目录的EOG/坐标修正并修复录制并发问题；历史raw没有被静默改写。
 
 ## 已有模块应如何复用
+
+2026-09-16 `validate_calibration_raw_fit_scope`成为个人preflight、旧fit、候选及fit缓存共用的raw拟合范围门禁；
+legacy配方在QC路由前统一解析为`TargetRecipe`。`continuous_filter_plan`在原预处理module内同时提供
+分段坐标和两侧原因，`continuous_filter_segments`保留坐标投影；滤波、恢复和执行凭证共用该解释。
+源adapter在数值处理前排除永久坏非参考导，坏Cz拒绝当前投影；最终通过既有montage接口补mask/零槽。
+source preparation `/2`绑定实际raw/sidecar及方法身份，恢复同时核验NPZ和record凭证，轻量准入不解压矩阵。
+`analysis_seed_pairs`/`analysis_source_arms`贯穿源任务、目标计划、结果；分析器复用同一配对引擎生成组内及跨源对比。
+见[完整调用链验收](evidence/algorithm_chain_repairs_20260916.zh.md)。
+
+2026-09-15 `data.preprocess.execute_preprocessing(raw, events, preprocessing, **layout_options)`
+集中完整Spec验证、参数解释、实际源sample支持及执行凭证。BrainSync、MOABB raw、GTN、
+BI2014a、BNCI2014-008、manifest及source_records七处已迁移；`build_subject/load_dataset`
+用显式`preprocessing`接入，低层`preprocess(n_times=None)`仍可做研究。
+`transform_epoch_samples`统一实际FFT→截长→半开基线，恢复矩阵仅开放线性能力，
+`recovery.epoch_linear_projection`保留有界缓存与分块构造。
+`PreprocessingSpec.record()`只表示声明；`provenance.preprocessing_execution`单独保存实际实现、
+模块加载时源码摘要、SOS、分段和源网格。cache合并保留全部父凭证，历史缺失记unverified_inputs。
+模型门禁分别绑定可迁移的算子身份和不可混同的数据来源，不比较不同录制长度/原始摘要。
+来源、单位、候选含义、QC拟合范围和交付时钟仍归各adapter；MOABB高层保留独立能力门禁。
+数学依据见[科研裁决](evidence/preprocessing_contract_research_20260915.zh.md)，
+实施和验收见[执行器落地](evidence/preprocessing_execution_20260915.zh.md)。
+
+2026-09-18源接入与排程分为三个Module：`data.source_parsers`持有连续格式Adapter、标签与实际伴随文件；
+`data.source_admission.PreparedSourceInventory`核验准备状态、merged NPZ/record摘要、物理研究库与预处理，
+返回ready/pending/failed；`research.source_catalog.SourceCatalog`解释源池和整库排除，
+`research.source_matrix`编译任务及等量剂量。池成员不是数据准入状态，B0--B7仍保留原153任务，
+不存在按“候选库”名称额外禁用已执行B7的开关。新组合通过显式JSON加入，不覆盖既有池名。
+source chain可用`source_studies`或`source_pool`声明任意数量的源，逐项与实际cache核对；
+旧未声明源集合的计划保留原三源/家族两源约束。S2单源剂量按实际源域数推导，
+common-three仍要求逐行真观测，不以补零绕过。选取单个matched任务时保留整折比较池与seed来定配额。
+BrainForm原始CSV、Cattan连续MAT及BI2012已经接入同一source preparation Interface；
+BrainForm保留Pxx、1245采样裁切坐标、校准标签和显式坏导，Cattan不按block重置滤波，BI2012排除Fz ground。
+Chailloux现在同时绑定实际读取的vhdr/eeg/vmrk，替换其中任一文件都会使旧准备记录失效。
+source pool入口支持配置预处理、无拟合预检及有截止时间的准备等待，输入摘要绑定后变更必须另开结果目录。
+`run_source_pool_matrix.py`调用共享`fit_or_reuse_source_trajectory`；公共目标复用`execute_target_tasks`，个人矩阵复用
+`fit_calibration_candidate`/`SubjectAdapter`及`CalibratedPredictor`保存与重载。
+`data.source_records.SOURCE_EOG_PREPROCESSING`显式绑定本轮单向陷波合同，与工作站日后默认值分离。
+`train.source_sampling`将不变CDF预计算一次，保持NumPy choice相同抽样和RNG流；
+大源审计向量用`encode_source_vector`无损编码，消费者通过`decode_source_vector`同时接收旧列表与新摘要绑定编码。
+等量源按每个目标留出折选择参与者/正负样本配额，先截取每库实际行再合并，避免将全池常驻复制到每个seed。
 
 2026-09-09 `data.preprocess.design_continuous_sos`统一构造“显式陷波→带通”的SOS级联，
 实际连续滤波、`data.recovery.filter_sos`与连续QC恢复门禁共用。BrainSync默认50Hz/Q30，
@@ -113,7 +242,7 @@ loader在原始域计算诊断摘要，写入`continuous_quality_ledger.signal_d
 它只替换显式离线实验的时间排序条件，仍检查会话不重叠、fit来源、人员、参考及原始支持。
 工作站默认无此scope；新测试仍受校准就绪时间约束。EOG和连续QC的拟合会话均不能超出声明校准集。
 `brainsync_model_task --preprocessing-config`传完整`PreprocessingSpec`，fit/preflight的
-`declared_preprocessing`显式核对实际输入；未声明仍检查标准因果合同，推理只从个体包恢复算子。
+`declared_preprocessing`显式核对实际输入；未声明检查当前个人合同，推理只从个体包恢复算子。
 `run_brainsync_recovery`支持无源scratch/LDA，保存实际EOG模型，统计真实源加载次数。
 新EOG参考策略由`data.ocular`持有，dependency矩阵、拟合CLI、个体入口、GUI选择和重载共同消费。
 
@@ -158,10 +287,23 @@ plan声明`target_stage=compact`、`target_batch_size=512`，使用明确的用�
 仍按声明运行。随后授权的扩展全量通过`include_historical_controls=false`排除E1/E3历史小batch，
 源链默认由`research.source_execution`根据实际CPU配额/显存预算调度外折和布局任务组；
 spawn隔离CUDA和随机状态，全局GPU信号量协调source、E2候选和外层目标组的并发。
+池内worker顺序复用，每次拟合仍从声明的seed和初始状态开始；Manager只加载调度合同，
+训练与评分依赖在实际调用时导入，N2P3训练不加载未使用的Braindecode对照模型。
 外层组只持有一个attested目标cache，`TargetResultReuse`按完整处理键复用基线或相同源状态评分，
 通过`transfer.result_reuse`核对已完成record/cell、预测与完整模型文件的摘要，
 从同一份已验证字节解码，重新生成当前消费合同并记录原结果来源。缺少原始完整性声明的
 旧产物不进入自动复用；历史分析保持可读。完整性异常独立于被试拟合失败。
+
+公共源池与本人EOG矩阵的已完成产物统一通过`transfer.result_reuse.admit_completed_result`准入。
+该interface要求生产入口的完整当前声明，内部按公共target run与本人排程结果分别核验。
+公共`target_context`与`build_manifest`同时服务执行及续跑：身份、具体行、配方、环境及快照均比较，
+再核验`tasks.json`、逐cell记录、模型和预测；保留已完成矩阵中的`fit_failed`及其分母。
+本人`personal_result_contract`绑定稳定单任务、完整recipe、测试会话、输入摘要及环境。
+生产时封存逐session NPZ和正K个体包，K0没有目标拟合模型；NaN保留为无证据，Inf及行错位被拒绝。
+个体包从同一份已验字节调用原加载门禁，任务、配方、历史和原计划声明交叉核对。
+`--task`子集改变本次队列但不改变单任务科学声明；队列计划追加保存，原`plan.json`和原模型来源保留。
+`SourceChainResume`继续持有历史源清单；`verify_pool_matrix.py`继续承担独立预测重放，不代替当前文件核验。
+实现和反例见[完成产物准入](evidence/completed_result_admission_20260909.zh.md)。
 公共`target_experiments`直接调用`calibration_candidates`，不再经个体包模块重导出候选接口。
 
 `PreparedTransferCheckpoint`为一个固定checkpoint/目标dataset组合完成一次完整校验，
@@ -226,11 +368,32 @@ GPU任务结束释放缓存并重置该worker的编译缓存，避免旧optimize
 
 ## 研究扩展
 
+2026-09-16统一模型设计将现有`N2P3Net`、`FeatureResidualAdapter`、参数组、`SubjectAdapter`和个人包作为复用主体，
+计划集中扩展源目标组合、源中心收缩和共同event×candidate membership；每个优化工作集只执行一次联合更新。
+`decision_loss/candidate_set_loss/candidate_evidence`需共享物理语义，source/target recipe、固定更新、inner/refit、
+checkpoint和resume同步迁移。先补全现有互斥所保护的批次/风险/状态合同，再解除互斥。
+逐文件顺序和验收见[统一模型方案](evidence/unified_model_plan_20260916.zh.md#7-逐项工程实施与验收)。
+上述为待实施设计；以下P1/P2接口是当前已实现能力，不将两者混称。
+
+2026-09-16首批域迁移实现使用两个集中module。
+`models.parameter_groups`验证参数归属完整且不重叠，`N2P3Net/FeatureDomainTransfer.adaptation_parameter_groups()`
+由实际module对象声明空间、时间、读出、BN及扩展参数；`SubjectAdapter`统一应用策略并记录训练参数量。
+`TargetRecipe.weights`新增`spatial/temporal/adapter`，残差配置显式序列化；个人模型按实际wrapper重建并严格核对架构。
+`P1`矩阵、公共runner和分析器共用这些配方，完整校准refit继续使用同一interface。
+
+`transfer.source_objective`持有源目标函数配置、身份准入、批内正负对、重复行处置和诊断。
+`DeepConfig.source_objective`仅用于固定更新源轨迹：CE原路径保持原计算，SupCon/MMD复用同一CE批次和优化器。
+`source_selection`及监督预训练CLI把实际辅助项写入每个更新点的合同，checkpoint入口核对配置与更新范围。
+`P2_source`复用既有源组调度、registry和resume；外层`P2`阶段绑定源臂并复用校验后的scratch/LDA产物。
+嵌套配置统一用`asdict`序列化，避免`__dict__`把dataclass实例写进JSON或造成续跑身份不一致。
+见[实施与验收](evidence/domain_transfer_implementation_20260916.zh.md)。
+
 | 现有实现 | 定位 | 继续运行的条件 |
 |---|---|---|
 | `models.adapters`、`models.splitbn` | 特征残差、invariant/private、Split-BN对照 | 显式源domain与目标buffer来源，匹配基线 |
 | `transfer.asmmd` | 源流/冻结logit联合适配对照 | 两阶段一致损失、源身份校验、批内至少2样本 |
 | `data.euclidean_alignment`、`data.domain_alignment`、`transfer.alignment` | EA、ACW、GALIA各自不同合同 | 不互换名称/公式，fit范围和参考可追溯 |
+| `data.ea_artifact` | EA 无量纲特征fit、冻结、变换与数值重放 | EAFitPlan＋actual parent核授权/state/output，缺域拒绝；普通物理入口拒绝EA。完整N2P3双侧源/目标消费者仍未晋升 |
 | `train.source_sampling` | TSD与Dense PDS源样本选择 | target选择依据仅来自声明校准，源行账本保留 |
 | `transfer.pretraining`、`run_pretrain.py` | 重建式预训练对照 | 不冒充已训练的监督源分类头 |
 | `transfer.candidate_set_loss`等 | 合法membership下的决策损失 | 物理候选合同成立，完整词表/覆盖测试通过 |
@@ -245,7 +408,7 @@ GPU任务结束释放缓存并重置该worker的编译缓存，避免旧optimize
 | `src/` | 可复用实现 | 不放一次性实验配方、现场路径或历史执行脚本 |
 | `experiments/*.py` | 可运行入口 | 编排已实现模块；直接CLI启动应成立 |
 | `configs/` | 当前产品声明和通用实验模板 | 不存已退役的日期化主线模板；JSON不自动代表采集器已执行 |
-| `tests/` | 当前行为与反例 | 删除退役接口/模板专属断言，保留仍成立的数学与合同测试 |
+| `tests/` | 当前行为与反例 | 共享造数归`support/`，测试文件不互相导入；合并重复场景，保留数学与合同反例 |
 | `doc/` | 六份当前指导与入口 | `research_program`为研究权威；`roadmap`为统一进度；本文件为实现导航 |
 | `doc/evidence/` | 结果、推导、来源与历史审计 | 主题索引；dated状态不覆盖当前指导，旧原文保留于压缩快照 |
 | `doc/assets/` | 文档引用的结构化证据 | 与源码分开；已运行审计的JSON不是默认配置 |

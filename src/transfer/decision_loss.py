@@ -21,7 +21,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from data.candidate_task import MembershipDecision
 from data.events import ScheduledEventTimeline
+from models.candidate_evidence import (
+    MEMBERSHIP_SCORE_METHOD,
+    aggregate_membership_sums,
+    membership_decision_scores,
+    membership_evidence,
+)
 
 DIRECT_DECISION_METADATA_SCHEMA = "n2p3_direct_decision_metadata/1"
 DECISION_LOSS_CONFIG_SCHEMA = "n2p3_decision_loss_config/1"
@@ -653,6 +660,7 @@ class DecisionLossResult:
     loss: torch.Tensor | None
     argmax_candidate: str | None
     failure_reason: str | None = None
+    score_kind: str = "count_neutral_mean/1"
 
     def record(self) -> dict[str, object]:
         detached_scores = self.scores.detach().float().cpu().tolist()
@@ -662,7 +670,7 @@ class DecisionLossResult:
             if self.posterior is None
             else [float(value) for value in self.posterior.detach().float().cpu().tolist()]
         )
-        return {
+        record = {
             "schema": DECISION_LOSS_RESULT_SCHEMA,
             "decision_id": self.decision_id,
             "evidence_level": self.evidence_level,
@@ -676,6 +684,46 @@ class DecisionLossResult:
             "argmax_candidate": self.argmax_candidate,
             "failure_reason": self.failure_reason,
         }
+        if self.score_kind != "count_neutral_mean/1":
+            record.update(schema="n2p3_decision_loss_result/2", score_kind=self.score_kind)
+        return record
+
+
+def membership_decision_loss(
+    evidence: torch.Tensor, decision: MembershipDecision, target_candidate: int, *,
+    available=None, temperature: float = 1., prior=None, logit_offset=0., decision_id: str = "decision",
+) -> DecisionLossResult:
+    """One differentiable sum decision; callers own risk weights and optimizer steps.
+
+    Incomplete requested decisions return no trainable loss, retaining their
+    vocabulary and reason. The caller must retain their requested denominator.
+    Ties remain eligible for CE; an operational abstention cannot escape training.
+    """
+    if not isinstance(evidence, torch.Tensor):
+        raise ValueError("decision training requires torch evidence")
+    if not isinstance(decision, MembershipDecision):
+        raise ValueError("decision training requires physical membership metadata")
+    if (isinstance(target_candidate, bool) or not isinstance(target_candidate, Integral)
+            or not 0 <= target_candidate < len(decision.candidate_vocabulary)):
+        raise ValueError("target candidate must index the frozen choice vocabulary")
+    decision_id = _strict_text(decision_id, "decision_id")
+    result = membership_decision_scores(evidence, decision, available=available,
+        temperature=temperature, prior=prior, logit_offset=logit_offset)
+    loss = (F.cross_entropy(result.scores.unsqueeze(0),
+            torch.tensor([target_candidate], dtype=torch.long, device=evidence.device))
+            if result.eligible else None)
+    return DecisionLossResult(
+        decision_id=decision_id, evidence_level=decision.repetitions,
+        status=("tie" if result.reason == "tie" else "complete") if result.eligible else (
+            "unidentifiable" if result.complete else "incomplete"),
+        candidate_vocabulary=decision.candidate_vocabulary,
+        target_candidate=decision.candidate_vocabulary[target_candidate],
+        missing_candidates=tuple(name for name, count in zip(
+            decision.candidate_vocabulary, result.counts, strict=True) if count == 0),
+        scores=result.scores, posterior=result.posterior if result.eligible else None,
+        loss=loss, argmax_candidate=result.predicted, failure_reason=result.reason,
+        score_kind=MEMBERSHIP_SCORE_METHOD,
+    )
 
 
 class DecisionLevelLoss(nn.Module):
@@ -762,29 +810,16 @@ class DecisionLevelLoss(nn.Module):
                 argmax_candidate=None,
                 failure_reason="evidence_contains_nan_or_infinity",
             )
-        scores_by_candidate: list[torch.Tensor] = []
-        observed_candidates: list[bool] = []
-        missing: list[str] = []
         outside = bool(
             ((candidate_membership < 0) | (candidate_membership >= self.num_candidates))
             .any()
             .item()
         )
-        for index, candidate in enumerate(self.candidate_vocabulary):
-            rows = candidate_membership == index
-            if bool(rows.any().item()):
-                scores_by_candidate.append(evidence[rows].mean())
-                observed_candidates.append(True)
-            else:
-                scores_by_candidate.append(evidence.new_tensor(float("-inf")))
-                observed_candidates.append(False)
-                missing.append(candidate)
-        scores = torch.stack(scores_by_candidate)
-        observed_mask = torch.as_tensor(
-            observed_candidates,
-            dtype=torch.bool,
-            device=evidence.device,
-        )
+        matrix = candidate_membership[:, None] == torch.arange(self.num_candidates, device=evidence.device)
+        observed_mask = matrix.any(dim=0)
+        missing = [candidate for candidate, observed in zip(
+            self.candidate_vocabulary, observed_mask.tolist(), strict=True) if not observed]
+        scores = membership_evidence(evidence, matrix, aggregation="mean")
         if not bool(torch.isfinite(scores[observed_mask]).all().item()):
             return DecisionLossResult(
                 decision_id=decision_name,
@@ -904,7 +939,8 @@ class DecisionLevelLoss(nn.Module):
             device=evidence.device,
             dtype=evidence.dtype,
         )
-        prefix_scores = packed.cumsum(dim=2) / divisor.view(1, 1, -1)
+        prefix_scores = aggregate_membership_sums(
+            packed.cumsum(dim=2), divisor.view(1, 1, -1), aggregation="mean")
         if not bool(torch.isfinite(prefix_scores).all().item()):
             raise ValueError("packed candidate prefix means overflowed.")
         log_posterior = F.log_softmax(prefix_scores / self.temperature, dim=1)
@@ -1363,4 +1399,5 @@ __all__ = [
     "DirectDecisionMetadata",
     "build_decision_batch_plan",
     "invalid_decision_ledger",
+    "membership_decision_loss",
 ]

@@ -27,6 +27,7 @@ from data.study import (
     load_study_membership_proof,
     study_ids_for_identity,
 )
+from research.comparison import evaluation_input_identity
 from research.evaluation import (
     build_evaluation_run_contract,
     scratch_model_origin,
@@ -39,6 +40,7 @@ from transfer.binary import (
     STANDARD_CALIBRATION_TRIALS,
     calibration_arms,
     fit_shrinkage_feature_model,
+    matched_input_digests,
     matched_split_digests,
     paired_transfer_effects,
     scratch_like_trunk,
@@ -77,6 +79,73 @@ def frozen_features(base, X, mask, stats, device, batch_size=256):
     return np.concatenate(scores), np.concatenate(features)
 
 
+def admit_unified_prefixes(dataset, prefixes, *, requested, budgets, plan,
+                          training_identity, source_membership, prefix_manifest):
+    """Bind actual raw views to this target plan and preserve allocation fallback."""
+    from data.epochs import select_epoch_channels, select_scheduled_events
+    from data.identity import assert_target_identity_excluded
+
+    declared = {str(entry.get("subject", entry.get("record", {}).get("subject"))): entry
+                for entry in prefix_manifest["records"]}
+    source_studies = set(study_ids_for_identity(training_identity, source_membership))
+    adjustments, allocations = [], {}
+    for subject in requested:
+        if subject not in prefixes:
+            raise ValueError(f"requested participant lacks raw prefix preparation: {subject}")
+        entry = prefixes[subject]
+        evidence = entry["manifest"]
+        if evidence != declared.get(subject):
+            raise ValueError("loaded target prefixes differ from the frozen manifest")
+        if tuple(evidence["requested_budgets"]) != budgets:
+            raise ValueError("raw prefix requested budgets differ from the target plan")
+        effective = tuple(sorted(entry["calibration"]))
+        validate_calibration_budgets(effective)
+        maximum = max(effective)
+        expected = tuple(sorted({k for k in budgets if k <= maximum} | {maximum}))
+        reasons = evidence.get("adjustments", {})
+        if (tuple(evidence["effective_budgets"]) != effective or maximum > max(budgets)
+                or evidence["maximum_calibration_events"] != maximum or effective != expected
+                or set(reasons) != {str(k) for k in budgets if k > maximum}
+                or any(not isinstance(reason, str) or not reason.strip() for reason in reasons.values())):
+            raise ValueError("raw prefix effective budgets lack the declared limited-data adjustments")
+        if any(evidence["protocol"].get(key) != value for key, value in plan["target_protocol"].items()):
+            raise ValueError("raw prefix recording protocol differs from the target plan")
+        expected_identity = dataset.identity_table.record_for(subject).authority_key()
+        views = [entry["test"], *(view for view in entry["calibration"].values() if view is not None)]
+        for inner in entry.get("early_stopping_inner", {}).values():
+            if inner.get("status") == "ready":
+                views.extend((inner["training"], inner["validation"]))
+        for view in views:
+            if view.identity_table.authority_keys() != (expected_identity,):
+                raise ValueError("actual raw prefix participant authority differs from the target cache")
+            membership = dataset_study_membership(view)
+            studies = set(study_ids_for_identity(view.identity_table, membership))
+            if studies != {plan["target_study"]} or studies & source_studies:
+                raise ValueError("actual raw prefix study differs from the held-out target study")
+            assert_target_identity_excluded(training_identity, view.identity_table.record_for(subject))
+        fixed = select_scheduled_events(dataset, dataset.event_timeline.subject_ids.astype(str) == subject,
+                                        reason="verify_fixed_test_against_authorized_raw_prefix")
+        actual = select_epoch_channels(entry["test"], dataset.channel_names)
+        masks = [view.trial_channel_mask if view.trial_channel_mask is not None else
+                 np.broadcast_to(view.channel_mask, view.X.shape[:2]) for view in (fixed, actual)]
+        if (fixed.preprocessing != actual.preprocessing
+                or fixed.provenance.get("source_reference") != actual.provenance.get("source_reference")
+                or fixed.event_timeline.fingerprint() != actual.event_timeline.fingerprint()
+                or not np.array_equal(fixed.X, actual.X) or not np.array_equal(fixed.y, actual.y)
+                or not np.array_equal(masks[0], masks[1])
+                or not np.array_equal(fixed.channel_positions_m, actual.channel_positions_m)):
+            raise ValueError("actual raw prefix test differs from the frozen target cache evidence")
+        allocations[subject] = {"participant_key": expected_identity,
+            "requested_budgets": list(budgets), "effective_budgets": list(effective), "adjustments": reasons,
+            "retained_calibration_trials": {str(k): 0 if view is None else view.n_epochs
+                                             for k, view in entry["calibration"].items()},
+            "fixed_test_trials": actual.n_epochs}
+        adjustments.extend({"subject": subject, "participant_key": expected_identity,
+            "requested_K": k, "effective_K": maximum, "status": "budget_reduced" if maximum else "unavailable",
+            "reason": reasons[str(k)]} for k in budgets if k > maximum)
+    return {"budget_adjustments": adjustments, "prefix_allocations": allocations}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", type=Path)
@@ -84,7 +153,7 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--cpu-threads", type=int, default=2)
-    parser.add_argument("--stage", choices=("B0", "B0_score", "E1", "E3", "compact", "ES"))
+    parser.add_argument("--stage", choices=("B0", "B0_score", "E1", "E3", "compact", "ES", "P1", "P2", "unified"))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--target-seed", type=int)
     parser.add_argument("--batch-size", type=int)
@@ -168,7 +237,7 @@ def execute(args):
         path = Path(plan[field])
         if not path.is_absolute():
             plan[field] = str((args.plan.parent / path).resolve())
-    for field in ("batch_rule_file", "batch_cohort_file"):
+    for field in ("batch_rule_file", "batch_cohort_file", "target_prefix_manifest"):
         if plan.get(field) is not None:
             path = Path(plan[field])
             if not path.is_absolute():
@@ -221,11 +290,60 @@ def execute(args):
         raise ValueError("source model and declared training snapshot disagree")
     prepared = PreparedTransferCheckpoint(payload, dataset)
     prepared_origin = prepared.model_origin(checkpoint_sha)
+    unified = getattr(args, "stage", None) == "unified"
+    scope_datasets = None
+    prefixes = None
+    prefix_admission = {}
+    if unified:
+        from data.source_records import load_target_prefixes
+        from research.source_matrix import (
+            validate_unified_source_factors,
+            validate_unified_source_input,
+        )
+        from train.early_stopping import UnifiedTrainingBudget
+
+        plan = {**plan, "unified_training_budget": UnifiedTrainingBudget(
+            **plan.get("unified_training_budget", {})
+        ).record()}
+        selection_binding = plan.get("source_prior_selection")
+        if selection_binding is None:
+            if evidence_scope != "software_correctness":
+                raise ValueError("unified development requires frozen source-inner prior selection evidence")
+        else:
+            from research.contracts import semantic_sha256
+
+            selection_path = Path(selection_binding["path"])
+            if not selection_path.is_absolute():
+                selection_path = args.plan.parent / selection_path
+            selection = json.loads(selection_path.read_text(encoding="utf-8"))
+            if (semantic_sha256(selection) != selection_binding["record_sha256"]
+                    or selection.get("status") != "selected"
+                    or selection.get("selected_weight") != plan.get("source_prior_weight")
+                    or selection.get("unified_training_budget") != plan["unified_training_budget"]
+                    or selection.get("source_budget") != plan.get("source_budget")
+                    or payload.get("source_budget") != plan.get("source_budget")
+                    or selection.get("source_cache_sha256") != payload["source_cache_sha256"]
+                    or plan["target_study"] not in selection.get("fold", {}).get("fit_ledger", {}).get("excluded_source_datasets", [])):
+                raise ValueError("frozen source-prior selection does not match the actual unified source/target plan")
+        validate_unified_source_factors(payload, plan.get("source_factors"))
+        validate_unified_source_input(dataset, plan.get("source_preprocessing"))
+        prefix_path = Path(plan["target_prefix_manifest"])
+        prefix_bytes = prefix_path.read_bytes()
+        if hashlib.sha256(prefix_bytes).hexdigest() != plan["target_prefix_manifest_sha256"]:
+            raise ValueError("target raw prefix manifest differs from the frozen plan")
+        prefixes = getattr(args, "target_prefixes", None)
+        if prefixes is None:
+            prefixes = load_target_prefixes(prefix_path, subjects=requested, load_inner=False)
+        prefix_admission = admit_unified_prefixes(dataset, prefixes, requested=requested, budgets=budgets,
+            plan=plan, training_identity=training_identity, source_membership=source_membership,
+            prefix_manifest=json.loads(prefix_bytes))
     splits = {}
     exclusions = []
-    unavailable_budgets = []
+    unavailable_budgets = prefix_admission.get("budget_adjustments", [])
     for subject in requested:
         prepared.assert_target_excluded(subject)
+        if unified:
+            continue
         try:
             missing = {}
             splits[subject] = planned_splits(dataset, subject, plan["target_protocol"], budgets, unavailable=missing)
@@ -245,6 +363,7 @@ def execute(args):
         from transfer.target_experiments import (
             apply_correctness_budget,
             build_target_tasks,
+            build_unified_scoped_tasks,
             execute_target_tasks,
             resolve_target_batch_rule,
         )
@@ -258,14 +377,30 @@ def execute(args):
         if seed is None:
             seed = target_seed
         order = plan["target_protocol"]
-        manifest = build_target_tasks(dataset, splits, stage=args.stage, batch_size=batch, seed=seed,
+        if unified:
+            manifest, scope_datasets = build_unified_scoped_tasks(prefixes,
+                requested_subjects=requested, channel_names=dataset.channel_names,
+                preprocessing=plan["source_preprocessing"], batch_size=batch, seed=seed,
+                source_prior_weight=plan["source_prior_weight"],
+                decision_weight=plan.get("decision_weight", 1.),
+                target_max_updates=plan.get("target_max_updates"),
+                unified_training_budget=plan["unified_training_budget"])
+        else:
+            manifest = build_target_tasks(dataset, splits, stage=args.stage, batch_size=batch, seed=seed,
                                       recording_order=order,
                                       include_historical_controls=plan.get("include_historical_controls", True),
-                                      epoch_selection=plan.get("epoch_selection"))
+                                      epoch_selection=plan.get("epoch_selection"),
+                                      global_early_stopping=plan.get("global_early_stopping"))
+        if plan.get("decision_diagnostics") is not None:
+            from transfer.decision_experiments import expand_decision_diagnostics
+
+            manifest = expand_decision_diagnostics(manifest, plan["decision_diagnostics"])
         if evidence_scope == "software_correctness":
             apply_correctness_budget(manifest, epochs=plan.get("correctness_target_epochs", 1))
         manifest.update(batch_rule=batch_rule, budget_adjustments=unavailable_budgets,
                         protocol_exclusions=exclusions, requested_calibration_budgets=list(budgets))
+        if unified:
+            manifest["prefix_allocations"] = prefix_admission["prefix_allocations"]
         context = dict(plan=plan, target_study=plan["target_study"], target_protocol=plan["target_protocol"],
                        evidence_scope=evidence_scope,
                        source_seed=prepared.source_seed,
@@ -295,7 +430,8 @@ def execute(args):
                               "fit_calls": manifest["fit_calls"], "dry_run": True}))
         else:
             execute_target_tasks(dataset, payload, manifest, output=args.output, context=context,
-                                 device=str(device), recording_order=order)
+                                 device=str(device), recording_order=order,
+                                 result_reuse=getattr(args, "result_reuse", None), scope_datasets=scope_datasets)
         return
     args.output.mkdir(parents=True, exist_ok=False)
     report = {
@@ -331,6 +467,9 @@ def execute(args):
                 if dataset.trial_channel_mask is None
                 else dataset.trial_channel_mask
             )
+            input_digests = matched_input_digests(
+                dataset.X, dataset.y, test, mask, dataset.preprocessing
+            )
             zero, test_features = frozen_features(base, dataset.X[test], mask[test], stats, device)
             effective_maximum = max(subject_splits)
             maximum_train = rows[subject_splits[effective_maximum].calibration_rows]
@@ -353,6 +492,7 @@ def execute(args):
                 train = rows[split.calibration_rows]
                 y_train = dataset.y[train]
                 split_digests = matched_split_digests(train, test)
+                comparison_identity = evaluation_input_identity(dataset, train, test)
                 for arm in calibration_arms(ARMS, k, budgets):
                     started = time.perf_counter()
                     target_only = arm in {"target_only", "shrinkage_lda"}
@@ -408,6 +548,9 @@ def execute(args):
                     )
                     cell = {
                         **split_digests,
+                        **input_digests,
+                        "comparison_identity": comparison_identity,
+                        "test_budget": split.test_budget.record(),
                         "study": plan["target_study"],
                         "source_arm": plan.get("source_arm"),
                         "source_seed": prepared.source_seed,
@@ -427,7 +570,7 @@ def execute(args):
                     reuse_key = None
                     cached = None
                     if result_reuse is not None:
-                        reuse_key = target_result_key(dataset_sha256=target_sha, participant_key=participant,
+                        reuse_key = target_result_key(dataset_sha256=comparison_identity["digest"], participant_key=participant,
                             split=split_digests, architecture=base.architecture_record(), treatment=adaptation,
                             batch_size=plan.get("target_batch_size", 32),
                             source_state=None if target_only else source_state_key,
