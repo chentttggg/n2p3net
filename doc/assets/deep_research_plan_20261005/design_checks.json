@@ -1,7 +1,7 @@
 {
   "evidence_scope": "software_and_mathematical_counterexamples",
-  "plan_sha256": "8342aa023967c6d7ef183ab96be80dc721c79070e207dfa0322c2f4f92d2fe38",
-  "script_sha256": "19b6cd7859f99c8297851306f8ac846e4dca6cec9e88ec6a8ea001856b5a0e0c",
+  "plan_sha256": "3fa387f505d3a2ffa93ada130284106fade7dfd219d156260684ceb8e57030f1",
+  "script_sha256": "2f1309f49309d5fd36424390fff8a48e0d489b185c9ff47a1307fc34fe969a82",
   "coverage_and_graph": {
     "wishlist_items": 123,
     "tasks": 15,
@@ -52,7 +52,13 @@
       "candidate_nll": 0.478916703869477
     },
     "three_seed_pseudoreplication_variance_ratio": 3.0,
-    "missing_nll_selection_bias_reproduced": true
+    "missing_nll_selection_bias_reproduced": true,
+    "tie_prediction_and_probability_coverage_differ": true,
+    "finite_underflow_nll": 1000,
+    "stable_arithmetic_log_pool": [
+      -0.6931471805599453,
+      -0.6931471805599453
+    ]
   },
   "scheduling": {
     "logical_cells": 144,

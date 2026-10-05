@@ -70,7 +70,7 @@ B05–B10 不需要等 N2P3Net 混合实现，也不要求先接完 EA。B12 的
 
 ## 3. B00：hit 优先的评价、选择与统计合同
 
-令参与者 s 的预声明 requested decisions 为 `R_s`，`a_sd` 表示模型是否提供合法完整概率，`c_sd` 表示是否正确。操作主指标与 coverage 为
+令参与者 s 的预声明 requested decisions 为 `R_s`，`a_sd` 表示模型是否实际提供合法可用预测，`c_sd` 表示是否正确；`b_sd`另表示是否提供合法完整候选概率。操作主指标与预测coverage为
 
 \[
 H_s=\frac{\sum_{d\in R_s}a_{sd}c_{sd}}{|R_s|},\quad
@@ -80,7 +80,9 @@ H=\frac1S\sum_s H_s.
 
 失败、弃权、不完整 schedule、不可达 K 都留在 requested 账本；不能用 valid-only hit 代替 H。trial 多的人不能支配 participant-macro 指标。`hit@all` 使用每个完整 decision 的全部合法重复，R1/R5 等另作次级读数，不改产品主定义。
 
-NLL、Brier 在明确的合法概率输出上计算。配对 NLL 使用同一预声明 roster 的 paired-complete 子集并保存缺失清单；同时列全 requested 的覆盖与失败，不允许因掉了困难项就宣称概率风险下降。若另报均匀拒判填补 NLL，必须写成报告约定；它不是模型实际输出。预测概率为零而真值发生时 NLL 为无穷，不用消费端剪裁伪造有限概率。
+概率coverage另记`B_s=Σ_d b_sd/|R_s|`。完整概率tie仍可有b=1而无唯一winner的a=0，不能将概率可得率当操作预测覆盖；同时报告tie、拒判和失败。paired NLL按b而非a建立固定支持，不能因正确/错误winner或tie后再删概率行。
+
+NLL、Brier 在明确的合法概率输出上计算。配对 NLL 使用同一预声明 roster 的 paired-complete 子集并保存缺失清单；同时列全 requested 的覆盖与失败，不允许因掉了困难项就宣称概率风险下降。若另报均匀拒判填补 NLL，必须写成报告约定；它不是模型实际输出。真实零概率而真值发生时 NLL 为无穷；finite log-softmax的exp数组下溢为0属于数值表达，使用持久化log-probability算NLL，不clip或误判为真实零。概率混合以`logsumexp(log w_m+log p_m)`稳定计算，算术池语义不变。
 
 开发候选进入下一阶段采用同批点估计门：`ΔH>=0`、`ΔNLL<=0`、不减少 baseline 已成功 decision 的合法输出、不增加逐人失败。先检查比较有效性与支持，再按 hit 排序，NLL/Brier/错时最大置信度检验过度自信。margin=0 是本轮清楚的开发比较规则，不是成人非劣效确认；成人效能差值、风险 margin 和独立人数另在新协议预声明。36 候选均匀 NLL=`log(36)` 只是一条参照，不能当普遍效能阈值。
 
@@ -133,6 +135,8 @@ p_{mix}(q)=\sum_m w_m p_m(q),\quad w_m\ge0,\quad\sum_mw_m=1.
 ### 公平 AR 与条件前缀
 
 阶数面板为 AR0/1/4/8/16/32，统一 hold-back 32 个源采样点，并记录该点数对应的物理秒数。Y 和 D 经同一个 whitening 后在共同评分行上取值，前缀真实作为条件信息保留于预算和支持，不从 requested 账本删除。平稳边际启动与实际 prefix 条件 likelihood 是不同面板，不能仅把低阶前 32 行删掉就宣称计算了条件模型。
+
+共同tail还用于精确条件模型的拟合criterion、innovation variance和选择criterion，不能只让评分行公平。Burg若仅作初始化，其不同阶内部lag-pair数量另记；不能把初始化目标冒充最终同支持likelihood。
 
 更强的条件反例是：即使 prefix 不区分 q，它也可能更新不确定 common ERP 系数。完整 `p(Y_tail|Y_prefix,C,q)` 必须对相关 ERP/kernel latent posterior 一并条件化；只做 AR 创新并继续使用未条件化 kernel posterior，不是该联合模型的精确条件 likelihood。前缀包含已知相邻响应时，onset 位于 p 之后也不能证明 prefix 是纯噪声。
 
@@ -199,7 +203,7 @@ E_{ERP}(h)=\frac{\|T(X+h)-T(X)-F_{short}h\|}{\|F_{short}h\|}.
 
 ### 污染和动态研究的进入条件
 
-工频漂移、幅相调制、持续污染、glitch、慢波、EOG、坏导与参考污染分别定义 mechanism challenge。固定 F 的 Gaussian 传播不包含从当前信号估频/估幅的不确定性。自适应 harmonic 已能用叠加反例证明非线性，后续需 parametric/bootstrap 或明确层级模型，不能套一个冻结 F 作完整概率解释。
+工频漂移、幅相调制、持续污染、glitch、慢波、EOG、坏导与参考污染分别定义 mechanism challenge。固定设计/频率/权重下线性LS估振幅是固定投影，可精确传播`TΣTᵀ`。当设计、频率、Huber权重或应用开关随X重选时，不能用一次冻结F代表完整自适应映射；自适应harmonic的叠加反例已证明这一点，后续需parametric/bootstrap或明确层级模型。给定X/C/seed后拟合参数与T仍确定，未知真实参数的posterior预测不确定性不等于额外运行时随机state。
 
 动态因子/VAR/graph AR、非平稳/change-point、Matérn GP/状态空间、Student-t/scale-mixture/matrix-t 都保留在清单；按层级、单位、可识别参数和 C 内有效独立组数选择进入。算力不受限也不能增加生理独立样本。明确 separable 模型残差失配后，先以新模型作可证伪模拟和配对诊断，再以相同预算比较真实任务；不一次引入所有自由度后归功于某一机制。
 

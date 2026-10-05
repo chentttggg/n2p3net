@@ -1566,6 +1566,8 @@
     },
     "selection": "nested grouped calibration OOF; outer-held labels never used for selection",
     "primary_candidate_metric": "requested-participant macro operational hit@all",
+    "coverage": "prediction coverage and legal probability coverage separately; ties may have probabilities without a prediction",
+    "nll_numerics": "persist log-probability; stable arithmetic log-pool; finite exp underflow is not true zero; no consumer epsilon clipping",
     "binary_estimand": "four-dataset equal macro paired delta AUC; candidate hit is separate",
     "development_gates": {
       "paired_delta_hit_min": 0.0,

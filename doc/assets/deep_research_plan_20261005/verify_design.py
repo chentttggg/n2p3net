@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 import numpy as np
+from scipy.special import logsumexp
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -91,12 +92,27 @@ def evaluation_counterexamples():
     # Incompleteness can lower valid-only NLL just by losing difficult decisions.
     nll_all = np.array([0.1, 0.2, 7.0])
     assert nll_all[:2].mean() < nll_all.mean()
+    # A tie has valid probability evidence and no operational prediction.
+    tie_log_probability = np.array([-np.log(2), -np.log(2)])
+    assert np.isclose(logsumexp(tie_log_probability), 0)
+    probability_available, prediction_available = True, False
+    assert probability_available and not prediction_available
+    # The exact model has nonzero mass even when float64 exp underflows to zero.
+    finite_log_probability = np.array([0.0, -1000.0])
+    assert np.exp(finite_log_probability)[1] == 0
+    assert -finite_log_probability[1] == 1000 and np.isfinite(-finite_log_probability[1])
+    pooled_log_probability = logsumexp(np.log(0.5) + np.array([
+        finite_log_probability, finite_log_probability[::-1]]), axis=0)
+    np.testing.assert_allclose(pooled_log_probability, [-np.log(2), -np.log(2)])
     return {"participant_macro_hit": macro, "incorrect_pooled_hit": pooled,
             "requested_hit": operational, "incorrect_valid_only_hit": valid_only,
             "nll_better_hit_worse": {"base_hit": base_hit, "candidate_hit": alt_hit,
                                      "base_nll": base_nll, "candidate_nll": alt_nll},
             "three_seed_pseudoreplication_variance_ratio": float(cluster_variance / pseudoreplicated_variance),
-            "missing_nll_selection_bias_reproduced": True}
+            "missing_nll_selection_bias_reproduced": True,
+            "tie_prediction_and_probability_coverage_differ": True,
+            "finite_underflow_nll": 1000,
+            "stable_arithmetic_log_pool": pooled_log_probability.tolist()}
 
 
 def scheduling_counterexamples():
