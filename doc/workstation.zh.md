@@ -1,5 +1,9 @@
 # BrainSync工作站指南
 
+2026-10-05 [多专家分块研究](evidence/deep_research_plan_20261005.zh.md)是研究规格，尚未接入工作站默认。
+未来统一个人包由现有calibrated owner保存各专家冻结状态、候选词表、校准/输入来源与概率校准程序，
+未知目标score不提供真值；K0不拟合目标温度/统计/gating。四库或BNCI36选一开发不能替代新成人九选一确认。
+
 2026-09-16统一模型后端已接通固定预算个人训练。一份自足个人包贯通同一前向图。
 研究校准入口为`brainsync_model_task.py --task calibrate --selector-mode unified
 --calibration-recipe <TargetRecipe.json> --training-budget configs/unified_training_budget.json`。

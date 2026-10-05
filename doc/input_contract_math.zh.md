@@ -1,5 +1,12 @@
 # P300 模型输入合同：离散时间、单位与分组
 
+2026-10-05 [分块研究合同](evidence/deep_research_plan_20261005.zh.md)要求共同物理decision与
+各专家独立数值view分开绑定；MAT上游分发信号不称ADC raw。AR0/1/4/8/16/32按共同hold-back=32
+源采样点比较，Y/D同步白化并保存实际条件prefix；prefix同时可能更新ERP/kernel后验，不能只改noise创新。
+g-prior信息矩阵来自授权C，不逐held候选重建。外部状态Gaussian条件模型同时使用候选相关均值
+与Schur协方差；确定padding和F(X)不能当新增独立噪声/观测。
+ERP保真与white-noise gain来自完整T映射；输出重叠率和0/2/8秒距离仅作研究分层，不是启用规则。
+
 ## 0. BrainSync 采集角色（2026-09-06）
 
 唯一产品布局由 `data.contract` 的 `BRAIN_SYNC_ACQUISITION_CHANNELS` 与

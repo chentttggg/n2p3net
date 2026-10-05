@@ -6,6 +6,13 @@
 
 ## 主链与接口
 
+2026-10-05 [分块科研规格](evidence/deep_research_plan_20261005.zh.md)计划由一个`transfer.ensemble`
+Module组织现有NN/经典trial/raw连续Adapter，`candidate_evidence`继续持有membership数学，
+`calibrated`继续持有个人包和只读推理；该新Module尚未实现。共同DecisionViews保存物理支持，
+各专家保留自己的数值身份，不要求raw与Toeplitz使用相同预处理。B02–B04的调用链、失败行为、
+重放与匹配scratch清单见规格；高阶OperatorGLS目前仍是doc/assets研究helper，不当作src生产能力。
+参数量随实际架构、pooling和残差recipe记录，历史1279含残差值不泛化到默认N2P3Net构造。
+
 2026-10-05 `experiments/boundary_state_research.py` 是独立数学/计划框架，无生产调用者：长短有限算子先映射到共同输出网格，ERP 模板行基按样本优先展平，诊断不选择 held penalty；dense Gaussian 参考检验协方差 gauge 而不拟合 AR。完整 E1–E3 与 Kalman 尚未执行，接口边界见[设计核对](evidence/boundary_state_redesign_20261005.zh.md)。
 
 2026-10-04的[实施记录](evidence/system_implementation_20261004.zh.md)把研究能力放在以下已有职责及新Module中：

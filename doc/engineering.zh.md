@@ -71,6 +71,14 @@ CUDA实际拟合、保存重载及CLI推理验证见[执行计划](roadmap.zh.md
 
 ## 开发与验证
 
+2026-10-05 [分块方案](evidence/deep_research_plan_20261005.zh.md)将123愿望映射到15块，
+实际研究入口/helper须一并冻结；旧Phase4凭证遗漏不能消费端补签。
+减少防御代码按“外部ingress/fit/load一次验证、不可变内部状态、纯数值核”实施，
+保留身份/fit/时间/完整候选/失败分母与artifact守卫，不以多层catch或默认参数吞掉失败。
+共享raw/view缓存和ready DAG消费同一CPU总预算、GPU容量及HostMemoryAdmission；四worker各6线程加1调度，
+准备/评价从总预算分配，尾部记录capacity/ready/active。本轮仅数学/合同验证，未实测新云吞吐。
+有并发原树时采用已绑定当前字节的隔离worktree，分块提交，交付净树；不reset/clean/stash他人内容。
+
 2026-10-04按实际dirty tree先物理冻结，再实施和独立双轴复审，见[实施与验收](evidence/system_implementation_20261004.zh.md)。
 `experiments/freeze_source_snapshot.py`包含源码、测试、配置、六指南及运行JSON/HTML/CSS/JS和许可证；
 逐成员核对archive与当前字节。已有脏改动用改前快照区分，不能拿Git HEAD差异替代本轮范围。

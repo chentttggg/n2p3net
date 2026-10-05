@@ -1,5 +1,19 @@
 # 当前执行计划
 
+## 2026-10-05 愿望清单与优先任务分块方案
+
+[深入研究与验收规格](evidence/deep_research_plan_20261005.zh.md)完成原清单123项覆盖、15块真实依赖及三路独立数学/来源核查。
+当前完成的是方案与反例；新模型接入、公共矩阵和成人确认的implementation/execution仍为not_started。
+
+1. B00评价/选择、B01信号/支持先固定；B02专家Interface、B03C内概率校准、B04神经/matched scratch构成主线。
+2. B05AR、B06边界、B07字典、B08先验、B09空间、B10输入算子在B00/B01后并行；B11动态/稳健模型按识别前置进入。
+3. B14源绑定/工程精简/共享缓存/吞吐贯穿主线；B12基础四专家复核只依赖B04/B14，不等待所有机制或EA。
+4. B12按四库binary与真实membership候选两个面板、K0/200/800/2000请求和三个完整source→target seed执行；variant追加自己的验收依赖。
+5. B13成人确认用冻结程序后的新数据与单独协议；历史0.771/1.069只作开发定位，新准入采用同批配对差值、coverage及概率风险。
+
+机器可读[计划](assets/deep_research_plan_20261005/research_plan.json)、[逐愿望覆盖](assets/deep_research_plan_20261005/coverage.zh.md)
+及独立报告给出每块入口、公式/反例、实际owner/callers、对照arms与失败条件。原四周顺序按上述验收里程碑压缩串行依赖。
+
 ## 2026-10-05 边界状态研究框架
 
 [源码与数学核对](evidence/boundary_state_redesign_20261005.zh.md)已确认双端 B 为 `(N,4×SOS节数)`、现有 ERP 保护字典独立于 SelectionERP、C800 按原 MAT 哈希和合法 scopes 重建。
