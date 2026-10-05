@@ -16,6 +16,7 @@ experiments/run_candidate_ensemble_study.py text eol=lf
 tests/models/test_candidate_probability_evidence.py text eol=lf
 tests/research/test_candidate_probability_metrics.py text eol=lf
 tests/research/test_candidate_ensemble_study.py text eol=lf
+tests/research/test_candidate_study_process_transport.py text eol=lf
 tests/transfer/test_continuous_ar_expert.py text eol=lf
 tests/transfer/test_calibration_state.py text eol=lf
 tests/transfer/test_ensemble.py text eol=lf

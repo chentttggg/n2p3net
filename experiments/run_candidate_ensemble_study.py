@@ -194,7 +194,9 @@ def _subject_impl(row, plan, directory, expected_source, source_snapshots):
               "evidence_level": groups[0].view.decision.repetitions, "participant_key": groups[0].view.participant_key}
     atomic_write_json(directory / "result.json", result)
     atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions), "status": "completed"})
-    return result
+    # The persisted record is the process wire format; fitted metadata stays
+    # deeply immutable inside the worker and never enters pickle transport.
+    return json.loads((directory / "result.json").read_bytes())
 
 
 def _subject(row, plan, directory, expected_source, source_snapshots):
