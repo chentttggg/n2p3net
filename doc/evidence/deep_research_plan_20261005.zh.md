@@ -86,6 +86,8 @@ NLL、Brier 在明确的合法概率输出上计算。配对 NLL 使用同一预
 
 参数、温度、lambda、AR 阶数、basis 自由度、gating 和距离 schedule 全部只在合法 C/source 内选择。每个 outer held selection 仍被视为开发评价组：inner group OOF 选择，outer training groups 重新拟合，再只评分该 outer held。任何从已看过的 48 折中选出的新方向，下一批仍属于开发复核；不能追称旧 C800 是未碰过的确认集。
 
+小K不足以形成独立完整组时，不按随机trial切分制造OOF。使用已经由source/预声明固定的校准程序，或将学习温度/gating臂记为unavailable；保留固定等权与未认证概率诊断。K200的额外标签不能偷接未来完整selection，requested/实际训练/可用于选择的独立组数分别记录。
+
 统计单位是参与者。先在每人内合并 selection、预算与 seed 的预声明估计量，再按参与者 bootstrap 配对差值。三 seed 复核训练随机性，不增加独立参与者人数；完整流程 seed 应重做 source 初始化、source 选择和 target 拟合，不能只抖 target seed。分别报告目标库效应、seed 效应、逐人负迁移及失败；主/次级 contrasts 固定，多重探索性结果保留探索标签。
 
 四库 binary AUC 保留既有“目标库等权 paired mean ΔAUC≥0.01”路线门槛，及匹配 scratch/波形 LDA。candidate hit 另用真实 membership 与决策边界，不能平均不同候选数/人群的 hit 后解释成成人产品效果。
@@ -136,6 +138,8 @@ p_{mix}(q)=\sum_m w_m p_m(q),\quad w_m\ge0,\quad\sum_mw_m=1.
 
 报告训练和 held 的逐导 residual ACF、PSD、创新协方差、posterior predictive quadratic、有效秩/condition、PARCOR 稳定性、dtype 与判别方向能量；所有诊断与 hit/NLL 分栏。Burg/PARCOR 解决稳定参数化和初始化，不能解决跨导共享单一谱的模型错误。逐导 AR、共享动态因子和 VAR 分别有不同协方差层级，先用小矩阵和模拟辨识其区别，再进入真实开发比较。
 
+可逆白化在均值、协方差、字典及先验同步变换且精确计算同一模型时，不降低Bayes可用信息；Mahalanobis判别距离不变。真正需要挑战的是截断/投影、错误噪声模型、有限估参、先验未同步和条件后验遗漏。候选方向能量变化只是一条机制诊断，不能把坐标范数下降直接称信息丢失。
+
 ### ERP 字典及可识别性
 
 令完整允许事件历史的 common、target 和 selection 设计为 `D_common,D_q,D_sel`，响应可写
@@ -159,6 +163,8 @@ X=D_{common}\beta_0+D_q\beta_\Delta+D_{sel}b_s+\eta.
 ### 空间 ERP 和 reference
 
 Pz 等通道的 d-prime 只由训练组估计并收缩，可进入 ERP 均值 prior、xDAWN、空间 LDA、ERP 原型几何和 graph smoothness。把 Pz 的噪声 precision 人为放大是不同模型，不能以“信号重要”论证“噪声更小”。同时估计通道噪声时须独立说明模型与相应不确定性。
+
+空间信号先验H_signal若不与噪声Σ_noise成比例，原矩阵正态共轭公式一般不能继续使用。应在vec坐标计算完整Gaussian块后验/边际协方差，或明确可分离近似并以small-matrix oracle检验；不把“仅改均值prior”视为只换一行权重的实现。
 
 实测 native layout、reference、gain 和 missing channels 组成观测映射。reference 可降低秩，car/差分后的 null-space 与 covariance 需要 range 模型；完整零填槽不等于实测导。空间×时间模型先检查 Kronecker 可分离假设，每通道不同谱时一般不成立。source temporal basis 保留在时间信息迁移，target head 只用 target 实测布局，EA 不成为所有路线的强制前置。
 

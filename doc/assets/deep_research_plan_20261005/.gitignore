@@ -1,0 +1,4 @@
+# Retrieved full texts remain local; source ledgers and quoted locators stay in Git.
+/ensemble/literature/
+/latent_models/sources/
+*.log

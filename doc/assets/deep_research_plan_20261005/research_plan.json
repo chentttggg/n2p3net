@@ -1572,8 +1572,10 @@
       "paired_delta_nll_max": 0.0,
       "coverage_delta_min": 0.0,
       "failure_count_increase_max": 0,
+      "require_no_new_missing_baseline_success": true,
       "nll_pairing": "same predeclared roster, paired-complete NLL plus explicit missing ledger"
     },
+    "small_K_selection": "insufficient independent groups: use a source/predeclared frozen calibration program or mark learned calibration unavailable; no random-trial split",
     "formal_confirmation": "not declared; adult population, sample size and risk margins require new protocol",
     "baseline_experts": [
       "raw_ar8_lambda_1",
