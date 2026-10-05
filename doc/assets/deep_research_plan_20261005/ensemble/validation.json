@@ -1,0 +1,72 @@
+{
+  "schema": "n2p3_ensemble_research_validation/1",
+  "scope": "research design, deterministic counterexamples, read-only historical prediction audit",
+  "production_code_changed": false,
+  "new_training_executed": false,
+  "new_effectiveness_matrix_executed": false,
+  "commands": [
+    {
+      "command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe doc/assets/deep_research_plan_20261005/ensemble/verify_math.py --phase4-root D:/BCI/n2p3-net --output doc/assets/deep_research_plan_20261005/ensemble/math_results.json",
+      "cwd": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net",
+      "exit_code": 0,
+      "deterministic_check_groups": 13,
+      "historical_mixture_rows_audited": 48,
+      "historical_total_rows": 576
+    },
+    {
+      "command": [
+        "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+        "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\doc\\assets\\deep_research_plan_20261005\\ensemble\\verify_math.py",
+        "--phase4-root",
+        "D:/BCI/n2p3-net",
+        "--output",
+        "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\doc\\assets\\deep_research_plan_20261005\\ensemble\\math_results.json"
+      ],
+      "cwd": "C:/Users/chent",
+      "exit_code": 0,
+      "output_byte_identical": true
+    },
+    {
+      "command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -m ruff check doc/assets/deep_research_plan_20261005/ensemble/verify_math.py",
+      "cwd": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net",
+      "exit_code": 0
+    },
+    {
+      "command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -m pytest tests/models/test_membership_decision.py tests/models/test_candidate_evidence.py tests/transfer/test_decision_loss.py tests/research/test_comparison_identity.py -q -p no:cacheprovider",
+      "cwd": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net",
+      "exit_code": 0,
+      "passed": 95,
+      "production_source_changed_since_test": false
+    },
+    {
+      "command": "git diff --check",
+      "cwd": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net",
+      "exit_code": 0
+    }
+  ],
+  "papers": {
+    "public_url_accesses": 10,
+    "successful": 10,
+    "publisher_fulltext_inspected": 2,
+    "local_paper_fulltext_inspected": 3,
+    "metadata_only_citations_labeled": true,
+    "credentials_read": false,
+    "packages_installed": false,
+    "pdf_text_runtime": "C:/Users/chent/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe"
+  },
+  "artifact_sha256": {
+    "verify_math.py": "fc88bc910485bff9cd6d9db941f2aeca572e9e7bb697b732c288272e63ecb2a2",
+    "math_results.json": "19694cdcef2eb926ee8b18406a93a98f0d5f023e7600725daa87029d9aea3c4d",
+    "research.zh.md": "245678807df8796849ccec64eec4510eb697c6204dd07f5697ea6c01c05a177e",
+    "literature_retrieval.json": "9f6cb8f467818bfd0ee2fd55970f9b061bd484fcd42058f7beaad668db91abfb",
+    "literature_fulltext.json": "2825a4230cf46b3b311bc6b4fab83b6ddc2c4825f89b3129c29b202bfc064da4"
+  },
+  "future_not_executed": [
+    "FittedEnsemble implementation",
+    "NN E0-E5 matrix",
+    "nested grouped probability calibration",
+    "quality gating",
+    "four datasets three source-to-target seeds",
+    "adult confirmation"
+  ]
+}

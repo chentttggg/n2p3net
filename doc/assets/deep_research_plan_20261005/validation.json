@@ -1,0 +1,132 @@
+{
+  "status": "passed",
+  "spec_review": "passed after independent three-axis review",
+  "standards_review": "passed; isolated sources, existing owners and six guides retained",
+  "math_checks": {
+    "ensemble": 13,
+    "latent_models": 14,
+    "signal_boundary": 16
+  },
+  "total_named_math_checks": 43,
+  "math_script_sha256": {
+    "ensemble": "fc88bc910485bff9cd6d9db941f2aeca572e9e7bb697b732c288272e63ecb2a2",
+    "latent_models": "146147f1614952fd4b2f69f79308f113d928cc247de0102eb34e942f1bca7923",
+    "signal_boundary": "8a89cd4ac871960811303fde2cbd934ef33193f8b4b47fa1d32df94a3ebe97ef"
+  },
+  "local_report_links_verified": 35,
+  "baseline_archive_verified_members": 396,
+  "artifact_sha256": {
+    "doc/assets/deep_research_plan_20261005/.gitattributes": "f102787df6993229c0893d2cdfb1efcd8b2564cacdf6c0fac79581e70a88213b",
+    "doc/assets/deep_research_plan_20261005/.gitignore": "d496a5a9efbabfd7e1f8bb0398103c7739e837c491d5e40e0cd9c5e47363067a",
+    "doc/assets/deep_research_plan_20261005/build_plan.py": "36a26461919bcb124cab86a3f13d1b3b7dfe1e03cd6691c7e02942b9d6185af3",
+    "doc/assets/deep_research_plan_20261005/coverage.zh.md": "a6a1df4701e706261ebc8668b90ff6c274eca80ad4ead1033eb390c04f058f28",
+    "doc/assets/deep_research_plan_20261005/design_checks.json": "eef6bec368bc73ea493e32bcab2fcb6c9ca336dc362dbc70111542249f8a75aa",
+    "doc/assets/deep_research_plan_20261005/ensemble/literature_fulltext.json": "2825a4230cf46b3b311bc6b4fab83b6ddc2c4825f89b3129c29b202bfc064da4",
+    "doc/assets/deep_research_plan_20261005/ensemble/literature_retrieval.json": "9f6cb8f467818bfd0ee2fd55970f9b061bd484fcd42058f7beaad668db91abfb",
+    "doc/assets/deep_research_plan_20261005/ensemble/math_results.json": "19694cdcef2eb926ee8b18406a93a98f0d5f023e7600725daa87029d9aea3c4d",
+    "doc/assets/deep_research_plan_20261005/ensemble/research.zh.md": "245678807df8796849ccec64eec4510eb697c6204dd07f5697ea6c01c05a177e",
+    "doc/assets/deep_research_plan_20261005/ensemble/validation.json": "6e5dd08c9e652617502fe02dfac3d17269bbda60a5418028457f531908a8751a",
+    "doc/assets/deep_research_plan_20261005/ensemble/verify_math.py": "fc88bc910485bff9cd6d9db941f2aeca572e9e7bb697b732c288272e63ecb2a2",
+    "doc/assets/deep_research_plan_20261005/execution_log.json": "a9054b5f471cffc7a6bbb1f5791f61376ce5308ac97267ff6fc0e3714203dc72",
+    "doc/assets/deep_research_plan_20261005/four_week_source.zh.md": "bb7f2a7b8be64ffd741216ee93b9b432219faf368d3de4f8ec898a2ef5f98880",
+    "doc/assets/deep_research_plan_20261005/latent_models/fetch_sources.py": "6e1cebda0de65184528ccaf539342fb0051713b708e9da7f9b470dd3df18f2c8",
+    "doc/assets/deep_research_plan_20261005/latent_models/inspect_sources.py": "8ecd05d9fbdd381ab48627066c07dd38371f59e41811136b0221df9b52d8cfea",
+    "doc/assets/deep_research_plan_20261005/latent_models/math_results.json": "242ab48e029a116cf61e985e64c48114a97b489575a3fad9482a344c6823c18c",
+    "doc/assets/deep_research_plan_20261005/latent_models/query_log.json": "2c028f4f5dc3bf506bd32a3dd0f8b2573f26012cabff7ed9830d5cfd741e4369",
+    "doc/assets/deep_research_plan_20261005/latent_models/read_source_manifest.json": "d02b375c38cf0945e08dde5bdbd83d81b1196a9de0133620318073a0c64cfdd9",
+    "doc/assets/deep_research_plan_20261005/latent_models/research.zh.md": "75bf0c8de7fdae13bdc459081b36e4b577d80ee3bd67701b5590baf9ec3342ae",
+    "doc/assets/deep_research_plan_20261005/latent_models/source_ledger.json": "441879b86080322556274842b630f04abfef9fb3179d6fc7646d7eb0ef7673be",
+    "doc/assets/deep_research_plan_20261005/latent_models/verify_math.py": "146147f1614952fd4b2f69f79308f113d928cc247de0102eb34e942f1bca7923",
+    "doc/assets/deep_research_plan_20261005/research_plan.json": "3fa387f505d3a2ffa93ada130284106fade7dfd219d156260684ceb8e57030f1",
+    "doc/assets/deep_research_plan_20261005/signal_boundary/cached_primary_sources.json": "3630d8508fc710874f0eb1e4ee99507035ac685c03010e8d3bb2ac9643efc144",
+    "doc/assets/deep_research_plan_20261005/signal_boundary/inspect_cached_primary.py": "b937909b4ca409a4a467346f4681abb443dda907892c63dd4013339309511c77",
+    "doc/assets/deep_research_plan_20261005/signal_boundary/math_results.json": "d0b3f0b2589fb56fd5e14554423000dc0137dc9d9261a90315cd2c026fd82d48",
+    "doc/assets/deep_research_plan_20261005/signal_boundary/research.zh.md": "fc4fb4815e05306ca559ebdce739a8390fff9bce8c6943677749aae168c45401",
+    "doc/assets/deep_research_plan_20261005/signal_boundary/retrieve_sources.py": "a47f0e125666f05775d8037a69f2381f39622ece833f2fbeb04761c431427fa5",
+    "doc/assets/deep_research_plan_20261005/signal_boundary/sources.json": "4bf1a46b0aa18bf72c30003ac65980ab0bacb1a19ecf923de963fe2963fca1da",
+    "doc/assets/deep_research_plan_20261005/signal_boundary/verify_math.py": "8a89cd4ac871960811303fde2cbd934ef33193f8b4b47fa1d32df94a3ebe97ef",
+    "doc/assets/deep_research_plan_20261005/verify_design.py": "555206cea05afd354c72c8bd8a118600a07048ee1480b0a7afe10283d49ec008",
+    "doc/assets/deep_research_plan_20261005/wishlist_source.zh.md": "4f65b4eeb38451728f5da6fbdfbfc5266da010caf607b24f8aa7a238229decea"
+  },
+  "source_and_experiment_limits": [
+    "Original working tree continues concurrent work",
+    "Phase4 historical source attestation is partial",
+    "New implementation, public efficacy matrix and adult confirmation not executed"
+  ],
+  "design_check": {
+    "evidence_scope": "software_and_mathematical_counterexamples",
+    "plan_sha256": "3fa387f505d3a2ffa93ada130284106fade7dfd219d156260684ceb8e57030f1",
+    "script_sha256": "555206cea05afd354c72c8bd8a118600a07048ee1480b0a7afe10283d49ec008",
+    "coverage_and_graph": {
+      "wishlist_items": 123,
+      "tasks": 15,
+      "dependency_layers": [
+        [
+          "B00",
+          "B01"
+        ],
+        [
+          "B02",
+          "B05",
+          "B06",
+          "B07",
+          "B08",
+          "B09",
+          "B10",
+          "B14"
+        ],
+        [
+          "B03",
+          "B11"
+        ],
+        [
+          "B04"
+        ],
+        [
+          "B12"
+        ],
+        [
+          "B13"
+        ]
+      ],
+      "ready_implementation_tasks": [
+        "B00",
+        "B01"
+      ],
+      "all_future_execution_not_started": true
+    },
+    "evaluation": {
+      "participant_macro_hit": 0.5,
+      "incorrect_pooled_hit": 0.2,
+      "requested_hit": 0.6,
+      "incorrect_valid_only_hit": 1.0,
+      "nll_better_hit_worse": {
+        "base_hit": 0.6666666666666666,
+        "candidate_hit": 0.3333333333333333,
+        "base_nll": 2.751481461836556,
+        "candidate_nll": 0.478916703869477
+      },
+      "three_seed_pseudoreplication_variance_ratio": 3.0,
+      "missing_nll_selection_bias_reproduced": true,
+      "tie_prediction_and_probability_coverage_differ": true,
+      "finite_underflow_nll": 1000,
+      "stable_arithmetic_log_pool": [
+        -0.6931471805599453,
+        -0.6931471805599453
+      ]
+    },
+    "scheduling": {
+      "logical_cells": 144,
+      "batched_input_loads": 24,
+      "illustrative_load_count_ratio": 6.0,
+      "measured_speedup_claimed": false,
+      "dependency_tail": {
+        "ready": 1,
+        "capacity": 4,
+        "active": 1
+      }
+    },
+    "status": "passed",
+    "public_efficacy_matrix_executed": false
+  }
+}

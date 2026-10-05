@@ -1,0 +1,210 @@
+[
+  {
+    "id": "toeplitz_doi",
+    "url": "https://api.crossref.org/works/10.1088%2F1741-2552%2Fac9c98",
+    "access_date": "2026-10-05",
+    "status": 200,
+    "content_type": "application/json",
+    "resolved_url": "https://api.crossref.org/works/10.1088%2F1741-2552%2Fac9c98",
+    "file": "doc/assets/deep_research_plan_20261005/ensemble/literature/toeplitz_doi.json",
+    "sha256": "e56286f7c419fe1077582a0c8b3500c7fb1fe691b8b54b1c45059b6812196dd8",
+    "bytes": 20951,
+    "access_level": "metadata_with_abstract",
+    "doi": "10.1088/1741-2552/ac9c98",
+    "title": [
+      "Introducing block-Toeplitz covariance matrices to remaster linear discriminant analysis for event-related potential brain–computer interfaces"
+    ],
+    "year": {
+      "date-parts": [
+        [
+          2022,
+          11,
+          7
+        ]
+      ]
+    },
+    "authors": [
+      "Jan Sosulski",
+      "Michael Tangermann"
+    ],
+    "abstract": "<jats:title>Abstract</jats:title>\n               <jats:p>\n                  <jats:italic>Objective.</jats:italic> Covariance matrices of noisy multichannel electroencephalogram (EEG) time series data provide essential information for the decoding of brain signals using machine learning methods. However, small datasets and high dimensionality make it hard to estimate these matrices. In brain–computer interfaces (BCI) based on event-related potentials (ERP) and a linear discriminant analysis (LDA) classifier, the state of the art covariance estimation uses shrinkage regularization. As this is a general covariance regularization approach, we aim at improving LDA further by better exploiting the domain-specific characteristics of the EEG to regularize the covariance estimates. <jats:italic>Approach.</jats:italic> We propose to enforce a block-Toeplitz structure for the covariance matrix of the LDA, which implements an assumption of signal stationarity in short time windows for each channel. <jats:italic>Main results.</jats:italic> An offline re-analysis of data collected from 213 subjects under 13 different event-related potential BCI protocols showed a significantly increased binary classification performance of this ‘ToeplitzLDA’ compared to shrinkage regularized LDA (up to 6 AUC points, <jats:italic>p</jats:italic> &lt; 0.001) and Riemannian classification approaches (up to 2 AUC points, <jats:italic>p</jats:italic> &lt; 0.001). In an unsupervised visual speller application, this improvement would translate to a relative reduction of spelling errors by 81% on average for 25 subjects. Additionally, aside from lower memory and reduced time complexity for LDA training, ToeplitzLDA proves to be robust against drastic increases of the number of temporal features. <jats:italic>Significance.</jats:italic> The proposed covariance estimation allows BCI researchers to improve classification rates and reduce calibration times of BCI protocols using event-related potentials and thus support the usability of corresponding applications. Its lower computational and memory needs could make it a valuable algorithm especially for mobile BCIs.</jats:p>"
+  },
+  {
+    "id": "xdawn_doi",
+    "url": "https://api.crossref.org/works/10.1109%2FTBME.2009.2012869",
+    "access_date": "2026-10-05",
+    "status": 200,
+    "content_type": "application/json",
+    "resolved_url": "https://api.crossref.org/works/10.1109%2FTBME.2009.2012869",
+    "file": "doc/assets/deep_research_plan_20261005/ensemble/literature/xdawn_doi.json",
+    "sha256": "239eed110c057583d2a4ee32f467a3065d23a331add3d6a1ee55064c2a114a61",
+    "bytes": 5089,
+    "access_level": "metadata",
+    "doi": "10.1109/tbme.2009.2012869",
+    "title": [
+      "xDAWN Algorithm to Enhance Evoked Potentials: Application to Brain–Computer Interface"
+    ],
+    "year": {
+      "date-parts": [
+        [
+          2009,
+          8
+        ]
+      ]
+    },
+    "authors": [
+      "B. Rivet",
+      "A. Souloumiac",
+      "V. Attina",
+      "G. Gibert"
+    ],
+    "abstract": null
+  },
+  {
+    "id": "stacking_doi",
+    "url": "https://api.crossref.org/works/10.1016%2FS0893-6080%2805%2980023-1",
+    "access_date": "2026-10-05",
+    "status": 200,
+    "content_type": "application/json",
+    "resolved_url": "https://api.crossref.org/works/10.1016%2FS0893-6080%2805%2980023-1",
+    "file": "doc/assets/deep_research_plan_20261005/ensemble/literature/stacking_doi.json",
+    "sha256": "2bb1d9b4754317f7829c2b19ced4e11021b0dad398b9f02cdb8d2ac5904eb8e6",
+    "bytes": 8549,
+    "access_level": "metadata",
+    "doi": "10.1016/s0893-6080(05)80023-1",
+    "title": [
+      "Stacked generalization"
+    ],
+    "year": {
+      "date-parts": [
+        [
+          1992,
+          1
+        ]
+      ]
+    },
+    "authors": [
+      "David H. Wolpert"
+    ],
+    "abstract": null
+  },
+  {
+    "id": "prior_shift_doi",
+    "url": "https://api.crossref.org/works/10.1162%2F089976602753284446",
+    "access_date": "2026-10-05",
+    "status": 200,
+    "content_type": "application/json",
+    "resolved_url": "https://api.crossref.org/works/10.1162%2F089976602753284446",
+    "file": "doc/assets/deep_research_plan_20261005/ensemble/literature/prior_shift_doi.json",
+    "sha256": "f955bf6d84b103a991821409e4e508f548c9bcf28d4ba3bb9077547f1e0295b5",
+    "bytes": 5683,
+    "access_level": "metadata_with_abstract",
+    "doi": "10.1162/089976602753284446",
+    "title": [
+      "Adjusting the Outputs of a Classifier to New a\n                    <i>Priori</i>\n                    Probabilities: A Simple Procedure"
+    ],
+    "year": {
+      "date-parts": [
+        [
+          2002,
+          1,
+          1
+        ]
+      ]
+    },
+    "authors": [
+      "Marco Saerens",
+      "Patrice Latinne",
+      "Christine Decaestecker"
+    ],
+    "abstract": "<jats:p>It sometimes happens (for instance in case control studies) that a classifier is trained on a data set that does not reflect the true a priori probabilities of the target classes on real-world data. This may have a negative effect on the classification accuracy obtained on the real-world data set, especially when the classifier's decisions are based on the a posteriori probabilities of class membership. Indeed, in this case, the trained classifier provides estimates of the a posteriori probabilities that are not valid for this real-world data set (they rely on the a priori probabilities of the training set). Applying the classifier as is (without correcting its outputs with respect to these new conditions) on this new data set may thus be suboptimal. In this note, we present a simple iterative procedure for adjusting the outputs of the trained classifier with respect to these new a priori probabilities without having to refit the model, even when these probabilities are not known in advance. As a by-product, estimates of the new a priori probabilities are also obtained. This iterative algorithm is a straightforward instance of the expectation-maximization (EM) algorithm and is shown to maximize the likelihood of the new data. Thereafter, we discuss a statistical test that can be applied to decide if the a priori class probabilities have changed from the training set to the real-world data. The procedure is illustrated on different classification problems involving a multilayer neural network, and comparisons with a standard procedure for a priori probability estimation are provided. Our original method, based on the EM algorithm, is shown to be superior to the standard one for a priori probability estimation. Experimental results also indicate that the classifier with adjusted outputs always performs better than the original one in terms of classification accuracy, when the a priori probability conditions differ from the training set to the real-world data. The gain in classification accuracy can be significant.</jats:p>"
+  },
+  {
+    "id": "ensemble_doi",
+    "url": "https://api.crossref.org/works/10.1007%2F3-540-45014-9_1",
+    "access_date": "2026-10-05",
+    "status": 200,
+    "content_type": "application/json",
+    "resolved_url": "https://api.crossref.org/works/10.1007%2F3-540-45014-9_1",
+    "file": "doc/assets/deep_research_plan_20261005/ensemble/literature/ensemble_doi.json",
+    "sha256": "6f131325ad4f1ea59db1770da69545f97a4ba579f599e071c23436a6179b6e98",
+    "bytes": 9244,
+    "access_level": "metadata",
+    "doi": "10.1007/3-540-45014-9_1",
+    "title": [
+      "Ensemble Methods in Machine Learning"
+    ],
+    "year": {
+      "date-parts": [
+        [
+          2000
+        ]
+      ]
+    },
+    "authors": [
+      "Thomas G. Dietterich"
+    ],
+    "abstract": null
+  },
+  {
+    "id": "temperature_pmlr",
+    "url": "https://proceedings.mlr.press/v70/guo17a.html",
+    "access_date": "2026-10-05",
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "resolved_url": "https://proceedings.mlr.press/v70/guo17a.html",
+    "file": "doc/assets/deep_research_plan_20261005/ensemble/literature/temperature_pmlr.html",
+    "sha256": "3b4d7ca0ab60cd88e263f0fe342e033947aed43c68988e91485f2a5318a30cf9",
+    "bytes": 14452,
+    "access_level": "publisher_abstract_and_pdf_link",
+    "title": "On Calibration of Modern Neural Networks"
+  },
+  {
+    "id": "selection_bias_jmlr",
+    "url": "https://www.jmlr.org/papers/v11/cawley10a.html",
+    "access_date": "2026-10-05",
+    "status": 200,
+    "content_type": "text/html",
+    "resolved_url": "https://www.jmlr.org/papers/v11/cawley10a.html",
+    "file": "doc/assets/deep_research_plan_20261005/ensemble/literature/selection_bias_jmlr.html",
+    "sha256": "c3118f2b3a84d3826d6e45565a8e7f5a308b356635a30776844ded55b7db4509",
+    "bytes": 6655,
+    "access_level": "publisher_abstract_and_pdf_link",
+    "title": "On Over-fitting in Model Selection and Subsequent Selection Bias in Performance Evaluation"
+  },
+  {
+    "id": "toeplitz_author_code",
+    "url": "https://raw.githubusercontent.com/jsosulski/toeplitzlda/main/README.md",
+    "access_date": "2026-10-05",
+    "status": 200,
+    "content_type": "text/plain; charset=utf-8",
+    "resolved_url": "https://raw.githubusercontent.com/jsosulski/toeplitzlda/main/README.md",
+    "file": "doc/assets/deep_research_plan_20261005/ensemble/literature/toeplitz_author_code.md",
+    "sha256": "adfa8b40164333a1ba01eea5d4e820eafa26ef901d28741beebe5732c1a41ba1",
+    "bytes": 7360,
+    "access_level": "author_code_readme",
+    "title": null
+  },
+  {
+    "id": "temperature_fulltext",
+    "url": "https://proceedings.mlr.press/v70/guo17a/guo17a.pdf",
+    "access_date": "2026-10-05",
+    "status": 200,
+    "content_type": "application/pdf",
+    "file": "doc/assets/deep_research_plan_20261005/ensemble/literature/temperature_fulltext.pdf",
+    "sha256": "df7c93f97204f8a3c2b10f6d5bf5265baac25f00c1ae3b473a3e1dbc102dacb2",
+    "bytes": 828420,
+    "access_level": "publisher_full_text_inspected"
+  },
+  {
+    "id": "selection_bias_fulltext",
+    "url": "https://jmlr.org/papers/volume11/cawley10a/cawley10a.pdf",
+    "access_date": "2026-10-05",
+    "status": 200,
+    "content_type": "application/pdf",
+    "file": "doc/assets/deep_research_plan_20261005/ensemble/literature/selection_bias_fulltext.pdf",
+    "sha256": "db01ac8fabef3064a0297bfcf64fb9791bf35c4d03be7a51f5862260adfca206",
+    "bytes": 759286,
+    "access_level": "publisher_full_text_inspected"
+  }
+]

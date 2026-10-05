@@ -1,0 +1,570 @@
+{
+  "purpose": "bounded_methodology_lookup_not_systematic_review",
+  "executed_source_sha256": "a47f0e125666f05775d8037a69f2381f39622ece833f2fbeb04761c431427fa5",
+  "retrieval": [
+    {
+      "name": "scipy_sosfiltfilt",
+      "requested_url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.sosfiltfilt.html",
+      "accessed_utc": "2026-10-05T08:41:55.853256+00:00",
+      "status": 200,
+      "final_url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.sosfiltfilt.html",
+      "content_type": "text/html",
+      "bytes": 39445,
+      "sha256": "a0ed74926b4bbbf5a268e61846bfd7c3d55e1e79bee6d4ec166490b0d02fca93",
+      "access_level": "primary_html",
+      "text_excerpt": "sosfiltfilt &#8212; SciPy v1.18.0 Manual Skip to main content Back to top Ctrl + K SciPy Installing User Guide API reference Building from source Development Release notes Choose version System Settings Light Dark GitHub Scientific Python Forum Installing User Guide API reference Building from source Development Release notes Choose version System Settings Light Dark GitHub Scientific Python Forum Search Ctrl + K Section Navigation scipy"
+    },
+    {
+      "name": "scipy_filtfilt",
+      "requested_url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html",
+      "accessed_utc": "2026-10-05T08:41:55.853923+00:00",
+      "status": 200,
+      "final_url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html",
+      "content_type": "text/html",
+      "bytes": 48470,
+      "sha256": "6d9acd9f3b055e1c34e2682e81b3dddf05308f81f0cceeadd2294055612de4ee",
+      "access_level": "primary_html",
+      "text_excerpt": "filtfilt &#8212; SciPy v1.18.0 Manual Skip to main content Back to top Ctrl + K SciPy Installing User Guide API reference Building from source Development Release notes Choose version System Settings Light Dark GitHub Scientific Python Forum Installing User Guide API reference Building from source Development Release notes Choose version System Settings Light Dark GitHub Scientific Python Forum Search Ctrl + K Section Navigation scipy"
+    },
+    {
+      "name": "bnci_description",
+      "requested_url": "https://bnci-horizon-2020.eu/database/data-sets/008-2014/description.pdf",
+      "accessed_utc": "2026-10-05T08:41:55.854294+00:00",
+      "access_level": "failed",
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)>"
+    },
+    {
+      "name": "kalman_original",
+      "requested_url": "https://www.cs.unc.edu/~welch/kalman/media/pdf/Kalman1960.pdf",
+      "accessed_utc": "2026-10-05T08:41:55.854712+00:00",
+      "access_level": "failed",
+      "error": "HTTP Error 404: Not Found",
+      "status": 404
+    },
+    {
+      "name": "unfold_author_docs",
+      "requested_url": "https://www.unfoldtoolbox.org/",
+      "accessed_utc": "2026-10-05T08:41:55.892555+00:00",
+      "status": 200,
+      "final_url": "https://www.unfoldtoolbox.org/",
+      "content_type": "text/html",
+      "bytes": 17152,
+      "sha256": "bf3d551447a093c5dd98c0683b432cbb6c6fdc963ef45df53887bf3eff946c2d",
+      "access_level": "primary_html",
+      "text_excerpt": "Unfold 1.2 - EEG Deconvolution Toolbox &#8212; Unfold EEG Toolbox Home Download from Github Getting Started Unfold’s toolbox workflow Massive univariate modeling (rERP) Artefacts &amp; missing data/predictors Removing artifactual data Imputation of missing data Theoretical Background Introduction to linear modeling Why deconvolution? How does deconvolution work? Introduction to additive/spline linear modeling The connection of (formal) convolution and timeexpansion Tutorials / Examples Quickstart: 2x2 ANOVA Longstart:"
+    },
+    {
+      "name": "widmann_exact_metadata",
+      "requested_url": "https://api.crossref.org/works/10.1016%2Fj.jneumeth.2014.08.002",
+      "accessed_utc": "2026-10-05T08:41:56.078455+00:00",
+      "status": 200,
+      "final_url": "https://api.crossref.org/works/10.1016%2Fj.jneumeth.2014.08.002",
+      "content_type": "application/json",
+      "bytes": 9613,
+      "sha256": "f273bad0beb3e49a2fbd7774a4a9b02a419b48dba3fff897f98e8c7100316038",
+      "access_level": "metadata_only",
+      "items": [
+        {
+          "title": [
+            "Digital filter design for electrophysiological data – a practical approach"
+          ],
+          "DOI": "10.1016/j.jneumeth.2014.08.002",
+          "published": {
+            "date-parts": [
+              [
+                2015,
+                7
+              ]
+            ]
+          },
+          "author": [
+            {
+              "given": "Andreas",
+              "family": "Widmann",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            },
+            {
+              "given": "Erich",
+              "family": "Schröger",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            },
+            {
+              "given": "Burkhard",
+              "family": "Maess",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            }
+          ],
+          "link": [
+            {
+              "URL": "https://api.elsevier.com/content/article/PII:S0165027014002866?httpAccept=text/xml",
+              "content-type": "text/xml",
+              "content-version": "vor",
+              "intended-application": "text-mining"
+            },
+            {
+              "URL": "https://api.elsevier.com/content/article/PII:S0165027014002866?httpAccept=text/plain",
+              "content-type": "text/plain",
+              "content-version": "vor",
+              "intended-application": "text-mining"
+            }
+          ],
+          "URL": "https://doi.org/10.1016/j.jneumeth.2014.08.002",
+          "abstract": null
+        }
+      ]
+    },
+    {
+      "name": "crossref_0",
+      "requested_url": "https://api.crossref.org/works?query.title=Practical+considerations+and+pitfalls+in+preprocessing+denoising+and+artifact+rejection&rows=2",
+      "accessed_utc": "2026-10-05T08:41:56.138165+00:00",
+      "status": 200,
+      "final_url": "https://api.crossref.org/works?query.title=Practical+considerations+and+pitfalls+in+preprocessing+denoising+and+artifact+rejection&rows=2",
+      "content_type": "application/json",
+      "bytes": 6548,
+      "sha256": "da005c897f670df3897933fd4602195586b43eb5b15b85a9229afe3b181de040",
+      "access_level": "metadata_only",
+      "items": [
+        {
+          "title": [
+            "Soil washing: Practical considerations and pitfalls"
+          ],
+          "DOI": "10.1002/rem.3440030105",
+          "published": {
+            "date-parts": [
+              [
+                1992,
+                12
+              ]
+            ]
+          },
+          "author": [
+            {
+              "given": "Dennis",
+              "family": "Dove",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "role": "author",
+                  "vocabulary": "crossref"
+                }
+              ]
+            },
+            {
+              "given": "Alok",
+              "family": "Bhandari",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "role": "author",
+                  "vocabulary": "crossref"
+                }
+              ]
+            },
+            {
+              "given": "John",
+              "family": "Novak",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "role": "author",
+                  "vocabulary": "crossref"
+                }
+              ]
+            }
+          ],
+          "link": [
+            {
+              "URL": "https://api.wiley.com/onlinelibrary/tdm/v1/articles/10.1002%2Frem.3440030105",
+              "content-type": "unspecified",
+              "content-version": "vor",
+              "intended-application": "text-mining"
+            },
+            {
+              "URL": "https://onlinelibrary.wiley.com/doi/pdf/10.1002/rem.3440030105",
+              "content-type": "unspecified",
+              "content-version": "vor",
+              "intended-application": "similarity-checking"
+            }
+          ],
+          "URL": "https://doi.org/10.1002/rem.3440030105",
+          "abstract": "<jats:title>Abstract</jats:title><jats:p>The use of soil washing to remove petroleum hydrocarbon contamination from the soil matrix is becoming more widely used. When viewed as a volume reduction tool, this technology shows some promise. However, ongoing research and treatability studies indicate that without further treatment, even larger‐sized soil fractions (sands and cobbles) may retain hydrocarbon contamination at levels that require further cleaning prior to permanent disposal or reuse. The perception has been that by removing the sand from the soil matrix, thus achieving a 30 percent to 60 percent volume reduction, expensive post‐washing treatment or approved disposal of the finer materials (silts and clays) would be cost‐effective. There exists evidence to the contrary, however. Hydrocarbon retention after soil washing may be influenced by a number of factors unrelated to particle size. Soil characteristics that may play a role include soil humic acids, metal oxide coatings, geologic origin of the soil particles, and clay type. In this article the authors describe a laboratory study designed to evaluate the “cleanability” of two soils.</jats:p>"
+        },
+        {
+          "title": [
+            "Helical CT: practical considerations and potential pitfalls."
+          ],
+          "DOI": "10.1148/radiographics.15.1.7899611",
+          "published": {
+            "date-parts": [
+              [
+                1995,
+                1
+              ]
+            ]
+          },
+          "author": [
+            {
+              "given": "P M",
+              "family": "Silverman",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            },
+            {
+              "given": "C J",
+              "family": "Cooper",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            },
+            {
+              "given": "D I",
+              "family": "Weltman",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            },
+            {
+              "given": "R K",
+              "family": "Zeman",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            }
+          ],
+          "link": [
+            {
+              "URL": "http://pubs.rsna.org/doi/pdf/10.1148/radiographics.15.1.7899611",
+              "content-type": "unspecified",
+              "content-version": "vor",
+              "intended-application": "similarity-checking"
+            }
+          ],
+          "URL": "https://doi.org/10.1148/radiographics.15.1.7899611",
+          "abstract": null
+        }
+      ],
+      "executed_query": "Practical considerations and pitfalls in preprocessing denoising and artifact rejection"
+    },
+    {
+      "name": "crossref_1",
+      "requested_url": "https://api.crossref.org/works?query.title=Digital+filter+design+for+electrophysiological+data+a+practical+approach&rows=2",
+      "accessed_utc": "2026-10-05T08:41:56.138631+00:00",
+      "access_level": "failed",
+      "error": "HTTP Error 429: Too Many Requests",
+      "status": 429,
+      "executed_query": "Digital filter design for electrophysiological data a practical approach"
+    },
+    {
+      "name": "crossref_2",
+      "requested_url": "https://api.crossref.org/works?query.title=How+inappropriate+high-pass+filters+can+produce+artifactual+effects+and+incorrect+conclusions+in+ERP+studies&rows=2",
+      "accessed_utc": "2026-10-05T08:41:57.063863+00:00",
+      "access_level": "failed",
+      "error": "HTTP Error 429: Too Many Requests",
+      "status": 429,
+      "executed_query": "How inappropriate high-pass filters can produce artifactual effects and incorrect conclusions in ERP studies"
+    },
+    {
+      "name": "crossref_3",
+      "requested_url": "https://api.crossref.org/works?query.title=Determining+the+initial+states+in+forward+backward+filtering&rows=2",
+      "accessed_utc": "2026-10-05T08:41:57.077963+00:00",
+      "status": 200,
+      "final_url": "https://api.crossref.org/works?query.title=Determining+the+initial+states+in+forward+backward+filtering&rows=2",
+      "content_type": "application/json",
+      "bytes": 4675,
+      "sha256": "efcfc3324d328b02772df73604a560ab241057f13d9d336e595bdff302fc7cb4",
+      "access_level": "metadata_only",
+      "items": [
+        {
+          "title": [
+            "Determining the initial states in forward-backward filtering"
+          ],
+          "DOI": "10.1109/78.492552",
+          "published": {
+            "date-parts": [
+              [
+                1996,
+                4
+              ]
+            ]
+          },
+          "author": [
+            {
+              "given": "F.",
+              "family": "Gustafsson",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            }
+          ],
+          "link": [
+            {
+              "URL": "http://xplorestaging.ieee.org/ielx4/78/10586/00492552.pdf?arnumber=492552",
+              "content-type": "unspecified",
+              "content-version": "vor",
+              "intended-application": "similarity-checking"
+            }
+          ],
+          "URL": "https://doi.org/10.1109/78.492552",
+          "abstract": null
+        },
+        {
+          "title": [
+            "Adaptive forward-backward filtering of images"
+          ],
+          "DOI": "10.1109/iscas.1990.112676",
+          "published": null,
+          "author": [
+            {
+              "family": "Xin Wang",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "role": "author",
+                  "vocabulary": "crossref"
+                }
+              ]
+            },
+            {
+              "given": "D.",
+              "family": "Wang",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "role": "author",
+                  "vocabulary": "crossref"
+                }
+              ]
+            }
+          ],
+          "link": [
+            {
+              "URL": "http://xplorestaging.ieee.org/ielx5/143/3356/00112676.pdf?arnumber=112676",
+              "content-type": "unspecified",
+              "content-version": "vor",
+              "intended-application": "similarity-checking"
+            }
+          ],
+          "URL": "https://doi.org/10.1109/iscas.1990.112676",
+          "abstract": null
+        }
+      ],
+      "executed_query": "Determining the initial states in forward backward filtering"
+    },
+    {
+      "name": "crossref_4",
+      "requested_url": "https://api.crossref.org/works?query.title=A+New+Approach+to+Linear+Filtering+and+Prediction+Problems&rows=2",
+      "accessed_utc": "2026-10-05T08:41:57.277846+00:00",
+      "access_level": "failed",
+      "error": "HTTP Error 429: Too Many Requests",
+      "status": 429,
+      "executed_query": "A New Approach to Linear Filtering and Prediction Problems"
+    },
+    {
+      "name": "crossref_5",
+      "requested_url": "https://api.crossref.org/works?query.title=Unfold+an+integrated+toolbox+for+overlap+correction+nonlinear+modeling+and+regression+based+EEG+analysis&rows=2",
+      "accessed_utc": "2026-10-05T08:41:57.327192+00:00",
+      "access_level": "failed",
+      "error": "HTTP Error 429: Too Many Requests",
+      "status": 429,
+      "executed_query": "Unfold an integrated toolbox for overlap correction nonlinear modeling and regression based EEG analysis"
+    }
+  ],
+  "local_papers": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\Paper\\Bayesian_Signal_Matching_ERP_Transfer_arXiv_2401.07111.pdf",
+      "sha256": "22284e59bd0f0a7195f051a4482cab534d903e3870ccc9f044e6d9f36795b33e",
+      "access_level": "local_full_pdf_text",
+      "pages": 36,
+      "public_url": "https://arxiv.org/abs/2401.07111",
+      "first_page_excerpt": "Bayesian Signal Matching for Transfer Learning in ERP-Based Brain Computer Interface Tianwen Ma Department of Biostatistics and Bioinformatics, Emory University, Jane E. Huggins Department of Physical Medicine and Rehabilitation and Department of Biomedical Engineering, University of Michigan, and Jian Kang∗ Department of Biostatistics, University of Michigan Abstract An Event-Related Potential (ERP)-based Brain-Computer Interface (BCI) Speller System assists people with disabilities to communicate by decoding electroencephalo-",
+      "relevant_page_locators": [
+        {
+          "page": 2,
+          "page_text_sha256": "afe744734b2c41ebce036d66bf187573f393f4e455bae9967a4d519663b07cd1",
+          "matched_topics": [
+            "latency"
+          ]
+        },
+        {
+          "page": 3,
+          "page_text_sha256": "182778c076b11e9a2da603622218550655a594d0da52b2bf5c3603756d51e2a2",
+          "matched_topics": [
+            "convolution",
+            "filter",
+            "overlap"
+          ]
+        },
+        {
+          "page": 5,
+          "page_text_sha256": "234e5c9eb07fbb580a03ec45f66c08a120a1ebd741b9a4b8e006157477b3767b",
+          "matched_topics": [
+            "covariance",
+            "reference"
+          ]
+        },
+        {
+          "page": 6,
+          "page_text_sha256": "b6ff1784bb05f3f85fc828ca6d3aff69293afbd75e644b1075d2beae3306cd80",
+          "matched_topics": [
+            "covariance"
+          ]
+        },
+        {
+          "page": 7,
+          "page_text_sha256": "185350601b34ecac8bcdf6752f21ebd69af536fdb830c117c7635af3c15d0d62",
+          "matched_topics": [
+            "covariance",
+            "filter"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\Paper\\Block_Toeplitz_LDA_ERP_JNE_2022.pdf",
+      "sha256": "ad490b2aceb5dd1110b4652d1ddf67afe091d53b8b5967d9bce5cd6a766f1b8a",
+      "access_level": "local_full_pdf_text",
+      "pages": 14,
+      "public_url": "https://arxiv.org/abs/2202.02001",
+      "first_page_excerpt": "Introducing Block-Toeplitz Covariance Matrices to Remaster Linear Discriminant Analysis for Event-related Potential Brain-computer Interfaces Jan Sosulski Department of Computer Science, University of Freiburg, Freiburg, Germany Michael Tangermann Donders Institute for Brain, Cognition and Behaviour, Radboud University, Nijmegen, The Netherlands Correspondence to: michael.tangermann@donders.ru.nl Abstract— Covariance matrices of noisy multichannel elec- troencephalogram time series data are hard to estimate due to high dimensionality. In brain-computer interfaces (BCI)",
+      "relevant_page_locators": [
+        {
+          "page": 1,
+          "page_text_sha256": "32ec118a84ba96c1afe30227c785b3f1f1451dad2f7b531a55d31c0654907fc4",
+          "matched_topics": [
+            "covariance"
+          ]
+        },
+        {
+          "page": 2,
+          "page_text_sha256": "2853938b4c885f275c77e7ee4816918ba1cf2643d5766d2d5f45de5f4c83ea56",
+          "matched_topics": [
+            "covariance"
+          ]
+        },
+        {
+          "page": 3,
+          "page_text_sha256": "9a44476b1b3887b29ff1dcc46446a76b04f9c7b781930e7b2a36d0a1e94356f3",
+          "matched_topics": [
+            "covariance"
+          ]
+        },
+        {
+          "page": 4,
+          "page_text_sha256": "c2c38be1fc447b61f6bb1e58557115e1416d649e77395bb81bb43982d2df980d",
+          "matched_topics": [
+            "covariance"
+          ]
+        },
+        {
+          "page": 5,
+          "page_text_sha256": "2eeccd5b9440124e368fcbd41a5ba0c564bbe95def5bdb08096e5b24943d4e0c",
+          "matched_topics": [
+            "covariance",
+            "overlap"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\Paper\\xDAWN_Riemannian_Transfer_P300_2020.pdf",
+      "sha256": "92ef68b01c3dca90459bb8d314e734267568a87da1a237d59474d571e218c045",
+      "access_level": "local_full_pdf_text",
+      "pages": 13,
+      "public_url": "https://doi.org/10.3390/app10051804",
+      "first_page_excerpt": "applied sciences Article Transfer Learning Algorithm of P300-EEG Signal Based on XDAWN Spatial Filter and Riemannian Geometry Classiﬁer Feng Li 1,2,†, Yi Xia 1,2,†, Fei Wang 3,* , Dengyong Zhang 1,2 , Xiaoyu Li 1,2 and Fan He 1,2 1 School of Computer and Communication Engineering, Changsha University of Science and Technology, Changsha 410114, China; Lif@csust.edu.cn (F.L.); csustxy@163.com (Y.X.); zhdy@csust.edu.cn (D.Z.); csustecolee@163.com (X.L.); hf0208@stu.csust.edu.cn (F.H.)",
+      "relevant_page_locators": [
+        {
+          "page": 1,
+          "page_text_sha256": "24adf5ed78cf578f8dbf909a9696e44b585b2bb631e025d84ce94bbd23ed7ac4",
+          "matched_topics": [
+            "covariance",
+            "filter",
+            "reference"
+          ]
+        },
+        {
+          "page": 2,
+          "page_text_sha256": "de9f93462503b1cb937c62e5ba36a0324bb9e35b9842173df536ccf45bb9c1a1",
+          "matched_topics": [
+            "covariance"
+          ]
+        },
+        {
+          "page": 4,
+          "page_text_sha256": "eacbb2e21162b90562ab1c3c3281911114ada190c835386ce280db023c71c699",
+          "matched_topics": [
+            "covariance",
+            "filter"
+          ]
+        },
+        {
+          "page": 5,
+          "page_text_sha256": "49134055bc05af861a08a15f89058b4504d3ebd099f98aa0b15d1f4e85b127b0",
+          "matched_topics": [
+            "covariance"
+          ]
+        },
+        {
+          "page": 6,
+          "page_text_sha256": "0dea7772aea0dacfc28f86f9011ee320859fbef0536f36644a4a98f363a600a1",
+          "matched_topics": [
+            "covariance",
+            "reference"
+          ]
+        }
+      ]
+    }
+  ]
+}

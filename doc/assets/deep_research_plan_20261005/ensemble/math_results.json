@@ -1,0 +1,279 @@
+{
+  "schema": "n2p3_ensemble_math_verification/1",
+  "status": "passed",
+  "scope": "deterministic mathematics and read-only historical prediction audit; no new model fits",
+  "isolated_src_first": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\src",
+  "module_files": {
+    "data.candidate_task": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\src\\data\\candidate_task.py",
+    "models.candidate_evidence": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\src\\models\\candidate_evidence.py",
+    "transfer.decision_loss": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\src\\transfer\\decision_loss.py"
+  },
+  "module_sha256": {
+    "data.candidate_task": "6efa9be063bf1f9dfe5473dcb6e83404ff0e403d104a0c3344ffccf21d04839d",
+    "models.candidate_evidence": "81c9a29aa2d8a798d388623472302f28e24d9b3275d690b1ad74a907e8197451",
+    "transfer.decision_loss": "8e5bd44fb560dad4a6952b742d81b58d5eb5311a404ca2a434760c9d42b446bb"
+  },
+  "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+  "numpy": "2.5.2",
+  "torch": "2.13.0+cpu",
+  "script_sha256": "fc88bc910485bff9cd6d9db941f2aeca572e9e7bb697b732c288272e63ecb2a2",
+  "checks": {
+    "nn_mapping_bernoulli_oracle": {
+      "pass": true,
+      "posterior": [
+        0.27858987762838505,
+        0.4893560206203014,
+        0.23205410175131355
+      ],
+      "oracle_max_error": 8.326672684688674e-17,
+      "assumptions": "conditional independence; corrected trial odds; frozen prior"
+    },
+    "weighted_ce_prior_ratio": {
+      "pass": true,
+      "effective_trial_prior": 0.2,
+      "positive_weight": 4.0,
+      "rho": 0.0,
+      "balanced_target_rho_is_zero": true,
+      "limitation": "not a guarantee of empirical calibration or target class-conditionals"
+    },
+    "membership_gradient": {
+      "pass": true,
+      "autograd": [
+        0.1638763986049324,
+        -0.30037881139982275,
+        0.13650241279489034,
+        -0.30037881139982275,
+        0.13650241279489034,
+        0.1638763986049324
+      ],
+      "oracle": [
+        0.1638763986049324,
+        -0.30037881139982275,
+        0.13650241279489037,
+        -0.30037881139982275,
+        0.13650241279489037,
+        0.1638763986049324
+      ]
+    },
+    "membership_permutation_and_failure": {
+      "pass": true,
+      "incomplete_reason": "incomplete_candidate_coverage",
+      "missing_reason": "no_usable_evidence",
+      "frozen_candidates": [
+        "A",
+        "B",
+        "C"
+      ],
+      "prior_only_not_operational_prediction": true,
+      "tie_trains_but_abstains": true
+    },
+    "row_column_not_stimulus_softmax": {
+      "pass": true,
+      "n_stimulus_types": 4,
+      "n_physical_choices": 4,
+      "candidate_posterior": [
+        0.200656169943774,
+        0.299343830056226,
+        0.200656169943774,
+        0.299343830056226
+      ],
+      "equal_exposure_offset_invariant": true
+    },
+    "unequal_exposure_offset_changes_winner": {
+      "pass": true,
+      "counts": [
+        3,
+        2,
+        2
+      ],
+      "scores_before": [
+        2.0999999999999996,
+        0.7,
+        0.7999999999999999
+      ],
+      "scores_after": [
+        -3.8999999999999995,
+        -3.3,
+        -3.2
+      ]
+    },
+    "mixture_hit_is_not_monotonic": {
+      "pass": true,
+      "anchor": [
+        0.51,
+        0.49
+      ],
+      "added_expert": [
+        0.01,
+        0.99
+      ],
+      "mixed": [
+        0.26,
+        0.74
+      ],
+      "anchor_hit_two_decisions": 0.5,
+      "mixed_hit_two_decisions": 0.0,
+      "anchor_nll": 9.547012648608067,
+      "mixed_nll": 1.3767853479979282,
+      "jensen_bound_is_to_average_nll_not_best_expert": true
+    },
+    "pooling_and_temperature_are_treatments": {
+      "pass": true,
+      "probability_pool": [
+        0.42500000000000004,
+        0.22499999999999998,
+        0.35000000000000003
+      ],
+      "log_pool": [
+        0.3376042532592353,
+        0.3580833852555388,
+        0.30431236148522595
+      ],
+      "single_expert_temperature_preserves_hit": true,
+      "fusion_temperature_changes_hit": true
+    },
+    "gate_and_expert_gradients": {
+      "pass": true,
+      "gate_gradient": [
+        -0.2857329271931112,
+        0.28573292719311133
+      ],
+      "expert_responsibilities": [
+        0.3619186459708725,
+        0.6380813540291275
+      ],
+      "expert_gradient": [
+        [
+          0.10555720267769368,
+          -0.29789496619335076,
+          0.19233776351565707
+        ],
+        [
+          0.3263206799555541,
+          -0.5054092662132769,
+          0.17908858625772284
+        ]
+      ]
+    },
+    "inverse_temperature_gradient": {
+      "pass": true,
+      "autograd": 0.08916583412205326,
+      "oracle": 0.08916583412205314
+    },
+    "log_pool_underflow_is_not_true_zero_mass": {
+      "pass": true,
+      "rounded_probability": 0.0,
+      "stable_nll": 1000.6931471805599,
+      "decimal_oracle_nll": 1000.6931471805599,
+      "probability_clip_not_used": true
+    },
+    "hit_nll_failure_and_seed_accounting": {
+      "pass": true,
+      "requested_participant_macro": 0.45,
+      "micro": 0.8181818181818182,
+      "seed_averaged_macro": 0.44999999999999996,
+      "independent_participants": 2,
+      "seed_count_is_not_independent_participant_count": true,
+      "conditional_nll_one_prediction": 0.2231435513142097,
+      "uniform_abstention_convention_nll_two_requests": 0.6608779199911597,
+      "all_abstained_conditional_nll": null,
+      "nll_better_cannot_override_hit_loss": true
+    },
+    "winners_curse_exact_enumeration": {
+      "pass": true,
+      "methods": 2,
+      "dev_decisions_per_method": 2,
+      "true_accuracy_each_method": 0.5,
+      "expected_maximum_dev_accuracy": 0.6875,
+      "independent_test_expectation": 0.5,
+      "enumerated_states": 16
+    }
+  },
+  "phase4_read_only_audit": {
+    "pass": true,
+    "result_sha256": "5dc85b86e791376836c78da7585fc9d593725d0268062c4c42b3bd2292c29ca2",
+    "report_sha256": "83906bb8a5aedeb30f2e9095271f0fb33977b85805b0d9220875625e5b262580",
+    "rows": 576,
+    "mixture_requested_decisions": 48,
+    "participant_macro_hit": 0.7708333333333333,
+    "participant_macro_nll": 1.0694548780609707,
+    "participant_metrics": [
+      {
+        "participant": "A01",
+        "hit": 0.6666666666666666,
+        "nll": 1.1301655856196298
+      },
+      {
+        "participant": "A02",
+        "hit": 0.6666666666666666,
+        "nll": 1.5163761208902429
+      },
+      {
+        "participant": "A03",
+        "hit": 0.8333333333333334,
+        "nll": 0.5145775714013716
+      },
+      {
+        "participant": "A04",
+        "hit": 0.3333333333333333,
+        "nll": 3.4755028049331362
+      },
+      {
+        "participant": "A05",
+        "hit": 0.6666666666666666,
+        "nll": 0.6611864955684994
+      },
+      {
+        "participant": "A06",
+        "hit": 1.0,
+        "nll": 0.5106918240691617
+      },
+      {
+        "participant": "A07",
+        "hit": 1.0,
+        "nll": 0.3588621623457178
+      },
+      {
+        "participant": "A08",
+        "hit": 1.0,
+        "nll": 0.38827645966000596
+      }
+    ],
+    "gained_vs_toeplitz": 3,
+    "lost_vs_toeplitz": 3,
+    "probability_ties_at_1e12_tolerance": 0,
+    "raw_component": "raw_ar8_lambda_1",
+    "entrypoint_in_runtime_source_map": false,
+    "provenance_files": {
+      "doc/assets/operator_research_20261004/phase4_hybrid_study.py": {
+        "current_file_sha256": "82afb55809da01a36011a390bc0a62dcc1b4abd770c465d69d0facec08db908b",
+        "runtime_source_sha256": null
+      },
+      "doc/assets/operator_research_20261004/run_calibration_study.py": {
+        "current_file_sha256": "f93ad8f6027a46704672ac0650e0e97df77dffb0efe62e7d39b95d5084bac1aa",
+        "runtime_source_sha256": "f93ad8f6027a46704672ac0650e0e97df77dffb0efe62e7d39b95d5084bac1aa"
+      },
+      "doc/assets/operator_research_20261004/phase4_plan.json": {
+        "current_file_sha256": "dbcfa1528d3b5a5e32fe0244f0d3b9e806587f418c04b9a47ae7f078c175b07f",
+        "runtime_source_sha256": null
+      },
+      "doc/assets/operator_research_20261004/phase4_manifest.json": {
+        "current_file_sha256": "e5b4204c78e11377e68ee0e598125eacdd18ad77452962555649fbf68c2f8a2e",
+        "runtime_source_sha256": null
+      },
+      "doc/assets/operator_research_20261004/continuous_model.py": {
+        "current_file_sha256": "30197962f36bf30a8281649f4f673b3a637f3651f9db53626d974e78c3a08be8",
+        "runtime_source_sha256": "30197962f36bf30a8281649f4f673b3a637f3651f9db53626d974e78c3a08be8"
+      },
+      "doc/assets/operator_research_20261004/selection_erp_model.py": {
+        "current_file_sha256": "5492acf6002b10d4ecb2660684999dea6089e3ed8c7b3f115917bfafb2976076",
+        "runtime_source_sha256": "5492acf6002b10d4ecb2660684999dea6089e3ed8c7b3f115917bfafb2976076"
+      }
+    },
+    "mixtures_list_in_saved_plan": [
+      "equal_hyperprior_probability_mixture",
+      "equal_raw_ar8_toeplitz_probability_mixture"
+    ],
+    "inference_limit": "prediction arithmetic verified; current entrypoint manifest is not execution proof"
+  }
+}

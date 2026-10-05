@@ -1,0 +1,166 @@
+{
+  "schema": "n2p3_latent_research_math/1",
+  "evidence_scope": "independent_synthetic_mechanism_checks_no_public_or_adult_performance",
+  "seed": 20261005,
+  "python_executable": "D:\\BCI\\n2p3-net\\.venv\\Scripts\\python.exe",
+  "isolated_checkout": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net",
+  "current_owner_import": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\src\\transfer\\temporal_noise.py",
+  "script_sha256": "146147f1614952fd4b2f69f79308f113d928cc247de0102eb34e942f1bca7923",
+  "source_sha256": {
+    "src/transfer/temporal_noise.py": "c0f5e320082178f1f9d9181d8e332cf4c3d6362219c8c1a1ca98266314bfa4e0",
+    "src/transfer/continuous_decision.py": "19e8073f3fb0afa5d88bceeec9f978d5749cb4aa12008f1aaaaf2f6f251b72c0",
+    "src/transfer/noise_model.py": "3b0d69d1b64a9aef0d4e0c57893f30420a3ea0152c76427f5c3ed96bf7f96354",
+    "src/baselines/structured_erp.py": "df7f6d8c503bb99191f455442919ad79f1a246bdcf81113113095b06f691ae05",
+    "src/baselines/temporal_transfer.py": "757e0d38b9b964cbea59704781291418493672e56b13299ac7b95c70a9e40299"
+  },
+  "check_count": 14,
+  "results": {
+    "full_rank_gprior_basis_invariance_and_ridge_failure": {
+      "status": "PASS",
+      "g_prior_predictive_max_error": 1.1102230246251565e-15,
+      "fixed_ridge_predictive_relative_change": 831.6542241131959,
+      "basis_transform_condition": 4001.89887097886
+    },
+    "rank_deficiency_and_weak_directions": {
+      "status": "PASS",
+      "rank": 1,
+      "training_projector_max_error": 1.6653345369377348e-16,
+      "held_variance_pinv_original": 0.0006493506493506494,
+      "held_variance_pinv_changed_basis": 0.0016623376623376613,
+      "null_direction_held_response": 0.7071067811865475,
+      "weak_coefficient_prior_variance": 89999999999.99998,
+      "weak_fitted_function_shrinkage": [
+        0.8999999999999999,
+        0.8999999999999999
+      ],
+      "implication": "pinv g-prior is invariant on training column space but not arbitrary held extrapolation"
+    },
+    "matrix_normal_gauge_vs_physical_voltage_units": {
+      "status": "PASS",
+      "ridge_gauge_log_bf_error": 2.1316282072803006e-14,
+      "g_prior_gauge_log_bf_error": 7.105427357601002e-15,
+      "voltage_unit_log_bf_error": 2.842170943040401e-14,
+      "unchanged_ridge_gauge_log_bf_change": 1.6657551865982398,
+      "noise_scaled_ridge_unit_log_bf_change": 1.8483330408215295,
+      "distinction": "gauge changes factorization; voltage units change observed physical numbers; changing AR changes the model"
+    },
+    "fixed_holdback32_and_actual_conditional_prefix": {
+      "status": "PASS",
+      "orders_scored_rows": {
+        "0": 148,
+        "1": 148,
+        "4": 148,
+        "8": 148,
+        "16": 148,
+        "32": 148
+      },
+      "whiten_data_and_design_residual_max_error": 1.7763568394002505e-15,
+      "actual_prefix_perturbation_effect": 7.294120920302871,
+      "conditional_dense_vs_innovation_logpdf_error": 0.0,
+      "stationary_marginal_vs_conditional_logpdf_difference": 0.3706364889168299,
+      "previous_event_outside_segment_has_response_until_sample": 40,
+      "budget": {
+        "read_samples": 180,
+        "conditioning_samples": 32,
+        "scored_samples": 148
+      }
+    },
+    "channel_ar_nonseparability": {
+      "status": "PASS",
+      "channel_normalized_lag1": [
+        0.8000000000000002,
+        -0.4
+      ],
+      "best_separable_lag1_relative_error": 0.5845196387406237,
+      "implication": "channel-specific AR with correlated innovations is a restricted VAR, not scalar time x space MN"
+    },
+    "whitening_and_candidate_discrimination_separate": {
+      "status": "PASS",
+      "signal_projection_hit_before": 0.9345,
+      "signal_projection_hit_after_tie_as_failure": 0.0,
+      "expected_bayes_hit_before": 0.9331927987311419,
+      "candidate_component_energy_before": 3.24556088919886,
+      "candidate_component_energy_after": 0.0,
+      "misweighted_classifier_hit": 0.5331,
+      "invertible_correct_whitening_mahalanobis_error": 0.0
+    },
+    "residual_psd_acf_cannot_replace_hit": {
+      "status": "PASS",
+      "same_residual_sha256": "1e6347155192412541e3c8cdba0610a079129bdcd977d2a87a435ef9b6d07462",
+      "same_residual_lag1_acf": -8.760794449427004e-05,
+      "same_residual_psd_sha256": "5bbdb66d72721bb283f7c02fbdfbd42e50dcd9761d509bda93e1437b188df272",
+      "different_candidate_hits": [
+        1.0,
+        0.0
+      ],
+      "implication": "noise diagnostics contain no candidate-label correctness certificate"
+    },
+    "latency_derivative_local_approximation": {
+      "status": "PASS",
+      "latency_seconds": 0.004,
+      "first_order_relative_error": 0.0008552164146325587,
+      "second_order_relative_error": 2.003297901574734e-05,
+      "first_order_random_latency_covariance_rank": 1,
+      "limitation": "Taylor basis is local in delay; random latency covariance is signal-dependent"
+    },
+    "common_selection_identifiability": {
+      "status": "PASS",
+      "unconstrained_design_rank": 3,
+      "unconstrained_columns": 4,
+      "sum_to_zero_design_rank": 3,
+      "implication": "common plus free selection offsets is unidentified without centering or a proper hierarchical prior"
+    },
+    "probability_mixture_vs_bayes_evidence_weights": {
+      "status": "PASS",
+      "fixed_equal_probability_mixture": [
+        0.5,
+        0.5
+      ],
+      "bayes_model_weights": [
+        0.9803921568627451,
+        0.0196078431372549
+      ],
+      "bayes_model_average": [
+        0.788235294117647,
+        0.21176470588235294
+      ],
+      "implication": "softmax each lambda then average is a probability ensemble, not marginal likelihood integration"
+    },
+    "reference_rank_and_mean_prior_vs_precision": {
+      "status": "PASS",
+      "car_noise_rank": 6,
+      "car_null_vector_residual": 2.220446049250313e-16,
+      "arbitrary_pz_precision_changes_mahalanobis": [
+        140.0,
+        268.0
+      ],
+      "implication": "rank is owned by observation/reference coordinates; ERP mean prior must be separate from noise precision"
+    },
+    "candidate_frozen_prior_and_prefix_shared_kernel_conditioning": {
+      "status": "PASS",
+      "frozen_physical_amplitude_prior_log_bf": 0.6181019568362496,
+      "candidate_adaptive_gprior_log_bf": 0.0,
+      "prefix_shared_kernel_conditional_logpdf_error": 2.220446049250313e-16,
+      "prefix_ignored_logpdf_difference": 0.16055999911772623,
+      "implication": "freeze g-prior on calibration design; candidate-free prefix still updates uncertain shared coefficients"
+    },
+    "student_t_scale_hierarchy_changes_inference": {
+      "status": "PASS",
+      "selection_global_precision_posterior_mean": 0.04695150580186464,
+      "independent_row_precision_posterior_means": [
+        0.040268456375838924,
+        1.1787819253438114
+      ],
+      "implication": "a selection-wide scale shock downweights all samples; local t scales downweight the outlier only"
+    },
+    "held_acf_improves_while_candidate_contrast_is_removed": {
+      "status": "PASS",
+      "held_noise_lag1_acf_before": 0.9005518680705538,
+      "held_noise_lag1_acf_after": -0.014879969641434482,
+      "classification_hit_before": 0.956,
+      "remaining_candidate_signal_norm": 1.233484761181068e-16,
+      "classification_hit_after_all_candidate_ties": 0.0,
+      "implication": "correct whitening plus an overbroad nuisance projection improves held residual ACF but removes the ERP contrast"
+    }
+  }
+}

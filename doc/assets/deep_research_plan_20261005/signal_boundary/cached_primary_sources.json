@@ -1,0 +1,458 @@
+{
+  "created_utc": "2026-10-05T08:41:57.832299+00:00",
+  "inspector_sha256": "b937909b4ca409a4a467346f4681abb443dda907892c63dd4013339309511c77",
+  "cached_primary_sources": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\operator_research_20261004\\literature\\sarkka_book.pdf",
+      "sha256": "41c30a59b4e6d2418634959a5991f60b1e6cba881eb2643adba3f432394b23f2",
+      "access_level": "cached_primary_full_pdf_text_reinspected",
+      "original_access": {
+        "file": "sarkka_book.pdf",
+        "requested_url": "https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf",
+        "fetched_utc": "2026-10-04T12:55:06.628839+00:00",
+        "status": 200,
+        "final_url": "https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf",
+        "content_type": "application/pdf",
+        "bytes": 4498379,
+        "sha256": "41c30a59b4e6d2418634959a5991f60b1e6cba881eb2643adba3f432394b23f2"
+      },
+      "pages_total": 252,
+      "reinspected_pages": [
+        {
+          "pdf_page": 229,
+          "page_text_sha256": "fbd3103aca71c7a8399979178bdca90774636d9ea89d1195f9eafd1c716aad19"
+        },
+        {
+          "pdf_page": 230,
+          "page_text_sha256": "9e8d1ee813ad59de39b90db2c9a1ba9df3e59d9f90ea5cec3e5e9dcd17fa9fde"
+        }
+      ]
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\operator_research_20261004\\literature\\bnci_official_description.pdf",
+      "sha256": "25d2c244c48ff9652017b48f86b2207221e88f5779980b891bfa309ed2db75f0",
+      "access_level": "cached_primary_full_pdf_text_reinspected",
+      "original_access": {
+        "file": "bnci_official_description.pdf",
+        "requested_url": "https://bnci-horizon-2020.eu/database/data-sets/008-2014/description.pdf",
+        "fetched_utc": "2026-10-04T13:54:11.719405+00:00",
+        "status": 200,
+        "final_url": "https://lampx.tugraz.at/~bci/database/008-2014/description.pdf",
+        "content_type": "application/pdf",
+        "bytes": 178802,
+        "sha256": "25d2c244c48ff9652017b48f86b2207221e88f5779980b891bfa309ed2db75f0"
+      },
+      "pages_total": 3,
+      "reinspected_pages": [
+        {
+          "pdf_page": 1,
+          "page_text_sha256": "003b165fcf62d0270bce4022af95fade6be2ccc8c1fb534ddc107417f7ea0b50"
+        },
+        {
+          "pdf_page": 2,
+          "page_text_sha256": "e472713a06de3612e3763532a0ed960bf61f7e70fda3f36adae5effdc4278362"
+        }
+      ]
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\system_research_20261004\\literature\\unfold_full.xml",
+      "sha256": "0d91af1490feb9cf8e5340abec4091e5ac3ba4ddf1a09b5fa942345431eda60e",
+      "access_level": "cached_primary_full_xml_reinspected",
+      "public_url": "https://peerj.com/articles/7838/",
+      "doi_from_article": [
+        "10.7717/peerj.7838"
+      ],
+      "relevant_paragraph_locators": [
+        {
+          "paragraph_index": 1,
+          "paragraph_sha256": "76deb27f35196fd1d28e96295b749f11a7c0b6e41acb43742ed9b0fe475b70ef",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 2,
+          "paragraph_sha256": "d1c98102582622dbdf953395d38ffe22502178cbeb9101a07407840877da670b",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 3,
+          "paragraph_sha256": "f878ac66a6648ed49a74c5b3593e4ae048f05dd4df7ce5eb1b416cd3d0dd1a68",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 5,
+          "paragraph_sha256": "809ff87a214f8e23f90d1e7c0efa7d7cf4c43bc16d0f0c83e7d478032bc33cd1",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 6,
+          "paragraph_sha256": "da959ee2a8817beee4c8d4f343d0b178306c50486ce279877d1ae7cba30bc4f9",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 7,
+          "paragraph_sha256": "c8bd432eb068ec5adb111a8f9735cbb7607690bf76a1b3217824403b15179824",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 9,
+          "paragraph_sha256": "34275ff6e67c2a7700fa0b53ba7a6da7d26c5783690a230c29853f0837e9c521",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 10,
+          "paragraph_sha256": "3fc01ef161a475b7db0d74d489c513381bbc95dd000d9f2ba28d5e5b05911ec5",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 11,
+          "paragraph_sha256": "a19f26cd718603171480498daaba005c4286b0245cfb31b504f31c1050eafadf",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 12,
+          "paragraph_sha256": "7e38b43dc159f31550f0d1258f5aeb487ee16c69743745daec2de8d73b5ea7e5",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 14,
+          "paragraph_sha256": "858f57d6f685a6d3cc7286f5d32e2fff43435f8ec118b2a24b7074dc43d3f716",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 17,
+          "paragraph_sha256": "5feb1453c9362aec28647dfb9823567916950e4be3e5eb91eeb0b191dde8338e",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 20,
+          "paragraph_sha256": "e94411c220d8ab4620eabd89e22a167dde6e2dd8ff8b4445798a3773ffce58a0",
+          "matched_topics": [
+            "time expansion"
+          ]
+        },
+        {
+          "paragraph_index": 27,
+          "paragraph_sha256": "55a587d8dbf048fa2c7eddbc5c9028d0e40327b7e017eb535407b3f267b4296c",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 28,
+          "paragraph_sha256": "6ddc47861ea7013a7e7880b5db496c2e66141d1b58b39f38dd904ebc1d78800d",
+          "matched_topics": [
+            "filter",
+            "time expansion"
+          ]
+        },
+        {
+          "paragraph_index": 41,
+          "paragraph_sha256": "9e45befdca7731b672e027d109f3a042de922074e4148a1e487685c103bdc02c",
+          "matched_topics": [
+            "overlap",
+            "time-expansion"
+          ]
+        },
+        {
+          "paragraph_index": 42,
+          "paragraph_sha256": "b617fd3586a8dcc379ec1b5ec5e6035dd9a807399075a688c6552bd1587040a7",
+          "matched_topics": [
+            "filter"
+          ]
+        },
+        {
+          "paragraph_index": 52,
+          "paragraph_sha256": "514f8e08b30ce0f50b110dbb56665ca3a8b4aab2343ff528e13b46305b1c76e1",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 54,
+          "paragraph_sha256": "5924cfa999dfcbbdcccbe936b7c237fa658996f7975860b37512d50f37039ce3",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 58,
+          "paragraph_sha256": "8542df8a94b514a3b30eef83d3e00e37cb04ddca0067395964bdd132331c067f",
+          "matched_topics": [
+            "filter",
+            "time-expansion"
+          ]
+        },
+        {
+          "paragraph_index": 59,
+          "paragraph_sha256": "4018700f4176b2eb81ad731b13662dfe73333c1ebf895b6ae76122b4f1c117a1",
+          "matched_topics": [
+            "filter",
+            "time-expansion"
+          ]
+        },
+        {
+          "paragraph_index": 60,
+          "paragraph_sha256": "6a7747478831df3a6e54b949c7d23bc16123662dd3be14aebdc315eab4c571f7",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 61,
+          "paragraph_sha256": "60de02380c30f0dcc891c412c8e76752a4308c6c4222581f0bcb2bcc420a987e",
+          "matched_topics": [
+            "overlap",
+            "time-expansion"
+          ]
+        },
+        {
+          "paragraph_index": 64,
+          "paragraph_sha256": "2b49ace5807a323e7e7dcbef0a971eec64c9f2a3396134d6a5ec9c4c0e2a36a2",
+          "matched_topics": [
+            "time-expansion"
+          ]
+        },
+        {
+          "paragraph_index": 66,
+          "paragraph_sha256": "cd93a147faaece90355f17b3f6acbb491e6f814822edb4368967ffdf0af3c7ec",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 67,
+          "paragraph_sha256": "c3c7d51fdf49921aa2e379697a5044db798e982590121653b4be5673fde74d4b",
+          "matched_topics": [
+            "filter",
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 68,
+          "paragraph_sha256": "a74909f230204eea6ee6519659a9ad8668a2d737d21188c360af8f38ae470175",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 74,
+          "paragraph_sha256": "d0e0a909282e4f5627443d34bb3f35a5887c6b373f192f28a1239a54888e9097",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 75,
+          "paragraph_sha256": "54874bced9431567a0e9f3012567fa003ba255763757544976fc569748e1869e",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 76,
+          "paragraph_sha256": "5fcc110b807141658c3b0d5ec7003344f3b92ffa906042a2ee375aa99b01656e",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 82,
+          "paragraph_sha256": "573f98853f7a6bf956eeded9adba6f89a902060c6dad7cb3612a08b6c08d3356",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 84,
+          "paragraph_sha256": "998aefb5a9c92607c77c6beb33a38783277c5deb77d7471dc17612110c5da3d6",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 85,
+          "paragraph_sha256": "593268996bda521b20d2d91f6ec49345d0ef6c07f02bfab6ed9798659a2af24e",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 86,
+          "paragraph_sha256": "b5fc5432785048e46b56beace2a1c451030889bee5a0b4ff9c6a9dadd19c0e12",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 89,
+          "paragraph_sha256": "bf9dfb41786ca7638e037ebfee502cfec7f75755cb654a5708b6063f87ef51b4",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 91,
+          "paragraph_sha256": "1fec628fea960e518023e99623bf7a9f74d280879961364de2400039018e1d11",
+          "matched_topics": [
+            "filter",
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 92,
+          "paragraph_sha256": "33900127c9e931f84dfbc954dece80b9502243d1b43bdb18010b3ba23dbd57e2",
+          "matched_topics": [
+            "epoch size",
+            "filter",
+            "time-expansion"
+          ]
+        },
+        {
+          "paragraph_index": 93,
+          "paragraph_sha256": "fd03bf7614056c31a1af74d904e5679ec7d6ce428921328b95286d4cd65c2abc",
+          "matched_topics": [
+            "epoch size",
+            "time-expansion"
+          ]
+        },
+        {
+          "paragraph_index": 95,
+          "paragraph_sha256": "81e9328b472dca4aa677505ec135568c3002102816599423e17cb13f03bbfd8a",
+          "matched_topics": [
+            "epoch size"
+          ]
+        },
+        {
+          "paragraph_index": 101,
+          "paragraph_sha256": "a22cf3a46607f19c81b6a4564c7e35b77927a977c57fbeffb9e918a2943ffd9f",
+          "matched_topics": [
+            "time-expansion"
+          ]
+        },
+        {
+          "paragraph_index": 103,
+          "paragraph_sha256": "ff9a90be5813007eb554a19445b4913ec1e9445b13c8f24fe7a31806e28c1279",
+          "matched_topics": [
+            "overlap"
+          ]
+        },
+        {
+          "paragraph_index": 104,
+          "paragraph_sha256": "12aa72ad6bfd3c2c05bb37d8b9f3399a5818c02b8be9e628722381659babc50b",
+          "matched_topics": [
+            "overlap"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\doc\\assets\\operator_research_20261004\\literature\\unfold_filter_simulation.m",
+      "sha256": "d4d9ce1148d732469b65d32222b49ee7435ff0639c4cb15ea0a0d8b6062755d5",
+      "access_level": "cached_author_code_reinspected",
+      "public_url": "https://github.com/unfoldtoolbox/unfold",
+      "selected_lines": [
+        {
+          "line": 25,
+          "text": "signals{1}(1).overlap = 0.85;"
+        },
+        {
+          "line": 31,
+          "text": "cfg.filterchoices = [0.01,0.1,1,10];"
+        },
+        {
+          "line": 33,
+          "text": "result.filter = [];"
+        },
+        {
+          "line": 48,
+          "text": "for filt = cfg.filterchoices"
+        },
+        {
+          "line": 55,
+          "text": "EEG = pop_eegfiltnew(EEG_raw,filt,[]);"
+        },
+        {
+          "line": 58,
+          "text": "timelimits = [-0.8,1];"
+        },
+        {
+          "line": 59,
+          "text": "EEG = uf_timeexpandDesignmat(EEG,'timelimits',timelimits,'method','full','timeexpandparam',7);"
+        },
+        {
+          "line": 74,
+          "text": "result.filter(end+1) = filt;"
+        },
+        {
+          "line": 79,
+          "text": "tmp = num2cell(cfg.filterchoices);"
+        },
+        {
+          "line": 86,
+          "text": "g = gramm('x',ufresult.times,'y',result.betas(:,:,1),'color',result.filter);"
+        },
+        {
+          "line": 91,
+          "text": "g = gramm('x',ufresult.times,'y',result.betas(:,:,2),'color',result.filter);"
+        }
+      ]
+    }
+  ],
+  "bounded_supplemental_requests": [
+    {
+      "name": "bnci_wayback_discovery",
+      "requested_url": "https://archive.org/wayback/available?url=https%3A%2F%2Fbnci-horizon-2020.eu%2Fdatabase%2Fdata-sets%2F008-2014%2Fdescription.pdf",
+      "accessed_utc": "2026-10-05T08:41:55.994901+00:00",
+      "access_level": "failed",
+      "error": "HTTP Error 429: Too Many Requests",
+      "status": 429,
+      "access_role": "snapshot_discovery_only_not_archived_page_content"
+    },
+    {
+      "name": "bnci_official_redirect_target",
+      "requested_url": "https://lampx.tugraz.at/~bci/database/008-2014/description.pdf",
+      "accessed_utc": "2026-10-05T08:41:55.995489+00:00",
+      "access_level": "failed",
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)>"
+    },
+    {
+      "name": "sarkka_author_book_live",
+      "requested_url": "https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf",
+      "accessed_utc": "2026-10-05T08:41:55.996098+00:00",
+      "access_level": "failed",
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)>"
+    },
+    {
+      "name": "unfold_primary_publisher",
+      "requested_url": "https://peerj.com/articles/7838.xml",
+      "accessed_utc": "2026-10-05T08:41:56.066590+00:00",
+      "access_level": "failed",
+      "error": "HTTP Error 403: Forbidden",
+      "status": 403
+    }
+  ]
+}

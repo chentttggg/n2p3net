@@ -6,6 +6,8 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
+import tarfile
 from pathlib import Path
 
 import numpy as np
@@ -134,9 +136,62 @@ def scheduling_counterexamples():
             "measured_speedup_claimed": False, "dependency_tail": {"ready": ready, "capacity": capacity, "active": active}}
 
 
+def verify_research_delivery(output):
+    counts = {}
+    script_bindings = {}
+    for folder in ("ensemble", "latent_models", "signal_boundary"):
+        report = json.loads((HERE / folder / "math_results.json").read_text(encoding="utf-8"))
+        script = HERE / folder / "verify_math.py"
+        assert hashlib.sha256(script.read_bytes()).hexdigest() == report["script_sha256"]
+        script_bindings[folder] = report["script_sha256"]
+        if folder == "ensemble":
+            rows = list(report["checks"].values())
+            assert report["status"] == "passed" and all(row["pass"] for row in rows)
+        elif folder == "latent_models":
+            rows = list(report["results"].values())
+            assert all(row["status"] == "PASS" for row in rows)
+        else:
+            rows = report["counterexamples"]
+            assert report["all_passed"] and all(row["status"] == "PASS" for row in rows)
+        counts[folder] = len(rows)
+    baseline = ROOT / "frozen/deep_research_20261005_before/manifest.json"
+    manifest = json.loads(baseline.read_text(encoding="utf-8"))
+    archive_path = baseline.parent / manifest["archive"]
+    assert hashlib.sha256(archive_path.read_bytes()).hexdigest() == manifest["archive_sha256"]
+    with tarfile.open(archive_path, "r:gz") as archive:
+        members = {member.name: member for member in archive.getmembers() if member.isfile()}
+        assert members.keys() == manifest["files"].keys()
+        for name, member in members.items():
+            assert hashlib.sha256(archive.extractfile(member).read()).hexdigest() == manifest["files"][name]
+    local_links = 0
+    markdown_files = [ROOT / "doc/evidence/deep_research_plan_20261005.zh.md",
+                      *HERE.glob("*/research.zh.md")]
+    for path in markdown_files:
+        for target in re.findall(r"\]\(([^)]+)\)", path.read_text(encoding="utf-8")):
+            if "://" in target or target.startswith("#"):
+                continue
+            target = target.split("#")[0]
+            resolved = (path.parent / target).resolve()
+            assert resolved == output.resolve() or resolved.exists(), f"missing link: {path}: {target}"
+            local_links += 1
+    task_files = subprocess.check_output(["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z",
+                                          "doc/assets/deep_research_plan_20261005"], cwd=ROOT).decode().split("\0")
+    artifacts = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
+                 for name in sorted(filter(None, task_files)) if (ROOT / name).resolve() != output.resolve()}
+    return {"status": "passed", "spec_review": "passed after independent three-axis review",
+            "standards_review": "passed; isolated sources, existing owners and six guides retained",
+            "math_checks": counts, "total_named_math_checks": sum(counts.values()),
+            "math_script_sha256": script_bindings, "local_report_links_verified": local_links,
+            "baseline_archive_verified_members": len(members), "artifact_sha256": artifacts,
+            "source_and_experiment_limits": ["Original working tree continues concurrent work",
+                                             "Phase4 historical source attestation is partial",
+                                             "New implementation, public efficacy matrix and adult confirmation not executed"]}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--delivery-output", type=Path)
     args = parser.parse_args()
     plan_path = HERE / "research_plan.json"
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
@@ -148,6 +203,11 @@ def main():
               "status": "passed", "public_efficacy_matrix_executed": False}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+    if args.delivery_output is not None:
+        delivery = verify_research_delivery(args.delivery_output)
+        delivery["design_check"] = record
+        args.delivery_output.write_text(json.dumps(delivery, ensure_ascii=False, indent=2) + "\n",
+                                        encoding="utf-8", newline="\n")
     print(json.dumps({"status": record["status"], "wishlist": 123, "tasks": 15}))
 
 

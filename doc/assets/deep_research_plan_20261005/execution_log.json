@@ -1,0 +1,62 @@
+{
+  "evidence_scope": "research_design_math_and_software_contracts",
+  "new_training_executed": false,
+  "new_public_efficacy_matrix_executed": false,
+  "commands": [
+    {
+      "kind": "ensemble_counterexamples_and_historical_replay",
+      "cmd": "$env:PYTHONIOENCODING='utf-8'\n$env:OMP_NUM_THREADS='1'\n$env:OPENBLAS_NUM_THREADS='1'\n$env:MKL_NUM_THREADS='1'\nD:/BCI/n2p3-net/.venv/Scripts/python.exe 'C:/Users/chent/.codex/worktrees/deep-research-plan/n2p3-net/doc/assets/deep_research_plan_20261005/ensemble/verify_math.py' --phase4-root D:/BCI/n2p3-net --output 'C:/Users/chent/.codex/worktrees/deep-research-plan/n2p3-net/doc/assets/deep_research_plan_20261005/ensemble/math_results.json'",
+      "chunk_id": "a3bf84",
+      "wall_time_seconds": 3.2986468,
+      "exit_code": 0,
+      "original_token_count": 53,
+      "output": "{\"status\": \"passed\", \"checks\": 13, \"phase4_audited\": true, \"output\": \"C:\\\\Users\\\\chent\\\\.codex\\\\worktrees\\\\deep-research-plan\\\\n2p3-net\\\\doc\\\\assets\\\\deep_research_plan_20261005\\\\ensemble\\\\math_results.json\"}\r\n"
+    },
+    {
+      "kind": "latent_model_counterexamples",
+      "cmd": "$env:PYTHONIOENCODING='utf-8'\n$env:OMP_NUM_THREADS='1'\n$env:OPENBLAS_NUM_THREADS='1'\n$env:MKL_NUM_THREADS='1'\nD:/BCI/n2p3-net/.venv/Scripts/python.exe 'C:/Users/chent/.codex/worktrees/deep-research-plan/n2p3-net/doc/assets/deep_research_plan_20261005/latent_models/verify_math.py'",
+      "chunk_id": "d7a3bc",
+      "wall_time_seconds": 2.8352563,
+      "exit_code": 0,
+      "original_token_count": 174,
+      "output": "full_rank_gprior_basis_invariance_and_ridge_failure PASS\r\nrank_deficiency_and_weak_directions PASS\r\nmatrix_normal_gauge_vs_physical_voltage_units PASS\r\nfixed_holdback32_and_actual_conditional_prefix PASS\r\nchannel_ar_nonseparability PASS\r\nwhitening_and_candidate_discrimination_separate PASS\r\nresidual_psd_acf_cannot_replace_hit PASS\r\nlatency_derivative_local_approximation PASS\r\ncommon_selection_identifiability PASS\r\nprobability_mixture_vs_bayes_evidence_weights PASS\r\nreference_rank_and_mean_prior_vs_precision PASS\r\ncandidate_frozen_prior_and_prefix_shared_kernel_conditioning PASS\r\nstudent_t_scale_hierarchy_changes_inference PASS\r\nheld_acf_improves_while_candidate_contrast_is_removed PASS\r\n"
+    },
+    {
+      "kind": "signal_boundary_counterexamples",
+      "cmd": "$env:PYTHONIOENCODING='utf-8'\n$env:OMP_NUM_THREADS='1'\n$env:OPENBLAS_NUM_THREADS='1'\n$env:MKL_NUM_THREADS='1'\nD:/BCI/n2p3-net/.venv/Scripts/python.exe 'C:/Users/chent/.codex/worktrees/deep-research-plan/n2p3-net/doc/assets/deep_research_plan_20261005/signal_boundary/verify_math.py'",
+      "chunk_id": "f3525e",
+      "wall_time_seconds": 3.3375478,
+      "exit_code": 0,
+      "original_token_count": 49,
+      "output": "{\"all_passed\": true, \"count\": 16, \"results\": \"C:\\\\Users\\\\chent\\\\.codex\\\\worktrees\\\\deep-research-plan\\\\n2p3-net\\\\doc\\\\assets\\\\deep_research_plan_20261005\\\\signal_boundary\\\\math_results.json\"}\r\n"
+    }
+  ],
+  "contract_checks": {
+    "command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -m pytest -q tests/research/test_research_contracts.py tests/research/test_comparison_identity.py tests/transfer/test_exact_covariance_and_bounds.py tests/transfer/test_temporal_noise.py tests/data/test_finite_filter_operator.py tests/models/test_membership_decision.py tests/models/test_structured_erp.py",
+    "cwd": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net",
+    "exit_code": 0,
+    "passed": 136,
+    "notes": "One existing SciPy ill-conditioned covariance warning; no failures."
+  },
+  "research_ruff": {
+    "chunk_id": "967987",
+    "wall_time_seconds": 0.762696,
+    "exit_code": 0,
+    "original_token_count": 10,
+    "output": "All checks passed!\nResearch scripts: 9\r\n"
+  },
+  "repository_ruff": {
+    "command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -m ruff check src experiments tests conftest.py",
+    "exit_code": 0
+  },
+  "local_environment": {
+    "logical_cpu_count": 32,
+    "python": "3.14.3",
+    "numpy": "2.5.2",
+    "scipy": "1.18.1",
+    "torch": "2.13.0+cpu",
+    "cuda_available": false,
+    "cloud_launch_verified": false
+  }
+}
+

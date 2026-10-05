@@ -1,0 +1,319 @@
+{
+  "scope": "targeted primary-source method review, not a systematic review",
+  "date_user_timezone": "2026-10-05 Asia/Shanghai",
+  "queries": [
+    {
+      "id": "ride_query",
+      "requested_level": "search_results",
+      "url": "https://api.crossref.org/works?query.title=Residue%20iteration%20decomposition%20RIDE%20latency%20variability%20Ouyang&rows=3",
+      "retrieved_utc": "2026-10-05T08:10:56.190093+00:00",
+      "http_status": 200,
+      "resolved_url": "https://api.crossref.org/works?query.title=Residue%20iteration%20decomposition%20RIDE%20latency%20variability%20Ouyang&rows=3",
+      "content_type": "application/json",
+      "bytes": 11665,
+      "response_sha256": "0f18e70a49f6524f4911da0f77f4909060427637ca1c6388081f079bbafc2a59",
+      "saved_file": "sources/ride_query.json",
+      "retrieved_level": "search_results",
+      "top_results": [
+        {
+          "doi": "10.1111/j.1469-8986.2011.01269.x",
+          "title": [
+            "Residue iteration decomposition (RIDE): A new method to separate ERP components on the basis of latency variability in single trials"
+          ],
+          "author": [
+            {
+              "given": "Guang",
+              "family": "Ouyang",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            },
+            {
+              "given": "Grit",
+              "family": "Herzmann",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "doi": "10.1016/j.ijpsycho.2014.08.642",
+          "title": [
+            "Restoring latency-variable ERP components from single trials: Anew approach to ERP analysis with residue iteration decomposition (RIDE)"
+          ],
+          "author": [
+            {
+              "given": "Changsong",
+              "family": "Zhou",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "role": "author",
+                  "vocabulary": "crossref"
+                }
+              ]
+            },
+            {
+              "given": "Guang",
+              "family": "Ouyang",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "role": "author",
+                  "vocabulary": "crossref"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "doi": "10.3389/conf.fnhum.2015.217.00256",
+          "title": [
+            "Restoring Latency-Variable ERP Components from Single Trials: A New Approach to ERP Analysis with Residue Iteration Decomposition (RIDE)?"
+          ],
+          "author": [
+            {
+              "given": "Ouyang",
+              "family": "Guang",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "role": "author",
+                  "vocabulary": "crossref"
+                }
+              ]
+            },
+            {
+              "given": "Sommer",
+              "family": "Werner",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "role": "author",
+                  "vocabulary": "crossref"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "woody_query",
+      "requested_level": "search_results",
+      "url": "https://api.crossref.org/works?query.title=Characterization%20adaptive%20filter%20analysis%20variable%20latency%20neuroelectric%20signals%20Woody&rows=3",
+      "retrieved_utc": "2026-10-05T08:10:56.190574+00:00",
+      "retrieved_level": "request_failed",
+      "error": "('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))"
+    },
+    {
+      "id": "factor_query",
+      "requested_level": "search_results",
+      "url": "https://api.crossref.org/works?query.title=State%20Space%20approach%20dynamic%20factor%20analysis%20Watson%20Engle%201983&rows=3",
+      "retrieved_utc": "2026-10-05T08:10:56.190733+00:00",
+      "http_status": 200,
+      "resolved_url": "https://api.crossref.org/works?query.title=State%20Space%20approach%20dynamic%20factor%20analysis%20Watson%20Engle%201983&rows=3",
+      "content_type": "application/json",
+      "bytes": 14571,
+      "response_sha256": "160d6ae3f0dbee6b8f94a5014a3e9c56ed96f155cbd285ca24c79e8507f5f06c",
+      "saved_file": "sources/factor_query.json",
+      "retrieved_level": "search_results",
+      "top_results": [
+        {
+          "doi": "10.7135/upo9781843318118.005",
+          "title": [
+            "Analysis of Dynamic Systems via State Space Approach"
+          ],
+          "author": []
+        },
+        {
+          "doi": "10.1016/s0141-0296(00)00096-1",
+          "title": [
+            "A state-space approach for dynamic analysis of sliding structures"
+          ],
+          "author": [
+            {
+              "given": "Yen-Po",
+              "family": "Wang",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            },
+            {
+              "given": "Wei-Hsin",
+              "family": "Liao",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "doi": "10.1016/j.compstruc.2004.03.023",
+          "title": [
+            "A state-space approach for the dynamic analysis of viscoelastic systems"
+          ],
+          "author": [
+            {
+              "given": "S.",
+              "family": "Menon",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            },
+            {
+              "given": "J.",
+              "family": "Tang",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "g_priors_query",
+      "requested_level": "search_results",
+      "url": "https://api.crossref.org/works?query.bibliographic=Mixtures%20of%20g%20Priors%20for%20Bayesian%20Variable%20Selection%20Liang%20Paulo%20Molina%20Clyde%20Berger%202008&rows=3",
+      "retrieved_utc": "2026-10-05T08:19:23.521392+00:00",
+      "http_status": 200,
+      "resolved_url": "https://api.crossref.org/works?query.bibliographic=Mixtures%20of%20g%20Priors%20for%20Bayesian%20Variable%20Selection%20Liang%20Paulo%20Molina%20Clyde%20Berger%202008&rows=3",
+      "content_type": "application/json",
+      "bytes": 22426,
+      "response_sha256": "d6530a4acb1aa946b032721be6cf5354c5b86735375172f29704573d2cce7f4c",
+      "saved_file": "sources/g_priors_query.json",
+      "retrieved_level": "search_results",
+      "top_results": [
+        {
+          "doi": "10.1198/016214507000001337",
+          "title": [
+            "Mixtures of <i>g</i> Priors for Bayesian Variable Selection"
+          ],
+          "author": [
+            {
+              "given": "Feng",
+              "family": "Liang",
+              "sequence": "first",
+              "affiliation": [
+                {
+                  "name": "Feng Liang is Assistant Professor, Department of Statistics, University of Illinois at Urbana–Champaign, Champaign, IL 61820 . Rui Paulo is Assistant Professor, Department of Mathematics, ISEG, Technical University of Lisbon, Lisbon, Portugal . German Molina is Quantitive Trading Researcher at Tudor Investment Corporation, London, England . Merlise A. Clyde is Associate Professor, Department of Statistical Science, Duke University, Durham, NC 27708 . Jim O. Berger is the Arts and Sciences Professor of..."
+                }
+              ],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            },
+            {
+              "given": "Rui",
+              "family": "Paulo",
+              "sequence": "additional",
+              "affiliation": [
+                {
+                  "name": "Feng Liang is Assistant Professor, Department of Statistics, University of Illinois at Urbana–Champaign, Champaign, IL 61820 . Rui Paulo is Assistant Professor, Department of Mathematics, ISEG, Technical University of Lisbon, Lisbon, Portugal . German Molina is Quantitive Trading Researcher at Tudor Investment Corporation, London, England . Merlise A. Clyde is Associate Professor, Department of Statistical Science, Duke University, Durham, NC 27708 . Jim O. Berger is the Arts and Sciences Professor of..."
+                }
+              ],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "doi": "10.32614/cran.package.bas",
+          "title": [
+            "BAS: Bayesian Variable Selection and Model Averaging using Bayesian Adaptive Sampling"
+          ],
+          "author": [
+            {
+              "given": "Merlise",
+              "family": "Clyde",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "role": "author",
+                  "vocabulary": "crossref"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "doi": "10.1214/08-ba323",
+          "title": [
+            "Bayesian variable selection and computation for generalized linear models with conjugate priors"
+          ],
+          "author": [
+            {
+              "given": "Ming-Hui",
+              "family": "Chen",
+              "sequence": "first",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            },
+            {
+              "given": "Lan",
+              "family": "Huang",
+              "sequence": "additional",
+              "affiliation": [],
+              "role": [
+                {
+                  "vocabulary": "crossref",
+                  "role": "author"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "retrieval_script_sha256": "6e1cebda0de65184528ccaf539342fb0051713b708e9da7f9b470dd3df18f2c8"
+}

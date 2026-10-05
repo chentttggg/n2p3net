@@ -1,0 +1,712 @@
+[
+  {
+    "id": "g_priors",
+    "requested_level": "crossref_metadata",
+    "url": "https://api.crossref.org/works/10.1198/016214507000001337",
+    "retrieved_utc": "2026-10-05T08:10:51.075798+00:00",
+    "retrieved_level": "request_failed",
+    "error": "('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))"
+  },
+  {
+    "id": "unfold",
+    "requested_level": "crossref_metadata",
+    "url": "https://api.crossref.org/works/10.7717/peerj.7838",
+    "retrieved_utc": "2026-10-05T08:10:51.076225+00:00",
+    "retrieved_level": "request_failed",
+    "error": "('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))"
+  },
+  {
+    "id": "xdawn",
+    "requested_level": "crossref_metadata",
+    "url": "https://api.crossref.org/works/10.1109/TBME.2009.2012869",
+    "retrieved_utc": "2026-10-05T08:10:51.076546+00:00",
+    "retrieved_level": "request_failed",
+    "error": "('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))"
+  },
+  {
+    "id": "toeplitz_lda",
+    "requested_level": "crossref_metadata",
+    "url": "https://api.crossref.org/works/10.1088/1741-2552/ac9c98",
+    "retrieved_utc": "2026-10-05T08:10:51.076889+00:00",
+    "http_status": 200,
+    "resolved_url": "https://api.crossref.org/works/10.1088/1741-2552/ac9c98",
+    "content_type": "application/json",
+    "bytes": 20951,
+    "response_sha256": "e56286f7c419fe1077582a0c8b3500c7fb1fe691b8b54b1c45059b6812196dd8",
+    "saved_file": "sources/toeplitz_lda.json",
+    "retrieved_level": "crossref_metadata",
+    "title": [
+      "Introducing block-Toeplitz covariance matrices to remaster linear discriminant analysis for event-related potential brain–computer interfaces"
+    ],
+    "doi": "10.1088/1741-2552/ac9c98",
+    "published": {
+      "date-parts": [
+        [
+          2022,
+          11,
+          7
+        ]
+      ]
+    },
+    "links": [
+      {
+        "URL": "https://iopscience.iop.org/article/10.1088/1741-2552/ac9c98",
+        "content-type": "text/html",
+        "content-version": "am",
+        "intended-application": "text-mining"
+      },
+      {
+        "URL": "https://iopscience.iop.org/article/10.1088/1741-2552/ac9c98/pdf",
+        "content-type": "application/pdf",
+        "content-version": "am",
+        "intended-application": "text-mining"
+      },
+      {
+        "URL": "https://iopscience.iop.org/article/10.1088/1741-2552/ac9c98",
+        "content-type": "text/html",
+        "content-version": "vor",
+        "intended-application": "text-mining"
+      },
+      {
+        "URL": "https://iopscience.iop.org/article/10.1088/1741-2552/ac9c98/pdf",
+        "content-type": "application/pdf",
+        "content-version": "vor",
+        "intended-application": "text-mining"
+      },
+      {
+        "URL": "https://iopscience.iop.org/article/10.1088/1741-2552/ac9c98/pdf",
+        "content-type": "application/pdf",
+        "content-version": "am",
+        "intended-application": "syndication"
+      },
+      {
+        "URL": "https://iopscience.iop.org/article/10.1088/1741-2552/ac9c98/pdf",
+        "content-type": "application/pdf",
+        "content-version": "vor",
+        "intended-application": "syndication"
+      },
+      {
+        "URL": "https://iopscience.iop.org/article/10.1088/1741-2552/ac9c98/pdf",
+        "content-type": "application/pdf",
+        "content-version": "am",
+        "intended-application": "similarity-checking"
+      },
+      {
+        "URL": "https://iopscience.iop.org/article/10.1088/1741-2552/ac9c98/pdf",
+        "content-type": "application/pdf",
+        "content-version": "vor",
+        "intended-application": "similarity-checking"
+      }
+    ]
+  },
+  {
+    "id": "gmrf_spde",
+    "requested_level": "crossref_metadata",
+    "url": "https://api.crossref.org/works/10.1111/j.1467-9868.2011.00777.x",
+    "retrieved_utc": "2026-10-05T08:10:51.077324+00:00",
+    "retrieved_level": "request_failed",
+    "error": "('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))"
+  },
+  {
+    "id": "kalman_gp",
+    "requested_level": "crossref_metadata",
+    "url": "https://api.crossref.org/works/10.1109/MLSP.2010.5589113",
+    "retrieved_utc": "2026-10-05T08:10:51.077515+00:00",
+    "retrieved_level": "request_failed",
+    "error": "('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))"
+  },
+  {
+    "id": "matrix_variate",
+    "requested_level": "crossref_metadata",
+    "url": "https://api.crossref.org/works/10.1093/biomet/68.1.265",
+    "retrieved_utc": "2026-10-05T08:10:53.584132+00:00",
+    "http_status": 200,
+    "resolved_url": "https://api.crossref.org/works/10.1093/biomet/68.1.265",
+    "content_type": "application/json",
+    "bytes": 1816,
+    "response_sha256": "5e5a7a66652de3bda9985da8e83a3e7dd461654a8de95845438682808495b719",
+    "saved_file": "sources/matrix_variate.json",
+    "retrieved_level": "crossref_metadata",
+    "title": [
+      "Some matrix-variate distribution theory: Notational considerations and a Bayesian application"
+    ],
+    "doi": "10.1093/biomet/68.1.265",
+    "published": {
+      "date-parts": [
+        [
+          1981
+        ]
+      ]
+    },
+    "links": [
+      {
+        "URL": "http://academic.oup.com/biomet/article-pdf/68/1/265/652522/68-1-265.pdf",
+        "content-type": "unspecified",
+        "content-version": "vor",
+        "intended-application": "similarity-checking"
+      }
+    ]
+  },
+  {
+    "id": "state_space",
+    "requested_level": "crossref_metadata",
+    "url": "https://api.crossref.org/works/10.1093/acprof:oso/9780199641178.001.0001",
+    "retrieved_utc": "2026-10-05T08:10:54.558109+00:00",
+    "http_status": 200,
+    "resolved_url": "https://api.crossref.org/works/10.1093/acprof:oso/9780199641178.001.0001",
+    "content_type": "application/json",
+    "bytes": 1511,
+    "response_sha256": "657edf581cdee06a8c128ddec9b8f5c7710a7a200b3708e3a6e63b4ab49673bf",
+    "saved_file": "sources/state_space.json",
+    "retrieved_level": "crossref_metadata",
+    "title": [
+      "Time Series Analysis by State Space Methods"
+    ],
+    "doi": "10.1093/acprof:oso/9780199641178.001.0001",
+    "published": {
+      "date-parts": [
+        [
+          2012,
+          5,
+          3
+        ]
+      ]
+    },
+    "links": null
+  },
+  {
+    "id": "bsm",
+    "requested_level": "crossref_metadata",
+    "url": "https://api.crossref.org/works/10.1080/01621459.2025.2563189",
+    "retrieved_utc": "2026-10-05T08:10:55.510994+00:00",
+    "http_status": 200,
+    "resolved_url": "https://api.crossref.org/works/10.1080/01621459.2025.2563189",
+    "content_type": "application/json",
+    "bytes": 9609,
+    "response_sha256": "43d15c589fbdc225f88c30fcdcfbd7450c680bb9732f86bf17aef0124acd5889",
+    "saved_file": "sources/bsm.json",
+    "retrieved_level": "crossref_metadata",
+    "title": [
+      "Bayesian Signal Matching for Transfer Learning in ERP-Based Brain Computer Interface"
+    ],
+    "doi": "10.1080/01621459.2025.2563189",
+    "published": {
+      "date-parts": [
+        [
+          2025,
+          12,
+          8
+        ]
+      ]
+    },
+    "links": [
+      {
+        "URL": "https://www.tandfonline.com/doi/pdf/10.1080/01621459.2025.2563189",
+        "content-type": "unspecified",
+        "content-version": "vor",
+        "intended-application": "similarity-checking"
+      }
+    ]
+  },
+  {
+    "id": "ride_query",
+    "requested_level": "search_results",
+    "url": "https://api.crossref.org/works?query.title=Residue%20iteration%20decomposition%20RIDE%20latency%20variability%20Ouyang&rows=3",
+    "retrieved_utc": "2026-10-05T08:10:56.190093+00:00",
+    "http_status": 200,
+    "resolved_url": "https://api.crossref.org/works?query.title=Residue%20iteration%20decomposition%20RIDE%20latency%20variability%20Ouyang&rows=3",
+    "content_type": "application/json",
+    "bytes": 11665,
+    "response_sha256": "0f18e70a49f6524f4911da0f77f4909060427637ca1c6388081f079bbafc2a59",
+    "saved_file": "sources/ride_query.json",
+    "retrieved_level": "search_results",
+    "top_results": [
+      {
+        "doi": "10.1111/j.1469-8986.2011.01269.x",
+        "title": [
+          "Residue iteration decomposition (RIDE): A new method to separate ERP components on the basis of latency variability in single trials"
+        ],
+        "author": [
+          {
+            "given": "Guang",
+            "family": "Ouyang",
+            "sequence": "first",
+            "affiliation": [],
+            "role": [
+              {
+                "vocabulary": "crossref",
+                "role": "author"
+              }
+            ]
+          },
+          {
+            "given": "Grit",
+            "family": "Herzmann",
+            "sequence": "additional",
+            "affiliation": [],
+            "role": [
+              {
+                "vocabulary": "crossref",
+                "role": "author"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "doi": "10.1016/j.ijpsycho.2014.08.642",
+        "title": [
+          "Restoring latency-variable ERP components from single trials: Anew approach to ERP analysis with residue iteration decomposition (RIDE)"
+        ],
+        "author": [
+          {
+            "given": "Changsong",
+            "family": "Zhou",
+            "sequence": "first",
+            "affiliation": [],
+            "role": [
+              {
+                "role": "author",
+                "vocabulary": "crossref"
+              }
+            ]
+          },
+          {
+            "given": "Guang",
+            "family": "Ouyang",
+            "sequence": "additional",
+            "affiliation": [],
+            "role": [
+              {
+                "role": "author",
+                "vocabulary": "crossref"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "doi": "10.3389/conf.fnhum.2015.217.00256",
+        "title": [
+          "Restoring Latency-Variable ERP Components from Single Trials: A New Approach to ERP Analysis with Residue Iteration Decomposition (RIDE)?"
+        ],
+        "author": [
+          {
+            "given": "Ouyang",
+            "family": "Guang",
+            "sequence": "first",
+            "affiliation": [],
+            "role": [
+              {
+                "role": "author",
+                "vocabulary": "crossref"
+              }
+            ]
+          },
+          {
+            "given": "Sommer",
+            "family": "Werner",
+            "sequence": "additional",
+            "affiliation": [],
+            "role": [
+              {
+                "role": "author",
+                "vocabulary": "crossref"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "woody_query",
+    "requested_level": "search_results",
+    "url": "https://api.crossref.org/works?query.title=Characterization%20adaptive%20filter%20analysis%20variable%20latency%20neuroelectric%20signals%20Woody&rows=3",
+    "retrieved_utc": "2026-10-05T08:10:56.190574+00:00",
+    "retrieved_level": "request_failed",
+    "error": "('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))"
+  },
+  {
+    "id": "factor_query",
+    "requested_level": "search_results",
+    "url": "https://api.crossref.org/works?query.title=State%20Space%20approach%20dynamic%20factor%20analysis%20Watson%20Engle%201983&rows=3",
+    "retrieved_utc": "2026-10-05T08:10:56.190733+00:00",
+    "http_status": 200,
+    "resolved_url": "https://api.crossref.org/works?query.title=State%20Space%20approach%20dynamic%20factor%20analysis%20Watson%20Engle%201983&rows=3",
+    "content_type": "application/json",
+    "bytes": 14571,
+    "response_sha256": "160d6ae3f0dbee6b8f94a5014a3e9c56ed96f155cbd285ca24c79e8507f5f06c",
+    "saved_file": "sources/factor_query.json",
+    "retrieved_level": "search_results",
+    "top_results": [
+      {
+        "doi": "10.7135/upo9781843318118.005",
+        "title": [
+          "Analysis of Dynamic Systems via State Space Approach"
+        ],
+        "author": []
+      },
+      {
+        "doi": "10.1016/s0141-0296(00)00096-1",
+        "title": [
+          "A state-space approach for dynamic analysis of sliding structures"
+        ],
+        "author": [
+          {
+            "given": "Yen-Po",
+            "family": "Wang",
+            "sequence": "first",
+            "affiliation": [],
+            "role": [
+              {
+                "vocabulary": "crossref",
+                "role": "author"
+              }
+            ]
+          },
+          {
+            "given": "Wei-Hsin",
+            "family": "Liao",
+            "sequence": "additional",
+            "affiliation": [],
+            "role": [
+              {
+                "vocabulary": "crossref",
+                "role": "author"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "doi": "10.1016/j.compstruc.2004.03.023",
+        "title": [
+          "A state-space approach for the dynamic analysis of viscoelastic systems"
+        ],
+        "author": [
+          {
+            "given": "S.",
+            "family": "Menon",
+            "sequence": "first",
+            "affiliation": [],
+            "role": [
+              {
+                "vocabulary": "crossref",
+                "role": "author"
+              }
+            ]
+          },
+          {
+            "given": "J.",
+            "family": "Tang",
+            "sequence": "additional",
+            "affiliation": [],
+            "role": [
+              {
+                "vocabulary": "crossref",
+                "role": "author"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "student_t_gp",
+    "requested_level": "primary_abstract_html",
+    "url": "https://proceedings.mlr.press/v33/shah14.html",
+    "retrieved_utc": "2026-10-05T08:10:56.190874+00:00",
+    "http_status": 200,
+    "resolved_url": "https://proceedings.mlr.press/v33/shah14.html",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 18268,
+    "response_sha256": "7719aa687bae6a308bf1624274b800bf004b48381cf4188085f301f1af737f7c",
+    "saved_file": "sources/student_t_gp.html",
+    "retrieved_level": "primary_abstract_html"
+  },
+  {
+    "id": "burg_official",
+    "requested_level": "official_implementation",
+    "url": "https://raw.githubusercontent.com/cokelaer/spectrum/master/src/spectrum/burg.py",
+    "retrieved_utc": "2026-10-05T08:10:56.191445+00:00",
+    "http_status": 200,
+    "resolved_url": "https://raw.githubusercontent.com/cokelaer/spectrum/master/src/spectrum/burg.py",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 8939,
+    "response_sha256": "7428becdc404cd55b5add799834fbf962aede6e1cad01593d588f1e7f6821fc8",
+    "saved_file": "sources/burg_official.py",
+    "retrieved_level": "official_implementation"
+  },
+  {
+    "id": "autoregression_official",
+    "requested_level": "official_documentation",
+    "url": "https://www.statsmodels.org/stable/generated/statsmodels.tsa.ar_model.AutoReg.html",
+    "retrieved_utc": "2026-10-05T08:10:56.476609+00:00",
+    "http_status": 200,
+    "resolved_url": "https://www.statsmodels.org/stable/generated/statsmodels.tsa.ar_model.AutoReg.html",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 80878,
+    "response_sha256": "688209148a9d01826fd86009a33f3f1750f6aeff20763dfb573b224ee4e6deb1",
+    "saved_file": "sources/autoregression_official.html",
+    "retrieved_level": "official_documentation"
+  },
+  {
+    "id": "toeplitz_official",
+    "requested_level": "official_implementation",
+    "url": "https://raw.githubusercontent.com/jsosulski/toeplitzlda/master/toeplitzlda/classification/lda.py",
+    "retrieved_utc": "2026-10-05T08:10:56.958805+00:00",
+    "http_status": 404,
+    "resolved_url": "https://raw.githubusercontent.com/jsosulski/toeplitzlda/master/toeplitzlda/classification/lda.py",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 14,
+    "response_sha256": "d5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed",
+    "retrieved_level": "request_failed"
+  },
+  {
+    "id": "unfold_official",
+    "requested_level": "official_documentation",
+    "url": "https://www.unfoldtoolbox.org/",
+    "retrieved_utc": "2026-10-05T08:10:57.295487+00:00",
+    "http_status": 200,
+    "resolved_url": "https://www.unfoldtoolbox.org/",
+    "content_type": "text/html",
+    "bytes": 17152,
+    "response_sha256": "bf3d551447a093c5dd98c0683b432cbb6c6fdc963ef45df53887bf3eff946c2d",
+    "saved_file": "sources/unfold_official.html",
+    "retrieved_level": "official_documentation"
+  },
+  {
+    "id": "g_priors_epmc",
+    "requested_level": "metadata_or_abstract",
+    "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI%3A10.1198/016214507000001337&format=json&resultType=core",
+    "retrieved_utc": "2026-10-05T08:19:18.285219+00:00",
+    "http_status": 200,
+    "resolved_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI%3A10.1198/016214507000001337&format=json&resultType=core",
+    "content_type": "application/json;charset=UTF-8",
+    "bytes": 193,
+    "response_sha256": "8d351b2a87446ff72184c6df2b41f617dc4db54df96d2bd90318b4a433b3bafa",
+    "saved_file": "sources/g_priors_epmc.json",
+    "retrieved_level": "empty_search_result",
+    "result_count": 0
+  },
+  {
+    "id": "g_priors_author",
+    "requested_level": "primary_fulltext_pdf",
+    "url": "https://www2.stat.duke.edu/~scs/Courses/Stat376/Papers/GpriorsLiangJASAFinal.pdf",
+    "retrieved_utc": "2026-10-05T08:19:18.285535+00:00",
+    "retrieved_level": "request_failed",
+    "error": "('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))"
+  },
+  {
+    "id": "ride_epmc",
+    "requested_level": "metadata_or_abstract",
+    "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI%3A10.1111/j.1469-8986.2011.01269.x&format=json&resultType=core",
+    "retrieved_utc": "2026-10-05T08:19:18.285729+00:00",
+    "http_status": 200,
+    "resolved_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI%3A10.1111/j.1469-8986.2011.01269.x&format=json&resultType=core",
+    "content_type": "application/json;charset=UTF-8",
+    "bytes": 4863,
+    "response_sha256": "5a13cd3e696bb5da25c957b63b0d2cfb2cb65ba1e9e779854529f5b43782740a",
+    "saved_file": "sources/ride_epmc.json",
+    "retrieved_level": "primary_abstract",
+    "result_count": 1
+  },
+  {
+    "id": "kalman_gp_author",
+    "requested_level": "primary_fulltext_pdf",
+    "url": "https://users.aalto.fi/~ssarkka/pub/gp-ts-kfrts.pdf",
+    "retrieved_utc": "2026-10-05T08:19:23.293049+00:00",
+    "http_status": 200,
+    "resolved_url": "https://users.aalto.fi/~ssarkka/pub/gp-ts-kfrts.pdf",
+    "content_type": "application/pdf",
+    "bytes": 201926,
+    "response_sha256": "bba85ed12fee67d1dfc581ba67669906efa98070caaf1a9ac1f26aef04f3bdfd",
+    "saved_file": "sources/kalman_gp_author.pdf",
+    "retrieved_level": "primary_fulltext_pdf"
+  },
+  {
+    "id": "student_t_gp_full",
+    "requested_level": "primary_fulltext_pdf",
+    "url": "https://proceedings.mlr.press/v33/shah14.pdf",
+    "retrieved_utc": "2026-10-05T08:19:23.293318+00:00",
+    "http_status": 200,
+    "resolved_url": "https://proceedings.mlr.press/v33/shah14.pdf",
+    "content_type": "application/pdf",
+    "bytes": 1200651,
+    "response_sha256": "4ce4d557ac0dee2a7165a973f73ed8c71c0a2bcdc9a514e39dc02781f9b7f201",
+    "saved_file": "sources/student_t_gp_full.pdf",
+    "retrieved_level": "primary_fulltext_pdf"
+  },
+  {
+    "id": "toeplitz_github_tree",
+    "requested_level": "official_repository_metadata",
+    "url": "https://api.github.com/repos/jsosulski/toeplitzlda/git/trees/main?recursive=1",
+    "retrieved_utc": "2026-10-05T08:19:23.518627+00:00",
+    "http_status": 200,
+    "resolved_url": "https://api.github.com/repos/jsosulski/toeplitzlda/git/trees/main?recursive=1",
+    "content_type": "application/json; charset=utf-8",
+    "bytes": 12243,
+    "response_sha256": "90b84f4c5300f81879c6024cf295fbb59e2ae115726048a850fedb45ccd2d3e0",
+    "saved_file": "sources/toeplitz_github_tree.json",
+    "retrieved_level": "official_repository_metadata"
+  },
+  {
+    "id": "g_priors_query",
+    "requested_level": "search_results",
+    "url": "https://api.crossref.org/works?query.bibliographic=Mixtures%20of%20g%20Priors%20for%20Bayesian%20Variable%20Selection%20Liang%20Paulo%20Molina%20Clyde%20Berger%202008&rows=3",
+    "retrieved_utc": "2026-10-05T08:19:23.521392+00:00",
+    "http_status": 200,
+    "resolved_url": "https://api.crossref.org/works?query.bibliographic=Mixtures%20of%20g%20Priors%20for%20Bayesian%20Variable%20Selection%20Liang%20Paulo%20Molina%20Clyde%20Berger%202008&rows=3",
+    "content_type": "application/json",
+    "bytes": 22426,
+    "response_sha256": "d6530a4acb1aa946b032721be6cf5354c5b86735375172f29704573d2cce7f4c",
+    "saved_file": "sources/g_priors_query.json",
+    "retrieved_level": "search_results",
+    "top_results": [
+      {
+        "doi": "10.1198/016214507000001337",
+        "title": [
+          "Mixtures of <i>g</i> Priors for Bayesian Variable Selection"
+        ],
+        "author": [
+          {
+            "given": "Feng",
+            "family": "Liang",
+            "sequence": "first",
+            "affiliation": [
+              {
+                "name": "Feng Liang is Assistant Professor, Department of Statistics, University of Illinois at Urbana–Champaign, Champaign, IL 61820 . Rui Paulo is Assistant Professor, Department of Mathematics, ISEG, Technical University of Lisbon, Lisbon, Portugal . German Molina is Quantitive Trading Researcher at Tudor Investment Corporation, London, England . Merlise A. Clyde is Associate Professor, Department of Statistical Science, Duke University, Durham, NC 27708 . Jim O. Berger is the Arts and Sciences Professor of..."
+              }
+            ],
+            "role": [
+              {
+                "vocabulary": "crossref",
+                "role": "author"
+              }
+            ]
+          },
+          {
+            "given": "Rui",
+            "family": "Paulo",
+            "sequence": "additional",
+            "affiliation": [
+              {
+                "name": "Feng Liang is Assistant Professor, Department of Statistics, University of Illinois at Urbana–Champaign, Champaign, IL 61820 . Rui Paulo is Assistant Professor, Department of Mathematics, ISEG, Technical University of Lisbon, Lisbon, Portugal . German Molina is Quantitive Trading Researcher at Tudor Investment Corporation, London, England . Merlise A. Clyde is Associate Professor, Department of Statistical Science, Duke University, Durham, NC 27708 . Jim O. Berger is the Arts and Sciences Professor of..."
+              }
+            ],
+            "role": [
+              {
+                "vocabulary": "crossref",
+                "role": "author"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "doi": "10.32614/cran.package.bas",
+        "title": [
+          "BAS: Bayesian Variable Selection and Model Averaging using Bayesian Adaptive Sampling"
+        ],
+        "author": [
+          {
+            "given": "Merlise",
+            "family": "Clyde",
+            "sequence": "first",
+            "affiliation": [],
+            "role": [
+              {
+                "role": "author",
+                "vocabulary": "crossref"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "doi": "10.1214/08-ba323",
+        "title": [
+          "Bayesian variable selection and computation for generalized linear models with conjugate priors"
+        ],
+        "author": [
+          {
+            "given": "Ming-Hui",
+            "family": "Chen",
+            "sequence": "first",
+            "affiliation": [],
+            "role": [
+              {
+                "vocabulary": "crossref",
+                "role": "author"
+              }
+            ]
+          },
+          {
+            "given": "Lan",
+            "family": "Huang",
+            "sequence": "additional",
+            "affiliation": [],
+            "role": [
+              {
+                "vocabulary": "crossref",
+                "role": "author"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "toeplitz_official_resolved",
+    "requested_level": "official_implementation",
+    "url": "https://raw.githubusercontent.com/jsosulski/toeplitzlda/main/toeplitzlda/classification/toeplitzlda.py",
+    "retrieved_utc": "2026-10-05T08:19:24.828904+00:00",
+    "http_status": 200,
+    "resolved_url": "https://raw.githubusercontent.com/jsosulski/toeplitzlda/main/toeplitzlda/classification/toeplitzlda.py",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 14921,
+    "response_sha256": "c74a5b32a0baf0d85d4cc7b39531aad036992859120c937bb9c3db4b21e08668",
+    "saved_file": "sources/toeplitz_official_resolved.py",
+    "retrieved_level": "official_implementation"
+  },
+  {
+    "id": "xdawn_official_mne",
+    "requested_level": "official_implementation",
+    "url": "https://raw.githubusercontent.com/mne-tools/mne-python/main/mne/preprocessing/xdawn.py",
+    "retrieved_utc": "2026-10-05T08:19:24.839753+00:00",
+    "http_status": 200,
+    "resolved_url": "https://raw.githubusercontent.com/mne-tools/mne-python/main/mne/preprocessing/xdawn.py",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 24084,
+    "response_sha256": "861f0b4f968f73810051655ae1501c5f68130c648c50147f2f5e95b2d43564cf",
+    "saved_file": "sources/xdawn_official_mne.py",
+    "retrieved_level": "official_implementation"
+  },
+  {
+    "id": "xdawn_epmc",
+    "requested_level": "metadata_or_abstract",
+    "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI%3A10.1109/TBME.2009.2012869&format=json&resultType=core",
+    "retrieved_utc": "2026-10-05T08:34:13.036741+00:00",
+    "http_status": 200,
+    "resolved_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI%3A10.1109/TBME.2009.2012869&format=json&resultType=core",
+    "content_type": "application/json;charset=UTF-8",
+    "bytes": 4157,
+    "response_sha256": "cc75e8aee2440086896d245629bb965e68c4a65f25095bcb2d7f82c662f4f47b",
+    "saved_file": "sources/xdawn_epmc.json",
+    "retrieved_level": "primary_abstract",
+    "attempt_history": [
+      {
+        "id": "xdawn_epmc",
+        "requested_level": "metadata_or_abstract",
+        "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI%3A10.1109/TBME.2009.2012869&format=json&resultType=core",
+        "retrieved_utc": "2026-10-05T08:19:18.286028+00:00",
+        "retrieved_level": "request_failed",
+        "error": "('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))"
+      }
+    ],
+    "result_count": 1
+  }
+]

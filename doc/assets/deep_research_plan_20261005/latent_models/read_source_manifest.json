@@ -1,0 +1,53 @@
+[
+  {
+    "id": "kalman_gp_author",
+    "level": "primary_fulltext_extracted",
+    "pages": 6,
+    "source_sha256": "bba85ed12fee67d1dfc581ba67669906efa98070caaf1a9ac1f26aef04f3bdfd"
+  },
+  {
+    "id": "student_t_gp_full",
+    "level": "primary_fulltext_extracted",
+    "pages": 9,
+    "source_sha256": "4ce4d557ac0dee2a7165a973f73ed8c71c0a2bcdc9a514e39dc02781f9b7f201"
+  },
+  {
+    "id": "local_unfold_full.txt",
+    "level": "existing_primary_text_readonly",
+    "path": "D:\\BCI\\n2p3-net\\doc\\assets\\system_research_20261004\\literature\\unfold_full.txt",
+    "bytes": 85786,
+    "sha256": "710f813ca1324628d0e202eb574928bf299c48b221d16c622babf65222506c73"
+  },
+  {
+    "id": "local_bsm_local_full.txt",
+    "level": "existing_primary_text_readonly",
+    "path": "D:\\BCI\\n2p3-net\\doc\\assets\\system_research_20261004\\literature\\bsm_local_full.txt",
+    "bytes": 67001,
+    "sha256": "ffb06e65e36bf1235843cf86259a9b37f943841a532c872348d1daa25671b278"
+  },
+  {
+    "id": "local_toeplitz_code_full.md",
+    "level": "existing_primary_text_readonly",
+    "path": "D:\\BCI\\n2p3-net\\doc\\assets\\system_research_20261004\\literature\\toeplitz_code_full.md",
+    "bytes": 7360,
+    "sha256": "adfa8b40164333a1ba01eea5d4e820eafa26ef901d28741beebe5732c1a41ba1"
+  },
+  {
+    "id": "continuous_model.py",
+    "level": "existing_research_helper_or_development_evidence_readonly",
+    "path": "D:\\BCI\\n2p3-net\\doc\\assets\\operator_research_20261004\\continuous_model.py",
+    "sha256": "30197962f36bf30a8281649f4f673b3a637f3651f9db53626d974e78c3a08be8"
+  },
+  {
+    "id": "selection_erp_model.py",
+    "level": "existing_research_helper_or_development_evidence_readonly",
+    "path": "D:\\BCI\\n2p3-net\\doc\\assets\\operator_research_20261004\\selection_erp_model.py",
+    "sha256": "5492acf6002b10d4ecb2660684999dea6089e3ed8c7b3f115917bfafb2976076"
+  },
+  {
+    "id": "phase4_report.json",
+    "level": "existing_research_helper_or_development_evidence_readonly",
+    "path": "D:\\BCI\\n2p3-net\\doc\\assets\\operator_research_20261004\\phase4_report.json",
+    "sha256": "83906bb8a5aedeb30f2e9095271f0fb33977b85805b0d9220875625e5b262580"
+  }
+]

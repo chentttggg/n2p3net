@@ -1,7 +1,7 @@
 {
   "evidence_scope": "software_and_mathematical_counterexamples",
   "plan_sha256": "3fa387f505d3a2ffa93ada130284106fade7dfd219d156260684ceb8e57030f1",
-  "script_sha256": "2f1309f49309d5fd36424390fff8a48e0d489b185c9ff47a1307fc34fe969a82",
+  "script_sha256": "555206cea05afd354c72c8bd8a118600a07048ee1480b0a7afe10283d49ec008",
   "coverage_and_graph": {
     "wishlist_items": 123,
     "tasks": 15,
