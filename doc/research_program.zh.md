@@ -49,6 +49,10 @@ GTN儿童三导且固定thought digit，只能作声明限制下的开发研究�
 
 ## 2. 活动算法路径
 
+[多专家代码实施](evidence/ensemble_implementation_20261005.zh.md)已兑现固定算术池、严格requested风险、C内完整组OOF温度和source排除。
+新AR为一次可行GLS、条件于已估noise，概率校准为开发程序而非认证后验；source-only K0经典/连续专家仍不可估。
+新179输入使用预声明共同raw支持，不能与历史178路线直接相减；target-only seed不称完整source→target seed。
+
 2026-10-05 [分块科研方案](evidence/deep_research_plan_20261005.zh.md)统一hit优先的开发选择合同：
 固定requested participant/decision分母，失败和弃权保留；比较先验证支持，再看同批paired hit，
 NLL/Brier和错时置信度检查概率风险。候选进入下阶段须hit不降、配对NLL不增，且不丢失baseline

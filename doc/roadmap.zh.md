@@ -3,7 +3,8 @@
 ## 2026-10-05 愿望清单与优先任务分块方案
 
 [深入研究与验收规格](evidence/deep_research_plan_20261005.zh.md)完成原清单123项覆盖、15块真实依赖及三路独立数学/来源核查。
-当前完成的是方案与反例；新模型接入、公共矩阵和成人确认的implementation/execution仍为not_started。
+方案阶段已完成；[后续代码实施](evidence/ensemble_implementation_20261005.zh.md)已经接通B00/B01/B02核心与B03分组温度、
+B04source/scratch及B05显式AR研究入口。复杂gating、fixed32与完整公共矩阵/成人确认仍待各自验收，不能将旧design JSON的not_started当当前软件状态。
 
 1. B00评价/选择、B01信号/支持先固定；B02专家Interface、B03C内概率校准、B04神经/matched scratch构成主线。
 2. B05AR、B06边界、B07字典、B08先验、B09空间、B10输入算子在B00/B01后并行；B11动态/稳健模型按识别前置进入。

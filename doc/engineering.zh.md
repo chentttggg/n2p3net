@@ -71,6 +71,11 @@ CUDA实际拟合、保存重载及CLI推理验证见[执行计划](roadmap.zh.md
 
 ## 开发与验证
 
+[多专家实施](evidence/ensemble_implementation_20261005.zh.md)将概率/producer/物理身份检查集中到入口及frozen载入；
+`calibration_state.FrozenTrialPredictor`复用真实decode并取代ERP comparator重复实现。研究CLI冻结全部src与实际入口，
+仅捕获明确ExpectedSubjectError/数值分解失败为fit_failure，合同错误传播并保存failed进度。
+本轮编辑Python文件以局部.gitattributes固定LF，actual源摘要按执行bytes保存，不以Git父SHA替代工作代码。
+
 2026-10-05 [分块方案](evidence/deep_research_plan_20261005.zh.md)将123愿望映射到15块，
 实际研究入口/helper须一并冻结；旧Phase4凭证遗漏不能消费端补签。
 减少防御代码按“外部ingress/fit/load一次验证、不可变内部状态、纯数值核”实施，

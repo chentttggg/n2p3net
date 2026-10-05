@@ -1,6 +1,8 @@
 # BrainSync工作站指南
 
-2026-10-05 [多专家分块研究](evidence/deep_research_plan_20261005.zh.md)是研究规格，尚未接入工作站默认。
+2026-10-05 [多专家分块研究](evidence/deep_research_plan_20261005.zh.md)已进入[后端代码实施](evidence/ensemble_implementation_20261005.zh.md)，尚未接入工作站默认。
+研究`FittedEnsemble`保存一份包含真实专家state/profile/固定池/校准温度的包，load后score只接无标签view；
+BrainSync日常入口仍消费已有CalibratedPredictor，不把公共36选一模型包当九选一工作站模型。
 未来统一个人包由现有calibrated owner保存各专家冻结状态、候选词表、校准/输入来源与概率校准程序，
 未知目标score不提供真值；K0不拟合目标温度/统计/gating。四库或BNCI36选一开发不能替代新成人九选一确认。
 
