@@ -1,0 +1,70 @@
+{
+  "evidence_scope": "software_and_mathematical_counterexamples",
+  "plan_sha256": "3da069d1590715a78fb2dfb4ec26de6840ac1c2edbe63892a8dd8ec3168c9a75",
+  "script_sha256": "1d88f4d03f3b0a2349ec5dc28bde8c54cd58e63ade7ad94ab6fddc8882cf7874",
+  "coverage_and_graph": {
+    "wishlist_items": 123,
+    "tasks": 15,
+    "dependency_layers": [
+      [
+        "B00",
+        "B01"
+      ],
+      [
+        "B02",
+        "B05",
+        "B06",
+        "B07",
+        "B08",
+        "B09",
+        "B10",
+        "B14"
+      ],
+      [
+        "B03",
+        "B11"
+      ],
+      [
+        "B04"
+      ],
+      [
+        "B12"
+      ],
+      [
+        "B13"
+      ]
+    ],
+    "ready_implementation_tasks": [
+      "B00",
+      "B01"
+    ],
+    "all_future_execution_not_started": true
+  },
+  "evaluation": {
+    "participant_macro_hit": 0.5,
+    "incorrect_pooled_hit": 0.2,
+    "requested_hit": 0.6,
+    "incorrect_valid_only_hit": 1.0,
+    "nll_better_hit_worse": {
+      "base_hit": 0.6666666666666666,
+      "candidate_hit": 0.3333333333333333,
+      "base_nll": 2.751481461836556,
+      "candidate_nll": 0.478916703869477
+    },
+    "three_seed_pseudoreplication_variance_ratio": 3.0,
+    "missing_nll_selection_bias_reproduced": true
+  },
+  "scheduling": {
+    "logical_cells": 144,
+    "batched_input_loads": 24,
+    "illustrative_load_count_ratio": 6.0,
+    "measured_speedup_claimed": false,
+    "dependency_tail": {
+      "ready": 1,
+      "capacity": 4,
+      "active": 1
+    }
+  },
+  "status": "passed",
+  "public_efficacy_matrix_executed": false
+}

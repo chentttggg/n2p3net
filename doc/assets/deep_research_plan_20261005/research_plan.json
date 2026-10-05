@@ -1,0 +1,1720 @@
+{
+  "schema": "n2p3_deep_research_design/1",
+  "evidence_scope": "research_design_and_math",
+  "design_date": "2026-10-05",
+  "production_default_changed": false,
+  "source_thread": "01a0eb70-bcfb-7a92-b22b-1bfd6b541ddc",
+  "source_text_sha256": {
+    "wishlist_source.zh.md": "4f65b4eeb38451728f5da6fbdfbfc5266da010caf607b24f8aa7a238229decea",
+    "four_week_source.zh.md": "bb7f2a7b8be64ffd741216ee93b9b432219faf368d3de4f8ec898a2ef5f98880"
+  },
+  "source_snapshot_commit": "dc506ca0c90f9e6904376bfdb5ae5f2f8ebc7493",
+  "wishlist": [
+    {
+      "id": "W01.01",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 13,
+      "text": "建立完整的上游信号履历：设备滤波、分发滤波、参考电极、硬件抗混叠、MAT 写出过程都分别记录。",
+      "tasks": [
+        "B01"
+      ]
+    },
+    {
+      "id": "W01.02",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 14,
+      "text": "把“分发 MAT 信号”“项目新增滤波”“真正 ADC 原始信号”分成三个明确层级。",
+      "tasks": [
+        "B01"
+      ]
+    },
+    {
+      "id": "W01.03",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 15,
+      "text": "对每条记录保存实际有限滤波矩阵、padding 规则、初始状态和有效样本范围。",
+      "tasks": [
+        "B01"
+      ]
+    },
+    {
+      "id": "W01.04",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 16,
+      "text": "同时保留因果、双向和逐 selection 独立滤波三种协议，明确各自延迟和边界含义。",
+      "tasks": [
+        "B10",
+        "B01"
+      ]
+    },
+    {
+      "id": "W01.05",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 17,
+      "text": "对 0.1–30 Hz、不同 notch、低通频率、滤波相位做完整输入对照。",
+      "tasks": [
+        "B10"
+      ]
+    },
+    {
+      "id": "W01.06",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 18,
+      "text": "对持续工频、频率漂移、幅相调制、突发 glitch、慢漂移分别处理，不能用一个 cleaner 解决所有污染。",
+      "tasks": [
+        "B10"
+      ]
+    },
+    {
+      "id": "W01.07",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 19,
+      "text": "发展“信号保真门”：已知 ERP 注入、波形增量、峰值、潜伏期、频谱变化都必须过门。",
+      "tasks": [
+        "B06",
+        "B10"
+      ]
+    },
+    {
+      "id": "W01.08",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 20,
+      "text": "根据边界距离自动决定修正强度，贴边界时减少修正，远离边界时允许更多修正。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W01.09",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 21,
+      "text": "为边界修正加入“不伤害 ERP”的软约束和噪声放大约束，输出完整 Pareto 曲线。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W01.10",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 22,
+      "text": "研究相邻未知 selection 的响应边缘化，避免把邻近刺激当不存在。",
+      "tasks": [
+        "B07",
+        "B06"
+      ]
+    },
+    {
+      "id": "W01.11",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 23,
+      "text": "研究每个 selection 独立滤波和整段连续滤波的真实差异，保留两套数据身份。",
+      "tasks": [
+        "B10",
+        "B01"
+      ]
+    },
+    {
+      "id": "W01.12",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 24,
+      "text": "为滤波估计误差建立不确定性，而不是把自适应频率和权重当成固定线性算子。",
+      "tasks": [
+        "B06",
+        "B10"
+      ]
+    },
+    {
+      "id": "W01.13",
+      "section": "一、先把信号本身弄清楚",
+      "source_line": 25,
+      "text": "为坏导、参考污染、EOG、通道缺失建立显式空间观测模型，避免补零或静默删除。",
+      "tasks": [
+        "B09",
+        "B10"
+      ]
+    },
+    {
+      "id": "W02.01",
+      "section": "二、重新设计边界状态",
+      "source_line": 29,
+      "text": "将确定 padding state、未知外部生理 state、滤波估计误差分成三个对象。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W02.02",
+      "section": "二、重新设计边界状态",
+      "source_line": 30,
+      "text": "对真实外部 state 使用完整的 \\(\\Sigma,\\Gamma,\\Omega\\) 联合协方差。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W02.03",
+      "section": "二、重新设计边界状态",
+      "source_line": 31,
+      "text": "对已经观察到的原始信号使用 Schur 补条件化，避免重复加入无条件 \\(\\Gamma\\)。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W02.04",
+      "section": "二、重新设计边界状态",
+      "source_line": 32,
+      "text": "把边界状态和 ERP 状态放进同一个 Kalman/状态空间模型。",
+      "tasks": [
+        "B11",
+        "B06"
+      ]
+    },
+    {
+      "id": "W02.05",
+      "section": "二、重新设计边界状态",
+      "source_line": 33,
+      "text": "估计边界差值的条件均值、条件协方差和 ERP 保护方向。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W02.06",
+      "section": "二、重新设计边界状态",
+      "source_line": 34,
+      "text": "用距离边界、上下文长度、刺激密度、通道质量共同决定修正可信度。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W02.07",
+      "section": "二、重新设计边界状态",
+      "source_line": 35,
+      "text": "对无法表示的边界方向直接拒绝修正，保留原有限算子结果。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W02.08",
+      "section": "二、重新设计边界状态",
+      "source_line": 36,
+      "text": "将 MSE、ERP 保真、噪声放大和命中率一起作为多目标优化，而不是只最小化 MSE。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W02.09",
+      "section": "二、重新设计边界状态",
+      "source_line": 37,
+      "text": "研究“先预测差值，再做受约束校正”和“直接在 raw 观测模型中边缘化边界状态”两条路线。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W02.10",
+      "section": "二、重新设计边界状态",
+      "source_line": 38,
+      "text": "研究不同 ERP 子空间：固定 P300、早期 ERP、慢漂移、邻近 flash 响应、潜伏期变化。",
+      "tasks": [
+        "B07",
+        "B06"
+      ]
+    },
+    {
+      "id": "W02.11",
+      "section": "二、重新设计边界状态",
+      "source_line": 39,
+      "text": "对 \\(K U_{\\mathrm{ERP}}=0\\) 的约束做软化、分段化和距离自适应化。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W02.12",
+      "section": "二、重新设计边界状态",
+      "source_line": 40,
+      "text": "为每种边界策略保存可解释的约束残差、condition number 和白噪声放大倍数。",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W03.01",
+      "section": "三、把 ERP 响应字典做得更灵活",
+      "source_line": 46,
+      "text": "从固定 8 个 Gaussian 基扩展到 B-spline、raised cosine、wavelet、多尺度 temporal basis。",
+      "tasks": [
+        "B07"
+      ]
+    },
+    {
+      "id": "W03.02",
+      "section": "三、把 ERP 响应字典做得更灵活",
+      "source_line": 47,
+      "text": "加入 ERP 一阶导数和二阶导数，表达潜伏期抖动。",
+      "tasks": [
+        "B07"
+      ]
+    },
+    {
+      "id": "W03.03",
+      "section": "三、把 ERP 响应字典做得更灵活",
+      "source_line": 48,
+      "text": "加入每个 selection 的随机 amplitude、latency、width 变化。",
+      "tasks": [
+        "B07"
+      ]
+    },
+    {
+      "id": "W03.04",
+      "section": "三、把 ERP 响应字典做得更灵活",
+      "source_line": 49,
+      "text": "将 common ERP、target increment、selection-specific ERP 分开建模。",
+      "tasks": [
+        "B07"
+      ]
+    },
+    {
+      "id": "W03.05",
+      "section": "三、把 ERP 响应字典做得更灵活",
+      "source_line": 50,
+      "text": "对不同刺激行列分别学习响应差异。",
+      "tasks": [
+        "B07"
+      ]
+    },
+    {
+      "id": "W03.06",
+      "section": "三、把 ERP 响应字典做得更灵活",
+      "source_line": 51,
+      "text": "对早期响应、P300 峰、晚期慢波设置独立子空间。",
+      "tasks": [
+        "B07"
+      ]
+    },
+    {
+      "id": "W03.07",
+      "section": "三、把 ERP 响应字典做得更灵活",
+      "source_line": 52,
+      "text": "用带零端点、非零端点、软端点的基函数做预声明对照。",
+      "tasks": [
+        "B07"
+      ]
+    },
+    {
+      "id": "W03.08",
+      "section": "三、把 ERP 响应字典做得更灵活",
+      "source_line": 53,
+      "text": "研究完整已知 event history 的卷积模型，避免只建当前 selection 的事件。",
+      "tasks": [
+        "B07"
+      ]
+    },
+    {
+      "id": "W03.09",
+      "section": "三、把 ERP 响应字典做得更灵活",
+      "source_line": 54,
+      "text": "让模型学习“滤波后 ERP 字典”，但同时保留 raw 坐标模型，区分字典适应和算子收益。",
+      "tasks": [
+        "B07"
+      ]
+    },
+    {
+      "id": "W03.10",
+      "section": "三、把 ERP 响应字典做得更灵活",
+      "source_line": 55,
+      "text": "用物理时间、采样点和响应支持共同定义字典，避免只在数组下标上做近似。",
+      "tasks": [
+        "B07"
+      ]
+    },
+    {
+      "id": "W03.11",
+      "section": "三、把 ERP 响应字典做得更灵活",
+      "source_line": 56,
+      "text": "将响应字典的自由度纳入预算，避免高阶基函数只是增加过拟合能力。",
+      "tasks": [
+        "B07"
+      ]
+    },
+    {
+      "id": "W04.01",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 60,
+      "text": "继续比较 AR0、AR1、AR4、AR8、AR16、AR32。",
+      "tasks": [
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.02",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 61,
+      "text": "用固定 hold-back 进行不同阶数的公平比较，避免 AR 阶数改变评分样本。",
+      "tasks": [
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.03",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 62,
+      "text": "保留 Burg 作为稳定初始化，再用完整 stationary likelihood 做精确更新。",
+      "tasks": [
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.04",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 63,
+      "text": "使用 PARCOR lattice 处理高阶 AR 的启动状态和数值稳定性。",
+      "tasks": [
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.05",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 64,
+      "text": "对平稳启动、条件前缀和因果状态传递分别建立独立实验。",
+      "tasks": [
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.06",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 65,
+      "text": "做逐通道 AR，而不是强行假设所有通道共享一个时间谱。",
+      "tasks": [
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.07",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 66,
+      "text": "做低秩动态因子模型，让几个通道共享部分时间动态，其余通道保留私有谱。",
+      "tasks": [
+        "B11",
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.08",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 67,
+      "text": "研究 VAR、稀疏 VAR、图结构 VAR 和 channel-group AR。",
+      "tasks": [
+        "B11",
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.09",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 68,
+      "text": "研究 AR 与 Matérn Gaussian Process、状态空间模型、Kalman smoother 的关系。",
+      "tasks": [
+        "B11",
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.10",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 69,
+      "text": "研究非平稳 AR、change-point、selection 内不同噪声状态。",
+      "tasks": [
+        "B11",
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.11",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 70,
+      "text": "研究 Student-t、scale mixture 和 matrix-t，但只在明确的协方差层级上使用。",
+      "tasks": [
+        "B11",
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.12",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 71,
+      "text": "对每个 AR 模型同时报告训练残差 ACF、held 残差 ACF、频谱、创新方差、预测二次型和条件数。",
+      "tasks": [
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.13",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 72,
+      "text": "检查白化后残差变好时，候选判别方向是否被一起消掉。",
+      "tasks": [
+        "B05"
+      ]
+    },
+    {
+      "id": "W04.14",
+      "section": "四、AR、Burg、PARCOR 和噪声模型继续深入",
+      "source_line": 73,
+      "text": "建立“白化收益”和“分类收益”两个独立门槛。",
+      "tasks": [
+        "B05"
+      ]
+    },
+    {
+      "id": "W05.01",
+      "section": "五、空间建模和 Pz 的正确用法",
+      "source_line": 79,
+      "text": "不直接把 Pz 作为残差 precision 的手工放大项。",
+      "tasks": [
+        "B09"
+      ]
+    },
+    {
+      "id": "W05.02",
+      "section": "五、空间建模和 Pz 的正确用法",
+      "source_line": 80,
+      "text": "通过 xDAWN、Riemannian ERP、空间 LDA 学习实际判别空间。",
+      "tasks": [
+        "B09"
+      ]
+    },
+    {
+      "id": "W05.03",
+      "section": "五、空间建模和 Pz 的正确用法",
+      "source_line": 81,
+      "text": "用训练组估计 Pz、Cz、Oz 等通道的 ERP d-prime，但做强收缩，防止小样本极端权重。",
+      "tasks": [
+        "B09"
+      ]
+    },
+    {
+      "id": "W05.04",
+      "section": "五、空间建模和 Pz 的正确用法",
+      "source_line": 82,
+      "text": "将 Pz 重要性放进 ERP 均值先验，而不是直接修改噪声精度。",
+      "tasks": [
+        "B09"
+      ]
+    },
+    {
+      "id": "W05.05",
+      "section": "五、空间建模和 Pz 的正确用法",
+      "source_line": 83,
+      "text": "使用头皮位置建立 graph Laplacian 或 spatial smoothness prior。",
+      "tasks": [
+        "B09"
+      ]
+    },
+    {
+      "id": "W05.06",
+      "section": "五、空间建模和 Pz 的正确用法",
+      "source_line": 84,
+      "text": "研究左右半球差异、后部通道组和中央通道组的分层模型。",
+      "tasks": [
+        "B09"
+      ]
+    },
+    {
+      "id": "W05.07",
+      "section": "五、空间建模和 Pz 的正确用法",
+      "source_line": 85,
+      "text": "将 reference、channel gain、通道缺失和空间投影一起建模。",
+      "tasks": [
+        "B09"
+      ]
+    },
+    {
+      "id": "W05.08",
+      "section": "五、空间建模和 Pz 的正确用法",
+      "source_line": 86,
+      "text": "评估 Pz 权重在不同 participant、不同源库、不同 reference 下是否稳定。",
+      "tasks": [
+        "B09"
+      ]
+    },
+    {
+      "id": "W05.09",
+      "section": "五、空间建模和 Pz 的正确用法",
+      "source_line": 87,
+      "text": "研究“空间权重 + Toeplitz 时间协方差”的联合模型。",
+      "tasks": [
+        "B09"
+      ]
+    },
+    {
+      "id": "W05.10",
+      "section": "五、空间建模和 Pz 的正确用法",
+      "source_line": 88,
+      "text": "研究“xDAWN 空间专家 + raw temporal 专家”的概率混合。",
+      "tasks": [
+        "B03",
+        "B09"
+      ]
+    },
+    {
+      "id": "W06.01",
+      "section": "六、先验要灵活，但不能失去约束",
+      "source_line": 94,
+      "text": "把 ridge 从单一数值改成明确的先验族。",
+      "tasks": [
+        "B08"
+      ]
+    },
+    {
+      "id": "W06.02",
+      "section": "六、先验要灵活，但不能失去约束",
+      "source_line": 95,
+      "text": "使用按设计信息归一化的 g-prior，减少基函数尺度变化带来的假差异。",
+      "tasks": [
+        "B08"
+      ]
+    },
+    {
+      "id": "W06.03",
+      "section": "六、先验要灵活，但不能失去约束",
+      "source_line": 96,
+      "text": "使用预声明的 lambda mixture，而不是看 held 结果挑一个 lambda。",
+      "tasks": [
+        "B08"
+      ]
+    },
+    {
+      "id": "W06.04",
+      "section": "六、先验要灵活，但不能失去约束",
+      "source_line": 97,
+      "text": "对 ERP 核使用层级 variance prior，让模型可以自己决定响应幅度。",
+      "tasks": [
+        "B08"
+      ]
+    },
+    {
+      "id": "W06.05",
+      "section": "六、先验要灵活，但不能失去约束",
+      "source_line": 98,
+      "text": "将 common ERP 和 selection-specific ERP 使用不同强度的收缩。",
+      "tasks": [
+        "B08"
+      ]
+    },
+    {
+      "id": "W06.06",
+      "section": "六、先验要灵活，但不能失去约束",
+      "source_line": 99,
+      "text": "对 kernel covariance 使用低秩加对角结构。",
+      "tasks": [
+        "B08"
+      ]
+    },
+    {
+      "id": "W06.07",
+      "section": "六、先验要灵活，但不能失去约束",
+      "source_line": 100,
+      "text": "对 noise scale、AR 参数和 ERP 参数的不确定性做联合边际化。",
+      "tasks": [
+        "B08"
+      ]
+    },
+    {
+      "id": "W06.08",
+      "section": "六、先验要灵活，但不能失去约束",
+      "source_line": 101,
+      "text": "研究 robust empirical Bayes、弱信息先验和重尾后验。",
+      "tasks": [
+        "B08"
+      ]
+    },
+    {
+      "id": "W06.09",
+      "section": "六、先验要灵活，但不能失去约束",
+      "source_line": 102,
+      "text": "把先验尺度变换、创新尺度和物理电压单位写进 artifact。",
+      "tasks": [
+        "B08"
+      ]
+    },
+    {
+      "id": "W06.10",
+      "section": "六、先验要灵活，但不能失去约束",
+      "source_line": 103,
+      "text": "设置先验敏感性报告，显示 lambda 改变后 hit、NLL、最大概率和残差如何变化。",
+      "tasks": [
+        "B08"
+      ]
+    },
+    {
+      "id": "W06.11",
+      "section": "六、先验要灵活，但不能失去约束",
+      "source_line": 104,
+      "text": "禁止用单次 held selection 选择温度、lambda、AR 阶数或基函数数量。",
+      "tasks": [
+        "B08"
+      ]
+    },
+    {
+      "id": "W07.01",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 114,
+      "text": "N2P3Net full-fine；",
+      "tasks": [
+        "B02",
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.02",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 115,
+      "text": "N2P3Net 同结构 scratch；",
+      "tasks": [
+        "B02",
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.03",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 116,
+      "text": "waveform LDA；",
+      "tasks": [
+        "B02",
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.04",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 117,
+      "text": "Toeplitz LDA；",
+      "tasks": [
+        "B02",
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.05",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 118,
+      "text": "xDAWN ERP；",
+      "tasks": [
+        "B02",
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.06",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 119,
+      "text": "raw AR 连续似然；",
+      "tasks": [
+        "B02",
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.07",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 120,
+      "text": "source temporal basis + target native head；",
+      "tasks": [
+        "B02",
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.08",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 121,
+      "text": "固定 cosine temporal basis。",
+      "tasks": [
+        "B02",
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.09",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 133,
+      "text": "固定等权；",
+      "tasks": [
+        "B03"
+      ]
+    },
+    {
+      "id": "W07.10",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 134,
+      "text": "在训练 selection 内估计；",
+      "tasks": [
+        "B03"
+      ]
+    },
+    {
+      "id": "W07.11",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 135,
+      "text": "按校准预算 K 改变；",
+      "tasks": [
+        "B03"
+      ]
+    },
+    {
+      "id": "W07.12",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 136,
+      "text": "按信号质量、通道覆盖和边界距离改变；",
+      "tasks": [
+        "B03"
+      ]
+    },
+    {
+      "id": "W07.13",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 137,
+      "text": "由一个只使用 calibration 的轻量 gating model 决定。",
+      "tasks": [
+        "B03"
+      ]
+    },
+    {
+      "id": "W07.14",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 141,
+      "text": "N2P3Net 单独；",
+      "tasks": [
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.15",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 142,
+      "text": "三个经典/连续专家混合；",
+      "tasks": [
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.16",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 143,
+      "text": "N2P3Net + Toeplitz；",
+      "tasks": [
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.17",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 144,
+      "text": "N2P3Net + xDAWN；",
+      "tasks": [
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.18",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 145,
+      "text": "N2P3Net + 三专家混合；",
+      "tasks": [
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.19",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 146,
+      "text": "同结构 scratch + 三专家混合。",
+      "tasks": [
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.20",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 150,
+      "text": "主要专家；",
+      "tasks": [
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.21",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 151,
+      "text": "在高 K 才有优势的专家；",
+      "tasks": [
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.22",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 152,
+      "text": "适合做空间表征但不适合独立决策的专家；",
+      "tasks": [
+        "B04"
+      ]
+    },
+    {
+      "id": "W07.23",
+      "section": "七、把 N2P3Net 和经典 ERP 统一起来",
+      "source_line": 153,
+      "text": "还是适合通过混合提供互补信息的专家。",
+      "tasks": [
+        "B04"
+      ]
+    },
+    {
+      "id": "W08.01",
+      "section": "八、Hit 和 NLL 怎样排序",
+      "source_line": 161,
+      "text": "先看 participant-macro `hit@all`；",
+      "tasks": [
+        "B00"
+      ]
+    },
+    {
+      "id": "W08.02",
+      "section": "八、Hit 和 NLL 怎样排序",
+      "source_line": 162,
+      "text": "再看完整 coverage、失败配对和拒判率；",
+      "tasks": [
+        "B00"
+      ]
+    },
+    {
+      "id": "W08.03",
+      "section": "八、Hit 和 NLL 怎样排序",
+      "source_line": 163,
+      "text": "在 hit 接近的模型中，用 NLL、Brier、最大置信度和校准误差做二级筛选；",
+      "tasks": [
+        "B00"
+      ]
+    },
+    {
+      "id": "W08.04",
+      "section": "八、Hit 和 NLL 怎样排序",
+      "source_line": 164,
+      "text": "对 NLL 明显差于均匀基线、且错误时高度自信的模型设置风险门；",
+      "tasks": [
+        "B00"
+      ]
+    },
+    {
+      "id": "W08.05",
+      "section": "八、Hit 和 NLL 怎样排序",
+      "source_line": 165,
+      "text": "NLL 不能替代 hit，也不能因为 NLL 好就接受命中率明显下降。",
+      "tasks": [
+        "B00"
+      ]
+    },
+    {
+      "id": "W08.06",
+      "section": "八、Hit 和 NLL 怎样排序",
+      "source_line": 169,
+      "text": "hit 问“答对了吗？”",
+      "tasks": [
+        "B00"
+      ]
+    },
+    {
+      "id": "W08.07",
+      "section": "八、Hit 和 NLL 怎样排序",
+      "source_line": 170,
+      "text": "NLL 问“答错时是不是还非常确定？”",
+      "tasks": [
+        "B00"
+      ]
+    },
+    {
+      "id": "W09.01",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 182,
+      "text": "增加独立 participant；",
+      "tasks": [
+        "B12"
+      ]
+    },
+    {
+      "id": "W09.02",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 183,
+      "text": "增加完整四库；",
+      "tasks": [
+        "B12"
+      ]
+    },
+    {
+      "id": "W09.03",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 184,
+      "text": "运行 3 个预声明 seed；",
+      "tasks": [
+        "B12"
+      ]
+    },
+    {
+      "id": "W09.04",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 185,
+      "text": "K=0、200、800、2000 全部保留；",
+      "tasks": [
+        "B12"
+      ]
+    },
+    {
+      "id": "W09.05",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 186,
+      "text": "每个方法共享真实 raw scope、测试队列、channel mask 和预算；",
+      "tasks": [
+        "B12"
+      ]
+    },
+    {
+      "id": "W09.06",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 187,
+      "text": "训练组内选择参数，held 只做一次评分；",
+      "tasks": [
+        "B00"
+      ]
+    },
+    {
+      "id": "W09.07",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 188,
+      "text": "按 participant 做 bootstrap 和配对差值；",
+      "tasks": [
+        "B00"
+      ]
+    },
+    {
+      "id": "W09.08",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 189,
+      "text": "报告每个 participant 的失败、负迁移和不确定性；",
+      "tasks": [
+        "B00"
+      ]
+    },
+    {
+      "id": "W09.09",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 190,
+      "text": "增加完整 selection、邻近 selection、不同响应间隔的分层结果；",
+      "tasks": [
+        "B07",
+        "B12"
+      ]
+    },
+    {
+      "id": "W09.10",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 191,
+      "text": "增加不同 reference 和通道缺失面板；",
+      "tasks": [
+        "B09",
+        "B12"
+      ]
+    },
+    {
+      "id": "W09.11",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 192,
+      "text": "将算法选择、概率校准和产品晋升分成三个独立阶段；",
+      "tasks": [
+        "B00",
+        "B03",
+        "B13"
+      ]
+    },
+    {
+      "id": "W09.12",
+      "section": "九、实验体系还可以扩大",
+      "source_line": 193,
+      "text": "先在公开数据完成预声明路线，再使用新的成人采集确认。",
+      "tasks": [
+        "B12",
+        "B13"
+      ]
+    },
+    {
+      "id": "W10.01",
+      "section": "十、当前最值得优先推进的路线",
+      "source_line": 199,
+      "text": "保留 N2P3Net 作为神经专家；",
+      "tasks": [
+        "B02",
+        "B04"
+      ]
+    },
+    {
+      "id": "W10.02",
+      "section": "十、当前最值得优先推进的路线",
+      "source_line": 200,
+      "text": "保留 Toeplitz 和 xDAWN 作为成熟空间/时间专家；",
+      "tasks": [
+        "B02",
+        "B09"
+      ]
+    },
+    {
+      "id": "W10.03",
+      "section": "十、当前最值得优先推进的路线",
+      "source_line": 201,
+      "text": "保留 raw AR8 作为连续时间专家；",
+      "tasks": [
+        "B02",
+        "B05"
+      ]
+    },
+    {
+      "id": "W10.04",
+      "section": "十、当前最值得优先推进的路线",
+      "source_line": 202,
+      "text": "用等权概率混合做稳定基线；",
+      "tasks": [
+        "B03"
+      ]
+    },
+    {
+      "id": "W10.05",
+      "section": "十、当前最值得优先推进的路线",
+      "source_line": 203,
+      "text": "在训练 selection 内研究 N2P3Net 与经典专家的 gating；",
+      "tasks": [
+        "B03"
+      ]
+    },
+    {
+      "id": "W10.06",
+      "section": "十、当前最值得优先推进的路线",
+      "source_line": 204,
+      "text": "用 hit@all 作为主目标；",
+      "tasks": [
+        "B00"
+      ]
+    },
+    {
+      "id": "W10.07",
+      "section": "十、当前最值得优先推进的路线",
+      "source_line": 205,
+      "text": "用 NLL、Brier、最大置信度和边界保真做安全门；",
+      "tasks": [
+        "B00",
+        "B06"
+      ]
+    },
+    {
+      "id": "W10.08",
+      "section": "十、当前最值得优先推进的路线",
+      "source_line": 206,
+      "text": "对边界只在 2 秒以上的可识别区域启用软修正；",
+      "tasks": [
+        "B06"
+      ]
+    },
+    {
+      "id": "W10.09",
+      "section": "十、当前最值得优先推进的路线",
+      "source_line": 207,
+      "text": "Pz 进入空间 ERP 建模，不直接手工放大残差精度；",
+      "tasks": [
+        "B09"
+      ]
+    },
+    {
+      "id": "W10.10",
+      "section": "十、当前最值得优先推进的路线",
+      "source_line": 208,
+      "text": "先完成独立数据和四库三 seed，再考虑接入产品默认。",
+      "tasks": [
+        "B12",
+        "B13"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "B00",
+      "title": "比较身份、评价与训练内选择",
+      "priority": "P0",
+      "depends_on": [],
+      "owner_files": [
+        "src/research/comparison.py",
+        "src/research/contracts.py",
+        "src/stats/transfer.py"
+      ],
+      "research_question": "如何让 hit 优先且失败、概率风险和多重选择都可解释？",
+      "exit_evidence": [
+        "固定 requested participant/decision roster",
+        "同批配对与 C 内 nested OOF",
+        "hit/NLL/coverage 门槛与 cluster CI"
+      ],
+      "falsification": "删掉失败项即可提高主指标、或选择器读取外层 held 标签，即合同失败。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B01",
+      "title": "信号履历与观测支持",
+      "priority": "P0",
+      "depends_on": [],
+      "owner_files": [
+        "src/data/contract.py",
+        "src/data/preprocess.py",
+        "src/data/raw_artifacts.py",
+        "src/transfer/raw_continuous.py"
+      ],
+      "research_question": "模型实际观察哪些物理样本、滤波层级和事件历史？",
+      "exit_evidence": [
+        "MAT/CSV/ADC 层级与 upstream unknown 账本",
+        "左右边界/时钟/可用时间",
+        "物理支持和专家各自数值视图"
+      ],
+      "falsification": "读取下一未授权 flash 的尾响应、或把 MAT 称 ADC raw，均不能通过。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B02",
+      "title": "专家 Interface 与神经候选证据",
+      "priority": "P0",
+      "depends_on": [
+        "B00",
+        "B01"
+      ],
+      "owner_files": [
+        "src/models/candidate_evidence.py",
+        "src/data/candidate_task.py",
+        "src/transfer/calibrated.py",
+        "src/research/evaluation.py"
+      ],
+      "research_question": "如何让不同专家对同一完整候选任务输出可比较概率？",
+      "exit_evidence": [
+        "membership log-odds 推导",
+        "专家独立数值身份/共同物理任务",
+        "冻结 candidate vocabulary 与无标签 score",
+        "保存重载"
+      ],
+      "falsification": "把 binary AUC 当 posterior、候选缺失后缩词表、失败专家静默删掉，均失败。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B03",
+      "title": "C 内概率校准、等权锚点及 gating",
+      "priority": "P0",
+      "depends_on": [
+        "B02"
+      ],
+      "owner_files": [
+        "src/models/candidate_evidence.py",
+        "src/transfer/calibration_split.py",
+        "src/transfer/quality.py"
+      ],
+      "research_question": "概率平均是否提供独立互补性，温度与 gating 是否能在 C 内识别？",
+      "exit_evidence": [
+        "固定三/四专家算术概率平均",
+        "nested grouped OOF 后 refit",
+        "fixed weight 与 calibration-only gating 分开",
+        "单专家失败行为"
+      ],
+      "falsification": "等权增加专家也可降低 hit；不能据 convex NLL 上界承诺不退步。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B04",
+      "title": "神经贡献与同结构 scratch 配对",
+      "priority": "P0",
+      "depends_on": [
+        "B03"
+      ],
+      "owner_files": [
+        "experiments/run_erp_comparator.py",
+        "src/transfer/target_experiments.py",
+        "src/transfer/recipes.py",
+        "src/transfer/checkpoint.py"
+      ],
+      "research_question": "神经专家带来源迁移、训练剂量还是独立互补信息？",
+      "exit_evidence": [
+        "NN/full-fine/scratch/成熟锚点同物理支持",
+        "六个预声明混合对照",
+        "K0 可达性与 source 排除",
+        "逐参与者失败/负迁移"
+      ],
+      "falsification": "没有 matched scratch、source 包含目标参与者/库、或将跨输入差值称迁移收益，即归因失败。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B05",
+      "title": "公平 AR 阶数及逐通道谱",
+      "priority": "P1",
+      "depends_on": [
+        "B00",
+        "B01"
+      ],
+      "owner_files": [
+        "src/transfer/temporal_noise.py",
+        "src/transfer/exact_covariance.py",
+        "src/transfer/continuous_decision.py"
+      ],
+      "research_question": "白化真实噪声的收益是否超过对白化判别方向的损伤？",
+      "exit_evidence": [
+        "AR0/1/4/8/16/32 的 hold_back=32",
+        "stationary 与 conditional 两独立面板",
+        "Y/D 同步白化",
+        "train/held ACF PSD 创新与判别信息"
+      ],
+      "falsification": "只缩短 Y 不变 D、各阶评分行不同、或 ACF 改善却当成 hit 改善，即失败。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B06",
+      "title": "边界条件均值、协方差与完整保真",
+      "priority": "P1",
+      "depends_on": [
+        "B00",
+        "B01"
+      ],
+      "owner_files": [
+        "src/data/finite_filter_operator.py",
+        "src/transfer/noise_model.py",
+        "experiments/boundary_state_research.py"
+      ],
+      "research_question": "有限观察下的外部状态可识别到什么程度？修正是否保留实际 ERP 增量？",
+      "exit_evidence": [
+        "确定 padding 与外部 latent/估计误差分离",
+        "候选相关条件均值及 Schur covariance",
+        "共同输出网格",
+        "完整 T(x+h) 与白噪声 gain",
+        "仅 C 内选距离 schedule"
+      ],
+      "falsification": "同一 short 可由不同外部延拓产生不同 delta，不能宣称唯一恢复；输出 ERP overlap 不是伤害证明。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B07",
+      "title": "ERP 字典、延迟和完整事件历史",
+      "priority": "P1",
+      "depends_on": [
+        "B00",
+        "B01"
+      ],
+      "owner_files": [
+        "src/transfer/continuous_decision.py",
+        "src/baselines/temporal_transfer.py",
+        "src/data/events.py"
+      ],
+      "research_question": "低维基、潜伏期与邻近事件是否解释当前设计失配？",
+      "exit_evidence": [
+        "Gaussian/B-spline/cosine/导数等自由度对照",
+        "common/target/selection 识别约束",
+        "完整卷积事件与删失",
+        "raw/filtered basis 同步传播"
+      ],
+      "falsification": "用真实未知邻近目标作 oracle、变基同时增加有效自由度、或 selection effect 吸收 q，均失败。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B08",
+      "title": "尺度一致 g-prior、层级先验和模型平均",
+      "priority": "P1",
+      "depends_on": [
+        "B00",
+        "B01"
+      ],
+      "owner_files": [
+        "src/transfer/continuous_decision.py",
+        "src/transfer/noise_model.py",
+        "src/models/parameter_groups.py"
+      ],
+      "research_question": "按白化设计信息定义先验能否区分尺度 gauge 与真实模型改变？",
+      "exit_evidence": [
+        "g-prior 换基/电压/MN gauge 反例",
+        "可识别预测子空间与 rank 账本",
+        "common/selection 分层收缩",
+        "fixed lambda posterior mixture 与 Bayes mixture 分开"
+      ],
+      "falsification": "机械 pinv 给未识别系数确定 prior、用 held 选 lambda、或把改 AR 阶数当 gauge，即失败。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B09",
+      "title": "空间 ERP 均值与实测布局",
+      "priority": "P1",
+      "depends_on": [
+        "B00",
+        "B01"
+      ],
+      "owner_files": [
+        "src/baselines/structured_erp.py",
+        "src/baselines/riemann.py",
+        "src/baselines/temporal_transfer.py",
+        "src/data/channel.py"
+      ],
+      "research_question": "Pz 信息应进入均值/空间判别而非人为压低噪声吗？",
+      "exit_evidence": [
+        "xDAWN/空间 LDA/ERP geometry 锚点",
+        "收缩 d-prime 与 graph 均值 prior",
+        "native/ref/channel mask 等秩对照",
+        "participant 稳定性"
+      ],
+      "falsification": "目标 d-prime 使用 held 标签、补零成实测导、reference 奇异秩未处理，均失败。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B10",
+      "title": "输入算子和污染分机制对照",
+      "priority": "P1",
+      "depends_on": [
+        "B00",
+        "B01"
+      ],
+      "owner_files": [
+        "src/data/harmonic.py",
+        "src/data/ocular.py",
+        "src/data/recovery.py",
+        "src/data/preprocess.py"
+      ],
+      "research_question": "改滤波/工频/EOG 是否改善任务，并满足部署可用时间？",
+      "exit_evidence": [
+        "因果/双向/selection 独立协议",
+        "高通低通 notch 与相位分轴",
+        "漂移/幅相调制/glitch/慢波独立挑战",
+        "改变 raw 截止与只改读窗分开"
+      ],
+      "falsification": "用未来长记录修正短测试、把自适应参数视作固定 F、或仅峰下降就晋升，均失败。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B11",
+      "title": "动态、重尾和联合状态模型",
+      "priority": "P2",
+      "depends_on": [
+        "B05",
+        "B06",
+        "B07",
+        "B08",
+        "B09"
+      ],
+      "owner_files": [
+        "src/transfer/temporal_noise.py",
+        "src/transfer/continuous_decision.py",
+        "src/transfer/noise_model.py"
+      ],
+      "research_question": "separable MN 明确失配后，动态因子/VAR/GP/重尾层级哪个可识别？",
+      "exit_evidence": [
+        "可观测性与噪声/ERP 辨识",
+        "channel 私有谱/共享因子",
+        "Student-t 层级与单位",
+        "filtering/smoothing 延迟合同"
+      ],
+      "falsification": "算力不能弥补有限 participant 和决策数；不识别/负迁移必须保留。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B14",
+      "title": "工程收敛、源绑定、吞吐和干净交付",
+      "priority": "P0",
+      "depends_on": [
+        "B00",
+        "B01"
+      ],
+      "owner_files": [
+        "experiments/freeze_source_snapshot.py",
+        "src/research/source_execution.py",
+        "src/research/execution.py",
+        "src/transfer/result_reuse.py",
+        "src/train/runtime.py"
+      ],
+      "research_question": "如何一次验证外部输入、精简内部防御，并将实际计算资源送到 worker？",
+      "exit_evidence": [
+        "已验证不可变内部状态/无静默兼容兜底",
+        "实际研究 helper 与 entrypoint 的源摘要",
+        "CPU>=25 GPU workers>=4",
+        "共享只读 cache 与滚动 ready DAG",
+        "失败账本与净 Git"
+      ],
+      "falsification": "防御删减造成身份/fit/时间守卫丢失、计划写4而实际1、或只量 kernel 不量整链，均失败。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B12",
+      "title": "四库与三 seed 完整流程复核",
+      "priority": "P0",
+      "depends_on": [
+        "B04",
+        "B14"
+      ],
+      "owner_files": [
+        "experiments/run_source_pool_matrix.py",
+        "experiments/run_public_pool_targets.py",
+        "experiments/verify_pool_matrix.py",
+        "experiments/run_erp_comparator.py"
+      ],
+      "research_question": "预声明混合在新配对开发支持中是否复现，并降低校准成本？",
+      "exit_evidence": [
+        "四库 binary 面板 + 合法 membership candidate 面板",
+        "三个完整 source→target seed",
+        "K0/200/800/2000 请求与实际 ledger",
+        "公共候选与成人产品边界"
+      ],
+      "falsification": "三 seed 算三倍参与者、四库伪造 candidate posterior、或只做有利 pilot 就停，均失败。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    },
+    {
+      "id": "B13",
+      "title": "独立成人确认与产品成本",
+      "priority": "P2",
+      "depends_on": [
+        "B12"
+      ],
+      "owner_files": [
+        "src/transfer/calibrated.py",
+        "experiments/brainsync_model_task.py",
+        "doc/workstation.zh.md"
+      ],
+      "research_question": "冻结选择/概率校准/程序后，新成人九选一 hit@all 和成本是否达标？",
+      "exit_evidence": [
+        "新采集/光学时钟/未知目标/跨日协议",
+        "事前估计量与样本量",
+        "一份包只读推理与真实停止/延迟",
+        "预声明效能和风险门槛"
+      ],
+      "falsification": "旧 P001、ALS BNCI 36选一或合同 fixture 均不能充当独立成人确认。",
+      "design_status": "complete",
+      "implementation_status": "not_started",
+      "execution_status": "not_started"
+    }
+  ],
+  "experiment_contract": {
+    "seeds": [
+      20260918,
+      20260919,
+      20260920
+    ],
+    "requested_K": [
+      0,
+      200,
+      800,
+      2000
+    ],
+    "binary_targets": [
+      "BI2014a",
+      "BI2015a",
+      "BNCI2014-008",
+      "Huebner2017"
+    ],
+    "candidate_adapters": {
+      "BNCI2014-008": "source MAT, continuous and epoch adapters",
+      "BI2014a": "raw CSV membership recovery; continuous adapter to be validated"
+    },
+    "other_targets_candidate_status": "require public membership and complete decision attestation; no inference from AUC",
+    "historical_bnci_design": {
+      "participants": 8,
+      "calibration_authorization_K": 800,
+      "group_count": 6,
+      "flashes_per_group": 120,
+      "fit_groups_per_outer_fold": 5,
+      "actual_fit_labels": 600,
+      "held_groups_per_outer_fold": 1,
+      "outer_fold_count": 48,
+      "unused_authorized_labels": 80,
+      "role": "already_observed_calibration_development"
+    },
+    "selection": "nested grouped calibration OOF; outer-held labels never used for selection",
+    "primary_candidate_metric": "requested-participant macro operational hit@all",
+    "binary_estimand": "four-dataset equal macro paired delta AUC; candidate hit is separate",
+    "development_gates": {
+      "paired_delta_hit_min": 0.0,
+      "paired_delta_nll_max": 0.0,
+      "coverage_delta_min": 0.0,
+      "failure_count_increase_max": 0,
+      "nll_pairing": "same predeclared roster, paired-complete NLL plus explicit missing ledger"
+    },
+    "formal_confirmation": "not declared; adult population, sample size and risk margins require new protocol",
+    "baseline_experts": [
+      "raw_ar8_lambda_1",
+      "toeplitz",
+      "xdawn"
+    ],
+    "added_expert": "n2p3net_full_fine",
+    "mixing": "fixed arithmetic probability average",
+    "core_mixture_arms": [
+      "neural_only",
+      "classic_three",
+      "neural_toeplitz",
+      "neural_xdawn",
+      "neural_classic_three",
+      "scratch_classic_three"
+    ],
+    "ar_orders": [
+      0,
+      1,
+      4,
+      8,
+      16,
+      32
+    ],
+    "ar_hold_back_samples": 32,
+    "ar_startup_panels": [
+      "stationary marginal common output tail",
+      "conditional actual prefix common output tail"
+    ],
+    "source_pools": {
+      "B7": [
+        "BI2014a",
+        "BI2015a",
+        "BNCI2014-008",
+        "Huebner2017",
+        "BI2013a",
+        "EPFLP300",
+        "Chailloux2020",
+        "Speier2017",
+        "GTN"
+      ],
+      "B7_plus_three": [
+        "BI2014a",
+        "BI2015a",
+        "BNCI2014-008",
+        "Huebner2017",
+        "BI2013a",
+        "EPFLP300",
+        "Chailloux2020",
+        "Speier2017",
+        "GTN",
+        "BI2012",
+        "Cattan2019_VR",
+        "BrainForm"
+      ]
+    },
+    "primary_source_pool": "B7_plus_three",
+    "secondary_source_pool": "B7",
+    "source_exclusion": "whole held target dataset including its participants; family sensitivity separately",
+    "window_and_filter_protocols": "declared contrast axes; no universal EA/window serial prerequisite"
+  },
+  "resource_contract": {
+    "cloud_config": "configs/cloud_training_resources.json",
+    "cloud": {
+      "cpu_budget": 25,
+      "gpu_workers": 4,
+      "source_workers": 4,
+      "source_load_workers": 1,
+      "target_workers": 4,
+      "source_worker_memory_gib": 18,
+      "shared_staging_memory_gib": 10,
+      "host_memory_fraction": 0.95,
+      "target_worker_memory_gib": 4,
+      "gpu_task_memory_gib": 4,
+      "cloud_resource_floor": {
+        "cpu_threads": 25,
+        "gpu_workers": 4
+      }
+    },
+    "capacity_vs_tail": ">=4 capacity; record ready fits in dependency tail",
+    "cpu_partition_at_4_workers": [
+      6,
+      6,
+      6,
+      6,
+      1
+    ],
+    "launch_status": "not_launched_by_design_task"
+  },
+  "variant_dependencies": {
+    "boundary_corrected": [
+      "B06"
+    ],
+    "alternative_ar": [
+      "B05"
+    ],
+    "alternative_basis": [
+      "B07"
+    ],
+    "gprior": [
+      "B08"
+    ],
+    "spatial_prior": [
+      "B09"
+    ],
+    "adaptive_filter": [
+      "B10"
+    ],
+    "dynamic_or_robust_noise": [
+      "B11"
+    ]
+  },
+  "week_deliverables": {
+    "week1": [
+      "B00",
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B14"
+    ],
+    "week2_parallel": [
+      "B05",
+      "B06",
+      "B07",
+      "B08",
+      "B09",
+      "B10"
+    ],
+    "week3": [
+      "B04",
+      "B12"
+    ],
+    "week4": [
+      "B12",
+      "B14"
+    ],
+    "research_extensions": [
+      "B11",
+      "B13"
+    ],
+    "calendar_rule": "acceptance milestones, not evidence of execution; do not wait for all optional research variants"
+  }
+}
