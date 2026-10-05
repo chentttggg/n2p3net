@@ -30,9 +30,9 @@ Semantics (frozen with the archived v3 evidence chain):
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from dataclasses import dataclass
-from numbers import Real
+from collections.abc import Mapping, Sequence
+from dataclasses import asdict, dataclass, field
+from numbers import Integral, Real
 
 import numpy as np
 import torch
@@ -47,6 +47,240 @@ DEFAULT_EVIDENCE_COUNT_POWER = 0.5
 # Retained alias: callers that only accept the three count-based modes.
 COUNT_AGGREGATIONS = EVIDENCE_AGGREGATIONS
 MEMBERSHIP_SCORE_METHOD = "membership_llr_sum/1"
+
+
+def _exact_identity(value: str, name: str) -> str:
+    if not isinstance(value, str) or not value or value != value.strip():
+        raise ValueError(f"{name} requires an exact nonempty string identity")
+    return value
+
+
+def _evidence_digest(value: str | None, name: str, *, optional: bool = False) -> None:
+    if value is None and optional:
+        return
+    if not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
+        raise ValueError(f"{name} must be a lowercase sha256 digest")
+
+
+def _log_normalize(values: np.ndarray) -> np.ndarray:
+    with np.errstate(over="raise", invalid="raise"):
+        try:
+            shifted = values - np.max(values)
+            return shifted - np.log(np.exp(shifted).sum())
+        except FloatingPointError as error:
+            raise ValueError("log evidence differences exceed floating-point support") from error
+
+
+@dataclass(frozen=True)
+class CandidateExpertIdentity:
+    """An expert's own input and fitted state, independent of common raw support.
+
+    A target-only expert has no source-model digest. A failed fit may have no
+    model digest; its declared fit procedure and numeric input remain identified.
+    Normalized scores do not by themselves certify probability calibration.
+    """
+
+    expert_id: str
+    numerical_input_digest: str
+    model_digest: str | None
+    source_digest: str | None
+    fit_digest: str
+    score_kind: str
+    probability_calibrated: bool
+
+    def __post_init__(self) -> None:
+        for name in ("expert_id", "score_kind"):
+            _exact_identity(getattr(self, name), name)
+        for name in ("numerical_input_digest", "fit_digest"):
+            _evidence_digest(getattr(self, name), name)
+        for name in ("model_digest", "source_digest"):
+            _evidence_digest(getattr(self, name), name, optional=True)
+        if not isinstance(self.probability_calibrated, bool):
+            raise ValueError("probability_calibrated must be explicitly boolean")
+
+    def record(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class CandidateEvidence:
+    """Validated, label-free candidate probabilities for one physical decision.
+
+    Construction and artifact reload are the sole validation boundary. Arrays
+    own immutable byte storage, so consumers do not revalidate or rehash them.
+    ``-inf`` denotes true zero probability; finite log probabilities remain
+    available when their exponentials underflow. Complete tied distributions
+    are available for risk evaluation but provide no operational prediction.
+    """
+
+    candidate_vocabulary: tuple[str, ...]
+    log_probability: np.ndarray | None
+    participant_key: str
+    decision_id: str
+    physical_support_digest: str
+    expert_identities: tuple[CandidateExpertIdentity, ...]
+    evidence_level: int
+    expected_event_counts: tuple[int, ...]
+    observed_event_counts: tuple[int, ...]
+    failure_reason: str | None = None
+    failure_kind: str | None = None
+    predicted: str | None = field(init=False)
+    status: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if isinstance(self.candidate_vocabulary, (str, bytes)):
+            raise ValueError("candidate vocabulary must be a sequence of exact identities")
+        vocabulary = tuple(self.candidate_vocabulary)
+        if len(vocabulary) < 2 or len(set(vocabulary)) != len(vocabulary):
+            raise ValueError("candidate vocabulary must contain at least two unique identities")
+        for candidate in vocabulary:
+            _exact_identity(candidate, "candidate vocabulary")
+        object.__setattr__(self, "candidate_vocabulary", vocabulary)
+        for name in ("participant_key", "decision_id"):
+            _exact_identity(getattr(self, name), name)
+        _evidence_digest(self.physical_support_digest, "physical_support_digest")
+        identities = tuple(self.expert_identities)
+        if not identities or any(not isinstance(value, CandidateExpertIdentity) for value in identities):
+            raise ValueError("expert_identities requires validated expert identities")
+        if len({value.expert_id for value in identities}) != len(identities):
+            raise ValueError("expert identities must be unique")
+        object.__setattr__(self, "expert_identities", identities)
+        if isinstance(self.evidence_level, bool) or not isinstance(self.evidence_level, Integral) or self.evidence_level < 1:
+            raise ValueError("evidence_level must be a positive integer")
+        object.__setattr__(self, "evidence_level", int(self.evidence_level))
+        for name in ("expected_event_counts", "observed_event_counts"):
+            counts = tuple(getattr(self, name))
+            if len(counts) != len(vocabulary) or any(
+                isinstance(value, bool) or not isinstance(value, Integral) or value < 0 for value in counts
+            ):
+                raise ValueError(f"{name} must be nonnegative integers aligned with the vocabulary")
+            object.__setattr__(self, name, tuple(int(value) for value in counts))
+        if any(observed > expected for observed, expected in
+               zip(self.observed_event_counts, self.expected_event_counts, strict=True)):
+            raise ValueError("observed event counts cannot exceed the declared physical schedule")
+        predicted = None
+        if self.log_probability is None:
+            if self.failure_kind not in {"fit_failure", "not_available", "incomplete", "abstain"}:
+                raise ValueError("missing probability requires an explicit failure kind")
+            _exact_identity(self.failure_reason, "failure_reason")
+            status = self.failure_kind
+        else:
+            if self.failure_reason is not None or self.failure_kind is not None:
+                raise ValueError("failure evidence cannot publish candidate probabilities")
+            if not self.physical_coverage_complete:
+                raise ValueError("candidate probability requires complete physical coverage")
+            if any(value.model_digest is None for value in identities):
+                raise ValueError("candidate probabilities require each fitted model identity")
+            values = np.asarray(self.log_probability, dtype=np.float64)
+            if values.shape != (len(vocabulary),):
+                raise ValueError("log probability shape must align with the frozen vocabulary")
+            if np.isnan(values).any() or np.isposinf(values).any() or not np.isfinite(values).any():
+                raise ValueError("log probabilities must be finite or true negative infinity")
+            maximum = np.max(values)
+            normalization = maximum + np.log(np.exp(values - maximum).sum())
+            if not np.isclose(normalization, 0., rtol=0., atol=1e-10):
+                raise ValueError("log probabilities must be normalized on the complete vocabulary")
+            values = np.frombuffer(values.tobytes(), dtype=np.float64)
+            object.__setattr__(self, "log_probability", values)
+            winners = np.flatnonzero(np.isclose(values, maximum, rtol=1e-12, atol=1e-12))
+            status = "tie" if len(winners) != 1 else "available"
+            if status == "available":
+                predicted = vocabulary[int(winners[0])]
+        object.__setattr__(self, "predicted", predicted)
+        object.__setattr__(self, "status", status)
+
+    @property
+    def probability(self) -> np.ndarray | None:
+        return None if self.log_probability is None else np.exp(self.log_probability)
+
+    @property
+    def probability_available(self) -> bool:
+        return self.log_probability is not None
+
+    @property
+    def operational_available(self) -> bool:
+        return self.predicted is not None
+
+    @property
+    def tie(self) -> bool:
+        return self.status == "tie"
+
+    @property
+    def physical_coverage_complete(self) -> bool:
+        return (all(value > 0 for value in self.expected_event_counts)
+                and self.expected_event_counts == self.observed_event_counts)
+
+    @classmethod
+    def from_log_evidence(cls, log_evidence, *, temperature=1., prior=None, **identity):
+        """Normalize a continuous joint likelihood once, without trial reaggregation."""
+        count = len(identity["candidate_vocabulary"])
+        values = np.asarray(log_evidence, dtype=np.float64)
+        if values.shape != (count,) or np.isnan(values).any() or np.isposinf(values).any() or not np.isfinite(values).any():
+            raise ValueError("log evidence must cover the frozen candidate vocabulary")
+        if isinstance(temperature, bool) or not isinstance(temperature, Real) or not np.isfinite(temperature) or temperature <= 0:
+            raise ValueError("temperature must be a positive finite frozen scalar")
+        if prior is None:
+            log_prior = np.zeros(count)
+        else:
+            prior = np.asarray(prior, dtype=np.float64)
+            if prior.shape != (count,) or not np.isfinite(prior).all() or np.any(prior < 0) or not np.isclose(prior.sum(), 1., rtol=0., atol=1e-10):
+                raise ValueError("candidate prior must sum to one on the frozen vocabulary")
+            log_prior = np.full(count, -np.inf)
+            np.log(prior, out=log_prior, where=prior > 0)
+        expected = tuple(identity["expected_event_counts"])
+        observed = tuple(identity["observed_event_counts"])
+        if expected != observed or not all(value > 0 for value in expected):
+            reason = "no_usable_evidence" if not any(observed) else "incomplete_candidate_coverage"
+            return cls(log_probability=None, failure_kind="incomplete", failure_reason=reason, **identity)
+        with np.errstate(over="raise", invalid="raise"):
+            try:
+                scaled = (values - np.max(values)) / temperature + log_prior
+            except FloatingPointError as error:
+                raise ValueError("log evidence differences exceed floating-point support") from error
+        if not np.isfinite(scaled).any():
+            raise ValueError("candidate likelihood and prior have disjoint support")
+        return cls(log_probability=_log_normalize(scaled), **identity)
+
+    @classmethod
+    def from_membership_scores(cls, scores: MembershipScores, decision: MembershipDecision, **identity):
+        """Preserve the existing membership scorer's full vocabulary and failure semantics."""
+        if scores.candidate_vocabulary != decision.candidate_vocabulary:
+            raise ValueError("membership scores and physical decision vocabulary differ")
+        identity = dict(identity, candidate_vocabulary=decision.candidate_vocabulary,
+                        evidence_level=decision.repetitions,
+                        expected_event_counts=tuple(decision.membership.sum(axis=0, dtype=np.int64)),
+                        observed_event_counts=tuple(scores.counts))
+        if not scores.eligible:
+            return cls(log_probability=None, failure_kind="incomplete",
+                       failure_reason=scores.reason or "unidentifiable_candidates", **identity)
+        values = scores.scores.detach().cpu().numpy() if isinstance(scores.scores, torch.Tensor) else np.asarray(scores.scores)
+        return cls(log_probability=_log_normalize(np.asarray(values, dtype=np.float64)), **identity)
+
+    def record(self) -> dict[str, object]:
+        """JSON-safe persistence; null inside a log vector encodes true zero probability."""
+        return {"schema": "n2p3_candidate_probability_evidence/1",
+                "candidate_vocabulary": list(self.candidate_vocabulary),
+                "log_probability": (None if self.log_probability is None else
+                                    [None if np.isneginf(value) else float(value) for value in self.log_probability]),
+                "participant_key": self.participant_key, "decision_id": self.decision_id,
+                "physical_support_digest": self.physical_support_digest,
+                "expert_identities": [identity.record() for identity in self.expert_identities],
+                "evidence_level": self.evidence_level,
+                "expected_event_counts": list(self.expected_event_counts),
+                "observed_event_counts": list(self.observed_event_counts),
+                "failure_reason": self.failure_reason, "failure_kind": self.failure_kind}
+
+    @classmethod
+    def from_record(cls, record: Mapping[str, object]):
+        fields = {name for name, value in cls.__dataclass_fields__.items() if value.init}
+        if set(record) != fields | {"schema"} or record["schema"] != "n2p3_candidate_probability_evidence/1":
+            raise ValueError("candidate probability evidence record schema or fields differ")
+        values = dict(record)
+        values.pop("schema")
+        values["expert_identities"] = tuple(CandidateExpertIdentity(**identity) for identity in values["expert_identities"])
+        if values["log_probability"] is not None:
+            values["log_probability"] = np.array([(-np.inf if value is None else value) for value in values["log_probability"]])
+        return cls(**values)
 
 
 def aggregate_membership_sums(sums, counts, *, aggregation="sum"):

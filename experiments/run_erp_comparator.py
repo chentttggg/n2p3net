@@ -11,11 +11,9 @@ import hashlib
 import io
 import json
 import sys
-from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
-import torch
 from sklearn.metrics import roc_auc_score
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -27,7 +25,7 @@ from baselines.temporal_transfer import TemporalBasis, resolve_temporal_basis  #
 from data.epochs import concatenate_epoch_datasets, select_epoch_channels  # noqa: E402
 from data.identity import DatasetIdentityTable, source_dataset_ids_from_identity  # noqa: E402
 from data.source_records import load_target_prefixes  # noqa: E402
-from models.n2p3net import N2P3ArchitectureConfig, N2P3Net  # noqa: E402
+from models.n2p3net import N2P3Net  # noqa: E402
 from research.comparison import ContrastPlan, evaluation_input_identity  # noqa: E402
 from research.contracts import semantic_sha256  # noqa: E402
 from research.evaluation import verified_executed_snapshot  # noqa: E402
@@ -36,17 +34,15 @@ from stats.transfer import analyze_transfer_contrasts  # noqa: E402
 from transfer.binary import (  # noqa: E402
     matched_input_digests,
     matched_split_digests,
-    plain_trunk_configuration,
-    target_shrinkage_features,
 )
 from transfer.calibration_candidates import (  # noqa: E402
     fit_calibration_candidate,
     waveform_lda_recipe,
 )
+from transfer.calibration_state import FrozenTrialPredictor  # noqa: E402
 from transfer.checkpoint import (  # noqa: E402
     PreparedTransferCheckpoint,
     load_checkpoint_payload,
-    predict_n2p3_checkpoint,
 )
 from transfer.recipes import TargetRecipe, erp_target_recipe  # noqa: E402
 
@@ -160,44 +156,8 @@ def _nn_anchor(snapshot, data, subject):
 
 
 def _saved_replay(path, fitted, data, rows, observed, device):
-    if fitted.erp is not None:
-        record = {"kind": "structured_erp", "model": fitted.erp.export_state()[0]}
-    elif fitted.adapter is None:
-        record = {"kind": "waveform_lda", "sfreq": fitted.sfreq,
-                  "classifier_dtype": fitted.lda.steps[1][1].coef_.dtype.str}
-    else:
-        trunk = fitted.adapter.trunk
-        record = {"kind": "n2p3", "configuration": asdict(plain_trunk_configuration(trunk)),
-            "architecture": trunk.architecture_record(), "n_channels": trunk.n_channels,
-            "n_times": trunk.n_times, "sfreq": trunk.sfreq, "tmin_s": trunk.tmin_s,
-            "pooling_mode": trunk.pooling_mode}
-    torch.save({"schema": "n2p3_matched_comparator_predictor/1", "record": record,
-                "recipe": fitted.recipe.record(), "state": fitted.state}, path)
-    saved = torch.load(path, weights_only=True, map_location="cpu")
-    if saved["schema"] != "n2p3_matched_comparator_predictor/1":
-        raise ValueError("unsupported comparator predictor schema")
-    record, state = saved["record"], saved["state"]
-    if record["kind"] == "structured_erp":
-        model = StructuredERP.from_state(record["model"], {k.removeprefix("erp."): v.numpy()
-            for k, v in state.items() if k.startswith("erp.")})
-        return model.predict_logit(data.X[rows][:, state["waveform_channels"].numpy()])
-    if record["kind"] == "waveform_lda":
-        F = target_shrinkage_features(data.X[rows][:, state["waveform_channels"].numpy()], sfreq=record["sfreq"])
-        # StandardScaler transforms in the input feature dtype; preserve its
-        # two rounding steps before the classifier's own numeric dtype.
-        F -= state["feature_mean"].numpy().astype(F.dtype)
-        F /= state["feature_scale"].numpy().astype(F.dtype)
-        dtype = np.dtype(record["classifier_dtype"])
-        return (F @ state["coefficient"].numpy().astype(dtype)[:, None]
-                + state["intercept"].numpy().astype(dtype)).ravel().astype(np.float64)
-    model = N2P3Net(record["n_channels"], n_times=record["n_times"], sfreq=record["sfreq"],
-        tmin_s=record["tmin_s"], pooling_mode=record["pooling_mode"],
-        **N2P3ArchitectureConfig(**record["configuration"]).model_kwargs())
-    if model.architecture_record() != record["architecture"]:
-        raise ValueError("saved comparator architecture does not reconstruct exactly")
-    model.load_state_dict({k.removeprefix("trunk."): v for k, v in state.items() if k.startswith("trunk.")})
-    return predict_n2p3_checkpoint(model, data.X[rows], trial_channel_mask=observed[rows],
-        input_stats=(state["input_mean"].numpy(), state["input_std"].numpy()), device=torch.device(device))
+    FrozenTrialPredictor.from_fitted(fitted).save(path)
+    return FrozenTrialPredictor.load(path).predict_logit(data.X[rows], observed[rows], device=device)
 
 
 def _control_matches(source, control):

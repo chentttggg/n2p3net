@@ -1,9 +1,10 @@
 """Frozen continuous candidate likelihood with estimated kernel uncertainty.
 
 Each raw sample is used once. A matrix-normal ridge response model is fitted
-only on labeled calibration/source records. AR(1) temporal noise and a shrunk
-channel covariance are estimated from calibration residuals. Prediction includes
-the conditional kernel posterior covariance and candidate-dependent logdet.
+only on labeled calibration/source records. The original default retains its
+clipped AR(1) estimator. Explicit research orders use the shared segmented Burg
+owner and exact stationary PARCOR innovations. Prediction includes the
+conditional kernel posterior covariance and candidate-dependent logdet.
 
 This is a research likelihood, not a certified posterior: AR/noise hyperparameter
 uncertainty and nonlinear/refractory ERP behavior are not integrated. Constant
@@ -32,8 +33,11 @@ from transfer.noise_model import (
     require_sha256,
     validate_covariance,
 )
+from transfer.temporal_noise import TemporalNoise
 
 _IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+_STATE_KEYS = ("basis", "kernel_mean", "kernel_row_covariance", "innovation_covariance")
+_COMPUTE_DTYPE = np.dtype(np.float64).str
 
 
 @dataclass(frozen=True)
@@ -55,11 +59,17 @@ class ContinuousDecisionResult:
     n_unique_samples: int
     input_sha256: str
 
+    @property
+    def log_probability(self):
+        """Normalized log mass before finite-precision probability underflow."""
+        return frozen_array(self.log_evidence - logsumexp(self.log_evidence))
+
     def record(self):
         return {
-            "schema": "n2p3_continuous_decision_result/1",
+            "schema": "n2p3_continuous_decision_result/2",
             "candidate_ids": list(self.candidate_ids),
             "log_evidence": self.log_evidence.tolist(),
+            "log_probability": self.log_probability.tolist(),
             "probabilities": self.probabilities.tolist(),
             "winner": self.winner, "reason": self.reason,
             "n_unique_samples": self.n_unique_samples,
@@ -81,7 +91,10 @@ def smooth_erp_basis(sfreq, response_seconds=0.8, n_basis=8):
 
 
 def _validate_record(samples, onsets, n_channels, kernel_length, *, allow_right_censor=False):
-    X = np.asarray(samples, dtype=float)
+    supplied = np.asarray(samples)
+    if supplied.dtype.kind not in "fiu":
+        raise ValueError("continuous samples must be real numeric observations")
+    X = np.asarray(supplied, dtype=float)
     onset = np.asarray(onsets)
     if X.ndim != 2 or X.shape[1] != n_channels or len(X) < kernel_length + 3:
         raise ValueError("continuous samples must match observed channels and response support")
@@ -117,18 +130,31 @@ def _whiten_and_project(value, phi):
     return whitened - Q @ (Q.T @ whitened)
 
 
+def _stationary_transform(noise, n_samples):
+    """One within-record noise geometry shared by Y, every design and drift."""
+    nuisance = np.column_stack([np.ones(n_samples), np.linspace(-1, 1, n_samples)])
+    Q, _ = np.linalg.qr(noise.whiten(nuisance), mode="reduced")
+
+    def transform(value):
+        whitened = noise.whiten(value)
+        return whitened - Q @ (Q.T @ whitened)
+
+    return transform
+
+
 @dataclass(frozen=True)
 class ContinuousDecisionModel:
     basis: np.ndarray
     kernel_mean: np.ndarray
     kernel_row_covariance: np.ndarray
     innovation_covariance: np.ndarray
-    phi: float
+    phi: float | None
     sfreq: float
     channels: tuple[str, ...]
     candidate_ids: tuple[str, ...]
     operator_identity: str
     provenance: dict
+    noise: TemporalNoise | None = None
     _integrity_sha256: str = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
@@ -148,8 +174,16 @@ class ContinuousDecisionModel:
             raise ValueError("observed channel names must be distinct and nonempty")
         if len(candidates) < 2 or len(set(candidates)) != len(candidates) or any(not c for c in candidates):
             raise ValueError("candidate vocabulary must be complete, unique and nonempty")
-        if not np.isfinite(self.phi) or abs(self.phi) >= 1 or not np.isfinite(self.sfreq) or self.sfreq <= 0:
-            raise ValueError("invalid AR parameter or sampling frequency")
+        if not np.isfinite(self.sfreq) or self.sfreq <= 0:
+            raise ValueError("invalid sampling frequency")
+        if self.noise is None:
+            if self.phi is None or not np.isfinite(self.phi) or abs(self.phi) >= 1:
+                raise ValueError("invalid legacy AR parameter")
+        else:
+            if (not isinstance(self.noise, TemporalNoise) or self.phi is not None
+                    or self.noise.startup_mode != "stationary_innovations"):
+                raise ValueError("explicit AR expert requires stationary innovations and no legacy phi")
+            self.noise.assert_integrity()
         if not self.operator_identity:
             raise ValueError("explicit materialized input operator identity is required")
         np.linalg.cholesky(noise)
@@ -164,11 +198,15 @@ class ContinuousDecisionModel:
         if scope == "analytic_reference":
             if set(provenance) != {"fit_scope", "reference_id", "records"} or provenance["records"] or not provenance["reference_id"]:
                 raise ValueError("analytic numerical reference must be explicitly identified without training claims")
+            if self.noise is not None and self.noise.provenance["fit_scope"] != scope:
+                raise ValueError("analytic continuous reference requires analytic temporal noise")
         else:
             if scope not in {"source_training", "target_calibration"} or not provenance.get("records"):
                 raise ValueError("continuous model requires a nonempty complete training ledger")
             required = {"record_id", "n_samples", "n_events", "n_targets", "signal_sha256", "input_sha256",
                         "right_censored", "right_censored_events"}
+            if self.noise is not None:
+                required |= {"read_sample_support", "input_dtypes", "raw_input_sha256"}
             require_identifiers([record["record_id"] for record in provenance["records"]], "training record IDs")
             for record in provenance["records"]:
                 if (set(record) != required or any(type(record[key]) is not int for key in ("n_samples", "n_events", "n_targets"))
@@ -181,15 +219,38 @@ class ContinuousDecisionModel:
                     raise ValueError("invalid continuous calibration censoring declaration")
                 require_sha256(record["signal_sha256"], "continuous fit signal")
                 require_sha256(record["input_sha256"], "continuous fit labels/input")
+                if self.noise is not None:
+                    if record["read_sample_support"] != [0, record["n_samples"]]:
+                        raise ValueError("continuous AR training support differs from the recorded observations")
+                    dtypes = record["input_dtypes"]
+                    if (set(dtypes) != {"samples", "onsets", "target_mask"}
+                            or np.dtype(dtypes["samples"]).kind not in "fiu"
+                            or np.dtype(dtypes["onsets"]).kind not in "iu"
+                            or np.dtype(dtypes["target_mask"]).kind not in "bfiu"):
+                        raise ValueError("continuous AR ledger lacks exact numeric input dtypes")
+                    require_sha256(record["raw_input_sha256"], "continuous raw fit input")
             require_sha256(provenance.get("implementation_sha256"), "continuous implementation")
             if not np.isfinite(provenance.get("ridge", float("nan"))) or provenance["ridge"] <= 0:
                 raise ValueError("continuous fit ledger lacks positive ridge")
+            if self.noise is not None:
+                noise_provenance = self.noise.provenance
+                if (noise_provenance["fit_scope"] != scope
+                        or noise_provenance["n_columns"] != len(channels)
+                        or [(r["record_id"], r["n_samples"]) for r in noise_provenance["records"]]
+                        != [(r["record_id"], r["n_samples"]) for r in provenance["records"]]):
+                    raise ValueError("continuous response and temporal noise training ledgers differ")
+                if (provenance["implementation_sha256"] != _IMPLEMENTATION_SHA256
+                        or provenance.get("compute_dtype") != _COMPUTE_DTYPE
+                        or provenance.get("noise_order") != self.noise.order
+                        or provenance.get("startup_mode") != self.noise.startup_mode
+                        or provenance.get("kernel_prior_scale") != "innovation"):
+                    raise ValueError("continuous AR source, dtype or noise/prior contract differs")
         object.__setattr__(self, "provenance", freeze_metadata(provenance))
         object.__setattr__(self, "_integrity_sha256", metadata_digest(self._metadata()))
 
     @classmethod
     def fit(cls, records, *, sfreq, channels, candidate_ids, operator_identity,
-            basis=None, ridge=1., fit_scope="target_calibration"):
+            basis=None, ridge=1., fit_scope="target_calibration", noise_order=None):
         """Fit all response and noise state from declared labeled records only.
 
         Records are independent legal scopes with complete stimulus histories.
@@ -200,11 +261,19 @@ class ContinuousDecisionModel:
         The caller must enforce physical participant/time/label authorization;
         record IDs and digests retain the concrete input used here. Ridge and
         dictionary must be fixed before held-out scoring.
+
+        Omitting noise_order executes the original clipped AR1 fit exactly.
+        An explicit integer order selects one feasible GLS update using pooled
+        Burg residual noise and a stationary latent startup. Ridge refers to
+        the unit-innovation row prior; the channel covariance owns voltage
+        scale. This is neither fixed-tail conditioning nor exact joint MLE.
         """
         if fit_scope not in {"target_calibration", "source_training"}:
             raise ValueError("continuous model fit scope must be training/calibration")
         if not np.isfinite(ridge) or ridge <= 0:
             raise ValueError("ridge must be strictly positive")
+        if noise_order is not None and (type(noise_order) is not int or not 0 <= noise_order <= 128):
+            raise ValueError("explicit AR order must be an integer in 0..128")
         basis = smooth_erp_basis(sfreq) if basis is None else np.asarray(basis, dtype=float)
         if basis.ndim != 2 or not np.all(np.isfinite(basis)) or min(basis.shape) == 0:
             raise ValueError("basis must be finite and nonempty")
@@ -228,26 +297,51 @@ class ContinuousDecisionModel:
                            "right_censored_events": int(np.sum(onsets + len(basis) > len(X))),
                            "signal_sha256": array_digest(X, onsets),
                            "input_sha256": array_digest(X, onsets, labels)})
+            if noise_order is not None:
+                original = {"samples": np.asarray(record.samples), "onsets": np.asarray(record.onsets),
+                            "target_mask": np.asarray(record.target_mask)}
+                ledger[-1].update(read_sample_support=[0, len(X)],
+                                  input_dtypes={key: value.dtype.str for key, value in original.items()},
+                                  raw_input_sha256=array_digest(*original.values()))
         if set(all_labels) != {0, 1}:
             raise ValueError("both target and non-target calibration events are required")
         p = 2 * basis.shape[1]
 
         def solve(phi):
-            D = np.vstack([_whiten_and_project(d, phi) for d in designs])
-            Y = np.vstack([_whiten_and_project(x, phi) for x in samples])
+            if isinstance(phi, TemporalNoise):
+                transforms = [_stationary_transform(phi, len(x)) for x in samples]
+                D = np.vstack([transform(d) for transform, d in zip(transforms, designs, strict=True)])
+                Y = np.vstack([transform(x) for transform, x in zip(transforms, samples, strict=True)])
+            else:
+                D = np.vstack([_whiten_and_project(d, phi) for d in designs])
+                Y = np.vstack([_whiten_and_project(x, phi) for x in samples])
             gram = D.T @ D
-            row_cov = np.linalg.inv(gram + ridge * np.eye(p))
-            mean = row_cov @ D.T @ Y
+            if noise_order is None:
+                row_cov = np.linalg.inv(gram + ridge * np.eye(p))
+                mean = row_cov @ D.T @ Y
+            else:
+                # Augmented QR does not square the conditioning of the design.
+                Q, root = np.linalg.qr(np.vstack([D, np.sqrt(ridge)*np.eye(p)]), mode="reduced")
+                inverse_root = solve_triangular(root, np.eye(p))
+                row_cov = inverse_root @ inverse_root.T
+                mean = solve_triangular(root, Q[:len(Y)].T @ Y)
             return D, Y, mean, (row_cov + row_cov.T) / 2, gram
 
         D, Y, initial, _, _ = solve(0.)
         initial_residual = Y - D @ initial
         offsets = np.cumsum([0] + [len(x) for x in samples])
         pairs = [initial_residual[a:b] for a, b in zip(offsets[:-1], offsets[1:], strict=True)]
-        numerator = sum(float(np.sum(r[1:] * r[:-1])) for r in pairs)
-        denominator = sum(float(np.sum(r[:-1] ** 2)) for r in pairs)
-        phi = float(np.clip(numerator / max(denominator, np.finfo(float).tiny), -0.95, 0.95))
-        D, Y, mean, row_cov, gram = solve(phi)
+        if noise_order is None:
+            numerator = sum(float(np.sum(r[1:] * r[:-1])) for r in pairs)
+            denominator = sum(float(np.sum(r[:-1] ** 2)) for r in pairs)
+            phi = float(np.clip(numerator / max(denominator, np.finfo(float).tiny), -0.95, 0.95))
+            noise_model = None
+            D, Y, mean, row_cov, gram = solve(phi)
+        else:
+            phi = None
+            noise_model = TemporalNoise.fit(pairs, order=noise_order, record_ids=ids,
+                                            fit_scope=fit_scope, startup_mode="stationary_innovations")
+            D, Y, mean, row_cov, gram = solve(noise_model)
         residual = Y - D @ mean
         effective_parameters = float(np.trace(gram @ row_cov))
         residual_df = len(Y) - 2 * len(records) - effective_parameters
@@ -259,8 +353,7 @@ class ContinuousDecisionModel:
         scale = max(float(np.trace(noise) / len(channels)),
                     float(np.mean(Y**2)) * np.finfo(float).eps, np.finfo(float).tiny)
         noise += np.eye(len(channels)) * scale * 1e-8
-        return cls(basis, mean, row_cov, noise, phi, sfreq, tuple(channels),
-                   tuple(candidate_ids), operator_identity, {
+        provenance = {
                        "fit_scope": fit_scope, "records": ledger, "ridge": float(ridge),
                        "implementation_sha256": _IMPLEMENTATION_SHA256,
                        "design_rank": int(np.linalg.matrix_rank(D)), "kernel_parameters_per_channel": p,
@@ -273,7 +366,20 @@ class ContinuousDecisionModel:
                        "hyperparameter_uncertainty_integrated": False,
                        "likelihood_assumptions": ["linear_event_superposition", "shared_class_noise",
                                                   "stationary_AR1", "complete_event_history"],
-                   })
+                   }
+        if noise_model is not None:
+            provenance.update(noise="segmented_Burg_AR_times_channel_covariance",
+                              noise_order=noise_model.order, startup_mode=noise_model.startup_mode,
+                              kernel_prior_scale="innovation", compute_dtype=_COMPUTE_DTYPE,
+                              noise_fit_passes=1, monotone_likelihood_optimization_claimed=False,
+                              likelihood_assumptions=["linear_event_superposition", "shared_class_noise",
+                                                      "stationary_shared_AR_spectrum", "complete_event_history"])
+        return cls(basis, mean, row_cov, noise, phi, sfreq, tuple(channels),
+                   tuple(candidate_ids), operator_identity, provenance, noise=noise_model)
+
+    @property
+    def noise_order(self):
+        return 1 if self.noise is None else self.noise.order
 
     def score(self, samples, onsets, membership, *, operator_identity, sfreq, channels,
               candidate_ids, record_id):
@@ -283,6 +389,8 @@ class ContinuousDecisionModel:
         all response-generating events; unknown adjacent decisions must be
         handled by the caller or excluded by predeclared support. No state is
         updated. No oracle kernel or Gamma is accepted by this interface.
+        log_evidence omits constants shared by this record's candidates; it
+        supports candidate normalization, not cross-model marginal evidence.
         """
         self.assert_integrity()
         if operator_identity != self.operator_identity:
@@ -304,24 +412,33 @@ class ContinuousDecisionModel:
             raise ValueError("every event must flash a proper nonempty candidate subset")
         if np.any(member.sum(axis=0) == 0):
             raise ValueError("missing candidate evidence: refuse incomplete decision")
-        Y = _whiten_and_project(X, self.phi)
+        transform = (_stationary_transform(self.noise, len(X)) if self.noise is not None
+                     else lambda value: _whiten_and_project(value, self.phi))
+        Y = transform(X)
         spatial_root = np.linalg.cholesky(self.innovation_covariance)
         kernel_root = np.linalg.cholesky(self.kernel_row_covariance)
         evidence = []
         for candidate in range(len(self.candidate_ids)):
             design = _event_design(onsets, member[:, candidate], len(X), self.basis)
-            D = _whiten_and_project(design, self.phi)
+            D = transform(design)
             residual = Y - D @ self.kernel_mean
             residual = solve_triangular(spatial_root, residual.T, lower=True).T
             U = D @ kernel_root
             small = np.eye(U.shape[1]) + U.T @ U
             root = np.linalg.cholesky(small)
             projected = solve_triangular(root, U.T @ residual, lower=True)
-            mahalanobis = float(np.sum(residual**2) - np.sum(projected**2))
-            if mahalanobis < -1e-8 * max(1., float(np.sum(residual**2))):
-                raise ValueError("unstable Gaussian covariance solve")
+            if self.noise is None:
+                mahalanobis = float(np.sum(residual**2) - np.sum(projected**2))
+                if mahalanobis < -1e-8 * max(1., float(np.sum(residual**2))):
+                    raise ValueError("unstable Gaussian covariance solve")
+                mahalanobis = max(0., mahalanobis)
+            else:
+                # Equivalent Woodbury quadratic as a sum of squares avoids
+                # subtracting two nearly equal, large signal energies.
+                coefficient = solve_triangular(root.T, projected, lower=False)
+                mahalanobis = float(np.sum((residual - U @ coefficient)**2) + np.sum(coefficient**2))
             logdet = len(self.channels) * 2 * float(np.log(np.diag(root)).sum())
-            evidence.append(-0.5 * (max(0., mahalanobis) + logdet))
+            evidence.append(-0.5 * (mahalanobis + logdet))
         evidence = np.asarray(evidence)
         probability = np.exp(evidence - logsumexp(evidence))
         best = int(np.argmax(evidence))
@@ -333,12 +450,17 @@ class ContinuousDecisionModel:
                                         array_digest(X, onsets, member))
 
     def _metadata(self):
-        return {"schema": "n2p3_continuous_decision_model/2", "phi": self.phi,
-                "sfreq": self.sfreq, "channels": self.channels,
+        state = {key: getattr(self, key) for key in _STATE_KEYS}
+        metadata = {"sfreq": self.sfreq, "channels": self.channels,
                 "candidate_ids": self.candidate_ids, "operator_identity": self.operator_identity,
                 "provenance": self.provenance,
-                "state_sha256": array_digest(self.basis, self.kernel_mean,
-                                              self.kernel_row_covariance, self.innovation_covariance)}
+                "state_sha256": array_digest(*state.values())}
+        if self.noise is None:
+            metadata.update(schema="n2p3_continuous_decision_model/2", phi=self.phi)
+        else:
+            metadata.update(schema="n2p3_continuous_decision_model/3", noise=self.noise.record(),
+                            state_dtypes={key: value.dtype.str for key, value in state.items()})
+        return metadata
 
     def assert_integrity(self):
         if metadata_digest(self._metadata()) != self._integrity_sha256:
@@ -346,9 +468,7 @@ class ContinuousDecisionModel:
 
     def save(self, path):
         self.assert_integrity()
-        state = {"basis": self.basis, "kernel_mean": self.kernel_mean,
-                 "kernel_row_covariance": self.kernel_row_covariance,
-                 "innovation_covariance": self.innovation_covariance}
+        state = {key: getattr(self, key) for key in _STATE_KEYS}
         metadata = self._metadata()
         metadata["artifact_sha256"] = metadata_digest(metadata)
         path = Path(path)
@@ -360,14 +480,19 @@ class ContinuousDecisionModel:
     def load(cls, path):
         with np.load(path, allow_pickle=False) as archive:
             metadata = json.loads(str(archive["metadata"]))
-            state = [archive[key] for key in ("basis", "kernel_mean", "kernel_row_covariance",
-                                             "innovation_covariance")]
-        if metadata.get("schema") != "n2p3_continuous_decision_model/2":
+            state = [archive[key] for key in _STATE_KEYS]
+        schema = metadata.get("schema")
+        if schema not in {"n2p3_continuous_decision_model/2", "n2p3_continuous_decision_model/3"}:
             raise ValueError("unsupported continuous decision model schema")
         expected = metadata.pop("artifact_sha256", None)
         if expected != metadata_digest(metadata):
             raise ValueError("continuous model metadata digest mismatch")
         if array_digest(*state) != metadata.get("state_sha256"):
             raise ValueError("continuous model state digest mismatch")
-        return cls(*state, metadata["phi"], metadata["sfreq"], tuple(metadata["channels"]),
-                   tuple(metadata["candidate_ids"]), metadata["operator_identity"], metadata["provenance"])
+        explicit_ar = schema == "n2p3_continuous_decision_model/3"
+        if explicit_ar and (metadata.get("state_dtypes") != dict.fromkeys(_STATE_KEYS, _COMPUTE_DTYPE)
+                            or any(value.dtype.str != _COMPUTE_DTYPE for value in state)):
+            raise ValueError("continuous AR artifact requires its exact float64 state dtype")
+        noise = TemporalNoise.from_record(metadata["noise"]) if explicit_ar else None
+        return cls(*state, None if explicit_ar else metadata["phi"], metadata["sfreq"], tuple(metadata["channels"]),
+                   tuple(metadata["candidate_ids"]), metadata["operator_identity"], metadata["provenance"], noise=noise)

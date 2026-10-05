@@ -1,0 +1,240 @@
+"""Fit real calibration experts and freeze their label-free candidate scoring."""
+
+from __future__ import annotations
+
+import hashlib
+import io
+import json
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+
+from data.identity import DatasetIdentityTable, source_dataset_ids_from_identity
+from models.candidate_evidence import (
+    CandidateEvidence,
+    CandidateExpertIdentity,
+    membership_decision_scores,
+)
+from research.contracts import semantic_sha256
+from research.execution import atomic_write_json
+from transfer.calibration_candidates import fit_calibration_candidate
+from transfer.calibration_state import FrozenTrialPredictor
+from transfer.checkpoint import PreparedTransferCheckpoint
+from transfer.continuous_decision import (
+    CalibrationRecord,
+    ContinuousDecisionModel,
+    smooth_erp_basis,
+)
+from transfer.ensemble import EnsembleProgram, EnsembleScorer
+from transfer.ensemble_views import (
+    CalibrationSelection,
+    PredictionDecisionView,
+    SelectionEpochProfile,
+    build_calibration_epoch_dataset,
+)
+from transfer.noise_model import array_digest
+from transfer.recipes import TargetRecipe
+
+FITTED_ENSEMBLE_SCHEMA = "n2p3_fitted_candidate_ensemble/1"
+
+
+@dataclass(frozen=True)
+class CalibrationExpertProgram:
+    expert_id: str
+    family: str
+    recipe: TargetRecipe | None = None
+    profile: SelectionEpochProfile | None = None
+    noise_order: int = 8
+    ridge: float = 1.
+    response_seconds: float = 1.2
+    n_basis: int = 8
+
+    def __post_init__(self):
+        if not self.expert_id or self.family not in {"trial", "continuous_ar"}:
+            raise ValueError("calibration expert requires an explicit ID and supported family")
+        if self.family == "trial" and (self.recipe is None or self.profile is None):
+            raise ValueError("trial expert requires one target recipe and actual epoch profile")
+        if self.family == "continuous_ar" and (self.recipe is not None or self.profile is not None):
+            raise ValueError("continuous expert consumes native raw, without an epoch recipe or profile")
+
+    def record(self):
+        return {"expert_id": self.expert_id, "family": self.family,
+                "recipe": None if self.recipe is None else self.recipe.record(),
+                "profile": None if self.profile is None else self.profile.record(),
+                "noise_order": self.noise_order, "ridge": self.ridge,
+                "response_seconds": self.response_seconds, "n_basis": self.n_basis}
+
+    @classmethod
+    def from_record(cls, record):
+        values = dict(record)
+        values["recipe"] = None if values["recipe"] is None else TargetRecipe(**values["recipe"])
+        values["profile"] = None if values["profile"] is None else SelectionEpochProfile.from_record(values["profile"])
+        return cls(**values)
+
+
+@dataclass
+class _FittedExpert:
+    program: CalibrationExpertProgram
+    predictor: FrozenTrialPredictor | ContinuousDecisionModel
+    model_digest: str
+    fit_digest: str
+    source_digest: str | None
+    logit_offset: float
+
+    def score(self, view: PredictionDecisionView):
+        if self.program.family == "trial":
+            epochs, mask, receipt = self.program.profile.transform(view)
+            logits = self.predictor.predict_logit(epochs, mask)
+            numerical_digest = receipt["numerical_input_digest"]
+            scores = membership_decision_scores(logits, view.decision, logit_offset=self.logit_offset)
+            identity = CandidateExpertIdentity(self.program.expert_id, numerical_digest,
+                self.model_digest, self.source_digest, self.fit_digest, scores.score_kind, False)
+            return CandidateEvidence.from_membership_scores(scores, view.decision,
+                participant_key=view.participant_key, decision_id=view.decision_id,
+                physical_support_digest=view.physical_support_digest, expert_identities=(identity,))
+        result = self.predictor.score(view.samples, view.onsets, view.decision.membership,
+            operator_identity="native_unfiltered_volts/1", sfreq=view.sample_rate_hz,
+            channels=view.channel_names, candidate_ids=view.decision.candidate_vocabulary,
+            record_id=view.record_id)
+        identity = CandidateExpertIdentity(self.program.expert_id, view.raw_input_digest,
+            self.model_digest, self.source_digest, self.fit_digest, "continuous_candidate_log_evidence", False)
+        counts = tuple(int(value) for value in view.decision.membership.sum(axis=0))
+        observed = tuple(int(value) for value in view.decision.membership[view.decision.evidence_indices >= 0].sum(axis=0))
+        return CandidateEvidence.from_log_evidence(result.log_evidence,
+            candidate_vocabulary=view.decision.candidate_vocabulary, participant_key=view.participant_key,
+            decision_id=view.decision_id, physical_support_digest=view.physical_support_digest,
+            expert_identities=(identity,), evidence_level=view.decision.repetitions,
+            expected_event_counts=counts, observed_event_counts=observed)
+
+
+class FittedEnsemble:
+    """Own expert state, fit authority and one frozen mixture behind score(view)."""
+
+    def __init__(self, scorer, experts, training_receipts):
+        self.scorer = scorer
+        self._experts = tuple(experts)
+        self._training_receipts = tuple(training_receipts)
+        self.participant_key = self._training_receipts[0]["participant_key"]
+        if tuple(expert.program.expert_id for expert in self._experts) != scorer.program.expert_ids:
+            raise ValueError("frozen expert states differ from the declared roster")
+
+    def score_experts(self, view: PredictionDecisionView):
+        if view.participant_key != self.participant_key:
+            raise ValueError("personal ensemble cannot score another participant identity")
+        for receipt in self._training_receipts:
+            if view.record_id == receipt["record_id"] or view.raw_input_digest == receipt["raw_input_digest"]:
+                raise ValueError("ensemble prediction repeats a calibration observation")
+            if view.source_sha256 == receipt["source_sha256"] and (
+                view.raw_scope[0] < receipt["raw_scope"][1] and view.raw_scope[1] > receipt["raw_scope"][0]
+            ):
+                raise ValueError("ensemble prediction raw support overlaps calibration")
+        return {expert.program.expert_id: expert.score(view) for expert in self._experts}
+
+    def score(self, view: PredictionDecisionView):
+        return self.scorer.score(self.score_experts(view))
+
+    def save(self, directory: str | Path):
+        directory = Path(directory)
+        directory.mkdir(parents=True, exist_ok=False)
+        entries = []
+        for index, expert in enumerate(self._experts):
+            filename = f"expert_{index:03d}." + ("pt" if expert.program.family == "trial" else "npz")
+            path = directory / filename
+            expert.predictor.save(path)
+            entries.append({"program": expert.program.record(), "model": filename,
+                "model_file_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                "model_digest": expert.model_digest, "fit_digest": expert.fit_digest,
+                "source_digest": expert.source_digest, "logit_offset": expert.logit_offset})
+        record = {"schema": FITTED_ENSEMBLE_SCHEMA, "program": self.scorer.program.record(),
+                  "experts": entries, "training_receipts": list(self._training_receipts)}
+        atomic_write_json(directory / "ensemble.json", {"record": record, "record_sha256": semantic_sha256(record)})
+        return directory
+
+    @classmethod
+    def load(cls, directory: str | Path):
+        directory = Path(directory)
+        payload = json.loads((directory / "ensemble.json").read_bytes())
+        record = payload["record"]
+        if semantic_sha256(record) != payload["record_sha256"] or record["schema"] != FITTED_ENSEMBLE_SCHEMA:
+            raise ValueError("frozen ensemble manifest changed or has an unsupported schema")
+        experts = []
+        for entry in record["experts"]:
+            program = CalibrationExpertProgram.from_record(entry["program"])
+            path = directory / entry["model"]
+            if path.resolve().parent != directory.resolve():
+                raise ValueError("frozen ensemble model path escapes its package")
+            if hashlib.sha256(path.read_bytes()).hexdigest() != entry["model_file_sha256"]:
+                raise ValueError("frozen ensemble model bytes changed")
+            predictor = (FrozenTrialPredictor.load(path) if program.family == "trial"
+                         else ContinuousDecisionModel.load(path))
+            experts.append(_FittedExpert(program, predictor, entry["model_digest"], entry["fit_digest"],
+                                         entry["source_digest"], entry["logit_offset"]))
+        return cls(EnsembleScorer(EnsembleProgram.from_record(record["program"])), experts, record["training_receipts"])
+
+
+def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProgram, *,
+                             source_checkpoints=None, device="cpu"):
+    """Fit only supplied authorized groups; no prediction data or truth is accepted."""
+    calibration = tuple(calibration)
+    expert_programs = tuple(expert_programs)
+    if not calibration or any(not isinstance(group, CalibrationSelection) for group in calibration):
+        raise ValueError("ensemble fitting requires authorized CalibrationSelection groups")
+    if tuple(spec.expert_id for spec in expert_programs) != program.expert_ids:
+        raise ValueError("fit programs must match the frozen ensemble roster and order")
+    participant = calibration[0].view.participant_key
+    vocabulary = calibration[0].view.decision.candidate_vocabulary
+    if any(group.view.participant_key != participant or group.view.decision.candidate_vocabulary != vocabulary
+           for group in calibration):
+        raise ValueError("ensemble calibration requires one participant and frozen candidate task")
+    for index, left in enumerate(calibration):
+        for right in calibration[index + 1:]:
+            if left.view.record_id == right.view.record_id or left.view.raw_input_digest == right.view.raw_input_digest:
+                raise ValueError("calibration groups repeat the same physical observation")
+            if left.view.source_sha256 == right.view.source_sha256 and (
+                left.view.raw_scope[0] < right.view.raw_scope[1] and right.view.raw_scope[0] < left.view.raw_scope[1]
+            ):
+                raise ValueError("calibration group raw scopes overlap")
+    sources = {} if source_checkpoints is None else dict(source_checkpoints)
+    if set(sources) - set(program.expert_ids):
+        raise ValueError("source checkpoint declaration contains an undeclared expert")
+    receipts = [dict(group.view.record()) for group in calibration]
+    fit_inputs = [group.record() for group in calibration]
+    experts = []
+    for spec in expert_programs:
+        source_digest = None
+        if spec.family == "trial":
+            data = build_calibration_epoch_dataset(calibration, spec.profile)
+            source_trunk = source_stats = None
+            if spec.expert_id in sources:
+                content = Path(sources[spec.expert_id]).read_bytes()
+                prepared = PreparedTransferCheckpoint(io.BytesIO(content), data)
+                source_identity = DatasetIdentityTable.from_payload(prepared.payload["training_identity_ledger"])
+                if set(source_dataset_ids_from_identity(source_identity)) & set(source_dataset_ids_from_identity(data.identity_table)):
+                    raise ValueError("ensemble source must exclude the complete target study")
+                source_trunk = prepared.trunk_for_target(data.subject_ids[0])
+                source_stats = prepared.input_statistics
+                source_digest = hashlib.sha256(content).hexdigest()
+            fitted = fit_calibration_candidate(data, spec.recipe, np.ones(data.n_epochs, dtype=bool),
+                source_trunk=source_trunk, source_input_stats=source_stats, device=device)
+            predictor = FrozenTrialPredictor.from_fitted(fitted)
+            model_digest = predictor.digest()
+            prior = float(data.y.mean())
+            offset = (0. if fitted.adapter is not None else float(np.log(prior / (1 - prior))))
+        else:
+            view = calibration[0].view
+            records = [CalibrationRecord(group.view.record_id, group.view.samples,
+                        group.view.onsets, group.labels) for group in calibration]
+            predictor = ContinuousDecisionModel.fit(records, sfreq=view.sample_rate_hz,
+                channels=view.channel_names, candidate_ids=vocabulary,
+                operator_identity="native_unfiltered_volts/1", noise_order=spec.noise_order,
+                ridge=spec.ridge, basis=smooth_erp_basis(view.sample_rate_hz,
+                    response_seconds=spec.response_seconds, n_basis=spec.n_basis))
+            model_digest = semantic_sha256({"basis_kernel_noise_arrays": array_digest(predictor.basis,
+                predictor.kernel_mean, predictor.kernel_row_covariance, predictor.innovation_covariance),
+                "noise": predictor.noise.record(), "provenance": predictor.provenance})
+            offset = 0.
+        fit_digest = semantic_sha256({"program": spec.record(), "authorized_calibration": fit_inputs,
+                                     "source_checkpoint_sha256": source_digest})
+        experts.append(_FittedExpert(spec, predictor, model_digest, fit_digest, source_digest, offset))
+    return FittedEnsemble(EnsembleScorer(program), experts, receipts)
