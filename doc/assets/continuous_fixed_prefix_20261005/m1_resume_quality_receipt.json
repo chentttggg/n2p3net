@@ -1,0 +1,78 @@
+{
+  "schema": "n2p3_m1_resume_quality_receipt/1",
+  "evidence_scope": "software_correctness",
+  "full_suite_before_relative_path_delta": {
+    "counts": {
+      "tests": 2586,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 19,
+      "passed": 2567
+    },
+    "source_file_count": 396,
+    "source_bytes_unchanged": true,
+    "runner_sha256": "3a9f361661f81d9a1ed91475a08542d4a71a40e10a6a71dd2e26235ed8437411",
+    "process_exit_code": 0,
+    "receipt_sha256": "de68571d883e122e43ddff77c76176094a71624e9c41649350abc31d650a9c1f"
+  },
+  "relative_path_delta_verification": {
+    "counts": {
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 25
+    },
+    "process_exit_code": 0,
+    "raw_xml_sha256": "848fdbff543ad6ba5e505bd522bb1de9408c8cf352032f682348bbaf817a780a"
+  },
+  "final_runtime_and_test_sha256": {
+    "experiments/run_candidate_ensemble_study.py": "284a93189e75352e8b2deaad246bfde72fd065843b1d5ef0818fda2b53745466",
+    "tests/research/test_candidate_ensemble_study.py": "c113127fe229dc772a25d5b1e780d34c820ea66bf31389f775249357739a1003",
+    "tests/research/test_candidate_study_process_transport.py": "5687eb4211d2700eb9311eb8686bad3fb1e3f7bf4f3b94d28bc1a08164b5b980",
+    "experiments/boundary_state_research.py": "7a2f8c0cea5f01f1dac9f69d535160647c0ecc33b6d9c96a476a9a67bdcb3e04",
+    "tests/research/test_boundary_full_map.py": "a0d758025fa92fd53ba1f8c88002ac22e9337bf9a4f5243e625f912768d4e8be"
+  },
+  "original_package_admission": {
+    "packages": 143,
+    "original_run_completed_participants": 1,
+    "original_run_parent_exit_code": 1,
+    "no_refit_during_admission": true,
+    "old_parent_status": "failed"
+  },
+  "matrix_status": "not_complete_at_receipt",
+  "limits": [
+    "full suite and final path delta are different source versions",
+    "public-development efficacy and adult confirmation are separate",
+    "B06 native affine-map reference is not deployment-state fitting"
+  ],
+  "Standards": {
+    "result": "passed",
+    "remaining_verified_findings": 0,
+    "related_counts": {
+      "tests": 26,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "actual_spawn_resume_receipt_sha256": "46b7641ec3789278d4e46a635f6f94faf706590cb6a070c83b1dbd711390e7a0",
+    "related_xml_sha256": "fb518ad0cda8ae4a0033e7d7f8f48d169d50cd1d4e63ae8650905465c49dc2ee",
+    "scope": "independent M1 runner transport and resume; B06 author not independently reviewed by this axis",
+    "final_independent_receipt_sha256": "3e979d01bf4b0fff58ab7dfb2a576c549020ef8e3555a52a3538f5e39d752690"
+  },
+  "Spec": {
+    "result": "passed",
+    "review": "primary integration requirement review",
+    "scope": [
+      "complete 576 logical cells remains required",
+      "same src bytes and scientific/resource plan for cache",
+      "old producer and new scoring source separated",
+      "143 packages independently admitted before resume",
+      "immutable originals and typed failed/missing support retained"
+    ],
+    "limits": [
+      "M1 efficacy not yet complete",
+      "B06 is native finite-map measurement, not deployed boundary fitting"
+    ]
+  }
+}

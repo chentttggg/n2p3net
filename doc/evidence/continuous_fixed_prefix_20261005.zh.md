@@ -62,3 +62,17 @@ M1固定8人×6fold×六阶×两估计器，共576fit、每臂48个requested dec
 本轮为单seed、target-only、公开校准开发。Windows本机venv为CPU-only Torch，未云端启动；云端25CPU/4GPU下限不改写成本地声明。M1需完整结束、核实际source/输入/覆盖/失败与participant-macro配对hit/NLL/Brier后另更新实测结论；四库/完整source→target seed、gating、其它机制与成人确认继续原依赖图。
 
 M1已从上述materialized源码启动，命令/venv/原输入/plan SHA、资源快照与actual worker采样保存在本地`tmp/continuous_fixed_prefix_20261005/m1_20261006/`。该目录的完整终态、失败与风险结果另更新，进程启动不算矩阵验收。
+
+## 2026-10-06：真实进程缺陷、包复用与续跑验收
+
+第一次M1运行980.258秒后父进程exit1，错误为`BrokenProcessPool`。原worker的冻结元数据在pickle恢复时触发`TypeError: fitted metadata is frozen`；这不是拟合失败或完整矩阵结果。A02完整72格写盘，A01没有最终record但保存71包；父账本completed_subjects=0。独立按旧冻结源核验全部143包，program、600训练/120held/80unused、原manifest/model SHA、实际fit_digest与公开score重放通过，原件前后SHA不变。
+
+修复将worker结果限定为已保存JSON的plain记录，内部state继续只读；真实双进程MAT入口在旧版先失败、修复后通过，14项关联检查通过。续跑使用[独立续跑计划](../assets/continuous_fixed_prefix_20261005/m1_resume_plan.json)，重新执行全部576逻辑cell，复用143个已验证包、剩433次新fit尝试。复用要求旧/新物理source freeze通过、每份`src/*.py`实际byte完全相同，科学/输入/资源计划一致；runner调度/通信来源另记。逐包重新核program、训练view和标签fit_digest、原model bytes，复制原byte后load/score/reload；未完成包新fit，完整但错误包拒绝且不fallback。每格保留physical attempt/success/reuse、原producer source与本轮score source，不重签原模型。
+
+独立Standards另以合成真实包复现绝对model路径在拒绝前写到原件的问题；已在任何copy前限定relative basename并核destination parent，原byte与mtime均须不变。该发现和RED原样保留，不把先前通过解释为无进程或路径缺陷。
+最终路径delta及真实双进程入口25项通过；紧凑源/验证分组见[续跑软件凭证](../assets/continuous_fixed_prefix_20261005/m1_resume_quality_receipt.json)。
+独立Standards最终26项通过，无剩余已验证发现；原件实际write probe为0写入且mtime不变。另在真实双进程冷启动的合成resume入口复用4包、0次新fit、4次精确重放并传回plain JSON，原run所有byte/mtime不变。主线Spec核对完整576格、同src/配方/资源、来源分列和失败分母通过；两轴只确认实现，完整M1效能继续另验。
+
+通信/续跑及B06完整映射的稳定候选上，完整pytest为2567通过、19跳过、0失败/错误，共2586项；396个受检源/测试/依赖文件前后byte不变，runner为`3a9f361661f81d9a1ed91475a08542d4a71a40e10a6a71dd2e26235ed8437411`。后续路径修复另有定向及独立复验，不能将该全集重新标为修复后执行。
+
+第一次完整participant运行测得双worker RSS峰值1812799488字节，系统available最低129716224字节，实际CPU阶段波动；不将此前公平数值窗口的23.4%收益包装成此受共享内存压力影响的总吞吐。续跑入场提高到available至少4GB，仍为2×4，保留实际资源日志。完整M1结束后才进行participant-macro风险与全部失败/来源验收；[分析计划](../assets/continuous_fixed_prefix_20261005/m1_analysis_plan.json)固定8人cluster、20000次共享bootstrap与完整48概率缺失规则。

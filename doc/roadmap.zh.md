@@ -9,6 +9,7 @@ B04source/scratch及B05显式AR研究入口，[独立质量评估](evidence/ense
 后续[B05 fixed32实施](evidence/continuous_fixed_prefix_20261005.zh.md)已接真实joint条件模型、稳定QR、精确梯度及M1匹配入口；真实A01的AR8/32拟合及重放已通过，完整矩阵另验收。
 M1使用[冻结计划](assets/continuous_fixed_prefix_20261005/m1_plan.json)：8人×6完整selection folds×6阶×2估计器，共576fit；C800中720标签形成六组，每fold600训练/120held，80标签不用。
 本地测得2participant workers×4threads为可行拓扑；所有12臂均执行、失败保留requested分母，不从单次探针选阶。该单seed target-only校准开发不称三完整source→target seed或成人确认。
+真实首轮因IPC父失败，143个原包已核验；[续跑计划](assets/continuous_fixed_prefix_20261005/m1_resume_plan.json)保持576逻辑格，复用来源与433新fit尝试另记，完整指标未完成前不晋升。
 
 1. B00评价/选择、B01信号/支持先固定；B02专家Interface、B03C内概率校准、B04神经/matched scratch构成主线。
 2. B05AR、B06边界、B07字典、B08先验、B09空间、B10输入算子在B00/B01后并行；B11动态/稳健模型按识别前置进入。
@@ -24,6 +25,7 @@ M1使用[冻结计划](assets/continuous_fixed_prefix_20261005/m1_plan.json)：8
 [源码与数学核对](evidence/boundary_state_redesign_20261005.zh.md)已确认双端 B 为 `(N,4×SOS节数)`、现有 ERP 保护字典独立于 SelectionERP、C800 按原 MAT 哈希和合法 scopes 重建。
 `experiments/boundary_state_research.py` 已提供共同网格诊断、ERP 输出软约束、距离 schedule、矩阵正态 gauge 参考与 E1–E3 计划生成；未改生产或执行新公开矩阵。
 后续先完善完整校正映射的独立 ERP 注入/白噪声指标，再按训练内分组选择执行 E1–E3；重叠率 0.5、hit 0.75 和 NLL 7.167 仅为待验证筛查候选，不作为效能晋升门。
+上述完整映射测量已落实为`FrozenShortBoundaryMap`、`evaluate_complete_map`和原`BoundaryStateAnalysis.compute`的supplied-map路径；36项关联测试通过，原teacher-only路径保持不可用指标。它是native crop的有限参考，不是已拟合部署state；完整最终预处理T、条件mean/Schur、E1–E3仍待分别验收。
 Kalman 路线先完成 observability、状态/噪声辨识及 filtering/smoothing 可用时间合同。旧 repair3 与 Phase 4 账本保持原执行身份。
 
 ## 2026-10-04 冻结后实施与下一轮科研

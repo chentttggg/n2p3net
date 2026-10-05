@@ -11,6 +11,7 @@ AR显式阶数使用stationary innovations且同步Y/D；[fixed32条件估计量
 g-prior信息矩阵来自授权C，不逐held候选重建。外部状态Gaussian条件模型同时使用候选相关均值
 与Schur协方差；确定padding和F(X)不能当新增独立噪声/观测。
 ERP保真与white-noise gain来自完整T映射；输出重叠率和0/2/8秒距离仅作研究分层，不是启用规则。
+研究框架现显式表达native `T(x)=Gx+b`；注入/white-noise增量只用G，短及输出网格为sample×physical-channel。external-only注入的短参照为零时relative error不可用；不能改flatten顺序或用输出投影条件数代替完整G的增益/condition。
 
 fixed32同一个full-record W作用于Y/D/Z，所有C prefix联合更新共享kernel及各record drift，再只以tail的条件joint密度优化AR/Σ；Σ profile分母为实际tail行数，不减旧GLS df。
 最终kernel posterior读完整授权C，不能写成kernel只用tail。AR0只是不使用noise Markov history，仍可通过prefix更新kernel/drift。

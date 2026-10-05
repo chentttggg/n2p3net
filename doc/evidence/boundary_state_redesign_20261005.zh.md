@@ -2,6 +2,20 @@
 
 日期：2026-10-05。范围是研究设计与 `experiments/` 独立框架；本轮不修改 `src/`，不运行新的公共效能矩阵，不晋升生产配方。用户附件中的公式与数值作为待核对输入，历史结论仍绑定原执行源码。本记录承接[算子复核](operator_research_20261004.zh.md)及[Phase 4](../assets/operator_research_20261004/phase4_report.zh.md)。
 
+2026-10-06追加实施：完整映射的独立增量与白噪声测量已接公开研究入口，以下新验收不重标此前Phase 4历史成绩。`src/`及M1数学源保持不变。
+
+## 2026-10-06：可执行的完整T测量
+
+`FrozenShortBoundaryMap`持有明确FiniteFilterOperator、短/输出绝对sample scope、native sfreq、physical channel顺序、reference、unit、提供参数来源ID及不可变K/b。native crop基线为A，映射为`T(x)=Gx+b=(A+K)x+b`；byte-backed参数、基线和完整G不可变，dense参考导出有总字节预算。`apply(short_samples)`只接短观测，不接长上下文、标签或oracle。参数来源字符串不签发C授权；本slice不拟合部署state，也不覆盖工作站最终FFT/resample/reference映射。
+
+公开`evaluate_complete_map`及原`BoundaryStateAnalysis.compute(...frozen_map=...)`计算独立注入的`T(x+h)-T(x)=Gh`，分别参照真实短增量`Ah_short`与长观测teacher的`R F_long h_full`。两类relative error、最大误差、signed channel peak、有效潜伏期及面积差保留；挑战的latency/width/sign/topography独立于保护字典。未提供实际map时原teacher-only路径保持不可用指标，不从overlap或held成绩选penalty。
+
+完整白噪声mean-relative gain为`||G||F²/||A||F²`，worst-absolute为`||G||2²`；另报rank与identified-range condition。affine b不进入噪声或ERP增量。short/long参照为零时relative error为null且请求仍在账本；external-only注入的short增量为0、E_short未定义、E_long=1，零波形潜伏期也不可用。输出保护矩阵的condition不代替完整G指标。
+
+反例验证先在旧HEAD独立源上运行新增测试，15项失败（能力未实施）；当前新15项、旧框架11项及finite operator10项共36通过，2.27秒，Ruff与diff check通过。实际experiment SHA为`7a2f8c0cea5f01f1dac9f69d535160647c0ecc33b6d9c96a476a9a67bdcb3e04`，新test SHA为`a0d758025fa92fd53ba1f8c88002ac22e9337bf9a4f5243e625f912768d4e8be`。后续主树完整测试2567通过、19跳过，其396-file byte guard不变；精确源与时间见[同期运行验收](continuous_fixed_prefix_20261005.zh.md)。原始patch、JSON、JUnit与命令收据在本地`tmp/boundary_implementation_20261006/`，范围是研究参考测量，不是已恢复不可观测边界或新公共效能。
+
+独立阅读另确认原`probe_constraint_pareto.py`注入中一个布局错位：训练首64 feature按channel×8feature展开，而独立注入首64用feature×channel展开；Pz-only例预期非零16–23，旧表达为2/10/18/…/58，L2差19.7484。因此旧soft Pareto的该ERP corrected-error不能作为新完整T的黄金数值。原历史文件/结果保留，noise路径及另一probe的首块布局未被该发现推翻；新map明确sample×physical-channel并以完整增量验证。条件raw的候选相关mean/Schur、未知state辨识和部署拟合继续后续切片。
+
 ## 1. 三个实现前提的答案
 
 | 问题 | 当前源码与产物的答案 | 本轮实施选择 |

@@ -221,3 +221,165 @@ def test_matched_source_controls_bind_frozen_architecture_before_any_fit(tmp_pat
     checkpoint.write_bytes(b"replaced after freeze")
     assert snapshot.digest == hashlib.sha256(snapshot.content).hexdigest()
     assert snapshot.content != checkpoint.read_bytes()
+
+
+def package_resume_fixture(tmp_path):
+    import io
+    import tarfile
+
+    import experiments.run_candidate_ensemble_study as runner
+
+    plan_path = study_plan(tmp_path)
+    plan = json.loads(plan_path.read_bytes())
+    raw = replace(CalibrationExpertProgram.from_record(plan["experts"][0]),
+                  expert_id="ar0_burg", conditioning_samples=32)
+    plan.update(experts=[raw.record()], mixtures=[EnsembleProgram.equal_weights("ar0_burg", ("ar0_burg",)).record()],
+                baseline_mixture="ar0_burg", comparison_role="fixed_prefix_ar_order")
+    source = runner._executing_source()
+
+    def physical_freeze(name, root):
+        freeze = tmp_path / name
+        freeze.mkdir()
+        paths = [*(runner.ROOT / "src").rglob("*.py"), *(runner.ROOT / "experiments").glob("*.py"),
+                 runner.ROOT / "pyproject.toml", runner.ROOT / "uv.lock"]
+        content = {path.relative_to(runner.ROOT).as_posix(): path.read_bytes() for path in paths}
+        archive = freeze / "source.tar.gz"
+        with tarfile.open(archive, "w:gz") as handle:
+            for relative, data in content.items():
+                info = tarfile.TarInfo(relative)
+                info.size = len(data)
+                handle.addfile(info, io.BytesIO(data))
+                if root != runner.ROOT:
+                    target = root / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(data)
+        payload = {"schema": "n2p3_source_freeze/1", "source_commit": "a" * 40,
+                   "archive": archive.name, "archive_sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+                   "byte_size": archive.stat().st_size, "member_count": len(content),
+                   "files": {path: hashlib.sha256(data).hexdigest() for path, data in content.items()}}
+        path = freeze / "manifest.json"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return path, payload
+
+    old_root = tmp_path / "old_checkout"
+    old_manifest, old_freeze = physical_freeze("old_freeze", old_root)
+    new_manifest, _ = physical_freeze("new_freeze", runner.ROOT)
+    old_plan = {**plan, "source_snapshot_manifest": str(old_manifest), "ar_panel": None,
+                "matched_controls": [], "source_checkpoint_sha256": {}}
+    old_run = tmp_path / "old_run"
+    old_run.mkdir()
+    (old_run / "plan.json").write_text(json.dumps(old_plan), encoding="utf-8")
+    (old_run / "executed_source.json").write_text(json.dumps(source), encoding="utf-8")
+    runner._subject(old_plan["records"][0], old_plan, old_run / "participant_000", source, {})
+    (old_run / "progress.json").write_text(json.dumps({"status": "failed", "completed_subjects": 0}), encoding="utf-8")
+    input_plan = old_root / "input_plan.json"
+    input_plan.write_text(json.dumps(old_plan), encoding="utf-8")
+    execution_path = tmp_path / "original_execution.json"
+    execution_path.write_text(json.dumps({"executed_root": str(old_root),
+        "argv": ["python", "--plan", str(input_plan), "--output", str(old_run)],
+        "plan_sha256": hashlib.sha256(input_plan.read_bytes()).hexdigest(),
+        "source": {"archive_sha256": old_freeze["archive_sha256"],
+                   "manifest_sha256": hashlib.sha256(old_manifest.read_bytes()).hexdigest()}}), encoding="utf-8")
+    normalized = {**old_plan, "source_snapshot_manifest": str(new_manifest), "resume": {
+        "schema": "n2p3_m1_package_resume/1", "original_run": str(old_run),
+        "original_plan_sha256": hashlib.sha256((old_run / "plan.json").read_bytes()).hexdigest(),
+        "original_executed_source_sha256": hashlib.sha256((old_run / "executed_source.json").read_bytes()).hexdigest(),
+        "original_execution": str(execution_path), "original_execution_sha256": hashlib.sha256(execution_path.read_bytes()).hexdigest(),
+        "original_source_manifest": str(old_manifest), "original_source_manifest_sha256": hashlib.sha256(old_manifest.read_bytes()).hexdigest(),
+        "original_source_archive_sha256": old_freeze["archive_sha256"]}}
+    return runner, normalized, old_run, source
+
+
+def test_fixed_prefix_resume_reuses_signed_packages_without_refitting(tmp_path, monkeypatch):
+    runner, plan, old_run, source = package_resume_fixture(tmp_path)
+    plan["resume_binding"] = runner._prepare_package_resume(plan, source)
+    original = {path.relative_to(old_run).as_posix(): path.read_bytes() for path in old_run.rglob("*") if path.is_file()}
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("reused package must not fit")
+
+    monkeypatch.setattr(runner, "fit_calibration_ensemble", forbidden)
+    result = runner._subject(plan["records"][0], plan, tmp_path / "new_participant", source, {})
+    assert len(result["predictions"]) == 2
+    for row in result["predictions"]:
+        assert row["fit_origin"]["kind"] == "reused_package"
+        assert row["fit_origin"]["physical_fit_attempts"] == row["fit_origin"]["physical_successful_fits"] == 0
+        assert row["fit_origin"]["reused_package_count"] == 1
+        assert row["fit_origin"]["producer_source_digest"] == runner.semantic_sha256(source)
+        assert row["score_source_digest"] == runner.semantic_sha256(source)
+        assert row["saved_replay_exact"]
+    assert original == {path.relative_to(old_run).as_posix(): path.read_bytes() for path in old_run.rglob("*") if path.is_file()}
+
+
+def test_fixed_prefix_resume_keeps_packages_when_subject_result_is_absent(tmp_path, monkeypatch):
+    runner, plan, old_run, source = package_resume_fixture(tmp_path)
+    (old_run / "participant_000/result.json").unlink()
+    plan["resume_binding"] = runner._prepare_package_resume(plan, source)
+    monkeypatch.setattr(runner, "fit_calibration_ensemble", lambda *args, **kwargs: pytest.fail("partial record package refit"))
+    result = runner._subject(plan["records"][0], plan, tmp_path / "new_participant", source, {})
+    assert all(row["fit_origin"]["reused_package_count"] == 1 for row in result["predictions"])
+
+
+@pytest.mark.parametrize("fail", [False, True])
+def test_fixed_prefix_resume_missing_manifest_executes_one_new_attempt(tmp_path, monkeypatch, fail):
+    from research.execution import ExpectedSubjectError, SubjectFailureCode
+
+    runner, plan, old_run, source = package_resume_fixture(tmp_path)
+    (old_run / "participant_000/seed23_fold1_expert0/ensemble.json").unlink()
+    plan["resume_binding"] = runner._prepare_package_resume(plan, source)
+    real_fit = runner.fit_calibration_ensemble
+    attempts = []
+
+    def one_new_fit(*args, **kwargs):
+        attempts.append(True)
+        if fail:
+            raise ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE, stage="fit", detail="software resume failure")
+        return real_fit(*args, **kwargs)
+
+    monkeypatch.setattr(runner, "fit_calibration_ensemble", one_new_fit)
+    result = runner._subject(plan["records"][0], plan, tmp_path / "new_participant", source, {})
+    assert len(attempts) == 1 and len(result["predictions"]) == len(result["requested"]) == 2
+    first, second = result["predictions"]
+    assert first["fit_origin"]["kind"] == "reused_package"
+    assert second["fit_origin"]["physical_fit_attempts"] == 1
+    assert second["fit_origin"]["physical_successful_fits"] == int(not fail)
+    assert second["fit_origin"]["reused_package_count"] == 0
+    assert second["fit_origin"]["kind"] == ("new_fit_failure" if fail else "new_fit")
+    assert second["saved_replay_exact"] is not fail
+    if fail:
+        assert second["evidence"]["failure_kind"] == "fit_failure"
+        assert second["continuous_score_support"]["ar0_burg"]["n_scored_samples"] == 0
+
+
+@pytest.mark.parametrize("change", ["plan", "src_bytes", "execution", "manifest", "scope", "model_bytes", "absolute_model_path"])
+def test_fixed_prefix_resume_rejects_changed_authority_without_fallback(tmp_path, change):
+    runner, plan, old_run, source = package_resume_fixture(tmp_path)
+    if change == "plan":
+        plan["authorized_labels"] = 801
+    elif change == "src_bytes":
+        source = {**source, "src/transfer/continuous_gradient.py": "f" * 64}
+    elif change == "execution":
+        plan["resume"]["original_execution_sha256"] = "f" * 64
+    elif change == "manifest":
+        plan["resume"]["original_source_manifest_sha256"] = "f" * 64
+    else:
+        package = old_run / "participant_000/seed23_fold0_expert0"
+        if change == "model_bytes":
+            path = package / "expert_000.npz"
+            path.write_bytes(path.read_bytes() + b"invalid")
+        else:
+            path = package / "ensemble.json"
+            payload = json.loads(path.read_bytes())
+            if change == "absolute_model_path":
+                model_path = package / payload["record"]["experts"][0]["model"]
+                model_before = (model_path.read_bytes(), model_path.stat().st_mtime_ns)
+                payload["record"]["experts"][0]["model"] = str(model_path.resolve())
+            else:
+                payload["record"]["training_receipts"][0]["participant_key"] = "other"
+            payload["record_sha256"] = runner.semantic_sha256(payload["record"])
+            path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError):
+        plan["resume_binding"] = runner._prepare_package_resume(plan, source)
+        runner._subject(plan["records"][0], plan, tmp_path / "new_participant", source, {})
+    if change == "absolute_model_path":
+        assert (model_path.read_bytes(), model_path.stat().st_mtime_ns) == model_before

@@ -5,6 +5,7 @@
 BrainSync日常入口仍消费已有CalibratedPredictor，不把公共36选一模型包当九选一工作站模型。
 后续[fixed32 raw条件模型](evidence/continuous_fixed_prefix_20261005.zh.md)属于该后端研究路径；prefix、真实过去事件与candidate prior按研究协议解释，尚未成为个人默认程序。
 该研究包绑定实际noise估计器、prefix支持、QR/gradient源码与求值记录；只读score和load不重新拟合noise、kernel或温度。真实A01重放通过仍只属公共开发软件证据。
+边界框架的short-only映射与完整增量测量仍是后端native-grid研究参考；工作站预处理、可部署state拟合和未知目标程序须另接完整时间/通道合同，不将observed-long teacher用于真实推理。
 未来统一个人包由现有calibrated owner保存各专家冻结状态、候选词表、校准/输入来源与概率校准程序，
 未知目标score不提供真值；K0不拟合目标温度/统计/gating。四库或BNCI36选一开发不能替代新成人九选一确认。
 

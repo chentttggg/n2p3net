@@ -84,6 +84,7 @@ CUDA实际拟合、保存重载及CLI推理验证见[执行计划](roadmap.zh.md
 fixed32 solver固定maxiter1000、maxcor32、eta_max8、ftol1e-10、gtol1e-6，CPU/float64 exact autograd；逐次求值及初末独立核对都计入真实账本。
 本地同输入数值窗口推荐2workers×4threads，实际约7.47核；比1×4吞吐高23.4%，双worker峰值约1.939GB。完整participant的内存、并发与总墙钟须在M1另测，不泛化为云吞吐。
 M1从物理冻结的materialized源码运行，绑定计划/原MAT哈希/venv；结束后核全部执行bytes。完整测试对应4b99源，计数修复e982源另有定向及独立复验，不混写测试版本。
+实际多进程egress消费已保存JSON record，冻结metadata/state不进入pickle协议。M1包续跑仅准入同src bytes与同科学/资源计划，先验证旧execution/physical freeze和relative包成员，再复制旧bytes；每格fit producer、实际fit/reuse与score来源分列，坏完整包不fallback。
 
 2026-10-05 [分块方案](evidence/deep_research_plan_20261005.zh.md)将123愿望映射到15块，
 实际研究入口/helper须一并冻结；旧Phase4凭证遗漏不能消费端补签。

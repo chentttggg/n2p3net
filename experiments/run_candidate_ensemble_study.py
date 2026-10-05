@@ -94,6 +94,129 @@ def _executing_source():
             for path in sorted(paths)}
 
 
+def _resume_plan_contract(plan):
+    return {key: value for key, value in plan.items()
+            if key not in {"source_snapshot_manifest", "resume", "resume_binding"}}
+
+
+def _bound_resume_json(path, expected_digest, name):
+    content = Path(path).read_bytes()
+    if hashlib.sha256(content).hexdigest() != expected_digest:
+        raise ValueError(f"original resume {name} bytes changed")
+    return json.loads(content)
+
+
+def _prepare_package_resume(plan, expected_source):
+    declaration = plan.get("resume")
+    if declaration is None:
+        return None
+    if (plan["comparison_role"] != "fixed_prefix_ar_order" or plan["calibration_strategy"] != "fixed"
+            or plan["source_checkpoints"] or any(row["family"] != "continuous_ar" for row in plan["experts"])):
+        raise ValueError("package resume is limited to fixed-prefix raw experts and fixed calibration")
+    required = {"schema", "original_run", "original_plan_sha256", "original_executed_source_sha256",
+                "original_execution", "original_execution_sha256", "original_source_manifest",
+                "original_source_manifest_sha256", "original_source_archive_sha256"}
+    if set(declaration) != required or declaration["schema"] != "n2p3_m1_package_resume/1":
+        raise ValueError("package resume requires an explicit complete original execution binding")
+    original_run = Path(declaration["original_run"]).resolve()
+    original_plan = _bound_resume_json(original_run / "plan.json", declaration["original_plan_sha256"], "plan")
+    original_source = _bound_resume_json(original_run / "executed_source.json",
+                                       declaration["original_executed_source_sha256"], "source")
+    execution = _bound_resume_json(declaration["original_execution"], declaration["original_execution_sha256"], "execution")
+    manifest = _bound_resume_json(declaration["original_source_manifest"],
+                                 declaration["original_source_manifest_sha256"], "manifest")
+    original_root = Path(execution["executed_root"]).resolve()
+    argv = execution["argv"]
+    if argv.count("--plan") != 1 or argv.count("--output") != 1:
+        raise ValueError("original execution must declare its actual input plan and output directory")
+    input_plan_path = Path(argv[argv.index("--plan") + 1]).resolve()
+    output_path = Path(argv[argv.index("--output") + 1]).resolve()
+    if (output_path != original_run
+            or hashlib.sha256(input_plan_path.read_bytes()).hexdigest() != execution["plan_sha256"]):
+        raise ValueError("original execution plan/output binding differs from the resumed run")
+    if json.loads((original_run / "progress.json").read_bytes())["status"] != "failed":
+        raise ValueError("package resume requires a terminated failed original parent run")
+    if _resume_plan_contract(original_plan) != _resume_plan_contract(plan):
+        raise ValueError("original resume plan differs in scientific, input or resource fields")
+    if (execution["source"]["archive_sha256"] != declaration["original_source_archive_sha256"]
+            or execution["source"]["manifest_sha256"] != declaration["original_source_manifest_sha256"]
+            or manifest["archive_sha256"] != declaration["original_source_archive_sha256"]
+            or Path(original_plan["source_snapshot_manifest"]).resolve()
+            != Path(declaration["original_source_manifest"]).resolve()):
+        raise ValueError("original execution and physical source freeze disagree")
+    original_freeze = verified_executed_snapshot(declaration["original_source_manifest"], root=original_root)
+    current_freeze = verified_executed_snapshot(plan["source_snapshot_manifest"], root=ROOT)
+    runtime_keys = {path.relative_to(original_root).as_posix() for path in (original_root / "src").rglob("*.py")}
+    runtime_keys.add("experiments/run_candidate_ensemble_study.py")
+    if set(original_source) != runtime_keys or set(original_source) != set(expected_source):
+        raise ValueError("resume execution source does not cover the complete actual runtime")
+    if any(original_source[name] != manifest["files"].get(name) for name in original_source):
+        raise ValueError("original execution source differs from its archived source")
+    mathematical_source = {name: digest for name, digest in expected_source.items() if name.startswith("src/")}
+    original_mathematical_source = {name: digest for name, digest in original_source.items() if name.startswith("src/")}
+    if mathematical_source != original_mathematical_source:
+        raise ValueError("resume requires every original src Python byte to remain unchanged")
+    return {"schema": "n2p3_m1_package_resume_binding/1", "original_run": str(original_run),
+            "original_execution_root": str(original_root), "original_execution_sha256": declaration["original_execution_sha256"],
+            "original_plan_sha256": declaration["original_plan_sha256"],
+            "original_executed_source_sha256": declaration["original_executed_source_sha256"],
+            "original_source_digest": semantic_sha256(original_source), "original_source_freeze": original_freeze,
+            "score_source_digest": semantic_sha256(expected_source), "score_source_freeze": current_freeze,
+            "executor_change_scope": "runner_transport_and_package_resume_only; all_src_bytes_identical"}
+
+
+def _reuse_frozen_package(binding, record_index, seed, fold, expert_index, spec, program, training, destination):
+    if binding is None:
+        return None, None
+    original = (Path(binding["original_run"]) / f"participant_{record_index:03d}"
+                / f"seed{seed}_fold{fold}_expert{expert_index}")
+    manifest_path = original / "ensemble.json"
+    if not manifest_path.is_file():
+        return None, None
+    manifest_bytes = manifest_path.read_bytes()
+    payload = json.loads(manifest_bytes)
+    record = payload["record"]
+    if semantic_sha256(record) != payload["record_sha256"] or len(record["experts"]) != 1:
+        raise ValueError("original resumed package manifest changed")
+    entry = record["experts"][0]
+    expected_fit = semantic_sha256({"program": spec.record(), "authorized_calibration": [group.record() for group in training],
+                                   "source_checkpoint_sha256": None, "checkpoint_role": None})
+    if (entry["program"] != spec.record() or record["program"] != program.record()
+            or record["training_receipts"] != [group.view.record() for group in training]
+            or entry["fit_digest"] != expected_fit or entry["source_digest"] is not None
+            or record["temperature_calibration"] != {"strategy": "fixed", "temperatures": {spec.expert_id: 1.}}):
+        raise ValueError("original resumed package program, labels or fit authority differs")
+    filename = entry["model"]
+    if not isinstance(filename, str) or not filename or Path(filename).name != filename or Path(filename).is_absolute():
+        raise ValueError("original resumed model must name one relative package member")
+    model_path = original / filename
+    if model_path.resolve().parent != original.resolve():
+        raise ValueError("original resumed model path escapes its package")
+    model_bytes = model_path.read_bytes()
+    if hashlib.sha256(model_bytes).hexdigest() != entry["model_file_sha256"]:
+        raise ValueError("original resumed model bytes changed")
+    model_destination = destination / filename
+    if model_destination.resolve().parent != destination.resolve():
+        raise ValueError("resumed model destination escapes its package")
+    destination.mkdir()
+    (destination / "ensemble.json").write_bytes(manifest_bytes)
+    model_destination.write_bytes(model_bytes)
+    try:
+        fitted = FittedEnsemble.load(destination)
+    except (ExpectedSubjectError, UnidentifiableFitError, np.linalg.LinAlgError) as error:
+        raise ValueError("original resumed frozen state is invalid") from error
+    if fitted.scorer.program.record() != program.record():
+        raise ValueError("original resumed actual program differs")
+    origin = {"kind": "reused_package", "physical_fit_attempts": 0, "physical_successful_fits": 0,
+              "reused_package_count": 1, "producer_source_digest": binding["original_source_digest"],
+              "producer_executed_source_sha256": binding["original_executed_source_sha256"],
+              "original_execution_sha256": binding["original_execution_sha256"],
+              "producer_source_freeze": binding["original_source_freeze"], "original_package": str(original),
+              "original_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+              "original_model_file_sha256": entry["model_file_sha256"]}
+    return fitted, origin
+
+
 def _fixed_prefix_ar_panel(experts, role):
     if role == "candidate_ensemble":
         return None
@@ -135,16 +258,25 @@ def _subject_impl(row, plan, directory, expected_source, source_snapshots):
                           for spec in declared)
             for fold, held in enumerate(groups):
                 training = [group for index, group in enumerate(groups) if index != fold]
-                evidence, calibrations = {}, {}
+                evidence, calibrations, origins = {}, {}, {}
                 for expert_index, spec in enumerate(specs):
                     one = EnsembleProgram.equal_weights(spec.expert_id, (spec.expert_id,))
                     sources = {spec.expert_id: source_snapshots[spec.expert_id]} if spec.expert_id in source_snapshots else {}
+                    package = directory / f"seed{seed}_fold{fold}_expert{expert_index}"
+                    origin = {"kind": "new_fit", "physical_fit_attempts": 0, "physical_successful_fits": 0,
+                              "reused_package_count": 0, "producer_source_digest": semantic_sha256(expected_source)}
                     try:
-                        fitted = fit_calibration_ensemble(training, (spec,), one,
-                            source_checkpoints=sources, device=plan["device"],
-                            calibration_strategy=plan["calibration_strategy"])
-                        package = directory / f"seed{seed}_fold{fold}_expert{expert_index}"
-                        fitted.save(package)
+                        fitted, reused_origin = _reuse_frozen_package(plan.get("resume_binding"),
+                            plan["records"].index(row), seed, fold, expert_index, spec, one, training, package)
+                        if fitted is None:
+                            origin["physical_fit_attempts"] = 1
+                            fitted = fit_calibration_ensemble(training, (spec,), one,
+                                source_checkpoints=sources, device=plan["device"],
+                                calibration_strategy=plan["calibration_strategy"])
+                            origin["physical_successful_fits"] = 1
+                            fitted.save(package)
+                        else:
+                            origin = reused_origin
                         value = fitted.score(held.view)
                         replay = FittedEnsemble.load(package).score(held.view)
                         if value.record() != replay.record():
@@ -162,6 +294,8 @@ def _subject_impl(row, plan, directory, expected_source, source_snapshots):
                             (identity,), view.decision.repetitions, counts, counts,
                             failure_reason=f"{type(error).__name__}: {error}", failure_kind="fit_failure")
                         calibrations[spec.expert_id] = {"strategy": plan["calibration_strategy"], "status": "fit_failure"}
+                        origin["kind"] = "reused_score_failure" if origin["reused_package_count"] else "new_fit_failure"
+                    origins[spec.expert_id] = origin
                 for mixture in mixtures:
                     result = EnsembleScorer(mixture).score({name: evidence[name] for name in mixture.expert_ids})
                     predictions.append({"seed": seed, "mixture": mixture.name, "fold": fold,
@@ -178,7 +312,9 @@ def _subject_impl(row, plan, directory, expected_source, source_snapshots):
                         "training_labels": sum(len(group.labels) for group in training),
                         "requested_authorized_labels": plan["authorized_labels"],
                         "saved_replay_exact": all(evidence[name].probability_available for name in mixture.expert_ids),
-                        "temperature_calibration": {name: calibrations[name] for name in mixture.expert_ids}})
+                         "temperature_calibration": {name: calibrations[name] for name in mixture.expert_ids}})
+                    predictions[-1].update(fit_origin=(origins[mixture.expert_ids[0]] if len(mixture.expert_ids) == 1 else
+                        {name: origins[name] for name in mixture.expert_ids}), score_source_digest=semantic_sha256(expected_source))
                 atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions),
                     "seed": seed, "fold": fold, "status": "running"})
     requested = []
@@ -256,6 +392,10 @@ def run_study(plan_path: str | Path, output: str | Path):
         normalized["source_checkpoints"].setdefault(binding["scratch"], normalized["source_checkpoints"][binding["source"]])
     normalized["source_checkpoint_sha256"] = {name: snapshot.digest for name, snapshot in source_snapshots.items()}
     source = _executing_source()
+    normalized["resume_binding"] = _prepare_package_resume(normalized, source)
+    if normalized["resume_binding"] is not None and any(output.is_relative_to(Path(normalized["resume_binding"][name]))
+            for name in ("original_run", "original_execution_root")):
+        raise ValueError("resumed output must preserve the original run and execution checkout read-only")
     output.mkdir(parents=True, exist_ok=False)
     atomic_write_json(output / "plan.json", normalized)
     atomic_write_json(output / "executed_source.json", source)

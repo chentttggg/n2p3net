@@ -22,6 +22,7 @@ Module组织现有NN/经典trial/raw连续Adapter，`candidate_evidence`继续�
 参数量随实际架构、pooling和残差recipe记录，历史1279含残差值不泛化到默认N2P3Net构造。
 
 2026-10-05 `experiments/boundary_state_research.py` 是独立数学/计划框架，无生产调用者：长短有限算子先映射到共同输出网格，ERP 模板行基按样本优先展平，诊断不选择 held penalty；dense Gaussian 参考检验协方差 gauge 而不拟合 AR。完整 E1–E3 与 Kalman 尚未执行，接口边界见[设计核对](evidence/boundary_state_redesign_20261005.zh.md)。
+2026-10-06该框架补`FrozenShortBoundaryMap`的不可变K/b、short-only apply、native grid/source支持与公开全T evaluator；affine offset不进入ERP/白噪声增量。未提供真实frozen map时不以oracle delta冒充部署测量，源码与36项定向验证见同一记录。
 
 2026-10-04的[实施记录](evidence/system_implementation_20261004.zh.md)把研究能力放在以下已有职责及新Module中：
 

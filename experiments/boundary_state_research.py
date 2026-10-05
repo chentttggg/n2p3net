@@ -10,7 +10,7 @@ import argparse
 import hashlib
 import json
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import numpy as np
@@ -21,10 +21,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from data.finite_filter_operator import FiniteFilterOperator  # noqa: E402
+from transfer.noise_model import array_digest, frozen_array  # noqa: E402
 
 
 def _finite(value, ndim, name):
-    result = np.asarray(value, dtype=np.float64)
+    raw = np.asarray(value)
+    if raw.dtype.kind not in "fiu":
+        raise ValueError(f"{name} must be real numeric data")
+    result = np.asarray(raw, dtype=np.float64)
     if result.ndim != ndim or not result.size or not np.isfinite(result).all():
         raise ValueError(f"{name} must be nonempty finite {ndim}-dimensional data")
     return result
@@ -68,9 +72,189 @@ def protect_delta(delta, erp_rows, *, penalty):
     if not np.isfinite(penalty) or penalty < 0:
         raise ValueError("penalty must be finite and nonnegative")
     vector = values.reshape(-1)  # sample first, then physical channel
-    return (vector - penalty / (1 + penalty) * (rows.T @ (rows @ vector))).reshape(
-        values.shape
-    )
+    return _protect_output(vector, rows, penalty).reshape(values.shape)
+
+
+def _protect_output(value, rows, penalty):
+    return value - penalty / (1 + penalty) * (rows.T @ (rows @ value))
+
+
+@dataclass(frozen=True)
+class FrozenShortBoundaryMap:
+    """Bounded research reference for T(x)=R F_short x + K x + b.
+
+    Samples are time-major native voltages on the declared short scope. The
+    output is the declared native crop; downstream resampling/reference or
+    baseline is not implicitly performed. K/b are provided frozen parameters,
+    not fitted or authorized by this reference. Source/C authorization belongs
+    to their producer. Prediction has no long-context or target-label input.
+    """
+
+    operator: FiniteFilterOperator
+    correction_matrix: np.ndarray
+    short_scope: tuple[int, int]
+    output_scope: tuple[int, int]
+    sfreq: float
+    channel_names: tuple[str, ...]
+    reference: str
+    signal_unit: str
+    parameter_source_id: str
+    correction_offset: np.ndarray | None = None
+    byte_budget: int = 8 * 1024 * 1024
+    baseline_matrix: np.ndarray = field(init=False, repr=False, compare=False)
+    complete_matrix: np.ndarray = field(init=False, repr=False, compare=False)
+    _protection: tuple | None = field(init=False, default=None, repr=False, compare=False)
+
+    def __post_init__(self):
+        short, output = tuple(self.short_scope), tuple(self.output_scope)
+        if (not isinstance(self.operator, FiniteFilterOperator) or len(short) != 2 or len(output) != 2
+                or any(type(v) is not int for v in (*short, *output))
+                or not 0 <= short[0] <= output[0] < output[1] <= short[1]):
+            raise ValueError("short/output physical sample scopes must share a contained native grid")
+        names = tuple(self.channel_names)
+        if (not names or len(set(names)) != len(names)
+                or any(not isinstance(name, str) or not name.strip() for name in names)
+                or not np.isfinite(self.sfreq) or self.sfreq <= 0
+                or any(not isinstance(value, str) or not value.strip()
+                       for value in (self.reference, self.signal_unit, self.parameter_source_id))):
+            raise ValueError("mapping requires named channels, sample rate, reference, unit and parameter source")
+        n, m, channels = short[1] - short[0], output[1] - output[0], len(names)
+        required_bytes = 8 * (n * n + 3 * m * n * channels * channels + m * channels)
+        if type(self.byte_budget) is not int or self.byte_budget < required_bytes:
+            raise ValueError("complete dense boundary map exceeds the explicit diagnostic byte budget")
+        correction = _finite(self.correction_matrix, 2, "short-only correction matrix")
+        if correction.shape != (m * channels, n * channels):
+            raise ValueError("correction matrix must read only the declared short grid and write the output grid")
+        offset = (np.zeros(m * channels) if self.correction_offset is None
+                  else _finite(self.correction_offset, 1, "correction offset"))
+        if offset.shape != (m * channels,):
+            raise ValueError("correction offset must match the declared output grid")
+        matrix = self.operator.dense_matrix(n, byte_budget=self.byte_budget)
+        baseline = np.kron(matrix[output[0] - short[0]:output[1] - short[0]], np.eye(channels))
+        for name, value in (("correction_matrix", correction), ("correction_offset", offset),
+                            ("baseline_matrix", baseline), ("complete_matrix", baseline + correction)):
+            object.__setattr__(self, name, frozen_array(value))
+        object.__setattr__(self, "short_scope", short)
+        object.__setattr__(self, "output_scope", output)
+        object.__setattr__(self, "channel_names", names)
+
+    def apply(self, short_samples):
+        """Apply frozen T to observed short samples; no parameter updates."""
+        values = _finite(short_samples, 2, "observed short samples")
+        if values.shape != (self.short_scope[1] - self.short_scope[0], len(self.channel_names)):
+            raise ValueError("prediction must contain only samples on the frozen short input grid")
+        result = self.complete_matrix @ values.ravel() + self.correction_offset
+        return result.reshape(self.output_scope[1] - self.output_scope[0], len(self.channel_names))
+
+    def with_output_protection(self, erp_rows, *, penalty):
+        """Derive an explicitly declared output-soft arm, without fitting."""
+        rows = _erp_rows(erp_rows, self.complete_matrix.shape[0])
+        if not np.isfinite(penalty) or penalty < 0:
+            raise ValueError("penalty must be finite and nonnegative")
+        protected = replace(self,
+            correction_matrix=_protect_output(self.correction_matrix, rows, penalty),
+            correction_offset=_protect_output(self.correction_offset, rows, penalty))
+        object.__setattr__(protected, "_protection", (float(penalty), array_digest(rows), self.digest))
+        return protected
+
+    def record(self):
+        return {"schema": "n2p3_frozen_short_boundary_map/1", "mapping_role": "short_only_frozen_affine",
+                "short_scope": list(self.short_scope), "output_scope": list(self.output_scope),
+                "sfreq": self.sfreq, "channel_names": list(self.channel_names),
+                "reference": self.reference, "signal_unit": self.signal_unit,
+                "flattening": "sample_then_physical_channel", "output_stage": "native_crop",
+                "operator": self.operator.record(), "parameter_source_id": self.parameter_source_id,
+                "parameter_source_authorized_here": False,
+                "numeric_sha256": array_digest(self.correction_matrix, self.correction_offset,
+                                                self.baseline_matrix, self.complete_matrix),
+                "output_protection": None if self._protection is None else {
+                    "penalty": self._protection[0], "erp_rows_sha256": self._protection[1],
+                    "parent_map_sha256": self._protection[2]}}
+
+    @property
+    def digest(self):
+        return hashlib.sha256(json.dumps(self.record(), sort_keys=True, allow_nan=False).encode()).hexdigest()
+
+
+def _increment_metrics(increment, reference, sfreq):
+    norm = float(np.linalg.norm(reference))
+    error = increment - reference
+    relative = None if norm <= np.finfo(float).tiny else float(np.linalg.norm(error) / norm)
+    peaks = np.argmax(np.abs(increment), axis=0)
+    reference_peaks = np.argmax(np.abs(reference), axis=0)
+    observed_peak = (np.any(increment != 0, axis=0) & np.any(reference != 0, axis=0))
+    latency = [float((peak - target) / sfreq) if defined else None
+               for peak, target, defined in zip(peaks, reference_peaks, observed_peak, strict=True)]
+    return {"relative_error": relative, "reference_norm": norm,
+            "undefined_reason": "zero_reference_increment" if relative is None else None,
+            "max_absolute_error": float(np.max(np.abs(error))),
+            "peak_signed_channels": increment[peaks, np.arange(increment.shape[1])].tolist(),
+            "peak_latency_error_seconds": latency,
+            "area_error_channels": (error.sum(axis=0) / sfreq).tolist()}
+
+
+def evaluate_complete_map(observed_full, mapping, operator_long, *, context_scope,
+                          erp_injections, injection_design_id):
+    """Full T increments and exact gains; long data is only an observed oracle.
+
+    Injection shapes are independently declared from protection/fitting
+    dictionaries by their producer. All injections retain this observed full
+    context grid; the applier sees only their short crop. No policy is selected.
+    This linear/affine reference does not certify nonlinear adaptive pipelines.
+    """
+    if not isinstance(mapping, FrozenShortBoundaryMap) or not isinstance(operator_long, FiniteFilterOperator):
+        raise ValueError("complete-map evaluation requires frozen short and explicit long operators")
+    x = _finite(observed_full, 2, "observed oracle context")
+    scope = tuple(context_scope)
+    if (len(scope) != 2 or any(type(v) is not int for v in scope)
+            or scope[1] - scope[0] != len(x) or not 0 <= scope[0] <= mapping.short_scope[0]
+            or mapping.short_scope[1] > scope[1] or x.shape[1] != len(mapping.channel_names)):
+        raise ValueError("observed context support must contain the mapping's physical short/output grids")
+    if not isinstance(injection_design_id, str) or not injection_design_id.strip():
+        raise ValueError("independent ERP injection design must have an explicit identity")
+    if not isinstance(erp_injections, dict) or not erp_injections:
+        raise ValueError("complete-map evaluation requires independent named ERP injections")
+    begin, end = (value - scope[0] for value in mapping.short_scope)
+    out_begin, out_end = (value - scope[0] for value in mapping.output_scope)
+    short = x[begin:end]
+    unperturbed = mapping.apply(short)
+    entries = []
+    for name, value in erp_injections.items():
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("ERP injections require nonempty names")
+        full_h = _finite(value, 2, "independent full-context ERP increment")
+        if full_h.shape != x.shape:
+            raise ValueError("ERP injection must use the same actually observed full context grid")
+        short_h = full_h[begin:end]
+        increment = mapping.apply(short + short_h) - unperturbed
+        short_reference = (mapping.baseline_matrix @ short_h.ravel()).reshape(increment.shape)
+        long_reference = operator_long.apply(full_h)[out_begin:out_end]
+        entries.append({"injection_id": name, "increment_sha256": array_digest(full_h),
+                        "short_input_increment_norm": float(np.linalg.norm(short_h)),
+                        "short_reference": _increment_metrics(increment, short_reference, mapping.sfreq),
+                        "observed_long_reference": _increment_metrics(increment, long_reference, mapping.sfreq)})
+    matrix, baseline = mapping.complete_matrix, mapping.baseline_matrix
+    baseline_energy = float(np.sum(baseline**2))
+    singular = np.linalg.svd(matrix, compute_uv=False)
+    keep = singular > max(matrix.shape) * np.finfo(float).eps * singular[0]
+    rank = int(keep.sum())
+    mean_gain = None if baseline_energy <= np.finfo(float).tiny else float(np.sum(matrix**2) / baseline_energy)
+    return {"schema": "n2p3_boundary_complete_map_diagnostics/1",
+            "context_scope": list(scope), "observed_long_role": "teacher_reference_only",
+            "deployment_input_scope": list(mapping.short_scope), "mapping": mapping.record(),
+            "mapping_sha256": mapping.digest, "injection_design_id": injection_design_id,
+            "independence_authorized_by_evaluator": False, "requested_injections": len(entries),
+            "defined_short_relative_errors": sum(row["short_reference"]["relative_error"] is not None for row in entries),
+            "defined_long_relative_errors": sum(row["observed_long_reference"]["relative_error"] is not None for row in entries),
+            "erp_increments": entries,
+            "white_noise_gain": {"mode": "exact_affine_increment_linear_map", "input_white_variance": 1.,
+                "mean_relative_to_short": mean_gain,
+                "undefined_reason": "zero_baseline_white_energy" if mean_gain is None else None,
+                "worst_absolute": float(singular[0]**2), "rank": rank,
+                "condition_in_identified_range": None if not rank else float(singular[0] / singular[keep][-1]),
+                "offset_included_as_noise": False},
+            "policy_selected": False, "external_state_uniquely_recoverable_claim": False,
+            "production_or_public_performance_claim": False}
 
 
 def distance_adaptive_erp_penalty(distance_seconds, *, d_pivot=1., tau=.5, lambda_max=100.):
@@ -92,16 +276,19 @@ class BoundaryStateAnalysis:
     pareto_diagnostics: tuple[dict, ...]
     input_sha256: str
     reference_role: str = "observed_long_context_diagnostic_only"
+    grid_support: dict = field(default_factory=dict)
 
     @classmethod
     def compute(cls, x_observed_full, operator_short, operator_long, erp_rows, *,
                 short_scope, output_scope, sfreq, penalty_grid=(0., .01, .1, 1., 10., 100.),
-                overlap_threshold=.5):
+                overlap_threshold=.5, frozen_map=None, erp_injections=None,
+                injection_design_id=None, context_scope=None):
         """Compare R F_long x to R F_short C x on a common output grid.
 
-        Scopes are absolute half-open sample intervals inside the supplied
-        observed full context. Longer context is a diagnostic reference, never
-        an imputed test input. Neither ERP truth nor a penalty is inferred here.
+        Scopes are absolute half-open native sample intervals; context_scope
+        declares the supplied array's origin. A supplied frozen map reads only
+        short X. Without one, output protection acts on teacher delta and cannot
+        certify full-map ERP/gain. No ERP challenge or penalty is inferred here.
         """
         x = _finite(x_observed_full, 2, "observed full context")
         if not isinstance(operator_short, FiniteFilterOperator) or not isinstance(
@@ -113,15 +300,31 @@ class BoundaryStateAnalysis:
             raise ValueError("scopes must contain integer half-open boundaries")
         begin, end = short_scope
         out_begin, out_end = output_scope
-        if not 0 <= begin <= out_begin < out_end <= end <= len(x):
+        if frozen_map is not None and context_scope is None:
+            raise ValueError("supplied map requires explicit context support on the physical sample grid")
+        context = (0, len(x)) if context_scope is None else tuple(context_scope)
+        if (len(context) != 2 or any(type(value) is not int for value in context)
+                or context[1] - context[0] != len(x)
+                or not 0 <= context[0] <= begin <= out_begin < out_end <= end <= context[1]):
             raise ValueError("output must be inside short scope and observed full context")
         if not np.isfinite(sfreq) or sfreq <= 0 or not 0 < overlap_threshold < 1:
             raise ValueError("invalid sample rate or diagnostic overlap threshold")
         penalties = tuple(penalty_grid)
         if not penalties or not np.isfinite(penalties).all() or min(penalties) < 0:
             raise ValueError("nonempty finite nonnegative penalty grid required")
-        short = operator_short.apply(x[begin:end])[out_begin - begin:out_end - begin]
-        long = operator_long.apply(x)[out_begin:out_end]
+        if frozen_map is not None:
+            if (not isinstance(frozen_map, FrozenShortBoundaryMap) or context_scope is None
+                    or frozen_map.short_scope != tuple(short_scope) or frozen_map.output_scope != tuple(output_scope)
+                    or frozen_map.sfreq != sfreq or len(frozen_map.channel_names) != x.shape[1]
+                    or frozen_map.operator.digest != operator_short.digest):
+                raise ValueError("supplied map must share explicit context support and the actual short/output grid")
+            if erp_injections is None or injection_design_id is None:
+                raise ValueError("supplied map requires independent ERP injections and their design identity")
+        elif erp_injections is not None or injection_design_id is not None:
+            raise ValueError("ERP/gain diagnostics require an explicitly supplied frozen short-only map")
+        observed_short = x[begin - context[0]:end - context[0]]
+        short = operator_short.apply(observed_short)[out_begin - begin:out_end - begin]
+        long = operator_long.apply(x)[out_begin - context[0]:out_end - context[0]]
         delta = long - short
         rows = _erp_rows(erp_rows, delta.size)
         energy = float(np.sum(delta**2))
@@ -129,7 +332,14 @@ class BoundaryStateAnalysis:
         fraction = None if zero else float(np.sum((rows @ delta.reshape(-1))**2) / energy)
         diagnostics = []
         for penalty in penalties:
-            correction = protect_delta(delta, rows, penalty=penalty)
+            full = None
+            if frozen_map is None:
+                correction = protect_delta(delta, rows, penalty=penalty)
+            else:
+                deployed = frozen_map.with_output_protection(rows, penalty=penalty)
+                correction = deployed.apply(observed_short) - short
+                full = evaluate_complete_map(x, deployed, operator_long, context_scope=context,
+                    erp_injections=erp_injections, injection_design_id=injection_design_id)
             residual = delta - correction
             diagnostics.append({
                 "penalty": float(penalty),
@@ -137,18 +347,36 @@ class BoundaryStateAnalysis:
                 "difference_mse_improvement": None if zero else 1 - float(np.sum(residual**2)) / energy,
                 "erp_aligned_correction_norm": float(np.linalg.norm(rows @ correction.reshape(-1))),
                 "protection_map_condition": float(1 + penalty) if len(rows) < delta.size else 1.,
-                "erp_increment_error": None,
-                "white_noise_gain": None,
-                "missing_metrics_reason": "requires_frozen_input_correction_map_and_independent_injections",
+                "correction_role": "observed_long_teacher" if full is None else "frozen_short_only_predictor",
+                "erp_increment_error": None if full is None else {
+                    "requested": full["requested_injections"],
+                    "defined_short": full["defined_short_relative_errors"],
+                    "defined_long": full["defined_long_relative_errors"],
+                    "injection_design_id": injection_design_id,
+                    "cases": full["erp_increments"]},
+                "white_noise_gain": None if full is None else full["white_noise_gain"],
+                "complete_map_sha256": None if full is None else full["mapping_sha256"],
+                "missing_metrics_reason": "requires_frozen_input_correction_map_and_independent_injections" if full is None else None,
             })
         digest = hashlib.sha256()
         digest.update(x.tobytes())
         digest.update(rows.tobytes())
         digest.update(json.dumps([operator_short.record(), operator_long.record(),
-                                  short_scope, output_scope, sfreq]).encode())
+                                  short_scope, output_scope, sfreq, context]).encode())
+        if frozen_map is not None:
+            digest.update(frozen_map.digest.encode())
+            digest.update(injection_design_id.encode())
+            for name, value in erp_injections.items():
+                digest.update(name.encode())
+                digest.update(array_digest(value).encode())
         return cls(min(out_begin - begin, end - out_end) / sfreq, fraction,
                    fraction is not None and fraction >= overlap_threshold, zero,
-                   tuple(diagnostics), digest.hexdigest())
+                   tuple(diagnostics), digest.hexdigest(), grid_support={
+                       "context_scope": list(context), "short_scope": list(short_scope),
+                       "output_scope": list(output_scope), "sample_rate_hz": sfreq,
+                       "flattening": "sample_then_physical_channel",
+                       "mapping_role": "teacher_only" if frozen_map is None else "short_only",
+                       "observed_long_used_at_deployment": False})
 
 
 @dataclass(frozen=True)
