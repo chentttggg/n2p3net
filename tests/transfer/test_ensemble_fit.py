@@ -116,6 +116,10 @@ def test_frozen_programme_temperature_and_trial_state_cannot_be_mutated(frozen_r
         fitted.temperature_record["temperatures"]["toeplitz"] = 100
     with pytest.raises(AttributeError):
         fitted.scorer.program = EnsembleProgram.equal_weights("other", ("toeplitz",))
+    with pytest.raises(AttributeError):
+        fitted.scorer = fitted.scorer
+    with pytest.raises(AttributeError):
+        fitted.participant_key = origin_subject_key("fixture", "other")
     trial = fitted._experts[1].predictor
     assert not hasattr(trial, "state")
     with pytest.raises(TypeError):

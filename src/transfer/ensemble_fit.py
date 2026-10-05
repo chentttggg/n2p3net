@@ -163,10 +163,10 @@ class FittedEnsemble:
     """Own expert state, fit authority and one frozen mixture behind score(view)."""
 
     def __init__(self, scorer, experts, training_receipts, temperature_record=None):
-        self.scorer = scorer
+        self._scorer = scorer
         self._experts = tuple(experts)
         self._training_receipts = tuple(freeze_metadata(row) for row in training_receipts)
-        self.participant_key = self._training_receipts[0]["participant_key"]
+        self._participant_key = self._training_receipts[0]["participant_key"]
         if tuple(expert.program.expert_id for expert in self._experts) != scorer.program.expert_ids:
             raise ValueError("frozen expert states differ from the declared roster")
         self._temperature_record = freeze_metadata({"strategy": "fixed", "temperatures": {name: 1. for name in scorer.program.expert_ids}}
@@ -180,6 +180,14 @@ class FittedEnsemble:
     @property
     def temperature_record(self):
         return self._temperature_record
+
+    @property
+    def scorer(self):
+        return self._scorer
+
+    @property
+    def participant_key(self):
+        return self._participant_key
 
     def score_experts(self, view: PredictionDecisionView):
         if view.participant_key != self.participant_key:
