@@ -205,7 +205,7 @@ def build():
 if __name__ == "__main__":
     output = HERE / "research_plan.json"
     plan = build()
-    output.write_text(json.dumps(plan, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    output.write_text(json.dumps(plan, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     tasks = {entry["id"]: entry for entry in plan["tasks"]}
     lines = ["# 原愿望清单覆盖表", "", "从原文逐条恢复，共 123 项；含原优先主线的重复项，保持来源可追溯。",
              "任务为方案层完成，实施与新性能矩阵均未启动。每项的实验、数学和失败条件见对应分块及独立研究报告。",
@@ -215,5 +215,5 @@ if __name__ == "__main__":
         assigned = ", ".join(row["tasks"])
         priority = tasks[row["tasks"][0]]["priority"]
         lines.append(f"| {row['id']} | {text} | {assigned} | {priority} |")
-    (HERE / "coverage.zh.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (HERE / "coverage.zh.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps({"plan": output.name, "wishlist_items": len(source_items()), "tasks": len(TASKS)}))

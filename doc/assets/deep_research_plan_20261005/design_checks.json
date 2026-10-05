@@ -1,7 +1,7 @@
 {
   "evidence_scope": "software_and_mathematical_counterexamples",
-  "plan_sha256": "3da069d1590715a78fb2dfb4ec26de6840ac1c2edbe63892a8dd8ec3168c9a75",
-  "script_sha256": "1d88f4d03f3b0a2349ec5dc28bde8c54cd58e63ade7ad94ab6fddc8882cf7874",
+  "plan_sha256": "35be8e6c8704b1d0aa5eb67519b2399a08fbde46bcd2ebc3ddf48a97e4679ec6",
+  "script_sha256": "19b6cd7859f99c8297851306f8ac846e4dca6cec9e88ec6a8ea001856b5a0e0c",
   "coverage_and_graph": {
     "wishlist_items": 123,
     "tasks": 15,
