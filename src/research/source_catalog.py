@@ -5,7 +5,15 @@ ready. Prepared artifacts are validated by data.source_admission separately.
 """
 from __future__ import annotations
 
+import hashlib
+import io
+import json
 from collections.abc import Mapping, Sequence
+from pathlib import Path
+
+from data.identity import DatasetIdentityTable, source_dataset_ids_from_identity
+from research.contracts import semantic_sha256
+from transfer.checkpoint import load_checkpoint_payload
 
 CORE_STUDIES = ("BI2014a", "BI2015a", "BNCI2014-008", "Huebner2017")
 ADDED_STUDIES = ("BI2013a", "EPFLP300", "Chailloux2020", "Speier2017")
@@ -96,3 +104,80 @@ class SourceCatalog:
 
 
 DEFAULT_SOURCE_CATALOG = SourceCatalog()
+
+
+def paired_pipeline_seeds(values):
+    """Three declared complete pipeline pairs, never a Cartesian product."""
+    pairs = tuple(tuple(pair) for pair in values)
+    if (len(pairs) != 3 or any(len(pair) != 2 or any(type(seed) is not int or seed < 0 for seed in pair)
+            for pair in pairs) or len({pair[0] for pair in pairs}) != 3 or len({pair[1] for pair in pairs}) != 3):
+        raise ValueError("complete pipeline replication requires three distinct paired source/target seeds")
+    return pairs
+
+
+class SourceSeedCatalog:
+    """Admit exact source bytes by outer study and actual complete source seed.
+
+    Selection/refit needs a per-seed producer record with measured outcomes and
+    a bound final refit. A declaration of a shared development selection is not
+    evidence of three complete source procedures. Fixtures retain their scope.
+    """
+
+    def __init__(self, entries, *, base_directory, evidence_scope):
+        self._entries = {}
+        self._records = []
+        for entry in entries:
+            key = (entry["outer_target_study"], entry["source_seed"])
+            if key in self._entries or type(key[1]) is not int or key[1] < 0:
+                raise ValueError("source catalog requires unique outer-study/source-seed keys")
+            path = Path(base_directory) / entry["path"]
+            content = path.read_bytes()
+            digest = hashlib.sha256(content).hexdigest()
+            if digest != entry["sha256"]:
+                raise ValueError("source catalog checkpoint bytes differ from declaration")
+            payload = load_checkpoint_payload(io.BytesIO(content))
+            contract = payload["training_contract"]
+            if contract["seed"] != key[1]:
+                raise ValueError("source catalog key differs from actual checkpoint seed")
+            studies = set(source_dataset_ids_from_identity(DatasetIdentityTable.from_payload(payload["training_identity_ledger"])))
+            if key[0] in studies:
+                raise ValueError("source catalog checkpoint must exclude the complete outer target study")
+            procedure = entry["procedure"]
+            config = contract["optimizer"].get("config", {})
+            selects = any(config.get(name) is not None for name in ("source_budget", "global_early_stopping"))
+            if procedure["kind"] == "fixed_recipe":
+                if procedure["selection"] != "not_applicable" or selects:
+                    raise ValueError("fixed source recipe cannot hide a selection procedure")
+                producer = None
+            elif procedure["kind"] == "selection_refit":
+                producer_path = Path(base_directory) / procedure["record_path"]
+                producer_bytes = producer_path.read_bytes()
+                if hashlib.sha256(producer_bytes).hexdigest() != procedure["record_sha256"]:
+                    raise ValueError("source procedure producer bytes changed")
+                producer = json.loads(producer_bytes)
+                selection, refit = producer["selection"], producer["refit"]
+                if (producer["source_seed"] != key[1] or selection["source_seed"] != key[1]
+                        or refit["source_seed"] != key[1] or producer["outer_target_study"] != key[0]
+                        or producer["evidence_scope"] != evidence_scope
+                        or selection["status"] != "selected" or not selection["outcomes"]
+                        or refit["status"] != "completed" or refit["checkpoint_sha256"] != digest
+                        or refit["training_contract_digest"] != payload["training_contract_digest"]
+                        or selection["source_snapshot_sha256"] != contract["source_snapshot_sha256"]
+                        or not refit["physical_optimizer_updates"]):
+                    raise ValueError("source selection/refit requires actual same-seed producer evidence")
+            else:
+                raise ValueError("source procedure must declare fixed recipe or actual selection/refit")
+            fixture = contract["optimizer"].get("kind") == "synthetic_test_fixture"
+            if fixture and evidence_scope != "software_correctness":
+                raise ValueError("software source fixtures cannot establish public full-source pipeline replication")
+            self._entries[key] = content
+            self._records.append({"outer_target_study": key[0], "source_seed": key[1], "checkpoint_sha256": digest,
+                "training_contract_digest": payload["training_contract_digest"], "source_studies": sorted(studies),
+                "procedure": procedure, "producer_digest": None if producer is None else semantic_sha256(producer),
+                "evidence_scope": evidence_scope, "source_selection": "not_applicable" if producer is None else "per_source_seed"})
+
+    def content(self, outer_target_study, source_seed):
+        return self._entries[(outer_target_study, source_seed)]
+
+    def record(self):
+        return self._records

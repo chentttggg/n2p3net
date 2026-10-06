@@ -550,6 +550,7 @@ def bnci2014_008_raw(record: BNCI2014008CandidateRecord):
 def build_bnci2014_008_subject_dataset(
     record: BNCI2014008CandidateRecord, *, preprocessing: PreprocessingSpec,
     raw_scope: RawSampleScope | None = None, raw: mne.io.BaseRaw | None = None,
+    output_dtype: str = "float32",
 ) -> EpochDataset:
     """Execute the declared profile on a whole record or an independent raw scope."""
     if not isinstance(record, BNCI2014008CandidateRecord):
@@ -642,7 +643,7 @@ def build_bnci2014_008_subject_dataset(
     )
     dataset = EpochDataset(
         name="BNCI2014-008-candidate",
-        X=result.data.astype(np.float32, copy=False),
+        X=result.data.astype(output_dtype, copy=False),
         y=derived_labels,
         subject_ids=np.repeat(recovered.subject_id, result.n_epochs),
         channel_names=identity.names,

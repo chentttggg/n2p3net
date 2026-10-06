@@ -479,7 +479,7 @@ def adapt_observed_montage(
         if anchor_index is None or not bool(source_mask[:, anchor_index].all()):
             raise ValueError("the measured reference must be observed in every projected trial.")
         reference_signal = dataset.X[:, anchor_index]
-    values = np.zeros((dataset.n_epochs, len(channels), dataset.n_times), dtype=np.float32)
+    values = np.zeros((dataset.n_epochs, len(channels), dataset.n_times), dtype=dataset.X.dtype)
     observed = np.zeros(values.shape[:2], dtype=bool)
     for destination, channel in enumerate(channels):
         index = source_positions.get(channel)

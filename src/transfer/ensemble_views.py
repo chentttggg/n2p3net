@@ -25,6 +25,8 @@ from data.bnci2014_008_candidate import (
     BNCI2014_008_REPETITIONS_PER_SELECTION,
     BNCI2014_008_SOURCE_REFERENCE,
     BNCI2014_008_SOURCE_SAMPLE_RATE_HZ,
+    bnci2014_008_raw,
+    build_bnci2014_008_subject_dataset,
     read_bnci2014_008_candidate_record,
 )
 from data.candidate_task import (
@@ -35,19 +37,23 @@ from data.candidate_task import (
 from data.channel import build_channel_identity, canonical_channel_name
 from data.continuous_qc import signal_dependency_matrix
 from data.contract import DEFAULT_P300_DATA_CONTRACT
-from data.epochs import EpochDataset, PreprocessingSpec, parse_preprocessing_spec
+from data.domain import adapt_observed_montage
+from data.epochs import EpochDataset, PreprocessingSpec, materialize_dataset_identity, parse_preprocessing_spec
 from data.events import ScheduledEventTimeline
 from data.finite_filter_operator import FiniteFilterOperator
 from data.identity import DatasetIdentityTable, origin_subject_key
 from data.lineage import DataLineage
 from data.preprocess import (
+    RawSampleScope,
     design_continuous_sos,
     filter_bidirectional_segment,
+    prefix_raw_scopes,
     source_epoch_support,
     transform_epoch_samples,
 )
 from research.contracts import semantic_sha256
 from transfer.candidate_decision import parse_row_column_target, row_column_target
+from transfer.continuous_decision import CalibrationRecord
 from transfer.noise_model import array_digest, freeze_metadata, require_identifiers, require_sha256
 
 
@@ -72,7 +78,7 @@ class PredictionDecisionView:
     record_id: str
     participant_key: str
     decision_id: str
-    samples: np.ndarray
+    samples: np.ndarray | None
     onsets: np.ndarray
     decision: MembershipDecision
     source_sha256: str
@@ -86,6 +92,7 @@ class PredictionDecisionView:
     source_subject_id: str
     available_sample: int
     signal_unit: str = DEFAULT_P300_DATA_CONTRACT.signal_unit
+    unavailable_reason: str | None = None
 
     def __post_init__(self):
         for field_name in ("record_id", "participant_key", "decision_id", "reference",
@@ -112,8 +119,10 @@ class PredictionDecisionView:
         if (isinstance(self.available_sample, bool) or not isinstance(self.available_sample, Integral)
                 or self.available_sample < scope[1]):
             raise ValueError("availability cannot precede the last actual raw observation")
-        samples = np.asarray(self.samples)
-        if (samples.shape != (scope[1] - scope[0], len(channels))
+        samples = None if self.samples is None else np.asarray(self.samples)
+        if samples is None and not self.unavailable_reason:
+            raise ValueError("unobserved physical decisions require an explicit unavailable reason")
+        if samples is not None and (samples.shape != (scope[1] - scope[0], len(channels))
                 or samples.dtype.kind != "f" or not np.isfinite(samples).all()):
             raise ValueError("actual raw scope and finite samples-by-EEG-channel values must agree")
         if not isinstance(self.decision, MembershipDecision):
@@ -121,9 +130,9 @@ class PredictionDecisionView:
         onset = np.asarray(self.onsets)
         if (onset.ndim != 1 or len(onset) != len(self.decision.event_ids)
                 or onset.dtype.kind not in "iu" or np.any(onset[1:] <= onset[:-1])
-                or not len(onset) or onset[0] < 0 or onset[-1] >= len(samples)):
+                or not len(onset) or onset[0] < 0 or onset[-1] >= scope[1] - scope[0]):
             raise ValueError("public event onsets must be ordered integer samples within the actual raw scope")
-        object.__setattr__(self, "samples", _immutable_array(samples, np.float64))
+        object.__setattr__(self, "samples", None if samples is None else _immutable_array(samples, np.float64))
         object.__setattr__(self, "onsets", _immutable_array(onset, np.int64))
         object.__setattr__(self, "decision", _immutable_decision(self.decision))
         object.__setattr__(self, "raw_scope", tuple(int(value) for value in scope))
@@ -132,7 +141,7 @@ class PredictionDecisionView:
         object.__setattr__(self, "available_sample", int(self.available_sample))
 
     def physical_record(self):
-        return {"schema": "n2p3_prediction_decision_physical_support/1",
+        record = {"schema": "n2p3_prediction_decision_physical_support/1",
                 "record_id": self.record_id, "participant_key": self.participant_key,
                 "decision_id": self.decision_id, "source_sha256": self.source_sha256,
                 "source_relative_path": self.source_relative_path,
@@ -142,6 +151,9 @@ class PredictionDecisionView:
                 "reference": self.reference, "signal_unit": self.signal_unit,
                 "onsets": self.onsets.tolist(), "decision": self.decision.record(),
                 "available_sample": self.available_sample}
+        if self.unavailable_reason is not None:
+            record["unavailable_reason"] = self.unavailable_reason
+        return record
 
     @property
     def physical_support_digest(self):
@@ -150,7 +162,7 @@ class PredictionDecisionView:
     @property
     def raw_input_digest(self):
         return semantic_sha256({"physical_support_digest": self.physical_support_digest,
-                                "raw_samples_sha256": array_digest(self.samples)})
+                                "raw_samples_sha256": None if self.samples is None else array_digest(self.samples)})
 
     def record(self):
         return {**self.physical_record(), "physical_support_digest": self.physical_support_digest,
@@ -383,6 +395,266 @@ class CalibrationGroupViews:
     def __post_init__(self):
         object.__setattr__(self, "groups", tuple(self.groups))
         object.__setattr__(self, "ledger", freeze_metadata(self.ledger))
+
+
+@dataclass(frozen=True)
+class TrialCheckpointTarget:
+    """Physical target input metadata for K0, with no target values or statistics."""
+
+    preprocessing: PreprocessingSpec
+    channel_names: tuple[str, ...]
+    identity_table: DatasetIdentityTable
+    provenance: dict
+
+    @property
+    def n_channels(self):
+        return len(self.channel_names)
+
+    @property
+    def n_times(self):
+        return self.preprocessing.n_times
+
+
+@dataclass(frozen=True)
+class CalibrationPrefix:
+    """One authorized physical prefix, with distinct raw and epoch label use."""
+
+    budget: int
+    raw: CalibrationRecord | None
+    trial_datasets: dict[str, EpochDataset]
+    complete_groups: tuple[CalibrationSelection, ...]
+    target_contract: dict
+    label_use: dict
+
+    def validate(self):
+        """Check actual dosage and numerical support once at labeled fit ingress."""
+        target = self.target_contract
+        start, cutoff = target["raw_scope"]
+        if type(self.budget) is not int or self.budget < 0 or start != 0:
+            raise ValueError("prefix authorization requires a chronological nonnegative K")
+        if self.budget == 0:
+            if self.raw is not None or self.trial_datasets or cutoff != 0 or self.complete_groups:
+                raise ValueError("K0 has no target calibration observations, labels or groups")
+            return self
+        raw = self.raw
+        if (raw is None or not raw.right_censored or raw.samples.shape != (cutoff, len(target["channel_names"]))
+                or len(raw.target_mask) != self.budget or raw.onsets.shape != (self.budget,)
+                or raw.target_mask.dtype != bool or raw.onsets.dtype.kind not in "iu"
+                or np.any(np.diff(raw.onsets) <= 0) or raw.onsets[0] < 0 or raw.onsets[-1] >= cutoff):
+            raise ValueError("actual raw calibration labels/onsets/read support differ from authorized K/cutoff")
+        raw_use = self.label_use["raw"]
+        if (raw_use["requested_labels"] != self.budget or raw_use["used_labels"] != self.budget
+                or raw_use["read_sample_support"] != [0, cutoff]):
+            raise ValueError("raw label ledger differs from actual authorized prefix")
+        for digest, data in self.trial_datasets.items():
+            use = self.label_use["trial"][digest]
+            profile = SelectionEpochProfile.from_record(use["profile"])
+            physical = self.trial_target(profile)
+            data.validate(require_labels=True)
+            actual = np.asarray(data.metadata["flash_sample_matlab_1based"], dtype=np.int64) - 1
+            expected = (raw.onsets + profile._source_start >= 0) & (raw.onsets + profile._source_stop <= cutoff)
+            indices = np.flatnonzero(expected)
+            identity = materialize_dataset_identity(data)
+            execution = data.provenance["preprocessing_execution"]["raw_sample_scope"]["declaration"]
+            if (digest != profile.digest or not np.array_equal(actual, raw.onsets[indices])
+                    or not np.array_equal(data.y, raw.target_mask[indices])
+                    or use["used_label_indices"] != indices.tolist() or use["used_labels"] != len(indices)
+                    or use["unused_label_indices"] != np.flatnonzero(~expected).tolist()
+                    or use["requested_labels"] != self.budget or use["read_sample_support"] != [0, cutoff]
+                    or execution["start_sample"] != 0 or execution["stop_sample"] != cutoff
+                    or execution["event_indices"] != list(range(self.budget))
+                    or data.preprocessing.record() != profile.preprocessing.record()
+                    or data.channel_names != physical.channel_names
+                    or data.provenance["source_reference"] != physical.provenance["source_reference"]
+                    or data.provenance["source_file_sha256"] != target["source_sha256"]
+                    or identity.authority_keys() != (target["participant_key"],)
+                    or use["numerical_input_digest"] != array_digest(data.X, data.y, data.trial_channel_mask)):
+                raise ValueError("actual trial rows/labels/profile/source identity exceed or differ from prefix authorization")
+        for group in self.complete_groups:
+            view = group.view
+            indices = np.searchsorted(raw.onsets, view.onsets + view.raw_scope[0])
+            if (view.source_sha256 != target["source_sha256"] or view.participant_key != target["participant_key"]
+                    or not view.decision.schedule_complete or np.any(view.decision.evidence_indices < 0)
+                    or view.raw_scope[0] < 0 or view.raw_scope[1] > cutoff or view.samples is None
+                    or np.any(indices >= self.budget) or not np.array_equal(raw.onsets[indices], view.onsets + view.raw_scope[0])
+                    or not np.array_equal(group.labels, raw.target_mask[indices])
+                    or not np.array_equal(view.samples, raw.samples[slice(*view.raw_scope)])):
+                raise ValueError("temperature groups must be complete observations inside actual C authority")
+        return self
+
+    def trial_target(self, profile):
+        contract = self.target_contract
+        channels = tuple(map(canonical_channel_name, profile.channel_names))
+        native = tuple(map(canonical_channel_name, contract["channel_names"]))
+        required = set(channels)
+        if profile.reference_channel is not None:
+            required.add(profile.reference_channel)
+        if (profile.source_sample_rate_hz != contract["sample_rate_hz"]
+                or profile.reference != contract["reference"]
+                or required - set(native)):
+            raise ValueError("prefix profile must use the actual measured native channels/reference")
+        reference = ("measured_channel:" + profile.reference_channel if profile.reference_channel is not None else
+                     contract["reference"] if channels == native else "native:" + contract["reference"])
+        return TrialCheckpointTarget(profile.preprocessing, channels,
+            DatasetIdentityTable.from_source_rows([contract["source_subject_id"]], [contract["source_dataset_id"]]),
+            {"source_reference": reference})
+
+    def record(self):
+        return {"budget": self.budget, "target_contract": self.target_contract,
+                "label_use": self.label_use,
+                "temperature_group_records": [group.record() for group in self.complete_groups]}
+
+
+@dataclass(frozen=True)
+class IndependentSubjectViews:
+    calibration: dict[int, CalibrationPrefix]
+    decisions: tuple[PredictionDecisionView, ...]
+    scoring_truth: dict[str, str]
+    ledger: dict
+
+
+def _bnci_prediction_view(record, indices, start, stop, *, available_sample, reason=None,
+                          evidence_indices=None):
+    decision = MembershipDecision.row_column(record.candidate_id[indices],
+        n_rows=BNCI2014_008_GRID_SHAPE[0], n_columns=BNCI2014_008_GRID_SHAPE[1],
+        event_ids=tuple(f"{BNCI2014_008_DATASET_ID}:{record.subject_id}:{int(row)}" for row in indices),
+        repetition_indices=record.repetition_index[indices], repetitions=BNCI2014_008_REPETITIONS_PER_SELECTION,
+        evidence_indices=evidence_indices)
+    decision_id = str(record.selection_id[indices[0]])
+    return PredictionDecisionView(
+        record_id=f"{BNCI2014_008_DATASET_ID}:{decision_id}:{record.source_sha256}",
+        participant_key=origin_subject_key(BNCI2014_008_DATASET_ID, record.subject_id),
+        decision_id=decision_id,
+        samples=None if reason else np.asarray(record.eeg_uv[start:stop], dtype=np.float64) * 1e-6,
+        onsets=record.flash_sample[indices] - start, decision=decision, source_sha256=record.source_sha256,
+        raw_scope=(start, stop), sample_rate_hz=BNCI2014_008_SOURCE_SAMPLE_RATE_HZ,
+        channel_names=BNCI2014_008_CHANNELS, channel_types=("EEG",) * len(BNCI2014_008_CHANNELS),
+        reference=BNCI2014_008_SOURCE_REFERENCE, source_relative_path=record.source_relative_path,
+        source_dataset_id=BNCI2014_008_DATASET_ID, source_subject_id=record.subject_id,
+        available_sample=available_sample, unavailable_reason=reason)
+
+
+def prepare_bnci_independent_prefixes(path, *, source_sha256, budgets, profiles,
+                                      authorization_preprocessing, response_seconds=1.2, pre_roll_seconds=.2):
+    """Native MAT → strict C prefixes and one independent requested future queue.
+
+    The original prefix owner determines C authorization and common Kmax embargo.
+    Both expert views clip C before the next unknown flash. Boundary trial rows
+    remain scheduled but unavailable; raw retains every K label, right censored.
+    """
+    budgets = tuple(budgets)
+    if (not budgets or len(set(budgets)) != len(budgets)
+            or any(type(k) is not int or k < 0 for k in budgets)):
+        raise ValueError("independent calibration budgets must be distinct nonnegative integers")
+    payload = Path(path).read_bytes()
+    if hashlib.sha256(payload).hexdigest() != source_sha256:
+        raise ValueError("original raw bytes differ from the frozen BNCI source declaration")
+    record = read_bnci2014_008_candidate_record(io.BytesIO(payload), source_relative_path=Path(path).name,
+                                               source_sha256=source_sha256)
+    profiles = {profile.digest: profile for profile in profiles}
+    rate = BNCI2014_008_SOURCE_SAMPLE_RATE_HZ
+    width = max([round(response_seconds * rate), *(profile._source_stop for profile in profiles.values())])
+    preroll = max([round(pre_roll_seconds * rate), *(-profile._source_start for profile in profiles.values())])
+    raw, events, _ = bnci2014_008_raw(record)
+    maximum = max(budgets)
+    if maximum >= len(events):
+        raise ValueError("calibration leaves no independent test flashes")
+    _, test_scope = prefix_raw_scopes(raw, events, authorization_preprocessing,
+        calibration_events=0, maximum_calibration_events=maximum) if maximum else (None,
+            RawSampleScope("recording:K0-heldout", 0, len(record.eeg_uv), tuple(range(len(events)))))
+    starts, stops = source_epoch_support(events, rate, authorization_preprocessing)
+    later = np.arange(len(events)) >= maximum
+    test_available = later & (starts >= test_scope.start_sample) & (stops <= test_scope.stop_sample)
+    selections = [np.flatnonzero(record.selection_index == selection) for selection in np.unique(record.selection_index)]
+    target = {"participant_key": origin_subject_key(BNCI2014_008_DATASET_ID, record.subject_id),
+              "candidate_vocabulary": [row_column_target(row, col) for row in range(6) for col in range(6)],
+              "sample_rate_hz": rate, "channel_names": list(BNCI2014_008_CHANNELS),
+              "channel_types": ["EEG"] * len(BNCI2014_008_CHANNELS), "reference": BNCI2014_008_SOURCE_REFERENCE,
+              "signal_unit": "V", "source_sha256": source_sha256, "source_dataset_id": BNCI2014_008_DATASET_ID,
+              "source_subject_id": record.subject_id, "source_relative_path": record.source_relative_path}
+    calibration = {}
+    for budget in budgets:
+        datasets, groups = {}, []
+        authorized, _ = prefix_raw_scopes(raw, events, authorization_preprocessing,
+            calibration_events=budget, maximum_calibration_events=maximum) if budget else (None, test_scope)
+        cutoff = min(authorized.stop_sample, int(record.flash_sample[budget])) if budget else 0
+        prefix_contract = {**target, "raw_scope": [0, cutoff], "available_sample": cutoff}
+        fitted_raw = (CalibrationRecord(f"{target['participant_key']}:C{budget}:{source_sha256}",
+            np.asarray(record.eeg_uv[:cutoff], dtype=np.float64) * 1e-6,
+            record.flash_sample[:budget], record.raw_is_target[:budget], right_censored=True) if budget else None)
+        label_use = {"raw": {"requested_labels": budget, "used_labels": budget, "unused_label_indices": [],
+            "read_sample_support": [0, cutoff] if budget else None, "available_sample": cutoff,
+            "right_censored": True, "observed_response_samples":
+                np.minimum(width, cutoff - record.flash_sample[:budget]).tolist()}, "trial": {}}
+        prefix = CalibrationPrefix(budget, fitted_raw, datasets, tuple(groups), prefix_contract, label_use)
+        for digest, profile in profiles.items():
+            prefix.trial_target(profile)
+            epoch_starts = record.flash_sample[:budget] + profile._source_start
+            epoch_stops = record.flash_sample[:budget] + profile._source_stop
+            available = (epoch_starts >= 0) & (epoch_stops <= cutoff)
+            used = np.flatnonzero(available)
+            receipt = {"requested_labels": budget, "used_labels": len(used), "used_label_indices": used.tolist(),
+                "unused_label_indices": np.flatnonzero(~available).tolist(), "profile": profile.record(),
+                "read_sample_support": [0, cutoff] if len(used) else None, "available_sample": cutoff,
+                "source_epoch_scopes": np.column_stack((epoch_starts[available], epoch_stops[available])).tolist()}
+            if len(used):
+                scope = RawSampleScope(f"recording:C{budget}-before-next-flash", 0, cutoff, tuple(range(budget)))
+                data = build_bnci2014_008_subject_dataset(record, preprocessing=profile.preprocessing,
+                    raw_scope=scope, raw=raw, output_dtype=profile.output_dtype)
+                if tuple(map(canonical_channel_name, profile.channel_names)) != data.channel_names or profile.reference_channel is not None:
+                    data = adapt_observed_montage(data, profile.channel_names, reference_channel=profile.reference_channel)
+                materialize_dataset_identity(data)
+                if not np.array_equal(data.metadata["flash_sample_matlab_1based"].to_numpy() - 1,
+                                      record.flash_sample[used]):
+                    raise ValueError("actual trial preprocessing evidence differs from prefix availability")
+                datasets[digest] = data
+                receipt.update(numerical_input_digest=array_digest(data.X, data.y, data.trial_channel_mask),
+                    preprocessing_execution=data.provenance["preprocessing_execution"],
+                    actual_reference=data.provenance["source_reference"])
+            data = datasets.get(digest)
+            if data is not None:
+                data.X = _immutable_array(data.X, data.X.dtype)
+                data.y = _immutable_array(data.y, data.y.dtype)
+            label_use["trial"][digest] = receipt
+        for indices in selections:
+            first, last = int(record.flash_sample[indices[0]]), int(record.flash_sample[indices[-1]])
+            start, stop = first - preroll, last + width
+            if indices[-1] >= budget or start < 0 or stop > cutoff:
+                continue
+            if ((indices[0] > 0 and record.flash_sample[indices[0] - 1] + width > start)
+                    or (indices[-1] + 1 < len(events) and record.flash_sample[indices[-1] + 1] < stop)):
+                continue
+            view = _bnci_prediction_view(record, indices, start, stop, available_sample=stop)
+            truth = row_column_target(int(record.target_row[indices[0]]), int(record.target_col[indices[0]]))
+            groups.append(CalibrationSelection(view, record.raw_is_target[indices], truth))
+        calibration[budget] = CalibrationPrefix(budget, fitted_raw, datasets, tuple(groups), prefix_contract, label_use)
+    decisions, truths = [], {}
+    for indices in selections:
+        if not np.any(later[indices]):
+            continue
+        first, last = int(record.flash_sample[indices[0]]), int(record.flash_sample[indices[-1]])
+        start, stop = first - preroll, last + width
+        reason = None
+        if not test_available[indices].all():
+            reason = "partial_decision_after_fixed_Kmax_and_original_epoch_support_purge"
+        elif start < test_scope.start_sample or stop > test_scope.stop_sample:
+            reason = "decision_response_outside_authorized_test_scope"
+        elif indices[0] > 0 and record.flash_sample[indices[0] - 1] + width > start:
+            reason = "previous_unknown_decision_overlaps_finite_response_support"
+        elif indices[-1] + 1 < len(events) and record.flash_sample[indices[-1] + 1] < stop:
+            reason = "next_unknown_decision_overlaps_finite_response_support"
+        evidence = np.where(test_available[indices], np.arange(len(indices)), -1)
+        view = _bnci_prediction_view(record, indices, start, stop,
+            available_sample=max(stop, test_scope.start_sample), reason=reason, evidence_indices=evidence)
+        decisions.append(view)
+        truths[view.decision_id] = row_column_target(int(record.target_row[indices[0]]), int(record.target_col[indices[0]]))
+    return IndependentSubjectViews(calibration, tuple(decisions), truths, {
+        "source_sha256": source_sha256, "requested_Ks": list(budgets), "maximum_calibration_events": maximum,
+        "calibration": {str(k): prefix.record() for k, prefix in calibration.items()}, "test_scope": test_scope.record(),
+        "requested_decisions": len(decisions), "scorable_decisions": sum(view.samples is not None for view in decisions),
+        "test_views": [view.record() for view in decisions], "operator_identity": "native_unfiltered_volts/1",
+        "filtering_scope": "strict_C_prefix_or_each_independent_test_decision",
+        "same_physical_calibration_cutoff_for_all_experts": True})
 
 
 def prepare_bnci_calibration_groups(path, *, source_sha256, authorized_labels=800, group_count=6,

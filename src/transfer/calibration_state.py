@@ -15,7 +15,11 @@ from models.n2p3net import N2P3ArchitectureConfig, N2P3Net
 from research.contracts import semantic_sha256
 from transfer.binary import plain_trunk_configuration, target_shrinkage_features
 from transfer.calibration_candidates import FittedCalibrationCandidate
-from transfer.checkpoint import checkpoint_input_stats, predict_n2p3_checkpoint
+from transfer.checkpoint import (
+    checkpoint_input_stats,
+    checkpoint_scores_to_llr,
+    predict_n2p3_checkpoint,
+)
 from transfer.noise_model import freeze_metadata
 
 FROZEN_TRIAL_SCHEMA = "n2p3_frozen_trial_predictor/1"
@@ -86,11 +90,30 @@ class FrozenTrialPredictor:
                       "pooling_mode": trunk.pooling_mode}
         return cls(record, fitted.state)
 
+    @classmethod
+    def from_source(cls, prepared, subject):
+        """K0 freezes source weights, BN and input statistics without a target fit."""
+        trunk = prepared.trunk_for_target(subject)
+        if type(trunk) is not N2P3Net or trunk.splitbn_config is not None:
+            raise ValueError("frozen source-only expert requires the plain declared N2P3 architecture")
+        source_calibration = prepared.payload["source_calibration"]
+        checkpoint_scores_to_llr({"source_calibration": source_calibration}, np.zeros(1))
+        record = {"kind": "n2p3", "configuration": asdict(plain_trunk_configuration(trunk)),
+                  "architecture": trunk.architecture_record(), "n_channels": trunk.n_channels,
+                  "n_times": trunk.n_times, "sfreq": trunk.sfreq, "tmin_s": trunk.tmin_s,
+                  "pooling_mode": trunk.pooling_mode, "source_calibration": source_calibration}
+        state = {f"trunk.{key}": value for key, value in trunk.state_dict().items()}
+        state.update(input_mean=torch.as_tensor(prepared.input_statistics[0]),
+                     input_std=torch.as_tensor(prepared.input_statistics[1]))
+        return cls(record, state)
+
     def predict_logit(self, X, trial_channel_mask=None, *, device="cpu"):
         if self.record["kind"] == "n2p3":
-            return predict_n2p3_checkpoint(self._model, X, trial_channel_mask=trial_channel_mask,
+            logits = predict_n2p3_checkpoint(self._model, X, trial_channel_mask=trial_channel_mask,
                 input_stats=self._input_statistics,
                 device=torch.device(device))
+            return (checkpoint_scores_to_llr(self.record, logits)[0]
+                    if "source_calibration" in self.record else logits)
         channels = self._state["waveform_channels"].numpy()
         if trial_channel_mask is not None and not np.asarray(trial_channel_mask)[:, channels].all():
             raise ValueError("frozen classic expert requires all selected physical channels")
