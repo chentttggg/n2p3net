@@ -4,6 +4,26 @@
 
 B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修复容量关系P2、完成两轴及实际三包重放；20项必要验证通过，source/main已整合。A0/A1不代表完整B07，更不代表123项完成；B12独立C/test、K0真实状态与source/target三seed流程作为P0并行主线，不等待全部P1机制。
 
+当前15块的实施/研究出口分列如下；原机器计划中`not_started`是设计冻结时的历史状态，当前进度以本表及各证据为准。
+
+| 块 | 已交付出口 | 仍需完成 |
+|---|---|---|
+| B00 比较/选择 | requested风险、配对、失败与概率覆盖owner | 全流程选择与独立效能验收 |
+| B01 信号/支持 | BNCI合法原字节、Cal/held无标签view与时间履历 | 其他candidate数据adapter与硬件/光学证据 |
+| B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
+| B03 校准/混合 | 固定算术池及完整C内分组温度 | 独立泛化/复杂gating另验收 |
+| B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整三source→target seed与同批互补性 |
+| B05 AR/噪声 | 固定32前缀、精确梯度、576格M1及诊断 | 逐通道私有谱/ERP损伤归因 |
+| B06 边界条件 | mean/Schur、完整T测量、实际operator只读入口 | 未知state辨识、最终预处理T、E1–E3 |
+| B07 字典/历史 | A0/A1物理字典、端点、真实容量关系 | 导数、合法完整history、邻居积分、随机效应 |
+| B08 先验 | g/trace-control、唯一QR后验与两轴质量 | 当前完整1344格v3及后续quotient/completion |
+| B09 空间 | 成熟ERP/native布局锚点已具备 | 均值/空间prior与跨人稳定性研究 |
+| B10 输入污染 | 有限算子/工频/EOG现有研究入口与反例 | 完整分污染/可用时间配对实验 |
+| B11 动态/稳健 | observability/识别研究规格 | 明确失配后的实际joint/重尾模型 |
+| B12 公共流程 | 全局code/artifact审查；独立C/test主线正在实施 | 四库binary/合法candidate、K0/预算、三完整流程 |
+| B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
+| B14 工程/吞吐 | 源冻结、原件/镜像保留、内部owner及两轴源码评估 | B12共享数据/rolling资源排程、云实际25CPU/4GPUworkers |
+
 B08 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已落实full-rank软件路径与真实prior/fit/package关系，主线整合全集2604/19及独立Spec/Standards通过；[参考能量匹配对照](evidence/prior_control_20261006.zh.md)随后完成实施、两轴质量及合并全集2670/19，完整1344格归因矩阵按冻结程序执行。dynamic prior、quotient/completion、K0与新效能矩阵不因此完成，冻结M1仍按原程序解释。
 首次1344运行因A02后验核验病态而受控停止，101原包及失败捕获保留；原gate误判经独立actual-W QR/SVD与held读数核实，已改QR-RHS/后向关系及peer-abort调度，40项必要验证通过。完整矩阵由[新计划](assets/prior_control_20261006/plan_v2.json)同1344科学/资源格重新执行；原包不改签为新source，整体结果未完成。
 
