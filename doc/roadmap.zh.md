@@ -10,6 +10,7 @@ B04source/scratch及B05显式AR研究入口，[独立质量评估](evidence/ense
 M1使用[冻结计划](assets/continuous_fixed_prefix_20261005/m1_plan.json)：8人×6完整selection folds×6阶×2估计器，共576fit；C800中720标签形成六组，每fold600训练/120held，80标签不用。
 本地测得2participant workers×4threads为可行拓扑；所有12臂均执行、失败保留requested分母，不从单次探针选阶。该单seed target-only校准开发不称三完整source→target seed或成人确认。
 真实首轮因IPC父失败，143个原包已核验；[续跑计划](assets/continuous_fixed_prefix_20261005/m1_resume_plan.json)保持576逻辑格，复用来源与433新fit尝试另记，完整指标未完成前不晋升。
+续跑已完成576/576并独立全包重放，原包143+新fit433、失败0；[全臂结果](assets/continuous_fixed_prefix_20261005/m1_results.json)没有替代臂通过hit/NLL联合门。B05数值实施与M1开发出口完成，逐通道/噪声-ERP归因另走机制切片，基础四专家/三完整流程seed及成人确认不由本结果代替。
 
 1. B00评价/选择、B01信号/支持先固定；B02专家Interface、B03C内概率校准、B04神经/matched scratch构成主线。
 2. B05AR、B06边界、B07字典、B08先验、B09空间、B10输入算子在B00/B01后并行；B11动态/稳健模型按识别前置进入。

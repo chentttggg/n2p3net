@@ -1,0 +1,4461 @@
+{
+  "schema": "n2p3_m1_complete_results/1",
+  "status": "passed",
+  "evidence_scope": "public_calibration_development",
+  "actual_cells": 576,
+  "fixed_participant_count": 8,
+  "requested_decisions_per_arm": 48,
+  "sealed_model_packages": 576,
+  "replayed_packages": 576,
+  "physical_fit_ledger": {
+    "physical_fit_attempts": 433,
+    "physical_successful_fits": 433,
+    "reused_package_count": 143
+  },
+  "fit_origin_counts": {
+    "reused_package": 143,
+    "new_fit": 433
+  },
+  "reused_predictions_matching_original_saved_evidence": 72,
+  "source_manifest_sha256": "780a10665d1dc439fe185551b2e8e8ed78839aaca41c35cb5784f08be809e3fb",
+  "raw_audit_sha256": "41b2c166f8a1017c93194059dae0528d14de30f78dd799640ea4779a4fdd2b22",
+  "metrics": {
+    "ar0_burg": {
+      "requested_participant_operational_hit_rate": 0.7083333333333334,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 25.22584355345078,
+      "full_requested_brier": 0.5736563110438031,
+      "available_probability_nll": 25.22584355345078,
+      "available_probability_brier": 0.5736563110438031,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 7.259591812093624,
+          "available_probability_brier": 0.3333333333333333,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 7.259591812093624,
+          "full_requested_brier": 0.3333333333333333,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 34.30876698231082,
+          "available_probability_brier": 0.9240834561613096,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 34.30876698231082,
+          "full_requested_brier": 0.9240834561613096,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 37.73009121666352,
+          "available_probability_brier": 0.3333333333333333,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 37.73009121666352,
+          "full_requested_brier": 0.3333333333333333,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.16666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 100.6926116536922,
+          "available_probability_brier": 1.666666274515504,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 100.6926116536922,
+          "full_requested_brier": 1.666666274515504,
+          "correct_count": 1,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 6.4098646857039725,
+          "available_probability_brier": 0.666653202593515,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 6.4098646857039725,
+          "full_requested_brier": 0.666653202593515,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 15.405822076757241,
+          "available_probability_brier": 0.6651808884134297,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 15.405822076757241,
+          "full_requested_brier": 0.6651808884134297,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 1.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.0,
+          "available_probability_brier": 4.9738193410915714e-61,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.0,
+          "full_requested_brier": 4.9738193410915714e-61,
+          "correct_count": 6,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 1.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.848716896290175e-10,
+          "available_probability_brier": 1.777514651820343e-18,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.848716896290175e-10,
+          "full_requested_brier": 1.777514651820343e-18,
+          "correct_count": 6,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    },
+    "ar1_burg": {
+      "requested_participant_operational_hit_rate": 0.5833333333333333,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 3.0160653028890945,
+      "full_requested_brier": 0.6205939293480459,
+      "available_probability_nll": 3.0160653028890945,
+      "available_probability_brier": 0.6205939293480459,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 1.4897529130793696,
+          "available_probability_brier": 0.5318222095939186,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 1.4897529130793696,
+          "full_requested_brier": 0.5318222095939186,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 7.418364494235999,
+          "available_probability_brier": 0.8170087320017657,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 7.418364494235999,
+          "full_requested_brier": 0.8170087320017657,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 4.3234556780270434,
+          "available_probability_brier": 0.85631046533776,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 4.3234556780270434,
+          "full_requested_brier": 0.85631046533776,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 6.195627268716957,
+          "available_probability_brier": 1.2655312936306897,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 6.195627268716957,
+          "full_requested_brier": 1.2655312936306897,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.287385911909769,
+          "available_probability_brier": 0.650418157879065,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.287385911909769,
+          "full_requested_brier": 0.650418157879065,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.7582923741856026,
+          "available_probability_brier": 0.5145445606343638,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.7582923741856026,
+          "full_requested_brier": 0.5145445606343638,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 1.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.082483270101272,
+          "available_probability_brier": 0.03172911836625538,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.082483270101272,
+          "full_requested_brier": 0.03172911836625538,
+          "correct_count": 6,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.5731605128567433,
+          "available_probability_brier": 0.29738689734054935,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.5731605128567433,
+          "full_requested_brier": 0.29738689734054935,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    },
+    "ar4_burg": {
+      "requested_participant_operational_hit_rate": 0.6666666666666666,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 6.918508111132151,
+      "full_requested_brier": 0.5898350144285768,
+      "available_probability_nll": 6.918508111132151,
+      "available_probability_brier": 0.5898350144285768,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 20.283196854783796,
+          "available_probability_brier": 0.6716878179562881,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 20.283196854783796,
+          "full_requested_brier": 0.6716878179562881,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 18.921061451527063,
+          "available_probability_brier": 1.0006326780256003,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 18.921061451527063,
+          "full_requested_brier": 1.0006326780256003,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 5.290567573963034,
+          "available_probability_brier": 0.7230479993955274,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 5.290567573963034,
+          "full_requested_brier": 0.7230479993955274,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.16666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 5.935816659145249,
+          "available_probability_brier": 1.2191925935306054,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 5.935816659145249,
+          "full_requested_brier": 1.2191925935306054,
+          "correct_count": 1,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 4.0616185094263235,
+          "available_probability_brier": 0.637220939622014,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 4.0616185094263235,
+          "full_requested_brier": 0.637220939622014,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.581661853016537,
+          "available_probability_brier": 0.30922873735111867,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.581661853016537,
+          "full_requested_brier": 0.30922873735111867,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 1.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.0027679781899545724,
+          "available_probability_brier": 7.728645177683742e-05,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.0027679781899545724,
+          "full_requested_brier": 7.728645177683742e-05,
+          "correct_count": 6,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.2713740090052477,
+          "available_probability_brier": 0.15759206309568327,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.2713740090052477,
+          "full_requested_brier": 0.15759206309568327,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    },
+    "ar8_burg": {
+      "requested_participant_operational_hit_rate": 0.6666666666666666,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 6.151387163748461,
+      "full_requested_brier": 0.5691155120343981,
+      "available_probability_nll": 6.151387163748461,
+      "available_probability_brier": 0.5691155120343981,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 20.46687321629552,
+          "available_probability_brier": 0.7012190878795271,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 20.46687321629552,
+          "full_requested_brier": 0.7012190878795271,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 13.152583784053414,
+          "available_probability_brier": 0.9711735745843573,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 13.152583784053414,
+          "full_requested_brier": 0.9711735745843573,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 7.041381251772123,
+          "available_probability_brier": 0.6513438203119827,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 7.041381251772123,
+          "full_requested_brier": 0.6513438203119827,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.16666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 6.097159725754143,
+          "available_probability_brier": 1.2389949485564433,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 6.097159725754143,
+          "full_requested_brier": 1.2389949485564433,
+          "correct_count": 1,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 1.7373240953813696,
+          "available_probability_brier": 0.5321596640222451,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 1.7373240953813696,
+          "full_requested_brier": 0.5321596640222451,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.3318046140775447,
+          "available_probability_brier": 0.23368459464517755,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.3318046140775447,
+          "full_requested_brier": 0.23368459464517755,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 1.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.05411784653204069,
+          "available_probability_brier": 0.024461394390442866,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.05411784653204069,
+          "full_requested_brier": 0.024461394390442866,
+          "correct_count": 6,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.32985277612152913,
+          "available_probability_brier": 0.1998870118850091,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.32985277612152913,
+          "full_requested_brier": 0.1998870118850091,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    },
+    "ar16_burg": {
+      "requested_participant_operational_hit_rate": 0.6458333333333334,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 7.946129891753578,
+      "full_requested_brier": 0.6009552194906356,
+      "available_probability_nll": 7.946129891753578,
+      "available_probability_brier": 0.6009552194906356,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 21.134121502601413,
+          "available_probability_brier": 0.6693189995126795,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 21.134121502601413,
+          "full_requested_brier": 0.6693189995126795,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 20.408590296526572,
+          "available_probability_brier": 0.9967306298005126,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 20.408590296526572,
+          "full_requested_brier": 0.9967306298005126,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 9.395615036558208,
+          "available_probability_brier": 0.6737094392540709,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 9.395615036558208,
+          "full_requested_brier": 0.6737094392540709,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 9.008099996977126,
+          "available_probability_brier": 1.4376557671850938,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 9.008099996977126,
+          "full_requested_brier": 1.4376557671850938,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 2.7965069112081786,
+          "available_probability_brier": 0.49998006211681195,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 2.7965069112081786,
+          "full_requested_brier": 0.49998006211681195,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.3829457125993598,
+          "available_probability_brier": 0.2623049538666869,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.3829457125993598,
+          "full_requested_brier": 0.2623049538666869,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 1.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.03960262819701459,
+          "available_probability_brier": 0.014772186085351009,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.03960262819701459,
+          "full_requested_brier": 0.014772186085351009,
+          "correct_count": 6,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.40355704936074704,
+          "available_probability_brier": 0.25316971810387834,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.40355704936074704,
+          "full_requested_brier": 0.25316971810387834,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    },
+    "ar32_burg": {
+      "requested_participant_operational_hit_rate": 0.625,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 7.308100556235528,
+      "full_requested_brier": 0.5827329449379635,
+      "available_probability_nll": 7.308100556235528,
+      "available_probability_brier": 0.5827329449379635,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 18.56051346624664,
+          "available_probability_brier": 0.6677093743804615,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 18.56051346624664,
+          "full_requested_brier": 0.6677093743804615,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 15.736287965319091,
+          "available_probability_brier": 0.9892629244375816,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 15.736287965319091,
+          "full_requested_brier": 0.9892629244375816,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 11.612962554993551,
+          "available_probability_brier": 0.6734039697397578,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 11.612962554993551,
+          "full_requested_brier": 0.6734039697397578,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 8.670857271892487,
+          "available_probability_brier": 1.4112673741430424,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 8.670857271892487,
+          "full_requested_brier": 1.4112673741430424,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.190331827062766,
+          "available_probability_brier": 0.41473411363879836,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.190331827062766,
+          "full_requested_brier": 0.41473411363879836,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.17404757018009784,
+          "available_probability_brier": 0.1379976154199585,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.17404757018009784,
+          "full_requested_brier": 0.1379976154199585,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.16765541135349527,
+          "available_probability_brier": 0.1339219258483156,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.16765541135349527,
+          "full_requested_brier": 0.1339219258483156,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.352148382836097,
+          "available_probability_brier": 0.2335662618957918,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.352148382836097,
+          "full_requested_brier": 0.2335662618957918,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    },
+    "ar0_conditional_profile": {
+      "requested_participant_operational_hit_rate": 0.7083333333333334,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 25.22584355345078,
+      "full_requested_brier": 0.5736563110438031,
+      "available_probability_nll": 25.22584355345078,
+      "available_probability_brier": 0.5736563110438031,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 7.259591812093624,
+          "available_probability_brier": 0.3333333333333333,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 7.259591812093624,
+          "full_requested_brier": 0.3333333333333333,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 34.30876698231082,
+          "available_probability_brier": 0.9240834561613096,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 34.30876698231082,
+          "full_requested_brier": 0.9240834561613096,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 37.73009121666352,
+          "available_probability_brier": 0.3333333333333333,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 37.73009121666352,
+          "full_requested_brier": 0.3333333333333333,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.16666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 100.6926116536922,
+          "available_probability_brier": 1.666666274515504,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 100.6926116536922,
+          "full_requested_brier": 1.666666274515504,
+          "correct_count": 1,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 6.4098646857039725,
+          "available_probability_brier": 0.666653202593515,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 6.4098646857039725,
+          "full_requested_brier": 0.666653202593515,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 15.405822076757241,
+          "available_probability_brier": 0.6651808884134297,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 15.405822076757241,
+          "full_requested_brier": 0.6651808884134297,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 1.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.0,
+          "available_probability_brier": 4.9738193410915714e-61,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.0,
+          "full_requested_brier": 4.9738193410915714e-61,
+          "correct_count": 6,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 1.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.848716896290175e-10,
+          "available_probability_brier": 1.777514651820343e-18,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.848716896290175e-10,
+          "full_requested_brier": 1.777514651820343e-18,
+          "correct_count": 6,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    },
+    "ar1_conditional_profile": {
+      "requested_participant_operational_hit_rate": 0.4791666666666667,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 2.524123182823853,
+      "full_requested_brier": 0.6576916028007809,
+      "available_probability_nll": 2.524123182823853,
+      "available_probability_brier": 0.6576916028007809,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 1.3286388025640503,
+          "available_probability_brier": 0.5710425351851423,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 1.3286388025640503,
+          "full_requested_brier": 0.5710425351851423,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.3333333333333333,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 4.62241434109535,
+          "available_probability_brier": 0.8014012441132494,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 4.62241434109535,
+          "full_requested_brier": 0.8014012441132494,
+          "correct_count": 2,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.3333333333333333,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 4.807702695797911,
+          "available_probability_brier": 0.9537243730544901,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 4.807702695797911,
+          "full_requested_brier": 0.9537243730544901,
+          "correct_count": 2,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 6.470549635982649,
+          "available_probability_brier": 1.2897307085234635,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 6.470549635982649,
+          "full_requested_brier": 1.2897307085234635,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 1.356898645932277,
+          "available_probability_brier": 0.6301495054505016,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 1.356898645932277,
+          "full_requested_brier": 0.6301495054505016,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.3333333333333333,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.9859933863581318,
+          "available_probability_brier": 0.6681672041547251,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.9859933863581318,
+          "full_requested_brier": 0.6681672041547251,
+          "correct_count": 2,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 1.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.1439184599978469,
+          "available_probability_brier": 0.07480725909670875,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.1439184599978469,
+          "full_requested_brier": 0.07480725909670875,
+          "correct_count": 6,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.4768694948626074,
+          "available_probability_brier": 0.2725099928279659,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.4768694948626074,
+          "full_requested_brier": 0.2725099928279659,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    },
+    "ar4_conditional_profile": {
+      "requested_participant_operational_hit_rate": 0.6458333333333334,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 5.417055522055791,
+      "full_requested_brier": 0.6572158787333097,
+      "available_probability_nll": 5.417055522055791,
+      "available_probability_brier": 0.6572158787333097,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 9.97917091580371,
+          "available_probability_brier": 0.6896278649375605,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 9.97917091580371,
+          "full_requested_brier": 0.6896278649375605,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.3333333333333333,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 8.081497944631968,
+          "available_probability_brier": 1.0634606271118556,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 8.081497944631968,
+          "full_requested_brier": 1.0634606271118556,
+          "correct_count": 2,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 12.629088088176303,
+          "available_probability_brier": 1.038469382184607,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 12.629088088176303,
+          "full_requested_brier": 1.038469382184607,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.16666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 9.878998052449289,
+          "available_probability_brier": 1.4566082528114828,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 9.878998052449289,
+          "full_requested_brier": 1.4566082528114828,
+          "correct_count": 1,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 1.3210201089632383,
+          "available_probability_brier": 0.35547133211643867,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 1.3210201089632383,
+          "full_requested_brier": 0.35547133211643867,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 1.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.07540310648448145,
+          "available_probability_brier": 0.02336682771033327,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.07540310648448145,
+          "full_requested_brier": 0.02336682771033327,
+          "correct_count": 6,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.793651812649836,
+          "available_probability_brier": 0.3271711115982339,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.793651812649836,
+          "full_requested_brier": 0.3271711115982339,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.8333333333333334,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 0.5776141472875002,
+          "available_probability_brier": 0.30355163139596536,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 0.5776141472875002,
+          "full_requested_brier": 0.30355163139596536,
+          "correct_count": 5,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    },
+    "ar8_conditional_profile": {
+      "requested_participant_operational_hit_rate": 0.3333333333333333,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 3.438000331356489,
+      "full_requested_brier": 0.9630178649865953,
+      "available_probability_nll": 3.438000331356489,
+      "available_probability_brier": 0.9630178649865953,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.3333333333333333,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.294252395303522,
+          "available_probability_brier": 0.953968180588845,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.294252395303522,
+          "full_requested_brier": 0.953968180588845,
+          "correct_count": 2,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.16666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.5123504798974996,
+          "available_probability_brier": 0.9679225227337526,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.5123504798974996,
+          "full_requested_brier": 0.9679225227337526,
+          "correct_count": 1,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.5984008003063885,
+          "available_probability_brier": 0.973071096016521,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.5984008003063885,
+          "full_requested_brier": 0.973071096016521,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.5704298240144694,
+          "available_probability_brier": 0.9715209605571683,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.5704298240144694,
+          "full_requested_brier": 0.9715209605571683,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.3333333333333333,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.5103740069590104,
+          "available_probability_brier": 0.9680388126541396,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.5103740069590104,
+          "full_requested_brier": 0.9680388126541396,
+          "correct_count": 2,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.5,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.497177738122597,
+          "available_probability_brier": 0.9672006716208857,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.497177738122597,
+          "full_requested_brier": 0.9672006716208857,
+          "correct_count": 3,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.2631286781785014,
+          "available_probability_brier": 0.9515704818438101,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.2631286781785014,
+          "full_requested_brier": 0.9515704818438101,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.6666666666666666,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.2578887280699256,
+          "available_probability_brier": 0.95085019387764,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.2578887280699256,
+          "full_requested_brier": 0.95085019387764,
+          "correct_count": 4,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    },
+    "ar16_conditional_profile": {
+      "requested_participant_operational_hit_rate": 0.0,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 3.697912650365975,
+      "full_requested_brier": 0.9785146293414401,
+      "available_probability_nll": 3.697912650365975,
+      "available_probability_brier": 0.9785146293414401,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.6669350406765173,
+          "available_probability_brier": 0.9759977738888647,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.6669350406765173,
+          "full_requested_brier": 0.9759977738888647,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.612635854954648,
+          "available_probability_brier": 0.9742680017474199,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.612635854954648,
+          "full_requested_brier": 0.9742680017474199,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.749283815307535,
+          "available_probability_brier": 0.9822122995069084,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.749283815307535,
+          "full_requested_brier": 0.9822122995069084,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.708580585133125,
+          "available_probability_brier": 0.9791776151906172,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.708580585133125,
+          "full_requested_brier": 0.9791776151906172,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.6649099383642323,
+          "available_probability_brier": 0.9765127941061159,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.6649099383642323,
+          "full_requested_brier": 0.9765127941061159,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.702457270112426,
+          "available_probability_brier": 0.9780172384955762,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.702457270112426,
+          "full_requested_brier": 0.9780172384955762,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.680712135244388,
+          "available_probability_brier": 0.9781951623063433,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.680712135244388,
+          "full_requested_brier": 0.9781951623063433,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.797786563134927,
+          "available_probability_brier": 0.9837361494896747,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.797786563134927,
+          "full_requested_brier": 0.9837361494896747,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    },
+    "ar32_conditional_profile": {
+      "requested_participant_operational_hit_rate": 0.0,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "full_requested_nll": 3.578054715685014,
+      "full_requested_brier": 0.9738002061510334,
+      "available_probability_nll": 3.578054715685014,
+      "available_probability_brier": 0.9738002061510334,
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.6032637326614796,
+          "available_probability_brier": 0.9758349941843133,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.6032637326614796,
+          "full_requested_brier": 0.9758349941843133,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.5807994142719966,
+          "available_probability_brier": 0.9721925861147662,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.5807994142719966,
+          "full_requested_brier": 0.9721925861147662,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.7625625942302974,
+          "available_probability_brier": 0.978573922416031,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.7625625942302974,
+          "full_requested_brier": 0.978573922416031,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.6796037746262082,
+          "available_probability_brier": 0.978661284981047,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.6796037746262082,
+          "full_requested_brier": 0.978661284981047,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.6227212918971206,
+          "available_probability_brier": 0.9744539167145431,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.6227212918971206,
+          "full_requested_brier": 0.9744539167145431,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.5691569898909865,
+          "available_probability_brier": 0.975544151657318,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.5691569898909865,
+          "full_requested_brier": 0.975544151657318,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.655787530032484,
+          "available_probability_brier": 0.9783568116894165,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.655787530032484,
+          "full_requested_brier": 0.9783568116894165,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "requested_decisions": 6,
+          "operational_hit_rate": 0.0,
+          "prediction_coverage": 1.0,
+          "probability_coverage": 1.0,
+          "available_probability_nll": 3.150542397869543,
+          "available_probability_brier": 0.9567839814508322,
+          "available_probability_seed_count": 1,
+          "full_requested_nll": 3.150542397869543,
+          "full_requested_brier": 0.9567839814508322,
+          "correct_count": 0,
+          "tie_count": 0,
+          "fit_failure_count": 0,
+          "incomplete_count": 0,
+          "not_available_count": 0,
+          "abstain_count": 0
+        }
+      ]
+    }
+  },
+  "paired_contrasts_against_ar8_burg": {
+    "ar0_burg": {
+      "delta_hit": 0.04166666666666667,
+      "delta_prediction_coverage": 0.0,
+      "delta_probability_coverage": 0.0,
+      "paired_baseline_nll": 6.151387163748461,
+      "paired_candidate_nll": 25.22584355345078,
+      "delta_paired_nll": 19.07445638970232,
+      "paired_baseline_brier": 0.5691155120343981,
+      "paired_candidate_brier": 0.5736563110438031,
+      "delta_paired_brier": 0.004540799009404961,
+      "full_requested_paired_delta_nll": 19.07445638970232,
+      "full_requested_paired_delta_brier": 0.004540799009404961,
+      "paired_probability_count": 48,
+      "missing_probability_ledger": [],
+      "rescued_count": 3,
+      "harmed_count": 1,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "no_new_missing_baseline_success": true,
+      "no_new_missing_baseline_probability_success": true,
+      "gate_scope": "preserve every baseline probability and operational prediction output; no selection action",
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "delta_hit": 0.16666666666666674,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 20.46687321629552,
+          "paired_candidate_nll": 7.259591812093624,
+          "delta_paired_nll": -13.207281404201897,
+          "paired_baseline_brier": 0.7012190878795271,
+          "paired_candidate_brier": 0.3333333333333333,
+          "delta_paired_brier": -0.3678857545461938
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 13.152583784053414,
+          "paired_candidate_nll": 34.30876698231082,
+          "delta_paired_nll": 21.15618319825741,
+          "paired_baseline_brier": 0.9711735745843573,
+          "paired_candidate_brier": 0.9240834561613096,
+          "delta_paired_brier": -0.04709011842304767
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "delta_hit": 0.16666666666666674,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 7.041381251772123,
+          "paired_candidate_nll": 37.73009121666352,
+          "delta_paired_nll": 30.688709964891395,
+          "paired_baseline_brier": 0.6513438203119827,
+          "paired_candidate_brier": 0.3333333333333333,
+          "delta_paired_brier": -0.31801048697864936
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 6.097159725754143,
+          "paired_candidate_nll": 100.6926116536922,
+          "delta_paired_nll": 94.59545192793806,
+          "paired_baseline_brier": 1.2389949485564433,
+          "paired_candidate_brier": 1.666666274515504,
+          "delta_paired_brier": 0.42767132595906077
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 1.7373240953813696,
+          "paired_candidate_nll": 6.4098646857039725,
+          "delta_paired_nll": 4.672540590322603,
+          "paired_baseline_brier": 0.5321596640222451,
+          "paired_candidate_brier": 0.666653202593515,
+          "delta_paired_brier": 0.1344935385712699
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "delta_hit": -0.16666666666666674,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.3318046140775447,
+          "paired_candidate_nll": 15.405822076757241,
+          "delta_paired_nll": 15.074017462679697,
+          "paired_baseline_brier": 0.23368459464517755,
+          "paired_candidate_brier": 0.6651808884134297,
+          "delta_paired_brier": 0.43149629376825216
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.05411784653204069,
+          "paired_candidate_nll": 0.0,
+          "delta_paired_nll": -0.05411784653204069,
+          "paired_baseline_brier": 0.024461394390442866,
+          "paired_candidate_brier": 4.9738193410915714e-61,
+          "delta_paired_brier": -0.024461394390442866
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "delta_hit": 0.16666666666666663,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.32985277612152913,
+          "paired_candidate_nll": 3.848716896290175e-10,
+          "delta_paired_nll": -0.32985277573665744,
+          "paired_baseline_brier": 0.1998870118850091,
+          "paired_candidate_brier": 1.777514651820343e-18,
+          "delta_paired_brier": -0.1998870118850091
+        }
+      ],
+      "selection_or_promotion_performed": false
+    },
+    "ar1_burg": {
+      "delta_hit": -0.08333333333333334,
+      "delta_prediction_coverage": 0.0,
+      "delta_probability_coverage": 0.0,
+      "paired_baseline_nll": 6.151387163748461,
+      "paired_candidate_nll": 3.0160653028890945,
+      "delta_paired_nll": -3.1353218608593663,
+      "paired_baseline_brier": 0.5691155120343981,
+      "paired_candidate_brier": 0.6205939293480459,
+      "delta_paired_brier": 0.05147841731364777,
+      "full_requested_paired_delta_nll": -3.1353218608593663,
+      "full_requested_paired_delta_brier": 0.05147841731364777,
+      "paired_probability_count": 48,
+      "missing_probability_ledger": [],
+      "rescued_count": 0,
+      "harmed_count": 4,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "no_new_missing_baseline_success": true,
+      "no_new_missing_baseline_probability_success": true,
+      "gate_scope": "preserve every baseline probability and operational prediction output; no selection action",
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 20.46687321629552,
+          "paired_candidate_nll": 1.4897529130793696,
+          "delta_paired_nll": -18.977120303216154,
+          "paired_baseline_brier": 0.7012190878795271,
+          "paired_candidate_brier": 0.5318222095939186,
+          "delta_paired_brier": -0.16939687828560857
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 13.152583784053414,
+          "paired_candidate_nll": 7.418364494235999,
+          "delta_paired_nll": -5.734219289817415,
+          "paired_baseline_brier": 0.9711735745843573,
+          "paired_candidate_brier": 0.8170087320017657,
+          "delta_paired_brier": -0.15416484258259155
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "delta_hit": -0.16666666666666663,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 7.041381251772123,
+          "paired_candidate_nll": 4.3234556780270434,
+          "delta_paired_nll": -2.717925573745079,
+          "paired_baseline_brier": 0.6513438203119827,
+          "paired_candidate_brier": 0.85631046533776,
+          "delta_paired_brier": 0.20496664502577733
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "delta_hit": -0.16666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 6.097159725754143,
+          "paired_candidate_nll": 6.195627268716957,
+          "delta_paired_nll": 0.09846754296281457,
+          "paired_baseline_brier": 1.2389949485564433,
+          "paired_candidate_brier": 1.2655312936306897,
+          "delta_paired_brier": 0.026536345074246404
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 1.7373240953813696,
+          "paired_candidate_nll": 3.287385911909769,
+          "delta_paired_nll": 1.5500618165283995,
+          "paired_baseline_brier": 0.5321596640222451,
+          "paired_candidate_brier": 0.650418157879065,
+          "delta_paired_brier": 0.11825849385681986
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "delta_hit": -0.16666666666666674,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.3318046140775447,
+          "paired_candidate_nll": 0.7582923741856026,
+          "delta_paired_nll": 0.4264877601080579,
+          "paired_baseline_brier": 0.23368459464517755,
+          "paired_candidate_brier": 0.5145445606343638,
+          "delta_paired_brier": 0.2808599659891863
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.05411784653204069,
+          "paired_candidate_nll": 0.082483270101272,
+          "delta_paired_nll": 0.02836542356923131,
+          "paired_baseline_brier": 0.024461394390442866,
+          "paired_candidate_brier": 0.03172911836625538,
+          "delta_paired_brier": 0.007267723975812514
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "delta_hit": -0.16666666666666674,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.32985277612152913,
+          "paired_candidate_nll": 0.5731605128567433,
+          "delta_paired_nll": 0.24330773673521416,
+          "paired_baseline_brier": 0.1998870118850091,
+          "paired_candidate_brier": 0.29738689734054935,
+          "delta_paired_brier": 0.09749988545554025
+        }
+      ],
+      "selection_or_promotion_performed": false
+    },
+    "ar4_burg": {
+      "delta_hit": 0.0,
+      "delta_prediction_coverage": 0.0,
+      "delta_probability_coverage": 0.0,
+      "paired_baseline_nll": 6.151387163748461,
+      "paired_candidate_nll": 6.918508111132151,
+      "delta_paired_nll": 0.76712094738369,
+      "paired_baseline_brier": 0.5691155120343981,
+      "paired_candidate_brier": 0.5898350144285768,
+      "delta_paired_brier": 0.020719502394178635,
+      "full_requested_paired_delta_nll": 0.76712094738369,
+      "full_requested_paired_delta_brier": 0.020719502394178635,
+      "paired_probability_count": 48,
+      "missing_probability_ledger": [],
+      "rescued_count": 0,
+      "harmed_count": 0,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "no_new_missing_baseline_success": true,
+      "no_new_missing_baseline_probability_success": true,
+      "gate_scope": "preserve every baseline probability and operational prediction output; no selection action",
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 20.46687321629552,
+          "paired_candidate_nll": 20.283196854783796,
+          "delta_paired_nll": -0.18367636151172562,
+          "paired_baseline_brier": 0.7012190878795271,
+          "paired_candidate_brier": 0.6716878179562881,
+          "delta_paired_brier": -0.029531269923239067
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 13.152583784053414,
+          "paired_candidate_nll": 18.921061451527063,
+          "delta_paired_nll": 5.768477667473649,
+          "paired_baseline_brier": 0.9711735745843573,
+          "paired_candidate_brier": 1.0006326780256003,
+          "delta_paired_brier": 0.02945910344124303
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 7.041381251772123,
+          "paired_candidate_nll": 5.290567573963034,
+          "delta_paired_nll": -1.7508136778090888,
+          "paired_baseline_brier": 0.6513438203119827,
+          "paired_candidate_brier": 0.7230479993955274,
+          "delta_paired_brier": 0.07170417908354476
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 6.097159725754143,
+          "paired_candidate_nll": 5.935816659145249,
+          "delta_paired_nll": -0.16134306660889397,
+          "paired_baseline_brier": 1.2389949485564433,
+          "paired_candidate_brier": 1.2191925935306054,
+          "delta_paired_brier": -0.019802355025837937
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 1.7373240953813696,
+          "paired_candidate_nll": 4.0616185094263235,
+          "delta_paired_nll": 2.324294414044954,
+          "paired_baseline_brier": 0.5321596640222451,
+          "paired_candidate_brier": 0.637220939622014,
+          "delta_paired_brier": 0.10506127559976886
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.3318046140775447,
+          "paired_candidate_nll": 0.581661853016537,
+          "delta_paired_nll": 0.24985723893899225,
+          "paired_baseline_brier": 0.23368459464517755,
+          "paired_candidate_brier": 0.30922873735111867,
+          "delta_paired_brier": 0.07554414270594112
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.05411784653204069,
+          "paired_candidate_nll": 0.0027679781899545724,
+          "delta_paired_nll": -0.05134986834208612,
+          "paired_baseline_brier": 0.024461394390442866,
+          "paired_candidate_brier": 7.728645177683742e-05,
+          "delta_paired_brier": -0.02438410793866603
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.32985277612152913,
+          "paired_candidate_nll": 0.2713740090052477,
+          "delta_paired_nll": -0.058478767116281416,
+          "paired_baseline_brier": 0.1998870118850091,
+          "paired_candidate_brier": 0.15759206309568327,
+          "delta_paired_brier": -0.042294948789325826
+        }
+      ],
+      "selection_or_promotion_performed": false
+    },
+    "ar16_burg": {
+      "delta_hit": -0.020833333333333332,
+      "delta_prediction_coverage": 0.0,
+      "delta_probability_coverage": 0.0,
+      "paired_baseline_nll": 6.151387163748461,
+      "paired_candidate_nll": 7.946129891753578,
+      "delta_paired_nll": 1.794742728005117,
+      "paired_baseline_brier": 0.5691155120343981,
+      "paired_candidate_brier": 0.6009552194906356,
+      "delta_paired_brier": 0.03183970745623743,
+      "full_requested_paired_delta_nll": 1.794742728005117,
+      "full_requested_paired_delta_brier": 0.03183970745623743,
+      "paired_probability_count": 48,
+      "missing_probability_ledger": [],
+      "rescued_count": 0,
+      "harmed_count": 1,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "no_new_missing_baseline_success": true,
+      "no_new_missing_baseline_probability_success": true,
+      "gate_scope": "preserve every baseline probability and operational prediction output; no selection action",
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 20.46687321629552,
+          "paired_candidate_nll": 21.134121502601413,
+          "delta_paired_nll": 0.6672482863058917,
+          "paired_baseline_brier": 0.7012190878795271,
+          "paired_candidate_brier": 0.6693189995126795,
+          "delta_paired_brier": -0.031900088366847656
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 13.152583784053414,
+          "paired_candidate_nll": 20.408590296526572,
+          "delta_paired_nll": 7.256006512473158,
+          "paired_baseline_brier": 0.9711735745843573,
+          "paired_candidate_brier": 0.9967306298005126,
+          "delta_paired_brier": 0.025557055216155367
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 7.041381251772123,
+          "paired_candidate_nll": 9.395615036558208,
+          "delta_paired_nll": 2.3542337847860857,
+          "paired_baseline_brier": 0.6513438203119827,
+          "paired_candidate_brier": 0.6737094392540709,
+          "delta_paired_brier": 0.022365618942088217
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "delta_hit": -0.16666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 6.097159725754143,
+          "paired_candidate_nll": 9.008099996977126,
+          "delta_paired_nll": 2.9109402712229837,
+          "paired_baseline_brier": 1.2389949485564433,
+          "paired_candidate_brier": 1.4376557671850938,
+          "delta_paired_brier": 0.19866081862865048
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 1.7373240953813696,
+          "paired_candidate_nll": 2.7965069112081786,
+          "delta_paired_nll": 1.059182815826809,
+          "paired_baseline_brier": 0.5321596640222451,
+          "paired_candidate_brier": 0.49998006211681195,
+          "delta_paired_brier": -0.032179601905433175
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.3318046140775447,
+          "paired_candidate_nll": 0.3829457125993598,
+          "delta_paired_nll": 0.05114109852181509,
+          "paired_baseline_brier": 0.23368459464517755,
+          "paired_candidate_brier": 0.2623049538666869,
+          "delta_paired_brier": 0.02862035922150935
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.05411784653204069,
+          "paired_candidate_nll": 0.03960262819701459,
+          "delta_paired_nll": -0.0145152183350261,
+          "paired_baseline_brier": 0.024461394390442866,
+          "paired_candidate_brier": 0.014772186085351009,
+          "delta_paired_brier": -0.009689208305091858
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.32985277612152913,
+          "paired_candidate_nll": 0.40355704936074704,
+          "delta_paired_nll": 0.07370427323921791,
+          "paired_baseline_brier": 0.1998870118850091,
+          "paired_candidate_brier": 0.25316971810387834,
+          "delta_paired_brier": 0.05328270621886924
+        }
+      ],
+      "selection_or_promotion_performed": false
+    },
+    "ar32_burg": {
+      "delta_hit": -0.041666666666666644,
+      "delta_prediction_coverage": 0.0,
+      "delta_probability_coverage": 0.0,
+      "paired_baseline_nll": 6.151387163748461,
+      "paired_candidate_nll": 7.308100556235528,
+      "delta_paired_nll": 1.1567133924870676,
+      "paired_baseline_brier": 0.5691155120343981,
+      "paired_candidate_brier": 0.5827329449379635,
+      "delta_paired_brier": 0.013617432903565319,
+      "full_requested_paired_delta_nll": 1.1567133924870676,
+      "full_requested_paired_delta_brier": 0.013617432903565319,
+      "paired_probability_count": 48,
+      "missing_probability_ledger": [],
+      "rescued_count": 1,
+      "harmed_count": 3,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "no_new_missing_baseline_success": true,
+      "no_new_missing_baseline_probability_success": true,
+      "gate_scope": "preserve every baseline probability and operational prediction output; no selection action",
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 20.46687321629552,
+          "paired_candidate_nll": 18.56051346624664,
+          "delta_paired_nll": -1.9063597500488818,
+          "paired_baseline_brier": 0.7012190878795271,
+          "paired_candidate_brier": 0.6677093743804615,
+          "delta_paired_brier": -0.03350971349906562
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 13.152583784053414,
+          "paired_candidate_nll": 15.736287965319091,
+          "delta_paired_nll": 2.583704181265677,
+          "paired_baseline_brier": 0.9711735745843573,
+          "paired_candidate_brier": 0.9892629244375816,
+          "delta_paired_brier": 0.0180893498532243
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "delta_hit": -0.16666666666666663,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 7.041381251772123,
+          "paired_candidate_nll": 11.612962554993551,
+          "delta_paired_nll": 4.5715813032214285,
+          "paired_baseline_brier": 0.6513438203119827,
+          "paired_candidate_brier": 0.6734039697397578,
+          "delta_paired_brier": 0.022060149427775122
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "delta_hit": -0.16666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 6.097159725754143,
+          "paired_candidate_nll": 8.670857271892487,
+          "delta_paired_nll": 2.5736975461383444,
+          "paired_baseline_brier": 1.2389949485564433,
+          "paired_candidate_brier": 1.4112673741430424,
+          "delta_paired_brier": 0.17227242558659905
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "delta_hit": 0.16666666666666674,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 1.7373240953813696,
+          "paired_candidate_nll": 3.190331827062766,
+          "delta_paired_nll": 1.4530077316813963,
+          "paired_baseline_brier": 0.5321596640222451,
+          "paired_candidate_brier": 0.41473411363879836,
+          "delta_paired_brier": -0.11742555038344676
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.3318046140775447,
+          "paired_candidate_nll": 0.17404757018009784,
+          "delta_paired_nll": -0.15775704389744685,
+          "paired_baseline_brier": 0.23368459464517755,
+          "paired_candidate_brier": 0.1379976154199585,
+          "delta_paired_brier": -0.09568697922521904
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "delta_hit": -0.16666666666666663,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.05411784653204069,
+          "paired_candidate_nll": 0.16765541135349527,
+          "delta_paired_nll": 0.11353756482145458,
+          "paired_baseline_brier": 0.024461394390442866,
+          "paired_candidate_brier": 0.1339219258483156,
+          "delta_paired_brier": 0.10946053145787274
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.32985277612152913,
+          "paired_candidate_nll": 0.352148382836097,
+          "delta_paired_nll": 0.022295606714567873,
+          "paired_baseline_brier": 0.1998870118850091,
+          "paired_candidate_brier": 0.2335662618957918,
+          "delta_paired_brier": 0.0336792500107827
+        }
+      ],
+      "selection_or_promotion_performed": false
+    },
+    "ar0_conditional_profile": {
+      "delta_hit": 0.04166666666666667,
+      "delta_prediction_coverage": 0.0,
+      "delta_probability_coverage": 0.0,
+      "paired_baseline_nll": 6.151387163748461,
+      "paired_candidate_nll": 25.22584355345078,
+      "delta_paired_nll": 19.07445638970232,
+      "paired_baseline_brier": 0.5691155120343981,
+      "paired_candidate_brier": 0.5736563110438031,
+      "delta_paired_brier": 0.004540799009404961,
+      "full_requested_paired_delta_nll": 19.07445638970232,
+      "full_requested_paired_delta_brier": 0.004540799009404961,
+      "paired_probability_count": 48,
+      "missing_probability_ledger": [],
+      "rescued_count": 3,
+      "harmed_count": 1,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "no_new_missing_baseline_success": true,
+      "no_new_missing_baseline_probability_success": true,
+      "gate_scope": "preserve every baseline probability and operational prediction output; no selection action",
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "delta_hit": 0.16666666666666674,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 20.46687321629552,
+          "paired_candidate_nll": 7.259591812093624,
+          "delta_paired_nll": -13.207281404201897,
+          "paired_baseline_brier": 0.7012190878795271,
+          "paired_candidate_brier": 0.3333333333333333,
+          "delta_paired_brier": -0.3678857545461938
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 13.152583784053414,
+          "paired_candidate_nll": 34.30876698231082,
+          "delta_paired_nll": 21.15618319825741,
+          "paired_baseline_brier": 0.9711735745843573,
+          "paired_candidate_brier": 0.9240834561613096,
+          "delta_paired_brier": -0.04709011842304767
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "delta_hit": 0.16666666666666674,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 7.041381251772123,
+          "paired_candidate_nll": 37.73009121666352,
+          "delta_paired_nll": 30.688709964891395,
+          "paired_baseline_brier": 0.6513438203119827,
+          "paired_candidate_brier": 0.3333333333333333,
+          "delta_paired_brier": -0.31801048697864936
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 6.097159725754143,
+          "paired_candidate_nll": 100.6926116536922,
+          "delta_paired_nll": 94.59545192793806,
+          "paired_baseline_brier": 1.2389949485564433,
+          "paired_candidate_brier": 1.666666274515504,
+          "delta_paired_brier": 0.42767132595906077
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 1.7373240953813696,
+          "paired_candidate_nll": 6.4098646857039725,
+          "delta_paired_nll": 4.672540590322603,
+          "paired_baseline_brier": 0.5321596640222451,
+          "paired_candidate_brier": 0.666653202593515,
+          "delta_paired_brier": 0.1344935385712699
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "delta_hit": -0.16666666666666674,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.3318046140775447,
+          "paired_candidate_nll": 15.405822076757241,
+          "delta_paired_nll": 15.074017462679697,
+          "paired_baseline_brier": 0.23368459464517755,
+          "paired_candidate_brier": 0.6651808884134297,
+          "delta_paired_brier": 0.43149629376825216
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.05411784653204069,
+          "paired_candidate_nll": 0.0,
+          "delta_paired_nll": -0.05411784653204069,
+          "paired_baseline_brier": 0.024461394390442866,
+          "paired_candidate_brier": 4.9738193410915714e-61,
+          "delta_paired_brier": -0.024461394390442866
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "delta_hit": 0.16666666666666663,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.32985277612152913,
+          "paired_candidate_nll": 3.848716896290175e-10,
+          "delta_paired_nll": -0.32985277573665744,
+          "paired_baseline_brier": 0.1998870118850091,
+          "paired_candidate_brier": 1.777514651820343e-18,
+          "delta_paired_brier": -0.1998870118850091
+        }
+      ],
+      "selection_or_promotion_performed": false
+    },
+    "ar1_conditional_profile": {
+      "delta_hit": -0.1875,
+      "delta_prediction_coverage": 0.0,
+      "delta_probability_coverage": 0.0,
+      "paired_baseline_nll": 6.151387163748461,
+      "paired_candidate_nll": 2.524123182823853,
+      "delta_paired_nll": -3.627263980924608,
+      "paired_baseline_brier": 0.5691155120343981,
+      "paired_candidate_brier": 0.6576916028007809,
+      "delta_paired_brier": 0.08857609076638273,
+      "full_requested_paired_delta_nll": -3.627263980924608,
+      "full_requested_paired_delta_brier": 0.08857609076638273,
+      "paired_probability_count": 48,
+      "missing_probability_ledger": [],
+      "rescued_count": 0,
+      "harmed_count": 9,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "no_new_missing_baseline_success": true,
+      "no_new_missing_baseline_probability_success": true,
+      "gate_scope": "preserve every baseline probability and operational prediction output; no selection action",
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "delta_hit": -0.16666666666666663,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 20.46687321629552,
+          "paired_candidate_nll": 1.3286388025640503,
+          "delta_paired_nll": -19.13823441373147,
+          "paired_baseline_brier": 0.7012190878795271,
+          "paired_candidate_brier": 0.5710425351851423,
+          "delta_paired_brier": -0.13017655269438488
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "delta_hit": -0.16666666666666669,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 13.152583784053414,
+          "paired_candidate_nll": 4.62241434109535,
+          "delta_paired_nll": -8.530169442958064,
+          "paired_baseline_brier": 0.9711735745843573,
+          "paired_candidate_brier": 0.8014012441132494,
+          "delta_paired_brier": -0.16977233047110785
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "delta_hit": -0.3333333333333333,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 7.041381251772123,
+          "paired_candidate_nll": 4.807702695797911,
+          "delta_paired_nll": -2.233678555974212,
+          "paired_baseline_brier": 0.6513438203119827,
+          "paired_candidate_brier": 0.9537243730544901,
+          "delta_paired_brier": 0.3023805527425074
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "delta_hit": -0.16666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 6.097159725754143,
+          "paired_candidate_nll": 6.470549635982649,
+          "delta_paired_nll": 0.3733899102285063,
+          "paired_baseline_brier": 1.2389949485564433,
+          "paired_candidate_brier": 1.2897307085234635,
+          "delta_paired_brier": 0.05073575996702018
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "delta_hit": -0.16666666666666663,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 1.7373240953813696,
+          "paired_candidate_nll": 1.356898645932277,
+          "delta_paired_nll": -0.3804254494490926,
+          "paired_baseline_brier": 0.5321596640222451,
+          "paired_candidate_brier": 0.6301495054505016,
+          "delta_paired_brier": 0.09798984142825651
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "delta_hit": -0.5,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.3318046140775447,
+          "paired_candidate_nll": 0.9859933863581318,
+          "delta_paired_nll": 0.6541887722805871,
+          "paired_baseline_brier": 0.23368459464517755,
+          "paired_candidate_brier": 0.6681672041547251,
+          "delta_paired_brier": 0.43448260950954753
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.05411784653204069,
+          "paired_candidate_nll": 0.1439184599978469,
+          "delta_paired_nll": 0.0898006134658062,
+          "paired_baseline_brier": 0.024461394390442866,
+          "paired_candidate_brier": 0.07480725909670875,
+          "delta_paired_brier": 0.05034586470626588
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.32985277612152913,
+          "paired_candidate_nll": 0.4768694948626074,
+          "delta_paired_nll": 0.14701671874107825,
+          "paired_baseline_brier": 0.1998870118850091,
+          "paired_candidate_brier": 0.2725099928279659,
+          "delta_paired_brier": 0.0726229809429568
+        }
+      ],
+      "selection_or_promotion_performed": false
+    },
+    "ar4_conditional_profile": {
+      "delta_hit": -0.020833333333333322,
+      "delta_prediction_coverage": 0.0,
+      "delta_probability_coverage": 0.0,
+      "paired_baseline_nll": 6.151387163748461,
+      "paired_candidate_nll": 5.417055522055791,
+      "delta_paired_nll": -0.7343316416926697,
+      "paired_baseline_brier": 0.5691155120343981,
+      "paired_candidate_brier": 0.6572158787333097,
+      "delta_paired_brier": 0.08810036669891153,
+      "full_requested_paired_delta_nll": -0.7343316416926697,
+      "full_requested_paired_delta_brier": 0.08810036669891153,
+      "paired_probability_count": 48,
+      "missing_probability_ledger": [],
+      "rescued_count": 2,
+      "harmed_count": 3,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "no_new_missing_baseline_success": true,
+      "no_new_missing_baseline_probability_success": true,
+      "gate_scope": "preserve every baseline probability and operational prediction output; no selection action",
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 20.46687321629552,
+          "paired_candidate_nll": 9.97917091580371,
+          "delta_paired_nll": -10.487702300491812,
+          "paired_baseline_brier": 0.7012190878795271,
+          "paired_candidate_brier": 0.6896278649375605,
+          "delta_paired_brier": -0.011591222941966683
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "delta_hit": -0.16666666666666669,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 13.152583784053414,
+          "paired_candidate_nll": 8.081497944631968,
+          "delta_paired_nll": -5.071085839421446,
+          "paired_baseline_brier": 0.9711735745843573,
+          "paired_candidate_brier": 1.0634606271118556,
+          "delta_paired_brier": 0.09228705252749836
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "delta_hit": -0.16666666666666663,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 7.041381251772123,
+          "paired_candidate_nll": 12.629088088176303,
+          "delta_paired_nll": 5.58770683640418,
+          "paired_baseline_brier": 0.6513438203119827,
+          "paired_candidate_brier": 1.038469382184607,
+          "delta_paired_brier": 0.38712556187262426
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 6.097159725754143,
+          "paired_candidate_nll": 9.878998052449289,
+          "delta_paired_nll": 3.781838326695146,
+          "paired_baseline_brier": 1.2389949485564433,
+          "paired_candidate_brier": 1.4566082528114828,
+          "delta_paired_brier": 0.21761330425503944
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "delta_hit": 0.16666666666666674,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 1.7373240953813696,
+          "paired_candidate_nll": 1.3210201089632383,
+          "delta_paired_nll": -0.41630398641813127,
+          "paired_baseline_brier": 0.5321596640222451,
+          "paired_candidate_brier": 0.35547133211643867,
+          "delta_paired_brier": -0.17668833190580646
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "delta_hit": 0.16666666666666663,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.3318046140775447,
+          "paired_candidate_nll": 0.07540310648448145,
+          "delta_paired_nll": -0.25640150759306324,
+          "paired_baseline_brier": 0.23368459464517755,
+          "paired_candidate_brier": 0.02336682771033327,
+          "delta_paired_brier": -0.21031776693484427
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "delta_hit": -0.16666666666666663,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.05411784653204069,
+          "paired_candidate_nll": 0.793651812649836,
+          "delta_paired_nll": 0.7395339661177953,
+          "paired_baseline_brier": 0.024461394390442866,
+          "paired_candidate_brier": 0.3271711115982339,
+          "delta_paired_brier": 0.30270971720779105
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "delta_hit": 0.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.32985277612152913,
+          "paired_candidate_nll": 0.5776141472875002,
+          "delta_paired_nll": 0.24776137116597102,
+          "paired_baseline_brier": 0.1998870118850091,
+          "paired_candidate_brier": 0.30355163139596536,
+          "delta_paired_brier": 0.10366461951095626
+        }
+      ],
+      "selection_or_promotion_performed": false
+    },
+    "ar8_conditional_profile": {
+      "delta_hit": -0.33333333333333337,
+      "delta_prediction_coverage": 0.0,
+      "delta_probability_coverage": 0.0,
+      "paired_baseline_nll": 6.151387163748461,
+      "paired_candidate_nll": 3.438000331356489,
+      "delta_paired_nll": -2.7133868323919716,
+      "paired_baseline_brier": 0.5691155120343981,
+      "paired_candidate_brier": 0.9630178649865953,
+      "delta_paired_brier": 0.3939023529521971,
+      "full_requested_paired_delta_nll": -2.7133868323919716,
+      "full_requested_paired_delta_brier": 0.3939023529521971,
+      "paired_probability_count": 48,
+      "missing_probability_ledger": [],
+      "rescued_count": 2,
+      "harmed_count": 18,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "no_new_missing_baseline_success": true,
+      "no_new_missing_baseline_probability_success": true,
+      "gate_scope": "preserve every baseline probability and operational prediction output; no selection action",
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "delta_hit": -0.3333333333333333,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 20.46687321629552,
+          "paired_candidate_nll": 3.294252395303522,
+          "delta_paired_nll": -17.172620820991998,
+          "paired_baseline_brier": 0.7012190878795271,
+          "paired_candidate_brier": 0.953968180588845,
+          "delta_paired_brier": 0.2527490927093179
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "delta_hit": -0.33333333333333337,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 13.152583784053414,
+          "paired_candidate_nll": 3.5123504798974996,
+          "delta_paired_nll": -9.640233304155915,
+          "paired_baseline_brier": 0.9711735745843573,
+          "paired_candidate_brier": 0.9679225227337526,
+          "delta_paired_brier": -0.0032510518506047026
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "delta_hit": -0.6666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 7.041381251772123,
+          "paired_candidate_nll": 3.5984008003063885,
+          "delta_paired_nll": -3.442980451465734,
+          "paired_baseline_brier": 0.6513438203119827,
+          "paired_candidate_brier": 0.973071096016521,
+          "delta_paired_brier": 0.3217272757045383
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "delta_hit": -0.16666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 6.097159725754143,
+          "paired_candidate_nll": 3.5704298240144694,
+          "delta_paired_nll": -2.526729901739673,
+          "paired_baseline_brier": 1.2389949485564433,
+          "paired_candidate_brier": 0.9715209605571683,
+          "delta_paired_brier": -0.267473987999275
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "delta_hit": -0.3333333333333333,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 1.7373240953813696,
+          "paired_candidate_nll": 3.5103740069590104,
+          "delta_paired_nll": 1.7730499115776408,
+          "paired_baseline_brier": 0.5321596640222451,
+          "paired_candidate_brier": 0.9680388126541396,
+          "delta_paired_brier": 0.4358791486318945
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "delta_hit": -0.33333333333333337,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.3318046140775447,
+          "paired_candidate_nll": 3.497177738122597,
+          "delta_paired_nll": 3.1653731240450522,
+          "paired_baseline_brier": 0.23368459464517755,
+          "paired_candidate_brier": 0.9672006716208857,
+          "delta_paired_brier": 0.7335160769757082
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "delta_hit": -0.33333333333333337,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.05411784653204069,
+          "paired_candidate_nll": 3.2631286781785014,
+          "delta_paired_nll": 3.2090108316464607,
+          "paired_baseline_brier": 0.024461394390442866,
+          "paired_candidate_brier": 0.9515704818438101,
+          "delta_paired_brier": 0.9271090874533673
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "delta_hit": -0.16666666666666674,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.32985277612152913,
+          "paired_candidate_nll": 3.2578887280699256,
+          "delta_paired_nll": 2.9280359519483965,
+          "paired_baseline_brier": 0.1998870118850091,
+          "paired_candidate_brier": 0.95085019387764,
+          "delta_paired_brier": 0.7509631819926309
+        }
+      ],
+      "selection_or_promotion_performed": false
+    },
+    "ar16_conditional_profile": {
+      "delta_hit": -0.6666666666666666,
+      "delta_prediction_coverage": 0.0,
+      "delta_probability_coverage": 0.0,
+      "paired_baseline_nll": 6.151387163748461,
+      "paired_candidate_nll": 3.697912650365975,
+      "delta_paired_nll": -2.453474513382486,
+      "paired_baseline_brier": 0.5691155120343981,
+      "paired_candidate_brier": 0.9785146293414401,
+      "delta_paired_brier": 0.4093991173070419,
+      "full_requested_paired_delta_nll": -2.453474513382486,
+      "full_requested_paired_delta_brier": 0.4093991173070419,
+      "paired_probability_count": 48,
+      "missing_probability_ledger": [],
+      "rescued_count": 0,
+      "harmed_count": 32,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "no_new_missing_baseline_success": true,
+      "no_new_missing_baseline_probability_success": true,
+      "gate_scope": "preserve every baseline probability and operational prediction output; no selection action",
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "delta_hit": -0.6666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 20.46687321629552,
+          "paired_candidate_nll": 3.6669350406765173,
+          "delta_paired_nll": -16.799938175619005,
+          "paired_baseline_brier": 0.7012190878795271,
+          "paired_candidate_brier": 0.9759977738888647,
+          "delta_paired_brier": 0.2747786860093375
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "delta_hit": -0.5,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 13.152583784053414,
+          "paired_candidate_nll": 3.612635854954648,
+          "delta_paired_nll": -9.539947929098766,
+          "paired_baseline_brier": 0.9711735745843573,
+          "paired_candidate_brier": 0.9742680017474199,
+          "delta_paired_brier": 0.0030944271630626297
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "delta_hit": -0.6666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 7.041381251772123,
+          "paired_candidate_nll": 3.749283815307535,
+          "delta_paired_nll": -3.2920974364645876,
+          "paired_baseline_brier": 0.6513438203119827,
+          "paired_candidate_brier": 0.9822122995069084,
+          "delta_paired_brier": 0.3308684791949257
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "delta_hit": -0.16666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 6.097159725754143,
+          "paired_candidate_nll": 3.708580585133125,
+          "delta_paired_nll": -2.3885791406210175,
+          "paired_baseline_brier": 1.2389949485564433,
+          "paired_candidate_brier": 0.9791776151906172,
+          "delta_paired_brier": -0.25981733336582613
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "delta_hit": -0.6666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 1.7373240953813696,
+          "paired_candidate_nll": 3.6649099383642323,
+          "delta_paired_nll": 1.9275858429828627,
+          "paired_baseline_brier": 0.5321596640222451,
+          "paired_candidate_brier": 0.9765127941061159,
+          "delta_paired_brier": 0.4443531300838708
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "delta_hit": -0.8333333333333334,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.3318046140775447,
+          "paired_candidate_nll": 3.702457270112426,
+          "delta_paired_nll": 3.3706526560348813,
+          "paired_baseline_brier": 0.23368459464517755,
+          "paired_candidate_brier": 0.9780172384955762,
+          "delta_paired_brier": 0.7443326438503987
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "delta_hit": -1.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.05411784653204069,
+          "paired_candidate_nll": 3.680712135244388,
+          "delta_paired_nll": 3.6265942887123472,
+          "paired_baseline_brier": 0.024461394390442866,
+          "paired_candidate_brier": 0.9781951623063433,
+          "delta_paired_brier": 0.9537337679159005
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "delta_hit": -0.8333333333333334,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.32985277612152913,
+          "paired_candidate_nll": 3.797786563134927,
+          "delta_paired_nll": 3.467933787013398,
+          "paired_baseline_brier": 0.1998870118850091,
+          "paired_candidate_brier": 0.9837361494896747,
+          "delta_paired_brier": 0.7838491376046656
+        }
+      ],
+      "selection_or_promotion_performed": false
+    },
+    "ar32_conditional_profile": {
+      "delta_hit": -0.6666666666666666,
+      "delta_prediction_coverage": 0.0,
+      "delta_probability_coverage": 0.0,
+      "paired_baseline_nll": 6.151387163748461,
+      "paired_candidate_nll": 3.578054715685014,
+      "delta_paired_nll": -2.5733324480634465,
+      "paired_baseline_brier": 0.5691155120343981,
+      "paired_candidate_brier": 0.9738002061510334,
+      "delta_paired_brier": 0.4046846941166352,
+      "full_requested_paired_delta_nll": -2.5733324480634465,
+      "full_requested_paired_delta_brier": 0.4046846941166352,
+      "paired_probability_count": 48,
+      "missing_probability_ledger": [],
+      "rescued_count": 0,
+      "harmed_count": 32,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "no_new_missing_baseline_success": true,
+      "no_new_missing_baseline_probability_success": true,
+      "gate_scope": "preserve every baseline probability and operational prediction output; no selection action",
+      "participants": [
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+          "delta_hit": -0.6666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 20.46687321629552,
+          "paired_candidate_nll": 3.6032637326614796,
+          "delta_paired_nll": -16.863609483634043,
+          "paired_baseline_brier": 0.7012190878795271,
+          "paired_candidate_brier": 0.9758349941843133,
+          "delta_paired_brier": 0.27461590630478616
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+          "delta_hit": -0.5,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 13.152583784053414,
+          "paired_candidate_nll": 3.5807994142719966,
+          "delta_paired_nll": -9.571784369781417,
+          "paired_baseline_brier": 0.9711735745843573,
+          "paired_candidate_brier": 0.9721925861147662,
+          "delta_paired_brier": 0.001019011530408953
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+          "delta_hit": -0.6666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 7.041381251772123,
+          "paired_candidate_nll": 3.7625625942302974,
+          "delta_paired_nll": -3.278818657541825,
+          "paired_baseline_brier": 0.6513438203119827,
+          "paired_candidate_brier": 0.978573922416031,
+          "delta_paired_brier": 0.32723010210404835
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+          "delta_hit": -0.16666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 6.097159725754143,
+          "paired_candidate_nll": 3.6796037746262082,
+          "delta_paired_nll": -2.4175559511279343,
+          "paired_baseline_brier": 1.2389949485564433,
+          "paired_candidate_brier": 0.978661284981047,
+          "delta_paired_brier": -0.26033366357539633
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+          "delta_hit": -0.6666666666666666,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 1.7373240953813696,
+          "paired_candidate_nll": 3.6227212918971206,
+          "delta_paired_nll": 1.885397196515751,
+          "paired_baseline_brier": 0.5321596640222451,
+          "paired_candidate_brier": 0.9744539167145431,
+          "delta_paired_brier": 0.44229425269229794
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+          "delta_hit": -0.8333333333333334,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.3318046140775447,
+          "paired_candidate_nll": 3.5691569898909865,
+          "delta_paired_nll": 3.2373523758134417,
+          "paired_baseline_brier": 0.23368459464517755,
+          "paired_candidate_brier": 0.975544151657318,
+          "delta_paired_brier": 0.7418595570121405
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+          "delta_hit": -1.0,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.05411784653204069,
+          "paired_candidate_nll": 3.655787530032484,
+          "delta_paired_nll": 3.601669683500443,
+          "paired_baseline_brier": 0.024461394390442866,
+          "paired_candidate_brier": 0.9783568116894165,
+          "delta_paired_brier": 0.9538954172989736
+        },
+        {
+          "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+          "delta_hit": -0.8333333333333334,
+          "delta_prediction_coverage": 0.0,
+          "delta_probability_coverage": 0.0,
+          "paired_baseline_nll": 0.32985277612152913,
+          "paired_candidate_nll": 3.150542397869543,
+          "delta_paired_nll": 2.8206896217480137,
+          "paired_baseline_brier": 0.1998870118850091,
+          "paired_candidate_brier": 0.9567839814508322,
+          "delta_paired_brier": 0.7568969695658231
+        }
+      ],
+      "selection_or_promotion_performed": false
+    }
+  },
+  "descriptive_participant_cluster_intervals": {
+    "role": "descriptive exploratory paired analysis; no production selection or adult confirmation",
+    "unit": "participant",
+    "participant_order": [
+      "n2p3-origin://BNCI2014-008/participant/A01",
+      "n2p3-origin://BNCI2014-008/participant/A02",
+      "n2p3-origin://BNCI2014-008/participant/A03",
+      "n2p3-origin://BNCI2014-008/participant/A04",
+      "n2p3-origin://BNCI2014-008/participant/A05",
+      "n2p3-origin://BNCI2014-008/participant/A06",
+      "n2p3-origin://BNCI2014-008/participant/A07",
+      "n2p3-origin://BNCI2014-008/participant/A08"
+    ],
+    "resamples": 20000,
+    "seed": 20261006,
+    "interval_probability": 0.95,
+    "shared_indices_sha256": "11a7b3ddaebe8dd214d15272bee356270024a594402d04445b32d0b485db4c77",
+    "shared_indices_file_sha256": "e34d7bcbce455f80802d35c2981c4443765e0dfa9856bfa9c17a8027bcd0b233",
+    "indices_dtype": "int64",
+    "indices_shape": [
+      20000,
+      8
+    ],
+    "refit": false,
+    "folds_treated_as_independent": false,
+    "p_values": null,
+    "metrics": {
+      "ar0_burg": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.7083333333333334,
+          "interval": [
+            0.5208333333333333,
+            0.875
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 25.22584355345078,
+          "interval": [
+            7.268704295745598,
+            49.59776338111272
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.5736563110438031,
+          "interval": [
+            0.24981259470920142,
+            0.948926996708926
+          ]
+        },
+        "full_requested_nll": {
+          "point": 25.22584355345078,
+          "interval": [
+            7.268704295745598,
+            49.59776338111272
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.5736563110438031,
+          "interval": [
+            0.24981259470920142,
+            0.948926996708926
+          ]
+        }
+      },
+      "ar1_burg": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.5833333333333333,
+          "interval": [
+            0.39583333333333326,
+            0.75
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 3.0160653028890945,
+          "interval": [
+            1.3222252251508315,
+            4.862417435269235
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.6205939293480459,
+          "interval": [
+            0.38399438078043796,
+            0.8644394277039654
+          ]
+        },
+        "full_requested_nll": {
+          "point": 3.0160653028890945,
+          "interval": [
+            1.3222252251508315,
+            4.862417435269235
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.6205939293480459,
+          "interval": [
+            0.38399438078043796,
+            0.8644394277039654
+          ]
+        }
+      },
+      "ar4_burg": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.6666666666666666,
+          "interval": [
+            0.49999999999999994,
+            0.8125
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 6.918508111132151,
+          "interval": [
+            2.0941137263890592,
+            12.64728234271116
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.5898350144285768,
+          "interval": [
+            0.32540207046425507,
+            0.8560889920606682
+          ]
+        },
+        "full_requested_nll": {
+          "point": 6.918508111132151,
+          "interval": [
+            2.0941137263890592,
+            12.64728234271116
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.5898350144285768,
+          "interval": [
+            0.32540207046425507,
+            0.8560889920606682
+          ]
+        }
+      },
+      "ar8_burg": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.6666666666666666,
+          "interval": [
+            0.49999999999999994,
+            0.8125
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 6.151387163748461,
+          "interval": [
+            1.8904330440218233,
+            11.220109139990644
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.5691155120343981,
+          "interval": [
+            0.31042889113526545,
+            0.8384754546247268
+          ]
+        },
+        "full_requested_nll": {
+          "point": 6.151387163748461,
+          "interval": [
+            1.8904330440218233,
+            11.220109139990644
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.5691155120343981,
+          "interval": [
+            0.31042889113526545,
+            0.8384754546247268
+          ]
+        }
+      },
+      "ar16_burg": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.6458333333333334,
+          "interval": [
+            0.4375,
+            0.8125
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 7.946129891753578,
+          "interval": [
+            2.757670079514491,
+            13.956966212993619
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.6009552194906356,
+          "interval": [
+            0.3214718888173516,
+            0.9071518925453019
+          ]
+        },
+        "full_requested_nll": {
+          "point": 7.946129891753578,
+          "interval": [
+            2.757670079514491,
+            13.956966212993619
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.6009552194906356,
+          "interval": [
+            0.3214718888173516,
+            0.9071518925453019
+          ]
+        }
+      },
+      "ar32_burg": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.625,
+          "interval": [
+            0.4166666666666667,
+            0.7916666666666667
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 7.308100556235528,
+          "interval": [
+            2.7182126911758777,
+            12.230025914282951
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.5827329449379635,
+          "interval": [
+            0.31031265094422555,
+            0.8891170403391656
+          ]
+        },
+        "full_requested_nll": {
+          "point": 7.308100556235528,
+          "interval": [
+            2.7182126911758777,
+            12.230025914282951
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.5827329449379635,
+          "interval": [
+            0.31031265094422555,
+            0.8891170403391656
+          ]
+        }
+      },
+      "ar0_conditional_profile": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.7083333333333334,
+          "interval": [
+            0.5208333333333333,
+            0.875
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 25.22584355345078,
+          "interval": [
+            7.268704295745598,
+            49.59776338111272
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.5736563110438031,
+          "interval": [
+            0.24981259470920142,
+            0.948926996708926
+          ]
+        },
+        "full_requested_nll": {
+          "point": 25.22584355345078,
+          "interval": [
+            7.268704295745598,
+            49.59776338111272
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.5736563110438031,
+          "interval": [
+            0.24981259470920142,
+            0.948926996708926
+          ]
+        }
+      },
+      "ar1_conditional_profile": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.4791666666666667,
+          "interval": [
+            0.27083333333333337,
+            0.6875
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 2.524123182823853,
+          "interval": [
+            1.081936491825131,
+            4.15802452837157
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.6576916028007809,
+          "interval": [
+            0.4163797732507799,
+            0.9062945628478488
+          ]
+        },
+        "full_requested_nll": {
+          "point": 2.524123182823853,
+          "interval": [
+            1.081936491825131,
+            4.15802452837157
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.6576916028007809,
+          "interval": [
+            0.4163797732507799,
+            0.9062945628478488
+          ]
+        }
+      },
+      "ar4_conditional_profile": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.6458333333333334,
+          "interval": [
+            0.4583333333333333,
+            0.8125
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 5.417055522055791,
+          "interval": [
+            1.9864139306147954,
+            8.848205833911521
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.6572158787333097,
+          "interval": [
+            0.3497444675932137,
+            0.980503134547893
+          ]
+        },
+        "full_requested_nll": {
+          "point": 5.417055522055791,
+          "interval": [
+            1.9864139306147954,
+            8.848205833911521
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.6572158787333097,
+          "interval": [
+            0.3497444675932137,
+            0.980503134547893
+          ]
+        }
+      },
+      "ar8_conditional_profile": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.3333333333333333,
+          "interval": [
+            0.16666666666666666,
+            0.5
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 3.438000331356489,
+          "interval": [
+            3.3414853553832673,
+            3.5262369016301642
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.9630178649865953,
+          "interval": [
+            0.9567356102878845,
+            0.9687672334617649
+          ]
+        },
+        "full_requested_nll": {
+          "point": 3.438000331356489,
+          "interval": [
+            3.3414853553832673,
+            3.5262369016301642
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.9630178649865953,
+          "interval": [
+            0.9567356102878845,
+            0.9687672334617649
+          ]
+        }
+      },
+      "ar16_conditional_profile": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 3.697912650365975,
+          "interval": [
+            3.6627137955994544,
+            3.735086779742515
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.9785146293414401,
+          "interval": [
+            0.9765765356477486,
+            0.9806175848991942
+          ]
+        },
+        "full_requested_nll": {
+          "point": 3.697912650365975,
+          "interval": [
+            3.6627137955994544,
+            3.735086779742515
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.9785146293414401,
+          "interval": [
+            0.9765765356477486,
+            0.9806175848991942
+          ]
+        }
+      },
+      "ar32_conditional_profile": {
+        "requested_participant_operational_hit_rate": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "prediction_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "probability_coverage": {
+          "point": 1.0,
+          "interval": [
+            1.0,
+            1.0
+          ]
+        },
+        "available_probability_nll": {
+          "point": 3.578054715685014,
+          "interval": [
+            3.4435261673669233,
+            3.6734943666813558
+          ]
+        },
+        "available_probability_brier": {
+          "point": 0.9738002061510334,
+          "interval": [
+            0.9684818018262004,
+            0.9774014523090085
+          ]
+        },
+        "full_requested_nll": {
+          "point": 3.578054715685014,
+          "interval": [
+            3.4435261673669233,
+            3.6734943666813558
+          ]
+        },
+        "full_requested_brier": {
+          "point": 0.9738002061510334,
+          "interval": [
+            0.9684818018262004,
+            0.9774014523090085
+          ]
+        }
+      }
+    },
+    "contrasts_against_ar8_burg": {
+      "ar0_burg": {
+        "delta_hit": {
+          "point": 0.04166666666666667,
+          "interval": [
+            -0.041666666666666685,
+            0.10416666666666671
+          ]
+        },
+        "delta_prediction_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_probability_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_paired_nll": {
+          "point": 19.07445638970232,
+          "interval": [
+            1.3054844993232013,
+            43.337582374542265
+          ]
+        },
+        "full_requested_paired_delta_nll": {
+          "point": 19.07445638970232,
+          "interval": [
+            1.3054844993232013,
+            43.337582374542265
+          ]
+        },
+        "delta_paired_brier": {
+          "point": 0.004540799009404961,
+          "interval": [
+            -0.18533392868272278,
+            0.20325583487558263
+          ]
+        },
+        "full_requested_paired_delta_brier": {
+          "point": 0.004540799009404961,
+          "interval": [
+            -0.18533392868272278,
+            0.20325583487558263
+          ]
+        }
+      },
+      "ar1_burg": {
+        "delta_hit": {
+          "point": -0.08333333333333334,
+          "interval": [
+            -0.14583333333333334,
+            -0.020833333333333343
+          ]
+        },
+        "delta_prediction_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_probability_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_paired_nll": {
+          "point": -3.1353218608593663,
+          "interval": [
+            -8.117907868818765,
+            0.2947331340653263
+          ]
+        },
+        "full_requested_paired_delta_nll": {
+          "point": -3.1353218608593663,
+          "interval": [
+            -8.117907868818765,
+            0.2947331340653263
+          ]
+        },
+        "delta_paired_brier": {
+          "point": 0.05147841731364777,
+          "interval": [
+            -0.05210370180905194,
+            0.1526519587990433
+          ]
+        },
+        "full_requested_paired_delta_brier": {
+          "point": 0.05147841731364777,
+          "interval": [
+            -0.05210370180905194,
+            0.1526519587990433
+          ]
+        }
+      },
+      "ar4_burg": {
+        "delta_hit": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_prediction_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_probability_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_paired_nll": {
+          "point": 0.76712094738369,
+          "interval": [
+            -0.4972443056417344,
+            2.4244452347360967
+          ]
+        },
+        "full_requested_paired_delta_nll": {
+          "point": 0.76712094738369,
+          "interval": [
+            -0.4972443056417344,
+            2.4244452347360967
+          ]
+        },
+        "delta_paired_brier": {
+          "point": 0.020719502394178635,
+          "interval": [
+            -0.015363676175350019,
+            0.058898741472536265
+          ]
+        },
+        "full_requested_paired_delta_brier": {
+          "point": 0.020719502394178635,
+          "interval": [
+            -0.015363676175350019,
+            0.058898741472536265
+          ]
+        }
+      },
+      "ar16_burg": {
+        "delta_hit": {
+          "point": -0.020833333333333332,
+          "interval": [
+            -0.0625,
+            0.0
+          ]
+        },
+        "delta_prediction_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_probability_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_paired_nll": {
+          "point": 1.794742728005117,
+          "interval": [
+            0.46382867160083086,
+            3.5776482247575134
+          ]
+        },
+        "full_requested_paired_delta_nll": {
+          "point": 1.794742728005117,
+          "interval": [
+            0.46382867160083086,
+            3.5776482247575134
+          ]
+        },
+        "delta_paired_brier": {
+          "point": 0.03183970745623743,
+          "interval": [
+            -0.00793393183367083,
+            0.08581713531608744
+          ]
+        },
+        "full_requested_paired_delta_brier": {
+          "point": 0.03183970745623743,
+          "interval": [
+            -0.00793393183367083,
+            0.08581713531608744
+          ]
+        }
+      },
+      "ar32_burg": {
+        "delta_hit": {
+          "point": -0.041666666666666644,
+          "interval": [
+            -0.12499999999999997,
+            0.0416666666666667
+          ]
+        },
+        "delta_prediction_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_probability_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_paired_nll": {
+          "point": 1.1567133924870676,
+          "interval": [
+            -0.13588787245755454,
+            2.4879776929121
+          ]
+        },
+        "full_requested_paired_delta_nll": {
+          "point": 1.1567133924870676,
+          "interval": [
+            -0.13588787245755454,
+            2.4879776929121
+          ]
+        },
+        "delta_paired_brier": {
+          "point": 0.013617432903565319,
+          "interval": [
+            -0.0488190946702591,
+            0.07709429215000307
+          ]
+        },
+        "full_requested_paired_delta_brier": {
+          "point": 0.013617432903565319,
+          "interval": [
+            -0.0488190946702591,
+            0.07709429215000307
+          ]
+        }
+      },
+      "ar0_conditional_profile": {
+        "delta_hit": {
+          "point": 0.04166666666666667,
+          "interval": [
+            -0.041666666666666685,
+            0.10416666666666671
+          ]
+        },
+        "delta_prediction_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_probability_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_paired_nll": {
+          "point": 19.07445638970232,
+          "interval": [
+            1.3054844993232013,
+            43.337582374542265
+          ]
+        },
+        "full_requested_paired_delta_nll": {
+          "point": 19.07445638970232,
+          "interval": [
+            1.3054844993232013,
+            43.337582374542265
+          ]
+        },
+        "delta_paired_brier": {
+          "point": 0.004540799009404961,
+          "interval": [
+            -0.18533392868272278,
+            0.20325583487558263
+          ]
+        },
+        "full_requested_paired_delta_brier": {
+          "point": 0.004540799009404961,
+          "interval": [
+            -0.18533392868272278,
+            0.20325583487558263
+          ]
+        }
+      },
+      "ar1_conditional_profile": {
+        "delta_hit": {
+          "point": -0.1875,
+          "interval": [
+            -0.2916666666666667,
+            -0.08333333333333333
+          ]
+        },
+        "delta_prediction_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_probability_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_paired_nll": {
+          "point": -3.627263980924608,
+          "interval": [
+            -8.57121636450248,
+            -0.004762877429633301
+          ]
+        },
+        "full_requested_paired_delta_nll": {
+          "point": -3.627263980924608,
+          "interval": [
+            -8.57121636450248,
+            -0.004762877429633301
+          ]
+        },
+        "delta_paired_brier": {
+          "point": 0.08857609076638273,
+          "interval": [
+            -0.039198063341788436,
+            0.22370164754378005
+          ]
+        },
+        "full_requested_paired_delta_brier": {
+          "point": 0.08857609076638273,
+          "interval": [
+            -0.039198063341788436,
+            0.22370164754378005
+          ]
+        }
+      },
+      "ar4_conditional_profile": {
+        "delta_hit": {
+          "point": -0.020833333333333322,
+          "interval": [
+            -0.10416666666666666,
+            0.06250000000000004
+          ]
+        },
+        "delta_prediction_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_probability_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_paired_nll": {
+          "point": -0.7343316416926697,
+          "interval": [
+            -4.134941160820503,
+            2.2772058968231788
+          ]
+        },
+        "full_requested_paired_delta_nll": {
+          "point": -0.7343316416926697,
+          "interval": [
+            -4.134941160820503,
+            2.2772058968231788
+          ]
+        },
+        "delta_paired_brier": {
+          "point": 0.08810036669891153,
+          "interval": [
+            -0.05436027071676308,
+            0.22672508385958534
+          ]
+        },
+        "full_requested_paired_delta_brier": {
+          "point": 0.08810036669891153,
+          "interval": [
+            -0.05436027071676308,
+            0.22672508385958534
+          ]
+        }
+      },
+      "ar8_conditional_profile": {
+        "delta_hit": {
+          "point": -0.33333333333333337,
+          "interval": [
+            -0.4375,
+            -0.25
+          ]
+        },
+        "delta_prediction_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_probability_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_paired_nll": {
+          "point": -2.7133868323919716,
+          "interval": [
+            -7.803340032101412,
+            1.5144273864664566
+          ]
+        },
+        "full_requested_paired_delta_nll": {
+          "point": -2.7133868323919716,
+          "interval": [
+            -7.803340032101412,
+            1.5144273864664566
+          ]
+        },
+        "delta_paired_brier": {
+          "point": 0.3939023529521971,
+          "interval": [
+            0.12790695786786402,
+            0.6483051776156998
+          ]
+        },
+        "full_requested_paired_delta_brier": {
+          "point": 0.3939023529521971,
+          "interval": [
+            0.12790695786786402,
+            0.6483051776156998
+          ]
+        }
+      },
+      "ar16_conditional_profile": {
+        "delta_hit": {
+          "point": -0.6666666666666666,
+          "interval": [
+            -0.8125,
+            -0.49999999999999994
+          ]
+        },
+        "delta_prediction_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_probability_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_paired_nll": {
+          "point": -2.453474513382486,
+          "interval": [
+            -7.540275066752954,
+            1.8266069047810856
+          ]
+        },
+        "full_requested_paired_delta_nll": {
+          "point": -2.453474513382486,
+          "interval": [
+            -7.540275066752954,
+            1.8266069047810856
+          ]
+        },
+        "delta_paired_brier": {
+          "point": 0.4093991173070419,
+          "interval": [
+            0.13923647992258414,
+            0.6679333634142928
+          ]
+        },
+        "full_requested_paired_delta_brier": {
+          "point": 0.4093991173070419,
+          "interval": [
+            0.13923647992258414,
+            0.6679333634142928
+          ]
+        }
+      },
+      "ar32_conditional_profile": {
+        "delta_hit": {
+          "point": -0.6666666666666666,
+          "interval": [
+            -0.8125,
+            -0.49999999999999994
+          ]
+        },
+        "delta_prediction_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_probability_coverage": {
+          "point": 0.0,
+          "interval": [
+            0.0,
+            0.0
+          ]
+        },
+        "delta_paired_nll": {
+          "point": -2.5733324480634465,
+          "interval": [
+            -7.6269129894863,
+            1.6415445350712798
+          ]
+        },
+        "full_requested_paired_delta_nll": {
+          "point": -2.5733324480634465,
+          "interval": [
+            -7.6269129894863,
+            1.6415445350712798
+          ]
+        },
+        "delta_paired_brier": {
+          "point": 0.4046846941166352,
+          "interval": [
+            0.13787369357700952,
+            0.6624125421447011
+          ]
+        },
+        "full_requested_paired_delta_brier": {
+          "point": 0.4046846941166352,
+          "interval": [
+            0.13787369357700952,
+            0.6624125421447011
+          ]
+        }
+      }
+    },
+    "selection_or_promotion_performed": false
+  },
+  "terminal_receipt": {
+    "schema": "n2p3_m1_execution_receipt/1",
+    "process_exit_code": 0,
+    "end_utc": "2026-10-05T18:59:45.365550+00:00",
+    "wall_seconds": 3008.9635151999973,
+    "source_bytes_unchanged": true,
+    "plan_bytes_unchanged": true,
+    "peak_sum_worker_rss_bytes": 1642909696,
+    "minimum_available_memory_bytes": 276201472,
+    "runner_log_sha256": "44ab5cc1b3b52cd32009a0e126295062774edb357cee088a287a2dec4654cb66"
+  },
+  "residual_diagnostic_receipt": {
+    "schema": "n2p3_m1_residual_diagnostics/1",
+    "script_sha256": "9433fd6dd7b47a73b795ef612c8b54b69f36bdcc2c79e11f6821e5929f375691",
+    "source": {
+      "archive_sha256": "184a2527a41a30b3beb6ed2de88541e95753fe81de03a9487291083c82231684",
+      "manifest_sha256": "780a10665d1dc439fe185551b2e8e8ed78839aaca41c35cb5784f08be809e3fb",
+      "source_commit": "e84f079026cc6185731bdb0ae965592750b5c0ae",
+      "byte_size": 2038056,
+      "member_count": 487,
+      "working_tree_snapshot": true,
+      "source_commit_role": "base_commit_only",
+      "executed_files_verified": 487
+    },
+    "report_sha256": "3317312e48dde2121596ee3c41cf03304b35001ad9877dfe0b86f924ebab0b34",
+    "models_diagnosed": 576,
+    "no_fit_or_selection": true,
+    "held_labels_used_only_for_truth_residual": true,
+    "covariance": "AR spectral whitening plus full conditional predictive row covariance plus spatial Sigma",
+    "ACF_and_PSD": "independent records; equal record weighting; no cross-record lag pairs",
+    "fit_failures": "retained as unavailable diagnostics"
+  },
+  "promoted_arm": null,
+  "limits": [
+    "single deterministic target-only public-calibration CV",
+    "each fold600 fit120 held labels fromC800;80 unused",
+    "8 independent participants;6 related folds not independent replicates",
+    "fixed-temperature probability risk is not calibrated adult efficacy"
+  ]
+}

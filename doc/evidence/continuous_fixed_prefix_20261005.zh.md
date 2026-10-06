@@ -76,3 +76,28 @@ M1已从上述materialized源码启动，命令/venv/原输入/plan SHA、资源
 通信/续跑及B06完整映射的稳定候选上，完整pytest为2567通过、19跳过、0失败/错误，共2586项；396个受检源/测试/依赖文件前后byte不变，runner为`3a9f361661f81d9a1ed91475a08542d4a71a40e10a6a71dd2e26235ed8437411`。后续路径修复另有定向及独立复验，不能将该全集重新标为修复后执行。
 
 第一次完整participant运行测得双worker RSS峰值1812799488字节，系统available最低129716224字节，实际CPU阶段波动；不将此前公平数值窗口的23.4%收益包装成此受共享内存压力影响的总吞吐。续跑入场提高到available至少4GB，仍为2×4，保留实际资源日志。完整M1结束后才进行participant-macro风险与全部失败/来源验收；[分析计划](../assets/continuous_fixed_prefix_20261005/m1_analysis_plan.json)固定8人cluster、20000次共享bootstrap与完整48概率缺失规则。
+
+## 完整M1结果与下一步判定
+
+完整续跑已结束，exit0、3008.964秒（约50.15分钟），487个冻结成员及计划前后bytes不变。独立验收确认576逻辑格、576成功包、576公开重放精确一致；143包复用、433新fit尝试且全部成功。A02原72格的保存证据与本次逐格完全一致；A01原无最终record的71包按包来源复用并重新评分。原件未重签，失败父运行仍单独保留。双worker RSS峰值1642909696字节、system available最低276201472字节；共享机器压力与阶段CPU波动仍存在，不据总墙钟反推公平数值窗口倍速。
+
+每臂请求48个decision、8人，每fold600训练labels/120held，C800中80不用。全部12臂prediction/probability coverage为100%、fit失败0、tie0。以下风险有完整48概率支持，因此条件风险与完整请求风险数值相同；[结构化结果](../assets/continuous_fixed_prefix_20261005/m1_results.json)、[参与者表](../assets/continuous_fixed_prefix_20261005/m1_participant_metrics.csv)和[完整图](../assets/continuous_fixed_prefix_20261005/m1_ar_orders.pdf)保存全臂与不确定性，不能只报最好hit。
+
+| 阶数 | Burg hit | Burg NLL | Burg Brier | 条件profile hit | 条件profile NLL | 条件profile Brier |
+|---|---:|---:|---:|---:|---:|---:|
+| 0 | 70.83% | 25.226 | 0.574 | 70.83% | 25.226 | 0.574 |
+| 1 | 58.33% | 3.016 | 0.621 | 47.92% | 2.524 | 0.658 |
+| 4 | 66.67% | 6.919 | 0.590 | 64.58% | 5.417 | 0.657 |
+| 8 | 66.67% | 6.151 | 0.569 | 33.33% | 3.438 | 0.963 |
+| 16 | 64.58% | 7.946 | 0.601 | 0% | 3.698 | 0.979 |
+| 32 | 62.50% | 7.308 | 0.583 | 0% | 3.578 | 0.974 |
+
+预声明baseline为AR8 Burg。AR0救回3、损害1，hit增加4.17个百分点，但paired NLL增加19.074（participant cluster95%区间1.305–43.338）；hit差区间−4.17至10.42个百分点，不能以两个净正确decision宣布总体优势。AR4 Burg正确/错误集合与baseline相同，NLL/Brier变差。其它臂均降低hit；AR8 profile损害18、救回2，hit差−33.33个百分点（区间−43.75至−25）。AR16/32 profile分别损害baseline全部32个正确decision，coverage仍完整，所以它们的0%不是失败分母造成。
+
+按“hit不降、paired NLL不增、baseline输出不丢”的开发点估计门，11个替代臂均不通过，未选择或晋升新程序。AR0虽有最高hit却有明显错时过度自信；高阶profile得到接近36类uniform的风险读数（uniform NLL约3.584、Brier约0.972），并未保留判别能力。降低C Gaussian目标/训练残差不等于提高产品命中，机制原因尚需噪声与ERP联合归因；不先把这一负结果归为代码缺陷或g-prior收益。
+
+所有区间为固定fit outcomes、8个participant的20000次共享cluster bootstrap，不把六个相关fold当独立重复，不重训，不覆盖source随机性。AR16/32的经验hit区间[0,0]只反映已观察八人的全零结果，不能当未见人群成功率已确定。M1是公开C内开发，不是成人九选一确认。
+
+另已对576成功模型完成truth-known residual诊断：训练按独立record投影drift，held用冻结C posterior加实际prefix的完整predictive row covariance与Σ白化；ACF/PSD不拼接records，输出创新协方差、条件数、预测二次型并与actual truth log-density核对。过程不fit、不改state、不用held选择，原始JSON与receipt留本地。完整source、模型/预测、重放审计、bootstrap索引和诊断继续物理归档，Git仅分发清单及紧凑表/图。B05逐通道谱、B06条件mean/Schur、B07–B11、K0、工作站和完整流程/成人确认仍为后续范围，不能将M1完成当全部15块已完成。
+
+[完整终态物理归档](../../frozen/continuous_fixed_prefix_20261006_resume/complete_m1_manifest.json)已封存1268成员、84499150压缩字节；逐成员、原件前后与镜像SHA一致。原始M1失败父运行和300成员旧包归档继续保留，不以成功续跑覆盖原失败。图的PNG/SVG/PDF已检查标签、原始参与者点、区间与轴范围，表格提供数字替代。

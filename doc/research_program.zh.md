@@ -55,6 +55,7 @@ GTN儿童三导且固定thought digit，只能作声明限制下的开发研究�
 真实A01的AR8/32已达到预声明数值停止条件；这不证明局部/全局最优。顺序QR与精确梯度通过独立核对，完整M1固定六阶×两估计器与共同32点prefix；不凭软件通过或残差改善晋升。
 旧stationary AR是条件于已估noise的一次可行GLS；fixed32 `/4`联合profile条件tail的AR/空间协方差，并保留完整授权C的kernel信息。概率程序仍是开发程序，source-only K0经典/连续专家不可估。
 新179输入使用预声明共同raw支持，不能与历史178路线直接相减；target-only seed不称完整source→target seed。
+fixed32 M1八人完整576fit/重放已完成，全部同48decision支持。高阶conditional-profile的更低概率风险点估计伴随hit下降，AR0更高hit伴随NLL显著变差；全部替代臂未过既定开发联合门，不据更低Gaussian训练目标晋升或宣称泛化收益。
 
 2026-10-05 [分块科研方案](evidence/deep_research_plan_20261005.zh.md)统一hit优先的开发选择合同：
 固定requested participant/decision分母，失败和弃权保留；比较先验证支持，再看同批paired hit，

@@ -1,0 +1,30 @@
+{
+  "schema": "n2p3_m1_figure_export/1",
+  "audit_sha256": "41b2c166f8a1017c93194059dae0528d14de30f78dd799640ea4779a4fdd2b22",
+  "script_sha256": "852fced6b2b7519fcc427efe7629f5153740744b806c52116d649c2e87535ed8",
+  "estimator": "participant macro",
+  "raw_points": "all eight participants for every arm",
+  "uncertainty": "95% percentile participant-cluster bootstrap; fixed fit outcomes",
+  "resamples": 20000,
+  "seed": 20261006,
+  "folds_independent": false,
+  "formats": [
+    "png",
+    "svg",
+    "pdf"
+  ],
+  "size_inches": [
+    11,
+    8
+  ],
+  "dpi_png": 180,
+  "journal": "none specified; provisional research report figure",
+  "promoted_arm": null,
+  "files": {
+    "m1_ar_orders.pdf": "7b32a1f36ff434dad3f4fbaeded8a24921119b0687fa2b0246f695ad15254bd2",
+    "m1_ar_orders.png": "07d6b5918f31f104f9b00dbf40c8574dcca8f2c6dd0cba2e937d720a88377029",
+    "m1_ar_orders.svg": "c2fcb97a57419a99245b6a16748a7b4784f72e01cefd02fa7c7950da9ec914dd"
+  },
+  "original_export_svg_sha256": "be1859d881af796d5671a237bf5aa730a1ebc434211da497db7f83a9f66f90e4",
+  "published_svg_trailing_whitespace_removed": true
+}
