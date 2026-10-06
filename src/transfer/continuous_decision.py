@@ -313,14 +313,19 @@ def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge,
                             status=int(result.status), message=str(result.message))
     elif strategy == "conditional_profile":
         optimization["message"] = "no AR shape parameters"
-    objective, spatial, n_tail, mean, covariance = evaluate(reflections, posterior=True)
+    objective, spatial, n_tail, _, _ = evaluate(reflections)
     if objective > initial_objective + 1e-9 * max(1., abs(initial_objective)):
         raise UnidentifiableFitError("conditional PARCOR optimization increased the exact Gaussian objective")
     optimization.update(final_objective=objective, evaluations=evaluations)
     noise = TemporalNoise.from_conditional_fit(initializer, reflections,
         innovation_variance=float(np.trace(spatial) / channels), conditioning_samples=prefix,
         objective_rows=n_tail, optimization=optimization, training_input_sha256=training_digest)
-    return mean, covariance, spatial, noise, training_digest
+    statistics = _kernel_fit_statistics(samples, designs, noise, prefix)
+    precision = np.sqrt(ridge)*np.eye(kernel_width) if kernel_prior is None else kernel_prior.precision_root
+    root, response, covariance = _kernel_posterior_factors(precision,
+        np.asarray(statistics["information_root"]), np.asarray(statistics["score"]))
+    mean = solve_triangular(root, response)
+    return mean, covariance, spatial, noise, training_digest, statistics
 
 
 def _prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, ledger, fit_scope):
@@ -346,20 +351,25 @@ def _kernel_fit_statistics(samples, designs, noise, prefix):
             "method": "all_C_actual_noise_per_record_diffuse_QR_response"}
 
 
-def _validate_prior_posterior(prior, statistics, mean, covariance, noise):
+def _kernel_posterior_factors(prior_root, information, score):
+    """One full-C quotient posterior for both fitting and persisted relations."""
+    q, root = np.linalg.qr(np.vstack((information, prior_root)), mode="reduced")
+    response = q.T @ np.vstack((score, np.zeros_like(score)))
+    inverse = solve_triangular(root, np.eye(len(root)))
+    return root, response, inverse@inverse.T
+
+
+def _validate_prior_posterior(prior_root, statistics, mean, covariance, noise_digest):
     information = _real_values(statistics["information_root"], "fitted kernel information root")
     score = _real_values(statistics["score"], "fitted kernel score")
-    width = len(prior.precision_root)
+    width = len(prior_root)
     if (information.shape != (width, width) or score.shape != mean.shape
             or not np.isfinite(information).all() or not np.isfinite(score).all()
             or statistics.get("method") != "all_C_actual_noise_per_record_diffuse_QR_response"
             or statistics.get("state_sha256") != array_digest(information, score)
-            or statistics.get("noise_digest") != noise.record()["artifact_sha256"]):
+            or statistics.get("noise_digest") != noise_digest):
         raise ValueError("kernel prior posterior statistics differ from the fitted noise and coordinates")
-    q, root = np.linalg.qr(np.vstack((information, prior.precision_root)), mode="reduced")
-    inverse = solve_triangular(root, np.eye(width))
-    expected_covariance = inverse@inverse.T
-    response = q.T @ np.vstack((score, np.zeros_like(score)))
+    root, response, expected_covariance = _kernel_posterior_factors(prior_root, information, score)
     # Check the QR equation's backward error, not forward coefficient error in
     # nearly unobserved directions. A changed posterior still violates R M = b.
     mean_scale = max(float(np.linalg.norm(root, ord=2)*np.linalg.norm(mean) + np.linalg.norm(response)), np.finfo(float).tiny)
@@ -494,8 +504,8 @@ class ContinuousDecisionModel:
                         or provenance.get("kernel_prior_digest") != self.kernel_prior.digest()
                         or self.kernel_prior.provenance["fit_scope"] != scope):
                     raise ValueError("compiled kernel prior differs from its actual C/basis/program binding")
-                _validate_prior_posterior(self.kernel_prior, provenance["kernel_prior_fit_statistics"],
-                                          mean, row_cov, self.noise)
+                _validate_prior_posterior(self.kernel_prior.precision_root, provenance["kernel_prior_fit_statistics"],
+                                          mean, row_cov, self.noise.record()["artifact_sha256"])
             if self.noise is not None:
                 noise_provenance = self.noise.provenance
                 if (noise_provenance["fit_scope"] != scope
@@ -637,7 +647,7 @@ class ContinuousDecisionModel:
         offsets = np.cumsum([0] + [len(x) for x in samples])
         pairs = [initial_residual[a:b] for a, b in zip(offsets[:-1], offsets[1:], strict=True)]
         if conditioning_samples:
-            mean, row_cov, noise, noise_model, training_digest = _fit_fixed_prefix(
+            mean, row_cov, noise, noise_model, training_digest, statistics = _fit_fixed_prefix(
                 samples, designs, pairs, ids, order=noise_order, prefix=conditioning_samples,
                 ridge=ridge, strategy=noise_estimator, fit_scope=fit_scope, kernel_prior=compiled_prior)
             provenance = {"fit_scope": fit_scope, "records": ledger,
@@ -658,7 +668,7 @@ class ContinuousDecisionModel:
                 provenance["ridge"] = float(ridge)
             else:
                 provenance.update(kernel_prior_spec=prior_spec.record(), kernel_prior_digest=compiled_prior.digest(),
-                    kernel_prior_fit_statistics=_kernel_fit_statistics(samples, designs, noise_model, conditioning_samples))
+                    kernel_prior_fit_statistics=statistics)
             return cls(basis, mean, row_cov, noise, None, sfreq, tuple(channels), tuple(candidate_ids),
                        operator_identity, provenance, noise=noise_model, conditioning_samples=conditioning_samples,
                        kernel_prior=compiled_prior)
