@@ -20,6 +20,8 @@
 
 已在主树接收，runner另补两处真正调用链：same-ridge AR阶数面板明确拒绝g程序，避免混入先验归因；`KernelPriorRankError.record()`进入失败格fit-origin，保留spec/rank/source证据、requested预算与actual scored0。59项联动通过；合并后完整pytest2604通过、19跳过、0失败/错误，共2623项，399文件前后byte guard不变。原独立g树2576/19与主树全集分别记录，原M1仍用自己的冻结e982执行源，不追签新g结果。
 
+[最终执行源物理清单](../../frozen/calibration_g_prior_20261006_delivery/manifest.json)封存419成员并对照实际主树/解包副本逐byte验证；[质量归档](../../frozen/calibration_g_prior_20261006_delivery/quality_manifest.json)封存1501成员、15345417压缩字节，包括原理论、修前RED、作者与两轴独立探针、两个全集及caller检查。原件前后及镜像SHA一致，Git只发布清单，payload留本地；g公开矩阵和成人确认未执行。
+
 主树runner整合清单（本树未改runner/resume）：
 
 1. g panel使用`CalibrationExpertProgram.from_record`的新`kernel_prior`字典，删除该entry的ridge；已有M1 `fixed_prefix_ar_order` comparison仍只比较same ridge，不把g塞入该归因面板。
