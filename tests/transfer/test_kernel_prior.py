@@ -129,3 +129,86 @@ def test_load_recomputes_rank_resolution_from_saved_original_design_root():
     payload["artifact_sha256"] = metadata_digest({k: v for k, v in payload.items() if k != "artifact_sha256"})
     with pytest.raises(ValueError, match="rank ledger"):
         CompiledKernelPrior.from_record(payload)
+
+
+def test_trace_isotropic_control_matches_g_energy_and_scales_with_g():
+    values = [d@np.diag([.25, 1., 3., 5.]) for d in designs()]
+    information = dense_information(values)
+    k = len(information)
+    controls = []
+    for g in (2., 8.):
+        control = compile_prior(values, KernelPriorSpec.calibration_trace_isotropic(g))
+        g_prior = compile_prior(values, KernelPriorSpec.calibration_g(g))
+        expected_precision = np.trace(information)/(k*g)
+        np.testing.assert_allclose(control.derived_precision, expected_precision, rtol=3e-15)
+        np.testing.assert_allclose(control.row_covariance, np.eye(k)/expected_precision, rtol=3e-15)
+        for prior in (control, g_prior):
+            np.testing.assert_allclose(np.trace(information@prior.row_covariance), k*g, rtol=3e-15)
+            np.testing.assert_allclose(prior.reference_root.T@prior.reference_root, information, atol=1e-12)
+        assert not np.isclose(control.derived_precision, 1/g)
+        assert not np.allclose(control.row_covariance, g_prior.row_covariance)
+        assert g_prior.derived_precision is None
+        controls.append(control)
+    np.testing.assert_allclose(controls[1].row_covariance, 4*controls[0].row_covariance, rtol=3e-15)
+    assert controls[1].derived_precision == pytest.approx(controls[0].derived_precision/4)
+
+
+def test_trace_control_is_coordinate_fixed_under_general_basis_change():
+    values = designs()
+    change = np.array([[2., .3, 0., 0.], [0., .4, 0., 0.], [0., 0., 1.2, -.2], [0., 0., .1, .8]])
+    original = compile_prior(values, KernelPriorSpec.calibration_trace_isotropic(9.))
+    transformed = compile_prior([d@change for d in values], original.spec)
+    inverse = np.linalg.inv(change)
+    assert not np.allclose(transformed.row_covariance, inverse@original.row_covariance@inverse.T)
+    assert not np.allclose(values[0]@original.row_covariance@values[0].T,
+                           values[0]@change@transformed.row_covariance@change.T@values[0].T)
+    np.testing.assert_allclose(np.trace(dense_information([d@change for d in values])@transformed.row_covariance), 36.)
+
+
+@pytest.mark.parametrize("case", ["zero", "affine", "duplicate"])
+def test_trace_control_preserves_g_singular_reference_failure_lineage(case):
+    if case == "zero":
+        values = [np.zeros((len(d), 2)) for d in designs()]
+    elif case == "affine":
+        values = [np.column_stack((np.ones(len(d)), np.linspace(-1, 1, len(d)))) for d in designs()]
+    else:
+        values = [np.column_stack((d[:, 0], d[:, 0])) for d in designs()]
+    failures = []
+    for kind in (KernelPriorSpec.calibration_g, KernelPriorSpec.calibration_trace_isotropic):
+        with pytest.raises(KernelPriorRankError) as caught:
+            compile_prior(values, kind(9.))
+        failure = caught.value.record()
+        assert failure["kind"] == "kernel_prior_rank_failure"
+        assert failure["prior_spec"]["kind"] == kind(9.).kind
+        assert failure["provenance"]["fit_scope"] == "target_calibration"
+        failures.append(failure["rank_ledger"])
+    assert failures[0] == failures[1]
+    assert failures[0]["rank"] == (1 if case == "duplicate" else 0)
+
+
+def test_trace_control_compiled_state_replays_and_rejects_resigned_wrong_scale():
+    from transfer.noise_model import metadata_digest
+
+    control = compile_prior(designs(), KernelPriorSpec.calibration_trace_isotropic(9.))
+    replay = CompiledKernelPrior.from_record(control.record())
+    assert replay.digest() == control.digest()
+    assert replay.derived_precision == control.derived_precision
+    with pytest.raises(ValueError):
+        replay.precision_root[0, 0] = 1.
+    payload = control.record()
+    payload["spec"]["g"] = 8.
+    payload["artifact_sha256"] = metadata_digest({k: v for k, v in payload.items() if k != "artifact_sha256"})
+    with pytest.raises(ValueError, match="precision root"):
+        CompiledKernelPrior.from_record(payload)
+
+
+def test_trace_control_rejects_external_precision_and_held_fit_scope():
+    spec = KernelPriorSpec.calibration_trace_isotropic(9.)
+    assert KernelPriorSpec.from_record(spec.record()) == spec
+    with pytest.raises(ValueError, match="mutually"):
+        resolve_kernel_prior(spec, 1.)
+    with pytest.raises(ValueError):
+        KernelPriorSpec.from_record({**spec.record(), "precision": 1.})
+    with pytest.raises(ValueError, match="fit scope"):
+        compile_kernel_prior(spec, designs(), record_ids=("C1", "C2"), fit_scope="held_test",
+                             binding={"design_source": "held"})

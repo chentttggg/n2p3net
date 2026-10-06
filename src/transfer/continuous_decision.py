@@ -41,6 +41,10 @@ from transfer.temporal_noise import TemporalNoise
 _IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _STATE_KEYS = ("basis", "kernel_mean", "kernel_row_covariance", "innovation_covariance")
 _PRIOR_STATE_KEYS = ("prior_precision_root", "prior_reference_root", "prior_design_root", "prior_fit_information_root", "prior_fit_score")
+_CALIBRATION_PRIOR_SCHEMAS = {
+    "calibration_g": "n2p3_continuous_decision_model/5",
+    "calibration_trace_isotropic": "n2p3_continuous_decision_model/6",
+}
 _COMPUTE_DTYPE = np.dtype(np.float64).str
 _CONDITIONAL_SOLVER_SETTINGS = freeze_metadata({"eta_max": 8., "maxiter": 1000, "maxcor": 32, "ftol": 1e-10, "gtol": 1e-6})
 
@@ -425,12 +429,12 @@ class ContinuousDecisionModel:
         scope = provenance.get("fit_scope")
         if self.kernel_prior is not None:
             if (not isinstance(self.kernel_prior, CompiledKernelPrior)
-                    or self.kernel_prior.spec.kind != "calibration_g" or not self.conditioning_samples):
-                raise ValueError("compiled calibration g prior requires the explicit fixed-prefix program")
+                    or not self.kernel_prior.spec.uses_calibration_reference or not self.conditioning_samples):
+                raise ValueError("compiled calibration prior requires the explicit fixed-prefix program")
             self.kernel_prior.digest()
         if scope == "analytic_reference":
             if self.kernel_prior is not None:
-                raise ValueError("calibration g models require an actual C ledger, not an analytic relabeling")
+                raise ValueError("calibration prior models require an actual C ledger, not an analytic relabeling")
             if set(provenance) != {"fit_scope", "reference_id", "records"} or provenance["records"] or not provenance["reference_id"]:
                 raise ValueError("analytic numerical reference must be explicitly identified without training claims")
             if self.noise is not None and self.noise.provenance["fit_scope"] != scope:
@@ -481,7 +485,7 @@ class ContinuousDecisionModel:
                 if not np.isfinite(provenance.get("ridge", float("nan"))) or provenance["ridge"] <= 0:
                     raise ValueError("continuous fit ledger lacks positive ridge")
                 if "kernel_prior_spec" in provenance:
-                    raise ValueError("calibration g program cannot be relabeled as the ridge model")
+                    raise ValueError("calibration prior program cannot be relabeled as the fixed ridge model")
             else:
                 expected_binding = _prior_binding(self.sfreq, channels, candidates, self.operator_identity,
                                                   basis, provenance["records"], scope)
@@ -561,8 +565,8 @@ class ContinuousDecisionModel:
             raise ValueError("conditioning prefix must cover explicit AR order and identify diffuse drift")
         if noise_estimator not in {"burg", "conditional_profile"} or (not conditioning_samples and noise_estimator != "burg"):
             raise ValueError("conditional profile noise estimation requires a fixed conditioning prefix")
-        if prior_spec.kind == "calibration_g" and not conditioning_samples:
-            raise ValueError("calibration g prior is implemented only for fixed-prefix conditional inference")
+        if prior_spec.uses_calibration_reference and not conditioning_samples:
+            raise ValueError("calibration priors are implemented only for fixed-prefix conditional inference")
         basis = smooth_erp_basis(sfreq) if basis is None else _real_values(basis, "ERP basis")
         if basis.ndim != 2 or not np.all(np.isfinite(basis)) or min(basis.shape) == 0:
             raise ValueError("basis must be finite and nonempty")
@@ -597,13 +601,13 @@ class ContinuousDecisionModel:
             if conditioning_samples:
                 ledger[-1].update(conditioning_sample_support=[0, conditioning_samples],
                                   score_sample_support=[conditioning_samples, len(X)])
-            if prior_spec.kind == "calibration_g":
+            if prior_spec.uses_calibration_reference:
                 ledger[-1]["design_sha256"] = array_digest(designs[-1])
         if set(all_labels) != {0, 1}:
             raise ValueError("both target and non-target calibration events are required")
         p = 2 * basis.shape[1]
         compiled_prior = None
-        if prior_spec.kind == "calibration_g":
+        if prior_spec.uses_calibration_reference:
             compiled_prior = compile_kernel_prior(prior_spec, designs, record_ids=ids, fit_scope=fit_scope,
                 binding=_prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, ledger, fit_scope))
 
@@ -820,7 +824,7 @@ class ContinuousDecisionModel:
                 prior.pop("precision_root")
                 prior.pop("reference_root")
                 prior.pop("design_root")
-                metadata.update(schema="n2p3_continuous_decision_model/5", kernel_prior=prior)
+                metadata.update(schema=_CALIBRATION_PRIOR_SCHEMAS[self.kernel_prior.spec.kind], kernel_prior=prior)
         return metadata
 
     def _state_arrays(self):
@@ -857,14 +861,15 @@ class ContinuousDecisionModel:
         with np.load(path, allow_pickle=False) as archive:
             metadata = json.loads(str(archive["metadata"]))
             schema = metadata.get("schema")
-            state_keys = _STATE_KEYS + (_PRIOR_STATE_KEYS if schema == "n2p3_continuous_decision_model/5" else ())
+            calibration_prior = schema in _CALIBRATION_PRIOR_SCHEMAS.values()
+            state_keys = _STATE_KEYS + (_PRIOR_STATE_KEYS if calibration_prior else ())
             if set(archive.files) != {*state_keys, "metadata"}:
                 raise ValueError("continuous model numeric payload differs from its declared prior schema")
             all_state = {key: archive[key] for key in state_keys}
             state = [all_state[key] for key in _STATE_KEYS]
         schema = metadata.get("schema")
         if schema not in {"n2p3_continuous_decision_model/2", "n2p3_continuous_decision_model/3",
-                          "n2p3_continuous_decision_model/4", "n2p3_continuous_decision_model/5"}:
+                          "n2p3_continuous_decision_model/4", *_CALIBRATION_PRIOR_SCHEMAS.values()}:
             raise ValueError("unsupported continuous decision model schema")
         expected = metadata.pop("artifact_sha256", None)
         if expected != metadata_digest(metadata):
@@ -876,16 +881,19 @@ class ContinuousDecisionModel:
                             or any(value.dtype.str != _COMPUTE_DTYPE for value in all_state.values())):
             raise ValueError("continuous AR artifact requires its exact float64 state dtype")
         noise = TemporalNoise.from_record(metadata["noise"]) if explicit_ar else None
-        prefix = metadata["conditioning_samples"] if schema in {"n2p3_continuous_decision_model/4", "n2p3_continuous_decision_model/5"} else 0
-        if schema in {"n2p3_continuous_decision_model/4", "n2p3_continuous_decision_model/5"} and not prefix:
+        conditional = schema == "n2p3_continuous_decision_model/4" or calibration_prior
+        prefix = metadata["conditioning_samples"] if conditional else 0
+        if conditional and not prefix:
             raise ValueError("conditional model schema requires its actual conditioning prefix")
         prior = None
-        if schema == "n2p3_continuous_decision_model/5":
+        if calibration_prior:
             prior_record = metadata["kernel_prior"]
             prior_record.update(precision_root=all_state["prior_precision_root"].tolist(),
                                 reference_root=all_state["prior_reference_root"].tolist(),
                                 design_root=all_state["prior_design_root"].tolist())
             prior = CompiledKernelPrior.from_record(prior_record)
+            if _CALIBRATION_PRIOR_SCHEMAS.get(prior.spec.kind) != schema:
+                raise ValueError("continuous model prior kind differs from its declared schema")
             metadata["provenance"]["kernel_prior_fit_statistics"].update(
                 information_root=all_state["prior_fit_information_root"].tolist(),
                 score=all_state["prior_fit_score"].tolist())

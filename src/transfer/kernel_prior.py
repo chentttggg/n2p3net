@@ -1,6 +1,6 @@
 """Immutable response-prior programs and calibration information compilation.
 
-The g prior uses every authorized calibration design row, with an independent
+Calibration priors use every authorized design row, with an independent
 diffuse intercept/trend removed per record. Its AR0 reference and precision
 root are fixed before Burg initialization and every subsequent noise objective.
 No prediction signal, candidate or fitted noise enters this compiler.
@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
-from scipy.linalg import solve_triangular
+from scipy.linalg import norm, solve_triangular
 
 from research.execution import UnidentifiableFitError
 from transfer.noise_model import (
@@ -27,7 +27,8 @@ from transfer.noise_model import (
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _SCHEMA = "n2p3_compiled_kernel_prior/1"
-_G_CONTRACT = {
+_CALIBRATION_KINDS = frozenset({"calibration_g", "calibration_trace_isotropic"})
+_CALIBRATION_CONTRACT = {
     "reference_noise": "AR0_unit_innovation", "information_support": "all_authorized_C",
     "nuisance": "per_record_diffuse_affine", "rank_policy": "require_full_rank",
 }
@@ -62,15 +63,15 @@ class KernelPriorSpec:
         if self.mean_center != "zero":
             raise ValueError("this kernel-prior slice requires the declared zero mean")
         if self.kind == "isotropic_ridge":
-            if self.g is not None or any(getattr(self, name) is not None for name in _G_CONTRACT):
+            if self.g is not None or any(getattr(self, name) is not None for name in _CALIBRATION_CONTRACT):
                 raise ValueError("ridge precision and calibration g parameters are mutually exclusive")
             object.__setattr__(self, "precision", _positive(self.precision, "ridge precision"))
-        elif self.kind == "calibration_g":
+        elif self.uses_calibration_reference:
             if self.precision is not None:
                 raise ValueError("ridge precision and calibration g parameters are mutually exclusive")
             object.__setattr__(self, "g", _positive(self.g, "g variance multiplier"))
-            if any(getattr(self, name) != expected for name, expected in _G_CONTRACT.items()):
-                raise ValueError("calibration g requires the fixed AR0/all-C/full-rank contract")
+            if any(getattr(self, name) != expected for name, expected in _CALIBRATION_CONTRACT.items()):
+                raise ValueError("calibration priors require the fixed AR0/all-C/full-rank contract")
         else:
             raise ValueError("unsupported kernel prior kind")
 
@@ -80,21 +81,29 @@ class KernelPriorSpec:
 
     @classmethod
     def calibration_g(cls, g):
-        return cls("calibration_g", g=g, **_G_CONTRACT)
+        return cls("calibration_g", g=g, **_CALIBRATION_CONTRACT)
+
+    @classmethod
+    def calibration_trace_isotropic(cls, g):
+        return cls("calibration_trace_isotropic", g=g, **_CALIBRATION_CONTRACT)
+
+    @property
+    def uses_calibration_reference(self):
+        return self.kind in _CALIBRATION_KINDS
 
     def record(self):
         values = {"kind": self.kind, "mean_center": self.mean_center}
         if self.kind == "isotropic_ridge":
             values["precision"] = self.precision
         else:
-            values.update(g=self.g, **_G_CONTRACT)
+            values.update(g=self.g, **_CALIBRATION_CONTRACT)
         return values
 
     @classmethod
     def from_record(cls, record):
         values = dict(record)
         expected = ({"kind", "precision", "mean_center"} if values.get("kind") == "isotropic_ridge"
-                    else {"kind", "g", "mean_center", *_G_CONTRACT})
+                    else {"kind", "g", "mean_center", *_CALIBRATION_CONTRACT})
         if set(values) != expected:
             raise ValueError("kernel prior record must contain only its declared kind parameters")
         return cls(**values)
@@ -117,7 +126,7 @@ class KernelPriorRankError(UnidentifiableFitError):
     def __init__(self, spec, rank_ledger, provenance):
         self._evidence = freeze_metadata({"kind": "kernel_prior_rank_failure", "prior_spec": spec.record(),
                                          "rank_ledger": rank_ledger, "provenance": provenance})
-        super().__init__(f"calibration g prior requires full rank: {rank_ledger['rank']}/{rank_ledger['requested_dimensions']}; "
+        super().__init__(f"{spec.kind} prior requires full rank: {rank_ledger['rank']}/{rank_ledger['requested_dimensions']}; "
                          f"threshold={rank_ledger['absolute_threshold']:.9g}")
 
     @property
@@ -151,6 +160,14 @@ def _rank_ledger(root, design_root, rows, count):
             "statistical_identifiability_claimed": False}
 
 
+def _reference_precision_root(spec, reference):
+    if spec.kind == "calibration_g":
+        return reference/np.sqrt(spec.g)
+    # ||R_C||_F^2 = tr(G). Coordinate-fixed control with tr(G H) = k g.
+    scale = norm(reference.ravel())/np.sqrt(reference.shape[1])/np.sqrt(spec.g)
+    return scale*np.eye(reference.shape[1])
+
+
 @dataclass(frozen=True)
 class CompiledKernelPrior:
     spec: KernelPriorSpec
@@ -181,8 +198,8 @@ class CompiledKernelPrior:
             if (reference.shape != root.shape or design_root.shape != root.shape
                     or np.any(np.tril(reference, -1)) or np.any(np.tril(design_root, -1))):
                 raise ValueError("calibration reference root must match the kernel coordinates")
-            if not np.allclose(root, reference/np.sqrt(self.spec.g), rtol=1e-13, atol=0):
-                raise ValueError("calibration g precision root differs from its actual reference and g")
+            if not np.allclose(root, _reference_precision_root(self.spec, reference), rtol=1e-13, atol=0):
+                raise ValueError("calibration prior precision root differs from its actual reference and g")
             records = provenance.get("records", [])
             if (provenance.get("fit_scope") not in {"target_calibration", "source_training"}
                     or provenance.get("method") != "all_C_AR0_per_record_diffuse_incremental_QR" or not records):
@@ -221,6 +238,11 @@ class CompiledKernelPrior:
     def rank_ledger(self):
         return self.provenance.get("rank_ledger")
 
+    @property
+    def derived_precision(self):
+        """Coordinate-isotropic precision; g prior has no scalar precision."""
+        return None if self.spec.kind == "calibration_g" else float(self.precision_root[0, 0]**2)
+
     def _record(self):
         return {"schema": _SCHEMA, "spec": self.spec.record(), "precision_root": self.precision_root.tolist(),
                 "reference_root": None if self.reference_root is None else self.reference_root.tolist(),
@@ -232,7 +254,7 @@ class CompiledKernelPrior:
         """The reference design ledger and model C share one authoritative binding."""
         if metadata_digest(self.provenance["binding"]) != metadata_digest(binding):
             raise ValueError("compiled kernel prior differs from the actual C/basis/input binding")
-        if self.spec.kind == "calibration_g":
+        if self.spec.uses_calibration_reference:
             _validate_reference_binding(self.provenance["records"], binding)
 
     def digest(self):
@@ -299,4 +321,4 @@ def compile_kernel_prior(spec, designs, *, record_ids, fit_scope, binding):
                       records=records, rank_ledger=ledger, reference_design_sha256=metadata_digest(records))
     if ledger["rank"] != width:
         raise KernelPriorRankError(spec, ledger, provenance)
-    return CompiledKernelPrior(spec, root/np.sqrt(spec.g), root, provenance, design_root=design_root)
+    return CompiledKernelPrior(spec, _reference_precision_root(spec, root), root, provenance, design_root=design_root)

@@ -103,10 +103,10 @@ class CalibrationExpertProgram:
             object.__setattr__(self, "_prior_spec", None)
         else:
             prior = resolve_kernel_prior(self.kernel_prior, self.ridge)
-            if prior.kind == "calibration_g" and not self.conditioning_samples:
-                raise ValueError("calibration g expert requires the fixed-prefix program")
+            if prior.uses_calibration_reference and not self.conditioning_samples:
+                raise ValueError("calibration prior expert requires the fixed-prefix program")
             object.__setattr__(self, "_prior_spec", prior)
-            object.__setattr__(self, "kernel_prior", prior if prior.kind == "calibration_g" else None)
+            object.__setattr__(self, "kernel_prior", prior if prior.uses_calibration_reference else None)
             object.__setattr__(self, "ridge", prior.precision)
         if (type(self.conditioning_samples) is not int or self.conditioning_samples < 0
                 or self.noise_estimator not in {"burg", "conditional_profile"}):
@@ -132,7 +132,7 @@ class CalibrationExpertProgram:
                 "response_seconds": self.response_seconds, "n_basis": self.n_basis}
         if self.conditioning_samples:
             record.update(conditioning_samples=self.conditioning_samples, noise_estimator=self.noise_estimator)
-        if self.kernel_prior is not None and self.kernel_prior.kind == "calibration_g":
+        if self.kernel_prior is not None:
             record.pop("ridge")
             record["kernel_prior"] = self.kernel_prior.record()
         return record

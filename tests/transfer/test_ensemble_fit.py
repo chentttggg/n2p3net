@@ -75,7 +75,8 @@ def test_fixed_prefix_raw_ensemble_preserves_program_support_and_exact_replay(tm
     assert before.record() == after.record()
 
 
-def test_calibration_g_program_saved_package_and_wrong_prior_relation(tmp_path, monkeypatch):
+@pytest.mark.parametrize("prior_factory", [KernelPriorSpec.calibration_g, KernelPriorSpec.calibration_trace_isotropic])
+def test_calibration_g_program_saved_package_and_wrong_prior_relation(tmp_path, monkeypatch, prior_factory):
     import transfer.continuous_decision as continuous
     from transfer.ensemble_fit import _FittedExpert
 
@@ -91,7 +92,7 @@ def test_calibration_g_program_saved_package_and_wrong_prior_relation(tmp_path, 
 
     groups = selections()
     spec = CalibrationExpertProgram("raw_g", "continuous_ar", noise_order=1, n_basis=2,
-        conditioning_samples=32, kernel_prior=KernelPriorSpec.calibration_g(9.))
+        conditioning_samples=32, kernel_prior=prior_factory(9.))
     assert "ridge" not in spec.record()
     assert CalibrationExpertProgram.from_record(spec.record()).prior_spec == spec.prior_spec
     mixture = EnsembleProgram.equal_weights("g", (spec.expert_id,))
@@ -100,7 +101,7 @@ def test_calibration_g_program_saved_package_and_wrong_prior_relation(tmp_path, 
     path = fitted.save(tmp_path/"g")
     assert FittedEnsemble.load(path).score(groups[3].view).record() == before.record()
     actual = fitted._experts[0]
-    changed = replace(spec, kernel_prior=KernelPriorSpec.calibration_g(8.))
+    changed = replace(spec, kernel_prior=prior_factory(8.))
     with pytest.raises(ValueError, match="actual numerical model"):
         _FittedExpert(changed, actual.predictor, actual.model_digest, actual.fit_digest, None, 0.)
     assert actual.predictor.kernel_prior.rank_ledger["observed_rows"] == 3*551
@@ -109,6 +110,8 @@ def test_calibration_g_program_saved_package_and_wrong_prior_relation(tmp_path, 
     for prior, row in zip(compiled[1:], fitted.temperature_record["OOF_groups"], strict=True):
         assert prior.rank_ledger["observed_rows"] == 2*551
         assert row["held_record_id"] not in {r["record_id"] for r in prior.provenance["records"]}
+        if prior.spec.kind == "calibration_trace_isotropic":
+            assert prior.derived_precision < actual.predictor.kernel_prior.derived_precision
 
 
 def test_continuous_g_and_explicit_ridge_programs_are_mutually_exclusive():

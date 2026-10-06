@@ -84,7 +84,7 @@ class ConditionalGaussianObjective:
         if kernel_prior is not None:
             if kernel_prior.precision_root.shape != (self._kernel_width, self._kernel_width):
                 raise ValueError("compiled prior root differs from the objective kernel coordinates")
-            if kernel_prior.spec.kind == "calibration_g" and [
+            if kernel_prior.spec.uses_calibration_reference and [
                 array_digest(d) for _, d in pairs
             ] != [row["design_sha256"] for row in kernel_prior.provenance["records"]]:
                 raise ValueError("gradient calibration designs differ from the frozen C prior")
