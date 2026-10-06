@@ -1,0 +1,50 @@
+{
+  "schema": "n2p3_calibration_g_prior_quality/1",
+  "evidence_scope": "software_correctness",
+  "current_code_sha256": {
+    "src/transfer/kernel_prior.py": "2e0e5da9e1b5471facfab1634012b731ec7dc1d8e4a9e563e5a48a009806cc48",
+    "src/transfer/continuous_decision.py": "4d33731cd18946583a36f78d02d845d9bb7df98209cdeeba09a5ff1312b6c0d1",
+    "src/transfer/continuous_gradient.py": "310917922cdb64783391dcb10eea19ded334a8aaff1815ca1da36b4559c5a4b6",
+    "src/transfer/ensemble_fit.py": "0d1cddf573e2a808954d72407d88a5d58ccee5679d10baf5d2d539b268b66152"
+  },
+  "full_suite": {
+    "counts": {
+      "tests": 2595,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 19,
+      "passed": 2576
+    },
+    "source_file_count": 398,
+    "source_bytes_unchanged": true,
+    "process_exit_code": 0,
+    "raw_receipt_sha256": "773e89143b320e7ff9c56e3966d95e467c3d3fc21ec996f8746d80ccae5d8d18"
+  },
+  "Spec": {
+    "result": "passed",
+    "tests": 26,
+    "remaining_confirmed_findings": 0,
+    "raw_receipt_sha256": "24092cd2429d2684b7745db34cb8b7747931b4476f128c4270d4bbdbc95cbfe3",
+    "independent_oracle_sha256": "e2a89632bc0d3cde4c069185c5b2be6cd3daacfaf9feb3df79d7ad61f660d15d"
+  },
+  "Standards": {
+    "result": "passed",
+    "test_counts": {
+      "tests": 34,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "initial_confirmed_findings": 2,
+    "remaining_confirmed_findings": 0,
+    "raw_receipt_sha256": "5803eb783d854661042652e50018a9ff330b21f3ecb972fd20f335567f8263a4"
+  },
+  "fixed_defects": [
+    "nuisance projection roundoff falsely admitted full rank",
+    "prior reference records not cross bound to actual calibration ledger"
+  ],
+  "numeric_payload_arrays": 9,
+  "public_g_prior_matrix_executed": false,
+  "adult_confirmation": false,
+  "old_M1_results_re_signed": false
+}

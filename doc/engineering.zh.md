@@ -71,6 +71,8 @@ CUDA实际拟合、保存重载及CLI推理验证见[执行计划](roadmap.zh.md
 
 ## 开发与验证
 
+g raw研究expert显式提供`kernel_prior=KernelPriorSpec.calibration_g(g)`，同时不给ridge；默认旧ridge1与新g互斥。compiled root只在fit/C或load ingress验证，数值η循环消费同一immutable root；rank failure有`KernelPriorRankError.record()`结构化证据供runner保存。新/5实际numerical payload和source门禁不接受旧数据/recipe重标，见[实施](evidence/calibration_g_prior_20261006.zh.md)。
+
 [多专家实施](evidence/ensemble_implementation_20261005.zh.md)将概率/producer/物理身份检查集中到入口及frozen载入；
 `calibration_state.FrozenTrialPredictor`复用真实decode并取代ERP comparator重复实现。研究CLI冻结全部src与实际入口，
 仅捕获明确ExpectedSubjectError/数值分解失败为fit_failure，合同错误传播并保存failed进度。

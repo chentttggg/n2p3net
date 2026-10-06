@@ -2,6 +2,8 @@
 
 ## 2026-10-05 愿望清单与优先任务分块方案
 
+B08 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已落实full-rank软件路径与真实prior/fit/package关系，定向回归通过；full suite/Spec/Standards与主线整合尚待调度。dynamic prior、quotient/completion、K0与新效能矩阵不因此完成，冻结M1仍按原程序执行。
+
 [深入研究与验收规格](evidence/deep_research_plan_20261005.zh.md)完成原清单123项覆盖、15块真实依赖及三路独立数学/来源核查。
 方案阶段已完成；[后续代码实施](evidence/ensemble_implementation_20261005.zh.md)已经接通B00/B01/B02核心与B03分组温度、
 B04source/scratch及B05显式AR研究入口，[独立质量评估](evidence/ensemble_quality_20261005.zh.md)及本轮软件验收已完成。

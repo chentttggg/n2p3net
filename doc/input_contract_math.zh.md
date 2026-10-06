@@ -1,5 +1,8 @@
 # P300 模型输入合同：离散时间、单位与分组
 
+[固定reference g-prior](evidence/calibration_g_prior_20261006.zh.md)以每record `Dbar=(I−Q_ZQ_Zᵀ)D_C` 的增量AR0 thin QR构建 `G=R_CᵀR_C`，读完整授权C；prior precision root `R_C/√g`同时进初始化和fixed32 NumPy/Torch目标，η期间不变，Σ仍profile为Q/nTail。g程序新/5 actual roots与source保存；held不建G，C-inner每fold单独编译。
+rank分辨尺度同时使用实际原design与residual thin roots，threshold记录投影roundoff参考，不以近零residual自己的最大值认证纯nuisance方向；weak方向只在数值可分辨时准入，不能拿full rank证明统计识别。reference ledger与actual C/basis/input/support在同一binding owner交叉核对。
+
 [代码实施](evidence/ensemble_implementation_20261005.zh.md)以`ensemble_views`分开无标签物理view与授权CalSelection；
 真实359 source点经FFT180保留179，358点仍诚实输出178。每组FiniteFilterOperator/共享resample/baseline执行receipt和lineage保留。
 AR显式阶数使用stationary innovations且同步Y/D；[fixed32条件估计量](evidence/continuous_fixed_prefix_20261005.zh.md)已另以`/4`实施，不能把旧stationary程序称公平tail矩阵。

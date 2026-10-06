@@ -6,6 +6,9 @@
 
 ## 主链与接口
 
+[g-prior](evidence/calibration_g_prior_20261006.zh.md)由`transfer.kernel_prior`编译canonical spec与immutable precision root；continuous初始化、NumPy joint QR和Torch objective共享该root。新g `/5`保存prior/reference与actual-C posterior statistics数值载荷，load核root/spec/C/source及actual posterior关系；ensemble raw program与producer匹配。legacy ridge数值路径独立，runner/resume由主线整合。
+compiler保存原design root以重核投影数值rank；同一个`validate_binding`将reference record身份/支持/design SHA与model actual C ledger、basis/input绑定交叉核验，避免两份self-summary各自成立而关系不成立。
+
 [固定前缀条件AR](evidence/continuous_fixed_prefix_20261005.zh.md)深化现有`ContinuousDecisionModel`的同一fit/score/save/load Interface：
 `conditioning_samples`与`noise_estimator`在recipe、实际noise/model与包内binding一致；model/noise `/4`保存真实初始化、优化和支持来源。
 共享B与各record diffuse drift在prefix联合更新，冻结B posterior来自完整授权C；同tail目标独立profile空间Σ。

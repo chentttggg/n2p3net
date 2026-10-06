@@ -2,11 +2,11 @@
 
 Scientific ingress owns authorization, physical coordinates and finite float64
 samples/designs. This numerical producer consumes only that calibration data.
-One shared zero-mean kernel prior has precision ``ridge * I``; every record has
+One shared zero-mean kernel prior has a frozen precision root; every record has
 its own diffuse intercept/trend. The same prefix-centered drift coordinates
 are used for prefix and tail, so their change of measure cancels in the
 conditional density. A general kernel-basis change also needs a transformed
-prior and is outside this scalar-ridge interface.
+prior. Calibration-g roots are compiled from the authorized C design once.
 
 PARCOR lattice whitening preserves stationary startup and record boundaries.
 Prefix and tail augmented QR avoid squaring the condition of a low-rank Gram
@@ -23,6 +23,8 @@ import numpy as np
 import torch
 
 from research.execution import UnidentifiableFitError
+from transfer.kernel_prior import CompiledKernelPrior, resolve_kernel_prior
+from transfer.noise_model import array_digest
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
@@ -63,11 +65,15 @@ class ConditionalGaussianObjective:
         "_prior", "_prior_rhs", "_drift_before", "_drift_after",
     )
 
-    def __init__(self, samples, designs, *, conditioning_samples, ridge):
+    def __init__(self, samples, designs, *, conditioning_samples, ridge=None, kernel_prior=None):
         if type(conditioning_samples) is not int or conditioning_samples < 2:
             raise ValueError("conditioning_samples must be an integer of at least two")
-        if not np.isfinite(ridge) or ridge <= 0:
-            raise ValueError("ridge must be positive and finite")
+        if kernel_prior is not None:
+            if not isinstance(kernel_prior, CompiledKernelPrior) or ridge is not None:
+                raise ValueError("compiled kernel prior and scalar ridge are mutually exclusive")
+            kernel_prior.digest()
+        else:
+            ridge = resolve_kernel_prior(None, ridge).precision
         pairs = tuple(zip(samples, designs, strict=True))
         if not pairs or any(len(y) <= conditioning_samples for y, _ in pairs):
             raise ValueError("every calibration record needs a prefix and a nonempty scored tail")
@@ -75,6 +81,13 @@ class ConditionalGaussianObjective:
         self._prefix = conditioning_samples
         self._channels = pairs[0][0].shape[1]
         self._kernel_width = pairs[0][1].shape[1]
+        if kernel_prior is not None:
+            if kernel_prior.precision_root.shape != (self._kernel_width, self._kernel_width):
+                raise ValueError("compiled prior root differs from the objective kernel coordinates")
+            if kernel_prior.spec.kind == "calibration_g" and [
+                array_digest(d) for _, d in pairs
+            ] != [row["design_sha256"] for row in kernel_prior.provenance["records"]]:
+                raise ValueError("gradient calibration designs differ from the frozen C prior")
         self._objective_rows = int(np.sum(lengths - conditioning_samples))
         record_count = len(pairs)
         width = self._kernel_width + 2 * record_count
@@ -100,7 +113,8 @@ class ConditionalGaussianObjective:
             for index, n in enumerate(lengths)
         )
         prior = np.zeros((self._kernel_width, width))
-        prior[:, :self._kernel_width] = np.sqrt(ridge) * np.eye(self._kernel_width)
+        prior[:, :self._kernel_width] = (np.sqrt(ridge)*np.eye(self._kernel_width)
+                                         if kernel_prior is None else kernel_prior.precision_root)
         self._prior = torch.tensor(prior, dtype=torch.float64, device="cpu")
         self._prior_rhs = torch.zeros(
             (self._kernel_width, self._channels), dtype=torch.float64, device="cpu"

@@ -26,6 +26,7 @@ from scipy.special import logsumexp
 from sklearn.covariance import LedoitWolf
 
 from research.execution import UnidentifiableFitError
+from transfer.kernel_prior import CompiledKernelPrior, compile_kernel_prior, resolve_kernel_prior
 from transfer.noise_model import (
     array_digest,
     freeze_metadata,
@@ -39,6 +40,7 @@ from transfer.temporal_noise import TemporalNoise
 
 _IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _STATE_KEYS = ("basis", "kernel_mean", "kernel_row_covariance", "innovation_covariance")
+_PRIOR_STATE_KEYS = ("prior_precision_root", "prior_reference_root", "prior_design_root", "prior_fit_information_root", "prior_fit_score")
 _COMPUTE_DTYPE = np.dtype(np.float64).str
 _CONDITIONAL_SOLVER_SETTINGS = freeze_metadata({"eta_max": 8., "maxiter": 1000, "maxcor": 32, "ftol": 1e-10, "gtol": 1e-6})
 
@@ -187,7 +189,8 @@ def _conditional_solver_record(noise):
             "optimized_objective_scale": "per_scored_row_centered_at_Burg"}
 
 
-def _conditional_prediction(samples, designs, noise, prefix, prior_mean, prior_covariance, *, posterior=False):
+def _conditional_prediction(samples, designs, noise, prefix, prior_mean, prior_covariance, *, posterior=False,
+                            prior_precision_root=None):
     """Condition all record prefixes jointly, retaining the same drift measure.
 
     The first coordinates are one shared response kernel. Each independent
@@ -211,7 +214,8 @@ def _conditional_prediction(samples, designs, noise, prefix, prior_mean, prior_c
         tail_design.append(matrix[prefix:])
         tail_y.append(transformed[prefix:, :channels])
     A_u, Y_u, A_s, Y_s = map(np.vstack, (prefix_design, prefix_y, tail_design, tail_y))
-    prior_root = solve_triangular(np.linalg.cholesky(prior_covariance), np.eye(kernel_width), lower=True)
+    prior_root = (solve_triangular(np.linalg.cholesky(prior_covariance), np.eye(kernel_width), lower=True)
+                  if prior_precision_root is None else prior_precision_root)
     prefix_mean, prefix_information_root = _joint_posterior(A_u, Y_u, prior_mean, prior_root)
     tail_q, full_information_root = np.linalg.qr(np.vstack((A_s, prefix_information_root)), mode="reduced")
     full_mean = solve_triangular(full_information_root,
@@ -229,7 +233,7 @@ def _conditional_prediction(samples, designs, noise, prefix, prior_mean, prior_c
     return scatter, logdet, len(Y_s), mean, covariance
 
 
-def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge, strategy, fit_scope):
+def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge, strategy, fit_scope, kernel_prior=None):
     """Exact conditional objective; Burg shape or locally optimized PARCOR.
 
     Prefix data updates the shared kernel and diffuse drift posterior. Spatial
@@ -239,7 +243,9 @@ def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge,
     initializer = TemporalNoise.fit(residuals, order=order, record_ids=ids,
         fit_scope=fit_scope, startup_mode="stationary_innovations")
     kernel_width, channels = designs[0].shape[1], samples[0].shape[1]
-    prior_mean, prior_covariance = np.zeros((kernel_width, channels)), np.eye(kernel_width) / ridge
+    prior_mean = np.zeros((kernel_width, channels))
+    prior_covariance = np.eye(kernel_width)/ridge if kernel_prior is None else None
+    prior_arguments = {} if kernel_prior is None else {"prior_precision_root": kernel_prior.precision_root}
     training_digest = array_digest(*[value for pair in zip(samples, designs, strict=True) for value in pair])
     evaluations = 0
 
@@ -248,7 +254,7 @@ def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge,
         evaluations += 1
         noise = TemporalNoise.from_reflections(reflections, innovation_variance=1., reference_id="conditional_objective")
         scatter, logdet, n_tail, mean, covariance = _conditional_prediction(
-            samples, designs, noise, prefix, prior_mean, prior_covariance, posterior=posterior)
+            samples, designs, noise, prefix, prior_mean, prior_covariance, posterior=posterior, **prior_arguments)
         spatial = (scatter + scatter.T) / (2 * n_tail)
         try:
             spatial_root = np.linalg.cholesky(spatial)
@@ -273,7 +279,8 @@ def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge,
         eta = np.arctanh(reflections)
         if np.any(np.abs(eta) > eta_max):
             raise UnidentifiableFitError("Burg initializer is outside the declared conditional PARCOR search domain")
-        gradient_objective = ConditionalGaussianObjective(samples, designs, conditioning_samples=prefix, ridge=ridge)
+        gradient_arguments = {"ridge": ridge} if kernel_prior is None else {"kernel_prior": kernel_prior}
+        gradient_objective = ConditionalGaussianObjective(samples, designs, conditioning_samples=prefix, **gradient_arguments)
         evaluations += 1
         initial_torch, _ = gradient_objective.value_gradient(eta)
         if gradient_objective.objective_rows != objective_rows or not np.isclose(
@@ -312,6 +319,52 @@ def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge,
     return mean, covariance, spatial, noise, training_digest
 
 
+def _prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, ledger, fit_scope):
+    return {"sample_rate_hz": sfreq, "channels": list(channels), "candidate_ids": list(candidate_ids),
+            "operator_identity": operator_identity, "basis_sha256": array_digest(basis),
+            "fit_scope": fit_scope, "calibration_inputs": ledger}
+
+
+def _kernel_fit_statistics(samples, designs, noise, prefix):
+    """Small actual C sufficient statistics bind the saved prior to its posterior."""
+    width, channels = designs[0].shape[1], samples[0].shape[1]
+    root, score = np.empty((0, width)), np.zeros((width, channels))
+    for y, d in zip(samples, designs, strict=True):
+        drift = np.column_stack((np.ones(len(y)), (2*np.arange(len(y))-(prefix-1))/(prefix-1)))
+        transformed = noise.whiten(np.column_stack((d, y, drift)))
+        q = np.linalg.qr(transformed[:, -2:], mode="reduced")[0]
+        xy = transformed[:, :-2]
+        xy -= q@(q.T@xy)
+        dd, yy = xy[:, :width], xy[:, width:]
+        root = np.linalg.qr(np.vstack((root, dd)), mode="r")
+        score += dd.T@yy
+    return {"information_root": root.tolist(), "score": score.tolist(),
+            "state_sha256": array_digest(root, score), "noise_digest": noise.record()["artifact_sha256"],
+            "method": "all_C_actual_noise_per_record_diffuse_information"}
+
+
+def _validate_prior_posterior(prior, statistics, mean, covariance, spatial, noise):
+    information = _real_values(statistics["information_root"], "fitted kernel information root")
+    score = _real_values(statistics["score"], "fitted kernel score")
+    width = len(prior.precision_root)
+    if (information.shape != (width, width) or score.shape != mean.shape
+            or not np.isfinite(information).all() or not np.isfinite(score).all()
+            or statistics.get("method") != "all_C_actual_noise_per_record_diffuse_information"
+            or statistics.get("state_sha256") != array_digest(information, score)
+            or statistics.get("noise_digest") != noise.record()["artifact_sha256"]):
+        raise ValueError("kernel prior posterior statistics differ from the fitted noise and coordinates")
+    root = np.linalg.qr(np.vstack((information, prior.precision_root)), mode="r")
+    inverse = solve_triangular(root, np.eye(width))
+    expected_covariance = inverse@inverse.T
+    expected_mean = solve_triangular(root, solve_triangular(root.T, score, lower=True))
+    mean_scale = max(float(np.linalg.norm(expected_mean)),
+                     float(np.sqrt(np.trace(expected_covariance)*np.trace(spatial))), np.finfo(float).tiny)
+    covariance_scale = max(float(np.linalg.norm(expected_covariance)), np.finfo(float).tiny)
+    if (np.linalg.norm(covariance-expected_covariance) > 2e-9*covariance_scale
+            or np.linalg.norm(mean-expected_mean) > 2e-9*mean_scale):
+        raise ValueError("saved kernel posterior differs from its actual prior and fitted C information")
+
+
 @dataclass(frozen=True)
 class ContinuousDecisionModel:
     basis: np.ndarray
@@ -326,6 +379,7 @@ class ContinuousDecisionModel:
     provenance: dict
     noise: TemporalNoise | None = None
     conditioning_samples: int = 0
+    kernel_prior: CompiledKernelPrior | None = None
     _integrity_sha256: str = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
@@ -369,7 +423,14 @@ class ContinuousDecisionModel:
         object.__setattr__(self, "candidate_ids", candidates)
         provenance = json.loads(json.dumps(self.provenance, allow_nan=False))
         scope = provenance.get("fit_scope")
+        if self.kernel_prior is not None:
+            if (not isinstance(self.kernel_prior, CompiledKernelPrior)
+                    or self.kernel_prior.spec.kind != "calibration_g" or not self.conditioning_samples):
+                raise ValueError("compiled calibration g prior requires the explicit fixed-prefix program")
+            self.kernel_prior.digest()
         if scope == "analytic_reference":
+            if self.kernel_prior is not None:
+                raise ValueError("calibration g models require an actual C ledger, not an analytic relabeling")
             if set(provenance) != {"fit_scope", "reference_id", "records"} or provenance["records"] or not provenance["reference_id"]:
                 raise ValueError("analytic numerical reference must be explicitly identified without training claims")
             if self.noise is not None and self.noise.provenance["fit_scope"] != scope:
@@ -383,6 +444,8 @@ class ContinuousDecisionModel:
                 required |= {"read_sample_support", "input_dtypes", "raw_input_sha256"}
             if self.conditioning_samples:
                 required |= {"conditioning_sample_support", "score_sample_support"}
+            if self.kernel_prior is not None:
+                required |= {"design_sha256"}
             require_identifiers([record["record_id"] for record in provenance["records"]], "training record IDs")
             for record in provenance["records"]:
                 if (set(record) != required or any(type(record[key]) is not int for key in ("n_samples", "n_events", "n_targets"))
@@ -395,6 +458,8 @@ class ContinuousDecisionModel:
                     raise ValueError("invalid continuous calibration censoring declaration")
                 require_sha256(record["signal_sha256"], "continuous fit signal")
                 require_sha256(record["input_sha256"], "continuous fit labels/input")
+                if self.kernel_prior is not None:
+                    require_sha256(record["design_sha256"], "actual calibration design")
                 if self.noise is not None:
                     if record["read_sample_support"] != [0, record["n_samples"]]:
                         raise ValueError("continuous AR training support differs from the recorded observations")
@@ -412,8 +477,21 @@ class ContinuousDecisionModel:
                 ):
                     raise ValueError("continuous conditioning/score support differs from the actual record")
             require_sha256(provenance.get("implementation_sha256"), "continuous implementation")
-            if not np.isfinite(provenance.get("ridge", float("nan"))) or provenance["ridge"] <= 0:
-                raise ValueError("continuous fit ledger lacks positive ridge")
+            if self.kernel_prior is None:
+                if not np.isfinite(provenance.get("ridge", float("nan"))) or provenance["ridge"] <= 0:
+                    raise ValueError("continuous fit ledger lacks positive ridge")
+                if "kernel_prior_spec" in provenance:
+                    raise ValueError("calibration g program cannot be relabeled as the ridge model")
+            else:
+                expected_binding = _prior_binding(self.sfreq, channels, candidates, self.operator_identity,
+                                                  basis, provenance["records"], scope)
+                self.kernel_prior.validate_binding(expected_binding)
+                if ("ridge" in provenance or provenance.get("kernel_prior_spec") != self.kernel_prior.spec.record()
+                        or provenance.get("kernel_prior_digest") != self.kernel_prior.digest()
+                        or self.kernel_prior.provenance["fit_scope"] != scope):
+                    raise ValueError("compiled kernel prior differs from its actual C/basis/program binding")
+                _validate_prior_posterior(self.kernel_prior, provenance["kernel_prior_fit_statistics"],
+                                          mean, row_cov, noise, self.noise)
             if self.noise is not None:
                 noise_provenance = self.noise.provenance
                 if (noise_provenance["fit_scope"] != scope
@@ -449,8 +527,8 @@ class ContinuousDecisionModel:
 
     @classmethod
     def fit(cls, records, *, sfreq, channels, candidate_ids, operator_identity,
-            basis=None, ridge=1., fit_scope="target_calibration", noise_order=None,
-            conditioning_samples=0, noise_estimator="burg"):
+            basis=None, ridge=None, fit_scope="target_calibration", noise_order=None,
+            conditioning_samples=0, noise_estimator="burg", kernel_prior=None):
         """Fit all response and noise state from declared labeled records only.
 
         Records are independent legal scopes with complete stimulus histories.
@@ -474,8 +552,8 @@ class ContinuousDecisionModel:
         """
         if fit_scope not in {"target_calibration", "source_training"}:
             raise ValueError("continuous model fit scope must be training/calibration")
-        if not np.isfinite(ridge) or ridge <= 0:
-            raise ValueError("ridge must be strictly positive")
+        prior_spec = resolve_kernel_prior(kernel_prior, ridge)
+        ridge = prior_spec.precision
         if noise_order is not None and (type(noise_order) is not int or not 0 <= noise_order <= 128):
             raise ValueError("explicit AR order must be an integer in 0..128")
         if (type(conditioning_samples) is not int or conditioning_samples < 0
@@ -483,6 +561,8 @@ class ContinuousDecisionModel:
             raise ValueError("conditioning prefix must cover explicit AR order and identify diffuse drift")
         if noise_estimator not in {"burg", "conditional_profile"} or (not conditioning_samples and noise_estimator != "burg"):
             raise ValueError("conditional profile noise estimation requires a fixed conditioning prefix")
+        if prior_spec.kind == "calibration_g" and not conditioning_samples:
+            raise ValueError("calibration g prior is implemented only for fixed-prefix conditional inference")
         basis = smooth_erp_basis(sfreq) if basis is None else _real_values(basis, "ERP basis")
         if basis.ndim != 2 or not np.all(np.isfinite(basis)) or min(basis.shape) == 0:
             raise ValueError("basis must be finite and nonempty")
@@ -517,9 +597,15 @@ class ContinuousDecisionModel:
             if conditioning_samples:
                 ledger[-1].update(conditioning_sample_support=[0, conditioning_samples],
                                   score_sample_support=[conditioning_samples, len(X)])
+            if prior_spec.kind == "calibration_g":
+                ledger[-1]["design_sha256"] = array_digest(designs[-1])
         if set(all_labels) != {0, 1}:
             raise ValueError("both target and non-target calibration events are required")
         p = 2 * basis.shape[1]
+        compiled_prior = None
+        if prior_spec.kind == "calibration_g":
+            compiled_prior = compile_kernel_prior(prior_spec, designs, record_ids=ids, fit_scope=fit_scope,
+                binding=_prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, ledger, fit_scope))
 
         def solve(phi):
             if isinstance(phi, TemporalNoise):
@@ -535,7 +621,8 @@ class ContinuousDecisionModel:
                 mean = row_cov @ D.T @ Y
             else:
                 # Augmented QR does not square the conditioning of the design.
-                Q, root = np.linalg.qr(np.vstack([D, np.sqrt(ridge)*np.eye(p)]), mode="reduced")
+                prior_root = np.sqrt(ridge)*np.eye(p) if compiled_prior is None else compiled_prior.precision_root
+                Q, root = np.linalg.qr(np.vstack([D, prior_root]), mode="reduced")
                 inverse_root = solve_triangular(root, np.eye(p))
                 row_cov = inverse_root @ inverse_root.T
                 mean = solve_triangular(root, Q[:len(Y)].T @ Y)
@@ -548,8 +635,8 @@ class ContinuousDecisionModel:
         if conditioning_samples:
             mean, row_cov, noise, noise_model, training_digest = _fit_fixed_prefix(
                 samples, designs, pairs, ids, order=noise_order, prefix=conditioning_samples,
-                ridge=ridge, strategy=noise_estimator, fit_scope=fit_scope)
-            provenance = {"fit_scope": fit_scope, "records": ledger, "ridge": float(ridge),
+                ridge=ridge, strategy=noise_estimator, fit_scope=fit_scope, kernel_prior=compiled_prior)
+            provenance = {"fit_scope": fit_scope, "records": ledger,
                 "implementation_sha256": _IMPLEMENTATION_SHA256, "compute_dtype": _COMPUTE_DTYPE,
                 "noise_order": noise_model.order, "startup_mode": noise_model.startup_mode,
                 "kernel_prior_scale": "innovation", "conditioning_samples": conditioning_samples,
@@ -563,8 +650,14 @@ class ContinuousDecisionModel:
                 "hyperparameter_uncertainty_integrated": False, "global_MLE_claimed": False,
                 "likelihood_assumptions": ["linear_event_superposition", "shared_class_noise",
                     "stationary_shared_AR_reference", "complete_event_history", "fixed_conditioning_prefix"]}
+            if compiled_prior is None:
+                provenance["ridge"] = float(ridge)
+            else:
+                provenance.update(kernel_prior_spec=prior_spec.record(), kernel_prior_digest=compiled_prior.digest(),
+                    kernel_prior_fit_statistics=_kernel_fit_statistics(samples, designs, noise_model, conditioning_samples))
             return cls(basis, mean, row_cov, noise, None, sfreq, tuple(channels), tuple(candidate_ids),
-                       operator_identity, provenance, noise=noise_model, conditioning_samples=conditioning_samples)
+                       operator_identity, provenance, noise=noise_model, conditioning_samples=conditioning_samples,
+                       kernel_prior=compiled_prior)
         if noise_order is None:
             numerator = sum(float(np.sum(r[1:] * r[:-1])) for r in pairs)
             denominator = sum(float(np.sum(r[:-1] ** 2)) for r in pairs)
@@ -705,10 +798,15 @@ class ContinuousDecisionModel:
                                         array_digest(X, onsets, member))
 
     def _metadata(self):
-        state = {key: getattr(self, key) for key in _STATE_KEYS}
+        state = self._state_arrays()
+        provenance = self.provenance
+        if self.kernel_prior is not None:
+            provenance = json.loads(json.dumps(self.provenance))
+            provenance["kernel_prior_fit_statistics"].pop("information_root")
+            provenance["kernel_prior_fit_statistics"].pop("score")
         metadata = {"sfreq": self.sfreq, "channels": self.channels,
                 "candidate_ids": self.candidate_ids, "operator_identity": self.operator_identity,
-                "provenance": self.provenance,
+                "provenance": provenance,
                 "state_sha256": array_digest(*state.values())}
         if self.noise is None:
             metadata.update(schema="n2p3_continuous_decision_model/2", phi=self.phi)
@@ -717,7 +815,24 @@ class ContinuousDecisionModel:
                             state_dtypes={key: value.dtype.str for key, value in state.items()})
             if self.conditioning_samples:
                 metadata.update(schema="n2p3_continuous_decision_model/4", conditioning_samples=self.conditioning_samples)
+            if self.kernel_prior is not None:
+                prior = self.kernel_prior.record()
+                prior.pop("precision_root")
+                prior.pop("reference_root")
+                prior.pop("design_root")
+                metadata.update(schema="n2p3_continuous_decision_model/5", kernel_prior=prior)
         return metadata
+
+    def _state_arrays(self):
+        state = {key: getattr(self, key) for key in _STATE_KEYS}
+        if self.kernel_prior is not None:
+            statistics = self.provenance["kernel_prior_fit_statistics"]
+            state.update(prior_precision_root=self.kernel_prior.precision_root,
+                prior_reference_root=self.kernel_prior.reference_root,
+                prior_design_root=self.kernel_prior.design_root,
+                prior_fit_information_root=np.asarray(statistics["information_root"], dtype=np.float64),
+                prior_fit_score=np.asarray(statistics["score"], dtype=np.float64))
+        return state
 
     def digest(self):
         self.assert_integrity()
@@ -729,7 +844,7 @@ class ContinuousDecisionModel:
 
     def save(self, path):
         self.assert_integrity()
-        state = {key: getattr(self, key) for key in _STATE_KEYS}
+        state = self._state_arrays()
         metadata = self._metadata()
         metadata["artifact_sha256"] = metadata_digest(metadata)
         path = Path(path)
@@ -741,23 +856,39 @@ class ContinuousDecisionModel:
     def load(cls, path):
         with np.load(path, allow_pickle=False) as archive:
             metadata = json.loads(str(archive["metadata"]))
-            state = [archive[key] for key in _STATE_KEYS]
+            schema = metadata.get("schema")
+            state_keys = _STATE_KEYS + (_PRIOR_STATE_KEYS if schema == "n2p3_continuous_decision_model/5" else ())
+            if set(archive.files) != {*state_keys, "metadata"}:
+                raise ValueError("continuous model numeric payload differs from its declared prior schema")
+            all_state = {key: archive[key] for key in state_keys}
+            state = [all_state[key] for key in _STATE_KEYS]
         schema = metadata.get("schema")
-        if schema not in {"n2p3_continuous_decision_model/2", "n2p3_continuous_decision_model/3", "n2p3_continuous_decision_model/4"}:
+        if schema not in {"n2p3_continuous_decision_model/2", "n2p3_continuous_decision_model/3",
+                          "n2p3_continuous_decision_model/4", "n2p3_continuous_decision_model/5"}:
             raise ValueError("unsupported continuous decision model schema")
         expected = metadata.pop("artifact_sha256", None)
         if expected != metadata_digest(metadata):
             raise ValueError("continuous model metadata digest mismatch")
-        if array_digest(*state) != metadata.get("state_sha256"):
+        if array_digest(*all_state.values()) != metadata.get("state_sha256"):
             raise ValueError("continuous model state digest mismatch")
         explicit_ar = schema != "n2p3_continuous_decision_model/2"
-        if explicit_ar and (metadata.get("state_dtypes") != dict.fromkeys(_STATE_KEYS, _COMPUTE_DTYPE)
-                            or any(value.dtype.str != _COMPUTE_DTYPE for value in state)):
+        if explicit_ar and (metadata.get("state_dtypes") != dict.fromkeys(state_keys, _COMPUTE_DTYPE)
+                            or any(value.dtype.str != _COMPUTE_DTYPE for value in all_state.values())):
             raise ValueError("continuous AR artifact requires its exact float64 state dtype")
         noise = TemporalNoise.from_record(metadata["noise"]) if explicit_ar else None
-        prefix = metadata["conditioning_samples"] if schema == "n2p3_continuous_decision_model/4" else 0
-        if schema == "n2p3_continuous_decision_model/4" and not prefix:
+        prefix = metadata["conditioning_samples"] if schema in {"n2p3_continuous_decision_model/4", "n2p3_continuous_decision_model/5"} else 0
+        if schema in {"n2p3_continuous_decision_model/4", "n2p3_continuous_decision_model/5"} and not prefix:
             raise ValueError("conditional model schema requires its actual conditioning prefix")
+        prior = None
+        if schema == "n2p3_continuous_decision_model/5":
+            prior_record = metadata["kernel_prior"]
+            prior_record.update(precision_root=all_state["prior_precision_root"].tolist(),
+                                reference_root=all_state["prior_reference_root"].tolist(),
+                                design_root=all_state["prior_design_root"].tolist())
+            prior = CompiledKernelPrior.from_record(prior_record)
+            metadata["provenance"]["kernel_prior_fit_statistics"].update(
+                information_root=all_state["prior_fit_information_root"].tolist(),
+                score=all_state["prior_fit_score"].tolist())
         return cls(*state, None if explicit_ar else metadata["phi"], metadata["sfreq"], tuple(metadata["channels"]),
                    tuple(metadata["candidate_ids"]), metadata["operator_identity"], metadata["provenance"], noise=noise,
-                   conditioning_samples=prefix)
+                   conditioning_samples=prefix, kernel_prior=prior)

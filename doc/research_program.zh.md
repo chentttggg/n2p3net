@@ -49,6 +49,8 @@ GTN儿童三导且固定thought digit，只能作声明限制下的开发研究�
 
 ## 2. 活动算法路径
 
+[B08第一切片](evidence/calibration_g_prior_20261006.zh.md)采用全授权C、固定AR0 reference的g-prior；η优化不更新prior，g是variance倍率、λ是coefficient precision，互斥且不互换。full rank只是数值准入，weak方向仍可有大不确定性；rank-def明确失败，不pinv/fallback。公共效能与成人确认没有由实施证明。
+
 [多专家代码实施](evidence/ensemble_implementation_20261005.zh.md)已兑现固定算术池、严格requested风险、C内完整组OOF温度和source排除。
 本轮[Spec/Standards独立软件验收](evidence/ensemble_quality_20261005.zh.md)均通过；这只验证实现及信息边界，完整公共配对矩阵、三个完整流程seed和成人确认继续按执行计划验收。
 后续[fixed32条件AR研究](evidence/continuous_fixed_prefix_20261005.zh.md)保留完整授权C的kernel信息，只以共同tail评价/优化；Burg初始化、有限数值优化及全局MLE是不同证据。
