@@ -1,0 +1,368 @@
+{
+  "schema": "n2p3_physical_dictionary_quality_delivery/1",
+  "status": "passed_A0_A1_only",
+  "current_source_sha256": {
+    "src/transfer/response_dictionary.py": "9f7678a086aa34afb1947f4c93dd753e133bbc9d930e275c50814381adc6063f",
+    "src/transfer/continuous_decision.py": "a9819706f4e3e687c358012c2a489e5d8f899eeee61fdbb631ef789371b6842e",
+    "src/transfer/kernel_prior.py": "b64f6db05f003736307d70d13774dcd553dadb7edeca6b570b3ed2a2b353fbd3",
+    "src/transfer/ensemble_fit.py": "5be66d124299776428020919827e194fd52d9a4ed87620d7a9a65e8983d69c9f",
+    "experiments/run_candidate_ensemble_study.py": "0bfe9da172df460d092376a2bc9b1b8f732b38dd88491635c9dbc25d3d852ee0",
+    "experiments/run_operator_decision_study.py": "68cd223af68dfe19ffe99dfc5ea328e96bb58b4ffcde70a5f4ab58a091042301",
+    "experiments/probe_response_dictionary.py": "4626d9b96bb1bde04bfa89eb822e4e1a9a5d28432835b8ef104b6600e113b10c"
+  },
+  "records": {
+    "author": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\dictionary_implementation_20261006\\capacity_binding_repair\\receipt.json",
+      "sha256": "3a96b582960022a805049e1d94691dad1903b58b3ef5d8b18260b7cb212b80a7",
+      "summary": {
+        "status": "stable_READY_for_independent_final_review",
+        "source_base": "3837542d939f2dec53d7c1063147198b5cca2442",
+        "source_sha256": {
+          ".gitattributes": "36218b9d3194f78079adc7ebdd82546f4a591adeae8a3c7ceaf975b5377bec9b",
+          "src/transfer/response_dictionary.py": "9f7678a086aa34afb1947f4c93dd753e133bbc9d930e275c50814381adc6063f",
+          "src/transfer/continuous_decision.py": "a9819706f4e3e687c358012c2a489e5d8f899eeee61fdbb631ef789371b6842e",
+          "src/transfer/kernel_prior.py": "b64f6db05f003736307d70d13774dcd553dadb7edeca6b570b3ed2a2b353fbd3",
+          "src/transfer/ensemble_fit.py": "5be66d124299776428020919827e194fd52d9a4ed87620d7a9a65e8983d69c9f",
+          "experiments/run_candidate_ensemble_study.py": "0bfe9da172df460d092376a2bc9b1b8f732b38dd88491635c9dbc25d3d852ee0",
+          "experiments/run_operator_decision_study.py": "68cd223af68dfe19ffe99dfc5ea328e96bb58b4ffcde70a5f4ab58a091042301",
+          "experiments/probe_response_dictionary.py": "4626d9b96bb1bde04bfa89eb822e4e1a9a5d28432835b8ef104b6600e113b10c",
+          "tests/transfer/test_response_dictionary.py": "751e31cf6c829e2e440d3a2119cdd419dfc1c5948651a015987dbedf2a031c4e",
+          "tests/transfer/test_continuous_dictionary.py": "6517211d9b9715a63f4aaf6510e9f32ff583a9c96e771a055c2f45f2ef73b5eb",
+          "tests/transfer/test_dictionary_capacity_binding.py": "9ad459971b9dcda28c68fc12aa14541f8141799d4fffe60fe4e9179f7f4b1969",
+          "tests/transfer/test_dictionary_ensemble.py": "7395c4d2126e9b0d446faa8fac1a76c007f5fed408be61b15b9207cb5f4920dc",
+          "tests/research/test_dictionary_operator_cli.py": "8174f79c516bae96ae2a9277d8c82bb756abbedff9340ad5647bbae5f9d8b071",
+          "tests/research/test_dictionary_panel.py": "ae7911db172261fdf830a699c604eb78a0560d1b2a4b7c615938ec674e21a0bd",
+          "doc/evidence/erp_dictionary_20261006.zh.md": "a42e00e878dd9bb5796febb43043dd4526227ee519c5ced6c106a0498638dc35"
+        },
+        "source_archive_sha256": "b550e55698ae78d30c07486f64f1e6633abff74e159cbdfd44453ceb8fe4f548",
+        "source_member_count": 432,
+        "published_posterior_functions_exact_parent": {
+          "_fit_fixed_prefix": "30b34c67829d776acdb84792f20373ece4e43419e755c18b89a701df9ff11732",
+          "_kernel_posterior_factors": "688d22e31b5e30c7a4306659e3912d2c1abc472dc8fbc4512a12708cb99a3d36"
+        },
+        "statistics_serializer_and_generic_precision_root_gate_extended_for_ridge": true,
+        "test_counts": {
+          "tests": 20,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "test_exit_code": 0,
+        "ruff_exit_code": 0,
+        "diff_check_exit_code": 0,
+        "native_n_fits": 3,
+        "native_seconds": 3.4555957000120543,
+        "native_exact_package_replays": 3,
+        "native_original_independent_samples_added": 0,
+        "actual_capacities": [
+          {
+            "ambient_dimensions": 16,
+            "kernel_dimensions": 16,
+            "df_ref": 14.399999999999999,
+            "df_fit": 3.164654828177387,
+            "reference_rank": 16,
+            "reference_prior_energy": 144.0,
+            "capacity_changed_by_hard_endpoint": false,
+            "capacity_matching_claimed": false
+          },
+          {
+            "ambient_dimensions": 16,
+            "kernel_dimensions": 16,
+            "df_ref": 14.399999999999999,
+            "df_fit": 2.908933518293864,
+            "reference_rank": 16,
+            "reference_prior_energy": 144.0,
+            "capacity_changed_by_hard_endpoint": false,
+            "capacity_matching_claimed": false
+          },
+          {
+            "ambient_dimensions": 16,
+            "kernel_dimensions": 12,
+            "df_ref": 10.799999999999999,
+            "df_fit": 0.8930860707838422,
+            "reference_rank": 12,
+            "reference_prior_energy": 108.0,
+            "capacity_changed_by_hard_endpoint": true,
+            "capacity_matching_claimed": false
+          }
+        ],
+        "new_calibration_prior_packages_have_no_dictionary_fitted_reference_original_mirror_arrays": true
+      }
+    },
+    "Spec": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\dictionary_20261006\\spec\\capacity_repair\\receipt.json",
+      "sha256": "2e2bc47ad7d33461973eaa87cb838aeb4a010b9efcb974b077c75a3d468a1ad7",
+      "summary": {
+        "status": "passed",
+        "scope": "A0/A1 deterministic physical dictionary and actual capacity/posterior binding",
+        "confirmed_remaining_findings": 0,
+        "core_source_sha256": "a9819706f4e3e687c358012c2a489e5d8f899eeee61fdbb631ef789371b6842e",
+        "source_archive_sha256": "b550e55698ae78d30c07486f64f1e6633abff74e159cbdfd44453ceb8fe4f548",
+        "source_member_count": 432,
+        "all_execution_source_bytes_verified": true,
+        "native_package_bytes_unchanged": true,
+        "native_arms": [
+          {
+            "df_fit_from_actual_R_and_published_H": 3.164654828177314,
+            "df_fit_declared": 3.164654828177387,
+            "arm": "gaussian_free",
+            "native_exact_replay": true,
+            "kernel_dimensions": 16,
+            "df_ref": 14.399999999999999,
+            "reference_energy": 144.0
+          },
+          {
+            "df_fit_from_actual_R_and_published_H": 2.908933518293849,
+            "df_fit_declared": 2.908933518293864,
+            "arm": "cosine_free",
+            "native_exact_replay": true,
+            "kernel_dimensions": 16,
+            "df_ref": 14.399999999999999,
+            "reference_energy": 144.0
+          },
+          {
+            "df_fit_from_actual_R_and_published_H": 0.8930860707838422,
+            "df_fit_declared": 0.8930860707838422,
+            "arm": "cosine_hard_zero",
+            "native_exact_replay": true,
+            "kernel_dimensions": 12,
+            "df_ref": 10.799999999999999,
+            "reference_energy": 108.0
+          }
+        ],
+        "native_fits_executed_by_reviewer": 0,
+        "small_synthetic_ridge_fits_executed": 1,
+        "exact_parent_function_bodies": [
+          "_fit_fixed_prefix",
+          "_kernel_posterior_factors"
+        ],
+        "statistics_body_semantic_change": "delegates QR information/response payload and real noise digest to helper; pads short ridge root with zero rows; not byte-identical to root statistics body",
+        "old_source_and_RED_resigned": false,
+        "performance_claim": false
+      }
+    },
+    "Standards": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\dictionary_20261006\\standards\\receipt.json",
+      "sha256": "bf5537771ae2e2f3c41e398ef5701024081d199e43ff66e85eddd3ac6a33ff3a",
+      "summary": {
+        "scope": "A0/A1 actual whole-code Standards; narrow decisive no-fit probes",
+        "final_source_sha256": {
+          ".gitattributes": "36218b9d3194f78079adc7ebdd82546f4a591adeae8a3c7ceaf975b5377bec9b",
+          "src/transfer/response_dictionary.py": "9f7678a086aa34afb1947f4c93dd753e133bbc9d930e275c50814381adc6063f",
+          "src/transfer/continuous_decision.py": "a9819706f4e3e687c358012c2a489e5d8f899eeee61fdbb631ef789371b6842e",
+          "src/transfer/kernel_prior.py": "b64f6db05f003736307d70d13774dcd553dadb7edeca6b570b3ed2a2b353fbd3",
+          "src/transfer/ensemble_fit.py": "5be66d124299776428020919827e194fd52d9a4ed87620d7a9a65e8983d69c9f",
+          "experiments/run_candidate_ensemble_study.py": "0bfe9da172df460d092376a2bc9b1b8f732b38dd88491635c9dbc25d3d852ee0",
+          "experiments/run_operator_decision_study.py": "68cd223af68dfe19ffe99dfc5ea328e96bb58b4ffcde70a5f4ab58a091042301",
+          "experiments/probe_response_dictionary.py": "4626d9b96bb1bde04bfa89eb822e4e1a9a5d28432835b8ef104b6600e113b10c",
+          "tests/transfer/test_response_dictionary.py": "751e31cf6c829e2e440d3a2119cdd419dfc1c5948651a015987dbedf2a031c4e",
+          "tests/transfer/test_continuous_dictionary.py": "6517211d9b9715a63f4aaf6510e9f32ff583a9c96e771a055c2f45f2ef73b5eb",
+          "tests/transfer/test_dictionary_capacity_binding.py": "9ad459971b9dcda28c68fc12aa14541f8141799d4fffe60fe4e9179f7f4b1969",
+          "tests/transfer/test_dictionary_ensemble.py": "7395c4d2126e9b0d446faa8fac1a76c007f5fed408be61b15b9207cb5f4920dc",
+          "tests/research/test_dictionary_operator_cli.py": "8174f79c516bae96ae2a9277d8c82bb756abbedff9340ad5647bbae5f9d8b071",
+          "tests/research/test_dictionary_panel.py": "ae7911db172261fdf830a699c604eb78a0560d1b2a4b7c615938ec674e21a0bd",
+          "doc/evidence/erp_dictionary_20261006.zh.md": "a42e00e878dd9bb5796febb43043dd4526227ee519c5ced6c106a0498638dc35"
+        },
+        "source_members_verified": 432,
+        "source_guard_passed": true,
+        "shared_published_posterior_AST_exact_main": [
+          "_fit_fixed_prefix",
+          "_kernel_posterior_factors"
+        ],
+        "confirmed_findings": [
+          {
+            "id": "dictionary_capacity_actual_posterior_binding",
+            "priority": 2,
+            "status": "closed",
+            "actual_old_package_source": "755d8d02e62ee97a2bf4e474950112b13c19f003d3dae03de2983ddca861c501",
+            "actual_new_package_source": "a9819706f4e3e687c358012c2a489e5d8f899eeee61fdbb631ef789371b6842e",
+            "effect": {
+              "reported_df_fit_original": 0.8930860707838422,
+              "reported_df_fit_rebound": 2.896403705896196,
+              "real_kernel_mean_and_covariance_unchanged": true
+            },
+            "fix": "one actual fit root/RHS owner; reuse compiled reference/design for calibration priors; ridge posterior binding",
+            "original_source_and_RED_capsule_preserved": true,
+            "GREEN_is_real_relation_rejection": true
+          }
+        ],
+        "remaining_confirmed_findings": [],
+        "actionable_code_smells": [],
+        "checks_exit_codes": {
+          "capacity_RED": 1,
+          "canonical_actual_information_GREEN": 0,
+          "native_package_audit": 0,
+          "scoped_ruff": 0,
+          "scoped_diff_check": 0
+        },
+        "new_fits": 0,
+        "wide_test_suites_run": 0,
+        "author_tests_repeated": false,
+        "limitations": [
+          "actual no-fit public replay covers the three native g-prior packages",
+          "ridge relationship reviewed in source and author meaningful regressions, no extra ridge fit",
+          "A2 derivative/random effects/history and B12 full matrix are separate exits",
+          "hard endpoints change capacity; software closure does not establish superiority or adult efficacy"
+        ]
+      }
+    },
+    "current_native": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\dictionary_implementation_20261006\\capacity_binding_repair\\native_after\\receipt.json",
+      "sha256": "e0e43334a53913101c0178dcc9f986d1bb26f6331137d29e14ad997393fe0da2",
+      "summary": {
+        "schema": "n2p3_dictionary_native_acceptance/1",
+        "status": "completed",
+        "evidence_scope": "public_native_caller_software_acceptance",
+        "performance_claim": false,
+        "source_sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+        "snapshot_sha256": "a33cbf739f1cecc262eca1fe41ad7dd9d37479306a040c0e0e9c23e4707b806d",
+        "same_native_C_read_scored_support_for_all_arms": true,
+        "current_overlap_rejection_preserved": true,
+        "n_fits": 3,
+        "cpu_threads": 1,
+        "wall_seconds": 3.4555957000120543,
+        "arms": [
+          {
+            "program": {
+              "expert_id": "gaussian_free",
+              "family": "continuous_ar",
+              "recipe": null,
+              "profile": null,
+              "noise_order": 1,
+              "conditioning_samples": 32,
+              "noise_estimator": "burg",
+              "kernel_prior": {
+                "kind": "calibration_g",
+                "mean_center": "zero",
+                "g": 9.0,
+                "reference_noise": "AR0_unit_innovation",
+                "information_support": "all_authorized_C",
+                "nuisance": "per_record_diffuse_affine",
+                "rank_policy": "require_full_rank"
+              },
+              "dictionary": {
+                "family": "gaussian",
+                "response_seconds": 1.2,
+                "n_basis": 8,
+                "endpoint": "free"
+              }
+            },
+            "capacity": {
+              "ambient_dimensions": 16,
+              "kernel_dimensions": 16,
+              "df_ref": 14.399999999999999,
+              "df_fit": 3.164654828177387,
+              "reference_rank": 16,
+              "reference_prior_energy": 144.0,
+              "capacity_changed_by_hard_endpoint": false,
+              "capacity_matching_claimed": false
+            },
+            "fit_seconds": 0.14638220000779256,
+            "reload_and_score_seconds": 0.4649356000008993,
+            "exact_package_replay": true,
+            "model_files_unchanged": true,
+            "held_truth_used_for_fit_or_selection": false
+          },
+          {
+            "program": {
+              "expert_id": "cosine_free",
+              "family": "continuous_ar",
+              "recipe": null,
+              "profile": null,
+              "noise_order": 1,
+              "conditioning_samples": 32,
+              "noise_estimator": "burg",
+              "kernel_prior": {
+                "kind": "calibration_g",
+                "mean_center": "zero",
+                "g": 9.0,
+                "reference_noise": "AR0_unit_innovation",
+                "information_support": "all_authorized_C",
+                "nuisance": "per_record_diffuse_affine",
+                "rank_policy": "require_full_rank"
+              },
+              "dictionary": {
+                "family": "cosine",
+                "response_seconds": 1.2,
+                "n_basis": 8,
+                "endpoint": "free"
+              }
+            },
+            "capacity": {
+              "ambient_dimensions": 16,
+              "kernel_dimensions": 16,
+              "df_ref": 14.399999999999999,
+              "df_fit": 2.908933518293864,
+              "reference_rank": 16,
+              "reference_prior_energy": 144.0,
+              "capacity_changed_by_hard_endpoint": false,
+              "capacity_matching_claimed": false
+            },
+            "fit_seconds": 0.1434562999929767,
+            "reload_and_score_seconds": 0.40222439999342896,
+            "exact_package_replay": true,
+            "model_files_unchanged": true,
+            "held_truth_used_for_fit_or_selection": false
+          },
+          {
+            "program": {
+              "expert_id": "cosine_hard_zero",
+              "family": "continuous_ar",
+              "recipe": null,
+              "profile": null,
+              "noise_order": 1,
+              "conditioning_samples": 32,
+              "noise_estimator": "burg",
+              "kernel_prior": {
+                "kind": "calibration_g",
+                "mean_center": "zero",
+                "g": 9.0,
+                "reference_noise": "AR0_unit_innovation",
+                "information_support": "all_authorized_C",
+                "nuisance": "per_record_diffuse_affine",
+                "rank_policy": "require_full_rank"
+              },
+              "dictionary": {
+                "family": "cosine",
+                "response_seconds": 1.2,
+                "n_basis": 8,
+                "endpoint": "hard_zero"
+              }
+            },
+            "capacity": {
+              "ambient_dimensions": 16,
+              "kernel_dimensions": 12,
+              "df_ref": 10.799999999999999,
+              "df_fit": 0.8930860707838422,
+              "reference_rank": 12,
+              "reference_prior_energy": 108.0,
+              "capacity_changed_by_hard_endpoint": true,
+              "capacity_matching_claimed": false
+            },
+            "fit_seconds": 0.1151372000167612,
+            "reload_and_score_seconds": 0.32396710000466555,
+            "exact_package_replay": true,
+            "model_files_unchanged": true,
+            "held_truth_used_for_fit_or_selection": false
+          }
+        ]
+      }
+    }
+  },
+  "limits": [
+    "same sets and native samples are not added as new independent evidence",
+    "no repeated full suite",
+    "no basis superiority, unknown history, random effects, source-to-target seed or adult claim",
+    "B08 v3 matrix uses its distinct frozen 437 source"
+  ],
+  "main_caller_integration": {
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit_sha256": "01c2dbd89b0c91d1f442f1e63de51978d0bafcfe730a11c8f49a2797aec9f518",
+    "ruff_exit_code": 0,
+    "diff_check_exit_code": 0,
+    "full_suite_repeated": false
+  }
+}

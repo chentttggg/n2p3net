@@ -69,6 +69,7 @@ NLL/Brier和错时置信度检查概率风险。候选进入下阶段须hit不�
 历史执行源绑定部分缺失，不追认完整预声明。新方案按同批三专家锚点复核。
 
 边界模型必须同时条件化候选相关均值与协方差；确定padding不另加独立Γ。
+[B07 A0/A1](evidence/erp_dictionary_20261006.zh.md)的硬端点约束为同ambient cosine `ΦN`、`N∈ker(E)`；它改变可表达函数空间、common/target维数及g-reference总能量，不称同容量或已改善hit。相同列数、reference-energy和actual likelihood df分别解释；Gaussian锚点保持原数值。导数潜伏期、未知邻居mix及selection随机效应另需辨识/授权出口。
 [B06条件软件路径](evidence/conditional_state_20261006.zh.md)将`μ_a,q+ΩᵀΣ_X⁻¹(x−μ_X,q)`与Schur同时传到operator评分；奇异raw只在已识别支持内求解，候选完整期望和Ω必须在共同支持内。固定equal class prior的conditional-response程序不自动等于full-observation Bayes；真实native前缀/续段只验证已观察续段调用，不证明未知filter state可唯一恢复。
 AR实际prefix还可能更新ERP核后验，不能只做噪声创新；g-prior信息矩阵在授权C设计固定，不能逐held候选重造。
 增加专家不保证hit单调，ERP输出重叠和白化ACF不能替代任务效能或完整增量保真。123项覆盖、文献与反例见方案附件。

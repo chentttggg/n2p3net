@@ -2,6 +2,8 @@
 
 ## 2026-10-05 愿望清单与优先任务分块方案
 
+B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修复容量关系P2、完成两轴及实际三包重放；20项必要验证通过，source/main已整合。A0/A1不代表完整B07，更不代表123项完成；B12独立C/test、K0真实状态与source/target三seed流程作为P0并行主线，不等待全部P1机制。
+
 B08 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已落实full-rank软件路径与真实prior/fit/package关系，主线整合全集2604/19及独立Spec/Standards通过；[参考能量匹配对照](evidence/prior_control_20261006.zh.md)随后完成实施、两轴质量及合并全集2670/19，完整1344格归因矩阵按冻结程序执行。dynamic prior、quotient/completion、K0与新效能矩阵不因此完成，冻结M1仍按原程序解释。
 首次1344运行因A02后验核验病态而受控停止，101原包及失败捕获保留；原gate误判经独立actual-W QR/SVD与held读数核实，已改QR-RHS/后向关系及peer-abort调度，40项必要验证通过。完整矩阵由[新计划](assets/prior_control_20261006/plan_v2.json)同1344科学/资源格重新执行；原包不改签为新source，整体结果未完成。
 

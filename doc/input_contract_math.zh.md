@@ -1,5 +1,7 @@
 # P300 模型输入合同：离散时间、单位与分组
 
+[物理字典](evidence/erp_dictionary_20261006.zh.md)拥有actual `L=round(fs*Trequested)`、`t_n=n/fs`和支持`[0,L)`；右端点在`Tactual=L/fs`评价，lastsample为`(L−1)/fs`。fs256、请求1.2秒时，L307、实际端点1.19921875秒、最后采样1.1953125秒，三者分列。`E=[Φ(0);Φ(Tactual)]`、`N∈ker(E)`作用于同一ambient cosine及实际event design；prior遵循`Λactual=NblockᵀΛambient Nblock`。本切片不扩现unknown-overlap准入，不变更可用raw/score时间。
+
 [固定reference g-prior](evidence/calibration_g_prior_20261006.zh.md)以每record `Dbar=(I−Q_ZQ_Zᵀ)D_C` 的增量AR0 thin QR构建 `G=R_CᵀR_C`，读完整授权C；prior precision root `R_C/√g`同时进初始化和fixed32 NumPy/Torch目标，η期间不变，Σ仍profile为Q/nTail。g程序新/5 actual roots与source保存；held不建G，C-inner每fold单独编译。
 rank分辨尺度同时使用实际原design与residual thin roots，threshold记录投影roundoff参考，不以近零residual自己的最大值认证纯nuisance方向；weak方向只在数值可分辨时准入，不能拿full rank证明统计识别。reference ledger与actual C/basis/input/support在同一binding owner交叉核对。
 [trace-isotropic控制](evidence/calibration_trace_control_20261006.zh.md)在同C-reference上固定`λ_C=tr(G)/(kg)`与`H_I=I/λ_C`，故`tr(GH_I)=tr(GH_g)=kg`。k为common与target全部kernel坐标数；这是AR0参考上的row-prior能量匹配，不保证final fitted-noise能量或有效自由度相等。compiler从同thin root派生precision，held及η不重建G/λ；一般basis不变性仅属g。

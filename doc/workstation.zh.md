@@ -1,5 +1,7 @@
 # BrainSync工作站指南
 
+[B07物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已接后端研究ensemble/operator入口与实际包重放；raw研究包保存函数grid、E/N、prior与真实C信息。当前日常个人包、未知边界state及新成人九选一须另接工作站任务合同，公共三包验收不构成已部署产品。
+
 [calibration g-prior raw研究程序](evidence/calibration_g_prior_20261006.zh.md)仅在后端研究FittedEnsemble接通，保存全C/reference/root/fit身份；工作站日常CalibratedPredictor与新成人九选一确认仍按原计划，不能把该软件包直接作为已验证工作站程序。
 [trace控制及28臂先验对照](evidence/prior_control_20261006.zh.md)沿用后端只读研究入口；模型`/5`与`/6`各自保存真实prior程序与C编译状态。未知目标score不重估λ或g，开发矩阵的公共36选一结果不替代工作站九选一确认。
 

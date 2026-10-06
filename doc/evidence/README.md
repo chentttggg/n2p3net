@@ -1,5 +1,7 @@
 # 研究与工程证据
 
+- [B07物理ERP字典与端点切片](erp_dictionary_20261006.zh.md)：Gaussian默认数值、同cosine空间自由/硬端点、半开物理grid、同prior pullback及真实ref/fit容量；确认容量关系P2已消重复root并绑定actual posterior，两轴复验/三actual包只读重放通过，仅A0/A1。
+
 - [B08同C参考能量匹配的先验对照](prior_control_20261006.zh.md)：同full-C信息定义g与trace-isotropic控制，分开先验形状与收缩强度；28臂、1344逻辑fit与12形状对照预声明，代码、质量与实际执行分别验收。
 - [全C trace-isotropic控制代码实施](calibration_trace_control_20261006.zh.md)：canonical kind、同owner派生λ、初始化与精确目标联动、/6九数组和OOF/C/source绑定；作者173项关联验证通过，主树整体验收另记。
 - [B06条件均值/Schur与实际operator调用](conditional_state_20261006.zh.md)：唯一noise owner、identified-support解算、候选相关均值和条件协方差、只读operator/CLI及native映射账本；observed-continuation软件验收与未知滤波state辨识分别记账。
