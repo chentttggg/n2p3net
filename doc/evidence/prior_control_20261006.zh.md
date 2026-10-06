@@ -43,3 +43,7 @@ counterexamples检查reference能量恒等式、g与λ语义、basis变换、训
 修复使用nuisance-block QR，保存信息root与正交响应`Q_DᵀY`，method明确新语义；核验augmented QR的`R M=b`后向误差，未改实际fitted M/H、noise优化或H的原2e-9关系限。原捕获后向误差9.85e-16，低于`64 eps k=2.27e-13`；错误均值、H×1.01及真实g99改g9而保留旧posterior仍被拒绝。worker改滚动ready任务及共享abort signal，合同故障后peer在下一fit前停止，不将合法typed rank failure当父故障。
 
 40项必要关联验证、真实spawn成功/停止、Ruff/diff-check通过，按用户要求不重复全集代替源码阅读。原2670/19完整测试与435源属于修前交付；修后源与独立两轴另记。[同1344格新计划](../assets/prior_control_20261006/plan_v2.json)只改变执行源清单，科学/资源字段不变；旧101包不重签或复用成新实现。完整新矩阵仍按原对照和失败分母执行。
+
+独立Spec和Standards修后均通过。Standards另实际复现parent KeyboardInterrupt未落failed状态的P2，最外层与subject现在落盘并原样传播；同spawn边界RED→GREEN和三个进程行为回归通过，遗留确认缺陷0。actual A02/fold0/AR32 g99从[新436成员物理源](../../frozen/prior_control_20261006_execution_v2/manifest.json)重新fit/save/load/score成功，112.40秒、397求值/324迭代、精确重放；原捕获仅用于验证，未改签成功模型。完整新1344格已从该materialized source实际启动，结果结束后再验收。
+
+[首轮停止与修复证据归档](../../frozen/prior_control_20261006_original_failure/manifest.json)逐成员验证710个成员并核镜像，含101旧包、真实RED、数值比较与修后两轴；原件保留，payload仅本地。原435源及4619成员质量归档也保持原身份。
