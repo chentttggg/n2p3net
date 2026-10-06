@@ -50,6 +50,7 @@ GTN儿童三导且固定thought digit，只能作声明限制下的开发研究�
 ## 2. 活动算法路径
 
 [B08第一切片](evidence/calibration_g_prior_20261006.zh.md)采用全授权C、固定AR0 reference的g-prior；η优化不更新prior，g是variance倍率、λ是coefficient precision，互斥且不互换。full rank只是数值准入，weak方向仍可有大不确定性；rank-def明确失败，不pinv/fallback。公共效能与成人确认没有由实施证明。
+后续[同C参考能量对照](evidence/prior_control_20261006.zh.md)将g与各自的trace-isotropic控制配对，参考能量相等后再考察形状；同一种prior内的g变化单独解释为收缩强度敏感性。basis、full-C授权、noise程序、fixed32与输出温度同时固定；共同估计程序中的噪声重拟合仍属于该prior程序的整体效果，不能宣称final noise covariance也固定相同。
 
 [多专家代码实施](evidence/ensemble_implementation_20261005.zh.md)已兑现固定算术池、严格requested风险、C内完整组OOF温度和source排除。
 本轮[Spec/Standards独立软件验收](evidence/ensemble_quality_20261005.zh.md)均通过；这只验证实现及信息边界，完整公共配对矩阵、三个完整流程seed和成人确认继续按执行计划验收。
@@ -68,6 +69,7 @@ NLL/Brier和错时置信度检查概率风险。候选进入下阶段须hit不�
 历史执行源绑定部分缺失，不追认完整预声明。新方案按同批三专家锚点复核。
 
 边界模型必须同时条件化候选相关均值与协方差；确定padding不另加独立Γ。
+[B06条件软件路径](evidence/conditional_state_20261006.zh.md)将`μ_a,q+ΩᵀΣ_X⁻¹(x−μ_X,q)`与Schur同时传到operator评分；奇异raw只在已识别支持内求解，候选完整期望和Ω必须在共同支持内。固定equal class prior的conditional-response程序不自动等于full-observation Bayes；真实native前缀/续段只验证已观察续段调用，不证明未知filter state可唯一恢复。
 AR实际prefix还可能更新ERP核后验，不能只做噪声创新；g-prior信息矩阵在授权C设计固定，不能逐held候选重造。
 增加专家不保证hit单调，ERP输出重叠和白化ACF不能替代任务效能或完整增量保真。123项覆盖、文献与反例见方案附件。
 

@@ -2,7 +2,7 @@
 
 ## 2026-10-05 愿望清单与优先任务分块方案
 
-B08 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已落实full-rank软件路径与真实prior/fit/package关系，定向回归通过；full suite/Spec/Standards与主线整合尚待调度。dynamic prior、quotient/completion、K0与新效能矩阵不因此完成，冻结M1仍按原程序执行。
+B08 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已落实full-rank软件路径与真实prior/fit/package关系，主线整合全集2604/19及独立Spec/Standards通过；[参考能量匹配对照](evidence/prior_control_20261006.zh.md)随后完成实施、两轴质量及合并全集2670/19，完整1344格归因矩阵按冻结程序执行。dynamic prior、quotient/completion、K0与新效能矩阵不因此完成，冻结M1仍按原程序解释。
 
 [深入研究与验收规格](evidence/deep_research_plan_20261005.zh.md)完成原清单123项覆盖、15块真实依赖及三路独立数学/来源核查。
 方案阶段已完成；[后续代码实施](evidence/ensemble_implementation_20261005.zh.md)已经接通B00/B01/B02核心与B03分组温度、
@@ -28,7 +28,8 @@ M1使用[冻结计划](assets/continuous_fixed_prefix_20261005/m1_plan.json)：8
 [源码与数学核对](evidence/boundary_state_redesign_20261005.zh.md)已确认双端 B 为 `(N,4×SOS节数)`、现有 ERP 保护字典独立于 SelectionERP、C800 按原 MAT 哈希和合法 scopes 重建。
 `experiments/boundary_state_research.py` 已提供共同网格诊断、ERP 输出软约束、距离 schedule、矩阵正态 gauge 参考与 E1–E3 计划生成；未改生产或执行新公开矩阵。
 后续先完善完整校正映射的独立 ERP 注入/白噪声指标，再按训练内分组选择执行 E1–E3；重叠率 0.5、hit 0.75 和 NLL 7.167 仅为待验证筛查候选，不作为效能晋升门。
-上述完整映射测量已落实为`FrozenShortBoundaryMap`、`evaluate_complete_map`和原`BoundaryStateAnalysis.compute`的supplied-map路径；36项关联测试通过，原teacher-only路径保持不可用指标。它是native crop的有限参考，不是已拟合部署state；完整最终预处理T、条件mean/Schur、E1–E3仍待分别验收。
+上述完整映射测量已落实为`FrozenShortBoundaryMap`、`evaluate_complete_map`和原`BoundaryStateAnalysis.compute`的supplied-map路径；36项关联测试通过，原teacher-only路径保持不可用指标。它是native crop的有限参考，不是已拟合部署state；完整最终预处理T、未知state辨识及E1–E3仍待分别验收。
+[B06条件owner/operator](evidence/conditional_state_20261006.zh.md)已交付mean与Schur、identified support和真实研究CLI，native A01完整映射的observed-continuation验收沿实际C/held账本记录。Spec14、Standards50及合并全集2670/19通过，复数ingress P2已修、遗留确认缺陷0；未知state辨识、最终T、完整E1–E3、Kalman及公共配对矩阵继续各自验收，不从单个binary AUC晋升产品。
 Kalman 路线先完成 observability、状态/噪声辨识及 filtering/smoothing 可用时间合同。旧 repair3 与 Phase 4 账本保持原执行身份。
 
 ## 2026-10-04 冻结后实施与下一轮科研

@@ -2,7 +2,9 @@
 
 日常只维护以下六份正文。先按任务阅读对应指导，再读实际源码；历史记录不覆盖当前规范。
 
-2026-10-06 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已接不可变prior编译、同root初始化/条件QR/精确梯度、真实保存与producer绑定；定向软件验证通过，完整测试/独立质量复审由主线调度。rank-def、dynamic prior、公共收益和成人确认未解锁。
+2026-10-06 [B06条件operator调用](evidence/conditional_state_20261006.zh.md)及[B08参考能量匹配控制](evidence/prior_control_20261006.zh.md)已完成实施和独立两轴质量验收；合并全集2670通过、19跳过、0失败/错误，413文件byte guard不变。确认的复数入口缺陷已集中修复，原RED保留；A01 native调用经原MAT独立重建。公开1344格先验矩阵和未知state识别分别验收，不由软件通过晋升。
+
+2026-10-06 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已接不可变prior编译、同root初始化/条件QR/精确梯度、真实保存与producer绑定；合并主树全集2604通过、19跳过，独立Spec/Standards复审通过。rank-def、dynamic prior、公共收益和成人确认未解锁；[同C参考能量对照](evidence/prior_control_20261006.zh.md)继续补齐形状与收缩强度的归因。
 
 2026-10-05 [固定前缀条件AR](evidence/continuous_fixed_prefix_20261005.zh.md)已接真实joint fit/score、状态/配方/重放与六阶×两估计器入口。
 已落实顺序QR、精确梯度和实际求值账本；真实A01的AR8/32拟合达到数值停止条件、保存重放一致。

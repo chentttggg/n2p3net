@@ -1,8 +1,12 @@
 # 研究与工程证据
 
+- [B08同C参考能量匹配的先验对照](prior_control_20261006.zh.md)：同full-C信息定义g与trace-isotropic控制，分开先验形状与收缩强度；28臂、1344逻辑fit与12形状对照预声明，代码、质量与实际执行分别验收。
+- [全C trace-isotropic控制代码实施](calibration_trace_control_20261006.zh.md)：canonical kind、同owner派生λ、初始化与精确目标联动、/6九数组和OOF/C/source绑定；作者173项关联验证通过，主树整体验收另记。
+- [B06条件均值/Schur与实际operator调用](conditional_state_20261006.zh.md)：唯一noise owner、identified-support解算、候选相关均值和条件协方差、只读operator/CLI及native映射账本；observed-continuation软件验收与未知滤波state辨识分别记账。
+
 - [全C固定reference g-prior：第一切片代码实施](calibration_g_prior_20261006.zh.md)：AR0全C增量QR信息、严格full rank、同prior初始化与精确梯度、/5数值root/来源保存及OOF/producer关系；合成软件验证，不含真实训练/效能。
 
-- [固定前缀条件AR：数学、实现与真实路径诊断](continuous_fixed_prefix_20261005.zh.md)：32点联合kernel/drift条件更新、空间协方差tail profile、Burg初始化与PARCOR优化分开绑定、六阶×两估计器入口；完整软件验证与实际优化未收敛分别记账，M1公共矩阵仍待执行。
+- [固定前缀条件AR：数学、实现与真实路径诊断](continuous_fixed_prefix_20261005.zh.md)：32点联合kernel/drift条件更新、空间协方差tail profile、Burg初始化与PARCOR优化分开绑定、六阶×两估计器入口；M1完整576格及独立重放完成，全部替代臂未过hit/风险联合门，未晋升生产。
 
 - [候选多专家主线：代码实施与质量验收](ensemble_implementation_20261005.zh.md)：实际概率/评价、合法MAT/epoch view、AR/ERP/NN、source与scratch、C内OOF温度、保存重放和研究CLI；本轮软件完成，完整公共矩阵和成人确认另记。
 - [候选多专家独立代码质量评估](ensemble_quality_20261005.zh.md)：Spec和Standards分轴通过，保留实际RED→GREEN、精确受审源码及测试版本区别；原始日志/探针/模型物理归档，公共效能和云吞吐未验证。

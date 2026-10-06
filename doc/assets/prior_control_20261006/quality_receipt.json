@@ -1,0 +1,827 @@
+{
+  "schema": "n2p3_prior_control_and_conditional_state_quality/1",
+  "status": "passed",
+  "current_source_sha256": {
+    "src/transfer/kernel_prior.py": "22e369488baebf09f2661bed459a187999b8f4290723670c24910e43ac7b31bd",
+    "src/transfer/continuous_decision.py": "1cfa032a71ec725d7cb43370c9b14d22f5610aea8c1faea0de8bc88a0dc1a217",
+    "src/transfer/continuous_gradient.py": "f3e57c89503231641a627cb418f44603b9eb94aa601821f97602b1b2df57708a",
+    "src/transfer/ensemble_fit.py": "8ab67829dbe4ca6cc2b2f3238c1bdccd28b5a9747554715f50847a4173496049",
+    "src/transfer/noise_model.py": "fe393308b556265f4fcce5df5a5002068744d6899a2bfb355d4674e0c2919e11",
+    "src/transfer/operator_lda.py": "e8540d6d73864e65078b4c4b4b6c2ca85da696ba38aa1e4fce566e4b88aeb75d",
+    "experiments/run_candidate_ensemble_study.py": "1b83e5786fa7016c13180d157aa3db198b7d844714f92f59dc2e590bab052be5",
+    "experiments/run_operator_decision_study.py": "48ace78d5d7ecce4deb938bb4cce2182e8af8299ba68809fda9cbfabc12f1f4a",
+    "experiments/probe_conditional_operator_native.py": "2196df21b3a15287d50468ff410ec6352dabf4661330be70eab15ff711aba16c"
+  },
+  "integrated_full_suite": {
+    "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\prior_control_20261006\\integrated_quality\\receipt.json",
+    "sha256": "c384c5efa41d1af7e73a843ecf48d0963c1abe438f1365b595f08624be012950",
+    "record": {
+      "schema": "n2p3_prior_and_conditional_state_quality/1",
+      "end_utc": "2026-10-06T06:36:48.917302+00:00",
+      "checks": [
+        {
+          "name": "ruff",
+          "argv": [
+            "D:\\BCI\\n2p3-net\\.venv\\Scripts\\python.exe",
+            "-m",
+            "ruff",
+            "check",
+            "src",
+            "experiments",
+            "tests"
+          ],
+          "exit_code": 0
+        },
+        {
+          "name": "diff_check",
+          "argv": [
+            "git",
+            "diff",
+            "--check"
+          ],
+          "exit_code": 0
+        },
+        {
+          "name": "pytest",
+          "argv": [
+            "D:\\BCI\\n2p3-net\\.venv\\Scripts\\python.exe",
+            "-X",
+            "utf8",
+            "-m",
+            "pytest",
+            "-q",
+            "--junitxml=C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\prior_control_20261006\\integrated_quality\\full.xml"
+          ],
+          "exit_code": 0
+        }
+      ],
+      "counts": {
+        "tests": 2689,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 19,
+        "passed": 2670
+      },
+      "source_file_count": 413,
+      "source_bytes_unchanged": true,
+      "source_manifest_sha256": "70b2dafa8990e02bb41864e5b72fa25f5b302464beca23a0c070f529067562a1"
+    }
+  },
+  "prior_control": {
+    "Spec": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\prior_control_20261006\\spec\\receipt.json",
+      "sha256": "adcd13704e27a369c5c5bbb04aa72314f01c54ddfb38c986c04fe7168979c8ac",
+      "record": {
+        "schema": "B08_trace_spec_receipt/1",
+        "decision": "passed",
+        "axis": "independent Spec/mathematics",
+        "source_sha256": {
+          "src/transfer/kernel_prior.py": "22e369488baebf09f2661bed459a187999b8f4290723670c24910e43ac7b31bd",
+          "src/transfer/continuous_decision.py": "1cfa032a71ec725d7cb43370c9b14d22f5610aea8c1faea0de8bc88a0dc1a217",
+          "src/transfer/continuous_gradient.py": "f3e57c89503231641a627cb418f44603b9eb94aa601821f97602b1b2df57708a",
+          "src/transfer/ensemble_fit.py": "8ab67829dbe4ca6cc2b2f3238c1bdccd28b5a9747554715f50847a4173496049",
+          "tests/transfer/test_kernel_prior.py": "e7f16d0ba72293dc1538cfc10b3f711fada95c65b01a0234e717b1ecddb42f0d",
+          "tests/transfer/test_continuous_g_prior.py": "915c0eea7fea99f70d6783d20b5a937071d88d8d667896404b17cc7c10848ffd",
+          "tests/transfer/test_ensemble_fit.py": "caff0939d263c1926fd37ea44c2444705e5d2eafb4a277d53f12195ef57dcc17"
+        },
+        "source_archive_sha256": "b5d922e37f20b392a050d63617ff49158388f9c309669ac24eb77bcf24cde76a",
+        "executed_root": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\prior_control_20261006\\spec\\execution",
+        "counts": {
+          "tests": 15,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "exit_code": 0,
+        "ruff_exit_code": 0,
+        "runtime_source_modified": false,
+        "empirical_matrix_executed": false,
+        "adult_tests_executed": false,
+        "main_caller_review": "read; final acceptance separately tied to final main source after B06 stabilization",
+        "evidence_sha256": {
+          "test_trace_spec.py": "7a658dd80d219dbcb021efaf69dda25d252909c60acae05ecf2c8f7a2147fef7",
+          "independent_gaussian_helpers.py": "e2a89632bc0d3cde4c069185c5b2be6cd3daacfaf9feb3df79d7ad61f660d15d",
+          "tests.xml": "2cf688e45b6a693b58d3dc5247b9231dc69d86d1b4039d78b5f5870df8f3a2e2",
+          "tests.log": "1c4e0c4945ea268c3bc11a7a613907555ed512b9eeaf46afe02b9e771b929bcc",
+          "math_results.json": "2f3c7e447a73e8c5a25f5e59a8e415da472d20c269c9b6f8ec39a8669c055938",
+          "review.zh.md": "df11e4ef57d3af08c692076e5a9ba43dce5d277989fad408f259ff632d47fab1",
+          "source_guard.json": "2876805f0b7c631dfb975db6b3fa6b47f6a148261bbc116323daecd6e363ad94"
+        }
+      }
+    },
+    "Standards": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\prior_control_20261006\\standards\\receipt.json",
+      "sha256": "e6e3223311479c28ceb514210963a43fc03923574d2af8c59ea08d4f5aa5160b",
+      "record": {
+        "schema": "n2p3_independent_standards_review/1",
+        "created_utc": "2026-10-06T03:33:44.681739+00:00",
+        "scope": "B08 trace control core and attribution runner; Standards axis",
+        "baseline_core": "108c6b18a9aec65509c7f2b8add8e9cb6bdd41dd",
+        "baseline_caller": "1055982d4aa992f725566d769608970bbc4a40d2",
+        "author_head_after_declared_commits": "03d37158449450bf06d7015a7d5161fff7b5462a",
+        "main_head_after_declared_commits": "9d6155049c3b257793d476052ac97915dbed8967",
+        "core_source": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\source_after\\checkout",
+        "review_capsule": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\prior_control_20261006\\standards\\checkout",
+        "source_sha256": {
+          "src/transfer/kernel_prior.py": "22e369488baebf09f2661bed459a187999b8f4290723670c24910e43ac7b31bd",
+          "src/transfer/continuous_decision.py": "1cfa032a71ec725d7cb43370c9b14d22f5610aea8c1faea0de8bc88a0dc1a217",
+          "src/transfer/continuous_gradient.py": "f3e57c89503231641a627cb418f44603b9eb94aa601821f97602b1b2df57708a",
+          "src/transfer/ensemble_fit.py": "8ab67829dbe4ca6cc2b2f3238c1bdccd28b5a9747554715f50847a4173496049",
+          "experiments/run_candidate_ensemble_study.py": "1b83e5786fa7016c13180d157aa3db198b7d844714f92f59dc2e590bab052be5",
+          "tests/research/test_calibration_prior_study.py": "795d16cf4746b3a914753a84cc9d1634cd9dfce147834bf7ca09e4de98a42938"
+        },
+        "validation": {
+          "standards": {
+            "tests": 78,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          },
+          "ensemble_oof": {
+            "tests": 2,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          }
+        },
+        "test_exit_codes": {
+          "standards": 0,
+          "ensemble_oof": 0,
+          "ruff": 0,
+          "cli_help_outside_project": 0,
+          "author_core_diff_check": 0
+        },
+        "thread_environment": {
+          "OMP_NUM_THREADS": "1",
+          "MKL_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1"
+        },
+        "python": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+        "commands": {
+          "cwd": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\prior_control_20261006\\standards\\checkout",
+          "standards": [
+            "python",
+            "-X",
+            "utf8",
+            "-m",
+            "pytest",
+            "-q",
+            "-c",
+            "pyproject.toml",
+            "--rootdir=.",
+            "../test_independent_standards.py",
+            "tests/research/test_calibration_prior_study.py",
+            "tests/transfer/test_kernel_prior.py",
+            "tests/transfer/test_continuous_g_prior.py",
+            "--junitxml=../standards.xml"
+          ],
+          "ensemble_oof": [
+            "python",
+            "-X",
+            "utf8",
+            "-m",
+            "pytest",
+            "-q",
+            "-c",
+            "pyproject.toml",
+            "--rootdir=.",
+            "tests/transfer/test_ensemble_fit.py",
+            "-k",
+            "calibration_g_program_saved_package_and_wrong_prior_relation",
+            "--basetemp=../oof_outputs",
+            "--junitxml=../oof.xml"
+          ],
+          "outside_cli": [
+            "python",
+            "-X",
+            "utf8",
+            "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\prior_control_20261006\\standards\\checkout\\experiments\\run_candidate_ensemble_study.py",
+            "--help"
+          ]
+        },
+        "source_guard": {
+          "capsule_original_members": 419,
+          "capsule_changes": [],
+          "main_review_scope_changes": [],
+          "author_core_changes": [],
+          "declared_commit_changes_allowed": true
+        },
+        "confirmed_findings": [],
+        "actionable_smells": [],
+        "named_panel_probe": {
+          "declared_arms": 28,
+          "requested_prediction_rows": 56,
+          "shape_contrasts": 12,
+          "actual_successful_fits_and_replays": 4,
+          "actual_zero_design_rank_failures": 44,
+          "explicit_software_ridge_failures": 8
+        },
+        "preserved_fixture_mirrors": [
+          {
+            "original": "C:\\Users\\chent\\AppData\\Local\\Temp\\pytest-of-chent\\pytest-215\\test_actual_named_panel_preser0",
+            "mirror": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\prior_control_20261006\\standards\\preserved_named_panel",
+            "fixture_scope": "software_correctness; injected zero basis and explicit ridge failures",
+            "original_preserved": true,
+            "members": {
+              "A01.mat": "9f84bedad5ef00243d7709ca134f2e2566ad0752dc90e25f716c9916fe19668a",
+              "plan.json": "f856bbb57ccf35d11dd3910a0517877780af1bcc4756a36376959635d2b9339f",
+              "complete_panel_with_explicit_failures/executed_source.json": "91ef7d2e7d7835709f900a6251cca601bcba0fa98343977ac9deefa36899d94d",
+              "complete_panel_with_explicit_failures/plan.json": "5b1fc58820bde7f2159f52930b207914ce31648fb441726e6722d426be623780",
+              "complete_panel_with_explicit_failures/progress.json": "e8761146faea9e1b299775b389db87decf883058a4bd3a6731d1b190a3e33588",
+              "complete_panel_with_explicit_failures/result.json": "2e7c83873152830be09d9896de82fc55137a0c065d860a78618e3ba5009b3a06",
+              "complete_panel_with_explicit_failures/participant_000/progress.json": "fd992bef00ebf0c9eca9e788cef00f39fd5c01c0c05c1a6706390a1963041a3b",
+              "complete_panel_with_explicit_failures/participant_000/result.json": "6a3cda5f508b11315e088fe712b3361326839a34feef148fd2008f5fa7ee276f",
+              "complete_panel_with_explicit_failures/participant_000/scopes.json": "44633d1a614c14ea5dae56c871cec2937fac5aa8b20d39885af538fc9a017651",
+              "complete_panel_with_explicit_failures/participant_000/seed23_fold0_expert3/ensemble.json": "473404208ef61ffc5e57e9521c954364ca799a43983a62a784e2261a0c9a6511",
+              "complete_panel_with_explicit_failures/participant_000/seed23_fold0_expert3/expert_000.npz": "2909f335d3487d611e740ad47ba787b84d16d40c0adb14c79e0743907dab7935",
+              "complete_panel_with_explicit_failures/participant_000/seed23_fold0_expert4/ensemble.json": "2b3a6f73ae2298701e5216dbfb664af17787521f304487b472782553d7fe3fab",
+              "complete_panel_with_explicit_failures/participant_000/seed23_fold0_expert4/expert_000.npz": "f1ecc1b1d81bec19b4d9c3e736a4b24b18fc2d5f321445d388e68a0687d5c83d",
+              "complete_panel_with_explicit_failures/participant_000/seed23_fold1_expert3/ensemble.json": "201ab00cab72fd6b923eaf5655ec08b5e81803665f196fca862b05f18825453e",
+              "complete_panel_with_explicit_failures/participant_000/seed23_fold1_expert3/expert_000.npz": "3f6ed3adbc4255d0276b1f5084222e913785a3aef05571a227e75b7a0d5e37a8",
+              "complete_panel_with_explicit_failures/participant_000/seed23_fold1_expert4/ensemble.json": "9859f2024f648b7682ef68b33e51c5536122b0438445544a6e473db9d2b6adc3",
+              "complete_panel_with_explicit_failures/participant_000/seed23_fold1_expert4/expert_000.npz": "cb1640efa33e55cc1e8b111fa3fd983102dae0422984214d48815750d60a468b"
+            }
+          }
+        ],
+        "artifact_sha256": {
+          "source_guard_before.json": "4e94e7c8ff3ba6f7586f5ea4d53b1d9c9e140a83211dd531b631e214b5c5b347",
+          "standards.xml": "c113876ff4b89e3a1bbc7d9768a2a84cccf8405ed28a33f45c0c34b20e72e497",
+          "standards.log": "134369496c274994acf75283a90f997896d30eaee672d0cb4c49ee90d7dd15c6",
+          "oof.xml": "d688047d9772528724633140e8c973141fc37aa6239e202cf66f5401fd9abce4",
+          "oof.log": "e39c7c8495c11b3781a4116112e8edaad58e79f9e534b4818722b9eae3cfa6a2",
+          "ruff.log": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+          "cli_help.log": "2f334e562632174ed5d70ac79bbe77313827cab0cb5af7bc7eb8b19d8552e538",
+          "test_independent_standards.py": "857d3791c4ac508be5496928a86b7a150c73606d6a43a9d3bdb286680e13b4ce",
+          "prepare_review.py": "0f0b92a5bb73bc837d392fb09fc51dd613214ba7260cec8476b8a1c8691ad6d3",
+          "finalize_review.py": "d294faf381327b8c5e32f2210ef9f6015c1c8d43feec7d54d38fc02e88c9f946",
+          "report.zh.md": "d0e6a0f09e4c9bbb1eccaec7bb6b4f460885a5ee322a436c66378bb12680bcbe"
+        },
+        "limitations": [
+          "software tests do not establish public prior effectiveness or adult/device confirmation",
+          "public 1344-fit matrix and broad suite belong to parent scheduling",
+          "caller reviewed against exact pre-B06 core; unrelated concurrent B06 source is not assessed"
+        ]
+      }
+    },
+    "author": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\receipt.json",
+      "sha256": "590569fa924e49081df302a53030cb19ea1126ef519ba9da5773c2266d4a3f61",
+      "record": {
+        "schema": "n2p3_continuous_decision_model/6",
+        "created_utc": "2026-10-06T03:16:17.102591+00:00",
+        "workspace": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net",
+        "baseline": "108c6b18a9aec65509c7f2b8add8e9cb6bdd41dd",
+        "branch": "codex/calibration-g-prior",
+        "canonical_kind": "calibration_trace_isotropic",
+        "matching_rule": "lambda_C = trace(G_C) / (kernel_width * g)",
+        "reference": "same all-C AR0 per-record diffuse affine root owner",
+        "admission": "require_full_rank shared with calibration_g; typed KernelPriorRankError lineage",
+        "coordinate_invariance": "control coordinate-fixed; general basis invariance not claimed",
+        "numeric_arrays": 9,
+        "baseline_source_sha256": {
+          "src/transfer/kernel_prior.py": "2e0e5da9e1b5471facfab1634012b731ec7dc1d8e4a9e563e5a48a009806cc48",
+          "src/transfer/continuous_decision.py": "4d33731cd18946583a36f78d02d845d9bb7df98209cdeeba09a5ff1312b6c0d1",
+          "src/transfer/continuous_gradient.py": "310917922cdb64783391dcb10eea19ded334a8aaff1815ca1da36b4559c5a4b6",
+          "src/transfer/ensemble_fit.py": "0d1cddf573e2a808954d72407d88a5d58ccee5679d10baf5d2d539b268b66152"
+        },
+        "source_sha256": {
+          "src/transfer/kernel_prior.py": "22e369488baebf09f2661bed459a187999b8f4290723670c24910e43ac7b31bd",
+          "src/transfer/continuous_decision.py": "1cfa032a71ec725d7cb43370c9b14d22f5610aea8c1faea0de8bc88a0dc1a217",
+          "src/transfer/continuous_gradient.py": "f3e57c89503231641a627cb418f44603b9eb94aa601821f97602b1b2df57708a",
+          "src/transfer/ensemble_fit.py": "8ab67829dbe4ca6cc2b2f3238c1bdccd28b5a9747554715f50847a4173496049",
+          "tests/transfer/test_kernel_prior.py": "e7f16d0ba72293dc1538cfc10b3f711fada95c65b01a0234e717b1ecddb42f0d",
+          "tests/transfer/test_continuous_g_prior.py": "915c0eea7fea99f70d6783d20b5a937071d88d8d667896404b17cc7c10848ffd",
+          "tests/transfer/test_ensemble_fit.py": "caff0939d263c1926fd37ea44c2444705e5d2eafb4a277d53f12195ef57dcc17"
+        },
+        "validation": [
+          {
+            "label": "compiler",
+            "tests": 23,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0,
+            "exit_code": 0,
+            "junit": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\compiler.xml",
+            "junit_sha256": "4b660ac203507ac349d1f75741a01b86f7c8ff82c1b41675be46a8faa9c836d5",
+            "log": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\compiler.log",
+            "log_sha256": "99afb92fd1dc34b5f443be3336cef93d8411e74063dde213264485b100e2a9c8"
+          },
+          {
+            "label": "affected",
+            "tests": 76,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0,
+            "exit_code": 0,
+            "junit": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\affected.xml",
+            "junit_sha256": "e70a91f99c167746881ac8ab25c3d1f4d27bb245db6937efc6bff96465501edf",
+            "log": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\affected.log",
+            "log_sha256": "bd52a3f3f7fd4027d804d5c0681bd30eae6d5c08da5dd14916f516864e193a01"
+          },
+          {
+            "label": "linked",
+            "tests": 173,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0,
+            "exit_code": 0,
+            "junit": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\linked.xml",
+            "junit_sha256": "ba5b19ae4977d01f16f57ced4ebb6d24127b58e99800ca3a9d960e4c1335bc7b",
+            "log": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\linked.log",
+            "log_sha256": "ef3ce0c5f676524558e31b6339b16aa5668d133de966f423374f186eaadd0fab"
+          }
+        ],
+        "test_command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -m pytest -q --junitxml=tmp/prior_control_20261006/linked.xml tests/transfer/test_kernel_prior.py tests/transfer/test_continuous_g_prior.py tests/transfer/test_continuous_fixed_prefix.py tests/transfer/test_continuous_gradient.py tests/transfer/test_continuous_ar_expert.py tests/transfer/test_ensemble_fit.py tests/research/test_candidate_ensemble_study.py",
+        "thread_environment": {
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "MKL_NUM_THREADS": "1",
+          "PYTHONPATH": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\src"
+        },
+        "ruff_command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe -m ruff check .",
+        "ruff_exit_code": 0,
+        "diff_check_exit_code": 0,
+        "source_before": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\source_before\\source.manifest.json",
+        "source_before_sha256": "7afe5157289c3dd4cd739b5fb28e848f725632577882ecb41c0ccd4becb22bbc",
+        "source_snapshot": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\source_after\\source.manifest.json",
+        "source_snapshot_sha256": "7d07e08cad07f447736c2d78515536c47babf3edcaf609b159e69a3e9646ce5a",
+        "source_archive_sha256": "b5d922e37f20b392a050d63617ff49158388f9c309669ac24eb77bcf24cde76a",
+        "source_member_count": 418,
+        "materialized_source": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\source_after\\checkout",
+        "patch": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\prior_control_20261006\\implementation_from_108c6b1.patch",
+        "patch_sha256": "a5ee2956438550647d04d003fcde98a99be0e762a0b1d0e10ff97c02705c4b33",
+        "independent_evidence": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\doc\\evidence\\calibration_trace_control_20261006.zh.md",
+        "independent_evidence_sha256": "9c0d87087e41c7362542373f71683d5536659bbf91bed41ffece443e2be09f36",
+        "snapshot_scope": "source helper does not recurse doc/evidence; independent evidence hash and full patch include it",
+        "quality_axes": "pending independent Spec/Standards on stable source",
+        "full_suite": "not_run_parent_resource_schedule",
+        "empirical_training": "not_run",
+        "commit": "not_authorized_not_performed",
+        "old_M1_and_RED_and_source_snapshots": "preserved unchanged"
+      }
+    }
+  },
+  "conditional_state": {
+    "Spec": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\spec\\receipt.json",
+      "sha256": "de7f61845c0ff5f45fa83d52ce8699708fed0bec5845f01fedfa784c0d03dbf4",
+      "record": {
+        "schema": "B06_final_spec_receipt/1",
+        "created_utc": "2026-10-06T06:40:26.635168+00:00",
+        "decision": "passed",
+        "axis": "independent Spec/math and actual native caller",
+        "source_sha256": {
+          "src/transfer/noise_model.py": "fe393308b556265f4fcce5df5a5002068744d6899a2bfb355d4674e0c2919e11",
+          "src/transfer/operator_lda.py": "e8540d6d73864e65078b4c4b4b6c2ca85da696ba38aa1e4fce566e4b88aeb75d",
+          "experiments/run_operator_decision_study.py": "48ace78d5d7ecce4deb938bb4cce2182e8af8299ba68809fda9cbfabc12f1f4a",
+          "experiments/probe_conditional_operator_native.py": "2196df21b3a15287d50468ff410ec6352dabf4661330be70eab15ff711aba16c",
+          "tests/transfer/test_conditional_noise.py": "3245f09c0695727ceca08a2276d0cc2650c39edfd27b86f905a0f8bc15531795",
+          "tests/transfer/test_conditional_operator_lda.py": "a5b7528402d21c1df2479aed0a1b8bca7793942a250831fa44259100af2034be",
+          "tests/research/test_conditional_operator_cli.py": "697d2173aab5c0591b612c44e0b588277a1f2cd76740ec95988cc3336e5913e4",
+          "doc/evidence/conditional_state_20261006.zh.md": "269f8d289f97805a78ea5a2dd01d934c042f5e4b3f81bf053c42441e3b256209"
+        },
+        "source_archive_sha256": "9f77c4aa70bc96a76e618fef8ec08ac4162206327ad5e4facf82601b1d8a978b",
+        "source_members": 424,
+        "executed_root": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\spec\\execution",
+        "counts": {
+          "tests": 14,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "test_exit_code": 0,
+        "ruff_exit_code": 0,
+        "theory_checks": 12,
+        "initial_setup_exit": 1,
+        "initial_setup_errors": 14,
+        "initial_setup_reason": "namespace CLI imported from shared cwd; path guard stopped before test assertions; corrected by executing from private capsule cwd/confcutdir",
+        "source_unchanged": true,
+        "existing_A01_window_rows_rebuilt": 360,
+        "existing_calibration_draws": 240,
+        "existing_held_draws": 120,
+        "existing_two_arms_exact_saved_replays": 240,
+        "new_public_fit_executed": false,
+        "original_bytes_changed": false,
+        "runtime_source_modified": false,
+        "adult_confirmation": false,
+        "physical_state_unique_claimed": false,
+        "main_full_suite_reported": {
+          "provenance": "parent message; separate axis",
+          "passed": 2670,
+          "skipped": 19,
+          "errors": 0,
+          "failures": 0,
+          "byte_guard_files": 413
+        },
+        "evidence_sha256": {
+          "test_final_spec.py": "387db7c727efb44642cf63d6f14cae60bbc936b7e68cf1ac78c168a931794b25",
+          "verify_theory.py": "6c540e18b7f8896c374608b919646d702de493076a9b92c305db25903135b221",
+          "theory_results.json": "d40fc9c2055cf82dd23a13efdbf8f077eef314045927030ed5390725eefb5e49",
+          "theory_contract.zh.md": "cb9264b76b82e6f0f3ae67eecb7b549ea712b13d37adc572179337e8afef655a",
+          "source_final.json": "103ae2a70b4a2dbbe035c608ae9a1e0922c6dd9aab5204d0e3c0e0b0230dbb91",
+          "final_exact.log": "bed26e89ce926907ff81f8bf894550030d1350ddc701a9795ff380af82dba174",
+          "final_exact.xml": "8003bf522ce021e0a0d879176c0787a3887631582f05af098c02a098d21ab4c1",
+          "final_math_results.json": "457c3f587d25f30694373a1a691024ac78004037db391ceb522957df65adf618",
+          "review.zh.md": "93e2954ad3224c7271dc9cbacdd89b49a810f8152990e093400d1f0185130f8b"
+        }
+      }
+    },
+    "Standards": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\standards\\receipt.json",
+      "sha256": "520e964d85cc4f470dc846b9bd8b3934f4031adf413527c3076650ffe3d2cb6d",
+      "record": {
+        "schema": "n2p3_independent_standards_review/1",
+        "created_utc": "2026-10-06T06:34:10.148126+00:00",
+        "scope": "B06 conditional noise/operator/native caller Standards",
+        "baseline": "1055982d4aa992f725566d769608970bbc4a40d2",
+        "parent_head_at_review": "9d6155049c3b257793d476052ac97915dbed8967",
+        "source_snapshot": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\source_after_complex_fix",
+        "capsule": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\standards\\checkout",
+        "review_source_sha256": {
+          "src/transfer/noise_model.py": "fe393308b556265f4fcce5df5a5002068744d6899a2bfb355d4674e0c2919e11",
+          "src/transfer/operator_lda.py": "e8540d6d73864e65078b4c4b4b6c2ca85da696ba38aa1e4fce566e4b88aeb75d",
+          "experiments/run_operator_decision_study.py": "48ace78d5d7ecce4deb938bb4cce2182e8af8299ba68809fda9cbfabc12f1f4a",
+          "experiments/probe_conditional_operator_native.py": "2196df21b3a15287d50468ff410ec6352dabf4661330be70eab15ff711aba16c",
+          "tests/transfer/test_conditional_noise.py": "3245f09c0695727ceca08a2276d0cc2650c39edfd27b86f905a0f8bc15531795",
+          "tests/transfer/test_conditional_operator_lda.py": "a5b7528402d21c1df2479aed0a1b8bca7793942a250831fa44259100af2034be",
+          "tests/research/test_conditional_operator_cli.py": "697d2173aab5c0591b612c44e0b588277a1f2cd76740ec95988cc3336e5913e4"
+        },
+        "validation": {
+          "directed": {
+            "tests": 48,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          },
+          "complex_saved_payloads": {
+            "tests": 2,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          }
+        },
+        "checks_exit_codes": {
+          "directed": 0,
+          "complex_saved_payloads": 0,
+          "ruff": 0,
+          "outside_project_cli": 0,
+          "scoped_diff_check": 0,
+          "complex_original_RED": 1,
+          "complex_same_input_GREEN": 0,
+          "native_readonly_audit": 0
+        },
+        "source_guard": {
+          "snapshot_members": 424,
+          "changed_capsule_members": [],
+          "changed_parent_scope_files": [],
+          "passed": true
+        },
+        "confirmed_findings": [
+          {
+            "id": "B06-Standards-complex-ingress",
+            "priority": 2,
+            "status": "closed",
+            "trigger": "complex ndarray at real-Gaussian external ingress",
+            "consequence": "imaginary values discarded while actual CLI declared completion",
+            "before_sha256": {
+              "src/transfer/noise_model.py": "36831fcb996e58bd5ee3356e149bac817a7c8f6e4f8e5dca1d774fdab95157c1",
+              "src/transfer/operator_lda.py": "53746f274fbd7326e1cb0cb40bd70367073385e1bb90f0d0fc780accaf6b465f",
+              "experiments/run_operator_decision_study.py": "48ace78d5d7ecce4deb938bb4cce2182e8af8299ba68809fda9cbfabc12f1f4a"
+            },
+            "after_sha256": {
+              "src/transfer/noise_model.py": "fe393308b556265f4fcce5df5a5002068744d6899a2bfb355d4674e0c2919e11",
+              "src/transfer/operator_lda.py": "e8540d6d73864e65078b4c4b4b6c2ca85da696ba38aa1e4fce566e4b88aeb75d",
+              "experiments/run_operator_decision_study.py": "48ace78d5d7ecce4deb938bb4cce2182e8af8299ba68809fda9cbfabc12f1f4a"
+            },
+            "same_input_paths_retested": [
+              "condition_complex_raw",
+              "condition_complex_candidate_mean",
+              "fit_complex_conditioner",
+              "fit_complex_response",
+              "predict_complex_conditioner",
+              "actual_noise_condition_cli"
+            ],
+            "fix": "one canonical finite_real_array owner reused at ingress and load"
+          }
+        ],
+        "remaining_confirmed_findings": [],
+        "actionable_code_smells": [],
+        "native_readonly_audit": {
+          "schema": "n2p3_independent_native_operator_audit/1",
+          "status": "passed",
+          "producer_run": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\public_probe_after_complex_fix",
+          "receipt_sha256": "97d315f673bf671cee70d4b7422f9a07c66863332fe57ce8dde01269f1190d6b",
+          "snapshot_manifest": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\source_after_complex_fix\\source.manifest.json",
+          "snapshot_sha256": "ed99c13061acd4c93da7786f1864be341799f6fd22541efe8513b49d0ffea851",
+          "snapshot_members_verified": 424,
+          "source_sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+          "calibration_draws": 240,
+          "held_draws": 120,
+          "unique_native_read_intervals": 360,
+          "calibration_and_held_support_disjoint": true,
+          "maps_and_absolute_ledger_match_raw_bytes": true,
+          "no_held_truth_in_prediction_npz": true,
+          "noise_uses_actual_calibration_class_residuals": true,
+          "dense_gaussian_replay": {
+            "conditional": {
+              "n_scored": 120,
+              "auc": 0.836,
+              "nll": 0.5400247992933715,
+              "brier": 0.17914272544134432,
+              "max_dense_replay_error": 1.3766765505351941e-14
+            },
+            "marginal": {
+              "n_scored": 120,
+              "auc": 0.833,
+              "nll": 0.5474309252445593,
+              "brier": 0.18289370368618058,
+              "max_dense_replay_error": 1.532107773982716e-14
+            }
+          },
+          "scope": "read-only caller acceptance; no refit, adult result or new efficacy claim"
+        },
+        "artifact_sha256": {
+          "source_guard_before.json": "69e5a4b6c48dbd78fbea6f32e1b1c847b431224042fa57281aa2af90a0dbaf1a",
+          "standards.xml": "9861df2381a97a04236bb3cad6937c76c2630b6d8406fd90981a827b80b60e33",
+          "standards.log": "cc8d4379f0bf4af21a288b9575dc589dabb4266d482b8ae878fb48b45f6aac07",
+          "complex_load.xml": "2f541ecab4102141f55f1a6b98aac08c02d98d071cea77813df310c3da2951fb",
+          "complex_load.log": "e07b335942acd4fd902d98462f79a37f75a35b28563f9c86307b726fdf192bd9",
+          "complex_ingress_red.json": "7017128b7daf77773552f847563907523a439dc5cb62448abd680b1bde56a6ec",
+          "complex_ingress_red.log": "0a9f5a9e517008bb5aae3653a7d9e4907ea395fd13137e7b0705c50efd23acd5",
+          "complex_ingress_green.json": "f3a10cda5f2bc0f21c8714943df4b06d6d8957dc610aa014b0ad21eaeef16cd0",
+          "complex_ingress_green.log": "288bcb5d0c92a192f21ea08994fd4d9aaebebca507bb2313b997988f383db2fa",
+          "probe_complex_current.py": "3807ebe1b8e6948ce42a000104240e4074ca5ba11c63fcb7b877b72539b9e48d",
+          "probe_complex_after.py": "9982ae3dcc9c7b70e7a98fa07aa0d2c0c1cb68a99a550e6d4f29e8148ceda533",
+          "test_independent_conditional_standards.py": "9653e0ca613a2579ccc1b64d47a79be24e9799ee357bc1330f1df25867351c54",
+          "audit_native_probe.py": "4e30fb7adc97d3f711ee80e881a5dae46cb0be1b65c63b9dc9350a9f2d013895",
+          "native_final_audit.json": "845086972a554471d7944d8b7f11c568fcf824b19ed4c418708b1134733e1c93",
+          "native_final_audit.log": "1d9369de925b65d4bd6a39904c091a52396a3f38a201d94fce52cb1ea0b91f8d",
+          "native_pre_complex_audit.json": "8997f5e0dd334c074acfc2fc0a22b29179bb89c15e59116f800f92d14539dbed",
+          "native_pre_complex_audit.log": "504fc1d710bad2ba2556a972be7956f503f799139403eec1b69985d748c9824d",
+          "prepare_review.py": "fc19e2f44b199fa3610b0d1847762bcf25e368fde544f541c2216b32625650e2",
+          "finalize_review.py": "9a9fffc184cb8c1914c18c92e36050968546d5a7969b9709d3997243a5088374",
+          "ruff.log": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+          "cli_help.log": "8678f365f4748104b0a02a91cf135eec08f592df97461e648530adaabbbeec9a",
+          "report.zh.md": "e22e61e34b15ed2a1493098d98918aa0a3e5c28086eacd4f72fa802966780f57"
+        },
+        "python": "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+        "thread_environment": {
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "MKL_NUM_THREADS": "1"
+        },
+        "commands": {
+          "cwd": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\standards\\checkout",
+          "directed": [
+            "python",
+            "-X",
+            "utf8",
+            "-m",
+            "pytest",
+            "-q",
+            "-c",
+            "pyproject.toml",
+            "--rootdir=.",
+            "../test_independent_conditional_standards.py",
+            "tests/transfer/test_noise_model.py",
+            "tests/transfer/test_operator_lda.py",
+            "tests/transfer/test_conditional_noise.py",
+            "tests/transfer/test_conditional_operator_lda.py",
+            "tests/research/test_operator_decision_cli.py",
+            "tests/research/test_conditional_operator_cli.py",
+            "--basetemp=../probe_outputs",
+            "--junitxml=../standards.xml"
+          ],
+          "complex_saved_payloads": [
+            "python",
+            "-X",
+            "utf8",
+            "-m",
+            "pytest",
+            "-q",
+            "-c",
+            "pyproject.toml",
+            "--rootdir=.",
+            "../test_independent_conditional_standards.py",
+            "-k",
+            "saved_complex_payload",
+            "--basetemp=../complex_load_outputs",
+            "--junitxml=../complex_load.xml"
+          ],
+          "native_audit": [
+            "python",
+            "-X",
+            "utf8",
+            "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\standards\\audit_native_probe.py",
+            "--run",
+            "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\public_probe_after_complex_fix",
+            "--snapshot",
+            "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\source_after_complex_fix\\source.manifest.json",
+            "--output",
+            "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\standards\\native_final_audit.json"
+          ]
+        },
+        "evidence_boundaries": [
+          "public native A01 audit is readonly and does not refit models",
+          "AUC is one-subject processed-data caller diagnosis, not new adult efficacy",
+          "unknown physical boundary-state identifiability remains unproved",
+          "parent broad suite and full public matrices are not part of this Standards receipt"
+        ]
+      }
+    },
+    "independent_native_map_audit": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\standards\\native_final_audit.json",
+      "sha256": "845086972a554471d7944d8b7f11c568fcf824b19ed4c418708b1134733e1c93",
+      "record": {
+        "schema": "n2p3_independent_native_operator_audit/1",
+        "status": "passed",
+        "producer_run": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\public_probe_after_complex_fix",
+        "receipt_sha256": "97d315f673bf671cee70d4b7422f9a07c66863332fe57ce8dde01269f1190d6b",
+        "snapshot_manifest": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\source_after_complex_fix\\source.manifest.json",
+        "snapshot_sha256": "ed99c13061acd4c93da7786f1864be341799f6fd22541efe8513b49d0ffea851",
+        "snapshot_members_verified": 424,
+        "source_sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+        "calibration_draws": 240,
+        "held_draws": 120,
+        "unique_native_read_intervals": 360,
+        "calibration_and_held_support_disjoint": true,
+        "maps_and_absolute_ledger_match_raw_bytes": true,
+        "no_held_truth_in_prediction_npz": true,
+        "noise_uses_actual_calibration_class_residuals": true,
+        "dense_gaussian_replay": {
+          "conditional": {
+            "n_scored": 120,
+            "auc": 0.836,
+            "nll": 0.5400247992933715,
+            "brier": 0.17914272544134432,
+            "max_dense_replay_error": 1.3766765505351941e-14
+          },
+          "marginal": {
+            "n_scored": 120,
+            "auc": 0.833,
+            "nll": 0.5474309252445593,
+            "brier": 0.18289370368618058,
+            "max_dense_replay_error": 1.532107773982716e-14
+          }
+        },
+        "scope": "read-only caller acceptance; no refit, adult result or new efficacy claim"
+      }
+    },
+    "author": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\receipt.json",
+      "sha256": "56a964a62f9ec69341a8fc73740a393d759f0840d1c0560b6bf245ffebdfe5a4",
+      "record": {
+        "schema": "B06_conditional_implementation_receipt/1",
+        "status": "stable_READY_for_independent_review",
+        "completed_at_utc": "2026-10-06T03:56:07.744092+00:00",
+        "workspace": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net",
+        "owned_baseline": {
+          "baseline": "1055982d4aa992f725566d769608970bbc4a40d2",
+          "files": {
+            "src/transfer/noise_model.py": "3b0d69d1b64a9aef0d4e0c57893f30420a3ea0152c76427f5c3ed96bf7f96354",
+            "src/transfer/operator_lda.py": "bc1753ded269fa2ae611002a5ce4da22e40e2cf727dca57a0bf8d4d07bb7c1a6",
+            "experiments/run_operator_decision_study.py": "016de611e356f9b89cbc0c2144fb03c8b6f4c387b3f80bee8e32803c90510e8b"
+          }
+        },
+        "current_base_commit": "9d6155049c3b257793d476052ac97915dbed8967",
+        "root_parallel_core_changes": "declared_trace/prior_integration_outside_this_owned_delta",
+        "source_sha256": {
+          "src/transfer/noise_model.py": "fe393308b556265f4fcce5df5a5002068744d6899a2bfb355d4674e0c2919e11",
+          "src/transfer/operator_lda.py": "e8540d6d73864e65078b4c4b4b6c2ca85da696ba38aa1e4fce566e4b88aeb75d",
+          "experiments/run_operator_decision_study.py": "48ace78d5d7ecce4deb938bb4cce2182e8af8299ba68809fda9cbfabc12f1f4a",
+          "experiments/probe_conditional_operator_native.py": "2196df21b3a15287d50468ff410ec6352dabf4661330be70eab15ff711aba16c",
+          "tests/transfer/test_conditional_noise.py": "3245f09c0695727ceca08a2276d0cc2650c39edfd27b86f905a0f8bc15531795",
+          "tests/transfer/test_conditional_operator_lda.py": "a5b7528402d21c1df2479aed0a1b8bca7793942a250831fa44259100af2034be",
+          "tests/research/test_conditional_operator_cli.py": "697d2173aab5c0591b612c44e0b588277a1f2cd76740ec95988cc3336e5913e4",
+          "doc/evidence/conditional_state_20261006.zh.md": "269f8d289f97805a78ea5a2dd01d934c042f5e4b3f81bf053c42441e3b256209"
+        },
+        "source_snapshot": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\source_after_complex_fix\\source.manifest.json",
+        "source_snapshot_sha256": "ed99c13061acd4c93da7786f1864be341799f6fd22541efe8513b49d0ffea851",
+        "source_archive_sha256": "9f77c4aa70bc96a76e618fef8ec08ac4162206327ad5e4facf82601b1d8a978b",
+        "source_member_count": 424,
+        "current_owned_bytes_match_executed_materialized_source": true,
+        "test_counts": {
+          "tests": 37,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "test_duration_seconds": 3.199,
+        "test_command": [
+          "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+          "-X",
+          "utf8",
+          "-m",
+          "pytest",
+          "-q",
+          "tests/research/test_conditional_operator_cli.py",
+          "tests/research/test_operator_decision_cli.py",
+          "tests/transfer/test_conditional_operator_lda.py",
+          "tests/transfer/test_operator_lda.py",
+          "tests/transfer/test_conditional_noise.py",
+          "tests/transfer/test_noise_model.py",
+          "--junitxml=tmp/conditional_state_20261006/implementation/complex_fix_green.xml"
+        ],
+        "test_exit_code": 0,
+        "ruff_command": [
+          "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+          "-X",
+          "utf8",
+          "-m",
+          "ruff",
+          "check",
+          "src",
+          "experiments",
+          "tests"
+        ],
+        "ruff_exit_code": 0,
+        "diff_check_exit_code": 0,
+        "original_red": {
+          "missing_interface_collection_errors": 1,
+          "owner_cases": 6,
+          "owner_failures": 6,
+          "caller_cases": 3,
+          "caller_failures": 3
+        },
+        "standards_confirmed_complex_ingress": {
+          "priority": 2,
+          "paths_confirmed": 6,
+          "red_preserved_in": "tmp/conditional_state_20261006/standards/complex_ingress_red*",
+          "formal_new_regressions": 8,
+          "independent_final_green": "pending_reviewer"
+        },
+        "independent_theory_counterexamples": 12,
+        "independent_actual_source_spec": "pending_reviewer",
+        "public_probe": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\public_probe_after_complex_fix\\receipt.json",
+        "public_probe_exit_code": 0,
+        "public_probe_source_sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+        "public_probe_results": {
+          "conditional": {
+            "n_scored": 120,
+            "n_targets": 20,
+            "binary_auc": 0.836,
+            "mean_nll_fixed_equal_prior": 0.5400247992933714,
+            "mean_brier": 0.1791427254413442,
+            "exact_reload_replay": true,
+            "model_unchanged_at_predict": true,
+            "no_raw_likelihood_multiplier": true
+          },
+          "marginal": {
+            "n_scored": 120,
+            "n_targets": 20,
+            "binary_auc": 0.8330000000000001,
+            "mean_nll_fixed_equal_prior": 0.5474309252445594,
+            "mean_brier": 0.18289370368618058,
+            "exact_reload_replay": true,
+            "model_unchanged_at_predict": true,
+            "no_raw_likelihood_multiplier": true
+          }
+        },
+        "public_probe_fit_role": "observed_native_continuation_not_unknown_filter_state_identification",
+        "physical_state_identification": "not_delivered_by_this_slice",
+        "full_public_matrix": "parent_scheduled_not_run_by_author",
+        "full_suite": "parent_scheduled_not_run_by_author",
+        "adult_confirmation": "not_run",
+        "thread_environment": {
+          "PYTHONPATH": "materialized/src for public; main/src for directed tests",
+          "OMP_NUM_THREADS": "1",
+          "MKL_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1"
+        },
+        "original_D_tree_modified": false,
+        "raw_data_modified": false,
+        "commit_performed_by_author": false,
+        "canonical_guides_modified_by_author": false,
+        "evidence": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\doc\\evidence\\conditional_state_20261006.zh.md",
+        "guide_snippets": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\guide_snippets.zh.md",
+        "patch": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\conditional_state_20261006\\implementation\\owned_implementation.patch",
+        "artifact_sha256": {
+          "complex_fix_green.xml": "9ccce7af02fdc0ca52a02bfde215e191cededf00d384608d2e5365747f4228ab",
+          "complex_fix_green.log": "b6a97764df3f66e5b8f7bc86b24558219a32a9446e400c128dcaafe3697642fa",
+          "complex_fix_ruff.log": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+          "complex_fix_diff_check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "public_probe_after_complex_fix.log": "0a5bc7f13c99037cf871fdfa112e1bdd6aab8f39c49fa3ed7b5f4d6ac0376637",
+          "public_probe_after_complex_fix/receipt.json": "97d315f673bf671cee70d4b7422f9a07c66863332fe57ce8dde01269f1190d6b",
+          "guide_snippets.zh.md": "f8e5084c36d78d1ab4d151e11a224065d9570efc4a28b8a941e55d03aa6c1c8e",
+          "handoff.zh.md": "72ec0de333de5d80c013e70e416bad649a710e920b4aa56a9d2ed778b501e8a2",
+          "owned_implementation.patch": "e7e7870fae5a0379d5dbf9d3367820dc44944673d5cbbf7bd69f2c0e80a1cefa"
+        }
+      }
+    }
+  },
+  "concurrent_source_run": {
+    "log_sha256": "4e236b22dc0ccf3b697294a0dc73d1ea0f0de5b9723124f7f5763f8fdac0f824",
+    "role": "one resume source guard detected normal concurrent operator edits; invalid acceptance, not hidden",
+    "source_guard_retry": {
+      "local_artifact": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\prior_control_20261006\\runner\\source_guard_retry.xml",
+      "sha256": "f0b2ab2d90f67dd7ee93755807bf05e5045b20ea3aa5b3a8a3e48755c2aa20ca",
+      "passed": 1
+    }
+  },
+  "limits": [
+    "validation sets overlap; counts not added",
+    "public matrix outcomes recorded separately",
+    "native observed-continuation is not unknown filter-state identifiability",
+    "no adult confirmation or cloud launch"
+  ]
+}

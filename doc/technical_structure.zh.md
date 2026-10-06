@@ -6,8 +6,9 @@
 
 ## 主链与接口
 
-[g-prior](evidence/calibration_g_prior_20261006.zh.md)由`transfer.kernel_prior`编译canonical spec与immutable precision root；continuous初始化、NumPy joint QR和Torch objective共享该root。新g `/5`保存prior/reference与actual-C posterior statistics数值载荷，load核root/spec/C/source及actual posterior关系；ensemble raw program与producer匹配。legacy ridge数值路径独立，runner/resume由主线整合。
+[g-prior](evidence/calibration_g_prior_20261006.zh.md)由`transfer.kernel_prior`编译canonical spec与immutable precision root；continuous初始化、NumPy joint QR和Torch objective共享该root。新g `/5`保存prior/reference与actual-C posterior statistics数值载荷，load核root/spec/C/source及actual posterior关系；ensemble raw program与producer匹配。legacy ridge数值路径独立，runner已整合g与same-ridge AR面板隔离及structured rank failure；历史M1续跑仍只准入同src bytes。
 compiler保存原design root以重核投影数值rank；同一个`validate_binding`将reference record身份/支持/design SHA与model actual C ledger、basis/input绑定交叉核验，避免两份self-summary各自成立而关系不成立。
+[trace控制](evidence/calibration_trace_control_20261006.zh.md)与g共享`uses_calibration_reference`和九数组，但使用独立model `/6`；scalar precision由compiler数值root派生，callers不重造G。runner的`fixed_reference_kernel_prior`面板核完整28格并直接用原requested指标owner产生12组同g形状对照；same-ridge AR面板继续单独归因。
 
 [固定前缀条件AR](evidence/continuous_fixed_prefix_20261005.zh.md)深化现有`ContinuousDecisionModel`的同一fit/score/save/load Interface：
 `conditioning_samples`与`noise_estimator`在recipe、实际noise/model与包内binding一致；model/noise `/4`保存真实初始化、优化和支持来源。
@@ -32,7 +33,7 @@ Module组织现有NN/经典trial/raw连续Adapter，`candidate_evidence`继续�
 - `research.comparison`统一物理证据、fit/score数值输入与显式`ContrastPlan`；executor复用另绑定实际inner输入、完整decision上下文和原执行身份。inline与完整统计共用配对门禁。
 - `data.ea_artifact.EAFitPlan`集中授权、算子与reference，fit/save/load核实际attested parent并数值重放；新输入只能用已冻结state transform。普通物理cache与checkpoint拒绝旧EA伪电压。
 - `baselines.riemann`提供ERP原型增广；`structured_erp`提供Toeplitz/pooled/temporal等纯数值状态；`temporal_transfer`区别固定cosine与参与者等权源时间基。通过`TargetRecipe`、`fit_calibration_candidate`、`CalibratedPredictor(selector_mode="fixed_erp")`连接个人未知标签推理。
-- `data.harmonic`是独立segment的离线自适应工频研究处理；`transfer.noise_model`与`operator_lda`承担联合raw/state协方差和固定A/B传播，尚不自动识别真实Γ/Ω。
+- `data.harmonic`是独立segment的离线自适应工频研究处理；`transfer.noise_model`与`operator_lda`承担联合raw/state协方差和固定A/B传播。后续[B06](evidence/conditional_state_20261006.zh.md)由同noise owner编译identified raw support/gain/Schur，conditional operator同时调整class mean与covariance；`run_operator_decision_study.py`连接实际fit/load/无标签predict。`probe_conditional_operator_native.py`保存真实native maps/absolute支持，state在该验收中为已观察response residual，尚不自动识别未知滤波state的Γ/Ω。
 - `transfer.continuous_decision`封装连续ERP核拟合、条件核不确定性、候选似然和冻结重放；`raw_continuous`适配BNCI原始字节与合法C/T，`run_bnci_continuous_study.py`连接requested outcomes、coverage、NLL和真实可用时间。
 - `transfer.decision_experiments`在声明的统一scope上扩展prior/decision/head/scratch有限归因，记录独立物理组数；不改变默认Q1配方。
 

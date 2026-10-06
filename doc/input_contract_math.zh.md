@@ -2,6 +2,7 @@
 
 [固定reference g-prior](evidence/calibration_g_prior_20261006.zh.md)以每record `Dbar=(I−Q_ZQ_Zᵀ)D_C` 的增量AR0 thin QR构建 `G=R_CᵀR_C`，读完整授权C；prior precision root `R_C/√g`同时进初始化和fixed32 NumPy/Torch目标，η期间不变，Σ仍profile为Q/nTail。g程序新/5 actual roots与source保存；held不建G，C-inner每fold单独编译。
 rank分辨尺度同时使用实际原design与residual thin roots，threshold记录投影roundoff参考，不以近零residual自己的最大值认证纯nuisance方向；weak方向只在数值可分辨时准入，不能拿full rank证明统计识别。reference ledger与actual C/basis/input/support在同一binding owner交叉核对。
+[trace-isotropic控制](evidence/calibration_trace_control_20261006.zh.md)在同C-reference上固定`λ_C=tr(G)/(kg)`与`H_I=I/λ_C`，故`tr(GH_I)=tr(GH_g)=kg`。k为common与target全部kernel坐标数；这是AR0参考上的row-prior能量匹配，不保证final fitted-noise能量或有效自由度相等。compiler从同thin root派生precision，held及η不重建G/λ；一般basis不变性仅属g。
 
 [代码实施](evidence/ensemble_implementation_20261005.zh.md)以`ensemble_views`分开无标签物理view与授权CalSelection；
 真实359 source点经FFT180保留179，358点仍诚实输出178。每组FiniteFilterOperator/共享resample/baseline执行receipt和lineage保留。
@@ -13,6 +14,7 @@ AR显式阶数使用stationary innovations且同步Y/D；[fixed32条件估计量
 源采样点比较，Y/D同步白化并保存实际条件prefix；prefix同时可能更新ERP/kernel后验，不能只改noise创新。
 g-prior信息矩阵来自授权C，不逐held候选重建。外部状态Gaussian条件模型同时使用候选相关均值
 与Schur协方差；确定padding和F(X)不能当新增独立噪声/观测。
+[B06实际条件接口](evidence/conditional_state_20261006.zh.md)在标准化Σ_X的已识别支持内解算并检查Ω的range，不以未声明pinv恢复未观测方向。条件response的shared affine support与null class contrast是当前LDA切片的准入限制；零随机response不补epsilon。caller必须证明实际feature map的读取区间和available_at，维度名/区间声明不替代native映射；新增raw条件与response不能重复消费同一确定观测。
 ERP保真与white-noise gain来自完整T映射；输出重叠率和0/2/8秒距离仅作研究分层，不是启用规则。
 研究框架现显式表达native `T(x)=Gx+b`；注入/white-noise增量只用G，短及输出网格为sample×physical-channel。external-only注入的短参照为零时relative error不可用；不能改flatten顺序或用输出投影条件数代替完整G的增益/condition。
 

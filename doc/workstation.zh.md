@@ -1,6 +1,7 @@
 # BrainSync工作站指南
 
 [calibration g-prior raw研究程序](evidence/calibration_g_prior_20261006.zh.md)仅在后端研究FittedEnsemble接通，保存全C/reference/root/fit身份；工作站日常CalibratedPredictor与新成人九选一确认仍按原计划，不能把该软件包直接作为已验证工作站程序。
+[trace控制及28臂先验对照](evidence/prior_control_20261006.zh.md)沿用后端只读研究入口；模型`/5`与`/6`各自保存真实prior程序与C编译状态。未知目标score不重估λ或g，开发矩阵的公共36选一结果不替代工作站九选一确认。
 
 2026-10-05 [多专家分块研究](evidence/deep_research_plan_20261005.zh.md)已完成本轮[后端代码与独立软件验收](evidence/ensemble_implementation_20261005.zh.md)，工作站接入仍在后续范围。
 研究`FittedEnsemble`保存一份包含真实专家state/profile/固定池/校准温度的包，load后score只接无标签view；
@@ -8,6 +9,7 @@ BrainSync日常入口仍消费已有CalibratedPredictor，不把公共36选一�
 后续[fixed32 raw条件模型](evidence/continuous_fixed_prefix_20261005.zh.md)属于该后端研究路径；prefix、真实过去事件与candidate prior按研究协议解释，尚未成为个人默认程序。
 该研究包绑定实际noise估计器、prefix支持、QR/gradient源码与求值记录；只读score和load不重新拟合noise、kernel或温度。真实A01重放通过仍只属公共开发软件证据。
 边界框架的short-only映射与完整增量测量仍是后端native-grid研究参考；工作站预处理、可部署state拟合和未知目标程序须另接完整时间/通道合同，不将observed-long teacher用于真实推理。
+[B06 conditional operator/CLI](evidence/conditional_state_20261006.zh.md)已提供后端只读研究调用；当前native探针的state仅为已观察续段，不作为工作站未知边界state部署程序。个人推理仍需另接真实九选一任务、采集通道与可用时间合同。
 未来统一个人包由现有calibrated owner保存各专家冻结状态、候选词表、校准/输入来源与概率校准程序，
 未知目标score不提供真值；K0不拟合目标温度/统计/gating。四库或BNCI36选一开发不能替代新成人九选一确认。
 

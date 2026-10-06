@@ -1,0 +1,116 @@
+{
+  "schema": "n2p3_prior_control_analysis_plan/1",
+  "evidence_scope": "public_calibration_development",
+  "unit": "participant",
+  "requested_participants": 8,
+  "requested_decisions_per_participant": 6,
+  "baseline": "ar8_burg_ridge1",
+  "shape_contrasts": [
+    {
+      "noise_order": 0,
+      "noise_estimator": "burg",
+      "g": 1.0,
+      "baseline": "ar0_burg_trace1",
+      "alternative": "ar0_burg_g1"
+    },
+    {
+      "noise_order": 0,
+      "noise_estimator": "burg",
+      "g": 9.0,
+      "baseline": "ar0_burg_trace9",
+      "alternative": "ar0_burg_g9"
+    },
+    {
+      "noise_order": 0,
+      "noise_estimator": "burg",
+      "g": 99.0,
+      "baseline": "ar0_burg_trace99",
+      "alternative": "ar0_burg_g99"
+    },
+    {
+      "noise_order": 8,
+      "noise_estimator": "burg",
+      "g": 1.0,
+      "baseline": "ar8_burg_trace1",
+      "alternative": "ar8_burg_g1"
+    },
+    {
+      "noise_order": 8,
+      "noise_estimator": "burg",
+      "g": 9.0,
+      "baseline": "ar8_burg_trace9",
+      "alternative": "ar8_burg_g9"
+    },
+    {
+      "noise_order": 8,
+      "noise_estimator": "burg",
+      "g": 99.0,
+      "baseline": "ar8_burg_trace99",
+      "alternative": "ar8_burg_g99"
+    },
+    {
+      "noise_order": 8,
+      "noise_estimator": "conditional_profile",
+      "g": 1.0,
+      "baseline": "ar8_conditional_profile_trace1",
+      "alternative": "ar8_conditional_profile_g1"
+    },
+    {
+      "noise_order": 8,
+      "noise_estimator": "conditional_profile",
+      "g": 9.0,
+      "baseline": "ar8_conditional_profile_trace9",
+      "alternative": "ar8_conditional_profile_g9"
+    },
+    {
+      "noise_order": 8,
+      "noise_estimator": "conditional_profile",
+      "g": 99.0,
+      "baseline": "ar8_conditional_profile_trace99",
+      "alternative": "ar8_conditional_profile_g99"
+    },
+    {
+      "noise_order": 32,
+      "noise_estimator": "conditional_profile",
+      "g": 1.0,
+      "baseline": "ar32_conditional_profile_trace1",
+      "alternative": "ar32_conditional_profile_g1"
+    },
+    {
+      "noise_order": 32,
+      "noise_estimator": "conditional_profile",
+      "g": 9.0,
+      "baseline": "ar32_conditional_profile_trace9",
+      "alternative": "ar32_conditional_profile_g9"
+    },
+    {
+      "noise_order": 32,
+      "noise_estimator": "conditional_profile",
+      "g": 99.0,
+      "baseline": "ar32_conditional_profile_trace99",
+      "alternative": "ar32_conditional_profile_g99"
+    }
+  ],
+  "primary": "participant_macro_operational_hit_with_unavailable_as_incorrect",
+  "secondary": [
+    "prediction_and_probability_coverage",
+    "NLL_and_Brier_with_exact_support",
+    "rescued_harmed_lost_baseline_outputs",
+    "within_kind_declared_g_strength_sensitivity"
+  ],
+  "bootstrap": {
+    "resamples": 20000,
+    "seed": 20261006,
+    "interval_probability": 0.95,
+    "shared_participant_indices": true,
+    "refit": false
+  },
+  "development_gate": "hit_not_lower; paired_NLL_available_and_not_higher; no_lost_baseline_prediction_or_probability; no_increased_participant_failures",
+  "limits": [
+    "8 independent participant units; six correlated CV folds per participant",
+    "one deterministic target-only seed; no source training randomness inference",
+    "trace controls use a fixed declared basis; matching is in AR0 C-reference energy",
+    "all 28 arms and 12 shape contrasts reported without significance selection",
+    "public development; no population noninferiority or adult efficacy claim"
+  ]
+}
