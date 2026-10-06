@@ -94,6 +94,7 @@ M1从物理冻结的materialized源码运行，绑定计划/原MAT哈希/venv；
 保留身份/fit/时间/完整候选/失败分母与artifact守卫，不以多层catch或默认参数吞掉失败。
 [B08能量匹配控制](evidence/prior_control_20261006.zh.md)由同prior owner派生`λ_C`并集中reference/kind规则，init/Burg/NumPy/Torch/OOF共享冻结root。真实28臂panel必须固定C、basis、prefix、noise与温度；typed rank failure保持requested分母及actual scored0，矩阵不得从原M1旧包改签复用。
 [B06条件路径](evidence/conditional_state_20261006.zh.md)由noise owner持有gain/Schur与支持合同，operator及CLI只消费冻结状态。生产SHA按实际执行字节绑定；相关源码与测试以LF跨checkout保持，修后probe与原RED各用自己的capsule。外部signal/means/operator的finite-real检查集中在ingress，数值核不散落重复防御；真实映射和producer核验仍保留。
+按用户2026-10-06要求，代码质量优先通读实际调用链、公式及运行证据，再选能区分新旧行为的必要验证；不以重复本地全集代替阅读。真实先验矩阵的后验误判采用原失败数组→独立QR/SVD→后向关系修复，40项关联/实际spawn通过；413文件旧全集不追认为修后源。全矩阵重新冻结完整执行源，原101包保留历史producer，当前程序不改签复用它们。
 共享raw/view缓存和ready DAG消费同一CPU总预算、GPU容量及HostMemoryAdmission；四worker各6线程加1调度，
 准备/评价从总预算分配，尾部记录capacity/ready/active。本轮仅数学/合同验证，未实测新云吞吐。
 有并发原树时采用已绑定当前字节的隔离worktree，分块提交，交付净树；不reset/clean/stash他人内容。

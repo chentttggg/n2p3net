@@ -9,6 +9,7 @@
 [g-prior](evidence/calibration_g_prior_20261006.zh.md)由`transfer.kernel_prior`编译canonical spec与immutable precision root；continuous初始化、NumPy joint QR和Torch objective共享该root。新g `/5`保存prior/reference与actual-C posterior statistics数值载荷，load核root/spec/C/source及actual posterior关系；ensemble raw program与producer匹配。legacy ridge数值路径独立，runner已整合g与same-ridge AR面板隔离及structured rank failure；历史M1续跑仍只准入同src bytes。
 compiler保存原design root以重核投影数值rank；同一个`validate_binding`将reference record身份/支持/design SHA与model actual C ledger、basis/input绑定交叉核验，避免两份self-summary各自成立而关系不成立。
 [trace控制](evidence/calibration_trace_control_20261006.zh.md)与g共享`uses_calibration_reference`和九数组，但使用独立model `/6`；scalar precision由compiler数值root派生，callers不重造G。runner的`fixed_reference_kernel_prior`面板核完整28格并直接用原requested指标owner产生12组同g形状对照；same-ridge AR面板继续单独归因。
+实际矩阵后改`_kernel_fit_statistics`为nuisance-block QR及信息root/正交响应压缩；`score`载荷由method `all_C_actual_noise_per_record_diffuse_QR_response`明确表示`Q_DᵀY`，不再表示`DᵀY`。posterior核验使用`R M=b`后向关系，避免两次normal-equation solve放大病态；旧包由自己的冻结source解释。runner滚动持有最多worker数的participant任务，共享abort signal只在真正合同失败后停下一fit，合法rank/fit failure仍保留requested输出。
 
 [固定前缀条件AR](evidence/continuous_fixed_prefix_20261005.zh.md)深化现有`ContinuousDecisionModel`的同一fit/score/save/load Interface：
 `conditioning_samples`与`noise_estimator`在recipe、实际noise/model与包内binding一致；model/noise `/4`保存真实初始化、优化和支持来源。

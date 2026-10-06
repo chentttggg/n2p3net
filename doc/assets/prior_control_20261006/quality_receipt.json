@@ -3,12 +3,12 @@
   "status": "passed",
   "current_source_sha256": {
     "src/transfer/kernel_prior.py": "22e369488baebf09f2661bed459a187999b8f4290723670c24910e43ac7b31bd",
-    "src/transfer/continuous_decision.py": "1cfa032a71ec725d7cb43370c9b14d22f5610aea8c1faea0de8bc88a0dc1a217",
+    "src/transfer/continuous_decision.py": "5448f6c188498918dc84685450144fde643256d86394b51a7a6be2d13d12da9b",
     "src/transfer/continuous_gradient.py": "f3e57c89503231641a627cb418f44603b9eb94aa601821f97602b1b2df57708a",
     "src/transfer/ensemble_fit.py": "8ab67829dbe4ca6cc2b2f3238c1bdccd28b5a9747554715f50847a4173496049",
     "src/transfer/noise_model.py": "fe393308b556265f4fcce5df5a5002068744d6899a2bfb355d4674e0c2919e11",
     "src/transfer/operator_lda.py": "e8540d6d73864e65078b4c4b4b6c2ca85da696ba38aa1e4fce566e4b88aeb75d",
-    "experiments/run_candidate_ensemble_study.py": "1b83e5786fa7016c13180d157aa3db198b7d844714f92f59dc2e590bab052be5",
+    "experiments/run_candidate_ensemble_study.py": "23eb8361d1eb5bc34d8f262f56090457cc5824b1649066c9dcb5f2ee8aeef6da",
     "experiments/run_operator_decision_study.py": "48ace78d5d7ecce4deb938bb4cce2182e8af8299ba68809fda9cbfabc12f1f4a",
     "experiments/probe_conditional_operator_native.py": "2196df21b3a15287d50468ff410ec6352dabf4661330be70eab15ff711aba16c"
   },
@@ -65,7 +65,8 @@
       "source_file_count": 413,
       "source_bytes_unchanged": true,
       "source_manifest_sha256": "70b2dafa8990e02bb41864e5b72fa25f5b302464beca23a0c070f529067562a1"
-    }
+    },
+    "source_role": "original 435-member delivery before the actual matrix QR-statistics defect; not repeated or relabeled as current"
   },
   "prior_control": {
     "Spec": {
@@ -823,5 +824,94 @@
     "public matrix outcomes recorded separately",
     "native observed-continuation is not unknown filter-state identifiability",
     "no adult confirmation or cloud launch"
-  ]
+  ],
+  "post_matrix_correction": {
+    "receipt": {
+      "schema": "n2p3_qr_posterior_and_matrix_abort_fix/1",
+      "created_utc": "2026-10-06T07:41:24.501799+00:00",
+      "source_sha256": {
+        "src/transfer/continuous_decision.py": "5448f6c188498918dc84685450144fde643256d86394b51a7a6be2d13d12da9b",
+        "experiments/run_candidate_ensemble_study.py": "8f65d99553aed789ad409094e225db968ad8340d185a94be20fae83dd566aa5e",
+        "tests/research/test_candidate_study_process_transport.py": "ab92ddadbeb1625b662a88fce3df03013bd77a034204953ccf55d6b8402c6edb"
+      },
+      "counts": {
+        "tests": 40,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "checks": {
+        "pytest_exit_code": 0,
+        "ruff_exit_code": 0,
+        "diff_check_exit_code": 0
+      },
+      "actual_captured_failure": {
+        "captured_old_gate_RED_new_QR_GREEN": true,
+        "backward_relative_error": 9.852950551156357e-16,
+        "tolerance": 2.2737367544323206e-13,
+        "captured_mean_unchanged": true,
+        "no_new_fit": true,
+        "method": "all_C_actual_noise_per_record_diffuse_QR_response"
+      },
+      "full_suite_repeated": false,
+      "scope": "actual ill-conditioned posterior capture plus changed prior/state and genuine spawned success/failure behavior"
+    },
+    "unresolved_review": "independent Spec passed; Standards green recheck, final receipt sealing; actual A02 new-source fit pending",
+    "old_run_status": "controlled_stopped; 101 original packages preserved; no new source signing or fit reuse",
+    "interrupt_regression": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_sha256": "a373e0ef4673247e8da3ae7abef4c6834ab537d558cd87194839283b53bb4782"
+    },
+    "Spec": {
+      "schema": "prior_control_actual_posterior_review/1",
+      "created_utc": "2026-10-06T07:39:29.106130+00:00",
+      "conclusion": "single-cell old gate false rejection supported by actual-W QR/SVD and held numerical sensitivity",
+      "original_source_archive_sha256": "cecaf999eafcc159c1a0f4835cdc9c03ae0d1ba6aa86fb7c9bb97f63d6a2d5f2",
+      "actual_cell": "ar32_conditional_profile_g99",
+      "participant": "A02",
+      "fold": 0,
+      "optimizer_reproductions": 1,
+      "original_gate_RED": true,
+      "successful_model_published": false,
+      "capture_wall_seconds": 83.52090709999902,
+      "additional_fits_by_comparison_or_sensitivity": 0,
+      "executed_script_sha256": {
+        "capture": "bc99b4e837fc65ef3f65b098634bf4d64eeda219b51534ea19a9f34fd7846844",
+        "actualW_comparator": "159c1eda213aacc5a07fdf66b4a293180b939f535e3287cb4acfc8971496fbd7"
+      },
+      "script_formatting_after_execution": "Ruff format only in reviewer tmp; original execution hashes retained above; no production source format/edit",
+      "formatted_script_sha256": {
+        "capture_failed_cell.py": "7c178bdebaba349b3fd7ca30dcd4a6170a0a3ad327e71834fdc8fbe9cc9a4b81",
+        "compare_posteriors.py": "42c84bda3dfbf5096e71d82316b2215151022c7f820983dcc121e5b544ebbb76",
+        "held_sensitivity.py": "0cc431f047804c2c64042b4f1e72da617d3e8ebe20172edab5e0a0a0dbf86c8f"
+      },
+      "evidence_sha256": {
+        "capture_receipt.json": "a7e415406be3a3d2c5defd6896d3e1003f211dc07f31bd2c2ad501dd6abc426e",
+        "failed_cell_arrays.npz": "1bc506bd5ee1a1dccfe4decf3d5ad58cdefd05123c07ae134485415e23c8a2d5",
+        "failed_cell_metadata.json": "a3ac531fe62bff776ccceddc3ec78b915308cd545231a0cc833beae2056e66c2",
+        "comparison_actualW.json": "bfbd9f6cdbc77976561a5c6490cbaf58608a186c287f0f7db5df2faf806cfadb",
+        "independent_actualW_arrays.npz": "0755cbff16a17ce4e3d5ed41a460265984ae9994d84e0241cd35e7fc8d73d3b8",
+        "held_sensitivity.json": "01c2eb3bee61d7a9696d38e01cc8198ca681b1cce7e7c0fcc375d2d6d83697ca",
+        "review.zh.md": "078237f9d2a85ee38cfbb775f768a63e35fe5725ff7bebdbf023a846d498fc90",
+        "independent_qr_fix.json": "8fac88d8468dd4c85851bddd670ce4f4226f35dbe6ca513714e5d4180bf9da1f",
+        "executed_qr_fix.py": "d882cf0db241332ff2b50c1c0eade7543c75a317e9ff0ee2dab9b3f7a4aec59d"
+      },
+      "full_matrix_accepted": false,
+      "old_models_resigned": false,
+      "production_fix_owner": "root",
+      "source_oracle_boundary": "actual frozen W is confirmed numerical input; independent QR/Householder/SVD posterior solvers; held same-producer sensitivity labeled separately",
+      "candidate_QR_fix_independent_assessment": "passed on original captured cell without refitting; mean/covariance/changed-g relations retained; fixed-W units passed",
+      "candidate_core_sha256": "5448f6c188498918dc84685450144fde643256d86394b51a7a6be2d13d12da9b",
+      "candidate_backward_error": 9.852950551156357e-16,
+      "candidate_backward_bound": 2.2737367544323206e-13
+    },
+    "source_sha256": {
+      "src/transfer/continuous_decision.py": "5448f6c188498918dc84685450144fde643256d86394b51a7a6be2d13d12da9b",
+      "experiments/run_candidate_ensemble_study.py": "23eb8361d1eb5bc34d8f262f56090457cc5824b1649066c9dcb5f2ee8aeef6da",
+      "tests/research/test_candidate_study_process_transport.py": "896eeb235261630883402f2127bd776bef51cd31f40fbe6f183f51d768c26c6e"
+    }
+  }
 }

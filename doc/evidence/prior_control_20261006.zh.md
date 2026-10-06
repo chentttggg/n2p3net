@@ -33,3 +33,13 @@ counterexamples检查reference能量恒等式、g与λ语义、basis变换、训
 主树合并B06后的完整pytest为2670通过、19跳过、0失败/错误，共2689项；Ruff/diff-check通过，413个源/测试/入口/指导文件byte guard不变。[质量凭证](../assets/prior_control_20261006/quality_receipt.json)绑定两轴、作者、原并发source-guard失败与有效复验。原失败源/日志和M1实际包保留；source checkpoints只表示父版本，实际SHA仍绑定执行byte。
 
 本轮以canonical prior owner集中kind/reference规则、一次编译root、多消费者共享纯数值路径，未在caller复制G或λ推导。软件质量不建立公共收益或成人确认；完整计划见[1344格开发矩阵](../assets/prior_control_20261006/plan.json)和[分析规则](../assets/prior_control_20261006/analysis_plan.json)。
+
+## 真实矩阵暴露的数值核验缺陷
+
+首轮从435成员物理源启动2workers×4threads，在A02/fold0/AR32 profile g99触发后验关系ValueError。原Pool在父级取得exception后等待其余队列，已有worker继续其他participant；本轮核实进程身份后受控停止，101原包保留，退出15、源码与计划byte不变。原progress仍running不构成完成，独立分析器明确返回controlled_stopped/metrics_finalized=false。
+
+一次必要的实际失败重现保存5个授权C的数组、design、prior/noise/M/H/statistics，83.52秒、原gate RED，未发布成功模型。实际W下独立simultaneous QR、Householder nuisance quotient和SVD支持数值误判：原均值绝对差8.53574e-17，固定2e-9 coefficient阈值却被相对量2.09576e-9越过；kernel信息root condition约1.0195e7，normal equations condition约1.039e14。posterior-standardized均值差平方约1e-16；同held全部36候选winner一致，归一化logp变化不超过9.43e-8。这个单格界限不追认为所有格效能。
+
+修复使用nuisance-block QR，保存信息root与正交响应`Q_DᵀY`，method明确新语义；核验augmented QR的`R M=b`后向误差，未改实际fitted M/H、noise优化或H的原2e-9关系限。原捕获后向误差9.85e-16，低于`64 eps k=2.27e-13`；错误均值、H×1.01及真实g99改g9而保留旧posterior仍被拒绝。worker改滚动ready任务及共享abort signal，合同故障后peer在下一fit前停止，不将合法typed rank failure当父故障。
+
+40项必要关联验证、真实spawn成功/停止、Ruff/diff-check通过，按用户要求不重复全集代替源码阅读。原2670/19完整测试与435源属于修前交付；修后源与独立两轴另记。[同1344格新计划](../assets/prior_control_20261006/plan_v2.json)只改变执行源清单，科学/资源字段不变；旧101包不重签或复用成新实现。完整新矩阵仍按原对照和失败分母执行。
