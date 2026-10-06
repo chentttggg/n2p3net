@@ -3,7 +3,7 @@
   "status": "passed",
   "current_source_sha256": {
     "src/transfer/kernel_prior.py": "22e369488baebf09f2661bed459a187999b8f4290723670c24910e43ac7b31bd",
-    "src/transfer/continuous_decision.py": "5448f6c188498918dc84685450144fde643256d86394b51a7a6be2d13d12da9b",
+    "src/transfer/continuous_decision.py": "a9fd4ff6548360912e7e1cc52990b6c0b0870669e4f81a79247526acbc43094e",
     "src/transfer/continuous_gradient.py": "f3e57c89503231641a627cb418f44603b9eb94aa601821f97602b1b2df57708a",
     "src/transfer/ensemble_fit.py": "8ab67829dbe4ca6cc2b2f3238c1bdccd28b5a9747554715f50847a4173496049",
     "src/transfer/noise_model.py": "fe393308b556265f4fcce5df5a5002068744d6899a2bfb355d4674e0c2919e11",
@@ -1224,6 +1224,171 @@
       "performance_claim": null,
       "full_matrix_required_independent_of_preflight_outcome": true
     },
-    "full_matrix_status": "full_matrix_v2 actually running; 1344 agreed cells, final acceptance pending"
+    "full_matrix_status": "v2 terminal failed; 72 saved packages preserved; no final metrics accepted"
+  },
+  "common_posterior_owner": {
+    "source_sha256": "a9fd4ff6548360912e7e1cc52990b6c0b0870669e4f81a79247526acbc43094e",
+    "focused_tests": 60,
+    "full_suite_repeated": false,
+    "Spec": {
+      "schema": "prior_control_common_posterior_owner_review/1",
+      "created_utc": "2026-10-06T09:09:47.319510+00:00",
+      "status": "passed_narrow_candidate",
+      "core_source_sha256": "a9fd4ff6548360912e7e1cc52990b6c0b0870669e4f81a79247526acbc43094e",
+      "capsule_members": 436,
+      "candidate_source_only_change": "src/transfer/continuous_decision.py",
+      "candidate_capsule_bytes_unchanged": true,
+      "actual_cases": [
+        {
+          "cell": "A01_fold1_trace1",
+          "gate": "accepted_new_common_owner_point",
+          "prior_kind": "calibration_trace_isotropic",
+          "mean_backward_relative": 1.1679590763890559e-17,
+          "mean_backward_bound": 2.2737367544323206e-13,
+          "covariance_relative_vs_independent_SVD": 4.241064314331486e-15,
+          "covariance_bound": 2e-09,
+          "mean_difference_vs_independent_SVD": 1.0400345326126044e-23,
+          "posterior_standardized_mean_delta_squared_vs_SVD": 2.0481683173982288e-27,
+          "mean_difference_vs_independent_Householder_QR": 9.073804723022061e-24,
+          "covariance_relative_vs_independent_Householder_QR": 1.2883237345517666e-15,
+          "rejections": {
+            "wrong_M": "saved kernel posterior differs from its actual prior and fitted C information",
+            "wrong_H": "saved kernel posterior differs from its actual prior and fitted C information",
+            "valid_prior_g1.0_to_9.0": "saved kernel posterior differs from its actual prior and fitted C information"
+          },
+          "prior_root_unchanged": true,
+          "source_capture_role": "new numeric point from old raw diagnostic; old model not loaded or re-signed"
+        },
+        {
+          "cell": "A02_fold0_g99",
+          "gate": "accepted_new_common_owner_point",
+          "prior_kind": "calibration_g",
+          "mean_backward_relative": 6.001910615871728e-18,
+          "mean_backward_bound": 2.2737367544323206e-13,
+          "covariance_relative_vs_independent_SVD": 4.818206975545233e-12,
+          "covariance_bound": 2e-09,
+          "mean_difference_vs_independent_SVD": 6.722043229095794e-18,
+          "posterior_standardized_mean_delta_squared_vs_SVD": 7.439135713764805e-18,
+          "mean_difference_vs_independent_Householder_QR": 6.713573102221081e-18,
+          "covariance_relative_vs_independent_Householder_QR": 5.926185108896725e-12,
+          "rejections": {
+            "wrong_M": "saved kernel posterior differs from its actual prior and fitted C information",
+            "wrong_H": "saved kernel posterior differs from its actual prior and fitted C information",
+            "valid_prior_g99.0_to_9.0": "saved kernel posterior differs from its actual prior and fitted C information"
+          },
+          "prior_root_unchanged": true,
+          "source_capture_role": "new numeric point from old raw diagnostic; old model not loaded or re-signed"
+        }
+      ],
+      "preserved_conditional_owner_functions": [
+        "_conditional_prediction",
+        "_joint_posterior",
+        "_event_design",
+        "_prior_binding",
+        "_kernel_fit_statistics"
+      ],
+      "fits_executed": 0,
+      "old_models_loaded_or_resigned": false,
+      "new_models_published": false,
+      "full_matrix_accepted": false,
+      "evidence_sha256": {
+        "candidate_source.json": "61cde2116650b55bdde49bf3a06f8b62b008ed326720028b6e3c0b4c9d033984",
+        "candidate_source.patch": "f866ad85ece68e39f85f69671c4bf4b112a3722f868baea1e87506b76fd8a812",
+        "check_common_owner.py": "159cfa5a438c54e5e6f901c2ebc5e12fc070261e68e8db2a3e137b9479138b1c",
+        "common_owner_assessment.json": "fefefd34a4fe2e3b628e348028796bf33b02125e9059077598d8a59fcfbe8763",
+        "common_owner_assessment.log": "3043664f3a677352acdffafad8d4094d28052f9e85d378683339a95d22275db6",
+        "common_owner_review.zh.md": "e47f1a91127c5960f29e9a6ad1fbf062b4968d0b19f396098854c9c39fa74864",
+        "receipt.json": "e8f1d1fc65c1257c18eb61435cc3249d6a383fcead2f6d3856a638b2bbcb9123",
+        "review.zh.md": "bd3e8f9af7ea44f50a8861dc96582b11469259d513741c82bd48727136ce9a70"
+      },
+      "source_boundary": "candidate capsule from old v2 source plus exact a9fd core; no inference claim for any other source",
+      "next_required": "source-bound actual fit/save/load/replay, then full requested matrix; production owner root"
+    },
+    "v2_failure": {
+      "schema": "prior_control_actual_v2_posterior_review/1",
+      "created_utc": "2026-10-06T08:54:10.563877+00:00",
+      "conclusion": "Actual single-cell gate false rejection supported by same-W independent quotient QR/SVD and held sensitivity; common final posterior/statistics owner recommended",
+      "source_archive_sha256": "7c728b8e46f01de38f72af99994007697a6840b9d710fa245a10f5401e8be32b",
+      "source_members": 436,
+      "actual_cell": {
+        "participant": "A01",
+        "fold": 1,
+        "expert_index": 16
+      },
+      "spec": {
+        "expert_id": "ar8_conditional_profile_trace1",
+        "family": "continuous_ar",
+        "recipe": null,
+        "profile": null,
+        "noise_order": 8,
+        "response_seconds": 1.2,
+        "n_basis": 8,
+        "conditioning_samples": 32,
+        "noise_estimator": "conditional_profile",
+        "kernel_prior": {
+          "kind": "calibration_trace_isotropic",
+          "mean_center": "zero",
+          "g": 1.0,
+          "reference_noise": "AR0_unit_innovation",
+          "information_support": "all_authorized_C",
+          "nuisance": "per_record_diffuse_affine",
+          "rank_policy": "require_full_rank"
+        }
+      },
+      "optimizer_reproductions": 1,
+      "original_gate_RED": true,
+      "capture_wall_seconds": 12.867512600001646,
+      "successful_model_published": false,
+      "gate_result_overridden": false,
+      "production_source_modified": false,
+      "source_bytes_unchanged": true,
+      "original_packages_unchanged": true,
+      "guarded_model_count": 72,
+      "guarded_ensemble_count": 72,
+      "gate_metrics": {
+        "covariance_relative_norm": 1.8611360854463462e-14,
+        "covariance_bound": 2e-09,
+        "mean_backward_relative_norm": 4.063185720750417e-13,
+        "mean_backward_bound": 2.2737367544323206e-13,
+        "posterior_root_condition": 15.355937675082872,
+        "joint_fit_root_condition": 13900.644246880262
+      },
+      "compressed_QR_vs_SVD": {
+        "mean_absolute_norm": 1.0400345326126044e-23,
+        "covariance_relative_norm": 4.241064314331486e-15
+      },
+      "held_max_normalized_log_probability_difference": 2.3283064365386963e-10,
+      "held_winners": [
+        "row:3|column:1"
+      ],
+      "comparison_and_sensitivity_additional_fits": 0,
+      "full_matrix_accepted": false,
+      "old_models_resigned": false,
+      "executed_script_sha256": {
+        "capture": "95fd8e997cbec4383be01d17b1c03427539b9da8951004eeb7b2d9859867483f",
+        "comparator": "a7e3a165163be6bbd6e4dff0a7535007e858e8947f7834dfc04710f2ec1a8989",
+        "held_sensitivity": "4abeeb732c5b8f4549b9920c9cde647fe7d52e78528012ff32d5aadb2be12dbd"
+      },
+      "evidence_sha256": {
+        "capture_failed_cell.py": "95fd8e997cbec4383be01d17b1c03427539b9da8951004eeb7b2d9859867483f",
+        "capture.log": "fdc457a13658f2c6cbd8aabe13e3d478505904b1a20f2e71ddd968c0cbabf345",
+        "failed_cell_arrays.npz": "4716a3b6474b15e0aa5968e4b16ba9939c68903bc4f412442f178fa77346fd75",
+        "failed_cell_metadata.json": "4911f813cbf767566e0103d75721ad2de6c7b422703355e270339758eeb650f2",
+        "capture_receipt.json": "1edf61f785cdc1387b7e244bc7e2b5f4e1143f3f8140c680fc4c468ad3c3d49c",
+        "original_package_guard.json": "dcaa3b1ec6b75072e4325ae29ee71bf06f141d881e08568705ab052b17bc5718",
+        "compare_posteriors.py": "a7e3a165163be6bbd6e4dff0a7535007e858e8947f7834dfc04710f2ec1a8989",
+        "comparison_actualW.json": "00b67e16a789d442fa6bcfa9be4acbb27750bf86b5dd4adf1248a0d1f1876c6c",
+        "independent_actualW_arrays.npz": "e78a301a148f274ec3aa910c99bb149a7dd4d77f654720874b8a695a2390ebcf",
+        "held_sensitivity.py": "4abeeb732c5b8f4549b9920c9cde647fe7d52e78528012ff32d5aadb2be12dbd",
+        "held_sensitivity.json": "6bce0f2c754a51d15072a74237efb98ed7cacf0df2afa347c1cdb45eb27f348f",
+        "held_sensitivity_arrays.npz": "9e4200fef790bad63f9d13f0ca397e8eb4956f4ce21f5e6c37b89b53e98e023d",
+        "review.zh.md": "bd3e8f9af7ea44f50a8861dc96582b11469259d513741c82bd48727136ce9a70"
+      },
+      "matrix_failed_run_audit": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\prior_control_20261006\\analysis_review\\acceptance_\\20261006T083944200666Z\\audit.json",
+      "production_fix_owner": "root",
+      "source_oracle_boundary": "same actual frozen W; independent Householder quotient and SVD posterior; same-producer held sensitivity separately labeled"
+    },
+    "shared_path": "one all-C compressed QR statistics/factors owner publishes and validates kernel M/H; conditional scatter, chosen W and prior unchanged",
+    "status": "meaningful tests and independent actual captured states passed; real new-source fit/replay pending"
   }
 }

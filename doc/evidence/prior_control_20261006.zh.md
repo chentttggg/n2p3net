@@ -47,3 +47,13 @@ counterexamples检查reference能量恒等式、g与λ语义、basis变换、训
 独立Spec和Standards修后均通过。Standards另实际复现parent KeyboardInterrupt未落failed状态的P2，最外层与subject现在落盘并原样传播；同spawn边界RED→GREEN和三个进程行为回归通过，遗留确认缺陷0。actual A02/fold0/AR32 g99从[新436成员物理源](../../frozen/prior_control_20261006_execution_v2/manifest.json)重新fit/save/load/score成功，112.40秒、397求值/324迭代、精确重放；原捕获仅用于验证，未改签成功模型。完整新1344格已从该materialized source实际启动，结果结束后再验收。
 
 [首轮停止与修复证据归档](../../frozen/prior_control_20261006_original_failure/manifest.json)逐成员验证710个成员并核镜像，含101旧包、真实RED、数值比较与修后两轴；原件保留，payload仅本地。原435源及4619成员质量归档也保持原身份。
+
+## 第二次实际失败与唯一后验owner
+
+v2真实终态exit1、1460.20秒，A01/fold1/AR8 profile trace1再次触发posterior关系，peer自动停止，72包保留；progress与独立分析器均为failed_run，不产生完整指标。一次必要实际捕获12.87秒保留原RED：H相对误差1.86e-14通过原2e-9，M后向相对量4.06e-13却越过64 eps k=2.27e-13。原joint系统condition13900.64，quotient15.36；两条算法路径各自有很低后向误差，跨路径固定阈值仍误拒。
+
+独立same-W Householder quotient/SVD核对显示原M绝对差约9.95e-23，标准化差平方2.26e-25；held归一化logp差至多2.33e-10、winner一致。原noise W、先验与输入不变；未将这些尺度推广给其他格或发布capture为成功模型。
+
+最终改为一个完整C kernel posterior owner：原joint prefix/tail仍决定noise objective、scatter/logdet与空间Σ；最终kernel M/H由同一个nuisance quotient压缩R/rhs加原precision root生成，fit provenance直接保存这一次统计量。载入核验共享同一factors函数，后向/H阈值均未放宽。60项相关验证通过，独立对两次实际失败数组核对新M/H与QR/SVD、真实改变M/H/先验仍拒绝；旧统计和模型只在原source重放。
+
+[第三版完整计划](../assets/prior_control_20261006/plan_v3.json)只变执行源、科学与资源格仍为1344。原两批101/72包保留原producer，不改签复用；新源码实际fit/save/load/score与完整矩阵分别继续验收。总体优化还要落实B12独立C/test、source→target三完整seed、K0/source-artifact与工作站调用，不把本修复作为全项目完成。

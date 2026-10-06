@@ -4,6 +4,7 @@
 
 2026-10-06 [B06条件operator调用](evidence/conditional_state_20261006.zh.md)及[B08参考能量匹配控制](evidence/prior_control_20261006.zh.md)已完成实施和独立两轴质量验收；合并全集2670通过、19跳过、0失败/错误，413文件byte guard不变。确认的复数入口缺陷已集中修复，原RED保留；A01 native调用经原MAT独立重建。公开1344格先验矩阵和未知state识别分别验收，不由软件通过晋升。
 随后真实1344格运行在A02暴露高条件数后验核验误判，已受控停止并保留101个原包；QR统计/后向误差及worker联动停止已修，40项定向和真实失败捕获复验通过，未重复全集。旧完整测试对应修前交付，实际矩阵与[新冻结计划](assets/prior_control_20261006/plan_v2.json)仍需完整验收。
+v2在A01另一格再次触发跨QR路径舍入误判，已自动联动停止、72包保留。现将最终kernel M/H与保存统计量收敛到同一all-C QR owner，条件似然与选定noise/prior保持原程序；60项必要验证与两次实际失败数组的独立QR/SVD核对通过。[第三版完整计划](assets/prior_control_20261006/plan_v3.json)继续1344格，尚无最终效能结论。
 
 2026-10-06 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已接不可变prior编译、同root初始化/条件QR/精确梯度、真实保存与producer绑定；合并主树全集2604通过、19跳过，独立Spec/Standards复审通过。rank-def、dynamic prior、公共收益和成人确认未解锁；[同C参考能量对照](evidence/prior_control_20261006.zh.md)继续补齐形状与收缩强度的归因。
 

@@ -10,6 +10,7 @@
 compiler保存原design root以重核投影数值rank；同一个`validate_binding`将reference record身份/支持/design SHA与model actual C ledger、basis/input绑定交叉核验，避免两份self-summary各自成立而关系不成立。
 [trace控制](evidence/calibration_trace_control_20261006.zh.md)与g共享`uses_calibration_reference`和九数组，但使用独立model `/6`；scalar precision由compiler数值root派生，callers不重造G。runner的`fixed_reference_kernel_prior`面板核完整28格并直接用原requested指标owner产生12组同g形状对照；same-ridge AR面板继续单独归因。
 实际矩阵后改`_kernel_fit_statistics`为nuisance-block QR及信息root/正交响应压缩；`score`载荷由method `all_C_actual_noise_per_record_diffuse_QR_response`明确表示`Q_DᵀY`，不再表示`DᵀY`。posterior核验使用`R M=b`后向关系，避免两次normal-equation solve放大病态；旧包由自己的冻结source解释。runner滚动持有最多worker数的participant任务，共享abort signal只在真正合同失败后停下一fit，合法rank/fit failure仍保留requested输出。
+随后v2实际失败促成`_kernel_posterior_factors`同一owner：`_fit_fixed_prefix`最终只用原joint程序算conditional scatter/logdet/Σ，再从完整C的一次统计压缩发布M/H，model保存同一统计对象。fit与load使用同precision/root/response求解，未宽阈值、改变先验或重造reference；prefix→tail的条件密度/漂移测度保持原函数。
 
 [固定前缀条件AR](evidence/continuous_fixed_prefix_20261005.zh.md)深化现有`ContinuousDecisionModel`的同一fit/score/save/load Interface：
 `conditioning_samples`与`noise_estimator`在recipe、实际noise/model与包内binding一致；model/noise `/4`保存真实初始化、优化和支持来源。
