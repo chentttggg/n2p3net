@@ -241,7 +241,8 @@ def _fixed_prefix_ar_panel(experts, role):
     estimators = ("burg", "conditional_profile")
     expected = {(order, estimator) for order in orders for estimator in estimators}
     actual = {(spec.noise_order, spec.noise_estimator) for spec in experts}
-    matched = {(spec.conditioning_samples, spec.ridge, spec.response_seconds, spec.n_basis) for spec in experts}
+    matched = {(spec.conditioning_samples, spec.ridge,
+                semantic_sha256(None if spec.dictionary_spec is None else spec.dictionary_spec.record())) for spec in experts}
     if (len(experts) != len(expected) or actual != expected or len(matched) != 1
             or any(spec.family != "continuous_ar" or spec.conditioning_samples != 32 for spec in experts)):
         raise ValueError("fixed-prefix AR panel requires all six orders and both estimators on the same prefix, basis and prior")
@@ -266,7 +267,7 @@ def _calibration_prior_panel(experts):
     cells = {(spec.noise_order, spec.noise_estimator, spec.prior_spec.kind,
               spec.prior_spec.precision if spec.prior_spec.kind == "isotropic_ridge" else spec.prior_spec.g): spec.expert_id
              for spec in experts}
-    matched = {(spec.conditioning_samples, spec.response_seconds, spec.n_basis) for spec in experts}
+    matched = {(spec.conditioning_samples, semantic_sha256(spec.dictionary_spec.record())) for spec in experts}
     if (set(cells) != expected or len(matched) != 1 or any(spec.conditioning_samples != 32 for spec in experts)):
         raise ValueError("calibration prior panel requires matched fixed32, basis, response and complete prior/noise cells")
     first = experts[0]
@@ -282,6 +283,24 @@ def _calibration_prior_panel(experts):
                 "baseline": cells[(order, estimator, "calibration_trace_isotropic", g)],
                 "alternative": cells[(order, estimator, "calibration_g", g)]}
                 for order, estimator in noise_programs for g in multipliers]}
+
+
+def _dictionary_panel(experts):
+    """An endpoint comparison uses one ambient cosine, with changed hard capacity."""
+    expected = {("gaussian", "free"), ("cosine", "free"), ("cosine", "hard_zero")}
+    if len(experts) != 3 or any(spec.family != "continuous_ar" for spec in experts):
+        raise ValueError("dictionary endpoint panel requires exactly three declared raw experts")
+    actual = {(spec.dictionary_spec.family, spec.dictionary_spec.endpoint) for spec in experts}
+    matched = {(spec.conditioning_samples, spec.noise_order, spec.noise_estimator, spec.dictionary_spec.response_seconds,
+                spec.dictionary_spec.n_basis, semantic_sha256(spec.prior_spec.record())) for spec in experts}
+    if actual != expected or len(matched) != 1 or any(spec.conditioning_samples != 32 for spec in experts):
+        raise ValueError("dictionary endpoints require matched native support, ambient dimension, fixed32, noise and prior programs")
+    return {"schema": "n2p3_dictionary_endpoint_panel/1", "same_ambient_cosine_for_free_and_hard": True,
+            "hard_endpoint": "kernel_of_E_at_0_and_actual_L_over_sample_rate",
+            "capacity_matching_claimed": False, "hard_endpoint_changes_function_dimension": True,
+            "score_estimand": "conditional_tail_with_fixed_candidate_prior",
+            "reference_prior_energy_and_df_reported_separately": True,
+            "arms": {spec.expert_id: spec.dictionary_spec.record() for spec in experts}}
 
 
 def _subject_impl(row, plan, directory, expected_source, source_snapshots):
@@ -410,7 +429,8 @@ def run_study(plan_path: str | Path, output: str | Path):
     expert_programs = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
     comparison_role = plan.get("comparison_role", "candidate_ensemble")
     prior_panel = _calibration_prior_panel(expert_programs) if comparison_role == "fixed_reference_kernel_prior" else None
-    ar_panel = None if prior_panel is not None else _fixed_prefix_ar_panel(expert_programs, comparison_role)
+    dictionary_panel = _dictionary_panel(expert_programs) if comparison_role == "fixed_dictionary_endpoints" else None
+    ar_panel = None if prior_panel is not None or dictionary_panel is not None else _fixed_prefix_ar_panel(expert_programs, comparison_role)
     names = {spec.expert_id for spec in expert_programs}
     if len(names) != len(expert_programs):
         raise ValueError("candidate expert roster contains duplicate names")
@@ -421,7 +441,7 @@ def run_study(plan_path: str | Path, output: str | Path):
         raise ValueError("candidate mixtures require unique names and declared expert producers")
     if plan["baseline_mixture"] not in {value.name for value in mixtures}:
         raise ValueError("baseline mixture is not declared")
-    if prior_panel is not None and (plan["calibration_strategy"] != "fixed" or plan["source_checkpoints"]
+    if (prior_panel is not None or dictionary_panel is not None) and (plan["calibration_strategy"] != "fixed" or plan["source_checkpoints"]
             or {value.name: value.expert_ids for value in mixtures} != {name: (name,) for name in names}):
         raise ValueError("calibration prior panel requires fixed temperatures and one unmixed output per declared expert")
     if type(plan["workers"]) is not int or plan["workers"] < 1 or type(plan["cpu_threads_per_worker"]) is not int or plan["cpu_threads_per_worker"] < 1:
@@ -434,6 +454,8 @@ def run_study(plan_path: str | Path, output: str | Path):
     normalized.update(comparison_role=comparison_role, ar_panel=ar_panel)
     if prior_panel is not None:
         normalized["prior_panel"] = prior_panel
+    if dictionary_panel is not None:
+        normalized["dictionary_panel"] = dictionary_panel
     normalized["records"] = [{**row, "path": str((plan_path.parent / row["path"]).resolve())}
                               for row in plan["records"]]
     normalized["source_checkpoints"] = {name: str((plan_path.parent / path).resolve())
@@ -521,6 +543,8 @@ def run_study(plan_path: str | Path, output: str | Path):
             report["prior_shape_contrasts"] = [{**row,
                 "comparison": compare_candidate_probability_metrics(metrics[row["baseline"]], metrics[row["alternative"]]).record()}
                 for row in prior_panel["shape_contrasts"]]
+        if dictionary_panel is not None:
+            report["dictionary_panel"] = dictionary_panel
         atomic_write_json(output / "result.json", report)
         atomic_write_json(output / "progress.json", {"status": "completed", "completed_subjects": len(completed)})
         return report

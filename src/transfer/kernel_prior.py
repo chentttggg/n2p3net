@@ -289,6 +289,19 @@ def _validate_reference_binding(records, binding):
             raise ValueError("prior reference design records differ from actual authorized C identity/support/design")
 
 
+def calibration_reference_roots(designs):
+    """Trusted all-C designs: the same AR0 diffuse geometry for prior and audit."""
+    width = designs[0].shape[1]
+    root, original = np.empty((0, width)), np.empty((0, width))
+    for design in designs:
+        drift = np.column_stack((np.ones(len(design)), np.linspace(-1., 1., len(design))))
+        q = np.linalg.qr(drift, mode="reduced")[0]
+        projected = design-q@(q.T@design)
+        root = np.linalg.qr(np.vstack((root, projected)), mode="r")
+        original = np.linalg.qr(np.vstack((original, design)), mode="r")
+    return root, original
+
+
 def compile_kernel_prior(spec, designs, *, record_ids, fit_scope, binding):
     """Compile one all-C program; no held inputs or noise-eta update is accepted."""
     if not isinstance(spec, KernelPriorSpec):
@@ -305,15 +318,9 @@ def compile_kernel_prior(spec, designs, *, record_ids, fit_scope, binding):
         return CompiledKernelPrior(spec, np.sqrt(spec.precision)*np.eye(width), None, provenance)
     if fit_scope not in {"target_calibration", "source_training"}:
         raise ValueError("calibration information prior requires authorized source/C fit scope")
-    root = np.empty((0, width))
-    design_root = np.empty((0, width))
+    root, design_root = calibration_reference_roots(arrays)
     records = []
     for identity, design in zip(ids, arrays, strict=True):
-        drift = np.column_stack((np.ones(len(design)), np.linspace(-1., 1., len(design))))
-        q = np.linalg.qr(drift, mode="reduced")[0]
-        projected = design-q@(q.T@design)
-        root = np.linalg.qr(np.vstack((root, projected)), mode="r")
-        design_root = np.linalg.qr(np.vstack((design_root, design)), mode="r")
         records.append({"record_id": identity, "n_samples": len(design), "read_sample_support": [0, len(design)],
                         "design_sha256": array_digest(design)})
     ledger = _rank_ledger(root, design_root, sum(len(d) for d in arrays), len(arrays))

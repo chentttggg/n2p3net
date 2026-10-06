@@ -26,7 +26,12 @@ from scipy.special import logsumexp
 from sklearn.covariance import LedoitWolf
 
 from research.execution import UnidentifiableFitError
-from transfer.kernel_prior import CompiledKernelPrior, compile_kernel_prior, resolve_kernel_prior
+from transfer.kernel_prior import (
+    CompiledKernelPrior,
+    calibration_reference_roots,
+    compile_kernel_prior,
+    resolve_kernel_prior,
+)
 from transfer.noise_model import (
     array_digest,
     freeze_metadata,
@@ -36,11 +41,21 @@ from transfer.noise_model import (
     require_sha256,
     validate_covariance,
 )
+from transfer.response_dictionary import ResponseDictionary
 from transfer.temporal_noise import TemporalNoise
 
 _IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _STATE_KEYS = ("basis", "kernel_mean", "kernel_row_covariance", "innovation_covariance")
 _PRIOR_STATE_KEYS = ("prior_precision_root", "prior_reference_root", "prior_design_root", "prior_fit_information_root", "prior_fit_score")
+_FIT_STATISTIC_STATE_KEYS = ("prior_fit_information_root", "prior_fit_score")
+_DICTIONARY_ARRAY_KEYS = ("times", "ambient_matrix", "endpoint_rows", "constraint_map")
+_DICTIONARY_GEOMETRY_KEYS = ("reference_information_root", "fitted_information_root",
+                             "ambient_reference_information_root", "ambient_prior_precision", "original_reference_root")
+def _dictionary_state_keys(calibration_prior):
+    roots = ("ambient_reference_information_root", "ambient_prior_precision")
+    if not calibration_prior:
+        roots += ("reference_information_root", "original_reference_root")
+    return tuple("dictionary_"+key for key in (*_DICTIONARY_ARRAY_KEYS, *roots))
 _CALIBRATION_PRIOR_SCHEMAS = {
     "calibration_g": "n2p3_continuous_decision_model/5",
     "calibration_trace_isotropic": "n2p3_continuous_decision_model/6",
@@ -328,10 +343,13 @@ def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge,
     return mean, covariance, spatial, noise, training_digest, statistics
 
 
-def _prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, ledger, fit_scope):
-    return {"sample_rate_hz": sfreq, "channels": list(channels), "candidate_ids": list(candidate_ids),
+def _prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, ledger, fit_scope, dictionary=None):
+    result = {"sample_rate_hz": sfreq, "channels": list(channels), "candidate_ids": list(candidate_ids),
             "operator_identity": operator_identity, "basis_sha256": array_digest(basis),
             "fit_scope": fit_scope, "calibration_inputs": ledger}
+    if dictionary is not None:
+        result["dictionary_digest"] = dictionary.digest()
+    return result
 
 
 def _kernel_fit_statistics(samples, designs, noise, prefix):
@@ -345,9 +363,20 @@ def _kernel_fit_statistics(samples, designs, noise, prefix):
         # Forming D.T Y then solving normal equations squares the conditioning.
         quotient = np.linalg.qr(np.column_stack((transformed[:, -2:], transformed[:, :-2])), mode="r")[2:, 2:]
         root = np.linalg.qr(np.vstack((root, quotient)), mode="r")
+    return _qr_fit_statistics(root, width, _fitted_noise_digest(noise))
+
+
+def _fitted_noise_digest(noise, phi=None):
+    return (noise.record()["artifact_sha256"] if noise is not None else
+            metadata_digest({"program": "legacy_clipped_AR1_stationary_transform", "phi": phi}))
+
+
+def _qr_fit_statistics(root, width, noise_digest):
+    if len(root) < width:
+        root = np.vstack((root, np.zeros((width-len(root), root.shape[1]))))
     information, response = root[:width, :width], root[:width, width:]
     return {"information_root": information.tolist(), "score": response.tolist(),
-            "state_sha256": array_digest(information, response), "noise_digest": noise.record()["artifact_sha256"],
+            "state_sha256": array_digest(information, response), "noise_digest": noise_digest,
             "method": "all_C_actual_noise_per_record_diffuse_QR_response"}
 
 
@@ -379,6 +408,64 @@ def _validate_prior_posterior(prior_root, statistics, mean, covariance, noise_di
         raise ValueError("saved kernel posterior differs from its actual prior and fitted C information")
 
 
+def _dictionary_geometry_from_roots(dictionary, roots, prior_root, n_rows, n_records):
+    p = dictionary.matrix.shape[1]*2
+    ambient = dictionary.spec.n_basis*2
+    arrays = {key: _real_values(roots[key], f"dictionary {key}") for key in _DICTIONARY_GEOMETRY_KEYS}
+    for key, width in (("reference_information_root", p), ("fitted_information_root", p),
+                       ("original_reference_root", p), ("ambient_reference_information_root", ambient)):
+        if arrays[key].ndim != 2 or arrays[key].shape[1] != width or not np.isfinite(arrays[key]).all():
+            raise ValueError("dictionary information roots differ from their actual function coordinates")
+    ambient_precision = arrays["ambient_prior_precision"]
+    if ambient_precision.shape != (ambient, ambient) or not np.isfinite(ambient_precision).all():
+        raise ValueError("dictionary ambient prior precision differs from its function coordinates")
+    embedding = np.kron(np.eye(2), dictionary.constraint_map)
+    reference, actual, parent = (arrays[key] for key in ("reference_information_root", "fitted_information_root", "ambient_reference_information_root"))
+    precision = prior_root.T@prior_root
+    reference_information = reference.T@reference
+    reference_scale = max(float(np.linalg.norm(reference_information)), float(np.linalg.norm(parent.T@parent)), np.finfo(float).tiny)
+    precision_scale = max(float(np.linalg.norm(precision)), float(np.linalg.norm(ambient_precision)), np.finfo(float).tiny)
+    if (not np.allclose(reference_information, embedding.T@(parent.T@parent)@embedding, rtol=2e-12, atol=reference_scale*2e-13)
+            or not np.allclose(precision, embedding.T@ambient_precision@embedding, rtol=2e-12, atol=precision_scale*2e-13)):
+        raise ValueError("dictionary constraints and prior precision do not obey the actual ambient pullback")
+    def df(root):
+        posterior_root = np.linalg.qr(np.vstack((root, prior_root)), mode="r")
+        inverse = solve_triangular(posterior_root, np.eye(p))
+        return float(np.linalg.norm(root@inverse)**2)
+    reference_scale = float(np.linalg.norm(arrays["original_reference_root"], ord=2))
+    threshold = np.finfo(float).eps*max(n_rows, p)*reference_scale
+    rank = int(np.sum(np.linalg.svd(reference, compute_uv=False) > threshold))
+    inverse_prior = solve_triangular(prior_root, np.eye(p))
+    return {"schema": "n2p3_dictionary_fit_geometry/1", "dictionary_digest": dictionary.identity_digest,
+            "ambient_dimensions": ambient, "kernel_dimensions": p, "n_rows": n_rows, "n_records": n_records,
+            "reference_geometry": "all_C_AR0_per_record_diffuse_affine", "fitted_geometry": "all_C_actual_noise_per_record_diffuse_affine",
+            "df_ref": df(reference), "df_fit": df(actual), "reference_rank": rank, "rank_threshold": threshold,
+            "reference_prior_energy": float(np.linalg.norm(reference@inverse_prior)**2),
+            "capacity_changed_by_hard_endpoint": dictionary.spec.endpoint == "hard_zero",
+            "capacity_matching_claimed": False, "prior_pullback": "embedding_T_ambient_precision_embedding",
+            "roots_sha256": array_digest(*arrays.values()), **{key: value.tolist() for key, value in arrays.items()}}
+
+
+def _fit_dictionary_geometry(dictionary, records, designs, actual_root, ridge, prior):
+    reference, original = calibration_reference_roots(designs)
+    ambient_designs = [_event_design(r.onsets, r.target_mask, len(r.samples), dictionary.ambient_matrix) for r in records]
+    ambient_reference, _ = calibration_reference_roots(ambient_designs)
+    width = 2*dictionary.spec.n_basis
+    if prior is not None and prior.spec.kind == "calibration_g":
+        ambient_precision = ambient_reference.T@ambient_reference/prior.spec.g
+    else:
+        # trace isotropic is calibrated in the declared restricted model. The
+        # same actual scalar lifts to ambient coordinates; this is not a claim
+        # that an unconstrained trace-control energy budget was preserved.
+        scalar = ridge if prior is None else prior.derived_precision
+        ambient_precision = scalar*np.eye(width)
+    prior_root = np.sqrt(ridge)*np.eye(designs[0].shape[1]) if prior is None else prior.precision_root
+    return _dictionary_geometry_from_roots(dictionary, {"reference_information_root": reference,
+        "original_reference_root": original, "fitted_information_root": actual_root,
+        "ambient_reference_information_root": ambient_reference, "ambient_prior_precision": ambient_precision},
+        prior_root, sum(len(r.samples) for r in records), len(records))
+
+
 @dataclass(frozen=True)
 class ContinuousDecisionModel:
     basis: np.ndarray
@@ -394,6 +481,8 @@ class ContinuousDecisionModel:
     noise: TemporalNoise | None = None
     conditioning_samples: int = 0
     kernel_prior: CompiledKernelPrior | None = None
+    dictionary: ResponseDictionary | None = None
+    dictionary_geometry: dict | None = None
     _integrity_sha256: str = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
@@ -436,6 +525,26 @@ class ContinuousDecisionModel:
         object.__setattr__(self, "channels", channels)
         object.__setattr__(self, "candidate_ids", candidates)
         provenance = json.loads(json.dumps(self.provenance, allow_nan=False))
+        if self.dictionary is not None:
+            if (not isinstance(self.dictionary, ResponseDictionary) or self.dictionary.sample_rate_hz != self.sfreq
+                    or not np.array_equal(self.dictionary.matrix, basis) or self.dictionary_geometry is None):
+                raise ValueError("owned physical dictionary differs from the actual response basis/grid")
+            roots = {**self.dictionary_geometry,
+                     "fitted_information_root": provenance["kernel_prior_fit_statistics"]["information_root"]}
+            if self.kernel_prior is not None:
+                roots.update(reference_information_root=self.kernel_prior.reference_root.tolist(),
+                             original_reference_root=self.kernel_prior.design_root.tolist())
+            prior_root = (np.sqrt(provenance["ridge"])*np.eye(p) if self.kernel_prior is None else self.kernel_prior.precision_root)
+            if self.kernel_prior is None:
+                _validate_prior_posterior(prior_root, provenance["kernel_prior_fit_statistics"], mean, row_cov,
+                                          _fitted_noise_digest(self.noise, self.phi))
+            geometry = _dictionary_geometry_from_roots(self.dictionary, roots, prior_root,
+                sum(r["n_samples"] for r in provenance["records"]), len(provenance["records"]))
+            if metadata_digest(geometry) != metadata_digest(self.dictionary_geometry):
+                raise ValueError("dictionary capacity/constraint ledger differs from its actual numerical roots")
+            object.__setattr__(self, "dictionary_geometry", freeze_metadata(geometry))
+        elif self.dictionary_geometry is not None:
+            raise ValueError("dictionary geometry requires its actual owned response function")
         scope = provenance.get("fit_scope")
         if self.kernel_prior is not None:
             if (not isinstance(self.kernel_prior, CompiledKernelPrior)
@@ -498,14 +607,14 @@ class ContinuousDecisionModel:
                     raise ValueError("calibration prior program cannot be relabeled as the fixed ridge model")
             else:
                 expected_binding = _prior_binding(self.sfreq, channels, candidates, self.operator_identity,
-                                                  basis, provenance["records"], scope)
+                                                  basis, provenance["records"], scope, self.dictionary)
                 self.kernel_prior.validate_binding(expected_binding)
                 if ("ridge" in provenance or provenance.get("kernel_prior_spec") != self.kernel_prior.spec.record()
                         or provenance.get("kernel_prior_digest") != self.kernel_prior.digest()
                         or self.kernel_prior.provenance["fit_scope"] != scope):
                     raise ValueError("compiled kernel prior differs from its actual C/basis/program binding")
                 _validate_prior_posterior(self.kernel_prior.precision_root, provenance["kernel_prior_fit_statistics"],
-                                          mean, row_cov, self.noise.record()["artifact_sha256"])
+                                           mean, row_cov, _fitted_noise_digest(self.noise))
             if self.noise is not None:
                 noise_provenance = self.noise.provenance
                 if (noise_provenance["fit_scope"] != scope
@@ -542,7 +651,7 @@ class ContinuousDecisionModel:
     @classmethod
     def fit(cls, records, *, sfreq, channels, candidate_ids, operator_identity,
             basis=None, ridge=None, fit_scope="target_calibration", noise_order=None,
-            conditioning_samples=0, noise_estimator="burg", kernel_prior=None):
+            conditioning_samples=0, noise_estimator="burg", kernel_prior=None, dictionary=None):
         """Fit all response and noise state from declared labeled records only.
 
         Records are independent legal scopes with complete stimulus histories.
@@ -577,7 +686,15 @@ class ContinuousDecisionModel:
             raise ValueError("conditional profile noise estimation requires a fixed conditioning prefix")
         if prior_spec.uses_calibration_reference and not conditioning_samples:
             raise ValueError("calibration priors are implemented only for fixed-prefix conditional inference")
-        basis = smooth_erp_basis(sfreq) if basis is None else _real_values(basis, "ERP basis")
+        if dictionary is not None:
+            if basis is not None:
+                raise ValueError("owned dictionary and a separate numeric basis are mutually exclusive")
+            if not isinstance(dictionary, ResponseDictionary) or dictionary.sample_rate_hz != sfreq:
+                raise ValueError("owned dictionary sampling differs from the actual native input")
+            dictionary.digest()
+            basis = dictionary.matrix
+        else:
+            basis = smooth_erp_basis(sfreq) if basis is None else _real_values(basis, "ERP basis")
         if basis.ndim != 2 or not np.all(np.isfinite(basis)) or min(basis.shape) == 0:
             raise ValueError("basis must be finite and nonempty")
         records = tuple(records)
@@ -619,7 +736,7 @@ class ContinuousDecisionModel:
         compiled_prior = None
         if prior_spec.uses_calibration_reference:
             compiled_prior = compile_kernel_prior(prior_spec, designs, record_ids=ids, fit_scope=fit_scope,
-                binding=_prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, ledger, fit_scope))
+                binding=_prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, ledger, fit_scope, dictionary))
 
         def solve(phi):
             if isinstance(phi, TemporalNoise):
@@ -664,14 +781,18 @@ class ContinuousDecisionModel:
                 "hyperparameter_uncertainty_integrated": False, "global_MLE_claimed": False,
                 "likelihood_assumptions": ["linear_event_superposition", "shared_class_noise",
                     "stationary_shared_AR_reference", "complete_event_history", "fixed_conditioning_prefix"]}
+            if dictionary is not None:
+                provenance["kernel_prior_fit_statistics"] = statistics
             if compiled_prior is None:
                 provenance["ridge"] = float(ridge)
             else:
                 provenance.update(kernel_prior_spec=prior_spec.record(), kernel_prior_digest=compiled_prior.digest(),
                     kernel_prior_fit_statistics=statistics)
+            geometry = (None if dictionary is None else _fit_dictionary_geometry(dictionary, records, designs,
+                np.asarray(statistics["information_root"]), ridge, compiled_prior))
             return cls(basis, mean, row_cov, noise, None, sfreq, tuple(channels), tuple(candidate_ids),
                        operator_identity, provenance, noise=noise_model, conditioning_samples=conditioning_samples,
-                       kernel_prior=compiled_prior)
+                        kernel_prior=compiled_prior, dictionary=dictionary, dictionary_geometry=geometry)
         if noise_order is None:
             numerator = sum(float(np.sum(r[1:] * r[:-1])) for r in pairs)
             denominator = sum(float(np.sum(r[:-1] ** 2)) for r in pairs)
@@ -715,8 +836,14 @@ class ContinuousDecisionModel:
                               noise_fit_passes=1, monotone_likelihood_optimization_claimed=False,
                               likelihood_assumptions=["linear_event_superposition", "shared_class_noise",
                                                       "stationary_shared_AR_spectrum", "complete_event_history"])
+        if dictionary is not None:
+            provenance["kernel_prior_fit_statistics"] = _qr_fit_statistics(
+                np.linalg.qr(np.column_stack((D, Y)), mode="r"), p, _fitted_noise_digest(noise_model, phi))
+        geometry = (None if dictionary is None else _fit_dictionary_geometry(dictionary, records, designs,
+            np.asarray(provenance["kernel_prior_fit_statistics"]["information_root"]), ridge, compiled_prior))
         return cls(basis, mean, row_cov, noise, phi, sfreq, tuple(channels),
-                   tuple(candidate_ids), operator_identity, provenance, noise=noise_model)
+                    tuple(candidate_ids), operator_identity, provenance, noise=noise_model,
+                    dictionary=dictionary, dictionary_geometry=geometry)
 
     @property
     def noise_order(self):
@@ -814,7 +941,7 @@ class ContinuousDecisionModel:
     def _metadata(self):
         state = self._state_arrays()
         provenance = self.provenance
-        if self.kernel_prior is not None:
+        if self.kernel_prior is not None or self.dictionary is not None:
             provenance = json.loads(json.dumps(self.provenance))
             provenance["kernel_prior_fit_statistics"].pop("information_root")
             provenance["kernel_prior_fit_statistics"].pop("score")
@@ -835,6 +962,14 @@ class ContinuousDecisionModel:
                 prior.pop("reference_root")
                 prior.pop("design_root")
                 metadata.update(schema=_CALIBRATION_PRIOR_SCHEMAS[self.kernel_prior.spec.kind], kernel_prior=prior)
+        if self.dictionary is not None:
+            record = self.dictionary.metadata()
+            geometry = json.loads(json.dumps(self.dictionary_geometry))
+            for key in _DICTIONARY_GEOMETRY_KEYS:
+                geometry.pop(key)
+            metadata.update(base_model_schema=metadata["schema"], schema="n2p3_continuous_dictionary_model/1",
+                            dictionary=record, dictionary_geometry=geometry,
+                            state_dtypes={key: value.dtype.str for key, value in state.items()})
         return metadata
 
     def _state_arrays(self):
@@ -846,6 +981,14 @@ class ContinuousDecisionModel:
                 prior_design_root=self.kernel_prior.design_root,
                 prior_fit_information_root=np.asarray(statistics["information_root"], dtype=np.float64),
                 prior_fit_score=np.asarray(statistics["score"], dtype=np.float64))
+        if self.dictionary is not None:
+            if self.kernel_prior is None:
+                statistics = self.provenance["kernel_prior_fit_statistics"]
+                state.update(prior_fit_information_root=np.asarray(statistics["information_root"], dtype=np.float64),
+                             prior_fit_score=np.asarray(statistics["score"], dtype=np.float64))
+            state.update({"dictionary_"+key: getattr(self.dictionary, key) for key in _DICTIONARY_ARRAY_KEYS})
+            state.update({key: np.asarray(self.dictionary_geometry[key.removeprefix("dictionary_")], dtype=np.float64)
+                          for key in _dictionary_state_keys(self.kernel_prior is not None) if key.removeprefix("dictionary_") in _DICTIONARY_GEOMETRY_KEYS})
         return state
 
     def digest(self):
@@ -871,13 +1014,18 @@ class ContinuousDecisionModel:
         with np.load(path, allow_pickle=False) as archive:
             metadata = json.loads(str(archive["metadata"]))
             schema = metadata.get("schema")
+            owned_dictionary = schema == "n2p3_continuous_dictionary_model/1"
+            if owned_dictionary:
+                schema = metadata.get("base_model_schema")
             calibration_prior = schema in _CALIBRATION_PRIOR_SCHEMAS.values()
-            state_keys = _STATE_KEYS + (_PRIOR_STATE_KEYS if calibration_prior else ())
+            state_keys = (_STATE_KEYS + (_PRIOR_STATE_KEYS if calibration_prior else ())
+                          + (_FIT_STATISTIC_STATE_KEYS if owned_dictionary and not calibration_prior else ())
+                          + (_dictionary_state_keys(calibration_prior) if owned_dictionary else ()))
             if set(archive.files) != {*state_keys, "metadata"}:
                 raise ValueError("continuous model numeric payload differs from its declared prior schema")
             all_state = {key: archive[key] for key in state_keys}
             state = [all_state[key] for key in _STATE_KEYS]
-        schema = metadata.get("schema")
+        schema = metadata.get("base_model_schema") if owned_dictionary else metadata.get("schema")
         if schema not in {"n2p3_continuous_decision_model/2", "n2p3_continuous_decision_model/3",
                           "n2p3_continuous_decision_model/4", *_CALIBRATION_PRIOR_SCHEMAS.values()}:
             raise ValueError("unsupported continuous decision model schema")
@@ -887,7 +1035,7 @@ class ContinuousDecisionModel:
         if array_digest(*all_state.values()) != metadata.get("state_sha256"):
             raise ValueError("continuous model state digest mismatch")
         explicit_ar = schema != "n2p3_continuous_decision_model/2"
-        if explicit_ar and (metadata.get("state_dtypes") != dict.fromkeys(state_keys, _COMPUTE_DTYPE)
+        if (explicit_ar or owned_dictionary) and (metadata.get("state_dtypes") != dict.fromkeys(state_keys, _COMPUTE_DTYPE)
                             or any(value.dtype.str != _COMPUTE_DTYPE for value in all_state.values())):
             raise ValueError("continuous AR artifact requires its exact float64 state dtype")
         noise = TemporalNoise.from_record(metadata["noise"]) if explicit_ar else None
@@ -907,6 +1055,22 @@ class ContinuousDecisionModel:
             metadata["provenance"]["kernel_prior_fit_statistics"].update(
                 information_root=all_state["prior_fit_information_root"].tolist(),
                 score=all_state["prior_fit_score"].tolist())
+        dictionary = geometry = None
+        if owned_dictionary:
+            if not calibration_prior:
+                metadata["provenance"]["kernel_prior_fit_statistics"].update(
+                    information_root=all_state["prior_fit_information_root"].tolist(),
+                    score=all_state["prior_fit_score"].tolist())
+            dictionary_record = metadata["dictionary"]
+            dictionary_record.update(matrix=all_state["basis"].tolist(),
+                **{key: all_state["dictionary_"+key].tolist() for key in _DICTIONARY_ARRAY_KEYS})
+            dictionary = ResponseDictionary.from_record(dictionary_record)
+            geometry = {**metadata["dictionary_geometry"],
+                        **{key.removeprefix("dictionary_"): all_state[key].tolist()
+                           for key in _dictionary_state_keys(calibration_prior) if key.removeprefix("dictionary_") in _DICTIONARY_GEOMETRY_KEYS},
+                        "fitted_information_root": metadata["provenance"]["kernel_prior_fit_statistics"]["information_root"]}
+            if calibration_prior:
+                geometry.update(reference_information_root=prior.reference_root.tolist(), original_reference_root=prior.design_root.tolist())
         return cls(*state, None if explicit_ar else metadata["phi"], metadata["sfreq"], tuple(metadata["channels"]),
                    tuple(metadata["candidate_ids"]), metadata["operator_identity"], metadata["provenance"], noise=noise,
-                   conditioning_samples=prefix, kernel_prior=prior)
+                    conditioning_samples=prefix, kernel_prior=prior, dictionary=dictionary, dictionary_geometry=geometry)

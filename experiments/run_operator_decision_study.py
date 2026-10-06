@@ -27,8 +27,10 @@ from transfer.continuous_decision import (  # noqa: E402
     ContinuousDecisionModel,
     smooth_erp_basis,
 )
+from transfer.kernel_prior import KernelPriorSpec  # noqa: E402
 from transfer.noise_model import JointNoiseModel, metadata_digest  # noqa: E402
 from transfer.operator_lda import ConditioningObservationSupport, OperatorAwareLDA  # noqa: E402
+from transfer.response_dictionary import ResponseDictionary, ResponseDictionarySpec  # noqa: E402
 
 
 @contextmanager
@@ -80,7 +82,8 @@ def _source_provenance(command):
             "module_source_sha256": {
                 name: _sha(ROOT / "src" / name) for name in
                 ("data/harmonic.py", "transfer/continuous_decision.py", "transfer/noise_model.py",
-                 "transfer/operator_lda.py")},
+                 "transfer/operator_lda.py", "transfer/response_dictionary.py", "transfer/kernel_prior.py",
+                 "transfer/continuous_gradient.py")},
             "evidence_scope": "software_or_public_development_no_confirmed_performance",
             "command": command}
 
@@ -120,7 +123,13 @@ def _fit(args, output):
                                               right_censored=item.get("right_censored", False)))
         files.append({"record_id": item["record_id"], "path": str(path), "sha256": digest})
     basis_sha = None
-    if "basis_path" in plan:
+    dictionary = None
+    if "dictionary" in plan:
+        if any(key in plan for key in ("basis_path", "n_basis", "response_seconds")):
+            raise ValueError("owned dictionary conflicts with independent basis/duration declarations")
+        dictionary = ResponseDictionary.compile(ResponseDictionarySpec.from_record(plan["dictionary"]), sample_rate_hz=plan["sfreq"])
+        basis = None
+    elif "basis_path" in plan:
         with _input_snapshot(_plan_path(args.plan, plan["basis_path"])) as (snapshot, basis_sha):
             basis = np.load(snapshot, allow_pickle=False)
         if not isinstance(basis, np.ndarray):
@@ -130,7 +139,10 @@ def _fit(args, output):
     model = ContinuousDecisionModel.fit(
         records, sfreq=plan["sfreq"], channels=tuple(plan["channels"]),
         candidate_ids=tuple(plan["candidate_ids"]), operator_identity=plan["operator_identity"],
-        basis=basis, ridge=plan.get("ridge", 1.), fit_scope=plan["fit_scope"],
+        basis=basis, dictionary=dictionary, ridge=plan.get("ridge"), fit_scope=plan["fit_scope"],
+        kernel_prior=None if "kernel_prior" not in plan else KernelPriorSpec.from_record(plan["kernel_prior"]),
+        noise_order=plan.get("noise_order"), conditioning_samples=plan.get("conditioning_samples", 0),
+        noise_estimator=plan.get("noise_estimator", "burg"),
     )
     path = output / "model.npz"
     model.save(path)
@@ -139,7 +151,12 @@ def _fit(args, output):
         np.testing.assert_array_equal(getattr(model, field), getattr(reloaded, field))
     _write(output / "fit.json", {**_provenance(args), "model_sha256": model_sha,
                                   "plan_sha256": plan_sha, "inputs": files, "basis_file_sha256": basis_sha,
-                                  "fit": model.provenance, "reload_state_equal": True})
+                                  "fit": model.provenance, "reload_state_equal": True,
+                                  "dictionary": None if model.dictionary is None else model.dictionary.metadata(),
+                                  "dictionary_capacity": None if model.dictionary_geometry is None else {
+                                      key: model.dictionary_geometry[key] for key in
+                                      ("ambient_dimensions", "kernel_dimensions", "df_ref", "df_fit", "reference_prior_energy",
+                                       "capacity_changed_by_hard_endpoint", "capacity_matching_claimed")}})
 
 
 def _predict(args, output):

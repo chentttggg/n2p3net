@@ -26,7 +26,6 @@ from transfer.checkpoint import PreparedTransferCheckpoint
 from transfer.continuous_decision import (
     CalibrationRecord,
     ContinuousDecisionModel,
-    smooth_erp_basis,
 )
 from transfer.ensemble import EnsembleProgram, EnsembleScorer
 from transfer.ensemble_views import (
@@ -38,6 +37,7 @@ from transfer.ensemble_views import (
 from transfer.kernel_prior import KernelPriorSpec, resolve_kernel_prior
 from transfer.noise_model import freeze_metadata
 from transfer.recipes import TargetRecipe
+from transfer.response_dictionary import ResponseDictionary, ResponseDictionarySpec
 
 FITTED_ENSEMBLE_SCHEMA = "n2p3_fitted_candidate_ensemble/2"
 
@@ -82,12 +82,14 @@ class CalibrationExpertProgram:
     profile: SelectionEpochProfile | None = None
     noise_order: int = 8
     ridge: float | None = None
-    response_seconds: float = 1.2
-    n_basis: int = 8
+    response_seconds: float | None = None
+    n_basis: int | None = None
     conditioning_samples: int = 0
     noise_estimator: str = "burg"
     kernel_prior: KernelPriorSpec | None = None
+    dictionary: ResponseDictionarySpec | None = None
     _prior_spec: KernelPriorSpec | None = field(init=False, repr=False, compare=False)
+    _dictionary_spec: ResponseDictionarySpec | None = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
         if not self.expert_id or self.family not in {"trial", "continuous_ar"}:
@@ -97,11 +99,26 @@ class CalibrationExpertProgram:
         if self.family == "continuous_ar" and (self.recipe is not None or self.profile is not None):
             raise ValueError("continuous expert consumes native raw, without an epoch recipe or profile")
         if self.family == "trial":
-            if self.kernel_prior is not None:
-                raise ValueError("continuous kernel priors cannot be assigned to trial experts")
+            if self.kernel_prior is not None or self.dictionary is not None:
+                raise ValueError("continuous kernel priors/dictionaries cannot be assigned to trial experts")
             object.__setattr__(self, "ridge", 1. if self.ridge is None else self.ridge)
             object.__setattr__(self, "_prior_spec", None)
+            object.__setattr__(self, "_dictionary_spec", None)
+            object.__setattr__(self, "response_seconds", 1.2 if self.response_seconds is None else self.response_seconds)
+            object.__setattr__(self, "n_basis", 8 if self.n_basis is None else self.n_basis)
         else:
+            if self.dictionary is not None:
+                if (not isinstance(self.dictionary, ResponseDictionarySpec)
+                        or (self.n_basis is not None and self.n_basis != self.dictionary.n_basis)
+                        or (self.response_seconds is not None and self.response_seconds != self.dictionary.response_seconds)):
+                    raise ValueError("owned dictionary conflicts with independent n_basis/response_seconds")
+                dictionary_spec = self.dictionary
+            else:
+                dictionary_spec = ResponseDictionarySpec("gaussian", 1.2 if self.response_seconds is None else self.response_seconds,
+                                                        8 if self.n_basis is None else self.n_basis)
+            object.__setattr__(self, "_dictionary_spec", dictionary_spec)
+            object.__setattr__(self, "n_basis", dictionary_spec.n_basis)
+            object.__setattr__(self, "response_seconds", dictionary_spec.response_seconds)
             prior = resolve_kernel_prior(self.kernel_prior, self.ridge)
             if prior.uses_calibration_reference and not self.conditioning_samples:
                 raise ValueError("calibration prior expert requires the fixed-prefix program")
@@ -124,6 +141,10 @@ class CalibrationExpertProgram:
     def prior_spec(self):
         return self._prior_spec
 
+    @property
+    def dictionary_spec(self):
+        return self._dictionary_spec
+
     def record(self):
         record = {"expert_id": self.expert_id, "family": self.family,
                 "recipe": None if self.recipe is None else self.recipe.record(),
@@ -135,6 +156,10 @@ class CalibrationExpertProgram:
         if self.kernel_prior is not None:
             record.pop("ridge")
             record["kernel_prior"] = self.kernel_prior.record()
+        if self.dictionary is not None:
+            record.pop("response_seconds")
+            record.pop("n_basis")
+            record["dictionary"] = self.dictionary.record()
         return record
 
     @classmethod
@@ -144,6 +169,8 @@ class CalibrationExpertProgram:
         values["profile"] = None if values["profile"] is None else SelectionEpochProfile.from_record(values["profile"])
         if "kernel_prior" in values:
             values["kernel_prior"] = KernelPriorSpec.from_record(values["kernel_prior"])
+        if "dictionary" in values:
+            values["dictionary"] = ResponseDictionarySpec.from_record(values["dictionary"])
         return cls(**values)
 
 
@@ -159,15 +186,17 @@ class _FittedExpert:
     def __post_init__(self):
         if self.program.family == "continuous_ar":
             model = self.predictor
-            expected_basis = smooth_erp_basis(model.sfreq, response_seconds=self.program.response_seconds,
-                                              n_basis=self.program.n_basis)
+            dictionary = ResponseDictionary.compile(self.program.dictionary_spec, sample_rate_hz=model.sfreq)
+            expected_basis = dictionary.matrix
             actual_prior = (KernelPriorSpec.isotropic_ridge(model.provenance["ridge"]) if model.kernel_prior is None
                             else model.kernel_prior.spec)
             if (model.noise_order != self.program.noise_order
                     or model.conditioning_samples != self.program.conditioning_samples
                     or actual_prior != self.program.prior_spec
                     or model.provenance.get("noise_estimator", "burg") != self.program.noise_estimator
-                    or not np.array_equal(model.basis, expected_basis)):
+                    or not np.array_equal(model.basis, expected_basis)
+                    or (model.dictionary is not None and model.dictionary.spec != self.program.dictionary_spec)
+                    or (model.dictionary is None and self.program.dictionary is not None)):
                 raise ValueError("frozen continuous recipe differs from its actual numerical model")
 
     def unavailable(self, view, reason):
@@ -413,8 +442,7 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
                 operator_identity="native_unfiltered_volts/1", noise_order=spec.noise_order,
                 **({"ridge": spec.ridge} if spec.prior_spec.kind == "isotropic_ridge" else {"kernel_prior": spec.kernel_prior}),
                 conditioning_samples=spec.conditioning_samples, noise_estimator=spec.noise_estimator,
-                basis=smooth_erp_basis(view.sample_rate_hz,
-                    response_seconds=spec.response_seconds, n_basis=spec.n_basis))
+                dictionary=ResponseDictionary.compile(spec.dictionary_spec, sample_rate_hz=view.sample_rate_hz))
             offset = 0.
         fit_digest = semantic_sha256({"program": spec.record(), "authorized_calibration": fit_inputs,
                                      "source_checkpoint_sha256": checkpoint_digest,
