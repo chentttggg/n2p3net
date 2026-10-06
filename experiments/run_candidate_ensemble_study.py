@@ -242,6 +242,36 @@ def _fixed_prefix_ar_panel(experts, role):
         "conditional_objective": "common_tail_joint_shared_kernel_and_independent_diffuse_record_drift"}
 
 
+def _calibration_prior_panel(experts):
+    """Bind shape contrasts separately from changes in prior signal energy."""
+    noise_programs = ((0, "burg"), (8, "burg"), (8, "conditional_profile"), (32, "conditional_profile"))
+    multipliers = (1., 9., 99.)
+    prior_cells = {("isotropic_ridge", 1.),
+                   *((kind, g) for kind in ("calibration_g", "calibration_trace_isotropic") for g in multipliers)}
+    expected = {(order, estimator, kind, value) for order, estimator in noise_programs for kind, value in prior_cells}
+    if len(experts) != len(expected) or any(spec.family != "continuous_ar" for spec in experts):
+        raise ValueError("calibration prior panel requires all declared raw prior/noise cells")
+    cells = {(spec.noise_order, spec.noise_estimator, spec.prior_spec.kind,
+              spec.prior_spec.precision if spec.prior_spec.kind == "isotropic_ridge" else spec.prior_spec.g): spec.expert_id
+             for spec in experts}
+    matched = {(spec.conditioning_samples, spec.response_seconds, spec.n_basis) for spec in experts}
+    if (set(cells) != expected or len(matched) != 1 or any(spec.conditioning_samples != 32 for spec in experts)):
+        raise ValueError("calibration prior panel requires matched fixed32, basis, response and complete prior/noise cells")
+    first = experts[0]
+    return {"schema": "n2p3_calibration_prior_panel/1", "noise_programs": [list(row) for row in noise_programs],
+            "variance_multipliers": list(multipliers), "conditioning_samples": 32,
+            "response_seconds": first.response_seconds, "n_basis": first.n_basis,
+            "reference_information": "all_authorized_C_AR0_per_record_diffuse_affine",
+            "energy_matching": "tr(G H_g)=k*g=tr(G H_isotropic); lambda_C=tr(G)/(k*g)",
+            "coordinate_policy": "g_basis_invariant; trace_isotropic_fixed_declared_basis",
+            "rank_policy": "same_full_rank_admissibility_for_g_and_trace_controls",
+            "score_estimand": "conditional_tail_with_fixed_candidate_prior",
+            "shape_contrasts": [{"noise_order": order, "noise_estimator": estimator, "g": g,
+                "baseline": cells[(order, estimator, "calibration_trace_isotropic", g)],
+                "alternative": cells[(order, estimator, "calibration_g", g)]}
+                for order, estimator in noise_programs for g in multipliers]}
+
+
 def _subject_impl(row, plan, directory, expected_source, source_snapshots):
     directory = Path(directory)
     directory.mkdir()
@@ -363,7 +393,8 @@ def run_study(plan_path: str | Path, output: str | Path):
         raise ValueError("target-only seeds must be explicit unique nonnegative integers")
     expert_programs = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
     comparison_role = plan.get("comparison_role", "candidate_ensemble")
-    ar_panel = _fixed_prefix_ar_panel(expert_programs, comparison_role)
+    prior_panel = _calibration_prior_panel(expert_programs) if comparison_role == "fixed_reference_kernel_prior" else None
+    ar_panel = None if prior_panel is not None else _fixed_prefix_ar_panel(expert_programs, comparison_role)
     names = {spec.expert_id for spec in expert_programs}
     if len(names) != len(expert_programs):
         raise ValueError("candidate expert roster contains duplicate names")
@@ -374,6 +405,9 @@ def run_study(plan_path: str | Path, output: str | Path):
         raise ValueError("candidate mixtures require unique names and declared expert producers")
     if plan["baseline_mixture"] not in {value.name for value in mixtures}:
         raise ValueError("baseline mixture is not declared")
+    if prior_panel is not None and (plan["calibration_strategy"] != "fixed" or plan["source_checkpoints"]
+            or {value.name: value.expert_ids for value in mixtures} != {name: (name,) for name in names}):
+        raise ValueError("calibration prior panel requires fixed temperatures and one unmixed output per declared expert")
     if type(plan["workers"]) is not int or plan["workers"] < 1 or type(plan["cpu_threads_per_worker"]) is not int or plan["cpu_threads_per_worker"] < 1:
         raise ValueError("candidate execution workers and thread budgets must be explicit positive integers")
     # A caller may declare a fixed source for target-only seed probes; these are
@@ -382,6 +416,8 @@ def run_study(plan_path: str | Path, output: str | Path):
         raise ValueError("source checkpoint names differ from the expert roster")
     normalized = dict(plan)
     normalized.update(comparison_role=comparison_role, ar_panel=ar_panel)
+    if prior_panel is not None:
+        normalized["prior_panel"] = prior_panel
     normalized["records"] = [{**row, "path": str((plan_path.parent / row["path"]).resolve())}
                               for row in plan["records"]]
     normalized["source_checkpoints"] = {name: str((plan_path.parent / path).resolve())
@@ -444,6 +480,11 @@ def run_study(plan_path: str | Path, output: str | Path):
                   "participants": completed, "metrics": {name: value.record() for name, value in metrics.items()},
                   "contrasts": {name: compare_candidate_probability_metrics(baseline, value).record()
                                 for name, value in metrics.items() if name != plan["baseline_mixture"]}}
+        if prior_panel is not None:
+            report["prior_panel"] = prior_panel
+            report["prior_shape_contrasts"] = [{**row,
+                "comparison": compare_candidate_probability_metrics(metrics[row["baseline"]], metrics[row["alternative"]]).record()}
+                for row in prior_panel["shape_contrasts"]]
         atomic_write_json(output / "result.json", report)
         atomic_write_json(output / "progress.json", {"status": "completed", "completed_subjects": len(completed)})
         return report
