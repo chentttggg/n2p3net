@@ -76,12 +76,21 @@ def frozen_array(value):
     return np.frombuffer(array.tobytes(), dtype=float).reshape(array.shape)
 
 
+def finite_real_array(value, *, name):
+    """Normalize external numerical data once without lossy complex coercion."""
+    raw = np.asarray(value)
+    if raw.dtype.kind not in "fiu":
+        raise ValueError(f"{name} must contain finite real numbers")
+    array = np.asarray(raw, dtype=float)
+    if not np.isfinite(array).all():
+        raise ValueError(f"{name} must contain finite real numbers")
+    return array
+
+
 def validate_covariance(value, *, name):
-    covariance = np.asarray(value, dtype=float)
+    covariance = finite_real_array(value, name=name)
     if covariance.ndim != 2 or covariance.shape[0] != covariance.shape[1]:
         raise ValueError(f"{name} must be square")
-    if not np.all(np.isfinite(covariance)):
-        raise ValueError(f"{name} must be finite")
     tolerance = max(np.linalg.norm(covariance, ord=2), np.finfo(float).tiny) * 1e-10
     if not np.allclose(covariance, covariance.T, rtol=1e-10, atol=tolerance):
         raise ValueError(f"{name} must be symmetric")
@@ -97,19 +106,98 @@ class PropagatedNoise:
 
 
 @dataclass(frozen=True)
+class ConditionedNoise:
+    mean: np.ndarray
+    covariance: np.ndarray
+    rank_ledger: dict
+
+
+@dataclass(frozen=True)
+class ConditionalProjection:
+    mean_gain: np.ndarray
+    covariance: np.ndarray
+    rank_ledger: dict
+
+
+def _support_residual(centered, scales, basis, *, name):
+    standardized = centered / scales
+    residual = standardized - (standardized @ basis) @ basis.T
+    relative = 64*np.finfo(float).eps*len(scales)
+    if np.any(np.linalg.norm(residual, axis=-1) > relative*np.linalg.norm(standardized, axis=-1)):
+        raise ValueError(f"{name} outside identified conditioning support")
+
+
+def _conditional_factors(covariance, raw_dimension):
+    """Solve on the standardized raw support, with an explicit roundoff ledger.
+
+    Scaling coordinates changes neither their physical support nor the
+    conditional distribution. The retained inverse is a solve on that support;
+    observations and Omega must belong to it before it can be used.
+    """
+    r = raw_dimension
+    sx, omega, gamma = covariance[:r, :r], covariance[:r, r:], covariance[r:, r:]
+    raw_scale = np.sqrt(np.diag(sx))
+    fallback = float(raw_scale.max()) or 1.
+    raw_scale = np.where(raw_scale > 0, raw_scale, fallback)
+    raw_correlation = sx / np.outer(raw_scale, raw_scale)
+    values, vectors = np.linalg.eigh(raw_correlation)
+    threshold = np.finfo(float).eps*r*max(float(values[-1]), 0.)
+    if values[0] < -32*max(threshold, np.finfo(float).tiny):
+        raise ValueError("raw covariance is not PSD at its conditioning resolution")
+    keep = values > threshold
+    basis = vectors[:, keep]
+    s = len(gamma)
+    state_scale = np.sqrt(np.diag(gamma))
+    state_scale = np.where(state_scale > 0, state_scale, float(state_scale.max(initial=0)) or 1.)
+    cross = omega / raw_scale[:, None] / state_scale[None, :]
+    _support_residual(cross.T, np.ones(r), basis, name="raw/state cross covariance")
+    gain_standard = ((cross.T @ basis) / values[keep]) @ basis.T
+    gain = gain_standard * state_scale[:, None] / raw_scale[None, :]
+    if s:
+        state_correlation = gamma / np.outer(state_scale, state_scale)
+        correction = gain_standard @ cross
+        schur = state_correlation-correction
+        schur = (schur+schur.T)/2
+        reference = max(float(np.linalg.norm(state_correlation, ord=2)), float(np.linalg.norm(correction, ord=2)))
+        resolution = 32*np.finfo(float).eps*(r+s)*reference
+        eigen, modes = np.linalg.eigh(schur)
+        if eigen[0] < -resolution:
+            raise ValueError("joint covariance has an invalid conditional Schur complement")
+        identified = eigen > resolution
+        conditional = ((modes[:, identified]*eigen[identified]) @ modes[:, identified].T)*np.outer(state_scale, state_scale)
+    else:
+        eigen, identified, resolution = np.empty(0), np.empty(0, dtype=bool), 0.
+        conditional = np.empty((0, 0))
+    ledger = {"method": "standardized_raw_identified_support_eigensolve",
+              "raw_dimension": r, "raw_rank": int(keep.sum()),
+              "raw_correlation_eigenvalues": values.tolist(), "raw_eigenvalue_threshold": float(threshold),
+              "raw_support_relative_tolerance": float(64*np.finfo(float).eps*r),
+              "conditional_state_rank": int(identified.sum()),
+              "conditional_state_correlation_eigenvalues": eigen.tolist(),
+              "conditional_roundoff_threshold": float(resolution),
+              "roundoff_modes_removed": int((~identified).sum()), "statistical_identifiability_claimed": False}
+    return raw_scale, basis, gain, conditional, ledger
+
+
+@dataclass(frozen=True)
 class JointNoiseModel:
     mean: np.ndarray
     covariance: np.ndarray
     raw_dimension: int
     provenance: dict
+    conditioning_gain: np.ndarray = field(init=False, repr=False, compare=False)
+    conditional_state_covariance: np.ndarray = field(init=False, repr=False, compare=False)
+    conditioning_rank_ledger: dict = field(init=False, repr=False, compare=False)
+    _raw_scales: np.ndarray = field(init=False, repr=False, compare=False)
+    _raw_support_basis: np.ndarray = field(init=False, repr=False, compare=False)
     _integrity_sha256: str = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
-        mean = np.asarray(self.mean, dtype=float)
+        mean = finite_real_array(self.mean, name="joint noise mean")
         covariance = validate_covariance(self.covariance, name="joint noise covariance")
         if mean.ndim != 1 or covariance.shape != (len(mean), len(mean)):
             raise ValueError("noise mean and covariance dimension mismatch")
-        if (not np.all(np.isfinite(mean)) or type(self.raw_dimension) is not int
+        if (type(self.raw_dimension) is not int
                 or not 0 < self.raw_dimension <= len(mean)):
             raise ValueError("invalid raw noise dimension or mean")
         object.__setattr__(self, "mean", frozen_array(mean))
@@ -131,6 +219,12 @@ class JointNoiseModel:
                 or not 0 <= provenance["shrinkage"] <= 1):
             raise ValueError("noise shrinkage must be finite in [0, 1]")
         object.__setattr__(self, "provenance", freeze_metadata(provenance))
+        scales, basis, gain, conditional, ledger = _conditional_factors(covariance, self.raw_dimension)
+        object.__setattr__(self, "_raw_scales", frozen_array(scales))
+        object.__setattr__(self, "_raw_support_basis", frozen_array(basis))
+        object.__setattr__(self, "conditioning_gain", frozen_array(gain))
+        object.__setattr__(self, "conditional_state_covariance", frozen_array(conditional))
+        object.__setattr__(self, "conditioning_rank_ledger", freeze_metadata(ledger))
         object.__setattr__(self, "_integrity_sha256", metadata_digest(self._metadata()))
 
     @classmethod
@@ -145,8 +239,8 @@ class JointNoiseModel:
         """
         if fit_scope not in {"source_training", "target_calibration"} or not isinstance(scope_id, str) or not scope_id.strip():
             raise ValueError("noise fit scope must be explicit training or calibration")
-        raw = np.asarray(raw_residual_draws, dtype=float)
-        state = np.asarray(state_draws, dtype=float)
+        raw = finite_real_array(raw_residual_draws, name="paired raw residual draws")
+        state = finite_real_array(state_draws, name="paired state draws")
         if raw.ndim != 2 or state.ndim != 2 or raw.shape[0] != state.shape[0]:
             raise ValueError("raw and state draws must be paired two-dimensional arrays")
         if len(raw) < 3 or raw.shape[1] < 1:
@@ -156,8 +250,6 @@ class JointNoiseModel:
         if len(ids) != len(raw) or len(set(ids)) != len(ids) or any(not v for v in ids):
             raise ValueError("noise draws require unique physical draw IDs")
         joint = np.column_stack([raw, state])
-        if not np.all(np.isfinite(joint)):
-            raise ValueError("noise draws must be finite")
         mean = joint.mean(axis=0)
         centered = joint - mean
         scale = np.sqrt(np.mean(centered**2, axis=0))
@@ -188,13 +280,24 @@ class JointNoiseModel:
         })
 
     def _metadata(self):
-        return {"schema": "n2p3_joint_noise/1", "raw_dimension": self.raw_dimension,
+        return {"schema": "n2p3_joint_noise/2", "raw_dimension": self.raw_dimension,
                 "provenance": self.provenance,
-                "state_sha256": array_digest(self.mean, self.covariance)}
+                "state_sha256": array_digest(self.mean, self.covariance),
+                "conditioning_rank_ledger": self.conditioning_rank_ledger,
+                "conditioning_state_sha256": array_digest(*self._conditional_arrays().values())}
+
+    def _conditional_arrays(self):
+        return {"raw_scales": self._raw_scales, "raw_support_basis": self._raw_support_basis,
+                "conditioning_gain": self.conditioning_gain,
+                "conditional_state_covariance": self.conditional_state_covariance}
 
     def assert_integrity(self):
         if metadata_digest(self._metadata()) != self._integrity_sha256:
             raise ValueError("frozen joint noise integrity changed")
+
+    def digest(self):
+        self.assert_integrity()
+        return self._integrity_sha256
 
     def project(self, raw_operator, state_operator):
         """Push forward the *joint* model, including all raw/state cross terms.
@@ -203,18 +306,62 @@ class JointNoiseModel:
         There is no independence assumption between epochs or raw and state.
         """
         self.assert_integrity()
-        A = np.asarray(raw_operator, dtype=float)
-        B = np.asarray(state_operator, dtype=float)
+        A = finite_real_array(raw_operator, name="raw operator")
+        B = finite_real_array(state_operator, name="state operator")
         if A.ndim != 2 or B.ndim != 2 or A.shape[0] != B.shape[0]:
             raise ValueError("operators must share the output sample dimension")
         if A.shape[1] != self.raw_dimension or B.shape[1] != len(self.mean) - self.raw_dimension:
             raise ValueError("operator dimensions do not match fitted noise coordinates")
-        if not np.all(np.isfinite(A)) or not np.all(np.isfinite(B)):
-            raise ValueError("operators must be finite")
         operator = np.column_stack([A, B])
         cov = operator @ self.covariance @ operator.T
         return PropagatedNoise(frozen_array(operator @ self.mean),
                                frozen_array((cov + cov.T) / 2))
+
+    def validate_conditioning_support(self, centered):
+        """Check all declared candidate residuals, without silently projecting."""
+        value = finite_real_array(centered, name="conditioning residuals")
+        if value.ndim < 2 or value.shape[-1] != self.raw_dimension:
+            raise ValueError("finite raw residuals must match conditioning support coordinates")
+        _support_residual(value, self._raw_scales, self._raw_support_basis, name="raw observation/candidate")
+
+    def _require_conditional_producer(self):
+        if self.provenance["implementation_sha256"] != _IMPLEMENTATION_SHA256:
+            raise ValueError("conditional noise producer differs from its executed implementation")
+
+    def condition(self, raw_values, *, raw_means, state_means):
+        """Return a|x,q for full candidate expectations, including noise mean.
+
+        This is a conditional distribution, not extra independent evidence.
+        All candidates must share an affine raw support in this first slice.
+        The fitted residual mean is already part of the supplied expectations.
+        """
+        self.assert_integrity()
+        self._require_conditional_producer()
+        raw = finite_real_array(raw_values, name="observed raw conditioners")
+        mx = finite_real_array(raw_means, name="full candidate raw means")
+        ma = finite_real_array(state_means, name="full candidate state means")
+        if (raw.ndim != 2 or raw.shape[1] != self.raw_dimension or mx.ndim != 2
+                or mx.shape[1] != self.raw_dimension or ma.shape != (len(mx), len(self.mean)-self.raw_dimension)
+                or len(mx) == 0):
+            raise ValueError("raw observations and full candidate raw/state means must match fitted dimensions")
+        self.validate_conditioning_support(mx-mx[:1])
+        centered = raw[:, None, :]-mx[None, :, :]
+        self.validate_conditioning_support(centered)
+        means = ma[None, :, :]+centered @ self.conditioning_gain.T
+        return ConditionedNoise(frozen_array(means), self.conditional_state_covariance, self.conditioning_rank_ledger)
+
+    def conditional_project(self, raw_operator, state_operator):
+        """Compile y=A x+B a given x; callers supply full output expectations."""
+        self.assert_integrity()
+        self._require_conditional_producer()
+        A = finite_real_array(raw_operator, name="conditional raw operator")
+        B = finite_real_array(state_operator, name="conditional state operator")
+        if (A.ndim != 2 or B.shape != (len(A), len(self.mean)-self.raw_dimension)
+                or A.shape[1] != self.raw_dimension):
+            raise ValueError("conditional operators must match fitted raw/state coordinates")
+        covariance = B @ self.conditional_state_covariance @ B.T
+        return ConditionalProjection(frozen_array(A+B @ self.conditioning_gain),
+                                     frozen_array((covariance+covariance.T)/2), self.conditioning_rank_ledger)
 
     def save(self, path):
         self.assert_integrity()
@@ -224,6 +371,7 @@ class JointNoiseModel:
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("xb") as handle:
             np.savez_compressed(handle, mean=self.mean, covariance=self.covariance,
+                                **self._conditional_arrays(),
                                 metadata=np.asarray(json.dumps(metadata, sort_keys=True)))
 
     @classmethod
@@ -231,11 +379,20 @@ class JointNoiseModel:
         with np.load(path, allow_pickle=False) as archive:
             metadata = json.loads(str(archive["metadata"]))
             mean, covariance = archive["mean"], archive["covariance"]
-        if metadata.get("schema") != "n2p3_joint_noise/1":
+            conditional = ({k: finite_real_array(archive[k], name=f"saved {k}") for k in ("raw_scales", "raw_support_basis", "conditioning_gain", "conditional_state_covariance")}
+                           if metadata.get("schema") == "n2p3_joint_noise/2" else None)
+        if metadata.get("schema") not in {"n2p3_joint_noise/1", "n2p3_joint_noise/2"}:
             raise ValueError("unsupported joint noise schema")
         expected = metadata.pop("artifact_sha256", None)
         if expected != metadata_digest(metadata):
             raise ValueError("joint noise metadata digest mismatch")
         if metadata.get("state_sha256") != array_digest(mean, covariance):
             raise ValueError("joint noise state digest mismatch")
-        return cls(mean, covariance, metadata["raw_dimension"], metadata["provenance"])
+        model = cls(mean, covariance, metadata["raw_dimension"], metadata["provenance"])
+        if conditional is not None:
+            model._require_conditional_producer()
+            if (metadata.get("conditioning_state_sha256") != array_digest(*conditional.values())
+                    or metadata_digest(model.conditioning_rank_ledger) != metadata_digest(metadata.get("conditioning_rank_ledger"))
+                    or any(not np.array_equal(v, model._conditional_arrays()[k]) for k, v in conditional.items())):
+                raise ValueError("saved conditional noise state differs from its actual joint covariance")
+        return model

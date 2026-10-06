@@ -27,8 +27,8 @@ from transfer.continuous_decision import (  # noqa: E402
     ContinuousDecisionModel,
     smooth_erp_basis,
 )
-from transfer.noise_model import JointNoiseModel  # noqa: E402
-from transfer.operator_lda import OperatorAwareLDA  # noqa: E402
+from transfer.noise_model import JointNoiseModel, metadata_digest  # noqa: E402
+from transfer.operator_lda import ConditioningObservationSupport, OperatorAwareLDA  # noqa: E402
 
 
 @contextmanager
@@ -184,40 +184,67 @@ def _noise_project(args, output):
                                      "min_eigenvalue": float(np.linalg.eigvalsh(result.covariance).min())})
 
 
+def _noise_condition(args, output):
+    model, model_sha = _model(JointNoiseModel, args.model)
+    with _arrays(args.input) as (archive, input_sha):
+        if set(archive.files) != {"raw_values", "raw_means", "state_means"}:
+            raise ValueError("noise conditioning takes only observed raw and full candidate expectations")
+        result = model.condition(archive["raw_values"], raw_means=archive["raw_means"], state_means=archive["state_means"])
+    np.savez_compressed(output/"conditioned.npz", mean=result.mean, covariance=result.covariance)
+    _write(output/"result.json", {**_provenance(args), "model_sha256": model_sha, "input_file_sha256": input_sha,
+                                 "rank_ledger": result.rank_ledger, "extra_independent_evidence": False})
+
+
 def _operator_lda_fit(args, output):
     plan, plan_sha = _json(args.plan)
     noise_path = _plan_path(args.plan, plan["noise_model"])
     noise, noise_sha = _model(JointNoiseModel, noise_path)
     data_path = _plan_path(args.plan, plan["input"])
     operator_path = _plan_path(args.plan, plan["operators"])
+    support = ConditioningObservationSupport.from_record(plan["observation_support"]) if "observation_support" in plan else None
     with _arrays(data_path) as (data, input_sha), _arrays(operator_path) as (operators, operator_sha):
+        expected = {"features", "labels"} | ({"conditioning_features"} if support is not None else set())
+        if set(data.files) != expected:
+            raise ValueError("operator calibration takes only declared features, labels and observed conditioning features")
         X = data["features"]
+        raw = data["conditioning_features"] if support is not None else None
         model = OperatorAwareLDA.fit(X, data["labels"], noise=noise,
                                      raw_operator=operators["A"], state_operator=operators["B"],
                                      calibration_ids=plan["calibration_ids"], scope_id=plan["scope_id"],
-                                     input_identity=plan["input_identity"], ridge_relative=plan.get("ridge_relative", 1e-3))
+                                     input_identity=plan["input_identity"], ridge_relative=plan.get("ridge_relative", 1e-3),
+                                     conditioning_features=raw, observation_support=support)
     model_path = output / "model.npz"
     model.save(model_path)
     reloaded, model_sha = _model(OperatorAwareLDA, model_path)
-    np.testing.assert_array_equal(model.predict_logit(X, input_identity=plan["input_identity"]),
-                                  reloaded.predict_logit(X, input_identity=plan["input_identity"]))
+    np.testing.assert_array_equal(model.predict_logit(X, observed_raw=raw, input_identity=plan["input_identity"]),
+                                  reloaded.predict_logit(X, observed_raw=raw, input_identity=plan["input_identity"]))
+    conditioning_report = ({} if support is None else {"conditioning_sample_support": list(support.conditioning_sample_support),
+        "scored_sample_support": list(support.response_sample_support), "available_samples": support.available_samples,
+        "rank_ledger": noise.conditioning_rank_ledger, "raw_likelihood_multiplied": False})
     _write(output / "fit.json", {**_provenance(args), "fit": model.provenance,
                                   "model_sha256": model_sha, "plan_sha256": plan_sha,
                                   "noise_artifact_sha256": noise_sha, "operator_file_sha256": operator_sha,
                                   "input_file_sha256": input_sha, "reload_score_equal": True,
-                                  "identifiable_rank": int(np.linalg.matrix_rank(model.identifiable_projector))})
+                                  "identifiable_rank": int(np.linalg.matrix_rank(model.identifiable_projector)), **conditioning_report})
 
 
 def _operator_lda_predict(args, output):
     metadata, metadata_sha = _json(args.metadata)
     model, model_sha = _model(OperatorAwareLDA, args.model)
+    conditional = model.observation_support is not None
+    if conditional and metadata_digest(metadata.get("observation_support")) != metadata_digest(model.observation_support.record()):
+        raise ValueError("prediction conditioning/scored support differs from its frozen operator program")
     with _arrays(args.input) as (data, input_sha):
-        if set(data.files) != {"features"}:
-            raise ValueError("operator LDA prediction takes only features, never labels or oracle states")
-        logits = model.predict_logit(data["features"], input_identity=metadata["input_identity"])
+        if set(data.files) != {"features"} | ({"observed_raw"} if conditional else set()):
+            raise ValueError("operator LDA prediction takes only declared features/observed raw, never labels or oracle states")
+        logits = model.predict_logit(data["features"], observed_raw=data["observed_raw"] if conditional else None,
+                                     input_identity=metadata["input_identity"])
+    conditioning_report = ({} if not conditional else {"conditioning_sample_support": list(model.observation_support.conditioning_sample_support),
+        "scored_sample_support": list(model.observation_support.response_sample_support),
+        "available_samples": model.observation_support.available_samples, "raw_likelihood_multiplied": False})
     _write(output / "prediction.json", {**_provenance(args), "logits": logits.tolist(),
                                          "model_sha256": model_sha, "input_file_sha256": input_sha,
-                                         "metadata_sha256": metadata_sha})
+                                         "metadata_sha256": metadata_sha, **conditioning_report})
 
 
 def main(argv=None):
@@ -229,8 +256,9 @@ def main(argv=None):
         "predict": ("Truth-free NPZ(samples,onsets,membership); metadata: sfreq, channels, candidate_ids in column order, operator_identity, record_id.", _predict),
         "noise-fit": ("Plan: input NPZ(raw_residual_draws,state_draws), fit_scope, scope_id, draw_ids, optional shrinkage.", _noise_fit),
         "noise-project": ("Frozen joint noise model and NPZ operators A, B; stack epochs to keep cross covariance.", _noise_project),
-        "operator-lda-fit": ("Plan: noise_model, input NPZ(features,labels), operators NPZ(A,B), calibration_ids, scope_id, input_identity, ridge_relative.", _operator_lda_fit),
-        "operator-lda-predict": ("Frozen operator LDA; NPZ(features) only; metadata input_identity.", _operator_lda_predict),
+        "noise-condition": ("Frozen joint model; NPZ(raw_values,raw_means,state_means) with full candidate expectations; returns a|x,q, no extra evidence.", _noise_condition),
+        "operator-lda-fit": ("Plan: noise_model, input NPZ(features,labels), operators NPZ(A,B), calibration_ids, scope_id, input_identity, ridge_relative. Conditional mode adds observation_support and NPZ conditioning_features.", _operator_lda_fit),
+        "operator-lda-predict": ("Frozen operator LDA; NPZ(features), plus observed_raw for conditional mode; metadata input_identity and frozen observation_support.", _operator_lda_predict),
     }
     for name, (help_text, handler) in specs.items():
         child = subparsers.add_parser(name, help=help_text, description=help_text)
