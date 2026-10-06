@@ -332,40 +332,40 @@ def _prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, led
 def _kernel_fit_statistics(samples, designs, noise, prefix):
     """Small actual C sufficient statistics bind the saved prior to its posterior."""
     width, channels = designs[0].shape[1], samples[0].shape[1]
-    root, score = np.empty((0, width)), np.zeros((width, channels))
+    root = np.empty((0, width + channels))
     for y, d in zip(samples, designs, strict=True):
         drift = np.column_stack((np.ones(len(y)), (2*np.arange(len(y))-(prefix-1))/(prefix-1)))
         transformed = noise.whiten(np.column_stack((d, y, drift)))
-        q = np.linalg.qr(transformed[:, -2:], mode="reduced")[0]
-        xy = transformed[:, :-2]
-        xy -= q@(q.T@xy)
-        dd, yy = xy[:, :width], xy[:, width:]
-        root = np.linalg.qr(np.vstack((root, dd)), mode="r")
-        score += dd.T@yy
-    return {"information_root": root.tolist(), "score": score.tolist(),
-            "state_sha256": array_digest(root, score), "noise_digest": noise.record()["artifact_sha256"],
-            "method": "all_C_actual_noise_per_record_diffuse_information"}
+        # Eliminate nuisance with orthogonal transformations and retain Q_D.T Y.
+        # Forming D.T Y then solving normal equations squares the conditioning.
+        quotient = np.linalg.qr(np.column_stack((transformed[:, -2:], transformed[:, :-2])), mode="r")[2:, 2:]
+        root = np.linalg.qr(np.vstack((root, quotient)), mode="r")
+    information, response = root[:width, :width], root[:width, width:]
+    return {"information_root": information.tolist(), "score": response.tolist(),
+            "state_sha256": array_digest(information, response), "noise_digest": noise.record()["artifact_sha256"],
+            "method": "all_C_actual_noise_per_record_diffuse_QR_response"}
 
 
-def _validate_prior_posterior(prior, statistics, mean, covariance, spatial, noise):
+def _validate_prior_posterior(prior, statistics, mean, covariance, noise):
     information = _real_values(statistics["information_root"], "fitted kernel information root")
     score = _real_values(statistics["score"], "fitted kernel score")
     width = len(prior.precision_root)
     if (information.shape != (width, width) or score.shape != mean.shape
             or not np.isfinite(information).all() or not np.isfinite(score).all()
-            or statistics.get("method") != "all_C_actual_noise_per_record_diffuse_information"
+            or statistics.get("method") != "all_C_actual_noise_per_record_diffuse_QR_response"
             or statistics.get("state_sha256") != array_digest(information, score)
             or statistics.get("noise_digest") != noise.record()["artifact_sha256"]):
         raise ValueError("kernel prior posterior statistics differ from the fitted noise and coordinates")
-    root = np.linalg.qr(np.vstack((information, prior.precision_root)), mode="r")
+    q, root = np.linalg.qr(np.vstack((information, prior.precision_root)), mode="reduced")
     inverse = solve_triangular(root, np.eye(width))
     expected_covariance = inverse@inverse.T
-    expected_mean = solve_triangular(root, solve_triangular(root.T, score, lower=True))
-    mean_scale = max(float(np.linalg.norm(expected_mean)),
-                     float(np.sqrt(np.trace(expected_covariance)*np.trace(spatial))), np.finfo(float).tiny)
+    response = q.T @ np.vstack((score, np.zeros_like(score)))
+    # Check the QR equation's backward error, not forward coefficient error in
+    # nearly unobserved directions. A changed posterior still violates R M = b.
+    mean_scale = max(float(np.linalg.norm(root, ord=2)*np.linalg.norm(mean) + np.linalg.norm(response)), np.finfo(float).tiny)
     covariance_scale = max(float(np.linalg.norm(expected_covariance)), np.finfo(float).tiny)
     if (np.linalg.norm(covariance-expected_covariance) > 2e-9*covariance_scale
-            or np.linalg.norm(mean-expected_mean) > 2e-9*mean_scale):
+            or np.linalg.norm(root@mean-response) > 64*np.finfo(float).eps*width*mean_scale):
         raise ValueError("saved kernel posterior differs from its actual prior and fitted C information")
 
 
@@ -495,7 +495,7 @@ class ContinuousDecisionModel:
                         or self.kernel_prior.provenance["fit_scope"] != scope):
                     raise ValueError("compiled kernel prior differs from its actual C/basis/program binding")
                 _validate_prior_posterior(self.kernel_prior, provenance["kernel_prior_fit_statistics"],
-                                          mean, row_cov, noise, self.noise)
+                                          mean, row_cov, self.noise)
             if self.noise is not None:
                 noise_provenance = self.noise.provenance
                 if (noise_provenance["fit_scope"] != scope

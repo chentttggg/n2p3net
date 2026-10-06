@@ -7,8 +7,9 @@ import hashlib
 import io
 import json
 import sys
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from dataclasses import replace
+from multiprocessing import get_context
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -49,6 +50,17 @@ from transfer.kernel_prior import KernelPriorRankError  # noqa: E402
 from transfer.outcomes import CandidateCoverage, DecisionKey  # noqa: E402
 
 SCHEMA = "n2p3_candidate_ensemble_study/1"
+_WORKER_ABORT = None
+
+
+def _initialize_worker_abort(signal):
+    global _WORKER_ABORT
+    _WORKER_ABORT = signal
+
+
+def _abort_checkpoint():
+    if _WORKER_ABORT is not None and _WORKER_ABORT.is_set():
+        raise RuntimeError("candidate matrix stopped after a peer contract failure")
 
 
 def _matched_source_controls(experts, source_snapshots):
@@ -275,6 +287,7 @@ def _calibration_prior_panel(experts):
 def _subject_impl(row, plan, directory, expected_source, source_snapshots):
     directory = Path(directory)
     directory.mkdir()
+    _abort_checkpoint()
     if _executing_source() != expected_source:
         raise ValueError("candidate ensemble execution differs from its frozen source")
     grouped = prepare_bnci_calibration_groups(row["path"], source_sha256=row["sha256"],
@@ -293,6 +306,7 @@ def _subject_impl(row, plan, directory, expected_source, source_snapshots):
                 training = [group for index, group in enumerate(groups) if index != fold]
                 evidence, calibrations, origins = {}, {}, {}
                 for expert_index, spec in enumerate(specs):
+                    _abort_checkpoint()
                     one = EnsembleProgram.equal_weights(spec.expert_id, (spec.expert_id,))
                     sources = {spec.expert_id: source_snapshots[spec.expert_id]} if spec.expert_id in source_snapshots else {}
                     package = directory / f"seed{seed}_fold{fold}_expert{expert_index}"
@@ -375,6 +389,8 @@ def _subject(row, plan, directory, expected_source, source_snapshots):
     try:
         return _subject_impl(row, plan, directory, expected_source, source_snapshots)
     except Exception as error:
+        if _WORKER_ABORT is not None:
+            _WORKER_ABORT.set()
         progress = directory / "progress.json"
         previous = json.loads(progress.read_bytes()) if progress.exists() else {"completed_prediction_cells": 0}
         atomic_write_json(progress, {**previous, "status": "failed", "error": f"{type(error).__name__}: {error}"})
@@ -447,12 +463,32 @@ def run_study(plan_path: str | Path, output: str | Path):
             for index, row in enumerate(normalized["records"]):
                 completed.append(_subject(row, normalized, output / f"participant_{index:03d}", source, source_snapshots))
         else:
-            with ProcessPoolExecutor(max_workers=plan["workers"]) as pool:
-                futures = [pool.submit(_subject, row, normalized, output / f"participant_{index:03d}", source, source_snapshots)
-                           for index, row in enumerate(normalized["records"])]
-                for future in as_completed(futures):
-                    completed.append(future.result())
-                    atomic_write_json(output / "progress.json", {"status": "running", "completed_subjects": len(completed)})
+            context = get_context("spawn")
+            abort = context.Event()
+            rows = iter(enumerate(normalized["records"]))
+            with ProcessPoolExecutor(max_workers=plan["workers"], mp_context=context,
+                    initializer=_initialize_worker_abort, initargs=(abort,)) as pool:
+                pending = set()
+                try:
+                    while True:
+                        while len(pending) < plan["workers"]:
+                            entry = next(rows, None)
+                            if entry is None:
+                                break
+                            index, row = entry
+                            pending.add(pool.submit(_subject, row, normalized,
+                                output / f"participant_{index:03d}", source, source_snapshots))
+                        if not pending:
+                            break
+                        done, pending = wait(pending, return_when=FIRST_COMPLETED)
+                        for future in done:
+                            completed.append(future.result())
+                            atomic_write_json(output / "progress.json", {"status": "running", "completed_subjects": len(completed)})
+                except BaseException:
+                    abort.set()
+                    for future in pending:
+                        future.cancel()
+                    raise
         completed.sort(key=lambda row: row["participant_key"])
         requested = tuple(DecisionPlanEntry(**entry) for row in completed for entry in row["requested"])
         roster = tuple(row["participant_key"] for row in completed)

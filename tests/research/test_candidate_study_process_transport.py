@@ -3,6 +3,7 @@ import hashlib
 import json
 
 import numpy as np
+import pytest
 from scipy.io import savemat
 
 from experiments.run_candidate_ensemble_study import run_study
@@ -41,3 +42,29 @@ def test_two_spawned_participants_return_saved_records_without_pickling_frozen_s
         assert len(participant["predictions"]) == 2
         assert all(cell["saved_replay_exact"] for cell in participant["predictions"])
         assert participant in report["participants"]
+
+
+def test_spawned_contract_failure_stops_pending_participants(tmp_path):
+    # The first two bad physical identities exercise actual worker ingress.
+    # Later records must never be dispatched after that contract failure.
+    records = []
+    for index in range(4):
+        path = tmp_path / f"A{index + 1:02d}.mat"
+        if index < 2:
+            savemat(path, {"data": bnci_mat_fields()})
+        records.append({"path": str(path), "sha256": f"{index:064x}"})
+    expert = CalibrationExpertProgram("ar0", "continuous_ar", noise_order=0, n_basis=2, conditioning_samples=32)
+    plan = {"schema": "n2p3_candidate_ensemble_study/1", "evidence_scope": "software_correctness",
+        "records": records, "authorized_labels": 800, "group_count": 2,
+        "observation_response_seconds": 308/256, "pre_roll_seconds": .2,
+        "experts": [expert.record()], "mixtures": [EnsembleProgram.equal_weights("ar0", ("ar0",)).record()],
+        "baseline_mixture": "ar0", "seeds": [23], "device": "cpu", "workers": 2,
+        "cpu_threads_per_worker": 1, "calibration_strategy": "fixed", "source_checkpoints": {}}
+    path = tmp_path / "failed_plan.json"
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    output = tmp_path / "failed_matrix"
+    with pytest.raises((ValueError, RuntimeError)):
+        run_study(path, output)
+    assert json.loads((output / "progress.json").read_bytes())["status"] == "failed"
+    assert not (output / "participant_002").exists() and not (output / "participant_003").exists()
+    assert not (output / "result.json").exists()
