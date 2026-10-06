@@ -68,3 +68,23 @@ def test_spawned_contract_failure_stops_pending_participants(tmp_path):
     assert json.loads((output / "progress.json").read_bytes())["status"] == "failed"
     assert not (output / "participant_002").exists() and not (output / "participant_003").exists()
     assert not (output / "result.json").exists()
+
+
+def test_parent_interrupt_stops_workers_and_persists_failed_status(tmp_path, monkeypatch):
+    import experiments.run_candidate_ensemble_study as runner
+    from tests.research.test_candidate_ensemble_study import study_plan
+
+    path = study_plan(tmp_path)
+    plan = json.loads(path.read_bytes())
+    plan["workers"] = 2
+    path.write_text(json.dumps(plan), encoding="utf-8")
+
+    def interrupt(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(runner, "wait", interrupt)
+    output = tmp_path / "interrupted"
+    with pytest.raises(KeyboardInterrupt):
+        runner.run_study(path, output)
+    assert json.loads((output / "progress.json").read_bytes())["status"] == "failed"
+    assert not (output / "result.json").exists()

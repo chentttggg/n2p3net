@@ -388,7 +388,7 @@ def _subject(row, plan, directory, expected_source, source_snapshots):
     directory = Path(directory)
     try:
         return _subject_impl(row, plan, directory, expected_source, source_snapshots)
-    except Exception as error:
+    except BaseException as error:
         if _WORKER_ABORT is not None:
             _WORKER_ABORT.set()
         progress = directory / "progress.json"
@@ -524,7 +524,7 @@ def run_study(plan_path: str | Path, output: str | Path):
         atomic_write_json(output / "result.json", report)
         atomic_write_json(output / "progress.json", {"status": "completed", "completed_subjects": len(completed)})
         return report
-    except Exception as error:
+    except BaseException as error:
         atomic_write_json(output / "progress.json", {"status": "failed", "completed_subjects": len(completed),
                           "error": f"{type(error).__name__}: {error}"})
         raise
