@@ -18,6 +18,8 @@
 
 全集在独立g树执行，合并主树后的caller联动另验；不将之前M1 source的成绩充作新g公开效能，不重签原模型。原始RED、源码副本与最终命令收据继续本地保留，主线review后接收提交。
 
+已在主树接收，runner另补两处真正调用链：same-ridge AR阶数面板明确拒绝g程序，避免混入先验归因；`KernelPriorRankError.record()`进入失败格fit-origin，保留spec/rank/source证据、requested预算与actual scored0。59项联动通过；合并后完整pytest2604通过、19跳过、0失败/错误，共2623项，399文件前后byte guard不变。原独立g树2576/19与主树全集分别记录，原M1仍用自己的冻结e982执行源，不追签新g结果。
+
 主树runner整合清单（本树未改runner/resume）：
 
 1. g panel使用`CalibrationExpertProgram.from_record`的新`kernel_prior`字典，删除该entry的ridge；已有M1 `fixed_prefix_ar_order` comparison仍只比较same ridge，不把g塞入该归因面板。

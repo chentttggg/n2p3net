@@ -46,5 +46,29 @@
   "numeric_payload_arrays": 9,
   "public_g_prior_matrix_executed": false,
   "adult_confirmation": false,
-  "old_M1_results_re_signed": false
+  "old_M1_results_re_signed": false,
+  "merged_main_full_suite": {
+    "counts": {
+      "tests": 2623,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 19,
+      "passed": 2604
+    },
+    "source_file_count": 399,
+    "source_bytes_unchanged": true,
+    "process_exit_code": 0,
+    "raw_receipt_sha256": "d8e9a7943f1176d89e47ebef7cb2e5a1a4f80a7c5a007e4d1edd12dee088b03e"
+  },
+  "caller_linked_tests": {
+    "tests": 59,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "caller_behavior": [
+    "calibration_g rejected from same-ridge AR-order attribution",
+    "typed g rank failure retains structured diagnostics and requested/actual score support"
+  ],
+  "final_caller_spec_receipt_sha256": "bbc6e214ff25c266f32095cc8b4738a467da3ae7d1b5e25df0da4c839bb26941"
 }

@@ -383,3 +383,43 @@ def test_fixed_prefix_resume_rejects_changed_authority_without_fallback(tmp_path
         runner._subject(plan["records"][0], plan, tmp_path / "new_participant", source, {})
     if change == "absolute_model_path":
         assert (model_path.read_bytes(), model_path.stat().st_mtime_ns) == model_before
+
+
+def test_calibration_g_prior_cannot_enter_same_ridge_ar_order_attribution():
+    from transfer.kernel_prior import KernelPriorSpec
+
+    experts = tuple(replace(spec, ridge=None, kernel_prior=KernelPriorSpec.calibration_g(9.))
+                    for spec in fixed_prefix_panel_programs())
+    with pytest.raises(ValueError, match="isotropic ridge"):
+        _fixed_prefix_ar_panel(experts, "fixed_prefix_ar_order")
+
+
+def test_g_prior_rank_failure_keeps_structured_evidence_and_requested_score_support(tmp_path, monkeypatch):
+    import experiments.run_candidate_ensemble_study as runner
+    from transfer.kernel_prior import KernelPriorRankError, KernelPriorSpec, compile_kernel_prior
+
+    prior = KernelPriorSpec.calibration_g(9.)
+    with pytest.raises(KernelPriorRankError) as captured:
+        compile_kernel_prior(prior, [np.ones((43, 1))], record_ids=("confounded_C",),
+                             fit_scope="target_calibration", binding={"scope": "software_fixture"})
+    rank_error = captured.value
+
+    def rank_failed(*args, **kwargs):
+        raise rank_error
+
+    monkeypatch.setattr(runner, "fit_calibration_ensemble", rank_failed)
+    path = study_plan(tmp_path)
+    plan = json.loads(path.read_bytes())
+    expert = replace(CalibrationExpertProgram.from_record(plan["experts"][0]),
+                     conditioning_samples=32, ridge=None, kernel_prior=prior)
+    plan.update(experts=[expert.record()], mixtures=[EnsembleProgram.equal_weights("g9", (expert.expert_id,)).record()],
+                baseline_mixture="g9")
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    report = run_study(path, tmp_path / "rank_failed")
+    assert len(report["participants"][0]["predictions"]) == 2
+    for cell in report["participants"][0]["predictions"]:
+        assert cell["evidence"]["failure_kind"] == "fit_failure"
+        assert cell["fit_origin"]["failure_diagnostics"]["rank_ledger"]["rank"] == 0
+        assert cell["fit_origin"]["failure_diagnostics"]["prior_spec"]["g"] == 9.
+        assert cell["continuous_score_support"][expert.expert_id]["n_scored_samples"] == 0
+        assert cell["requested_authorized_labels"] == 800

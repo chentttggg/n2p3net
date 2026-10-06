@@ -45,6 +45,7 @@ from transfer.ensemble_fit import (  # noqa: E402
     fit_calibration_ensemble,
 )
 from transfer.ensemble_views import prepare_bnci_calibration_groups  # noqa: E402
+from transfer.kernel_prior import KernelPriorRankError  # noqa: E402
 from transfer.outcomes import CandidateCoverage, DecisionKey  # noqa: E402
 
 SCHEMA = "n2p3_candidate_ensemble_study/1"
@@ -222,6 +223,8 @@ def _fixed_prefix_ar_panel(experts, role):
         return None
     if role != "fixed_prefix_ar_order":
         raise ValueError("unknown candidate comparison role")
+    if any(spec.kernel_prior is not None and spec.kernel_prior.kind != "isotropic_ridge" for spec in experts):
+        raise ValueError("fixed-prefix AR order comparison requires the same isotropic ridge prior")
     orders = (0, 1, 4, 8, 16, 32)
     estimators = ("burg", "conditional_profile")
     expected = {(order, estimator) for order in orders for estimator in estimators}
@@ -295,6 +298,8 @@ def _subject_impl(row, plan, directory, expected_source, source_snapshots):
                             failure_reason=f"{type(error).__name__}: {error}", failure_kind="fit_failure")
                         calibrations[spec.expert_id] = {"strategy": plan["calibration_strategy"], "status": "fit_failure"}
                         origin["kind"] = "reused_score_failure" if origin["reused_package_count"] else "new_fit_failure"
+                        if isinstance(error, KernelPriorRankError):
+                            origin["failure_diagnostics"] = error.record()
                     origins[spec.expert_id] = origin
                 for mixture in mixtures:
                     result = EnsembleScorer(mixture).score({name: evidence[name] for name in mixture.expert_ids})
