@@ -6,6 +6,7 @@ import hashlib
 import tempfile
 import unittest
 from dataclasses import replace
+from fractions import Fraction
 from pathlib import Path
 from unittest.mock import patch
 
@@ -19,6 +20,9 @@ from transfer.spatial_signal_prior import (
     SpatialResponseBlock,
     SpatialSignalPosterior,
     SpatialSignalPrior,
+    _exact_covariance_relation,
+    _qr_column_relation,
+    _unit_information_relation,
 )
 
 
@@ -133,6 +137,43 @@ class TestSpatialSignalPrior(unittest.TestCase):
         change = np.kron(whiten, np.eye(2))
         white_covariance = change @ fitted.covariance @ change.T
         self.assertGreater(np.linalg.norm(white_covariance[:2, 2:4]), 1e-6)
+
+    def test_qr_reconstruction_uses_original_columns_without_losing_weak_certificate(self):
+        # A dense row rotation introduces rounded remnants in structural zero
+        # entries; one original column's roundoff cannot borrow another's norm.
+        generator = np.random.default_rng(9107)
+        actual = np.zeros((36, 6))
+        actual[:6] = np.diag([1., 1e-8, 3., .7, 2., 4.])
+        actual[6:12] = np.diag([.5, 2e-8, .6, 1.2, 1., 3.])
+        rotation, _ = np.linalg.qr(generator.normal(size=(36, 36)))
+        rotated_q, root = np.linalg.qr(rotation @ actual, mode="reduced")
+        q = rotation.T @ rotated_q
+        _qr_column_relation(actual, q, root)
+        _unit_information_relation(actual, root)
+        changed = root.copy()
+        changed[1, 1] *= 2
+        with self.assertRaises(ValueError):
+            _unit_information_relation(actual, changed)
+        changed_q = q.copy()
+        changed_q[:, 1] *= .5
+        self.assertGreater(np.max(np.abs(changed_q.T @ changed_q - np.eye(6))), .7)
+
+    def test_exact_covariance_certificate_matches_independent_fraction_oracle(self):
+        root = np.array([[1., .125, -.0625], [0., .75, .03125], [0., 0., .5]])
+        inverse = np.linalg.inv(root)
+        covariance = inverse @ inverse.T
+        certificate = _exact_covariance_relation(root, covariance)
+        exact_root = [[Fraction.from_float(float(value)) for value in row] for row in root]
+        exact_covariance = [[Fraction.from_float(float(value)) for value in row] for row in covariance]
+        quadratic = [[sum(exact_root[i][a] * exact_covariance[a][b] * exact_root[j][b]
+                          for a in range(3) for b in range(3)) for j in range(3)] for i in range(3)]
+        error = max(abs(quadratic[i][j] - (1 if i == j else 0)) for i in range(3) for j in range(3))
+        self.assertEqual(Fraction(int(certificate["unit_error_numerator"]),
+                                  int(certificate["unit_error_denominator"])), error)
+        changed = covariance.copy()
+        changed[0, 0] *= 4
+        with self.assertRaises(SpatialPriorIdentificationError):
+            _exact_covariance_relation(root, changed)
 
     def test_diffuse_nuisance_and_conditional_prefix_oracle(self):
         records = [block(self.rng, self.geometry, "C1", nuisance=True),

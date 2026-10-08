@@ -89,7 +89,7 @@ def _spatial_energy(observation, signal, noise):
     return float(np.trace(np.linalg.solve(projected_noise, projected_signal)))
 
 
-def run_native_panel(*, plan_path, snapshot, output):
+def run_native_panel(*, plan_path, snapshot, output, reuse_baseline=None, baseline_origin_receipt=None):
     """Execute one declared six-cell panel; do not select priors from held output."""
     plan, plan_sha256 = _read_plan(plan_path)
     snapshot_state = verified_executed_snapshot(snapshot, root=ROOT,
@@ -140,21 +140,41 @@ def run_native_panel(*, plan_path, snapshot, output):
         atomic_write_json(receipt_path, state)
         records = [CalibrationRecord(g.view.record_id, g.view.samples, g.view.onsets, g.labels) for g in calibration]
         dictionary = ResponseDictionary(ResponseDictionarySpec(**plan["baseline"]["dictionary"]), view.sample_rate_hz)
-        baseline_path = output / "native_AR0_noise_model.npz"
+        baseline_path = output / "native_AR0_noise_model.npz" if reuse_baseline is None else reuse_baseline.resolve()
         begin = perf_counter()
         try:
-            baseline = ContinuousDecisionModel.fit(records, sfreq=view.sample_rate_hz, channels=view.channel_names,
-                candidate_ids=view.decision.candidate_vocabulary,
-                operator_identity="B09_actual_native_unfiltered_reference_and_grid/1:" + metadata_digest({
-                    "channels": view.channel_names, "reference": view.reference, "unit": view.signal_unit,
-                    "source_sha256": source_sha256, "sample_rate_hz": view.sample_rate_hz}),
-                dictionary=dictionary, ridge=1., noise_order=0, conditioning_samples=32,
-                noise_estimator="conditional_profile", fit_scope="target_calibration")
-            baseline.save(baseline_path)
+            if reuse_baseline is None:
+                if baseline_origin_receipt is not None:
+                    raise ValueError("origin receipt is meaningful only for an explicit reused baseline")
+                baseline = ContinuousDecisionModel.fit(records, sfreq=view.sample_rate_hz, channels=view.channel_names,
+                    candidate_ids=view.decision.candidate_vocabulary,
+                    operator_identity="B09_actual_native_unfiltered_reference_and_grid/1:" + metadata_digest({
+                        "channels": view.channel_names, "reference": view.reference, "unit": view.signal_unit,
+                        "source_sha256": source_sha256, "sample_rate_hz": view.sample_rate_hz}),
+                    dictionary=dictionary, ridge=1., noise_order=0, conditioning_samples=32,
+                    noise_estimator="conditional_profile", fit_scope="target_calibration")
+                baseline.save(baseline_path)
+            else:
+                if baseline_origin_receipt is None:
+                    raise ValueError("same-C baseline reuse requires its actual producer execution receipt")
+                origin = json.loads(baseline_origin_receipt.read_text(encoding="utf-8"))
+                if (origin["plan_sha256"] != plan_sha256 or origin["original_MAT_sha256"] != source_sha256
+                        or origin["actual_calibration"] != state["actual_calibration"]
+                        or origin["prior_programs_frozen_before_first_held_score"][baseline_path.name]
+                        != hashlib.sha256(baseline_path.read_bytes()).hexdigest()):
+                    raise ValueError("reused baseline differs from its original same-C plan/source/producer")
+                state["baseline_reuse"] = {"path": str(baseline_path),
+                    "origin_receipt_sha256": hashlib.sha256(baseline_origin_receipt.read_bytes()).hexdigest(),
+                    "original_source_archive_sha256": origin["actual_source_archive_sha256"],
+                    "original_source_manifest_sha256": origin["snapshot_manifest_sha256"],
+                    "original_fit_attempts": origin["baseline_fit_attempts"],
+                    "current_fit_attempts": 0, "original_model_digest": origin["baseline_model_digest"]}
             baseline_file_digest = hashlib.sha256(baseline_path.read_bytes()).hexdigest()
             baseline = ContinuousDecisionModel.load(baseline_path)
             if hashlib.sha256(baseline_path.read_bytes()).hexdigest() != baseline_file_digest:
                 raise ValueError("read-only baseline load altered its original model artifact")
+            if reuse_baseline is not None and baseline.digest() != state["baseline_reuse"]["original_model_digest"]:
+                raise ValueError("reused baseline state differs from its actual original producer")
         except UnidentifiableFitError as error:
             for cell in cells:
                 cell.update(status="typed_baseline_failure", failure={"type": type(error).__name__, "detail": str(error)},
@@ -192,7 +212,8 @@ def run_native_panel(*, plan_path, snapshot, output):
             priors[name] = prior_path
         immutable_inputs = {path.name: hashlib.sha256(path.read_bytes()).hexdigest()
                             for path in (baseline_path, *priors.values())}
-        state.update(baseline_fit_attempts=1, baseline_fit_seconds=perf_counter() - begin,
+        state.update(baseline_fit_attempts=1 if reuse_baseline is None else 0,
+            baseline_fit_seconds=perf_counter() - begin,
             baseline_model_digest=baseline.digest(), baseline_noise_digest=baseline.noise.record()["artifact_sha256"],
             baseline_innovation_covariance_sha256=array_digest(sigma),
             baseline_noise_schema=baseline.noise.record()["schema"],
@@ -295,7 +316,8 @@ def run_native_panel(*, plan_path, snapshot, output):
     if hashlib.sha256(input_path.read_bytes()).hexdigest() != source_sha256 or hashlib.sha256(plan_path.read_bytes()).hexdigest() != plan_sha256:
         raise ValueError("scientific input or predeclared plan changed during execution")
     for name, digest in immutable_inputs.items():
-        if hashlib.sha256((output / name).read_bytes()).hexdigest() != digest:
+        actual_path = baseline_path if name == baseline_path.name else output / name
+        if hashlib.sha256(actual_path.read_bytes()).hexdigest() != digest:
             raise ValueError("a fixed baseline or prior input was modified by the panel")
     resources.update(wall_seconds=perf_counter() - start, process_cpu_seconds=sum(process.cpu_times()[:2]) - cpu_start,
         process_rss_after_bytes=process.memory_info().rss, memory_available_after_bytes=psutil.virtual_memory().available,
@@ -321,9 +343,12 @@ def main(argv=None):
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--snapshot", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--reuse-baseline", type=Path)
+    parser.add_argument("--baseline-origin-receipt", type=Path)
     args = parser.parse_args(argv)
     try:
-        result = run_native_panel(plan_path=args.plan, snapshot=args.snapshot, output=args.output)
+        result = run_native_panel(plan_path=args.plan, snapshot=args.snapshot, output=args.output,
+            reuse_baseline=args.reuse_baseline, baseline_origin_receipt=args.baseline_origin_receipt)
     except Exception as error:
         receipt_path = args.output / "panel_receipt.json"
         if receipt_path.is_file():

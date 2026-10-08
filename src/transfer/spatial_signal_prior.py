@@ -114,6 +114,63 @@ def _unit_information_relation(actual, saved, *, lower=False):
     return scales
 
 
+def _qr_column_relation(actual, q, root):
+    """Householder QR reconstruction in each original coefficient column.
+
+    QR is backward stable at column scale, including when an input entry is
+    exactly zero. The orthogonal factor's construction and the subsequent dot
+    products can mix all rows of that column; an entry's own near-zero result
+    is therefore not their roundoff scale. Independent unit-information and
+    orthogonality certificates still resolve every weak precision direction.
+    """
+    residual = actual - q @ root
+    original_norms = np.sqrt(np.sum(actual**2, axis=0))
+    product_norms = np.sqrt(np.sum((np.abs(q) @ np.abs(root))**2, axis=0))
+    rows, width = actual.shape
+    q_generation = _gamma(6 * rows * width) * original_norms
+    multiplication = _gamma(width) * product_norms
+    bounds = q_generation + multiplication
+    residual_norms = np.sqrt(np.sum(residual**2, axis=0))
+    if np.any(residual_norms > bounds):
+        raise ValueError("producer posterior QR root differs from actual C likelihood information")
+
+
+def _binary_integer_matrix(matrix):
+    """Represent finite binary64 operands over one exact power-of-two denominator."""
+    ratios = [float(value).as_integer_ratio() for value in np.asarray(matrix).flat]
+    powers = [denominator.bit_length() - 1 for _, denominator in ratios]
+    power = max(powers, default=0)
+    values = [numerator << (power - item_power)
+              for (numerator, _), item_power in zip(ratios, powers, strict=True)]
+    return np.asarray(values, dtype=object).reshape(matrix.shape), power
+
+
+def _exact_covariance_relation(root, covariance):
+    """Rare exact check of the stored R H R.T operands, with no tolerance conversion.
+
+    Each finite float is a rational with a power-of-two denominator. Two Python
+    integer matrix products therefore give the exact quadratic; comparing its
+    integer residual to the original resolution avoids an inconclusive float
+    cancellation enclosure. This is ingress/publication work, never scoring.
+    """
+    integer_root, root_power = _binary_integer_matrix(root)
+    integer_covariance, covariance_power = _binary_integer_matrix(covariance)
+    quadratic = (integer_root @ integer_covariance) @ integer_root.T
+    denominator = 1 << (2 * root_power + covariance_power)
+    numerator = max(abs(int(quadratic[i, j]) - (denominator if i == j else 0))
+                    for i in range(len(root)) for j in range(len(root)))
+    resolution_numerator, resolution_denominator = _IDENTITY_RESOLUTION.as_integer_ratio()
+    if numerator * resolution_denominator > denominator * resolution_numerator:
+        raise SpatialPriorIdentificationError("posterior_covariance_resolution_unresolved",
+            exact_unit_error_numerator=str(numerator), exact_unit_error_denominator=str(denominator),
+            identity_resolution_numerator=str(resolution_numerator),
+            identity_resolution_denominator=str(resolution_denominator))
+    return {"arithmetic": "exact_binary64_power_of_two_integer_quadratic",
+            "unit_error_numerator": str(numerator), "unit_error_denominator": str(denominator),
+            "identity_resolution_numerator": str(resolution_numerator),
+            "identity_resolution_denominator": str(resolution_denominator)}
+
+
 class SpatialPriorIdentificationError(UnidentifiableFitError):
     """A valid requested spatial mechanism has no identified implementation."""
 
@@ -594,9 +651,7 @@ def _posterior_state(prior, roots, responses, state):
     q_gram_bound = _gamma(len(q)) * (np.abs(q).T @ np.abs(q))
     if np.any(np.abs(q.T @ q - np.eye(width)) > tolerance + q_gram_bound):
         raise ValueError("producer actual-C QR factor is not orthonormal in every direction")
-    qr_bound = 256 * _gamma(width) * (np.abs(normalized_stack) + np.abs(q) @ np.abs(normalized_root))
-    if np.any(np.abs(normalized_stack - q @ normalized_root) > qr_bound):
-        raise ValueError("producer posterior QR root differs from actual C likelihood information")
+    _qr_column_relation(normalized_stack, q, normalized_root)
     _unit_information_relation(stacked, root)
     response_bound = 256 * _gamma(len(q)) * (np.abs(q).T @ np.abs(rhs))
     if np.any(np.abs(response - q.T @ rhs) > response_bound):
@@ -614,9 +669,8 @@ def _posterior_state(prior, roots, responses, state):
     gram_bound = (3 * _gamma(width) + 2 * np.finfo(float).eps) * (
         np.abs(normalized_root) @ np.abs(normalized_covariance) @ np.abs(normalized_root.T))
     if not np.isfinite(gram_bound).all() or np.max(gram_bound) > _IDENTITY_RESOLUTION:
-        raise SpatialPriorIdentificationError("posterior_covariance_resolution_unresolved",
-            relative_identity_error_bound=float(np.max(gram_bound)), identity_resolution=_IDENTITY_RESOLUTION)
-    if np.any(np.abs(gram - np.eye(width)) > tolerance + gram_bound):
+        _exact_covariance_relation(root, covariance)
+    elif np.any(np.abs(gram - np.eye(width)) > tolerance + gram_bound):
         raise ValueError("saved spatial posterior covariance violates its actual C information")
     return root, response, mean, covariance, q, scales
 
