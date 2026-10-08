@@ -1965,7 +1965,11 @@ def _select_unified_source_prior(dataset, outer, *, layout, plan, report, output
                 record["outcomes"].extend(_score_source_prior_person(job))
                 atomic_write_json(destination / "selection.json", record)
         else:
-            with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("spawn")) as pool:
+            from research.source_execution import current_input_admission, install_input_admission
+
+            with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("spawn"),
+                    initializer=install_input_admission,
+                    initargs=(current_input_admission(), os.environ.get("N2P3_CLOUD_TASK_ID"))) as pool:
                 futures = [pool.submit(_score_source_prior_person, job) for job in jobs]
                 for future in as_completed(futures):
                     record["outcomes"].extend(future.result())
