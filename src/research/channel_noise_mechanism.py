@@ -969,7 +969,44 @@ def _response_nuisance_qr(z, *, require_prefix=None):
     return q, root, scales
 
 
+@dataclass(frozen=True)
+class _ResponseLikelihoodRecord:
+    raw: ResponseFitRecord
+    white_y: np.ndarray
+    white_design: np.ndarray
+    white_nuisance: np.ndarray
+    map_binding: dict
+
+
+def _compile_current_response_likelihood(noise, row):
+    n, channels = row.samples.shape
+    width = row.design.shape[1]*channels
+    mapping = np.kron(row.design, np.eye(channels)).reshape(n, channels, width)
+    combined = np.concatenate((row.samples[:, :, None], mapping, row.nuisance), axis=2)
+    white = noise.whiten(combined).reshape(n*channels, -1)
+    y, design, z = white[:, 0], white[:, 1:1+width], white[:, 1+width:]
+    return _ResponseLikelihoodRecord(row, frozen_array(y), frozen_array(design), frozen_array(z),
+        freeze_metadata({"program": "current_actual_B05_whitened_C",
+            "noise_sha256": metadata_digest(noise.record()),
+            "actual_raw_record": row.ledger(), "white_map_sha256": array_digest(y, design, z)}))
+
+
 def _fit_response_given_frozen_noise(noise, prior, records, *, response_id):
+    """Compile canonical current-noise maps and consume the shared QR core."""
+    if not isinstance(noise, FittedChannelNoise) or not isinstance(prior, PhysicalCoefficientPrior):
+        raise TypeError("fit needs an admitted B05 frozen noise and physical coefficient prior")
+    noise.assert_integrity()
+    records = tuple(records)
+    if not records or any(not isinstance(row, ResponseFitRecord) for row in records):
+        raise ValueError("proper physical response fit needs explicit authorized C records")
+    compiled = (_compile_current_response_likelihood(noise, row) for row in records)
+    return _fit_response_likelihood_core(prior, records, compiled, geometry=noise.geometry,
+        conditioning_samples=noise.conditioning_samples, noise_family=noise.family,
+        noise_binding=noise.record(), response_id=response_id)
+
+
+def _fit_response_likelihood_core(prior, records, likelihood_records, *, geometry, conditioning_samples,
+                                  noise_family, noise_binding, response_id):
     """All authorized C Gaussian fit with proper physical prior and fixed noise.
 
     Same full-record whitening acts on Y, vec response design and diffuse Z.
@@ -977,24 +1014,22 @@ def _fit_response_given_frozen_noise(noise, prior, records, *, response_id):
     Record roots are compressed incrementally; no full-C covariance or Gram is
     formed. External caller authority remains external to this numerical fit.
     """
-    if not isinstance(noise, FittedChannelNoise) or not isinstance(prior, PhysicalCoefficientPrior):
-        raise TypeError("fit needs an admitted B05 frozen noise and physical coefficient prior")
-    noise.assert_integrity()
+    # Record source/role/geometry checks are shared by both map producers.
     records = tuple(records)
     if not records or any(not isinstance(row, ResponseFitRecord) for row in records):
-        raise ValueError("proper physical response fit needs explicit authorized C records")
+        raise ValueError("response fit requires actual authorized C records")
     if not isinstance(response_id, str) or not response_id.strip():
         raise ValueError("fitted physical response needs an identity")
     ids = [row.authorization["record_id"] for row in records]
     require_identifiers(ids, "response C record identities")
     scopes = {row.authorization["fit_scope"] for row in records}
-    if len(scopes) != 1 or noise.geometry != prior.geometry:
+    if len(scopes) != 1 or geometry != prior.geometry:
         raise ValueError("fixed noise/prior/C physical geometry or fit scopes differ")
     if next(iter(scopes)) == "target_calibration" and len({row.authorization["participant_key"] for row in records}) != 1:
         raise ValueError("target response C requires one actual participant")
     for i, row in enumerate(records):
         if (row.geometry != prior.geometry or row.basis_sha256 != array_digest(prior.basis)
-                or row.design.shape[1] != prior.mean.shape[0] or len(row.samples) <= noise.conditioning_samples):
+                or row.design.shape[1] != prior.mean.shape[0] or len(row.samples) <= conditioning_samples):
             raise ValueError("C design/basis/geometry/prefix differs from fixed physical prior/noise")
         for other in records[:i]:
             left, right = row.authorization["read_support"], other.authorization["read_support"]
@@ -1007,13 +1042,16 @@ def _fit_response_given_frozen_noise(noise, prior, records, *, response_id):
                                   prior.precision_root@prior.mean.ravel()))
     compressed = np.linalg.qr(augmented, mode="r")
     drift_parts, compression, information_roots, information_responses = [], [], [], []
-    for row in records:
-        n = len(row.samples)
-        mapping = np.kron(row.design, np.eye(channels)).reshape(n, channels, width)
-        combined = np.concatenate((row.samples[:, :, None], mapping, row.nuisance), axis=2)
-        white = noise.whiten(combined).reshape(n*channels, -1)
-        y, design, z = white[:, 0], white[:, 1:1+width], white[:, 1+width:]
-        qz, rz, zscales = _response_nuisance_qr(z, require_prefix=noise.conditioning_samples*channels)
+    for row, compiled in zip(records, likelihood_records, strict=True):
+        if not isinstance(compiled, _ResponseLikelihoodRecord) or compiled.raw is not row:
+            raise ValueError("compiled likelihood producer and actual C records differ")
+        y, design, z = compiled.white_y, compiled.white_design, compiled.white_nuisance
+        if (y.shape != (row.samples.size,) or design.shape != (row.samples.size, width)
+                or z.shape != (row.samples.size, row.nuisance.shape[2])
+                or compiled.map_binding["actual_raw_record"] != freeze_metadata(row.ledger())
+                or compiled.map_binding["white_map_sha256"] != array_digest(y, design, z)):
+            raise ValueError("compiled C maps changed after their actual producer validation")
+        qz, rz, zscales = _response_nuisance_qr(z, require_prefix=conditioning_samples*channels)
         zy, zd = qz.T@y, qz.T@design
         projected_y, projected_d = y-qz@zy, design-qz@zd
         update = np.column_stack((projected_d/scales, projected_y))
@@ -1030,7 +1068,8 @@ def _fit_response_given_frozen_noise(noise, prior, records, *, response_id):
                             "information_root_sha256": array_digest(information),
                             "information_response_sha256": array_digest(record_response),
                             "compressed_augmented_root_sha256": array_digest(compressed),
-                            "nuisance_coordinates": z.shape[1]})
+                            "nuisance_coordinates": z.shape[1],
+                            "map_producer": compiled.map_binding})
     normalized_root, rhs = compressed[:width, :width], compressed[:width, width]
     _response_resolved_root(normalized_root, "given-noise physical posterior")
     vector = solve_triangular(normalized_root, rhs)/scales
@@ -1052,7 +1091,7 @@ def _fit_response_given_frozen_noise(noise, prior, records, *, response_id):
     mean = vector.reshape(prior.mean.shape)
     provenance = {"fit_scope": next(iter(scopes)), "records": [row.ledger() for row in records],
                   "method": "all_C_given_frozen_noise_streamed_diffuse_QR_fixed_physical_prior",
-                  "prior": prior.record(), "actual_noise": noise.record(),
+                  "prior": prior.record(), "actual_noise": noise_binding,
                   "compression": compression, "final_augmented_root_sha256": array_digest(compressed),
                   "prior_column_scales": scales.tolist(), "implementation_sha256": _IMPLEMENTATION_SHA256,
                   "producer_identity_kind": "actual_in_memory_fit_state_not_model_file_or_legacy_relabel",
@@ -1064,10 +1103,10 @@ def _fit_response_given_frozen_noise(noise, prior, records, *, response_id):
     fit_identity = metadata_digest({"provenance": provenance, "mean_sha256": array_digest(mean),
                                    "root_and_rhs_sha256": array_digest(root, rhs), "factor_sha256": array_digest(factor)})
     response = FrozenERPResponse(mean, factor, prior.geometry, fit_identity, response_id, provenance)
-    binding = freeze_metadata({"fit_sha256": fit_identity, "prior": prior.record(), "noise_sha256": metadata_digest(noise.record()),
+    binding = freeze_metadata({"fit_sha256": fit_identity, "prior": prior.record(), "noise_sha256": metadata_digest(noise_binding),
                                "implementation_sha256": _IMPLEMENTATION_SHA256, "fit_scope": next(iter(scopes)),
                                "coefficient_order": "row_major_coefficient_then_observed_channel",
-                               "noise_family": noise.family, "conditioning_samples": noise.conditioning_samples,
+                               "noise_family": noise_family, "conditioning_samples": conditioning_samples,
                                "posterior_scope": "all_authorized_C_prefix_and_tail_given_frozen_parameters",
                                "measurement_authority": "external_caller", "matrix_normal_claimed": False})
     return FixedNoiseResponseFit(response, frozen_array(root), frozen_array(rhs), tuple(information_roots),
