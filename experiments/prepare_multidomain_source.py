@@ -7,7 +7,10 @@ import sys
 from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext
+from dataclasses import replace
 from pathlib import Path
+
+import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
@@ -32,6 +35,8 @@ from data.epochs import (  # noqa: E402
     produce_epoch_cache,
     save_epoch_dataset,
 )
+from research.execution import atomic_write_json  # noqa: E402
+from research.source_execution import PreparedSourceStorage  # noqa: E402
 from train.runtime import (  # noqa: E402
     cpu_thread_budget,
     resolve_cpu_worker_plan,
@@ -54,10 +59,12 @@ def _prepare_source(
     missing_channel_policy: str = "require",
     reference_channel: str | None = None,
     phases=None,
+    destination=None,
+    snapshot_directory=None,
 ) -> tuple[EpochDataset, dict[str, object]]:
     namespace, path = source
     with phases.phase("load_admitted_cache:" + namespace) if phases is not None else nullcontext():
-        dataset = load_epoch_dataset(path, require_labels=True, validation="attested")
+        dataset = load_epoch_dataset(path, require_labels=True, validation="attested", snapshot_directory=snapshot_directory)
     cache_attestation = loaded_epoch_cache_attestation(dataset)
     namespace_preexisting = dataset.provenance.get("subject_namespace") is not None
     with phases.phase("project_reference_QC_and_identity:" + namespace) if phases is not None else nullcontext():
@@ -80,6 +87,13 @@ def _prepare_source(
                 or projection["dropped_metadata_columns"]
                 or projection["source_candidate_task_contract"] is not None
             )
+        if destination is not None:
+            if (destination.shape != aligned.X.shape or destination.dtype != aligned.X.dtype
+                    or not aligned.X.flags.c_contiguous):
+                raise ValueError("streamed source allocation differs from the verified prepared EEG geometry")
+            np.copyto(destination, aligned.X)
+            destination.flags.writeable = False
+            aligned = replace(aligned, X=destination)
     return aligned, {
         "namespace": namespace,
         "namespace_preexisting": namespace_preexisting,
@@ -128,6 +142,10 @@ def main(argv=None, *, retain_production=False, phases=None):
     parser.add_argument("--reference-channel", default=None)
     parser.add_argument("--output", required=True)
     parser.add_argument("--uncompressed", action="store_true")
+    parser.add_argument("--source-memory-budget-bytes", type=int,
+                        help="Whole source-view budget for resident rows/metadata and concurrently decoded temporaries")
+    parser.add_argument("--verified-snapshot-directory", type=Path,
+                        help="Private stable cache snapshots on the selected work filesystem; full hash verification remains active")
     parser.add_argument(
         "--source-workers",
         type=int,
@@ -141,6 +159,9 @@ def main(argv=None, *, retain_production=False, phases=None):
         help="Total native CPU thread budget shared by source workers.",
     )
     args = parser.parse_args(argv)
+    if args.verified_snapshot_directory is not None:
+        directory = args.verified_snapshot_directory.resolve()
+        directory.mkdir(parents=True, exist_ok=True)
     if args.missing_channel_policy == "mask" and args.reference_mode == "common_average":
         parser.error(
             "masked montage cannot claim one shared CAR over different observed electrodes"
@@ -179,40 +200,30 @@ def main(argv=None, *, retain_production=False, phases=None):
         requested_workers=args.source_workers,
         total_threads=args.cpu_threads,
     )
+    storage = (PreparedSourceStorage(args.source, n_channels=len(channels), output_path=output_path,
+        snapshot_directory=args.verified_snapshot_directory, budget_bytes=args.source_memory_budget_bytes)
+        if retain_production else None)
+    shared_X = storage.X if storage is not None else None
+
+    def prepare(indexed):
+        index, source = indexed
+        with storage.reserve(index) if storage is not None else nullcontext():
+            return _prepare_source(source, channels=channels, event_contract=args.event_contract,
+                reference_mode=args.reference_mode, missing_channel_policy=args.missing_channel_policy,
+                reference_channel=args.reference_channel, phases=phases, destination=storage.destinations[index] if storage is not None else None,
+                snapshot_directory=storage.snapshot_directories[index] if storage is not None else args.verified_snapshot_directory)
     with cpu_thread_budget(worker_plan.threads_per_worker):
         if worker_plan.effective_workers == 1:
-            prepared = tuple(
-                _prepare_source(
-                    source,
-                    channels=channels,
-                    event_contract=args.event_contract,
-                    reference_mode=args.reference_mode,
-                    missing_channel_policy=args.missing_channel_policy,
-                    reference_channel=args.reference_channel,
-                    phases=phases,
-                )
-                for source in args.source
-            )
+            prepared = tuple(prepare(indexed) for indexed in enumerate(args.source))
         else:
             with ThreadPoolExecutor(
                 max_workers=worker_plan.effective_workers,
                 thread_name_prefix="multidomain-source",
             ) as executor:
-                prepared = tuple(
-                    executor.map(
-                        lambda source: _prepare_source(
-                            source,
-                            channels=channels,
-                            event_contract=args.event_contract,
-                            reference_mode=args.reference_mode,
-                            missing_channel_policy=args.missing_channel_policy,
-                            reference_channel=args.reference_channel,
-                            phases=phases,
-                        ),
-                        args.source,
-                    )
-                )
+                prepared = tuple(executor.map(prepare, enumerate(args.source)))
     adapted = [item[0] for item in prepared]
+    if shared_X is not None:
+        shared_X.flags.writeable = False
     source_records = [item[1] for item in prepared]
     reference = adapted[0].provenance["source_reference"]
     domain_adapter = adapted[0].provenance.get("domain_adapter")
@@ -245,10 +256,17 @@ def main(argv=None, *, retain_production=False, phases=None):
                 },
                 "sources": source_records,
             },
+            shared_X=shared_X,
         )
     merged.provenance["identity_table_digest"] = (
         merged.identity_table.digest() if merged.identity_table is not None else None
     )
+    # Concatenation owns the final arrays and immutable parent identities. The
+    # eleven adapted parents are no longer numerical inputs to serialization.
+    del prepared, adapted
+    if storage is not None and phases is not None:
+        atomic_write_json(phases.path.parent / "source_input_memory.json", {
+            **storage.record(), "effective_loader_workers": worker_plan.effective_workers})
     with phases.phase("write_working_cache_validate_and_hash") if phases is not None else nullcontext():
         production = (produce_epoch_cache(output_path, merged, compressed=not args.uncompressed)
                       if retain_production else None)

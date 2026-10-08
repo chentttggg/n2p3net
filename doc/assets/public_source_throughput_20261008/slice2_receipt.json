@@ -1,0 +1,439 @@
+{
+  "schema": "n2p3_source_throughput_slice2_receipt/1",
+  "status": "software_validation_complete_pending_root_integration_and_final_two_axis_receipts",
+  "base_commit": "321840f58a12912f8ca128d3aac4dbf3705b4848",
+  "owned_source_sha256": {
+    "experiments/prepare_multidomain_source.py": "489ddcedd3a00f0623adf508b5664edfb83890cdc484d124bff7e2b285b84692",
+    "experiments/run_source_training_chain.py": "db034f26c77b83ab9c28c3e6650b02f095602565a4399141816c6eeff50049cd",
+    "src/baselines/deep.py": "6878a07d2d1347c19adc7f6af2b9cf930b7fbdcbcfda4b2632b575daa034b8c1",
+    "src/data/epochs.py": "874458147492f05857351ad41c37896d85cf6381ddb698875731d59f37dd0be5",
+    "src/research/source_execution.py": "5dd0b1c8dce93b3090a14bc0c36297186cb3fb68b438fa3ff6f692668bc862fc",
+    "src/research/source_selection.py": "9924599ea7867525c968c90ce1c3d91d7f1c927e88acb5ce96c81c485eacdee8",
+    "src/train/runtime.py": "ef0fca21a424a6caa17a8fc86cedd22cb2a1c1127275ee63c56a3e2c6637aa34",
+    "src/train/source_sampling.py": "a56d4cb4ba920710a1d720a1e1d5e45a6729030fef86dbb811780086a5bbe8f8",
+    "tests/data/test_epoch_cache_production.py": "8c29359563df316d2ee444b0184cc16a0eeafb47c0138bc19562fbda219f0a2b",
+    "tests/train/test_independent_source_pipeline.py": "e346085e802760860cd1cf231bd717c56081a7f099f283f809867871a7c937db",
+    "tests/train/test_prepare_multidomain_source.py": "cd67645768caef0c94c1bc49c0be56a59c2fbcfbca004594773b9e6d6e72d769",
+    "tests/train/test_source_execution_resources.py": "7887451b37ef08c48e1a38bab7a8564ab4d76373d90e9e19bbb12062b429986f",
+    "src/train/source_rows.py": "336502dd9e73bfb8f98f40709554aab8c698b51df4dd606c6bf502e0f3749bad",
+    "tests/data/test_epoch_value_blocks.py": "708f1023236e1be3a431c16d79ecf3131790a5b52388ec3dba2da6d1539cf045",
+    "tests/data/test_streamed_epoch_concatenation.py": "668b7600dd986541879497020c399a60f05d31c7ba5b23d3a855b171981e3a9d",
+    "tests/train/test_source_input_admission.py": "db00c0afb02919f2f964562b5e98a3c32f54740b4809cb6d3bebfb422c1fcf3f",
+    "tests/train/test_source_rows.py": "6bd045c1ad3a4ff13816bf13fc55bcd9097fa01ab18f1e3125b3b019f721cb34"
+  },
+  "owned_file_count": 17,
+  "source_release_candidate": {
+    "manifest": "C:\\Users\\chent\\.codex\\worktrees\\independent-calibration\\n2p3-net\\tmp\\source_throughput_20261008\\slice2_rc_source\\source.manifest.json",
+    "manifest_sha256": "a93dcbdb17ae08ee1236b7ba006ab034de61259cc92e6982a02af609a6faf575",
+    "archive_sha256": "e323ea3807e9771913d476367140c57f3ab60c308f771b081857d2395a129b18",
+    "member_count": 444,
+    "role": "actual_cloud_software_CPU_two_nodeids; source_code_matches_final_owned_files"
+  },
+  "local_validation_runs": [
+    {
+      "phase": "core01",
+      "junit": "C:\\Users\\chent\\.codex\\worktrees\\independent-calibration\\n2p3-net\\tmp\\validation\\slice2_core01\\junit.xml",
+      "sha256": "d82efbf54f2fb8ec1c8c306ffc24911639d12bff47fb7a993d73b5a1127b145a",
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "16",
+          "time": "13.590",
+          "timestamp": "2026-10-08T15:31:07.486560+08:00",
+          "hostname": "Tonger"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "phase": "builder01",
+      "junit": "C:\\Users\\chent\\.codex\\worktrees\\independent-calibration\\n2p3-net\\tmp\\validation\\slice2_builder01\\junit.xml",
+      "sha256": "1d67169eca2125224d942fb13e59bf1d2c6644498febef56ba7217ffd3a8019f",
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "23",
+          "time": "19.398",
+          "timestamp": "2026-10-08T15:35:21.058299+08:00",
+          "hostname": "Tonger"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "phase": "increment01",
+      "junit": "C:\\Users\\chent\\.codex\\worktrees\\independent-calibration\\n2p3-net\\tmp\\validation\\slice2_increment01\\junit.xml",
+      "sha256": "b87f1fcb917d90ff4c784f165bf40c0303cd32cb211a425c2fbe3c8fb90eced5",
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "6",
+          "time": "72.679",
+          "timestamp": "2026-10-08T15:37:11.145030+08:00",
+          "hostname": "Tonger"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "phase": "owner01",
+      "junit": "C:\\Users\\chent\\.codex\\worktrees\\independent-calibration\\n2p3-net\\tmp\\validation\\slice2_owner01\\junit.xml",
+      "sha256": "8b3a7cca17c29b26104f4aa1dd630d525fd2d2922461d2ab9b1a3ea443109608",
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "7",
+          "time": "26.532",
+          "timestamp": "2026-10-08T15:42:57.321979+08:00",
+          "hostname": "Tonger"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "phase": "final01",
+      "junit": "C:\\Users\\chent\\.codex\\worktrees\\independent-calibration\\n2p3-net\\tmp\\validation\\slice2_final01\\junit.xml",
+      "sha256": "e95d105b1ccd90c090090dbc17e528fe00e550399adf174a8078db9a953d583a",
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "10",
+          "time": "15.540",
+          "timestamp": "2026-10-08T15:48:16.461463+08:00",
+          "hostname": "Tonger"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "phase": "progress01",
+      "junit": "C:\\Users\\chent\\.codex\\worktrees\\independent-calibration\\n2p3-net\\tmp\\validation\\slice2_progress01\\junit.xml",
+      "sha256": "26bb985532c8a3b3074723ef6818e3eae5f584a3615e2db8d6d6aac0284b70b7",
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "3",
+          "time": "15.967",
+          "timestamp": "2026-10-08T16:01:59.465648+08:00",
+          "hostname": "Tonger"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "phase": "progress02",
+      "junit": "C:\\Users\\chent\\.codex\\worktrees\\independent-calibration\\n2p3-net\\tmp\\validation\\slice2_progress02\\junit.xml",
+      "sha256": "332b58ada18a9fe1d0b5a072b2025b5067a818472a7c2266c2fe6388b6ac668d",
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "2",
+          "skipped": "0",
+          "tests": "3",
+          "time": "41.207",
+          "timestamp": "2026-10-08T16:06:12.794894+08:00",
+          "hostname": "Tonger"
+        }
+      ],
+      "failures": [
+        {
+          "classname": "tests.train.test_source_execution_resources",
+          "name": "test_parallel_source_cli_executes_layouts_from_its_snapshot[1]",
+          "kind": "failure"
+        },
+        {
+          "classname": "tests.train.test_source_execution_resources",
+          "name": "test_parallel_source_cli_executes_layouts_from_its_snapshot[2]",
+          "kind": "failure"
+        }
+      ]
+    },
+    {
+      "phase": "progress03",
+      "junit": "C:\\Users\\chent\\.codex\\worktrees\\independent-calibration\\n2p3-net\\tmp\\validation\\slice2_progress03\\junit.xml",
+      "sha256": "1ec87740f66430850c742197ee517110d7ff16ff482f26911817d78b31f71b17",
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "2",
+          "skipped": "0",
+          "tests": "2",
+          "time": "33.281",
+          "timestamp": "2026-10-08T16:11:28.696081+08:00",
+          "hostname": "Tonger"
+        }
+      ],
+      "failures": [
+        {
+          "classname": "tests.train.test_source_execution_resources",
+          "name": "test_parallel_source_cli_executes_layouts_from_its_snapshot[1]",
+          "kind": "failure"
+        },
+        {
+          "classname": "tests.train.test_source_execution_resources",
+          "name": "test_parallel_source_cli_executes_layouts_from_its_snapshot[2]",
+          "kind": "failure"
+        }
+      ]
+    }
+  ],
+  "cloud_validation": {
+    "scope": "software_correctness_CPU_tiny_no_public_source_training",
+    "files": {
+      "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_20261008\\data_admission_recovery\\root_source_training_receipts\\validation_slice2_rc_upload.json": "4de816bed7c116933bee696dad1e083f79d1ff5978930b7de82a212b7cb7c526",
+      "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_20261008\\data_admission_recovery\\root_source_training_receipts\\validation_slice2_rc_launch.json": "4bd1a48afd44a53bd0af7229d1950bc68a78d07a7a4cf26b3c53656bd1e96a88",
+      "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_20261008\\data_admission_recovery\\root_source_training_receipts\\validation_slice2_rc_status.json": "b817cce1dd63dfc3fcd248ed46c9a92b9672d54aa781127fa48ceb8985fd245e",
+      "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_20261008\\data_admission_recovery\\root_source_training_receipts\\validation_slice2_rc\\download_receipt.json": "734bdc58dff14b102382ea0a03ba96ed38cfc94a49b946ec77d4933f502f594c",
+      "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_20261008\\data_admission_recovery\\root_source_training_receipts\\validation_slice2_rc\\junit.xml": "88ebc1cba4a024962ad3a49c945b595b53a4609e3f5b7d80524b4c77530f9ecc",
+      "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_20261008\\data_admission_recovery\\root_source_training_receipts\\validation_slice2_rc\\launch.json": "304eb2137ed940a2ab99e8711cacdd1011fa0ba821d4319705e71865e3d9c9d1",
+      "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_20261008\\data_admission_recovery\\root_source_training_receipts\\validation_slice2_rc\\runner.log": "99db33d5c94c6f7da021687c7391181685cc33299c5435b1c861e2db3be3ec87"
+    },
+    "junit_summary": {
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "2",
+          "time": "27.120",
+          "timestamp": "2026-10-08T16:17:21.206120+08:00",
+          "hostname": "autodl-container-ca6c40b13f-86ca9d13"
+        }
+      ],
+      "cases": [
+        {
+          "classname": "tests.train.test_source_execution_resources",
+          "name": "test_parallel_source_cli_executes_layouts_from_its_snapshot[1]",
+          "time": "14.449"
+        },
+        {
+          "classname": "tests.train.test_source_execution_resources",
+          "name": "test_parallel_source_cli_executes_layouts_from_its_snapshot[2]",
+          "time": "12.311"
+        }
+      ]
+    },
+    "local_resource_red_preserved": true,
+    "source_worker_memory_gib_fixture": 1.0,
+    "cloud_training_source_memory_gib_unchanged": 18,
+    "original_junit_sha256": "88ebc1cba4a024962ad3a49c945b595b53a4609e3f5b7d80524b4c77530f9ecc"
+  },
+  "distinct_successful_case_count": 44,
+  "case_identity_key": [
+    "classname",
+    "name"
+  ],
+  "distinct_cases": [
+    {
+      "classname": "tests.data.test_epoch_cache_production",
+      "name": "test_fresh_written_source_state_and_attested_resume_bind_same_actual_cache"
+    },
+    {
+      "classname": "tests.data.test_epoch_cache_production",
+      "name": "test_source_production_does_not_change_fortran_layout_of_generic_arrays"
+    },
+    {
+      "classname": "tests.data.test_epoch_cache_production",
+      "name": "test_source_production_rejects_uncanonical_serialized_metadata[channel_positions_m-float64]"
+    },
+    {
+      "classname": "tests.data.test_epoch_cache_production",
+      "name": "test_source_production_rejects_uncanonical_serialized_metadata[y-uint8]"
+    },
+    {
+      "classname": "tests.data.test_epoch_cache_production",
+      "name": "test_source_writer_does_not_attest_unserialized_float64_state"
+    },
+    {
+      "classname": "tests.data.test_epoch_cache_production",
+      "name": "test_written_source_handoff_rejects_modified_persisted_cache"
+    },
+    {
+      "classname": "tests.data.test_epoch_cache_production",
+      "name": "test_written_source_handoff_rejects_post_write_signal_change"
+    },
+    {
+      "classname": "tests.data.test_epoch_value_blocks",
+      "name": "test_epoch_finite_validation_rejects_nonfinite_after_two_complete_blocks[-inf]"
+    },
+    {
+      "classname": "tests.data.test_epoch_value_blocks",
+      "name": "test_epoch_finite_validation_rejects_nonfinite_after_two_complete_blocks[inf]"
+    },
+    {
+      "classname": "tests.data.test_epoch_value_blocks",
+      "name": "test_epoch_finite_validation_rejects_nonfinite_after_two_complete_blocks[nan]"
+    },
+    {
+      "classname": "tests.data.test_epoch_value_blocks",
+      "name": "test_epoch_nonfinite_values_remain_invalid_inside_later_masked_channels"
+    },
+    {
+      "classname": "tests.data.test_epoch_value_blocks",
+      "name": "test_epoch_static_mask_validation_checks_later_blocks"
+    },
+    {
+      "classname": "tests.data.test_epoch_value_blocks",
+      "name": "test_epoch_trial_mask_validation_checks_later_blocks"
+    },
+    {
+      "classname": "tests.data.test_streamed_epoch_concatenation",
+      "name": "test_streamed_source_concat_cannot_relabel_an_unrelated_shared_buffer"
+    },
+    {
+      "classname": "tests.data.test_streamed_epoch_concatenation",
+      "name": "test_streamed_source_concat_rejects_reversed_or_reordered_memory_views"
+    },
+    {
+      "classname": "tests.data.test_streamed_epoch_concatenation",
+      "name": "test_streamed_source_concatenation_is_exact_and_does_not_copy_final_eeg"
+    },
+    {
+      "classname": "tests.train.test_independent_source_pipeline",
+      "name": "test_current_source_config_reaches_actual_inner_refit_and_frozen_catalog"
+    },
+    {
+      "classname": "tests.train.test_independent_source_pipeline",
+      "name": "test_real_multistudy_group_merge_keeps_actual_eeg_labels_and_complete_membership[False]"
+    },
+    {
+      "classname": "tests.train.test_independent_source_pipeline",
+      "name": "test_real_multistudy_group_merge_keeps_actual_eeg_labels_and_complete_membership[True]"
+    },
+    {
+      "classname": "tests.train.test_prepare_multidomain_source",
+      "name": "test_explicit_unaffordable_source_budget_fails_before_final_eeg_allocation[0]"
+    },
+    {
+      "classname": "tests.train.test_prepare_multidomain_source",
+      "name": "test_explicit_unaffordable_source_budget_fails_before_final_eeg_allocation[1]"
+    },
+    {
+      "classname": "tests.train.test_prepare_multidomain_source",
+      "name": "test_multidomain_builder_preserves_native_reference_by_default"
+    },
+    {
+      "classname": "tests.train.test_prepare_multidomain_source",
+      "name": "test_multidomain_builder_preserves_sparse_source_observations_in_full_montage"
+    },
+    {
+      "classname": "tests.train.test_prepare_multidomain_source",
+      "name": "test_multidomain_builder_rejects_two_channel_car_when_requested"
+    },
+    {
+      "classname": "tests.train.test_prepare_multidomain_source",
+      "name": "test_multidomain_builder_requires_explicit_binary_view_for_mixed_event_metadata"
+    },
+    {
+      "classname": "tests.train.test_prepare_multidomain_source",
+      "name": "test_multidomain_builder_reuses_prepared_car_and_namespace"
+    },
+    {
+      "classname": "tests.train.test_prepare_multidomain_source",
+      "name": "test_production_builder_matches_full_writer_and_uses_actual_snapshot_filesystem[False]"
+    },
+    {
+      "classname": "tests.train.test_prepare_multidomain_source",
+      "name": "test_production_builder_matches_full_writer_and_uses_actual_snapshot_filesystem[True]"
+    },
+    {
+      "classname": "tests.train.test_prepare_multidomain_source",
+      "name": "test_reference_cache_derivation_builds_native_and_car_views"
+    },
+    {
+      "classname": "tests.train.test_source_execution_resources",
+      "name": "test_parallel_source_cli_executes_layouts_from_its_snapshot[1]"
+    },
+    {
+      "classname": "tests.train.test_source_execution_resources",
+      "name": "test_parallel_source_cli_executes_layouts_from_its_snapshot[2]"
+    },
+    {
+      "classname": "tests.train.test_source_execution_resources",
+      "name": "test_shared_registry_reuses_real_source_fit_across_independent_instances"
+    },
+    {
+      "classname": "tests.train.test_source_input_admission",
+      "name": "test_four_large_cpu_fallbacks_transfer_to_retained_group_reservations"
+    },
+    {
+      "classname": "tests.train.test_source_input_admission",
+      "name": "test_input_phase_failure_and_partial_retention_release_all_bytes"
+    },
+    {
+      "classname": "tests.train.test_source_input_admission",
+      "name": "test_prepared_source_temporary_and_snapshot_leases_drain_after_failure"
+    },
+    {
+      "classname": "tests.train.test_source_input_admission",
+      "name": "test_ready_nn_priority_does_not_hold_cache_io_through_gpu_fit"
+    },
+    {
+      "classname": "tests.train.test_source_rows",
+      "name": "test_cpu_fallback_over_resident_budget_fails_before_updates_and_releases_staging"
+    },
+    {
+      "classname": "tests.train.test_source_rows",
+      "name": "test_lazy_source_rows_execute_exact_fixed_updates_with_cpu_resident_transfer"
+    },
+    {
+      "classname": "tests.train.test_source_rows",
+      "name": "test_source_row_moments_remain_exact_across_32768_row_reduction_blocks[observed_domain_participant]"
+    },
+    {
+      "classname": "tests.train.test_source_rows",
+      "name": "test_source_row_moments_remain_exact_across_32768_row_reduction_blocks[observed_rows]"
+    },
+    {
+      "classname": "tests.train.test_source_rows",
+      "name": "test_source_row_normalizer_is_exact_for_training_and_validation"
+    },
+    {
+      "classname": "tests.train.test_source_rows",
+      "name": "test_source_rows_preserve_order_duplicate_rows_and_bound_array_conversion"
+    },
+    {
+      "classname": "tests.train.test_source_rows",
+      "name": "test_source_rows_statistics_are_exact_for_masked_and_partial_scope[observed_domain_participant]"
+    },
+    {
+      "classname": "tests.train.test_source_rows",
+      "name": "test_source_rows_statistics_are_exact_for_masked_and_partial_scope[observed_rows]"
+    }
+  ],
+  "scope_limits": [
+    "No cloud public training launched by this agent",
+    "ZIP capacity and RSS endpoints are not full-run peaks",
+    "Four 6GiB staging cases are abstract byte leases with actual four live18GiB group reservations; no giant allocation/CUDA claim",
+    "SourceInputAdmission currently one group I/O; cross-group shared snapshot filesystem pool and current source-target rolling executor remain root integration work",
+    "Canonical provenance source_loading changes create new decoded/cache identities",
+    "Root merges all slices then runs one full suite against actual cloud frozen source"
+  ],
+  "quality": {
+    "ruff": "passed_owned_source_and_tests",
+    "git_diff_check": "passed_before_receipt",
+    "independent_review": "await final owned SHA/capsule acceptance"
+  },
+  "public_development_new_NN_fits": 0
+}

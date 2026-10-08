@@ -1,4 +1,4 @@
-# 公共源吞吐：第一软件切片
+# 公共源吞吐：软件切片与实际验收边界
 
 2026-10-08。真实旧运行 fd62c48 已有四个完整outer就绪，但单个load gate保护下仅一个worker做十一库合并和压缩，05:21采样约0.97 CPU核、GPU0；其余三个worker在IPC等待。旧first merge曾观测RSS25.79 GiB，高于18 GiB静态worker估计。原运行、已完成view与所有准备产物保留。
 
@@ -33,3 +33,34 @@ fd62原运行于05:59:33 UTC因caller非法scope以exit1结束，四完整view�
 退出观测已由独立SRC owner集中实施并合入a23fe28：每pool实例隔离、PID/创建身份、每任务状态重置、source/load/fit阶段、Python/native stderr与faulthandler；父层保存首次观察及实际process handle退出码。坏JSON、资源传感器异常、诊断写盘失败和executor registry并发清空经真实RED→GREEN处理，原fit/pool异常仍保留。Windows CPython动态spawn遗漏新sentinel的纯stdlib原始frame证据保留；本片交付观测，不宣称修复该调度竞争或2394原始死亡原因。
 
 最终独立21项（11诊断/10资源owner）、Ruff、diff检查及Spec/Standards通过；两份旧真实sourceCLI共16task对应各自此前冻结版本，没有重标为final v3执行。[质量凭证](../assets/public_source_throughput_20261008/diagnostics_quality_receipt.json)、[主树逐文件整合](../assets/public_source_throughput_20261008/diagnostics_integration.json)和[444成员原冻结清单](../../frozen/source_worker_diagnostics_20261008/source.manifest.json)分别绑定实际来源。整合后的共同调度与全矩阵、云端完整吞吐仍按本轮工程接口继续验收。
+
+## 第二软件切片：共享存储、行视图与输入调度
+
+一次最终C-order float32 buffer由`PreparedSourceStorage`拥有；每个原source按原顺序独占行区间，读入/投影后立即交到最终buffer。
+不同时保留全部原X再复制最终X；事件、身份、标签、mask、metadata、lineage仍由原canonical concat owner产生。
+`source_loading`仍进入canonical provenance；改变loader数量会形成新的decoded/cache身份，数值一致不能追认为旧cache身份。
+线程loader使用分配的group native预算并按RAM临时与snapshot磁盘字节准入，父对象在合并后释放。
+ENV或显式snapshot目录先经同一central选择，再按实际tmpfs/ramfs额外计RAM。容量是估计，不能当实测峰值。
+通用CLI保留原普通save/load路径；production交接只接受canonical C-contiguous final buffer。
+
+`SourceRows`保存原行顺序、重复行和实际通道索引，禁止隐式物化全部raw subset；选轮train/held与全量refit都消费同一只读base。
+原逐行float64 moments、风险权重、source sampling、seed、更新和归一化不变；final normalized矩阵只分配一次。
+中央finite/static mask/trial mask检查按2048行分块，包括晚块masked NaN，保留拒绝边界。
+
+共享NN暂存按train+held float32确数准入，ready NN优先于下一个组I/O。
+`GpuPerformanceScheduler`在两个normalized矩阵仍存活时测RSS；CPU fallback若满足始终持有的source whole-process组预算则归还额外staging，
+否则在首个optimizer更新前明确失败并释放lease。四个6GiB抽象stage与四份18GiB组reservation同时就绪的反例通过，未做巨型分配或CUDA拟合。
+没有shared pool的source child仍消费组RSS预算；历史0.25GiB软件fixture升为1GiB，原小值不构成Torch进程容量证据。
+
+固定更新复用已有`baselines.progress` sink：既有100-update/验证报告点写小JSONL，selection与refit目录分开，display fold=0不改变cfg.seed。
+软件实例核进度真实更新数与inner/refit账本，不能把completed exposure=0解释成in-flight更新=0。
+
+本软件切片44个独立case的所需路径通过。42个主要case由本机必要验证核对；两个always-RSS spawn CLI终态在实际云Linux3.12锁定环境复验，2通过、0失败/错误/跳过、27.120秒，实际执行源为RC e323ea38…的444成员逐bytes冻结。本机资源准入RED及早期无RSS版本GREEN各留原来源。多轮JUnit按classname+case去重，不把重测相加。
+包括5036有序/重复行、超过32768行moments两风险、真实两更新CPU dense/lazy的完整history与state逐元素一致、训练和held normalizer exact、
+原SharedTrajectoryRegistry实际fit复用、两真实study调用、writer/cold-load decoded摘要一致；spawn CLI两布局以实际RC云CPU记录验收，
+模拟disk/tmpfs与ENV snapshot选择、0/1字节预算分配前失败、晚块非法值及lease失败释放。
+完整测试由根代理在合并所有独立切片后统一一次；[第二切片凭证](../assets/public_source_throughput_20261008/slice2_receipt.json)绑定源码与原JUnit。
+
+本切片没有重新云端launch。旧full11 benchmark的reader/writer成本和高峰、2394/fd62失败及所有原产物由根保留。
+目前组I/O门禁为1，组内可以多个source loader；跨组snapshot磁盘聚合和当前binary/candidate消费者的共享ready滚动仍由统一executor收口。
+终态full11真实bench、整个12源程序、CPU/GPU实际利用率与峰值分别验收，不能把本软件切片称为云吞吐或研究效能已经完成。

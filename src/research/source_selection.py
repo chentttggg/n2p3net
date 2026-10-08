@@ -7,6 +7,7 @@ import time
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, replace
 from math import ceil
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -616,6 +617,8 @@ def fit_source_trajectory(
     architecture: N2P3ArchitectureConfig = DEFAULT_N2P3_ARCHITECTURE,
     runtime_preload_budget_bytes: int | None = None,
     runtime_input_staging_gate=None,
+    runtime_host_process_budget_bytes=None,
+    runtime_progress_directory=None,
     source_program_config=None,
 ) -> tuple[N2P3NetBaseline, dict[int, dict]]:
     """Fit actual rows once and return loadable, source-bound candidate checkpoints."""
@@ -627,6 +630,8 @@ def fit_source_trajectory(
             architecture=architecture,
             runtime_preload_budget_bytes=runtime_preload_budget_bytes,
             runtime_input_staging_gate=runtime_input_staging_gate,
+            runtime_host_process_budget_bytes=runtime_host_process_budget_bytes,
+            runtime_progress_directory=runtime_progress_directory,
             source_program_config=source_program_config,
         )
     if config.fixed_updates is None:
@@ -648,10 +653,15 @@ def fit_source_trajectory(
                            config=config, device=device, channel_mask=dataset.channel_mask,
                            architecture=architecture,
                            tmin_s=dataset.preprocessing.tmin_ms / 1000)
-    all_rows = len(rows) == dataset.n_epochs and np.array_equal(rows, np.arange(dataset.n_epochs))
     model.runtime.configure_resident_memory_budget(runtime_preload_budget_bytes)
     model.runtime.input_staging_gate = runtime_input_staging_gate
-    model.fit(dataset.X if all_rows else dataset.X[rows], np.asarray(dataset.y)[rows], trial_channel_mask=observed,
+    model.runtime.configure_host_process_resident_budget(runtime_host_process_budget_bytes)
+    if runtime_progress_directory is not None:
+        model.configure_epoch_progress(Path(runtime_progress_directory) / "fixed")
+        model.configure_evaluation_fold(0)
+    from train.source_rows import SourceRows
+
+    model.fit(SourceRows(dataset.X, rows), np.asarray(dataset.y)[rows], trial_channel_mask=observed,
               source_domain_ids=domains[rows], risk_unit_ids=people[rows],
               source_domain_mass={domain: 1 / len(unique_domains) for domain in unique_domains})
     snapshots = dict(model.candidate_snapshots_)
@@ -715,6 +725,8 @@ def _fit_source_with_early_stopping(
     dataset, rows, *, config, source_cache_sha256, source_snapshot_sha256,
     excluded_source_datasets, device, evidence_scope, architecture, runtime_preload_budget_bytes=None,
     runtime_input_staging_gate=None,
+    runtime_host_process_budget_bytes=None,
+    runtime_progress_directory=None,
     source_program_config=None,
 ):
     """Hold out source participants, select epochs, then independently refit all source rows."""
@@ -749,9 +761,15 @@ def _fit_source_with_early_stopping(
     weights = weights / weights.sum()
     inner.runtime.configure_resident_memory_budget(runtime_preload_budget_bytes)
     inner.runtime.input_staging_gate = runtime_input_staging_gate
-    inner.fit(dataset.X[training], np.asarray(dataset.y)[training], trial_channel_mask=observed[training],
+    inner.runtime.configure_host_process_resident_budget(runtime_host_process_budget_bytes)
+    if runtime_progress_directory is not None:
+        inner.configure_epoch_progress(Path(runtime_progress_directory) / "selection")
+        inner.configure_evaluation_fold(0)
+    from train.source_rows import SourceRows
+
+    inner.fit(SourceRows(dataset.X, training), np.asarray(dataset.y)[training], trial_channel_mask=observed[training],
         source_domain_ids=domains[training], risk_unit_ids=people[training], source_domain_mass=domain_mass,
-        early_stopping_validation={"X": dataset.X[validation], "y": vy,
+        early_stopping_validation={"X": SourceRows(dataset.X, validation), "y": vy,
             "channel_mask": observed[validation], "weights": weights,
             "check_every_updates": check_every, "policy": policy})
     history = inner.last_history
@@ -778,7 +796,10 @@ def _fit_source_with_early_stopping(
         source_cache_sha256=source_cache_sha256, source_snapshot_sha256=source_snapshot_sha256,
         excluded_source_datasets=excluded_source_datasets, device=device, evidence_scope=evidence_scope,
         architecture=architecture, runtime_preload_budget_bytes=runtime_preload_budget_bytes,
-        runtime_input_staging_gate=runtime_input_staging_gate, source_program_config=source_program_config)
+        runtime_input_staging_gate=runtime_input_staging_gate,
+        runtime_host_process_budget_bytes=runtime_host_process_budget_bytes,
+        runtime_progress_directory=(Path(runtime_progress_directory) / "refit" if runtime_progress_directory is not None else None),
+        source_program_config=source_program_config)
     selection.update(refit_updates=refit_updates,
         total_optimizer_updates=history["optimizer_updates"] + model.last_history["optimizer_updates"],
         total_trial_draws=history["trial_draws"] + model.last_history["trial_draws"],

@@ -77,7 +77,7 @@ def _plan(cache, spec, snapshot):
         "source_seeds": [11, 12, 13], "target_seeds": [11, 12, 13],
         "paired_source_target_seeds": True, "compile_mode": None,
         "cpu_budget": 1, "source_workers": 1, "target_workers": 1,
-        "source_worker_memory_gib": .25, "target_worker_memory_gib": .25,
+        "source_worker_memory_gib": 1., "target_worker_memory_gib": .25, "host_memory_fraction": .95,
         "batch_rule": user_fixed_target_batch_rule(),
         "outer_folds": [{"name": "leave_BNCI", "target_study": "BNCI2014-008",
             "source_cache": str(cache), "source_studies": ["Huebner2017"],
@@ -404,6 +404,11 @@ def test_current_source_config_reaches_actual_inner_refit_and_frozen_catalog(tmp
     assert actual["val_groups_min"] == 2 and actual["val_groups_max"] == 4
     assert payload["training_contract"]["objective"]["source_program_config"] == resolved
     selection = payload["source_epoch_selection"]
+    selection_progress = [json.loads(line) for line in (tmp_path / "current/progress/selection/fold_0.jsonl").read_text().splitlines()]
+    refit_progress = [json.loads(line) for line in (tmp_path / "current/progress/refit/fixed/fold_0.jsonl").read_text().splitlines()]
+    assert selection_progress[-1]["optimizer_steps"] == selection["inner_history"]["optimizer_updates"]
+    assert selection_progress[-1]["validation_checks"] == selection["validation_checks"]
+    assert refit_progress[-1]["optimizer_steps"] == selection["refit_updates"]
     assert len(selection["validation_fit_ledger"]["training_participant_keys"]) == 2
     assert selection["refit_initialization"] == "fresh_same_seed"
     logits = np.asarray([0.])
@@ -429,14 +434,15 @@ def test_current_source_config_reaches_actual_inner_refit_and_frozen_catalog(tmp
 
 @pytest.mark.parametrize("separate_working_directory", [False, True])
 def test_real_multistudy_group_merge_keeps_actual_eeg_labels_and_complete_membership(tmp_path, separate_working_directory):
+    import multiprocessing
     from pathlib import Path
-    from threading import BoundedSemaphore
 
     from scipy.io import savemat
 
     from data.epochs import load_epoch_dataset
     from experiments.run_source_training_chain import _prepare_source_group_inputs
     from research.source_catalog import SourceCatalog
+    from research.source_execution import SourceInputAdmission
     from research.source_selection import source_identity_axes, validate_independent_source_input
     from tests.support.bnci import bnci_mat_fields
 
@@ -461,10 +467,12 @@ def test_real_multistudy_group_merge_keeps_actual_eeg_labels_and_complete_member
     outer = {"name": "leave_BI", "source_studies": list(sources), "target_study": "BI2014a",
              "excluded_source_datasets": ["BI2014a"]}
     plan = {"outer_folds": [outer], "_prepared_source_inputs": inputs,
-            "_native_threads_per_worker": 1, "_source_load_slots": BoundedSemaphore(1)}
+            "_native_threads_per_worker": 1}
     if separate_working_directory:
         plan["source_view_working_directory"] = str(tmp_path / "independent_working_cache")
-    resolved = _prepare_source_group_inputs(plan, tmp_path / "run/groups/00_leave_BI_six")
+    with multiprocessing.get_context("spawn").Manager() as manager:
+        plan["_source_input_admission"] = SourceInputAdmission(manager, capacity_bytes=0, load_workers=1)
+        resolved = _prepare_source_group_inputs(plan, tmp_path / "run/groups/00_leave_BI_six")
     if separate_working_directory:
         assert Path(resolved["outer_folds"][0]["source_cache"]).is_relative_to(tmp_path / "independent_working_cache")
     merged = load_epoch_dataset(resolved["outer_folds"][0]["source_cache"], validation="attested")

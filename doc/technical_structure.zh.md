@@ -53,6 +53,12 @@ R1与R2仍是独立研究路线；将自适应harmonic串到固定A/B之后会�
 2026-09-18云端资源预算由`research.source_execution`统一解析并传递至source、源内λ和outer target worker。
 `cloud_resource_floor`约束CPU/GPU容量，`HostMemoryAdmission`同时限制嵌套worker占用。
 缓存输入的显式只读通道视图、统计分块与`MatrixBatchSource`成功预加载后的CPU释放保持在原owner内。
+2026-10-08源吞吐资源算法集中在同一`research.source_execution`：`PreparedSourceStorage`拥有一次分配的最终EEG、
+有界source解码与实际snapshot文件系统容量；`SourceInputAdmission`拥有ready NN优先及归一化暂存字节。
+`train.source_rows.SourceRows`只负责只读有序行读取，`data.epochs.concatenate_epoch_datasets`核精确shared行关系并合并身份/事件；
+实验CLI声明科学adapter与资源，不另写容量算法。`GpuPerformanceScheduler`持有实际RSS常驻转账和失败释放，继续复用`MatrixBatchSource`。
+source固定更新的进度复用`baselines.progress`；selection/refit sink分开，显示fold=0不改初始化seed。
+跨组snapshot共享磁盘池和当前target消费者的同owner滚动排程仍由统一executor接入验收，不由本软件切片宣称已经完成。
 
 2026-09-18 `SourceCatalog.validate_fold`集中区分evaluation和deployment源组，部署组必须显式完整成员且不得生成外层目标。
 `source_prior_development_fold`接受显式development_domains，未选域全量留在源拟合；source链检查开发域与逐域排除原因完整分割实际source。

@@ -426,16 +426,20 @@ class EpochDataset:
                     )
         if require_labels and self.y is None:
             raise ValueError("This operation requires labels.")
-        if not np.isfinite(X).all():
-            raise ValueError(
-                "EpochDataset.X must be finite; represent absent channels as zero + mask."
-            )
-        if np.any(~channel_mask) and np.any(X[:, ~channel_mask, :] != 0.0):
-            raise ValueError("Absent channels must be exactly zero wherever channel_mask is false.")
-        if self.trial_channel_mask is not None and np.any(
-            X[~np.asarray(self.trial_channel_mask)] != 0.0
-        ):
-            raise ValueError("Trial-masked channels must be exactly zero.")
+        # These value contracts need no whole-EEG boolean matrix or masked
+        # gather. Every row receives the same checks in bounded row blocks.
+        for start in range(0, n_epochs, 2048):
+            block = X[start:start + 2048]
+            if not np.isfinite(block).all():
+                raise ValueError(
+                    "EpochDataset.X must be finite; represent absent channels as zero + mask."
+                )
+            if np.any(~channel_mask) and np.any(block[:, ~channel_mask, :] != 0.0):
+                raise ValueError("Absent channels must be exactly zero wherever channel_mask is false.")
+            if self.trial_channel_mask is not None and np.any(
+                block[~np.asarray(self.trial_channel_mask)[start:start + 2048]] != 0.0
+            ):
+                raise ValueError("Trial-masked channels must be exactly zero.")
         if self.qc_features is not None:
             from data.qc_features import effective_observed_mask
 
@@ -1081,6 +1085,8 @@ class EpochCacheProduction:
 
 def produce_epoch_cache(path: str | Path, dataset: EpochDataset, *, compressed=False) -> EpochCacheProduction:
     """Save a fresh working cache and retain its exact decoded producer state."""
+    if not np.asarray(dataset.X).flags.c_contiguous:
+        raise ValueError("in-memory source production requires the canonical contiguous EEG layout")
     storage_types = {"X": np.float32, "y": np.int64, "channel_positions_m": np.float32,
                      "channel_mask": bool, "trial_channel_mask": bool}
     for name, dtype in storage_types.items():
@@ -1137,8 +1143,9 @@ def _copy_and_sha256_stream(source: BinaryIO, destination: BinaryIO) -> tuple[st
     return digest.hexdigest(), size_bytes
 
 
-def _verified_cache_snapshot_directory(path: Path, *, byte_size: int) -> Path:
-    configured = os.environ.get(_VERIFIED_CACHE_SNAPSHOT_DIR_ENV)
+def _verified_cache_snapshot_directory(path: Path, *, byte_size: int, directory_override=None) -> Path:
+    configured = (directory_override if directory_override is not None
+                  else os.environ.get(_VERIFIED_CACHE_SNAPSHOT_DIR_ENV))
     directory = (
         Path(configured).expanduser().resolve(strict=True)
         if configured
@@ -1263,6 +1270,7 @@ def _epoch_cache_archive_source(
     path: Path,
     *,
     validation: Literal["full", "attested"],
+    snapshot_directory: str | Path | None = None,
 ) -> Iterator[
     tuple[
         Path | BinaryIO,
@@ -1278,6 +1286,7 @@ def _epoch_cache_archive_source(
     snapshot_directory = _verified_cache_snapshot_directory(
         path,
         byte_size=int(attestation["byte_size"]),
+        directory_override=snapshot_directory,
     )
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
     try:
@@ -1374,6 +1383,7 @@ def _load_epoch_dataset(
     require_labels: bool = False,
     validation: Literal["full", "attested"] = "full",
     _historical_audit: bool = False,
+    snapshot_directory: str | Path | None = None,
 ) -> EpochDataset:
     """Load a cache with full validation or an immutable cache attestation."""
 
@@ -1383,7 +1393,7 @@ def _load_epoch_dataset(
     if validation not in {"full", "attested"}:
         raise ValueError("validation must be 'full' or 'attested'.")
     with (
-        _epoch_cache_archive_source(path, validation=validation) as (
+        _epoch_cache_archive_source(path, validation=validation, snapshot_directory=snapshot_directory) as (
             archive_source,
             attested_record,
             verified_attestation,
@@ -1640,10 +1650,12 @@ def assert_attested_epoch_dataset(dataset: EpochDataset) -> dict[str, object]:
 def load_epoch_dataset(
     path: str | Path, *, expected_preprocessing: PreprocessingSpec | None = None,
     require_labels: bool = False, validation: Literal["full", "attested"] = "full",
+    snapshot_directory: str | Path | None = None,
 ) -> EpochDataset:
     """Load physical electrode voltages for active processing and modelling."""
     return _load_epoch_dataset(path, expected_preprocessing=expected_preprocessing,
-                               require_labels=require_labels, validation=validation)
+                               require_labels=require_labels, validation=validation,
+                               snapshot_directory=snapshot_directory)
 
 
 def load_historical_epoch_dataset(
@@ -1760,12 +1772,26 @@ def concatenate_epoch_datasets(
     *,
     name: str,
     provenance: Mapping[str, Any] | None = None,
+    shared_X: np.ndarray | None = None,
 ) -> EpochDataset:
     """Concatenate one physical grid, retaining per-trial observation differences."""
 
     if not datasets:
         raise ValueError("At least one EpochDataset is required.")
     first = datasets[0]
+    if shared_X is not None:
+        expected_shape = (sum(dataset.n_epochs for dataset in datasets), *first.X.shape[1:])
+        if np.asarray(shared_X).shape != expected_shape or not np.asarray(shared_X).flags.c_contiguous:
+            raise ValueError("streamed concatenation requires one complete contiguous EEG allocation")
+        start = 0
+        for dataset in datasets:
+            stop = start + dataset.n_epochs
+            destination = shared_X[start:stop]
+            if (dataset.X.dtype != shared_X.dtype or dataset.X.shape != destination.shape
+                    or dataset.X.strides != destination.strides
+                    or dataset.X.__array_interface__["data"][0] != destination.__array_interface__["data"][0]):
+                raise ValueError("streamed source datasets must occupy the exact ordered rows of the shared EEG allocation")
+            start = stop
     for dataset in datasets:
         materialize_dataset_identity(dataset)
         materialize_dataset_lineage(dataset)
@@ -1810,7 +1836,7 @@ def concatenate_epoch_datasets(
         merged_provenance.pop("preprocessing_execution", None)
     merged = EpochDataset(
         name=name,
-        X=np.concatenate([dataset.X for dataset in datasets], axis=0),
+        X=(shared_X if shared_X is not None else np.concatenate([dataset.X for dataset in datasets], axis=0)),
         y=(
             np.concatenate([dataset.y for dataset in datasets], axis=0)
             if first.y is not None

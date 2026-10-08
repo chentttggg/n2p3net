@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from threading import RLock
+from threading import Condition, RLock
+from zipfile import ZipFile
 
 from research.execution import atomic_write_json
 
@@ -56,6 +58,208 @@ class SourceInputPhases:
                 "process_cpu_seconds": cpu.user + cpu.system - before_cpu, "rss_before_bytes": before_rss,
                 "rss_after_bytes": self.process.memory_info().rss})
             self._write()
+
+
+class PreparedSourceThreadMemory:
+    """Bound concurrently decoded source temporaries beside final resident rows."""
+
+    def __init__(self, *, budget_bytes, resident_bytes, temporary_bytes, disk_bytes=None, snapshot_bytes=()):
+        self.capacity = budget_bytes - resident_bytes
+        if self.capacity < max(temporary_bytes, default=0):
+            raise ValueError("source memory budget cannot hold the complete final view and one admitted source temporary")
+        if disk_bytes is not None and disk_bytes < max(snapshot_bytes, default=0):
+            raise ValueError("source snapshot filesystem cannot hold one admitted input cache")
+        self.free = self.capacity
+        self.disk_free = disk_bytes
+        self.peak_reserved = 0
+        self.peak_snapshot = 0
+        self.disk_capacity = disk_bytes
+        self.condition = Condition()
+
+    @contextmanager
+    def reserve(self, nbytes, snapshot_bytes=0):
+        with self.condition:
+            self.condition.wait_for(lambda: self.free >= nbytes and (self.disk_free is None or self.disk_free >= snapshot_bytes))
+            self.free -= nbytes
+            if self.disk_free is not None:
+                self.disk_free -= snapshot_bytes
+                self.peak_snapshot = max(self.peak_snapshot, self.disk_capacity - self.disk_free)
+            self.peak_reserved = max(self.peak_reserved, self.capacity - self.free)
+        try:
+            yield
+        finally:
+            with self.condition:
+                self.free += nbytes
+                if self.disk_free is not None:
+                    self.disk_free += snapshot_bytes
+                self.condition.notify_all()
+
+
+def filesystem_uses_host_memory(directory):
+    """Identify tmpfs/ramfs backing the actual snapshot or output directory."""
+    import psutil
+
+    directory = Path(directory).resolve(strict=True)
+    mounts = []
+    for partition in psutil.disk_partitions(all=True):
+        mount = Path(partition.mountpoint)
+        if directory == mount or mount in directory.parents:
+            mounts.append((len(mount.parts), partition.fstype))
+    return bool(mounts and max(mounts)[1].lower() in {"tmpfs", "ramfs"})
+
+
+
+class PreparedSourceStorage:
+    """Own final EEG storage and source decode/snapshot capacity for a caller.
+
+    Resource decisions share one implementation; scientific adapters still
+    produce each source's verified channels, reference and identity themselves.
+    """
+
+    def __init__(self, inputs, *, n_channels, output_path, snapshot_directory=None, budget_bytes=None):
+        import numpy as np
+
+        from data.epochs import _read_epoch_cache_record, _verified_cache_snapshot_directory
+
+        self.names = [name for name, _ in inputs]
+        shapes = [_read_epoch_cache_record(path)[0]["shape"] for _, path in inputs]
+        if len({shape[2] for shape in shapes}) != 1:
+            raise ValueError("source caches require one physical time-grid before allocation")
+        final_shape = (sum(shape[0] for shape in shapes), n_channels, shapes[0][2])
+        self.snapshot_directories, self.snapshot_in_memory = [], []
+        self.temporary_costs, self.snapshot_costs, non_eeg_bytes = [], [], []
+        for index, (_, path) in enumerate(inputs):
+            with ZipFile(path) as archive:
+                total = sum(info.file_size for info in archive.infolist())
+                eeg = archive.getinfo("X.npy").file_size
+            non_eeg_bytes.append(total - eeg)
+            snapshot_bytes = path.stat().st_size
+            directory = _verified_cache_snapshot_directory(path, byte_size=snapshot_bytes,
+                directory_override=snapshot_directory)
+            in_memory = filesystem_uses_host_memory(directory)
+            self.snapshot_directories.append(directory)
+            self.snapshot_in_memory.append(in_memory)
+            self.snapshot_costs.append(snapshot_bytes)
+            projected = shapes[index][0] * n_channels * shapes[index][2] * 4
+            self.temporary_costs.append(eeg + projected + 2 * (total - eeg) + 32 * 2**20
+                + (snapshot_bytes if in_memory else 0))
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        self.output_in_memory = filesystem_uses_host_memory(output_path.parent)
+        final_eeg_bytes = int(np.prod(final_shape)) * 4
+        # Twice decoded metadata allows for merged Unicode widths and writer
+        # materialization. This remains a capacity estimate, not a hard RSS cap.
+        self.output_estimate_bytes = final_eeg_bytes + 2 * sum(non_eeg_bytes) + 32 * 2**20
+        self.resident_bytes = final_eeg_bytes + 2 * sum(non_eeg_bytes)
+        if self.output_in_memory:
+            self.resident_bytes += self.output_estimate_bytes
+        self.budget_bytes = int(available_host_memory_bytes() * .8) if budget_bytes is None else budget_bytes
+        directory = self.snapshot_directories[0]
+        if any(path.stat().st_dev != directory.stat().st_dev for path in self.snapshot_directories):
+            raise ValueError("source production requires one verified snapshot filesystem or an explicit snapshot directory")
+        reserve = max(64 * 2**20, int(max(self.snapshot_costs) * .05))
+        disk_bytes = max(0, shutil.disk_usage(directory).free - reserve)
+        self.memory = PreparedSourceThreadMemory(budget_bytes=self.budget_bytes, resident_bytes=self.resident_bytes,
+            temporary_bytes=self.temporary_costs, disk_bytes=disk_bytes, snapshot_bytes=self.snapshot_costs)
+        # Admit the complete resident view and at least one source before the
+        # first large allocation. Threads receive only disjoint ordered rows.
+        self.X = np.empty(final_shape, dtype=np.float32)
+        offsets = np.cumsum([0, *[shape[0] for shape in shapes]])
+        self.destinations = [self.X[offsets[index]:offsets[index + 1]] for index in range(len(inputs))]
+
+    def reserve(self, index):
+        return self.memory.reserve(self.temporary_costs[index], self.snapshot_costs[index])
+
+    def record(self):
+        return {"schema": "n2p3_source_input_capacity/1", "budget_bytes": self.budget_bytes,
+            "resident_estimate_bytes": self.resident_bytes,
+            "source_temporary_estimates_bytes": dict(zip(self.names, self.temporary_costs, strict=True)),
+            "peak_admitted_temporary_bytes": self.memory.peak_reserved,
+            "peak_admitted_snapshot_bytes": self.memory.peak_snapshot,
+            "snapshot_in_host_memory": dict(zip(self.names, self.snapshot_in_memory, strict=True)),
+            "output_in_host_memory": self.output_in_memory, "output_archive_estimate_bytes": self.output_estimate_bytes,
+            "estimate_basis": "final float32 EEG plus twice decoded non-EEG; original X plus projected X plus twice non-EEG and 32MiB per source; tmpfs snapshot/output additionally charged",
+            "estimated_bytes_are_not_measured_RSS": True}
+
+
+class SourceInputLease:
+    """Release normalized host bytes only after transfer or fit cleanup."""
+
+    def __init__(self, owner, phase, nbytes):
+        self.owner, self.phase, self.nbytes = owner, phase, nbytes
+        self.active = True
+
+    def release_unused(self, retained_bytes=0):
+        if not self.active:
+            return
+        if not 0 <= retained_bytes <= self.nbytes:
+            raise ValueError("retained source staging bytes exceed the admitted lease")
+        with self.owner.condition:
+            self.owner.state.free += self.nbytes - retained_bytes
+            self.nbytes = retained_bytes
+            if retained_bytes == 0:
+                if self.phase == "nn":
+                    self.owner.state.nn_active -= 1
+                else:
+                    self.owner.state.load_active -= 1
+                self.active = False
+            self.owner.condition.notify_all()
+
+
+class SourceInputAdmission:
+    """Shared staging bytes with NN priority and separate cache-I/O capacity.
+
+    Complete source views and source-builder working sets retain their whole
+    group reservation throughout fitting. This pool admits extra normalized
+    matrices; cache-I/O leases use zero extra bytes on disk-backed snapshots.
+    """
+
+    def __init__(self, manager, *, capacity_bytes, load_workers):
+        if capacity_bytes < 0 or load_workers != 1:
+            raise ValueError("source input admission requires nonnegative bytes and one group I/O worker; parallel groups need a shared snapshot filesystem budget")
+        self.capacity = capacity_bytes
+        self.load_workers = load_workers
+        self.condition = manager.Condition()
+        self.state = manager.Namespace()
+        self.state.free = capacity_bytes
+        self.state.nn_waiting = self.state.nn_active = self.state.load_active = 0
+        self.state.peak_bytes = self.state.peak_loaders = self.state.peak_nn = 0
+
+    @contextmanager
+    def reserve(self, phase, nbytes=0):
+        if phase not in {"load", "nn"} or type(nbytes) is not int or not 0 <= nbytes <= self.capacity:
+            raise ValueError("source input phase exceeds its shared staging byte capacity")
+        with self.condition:
+            if phase == "nn":
+                self.state.nn_waiting += 1
+                self.condition.notify_all()
+            try:
+                self.condition.wait_for(lambda: self.state.free >= nbytes and (
+                    phase == "nn" or self.state.nn_waiting == 0 and self.state.load_active < self.load_workers))
+                self.state.free -= nbytes
+                if phase == "nn":
+                    self.state.nn_active += 1
+                    self.state.peak_nn = max(self.state.peak_nn, self.state.nn_active)
+                else:
+                    self.state.load_active += 1
+                    self.state.peak_loaders = max(self.state.peak_loaders, self.state.load_active)
+                self.state.peak_bytes = max(self.state.peak_bytes, self.capacity - self.state.free)
+            finally:
+                if phase == "nn":
+                    self.state.nn_waiting -= 1
+                self.condition.notify_all()
+        lease = SourceInputLease(self, phase, nbytes)
+        try:
+            yield lease
+        finally:
+            lease.release_unused()
+
+    def record(self):
+        with self.condition:
+            return {"shared_staging_capacity_bytes": self.capacity, "free_staging_bytes": self.state.free,
+                "nn_waiting": self.state.nn_waiting, "nn_active": self.state.nn_active,
+                "load_active": self.state.load_active, "load_worker_capacity": self.load_workers,
+                "peak_staging_bytes": self.state.peak_bytes, "peak_loaders": self.state.peak_loaders,
+                "peak_nn_staging": self.state.peak_nn, "ready_nn_priority": True}
 
 
 @contextmanager

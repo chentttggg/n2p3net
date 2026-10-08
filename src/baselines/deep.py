@@ -17,6 +17,7 @@ import threading
 import time
 import warnings
 from collections.abc import Mapping, Sequence
+from contextlib import ExitStack
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -612,7 +613,10 @@ class DeepBaseline(Baseline):
             effective = supplied & static
         if not bool(effective.any(axis=1).all()):
             raise ValueError("Every trial must retain at least one observed channel.")
-        if not np.isfinite(X).all():
+        from train.source_rows import SourceRows
+
+        finite = X.all_finite() if isinstance(X, SourceRows) else np.isfinite(X).all()
+        if not finite:
             raise ValueError("X contains NaN/inf.")
         return effective
 
@@ -666,7 +670,16 @@ class DeepBaseline(Baseline):
         return self._input_mean.copy(), self._input_std.copy()
 
     def _prepare_input(self, X: np.ndarray, mask: np.ndarray) -> np.ndarray:
+        from train.source_rows import SourceRows
+
         prepared = np.empty(X.shape, dtype=np.float32)
+        if isinstance(X, SourceRows):
+            for start in range(0, len(X), 2048):
+                stop = min(start + 2048, len(X))
+                np.subtract(X[start:stop], self._input_mean, out=prepared[start:stop], casting="unsafe")
+                np.divide(prepared[start:stop], self._input_std, out=prepared[start:stop])
+                np.copyto(prepared[start:stop], 0.0, where=~mask[start:stop, :, None])
+            return prepared
         np.subtract(X, self._input_mean, out=prepared, casting="unsafe")
         np.divide(prepared, self._input_std, out=prepared)
         # Standardization turns zero-filled missing channels into non-zero
@@ -1172,7 +1185,9 @@ class DeepBaseline(Baseline):
         early_stopping_validation=None,
     ) -> DeepBaseline:
         """Fit a bounded source trajectory with optional independently scoped validation."""
-        X = np.asarray(X)
+        from train.source_rows import SourceRows
+
+        X = X if isinstance(X, SourceRows) else np.asarray(X)
         y = np.asarray(y)
         if X.ndim != 3 or X.shape[1:] != (self.n_chans, self.n_times):
             raise ValueError("source X shape disagrees with model input contract")
@@ -1220,8 +1235,10 @@ class DeepBaseline(Baseline):
         importance = target_mass / probability
         active = np.flatnonzero(self.channel_mask)
         complete_statistics = stats_rows.all() and len(active) == self.n_chans
+        statistics_values = (X if complete_statistics else X.select(stats_rows, active)
+                             if isinstance(X, SourceRows) else X[stats_rows][:, active])
         mean, std, ledger = observed_source_statistics(
-            X if complete_statistics else X[stats_rows][:, active],
+            statistics_values,
             observed if complete_statistics else observed[stats_rows][:, active],
             domain_ids=domains[stats_rows], participant_keys=people[stats_rows],
             weighting=self.cfg.input_statistics,
@@ -1262,7 +1279,8 @@ class DeepBaseline(Baseline):
         selected_snapshot = None
         rng_devices = ([self.device.index if self.device.index is not None else torch.cuda.current_device()]
                        if self.device.type == "cuda" else [])
-        with torch.random.fork_rng(devices=rng_devices), self.runtime.lease():
+        with torch.random.fork_rng(devices=rng_devices), self.runtime.lease(), ExitStack() as input_residency:
+            source = validation_source = None
             try:
                 torch.manual_seed(self._model_seed())
                 self._initialize_model(self._model_seed())
@@ -1270,37 +1288,45 @@ class DeepBaseline(Baseline):
                                     else "post_mst")
                 if auxiliary is not None and auxiliary_config.feature_location != feature_location:
                     raise ValueError("source objective feature location differs from the model architecture")
-                with self.runtime.stage_inputs():
-                    source = MatrixBatchSource(
-                        torch.from_numpy(self._prepare_input(X, observed)),
-                        torch.from_numpy(y.astype(np.int64)), self.runtime,
-                        preload=self.runtime.can_preload(X.nbytes + y.nbytes + importance.nbytes + observed.nbytes),
+                normalized_bytes = int(np.prod(X.shape)) * 4
+                if validation is not None:
+                    normalized_bytes += int(np.prod(validation["X"].shape)) * 4
+                staging = input_residency.enter_context(self.runtime.stage_inputs(nbytes=normalized_bytes))
+                source = MatrixBatchSource(
+                    torch.from_numpy(self._prepare_input(X, observed)),
+                    torch.from_numpy(y.astype(np.int64)), self.runtime,
+                    preload=self.runtime.can_preload(X.nbytes + y.nbytes + importance.nbytes + observed.nbytes),
+                    release_cpu_after_preload=True,
+                    row_weights=torch.from_numpy(importance.astype(np.float32)),
+                    row_channel_mask=torch.from_numpy(np.ascontiguousarray(observed)),
+                )
+                adam_kwargs = {"lr": self.cfg.lr, "weight_decay": self.cfg.weight_decay}
+                if self.optimizer_execution.fused_adam:
+                    adam_kwargs["fused"] = True
+                if self.optimizer_execution.uses_cuda_graphs:
+                    adam_kwargs["capturable"] = True
+                optimizer = torch.optim.Adam(self.model_.parameters(), **adam_kwargs)
+                validation_source = None
+                if validation is not None:
+                    value = validation["X"]
+                    vx = value if isinstance(value, SourceRows) else np.asarray(value)
+                    vy = np.asarray(validation["y"])
+                    vm = self._effective_trial_channel_mask(vx, validation["channel_mask"])
+                    vw = np.asarray(validation["weights"], dtype=np.float32)
+                    if (vy.shape != (len(vx),) or set(np.unique(vy)) != {0, 1}
+                            or vw.shape != vy.shape or not np.isfinite(vw).all() or np.any(vw < 0)
+                            or not np.isclose(vw.sum(), 1.0)):
+                        raise ValueError("source validation requires both classes and normalized risk weights")
+                    validation_source = MatrixBatchSource(
+                        torch.from_numpy(self._prepare_input(vx, vm)), torch.from_numpy(vy.astype(np.int64)),
+                        self.runtime, preload=self.runtime.can_preload(vx.nbytes + vy.nbytes + vm.nbytes),
                         release_cpu_after_preload=True,
-                        row_weights=torch.from_numpy(importance.astype(np.float32)),
-                        row_channel_mask=torch.from_numpy(np.ascontiguousarray(observed)),
+                        row_weights=torch.from_numpy(vw),
+                        row_channel_mask=torch.from_numpy(np.ascontiguousarray(vm)),
                     )
-                    adam_kwargs = {"lr": self.cfg.lr, "weight_decay": self.cfg.weight_decay}
-                    if self.optimizer_execution.fused_adam:
-                        adam_kwargs["fused"] = True
-                    if self.optimizer_execution.uses_cuda_graphs:
-                        adam_kwargs["capturable"] = True
-                    optimizer = torch.optim.Adam(self.model_.parameters(), **adam_kwargs)
-                    validation_source = None
-                    if validation is not None:
-                        vx, vy = np.asarray(validation["X"]), np.asarray(validation["y"])
-                        vm = self._effective_trial_channel_mask(vx, validation["channel_mask"])
-                        vw = np.asarray(validation["weights"], dtype=np.float32)
-                        if (vy.shape != (len(vx),) or set(np.unique(vy)) != {0, 1}
-                                or vw.shape != vy.shape or not np.isfinite(vw).all() or np.any(vw < 0)
-                                or not np.isclose(vw.sum(), 1.0)):
-                            raise ValueError("source validation requires both classes and normalized risk weights")
-                        validation_source = MatrixBatchSource(
-                            torch.from_numpy(self._prepare_input(vx, vm)), torch.from_numpy(vy.astype(np.int64)),
-                            self.runtime, preload=self.runtime.can_preload(vx.nbytes + vy.nbytes + vm.nbytes),
-                            release_cpu_after_preload=True,
-                            row_weights=torch.from_numpy(vw),
-                            row_channel_mask=torch.from_numpy(np.ascontiguousarray(vm)),
-                        )
+                retained = sum(matrix.cpu_X.numel() * matrix.cpu_X.element_size()
+                    for matrix in (source, validation_source) if matrix is not None and matrix.cpu_X is not None)
+                input_residency_record = self.runtime.complete_input_staging(staging, retained_bytes=retained)
 
                 def train_step(xb, yb, weights, rows, channel_mask):
                     optimizer.zero_grad(set_to_none=True)
@@ -1330,6 +1356,7 @@ class DeepBaseline(Baseline):
                 loss_sum = torch.zeros((), device=self.device)
                 finite_updates = torch.ones((), device=self.device, dtype=torch.bool)
                 auxiliary_totals: dict[str, torch.Tensor] = {}
+                epoch_progress_callback = self.epoch_progress_callback()
                 for update in range(1, updates + 1):
                     if self.cfg.sampling == "epoch_permutation":
                         if cursor >= len(permutation):
@@ -1377,6 +1404,7 @@ class DeepBaseline(Baseline):
                         }
                     if report_due:
                         losses.append({"update": update, "mean_loss": float(loss_sum.cpu()) / update})
+                    stop_early = False
                     if validation_source is not None and update % validation["check_every_updates"] == 0:
                         self.model_.eval()
                         validation_loss = torch.zeros((), device=self.device)
@@ -1399,8 +1427,21 @@ class DeepBaseline(Baseline):
                                 "batch_sequence_sha256": order_digest.hexdigest(),
                             }
                         self.model_.train()
-                        if stopper.exhausted:
-                            break
+                        stop_early = stopper.exhausted
+                    if report_due and epoch_progress_callback is not None:
+                        epoch_updates = (len(X) + self.cfg.batch_size - 1) // self.cfg.batch_size
+                        latest_validation = validation_curve[-1] if validation_curve else None
+                        epoch_progress_callback({
+                            "phase": "source_fixed_updates", "epoch": update / epoch_updates,
+                            "epoch_limit": updates / epoch_updates, "optimizer_steps": update,
+                            "optimizer_steps_limit": updates, "trial_draws": draws,
+                            "train_loss": losses[-1]["mean_loss"], "selection_active": validation is not None,
+                            "task_val_loss": None if latest_validation is None else latest_validation["validation_loss"],
+                            "validation_loss_at_optimizer_steps": None if latest_validation is None else latest_validation["updates"],
+                            "validation_checks": 0 if stopper is None else stopper.checks,
+                            "early_stop": stop_early})
+                    if stop_early:
+                        break
                 updates = update
                 if selected_snapshot is not None:
                     self.model_.load_state_dict(selected_snapshot["model_state_dict"])
@@ -1412,12 +1453,17 @@ class DeepBaseline(Baseline):
                     "preloaded": source.preloaded, "transfer_fallback": source.transfer_fallback,
                     "resident_memory_budget_bytes": self.runtime.resident_memory_budget_bytes,
                     "normalized_host_matrix_retained": source.cpu_X is not None,
+                    **input_residency_record,
                     "memory": self.runtime.memory_record(), **self.optimizer_execution.record(),
                 }
             except BaseException:
                 self.candidate_snapshots_ = {}
                 self._clear_failed_fit(release_memory=False)
                 raise
+            finally:
+                # CPU fallback matrices retain their staging lease through all
+                # updates; destroy them before ExitStack releases those bytes.
+                source = validation_source = None
         self.training_pos_weight_ = float(self.cfg.pos_weight)
         self.training_prior_ = float(np.sum(multipliers * y) / np.sum(multipliers))
         self.last_history = {

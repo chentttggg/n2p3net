@@ -349,8 +349,16 @@ GPU计时同步，冷启动/编译与热运行分列。缓存就绪的训练时�
 依赖末端只有一两个可执行拟合时记录就绪任务数，不通过重复拟合伪造四路工作量。
 大源路径同序通道采用显式只读共享视图；全行source refit避免再次复制X；成功GPU预加载释放归一化CPU副本；
 统计量保留原逐行float64归约与最终加权内积，只将临时矩阵分块。父调度器给每worker显式GPU常驻字节预算；
-大cache加载与归一化暂存共用峰值门禁，GPU拟合继续四路并行；配置单列共享暂存预算，不将其误当四份常驻副本。
-旧checkpoint仍绑定原执行快照。
+`research.source_execution.PreparedSourceStorage`集中读取容量header、选择实际snapshot文件系统、
+准入解码/磁盘临时字节并一次分配最终C-order EEG；每source写入自己固定的行区间，科学adapter仍核真实参考/身份。
+`train.source_rows.SourceRows`使source选轮和refit按行分块读取，避免完整raw subset复制；有限值与缺导检查同样按完整epoch分块。
+`SourceInputAdmission`分开组I/O容量和共享NN归一化字节，ready NN优先；四GPU容量由原资源owner保留。
+`GpuPerformanceScheduler.complete_input_staging`在train/held矩阵仍存活时测实际进程RSS；CPU回退只在整场持有的source组预算内
+转为常驻，超预算在optimizer更新前失败并释放暂存，不用长lease静默降低并发。即使没有shared staging，source组预算仍传入实际worker。
+这些端点RSS与ZIP容量估计都不等于全程峰值；tmpfs/ramfs snapshot和工作输出额外计RAM，不能当可回收磁盘页。
+现切片支持单组I/O、组内资源准入的多个source loader；跨组共享snapshot磁盘额度由统一executor继续接入后才放开组I/O并发。
+源固定更新复用`baselines.progress`的轻量JSONL sink，在原100-update/验证点记录实际更新与验证，selection/refit各有独占目录；
+显示fold=0保留原seed。scientific report与已完成checkpoint账本不逐batch改写。旧checkpoint仍绑定原执行快照。
 
 
 2026-09-18十二库合并暴露单个NumPy Unicode标量的itemsize上限；新cache的metadata_json改用一维UTF-8 uint8，

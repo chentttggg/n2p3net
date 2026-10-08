@@ -65,6 +65,69 @@ def _prepared_source(dataset: EpochDataset) -> EpochDataset:
     return namespace_epoch_dataset(car, dataset.name)
 
 
+@pytest.mark.parametrize("host_memory_filesystem", [False, True])
+def test_production_builder_matches_full_writer_and_uses_actual_snapshot_filesystem(
+    tmp_path, monkeypatch, host_memory_filesystem,
+):
+    import json
+
+    from experiments import prepare_multidomain_source as module
+    from research.source_execution import SourceInputPhases
+
+    sources = [_prepared_source(_source_dataset(source_id=name, subject="01", offset=offset))
+               for name, offset in (("A", 0.), ("B", 100.))]
+    paths = [save_epoch_dataset(tmp_path / f"{index}.npz", source) for index, source in enumerate(sources)]
+    snapshot = tmp_path / "snapshots"
+    snapshot.mkdir()
+    monkeypatch.setenv("N2P3_VERIFIED_CACHE_SNAPSHOT_DIR", str(snapshot))
+    arguments = ["--source", f"A={paths[0]}", "--source", f"B={paths[1]}",
+        "--target-channels", "Cz,P3,Pz,P4,Oz", "--reference-mode", "common_average",
+        "--source-workers", "2", "--cpu-threads", "2", "--uncompressed"]
+    module.main([*arguments, "--output", str(tmp_path / "legacy.npz")])
+    expected = load_epoch_dataset(tmp_path / "legacy.npz", validation="attested")
+    consumed = []
+    original = module.load_epoch_dataset
+
+    def load(path, **options):
+        consumed.append(Path(options["snapshot_directory"]))
+        return original(path, **options)
+
+    monkeypatch.setattr(module, "load_epoch_dataset", load)
+    monkeypatch.setattr("research.source_execution.filesystem_uses_host_memory", lambda _: host_memory_filesystem)
+    phases = SourceInputPhases(tmp_path / "phases.json")
+    production = module.main([*arguments, "--output", str(tmp_path / "production.npz"),
+        "--source-memory-budget-bytes", str(128 * 2**20)], retain_production=True, phases=phases)
+    actual = production.dataset
+    assert consumed == [snapshot, snapshot]
+    np.testing.assert_array_equal(actual.X, expected.X)
+    np.testing.assert_array_equal(actual.y, expected.y)
+    assert actual.record() == expected.record()
+    assert actual.event_timeline.fingerprint() == expected.event_timeline.fingerprint()
+    assert actual.identity_table.payload() == expected.identity_table.payload()
+    assert production.verify()["decoded_dataset_sha256"] == loaded_epoch_cache_attestation(expected)["decoded_dataset_sha256"]
+    memory = json.loads((tmp_path / "source_input_memory.json").read_text())
+    assert memory["snapshot_in_host_memory"] == {"A": host_memory_filesystem, "B": host_memory_filesystem}
+    assert memory["output_in_host_memory"] == host_memory_filesystem
+    if host_memory_filesystem:
+        assert memory["resident_estimate_bytes"] > memory["output_archive_estimate_bytes"]
+
+
+@pytest.mark.parametrize("budget", [0, 1])
+def test_explicit_unaffordable_source_budget_fails_before_final_eeg_allocation(tmp_path, monkeypatch, budget):
+    from research.source_execution import PreparedSourceStorage
+
+    paths = [save_epoch_dataset(tmp_path / f"{name}.npz",
+        _prepared_source(_source_dataset(source_id=name, subject="01", offset=0.))) for name in ("A", "B")]
+
+    def allocate(*arguments, **options):
+        pytest.fail("an explicitly unaffordable resident budget must fail before allocating final EEG")
+
+    monkeypatch.setattr(np, "empty", allocate)
+    with pytest.raises(ValueError, match="source memory budget"):
+        PreparedSourceStorage(list(zip(("A", "B"), paths, strict=True)), n_channels=5,
+            output_path=tmp_path / "new.npz", budget_bytes=budget)
+
+
 def test_multidomain_builder_reuses_prepared_car_and_namespace(
     tmp_path: Path,
     monkeypatch,

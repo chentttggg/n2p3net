@@ -187,7 +187,7 @@ def test_parallel_source_cli_executes_layouts_from_its_snapshot(tmp_path, worker
             "evidence_scope": "software_correctness", "correctness_source_updates": 1,
             "correctness_candidate_updates": [1], "compile_mode": None, "cpu_budget": 2,
             "source_layouts": layouts, "source_workers": workers,
-            "source_worker_memory_gib": 0.25, "target_worker_memory_gib": 0.25,
+            "source_worker_memory_gib": 1.0, "target_worker_memory_gib": 0.25, "host_memory_fraction": .95,
             "batch_rule": user_fixed_target_batch_rule(), "outer_folds": [{"name": "held", "source_cache": str(cache),
                 "excluded_source_datasets": ["held"], "source_protocols": {}, "target_cache": str(target),
                 "target_study": "held", "target_protocol": {"kind": "single_recording_prefix"}}]}

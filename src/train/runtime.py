@@ -1051,6 +1051,7 @@ class GpuPerformanceScheduler:
         self.shared_worker_count = 1
         self.resident_memory_budget_bytes: int | None = None
         self.input_staging_gate = None
+        self.host_process_resident_budget_bytes: int | None = None
         self.last_memory: MemorySnapshot | None = None
 
     @property
@@ -1142,14 +1143,38 @@ class GpuPerformanceScheduler:
             raise ValueError("resident memory budget must be positive bytes")
         self.resident_memory_budget_bytes = nbytes
 
+    def configure_host_process_resident_budget(self, nbytes: int | None) -> None:
+        """Assign the whole source-group host lease for retained input residency."""
+        if nbytes is not None and (type(nbytes) is not int or nbytes < 1):
+            raise ValueError("host process resident budget must be positive bytes")
+        self.host_process_resident_budget_bytes = nbytes
+
     @contextmanager
-    def stage_inputs(self):
+    def stage_inputs(self, *, nbytes=0):
         """Bound host staging peaks while other workers continue GPU fitting."""
+        if self.host_process_resident_budget_bytes is not None and nbytes > self.host_process_resident_budget_bytes:
+            raise RuntimeError("source normalized inputs exceed the reserved whole-process resident budget")
         if self.input_staging_gate is None:
-            yield
+            yield None
         else:
-            with self.input_staging_gate:
-                yield
+            with self.input_staging_gate.reserve("nn", nbytes) as lease:
+                yield lease
+
+    def complete_input_staging(self, lease, *, retained_bytes):
+        """Transfer retained CPU inputs to the live whole-source group lease."""
+        import psutil
+
+        host_rss = psutil.Process().memory_info().rss
+        budget = self.host_process_resident_budget_bytes
+        if budget is not None and host_rss > budget:
+            raise RuntimeError(
+                f"source input staging exceeds its whole-process resident budget: "
+                f"rss={host_rss} budget={budget} retained_normalized={retained_bytes}; "
+                "cannot meet the declared source-worker capacity")
+        if lease is not None:
+            lease.release_unused(0 if budget is not None else retained_bytes)
+        return {"host_process_resident_budget_bytes": budget, "host_rss_after_input_staging_bytes": host_rss,
+            "normalized_host_resident_bytes": retained_bytes}
 
     def recommended_concurrent_workers(self, requested: int, *, cap: int = 4) -> int:
         """Return a hardware-aware default for one physical accelerator.

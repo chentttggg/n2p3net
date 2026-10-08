@@ -83,7 +83,8 @@ def _malformed_preparation_worker(output):
 
     sys.modules["experiments.prepare_source_records"] = SimpleNamespace(main=prepare)
     sys.modules["train.runtime"] = SimpleNamespace(cpu_thread_budget=lambda threads: nullcontext())
-    return _source_preparation_worker(("manifest.json", output, "profile.json", 1, None))
+    staging = SimpleNamespace(reserve=lambda phase: nullcontext())
+    return _source_preparation_worker(("manifest.json", output, "profile.json", 1, staging))
 
 
 def test_preparation_result_parse_failure_is_inside_diagnostic_task(tmp_path):

@@ -139,13 +139,16 @@ def observed_source_statistics(
     weighting: str = "observed_rows",
 ) -> tuple[np.ndarray, np.ndarray, dict[str, object]]:
     """Fit observed-channel population moments without any class weighting."""
-    values = np.asarray(values)
+    from train.source_rows import SourceRows
+
+    values = values if isinstance(values, SourceRows) else np.asarray(values)
     observed = np.asarray(observed)
     domains = np.asarray(domain_ids).astype(str)
     people = np.asarray(participant_keys).astype(str)
     if values.ndim != 3 or observed.shape != values.shape[:2] or observed.dtype != bool:
         raise ValueError("source statistics require (N,C,T) values and boolean (N,C) observations")
-    if not np.isfinite(values).all() or domains.shape != (len(values),):
+    finite = values.all_finite() if isinstance(values, SourceRows) else np.isfinite(values).all()
+    if not finite or domains.shape != (len(values),):
         raise ValueError("source statistics require finite values and aligned identities")
     source_sampling_probabilities(domains, people, sampling="uniform_rows")
     if weighting not in {"observed_rows", "observed_domain_participant"}:

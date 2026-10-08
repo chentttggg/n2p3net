@@ -69,3 +69,11 @@ def test_source_production_rejects_uncanonical_serialized_metadata(tmp_path, fie
     with pytest.raises(ValueError, match="canonical.*" + field):
         produce_epoch_cache(tmp_path / "source.npz", changed)
     assert not (tmp_path / "source.npz").exists()
+
+
+def test_source_production_does_not_change_fortran_layout_of_generic_arrays(tmp_path):
+    original = _dataset()
+    dataset = replace(original, X=np.asfortranarray(original.X))
+    with pytest.raises(ValueError, match="canonical contiguous"):
+        produce_epoch_cache(tmp_path / "source.npz", dataset)
+    assert not (tmp_path / "source.npz").exists()

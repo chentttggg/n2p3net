@@ -52,6 +52,7 @@ def fit_or_reuse_source_trajectory(
     device, evidence_scope, gpu_slots=None, architecture=None,
     runtime_preload_budget_bytes=None,
     runtime_input_staging_gate=None,
+    runtime_host_process_budget_bytes=None,
     source_program_config=None,
 ):
     """Reuse exact source training inputs while binding each consumer's own contract."""
@@ -107,6 +108,7 @@ def fit_or_reuse_source_trajectory(
         architecture=architecture)
     arguments["runtime_preload_budget_bytes"] = runtime_preload_budget_bytes
     arguments["runtime_input_staging_gate"] = runtime_input_staging_gate
+    arguments["runtime_host_process_budget_bytes"] = runtime_host_process_budget_bytes
     arguments["source_program_config"] = source_program_config
     if isinstance(registry, SharedTrajectoryRegistry):
         with registry.transaction(signature) as local:
@@ -117,7 +119,7 @@ def fit_or_reuse_source_trajectory(
 def _materialize_source_trajectory(*, registry, dataset, rows, config, destination, task_id,
         source_cache_sha256, source_snapshot_sha256, excluded_source_datasets, device, evidence_scope,
         signature, signature_record, fit_ledger, gpu_slots, architecture, runtime_preload_budget_bytes=None,
-        runtime_input_staging_gate=None, source_program_config=None):
+        runtime_input_staging_gate=None, runtime_host_process_budget_bytes=None, source_program_config=None):
     import torch
 
     from data.study import dataset_study_membership
@@ -153,6 +155,8 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
                     architecture=architecture,
                     runtime_preload_budget_bytes=runtime_preload_budget_bytes,
                     runtime_input_staging_gate=runtime_input_staging_gate,
+                    runtime_host_process_budget_bytes=runtime_host_process_budget_bytes,
+                    runtime_progress_directory=destination / "progress",
                     source_program_config=source_program_config,
                 )
                 physical_updates = int(model.last_history["optimizer_updates"])
@@ -548,6 +552,10 @@ def _source_group_worker(arguments):
         for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
             os.environ[name] = str(native_threads)
         os.environ["TORCHINDUCTOR_COMPILE_THREADS"] = "1"
+        snapshot_directory = plan.get("verified_cache_snapshot_directory")
+        if snapshot_directory is not None:
+            directory = Path(snapshot_directory).resolve()
+            directory.mkdir(parents=True, exist_ok=True)
         admission = nullcontext() if plan.get("_phase_reserved") else plan["_memory_admission"].source_group()
         with cpu_thread_budget(native_threads), admission:
             worker_diagnostic_phase("source_input_and_memory_admission")
@@ -587,17 +595,18 @@ def _prepare_source_group_inputs(plan, output):
         argv = ["--output", str(cache), "--target-channels", "Fz,P3,Pz,P4,PO8,Oz",
             "--event-contract", "binary_evidence", "--reference-mode", "measured_channel",
             "--reference-channel", "Cz",
-            "--missing-channel-policy", "mask", "--source-workers", "1", "--uncompressed",
+            "--missing-channel-policy", "mask", "--source-workers",
+            str(plan.get("source_merge_workers", plan["_native_threads_per_worker"])), "--uncompressed",
             "--cpu-threads", str(plan["_native_threads_per_worker"])]
         for study in outer["source_studies"]:
             argv.extend(("--source", f"{study}={inputs[study]['cache']}"))
-        with phases.phase("merge_staging_wait"):
-            plan["_source_load_slots"].acquire()
-        try:
+        if plan.get("verified_cache_snapshot_directory"):
+            argv.extend(("--verified-snapshot-directory", str(plan["verified_cache_snapshot_directory"])))
+        if plan.get("_source_worker_memory_bytes"):
+            argv.extend(("--source-memory-budget-bytes", str(plan["_source_worker_memory_bytes"])))
+        with plan["_source_input_admission"].reserve("load"):
             with phases.phase("whole_fold_merge_and_write"):
                 production = merge(argv, retain_production=True, phases=phases)
-        finally:
-            plan["_source_load_slots"].release()
         metadata, attestation = _read_epoch_cache_record(cache)
         loaded = {record["namespace"]: record["cache_sha256"] for record in metadata["provenance"]["sources"]}
         if loaded != {study: record["cache_sha256"] for study, record in inputs.items()}:
@@ -623,7 +632,7 @@ def _source_preparation_worker(arguments):
         with cpu_thread_budget(1):
             worker_diagnostic_phase("prepare_record_workers")
             prepare(["--manifest", manifest, "--output", output, "--preprocessing-config", profile,
-                     "--workers", str(record_workers)], merge_gate=staging)
+                     "--workers", str(record_workers)], merge_gate=staging.reserve("load"))
         worker_diagnostic_phase("read_preparation_result")
         path = Path(output) / "preparation.json"
         record = json.loads(path.read_text(encoding="utf-8"))
@@ -640,6 +649,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
     from research.evaluation import verified_executed_snapshot
     from research.source_execution import (
         HostMemoryAdmission,
+        SourceInputAdmission,
         resolve_source_resources,
         source_group_input_status,
     )
@@ -716,7 +726,9 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
     report["worker_diagnostics"] = {"directory": str(diagnostics_directory), "identity": diagnostic_identity}
     with context.Manager() as manager:
         slots = manager.BoundedSemaphore(resources["gpu_slots"]) if torch.device(device).type == "cuda" else None
-        load_slots = manager.BoundedSemaphore(int(plan.get("source_load_workers", resources["source_workers"])))
+        input_admission = SourceInputAdmission(manager,
+            capacity_bytes=resources["shared_staging_memory_bytes"],
+            load_workers=int(plan.get("source_load_workers", 1)))
         memory_admission = HostMemoryAdmission(manager, resources)
         with ProcessPoolExecutor(max_workers=resources["source_workers"], mp_context=context,
                 initializer=initialize_worker_diagnostics, initargs=(str(diagnostics_directory), diagnostic_identity)) as pool:
@@ -766,8 +778,11 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                              "_source_group": True, "_defer_outer_plans": True, "_gpu_slots": slots,
                              "_memory_admission": memory_admission, "_phase_reserved": True,
                              "_native_threads_per_worker": reservation["cpu_threads"],
-                             "_source_load_slots": load_slots,
+                             "_source_worker_memory_bytes": resources["source_worker_memory_bytes"],
+                             "_source_input_admission": input_admission,
+                             "_runtime_input_staging_gate": (input_admission if input_admission.capacity else None),
                              "_runtime_preload_budget_bytes": resources["resident_memory_budget_bytes"],
+                             "_runtime_host_process_budget_bytes": resources["source_worker_memory_bytes"],
                              "shared_registry_directory": str(output / "trajectory_registry"),
                              "target_workers": resources["inner_workers_per_group"]}
                     if inventory is not None:
@@ -809,7 +824,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                         preparation_started.add(study)
                         try:
                             future = pool.submit(_source_preparation_worker, (manifests[study],
-                                str(Path(prepared_directory) / study), str(profile_path), phase_threads - 1, load_slots))
+                                str(Path(prepared_directory) / study), str(profile_path), phase_threads - 1, input_admission))
                         except BrokenProcessPool as error:
                             report["pool_failure_observation"] = pool_diagnostics.capture(error,
                                 {"study": study, "phase": "preparation"}, stage="submit")
@@ -818,7 +833,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                         pool_diagnostics.remember_processes(pool)
                         active[future] = (entry, reservation)
                 reserved = memory_admission.record()
-                observation = {**reserved, "ready_source_groups": reserved["source_groups"] + sum(
+                observation = {**reserved, **input_admission.record(), "ready_source_groups": reserved["source_groups"] + sum(
                     groups[index][0]["name"] in ready_names for index in pending),
                     "waiting_ready_source_groups": sum(groups[index][0]["name"] in ready_names for index in pending),
                     "pending_source_groups": len(pending), "active_pipeline_nodes": len(active)}
@@ -857,6 +872,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                     if progress.exists():
                         entry["progress"] = json.loads(progress.read_text(encoding="utf-8"))
                 _save_chain_report(output, report)
+        report["source_input_admission"] = input_admission.record()
         for entry in report["groups"]:
             path = Path(entry["directory"]) / "source_chain_record.json"
             if not path.exists():
@@ -900,13 +916,14 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
     from baselines.deep import DeepConfig
     from data.contract import SOURCE_COHORT_DATA_CONTRACTS, assert_p300_input_contract
     from data.epochs import (
+        _verified_cache_snapshot_directory,
         load_epoch_dataset,
         loaded_epoch_cache_attestation,
         select_epoch_channels,
     )
     from models.n2p3net import DEFAULT_N2P3_ARCHITECTURE, N2P3ArchitectureConfig
     from research.evaluation import verified_source_snapshot
-    from research.source_execution import SharedTrajectoryRegistry
+    from research.source_execution import SharedTrajectoryRegistry, filesystem_uses_host_memory
     from research.source_matrix import unified_source_conditions, validate_unified_source_input
     from research.source_resume import SourceChainResume
     from research.source_selection import (
@@ -1034,9 +1051,14 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
             source = production.dataset
         else:
             production_identity = None
+            snapshot_directory = _verified_cache_snapshot_directory(source_cache,
+                byte_size=source_cache.stat().st_size, directory_override=plan.get("verified_cache_snapshot_directory"))
+            snapshot_memory_bytes = (source_cache.stat().st_size if filesystem_uses_host_memory(snapshot_directory) else 0)
             with phases.phase("attested_resume_load") if phases is not None else nullcontext():
-                with (plan["_source_load_slots"] if plan.get("_source_load_slots") is not None else nullcontext()):
-                    source = load_epoch_dataset(source_cache, require_labels=True, validation="attested")
+                with (plan["_source_input_admission"].reserve("load", snapshot_memory_bytes)
+                        if plan.get("_source_input_admission") is not None else nullcontext()):
+                    source = load_epoch_dataset(source_cache, require_labels=True, validation="attested",
+                                                snapshot_directory=snapshot_directory)
         input_record = None
         if independent:
             input_record = validate_independent_source_input(source, program["preprocessing"])
@@ -1185,7 +1207,8 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
                                 excluded_source_datasets=excluded, device=device, evidence_scope=evidence_scope,
                                 gpu_slots=plan.get("_gpu_slots"), architecture=architecture,
                                 runtime_preload_budget_bytes=plan.get("_runtime_preload_budget_bytes"),
-                                runtime_input_staging_gate=plan.get("_source_load_slots"),
+                                runtime_input_staging_gate=plan.get("_runtime_input_staging_gate"),
+                                runtime_host_process_budget_bytes=plan.get("_runtime_host_process_budget_bytes"),
                                 source_program_config=source_config_record)
                     except RuntimeError as error:
                         worker_diagnostic_phase("source_fit_python_failure", failure={"type": type(error).__name__, "message": str(error)},
@@ -1374,7 +1397,10 @@ def _run_e2_selection(dataset, outer, seed, target_seeds, output, source_sha, sn
                                 config=config, destination=destination.with_suffix(""), task_id=str(destination),
                                 source_cache_sha256=source_sha, source_snapshot_sha256=snapshot_sha,
                                 excluded_source_datasets=outer["excluded_source_datasets"], device=device, evidence_scope=evidence_scope,
-                                gpu_slots=plan.get("_gpu_slots"))
+                                gpu_slots=plan.get("_gpu_slots"),
+                                runtime_preload_budget_bytes=plan.get("_runtime_preload_budget_bytes"),
+                                runtime_input_staging_gate=plan.get("_runtime_input_staging_gate"),
+                                runtime_host_process_budget_bytes=plan.get("_runtime_host_process_budget_bytes"))
                     except RuntimeError as error:
                         report["tasks"].append({"key": str(destination), "refit_key": list(refit_key),
                             "status": "fit_failure", "failure": str(error), "optimizer_updates": updates,
@@ -1578,7 +1604,8 @@ def _select_unified_source_prior(dataset, outer, *, layout, plan, report, output
             excluded_source_datasets=outer["excluded_source_datasets"], device=device,
             evidence_scope=plan.get("evidence_scope", "development"), architecture=architecture, gpu_slots=plan.get("_gpu_slots"),
             runtime_preload_budget_bytes=plan.get("_runtime_preload_budget_bytes"),
-                                runtime_input_staging_gate=plan.get("_source_load_slots"))
+                                runtime_input_staging_gate=plan.get("_runtime_input_staging_gate"),
+                                runtime_host_process_budget_bytes=plan.get("_runtime_host_process_budget_bytes"))
     checkpoint = next(iter(acquired["checkpoints"].values()))
     payload = load_checkpoint_payload(checkpoint)
     record["source_budget"] = {"mode": "reference_selected_exposure", "selected_epochs": payload["source_epoch_selection"]["selected_epochs"],
@@ -1822,7 +1849,7 @@ def main(argv=None):
         return str(path if path.is_absolute() else (plan_path.parent / path).resolve())
 
     for key in ("source_snapshot_manifest", "evaluation_snapshot_manifest", "batch_rule_file",
-                "prepared_source_directory", "source_view_working_directory"):
+                "prepared_source_directory", "source_view_working_directory", "verified_cache_snapshot_directory"):
         if key in plan:
             plan[key] = resolve_path(plan[key])
     if "source_preparation_manifests" in plan:
