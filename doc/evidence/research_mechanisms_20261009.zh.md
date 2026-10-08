@@ -119,6 +119,26 @@ C状态重建的最高8个信息方向与endpoint value/first-difference rowspac
 
 理论、原始论文、actual stages和两个独立结论分别在本轮 `B11_FULL_C/`、`B11_FULL_C_SCALING/` 与对应 `REVIEWS/`。当前未接实际K0/C权限、flat nuisance或产品包；实际EEG行数远大于8，dense noise root及全draw residual矩阵的内存问题已进入下一压缩QR/分批预测切片，不据此声称真实训练吞吐。
 
+## 共同flat nuisance的联合尺度参考
+
+后续小矩阵参考明确 `y=Dβ+Za+ε`，一个proper global β、每完整decision一个λ，以及同一Lebesgue系数坐标da。令 `W0=L0⁻¹`、`r=rank(Z)`、`d=n_raw−r`，消去a后的log potential为 `log|W0|−½log|ZᵀW0ᵀW0Z|−d/2 log(2πτ²)+d/2 logλ−λδ_Z(β)/(2τ²)`。whole potential是共同sigma-finite测度；prefix识别相同Z列后，full/prefix比才是正规raw-tail条件密度。collapsed `λ|β,y` 的shape是 `(ν+d)/2`，原prior ν不变；proper β的维数不再扣除。显式保a的另一augmentation则使用raw维数，两种程序不能混写。
+
+原型SHA `255a8f266b5ab2e412657433a012d838b5ce01527b7be09e7b3b8db1a37d02d8`、最终verifier `2e57023a15832924111f617a7109bb795e850ab742cd9d2a30d68472e4148804` 对应实际12个小案例。独立β-first Gaussian/flat-Z积分的full/prefix log差0，posterior矩差不超过 `2.22e-15`；raw-tail积分质量为 `.9999999999999988`。独立proper-a宽先验与反向Γ→raw t→a积分支持同一体积关系，sample-major多通道反例核完整rankZ。旧verifier8d及首次stdout保持原身份，没有追签为最终2e57。来源和完整公式在本轮 `B11_DIFFUSE_NUISANCE/RESEARCH.zh.md`、`delivery.binding.json`。
+
+独立审阅另做一个prefix恰好识别constant a的饱和例：full/prefix log-density与原raw contrast `Δ=y1−y0` 的闭式混合均为 `−1.38483787423048`。正确variance使用 `τ²·1.13/λ`，只用noise Schur会错成 `τ²·.64/λ`；prefix无quotient信息时λ mean仍为prior的1.47。这同时检出漏掉a posterior uncertainty和把zero quotient误作非法prefix。审阅见本轮 `REVIEWS/B11_DIFFUSE_AND_COMPRESSION.zh.md` 与binding；该独立oracle的exact stdin未在此前压缩前归档，保实际结果与可重构输入，不补造原执行文本签名。
+
+精确长记录seam已经落 `B11_DIFFUSE_NUISANCE/CANONICAL_SEAM.zh.md`：raw行数、nuisance rank、effective行数和raw-coordinate volume分别保存；同actual W0先白化Y/D/Z，full与raw prefix各自thin Z-QR再压缩response，不能截full quotient/R。给定prefix的raw-tail还须保a posterior与Schur联合方差。当前小矩阵数学出口已验收，actual-row有nuisance编译、采样与生产接入继续分别实施；没有将现无nuisance canonical模块或旧运行改签为支持这一扩展。
+
+## 实际长记录压缩与预测质量出口
+
+无nuisance切片实际计算7975 native samples×8 channels、128个proper β和16000 retained draws。原B05 owner一次完整白化后，以增广 `[WDLβ,W(y−Dm0)]/√τ²` 的行块QR压缩，保全部p+1列与residual行；full/prefix分别来自原白化行，Γshape和normalizer使用原63800行。一个record保留root仅133128B。当前仍需线性 `O(NC(p+1))` 工作内存，没有宣称已实现stateful raw streaming；63800² dense root32.56GB和全draw raw residual8.17GB只是未实际分配的公式成本。
+
+独立binary64高SNR例的准确residual energy为1，Gram相减得到0，增广QR仍为1；删最后residual行会漏7.11512能量，把原n24误改为压缩行数会把Γshape14错成4。实际CPU1成本probe约9.009秒，OS process peak438136832B、host采样峰17.9%。这些是合成private VAR1/no-nuisance计算成本与数值关系，未消费真实五C或证明公共训练吞吐。
+
+原importance读数Kish15.65/16000、maxweight .2312，没有过预声明 `.02/.02` policy；必要followup实际触发typed拒绝，caller随后明示另跑C+同prefix。新程序約19.828秒、OS peak437252096B；coordinate Rhat1.00050/ESS至少14381，但点log-density MCSE仍 `.424812`、likelihood Kish仅5.5311、最大贡献 `.28684`，预测精度未验收。下一Rao–Blackwell切片将条件于同joint λ posterior解析积分β，单独核验，不通过漂亮MCMC诊断或有限混合正规掩盖该失败。
+
+初成本source803472/verify79d069的实际字节已精确恢复，followup87d3a8/f5f043保持自己的执行记录；当前格式整理e0a0c4/952cdc仅静态，不追签旧run。完整来源和结果在本轮 `B11_ACTUAL_ROW_SCALING/RESEARCH.zh.md`、`delivery.binding.json`；独立审阅已核8份row载荷及10份diffuse载荷，见同一 `REVIEWS/B11_DIFFUSE_AND_COMPRESSION`。raw-volume有nuisance、连续posterior准确性、真实权限caller与生产接入各自仍待出口。
+
 ## 本轮统一软件入口核验
 
 ERP入口的已删除私有digest调用已修正，原compact dtype/shape/bytes关系保持，真实仓库外CLI help通过。459个Python文件的4665个仓库内显式from-import静态检查未见缺符号；随后实际 `pytest --collect-only tests` exit0，收集217个测试模块/3179用例、源码前后不变。收集没有执行测试断言，完整integrated suite仍待实际足额内存；不降低原native资源声明或重启用户关闭的云。
