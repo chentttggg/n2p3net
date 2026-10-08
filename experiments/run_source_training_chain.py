@@ -792,7 +792,8 @@ def _source_parent_input_owner(admission):
         install_input_admission(previous)
 
 
-def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, groups):
+def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, groups,
+                           additional_tasks=(), on_additional_finished=None, on_additional_complete=None):
     from data.epochs import parse_preprocessing_spec
     from data.source_admission import PreparedSourceInventory, bind_source_inputs
     from research.cloud_execution import CloudExecutor, CloudTask, PhaseResources
@@ -994,6 +995,24 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                     outcome.supplementary_failures.append(failure)
 
             legacy_tasks = {}
+            additional_ids = set()
+            pipeline_ids = {*group_ids.values(), *input_nodes.values(),
+                *(task.task_id for _, programme in consumers.values() for task in programme.tasks)}
+
+            def register_additional(new_tasks):
+                new_tasks = tuple(new_tasks)
+                ids = [task.task_id for task in new_tasks]
+                if (len(set(ids)) != len(ids) or set(ids) & (pipeline_ids | additional_ids | set(legacy_tasks))
+                        or any(key.startswith(("consumer-binding-failure-", "outer-preparation-", "outer-evaluation-"))
+                               for key in ids)):
+                    raise ValueError("additional cloud tasks must have distinct pipeline task identities")
+                additional_ids.update(ids)
+                report.setdefault("additional_cloud_requests", []).extend({"task_id": task.task_id,
+                    "adapter": task.adapter, "resources": asdict(task.resources), "depends_on": list(task.depends_on)}
+                    for task in new_tasks)
+                return new_tasks
+
+            tasks.extend(register_additional(additional_tasks() if callable(additional_tasks) else additional_tasks))
 
             def on_finished(outcome):
                 nonlocal state, bindings
@@ -1091,6 +1110,8 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                                     str(output / "outer_execution" / task_id), phases["calibration"], (outcome.task_id,)))
                     elif entry["kind"] == "evaluation" and outcome.status == "completed":
                         report.setdefault("outer_execution", []).extend(outcome.value)
+                elif outcome.task_id in additional_ids and on_additional_finished is not None:
+                    additions.extend(register_additional(on_additional_finished(outcome) or ()))
                 if inventory is not None:
                     atomic_write_json(output / "input_status.json", input_status())
                     atomic_write_json(output / "input_bindings.json", bindings)
@@ -1133,7 +1154,9 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
             report["worker_diagnostics"] = run.diagnostics
             report["observation_failures"] = run.observation_failures
             report["cloud_execution"] = {"status": run.status, "results": [asdict(result) for result in run.results.values()]}
-            report["source_input_admission"] = input_admission.record()
+            if additional_ids:
+                report["additional_cloud_tasks"] = [asdict(result) for key, result in run.results.items()
+                    if key in additional_ids]
             try:
                 _assert_source_bytes(plan["source_snapshot_manifest"], snapshot)
                 report["execution_end_source_check"] = "actual_runtime_bytes_match_the_ingress_archive"
@@ -1176,8 +1199,18 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                         request.update(status="source_group_failure", failure=failures[request["outer"]],
                                        artifact_admission_status="rejected")
                 _finish_independent_source_report(report, output)
+            if on_additional_complete is not None:
+                try:
+                    finalization = on_additional_complete(run)
+                    report["additional_finalization"] = {
+                        "status": "completed" if finalization is None else finalization["status"]}
+                except Exception as error:
+                    report["additional_finalization"] = {"status": "failed", "failure": {
+                        "type": type(error).__name__, "message": str(error), "stage": "additional_artifact_finalization"}}
+            report["source_input_admission"] = input_admission.record()
             failed = (run.status != "completed" or "execution_end_source_failure" in report
-                      or any(entry["status"] == "failed" for entry in report["consumers"]))
+                      or any(entry["status"] == "failed" for entry in report["consumers"])
+                      or report.get("additional_finalization", {}).get("status", "completed") != "completed")
             report["status"] = "failed" if failed else "completed"
             _save_chain_report(output, report)
     if failed:
@@ -1185,7 +1218,25 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
     return report
 
 
-def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stages: tuple[str, ...], evaluate_outer: bool = False):
+def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stages: tuple[str, ...],
+                         evaluate_outer: bool = False, additional_tasks=(), on_additional_finished=None,
+                         on_additional_complete=None):
+    """Run source and dependent consumers under one owner, with optional CloudTasks.
+
+    Additional adapters use the same resource claims and input/artifact admission.
+    A no-argument task factory runs after that owner is installed, so initial
+    request ledgers also receive shared persistent-file admission.
+    Their per-task hook may return successors; the final hook consumes CloudRun
+    while the shared artifact owner is live and may return a report with a
+    completion status. Neither hook enters a scientific plan or a source-fit child.
+    """
+    if not callable(additional_tasks):
+        additional_tasks = tuple(additional_tasks)
+    if any(callback is not None and (not additional_tasks or not callable(callback))
+           for callback in (on_additional_finished, on_additional_complete)):
+        raise ValueError("additional completion requires initial tasks and a callable")
+    if additional_tasks and (dry_run or plan.get("_source_group", False)):
+        raise ValueError("additional cloud tasks require the executing parent resource owner")
     import numpy as np
 
     from baselines.deep import DeepConfig
@@ -1249,7 +1300,10 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
         groups = source_execution_groups(plan, stages)
         if groups:
             return _execute_source_groups(plan, output=output, device=device, stages=stages,
-                                           evaluate_outer=evaluate_outer, groups=groups)
+                evaluate_outer=evaluate_outer, groups=groups, additional_tasks=additional_tasks,
+                on_additional_finished=on_additional_finished, on_additional_complete=on_additional_complete)
+    if additional_tasks:
+        raise ValueError("additional cloud tasks require at least one declared source group")
     workers = plan.get("target_workers", 1)
     if workers in (None, "auto"):
         workers = 1 if dry_run else available_cpu_threads()

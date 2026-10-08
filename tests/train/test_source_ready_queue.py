@@ -14,7 +14,7 @@ import pytest
 
 from experiments.freeze_source_snapshot import freeze_source
 from experiments.run_source_training_chain import _admit_source_group, execute_source_chain
-from research.cloud_execution import CloudExecutor
+from research.cloud_execution import CloudExecutor, CloudTask, PhaseResources
 from research.source_selection import resolve_source_program
 from tests.support.source_programs import independent_source_plan as _plan
 from tests.support.source_programs import prepared_finite_source as _prepared_source
@@ -55,6 +55,104 @@ def test_native_single_seed_research_keeps_independent_selection_and_fresh_refit
     assert not report.get("unadmitted_source_artifacts")
     assert (output / "source_seed_catalog.json").is_file()
     assert plan["source_seeds"] == plan["target_seeds"] == [11]
+
+
+def _additional_cloud_probe(arguments):
+    from research.source_execution import current_input_admission
+
+    output = Path(arguments["output"])
+    with current_input_admission().artifact_writer(output, 32):
+        output.write_text(arguments["mode"], encoding="utf-8")
+        if arguments["mode"] == "native_exit":
+            os._exit(73)
+    return str(output)
+
+
+@pytest.mark.parametrize("native_failure", [True, False], ids=["native_failure", "final_artifact_rejection"])
+def test_source_owner_composes_additional_successors_and_preserves_native_failure_requests(tmp_path, native_failure):
+    cache, spec, _ = _prepared_source(tmp_path)
+    snapshot = freeze_source(tmp_path / "snapshot")
+    plan = _plan(cache, spec, snapshot)
+    plan.update(source_seeds=[11], target_seeds=[11], cpu_budget=3, source_workers=1, target_workers=1)
+    phase = PhaseResources("evaluation", 1, 4 * 2**30, 1, "cpu")
+
+    def task(name, mode="success", dependencies=()):
+        path = tmp_path / (name + ".txt")
+        return CloudTask(name, "tests.train.test_source_ready_queue:_additional_cloud_probe",
+            {"output": str(path), "mode": mode}, str(tmp_path / name), phase, dependencies)
+
+    admitted = []
+
+    def on_finished(outcome):
+        admitted.append((outcome.task_id, outcome.status))
+        if outcome.task_id == "additional-start" and outcome.status == "completed":
+            assert Path(outcome.value).read_text(encoding="utf-8") == "success"
+            return (task("additional-successor", dependencies=(outcome.task_id,)),)
+        return ()
+
+    requested = (task("additional-start"), task("additional-native", "native_exit" if native_failure else "success"),
+                 task("additional-blocked", dependencies=("additional-native",)))
+
+    def initial():
+        from research.source_execution import current_input_admission
+
+        current_input_admission().write_json(tmp_path / "additional-requested.json",
+            {"task_ids": [item.task_id for item in requested]})
+        return requested
+
+    def finalize(run):
+        from research.source_execution import current_input_admission
+
+        assert run.status == ("failed" if native_failure else "completed")
+        assert set(run.results) >= {"additional-start", "additional-successor", "additional-native", "additional-blocked"}
+        if not native_failure:
+            # Reject a post-admission artifact change even when every process
+            # completed. A returned failed report must fail the parent run.
+            (tmp_path / "additional-start.txt").write_text("changed", encoding="utf-8")
+            assert Path(run.results["additional-start"].value).read_text(encoding="utf-8") != "success"
+        current_input_admission().write_json(tmp_path / "additional-final.json",
+            {key: result.status for key, result in run.results.items() if key.startswith("additional-")})
+        return {"status": "failed"}
+
+    output = tmp_path / "run"
+    with pytest.raises(RuntimeError, match="source/consumer programme failed"):
+        execute_source_chain(plan, output=output, dry_run=False, device="cpu", stages=("P2_source",),
+            additional_tasks=initial, on_additional_finished=on_finished, on_additional_complete=finalize)
+    report = json.loads((output / "source_chain_record.json").read_bytes())
+    assert report["status"] == "failed"
+    assert report["groups"][0]["status"] == "completed"
+    assert report["requested_source_task_count"] == 1
+    assert report["completed_physical_fit_count"] == 2
+    assert len(report["source_seed_catalog"]) == 1
+    outcomes = {row["task_id"]: row for row in report["additional_cloud_tasks"]}
+    assert {row["task_id"] for row in report["additional_cloud_requests"]} == set(outcomes)
+    expected = {
+        "additional-start": "completed", "additional-successor": "completed",
+        "additional-native": "failed", "additional-blocked": "blocked"}
+    if not native_failure:
+        expected.update({"additional-native": "completed", "additional-blocked": "completed"})
+    assert {key: value["status"] for key, value in outcomes.items()} == expected
+    assert sorted(admitted) == sorted((key, value["status"]) for key, value in outcomes.items())
+    assert report["additional_finalization"] == {"status": "failed"}
+    assert json.loads((tmp_path / "additional-requested.json").read_bytes()) == {
+        "task_ids": [item.task_id for item in requested]}
+    assert json.loads((tmp_path / "additional-final.json").read_bytes()) == {
+        key: value["status"] for key, value in outcomes.items()}
+    assert (tmp_path / "additional-native.txt").read_text(encoding="utf-8") == ("native_exit" if native_failure else "success")
+    assert (tmp_path / "additional-blocked.txt").exists() is not native_failure
+    assert all(row["reserved_cpu_threads"] <= 3 for row in report["resource_observations"])
+    assert all(row["worker"] is None or row["worker"]["alive"] is False
+               for row in report["cloud_execution"]["results"])
+    native_lease = next(row for row in report["source_input_admission"]["active_leases"]
+                        if row.get("path") == str((tmp_path / "additional-native.txt").resolve()))
+    assert native_lease["committed"] and native_lease["disk_bytes"] == len("native_exit" if native_failure else "success")
+    final_lease = next(row for row in report["source_input_admission"]["active_leases"]
+                       if row.get("path") == str((tmp_path / "additional-final.json").resolve()))
+    assert final_lease["committed"] and final_lease["disk_bytes"] == (tmp_path / "additional-final.json").stat().st_size
+    initial_lease = next(row for row in report["source_input_admission"]["active_leases"]
+                         if row.get("path") == str((tmp_path / "additional-requested.json").resolve()))
+    assert initial_lease["committed"]
+    assert report["execution_end_source_check"] == "actual_runtime_bytes_match_the_ingress_archive"
 
 
 @pytest.mark.parametrize("change", ["scope", "stopping", "key_seed", "missing_catalog"])
