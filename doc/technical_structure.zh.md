@@ -14,7 +14,7 @@
 
 当前[集成骨干](evidence/research_integration_20261008.zh.md)以`dictionary_artifact`持有字典编译/准入，`temporal_noise/5`持有实际startup数组与scales，`continuous_decision`持有全C/prior生产QR后验；load消费原数值态，整模型仍核同implementation字节。B05一般vec冻结响应可通过真实行/列置换消费B09空间后验，评分noise独立，不重新拟合后验。数值不可识别只使对应连续专家/decision不可用，正常peer保留；artifact/输入合同错误继续传播。
 
-`research.input_contamination`复用真实harmonic/finite程序，测完整自适应`T(x+h)-T(x)`及明示扰动分布下的经验矩，接原operator CLI的`audit-clean`。`research.dynamic_identification`只作noise-only Gamma尺度与独立proper Gaussian不确定性的积分参考；prefix条件密度是joint/prefix两个生成积分的比，不是固定prior权重平均conditional输出。二者不新增生产fitter或默认算法，也不签发原始观测授权。
+`research.input_contamination`复用真实harmonic/finite程序，测完整自适应`T(x+h)-T(x)`及明示扰动分布下的经验矩，接原operator CLI的`audit-clean`。`research.dynamic_identification`只作noise-only Gamma尺度与独立proper Gaussian不确定性的积分参考；prefix条件密度是joint/prefix两个生成积分的比，不是固定prior权重平均conditional输出。这些研究参考不新增生产fitter或默认算法，也不签发原始观测授权。`research.response_history_identification`枚举完整公开selection label状态，共享同MN response后验，计算proper Gaussian或共同flat-nuisance measure下的full/prefix mixture比；整mask相关和kernel cross terms保留，不能替换成独立flash Bernoulli或附加独立Γ。当前只有小矩阵参考和反例，生产unknownoverlap拒绝保持。
 
 [B07 `transfer.response_dictionary`](evidence/erp_dictionary_20261006.zh.md)拥有analytic spec、actual basis/grid、E/N与immutable数值状态；`ContinuousDecisionModel`仍唯一fit/score owner，kernel prior、精确目标、ensemble/OOF和CLI消费同basis。capacity直接消费actual fit statistics及compiled reference/design，cal-prior三份dict mirror已删除；ridge保存一次真实R/rhs并与precision/M/H/noise或legacyφ关系绑定。字典包声明base_model_schema并保存物理/约束数值，不能仅改metadata换函数或重签容量。
 

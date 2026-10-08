@@ -1,6 +1,6 @@
 # 研究与工程证据
 
-- [本地科研机制与真实A01](research_mechanisms_20261009.zh.md)：六格fixed-noise signal-prior、MN/reference商空间等价、native可识别性与完整自适应挑战；保存态/独立反例，单例限度及实际执行来源。
+- [本地科研机制与真实数据](research_mechanisms_20261009.zh.md)：八人48格fixed-noise signal-prior、MN/reference商空间等价、native可识别性与完整自适应挑战、有限整selection历史参考；保存态/独立反例、归因限制及实际执行来源。
 
 - [科研与代码集成](research_integration_20261008.zh.md)：两窗口单作者分工、总并发10、科研单seed/大版本三seed；字典重编译与容量诊断跨平台风险、独立机制代码的实际实施和未验收范围。
 

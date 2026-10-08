@@ -1,6 +1,6 @@
-# 科研机制：真实A01、保存态与独立反例
+# 科研机制：真实数据、保存态与独立反例
 
-2026-10-09。范围是本地数学/软件验收与A01预声明机制对照；不是全公共矩阵、概率校准或成人确认。当前指导见六指南，本页只保存本轮已落地的独立结果和来源。
+2026-10-09。范围是本地数学/软件验收、A01预声明机制对照、八人48格signal-prior归因及有限历史参考。完整source→target两面板、概率校准和成人确认各自验收。当前指导见六指南，本页只保存本轮已落地的独立结果和来源。
 
 ## 执行身份与授权
 
@@ -32,6 +32,16 @@ noise-tied prior为S=Σ_C；独立预声明prior为S=a·diag(Pz4,其余1)，a=8/
 实际矩阵暴露并关闭QR zero/tiny entry误拒。修后按每个输入列的QR生成误差核，并保单位方向precision、Q正交、rhs/mean/H关系。浮点Gram最坏enclosure过宽时，rare分支用保存binary64 R/H的精确整数RHRᵀ，仍按原resolution1.49e-8准入；真实128维误差1.1701e-11、单次0.1654秒，wrong-H4×仍拒。不改prior/noise/阈值或score。
 
 CPU1、单worker/GPU0；actualPython body墙钟16.632s/CPU16.375s，含启动22.534s，峰working set414.05MiB，主机CPU采样峰12.2%。只说明这次机制panel成本。
+
+## 有限整selection历史参考
+
+`research.response_history_identification` 已落实完整有限 joint label 状态、一个共享 MN response 后验和 full/prefix 两个边缘积分的比。给定状态的时间协方差为 `K+D H Dᵀ`，保留当前与邻居设计的共享 β 交叉项；邻居全部 flash 共用该 selection 的一个 target 标签。prefix 更新邻状态权重，不能以独立 flash Bernoulli、额外独立 Γ 或旧 prior 权重的 conditional 平均替代。
+
+当前 source SHA `47bdc38cae0ffce67fd433d31d30d3effe8ccab442186a080ee9278e750ef97c`，test SHA `aac7c76f6d2745daaee0a575f188b75bfc122658b21d4d9c1f2650d8c3316c79`，提交 `a6e403b`。promotion 的五项必要反例实际通过，包含任意 current 轴、past/current/future 相关 prior、独立多通道 Gaussian 与 flat-nuisance oracle，以及固定 current-prior tail 评分不等于 full-data Bayes current posterior的反证。原型14+1日志没有执行源码绑定，保持其原身份，不补签为本次五项或整个17项的新运行。
+
+独立科学复审接受当前声明模型，未发现新增确认缺陷。直接 β 的40×40 Gauss-Hermite积分与实现 full/prefix/conditional 最大 log 差分别为 `8.88e-16/0/8.88e-16`；双通道、独立 proper nuisance prior 的宽尺度极限按 `O(τ⁻²)` 收敛。这是两个独立小案例，不是整个数值域认证；12件原始来源和promotion receipt已按当前hash核对，未重跑作者suite。审阅详细记录保存在本轮 `REVIEWS/B07_HISTORY_SCIENCE.zh.md` 及相邻binding。
+
+无 nuisance 时使用 proper Gaussian density；有 nuisance 时使用 full/prefix 相同坐标体积的共同 sigma-finite measure。prefix 识别共同 nuisance 后，比值定义 normalized conditional-tail density；单个full marginal仍不称proper密度，prefix缺列秩明确拒绝。future 状态可以因冻结 joint prior 与已观察 past 的相关性更新权重，未读取 future EEG。它是每状态 dense 小矩阵研究参考，完整历史、真实 source/channel/reference/time 与数据权限由外部 caller 证明；实际模型 adapter、保存重放、长历史扩展、latency、随机效应及真实效能另验。生产未知 overlap 拒绝保持。
 
 ## 八人48格signal-prior归因
 
