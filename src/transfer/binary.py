@@ -205,6 +205,22 @@ def validate_calibration_budgets(budgets: tuple[int, ...]) -> None:
         raise ValueError("calibration budgets must be unique increasing nonnegative integers")
 
 
+def calibration_budget_requests(requested_budgets, effective_budgets, adjustments):
+    """Bind requested labels to the already resolved chronological fit scopes."""
+    requested, effective = tuple(requested_budgets), tuple(effective_budgets)
+    validate_calibration_budgets(requested)
+    validate_calibration_budgets(effective)
+    maximum = max(effective)
+    expected = {budget for budget in requested if budget > maximum}
+    if set(adjustments) != expected or any(not isinstance(reason, str) or not reason for reason in adjustments.values()):
+        raise ValueError("calibration request adjustments differ from the resolved budget cap")
+    mapping = {budget: {"requested_K": budget, "actual_K": min(budget, maximum),
+        "adjustment": adjustments.get(budget)} for budget in requested}
+    if {row["actual_K"] for row in mapping.values()} != set(effective):
+        raise ValueError("calibration request mapping differs from the prepared fit scopes")
+    return mapping
+
+
 def calibration_arms(arms: tuple[str, ...], budget: int, budgets: tuple[int, ...]) -> tuple[str, ...]:
     if budget == 0:
         return tuple(arm for arm in arms if arm == "zero_shot")

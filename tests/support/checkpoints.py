@@ -80,6 +80,15 @@ def write_checkpoint(
             "source": "synthetic_test_fixture",
         },
     )
+    membership = {
+        "schema": "n2p3_source_study_membership/1",
+        "stream_to_study": {"external-source": "external-study"},
+        "evidence": [{"basis": "synthetic_test_fixture", "study_id": "external-study"}],
+    }
+    membership["digest"] = semantic_sha256(membership)
+    payload["source_study_membership"] = membership
+    payload["training_contract"]["objective"]["source_study_membership"] = membership
+    payload["training_contract_digest"] = semantic_sha256(payload["training_contract"])
     torch.save(payload, path)
     return path
 

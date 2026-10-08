@@ -22,7 +22,7 @@ from data.epochs import (
     preprocessing_execution_binding,
 )
 from data.identity import DatasetIdentityTable, training_identity_ledger_from_rows
-from data.study import dataset_study_membership, study_ids_for_identity
+from data.study import checkpoint_study_membership, dataset_study_membership, study_ids_for_identity
 from models.n2p3net import (
     DEFAULT_N2P3_ARCHITECTURE,
     DEFAULT_N2P3_POOLING_MODE,
@@ -341,6 +341,148 @@ def source_architecture_record(dataset: EpochDataset, architecture: N2P3Architec
         sfreq=dataset.preprocessing.sfreq, n_times=dataset.n_times, architecture=architecture)
 
 
+def validate_source_procedure(payload, *, source_seed, outer_target_study, evidence_scope, kind):
+    """Admit the procedure that produced these weights, not a catalog status flag.
+
+    This owner supports its fixed-update and participant-disjoint epoch/refit
+    programs. Reference-exposure and external hyperparameter selectors require
+    their own complete per-seed producer binding before full-pipeline admission.
+    """
+    from train.early_stopping import GlobalEarlyStoppingPolicy, PatienceStopper
+    from transfer.checkpoint import (
+        checkpoint_training_contract,
+        checkpoint_training_identity_ledger,
+    )
+
+    contract = checkpoint_training_contract(payload)
+    identity = checkpoint_training_identity_ledger(payload)
+    studies = study_ids_for_identity(identity, checkpoint_study_membership(payload))
+    if outer_target_study in studies:
+        raise ValueError("source catalog checkpoint must exclude the complete outer target study")
+    if contract.seed != source_seed:
+        raise ValueError("source procedure seed differs from actual checkpoint seed")
+    config = contract.optimizer.get("config", {})
+    selection = payload.get("source_epoch_selection")
+    known_selection = (selection is not None or payload.get("global_early_stopping") is not None
+        or payload.get("source_budget") is not None or config.get("source_budget") is not None
+        or config.get("global_early_stopping") is not None
+        or contract.validation.get("early_stopping") is not None
+        or contract.validation.get("strategy") == "source_internal_early_stopping_then_full_refit")
+    external_selection = any(payload.get(key) is not None for key in (
+        "source_prior_selection", "source_residual_selection", "source_prior_weight_selection"))
+    fixture = contract.optimizer.get("kind") == "synthetic_test_fixture"
+    source_scope = "software_correctness" if fixture else payload.get("evidence_scope")
+    if evidence_scope not in {"software_correctness", "public_development", "public_calibration_development"}:
+        raise ValueError("source procedure consumer evidence scope is unsupported")
+    if fixture and evidence_scope != "software_correctness":
+        raise ValueError("software source fixtures cannot establish public full-source pipeline replication")
+    if kind not in {"fixed_recipe", "selection_refit"}:
+        raise ValueError("source procedure must declare fixed recipe or actual selection/refit")
+    if external_selection or (kind == "fixed_recipe" and known_selection):
+        raise ValueError("fixed source recipe cannot hide a selection procedure")
+    if fixture and kind == "fixed_recipe":
+        return {"kind": kind, "selection": "not_applicable", "source_seed": source_seed,
+                "source_evidence_scope": source_scope, "consumer_evidence_scope": evidence_scope,
+                "source_studies": sorted(studies)}
+    if source_scope == "software_correctness" and evidence_scope != "software_correctness":
+        raise ValueError("software source fixtures cannot establish public full-source pipeline replication")
+    if (source_scope not in {"development", "public_development", "public_calibration_development", "software_correctness"}
+            or config.get("seed") != source_seed
+            or contract.validation.get("evidence_scope") != source_scope
+            or payload.get("source_cache_sha256") != contract.source_cache_sha256
+            or payload.get("source_snapshot_sha256") != contract.source_snapshot_sha256
+            or payload.get("source_full_refit") is not True):
+        raise ValueError("source procedure requires actual same-seed producer evidence and executed input/source binding")
+    ledger = payload.get("source_fit_ledger")
+    if not isinstance(ledger, dict) or contract.validation.get("fit_ledger") != ledger:
+        raise ValueError("source full refit ledger differs from its training contract")
+    full_rows = np.asarray(ledger["fit_rows"])
+    if (full_rows.ndim != 1 or full_rows.dtype.kind not in "iu" or not len(full_rows)
+            or np.any(full_rows < 0) or len(np.unique(full_rows)) != len(full_rows)
+            or ledger["fit_rows_sha256"] != semantic_sha256(full_rows.tolist())
+            or ledger["training_identity_ledger"] != identity.payload()
+            or ledger["training_identity_ledger_digest"] != identity.digest()
+            or tuple(ledger["training_participant_keys"]) != contract.training_participant_keys
+            or outer_target_study not in ledger["excluded_source_datasets"]
+            or set(ledger["actual_source_libraries"]) != set(studies)):
+        raise ValueError("source refit rows/identities/exclusion differ from actual fit authority")
+    updates = contract.optimizer.get("actual_updates")
+    if (type(updates) is not int or updates < 1 or payload.get("source_fixed_updates") != updates
+            or config.get("fixed_updates") != updates
+            or type(contract.optimizer.get("trial_draws")) is not int or contract.optimizer["trial_draws"] < updates
+            or not contract.optimizer.get("batch_sequence_sha256")):
+        raise ValueError("source refit budget differs from actual optimizer exposure")
+    if kind == "fixed_recipe":
+        if contract.validation.get("strategy") != "fixed_source_updates":
+            raise ValueError("fixed source recipe requires a recorded no-selection producer program")
+        return {"kind": kind, "selection": "not_applicable", "source_seed": source_seed,
+                "actual_refit_updates": updates, "fit_ledger_digest": semantic_sha256(ledger),
+                "source_evidence_scope": source_scope, "consumer_evidence_scope": evidence_scope,
+                "source_studies": sorted(studies)}
+    if (selection is None or contract.validation.get("strategy") != "source_internal_early_stopping_then_full_refit"
+            or contract.validation.get("early_stopping") != selection
+            or payload.get("source_budget") is not None or config.get("source_budget") is not None
+            or selection.get("source_seed") != source_seed
+            or selection.get("source_cache_sha256") != contract.source_cache_sha256
+            or selection.get("source_snapshot_sha256") != contract.source_snapshot_sha256
+            or selection.get("source_identity_digest") != contract.source_identity_digest
+            or selection.get("full_refit_ledger_digest") != semantic_sha256(ledger)
+            or selection.get("refit_initialization") != "fresh_same_seed"
+            or selection.get("outer_target_used_for_selection") is not False
+            or selection.get("epoch_unit") != "ceil(inner_rows/batch_size)_source_updates"
+            or selection.get("validation_unit") != "source_participant_disjoint_within_each_domain"
+            or selection.get("monitor") != "source_validation_hierarchical_weighted_cross_entropy"):
+        raise ValueError("source selection/refit requires actual same-seed producer evidence")
+    policy = GlobalEarlyStoppingPolicy(**selection["policy"])
+    if payload.get("global_early_stopping") != policy.record():
+        raise ValueError("source selected policy differs from actual producer declaration")
+    training, validation = (np.asarray(selection[key]) for key in ("training_rows", "validation_rows"))
+    inner, held = selection["inner_fit_ledger"], selection["validation_fit_ledger"]
+    if (any(value.ndim != 1 or value.dtype.kind not in "iu" or not len(value)
+            or len(np.unique(value)) != len(value) for value in (training, validation))
+            or np.intersect1d(training, validation).size
+            or not np.array_equal(np.sort(np.r_[training, validation]), np.sort(full_rows))
+            or inner["fit_rows"] != training.tolist() or held["fit_rows"] != validation.tolist()
+            or set(inner["training_participant_keys"]) & set(held["training_participant_keys"])
+            or set(inner["training_participant_keys"]) | set(held["training_participant_keys"]) != set(ledger["training_participant_keys"])):
+        raise ValueError("source inner selection and full refit must share the actual source-only row partition")
+    for part in (inner, held):
+        if (part["cache_row_identity_sha256"] != ledger["cache_row_identity_sha256"]
+                or part["input_lineage_digest"] != ledger["input_lineage_digest"]
+                or part["excluded_source_datasets"] != ledger["excluded_source_datasets"]
+                or not set(part["actual_source_libraries"]) <= set(ledger["actual_source_libraries"])
+                or part["fit_rows_sha256"] != semantic_sha256(part["fit_rows"])):
+            raise ValueError("source inner selection rows differ from refit cache/source authority")
+    check_every = ceil(len(training) / config["batch_size"])
+    history = selection["inner_history"]
+    early = history["early_stopping"]
+    if (selection["check_every_updates"] != check_every or early != {
+            key: selection[key] for key in early} or selection["maximum_epochs"] != policy.source_max_epochs):
+        raise ValueError("source selection curve differs from recorded inner fit")
+    stopper = PatienceStopper(policy.patience, policy.min_delta)
+    for index, point in enumerate(selection["validation_curve"], start=1):
+        if (stopper.exhausted or index > policy.source_max_epochs
+                or point["epoch"] != index or point["updates"] != index * check_every):
+            raise ValueError("source selection validation curve differs from producer update checks")
+        stopper.observe(point["validation_loss"])
+    if (not stopper.checks or any(selection[key] != value for key, value in stopper.record().items())
+            or selection["selected_epochs"] != stopper.best_check
+            or selection["selected_updates"] != stopper.best_check * check_every
+            or history["optimizer_updates"] != stopper.checks * check_every
+            or (not stopper.exhausted and stopper.checks != policy.source_max_epochs)
+            or selection["refit_updates"] != updates
+            or updates != stopper.best_check * ceil(len(full_rows) / config["batch_size"])
+            or selection["total_optimizer_updates"] != history["optimizer_updates"] + updates
+            or selection["total_trial_draws"] != history["trial_draws"] + contract.optimizer["trial_draws"]):
+        raise ValueError("source selected epoch and actual full refit budget are inconsistent")
+    return {"kind": kind, "selection": "per_source_seed", "source_seed": source_seed,
+            "selected_epochs": stopper.best_check, "actual_inner_updates": history["optimizer_updates"],
+            "actual_refit_updates": updates, "selection_digest": semantic_sha256(selection),
+            "fit_ledger_digest": semantic_sha256(ledger), "source_evidence_scope": source_scope,
+            "consumer_evidence_scope": evidence_scope,
+            "source_studies": sorted(studies)}
+
+
 def fit_source_trajectory(
     dataset: EpochDataset, rows: np.ndarray, *, config: DeepConfig,
     source_cache_sha256: str, source_snapshot_sha256: str,
@@ -485,12 +627,18 @@ def _fit_source_with_early_stopping(
             "check_every_updates": check_every, "policy": policy})
     history = inner.last_history
     selection = {**history["early_stopping"], "policy": policy.record(),
+        "source_seed": config.seed, "source_cache_sha256": source_cache_sha256,
+        "source_snapshot_sha256": source_snapshot_sha256,
+        "source_identity_digest": dataset.identity_table.digest(),
         "monitor": "source_validation_hierarchical_weighted_cross_entropy",
         "validation_unit": "source_participant_disjoint_within_each_domain",
         "epoch_unit": "ceil(inner_rows/batch_size)_source_updates",
         "check_every_updates": check_every,
         "training_rows": training.tolist(), "validation_rows": validation.tolist(),
-        "inner_fit_ledger": inner_ledger, "inner_history": history, "inner_runtime": inner.last_runtime,
+        "inner_fit_ledger": inner_ledger,
+        "validation_fit_ledger": source_fit_ledger(dataset, validation,
+            excluded_source_datasets=excluded_source_datasets, forbidden_participant_keys=people[training]),
+        "inner_history": history, "inner_runtime": inner.last_runtime,
         "outer_target_used_for_selection": False,
         "refit_initialization": "fresh_same_seed", "maximum_epochs": policy.source_max_epochs}
     selection["reached_epoch_limit"] = selection["validation_checks"] >= policy.source_max_epochs
@@ -506,6 +654,7 @@ def _fit_source_with_early_stopping(
         total_optimizer_updates=history["optimizer_updates"] + model.last_history["optimizer_updates"],
         total_trial_draws=history["trial_draws"] + model.last_history["trial_draws"],
         refit_runtime=dict(model.last_runtime), total_wall_seconds=time.perf_counter() - started)
+    selection["full_refit_ledger_digest"] = semantic_sha256(payloads[refit_updates]["source_fit_ledger"])
     model.last_runtime = {**model.last_runtime, "fit_seconds": selection["total_wall_seconds"],
                           "includes_inner_and_full_refit": True}
     for payload in payloads.values():

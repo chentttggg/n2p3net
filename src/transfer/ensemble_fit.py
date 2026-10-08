@@ -250,6 +250,17 @@ class FittedEnsemble:
             not np.isfinite(value) or value <= 0 for value in temperatures.values()
         ):
             raise ValueError("frozen temperatures must cover the roster and be positive finite scalars")
+        strategy = self._temperature_record["strategy"]
+        if strategy == "fixed":
+            if any(value != 1. for value in temperatures.values()):
+                raise ValueError("fixed temperature program requires unit temperatures")
+        elif strategy == "grouped_temperature":
+            if self._temperature_record.get("temperature_bounds") != (.05, 20.) or any(
+                not .05 <= value <= 20. for value in temperatures.values()
+            ):
+                raise ValueError("grouped temperature program differs from its declared bounds")
+        else:
+            raise ValueError("unknown declared ensemble calibration strategy")
 
     @property
     def temperature_record(self):
@@ -270,6 +281,10 @@ class FittedEnsemble:
     @property
     def fit_available(self):
         return all(expert.predictor is not None for expert in self._experts)
+
+    @property
+    def expert_fit_available(self):
+        return {expert.program.expert_id: expert.predictor is not None for expert in self._experts}
 
     def score_experts(self, view: PredictionDecisionView):
         if view.participant_key != self.participant_key:
@@ -337,6 +352,62 @@ class FittedEnsemble:
             record["target_contract"] = self._target_contract
         atomic_write_json(directory / "ensemble.json", {"record": record, "record_sha256": semantic_sha256(record)})
         return directory
+
+    @classmethod
+    def save_programs(cls, directory, programs, *, participant_key):
+        """One numerical package, with separate declared probability programs."""
+        directory = Path(directory)
+        fitted = next((value for value in programs.values() if isinstance(value, cls)), None)
+        if fitted is None:
+            directory.mkdir(parents=True, exist_ok=False)
+            base_digest = None
+        else:
+            fitted.save(directory)
+            base_digest = hashlib.sha256((directory / "ensemble.json").read_bytes()).hexdigest()
+        records = {}
+        for name, value in programs.items():
+            if name not in {"fixed", "grouped_temperature"}:
+                raise ValueError("unknown declared ensemble calibration strategy")
+            if isinstance(value, ExpectedSubjectError):
+                records[name] = {"status": "unavailable", "failure": value.record(subject=participant_key)}
+            else:
+                if value._experts is not fitted._experts or value.scorer.program != fitted.scorer.program:
+                    raise ValueError("temperature programs must share the actual all-C final expert states")
+                if name != value.temperature_record["strategy"]:
+                    raise ValueError("temperature program name differs from its actual strategy")
+                records[name] = {"status": "completed", "temperature_calibration": value.temperature_record}
+        record = {"schema": "n2p3_prefix_temperature_programs/1", "base_package_sha256": base_digest,
+                  "participant_key": participant_key,
+                  "programs": records}
+        atomic_write_json(directory / "temperature_programs.json", {"record": record, "record_sha256": semantic_sha256(record)})
+        return directory
+
+    @classmethod
+    def load_programs(cls, directory):
+        directory = Path(directory)
+        payload = json.loads((directory / "temperature_programs.json").read_bytes())
+        record = payload["record"]
+        if record["schema"] != "n2p3_prefix_temperature_programs/1" or semantic_sha256(record) != payload["record_sha256"]:
+            raise ValueError("frozen temperature program manifest changed")
+        if not record["programs"] or set(record["programs"]) - {"fixed", "grouped_temperature"}:
+            raise ValueError("unknown declared ensemble calibration strategy")
+        for name, value in record["programs"].items():
+            if value["status"] not in {"completed", "unavailable"}:
+                raise ValueError("temperature program requires an explicit completed or unavailable state")
+            if value["status"] == "completed" and name != value["temperature_calibration"]["strategy"]:
+                raise ValueError("temperature program name differs from its actual strategy")
+        if record["base_package_sha256"] is None:
+            if any(value["status"] != "unavailable" for value in record["programs"].values()):
+                raise ValueError("available temperature programs require their actual final model package")
+            return {}
+        if hashlib.sha256((directory / "ensemble.json").read_bytes()).hexdigest() != record["base_package_sha256"]:
+            raise ValueError("temperature programs differ from their actual final model package")
+        fitted = cls.load(directory)
+        if record["participant_key"] != fitted.participant_key:
+            raise ValueError("temperature program participant differs from actual final model package")
+        return {name: cls(fitted.scorer, fitted._experts, fitted._training_receipts,
+            value["temperature_calibration"], target_contract=fitted._target_contract)
+            for name, value in record["programs"].items() if value["status"] == "completed"}
 
     @classmethod
     def load(cls, directory: str | Path):
@@ -494,9 +565,8 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
         raise ValueError("prefix fit programs must match the complete frozen expert roster")
     if calibration_strategy not in {"fixed", "grouped_temperature"}:
         raise ValueError("unknown declared ensemble calibration strategy")
-    temperature_unavailable = None
     if calibration_strategy == "grouped_temperature" and len(prefix.complete_groups) < 3:
-        temperature_unavailable = ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
+        raise ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
             stage="temperature", detail="fewer than three complete C-only groups")
     sources = {} if source_checkpoints is None else {name: value if isinstance(value, FrozenSourceCheckpoint)
         else FrozenSourceCheckpoint.from_path(value) for name, value in source_checkpoints.items()}
@@ -530,12 +600,6 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
                 expert = _FittedExpert(spec, None, None, fit_digest, None, 0., reason, "fit_failure")
         experts.append(expert)
     fitted = FittedEnsemble(EnsembleScorer(program), experts, receipts, target_contract=prefix.target_contract)
-    if temperature_unavailable is not None:
-        record = {**fitted.temperature_record, "requested_strategy": "grouped_temperature",
-            "requested_status": "unavailable", "effective_strategy": "fixed",
-            "failure": temperature_unavailable.record(subject=fitted.participant_key)}
-        return FittedEnsemble(fitted.scorer, fitted._experts, fitted._training_receipts, record,
-                              target_contract=fitted._target_contract)
     if calibration_strategy == "fixed":
         return fitted
     return _grouped_temperature(fitted, prefix.complete_groups, specs, sources, device)
@@ -553,7 +617,8 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device):
         target = held.view.decision.candidate_vocabulary.index(held.target_candidate)
         for name, item in scores.items():
             if not item.probability_available:
-                raise ValueError("grouped temperature fit requires complete OOF probability evidence")
+                raise ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE, stage="temperature",
+                    detail=f"{name}: grouped temperature fit requires complete OOF probability evidence")
             by_expert[name].append((item.log_probability, target))
         producers.append({"held_record_id": held.view.record_id,
             "training_record_ids": [group.view.record_id for group in training],
@@ -566,7 +631,8 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device):
         solution = minimize_scalar(_temperature_nll, args=(log_probability, targets),
                                    bounds=(np.log(.05), np.log(20.)), method="bounded")
         if not solution.success or not np.isfinite(solution.fun):
-            raise ValueError("grouped temperature fit did not produce a finite declared calibration")
+            raise ExpectedSubjectError(SubjectFailureCode.NONFINITE_OPTIMIZATION, stage="temperature",
+                detail="grouped temperature fit did not produce a finite declared calibration")
         temperatures[name] = float(np.exp(solution.x))
     temperature_record = {"strategy": "grouped_temperature", "temperatures": temperatures,
         "temperature_bounds": [.05, 20.], "score_transform": "posterior_power_temperature/1",
@@ -575,3 +641,32 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device):
         "held_prediction_labels_used_for_calibration": False}
     return FittedEnsemble(fitted.scorer, fitted._experts, fitted._training_receipts, temperature_record,
                           target_contract=fitted._target_contract)
+
+
+def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strategies,
+                                    source_checkpoints=None, device="cpu"):
+    """Declared temperature programs share one actual all-C final expert fit."""
+    if (not strategies or len(set(strategies)) != len(strategies)
+            or set(strategies) - {"fixed", "grouped_temperature"}):
+        raise ValueError("prefix temperature programs must be explicit and distinct")
+    sources = {} if source_checkpoints is None else {name: value if isinstance(value, FrozenSourceCheckpoint)
+        else FrozenSourceCheckpoint.from_path(value) for name, value in source_checkpoints.items()}
+    result = {}
+    eligible = len(prefix.complete_groups) >= 3
+    fixed = (fit_calibration_prefix(prefix, expert_programs, program, source_checkpoints=sources, device=device)
+             if "fixed" in strategies or eligible else None)
+    for strategy in strategies:
+        if strategy == "fixed":
+            result[strategy] = fixed
+        elif not eligible:
+            result[strategy] = ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
+                stage="temperature", detail="fewer than three complete C-only groups")
+        else:
+            try:
+                result[strategy] = _grouped_temperature(fixed, prefix.complete_groups, expert_programs, sources, device)
+            except ExpectedSubjectError as error:
+                result[strategy] = error
+            except (UnidentifiableFitError, np.linalg.LinAlgError) as error:
+                result[strategy] = ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE,
+                    stage="temperature", detail=f"{type(error).__name__}: {error}")
+    return result

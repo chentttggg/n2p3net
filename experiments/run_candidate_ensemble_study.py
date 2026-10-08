@@ -32,6 +32,7 @@ from research.contracts import (  # noqa: E402
 from research.evaluation import verified_executed_snapshot  # noqa: E402
 from research.execution import (  # noqa: E402
     ExpectedSubjectError,
+    SubjectFailureCode,
     UnidentifiableFitError,
     atomic_write_json,
 )
@@ -47,7 +48,7 @@ from transfer.ensemble_fit import (  # noqa: E402
     FittedEnsemble,
     FrozenSourceCheckpoint,
     fit_calibration_ensemble,
-    fit_calibration_prefix,
+    fit_calibration_prefix_programs,
 )
 from transfer.ensemble_views import (  # noqa: E402
     prepare_bnci_calibration_groups,
@@ -411,57 +412,65 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                 if spec.family == "trial" and spec.recipe.initialization == "source"}
             sources, controls = _matched_source_controls(specs, sources)
             for budget, prefix in views.calibration.items():
-                fitted_experts, replay_experts, calibrations = {}, {}, {}
-                for expert_index, spec in enumerate(specs):
+                roster = EnsembleProgram.equal_weights("prefix_fit", tuple(spec.expert_id for spec in specs))
+                programs = fit_calibration_prefix_programs(prefix, specs, roster,
+                    strategies=plan["calibration_strategies"], source_checkpoints=sources, device=plan["device"])
+                package = directory / f"source{source_seed}_target{seed}_K{budget}"
+                FittedEnsemble.save_programs(package, programs, participant_key=prefix.target_contract["participant_key"])
+                replay_programs = FittedEnsemble.load_programs(package)
+                for strategy in plan["calibration_strategies"]:
                     _abort_checkpoint()
-                    one = EnsembleProgram.equal_weights(spec.expert_id, (spec.expert_id,))
-                    package = directory / f"source{source_seed}_target{seed}_K{budget}_expert{expert_index}"
-                    kwargs = dict(source_checkpoints={spec.expert_id: sources[spec.expert_id]}
-                        if spec.expert_id in sources else {}, device=plan["device"],
-                        calibration_strategy=plan["calibration_strategy"])
-                    try:
-                        fitted = fit_calibration_prefix(prefix, (spec,), one, **kwargs)
-                        fitted.save(package)
-                        replay = FittedEnsemble.load(package)
-                        fitted_experts[spec.expert_id], replay_experts[spec.expert_id] = fitted, replay
-                        calibrations[spec.expert_id] = fitted.temperature_record
+                    fitted = replay = None
+                    result = programs[strategy]
+                    if not isinstance(result, ExpectedSubjectError):
+                        fitted = result
+                        replay = replay_programs[strategy]
+                        calibration = fitted.temperature_record
+                    else:
+                        calibration = {"strategy": strategy, "status": "unavailable",
+                            "failure": result.record(subject=prefix.target_contract["participant_key"])}
+                    for spec in specs:
                         use = prefix.label_use["raw"] if spec.family == "continuous_ar" else prefix.label_use["trial"][spec.profile.digest]
                         fits.append({"source_seed": source_seed, "target_seed": seed, "K": budget,
-                            "expert_id": spec.expert_id, "package": package.name, "label_use": use,
-                            "matched_source_controls": controls, "temperature_calibration": fitted.temperature_record,
-                            "fit_available": fitted.fit_available,
-                            "source_only": budget == 0 and spec.family == "trial" and spec.recipe.initialization == "source"})
-                    except ExpectedSubjectError as error:
-                        calibrations[spec.expert_id] = {"strategy": plan["calibration_strategy"],
-                            "status": "unavailable", "failure": error.record(subject=prefix.target_contract["participant_key"])}
-                        fits.append({"source_seed": source_seed, "target_seed": seed, "K": budget,
-                            "expert_id": spec.expert_id, "fit_available": False, "temperature_calibration": calibrations[spec.expert_id]})
-                for view in views.decisions:
-                    evidence = {}
-                    for spec in specs:
-                        if spec.expert_id in fitted_experts:
-                            value = fitted_experts[spec.expert_id].score(view)
-                            replay = replay_experts[spec.expert_id].score(view)
-                            if value.record() != replay.record():
+                            "requested_Ks": [int(key) for key, actual in views.ledger["requested_to_actual_K"].items() if actual == budget],
+                            "calibration_strategy": strategy, "expert_id": spec.expert_id,
+                            "package": package.name, "label_use": use,
+                            "matched_source_controls": controls, "temperature_calibration": calibration,
+                            "fit_available": fitted is not None and fitted.expert_fit_available[spec.expert_id],
+                            "source_only": strategy == "fixed" and budget == 0 and spec.family == "trial"
+                                and spec.recipe.initialization == "source"})
+                    for view in views.decisions:
+                        if fitted is not None:
+                            evidence, reloaded = fitted.score_experts(view), replay.score_experts(view)
+                            if any(evidence[name].record() != reloaded[name].record() for name in roster.expert_ids):
                                 raise ValueError("saved independent-prefix expert replay differs from actual fit")
                         else:
+                            evidence = {}
                             counts = tuple(int(count) for count in view.decision.membership.sum(axis=0))
                             observed = tuple(int(count) for count in view.decision.membership[view.decision.evidence_indices >= 0].sum(axis=0))
-                            identity = CandidateExpertIdentity(spec.expert_id, view.raw_input_digest, None, None,
-                                semantic_sha256({"prefix": prefix.record(), "program": spec.record()}),
-                                "unavailable_C_only_temperature", False)
-                            value = CandidateEvidence(view.decision.candidate_vocabulary, None, view.participant_key,
-                                view.decision_id, view.physical_support_digest, (identity,), view.decision.repetitions,
-                                counts, observed, failure_reason="insufficient_complete_C_only_temperature_groups", failure_kind="not_available")
-                        evidence[spec.expert_id] = value
-                    for mixture in mixtures:
-                        value = EnsembleScorer(mixture).score({name: evidence[name] for name in mixture.expert_ids})
-                        predictions.append({"source_seed": source_seed, "target_seed": seed, "seed": seed,
-                            "K": budget, "mixture": mixture.name, "evidence": value.record(),
-                            "truth": views.scoring_truth[view.decision_id], "requested_authorized_labels": budget,
-                            "saved_replay_exact": all(name in replay_experts for name in mixture.expert_ids),
-                            "temperature_calibration": {name: calibrations[name] for name in mixture.expert_ids},
-                            "score_source_digest": semantic_sha256(expected_source)})
+                            for spec in specs:
+                                identity = CandidateExpertIdentity(spec.expert_id, view.raw_input_digest, None, None,
+                                    semantic_sha256({"prefix": prefix.record(), "program": spec.record(), "strategy": strategy}),
+                                    f"temperature:{result.code.value}", False)
+                                evidence[spec.expert_id] = CandidateEvidence(view.decision.candidate_vocabulary, None,
+                                    view.participant_key, view.decision_id, view.physical_support_digest, (identity,),
+                                    view.decision.repetitions, counts, observed,
+                                    failure_reason=str(result), failure_kind="not_available"
+                                    if result.code == SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS else "fit_failure")
+                        for mixture in mixtures:
+                            value = EnsembleScorer(mixture).score({name: evidence[name] for name in mixture.expert_ids})
+                            predictions.append({"source_seed": source_seed, "target_seed": seed, "seed": seed,
+                                "K": budget, "calibration_strategy": strategy, "mixture": mixture.name, "evidence": value.record(),
+                                "truth": views.scoring_truth[view.decision_id], "actual_authorized_labels": budget,
+                                "requested_Ks": [int(key) for key, actual in views.ledger["requested_to_actual_K"].items() if actual == budget],
+                                "saved_replay_exact": fitted is not None,
+                                "temperature_calibration": calibration,
+                                "prediction_read_support": {spec.expert_id: {
+                                    "raw_scope": list(view.raw_scope) if view.samples is not None else None,
+                                    "available_sample": view.available_sample, "profile": None if spec.profile is None else spec.profile.record(),
+                                    "filtering_scope": "independent_test_decision" if spec.family == "trial" else "native_unfiltered_decision"}
+                                    for spec in specs if spec.expert_id in mixture.expert_ids},
+                                "score_source_digest": semantic_sha256(expected_source)})
                 atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions),
                     "source_seed": source_seed, "target_seed": seed, "K": budget, "status": "running"})
     requested = [DecisionPlanEntry(view.participant_key, view.decision_id, views.scoring_truth[view.decision_id]).record()
@@ -470,6 +479,7 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
         "counts": dict(zip(view.decision.candidate_vocabulary, map(int, view.decision.membership.sum(axis=0)), strict=True))}
         for view in views.decisions]
     result = {"status": "completed", "predictions": predictions, "fits": fits, "requested": requested,
+        "requested_to_actual_K": views.ledger["requested_to_actual_K"], "budget_adjustments": views.ledger["budget_adjustments"],
         "coverage": coverage, "candidate_vocabulary": list(views.decisions[0].decision.candidate_vocabulary),
         "evidence_level": views.decisions[0].decision.repetitions, "participant_key": views.decisions[0].participant_key}
     atomic_write_json(directory / "result.json", result)
@@ -499,6 +509,10 @@ def run_study(plan_path: str | Path, output: str | Path):
         verified_executed_snapshot(plan["source_snapshot_manifest"], root=ROOT)
     independent = plan.get("evaluation_design") == "independent_prefix"
     pairs = paired_pipeline_seeds(plan["seed_pairs"]) if independent else None
+    strategies = plan["calibration_strategies"] if independent else [plan["calibration_strategy"]]
+    if (not isinstance(strategies, list) or not strategies or len(set(strategies)) != len(strategies)
+            or set(strategies) - {"fixed", "grouped_temperature"}):
+        raise ValueError("calibration programs must be explicit distinct fixed/grouped_temperature declarations")
     seeds = [pair[1] for pair in pairs] if independent else plan["seeds"]
     if not seeds or len(set(seeds)) != len(seeds) or any(type(seed) is not int or seed < 0 for seed in seeds):
         raise ValueError("target-only seeds must be explicit unique nonnegative integers")
@@ -606,23 +620,25 @@ def run_study(plan_path: str | Path, output: str | Path):
         if len(vocabularies) != 1 or len(levels) != 1:
             raise ValueError("candidate study mixes different physical vocabularies or evidence levels")
         metrics = {}
-        budgets = plan["budgets"] if independent else [None]
+        budgets = sorted({cell["K"] for row in completed for cell in row["predictions"]}) if independent else [None]
         for budget in budgets:
-            for mixture in mixtures:
-                scores = {seed: [CandidateEvidence.from_record(cell["evidence"]) for row in completed
-                    for cell in row["predictions"] if cell["mixture"] == mixture.name and cell["seed"] == seed
-                    and (not independent or cell["K"] == budget)] for seed in seeds}
-                name = f"{mixture.name}@K{budget}" if independent else mixture.name
-                metrics[name] = evaluate_candidate_evidence(scores, decision_plan=decision_plan,
-                    seeds=seeds, candidate_vocabulary=next(iter(vocabularies)), evidence_level=next(iter(levels)),
-                    requested_coverage=coverage)
+            for strategy in strategies:
+                for mixture in mixtures:
+                    scores = {seed: [CandidateEvidence.from_record(cell["evidence"]) for row in completed
+                        for cell in row["predictions"] if cell["mixture"] == mixture.name and cell["seed"] == seed
+                        and (not independent or cell["K"] == budget and cell["calibration_strategy"] == strategy)] for seed in seeds}
+                    name = f"{mixture.name}@{strategy}@K{budget}" if independent else mixture.name
+                    metrics[name] = evaluate_candidate_evidence(scores, decision_plan=decision_plan,
+                        seeds=seeds, candidate_vocabulary=next(iter(vocabularies)), evidence_level=next(iter(levels)),
+                        requested_coverage=coverage)
         contrasts = {}
         for budget in budgets:
-            baseline_name = f"{plan['baseline_mixture']}@K{budget}" if independent else plan["baseline_mixture"]
-            for mixture in mixtures:
-                name = f"{mixture.name}@K{budget}" if independent else mixture.name
-                if name != baseline_name:
-                    contrasts[name] = compare_candidate_probability_metrics(metrics[baseline_name], metrics[name]).record()
+            for strategy in strategies:
+                baseline_name = f"{plan['baseline_mixture']}@{strategy}@K{budget}" if independent else plan["baseline_mixture"]
+                for mixture in mixtures:
+                    name = f"{mixture.name}@{strategy}@K{budget}" if independent else mixture.name
+                    if name != baseline_name:
+                        contrasts[name] = compare_candidate_probability_metrics(metrics[baseline_name], metrics[name]).record()
         report = {"schema": "n2p3_candidate_ensemble_report/1", "status": "completed",
                   "evidence_scope": plan["evidence_scope"], "randomness_scope": "paired_source_target_pipeline" if independent else "target_only_fixed_source",
                   "comparison_role": comparison_role, "ar_panel": ar_panel,
@@ -631,6 +647,8 @@ def run_study(plan_path: str | Path, output: str | Path):
                   "contrasts": contrasts}
         if independent:
             report.update(evaluation_design="independent_prefix", seed_pairs=[list(pair) for pair in pairs],
+                calibration_strategies=strategies,
+                requested_budgets=plan["budgets"], actual_budgets=budgets,
                 source_seed_catalog=normalized["source_seed_catalog"],
                 source_replication="not_applicable_no_source_NN" if not source_snapshots else plan["evidence_scope"])
         if prior_panel is not None:

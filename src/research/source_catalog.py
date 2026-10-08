@@ -7,12 +7,11 @@ from __future__ import annotations
 
 import hashlib
 import io
-import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-from data.identity import DatasetIdentityTable, source_dataset_ids_from_identity
 from research.contracts import semantic_sha256
+from research.source_selection import validate_source_procedure
 from transfer.checkpoint import load_checkpoint_payload
 
 CORE_STUDIES = ("BI2014a", "BI2015a", "BNCI2014-008", "Huebner2017")
@@ -136,45 +135,20 @@ class SourceSeedCatalog:
             if digest != entry["sha256"]:
                 raise ValueError("source catalog checkpoint bytes differ from declaration")
             payload = load_checkpoint_payload(io.BytesIO(content))
-            contract = payload["training_contract"]
-            if contract["seed"] != key[1]:
-                raise ValueError("source catalog key differs from actual checkpoint seed")
-            studies = set(source_dataset_ids_from_identity(DatasetIdentityTable.from_payload(payload["training_identity_ledger"])))
-            if key[0] in studies:
-                raise ValueError("source catalog checkpoint must exclude the complete outer target study")
             procedure = entry["procedure"]
-            config = contract["optimizer"].get("config", {})
-            selects = any(config.get(name) is not None for name in ("source_budget", "global_early_stopping"))
             if procedure["kind"] == "fixed_recipe":
-                if procedure["selection"] != "not_applicable" or selects:
+                if procedure["selection"] != "not_applicable":
                     raise ValueError("fixed source recipe cannot hide a selection procedure")
-                producer = None
-            elif procedure["kind"] == "selection_refit":
-                producer_path = Path(base_directory) / procedure["record_path"]
-                producer_bytes = producer_path.read_bytes()
-                if hashlib.sha256(producer_bytes).hexdigest() != procedure["record_sha256"]:
-                    raise ValueError("source procedure producer bytes changed")
-                producer = json.loads(producer_bytes)
-                selection, refit = producer["selection"], producer["refit"]
-                if (producer["source_seed"] != key[1] or selection["source_seed"] != key[1]
-                        or refit["source_seed"] != key[1] or producer["outer_target_study"] != key[0]
-                        or producer["evidence_scope"] != evidence_scope
-                        or selection["status"] != "selected" or not selection["outcomes"]
-                        or refit["status"] != "completed" or refit["checkpoint_sha256"] != digest
-                        or refit["training_contract_digest"] != payload["training_contract_digest"]
-                        or selection["source_snapshot_sha256"] != contract["source_snapshot_sha256"]
-                        or not refit["physical_optimizer_updates"]):
-                    raise ValueError("source selection/refit requires actual same-seed producer evidence")
-            else:
-                raise ValueError("source procedure must declare fixed recipe or actual selection/refit")
-            fixture = contract["optimizer"].get("kind") == "synthetic_test_fixture"
-            if fixture and evidence_scope != "software_correctness":
-                raise ValueError("software source fixtures cannot establish public full-source pipeline replication")
+            if "record_path" in procedure or "record_sha256" in procedure:
+                raise ValueError("source selection/refit requires actual same-seed producer evidence embedded in the checkpoint")
+            producer = validate_source_procedure(payload, source_seed=key[1], outer_target_study=key[0],
+                evidence_scope=evidence_scope, kind=procedure["kind"])
             self._entries[key] = content
             self._records.append({"outer_target_study": key[0], "source_seed": key[1], "checkpoint_sha256": digest,
-                "training_contract_digest": payload["training_contract_digest"], "source_studies": sorted(studies),
-                "procedure": procedure, "producer_digest": None if producer is None else semantic_sha256(producer),
-                "evidence_scope": evidence_scope, "source_selection": "not_applicable" if producer is None else "per_source_seed"})
+                "training_contract_digest": payload["training_contract_digest"], "source_studies": producer["source_studies"],
+                "procedure": procedure, "producer_digest": semantic_sha256(producer), "producer": producer,
+                "source_evidence_scope": producer["source_evidence_scope"],
+                "consumer_evidence_scope": evidence_scope, "source_selection": producer["selection"]})
 
     def content(self, outer_target_study, source_seed):
         return self._entries[(outer_target_study, source_seed)]
