@@ -110,3 +110,5 @@ src/research/dynamic_identification.py text eol=lf
 tests/research/test_dynamic_identification.py text eol=lf
 experiments/freeze_source_snapshot.py text eol=lf
 tests/train/test_source_ledger_validation.py text eol=lf
+src/research/response_history_identification.py text eol=lf
+tests/research/test_response_history_identification.py text eol=lf
