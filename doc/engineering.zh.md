@@ -6,7 +6,7 @@
 
 [当前公共source实施](evidence/public_source_pipeline_20261008.zh.md)共享准备/合并/load/fit预算，并保存原prepared方法与每seed实际producer。五项恢复/准入/账本修复经源码两轴和必要定向验证；未重复全集。云真实16/16数据准备成功，25CPU/4GPU完整源程序继续；只读释放完成文件页的内存提示与原数据删除不同，任何吞吐结论须读真实阶段/资源日志。科研子代理不设我方额度上限或人为期限，质量优先。
 
-[B12切片](evidence/independent_prefix_20261008.zh.md)采用一次授权验证、共享final fit与单份数值包。独立两轴后只补相关consumer回归与B07组合/原生重放，没有重复全集。B08原progress、包和producer链保持原字节，普通用户Task Scheduler服务启动的完整1344格复用436个原封包并继续拟合；实际进程与终态凭证作为续接权威。[CPU限流续接证据](evidence/prior_control_20261006.zh.md#后台运行与本机cpu余量)记录资源控制器接管，不能将仍在运行的矩阵写成完成。
+[B12切片](evidence/independent_prefix_20261008.zh.md)采用一次授权验证、共享final fit与单份数值包。独立两轴后只补相关consumer回归与B07组合/原生重放，没有重复全集。B08原progress、包和producer链保持原字节，普通用户Task Scheduler服务启动的完整1344格复用436个原封包并继续拟合；实际进程与终态凭证作为续接权威。[CPU限流续接证据](evidence/prior_control_20261006.zh.md#后台运行与本机cpu余量)记录资源控制器接管，该记录属于旧执行时期，当前云实例已由用户关闭；实际旧矩阵producer与未完成出口保持原身份。
 
 更新：2026-09-07。合并原工程流程与环境指导，设备策略集中于本文件。
 先读[研究规范](research_program.zh.md)与[技术结构](technical_structure.zh.md)，再看实际调用链。
@@ -78,6 +78,8 @@ CUDA实际拟合、保存重载及CLI推理验证见[执行计划](evidence/doma
 `tests/verify_quality_report.py`，使用模拟采集和独立输出目录，不能据其波形或报告认定真实信号合格。
 
 ## 开发与验证
+
+[本轮实际机制与来源](evidence/research_mechanisms_20261009.zh.md)记录本地A01六格空间prior、native边界及自适应输入挑战；完整公共训练/跨host与一次最终整仓验证仍依各自实际环境验收。source ledger同一次同步只读调用在真实validate后用私有row digest，公共entry继续验证、新调用重新hash当前输入；39.3MB合成账本六对实测约1.34倍，只关闭该重复扫描，不称云全阶段吞吐。
 
 g raw研究expert显式提供`kernel_prior=KernelPriorSpec.calibration_g(g)`，同时不给ridge；默认旧ridge1与新g互斥。compiled root只在fit/C或load ingress验证，数值η循环消费同一immutable root；rank failure有`KernelPriorRankError.record()`结构化证据供runner保存。新/5实际numerical payload和source门禁不接受旧数据/recipe重标，见[实施](evidence/calibration_g_prior_20261006.zh.md)。
 

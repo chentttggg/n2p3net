@@ -1,5 +1,7 @@
 # 研究与工程证据
 
+- [本地科研机制与真实A01](research_mechanisms_20261009.zh.md)：六格fixed-noise signal-prior、MN/reference商空间等价、native可识别性与完整自适应挑战；保存态/独立反例，单例限度及实际执行来源。
+
 - [科研与代码集成](research_integration_20261008.zh.md)：两窗口单作者分工、总并发10、科研单seed/大版本三seed；字典重编译与容量诊断跨平台风险、独立机制代码的实际实施和未验收范围。
 
 - [当前公共消费者：风险、概率与实测空间](current_public_consumers_20261008.zh.md)：固定C质量loss、实际prior/β后验与LLR分开、Cz6 raw/真实执行family、温度控制子集与概率池完整分母；两轴零关键遗留、真实源K0/OOF和A01单raw验证，完整效能另验收。

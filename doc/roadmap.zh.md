@@ -23,18 +23,18 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
 | B03 校准/混合 | 固定算术池及完整C内分组温度 | 独立泛化/复杂gating另验收 |
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
-| B05 AR/噪声 | 固定32前缀、精确梯度、576格M1及诊断 | 逐通道私有谱/ERP损伤归因 |
-| B06 边界条件 | mean/Schur、完整T测量、实际operator只读入口 | 未知state辨识、最终预处理T、E1–E3 |
-| B07 字典/历史 | A0/A1物理字典、端点、真实容量关系 | 导数、合法完整history、邻居积分、随机效应 |
-| B08 先验 | g/trace-control、唯一QR后验与两轴质量 | 当前完整1344格v3及后续quotient/completion |
-| B09 空间 | 成熟ERP/native布局锚点已具备 | 均值/空间prior与跨人稳定性研究 |
-| B10 输入污染 | 有限算子/工频/EOG现有研究入口与反例 | 完整分污染/可用时间配对实验 |
-| B11 动态/稳健 | observability/识别研究规格 | 明确失配后的实际joint/重尾模型 |
+| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec冻结响应与真实编译包、可选诊断分离 | 旧M1真实噪声×ERP归因及joint MLE，不把ACF改善当效能 |
+| B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
+| B07 字典/历史 | A0/A1与五数组portable编译态、端点/容量、model/ensemble无重编译消费 | 导数、合法完整history、邻居积分、随机效应 |
+| B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
+| B09 空间 | 一般signal-prior后验、真实A01六格与MN/商空间等价 | 八人native/Cz×Σ/I/Pz4归因、learned prior及joint MLE |
+| B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
+| B11 动态/稳健 | noise-only Gamma×proper Gaussian参考、prefix积分比及独立精度反例 | 真辨识、拟合/ν选择、动态state和完整程序效能 |
 | B12 公共流程 | 全局code/artifact审查；独立C/test入口与B14共同owner | 四库binary/合法candidate、K0/预算、一个完整科研流程 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
-| B14 工程/吞吐 | 源冻结、原件/镜像保留、内部owner及两轴源码评估 | B12共享数据/rolling资源排程、云实际25CPU/4GPUworkers |
+| B14 工程/吞吐 | B12同资源owner/完整requested账、实际源码保存与同call重复扫描退役 | B12共享数据/rolling资源排程、云实际25CPU/4GPUworkers |
 
-B08 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已落实full-rank软件路径与真实prior/fit/package关系，主线整合全集2604/19及独立Spec/Standards通过；[参考能量匹配对照](evidence/prior_control_20261006.zh.md)随后完成实施、两轴质量及合并全集2670/19，完整1344格归因矩阵按冻结程序执行。dynamic prior、quotient/completion、K0与新效能矩阵不因此完成，冻结M1仍按原程序解释。
+B08 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已落实full-rank软件路径与真实prior/fit/package关系，主线整合全集2604/19及独立Spec/Standards通过；[参考能量匹配对照](evidence/prior_control_20261006.zh.md)随后完成实施、两轴质量及合并全集2670/19，完整1344格归因矩阵按冻结程序执行。当时的dynamic prior、quotient/completion、K0与新效能矩阵未由该旧运行完成；当前quotient/completion软件出口见[本轮机制](evidence/research_mechanisms_20261009.zh.md)，冻结M1保持原解释。
 首次1344运行因A02后验核验病态而受控停止，101原包及失败捕获保留；原gate误判经独立actual-W QR/SVD与held读数核实，已改QR-RHS/后向关系及peer-abort调度，40项必要验证通过。完整矩阵由[新计划](assets/prior_control_20261006/plan_v2.json)同1344科学/资源格重新执行；原包不改签为新source，整体结果未完成。
 
 [深入研究与验收规格](evidence/deep_research_plan_20261005.zh.md)完成原清单123项覆盖、15块真实依赖及三路独立数学/来源核查。
