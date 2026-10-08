@@ -1,5 +1,7 @@
 # N2P3-Net：公开ERP预训练辅助成人猜数字
 
+[当前公共源程序](evidence/public_source_pipeline_20261008.zh.md)定义等库、库内等participant、观察行内等权CE，显式β1。旧β8按participant class-mass归一后减ln8仍改变原混合测度，不签proper等人源概率。实际participant-only内选轮与fresh全源refit每seed独立；32周期cap是预声明有限开发程序/右删失范围，不称最优或已收敛。源posterior、LLR、目标概率和真实candidate证据各按自己的prior/fit测度解释。
+
 [独立前缀公共入口](evidence/independent_prefix_20261008.zh.md)在实际K和共同later-test上保存requested→actualK及失败分母；fixed/grouped分别声明并共享最终专家，K0只消费冻结源状态。source与consumer证据角色分开，每seed选择/refit由真实producer绑定。软件交付和公共效能/成人确认分别验收。
 
 版本：2026-09-06d，作者拒收被试排除版。唯一活动研究规范，负责目标与科学约束。

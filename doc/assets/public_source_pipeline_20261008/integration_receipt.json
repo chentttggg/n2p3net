@@ -1,0 +1,22 @@
+{
+  "schema": "n2p3_current_public_source_delivery/1",
+  "checked_utc": "2026-10-08T05:10:42.602710+00:00",
+  "accepted_source_archive": "fd62c48b37de5a569ad2be629e61c508b931dc9b2e80bd2d3147cee2e25e94ea",
+  "source_commit": "79b3b42e6166e5924ec6528bae3212def82f432c",
+  "main_integration_commit": "a2975557d6e5e3ae99ff2f8d692ecc8a7e524ab2",
+  "actual_main_owned_bytes_equal": true,
+  "spec_remaining_blocking_findings": 0,
+  "standards_remaining_critical_findings": 0,
+  "preparation": {
+    "status": "completed",
+    "completed_jobs": 16,
+    "failed_jobs": 0,
+    "terminal_sha256": "7785fdc9fe871d39121fe09bf7f66a14c5f276dea2efd6217db18b5166c14d83",
+    "source_records": 1963,
+    "source_epochs": 1430742,
+    "target_participant_groups": 123
+  },
+  "public_source_training_complete": false,
+  "target_probability_and_spatial_consumers_complete": false,
+  "adult_confirmation_complete": false
+}

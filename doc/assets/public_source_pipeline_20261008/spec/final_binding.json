@@ -1,0 +1,104 @@
+{
+  "schema": "independent_source_spec_final_binding/1",
+  "status": "passed_source_and_saved_bytes_binding",
+  "source_manifest": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\accepted_capsule\\source.manifest.json",
+  "source_manifest_sha256": "5d2ad8d5a23367994557e50ea6e29affc7f63631874ef451e007268a353dc1f3",
+  "source_archive_sha256": "fd62c48b37de5a569ad2be629e61c508b931dc9b2e80bd2d3147cee2e25e94ea",
+  "verified_capsule_members": 436,
+  "verified_current_review_files": 20,
+  "verified_preserved_original_files": 1124,
+  "verified_current_probe_preserved_files": 31,
+  "current_probe_archive_sha256": "95c93303a2e23e0faaf84ad8ab2e663f53a49691011a7d9568872acddd6ce86b",
+  "current_probe_preservation_sha256": "3c31f727048ee09f685502770d77ef2f6e44959af73bfc1781de4197b5f0a35e",
+  "current_probe_actual_trajectory_sha256": "f539954b6783cee6868cd52b29d296e17e0fceb4befde2fa17c12ef12e95dc9f",
+  "current_probe_three_seed_dry_mapping": true,
+  "saved_evidence_receipt_sha256": "86065875bac790b96b07d591f31572611f1a7150620d95a0e81c608c01b24590",
+  "saved_evidence_replay_sha256": "4dd063de8f715e167a64e5db44d696d8c3df8c8a8d8a323c746bb1eefa4982c0",
+  "readonly_evidence_sha256": "6302b55d1cea9682c7530413f74242fa69f081f87ed918c32febcb4a6767956e",
+  "risk_counterexample_sha256": "72c2ca6aa068dec7f768df9b8bd3bcaa935eecd2f80998aece48ccd21d72993c",
+  "torch_imported": false,
+  "pytest_run": false,
+  "model_or_tensor_replay": false,
+  "quality_receipt": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\quality_receipt.json",
+    "sha256": "8a880d194424093d0d1ae7894b29b84ea85bfdab7175137a4f6f8a4321cda8cc",
+    "record": {
+      "schema": "n2p3_independent_source_quality/1",
+      "base_commit": "3f38fe12e6a000d219967dba52faf0815cf6e2e6",
+      "capsule": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\accepted_capsule\\source.manifest.json",
+      "source_archive_sha256": "fd62c48b37de5a569ad2be629e61c508b931dc9b2e80bd2d3147cee2e25e94ea",
+      "member_count": 436,
+      "owned_files": {
+        ".gitattributes": "c08c4c72a617bf89e5442269794d0cdbceee0e702e50ac75d596c63529df157a",
+        "experiments/prepare_multidomain_source.py": "86c453ea421bad5feee2199f3c4c9f91a5194a4239f6212b9c843065e86844b7",
+        "experiments/prepare_source_records.py": "86e82958f956a9bc45393aed46290ad4217c1cab0a5217e6ab04e9175f908896",
+        "experiments/run_candidate_ensemble_study.py": "9087073cd7bca4f74a9468377f8371c1af7723b228ecf6cd33f544345b51f60a",
+        "experiments/run_erp_comparator.py": "1fc35e271ed14f1fa0c76307ef4411282a736731984e4268dfe252e8995e055c",
+        "experiments/run_source_training_chain.py": "48c03dde128efad0962d2893ac6de7ddfaa39bebb87af8c576c7e9f1cb8d26ec",
+        "src/data/source_admission.py": "fe32a90797a59b1507739d05b147389f62d1396ed222170c2c0864ad81ee160c",
+        "src/research/source_catalog.py": "8107b4715ef1de9ceab8228dad04401c2517066bf991c387279527b014ef8708",
+        "src/research/source_execution.py": "c25c3918f006fe2825443ee9f5e9bab28591f1e298dcb3045d0deb92770067c3",
+        "src/research/source_resume.py": "382bc2fe6db9b04cb79ad0f7357432e82f2fac2601ad306c0090364f3436684c",
+        "src/research/source_selection.py": "499b860a3bb424d5956e17e13e39cd7a5991693efd3a962d3ad82568536454b2",
+        "tests/train/test_independent_source_pipeline.py": "b18fea37a86f7f5dfbcd9559232a239bedb9edf376c19d74e22f1809f39bd929",
+        "tests/train/test_source_execution_resources.py": "329408cab54ec4e29b697ca4e06810b08d16e340b9a8a760b08c8d2fff15e267",
+        "tests/train/test_source_resume.py": "276d17846c4e7efeb9dfcb47b32f521d5452b6dcfbad984bc5645bb4704d2fed"
+      },
+      "verification": [
+        {
+          "check": "three resume/admission/unaffordable DAG counterexamples",
+          "exit_code": 0,
+          "test_count": 3,
+          "session": 45902
+        },
+        {
+          "check": "fit failure exposure plus resource/ready contracts",
+          "exit_code": 0,
+          "test_count": 4,
+          "session": 77166
+        },
+        {
+          "check": "explicit source-only programme parser counterexamples",
+          "exit_code": 0,
+          "test_count": 6,
+          "session": 61253
+        },
+        {
+          "check": "current pos_weight1 actual inner/refit, frozen Catalog/calibration and three-seed dry-run config mapping",
+          "exit_code": 0,
+          "test_count": 1,
+          "session": 18269,
+          "producer_snapshot": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\current_source_config_probe\\snapshot\\source.manifest.json"
+        },
+        {
+          "check": "final targeted affected contracts after source_config seam",
+          "exit_code": 0,
+          "test_count": 14,
+          "session": 80240
+        },
+        {
+          "check": "Ruff all13 owned Python files",
+          "exit_code": 0
+        },
+        {
+          "check": "git diff --check",
+          "exit_code": 0
+        }
+      ],
+      "original_evidence": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\saved_evidence_replay.json",
+      "confirmed_red": {
+        "check": "before-fit RuntimeError must not count planned exposure",
+        "exit_code": 1,
+        "receipt": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\red_failed_exposure\\red_receipt.json",
+        "producer_archive_sha256": "6a2be24e039092bd5cf9a0afcfd2fcdf28d98bd69d74cfafa5cfda18d77f7fe8"
+      },
+      "limitations": [
+        "Formal full12 source runs not executed by this software slice",
+        "Current new beta1 actual software probe is one source seed; original six beta8 packages retain separate original snapshots",
+        "Old beta8 source packages remain replayable without expected_source_config; current public consumers must declare expected_source_config",
+        "Current source proper-risk evidence does not establish public target NLL/Brier or adult performance",
+        "Fullsuite intentionally not repeated; only materially affected contracts and real minimal producer probed"
+      ]
+    }
+  }
+}

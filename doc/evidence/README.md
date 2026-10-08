@@ -1,5 +1,7 @@
 # 研究与工程证据
 
+- [当前公共源程序、实际数据准备与质量](public_source_pipeline_20261008.zh.md)：每seed独立选择/refit、等库等人β1风险、声明manifest与完整view恢复、25CPU/4GPU共享调度；两轴零关键遗留、16/16输入准备成功，完整12 source实际启动，公共效能/目标新语义另验收。
+
 - [B12独立前缀、温度程序与配对公共入口](independent_prefix_20261008.zh.md)：actualK与时间/标签一次绑定、K0源冻结、共享最终专家和温度程序、真实source选择/refit、配对seed与预算复用/统计；两轴及主树组合/新原生重放，完整公共流程另验收。
 
 - [B07物理ERP字典与端点切片](erp_dictionary_20261006.zh.md)：Gaussian默认数值、同cosine空间自由/硬端点、半开物理grid、同prior pullback及真实ref/fit容量；确认容量关系P2已消重复root并绑定actual posterior，两轴复验/三actual包只读重放通过，仅A0/A1。

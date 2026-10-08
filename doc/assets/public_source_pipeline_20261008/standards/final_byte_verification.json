@@ -1,0 +1,101 @@
+{
+  "schema": "n2p3_standards_readonly_byte_verification/1",
+  "capsule": {
+    "manifest": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\accepted_capsule\\source.manifest.json",
+    "manifest_sha256": "5d2ad8d5a23367994557e50ea6e29affc7f63631874ef451e007268a353dc1f3",
+    "archive_sha256": "fd62c48b37de5a569ad2be629e61c508b931dc9b2e80bd2d3147cee2e25e94ea",
+    "member_count": 436,
+    "archive_mismatches": [],
+    "current_source_mismatches": [],
+    "current_newline_only_differences": []
+  },
+  "preserved_previous_producers": [
+    {
+      "origin": "C:\\Users\\chent\\AppData\\Local\\Temp\\pytest-of-chent\\pytest-15\\test_native_cli_saves_actual_t0",
+      "preserved": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\previous_producers\\test_native_cli_saves_actual_t0",
+      "checked_files": 539,
+      "byte_mismatches": [],
+      "original_run_sha256": "734ed7c7547d7211b754c9eadc7ab25755367384a59187d5a4c5d39e356afe1e"
+    },
+    {
+      "origin": "C:\\Users\\chent\\AppData\\Local\\Temp\\pytest-of-chent\\pytest-15\\test_native_shared_preparation0",
+      "preserved": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\previous_producers\\test_native_shared_preparation0",
+      "checked_files": 555,
+      "byte_mismatches": [],
+      "original_run_sha256": "7bb49ace4db766f5e1711b4eca1ad32537f9ee0f6771181e5caf84f39b481662"
+    },
+    {
+      "origin": "C:\\Users\\chent\\AppData\\Local\\Temp\\pytest-of-chent\\pytest-15\\test_independent_program_prefl0",
+      "preserved": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\previous_producers\\test_independent_program_prefl0",
+      "checked_files": 30,
+      "byte_mismatches": [],
+      "original_run_sha256": null
+    }
+  ],
+  "current_probe": {
+    "checked_files": 31,
+    "byte_mismatches": [],
+    "capsule": {
+      "manifest": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\current_source_config_probe\\snapshot\\source.manifest.json",
+      "manifest_sha256": "30024d134a5260256793b63da07698d7bc540083df8de717e92e01ce10cc87ba",
+      "archive_sha256": "95c93303a2e23e0faaf84ad8ab2e663f53a49691011a7d9568872acddd6ce86b",
+      "member_count": 436,
+      "archive_mismatches": [],
+      "current_source_mismatches": [
+        "src/research/source_catalog.py",
+        "tests/train/test_independent_source_pipeline.py"
+      ],
+      "current_newline_only_differences": [
+        "src/research/source_catalog.py"
+      ]
+    }
+  },
+  "author_quality_receipt": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\quality_receipt.json",
+    "sha256": "8a880d194424093d0d1ae7894b29b84ea85bfdab7175137a4f6f8a4321cda8cc",
+    "checked_owned_files": 14,
+    "byte_mismatches": [],
+    "verification": [
+      {
+        "check": "three resume/admission/unaffordable DAG counterexamples",
+        "exit_code": 0,
+        "test_count": 3,
+        "session": 45902
+      },
+      {
+        "check": "fit failure exposure plus resource/ready contracts",
+        "exit_code": 0,
+        "test_count": 4,
+        "session": 77166
+      },
+      {
+        "check": "explicit source-only programme parser counterexamples",
+        "exit_code": 0,
+        "test_count": 6,
+        "session": 61253
+      },
+      {
+        "check": "current pos_weight1 actual inner/refit, frozen Catalog/calibration and three-seed dry-run config mapping",
+        "exit_code": 0,
+        "test_count": 1,
+        "session": 18269,
+        "producer_snapshot": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\current_source_config_probe\\snapshot\\source.manifest.json"
+      },
+      {
+        "check": "final targeted affected contracts after source_config seam",
+        "exit_code": 0,
+        "test_count": 14,
+        "session": 80240
+      },
+      {
+        "check": "Ruff all13 owned Python files",
+        "exit_code": 0
+      },
+      {
+        "check": "git diff --check",
+        "exit_code": 0
+      }
+    ]
+  },
+  "checks": "stdlib JSON, SHA256 and tar member reads; no training imports or writes to production"
+}

@@ -1,5 +1,7 @@
 # P300 模型输入合同：离散时间、单位与分组
 
+[当前公共输入准入](evidence/public_source_pipeline_20261008.zh.md)使用新完整finite-zero none/128Hz179声明，父mean_only与旧raw/cache保持原身份；prepared程序绑定实际18dafd6源码，后续训练不得改签。源1964请求中仅BI2012已证常零的subject3 online记录明确排除，training保留。GTN实际245 NIX/TXT exact keys和一手论文支撑源内匿名dataset-participant authority，全局person linkage未独立验证。target534原记录与123 participant group分别记分母。
+
 [B12前缀实施](evidence/independent_prefix_20261008.zh.md)将raw的right-censored完整K与截止内真实可用trial分别记录；A01 C200为raw200/trial196。candidate严格下一未知flash截止，binary按其prefix owner保留原epoch尾部与共同test embargo；两个面板各自冻结可用时间，不据不同输入直接认定算法反差。
 
 [物理字典](evidence/erp_dictionary_20261006.zh.md)拥有actual `L=round(fs*Trequested)`、`t_n=n/fs`和支持`[0,L)`；右端点在`Tactual=L/fs`评价，lastsample为`(L−1)/fs`。fs256、请求1.2秒时，L307、实际端点1.19921875秒、最后采样1.1953125秒，三者分列。`E=[Φ(0);Φ(Tactual)]`、`N∈ker(E)`作用于同一ambient cosine及实际event design；prior遵循`Λactual=NblockᵀΛambient Nblock`。本切片不扩现unknown-overlap准入，不变更可用raw/score时间。

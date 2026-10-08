@@ -1,0 +1,93 @@
+{
+  "plan": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_20261008\\root_source_training\\plan.json",
+  "resolved_program": {
+    "name": "independent_selection_refit",
+    "preprocessing": {
+      "name": "brainsync_bidirectional_v1",
+      "sfreq": 128.0,
+      "l_freq": 0.1,
+      "h_freq": 30.0,
+      "tmin_ms": -200.0,
+      "tmax_ms": 1200.0,
+      "n_times": 179,
+      "baseline_mode": "none",
+      "signal_unit": "V",
+      "filter_method": "iir",
+      "filter_order": 4,
+      "filter_phase": "zero",
+      "causal_iir_initial_state": "not_applicable",
+      "notch_freqs_hz": [
+        50.0
+      ],
+      "notch_quality_factor": 30.0,
+      "zero_phase_edge_policy": "mne_reflect_limited",
+      "resample_domain": "epoched",
+      "resample_method": "fft",
+      "resample_npad": "auto",
+      "resample_window": "auto",
+      "resample_pad": "edge",
+      "trial_reference_window_ms": null,
+      "trial_reference_center": "mean",
+      "trial_reference_scale": "none",
+      "reject_threshold_v": null
+    },
+    "stopping": {
+      "patience": 6,
+      "min_delta": 1e-06,
+      "source_max_epochs": 32,
+      "target_max_epochs": 200,
+      "source_validation_fraction": 0.2
+    },
+    "source_config": {
+      "pos_weight": 1.0,
+      "val_groups_min": 2,
+      "val_groups_max": null
+    },
+    "seed_pairs": [
+      [
+        20260918,
+        20260918
+      ],
+      [
+        20260919,
+        20260919
+      ],
+      [
+        20260920,
+        20260920
+      ]
+    ],
+    "procedure": "selection_refit"
+  },
+  "resource_capacity": {
+    "policy": "automatic_resource_admission",
+    "available_cpu_threads": 25,
+    "cpu_budget": 25,
+    "worker_cpu_budget": 24,
+    "coordinator_cpu_threads": 1,
+    "requested_source_workers": 4,
+    "source_groups": 4,
+    "source_workers": 4,
+    "gpu_slots": 4,
+    "target_workers": 4,
+    "inner_workers_per_group": 4,
+    "native_threads_per_worker": 6,
+    "compiler_threads_per_worker": 1,
+    "cloud_resource_floor": {
+      "cpu_threads": 25,
+      "gpu_workers": 4
+    },
+    "gpu_task_memory_gib": 4.0,
+    "free_device_bytes": 34359738368,
+    "resident_memory_budget_bytes": 7730941132,
+    "available_host_memory_bytes": 94489280512,
+    "host_memory_budget_bytes": 89764816486,
+    "host_memory_fraction": 0.95,
+    "shared_staging_memory_bytes": 10737418240,
+    "source_worker_memory_bytes": 19327352832,
+    "target_worker_memory_bytes": 4294967296
+  },
+  "nominal_source_checkpoints": 12,
+  "actual_cpu_topology": "4x6+1=25",
+  "verification": "parser only; no cache/model loaded or fitted"
+}

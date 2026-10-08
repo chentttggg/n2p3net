@@ -1,5 +1,7 @@
 # 工程指南
 
+[当前公共source实施](evidence/public_source_pipeline_20261008.zh.md)共享准备/合并/load/fit预算，并保存原prepared方法与每seed实际producer。五项恢复/准入/账本修复经源码两轴和必要定向验证；未重复全集。云真实16/16数据准备成功，25CPU/4GPU完整源程序继续；只读释放完成文件页的内存提示与原数据删除不同，任何吞吐结论须读真实阶段/资源日志。科研子代理不设我方额度上限或人为期限，质量优先。
+
 [B12切片](evidence/independent_prefix_20261008.zh.md)采用一次授权验证、共享final fit与单份数值包。独立两轴后只补相关consumer回归与B07组合/原生重放，没有重复全集。B08原progress、包和producer链保持原字节，普通用户Task Scheduler服务启动的完整1344格复用436个原封包并继续拟合；实际进程与终态凭证作为续接权威。[CPU限流续接证据](evidence/prior_control_20261006.zh.md#后台运行与本机cpu余量)记录资源控制器接管，不能将仍在运行的矩阵写成完成。
 
 更新：2026-09-07。合并原工程流程与环境指导，设备策略集中于本文件。

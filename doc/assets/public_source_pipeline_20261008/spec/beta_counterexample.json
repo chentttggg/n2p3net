@@ -1,0 +1,30 @@
+{
+  "schema": "source_risk_beta_counterexample/1",
+  "status": "passed_exact_distribution_checks",
+  "source_owner": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\src\\baselines\\deep.py",
+  "source_owner_sha256": "6a7ec884a31476275f2688c936e587155025ba86df389dfe4c3a8559048431e7",
+  "formula": "r_i = alpha_d/N_d * beta**y_i/(n_du * (1+(beta-1)*pi_du))",
+  "population_limit": "Unrestricted binary CE minimizer under the declared empirical hierarchical measure; finite NN need not attain it.",
+  "person_priors": [
+    "4/5",
+    "1/5"
+  ],
+  "beta8_Z": [
+    "33/5",
+    "12/5"
+  ],
+  "proper_equal_person_posterior_at_a": "19/24",
+  "beta8_minus_log_beta_posterior_at_a": "83/131",
+  "beta1_recovers_equal_person_measure": true,
+  "llr_is_not_binary_posterior_without_prior": {
+    "prior": 0.2,
+    "llr": 0.0,
+    "sigmoid_llr": 0.5,
+    "optimal_NLL": 0.5004024235381879,
+    "LLR_as_posterior_NLL": 0.6931471805599453,
+    "optimal_Brier": 0.16000000000000003,
+    "LLR_as_posterior_Brier": 0.25
+  },
+  "torch_imported": false,
+  "model_fit": false
+}

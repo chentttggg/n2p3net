@@ -1,0 +1,11 @@
+{
+  "commit": "79b3b42e6166e5924ec6528bae3212def82f432c",
+  "branch": "codex/public-source-pipeline",
+  "clean": true,
+  "owned_source_file_count": 14,
+  "source_archive_sha256": "fd62c48b37de5a569ad2be629e61c508b931dc9b2e80bd2d3147cee2e25e94ea",
+  "archive_source_commit_role": "original dirty base 3f38fe12; preserved, not re-signed",
+  "all_committed_owned_bytes_match_accepted_quality_receipt": true,
+  "Spec": "complete; zero remaining blocking findings",
+  "Standards": "complete; zero remaining critical findings"
+}
