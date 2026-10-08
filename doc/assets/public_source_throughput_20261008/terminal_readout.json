@@ -1,0 +1,60 @@
+{
+  "schema": "n2p3_public_source_terminal_readout/1",
+  "evidence_archive_sha256": "c352d3f3851922136e376b95eb662732c5ede6cb9eaccf1f9929a71cde582346",
+  "evidence_manifest": "frozen/public_source_terminal_20261008/evidence.manifest.json",
+  "observed_utc": "2026-10-08T07:21:29.118122+00:00",
+  "completed_source_checkpoints": 0,
+  "active_source_processes": [],
+  "runs": {
+    "source_training_fd62c48": {
+      "source_archive_sha256": "fd62c48b37de5a569ad2be629e61c508b931dc9b2e80bd2d3147cee2e25e94ea",
+      "started_utc": "2026-10-08T05:09:36.000111+00:00",
+      "finished_utc": "2026-10-08T05:59:33.827544+00:00",
+      "status": "failed",
+      "exit_code": 1,
+      "wall_seconds": 2997.775860544294,
+      "recorded_failure": "caller_invalid_evidence_scope_rejected_after_views",
+      "completed_logical_fit_count": 0,
+      "catalog_entries": 0,
+      "source_bytes_unchanged": true,
+      "plan_bytes_unchanged": true,
+      "resource_samples": 546,
+      "peak_sampled_cgroup_memory_bytes": 53806530560,
+      "peak_sampled_effective_cpu_cores": 1.9714807513569073,
+      "peak_sampled_gpu_utilization_percent": 1,
+      "median_effective_cpu_cores_when_gpu_ge80": null
+    },
+    "source_training_2394ca3": {
+      "source_archive_sha256": "2394ca344ab80c03b05ef62a5c8e94f29fc69cb95007943c8d3c33f3969cb0af",
+      "started_utc": "2026-10-08T06:37:00.951406+00:00",
+      "finished_utc": "2026-10-08T06:53:03.385362+00:00",
+      "status": "failed",
+      "exit_code": 1,
+      "wall_seconds": 962.3900238238275,
+      "recorded_failure": "abrupt_worker_termination_original_cause_unknown",
+      "completed_logical_fit_count": 0,
+      "catalog_entries": 0,
+      "source_bytes_unchanged": true,
+      "plan_bytes_unchanged": true,
+      "resource_samples": 187,
+      "peak_sampled_cgroup_memory_bytes": 96625889280,
+      "peak_sampled_effective_cpu_cores": 4.379014028971919,
+      "peak_sampled_gpu_utilization_percent": 95,
+      "median_effective_cpu_cores_when_gpu_ge80": 4.031410997319
+    }
+  },
+  "complete_eleven_source_benchmark": {
+    "source_archive_sha256": "be71781eb7dda374f83858f19317320dd60957ebed29e239f3d7c47400c5f4d3",
+    "merge_seconds": 529.0642729401588,
+    "resident_ingress_seconds": 72.42805091291666,
+    "peak_sampled_rss_bytes": 27555393536,
+    "numeric_input_signature_equal": true,
+    "scope": "real eleven-source input production and ingress, zero NN fit"
+  },
+  "current_memory_events": {
+    "oom": 0,
+    "oom_kill": 0,
+    "max": 208302,
+    "causality": "current counters do not identify original worker exit"
+  }
+}

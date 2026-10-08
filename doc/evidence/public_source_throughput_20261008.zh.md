@@ -17,3 +17,13 @@ production入口明确限制writer实际保存的表示，包括float32 EEG/posi
 来源、JUnit、探针及代码身份由[切片凭证](../assets/public_source_throughput_20261008/slice1_receipt.json)绑定。完整排除BNCI十一库云端bench、实际peak、门禁/并行调度、旧view/model受控接续与新运行利用率仍单列完成；本页没有宣称2500% CPU或四路GPU已经实测达到。
 
 后续原fd62全四view完成但尚未NN拟合时，caller计划非法scope `public_source_development` 在child较晚阶段才拒绝。新切片将scope/software预算合法性集中到 `resolve_source_program`，在任何资源/归档准入及重merge前调用；三个非法enum的无输出/无cache与两合法enum等6项反例通过。该失败与旧view来源保留，0 NN不记完成；[前置凭证](../assets/public_source_throughput_20261008/scope_preflight_receipt.json)独立签本次源码。
+
+## 完整输入基准与后续源运行终态
+
+真实排除BNCI的十一库输入基准已结束：合并529.064秒、writer常驻交接72.428秒，采样RSS峰27,555,393,536 bytes；X/y/身份/掩码/位置/QC/时间与预处理数值摘要全部与原view相同。Chailloux安全加载161.764秒、投影及身份核验36.38秒、完整拼接31.73秒、写盘/核验135.13秒是实际阶段读数。该基准只做输入生产和交接、零NN；旧运行包含四view及失败开销，不能用它的总时间与本单view计算速度倍数。
+
+fd62原运行于05:59:33 UTC因caller非法scope以exit1结束，四完整view保留。改合法`development`后的2394执行直接复用四view，06:37:00–06:53:03 UTC运行962.390秒后exit1，父层报告`BrokenProcessPool`及worker突然终止。187个资源样本中GPU最高95%，GPU≥80%期间CPU中位约4.03核；cgroup内存采样峰96,625,889,280 bytes，接近90 GiB硬上限。这些值说明实际训练曾使用GPU，但不是25核充分利用或内存准入成功的证明。当前`oom=0/oom_kill=0`不能确定原始退出原因；没有已完成source checkpoint，不把在途更新填成零更新或完成。
+
+07:21:29 UTC只读核验无活动source owner/runner，GPU0。下一切片继续减少whole-X与inner/held副本、落实分阶段字节准入和ready NN优先，另补实际worker退出码/phase/native诊断后再恢复完整12程序。科研子代理不设我方期限或额度；局部软件通过不能代替下一次真实内存峰、有效并发和进度验收。
+
+两个失败run及完整基准共26份原计划、owner、退出/资源/runner记录已下载逐SHA核对，创建并逐成员回读[物理证据归档清单](../../frozen/public_source_terminal_20261008/evidence.manifest.json)。归档载荷与云端原文件均保留；[终态读数](../assets/public_source_throughput_20261008/terminal_readout.json)绑定实际archive而不改写历史producer。

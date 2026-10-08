@@ -1,6 +1,6 @@
 # 当前执行计划
 
-[当前目标软件切片](evidence/current_public_consumers_20261008.zh.md)已合入6295cde：fixed32/b64设计配方与匹配scratch、固定C质量loss、actualprior/β、观测Cz6 raw/原8导控制、指定primary温度与binary概率池；真实source K0/OOF和联合零fit源检查通过。原源启动因root非法scope结束、NN0且四view完整保留；修development后的2394执行直接复用四view继续完整12 checkpoint，不重合并。源/目标真实效能仍分别按终态和全包重放验收。
+[当前目标软件切片](evidence/current_public_consumers_20261008.zh.md)已合入6295cde：fixed32/b64设计配方与匹配scratch、固定C质量loss、actualprior/β、观测Cz6 raw/原8导控制、指定primary温度与binary概率池；真实source K0/OOF和联合零fit源检查通过。原源启动因root非法scope结束、NN0且四view完整保留；修development后的2394直接复用四view，于06:53:03 UTC因worker突然终止失败，原始原因未知、已完成checkpoint0。输入完整基准与终态证据见[吞吐记录](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)；字节准入/副本消除和退出诊断完成后恢复完整12程序。源/目标真实效能仍分别按终态和全包重放验收。
 
 2026-10-08 [当前源程序实施](evidence/public_source_pipeline_20261008.zh.md)已合入：source-only三seed各自participant选择/fresh refit、β1和实际验证人数、两轴零关键遗留。实际十二库1963记录/1430742 epoch与四库123 target groups已准备成功；12 source checkpoint完整程序从fd62冻结启动。下一切片接目标fixed-mass风险、binary posterior与candidate共享Cz raw空间，公共效能尚未验收。
 

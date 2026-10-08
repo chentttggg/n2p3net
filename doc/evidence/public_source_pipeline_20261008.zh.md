@@ -30,4 +30,4 @@ source有限开发程序预声明cap32、patience6、绝对CE min_delta1e-6、va
 
 准备25CPU为1调度+4×(1 CLI控制器+5 record worker)，数值进程各1原生线程。完成后仅通过实际输入/本任务产物的只读`POSIX_FADV_DONTNEED`提示释放干净文件页，size/mtime保持；未删数据、重置全局缓存或改模型。prepared method保持18dafd6实际runner/data身份，新训练消费已准入完整cache，不改签fd62。
 
-完整12 source程序于2026-10-08 05:09:35 UTC从fd62 materialized source实际启动，解析25CPU/4GPU slots/4source groups。启动/输入准入不等于真实拟合、吞吐或最终checkpoint，执行按进程、账本与终态继续核。目标fixed-mass训练、binary posterior风险、candidate共享Cz raw空间及温度控制子集仍在下一切片实施；公共效能、B05–B11后续机制和B13新成人确认各自验收。
+完整12 source程序于2026-10-08 05:09:35 UTC从fd62 materialized source实际启动，解析25CPU/4GPU slots/4source groups；05:59:33 UTC因caller非法scope结束，四view完整保留。修scope后2394直接消费四view，06:53:03 UTC因worker突然终止失败，原始原因未知、已完成checkpoint0；[终态与完整输入基准](public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)绑定26份原件与实际archive。字节准入/副本优化及退出诊断完成后恢复完整程序。目标fixed-mass、binary posterior、共享Cz raw空间和温度子集已由[当前消费者切片](current_public_consumers_20261008.zh.md)完成软件验收；公共效能、B05–B11后续机制和B13新成人确认各自验收。

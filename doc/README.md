@@ -2,7 +2,7 @@
 
 2026-10-08 [当前公共消费者](evidence/current_public_consumers_20261008.zh.md)已落实fixed-mass目标loss、实际概率语义、实测Cz raw空间、温度primary范围和完整概率池；真实source K0/OOF门禁RED→GREEN、A01单raw重放及两轴通过。与吞吐/前置合并后的真实源零fit检查通过；公共全矩阵和成人确认继续。
 
-2026-10-08 [当前公共源程序](evidence/public_source_pipeline_20261008.zh.md)已完成三seed独立选轮/refit、β1/实际participant验证比例、共享ready调度及两轴评审，五项恢复/准入/账本缺口关闭。十二库源与四库target准备16/16成功；完整12 source程序已启动，真实训练和目标概率/空间切片继续各自验收。旧试验矩阵不作为当前必跑范围。
+2026-10-08 [当前公共源程序](evidence/public_source_pipeline_20261008.zh.md)已完成三seed独立选轮/refit、β1/实际participant验证比例、共享ready调度及两轴评审，五项恢复/准入/账本缺口关闭。十二库源与四库target准备16/16成功；[完整输入基准与源运行终态](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)记录2394突然worker退出、checkpoint0，字节准入/副本优化和退出诊断继续，随后恢复完整12程序。旧试验矩阵不作为当前必跑范围。
 
 2026-10-08 [独立前缀与配对公共入口](evidence/independent_prefix_20261008.zh.md)已合入B12软件切片：实际K/截止、K0冻结源状态、共享fixed/grouped数值包、三组seed与真实source选择/refit关系。独立两轴0遗留；主树B07组合6项与新A01的102次保存重放通过。完整公共source3seed与两个面板继续准备。
 

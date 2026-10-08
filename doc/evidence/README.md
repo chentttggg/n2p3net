@@ -2,7 +2,7 @@
 
 - [当前公共消费者：风险、概率与实测空间](current_public_consumers_20261008.zh.md)：固定C质量loss、实际prior/β后验与LLR分开、Cz6 raw/真实执行family、温度控制子集与概率池完整分母；两轴零关键遗留、真实源K0/OOF和A01单raw验证，完整效能另验收。
 
-- [公共源吞吐第一切片](public_source_throughput_20261008.zh.md)：逐epoch同数值QC、免压缩工作cache、真实writer与同进程decoded交接、阶段日志；22项必要验证与原两库输入准备通过，完整云端吞吐与并发峰另验。
+- [公共源吞吐第一切片](public_source_throughput_20261008.zh.md)：逐epoch同数值QC、免压缩工作cache、真实writer与同进程decoded交接、完整十一库输入基准；两个失败源运行终态/资源原件已物理封存，后续副本/字节调度与真实并发继续验收。
 
 - [当前公共源程序、实际数据准备与质量](public_source_pipeline_20261008.zh.md)：每seed独立选择/refit、等库等人β1风险、声明manifest与完整view恢复、25CPU/4GPU共享调度；两轴零关键遗留、16/16输入准备成功，完整12 source实际启动，公共效能/目标新语义另验收。
 
