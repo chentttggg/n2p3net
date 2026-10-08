@@ -1,0 +1,17 @@
+{
+  "schema": "n2p3_source_worker_diagnostics_integration/1",
+  "author_commit": "ac0b0a5508eab5ad507b3cb03c66fcc31ab91f39",
+  "main_commit": "a23fe28",
+  "accepted_archive_sha256": "a3cbf9004a03fd0cba55b25337255a0723f7492ad395b2e4ef4af16ab4f78f26",
+  "accepted_runtime_code_files": {
+    "experiments/run_source_training_chain.py": "4c5eeb40465ccc30409f6b08e8603f93b573da3de8d1150746aff59d094fa6c8",
+    "src/research/worker_diagnostics.py": "176fbcfa0faf48c65cd26556d7cde05e1f9ed7367ae7bd3f2d136a101ea92ac4",
+    "tests/research/test_worker_diagnostics.py": "4b9f36d9d248dd672a19e1dc516c0d8138143b965bc5df8ffcfe3595ee34fd56"
+  },
+  "final_diagnostic_cases": 11,
+  "final_resource_owner_cases": 10,
+  "tests_total": 21,
+  "original_2394_native_cause": "unknown",
+  "fitting_or_cloud_throughput_proven_by_this_slice": false,
+  "joint_integrated_final_suite": "pending reusable executor and Slice2 integration; prefer cloud"
+}

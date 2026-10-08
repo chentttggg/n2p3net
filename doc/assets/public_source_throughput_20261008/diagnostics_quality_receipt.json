@@ -1,0 +1,238 @@
+{
+  "schema": "n2p3_worker_diagnostic_quality/1",
+  "created_utc": "2026-10-08T07:56:12.623631+00:00",
+  "branch": "codex/source-worker-diagnostics",
+  "base_commit": "f945a97f3b156d287f95d1bd6617a22690797289",
+  "source_manifest": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\source_worker_diagnostics_20261008\\final_source_v3\\source.manifest.json",
+  "source_manifest_sha256": "b2a75faa9d567e2deb3048c09165e8f6cefd91cdb3db62c305adf76e99c4a757",
+  "source": {
+    "archive_sha256": "a3cbf9004a03fd0cba55b25337255a0723f7492ad395b2e4ef4af16ab4f78f26",
+    "manifest_sha256": "b2a75faa9d567e2deb3048c09165e8f6cefd91cdb3db62c305adf76e99c4a757",
+    "source_commit": "f945a97f3b156d287f95d1bd6617a22690797289",
+    "byte_size": 1883765,
+    "member_count": 444,
+    "working_tree_snapshot": true,
+    "source_commit_role": "base_commit_only",
+    "executed_files_verified": 444
+  },
+  "owned_file_hashes": {
+    ".gitattributes": "8ed3c0215050815ba3ff519f566b8981506df91022f003adda23f19e7a7cb9b5",
+    "src/research/worker_diagnostics.py": "176fbcfa0faf48c65cd26556d7cde05e1f9ed7367ae7bd3f2d136a101ea92ac4",
+    "tests/research/test_worker_diagnostics.py": "4b9f36d9d248dd672a19e1dc516c0d8138143b965bc5df8ffcfe3595ee34fd56",
+    "experiments/run_source_training_chain.py": "4c5eeb40465ccc30409f6b08e8603f93b573da3de8d1150746aff59d094fa6c8"
+  },
+  "software_evidence": {
+    "final_junit": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\source_worker_diagnostics_20261008\\final_green_v3.xml",
+    "final_junit_sha256": "8f94ed1b4d811f6dfd9719a28e0c26005d8e70bfc5893d79a9399f560411a6c7",
+    "tests": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "21",
+      "time": "16.253",
+      "timestamp": "2026-10-08T15:50:40.944184+08:00",
+      "hostname": "Tonger"
+    },
+    "test_ids": [
+      "test_preparation_result_parse_failure_is_inside_diagnostic_task",
+      "test_failed_worker_diagnostic_write_preserves_python_failure",
+      "test_failed_parent_diagnostic_write_preserves_pool_observation",
+      "test_process_handles_survive_manager_clearing_executor_registry",
+      "test_failed_resource_sensor_preserves_original_fit_failure",
+      "test_failed_parent_resource_sensor_preserves_pool_failure",
+      "test_reused_worker_starts_without_previous_task_facts",
+      "test_failure_capture_keeps_original_error_when_state_or_phase_is_unreadable",
+      "test_failure_capture_excludes_states_from_another_pool_instance",
+      "test_worker_stderr_phase_and_python_exception_leave_output_empty",
+      "test_native_exit_captures_exit7_and_separates_peer_pool_failure",
+      "test_registry_transaction_serializes_competing_publishers",
+      "test_registry_lock_releases_after_failure",
+      "test_auto_resources_use_quota_and_memory_instead_of_one_worker",
+      "test_memory_budget_limits_groups_and_rejects_unaffordable_worker",
+      "test_memory_admission_releases_failed_children_and_expands_after_group_exit",
+      "test_nested_workers_share_cpu_quota_across_groups",
+      "test_source_groups_preserve_outer_library_and_layout_boundaries",
+      "test_cloud_floor_routes_25_threads_and_four_gpu_workers_without_silent_clamp",
+      "test_preparation_and_source_nodes_share_actual_cpu_and_host_capacity",
+      "test_ready_whole_study_folds_do_not_drop_pending_or_failed_members"
+    ],
+    "ruff": "src experiments tests: passed",
+    "diff_check": "passed",
+    "full_suite_rerun": false,
+    "red_artifacts": [
+      "review_red_v1.log",
+      "preparation_red_v1.log",
+      "registry_red_v1.log",
+      "sensor_red_v1.log",
+      "probes_v3",
+      "native_plain_peer_v1",
+      "native_diagnosed_peer_v1",
+      "native_plain_peer_frame_v2",
+      "native_diagnosed_peer_frame_v2"
+    ],
+    "prior_runtime_smoke": [
+      {
+        "fixture": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\source_worker_diagnostics_20261008\\integration_green_v2\\test_parallel_source_cli_execu0",
+        "status": "completed",
+        "task_count": 8,
+        "source_failure_count": 0,
+        "source_archive_sha256": "d3ab7ad39d5c836564cc89cab1c6c836cd40174fd34234a02169e3fbcfd2df91",
+        "evidence_scope": "software_correctness",
+        "source_program": "declared_legacy_stages",
+        "source_runtime_hashes": {
+          "src/research/worker_diagnostics.py": "b2b0cd5a83d8ef5ff410cfb7e07e723f22d5a589f009a0b918579a7ccf23161f",
+          "tests/research/test_worker_diagnostics.py": "1329aaf504fa847f1237034fae26c25d94279ed5631bc9844fc29b35f5906b6a",
+          "experiments/run_source_training_chain.py": "a999bc245783c0a6c062b277f04d0ac1761f9682230e031010756ad2c021ae6e"
+        },
+        "worker_pids": [
+          4416
+        ],
+        "worker_count": 1,
+        "reported_resource_policy": {
+          "policy": "automatic_resource_admission",
+          "available_cpu_threads": 32,
+          "cpu_budget": 2,
+          "worker_cpu_budget": 1,
+          "coordinator_cpu_threads": 1,
+          "requested_source_workers": 1,
+          "source_groups": 2,
+          "source_workers": 1,
+          "gpu_slots": 1,
+          "target_workers": 1,
+          "inner_workers_per_group": 1,
+          "native_threads_per_worker": 1,
+          "compiler_threads_per_worker": 1,
+          "cloud_resource_floor": null,
+          "gpu_task_memory_gib": 3.0,
+          "free_device_bytes": null,
+          "resident_memory_budget_bytes": null,
+          "available_host_memory_bytes": 2193874944,
+          "host_memory_budget_bytes": 1864793702,
+          "host_memory_fraction": 0.85,
+          "shared_staging_memory_bytes": 0,
+          "source_worker_memory_bytes": 268435456,
+          "target_worker_memory_bytes": 268435456
+        },
+        "diagnostic_pool_instance_id": "250cfc6de90a4b189e919826b93a1cda"
+      },
+      {
+        "fixture": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\source_worker_diagnostics_20261008\\integration_green_v2\\test_parallel_source_cli_execu1",
+        "status": "completed",
+        "task_count": 8,
+        "source_failure_count": 0,
+        "source_archive_sha256": "6055bcb96de578a61a111e35bc094b5ff144b6b6da087e9fe01085cfbd5f9bea",
+        "evidence_scope": "software_correctness",
+        "source_program": "declared_legacy_stages",
+        "source_runtime_hashes": {
+          "src/research/worker_diagnostics.py": "b2b0cd5a83d8ef5ff410cfb7e07e723f22d5a589f009a0b918579a7ccf23161f",
+          "tests/research/test_worker_diagnostics.py": "1329aaf504fa847f1237034fae26c25d94279ed5631bc9844fc29b35f5906b6a",
+          "experiments/run_source_training_chain.py": "a999bc245783c0a6c062b277f04d0ac1761f9682230e031010756ad2c021ae6e"
+        },
+        "worker_pids": [
+          36140
+        ],
+        "worker_count": 1,
+        "reported_resource_policy": {
+          "policy": "automatic_resource_admission",
+          "available_cpu_threads": 32,
+          "cpu_budget": 2,
+          "worker_cpu_budget": 1,
+          "coordinator_cpu_threads": 1,
+          "requested_source_workers": 2,
+          "source_groups": 2,
+          "source_workers": 1,
+          "gpu_slots": 1,
+          "target_workers": 1,
+          "inner_workers_per_group": 1,
+          "native_threads_per_worker": 1,
+          "compiler_threads_per_worker": 1,
+          "cloud_resource_floor": null,
+          "gpu_task_memory_gib": 3.0,
+          "free_device_bytes": null,
+          "resident_memory_budget_bytes": null,
+          "available_host_memory_bytes": 3440156672,
+          "host_memory_budget_bytes": 2924133171,
+          "host_memory_fraction": 0.85,
+          "shared_staging_memory_bytes": 0,
+          "source_worker_memory_bytes": 268435456,
+          "target_worker_memory_bytes": 268435456
+        },
+        "diagnostic_pool_instance_id": "b466e3ca730a4795afdadf7a9a44d4fb"
+      }
+    ],
+    "native_exit_evidence": {
+      "record": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\source_worker_diagnostics_20261008\\final_green_v3\\test_native_exit_captures_exit0\\diagnostics\\7d785f71819e4a12b0a3b1ea8c43f5af\\first_pool_failure.json",
+      "sha256": "6726bc5c047c3a3dcc4c820ed630052ec8c189c88353106ad96e2c4f9d592e35",
+      "exception": {
+        "type": "BrokenProcessPool",
+        "message": "A process in the process pool was terminated abruptly while the future was running or pending."
+      },
+      "process_exit_observations": [
+        {
+          "pid": 16248,
+          "create_time": 1791445847.6794915,
+          "identity_source": "executor_process_handle",
+          "parent_pid": 7492,
+          "executable": "C:\\Users\\chent\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+          "exit_code": -15,
+          "alive": false
+        },
+        {
+          "pid": 22280,
+          "create_time": 1791445848.3979912,
+          "identity_source": "executor_process_handle",
+          "parent_pid": 7492,
+          "executable": "C:\\Users\\chent\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+          "exit_code": 7,
+          "alive": false
+        }
+      ],
+      "relationship": "first_parent_observation",
+      "native_first_cause": "unknown"
+    }
+  },
+  "original_2394_evidence": {
+    "manifest": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\frozen\\public_source_terminal_20261008\\evidence.manifest.json",
+    "manifest_sha256": "44004590d6631b787884369de9c6c474748c0ea5a0ec140b9cb01bbe32de491d",
+    "archive": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_20261008\\data_admission_recovery\\root_source_training_receipts\\preserved_terminal\\terminal_evidence.zip",
+    "archive_sha256": "c352d3f3851922136e376b95eb662732c5ede6cb9eaccf1f9929a71cde582346",
+    "verified_members": 26,
+    "terminal_readout": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\doc\\assets\\public_source_throughput_20261008\\terminal_readout.json",
+    "terminal_readout_sha256": "4fe58f24256f307737ff38b2f06119bef6c84539e8a5aa2edea581c3fe004438",
+    "terminal": {
+      "source_archive_sha256": "2394ca344ab80c03b05ef62a5c8e94f29fc69cb95007943c8d3c33f3969cb0af",
+      "started_utc": "2026-10-08T06:37:00.951406+00:00",
+      "finished_utc": "2026-10-08T06:53:03.385362+00:00",
+      "status": "failed",
+      "exit_code": 1,
+      "wall_seconds": 962.3900238238275,
+      "recorded_failure": "abrupt_worker_termination_original_cause_unknown",
+      "completed_logical_fit_count": 0,
+      "catalog_entries": 0,
+      "source_bytes_unchanged": true,
+      "plan_bytes_unchanged": true,
+      "resource_samples": 187,
+      "peak_sampled_cgroup_memory_bytes": 96625889280,
+      "peak_sampled_effective_cpu_cores": 4.379014028971919,
+      "peak_sampled_gpu_utilization_percent": 95,
+      "median_effective_cpu_cores_when_gpu_ge80": 4.031410997319
+    },
+    "current_memory_events": {
+      "oom": 0,
+      "oom_kill": 0,
+      "max": 208302,
+      "causality": "current counters do not identify original worker exit"
+    },
+    "cause": "unknown",
+    "root_cause_fix_claim": false
+  },
+  "limitations": [
+    "Observability delivery, not a diagnosis of original native death.",
+    "Native test warms all process handles before induced exit7; CPython dynamic spawn sentinel race is preserved separately.",
+    "Earlier two frozen CLI fixtures bind their own preceding runtime, not this final runtime hash.",
+    "Resource snapshots are endpoints, not sampled peak-RSS traces.",
+    "Unavailable diagnostic storage is separately reported; a failed write cannot produce a durable file."
+  ],
+  "independent_review_status": "pending"
+}

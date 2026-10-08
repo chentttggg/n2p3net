@@ -27,3 +27,9 @@ fd62原运行于05:59:33 UTC因caller非法scope以exit1结束，四完整view�
 07:21:29 UTC只读核验无活动source owner/runner，GPU0。下一切片继续减少whole-X与inner/held副本、落实分阶段字节准入和ready NN优先，另补实际worker退出码/phase/native诊断后再恢复完整12程序。科研子代理不设我方期限或额度；局部软件通过不能代替下一次真实内存峰、有效并发和进度验收。
 
 两个失败run及完整基准共26份原计划、owner、退出/资源/runner记录已下载逐SHA核对，创建并逐成员回读[物理证据归档清单](../../frozen/public_source_terminal_20261008/evidence.manifest.json)。归档载荷与云端原文件均保留；[终态读数](../assets/public_source_throughput_20261008/terminal_readout.json)绑定实际archive而不改写历史producer。
+
+## worker退出诊断软件切片
+
+退出观测已由独立SRC owner集中实施并合入a23fe28：每pool实例隔离、PID/创建身份、每任务状态重置、source/load/fit阶段、Python/native stderr与faulthandler；父层保存首次观察及实际process handle退出码。坏JSON、资源传感器异常、诊断写盘失败和executor registry并发清空经真实RED→GREEN处理，原fit/pool异常仍保留。Windows CPython动态spawn遗漏新sentinel的纯stdlib原始frame证据保留；本片交付观测，不宣称修复该调度竞争或2394原始死亡原因。
+
+最终独立21项（11诊断/10资源owner）、Ruff、diff检查及Spec/Standards通过；两份旧真实sourceCLI共16task对应各自此前冻结版本，没有重标为final v3执行。[质量凭证](../assets/public_source_throughput_20261008/diagnostics_quality_receipt.json)、[主树逐文件整合](../assets/public_source_throughput_20261008/diagnostics_integration.json)和[444成员原冻结清单](../../frozen/source_worker_diagnostics_20261008/source.manifest.json)分别绑定实际来源。整合后的共同调度与全矩阵、云端完整吞吐仍按本轮工程接口继续验收。
