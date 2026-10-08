@@ -217,15 +217,21 @@ def _control_matches(source, control):
     return left == right
 
 
+def _resolved_peers(source, cells):
+    """Controls must own the same actual fit budget and pipeline request."""
+    fields = ("participant_key", "K", "actual_K", "source_seed", "target_seed")
+    key = tuple(source[field] for field in fields)
+    return [(index, row) for index, row in enumerate(cells) if row["actual_K"] is not None
+            and tuple(row[field] for field in fields) == key]
+
+
 def _bind_matched_controls(cells):
     """The source effect is identified only by same-input/architecture/recipe controls."""
     mappings = []
     for index, source in enumerate(cells):
         if source["family"] != "full_fine" or source["actual_K"] in {None, 0}:
             continue
-        key = tuple(source[field] for field in ("participant_key", "K", "source_seed", "target_seed"))
-        peers = [(i, row) for i, row in enumerate(cells) if row["actual_K"] is not None and
-                 tuple(row[field] for field in ("participant_key", "K", "source_seed", "target_seed")) == key]
+        peers = _resolved_peers(source, cells)
         matched = {}
         for family in ("scratch", "waveform_lda"):
             for peer_index, control in peers:
@@ -252,10 +258,8 @@ def _validate_transfer_contrast(name, weights, cells):
         coefficients = weights.get("by_study", {}).get(source["study"], {}) if "by_study" in weights else weights
         if source["family"] != "full_fine" or source["arm"] not in coefficients or source["actual_K"] in {None, 0}:
             continue
-        for control in cells:
+        for _, control in _resolved_peers(source, cells):
             if control["family"] != "scratch" or control["arm"] not in coefficients:
-                continue
-            if any(source[field] != control[field] for field in ("participant_key", "K", "source_seed", "target_seed")):
                 continue
             if not _control_matches(source, control):
                 raise ValueError(f"contrast {name} uses an unmatched scratch control for {source['arm']}; "
@@ -328,11 +332,12 @@ def run_comparison(plan_path: Path, output: Path):
                 input_available = (not paired or requested_budget in resolved) and budget in entry["calibration"] and (
                     budget == 0 or entry["calibration"][budget] is not None)
                 available = input_available and (budget > 0 or arm["family"] == "full_fine")
-                if budget in actual_cells:
+                if input_available and budget in actual_cells:
                     for index in actual_cells[budget]:
                         cell = cells[index]
                         cell["requested_Ks"].append(requested_budget)
                         requests.append({"study": study, "participant_key": participant, "requested_K": requested_budget,
+                            "requested_Ks": [requested_budget],
                             "actual_K": cell["actual_K"], "arm": arm["name"], "source_seed": cell["source_seed"],
                             "target_seed": cell["target_seed"], "budget_adjustment": adjustment,
                             "cell_index": index, "status": "requested" if available else "protocol_excluded"})
@@ -384,8 +389,10 @@ def run_comparison(plan_path: Path, output: Path):
                             if input_available else "requested budget absent; prepared fallback is not substituted")
                     index = len(cells)
                     cells.append(cell)
-                    actual_cells.setdefault(budget, []).append(index)
+                    if input_available:
+                        actual_cells.setdefault(budget, []).append(index)
                     requests.append({"study": study, "participant_key": participant, "requested_K": requested_budget,
+                        "requested_Ks": [requested_budget],
                         "actual_K": budget if input_available else None, "arm": arm["name"],
                         "source_seed": source_seed, "target_seed": seed,
                         "budget_adjustment": adjustment, "cell_index": index,

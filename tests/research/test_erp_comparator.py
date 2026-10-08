@@ -245,7 +245,7 @@ def test_paired_comparator_keeps_zero_requests_and_reuses_deterministic_fit(tmp_
     arms = [{"name": family, "family": family, "prefix_collection": str(collection),
         **({"epochs": 1, "batch_size": 32} if family in {"full_fine", "scratch"} else {})}
         for family in ("waveform_lda", "full_fine", "scratch")]
-    plan = {"schema": "n2p3_erp_comparator_plan/1", "subjects": ["1"], "budgets": [0, 8, 200, 800],
+    plan = {"schema": "n2p3_erp_comparator_plan/1", "subjects": ["1"], "budgets": [0, 8, 16, 200, 800],
         "arms": arms, "allowed_input_axes": [], "evidence_scope": "software_correctness",
         "seed_pairs": pairs, "source_seed_catalog": catalog,
         "contrasts": {"full_minus_scratch": {"full_fine": 1, "scratch": -1}}}
@@ -265,8 +265,8 @@ def test_paired_comparator_keeps_zero_requests_and_reuses_deterministic_fit(tmp_
     monkeypatch.setattr(runner, "fit_calibration_candidate", measured_fit)
     monkeypatch.setattr(runner, "load_target_prefixes", measured_load)
     report = run_comparison(path, tmp_path / "result")
-    assert report["requested_cells"] == 36
-    assert report["actual_fit_score_cells"] == 27
+    assert report["requested_cells"] == 45
+    assert report["actual_fit_score_cells"] == 36
     assert report["budget_program"] == "owner_resolved_requests"
     assert report["seed_pairs"] == pairs
     assert {(c["source_seed"], c["target_seed"]) for c in report["cells"]} == {tuple(p) for p in pairs}
@@ -277,7 +277,10 @@ def test_paired_comparator_keeps_zero_requests_and_reuses_deterministic_fit(tmp_
                and c["prediction_program"] == "source_only" for c in zero if c["family"] == "full_fine")
     assert all(c["saved_replay_exact"] for c in report["cells"] if c["status"] == "completed")
     assert all(c["status"] == "completed" for c in report["cells"] if c["K"] == 8)
-    fallback = [cell for cell in report["cells"] if cell["K"] == 16]
+    undeclared = [cell for cell in report["cells"] if cell["requested_K"] == 16]
+    assert len(undeclared) == 9 and all(cell["status"] == "protocol_unavailable" for cell in undeclared)
+    assert all(cell["actual_K"] is None for cell in undeclared)
+    fallback = [cell for cell in report["cells"] if cell["K"] == 16 and cell["actual_K"] == 16]
     assert len(fallback) == 9 and all(cell["status"] == "completed" for cell in fallback)
     assert all(cell["requested_Ks"] == [200, 800] for cell in fallback)
     assert not any(cell["K"] in {200, 800} for cell in report["cells"])
@@ -288,6 +291,9 @@ def test_paired_comparator_keeps_zero_requests_and_reuses_deterministic_fit(tmp_
     assert {rows for _, _, rows in fits} == {8, 16}
     assert report["physical_target_fits"] == 14
     assert report["statistics"]["declared_seed_pairs"] == pairs
+    exact = report["statistics"]["groups"][0]["contrasts"]["full_minus_scratch"]["exact_K"]
+    assert all(exact[str(requested)]["n_declared_requested_at_K"] == 1
+               and len(exact[str(requested)]["requested_without_actual_K_result"]) == 1 for requested in (200, 800))
     assert len(loads) == 2  # One collection per participant, preflight + execution.
     for entry in catalog:
         assert hashlib.sha256((tmp_path / entry["path"]).read_bytes()).hexdigest() == entry["sha256"]
