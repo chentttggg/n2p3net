@@ -1,0 +1,37 @@
+{
+  "schema": "n2p3_source_slice2_integration/1",
+  "author_commit": "c67918c827e61eace6a14725ca05fff473f91bad",
+  "main_commit": "63e38bacf6435cce774a906f94e3178e8edf95b4",
+  "accepted_source_archive_sha256": "c881318eb58c8411096e6cf7ccc76b9eb7e6eda8eafe5c121ea10e55b1300be0",
+  "code_files_equal_to_reviewed_runtime": {
+    "experiments/prepare_multidomain_source.py": "489ddcedd3a00f0623adf508b5664edfb83890cdc484d124bff7e2b285b84692",
+    "src/baselines/deep.py": "6878a07d2d1347c19adc7f6af2b9cf930b7fbdcbcfda4b2632b575daa034b8c1",
+    "src/data/epochs.py": "874458147492f05857351ad41c37896d85cf6381ddb698875731d59f37dd0be5",
+    "src/research/source_execution.py": "5dd0b1c8dce93b3090a14bc0c36297186cb3fb68b438fa3ff6f692668bc862fc",
+    "src/research/source_selection.py": "9924599ea7867525c968c90ce1c3d91d7f1c927e88acb5ce96c81c485eacdee8",
+    "src/train/runtime.py": "ef0fca21a424a6caa17a8fc86cedd22cb2a1c1127275ee63c56a3e2c6637aa34",
+    "src/train/source_sampling.py": "a56d4cb4ba920710a1d720a1e1d5e45a6729030fef86dbb811780086a5bbe8f8",
+    "tests/data/test_epoch_cache_production.py": "8c29359563df316d2ee444b0184cc16a0eeafb47c0138bc19562fbda219f0a2b",
+    "tests/train/test_independent_source_pipeline.py": "e346085e802760860cd1cf231bd717c56081a7f099f283f809867871a7c937db",
+    "tests/train/test_prepare_multidomain_source.py": "cd67645768caef0c94c1bc49c0be56a59c2fbcfbca004594773b9e6d6e72d769",
+    "tests/train/test_source_execution_resources.py": "7887451b37ef08c48e1a38bab7a8564ab4d76373d90e9e19bbb12062b429986f",
+    "src/train/source_rows.py": "336502dd9e73bfb8f98f40709554aab8c698b51df4dd606c6bf502e0f3749bad",
+    "tests/data/test_epoch_value_blocks.py": "708f1023236e1be3a431c16d79ecf3131790a5b52388ec3dba2da6d1539cf045",
+    "tests/data/test_streamed_epoch_concatenation.py": "668b7600dd986541879497020c399a60f05d31c7ba5b23d3a855b171981e3a9d",
+    "tests/train/test_source_input_admission.py": "db00c0afb02919f2f964562b5e98a3c32f54740b4809cb6d3bebfb422c1fcf3f",
+    "tests/train/test_source_rows.py": "6bd045c1ad3a4ff13816bf13fc55bcd9097fa01ab18f1e3125b3b019f721cb34"
+  },
+  "merged_code_files": {
+    "experiments/run_source_training_chain.py": {
+      "accepted_slice2_sha256": "db034f26c77b83ab9c28c3e6650b02f095602565a4399141816c6eeff50049cd",
+      "integrated_sha256": "63c0c261771fdac95fb0a639b65be2dac5387905172d38929aa5183ffa37dfa2"
+    }
+  },
+  "merged_test_seams": [
+    "tests/research/test_worker_diagnostics.py: malformed preparation consumes reserve interface"
+  ],
+  "joint_validation_archive_sha256": "07104d5436338ffaf553392d1712922c1631ca098d217c40d030c6ba0794a2e8",
+  "joint_validation_status": "cloud3/3passed; exit0; 27.510seconds; source449files verified; first owner failed before tests preserved",
+  "full_suite_status": "pending integrated cloud executor, once in cloud",
+  "shared_global_FS_pool_and_current_targets": "implementation continues"
+}

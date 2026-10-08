@@ -64,3 +64,5 @@ ENV或显式snapshot目录先经同一central选择，再按实际tmpfs/ramfs额
 本切片没有重新云端launch。旧full11 benchmark的reader/writer成本和高峰、2394/fd62失败及所有原产物由根保留。
 目前组I/O门禁为1，组内可以多个source loader；跨组snapshot磁盘聚合和当前binary/candidate消费者的共享ready滚动仍由统一executor收口。
 终态full11真实bench、整个12源程序、CPU/GPU实际利用率与峰值分别验收，不能把本软件切片称为云吞吐或研究效能已经完成。
+
+主树63e38ba已合入第二切片与退出诊断，三处source CLI冲突保留两方意图：诊断范围内创建显式snapshot根、准备调用使用共享`reserve("load")`并在同诊断task内解析结果、父层提交同时保留输入gate和process事实捕获。相应旧parser反例的stage seam同步新接口。十六份受审源码保持原bytes；合成CLI另签实际449成员归档07104d54…，在云Linux锁定环境完成2个真实sourceCLI与1个准备坏JSON诊断case：3通过、0失败/错误/跳过、27.510秒，实际pytest退出0。首版后台验证owner因换行转义在测试前失败，原日志保留；v2负责实际退出码和cgroup采样。新sourceRows/test行尾已集中固定为受审LF，[逐文件整合凭证](../assets/public_source_throughput_20261008/slice2_integration.json)和[原受审444成员清单](../../frozen/public_source_throughput_slice2_20261008/source.manifest.json)分别记录，联合软件通过未签为新四GPU吞吐或通用执行器完成。
