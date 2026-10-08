@@ -1,5 +1,7 @@
 # 研究与工程证据
 
+- [科研与代码集成](research_integration_20261008.zh.md)：两窗口单作者分工、总并发10、科研单seed/大版本三seed；字典重编译与容量诊断跨平台风险、独立机制代码的实际实施和未验收范围。
+
 - [当前公共消费者：风险、概率与实测空间](current_public_consumers_20261008.zh.md)：固定C质量loss、实际prior/β后验与LLR分开、Cz6 raw/真实执行family、温度控制子集与概率池完整分母；两轴零关键遗留、真实源K0/OOF和A01单raw验证，完整效能另验收。
 
 - [公共源吞吐软件切片](public_source_throughput_20261008.zh.md)：同数值分块QC/finite、免压缩真实writer交接、共享final EEG、lazy source行、ready NN字节门禁和原进度sink；第二切片44独立case验证含RC终态云CPU CLI两项GREEN，保留本机资源RED；跨组磁盘池与完整云端吞吐/并发峰由统一executor另验。

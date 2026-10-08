@@ -1,5 +1,7 @@
 # N2P3-Net：公开ERP预训练辅助成人猜数字
 
+2026-10-08用户更新：科研云端训练只用一个完整source→target seed；大版本校验才用三个独立完整程序。当前科研计划使用20260918，大版本校验使用20260918/19/20。阶段和声明集合由实际冻结计划绑定，不能复制单seed产物补成三seed，也不能将日常研究改称大版本。单seed参与者区间只说明条件于该冻结程序的参与者不确定性。[科研与集成状态](evidence/research_integration_20261008.zh.md)记录职责、源码与未完成出口。
+
 [当前目标风险](evidence/current_public_consumers_20261008.zh.md)按完整C的固定class mass定义balanced CE，避免小batch随机分母改变目标；actualβ/π/Z来自fitC，OOF不消费held标签。posterior forecast与LLR分别输出，有限NN校准需实测而非Bayes等式保证。primary机制类权重固定，scratch仅替换迁移初始化作对照，wave/native信息控制不额外计票或影响primary温度失败分母。
 
 [当前公共源程序](evidence/public_source_pipeline_20261008.zh.md)定义等库、库内等participant、观察行内等权CE，显式β1。旧β8按participant class-mass归一后减ln8仍改变原混合测度，不签proper等人源概率。实际participant-only内选轮与fresh全源refit每seed独立；32周期cap是预声明有限开发程序/右删失范围，不称最优或已收敛。源posterior、LLR、目标概率和真实candidate证据各按自己的prior/fit测度解释。

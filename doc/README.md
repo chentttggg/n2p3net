@@ -1,5 +1,7 @@
 # 项目文档
 
+2026-10-08[科研与代码集成](evidence/research_integration_20261008.zh.md)接续B07字典可移植、B08可识别prior及B05/B06/B09机制；科研窗口负责最终代码整合，云端窗口负责唯一执行调度。日常科研云训练单seed，大版本校验才三seed；本轮机制仍在实施，不作为新效能或成人确认。
+
 2026-10-08 [当前公共消费者](evidence/current_public_consumers_20261008.zh.md)已落实fixed-mass目标loss、实际概率语义、实测Cz raw空间、温度primary范围和完整概率池；真实source K0/OOF门禁RED→GREEN、A01单raw重放及两轴通过。与吞吐/前置合并后的真实源零fit检查通过；公共全矩阵和成人确认继续。
 
 2026-10-08 [当前公共源程序](evidence/public_source_pipeline_20261008.zh.md)已完成三seed独立选轮/refit、β1/实际participant验证比例、共享ready调度及两轴评审，五项恢复/准入/账本缺口关闭。十二库源与四库target准备16/16成功；[完整输入基准与源运行终态](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)记录2394突然worker退出、checkpoint0，字节准入/副本优化和退出诊断继续，随后恢复完整12程序。旧试验矩阵不作为当前必跑范围。
