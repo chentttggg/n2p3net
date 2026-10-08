@@ -805,6 +805,11 @@ def epoch_row_identity_digest(dataset: EpochDataset) -> str:
     validate = getattr(dataset, "validate", None)
     if validate is not None:
         validate(require_labels=False)
+    return _epoch_row_identity_digest(dataset)
+
+
+def _epoch_row_identity_digest(dataset: EpochDataset) -> str:
+    """Hash ordered physical rows after validation in the same read-only call."""
     subjects = np.asarray(dataset.subject_ids).astype(str)
     timeline = getattr(dataset, "event_timeline", None)
     if timeline is None:

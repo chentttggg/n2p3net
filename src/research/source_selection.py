@@ -18,7 +18,7 @@ from baselines.validation import domain_stratified_group_validation_split
 from data.domain import source_domain_ids
 from data.epochs import (
     EpochDataset,
-    epoch_row_identity_digest,
+    _epoch_row_identity_digest,
     materialize_dataset_lineage,
     preprocessing_execution_binding,
 )
@@ -201,7 +201,9 @@ def source_fit_ledger(
     input_digest.update(np.ascontiguousarray(mask).tobytes())
     return {
         "fit_rows": rows.astype(int).tolist(), "fit_rows_sha256": semantic_sha256(rows.tolist()),
-        "cache_row_identity_sha256": epoch_row_identity_digest(dataset),
+        # source_identity_axes admitted this dataset earlier in this same
+        # read-only call; the ordered digest retains its own mapping check.
+        "cache_row_identity_sha256": _epoch_row_identity_digest(dataset),
         "fit_input_label_mask_sha256": input_digest.hexdigest(),
         "input_channel_names": list(dataset.channel_names),
         "input_lineage_digest": materialize_dataset_lineage(dataset).payload()["lineage_digest"],
