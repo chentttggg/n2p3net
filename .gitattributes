@@ -118,3 +118,5 @@ tests/research/test_continuous_history_adapter.py text eol=lf
 src/research/noise_scale_identification.py text eol=lf
 tests/research/test_noise_scale_identification.py text eol=lf
 tests/research/test_channel_noise_response_fit.py text eol=lf
+src/research/joint_response_scale.py text eol=lf
+tests/research/test_joint_response_scale.py text eol=lf
