@@ -8,7 +8,7 @@
 
 | 切片 | 当前实现和审阅 | 仍须完成的具体出口 |
 |---|---|---|
-| B07字典 | `/2`冻结五数组、固定标量算术和物理表达式/constraint/lift；owned模型与ensemble直接消费原dictionary，独立全路径审查闭合 | completion保存重放已通过，完整同版本跨host模型重放待验；有限整selection history参考已以共享β与冻结joint prior边缘化，proper/flat测度分开；生产完整history接入/derivative另验 |
+| B07字典 | `/2`五数组与物理表达式/lift准入；有限history共享β/joint prior与actual模型adapter；support×precision及错误端点反例已审 | 完整同版本跨host、真实完整history/权限与实际operator端点对照待验；不把synthetic结果晋升hard默认 |
 | B08先验 | 物理equal-class response metric、quotient范围及显式completion；全C/prior生产Q/R/rhs/M保存，评分用precision factor，H是derived diagnostic | 真实completed-fit与弱方向攻击已验；quotient/completion新的公共配对及同版本跨host仍待验 |
 | B05噪声归因 | shared/private与一般vec分开；原576状态归因、Σ-only均值取消及增量/fulltarget关系明确；同B05 owner新增fixed-physical-prior given-noise Cfit | 真实noise/response可归因控制、正式fit包与finite endpoint交互仍需验收；生产joint MLE未由状态诊断实现 |
 | B06可观测性 | 实际O/L核空间及每个请求泛函独立归一；真实native有限T、ERP/噪声增量和外部未观测witness | 真实A01只读计划已完成且独立验收；未知state拟合、最终完整预处理和独立效能仍待各自验收 |

@@ -79,6 +79,16 @@ C状态重建的最高8个信息方向与endpoint value/first-difference rowspac
 
 作者完整结果及绑定在本轮 `B05_ATTRIBUTION/ATTRIBUTION.zh.md`、`delivery.json`、全部576state与12臂summary。独立审阅已核全部model/ensemble身份、288个同阶initializer/目标关系、12臂原概率宏指标和11个原开发门；另从30份原NPZ独算波形/cross covariance/df/η与endpoint overlap，294项summary独立归约一致。未发现来源或公式错贴，endpoint overlap独算最大差 `3.37e-10`。其结论保本轮 `REVIEWS/B05_M1_ATTRIBUTION.zh.md` 与binding，不将状态归因签成新fitter或独有因果证明。
 
+## 有限support、端点与noise precision的交互
+
+端点切片完成六组明确生成程序的CPU1 oracle，数学/原包/文献经独立复审接受。已知可逆F同时传播Y/D/Z/noise可保Gaussian后验和信息；正确完整传播的synthetic response相对偏差 `.000199`，把filtered response截回raw长度后偏差 `.862746`，错误强制observed raw-T为零的偏差 `.747407`。滤波后合法tail占norm `.405369`，原raw硬零不授予filtered endpoint硬零。
+
+在完全正确noise的另一合法非零边界例，hard约束造成两requested endpoint的coverage为0；真值位于hard空间时可降低风险，结构点质量coverage为1。它们不支持自动晋升hard。current hard_zero只限制同ambient cosine，在analytic `Tactual=L/fs`取E，不能用lastsample代替；cosine hard产生C1零延拓，curvature接缝仍可被更高阶差分强调。受限prior的precision/非零mean须正确pullback，dimension、physical energy和实际df分别记录。
+
+完整设计未证明时，noise error contrast也会泄漏signal：正确完整设计的期望相对尺度为1，同维数错误截断设计变为 `4.590795`，不能把更多contrast称纯noise。原六份M1 noise/basis只在新的scalar/synthetic clock中诊断，Burg亦强读边界，不把端点集中归为profile专属病因。actual source与全部37file绑定见本轮 `B07_ENDPOINT_INTERACTION/delivery.json`；独立八sample反例与结论见 `REVIEWS/B07_ENDPOINT_INTERACTION.zh.md`。
+
+三篇正文支撑检查滤波/完整response支持；Harris只核书目，失败PDF返回HTML不当正文。上述结果没有恢复未知processed MAT filter，也不是新公共效能。下一真实C对照须声明实际operator/support、同physical prior与函数空间，保持现B05同owner。
+
 ## 给定noise、固定physical prior的C拟合
 
 `6128c69` 在原 `FittedChannelNoise` 加入 `fit_response_given_frozen_noise`，source SHA `307b3db6e738a7be680936a2fae14eca7be4e9a7b61d56acbe0b6e81b5df1177`、专属test SHA `b286e2065c9027cebbf4df14209a2ce2a21cb717b86aad033e8e46bd9a8bc701`。固定完整physical coefficient prior，noise arm更换不重标Σ；同actual whitening作用于Y/D/Z后流式QR，只加入一次prior。输出保每record information roots/responses、最终augmented root、完整response/drift及跨record covariance，由原FrozenERPResponse/score消费，无第二个生产fitter。
