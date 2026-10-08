@@ -1,5 +1,7 @@
 # N2P3-Net：公开ERP预训练辅助成人猜数字
 
+[独立前缀公共入口](evidence/independent_prefix_20261008.zh.md)在实际K和共同later-test上保存requested→actualK及失败分母；fixed/grouped分别声明并共享最终专家，K0只消费冻结源状态。source与consumer证据角色分开，每seed选择/refit由真实producer绑定。软件交付和公共效能/成人确认分别验收。
+
 版本：2026-09-06d，作者拒收被试排除版。唯一活动研究规范，负责目标与科学约束。
 公开BI等数据用于学习可迁移P300/ERP特征；目标硬件为七路头皮EEG和一路独立EOG。
 阶段、配方和验收统一见[执行计划](roadmap.zh.md)，实际接口见[技术结构](technical_structure.zh.md)，

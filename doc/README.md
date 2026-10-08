@@ -1,5 +1,7 @@
 # 项目文档
 
+2026-10-08 [独立前缀与配对公共入口](evidence/independent_prefix_20261008.zh.md)已合入B12软件切片：实际K/截止、K0冻结源状态、共享fixed/grouped数值包、三组seed与真实source选择/refit关系。独立两轴0遗留；主树B07组合6项与新A01的102次保存重放通过。完整公共source3seed与两个面板继续准备。
+
 日常只维护以下六份正文。先按任务阅读对应指导，再读实际源码；历史记录不覆盖当前规范。
 
 2026-10-06 [B07物理ERP字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已合入真实fit/score/OOF/package/CLI：Gaussian锚点、同ambient cosine自由/硬端点、实际时间网格、约束/先验pullback与真实容量分别记录。两轴源码评审关闭容量自签P2并核三个actual包重放，20项定向通过；未重复全集。未知邻居、随机效应与端点收益仍未交付，B12独立C/test主线并行落实。

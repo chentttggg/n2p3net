@@ -1,5 +1,7 @@
 # P300 模型输入合同：离散时间、单位与分组
 
+[B12前缀实施](evidence/independent_prefix_20261008.zh.md)将raw的right-censored完整K与截止内真实可用trial分别记录；A01 C200为raw200/trial196。candidate严格下一未知flash截止，binary按其prefix owner保留原epoch尾部与共同test embargo；两个面板各自冻结可用时间，不据不同输入直接认定算法反差。
+
 [物理字典](evidence/erp_dictionary_20261006.zh.md)拥有actual `L=round(fs*Trequested)`、`t_n=n/fs`和支持`[0,L)`；右端点在`Tactual=L/fs`评价，lastsample为`(L−1)/fs`。fs256、请求1.2秒时，L307、实际端点1.19921875秒、最后采样1.1953125秒，三者分列。`E=[Φ(0);Φ(Tactual)]`、`N∈ker(E)`作用于同一ambient cosine及实际event design；prior遵循`Λactual=NblockᵀΛambient Nblock`。本切片不扩现unknown-overlap准入，不变更可用raw/score时间。
 
 [固定reference g-prior](evidence/calibration_g_prior_20261006.zh.md)以每record `Dbar=(I−Q_ZQ_Zᵀ)D_C` 的增量AR0 thin QR构建 `G=R_CᵀR_C`，读完整授权C；prior precision root `R_C/√g`同时进初始化和fixed32 NumPy/Torch目标，η期间不变，Σ仍profile为Q/nTail。g程序新/5 actual roots与source保存；held不建G，C-inner每fold单独编译。

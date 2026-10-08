@@ -1,5 +1,7 @@
 # 当前执行计划
 
+[B12独立前缀代码](evidence/independent_prefix_20261008.zh.md)已实现、独立两轴通过并合入B07主树：实际预算、K0、两温度程序共享状态、配对seed/source producer和binary去重/统计合同已闭合。主树组合验证和新A01重放通过；公共三source流程、真实新prepared库存、共享云调度和完整两面板仍待落实。B08完整1344后台续跑保持独立冻结源。
+
 ## 2026-10-05 愿望清单与优先任务分块方案
 
 B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修复容量关系P2、完成两轴及实际三包重放；20项必要验证通过，source/main已整合。A0/A1不代表完整B07，更不代表123项完成；B12独立C/test、K0真实状态与source/target三seed流程作为P0并行主线，不等待全部P1机制。

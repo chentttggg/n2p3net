@@ -1,5 +1,7 @@
 # BrainSync工作站指南
 
+[B12后端独立前缀包](evidence/independent_prefix_20261008.zh.md)可只读载入固定或C内OOF温度程序，共用原数值状态。公共candidate预算/词表与实际时间支持保存在研究包；日常BrainSync个人入口和新成人九选一仍沿自身任务合同接入并独立确认。
+
 [B07物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已接后端研究ensemble/operator入口与实际包重放；raw研究包保存函数grid、E/N、prior与真实C信息。当前日常个人包、未知边界state及新成人九选一须另接工作站任务合同，公共三包验收不构成已部署产品。
 
 [calibration g-prior raw研究程序](evidence/calibration_g_prior_20261006.zh.md)仅在后端研究FittedEnsemble接通，保存全C/reference/root/fit身份；工作站日常CalibratedPredictor与新成人九选一确认仍按原计划，不能把该软件包直接作为已验证工作站程序。

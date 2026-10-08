@@ -1,0 +1,66 @@
+{
+  "schema": "n2p3_independent_prefix_delivery/1",
+  "scope": "B12 software slice; full fifteen-block program remains unfinished",
+  "main_commit": "979661582f5eddf8a6d1857f9755bd7f6f4959a9",
+  "b12_branch_commit": "34421897fd117263d2d4de60790ca659fe030b55",
+  "review_source_archive_sha256": "45031d4699744b04b58349a3e09f213e961507dc5354957f7f363a54aee56abf",
+  "integration_source_archive_sha256": "ad4f12515bfa113ab0d9cbc42cc7754da6c951f6c71554800fda423b7e7a6ca6",
+  "verification": {
+    "prefix_temperature_relevant_tests": {
+      "passed": 19,
+      "source": "f58d14eb43d99697f55c4d0deb2e127501ba163fd768c58436f5dfa30b128783",
+      "repeated_wide_suite": false
+    },
+    "binary_final_tests": {
+      "passed": 11,
+      "exit_code": 0,
+      "source": "45031d4699744b04b58349a3e09f213e961507dc5354957f7f363a54aee56abf"
+    },
+    "integration_tests": {
+      "passed": 6,
+      "exit_code": 0
+    },
+    "native_integrated": {
+      "raw_labels": 200,
+      "trial_labels": 196,
+      "complete_C_groups": 1,
+      "actual_expert_fits": 2,
+      "shared_numeric_files": 2,
+      "requested_decisions": 34,
+      "exact_mixture_replays": 102,
+      "source": "ad4f12515bfa113ab0d9cbc42cc7754da6c951f6c71554800fda423b7e7a6ca6"
+    },
+    "ruff": "passed",
+    "git_diff_check": "passed"
+  },
+  "independent_review": {
+    "Spec": {
+      "residual_confirmed_findings": 0,
+      "receipt": "tmp/b12_independent_calibration_20261006/spec/final_20261008/quality_receipt.json"
+    },
+    "Standards": {
+      "residual_confirmed_findings": 0,
+      "receipt": "tmp/b12_independent_20261006/standards/final_20261008/receipt.json"
+    },
+    "reviewed_source": "45031d4699744b04b58349a3e09f213e961507dc5354957f7f363a54aee56abf",
+    "main_merge": "root combined contract reading and six tests plus fresh native proof; independent merge review pending"
+  },
+  "remaining": [
+    "public source-program entrance combining declared finite-zero profile, per-seed selection/refit and shared resource scheduling",
+    "newly admitted full twelve-library source caches and four-library target prefixes",
+    "full three-source-to-target-seed public binary/candidate matrix",
+    "workstation and adult confirmation",
+    "other exits in the fifteen-block roadmap"
+  ],
+  "cloud_preflight": {
+    "effective_cpu_cores": 25,
+    "effective_memory_limit_bytes": 96636764160,
+    "gpu": "RTX 5090",
+    "visible_physical_gpu_count": 1,
+    "planned_gpu_workers": 4,
+    "torch": "2.8.0+cu128",
+    "cuda_available": true,
+    "new_training_started": false
+  },
+  "artifacts_local_only": true
+}

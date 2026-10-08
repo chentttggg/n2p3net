@@ -1,5 +1,7 @@
 # 研究与工程证据
 
+- [B12独立前缀、温度程序与配对公共入口](independent_prefix_20261008.zh.md)：actualK与时间/标签一次绑定、K0源冻结、共享最终专家和温度程序、真实source选择/refit、配对seed与预算复用/统计；两轴及主树组合/新原生重放，完整公共流程另验收。
+
 - [B07物理ERP字典与端点切片](erp_dictionary_20261006.zh.md)：Gaussian默认数值、同cosine空间自由/硬端点、半开物理grid、同prior pullback及真实ref/fit容量；确认容量关系P2已消重复root并绑定actual posterior，两轴复验/三actual包只读重放通过，仅A0/A1。
 
 - [B08同C参考能量匹配的先验对照](prior_control_20261006.zh.md)：同full-C信息定义g与trace-isotropic控制，分开先验形状与收缩强度；28臂、1344逻辑fit与12形状对照预声明，代码、质量与实际执行分别验收。

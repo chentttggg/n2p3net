@@ -1,5 +1,7 @@
 # 当前技术结构与完整链条
 
+[B12独立前缀切片](evidence/independent_prefix_20261008.zh.md)由CalibrationPrefix持有一次验证的不可变授权，fit_calibration_prefix_programs持有共享all-C状态及各温度程序，FittedEnsemble.save_programs/load_programs保存单份数值模型。请求预算、来源选择/refit和matched-control筛选各由共同owner派生。
+
 更新：2026-09-06。本文件依据实际源码与入口核对，描述现状与尚缺接口；科研目标由
 [活动规范](research_program.zh.md)定义，发现和验证见[本次审计](evidence/technical_audit_20260906.zh.md)。
 源码目录不因行数大或模块多就拆分；优先保留已经集中实现的合同和算法。
