@@ -1,5 +1,7 @@
 # N2P3-Net：公开ERP预训练辅助成人猜数字
 
+[当前目标风险](evidence/current_public_consumers_20261008.zh.md)按完整C的固定class mass定义balanced CE，避免小batch随机分母改变目标；actualβ/π/Z来自fitC，OOF不消费held标签。posterior forecast与LLR分别输出，有限NN校准需实测而非Bayes等式保证。primary机制类权重固定，scratch仅替换迁移初始化作对照，wave/native信息控制不额外计票或影响primary温度失败分母。
+
 [当前公共源程序](evidence/public_source_pipeline_20261008.zh.md)定义等库、库内等participant、观察行内等权CE，显式β1。旧β8按participant class-mass归一后减ln8仍改变原混合测度，不签proper等人源概率。实际participant-only内选轮与fresh全源refit每seed独立；32周期cap是预声明有限开发程序/右删失范围，不称最优或已收敛。源posterior、LLR、目标概率和真实candidate证据各按自己的prior/fit测度解释。
 
 [独立前缀公共入口](evidence/independent_prefix_20261008.zh.md)在实际K和共同later-test上保存requested→actualK及失败分母；fixed/grouped分别声明并共享最终专家，K0只消费冻结源状态。source与consumer证据角色分开，每seed选择/refit由真实producer绑定。软件交付和公共效能/成人确认分别验收。

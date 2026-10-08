@@ -1,0 +1,7 @@
+{
+  "source_checkpoint": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\current_source_config_probe\\current\\source.u1.pt",
+  "executed_baseline_archive": "fd62c48b37de5a569ad2be629e61c508b931dc9b2e80bd2d3147cee2e25e94ea",
+  "actual_source_execution_present": true,
+  "checkpoint_ingress_failed": "checkpoint requires compatible preprocessing execution evidence",
+  "target_fits": 0
+}

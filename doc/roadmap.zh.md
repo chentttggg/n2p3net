@@ -1,5 +1,7 @@
 # 当前执行计划
 
+[当前目标软件切片](evidence/current_public_consumers_20261008.zh.md)已合入6295cde：fixed32/b64设计配方与匹配scratch、固定C质量loss、actualprior/β、观测Cz6 raw/原8导控制、指定primary温度与binary概率池；真实source K0/OOF和联合零fit源检查通过。原源启动因root非法scope结束、NN0且四view完整保留；修development后的2394执行直接复用四view继续完整12 checkpoint，不重合并。源/目标真实效能仍分别按终态和全包重放验收。
+
 2026-10-08 [当前源程序实施](evidence/public_source_pipeline_20261008.zh.md)已合入：source-only三seed各自participant选择/fresh refit、β1和实际验证人数、两轴零关键遗留。实际十二库1963记录/1430742 epoch与四库123 target groups已准备成功；12 source checkpoint完整程序从fd62冻结启动。下一切片接目标fixed-mass风险、binary posterior与candidate共享Cz raw空间，公共效能尚未验收。
 
 用户于2026-10-08允许按当前范式重新设计；下方几周前的B7剂量、SupCon/MMD、60/90等dated方案保留历史来源，不能自动作为本轮必跑任务。科研子代理不设我方额度或人为时间期限，质量优先；15块/123项整体范围仍按实际出口逐项闭合。

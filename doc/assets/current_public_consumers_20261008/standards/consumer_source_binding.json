@@ -1,0 +1,100 @@
+{
+  "schema": "n2p3_independent_public_consumer_standards_binding/1",
+  "accepted": {
+    "manifest": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\current_public_consumers_20261008\\accepted_source\\source.manifest.json",
+    "manifest_sha256": "75c2cb3ebb0da2d8a99be330705d887c6ba97343116479c9c75bece72ff69462",
+    "archive_sha256": "e6499b90778644e0df3ffd899a39aaf004ab792b1302f29cf2105b02570955ff",
+    "verified_members": 439,
+    "current_source_changed": []
+  },
+  "owned_files": {
+    ".gitattributes": "ef61c1881e0615b1f9569c32c2cd0336ac2a74deee5d8b086159b57cc94ce0de",
+    "experiments/run_candidate_ensemble_study.py": "fba33809fecaeedaef24b0355aadf2a489e16e584513bcc959499caf8c83e69e",
+    "experiments/run_erp_comparator.py": "4fa62c27fc1f6538d3d17c71d04d977d6c8a40e32b260797c655bce75aee8ecb",
+    "src/research/binary_probability.py": "81b31930a9ea9a63762da45dc157abd55b65128e826332e9aba9f42c69f0d342",
+    "src/transfer/calibration_candidates.py": "8c8f89d29327958cadf4b1b1490095cd51519f65681ef6d547cacc54fbe6dfeb",
+    "src/transfer/calibration_state.py": "8b850377445ae09b86bceb245441f3a3c8e07a94d367c4f6836f2046127062a3",
+    "src/transfer/checkpoint.py": "0980ecc008d53b442df686d4b7f6882ec9bd5ea142aee4c19b0d67d35e401ae7",
+    "src/transfer/class_calibration.py": "9dcd53767a9701d5e3d4febc27495e10c82e4a531b011a8d4830902d72e9a1a5",
+    "src/transfer/ensemble_fit.py": "45b960877ae4de63e95cd5a264ac5113a2267216046c10728c8415dc804fb932",
+    "src/transfer/ensemble_views.py": "4a0734ddfe035c117cd6c821198a5efb2467cb04a222b70bd940c72865c7a915",
+    "src/transfer/recipes.py": "e5e5a3524417d3369a76dfde3bb0986f9e22fbde74fbfa8dd7741bc7ffe749a8",
+    "src/transfer/subject_adapter.py": "c4f902bc70ab8a9970fb887d4ae3cc40c535a932a18fdf01ec9e13ab3c2ced17",
+    "tests/transfer/test_current_public_probability.py": "0614f7f8d2d4c8d86fdf6d5511196be0f4b0ece6e5227a46058115d5483014f6"
+  },
+  "quality_receipt_sha256": "7cb0f1f50a311c42037e1e980f712447f514bdb2da31eb2e0ad15a1c3df7584b",
+  "native_A01_original_execution": {
+    "manifest": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\current_public_consumers_20261008\\actual_A01\\source\\source.manifest.json",
+    "manifest_sha256": "d973dc340fb1fb30d08410fdcf9e46808ff628fcfd48ab7b37013cdda54a1710",
+    "archive_sha256": "ce9b3e2cc7e3d7e6ca8f08757952fd42ca2742ed9b03141d63b924a61f1e951e",
+    "verified_members": 439,
+    "current_source_changed": []
+  },
+  "native_A01_receipt_sha256": "14a1b0c24d72c1ccb32f04bf846d0dab41bedd5fb740ab06e347dbbb381af55e",
+  "accepted_source_ingress_receipt_sha256": "174009c08545024ee510d56317ce3a68be7a0ff2aa7dad743bcec3f43506f9bc",
+  "original_source_producer": "95c93303a2e23e0faaf84ad8ab2e663f53a49691011a7d9568872acddd6ce86b",
+  "source_gate_red_receipt_sha256": "2309086df14bfe467f618cd33c8fe2c7406c6674f1e2ca4fd4bdf5d37d76861d",
+  "saved_software_files_verified": 3,
+  "author_validation_receipts_read": [
+    {
+      "check": "new fixedmass probability/gradient/spatial/temperature/binarycaller + existing frozenstate regressions",
+      "exit_code": 0,
+      "test_count": 12,
+      "session": 52916,
+      "evidence": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\current_public_consumers_20261008\\final_tests_v1",
+      "scope": "software synthetic fixtures"
+    },
+    {
+      "check": "actual executed-source capability/selection ingress and existing execution gates",
+      "exit_code": 0,
+      "test_count": 10,
+      "evidence": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\current_public_consumers_20261008\\execution_gate_tests_v2",
+      "scope": "software kernel/contract tests"
+    },
+    {
+      "check": "four-expert fit and grouped temperature legacy ensemble regressions",
+      "exit_code": 0,
+      "test_count": 2,
+      "evidence": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\current_public_consumers_20261008\\caller_integration_v1",
+      "scope": "software synthetic fixtures; newclass-prior precision counterexample separately fixed"
+    },
+    {
+      "check": "threepairedseed real caller pipeline with requestedK0/K200 and sharedsavedprogramme",
+      "exit_code": 0,
+      "test_count": 1,
+      "session": 42573,
+      "evidence": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\current_public_consumers_20261008\\caller_integration_v2",
+      "scope": "software synthetic MAT;1224 prediction cells, not public effectiveness"
+    },
+    {
+      "check": "actual public A01 C200 sharedCz6 rawAR8/Burg/fixed32/ridge1 singlefit held/reload",
+      "exit_code": 0,
+      "evidence": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\current_public_consumers_20261008\\actual_A01\\receipt.json",
+      "executed_source_manifest": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\current_public_consumers_20261008\\actual_A01\\source\\source.manifest.json",
+      "scope": "one real public-data participant spatial integration probe"
+    },
+    {
+      "check": "real BDF trainedsource95 checkpoint to publicA01 K0/OOF/coldcache ingress and probability exactreplay,wrongnumeric/wrongtrainedprofile rejected",
+      "exit_code": 0,
+      "target_fit_count": 0,
+      "evidence": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\current_public_consumers_20261008\\source_ingress_accepted_receipt.json",
+      "scope": "mixed software source + public raw input; each original producer retained"
+    },
+    {
+      "check": "beforechange real source execution gate refuseslegalK0",
+      "exit_code": 1,
+      "expected_red": true,
+      "evidence": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\current_public_consumers_20261008\\source_gate_red_receipt.json",
+      "baseline_source_archive": "fd62c48b37de5a569ad2be629e61c508b931dc9b2e80bd2d3147cee2e25e94ea"
+    },
+    {
+      "check": "Ruff all12 ownedPythonfiles",
+      "exit_code": 0
+    },
+    {
+      "check": "gitdiffcheck",
+      "exit_code": 0
+    }
+  ],
+  "reviewer_checks": "stdlib tar, JSON, SHA256; no Torch/pytest or production mutation"
+}

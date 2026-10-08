@@ -1,0 +1,1458 @@
+{
+  "source_checkpoint": "C:\\Users\\chent\\.codex\\worktrees\\calibration-g-prior\\n2p3-net\\tmp\\public_source_delivery_20261008\\current_source_config_probe\\current\\source.u1.pt",
+  "executed_consumer_source": {
+    "archive_sha256": "e6499b90778644e0df3ffd899a39aaf004ab792b1302f29cf2105b02570955ff",
+    "manifest_sha256": "75c2cb3ebb0da2d8a99be330705d887c6ba97343116479c9c75bece72ff69462",
+    "source_commit": "a2975557d6e5e3ae99ff2f8d692ecc8a7e524ab2",
+    "byte_size": 1869036,
+    "member_count": 439,
+    "working_tree_snapshot": true,
+    "source_commit_role": "base_commit_only",
+    "executed_files_verified": 439
+  },
+  "OOF_cold_saved_reload_ingress_success": true,
+  "source_preprocessing_execution": {
+    "recordings": [
+      {
+        "declaration": {
+          "baseline_mode": "none",
+          "causal_iir_initial_state": "not_applicable",
+          "filter_method": "iir",
+          "filter_order": 4,
+          "filter_phase": "zero",
+          "h_freq": 30.0,
+          "l_freq": 0.1,
+          "n_times": 179,
+          "name": "brainsync_bidirectional_v1",
+          "notch_freqs_hz": [
+            50.0
+          ],
+          "notch_quality_factor": 30.0,
+          "reject_threshold_v": null,
+          "resample_domain": "epoched",
+          "resample_method": "fft",
+          "resample_npad": "auto",
+          "resample_pad": "edge",
+          "resample_window": "auto",
+          "sfreq": 128.0,
+          "signal_unit": "V",
+          "tmax_ms": 1200.0,
+          "tmin_ms": -200.0,
+          "trial_reference_center": "mean",
+          "trial_reference_scale": "none",
+          "trial_reference_window_ms": null,
+          "zero_phase_edge_policy": "mne_reflect_limited"
+        },
+        "epoch_grid": {
+          "actual_source_tmin_s": -0.2,
+          "end_offset_samples": 300,
+          "output_n_times": 179,
+          "requested_tmin_s": -0.2,
+          "resampled": true,
+          "resampled_n_times": 180,
+          "source_n_times": 351,
+          "start_offset_samples": -50
+        },
+        "filter": {
+          "backend": "mne_reflect_limited",
+          "initial_state": "not_applicable",
+          "padding_limit_samples": 2201,
+          "segments_are_half_open_record_offsets": true,
+          "sos": [
+            [
+              0.9794827609814495,
+              -0.6053536376811252,
+              0.9794827609814492,
+              1.0,
+              -0.6053536376811253,
+              0.958965521962899
+            ],
+            [
+              0.008815842809002184,
+              0.017631685618004368,
+              0.008815842809002184,
+              1.0,
+              -0.8979188239851807,
+              0.2274924927836225
+            ],
+            [
+              1.0,
+              2.0,
+              1.0,
+              1.0,
+              -1.1574368211532289,
+              0.5868348936930503
+            ],
+            [
+              1.0,
+              -2.0,
+              1.0,
+              1.0,
+              -1.99533965428191,
+              0.9953460250330617
+            ],
+            [
+              1.0,
+              -2.0,
+              1.0,
+              1.0,
+              -1.9980805960321355,
+              0.998086918160951
+            ]
+          ]
+        },
+        "implementation": {
+          "mne": "1.12.1",
+          "numpy": "2.5.2",
+          "python": "3.14.3",
+          "scipy": "1.18.1",
+          "source_sha256": {
+            "epochs.py": "dfe5347dbd80c94dcc2e6b589aef9e225525f78edcd9cf1c95d61f7a8e818143",
+            "preprocess.py": "a03495aa4347fe78ba3c36f40add50861f69eda5995a7d8eb08ed509187b51d6"
+          }
+        },
+        "output": {
+          "channel_names": [
+            "FZ",
+            "CZ",
+            "P3",
+            "PZ",
+            "P4",
+            "PO8",
+            "OZ"
+          ],
+          "dtype": "float32",
+          "event_samples_sha256": "fc5030e5350f4381498ae08b568e87062cb0eb172fbfcc4926652df05ba4e29e",
+          "scheduled_event_indices_sha256": "29101ebf1ead685029508789eee51c4d4fff65524064d8e32a48efded7036982",
+          "scheduled_events": 8,
+          "selected_event_indices_sha256": "29101ebf1ead685029508789eee51c4d4fff65524064d8e32a48efded7036982",
+          "shape": [
+            8,
+            7,
+            179
+          ]
+        },
+        "receipt_sha256": "c964d6541957720556e3e5e60bf85a39a145421e9d82de7a8b11e6d335fe5c4b",
+        "schema": "n2p3_preprocessing_execution/1",
+        "semantic_identity": {
+          "availability": "max_nominal_and_source_endpoint_or_record_end/1",
+          "backend": "mne_raw",
+          "operations": [
+            "continuous_filter",
+            "source_grid_closed_epoch",
+            "epoch_fft_resample",
+            "first_T_crop",
+            "half_open_baseline",
+            "float32"
+          ],
+          "schema": "n2p3_preprocessing_operator/1"
+        },
+        "source_context": {
+          "channel_names": [
+            "Fz",
+            "Cz",
+            "P3",
+            "Pz",
+            "P4",
+            "PO8",
+            "Oz"
+          ],
+          "filter_segment_boundaries": {
+            "CZ": [
+              {
+                "left_causes": [
+                  "record_start"
+                ],
+                "right_causes": [
+                  "record_end"
+                ],
+                "start_sample": 0,
+                "stop_sample": 3000
+              }
+            ],
+            "FZ": [
+              {
+                "left_causes": [
+                  "record_start"
+                ],
+                "right_causes": [
+                  "record_end"
+                ],
+                "start_sample": 0,
+                "stop_sample": 3000
+              }
+            ],
+            "OZ": [
+              {
+                "left_causes": [
+                  "record_start"
+                ],
+                "right_causes": [
+                  "record_end"
+                ],
+                "start_sample": 0,
+                "stop_sample": 3000
+              }
+            ],
+            "P3": [
+              {
+                "left_causes": [
+                  "record_start"
+                ],
+                "right_causes": [
+                  "record_end"
+                ],
+                "start_sample": 0,
+                "stop_sample": 3000
+              }
+            ],
+            "P4": [
+              {
+                "left_causes": [
+                  "record_start"
+                ],
+                "right_causes": [
+                  "record_end"
+                ],
+                "start_sample": 0,
+                "stop_sample": 3000
+              }
+            ],
+            "PO8": [
+              {
+                "left_causes": [
+                  "record_start"
+                ],
+                "right_causes": [
+                  "record_end"
+                ],
+                "start_sample": 0,
+                "stop_sample": 3000
+              }
+            ],
+            "PZ": [
+              {
+                "left_causes": [
+                  "record_start"
+                ],
+                "right_causes": [
+                  "record_end"
+                ],
+                "start_sample": 0,
+                "stop_sample": 3000
+              }
+            ]
+          },
+          "filter_segments": {
+            "CZ": [
+              [
+                0,
+                3000
+              ]
+            ],
+            "FZ": [
+              [
+                0,
+                3000
+              ]
+            ],
+            "OZ": [
+              [
+                0,
+                3000
+              ]
+            ],
+            "P3": [
+              [
+                0,
+                3000
+              ]
+            ],
+            "P4": [
+              [
+                0,
+                3000
+              ]
+            ],
+            "PO8": [
+              [
+                0,
+                3000
+              ]
+            ],
+            "PZ": [
+              [
+                0,
+                3000
+              ]
+            ]
+          },
+          "first_samp": 0,
+          "n_times": 3000,
+          "sample_rate_hz": 250.0
+        },
+        "timing_source": "source_mne_event_samples;source_grid_closed_epoch;max_nominal_and_source_endpoint;complete_recording_end"
+      }
+    ],
+    "schema": "n2p3_preprocessing_execution_bundle/1",
+    "unverified_inputs": 0
+  },
+  "source_producer_snapshot": "95c93303a2e23e0faaf84ad8ab2e663f53a49691011a7d9568872acddd6ce86b",
+  "K0_capability": {
+    "source_reference": "measured_channel:CZ",
+    "selection_epoch_capability": {
+      "schema": "n2p3_selection_epoch_capability/1",
+      "profile": {
+        "schema": "n2p3_selection_epoch_profile/1",
+        "preprocessing": {
+          "name": "brainsync_bidirectional_v1",
+          "sfreq": 128.0,
+          "l_freq": 0.1,
+          "h_freq": 30.0,
+          "tmin_ms": -200.0,
+          "tmax_ms": 1200.0,
+          "n_times": 179,
+          "baseline_mode": "none",
+          "signal_unit": "V",
+          "filter_method": "iir",
+          "filter_order": 4,
+          "filter_phase": "zero",
+          "causal_iir_initial_state": "not_applicable",
+          "notch_freqs_hz": [
+            50.0
+          ],
+          "notch_quality_factor": 30.0,
+          "zero_phase_edge_policy": "mne_reflect_limited",
+          "resample_domain": "epoched",
+          "resample_method": "fft",
+          "resample_npad": "auto",
+          "resample_window": "auto",
+          "resample_pad": "edge",
+          "trial_reference_window_ms": null,
+          "trial_reference_center": "mean",
+          "trial_reference_scale": "none",
+          "reject_threshold_v": null
+        },
+        "source_sample_rate_hz": 256.0,
+        "channel_names": [
+          "Fz",
+          "P3",
+          "Pz",
+          "P4",
+          "PO8",
+          "Oz"
+        ],
+        "reference": "right earlobe",
+        "reference_channel": "CZ",
+        "output_dtype": "float32",
+        "operator": {
+          "schema": "n2p3_finite_filter_operator/1",
+          "sos": [
+            [
+              0.9799541272795681,
+              -0.6602732045406293,
+              0.9799541272795681,
+              1.0,
+              -0.6602732045406292,
+              0.959908254559136
+            ],
+            [
+              0.008145023139441595,
+              0.01629004627888319,
+              0.008145023139441595,
+              1.0,
+              -0.919280680446913,
+              0.23659080963671544
+            ],
+            [
+              1.0,
+              2.0,
+              1.0,
+              1.0,
+              -1.1810622087903069,
+              0.593087300861466
+            ],
+            [
+              1.0,
+              -2.0,
+              1.0,
+              1.0,
+              -1.9954487304680963,
+              0.9954548065769517
+            ],
+            [
+              1.0,
+              -2.0,
+              1.0,
+              1.0,
+              -1.9981257045144607,
+              0.9981317339275217
+            ]
+          ],
+          "padding_limit": 2253,
+          "edge_rule": "observed_odd_reflection",
+          "state_role": "deterministic_function_of_observed_segment"
+        },
+        "epoch_geometry": {
+          "source_sample_rate_hz": 256.0,
+          "source_start_inclusive": -51,
+          "source_stop_exclusive": 308,
+          "source_last_inclusive": 307,
+          "source_samples": 359,
+          "actual_source_start_ms": -199.21875,
+          "actual_source_last_ms": 1199.21875,
+          "fft_resampled_samples": 180,
+          "output_sample_rate_hz": 128.0,
+          "output_samples": 179,
+          "first_T_discarded_output_samples": 1,
+          "declared_output_start_ms": -200.0,
+          "declared_output_last_ms": 1190.625
+        }
+      },
+      "profile_digest": "6a05f5b9e4cb964dbe50eca354f33e2e53d09a3b44c2e91b227bbdd9d7aa089b",
+      "producer_source_sha256": "4a0734ddfe035c117cd6c821198a5efb2467cb04a222b70bd940c72865c7a915",
+      "operator_family": "finite_segment_sos_closed_grid_fft_first_T_linear_baseline_float32/1"
+    }
+  },
+  "actual_score_receipt": {
+    "schema": "n2p3_selection_epoch_execution/1",
+    "profile": {
+      "schema": "n2p3_selection_epoch_profile/1",
+      "preprocessing": {
+        "name": "brainsync_bidirectional_v1",
+        "sfreq": 128.0,
+        "l_freq": 0.1,
+        "h_freq": 30.0,
+        "tmin_ms": -200.0,
+        "tmax_ms": 1200.0,
+        "n_times": 179,
+        "baseline_mode": "none",
+        "signal_unit": "V",
+        "filter_method": "iir",
+        "filter_order": 4,
+        "filter_phase": "zero",
+        "causal_iir_initial_state": "not_applicable",
+        "notch_freqs_hz": [
+          50.0
+        ],
+        "notch_quality_factor": 30.0,
+        "zero_phase_edge_policy": "mne_reflect_limited",
+        "resample_domain": "epoched",
+        "resample_method": "fft",
+        "resample_npad": "auto",
+        "resample_window": "auto",
+        "resample_pad": "edge",
+        "trial_reference_window_ms": null,
+        "trial_reference_center": "mean",
+        "trial_reference_scale": "none",
+        "reject_threshold_v": null
+      },
+      "source_sample_rate_hz": 256.0,
+      "channel_names": [
+        "Fz",
+        "P3",
+        "Pz",
+        "P4",
+        "PO8",
+        "Oz"
+      ],
+      "reference": "right earlobe",
+      "reference_channel": "CZ",
+      "output_dtype": "float32",
+      "operator": {
+        "schema": "n2p3_finite_filter_operator/1",
+        "sos": [
+          [
+            0.9799541272795681,
+            -0.6602732045406293,
+            0.9799541272795681,
+            1.0,
+            -0.6602732045406292,
+            0.959908254559136
+          ],
+          [
+            0.008145023139441595,
+            0.01629004627888319,
+            0.008145023139441595,
+            1.0,
+            -0.919280680446913,
+            0.23659080963671544
+          ],
+          [
+            1.0,
+            2.0,
+            1.0,
+            1.0,
+            -1.1810622087903069,
+            0.593087300861466
+          ],
+          [
+            1.0,
+            -2.0,
+            1.0,
+            1.0,
+            -1.9954487304680963,
+            0.9954548065769517
+          ],
+          [
+            1.0,
+            -2.0,
+            1.0,
+            1.0,
+            -1.9981257045144607,
+            0.9981317339275217
+          ]
+        ],
+        "padding_limit": 2253,
+        "edge_rule": "observed_odd_reflection",
+        "state_role": "deterministic_function_of_observed_segment"
+      },
+      "epoch_geometry": {
+        "source_sample_rate_hz": 256.0,
+        "source_start_inclusive": -51,
+        "source_stop_exclusive": 308,
+        "source_last_inclusive": 307,
+        "source_samples": 359,
+        "actual_source_start_ms": -199.21875,
+        "actual_source_last_ms": 1199.21875,
+        "fft_resampled_samples": 180,
+        "output_sample_rate_hz": 128.0,
+        "output_samples": 179,
+        "first_T_discarded_output_samples": 1,
+        "declared_output_start_ms": -200.0,
+        "declared_output_last_ms": 1190.625
+      }
+    },
+    "profile_digest": "6a05f5b9e4cb964dbe50eca354f33e2e53d09a3b44c2e91b227bbdd9d7aa089b",
+    "physical_support_digest": "e0bcc4f35d3874e17157224c71ce8d2a113bf218f4b433cd51fb027ca2ec317a",
+    "raw_input_digest": "5fa68dfdc043c8bd79ed7536bd0b25b12c249f88c0042bfdccfeaac3aea6d68e",
+    "numerical_input_digest": "58fcbd9e12cb5969865e16a2a65c381861871b3b7c975f6896939739d9b21394",
+    "epoch_geometry": {
+      "source_sample_rate_hz": 256.0,
+      "source_start_inclusive": -51,
+      "source_stop_exclusive": 308,
+      "source_last_inclusive": 307,
+      "source_samples": 359,
+      "actual_source_start_ms": -199.21875,
+      "actual_source_last_ms": 1199.21875,
+      "fft_resampled_samples": 180,
+      "output_sample_rate_hz": 128.0,
+      "output_samples": 179,
+      "first_T_discarded_output_samples": 1,
+      "declared_output_start_ms": -200.0,
+      "declared_output_last_ms": 1190.625
+    },
+    "raw_scope": [
+      70877,
+      78852
+    ],
+    "source_epoch_scopes": [
+      [
+        70877,
+        71236
+      ],
+      [
+        70941,
+        71300
+      ],
+      [
+        71005,
+        71364
+      ],
+      [
+        71069,
+        71428
+      ],
+      [
+        71133,
+        71492
+      ],
+      [
+        71197,
+        71556
+      ],
+      [
+        71261,
+        71620
+      ],
+      [
+        71325,
+        71684
+      ],
+      [
+        71389,
+        71748
+      ],
+      [
+        71453,
+        71812
+      ],
+      [
+        71517,
+        71876
+      ],
+      [
+        71581,
+        71940
+      ],
+      [
+        71645,
+        72004
+      ],
+      [
+        71709,
+        72068
+      ],
+      [
+        71773,
+        72132
+      ],
+      [
+        71837,
+        72196
+      ],
+      [
+        71901,
+        72260
+      ],
+      [
+        71965,
+        72324
+      ],
+      [
+        72029,
+        72388
+      ],
+      [
+        72093,
+        72452
+      ],
+      [
+        72157,
+        72516
+      ],
+      [
+        72221,
+        72580
+      ],
+      [
+        72285,
+        72644
+      ],
+      [
+        72349,
+        72708
+      ],
+      [
+        72413,
+        72772
+      ],
+      [
+        72477,
+        72836
+      ],
+      [
+        72541,
+        72900
+      ],
+      [
+        72605,
+        72964
+      ],
+      [
+        72669,
+        73028
+      ],
+      [
+        72733,
+        73092
+      ],
+      [
+        72797,
+        73156
+      ],
+      [
+        72861,
+        73220
+      ],
+      [
+        72925,
+        73284
+      ],
+      [
+        72989,
+        73348
+      ],
+      [
+        73053,
+        73412
+      ],
+      [
+        73117,
+        73476
+      ],
+      [
+        73181,
+        73540
+      ],
+      [
+        73245,
+        73604
+      ],
+      [
+        73309,
+        73668
+      ],
+      [
+        73373,
+        73732
+      ],
+      [
+        73437,
+        73796
+      ],
+      [
+        73501,
+        73860
+      ],
+      [
+        73565,
+        73924
+      ],
+      [
+        73629,
+        73988
+      ],
+      [
+        73693,
+        74052
+      ],
+      [
+        73757,
+        74116
+      ],
+      [
+        73821,
+        74180
+      ],
+      [
+        73885,
+        74244
+      ],
+      [
+        73949,
+        74308
+      ],
+      [
+        74013,
+        74372
+      ],
+      [
+        74077,
+        74436
+      ],
+      [
+        74141,
+        74500
+      ],
+      [
+        74205,
+        74564
+      ],
+      [
+        74269,
+        74628
+      ],
+      [
+        74333,
+        74692
+      ],
+      [
+        74397,
+        74756
+      ],
+      [
+        74461,
+        74820
+      ],
+      [
+        74525,
+        74884
+      ],
+      [
+        74589,
+        74948
+      ],
+      [
+        74653,
+        75012
+      ],
+      [
+        74717,
+        75076
+      ],
+      [
+        74781,
+        75140
+      ],
+      [
+        74845,
+        75204
+      ],
+      [
+        74909,
+        75268
+      ],
+      [
+        74973,
+        75332
+      ],
+      [
+        75037,
+        75396
+      ],
+      [
+        75101,
+        75460
+      ],
+      [
+        75165,
+        75524
+      ],
+      [
+        75229,
+        75588
+      ],
+      [
+        75293,
+        75652
+      ],
+      [
+        75357,
+        75716
+      ],
+      [
+        75421,
+        75780
+      ],
+      [
+        75485,
+        75844
+      ],
+      [
+        75549,
+        75908
+      ],
+      [
+        75613,
+        75972
+      ],
+      [
+        75677,
+        76036
+      ],
+      [
+        75741,
+        76100
+      ],
+      [
+        75805,
+        76164
+      ],
+      [
+        75869,
+        76228
+      ],
+      [
+        75933,
+        76292
+      ],
+      [
+        75997,
+        76356
+      ],
+      [
+        76061,
+        76420
+      ],
+      [
+        76125,
+        76484
+      ],
+      [
+        76189,
+        76548
+      ],
+      [
+        76253,
+        76612
+      ],
+      [
+        76317,
+        76676
+      ],
+      [
+        76381,
+        76740
+      ],
+      [
+        76445,
+        76804
+      ],
+      [
+        76509,
+        76868
+      ],
+      [
+        76573,
+        76932
+      ],
+      [
+        76637,
+        76996
+      ],
+      [
+        76701,
+        77060
+      ],
+      [
+        76765,
+        77124
+      ],
+      [
+        76829,
+        77188
+      ],
+      [
+        76893,
+        77252
+      ],
+      [
+        76957,
+        77316
+      ],
+      [
+        77021,
+        77380
+      ],
+      [
+        77085,
+        77444
+      ],
+      [
+        77149,
+        77508
+      ],
+      [
+        77213,
+        77572
+      ],
+      [
+        77277,
+        77636
+      ],
+      [
+        77341,
+        77700
+      ],
+      [
+        77405,
+        77764
+      ],
+      [
+        77469,
+        77828
+      ],
+      [
+        77533,
+        77892
+      ],
+      [
+        77597,
+        77956
+      ],
+      [
+        77661,
+        78020
+      ],
+      [
+        77725,
+        78084
+      ],
+      [
+        77789,
+        78148
+      ],
+      [
+        77853,
+        78212
+      ],
+      [
+        77917,
+        78276
+      ],
+      [
+        77981,
+        78340
+      ],
+      [
+        78045,
+        78404
+      ],
+      [
+        78109,
+        78468
+      ],
+      [
+        78173,
+        78532
+      ],
+      [
+        78237,
+        78596
+      ],
+      [
+        78301,
+        78660
+      ],
+      [
+        78365,
+        78724
+      ],
+      [
+        78429,
+        78788
+      ],
+      [
+        78493,
+        78852
+      ]
+    ],
+    "available_sample": 78852,
+    "filter": {
+      "operator": {
+        "schema": "n2p3_finite_filter_operator/1",
+        "sos": [
+          [
+            0.9799541272795681,
+            -0.6602732045406293,
+            0.9799541272795681,
+            1.0,
+            -0.6602732045406292,
+            0.959908254559136
+          ],
+          [
+            0.008145023139441595,
+            0.01629004627888319,
+            0.008145023139441595,
+            1.0,
+            -0.919280680446913,
+            0.23659080963671544
+          ],
+          [
+            1.0,
+            2.0,
+            1.0,
+            1.0,
+            -1.1810622087903069,
+            0.593087300861466
+          ],
+          [
+            1.0,
+            -2.0,
+            1.0,
+            1.0,
+            -1.9954487304680963,
+            0.9954548065769517
+          ],
+          [
+            1.0,
+            -2.0,
+            1.0,
+            1.0,
+            -1.9981257045144607,
+            0.9981317339275217
+          ]
+        ],
+        "padding_limit": 2253,
+        "edge_rule": "observed_odd_reflection",
+        "state_role": "deterministic_function_of_observed_segment"
+      },
+      "padding_samples": 2253,
+      "left_state": [
+        [
+          [
+            -1.2260762480433488e-07,
+            -2.6231802349423087e-07
+          ],
+          [
+            -8.487865037497056e-08,
+            -2.5069841308478466e-07
+          ],
+          [
+            7.348099691543648e-08,
+            -2.3490732226827646e-07
+          ],
+          [
+            1.642948212576336e-07,
+            -2.1094835410505287e-07
+          ],
+          [
+            5.791276217276797e-08,
+            -1.9243025228357953e-07
+          ],
+          [
+            5.573005411503281e-08,
+            -2.1650223375704513e-07
+          ],
+          [
+            2.6493793275077163e-07,
+            -2.252871783202069e-07
+          ],
+          [
+            9.613713309581384e-08,
+            -1.4979817613253004e-07
+          ]
+        ],
+        [
+          [
+            -1.1164899133260484e-06,
+            2.814777925093353e-07
+          ],
+          [
+            -9.77968641953169e-07,
+            2.5475974431387437e-07
+          ],
+          [
+            -2.437770613511151e-07,
+            9.720558853846696e-08
+          ],
+          [
+            -3.473041880435178e-08,
+            7.448682384201177e-08
+          ],
+          [
+            -2.3371691702542472e-07,
+            9.475661754012271e-08
+          ],
+          [
+            -2.343919835360939e-07,
+            9.067580616529407e-08
+          ],
+          [
+            2.5269577387264214e-07,
+            2.2830695283136595e-08
+          ],
+          [
+            1.5515453500326287e-08,
+            3.2960880385944575e-08
+          ]
+        ],
+        [
+          [
+            -1.3878967595665119e-05,
+            1.1757053381621866e-05
+          ],
+          [
+            -1.2603196498411693e-05,
+            1.1005414026859643e-05
+          ],
+          [
+            -4.667168630460965e-06,
+            6.807483103486021e-06
+          ],
+          [
+            -3.903542917172343e-06,
+            6.8196613701207254e-06
+          ],
+          [
+            -4.369953891117416e-06,
+            6.284886182359638e-06
+          ],
+          [
+            -4.593740774539406e-06,
+            6.482391452164462e-06
+          ],
+          [
+            -7.285564279197843e-07,
+            5.987340442320934e-06
+          ],
+          [
+            -1.93790341025026e-06,
+            4.114199177292157e-06
+          ]
+        ],
+        [
+          [
+            2.113711257160555e-05,
+            -2.113671174888272e-05
+          ],
+          [
+            1.9189708500828205e-05,
+            -1.9189291309917234e-05
+          ],
+          [
+            1.351375868661906e-05,
+            -1.3513408819770277e-05
+          ],
+          [
+            1.1335547242223212e-05,
+            -1.1334635966916767e-05
+          ],
+          [
+            1.1107336918805775e-05,
+            -1.1106847267171104e-05
+          ],
+          [
+            1.2010795992443149e-05,
+            -1.2010472326664952e-05
+          ],
+          [
+            1.1507337240043049e-05,
+            -1.1506675063302875e-05
+          ],
+          [
+            7.168823401446322e-06,
+            -7.168363447894995e-06
+          ]
+        ],
+        [
+          [
+            2.02975582102935e-07,
+            -2.0287872064593366e-07
+          ],
+          [
+            1.361054955753615e-07,
+            -1.357771352571628e-07
+          ],
+          [
+            5.5397874392696806e-08,
+            -5.49951456805308e-08
+          ],
+          [
+            -4.258978177353411e-08,
+            4.4603230590773114e-08
+          ],
+          [
+            6.98748837956873e-08,
+            -6.920738687451291e-08
+          ],
+          [
+            -7.156574212443042e-08,
+            7.248685503400388e-08
+          ],
+          [
+            6.285091889247871e-10,
+            7.237675271263665e-10
+          ],
+          [
+            -1.7639032168012246e-07,
+            1.779605671320769e-07
+          ]
+        ]
+      ],
+      "right_state": [
+        [
+          [
+            -2.968306837363383e-07,
+            -1.5315113447236704e-07
+          ],
+          [
+            -1.3407326040919114e-07,
+            -7.626364856693002e-09
+          ],
+          [
+            -2.635048383495426e-07,
+            -1.2929765431165808e-07
+          ],
+          [
+            -4.99064093785148e-07,
+            -2.203542658892796e-07
+          ],
+          [
+            -2.9663574831998906e-07,
+            -1.1298040878915486e-07
+          ],
+          [
+            -2.974258087414591e-07,
+            -1.2451684528974567e-07
+          ],
+          [
+            -5.466081034550958e-07,
+            -2.243562352374213e-07
+          ],
+          [
+            -3.555448775319412e-07,
+            -1.6531459334800754e-07
+          ]
+        ],
+        [
+          [
+            -8.142320601057034e-07,
+            8.492085850684936e-08
+          ],
+          [
+            -1.2825712906527381e-07,
+            -2.4287754566222884e-08
+          ],
+          [
+            -5.59463232296862e-07,
+            1.9658922446335487e-08
+          ],
+          [
+            -1.3478264473456044e-06,
+            1.427352841197189e-07
+          ],
+          [
+            -6.895593501001251e-07,
+            5.304430088703429e-08
+          ],
+          [
+            -6.115022488300491e-07,
+            2.3598454657974998e-08
+          ],
+          [
+            -1.2227198789999815e-06,
+            7.406428508955914e-08
+          ],
+          [
+            -9.350636258740922e-07,
+            9.20361359588568e-08
+          ]
+        ],
+        [
+          [
+            -4.215698305345188e-06,
+            4.5160518607670266e-07
+          ],
+          [
+            1.7864459828117418e-06,
+            -2.567221261398621e-06
+          ],
+          [
+            -1.1139079698934462e-06,
+            -1.6677702093693961e-06
+          ],
+          [
+            -6.781004440059991e-06,
+            5.620472198491706e-07
+          ],
+          [
+            -2.294987339750753e-06,
+            -9.867451680503743e-07
+          ],
+          [
+            -1.0091896558438653e-06,
+            -2.019584462812206e-06
+          ],
+          [
+            -3.391982898010935e-06,
+            -2.528889408048434e-06
+          ],
+          [
+            -4.427727780026495e-06,
+            7.785923074754146e-08
+          ]
+        ],
+        [
+          [
+            2.7379726405241077e-06,
+            -2.7329938407448567e-06
+          ],
+          [
+            -6.001106847408326e-07,
+            5.987868568173312e-07
+          ],
+          [
+            1.0160676337489416e-06,
+            -1.014405759530226e-06
+          ],
+          [
+            4.15151038744822e-06,
+            -4.143810519361013e-06
+          ],
+          [
+            1.5935151844711304e-06,
+            -1.590646522876475e-06
+          ],
+          [
+            1.0656046207515188e-06,
+            -1.063842852464323e-06
+          ],
+          [
+            2.2566378273467243e-06,
+            -2.2525314776121877e-06
+          ],
+          [
+            2.8641322856562146e-06,
+            -2.858857525145984e-06
+          ]
+        ],
+        [
+          [
+            2.2034772968133566e-06,
+            -2.1946232952947946e-06
+          ],
+          [
+            -1.2967681027419167e-06,
+            1.295564734994311e-06
+          ],
+          [
+            6.781281860328944e-07,
+            -6.757029327118204e-07
+          ],
+          [
+            4.155066452356344e-06,
+            -4.1431087657684026e-06
+          ],
+          [
+            1.436548075564986e-06,
+            -1.4321363658128873e-06
+          ],
+          [
+            4.216379944902617e-07,
+            -4.1818832720190405e-07
+          ],
+          [
+            2.806843839925437e-06,
+            -2.802434925551536e-06
+          ],
+          [
+            2.4352010430593165e-06,
+            -2.4259648217966746e-06
+          ]
+        ]
+      ],
+      "effective_filter_states_sha256": "4558a08467fdaba1d30488282df86562f7b0b222c08019eb6cfe90daf24d3cac"
+    },
+    "output": {
+      "shape": [
+        120,
+        6,
+        179
+      ],
+      "dtype": "float32",
+      "channel_names": [
+        "Fz",
+        "P3",
+        "Pz",
+        "P4",
+        "PO8",
+        "Oz"
+      ],
+      "signal_unit": "V",
+      "source_reference": "right earlobe",
+      "reference": "measured_channel:CZ"
+    }
+  },
+  "source_prior": 0.5,
+  "K0_saved_probability_replay_exact": true,
+  "OOF_actual_fit_rows": 240,
+  "OOF_ingress_success": true,
+  "counterexamples": {
+    "wrong_trained_channel_profile": "source inference capability differs from its actual trained input contract",
+    "wrong_execution": "selection execution receipt differs from its actual transformed calibration bytes"
+  },
+  "zero_target_fit": true,
+  "data_role": "actual public A01 input; prior source software BDF producer kept original"
+}

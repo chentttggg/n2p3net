@@ -1,5 +1,7 @@
 # 当前技术结构与完整链条
 
+[当前消费者](evidence/current_public_consumers_20261008.zh.md)由class_calibration持有fit风险/分数变换、FrozenTrialPredictor/2持有实际state/来源、ensemble_views持有实测线性空间与选择执行family、checkpoint集中核source/target不同入口的程序族相容。binary_probability复用共同输入比较owner及artifact SHA，确定性seed alias保留完整概率状态；旧/1不被重签proper合同。
+
 [当前source程序](evidence/public_source_pipeline_20261008.zh.md)复用source_selection/source_execution/source_resume/PreparedSourceInventory：manifest SHA一次准入、准备/合并/fit共享预算、每outer一次load三seed、恢复复用原完整view。source_config从实际identity authority解析并绑定contract/registry；SourceSeedCatalog和两个公共消费者通过expected_source_config核真实producer，不借程序同名混入历史β8。
 
 [B12独立前缀切片](evidence/independent_prefix_20261008.zh.md)由CalibrationPrefix持有一次验证的不可变授权，fit_calibration_prefix_programs持有共享all-C状态及各温度程序，FittedEnsemble.save_programs/load_programs保存单份数值模型。请求预算、来源选择/refit和matched-control筛选各由共同owner派生。

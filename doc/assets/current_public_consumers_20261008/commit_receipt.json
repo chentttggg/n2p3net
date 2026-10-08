@@ -1,0 +1,11 @@
+{
+  "commit": "551ec33d6cf892fd89653e7535624a1d440ca296",
+  "branch": "codex/current-public-consumers",
+  "clean": true,
+  "owned_file_count": 13,
+  "accepted_source_archive_sha256": "e6499b90778644e0df3ffd899a39aaf004ab792b1302f29cf2105b02570955ff",
+  "committed_owned_bytes_equal_final_review": true,
+  "Spec": "complete,0critical",
+  "Standards": "complete,0critical",
+  "source_training_freeze_fd62_unchanged": true
+}

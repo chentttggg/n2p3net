@@ -1,0 +1,41 @@
+{
+  "schema": "current_target_probability_counterexample/1",
+  "status": "passed_exact_formula_and_minibatch_checks",
+  "torch_imported": false,
+  "model_fit": false,
+  "before_program_identity": {
+    "base_commit": "a2975557d6e5e3ae99ff2f8d692ecc8a7e524ab2",
+    "subject_adapter_sha256": "3deebd464e02cf1959ed8d7c7da8378fe44b06ab36db7ee897426b22485e7dfe",
+    "loss_reduction": "batch_class_mass"
+  },
+  "source_files": {
+    "src/transfer/subject_adapter.py": "c4f902bc70ab8a9970fb887d4ae3cc40c535a932a18fdf01ec9e13ab3c2ced17",
+    "src/transfer/calibration_state.py": "6ebacaaaea89a28af252a712ae5c6d1776e43d58d026fe378283b343714e6385"
+  },
+  "full_risk_formula": "raw=LLR+ln(beta)+logit(pi); posterior_logit=raw-ln(beta); LLR=raw-ln(beta)-logit(pi)",
+  "posterior_at_pi_point1_zero_information": 0.1,
+  "raw_sigmoid_at_same_full_risk": 0.5000000000000001,
+  "exact_no_replacement_batch_mean_counterexample": {
+    "N": 10,
+    "positive_count": 1,
+    "batch": 2,
+    "declared_beta": 9,
+    "effective_beta": "81/41",
+    "population_minimizer_probability": "9/50",
+    "full_batch_effective_beta": "9"
+  },
+  "batch64_finite_C_example": {
+    "N": 200,
+    "positive_count": 20,
+    "declared_beta": 9,
+    "effective_beta": 8.567780202322513,
+    "log_ratio_correction_gap": -0.04921589784352685
+  },
+  "fixed_mass_gradient_at_fixed_model": {
+    "full_C_gradient": "-1/8",
+    "mean_uniform_no_replacement_batch_gradient": "-1/8",
+    "conditional_remaining_subset_gradient": "-1/3",
+    "assertion": "exact equality only for uniformly sampled subsets at a fixed model state"
+  },
+  "interpretation": "Analytic deweighting is a declared score transform, not proof of calibrated posterior or exact finite-minibatch Bayes risk."
+}

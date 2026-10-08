@@ -1,0 +1,12 @@
+{
+  "schema": "n2p3_current_consumer_integration/1",
+  "consumer_archive_sha256": "e6499b90778644e0df3ffd899a39aaf004ab792b1302f29cf2105b02570955ff",
+  "combined_archive_sha256": "2394ca344ab80c03b05ef62a5c8e94f29fc69cb95007943c8d3c33f3969cb0af",
+  "combined_source_commit": "6295cde28478fc2be0d63f2d14e82c0b03a79e7b",
+  "combined_zero_target_fit_probe_sha256": "90ec91190b270ca70b7ee489a76c0789a47214109010c0482b0e50834e487bbd",
+  "K0_real_source_and_raw_ingress_passed": true,
+  "OOF_real_input_and_cold_reload_passed": true,
+  "target_fits_in_combined_probe": 0,
+  "full_public_matrix_complete": false,
+  "adult_confirmation_complete": false
+}
