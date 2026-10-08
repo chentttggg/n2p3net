@@ -80,10 +80,9 @@ def _plan_path(plan_file, value):
 def _source_provenance(command):
     return {"runner_source_sha256": _sha(__file__),
             "module_source_sha256": {
-                name: _sha(ROOT / "src" / name) for name in
-                ("data/harmonic.py", "transfer/continuous_decision.py", "transfer/noise_model.py",
-                 "transfer/operator_lda.py", "transfer/response_dictionary.py", "transfer/kernel_prior.py",
-                 "transfer/continuous_gradient.py")},
+                path.relative_to(ROOT / "src").as_posix(): _sha(path)
+                for path in sorted((ROOT / "src").rglob("*.py"))},
+            "source_scope": "all_backend_python_in_the_executed_checkout",
             "evidence_scope": "software_or_public_development_no_confirmed_performance",
             "command": command}
 
@@ -110,6 +109,51 @@ def _clean(args, output):
                                      "scope_id": plan["scope_id"], "scope_role": plan["scope_role"],
                                      "segments": plan["segments"], "sfreq": plan["sfreq"],
                                      "input_file_sha256": input_sha, "plan_sha256": plan_sha})
+
+
+def _audit_clean(args, output):
+    from data.finite_filter_operator import FiniteFilterOperator
+    from research.boundary_observability import NativeBoundaryGrid
+    from research.input_contamination import (
+        ContaminationInput,
+        ContaminationProgram,
+        audit_input_contamination,
+    )
+
+    plan, plan_sha = _json(args.plan)
+    native = plan["native_grid"]
+    if plan["sfreq"] != native["sample_rate_hz"]:
+        raise ValueError("audit rate differs from the actual native grid")
+    grid = NativeBoundaryGrid(tuple(native["context_scope"]), native["sample_rate_hz"],
+        tuple(native["channel_names"]), native["reference"], native["source_sha256"],
+        native["source_identity"], native["signal_unit"])
+    origin = grid.context_scope[0]
+    requested = plan["challenges"]
+    input_path = _plan_path(args.plan, plan["input"])
+    with _arrays(input_path) as (archive, input_sha):
+        keys = {"X", *(row["key"] for row in requested.values())}
+        noise_key = plan.get("perturbations_key")
+        if noise_key is not None:
+            keys.add(noise_key)
+        if set(archive.files) != keys:
+            raise ValueError("input audit only consumes declared samples/increments/draws")
+        observation = ContaminationInput(grid, archive["X"].T,
+            tuple((origin + a, origin + b) for a, b in plan["segments"]),
+            plan["available_at_sample"], plan["scope_role"], plan["input_level"],
+            plan["observation_identity"])
+        challenges = {name: {"kind": row["kind"], "values": archive[row["key"]]}
+                      for name, row in requested.items()}
+        operator = (None if "finite_operator" not in plan else
+                    FiniteFilterOperator.from_record(plan["finite_operator"]))
+        program = ContaminationProgram(HarmonicConfig(**plan.get("config", {})), operator)
+        result = audit_input_contamination(observation, program, challenges,
+            challenge_design_identity=plan["challenge_design_identity"],
+            perturbations=None if noise_key is None else archive[noise_key],
+            perturbation_design_identity=plan.get("perturbation_design_identity"),
+            byte_budget=plan.get("byte_budget", 64 * 1024**2))
+    result.save(output / "audit")
+    _write(output / "result.json", {**_provenance(args), "plan_sha256": plan_sha,
+        "input_file_sha256": input_sha, "audit_report": result.report})
 
 
 def _fit(args, output):
@@ -268,6 +312,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     specs = {
+        "audit-clean": ("Plan-bound complete adaptive input challenges and perturbation moments; no classifier or truth.", _audit_clean),
         "clean": ("Plan: input NPZ with X[channels,samples], sfreq, segments, scope_id, scope_role, config.", _clean),
         "fit": ("Plan: labeled records NPZ(samples,onsets,target_mask), sfreq, channels, candidate_ids, operator_identity, fit_scope, basis_path or n_basis/response_seconds, ridge.", _fit),
         "predict": ("Truth-free NPZ(samples,onsets,membership); metadata: sfreq, channels, candidate_ids in column order, operator_identity, record_id.", _predict),
@@ -280,7 +325,7 @@ def main(argv=None):
     for name, (help_text, handler) in specs.items():
         child = subparsers.add_parser(name, help=help_text, description=help_text)
         child.add_argument("--output", type=Path, required=True)
-        if name in {"clean", "fit", "noise-fit", "operator-lda-fit"}:
+        if name in {"clean", "audit-clean", "fit", "noise-fit", "operator-lda-fit"}:
             child.add_argument("--plan", type=Path, required=True)
         else:
             child.add_argument("--input", type=Path, required=True)

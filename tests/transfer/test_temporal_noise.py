@@ -158,7 +158,7 @@ def test_conditional_mode_does_not_require_ill_conditioned_stationary_matrix_but
     model.save(path)
     loaded = TemporalNoise.load(path)
     np.testing.assert_array_equal(model.whiten(x), loaded.whiten(x))
-    assert loaded.record()["schema"] == "n2p3_temporal_noise/2"
+    assert loaded.record()["schema"] == "n2p3_temporal_noise/5"
     assert loaded.record()["startup_mode"] == "conditional_prefix"
     assert loaded.record()["conditioning_prefix_samples"] == 4
     with pytest.raises(ValueError, match="stabl"):
@@ -176,8 +176,8 @@ def test_conditional_fit_records_actual_full_inputs_without_changing_stationary_
     np.testing.assert_array_equal(marginal.coefficients, conditional.coefficients)
     np.testing.assert_array_equal(marginal.whiten(data)[8:], conditional.whiten(data))
     assert marginal.provenance == conditional.provenance
-    assert marginal.record()["schema"] == "n2p3_temporal_noise/1"
-    assert "startup_mode" not in marginal.record()
+    assert marginal.record()["schema"] == "n2p3_temporal_noise/5"
+    assert marginal.record()["startup_mode"] == "stationary"
     assert conditional.provenance["records"][0]["n_samples"] == 1200
     with pytest.raises(ValueError, match="startup"):
         TemporalNoise.fit([data], **settings, startup_mode="drop_bad_prefix")
@@ -208,7 +208,7 @@ def test_stationary_lattice_matches_independent_dense_covariance_and_preserves_p
     old = TemporalNoise.from_parameters(coefficients, innovation_variance=2., reference_id="same_AR")
     np.testing.assert_allclose(operator, old.whiten(np.eye(n)), atol=3e-14)
     assert operator.shape == (n, n)
-    assert model.record()["schema"] == "n2p3_temporal_noise/3"
+    assert model.record()["schema"] == "n2p3_temporal_noise/5"
 
 
 def test_actual_burg_reflections_are_saved_without_unstable_inverse_stepdown(monkeypatch, tmp_path):
@@ -232,12 +232,10 @@ def test_actual_burg_reflections_are_saved_without_unstable_inverse_stepdown(mon
 
 
 def test_stable_parcor_does_not_trust_false_expanded_polynomial_roots(monkeypatch):
-    import transfer.temporal_noise as module
-
     def forbidden(*args):
         raise AssertionError("lattice must not construct stationary covariance")
 
-    monkeypatch.setattr(module, "solve_discrete_lyapunov", forbidden)
+    monkeypatch.setattr("scipy.linalg.solve_discrete_lyapunov", forbidden)
     # Independently obtained at 100 decimal digits from eight repeated .99 poles.
     parcor = np.array([-.9999961149865101, .9999901108404076, -.9999801038304161,
                        .999961519006537, -.9999206301468053, .9997979222646003,

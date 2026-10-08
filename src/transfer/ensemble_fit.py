@@ -72,10 +72,6 @@ def _temperature_nll(log_temperature, log_probability, targets):
     return float(np.mean(logsumexp(values, axis=1) - values[np.arange(len(values)), targets]))
 
 
-def _predictor_digest(predictor):
-    return predictor.digest()
-
-
 def _native_observation_contract(view):
     return (view.sample_rate_hz, view.channel_names, view.channel_types, view.reference, view.signal_unit)
 
@@ -222,17 +218,18 @@ class _FittedExpert:
                     if (model.channels != channels or model.operator_identity != operator
                             or receipt["matrix"] != expected["matrix"] or receipt["observed_slots"] != expected["observed_slots"]):
                         raise ValueError("raw frozen numerical model differs from its actual spatial programme")
-            dictionary = ResponseDictionary.compile(self.program.dictionary_spec, sample_rate_hz=model.sfreq)
-            expected_basis = dictionary.matrix
+            dictionary = model.dictionary
+            if (not isinstance(dictionary, ResponseDictionary)
+                    or dictionary.spec != self.program.dictionary_spec
+                    or dictionary.sample_rate_hz != model.sfreq):
+                raise ValueError("frozen continuous expert requires its actual owned physical dictionary")
             actual_prior = (KernelPriorSpec.isotropic_ridge(model.provenance["ridge"]) if model.kernel_prior is None
                             else model.kernel_prior.spec)
             if (model.noise_order != self.program.noise_order
                     or model.conditioning_samples != self.program.conditioning_samples
                     or actual_prior != self.program.prior_spec
                     or model.provenance.get("noise_estimator", "burg") != self.program.noise_estimator
-                    or not np.array_equal(model.basis, expected_basis)
-                    or (model.dictionary is not None and model.dictionary.spec != self.program.dictionary_spec)
-                    or (model.dictionary is None and self.program.dictionary is not None)):
+                    or not np.array_equal(model.basis, dictionary.matrix)):
                 raise ValueError("frozen continuous recipe differs from its actual numerical model")
 
     def unavailable(self, view, reason, failure_kind="incomplete"):
@@ -267,10 +264,16 @@ class _FittedExpert:
 
         samples, channels, operator, spatial_receipt = project_raw_observations(view.samples, view.channel_names,
             view.reference, self.program.spatial, sample_rate_hz=view.sample_rate_hz)
-        result = self.predictor.score(samples, view.onsets, view.decision.membership,
-            operator_identity=operator, sfreq=view.sample_rate_hz,
-            channels=channels, candidate_ids=view.decision.candidate_vocabulary,
-            record_id=view.record_id)
+        try:
+            result = self.predictor.score(samples, view.onsets, view.decision.membership,
+                operator_identity=operator, sfreq=view.sample_rate_hz,
+                channels=channels, candidate_ids=view.decision.candidate_vocabulary,
+                record_id=view.record_id)
+        except (UnidentifiableFitError, np.linalg.LinAlgError) as error:
+            failure = {"stage": "read_only_prediction", "type": type(error).__name__, "message": str(error)}
+            if hasattr(error, "record"):
+                failure["numerical_evidence"] = error.record()
+            return self.unavailable(view, json.dumps(failure, sort_keys=True, allow_nan=False), "not_available")
         numerical_digest = view.raw_input_digest
         if spatial_receipt is not None:
             numerical_digest = semantic_sha256({"raw_input": view.raw_input_digest, "spatial": spatial_receipt})
@@ -501,7 +504,7 @@ class FittedEnsemble:
                 raise ValueError("frozen ensemble model bytes changed")
             predictor = (FrozenTrialPredictor.load(io.BytesIO(content)) if program.family == "trial"
                          else ContinuousDecisionModel.load(io.BytesIO(content)))
-            if _predictor_digest(predictor) != entry["model_digest"]:
+            if predictor.digest() != entry["model_digest"]:
                 raise ValueError("frozen ensemble model state differs from its declared identity")
             binding = (predictor.record["ensemble_fit_binding"] if program.family == "trial"
                        else predictor.provenance["ensemble_fit_binding"])
@@ -635,7 +638,7 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
         binding["target_contract"] = target_contract
     predictor = (predictor.with_fit_binding(binding) if spec.family == "trial" else
                  replace(predictor, provenance={**predictor.provenance, "ensemble_fit_binding": binding}))
-    return _FittedExpert(spec, predictor, _predictor_digest(predictor), fit_digest, source_digest, offset)
+    return _FittedExpert(spec, predictor, predictor.digest(), fit_digest, source_digest, offset)
 
 
 def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: EnsembleProgram, *,

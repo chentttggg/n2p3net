@@ -190,7 +190,13 @@ def test_save_load_freezes_actual_root_and_held_does_not_compile_any_prior(tmp_p
     with np.load(path, allow_pickle=False) as archive:
         import json
         assert json.loads(str(archive["metadata"]))["schema"] == f"n2p3_continuous_decision_model/{schema}"
-        assert len(archive.files) == 10  # Nine numerical arrays plus metadata.
+        assert set(archive.files) == {
+            "basis", "kernel_mean", "kernel_row_covariance", "innovation_covariance",
+            "prior_precision_root", "prior_reference_root", "prior_design_root",
+            "prior_fit_information_root", "prior_fit_score",
+            "posterior_precision_root", "posterior_response", "posterior_orthogonal",
+            "metadata",
+        }
     restored = ContinuousDecisionModel.load(path)
     before = restored.digest()
     values = held(model)

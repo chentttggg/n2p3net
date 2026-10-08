@@ -154,6 +154,38 @@ def frozen_raw_classic():
     return groups, specs, program, fit_calibration_ensemble(groups[:3], specs, program)
 
 
+def test_unresolved_continuous_prediction_preserves_trial_peer_and_declared_roster(monkeypatch, frozen_raw_classic):
+    from transfer.continuous_decision import ContinuousDecisionModel, KernelPosteriorResolutionError
+
+    groups, specs, program, fitted = frozen_raw_classic
+    view = groups[3].view
+    before = fitted.score_experts(view)
+
+    def unresolved(*args, **kwargs):
+        raise KernelPosteriorResolutionError({"kernel_dimensions": 4, "unresolved_held_direction": True})
+
+    monkeypatch.setattr(ContinuousDecisionModel, "score", unresolved)
+    after = fitted.score_experts(view)
+    assert tuple(after) == program.expert_ids
+    raw = after[specs[0].expert_id]
+    assert not raw.probability_available and raw.failure_kind == "not_available"
+    reason = json.loads(raw.failure_reason)
+    assert reason["stage"] == "read_only_prediction"
+    assert reason["numerical_evidence"]["unresolved_held_direction"]
+    assert raw.expected_event_counts == before[specs[0].expert_id].expected_event_counts
+    assert after[specs[1].expert_id].record() == before[specs[1].expert_id].record()
+    mixture = fitted.scorer.score(after)
+    assert not mixture.probability_available
+    assert {identity.expert_id for identity in mixture.expert_identities} == set(program.expert_ids)
+
+    def invalid_contract(*args, **kwargs):
+        raise ValueError("actual artifact/input contract differs")
+
+    monkeypatch.setattr(ContinuousDecisionModel, "score", invalid_contract)
+    with pytest.raises(ValueError, match="artifact/input contract"):
+        fitted.score_experts(view)
+
+
 def test_incomplete_physical_groups_retain_outcomes_after_contract_validation(frozen_raw_classic):
     groups, _, _, fitted = frozen_raw_classic
     view = groups[3].view

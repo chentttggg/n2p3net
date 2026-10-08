@@ -5,9 +5,14 @@ from transfer.continuous_decision import smooth_erp_basis
 from transfer.response_dictionary import ResponseDictionary, ResponseDictionarySpec
 
 
-def test_physical_gaussian_anchor_preserves_actual_default_numeric_grid():
+def test_portable_gaussian_has_the_same_physical_family_and_actual_default_grid():
     dictionary = ResponseDictionary.compile(ResponseDictionarySpec("gaussian", 1.2, 8), sample_rate_hz=256.)
-    np.testing.assert_array_equal(dictionary.matrix, smooth_erp_basis(256., 1.2, 8))
+    # The new declared scalar compiler has its own exact numerical identity;
+    # the legacy NumPy program remains an independent physical-family check.
+    np.testing.assert_allclose(dictionary.matrix, smooth_erp_basis(256., 1.2, 8),
+                               rtol=0, atol=4*np.finfo(float).eps)
+    assert dictionary.metadata()["compiler"]["semantic_id"] == "n2p3_physical_dictionary_decimal96_binary64/1"
+    assert dictionary.matrix[0, 0] == 1. and dictionary.matrix[-1, -1] == 1.
     np.testing.assert_array_equal(dictionary.times, np.arange(307)/256.)
     assert dictionary.actual_seconds == 307/256.
     assert dictionary.times[-1] == 306/256.

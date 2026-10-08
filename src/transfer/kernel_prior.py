@@ -24,10 +24,15 @@ from transfer.noise_model import (
     require_identifiers,
     require_sha256,
 )
+from transfer.predictive_prior import (
+    CompiledPredictivePrior,
+    PhysicalResponseMetric,
+    rank_ledger_matches,
+)
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _SCHEMA = "n2p3_compiled_kernel_prior/1"
-_CALIBRATION_KINDS = frozenset({"calibration_g", "calibration_trace_isotropic"})
+_CALIBRATION_KINDS = frozenset({"calibration_g", "calibration_trace_isotropic", "calibration_completed_g"})
 _CALIBRATION_CONTRACT = {
     "reference_noise": "AR0_unit_innovation", "information_support": "all_authorized_C",
     "nuisance": "per_record_diffuse_affine", "rank_policy": "require_full_rank",
@@ -58,20 +63,26 @@ class KernelPriorSpec:
     nuisance: str | None = None
     rank_policy: str | None = None
     mean_center: str = "zero"
+    completion_variance: float | None = None
 
     def __post_init__(self):
         if self.mean_center != "zero":
             raise ValueError("this kernel-prior slice requires the declared zero mean")
         if self.kind == "isotropic_ridge":
-            if self.g is not None or any(getattr(self, name) is not None for name in _CALIBRATION_CONTRACT):
+            if self.g is not None or self.completion_variance is not None or any(getattr(self, name) is not None for name in _CALIBRATION_CONTRACT):
                 raise ValueError("ridge precision and calibration g parameters are mutually exclusive")
             object.__setattr__(self, "precision", _positive(self.precision, "ridge precision"))
         elif self.uses_calibration_reference:
             if self.precision is not None:
                 raise ValueError("ridge precision and calibration g parameters are mutually exclusive")
             object.__setattr__(self, "g", _positive(self.g, "g variance multiplier"))
-            if any(getattr(self, name) != expected for name, expected in _CALIBRATION_CONTRACT.items()):
-                raise ValueError("calibration priors require the fixed AR0/all-C/full-rank contract")
+            contract = self._calibration_contract
+            if any(getattr(self, name) != expected for name, expected in contract.items()):
+                raise ValueError("calibration priors require their declared fixed AR0/all-C/rank contract")
+            if self.kind == "calibration_completed_g":
+                object.__setattr__(self, "completion_variance", _positive(self.completion_variance, "unidentified physical response variance"))
+            elif self.completion_variance is not None:
+                raise ValueError("full-rank calibration prior cannot carry a completion variance")
         else:
             raise ValueError("unsupported kernel prior kind")
 
@@ -87,6 +98,16 @@ class KernelPriorSpec:
     def calibration_trace_isotropic(cls, g):
         return cls("calibration_trace_isotropic", g=g, **_CALIBRATION_CONTRACT)
 
+    @classmethod
+    def calibration_completed_g(cls, g, completion_variance):
+        contract = {**_CALIBRATION_CONTRACT, "rank_policy": "physical_response_completion"}
+        return cls("calibration_completed_g", g=g, completion_variance=completion_variance, **contract)
+
+    @property
+    def _calibration_contract(self):
+        return ({**_CALIBRATION_CONTRACT, "rank_policy": "physical_response_completion"}
+                if self.kind == "calibration_completed_g" else _CALIBRATION_CONTRACT)
+
     @property
     def uses_calibration_reference(self):
         return self.kind in _CALIBRATION_KINDS
@@ -96,7 +117,9 @@ class KernelPriorSpec:
         if self.kind == "isotropic_ridge":
             values["precision"] = self.precision
         else:
-            values.update(g=self.g, **_CALIBRATION_CONTRACT)
+            values.update(g=self.g, **self._calibration_contract)
+            if self.kind == "calibration_completed_g":
+                values["completion_variance"] = self.completion_variance
         return values
 
     @classmethod
@@ -104,6 +127,8 @@ class KernelPriorSpec:
         values = dict(record)
         expected = ({"kind", "precision", "mean_center"} if values.get("kind") == "isotropic_ridge"
                     else {"kind", "g", "mean_center", *_CALIBRATION_CONTRACT})
+        if values.get("kind") == "calibration_completed_g":
+            expected.add("completion_variance")
         if set(values) != expected:
             raise ValueError("kernel prior record must contain only its declared kind parameters")
         return cls(**values)
@@ -175,6 +200,7 @@ class CompiledKernelPrior:
     reference_root: np.ndarray | None
     provenance: dict
     design_root: np.ndarray | None = None
+    predictive_geometry: CompiledPredictivePrior | None = None
     _integrity: str = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
@@ -190,15 +216,28 @@ class CompiledKernelPrior:
         reference = None
         design_root = None
         if self.spec.kind == "isotropic_ridge":
-            if self.reference_root is not None or self.design_root is not None or not np.array_equal(root, np.sqrt(self.spec.precision)*np.eye(width)):
+            if self.reference_root is not None or self.design_root is not None or self.predictive_geometry is not None or not np.array_equal(root, np.sqrt(self.spec.precision)*np.eye(width)):
                 raise ValueError("isotropic prior precision root differs from its declared precision")
         else:
             reference = _matrix(self.reference_root, "calibration reference root")
             design_root = _matrix(self.design_root, "original calibration design root")
-            if (reference.shape != root.shape or design_root.shape != root.shape
+            completion = self.spec.kind == "calibration_completed_g"
+            if (reference.shape[1] != width or design_root.shape[1] != width
+                    or (not completion and (reference.shape != root.shape or design_root.shape != root.shape))
                     or np.any(np.tril(reference, -1)) or np.any(np.tril(design_root, -1))):
                 raise ValueError("calibration reference root must match the kernel coordinates")
-            if not np.allclose(root, _reference_precision_root(self.spec, reference), rtol=1e-13, atol=0):
+            if completion:
+                geometry = self.predictive_geometry
+                if (not isinstance(geometry, CompiledPredictivePrior)
+                        or geometry.g != self.spec.g or geometry.completion_variance != self.spec.completion_variance
+                        or not np.array_equal(geometry.reference_root, reference)
+                        or not np.array_equal(geometry.design_root, design_root)):
+                    raise ValueError("completion prior differs from its explicit physical/C program")
+                geometry.digest()
+                geometry.metric.validate_binding(provenance["binding"])
+                if not np.array_equal(root, geometry.precision_root):
+                    raise ValueError("completion precision root differs from its actual physical geometry")
+            elif self.predictive_geometry is not None or not np.allclose(root, _reference_precision_root(self.spec, reference), rtol=1e-13, atol=0):
                 raise ValueError("calibration prior precision root differs from its actual reference and g")
             records = provenance.get("records", [])
             if (provenance.get("fit_scope") not in {"target_calibration", "source_training"}
@@ -214,14 +253,20 @@ class CompiledKernelPrior:
             if provenance.get("reference_design_sha256") != metadata_digest(records):
                 raise ValueError("calibration prior reference design identity changed")
             _validate_reference_binding(records, provenance["binding"])
-            actual = _rank_ledger(reference, design_root, sum(row["n_samples"] for row in records), len(records))
+            rows = sum(row["n_samples"] for row in records)
+            if completion:
+                if geometry.observed_rows != rows or geometry.n_records != len(records):
+                    raise ValueError("completion geometry differs from actual C observation support")
+                actual = geometry.rank_ledger
+            else:
+                actual = _rank_ledger(reference, design_root, rows, len(records))
             recorded = provenance.get("rank_ledger", {})
             float_fields = {"singular_values", "relative_threshold", "absolute_threshold", "condition_number",
                             "original_design_singular_values", "original_design_scale", "residual_design_scale",
                             "roundoff_reference_scale"}
-            if (set(recorded) != set(actual) or actual["rank"] != width
-                    or any(recorded[key] != value for key, value in actual.items() if key not in float_fields)
-                    or any(not np.allclose(recorded[key], actual[key], rtol=2e-13, atol=0) for key in float_fields)):
+            float_fields &= set(actual)
+            if ((not completion and actual["rank"] != width)
+                    or not rank_ledger_matches(recorded, actual, float_fields=float_fields, rtol=2e-13)):
                 raise ValueError("calibration prior rank ledger differs from its actual information root")
         object.__setattr__(self, "precision_root", frozen_array(root))
         object.__setattr__(self, "reference_root", None if reference is None else frozen_array(reference))
@@ -241,14 +286,18 @@ class CompiledKernelPrior:
     @property
     def derived_precision(self):
         """Coordinate-isotropic precision; g prior has no scalar precision."""
-        return None if self.spec.kind == "calibration_g" else float(self.precision_root[0, 0]**2)
+        return (None if self.spec.kind in {"calibration_g", "calibration_completed_g"}
+                else float(self.precision_root[0, 0]**2))
 
     def _record(self):
-        return {"schema": _SCHEMA, "spec": self.spec.record(), "precision_root": self.precision_root.tolist(),
+        values = {"schema": _SCHEMA, "spec": self.spec.record(), "precision_root": self.precision_root.tolist(),
                 "reference_root": None if self.reference_root is None else self.reference_root.tolist(),
                 "design_root": None if self.design_root is None else self.design_root.tolist(),
                 "provenance": self.provenance, "compute_dtype": np.dtype(np.float64).str,
                 "state_sha256": array_digest(self.precision_root, *( () if self.reference_root is None else (self.reference_root, self.design_root)))}
+        if self.predictive_geometry is not None:
+            values.update(schema="n2p3_compiled_kernel_prior/2", predictive_geometry=self.predictive_geometry.record())
+        return values
 
     def validate_binding(self, binding):
         """The reference design ledger and model C share one authoritative binding."""
@@ -271,10 +320,14 @@ class CompiledKernelPrior:
     def from_record(cls, record):
         values = json.loads(json.dumps(record, allow_nan=False))
         expected = values.pop("artifact_sha256", None)
-        if values.get("schema") != _SCHEMA or metadata_digest(values) != expected or values.get("compute_dtype") != np.dtype(np.float64).str:
+        if values.get("schema") not in {_SCHEMA, "n2p3_compiled_kernel_prior/2"} or metadata_digest(values) != expected or values.get("compute_dtype") != np.dtype(np.float64).str:
             raise ValueError("compiled kernel prior record changed or has an unsupported identity")
+        completion = values.get("schema") == "n2p3_compiled_kernel_prior/2"
+        if completion != (values["spec"].get("kind") == "calibration_completed_g"):
+            raise ValueError("compiled completion program differs from its declared schema")
+        geometry = CompiledPredictivePrior.from_record(values["predictive_geometry"]) if completion else None
         result = cls(KernelPriorSpec.from_record(values["spec"]), values["precision_root"],
-                     values["reference_root"], values["provenance"], design_root=values["design_root"])
+                     values["reference_root"], values["provenance"], design_root=values["design_root"], predictive_geometry=geometry)
         if metadata_digest(result._record()) != metadata_digest(values):
             raise ValueError("compiled prior numerical state differs from its saved record")
         return result
@@ -302,7 +355,7 @@ def calibration_reference_roots(designs):
     return root, original
 
 
-def compile_kernel_prior(spec, designs, *, record_ids, fit_scope, binding):
+def compile_kernel_prior(spec, designs, *, record_ids, fit_scope, binding, physical_metric=None):
     """Compile one all-C program; no held inputs or noise-eta update is accepted."""
     if not isinstance(spec, KernelPriorSpec):
         raise ValueError("prior compilation requires a validated specification")
@@ -312,6 +365,15 @@ def compile_kernel_prior(spec, designs, *, record_ids, fit_scope, binding):
     if not arrays or len(arrays) != len(ids) or len({d.shape[1] for d in arrays}) != 1 or any(len(d) < 3 for d in arrays):
         raise ValueError("prior designs require independent records with matched kernel coordinates")
     width = arrays[0].shape[1]
+    completion = spec.kind == "calibration_completed_g"
+    if completion:
+        if not isinstance(physical_metric, PhysicalResponseMetric):
+            raise ValueError("completion prior requires an explicit physical response metric")
+        physical_metric.validate_binding(binding)
+        if len(physical_metric.precision_root) != width:
+            raise ValueError("completion physical metric differs from actual kernel coordinates")
+    elif physical_metric is not None:
+        raise ValueError("a physical completion metric is exclusive to the explicit completion prior")
     provenance = {"implementation_sha256": IMPLEMENTATION_SHA256, "binding": binding}
     if spec.kind == "isotropic_ridge":
         provenance.update(method="fixed_isotropic_coefficient_precision", fit_scope="fixed_prior")
@@ -323,9 +385,15 @@ def compile_kernel_prior(spec, designs, *, record_ids, fit_scope, binding):
     for identity, design in zip(ids, arrays, strict=True):
         records.append({"record_id": identity, "n_samples": len(design), "read_sample_support": [0, len(design)],
                         "design_sha256": array_digest(design)})
-    ledger = _rank_ledger(root, design_root, sum(len(d) for d in arrays), len(arrays))
+    geometry = (CompiledPredictivePrior(physical_metric, root, design_root,
+        sum(len(d) for d in arrays), len(arrays), spec.g, spec.completion_variance) if completion else None)
+    ledger = (geometry.rank_ledger if completion
+              else _rank_ledger(root, design_root, sum(len(d) for d in arrays), len(arrays)))
     provenance.update(method="all_C_AR0_per_record_diffuse_incremental_QR", fit_scope=fit_scope,
                       records=records, rank_ledger=ledger, reference_design_sha256=metadata_digest(records))
+    if geometry is not None:
+        return CompiledKernelPrior(spec, geometry.precision_root, root, provenance,
+                                   design_root=design_root, predictive_geometry=geometry)
     if ledger["rank"] != width:
         raise KernelPriorRankError(spec, ledger, provenance)
     return CompiledKernelPrior(spec, _reference_precision_root(spec, root), root, provenance, design_root=design_root)

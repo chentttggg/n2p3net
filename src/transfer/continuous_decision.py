@@ -10,6 +10,10 @@ This is a research likelihood, not a certified posterior: AR/noise hyperparamete
 uncertainty and nonlinear/refractory ERP behavior are not integrated. Constant
 and linear drift are explicit shared diffuse nuisance directions, projected out
 in whitened coordinates. They can remove genuine ERP information.
+
+Actual fitted predictions consume the fixed-prior/all-C QR precision factor
+and response. The serialized dense kernel covariance is a rounded diagnostic;
+its small eigenvalues need not survive an ill-conditioned factor Gram product.
 """
 
 from __future__ import annotations
@@ -17,6 +21,9 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
+from fractions import Fraction
+from functools import lru_cache
+from math import ulp
 from pathlib import Path
 
 import numpy as np
@@ -41,6 +48,7 @@ from transfer.noise_model import (
     require_sha256,
     validate_covariance,
 )
+from transfer.predictive_prior import PhysicalResponseMetric
 from transfer.response_dictionary import ResponseDictionary
 from transfer.temporal_noise import TemporalNoise
 
@@ -48,6 +56,7 @@ _IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _STATE_KEYS = ("basis", "kernel_mean", "kernel_row_covariance", "innovation_covariance")
 _PRIOR_STATE_KEYS = ("prior_precision_root", "prior_reference_root", "prior_design_root", "prior_fit_information_root", "prior_fit_score")
 _FIT_STATISTIC_STATE_KEYS = ("prior_fit_information_root", "prior_fit_score")
+_POSTERIOR_STATE_KEYS = ("posterior_precision_root", "posterior_response", "posterior_orthogonal")
 _DICTIONARY_ARRAY_KEYS = ("times", "ambient_matrix", "endpoint_rows", "constraint_map")
 _DICTIONARY_GEOMETRY_KEYS = ("reference_information_root", "fitted_information_root",
                              "ambient_reference_information_root", "ambient_prior_precision", "original_reference_root")
@@ -59,9 +68,19 @@ def _dictionary_state_keys(calibration_prior):
 _CALIBRATION_PRIOR_SCHEMAS = {
     "calibration_g": "n2p3_continuous_decision_model/5",
     "calibration_trace_isotropic": "n2p3_continuous_decision_model/6",
+    "calibration_completed_g": "n2p3_continuous_decision_model/7",
 }
 _COMPUTE_DTYPE = np.dtype(np.float64).str
 _CONDITIONAL_SOLVER_SETTINGS = freeze_metadata({"eta_max": 8., "maxiter": 1000, "maxcor": 32, "ftol": 1e-10, "gtol": 1e-6})
+_POSTERIOR_BINDING = freeze_metadata({
+    "schema": "n2p3_continuous_posterior_binding/1",
+    "authority": "fixed_prior_and_all_C_actual_noise_QR_statistics",
+    "prediction": "frozen_producer_triangular_precision_and_kernel_mean",
+    "numerical_state": "producer_Q_R_response_preserved_without_QR_regeneration",
+    "qr_admission": "column_scaled_factorization_backward_error_plus_entrywise_product_roundoff",
+    "saved_covariance": "rounded_derived_factor_Gram_diagnostic",
+    "covariance_admission": "entrywise_equilibrated_QR_replay_and_factor_product_resolution",
+})
 
 
 @dataclass(frozen=True)
@@ -337,10 +356,11 @@ def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge,
         objective_rows=n_tail, optimization=optimization, training_input_sha256=training_digest)
     statistics = _kernel_fit_statistics(samples, designs, noise, prefix)
     precision = np.sqrt(ridge)*np.eye(kernel_width) if kernel_prior is None else kernel_prior.precision_root
-    root, response, covariance = _kernel_posterior_factors(precision,
-        np.asarray(statistics["information_root"]), np.asarray(statistics["score"]))
+    root, response, covariance, _, orthogonal = _kernel_posterior_factors(precision,
+        np.asarray(statistics["information_root"]), np.asarray(statistics["score"]), with_factor=True)
     mean = solve_triangular(root, response)
-    return mean, covariance, spatial, noise, training_digest, statistics
+    posterior_state = {"precision_root": root, "response": response, "orthogonal": orthogonal}
+    return mean, covariance, spatial, noise, training_digest, statistics, posterior_state
 
 
 def _prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, ledger, fit_scope, dictionary=None):
@@ -348,7 +368,7 @@ def _prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, led
             "operator_identity": operator_identity, "basis_sha256": array_digest(basis),
             "fit_scope": fit_scope, "calibration_inputs": ledger}
     if dictionary is not None:
-        result["dictionary_digest"] = dictionary.digest()
+        result["dictionary_digest"] = dictionary.identity_digest
     return result
 
 
@@ -380,15 +400,28 @@ def _qr_fit_statistics(root, width, noise_digest):
             "method": "all_C_actual_noise_per_record_diffuse_QR_response"}
 
 
-def _kernel_posterior_factors(prior_root, information, score):
+def _kernel_posterior_factors(prior_root, information, score, *, with_factor=False):
     """One full-C quotient posterior for both fitting and persisted relations."""
     q, root = np.linalg.qr(np.vstack((information, prior_root)), mode="reduced")
     response = q.T @ np.vstack((score, np.zeros_like(score)))
     inverse = solve_triangular(root, np.eye(len(root)))
-    return root, response, inverse@inverse.T
+    covariance = inverse@inverse.T
+    return ((root, response, covariance, inverse, q) if with_factor
+            else (root, response, covariance))
 
 
-def _validate_prior_posterior(prior_root, statistics, mean, covariance, noise_digest):
+class KernelPosteriorResolutionError(UnidentifiableFitError):
+    """The declared posterior cannot be certified at its numerical resolution."""
+
+    def __init__(self, ledger):
+        self._evidence = freeze_metadata({"kind": "kernel_posterior_numerical_resolution_failure", **ledger})
+        super().__init__("posterior factor is unresolved after kernel-coordinate column equilibration")
+
+    def record(self):
+        return json.loads(json.dumps(self._evidence, allow_nan=False))
+
+
+def _validate_prior_posterior(prior_root, statistics, mean, covariance, noise_digest, *, posterior_state=None):
     information = _real_values(statistics["information_root"], "fitted kernel information root")
     score = _real_values(statistics["score"], "fitted kernel score")
     width = len(prior_root)
@@ -398,17 +431,155 @@ def _validate_prior_posterior(prior_root, statistics, mean, covariance, noise_di
             or statistics.get("state_sha256") != array_digest(information, score)
             or statistics.get("noise_digest") != noise_digest):
         raise ValueError("kernel prior posterior statistics differ from the fitted noise and coordinates")
-    root, response, expected_covariance = _kernel_posterior_factors(prior_root, information, score)
-    # Check the QR equation's backward error, not forward coefficient error in
-    # nearly unobserved directions. A changed posterior still violates R M = b.
-    mean_scale = max(float(np.linalg.norm(root, ord=2)*np.linalg.norm(mean) + np.linalg.norm(response)), np.finfo(float).tiny)
-    covariance_scale = max(float(np.linalg.norm(expected_covariance)), np.finfo(float).tiny)
-    if (np.linalg.norm(covariance-expected_covariance) > 2e-9*covariance_scale
-            or np.linalg.norm(root@mean-response) > 64*np.finfo(float).eps*width*mean_scale):
-        raise ValueError("saved kernel posterior differs from its actual prior and fitted C information")
+    if posterior_state is None:
+        root, response, expected_covariance, factor, orthogonal = _kernel_posterior_factors(
+            prior_root, information, score, with_factor=True)
+    else:
+        if set(posterior_state) != {"precision_root", "response", "orthogonal"}:
+            raise ValueError("saved posterior QR state differs from its declared numerical program")
+        root, response, orthogonal = (_real_values(posterior_state[key], f"posterior {key}")
+                                     for key in ("precision_root", "response", "orthogonal"))
+        if (root.shape != (width, width) or response.shape != mean.shape
+                or orthogonal.shape != (2*width, width)
+                or not all(np.isfinite(value).all() for value in (root, response, orthogonal))
+                or np.any(np.tril(root, -1)) or np.any(np.diag(root) == 0)):
+            raise ValueError("saved posterior QR state differs from actual kernel coordinates")
+        factor = solve_triangular(root, np.eye(width))
+        expected_covariance = factor@factor.T
+    # H is a rounded factor Gram, not a numerically trustworthy inverse in
+    # every direction. Check each stored entry at its own product scale: a
+    # huge weak variance cannot provide the tolerance for another diagonal.
+    # Prediction consumes R and its bound producer mean, avoiding Cholesky(H)
+    # and the ill-conditioned identity R H R.T = I altogether.
+    covariance_scale = np.abs(factor)@np.abs(factor).T
+    mean_scale = np.abs(root)@np.abs(mean)+np.abs(response)
+    resolution = 128*np.finfo(float).eps*max(1, width)
+    stacked = np.vstack((information, prior_root))
+    column_scales = np.max(np.abs(stacked), axis=0)
+    if np.any(column_scales == 0):
+        raise KernelPosteriorResolutionError({"kernel_dimensions": width, "zero_precision_column": True})
+    # Raw condition numbers would wrongly reject diag(1, 1e-100), which is an
+    # exactly representable coordinate scale change. Only the column-equilibrated
+    # precision system enters this replay error budget. Dense H is diagnostic;
+    # this is not a claim to recover its tiny eigenvalues from rounded entries.
+    singular = np.linalg.svd(stacked/column_scales, compute_uv=False)
+    condition = float(singular[0]/singular[-1]) if singular[-1] > 0 else np.inf
+    replay_resolution = 128*np.finfo(float).eps*max(stacked.shape)*condition
+    if not np.isfinite(replay_resolution) or replay_resolution >= .125:
+        raise KernelPosteriorResolutionError({"kernel_dimensions": width,
+            "equilibrated_precision_condition": condition if np.isfinite(condition) else None,
+            "replay_resolution": replay_resolution if np.isfinite(replay_resolution) else None,
+            "criterion": "equilibrated_QR_relative_perturbation_budget_below_one_eighth"})
+    covariance_resolution = max(resolution, 2*replay_resolution/(1-replay_resolution))
+    # Authenticate producer Q/R/response against actual prior+C. Orthogonality
+    # has dimensionless scale; each matrix equation has its own product scale.
+    # Neither a full Gram norm nor R H R.T can supply another direction's bound.
+    qr_scale = np.abs(orthogonal)@np.abs(root)+np.abs(stacked)
+    target = np.vstack((score, np.zeros_like(score)))
+    response_scale = np.abs(orthogonal.T)@np.abs(target)+np.abs(response)
+    qr_resolution = 128*np.finfo(float).eps*max(stacked.shape)
+    # Explicit Q is itself computed from Householder reflectors. Its factor-
+    # generation error is columnwise; |Q||R| alone only bounds the subsequent
+    # matrix product and can assign eps**2 to a spurious near-zero Q entry.
+    # Keep each authorized A column's own scale. A large unrelated column
+    # cannot supply the budget for a genuinely small coordinate direction.
+    column_backward = (qr_resolution*column_scales)*np.linalg.norm(stacked/column_scales, axis=0)
+    factorization_bound = qr_resolution*qr_scale+column_backward[None, :]
+    if (not np.isfinite(qr_scale).all() or not np.isfinite(response_scale).all()
+            or not np.isfinite(factorization_bound).all()
+            or np.any(np.abs(orthogonal.T@orthogonal-np.eye(width)) > qr_resolution)
+            or np.any(np.abs(orthogonal@root-stacked) > factorization_bound)
+            or np.any(np.abs(orthogonal.T@target-response) > qr_resolution*response_scale)):
+        raise ValueError("saved posterior QR differs from actual prior and fitted C information/response")
+    if (not np.isfinite(expected_covariance).all() or not np.isfinite(covariance_scale).all()
+            or not np.isfinite(mean_scale).all()):
+        raise UnidentifiableFitError("posterior diagnostic relation is not representable in float64")
+    if np.any(np.abs(covariance-expected_covariance) > covariance_resolution*covariance_scale):
+        raise ValueError("saved kernel posterior covariance differs from its declared producer factor Gram")
+    if np.any(np.abs(root@mean-response) > resolution*mean_scale):
+        raise ValueError("saved kernel posterior mean differs from its frozen producer QR response")
+    return root, response, orthogonal
 
 
-def _dictionary_geometry_from_roots(dictionary, roots, prior_root, n_rows, n_records):
+def _fraction_gram(array):
+    """Exact real Gram of the declared binary64 factor, without float squaring."""
+    rows = [[Fraction.from_float(float(value)) for value in row] for row in array]
+    width = array.shape[1]
+    return [[sum((row[i]*row[j] for row in rows), Fraction()) for j in range(width)] for i in range(width)]
+
+
+def _fraction_ldlt(matrix):
+    """Exact SPD elimination; no numeric rank truncation or ridge is introduced."""
+    width = len(matrix)
+    lower = [[Fraction(i == j) for j in range(width)] for i in range(width)]
+    diagonal = []
+    for j in range(width):
+        pivot = matrix[j][j]-sum((lower[j][k]**2*diagonal[k] for k in range(j)), Fraction())
+        if pivot <= 0:
+            raise UnidentifiableFitError("dictionary diagnostic requires its actual proper precision")
+        diagonal.append(pivot)
+        for i in range(j+1, width):
+            lower[i][j] = (matrix[i][j]-sum((lower[i][k]*lower[j][k]*diagonal[k]
+                                           for k in range(j)), Fraction()))/pivot
+    return lower, diagonal
+
+
+def _fraction_trace_solve(matrix, numerator):
+    lower, diagonal = _fraction_ldlt(matrix)
+    width = len(matrix)
+    trace = Fraction()
+    for column in range(width):
+        forward = []
+        for i in range(width):
+            forward.append(numerator[i][column]-sum((lower[i][j]*forward[j] for j in range(i)), Fraction()))
+        solution = [forward[i]/diagonal[i] for i in range(width)]
+        for i in range(width-1, -1, -1):
+            solution[i] -= sum((lower[j][i]*solution[j] for j in range(i+1, width)), Fraction())
+        trace += solution[column]
+    return trace
+
+
+def _capacity_from_binary_factors(reference, fitted, prior):
+    precision = _fraction_gram(prior)
+    reference_information, fitted_information = _fraction_gram(reference), _fraction_gram(fitted)
+
+    def df(information):
+        total = [[p+g for p, g in zip(prior_row, data_row, strict=True)]
+                 for prior_row, data_row in zip(precision, information, strict=True)]
+        return _fraction_trace_solve(total, information)
+
+    values = (df(reference_information), df(fitted_information),
+              _fraction_trace_solve(precision, reference_information))
+    try:
+        rounded = tuple(float(value) for value in values)
+    except OverflowError:
+        rounded = tuple(None if value > Fraction.from_float(np.finfo(float).max) else float(value) for value in values)
+    return rounded
+
+
+@lru_cache(maxsize=32)
+def _cached_capacity_binary_factors(reference_shape, reference_bytes, fitted_shape, fitted_bytes, prior_shape, prior_bytes):
+    arrays = [np.frombuffer(raw, dtype="<f8").reshape(shape) for shape, raw in (
+        (reference_shape, reference_bytes), (fitted_shape, fitted_bytes), (prior_shape, prior_bytes))]
+    return _capacity_from_binary_factors(*arrays)
+
+
+def _exact_capacity_diagnostics(reference, fitted, prior):
+    """Correctly rounded scalar diagnostics; never controls posterior/score.
+
+    Exact Fraction arithmetic is isolated to this small-matrix fit/load seam.
+    A byte-bound LRU reuses fit/admission/replay summaries; larger payloads are
+    calculated without retaining them, keeping cache memory bounded.
+    """
+    arrays = [np.ascontiguousarray(value, dtype="<f8") for value in (reference, fitted, prior)]
+    if sum(value.nbytes for value in arrays) > 65536:
+        return _capacity_from_binary_factors(*arrays)
+    arguments = tuple(item for value in arrays for item in (value.shape, value.tobytes()))
+    return _cached_capacity_binary_factors(*arguments)
+
+
+def _dictionary_geometry_from_roots(dictionary, roots, prior_root, n_rows, n_records,
+                                    *, restricted_precision_extension=False):
     p = dictionary.matrix.shape[1]*2
     ambient = dictionary.spec.n_basis*2
     arrays = {key: _real_values(roots[key], f"dictionary {key}") for key in _DICTIONARY_GEOMETRY_KEYS}
@@ -428,22 +599,55 @@ def _dictionary_geometry_from_roots(dictionary, roots, prior_root, n_rows, n_rec
     if (not np.allclose(reference_information, embedding.T@(parent.T@parent)@embedding, rtol=2e-12, atol=reference_scale*2e-13)
             or not np.allclose(precision, embedding.T@ambient_precision@embedding, rtol=2e-12, atol=precision_scale*2e-13)):
         raise ValueError("dictionary constraints and prior precision do not obey the actual ambient pullback")
-    def df(root):
-        posterior_root = np.linalg.qr(np.vstack((root, prior_root)), mode="r")
-        inverse = solve_triangular(posterior_root, np.eye(p))
-        return float(np.linalg.norm(root@inverse)**2)
+    if restricted_precision_extension and not np.allclose(
+            ambient_precision, embedding@precision@embedding.T, rtol=2e-12, atol=precision_scale*2e-13):
+        raise ValueError("dictionary completion precision extension is not zero on the constraint complement")
+    df_ref, df_fit, prior_energy = _exact_capacity_diagnostics(reference, actual, prior_root)
     reference_scale = float(np.linalg.norm(arrays["original_reference_root"], ord=2))
     threshold = np.finfo(float).eps*max(n_rows, p)*reference_scale
     rank = int(np.sum(np.linalg.svd(reference, compute_uv=False) > threshold))
-    inverse_prior = solve_triangular(prior_root, np.eye(p))
-    return {"schema": "n2p3_dictionary_fit_geometry/1", "dictionary_digest": dictionary.identity_digest,
+    return {"schema": "n2p3_dictionary_fit_geometry/3", "dictionary_digest": dictionary.identity_digest,
             "ambient_dimensions": ambient, "kernel_dimensions": p, "n_rows": n_rows, "n_records": n_records,
             "reference_geometry": "all_C_AR0_per_record_diffuse_affine", "fitted_geometry": "all_C_actual_noise_per_record_diffuse_affine",
-            "df_ref": df(reference), "df_fit": df(actual), "reference_rank": rank, "rank_threshold": threshold,
-            "reference_prior_energy": float(np.linalg.norm(reference@inverse_prior)**2),
+            "df_ref": df_ref, "df_fit": df_fit, "reference_rank": rank, "rank_threshold": threshold,
+            "reference_prior_energy": prior_energy,
             "capacity_changed_by_hard_endpoint": dictionary.spec.endpoint == "hard_zero",
-            "capacity_matching_claimed": False, "prior_pullback": "embedding_T_ambient_precision_embedding",
+            "capacity_matching_claimed": False,
+            "prior_pullback": ("restricted_precision_extension_zero_on_constraint_complement"
+                               if restricted_precision_extension else "embedding_T_ambient_precision_embedding"),
+            "proper_on_actual_function_space": True,
+            "diagnostic_resolution_rule": "exact_binary64_operand_Fraction_trace_with_two_ULP_scalar_storage",
+            "diagnostic_status": {"df_ref": "certified_binary64_operands", "df_fit": "certified_binary64_operands",
+                                  "reference_prior_energy": "unrepresentable_diagnostic" if prior_energy is None else "certified_binary64_operands"},
             "roots_sha256": array_digest(*arrays.values()), **{key: value.tolist() for key, value in arrays.items()}}
+
+
+def _validate_dictionary_geometry(saved, actual):
+    """Admit frozen producer diagnostics without rewriting their float64 values.
+
+    Exact rational trace diagnostics refer to the actual saved binary64 roots.
+    Two ULPs cover scalar transport rounding, not an ill-conditioned matrix
+    calculation. An unrepresentable summary has an explicit diagnostic status
+    and never changes an otherwise valid posterior/score. Spectral rank threshold
+    remains a separately declared float64 numerical-resolution diagnostic.
+    """
+    scalar_keys = {"df_ref", "df_fit", "rank_threshold", "reference_prior_energy"}
+    if (set(saved) != set(actual)
+            or metadata_digest({k: v for k, v in saved.items() if k not in scalar_keys})
+            != metadata_digest({k: v for k, v in actual.items() if k not in scalar_keys})):
+        raise ValueError("dictionary capacity/constraint ledger differs from its actual numerical roots")
+    resolution = 128*np.finfo(np.float64).eps*max(actual["n_rows"], actual["kernel_dimensions"])
+    for key in scalar_keys:
+        value, expected = saved[key], actual[key]
+        if key == "reference_prior_energy" and expected is None:
+            if value is not None:
+                raise ValueError("dictionary capacity diagnostic differs from its declared unrepresentable state")
+            continue
+        tolerance = (resolution*max(abs(expected), np.finfo(float).tiny) if key == "rank_threshold"
+                     else 2*ulp(expected))
+        if (isinstance(value, bool) or not isinstance(value, (int, float)) or not np.isfinite(value)
+                or value < 0 or abs(value-expected) > tolerance):
+            raise ValueError("dictionary capacity diagnostic differs from its actual numerical relation")
 
 
 def _fit_dictionary_geometry(dictionary, records, designs, actual_root, ridge, prior):
@@ -451,7 +655,11 @@ def _fit_dictionary_geometry(dictionary, records, designs, actual_root, ridge, p
     ambient_designs = [_event_design(r.onsets, r.target_mask, len(r.samples), dictionary.ambient_matrix) for r in records]
     ambient_reference, _ = calibration_reference_roots(ambient_designs)
     width = 2*dictionary.spec.n_basis
-    if prior is not None and prior.spec.kind == "calibration_g":
+    completion = prior is not None and prior.spec.kind == "calibration_completed_g"
+    if completion:
+        embedding = np.kron(np.eye(2), dictionary.constraint_map)
+        ambient_precision = embedding@(prior.precision_root.T@prior.precision_root)@embedding.T
+    elif prior is not None and prior.spec.kind == "calibration_g":
         ambient_precision = ambient_reference.T@ambient_reference/prior.spec.g
     else:
         # trace isotropic is calibrated in the declared restricted model. The
@@ -463,7 +671,8 @@ def _fit_dictionary_geometry(dictionary, records, designs, actual_root, ridge, p
     return _dictionary_geometry_from_roots(dictionary, {"reference_information_root": reference,
         "original_reference_root": original, "fitted_information_root": actual_root,
         "ambient_reference_information_root": ambient_reference, "ambient_prior_precision": ambient_precision},
-        prior_root, sum(len(r.samples) for r in records), len(records))
+        prior_root, sum(len(r.samples) for r in records), len(records),
+        restricted_precision_extension=completion)
 
 
 @dataclass(frozen=True)
@@ -483,7 +692,12 @@ class ContinuousDecisionModel:
     kernel_prior: CompiledKernelPrior | None = None
     dictionary: ResponseDictionary | None = None
     dictionary_geometry: dict | None = None
+    posterior_state: dict | None = field(default=None, repr=False, compare=False)
     _integrity_sha256: str = field(init=False, repr=False, compare=False)
+    _posterior_precision_root: np.ndarray | None = field(init=False, repr=False, compare=False)
+    _predictive_kernel_mean: np.ndarray = field(init=False, repr=False, compare=False)
+    _fit_information_root: np.ndarray | None = field(init=False, repr=False, compare=False)
+    _fit_score: np.ndarray | None = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
         basis = _real_values(self.basis, "ERP basis")
@@ -518,13 +732,19 @@ class ContinuousDecisionModel:
         if not self.operator_identity:
             raise ValueError("explicit materialized input operator identity is required")
         np.linalg.cholesky(noise)
-        np.linalg.cholesky(row_cov)
+        actual_posterior = self.provenance.get("fit_scope") in {"source_training", "target_calibration"}
+        if not actual_posterior:
+            np.linalg.cholesky(row_cov)
         for name, value in [("basis", basis), ("kernel_mean", mean),
                             ("kernel_row_covariance", row_cov), ("innovation_covariance", noise)]:
             object.__setattr__(self, name, frozen_array(value))
         object.__setattr__(self, "channels", channels)
         object.__setattr__(self, "candidate_ids", candidates)
         provenance = json.loads(json.dumps(self.provenance, allow_nan=False))
+        posterior_root = None
+        predictive_mean = mean
+        fit_information = fit_score = None
+        posterior_state = None
         if self.dictionary is not None:
             if (not isinstance(self.dictionary, ResponseDictionary) or self.dictionary.sample_rate_hz != self.sfreq
                     or not np.array_equal(self.dictionary.matrix, basis) or self.dictionary_geometry is None):
@@ -535,14 +755,12 @@ class ContinuousDecisionModel:
                 roots.update(reference_information_root=self.kernel_prior.reference_root.tolist(),
                              original_reference_root=self.kernel_prior.design_root.tolist())
             prior_root = (np.sqrt(provenance["ridge"])*np.eye(p) if self.kernel_prior is None else self.kernel_prior.precision_root)
-            if self.kernel_prior is None:
-                _validate_prior_posterior(prior_root, provenance["kernel_prior_fit_statistics"], mean, row_cov,
-                                          _fitted_noise_digest(self.noise, self.phi))
             geometry = _dictionary_geometry_from_roots(self.dictionary, roots, prior_root,
-                sum(r["n_samples"] for r in provenance["records"]), len(provenance["records"]))
-            if metadata_digest(geometry) != metadata_digest(self.dictionary_geometry):
-                raise ValueError("dictionary capacity/constraint ledger differs from its actual numerical roots")
-            object.__setattr__(self, "dictionary_geometry", freeze_metadata(geometry))
+                sum(r["n_samples"] for r in provenance["records"]), len(provenance["records"]),
+                restricted_precision_extension=(self.kernel_prior is not None
+                                                and self.kernel_prior.spec.kind == "calibration_completed_g"))
+            _validate_dictionary_geometry(self.dictionary_geometry, geometry)
+            object.__setattr__(self, "dictionary_geometry", freeze_metadata(self.dictionary_geometry))
         elif self.dictionary_geometry is not None:
             raise ValueError("dictionary geometry requires its actual owned response function")
         scope = provenance.get("fit_scope")
@@ -552,6 +770,8 @@ class ContinuousDecisionModel:
                 raise ValueError("compiled calibration prior requires the explicit fixed-prefix program")
             self.kernel_prior.digest()
         if scope == "analytic_reference":
+            if self.posterior_state is not None:
+                raise ValueError("analytic reference cannot claim actual fitted posterior QR state")
             if self.kernel_prior is not None:
                 raise ValueError("calibration prior models require an actual C ledger, not an analytic relabeling")
             if set(provenance) != {"fit_scope", "reference_id", "records"} or provenance["records"] or not provenance["reference_id"]:
@@ -613,8 +833,20 @@ class ContinuousDecisionModel:
                         or provenance.get("kernel_prior_digest") != self.kernel_prior.digest()
                         or self.kernel_prior.provenance["fit_scope"] != scope):
                     raise ValueError("compiled kernel prior differs from its actual C/basis/program binding")
-                _validate_prior_posterior(self.kernel_prior.precision_root, provenance["kernel_prior_fit_statistics"],
-                                           mean, row_cov, _fitted_noise_digest(self.noise))
+            prior_root = (np.sqrt(provenance["ridge"])*np.eye(p) if self.kernel_prior is None
+                          else self.kernel_prior.precision_root)
+            if "kernel_prior_fit_statistics" not in provenance:
+                raise ValueError("actual fitted posterior requires its complete C QR statistics")
+            posterior_root, posterior_response, posterior_orthogonal = _validate_prior_posterior(
+                prior_root, provenance["kernel_prior_fit_statistics"], mean, row_cov,
+                _fitted_noise_digest(self.noise, self.phi), posterior_state=self.posterior_state)
+            posterior_state = {"precision_root": frozen_array(posterior_root),
+                "response": frozen_array(posterior_response), "orthogonal": frozen_array(posterior_orthogonal)}
+            # Preserve the producer's already verified posterior mean. Re-solving
+            # on another host could replace its numeric predictive state silently.
+            predictive_mean = mean
+            fit_information = np.asarray(provenance["kernel_prior_fit_statistics"]["information_root"], dtype=float)
+            fit_score = np.asarray(provenance["kernel_prior_fit_statistics"]["score"], dtype=float)
             if self.noise is not None:
                 noise_provenance = self.noise.provenance
                 if (noise_provenance["fit_scope"] != scope
@@ -646,6 +878,11 @@ class ContinuousDecisionModel:
                             or provenance.get("noise_solver") != _conditional_solver_record(self.noise)):
                         raise ValueError("conditional estimator and solver differ from the actual noise fit")
         object.__setattr__(self, "provenance", freeze_metadata(provenance))
+        object.__setattr__(self, "posterior_state", None if posterior_state is None else freeze_metadata(posterior_state))
+        object.__setattr__(self, "_posterior_precision_root", None if posterior_state is None else posterior_state["precision_root"])
+        object.__setattr__(self, "_predictive_kernel_mean", frozen_array(predictive_mean))
+        object.__setattr__(self, "_fit_information_root", None if fit_information is None else frozen_array(fit_information))
+        object.__setattr__(self, "_fit_score", None if fit_score is None else frozen_array(fit_score))
         object.__setattr__(self, "_integrity_sha256", metadata_digest(self._metadata()))
 
     @classmethod
@@ -735,8 +972,11 @@ class ContinuousDecisionModel:
         p = 2 * basis.shape[1]
         compiled_prior = None
         if prior_spec.uses_calibration_reference:
+            binding = _prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, ledger, fit_scope, dictionary)
+            physical_metric = (PhysicalResponseMetric.from_basis(basis, sample_rate_hz=sfreq, binding=binding)
+                               if prior_spec.kind == "calibration_completed_g" else None)
             compiled_prior = compile_kernel_prior(prior_spec, designs, record_ids=ids, fit_scope=fit_scope,
-                binding=_prior_binding(sfreq, channels, candidate_ids, operator_identity, basis, ledger, fit_scope, dictionary))
+                binding=binding, physical_metric=physical_metric)
 
         def solve(phi):
             if isinstance(phi, TemporalNoise):
@@ -764,7 +1004,7 @@ class ContinuousDecisionModel:
         offsets = np.cumsum([0] + [len(x) for x in samples])
         pairs = [initial_residual[a:b] for a, b in zip(offsets[:-1], offsets[1:], strict=True)]
         if conditioning_samples:
-            mean, row_cov, noise, noise_model, training_digest, statistics = _fit_fixed_prefix(
+            mean, row_cov, noise, noise_model, training_digest, statistics, posterior_state = _fit_fixed_prefix(
                 samples, designs, pairs, ids, order=noise_order, prefix=conditioning_samples,
                 ridge=ridge, strategy=noise_estimator, fit_scope=fit_scope, kernel_prior=compiled_prior)
             provenance = {"fit_scope": fit_scope, "records": ledger,
@@ -781,8 +1021,7 @@ class ContinuousDecisionModel:
                 "hyperparameter_uncertainty_integrated": False, "global_MLE_claimed": False,
                 "likelihood_assumptions": ["linear_event_superposition", "shared_class_noise",
                     "stationary_shared_AR_reference", "complete_event_history", "fixed_conditioning_prefix"]}
-            if dictionary is not None:
-                provenance["kernel_prior_fit_statistics"] = statistics
+            provenance["kernel_prior_fit_statistics"] = statistics
             if compiled_prior is None:
                 provenance["ridge"] = float(ridge)
             else:
@@ -792,7 +1031,8 @@ class ContinuousDecisionModel:
                 np.asarray(statistics["information_root"]), ridge, compiled_prior))
             return cls(basis, mean, row_cov, noise, None, sfreq, tuple(channels), tuple(candidate_ids),
                        operator_identity, provenance, noise=noise_model, conditioning_samples=conditioning_samples,
-                        kernel_prior=compiled_prior, dictionary=dictionary, dictionary_geometry=geometry)
+                        kernel_prior=compiled_prior, dictionary=dictionary, dictionary_geometry=geometry,
+                        posterior_state=posterior_state)
         if noise_order is None:
             numerator = sum(float(np.sum(r[1:] * r[:-1])) for r in pairs)
             denominator = sum(float(np.sum(r[:-1] ** 2)) for r in pairs)
@@ -836,14 +1076,19 @@ class ContinuousDecisionModel:
                               noise_fit_passes=1, monotone_likelihood_optimization_claimed=False,
                               likelihood_assumptions=["linear_event_superposition", "shared_class_noise",
                                                       "stationary_shared_AR_spectrum", "complete_event_history"])
-        if dictionary is not None:
-            provenance["kernel_prior_fit_statistics"] = _qr_fit_statistics(
-                np.linalg.qr(np.column_stack((D, Y)), mode="r"), p, _fitted_noise_digest(noise_model, phi))
+        provenance["kernel_prior_fit_statistics"] = _qr_fit_statistics(
+            np.linalg.qr(np.column_stack((D, Y)), mode="r"), p, _fitted_noise_digest(noise_model, phi))
+        statistics = provenance["kernel_prior_fit_statistics"]
+        posterior_root, posterior_response, _, _, posterior_orthogonal = _kernel_posterior_factors(
+            np.sqrt(ridge)*np.eye(p), np.asarray(statistics["information_root"]),
+            np.asarray(statistics["score"]), with_factor=True)
+        posterior_state = {"precision_root": posterior_root, "response": posterior_response,
+                           "orthogonal": posterior_orthogonal}
         geometry = (None if dictionary is None else _fit_dictionary_geometry(dictionary, records, designs,
             np.asarray(provenance["kernel_prior_fit_statistics"]["information_root"]), ridge, compiled_prior))
         return cls(basis, mean, row_cov, noise, phi, sfreq, tuple(channels),
                     tuple(candidate_ids), operator_identity, provenance, noise=noise_model,
-                    dictionary=dictionary, dictionary_geometry=geometry)
+                    dictionary=dictionary, dictionary_geometry=geometry, posterior_state=posterior_state)
 
     @property
     def noise_order(self):
@@ -888,8 +1133,12 @@ class ContinuousDecisionModel:
             evidence = []
             for candidate in range(len(self.candidate_ids)):
                 design = _event_design(onsets, member[:, candidate], len(X), self.basis)
+                posterior_arguments = ({} if self._posterior_precision_root is None else
+                                       {"prior_precision_root": self._posterior_precision_root})
                 scatter, logdet, n_tail, _, _ = _conditional_prediction(
-                    [X], [design], self.noise, self.conditioning_samples, self.kernel_mean, self.kernel_row_covariance)
+                    [X], [design], self.noise, self.conditioning_samples, self._predictive_kernel_mean,
+                    self.kernel_row_covariance if self._posterior_precision_root is None else None,
+                    **posterior_arguments)
                 spatial_precision_scatter = solve_triangular(spatial_root, scatter, lower=True)
                 spatial_precision_scatter = solve_triangular(spatial_root.T, spatial_precision_scatter, lower=False)
                 evidence.append(-.5 * (float(np.trace(spatial_precision_scatter)) + len(self.channels) * logdet
@@ -905,14 +1154,16 @@ class ContinuousDecisionModel:
                      else lambda value: _whiten_and_project(value, self.phi))
         Y = transform(X)
         spatial_root = np.linalg.cholesky(self.innovation_covariance)
-        kernel_root = np.linalg.cholesky(self.kernel_row_covariance)
+        kernel_root = (np.linalg.cholesky(self.kernel_row_covariance)
+                       if self._posterior_precision_root is None else None)
         evidence = []
         for candidate in range(len(self.candidate_ids)):
             design = _event_design(onsets, member[:, candidate], len(X), self.basis)
             D = transform(design)
-            residual = Y - D @ self.kernel_mean
+            residual = Y - D @ self._predictive_kernel_mean
             residual = solve_triangular(spatial_root, residual.T, lower=True).T
-            U = D @ kernel_root
+            U = (D@kernel_root if self._posterior_precision_root is None else
+                 solve_triangular(self._posterior_precision_root.T, D.T, lower=True).T)
             small = np.eye(U.shape[1]) + U.T @ U
             root = np.linalg.cholesky(small)
             projected = solve_triangular(root, U.T @ residual, lower=True)
@@ -941,7 +1192,7 @@ class ContinuousDecisionModel:
     def _metadata(self):
         state = self._state_arrays()
         provenance = self.provenance
-        if self.kernel_prior is not None or self.dictionary is not None:
+        if self._posterior_precision_root is not None:
             provenance = json.loads(json.dumps(self.provenance))
             provenance["kernel_prior_fit_statistics"].pop("information_root")
             provenance["kernel_prior_fit_statistics"].pop("score")
@@ -949,6 +1200,9 @@ class ContinuousDecisionModel:
                 "candidate_ids": self.candidate_ids, "operator_identity": self.operator_identity,
                 "provenance": provenance,
                 "state_sha256": array_digest(*state.values())}
+        if self._posterior_precision_root is not None:
+            metadata.update(posterior_binding=_POSTERIOR_BINDING,
+                            state_dtypes={key: value.dtype.str for key, value in state.items()})
         if self.noise is None:
             metadata.update(schema="n2p3_continuous_decision_model/2", phi=self.phi)
         else:
@@ -967,7 +1221,7 @@ class ContinuousDecisionModel:
             geometry = json.loads(json.dumps(self.dictionary_geometry))
             for key in _DICTIONARY_GEOMETRY_KEYS:
                 geometry.pop(key)
-            metadata.update(base_model_schema=metadata["schema"], schema="n2p3_continuous_dictionary_model/1",
+            metadata.update(base_model_schema=metadata["schema"], schema="n2p3_continuous_dictionary_model/2",
                             dictionary=record, dictionary_geometry=geometry,
                             state_dtypes={key: value.dtype.str for key, value in state.items()})
         return metadata
@@ -975,20 +1229,19 @@ class ContinuousDecisionModel:
     def _state_arrays(self):
         state = {key: getattr(self, key) for key in _STATE_KEYS}
         if self.kernel_prior is not None:
-            statistics = self.provenance["kernel_prior_fit_statistics"]
             state.update(prior_precision_root=self.kernel_prior.precision_root,
                 prior_reference_root=self.kernel_prior.reference_root,
                 prior_design_root=self.kernel_prior.design_root,
-                prior_fit_information_root=np.asarray(statistics["information_root"], dtype=np.float64),
-                prior_fit_score=np.asarray(statistics["score"], dtype=np.float64))
+                prior_fit_information_root=self._fit_information_root,
+                prior_fit_score=self._fit_score)
+        elif self._posterior_precision_root is not None:
+            state.update(prior_fit_information_root=self._fit_information_root, prior_fit_score=self._fit_score)
         if self.dictionary is not None:
-            if self.kernel_prior is None:
-                statistics = self.provenance["kernel_prior_fit_statistics"]
-                state.update(prior_fit_information_root=np.asarray(statistics["information_root"], dtype=np.float64),
-                             prior_fit_score=np.asarray(statistics["score"], dtype=np.float64))
             state.update({"dictionary_"+key: getattr(self.dictionary, key) for key in _DICTIONARY_ARRAY_KEYS})
             state.update({key: np.asarray(self.dictionary_geometry[key.removeprefix("dictionary_")], dtype=np.float64)
                           for key in _dictionary_state_keys(self.kernel_prior is not None) if key.removeprefix("dictionary_") in _DICTIONARY_GEOMETRY_KEYS})
+        if self.posterior_state is not None:
+            state.update({"posterior_"+key: value for key, value in self.posterior_state.items()})
         return state
 
     def digest(self):
@@ -1014,13 +1267,21 @@ class ContinuousDecisionModel:
         with np.load(path, allow_pickle=False) as archive:
             metadata = json.loads(str(archive["metadata"]))
             schema = metadata.get("schema")
-            owned_dictionary = schema == "n2p3_continuous_dictionary_model/1"
+            if schema == "n2p3_continuous_dictionary_model/1":
+                raise ValueError("unsupported frozen dictionary model schema; use its original execution source")
+            owned_dictionary = schema == "n2p3_continuous_dictionary_model/2"
             if owned_dictionary:
                 schema = metadata.get("base_model_schema")
             calibration_prior = schema in _CALIBRATION_PRIOR_SCHEMAS.values()
+            posterior_bound = metadata.get("provenance", {}).get("fit_scope") in {"source_training", "target_calibration"}
+            if posterior_bound and metadata.get("posterior_binding") != _POSTERIOR_BINDING:
+                raise ValueError("unsupported fitted posterior binding protocol; use its original execution source")
+            if not posterior_bound and "posterior_binding" in metadata:
+                raise ValueError("analytic reference cannot declare an actual fitted posterior binding")
             state_keys = (_STATE_KEYS + (_PRIOR_STATE_KEYS if calibration_prior else ())
-                          + (_FIT_STATISTIC_STATE_KEYS if owned_dictionary and not calibration_prior else ())
-                          + (_dictionary_state_keys(calibration_prior) if owned_dictionary else ()))
+                          + (_FIT_STATISTIC_STATE_KEYS if (posterior_bound or owned_dictionary) and not calibration_prior else ())
+                          + (_dictionary_state_keys(calibration_prior) if owned_dictionary else ())
+                          + (_POSTERIOR_STATE_KEYS if posterior_bound else ()))
             if set(archive.files) != {*state_keys, "metadata"}:
                 raise ValueError("continuous model numeric payload differs from its declared prior schema")
             all_state = {key: archive[key] for key in state_keys}
@@ -1032,12 +1293,12 @@ class ContinuousDecisionModel:
         expected = metadata.pop("artifact_sha256", None)
         if expected != metadata_digest(metadata):
             raise ValueError("continuous model metadata digest mismatch")
-        if array_digest(*all_state.values()) != metadata.get("state_sha256"):
-            raise ValueError("continuous model state digest mismatch")
         explicit_ar = schema != "n2p3_continuous_decision_model/2"
-        if (explicit_ar or owned_dictionary) and (metadata.get("state_dtypes") != dict.fromkeys(state_keys, _COMPUTE_DTYPE)
+        if (explicit_ar or owned_dictionary or posterior_bound) and (metadata.get("state_dtypes") != dict.fromkeys(state_keys, _COMPUTE_DTYPE)
                             or any(value.dtype.str != _COMPUTE_DTYPE for value in all_state.values())):
             raise ValueError("continuous AR artifact requires its exact float64 state dtype")
+        if array_digest(*all_state.values()) != metadata.get("state_sha256"):
+            raise ValueError("continuous model state digest mismatch")
         noise = TemporalNoise.from_record(metadata["noise"]) if explicit_ar else None
         conditional = schema == "n2p3_continuous_decision_model/4" or calibration_prior
         prefix = metadata["conditioning_samples"] if conditional else 0
@@ -1052,15 +1313,12 @@ class ContinuousDecisionModel:
             prior = CompiledKernelPrior.from_record(prior_record)
             if _CALIBRATION_PRIOR_SCHEMAS.get(prior.spec.kind) != schema:
                 raise ValueError("continuous model prior kind differs from its declared schema")
+        if posterior_bound:
             metadata["provenance"]["kernel_prior_fit_statistics"].update(
                 information_root=all_state["prior_fit_information_root"].tolist(),
                 score=all_state["prior_fit_score"].tolist())
         dictionary = geometry = None
         if owned_dictionary:
-            if not calibration_prior:
-                metadata["provenance"]["kernel_prior_fit_statistics"].update(
-                    information_root=all_state["prior_fit_information_root"].tolist(),
-                    score=all_state["prior_fit_score"].tolist())
             dictionary_record = metadata["dictionary"]
             dictionary_record.update(matrix=all_state["basis"].tolist(),
                 **{key: all_state["dictionary_"+key].tolist() for key in _DICTIONARY_ARRAY_KEYS})
@@ -1073,4 +1331,6 @@ class ContinuousDecisionModel:
                 geometry.update(reference_information_root=prior.reference_root.tolist(), original_reference_root=prior.design_root.tolist())
         return cls(*state, None if explicit_ar else metadata["phi"], metadata["sfreq"], tuple(metadata["channels"]),
                    tuple(metadata["candidate_ids"]), metadata["operator_identity"], metadata["provenance"], noise=noise,
-                    conditioning_samples=prefix, kernel_prior=prior, dictionary=dictionary, dictionary_geometry=geometry)
+                    conditioning_samples=prefix, kernel_prior=prior, dictionary=dictionary, dictionary_geometry=geometry,
+                    posterior_state=({key.removeprefix("posterior_"): all_state[key] for key in _POSTERIOR_STATE_KEYS}
+                                     if posterior_bound else None))

@@ -56,7 +56,7 @@ def test_conditional_state_keeps_actual_full_burg_initialization_and_unit_shape(
     reflections = initializer.reflection_coefficients * .9
     state = fitted(training, reflections=reflections)
     record = state.record()
-    assert record["schema"] == "n2p3_temporal_noise/4"
+    assert record["schema"] == "n2p3_temporal_noise/5"
     assert record["startup_mode"] == "stationary_innovations"
     assert record["reflection_origin"] == "conditional_profile_optimized_PARCOR"
     assert record["stability_certificate"] == "actual_PARCOR_strictly_inside_unit_interval"
@@ -247,14 +247,14 @@ def test_conditional_stability_replays_actual_optimized_lattice_not_inverse_root
         raise AssertionError("conditional state must preserve actual PARCOR without inverse polynomial algebra")
 
     monkeypatch.setattr(module, "_reflections", forbidden)
-    monkeypatch.setattr(module, "solve_discrete_lyapunov", forbidden)
+    monkeypatch.setattr("scipy.linalg.solve_discrete_lyapunov", forbidden)
     parcor = np.array([-.9999961149865101, .9999901108404076, -.9999801038304161,
                        .999961519006537, -.9999206301468053, .9997979222646003,
                        -.9989401968753808, .9227446944279201])
     state = fitted((data, initializer), reflections=parcor, optimization=optimization(eta_max=8.))
     assert state.pole_radius > 1
     assert state.record()["reflection_origin"] == "conditional_profile_optimized_PARCOR"
-    assert state.record()["expanded_polynomial_radius_role"] == "diagnostic_only_not_lattice_stability_test"
+    assert state.record()["expanded_polynomial_radius_role"] == "producer_diagnostic_not_compiled_state_authority"
     assert state.startup_covariance.shape == (0, 0)
     loaded = TemporalNoise.from_record(state.record())
     np.testing.assert_array_equal(loaded.reflection_coefficients, parcor)
@@ -288,12 +288,12 @@ def test_complex_state_ingress_never_discards_imaginary_evidence(training, kind)
 
 def test_legacy_schema_replay_does_not_acquire_conditional_training_meanings(training):
     records, _ = training
-    for mode, schema in (("stationary", "/1"), ("conditional_prefix", "/2"),
-                         ("stationary_innovations", "/3")):
+    for mode in ("stationary", "conditional_prefix", "stationary_innovations"):
         state = TemporalNoise.fit(records, order=2, record_ids=("one", "two"),
                                   fit_scope="source_training", startup_mode=mode)
         record = state.record()
-        assert record["schema"] == f"n2p3_temporal_noise{schema}"
+        assert record["schema"] == "n2p3_temporal_noise/5"
+        assert record["startup_mode"] == mode
         assert "conditioning_samples" not in record["provenance"]
         assert "initialization" not in record["provenance"]
         restored = TemporalNoise.from_record(copy.deepcopy(record))

@@ -46,6 +46,47 @@ def independent_case(tmp_path_factory):
     return root, fields, path, spec, experts, views
 
 
+def test_one_unresolved_continuous_expert_keeps_trial_and_all_requested_decisions(independent_case, tmp_path, monkeypatch):
+    from transfer.continuous_decision import ContinuousDecisionModel, KernelPosteriorResolutionError
+
+    _, _, path, spec, experts, views = independent_case
+    mixtures = (EnsembleProgram.equal_weights("trial", ("toeplitz",)),
+                EnsembleProgram.equal_weights("strict", ("raw", "toeplitz")))
+    plan = {"schema": "n2p3_candidate_ensemble_study/1", "evidence_scope": "software_correctness",
+        "evaluation_design": "independent_prefix", "seed_pairs": [[20260918, 20260918]],
+        "records": [{"path": str(path), "sha256": views.ledger["source_sha256"]}],
+        "budgets": [200], "experts": [expert.record() for expert in experts],
+        "mixtures": [mixture.record() for mixture in mixtures], "baseline_mixture": "trial",
+        "authorization_preprocessing": spec.record(), "observation_response_seconds": 308 / 256,
+        "pre_roll_seconds": .2, "device": "cpu", "workers": 1, "cpu_threads_per_worker": 1,
+        "source_checkpoints": {}, "source_seed_catalog": [],
+        "calibration_strategies": ["fixed"]}
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+
+    def unresolved(*args, **kwargs):
+        raise KernelPosteriorResolutionError({"unresolved_held_direction": True})
+
+    monkeypatch.setattr(ContinuousDecisionModel, "score", unresolved)
+    report = run_study(plan_path, tmp_path / "run", execution="inline")
+    assert report["status"] == "completed"
+    participant = report["participants"][0]
+    trial = [cell for cell in participant["predictions"] if cell["mixture"] == "trial"]
+    strict = [cell for cell in participant["predictions"] if cell["mixture"] == "strict"]
+    assert len(trial) == len(strict) == len(participant["requested"])
+    available = [cell for cell in trial if cell["evidence"]["log_probability"] is not None]
+    assert available and all(cell["saved_replay_exact"] for cell in available)
+    resolved_ids = {cell["evidence"]["decision_id"] for cell in available}
+    for cell in strict:
+        evidence = cell["evidence"]
+        assert evidence["log_probability"] is None
+        if evidence["decision_id"] in resolved_ids:
+            assert evidence["failure_kind"] == "not_available"
+            assert "unresolved_held_direction" in evidence["failure_reason"]
+        assert {identity["expert_id"] for identity in evidence["expert_identities"]} == {"raw", "toeplitz"}
+    assert set(report["metrics"]) == {"trial@fixed@K200", "strict@fixed@K200"}
+
+
 def test_k200_uses_partial_selection_labels_and_future_changes_cannot_change_c(independent_case):
     root, fields, path, spec, experts, views = independent_case
     prefix = views.calibration[200]

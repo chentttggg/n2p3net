@@ -22,8 +22,9 @@ def freeze_source(output: Path, *, root: Path = ROOT, materialize: bool = False)
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     relative_paths = {"AGENTS.md", "pyproject.toml", "uv.lock"}
-    if (root / "conftest.py").is_file():
-        relative_paths.add("conftest.py")
+    for name in (".gitattributes", "conftest.py"):
+        if (root / name).is_file():
+            relative_paths.add(name)
     relative_paths.update(path.relative_to(root).as_posix() for path in (root / "src").rglob("*.py"))
     relative_paths.update(path.relative_to(root).as_posix() for path in (root / "tests").rglob("*.py"))
     for directory in ("src", "tests", "configs"):

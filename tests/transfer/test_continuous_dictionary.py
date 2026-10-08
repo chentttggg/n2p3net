@@ -67,7 +67,7 @@ def test_owned_dictionary_conflict_and_numeric_payload_mismatch_rejected(tmp_pat
     with np.load(path, allow_pickle=False) as archive:
         values = {k: archive[k] for k in archive.files}
     metadata = json.loads(str(values["metadata"]))
-    assert metadata["schema"] == "n2p3_continuous_dictionary_model/1"
+    assert metadata["schema"] == "n2p3_continuous_dictionary_model/2"
     values["dictionary_constraint_map"] = values["dictionary_constraint_map"].copy()
     values["dictionary_constraint_map"][0, 0] += .1
     np.savez_compressed(tmp_path/"wrong.npz", **values)
