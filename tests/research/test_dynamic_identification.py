@@ -142,6 +142,39 @@ def test_narrow_gamma_peak_cannot_silently_lose_half_normalization_mass():
     assert result.gamma_normalizer_log_error_bound == pytest.approx(1 / (1680 * (5e5) ** 7))
 
 
+@pytest.mark.parametrize("nu,oracle", [
+    (199.9, -0.9201891533013320468736781692596337363320907642424190402116804786637997),
+    (200., -0.9201885279964956465904189488561286013053818006744376274835558600131887),
+    (200.1, -0.9201879033166437787190724979537181751758394685182726265884616853508996),
+    (10000., -0.9189635332046310751141630697237724026272704109880825150268921505478113),
+    (19900., -0.9189510960187378062929968055929038401059880052091496461671419353099541),
+    (19999., -0.9189510338296987842282620293745420284619446635790003129983076100328058),
+    (20000., -0.918951033204667533447012028072165723940460283619283508514257990867039),
+])
+def test_moderate_gamma_normalizer_respects_tight_request_against_high_precision_t(nu, oracle):
+    # Independently evaluated at 70 decimal digits with exact binary64 nu:
+    # loggamma((nu+1)/2)-loggamma(nu/2)-log(nu*pi)/2. Constants avoid adding
+    # a test/runtime mpmath dependency or using the same cancelling scipy formula.
+    result = noise_scale_mixture_logpdf([0.], [0.], [[1.]], np.empty((1, 0)),
+        degrees_of_freedom=nu, relative_tolerance=1e-12)
+    assert abs(np.expm1(result.log_density - oracle)) <= 1e-12
+    assert result.relative_error_estimate <= 1e-12
+
+
+@pytest.mark.parametrize("nu,oracle", [
+    (199.9, -395.9213267121477806269444889813871672251159888933209576275310840666619),
+    (200., -396.0686646167912356968907943558191787449925856267281086501927290477518),
+    (200.1, -396.2159786177910599024482411706632915863471568680054428584683487863478),
+])
+def test_moderate_gamma_tail_includes_normalizer_in_requested_budget(nu, oracle):
+    # Same 70-digit normalized t oracle, adding -(nu+1)/2*log1p(100**2/nu).
+    result = noise_scale_mixture_logpdf([100.], [0.], [[1.]], np.empty((1, 0)),
+        degrees_of_freedom=nu, relative_tolerance=1e-12)
+    assert abs(np.expm1(result.log_density - oracle)) <= 1e-12
+    assert result.relative_error_estimate <= 1e-12
+    assert result.analytic_omitted_tail_relative_bound <= 1e-12
+
+
 def test_gaussian_factor_rotation_preserves_the_declared_distribution():
     noise = np.array([[1., 0.], [.2, .7]])
     factor = np.array([[1., .3], [.1, -.2]])

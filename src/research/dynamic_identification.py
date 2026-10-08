@@ -120,8 +120,10 @@ physical factors; for nu <= 2 this density is proper but its noise covariance
     constant = -0.5 * (n * log(2 * np.pi) + noise_logdet + n * log_a) - gammaln(a)
     k = a + n / 2
     # Evaluate the Gamma peak without subtracting O(a*log(a)) terms.
-    # The retained Stirling remainder is < 1/(1680*a**7) for a >= 1e4.
-    if a >= 1e4:
+    # At a >= 100, the retained Stirling remainder is < 1/(1680*a**7)
+    # <= 5.96e-18. Using cancelling gammaln terms up to a=1e4 violated a
+    # supported 1e-12 density request even when quadrature had converged.
+    if a >= 100:
         inverse_a = 1 / a
         correction = inverse_a / 12 - inverse_a ** 3 / 360 + inverse_a ** 5 / 1260
         gamma_at_unit = 0.5 * (log_a - log(2 * np.pi)) - correction
