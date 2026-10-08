@@ -8,6 +8,7 @@ import os
 from dataclasses import replace
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from data.source_records import prepare_source_record_prefixes
@@ -60,6 +61,14 @@ def _native_bad_output(arguments):
                 report["seed_pairs"].append([99, 98])
             elif violation == "sha":
                 (Path(path).parent / report["cells"][0]["prediction_artifact"]["path"]).write_bytes(b"changed")
+            elif violation == "label_dtype":
+                artifact = report["cells"][0]["prediction_artifact"]
+                prediction_path = Path(path).parent / artifact["path"]
+                with np.load(prediction_path, allow_pickle=False) as saved:
+                    arrays = {name: saved[name] for name in saved.files}
+                arrays["y"] = arrays["y"].astype(np.int32)
+                np.savez_compressed(prediction_path, **arrays)
+                artifact["sha256"] = runner.file_sha256(prediction_path)
             original_write(path, report, **kwargs)
             if violation in {"partial_source", "containment"}:
                 os._exit(43)
@@ -153,7 +162,7 @@ def test_native_all_failed_nonpaired_keeps_unresolved_roster_without_zero_fit_cl
     assert all(cell["actual_K"] is None and cell["participant_key"] is None for cell in report["cells"])
 
 
-@pytest.mark.parametrize("violation", ["subject", "partial_source", "containment", "seed_grid", "sha"])
+@pytest.mark.parametrize("violation", ["subject", "partial_source", "containment", "seed_grid", "sha", "label_dtype"])
 def test_actual_binary_output_admission_rejects_wrong_scientific_identity(tmp_path, violation):
     path, plan = _plan(tmp_path, subjects=("1",), arms=("waveform_lda",))
     programme = _programme(path, plan, tmp_path / "run")
@@ -169,6 +178,8 @@ def test_actual_binary_output_admission_rejects_wrong_scientific_identity(tmp_pa
         assert outcome.supplementary_failures[0]["stage"] == "artifact_admission"
     else:
         assert outcome.failure["stage"] == "artifact_admission"
+        if violation == "label_dtype":
+            assert outcome.failure["message"] == "binary artifact labels/scores differ from the recorded result"
 
 
 def test_predeclared_binary_source_dependency_failures_keep_all_requests(tmp_path):

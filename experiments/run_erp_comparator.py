@@ -22,6 +22,7 @@ if str(ROOT / "src") not in sys.path:
 
 from baselines.structured_erp import ERP_FAMILIES, StructuredERP  # noqa: E402
 from baselines.temporal_transfer import TemporalBasis, resolve_temporal_basis  # noqa: E402
+from data.digests import compact_array_digest  # noqa: E402
 from data.epochs import concatenate_epoch_datasets, select_epoch_channels  # noqa: E402
 from data.identity import DatasetIdentityTable, ParticipantIdentityRecord  # noqa: E402
 from data.source_records import (  # noqa: E402
@@ -54,7 +55,6 @@ from stats.transfer import (  # noqa: E402
     resolve_seed_pairs,
 )
 from transfer.binary import (  # noqa: E402
-    _array_identity,
     matched_input_digests,
     matched_split_digests,
 )
@@ -896,7 +896,7 @@ def _admit_binary_participant(task, outcome, plan, tree):
             if any(cell[key] != digest for key, digest in matched_split_digests(saved["calibration_rows"], saved["test_rows"]).items()):
                 raise ValueError("binary artifact rows differ from its scored input")
             if (len(saved["y"]) != identity["score"]["n_rows"] or not np.isfinite(saved["logits"]).all()
-                    or _array_identity(saved["y"]) != cell["test_labels_sha256"]
+                    or compact_array_digest(saved["y"]) != cell["test_labels_sha256"]
                     or float(roc_auc_score(saved["y"], saved["logits"])) != cell["auc"]):
                 raise ValueError("binary artifact labels/scores differ from the recorded result")
             if cell["probability_status"] == "completed":
