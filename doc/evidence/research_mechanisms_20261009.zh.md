@@ -123,7 +123,11 @@ C状态重建的最高8个信息方向与endpoint value/first-difference rowspac
 
 ERP入口的已删除私有digest调用已修正，原compact dtype/shape/bytes关系保持，真实仓库外CLI help通过。459个Python文件的4665个仓库内显式from-import静态检查未见缺符号；随后实际 `pytest --collect-only tests` exit0，收集217个测试模块/3179用例、源码前后不变。收集没有执行测试断言，完整integrated suite仍待实际足额内存；不降低原native资源声明或重启用户关闭的云。
 
+合入fixedprior/sharedQR和两joint-response模块后，仓库外实际import确认sampling与finite reference复用同一组canonical类、唯一QR core；新integrated test收集220模块/3216case exit0，执行体前后不变。这里只核新源码入口，未执行3216项断言或重复作者绿色用例；完整suite按最终实际source与足额内存验收。
+
 长期owner落实后删除六份已确认等价的prototype/proposal源码与测试副本及首批bytecode，共80,582文本字节；原source producer、执行receipt、数据/cache、模型和最终结果保留。他人或下一批科研WIP未改。验证身份见本轮 `VALIDATION/research_ingress/`。
+
+本批另退役两份B05同字节candidate副本和四份joint-response已等价proposal副本，共158,264文本字节；current owners与原研究receipt/source保留。矩阵实现和实际长度推断的WIP不纳入清理。
 
 ## 八人48格signal-prior归因
 
