@@ -23,7 +23,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
 | B03 校准/混合 | 固定算术池及完整C内分组温度 | 独立泛化/复杂gating另验收 |
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
-| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec冻结响应与真实编译包、可选诊断分离 | 旧M1真实噪声×ERP归因及joint MLE，不把ACF改善当效能 |
+| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec与编译包；576原状态归因、given-noise fixed-physical-prior C fitter与完整drift crosscov | 真实noise×ERP可归因对照、finite endpoint交互与joint MLE，不把ACF/低C目标当效能 |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
 | B07 字典/历史 | A0/A1与五数组portable编译态、端点/容量、model/ensemble无重编译消费；有限整selection joint历史、共享β边缘化及实际保存模型研究adapter | 真实完整history/权限caller和组合保存重放、导数/latency、长history和随机效应 |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |

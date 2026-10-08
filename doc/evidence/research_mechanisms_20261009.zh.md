@@ -79,6 +79,14 @@ C状态重建的最高8个信息方向与endpoint value/first-difference rowspac
 
 作者完整结果及绑定在本轮 `B05_ATTRIBUTION/ATTRIBUTION.zh.md`、`delivery.json`、全部576state与12臂summary。独立审阅已核全部model/ensemble身份、288个同阶initializer/目标关系、12臂原概率宏指标和11个原开发门；另从30份原NPZ独算波形/cross covariance/df/η与endpoint overlap，294项summary独立归约一致。未发现来源或公式错贴，endpoint overlap独算最大差 `3.37e-10`。其结论保本轮 `REVIEWS/B05_M1_ATTRIBUTION.zh.md` 与binding，不将状态归因签成新fitter或独有因果证明。
 
+## 给定noise、固定physical prior的C拟合
+
+`6128c69` 在原 `FittedChannelNoise` 加入 `fit_response_given_frozen_noise`，source SHA `307b3db6e738a7be680936a2fae14eca7be4e9a7b61d56acbe0b6e81b5df1177`、专属test SHA `b286e2065c9027cebbf4df14209a2ce2a21cb717b86aad033e8e46bd9a8bc701`。固定完整physical coefficient prior，noise arm更换不重标Σ；同actual whitening作用于Y/D/Z后流式QR，只加入一次prior。输出保每record information roots/responses、最终augmented root、完整response/drift及跨record covariance，由原FrozenERPResponse/score消费，无第二个生产fitter。
+
+独立dense joint oracle支持shared MN极限、private非separable后验、Σ-only的两种prior区别、单位/非正交basis pullback和prefix/full共同测度评分。原型分阶段8/3/3/1项有重叠，existing-owner接线必要3项实际通过；不累计成15独立case或宣称最终11项全套新通过。root所合source/test逐字节等于该3项实际candidate，Ruff/编译/diff通过，数学与调用链独立审阅接受。详细分阶段来源在本轮 `B05_FIXED_PRIOR/delivery.binding.json`，独立结论见 `REVIEWS/B05_FIXED_PRIOR_SCIENCE.zh.md`。
+
+它是在给定frozen noise/plugin参数下读全授权C的Gaussian后验，不估AR/Σ或积分hyperparameters。实际C labels/design/history、producer、绝对时间与读权限仍由外部caller证明。数组保存重放说明软件状态可恢复，尚不是正式持久包篡改/producer认证；真实归因矩阵与joint MLE另验。
+
 ## 本轮统一软件入口核验
 
 ERP入口的已删除私有digest调用已修正，原compact dtype/shape/bytes关系保持，真实仓库外CLI help通过。459个Python文件的4665个仓库内显式from-import静态检查未见缺符号；随后实际 `pytest --collect-only tests` exit0，收集217个测试模块/3179用例、源码前后不变。收集没有执行测试断言，完整integrated suite仍待实际足额内存；不降低原native资源声明或重启用户关闭的云。

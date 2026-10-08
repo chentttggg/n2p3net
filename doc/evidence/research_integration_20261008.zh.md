@@ -10,7 +10,7 @@
 |---|---|---|
 | B07字典 | `/2`冻结五数组、固定标量算术和物理表达式/constraint/lift；owned模型与ensemble直接消费原dictionary，独立全路径审查闭合 | completion保存重放已通过，完整同版本跨host模型重放待验；有限整selection history参考已以共享β与冻结joint prior边缘化，proper/flat测度分开；生产完整history接入/derivative另验 |
 | B08先验 | 物理equal-class response metric、quotient范围及显式completion；全C/prior生产Q/R/rhs/M保存，评分用precision factor，H是derived diagnostic | 真实completed-fit与弱方向攻击已验；quotient/completion新的公共配对及同版本跨host仍待验 |
-| B05噪声归因 | shared/private与一般vec分开；旧M1原576状态已核对，Σ-only均值取消及增量/fulltarget关系明确 | fixed-physical-prior一般Cfit、noise/response可归因控制及finite endpoint交互进入下一研究；生产joint MLE未由状态诊断实现 |
+| B05噪声归因 | shared/private与一般vec分开；原576状态归因、Σ-only均值取消及增量/fulltarget关系明确；同B05 owner新增fixed-physical-prior given-noise Cfit | 真实noise/response可归因控制、正式fit包与finite endpoint交互仍需验收；生产joint MLE未由状态诊断实现 |
 | B06可观测性 | 实际O/L核空间及每个请求泛函独立归一；真实native有限T、ERP/噪声增量和外部未观测witness | 真实A01只读计划已完成且独立验收；未知state拟合、最终完整预处理和独立效能仍待各自验收 |
 | B09空间 | native/reference/CAR结构与输出gain；一般vec signal prior、冻结noise因子传播、保存生产QR与只读诊断CLI | 真实A01六格和八人48格归因已完成并验收，Pz4无额外hit且NLL升；联合MLE及新效能另验；工作站入口需共同授权owner另接 |
 | B14/B12 | 已审阅e51输入的24个owned文件逐一合入，epoch采样委托共同合同；requested任务、输入/产物预算和单seed源/目标共享owner | 最终composition已审阅合入；3项Linux并发case、真实25CPU/4GPU吞吐与完整公共两面板仍待验 |
