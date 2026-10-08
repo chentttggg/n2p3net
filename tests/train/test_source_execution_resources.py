@@ -7,6 +7,7 @@ from research.source_execution import (
     HostMemoryAdmission,
     SharedTrajectoryRegistry,
     resolve_source_resources,
+    source_group_input_status,
 )
 from tests.support.datasets import epoch_dataset, source_dataset
 from tests.support.io import read_json, write_json
@@ -47,7 +48,7 @@ def test_auto_resources_use_quota_and_memory_instead_of_one_worker():
     assert result["compiler_threads_per_worker"] == 1
     limited = resolve_source_resources({"cpu_budget": 3}, 9, "cuda",
                                        cpu_count=25, free_device_bytes=6 * 2**30, free_host_bytes=256 * 2**30)
-    assert limited["source_workers"] == 3
+    assert limited["source_workers"] == 2
     assert limited["gpu_slots"] == 1
     explicit = resolve_source_resources({"source_workers": 2, "target_workers": 3}, 9,
                                          "cuda", cpu_count=25, free_device_bytes=32 * 2**30,
@@ -97,7 +98,7 @@ def test_nested_workers_share_cpu_quota_across_groups():
         admission = HostMemoryAdmission(manager, resources)
         with admission.source_group(), admission.source_group():
             with admission.target_workers(4) as first:
-                assert first == 3
+                assert first == 2
                 with admission.target_workers(4) as second:
                     assert second == 1
             assert admission.state.child_cpus == 0
@@ -201,7 +202,8 @@ def test_parallel_source_cli_executes_layouts_from_its_snapshot(tmp_path, worker
     effective_workers = resources["source_workers"]
     assert 1 <= effective_workers <= workers
     if effective_workers < workers:
-        assert resources["host_memory_budget_bytes"] < workers * resources["source_worker_memory_bytes"]
+        assert (resources["host_memory_budget_bytes"] < workers * resources["source_worker_memory_bytes"]
+                or resources["worker_cpu_budget"] < workers)
     assert len({row["progress"]["pid"] for row in report["groups"]}) == effective_workers
     assert report["task_count"] == 4 * len(layouts)
     assert report["source_failure_count"] == 0
@@ -221,3 +223,43 @@ def test_cloud_floor_routes_25_threads_and_four_gpu_workers_without_silent_clamp
         with pytest.raises(ValueError, match="floor"):
             resolve_source_resources(plan, 5, "cuda", cpu_count=cpu,
                 free_device_bytes=32 * 2**30, free_host_bytes=memory * 2**30)
+
+
+def test_preparation_and_source_nodes_share_actual_cpu_and_host_capacity():
+    import multiprocessing
+
+    resources = resolve_source_resources({"cpu_budget": 25, "source_workers": 4,
+        "target_workers": 4, "gpu_workers": 4}, 4, "cuda", cpu_count=25,
+        free_device_bytes=32 * 2**30, free_host_bytes=128 * 2**30)
+    with multiprocessing.get_context("spawn").Manager() as manager:
+        admission = HostMemoryAdmission(manager, resources)
+        reservations = [admission.reserve_phase(phase, cpu_threads=6, memory_bytes=6 * 2**30)
+                        for phase in ("preparation", "source", "source", "source")]
+        assert all(reservations)
+        assert admission.record()["reserved_cpu_threads"] == 25
+        assert admission.record()["coordinator_cpu_threads"] == 1
+        assert admission.reserve_phase("source", cpu_threads=6, memory_bytes=6 * 2**30) is None
+        admission.release_phase(reservations.pop(0))
+        final = admission.reserve_phase("source", cpu_threads=6, memory_bytes=6 * 2**30)
+        assert final is not None
+        assert admission.record()["source_groups"] == 4
+        for reservation in [*reservations, final]:
+            admission.release_phase(reservation)
+        assert admission.record()["reserved_cpu_threads"] == 1
+        assert admission.record()["free_worker_memory_bytes"] == resources["host_memory_budget_bytes"]
+
+
+def test_ready_whole_study_folds_do_not_drop_pending_or_failed_members():
+    studies = [f"study{i}" for i in range(12)]
+    groups = [({"name": held, "source_studies": [study for study in studies if study != held]}, "six")
+              for held in studies[:4]]
+    initial = {"ready": {study: {} for study in studies[1:]},
+               "pending": {studies[0]: "running"}, "failed": {}}
+    ready = source_group_input_status(groups, initial)
+    assert ready["ready"] == [groups[0]]
+    assert len(ready["pending"]) == 3 and not ready["failed"]
+    assert all(missing == [studies[0]] for _, _, missing in ready["pending"])
+    failed = source_group_input_status(groups, {**initial, "failed": {studies[0]: "raw preparation failed"}})
+    assert failed["ready"] == [groups[0]] and len(failed["failed"]) == 3
+    assert not failed["pending"]
+    assert all(len(outer["source_studies"]) == 11 for outer, _ in groups)

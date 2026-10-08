@@ -106,6 +106,26 @@ class SourceChainResume:
                     "origin_checkpoints": {str(update): {"path": str(path), "sha256": self.verify(path)}
                                            for update, path in paths.items()}}}
 
+    def prepared_source_view(self, outer, input_bindings):
+        """Reuse the frozen whole-fold input even when execution budgets change."""
+        if self.inventory is None:
+            return None
+        tasks = [task for task in self.record["tasks"]
+                 if task["key"].startswith(f"{outer}/six/") and "source_input_bindings" in task]
+        if not tasks:
+            return None
+        first = tasks[0]
+        identity = (first["source_cache"], first["source_cache_sha256"], first["source_input_bindings"])
+        if any((task["source_cache"], task["source_cache_sha256"], task["source_input_bindings"]) != identity
+               for task in tasks) or first["source_input_bindings"] != input_bindings:
+            raise ValueError("resumed whole-fold source view differs from admitted preparation inputs")
+        path = Path(first["source_cache"])
+        if self.verify(path) != first["source_cache_sha256"]:
+            raise ValueError("resumed whole-fold source view differs from its recorded producer bytes")
+        self.verify(path.with_suffix(".record.json"))
+        return {"source_cache": str(path.resolve()),
+                "expected_source_cache_sha256": first["source_cache_sha256"]}
+
     def selection(self, outer, source_seed, target_seed, axis):
         return next((row for row in self.record.get("selection", [])
                      if (row["outer"], row["source_seed"], row["target_seed"], row["axis"])

@@ -6,6 +6,7 @@ import json
 import os
 import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import nullcontext
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,7 +65,7 @@ def _row_key(row):
     return json.dumps(row["records"] if "records" in row else row["record"], sort_keys=True)
 
 
-def main(argv=None):
+def main(argv=None, *, merge_gate=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -192,7 +193,8 @@ def main(argv=None):
         atomic_write_json(result_path, result)
         print(json.dumps({"status": "completed", "target_prefixes": str(final), "records": len(rows)}), flush=True)
         return
-    final = merge_source_shards([row["cache"] for row in rows], args.output / "epochs.npz")
+    with merge_gate if merge_gate is not None else nullcontext():
+        final = merge_source_shards([row["cache"] for row in rows], args.output / "epochs.npz")
     result.update(status="completed", cache=str(final), cache_sha256=file_sha256(final),
         cache_record_sha256=file_sha256(final.with_suffix(".record.json")),
         n_epochs=sum(row["n_epochs"] for row in rows), scheduled=sum(row["scheduled"] for row in rows),

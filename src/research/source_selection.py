@@ -38,6 +38,100 @@ SOURCE_CHAIN_LAYOUTS = {"six": ("Fz", "P3", "Pz", "P4", "PO8", "Oz"),
                         "common_three": ("P3", "Pz", "P4")}
 
 
+def _independent_source_config_parameters(value):
+    if not isinstance(value, Mapping) or set(value) != {"pos_weight", "val_groups_min", "val_groups_max"}:
+        raise ValueError("independent source_config must declare pos_weight and validation group bounds only")
+    weight, minimum, maximum = (value[key] for key in ("pos_weight", "val_groups_min", "val_groups_max"))
+    if (not isinstance(weight, (int, float)) or isinstance(weight, bool) or not 0 < weight < float("inf")
+            or type(minimum) is not int or minimum < 1
+            or maximum is not None and (type(maximum) is not int or maximum < minimum)):
+        raise ValueError("independent source_config requires positive class weight and valid group bounds")
+    return {"pos_weight": float(weight), "val_groups_min": minimum, "val_groups_max": maximum}
+
+
+def resolve_independent_source_config(declared, identity, study_membership):
+    """Bind the source-only risk and fraction cap to actual participant authority."""
+    declared = _independent_source_config_parameters(declared)
+    participants = {}
+    for record in identity.records:
+        studies = study_ids_for_identity(DatasetIdentityTable((record,)), study_membership)
+        if len(studies) != 1:
+            raise ValueError("independent source participant must belong to one actual source study")
+        participants.setdefault(studies[0], set()).add(record.authority_key())
+    counts = {study: len(people) for study, people in sorted(participants.items())}
+    maximum = max(counts.values()) if declared["val_groups_max"] is None else declared["val_groups_max"]
+    return {"declared": declared, "resolved": {**declared, "val_groups_max": maximum},
+            "source_participant_counts": counts,
+            "val_groups_max_basis": ("maximum_actual_source_participants_per_study"
+                                     if declared["val_groups_max"] is None else "explicit_source_cap")}
+
+
+def resolve_source_program(plan, stages):
+    """Separate the independent per-seed procedure from historical programs."""
+    from data.epochs import parse_preprocessing_spec
+    from research.source_catalog import paired_pipeline_seeds
+    from train.early_stopping import GlobalEarlyStoppingPolicy
+
+    expected = "unified" if "unified_source" in stages else "declared_legacy_stages"
+    program = plan.get("source_program", expected)
+    if program == expected:
+        return {"name": program}
+    if program != "independent_selection_refit":
+        raise ValueError("source_program differs from the requested source stages")
+    outers = plan["outer_folds"]
+    if not outers or len({outer.get("target_study") for outer in outers}) != len(outers):
+        raise ValueError("independent source requires nonempty unique outer target study folds")
+    if (set(stages) != {"P2_source"} or plan.get("source_layouts") != ["six"]
+            or plan.get("source_objectives") != {"ce": {}}
+            or plan.get("paired_source_target_seeds") is not True
+            or not isinstance(plan.get("source_preprocessing"), dict)
+            or not isinstance(plan.get("global_early_stopping"), dict)
+            or any(plan.get(field) is not None for field in (
+                "unified_training_budget", "source_prior_selection", "source_budget"))
+            or any(outer.get("source_prior_selection") is not None for outer in plan["outer_folds"])):
+        raise ValueError("independent source requires plain CE, six channels, explicit preprocessing, paired seeds and its own patience/refit program")
+    spec = parse_preprocessing_spec(plan["source_preprocessing"])
+    if spec.filter_phase != "zero":
+        raise ValueError("independent source requires an explicit finite zero-phase profile")
+    if not {"patience", "min_delta", "source_max_epochs", "source_validation_fraction"} <= set(plan["global_early_stopping"]):
+        raise ValueError("independent source requires its four consumed stopping parameters explicitly")
+    source_config = _independent_source_config_parameters(plan.get("source_config"))
+    policy = GlobalEarlyStoppingPolicy(**plan["global_early_stopping"])
+    source_seeds, target_seeds = plan.get("source_seeds", ()), plan.get("target_seeds", ())
+    pairs = paired_pipeline_seeds(plan.get("seed_pairs", list(zip(source_seeds, target_seeds, strict=True))))
+    if (set(source_seeds) != {pair[0] for pair in pairs}
+            or set(target_seeds) != {pair[1] for pair in pairs}):
+        raise ValueError("independent source pairs must cover the declared source and target seeds exactly")
+    for outer in plan["outer_folds"]:
+        if (outer.get("role", "evaluation") != "evaluation"
+                or outer.get("target_study") not in outer["excluded_source_datasets"]
+                or "source_studies" not in outer):
+            raise ValueError("independent source folds require explicit full study membership and whole-target-study exclusion")
+    return {"name": program, "preprocessing": spec.record(), "stopping": policy.record(),
+            "source_config": source_config,
+            "seed_pairs": [list(pair) for pair in pairs], "procedure": "selection_refit"}
+
+
+def validate_independent_source_input(dataset, preprocessing):
+    """Admit the declared operator and its actual measured-Cz execution once."""
+    from data.channel import canonical_channel_name
+    from data.epochs import parse_preprocessing_spec
+
+    declared = parse_preprocessing_spec(preprocessing)
+    if (declared.filter_phase != "zero" or dataset.preprocessing != declared
+            or tuple(map(canonical_channel_name, dataset.channel_names)) != tuple(map(canonical_channel_name, SOURCE_CHAIN_LAYOUTS["six"]))
+            or dataset.provenance.get("source_reference") != "measured_channel:CZ"):
+        raise ValueError("independent source cache differs from its declared finite profile or measured-Cz six-channel input")
+    binding = preprocessing_execution_binding(dataset.provenance.get("preprocessing_execution"), declared)
+    identity = binding.get("execution_identity")
+    if identity is None:
+        raise ValueError("independent source requires complete actual preprocessing execution evidence")
+    return {"preprocessing": declared.record(), "execution_identity": identity,
+            "execution_provenance_sha256": binding["execution_provenance_sha256"],
+            "channel_names": list(dataset.channel_names), "n_times": dataset.n_times,
+            "source_reference": dataset.provenance["source_reference"]}
+
+
 def source_identity_axes(dataset: EpochDataset) -> tuple[np.ndarray, np.ndarray, dict]:
     """Resolve actual person/library identities and reject relabelled duplicate domains."""
     if dataset.identity_table is None:
@@ -341,7 +435,8 @@ def source_architecture_record(dataset: EpochDataset, architecture: N2P3Architec
         sfreq=dataset.preprocessing.sfreq, n_times=dataset.n_times, architecture=architecture)
 
 
-def validate_source_procedure(payload, *, source_seed, outer_target_study, evidence_scope, kind):
+def validate_source_procedure(payload, *, source_seed, outer_target_study, evidence_scope, kind,
+                              expected_source_config=None):
     """Admit the procedure that produced these weights, not a catalog status flag.
 
     This owner supports its fixed-update and participant-disjoint epoch/refit
@@ -362,6 +457,17 @@ def validate_source_procedure(payload, *, source_seed, outer_target_study, evide
     if contract.seed != source_seed:
         raise ValueError("source procedure seed differs from actual checkpoint seed")
     config = contract.optimizer.get("config", {})
+    program_config = contract.objective.get("source_program_config")
+    declared_config = expected_source_config
+    if declared_config is None and program_config is not None:
+        declared_config = program_config["declared"]
+    expected = None
+    if declared_config is not None:
+        expected = resolve_independent_source_config(declared_config, identity, checkpoint_study_membership(payload))
+        if ({key: config.get(key) for key in expected["resolved"]} != expected["resolved"]
+                or payload.get("source_calibration", {}).get("pos_weight") != expected["resolved"]["pos_weight"]
+                or program_config is not None and program_config != expected):
+            raise ValueError("source actual producer differs from the declared independent source_config")
     selection = payload.get("source_epoch_selection")
     known_selection = (selection is not None or payload.get("global_early_stopping") is not None
         or payload.get("source_budget") is not None or config.get("source_budget") is not None
@@ -453,6 +559,18 @@ def validate_source_procedure(payload, *, source_seed, outer_target_study, evide
                 or not set(part["actual_source_libraries"]) <= set(ledger["actual_source_libraries"])
                 or part["fit_rows_sha256"] != semantic_sha256(part["fit_rows"])):
             raise ValueError("source inner selection rows differ from refit cache/source authority")
+    if expected is not None:
+        from baselines.validation import group_disjoint_validation_split
+
+        held_identity = DatasetIdentityTable.from_payload(held["training_identity_ledger"])
+        held_counts = resolve_independent_source_config(declared_config, held_identity,
+                                                       checkpoint_study_membership(payload))["source_participant_counts"]
+        expected_counts = {study: group_disjoint_validation_split(np.arange(count),
+            fraction=policy.source_validation_fraction, min_groups=config["val_groups_min"],
+            max_groups=config["val_groups_max"]).n_validation_groups
+            for study, count in expected["source_participant_counts"].items()}
+        if held_counts != expected_counts:
+            raise ValueError("source selected validation participants differ from the declared fraction/group rule")
     check_every = ceil(len(training) / config["batch_size"])
     history = selection["inner_history"]
     early = history["early_stopping"]
@@ -480,6 +598,7 @@ def validate_source_procedure(payload, *, source_seed, outer_target_study, evide
             "actual_refit_updates": updates, "selection_digest": semantic_sha256(selection),
             "fit_ledger_digest": semantic_sha256(ledger), "source_evidence_scope": source_scope,
             "consumer_evidence_scope": evidence_scope,
+            **({"source_program_config": program_config} if program_config is not None else {}),
             "source_studies": sorted(studies)}
 
 
@@ -491,6 +610,7 @@ def fit_source_trajectory(
     architecture: N2P3ArchitectureConfig = DEFAULT_N2P3_ARCHITECTURE,
     runtime_preload_budget_bytes: int | None = None,
     runtime_input_staging_gate=None,
+    source_program_config=None,
 ) -> tuple[N2P3NetBaseline, dict[int, dict]]:
     """Fit actual rows once and return loadable, source-bound candidate checkpoints."""
     if config.global_early_stopping is not None:
@@ -501,6 +621,7 @@ def fit_source_trajectory(
             architecture=architecture,
             runtime_preload_budget_bytes=runtime_preload_budget_bytes,
             runtime_input_staging_gate=runtime_input_staging_gate,
+            source_program_config=source_program_config,
         )
     if config.fixed_updates is None:
         raise ValueError("source trajectory requires explicit fixed updates")
@@ -551,6 +672,7 @@ def fit_source_trajectory(
                        "trial_draws": snapshot["trial_draws"], "batch_sequence_sha256": snapshot["batch_sequence_sha256"]},
             validation={"strategy": "fixed_source_updates", "fit_ledger": ledger, "evidence_scope": evidence_scope},
             objective={"name": "hierarchical_weighted_CE", "sampling": model.sampling_ledger_,
+                       **({"source_program_config": source_program_config} if source_program_config is not None else {}),
                        **({"source_auxiliary": snapshot["source_objective"]}
                           if "source_objective" in snapshot else {}),
                        "input_statistics": model.source_statistics_, "source_study_membership": study_membership}, seed=config.seed,
@@ -587,6 +709,7 @@ def _fit_source_with_early_stopping(
     dataset, rows, *, config, source_cache_sha256, source_snapshot_sha256,
     excluded_source_datasets, device, evidence_scope, architecture, runtime_preload_budget_bytes=None,
     runtime_input_staging_gate=None,
+    source_program_config=None,
 ):
     """Hold out source participants, select epochs, then independently refit all source rows."""
     from transfer.checkpoint import checkpoint_training_contract
@@ -649,7 +772,7 @@ def _fit_source_with_early_stopping(
         source_cache_sha256=source_cache_sha256, source_snapshot_sha256=source_snapshot_sha256,
         excluded_source_datasets=excluded_source_datasets, device=device, evidence_scope=evidence_scope,
         architecture=architecture, runtime_preload_budget_bytes=runtime_preload_budget_bytes,
-        runtime_input_staging_gate=runtime_input_staging_gate)
+        runtime_input_staging_gate=runtime_input_staging_gate, source_program_config=source_program_config)
     selection.update(refit_updates=refit_updates,
         total_optimizer_updates=history["optimizer_updates"] + model.last_history["optimizer_updates"],
         total_trial_draws=history["trial_draws"] + model.last_history["trial_draws"],

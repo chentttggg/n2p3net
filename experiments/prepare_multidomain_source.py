@@ -93,7 +93,7 @@ def _prepare_source(
     }
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", action="append", type=_source_spec, required=True)
     parser.add_argument("--target-channels", required=True)
@@ -135,7 +135,7 @@ def main() -> None:
         default=None,
         help="Total native CPU thread budget shared by source workers.",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.missing_channel_policy == "mask" and args.reference_mode == "common_average":
         parser.error(
             "masked montage cannot claim one shared CAR over different observed electrodes"

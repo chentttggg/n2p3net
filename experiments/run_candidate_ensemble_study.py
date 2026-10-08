@@ -577,7 +577,8 @@ def run_study(plan_path: str | Path, output: str | Path):
         if plan["source_checkpoints"] or plan.get("resume") is not None:
             raise ValueError("independent prefixes use the outer-study/seed source catalog")
         catalog = SourceSeedCatalog(plan["source_seed_catalog"], base_directory=plan_path.parent,
-                                    evidence_scope=plan["evidence_scope"])
+                                    evidence_scope=plan["evidence_scope"],
+                                    expected_source_config=plan.get("expected_source_config"))
         source_snapshots = {(entry["outer_target_study"], entry["source_seed"]):
             FrozenSourceCheckpoint(catalog.content(entry["outer_target_study"], entry["source_seed"]))
             for entry in catalog.record()}

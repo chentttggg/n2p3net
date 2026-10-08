@@ -297,7 +297,7 @@ def run_comparison(plan_path: Path, output: Path):
         if any("checkpoint" in arm or "checkpoints" in arm for arm in arms):
             raise ValueError("paired source pipelines consume the source catalog exclusively")
         catalog = SourceSeedCatalog(plan["source_seed_catalog"], base_directory=plan_path.parent,
-                                    evidence_scope=scope)
+                                    evidence_scope=scope, expected_source_config=plan.get("expected_source_config"))
         catalog_snapshots = {(entry["outer_target_study"], entry["source_seed"]): (
             catalog.content(entry["outer_target_study"], entry["source_seed"]), entry["checkpoint_sha256"]
         ) for entry in catalog.record()}

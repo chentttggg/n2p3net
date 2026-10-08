@@ -8,6 +8,7 @@ import hashlib
 import json
 import multiprocessing
 import os
+import shutil
 import sys
 import time
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, as_completed, wait
@@ -16,6 +17,8 @@ from functools import lru_cache
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
@@ -48,6 +51,7 @@ def fit_or_reuse_source_trajectory(
     device, evidence_scope, gpu_slots=None, architecture=None,
     runtime_preload_budget_bytes=None,
     runtime_input_staging_gate=None,
+    source_program_config=None,
 ):
     """Reuse exact source training inputs while binding each consumer's own contract."""
     import numpy as np
@@ -86,6 +90,14 @@ def fit_or_reuse_source_trajectory(
         "source_snapshot_sha256": source_snapshot_sha256, "evidence_scope": evidence_scope,
         "initialization": "scratch_N2P3NetBaseline_fixed_source_seed",
     }
+    if config.global_early_stopping is not None:
+        # The selector's cache/row partition is producer evidence, not a
+        # consumer label that can be rebound to another fitted trajectory.
+        signature_record["selection_input_binding"] = {
+            "source_cache_sha256": source_cache_sha256,
+            "full_fit_ledger_digest": semantic_sha256(fit_ledger)}
+    if source_program_config is not None:
+        signature_record["source_program_config"] = source_program_config
     signature = semantic_sha256(signature_record)
     arguments = dict(dataset=dataset, rows=rows, config=config, destination=destination, task_id=task_id,
         source_cache_sha256=source_cache_sha256, source_snapshot_sha256=source_snapshot_sha256,
@@ -94,6 +106,7 @@ def fit_or_reuse_source_trajectory(
         architecture=architecture)
     arguments["runtime_preload_budget_bytes"] = runtime_preload_budget_bytes
     arguments["runtime_input_staging_gate"] = runtime_input_staging_gate
+    arguments["source_program_config"] = source_program_config
     if isinstance(registry, SharedTrajectoryRegistry):
         with registry.transaction(signature) as local:
             return _materialize_source_trajectory(registry=local, **arguments)
@@ -103,7 +116,7 @@ def fit_or_reuse_source_trajectory(
 def _materialize_source_trajectory(*, registry, dataset, rows, config, destination, task_id,
         source_cache_sha256, source_snapshot_sha256, excluded_source_datasets, device, evidence_scope,
         signature, signature_record, fit_ledger, gpu_slots, architecture, runtime_preload_budget_bytes=None,
-        runtime_input_staging_gate=None):
+        runtime_input_staging_gate=None, source_program_config=None):
     import torch
 
     from data.study import dataset_study_membership
@@ -139,6 +152,7 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
                     architecture=architecture,
                     runtime_preload_budget_bytes=runtime_preload_budget_bytes,
                     runtime_input_staging_gate=runtime_input_staging_gate,
+                    source_program_config=source_program_config,
                 )
                 physical_updates = int(model.last_history["optimizer_updates"])
                 physical_draws = int(model.last_history["trial_draws"])
@@ -170,6 +184,14 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
             origin_record = {**origin, "training_contract_digest": original.digest(),
                              "source_snapshot_sha256": original.source_snapshot_sha256}
             reuse["origin_checkpoints"][str(update)] = origin_record
+            if selecting:
+                if (original.source_cache_sha256 != source_cache_sha256
+                        or original.validation["fit_ledger"] != fit_ledger):
+                    raise ValueError("selected trajectory reuse must preserve its original source producer binding")
+                path = destination / f"source.u{update}.pt"
+                shutil.copyfile(origin["path"], path)
+                checkpoints[update] = str(path.resolve())
+                continue
             provenance = {"schema": reuse["schema"], "training_signature": signature,
                           "origin_checkpoint": origin_record, "physical_fit_performed": False,
                           "physical_optimizer_updates": 0, "physical_trial_draws": 0}
@@ -420,15 +442,70 @@ def _score_e2_candidates(dataset, path, cohort, candidates, *, workers, progress
     return sorted(outcomes, key=lambda row: (row["updates"], row["participant_key"], row["actual_K"]))
 
 
+def _independent_source_requests(plan):
+    pairs = plan.get("seed_pairs") or list(zip(plan["source_seeds"], plan["target_seeds"], strict=True))
+    return [{"key": f"{outer['name']}/six/seed{source_seed}/P2_source_ce",
+             "outer": outer["name"], "outer_target_study": outer["target_study"],
+             "source_studies": outer["source_studies"], "source_seed": source_seed,
+             "target_seed": target_seed, "status": "pending"}
+            for outer in plan["outer_folds"] for source_seed, target_seed in pairs]
+
+
+def _finish_independent_source_report(report, output):
+    """Retain every requested procedure, including unavailable source inputs."""
+    tasks = {task["key"]: task for task in report["tasks"]}
+    for request in report["requested_source_tasks"]:
+        if request["key"] in tasks:
+            task = tasks[request["key"]]
+            if task["status"] in {"completed", "fit_failure"} or request["status"] == "pending":
+                request["status"] = task["status"]
+            if task.get("failure") is not None:
+                request["failure"] = task["failure"]
+    report.update(requested_source_task_count=len(report["requested_source_tasks"]),
+        source_failure_count=sum(request["status"] not in {"completed", "planned", "pending"}
+                                 for request in report["requested_source_tasks"]),
+        completed_physical_fit_count=sum(task.get("physical_fit_count", 0) for task in tasks.values()),
+        completed_logical_fit_count=sum(task.get("logical_fit_count", 0) for task in tasks.values()))
+    report["unmeasured_source_fit_tasks"] = [task["key"] for task in tasks.values()
+                                            if task["status"] in {"fit_failure", "running"}]
+    if not report["dry_run"]:
+        report.update(optimizer_updates=sum(task["optimizer_updates"] for task in tasks.values()
+                                            if task["status"] == "completed"),
+            trial_draws=sum(task["trial_draws"] for task in tasks.values() if task["status"] == "completed"),
+            optimizer_exposure_scope="completed_source_procedures",
+            physical_optimizer_exposure_scope="returned_fit_attempts")
+    atomic_write_json(output / "source_seed_catalog.json", {
+        "schema": "n2p3_source_seed_catalog/1", "source_program": report["source_program_record"],
+        "source_snapshot": report["source_snapshot"], "source_evidence_scope": report["evidence_scope"],
+        "entries": report["source_seed_catalog"], "requested": report["requested_source_tasks"],
+        "optimizer_exposure_scope": report.get("optimizer_exposure_scope", "planned_upper_bound"),
+        "physical_optimizer_exposure_scope": report.get("physical_optimizer_exposure_scope", "no_execution"),
+        "unmeasured_source_fit_tasks": report["unmeasured_source_fit_tasks"],
+        "physical_fit_count": report["completed_physical_fit_count"],
+        "logical_fit_count": report["completed_logical_fit_count"]})
+
+
 def _save_chain_report(output, report):
+    import torch
+
     atomic_write_json(output / "source_chain_record.json", report)
     tasks = report.get("tasks", [])
+    completed = {task["key"] for task in tasks if task["status"] in {"completed", "fit_failure"}}
+    active = next((task for task in reversed(tasks) if task["status"] == "running"), None)
+    remaining = [request for request in report.get("requested_source_tasks", [])
+                 if request["key"] not in completed]
     atomic_write_json(output / "worker_progress.json", {
         "pid": os.getpid(), "updated_unix": time.time(), "task_count": len(tasks),
         "completed_tasks": sum(task["status"] == "completed" for task in tasks),
         "failed_tasks": sum(task["status"] == "fit_failure" for task in tasks),
         "resumed_tasks": sum(task.get("source_training_reuse", {}).get("kind") == "completed_previous_run" for task in tasks),
         "physical_optimizer_updates": sum(task.get("physical_optimizer_updates", 0) for task in tasks),
+        "native_threads": torch.get_num_threads(),
+        "source_input_admitted": report.get("source_input_admitted", False),
+        "active_source_seed": None if active is None else active["config"]["seed"],
+        "remaining_source_seed_tasks": [{"key": request["key"], "source_seed": request["source_seed"]}
+                                         for request in remaining],
+        "source_seed_execution_topology": "sequential_in_one_cache_group",
         "last_task": tasks[-1]["key"] if tasks else None,
         "completed_selections": len(report.get("selection", [])),
     })
@@ -455,36 +532,150 @@ def source_execution_groups(plan, stages):
 
 
 def _source_group_worker(arguments):
-    from train.runtime import cpu_thread_budget
+    from contextlib import nullcontext
+
+    from train.runtime import configure_spawned_worker_threads, cpu_thread_budget
 
     plan, output, device, stages = arguments
+    native_threads = plan.get("_native_threads_per_worker", 1)
+    configure_spawned_worker_threads(native_threads)
+    for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+        os.environ[name] = str(native_threads)
     os.environ["TORCHINDUCTOR_COMPILE_THREADS"] = "1"
-    with cpu_thread_budget(plan.get("_native_threads_per_worker", 1)), plan["_memory_admission"].source_group():
+    admission = nullcontext() if plan.get("_phase_reserved") else plan["_memory_admission"].source_group()
+    with cpu_thread_budget(native_threads), admission:
+        if plan.get("_prepared_source_inputs") is not None:
+            plan = _prepare_source_group_inputs(plan, Path(output))
         execute_source_chain(plan, output=Path(output), dry_run=False, device=device,
                              stages=stages, evaluate_outer=False)
     return str(Path(output) / "source_chain_record.json")
 
 
+def _prepare_source_group_inputs(plan, output):
+    """Materialize one complete outer view, then let all seeds share its load."""
+    from data.epochs import _read_epoch_cache_record
+    from experiments.prepare_multidomain_source import main as merge
+    from research.source_resume import SourceChainResume
+
+    inputs = plan["_prepared_source_inputs"]
+    outer = dict(plan["outer_folds"][0])
+    bindings = {study: {field: record[field] for field in (
+        "manifest_sha256", "cache_sha256", "cache_record_sha256", "preparation_method")}
+        for study, record in inputs.items()}
+    previous = SourceChainResume(plan.get("resume_source_run")).prepared_source_view(outer["name"], bindings)
+    if previous is not None:
+        outer.update(previous)
+    elif len(inputs) == 1:
+        record = next(iter(inputs.values()))
+        outer.update(source_cache=record["cache"], expected_source_cache_sha256=record["cache_sha256"])
+    else:
+        cache = output.parent.parent / "source_views" / output.name / "source.npz"
+        argv = ["--output", str(cache), "--target-channels", "Fz,P3,Pz,P4,PO8,Oz",
+            "--event-contract", "binary_evidence", "--reference-mode", "measured_channel",
+            "--reference-channel", "Cz",
+            "--missing-channel-policy", "mask", "--source-workers", "1",
+            "--cpu-threads", str(plan["_native_threads_per_worker"])]
+        for study in outer["source_studies"]:
+            argv.extend(("--source", f"{study}={inputs[study]['cache']}"))
+        with plan["_source_load_slots"]:
+            merge(argv)
+        metadata, attestation = _read_epoch_cache_record(cache)
+        loaded = {record["namespace"]: record["cache_sha256"] for record in metadata["provenance"]["sources"]}
+        if loaded != {study: record["cache_sha256"] for study, record in inputs.items()}:
+            raise ValueError("source merge consumed different bytes from the admitted prepared inventory")
+        outer.update(source_cache=str(cache.resolve()), expected_source_cache_sha256=attestation["sha256"])
+    outer["source_input_bindings"] = bindings
+    return {**plan, "outer_folds": [outer]}
+
+
+def _source_preparation_worker(arguments):
+    from experiments.prepare_source_records import main as prepare
+    from train.runtime import cpu_thread_budget
+
+    manifest, output, profile, record_workers, staging = arguments
+    for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+        os.environ[name] = "1"
+    with cpu_thread_budget(1):
+        prepare(["--manifest", manifest, "--output", output, "--preprocessing-config", profile,
+                 "--workers", str(record_workers)], merge_gate=staging)
+    path = Path(output) / "preparation.json"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    return {"record": str(path), "status": record["status"], "record_workers": record["workers"],
+            "controller_pid": os.getpid(), "native_threads_per_record_worker": 1,
+            "cache_sha256": record["cache_sha256"]}
+
+
 def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, groups):
     import torch
 
+    from data.epochs import parse_preprocessing_spec
+    from data.source_admission import PreparedSourceInventory, bind_source_inputs
     from research.evaluation import verified_executed_snapshot
-    from research.source_execution import HostMemoryAdmission, resolve_source_resources
+    from research.source_execution import (
+        HostMemoryAdmission,
+        resolve_source_resources,
+        source_group_input_status,
+    )
+    from research.source_selection import resolve_source_program
     from transfer.target_experiments import resolve_target_batch_rule
 
     resources = resolve_source_resources(plan, len(groups), device)
     snapshot = verified_executed_snapshot(plan["source_snapshot_manifest"], root=ROOT)
+    program = resolve_source_program(plan, stages)
+    independent = program["name"] == "independent_selection_refit"
+    prepared_directory = plan.get("prepared_source_directory")
+    manifests = plan.get("source_preparation_manifests", {})
+    input_wait = plan.get("wait_for_preparation_seconds", 0.)
+    if not isinstance(input_wait, (int, float)) or not 0 <= input_wait < float("inf"):
+        raise ValueError("preparation wait must be finite and nonnegative")
+    if (prepared_directory or manifests) and not independent:
+        raise ValueError("prepared source DAG requires the explicit independent source program")
+    if manifests and not prepared_directory:
+        raise ValueError("source preparation requires an explicit prepared_source_directory")
+    required_studies = {study for outer, _ in groups for study in outer.get("source_studies", ())}
+    inventory = None
+    if prepared_directory:
+        if any("source_cache" in outer for outer, _ in groups):
+            raise ValueError("declare prepared source studies or fixed source caches, never both")
+        from data.source_parsers import validate_source_manifest
+        from experiments.prepare_source_records import _manifest_preprocessing
+
+        if not isinstance(manifests, dict) or not set(manifests) <= required_studies:
+            raise ValueError("preparation manifests must identify declared source dependencies")
+        spec = parse_preprocessing_spec(program["preprocessing"])
+        manifest_hashes = {}
+        for study, path in manifests.items():
+            declaration = json.loads(Path(path).read_text(encoding="utf-8"))
+            validate_source_manifest(declaration)
+            if declaration["study"] != study or _manifest_preprocessing(declaration, None) != spec:
+                raise ValueError("source preparation manifest must explicitly declare the independent program's profile")
+            manifest_hashes[study] = _sha256(path)
+        inventory = PreparedSourceInventory(prepared_directory, preprocessing=spec,
+                                            expected_manifest_sha256=manifest_hashes)
     if output.exists() and any(output.iterdir()):
         raise FileExistsError("parallel source chain requires a new or empty output directory")
     output.mkdir(parents=True, exist_ok=True)
     batch, rule = resolve_target_batch_rule(plan)
-    plan = {**plan, "target_batch_size": batch, "batch_rule": rule, "target_workers": resources["target_workers"]}
+    plan = {**plan, "target_batch_size": batch, "batch_rule": rule,
+            "cpu_budget": resources["cpu_budget"], "target_workers": resources["target_workers"],
+            "_target_native_threads_per_worker": resources["native_threads_per_worker"]}
     report = {"schema": "n2p3_source_training_chain_run/1", "dry_run": False,
               "status": "running", "source_snapshot": snapshot, "resource_policy": resources,
+              "source_program": program["name"], "source_program_record": program,
               "evidence_scope": plan.get("evidence_scope", "development"), "batch_rule": rule,
               "source_seeds": plan.get("source_seeds", [20260906]),
               "target_seeds": plan.get("target_seeds", [20260906]), "groups": [],
+              "preparation": [], "resource_observations": [],
               "tasks": [], "selection": [], "preflight_failures": [], "outer_evaluation_jobs": []}
+    if independent:
+        report.update(source_seed_catalog=[], requested_source_tasks=_independent_source_requests(plan))
+    for index, (outer, layout) in enumerate(groups):
+        directory = output / "groups" / f"{index:02d}_{outer['name']}_{layout}"
+        report["groups"].append({"outer": outer["name"], "layout": layout,
+            "directory": str(directory), "status": "pending", "source_studies": outer.get("source_studies")})
+    profile_path = output / "source_preprocessing.json"
+    if inventory is not None:
+        atomic_write_json(profile_path, program["preprocessing"])
     _save_chain_report(output, report)
     context = multiprocessing.get_context("spawn")
     with context.Manager() as manager:
@@ -492,55 +683,157 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
         load_slots = manager.BoundedSemaphore(int(plan.get("source_load_workers", resources["source_workers"])))
         memory_admission = HostMemoryAdmission(manager, resources)
         with ProcessPoolExecutor(max_workers=resources["source_workers"], mp_context=context) as pool:
-            futures = {}
-            for index, (outer, layout) in enumerate(groups):
-                directory = output / "groups" / f"{index:02d}_{outer['name']}_{layout}"
-                child = {**plan, "outer_folds": [outer], "source_layouts": [layout],
-                         "_source_group": True, "_defer_outer_plans": True, "_gpu_slots": slots,
-                         "_memory_admission": memory_admission,
-                         "_native_threads_per_worker": resources["native_threads_per_worker"],
-                         "_source_load_slots": load_slots,
-                         "_runtime_preload_budget_bytes": resources["resident_memory_budget_bytes"],
-                         "shared_registry_directory": str(output / "trajectory_registry"),
-                         "target_workers": resources["inner_workers_per_group"]}
-                entry = {"outer": outer["name"], "layout": layout, "directory": str(directory), "status": "running"}
-                report["groups"].append(entry)
-                futures[pool.submit(_source_group_worker, (child, str(directory), device, stages))] = entry
-            _save_chain_report(output, report)
-            pending = set(futures)
-            while pending:
-                done, pending = wait(pending, timeout=5, return_when=FIRST_COMPLETED)
+            pending = list(range(len(groups)))
+            active, preparation_started, preparation_failures = {}, set(), {}
+            bindings, previous_input_status = {}, None
+            deadline = time.monotonic() + input_wait
+            while pending or active:
+                state = {"ready": {}, "pending": {}, "failed": {}}
+                if inventory is not None:
+                    state = inventory.inspect(required_studies)
+                    state["failed"].update(preparation_failures)
+                    for study in set(state["pending"]) - set(manifests):
+                        if time.monotonic() >= deadline:
+                            state["failed"][study] = f"preparation wait expired: {state['pending'][study]}"
+                    bindings = bind_source_inputs(bindings, state["ready"])
+                    input_status = {"ready": {study: {field: record[field] for field in (
+                        "cache_sha256", "manifest_sha256", "n_epochs", "participants")}
+                        for study, record in state["ready"].items()},
+                        "pending": state["pending"], "failed": state["failed"]}
+                    if input_status != previous_input_status:
+                        atomic_write_json(output / "input_status.json", input_status)
+                        atomic_write_json(output / "input_bindings.json", bindings)
+                        previous_input_status = input_status
+                    readiness = source_group_input_status([groups[index] for index in pending], state)
+                    failed_names = {outer["name"]: errors for outer, _, errors in readiness["failed"]}
+                    for index in list(pending):
+                        entry = report["groups"][index]
+                        if entry["outer"] in failed_names:
+                            entry.update(status="failed", input_errors=failed_names[entry["outer"]])
+                            pending.remove(index)
+                    ready_names = {outer["name"] for outer, _ in readiness["ready"]}
+                else:
+                    ready_names = {groups[index][0]["name"] for index in pending}
+                for index in list(pending):
+                    if len(active) >= resources["source_workers"]:
+                        break
+                    outer, layout = groups[index]
+                    if outer["name"] not in ready_names:
+                        continue
+                    reservation = memory_admission.reserve_phase("source",
+                        cpu_threads=resources["native_threads_per_worker"],
+                        memory_bytes=resources["source_worker_memory_bytes"])
+                    if reservation is None:
+                        break
+                    child = {**plan, "outer_folds": [outer], "source_layouts": [layout],
+                             "_source_group": True, "_defer_outer_plans": True, "_gpu_slots": slots,
+                             "_memory_admission": memory_admission, "_phase_reserved": True,
+                             "_native_threads_per_worker": reservation["cpu_threads"],
+                             "_source_load_slots": load_slots,
+                             "_runtime_preload_budget_bytes": resources["resident_memory_budget_bytes"],
+                             "shared_registry_directory": str(output / "trajectory_registry"),
+                             "target_workers": resources["inner_workers_per_group"]}
+                    if inventory is not None:
+                        child["_prepared_source_inputs"] = {study: {field: state["ready"][study][field] for field in (
+                            "cache", "cache_sha256", "cache_record_sha256", "manifest_sha256", "preparation_method")}
+                            for study in outer["source_studies"]}
+                    entry = report["groups"][index]
+                    entry.update(status="running", resource_reservation=reservation)
+                    future = pool.submit(_source_group_worker, (child, entry["directory"], device, stages))
+                    active[future] = (entry, reservation)
+                    pending.remove(index)
+                if inventory is not None:
+                    needed_studies = {study for index in pending for study in groups[index][0]["source_studies"]}
+                    for study in sorted(set(state["pending"]) & set(manifests) & needed_studies - preparation_started):
+                        if len(active) >= resources["source_workers"]:
+                            break
+                        phase_threads = max(2, resources["native_threads_per_worker"])
+                        if phase_threads > resources["worker_cpu_budget"]:
+                            error = "source preparation needs CPU budget for its controller and a record worker alongside the coordinator"
+                            preparation_failures[study] = error
+                            preparation_started.add(study)
+                            report["preparation"].append({"study": study, "status": "failed",
+                                "manifest": manifests[study], "failure": {"type": "ValueError", "message": error}})
+                            continue
+                        reservation = memory_admission.reserve_phase("preparation", cpu_threads=phase_threads,
+                            memory_bytes=resources["source_worker_memory_bytes"])
+                        if reservation is None:
+                            break
+                        entry = {"study": study, "status": "running", "resource_reservation": reservation,
+                                 "manifest": manifests[study]}
+                        report["preparation"].append(entry)
+                        preparation_started.add(study)
+                        future = pool.submit(_source_preparation_worker, (manifests[study],
+                            str(Path(prepared_directory) / study), str(profile_path), phase_threads - 1, load_slots))
+                        active[future] = (entry, reservation)
+                reserved = memory_admission.record()
+                observation = {**reserved, "ready_source_groups": reserved["source_groups"] + sum(
+                    groups[index][0]["name"] in ready_names for index in pending),
+                    "waiting_ready_source_groups": sum(groups[index][0]["name"] in ready_names for index in pending),
+                    "pending_source_groups": len(pending), "active_pipeline_nodes": len(active)}
+                previous = report["resource_observations"][-1] if report["resource_observations"] else None
+                if previous is None or {key: value for key, value in previous.items() if key != "observed_unix"} != observation:
+                    report["resource_observations"].append({"observed_unix": time.time(), **observation})
+                _save_chain_report(output, report)
+                if active:
+                    done, _ = wait(active, timeout=5, return_when=FIRST_COMPLETED)
+                else:
+                    done = set()
+                    if pending:
+                        time.sleep(min(1., max(.01, deadline - time.monotonic())))
                 for future in done:
-                    entry = futures[future]
+                    entry, reservation = active.pop(future)
                     try:
-                        entry.update(status="completed", record=future.result())
+                        result = future.result()
+                        if reservation["phase"] == "source":
+                            entry.update(status="completed", record=result)
+                        else:
+                            entry.update(result)
                     except Exception as error:
                         entry.update(status="failed", failure={"type": type(error).__name__, "message": str(error)})
+                        if reservation["phase"] == "preparation":
+                            preparation_failures[entry["study"]] = str(error)
+                    finally:
+                        memory_admission.release_phase(reservation)
                 for entry in report["groups"]:
                     progress = Path(entry["directory"]) / "worker_progress.json"
                     if progress.exists():
                         entry["progress"] = json.loads(progress.read_text(encoding="utf-8"))
                 _save_chain_report(output, report)
-        if any(entry["status"] == "failed" for entry in report["groups"]):
-            report["status"] = "failed"
-            _save_chain_report(output, report)
-            raise RuntimeError("source group failed; completed group records are preserved")
         for entry in report["groups"]:
-            child = json.loads(Path(entry["record"]).read_text(encoding="utf-8"))
+            path = Path(entry["directory"]) / "source_chain_record.json"
+            if not path.exists():
+                continue
+            child = json.loads(path.read_text(encoding="utf-8"))
             for key in ("tasks", "selection", "preflight_failures", "outer_evaluation_jobs"):
                 report[key].extend(child[key])
             report.setdefault("source_prior_selection", []).extend(child.get("source_prior_selection", []))
+            if independent:
+                report["source_seed_catalog"].extend(child.get("source_seed_catalog", []))
         report.update(task_count=len(report["tasks"]),
-            optimizer_updates=sum(task["optimizer_updates"] for task in report["tasks"]),
-            trial_draws=sum(task["trial_draws"] for task in report["tasks"]),
+            optimizer_updates=sum(task["optimizer_updates"] for task in report["tasks"]
+                                  if not independent or task["status"] == "completed"),
+            trial_draws=sum(task["trial_draws"] for task in report["tasks"]
+                            if not independent or task["status"] == "completed"),
             source_failure_count=sum(task["status"] == "fit_failure" for task in report["tasks"]),
             reused_source_task_count=sum(bool(task.get("source_training_reuse", {}).get("reused")) for task in report["tasks"]),
             completed_physical_optimizer_updates=sum(task.get("physical_optimizer_updates", 0) for task in report["tasks"]),
             completed_physical_trial_draws=sum(task.get("physical_trial_draws", 0) for task in report["tasks"]))
         report["fitting_performed"] = report["completed_physical_optimizer_updates"] > 0
-        _prepare_outer_plans(report, {**plan, "_gpu_slots": slots}, output, device=device, execute=evaluate_outer)
-    report["status"] = "completed"
+        if independent:
+            failures = {entry["outer"]: entry for entry in report["groups"] if entry["status"] == "failed"}
+            for request in report["requested_source_tasks"]:
+                if request["outer"] in failures:
+                    request.update(status="source_group_failure", failure=failures[request["outer"]])
+            _finish_independent_source_report(report, output)
+        failed = (any(entry["status"] == "failed" for entry in report["groups"])
+                  or report["source_failure_count"] > 0)
+        if not failed and not independent:
+            _prepare_outer_plans(report, {**plan, "_gpu_slots": slots}, output, device=device, execute=evaluate_outer)
+    report["status"] = "failed" if failed else "completed"
     _save_chain_report(output, report)
+    if failed:
+        raise RuntimeError("source group failed; complete requested and completed group records are preserved")
     return report
 
 
@@ -562,17 +855,25 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
     from research.source_selection import (
         SOURCE_CHAIN_LAYOUTS,
         SOURCE_UPDATE_CANDIDATES,
+        resolve_independent_source_config,
+        resolve_source_program,
         source_architecture_record,
         source_fit_ledger,
         source_fixed_dose,
         source_identity_axes,
         source_inner_folds,
+        validate_independent_source_input,
+        validate_source_procedure,
     )
     from train.runtime import available_cpu_threads
     from transfer.target_experiments import resolve_target_batch_rule
 
     if plan.get("schema") != "n2p3_source_training_chain/1":
         raise ValueError("unsupported source training chain plan schema")
+    program = resolve_source_program(plan, stages)
+    independent = program["name"] == "independent_selection_refit"
+    if independent and evaluate_outer:
+        raise ValueError("independent source checkpoints are consumed by the declared independent public panels")
     unified = "unified_source" in stages
     from train.early_stopping import GlobalEarlyStoppingPolicy, UnifiedTrainingBudget
 
@@ -632,13 +933,17 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
 
     if type(plan.get("paired_source_target_seeds", True)) is not bool:
         raise ValueError("paired_source_target_seeds must be an explicit boolean")
-    if (objectives or unified) and plan.get("paired_source_target_seeds", True) and set(source_seeds) != set(target_seeds):
+    if (objectives or unified) and not independent and plan.get("paired_source_target_seeds", True) and set(source_seeds) != set(target_seeds):
         raise ValueError("paired source-objective experiments require matching declared source/target seeds")
     if not source_seeds or not target_seeds or len(set(source_seeds)) != len(source_seeds) or len(set(target_seeds)) != len(target_seeds):
         raise ValueError("source and target seeds must be independently unique")
-    crossed_pairs = resolve_seed_pairs(source_seeds, target_seeds)
-    objective_pairs = resolve_seed_pairs(source_seeds, target_seeds,
-        mode="paired" if plan.get("paired_source_target_seeds", True) else "crossed") if objectives or unified else ()
+    crossed_pairs = () if independent else resolve_seed_pairs(source_seeds, target_seeds)
+    objective_pairs = ()
+    if independent:
+        objective_pairs = tuple(map(tuple, program["seed_pairs"]))
+    elif objectives or unified:
+        objective_pairs = resolve_seed_pairs(source_seeds, target_seeds,
+            mode="paired" if plan.get("paired_source_target_seeds", True) else "crossed")
     batch, batch_rule = resolve_target_batch_rule(plan, dry_run=dry_run)
     plan = {**plan, "target_batch_size": batch, "batch_rule": batch_rule}
     snapshot_path = Path(plan["source_snapshot_manifest"])
@@ -651,11 +956,14 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
     output.mkdir(parents=True, exist_ok=True)
     report = {"schema": "n2p3_source_training_chain_run/1", "dry_run": dry_run,
               "evidence_scope": evidence_scope,
-              "source_program": "unified" if unified else "declared_legacy_stages",
+              "source_program": program["name"], "source_program_record": program,
               "batch_rule": batch_rule,
               "source_snapshot": snapshot, "source_seeds": list(source_seeds),
               "target_seeds": list(target_seeds), "tasks": [], "selection": [],
               "preflight_failures": [], "outer_evaluation_jobs": [], "fitting_performed": False}
+    if independent:
+        report["source_seed_catalog"] = []
+        report["requested_source_tasks"] = _independent_source_requests(plan)
     _save_chain_report(output, report)
     trajectory_registry = (SharedTrajectoryRegistry(plan["shared_registry_directory"])
                            if plan.get("shared_registry_directory") else {})
@@ -666,19 +974,31 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
 
         with (plan["_source_load_slots"] if plan.get("_source_load_slots") is not None else nullcontext()):
             source = load_epoch_dataset(source_cache, require_labels=True, validation="attested")
-        if unified:
+        input_record = None
+        if independent:
+            input_record = validate_independent_source_input(source, program["preprocessing"])
+        elif unified:
             validate_unified_source_input(source, plan["source_preprocessing"])
         else:
             assert_p300_input_contract(source.preprocessing, SOURCE_COHORT_DATA_CONTRACTS["causal"])
         if source.provenance.get("source_reference") != "measured_channel:CZ":
             raise ValueError("source-chain caches must contain measured Cz differences")
         source_sha = loaded_epoch_cache_attestation(source)["sha256"]
+        if outer.get("expected_source_cache_sha256", source_sha) != source_sha:
+            raise ValueError("source worker loaded different bytes from its admitted input binding")
         excluded = tuple(outer["excluded_source_datasets"])
         source_fit_ledger(source, np.arange(source.n_epochs), excluded_source_datasets=excluded)
         domains, _, _ = source_identity_axes(source)
         from research.source_catalog import SourceCatalog
 
         SourceCatalog(plan.get("source_pools")).validate_fold(outer, domains)
+        report["source_input_admitted"] = True
+        source_config_record = None
+        if independent:
+            from data.study import dataset_study_membership
+
+            source_config_record = resolve_independent_source_config(program["source_config"],
+                source.identity_table, dataset_study_membership(source))
         for layout in plan.get("source_layouts", ("six",) if set(stages) in ({"P2_source"}, {"unified_source"}) else ("six", "common_three")):
             if outer.get("family_exclusion", False) and layout != "common_three" and not objectives and not unified:
                 continue
@@ -712,6 +1032,8 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
                                   source_budget=source_budget,
                                   global_early_stopping=stopping, batch_size=512, seed=seed, val_group_frac=None,
                                   sampling="uniform_rows", compile_mode=plan.get("compile_mode", "reduce-overhead"))
+                if source_config_record is not None:
+                    base = replace(base, **source_config_record["resolved"])
                 work = []
                 work.extend((f"P2_source_{name}", all_rows, replace(base, source_objective=objective))
                             for name, objective in objectives.items())
@@ -755,7 +1077,16 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
                             "trial_draws": updates_bound * config.batch_size,
                             **({"budget_kind": "inner_plus_refit_upper_bound"} if stopping is not None else {}),
                             "layout_contrast": "information_and_input_dimension_change"}
+                    if independent:
+                        task.update(requested_optimizer_updates_upper_bound=updates_bound,
+                                    requested_trial_draws_upper_bound=updates_bound * config.batch_size)
+                        if not dry_run:
+                            task.update(optimizer_updates=None, trial_draws=None, budget_kind="actual_pending")
                     task["architecture_configuration"] = asdict(architecture)
+                    if input_record is not None:
+                        task["source_input"] = input_record
+                        task["source_input_bindings"] = outer.get("source_input_bindings")
+                        task["source_program_config"] = source_config_record
                     if budget is not None:
                         task["budget_kind"] = ("reference_selected_exposure_upper_bound" if dry_run
                                                else "frozen_reference_exposure")
@@ -764,6 +1095,8 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
                     report["tasks"].append(task)
                     if dry_run:
                         continue
+                    task["status"] = "running"
+                    _save_chain_report(output, report)
                     destination = output / key
                     destination.mkdir(parents=True, exist_ok=True)
                     try:
@@ -777,19 +1110,43 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
                                 excluded_source_datasets=excluded, device=device, evidence_scope=evidence_scope,
                                 gpu_slots=plan.get("_gpu_slots"), architecture=architecture,
                                 runtime_preload_budget_bytes=plan.get("_runtime_preload_budget_bytes"),
-                                runtime_input_staging_gate=plan.get("_source_load_slots"))
+                                runtime_input_staging_gate=plan.get("_source_load_slots"),
+                                source_program_config=source_config_record)
                     except RuntimeError as error:
                         task.update(status="fit_failure", failure=str(error))
+                        if independent:
+                            task["budget_kind"] = "actual_unmeasured_after_fit_failure"
                         _save_chain_report(output, report)
                         continue
                     report["fitting_performed"] |= acquired["physical_optimizer_updates"] > 0
-                    task["status"] = "completed"
                     task.update({name: acquired[name] for name in (
                         "source_training_reuse", "physical_optimizer_updates", "physical_trial_draws")})
                     task["checkpoints"] = {str(update): value for update, value in acquired["checkpoints"].items()}
+                    if independent:
+                        from transfer.checkpoint import load_checkpoint_payload
+
+                        checkpoint = next(iter(acquired["checkpoints"].values()))
+                        payload = load_checkpoint_payload(checkpoint)
+                        producer = validate_source_procedure(payload, source_seed=seed,
+                            outer_target_study=outer["target_study"],
+                            evidence_scope=("software_correctness" if evidence_scope == "software_correctness"
+                                            else "public_development"), kind="selection_refit",
+                            expected_source_config=program["source_config"])
+                        selection = payload["source_epoch_selection"]
+                        task.update(optimizer_updates=selection["total_optimizer_updates"],
+                            trial_draws=selection["total_trial_draws"], budget_kind="actual_inner_plus_refit",
+                            source_producer=producer, source_epoch_selection=selection,
+                            physical_fit_count=0 if acquired["physical_optimizer_updates"] == 0 else 2,
+                            logical_fit_count=2)
+                        entry = {"outer_target_study": outer["target_study"], "source_seed": seed,
+                            "path": str(Path(checkpoint).resolve()), "sha256": _sha256(checkpoint),
+                            "procedure": {"kind": "selection_refit"}}
+                        task["source_catalog_entry"] = entry
+                        report["source_seed_catalog"].append(entry)
+                    task["status"] = "completed"
                     gc.collect()
                     _save_chain_report(output, report)
-                    if not label.startswith("E2_") and outer.get("role", "evaluation") != "deployment":
+                    if not independent and not label.startswith("E2_") and outer.get("role", "evaluation") != "deployment":
                         selected_checkpoint = (next(iter(acquired["checkpoints"].values())) if stopping is not None
                                                else acquired["checkpoints"][config.fixed_updates])
                         report["outer_evaluation_jobs"].append({"source_checkpoint": selected_checkpoint,
@@ -820,8 +1177,10 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
         del source
         gc.collect()
     report.update(task_count=len(report["tasks"]),
-        optimizer_updates=sum(task["optimizer_updates"] for task in report["tasks"]),
-        trial_draws=sum(task["trial_draws"] for task in report["tasks"]))
+        optimizer_updates=sum(task["optimizer_updates"] for task in report["tasks"]
+                              if not independent or dry_run or task["status"] == "completed"),
+        trial_draws=sum(task["trial_draws"] for task in report["tasks"]
+                        if not independent or dry_run or task["status"] == "completed"))
     report["requested_source_task_count"] = report["task_count"] + sum(
         failure.get("status") == "invalid_design" for failure in report["preflight_failures"])
     report["source_failure_count"] = sum(task.get("status") == "fit_failure" for task in report["tasks"])
@@ -836,8 +1195,10 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
         "target_fit_count": sum(sum(int(cell[2] > 0) for cell in selection.get("requested_cells", []))
                                 * len(candidates) for selection in report["selection"]),
     }
-    if not dry_run and not plan.get("_defer_outer_plans", False):
+    if not dry_run and not independent and not plan.get("_defer_outer_plans", False):
         _prepare_outer_plans(report, plan, output, device=device, execute=evaluate_outer)
+    if independent:
+        _finish_independent_source_report(report, output)
     _save_chain_report(output, report)
     return report
 
@@ -1201,6 +1562,7 @@ def _prepare_outer_plans(report, plan, output, *, device, execute):
     final_jobs = []
     grouped_jobs = {}
     workers = plan.get("target_workers", 1)
+    native_threads = plan.get("_target_native_threads_per_worker", 1)
     for job in report["outer_evaluation_jobs"]:
         outer = outers[job["outer"]]
         unified = job.get("target_stage") == "unified"
@@ -1276,7 +1638,8 @@ def _prepare_outer_plans(report, plan, output, *, device, execute):
                     result_path = output / "outer_results" / name
                     command = [sys.executable, str(ROOT / "experiments/run_cross_dataset_transfer.py"),
                                "--plan", str(plan_path.resolve()), "--subjects", ",".join(view["subjects"]),
-                               "--output", str(result_path.resolve()), "--device", device, "--cpu-threads", "1"]
+                               "--output", str(result_path.resolve()), "--device", device,
+                               "--cpu-threads", str(native_threads)]
                     if job.get("target_stage"):
                         command.extend(("--stage", job["target_stage"]))
                     final_jobs.append({"plan": str(plan_path.resolve()), "argv": command,
@@ -1288,6 +1651,7 @@ def _prepare_outer_plans(report, plan, output, *, device, execute):
                         shard_output = result_path if workers == 1 else result_path / f"shard{shard}"
                         entry = {"plan": str(plan_path.resolve()), "subjects": subjects,
                                  "output": str(shard_output), "device": device, "target_cache": view["cache"],
+                                 "cpu_threads": native_threads,
                                  "target_stage": job.get("target_stage"),
                                  "gpu_slots": plan.get("_gpu_slots")}
                         grouped_jobs.setdefault((view["cache"], shard), []).append(entry)
@@ -1377,9 +1741,15 @@ def main(argv=None):
         path = Path(value)
         return str(path if path.is_absolute() else (plan_path.parent / path).resolve())
 
-    for key in ("source_snapshot_manifest", "evaluation_snapshot_manifest", "batch_rule_file"):
+    for key in ("source_snapshot_manifest", "evaluation_snapshot_manifest", "batch_rule_file", "prepared_source_directory"):
         if key in plan:
             plan[key] = resolve_path(plan[key])
+    if "source_preparation_manifests" in plan:
+        plan["source_preparation_manifests"] = {study: resolve_path(path)
+            for study, path in plan["source_preparation_manifests"].items()}
+    if plan.get("resume_source_run") is not None:
+        plan["resume_source_run"] = {**plan["resume_source_run"],
+                                    "inventory": resolve_path(plan["resume_source_run"]["inventory"])}
     for outer in plan["outer_folds"]:
         for key in ("source_cache", "target_cache"):
             if key in outer:

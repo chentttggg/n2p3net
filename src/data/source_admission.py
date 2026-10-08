@@ -65,9 +65,10 @@ class PreparedSourceInventory:
     attested cache load. Missing/failed members never shrink the requested pool.
     """
 
-    def __init__(self, directory, *, preprocessing):
+    def __init__(self, directory, *, preprocessing, expected_manifest_sha256=None):
         self.directory = Path(directory)
         self.preprocessing = preprocessing
+        self.expected_manifest_sha256 = expected_manifest_sha256 or {}
         self._verified = {}
 
     def inspect(self, studies):
@@ -89,6 +90,10 @@ class PreparedSourceInventory:
                 ready.pop(study, None)
                 continue
             seen.add(study)
+            if (study in self.expected_manifest_sha256
+                    and record.get("manifest_sha256") != self.expected_manifest_sha256[study]):
+                failed[study] = "preparation ledger differs from the requested source manifest"
+                continue
             if record.get("status") in {"running", "pending"}:
                 pending[study] = record["status"]
                 continue

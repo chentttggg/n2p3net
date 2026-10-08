@@ -112,21 +112,65 @@ class HostMemoryAdmission:
         self.state.free = resources["host_memory_budget_bytes"] - resources.get("shared_staging_memory_bytes", 0)
         self.state.groups = 0
         self.state.child_cpus = 0
+        self.coordinator_threads = resources.get("coordinator_cpu_threads", 0)
+        self.state.cpu_threads = self.coordinator_threads
+        self.state.preparation_groups = 0
         self.lock = manager.RLock()
         self.group_bytes = resources["source_worker_memory_bytes"]
         self.target_bytes = resources["target_worker_memory_bytes"]
         self.target_limit = resources["target_workers"]
         self.cpu_budget = resources["cpu_budget"]
         self.gpu_worker_limit = resources["gpu_slots"]
+        self.native_threads = resources["native_threads_per_worker"]
+        self.source_limit = resources["source_workers"]
+
+    def reserve_phase(self, phase, *, cpu_threads, memory_bytes):
+        """Reserve a ready DAG node without parking another process in a wait."""
+        if phase not in {"source", "preparation"}:
+            raise ValueError("unknown source pipeline phase")
+        if (type(cpu_threads) is not int or cpu_threads < 1
+                or type(memory_bytes) is not int or memory_bytes < 1):
+            raise ValueError("source phases require positive CPU and memory budgets")
+        with self.lock:
+            if (self.state.free < memory_bytes or self.state.cpu_threads + cpu_threads > self.cpu_budget
+                    or phase == "source" and self.state.groups >= min(self.source_limit, self.gpu_worker_limit)):
+                return None
+            self.state.free -= memory_bytes
+            self.state.cpu_threads += cpu_threads
+            if phase == "source":
+                self.state.groups += 1
+            else:
+                self.state.preparation_groups += 1
+        return {"phase": phase, "cpu_threads": cpu_threads, "memory_bytes": memory_bytes}
+
+    def release_phase(self, reservation):
+        with self.lock:
+            self.state.free += reservation["memory_bytes"]
+            self.state.cpu_threads -= reservation["cpu_threads"]
+            if reservation["phase"] == "source":
+                self.state.groups -= 1
+            else:
+                self.state.preparation_groups -= 1
+
+    def record(self):
+        with self.lock:
+            return {"reserved_cpu_threads": self.state.cpu_threads,
+                    "coordinator_cpu_threads": self.coordinator_threads,
+                    "free_cpu_threads": self.cpu_budget - self.state.cpu_threads,
+                    "free_worker_memory_bytes": self.state.free,
+                    "source_groups": self.state.groups,
+                    "preparation_groups": self.state.preparation_groups,
+                    "nested_target_workers": self.state.child_cpus}
 
     @contextmanager
     def source_group(self):
         while True:
             with self.lock:
                 if (self.state.free >= self.group_bytes
-                        and self.state.groups + self.state.child_cpus < self.cpu_budget):
+                        and self.state.cpu_threads + self.native_threads <= self.cpu_budget):
                     self.state.free -= self.group_bytes
                     self.state.groups += 1
+                    self.state.cpu_threads += self.native_threads
                     break
             time.sleep(0.1)
         try:
@@ -135,24 +179,42 @@ class HostMemoryAdmission:
             with self.lock:
                 self.state.free += self.group_bytes
                 self.state.groups -= 1
+                self.state.cpu_threads -= self.native_threads
 
     @contextmanager
     def target_workers(self, requested):
         with self.lock:
             desired = min(self.target_limit, max(requested, self.cpu_budget // max(1, self.state.groups)))
-            cpu_free = self.cpu_budget - self.state.groups - self.state.child_cpus + 1
+            cpu_free = (self.cpu_budget - self.state.cpu_threads) // self.native_threads + 1
             task_free = self.gpu_worker_limit - self.state.groups - self.state.child_cpus + 1
             allowed = min(desired, self.state.free // self.target_bytes, cpu_free, task_free)
             workers = int(allowed) if allowed >= 2 else 1
             reservation = workers * self.target_bytes if workers > 1 else 0
             self.state.free -= reservation
             self.state.child_cpus += workers - 1
+            self.state.cpu_threads += (workers - 1) * self.native_threads
         try:
             yield workers
         finally:
             with self.lock:
                 self.state.free += reservation
                 self.state.child_cpus -= workers - 1
+                self.state.cpu_threads -= (workers - 1) * self.native_threads
+
+
+def source_group_input_status(groups, state):
+    """A fold is ready only when every declared source study is admitted."""
+    ready, pending, failed = [], [], []
+    for outer, layout in groups:
+        dependencies = set(outer["source_studies"])
+        errors = {study: state["failed"][study] for study in sorted(dependencies & set(state["failed"]))}
+        if errors:
+            failed.append((outer, layout, errors))
+        elif dependencies <= set(state["ready"]):
+            ready.append((outer, layout))
+        else:
+            pending.append((outer, layout, sorted(dependencies - set(state["ready"]))))
+    return {"ready": ready, "pending": pending, "failed": failed}
 
 
 def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_device_bytes=None, free_host_bytes=None):
@@ -166,10 +228,12 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
     if plan.get("cpu_budget") is not None and (type(plan["cpu_budget"]) is not int or plan["cpu_budget"] < 1):
         raise ValueError("CPU budget must be a positive integer")
     budget = min(available, plan.get("cpu_budget") or available)
+    coordinator_threads = int(budget > 1)
+    worker_cpu_budget = budget - coordinator_threads
     requested = plan.get("source_workers", "auto")
     if requested not in (None, "auto") and (type(requested) is not int or requested < 1):
         raise ValueError("source_workers must be auto or a positive integer")
-    groups = min(group_count, budget, group_count if requested in (None, "auto") else requested)
+    groups = min(group_count, worker_cpu_budget, group_count if requested in (None, "auto") else requested)
     memory_gib = float(plan.get("gpu_task_memory_gib", 3.0))
     if not 0 < memory_gib < float("inf") or budget < 1:
         raise ValueError("resource budgets must be positive and finite")
@@ -191,9 +255,9 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
     if torch.device(device).type == "cuda":
         if free_device_bytes is None:
             free_device_bytes = torch.cuda.mem_get_info(torch.device(device))[0]
-        slots = max(1, min(budget, int(0.8 * free_device_bytes / (memory_gib * 2**30))))
+        slots = max(1, min(worker_cpu_budget, int(0.8 * free_device_bytes / (memory_gib * 2**30))))
     else:
-        slots = budget
+        slots = worker_cpu_budget
     requested_gpu = plan.get("gpu_workers")
     if requested_gpu is not None:
         if type(requested_gpu) is not int or requested_gpu < 1:
@@ -211,9 +275,11 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
         if (budget < floor["cpu_threads"] or slots < floor["gpu_workers"]
                 or target < floor["gpu_workers"] or groups < min(group_count, floor["gpu_workers"])):
             raise ValueError("resources cannot meet declared cloud CPU/GPU worker floor; do not silently serialize")
-    native_threads = max(1, budget // max(groups, target))
+    native_threads = max(1, worker_cpu_budget // max(groups, target))
     return {"policy": "automatic_resource_admission", "available_cpu_threads": available,
-            "cpu_budget": budget, "requested_source_workers": requested or "auto",
+            "cpu_budget": budget, "worker_cpu_budget": worker_cpu_budget,
+            "coordinator_cpu_threads": coordinator_threads,
+            "requested_source_workers": requested or "auto",
             "source_groups": group_count, "source_workers": groups,
             "gpu_slots": slots, "target_workers": target,
             "inner_workers_per_group": min(target, max(1, (budget - groups) // min(groups, 4))),

@@ -122,7 +122,7 @@ class SourceSeedCatalog:
     evidence of three complete source procedures. Fixtures retain their scope.
     """
 
-    def __init__(self, entries, *, base_directory, evidence_scope):
+    def __init__(self, entries, *, base_directory, evidence_scope, expected_source_config=None):
         self._entries = {}
         self._records = []
         for entry in entries:
@@ -142,7 +142,7 @@ class SourceSeedCatalog:
             if "record_path" in procedure or "record_sha256" in procedure:
                 raise ValueError("source selection/refit requires actual same-seed producer evidence embedded in the checkpoint")
             producer = validate_source_procedure(payload, source_seed=key[1], outer_target_study=key[0],
-                evidence_scope=evidence_scope, kind=procedure["kind"])
+                evidence_scope=evidence_scope, kind=procedure["kind"], expected_source_config=expected_source_config)
             self._entries[key] = content
             self._records.append({"outer_target_study": key[0], "source_seed": key[1], "checkpoint_sha256": digest,
                 "training_contract_digest": payload["training_contract_digest"], "source_studies": producer["source_studies"],

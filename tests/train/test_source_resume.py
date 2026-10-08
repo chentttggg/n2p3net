@@ -79,3 +79,47 @@ def test_resume_reuses_original_bytes_and_rejects_changed_inputs_or_artifacts(tm
     torch.save(payload, original_path)
     with pytest.raises(ValueError, match="artifact changed"):
         resume.acquire("task", config, acquired["fit_ledger"], "a" * 64)
+
+
+def test_prepared_resume_preserves_whole_fold_bytes_across_resource_changes(tmp_path):
+    from experiments.run_source_training_chain import _prepare_source_group_inputs
+
+    manifest, _, _ = write_source_snapshot(tmp_path)
+    snapshot = verified_source_snapshot(manifest)
+    root = tmp_path / "original"
+    root.mkdir()
+    cache = root / "source.npz"
+    cache.write_bytes(b"frozen whole-fold numeric view")
+    cache.with_suffix(".record.json").write_bytes(b"frozen attestation")
+    inputs = {study: {"cache": f"prepared/{study}.npz", "manifest_sha256": "a" * 64,
+        "cache_sha256": "b" * 64, "cache_record_sha256": "c" * 64,
+        "preparation_method": {"producer": "original raw preparation"}} for study in ("studyA", "studyB")}
+    bindings = {study: {field: record[field] for field in (
+        "manifest_sha256", "cache_sha256", "cache_record_sha256", "preparation_method")}
+        for study, record in inputs.items()}
+    write_json(root / "source_chain_record.json", {"source_snapshot": snapshot, "tasks": [{
+        "key": "leave_target/six/seed11/P2_source_ce", "status": "running", "source_cache": str(cache),
+        "source_cache_sha256": hashlib.sha256(cache.read_bytes()).hexdigest(),
+        "source_input_bindings": bindings}]})
+    path = tmp_path / "inventory.json"
+    write_json(path, {"schema": "n2p3_source_resume_inventory/1", "source_root": str(root),
+        "source_snapshot_manifest": str(manifest),
+        "files": {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                  for p in root.iterdir() if p.is_file()}})
+    declaration = {"inventory": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+    outer = {"name": "leave_target", "source_studies": list(inputs)}
+    before = cache.read_bytes()
+    for threads in (1, 6):
+        output = tmp_path / f"new{threads}/groups/00_leave_target_six"
+        resolved = _prepare_source_group_inputs({"outer_folds": [outer], "_prepared_source_inputs": inputs,
+            "_native_threads_per_worker": threads, "resume_source_run": declaration}, output)
+        assert resolved["outer_folds"][0]["source_cache"] == str(cache.resolve())
+        assert resolved["outer_folds"][0]["source_input_bindings"] == bindings
+        assert cache.read_bytes() == before and not output.parent.parent.exists()
+    resume = SourceChainResume(declaration)
+    with pytest.raises(ValueError, match="admitted preparation inputs"):
+        resume.prepared_source_view("leave_target", {**bindings, "studyA": {
+            **bindings["studyA"], "manifest_sha256": "0" * 64}})
+    cache.write_bytes(before + b"modified")
+    with pytest.raises(ValueError, match="artifact changed"):
+        resume.prepared_source_view("leave_target", bindings)
