@@ -97,6 +97,16 @@ C状态重建的最高8个信息方向与endpoint value/first-difference rowspac
 
 它是在给定frozen noise/plugin参数下读全授权C的Gaussian后验，不估AR/Σ或积分hyperparameters。实际C labels/design/history、producer、绝对时间与读权限仍由外部caller证明。数组保存重放说明软件状态可恢复，尚不是正式持久包篡改/producer认证；真实归因矩阵与joint MLE另验。
 
+## 原M1合法C导出与实际共用QR入口
+
+原A01/fold0/AR8 Burg的五个C record已从原477-member源码恢复，600labels/100targets、absolute read/label/prefix、basis307×8、8EEG/right-earlobe/256Hz/V与原model逐项吻合。observed tail为308samples，不能以今天默认1.2秒猜其7975行。旧 `/4` 包不保存startup数组，原加载器重建后严格核其原数值哈希；导出明确是本次原程序数值重放，没有用当前 `/5` 改签旧包。
+
+独立审阅确认两条实际关系漏门并闭合：协调签新export receipt仍能把label/prefix区间缩错，或把真实A02 MAT错贴给A01 C；现区间直接来自actual onsets/readstart+32，source字段来自原model真实training views。最终必要6项与正常五C/600label通过，原source、model、MAT与export未变。纯旧lattice源和原startup state逐bit核FY/FD/FZ，prewhite后空间Σ只消费一次；两个来源都进入同一private QR core，`2206ad5` 的source SHA `06a5c16731a03bbd316491d773ba109693d39e1e8c6e8fba2a589cd59aa616e3`，无第二fitter。
+
+实际matched-MN入口在固定mean0/λ1/Σ_AR8 physicalprior上完成一个逻辑格。为了纠正venv launcher漏记子进程资源，执行两次physical fit，所有保存numeric arrays逐bit相同；不计两个seed。原posterior单位均值/完整cov最大差 `2.26e-12/1.08e-12`，common-increment与完整target cross covariance相对差 `1.85e-13/2.93e-14`，actual R/RHS关系亦通过。第二次fit 2.912秒、真worker约一核、Windows lifetime peakworking set约618.5MiB、host采样峰26.8%；第一轮launcher-only 4MiB不能当真实资源。
+
+完整下一对照已固定48 Cunits×12原冻结noise×whole/shape-only/Σ-only=1728逻辑格，完全等价数值程序可复用、实际fit与requested另账；每unit用原预声明AR8Burg physicalprior。它是C-only参数机制研究，不重估噪声、读取旧held选方案或声称新效能。machine plan/当前执行源码尚在准备；原数据/model/producer和seed20261005保持，不能称一个新完整source→target seed。详细身份及实际onefold入口在本轮 `B05_M1_C_ADAPTER/`，最终只读clock/source复审见 `REVIEWS/B05_COMPILED_C_LIKELIHOOD.zh.md`。
+
 ## 全C共享response与noise尺度联合推断
 
 `c94c0a1` 落实 `research.joint_response_scale`，physical β prior与noise scales独立；每完整decision一个λ，C与测试共享一个β。`m(C+full)/m(C+prefix)` 中C各出现一次，prefix保留对β、校准λ和测试λ的联合更新，不把旧Gaussian-C后验或moment-match Gaussian改签新模型。canonical source采用LF后SHA `7671997aefc4cdf046e546a301c97bb7a4d70079fdad2a51ca83132cf34ad273`，与作者309a proposal的AST相同；formal tests只调import排序/LF。
