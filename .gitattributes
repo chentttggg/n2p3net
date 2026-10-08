@@ -68,3 +68,5 @@ src/transfer/recipes.py text eol=lf
 src/transfer/subject_adapter.py text eol=lf
 tests/transfer/test_current_public_probability.py text eol=lf
 src/transfer/checkpoint.py text eol=lf
+src/research/worker_diagnostics.py text eol=lf
+tests/research/test_worker_diagnostics.py text eol=lf

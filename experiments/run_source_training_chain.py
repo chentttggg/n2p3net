@@ -12,6 +12,7 @@ import shutil
 import sys
 import time
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, as_completed, wait
+from concurrent.futures.process import BrokenProcessPool
 from dataclasses import asdict, replace
 from functools import lru_cache
 from pathlib import Path
@@ -534,20 +535,27 @@ def source_execution_groups(plan, stages):
 def _source_group_worker(arguments):
     from contextlib import nullcontext
 
-    from train.runtime import configure_spawned_worker_threads, cpu_thread_budget
+    from research.worker_diagnostics import diagnostic_task, worker_diagnostic_phase
 
     plan, output, device, stages = arguments
-    native_threads = plan.get("_native_threads_per_worker", 1)
-    configure_spawned_worker_threads(native_threads)
-    for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
-        os.environ[name] = str(native_threads)
-    os.environ["TORCHINDUCTOR_COMPILE_THREADS"] = "1"
-    admission = nullcontext() if plan.get("_phase_reserved") else plan["_memory_admission"].source_group()
-    with cpu_thread_budget(native_threads), admission:
-        if plan.get("_prepared_source_inputs") is not None:
-            plan = _prepare_source_group_inputs(plan, Path(output))
-        execute_source_chain(plan, output=Path(output), dry_run=False, device=device,
-                             stages=stages, evaluate_outer=False)
+    with diagnostic_task(output, {"phase_kind": "source_group", "outer": plan["outer_folds"][0]["name"],
+            "stages": list(stages), "device": device, "native_threads": plan.get("_native_threads_per_worker", 1)}):
+        worker_diagnostic_phase("import_training_runtime")
+        from train.runtime import configure_spawned_worker_threads, cpu_thread_budget
+
+        native_threads = plan.get("_native_threads_per_worker", 1)
+        configure_spawned_worker_threads(native_threads)
+        for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+            os.environ[name] = str(native_threads)
+        os.environ["TORCHINDUCTOR_COMPILE_THREADS"] = "1"
+        admission = nullcontext() if plan.get("_phase_reserved") else plan["_memory_admission"].source_group()
+        with cpu_thread_budget(native_threads), admission:
+            worker_diagnostic_phase("source_input_and_memory_admission")
+            if plan.get("_prepared_source_inputs") is not None:
+                plan = _prepare_source_group_inputs(plan, Path(output))
+            worker_diagnostic_phase("execute_source_chain")
+            execute_source_chain(plan, output=Path(output), dry_run=False, device=device,
+                                 stages=stages, evaluate_outer=False)
     return str(Path(output) / "source_chain_record.json")
 
 
@@ -601,20 +609,27 @@ def _prepare_source_group_inputs(plan, output):
 
 
 def _source_preparation_worker(arguments):
-    from experiments.prepare_source_records import main as prepare
-    from train.runtime import cpu_thread_budget
+    from research.worker_diagnostics import diagnostic_task, worker_diagnostic_phase
 
     manifest, output, profile, record_workers, staging = arguments
-    for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
-        os.environ[name] = "1"
-    with cpu_thread_budget(1):
-        prepare(["--manifest", manifest, "--output", output, "--preprocessing-config", profile,
-                 "--workers", str(record_workers)], merge_gate=staging)
-    path = Path(output) / "preparation.json"
-    record = json.loads(path.read_text(encoding="utf-8"))
-    return {"record": str(path), "status": record["status"], "record_workers": record["workers"],
-            "controller_pid": os.getpid(), "native_threads_per_record_worker": 1,
-            "cache_sha256": record["cache_sha256"]}
+    with diagnostic_task(output, {"phase_kind": "source_preparation", "manifest": manifest,
+                                 "profile": profile, "record_workers": record_workers}):
+        worker_diagnostic_phase("import_preparation_runtime")
+        from experiments.prepare_source_records import main as prepare
+        from train.runtime import cpu_thread_budget
+
+        for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+            os.environ[name] = "1"
+        with cpu_thread_budget(1):
+            worker_diagnostic_phase("prepare_record_workers")
+            prepare(["--manifest", manifest, "--output", output, "--preprocessing-config", profile,
+                     "--workers", str(record_workers)], merge_gate=staging)
+        worker_diagnostic_phase("read_preparation_result")
+        path = Path(output) / "preparation.json"
+        record = json.loads(path.read_text(encoding="utf-8"))
+        return {"record": str(path), "status": record["status"], "record_workers": record["workers"],
+                "controller_pid": os.getpid(), "native_threads_per_record_worker": 1,
+                "cache_sha256": record["cache_sha256"]}
 
 
 def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, groups):
@@ -629,6 +644,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
         source_group_input_status,
     )
     from research.source_selection import resolve_source_program
+    from research.worker_diagnostics import PoolFailureDiagnostics, initialize_worker_diagnostics
     from transfer.target_experiments import resolve_target_batch_rule
 
     program = resolve_source_program(plan, stages)
@@ -690,11 +706,20 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
         atomic_write_json(profile_path, program["preprocessing"])
     _save_chain_report(output, report)
     context = multiprocessing.get_context("spawn")
+    diagnostic_identity = {"source_snapshot": snapshot, "actual_source_root": str(ROOT),
+        "resolved_plan_sha256": semantic_sha256({key: value for key, value in plan.items() if not key.startswith("_")}),
+        "stages": list(stages), "device": device, "resources": resources}
+    diagnostic_identity["actual_run_sha256"] = semantic_sha256(diagnostic_identity)
+    diagnostics_directory = output / "worker_diagnostics"
+    pool_diagnostics = PoolFailureDiagnostics(diagnostics_directory, diagnostic_identity)
+    diagnostics_directory, diagnostic_identity = pool_diagnostics.directory, pool_diagnostics.identity
+    report["worker_diagnostics"] = {"directory": str(diagnostics_directory), "identity": diagnostic_identity}
     with context.Manager() as manager:
         slots = manager.BoundedSemaphore(resources["gpu_slots"]) if torch.device(device).type == "cuda" else None
         load_slots = manager.BoundedSemaphore(int(plan.get("source_load_workers", resources["source_workers"])))
         memory_admission = HostMemoryAdmission(manager, resources)
-        with ProcessPoolExecutor(max_workers=resources["source_workers"], mp_context=context) as pool:
+        with ProcessPoolExecutor(max_workers=resources["source_workers"], mp_context=context,
+                initializer=initialize_worker_diagnostics, initargs=(str(diagnostics_directory), diagnostic_identity)) as pool:
             pending = list(range(len(groups)))
             active, preparation_started, preparation_failures = {}, set(), {}
             bindings, previous_input_status = {}, None
@@ -751,7 +776,14 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                             for study in outer["source_studies"]}
                     entry = report["groups"][index]
                     entry.update(status="running", resource_reservation=reservation)
-                    future = pool.submit(_source_group_worker, (child, entry["directory"], device, stages))
+                    try:
+                        future = pool.submit(_source_group_worker, (child, entry["directory"], device, stages))
+                    except BrokenProcessPool as error:
+                        report["pool_failure_observation"] = pool_diagnostics.capture(error,
+                            {"outer": entry["outer"], "phase": "source"}, stage="submit")
+                        _save_chain_report(output, report)
+                        raise
+                    pool_diagnostics.remember_processes(pool)
                     active[future] = (entry, reservation)
                     pending.remove(index)
                 if inventory is not None:
@@ -775,8 +807,15 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                                  "manifest": manifests[study]}
                         report["preparation"].append(entry)
                         preparation_started.add(study)
-                        future = pool.submit(_source_preparation_worker, (manifests[study],
-                            str(Path(prepared_directory) / study), str(profile_path), phase_threads - 1, load_slots))
+                        try:
+                            future = pool.submit(_source_preparation_worker, (manifests[study],
+                                str(Path(prepared_directory) / study), str(profile_path), phase_threads - 1, load_slots))
+                        except BrokenProcessPool as error:
+                            report["pool_failure_observation"] = pool_diagnostics.capture(error,
+                                {"study": study, "phase": "preparation"}, stage="submit")
+                            _save_chain_report(output, report)
+                            raise
+                        pool_diagnostics.remember_processes(pool)
                         active[future] = (entry, reservation)
                 reserved = memory_admission.record()
                 observation = {**reserved, "ready_source_groups": reserved["source_groups"] + sum(
@@ -788,6 +827,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                     report["resource_observations"].append({"observed_unix": time.time(), **observation})
                 _save_chain_report(output, report)
                 if active:
+                    pool_diagnostics.remember_processes(pool)
                     done, _ = wait(active, timeout=5, return_when=FIRST_COMPLETED)
                 else:
                     done = set()
@@ -803,6 +843,11 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                             entry.update(result)
                     except Exception as error:
                         entry.update(status="failed", failure={"type": type(error).__name__, "message": str(error)})
+                        if isinstance(error, BrokenProcessPool):
+                            entry["failure"]["diagnostic_observation"] = pool_diagnostics.capture(error,
+                                {"outer": entry.get("outer"), "study": entry.get("study"), "phase": reservation["phase"]},
+                                stage="future_result")
+                            report["pool_failure_observation"] = entry["failure"]["diagnostic_observation"]
                         if reservation["phase"] == "preparation":
                             preparation_failures[entry["study"]] = str(error)
                     finally:
@@ -1009,6 +1054,11 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
         with phases.phase("whole_source_input_ledger") if phases is not None else nullcontext():
             source_fit_ledger(source, np.arange(source.n_epochs), excluded_source_datasets=excluded)
             domains, _, _ = source_identity_axes(source)
+        from research.worker_diagnostics import worker_diagnostic_phase
+
+        worker_diagnostic_phase("actual_source_input_admitted", source_shape=list(source.X.shape),
+            source_dtype=str(source.X.dtype), source_cache_sha256=source_sha, source_cache_path=str(source_cache),
+            source_program=program["name"], native_threads=plan.get("_native_threads_per_worker", 1))
         from research.source_catalog import SourceCatalog
 
         SourceCatalog(plan.get("source_pools")).validate_fold(outer, domains)
@@ -1122,6 +1172,9 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
                     destination = output / key
                     destination.mkdir(parents=True, exist_ok=True)
                     try:
+                        worker_diagnostic_phase("source_fit_or_verified_reuse", source_seed=seed, task_key=key,
+                            resolved_config=asdict(config), source_cache_sha256=source_sha, failure=None,
+                            physical_optimizer_updates=None, physical_trial_draws=None)
                         acquired = resume.acquire(key, config, ledger, source_sha,
                             architecture_record=source_architecture_record(dataset, architecture))
                         if acquired is None:
@@ -1135,12 +1188,17 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
                                 runtime_input_staging_gate=plan.get("_source_load_slots"),
                                 source_program_config=source_config_record)
                     except RuntimeError as error:
+                        worker_diagnostic_phase("source_fit_python_failure", failure={"type": type(error).__name__, "message": str(error)},
+                                                source_seed=seed, task_key=key)
                         task.update(status="fit_failure", failure=str(error))
                         if independent:
                             task["budget_kind"] = "actual_unmeasured_after_fit_failure"
                         _save_chain_report(output, report)
                         continue
                     report["fitting_performed"] |= acquired["physical_optimizer_updates"] > 0
+                    worker_diagnostic_phase("source_fit_returned", source_seed=seed, task_key=key,
+                        physical_optimizer_updates=acquired["physical_optimizer_updates"],
+                        physical_trial_draws=acquired["physical_trial_draws"])
                     task.update({name: acquired[name] for name in (
                         "source_training_reuse", "physical_optimizer_updates", "physical_trial_draws")})
                     task["checkpoints"] = {str(update): value for update, value in acquired["checkpoints"].items()}
