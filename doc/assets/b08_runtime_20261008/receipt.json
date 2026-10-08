@@ -1,0 +1,95 @@
+{
+  "schema": "n2p3_cpu_margin_v3_validation/1",
+  "checked_utc": "2026-10-08T04:21:39.447622+00:00",
+  "running_handles": [
+    {
+      "pid": 16100,
+      "create_time": 1791428814.398248,
+      "live": true
+    },
+    {
+      "pid": 35732,
+      "create_time": 1791428814.994878,
+      "live": true
+    },
+    {
+      "pid": 48156,
+      "create_time": 1791432763.4073043,
+      "live": true
+    },
+    {
+      "pid": 45664,
+      "create_time": 1791428825.6372802,
+      "live": true
+    },
+    {
+      "pid": 43976,
+      "create_time": 1791428825.6479185,
+      "live": true
+    },
+    {
+      "pid": 21036,
+      "create_time": 1791428825.6570575,
+      "live": true
+    },
+    {
+      "pid": 7000,
+      "create_time": 1791428827.7162948,
+      "live": true
+    },
+    {
+      "pid": 48872,
+      "create_time": 1791433051.815122,
+      "live": true
+    }
+  ],
+  "observed_samples": 519,
+  "observed_maximum_host_cpu_percent": 71.5,
+  "observed_samples_at_or_above_80": 0,
+  "historical_v2": {
+    "utc": "2026-10-08T04:12:56.615073+00:00",
+    "old_watchdog_pid": 44248,
+    "old_watchdog_create_time": 1791430334.393224,
+    "old_resource_task_only_stopped": true,
+    "worker_job_retained": {
+      "source_process_id": 44248,
+      "source_job_handle_value": 552,
+      "control_flags": 5,
+      "queried_job_relative_rate_percent": 73.11,
+      "exact_job_process_ids": [
+        45664,
+        43976,
+        21036,
+        7000
+      ]
+    },
+    "parent_job_retained": {
+      "source_process_id": 44248,
+      "source_job_handle_value": 556,
+      "control_flags": 5,
+      "queried_job_relative_rate_percent": 47.87,
+      "exact_job_process_ids": [
+        16100,
+        35732,
+        1368,
+        45260,
+        45664,
+        43976,
+        21036,
+        7000
+      ]
+    },
+    "watchdog_pid": 48156,
+    "watchdog_create_time": 1791432763.4073043,
+    "fit_owner_pid_unchanged": 16100,
+    "fits_interrupted_or_repeated": 0,
+    "prior_controller_maximum_host_cpu_percent": 94.3,
+    "prior_controller_samples_at_or_above_ceiling": 14
+  },
+  "execution_sha256": "9ec532a41af30cbb465442a6ee0bb1a6e90c7736d6e08f6a04f6e37c1f46b33b",
+  "source_sha256": "b003cc0c51854824ac2b5896ea75f3d2f2c99953cc787e6eadd6124d305fb0e4",
+  "numeric_source_altered": false,
+  "fit_restart_count": 0,
+  "source_scope": "resource controller only, existing model source and artifacts retained",
+  "controller_archive_sha256": "a6259e60d1e87ffea3d87cf8236b71088a778a358546226c8cc4e7169fa3c28d"
+}

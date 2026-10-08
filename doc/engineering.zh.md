@@ -1,6 +1,6 @@
 # 工程指南
 
-[B12切片](evidence/independent_prefix_20261008.zh.md)采用一次授权验证、共享final fit与单份数值包。独立两轴后只补相关consumer回归与B07组合/原生重放，没有重复全集。B08两次外部中断的原progress、包和producer链保持原字节，已脱离工具会话后台恢复324封包并继续完整1344；实际进程与终态凭证作为续接权威。
+[B12切片](evidence/independent_prefix_20261008.zh.md)采用一次授权验证、共享final fit与单份数值包。独立两轴后只补相关consumer回归与B07组合/原生重放，没有重复全集。B08原progress、包和producer链保持原字节，普通用户Task Scheduler服务启动的完整1344格复用436个原封包并继续拟合；实际进程与终态凭证作为续接权威。[CPU限流续接证据](evidence/prior_control_20261006.zh.md#后台运行与本机cpu余量)记录资源控制器接管，不能将仍在运行的矩阵写成完成。
 
 更新：2026-09-07。合并原工程流程与环境指导，设备策略集中于本文件。
 先读[研究规范](research_program.zh.md)与[技术结构](technical_structure.zh.md)，再看实际调用链。

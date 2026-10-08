@@ -57,3 +57,13 @@ v2真实终态exit1、1460.20秒，A01/fold1/AR8 profile trace1再次触发poste
 最终改为一个完整C kernel posterior owner：原joint prefix/tail仍决定noise objective、scatter/logdet与空间Σ；最终kernel M/H由同一个nuisance quotient压缩R/rhs加原precision root生成，fit provenance直接保存这一次统计量。载入核验共享同一factors函数，后向/H阈值均未放宽。60项相关验证通过，独立对两次实际失败数组核对新M/H与QR/SVD、真实改变M/H/先验仍拒绝；旧统计和模型只在原source重放。
 
 [第三版完整计划](../assets/prior_control_20261006/plan_v3.json)只变执行源、科学与资源格仍为1344。原两批101/72包保留原producer，不改签复用；新源码实际fit/save/load/score与完整矩阵分别继续验收。总体优化还要落实B12独立C/test、source→target三完整seed、K0/source-artifact与工作站调用，不把本修复作为全项目完成。
+
+## 后台运行与本机CPU余量
+
+2026-10-08完整v3由普通用户Task Scheduler服务执行，保留436个已封包的原producer，fit/audit owner独立于工具终端。这个启动方式不承诺抵抗机器关机或人为停止任务。唯一owner在真实矩阵终态后运行完整1344包重放、12组形状对照和20000次participant整簇bootstrap，当前未产生最终效能结论。
+
+本机整机CPU目标低于80%。第二版资源控制器按实测父Job比例调整子Job，仍有14个超限样本、最高94.3%，原日志完整保留。第三版只替换资源观察/限流：保留现有worker Job句柄，使用近期30秒后台负载峰值留余量，并限制子Job相对配额，使父Job随后提高配额时不会放大到原设定之外。观察器按各进程实际采样时刻计算CPU量，减少反复扫描进程命令的开销；没有重启fit或更改数值模型源码。
+
+[2026-10-08 04:21:39 UTC验证凭证](../assets/b08_runtime_20261008/receipt.json)核实际owner、runner、控制器及全部当时worker的PID/create-time；接管后的519个样本最高71.5%，超限0。它只证明该观察区间，不能抹去此前超限或代表完整运行史。后续新增ready worker由同一控制器纳入原Job；工作量继续按真实保存包/终态统计，不由worker容量推算完成。
+
+[资源控制器归档](../../frozen/prior_control_20261008_cpu_margin_v3/manifest.json)的5成员逐字节校验并核本地镜像，原件保留。归档仅含控制器、句柄helper、手动任务XML和验证/接管凭证；数值fit继续绑定原执行快照，不改签已完成模型。没有Windows管理员提升或周期触发器。
