@@ -4,17 +4,13 @@ import copy
 from dataclasses import replace
 
 import numpy as np
-import pandas as pd
 import pytest
 import torch
 
 from baselines.deep import DeepConfig
-from data.domain import annotate_source_domain, namespace_epoch_dataset
-from data.events import observed_only_timeline
-from data.identity import DatasetIdentityTable
 from research.source_selection import fit_source_trajectory
-from tests.support.datasets import epoch_dataset
-from train.early_stopping import GlobalEarlyStoppingPolicy, PatienceStopper, UnifiedTrainingBudget
+from tests.support.source_programs import source_early_stopping_config, source_early_stopping_data
+from train.early_stopping import PatienceStopper, UnifiedTrainingBudget
 
 
 def test_reference_policy_is_independent_of_fixed_target_budget():
@@ -26,28 +22,6 @@ def test_reference_policy_is_independent_of_fixed_target_budget():
         UnifiedTrainingBudget(target_epochs=0)
     with pytest.raises(ValueError):
         UnifiedTrainingBudget(development_people_per_domain=True)
-
-
-def source_data():
-    data = epoch_dataset()
-    data.subject_ids = np.repeat(["s1", "s2", "s3", "s4", "s5"], 8)
-    data.y = np.tile([0, 1], 20)
-    data.X = np.random.default_rng(31).normal(size=(40, 3, 100)).astype(np.float32) * 1e-6
-    data.metadata = pd.DataFrame({"subject": data.subject_ids, "run": ["1"] * 40})
-    data.event_timeline = observed_only_timeline(
-        dataset_id="source", subject_ids=data.subject_ids, group_ids=data.subject_ids,
-        stimulus_ids=np.arange(40), onset_times_s=np.arange(40) * 2.,
-        evidence_available_times_s=np.arange(40) * 2. + 1.2,
-        online_causal=False, timing_source="synthetic_schedule",
-    )
-    data.identity_table = DatasetIdentityTable.from_source_rows(data.subject_ids.tolist(), ["source"] * 40)
-    return annotate_source_domain(namespace_epoch_dataset(data, "source"), "source")
-
-
-def config():
-    return DeepConfig(global_early_stopping=GlobalEarlyStoppingPolicy(
-        patience=2, min_delta=100., source_max_epochs=5, target_max_epochs=5),
-        batch_size=16, sampling="uniform_rows", compile_mode=None, val_group_frac=None, seed=7)
 
 
 def run_source(data, cfg):
@@ -72,7 +46,7 @@ def test_global_value_does_not_share_counter_state_and_resets_on_improvement():
 
 
 def test_source_early_stopping_refits_selected_epochs_from_origin():
-    data, cfg = source_data(), config()
+    data, cfg = source_early_stopping_data(), source_early_stopping_config()
     model, payloads = run_source(data, cfg)
     assert set(payloads) == {2}
     payload = payloads[2]
@@ -91,7 +65,7 @@ def test_source_early_stopping_refits_selected_epochs_from_origin():
 
 
 def test_source_validation_and_outside_rows_cannot_enter_inner_training():
-    data, cfg = source_data(), config()
+    data, cfg = source_early_stopping_data(), source_early_stopping_config()
     _, original = run_source(data, cfg)
     before = original[2]["source_epoch_selection"]
     changed = copy.deepcopy(data)
@@ -112,7 +86,7 @@ def test_fixed_and_global_budgets_cannot_be_combined():
 def test_source_exact_reuse_keeps_stopping_evidence_and_changes_policy_invalidate_cache(tmp_path):
     from experiments.run_source_training_chain import fit_or_reuse_source_trajectory
 
-    common = dict(registry={}, dataset=source_data(), rows=np.arange(32), config=config(),
+    common = dict(registry={}, dataset=source_early_stopping_data(), rows=np.arange(32), config=source_early_stopping_config(),
         source_cache_sha256="a" * 64, source_snapshot_sha256="b" * 64,
         excluded_source_datasets=["outer"], device="cpu", evidence_scope="software_correctness")
     first = fit_or_reuse_source_trajectory(**common, destination=tmp_path / "a", task_id="a")
@@ -121,7 +95,7 @@ def test_source_exact_reuse_keeps_stopping_evidence_and_changes_policy_invalidat
     assert second["physical_optimizer_updates"] == 0
     saved = torch.load(second["checkpoints"][2], weights_only=False)
     assert saved["training_contract"]["validation"]["early_stopping"]["selected_epochs"] == 1
-    third = fit_or_reuse_source_trajectory(**{**common, "config": replace(config(),
-        global_early_stopping=replace(config().global_early_stopping, patience=3))},
+    third = fit_or_reuse_source_trajectory(**{**common, "config": replace(source_early_stopping_config(),
+        global_early_stopping=replace(source_early_stopping_config().global_early_stopping, patience=3))},
         destination=tmp_path / "c", task_id="c")
     assert third["physical_optimizer_updates"] == 6

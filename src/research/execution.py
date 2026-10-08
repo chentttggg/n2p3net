@@ -17,6 +17,7 @@ class UnidentifiableFitError(ValueError):
 
 
 class SubjectFailureCode(StrEnum):
+    INSUFFICIENT_CALIBRATION_GROUPS = "insufficient_calibration_groups"
     INSUFFICIENT_CLASSES = "insufficient_classes"
     NONFINITE_OPTIMIZATION = "nonfinite_optimization"
     ACCELERATOR_OOM = "accelerator_oom"

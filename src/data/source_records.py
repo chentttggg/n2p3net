@@ -794,6 +794,14 @@ def target_raw_view_identity(dataset):
     return {**identity, "sha256": hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()}
 
 
+def prepared_calibration_requests(entry):
+    """Consume a prefix producer's recorded cap without parsing its reason text."""
+    from transfer.binary import calibration_budget_requests
+
+    return calibration_budget_requests(entry["requested_budgets"], entry["effective_budgets"],
+        {int(key): reason for key, reason in entry["adjustments"].items()})
+
+
 def load_target_prefixes(path, *, subjects=None, load_inner=True):
     """Load attested per-subject views without changing recording identities.
 

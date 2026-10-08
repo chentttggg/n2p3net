@@ -92,7 +92,7 @@ def test_erp_runner_retains_unavailable_requested_budget_and_executes_legal_anch
         return loader(*args, **kwargs)
     monkeypatch.setattr(runner, "load_target_prefixes", checked_loader)
     report = run_comparison(path, tmp_path / "result")
-    assert len(streamed) == 6  # Three arms, one participant, preflight + execution.
+    assert len(streamed) == 2  # Shared collection, one participant, preflight + execution.
     assert len(report["cells"]) == 6
     assert all(c["status"] == "completed" for c in report["cells"] if c["K"] == 8), report["cells"]
     assert all(c["status"] == "protocol_unavailable" for c in report["cells"] if c["K"] == 200)
@@ -129,6 +129,12 @@ def test_erp_runner_retains_unavailable_requested_budget_and_executes_legal_anch
     original["training_identity_ledger_digest"] = table.digest()
     original["training_contract"]["source_identity_digest"] = table.digest()
     original["training_contract"]["training_participant_keys"] = list(table.authority_keys())
+    membership = {"schema": "n2p3_source_study_membership/1",
+        "stream_to_study": {"Huebner2017": "Huebner2017"},
+        "evidence": [{"basis": "synthetic_test_fixture", "study_id": "Huebner2017"}]}
+    membership["digest"] = semantic_sha256(membership)
+    original["source_study_membership"] = membership
+    original["training_contract"]["objective"]["source_study_membership"] = membership
     original["training_contract_digest"] = semantic_sha256(original["training_contract"])
     torch.save(original, checkpoint)
     with pytest.raises(ValueError, match="complete target study"):
@@ -207,3 +213,87 @@ def test_nn_transfer_refuses_unmatched_controls_before_fitting(tmp_path, violati
     with pytest.raises(ValueError, match="matched.*control"):
         run_comparison(path, tmp_path / "output")
     assert not (tmp_path / "output").exists()
+
+
+def test_paired_comparator_keeps_zero_requests_and_reuses_deterministic_fit(tmp_path, monkeypatch):
+    import hashlib
+
+    import experiments.run_erp_comparator as runner
+    from data.epochs import load_epoch_dataset
+    from research.contracts import semantic_sha256
+    from tests.support.checkpoints import write_checkpoint
+
+    item, spec, _ = write_real_record(tmp_path)
+    prefix = prepare_source_record_prefixes(item, root=tmp_path, output=tmp_path / "prepared",
+        preprocessing=spec, budgets=(0, 8, 200, 800), minimum_test_trials=2)
+    collection = tmp_path / "prefix.json"
+    collection.write_text(json.dumps({"schema": "n2p3_target_raw_prefix_collection/1",
+        "preprocessing": prefix["preprocessing"], "preparation_method": prefix["preparation_method"],
+        "records": [prefix]}), encoding="utf-8")
+    calibration = load_epoch_dataset(prefix["calibration"]["8"]["cache"], validation="attested")
+    pairs, catalog = [[11, 101], [12, 102], [13, 103]], []
+    for source_seed, _ in pairs:
+        checkpoint = write_checkpoint(tmp_path / f"source-{source_seed}.pt", calibration,
+            source_snapshot_sha256="e" * 64)
+        payload = torch.load(checkpoint, weights_only=True)
+        payload["training_contract"]["seed"] = source_seed
+        payload["training_contract_digest"] = semantic_sha256(payload["training_contract"])
+        torch.save(payload, checkpoint)
+        catalog.append({"outer_target_study": "Huebner2017", "source_seed": source_seed,
+            "path": checkpoint.name, "sha256": hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
+            "procedure": {"kind": "fixed_recipe", "selection": "not_applicable"}})
+    arms = [{"name": family, "family": family, "prefix_collection": str(collection),
+        **({"epochs": 1, "batch_size": 32} if family in {"full_fine", "scratch"} else {})}
+        for family in ("waveform_lda", "full_fine", "scratch")]
+    plan = {"schema": "n2p3_erp_comparator_plan/1", "subjects": ["1"], "budgets": [0, 8, 16, 200, 800],
+        "arms": arms, "allowed_input_axes": [], "evidence_scope": "software_correctness",
+        "seed_pairs": pairs, "source_seed_catalog": catalog,
+        "contrasts": {"full_minus_scratch": {"full_fine": 1, "scratch": -1}}}
+    path = tmp_path / "plan.json"
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    actual_fit, actual_load = runner.fit_calibration_candidate, runner.load_target_prefixes
+    fits, loads = [], []
+
+    def measured_fit(data, recipe, rows, **kwargs):
+        fits.append((recipe.initialization, recipe.seed, int(np.count_nonzero(rows))))
+        return actual_fit(data, recipe, rows, **kwargs)
+
+    def measured_load(*args, **kwargs):
+        loads.append(kwargs["subjects"])
+        return actual_load(*args, **kwargs)
+
+    monkeypatch.setattr(runner, "fit_calibration_candidate", measured_fit)
+    monkeypatch.setattr(runner, "load_target_prefixes", measured_load)
+    report = run_comparison(path, tmp_path / "result")
+    assert report["requested_cells"] == 45
+    assert report["actual_fit_score_cells"] == 36
+    assert report["budget_program"] == "owner_resolved_requests"
+    assert report["seed_pairs"] == pairs
+    assert {(c["source_seed"], c["target_seed"]) for c in report["cells"]} == {tuple(p) for p in pairs}
+    zero = [c for c in report["cells"] if c["K"] == 0]
+    assert sum(c["status"] == "completed" for c in zero) == 3
+    assert all(c["status"] == "protocol_unavailable" for c in zero if c["family"] != "full_fine")
+    assert all(c["target_fit_rows"] == 0 and c["physical_optimizer_updates"] == 0
+               and c["prediction_program"] == "source_only" for c in zero if c["family"] == "full_fine")
+    assert all(c["saved_replay_exact"] for c in report["cells"] if c["status"] == "completed")
+    assert all(c["status"] == "completed" for c in report["cells"] if c["K"] == 8)
+    undeclared = [cell for cell in report["cells"] if cell["requested_K"] == 16]
+    assert len(undeclared) == 9 and all(cell["status"] == "protocol_unavailable" for cell in undeclared)
+    assert all(cell["actual_K"] is None for cell in undeclared)
+    fallback = [cell for cell in report["cells"] if cell["K"] == 16 and cell["actual_K"] == 16]
+    assert len(fallback) == 9 and all(cell["status"] == "completed" for cell in fallback)
+    assert all(cell["requested_Ks"] == [200, 800] for cell in fallback)
+    assert not any(cell["K"] in {200, 800} for cell in report["cells"])
+    assert all(row["actual_K"] == 16 and row["budget_adjustment"]
+               for row in report["requested_participants"] if row["requested_K"] in {200, 800})
+    assert all(row["completed_cells"] == 9 for row in report["requested_budget_coverage"] if row["requested_K"] in {200, 800})
+    assert len(fits) == 14 and sum(kind == "waveform_lda" for kind, *_ in fits) == 2
+    assert {rows for _, _, rows in fits} == {8, 16}
+    assert report["physical_target_fits"] == 14
+    assert report["statistics"]["declared_seed_pairs"] == pairs
+    exact = report["statistics"]["groups"][0]["contrasts"]["full_minus_scratch"]["exact_K"]
+    assert all(exact[str(requested)]["n_declared_requested_at_K"] == 1
+               and len(exact[str(requested)]["requested_without_actual_K_result"]) == 1 for requested in (200, 800))
+    assert len(loads) == 2  # One collection per participant, preflight + execution.
+    for entry in catalog:
+        assert hashlib.sha256((tmp_path / entry["path"]).read_bytes()).hexdigest() == entry["sha256"]

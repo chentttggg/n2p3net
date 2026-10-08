@@ -19,7 +19,12 @@ from models.candidate_evidence import (
     membership_decision_scores,
 )
 from research.contracts import semantic_sha256
-from research.execution import atomic_write_json
+from research.execution import (
+    ExpectedSubjectError,
+    SubjectFailureCode,
+    UnidentifiableFitError,
+    atomic_write_json,
+)
 from transfer.calibration_candidates import fit_calibration_candidate
 from transfer.calibration_state import FrozenTrialPredictor
 from transfer.checkpoint import PreparedTransferCheckpoint
@@ -29,13 +34,14 @@ from transfer.continuous_decision import (
 )
 from transfer.ensemble import EnsembleProgram, EnsembleScorer
 from transfer.ensemble_views import (
+    CalibrationPrefix,
     CalibrationSelection,
     PredictionDecisionView,
     SelectionEpochProfile,
     build_calibration_epoch_dataset,
 )
 from transfer.kernel_prior import KernelPriorSpec, resolve_kernel_prior
-from transfer.noise_model import freeze_metadata
+from transfer.noise_model import array_digest, freeze_metadata
 from transfer.recipes import TargetRecipe
 from transfer.response_dictionary import ResponseDictionary, ResponseDictionarySpec
 
@@ -177,14 +183,19 @@ class CalibrationExpertProgram:
 @dataclass
 class _FittedExpert:
     program: CalibrationExpertProgram
-    predictor: FrozenTrialPredictor | ContinuousDecisionModel
-    model_digest: str
+    predictor: FrozenTrialPredictor | ContinuousDecisionModel | None
+    model_digest: str | None
     fit_digest: str
     source_digest: str | None
     logit_offset: float
+    unavailable_reason: str | None = None
+    unavailable_kind: str = "not_available"
 
     def __post_init__(self):
-        if self.program.family == "continuous_ar":
+        if self.predictor is None:
+            if not self.unavailable_reason or self.model_digest is not None:
+                raise ValueError("unavailable experts have a reason and no fitted numerical model")
+        elif self.program.family == "continuous_ar":
             model = self.predictor
             dictionary = ResponseDictionary.compile(self.program.dictionary_spec, sample_rate_hz=model.sfreq)
             expected_basis = dictionary.matrix
@@ -199,18 +210,22 @@ class _FittedExpert:
                     or (model.dictionary is None and self.program.dictionary is not None)):
                 raise ValueError("frozen continuous recipe differs from its actual numerical model")
 
-    def unavailable(self, view, reason):
+    def unavailable(self, view, reason, failure_kind="incomplete"):
         counts = tuple(int(value) for value in view.decision.membership.sum(axis=0))
         observed = tuple(int(value) for value in view.decision.membership[view.decision.evidence_indices >= 0].sum(axis=0))
         digest = semantic_sha256({"program": self.program.record(), "raw_input": view.raw_input_digest,
                                   "unavailable_reason": reason})
         identity = CandidateExpertIdentity(self.program.expert_id, digest, self.model_digest,
-            self.source_digest, self.fit_digest, "incomplete_physical_decision", False)
+            self.source_digest, self.fit_digest, failure_kind, False)
         return CandidateEvidence(view.decision.candidate_vocabulary, None, view.participant_key,
             view.decision_id, view.physical_support_digest, (identity,), view.decision.repetitions,
-            counts, observed, failure_reason=reason, failure_kind="incomplete")
+            counts, observed, failure_reason=reason, failure_kind=failure_kind)
 
     def score(self, view: PredictionDecisionView):
+        if self.predictor is None:
+            return self.unavailable(view, self.unavailable_reason, self.unavailable_kind)
+        if view.samples is None:
+            return self.unavailable(view, view.unavailable_reason)
         if not view.decision.schedule_complete or np.any(view.decision.evidence_indices < 0):
             return self.unavailable(view, "incomplete_physical_decision")
         if self.program.family == "trial":
@@ -248,11 +263,13 @@ class _FittedExpert:
 class FittedEnsemble:
     """Own expert state, fit authority and one frozen mixture behind score(view)."""
 
-    def __init__(self, scorer, experts, training_receipts, temperature_record=None):
+    def __init__(self, scorer, experts, training_receipts, temperature_record=None, *, target_contract=None):
         self._scorer = scorer
         self._experts = tuple(experts)
         self._training_receipts = tuple(freeze_metadata(row) for row in training_receipts)
-        self._participant_key = self._training_receipts[0]["participant_key"]
+        self._target_contract = (None if target_contract is None else freeze_metadata(target_contract))
+        self._participant_key = (self._training_receipts[0]["participant_key"] if target_contract is None else
+                                 target_contract["participant_key"])
         if tuple(expert.program.expert_id for expert in self._experts) != scorer.program.expert_ids:
             raise ValueError("frozen expert states differ from the declared roster")
         self._temperature_record = freeze_metadata({"strategy": "fixed", "temperatures": {name: 1. for name in scorer.program.expert_ids}}
@@ -262,6 +279,17 @@ class FittedEnsemble:
             not np.isfinite(value) or value <= 0 for value in temperatures.values()
         ):
             raise ValueError("frozen temperatures must cover the roster and be positive finite scalars")
+        strategy = self._temperature_record["strategy"]
+        if strategy == "fixed":
+            if any(value != 1. for value in temperatures.values()):
+                raise ValueError("fixed temperature program requires unit temperatures")
+        elif strategy == "grouped_temperature":
+            if self._temperature_record.get("temperature_bounds") != (.05, 20.) or any(
+                not .05 <= value <= 20. for value in temperatures.values()
+            ):
+                raise ValueError("grouped temperature program differs from its declared bounds")
+        else:
+            raise ValueError("unknown declared ensemble calibration strategy")
 
     @property
     def temperature_record(self):
@@ -275,16 +303,29 @@ class FittedEnsemble:
     def participant_key(self):
         return self._participant_key
 
+    @property
+    def fit_receipts(self):
+        return self._training_receipts
+
+    @property
+    def fit_available(self):
+        return all(expert.predictor is not None for expert in self._experts)
+
+    @property
+    def expert_fit_available(self):
+        return {expert.program.expert_id: expert.predictor is not None for expert in self._experts}
+
     def score_experts(self, view: PredictionDecisionView):
         if view.participant_key != self.participant_key:
             raise ValueError("personal ensemble cannot score another participant identity")
-        if tuple(view.decision.candidate_vocabulary) != tuple(self._training_receipts[0]["decision"]["candidate_vocabulary"]):
+        task = (self._training_receipts[0]["decision"] if self._target_contract is None else self._target_contract)
+        if tuple(view.decision.candidate_vocabulary) != tuple(task["candidate_vocabulary"]):
             raise ValueError("ensemble candidate vocabulary/order differs from the frozen task")
         for expert in self._experts:
             if expert.program.family == "trial":
                 expert.program.profile.validate_observation(view)
         if any(expert.program.family == "continuous_ar" for expert in self._experts):
-            first = self._training_receipts[0]
+            first = self._training_receipts[0] if self._target_contract is None else self._target_contract
             expected = (first["sample_rate_hz"], tuple(first["channel_names"]), tuple(first["channel_types"]),
                         first["reference"], first["signal_unit"])
             if _native_observation_contract(view) != expected:
@@ -292,7 +333,7 @@ class FittedEnsemble:
         for receipt in self._training_receipts:
             if view.record_id == receipt["record_id"] or view.raw_input_digest == receipt["raw_input_digest"]:
                 raise ValueError("ensemble prediction repeats a calibration observation")
-            if view.source_sha256 == receipt["source_sha256"] and (
+            if view.samples is not None and view.source_sha256 == receipt["source_sha256"] and (
                 view.raw_scope[0] < receipt["raw_scope"][1] and view.raw_scope[1] > receipt["raw_scope"][0]
             ):
                 raise ValueError("ensemble prediction raw support overlaps calibration")
@@ -320,6 +361,12 @@ class FittedEnsemble:
         directory.mkdir(parents=True, exist_ok=False)
         entries = []
         for index, expert in enumerate(self._experts):
+            if expert.predictor is None:
+                entries.append({"program": expert.program.record(), "model": None,
+                    "model_digest": None, "fit_digest": expert.fit_digest,
+                    "source_digest": expert.source_digest, "logit_offset": expert.logit_offset,
+                    "unavailable_reason": expert.unavailable_reason, "unavailable_kind": expert.unavailable_kind})
+                continue
             filename = f"expert_{index:03d}." + ("pt" if expert.program.family == "trial" else "npz")
             path = directory / filename
             expert.predictor.save(path)
@@ -330,8 +377,66 @@ class FittedEnsemble:
         record = {"schema": FITTED_ENSEMBLE_SCHEMA, "program": self.scorer.program.record(),
                   "experts": entries, "training_receipts": list(self._training_receipts),
                   "temperature_calibration": self.temperature_record}
+        if self._target_contract is not None:
+            record["target_contract"] = self._target_contract
         atomic_write_json(directory / "ensemble.json", {"record": record, "record_sha256": semantic_sha256(record)})
         return directory
+
+    @classmethod
+    def save_programs(cls, directory, programs, *, participant_key):
+        """One numerical package, with separate declared probability programs."""
+        directory = Path(directory)
+        fitted = next((value for value in programs.values() if isinstance(value, cls)), None)
+        if fitted is None:
+            directory.mkdir(parents=True, exist_ok=False)
+            base_digest = None
+        else:
+            fitted.save(directory)
+            base_digest = hashlib.sha256((directory / "ensemble.json").read_bytes()).hexdigest()
+        records = {}
+        for name, value in programs.items():
+            if name not in {"fixed", "grouped_temperature"}:
+                raise ValueError("unknown declared ensemble calibration strategy")
+            if isinstance(value, ExpectedSubjectError):
+                records[name] = {"status": "unavailable", "failure": value.record(subject=participant_key)}
+            else:
+                if value._experts is not fitted._experts or value.scorer.program != fitted.scorer.program:
+                    raise ValueError("temperature programs must share the actual all-C final expert states")
+                if name != value.temperature_record["strategy"]:
+                    raise ValueError("temperature program name differs from its actual strategy")
+                records[name] = {"status": "completed", "temperature_calibration": value.temperature_record}
+        record = {"schema": "n2p3_prefix_temperature_programs/1", "base_package_sha256": base_digest,
+                  "participant_key": participant_key,
+                  "programs": records}
+        atomic_write_json(directory / "temperature_programs.json", {"record": record, "record_sha256": semantic_sha256(record)})
+        return directory
+
+    @classmethod
+    def load_programs(cls, directory):
+        directory = Path(directory)
+        payload = json.loads((directory / "temperature_programs.json").read_bytes())
+        record = payload["record"]
+        if record["schema"] != "n2p3_prefix_temperature_programs/1" or semantic_sha256(record) != payload["record_sha256"]:
+            raise ValueError("frozen temperature program manifest changed")
+        if not record["programs"] or set(record["programs"]) - {"fixed", "grouped_temperature"}:
+            raise ValueError("unknown declared ensemble calibration strategy")
+        for name, value in record["programs"].items():
+            if value["status"] not in {"completed", "unavailable"}:
+                raise ValueError("temperature program requires an explicit completed or unavailable state")
+            if value["status"] == "completed" and name != value["temperature_calibration"]["strategy"]:
+                raise ValueError("temperature program name differs from its actual strategy")
+        if record["base_package_sha256"] is None:
+            if any(value["status"] != "unavailable" for value in record["programs"].values()):
+                raise ValueError("available temperature programs require their actual final model package")
+            return {}
+        if hashlib.sha256((directory / "ensemble.json").read_bytes()).hexdigest() != record["base_package_sha256"]:
+            raise ValueError("temperature programs differ from their actual final model package")
+        fitted = cls.load(directory)
+        if record["participant_key"] != fitted.participant_key:
+            raise ValueError("temperature program participant differs from actual final model package")
+        return {name: cls(fitted.scorer, fitted._experts, fitted._training_receipts,
+            value["temperature_calibration"], target_contract=fitted._target_contract)
+            for name, value in record["programs"].items() if value["status"] == "completed"}
 
     @classmethod
     def load(cls, directory: str | Path):
@@ -343,6 +448,10 @@ class FittedEnsemble:
         experts = []
         for entry in record["experts"]:
             program = CalibrationExpertProgram.from_record(entry["program"])
+            if entry["model"] is None:
+                experts.append(_FittedExpert(program, None, entry["model_digest"], entry["fit_digest"],
+                    entry["source_digest"], entry["logit_offset"], entry["unavailable_reason"], entry["unavailable_kind"]))
+                continue
             path = directory / entry["model"]
             if path.resolve().parent != directory.resolve():
                 raise ValueError("frozen ensemble model path escapes its package")
@@ -358,12 +467,15 @@ class FittedEnsemble:
             expected_binding = {"program": program.record(), "training_receipts": record["training_receipts"],
                                 "model_source_digest": entry["source_digest"], "fit_digest": entry["fit_digest"],
                                 "logit_offset": entry["logit_offset"]}
+            if "target_contract" in record:
+                expected_binding["target_contract"] = record["target_contract"]
             if semantic_sha256(binding) != semantic_sha256(expected_binding):
                 raise ValueError("frozen ensemble recipe and fit authority differ from the actual model")
             experts.append(_FittedExpert(program, predictor, entry["model_digest"], entry["fit_digest"],
                                          entry["source_digest"], entry["logit_offset"]))
         return cls(EnsembleScorer(EnsembleProgram.from_record(record["program"])), experts,
-                   record["training_receipts"], record["temperature_calibration"])
+                   record["training_receipts"], record["temperature_calibration"],
+                   target_contract=record.get("target_contract"))
 
 
 def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProgram, *,
@@ -412,51 +524,118 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
     fit_inputs = [group.record() for group in calibration]
     experts = []
     for spec in expert_programs:
-        source_digest = None
-        checkpoint_digest = None
-        if spec.family == "trial":
-            data = build_calibration_epoch_dataset(calibration, spec.profile)
-            source_trunk = source_stats = None
-            if spec.expert_id in sources:
-                content = sources[spec.expert_id].content
-                prepared = PreparedTransferCheckpoint(io.BytesIO(content), data)
-                source_identity = DatasetIdentityTable.from_payload(prepared.payload["training_identity_ledger"])
-                if set(source_dataset_ids_from_identity(source_identity)) & set(source_dataset_ids_from_identity(data.identity_table)):
-                    raise ValueError("ensemble source must exclude the complete target study")
-                source_trunk = prepared.trunk_for_target(data.subject_ids[0])
-                source_stats = prepared.input_statistics
-                checkpoint_digest = hashlib.sha256(content).hexdigest()
-                if spec.recipe.initialization == "source":
-                    source_digest = checkpoint_digest
+        data = build_calibration_epoch_dataset(calibration, spec.profile) if spec.family == "trial" else None
+        records = [CalibrationRecord(group.view.record_id, group.view.samples, group.view.onsets, group.labels)
+                   for group in calibration] if spec.family == "continuous_ar" else []
+        experts.append(_fit_expert(spec, data, records, receipts[0], sources.get(spec.expert_id),
+            receipts, fit_inputs, device=device))
+    fitted = FittedEnsemble(EnsembleScorer(program), experts, receipts)
+    if calibration_strategy == "fixed":
+        return fitted
+    return _grouped_temperature(fitted, calibration, expert_programs, sources, device)
+
+
+def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *, device,
+                source_only=False, target_contract=None):
+    source_digest = checkpoint_digest = None
+    if spec.family == "trial":
+        source_trunk = source_stats = prepared = None
+        if source is not None:
+            prepared = PreparedTransferCheckpoint(io.BytesIO(source.content), data)
+            source_identity = DatasetIdentityTable.from_payload(prepared.payload["training_identity_ledger"])
+            if set(source_dataset_ids_from_identity(source_identity)) & set(source_dataset_ids_from_identity(data.identity_table)):
+                raise ValueError("ensemble source must exclude the complete target study")
+            subject = data.identity_table.local_subject_ids[0]
+            source_trunk = prepared.trunk_for_target(subject)
+            source_stats = prepared.input_statistics
+            checkpoint_digest = source.digest
+            if spec.recipe.initialization == "source":
+                source_digest = checkpoint_digest
+        if source_only:
+            if prepared is None:
+                raise ValueError("source-only K0 requires an admitted source checkpoint")
+            predictor = FrozenTrialPredictor.from_source(prepared, subject)
+            offset = 0.
+        else:
             fitted = fit_calibration_candidate(data, spec.recipe, np.ones(data.n_epochs, dtype=bool),
                 source_trunk=source_trunk, source_input_stats=source_stats, device=device)
             predictor = FrozenTrialPredictor.from_fitted(fitted)
             prior = float(data.y.mean())
             offset = (0. if fitted.adapter is not None else float(np.log(prior / (1 - prior))))
+    else:
+        rate = target["sample_rate_hz"]
+        vocabulary = target["candidate_vocabulary"] if "candidate_vocabulary" in target else target["decision"]["candidate_vocabulary"]
+        predictor = ContinuousDecisionModel.fit(raw_records, sfreq=rate, channels=target["channel_names"],
+            candidate_ids=vocabulary, operator_identity="native_unfiltered_volts/1", noise_order=spec.noise_order,
+            **({"ridge": spec.ridge} if spec.prior_spec.kind == "isotropic_ridge" else {"kernel_prior": spec.kernel_prior}),
+            conditioning_samples=spec.conditioning_samples, noise_estimator=spec.noise_estimator,
+            dictionary=ResponseDictionary.compile(spec.dictionary_spec, sample_rate_hz=rate))
+        offset = 0.
+    fit_digest = semantic_sha256({"program": spec.record(), "authorized_calibration": fit_inputs,
+        "source_checkpoint_sha256": checkpoint_digest, "checkpoint_role": (None if checkpoint_digest is None else
+            "pretrained_weights" if spec.recipe.initialization == "source" else "architecture_only")})
+    binding = {"program": spec.record(), "training_receipts": receipts,
+               "model_source_digest": source_digest, "fit_digest": fit_digest, "logit_offset": offset}
+    if target_contract is not None:
+        binding["target_contract"] = target_contract
+    predictor = (predictor.with_fit_binding(binding) if spec.family == "trial" else
+                 replace(predictor, provenance={**predictor.provenance, "ensemble_fit_binding": binding}))
+    return _FittedExpert(spec, predictor, _predictor_digest(predictor), fit_digest, source_digest, offset)
+
+
+def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: EnsembleProgram, *,
+                            source_checkpoints=None, device="cpu", calibration_strategy="fixed"):
+    """Fit all legitimate prefix rows; complete C groups serve only temperature."""
+    if not isinstance(prefix, CalibrationPrefix):
+        raise TypeError("prefix fitting requires an authorized CalibrationPrefix")
+    prefix.validate()
+    specs = tuple(expert_programs)
+    if tuple(spec.expert_id for spec in specs) != program.expert_ids:
+        raise ValueError("prefix fit programs must match the complete frozen expert roster")
+    if calibration_strategy not in {"fixed", "grouped_temperature"}:
+        raise ValueError("unknown declared ensemble calibration strategy")
+    if calibration_strategy == "grouped_temperature" and len(prefix.complete_groups) < 3:
+        raise ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
+            stage="temperature", detail="fewer than three complete C-only groups")
+    sources = {} if source_checkpoints is None else {name: value if isinstance(value, FrozenSourceCheckpoint)
+        else FrozenSourceCheckpoint.from_path(value) for name, value in source_checkpoints.items()}
+    if set(sources) - set(program.expert_ids) or any(spec.expert_id in sources and
+            (spec.family != "trial" or spec.recipe.initialization not in {"source", "scratch"}) for spec in specs):
+        raise ValueError("prefix sources must belong to declared source or matched scratch experts")
+    receipts = [] if prefix.raw is None else [{**prefix.target_contract, "record_id": prefix.raw.record_id,
+        "raw_input_digest": array_digest(prefix.raw.samples, prefix.raw.onsets, prefix.raw.target_mask),
+        "label_use": prefix.label_use}]
+    experts = []
+    for spec in specs:
+        source_only = prefix.budget == 0 and spec.family == "trial" and spec.recipe.initialization == "source"
+        data = (prefix.trial_target(spec.profile) if source_only else
+                prefix.trial_datasets.get(spec.profile.digest) if spec.family == "trial" else None)
+        reason = None
+        if not source_only and (prefix.raw is None or spec.family == "trial" and data is None):
+            reason = "K0_target_fitted_expert_unavailable" if prefix.budget == 0 else "no_complete_authorized_trial_rows"
+        elif spec.family == "trial" and not source_only and (data.n_epochs < 3 or set(np.unique(data.y)) != {0, 1}):
+            reason = "insufficient_authorized_trial_classes_or_rows"
+        if reason:
+            fit_digest = semantic_sha256({"program": spec.record(), "prefix": prefix.record(), "unavailable": reason})
+            expert = _FittedExpert(spec, None, None, fit_digest, None, 0., reason)
         else:
-            view = calibration[0].view
-            records = [CalibrationRecord(group.view.record_id, group.view.samples,
-                        group.view.onsets, group.labels) for group in calibration]
-            predictor = ContinuousDecisionModel.fit(records, sfreq=view.sample_rate_hz,
-                channels=view.channel_names, candidate_ids=vocabulary,
-                operator_identity="native_unfiltered_volts/1", noise_order=spec.noise_order,
-                **({"ridge": spec.ridge} if spec.prior_spec.kind == "isotropic_ridge" else {"kernel_prior": spec.kernel_prior}),
-                conditioning_samples=spec.conditioning_samples, noise_estimator=spec.noise_estimator,
-                dictionary=ResponseDictionary.compile(spec.dictionary_spec, sample_rate_hz=view.sample_rate_hz))
-            offset = 0.
-        fit_digest = semantic_sha256({"program": spec.record(), "authorized_calibration": fit_inputs,
-                                     "source_checkpoint_sha256": checkpoint_digest,
-                                     "checkpoint_role": (None if checkpoint_digest is None else
-                                         "pretrained_weights" if spec.recipe.initialization == "source" else "architecture_only")})
-        binding = {"program": spec.record(), "training_receipts": receipts,
-                   "model_source_digest": source_digest, "fit_digest": fit_digest, "logit_offset": offset}
-        predictor = (predictor.with_fit_binding(binding) if spec.family == "trial" else
-                     replace(predictor, provenance={**predictor.provenance, "ensemble_fit_binding": binding}))
-        model_digest = _predictor_digest(predictor)
-        experts.append(_FittedExpert(spec, predictor, model_digest, fit_digest, source_digest, offset))
-    fitted = FittedEnsemble(EnsembleScorer(program), experts, receipts)
+            try:
+                expert = _fit_expert(spec, data, [] if prefix.raw is None else [prefix.raw], prefix.target_contract,
+                    sources.get(spec.expert_id), receipts, prefix.record(), device=device, source_only=source_only,
+                    target_contract=prefix.target_contract)
+            except (ExpectedSubjectError, UnidentifiableFitError, np.linalg.LinAlgError) as error:
+                reason = f"{type(error).__name__}: {error}"
+                fit_digest = semantic_sha256({"program": spec.record(), "prefix": prefix.record(), "fit_failure": reason})
+                expert = _FittedExpert(spec, None, None, fit_digest, None, 0., reason, "fit_failure")
+        experts.append(expert)
+    fitted = FittedEnsemble(EnsembleScorer(program), experts, receipts, target_contract=prefix.target_contract)
     if calibration_strategy == "fixed":
         return fitted
+    return _grouped_temperature(fitted, prefix.complete_groups, specs, sources, device)
+
+
+def _grouped_temperature(fitted, calibration, expert_programs, sources, device):
+    program = fitted.scorer.program
     by_expert = {name: [] for name in program.expert_ids}
     producers = []
     for held_index, held in enumerate(calibration):
@@ -467,7 +646,8 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
         target = held.view.decision.candidate_vocabulary.index(held.target_candidate)
         for name, item in scores.items():
             if not item.probability_available:
-                raise ValueError("grouped temperature fit requires complete OOF probability evidence")
+                raise ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE, stage="temperature",
+                    detail=f"{name}: grouped temperature fit requires complete OOF probability evidence")
             by_expert[name].append((item.log_probability, target))
         producers.append({"held_record_id": held.view.record_id,
             "training_record_ids": [group.view.record_id for group in training],
@@ -480,11 +660,42 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
         solution = minimize_scalar(_temperature_nll, args=(log_probability, targets),
                                    bounds=(np.log(.05), np.log(20.)), method="bounded")
         if not solution.success or not np.isfinite(solution.fun):
-            raise ValueError("grouped temperature fit did not produce a finite declared calibration")
+            raise ExpectedSubjectError(SubjectFailureCode.NONFINITE_OPTIMIZATION, stage="temperature",
+                detail="grouped temperature fit did not produce a finite declared calibration")
         temperatures[name] = float(np.exp(solution.x))
     temperature_record = {"strategy": "grouped_temperature", "temperatures": temperatures,
         "temperature_bounds": [.05, 20.], "score_transform": "posterior_power_temperature/1",
         "evidence_scope": "calibration_development", "OOF_groups": producers,
         "final_experts_refitted_on_all_authorized_groups": True,
         "held_prediction_labels_used_for_calibration": False}
-    return FittedEnsemble(fitted.scorer, fitted._experts, fitted._training_receipts, temperature_record)
+    return FittedEnsemble(fitted.scorer, fitted._experts, fitted._training_receipts, temperature_record,
+                          target_contract=fitted._target_contract)
+
+
+def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strategies,
+                                    source_checkpoints=None, device="cpu"):
+    """Declared temperature programs share one actual all-C final expert fit."""
+    if (not strategies or len(set(strategies)) != len(strategies)
+            or set(strategies) - {"fixed", "grouped_temperature"}):
+        raise ValueError("prefix temperature programs must be explicit and distinct")
+    sources = {} if source_checkpoints is None else {name: value if isinstance(value, FrozenSourceCheckpoint)
+        else FrozenSourceCheckpoint.from_path(value) for name, value in source_checkpoints.items()}
+    result = {}
+    eligible = len(prefix.complete_groups) >= 3
+    fixed = (fit_calibration_prefix(prefix, expert_programs, program, source_checkpoints=sources, device=device)
+             if "fixed" in strategies or eligible else None)
+    for strategy in strategies:
+        if strategy == "fixed":
+            result[strategy] = fixed
+        elif not eligible:
+            result[strategy] = ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
+                stage="temperature", detail="fewer than three complete C-only groups")
+        else:
+            try:
+                result[strategy] = _grouped_temperature(fixed, prefix.complete_groups, expert_programs, sources, device)
+            except ExpectedSubjectError as error:
+                result[strategy] = error
+            except (UnidentifiableFitError, np.linalg.LinAlgError) as error:
+                result[strategy] = ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE,
+                    stage="temperature", detail=f"{type(error).__name__}: {error}")
+    return result
