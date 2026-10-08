@@ -38,15 +38,20 @@ def test_two_spawned_participants_return_saved_records_without_pickling_frozen_s
     persisted = json.loads((output / "result.json").read_bytes())
     assert report["participants"] == persisted["participants"]
     for index in range(2):
-        participant = json.loads((output / f"participant_{index:03d}" / "result.json").read_bytes())
+        participant = json.loads((output / "participant_groups" / f"participant_{index:03d}" / f"participant_{index:03d}" / "result.json").read_bytes())
         assert len(participant["predictions"]) == 2
         assert all(cell["saved_replay_exact"] for cell in participant["predictions"])
-        assert participant in report["participants"]
+        admitted = next(row for row in report["participants"] if row["record_index"] == index)
+        # The joined report adds admission/receipt facts while retaining every
+        # original scientific result field and its real participant authority.
+        assert {key: admitted[key] for key in participant} == participant
+        assert admitted["participant_key"] == participant["participant_key"]
+        assert len(admitted["artifact_receipts"]) == 2
 
 
-def test_spawned_contract_failure_stops_pending_participants(tmp_path):
-    # The first two bad physical identities exercise actual worker ingress.
-    # Later records must never be dispatched after that contract failure.
+def test_spawned_contract_failure_preserves_unresolved_requested_participants(tmp_path):
+    # Actual worker ingress rejects untrusted physical identities before fits.
+    # Independent actors retain their own terminal result and requested roster.
     records = []
     for index in range(4):
         path = tmp_path / f"A{index + 1:02d}.mat"
@@ -63,16 +68,19 @@ def test_spawned_contract_failure_stops_pending_participants(tmp_path):
     path = tmp_path / "failed_plan.json"
     path.write_text(json.dumps(plan), encoding="utf-8")
     output = tmp_path / "failed_matrix"
-    with pytest.raises((ValueError, RuntimeError)):
-        run_study(path, output)
+    report = run_study(path, output)
+    assert report["status"] == "failed" and report["unresolved_record_indexes"] == [0, 1, 2, 3]
+    assert len(report["requested_pipeline_cells"]) == 4
+    assert all(value["decision_identity"] == "unresolved" for value in report["requested_pipeline_cells"])
     assert json.loads((output / "progress.json").read_bytes())["status"] == "failed"
-    assert not (output / "participant_002").exists() and not (output / "participant_003").exists()
-    assert not (output / "result.json").exists()
+    assert not list(output.rglob("*.started.json"))
+    assert json.loads((output / "result.json").read_bytes())["status"] == "failed"
 
 
 def test_parent_interrupt_stops_workers_and_persists_failed_status(tmp_path, monkeypatch):
     import experiments.run_candidate_ensemble_study as runner
-    from tests.research.test_candidate_ensemble_study import study_plan
+    import research.cloud_execution as cloud
+    from tests.support.candidate_programs import study_plan
 
     path = study_plan(tmp_path)
     plan = json.loads(path.read_bytes())
@@ -82,7 +90,7 @@ def test_parent_interrupt_stops_workers_and_persists_failed_status(tmp_path, mon
     def interrupt(*args, **kwargs):
         raise KeyboardInterrupt
 
-    monkeypatch.setattr(runner, "wait", interrupt)
+    monkeypatch.setattr(cloud, "wait", interrupt)
     output = tmp_path / "interrupted"
     with pytest.raises(KeyboardInterrupt):
         runner.run_study(path, output)

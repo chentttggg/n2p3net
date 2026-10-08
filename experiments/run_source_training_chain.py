@@ -11,8 +11,8 @@ import os
 import shutil
 import sys
 import time
-from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, as_completed, wait
-from concurrent.futures.process import BrokenProcessPool
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import contextmanager
 from dataclasses import asdict, replace
 from functools import lru_cache
 from pathlib import Path
@@ -462,7 +462,8 @@ def _finish_independent_source_report(report, output):
     for request in report["requested_source_tasks"]:
         if request["key"] in tasks:
             task = tasks[request["key"]]
-            if task["status"] in {"completed", "fit_failure"} or request["status"] == "pending":
+            if request.get("artifact_admission_status") != "rejected" and (
+                    task["status"] in {"completed", "fit_failure"} or request["status"] == "pending"):
                 request["status"] = task["status"]
             if task.get("failure") is not None:
                 request["failure"] = task["failure"]
@@ -539,9 +540,11 @@ def source_execution_groups(plan, stages):
 def _source_group_worker(arguments):
     from contextlib import nullcontext
 
+    from research.source_execution import install_input_admission
     from research.worker_diagnostics import diagnostic_task, worker_diagnostic_phase
 
     plan, output, device, stages = arguments
+    install_input_admission(plan.get("_source_input_admission"))
     with diagnostic_task(output, {"phase_kind": "source_group", "outer": plan["outer_folds"][0]["name"],
             "stages": list(stages), "device": device, "native_threads": plan.get("_native_threads_per_worker", 1)}):
         worker_diagnostic_phase("import_training_runtime")
@@ -557,13 +560,18 @@ def _source_group_worker(arguments):
             directory = Path(snapshot_directory).resolve()
             directory.mkdir(parents=True, exist_ok=True)
         admission = nullcontext() if plan.get("_phase_reserved") else plan["_memory_admission"].source_group()
-        with cpu_thread_budget(native_threads), admission:
+        staging = plan.get("_source_input_admission")
+        artifacts = (staging.artifact_directory(output, plan["_source_worker_memory_bytes"])
+                     if staging is not None else nullcontext())
+        with cpu_thread_budget(native_threads), admission, artifacts:
             worker_diagnostic_phase("source_input_and_memory_admission")
             if plan.get("_prepared_source_inputs") is not None:
                 plan = _prepare_source_group_inputs(plan, Path(output))
             worker_diagnostic_phase("execute_source_chain")
             execute_source_chain(plan, output=Path(output), dry_run=False, device=device,
                                  stages=stages, evaluate_outer=False)
+            snapshot = json.loads((Path(output) / "source_chain_record.json").read_text(encoding="utf-8"))["source_snapshot"]
+            _assert_source_bytes(plan["source_snapshot_manifest"], snapshot)
     return str(Path(output) / "source_chain_record.json")
 
 
@@ -604,9 +612,8 @@ def _prepare_source_group_inputs(plan, output):
             argv.extend(("--verified-snapshot-directory", str(plan["verified_cache_snapshot_directory"])))
         if plan.get("_source_worker_memory_bytes"):
             argv.extend(("--source-memory-budget-bytes", str(plan["_source_worker_memory_bytes"])))
-        with plan["_source_input_admission"].reserve("load"):
-            with phases.phase("whole_fold_merge_and_write"):
-                production = merge(argv, retain_production=True, phases=phases)
+        with phases.phase("whole_fold_merge_and_write"):
+            production = merge(argv, retain_production=True, phases=phases)
         metadata, attestation = _read_epoch_cache_record(cache)
         loaded = {record["namespace"]: record["cache_sha256"] for record in metadata["provenance"]["sources"]}
         if loaded != {study: record["cache_sha256"] for study, record in inputs.items()}:
@@ -621,6 +628,9 @@ def _source_preparation_worker(arguments):
     from research.worker_diagnostics import diagnostic_task, worker_diagnostic_phase
 
     manifest, output, profile, record_workers, staging = arguments
+    from research.source_execution import install_input_admission
+
+    install_input_admission(staging)
     with diagnostic_task(output, {"phase_kind": "source_preparation", "manifest": manifest,
                                  "profile": profile, "record_workers": record_workers}):
         worker_diagnostic_phase("import_preparation_runtime")
@@ -632,7 +642,7 @@ def _source_preparation_worker(arguments):
         with cpu_thread_budget(1):
             worker_diagnostic_phase("prepare_record_workers")
             prepare(["--manifest", manifest, "--output", output, "--preprocessing-config", profile,
-                     "--workers", str(record_workers)], merge_gate=staging.reserve("load"))
+                     "--workers", str(record_workers)])
         worker_diagnostic_phase("read_preparation_result")
         path = Path(output) / "preparation.json"
         record = json.loads(path.read_text(encoding="utf-8"))
@@ -641,20 +651,158 @@ def _source_preparation_worker(arguments):
                 "cache_sha256": record["cache_sha256"]}
 
 
-def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, groups):
-    import torch
+def _source_input_wait_worker(arguments):
+    """Wait for one explicitly external preparation, never shrink its library."""
+    from data.epochs import parse_preprocessing_spec
+    from data.source_admission import PreparedSourceInventory
 
+    directory, study, preprocessing, manifest_hashes, timeout = arguments
+    inventory = PreparedSourceInventory(directory, preprocessing=parse_preprocessing_spec(preprocessing),
+                                        expected_manifest_sha256=manifest_hashes)
+    deadline = time.monotonic() + timeout
+    while True:
+        state = inventory.inspect([study])
+        if study in state["ready"]:
+            return {"study": study, "cache_sha256": state["ready"][study]["cache_sha256"]}
+        if study in state["failed"]:
+            raise ValueError(state["failed"][study])
+        if time.monotonic() >= deadline:
+            raise ValueError(f"preparation wait expired: {state['pending'][study]}")
+        time.sleep(min(1., max(.01, deadline - time.monotonic())))
+
+
+def _source_input_failure_worker(arguments):
+    raise ValueError(arguments)
+
+
+def _assert_source_bytes(snapshot_path, snapshot):
+    """The archive was verified at ingress; compare actual runtime files at egress."""
+    if _sha256(snapshot_path) != snapshot["manifest_sha256"]:
+        raise ValueError("source snapshot manifest changed during its declared execution")
+    files = json.loads(Path(snapshot_path).read_bytes())["files"]
+    for name, expected in files.items():
+        if (name.startswith(("src/", "experiments/")) and name.endswith(".py")) or name in {"pyproject.toml", "uv.lock"}:
+            if _sha256(ROOT / name) != expected:
+                raise ValueError(f"executed source changed during the source programme: {name}")
+
+
+def _admit_source_group(path, *, child_plan, program, snapshot):
+    """Admit returned producer bytes before releasing a source dependency."""
+    from baselines.deep import DeepConfig
+    from models.n2p3net import DEFAULT_N2P3_ARCHITECTURE, DEFAULT_N2P3_POOLING_MODE, N2P3Net
+    from research.source_catalog import SourceSeedCatalog
+    from train.early_stopping import GlobalEarlyStoppingPolicy
+    from transfer.checkpoint import checkpoint_training_contract, load_checkpoint_payload
+
+    _assert_source_bytes(child_plan["source_snapshot_manifest"], snapshot)
+    child = json.loads(Path(path).read_text(encoding="utf-8"))
+    if (child["source_snapshot"]["archive_sha256"] != snapshot["archive_sha256"]
+            or child["source_program_record"] != program
+            or child["evidence_scope"] != child_plan.get("evidence_scope", "development")
+            or not child.get("source_input_admitted") or child["preflight_failures"]
+            or not child["tasks"] or any(task["status"] != "completed" for task in child["tasks"])):
+        raise ValueError("source cache-group report does not prove its complete declared programme")
+    outer = child_plan["outer_folds"][0]
+    if program["name"] != "independent_selection_refit":
+        for task in child["tasks"]:
+            for checkpoint in task["checkpoints"].values():
+                payload = load_checkpoint_payload(checkpoint)
+                contract = checkpoint_training_contract(payload)
+                if (contract.source_cache_sha256 != task["source_cache_sha256"]
+                        or contract.seed != task["config"]["seed"]
+                        or contract.validation["fit_ledger"] != task["fit_ledger"]):
+                    raise ValueError("source checkpoint differs from its completed task input/fit/seed binding")
+        return child
+    wanted = {request["key"] for request in _independent_source_requests(child_plan)}
+    if {task["key"] for task in child["tasks"]} != wanted or len(child["tasks"]) != len(wanted):
+        raise ValueError("independent source group did not complete every declared source seed")
+    entries = child["source_seed_catalog"]
+    seeds = {pair[0] for pair in program["seed_pairs"]}
+    if (len(entries) != len(seeds)
+            or {(entry["outer_target_study"], entry["source_seed"]) for entry in entries}
+               != {(outer["target_study"], seed) for seed in seeds}):
+        raise ValueError("independent source consumers require every declared source-seed catalog entry")
+    scope = "software_correctness" if child["evidence_scope"] == "software_correctness" else "public_development"
+    catalog = SourceSeedCatalog(entries, base_directory=Path(path).parent, evidence_scope=scope,
+                                expected_source_config=program["source_config"])
+    by_seed = {task["config"]["seed"]: task for task in child["tasks"]}
+    if set(by_seed) != seeds or len(by_seed) != len(child["tasks"]):
+        raise ValueError("independent task configuration must preserve its declared source seeds")
+    for record in catalog.record():
+        task = by_seed[record["source_seed"]]
+        if (set(record["producer"]["source_studies"]) != set(outer["source_studies"])
+                or task["source_producer"] != record["producer"]
+                or task["source_input"]["preprocessing"] != program["preprocessing"]
+                or task["key"] != f"{outer['name']}/six/seed{record['source_seed']}/P2_source_ce"
+                or task["config"]["global_early_stopping"] != program["stopping"]
+                or task["source_input_bindings"] != outer.get("source_input_bindings")
+                   and child_plan.get("_prepared_source_inputs") is None):
+            raise ValueError("source producer differs from its whole-library/input/programme declaration")
+        if child_plan.get("_prepared_source_inputs") is not None:
+            expected = {study: {field: value[field] for field in (
+                "manifest_sha256", "cache_sha256", "cache_record_sha256", "preparation_method")}
+                for study, value in child_plan["_prepared_source_inputs"].items()}
+            if task["source_input_bindings"] != expected:
+                raise ValueError("source fit consumed a different admitted prepared-source inventory")
+        entry = next(item for item in entries if item["source_seed"] == record["source_seed"])
+        payload = load_checkpoint_payload(entry["path"])
+        config = DeepConfig(global_early_stopping=GlobalEarlyStoppingPolicy(**program["stopping"]),
+            batch_size=512, seed=record["source_seed"], val_group_frac=None, sampling="uniform_rows",
+            compile_mode=child_plan.get("compile_mode", "reduce-overhead"),
+            source_objective=None, **record["producer"]["source_program_config"]["resolved"])
+        refit_config = replace(config, global_early_stopping=None,
+                               val_group_frac=None,
+                               fixed_updates=payload["source_epoch_selection"]["refit_updates"])
+        contract = checkpoint_training_contract(payload)
+        architecture = N2P3Net.default_architecture_record(pooling_mode=DEFAULT_N2P3_POOLING_MODE,
+            tmin_s=program["preprocessing"]["tmin_ms"] / 1000,
+            sfreq=program["preprocessing"]["sfreq"], n_times=task["source_input"]["n_times"],
+            architecture=DEFAULT_N2P3_ARCHITECTURE)
+        if (payload["source_cache_sha256"] != task["source_cache_sha256"]
+                or payload["source_fit_ledger"] != task["fit_ledger"]
+                or payload["global_early_stopping"] != program["stopping"]
+                or payload["input_preprocessing"] != task["source_input"]["preprocessing"]
+                or payload["input_channel_names"] != task["source_input"]["channel_names"]
+                or payload["n_times"] != task["source_input"]["n_times"]
+                or semantic_sha256(task["config"]) != semantic_sha256(asdict(config))
+                or semantic_sha256(contract.optimizer["config"]) != semantic_sha256(asdict(refit_config))
+                or semantic_sha256(task["architecture_configuration"]) != semantic_sha256(asdict(DEFAULT_N2P3_ARCHITECTURE))
+                or contract.architecture != architecture or payload["architecture"] != architecture):
+            raise ValueError("source catalog does not bind the completed full-source input ledger")
+    child["source_seed_catalog"] = [{**entry, "path": str((Path(path).parent / entry["path"]).resolve())}
+                                     for entry in entries]
+    return child
+
+
+def _source_legacy_outer_preparation_worker(arguments):
+    report, plan, output, device = arguments
+    groups = _prepare_outer_plans(report, plan, Path(output), device=device, execute=False)
+    return {"record": str(Path(output) / "source_chain_record.json"), "groups": list(groups.values())}
+
+
+@contextmanager
+def _source_parent_input_owner(admission):
+    from research.source_execution import current_input_admission, install_input_admission
+
+    previous = current_input_admission()
+    install_input_admission(admission)
+    try:
+        yield
+    finally:
+        install_input_admission(previous)
+
+
+def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, groups):
     from data.epochs import parse_preprocessing_spec
     from data.source_admission import PreparedSourceInventory, bind_source_inputs
+    from research.cloud_execution import CloudExecutor, CloudTask, PhaseResources
     from research.evaluation import verified_executed_snapshot
     from research.source_execution import (
         HostMemoryAdmission,
         SourceInputAdmission,
         resolve_source_resources,
-        source_group_input_status,
     )
     from research.source_selection import resolve_source_program
-    from research.worker_diagnostics import PoolFailureDiagnostics, initialize_worker_diagnostics
     from transfer.target_experiments import resolve_target_batch_rule
 
     program = resolve_source_program(plan, stages)
@@ -672,6 +820,7 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
         raise ValueError("source preparation requires an explicit prepared_source_directory")
     required_studies = {study for outer, _ in groups for study in outer.get("source_studies", ())}
     inventory = None
+    manifest_hashes = {}
     if prepared_directory:
         if any("source_cache" in outer for outer, _ in groups):
             raise ValueError("declare prepared source studies or fixed source caches, never both")
@@ -681,7 +830,6 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
         if not isinstance(manifests, dict) or not set(manifests) <= required_studies:
             raise ValueError("preparation manifests must identify declared source dependencies")
         spec = parse_preprocessing_spec(program["preprocessing"])
-        manifest_hashes = {}
         for study, path in manifests.items():
             declaration = json.loads(Path(path).read_text(encoding="utf-8"))
             validate_source_manifest(declaration)
@@ -690,6 +838,20 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
             manifest_hashes[study] = _sha256(path)
         inventory = PreparedSourceInventory(prepared_directory, preprocessing=spec,
                                             expected_manifest_sha256=manifest_hashes)
+    declared_consumers = plan.get("ready_consumers", [])
+    group_by_outer = {outer["name"]: index for index, (outer, _) in enumerate(groups)}
+    names = set()
+    for consumer in declared_consumers:
+        if (not independent or set(consumer) != {"kind", "name", "outer", "plan", "output"}
+                or consumer["kind"] not in {"binary", "candidate"}
+                or not consumer["name"] or consumer["name"] in names
+                or consumer["outer"] not in group_by_outer):
+            raise ValueError("ready_consumers require unique explicit current binary/candidate requests and an independent outer")
+        names.add(consumer["name"])
+        declaration = json.loads(Path(consumer["plan"]).read_bytes())
+        if (declaration.get("seed_pairs") != program["seed_pairs"]
+                or declaration.get("expected_source_config") != program["source_config"]):
+            raise ValueError("ready consumer must preserve the declared complete source/target pairs and source configuration")
     if output.exists() and any(output.iterdir()):
         raise FileExistsError("parallel source chain requires a new or empty output directory")
     output.mkdir(parents=True, exist_ok=True)
@@ -703,210 +865,323 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
               "evidence_scope": plan.get("evidence_scope", "development"), "batch_rule": rule,
               "source_seeds": plan.get("source_seeds", [20260906]),
               "target_seeds": plan.get("target_seeds", [20260906]), "groups": [],
-              "preparation": [], "resource_observations": [],
+              "preparation": [], "input_waits": [], "resource_observations": [], "consumers": [],
               "tasks": [], "selection": [], "preflight_failures": [], "outer_evaluation_jobs": []}
     if independent:
         report.update(source_seed_catalog=[], requested_source_tasks=_independent_source_requests(plan))
+    group_ids = {}
     for index, (outer, layout) in enumerate(groups):
+        task_id = f"source-{index:02d}-{semantic_sha256([outer['name'], layout])[:12]}"
+        group_ids[index] = task_id
         directory = output / "groups" / f"{index:02d}_{outer['name']}_{layout}"
-        report["groups"].append({"outer": outer["name"], "layout": layout,
+        report["groups"].append({"outer": outer["name"], "layout": layout, "task_id": task_id,
             "directory": str(directory), "status": "pending", "source_studies": outer.get("source_studies")})
     profile_path = output / "source_preprocessing.json"
     if inventory is not None:
         atomic_write_json(profile_path, program["preprocessing"])
-    _save_chain_report(output, report)
-    context = multiprocessing.get_context("spawn")
     diagnostic_identity = {"source_snapshot": snapshot, "actual_source_root": str(ROOT),
         "resolved_plan_sha256": semantic_sha256({key: value for key, value in plan.items() if not key.startswith("_")}),
         "stages": list(stages), "device": device, "resources": resources}
     diagnostic_identity["actual_run_sha256"] = semantic_sha256(diagnostic_identity)
     diagnostics_directory = output / "worker_diagnostics"
-    pool_diagnostics = PoolFailureDiagnostics(diagnostics_directory, diagnostic_identity)
-    diagnostics_directory, diagnostic_identity = pool_diagnostics.directory, pool_diagnostics.identity
     report["worker_diagnostics"] = {"directory": str(diagnostics_directory), "identity": diagnostic_identity}
+    _save_chain_report(output, report)
+    context = multiprocessing.get_context("spawn")
     with context.Manager() as manager:
-        slots = manager.BoundedSemaphore(resources["gpu_slots"]) if torch.device(device).type == "cuda" else None
-        input_admission = SourceInputAdmission(manager,
-            capacity_bytes=resources["shared_staging_memory_bytes"],
-            load_workers=int(plan.get("source_load_workers", 1)))
-        memory_admission = HostMemoryAdmission(manager, resources)
-        with ProcessPoolExecutor(max_workers=resources["source_workers"], mp_context=context,
-                initializer=initialize_worker_diagnostics, initargs=(str(diagnostics_directory), diagnostic_identity)) as pool:
-            pending = list(range(len(groups)))
-            active, preparation_started, preparation_failures = {}, set(), {}
-            bindings, previous_input_status = {}, None
-            deadline = time.monotonic() + input_wait
-            while pending or active:
-                state = {"ready": {}, "pending": {}, "failed": {}}
-                if inventory is not None:
-                    state = inventory.inspect(required_studies)
-                    state["failed"].update(preparation_failures)
-                    for study in set(state["pending"]) - set(manifests):
-                        if time.monotonic() >= deadline:
-                            state["failed"][study] = f"preparation wait expired: {state['pending'][study]}"
-                    bindings = bind_source_inputs(bindings, state["ready"])
-                    input_status = {"ready": {study: {field: record[field] for field in (
-                        "cache_sha256", "manifest_sha256", "n_epochs", "participants")}
-                        for study, record in state["ready"].items()},
-                        "pending": state["pending"], "failed": state["failed"]}
-                    if input_status != previous_input_status:
-                        atomic_write_json(output / "input_status.json", input_status)
-                        atomic_write_json(output / "input_bindings.json", bindings)
-                        previous_input_status = input_status
-                    readiness = source_group_input_status([groups[index] for index in pending], state)
-                    failed_names = {outer["name"]: errors for outer, _, errors in readiness["failed"]}
-                    for index in list(pending):
-                        entry = report["groups"][index]
-                        if entry["outer"] in failed_names:
-                            entry.update(status="failed", input_errors=failed_names[entry["outer"]])
-                            pending.remove(index)
-                    ready_names = {outer["name"] for outer, _ in readiness["ready"]}
+        input_admission = SourceInputAdmission(manager, capacity_bytes=resources["shared_staging_memory_bytes"],
+                                               load_workers=int(plan.get("source_load_workers", 1)))
+        with _source_parent_input_owner(input_admission):
+            memory_admission = HostMemoryAdmission(manager, resources, input_admission=input_admission)
+            phases = {phase: PhaseResources(phase, resources["native_threads_per_worker"],
+                resources["source_worker_memory_bytes"] if phase in {"source", "preparation"} else resources["target_worker_memory_bytes"],
+                resources["native_threads_per_worker"], device if phase != "preparation" else "cpu")
+                for phase in ("source", "preparation", "calibration")}
+            consumers, consumer_tasks = {}, {}
+            for declaration in declared_consumers:
+                index = group_by_outer[declaration["outer"]]
+                if declaration["kind"] == "binary":
+                    from experiments.run_erp_comparator import build_binary_cloud_tasks as builder
                 else:
-                    ready_names = {groups[index][0]["name"] for index in pending}
-                for index in list(pending):
-                    if len(active) >= resources["source_workers"]:
-                        break
-                    outer, layout = groups[index]
-                    if outer["name"] not in ready_names:
+                    from experiments.run_candidate_ensemble_study import (
+                        build_candidate_cloud_tasks as builder,
+                    )
+                programme = builder(declaration["plan"], declaration["output"], resources,
+                    task_prefix=f"consumer-{declaration['name']}", dependencies=(group_ids[index],),
+                    input_admission=input_admission)
+                consumers[declaration["name"]] = (index, programme)
+                report["consumers"].append({**declaration, "status": "waiting_source",
+                    "source_dependency": group_ids[index], "requested_tasks": [task.task_id for task in programme.tasks]})
+            _save_chain_report(output, report)
+            state = inventory.inspect(required_studies) if inventory is not None else {"ready": {}, "pending": {}, "failed": {}}
+            bindings = bind_source_inputs({}, state["ready"])
+            input_nodes, input_results, source_plans, submitted_groups = {}, {}, {}, set()
+            tasks = []
+            for study in sorted(required_studies - set(state["ready"])) if inventory is not None else ():
+                task_id = f"input-{semantic_sha256(study)[:16]}"
+                input_nodes[study] = task_id
+                if study in state["failed"]:
+                    adapter, arguments = "_source_input_failure_worker", state["failed"][study]
+                    claim = PhaseResources("preparation", 1, min(64 * 2**20, resources["source_worker_memory_bytes"]), 1)
+                    entry = {"study": study, "task_id": task_id, "status": "pending"}
+                    report["input_waits"].append(entry)
+                elif study in manifests:
+                    phase_threads = max(2, resources["native_threads_per_worker"])
+                    entry = {"study": study, "task_id": task_id, "status": "pending", "manifest": manifests[study]}
+                    report["preparation"].append(entry)
+                    if phase_threads > resources["worker_cpu_budget"]:
+                        adapter = "_source_input_failure_worker"
+                        arguments = "source preparation needs CPU budget for its controller and a record worker alongside the coordinator"
+                        claim = PhaseResources("preparation", 1, resources["source_worker_memory_bytes"], 1)
+                    else:
+                        adapter = "_source_preparation_worker"
+                        arguments = (manifests[study], str(Path(prepared_directory) / study), str(profile_path),
+                                     phase_threads - 1, input_admission)
+                        claim = PhaseResources("preparation", phase_threads, resources["source_worker_memory_bytes"], 1)
+                else:
+                    adapter = "_source_input_wait_worker"
+                    arguments = (prepared_directory, study, program["preprocessing"], manifest_hashes, input_wait)
+                    claim = PhaseResources("preparation", 1, min(64 * 2**20, resources["source_worker_memory_bytes"]), 1)
+                    entry = {"study": study, "task_id": task_id, "status": "pending"}
+                    report["input_waits"].append(entry)
+                entry["resource_reservation"] = {"phase": claim.phase, "cpu_threads": claim.cpu_threads,
+                                                   "memory_bytes": claim.memory_bytes, "gpu_workers": 0}
+                tasks.append(CloudTask(task_id, f"experiments.run_source_training_chain:{adapter}", arguments,
+                    str(output / "input_tasks" / task_id), claim))
+
+            def input_status():
+                return {"ready": {study: {field: record[field] for field in (
+                    "cache_sha256", "manifest_sha256", "n_epochs", "participants")}
+                    for study, record in state["ready"].items()}, "pending": state["pending"], "failed": state["failed"]}
+
+            def source_tasks_ready():
+                additions = []
+                for index, (outer, layout) in enumerate(groups):
+                    if index in submitted_groups:
                         continue
-                    reservation = memory_admission.reserve_phase("source",
-                        cpu_threads=resources["native_threads_per_worker"],
-                        memory_bytes=resources["source_worker_memory_bytes"])
-                    if reservation is None:
-                        break
+                    dependencies = tuple(input_nodes[study] for study in outer.get("source_studies", ()) if study in input_nodes)
+                    if any(task_id not in input_results for task_id in dependencies):
+                        continue
                     child = {**plan, "outer_folds": [outer], "source_layouts": [layout],
-                             "_source_group": True, "_defer_outer_plans": True, "_gpu_slots": slots,
-                             "_memory_admission": memory_admission, "_phase_reserved": True,
-                             "_native_threads_per_worker": reservation["cpu_threads"],
-                             "_source_worker_memory_bytes": resources["source_worker_memory_bytes"],
-                             "_source_input_admission": input_admission,
-                             "_runtime_input_staging_gate": (input_admission if input_admission.capacity else None),
-                             "_runtime_preload_budget_bytes": resources["resident_memory_budget_bytes"],
-                             "_runtime_host_process_budget_bytes": resources["source_worker_memory_bytes"],
-                             "shared_registry_directory": str(output / "trajectory_registry"),
-                             "target_workers": resources["inner_workers_per_group"]}
-                    if inventory is not None:
+                        "_source_group": True, "_defer_outer_plans": True, "_phase_reserved": True,
+                        "_memory_admission": memory_admission,
+                        "_native_threads_per_worker": resources["native_threads_per_worker"],
+                        "_source_worker_memory_bytes": resources["source_worker_memory_bytes"],
+                        "_source_input_admission": input_admission,
+                        "_runtime_input_staging_gate": input_admission if input_admission.capacity else None,
+                        "_runtime_preload_budget_bytes": resources["resident_memory_budget_bytes"],
+                        "_runtime_host_process_budget_bytes": resources["source_worker_memory_bytes"],
+                        "shared_registry_directory": str(output / "trajectory_registry"),
+                        "target_workers": resources["inner_workers_per_group"]}
+                    if inventory is not None and all(task_id not in input_results or input_results[task_id] == "completed"
+                                                      for task_id in dependencies):
                         child["_prepared_source_inputs"] = {study: {field: state["ready"][study][field] for field in (
                             "cache", "cache_sha256", "cache_record_sha256", "manifest_sha256", "preparation_method")}
                             for study in outer["source_studies"]}
                     entry = report["groups"][index]
-                    entry.update(status="running", resource_reservation=reservation)
-                    try:
-                        future = pool.submit(_source_group_worker, (child, entry["directory"], device, stages))
-                    except BrokenProcessPool as error:
-                        report["pool_failure_observation"] = pool_diagnostics.capture(error,
-                            {"outer": entry["outer"], "phase": "source"}, stage="submit")
-                        _save_chain_report(output, report)
-                        raise
-                    pool_diagnostics.remember_processes(pool)
-                    active[future] = (entry, reservation)
-                    pending.remove(index)
-                if inventory is not None:
-                    needed_studies = {study for index in pending for study in groups[index][0]["source_studies"]}
-                    for study in sorted(set(state["pending"]) & set(manifests) & needed_studies - preparation_started):
-                        if len(active) >= resources["source_workers"]:
-                            break
-                        phase_threads = max(2, resources["native_threads_per_worker"])
-                        if phase_threads > resources["worker_cpu_budget"]:
-                            error = "source preparation needs CPU budget for its controller and a record worker alongside the coordinator"
-                            preparation_failures[study] = error
-                            preparation_started.add(study)
-                            report["preparation"].append({"study": study, "status": "failed",
-                                "manifest": manifests[study], "failure": {"type": "ValueError", "message": error}})
-                            continue
-                        reservation = memory_admission.reserve_phase("preparation", cpu_threads=phase_threads,
-                            memory_bytes=resources["source_worker_memory_bytes"])
-                        if reservation is None:
-                            break
-                        entry = {"study": study, "status": "running", "resource_reservation": reservation,
-                                 "manifest": manifests[study]}
-                        report["preparation"].append(entry)
-                        preparation_started.add(study)
-                        try:
-                            future = pool.submit(_source_preparation_worker, (manifests[study],
-                                str(Path(prepared_directory) / study), str(profile_path), phase_threads - 1, input_admission))
-                        except BrokenProcessPool as error:
-                            report["pool_failure_observation"] = pool_diagnostics.capture(error,
-                                {"study": study, "phase": "preparation"}, stage="submit")
-                            _save_chain_report(output, report)
-                            raise
-                        pool_diagnostics.remember_processes(pool)
-                        active[future] = (entry, reservation)
-                reserved = memory_admission.record()
-                observation = {**reserved, **input_admission.record(), "ready_source_groups": reserved["source_groups"] + sum(
-                    groups[index][0]["name"] in ready_names for index in pending),
-                    "waiting_ready_source_groups": sum(groups[index][0]["name"] in ready_names for index in pending),
-                    "pending_source_groups": len(pending), "active_pipeline_nodes": len(active)}
-                previous = report["resource_observations"][-1] if report["resource_observations"] else None
-                if previous is None or {key: value for key, value in previous.items() if key != "observed_unix"} != observation:
-                    report["resource_observations"].append({"observed_unix": time.time(), **observation})
-                _save_chain_report(output, report)
-                if active:
-                    pool_diagnostics.remember_processes(pool)
-                    done, _ = wait(active, timeout=5, return_when=FIRST_COMPLETED)
+                    source_plans[group_ids[index]] = child
+                    entry["resource_reservation"] = {"phase": "source", "cpu_threads": phases["source"].cpu_threads,
+                        "memory_bytes": phases["source"].memory_bytes, "gpu_workers": int(str(device).startswith("cuda"))}
+                    additions.append(CloudTask(group_ids[index], "experiments.run_source_training_chain:_source_group_worker",
+                        (child, entry["directory"], device, stages), entry["directory"], phases["source"], dependencies))
+                    submitted_groups.add(index)
+                return additions
+
+            def record_failure(outcome, error):
+                failure = {"type": type(error).__name__, "message": str(error), "stage": "artifact_admission"}
+                if outcome.failure is None:
+                    outcome.status, outcome.failure = "failed", failure
                 else:
-                    done = set()
-                    if pending:
-                        time.sleep(min(1., max(.01, deadline - time.monotonic())))
-                for future in done:
-                    entry, reservation = active.pop(future)
-                    try:
-                        result = future.result()
-                        if reservation["phase"] == "source":
-                            entry.update(status="completed", record=result)
+                    outcome.supplementary_failures.append(failure)
+
+            legacy_tasks = {}
+
+            def on_finished(outcome):
+                nonlocal state, bindings
+                additions = []
+                if outcome.task_id in input_nodes.values():
+                    study = next(study for study, task_id in input_nodes.items() if task_id == outcome.task_id)
+                    if outcome.status == "completed":
+                        try:
+                            current = inventory.inspect(required_studies)
+                            if study not in current["ready"]:
+                                raise ValueError(f"prepared task returned without an admitted cache: {study}")
+                            bindings = bind_source_inputs(bindings, current["ready"])
+                            state = current
+                        except Exception as error:
+                            record_failure(outcome, error)
+                    input_results[outcome.task_id] = outcome.status
+                    if outcome.status != "completed":
+                        state["failed"][study] = outcome.failure
+                        state["pending"].pop(study, None)
+                    entry = next(entry for entry in report["preparation"] + report["input_waits"]
+                                 if entry["task_id"] == outcome.task_id)
+                    entry.update(status="completed" if outcome.status == "completed" else "failed", worker=outcome.worker)
+                    if outcome.status == "completed" and isinstance(outcome.value, dict):
+                        entry.update(outcome.value)
+                    if outcome.failure is not None:
+                        entry["failure"] = outcome.failure
+                    additions.extend(source_tasks_ready())
+                elif outcome.task_id in source_plans:
+                    entry = next(entry for entry in report["groups"] if entry["task_id"] == outcome.task_id)
+                    child = None
+                    if outcome.status == "completed":
+                        try:
+                            expected = Path(entry["directory"]) / "source_chain_record.json"
+                            if Path(outcome.value).resolve() != expected.resolve():
+                                raise ValueError("source worker returned a different output record")
+                            child = _admit_source_group(expected, child_plan=source_plans[outcome.task_id],
+                                                       program=program, snapshot=snapshot)
+                        except Exception as error:
+                            record_failure(outcome, error)
+                    entry.update(status="completed" if outcome.status == "completed" else "failed", worker=outcome.worker)
+                    if outcome.failure is not None:
+                        entry["failure"] = outcome.failure
+                    if child is not None and outcome.status == "completed":
+                        entry.update(record=str(Path(entry["directory"]) / "source_chain_record.json"),
+                                     source_artifact_admission="completed_declared_producer_programme")
+                        if independent:
+                            entry["accepted_source_seed_catalog"] = child["source_seed_catalog"]
+                        if not independent:
+                            task_id = f"outer-preparation-{outcome.task_id}"
+                            child_output = str(output / "outer_groups" / outcome.task_id)
+                            legacy_tasks[task_id] = {"kind": "preparation", "outer": entry["outer"]}
+                            additions.append(CloudTask(task_id,
+                                "experiments.run_source_training_chain:_source_legacy_outer_preparation_worker",
+                                (child, source_plans[outcome.task_id], child_output, device), child_output,
+                                phases["preparation"], (outcome.task_id,)))
+                    for declaration in report["consumers"]:
+                        index, programme = consumers[declaration["name"]]
+                        if group_ids[index] != outcome.task_id:
+                            continue
+                        if outcome.status == "completed":
+                            try:
+                                ready = programme.bind_source(child["source_seed_catalog"], plan["source_snapshot_manifest"])
+                                declaration.update(status="source_admitted", source_seed_catalog=child["source_seed_catalog"],
+                                    source_snapshot_manifest=plan["source_snapshot_manifest"])
+                            except Exception as error:
+                                declaration.update(status="binding_failed", failure={"type": type(error).__name__, "message": str(error)})
+                                # The source remains a valid producer when a consumer's own declaration fails.
+                                gate_id = f"consumer-binding-failure-{declaration['name']}"
+                                additions.append(CloudTask(gate_id,
+                                    "experiments.run_source_training_chain:_source_input_failure_worker", str(error),
+                                    str(output / "consumer_failures" / gate_id),
+                                    PhaseResources("preparation", 1, min(64 * 2**20, resources["source_worker_memory_bytes"]), 1),
+                                    (outcome.task_id,)))
+                                ready = [replace(task, depends_on=(*task.depends_on, gate_id)) for task in programme.tasks]
                         else:
-                            entry.update(result)
-                    except Exception as error:
-                        entry.update(status="failed", failure={"type": type(error).__name__, "message": str(error)})
-                        if isinstance(error, BrokenProcessPool):
-                            entry["failure"]["diagnostic_observation"] = pool_diagnostics.capture(error,
-                                {"outer": entry.get("outer"), "study": entry.get("study"), "phase": reservation["phase"]},
-                                stage="future_result")
-                            report["pool_failure_observation"] = entry["failure"]["diagnostic_observation"]
-                        if reservation["phase"] == "preparation":
-                            preparation_failures[entry["study"]] = str(error)
-                    finally:
-                        memory_admission.release_phase(reservation)
+                            ready = programme.tasks
+                            declaration.update(status="source_dependency_failed", source_failure=outcome.failure)
+                        for task in ready:
+                            consumer_tasks[task.task_id] = programme
+                        additions.extend(ready)
+                elif outcome.task_id in consumer_tasks:
+                    consumer_tasks[outcome.task_id].on_finished(outcome)
+                elif outcome.task_id in legacy_tasks:
+                    entry = legacy_tasks[outcome.task_id]
+                    entry.update(status=outcome.status, failure=outcome.failure)
+                    if entry["kind"] == "preparation" and outcome.status == "completed":
+                        child = json.loads(Path(outcome.value["record"]).read_text(encoding="utf-8"))
+                        report["outer_evaluation_jobs"].extend(child["outer_evaluation_jobs"])
+                        if evaluate_outer:
+                            for index, jobs in enumerate(outcome.value["groups"]):
+                                task_id = f"outer-evaluation-{outcome.task_id}-{index}"
+                                legacy_tasks[task_id] = {"kind": "evaluation", "outer": entry["outer"]}
+                                additions.append(CloudTask(task_id,
+                                    "experiments.run_source_training_chain:_evaluate_outer_group", jobs,
+                                    str(output / "outer_execution" / task_id), phases["calibration"], (outcome.task_id,)))
+                    elif entry["kind"] == "evaluation" and outcome.status == "completed":
+                        report.setdefault("outer_execution", []).extend(outcome.value)
+                if inventory is not None:
+                    atomic_write_json(output / "input_status.json", input_status())
+                    atomic_write_json(output / "input_bindings.json", bindings)
+                _save_chain_report(output, report)
+                return additions
+
+            previous_observation = None
+
+            def on_observation(observation):
+                nonlocal previous_observation
+                merged = {**observation["resources"], **input_admission.record(),
+                    "ready_source_groups": sum(entry["task_id"] in observation["running"] or
+                        entry["task_id"] in observation["pending"] and all(input_results.get(input_nodes.get(study), "completed") == "completed"
+                            for study in entry["source_studies"] or ()) for entry in report["groups"]),
+                    "waiting_ready_source_groups": sum(entry["task_id"] in observation["pending"]
+                        and all(input_results.get(input_nodes.get(study), "completed") == "completed"
+                            for study in entry["source_studies"] or ()) for entry in report["groups"]),
+                    "pending_source_groups": sum(entry["status"] == "pending" for entry in report["groups"]),
+                    "active_pipeline_nodes": len(observation["running"]),
+                    "running_tasks": observation["running"], "pending_tasks": observation["pending"]}
+                if merged != previous_observation:
+                    report["resource_observations"].append({"observed_unix": observation["observed_unix"], **merged})
+                    previous_observation = merged
                 for entry in report["groups"]:
+                    if entry["task_id"] in observation["running"]:
+                        entry["status"] = "running"
                     progress = Path(entry["directory"]) / "worker_progress.json"
                     if progress.exists():
                         entry["progress"] = json.loads(progress.read_text(encoding="utf-8"))
                 _save_chain_report(output, report)
-        report["source_input_admission"] = input_admission.record()
-        for entry in report["groups"]:
-            path = Path(entry["directory"]) / "source_chain_record.json"
-            if not path.exists():
-                continue
-            child = json.loads(path.read_text(encoding="utf-8"))
-            for key in ("tasks", "selection", "preflight_failures", "outer_evaluation_jobs"):
-                report[key].extend(child[key])
-            report.setdefault("source_prior_selection", []).extend(child.get("source_prior_selection", []))
+
+            tasks = source_tasks_ready() + tasks
+            if inventory is not None:
+                atomic_write_json(output / "input_status.json", input_status())
+                atomic_write_json(output / "input_bindings.json", bindings)
+            _save_chain_report(output, report)
+            executor = CloudExecutor(memory_admission, max_workers=resources["worker_cpu_budget"],
+                diagnostic_directory=diagnostics_directory, identity=diagnostic_identity)
+            run = executor.run(tasks, on_finished=on_finished, on_observation=on_observation)
+            report["worker_diagnostics"] = run.diagnostics
+            report["observation_failures"] = run.observation_failures
+            report["cloud_execution"] = {"status": run.status, "results": [asdict(result) for result in run.results.values()]}
+            report["source_input_admission"] = input_admission.record()
+            try:
+                _assert_source_bytes(plan["source_snapshot_manifest"], snapshot)
+                report["execution_end_source_check"] = "actual_runtime_bytes_match_the_ingress_archive"
+            except ValueError as error:
+                report["execution_end_source_failure"] = {"type": type(error).__name__, "message": str(error)}
+            for declaration in report["consumers"]:
+                _, programme = consumers[declaration["name"]]
+                try:
+                    result = programme.finalize(run.results, input_admission=input_admission)
+                    declaration.update(status=result["status"], result=result)
+                except Exception as error:
+                    declaration.update(status="failed", failure={"type": type(error).__name__, "message": str(error)})
+            for entry in report["groups"]:
+                path = Path(entry["directory"]) / "source_chain_record.json"
+                if not path.exists():
+                    continue
+                child = json.loads(path.read_text(encoding="utf-8"))
+                for key in ("tasks", "selection", "preflight_failures"):
+                    report[key].extend(child[key])
+                report.setdefault("source_prior_selection", []).extend(child.get("source_prior_selection", []))
+                if independent:
+                    report["source_seed_catalog"].extend(entry.get("accepted_source_seed_catalog", []))
+                    if entry["status"] != "completed":
+                        report.setdefault("unadmitted_source_artifacts", []).append({
+                            "outer": entry["outer"], "record": str(path),
+                            "source_seed_catalog": child.get("source_seed_catalog", []),
+                            "admission_failure": entry.get("failure")})
+            report.update(task_count=len(report["tasks"]),
+                optimizer_updates=sum(task["optimizer_updates"] for task in report["tasks"] if task["status"] == "completed"),
+                trial_draws=sum(task["trial_draws"] for task in report["tasks"] if task["status"] == "completed"),
+                source_failure_count=sum(task["status"] == "fit_failure" for task in report["tasks"]),
+                reused_source_task_count=sum(bool(task.get("source_training_reuse", {}).get("reused")) for task in report["tasks"]),
+                completed_physical_optimizer_updates=sum(task.get("physical_optimizer_updates", 0) for task in report["tasks"]),
+                completed_physical_trial_draws=sum(task.get("physical_trial_draws", 0) for task in report["tasks"]))
+            report["fitting_performed"] = report["completed_physical_optimizer_updates"] > 0
             if independent:
-                report["source_seed_catalog"].extend(child.get("source_seed_catalog", []))
-        report.update(task_count=len(report["tasks"]),
-            optimizer_updates=sum(task["optimizer_updates"] for task in report["tasks"]
-                                  if not independent or task["status"] == "completed"),
-            trial_draws=sum(task["trial_draws"] for task in report["tasks"]
-                            if not independent or task["status"] == "completed"),
-            source_failure_count=sum(task["status"] == "fit_failure" for task in report["tasks"]),
-            reused_source_task_count=sum(bool(task.get("source_training_reuse", {}).get("reused")) for task in report["tasks"]),
-            completed_physical_optimizer_updates=sum(task.get("physical_optimizer_updates", 0) for task in report["tasks"]),
-            completed_physical_trial_draws=sum(task.get("physical_trial_draws", 0) for task in report["tasks"]))
-        report["fitting_performed"] = report["completed_physical_optimizer_updates"] > 0
-        if independent:
-            failures = {entry["outer"]: entry for entry in report["groups"] if entry["status"] == "failed"}
-            for request in report["requested_source_tasks"]:
-                if request["outer"] in failures:
-                    request.update(status="source_group_failure", failure=failures[request["outer"]])
-            _finish_independent_source_report(report, output)
-        failed = (any(entry["status"] == "failed" for entry in report["groups"])
-                  or report["source_failure_count"] > 0)
-        if not failed and not independent:
-            _prepare_outer_plans(report, {**plan, "_gpu_slots": slots}, output, device=device, execute=evaluate_outer)
-    report["status"] = "failed" if failed else "completed"
-    _save_chain_report(output, report)
+                failures = {entry["outer"]: entry for entry in report["groups"] if entry["status"] == "failed"}
+                for request in report["requested_source_tasks"]:
+                    if request["outer"] in failures:
+                        request.update(status="source_group_failure", failure=failures[request["outer"]],
+                                       artifact_admission_status="rejected")
+                _finish_independent_source_report(report, output)
+            failed = (run.status != "completed" or "execution_end_source_failure" in report
+                      or any(entry["status"] == "failed" for entry in report["consumers"]))
+            report["status"] = "failed" if failed else "completed"
+            _save_chain_report(output, report)
     if failed:
-        raise RuntimeError("source group failed; complete requested and completed group records are preserved")
+        raise RuntimeError("source/consumer programme failed; complete requested and completed artifact records are preserved")
     return report
 
 
@@ -923,7 +1198,7 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
     )
     from models.n2p3net import DEFAULT_N2P3_ARCHITECTURE, N2P3ArchitectureConfig
     from research.evaluation import verified_source_snapshot
-    from research.source_execution import SharedTrajectoryRegistry, filesystem_uses_host_memory
+    from research.source_execution import SharedTrajectoryRegistry
     from research.source_matrix import unified_source_conditions, validate_unified_source_input
     from research.source_resume import SourceChainResume
     from research.source_selection import (
@@ -1020,7 +1295,9 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
     if not dry_run:
         from research.evaluation import verified_executed_snapshot
         verified_executed_snapshot(snapshot_path, root=ROOT)
-    if output.exists() and any(output.iterdir()):
+    phases = plan.get("_source_input_phases")
+    precreated = {phases.path.resolve()} if phases is not None else set()
+    if output.exists() and any(path.resolve() not in precreated for path in output.iterdir()):
         raise FileExistsError("source chain requires a new or empty output directory")
     output.mkdir(parents=True, exist_ok=True)
     report = {"schema": "n2p3_source_training_chain_run/1", "dry_run": dry_run,
@@ -1053,12 +1330,9 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
             production_identity = None
             snapshot_directory = _verified_cache_snapshot_directory(source_cache,
                 byte_size=source_cache.stat().st_size, directory_override=plan.get("verified_cache_snapshot_directory"))
-            snapshot_memory_bytes = (source_cache.stat().st_size if filesystem_uses_host_memory(snapshot_directory) else 0)
             with phases.phase("attested_resume_load") if phases is not None else nullcontext():
-                with (plan["_source_input_admission"].reserve("load", snapshot_memory_bytes)
-                        if plan.get("_source_input_admission") is not None else nullcontext()):
-                    source = load_epoch_dataset(source_cache, require_labels=True, validation="attested",
-                                                snapshot_directory=snapshot_directory)
+                source = load_epoch_dataset(source_cache, require_labels=True, validation="attested",
+                                            snapshot_directory=snapshot_directory)
         input_record = None
         if independent:
             input_record = validate_independent_source_input(source, program["preprocessing"])
@@ -1778,6 +2052,7 @@ def _prepare_outer_plans(report, plan, output, *, device, execute):
                     report["outer_execution"].extend(future.result())
                     _save_chain_report(output, report)
 
+    return grouped_jobs
 
 def _evaluate_outer_group(jobs):
     from types import SimpleNamespace
@@ -1855,6 +2130,10 @@ def main(argv=None):
     if "source_preparation_manifests" in plan:
         plan["source_preparation_manifests"] = {study: resolve_path(path)
             for study, path in plan["source_preparation_manifests"].items()}
+    if "ready_consumers" in plan:
+        plan["ready_consumers"] = [{**consumer, "plan": resolve_path(consumer["plan"]),
+                                    "output": resolve_path(consumer["output"])}
+                                   for consumer in plan["ready_consumers"]]
     if plan.get("resume_source_run") is not None:
         plan["resume_source_run"] = {**plan["resume_source_run"],
                                     "inventory": resolve_path(plan["resume_source_run"]["inventory"])}

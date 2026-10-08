@@ -106,11 +106,12 @@ DEFAULT_SOURCE_CATALOG = SourceCatalog()
 
 
 def paired_pipeline_seeds(values):
-    """Three declared complete pipeline pairs, never a Cartesian product."""
+    """One research pair or three version-validation pairs, explicitly declared."""
     pairs = tuple(tuple(pair) for pair in values)
-    if (len(pairs) != 3 or any(len(pair) != 2 or any(type(seed) is not int or seed < 0 for seed in pair)
-            for pair in pairs) or len({pair[0] for pair in pairs}) != 3 or len({pair[1] for pair in pairs}) != 3):
-        raise ValueError("complete pipeline replication requires three distinct paired source/target seeds")
+    if (len(pairs) not in {1, 3} or any(len(pair) != 2 or any(type(seed) is not int or seed < 0 for seed in pair)
+            for pair in pairs) or len({pair[0] for pair in pairs}) != len(pairs)
+            or len({pair[1] for pair in pairs}) != len(pairs)):
+        raise ValueError("complete pipeline replication requires one research pair or three distinct paired source/target seeds for version validation")
     return pairs
 
 

@@ -29,7 +29,11 @@ from data.source_records import (  # noqa: E402
     verify_source_record_inputs,
 )
 from research.execution import atomic_write_json  # noqa: E402
-from research.source_execution import available_host_memory_bytes  # noqa: E402
+from research.source_execution import (  # noqa: E402
+    available_host_memory_bytes,
+    current_input_admission,
+    install_input_admission,
+)
 from train.runtime import available_cpu_threads  # noqa: E402
 
 
@@ -167,7 +171,8 @@ def main(argv=None, *, merge_gate=None):
     atomic_write_json(result_path, result)
     for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
         os.environ[name] = "1"
-    with ProcessPoolExecutor(max_workers=workers) as pool:
+    with ProcessPoolExecutor(max_workers=workers, initializer=install_input_admission,
+            initargs=(current_input_admission(), os.environ.get("N2P3_CLOUD_TASK_ID"))) as pool:
         futures = {pool.submit(worker, item): item[0] for item in pending}
         for future in as_completed(futures):
             try:

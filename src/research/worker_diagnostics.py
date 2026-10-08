@@ -76,7 +76,7 @@ class WorkerDiagnostics:
             atomic_write_json(self.state_path, self.state)
             with self.events_path.open("a", encoding="utf-8", buffering=1) as stream:
                 stream.write(json.dumps(self.state, ensure_ascii=True, allow_nan=False) + "\n")
-        except OSError as error:
+        except (OSError, ValueError, RuntimeError) as error:
             self.record_persistence_failure(error)
 
     def record_persistence_failure(self, error):
@@ -203,7 +203,7 @@ class PoolFailureDiagnostics:
         for path, payload in destinations:
             try:
                 atomic_write_json(path, payload)
-            except OSError as diagnostic_error:
+            except (OSError, ValueError, RuntimeError) as diagnostic_error:
                 persistence_errors.append({"path": str(path), "type": type(diagnostic_error).__name__,
                                            "message": str(diagnostic_error)})
         return {"directory": str(self.directory), "relationship": event["relationship"],

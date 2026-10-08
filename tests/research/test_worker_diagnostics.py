@@ -54,12 +54,13 @@ def _reuse_worker(output):
         return dict(observer.state)
 
 
-def _persistence_failure_worker(output):
+def _persistence_failure_worker(output, error_type):
     import research.worker_diagnostics as module
 
     with diagnostic_task(output, {"phase_kind": "failed_persistence_probe"}):
         def unwritable(*args, **kwargs):
-            raise PermissionError("diagnostic storage became unwritable")
+            raise {"PermissionError": PermissionError, "ValueError": ValueError, "RuntimeError": RuntimeError}[error_type](
+                "diagnostic storage became unwritable")
 
         original = module.atomic_write_json
         module.atomic_write_json = unwritable
@@ -98,16 +99,17 @@ def test_preparation_result_parse_failure_is_inside_diagnostic_task(tmp_path):
     assert state["role"]["phase_kind"] == "source_preparation"
 
 
-def test_failed_worker_diagnostic_write_preserves_python_failure(tmp_path):
+@pytest.mark.parametrize("error_type", ["PermissionError", "ValueError", "RuntimeError"])
+def test_failed_worker_diagnostic_write_preserves_python_failure(tmp_path, error_type):
     with ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context("spawn"),
                              initializer=initialize_worker_diagnostics,
                              initargs=(str(tmp_path / "diagnostics"), {"pool_instance_id": "write-failure"})) as pool:
         with pytest.raises(RuntimeError, match="original fit failure"):
-            pool.submit(_persistence_failure_worker, str(tmp_path / "scientific_output")).result(timeout=30)
+            pool.submit(_persistence_failure_worker, str(tmp_path / "scientific_output"), error_type).result(timeout=30)
     state = json.loads(next((tmp_path / "diagnostics").glob("*.state.json")).read_text())
     assert state["failure"]["type"] == "RuntimeError"
     persistence = state["diagnostic_persistence_failure"]
-    assert persistence["type"] == "PermissionError" and persistence["phase"] == "source_fit_python_failure"
+    assert persistence["type"] == error_type and persistence["phase"] == "source_fit_python_failure"
     assert persistence["primary_failure"] == state["failure"]
 
 

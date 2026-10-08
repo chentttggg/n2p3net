@@ -1,4 +1,4 @@
-"""The executable E2 chain on independently filtered real BDF containers."""
+"""Scientific body probes; cloud-process integration has separate native cases."""
 import json
 from dataclasses import replace
 
@@ -10,7 +10,7 @@ from data.brainsync import load_brainsync_sessions
 from data.epochs import save_epoch_dataset
 from data.source_records import prepare_source_record_prefixes
 from experiments.fit_source_temporal_basis import fit_plan
-from experiments.run_erp_comparator import run_comparison
+from experiments.run_erp_comparator import _run_comparison_serial as run_comparison
 from tests.support.brainsync import write_bids_session
 from tests.support.raw_prefix import write_real_record
 

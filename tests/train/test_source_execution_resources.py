@@ -73,7 +73,7 @@ def test_memory_admission_releases_failed_children_and_expands_after_group_exit(
     resources = resolve_source_resources({}, 9, "cpu", cpu_count=25, free_host_bytes=32 * 2**30)
     with multiprocessing.get_context("spawn").Manager() as manager:
         admission = HostMemoryAdmission(manager, resources)
-        original = admission.state.free
+        original = admission.record()["free_worker_memory_bytes"]
         with admission.source_group(), admission.source_group(), admission.source_group():
             with admission.target_workers(6) as workers:
                 assert workers == 2
@@ -83,11 +83,11 @@ def test_memory_admission_releases_failed_children_and_expands_after_group_exit(
                 with admission.target_workers(6) as workers:
                     assert workers == 2
                     raise RuntimeError("worker failed")
-            assert admission.state.free == original - 3 * admission.group_bytes
-        assert admission.state.free == original
+            assert admission.record()["free_worker_memory_bytes"] == original - 3 * admission.group_bytes
+        assert admission.record()["free_worker_memory_bytes"] == original
         with admission.source_group(), admission.target_workers(6) as workers:
             assert workers == 5
-        assert admission.state.free == original
+        assert admission.record()["free_worker_memory_bytes"] == original
 
 
 def test_nested_workers_share_cpu_quota_across_groups():
@@ -101,7 +101,31 @@ def test_nested_workers_share_cpu_quota_across_groups():
                 assert first == 2
                 with admission.target_workers(4) as second:
                     assert second == 1
-            assert admission.state.child_cpus == 0
+            assert admission.record()["nested_target_workers"] == 0
+
+
+def test_cpu_calibration_does_not_consume_gpu_cohort_capacity():
+    import multiprocessing
+
+    gib = 2**30
+    resources = {"host_memory_budget_bytes": 32 * gib, "shared_staging_memory_bytes": 0,
+        "source_worker_memory_bytes": gib, "target_worker_memory_bytes": gib,
+        "source_workers": 4, "target_workers": 4, "gpu_slots": 4,
+        "native_threads_per_worker": 6, "cpu_budget": 25, "coordinator_cpu_threads": 1}
+    with multiprocessing.get_context("spawn").Manager() as manager:
+        admission = HostMemoryAdmission(manager, resources)
+        original = admission.record()
+        reservations = [admission.reserve_phase("calibration", cpu_threads=4, memory_bytes=gib, gpu_workers=0)
+                        for _ in range(3)]
+        reservations += [admission.reserve_phase("calibration", cpu_threads=6, memory_bytes=gib, gpu_workers=1)
+                         for _ in range(2)]
+        assert all(reservations)
+        assert admission.record()["reserved_cpu_threads"] == 25
+        assert admission.record()["active_gpu_groups"] == 2
+        assert admission.record()["calibration_groups"] == 5
+        for reservation in reservations:
+            admission.release_phase(reservation)
+        assert admission.record() == original
 
 
 def test_source_groups_preserve_outer_library_and_layout_boundaries():
@@ -204,7 +228,10 @@ def test_parallel_source_cli_executes_layouts_from_its_snapshot(tmp_path, worker
     if effective_workers < workers:
         assert (resources["host_memory_budget_bytes"] < workers * resources["source_worker_memory_bytes"]
                 or resources["worker_cpu_budget"] < workers)
-    assert len({row["progress"]["pid"] for row in report["groups"]}) == effective_workers
+    # Each layout now retires its allocator/CUDA process before returning its
+    # reservation; capacity limits concurrent actors rather than PID reuse.
+    assert len({row["progress"]["pid"] for row in report["groups"]}) == len(layouts)
+    assert all(point["source_groups"] <= effective_workers for point in report["resource_observations"])
     assert report["task_count"] == 4 * len(layouts)
     assert report["source_failure_count"] == 0
     assert report["completed_physical_optimizer_updates"] == 4 * len(layouts)

@@ -10,7 +10,7 @@ import shutil
 import stat
 import tempfile
 from collections.abc import Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import asdict, dataclass, field, replace
 from io import StringIO
 from numbers import Real
@@ -25,6 +25,7 @@ from data.channel import canonical_channel_name
 from data.contract import (
     DEFAULT_P300_DATA_CONTRACT,
     EEGDataContract,
+    epoch_sample_count,
     validate_notch_parameters,
     validate_zero_phase_edge_policy,
 )
@@ -115,7 +116,7 @@ class PreprocessingSpec:
         if not self.tmin_ms < self.tmax_ms:
             raise ValueError("Preprocessing tmin_ms must be smaller than tmax_ms.")
         expected = (self.tmax_ms - self.tmin_ms) * self.sfreq / 1000.0
-        expected_n_times = int(np.floor(expected + 1e-9))
+        expected_n_times = epoch_sample_count(self.sfreq, self.tmin_ms, self.tmax_ms)
         if self.n_times != expected_n_times:
             raise ValueError(
                 "Physical time axis with an exclusive right endpoint requires "
@@ -1039,8 +1040,16 @@ def save_epoch_dataset(
     }
     writer = np.savez_compressed if compressed else np.savez
     temporary = path.with_suffix(path.suffix + ".tmp.npz")
-    writer(temporary, **payload)
-    temporary.replace(path)
+    from research.source_execution import current_input_admission
+
+    admission = current_input_admission()
+    # NPY headers/ZIP records plus the deflate worst-case growth; the same
+    # payload arrays are serialized, without another copy or scientific change.
+    estimate = sum(value.nbytes for value in payload.values()) * 1001 // 1000 + len(payload) * 65536 + 2**20
+    with (admission.artifact_writer(path, estimate, temporary_paths=(temporary,))
+          if admission is not None else nullcontext()):
+        writer(temporary, **payload)
+        temporary.replace(path)
     write_epoch_dataset_record(path, dataset)
     return path
 
@@ -1288,47 +1297,54 @@ def _epoch_cache_archive_source(
         byte_size=int(attestation["byte_size"]),
         directory_override=snapshot_directory,
     )
-    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
-    try:
-        descriptor = os.open(path, flags)
-    except OSError as error:
-        raise ValueError(f"{path} cannot be opened as a stable cache object.") from error
-    try:
-        snapshot = tempfile.TemporaryFile(
-            mode="w+b",
-            prefix=".n2p3-attested-cache-",
-            suffix=".npz",
-            dir=snapshot_directory,
-        )
-    except OSError as error:
-        os.close(descriptor)
-        raise ValueError(
-            f"cannot create a private verified cache snapshot in {snapshot_directory}."
-        ) from error
-    with snapshot:
+    from contextlib import nullcontext
+
+    from research.source_execution import current_input_admission
+
+    admission = current_input_admission()
+    with (admission.snapshot(snapshot_directory, int(attestation["byte_size"]))
+          if admission is not None else nullcontext()):
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
         try:
-            with os.fdopen(descriptor, "rb") as stream:
-                before = os.fstat(stream.fileno())
-                if not stat.S_ISREG(before.st_mode):
-                    raise ValueError(f"{path} must be a regular cache file.")
-                if before.st_size != attestation["byte_size"]:
-                    raise ValueError(f"{path} byte size no longer matches its cache attestation.")
-                observed_sha256, observed_size = _copy_and_sha256_stream(
-                    stream,
-                    snapshot,
-                )
-                after = os.fstat(stream.fileno())
+            descriptor = os.open(path, flags)
         except OSError as error:
-            raise ValueError(f"{path} could not be copied into a stable snapshot.") from error
-        if _file_identity(after) != _file_identity(before):
-            raise ValueError(f"{path} changed while its attested bytes were copied.")
-        if observed_size != attestation["byte_size"]:
-            raise ValueError(f"{path} byte size no longer matches its cache attestation.")
-        if observed_sha256 != attestation["sha256"]:
-            raise ValueError(f"{path} SHA-256 no longer matches its cache attestation.")
-        snapshot.flush()
-        snapshot.seek(0)
-        yield snapshot, record, attestation
+            raise ValueError(f"{path} cannot be opened as a stable cache object.") from error
+        try:
+            snapshot = tempfile.TemporaryFile(
+                mode="w+b",
+                prefix=".n2p3-attested-cache-",
+                suffix=".npz",
+                dir=snapshot_directory,
+            )
+        except OSError as error:
+            os.close(descriptor)
+            raise ValueError(
+                f"cannot create a private verified cache snapshot in {snapshot_directory}."
+            ) from error
+        with snapshot:
+            try:
+                with os.fdopen(descriptor, "rb") as stream:
+                    before = os.fstat(stream.fileno())
+                    if not stat.S_ISREG(before.st_mode):
+                        raise ValueError(f"{path} must be a regular cache file.")
+                    if before.st_size != attestation["byte_size"]:
+                        raise ValueError(f"{path} byte size no longer matches its cache attestation.")
+                    observed_sha256, observed_size = _copy_and_sha256_stream(
+                        stream,
+                        snapshot,
+                    )
+                    after = os.fstat(stream.fileno())
+            except OSError as error:
+                raise ValueError(f"{path} could not be copied into a stable snapshot.") from error
+            if _file_identity(after) != _file_identity(before):
+                raise ValueError(f"{path} changed while its attested bytes were copied.")
+            if observed_size != attestation["byte_size"]:
+                raise ValueError(f"{path} byte size no longer matches its cache attestation.")
+            if observed_sha256 != attestation["sha256"]:
+                raise ValueError(f"{path} SHA-256 no longer matches its cache attestation.")
+            snapshot.flush()
+            snapshot.seek(0)
+            yield snapshot, record, attestation
 
 
 def write_epoch_dataset_record(
@@ -1350,7 +1366,14 @@ def write_epoch_dataset_record(
         "byte_size": cache_path.stat().st_size,
     }
     record_path = _cache_record_path(cache_path)
-    record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+    text = json.dumps(record, ensure_ascii=False, indent=2)
+    from research.source_execution import current_input_admission
+
+    admission = current_input_admission()
+    encoded_size = len(text.encode("utf-8")) + text.count("\n") * (len(os.linesep) - 1)
+    with (admission.artifact_writer(record_path, encoded_size)
+          if admission is not None else nullcontext()):
+        record_path.write_text(text, encoding="utf-8")
     return record_path
 
 

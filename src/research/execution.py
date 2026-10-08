@@ -6,6 +6,7 @@ import json
 import os
 import time
 from collections.abc import Mapping, Sequence
+from contextlib import nullcontext
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -44,34 +45,41 @@ class ExpectedSubjectError(RuntimeError):
         }
 
 
-def atomic_write_json(path: str | Path, payload: Mapping[str, Any]) -> Path:
+def atomic_write_json(path: str | Path, payload: Mapping[str, Any], *, input_admission=None) -> Path:
     """Atomically replace one JSON record without exposing a partial document."""
 
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
-    try:
-        with temporary.open("w", encoding="utf-8", newline="\n") as stream:
-            json.dump(payload, stream, ensure_ascii=False, indent=2, allow_nan=False)
-            stream.write("\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        for attempt in range(7):
-            try:
-                temporary.replace(target)
-                break
-            except PermissionError:
-                # Windows readers/antivirus may briefly hold a handle without
-                # delete sharing. Keep the old record intact and retry <= 0.63 s.
-                if attempt == 6:
-                    raise
-                time.sleep(0.01 * 2**attempt)
-    except BaseException:
+    encoded = (json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
+    if input_admission is None:
+        from research.source_execution import current_input_admission
+
+        input_admission = current_input_admission()
+    allocation = (input_admission.artifact_writer(target, len(encoded), temporary_paths=(temporary,))
+                  if input_admission is not None else nullcontext())
+    with allocation:
         try:
-            temporary.unlink()
-        except OSError:
-            pass
-        raise
+            with temporary.open("wb") as stream:
+                stream.write(encoded)
+                stream.flush()
+                os.fsync(stream.fileno())
+            for attempt in range(7):
+                try:
+                    temporary.replace(target)
+                    break
+                except PermissionError:
+                    # Windows readers/antivirus may briefly hold a handle without
+                    # delete sharing. Keep the old record intact and retry <= 0.63 s.
+                    if attempt == 6:
+                        raise
+                    time.sleep(0.01 * 2**attempt)
+        except BaseException:
+            try:
+                temporary.unlink()
+            except OSError:
+                pass
+            raise
     return target
 
 

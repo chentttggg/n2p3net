@@ -1,6 +1,11 @@
 import pytest
 
-from research.source_catalog import CORE_STUDIES, DEFAULT_POOLS, SourceCatalog
+from research.source_catalog import (
+    CORE_STUDIES,
+    DEFAULT_POOLS,
+    SourceCatalog,
+    paired_pipeline_seeds,
+)
 from research.source_matrix import (
     freeze_matched_dose,
     matched_dose_tasks,
@@ -74,3 +79,17 @@ def test_deployment_is_explicit_complete_and_never_an_outer_evaluation():
             catalog.validate_fold({**outer, **changed}, DEFAULT_POOLS["B7"])
     with pytest.raises(ValueError, match="complete source membership"):
         catalog.validate_fold({"role": "deployment", "excluded_source_datasets": []}, ["a", "b", "c"])
+
+
+def test_research_single_pair_and_version_three_pairs_preserve_explicit_identity():
+    assert paired_pipeline_seeds([[20260918, 20260918]]) == ((20260918, 20260918),)
+    declared = [[11, 21], [12, 22], [13, 23]]
+    assert paired_pipeline_seeds(declared) == tuple(map(tuple, declared))
+    assert declared == [[11, 21], [12, 22], [13, 23]]
+
+
+@pytest.mark.parametrize("pairs", [[], [[11, 21], [12, 22]], [[11, 21], [12, 22], [13, 23], [14, 24]],
+    [[11, 21], [12, 21], [13, 23]], [[11, 21], [11, 22], [13, 23]], [[True, 21]], [[11, -1]], [[11]]])
+def test_pipeline_policy_never_fills_missing_or_duplicate_seeds(pairs):
+    with pytest.raises(ValueError, match="one research pair or three"):
+        paired_pipeline_seeds(pairs)
