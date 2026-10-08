@@ -447,6 +447,7 @@ class TemporalNoise:
     _marginal_variance_value: float = field(init=False, repr=False, compare=False)
     _compiler: dict = field(init=False, repr=False, compare=False)
     _runtime_binding: tuple = field(init=False, repr=False, compare=False)
+    _owned_state: tuple = field(init=False, repr=False, compare=False)
     _integrity_sha256: str = field(init=False, repr=False, compare=False)
 
     def __post_init__(self, reflection_state):
@@ -513,6 +514,8 @@ class TemporalNoise:
         for name, value in diagnostics.items():
             object.__setattr__(self, name, value)
         object.__setattr__(self, "_integrity_sha256", metadata_digest(self._state()))
+        object.__setattr__(self, "_owned_state", (self.coefficients, self.reflection_coefficients,
+            *self._arrays().values(), self.provenance, self._compiler))
         object.__setattr__(self, "_runtime_binding", self._runtime_signature())
 
     def _runtime_signature(self):
@@ -521,8 +524,8 @@ class TemporalNoise:
         return (self.startup_mode, type(self.innovation_variance), self.innovation_variance,
                 self._marginal_variance_value, self.pole_radius, self.startup_condition,
                 self.startup_factor_condition, id(self.provenance), id(self._compiler),
-                id(self.coefficients), id(self.reflection_coefficients),
-                *(id(value) for value in self._arrays().values()))
+                *((id(value), value.shape, value.strides, value.dtype.str) for value in
+                  (self.coefficients, self.reflection_coefficients, *self._arrays().values())))
 
     @property
     def order(self):

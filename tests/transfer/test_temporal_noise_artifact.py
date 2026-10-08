@@ -69,6 +69,14 @@ def test_parameter_stepdown_ignores_callers_decimal_context():
     assert original.record() == changed.record()
 
 
+def test_readonly_array_header_cannot_reinterpret_compiled_noise_without_guard_failure():
+    state = TemporalNoise.from_reflections([-.8, .4], innovation_variance=1., reference_id="header_integrity")
+    # Bytes are immutable, but NumPy still allows dtype/header mutation.
+    state.reflection_coefficients.dtype = np.int64
+    with pytest.raises(ValueError, match="integrity"):
+        state.whiten(np.ones((10, 1)))
+
+
 def test_resigned_small_stationary_pivot_cannot_hide_in_a_large_covariance():
     # AR1 represented with an explicit zero second coefficient has a large
     # marginal variance and a unit second prefix prediction-error variance.
