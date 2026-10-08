@@ -57,3 +57,7 @@ src/research/source_resume.py text eol=lf
 tests/train/test_source_resume.py text eol=lf
 src/data/source_admission.py text eol=lf
 src/research/source_catalog.py text eol=lf
+src/data/epochs.py text eol=lf
+src/data/qc_features.py text eol=lf
+tests/data/test_epoch_cache_production.py text eol=lf
+tests/data/test_qc_chunked.py text eol=lf

@@ -1047,6 +1047,73 @@ _VERIFIED_CACHE_SNAPSHOT_DIR_ENV = "N2P3_VERIFIED_CACHE_SNAPSHOT_DIR"
 _VERIFIED_CACHE_SNAPSHOT_MIN_RESERVE_BYTES = 64 * 1024 * 1024
 
 
+@dataclass(frozen=True)
+class EpochCacheProduction:
+    """The writer's still-resident dataset and its actual persisted identities.
+
+    This is a production handoff, not an attested load. Training consumes the
+    same decoded state the writer serialized; resumed processes still load the
+    verified cache through the ordinary loader.
+    """
+
+    path: Path
+    dataset: EpochDataset
+    cache_attestation: Mapping[str, object]
+    decoded_dataset_sha256: str
+    cache_record_sha256: str
+    file_identity: tuple[int, int, int, int]
+
+    def verify(self) -> dict[str, object]:
+        record, attestation = _read_epoch_cache_record(self.path)
+        if (attestation != dict(self.cache_attestation)
+                or _file_identity(self.path.stat()) != self.file_identity
+                or _sha256_file(_cache_record_path(self.path)) != self.cache_record_sha256):
+            raise ValueError("written source cache changed before its in-memory production handoff")
+        _validate_attested_cache(record, self.dataset, record_path=_cache_record_path(self.path))
+        if _decoded_dataset_sha256(self.dataset) != self.decoded_dataset_sha256:
+            raise ValueError("written source dataset changed before its in-memory production handoff")
+        return {"schema": "n2p3_verified_epoch_cache_production/1", "path": str(self.path),
+                "sha256": attestation["sha256"], "byte_size": attestation["byte_size"],
+                "decoded_dataset_sha256": self.decoded_dataset_sha256,
+                "cache_record_sha256": self.cache_record_sha256,
+                "origin": "validated_cache_writer_same_process"}
+
+
+def produce_epoch_cache(path: str | Path, dataset: EpochDataset, *, compressed=False) -> EpochCacheProduction:
+    """Save a fresh working cache and retain its exact decoded producer state."""
+    storage_types = {"X": np.float32, "y": np.int64, "channel_positions_m": np.float32,
+                     "channel_mask": bool, "trial_channel_mask": bool}
+    for name, dtype in storage_types.items():
+        value = getattr(dataset, name)
+        if value is not None and np.asarray(value).dtype != np.dtype(dtype):
+            raise ValueError(f"in-memory source production requires canonical {np.dtype(dtype)} {name}")
+    timeline_types = {"stimulus_ids": np.int64, "onset_samples": np.int64, "evidence_indices": np.int64,
+                      "repetition_indices": np.int64, "onset_times_s": np.float64,
+                      "evidence_available_times_s": np.float64}
+    for name, dtype in timeline_types.items():
+        if np.asarray(getattr(dataset.event_timeline, name)).dtype != np.dtype(dtype):
+            raise ValueError(f"in-memory source production requires canonical {np.dtype(dtype)} event {name}")
+    if dataset.qc_features is not None:
+        for name, dtype in {"relative_ptp": np.float32, "channel_std_v": np.float32,
+                            "epoch_scale_v": np.float32, "observed_mask": bool}.items():
+            if np.asarray(getattr(dataset.qc_features, name)).dtype != np.dtype(dtype):
+                raise ValueError(f"in-memory source production requires canonical {np.dtype(dtype)} QC {name}")
+    string_arrays = [dataset.subject_ids, *(getattr(dataset.event_timeline, name) for name in (
+        "event_ids", "group_ids", "subject_ids", "statuses", "status_details", "dataset_ids", "session_ids",
+        "run_ids", "selection_ids", "candidate_ids", "target_candidate_ids"))]
+    if any(np.asarray(value).dtype.kind != "U" for value in string_arrays):
+        raise ValueError("in-memory source production requires the writer's Unicode identity arrays")
+    if dataset.metadata.empty:
+        raise ValueError("in-memory source production requires the writer's explicit metadata table")
+    path = save_epoch_dataset(path, dataset, compressed=compressed).resolve()
+    record, attestation = _read_epoch_cache_record(path)
+    _validate_attested_cache(record, dataset, record_path=_cache_record_path(path))
+    with np.load(path, allow_pickle=False) as archive:
+        decoded = str(np.asarray(archive["decoded_dataset_sha256"]).item())
+    return EpochCacheProduction(path, dataset, MappingProxyType(attestation), decoded,
+                                _sha256_file(_cache_record_path(path)), _file_identity(path.stat()))
+
+
 def _cache_record_path(path: str | Path) -> Path:
     return Path(path).with_suffix(".record.json")
 

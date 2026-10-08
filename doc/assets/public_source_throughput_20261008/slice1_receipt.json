@@ -1,0 +1,143 @@
+{
+  "schema": "n2p3_source_throughput_slice/1",
+  "status": "first_software_slice_validated_full_cloud_benchmark_pending",
+  "source_files_sha256": {
+    "src/data/qc_features.py": "2866730ec4c8a76b0cb715b7032bf3037deff2a5fa9c4090c0ed0d8c501a777c",
+    "src/data/epochs.py": "0e186726a5accae471c888d9d6445a06935fb9f2277b7f9b3145449502a73292",
+    "src/research/source_execution.py": "b526547d7d274a764773f6fa52db7d6b46a294581a95a44fb276773b0dd20173",
+    "experiments/prepare_multidomain_source.py": "13a30862c79f70a4ca03a4bdf50fb2388d39e2b0fad8e655294f2d6e32d8642c",
+    "experiments/run_source_training_chain.py": "122dc5469c6b7b21173bfe1dfdd2c8b169b6cd3741f7fa17ea4a59e351b6a7eb",
+    "tests/data/test_qc_chunked.py": "12b744d3175d0b7d53f1093d5981c932fb3994a380f92f3f1daf6b269b82c472",
+    "tests/data/test_epoch_cache_production.py": "2f6cd5f9565f2d541c6d9a96a7fdc8bd5ec7fe7cebcaa33d9f1a7ebfada43e04",
+    "tests/train/test_independent_source_pipeline.py": "05702c6b368fbe132cfb6cdfbfe1e9b14eb0ee0c4d1439bf10f5feca9c59712f"
+  },
+  "junit_sha256": "6facd474dd944e94b3069775ef9894c036a5fb103471b4318cf61202e20b92a8",
+  "tests": 22,
+  "failures": 0,
+  "errors": 0,
+  "QC_numeric_scope": "float32/fp64 slice/Fortran/reversed masked/zero/lateNonfinite exact stored outputs",
+  "QC_short_memory_probe": {
+    "EEG_input_bytes": 70385664,
+    "legacy_extra_peak_rss": 285704192,
+    "chunked_extra_peak_rss": 36192256,
+    "legacy_seconds": 0.2285232,
+    "chunked_seconds": 0.204208,
+    "scope": "bounded short software probe, not complete source peak"
+  },
+  "same_actual_merge_call_path": {
+    "baseline": {
+      "mode": "baseline",
+      "scope": "software_performance_no_NN_fit",
+      "merge_seconds": 5.086628299999575,
+      "ingress_seconds": 0.4443663000020024,
+      "total_seconds": 5.531000899998617,
+      "cache_bytes": 65933295,
+      "X_sum": 0.008145431395878422,
+      "y_sum": 8192,
+      "decoded_dataset_sha256": "dbd2495a37f9a34545ebb256f5ff04e4318844af54c849ff80b4285f93c28015",
+      "rows": 16384,
+      "executed_source_sha256": {
+        "src/data/epochs.py": "0e186726a5accae471c888d9d6445a06935fb9f2277b7f9b3145449502a73292",
+        "src/data/qc_features.py": "2866730ec4c8a76b0cb715b7032bf3037deff2a5fa9c4090c0ed0d8c501a777c",
+        "experiments/prepare_multidomain_source.py": "13a30862c79f70a4ca03a4bdf50fb2388d39e2b0fad8e655294f2d6e32d8642c"
+      }
+    },
+    "resident": {
+      "mode": "resident",
+      "scope": "software_performance_no_NN_fit",
+      "merge_seconds": 3.3109354999978677,
+      "ingress_seconds": 0.4246707999991486,
+      "total_seconds": 3.735608700000739,
+      "cache_bytes": 76713690,
+      "X_sum": 0.008145431395878422,
+      "y_sum": 8192,
+      "decoded_dataset_sha256": "dbd2495a37f9a34545ebb256f5ff04e4318844af54c849ff80b4285f93c28015",
+      "rows": 16384,
+      "executed_source_sha256": {
+        "src/data/epochs.py": "0e186726a5accae471c888d9d6445a06935fb9f2277b7f9b3145449502a73292",
+        "src/data/qc_features.py": "2866730ec4c8a76b0cb715b7032bf3037deff2a5fa9c4090c0ed0d8c501a777c",
+        "experiments/prepare_multidomain_source.py": "13a30862c79f70a4ca03a4bdf50fb2388d39e2b0fad8e655294f2d6e32d8642c"
+      }
+    },
+    "complete_decoded_state_equal": true
+  },
+  "real_original_two_study_probe": {
+    "scope": "real_public_raw_data_preparation_no_model_fit_or_performance_claim",
+    "status": "passed",
+    "original_raw_records": [
+      {
+        "study": "BNCI2014-008",
+        "subject": "A01",
+        "session": "0",
+        "run": "0",
+        "reference": "right earlobe",
+        "sample_rate_hz": 256.0,
+        "path": "mne_data/MNE-bnci-data/~bci/database/008-2014/A01.mat",
+        "sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+        "original_path": "mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A01.mat",
+        "original_archive_member": null
+      },
+      {
+        "study": "BI2014a",
+        "subject": "1",
+        "session": "0",
+        "run": "0",
+        "reference": "right earlobe",
+        "sample_rate_hz": 512.0,
+        "path": "mne_data/MNE-braininvaders2014a-data/zenodo/3266223/subject_01.zip",
+        "sha256": "eecb29c236f21b5d8d1b8b3cc07e4aa96b107eeb29033201fcab407d94fdd759",
+        "original_path": "mne_data\\MNE-braininvaders2014a-data\\zenodo\\3266223\\subject_01\\subject_01.mat",
+        "original_archive_member": null,
+        "member": "subject_01.mat"
+      }
+    ],
+    "source_rows": 5388,
+    "X_shape": [
+      5388,
+      6,
+      179
+    ],
+    "writer_identity": {
+      "schema": "n2p3_verified_epoch_cache_production/1",
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\independent-calibration\\n2p3-net\\tmp\\source_throughput_20261008\\real_two_study\\source_uncompressed.npz",
+      "sha256": "2c00dce2b0f13b0f6dec5978a1cd7af23b11c58de68505ba70c4cffa64304832",
+      "byte_size": 33102852,
+      "decoded_dataset_sha256": "47dd778094c681bde6258d1e90d668485db7a05dbb89127761f40db08d8ea642",
+      "cache_record_sha256": "123d96de3ab47dd713abe8d843ba23348130c5a1bab844b1638adc27ea3e7671",
+      "origin": "validated_cache_writer_same_process"
+    },
+    "actual_cold_reload_exact_X_y_identity_and_mask": true,
+    "elapsed_seconds": 9.388079300002573,
+    "executed_source_sha256": {
+      "src\\data\\epochs.py": "0e186726a5accae471c888d9d6445a06935fb9f2277b7f9b3145449502a73292",
+      "src\\data\\qc_features.py": "db34240f16243f05f752a8a4274fa58dffd85d118f0a05921cc13d98c5eb9475",
+      "experiments\\prepare_multidomain_source.py": "13a30862c79f70a4ca03a4bdf50fb2388d39e2b0fad8e655294f2d6e32d8642c"
+    },
+    "raw_data_modified": false,
+    "NN_training_executed": false
+  },
+  "full_cloud_25CPU_4GPU_measured_by_this_slice": false,
+  "live_old_source_runtime_modified": false,
+  "resource_merge_slots_changed": false,
+  "producer_semantics": "fresh written-cache origin distinct from attested-load; resumed bytes retain their origin",
+  "test_temporary_root": "task-exclusive tmp/validation/source-throughput-slice1-20261008-02/pytest",
+  "initial_basetemp_parent_setup_errors_retained": true,
+  "incremental_QC_empty_axes_and_numeric_recheck": {
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "junit_sha256": "ce5a09219401dc4e8db93876f3de99a43a8b634dba292f8f92d6b6ff9427d36a",
+    "new_distinct_cases": 2,
+    "repeated_QC_cases": 7,
+    "source_sha256": "2866730ec4c8a76b0cb715b7032bf3037deff2a5fa9c4090c0ed0d8c501a777c"
+  },
+  "unique_contract_cases": 25,
+  "working_cache_directory_incremental_validation": {
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "junit_sha256": "2099b5d3203cdc01c979824546d35667c1b704eebe8ded93a4a9813685a03e3e",
+    "new_distinct_cases": 1,
+    "actual_two_study_default_and_separate_working_cache": true
+  }
+}

@@ -555,7 +555,11 @@ def _prepare_source_group_inputs(plan, output):
     """Materialize one complete outer view, then let all seeds share its load."""
     from data.epochs import _read_epoch_cache_record
     from experiments.prepare_multidomain_source import main as merge
+    from research.source_execution import SourceInputPhases
     from research.source_resume import SourceChainResume
+
+    phases = SourceInputPhases(output / "source_input_stages.json")
+    plan = {**plan, "_source_input_phases": phases}
 
     inputs = plan["_prepared_source_inputs"]
     outer = dict(plan["outer_folds"][0])
@@ -569,21 +573,29 @@ def _prepare_source_group_inputs(plan, output):
         record = next(iter(inputs.values()))
         outer.update(source_cache=record["cache"], expected_source_cache_sha256=record["cache_sha256"])
     else:
-        cache = output.parent.parent / "source_views" / output.name / "source.npz"
+        view_root = (Path(plan["source_view_working_directory"]) if plan.get("source_view_working_directory")
+                     else output.parent.parent / "source_views")
+        cache = view_root / output.name / "source.npz"
         argv = ["--output", str(cache), "--target-channels", "Fz,P3,Pz,P4,PO8,Oz",
             "--event-contract", "binary_evidence", "--reference-mode", "measured_channel",
             "--reference-channel", "Cz",
-            "--missing-channel-policy", "mask", "--source-workers", "1",
+            "--missing-channel-policy", "mask", "--source-workers", "1", "--uncompressed",
             "--cpu-threads", str(plan["_native_threads_per_worker"])]
         for study in outer["source_studies"]:
             argv.extend(("--source", f"{study}={inputs[study]['cache']}"))
-        with plan["_source_load_slots"]:
-            merge(argv)
+        with phases.phase("merge_staging_wait"):
+            plan["_source_load_slots"].acquire()
+        try:
+            with phases.phase("whole_fold_merge_and_write"):
+                production = merge(argv, retain_production=True, phases=phases)
+        finally:
+            plan["_source_load_slots"].release()
         metadata, attestation = _read_epoch_cache_record(cache)
         loaded = {record["namespace"]: record["cache_sha256"] for record in metadata["provenance"]["sources"]}
         if loaded != {study: record["cache_sha256"] for study, record in inputs.items()}:
             raise ValueError("source merge consumed different bytes from the admitted prepared inventory")
         outer.update(source_cache=str(cache.resolve()), expected_source_cache_sha256=attestation["sha256"])
+        plan = {**plan, "_resident_source_production": production}
     outer["source_input_bindings"] = bindings
     return {**plan, "outer_folds": [outer]}
 
@@ -972,8 +984,19 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
         source_cache = Path(outer["source_cache"])
         from contextlib import nullcontext
 
-        with (plan["_source_load_slots"] if plan.get("_source_load_slots") is not None else nullcontext()):
-            source = load_epoch_dataset(source_cache, require_labels=True, validation="attested")
+        production = plan.get("_resident_source_production")
+        phases = plan.get("_source_input_phases")
+        if production is not None:
+            if production.path != source_cache.resolve() or len(plan["outer_folds"]) != 1:
+                raise ValueError("resident source production must belong to this exact whole-fold cache")
+            with phases.phase("resident_writer_receipt_and_decoded_verify") if phases is not None else nullcontext():
+                production_identity = production.verify()
+            source = production.dataset
+        else:
+            production_identity = None
+            with phases.phase("attested_resume_load") if phases is not None else nullcontext():
+                with (plan["_source_load_slots"] if plan.get("_source_load_slots") is not None else nullcontext()):
+                    source = load_epoch_dataset(source_cache, require_labels=True, validation="attested")
         input_record = None
         if independent:
             input_record = validate_independent_source_input(source, program["preprocessing"])
@@ -983,16 +1006,20 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
             assert_p300_input_contract(source.preprocessing, SOURCE_COHORT_DATA_CONTRACTS["causal"])
         if source.provenance.get("source_reference") != "measured_channel:CZ":
             raise ValueError("source-chain caches must contain measured Cz differences")
-        source_sha = loaded_epoch_cache_attestation(source)["sha256"]
+        source_sha = (production_identity["sha256"] if production_identity is not None
+                      else loaded_epoch_cache_attestation(source)["sha256"])
         if outer.get("expected_source_cache_sha256", source_sha) != source_sha:
             raise ValueError("source worker loaded different bytes from its admitted input binding")
         excluded = tuple(outer["excluded_source_datasets"])
-        source_fit_ledger(source, np.arange(source.n_epochs), excluded_source_datasets=excluded)
-        domains, _, _ = source_identity_axes(source)
+        with phases.phase("whole_source_input_ledger") if phases is not None else nullcontext():
+            source_fit_ledger(source, np.arange(source.n_epochs), excluded_source_datasets=excluded)
+            domains, _, _ = source_identity_axes(source)
         from research.source_catalog import SourceCatalog
 
         SourceCatalog(plan.get("source_pools")).validate_fold(outer, domains)
         report["source_input_admitted"] = True
+        if production_identity is not None:
+            report["source_input_production"] = production_identity
         source_config_record = None
         if independent:
             from data.study import dataset_study_membership
@@ -1741,7 +1768,8 @@ def main(argv=None):
         path = Path(value)
         return str(path if path.is_absolute() else (plan_path.parent / path).resolve())
 
-    for key in ("source_snapshot_manifest", "evaluation_snapshot_manifest", "batch_rule_file", "prepared_source_directory"):
+    for key in ("source_snapshot_manifest", "evaluation_snapshot_manifest", "batch_rule_file",
+                "prepared_source_directory", "source_view_working_directory"):
         if key in plan:
             plan[key] = resolve_path(plan[key])
     if "source_preparation_manifests" in plan:

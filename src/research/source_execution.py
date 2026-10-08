@@ -6,8 +6,56 @@ import os
 import time
 from contextlib import contextmanager
 from pathlib import Path
+from threading import RLock
 
 from research.execution import atomic_write_json
+
+
+class SourceInputPhases:
+    """Record actual cache preparation/ingress costs without changing its identity."""
+
+    def __init__(self, path):
+        import psutil
+
+        self.path = Path(path)
+        self.process = psutil.Process()
+        self.lock = RLock()
+        self.completed = []
+        self.active = {}
+        self.next_id = 0
+
+    def _write(self):
+        atomic_write_json(self.path, {"schema": "n2p3_source_input_phases/1", "pid": os.getpid(),
+            "updated_unix": time.time(), "active": list(self.active.values()), "completed": self.completed,
+            "cpu_accounting_scope": "whole_process_including_other_active_threads"})
+
+    @contextmanager
+    def phase(self, name):
+        wall = time.perf_counter()
+        cpu = self.process.cpu_times()
+        before_cpu = cpu.user + cpu.system
+        before_rss = self.process.memory_info().rss
+        with self.lock:
+            token = self.next_id
+            self.next_id += 1
+            self.active[token] = {"name": name, "started_unix": time.time(), "rss_before_bytes": before_rss}
+            self._write()
+        try:
+            yield
+        except BaseException:
+            self._finish(token, wall, before_cpu, before_rss, "failed")
+            raise
+        else:
+            self._finish(token, wall, before_cpu, before_rss, "completed")
+
+    def _finish(self, token, wall, before_cpu, before_rss, status):
+        cpu = self.process.cpu_times()
+        with self.lock:
+            stage = self.active.pop(token)
+            self.completed.append({**stage, "status": status, "wall_seconds": time.perf_counter() - wall,
+                "process_cpu_seconds": cpu.user + cpu.system - before_cpu, "rss_before_bytes": before_rss,
+                "rss_after_bytes": self.process.memory_info().rss})
+            self._write()
 
 
 @contextmanager

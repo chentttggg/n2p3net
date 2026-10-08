@@ -1,5 +1,7 @@
 # 研究与工程证据
 
+- [公共源吞吐第一切片](public_source_throughput_20261008.zh.md)：逐epoch同数值QC、免压缩工作cache、真实writer与同进程decoded交接、阶段日志；22项必要验证与原两库输入准备通过，完整云端吞吐与并发峰另验。
+
 - [当前公共源程序、实际数据准备与质量](public_source_pipeline_20261008.zh.md)：每seed独立选择/refit、等库等人β1风险、声明manifest与完整view恢复、25CPU/4GPU共享调度；两轴零关键遗留、16/16输入准备成功，完整12 source实际启动，公共效能/目标新语义另验收。
 
 - [B12独立前缀、温度程序与配对公共入口](independent_prefix_20261008.zh.md)：actualK与时间/标签一次绑定、K0源冻结、共享最终专家和温度程序、真实source选择/refit、配对seed与预算复用/统计；两轴及主树组合/新原生重放，完整公共流程另验收。

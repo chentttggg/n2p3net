@@ -154,23 +154,34 @@ def compute_epoch_qc_features(
     """Compute cache-safe statistics from final preprocessed EEG epochs only."""
 
     data = np.asarray(X)
-    if data.ndim != 3 or not len(data):
+    if data.ndim != 3 or not len(data) or not min(data.shape[1:]):
         raise ValueError("QC features require a non-empty (N,C,T) EEG tensor.")
-    if not np.issubdtype(data.dtype, np.floating) or not np.isfinite(data).all():
+    if not np.issubdtype(data.dtype, np.floating):
         raise ValueError("QC features require finite floating-point EEG data.")
     observed = effective_observed_mask(
         n_epochs=len(data),
         channel_mask=channel_mask,
         trial_channel_mask=trial_channel_mask,
     )
-    values = data.astype(np.float64, copy=False)
-    raw_ptp = np.ptp(values, axis=2)
-    epoch_scale = np.nanmedian(np.where(observed, raw_ptp, np.nan), axis=1)
-    floor = np.finfo(np.float64).eps
-    relative_ptp = raw_ptp / np.maximum(epoch_scale[:, None], floor)
-    channel_std = np.std(values, axis=2)
-    relative_ptp = np.where(observed, relative_ptp, 0.0).astype(np.float32)
-    channel_std = np.where(observed, channel_std, 0.0).astype(np.float32)
+    # Each statistic reduces within an epoch. Chunking rows preserves the exact
+    # float64 per-row arithmetic without materializing two full float64 tensors.
+    chunk_rows = max(1, 32 * 2**20 // (data.shape[1] * data.shape[2] * 8 * 2))
+    relative_ptp = np.empty(data.shape[:2], dtype=np.float32)
+    channel_std = np.empty(data.shape[:2], dtype=np.float32)
+    epoch_scale = np.empty(len(data), dtype=np.float32)
+    for start in range(0, len(data), chunk_rows):
+        stop = min(start + chunk_rows, len(data))
+        block = data[start:stop]
+        if not np.isfinite(block).all():
+            raise ValueError("QC features require finite floating-point EEG data.")
+        values = block.astype(np.float64, copy=False)
+        available = observed[start:stop]
+        raw_ptp = np.ptp(values, axis=2)
+        scale = np.nanmedian(np.where(available, raw_ptp, np.nan), axis=1)
+        relative_ptp[start:stop] = np.where(
+            available, raw_ptp / np.maximum(scale[:, None], np.finfo(np.float64).eps), 0.0)
+        channel_std[start:stop] = np.where(available, np.std(values, axis=2), 0.0)
+        epoch_scale[start:stop] = scale
     result = EpochQCFeatures(
         relative_ptp=relative_ptp,
         channel_std_v=channel_std,

@@ -323,6 +323,15 @@ GPU计时同步，冷启动/编译与热运行分列。缓存就绪的训练时�
 
 ### 云端训练性能优先
 
+2026-10-08首个[公共源吞吐切片](evidence/public_source_throughput_20261008.zh.md)将QC按epoch分块，
+保持逐行float64归约及最终float32结果；新outer工作cache采用免压缩容器，并由同进程真实writer
+以独立production凭证交接实际数据，避免马上重新复制、哈希和解压。`source_view_working_directory`可显式指定
+独占工作cache根目录，与持久结果根分开；工作cache的恢复/持久镜像由运行owner记录，不能覆盖旧view。
+旧cache/模型不换身份；resume仍走原attested loader。
+`source_input_stages.json`记录加载、投影/QC、拼接、写盘/核验与source账本的真实耗时和进程CPU；
+端点RSS不是峰值，native线程/GPU worker容量也不是实际利用率。完整云端峰值与吞吐另测后才调整merge并发。
+验证使用各任务独占的持久`--basetemp`，每轮新目录且先创建父目录；不使用共享pytest临时池清理未封存证据。
+
 用户于2026-09-18明确要求今后云端统一CPU总线程预算至少25、GPU worker容量至少4。
 集中配置为`configs/cloud_training_resources.json`；源/目标worker须消费资源解析器给出的实际原生线程预算，
 不能只在plan里写25而在调用处固定1。四worker时每worker分配6个数值线程，另保留调度线程；

@@ -427,7 +427,8 @@ def test_current_source_config_reaches_actual_inner_refit_and_frozen_catalog(tmp
                and task["source_program_config"] == resolved for task in planned["tasks"])
 
 
-def test_real_multistudy_group_merge_keeps_actual_eeg_labels_and_complete_membership(tmp_path):
+@pytest.mark.parametrize("separate_working_directory", [False, True])
+def test_real_multistudy_group_merge_keeps_actual_eeg_labels_and_complete_membership(tmp_path, separate_working_directory):
     from pathlib import Path
     from threading import BoundedSemaphore
 
@@ -461,7 +462,11 @@ def test_real_multistudy_group_merge_keeps_actual_eeg_labels_and_complete_member
              "excluded_source_datasets": ["BI2014a"]}
     plan = {"outer_folds": [outer], "_prepared_source_inputs": inputs,
             "_native_threads_per_worker": 1, "_source_load_slots": BoundedSemaphore(1)}
+    if separate_working_directory:
+        plan["source_view_working_directory"] = str(tmp_path / "independent_working_cache")
     resolved = _prepare_source_group_inputs(plan, tmp_path / "run/groups/00_leave_BI_six")
+    if separate_working_directory:
+        assert Path(resolved["outer_folds"][0]["source_cache"]).is_relative_to(tmp_path / "independent_working_cache")
     merged = load_epoch_dataset(resolved["outer_folds"][0]["source_cache"], validation="attested")
     validate_independent_source_input(merged, spec.record())
     SourceCatalog().validate_fold(outer, source_identity_axes(merged)[0])

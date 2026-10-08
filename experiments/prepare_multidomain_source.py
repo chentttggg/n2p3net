@@ -6,6 +6,7 @@ import argparse
 import sys
 from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -28,6 +29,7 @@ from data.epochs import (  # noqa: E402
     concatenate_epoch_datasets,
     load_epoch_dataset,
     loaded_epoch_cache_attestation,
+    produce_epoch_cache,
     save_epoch_dataset,
 )
 from train.runtime import (  # noqa: E402
@@ -51,30 +53,33 @@ def _prepare_source(
     reference_mode: str,
     missing_channel_policy: str = "require",
     reference_channel: str | None = None,
+    phases=None,
 ) -> tuple[EpochDataset, dict[str, object]]:
     namespace, path = source
-    dataset = load_epoch_dataset(path, require_labels=True, validation="attested")
+    with phases.phase("load_admitted_cache:" + namespace) if phases is not None else nullcontext():
+        dataset = load_epoch_dataset(path, require_labels=True, validation="attested")
     cache_attestation = loaded_epoch_cache_attestation(dataset)
     namespace_preexisting = dataset.provenance.get("subject_namespace") is not None
-    if reference_mode == "common_average":
-        aligned = ensure_common_channel_average_reference(dataset, channels)
-    elif missing_channel_policy == "mask" or reference_mode == "measured_channel":
-        aligned = adapt_observed_montage(dataset, channels, reference_channel=reference_channel)
-        if missing_channel_policy == "require" and not bool(aligned.trial_channel_mask.all()):
-            raise ValueError("unobserved source channels require an explicit mask policy")
-    else:
-        aligned = ensure_native_reference_selection(dataset, channels)
-    aligned = ensure_epoch_dataset_namespace(aligned, namespace)
-    aligned = annotate_source_domain(aligned, namespace)
-    candidate_metadata_projected = False
-    if event_contract == "binary_evidence":
-        aligned = project_binary_evidence_source_view(aligned)
-        projection = aligned.provenance["binary_evidence_projection"]
-        candidate_metadata_projected = bool(
-            projection["dropped_fields"]
-            or projection["dropped_metadata_columns"]
-            or projection["source_candidate_task_contract"] is not None
-        )
+    with phases.phase("project_reference_QC_and_identity:" + namespace) if phases is not None else nullcontext():
+        if reference_mode == "common_average":
+            aligned = ensure_common_channel_average_reference(dataset, channels)
+        elif missing_channel_policy == "mask" or reference_mode == "measured_channel":
+            aligned = adapt_observed_montage(dataset, channels, reference_channel=reference_channel)
+            if missing_channel_policy == "require" and not bool(aligned.trial_channel_mask.all()):
+                raise ValueError("unobserved source channels require an explicit mask policy")
+        else:
+            aligned = ensure_native_reference_selection(dataset, channels)
+        aligned = ensure_epoch_dataset_namespace(aligned, namespace)
+        aligned = annotate_source_domain(aligned, namespace)
+        candidate_metadata_projected = False
+        if event_contract == "binary_evidence":
+            aligned = project_binary_evidence_source_view(aligned)
+            projection = aligned.provenance["binary_evidence_projection"]
+            candidate_metadata_projected = bool(
+                projection["dropped_fields"]
+                or projection["dropped_metadata_columns"]
+                or projection["source_candidate_task_contract"] is not None
+            )
     return aligned, {
         "namespace": namespace,
         "namespace_preexisting": namespace_preexisting,
@@ -93,7 +98,7 @@ def _prepare_source(
     }
 
 
-def main(argv=None) -> None:
+def main(argv=None, *, retain_production=False, phases=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", action="append", type=_source_spec, required=True)
     parser.add_argument("--target-channels", required=True)
@@ -184,6 +189,7 @@ def main(argv=None) -> None:
                     reference_mode=args.reference_mode,
                     missing_channel_policy=args.missing_channel_policy,
                     reference_channel=args.reference_channel,
+                    phases=phases,
                 )
                 for source in args.source
             )
@@ -201,6 +207,7 @@ def main(argv=None) -> None:
                             reference_mode=args.reference_mode,
                             missing_channel_policy=args.missing_channel_policy,
                             reference_channel=args.reference_channel,
+                            phases=phases,
                         ),
                         args.source,
                     )
@@ -213,35 +220,40 @@ def main(argv=None) -> None:
         dataset.provenance.get("domain_adapter") != domain_adapter for dataset in adapted[1:]
     ):
         raise ValueError("multi-domain sources do not share one verified domain_adapter contract.")
-    merged = concatenate_epoch_datasets(
-        adapted,
-        name=args.name,
-        provenance={
-            "source": (
-                "explicit_multidomain_common_channel_car"
-                if args.reference_mode == "common_average"
-                else "explicit_multidomain_" + args.reference_mode + "_selection"
-            ),
-            "source_reference": reference,
-            "domain_adapter": dict(domain_adapter),
-            "target_channels": list(adapted[0].channel_names),
-            "event_contract": args.event_contract,
-            "reference_mode": args.reference_mode,
-            "missing_channel_policy": args.missing_channel_policy,
-            "reference_channel": args.reference_channel,
-            "source_loading": worker_plan.record(),
-            "source_domain_axis": {
-                "schema": SOURCE_DOMAIN_AXIS_SCHEMA,
-                "column": SOURCE_DOMAIN_COLUMN,
-                "domains": namespaces,
+    with phases.phase("concatenate_complete_study_views") if phases is not None else nullcontext():
+        merged = concatenate_epoch_datasets(
+            adapted,
+            name=args.name,
+            provenance={
+                "source": (
+                    "explicit_multidomain_common_channel_car"
+                    if args.reference_mode == "common_average"
+                    else "explicit_multidomain_" + args.reference_mode + "_selection"
+                ),
+                "source_reference": reference,
+                "domain_adapter": dict(domain_adapter),
+                "target_channels": list(adapted[0].channel_names),
+                "event_contract": args.event_contract,
+                "reference_mode": args.reference_mode,
+                "missing_channel_policy": args.missing_channel_policy,
+                "reference_channel": args.reference_channel,
+                "source_loading": worker_plan.record(),
+                "source_domain_axis": {
+                    "schema": SOURCE_DOMAIN_AXIS_SCHEMA,
+                    "column": SOURCE_DOMAIN_COLUMN,
+                    "domains": namespaces,
+                },
+                "sources": source_records,
             },
-            "sources": source_records,
-        },
-    )
+        )
     merged.provenance["identity_table_digest"] = (
         merged.identity_table.digest() if merged.identity_table is not None else None
     )
-    output = save_epoch_dataset(output_path, merged, compressed=not args.uncompressed)
+    with phases.phase("write_working_cache_validate_and_hash") if phases is not None else nullcontext():
+        production = (produce_epoch_cache(output_path, merged, compressed=not args.uncompressed)
+                      if retain_production else None)
+        output = production.path if production is not None else save_epoch_dataset(
+            output_path, merged, compressed=not args.uncompressed)
     print(
         f"[multidomain] {output} X={merged.X.shape} "
         f"subjects={len(set(merged.subject_ids))} "
@@ -250,6 +262,7 @@ def main(argv=None) -> None:
         f"threads_per_worker={worker_plan.threads_per_worker}",
         flush=True,
     )
+    return production
 
 
 if __name__ == "__main__":
