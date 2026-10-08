@@ -4,6 +4,8 @@
 
 对自适应清理，完整增量是`T(x+h)-T(x)`，一般不等于单独`T(h)-T(0)`或冻结一次的线性映射。B10经验covariance factor只描述指定base与draw分布，不能代替固定Gaussian的`FΣFᵀ`；B11重尾模型仅noise受共同Gamma尺度作用，独立ERP/state Gaussian不随该scale重标。两者仍须由实际调用者保持同physical grid、单位、角色与读取截止。
 
+B07历史研究adapter以实际保存的 `F=noise.whiten(I)` 解 `F L_K=I`，保unit-innovation时间协方差及一次Σ，full/prefix使用同L_K的leading block和同Z坐标。它不另编AR/Toeplitz或重新启动prefix，不支持rectangular conditional-prefix。所有明示actual public onset须早于available截止，observed end不得越过截止；预公开scheduled clock是不同合同，不能改标事后actual clock。相同fs/channel/operator字符串和反重复检查只核一致性，真实历史完整性、参考、C/held边界和权限仍须caller证明。
+
 [当前选择执行关系](evidence/current_public_consumers_20261008.zh.md)核source原actualreceipt与target capability/实际selection证据，允许经证明的相同SOS/padding/closed-grid/FFT/first-T程序族，不把不同授权长度的F_N说成相同。实测BNCI Cz6投影与原8导physical identity分列；raw256Hz/unfiltered与trial128Hz179/finite-zero的时间合同不同，不以共同空间消除该差异。
 
 [当前公共输入准入](evidence/public_source_pipeline_20261008.zh.md)使用新完整finite-zero none/128Hz179声明，父mean_only与旧raw/cache保持原身份；prepared程序绑定实际18dafd6源码，后续训练不得改签。源1964请求中仅BI2012已证常零的subject3 online记录明确排除，training保留。GTN实际245 NIX/TXT exact keys和一手论文支撑源内匿名dataset-participant authority，全局person linkage未独立验证。target534原记录与123 participant group分别记分母。

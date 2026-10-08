@@ -25,7 +25,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
 | B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec冻结响应与真实编译包、可选诊断分离 | 旧M1真实噪声×ERP归因及joint MLE，不把ACF改善当效能 |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
-| B07 字典/历史 | A0/A1与五数组portable编译态、端点/容量、model/ensemble无重编译消费；有限整selection joint历史与共享β边缘化参考 | actual模型/合法完整history adapter与保存重放、导数/latency、长history和随机效应 |
+| B07 字典/历史 | A0/A1与五数组portable编译态、端点/容量、model/ensemble无重编译消费；有限整selection joint历史、共享β边缘化及实际保存模型研究adapter | 真实完整history/权限caller和组合保存重放、导数/latency、长history和随机效应 |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
 | B09 空间 | 一般signal-prior后验、A01六格及八人48格/MN商空间验收 | Pz4无额外hit且NLL增，不晋升；learned prior与joint MLE另验 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |

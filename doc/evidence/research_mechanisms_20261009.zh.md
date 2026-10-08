@@ -43,6 +43,12 @@ CPU1、单worker/GPU0；actualPython body墙钟16.632s/CPU16.375s，含启动22.
 
 无 nuisance 时使用 proper Gaussian density；有 nuisance 时使用 full/prefix 相同坐标体积的共同 sigma-finite measure。prefix 识别共同 nuisance 后，比值定义 normalized conditional-tail density；单个full marginal仍不称proper密度，prefix缺列秩明确拒绝。future 状态可以因冻结 joint prior 与已观察 past 的相关性更新权重，未读取 future EEG。它是每状态 dense 小矩阵研究参考，完整历史、真实 source/channel/reference/time 与数据权限由外部 caller 证明；实际模型 adapter、保存重放、长历史扩展、latency、随机效应及真实效能另验。生产未知 overlap 拒绝保持。
 
+## 实际模型到历史参考的接线
+
+`research.continuous_history_adapter` 已由独立数学/调用链审阅后迁入长期research owner，source SHA `406aff8360813fa5967c788f97ab6ef9b6b523f1b5f6e854040696e23f91b14c` 保持原审字节。实际model integrity、原basis/M/R/Σ与stored noise runtime直接消费；以 `noise.whiten(I)` 的inverse取得同joint时间covariance，full/prefix保共同Z，不再乘innovation variance诊断值。rectangular启动和未发生actual public clocks明确拒绝；source/reference/历史完整性与权限仍由caller举证，生产未知overlap门未放宽。
+
+原保存软件包及真实A01状态抽取的10项、无邻居原conditional-score parity1项各保原test版本；可分发module fixture改用canonical C、一次toy fit/save，必要迁移3项通过。它们有覆盖重叠，不合计成14独立反例或最终10项全集新通过。迁入测试只改package import及排序，SHA `7de69eca74ffd781d8edeb5efc50c6b5b7eb2e6b2bec4d644be9d3d170f717a0`；root编译与仓库外真实import通过，未重复三项绿色。独立结论见本轮 `REVIEWS/B07_ADAPTER_SCIENCE.zh.md` 与binding。它仍是dense小矩阵研究接口，没有新的可部署组合包、长期history吞吐、完整权限caller或新效能。
+
 ## 八人48格signal-prior归因
 
 后续固定八人A01–A08 × native8/Cz7 × noise-tied Σ/energy-matched diagonal I/Pz4，共48格，CAR同商重复省去。实际source archive `f6101b585e6871595180a6147150833780a37054cf249210e8e357c42ddadd4a`，manifest `6e08c3fbab731351eede0097e852a78c5705c257983ed0d4a4c919f9f396c2df`，479成员、base `4ac444c`；新source before/after与八份原MAT均相同。48/48完成并独立验收，typed failure/reference-unavailable0，全包保存重放一致。

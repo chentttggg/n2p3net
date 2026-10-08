@@ -113,3 +113,5 @@ tests/train/test_source_ledger_validation.py text eol=lf
 src/research/response_history_identification.py text eol=lf
 tests/research/test_response_history_identification.py text eol=lf
 tests/train/test_legacy_input_admission.py text eol=lf
+src/research/continuous_history_adapter.py text eol=lf
+tests/research/test_continuous_history_adapter.py text eol=lf
