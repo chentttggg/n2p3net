@@ -2,13 +2,13 @@
 
 2026-10-08最新执行规则覆盖下文待跑三seed数量：日常科研使用20260918单个完整source→target程序，重大版本校验才使用20260918/19/20三个独立程序。当前公共科研对应四个source checkpoint流程，各自选择与fresh refit，初始八个逻辑NN fit；B12两个公共面板继续按真实预算和requested账本验收。历史三seed设计与已执行身份不改写。科研线接B08可识别prior、B07字典可移植与B05/B06/B09机制，B14云底座和B12基础矩阵并行；各项代码、软件验证、公共效能分别见[集成状态](evidence/research_integration_20261008.zh.md)。
 
-[当前目标软件切片](evidence/current_public_consumers_20261008.zh.md)已合入6295cde：fixed32/b64设计配方与匹配scratch、固定C质量loss、actualprior/β、观测Cz6 raw/原8导控制、指定primary温度与binary概率池；真实source K0/OOF和联合零fit源检查通过。原源启动因root非法scope结束、NN0且四view完整保留；修development后的2394直接复用四view，于06:53:03 UTC因worker突然终止失败，原始原因未知、已完成checkpoint0。输入完整基准与终态证据见[吞吐记录](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)；字节准入/副本消除和退出诊断完成后恢复完整12程序。源/目标真实效能仍分别按终态和全包重放验收。
+[当前目标软件切片](evidence/current_public_consumers_20261008.zh.md)已实现fixed32/b64配方、匹配scratch、固定C质量loss、actualprior/β、观测Cz6 raw/原8导控制、primary温度与binary概率池；真实source K0/OOF和联合零fit源检查通过。已准备四份完整source view；上次完整源运行因worker突然终止失败，原因未确认、完整checkpoint为0，实际输入与终态见[吞吐记录](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)。云实例由用户关闭，当前先完成源码集成；恢复时按四个source流程×一个科研seed执行选择与fresh refit，接两个目标面板。源/目标效能按完整requested账本与原包重放验收。
 
-2026-10-08 [当前源程序实施](evidence/public_source_pipeline_20261008.zh.md)已合入：source-only三seed各自participant选择/fresh refit、β1和实际验证人数、两轴零关键遗留。实际十二库1963记录/1430742 epoch与四库123 target groups已准备成功；12 source checkpoint完整程序从fd62冻结启动。下一切片接目标fixed-mass风险、binary posterior与candidate共享Cz raw空间，公共效能尚未验收。
+2026-10-08 [源程序实施](evidence/public_source_pipeline_20261008.zh.md)已提供source-only participant选择/fresh refit、β1和实际验证人数；支持显式一个或三个完整seed。十二库1963记录/1430742 epoch与四库123 target groups已准备，prepared来源保持原身份。本轮目标fixed-mass风险、binary posterior与candidate共享Cz raw空间已接软件入口，公共效能尚未验收。
 
 用户于2026-10-08允许按当前范式重新设计；下方几周前的B7剂量、SupCon/MMD、60/90等dated方案保留历史来源，不能自动作为本轮必跑任务。科研子代理不设我方额度或人为时间期限，质量优先；15块/123项整体范围仍按实际出口逐项闭合。
 
-[B12独立前缀代码](evidence/independent_prefix_20261008.zh.md)已实现、独立两轴通过并合入B07主树：实际预算、K0、两温度程序共享状态、配对seed/source producer和binary去重/统计合同已闭合。主树组合验证和新A01重放通过；公共三source流程、真实新prepared库存、共享云调度和完整两面板仍待落实。B08完整1344后台续跑保持独立冻结源。
+[B12独立前缀代码](evidence/independent_prefix_20261008.zh.md)已实现实际预算、K0、两温度程序共享状态、配对seed/source producer及binary去重/统计合同。既有组合软件验证和A01重放保其执行身份；B14共享调度正在科研树逐文件合入，完整source→target两面板和合并源码运行仍待验收。旧B08完整1344格仍由原冻结源独立解释，当前离线。
 
 ## 2026-10-05 愿望清单与优先任务分块方案
 
@@ -22,7 +22,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B01 信号/支持 | BNCI合法原字节、Cal/held无标签view与时间履历 | 其他candidate数据adapter与硬件/光学证据 |
 | B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
 | B03 校准/混合 | 固定算术池及完整C内分组温度 | 独立泛化/复杂gating另验收 |
-| B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整三source→target seed与同批互补性 |
+| B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
 | B05 AR/噪声 | 固定32前缀、精确梯度、576格M1及诊断 | 逐通道私有谱/ERP损伤归因 |
 | B06 边界条件 | mean/Schur、完整T测量、实际operator只读入口 | 未知state辨识、最终预处理T、E1–E3 |
 | B07 字典/历史 | A0/A1物理字典、端点、真实容量关系 | 导数、合法完整history、邻居积分、随机效应 |
@@ -30,7 +30,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B09 空间 | 成熟ERP/native布局锚点已具备 | 均值/空间prior与跨人稳定性研究 |
 | B10 输入污染 | 有限算子/工频/EOG现有研究入口与反例 | 完整分污染/可用时间配对实验 |
 | B11 动态/稳健 | observability/识别研究规格 | 明确失配后的实际joint/重尾模型 |
-| B12 公共流程 | 全局code/artifact审查；独立C/test主线正在实施 | 四库binary/合法candidate、K0/预算、三完整流程 |
+| B12 公共流程 | 全局code/artifact审查；独立C/test入口与B14共同owner | 四库binary/合法candidate、K0/预算、一个完整科研流程 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
 | B14 工程/吞吐 | 源冻结、原件/镜像保留、内部owner及两轴源码评估 | B12共享数据/rolling资源排程、云实际25CPU/4GPUworkers |
 
@@ -50,7 +50,7 @@ M1使用[冻结计划](assets/continuous_fixed_prefix_20261005/m1_plan.json)：8
 1. B00评价/选择、B01信号/支持先固定；B02专家Interface、B03C内概率校准、B04神经/matched scratch构成主线。
 2. B05AR、B06边界、B07字典、B08先验、B09空间、B10输入算子在B00/B01后并行；B11动态/稳健模型按识别前置进入。
 3. B14源绑定/工程精简/共享缓存/吞吐贯穿主线；B12基础四专家复核只依赖B04/B14，不等待所有机制或EA。
-4. B12按四库binary与真实membership候选两个面板、K0/200/800/2000请求和三个完整source→target seed执行；variant追加自己的验收依赖。
+4. B12按四库binary与真实membership候选两个面板、K0/200/800/2000请求和20260918完整source→target seed执行；variant追加自己的验收依赖，大版本另验三个seed。
 5. B13成人确认用冻结程序后的新数据与单独协议；历史0.771/1.069只作开发定位，新准入采用同批配对差值、coverage及概率风险。
 
 机器可读[计划](assets/deep_research_plan_20261005/research_plan.json)、[逐愿望覆盖](assets/deep_research_plan_20261005/coverage.zh.md)

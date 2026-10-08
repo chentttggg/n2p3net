@@ -109,7 +109,7 @@ M1从物理冻结的materialized源码运行，绑定计划/原MAT哈希/venv；
 有并发原树时采用已绑定当前字节的隔离worktree，分块提交，交付净树；不reset/clean/stash他人内容。
 
 2026-10-04按实际dirty tree先物理冻结，再实施和独立双轴复审，见[实施与验收](evidence/system_implementation_20261004.zh.md)。
-`experiments/freeze_source_snapshot.py`包含源码、测试、配置、六指南及运行JSON/HTML/CSS/JS和许可证；
+`experiments/freeze_source_snapshot.py`包含源码、测试、配置、六指南、Git换行规则及运行JSON/HTML/CSS/JS和许可证；
 逐成员核对archive与当前字节。已有脏改动用改前快照区分，不能拿Git HEAD差异替代本轮范围。
 历史RED探针保留，修后结果另记；全套通过也不能替代真实输入、失败分母和数学反例审查。
 
@@ -150,9 +150,9 @@ valid_samples_exclusive_end=289814，其余不裁。BI2012直接消费training/o
 实施按[分段验收清单](evidence/unified_model_plan_20260916.zh.md#71-必过反例不以旧全套替代)推进：
 先对应合同/反例与Ruff，跨主链最终集成再做完整套件。新架构、loss组合、采样风险、源中心尺度、
 BN状态或score定义变化均进入checkpoint/cache/resume身份；旧归档不重标。
-每个较大模块完成后用`experiments/freeze_source_snapshot.py --output <新目录>`物理压缩源码并核验逐文件摘要；
-阶段快照可以包含其他尚未验收的并行模块，整体完成后另存最终验收快照。证据文档和日志另作压缩清单，
-不依赖源码helper递归收录`doc/evidence/`。整理仅处理本次临时材料，不通过reset清空并行dirty工作。
+实际执行前用`experiments/freeze_source_snapshot.py --output <新目录>`冻结将要执行的合并源码并核验逐文件摘要；
+不为每次修复另留完整微冻结。阶段落地后保当前骨干、主要可恢复版本及最终模型/预测所必需的真实producer来源，
+已解决失败、重复review副本和一次性工具退役。未关闭问题保必要反例与原状态；不清除并行dirty工作、原数据或唯一结果。
 统一主链最终全套2095通过、4跳过，定向反例及六份阶段源码校验见
 [统一程序实施与验收](evidence/domain_transfer_major_20260920.zh.md)；最终源码与验证证据已分别物理冻结。
 

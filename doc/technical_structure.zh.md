@@ -12,11 +12,15 @@
 
 ## 主链与接口
 
+当前[集成骨干](evidence/research_integration_20261008.zh.md)以`dictionary_artifact`持有字典编译/准入，`temporal_noise/5`持有实际startup数组与scales，`continuous_decision`持有全C/prior生产QR后验；load消费原数值态，整模型仍核同implementation字节。B05一般vec冻结响应可通过真实行/列置换消费B09空间后验，评分noise独立，不重新拟合后验。数值不可识别只使对应连续专家/decision不可用，正常peer保留；artifact/输入合同错误继续传播。
+
+`research.input_contamination`复用真实harmonic/finite程序，测完整自适应`T(x+h)-T(x)`及明示扰动分布下的经验矩，接原operator CLI的`audit-clean`。`research.dynamic_identification`只作noise-only Gamma尺度与独立proper Gaussian不确定性的积分参考；prefix条件密度是joint/prefix两个生成积分的比，不是固定prior权重平均conditional输出。二者不新增生产fitter或默认算法，也不签发原始观测授权。
+
 [B07 `transfer.response_dictionary`](evidence/erp_dictionary_20261006.zh.md)拥有analytic spec、actual basis/grid、E/N与immutable数值状态；`ContinuousDecisionModel`仍唯一fit/score owner，kernel prior、精确目标、ensemble/OOF和CLI消费同basis。capacity直接消费actual fit statistics及compiled reference/design，cal-prior三份dict mirror已删除；ridge保存一次真实R/rhs并与precision/M/H/noise或legacyφ关系绑定。字典包声明base_model_schema并保存物理/约束数值，不能仅改metadata换函数或重签容量。
 
 [g-prior](evidence/calibration_g_prior_20261006.zh.md)由`transfer.kernel_prior`编译canonical spec与immutable precision root；continuous初始化、NumPy joint QR和Torch objective共享该root。新g `/5`保存prior/reference与actual-C posterior statistics数值载荷，load核root/spec/C/source及actual posterior关系；ensemble raw program与producer匹配。legacy ridge数值路径独立，runner已整合g与same-ridge AR面板隔离及structured rank failure；历史M1续跑仍只准入同src bytes。
 compiler保存原design root以重核投影数值rank；同一个`validate_binding`将reference record身份/支持/design SHA与model actual C ledger、basis/input绑定交叉核验，避免两份self-summary各自成立而关系不成立。
-[trace控制](evidence/calibration_trace_control_20261006.zh.md)与g共享`uses_calibration_reference`和九数组，但使用独立model `/6`；scalar precision由compiler数值root派生，callers不重造G。runner的`fixed_reference_kernel_prior`面板核完整28格并直接用原requested指标owner产生12组同g形状对照；same-ridge AR面板继续单独归因。
+[trace控制](evidence/calibration_trace_control_20261006.zh.md)与g共享`uses_calibration_reference`，使用独立model `/6`；scalar precision由compiler数值root派生，callers不重造G。当前fit包保存12个数值数组（原prior/C状态与生产posterior Q/R/response）加metadata，旧九数组包由原执行源重放。runner的`fixed_reference_kernel_prior`面板核完整28格并直接用原requested指标owner产生12组同g形状对照；same-ridge AR面板继续单独归因。
 实际矩阵后改`_kernel_fit_statistics`为nuisance-block QR及信息root/正交响应压缩；`score`载荷由method `all_C_actual_noise_per_record_diffuse_QR_response`明确表示`Q_DᵀY`，不再表示`DᵀY`。posterior核验使用`R M=b`后向关系，避免两次normal-equation solve放大病态；旧包由自己的冻结source解释。runner滚动持有最多worker数的participant任务，共享abort signal只在真正合同失败后停下一fit，合法rank/fit failure仍保留requested输出。
 随后v2实际失败促成`_kernel_posterior_factors`同一owner：`_fit_fixed_prefix`最终只用原joint程序算conditional scatter/logdet/Σ，再从完整C的一次统计压缩发布M/H，model保存同一统计对象。fit与load使用同precision/root/response求解，未宽阈值、改变先验或重造reference；prefix→tail的条件密度/漂移测度保持原函数。
 
