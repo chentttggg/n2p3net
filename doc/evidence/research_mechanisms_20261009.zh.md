@@ -59,6 +59,32 @@ finiteν正尺度interior MLE要求 `νJ_positive>R_zero`，mixed zero也可能�
 
 读取区间显式声明，不从flatten长度猜native时间；caller仍证明权限/physical map、fixed producer和真实noise独立。C估计K0是plugin，whole-program OOF须在inner train重拟它或明确conditional比较。更换noise law后，旧Gaussian C的ERP后验不能重签为新t exact posterior，完整C共享β/各λ联合更新正在下一研究切片。两个独立审阅见本轮 `REVIEWS/B11_IDENTIFICATION_SCIENCE.zh.md` 和 `B11_LASTING_OWNER.zh.md`；当前是moderate finiteν、小矩阵reference，无默认ν/生产接入/真实效能主张。
 
+## 原M1完整状态的只读归因
+
+原八人×六个C-inner fold×六阶×两估计器的576模型在另一执行工作树可达，全部文件与complete M1原档SHA `edcb65ae2405b3af67820b76b0708f170e0bd4eb31b1148c78ca9094b58e7539` 核对，143原包复用/433新fit身份保持。原continuous source `e982d26d…`、TemporalNoise `/4` source `9fc7d122…`，没有用当前 `/5` 构造/load旧模型、重评分或重fit。每臂48个相关C-fold状态来自8人，不称48独立participant。
+
+| 原臂 | 原hit | 原NLL | increment norm / AR8 Burg，中位 | full target norm / AR8 Burg，中位 | given-noise kernel df，中位 |
+|---|---:|---:|---:|---:|---:|
+| AR8 Burg | .6667 | 6.1514 | 1 | 1 | 7.0937 |
+| AR32 Burg | .6250 | 7.3081 | 1.0325 | 1.0140 | 7.3635 |
+| AR8 profile | .3333 | 3.4380 | .009501 | .010745 | 5.7046 |
+| AR16 profile | 0 | 3.6979 | .000800 | .000577 | 7.9592 |
+| AR32 profile | 0 | 3.5781 | .000307 | .000755 | 8.1125 |
+
+target increment为 `ΦM_delta`，完整target为 `Φ(M_common+M_delta)`，posterior保common/increment交叉块。AR32 profile相对同阶Burg的increment norm中位 `.00029829`，校准目标每tail行降低中位36.8596，但原效能联合门所有11替代臂均未过；不晋升默认，也不把拟合均值变小说成真实生理ERP消失。
+
+固定AR形状/λ/C时，MN方程 `H=(G+λI)⁻¹, M=H S` 中Σ消去；Σ只变不会独自令M/H缩小，但会改变physical prior/posterior与概率尺度。实际profile一起改变AR的G/S、均值、Σ及noise-tied prior，是完整耦合程序。AR16/32的η没有普遍触8边界、df没有降到0；不能单因解释成过强白化或设计无信息。
+
+C状态重建的最高8个信息方向与endpoint value/first-difference rowspace overlap，中位AR32 profile `.999946`、AR32 Burg `.719476`。它来自固定Gaussian坐标的已有H，与原raw C独立Gram复算不同；支持研究finite support/端点交互，尚不证明hard endpoint改善held。下一切片固定完整physical response/noise做可归因控制，再用一般vec C fit保持同一physical prior，最后明确不同函数空间与实际df。旧held已见，不据此选择新阶、prior或默认。
+
+作者完整结果及绑定在本轮 `B05_ATTRIBUTION/ATTRIBUTION.zh.md`、`delivery.json`、全部576state与12臂summary。独立审阅已核全部model/ensemble身份、288个同阶initializer/目标关系、12臂原概率宏指标和11个原开发门；另从30份原NPZ独算波形/cross covariance/df/η与endpoint overlap，294项summary独立归约一致。未发现来源或公式错贴，endpoint overlap独算最大差 `3.37e-10`。其结论保本轮 `REVIEWS/B05_M1_ATTRIBUTION.zh.md` 与binding，不将状态归因签成新fitter或独有因果证明。
+
+## 本轮统一软件入口核验
+
+ERP入口的已删除私有digest调用已修正，原compact dtype/shape/bytes关系保持，真实仓库外CLI help通过。459个Python文件的4665个仓库内显式from-import静态检查未见缺符号；随后实际 `pytest --collect-only tests` exit0，收集217个测试模块/3179用例、源码前后不变。收集没有执行测试断言，完整integrated suite仍待实际足额内存；不降低原native资源声明或重启用户关闭的云。
+
+长期owner落实后删除六份已确认等价的prototype/proposal源码与测试副本及首批bytecode，共80,582文本字节；原source producer、执行receipt、数据/cache、模型和最终结果保留。他人或下一批科研WIP未改。验证身份见本轮 `VALIDATION/research_ingress/`。
+
 ## 八人48格signal-prior归因
 
 后续固定八人A01–A08 × native8/Cz7 × noise-tied Σ/energy-matched diagonal I/Pz4，共48格，CAR同商重复省去。实际source archive `f6101b585e6871595180a6147150833780a37054cf249210e8e357c42ddadd4a`，manifest `6e08c3fbab731351eede0097e852a78c5705c257983ed0d4a4c919f9f396c2df`，479成员、base `4ac444c`；新source before/after与八份原MAT均相同。48/48完成并独立验收，typed failure/reference-unavailable0，全包保存重放一致。
