@@ -15,7 +15,7 @@
 | B09空间 | native/reference/CAR结构与输出gain；一般vec signal prior、冻结noise因子传播、保存生产QR与只读诊断CLI | 真实A01六格和八人48格归因已完成并验收，Pz4无额外hit且NLL升；联合MLE及新效能另验；工作站入口需共同授权owner另接 |
 | B14/B12 | 已审阅e51输入的24个owned文件逐一合入，epoch采样委托共同合同；requested任务、输入/产物预算和单seed源/目标共享owner | 最终composition已审阅合入；3项Linux并发case、真实25CPU/4GPU吞吐与完整公共两面板仍待验 |
 | B10输入污染 | 已实现完整自适应程序增量和条件经验矩，复用实际harmonic/finite owner | 14项实际pipeline反例和原CLI审计入口已验；真实污染分轴配对及固定θ模型另验 |
-| B11重尾参考 | noise-only Gamma尺度与独立proper Gaussian ERP/state的真实joint/prefix积分比；作者28初验与3关联复验 | 独立数学复审已关闭中等Gamma归一化精度错误，10高精度case通过；真实noise/ERP辨识和公共接线仍待验；不选择默认ν或自动部署 |
+| B11重尾参考 | noise-only Gamma与proper Gaussian积分比；fixed-shape projected尺度/ν与Fisher参考，rank截断误识noise已独立闭合 | 实际K0/独立noise/C权限、完整新β/λ后验和公共接线仍待验；不选择默认ν或自动部署 |
 
 B07的完整模型测试原27项26通过、1个completion实际fit误拒，已独立诊断为显式Q生成误差未纳入逐列后向预算。修复保原producer，不重QR覆盖；9项必要completed-fit/保存/held及弱方向攻击已通过。实际源码、失败和通过日志分列，未合计为整仓通过。
 
@@ -46,3 +46,5 @@ B05使用row-major vec(B)，B09使用column-major vec(B)；未来组合必须用
 B07有限history参考保完整joint label states及shared β crosscov，以两个生成marginal的比更新prefix后邻状态权重。必要promotion/跨时间相关与固定currentprior反例5项通过，默认未知overlap拒绝未放宽；dense每state参考仅适用小矩阵，外部完整history/actualtime/source授权与生产保存接入尚未完成。
 
 L1旧source-prior selector的nested spawn已在 `64481f0` 复用现有 `install_input_admission`，传父进程实际proxy和taskID，不另建资源owner或改变source科学配方。精准caller SHA `d7f4df09bf2d347cea150f5132e08180b8195669a7fff2fd70135a4c37d1e0bf` 与test SHA `72b967f557bddaac675c2b459b163736f2048d9ca58eff9d8386f9e34a2fcaa9` 均等于上游实际执行字节。两项最高selector接缝零fit探针原2失败、修后2通过：真实双spawn共享snapshot账，normal归还与native exit73后父 `retire_task` 回收分别验证；committed JSON继续收费。root只读复核、Ruff、编译和diff检查通过，未重跑这两个绿色case，未把替换的科学body当效能。一次最终整合suite与原pending三项native组合仍待足额内存环境，不重启已关闭云实例。
+
+ERP比较入口漏改的 `_array_identity` 已在 `ecfcba5` 删除私有import，直接消费共同 `data.digests.compact_array_digest`；原encoding/保存label关系保留。实际旧入口ImportError、新caller仓库外help成功及最高parent标签dtype攻击验收各保来源；不恢复alias。静态遍历当时459个Python文件的4665个仓库内显式from-import未见其它缺失符号，不能替代完整运行套件。B07实际模型adapter已进入research owner；B11 projected尺度参考按独立数学/迁移delta审阅落地，源/test及17unique实际case/6未执行分别记录于[机制证据](research_mechanisms_20261009.zh.md)。

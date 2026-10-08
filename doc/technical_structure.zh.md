@@ -18,6 +18,8 @@
 
 [B07 `transfer.response_dictionary`](evidence/erp_dictionary_20261006.zh.md)拥有analytic spec、actual basis/grid、E/N与immutable数值状态；`ContinuousDecisionModel`仍唯一fit/score owner，kernel prior、精确目标、ensemble/OOF和CLI消费同basis。capacity直接消费actual fit statistics及compiled reference/design，cal-prior三份dict mirror已删除；ridge保存一次真实R/rhs并与precision/M/H/noise或legacyφ关系绑定。字典包声明base_model_schema并保存物理/约束数值，不能仅改metadata换函数或重签容量。
 
+`research.noise_scale_identification`在固定physical noise root、完整声明ERP/state列空间及独立decision尺度模型下生成proper noise contrasts，拟相对τ²和明示ν，并提供完整decision的C内比较及模型内Fisher。actual stored rank与白化resolved rank不一致时拒绝，不把弱ERP方向改名noise；读取区间由caller显式供应，不从flatten维数猜native时间。它是小矩阵reference，不拟freeΣ、未知state或完整新β后验。
+
 [g-prior](evidence/calibration_g_prior_20261006.zh.md)由`transfer.kernel_prior`编译canonical spec与immutable precision root；continuous初始化、NumPy joint QR和Torch objective共享该root。新g `/5`保存prior/reference与actual-C posterior statistics数值载荷，load核root/spec/C/source及actual posterior关系；ensemble raw program与producer匹配。legacy ridge数值路径独立，runner已整合g与same-ridge AR面板隔离及structured rank failure；历史M1续跑仍只准入同src bytes。
 compiler保存原design root以重核投影数值rank；同一个`validate_binding`将reference record身份/支持/design SHA与model actual C ledger、basis/input绑定交叉核验，避免两份self-summary各自成立而关系不成立。
 [trace控制](evidence/calibration_trace_control_20261006.zh.md)与g共享`uses_calibration_reference`，使用独立model `/6`；scalar precision由compiler数值root派生，callers不重造G。当前fit包保存12个数值数组（原prior/C状态与生产posterior Q/R/response）加metadata，旧九数组包由原执行源重放。runner的`fixed_reference_kernel_prior`面板核完整28格并直接用原requested指标owner产生12组同g形状对照；same-ridge AR面板继续单独归因。

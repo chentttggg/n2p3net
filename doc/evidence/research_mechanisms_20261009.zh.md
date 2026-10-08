@@ -49,6 +49,16 @@ CPU1、单worker/GPU0；actualPython body墙钟16.632s/CPU16.375s，含启动22.
 
 原保存软件包及真实A01状态抽取的10项、无邻居原conditional-score parity1项各保原test版本；可分发module fixture改用canonical C、一次toy fit/save，必要迁移3项通过。它们有覆盖重叠，不合计成14独立反例或最终10项全集新通过。迁入测试只改package import及排序，SHA `7de69eca74ffd781d8edeb5efc50c6b5b7eb2e6b2bec4d644be9d3d170f717a0`；root编译与仓库外真实import通过，未重复三项绿色。独立结论见本轮 `REVIEWS/B07_ADAPTER_SCIENCE.zh.md` 与binding。它仍是dense小矩阵研究接口，没有新的可部署组合包、长期history吞吐、完整权限caller或新效能。
 
+## 噪声尺度的可识别投影参考
+
+`research.noise_scale_identification` source SHA `8fcd27e0899457414a45d28a90906b5b0cb91690623e941ad8bbde3172d7549f` 已经独立数学与迁移接口审查后落地。给定fixed K0和完整ERP/state/nuisance span，以白化正交补消除共享β，包括其真正落在该span的Gaussian不确定性；只估投影里的相对τ²/明示ν。投影看不到blind noise方向，不能称freeΣ、未知state或full joint MLE。
+
+初版静默rank截断曾将近共线满rank的纯ERP解释为noise；actual binary64精确rank与白化resolved rank不符时现明确拒绝，未隐加β幅度界。17个迁移相关unique case通过、6个仅收集，另原18组研究/高精度及独立直接Gamma/Beta积分保原源码，不签23全绿。正式test迁入只调整import排序，SHA `25ea1ff82370768118d45b35caa5e1367ceeb56d5a18c0f730c1860677302b41`，无新增运行依赖。
+
+finiteν正尺度interior MLE要求 `νJ_positive>R_zero`，mixed zero也可能只有边界sup。单个decision自由τ²时ν profile严格增加、sup在Gaussian∞；这不否定t族的population结构可识别。模型内 `I_logτ²=rν/[2(ν+r+2)]` 随同decision维数r饱和到ν/2，时间/通道数不替代独立λ draw数。positive Fisher或optimizer收敛不能签真实ν稳定。ν≤2不报告finite covariance；explicit∞控制独立拟尺度，C folds按完整decision划分。
+
+读取区间显式声明，不从flatten长度猜native时间；caller仍证明权限/physical map、fixed producer和真实noise独立。C估计K0是plugin，whole-program OOF须在inner train重拟它或明确conditional比较。更换noise law后，旧Gaussian C的ERP后验不能重签为新t exact posterior，完整C共享β/各λ联合更新正在下一研究切片。两个独立审阅见本轮 `REVIEWS/B11_IDENTIFICATION_SCIENCE.zh.md` 和 `B11_LASTING_OWNER.zh.md`；当前是moderate finiteν、小矩阵reference，无默认ν/生产接入/真实效能主张。
+
 ## 八人48格signal-prior归因
 
 后续固定八人A01–A08 × native8/Cz7 × noise-tied Σ/energy-matched diagonal I/Pz4，共48格，CAR同商重复省去。实际source archive `f6101b585e6871595180a6147150833780a37054cf249210e8e357c42ddadd4a`，manifest `6e08c3fbab731351eede0097e852a78c5705c257983ed0d4a4c919f9f396c2df`，479成员、base `4ac444c`；新source before/after与八份原MAT均相同。48/48完成并独立验收，typed failure/reference-unavailable0，全包保存重放一致。
