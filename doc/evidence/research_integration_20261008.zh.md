@@ -15,7 +15,7 @@
 | B09空间 | native/reference/CAR结构与输出gain；一般vec signal prior、冻结noise因子传播、保存生产QR与只读诊断CLI | 真实A01六格和八人48格归因已完成并验收，Pz4无额外hit且NLL升；联合MLE及新效能另验；工作站入口需共同授权owner另接 |
 | B14/B12 | 已审阅e51输入的24个owned文件逐一合入，epoch采样委托共同合同；requested任务、输入/产物预算和单seed源/目标共享owner | 最终composition已审阅合入；3项Linux并发case、真实25CPU/4GPU吞吐与完整公共两面板仍待验 |
 | B10输入污染 | 已实现完整自适应程序增量和条件经验矩，复用实际harmonic/finite owner | 14项实际pipeline反例和原CLI审计入口已验；真实污染分轴配对及固定θ模型另验 |
-| B11重尾参考 | noise-only Gamma与proper Gaussian积分比；fixed-shape projected尺度/ν与Fisher参考，rank截断误识noise已独立闭合 | 实际K0/独立noise/C权限、完整新β/λ后验和公共接线仍待验；不选择默认ν或自动部署 |
+| B11重尾参考 | projected尺度/ν与Fisher；全C共享β/各λ联合参考、有限规则同measure归一修复及同模型Gibbs/prefix混合已落地 | 实际K0/独立noise/C权限、实际行数/内存伸缩、nuisance和公共接线另验；不默认ν或认证多链遍历全部模态 |
 
 B07的完整模型测试原27项26通过、1个completion实际fit误拒，已独立诊断为显式Q生成误差未纳入逐列后向预算。修复保原producer，不重QR覆盖；9项必要completed-fit/保存/held及弱方向攻击已通过。实际源码、失败和通过日志分列，未合计为整仓通过。
 

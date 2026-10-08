@@ -97,6 +97,18 @@ C状态重建的最高8个信息方向与endpoint value/first-difference rowspac
 
 它是在给定frozen noise/plugin参数下读全授权C的Gaussian后验，不估AR/Σ或积分hyperparameters。实际C labels/design/history、producer、绝对时间与读权限仍由外部caller证明。数组保存重放说明软件状态可恢复，尚不是正式持久包篡改/producer认证；真实归因矩阵与joint MLE另验。
 
+## 全C共享response与noise尺度联合推断
+
+`c94c0a1` 落实 `research.joint_response_scale`，physical β prior与noise scales独立；每完整decision一个λ，C与测试共享一个β。`m(C+full)/m(C+prefix)` 中C各出现一次，prefix保留对β、校准λ和测试λ的联合更新，不把旧Gaussian-C后验或moment-match Gaussian改签新模型。canonical source采用LF后SHA `7671997aefc4cdf046e546a301c97bb7a4d70079fdad2a51ca83132cf34ad273`，与作者309a proposal的AST相同；formal tests只调import排序/LF。
+
+独立审查发现原dimension-tilted积分规则的有限ratio不正规：同一D0例96节点的某点误差约 `1e-15`，实际tail mass却为 `.999808249`。现只供应一个预先固定、正且归一的离散Γ近似measure，full/prefix消费同actualrule；独立原反例新mass误差约 `1e-15`，真正共享β/两C的finite dense oracle也通过。连续Γ误差另外按node/range核，prior排除概率不作posterior证书；低order的实际Eλ明显偏离1、有限极端尾为Gaussian，不冒称原t尾。旧614d source及10组记录保原字节，原反向t组件mass1不能追签旧finite程序。新六组与必要迁移分阶段执行，未重复旧套。
+
+`c3268ec` 的 `research.joint_response_sampling` 共用上述canonical输入类，source SHA `2dbfe3d963b5d7da622d14f5c472cd01f93589816f044c480c296583c967a5a3`。Gibbs只更新一个global β和全部decision λ；一次准备C统计及测试白化。C样本的prefix权重先固定后平均proper条件组件，或由caller明示另跑C+prefix采样，再平均同条件组件；不用两批独立随机full/prefix分母，也无静默fallback。
+
+原合成128C×8行、16β/129λ的两次CPU1运行各约4.7秒，predictive log差 `.000586`、combined MCSE估计 `.005119`；仅为该合成规模成本/重复性，没有高维exact oracle。实际多模态反例永久保留：overdispersed链Rhat约1.73/ESS6会拒；全从同mode起步却Rhat1.001/ESS2488，βmean3.981而exact symmetry mean0。诊断通过、MCSE和有限混合正规都不认证真实后验准确性。16个formal migration case分14+2通过，不重原10组/128C；新增prediction cache最高seam证明重复评分不重白化。
+
+理论、原始论文、actual stages和两个独立结论分别在本轮 `B11_FULL_C/`、`B11_FULL_C_SCALING/` 与对应 `REVIEWS/`。当前未接实际K0/C权限、flat nuisance或产品包；实际EEG行数远大于8，dense noise root及全draw residual矩阵的内存问题已进入下一压缩QR/分批预测切片，不据此声称真实训练吞吐。
+
 ## 本轮统一软件入口核验
 
 ERP入口的已删除私有digest调用已修正，原compact dtype/shape/bytes关系保持，真实仓库外CLI help通过。459个Python文件的4665个仓库内显式from-import静态检查未见缺符号；随后实际 `pytest --collect-only tests` exit0，收集217个测试模块/3179用例、源码前后不变。收集没有执行测试断言，完整integrated suite仍待实际足额内存；不降低原native资源声明或重启用户关闭的云。

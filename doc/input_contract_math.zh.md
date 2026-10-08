@@ -10,6 +10,8 @@ B11 projected-noise参考以fixed root `K0=L0 L0ᵀ` 和完整设计X的白化�
 
 B05固定physical prior的given-noise C fit使用 `b=vec_row(B)`、`A=D⊗I` 和 actual full-record whitening，proper prior precision `R0ᵀR0` 不继承替换后的Σ。消去完整per-record flat Z后逐record QR，后验covariance factor为完整pC维，private非separable谱不能代换MN row H。shared MN特例的noise-tied prior让Σ从均值方程取消；同一固定physical prior没有该取消结论。response与C drift负关联、不同record drift因共享response相关，两类cross covariance都保留。
 
+B11 full-C模型在一个独立proper global β prior下计算 `m(C+full,q)/m(C+prefix,q)`，每次C只进入一次、测试full/prefix同一次λ；prefix还可经共享β更新校准λ后验。有限数值积分必须共用同一个正离散prior measure，不能因full/prefix维数不同各自换节点却声称正规density。连续Gamma、有限离散近似和MCMC经验β混合的law/误差分别声明。有限节点的prior平均精度未必1、极端尾为Gaussian，prior排除概率不保证posterior或conditional误差；MCMC诊断同样不能代替多模态或真模型验证。
+
 [当前选择执行关系](evidence/current_public_consumers_20261008.zh.md)核source原actualreceipt与target capability/实际selection证据，允许经证明的相同SOS/padding/closed-grid/FFT/first-T程序族，不把不同授权长度的F_N说成相同。实测BNCI Cz6投影与原8导physical identity分列；raw256Hz/unfiltered与trial128Hz179/finite-zero的时间合同不同，不以共同空间消除该差异。
 
 [当前公共输入准入](evidence/public_source_pipeline_20261008.zh.md)使用新完整finite-zero none/128Hz179声明，父mean_only与旧raw/cache保持原身份；prepared程序绑定实际18dafd6源码，后续训练不得改签。源1964请求中仅BI2012已证常零的subject3 online记录明确排除，training保留。GTN实际245 NIX/TXT exact keys和一手论文支撑源内匿名dataset-participant authority，全局person linkage未独立验证。target534原记录与123 participant group分别记分母。

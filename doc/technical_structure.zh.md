@@ -22,6 +22,8 @@
 
 `FittedChannelNoise.fit_response_given_frozen_noise`在原B05 owner上消费固定proper `PhysicalCoefficientPrior` 和明确source/C `ResponseFitRecord`，共同白化Y、row-major response design及per-record diffuse nuisance。每record压缩actual augmented QR后加入一次physical prior，返回完整response factor、各drift和跨record关联；noise/Σ替换不重标prior。拟合读全C prefix+tail，不重新拟noise或profile tail噪声目标。原 `FrozenERPResponse`/score 消费该完整后验，持久包认证和真实输入授权由各自owner另验。
 
+`research.joint_response_scale`持有一个proper physical global β prior、各完整decision的noise scale以及明确的external/C-plugin参数程序。正离散scale rule必须显式供应，full/prefix消费同一数值态；tensor积分保β及C/test scale后验关联，有限程序正规与连续Gamma近似精度分开。`research.joint_response_sampling`复用相同prior/hyperparameter/decision类，一次准备统计和测试白化，提供global β↔各λ Gibbs、C后验prefix重加权及caller显式另跑的C+prefix程序。有限经验预测混合正规，Rhat/ESS/MCSE不认证未访问模态或真实后验准确性；二者目前无flat nuisance、默认ν或产品准入。
+
 [g-prior](evidence/calibration_g_prior_20261006.zh.md)由`transfer.kernel_prior`编译canonical spec与immutable precision root；continuous初始化、NumPy joint QR和Torch objective共享该root。新g `/5`保存prior/reference与actual-C posterior statistics数值载荷，load核root/spec/C/source及actual posterior关系；ensemble raw program与producer匹配。legacy ridge数值路径独立，runner已整合g与same-ridge AR面板隔离及structured rank failure；历史M1续跑仍只准入同src bytes。
 compiler保存原design root以重核投影数值rank；同一个`validate_binding`将reference record身份/支持/design SHA与model actual C ledger、basis/input绑定交叉核验，避免两份self-summary各自成立而关系不成立。
 [trace控制](evidence/calibration_trace_control_20261006.zh.md)与g共享`uses_calibration_reference`，使用独立model `/6`；scalar precision由compiler数值root派生，callers不重造G。当前fit包保存12个数值数组（原prior/C状态与生产posterior Q/R/response）加metadata，旧九数组包由原执行源重放。runner的`fixed_reference_kernel_prior`面板核完整28格并直接用原requested指标owner产生12组同g形状对照；same-ridge AR面板继续单独归因。
