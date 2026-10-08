@@ -27,7 +27,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
 | B07 字典/历史 | A0/A1与五数组portable编译态、端点/容量、model/ensemble无重编译消费 | 导数、合法完整history、邻居积分、随机效应 |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
-| B09 空间 | 一般signal-prior后验、真实A01六格与MN/商空间等价 | 八人native/Cz×Σ/I/Pz4归因、learned prior及joint MLE |
+| B09 空间 | 一般signal-prior后验、A01六格及八人48格/MN商空间验收 | Pz4无额外hit且NLL增，不晋升；learned prior与joint MLE另验 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
 | B11 动态/稳健 | noise-only Gamma×proper Gaussian参考、prefix积分比及独立精度反例 | 真辨识、拟合/ν选择、动态state和完整程序效能 |
 | B12 公共流程 | 全局code/artifact审查；独立C/test入口与B14共同owner | 四库binary/合法candidate、K0/预算、一个完整科研流程 |

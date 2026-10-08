@@ -12,7 +12,7 @@
 | B08先验 | 物理equal-class response metric、quotient范围及显式completion；全C/prior生产Q/R/rhs/M保存，评分用precision factor，H是derived diagnostic | 真实completed-fit与弱方向攻击已验；quotient/completion新的公共配对及同版本跨host仍待验 |
 | B05噪声归因 | shared/private谱与一般vec Gaussian分开；保prefix、完整ERP uncertainty与真实Y/D映射 | compiled载荷/可选诊断及shared实际入口已验；现有M1真实状态归因待原产物可达；生产joint MLE未由诊断实现 |
 | B06可观测性 | 实际O/L核空间及每个请求泛函独立归一；真实native有限T、ERP/噪声增量和外部未观测witness | 真实A01只读计划已完成且独立验收；未知state拟合、最终完整预处理和独立效能仍待各自验收 |
-| B09空间 | native/reference/CAR结构与输出gain；一般vec signal prior、冻结noise因子传播、保存生产QR与只读诊断CLI | 真实A01六格fixed-noise诊断已完成，联合AR/Σ MLE和跨人效能另验；工作站入口需共同授权owner另接 |
+| B09空间 | native/reference/CAR结构与输出gain；一般vec signal prior、冻结noise因子传播、保存生产QR与只读诊断CLI | 真实A01六格和八人48格归因已完成并验收，Pz4无额外hit且NLL升；联合MLE及新效能另验；工作站入口需共同授权owner另接 |
 | B14/B12 | 已审阅e51输入的24个owned文件逐一合入，epoch采样委托共同合同；requested任务、输入/产物预算和单seed源/目标共享owner | 最终composition已审阅合入；3项Linux并发case、真实25CPU/4GPU吞吐与完整公共两面板仍待验 |
 | B10输入污染 | 已实现完整自适应程序增量和条件经验矩，复用实际harmonic/finite owner | 14项实际pipeline反例和原CLI审计入口已验；真实污染分轴配对及固定θ模型另验 |
 | B11重尾参考 | noise-only Gamma尺度与独立proper Gaussian ERP/state的真实joint/prefix积分比；作者28初验与3关联复验 | 独立数学复审已关闭中等Gamma归一化精度错误，10高精度case通过；真实noise/ERP辨识和公共接线仍待验；不选择默认ν或自动部署 |
@@ -41,4 +41,4 @@ B05使用row-major vec(B)，B09使用column-major vec(B)；未来组合必须用
 
 必要本地执行来源见 `tmp/research_line_20261008/VALIDATION/windows_diagnostics01/`；独立审阅与上游合入receipt见同轮 `REVIEWS/`。当前记录分别说明软件、机制和效能出口，不将全部15块/123愿望或公共效能标为完成。
 
-[真实本地机制](research_mechanisms_20261009.zh.md)收B06/B10独立数据审阅与B09完整六格、两actualsource和原基线复用；下一步以noise-tied/diagonal-I/Pz4及native/Cz分解贡献，不重复等价CAR格，跨participant仍是公共开发。
+[真实本地机制](research_mechanisms_20261009.zh.md)收B06/B10独立数据审阅与B09完整六格、两actualsource和原基线复用；八人48格已用noise-tied/diagonal-I/Pz4及native/Cz分解贡献，不重复等价CAR格；Pz4未过NLL开发门，全8及七人新variant读数仍是公共开发。

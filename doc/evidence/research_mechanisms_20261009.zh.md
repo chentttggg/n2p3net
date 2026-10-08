@@ -33,6 +33,29 @@ noise-tied prior为S=Σ_C；独立预声明prior为S=a·diag(Pz4,其余1)，a=8/
 
 CPU1、单worker/GPU0；actualPython body墙钟16.632s/CPU16.375s，含启动22.534s，峰working set414.05MiB，主机CPU采样峰12.2%。只说明这次机制panel成本。
 
+## 八人48格signal-prior归因
+
+后续固定八人A01–A08 × native8/Cz7 × noise-tied Σ/energy-matched diagonal I/Pz4，共48格，CAR同商重复省去。实际source archive `f6101b585e6871595180a6147150833780a37054cf249210e8e357c42ddadd4a`，manifest `6e08c3fbab731351eede0097e852a78c5705c257983ed0d4a4c919f9f396c2df`，479成员、base `4ac444c`；新source before/after与八份原MAT均相同。48/48完成并独立验收，typed failure/reference-unavailable0，全包保存重放一致。
+
+A01原四格按其source00fa及成功baseline5dde复用、不重评分；A01 I两格和其余七人42格新空间fit44，新baseline fit7。每人同C240/later-held120/request800，prior文件C-only且在held score前冻结。八人历史公共开发、A01已见；另列七人新variant读数，不称盲确认。
+
+| 实际观测 | signal prior | hit/requested8 | 平均NLL | Brier |
+|---|---|---:|---:|---:|
+| native8 | Σ noise-tied | 6/8 | 2.594126 | 0.475504 |
+| native8 | matched diagonal I | 7/8 | 0.922528 | 0.249504 |
+| native8 | matched Pz4 | 7/8 | 1.128338 | 0.202325 |
+| Cz7 | Σ noise-tied | 7/8 | 5.112400 | 0.250000 |
+| Cz7 | matched diagonal I | 7/8 | 3.707681 | 0.250000 |
+| Cz7 | matched Pz4 | 7/8 | 3.795221 | 0.250000 |
+
+全coverage1。除去seen A01，三native prior命中均6/7：Σ→I救回A03、损伤A02，净命中收益0。七人native NLL为2.588497/1.046889/1.274405。A01 I自身已救回、NLL0.0520优于Pz4的0.1059，不能宣称Pz独有收益。Pz4相对I没有额外hit，native/Cz NLL分别增加0.205811/0.087540，均未过预声明hit/NLL联合开发门，不晋升默认。Cz的A03三prior均错误且置信度约1，NLL40.899/29.661/30.362；更高点命中不能证明reference或概率更可靠。
+
+I与Pz4匹配原native总白化prior energy8。令π=(Σ⁻¹)Pz,Pz/tr(Σ⁻¹)，Pz方差相对I变4/(1+3π)，其它导变1/(1+3π)，是相对收缩重分配。A01实际倍率为2.33018/0.582544，不是独立放大Pz4倍。Cz projected energy仅报告，不另匹配或混称同能量。Σ→I改变整个noise-link/形状/正则分配，不能称纯decorrelation。
+
+CPU1、GPU0，actual执行约126.25秒、主机CPU采样峰14.9%、峰working set约423.57MiB。该点估计依各人一个later decision和固定C-estimated noise；noise/超参数不确定性未积分，不能代替跨日、完整公共矩阵或成人确认。
+
+权威结果：`B09/SPATIAL_ATTRIBUTION_RESULTS/matrix_receipt.json`、`B09/spatial_attribution_acceptance.json`和逐人48行`B09/spatial_attribution_participant_cells.csv`，均位于同轮本地研究目录。
+
 ## B06完整native T与B10实际自适应程序
 
 B06 context[1800,1992)、short[1832,1960)、output[1864,1928)，实际额外研究SOS，不重构未知上游带通。短观测严格无法决定全部long-teacher输出；外部1831/Fz加1µV保持short字节相同，目标增量norm1.79236e-16V、有限差分舍入1.895e-20V。因此正确拒“精确恢复”，但不支持可测ERP损伤主张。K=b=0锚点的完整G与short baseline相同；relative white gain1不等于raw unit gain，raw平均variance gain约2.963、worst约15.863。
@@ -45,7 +68,7 @@ B10小矩阵反例另外证实：isolated ERP清理误差0仍可在污染base上
 
 ## 科学代码与后续边界
 
-B07五数组/物理表达式准入，B08逐functional quotient/completion与生产QR后验，TemporalNoise/5保存编译态和实际scale，B05/B09真实vec次序与private非分离noise均有独立反例及实际调用链。B11noise-only Gamma与独立proper Gaussian是数值参考，其tight accuracy仍按独立审查收口，不把所有不确定性一起套t分布。
+B07五数组/物理表达式准入，B08逐functional quotient/completion与生产QR后验，TemporalNoise/5保存编译态和实际scale，B05/B09真实vec次序与private非分离noise均有独立反例及实际调用链。B11noise-only Gamma与独立proper Gaussian是数值参考，中等Gamma归一化消去已由70digit闭式反例修复、10项必要case通过；QUAD/解析tail/Stirling预算仍非all-floating证书，不把所有不确定性一起套t分布。
 
 后续需预声明跨participant配对、signal prior形状归因、proper概率校准、joint AR/Σ或learned graph估计器与工作站授权接线。四source/单seed公共两面板、同版本完整crosshost及云25CPU/4GPU实效仍另验；本结果不晋升Pz/参考/清理默认。
 
