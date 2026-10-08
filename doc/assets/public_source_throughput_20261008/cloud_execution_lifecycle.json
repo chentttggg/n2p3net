@@ -1,0 +1,71 @@
+{
+  "schema": "n2p3_shared_cloud_executor_lifecycle_validation/1",
+  "status": "RC2 eleven lifecycle cases passed in actual cloud; complete reusable foundation and scientific integration pending",
+  "receipts": {
+    "rc1": {
+      "source_archive_sha256": "7c7c8a89736512a2a3f32472de6b330436ed3277c7e4127c6534006699b03e48",
+      "verified_source_files": 451,
+      "exit_code": 0,
+      "cases": 9,
+      "seconds": 7.899,
+      "case_names": [
+        "test_completed_dependency_unlocks_work_before_other_source_job_finishes",
+        "test_native_exit_is_terminal_and_does_not_kill_an_independent_peer",
+        "test_python_failure_keeps_original_error_and_blocks_only_its_descendants",
+        "test_exit_zero_does_not_admit_an_artifact_rejected_by_the_scientific_owner",
+        "test_unreachable_dependency_and_cycle_remain_in_the_requested_denominator",
+        "test_spawn_failure_returns_the_reservation_exactly_once",
+        "test_observer_error_cannot_replace_the_original_scientific_failure",
+        "test_duplicate_task_ids_are_rejected_before_work_is_reserved",
+        "test_initialized_cuda_sensor_and_cleanup_preserve_completed_artifact"
+      ],
+      "artifacts": {
+        "terminal.json": "2b3c292c82ff1fedd1236b825d6b25db7052a8bceec9b9c71678c51197342e44",
+        "junit.xml": "f62cd888f70689c691d10f932490a661e9c2d7dfa7f301c0baa3ba97cf563ff3",
+        "runner.log": "585ba42829657b9e2d56f8614be6c3365a8405474eed008559511ab50f2ffcfb",
+        "resources.jsonl": "d2857f27ba3529ba99b7fda084c907921f7f995a131e28d14b8e98542171634a"
+      },
+      "scope": "shared executor RC1 software behavior; actual CUDA 16zero elements; no EEG/model fit",
+      "does_not_cover": [
+        "later globalFS/RAM admission",
+        "current source/binary/candidate scientific adapters",
+        "full public-data training throughput"
+      ]
+    },
+    "rc2": {
+      "source_archive_sha256": "56168f3bbbd16fbe71fb25af08c9196aba54f4aed5619e2cad651297c45a337f",
+      "verified_source_files": 451,
+      "exit_code": 0,
+      "cases": 11,
+      "seconds": 8.529,
+      "case_names": [
+        "test_completed_dependency_unlocks_work_before_other_source_job_finishes",
+        "test_native_exit_is_terminal_and_does_not_kill_an_independent_peer",
+        "test_python_failure_keeps_original_error_and_blocks_only_its_descendants",
+        "test_native_actor_exit_retires_its_grandchild_before_returning_phase_budget",
+        "test_exit_zero_does_not_admit_an_artifact_rejected_by_the_scientific_owner",
+        "test_unreachable_dependency_and_cycle_remain_in_the_requested_denominator",
+        "test_spawn_failure_returns_the_reservation_exactly_once",
+        "test_pipe_creation_failure_returns_the_reservation_exactly_once",
+        "test_observer_error_cannot_replace_the_original_scientific_failure",
+        "test_duplicate_task_ids_are_rejected_before_work_is_reserved",
+        "test_initialized_cuda_sensor_and_cleanup_preserve_completed_artifact"
+      ],
+      "artifacts": {
+        "terminal.json": "e9a47aed54f86bd85d7955601476647d36b06ed4945e86da00d8b4a1843851be",
+        "junit.xml": "b1e1cdb1ba528b2b3cc2d99eb5226e1d14447fc23cfc43367d1c0c6500006e63",
+        "runner.log": "08faea39fd19189f6544839f505d91d76ecb1367e219f5db362cdf22916ef869",
+        "resources.jsonl": "516a4aa75ac06054cd3b500f125404855c9db44a7a35091ee62d009e885b4b5a"
+      },
+      "scope": "shared executor RC2 software behavior; actual CUDA 16zero elements; no EEG/model fit",
+      "does_not_cover": [
+        "later globalFS/RAM admission",
+        "current source/binary/candidate scientific adapters",
+        "full public-data training throughput"
+      ]
+    }
+  },
+  "distinct_rc2_cases": 11,
+  "test_location": "locked cloud Linux3.12 environment",
+  "physical_archives_local_only": true
+}
