@@ -750,6 +750,10 @@ class FittedChannelNoise:
                 "signal_geometry_role": "full_record_nuisance_overlap_diagnostic_not_oracle_information",
                 "truth_used": False, "parameters_updated": False}
 
+    def fit_response_given_frozen_noise(self, prior, records, *, response_id):
+        """Fit authorized C with a fixed physical prior and this exact noise state."""
+        return _fit_response_given_frozen_noise(self, prior, records, response_id=response_id)
+
     def diagnose(self, records, *, max_lag=32, psd_samples=256):
         """Truth-known residual-only diagnostics; never selection or a predictor."""
         self.assert_integrity()
@@ -821,3 +825,250 @@ def known_covariance_discriminant_efficiency(delta, true_covariance, assumed_cov
             "assumed_discriminant_snr_squared": float((weight @ contrast) ** 2 / variance),
             "efficiency": float((weight @ contrast) ** 2 / (variance * oracle)),
             "role": "known_equal_covariance_oracle_only"}
+
+
+def _response_resolved_root(root, name):
+    scales = np.max(np.abs(root), axis=0)
+    if np.any(scales == 0) or not np.isfinite(scales).all():
+        raise UnidentifiableFitError(f"{name} has unresolved coefficient coordinates")
+    normalized = root/scales
+    singular = np.linalg.svd(normalized, compute_uv=False)
+    if (len(singular) != root.shape[1]
+            or singular[-1] <= 64*np.finfo(float).eps*max(root.shape)*singular[0]):
+        raise UnidentifiableFitError(f"{name} is numerically unresolved in its declared coordinates")
+    return scales
+
+
+@dataclass(frozen=True)
+class PhysicalCoefficientPrior:
+    mean: np.ndarray
+    precision_root: np.ndarray
+    basis: np.ndarray
+    geometry: NoiseGeometry
+    prior_id: str
+    provenance: dict
+
+    def __post_init__(self):
+        mean, root, basis = (_array(value, name, 2) for value, name in (
+            (self.mean, "physical prior mean"), (self.precision_root, "physical prior precision"),
+            (self.basis, "actual response basis")))
+        if (not isinstance(self.geometry, NoiseGeometry) or min(basis.shape) == 0
+                or mean.shape != (2*basis.shape[1], len(self.geometry.channels))
+                or root.shape != (mean.size, mean.size) or not isinstance(self.prior_id, str)
+                or not self.prior_id.strip() or not isinstance(self.provenance, dict)):
+            raise ValueError("physical prior requires its actual common/increment basis and full observed geometry")
+        _response_resolved_root(root, "proper physical prior")
+        if self.provenance.get("role") not in {"fixed_source_prior", "C_derived_plugin_reference", "analytic_reference"}:
+            raise ValueError("physical prior requires an explicit source/C-plugin/oracle role")
+        require_sha256(self.provenance.get("source_sha256"), "physical prior source")
+        for key, value in (("mean", mean), ("precision_root", root), ("basis", basis)):
+            object.__setattr__(self, key, frozen_array(value))
+        object.__setattr__(self, "provenance", freeze_metadata(self.provenance))
+
+    def record(self):
+        return {"prior_id": self.prior_id, "geometry": self.geometry.record(), "provenance": self.provenance,
+                "mean_sha256": array_digest(self.mean), "precision_root_sha256": array_digest(self.precision_root),
+                "actual_basis_sha256": array_digest(self.basis),
+                "coefficient_order": "row_major_coefficient_then_observed_channel",
+                "precision_units": "inverse_"+self.geometry.unit,
+                "noise_arm_rescaling": False}
+
+
+@dataclass(frozen=True)
+class ResponseFitRecord:
+    samples: np.ndarray
+    design: np.ndarray
+    nuisance: np.ndarray
+    known_labels: np.ndarray
+    basis_sha256: str
+    geometry: NoiseGeometry
+    authorization: dict
+
+    def __post_init__(self):
+        y, design = _array(self.samples, "actual C volts", 2), _array(self.design, "actual C response design", 2)
+        z = finite_real_array(self.nuisance, name="actual C common diffuse coordinates")
+        labels = np.asarray(self.known_labels)
+        if (not isinstance(self.geometry, NoiseGeometry) or len(y) == 0 or y.shape[1] != len(self.geometry.channels)
+                or design.shape[0] != len(y) or not design.shape[1] or z.ndim != 3 or z.shape[:2] != y.shape
+                or labels.ndim != 1 or not len(labels) or labels.dtype.kind not in "bifu"
+                or not np.isin(labels, [0, 1]).all()):
+            raise ValueError("authorized C samples/design/nuisance/labels do not align")
+        require_sha256(self.basis_sha256, "actual C basis")
+        authority = self.authorization
+        if not isinstance(authority, dict) or authority.get("fit_scope") not in {"source_training", "target_calibration"}:
+            raise ValueError("response fitting accepts declared source/C labels, never held diagnostics")
+        if any(not isinstance(authority.get(key), str) or not authority[key].strip()
+               for key in ("record_id", "participant_key", "recording_id")):
+            raise ValueError("actual C requires record/participant/recording identities")
+        support, label_support = authority.get("read_support"), authority.get("label_support")
+        if (not isinstance(support, (list, tuple)) or len(support) != 2
+                or any(type(v) is not int for v in support) or support[0] < 0 or support[1]-support[0] != len(y)
+                or not isinstance(label_support, (list, tuple)) or len(label_support) != 2
+                or any(type(v) is not int for v in label_support)
+                or not support[0] <= label_support[0] < label_support[1] <= support[1]):
+            raise ValueError("actual C read and known-label support are inconsistent")
+        require_sha256(authority.get("source_sha256"), "actual C source")
+        require_sha256(authority.get("source_input_sha256"), "actual C original input")
+        if authority.get("design_role") != "actual_known_C_event_design":
+            raise ValueError("response fit design must come from actual authorized C event labels")
+        for key, value in (("samples", y), ("design", design), ("nuisance", z), ("known_labels", labels)):
+            object.__setattr__(self, key, frozen_array(value))
+        object.__setattr__(self, "authorization", freeze_metadata(authority))
+
+    def ledger(self):
+        return {**self.authorization, "geometry": self.geometry.record(), "basis_sha256": self.basis_sha256,
+                "samples_sha256": array_digest(self.samples), "design_sha256": array_digest(self.design),
+                "nuisance_sha256": array_digest(self.nuisance), "known_labels_sha256": array_digest(self.known_labels)}
+
+
+@dataclass(frozen=True)
+class FittedResponseDrift:
+    record_id: str
+    mean: np.ndarray
+    conditional_factor: np.ndarray
+    response_draw_factor: np.ndarray
+    response_to_drift: np.ndarray
+
+
+@dataclass(frozen=True)
+class FixedNoiseResponseFit:
+    response: FrozenERPResponse
+    precision_root: np.ndarray
+    precision_response: np.ndarray
+    information_roots: tuple[np.ndarray, ...]
+    information_responses: tuple[np.ndarray, ...]
+    augmented_root: np.ndarray
+    drifts: tuple[FittedResponseDrift, ...]
+    binding: dict
+
+    def joint_coefficient_drift_factor(self):
+        """One shared response draw plus independent conditional drift draws."""
+        width = self.response.mean.size
+        total = width+sum(len(item.mean) for item in self.drifts)
+        factor = np.zeros((total, total))
+        factor[:width, :width] = self.response.coefficient_factor
+        offset = width
+        for item in self.drifts:
+            stop = offset+len(item.mean)
+            factor[offset:stop, :width] = item.response_draw_factor
+            factor[offset:stop, offset:stop] = item.conditional_factor
+            offset = stop
+        return frozen_array(factor)
+
+
+def _response_nuisance_qr(z, *, require_prefix=None):
+    if z.shape[1] == 0:
+        return np.empty((len(z), 0)), np.empty((0, 0)), np.empty(0)
+    scales = np.max(np.abs(z), axis=0)
+    if np.any(scales == 0):
+        raise UnidentifiableFitError("actual common diffuse coordinates are not identified")
+    q, root = np.linalg.qr(z/scales, mode="reduced")
+    _response_resolved_root(root, "actual common diffuse nuisance")
+    if require_prefix is not None:
+        _response_nuisance_qr(z[:require_prefix])
+    return q, root, scales
+
+
+def _fit_response_given_frozen_noise(noise, prior, records, *, response_id):
+    """All authorized C Gaussian fit with proper physical prior and fixed noise.
+
+    Same full-record whitening acts on Y, vec response design and diffuse Z.
+    Prefix identifies the same nuisance measure used for later conditional score.
+    Record roots are compressed incrementally; no full-C covariance or Gram is
+    formed. External caller authority remains external to this numerical fit.
+    """
+    if not isinstance(noise, FittedChannelNoise) or not isinstance(prior, PhysicalCoefficientPrior):
+        raise TypeError("fit needs an admitted B05 frozen noise and physical coefficient prior")
+    noise.assert_integrity()
+    records = tuple(records)
+    if not records or any(not isinstance(row, ResponseFitRecord) for row in records):
+        raise ValueError("proper physical response fit needs explicit authorized C records")
+    if not isinstance(response_id, str) or not response_id.strip():
+        raise ValueError("fitted physical response needs an identity")
+    ids = [row.authorization["record_id"] for row in records]
+    require_identifiers(ids, "response C record identities")
+    scopes = {row.authorization["fit_scope"] for row in records}
+    if len(scopes) != 1 or noise.geometry != prior.geometry:
+        raise ValueError("fixed noise/prior/C physical geometry or fit scopes differ")
+    if next(iter(scopes)) == "target_calibration" and len({row.authorization["participant_key"] for row in records}) != 1:
+        raise ValueError("target response C requires one actual participant")
+    for i, row in enumerate(records):
+        if (row.geometry != prior.geometry or row.basis_sha256 != array_digest(prior.basis)
+                or row.design.shape[1] != prior.mean.shape[0] or len(row.samples) <= noise.conditioning_samples):
+            raise ValueError("C design/basis/geometry/prefix differs from fixed physical prior/noise")
+        for other in records[:i]:
+            left, right = row.authorization["read_support"], other.authorization["read_support"]
+            if (row.authorization["recording_id"] == other.authorization["recording_id"]
+                    and max(left[0], right[0]) < min(left[1], right[1])):
+                raise ValueError("response C records duplicate actual physical observation support")
+    width, channels = prior.mean.size, len(prior.geometry.channels)
+    scales = np.max(np.abs(prior.precision_root), axis=0)
+    augmented = np.column_stack((prior.precision_root/scales,
+                                  prior.precision_root@prior.mean.ravel()))
+    compressed = np.linalg.qr(augmented, mode="r")
+    drift_parts, compression, information_roots, information_responses = [], [], [], []
+    for row in records:
+        n = len(row.samples)
+        mapping = np.kron(row.design, np.eye(channels)).reshape(n, channels, width)
+        combined = np.concatenate((row.samples[:, :, None], mapping, row.nuisance), axis=2)
+        white = noise.whiten(combined).reshape(n*channels, -1)
+        y, design, z = white[:, 0], white[:, 1:1+width], white[:, 1+width:]
+        qz, rz, zscales = _response_nuisance_qr(z, require_prefix=noise.conditioning_samples*channels)
+        zy, zd = qz.T@y, qz.T@design
+        projected_y, projected_d = y-qz@zy, design-qz@zd
+        update = np.column_stack((projected_d/scales, projected_y))
+        record_root = np.linalg.qr(update, mode="r")
+        information = record_root[:, :width]*scales
+        record_response = record_root[:, width]
+        information_roots.append(frozen_array(information))
+        information_responses.append(frozen_array(record_response))
+        compressed = np.linalg.qr(np.vstack((compressed, record_root)), mode="r")
+        drift_parts.append((row.authorization["record_id"], rz, zscales, zy, zd))
+        compression.append({"record_id": row.authorization["record_id"],
+                            "projected_design_sha256": array_digest(projected_d),
+                            "projected_response_sha256": array_digest(projected_y),
+                            "information_root_sha256": array_digest(information),
+                            "information_response_sha256": array_digest(record_response),
+                            "compressed_augmented_root_sha256": array_digest(compressed),
+                            "nuisance_coordinates": z.shape[1]})
+    normalized_root, rhs = compressed[:width, :width], compressed[:width, width]
+    _response_resolved_root(normalized_root, "given-noise physical posterior")
+    vector = solve_triangular(normalized_root, rhs)/scales
+    factor = solve_triangular(normalized_root, np.eye(width))/scales[:, None]
+    root = normalized_root*scales
+    if not (np.isfinite(vector).all() and np.isfinite(factor).all()):
+        raise UnidentifiableFitError("given-noise physical response posterior is not representable")
+    drifts = []
+    for record_id, rz, zscales, zy, zd in drift_parts:
+        count = len(zscales)
+        if count:
+            transform = solve_triangular(rz, zd)/zscales[:, None]
+            mean = solve_triangular(rz, zy)/zscales-transform@vector
+            conditional = solve_triangular(rz, np.eye(count))/zscales[:, None]
+        else:
+            transform, mean, conditional = np.empty((0, width)), np.empty(0), np.empty((0, 0))
+        drifts.append(FittedResponseDrift(record_id, frozen_array(mean), frozen_array(conditional),
+            frozen_array(-transform@factor), frozen_array(transform)))
+    mean = vector.reshape(prior.mean.shape)
+    provenance = {"fit_scope": next(iter(scopes)), "records": [row.ledger() for row in records],
+                  "method": "all_C_given_frozen_noise_streamed_diffuse_QR_fixed_physical_prior",
+                  "prior": prior.record(), "actual_noise": noise.record(),
+                  "compression": compression, "final_augmented_root_sha256": array_digest(compressed),
+                  "prior_column_scales": scales.tolist(), "implementation_sha256": _IMPLEMENTATION_SHA256,
+                  "producer_identity_kind": "actual_in_memory_fit_state_not_model_file_or_legacy_relabel",
+                  "drift_state": [{"record_id": item.record_id,
+                      "actual_arrays_sha256": array_digest(item.mean, item.conditional_factor,
+                                                          item.response_draw_factor, item.response_to_drift)}
+                      for item in drifts],
+                  "hyperparameter_uncertainty_integrated": False, "noise_refitted": False}
+    fit_identity = metadata_digest({"provenance": provenance, "mean_sha256": array_digest(mean),
+                                   "root_and_rhs_sha256": array_digest(root, rhs), "factor_sha256": array_digest(factor)})
+    response = FrozenERPResponse(mean, factor, prior.geometry, fit_identity, response_id, provenance)
+    binding = freeze_metadata({"fit_sha256": fit_identity, "prior": prior.record(), "noise_sha256": metadata_digest(noise.record()),
+                               "implementation_sha256": _IMPLEMENTATION_SHA256, "fit_scope": next(iter(scopes)),
+                               "coefficient_order": "row_major_coefficient_then_observed_channel",
+                               "noise_family": noise.family, "conditioning_samples": noise.conditioning_samples,
+                               "posterior_scope": "all_authorized_C_prefix_and_tail_given_frozen_parameters",
+                               "measurement_authority": "external_caller", "matrix_normal_claimed": False})
+    return FixedNoiseResponseFit(response, frozen_array(root), frozen_array(rhs), tuple(information_roots),
+                                tuple(information_responses), frozen_array(compressed), tuple(drifts), binding)
