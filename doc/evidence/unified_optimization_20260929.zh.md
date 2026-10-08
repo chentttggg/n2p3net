@@ -74,7 +74,7 @@ LDA/target-only先提供输入敏感性对照。`full_unfold`窗口改变head维
 ### 4.2 P1：校准统计冻结的双侧EA，保持CE目标
 
 **先做空间可行性准入，EA目前只是条件候选。** 十二库现有输入使用实测mask，并不都有完整六导。
-[源接入证据](source_modules_20260918.zh.md)记录BrainForm、Cattan、BI2012不同缺导；GTN原生仅Fz/Cz/Pz，
+[源接入证据](domain_transfer_major_20260920.zh.md)记录BrainForm、Cattan、BI2012不同缺导；GTN原生仅Fz/Cz/Pz，
 在Cz差分后也不具备全六导。当前EA cache入口拒绝非完整观测，不能直接套在这些六槽零填充输入上。
 六槽顺序为Fz/P3/Pz/P4/PO8/Oz（各自减Cz）：BrainForm探针mask=`101011`，BI2012=`011100`，
 二者交集已经仅剩Pz−Cz。完整十二库和四个普通留库折均包含二者，因此全源共同实测空间

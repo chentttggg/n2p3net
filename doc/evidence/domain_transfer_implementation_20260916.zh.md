@@ -2,7 +2,7 @@
 
 2026-09-16。用户要求结合`codebase-design`逐步实现，并取消蒸馏。
 本次完成P1/P2的软件能力、调用链和反例；未启动公共/本人真实数据训练，没有新迁移效能结论。
-后续次序由[路线图](../roadmap.zh.md#2026-09-15-域迁移改进方案)统一维护。
+后续次序由[路线图](domain_transfer_major_20260920.zh.md)统一维护。
 
 修改前的323份源码、测试与指导已物理压缩并逐成员验证，
 [清单](../../frozen/domain_transfer_20260915_before/manifest.json)保留SHA-256；payload留在本地。

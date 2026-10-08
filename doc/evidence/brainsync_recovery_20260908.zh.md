@@ -173,8 +173,8 @@ LDA只在59个完整六导事件上评分，AUC由0.3428到0.3679；不能与229
 
 旧原型426文件已逐成员校验压缩并移出活动目录，原文件保留在独立历史目录，见
 [旧原型清单](../../frozen/brainsync_recovery_prototypes_20260908/manifest.json)。
-前端[修改前](../../frozen/brainsync_recovery_before_frontend_20260908/frontend.manifest.json)与
-[修改后](../../frozen/brainsync_recovery_frontend_20260908/frontend.manifest.json)源码分别物理冻结。
+前端修改前过程副本已退役；[当时修改后](../../frozen/brainsync_recovery_frontend_20260908/frontend.manifest.json)
+保持原身份，当前软件恢复入口见[稳定大版](../../frozen/major_domain_transfer_20260920/README.zh.md)。
 最终证据、模型/缓存/原始来源绑定及执行环境见[总归档清单](../../frozen/brainsync_recovery_20260908/manifest.json)。
 
 ## 第四份补充核查

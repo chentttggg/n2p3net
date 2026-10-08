@@ -123,7 +123,7 @@ BI 敏感性折中，A1Q1−A0Q0 为 −0.0166（Holm 校正后 p=0.00016），�
 
 ### 7.3 工程与支援
 
-算法链八项合同修复完成，全套定向验收记录为 1,936 项通过。BrainSync 前端完成串口/BLE 统一、固定 250 Hz、采集收尾和结果准入改造；发布副本采用 PyInstaller onedir，`BrainSync.exe --mock` 在隔离环境下持续运行 8 秒，发布载荷与开发目录边界已核验。云端训练执行器记录 CPU 总预算 25、GPU worker 容量 4，并将预算传入 source/target worker；四路大源预加载验证成功，未发生传输回退或 OOM 重试。上述结果属于软件、资源和模拟链条验收，不构成真实设备吞吐或成人识别效能结论。相关记录见[统一训练性能](evidence/unified12_performance_20260918.zh.md)、[BrainSync 传输统一](evidence/brainsync_transport_unification_20260917.zh.md)和[发布版验收](evidence/brainsync_release_20260920.zh.md)。
+算法链八项合同修复完成，全套定向验收记录为 1,936 项通过。BrainSync 前端完成串口/BLE 统一、固定 250 Hz、采集收尾和结果准入改造；发布副本采用 PyInstaller onedir，`BrainSync.exe --mock` 在隔离环境下持续运行 8 秒，发布载荷与开发目录边界已核验。云端训练执行器记录 CPU 总预算 25、GPU worker 容量 4，并将预算传入 source/target worker；四路大源预加载验证成功，未发生传输回退或 OOM 重试。上述结果属于软件、资源和模拟链条验收，不构成真实设备吞吐或成人识别效能结论。相关记录见[统一训练性能](evidence/unified12_performance_20260918.zh.md)、[BrainSync 传输统一](evidence/domain_transfer_major_20260920.zh.md)和[发布版验收](evidence/brainsync_release_20260920.zh.md)。
 
 ## 8. 讨论、结论与下一步
 

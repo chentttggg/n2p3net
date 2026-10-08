@@ -1,7 +1,7 @@
 # batch512训练链条完成结果
 
 2026-09-07，公开开发，source/target单seed20260906。有效实验范围见
-[执行计划](../roadmap.zh.md#2026-09-07训练链条验证方案)，实现与历次续跑见
+[执行计划](domain_transfer_major_20260920.zh.md)，实现与历次续跑见
 [实施记录](training_chain_implementation_20260907.zh.md)。本次分析没有重新训练或修改模型。
 
 ## 结论与建议

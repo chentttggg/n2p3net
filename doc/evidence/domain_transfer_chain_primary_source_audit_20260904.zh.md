@@ -5,7 +5,7 @@
 
 日期：2026-09-04\
 本记录按当时源码与文献解释。被审计的旧`domain_alignment_replacement`等方案现已
-[物理归档](../../frozen/technical_audit_before_20260906.manifest.json)，其中“主链”不再指当前默认路线。
+退休为已关闭的过程材料，恢复入口现收敛到[稳定大版](../../frozen/major_domain_transfer_20260920/README.zh.md)，其中“主链”不再指当前默认路线。
 触发：审计主链 `native reference → domain-specific feature lift → GALIA/AJD → conditional AS-MMD → PDS source sampling` 中每个关键公式与数值选择是否有一手来源支持，并与 `src/` 当前实现逐项比对。\
 范围：`src/data/domain.py`、`src/data/domain_alignment.py`、`experiments/fit_galia_alignment.py`、`experiments/prepare_domain_features.py`、`src/transfer/alignment.py`、`src/baselines/deep.py`、`src/train/source_sampling.py`、`experiments/prepare_source_selection.py`、`doc/domain_alignment_replacement_20260904.zh.md`，以及 `.venv` 中 `pyriemann 0.12` 的安装源码与 sdist 测试。\
 状态：本文只审计公式/数值选择，不修改任何代码，不提交任何内容，不授权性能结论。

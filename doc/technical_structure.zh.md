@@ -70,7 +70,7 @@ source固定更新的进度复用`baselines.progress`；selection/refit sink分�
 采集端数据合同的250 Hz为两传输及模拟模式唯一采样率，SDK回调batch独立为250包的正整数倍。
 `LocalEdfRecorder`统一电压/样本时钟检查点，`RecordingSession`继续持有暂停和EDF/BIDS收尾。
 BLE回调按连接generation隔离，固件应答后再次核验句柄；关闭等待原生连接请求与迟到句柄清理。
-调用链、反例及验证见[连接统一记录](evidence/brainsync_transport_unification_20260917.zh.md)。
+调用链、反例及验证见[连接统一记录](evidence/domain_transfer_major_20260920.zh.md)。
 
 2026-09-20发布层将上述采集端模块封装为PyInstaller onedir `BrainSync.exe`及`_internal`运行时；
 发布目录只保留用户配置、默认源模型、空数据/日志目录、运行时和发布说明。开发Python入口、测试、
@@ -84,14 +84,14 @@ post-MST直接复用`FeatureResidualAdapter`，六导含残差共1279参数。`m
 `data.source_records`准备逐K独立raw校准、inner T/V及固定test，`prepare_source_records.py`输出受核验的prefix manifest。
 `unified_source`与目标`unified`复用源调度和目标worker；λ由`source_prior_selection`的源内开发manifest选择。
 个人`selector_mode=unified`消费单份显式recipe和固定目标预算，保存完整参数、统计、质量状态及membership评分声明。
-调用和反例见[实施记录](evidence/unified_model_implementation_20260916.zh.md)。
+调用和反例见[实施记录](evidence/domain_transfer_major_20260920.zh.md)。
 
 2026-09-16统一预算由`train.early_stopping.UnifiedTrainingBudget`集中解释，`PatienceStopper`继续负责独立早停计数。
 `source_selection.fit_source_trajectory`执行参考源的参与者选轮/refit，source chain每折只调用一次，
 正式源训练消费带reference摘要的`source_budget`并按e*换算固定更新。λ开发和目标worker直接全C拟合。
 `transfer.epoch_selection`保留其它显式早停研究；新unified默认不消费个人inner视图。
 `source_records`可按是否需要inner准备/读取实际视图；新CLI默认只准备C_K/test。
-模块、复用和性能记录见[预算执行器](evidence/unified_budget_execution_20260916.zh.md)。
+模块、复用和性能记录见[预算执行器](evidence/domain_transfer_major_20260920.zh.md)。
 
 2026-09-16 `run_domain_transfer_matrix.py`组合既有source chain及共享目标worker，统一执行P1/P2
 并复用相同输入/配方/权重的结果；不复制训练循环。`SourceObjective`集中source-only配对、
@@ -190,7 +190,7 @@ legacy配方在QC路由前统一解析为`TargetRecipe`。`continuous_filter_pla
 源adapter在数值处理前排除永久坏非参考导，坏Cz拒绝当前投影；最终通过既有montage接口补mask/零槽。
 source preparation `/2`绑定实际raw/sidecar及方法身份，恢复同时核验NPZ和record凭证，轻量准入不解压矩阵。
 `analysis_seed_pairs`/`analysis_source_arms`贯穿源任务、目标计划、结果；分析器复用同一配对引擎生成组内及跨源对比。
-见[完整调用链验收](evidence/algorithm_chain_repairs_20260916.zh.md)。
+见[完整调用链验收](evidence/domain_transfer_major_20260920.zh.md)。
 
 2026-09-15 `data.preprocess.execute_preprocessing(raw, events, preprocessing, **layout_options)`
 集中完整Spec验证、参数解释、实际源sample支持及执行凭证。BrainSync、MOABB raw、GTN、
@@ -459,7 +459,7 @@ checkpoint和resume同步迁移。先补全现有互斥所保护的批次/风险
 | `Paper/` | 文献原文 | 保留来源，不是模型输入或试验结果 |
 
 2026-09-06审计时工作树包含未提交研究变更，审计前非忽略文件已逐文件校验冻结，
-见[manifest](../frozen/technical_audit_before_20260906.manifest.json)。该历史base commit
+见[manifest](../frozen/major_domain_transfer_20260920/README.zh.md)。该历史base commit
 不等于当时执行源码，后续Git提交整理也不改变旧实验身份。当前提交状态用`git status`核对。
 
 历史`tmp/`的16,389个文件已按[数据保留与清理记录](evidence/workspace_cleanup_20260906.zh.md)

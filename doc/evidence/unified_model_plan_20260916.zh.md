@@ -1,6 +1,6 @@
 # 统一 P300 模型：科研裁决、数学合同与实施方案
 
-日期：2026-09-16。共享模型、raw作用域、联合损失和保存链已实现，软件验收见[实施记录](unified_model_implementation_20260916.zh.md)。用户随后允许按阶段选择停止方法，当前排程改为[精简训练方案](unified_compact_training_20260916.zh.md)：源内参考选轮、共享源预算、个人固定90轮及两包2×2。执行器差异已落实，见[预算与性能验收](unified_budget_execution_20260916.zh.md)；未运行新真实矩阵。
+日期：2026-09-16。共享模型、raw作用域、联合损失和保存链已实现，软件验收见[实施记录](domain_transfer_major_20260920.zh.md)。用户随后允许按阶段选择停止方法，当前排程改为[精简训练方案](domain_transfer_major_20260920.zh.md)：源内参考选轮、共享源预算、个人固定90轮及两包2×2。执行器差异已落实，见[预算与性能验收](domain_transfer_major_20260920.zh.md)；未运行新真实矩阵。
 本次检查当前源码、前轮修复、历史开发证据，并联网核查原始资料，执行独立数学反例。
 既有 P1/P2 云端实验仍有独立执行身份；本方案不改写其模型、预处理或结果含义。
 
@@ -141,7 +141,7 @@ E若后续启用，也须独立冻结其尺度规则，不能随outer参数暗�
 当前源内选择采用\(\lambda\in\{0,10^{-3},10^{-2},10^{-1}\}\)，每来源库预先声明2名开发人员。
 参考源训练和早停均排除这些人；其C200按固定90轮适配，独立query按库/人员逐级等权选择λ。
 每外折仅选一次，冻结到两个源目标包；允许λ=0，失败不缩小选择分母。参考预算、划分、默认seed与成本
-见[精简训练方案第4节](unified_compact_training_20260916.zh.md#4-源参考共享预算和λ选择)。
+见[精简训练方案第4节](domain_transfer_major_20260920.zh.md)。
 当前选择器已采用四λ含0、固定目标轮数和每折一个开发seed，并保留范围与摘要绑定。
 
 \[
@@ -356,7 +356,7 @@ batch 上限512继续约束每次物理前向；大组按固定冻结 BN 的微�
 不截断决策事件。在线 BN 下拆分不是等价操作，须另有明确训练程序和同处理对照。
 所有 batch 条件记录 rows/draws/unique rows/groups/active pairs/steps/forward-backward 次数与时间。
 
-当前停止方案按阶段确定，详见[精简训练方案](unified_compact_training_20260916.zh.md)。
+当前停止方案按阶段确定，详见[精简训练方案](domain_transfer_major_20260920.zh.md)。
 每外折仅一个A1参考源使用participant验证CE、patience3、min_delta1e-4和最多12曝光周期。
 选出e*后，参考重训及该折两个源目标包的三个seed均消费这个周期预算；源主矩阵不重复内部选轮。
 个人迁移和scratch固定90轮，完整C直接拟合。源优化器Adam、个人AdamW，lr=1e-3、weight decay=1e-4；
@@ -486,7 +486,7 @@ EA 的可逆对齐只在真实共同观测协方差子空间中有定义，缺�
 首轮固定R=1，共享图保持1279参数。A={源CE,CE+SupCon+条件MMD}，Q={本人full,有限源中心收缩+真实decision}，
 运行A0Q0、A1Q0、A0Q1、A1Q1，以及同结构/同decision监督scratch和波形LDA。
 四个组合保留A×Q交互，减少到30个主源checkpoint；5个源内参考另计。首轮K0/200/800，实际回退档保留。
-完整表、数学、资格、风险/复用账本与计时见[当前训练方案](unified_compact_training_20260916.zh.md)。
+完整表、数学、资格、风险/复用账本与计时见[当前训练方案](domain_transfer_major_20260920.zh.md)。
 
 \[
 I_{A,Q}=Y_{11}-Y_{10}-Y_{01}+Y_{00},\qquad
@@ -496,7 +496,7 @@ I_{A,Q}=Y_{11}-Y_{10}-Y_{01}+Y_{00},\qquad
 本表估计两个处理包及其交互，不能单独识别SC、MMD、prior、decision或残差的细分贡献。
 这不是原四因素的低分辨率抽样；不将包内混合效应冒称单模块主效应。
 缺少membership时D为N/A；λ=0且D不适用使Q两级程序重合，复用实际拟合并记录退化。
-原16格CSV及旧排程已移出活动目录，保留于[物理归档](../../frozen/unified_compact_training_20260916_before/previous_program.manifest.json)。
+原16格CSV及被取消排程已退休；实际完成的稳定程序与恢复身份见[稳定大版](domain_transfer_major_20260920.zh.md)。
 
 ### 6.2 后续独立问题的候选扩展（不计入本轮）
 
@@ -617,7 +617,7 @@ GPU/compile/缓存/多进程行为在对应变化时验证。正式云端启动�
 
 最初方案阶段的文档与数学证据保留于 [研究资产](../assets/unified_model_research_20260916/)；
 其中源码摘要和验证JSON绑定当时的设计核验状态。随后授权实施已完成共享模型、联合目标、raw范围、
-全局早停、源内λ选择及个人保存链，并有分模块物理快照和定向反例，详见[实施记录](unified_model_implementation_20260916.zh.md)
+全局早停、源内λ选择及个人保存链，并有分模块物理快照和定向反例，详见[实施记录](domain_transfer_major_20260920.zh.md)
 及[源/运行时实施记录](../assets/unified_model_research_20260916/source_runtime_implementation.md)。
 真实新矩阵尚未执行；此前1936通过/4跳过属于前轮算法链修复，不能替代本方案的新软件或效能证据。
 原设计资产包括：

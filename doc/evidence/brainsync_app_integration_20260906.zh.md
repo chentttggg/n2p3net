@@ -59,10 +59,10 @@
 [manifest](../../frozen/brainsync_newest_before_integration_20260906.manifest.json)，SHA256
 `e04096d3cd4bb4fbb3a0f40a6e43f3d3f0bd8f4a8e6fcf74f7aea5e82777b7d9`。
 
-后端新功能前的220份源码/指导另行冻结：
-[manifest](../../frozen/technical_audit_before_app_20260906.manifest.json)，SHA256
+后端新功能前的220份源码/指导当时另行冻结，原SHA256
 `25fc6326e425e4a525fe1fae319c8fd157daf2235846c9aa4165c65a618df6e6`。
-不修改既有raw或历史成绩，不用新源码hash重标旧实验。
+该已关闭过程快照现退休，软件恢复入口见[稳定大版](../../frozen/major_domain_transfer_20260920/README.zh.md)。
+既有raw或历史成绩保留，不用新源码hash重标旧实验。
 
 ## 启动与交付
 

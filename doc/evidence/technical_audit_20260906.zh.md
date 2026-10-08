@@ -95,12 +95,12 @@ JSON反例在已有有效结果上尝试写NaN，验证失败不覆盖旧文件�
 ## 工作树与归档
 
 基线commit为`c8ee57399f3a081a14bab4ab914f07f86fb02184`，仅标识父提交。
-修改前296份实际非忽略文件已压缩并逐成员校验：
-[快照manifest](../../frozen/technical_audit_before_20260906.manifest.json)，archive SHA256：
+当时修改前296份实际非忽略文件已压缩并逐成员校验，原 archive SHA256：
 `96641cdd4f4a98c9b2c5ee52a68aba5d76945f2da7c22f737cf648e45c5b24b6`。
 
 从活动目录移除13份已被取代的指导/方案、2份日期化云模板，以及仍断言128 samples和
-8 EEG的旧`patch.sh`；这些文件的原文仍在上述物理压缩包内。两个仅检验旧模板的测试
+8 EEG的旧`patch.sh`。这些已关闭的过程快照于2026-10-08退役，恢复入口收敛到
+[稳定大版](../../frozen/major_domain_transfer_20260920/README.zh.md)。两个仅检验旧模板的测试
 随模板删除，通用promotion模板和真实合同测试保留。
 
 删除`tmp/l0_bi2014a_causal_v3_64subj.npz`的重复副本，保留`cloud_inputs/`同名文件；

@@ -1,23 +1,24 @@
-# Frozen Evidence Index
+# Research version archives
 
-This directory tracks manifests, checksums and delivery records for physical
-source and evidence snapshots. Historical archive payloads (`*.zip`, `*.tar.gz`,
-`*.tar`, `*.7z`, `*.bundle`) stay local and are not distributed through GitHub.
-`local_history/` also stays local. A fresh clone therefore does not contain these
-archives, raw datasets, experiment caches, model checkpoints or run outputs.
-Materialized `checkout/` directories also stay local; only their source manifests
-are tracked. Per-event figure data (`doc/assets/**/*.npz`) stays local alongside
-the published report figures and metadata.
+Retain history by substantive architecture milestone, with one recovery manifest
+for each major version. Its contents identify the actual backend and BrainSync
+interfaces, necessary source/environment/model inputs, final accepted results
+and the producers those results used. Verify member hashes and recovery before
+retiring superseded material. A source snapshot or EXE launch does not prove an
+integrated training release or adult performance.
 
-Manifest archive paths refer to separately retained files. Obtain the matching
-archive from its custodian and verify its recorded SHA-256 before inspection or
-execution. Do not regenerate an archive from current code and reuse its old
-identity. A source snapshot is not evidence that its experiments completed.
+Once an outcome is accepted, delete its redundant micro-freezes, source-before/
+after copies, resolved failure/debug logs, intermediate validation bundles and
+one-off helpers. Current unfinished research keeps its necessary backbone and
+evidence until the issue closes. Bundling every minor snapshot into another ZIP
+is not version reduction.
 
-Historical `source_commit` values retain their original meaning. Publication
-may remove archive payloads from unpublished Git history and change commit IDs;
-the original history and commit mapping are retained locally. Snapshot hashes
-and historical result identities must not be rewritten to match publication.
+Original acquisitions, unique scientific inputs, final models/predictions/results,
+credentials and other authors' WIP remain separate from disposable process files.
+Archive payloads, materialized checkouts and raw data stay local; Git distributes
+source, active guides and compact manifests. Obtain a referenced payload from its
+custodian and verify its SHA-256 before use. Preserve actual source bytes and
+producer identities; historical commit mappings stay local and are not rewritten
+to match publication.
 
-Start with the [evidence index](../doc/evidence/README.md) for research records,
-or the [active guides](../doc/README.md) for current behavior.
+Start with the [current guides](../doc/README.md) and [evidence index](../doc/evidence/README.md).

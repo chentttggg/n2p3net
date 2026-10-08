@@ -25,14 +25,14 @@ BrainSync日常入口仍消费已有CalibratedPredictor，不把公共36选一�
 输入统计、BN重估、可拟合QC和自动EOG均绑定实际完整校准范围；保存模式为`fixed_unified_program`。
 recipe明确decision系数及源中心强度，scratch的源罚项为0；不能同时声明固定updates或内部refit。
 新个人包保存sum membership评分、温度、严格coverage及质量状态，推理不读目标标签；该分数未认证为校准概率。
-操作和实测见[预算执行器验收](evidence/unified_budget_execution_20260916.zh.md)，完整科研设计见
-[精简训练方案](evidence/unified_compact_training_20260916.zh.md)。真人九选一效能仍待验证。
+操作和实测见[预算执行器验收](evidence/domain_transfer_major_20260920.zh.md)，完整科研设计见
+[精简训练方案](evidence/domain_transfer_major_20260920.zh.md)。真人九选一效能仍待验证。
 
 2026-09-16个人校准正式执行与预检查共用质量模型拟合范围门禁；用于内部选方的QC不能包含验证会话。
 旧非逐导QC也执行相同检查。固定本人LDA使用完整授权校准范围；冻结模型与需最终重拟合的quality policy各保存实际状态。
 QC开关可以改变可用数据和预测，但不会暗中改变同一legacy配方的输入统计、BN和训练策略。
 不合格范围在训练前说明原因；新修复不会为旧模型补写缺失证据。软件验证见
-[算法链验收](evidence/algorithm_chain_repairs_20260916.zh.md)。
+[算法链验收](evidence/domain_transfer_major_20260920.zh.md)。
 
 更新：2026-09-06。活动采集端为`D:/BCI/BrainSync_Tool_newest/BrainSync_Tool`，
 后端为`D:/BCI/n2p3-net`。两个版本的增强已整合到newest，不在旧目录同步开发。
@@ -77,7 +77,7 @@ QC开关可以改变可用数据和预测，但不会暗中改变同一legacy配
 BLE对应`--transport ble --address BrainSync`。省略地址使用所选模式的保存值。
 阻抗后重新应用250 Hz及所选增益；串口要求采样率读回，BLE保留有链路存活证据的读回超时声明。
 取消连接等待迟到句柄清理，关窗在原生连接请求结束后才关闭事件循环。
-软件与模拟验收见[连接统一记录](evidence/brainsync_transport_unification_20260917.zh.md)。
+软件与模拟验收见[连接统一记录](evidence/domain_transfer_major_20260920.zh.md)。
 
 发布使用`D:/BCI/BrainSync_Release_20260920/BrainSync.exe`，不再使用开发目录的Python入口或模拟启动器。
 发布版数据、日志和用户模型分别写入发布目录的`data/`、`logs/`和`models/`；算法设置中仍可显式选择

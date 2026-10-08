@@ -101,9 +101,9 @@ see [the workspace map](doc/technical_structure.zh.md#目录与数据层级).
 GitHub contains source, tests, guidance and evidence manifests. Historical archive
 payloads remain local; see [archive distribution](frozen/README.md). A clone does
 not include datasets, pretrained checkpoints, run outputs or the BrainSync app.
-Superseded planning documents, examples and the incompatible legacy `patch.sh`
-were physically frozen before removal. Their hashes and original paths are in
-the [audit snapshot](frozen/technical_audit_before_20260906.manifest.json).
+Completed stage snapshots and superseded process documents are consolidated in
+the [stable domain-transfer and BrainSync major](frozen/major_domain_transfer_20260920/README.zh.md).
+Its manifest binds the necessary executed sources and restoration evidence.
 The [technical audit](doc/evidence/technical_audit_20260906.zh.md) records fixes, tests
 and remaining integration work. Existing data and measured scores retain their
 original provenance.

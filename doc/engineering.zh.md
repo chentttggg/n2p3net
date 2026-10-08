@@ -1,6 +1,8 @@
 # 工程指南
 
-2026-10-08用户更新：科研与代码最终集成由科研窗口持有，云端窗口持有唯一资源调度、准备、启动、监控和既有结果验收。两窗口总并发最多10（科研主代理+5子代理，云端主代理+3子代理），增开或恢复先核双方实际活跃数。科研子代理不设我方期限或额度；以完整源码审查、真实调用链和必要反例验证推进，不重复本地全集或无依据门禁。当前科研云训练单seed，大版本才三seed；具体作用域见[当前集成状态](evidence/research_integration_20261008.zh.md)。外部文件、fit/时间授权和执行身份的检查保留，已准入不可变内部状态由唯一owner消费。
+2026-10-08用户更新：科研与代码最终集成由科研窗口持有，云端窗口持有唯一资源调度、准备、启动、监控和既有结果验收。两窗口总并发最多10（科研主代理+5子代理，云端主代理+3子代理），增开或恢复先核双方实际活跃数。科研子代理不设我方期限或额度；以完整源码审查、真实调用链和必要反例验证推进，不重复本地全集或无依据门禁。集成须仔细审阅实际模块逻辑，可交详细handoff给独立子代理，不能凭作者摘要或测试数量直接合入。当前科研云训练单seed，大版本才三seed；具体作用域见[当前集成状态](evidence/research_integration_20261008.zh.md)。外部文件、fit/时间授权和执行身份的检查保留，已准入不可变内部状态由唯一owner消费。
+
+两窗口在职责范围内自主处理小决定，只同步共享接口/所有权变化、关键阻塞或失败及可集成候选，不逐步报告常规排障。历史按已实现的大架构版本保留，验明恢复后删除已落地成果的微冻结、已解决失败记录和一次性过程工具；当前未关闭问题只留仍必要的证据。不可把所有小版本再套一层ZIP充作精简，范围见[归档分发规则](../frozen/README.md)。
 
 [当前公共source实施](evidence/public_source_pipeline_20261008.zh.md)共享准备/合并/load/fit预算，并保存原prepared方法与每seed实际producer。五项恢复/准入/账本修复经源码两轴和必要定向验证；未重复全集。云真实16/16数据准备成功，25CPU/4GPU完整源程序继续；只读释放完成文件页的内存提示与原数据删除不同，任何吞吐结论须读真实阶段/资源日志。科研子代理不设我方额度上限或人为期限，质量优先。
 
@@ -46,7 +48,7 @@ SDK发行包版本0.3.0的运行时自报0.2.0，来源记录分别保存，不�
 两种传输均按250 Hz运行；`test_transport_sample_contract.py`覆盖相同回调/样本时钟/暂停/BIDS及
 拒绝非250请求，`test_transport_connection.py`覆盖迟到连接、旧回调、断开重试与阻抗后配置恢复。
 `tests/verify_transport_ui.py <TEMP输出目录>`在真实qasync下使用FakeSdk检验串口/BLE启动与预览，
-不扫描或连接硬件。测试证据见[连接统一验收](evidence/brainsync_transport_unification_20260917.zh.md)。
+不扫描或连接硬件。测试证据见[连接统一验收](evidence/domain_transfer_major_20260920.zh.md)。
 2026-09-20发布构建位于`D:/BCI/BrainSync_Release_20260920`，使用PyInstaller onedir并随附`_internal`运行时；
 构建时排除未使用的Qt WebEngine/Qt3D/Quick等模块，排除`_internal`后的发布载荷128.319 MiB，小于200 MiB，
 不复制`.venv`、源码、测试、开发入口或历史数据。启动探针使用`BrainSync.exe --mock`，
@@ -68,7 +70,7 @@ Qt测试必须注入临时`app_root`，在同一qasync循环内完成`window.shu
 epoch后Cz、EOG和QC拥有Cz参考、保存的通道子集/顺序、旧无陷波包；按实际张量与事件账本比较。
 零epoch路径先核验录制准入，普通合同失败不能降级为拒判；报告禁止分类器执行，原始文件和模型只读。
 2026-09-08本轮入口修复在当前后端环境全套1539通过、4跳过；前端35项通过。
-CUDA实际拟合、保存重载及CLI推理验证见[执行计划](roadmap.zh.md#已完成与未完成)，
+CUDA实际拟合、保存重载及CLI推理验证见[执行计划](evidence/domain_transfer_major_20260920.zh.md)，
 该合成验证不构成CPU/GPU吞吐比较或成人效能结果。
 
 采集后质量报告需要`signals`依赖组，Matplotlib已显式声明并由`uv.lock`锁定；绘图使用Agg后端。
@@ -119,7 +121,7 @@ M1从物理冻结的materialized源码运行，绑定计划/原MAT哈希/venv；
 连续BNCI入口为`experiments/run_bnci_continuous_study.py --plan <plan> --output <new-directory>`，
 计划示例及真实执行源见实施证据；运行前据本机可用内存确定线程，不能同时物化全四库数组。
 
-2026-09-18源池配置与准备验证集中化，详情见[源模块验收](evidence/source_modules_20260918.zh.md)。
+2026-09-18源池配置与准备验证集中化，详情见[源模块验收](evidence/domain_transfer_major_20260920.zh.md)。
 新研究使用`configs/source_pool_expansion.example.json`描述source_pools、targets的整库排除、seed、
 matched_pools、product_pools和独立输入布局。示例默认三seed、四个已用开发目标，不代表准入已完成。
 `run_source_pool_matrix.py --matrix-plan <JSON> --prepared <目录> --snapshot <源码清单> --output <新目录> --dry-run`
@@ -152,10 +154,10 @@ BN状态或score定义变化均进入checkpoint/cache/resume身份；旧归档�
 阶段快照可以包含其他尚未验收的并行模块，整体完成后另存最终验收快照。证据文档和日志另作压缩清单，
 不依赖源码helper递归收录`doc/evidence/`。整理仅处理本次临时材料，不通过reset清空并行dirty工作。
 统一主链最终全套2095通过、4跳过，定向反例及六份阶段源码校验见
-[统一程序实施与验收](evidence/unified_model_implementation_20260916.zh.md)；最终源码与验证证据已分别物理冻结。
+[统一程序实施与验收](evidence/domain_transfer_major_20260920.zh.md)；最终源码与验证证据已分别物理冻结。
 
 2026-09-16算法链修复以失败反例先行，最终全套1936通过、4跳过，Ruff及diff检查通过，见
-[验收记录](evidence/algorithm_chain_repairs_20260916.zh.md)。修复前后源码均物理归档，已有dirty改动保留。
+[验收记录](evidence/domain_transfer_major_20260920.zh.md)。修复前后源码均物理归档，已有dirty改动保留。
 源MMD/SupCon在normalize/dedup前验证原特征和索引，CUDA采用一次设备断言，保留批量MMD；
 合法无项返回图连通零，CE批序、draws、BN、optimizer及RNG不变，基础双样本MMD仍严格。
 新source准备目录使用`n2p3_source_preparation/2`；方法、raw或sidecar改变以及缓存record缺失/篡改均拒绝旧completed复用，
@@ -198,7 +200,7 @@ Windows原子JSON替换对短暂PermissionError最多等待0.63秒重试，失�
 测试文件不互相导入。辅助函数直接构造当前合同，不加兼容别名、异常吞并或猜测字段的兜底。
 相同操作的不同输入用参数化用例；一次拟合可覆盖学习效果、logit和概率，避免为重复断言重训。
 2026-09-16按此原则合并数据与统一适配测试：测试文件144→135，相关个人NN拟合105→89，
-重复prefix准备和EOG拟合均5→1；完整映射及最终验证见[精简方案](evidence/unified_compact_training_20260916.zh.md#8-测试整理)。
+重复prefix准备和EOG拟合均5→1；完整映射及最终验证见[精简方案](evidence/domain_transfer_major_20260920.zh.md)。
 测试数量不是质量目标；删除项必须由同接口的独立行为检查覆盖，先归档，再移除旧入口和无用途的假拟合层。
 删除没有独立行为价值的退役状态断言、不可达fake与重复构造，不保留空壳；净删减统计包含辅助代码。
 参数案例直接声明输入变更与预期，避免用同一个场景名分别驱动造数和断言的分支链。
@@ -274,7 +276,7 @@ loader/参考/重采样/基线和后续QC，不只检验简化滤波脚本。总
 适配器任何阶段失败后均拒绝推理和统计导出。回归包括NaN loss、非有限梯度/参数和refit中断。
 监控PID存活使用已声明依赖`psutil`的只读查询，Windows禁止以`os.kill(pid, 0)`探测。
 仪表盘的监控认领在已有锁中完成；缺失数值保持缺失，真实零值仍保留，见
-[全库核查与修复](evidence/code_quality_audit_20260908.zh.md#修复落实)。
+[全库核查与修复](evidence/domain_transfer_major_20260920.zh.md)。
 Dense PDS的GPU距离使用直接差值路径，避免矩阵平方展开的相消；坐标指数超出安全平方范围
 时复用既有CPU `hypot`计算，不放宽半径。该边界由float64精度和特征维数推导，backend照实记录。
 每个实验保存实际配置、训练/评估各自源码snapshot、训练行、预测、指标、包版本及资源记录。
@@ -305,14 +307,14 @@ ES轮数读取`epoch_selection.epochs`，缺省60；普通非stage入口的`targ
 
 ### 统一模型的分阶段训练预算
 
-用户最新允许按阶段采用不同停止规则。当前[精简设计](evidence/unified_compact_training_20260916.zh.md)只在每外折一个源内参考上早停：
+用户最新允许按阶段采用不同停止规则。当前[精简设计](evidence/domain_transfer_major_20260920.zh.md)只在每外折一个源内参考上早停：
 patience3、min_delta1e-4、最多12曝光周期。reference inner与refit的范围和成本分别记录；
 主源两种配方/三个seed消费同一个冻结e*，每次直接拟合全部合法源。个人迁移和scratch固定90轮，完整C一次拟合。
 输入统计、BN重估和LDA为一次估计；K0/只读推理没有停止轮数。主K0/200/800，不默认展开更高K或模块大笛卡尔积。
 
 当前代码已由`UnifiedTrainingBudget`路由新预算，默认文件`configs/unified_training_budget.json`。
 复用`PatienceStopper`、source fit/refit及直接target fit；`GlobalEarlyStoppingPolicy`和`EpochSelectionPolicy`保留为其它显式研究能力。
-来源与反例见[实施验收](evidence/unified_budget_execution_20260916.zh.md)，没有新增每算法一个runner。参考source范围/配置、e*、λ、实际模式、目标轮数均进入checkpoint、计划和cache身份。
+来源与反例见[实施验收](evidence/domain_transfer_major_20260920.zh.md)，没有新增每算法一个runner。参考source范围/配置、e*、λ、实际模式、目标轮数均进入checkpoint、计划和cache身份。
 相同e*对应不同fit行数时按曝光周期换算updates；固定个人模式不请求或生成无用途的inner raw缓存。
 确定性LDA按实际输入和数值程序复用，seed标签不能触发相同的重新拟合。
 
@@ -329,7 +331,7 @@ GPU计时同步，冷启动/编译与热运行分列。缓存就绪的训练时�
 
 用户随后明确本轮交付目标是**优化底层调用算法并彻底模块化云端训练**：相近实验固定复用同一个执行模块，已有优秀训练实现按当前合同复用。实验计划提供依赖、配方、科学调用和真实输入/输出身份；公共底层统一拥有ready队列、进程与数值线程、host/GPU/暂存准入、缓存复用、阶段记录和异常退出诊断。`TrainingRuntime`、`MatrixBatchSource`、源轨迹登记表、原缓存writer/attested loader及资源owner作为复用基础；CLI消费稳定接口，资源算法集中在SRC。
 
-本轮统一验收包含准备→完整源选择/refit→目标校准→评估的实际调用链。一个cache组内复用加载与已准入输入，完整源产物完成后按真实依赖解锁目标工作；源/目标共用CPU、GPU与内存额度，CPU fallback按实际常驻占用转账。participant任务分片只改变排程，三组配对seed、requested预算与失败分母、C/held授权、fixed/grouped程序、模型保存重放和actual producer由原科学owner继续持有。输出与概率合同分别绑定当前binary/candidate入口。
+本轮统一验收包含准备→完整源选择/refit→目标校准→评估的实际调用链。一个cache组内复用加载与已准入输入，完整源产物完成后按真实依赖解锁目标工作；源/目标共用CPU、GPU与内存额度，CPU fallback按实际常驻占用转账。participant任务分片只改变排程，当前阶段声明的配对seed集合、requested预算与失败分母、C/held授权、fixed/grouped程序、模型保存重放和actual producer由原科学owner继续持有。输出与概率合同分别绑定当前binary/candidate入口。
 
 当前源输入/字节调度和退出诊断切片仍在独立两轴审查，共用执行接口及公共消费者接入尚在实施；此目标段不表示模块化或真实吞吐已经验收。合并稳定源码后统一运行一次所需全集、Ruff及合同反例，再做真实完整输入与实际进程/资源/进度验证。短软件探针、单个phase改善和名义容量均分别记录。
 

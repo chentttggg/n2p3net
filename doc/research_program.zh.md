@@ -234,7 +234,7 @@ EA、AS-MMD、Split-BN、TSD、Dense PDS、源残差、invariant/private等已�
 [统一模型方案](evidence/unified_model_plan_20260916.zh.md)，当前尚无新架构效能结果。
 
 首版主链已实施。源内λ选择只消费被排除在参考源拟合之外的参与者，按seed后participant等权开发AUC选择；
-外层目标不参与。最新[精简训练裁决](evidence/unified_compact_training_20260916.zh.md)只对每折一个源内参考模型早停，
+外层目标不参与。最新[精简训练裁决](evidence/domain_transfer_major_20260920.zh.md)只对每折一个源内参考模型早停，
 其e*冻结到该折两种源目标的三个seed；个人固定90轮直接拟合全部授权C，不再强制个人内部选轮和第二次重训。
 首轮估计源目标包A与个人适配包Q的2×2交互及相对scratch/LDA收益，不分离包内各模块作用。
 共享预算由A1参考选择，三个seed条件于冻结e*/λ；实际剂量及选择成本另报，不宣称各方法分别最优。
@@ -256,7 +256,7 @@ LDA顺序实验作为独立开发对照：微调后冻结特征并拟合收缩LD
 配对重复关系从执行计划传到结果与分析，不从成功cell推断；不同源方法保留独立因素，复用scratch/LDA
 不增加独立重复数。预声明库缺失时全库主估计不可用，部分库读数另列；已知实际K失败保留分母，
 未知K不虚构。缺失AUC对比的识别界按正系数总和及库等权计算，不是置信区间。
-实施及数学验证见[八项修复证据](evidence/algorithm_chain_repairs_20260916.zh.md)。
+实施及数学验证见[八项修复证据](evidence/domain_transfer_major_20260920.zh.md)。
 
 2026-09-16域迁移首批实现只开放显式P1/P2研究处理，蒸馏已取消；实际顺序见路线图。
 P1空间组指`st_spatial`，时间组包括`st_temporal`及MST depthwise/pointwise，
@@ -367,7 +367,7 @@ CI含0只是未决，实用等效需要适当检验与精度。
 
 ## 6. 反例与联动
 
-本轮训练只执行[compact512基线与组件消融](roadmap.zh.md#2026-09-07训练链条验证方案)：
+本轮训练只执行[compact512基线与组件消融](evidence/domain_transfer_major_20260920.zh.md)：
 固定batch上限512、60遍历，复用四个排他source；不新增源训练、不搜索batch或产品选择器。
 batch512是用户指定的资源策略，不是B0选出的最优值。三个消融只估计相对Source full的
 条件贡献，不证明完整因素交互、多源独立优势、源选模最优或成人效果。
