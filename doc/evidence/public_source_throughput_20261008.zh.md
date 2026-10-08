@@ -15,3 +15,5 @@ production入口明确限制writer实际保存的表示，包括float32 EEG/posi
 另从原BNCI A01 MAT和BI2014a subject1 ZIP成员真实准备两库，原信号SHA核对后得到5388×6×179。免压缩writer交接与冷attested loader逐元素核X/y/subject/mask一致；这是公共输入准备证据，NN拟合0次，无效能结论。
 
 来源、JUnit、探针及代码身份由[切片凭证](../assets/public_source_throughput_20261008/slice1_receipt.json)绑定。完整排除BNCI十一库云端bench、实际peak、门禁/并行调度、旧view/model受控接续与新运行利用率仍单列完成；本页没有宣称2500% CPU或四路GPU已经实测达到。
+
+后续原fd62全四view完成但尚未NN拟合时，caller计划非法scope `public_source_development` 在child较晚阶段才拒绝。新切片将scope/software预算合法性集中到 `resolve_source_program`，在任何资源/归档准入及重merge前调用；三个非法enum的无输出/无cache与两合法enum等6项反例通过。该失败与旧view来源保留，0 NN不记完成；[前置凭证](../assets/public_source_throughput_20261008/scope_preflight_receipt.json)独立签本次源码。

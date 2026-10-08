@@ -631,9 +631,9 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
     from research.source_selection import resolve_source_program
     from transfer.target_experiments import resolve_target_batch_rule
 
+    program = resolve_source_program(plan, stages)
     resources = resolve_source_resources(plan, len(groups), device)
     snapshot = verified_executed_snapshot(plan["source_snapshot_manifest"], root=ROOT)
-    program = resolve_source_program(plan, stages)
     independent = program["name"] == "independent_selection_refit"
     prepared_directory = plan.get("prepared_source_directory")
     manifests = plan.get("source_preparation_manifests", {})
@@ -920,15 +920,10 @@ def execute_source_chain(plan, *, output: Path, dry_run: bool, device: str, stag
     if type(workers) is not int or not 1 <= workers <= available_cpu_threads():
         raise ValueError("target_workers must be within the available CPU budget")
     evidence_scope = plan.get("evidence_scope", "development")
-    if evidence_scope not in {"development", "software_correctness"}:
-        raise ValueError("source chain supports only development or software_correctness evidence")
     if (unified and not dry_run and plan.get("source_prior_selection") is None
             and not all(outer.get("source_prior_selection") is not None for outer in plan["outer_folds"])
             ):
         raise ValueError("unified development requires source_prior_selection with independent source-inner raw prefixes")
-    correctness_fields = {key for key in plan if key.startswith("correctness_")}
-    if correctness_fields and evidence_scope != "software_correctness":
-        raise ValueError("correctness budgets cannot be used under public development evidence")
     if evidence_scope == "software_correctness":
         candidates = tuple(plan.get("correctness_candidate_updates", [1, 2]))
         source_updates = int(plan.get("correctness_source_updates", 2))

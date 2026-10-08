@@ -72,6 +72,12 @@ def resolve_source_program(plan, stages):
     from research.source_catalog import paired_pipeline_seeds
     from train.early_stopping import GlobalEarlyStoppingPolicy
 
+    evidence_scope = plan.get("evidence_scope", "development")
+    if evidence_scope not in {"development", "software_correctness"}:
+        raise ValueError("source chain supports only development or software_correctness evidence")
+    if any(key.startswith("correctness_") for key in plan) and evidence_scope != "software_correctness":
+        raise ValueError("correctness budgets cannot be used under public development evidence")
+
     expected = "unified" if "unified_source" in stages else "declared_legacy_stages"
     program = plan.get("source_program", expected)
     if program == expected:

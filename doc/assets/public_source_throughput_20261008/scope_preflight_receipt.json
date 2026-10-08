@@ -1,0 +1,16 @@
+{
+  "schema": "n2p3_source_scope_preflight/1",
+  "status": "passed",
+  "tests": 6,
+  "failures": 0,
+  "errors": 0,
+  "source_files_sha256": {
+    "src/research/source_selection.py": "14d7f36039446c2544cdf8d13ca1d0f685c90916ce61964afaab909b74a95e92",
+    "experiments/run_source_training_chain.py": "0ab51774c444dec88a74a7c50edc57665f71af84ee8159d8af7da19ce40e3013",
+    "tests/train/test_source_scope_preflight.py": "9234fbda4a478acbb6726ef3a02fb7d3308b335d346bdf610a9e56809645ddb9"
+  },
+  "junit_sha256": "0fffa0c258c3dc10c4a8c866965b6492949734b0c102c2f54a796b7dd2a67968",
+  "heavy_cache_or_NN_executed_by_probe": false,
+  "central_owner": "resolve_source_program",
+  "invalid_scope_rejected_before_resources_or_input_loading": true
+}
