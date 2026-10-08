@@ -22,6 +22,7 @@ from typing import Any
 
 import numpy as np
 
+from data.digests import compact_array_digest
 from data.domain import DOMAIN_ADAPTER_SCHEMA, NATIVE_REFERENCE_SCHEMA, source_domain_ids
 from data.epochs import (
     EpochDataset,
@@ -45,15 +46,6 @@ def _digest(value: object) -> str:
     return hashlib.sha256(json.dumps(
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False
     ).encode("utf-8")).hexdigest()
-
-
-def _array_digest(value: object) -> str:
-    array = np.ascontiguousarray(np.asarray(value))
-    digest = hashlib.sha256()
-    digest.update(json.dumps({"dtype": array.dtype.str, "shape": list(array.shape)},
-                             sort_keys=True, separators=(",", ":")).encode("utf-8"))
-    digest.update(memoryview(array).cast("B"))
-    return digest.hexdigest()
 
 
 def _file_digest(path: Path) -> tuple[str, int]:
@@ -185,7 +177,7 @@ def authorization_from_dataset(
         fit_scope=fit_scope,
         authorized_row_ids=tuple(row_ids[index] for index in indices),
         authorized_participant_keys=participant_keys,
-        fit_rows_sha256=_array_digest(indices),
+        fit_rows_sha256=compact_array_digest(indices),
     )
 
 
@@ -345,12 +337,12 @@ class EAFeatureArtifact:
         return {
             "schema": EA_FEATURE_ARTIFACT_SCHEMA,
             "name": self.name,
-            "X_sha256": _array_digest(self.X),
-            "y_sha256": None if self.y is None else _array_digest(self.y),
-            "subject_ids_sha256": _array_digest(self.subject_ids),
+            "X_sha256": compact_array_digest(self.X),
+            "y_sha256": None if self.y is None else compact_array_digest(self.y),
+            "subject_ids_sha256": compact_array_digest(self.subject_ids),
             "row_ids": list(self.row_ids),
             "component_names": list(self.component_names),
-            "component_mask_sha256": _array_digest(self.component_mask),
+            "component_mask_sha256": compact_array_digest(self.component_mask),
             "preprocessing": dict(self.preprocessing),
             "parent_channel_names": list(self.parent_channel_names),
             "source_reference": self.source_reference,

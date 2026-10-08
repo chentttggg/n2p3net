@@ -97,16 +97,6 @@ def _matching_pids(script_name: str, option: str, values: set[str]) -> list[int]
     return matches
 
 
-def _path_matches(value: str, target: Path, project_root: Path) -> bool:
-    candidate = Path(value).expanduser()
-    if not candidate.is_absolute():
-        candidate = project_root / candidate
-    try:
-        return candidate.resolve() == target.resolve()
-    except OSError:
-        return False
-
-
 def _process_belongs_to_run(command: list[str], run_dir: Path, project_root: Path) -> bool:
     run_name = _argument_value(command, "--run-name")
     run_root = _argument_value(command, "--run-dir")

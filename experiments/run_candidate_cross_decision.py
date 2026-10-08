@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import platform
@@ -20,6 +19,7 @@ for search_path in (ROOT, SRC):
     if str(search_path) not in sys.path:
         sys.path.insert(0, str(search_path))
 
+from data.digests import file_sha256  # noqa: E402
 from experiments.result_batch_contract import ZERO_SHOT_FEATURE_CACHE_SCHEMA  # noqa: E402
 from research.contracts import (  # noqa: E402
     MIN_PROMOTION_HIT_AT_R,
@@ -62,14 +62,6 @@ def _load_trunk(
     return trunk
 
 
-def _sha256_file(path: str | Path) -> str:
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
 def _cached_attested_dataset(cache_path: str) -> object:
     from data.epochs import load_epoch_dataset
 
@@ -78,41 +70,7 @@ def _cached_attested_dataset(cache_path: str) -> object:
 
 @lru_cache(maxsize=8)
 def _cached_sha256_file(path: str) -> str:
-    return _sha256_file(path)
-
-
-def _load_source_selection(
-    path: str | Path,
-    *,
-    source_cache_sha256: str,
-    row_identity_digest: str | None = None,
-) -> tuple[object, dict[str, object]]:
-    """Load a PDS selection record bound to the attested source cache.
-
-    Mirrors ``run_pretrain_supervised._load_source_selection`` so the live
-    AS-MMD source-stream path verifies the exact same cache identity and row
-    identity fields before applying selected indices.
-    """
-
-    from train.source_sampling import load_pds_selection_record, pds_selection_from_record
-
-
-    _, record = load_pds_selection_record(path)
-    selection = pds_selection_from_record(
-        record,
-        expected_source_cache_sha256=source_cache_sha256,
-    )
-    if row_identity_digest is not None:
-        feature_record = record.get("source_feature_record")
-        if not isinstance(feature_record, Mapping):
-            raise ValueError("source-selection record lacks its source_feature_record.")
-        feature_row_digest = feature_record.get("row_identity_digest")
-        if feature_row_digest != row_identity_digest:
-            raise ValueError(
-                "source-selection feature row_identity_digest disagrees with "
-                "the loaded source cache."
-            )
-    return selection, record
+    return file_sha256(path)
 
 
 @lru_cache(maxsize=8)
@@ -120,7 +78,6 @@ def _cached_candidate_split(
     dataset_cache_path: str,
     calibration_selections: int,
     test_repetitions: int,
-    selection_repetition_floor: int,
     max_test_selections: int | None,
 ) -> object:
     from transfer.candidate_within_subject import candidate_calibration_decision_split
@@ -129,7 +86,6 @@ def _cached_candidate_split(
         _cached_attested_dataset_memo(dataset_cache_path),
         calibration_selections=calibration_selections,
         test_repetitions=test_repetitions,
-        selection_repetition_floor=selection_repetition_floor,
         max_test_selections=max_test_selections,
     )
 
@@ -240,12 +196,12 @@ BUFFER_ESTIMAND_BY_BUFFER_SOURCE = {
     "target_calibration": "calibration_defined_target",
 }
 
-_ENV_LOCKFILE_NAMES = ("uv.lock", "requirements.txt", "requirements-minimal.txt")
+_ENV_LOCKFILE_NAMES = ("uv.lock", "requirements.txt")
 
 
 def _lockfile_digests() -> dict[str, str]:
     lockfiles = {
-        name: _sha256_file(ROOT / name) for name in _ENV_LOCKFILE_NAMES if (ROOT / name).is_file()
+        name: file_sha256(ROOT / name) for name in _ENV_LOCKFILE_NAMES if (ROOT / name).is_file()
     }
     if "uv.lock" not in lockfiles:
         raise ValueError("uv.lock is missing; the environment identity cannot be recorded.")
@@ -728,7 +684,6 @@ def main(argv: Sequence[str] | None = None) -> None:
         str(Path(args.dataset_cache).resolve()),
         args.calibration_selections,
         args.test_reps,
-        args.min_evidence_level,
         args.max_test_selections,
     )
     manifest_subjects = (
@@ -909,10 +864,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         if args.source_selection_record is not None:
             assert source_selection_record_path is not None
             selection_path = Path(source_selection_record_path)
-            selection, _ = _load_source_selection(
+            from train.source_sampling import load_pds_selection_record
+
+            selection, _ = load_pds_selection_record(
                 selection_path,
-                source_cache_sha256=source_stream_sha256,
-                row_identity_digest=epoch_row_identity_digest(source_dataset),
+                expected_source_cache_sha256=source_stream_sha256,
+                expected_row_identity_digest=epoch_row_identity_digest(source_dataset),
             )
             if selection.source_count != source_dataset.n_epochs:
                 raise ValueError(
@@ -1226,9 +1183,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 )
                 continue
             if inner is not None:
-                calibration_logits, calibration_y, calibration_source = calibration_data_from_model(
-                    adapter, local_X[effective_train], local_y[effective_train]
-                )
+                calibration_logits, calibration_y, calibration_source = calibration_data_from_model(adapter)
                 calibration = fit_weighted_logit_temperature(
                     calibration_logits,
                     calibration_y,

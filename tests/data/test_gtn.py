@@ -12,9 +12,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from data.contract import epoch_sample_count
 from data.gtn import GTNData, _extract_digit, _nix_subject_ids, _parse_age, read_gtn_experiment
 from data.gtn_dataset import build_gtn_epoch_dataset, gtn_preprocessing_for_cohort
-from experiments.prepare_gtn_dataset import _derive_n_times
 from tests import PROJECT_ROOT
 from tests.support.signal import make_raw
 
@@ -42,8 +42,8 @@ def test_parse_age():
 
 
 def test_gtn_n_times_uses_the_shared_exclusive_right_edge_rule():
-    assert _derive_n_times(256.0, -200.0, 800.0) == 256
-    assert _derive_n_times(128.0, 0.0, 1000.0) == 128
+    assert epoch_sample_count(256.0, -200.0, 800.0) == 256
+    assert epoch_sample_count(128.0, 0.0, 1000.0) == 128
 
 
 @pytest.mark.parametrize("cohort,low_cutoff,causal", [

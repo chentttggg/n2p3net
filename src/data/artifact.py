@@ -183,28 +183,6 @@ class FoldLocalArtifactPolicy:
             fit_data_digest=_fit_data_digest(X, subject_ids, groups, observed, features),
         )
 
-    def _choose_quantile(
-        self,
-        X: np.ndarray,
-        ptp: np.ndarray,
-        observed: np.ndarray,
-        subject_ids: np.ndarray,
-        channel: int,
-    ) -> float:
-        """Choose one channel's threshold quantile through subject-disjoint CV.
-
-        Keep this narrow wrapper for callers that used the former private helper;
-        fitting uses :meth:`_choose_quantiles` to batch the channel calculations.
-        """
-
-        features = EpochQCFeatures(
-            relative_ptp=np.asarray(ptp, dtype=np.float32),
-            channel_std_v=np.std(np.asarray(X, dtype=np.float64), axis=2).astype(np.float32),
-            epoch_scale_v=np.ones(len(X), dtype=np.float32),
-            observed_mask=np.asarray(observed, dtype=bool),
-        )
-        return float(self._choose_quantiles(X, features, subject_ids)[channel])
-
     def _choose_quantiles(
         self,
         X: np.ndarray,
@@ -874,19 +852,3 @@ def _validate_fit_scope(fitted, X, subjects, train, trial_mask, features, fit_gr
 
 def _subset_mask(mask: np.ndarray | None, rows: np.ndarray) -> np.ndarray | None:
     return None if mask is None else np.asarray(mask)[rows]
-
-
-def _relative_peak_to_peak(X: np.ndarray, observed: np.ndarray) -> np.ndarray:
-    """Normalize each epoch's PTP by its observed-channel median.
-
-    EEG recording gain and reference scale can differ substantially across
-    held-out subjects. This preserves a channel-local PTP contrast while
-    preventing an unseen subject's global scale from becoming a false artifact.
-    """
-
-    raw_ptp = np.ptp(X.astype(np.float64, copy=False), axis=2)
-    if not observed.any(axis=1).all():
-        raise ValueError("Every epoch must contain at least one observed channel.")
-    scales = np.nanmedian(np.where(observed, raw_ptp, np.nan), axis=1)
-    floor = np.finfo(float).eps
-    return raw_ptp / np.maximum(scales[:, None], floor)

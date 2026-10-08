@@ -1112,9 +1112,6 @@ class DeepBaseline(Baseline):
                         risk_unit_ids=risk_unit_ids,
                         risk_within_domain_unit=risk_within_domain_unit,
                         selection_domain=selection_domain,
-                        feature_alignment_mode=feature_alignment_mode,
-                        feature_alignment_min_cell_count=feature_alignment_min_cell_count,
-                        feature_alignment_inactive_policy=feature_alignment_inactive_policy,
                         decision_metadata=decision_metadata,
                         decision_loss_config=decision_loss_config,
                         requested_batch_size=requested_batch_size,
@@ -1364,7 +1361,7 @@ class DeepBaseline(Baseline):
                         rows = permutation[cursor:cursor + self.cfg.batch_size]
                         cursor += len(rows)
                     else:
-                        rows = sample_source_rows(rng, probability, self.cfg.batch_size,
+                        rows = sample_source_rows(rng, self.cfg.batch_size,
                                                   cumulative=cumulative_probability)
                     rows = np.ascontiguousarray(rows, dtype=np.int64)
                     order_digest.update(rows.tobytes())
@@ -1494,9 +1491,6 @@ class DeepBaseline(Baseline):
         risk_unit_ids: np.ndarray | None,
         risk_within_domain_unit: str,
         selection_domain: str | None,
-        feature_alignment_mode: str,
-        feature_alignment_min_cell_count: int,
-        feature_alignment_inactive_policy: str,
         decision_metadata: DirectDecisionMetadata | None,
         decision_loss_config: DecisionLossConfig | None,
         requested_batch_size: int,

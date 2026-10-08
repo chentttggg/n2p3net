@@ -44,8 +44,6 @@ EXTENDED_EVIDENCE_AGGREGATIONS = EVIDENCE_AGGREGATIONS | {"trim0.2", "precision"
 DEFAULT_EVIDENCE_AGGREGATION = "mean"
 DEFAULT_EVIDENCE_COUNT_POWER = 0.5
 
-# Retained alias: callers that only accept the three count-based modes.
-COUNT_AGGREGATIONS = EVIDENCE_AGGREGATIONS
 MEMBERSHIP_SCORE_METHOD = "membership_llr_sum/1"
 
 

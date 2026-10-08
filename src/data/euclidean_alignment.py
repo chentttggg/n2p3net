@@ -17,6 +17,8 @@ from typing import Any
 
 import numpy as np
 
+from data.digests import array_digest
+
 EA_ALIGNMENT_SCHEMA = "n2p3_euclidean_alignment/2"
 VALID_EA_SCOPES = frozenset(
     {"source_rows", "target_calibration", "unlabelled_buffer", "per_domain"}
@@ -28,14 +30,6 @@ def _digest(value: object) -> str:
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
     ).hexdigest()
-
-
-def _array_digest(value: np.ndarray) -> str:
-    array = np.ascontiguousarray(np.asarray(value))
-    digest = hashlib.sha256()
-    digest.update(json.dumps({"dtype": array.dtype.str, "shape": list(array.shape)}).encode())
-    digest.update(memoryview(array).cast("B"))
-    return digest.hexdigest()
 
 
 def _readonly(value: np.ndarray) -> np.ndarray:
@@ -207,7 +201,7 @@ def fit_euclidean_alignment(
         domain_id=domain_id, fit_scope=fit_scope, mean_trial_covariance=covariance,
         reference_covariance=reference, inverse_sqrt_reference=inverse, sample_count=len(values),
         shrinkage=cfg.shrinkage, relative_eigenvalue_floor=cfg.relative_eigenvalue_floor,
-        covariance_condition_number=condition, effective_rank=rank, buffer_digest=_array_digest(values),
+        covariance_condition_number=condition, effective_rank=rank, buffer_digest=array_digest(values),
     )
 
 

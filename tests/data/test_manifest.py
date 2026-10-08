@@ -5,9 +5,9 @@ import numpy as np
 import pytest
 
 from data.artifact import FoldLocalArtifactPolicy, parse_candidate_quantiles
+from data.contract import epoch_sample_count
 from data.epochs import PreprocessingSpec
 from data.manifest import build_manifest_dataset, load_manifest, resolve_manifest_channels
-from experiments.prepare_eeg_dataset import _derive_exclusive_n_times
 from experiments.run_eeg_loso import _safe_auto_run_component, _validate_run_name
 from tests.support.io import read_json, write_json
 
@@ -205,8 +205,8 @@ def test_runner_run_names_are_relative_and_path_safe() -> None:
 
 
 def test_preprocessing_derives_exclusive_endpoint_width() -> None:
-    assert _derive_exclusive_n_times(sfreq=256.0, tmin_ms=-200.0, tmax_ms=800.0) == 256
-    assert _derive_exclusive_n_times(sfreq=128.0, tmin_ms=0.0, tmax_ms=1000.0) == 128
+    assert epoch_sample_count(sample_rate_hz=256.0, tmin_ms=-200.0, tmax_ms=800.0) == 256
+    assert epoch_sample_count(sample_rate_hz=128.0, tmin_ms=0.0, tmax_ms=1000.0) == 128
 
 
 def test_artifact_quantile_parser_preserves_the_declared_order() -> None:

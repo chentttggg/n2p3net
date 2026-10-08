@@ -588,9 +588,7 @@ def _fold_result(
     started = time.perf_counter()
     _fit(model, X, y, subject_ids, train, trial_channel_mask)
     fit_sec = time.perf_counter() - started
-    calibration_logits, calibration_y, source = calibration_data_from_model(
-        model, X[train], y[train]
-    )
+    calibration_logits, calibration_y, source = calibration_data_from_model(model)
     pos_weight = getattr(model, "training_pos_weight_", None)
     train_prior = getattr(model, "training_prior_", None)
     calibration = fit_logit_calibration(

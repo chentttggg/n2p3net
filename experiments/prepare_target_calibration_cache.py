@@ -41,7 +41,6 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--calibration-selections", type=int, required=True)
     parser.add_argument("--test-repetitions", type=int, required=True)
-    parser.add_argument("--selection-repetition-floor", type=int, default=None)
     parser.add_argument("--max-test-selections", type=int, default=None)
     parser.add_argument("--name", default=None)
     parser.add_argument("--uncompressed", action="store_true")
@@ -51,8 +50,6 @@ def main(argv: list[str] | None = None) -> None:
         parser.error("--calibration-selections must be at least one")
     if args.test_repetitions < 1:
         parser.error("--test-repetitions must be at least one")
-    if args.selection_repetition_floor is not None and args.selection_repetition_floor < 1:
-        parser.error("--selection-repetition-floor must be at least one")
     if args.max_test_selections is not None and args.max_test_selections < 1:
         parser.error("--max-test-selections must be at least one")
 
@@ -66,7 +63,6 @@ def main(argv: list[str] | None = None) -> None:
         dataset,
         calibration_selections=args.calibration_selections,
         test_repetitions=args.test_repetitions,
-        selection_repetition_floor=args.selection_repetition_floor,
         max_test_selections=args.max_test_selections,
     )
     mask = np.asarray(split.calibration_mask, dtype=bool)
@@ -81,11 +77,6 @@ def main(argv: list[str] | None = None) -> None:
         "schema": TARGET_CALIBRATION_SCOPE_SCHEMA,
         "calibration_selections": int(args.calibration_selections),
         "test_repetitions": int(args.test_repetitions),
-        "selection_repetition_floor": int(
-            args.test_repetitions
-            if args.selection_repetition_floor is None
-            else args.selection_repetition_floor
-        ),
         "max_test_selections": args.max_test_selections,
         "usable_subjects": sorted(np.unique(subjects).tolist()),
         "excluded_subjects": dict(sorted(split.excluded_subjects.items())),
@@ -129,7 +120,6 @@ def main(argv: list[str] | None = None) -> None:
             parameters={
                 "calibration_selections": args.calibration_selections,
                 "test_repetitions": args.test_repetitions,
-                "selection_repetition_floor": calibration_scope["selection_repetition_floor"],
                 "max_test_selections": args.max_test_selections,
             },
         ),

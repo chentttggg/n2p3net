@@ -315,33 +315,16 @@ def test_generic_bnci_contract_uses_early_decisions_and_tests_new_targets() -> N
 
 
 @pytest.mark.parametrize(
-    "repetitions,horizon,options,calibration_rows,test_rows",
+    "repetitions,horizon,calibration_rows,test_rows",
     [
-        pytest.param((4, 4, 4, 1, 2, 3, 4, 8), 8, {}, 144, 216, id="mixed-depth-default"),
-        pytest.param(
-            (4, 4, 4, 1, 2, 3, 4, 8),
-            8,
-            {"selection_repetition_floor": 2},
-            144,
-            216,
-            id="mixed-depth-explicit-floor",
-        ),
-        pytest.param((4, 4, 4, 3, 4, 5), 4, {}, 144, 132, id="default-horizon"),
-        pytest.param(
-            (4, 4, 4, 3, 4, 5),
-            4,
-            {"selection_repetition_floor": 4},
-            144,
-            132,
-            id="explicit-horizon",
-        ),
-        pytest.param((7, 7, 7, 7), 8, {}, 252, 84, id="all-test-decisions-shallow"),
+        pytest.param((4, 4, 4, 1, 2, 3, 4, 8), 8, 144, 216, id="mixed-depth-default"),
+        pytest.param((4, 4, 4, 3, 4, 5), 4, 144, 132, id="default-horizon"),
+        pytest.param((7, 7, 7, 7), 8, 252, 84, id="all-test-decisions-shallow"),
     ],
 )
 def test_candidate_split_keeps_shallow_decisions_in_requested_denominator(
     repetitions,
     horizon,
-    options,
     calibration_rows,
     test_rows,
 ) -> None:
@@ -349,7 +332,7 @@ def test_candidate_split_keeps_shallow_decisions_in_requested_denominator(
         "s1", n_selections=len(repetitions), repetitions_per_selection=repetitions
     )
     split = candidate_calibration_decision_split(
-        dataset, calibration_selections=3, test_repetitions=horizon, **options
+        dataset, calibration_selections=3, test_repetitions=horizon
     )
     expected = {"s1": tuple(f"s1:selection{index}" for index in range(3, len(repetitions)))}
     assert split.usable_subjects == ("s1",)
@@ -359,21 +342,6 @@ def test_candidate_split_keeps_shallow_decisions_in_requested_denominator(
     assert split.excluded_subjects == {}
     assert split.calibration_mask.sum() == calibration_rows
     assert split.test_mask.sum() == test_rows
-
-
-@pytest.mark.parametrize(
-    "floor,message",
-    [(value, "positive integer") for value in (0, -1, True, 2.0, "2")] + [(5, "must not exceed")],
-)
-def test_selection_floor_rejects_invalid_values(floor, message) -> None:
-    dataset = candidate_dataset("s1", n_selections=5, repetitions_per_selection=4)
-    with pytest.raises(ValueError, match=message):
-        candidate_calibration_decision_split(
-            dataset,
-            calibration_selections=3,
-            test_repetitions=4,
-            selection_repetition_floor=floor,
-        )
 
 
 def test_candidate_split_typed_failure_when_no_later_decisions_exist() -> None:

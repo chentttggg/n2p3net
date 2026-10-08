@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import argparse
 import gc
-import hashlib
 import json
 import re
 import sys
@@ -26,6 +25,7 @@ for search_path in (ROOT, SRC):
     if str(search_path) not in sys.path:
         sys.path.insert(0, str(search_path))
 
+from data.digests import file_sha256  # noqa: E402
 from experiments import run_candidate_cross_decision as result_runner  # noqa: E402
 from experiments.build_candidate_cross_decision_manifest import RESULT_SCHEMA  # noqa: E402
 from experiments.result_batch_contract import (  # noqa: E402
@@ -49,14 +49,6 @@ _COMMON_FLAGS = (
 )
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
-
-
-def _sha256_file(path: str | Path) -> str:
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def _read_json_mapping(path: Path, name: str) -> dict[str, Any]:
@@ -156,7 +148,7 @@ def _ledger_job(job: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "arm_name": job["arm_name"],
         "output": str(output),
-        "sha256": _sha256_file(output),
+        "sha256": file_sha256(output),
         "byte_size": output.stat().st_size,
         "evaluation_contract_digest": evaluation_digest,
         "decision_plan_digest": decision_digest,
@@ -188,7 +180,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "schema": RESULT_BATCH_LEDGER_SCHEMA,
         "completed": True,
         "jobs_file": str(jobs_path),
-        "jobs_file_sha256": _sha256_file(jobs_path),
+        "jobs_file_sha256": file_sha256(jobs_path),
         "job_count": len(ledger_jobs),
         "jobs": ledger_jobs,
     }

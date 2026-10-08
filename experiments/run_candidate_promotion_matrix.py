@@ -35,6 +35,7 @@ for search_path in (ROOT, SRC):
     if str(search_path) not in sys.path:
         sys.path.insert(0, str(search_path))
 
+from data.digests import file_sha256  # noqa: E402
 from data.domain import source_domain_ids  # noqa: E402
 from data.epochs import (  # noqa: E402
     load_epoch_dataset,
@@ -286,14 +287,6 @@ def evaluation_arm_name(source_arm: str, evaluation_arm: str) -> str:
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
-
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def _mapping(value: object, name: str) -> dict[str, Any]:
@@ -2229,7 +2222,7 @@ def _embedded_artifact_record(task: MatrixTask) -> dict[str, Any]:
             digest = _validate_sha(
                 job.get("checkpoint_sha256"), "checkpoint batch checkpoint_sha256"
             )
-            if checkpoint.stat().st_size != byte_size or _sha256_file(checkpoint) != digest:
+            if checkpoint.stat().st_size != byte_size or file_sha256(checkpoint) != digest:
                 raise ValueError("checkpoint batch checkpoint bytes changed after completion.")
             payload = load_checkpoint_payload(checkpoint)
             training = checkpoint_training_contract(payload)
@@ -2284,7 +2277,7 @@ def _embedded_artifact_record(task: MatrixTask) -> dict[str, Any]:
         ledger_jobs_file_sha = _validate_sha(
             record.get("jobs_file_sha256"), "result batch jobs_file_sha256"
         )
-        if _sha256_file(jobs_path) != ledger_jobs_file_sha:
+        if file_sha256(jobs_path) != ledger_jobs_file_sha:
             raise ValueError("result batch jobs file changed after completion.")
         embedded_jobs: list[dict[str, object]] = []
         for raw_job, raw_ledger_job in zip(raw_jobs, raw_ledger_jobs, strict=True):
@@ -2314,7 +2307,7 @@ def _embedded_artifact_record(task: MatrixTask) -> dict[str, Any]:
             result_sha256 = _validate_sha(
                 ledger_job.get("sha256"), "result batch ledger sha256"
             )
-            if result_path.stat().st_size != byte_size or _sha256_file(result_path) != result_sha256:
+            if result_path.stat().st_size != byte_size or file_sha256(result_path) != result_sha256:
                 raise ValueError("result batch result bytes changed after completion.")
             if (
                 ledger_job.get("evaluation_contract_digest")
@@ -2371,7 +2364,7 @@ def _artifact_attestation(task: MatrixTask) -> dict[str, Any]:
     embedded = _embedded_artifact_record(task)
     return {
         "path": task.output.name,
-        "sha256": _sha256_file(task.output),
+        "sha256": file_sha256(task.output),
         "byte_size": task.output.stat().st_size,
         "embedded": embedded,
     }
@@ -2593,12 +2586,12 @@ def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
     resolved: dict[str, Any] = {
         "source_snapshot": {
             "manifest_path": _portable_path(plan.source_snapshot_manifest, dag),
-            "manifest_sha256": _sha256_file(plan.source_snapshot_manifest),
+            "manifest_sha256": file_sha256(plan.source_snapshot_manifest),
             "archive_sha256": source_snapshot_sha256,
         },
         "evaluation_snapshot": {
             "manifest_path": _portable_path(plan.evaluation_snapshot_manifest, dag),
-            "manifest_sha256": _sha256_file(plan.evaluation_snapshot_manifest),
+            "manifest_sha256": file_sha256(plan.evaluation_snapshot_manifest),
             "archive_sha256": evaluation_snapshot_sha256,
         },
         "target_cache": dict(target.resolved_record),
@@ -2618,7 +2611,7 @@ def _verify_inputs(dag: PromotionDag) -> dict[str, Any]:
             if plan.statistical_design.power_plan is None
             else {
                 "path": _portable_path(plan.statistical_design.power_plan, dag),
-                "sha256": _sha256_file(plan.statistical_design.power_plan),
+                "sha256": file_sha256(plan.statistical_design.power_plan),
             }
         ),
     }
@@ -2760,7 +2753,7 @@ def _materialize_subject_scopes(dag: PromotionDag, state: dict[str, Any]) -> Non
         _atomic_write_json(path, [targets[partition_key].target_subject])
         records[partition_key] = {
             "path": _portable_path(path, dag),
-            "sha256": _sha256_file(path),
+            "sha256": file_sha256(path),
             "byte_size": path.stat().st_size,
             "target_subject": targets[partition_key].target_subject,
         }
@@ -2771,7 +2764,7 @@ def _materialize_subject_scopes(dag: PromotionDag, state: dict[str, Any]) -> Non
         _atomic_write_json(path, record)
         batch_records[task_id] = {
             "path": _portable_path(path, dag),
-            "sha256": _sha256_file(path),
+            "sha256": file_sha256(path),
             "byte_size": path.stat().st_size,
             "job_count": int(record.get("job_count", 0)),
         }
@@ -2810,7 +2803,7 @@ def _resume_validation(
         digest = _validate_sha(output.get("sha256"), "journal output sha256")
         if task.output.stat().st_size != byte_size:
             return False, "output byte_size changed"
-        if _sha256_file(task.output) != digest:
+        if file_sha256(task.output) != digest:
             return False, "output SHA-256 changed"
         embedded = _embedded_artifact_record(task)
         if embedded != output.get("embedded"):
@@ -2847,7 +2840,7 @@ def _resume_validation(
             )
             if not path.is_file() or path.stat().st_size != byte_size:
                 return False, f"{stream_name} log is missing or changed size"
-            if _sha256_file(path) != digest:
+            if file_sha256(path) != digest:
                 return False, f"{stream_name} log SHA-256 changed"
         current_dependencies = _dependency_digests(task, state_tasks)
         if current_dependencies != record.get("dependency_outputs", {}):
@@ -2926,7 +2919,7 @@ def _log_attestation(path: Path, dag: PromotionDag) -> dict[str, Any]:
         raise FileNotFoundError(f"subprocess log is missing: {path.name}")
     return {
         "path": _portable_path(path, dag),
-        "sha256": _sha256_file(path),
+        "sha256": file_sha256(path),
         "byte_size": path.stat().st_size,
     }
 
@@ -3578,7 +3571,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             {
                 "status": "completed",
                 "analysis": str(output),
-                "analysis_sha256": _sha256_file(output),
+                "analysis_sha256": file_sha256(output),
                 "journal": str(_journal_path(dag)),
             },
             ensure_ascii=False,

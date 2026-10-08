@@ -18,6 +18,8 @@ from typing import Any
 
 import numpy as np
 
+from data.digests import array_digest
+
 ACW_ALIGNMENT_SCHEMA = "n2p3_ajd_congruence_whitening/1"
 FAST_ALIGNMENT_SCHEMA = "n2p3_galia_fast_alignment/1"
 VALID_AJD_METHODS = frozenset({"ajd_pham", "rjd", "uwedge"})
@@ -29,14 +31,6 @@ def _digest(value: object) -> str:
         "utf-8"
     )
     return hashlib.sha256(encoded).hexdigest()
-
-
-def _array_digest(value: np.ndarray) -> str:
-    array = np.ascontiguousarray(np.asarray(value))
-    digest = hashlib.sha256()
-    digest.update(json.dumps({"dtype": array.dtype.str, "shape": list(array.shape)}).encode())
-    digest.update(memoryview(array).cast("B"))
-    return digest.hexdigest()
 
 
 def _readonly(value: np.ndarray, *, dtype: np.dtype[Any] | None = None) -> np.ndarray:
@@ -448,7 +442,7 @@ class AcwState:
             scales=scales,
             covariance_condition_number=condition_number,
             target_offdiag_residual=target_offdiag_residual,
-            buffer_digest=_array_digest(values),
+            buffer_digest=array_digest(values),
         )
 
     def transform_fast(self, features: object, fast_state: FastAlignmentState) -> np.ndarray:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import math
 import sys
 from dataclasses import replace
 from pathlib import Path
@@ -13,17 +12,13 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from data.contract import CAUSAL_IIR_INITIAL_STATE  # noqa: E402
+from data.contract import CAUSAL_IIR_INITIAL_STATE, epoch_sample_count  # noqa: E402
 from data.epochs import save_epoch_dataset  # noqa: E402
 from data.gtn_dataset import (  # noqa: E402
     GTN_COHORT_CONTRACTS,
     build_gtn_epoch_dataset,
     gtn_preprocessing_for_cohort,
 )
-
-
-def _derive_n_times(sfreq: float, tmin_ms: float, tmax_ms: float) -> int:
-    return math.floor((tmax_ms - tmin_ms) * sfreq / 1000.0 + 1e-9)
 
 
 def main() -> None:
@@ -69,7 +64,7 @@ def main() -> None:
     causal_iir_initial_state = (
         CAUSAL_IIR_INITIAL_STATE if filter_phase == "forward" else "not_applicable"
     )
-    n_times = args.n_times or _derive_n_times(sfreq, tmin_ms, tmax_ms)
+    n_times = args.n_times or epoch_sample_count(sfreq, tmin_ms, tmax_ms)
     preprocessing = replace(
         base,
         sfreq=sfreq,

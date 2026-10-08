@@ -15,6 +15,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.utils.validation import check_is_fitted
 
 from baselines.features import downsample_epochs
+from data.digests import compact_array_digest
 from models.n2p3net import N2P3ArchitectureConfig, N2P3Net
 from research.comparison import assert_matched_cells
 
@@ -98,16 +99,6 @@ def matched_split_digests(calibration_rows: np.ndarray, test_rows: np.ndarray) -
     }
 
 
-def _array_identity(value: np.ndarray) -> str:
-    """Hash an array together with its geometry and exact storage dtype."""
-    array = np.ascontiguousarray(np.asarray(value))
-    digest = hashlib.sha256()
-    digest.update(json.dumps({"dtype": array.dtype.str, "shape": list(array.shape)},
-                             sort_keys=True, separators=(",", ":")).encode("utf-8"))
-    digest.update(memoryview(array).cast("B"))
-    return digest.hexdigest()
-
-
 def matched_input_digests(
     X: np.ndarray,
     y: np.ndarray,
@@ -143,18 +134,18 @@ def matched_input_digests(
         mask = np.asarray(trial_channel_mask)
         if mask.shape != values.shape[:2] or mask.dtype != bool:
             raise ValueError("trial_channel_mask must be boolean and aligned with dataset rows/channels")
-        mask_digest = _array_identity(mask[rows].astype(bool, copy=False))
+        mask_digest = compact_array_digest(mask[rows].astype(bool, copy=False))
     if hasattr(preprocessing, "record"):
         declaration = preprocessing.record()
     elif isinstance(preprocessing, dict):
         declaration = preprocessing
     else:
         raise TypeError("preprocessing must provide a record() or be a mapping")
-    label_digest = _array_identity(labels[rows])
+    label_digest = compact_array_digest(labels[rows])
     semantic = {
         "schema": "n2p3_scored_input/1",
-        "rows": _array_identity(rows),
-        "X": _array_identity(values[rows]),
+        "rows": compact_array_digest(rows),
+        "X": compact_array_digest(values[rows]),
         "labels": label_digest,
         "trial_channel_mask": mask_digest,
         "preprocessing": declaration,

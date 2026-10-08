@@ -206,11 +206,7 @@ def fit_logit_calibration(
     )
 
 
-def calibration_data_from_model(
-    model,
-    X_train: np.ndarray,
-    y_train: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray, str]:
+def calibration_data_from_model(model) -> tuple[np.ndarray, np.ndarray, str]:
     """Require group-disjoint validation scores exposed by trainable adapters."""
 
     logits = getattr(model, "calibration_logits_", None)

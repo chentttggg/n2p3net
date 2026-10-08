@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import sys
@@ -20,6 +19,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from data.candidate_task import CandidateTaskContract  # noqa: E402
+from data.digests import file_sha256  # noqa: E402
 from research.contracts import (  # noqa: E402
     MIN_EVIDENCE_LEVEL,
     MIN_PROMOTION_HIT_AT_R,
@@ -56,7 +56,6 @@ POWER_PLAN_SCHEMA = "n2p3_power_plan_contract/1"
 REQUESTED_METRIC = "requested_participant_operational_hit_rate"
 VALID_SUBJECT_METRIC = "valid_subject_operational_hit_rate"
 SUPPORTED_METRICS = frozenset({REQUESTED_METRIC, VALID_SUBJECT_METRIC})
-SUPPORTED_METRIC = REQUESTED_METRIC  # legacy alias; new manifests select a metric explicitly
 DEFAULT_METRIC = REQUESTED_METRIC
 VALID_SUBJECT_STATUSES = frozenset(
     {DecisionStatus.CORRECT, DecisionStatus.INCORRECT, DecisionStatus.TIE}
@@ -157,14 +156,6 @@ def _sha(value: object, name: str) -> str:
     return digest
 
 
-def _file_sha(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def _read_json(path: Path, name: str) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -185,7 +176,7 @@ def _artifact(
     path = (base / path).resolve() if not path.is_absolute() else path.resolve()
     expected = _sha(record.get(sha_field), f"{name}.{sha_field}")
     try:
-        actual = _file_sha(path)
+        actual = file_sha256(path)
     except OSError as error:
         raise ValueError(f"cannot hash {name} {path}: {error}") from error
     if actual != expected:
@@ -1341,7 +1332,7 @@ def analyze_manifest(path: str | Path) -> dict[str, Any]:
     return {
         "schema": ANALYSIS_SCHEMA,
         "manifest": str(manifest.path),
-        "manifest_sha256": _file_sha(manifest.path),
+        "manifest_sha256": file_sha256(manifest.path),
         "source_snapshot": {
             "archive_path": str(manifest.source_snapshot.path),
             "archive_sha256": manifest.source_snapshot.sha256,

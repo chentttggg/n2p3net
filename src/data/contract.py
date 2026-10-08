@@ -20,6 +20,11 @@ BRAIN_SYNC_EEG_CHANNELS = tuple(
 )
 
 
+def epoch_sample_count(sample_rate_hz: float, tmin_ms: float, tmax_ms: float) -> int:
+    """Sample count on the shared epoch grid with an exclusive right edge."""
+    return int(floor((tmax_ms - tmin_ms) * sample_rate_hz / 1000.0 + 1e-9))
+
+
 def brainsync_reference_record() -> dict[str, str]:
     """Physical REF placement, independent of any software rereferencing."""
     return {
@@ -87,7 +92,7 @@ class EEGDataContract:
 
     @property
     def n_times(self) -> int:
-        return int(floor((self.tmax_ms - self.tmin_ms) * self.sample_rate_hz / 1000.0 + 1e-9))
+        return epoch_sample_count(self.sample_rate_hz, self.tmin_ms, self.tmax_ms)
 
 
 # Retained execution recipe, not an independently validated optimal epoch end.

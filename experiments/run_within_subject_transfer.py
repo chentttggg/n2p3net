@@ -8,7 +8,6 @@ evaluation uses only later repetitions of the same subject.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from dataclasses import replace
@@ -36,13 +35,14 @@ from data.contract import (  # noqa: E402
     SINGLE_SUBJECT_CAUSAL_P300_DATA_CONTRACT,
     assert_p300_input_contract,
 )
+from data.digests import file_sha256  # noqa: E402
 from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from data.identity import IdentityExclusionPolicy  # noqa: E402
 from data.qc_features import compute_epoch_qc_features  # noqa: E402
 from models.candidate_evidence import (  # noqa: E402
-    COUNT_AGGREGATIONS,
     DEFAULT_EVIDENCE_AGGREGATION,
     DEFAULT_EVIDENCE_COUNT_POWER,
+    EVIDENCE_AGGREGATIONS,
 )
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
@@ -88,14 +88,6 @@ def _load_trunk(
         identity_exclusion_policy=identity_exclusion_policy,
     )
     return trunk
-
-
-def _sha256_file(path: str | Path) -> str:
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def _target_fixed_budget_calibration_payload(
@@ -214,7 +206,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
         "--aggregation",
-        choices=sorted(COUNT_AGGREGATIONS | {"trim0.2"}),
+        choices=sorted(EVIDENCE_AGGREGATIONS | {"trim0.2"}),
         default=DEFAULT_EVIDENCE_AGGREGATION,
         help=(
             "Suffix candidate evidence aggregation. Mean is the all-evidence default; "
@@ -591,9 +583,7 @@ def main() -> None:
                 )
             suffix_logits = adapter.predict_logit(suffix_X, trial_channel_mask=suffix_mask)
             if inner_split is not None:
-                calibration_logits, calibration_y, calibration_source = calibration_data_from_model(
-                    adapter, X_pre, y_pre
-                )
+                calibration_logits, calibration_y, calibration_source = calibration_data_from_model(adapter)
                 calibration = fit_weighted_logit_temperature(
                     calibration_logits,
                     calibration_y,
@@ -747,7 +737,7 @@ def main() -> None:
             }
         )
     )
-    checkpoint_sha256 = _sha256_file(args.checkpoint) if args.checkpoint else None
+    checkpoint_sha256 = file_sha256(args.checkpoint) if args.checkpoint else None
     model_origin = (
         checkpoint_model_origin(
             checkpoint_payload,

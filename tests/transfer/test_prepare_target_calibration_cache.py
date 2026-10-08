@@ -17,11 +17,11 @@ from transfer.candidate_within_subject import candidate_calibration_decision_spl
 
 
 @pytest.mark.parametrize(
-    "n_selections,calibration_selections,test_repetitions,extra",
-    [(7, 3, 3, {}), (5, 2, 2, {"selection_repetition_floor": 2})],
+    "n_selections,calibration_selections,test_repetitions",
+    [(7, 3, 3), (5, 2, 2)],
 )
 def test_target_calibration_cache_keeps_only_calibration_rows(
-    tmp_path: Path, n_selections, calibration_selections, test_repetitions, extra
+    tmp_path: Path, n_selections, calibration_selections, test_repetitions
 ) -> None:
     dataset = candidate_dataset(n_selections=n_selections)
     source = tmp_path / "target.npz"
@@ -34,7 +34,6 @@ def test_target_calibration_cache_keeps_only_calibration_rows(
             output=output,
             calibration_selections=calibration_selections,
             test_repetitions=test_repetitions,
-            **extra,
         )
     )
 
@@ -42,7 +41,6 @@ def test_target_calibration_cache_keeps_only_calibration_rows(
         dataset,
         calibration_selections=calibration_selections,
         test_repetitions=test_repetitions,
-        **extra,
     )
     expected_rows = int(np.asarray(split.calibration_mask).sum())
     adapted = load_epoch_dataset(output, require_labels=True, validation="attested")

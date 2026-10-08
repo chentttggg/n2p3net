@@ -9,7 +9,6 @@ that actually reach fitting.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import sys
@@ -24,6 +23,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from data.digests import file_sha256  # noqa: E402
 from research.contracts import TrainingRunContract, semantic_sha256  # noqa: E402
 
 SOURCE_PRETRAIN_BATCH_SCHEMA = "n2p3_source_pretrain_batch/1"
@@ -33,7 +33,6 @@ SOURCE_PRETRAIN_INVALID_SCHEMA = "n2p3_source_pretrain_invalid/1"
 if TYPE_CHECKING:
     from data.epochs import EpochDataset
     from models.adapters import SourceResidualContractError
-    from train.source_sampling import PDSSelection
     from transfer.decision_loss import DirectDecisionContractError
 
 
@@ -69,14 +68,6 @@ def _source_snapshot_sha256_once(path: Path) -> str:
         cached = source_snapshot_sha256_from_archive_manifest(resolved)
         _SOURCE_SNAPSHOT_CACHE[resolved] = cached
     return cached
-
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def _write_json_atomic(path: Path, value: dict[str, object]) -> None:
@@ -129,40 +120,6 @@ def _write_contract_failure(
         },
     )
     return output
-
-
-def _load_source_selection(
-    path: str | Path,
-    *,
-    source_cache_sha256: str,
-    row_identity_digest: str | None = None,
-) -> tuple[PDSSelection, dict[str, object]]:
-    """Load a PDS selection record bound to the attested source cache.
-
-    The returned raw record is embedded in the training contract unchanged
-    (except by the contract's canonical serializer), so the checkpoint carries
-    the exact selection provenance rather than a reconstructed summary.
-    """
-
-    from train.source_sampling import load_pds_selection_record, pds_selection_from_record
-
-
-    _, record = load_pds_selection_record(path)
-    selection = pds_selection_from_record(
-        record,
-        expected_source_cache_sha256=source_cache_sha256,
-    )
-    if row_identity_digest is not None:
-        feature_record = record.get("source_feature_record")
-        if not isinstance(feature_record, Mapping):
-            raise ValueError("source-selection record lacks its source_feature_record.")
-        feature_row_digest = feature_record.get("row_identity_digest")
-        if feature_row_digest != row_identity_digest:
-            raise ValueError(
-                "source-selection feature row_identity_digest disagrees with "
-                "the loaded source cache."
-            )
-    return selection, record
 
 
 def parse_source_domain_mass(values: list[str]) -> dict[str, float]:
@@ -366,7 +323,7 @@ def _run_batch(args: argparse.Namespace, jobs: tuple[SourcePretrainJob, ...]) ->
                     item.strip() for item in job.holdout_subjects.split(",") if item.strip()
                 ),
                 "checkpoint": str(checkpoint),
-                "checkpoint_sha256": _sha256_file(checkpoint),
+                "checkpoint_sha256": file_sha256(checkpoint),
                 "checkpoint_byte_size": checkpoint.stat().st_size,
                 "training_contract_digest": training.digest(),
             }
@@ -806,7 +763,7 @@ def main(argv: list[str] | None = None) -> None:
         if not isinstance(state, Mapping) or not state:
             raise ValueError("--initial-checkpoint lacks a non-empty trunk_state_dict.")
         initial_state_dict = dict(state)
-        initial_checkpoint_sha256 = _sha256_file(initial_checkpoint)
+        initial_checkpoint_sha256 = file_sha256(initial_checkpoint)
     expected_contract = SOURCE_COHORT_DATA_CONTRACTS[args.cohort]
     if args.tmax_ms is not None:
         expected_contract = replace(expected_contract, tmax_ms=float(args.tmax_ms))
@@ -814,10 +771,12 @@ def main(argv: list[str] | None = None) -> None:
     source_selection = None
     source_selection_record: dict[str, object] | None = None
     if args.source_selection_record is not None:
-        source_selection, source_selection_record = _load_source_selection(
+        from train.source_sampling import load_pds_selection_record
+
+        source_selection, source_selection_record = load_pds_selection_record(
             args.source_selection_record,
-            source_cache_sha256=source_cache_sha256,
-            row_identity_digest=epoch_row_identity_digest(dataset),
+            expected_source_cache_sha256=source_cache_sha256,
+            expected_row_identity_digest=epoch_row_identity_digest(dataset),
         )
         if source_selection.source_count != dataset.n_epochs:
             raise ValueError(

@@ -1,0 +1,30 @@
+{
+  "schema": "n2p3_retired_source_files/1",
+  "source_commit": "14b7a8a07adcf7c88b07381c25a1b95950ffb728",
+  "archive": "frozen/redundancy_cleanup_20261008/retired_files.zip",
+  "archive_sha256": "b5e0c803e660150aa063ca9be79161789a04aaae502916277f148275ed3cb44b",
+  "verified_members": [
+    {
+      "path": "requirements-minimal.txt",
+      "bytes": 202,
+      "sha256": "eb61b398cd8c4d8f38b72492d7638b216523ebaf2a5cd35956144fad161a7cb1"
+    },
+    {
+      "path": "experiments/retire_bi2014a_legacy_derivatives.py",
+      "bytes": 2435,
+      "sha256": "3b1c8dd7551e6dbc214b7c00a953ced7424bf41e07b6a4305090cfb9f2df2ceb"
+    },
+    {
+      "path": "experiments/retire_bi2014a_participants.py",
+      "bytes": 6240,
+      "sha256": "5b14d6cf856b2bc0da2ad9056ff7e2410848b3608435ed5383cf033518911f94"
+    }
+  ],
+  "reasons": {
+    "requirements-minimal.txt": "Superseded setup_cloud.sh minimal-dependency recipe; current pyproject.toml and uv.lock remain canonical. Current evaluation environment fingerprint stops listing this retired convenience file; prior frozen fingerprints are unchanged.",
+    "experiments/retire_bi2014a_legacy_derivatives.py": "Completed one-off 2026-09-06 BI2014a legacy derivative deletion, with no active caller or test; current exclusions live in data.exclusions.",
+    "experiments/retire_bi2014a_participants.py": "Completed one-off 2026-09-06 migration through explicitly supplied historical loader; no active caller or test. Current cache/checkpoint admission preserves author exclusions."
+  },
+  "historical_evidence": "doc/evidence/bi61_author_exclusion_20260906.zh.md",
+  "deletion_scope": "Only these three current source/tool files; datasets, caches, results, manifests, other worktrees, old freeze payloads and current WIP are retained."
+}

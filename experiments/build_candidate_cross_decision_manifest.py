@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import sys
@@ -18,6 +17,7 @@ for search_path in (ROOT, SRC):
         sys.path.insert(0, str(search_path))
 
 from data.candidate_task import CandidateTaskContract  # noqa: E402
+from data.digests import file_sha256  # noqa: E402
 from experiments.analyze_candidate_cross_decision import (  # noqa: E402
     DEFAULT_METRIC,
     SUPPORTED_METRICS,
@@ -94,14 +94,6 @@ def _validate_completion_state(
         }
         if dict(endpoint) != expected:
             raise ValueError(f"{name} selection-failed participant endpoint must be zero.")
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def _read_json(path: Path, name: str) -> dict[str, Any]:
@@ -329,7 +321,7 @@ def build_manifest(
             checkpoint_by_result[path] = None
             continue
         checkpoint_path = Path(str(result.get("checkpoint"))).resolve()
-        checkpoint_sha = _sha256(checkpoint_path)
+        checkpoint_sha = file_sha256(checkpoint_path)
         if checkpoint_sha != result.get("checkpoint_sha256"):
             raise ValueError(f"result {path} checkpoint SHA mismatch.")
         payload = load_checkpoint_payload(checkpoint_path)
@@ -420,7 +412,7 @@ def build_manifest(
             {
                 "run_id": f"{evaluation.arm_name}|{replicate}|{partition}",
                 "result_path": _relative(path, output_path.parent),
-                "result_sha256": _sha256(path),
+                "result_sha256": file_sha256(path),
                 "training_replicate_key": replicate,
                 "partition_key": partition,
                 "checkpoint_id": checkpoint_by_result[path],
@@ -437,11 +429,11 @@ def build_manifest(
         "schema": MANIFEST_SCHEMA,
         "source_snapshot": {
             "manifest_path": _relative(source_manifest_path, output_path.parent),
-            "manifest_sha256": _sha256(source_manifest_path),
+            "manifest_sha256": file_sha256(source_manifest_path),
         },
         "evaluation_snapshot": {
             "manifest_path": _relative(evaluation_manifest_path, output_path.parent),
-            "manifest_sha256": _sha256(evaluation_manifest_path),
+            "manifest_sha256": file_sha256(evaluation_manifest_path),
         },
         "target_dataset": {
             "target_cache_sha256": next(iter(target_cache_values)),

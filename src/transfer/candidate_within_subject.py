@@ -111,25 +111,18 @@ def candidate_calibration_decision_split(
     *,
     calibration_selections: int,
     test_repetitions: int,
-    selection_repetition_floor: int | None = None,
     max_test_selections: int | None = None,
 ) -> CandidateCalibrationDecisionSplit:
     """Split known early selections from later, truth-hidden test selections.
 
-    ``selection_repetition_floor`` is retained for API compatibility but is no
-    longer a hard eligibility gate.  Every later non-overlapping decision is
-    eligible; levels deeper than its observed repetitions are recorded as
+    Every later non-overlapping decision is eligible; levels deeper than its
+    observed repetitions are recorded as
     ``incomplete`` in the hit@R curve instead of excluding the decision.
     """
 
     contract, metadata = _validated_metadata(dataset)
     if calibration_selections < 1 or test_repetitions < 1:
         raise ValueError("calibration_selections and test_repetitions must be positive.")
-    floor = test_repetitions if selection_repetition_floor is None else selection_repetition_floor
-    if isinstance(floor, bool) or not isinstance(floor, int) or floor < 1:
-        raise ValueError("selection_repetition_floor must be a positive integer.")
-    if floor > test_repetitions:
-        raise ValueError("selection_repetition_floor must not exceed test_repetitions.")
     if max_test_selections is not None and max_test_selections < 1:
         raise ValueError("max_test_selections must be positive or None.")
     subject_ids = np.asarray(dataset.subject_ids).astype(str)

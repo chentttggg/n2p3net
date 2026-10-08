@@ -16,10 +16,13 @@ import base64
 import hashlib
 import json
 import zlib
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+
+from data.digests import array_digest
 
 try:
     import torch as _torch
@@ -124,7 +127,7 @@ def source_sampling_cdf(probability: np.ndarray) -> np.ndarray:
     return cumulative
 
 
-def sample_source_rows(rng: np.random.Generator, probability: np.ndarray, size: int,
+def sample_source_rows(rng: np.random.Generator, size: int,
                        *, cumulative: np.ndarray) -> np.ndarray:
     """Match Generator.choice(p=...) draws and RNG consumption without repeated scans."""
     return cumulative.searchsorted(rng.random(size), side="right")
@@ -193,14 +196,6 @@ def observed_source_statistics(
         "weighting": weighting, "class_weighting": "none", "vector_encoding": "n2p3_source_vector/1",
         "variance_convention": "population", "channels": channels,
     }
-
-
-def _array_digest(value: np.ndarray) -> str:
-    array = np.ascontiguousarray(np.asarray(value))
-    digest = hashlib.sha256()
-    digest.update(json.dumps({"dtype": array.dtype.str, "shape": list(array.shape)}).encode())
-    digest.update(memoryview(array).cast("B"))
-    return digest.hexdigest()
 
 
 def _record_integer(value: object, *, name: str) -> int:
@@ -362,11 +357,6 @@ class PDSSelection:
         }
 
 
-def array_digest(value: np.ndarray) -> str:
-    """Deterministic SHA-256 over a numeric array's dtype, shape, and bytes."""
-    return _array_digest(value)
-
-
 def pds_selection_from_record(
     record: dict[str, object],
     *,
@@ -464,13 +454,30 @@ def pds_selection_from_record(
     return selection
 
 
-def load_pds_selection_record(path: str | Path) -> tuple[PDSSelection, dict[str, object]]:
-    """Load a PDS selection JSON and return ``(selection, raw_record)``."""
+def load_pds_selection_record(
+    path: str | Path,
+    *,
+    expected_source_cache_sha256: str | None = None,
+    expected_row_identity_digest: str | None = None,
+) -> tuple[PDSSelection, dict[str, object]]:
+    """Admit a selection once, retaining its exact raw provenance record."""
     resolved = Path(path).resolve(strict=True)
     record = json.loads(resolved.read_text(encoding="utf-8"))
     if not isinstance(record, dict):
         raise ValueError(f"{resolved} does not contain a JSON object.")
-    return pds_selection_from_record(record), record
+    selection = pds_selection_from_record(
+        record, expected_source_cache_sha256=expected_source_cache_sha256
+    )
+    if expected_row_identity_digest is not None:
+        feature_record = record.get("source_feature_record")
+        if not isinstance(feature_record, Mapping):
+            raise ValueError("source-selection record lacks its source_feature_record.")
+        if feature_record.get("row_identity_digest") != expected_row_identity_digest:
+            raise ValueError(
+                "source-selection feature row_identity_digest disagrees with "
+                "the loaded source cache."
+            )
+    return selection, record
 
 
 def _validate_matrix(value: object, *, name: str) -> np.ndarray:
@@ -523,31 +530,6 @@ def _pairwise_squared_distances(
         np.maximum(squared, 0.0, out=squared)
         output[start : start + chunk_size] = squared
     return output
-
-
-def _update_min_distances(
-    minimum_distance: np.ndarray,
-    source: np.ndarray,
-    selected_vector: np.ndarray,
-    *,
-    chunk_size: int = 4096,
-) -> None:
-    """Fold Euclidean distances to one selected row into running minima.
-
-    Coordinate deltas are formed first and reduced with ``numpy.hypot`` in
-    chunks.  This avoids both the ``||a||^2 + ||b||^2 - 2 a.b`` cancellation
-    for large nearby coordinates and the square/square-root underflow for tiny
-    coordinates, while keeping peak memory at ``chunk_size * P``.
-    """
-    for start in range(0, len(source), chunk_size):
-        block = source[start : start + chunk_size]
-        delta = block - selected_vector[None, :]
-        distances = np.hypot.reduce(delta, axis=1)
-        np.minimum(
-            minimum_distance[start : start + chunk_size],
-            distances,
-            out=minimum_distance[start : start + chunk_size],
-        )
 
 
 def _estimate_bandwidth(
@@ -716,9 +698,9 @@ def select_pds_rows(
         target_temperature=float(target_temperature),
         diversity_weight=float(diversity_weight),
         bandwidth=float(bandwidth),
-        source_digest=_array_digest(source),
-        target_digest=_array_digest(target),
-        selected_digest=_array_digest(indices),
+        source_digest=array_digest(source),
+        target_digest=array_digest(target),
+        selected_digest=array_digest(indices),
         bandwidth_estimator=bandwidth_estimator,
     )
 
@@ -933,9 +915,9 @@ def select_dense_pds_rows(
         target_temperature=1.0,
         diversity_weight=0.0,
         bandwidth=1.0,
-        source_digest=_array_digest(source),
-        target_digest=_array_digest(target),
-        selected_digest=_array_digest(indices),
+        source_digest=array_digest(source),
+        target_digest=array_digest(target),
+        selected_digest=array_digest(indices),
         bandwidth_estimator="explicit",
         sampler_kind="dense_pds",
         pds_radius=float(pds_radius),

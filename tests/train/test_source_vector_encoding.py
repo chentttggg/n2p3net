@@ -38,8 +38,8 @@ def test_compact_source_ledgers_do_not_change_updates_or_parameters(monkeypatch)
     with monkeypatch.context() as legacy:
         legacy.setattr(deep, "encode_source_vector", lambda x: np.asarray(x).tolist())
         legacy.setattr(sampling, "encode_source_vector", lambda x: np.asarray(x).tolist())
-        legacy.setattr(deep, "sample_source_rows", lambda rng, probability, size, **kw:
-                       rng.choice(len(probability), size=size, replace=True, p=probability))
+        legacy.setattr(deep, "sample_source_rows", lambda rng, size, **kw:
+                       rng.choice(len(values), size=size, replace=True, p=np.full(len(values), 1/len(values))))
         before.fit(values, labels)
     after = N2P3NetBaseline(3, 100, 100, config=config, device=torch.device("cpu"))
     after.fit(values, labels)
@@ -58,6 +58,6 @@ def test_precomputed_cdf_preserves_every_draw_and_rng_state(probability):
     cumulative = source_sampling_cdf(probability)
     for _ in range(16):
         expected = original.choice(len(probability), size=512, replace=True, p=probability)
-        actual = sample_source_rows(optimized, probability, 512, cumulative=cumulative)
+        actual = sample_source_rows(optimized, 512, cumulative=cumulative)
         np.testing.assert_array_equal(expected, actual)
     np.testing.assert_array_equal(original.random(32), optimized.random(32))

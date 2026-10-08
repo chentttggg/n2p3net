@@ -7,15 +7,13 @@ import sys
 from dataclasses import replace
 from pathlib import Path
 
-import numpy as np
-
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from data.brainsync import load_brainsync_sessions  # noqa: E402
-from data.contract import CAUSAL_IIR_INITIAL_STATE  # noqa: E402
+from data.contract import CAUSAL_IIR_INITIAL_STATE, epoch_sample_count  # noqa: E402
 from data.epochs import P300_PERFORMANCE_PREPROCESSING, save_epoch_dataset  # noqa: E402
 from data.manifest import build_manifest_dataset, load_manifest  # noqa: E402
 from data.moabb import prepare_moabb_p300  # noqa: E402
@@ -77,12 +75,6 @@ def _positive_int(value: str) -> int:
     if parsed < 1:
         raise argparse.ArgumentTypeError("must be a positive integer")
     return parsed
-
-
-def _derive_exclusive_n_times(*, sfreq: float, tmin_ms: float, tmax_ms: float) -> int:
-    """Derive the cache width for the preprocessing contract's exclusive right edge."""
-
-    return int(np.floor((tmax_ms - tmin_ms) * sfreq / 1000.0 + 1e-9))
 
 
 def main() -> None:
@@ -206,8 +198,8 @@ def main() -> None:
             tmax_ms = float(
                 preprocessing_overrides.get("tmax_ms", P300_PERFORMANCE_PREPROCESSING.tmax_ms)
             )
-            preprocessing_overrides["n_times"] = _derive_exclusive_n_times(
-                sfreq=sfreq,
+            preprocessing_overrides["n_times"] = epoch_sample_count(
+                sample_rate_hz=sfreq,
                 tmin_ms=tmin_ms,
                 tmax_ms=tmax_ms,
             )
