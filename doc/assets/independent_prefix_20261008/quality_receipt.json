@@ -43,7 +43,13 @@
       "receipt": "tmp/b12_independent_20261006/standards/final_20261008/receipt.json"
     },
     "reviewed_source": "45031d4699744b04b58349a3e09f213e961507dc5354957f7f363a54aee56abf",
-    "main_merge": "root combined contract reading and six tests plus fresh native proof; independent merge review pending"
+    "main_merge": {
+      "Spec": "passed; zero confirmed residual findings; no new fits or wide tests",
+      "receipt": "tmp/b12_integration_20261008/independent_spec/package_receipt.json",
+      "readout": "tmp/b12_integration_20261008/independent_spec/READOUT.zh.md",
+      "source": "ad4f12515bfa113ab0d9cbc42cc7754da6c951f6c71554800fda423b7e7a6ca6",
+      "Standards": "pure B12 source reviewed; combined source follows B07 and B12 owner contracts"
+    }
   },
   "remaining": [
     "public source-program entrance combining declared finite-zero profile, per-seed selection/refit and shared resource scheduling",
