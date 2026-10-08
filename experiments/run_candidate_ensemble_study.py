@@ -433,7 +433,8 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
             for budget, prefix in views.calibration.items():
                 roster = EnsembleProgram.equal_weights("prefix_fit", tuple(spec.expert_id for spec in specs))
                 programs = fit_calibration_prefix_programs(prefix, specs, roster,
-                    strategies=plan["calibration_strategies"], source_checkpoints=sources, device=plan["device"])
+                    strategies=plan["calibration_strategies"], source_checkpoints=sources, device=plan["device"],
+                    temperature_expert_ids=plan.get("temperature_expert_ids"))
                 package = directory / f"source{source_seed}_target{seed}_K{budget}"
                 FittedEnsemble.save_programs(package, programs, participant_key=prefix.target_contract["participant_key"])
                 replay_programs = FittedEnsemble.load_programs(package)
@@ -457,7 +458,9 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                             "matched_source_controls": controls, "temperature_calibration": calibration,
                             "fit_available": fitted is not None and fitted.expert_fit_available[spec.expert_id],
                             "source_only": strategy == "fixed" and budget == 0 and spec.family == "trial"
-                                and spec.recipe.initialization == "source"})
+                                and spec.recipe.initialization == "source",
+                            "temperature_calibrated": strategy == "grouped_temperature" and spec.expert_id in
+                                plan.get("temperature_expert_ids", roster.expert_ids)})
                     for view in views.decisions:
                         if fitted is not None:
                             evidence, reloaded = fitted.score_experts(view), replay.score_experts(view)
@@ -477,6 +480,8 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                                     failure_reason=str(result), failure_kind="not_available"
                                     if result.code == SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS else "fit_failure")
                         for mixture in mixtures:
+                            if strategy not in plan.get("mixture_calibration_strategies", {}).get(mixture.name, plan["calibration_strategies"]):
+                                continue
                             value = EnsembleScorer(mixture).score({name: evidence[name] for name in mixture.expert_ids})
                             predictions.append({"source_seed": source_seed, "target_seed": seed, "seed": seed,
                                 "K": budget, "calibration_strategy": strategy, "mixture": mixture.name, "evidence": value.record(),
@@ -535,6 +540,11 @@ def run_study(plan_path: str | Path, output: str | Path):
     seeds = [pair[1] for pair in pairs] if independent else plan["seeds"]
     if not seeds or len(set(seeds)) != len(seeds) or any(type(seed) is not int or seed < 0 for seed in seeds):
         raise ValueError("target-only seeds must be explicit unique nonnegative integers")
+    spatial = plan.get("raw_spatial_views", {})
+    if set(spatial) - {value["expert_id"] for value in plan["experts"] if value["family"] == "continuous_ar"}:
+        raise ValueError("raw spatial declarations must identify actual continuous expert producers")
+    plan = {**plan, "experts": [{**value, **({"spatial": spatial[value["expert_id"]]} if value["expert_id"] in spatial else {})}
+                                for value in plan["experts"]]}
     expert_programs = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
     comparison_role = plan.get("comparison_role", "candidate_ensemble")
     prior_panel = _calibration_prior_panel(expert_programs) if comparison_role == "fixed_reference_kernel_prior" else None
@@ -550,6 +560,12 @@ def run_study(plan_path: str | Path, output: str | Path):
         raise ValueError("candidate mixtures require unique names and declared expert producers")
     if plan["baseline_mixture"] not in {value.name for value in mixtures}:
         raise ValueError("baseline mixture is not declared")
+    if plan.get("temperature_expert_ids") is not None:
+        ids = plan["temperature_expert_ids"]
+        if not ids or len(set(ids)) != len(ids) or not set(ids) <= names:
+            raise ValueError("temperature experts must be an explicit nonempty subset of the actual roster")
+        plan["mixture_calibration_strategies"] = {mixture.name: [strategy for strategy in strategies
+            if strategy == "fixed" or set(mixture.expert_ids) & set(ids)] for mixture in mixtures}
     if (prior_panel is not None or dictionary_panel is not None) and (plan["calibration_strategy"] != "fixed" or plan["source_checkpoints"]
             or {value.name: value.expert_ids for value in mixtures} != {name: (name,) for name in names}):
         raise ValueError("calibration prior panel requires fixed temperatures and one unmixed output per declared expert")
@@ -647,6 +663,8 @@ def run_study(plan_path: str | Path, output: str | Path):
         for budget in budgets:
             for strategy in strategies:
                 for mixture in mixtures:
+                    if strategy not in normalized.get("mixture_calibration_strategies", {}).get(mixture.name, strategies):
+                        continue
                     scores = {seed: [CandidateEvidence.from_record(cell["evidence"]) for row in completed
                         for cell in row["predictions"] if cell["mixture"] == mixture.name and cell["seed"] == seed
                         and (not independent or cell["K"] == budget and cell["calibration_strategy"] == strategy)] for seed in seeds}
@@ -659,6 +677,8 @@ def run_study(plan_path: str | Path, output: str | Path):
             for strategy in strategies:
                 baseline_name = f"{plan['baseline_mixture']}@{strategy}@K{budget}" if independent else plan["baseline_mixture"]
                 for mixture in mixtures:
+                    if strategy not in normalized.get("mixture_calibration_strategies", {}).get(mixture.name, strategies):
+                        continue
                     name = f"{mixture.name}@{strategy}@K{budget}" if independent else mixture.name
                     if name != baseline_name:
                         contrasts[name] = compare_candidate_probability_metrics(metrics[baseline_name], metrics[name]).record()

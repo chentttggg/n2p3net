@@ -30,6 +30,7 @@ from models.splitbn import (
 from research.execution import ExpectedSubjectError, SubjectFailureCode
 from train.early_stopping import DEFAULT_EARLY_STOP_PATIENCE, PatienceStopper
 from transfer.asmmd import asmmd_joint_loss
+from transfer.class_calibration import TRIAL_LOSS_REDUCTIONS, calibration_trial_loss
 from transfer.decision_loss import membership_decision_loss
 from transfer.within_subject import chronological_validation_split
 
@@ -92,6 +93,7 @@ class SubjectAdapterConfig:
     max_updates: int | None = None
     bn_reestimation_batch_size: int = 128
     validation_behavior: str = "select_epoch"
+    trial_loss_reduction: str = "batch_class_mass"
 
     def __post_init__(self) -> None:
         if not isfinite(self.source_prior_weight) or self.source_prior_weight < 0:
@@ -114,6 +116,7 @@ class SubjectAdapterConfig:
             "trainable_weights": {None, "none", "head", "non_bn", "spatial", "temporal", "adapter"},
             "dropout_mode": {"legacy", "off", "checkpoint"},
             "validation_behavior": {"select_epoch", "select_epoch_full_trajectory", "diagnostics_only"},
+            "trial_loss_reduction": TRIAL_LOSS_REDUCTIONS,
         }.items():
             if getattr(self, name) not in values:
                 raise ValueError(f"invalid {name}: {getattr(self, name)!r}")
@@ -225,6 +228,7 @@ class SubjectAdapter:
         self.calibration_source_ = None
         self.training_pos_weight_: float | None = None
         self.training_prior_: float | None = None
+        self.training_class_risk_: dict | None = None
         self.last_history: dict[str, object] = {}
         self._input_mean_t: torch.Tensor | None = None
         self._input_std_t: torch.Tensor | None = None
@@ -740,6 +744,7 @@ class SubjectAdapter:
         self.calibration_source_ = None
         self.training_pos_weight_ = None
         self.training_prior_ = None
+        self.training_class_risk_ = None
         self._input_mean_t = self._input_std_t = None
         self._input_mean = self._input_std = None
         self._source_input_mean = self._source_input_std = None
@@ -1048,11 +1053,11 @@ class SubjectAdapter:
                 if parameters
                 else None
             )
-            train_counts = np.bincount(y[train_mask], minlength=2)
-            pos_weight = float(train_counts[0] / max(train_counts[1], 1))
+            loss_fn, self.training_class_risk_ = calibration_trial_loss(y[train_mask],
+                reduction=self.config.trial_loss_reduction, device=self.device)
+            pos_weight = self.training_class_risk_["pos_weight"]
             self.training_pos_weight_ = pos_weight
             self.training_prior_ = float(y[train_mask].mean())
-            loss_fn = nn.CrossEntropyLoss(weight=torch.tensor([1.0, pos_weight], device=self.device))
 
             # Materialize train/validation row blocks once. The training loop then
             # uses device-side index_select with the same permutation values, so the
@@ -1302,6 +1307,7 @@ class SubjectAdapter:
                 "fit_budget": self._finalize_budget(self._fit_budget),
                 "refit_budget": self._finalize_budget(self._refit_budget),
                 "input_statistics": self.input_statistics_record(),
+                "class_risk": self.training_class_risk_,
                 "bn_reestimation": self.bn_reestimation_,
                 "initial_bn_reestimation": initial_bn_reestimation,
                 "feature_cache_key": self.feature_cache_key_,
@@ -1473,11 +1479,11 @@ class SubjectAdapter:
             lr=self.config.lr,
             weight_decay=self.config.weight_decay,
         )
-        counts = np.bincount(y, minlength=2)
-        pos_weight = float(counts[0] / max(counts[1], 1))
+        loss_fn, self.training_class_risk_ = calibration_trial_loss(y,
+            reduction=self.config.trial_loss_reduction, device=self.device)
+        pos_weight = self.training_class_risk_["pos_weight"]
         self.training_pos_weight_ = pos_weight
         self.training_prior_ = float(y.mean())
-        loss_fn = nn.CrossEntropyLoss(weight=torch.tensor([1.0, pos_weight], device=self.device))
         torch.manual_seed(self.config.seed)
         if self.device.type == "cuda":
             with torch.cuda.device(self.device):

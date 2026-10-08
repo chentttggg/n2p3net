@@ -680,6 +680,19 @@ def _fit_calibration_candidate(
             fitted_lda = fit_shrinkage_feature_model(features, labels)
     history["requested_training_data_sha256"] = requested_training_digest
     history["training_data_sha256"] = training_digest.hexdigest()
+    actual_prior = (adapter.training_prior_ if adapter is not None else
+                   fitted_lda.steps[1][1].priors_[1] if fitted_lda is not None else float(np.mean(labels)))
+    risk = None if adapter is None else copy.deepcopy(adapter.training_class_risk_)
+    probability_training_digest = history["training_data_sha256"]
+    if adapter is not None and history.get("refit_full_prefix"):
+        digest = hashlib.sha256()
+        for array in (dataset.X[scope], dataset.y[scope], observed[scope]):
+            digest.update(np.ascontiguousarray(array).tobytes())
+        probability_training_digest = digest.hexdigest()
+    history["probability_fit"] = {"prior": float(actual_prior),
+        "prior_dtype": fitted_lda.steps[1][1].priors_.dtype.str if fitted_lda is not None else np.dtype(np.float64).str,
+        "class_counts": np.bincount(labels, minlength=2).tolist() if risk is None else risk["class_counts"],
+        "training_data_sha256": probability_training_digest, "recipe": recipe.record(), "class_risk": risk}
     continuous = dataset.provenance.get("continuous_artifact_processing", {})
     channel_quality_availability = (
         continuous.get("status") == "applied"

@@ -96,15 +96,20 @@ class CalibrationExpertProgram:
     dictionary: ResponseDictionarySpec | None = None
     _prior_spec: KernelPriorSpec | None = field(init=False, repr=False, compare=False)
     _dictionary_spec: ResponseDictionarySpec | None = field(init=False, repr=False, compare=False)
+    spatial: dict | None = None
 
     def __post_init__(self):
         if not self.expert_id or self.family not in {"trial", "continuous_ar"}:
             raise ValueError("calibration expert requires an explicit ID and supported family")
         if self.family == "trial" and (self.recipe is None or self.profile is None):
             raise ValueError("trial expert requires one target recipe and actual epoch profile")
+        if self.spatial is not None:
+            object.__setattr__(self, "spatial", freeze_metadata(self.spatial))
         if self.family == "continuous_ar" and (self.recipe is not None or self.profile is not None):
             raise ValueError("continuous expert consumes native raw, without an epoch recipe or profile")
         if self.family == "trial":
+            if self.spatial is not None:
+                raise ValueError("trial spatial programme belongs to its epoch profile")
             if self.kernel_prior is not None or self.dictionary is not None:
                 raise ValueError("continuous kernel priors/dictionaries cannot be assigned to trial experts")
             object.__setattr__(self, "ridge", 1. if self.ridge is None else self.ridge)
@@ -166,6 +171,8 @@ class CalibrationExpertProgram:
             record.pop("response_seconds")
             record.pop("n_basis")
             record["dictionary"] = self.dictionary.record()
+        if self.spatial is not None:
+            record["spatial"] = self.spatial
         return record
 
     @classmethod
@@ -195,8 +202,26 @@ class _FittedExpert:
         if self.predictor is None:
             if not self.unavailable_reason or self.model_digest is not None:
                 raise ValueError("unavailable experts have a reason and no fitted numerical model")
+        elif self.program.family == "trial" and "selection_epoch_capability" in self.predictor.record:
+            if self.predictor.record["selection_epoch_capability"]["profile_digest"] != self.program.profile.digest:
+                raise ValueError("source inference epoch programme differs from its actual frozen capability")
         elif self.program.family == "continuous_ar":
             model = self.predictor
+            if self.program.spatial is not None:
+                from transfer.ensemble_views import project_raw_observations
+
+                receipts = model.provenance.get("raw_spatial_execution", ())
+                if not receipts:
+                    raise ValueError("projected raw expert requires its actual spatial execution receipt")
+                for receipt in receipts:
+                    if semantic_sha256(receipt["declaration"]) != semantic_sha256(self.program.spatial):
+                        raise ValueError("raw spatial programme differs from actual fitted projection")
+                    _, channels, operator, expected = project_raw_observations(np.zeros((1, len(receipt["native_channels"]))),
+                        receipt["native_channels"], receipt["native_reference"], self.program.spatial,
+                        sample_rate_hz=model.sfreq)
+                    if (model.channels != channels or model.operator_identity != operator
+                            or receipt["matrix"] != expected["matrix"] or receipt["observed_slots"] != expected["observed_slots"]):
+                        raise ValueError("raw frozen numerical model differs from its actual spatial programme")
             dictionary = ResponseDictionary.compile(self.program.dictionary_spec, sample_rate_hz=model.sfreq)
             expected_basis = dictionary.matrix
             actual_prior = (KernelPriorSpec.isotropic_ridge(model.provenance["ridge"]) if model.kernel_prior is None
@@ -238,14 +263,20 @@ class _FittedExpert:
             return CandidateEvidence.from_membership_scores(scores, view.decision,
                 participant_key=view.participant_key, decision_id=view.decision_id,
                 physical_support_digest=view.physical_support_digest, expert_identities=(identity,))
-        result = self.predictor.score(view.samples, view.onsets, view.decision.membership,
-            operator_identity="native_unfiltered_volts/1", sfreq=view.sample_rate_hz,
-            channels=view.channel_names, candidate_ids=view.decision.candidate_vocabulary,
+        from transfer.ensemble_views import project_raw_observations
+
+        samples, channels, operator, spatial_receipt = project_raw_observations(view.samples, view.channel_names,
+            view.reference, self.program.spatial, sample_rate_hz=view.sample_rate_hz)
+        result = self.predictor.score(samples, view.onsets, view.decision.membership,
+            operator_identity=operator, sfreq=view.sample_rate_hz,
+            channels=channels, candidate_ids=view.decision.candidate_vocabulary,
             record_id=view.record_id)
         numerical_digest = view.raw_input_digest
+        if spatial_receipt is not None:
+            numerical_digest = semantic_sha256({"raw_input": view.raw_input_digest, "spatial": spatial_receipt})
         score_kind = "continuous_candidate_log_evidence"
         if self.program.conditioning_samples:
-            numerical_digest = semantic_sha256({"raw_input": view.raw_input_digest,
+            numerical_digest = semantic_sha256({"raw_input": numerical_digest,
                 "conditioning_sample_support": [0, self.program.conditioning_samples],
                 "score_sample_support": [self.program.conditioning_samples, len(view.samples)]})
             score_kind = "continuous_conditional_tail_log_density_fixed_candidate_prior/1"
@@ -288,6 +319,15 @@ class FittedEnsemble:
                 not .05 <= value <= 20. for value in temperatures.values()
             ):
                 raise ValueError("grouped temperature program differs from its declared bounds")
+            calibrated_ids = tuple(self._temperature_record.get("temperature_expert_ids", scorer.program.expert_ids))
+            if (not calibrated_ids or len(set(calibrated_ids)) != len(calibrated_ids)
+                    or not set(calibrated_ids) <= set(scorer.program.expert_ids)
+                    or any(temperatures[name] != 1. for name in set(scorer.program.expert_ids) - set(calibrated_ids))):
+                raise ValueError("grouped temperature programmes require explicit calibrated experts and fixed controls")
+            if "temperature_expert_ids" in self._temperature_record and (
+                set(self._temperature_record["fixed_control_expert_ids"]) != set(scorer.program.expert_ids) - set(calibrated_ids)
+                or any(set(row["expert_fit_digests"]) != set(calibrated_ids) for row in self._temperature_record["OOF_groups"])):
+                raise ValueError("temperature subset differs from actual grouped OOF producers")
         else:
             raise ValueError("unknown declared ensemble calibration strategy")
 
@@ -343,7 +383,8 @@ class FittedEnsemble:
         calibrated = {}
         calibration_digest = semantic_sha256(self.temperature_record)
         for name, item in scored.items():
-            if not item.probability_available:
+            if (not item.probability_available or name not in self.temperature_record.get(
+                "temperature_expert_ids", self.scorer.program.expert_ids)):
                 calibrated[name] = item
                 continue
             identities = tuple(replace(identity, probability_calibrated=True,
@@ -479,7 +520,7 @@ class FittedEnsemble:
 
 
 def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProgram, *,
-                             source_checkpoints=None, device="cpu", calibration_strategy="fixed"):
+                             source_checkpoints=None, device="cpu", calibration_strategy="fixed", temperature_expert_ids=None):
     """Fit only supplied authorized groups; no prediction data or truth is accepted."""
     calibration = tuple(calibration)
     expert_programs = tuple(expert_programs)
@@ -532,7 +573,7 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
     fitted = FittedEnsemble(EnsembleScorer(program), experts, receipts)
     if calibration_strategy == "fixed":
         return fitted
-    return _grouped_temperature(fitted, calibration, expert_programs, sources, device)
+    return _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids)
 
 
 def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *, device,
@@ -560,16 +601,30 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
             fitted = fit_calibration_candidate(data, spec.recipe, np.ones(data.n_epochs, dtype=bool),
                 source_trunk=source_trunk, source_input_stats=source_stats, device=device)
             predictor = FrozenTrialPredictor.from_fitted(fitted)
-            prior = float(data.y.mean())
-            offset = (0. if fitted.adapter is not None else float(np.log(prior / (1 - prior))))
+            offset = 0.
     else:
+        from transfer.ensemble_views import project_raw_observations
+
         rate = target["sample_rate_hz"]
         vocabulary = target["candidate_vocabulary"] if "candidate_vocabulary" in target else target["decision"]["candidate_vocabulary"]
-        predictor = ContinuousDecisionModel.fit(raw_records, sfreq=rate, channels=target["channel_names"],
-            candidate_ids=vocabulary, operator_identity="native_unfiltered_volts/1", noise_order=spec.noise_order,
+        projected_records, spatial_receipts = [], []
+        channels, operator = None, None
+        for record in raw_records:
+            samples, current_channels, current_operator, receipt = project_raw_observations(record.samples,
+                target["channel_names"], target["reference"], spec.spatial, sample_rate_hz=rate)
+            if channels is not None and (channels, operator) != (current_channels, current_operator):
+                raise ValueError("raw C records require one actual observed spatial programme")
+            channels, operator = current_channels, current_operator
+            projected_records.append(replace(record, samples=samples))
+            if receipt is not None:
+                spatial_receipts.append({"record_id": record.record_id, **receipt})
+        predictor = ContinuousDecisionModel.fit(projected_records, sfreq=rate, channels=channels,
+            candidate_ids=vocabulary, operator_identity=operator, noise_order=spec.noise_order,
             **({"ridge": spec.ridge} if spec.prior_spec.kind == "isotropic_ridge" else {"kernel_prior": spec.kernel_prior}),
             conditioning_samples=spec.conditioning_samples, noise_estimator=spec.noise_estimator,
             dictionary=ResponseDictionary.compile(spec.dictionary_spec, sample_rate_hz=rate))
+        if spatial_receipts:
+            predictor = replace(predictor, provenance={**predictor.provenance, "raw_spatial_execution": spatial_receipts})
         offset = 0.
     fit_digest = semantic_sha256({"program": spec.record(), "authorized_calibration": fit_inputs,
         "source_checkpoint_sha256": checkpoint_digest, "checkpoint_role": (None if checkpoint_digest is None else
@@ -634,14 +689,20 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
     return _grouped_temperature(fitted, prefix.complete_groups, specs, sources, device)
 
 
-def _grouped_temperature(fitted, calibration, expert_programs, sources, device):
+def _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids=None):
     program = fitted.scorer.program
-    by_expert = {name: [] for name in program.expert_ids}
+    selected = program.expert_ids if temperature_expert_ids is None else tuple(temperature_expert_ids)
+    if not selected or len(set(selected)) != len(selected) or not set(selected) <= set(program.expert_ids):
+        raise ValueError("temperature calibration requires an explicit nonempty subset of declared producers")
+    by_expert = {name: [] for name in selected}
+    inner_program = EnsembleProgram.equal_weights(program.name + ":temperature_training", selected)
+    selected_specs = tuple(next(spec for spec in expert_programs if spec.expert_id == name) for name in selected)
     producers = []
     for held_index, held in enumerate(calibration):
         training = [group for index, group in enumerate(calibration) if index != held_index]
-        inner = fit_calibration_ensemble(training, expert_programs, program,
-            source_checkpoints=sources, device=device, calibration_strategy="fixed")
+        inner = fit_calibration_ensemble(training, selected_specs, inner_program,
+            source_checkpoints={name: source for name, source in sources.items() if name in selected},
+            device=device, calibration_strategy="fixed")
         scores = inner.score_experts(held.view)
         target = held.view.decision.candidate_vocabulary.index(held.target_candidate)
         for name, item in scores.items():
@@ -652,7 +713,7 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device):
         producers.append({"held_record_id": held.view.record_id,
             "training_record_ids": [group.view.record_id for group in training],
             "expert_fit_digests": {name: item.expert_identities[0].fit_digest for name, item in scores.items()}})
-    temperatures = {}
+    temperatures = {name: 1. for name in program.expert_ids}
     for name, rows in by_expert.items():
         log_probability = np.stack([row[0] for row in rows])
         targets = np.asarray([row[1] for row in rows], dtype=int)
@@ -664,6 +725,7 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device):
                 detail="grouped temperature fit did not produce a finite declared calibration")
         temperatures[name] = float(np.exp(solution.x))
     temperature_record = {"strategy": "grouped_temperature", "temperatures": temperatures,
+        "temperature_expert_ids": list(selected), "fixed_control_expert_ids": [name for name in program.expert_ids if name not in selected],
         "temperature_bounds": [.05, 20.], "score_transform": "posterior_power_temperature/1",
         "evidence_scope": "calibration_development", "OOF_groups": producers,
         "final_experts_refitted_on_all_authorized_groups": True,
@@ -673,7 +735,7 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device):
 
 
 def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strategies,
-                                    source_checkpoints=None, device="cpu"):
+                                    source_checkpoints=None, device="cpu", temperature_expert_ids=None):
     """Declared temperature programs share one actual all-C final expert fit."""
     if (not strategies or len(set(strategies)) != len(strategies)
             or set(strategies) - {"fixed", "grouped_temperature"}):
@@ -692,7 +754,8 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
                 stage="temperature", detail="fewer than three complete C-only groups")
         else:
             try:
-                result[strategy] = _grouped_temperature(fixed, prefix.complete_groups, expert_programs, sources, device)
+                result[strategy] = _grouped_temperature(fixed, prefix.complete_groups, expert_programs, sources,
+                                                       device, temperature_expert_ids)
             except ExpectedSubjectError as error:
                 result[strategy] = error
             except (UnidentifiableFitError, np.linalg.LinAlgError) as error:

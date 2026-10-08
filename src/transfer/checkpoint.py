@@ -537,7 +537,10 @@ def _validate_metadata(
         raise ValueError("checkpoint input signature disagrees with its training contract.")
     expected_execution = execution_binding.get("execution_identity")
     if expected_execution is not None and preprocessing_execution_identity(dataset) != expected_execution:
-        raise ValueError("checkpoint requires compatible preprocessing execution evidence")
+        from transfer.ensemble_views import validate_selection_checkpoint_execution
+
+        validate_selection_checkpoint_execution(dataset, payload["input_preprocessing_execution"],
+                                               PreprocessingSpec(**payload["input_preprocessing"]))
     checkpoint_classifier_is_trained(payload)
     input_mean, input_std = checkpoint_input_stats(payload, int(dataset.n_channels))
     optimizer_config = training_contract.optimizer.get("config", {})
@@ -922,6 +925,7 @@ class PreparedTransferCheckpoint:
         self.training_contract_digest = str(payload["training_contract_digest"])
         self.input_statistics = checkpoint_input_stats(payload, dataset.n_channels)
         self.payload = payload
+        self.selection_epoch_capability = dataset.provenance.get("selection_epoch_capability")
 
     def assert_target_excluded(self, subject):
         assert_target_identity_excluded(self._training_identity,

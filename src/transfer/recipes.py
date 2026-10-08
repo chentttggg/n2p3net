@@ -37,6 +37,7 @@ class TargetRecipe:
     erp_bin_width: int = 1
     temporal_basis_kind: str | None = None
     temporal_rank: int | None = None
+    trial_loss_reduction: str = "batch_class_mass"
 
     def __post_init__(self) -> None:
         adapter = self.target_adapter_config
@@ -112,6 +113,8 @@ class TargetRecipe:
         if self.temporal_basis_kind is None:
             record.pop("temporal_basis_kind")
             record.pop("temporal_rank")
+        if self.trial_loss_reduction == "batch_class_mass":
+            record.pop("trial_loss_reduction")
         return record
 
 
@@ -141,6 +144,7 @@ class TargetRecipe:
             candidate_loss_weight=0. if self.candidate_loss_weight is None else self.candidate_loss_weight,
             candidate_loss_temperature=self.candidate_loss_temperature,
             source_prior_weight=self.source_prior_weight,
+            trial_loss_reduction=self.trial_loss_reduction,
         )
 
 

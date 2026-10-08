@@ -31,6 +31,10 @@ from data.study import (  # noqa: E402
     study_ids_for_identity,
 )
 from models.n2p3net import N2P3Net  # noqa: E402
+from research.binary_probability import (  # noqa: E402
+    binary_probability_metrics,
+    export_binary_pools,
+)
 from research.comparison import ContrastPlan, evaluation_input_identity  # noqa: E402
 from research.contracts import semantic_sha256  # noqa: E402
 from research.evaluation import verified_executed_snapshot  # noqa: E402
@@ -111,7 +115,8 @@ def _recipe(arm, seed):
             bn_affine=arm.get("bn_affine", "trainable"), dropout=arm.get("dropout", "off"),
             input_statistics=arm.get("input_statistics", "target_prefix"),
             epochs=arm["epochs"], batch_size=batch, seed=seed,
-            lr=arm.get("lr", .001), weight_decay=arm.get("weight_decay", .0001))
+            lr=arm.get("lr", .001), weight_decay=arm.get("weight_decay", .0001),
+            trial_loss_reduction=arm.get("trial_loss_reduction", "batch_class_mass"))
     if family == "waveform_lda":
         return waveform_lda_recipe(batch_size=batch, seed=seed)
     return erp_target_recipe(family, bin_width=arm.get("bin_width", 1), seed=seed, batch_size=batch,
@@ -448,6 +453,8 @@ def run_comparison(plan_path: Path, output: Path):
                         cell.update({key: origin[key] for key in ("status", "auc", "fit_history", "saved_replay_exact",
                             "saved_replay_max_abs", "saved_replay_tolerance", "model_artifact", "prediction_artifact",
                             "target_fit_rows")})
+                        cell.update({key: origin[key] for key in ("probability_status", "probability_semantics", "nll", "brier",
+                            "probability_scored_rows", "probability_failure", "probability_auc") if key in origin})
                         cell.update(reused_prediction_cell=origin_index, physical_target_fit=False)
                         atomic_write_json(output / "result.json", report)
                         continue
@@ -460,7 +467,6 @@ def run_comparison(plan_path: Path, output: Path):
                             stats = prepared.input_statistics if arm["family"] == "full_fine" else None
                         if budget == 0:
                             predictor = FrozenTrialPredictor.from_source(prepared, subject)
-                            scores = predictor.predict_logit(data.X[test], observed[test], device=device)
                             history, tolerance = {"program": "source_only", "target_fit_rows": 0,
                                 "physical_optimizer_updates": 0}, 1e-6
                             cell.update(physical_target_fit=False, physical_optimizer_updates=0)
@@ -471,18 +477,38 @@ def run_comparison(plan_path: Path, output: Path):
                             fitted = fit_calibration_candidate(data, TargetRecipe(**cell["recipe"]), mask,
                                 source_trunk=source, source_input_stats=stats, device=device,
                                 source_temporal_basis=bases[arm["name"]])
-                            scores = fitted.predict_logit(data.X[test], trial_channel_mask=observed[test])
                             predictor = FrozenTrialPredictor.from_fitted(fitted)
                             history, tolerance = fitted.fit_history, 1e-6 if fitted.adapter is not None else 0.
                             cell["physical_target_fit"] = True
+                        probability = (predictor.probability_scores(data.X[test], observed[test], device=device)
+                                       if predictor.posterior_available else None)
+                        if plan.get("require_probability_output") and probability is None:
+                            raise ValueError("declared proper probability output requires its actual fitted posterior programme")
+                        scores = probability["llr"] if probability is not None else predictor.predict_logit(
+                            data.X[test], observed[test], device=device)
                         if not np.isfinite(scores).all() or set(np.unique(data.y[test])) != {0, 1}:
                             raise ValueError("primary AUC requires all requested test trials and both classes")
                         model_path, prediction_path = output / f"{index:05d}.pt", output / f"{index:05d}.npz"
-                        replay = _saved_replay(model_path, predictor, data, test, observed, device)
+                        predictor.save(model_path)
+                        restored = FrozenTrialPredictor.load(model_path)
+                        probability_replay = (restored.probability_scores(data.X[test], observed[test], device=device)
+                                              if probability is not None else None)
+                        replay = probability_replay["llr"] if probability is not None else restored.predict_logit(
+                            data.X[test], observed[test], device=device)
                         np.testing.assert_allclose(scores, replay, atol=tolerance, rtol=tolerance)
                         if roc_auc_score(data.y[test], scores) != roc_auc_score(data.y[test], replay):
                             raise ValueError("saved replay changed scored ranking/AUC")
-                        np.savez_compressed(prediction_path, calibration_rows=train, test_rows=test, y=data.y[test], logits=scores)
+                        probability_payload = {}
+                        if probability is not None:
+                            for key in ("raw_logits", "llr", "posterior_logits", "probability"):
+                                np.testing.assert_allclose(probability[key], probability_replay[key], atol=tolerance, rtol=tolerance)
+                                probability_payload[key] = probability[key]
+                            metrics = binary_probability_metrics(data.y[test], probability["posterior_logits"])
+                            cell.update(probability_status="completed", probability_semantics=probability["semantics"], **metrics)
+                        else:
+                            cell.update(probability_status="unavailable", probability_failure="no_actual_posterior_programme")
+                        np.savez_compressed(prediction_path, calibration_rows=train, test_rows=test, y=data.y[test],
+                                            logits=scores, **probability_payload)
                         cell.update(status="completed", auc=float(roc_auc_score(data.y[test], scores)),
                             fit_history=history, saved_replay_exact=bool(np.array_equal(scores, replay)),
                             saved_replay_max_abs=float(np.max(np.abs(scores-replay))), saved_replay_tolerance=tolerance,
@@ -497,6 +523,7 @@ def run_comparison(plan_path: Path, output: Path):
                 del data, train, test, observed
             del entry
         del entries, deterministic_results
+    report["probability_pools"] = export_binary_pools(cells, plan.get("probability_pools", []), output)
     if _executing_tree() != tree:
         report["execution_source_status"] = "changed_during_execution"
         atomic_write_json(output / "result.json", report)

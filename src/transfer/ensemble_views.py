@@ -45,6 +45,7 @@ from data.epochs import (
     materialize_dataset_identity,
     materialize_dataset_lineage,
     parse_preprocessing_spec,
+    validate_preprocessing_execution,
 )
 from data.events import ScheduledEventTimeline
 from data.finite_filter_operator import FiniteFilterOperator
@@ -68,10 +69,62 @@ from transfer.candidate_decision import parse_row_column_target, row_column_targ
 from transfer.continuous_decision import CalibrationRecord
 from transfer.noise_model import array_digest, freeze_metadata, require_identifiers, require_sha256
 
+_SELECTION_EXECUTION_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
 
 def _immutable_array(values, dtype):
     array = np.ascontiguousarray(values, dtype=dtype)
     return np.frombuffer(array.tobytes(), dtype=array.dtype).reshape(array.shape)
+
+
+def observed_spatial_projection(native_channels, slot_channels, *, reference_channel=None):
+    """One label-free measured-space matrix, with absent slots explicitly unobserved."""
+    native = tuple(map(canonical_channel_name, native_channels))
+    slots = tuple(slot_channels)
+    matrix = signal_dependency_matrix(native_channels, slots, reference_channel=reference_channel)
+    present = np.asarray([canonical_channel_name(name) in native for name in slots])
+    observed = present & np.any(matrix != 0, axis=1)
+    return matrix, observed
+
+
+def project_raw_observations(samples, native_channels, native_reference, declaration, *, sample_rate_hz):
+    """Raw covariance consumes only actual nonzero observed coordinates."""
+    if declaration is None:
+        return samples, tuple(native_channels), "native_unfiltered_volts/1", None
+    mode = declaration["mode"]
+    if mode == "native":
+        if (tuple(declaration["channels"]) != tuple(native_channels)
+                or declaration["reference"] != native_reference):
+            raise ValueError("native raw spatial programme differs from actual observation authority")
+        matrix, observed = observed_spatial_projection(native_channels, native_channels)
+        channels = tuple(native_channels)
+        reference = native_reference
+    elif mode == "observed_measured_reference":
+        matrix, observed = observed_spatial_projection(native_channels, declaration["slot_channels"],
+                                                      reference_channel=declaration["reference_channel"])
+        if declaration.get("observed_only_for_raw_covariance") is not True:
+            raise ValueError("raw spatial programme must consume only real observed coordinates")
+        if "matrix" in declaration and not np.array_equal(matrix, declaration["matrix"]):
+            raise ValueError("raw spatial matrix differs from its actual measured dependencies")
+        channels = tuple(name for name, present in zip(declaration["slot_channels"], observed, strict=True) if present)
+        reference = "measured_channel:" + canonical_channel_name(declaration["reference_channel"])
+    else:
+        raise ValueError("unknown raw spatial programme")
+    if declaration.get("native_sample_rate_hz", sample_rate_hz) != sample_rate_hz:
+        raise ValueError("raw spatial programme cannot change the actual temporal sample grid")
+    matrix = matrix[observed]
+    if not len(matrix) or np.linalg.matrix_rank(matrix) != len(matrix):
+        raise ValueError("raw spatial covariance requires independent actual observed coordinates")
+    values = _immutable_array(np.asarray(samples) @ matrix.T, np.float64)
+    receipt = {"schema": "n2p3_observed_raw_spatial_projection/1", "declaration": declaration,
+        "native_channels": list(native_channels), "native_reference": native_reference,
+        "native_values_sha256": array_digest(samples), "native_sample_rate_hz": sample_rate_hz,
+        "matrix": matrix.tolist(), "observed_slots": observed.tolist(), "rank": len(matrix),
+        "output_channels": list(channels), "output_reference": reference,
+        "output_values_sha256": array_digest(values), "time_transform": "none"}
+    return values, channels, "native_unfiltered_observed_spatial/1:" + semantic_sha256({
+        "native_channels": native_channels, "native_reference": native_reference,
+        "matrix": matrix.tolist(), "output_channels": channels, "reference": reference}), freeze_metadata(receipt)
 
 
 def _immutable_decision(decision):
@@ -375,11 +428,12 @@ class SelectionEpochProfile:
         raw_epochs = np.stack([filtered[start:stop].T for start, stop in zip(starts, stops, strict=True)])
         epochs = transform_epoch_samples(raw_epochs, view.sample_rate_hz, self.preprocessing,
                                          require_linear=True).astype(self.output_dtype)
-        projection = signal_dependency_matrix(view.channel_names, self.channel_names,
-                                               reference_channel=self.reference_channel).astype(self.output_dtype)
+        projection, spatial_observed = observed_spatial_projection(view.channel_names, self.channel_names,
+                                                                   reference_channel=self.reference_channel)
+        projection = projection.astype(self.output_dtype)
         epochs = np.einsum("nct,oc->not", epochs, projection, optimize=True)
-        mask = np.broadcast_to(view.decision.evidence_indices[:, None] >= 0,
-                               (len(view.onsets), len(self.channel_names))).copy()
+        mask = (np.broadcast_to(view.decision.evidence_indices[:, None] >= 0,
+                               (len(view.onsets), len(self.channel_names))) & spatial_observed).copy()
         epochs[~mask] = 0
         epochs = _immutable_array(epochs, self.output_dtype)
         mask = _immutable_array(mask, bool)
@@ -397,6 +451,92 @@ class SelectionEpochProfile:
                               "reference": (view.reference if self.reference_channel is None
                                             else "measured_channel:" + self.reference_channel)}}
         return epochs, mask, freeze_metadata(receipt)
+
+    def execution_capability(self):
+        """A compiled inference capability, distinct from an executed raw receipt."""
+        if self.output_dtype != "float32" or (self.preprocessing.baseline_mode == "trial_reference"
+                and self.preprocessing.trial_reference_center != "mean"):
+            raise ValueError("selection checkpoint capability requires the actual linear float32 transform")
+        return {"schema": "n2p3_selection_epoch_capability/1", "profile": self.record(),
+                "profile_digest": self.digest, "producer_source_sha256": _SELECTION_EXECUTION_SOURCE_SHA256,
+                "operator_family": "finite_segment_sos_closed_grid_fft_first_T_linear_baseline_float32/1"}
+
+
+def validate_selection_checkpoint_execution(dataset, source_execution, preprocessing):
+    """Prove numerical-family compatibility without relabelling either ingress.
+
+    Segment lengths and source grids remain their actual recorded supports;
+    they never claim the same finite matrix or the same physical observations.
+    """
+    capability = dataset.provenance.get("selection_epoch_capability")
+    if not isinstance(capability, dict) or capability.get("schema") != "n2p3_selection_epoch_capability/1":
+        raise ValueError("checkpoint requires actual preprocessing execution evidence or compiled selection capability")
+    profile = SelectionEpochProfile.from_record(capability["profile"])
+    require_sha256(capability["producer_source_sha256"], "selection execution implementation")
+    if (capability["profile_digest"] != profile.digest or profile.preprocessing != preprocessing
+            or profile.output_dtype != "float32" or capability["operator_family"] != profile.execution_capability()["operator_family"]
+            or tuple(map(canonical_channel_name, dataset.channel_names)) != tuple(map(canonical_channel_name, profile.channel_names))):
+        raise ValueError("selection execution capability differs from the actual checkpoint numerical contract")
+    sources = validate_preprocessing_execution(source_execution, preprocessing)
+    if not sources or any(receipt["filter"]["backend"] not in {"identity", "mne_reflect_limited"} for receipt in sources):
+        raise ValueError("source execution family is not supported by the compiled selection transform")
+    operators = {}
+    for receipt in sources:
+        rate = receipt["source_context"]["sample_rate_hz"]
+        if rate not in operators:
+            operators[rate] = _profile_operator(preprocessing, rate)
+        operator = operators[rate]
+        actual_sos = np.asarray(receipt["filter"]["sos"])
+        if ((operator is None) != (not actual_sos.size) or operator is not None and (
+                not np.array_equal(actual_sos, operator.sos)
+                or receipt["filter"]["padding_limit_samples"] != operator.padding_limit)):
+            raise ValueError("source finite SOS programme differs from the compiled selection family")
+    if isinstance(dataset, TrialCheckpointTarget):
+        # No calibration or preprocessing is claimed here. Every inference
+        # transforms an actual PredictionDecisionView through this same profile.
+        return {"source_ingress": "mne_raw", "target_ingress": "selection_future_capability",
+                "family": capability["operator_family"], "same_finite_support_claimed": False}
+    receipts = dataset.provenance.get("selection_epoch_execution")
+    records = dataset.provenance.get("source_records")
+    if not receipts or not records or len(receipts) != len(records):
+        raise ValueError("selection calibration requires its actual executed raw observations")
+    observed = (np.broadcast_to(dataset.channel_mask, dataset.X.shape[:2]) if dataset.trial_channel_mask is None
+                else dataset.trial_channel_mask)
+    offset = 0
+    for receipt, raw in zip(receipts, records, strict=True):
+        count = receipt["output"]["shape"][0]
+        values, mask = dataset.X[offset:offset + count], observed[offset:offset + count]
+        output = receipt["output"]
+        physical = {key: value for key, value in raw.items() if key not in {"physical_support_digest", "raw_input_digest"}}
+        expected_reference = profile.reference if profile.reference_channel is None else "measured_channel:" + profile.reference_channel
+        if (receipt["schema"] != "n2p3_selection_epoch_execution/1" or receipt["profile_digest"] != profile.digest
+                or semantic_sha256(receipt["profile"]) != profile.digest
+                or receipt["physical_support_digest"] != raw["physical_support_digest"]
+                or receipt["raw_input_digest"] != raw["raw_input_digest"]
+                or tuple(output["shape"]) != (count, len(profile.channel_names), profile.preprocessing.n_times)
+                or output["dtype"] != "float32" or tuple(output["channel_names"]) != profile.channel_names
+                or output["reference"] != expected_reference or output["source_reference"] != raw["reference"]
+                or semantic_sha256(physical) != raw["physical_support_digest"]
+                or receipt["numerical_input_digest"] != semantic_sha256({"profile_digest": profile.digest,
+                    "physical_support_digest": raw["physical_support_digest"], "values_sha256": array_digest(values, mask)})
+                or (receipt["filter"]["operator"] is None) != (profile.operator is None)
+                or profile.operator is not None and semantic_sha256(receipt["filter"]["operator"]) != profile.operator.digest):
+            raise ValueError("selection execution receipt differs from its actual transformed calibration bytes")
+        scope = raw["raw_scope"]
+        spans = np.asarray(receipt["source_epoch_scopes"])
+        expected_spans = np.column_stack((np.asarray(raw["onsets"]) + profile._source_start,
+                                         np.asarray(raw["onsets"]) + profile._source_stop)) + scope[0]
+        if (spans.shape != (count, 2) or np.any(spans[:, 0] < scope[0]) or np.any(spans[:, 1] > scope[1])
+                or not np.array_equal(spans, expected_spans) or receipt["epoch_geometry"] != profile.epoch_geometry
+                or receipt["available_sample"] != raw["available_sample"]
+                or profile.operator is not None and receipt["filter"]["padding_samples"] != min(
+                    profile.operator.padding_limit, scope[1] - scope[0] - 1)):
+            raise ValueError("selection execution extends outside its actual authorized observation support")
+        offset += count
+    if offset != dataset.n_epochs:
+        raise ValueError("selection execution receipts do not cover the actual calibration rows")
+    return {"source_ingress": "mne_raw", "target_ingress": "selection_executed_segments",
+            "family": capability["operator_family"], "same_finite_support_claimed": False}
 
 
 @dataclass(frozen=True)
@@ -581,7 +721,7 @@ class CalibrationPrefix:
                      contract["reference"] if channels == native else "native:" + contract["reference"])
         return TrialCheckpointTarget(profile.preprocessing, channels,
             DatasetIdentityTable.from_source_rows([contract["source_subject_id"]], [contract["source_dataset_id"]]),
-            {"source_reference": reference})
+            {"source_reference": reference, "selection_epoch_capability": profile.execution_capability()})
 
     def record(self):
         return {"budget": self.budget, "target_contract": self.target_contract,
@@ -940,6 +1080,7 @@ def build_calibration_epoch_dataset(groups, profile: SelectionEpochProfile, *, t
                   "source_sample_rate_hz": profile.source_sample_rate_hz,
                   "source_records": [view.record() for view in views], "selection_epoch_profile": profile.record(),
                   "selection_epoch_execution": receipts, "authorized_label_count": len(labels)}
+    provenance["selection_epoch_capability"] = profile.execution_capability()
     if len({view.source_sha256 for view in views}) == 1:
         provenance["source_file_sha256"] = views[0].source_sha256
     else:
