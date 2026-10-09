@@ -2,6 +2,8 @@
 
 - [本地科研机制与真实数据](research_mechanisms_20261009.zh.md)：八人48格fixed-noise signal-prior、MN/reference商空间等价、native可识别性与完整自适应挑战、有限整selection历史参考；保存态/独立反例、归因限制及实际执行来源。
 
+- [B05固定物理先验1728格终态](../../tmp/research_line_20261009/REVIEWS/B05_MATRIX_FINAL.zh.md)：48个C unit、1728 requested logical cells、原中断恢复、source/input/array绑定、强MN门禁失败项和实际资源限制。该报告只支持给定冻结噪声与plugin prior机制读数。
+
 - [科研与代码集成](research_integration_20261008.zh.md)：两窗口单作者分工、总并发10、科研单seed/大版本三seed；字典重编译与容量诊断跨平台风险、独立机制代码的实际实施和未验收范围。
 
 - [当前公共消费者：风险、概率与实测空间](current_public_consumers_20261008.zh.md)：固定C质量loss、实际prior/β后验与LLR分开、Cz6 raw/真实执行family、温度控制子集与概率池完整分母；两轴零关键遗留、真实源K0/OOF和A01单raw验证，完整效能另验收。

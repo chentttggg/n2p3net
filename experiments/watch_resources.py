@@ -29,7 +29,15 @@ def _resolve_run(value: str) -> Path:
 
 
 def _pid_alive(pid: int) -> bool:
-    return pid > 0 and psutil.pid_exists(pid)
+    if pid <= 0:
+        return False
+    try:
+        psutil.Process(pid).status()
+    except psutil.NoSuchProcess:
+        return False
+    except psutil.AccessDenied:
+        return True
+    return True
 
 
 def _process_rows(root_pid: int) -> list[dict[str, object]]:

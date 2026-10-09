@@ -12,6 +12,12 @@ B05固定physical prior的given-noise C fit使用 `b=vec_row(B)`、`A=D⊗I` 和
 
 B11 full-C模型在一个独立proper global β prior下计算 `m(C+full,q)/m(C+prefix,q)`，每次C只进入一次、测试full/prefix同一次λ；prefix还可经共享β更新校准λ后验。有限数值积分必须共用同一个正离散prior measure，不能因full/prefix维数不同各自换节点却声称正规density。连续Gamma、有限离散近似和MCMC经验β混合的law/误差分别声明。有限节点的prior平均精度未必1、极端尾为Gaussian，prior排除概率不保证posterior或conditional误差；MCMC诊断同样不能代替多模态或真模型验证。
 
+长记录增广QR的能量为`||R[u;-1]||²`，必须保最后residual行；Γshape与normalizer用原观测scalar行数，不能用压缩R高度。full/prefix/tail分别从一次actual square map的原白化行编译，禁止截full R或重新启动AR。β条件积分的tail quadratic保tail residual与prefix precision shift两个非负平方，保原tail行数与Jacobian。flat nuisance参考另外保`n_raw/rankZ/n_eff`及同da raw-coordinate volume，collapsed shape用`(ν+n_eff)/2`、priorν不变；正式compiled proper工厂尚不接受flat载荷。
+
+消去nuisance的数值准入依完整physical prior chart和原white operands；极小Σ或巨大pure-flat偏移可能使合法finite输入的舍入伪造信息，需typed unresolved。完整非对角prior factor不能用precision列最大值替代；强真方向不能替弱方向授信。Gamma参考还须保`min(1,sqrtν)`的rate/noise基准，并在实际u/λ处核quadratic误差；编译时通过不认证任意u/λ或所有底层whitening误差。
+
+raw score的共同intercept平移`y*=y−y0`不改proper β或同da测度，prefix条件下tail Jacobian为1。tail二次型使用`||r_t−A_tθ||²+||R_pθ−c_p||²`，保a后验；prefix正交残差在ratio抵消。条件评分单独估计source/whitening/prefix与tail QR误差，超出actual tail行数乘`sqrtε`的absolute nats预算则typed unresolved。有限t的归一项使用`logΓ(a+n/2)−logΓ(a)−(n/2)log a`的整数维递推与稳定半步，有限ν仍保原值，解析截断界不含所有浮点或积分误差。
+
 [当前选择执行关系](evidence/current_public_consumers_20261008.zh.md)核source原actualreceipt与target capability/实际selection证据，允许经证明的相同SOS/padding/closed-grid/FFT/first-T程序族，不把不同授权长度的F_N说成相同。实测BNCI Cz6投影与原8导physical identity分列；raw256Hz/unfiltered与trial128Hz179/finite-zero的时间合同不同，不以共同空间消除该差异。
 
 [当前公共输入准入](evidence/public_source_pipeline_20261008.zh.md)使用新完整finite-zero none/128Hz179声明，父mean_only与旧raw/cache保持原身份；prepared程序绑定实际18dafd6源码，后续训练不得改签。源1964请求中仅BI2012已证常零的subject3 online记录明确排除，training保留。GTN实际245 NIX/TXT exact keys和一手论文支撑源内匿名dataset-participant authority，全局person linkage未独立验证。target534原记录与123 participant group分别记分母。

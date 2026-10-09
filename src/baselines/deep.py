@@ -221,6 +221,8 @@ class _CrossEntropyObjective(nn.Module):
         logits: torch.Tensor,
         labels: torch.Tensor,
         row_weights: torch.Tensor | None = None,
+        *,
+        reduction_dtype: torch.dtype | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Return additive sufficient statistics for split-independent validation."""
 
@@ -232,8 +234,8 @@ class _CrossEntropyObjective(nn.Module):
         )
         if row_weights is not None:
             rows = rows * row_weights
-        denominator = self.class_weights.index_select(0, labels).sum()
-        return rows.sum(), denominator
+        denominator = self.class_weights.index_select(0, labels).sum(dtype=reduction_dtype)
+        return rows.sum(dtype=reduction_dtype), denominator
 
 
 @dataclass
@@ -831,7 +833,9 @@ class DeepBaseline(Baseline):
                         )
                     else:
                         logits = self._forward_model(xb, channel_mask=channel_mask)
-                    numerator, denominator = loss_fn.components(logits, yb, row_weights)
+                    numerator, denominator = loss_fn.components(
+                        logits, yb, row_weights, reduction_dtype=torch.float64,
+                    )
                     targets = self.runtime.to_device(
                         torch.from_numpy(
                             np.array(
@@ -847,12 +851,13 @@ class DeepBaseline(Baseline):
                         max_repetitions=config.max_repetitions,
                         prefix_weights=config.prefix_weights,
                         validate=False,
+                        reduction_dtype=torch.float64,
                     )
-                detached_numerator = numerator.detach().float()
-                detached_denominator = denominator.detach().float()
+                detached_numerator = numerator.detach()
+                detached_denominator = denominator.detach()
                 decision_count = len(decision_batch.decision_ids)
-                detached_candidate_sum = candidate_loss.detach().float() * decision_count
-                detached_prefix_sum = prefix_losses.detach().float() * decision_count
+                detached_candidate_sum = candidate_loss.detach() * decision_count
+                detached_prefix_sum = prefix_losses.detach() * decision_count
                 trial_numerator = (
                     detached_numerator
                     if trial_numerator is None
@@ -2459,8 +2464,8 @@ class DeepBaseline(Baseline):
                 weighted_loss = loss.float() * len(xb)
                 epoch_loss = weighted_loss if epoch_loss is None else epoch_loss + weighted_loss
                 n_seen += len(xb)
-                detached_trial_numerator = trial_numerator.float()
-                detached_trial_denominator = trial_denominator.float()
+                detached_trial_numerator = trial_numerator.to(torch.float64)
+                detached_trial_denominator = trial_denominator.to(torch.float64)
                 epoch_trial_numerator = (
                     detached_trial_numerator
                     if epoch_trial_numerator is None
@@ -2474,9 +2479,9 @@ class DeepBaseline(Baseline):
                 if decision_context_active:
                     if candidate_loss is None or candidate_prefix_losses is None:
                         raise RuntimeError("P2 training batch omitted candidate loss components.")
-                    candidate_batch_sum = candidate_loss.float() * batch_decision_count
+                    candidate_batch_sum = candidate_loss.to(torch.float64) * batch_decision_count
                     candidate_prefix_batch_sum = (
-                        candidate_prefix_losses.float() * batch_decision_count
+                        candidate_prefix_losses.to(torch.float64) * batch_decision_count
                     )
                     epoch_candidate_sum = (
                         candidate_batch_sum

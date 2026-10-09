@@ -73,6 +73,7 @@ def test_native_cli_saves_actual_three_seed_producers_and_catalog(tmp_path):
     from research.source_catalog import SourceSeedCatalog
     from research.source_selection import fit_source_trajectory
     from train.early_stopping import GlobalEarlyStoppingPolicy
+    from train.runtime import cpu_thread_budget
 
     cache, spec, _ = _prepared_source(tmp_path)
     snapshot = freeze_source(tmp_path / "snapshot", materialize=True)
@@ -107,16 +108,19 @@ def test_native_cli_saves_actual_three_seed_producers_and_catalog(tmp_path):
             selection["validation_fit_ledger"]["training_participant_keys"])
         assert selection["full_refit_ledger_digest"] == report["tasks"][entries.index(entry)]["source_producer"]["fit_ledger_digest"]
         # An independently invoked full-source producer from the same seed
-        # must reproduce the saved refit, without retaining selected weights.
+        # and numeric thread topology must reproduce the saved refit, without
+        # retaining selected weights. Earlier CLI tests may change the parent
+        # thread budget without changing this worker's declared budget.
         from baselines.deep import DeepConfig
 
         config = DeepConfig(fixed_updates=selection["refit_updates"], batch_size=512,
             seed=entry["source_seed"], val_group_frac=None, sampling="uniform_rows", compile_mode=None)
-        _, expected = fit_source_trajectory(dataset, np.arange(dataset.n_epochs), config=config,
-            source_cache_sha256=payload["source_cache_sha256"],
-            source_snapshot_sha256=payload["source_snapshot_sha256"],
-            excluded_source_datasets=["BNCI2014-008"], device=torch.device("cpu"),
-            evidence_scope="software_correctness")
+        with cpu_thread_budget(report["resource_policy"]["native_threads_per_worker"]):
+            _, expected = fit_source_trajectory(dataset, np.arange(dataset.n_epochs), config=config,
+                source_cache_sha256=payload["source_cache_sha256"],
+                source_snapshot_sha256=payload["source_snapshot_sha256"],
+                excluded_source_datasets=["BNCI2014-008"], device=torch.device("cpu"),
+                evidence_scope="software_correctness")
         for name, value in payload["trunk_state_dict"].items():
             torch.testing.assert_close(value, expected[selection["refit_updates"]]["trunk_state_dict"][name],
                 rtol=0, atol=0)

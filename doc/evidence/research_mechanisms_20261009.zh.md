@@ -139,6 +139,38 @@ C状态重建的最高8个信息方向与endpoint value/first-difference rowspac
 
 初成本source803472/verify79d069的实际字节已精确恢复，followup87d3a8/f5f043保持自己的执行记录；当前格式整理e0a0c4/952cdc仅静态，不追签旧run。完整来源和结果在本轮 `B11_ACTUAL_ROW_SCALING/RESEARCH.zh.md`、`delivery.binding.json`；独立审阅已核8份row载荷及10份diffuse载荷，见同一 `REVIEWS/B11_DIFFUSE_AND_COMPRESSION`。raw-volume有nuisance、连续posterior准确性、真实权限caller与生产接入各自仍待出口。
 
+后续无nuisance β条件积分只平均同C+prefix的joint λ posterior；每个λ state下重新计算proper β conditional，并从一次原白化的真实tail行编独立R。tail quadratic是 `λ_T‖R_tail[u_full;−1]‖²+‖R_prefix(u_full−u_prefix)‖²`，不以两个巨大full/prefix SSE相减；normalizer保原55800 tail rows和同λ_T/Jacobian。六个独立raw Gaussian条件化oracle最大log差 `7.11e-15`，实际prior/prefix不一致拒绝。
+
+同63800/8000/55800行、128β、16000 paired λ的合成例，点MCSE从 `.424812` 变为 `.012095`，likelihood Kish从5.53变为4870.5；β积分本身约16.94秒，比原约0.59秒的β-particle评分更贵。新旧log-density相差18.27，说明旧有限样本MCSE不是遗漏稀有贡献的误差上界。独立新seed601–604的repeat-only结果log差 `.015538`、合成MCSE估计 `.016937`，只支持该fixture复现稳定；不认证连续真值或未访问模式。
+
+两种条件积分无通用方差排序：D_test=0时，旧λ解析t组件MCSE为0，新的β解析Gaussian-mixture MCSE约 `.003759`。原kernel3f777/首verifier9551、repeat verifier ef71均保各自实际字节，静态整理25ee/3fb不追签；来源见本轮 `B11_ACTUAL_ROW_SCALING/RAO_BLACKWELL.zh.md`、`rb_delivery.binding.json`。独立审阅已核31份文件及三个manifest，现接受无nuisance参考的声明范围；canonical长记录生产接线、flat nuisance数值域和真实数据性能继续单独验收。
+
+## 源尺度数值修复与canonical长记录接入
+
+实际独立反例证明，raw14/rankZ4/effective10且D/Y全在flat-Z span时，binary64投影仍会留下舍入。有限Σ尺度`1e-48 V²`的正式C入口把本应等prior的common chart covariance缩为 `2.677e-5/1.052e-6`；普通noise但巨大constant Y则让原conditional score从126.0059错成约`−1.5928e8`。这是软件合成极端域的确证缺陷，未证明当前MAT触发，也不抹掉旧normal-domain矩阵的actual producer。
+
+修复由原B05 owner持有统一source-scale准入：完整 `F=R0⁻¹` 的proper prior chart、noise unit、thin Z-QR重构/正交缺陷与原操作数γ误差，经完整增广reference inverse-root归一；超出binary64可分辨目标时typed unresolved。普通pure-Z保prior，结构饱和Z的quotient明确为零；不以小residual自己的norm认证，不clamp/删rank/放tol。score消费同准入规则，保原proper+diffuse prefix/tail、a posterior和Schur关系。Γ参考另外保`min(1,sqrtν)`并在实际u/λ核quadratic误差；这不是所有whitening操作的区间证书或全ν域后验精度证书。
+
+独立终审又以7×1/AR0/prefix2构造强tail与exact constant平移：原full相对误差门接受，但平移后的raw条件log误差约15515494。修后score先在raw共同intercept坐标减y0，保原Y哈希；同full/prefix da平移及条件tail Jacobian为1，prefix compressed rhs直接进入tailQR。额外条件误差估计覆盖源/实际white/QR及Q非正交，预算为actual tail scalar行数乘`sqrtε` nats。最终source `181b01328776130e1538c6a2b5b1f2b90ea8bae1c24ed7e403225df25fe556b5` 的四次独立Fraction/Decimal oracle中，moderate tail的两原输入得逐bit相同density、绝对误差约`5.06e-16`；giant tail两者都typed unresolved。另一个proper posterior→dense最高入口通过。先前15项保原e266来源，不追签最终body；数值估计不是全输入区间证书，真实长记录额外成本另验。
+
+大finiteν归一常数也有独立确证：无C、D0、二维y0时t density必须恒为`−log(2π)`，原ν1e16/1e30却返回−37.9861/−70.2223。新的唯一`student_t_numerics`用整数维Γ递推、稳定奇数半步和径向ratio计算；半步六项Stirling纯解析余项在a≥16小于`2.847e-18`，不含普通舍入。sampling与contrast共用，ν/2不可表示则typed，有限ν不改标∞。108个90位公开入口及4个物理shape对照通过，最终53项new/contrast加5项原预测相关case通过；相同新增17项在实际原byte源码上11失败/6通过。contrast从原z scaled logenergy计算，避免指数下溢把有限能量抹零；half logdet后置，真实结果不可表示保持typed。独立终审已核最终helper58797、samplingb2232、contrastc80bbb与相关manifest，原491运行不追签这些修复。
+
+长记录已接原`joint_response_scale/sampling`，一个factory-owned增广QR载荷同时服务有限积分与唯一Gibbs循环；采样重复Gram/linear/白化堆栈已移除。原scalar行数、Jacobian、完整residual行、同prior/noise chart及实际full/prefix/tail分别绑定。新增actual raw Y/D字节流先于prior变换记录；独立wrong-prefix反例中D的原区别曾被变换舍入抹掉，现明确拒绝，reader分块不改digest。β解析估计器使用同targeted joint λ posterior，公开边界核一次，已准入内部state不在每draw重核大数组。正式载荷仍只支持proper无nuisance；flat长记录编译/概率参考不被改签为已接采样或产品持久包。
+
+## B05 固定物理先验 1728 格终态
+
+原中断后的只读恢复已完成全部 `48 units × 36 controls = 1728/1728` logical cells。1345 个原完成记录未重算；恢复新增330次实际物理拟合和53个精确别名，得到1488个唯一数值状态、240个最终逻辑别名。4022项源码/输入/原模型/MAT/旧产物绑定逐项核对，全部来源与数组保存态一致；无数值拟合失败、无新 held score、无噪声重拟合。原一次未收到完整科学回执的 started attempt 保持 unknown，物理尝试只报已知下界1489，不把未记录次数伪造为零。
+
+强 matched-MN 对照仍是科学门禁：672 个需要强 oracle 的格中613通过、59失败，最大 covariance-unit 误差 `1.02947e-4`，原 `1e-7/1e-8` 阈值、AR8 reference prior、source producer和白化程序均未更换。代表性八个保存态独立重算的 waveform/covariance/df 最大相对误差 `3.43e-14`；这些结果只支持给定冻结噪声和 C-derived plugin prior 的机制读数，不支持替代 prior 晋升、公共泛化或成人效能。
+
+实际运行约1035秒，两个 worker 各一 native thread；整机 CPU 峰值 `86.7%`，9 次观察超过工程目标80%，最低可用内存约 `400.8 MiB`。这一资源例外已记录在终态 receipt，不能把矩阵写成全程资源约束达标，也不因资源例外重跑或改签结果。完整归约和身份见 `B05_FIXED_PRIOR_MATRIX/RESUME_01/HANDOFF.zh.md`、`REVIEWS/B05_MATRIX_FINAL.zh.md` 及其 binding/derived summary。
+
+## 云端一次性软件验证的当前出口
+
+固定 491 文件包的唯一软件 suite 已实际运行一次：3180 passed、16 failed、20 skipped、0 errors，exit1，源码成员未变。11 个失败来自环境缺失 `braindecode` 的深模型/多域模块；在锁定 uv 环境补齐 `braindecode 1.7` 后，11 个必要环境案例以25 CPU/4 GPU owner实际复验通过。其余失败分别归因于 calibration prior 测试读取过时 participant actor 路径（四个 fit/save/score/replay 和 reference energy 36 均实际正确）、dashboard read-only liveness、worker diagnostics fake owner 缺少 artifact_writer、native 3-seed producer exact topology 以及 validation 分区的 float32 最终归约。对应局部修复均保持原491一次运行证据；未重跑原3180，未启动正式公共 fit。云端可暂时关闭，后续仅对相关修复做定向复验。
+
+本批同时整体退役无人调用的historical mean-scale `transfer.candidate_set_loss` 包装器及其三个历史测试，当前真实入口是`subject_adapter→decision_loss.membership_decision_loss`。原两文件逐字节保存在稳定大版c71 source内，不将历史mean温度重签sum语义。全仓宏观审查另确认2167个过程/展开副本、135769259B可退役；root核所有SHA、四包恢复与当前依赖后，自动审批仍拒绝整批及单文件删除，只给`blocked by policy`，该批实际删除0。精确清单及核验在本轮 `ARCHITECTURE_RETENTION_AUDIT/`，原数据/cache、唯一模型结果、当前科研WIP保持。
+
 ## 本轮统一软件入口核验
 
 ERP入口的已删除私有digest调用已修正，原compact dtype/shape/bytes关系保持，真实仓库外CLI help通过。459个Python文件的4665个仓库内显式from-import静态检查未见缺符号；随后实际 `pytest --collect-only tests` exit0，收集217个测试模块/3179用例、源码前后不变。收集没有执行测试断言，完整integrated suite仍待实际足额内存；不降低原native资源声明或重启用户关闭的云。

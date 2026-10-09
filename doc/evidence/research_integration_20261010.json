@@ -1,0 +1,105 @@
+{
+  "schema": "n2p3_final_source_manifest_pointer/1",
+  "integration_status": "integrated_final_source_freeze",
+  "integration_artifact": "tmp/FINAL_INTEGRATION/final_integration.json",
+  "integration_artifact_sha256": "d5dd85d2b17e2b0387472b4ebff42c3f049dff6f74e6d167d8e0068a420e26af",
+  "source_freeze": {
+    "manifest": "tmp/FINAL_INTEGRATION/final_source_20261010_final5/source.manifest.json",
+    "manifest_sha256": "b193664bf5d42b74529babf04f6c27f90e25748f1696573420daf27240137b7d",
+    "archive": "tmp/FINAL_INTEGRATION/final_source_20261010_final5/source.source-only.tar.gz",
+    "archive_sha256": "5f3b2a6b6bcfd70b624131fba99eeb221a947c1ba6846716bda328e41d343b6b",
+    "member_count": 496,
+    "working_tree_snapshot": true
+  },
+  "accepted_scopes": {
+    "canonical_science_review": {
+      "report": "tmp/REVIEWS/FINAL_CANONICAL_SCIENCE.zh.md",
+      "sha256": "a6166f8772364f96b7805e9607d5b33f2ee635b78fdce85ca551c9d60a6465a1",
+      "binding": "tmp/REVIEWS/FINAL_CANONICAL_SCIENCE.binding.json"
+    },
+    "score_affine": {
+      "source_sha256": "181b01328776130e1538c6a2b5b1f2b90ea8bae1c24ed7e403225df25fe556b5",
+      "delivery": "tmp/SCORE_AFFINE_NUMERICS/delivery.binding.json",
+      "status": "accepted_limited_conditional_precision_policy"
+    },
+    "gamma_normalization": {
+      "student_t_helper": "58797d0db0351e4f66d27e3d7231989ad9400051968537f68f0465308d76db72",
+      "sampling": "b2232e5a3ad28cb8162203b11efa50e7c2f56a15092a8b864e32954983bd8db8",
+      "contrast": "c80bbb351a174689856b36bf9a844b012a0fc5b3c00396a0463f78b0835dafdf",
+      "binding": "tmp/gamma_normalization_repair/binding.json",
+      "status": "accepted_finite_nu_numeric_scope"
+    },
+    "decision_partition": {
+      "deep": "b17179a19c10ee122c9aae432bac0480fe8ced69f03dd6e7373d3cb687b48e7e",
+      "decision_loss": "e42b98e932c184b3a97998e57396f5bb17307c0f82dcbf3acaee1c2d2432f482",
+      "handoff": "tmp/decision_partition_20261009/HANDOFF.md",
+      "status": "accepted_P2_validation_reduction_scope"
+    },
+    "source_output_admission": {
+      "experiments": "c3e445790323b3a78cfb1bf3a18a53334d3718d48a65f0c54d8487d3e152bffa",
+      "source_execution": "dd5fbd5914db25d6f7be00cdc56fe02f8bb93ddf0705eeb3205f74c6c4997fb4",
+      "progress": "7483c3d4e8a9826b2df9ca84b7c99eef8c8842c6ae36e3557114709bb183667f",
+      "test": "8f3b362f339c4fad29ce469fcfcb612fdaa2863400ddbbf5cd5eec24381dcbd4",
+      "status": "accepted_disk_vs_RAM_admission_scope"
+    },
+    "infrastructure": {
+      "watch_resources": "6febc7927fda49bac0163daefd197a0bd3b5d085326c558906dfc25f1030aeb8",
+      "worker_diagnostics_test": "26f1b94ba4b58ce885f24153fd8fc96180ad47e13c72f88592ad0e7cfeef7095",
+      "status": "accepted_local_cases_linux_revalidation_pending"
+    },
+    "native_refit_oracle": {
+      "test": "07c071e3c75190346bbf0e14ea65564b8a91cc1076fed145496512d5e22aaebc",
+      "status": "accepted_test_only_scope_linux_revalidation_pending"
+    },
+    "prior_panel_test": {
+      "test": "0baa4a9efd583ddfc581077a084d4328f33470dae32a81483ada3b4462c1e511",
+      "status": "accepted_path_scope_linux_revalidation_pending"
+    }
+  },
+  "focused_validation": {
+    "ruff": "passed",
+    "diff_check": "passed",
+    "student_t_and_joint_tests": "passed",
+    "channel_response_and_compiled_tests": "passed",
+    "source_output_dashboard_workerdiag_tests": "passed",
+    "prior_panel_selector": "passed",
+    "decision_partition_selector": "passed"
+  },
+  "limitations": [
+    "full final-source cloud suite after this merged source not run",
+    "normal actual-length score gate remains typed unresolved at conservative full-projection bound",
+    "flat nuisance long-record sampler/product package not integrated",
+    "public efficacy/adult/device confirmation not established",
+    "whole-tree deletion batch remains blocked by automatic approval policy"
+  ],
+  "local_archive_retention": "source archive and materialized checkout remain in ignored tmp/FINAL_INTEGRATION; manifest and hashes are the tracked pointer",
+  "integration_commit": "see current HEAD at delivery",
+  "source_ingress": {
+    "archive_sha256": "b5bc3277139d210bfbde5101dddbedec61314f75b04ad4295ce4ddfa31229820",
+    "manifest_sha256": "84ee7b4ec0b914b1092fdab81d67a57c9143b98fb8b3cb4cc231bdd3197b24e8",
+    "members_verified": 493,
+    "original_491_results_resigned": false,
+    "extra_scope": [
+      "data digests",
+      "domain/euclidean alignment",
+      "transfer binary",
+      "source vector and predictive-prior tests",
+      "freeze helper",
+      "candidate_set_loss removal"
+    ],
+    "next_linux_scope": "targeted validation for new production members and remaining repaired failures; no automatic 491 full-suite re-run"
+  },
+  "cold_reclaim": {
+    "status": "accepted_software_scope_pending_linux_mount_validation",
+    "candidate_source_sha256": "ff4eeaf99ca2d649d474a7e55f49287cecb3130f902270fbc891bd25906d9301",
+    "compact_script_sha256": "5a8ff34594c0b94a3f3396ff774a8e0f29b1f59f973807e14301da86e0f33b9c",
+    "tests": {
+      "external_reclaim_sha256": "382af714e8f68a52e0981afd1ab892c88bcc7cac074b5be73b266fc32a0213b0",
+      "cold_compaction_sha256": "3af480e7dc610e290f719eb98b62902a85bcd097dfbfd16e935baf726e72f095",
+      "cases_passed": 31
+    },
+    "contract": "instant credit=min(allocated,last-link observed-free-delta); deferred upper bound remains separate; every new admission rechecks actual free and live reservations; RAM capacity unchanged",
+    "actual_cleanup_performed": false,
+    "linux_mount_validation": "pending"
+  }
+}

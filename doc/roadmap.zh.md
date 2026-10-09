@@ -29,7 +29,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
 | B09 空间 | 一般signal-prior后验、A01六格及八人48格/MN商空间验收 | Pz4无额外hit且NLL增，不晋升；learned prior与joint MLE另验 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
-| B11 动态/稳健 | noise-only Gamma、projected尺度/ν；proper global β与全C/test λ联合参考、共同正测度修复和Gibbs/prefix经验混合 | 实际K0/独立noise/C权限、真实行数与内存伸缩、nuisance/动态state、完整程序效能及多模态保证 |
+| B11 动态/稳健 | noise-only Gamma、proper全C/test联合尺度；实际行数增广QR和显式β条件积分接研究owner；共同flat-Z小参考及源尺度反例 | 真实K0/独立noise/C权限、flat长记录采样/持久包、动态state、连续预测准确性与完整效能；多模态不由诊断保证 |
 | B12 公共流程 | 全局code/artifact审查；独立C/test入口与B14共同owner | 四库binary/合法candidate、K0/预算、一个完整科研流程 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
 | B14 工程/吞吐 | B12同资源owner/完整requested账、实际源码保存与同call重复扫描退役 | B12共享数据/rolling资源排程、云实际25CPU/4GPUworkers |

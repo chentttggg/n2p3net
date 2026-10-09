@@ -71,7 +71,7 @@ def test_migration_shared_cross_prior_and_conditional_scales_match_dense_gaussia
     np.testing.assert_allclose(rates, (4 + np.asarray(energy)) / 2, atol=1e-13)
     assert model.hyperparameters is hyper and model.prior is prior
     with pytest.raises(ValueError):
-        model.grams.flags.writeable = True
+        model.blocks[0].augmented_root.flags.writeable = True
 
 
 def test_migration_no_c_gaussian_sampling_has_the_physical_prior_and_zero_extra_lambdas():
@@ -249,5 +249,8 @@ def test_physical_voltage_units_leave_chart_conditionals_and_tail_jacobian_consi
     scaled_model = prepare_model(scaled_prior, [scaled_c], hyper)
     scaled_prediction = prepare_prediction(scaled_model, scaled_test, conditioning_rows=1)
     _, _, scaled = conditional_tail_components(scaled_prediction, chart)
-    np.testing.assert_allclose(scaled_model.grams, model.grams, atol=1e-13)
+    mean, root = conditional_beta_chart(model, np.array([.7]))
+    scaled_mean, scaled_root = conditional_beta_chart(scaled_model, np.array([.7]))
+    np.testing.assert_allclose(scaled_mean, mean, atol=1e-13)
+    np.testing.assert_allclose(scaled_root @ scaled_root.T, root @ root.T, atol=1e-13)
     np.testing.assert_allclose(scaled, original - np.log(gain), atol=1e-12)

@@ -120,10 +120,17 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
         source_cache_sha256, source_snapshot_sha256, excluded_source_datasets, device, evidence_scope,
         signature, signature_record, fit_ledger, gpu_slots, architecture, runtime_preload_budget_bytes=None,
         runtime_input_staging_gate=None, runtime_host_process_budget_bytes=None, source_program_config=None):
+    from contextlib import nullcontext
+
     import torch
 
     from data.study import dataset_study_membership
-    from research.source_execution import gpu_task_slot, release_source_worker
+    from research.source_execution import (
+        current_input_admission,
+        gpu_task_slot,
+        release_source_worker,
+        save_source_checkpoint,
+    )
     from research.source_selection import fit_source_trajectory
     from transfer.checkpoint import checkpoint_training_contract, load_checkpoint_payload
 
@@ -163,7 +170,7 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
                 physical_draws = int(model.last_history["trial_draws"])
                 for update, payload in payloads.items():
                     path = destination / f"source.u{update}.pt"
-                    torch.save(payload, path)
+                    save_source_checkpoint(path, payload)
                     checkpoints[update] = str(path.resolve())
                     stored[update] = {"path": str(path.resolve()), "sha256": _sha256(path)}
                 del model, payloads
@@ -194,7 +201,10 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
                         or original.validation["fit_ledger"] != fit_ledger):
                     raise ValueError("selected trajectory reuse must preserve its original source producer binding")
                 path = destination / f"source.u{update}.pt"
-                shutil.copyfile(origin["path"], path)
+                admission = current_input_admission()
+                with (admission.artifact_writer(path, Path(origin["path"]).stat().st_size)
+                      if admission is not None else nullcontext()):
+                    shutil.copyfile(origin["path"], path)
                 checkpoints[update] = str(path.resolve())
                 continue
             provenance = {"schema": reuse["schema"], "training_signature": signature,
@@ -214,14 +224,14 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
                 holdout_participant_keys=(),
             )
             path = destination / f"source.u{update}.pt"
-            torch.save({**payload, "source_cache_sha256": source_cache_sha256,
+            save_source_checkpoint(path, {**payload, "source_cache_sha256": source_cache_sha256,
                 "training_identity_ledger": fit_ledger["training_identity_ledger"],
                 "training_identity_ledger_digest": fit_ledger["training_identity_ledger_digest"],
                 "training_contract": contract.record(), "training_contract_digest": contract.digest(),
                 "source_study_membership": membership, "source_fit_ledger": fit_ledger,
                 "source_training_reuse": provenance,
                 "runtime": {"physical_fit_performed": False, "origin_runtime": payload.get("runtime")},
-            }, path)
+            })
             checkpoints[update] = str(path.resolve())
     result = {"checkpoints": checkpoints, "source_training_reuse": reuse, "fit_ledger": fit_ledger,
               "physical_optimizer_updates": physical_updates, "physical_trial_draws": physical_draws}
@@ -560,10 +570,9 @@ def _source_group_worker(arguments):
             directory = Path(snapshot_directory).resolve()
             directory.mkdir(parents=True, exist_ok=True)
         admission = nullcontext() if plan.get("_phase_reserved") else plan["_memory_admission"].source_group()
-        staging = plan.get("_source_input_admission")
-        artifacts = (staging.artifact_directory(output, plan["_source_worker_memory_bytes"])
-                     if staging is not None else nullcontext())
-        with cpu_thread_budget(native_threads), admission, artifacts:
+        # Resident EEG RAM is not an output filesystem claim. Cache, JSON,
+        # checkpoint and progress writers admit their own actual output bytes.
+        with cpu_thread_budget(native_threads), admission:
             worker_diagnostic_phase("source_input_and_memory_admission")
             if plan.get("_prepared_source_inputs") is not None:
                 plan = _prepare_source_group_inputs(plan, Path(output))

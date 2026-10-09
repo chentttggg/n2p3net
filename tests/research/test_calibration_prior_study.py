@@ -74,9 +74,18 @@ def test_mat_g_and_trace_control_have_actual_equal_reference_energy_and_exact_re
     assert result["contrasts"]["g9"]["paired_probability_count"] == 2
     from transfer.continuous_decision import ContinuousDecisionModel
 
+    participant = result["participants"][0]
+    assert len(participant["fits"]) == len(participant["artifact_receipts"]) == 4
+    assert not participant["failed_fit_receipts"] and not participant["inflight_fits"]
+    assert all(row["fit_origin"]["physical_successful_fits"] == 1 for row in participant["fits"])
+    actor_name = f"participant_{participant['record_index']:03d}"
+    directory = output / "participant_groups" / actor_name / actor_name
+    models = {(receipt["request"]["fold"], receipt["request"]["expert_programs"][0]["expert_id"]):
+        ContinuousDecisionModel.load(directory / next(file["path"] for file in receipt["files"]
+            if file["path"].endswith(".npz"))) for receipt in participant["artifact_receipts"]}
+    assert set(models) == {(fold, expert.expert_id) for fold in range(2) for expert in experts}
     for fold in range(2):
-        priors = [ContinuousDecisionModel.load(output / f"participant_000/seed23_fold{fold}_expert{index}/expert_000.npz")
-                  .kernel_prior for index in range(2)]
+        priors = [models[fold, expert.expert_id].kernel_prior for expert in experts]
         assert priors[0].provenance["records"] == priors[1].provenance["records"]
         np.testing.assert_array_equal(priors[0].reference_root, priors[1].reference_root)
         G = priors[0].reference_root.T @ priors[0].reference_root

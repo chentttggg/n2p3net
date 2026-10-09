@@ -122,3 +122,4 @@ src/research/joint_response_scale.py text eol=lf
 tests/research/test_joint_response_scale.py text eol=lf
 src/research/joint_response_sampling.py text eol=lf
 tests/research/test_joint_response_sampling.py text eol=lf
+tests/research/test_joint_response_compiled.py text eol=lf

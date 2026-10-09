@@ -14,7 +14,8 @@ default degrees of freedom, scalable inference engine or production admission.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import hashlib
+from dataclasses import dataclass, field
 from itertools import islice, product
 
 import numpy as np
@@ -22,7 +23,7 @@ from scipy.linalg import solve_triangular
 from scipy.special import gammaln, logsumexp, roots_legendre
 from scipy.stats import gamma
 
-from transfer.noise_model import finite_real_array, frozen_array
+from transfer.noise_model import finite_real_array, frozen_array, metadata_digest
 
 
 class NumericalResolutionError(ValueError):
@@ -124,6 +125,252 @@ class DecisionBlock:
             raise ValueError("this synthetic reference supports declared C and read-only test roles")
         for key, value in (("samples", y), ("design", design), ("noise_root", root)):
             object.__setattr__(self, key, value)
+
+
+def _input_digest(*arrays):
+    """Hash actual operands without allocating a full byte-string copy."""
+    digest = hashlib.sha256()
+    for value in arrays:
+        array = np.ascontiguousarray(value)
+        digest.update(str((array.shape, array.dtype.str)).encode())
+        digest.update(memoryview(array).cast("B"))
+    return digest.hexdigest()
+
+
+def _raw_streams(samples, channels, width):
+    return tuple(hashlib.sha256(str((shape, np.dtype(float).str)).encode())
+                 for shape in ((samples, channels), (samples, channels, width)))
+
+
+def _raw_stream_identity(streams):
+    return metadata_digest({"Y": streams[0].hexdigest(), "D": streams[1].hexdigest()})
+
+
+def _chart_identity(prior, hyperparameters):
+    return metadata_digest({"prior_program": prior.program,
+                            "physical_prior": _input_digest(prior.mean, prior.root),
+                            "nu": str(hyperparameters.degrees_of_freedom),
+                            "relative_noise_shape": hyperparameters.relative_noise_shape,
+                            "hyperparameter_program": hyperparameters.program})
+
+
+@dataclass(frozen=True, init=False, eq=False)
+class CompiledDecision:
+    """Factory-owned proper likelihood rows, never a generic root admission API.
+
+    ``observed_rows`` counts original scalar observations, including residual
+    directions removed by QR. A conditional tail shares the full decision's
+    scale and cannot enter an independent-decision observation set.
+    Source/read authority remains outside this research numerical carrier.
+    """
+
+    decision_id: str
+    role: str
+    augmented_root: np.ndarray
+    observed_rows: int
+    noise_logdet: float
+    row_start: int
+    row_stop: int
+    kind: str
+    chart_identity: str
+    source_identity: str
+    map_identity: str
+    raw_input_identity: str
+    prefix: CompiledDecision | None = field(repr=False)
+    tail: CompiledDecision | None = field(repr=False)
+
+    def __init__(self, *args, **kwargs):
+        raise TypeError("compiled proper likelihoods require a canonical compiler factory")
+
+
+def _compiled(root, *, decision_id, role, rows, logdet, start, kind, chart, source, mapping, raw):
+    _numeric(root, logdet, name="compiled augmented likelihood")
+    result = object.__new__(CompiledDecision)
+    fields = {"decision_id": decision_id, "role": role, "augmented_root": frozen_array(root),
+              "observed_rows": rows, "noise_logdet": float(logdet), "row_start": start,
+              "row_stop": start + rows, "kind": kind, "chart_identity": chart,
+              "source_identity": source, "map_identity": mapping, "raw_input_identity": raw,
+              "prefix": None, "tail": None}
+    for name, value in fields.items():
+        object.__setattr__(result, name, value)
+    return result
+
+
+def _augmented_qr(rows, chunk_rows):
+    """Preserve all p+1 columns and the final residual-only row."""
+    if type(chunk_rows) is not int or chunk_rows < 1:
+        raise ValueError("QR work-block size must be a positive integer")
+    root = np.empty((0, rows.shape[1]))
+    for start in range(0, len(rows), chunk_rows):
+        root = np.linalg.qr(np.vstack((root, rows[start:start + chunk_rows])), mode="r")
+    _numeric(root, name="augmented QR root")
+    return root
+
+
+def _compile_white(white, *, decision_id, role, full_logdet, prefix_logdet, cut,
+                   chart, source, mapping, full_raw, prefix_raw, qr_chunk_rows):
+    common = {"decision_id": decision_id, "role": role, "chart": chart,
+              "source": source, "mapping": mapping}
+    full = _compiled(_augmented_qr(white, qr_chunk_rows), rows=len(white), logdet=full_logdet,
+                     start=0, kind="full", raw=full_raw, **common)
+    if cut is not None:
+        prefix = _compiled(_augmented_qr(white[:cut], qr_chunk_rows), rows=cut, logdet=prefix_logdet,
+                           start=0, kind="prefix", raw=prefix_raw, **common)
+        tail = _compiled(_augmented_qr(white[cut:], qr_chunk_rows), rows=len(white)-cut,
+                         logdet=full_logdet-prefix_logdet, start=cut, kind="conditional_tail",
+                         raw=full_raw, **common)
+        object.__setattr__(full, "prefix", prefix)
+        object.__setattr__(full, "tail", tail)
+    return full
+
+
+def _compilation_chart(prior, hyperparameters):
+    if not isinstance(prior, GlobalGaussianPrior) or not isinstance(hyperparameters, FixedHyperparameters):
+        raise TypeError("canonical proper physical prior and fixed hyperparameters are required")
+    return _chart_identity(prior, hyperparameters)
+
+
+def _prefix_cut(cut, count):
+    if cut is not None and (type(cut) is not int or not 0 < cut < count):
+        raise ValueError("an actual nonempty prefix and tail are required")
+
+
+def compile_decision(prior, hyperparameters, block, *, conditioning_rows=None, qr_chunk_rows=2048):
+    """Compile one dense proper decision; split only original whitened rows.
+
+    Independently supplied dense prefixes bind by their exact y/D/leading
+    noise-root operands, rather than shape-dependent QR rounding.
+    """
+    chart = _compilation_chart(prior, hyperparameters)
+    if not isinstance(block, DecisionBlock):
+        raise TypeError("a canonical proper raw DecisionBlock is required")
+    p, n, cut = len(prior.mean), len(block.samples), conditioning_rows
+    if block.design.shape[1] != p:
+        raise ValueError("every decision must use the same actual physical beta chart")
+    _prefix_cut(cut, n)
+    with np.errstate(over="ignore", under="ignore", invalid="ignore", divide="ignore"):
+        augmented = np.column_stack((block.design @ prior.root, block.samples-block.design @ prior.mean))
+        _numeric(augmented, name="actual beta image and residual")
+        white = solve_triangular(block.noise_root, augmented, lower=True)
+        white /= np.sqrt(hyperparameters.relative_noise_shape)
+        full_logdet = 2*np.log(np.diag(block.noise_root)).sum()+n*np.log(hyperparameters.relative_noise_shape)
+        prefix_logdet = (None if cut is None else 2*np.log(np.diag(block.noise_root)[:cut]).sum()
+                         +cut*np.log(hyperparameters.relative_noise_shape))
+    raw = _input_digest(block.samples, block.design, block.noise_root)
+    prefix_raw = (None if cut is None else _input_digest(block.samples[:cut], block.design[:cut],
+                                                        block.noise_root[:cut, :cut]))
+    _numeric(white, name="actual full-record whitening")
+    return _compile_white(white, decision_id=block.decision_id, role=block.role, cut=cut,
+                          full_logdet=full_logdet, prefix_logdet=prefix_logdet, chart=chart,
+                          source=raw, mapping=_input_digest(block.noise_root), full_raw=raw,
+                          prefix_raw=prefix_raw, qr_chunk_rows=qr_chunk_rows)
+
+
+def compile_owned_decision(prior, hyperparameters, noise, *, decision_id, role, native_samples,
+                           raw_batches, conditioning_samples=None, qr_chunk_rows=2048):
+    """Use the existing B05 full-record map and public whitening Jacobian once.
+
+    ``raw_batches`` supplies contiguous (start_sample, Y[N,C], D[N,C,p]). B05
+    still requires the whole record: chunks do not reset the temporal filter.
+    All prefix/tail roots come independently from its original white rows.
+    No dense square covariance or observation-by-draw matrix is constructed.
+    """
+    from research.channel_noise_mechanism import FittedChannelNoise
+
+    chart = _compilation_chart(prior, hyperparameters)
+    if not isinstance(noise, FittedChannelNoise):
+        raise TypeError("the canonical proper B05 noise owner is required")
+    if (not isinstance(decision_id, str) or not decision_id.strip()
+            or role not in {"target_calibration", "read_only_inference"}
+            or type(native_samples) is not int or native_samples < 1):
+        raise ValueError("one actual complete decision, role and native sample count are required")
+    _prefix_cut(conditioning_samples, native_samples)
+    p, channels = len(prior.mean), len(noise.geometry.channels)
+    augmented = np.empty((native_samples, channels, p+1))
+    raw_streams = _raw_streams(native_samples, channels, p)
+    prefix_streams = (None if conditioning_samples is None else
+                      _raw_streams(conditioning_samples, channels, p))
+    offset = 0
+    for start, samples, design in raw_batches:
+        y = finite_real_array(samples, name="actual source observations")
+        d = finite_real_array(design, name="actual source design")
+        if (type(start) is not int or start != offset or y.ndim != 2 or not len(y)
+                or y.shape[1] != channels or d.shape != (*y.shape, p)):
+            raise ValueError("actual contiguous sample-major physical Y/D chunks are required")
+        stop = offset+len(y)
+        if stop > native_samples:
+            raise ValueError("source reader exceeds the declared complete decision")
+        # Bind original canonical Y/D before the chart multiplication can round
+        # away their differences. Independent streams make reader cuts irrelevant.
+        for digest, value in zip(raw_streams, (y, d), strict=True):
+            digest.update(memoryview(np.ascontiguousarray(value)).cast("B"))
+        if prefix_streams is not None:
+            leading = min(len(y), max(conditioning_samples-offset, 0))
+            if leading:
+                for digest, value in zip(prefix_streams, (y[:leading], d[:leading]), strict=True):
+                    digest.update(memoryview(np.ascontiguousarray(value)).cast("B"))
+        augmented[offset:stop, :, :p] = d @ prior.root
+        augmented[offset:stop, :, p] = y-d @ prior.mean
+        offset = stop
+    if offset != native_samples:
+        raise ValueError("all declared decision rows must actually be supplied")
+    _numeric(augmented, name="actual source augmented data")
+    mapping = metadata_digest(noise.record())
+    source = _raw_stream_identity(raw_streams)
+    full_raw = metadata_digest({"source": source, "map": mapping})
+    prefix_raw = (None if prefix_streams is None else
+                  metadata_digest({"source": _raw_stream_identity(prefix_streams), "map": mapping}))
+    augmented /= np.sqrt(hyperparameters.relative_noise_shape)
+    white = noise.whiten(augmented).reshape(native_samples*channels, p+1)
+    del augmented
+    n, cut = len(white), None if conditioning_samples is None else conditioning_samples*channels
+    full_logdet = -2*noise.whitening_logabsdet(native_samples)+n*np.log(hyperparameters.relative_noise_shape)
+    prefix_logdet = (None if cut is None else -2*noise.whitening_logabsdet(conditioning_samples)
+                     +cut*np.log(hyperparameters.relative_noise_shape))
+    return _compile_white(white, decision_id=decision_id, role=role, cut=cut,
+                          full_logdet=full_logdet, prefix_logdet=prefix_logdet, chart=chart,
+                          source=source, mapping=mapping, full_raw=full_raw,
+                          prefix_raw=prefix_raw, qr_chunk_rows=qr_chunk_rows)
+
+
+def _prepare(prior, blocks, hyperparameters):
+    chart = _compilation_chart(prior, hyperparameters)
+    prepared = []
+    for block in blocks:
+        if isinstance(block, DecisionBlock):
+            block = compile_decision(prior, hyperparameters, block)
+        if not isinstance(block, CompiledDecision):
+            raise TypeError("canonical proper raw or factory-compiled decisions are required")
+        if block.chart_identity != chart:
+            raise ValueError("compiled decisions must use the same physical prior and noise program")
+        if block.kind == "conditional_tail":
+            raise ValueError("a conditional tail cannot introduce another independent Gamma decision")
+        prepared.append(block)
+    if len({block.decision_id for block in prepared}) != len(prepared):
+        raise ValueError("C/test cannot repeat a complete decision or duplicate its Gamma draw")
+    return tuple(prepared)
+
+
+def _qr_beta(records, scales, width):
+    """Admitted numerical core: one prior I, all complete-decision roots."""
+    terms = [np.column_stack((np.eye(width), np.zeros(width)))]
+    terms.extend(np.sqrt(lam)*record.augmented_root for record, lam in zip(records, scales, strict=True))
+    augmented = np.linalg.qr(np.vstack(terms), mode="r")
+    root, rhs = augmented[:width, :width], augmented[:width, width]
+    _numeric(root, rhs, name="proper conditional beta QR")
+    if np.any(np.diag(root) == 0):
+        raise NumericalResolutionError("proper conditional beta QR is numerically unresolved")
+    mean = solve_triangular(root, rhs, lower=False)
+    _numeric(mean, name="proper conditional beta mean")
+    return mean, root
+
+
+def _root_energy(record, charts):
+    vectors = np.column_stack((charts, -np.ones(len(charts))))
+    residual = vectors @ record.augmented_root.T
+    result = np.einsum("bi,bi->b", residual, residual)
+    _numeric(result, name="augmented residual energy")
+    return result
 
 
 @dataclass(frozen=True)
@@ -255,62 +502,28 @@ class ConditionalTailEvidence:
     hyperparameter_program: str
 
 
-def _prepare(prior, blocks):
-    blocks = tuple(blocks)
-    if not isinstance(prior, GlobalGaussianPrior) or any(not isinstance(block, DecisionBlock) for block in blocks):
-        raise ValueError("owned physical prior and decision blocks are required")
-    if len({block.decision_id for block in blocks}) != len(blocks):
-        raise ValueError("C/test cannot repeat a complete decision or duplicate its Gamma draw")
-    width = len(prior.mean)
-    prepared = []
-    for block in blocks:
-        if block.design.shape[1] != width:
-            raise ValueError("every decision must use the same actual physical beta chart")
-        with np.errstate(over="ignore", under="ignore", invalid="ignore", divide="ignore"):
-            response = block.design @ prior.root
-            error = block.samples - block.design @ prior.mean
-            _numeric(response, error, name="actual beta image and residual")
-            image = solve_triangular(block.noise_root, response, lower=True)
-            residual = solve_triangular(block.noise_root, error, lower=True)
-        if not np.isfinite(image).all() or not np.isfinite(residual).all():
-            raise NumericalResolutionError("whitened actual prior image is unresolved")
-        prepared.append((image, residual, 2 * np.log(np.diag(block.noise_root)).sum()))
-    return blocks, prepared
-
-
-def _conditional_gaussian(prior, blocks, prepared, lambdas, relative_shape):
-    """Integrate one shared beta; return its conditional Gaussian moments."""
+def _conditional_gaussian(prior, prepared, lambdas):
+    """Integrate one shared proper beta using augmented square-root statistics."""
     count, width = len(lambdas), len(prior.mean)
-    precision = np.broadcast_to(np.eye(width), (count, width, width)).copy()
-    linear = np.zeros((count, width))
-    normalization = np.zeros(count)
-    for j, (block, (image, residual, logdet)) in enumerate(zip(blocks, prepared, strict=True)):
-        strength = lambdas[:, j] / relative_shape
-        if not np.isfinite(strength).all() or np.any(strength <= 0):
-            raise NumericalResolutionError("positive noise precision multiplier is unresolved")
-        precision += strength[:, None, None] * (image.T @ image)
-        linear += strength[:, None] * (image.T @ residual)
-        normalization += logdet + len(block.samples) * (np.log(2 * np.pi * relative_shape) - np.log(lambdas[:, j]))
-    try:
-        factor = np.linalg.cholesky(precision)
-        intermediate = np.linalg.solve(factor, linear[..., None])
-        chart_mean = np.linalg.solve(factor.swapaxes(1, 2), intermediate)[..., 0]
-        inverse_factor = np.linalg.solve(factor, np.broadcast_to(np.eye(width), factor.shape))
-    except np.linalg.LinAlgError as error:
-        raise NumericalResolutionError("proper beta conditional precision is numerically unresolved") from error
-    chart_covariance = inverse_factor.swapaxes(1, 2) @ inverse_factor
-    quadratic = np.sum(chart_mean**2, axis=1)
-    for j, (image, residual, _) in enumerate(prepared):
-        remaining = residual[None, :] - chart_mean @ image.T
-        quadratic += lambdas[:, j] / relative_shape * np.sum(remaining**2, axis=1)
-    log_density = -.5 * (normalization + 2 * np.log(np.diagonal(factor, axis1=1, axis2=2)).sum(axis=1) + quadratic)
-    beta_mean = prior.mean[None, :] + chart_mean @ prior.root.T
-    beta_covariance = prior.root[None, :, :] @ chart_covariance @ prior.root.T[None, :, :]
-    if not all(np.isfinite(v).all() for v in (log_density, beta_mean, beta_covariance)):
-        raise NumericalResolutionError("conditional beta moments/density are not representable")
-    if np.any(np.diagonal(beta_covariance, axis1=1, axis2=2) <= 0):
+    log_density = np.empty(count)
+    means = np.empty((count, width))
+    covariances = np.empty((count, width, width))
+    for index, scales in enumerate(lambdas):
+        chart_mean, root = _qr_beta(prepared, scales, width)
+        inverse = solve_triangular(root, np.eye(width), lower=False)
+        chart_covariance = inverse @ inverse.T
+        quadratic = float(chart_mean @ chart_mean)
+        normalization = 0.
+        for block, lam in zip(prepared, scales, strict=True):
+            quadratic += lam * _root_energy(block, chart_mean[None])[0]
+            normalization += block.noise_logdet + block.observed_rows * (np.log(2*np.pi)-np.log(lam))
+        log_density[index] = -.5 * (normalization+2*np.log(abs(np.diag(root))).sum()+quadratic)
+        means[index] = prior.mean+prior.root @ chart_mean
+        covariances[index] = prior.root @ chart_covariance @ prior.root.T
+    _numeric(log_density, means, covariances, name="conditional beta moments/density")
+    if np.any(np.diagonal(covariances, axis1=1, axis2=2) <= 0):
         raise NumericalResolutionError("proper conditional beta variances are unresolved")
-    return log_density, beta_mean, beta_covariance
+    return log_density, means, covariances
 
 
 def conditional_gaussian_components(prior, blocks, hyperparameters, scale_values):
@@ -323,12 +536,12 @@ than inventing another model. No Gamma weights or hyperparameters are fit here.
 """
     if not isinstance(hyperparameters, FixedHyperparameters):
         raise ValueError("owned fixed hyperparameters are required")
-    blocks, prepared = _prepare(prior, blocks)
+    blocks = prepared = _prepare(prior, blocks, hyperparameters)
     scales = _array(scale_values, 2, "actual batch of decision scales")
     if not len(scales) or scales.shape[1] != len(blocks) or np.any(scales <= 0):
         raise ValueError("positive scales must match the complete actual decision axis")
     with np.errstate(over="ignore", under="ignore", invalid="ignore", divide="ignore"):
-        values = _conditional_gaussian(prior, blocks, prepared, scales, hyperparameters.relative_noise_shape)
+        values = _conditional_gaussian(prior, prepared, scales)
     return tuple(_numeric_array(value, value.ndim, "conditional Gaussian component") for value in values)
 
 
@@ -368,7 +581,7 @@ node count or properness. Supply scale_rule to replay the actual prior rule.
 """
     if not isinstance(hyperparameters, FixedHyperparameters):
         raise ValueError("owned fixed hyperparameters are required")
-    blocks, prepared = _prepare(prior, blocks)
+    blocks = prepared = _prepare(prior, blocks, hyperparameters)
     rule = scale_rule
     if not isinstance(rule, DiscreteGammaRule) or rule.degrees_of_freedom != hyperparameters.degrees_of_freedom:
         raise ValueError("actual finite rule must agree with the declared prior nu")
@@ -380,11 +593,10 @@ node count or properness. Supply scale_rule to replay the actual prior rule.
     if type(batch_size) is not int or batch_size < 1:
         raise ValueError("positive integer memory batch size required")
     nu = float(hyperparameters.degrees_of_freedom)
-    relative_shape = float(hyperparameters.relative_noise_shape)
     if np.isposinf(nu):
         lambdas = np.ones((1, len(blocks)))
         with np.errstate(over="ignore", under="ignore", invalid="ignore", divide="ignore"):
-            density, means, covariances = _conditional_gaussian(prior, blocks, prepared, lambdas, relative_shape)
+            density, means, covariances = _conditional_gaussian(prior, prepared, lambdas)
         return JointEvidence(float(density[0]), _array(means[0], 1, "beta posterior mean"),
             _array(covariances[0], 2, "beta posterior covariance"), _array(lambdas[0], 1, "fixed Gaussian scales"),
             _array(np.zeros((len(blocks), len(blocks))), 2, "fixed Gaussian scale covariance"),
@@ -398,7 +610,7 @@ node count or properness. Supply scale_rule to replay the actual prior rule.
         positions = np.asarray(batch, dtype=int)
         lambdas = rule.nodes[positions]
         with np.errstate(over="ignore", under="ignore", invalid="ignore", divide="ignore"):
-            density, means, covariances = _conditional_gaussian(prior, blocks, prepared, lambdas, relative_shape)
+            density, means, covariances = _conditional_gaussian(prior, prepared, lambdas)
             terms = density + log_weights[positions].sum(axis=1)
             beta_summary = _merge(beta_summary, _weighted_moments(terms, means, covariances))
             scale_summary = _merge(scale_summary, _weighted_moments(terms, lambdas))
@@ -419,11 +631,14 @@ the caller must supply sample-major arrays/root so the cut is a native prefix.
 Roles and IDs enforce only the synthetic contract, never real read permission.
 """
     calibration = tuple(calibration)
-    if (any(v.role != "target_calibration" for v in calibration) or test.role != "read_only_inference"
-            or type(conditioning_rows) is not int or not 0 < conditioning_rows < len(test.samples)):
+    if isinstance(test, DecisionBlock):
+        test = compile_decision(prior, hyperparameters, test, conditioning_rows=conditioning_rows)
+    if (not isinstance(test, CompiledDecision) or test.role != "read_only_inference"
+            or any(v.role != "target_calibration" for v in calibration)
+            or type(conditioning_rows) is not int or test.prefix is None
+            or test.prefix.observed_rows != conditioning_rows):
         raise ValueError("complete declared C and a genuine nonempty test prefix/tail required")
-    prefix = DecisionBlock(test.decision_id, test.samples[:conditioning_rows], test.design[:conditioning_rows],
-                           test.noise_root[:conditioning_rows, :conditioning_rows], test.role)
+    prefix = test.prefix
     rule = scale_rule
     full = joint_evidence(prior, calibration + (test,), hyperparameters, scale_rule=rule)
     past = joint_evidence(prior, calibration + (prefix,), hyperparameters, scale_rule=rule)

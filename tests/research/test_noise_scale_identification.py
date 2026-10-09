@@ -203,7 +203,7 @@ def test_nonrepresentable_reference_results_are_explicit_failures(entry):
         if entry == "projection":
             _block([1.], 0, root=[[1e-320]])
         elif entry == "density":
-            contrast_log_density([1.], degrees_of_freedom=1e308, log_shape=0.)
+            contrast_log_density([1.], degrees_of_freedom=np.nextafter(0., 1.), log_shape=0.)
         elif entry == "fit":
             fit_contrast_shape([_block([1e300], 0)], degrees_of_freedom=4.)
         else:

@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import stat
 import time
 import uuid
 from contextlib import contextmanager
@@ -26,6 +27,38 @@ def install_input_admission(admission, task_id=None):
 
 def current_input_admission():
     return _PROCESS_INPUT_ADMISSION
+
+
+class _CheckpointByteCounter:
+    """Count the actual Torch archive without retaining a second payload."""
+
+    def __init__(self):
+        self.nbytes = 0
+
+    def write(self, data):
+        self.nbytes += len(data)
+        return len(data)
+
+    def flush(self):
+        pass
+
+
+def save_source_checkpoint(path, payload):
+    """Admit serialized model/ledger bytes independently of resident EEG RAM."""
+    import torch
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    admission = current_input_admission()
+    if admission is None:
+        torch.save(payload, path)
+        return
+    counter = _CheckpointByteCounter()
+    torch.save(payload, counter)
+    # Both passes use Torch's file-like archive layout. Counting stores no
+    # tensors or serialized buffer; the existing writer settles actual partials.
+    with admission.artifact_writer(path, counter.nbytes), path.open("wb") as stream:
+        torch.save(payload, stream)
 
 
 class SourceInputPhases:
@@ -218,6 +251,11 @@ def _named_output_bytes(path, directory=False):
     return path.stat().st_size
 
 
+def _external_file_identity(info):
+    return {name: getattr(info, name) for name in (
+        "st_mode", "st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")}
+
+
 class _SourceInputState:
     """Short atomic transactions execute in the existing Manager server.
 
@@ -230,6 +268,7 @@ class _SourceInputState:
         self.capacity, self.load_workers = capacity, load_workers
         self.lock = RLock()
         self.leases, self.filesystems, self.retired_tasks = {}, {}, set()
+        self.reclaimed_paths = {}
         self.free = capacity
         self.nn_waiting = self.nn_active = self.load_active = 0
         self.peak_bytes = self.peak_loaders = self.peak_nn = 0
@@ -255,9 +294,25 @@ class _SourceInputState:
         safety = max(64 * 2**20, int(nbytes * .05))
         state = self.filesystems.setdefault(key, {"directory": directory,
             "baseline_free_bytes": shutil.disk_usage(directory).free, "reserved_bytes": 0,
-            "safety_bytes": safety, "peak_reserved_bytes": 0, "uses_host_memory": uses_host_memory})
+            "safety_bytes": safety, "peak_reserved_bytes": 0, "uses_host_memory": uses_host_memory,
+            "reclaimed_bytes": 0, "deferred_reclaim_upper_bound_bytes": 0})
         state["safety_bytes"] = max(state["safety_bytes"], safety)
         return state
+
+    def _unsettled_disk_bytes(self, key):
+        return sum(row["disk_bytes"] for row in self.leases.values()
+            if (row["kind"] == "anonymous_snapshot" or row["kind"] == "persistent_artifact"
+                and not row["committed"]) and row["filesystem"] == key)
+
+    def _filesystem_room(self, state, directory, key):
+        physical = shutil.disk_usage(directory).free - state["safety_bytes"]
+        if state["deferred_reclaim_upper_bound_bytes"]:
+            # Deferred deletion is only an allocation upper bound. Actual free
+            # has not paid for unmaterialized snapshots/writers yet; subtract
+            # their whole peaks until settlement, even after a partial write.
+            physical -= self._unsettled_disk_bytes(key)
+        return min(state["baseline_free_bytes"] + state["reclaimed_bytes"]
+            + state["deferred_reclaim_upper_bound_bytes"] - state["safety_bytes"] - state["reserved_bytes"], physical)
 
     def try_phase(self, phase, nbytes, token, identity):
         with self.lock:
@@ -287,11 +342,11 @@ class _SourceInputState:
             persistent = self._held_persistent(identity)
             disk_held = sum(row["disk_bytes"] for row in persistent if row["filesystem"] == key)
             ram_held = sum(row["nbytes"] for row in persistent)
-            if (state["baseline_free_bytes"] - state["safety_bytes"] - disk_held < nbytes
+            if (state["baseline_free_bytes"] + state["reclaimed_bytes"] + state["deferred_reclaim_upper_bound_bytes"]
+                    - state["safety_bytes"] - disk_held < nbytes
                     or self.capacity - ram_held < ram_bytes):
                 raise ValueError("snapshot cannot fit after transient leases retire; persistent files retain their budget")
-            room = min(state["baseline_free_bytes"] - state["safety_bytes"] - state["reserved_bytes"],
-                       shutil.disk_usage(directory).free - state["safety_bytes"])
+            room = self._filesystem_room(state, directory, key)
             if room < nbytes or self.free < ram_bytes or self.load_active >= self.load_workers or self.nn_waiting:
                 # Unowned external storage pressure cannot be cured by waiting
                 # when this owner has no live allocation which can release it.
@@ -354,8 +409,7 @@ class _SourceInputState:
                 raise ValueError("named writer retry changed its output kind")
             parent = str(Path(path).parent)
             state = self._filesystem(parent, key, nbytes, ram_backed)
-            room = min(state["baseline_free_bytes"] - state["safety_bytes"] - state["reserved_bytes"],
-                       shutil.disk_usage(parent).free - state["safety_bytes"])
+            room = self._filesystem_room(state, parent, key)
             if room < nbytes or self.free < ram_bytes:
                 raise ValueError("named working artifact exceeds the remaining shared filesystem/RAM budget")
             if previous:
@@ -395,6 +449,45 @@ class _SourceInputState:
             return {"path": row["path"], "surviving_total_bytes": total,
                     "baseline_bytes": row["baseline_bytes"], "charged_bytes": actual}
 
+    def remove_external_file(self, path, expected_identity, ram_backed, identity):
+        """Delete one verified external file, never an owner-managed output."""
+        with self.lock:
+            self._identity_allowed(identity)
+            if path in self.reclaimed_paths:
+                raise ValueError("external file path was already reclaimed by this owner")
+            target = Path(path)
+            info = target.lstat()
+            if not stat.S_ISREG(info.st_mode):
+                raise ValueError("external reclamation requires a regular file, never a symlink or directory")
+            if _external_file_identity(info) != expected_identity:
+                raise ValueError("external file identity changed after archive verification")
+            if any(row["kind"] == "persistent_artifact" and any(
+                target == Path(item) or row["directory"] and target.is_relative_to(item)
+                for item in row["paths"]) for row in self.leases.values()):
+                raise ValueError("external file overlaps a named artifact; retain its original settlement accounting")
+            parent, key = str(target.parent), str(info.st_dev)
+            state = self._filesystem(parent, key, 0, ram_backed)
+            before = shutil.disk_usage(parent).free
+            # st_blocks is the allocated byte authority on Linux. Sparse bytes,
+            # other hardlinks, and platforms lacking this field earn no credit.
+            blocks = getattr(info, "st_blocks", None)
+            allocated = blocks * 512 if blocks is not None else 0
+            target.unlink()
+            after = shutil.disk_usage(parent).free
+            reclaimable = allocated if info.st_nlink == 1 else 0
+            credited = min(reclaimable, max(0, after - before))
+            deferred = reclaimable - credited
+            state["reclaimed_bytes"] += credited
+            state["deferred_reclaim_upper_bound_bytes"] += deferred
+            receipt = {"path": path, "filesystem": key, "original_identity": expected_identity,
+                "allocated_bytes": allocated, "physical_blocks_known": blocks is not None,
+                "link_count": info.st_nlink, "free_before_bytes": before, "free_after_bytes": after,
+                "observed_free_delta_bytes": after - before,
+                "credited_bytes": credited, "deferred_allocation_upper_bound_bytes": deferred,
+                "removed": True, **identity}
+            self.reclaimed_paths[path] = receipt
+            return dict(receipt)
+
     def retire_task(self, task_id):
         with self.lock:
             self.retired_tasks.add(task_id)
@@ -419,7 +512,9 @@ class _SourceInputState:
                 "nn_waiting": self.nn_waiting, "nn_active": self.nn_active, "load_active": self.load_active,
                 "load_worker_capacity": self.load_workers, "peak_staging_bytes": self.peak_bytes,
                 "peak_loaders": self.peak_loaders, "peak_nn_staging": self.peak_nn, "ready_nn_priority": True,
-                "filesystem_pools": {key: dict(row) for key, row in self.filesystems.items()},
+                "filesystem_pools": {key: {**row, "live_unsettled_reserved_bytes": self._unsettled_disk_bytes(key)}
+                    for key, row in self.filesystems.items()},
+                "external_file_reclaims": [dict(row) for row in self.reclaimed_paths.values()],
                 "active_leases": [dict(row) for row in self.leases.values()]}
 
 
@@ -491,6 +586,18 @@ class SourceInputAdmission:
 
     def settle_artifact(self, token):
         return self._ledger.settle_artifact(token)
+
+    def remove_external_file(self, path, *, expected_stat):
+        """Reclaim an archived external file through the same disk-budget owner.
+
+        The caller owns lossless archive verification and cleanup authorization.
+        This method rejects named output overlap and rechecks the original inode
+        identity before unlinking. Disk credit cannot enlarge fixed RAM staging.
+        """
+        path = Path(path)
+        path = path.parent.resolve(strict=True) / path.name
+        return self._ledger.remove_external_file(str(path), _external_file_identity(expected_stat),
+            filesystem_uses_host_memory(path.parent), self._identity())
 
     @contextmanager
     def artifact_writer(self, path, nbytes, *, temporary_paths=(), directory=False):

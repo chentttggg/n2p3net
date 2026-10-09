@@ -11,7 +11,7 @@ import pytest
 import torch
 import torch.nn as nn
 
-from baselines.deep import DeepBaseline, DeepConfig
+from baselines.deep import DeepBaseline, DeepConfig, _CrossEntropyObjective
 from baselines.n2p3net import N2P3NetBaseline
 from data.candidate_task import CandidateTaskContract
 from data.events import AVAILABLE, ScheduledEventTimeline
@@ -535,10 +535,14 @@ def test_matrix_batch_source_gathers_all_row_axes_in_lockstep() -> None:
         tuple(source.iter_index_batches((rows,)))
 
 
-def test_validation_candidate_objective_is_chunk_partition_invariant() -> None:
+@pytest.mark.parametrize("scale", [1.0, 10000.0])
+@pytest.mark.parametrize("prefix_weight_mode", ["final", "uniform"])
+def test_validation_candidate_objective_is_chunk_partition_invariant(
+    scale: float, prefix_weight_mode: str,
+) -> None:
     timeline, labels = _timeline(decision_count=6)
     metadata = _metadata(timeline)
-    config = _config()
+    config = _config(prefix_weight_mode=prefix_weight_mode)
     plan_wide, plan_narrow = (
         build_decision_batch_plan(
             metadata, labels, config, max_batch_rows=budget, phase="validation"
@@ -547,33 +551,101 @@ def test_validation_candidate_objective_is_chunk_partition_invariant() -> None:
     )
     assert plan_wide.batch_decision_counts != plan_narrow.batch_decision_counts
     generator = torch.Generator().manual_seed(11)
-    evidence = torch.randn(len(labels), generator=generator)
+    evidence = torch.randn(len(labels), generator=generator) * scale
     logits = torch.stack((-evidence / 2, evidence / 2), dim=1)
+    baseline = _tiny_baseline(pos_weight=3.0, precision="fp32")
+    # Hold the actual forward evidence fixed: this checks evaluation reduction,
+    # without confusing model/BN batch effects with the declared risk measure.
+    baseline.model_ = nn.Identity()
+    source = MatrixBatchSource(
+        logits, torch.from_numpy(labels), baseline.runtime, preload=False,
+    )
+    module = DecisionLevelLoss(candidate_vocabulary=("0", "1"), temperature=0.7)
+    objective = _CrossEntropyObjective(3.0, torch.device("cpu"))
+    wide, narrow = (
+        baseline._decision_validation_pass(source, objective, module, plan, config)
+        for plan in (plan_wide, plan_narrow)
+    )
+    for key in ("candidate_loss", "trial_loss", "objective_loss", "candidate_loss_by_prefix"):
+        assert wide[key] == pytest.approx(narrow[key], rel=0.0, abs=1e-10)
+    assert wide["requested_decisions"] == narrow["requested_decisions"] == 6
 
-    def aggregate(plan) -> tuple[float, tuple[float, ...]]:
-        module = DecisionLevelLoss(candidate_vocabulary=("0", "1"), temperature=0.7)
-        weighted = 0.0
-        prefix = torch.zeros(32)
-        count = 0
-        for batch in plan.batches(seed=None):
-            rows = torch.from_numpy(np.array(batch.row_indices, copy=True))
-            targets = torch.from_numpy(np.array(batch.target_indices, copy=True))
-            loss, by_prefix = module.packed_loss(
-                logits[rows, 1] - logits[rows, 0],
-                targets,
-                max_repetitions=32,
-                prefix_weights=config.prefix_weights,
+    # Independent, one-decision-at-a-time binary NLL, then equal decision mass.
+    # NumPy's float64 logaddexp supplies a reference to the native float32
+    # scoring primitive, rather than recomputing a mean of chunk means.
+    reference_prefixes = []
+    for batch in plan_wide.batches(seed=None):
+        for index, target in enumerate(batch.target_indices):
+            rows = batch.row_indices[index * 64 : (index + 1) * 64]
+            packed = evidence.numpy()[rows].astype(np.float64).reshape(2, 32)
+            scores = np.cumsum(packed, axis=1) / np.arange(1, 33) / config.temperature
+            reference_prefixes.append(np.logaddexp(0.0, scores[1 - target] - scores[target]))
+    reference_prefix = np.asarray(reference_prefixes).mean(axis=0)
+    primitive_rounding_bound = 8 * np.finfo(np.float32).eps * scale
+    np.testing.assert_allclose(
+        wide["candidate_loss_by_prefix"], reference_prefix,
+        rtol=0.0, atol=primitive_rounding_bound,
+    )
+    assert wide["candidate_loss"] == pytest.approx(
+        float(np.dot(reference_prefix, config.prefix_weights)),
+        rel=0.0, abs=primitive_rounding_bound,
+    )
+    # Preserve the original class-weight denominator, not a mean of batch CE.
+    trial_rows = nn.functional.cross_entropy(
+        logits, torch.from_numpy(labels), weight=objective.class_weights, reduction="none",
+    )
+    reference_trial = float(trial_rows.sum(dtype=torch.float64)) / float(
+        objective.class_weights[torch.from_numpy(labels)].sum(dtype=torch.float64)
+    )
+    assert wide["trial_loss"] == pytest.approx(reference_trial, rel=0.0, abs=1e-10)
+
+    # A missing registered decision cannot become a smaller successful cohort.
+    incomplete_source = MatrixBatchSource(
+        logits[:-64], torch.from_numpy(labels[:-64]), baseline.runtime, preload=False,
+    )
+    with pytest.raises(ValueError, match="cover every source row"):
+        baseline._decision_validation_pass(
+            incomplete_source, objective, module, plan_wide, config,
+        )
+
+
+@pytest.mark.parametrize("prefix_weight_mode", ["final", "uniform"])
+def test_packed_risk_reduction_preserves_training_dtype_and_prefix_gradient(
+    prefix_weight_mode: str,
+) -> None:
+    config = _config(repetitions=3, prefix_weight_mode=prefix_weight_mode)
+    module = DecisionLevelLoss(candidate_vocabulary=("0", "1"), temperature=config.temperature)
+    evidence = torch.tensor(
+        [0.2, -0.4, 1.1, -0.3, 0.5, 0.7, 0.9, -0.8, 0.6, 0.4, -0.1, -0.5],
+        requires_grad=True,
+    )
+    targets = torch.tensor([0, 1])
+    loss, prefixes = module.packed_loss(
+        evidence, targets, max_repetitions=3, prefix_weights=config.prefix_weights,
+    )
+    assert loss.dtype == prefixes.dtype == torch.float32
+    loss.backward()
+    assert evidence.grad is not None and evidence.grad.dtype == torch.float32
+
+    # dL/de[d,c,t] = sum_{r>=t} w[r]*(p[d,c,r]-1[c=q[d]])/(D*tau*r).
+    values = evidence.detach().numpy().astype(np.float64).reshape(2, 2, 3)
+    expected = np.zeros_like(values)
+    for decision, target in enumerate(targets.tolist()):
+        for repetition, weight in enumerate(config.prefix_weights, start=1):
+            scores = values[decision, :, :repetition].mean(axis=1) / config.temperature
+            probabilities = np.exp(scores - np.logaddexp.reduce(scores))
+            probabilities[target] -= 1.0
+            expected[decision, :, :repetition] += (
+                weight * probabilities[:, None] / (2 * config.temperature * repetition)
             )
-            n_decisions = len(batch.decision_ids)
-            weighted += float(loss) * n_decisions
-            prefix += by_prefix * n_decisions
-            count += n_decisions
-        return weighted / count, tuple(float(value) for value in prefix / count)
-
-    wide_loss, wide_prefix = aggregate(plan_wide)
-    narrow_loss, narrow_prefix = aggregate(plan_narrow)
-    assert wide_loss == pytest.approx(narrow_loss, abs=1e-7)
-    assert wide_prefix == pytest.approx(narrow_prefix, abs=1e-7)
+    np.testing.assert_allclose(
+        evidence.grad.numpy().reshape(2, 2, 3), expected, rtol=1e-6, atol=1e-7,
+    )
+    reduced_loss, reduced_prefixes = module.packed_loss(
+        evidence.detach(), targets, max_repetitions=3, prefix_weights=config.prefix_weights,
+        reduction_dtype=torch.float64,
+    )
+    assert reduced_loss.dtype == reduced_prefixes.dtype == torch.float64
 
 
 class _TinyDecisionBaseline(DeepBaseline):

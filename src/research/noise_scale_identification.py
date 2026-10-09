@@ -9,8 +9,9 @@ independence must be established externally; declared roles do not grant access.
 
 Exact rational rank costs O(n*p*min(n,p)) operations with growing rational bit
 lengths. It is a small reference, not a default large-record admission algorithm.
-Finite-df formulas are a moderate-df numerical reference, not a precision
-certificate. Nonrepresentable inputs, intermediates or results fail explicitly;
+Scale-fitting/Fisher formulas are a moderate-df numerical reference, not a
+precision certificate. The t density shares the stable finite-df Gamma/radial
+evaluation with joint-response prediction. Nonrepresentable operands/results fail explicitly;
 the module supplies no default df, artificial df cap or production entrypoint.
 """
 
@@ -23,8 +24,9 @@ from math import fsum
 import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import brentq
-from scipy.special import expit, gammaln, polygamma
+from scipy.special import expit, polygamma
 
+from research.student_t_numerics import StudentTNumericalError, student_t_log_density
 from transfer.noise_model import finite_real_array, frozen_array
 
 
@@ -181,27 +183,26 @@ def contrast_log_density(projected, *, degrees_of_freedom, log_shape):
     if z.ndim != 1 or not len(z):
         raise ValueError("a nonempty projected decision vector is required")
     r = len(z)
-    q = _energy(z)
     nu = _degrees(degrees_of_freedom)
     if isinstance(log_shape, (bool, complex)) or not np.isfinite(log_shape):
         raise ValueError("log noise shape must be explicitly finite and real")
+    maximum = np.max(np.abs(z))
     with np.errstate(over="ignore", under="ignore", divide="ignore", invalid="ignore"):
-        standardized_energy = q * np.exp(-log_shape) if q else 0.
-    if not np.isfinite(standardized_energy):
+        scaled = z / maximum if maximum else z
+        standardized_energy = (np.exp(2 * np.log(maximum) + np.log(scaled @ scaled) - log_shape)
+                               if maximum else 0.)
+    if (not np.isfinite(standardized_energy)
+            or maximum != 0 and standardized_energy == 0):
         raise ContrastNumericalError("standardized contrast energy is not representable")
-    if np.isposinf(nu):
-        density = -0.5 * (r * (np.log(2 * np.pi) + log_shape) + standardized_energy)
-    else:
-        with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
-            prior_shape, updated_shape = nu / 2, (nu + r) / 2
-            log_prior, log_updated = gammaln(prior_shape), gammaln(updated_shape)
-            if (not np.isfinite([log_prior, log_updated]).all()
-                    or updated_shape <= prior_shape
-                    or prior_shape >= 2 and log_updated <= log_prior):
-                raise ContrastNumericalError("finite-df Gamma normalization is not numerically resolved")
-            density = (log_updated - log_prior
-                       - r / 2 * (np.log(nu) + np.log(np.pi) + log_shape)
-                       - (nu + r) / 2 * np.log1p(standardized_energy / nu))
+    try:
+        density = student_t_log_density(standardized_energy, degrees_of_freedom=nu,
+                                       dimension=r, noise_logdet=0.)
+    except StudentTNumericalError as error:
+        raise ContrastNumericalError("contrast log density is not representable") from error
+    # Apply the scalar shape's half log determinant without first overflowing
+    # r*log_shape when (r/2)*log_shape and the actual density are representable.
+    with np.errstate(over="ignore", invalid="ignore"):
+        density = density - (.5 * r) * log_shape
     if not np.isfinite(density):
         raise ContrastNumericalError("contrast log density is not representable")
     return float(density)

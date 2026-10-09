@@ -22,7 +22,13 @@
 
 `FittedChannelNoise.fit_response_given_frozen_noise`在原B05 owner上消费固定proper `PhysicalCoefficientPrior` 和明确source/C `ResponseFitRecord`，共同白化Y、row-major response design及per-record diffuse nuisance。每record压缩actual augmented QR后加入一次physical prior，返回完整response factor、各drift和跨record关联；noise/Σ替换不重标prior。拟合读全C prefix+tail，不重新拟noise或profile tail噪声目标。原 `FrozenERPResponse`/score 消费该完整后验，持久包认证和真实输入授权由各自owner另验。
 
+`project_diffuse_nuisance`由同B05 owner集中判断源尺度的数值可分辨性，使用完整proper prior factor与noise unit，不以投影后微小残差自己定尺度。C fit和score消费同规则；score保原proper+diffuse prefix/tail与a后验程序。`whitening_logabsdet`只读实际冻结方阵的leading prefix和tail spatial root，不另编噪声或授予读取权限。极端有限输入的原反例、修复范围与未覆盖项见[本轮证据](evidence/research_mechanisms_20261009.zh.md)。
+
+score另外在raw共同intercept坐标中减首个实测样本，原samples身份保持；同full/prefix flat系数平移和tail条件坐标Jacobian皆1。prefix compressed rhs直接进入tail增广QR，不相减巨大a均值。原full相对误差门与raw conditional log-density绝对误差估计分别准入；后者预算为每actual tail scalar行`sqrt(binary64 eps)` nats，不是全输入区间证书。`student_t_numerics`集中有限ν的Gamma整数维递推/半步及径向计算，sampling与projected contrast共用，不用大log-Gamma直接相减或将有限ν重标∞。
+
 `research.joint_response_scale`持有一个proper physical global β prior、各完整decision的noise scale以及明确的external/C-plugin参数程序。正离散scale rule必须显式供应，full/prefix消费同一数值态；tensor积分保β及C/test scale后验关联，有限程序正规与连续Gamma近似精度分开。`research.joint_response_sampling`复用相同prior/hyperparameter/decision类，一次准备统计和测试白化，提供global β↔各λ Gibbs、C后验prefix重加权及caller显式另跑的C+prefix程序。有限经验预测混合正规，Rhat/ESS/MCSE不认证未访问模态或真实后验准确性；二者目前无flat nuisance、默认ν或产品准入。
+
+长记录由同scale owner的`compile_decision/compile_owned_decision`工厂编成不可变`CompiledDecision`，保原scalar行数、完整增广R、actual source/map/chart与full/prefix/tail关系。B05一次白化后，从原白化行分别压缩三根；tail不能引入新Γ轴。原Y/D先于prior/mean变换流式绑定，reader分块不改身份。finite reference和唯一Gibbs/RNG循环共享QR统计，已删除sampling的重复Gram/linear/白化堆栈。`targeted_conditional_beta_predict`由caller显式选择，平均同C+prefix joint λ后验下的proper β解析组件；不自动fallback、不重标旧Gaussian后验。当前工厂只准proper无nuisance likelihood，flat-Z长记录仍是独立参考，不能借相同R高度或schema混入。
 
 [g-prior](evidence/calibration_g_prior_20261006.zh.md)由`transfer.kernel_prior`编译canonical spec与immutable precision root；continuous初始化、NumPy joint QR和Torch objective共享该root。新g `/5`保存prior/reference与actual-C posterior statistics数值载荷，load核root/spec/C/source及actual posterior关系；ensemble raw program与producer匹配。legacy ridge数值路径独立，runner已整合g与same-ridge AR面板隔离及structured rank failure；历史M1续跑仍只准入同src bytes。
 compiler保存原design root以重核投影数值rank；同一个`validate_binding`将reference record身份/支持/design SHA与model actual C ledger、basis/input绑定交叉核验，避免两份self-summary各自成立而关系不成立。
@@ -416,7 +422,7 @@ GPU任务结束释放缓存并重置该worker的编译缓存，避免旧optimize
 
 2026-09-16统一模型设计将现有`N2P3Net`、`FeatureResidualAdapter`、参数组、`SubjectAdapter`和个人包作为复用主体，
 计划集中扩展源目标组合、源中心收缩和共同event×candidate membership；每个优化工作集只执行一次联合更新。
-`decision_loss/candidate_set_loss/candidate_evidence`需共享物理语义，source/target recipe、固定更新、inner/refit、
+`decision_loss/candidate_evidence`需共享物理语义，source/target recipe、固定更新、inner/refit、
 checkpoint和resume同步迁移。先补全现有互斥所保护的批次/风险/状态合同，再解除互斥。
 逐文件顺序和验收见[统一模型方案](evidence/unified_model_plan_20260916.zh.md#7-逐项工程实施与验收)。
 上述为待实施设计；以下P1/P2接口是当前已实现能力，不将两者混称。
@@ -442,7 +448,7 @@ checkpoint和resume同步迁移。先补全现有互斥所保护的批次/风险
 | `data.ea_artifact` | EA 无量纲特征fit、冻结、变换与数值重放 | EAFitPlan＋actual parent核授权/state/output，缺域拒绝；普通物理入口拒绝EA。完整N2P3双侧源/目标消费者仍未晋升 |
 | `train.source_sampling` | TSD与Dense PDS源样本选择 | target选择依据仅来自声明校准，源行账本保留 |
 | `transfer.pretraining`、`run_pretrain.py` | 重建式预训练对照 | 不冒充已训练的监督源分类头 |
-| `transfer.candidate_set_loss`等 | 合法membership下的决策损失 | 物理候选合同成立，完整词表/覆盖测试通过 |
+| `transfer.decision_loss.membership_decision_loss` | 合法membership下的决策损失 | 物理候选合同成立，完整词表/覆盖测试通过 |
 
 这些实现不是已证伪模块。删除的是错误或被取代的默认叙述、重复实现与死接口，
 不因机制CI含0或未被默认调用而抹去可复用研究能力。

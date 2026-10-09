@@ -84,7 +84,8 @@ def _malformed_preparation_worker(output):
 
     sys.modules["experiments.prepare_source_records"] = SimpleNamespace(main=prepare)
     sys.modules["train.runtime"] = SimpleNamespace(cpu_thread_budget=lambda threads: nullcontext())
-    staging = SimpleNamespace(reserve=lambda phase: nullcontext())
+    staging = SimpleNamespace(reserve=lambda phase: nullcontext(),
+                              artifact_writer=lambda *args, **kwargs: nullcontext())
     return _source_preparation_worker(("manifest.json", output, "profile.json", 1, staging))
 
 

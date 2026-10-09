@@ -902,8 +902,13 @@ class DecisionLevelLoss(nn.Module):
         max_repetitions: int,
         prefix_weights: Sequence[float],
         validate: bool = True,
+        reduction_dtype: torch.dtype | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Return objective and per-prefix mean NLL for candidate-major packed rows."""
+        """Return objective and per-prefix mean NLL for candidate-major packed rows.
+
+        ``reduction_dtype`` controls only the final risk sums. Validation uses
+        float64 without changing native evidence, prefix scores or training.
+        """
 
         repetitions = _strict_integer(max_repetitions, "max_repetitions", minimum=1)
         if evidence.ndim != 1 or not evidence.is_floating_point():
@@ -946,8 +951,8 @@ class DecisionLevelLoss(nn.Module):
         log_posterior = F.log_softmax(prefix_scores / self.temperature, dim=1)
         selected = target_indices.view(-1, 1, 1).expand(-1, 1, repetitions)
         per_decision_prefix = -log_posterior.gather(1, selected).squeeze(1)
-        per_prefix = per_decision_prefix.mean(dim=0)
-        weight_tensor = evidence.new_tensor(weights)
+        per_prefix = per_decision_prefix.mean(dim=0, dtype=reduction_dtype)
+        weight_tensor = evidence.new_tensor(weights, dtype=reduction_dtype)
         return torch.sum(per_prefix * weight_tensor), per_prefix
 
 

@@ -305,3 +305,230 @@ def test_actual_per_record_roots_and_streamed_posterior_preserve_prior_informati
     scales = np.asarray(result.response.provenance["prior_column_scales"])
     vector = np.r_[scales*result.response.mean.ravel(), -1.]
     np.testing.assert_allclose(objective@objective, np.sum((compressed@vector)**2), rtol=3e-12, atol=3e-12)
+
+
+@pytest.mark.parametrize("voltage_scale", [1., 1e6])
+@pytest.mark.parametrize("noise_scale,offset,unresolved", [
+    (1e-12, .35e-6, False), (1e-48, 0., True), (1e-12, .35e14, True)])
+def test_pure_diffuse_public_fit_preserves_full_prior_or_reports_numeric_unresolved(
+        voltage_scale, noise_scale, offset, unresolved):
+    from research.channel_noise_mechanism import DiffuseProjectionResolutionError
+
+    native, channels, prefix = 7, 2, 2
+    unit = "V" if voltage_scale == 1 else "uV"
+    geometry = NoiseGeometry(("toy-left", "toy-right"), 256., unit, "toy-earlobe", "toy-native", channels)
+    sigma = np.array([[.9, .22], [.22, .6]])*noise_scale*voltage_scale**2
+    noise = FittedChannelNoise.from_parameters([[.62], [-.27]], sigma, geometry=geometry,
+        conditioning_samples=prefix, reference_id="pure-Z-software", family="private")
+    basis = np.ones((native, 1))
+    # A complete nontriangular precision root, rather than marginal deviations.
+    root = np.array([[1., .35, 0., .2], [.1, 1.2, .3, 0.],
+                     [0., -.2, .8, .1], [.15, 0., .2, 1.1]])/(.6e-6*voltage_scale)
+    prior = PhysicalCoefficientPrior(np.array([[.1, -.2], [.3, .1]])*1e-6*voltage_scale,
+        root, basis, geometry, "independent-physical-prior",
+        {"role": "analytic_reference", "source_sha256": "a"*64})
+    design = np.column_stack((np.ones(native), np.zeros(native)))
+    nuisance = np.kron(np.column_stack((np.ones(native), 2*np.arange(native)-1)),
+        np.diag(np.sqrt(np.diag(sigma)))).reshape(native, channels, 4)
+    row = ResponseFitRecord(np.tile(np.array([offset, -.6*offset])*voltage_scale, (native, 1)),
+        design, nuisance, np.array([0]), array_digest(basis), geometry,
+        {"record_id": "pure-Z-C", "participant_key": "toy", "recording_id": "toy-recording",
+         "read_support": [0, native], "label_support": [0, 1], "fit_scope": "target_calibration",
+         "source_sha256": "b"*64, "source_input_sha256": "c"*64,
+         "design_role": "actual_known_C_event_design"})
+    if unresolved:
+        with pytest.raises(DiffuseProjectionResolutionError, match="proper-prior/noise chart"):
+            noise.fit_response_given_frozen_noise(prior, [row], response_id="unresolved-toy")
+    else:
+        result = noise.fit_response_given_frozen_noise(prior, [row], response_id="ordinary-toy")
+        np.testing.assert_allclose(result.response.mean, prior.mean, rtol=3e-13, atol=1e-18*voltage_scale)
+        chart_factor = root@result.response.coefficient_factor
+        np.testing.assert_allclose(chart_factor@chart_factor.T, np.eye(4), rtol=3e-13, atol=3e-13)
+        resolution = result.response.provenance["compression"][0]["diffuse_projection_resolution"]
+        assert resolution["structural_zero"] is False
+        assert resolution["normalized_error_bound"] > 0
+
+
+def test_structurally_saturated_nuisance_quotient_is_zero_at_large_operand_scales():
+    from research.channel_noise_mechanism import project_diffuse_nuisance
+
+    z = np.array([[1., 2.], [1., -1.]])
+    result = project_diffuse_nuisance(np.array([[2., -3.], [5., 1.]])*1e100,
+        np.array([.4, -.7])*1e100, z, prior_factor=np.eye(2))
+    np.testing.assert_array_equal(result.design, np.zeros((2, 2)))
+    np.testing.assert_array_equal(result.response, np.zeros(2))
+    assert result.resolution["structural_zero"] is True
+
+
+def test_diffuse_resolution_uses_complete_correlated_prior_not_precision_column_maxima():
+    from research.channel_noise_mechanism import (
+        DiffuseProjectionResolutionError,
+        project_diffuse_nuisance,
+    )
+
+    # Precision entries have order 1e6, but the common weak direction has a
+    # huge proper variance. Marginal max-column scaling would miss that axis.
+    precision = np.array([[1., 1.], [1., 1.+1e-10]])*1e6
+    d = np.tile(np.eye(2), (7, 1))*1e6
+    z = np.kron(np.column_stack((np.ones(7), 2*np.arange(7)-1)), np.eye(2))
+    with pytest.raises(DiffuseProjectionResolutionError, match="proper-prior/noise chart"):
+        project_diffuse_nuisance(d, np.zeros(14), z,
+            prior_factor=np.linalg.solve(precision, np.eye(2)))
+    # This intentionally different, tightly independent prior is resolved.
+    resolved = project_diffuse_nuisance(d, np.zeros(14), z, prior_factor=np.eye(2)*1e-6)
+    assert resolved.resolution["normalized_error_bound"] < resolved.resolution["resolution_target"]
+
+
+def test_genuinely_large_quotient_information_is_resolved_without_blanket_amplitude_rejection():
+    from research.channel_noise_mechanism import project_diffuse_nuisance
+
+    n = 9
+    z = np.column_stack((np.ones(n), np.arange(n)))
+    d = (np.arange(n) % 2)[:, None]*1e12
+    result = project_diffuse_nuisance(d, np.zeros(n), z, prior_factor=np.eye(1))
+    complement = null_space(z.T)
+    expected = np.sum((complement.T@d)**2)
+    assert np.sum(result.design**2) == pytest.approx(expected, rel=1e-13)
+    assert expected > 1e24
+    assert result.resolution["normalized_error_bound"] < result.resolution["resolution_target"]
+
+
+def test_small_gamma_rate_reference_cannot_admit_pure_flat_response_roundoff_as_scale_evidence():
+    from research.channel_noise_mechanism import (
+        DiffuseProjectionResolutionError,
+        project_diffuse_nuisance,
+    )
+
+    z = np.column_stack((np.ones(7), np.arange(7)))
+    d, y = np.zeros((7, 1)), np.ones(7)
+    ordinary = project_diffuse_nuisance(d, y, z, prior_factor=np.eye(1))
+    assert ordinary.resolution["normalized_error_bound"] < ordinary.resolution["resolution_target"]
+    # The same rounding in q is material against the declared tiny nu/2 rate.
+    with pytest.raises(DiffuseProjectionResolutionError, match="proper-prior/noise chart"):
+        project_diffuse_nuisance(d, y, z, prior_factor=np.eye(1), response_reference_scale=1e-15)
+
+
+def test_response_rate_reference_keeps_gaussian_noise_unit_and_explicit_known_mean_chart():
+    from research.channel_noise_mechanism import project_diffuse_nuisance
+
+    y = np.array([1., 2., -.5, .7])
+    z = np.ones((4, 1))
+    quotient = project_diffuse_nuisance(np.empty((4, 0)), y, z, prior_factor=np.empty((0, 0)))
+    np.testing.assert_allclose(quotient.response, y-y.mean(), atol=1e-14)
+    assert quotient.design.shape == (4, 0)
+    with pytest.raises(ValueError, match="retain one noise unit"):
+        project_diffuse_nuisance(np.empty((4, 0)), y, z,
+            prior_factor=np.empty((0, 0)), response_reference_scale=1e15)
+
+
+@pytest.mark.parametrize("known_mean", [False, True])
+def test_public_score_flat_translation_is_equivariant_or_typed_unresolved(known_mean):
+    from research.channel_noise_mechanism import FrozenERPResponse
+
+    geometry = NoiseGeometry(("toy-left", "toy-right"), 256., "V", "toy-earlobe", "toy-native", 2)
+    noise = FittedChannelNoise.from_parameters([[.62], [-.27]], np.array([[.9, .22], [.22, .6]])*1e-12,
+        geometry=geometry, conditioning_samples=2, reference_id="score-pure-Z", family="private")
+    factor = np.empty((4, 0)) if known_mean else np.diag([.6e-6, .7e-6, .6e-6, .7e-6])
+    response = FrozenERPResponse(np.zeros((2, 2)), factor, geometry, "a"*64, "frozen-toy",
+        {"fit_scope": "analytic_reference"})
+    designs = np.tile(np.column_stack((np.ones(7), np.zeros(7))), (2, 1, 1))
+    args = dict(candidate_ids=("one", "two"), geometry=geometry,
+        record_id="held", recording_id="held-physical", sample_start=0)
+    reference = noise.score(np.zeros((7, 2)), designs, response, **args)
+    ordinary = noise.score(np.tile([.35e-6, -.22e-6], (7, 1)), designs, response, **args)
+    np.testing.assert_allclose(ordinary["log_density"], reference["log_density"], rtol=3e-13, atol=3e-13)
+    np.testing.assert_allclose(ordinary["probabilities"], [.5, .5], atol=1e-14)
+    assert ordinary["reason"] == "tie"
+    # The declared intercept chart removes an exactly represented common
+    # offset before the actual causal map, rather than rejecting legal pure Z.
+    huge = np.tile([.35e14, -.22e14], (7, 1))
+    translated = noise.score(huge, designs, response, **args)
+    np.testing.assert_array_equal(translated["log_density"], reference["log_density"])
+    assert translated["samples_sha256"] == array_digest(huge)
+
+
+@pytest.mark.parametrize("family", ["shared", "private"])
+def test_actual_square_whitening_logdet_matches_independent_dense_native_covariance(family):
+    noise, _, _ = fixture(family=family)
+    before = noise.record()
+    for native in (1, 2, noise.conditioning_samples, noise.conditioning_samples+1, 13):
+        covariance = ar1_covariance([item.coefficients[0] for item in noise.temporal],
+            noise.innovation_covariance, native)
+        expected = -.5*np.linalg.slogdet(covariance)[1]
+        assert noise.whitening_logabsdet(native) == pytest.approx(expected, rel=3e-13, abs=3e-13)
+    assert noise.record() == before
+    for invalid in (0, -1, True, 2., np.int64(2)):
+        with pytest.raises(ValueError, match="native sample count"):
+            noise.whitening_logabsdet(invalid)
+
+
+@pytest.mark.parametrize("offset", [0., 1e14])
+def test_raw_conditional_density_cannot_borrow_full_quotient_relative_precision(offset):
+    from research.channel_noise_mechanism import DiffuseProjectionResolutionError, FrozenERPResponse
+
+    g = NoiseGeometry(("toy",), 128., "V", "explicit_toy_reference", "AR0_affine_translation", 1)
+    noise = FittedChannelNoise.from_parameters(np.empty((1, 0)), np.ones((1, 1)), geometry=g,
+        conditioning_samples=2, reference_id="mixed-prefix", family="shared")
+    response = FrozenERPResponse(np.zeros((2, 1)), np.empty((2, 0)), g, "a"*64, "known-zero",
+        {"fit_scope": "analytic_reference"})
+    # The independent raw contrast covariance is I+H H.T, H_t=[1-t,t].
+    # Exact q=33750000000000000000/7; even the output binary64 ULP cannot
+    # meet sqrt(eps) nats per tail row. The old full quotient gate admitted both
+    # cases, with a spurious 31,031,003 change in q after the exact flat shift.
+    y = np.array([0., 0., 1e9, -1e9, 1e9, -1e9, 1e9])[:, None]+offset
+    with pytest.raises(DiffuseProjectionResolutionError, match="raw conditional log-density"):
+        noise.score(y, np.zeros((2, 7, 2)), response, candidate_ids=("a", "b"), geometry=g,
+                    record_id="held-offset", recording_id="toy-native", sample_start=0)
+
+
+@pytest.mark.parametrize("family", ["shared", "private"])
+@pytest.mark.parametrize("known_mean", [False, True])
+def test_raw_intercept_chart_keeps_exact_mixed_translation_and_original_source(family, known_mean):
+    from research.channel_noise_mechanism import FrozenERPResponse
+
+    g = geometry()
+    sigma = np.array([[1., .25], [.25, 1.5]])
+    coefficients = [[.5], [.5]] if family == "shared" else [[.5], [-.25]]
+    noise = FittedChannelNoise.from_parameters(coefficients, sigma, geometry=g,
+        conditioning_samples=2, reference_id="exact-chart", family=family)
+    mean = np.array([[.25, -.125], [.125, .375]])
+    factor = np.empty((4, 0)) if known_mean else np.array([
+        [.5, .125, 0., 0.], [0., .375, .125, 0.], [.125, 0., .5, .125], [0., 0., 0., .25]])
+    response = FrozenERPResponse(mean, factor, g, "a"*64, "fixed-correlated-proper",
+                                 {"fit_scope": "analytic_reference"})
+    y = np.array([[0., 0.], [.25, -.125], [.5, .25], [-.375, .125],
+                  [.25, -.25], [-.5, .375], [.125, -.125]])
+    designs = np.stack((np.column_stack((np.ones(7), np.arange(7)%2)),
+                       np.column_stack((np.ones(7), (np.arange(7)+1)%2))))
+    args = dict(candidate_ids=("a", "b"), geometry=g, record_id="held",
+                recording_id="toy-native", sample_start=10, candidate_prior=np.array([.3, .7]))
+    shifted_y = y+np.array([1e14, -1e14])
+    np.testing.assert_array_equal(shifted_y-shifted_y[0], y-y[0])
+    original, shifted = (noise.score(value, designs, response, **args) for value in (y, shifted_y))
+    np.testing.assert_array_equal(shifted["log_density"], original["log_density"])
+    np.testing.assert_array_equal(shifted["probabilities"], original["probabilities"])
+    assert shifted["samples_sha256"] == array_digest(shifted_y)
+    assert shifted["samples_sha256"] != original["samples_sha256"]
+    assert shifted["read_support"] == [10, 17] and shifted["conditioning_support"] == [10, 12]
+    for diagnostic in shifted["candidate_diagnostics"]:
+        resolution = diagnostic["conditional_numerical_resolution"]
+        assert resolution["actual_tail_scalar_rows"] == 10
+        assert resolution["absolute_log_density_error_estimate"] <= resolution["absolute_log_density_error_budget"]
+        assert resolution["all_input_certificate"] is False
+
+
+def test_large_affine_slope_is_not_certified_by_intercept_centering():
+    from research.channel_noise_mechanism import DiffuseProjectionResolutionError, FrozenERPResponse
+
+    g = NoiseGeometry(("toy",), 128., "V", "toy-reference", "AR0-affine-slope", 1)
+    noise = FittedChannelNoise.from_parameters(np.empty((1, 0)), np.ones((1, 1)), geometry=g,
+        conditioning_samples=2, reference_id="slope", family="shared")
+    response = FrozenERPResponse(np.zeros((1, 1)), np.empty((1, 0)), g, "a"*64, "known-zero",
+        {"fit_scope": "analytic_reference"})
+    # The exact representable affine nuisance is legal; this implementation's
+    # intercept chart leaves large slope operands and must disclose unresolved
+    # conditional arithmetic instead of asserting a nonzero residual density.
+    with pytest.raises(DiffuseProjectionResolutionError, match="(proper-prior/noise chart|raw conditional)"):
+        noise.score((np.arange(7)*1e14)[:, None], np.zeros((2, 7, 1)), response,
+                    candidate_ids=("a", "b"), geometry=g, record_id="held",
+                    recording_id="toy-native", sample_start=0)

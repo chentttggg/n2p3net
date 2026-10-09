@@ -4,6 +4,12 @@
 
 两窗口在职责范围内自主处理小决定，只同步共享接口/所有权变化、关键阻塞或失败及可集成候选，不逐步报告常规排障。历史按已实现的大架构版本保留，验明恢复后删除已落地成果的微冻结、已解决失败记录和一次性过程工具；当前未关闭问题只留仍必要的证据。不可把所有小版本再套一层ZIP充作精简，范围见[归档分发规则](../frozen/README.md)。
 
+2026-10-09用户已在云端窗口授权恢复训练；该窗口先核实际资源/锁定环境，最终接受源码只执行一次整仓验证，再继续约定完整单seed公共程序。科研修复在隔离树审阅，运行中的历史矩阵从自己的物理源码消费，不能因当前工作树更新改变其producer。长记录compiler绑定原Y/D字节并一次full-record白化，公开边界验证一次，内部抽样消费已准入不可变R/count/map；不再每draw重复大数组验证。必要反例/相关合同先执行，完整套件由云端唯一执行权按最终实际源码与原资源声明验收。
+
+当前云端一次性491软件验证已经保存完整失败和环境复验材料，正式公共训练尚未启动；用户已获告知可以关闭云端。关闭后不再启动新的SSH或云任务，保留原suite、11项锁定环境复验、存储准入和基础设施局部修复的独立来源。原491 source/producers不因局部修复改签；下一次公共执行须使用新的完整源码冻结和一次性定向门禁。
+
+最终493成员冻结相对原491还包含数据digests/domain/euclidean alignment、binary/transfer接点、source vector与predictive-prior测试、freeze helper以及已确认无调用者的历史 `candidate_set_loss` 退役；因此它是独立源码版本，不能追签原491的3180项结果。493只完成来源成员/哈希准入，新的Linux范围只需对新增生产接点和剩余失败修复做定向验证，再决定是否需要完整suite。
+
 [当前公共source实施](evidence/public_source_pipeline_20261008.zh.md)共享准备/合并/load/fit预算，并保存原prepared方法与每seed实际producer。五项恢复/准入/账本修复经源码两轴和必要定向验证；未重复全集。云真实16/16数据准备成功，25CPU/4GPU完整源程序继续；只读释放完成文件页的内存提示与原数据删除不同，任何吞吐结论须读真实阶段/资源日志。科研子代理不设我方额度上限或人为期限，质量优先。
 
 [B12切片](evidence/independent_prefix_20261008.zh.md)采用一次授权验证、共享final fit与单份数值包。独立两轴后只补相关consumer回归与B07组合/原生重放，没有重复全集。B08原progress、包和producer链保持原字节，普通用户Task Scheduler服务启动的完整1344格复用436个原封包并继续拟合；实际进程与终态凭证作为续接权威。[CPU限流续接证据](evidence/prior_control_20261006.zh.md#后台运行与本机cpu余量)记录资源控制器接管，该记录属于旧执行时期，当前云实例已由用户关闭；实际旧矩阵producer与未完成出口保持原身份。
@@ -359,6 +365,16 @@ GPU计时同步，冷启动/编译与热运行分列。缓存就绪的训练时�
 准入解码/磁盘临时字节并一次分配最终C-order EEG；每source写入自己固定的行区间，科学adapter仍核真实参考/身份。
 `train.source_rows.SourceRows`使source选轮和refit按行分块读取，避免完整raw subset复制；有限值与缺导检查同样按完整epoch分块。
 `SourceInputAdmission`分开组I/O容量和共享NN归一化字节，ready NN优先；四GPU容量由原资源owner保留。
+source组的host RAM声明不转换成输出盘容量；复用固定source view时不预留新增EEG文件。
+source checkpoint先对实际CPU payload执行不保留buffer的Torch序列化计数，再由原named writer准入实际档案字节；
+选轮checkpoint复用按原文件大小准入，保持原producer文件字节。JSON沿用原精确writer，进度JSONL按实际UTF-8追加字节准入。
+新source view默认位于group目录的兄弟`source_views/`，也可显式选择另一文件系统；它由原cache writer按实际payload独立准入，
+`PreparedSourceStorage`仍负责resident/decoded临时内存。写盘不足须在覆盖前拒绝，真实失败后留下的partial继续按实际字节计费。
+固定名单中的旧派生cache先按原build SHA流式压缩，再逐字节解压还原核验；删除由同一`SourceInputAdmission.remove_external_file`执行。
+该接口重核mode/dev/inode/size/mtime/ctime，仅删除不被任何named file、temporary或目录lease覆盖的外部regular file；同路径只可回收一次。
+即时磁盘信用取最后link的实际分配块与删除前后实测free增量的较小值；未释放部分只记为 deferred upper bound，不直接提升可用容量。
+每次新申请重新读取实际free，并保留所有live snapshot和uncommitted artifact reservation；tmpfs回收不扩固定RAM staging。
+raw、model和唯一evidence不属于此清理名单；压缩/删除失败保留原件和surviving partial。
 `GpuPerformanceScheduler.complete_input_staging`在train/held矩阵仍存活时测实际进程RSS；CPU回退只在整场持有的source组预算内
 转为常驻，超预算在optimizer更新前失败并释放暂存，不用长lease静默降低并发。即使没有shared staging，source组预算仍传入实际worker。
 这些端点RSS与ZIP容量估计都不等于全程峰值；tmpfs/ramfs snapshot和工作输出额外计RAM，不能当可回收磁盘页。

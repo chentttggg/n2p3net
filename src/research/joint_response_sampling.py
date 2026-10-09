@@ -16,11 +16,23 @@ from dataclasses import dataclass, field
 from time import perf_counter
 
 import numpy as np
-from scipy.linalg import cho_solve, solve_triangular
-from scipy.special import gammaln, logsumexp, ndtri
+from scipy.linalg import solve_triangular
+from scipy.special import logsumexp, ndtri
 from scipy.stats import rankdata
 
-from research.joint_response_scale import DecisionBlock, FixedHyperparameters, GlobalGaussianPrior
+from research.joint_response_scale import (
+    CompiledDecision,
+    DecisionBlock,
+    FixedHyperparameters,
+    GlobalGaussianPrior,
+    NumericalResolutionError,
+    _chart_identity,
+    _prepare,
+    _qr_beta,
+    _root_energy,
+    compile_decision,
+)
+from research.student_t_numerics import StudentTNumericalError, student_t_log_density
 from transfer.noise_model import finite_real_array, frozen_array
 
 
@@ -33,35 +45,39 @@ class PredictiveSamplingError(ValueError):
 
 
 @dataclass(frozen=True)
-class PreparedDecision:
-    decision_id: str
-    image: np.ndarray
-    residual: np.ndarray
-    noise_logdet: float
-
-
-@dataclass(frozen=True)
 class PreparedModel:
     prior: GlobalGaussianPrior
-    blocks: tuple[DecisionBlock, ...]
-    prepared: tuple[PreparedDecision, ...]
+    blocks: tuple[CompiledDecision, ...]
     hyperparameters: FixedHyperparameters
-    grams: np.ndarray
-    linear: np.ndarray
-    stacked_images: np.ndarray | None
-    stacked_residuals: np.ndarray | None
+
+    def __post_init__(self):
+        blocks = _prepare(self.prior, self.blocks, self.hyperparameters)
+        if (any(v.role != "target_calibration" for v in blocks[:-1])
+                or blocks and blocks[-1].role not in {"target_calibration", "read_only_inference"}):
+            raise ValueError("only complete C followed by at most one actual inference prefix is supported")
+        object.__setattr__(self, "blocks", blocks)
 
 
 @dataclass(frozen=True)
 class PreparedPrediction:
-    """Actual test whitening compiled once, tied to one physical prior/noise chart."""
+    """One actual full map, its independent original-row prefix/tail roots."""
 
     prior: GlobalGaussianPrior
     hyperparameters: FixedHyperparameters
-    test: DecisionBlock
-    conditioning_rows: int
-    full: PreparedDecision
-    prefix_logdet: float
+    full: CompiledDecision
+    prefix: CompiledDecision
+    tail: CompiledDecision
+    draw_batch_size: int
+
+    def __post_init__(self):
+        if (not isinstance(self.full, CompiledDecision) or self.full.kind != "full"
+                or self.full.role != "read_only_inference" or self.prefix is None or self.tail is None
+                or self.prefix is not self.full.prefix or self.tail is not self.full.tail):
+            raise ValueError("prediction requires the same factory full/prefix/tail map")
+        if self.full.chart_identity != _chart_identity(self.prior, self.hyperparameters):
+            raise ValueError("prediction requires the same physical prior and noise program")
+        if type(self.draw_batch_size) is not int or self.draw_batch_size < 1:
+            raise ValueError("prediction draw work-block size must be a positive integer")
 
 
 @dataclass(frozen=True)
@@ -97,68 +113,30 @@ class JointResponseSamples:
         object.__setattr__(self, "gaussian_limit", gaussian)
 
 
-def _prepared_decision(prior, block, hyperparameters):
-    scale = np.sqrt(hyperparameters.relative_noise_shape)
-    with np.errstate(over="ignore", under="ignore", invalid="ignore", divide="ignore"):
-        image = solve_triangular(block.noise_root, block.design @ prior.root, lower=True) / scale
-        residual = solve_triangular(block.noise_root, block.samples - block.design @ prior.mean,
-                                    lower=True) / scale
-        logdet = float(2 * np.log(np.diag(block.noise_root)).sum()
-                       + len(block.samples) * np.log(hyperparameters.relative_noise_shape))
-    if not all(np.isfinite(v).all() for v in (image, residual, logdet)):
-        raise SamplingResolutionError("physical whitened model is not representable")
-    return PreparedDecision(block.decision_id, frozen_array(image), frozen_array(residual), logdet)
-
-
 def prepare_model(prior, blocks, hyperparameters):
-    """Compile actual C or C+one declared inference prefix exactly once.
+    """Admit proper raw or factory-compiled C/C+actual-prefix rows once.
 
-All physical coordinates, source/plugin authority, read time and cross-decision
-noise independence remain caller-owned; canonical classes enforce declarations.
-"""
-    blocks = tuple(blocks)
-    if (not isinstance(prior, GlobalGaussianPrior) or not isinstance(hyperparameters, FixedHyperparameters)
-            or any(not isinstance(v, DecisionBlock) for v in blocks)):
-        raise ValueError("canonical prior, hyperparameters and decision blocks are required")
-    if len({v.decision_id for v in blocks}) != len(blocks):
-        raise ValueError("each complete decision must appear once in the supplied observation set")
-    if (any(v.role != "target_calibration" for v in blocks[:-1])
-            or blocks and blocks[-1].role not in {"target_calibration", "read_only_inference"}):
-        raise ValueError("only complete C followed by at most one actual inference prefix is supported")
-    p = len(prior.mean)
-    prepared = []
-    for block in blocks:
-        if block.design.shape[1] != p:
-            raise ValueError("every block must use the same actual global beta chart")
-        prepared.append(_prepared_decision(prior, block, hyperparameters))
-    with np.errstate(over="ignore", invalid="ignore"):
-        grams = np.asarray([v.image.T @ v.image for v in prepared]).reshape(len(blocks), p, p)
-        linear = np.asarray([v.image.T @ v.residual for v in prepared]).reshape(len(blocks), p)
-    if not np.isfinite(grams).all() or not np.isfinite(linear).all():
-        raise SamplingResolutionError("conditional Gaussian statistics are not representable")
-    same_grid = bool(prepared) and len({len(v.residual) for v in prepared}) == 1
-    images = np.stack([v.image for v in prepared]) if same_grid else None
-    residuals = np.stack([v.residual for v in prepared]) if same_grid else None
-    return PreparedModel(prior, blocks, tuple(prepared), hyperparameters, frozen_array(grams),
-                         frozen_array(linear), frozen_array(images) if images is not None else None,
-                         frozen_array(residuals) if residuals is not None else None)
+    Physical coordinates, source/read authority and cross-decision independence
+    remain caller-owned. A tail cannot add another independent Gamma variable.
+    """
+    return PreparedModel(prior, tuple(blocks), hyperparameters)
 
 
-def prepare_prediction(model, test, *, conditioning_rows):
-    """Prepare the actual full test once; its leading rows are the SAME prefix."""
-    if not isinstance(test, DecisionBlock) or test.role != "read_only_inference":
-        raise ValueError("a canonical declared read-only test decision is required")
-    if test.design.shape[1] != len(model.prior.mean):
-        raise ValueError("test must use the same global physical beta chart")
-    cut = conditioning_rows
-    if type(cut) is not int or not 0 < cut < len(test.samples):
-        raise ValueError("an actual nonempty test prefix and tail are required")
+def prepare_prediction(model, test, *, conditioning_rows, draw_batch_size=256):
+    """Compile the actual full test once, with the SAME original prefix rows."""
+    if isinstance(test, DecisionBlock):
+        test = compile_decision(model.prior, model.hyperparameters, test,
+                                conditioning_rows=conditioning_rows)
+    if (not isinstance(test, CompiledDecision) or test.role != "read_only_inference"
+            or test.kind != "full" or test.prefix is None or test.tail is None
+            or type(conditioning_rows) is not int or test.prefix.observed_rows != conditioning_rows):
+        raise ValueError("a canonical full read-only test with its actual prefix and tail is required")
     if any(v.decision_id == test.decision_id and v.role == "target_calibration" for v in model.blocks):
         raise ValueError("test cannot duplicate a complete C decision or its Gamma draw")
-    full = _prepared_decision(model.prior, test, model.hyperparameters)
-    prefix_logdet = float(2 * np.log(np.diag(test.noise_root)[:cut]).sum()
-                         + cut * np.log(model.hyperparameters.relative_noise_shape))
-    return PreparedPrediction(model.prior, model.hyperparameters, test, cut, full, prefix_logdet)
+    prediction = PreparedPrediction(model.prior, model.hyperparameters, test, test.prefix, test.tail,
+                                    draw_batch_size)
+    _prediction_binding(model, prediction)
+    return prediction
 
 
 def _prediction_binding(model, prediction):
@@ -168,46 +146,60 @@ def _prediction_binding(model, prediction):
             or not np.array_equal(prediction.prior.root, model.prior.root)
             or prediction.hyperparameters != model.hyperparameters):
         raise ValueError("prediction and sampled C must share the same physical prior and noise program")
+    # Compile-time chart binds all proper beta/noise operands, including a no-C model.
+    if prediction.full.chart_identity != _chart_identity(model.prior, model.hyperparameters):
+        raise ValueError("prediction and sampled C must share the same physical prior and noise program")
+
+
+def _targeted_prediction_binding(model, prediction):
+    _prediction_binding(model, prediction)
+    if not model.blocks:
+        raise ValueError("targeted sampling requires the actual test prefix")
+    last, expected = model.blocks[-1], prediction.prefix
+    if (any(v.role != "target_calibration" for v in model.blocks[:-1])
+            or last.decision_id != expected.decision_id or last.role != "read_only_inference"
+            or last.observed_rows != expected.observed_rows or last.noise_logdet != expected.noise_logdet
+            or last.raw_input_identity != expected.raw_input_identity):
+        raise ValueError("the actual test prefix must have entered the global sampler exactly once")
+
+
+def _conditional_beta_chart(model, values):
+    try:
+        mean, upper = _qr_beta(model.blocks, values, len(model.prior.mean))
+    except (NumericalResolutionError, np.linalg.LinAlgError) as error:
+        raise SamplingResolutionError("proper conditional beta QR is unresolved") from error
+    # Existing single RNG loop solves lower.T * shift=z; precision is R.T R.
+    return mean, upper.T
 
 
 def conditional_beta_chart(model, lambdas):
-    """u|lambda,y with beta=m0+Lbeta*u and u-prior exactly N(0,I)."""
+    """u|lambda,y, using one prior I and complete augmented square-root rows."""
     values = finite_real_array(lambdas, name="conditional decision precisions")
-    if values.shape != (len(model.blocks),) or not np.isfinite(values).all() or np.any(values <= 0):
+    if values.shape != (len(model.blocks),) or np.any(values <= 0):
         raise ValueError("one finite positive conditional scale per supplied decision is required")
-    p = len(model.prior.mean)
-    with np.errstate(over="ignore", invalid="ignore"):
-        precision = np.eye(p) + np.einsum("j,jab->ab", values, model.grams)
-        rhs = values @ model.linear
-    if not np.isfinite(precision).all() or not np.isfinite(rhs).all():
-        raise SamplingResolutionError("conditional beta precision/RHS is not representable")
+    return _conditional_beta_chart(model, values)
+
+
+def _conditional_scale_parameters(model, u):
     try:
-        root = np.linalg.cholesky(precision)
-        mean = cho_solve((root, True), rhs)
-    except np.linalg.LinAlgError as error:
-        raise SamplingResolutionError("proper conditional beta precision is unresolved") from error
-    if not np.isfinite(root).all() or not np.isfinite(mean).all():
-        raise SamplingResolutionError("conditional beta chart is not representable")
-    return mean, root
-
-
-def conditional_scale_parameters(model, chart):
-    """lambda_j|u,y are independent Gamma((nu+n_j)/2,(nu+q_j(u))/2)."""
-    u = finite_real_array(chart, name="global prior chart")
-    if u.shape != (len(model.prior.mean),) or not np.isfinite(u).all():
-        raise ValueError("the same finite global prior chart is required")
-    with np.errstate(over="ignore", invalid="ignore"):
-        if model.stacked_images is not None:
-            residuals = model.stacked_residuals - np.einsum("jnp,p->jn", model.stacked_images, u)
-            energies = np.einsum("jn,jn->j", residuals, residuals)
-        else:
-            energies = np.asarray([np.sum((v.residual - v.image @ u) ** 2) for v in model.prepared])
+        energies = np.asarray([_root_energy(v, u[None])[0] for v in model.blocks])
+    except NumericalResolutionError as error:
+        raise SamplingResolutionError("conditional Gamma energy is not representable") from error
     nu = model.hyperparameters.degrees_of_freedom
-    shapes = np.asarray([(nu + len(v.residual)) / 2 for v in model.prepared])
-    rates = (nu + energies) / 2
+    # Original raw scalar dimension, never compressed root height or n-p.
+    shapes = np.asarray([(nu+v.observed_rows)/2 for v in model.blocks])
+    rates = (nu+energies)/2
     if not np.isfinite(shapes).all() or not np.isfinite(rates).all() or np.any(rates <= 0):
         raise SamplingResolutionError("conditional Gamma operands are not representable")
     return shapes, rates
+
+
+def conditional_scale_parameters(model, chart):
+    """Independent Gamma((nu+n_raw)/2,(nu+||R[u;-1]||²)/2)."""
+    u = finite_real_array(chart, name="global prior chart")
+    if u.shape != (len(model.prior.mean),):
+        raise ValueError("the same finite global prior chart is required")
+    return _conditional_scale_parameters(model, u)
 
 
 def run_gibbs(model, *, burnin, draws, seeds, initial_charts):
@@ -227,19 +219,19 @@ conditional-Gaussian draws; no finite nu is silently relabelled infinity.
     chart_draws = np.empty((len(seeds), draws, p))
     scale_draws = np.empty((len(seeds), draws, j))
     gaussian = np.isposinf(model.hyperparameters.degrees_of_freedom)
-    gaussian_conditional = conditional_beta_chart(model, np.ones(j)) if gaussian else None
+    gaussian_conditional = _conditional_beta_chart(model, np.ones(j)) if gaussian else None
     started = perf_counter()
     for chain, seed in enumerate(seeds):
         rng = np.random.default_rng(seed)
         u, lambdas = starts[chain].copy(), np.ones(j)
         if not gaussian:
-            shape, rate = conditional_scale_parameters(model, u)
+            shape, rate = _conditional_scale_parameters(model, u)
             lambdas = rng.gamma(shape, 1 / rate)
         for iteration in range(burnin + draws):
-            mean, root = gaussian_conditional if gaussian else conditional_beta_chart(model, lambdas)
+            mean, root = gaussian_conditional if gaussian else _conditional_beta_chart(model, lambdas)
             u = mean + solve_triangular(root.T, rng.normal(size=p), lower=False)
             if not gaussian:
-                shape, rate = conditional_scale_parameters(model, u)
+                shape, rate = _conditional_scale_parameters(model, u)
                 lambdas = rng.gamma(shape, 1 / rate)
             if not np.isfinite(u).all() or not np.isfinite(lambdas).all() or np.any(lambdas <= 0):
                 raise SamplingResolutionError("Gamma/Gaussian draw is not finite and positive")
@@ -337,41 +329,89 @@ def _functional_diagnostics(values):
     return scalar_chain_diagnostics(values)
 
 
-def _t_logpdf(residuals, nu, logdet):
-    n = residuals.shape[1]
-    with np.errstate(over="ignore", invalid="ignore"):
-        quadratic = np.einsum("si,si->s", residuals, residuals)
-    if np.isposinf(nu):
-        result = -.5 * (n * np.log(2 * np.pi) + logdet + quadratic)
-    else:
-        with np.errstate(over="ignore", invalid="ignore"):
-            normalizer = gammaln((nu + n) / 2) - gammaln(nu / 2)
-            result = (normalizer - .5 * (n * (np.log(nu) + np.log(np.pi)) + logdet)
-                      - (nu + n) / 2 * np.log1p(quadratic / nu))
-    if not np.isfinite(result).all():
-        raise SamplingResolutionError("normalized finite-df predictive density is unresolved")
-    return result
+def _t_logpdf(record, charts, nu):
+    n = record.observed_rows
+    try:
+        quadratic = _root_energy(record, charts)
+    except NumericalResolutionError as error:
+        raise SamplingResolutionError("normalized predictive residual energy is unresolved") from error
+    try:
+        return student_t_log_density(quadratic, degrees_of_freedom=nu, dimension=n,
+                                     noise_logdet=record.noise_logdet)
+    except StudentTNumericalError as error:
+        raise SamplingResolutionError("normalized finite-df predictive density is unresolved") from error
 
 
 def conditional_tail_components(prediction, chart):
-    """Each component is normalized p(tail|u,prefix), using ONE actual test lambda.
+    """All retained beta draws, batched; one actual test lambda integrated out.
 
-Full and prefix roots are the same physical lower factor/leading block. The
-test mean/design shares the global beta chart; lambda is analytically integrated
-after updating it with prefix evidence. No tail is used to weight components.
-"""
-    cut = prediction.conditioning_rows
-    prepared = prediction.full
+    Each normalized p(tail|u,prefix) uses original-row full/prefix roots from the
+    same causal map. Prefix weights never inspect the tail. No draw is removed.
+    """
     charts = finite_real_array(chart, name="sampled global charts")
-    if charts.ndim not in (2, 3) or charts.shape[-1] != len(prediction.prior.mean):
+    p = len(prediction.prior.mean)
+    if charts.ndim not in (2, 3) or charts.shape[-1] != p:
         raise ValueError("prediction components require the actual sampled global chart width")
-    u = charts.reshape(-1, len(prediction.prior.mean))
-    with np.errstate(over="ignore", invalid="ignore"):
-        residuals = prepared.residual - u @ prepared.image.T
+    u = charts.reshape(-1, p)
+    full, prefix = np.empty(len(u)), np.empty(len(u))
     nu = prediction.hyperparameters.degrees_of_freedom
-    full = _t_logpdf(residuals, nu, prepared.noise_logdet)
-    prefix = _t_logpdf(residuals[:, :cut], nu, prediction.prefix_logdet)
-    return full, prefix, full - prefix
+    for start in range(0, len(u), prediction.draw_batch_size):
+        end = min(start+prediction.draw_batch_size, len(u))
+        full[start:end] = _t_logpdf(prediction.full, u[start:end], nu)
+        prefix[start:end] = _t_logpdf(prediction.prefix, u[start:end], nu)
+    return full, prefix, full-prefix
+
+
+def _conditional_beta_tail_logpdf(model, prediction, scales):
+    """Private admitted joint-lambda state core; no repeated source admission."""
+    mean, lower = _conditional_beta_chart(model, scales)
+    prefix_root = lower.T
+    tail = prediction.tail
+    proper_prior = np.column_stack((prefix_root, prefix_root @ mean))
+    augmented = np.linalg.qr(np.vstack((proper_prior, np.sqrt(scales[-1])*tail.augmented_root)), mode="r")
+    p = len(mean)
+    full_root, rhs = augmented[:p, :p], augmented[:p, p]
+    updated = solve_triangular(full_root, rhs, lower=False)
+    remaining = tail.augmented_root[:, :p] @ updated-tail.augmented_root[:, p]
+    shift = prefix_root @ (updated-mean)
+    # Positive energies: never subtract two large C/full likelihood quadratics.
+    quadratic = scales[-1]*(remaining @ remaining)+shift @ shift
+    logdet = 2*(np.log(abs(np.diag(full_root)))-np.log(abs(np.diag(prefix_root)))).sum()
+    density = -.5*(tail.observed_rows*(np.log(2*np.pi)-np.log(scales[-1]))
+                   +tail.noise_logdet+logdet+quadratic)
+    if not np.isfinite(density):
+        raise SamplingResolutionError("conditional-beta Gaussian tail density is not finite")
+    return float(density)
+
+
+def _conditional_beta_components(model, prediction, scales):
+    logs = np.empty(len(scales))
+    # Exact Gaussian-limit states repeat; their conditional component is identical.
+    gaussian_value = None
+    for start in range(0, len(scales), prediction.draw_batch_size):
+        for index in range(start, min(start+prediction.draw_batch_size, len(scales))):
+            if np.isposinf(model.hyperparameters.degrees_of_freedom):
+                if gaussian_value is None:
+                    gaussian_value = _conditional_beta_tail_logpdf(model, prediction, scales[index])
+                logs[index] = gaussian_value
+            else:
+                logs[index] = _conditional_beta_tail_logpdf(model, prediction, scales[index])
+    return logs
+
+
+def conditional_beta_tail_components(model, prediction, scale_values):
+    """Integrate proper beta|all SAME C+prefix joint scales for every state.
+
+    Gaussianity is conditional on paired joint scales. This never relabels a
+    separate Gaussian-C posterior as the finite-nu marginal beta posterior.
+    """
+    _targeted_prediction_binding(model, prediction)
+    scales = finite_real_array(scale_values, name="targeted joint precision states")
+    if scales.ndim not in (2, 3) or scales.shape[-1] != len(model.blocks) or np.any(scales <= 0):
+        raise ValueError("positive joint scales must preserve every C and actual-prefix decision")
+    if np.isposinf(model.hyperparameters.degrees_of_freedom) and np.any(scales != 1):
+        raise ValueError("the explicit Gaussian limit has deterministic unit precisions")
+    return _conditional_beta_components(model, prediction, scales.reshape(-1, len(model.blocks)))
 
 
 def _batch_mcse(influence, batch_size):
@@ -439,18 +479,7 @@ fixed; prefix inference updates beta/calibration/test lambdas, not a new fit.
 """
     model = samples.model
     _predictive_policy(max_rhat, min_bulk_ess, min_tail_ess)
-    _prediction_binding(model, prediction)
-    test, cut = prediction.test, prediction.conditioning_rows
-    if not model.blocks:
-        raise ValueError("targeted sampling requires C plus the actual test prefix")
-    last = model.blocks[-1]
-    if (last.decision_id != test.decision_id or last.role != "read_only_inference"
-            or len(last.samples) != cut
-            or not np.array_equal(last.samples, test.samples[:cut])
-            or not np.array_equal(last.design, test.design[:cut])
-            or not np.array_equal(last.noise_root, test.noise_root[:cut, :cut])
-            or any(v.role != "target_calibration" for v in model.blocks[:-1])):
-        raise ValueError("the actual test prefix must have entered the global sampler exactly once")
+    _targeted_prediction_binding(model, prediction)
     diagnostics = posterior_diagnostics(samples)
     if (diagnostics["max_rank_folded_split_rhat"] > max_rhat
             or diagnostics["min_bulk_ess"] < min_bulk_ess
@@ -470,3 +499,39 @@ fixed; prefix inference updates beta/calibration/test lambdas, not a new fit.
             "finite_predictive_mixture_proper": True,
             "continuous_Gamma_target_accuracy_certified": False,
             "uncertainty_scope": "conditional_mean_delta_method_batch_MCSE_estimate"}
+
+
+def targeted_conditional_beta_predict(samples, prediction, *, batch_size, max_rhat, min_bulk_ess, min_tail_ess):
+    """Explicit alternate estimator: beta integrated under SAME targeted lambdas.
+
+    These scales must come from C+the actual prefix joint posterior, rather than
+    a C-only fit. Equal finite weights are fixed before tail evaluation. This
+    estimator and the lambda-collapsed t estimator integrate different variables;
+    neither universally has lower variance. Finite mixing/MCSE limits remain.
+    """
+    model = samples.model
+    _predictive_policy(max_rhat, min_bulk_ess, min_tail_ess)
+    _targeted_prediction_binding(model, prediction)
+    diagnostics = posterior_diagnostics(samples)
+    if (diagnostics["max_rank_folded_split_rhat"] > max_rhat
+            or diagnostics["min_bulk_ess"] < min_bulk_ess
+            or diagnostics["min_tail_ess"] < min_tail_ess):
+        raise PredictiveSamplingError("caller-declared C+prefix MCMC diagnostics were not met")
+    scales = samples.scales.reshape(-1, len(model.blocks))
+    logs = _conditional_beta_components(model, prediction, scales)
+    log_density = float(logsumexp(logs)-np.log(len(logs)))
+    influence = (np.exp(logs-log_density)-1).reshape(samples.chart.shape[:2])
+    concentrations = np.exp(logs-logsumexp(logs))
+    return {"log_density": log_density,
+            "log_density_batch_mcse": _batch_mcse(influence, batch_size),
+            "diagnostics": diagnostics,
+            "log_density_influence_diagnostics": _functional_diagnostics(influence),
+            "point_likelihood_Kish_concentration": float(1/np.sum(concentrations**2)),
+            "point_likelihood_maximum_concentration": float(concentrations.max()),
+            "component_tail_logs": logs,
+            "actual_retained_joint_scale_draws": len(logs),
+            "finite_predictive_mixture_proper": True,
+            "continuous_Gamma_target_accuracy_certified": False,
+            "numerical_program": "conditional_beta_Gaussian_integration_under_targeted_joint_Gamma_draws",
+            "uncertainty_scope": "conditional_mean_delta_method_batch_MCSE_estimate",
+            "universal_variance_improvement_over_lambda_collapsed_t_not_claimed": True}

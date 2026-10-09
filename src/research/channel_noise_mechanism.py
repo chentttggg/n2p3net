@@ -339,8 +339,8 @@ def _posterior_qr(design, response, prior_root):
     singular = np.linalg.svd(root, compute_uv=False)
     if len(singular) != width or singular[-1] <= np.finfo(float).eps * max(design.shape) * singular[0]:
         raise UnidentifiableFitError("actual prefix cannot identify the declared diffuse nuisance")
-    mean = solve_triangular(root, q.T @ np.r_[response, np.zeros(len(prior_root))])
-    return mean, root
+    rhs = q.T @ np.r_[response, np.zeros(len(prior_root))]
+    return rhs, root, q, singular[-1]
 
 
 @dataclass(frozen=True)
@@ -616,6 +616,21 @@ class FittedChannelNoise:
         self.assert_integrity()
         return self._whiten(values)
 
+    def whitening_logabsdet(self, native_samples: int) -> float:
+        """Log determinant of the actual frozen square causal whitening map.
+
+        A short prefix uses the leading block of the *saved* joint prefix root.
+        Every subsequent native row contributes one spatial innovation root.
+        This is a numerical getter; it grants no observation or fit authority.
+        """
+        self.assert_integrity()
+        if type(native_samples) is not int or native_samples < 1:
+            raise ValueError("whitening determinant needs a positive native sample count")
+        leading = min(native_samples, self.conditioning_samples)*len(self.geometry.channels)
+        return float(-np.log(np.diag(self.compiled_prefix_root)[:leading]).sum()
+                     -max(native_samples-self.conditioning_samples, 0)
+                     *np.log(np.diag(self._spatial_root)).sum())
+
     def _whiten(self, values):
         value = finite_real_array(values, name="observation/design map")
         vector = value.ndim == 2
@@ -680,29 +695,75 @@ class FittedChannelNoise:
         proper_root = np.zeros((rank, rank + 2 * channels))
         proper_root[:, :rank] = np.eye(rank)
         prefix_rows = prefix * channels
+        nuisance_q, nuisance_root, nuisance_scales = _response_nuisance_qr(
+            white_nuisance, require_prefix=prefix_rows)
+        projection_geometry = _diffuse_qr_geometry(white_nuisance, nuisance_q, nuisance_root, nuisance_scales)
         densities, diagnostics, mean_contrasts, white_means = [], [], [], []
-        white_y = self._whiten(y)
+        # Both marginal potentials use a*=a-y[0]/scale in their common
+        # intercept coordinates. This Lebesgue translation has Jacobian one;
+        # conditional on the prefix, the raw-tail translation also has unit
+        # Jacobian. The original y remains the source/read-support identity.
+        chart_y = y-y[0]
+        if not np.isfinite(chart_y).all():
+            raise DiffuseProjectionResolutionError("raw intercept chart is not representable")
+        same_sign = np.signbit(y) == np.signbit(y[0])
+        exact_subtraction = ((same_sign & (np.abs(y)/2 <= np.abs(y[0]))
+                              & (np.abs(y[0])/2 <= np.abs(y))) | (y == 0) | (y[0] == 0))
+        chart_error = _roundoff_gamma(1)*float(np.linalg.norm(np.where(exact_subtraction, 0., chart_y)))
+        white_y = self._whiten(chart_y)
+        map_geometry = _score_whitening_geometry(self)
+        white_y_error = _score_whitening_error(self, chart_y, white_y, chart_error, map_geometry)
+        nuisance_error = _score_whitening_error(self, nuisance, white_nuisance.reshape(nuisance.shape),
+            _roundoff_gamma(3)*float(np.linalg.norm(nuisance)), map_geometry)
         for design in designs:
             mean = design @ response.mean
             mean_contrasts.append(mean)
             white_mean = self._whiten(mean)
+            mean_error = _roundoff_gamma(design.shape[1])*float(
+                np.linalg.norm(np.abs(design)@np.abs(response.mean)))
+            white_mean_error = _score_whitening_error(self, mean, white_mean, mean_error, map_geometry)
             white_means.append(white_mean.ravel())
             residual = (white_y - white_mean).ravel()
             if rank:
                 uncertainty = np.einsum("nk,kcr->ncr", design,
                     factor.reshape(response.mean.shape[0], channels, rank))
                 white_uncertainty = self._whiten(uncertainty).reshape(len(y) * channels, rank)
+                uncertainty_error = _roundoff_gamma(design.shape[1])*float(np.linalg.norm(
+                    np.einsum("nk,kcr->ncr", np.abs(design),
+                        np.abs(factor).reshape(response.mean.shape[0], channels, rank))))
+                white_uncertainty_error = _score_whitening_error(self, uncertainty,
+                    white_uncertainty.reshape(uncertainty.shape), uncertainty_error, map_geometry)
             else:
                 white_uncertainty = np.empty((len(y) * channels, 0))
+                white_uncertainty_error = 0.
+            # The actual frozen covariance image is already the full proper
+            # latent prior chart. Reuse record Z-QR only for numerical admission;
+            # the raw prefix/tail conditional posterior below is unchanged.
+            centering_error = _roundoff_gamma(1)*float(
+                _column_norms((np.abs(white_y)+np.abs(white_mean)).reshape(-1, 1))[0])
+            _, _, resolution = _project_diffuse_arrays(white_uncertainty, residual, white_nuisance,
+                nuisance_q, nuisance_root, nuisance_scales, geometry=projection_geometry,
+                response_source_error=centering_error)
             matrix = np.column_stack((white_uncertainty, white_nuisance))
-            prefix_mean, prefix_root = _posterior_qr(matrix[:prefix_rows], residual[:prefix_rows], proper_root)
+            prefix_rhs, prefix_root, prefix_q, prefix_smallest = _posterior_qr(
+                matrix[:prefix_rows], residual[:prefix_rows], proper_root)
             tail_design, tail_y = matrix[prefix_rows:], residual[prefix_rows:]
-            q, full_root = np.linalg.qr(np.vstack((tail_design, prefix_root)), mode="reduced")
-            full_mean = solve_triangular(full_root,
-                q.T @ np.r_[tail_y, prefix_root @ prefix_mean])
+            full_design = np.vstack((tail_design, prefix_root))
+            full_y = np.r_[tail_y, prefix_rhs]
+            q, full_root = np.linalg.qr(full_design, mode="reduced")
+            full_rhs = q.T@full_y
+            full_mean = solve_triangular(full_root, full_rhs)
             remaining = tail_y - tail_design @ full_mean
-            shift = prefix_root @ (full_mean - prefix_mean)
+            # c_p=R_p mu_p encodes the same raw-prefix proper+flat posterior.
+            # Avoid subtracting two large nuisance means before applying R_p.
+            shift = prefix_root@full_mean-prefix_rhs
             quadratic = float(remaining @ remaining + shift @ shift)
+            conditional_resolution = _conditional_score_resolution(
+                matrix, residual, proper_root, prefix_rows, prefix_q, prefix_root,
+                prefix_smallest, full_design, full_y, q, full_root, full_rhs, full_mean,
+                remaining, shift, quadratic,
+                white_uncertainty_error+nuisance_error,
+                white_y_error+white_mean_error+centering_error)
             logdet = float(2 * (np.log(np.abs(np.diag(full_root))).sum()
                                - np.log(np.abs(np.diag(prefix_root))).sum()))
             noise_logdet = 2 * np.log(np.diag(self._spatial_root)).sum()
@@ -713,13 +774,14 @@ class FittedChannelNoise:
             densities.append(float(density))
             diagnostics.append({"quadratic": quadratic, "predictive_logdet": logdet,
                                 "prefix_information_condition": float(np.linalg.cond(prefix_root)),
-                                "kernel_uncertainty_columns": rank})
+                                "kernel_uncertainty_columns": rank,
+                                "diffuse_projection_resolution": resolution,
+                                "conditional_numerical_resolution": conditional_resolution})
         evidence = np.asarray(densities) + np.log(prior)
         log_probability = evidence - logsumexp(evidence)
         probability = np.exp(log_probability)
         maxima = np.flatnonzero(np.isclose(evidence, evidence.max(), rtol=0, atol=1e-10))
         pairs = []
-        nuisance_q, _ = np.linalg.qr(white_nuisance, mode="reduced")
         white_means = np.asarray(white_means)
         projected_means = white_means - (white_means @ nuisance_q) @ nuisance_q.T
         for left in range(len(ids)):
@@ -969,6 +1031,289 @@ def _response_nuisance_qr(z, *, require_prefix=None):
     return q, root, scales
 
 
+class DiffuseProjectionResolutionError(UnidentifiableFitError):
+    """The supplied finite diffuse quotient cannot resolve the likelihood."""
+
+
+@dataclass(frozen=True)
+class DiffuseProjection:
+    design: np.ndarray
+    response: np.ndarray
+    nuisance_q: np.ndarray
+    nuisance_root: np.ndarray
+    nuisance_scales: np.ndarray
+    resolution: dict
+
+
+def _roundoff_gamma(operations):
+    product = operations*np.finfo(float).eps
+    if product >= 1:
+        raise DiffuseProjectionResolutionError("diffuse projection arithmetic has no finite error bound")
+    return product/(1-product)
+
+
+def _score_whitening_geometry(noise):
+    """Fixed numerical-map error geometry, computed once for the held record."""
+    roots = (noise.compiled_prefix_root, noise._spatial_root)
+    result = []
+    for root in roots:
+        inverse = solve_triangular(root, np.eye(len(root)), lower=True)
+        inverse_norm = float(np.linalg.norm(np.abs(inverse), ord=2))
+        root_norm = float(np.linalg.norm(np.abs(root), ord=2))
+        perturbation = _roundoff_gamma(len(root))*inverse_norm*root_norm
+        if not np.isfinite(perturbation) or perturbation >= 1:
+            raise DiffuseProjectionResolutionError("conditional whitening solve is numerically unresolved")
+        result.append((inverse_norm/(1-perturbation), root_norm))
+    # Each PARCOR forward/backward pair has norm <=1+|k|. Initial
+    # duplicated history has norm <=sqrt(2); discarded rows only contract it.
+    lattice_gain = max(float(np.sqrt(2)*np.prod(1+np.abs(item.reflection_coefficients)))
+                       if item.order else 1. for item in noise.temporal)
+    return (*result, lattice_gain)
+
+
+def _score_whitening_error(noise, raw, white, source_error, geometry):
+    """Normwise source/lattice/triangular-solve roundoff estimate, not a new map."""
+    (prefix_inverse, prefix_root), (spatial_inverse, spatial_root), gain = geometry
+    cut = noise.conditioning_samples
+    prefix_error = prefix_inverse*(source_error+_roundoff_gamma(cut*len(noise.temporal))*
+                                  prefix_root*float(np.linalg.norm(white[:cut])))
+    lattice_error = gain*(source_error+_roundoff_gamma(2*noise.order)*float(np.linalg.norm(raw)))
+    tail_error = spatial_inverse*(lattice_error+_roundoff_gamma(len(noise.temporal))*
+                                 spatial_root*float(np.linalg.norm(white[cut:])))
+    return prefix_error+tail_error
+
+
+def _conditional_score_resolution(matrix, response, prior_root, cut, prefix_q, prefix_root,
+                                  prefix_smallest, full_design, full_y, full_q, full_root,
+                                  full_rhs, full_mean, remaining, shift, quadratic,
+                                  matrix_source_error, response_source_error):
+    """Estimate absolute raw conditional log-density error in its actual chart.
+
+    QR reconstruction and source-scale errors perturb the prefix R,c_p, then
+    the augmented tail least-squares problem. If ||delta A||<sigma_min(A),
+    any perturbed minimizer has norm <=(||b||+||delta b||)/(sigma_min-||delta A||).
+    Thus its residual norm moves by at most e=||delta b||+||delta A||*max||theta||,
+    and |delta q| <=2||r||e+e^2, plus actual residual/dot arithmetic.
+    Determinants use the corresponding singular-value perturbation bound.
+
+    The explicit policy is sqrt(eps) nats per actual tail scalar row. These
+    normwise floating-point estimates cover this chart/map/QR program under
+    ordinary arithmetic assumptions; they are not an all-input interval
+    certificate, a posterior accuracy claim, or the full quotient admission.
+    """
+    width = matrix.shape[1]
+    prefix_design = np.vstack((matrix[:cut], prior_root))
+    prefix_y = np.r_[response[:cut], np.zeros(len(prior_root))]
+    prefix_error = matrix_source_error+float(np.linalg.norm(prefix_design-prefix_q@prefix_root))
+    prefix_error += _roundoff_gamma(width)*float(np.linalg.norm(np.abs(prefix_q)@np.abs(prefix_root)))
+    prefix_relative = prefix_error/prefix_smallest
+    if not np.isfinite(prefix_relative) or prefix_relative >= 1:
+        raise DiffuseProjectionResolutionError("raw conditional prefix posterior is numerically unresolved")
+    q_error = (2*prefix_relative/(1-prefix_relative)
+               +float(np.linalg.norm(prefix_q.T@prefix_q-np.eye(width), ord=2))
+               +_roundoff_gamma(len(prefix_q))*float(np.linalg.norm(np.abs(prefix_q).T@np.abs(prefix_q), ord=2)))
+    root_error = prefix_error+q_error*float(np.linalg.norm(prefix_design))
+    prefix_root_relative = root_error/prefix_smallest
+    if not np.isfinite(prefix_root_relative) or prefix_root_relative >= 1:
+        raise DiffuseProjectionResolutionError("raw conditional compressed prefix root is numerically unresolved")
+    rhs_error = response_source_error+(q_error+_roundoff_gamma(len(prefix_q)))*float(np.linalg.norm(prefix_y))
+    design_error = matrix_source_error+root_error+float(np.linalg.norm(full_design-full_q@full_root))
+    design_error += _roundoff_gamma(width)*float(np.linalg.norm(np.abs(full_q)@np.abs(full_root)))
+    full_orthogonality = (float(np.linalg.norm(full_q.T@full_q-np.eye(width), ord=2))
+        +_roundoff_gamma(len(full_q))*float(np.linalg.norm(np.abs(full_q).T@np.abs(full_q), ord=2)))
+    if not np.isfinite(full_orthogonality) or full_orthogonality >= 1:
+        raise DiffuseProjectionResolutionError("raw conditional tail QR is numerically unresolved")
+    projected_error = (_roundoff_gamma(len(full_y))*float(np.linalg.norm(full_y))
+        +float(np.linalg.norm(full_root@full_mean-full_rhs))
+        +_roundoff_gamma(width)*float(np.linalg.norm(np.abs(full_root)@np.abs(full_mean))))
+    # Q.T Q=S: the true least-squares R theta is S^-1 Q.T b, whereas
+    # the computed solve uses Q.T b. Account for this optimality defect.
+    optimality_error = np.sqrt(1+full_orthogonality)/(1-full_orthogonality)*(
+        projected_error+full_orthogonality*float(np.linalg.norm(full_root@full_mean)))
+    data_error = response_source_error+rhs_error+optimality_error
+    smallest = float(np.linalg.svd(full_root, compute_uv=False)[-1])*np.sqrt(1-full_orthogonality)
+    relative = design_error/smallest
+    if not np.isfinite(relative) or relative >= 1:
+        raise DiffuseProjectionResolutionError("raw conditional tail posterior is numerically unresolved")
+    coefficient_norm = max(float(np.linalg.norm(full_mean)),
+                           (float(np.linalg.norm(full_y))+data_error)/(smallest-design_error))
+    residual_error = data_error+design_error*coefficient_norm
+    residual_error += _roundoff_gamma(width+1)*(
+        float(np.linalg.norm(np.abs(full_y)+np.abs(full_design)@np.abs(full_mean))))
+    quadratic_error = (2*np.sqrt(quadratic)*residual_error+residual_error**2
+                       +_roundoff_gamma(len(remaining)+len(shift))*quadratic)
+    logdet_error = 2*width*(-np.log1p(-relative)-np.log1p(-prefix_root_relative))
+    logdet_error -= width*np.log1p(-full_orthogonality)
+    logdet_error += _roundoff_gamma(width+1)*float(
+        np.sum(np.abs(np.log(np.abs(np.diag(prefix_root)))))
+        +np.sum(np.abs(np.log(np.abs(np.diag(full_root))))))
+    tail_rows = len(response)-cut
+    error = float(.5*(quadratic_error+logdet_error)+_roundoff_gamma(3)*(quadratic+tail_rows))
+    target = float(tail_rows*np.sqrt(np.finfo(float).eps))
+    if not np.isfinite(error) or error > target:
+        raise DiffuseProjectionResolutionError(
+            "raw conditional log-density is numerically unresolved: "
+            f"absolute error estimate {error:.6g} exceeds {tail_rows}-row budget {target:.6g}")
+    return {"method": "raw_intercept_chart_prefix_QR_conditional_error_estimate",
+            "absolute_log_density_error_estimate": error, "absolute_log_density_error_budget": target,
+            "actual_tail_scalar_rows": tail_rows, "quadratic_error_estimate": float(quadratic_error),
+            "prefix_matrix_relative_error_estimate": float(prefix_relative),
+            "compressed_prefix_root_relative_error_estimate": float(prefix_root_relative),
+            "tail_matrix_relative_error_estimate": float(relative),
+            "full_QR_orthogonality_error_estimate": float(full_orthogonality),
+            "original_raw_identity_preserved": True, "all_input_certificate": False}
+
+
+def _column_norms(values):
+    """Scaled Euclidean norms, including zero columns, without squaring volts."""
+    maxima = np.max(np.abs(values), axis=0, initial=0.)
+    normalized = values/np.where(maxima == 0, 1., maxima)
+    return maxima*np.sqrt(np.sum(normalized*normalized, axis=0))
+
+
+def project_diffuse_nuisance(design, response, nuisance, *, prior_factor,
+                             prior_mean=None, require_prefix=None, response_reference_scale=1.):
+    """Project one whitened record and assess its original numerical scale.
+
+    ``prior_factor @ prior_factor.T`` must be the complete proper coefficient
+    covariance in the supplied design coordinates. For an already standardized
+    prior chart it is I. The response is in noise units; a scalar noise shape
+    must therefore already have been applied to both design and response.
+    ``response_reference_scale`` is 1 for a fixed Gaussian likelihood. A
+    Gamma(nu/2,nu/2) scale mixture uses min(1,sqrt(nu)): the rate reference must
+    retain both its small-nu rate and the Gaussian noise-unit limit at large nu.
+
+    Small output residuals do not certify accuracy. We estimate source-scale
+    QR/subspace and multiplication errors, then bound their effect relative to
+    [diag(I,response_reference_scale); projected (D F, y-D m)]. This retains
+    the proper prior chart and the declared response rate/noise reference.
+    The sqrt(eps) resolution target retains half the binary64
+    significant digits in this augmented norm; pure-null roundoff then has at
+    most eps squared-likelihood information. Nothing is clipped or rank-dropped.
+    This is a conservative floating-point admission estimate, not an interval
+    arithmetic certificate for all underlying whitening operations.
+    """
+    d, y, z = (_array(value, name, ndim) for value, name, ndim in (
+        (design, "whitened response design", 2), (response, "whitened response", 1),
+        (nuisance, "whitened diffuse design", 2)))
+    factor = _array(prior_factor, "complete proper prior covariance factor", 2)
+    width = d.shape[1]
+    mean = np.zeros(width) if prior_mean is None else _array(prior_mean, "proper prior mean", 1)
+    if (len(d) != len(y) or len(z) != len(y) or factor.shape != (width, width)
+            or mean.shape != (width,) or z.shape[1] > len(z)):
+        raise ValueError("diffuse projection requires consistent complete proper-prior coordinates")
+    if (isinstance(response_reference_scale, (bool, np.bool_))
+            or not np.isscalar(response_reference_scale)
+            or not np.isfinite(response_reference_scale) or not 0 < response_reference_scale <= 1):
+        raise ValueError("diffuse projection response rate reference must be positive and retain one noise unit")
+    if width:
+        _response_resolved_root(factor, "complete proper prior covariance factor")
+    q, root, scales = _response_nuisance_qr(z, require_prefix=require_prefix)
+    projected_d, projected_y, resolution = _project_diffuse_arrays(d, y, z, q, root, scales,
+        factor=factor, mean=mean, response_reference_scale=response_reference_scale)
+    return DiffuseProjection(frozen_array(projected_d), frozen_array(projected_y),
+        frozen_array(q), frozen_array(root), frozen_array(scales), freeze_metadata(resolution))
+
+
+def _diffuse_qr_geometry(z, q, root, scales):
+    """One source-scale nuisance geometry, reusable across actual candidates."""
+    if z.shape[1] == 0 or z.shape[1] == len(z):
+        return None
+    normalized_z = z/scales
+    reconstruction = float(np.linalg.norm(normalized_z-q@root, ord=2))
+    reconstruction += _roundoff_gamma(len(scales)+1)*float(
+        np.linalg.norm(np.abs(q)@np.abs(root), ord=2))
+    smallest = float(np.linalg.svd(root, compute_uv=False)[-1])
+    subspace = reconstruction/smallest
+    orthogonality = float(np.linalg.norm(q.T@q-np.eye(len(scales)), ord=2))
+    absolute_q_squared_norm = float(np.linalg.norm(np.abs(q).T@np.abs(q), ord=2))
+    orthogonality += _roundoff_gamma(len(z))*absolute_q_squared_norm
+    if not np.isfinite(subspace) or subspace >= 1:
+        raise DiffuseProjectionResolutionError("diffuse nuisance subspace is numerically unresolved")
+    projector_error = (2*subspace+subspace*subspace)/(1-subspace)+orthogonality
+    arithmetic_error = _roundoff_gamma(2*len(z)+2*len(scales)+4)*(1+absolute_q_squared_norm)
+    return subspace, orthogonality, projector_error, arithmetic_error
+
+
+def _project_diffuse_arrays(d, y, z, q, root, scales, *, factor=None, mean=None,
+                            geometry=None, response_reference_scale=1., response_source_error=0.):
+    """Owned, validated arrays only; factor=None denotes the actual prior chart.
+
+    Scoring reuses its one record QR and geometry. Admission never substitutes
+    this quotient for the conditional raw-tail proper+diffuse posterior.
+    """
+    width = d.shape[1]
+    if z.shape[1] == len(z):
+        # Full observed nuisance span: the quotient is structurally zero.
+        projected_d, projected_y = np.zeros_like(d), np.zeros_like(y)
+        resolution = {"method": "full_observed_nuisance_span_structural_zero",
+                      "normalized_error_bound": 0., "structural_zero": True}
+    elif z.shape[1] == 0:
+        projected_d, projected_y = d.copy(), y.copy()
+        resolution = {"method": "no_diffuse_projection", "normalized_error_bound": 0.,
+                      "structural_zero": False}
+    else:
+        projected_d, projected_y = d-q@(q.T@d), y-q@(q.T@y)
+        if factor is None:
+            chart, projected = np.column_stack((d, y)), np.column_stack((projected_d, projected_y))
+        else:
+            chart = np.column_stack((d@factor, y-d@mean))
+            projected = np.column_stack((projected_d@factor, projected_y-projected_d@mean))
+        subspace, orthogonality, projector_error, arithmetic_error = (
+            _diffuse_qr_geometry(z, q, root, scales) if geometry is None else geometry)
+        source_norms = _column_norms(chart)
+        errors = projector_error*source_norms
+        # Full nonorthogonal prior factors and centered-response operands are
+        # included; column maxima of a precision root are not prior deviations.
+        if factor is not None:
+            absolute_chart_design = np.abs(d)@np.abs(factor)
+            absolute_chart_response = np.abs(y)+np.abs(d)@np.abs(mean)
+            # Projecting raw D before the full F pullback can amplify roundoff
+            # hidden by cancellation in D F. Bound arithmetic in its actual
+            # original operands, rather than treating those operations as exact.
+            errors[:width] += arithmetic_error*_column_norms(absolute_chart_design)
+            errors[-1] += arithmetic_error*float(_column_norms(absolute_chart_response[:, None])[0])
+            multiply_error = _roundoff_gamma(width+1)
+            errors[:width] += multiply_error*(_column_norms(absolute_chart_design)
+                +_column_norms(np.abs(projected_d)@np.abs(factor)))
+            errors[-1] += multiply_error*(float(_column_norms(y[:, None])[0])
+                +float(_column_norms((np.abs(d)@np.abs(mean))[:, None])[0])
+                +float(_column_norms(projected_y[:, None])[0])
+                +float(_column_norms((np.abs(projected_d)@np.abs(mean))[:, None])[0]))
+        else:
+            errors += arithmetic_error*source_norms
+        errors[-1] += response_source_error
+        if not np.isfinite(projected).all() or not np.isfinite(errors).all():
+            raise DiffuseProjectionResolutionError("diffuse prior/noise chart is not representable")
+        target = float(np.sqrt(np.finfo(float).eps))
+        floor_errors = errors.copy()
+        floor_errors[-1] /= response_reference_scale
+        normalized_error = float(np.linalg.norm(floor_errors))
+        reference_method = "proper_prior_and_noise_floor_bound"
+        if normalized_error > target:
+            # Strong, genuinely retained information can resolve large input
+            # amplitudes. Only this case needs another augmented QR.
+            reference_floor = np.eye(width+1)
+            reference_floor[-1, -1] = response_reference_scale
+            reference = np.linalg.qr(np.vstack((reference_floor, projected)), mode="r")
+            inverse = solve_triangular(reference, np.eye(width+1))
+            normalized_error = float(np.linalg.norm(errors@np.abs(inverse)))
+            reference_method = "projected_augmented_reference_QR"
+        if not np.isfinite(normalized_error) or normalized_error > target:
+            raise DiffuseProjectionResolutionError(
+                "diffuse projection is unresolved in the complete proper-prior/noise chart: "
+                f"source-scale error bound {normalized_error:.6g} exceeds binary64 resolution {target:.6g}")
+        resolution = {"method": "source_scale_thin_QR_complete_prior_noise_chart",
+                      "normalized_error_bound": normalized_error, "resolution_target": target,
+                      "source_chart_column_norms": source_norms.tolist(),
+                      "chart_column_error_bounds": errors.tolist(),
+                      "response_reference_scale": float(response_reference_scale),
+                      "reference_method": reference_method,
+                      "subspace_error_reference": subspace,
+                      "orthogonality_error_reference": orthogonality, "structural_zero": False}
+    return projected_d, projected_y, resolution
+
+
 @dataclass(frozen=True)
 class _ResponseLikelihoodRecord:
     raw: ResponseFitRecord
@@ -1037,6 +1382,7 @@ def _fit_response_likelihood_core(prior, records, likelihood_records, *, geometr
                     and max(left[0], right[0]) < min(left[1], right[1])):
                 raise ValueError("response C records duplicate actual physical observation support")
     width, channels = prior.mean.size, len(prior.geometry.channels)
+    prior_factor = np.linalg.solve(prior.precision_root, np.eye(width))
     scales = np.max(np.abs(prior.precision_root), axis=0)
     augmented = np.column_stack((prior.precision_root/scales,
                                   prior.precision_root@prior.mean.ravel()))
@@ -1051,9 +1397,11 @@ def _fit_response_likelihood_core(prior, records, likelihood_records, *, geometr
                 or compiled.map_binding["actual_raw_record"] != freeze_metadata(row.ledger())
                 or compiled.map_binding["white_map_sha256"] != array_digest(y, design, z)):
             raise ValueError("compiled C maps changed after their actual producer validation")
-        qz, rz, zscales = _response_nuisance_qr(z, require_prefix=conditioning_samples*channels)
+        quotient = project_diffuse_nuisance(design, y, z, prior_factor=prior_factor,
+            prior_mean=prior.mean.ravel(), require_prefix=conditioning_samples*channels)
+        qz, rz, zscales = quotient.nuisance_q, quotient.nuisance_root, quotient.nuisance_scales
         zy, zd = qz.T@y, qz.T@design
-        projected_y, projected_d = y-qz@zy, design-qz@zd
+        projected_y, projected_d = quotient.response, quotient.design
         update = np.column_stack((projected_d/scales, projected_y))
         record_root = np.linalg.qr(update, mode="r")
         information = record_root[:, :width]*scales
@@ -1069,6 +1417,7 @@ def _fit_response_likelihood_core(prior, records, likelihood_records, *, geometr
                             "information_response_sha256": array_digest(record_response),
                             "compressed_augmented_root_sha256": array_digest(compressed),
                             "nuisance_coordinates": z.shape[1],
+                            "diffuse_projection_resolution": quotient.resolution,
                             "map_producer": compiled.map_binding})
     normalized_root, rhs = compressed[:width, :width], compressed[:width, width]
     _response_resolved_root(normalized_root, "given-noise physical posterior")
