@@ -372,6 +372,7 @@ source checkpoint先对实际CPU payload执行不保留buffer的Torch序列化�
 `PreparedSourceStorage`仍负责resident/decoded临时内存。写盘不足须在覆盖前拒绝，真实失败后留下的partial继续按实际字节计费。
 固定名单中的旧派生cache先按原build SHA流式压缩，再逐字节解压还原核验；删除由同一`SourceInputAdmission.remove_external_file`执行。
 该接口重核mode/dev/inode/size/mtime/ctime，仅删除不被任何named file、temporary或目录lease覆盖的外部regular file；同路径只可回收一次。
+unlink成功先登记removed事实与同路径guard；随后free探测失败保即时信用0、未确认延期上界，由原OSError携小收据，adapter保存真实删除与可恢复archive来源后原样抛错。二次journal失败附诊断note，由原worker stderr保存；不声称durable receipt已更新。
 即时磁盘信用取最后link的实际分配块与删除前后实测free增量的较小值；未释放部分只记为 deferred upper bound，不直接提升可用容量。
 每次新申请重新读取实际free，并保留所有live snapshot和uncommitted artifact reservation；tmpfs回收不扩固定RAM staging。
 raw、model和唯一evidence不属于此清理名单；压缩/删除失败保留原件和surviving partial。

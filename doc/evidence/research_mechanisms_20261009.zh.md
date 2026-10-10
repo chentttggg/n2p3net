@@ -157,6 +157,12 @@ C状态重建的最高8个信息方向与endpoint value/first-difference rowspac
 
 长记录已接原`joint_response_scale/sampling`，一个factory-owned增广QR载荷同时服务有限积分与唯一Gibbs循环；采样重复Gram/linear/白化堆栈已移除。原scalar行数、Jacobian、完整residual行、同prior/noise chart及实际full/prefix/tail分别绑定。新增actual raw Y/D字节流先于prior变换记录；独立wrong-prefix反例中D的原区别曾被变换舍入抹掉，现明确拒绝，reader分块不改digest。β解析估计器使用同targeted joint λ posterior，公开边界核一次，已准入内部state不在每draw重核大数组。正式载荷仍只支持proper无nuisance；flat长记录编译/概率参考不被改签为已接采样或产品持久包。
 
+实际长记录score独立审计确认：锁定7975×8 synthetic fixture在现行完整投影界下为`1.667340921211915e-8`，高于原`sqrt(eps)=1.4901161193847656e-8`，因此当前typed unresolved正确，不能用测得Q正交误差代替误差界。保留原QR geometry、按每次dot实际长度传播的operation-wise候选，在界自身向外舍入后最差为`7.272170714528766e-9`；64组90位原oracle与45组110位后续oracle各验证投影算术，不相加为完整score验收。后续仅本机OpenBLAS的准备/QR线程变体，未证明跨backend、AR32、真实MAT、conditional gate或公共效能；候选进入独立科研切片，不追签现行source。报告在本地`tmp/FINAL_SCORE_GATE_RESEARCH/`。
+
+flat nuisance范围审查完成，通用proper compiler/sampler仍不支持该载荷，窄Gaussian及dense小矩阵参考继续独立解释。跨通道共享常数的n4/c2反例中，raw单系数rank1与现有逐通道系数rank2模型的log marginal相差`1.5723649429246995` nats，证明两者不能借接口同名混用，未判定窄接口有bug。长记录接线须显式raw Z、rank/n_eff/flat volume、full/prefix/tail共同measure及序列化来源门；本轮没有生产化flat sampler或产品包。独立报告在本地`tmp/FINAL_FLAT_NUISANCE_AUDIT/`。
+
+冷回收后置切片经独立Spec反例确认ff4的真实P2：unlink成功后free探测OSError使ledger漏记删除，同路径重建可能再次被删除，archive journal仍错误报告未删。最终source`0a066fce…`在unlink后立即登记事实/guard和已知延期上界，未知free保持即时信用0；原OSError携小收据跨实际Manager RPC，adapter保存真实删除状态，二次journal失败只附note并沿原worker stderr保存。独立Spec/Standards新增hunk零遗留，作者20项受影响测试保原source；canonical四文件逐字节匹配后另实际验证相关41项全部通过，Ruff/diff检查通过。旧30/5/31记录不追签修后版本；Linux挂载、真实冷盘清理和吞吐仍未执行，493与旧final5保原身份。
+
 ## B05 固定物理先验 1728 格终态
 
 原中断后的只读恢复已完成全部 `48 units × 36 controls = 1728/1728` logical cells。1345 个原完成记录未重算；恢复新增330次实际物理拟合和53个精确别名，得到1488个唯一数值状态、240个最终逻辑别名。4022项源码/输入/原模型/MAT/旧产物绑定逐项核对，全部来源与数组保存态一致；无数值拟合失败、无新 held score、无噪声重拟合。原一次未收到完整科学回执的 started attempt 保持 unknown，物理尝试只报已知下界1489，不把未记录次数伪造为零。

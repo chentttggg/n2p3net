@@ -34,6 +34,8 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
 | B14 工程/吞吐 | B12同资源owner/完整requested账、实际源码保存与同call重复扫描退役 | B12共享数据/rolling资源排程、云实际25CPU/4GPUworkers |
 
+2026-10-10两个独立范围审查已结束：actual-length raw score按现行数值界保持typed unresolved；operation-wise投影界只进入独立科研切片。flat nuisance仍为小矩阵reference，通用proper sampler和产品包不准入。下一步可在本地研究更紧的可证伪误差传播，无需等待云端或重跑1728矩阵；Linux工程门禁与公共效能保各自未完成出口，见[本轮机制证据](evidence/research_mechanisms_20261009.zh.md)。
+
 B08 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已落实full-rank软件路径与真实prior/fit/package关系，主线整合全集2604/19及独立Spec/Standards通过；[参考能量匹配对照](evidence/prior_control_20261006.zh.md)随后完成实施、两轴质量及合并全集2670/19，完整1344格归因矩阵按冻结程序执行。当时的dynamic prior、quotient/completion、K0与新效能矩阵未由该旧运行完成；当前quotient/completion软件出口见[本轮机制](evidence/research_mechanisms_20261009.zh.md)，冻结M1保持原解释。
 首次1344运行因A02后验核验病态而受控停止，101原包及失败捕获保留；原gate误判经独立actual-W QR/SVD与held读数核实，已改QR-RHS/后向关系及peer-abort调度，40项必要验证通过。完整矩阵由[新计划](assets/prior_control_20261006/plan_v2.json)同1344科学/资源格重新执行；原包不改签为新source，整体结果未完成。
 

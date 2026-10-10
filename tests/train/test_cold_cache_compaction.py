@@ -102,3 +102,52 @@ def test_failed_archival_preserves_original_and_charges_surviving_partial(tmp_pa
     assert archive.exists()
     lease = owner.record()["active_leases"][0]
     assert lease["committed"] and lease["disk_bytes"] >= archive.stat().st_size > 0
+
+
+@pytest.mark.parametrize("journal_failure", [False, True])
+def test_after_unlink_sensor_failure_preserves_truthful_archive_receipt_and_primary_error(
+    tmp_path, monkeypatch, journal_failure,
+):
+    owner, inputs, output, name, original, payload, _, _ = _inactive_pool(tmp_path, monkeypatch)
+    primary = OSError("actual disk sensor failed after successful unlink")
+    sensor = source_execution.shutil.disk_usage
+
+    def probe(path):
+        if not original.exists():
+            raise primary
+        return sensor(path)
+
+    monkeypatch.setattr(source_execution.shutil, "disk_usage", probe)
+    if journal_failure:
+        original_write = owner.write_json
+        calls = 0
+
+        def journal(path, entry):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise OSError("secondary removal journal write failed")
+            return original_write(path, entry)
+
+        monkeypatch.setattr(owner, "write_json", journal)
+    with pytest.raises(OSError) as captured:
+        compact_cold_caches._compact_one(owner, inputs, output, name)
+    assert captured.value is primary and not original.exists()
+    archive = output / name / (name + ".npz.gz")
+    assert gzip.decompress(archive.read_bytes()) == payload
+    removal = owner.record()["external_file_reclaims"][0]
+    assert removal["removed"] and removal["credited_bytes"] == 0
+    assert removal == primary.external_file_removal
+    if journal_failure:
+        note = primary.__notes__[0]
+        assert "secondary removal journal write failed" in note
+        entry = json.loads(note.split("confirmed archive/removal receipt: ", 1)[1])
+    else:
+        entry = json.loads((output / name / "receipt.json").read_bytes())
+    assert entry["original_removed"] and entry["removal"] == removal
+    assert entry["archive_sha256"] == hashlib.sha256(archive.read_bytes()).hexdigest()
+    assert entry["original_sha256"] == hashlib.sha256(payload).hexdigest()
+    assert entry["build_sha256"] == hashlib.sha256((inputs / (name + ".build.json")).read_bytes()).hexdigest()
+    assert entry["record_sha256"] == hashlib.sha256((inputs / (name + ".record.json")).read_bytes()).hexdigest()
+    state = owner.record()
+    assert state["active_leases"][0]["committed"] and state["active_leases"][0]["disk_bytes"] >= archive.stat().st_size

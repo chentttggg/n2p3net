@@ -5,9 +5,11 @@ import multiprocessing
 import os
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
+from multiprocessing.managers import SyncManager
 from pathlib import Path
 from threading import Barrier, Event
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 
@@ -332,3 +334,160 @@ def test_real_manager_consumes_parent_stat_identity_and_records_removal(tmp_path
     assert not original.exists() and receipt["removed"]
     assert record["external_file_reclaims"] == [receipt]
     assert record["free_staging_bytes"] == 0
+
+
+@pytest.mark.parametrize("blocks,links,deferred", [(16, 1, 8192), (None, 1, 0), (16, 2, 0)])
+def test_after_unlink_probe_failure_records_removal_and_blocks_recreated_path(
+    tmp_path, monkeypatch, reclaim_owner, blocks, links, deferred,
+):
+    original = tmp_path / "old.npz"
+    expected, _ = _physical_file(monkeypatch, original, blocks=blocks, links=links, freed_bytes=0)
+    sensor = source_execution.shutil.disk_usage
+    primary = OSError("actual disk sensor failed after successful unlink")
+
+    def probe(path):
+        if not original.exists():
+            raise primary
+        return sensor(path)
+
+    monkeypatch.setattr(source_execution.shutil, "disk_usage", probe)
+    with pytest.raises(OSError) as captured:
+        reclaim_owner.remove_external_file(original, expected_stat=expected)
+    assert captured.value is primary and not original.exists()
+    record = reclaim_owner.record()
+    assert len(record["external_file_reclaims"]) == 1
+    receipt = record["external_file_reclaims"][0]
+    assert receipt == primary.external_file_removal
+    assert receipt["removed"] and receipt["credited_bytes"] == 0
+    assert receipt["deferred_allocation_upper_bound_bytes"] == deferred
+    assert receipt["free_after_bytes"] is None and receipt["observed_free_delta_bytes"] is None
+    assert receipt["probe_failure"] == {"type": "OSError", "message": str(primary)}
+    assert record["free_staging_bytes"] == 10
+    assert _filesystem(reclaim_owner)["reclaimed_bytes"] == 0
+    assert _filesystem(reclaim_owner)["deferred_reclaim_upper_bound_bytes"] == deferred
+    original.write_bytes(b"recreated same path")
+    with pytest.raises(ValueError, match="already reclaimed"):
+        reclaim_owner.remove_external_file(original, expected_stat=original.lstat())
+    assert original.exists() and reclaim_owner.record() == record
+
+
+def test_probe_failure_before_unlink_preserves_original_and_creates_no_removal(tmp_path, monkeypatch, reclaim_owner):
+    original = tmp_path / "old.npz"
+    expected, _ = _physical_file(monkeypatch, original)
+    primary = OSError("actual disk sensor failed before unlink")
+
+    def probe(path):
+        raise primary
+
+    monkeypatch.setattr(source_execution.shutil, "disk_usage", probe)
+    with pytest.raises(OSError) as captured:
+        reclaim_owner.remove_external_file(original, expected_stat=expected)
+    assert captured.value is primary and original.exists()
+    assert not hasattr(primary, "external_file_removal")
+    assert not reclaim_owner.record()["external_file_reclaims"]
+
+
+def test_unlink_failure_preserves_original_and_creates_no_removal(tmp_path, monkeypatch, reclaim_owner):
+    original = tmp_path / "old.npz"
+    expected, _ = _physical_file(monkeypatch, original)
+    primary = OSError("actual unlink failed")
+
+    def unlink(path, *args, **kwargs):
+        raise primary
+
+    monkeypatch.setattr(Path, "unlink", unlink)
+    with pytest.raises(OSError) as captured:
+        reclaim_owner.remove_external_file(original, expected_stat=expected)
+    assert captured.value is primary and original.exists()
+    assert not hasattr(primary, "external_file_removal")
+    assert not reclaim_owner.record()["external_file_reclaims"]
+    assert _filesystem(reclaim_owner)["reclaimed_bytes"] == 0
+    assert _filesystem(reclaim_owner)["deferred_reclaim_upper_bound_bytes"] == 0
+
+
+def test_after_unlink_sensor_failure_does_not_expand_ram(tmp_path, monkeypatch, reclaim_owner):
+    original = tmp_path / "old.npz"
+    expected, _ = _physical_file(monkeypatch, original)
+    monkeypatch.setattr(source_execution, "filesystem_uses_host_memory", lambda path: True)
+    with reclaim_owner.artifact_writer(tmp_path / "retained.npz", 6):
+        (tmp_path / "retained.npz").write_bytes(b"retain")
+    sensor = source_execution.shutil.disk_usage
+
+    def probe(path):
+        if not original.exists():
+            raise OSError("actual post-unlink disk probe failed")
+        return sensor(path)
+
+    monkeypatch.setattr(source_execution.shutil, "disk_usage", probe)
+    with pytest.raises(OSError):
+        reclaim_owner.remove_external_file(original, expected_stat=expected)
+    record = reclaim_owner.record()
+    assert record["free_staging_bytes"] == 4
+    assert _filesystem(reclaim_owner)["reclaimed_bytes"] == 0
+    assert _filesystem(reclaim_owner)["deferred_reclaim_upper_bound_bytes"] == 8192
+    assert record["active_leases"][0]["nbytes"] == 6
+
+
+def test_after_unlink_probe_failure_keeps_pending_physical_budget_bound(tmp_path, monkeypatch, reclaim_owner):
+    gib = 2**30
+    original = tmp_path / "old.npz"
+    expected, free = _physical_file(monkeypatch, original, blocks=10 * gib // 512, freed_bytes=0)
+    free["bytes"] = 45 * gib
+    sensor = source_execution.shutil.disk_usage
+    fault = {"enabled": True}
+
+    def probe(path):
+        if fault["enabled"] and not original.exists():
+            raise OSError("post-unlink free is unobserved")
+        return sensor(path)
+
+    monkeypatch.setattr(source_execution.shutil, "disk_usage", probe)
+    with reclaim_owner.artifact_writer(tmp_path / "first.npz", 10 * gib), reclaim_owner.artifact_writer(tmp_path / "second.npz", 10 * gib):
+        with pytest.raises(OSError, match="unobserved"):
+            reclaim_owner.remove_external_file(original, expected_stat=expected)
+        state = _filesystem(reclaim_owner)
+        assert state["reclaimed_bytes"] == 0
+        assert state["deferred_reclaim_upper_bound_bytes"] == 10 * gib
+        assert state["live_unsettled_reserved_bytes"] == 20 * gib
+        fault["enabled"] = False
+        with pytest.raises(ValueError, match="remaining shared filesystem"):
+            with reclaim_owner.artifact_writer(tmp_path / "overbook.npz", 30 * gib):
+                pytest.fail("post-sensor failure cannot turn unobserved D into available bytes")
+        free["bytes"] += 10 * gib
+        with reclaim_owner.artifact_writer(tmp_path / "allowed.npz", 30 * gib):
+            assert _filesystem(reclaim_owner)["live_unsettled_reserved_bytes"] == 50 * gib
+
+
+class _PostUnlinkProbeState(source_execution._SourceInputState):
+    """Inject the sensor failure inside the real Manager server."""
+
+    def remove_external_file(self, path, expected_identity, ram_backed, identity):
+        sensor = source_execution.shutil.disk_usage
+
+        def probe(directory):
+            if not Path(path).exists():
+                raise OSError("manager disk sensor failed after unlink")
+            return sensor(directory)
+
+        with patch.object(source_execution.shutil, "disk_usage", probe):
+            return super().remove_external_file(path, expected_identity, ram_backed, identity)
+
+
+SyncManager.register("PostUnlinkProbeState", _PostUnlinkProbeState)
+
+
+def test_real_manager_transports_confirmed_removal_on_original_oserror(tmp_path):
+    original = tmp_path / "old.npz"
+    original.write_bytes(b"exact archived bytes")
+    with multiprocessing.get_context("spawn").Manager() as manager:
+        owner = SourceInputAdmission(SimpleNamespace(SourceInputState=manager.PostUnlinkProbeState),
+                                     capacity_bytes=0, load_workers=1)
+        with pytest.raises(OSError, match="manager disk sensor failed after unlink") as captured:
+            owner.remove_external_file(original, expected_stat=original.lstat())
+        removal = captured.value.external_file_removal
+        assert removal["removed"] and removal["credited_bytes"] == 0
+        assert owner.record()["external_file_reclaims"] == [removal]
+        original.write_bytes(b"recreated original name")
+        with pytest.raises(ValueError, match="already reclaimed"):
+            owner.remove_external_file(original, expected_stat=original.lstat())
+        assert original.exists() and owner.record()["free_staging_bytes"] == 0

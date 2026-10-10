@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_final_source_manifest_pointer/1",
-  "integration_status": "integrated_final_source_freeze",
+  "integration_status": "integrated_post_unlink_pending_final_freeze",
   "integration_artifact": "tmp/FINAL_INTEGRATION/final_integration.json",
   "integration_artifact_sha256": "d5dd85d2b17e2b0387472b4ebff42c3f049dff6f74e6d167d8e0068a420e26af",
   "source_freeze": {
@@ -90,16 +90,21 @@
     "next_linux_scope": "targeted validation for new production members and remaining repaired failures; no automatic 491 full-suite re-run"
   },
   "cold_reclaim": {
-    "status": "accepted_software_scope_pending_linux_mount_validation",
-    "candidate_source_sha256": "ff4eeaf99ca2d649d474a7e55f49287cecb3130f902270fbc891bd25906d9301",
-    "compact_script_sha256": "5a8ff34594c0b94a3f3396ff774a8e0f29b1f59f973807e14301da86e0f33b9c",
+    "status": "accepted_post_unlink_software_scope_pending_linux_mount_validation",
+    "candidate_source_sha256": "0a066fce3c903a0f644895399d7bcb70719b6a75db635815fbec470e9e29de8a",
+    "compact_script_sha256": "a96a7f8ecc63347fe2425f92521614e5a1ceffb87068f6462301487c51c1b2ad",
     "tests": {
-      "external_reclaim_sha256": "382af714e8f68a52e0981afd1ab892c88bcc7cac074b5be73b266fc32a0213b0",
-      "cold_compaction_sha256": "3af480e7dc610e290f719eb98b62902a85bcd097dfbfd16e935baf726e72f095",
-      "cases_passed": 31
+      "external_reclaim_sha256": "e05721a4958bb584b049aa3abbfb7e984ee4a80f4887cd8222282f59a29adc33",
+      "cold_compaction_sha256": "12ed68e9e8760435f20f61dd4a0c9b33323d2e0a6e692df9ddb8ab4a080b87e7",
+      "cases_passed": 41,
+      "scope": "current canonical source related files; no historical count aggregation"
     },
     "contract": "instant credit=min(allocated,last-link observed-free-delta); deferred upper bound remains separate; every new admission rechecks actual free and live reservations; RAM capacity unchanged",
     "actual_cleanup_performed": false,
-    "linux_mount_validation": "pending"
-  }
+    "linux_mount_validation": "pending",
+    "previous_candidate_source_sha256": "ff4eeaf99ca2d649d474a7e55f49287cecb3130f902270fbc891bd25906d9301",
+    "post_unlink_integration": "tmp/FINAL_INTEGRATION/post_unlink_integration.json",
+    "post_unlink_integration_sha256": "3b4286fd287bc8304596ffc97e3102770d7a0f045a1616b334066d0c0be93482"
+  },
+  "source_freeze_role": "historical_pre_post_unlink_source; current executable freeze pending"
 }

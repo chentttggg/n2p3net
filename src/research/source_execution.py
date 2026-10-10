@@ -472,20 +472,29 @@ class _SourceInputState:
             # other hardlinks, and platforms lacking this field earn no credit.
             blocks = getattr(info, "st_blocks", None)
             allocated = blocks * 512 if blocks is not None else 0
-            target.unlink()
-            after = shutil.disk_usage(parent).free
             reclaimable = allocated if info.st_nlink == 1 else 0
-            credited = min(reclaimable, max(0, after - before))
-            deferred = reclaimable - credited
-            state["reclaimed_bytes"] += credited
-            state["deferred_reclaim_upper_bound_bytes"] += deferred
             receipt = {"path": path, "filesystem": key, "original_identity": expected_identity,
                 "allocated_bytes": allocated, "physical_blocks_known": blocks is not None,
-                "link_count": info.st_nlink, "free_before_bytes": before, "free_after_bytes": after,
-                "observed_free_delta_bytes": after - before,
-                "credited_bytes": credited, "deferred_allocation_upper_bound_bytes": deferred,
+                "link_count": info.st_nlink, "free_before_bytes": before, "free_after_bytes": None,
+                "observed_free_delta_bytes": None, "credited_bytes": 0,
+                "deferred_allocation_upper_bound_bytes": reclaimable,
                 "removed": True, **identity}
+            target.unlink()
+            # The unlink is irreversible. Commit its fact and path guard before
+            # the next sensor can fail; unobserved space remains only a D bound.
             self.reclaimed_paths[path] = receipt
+            state["deferred_reclaim_upper_bound_bytes"] += reclaimable
+            try:
+                after = shutil.disk_usage(parent).free
+            except OSError as error:
+                receipt["probe_failure"] = {"type": type(error).__name__, "message": str(error)}
+                error.external_file_removal = dict(receipt)
+                raise
+            credited = min(reclaimable, max(0, after - before))
+            state["reclaimed_bytes"] += credited
+            state["deferred_reclaim_upper_bound_bytes"] -= credited
+            receipt.update(free_after_bytes=after, observed_free_delta_bytes=after - before,
+                credited_bytes=credited, deferred_allocation_upper_bound_bytes=reclaimable - credited)
             return dict(receipt)
 
     def retire_task(self, task_id):
@@ -593,6 +602,8 @@ class SourceInputAdmission:
         The caller owns lossless archive verification and cleanup authorization.
         This method rejects named output overlap and rechecks the original inode
         identity before unlinking. Disk credit cannot enlarge fixed RAM staging.
+        A post-unlink probe OSError carries its confirmed external_file_removal
+        receipt so the caller can preserve the deletion journal before reraising.
         """
         path = Path(path)
         path = path.parent.resolve(strict=True) / path.name

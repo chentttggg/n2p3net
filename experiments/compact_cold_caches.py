@@ -61,7 +61,18 @@ def _compact_one(admission, inputs, output, name):
         admission.write_json(destination / "receipt.json", entry)
         # The parent ledger rechecks identity and rejects any named-output
         # overlap. Its narrow external-file credit cannot double-charge leases.
-        entry["removal"] = admission.remove_external_file(original, expected_stat=before)
+        try:
+            entry["removal"] = admission.remove_external_file(original, expected_stat=before)
+        except OSError as primary:
+            removal = getattr(primary, "external_file_removal", None)
+            if removal is not None:
+                entry.update(removal=removal, original_removed=True)
+                try:
+                    admission.write_json(destination / "receipt.json", entry)
+                except Exception as secondary:
+                    primary.add_note(f"removal journal publication failed: {secondary}; "
+                        f"confirmed archive/removal receipt: {json.dumps(entry, ensure_ascii=False)}")
+            raise
         entry["original_removed"] = True
         admission.write_json(destination / "receipt.json", entry)
     return entry
