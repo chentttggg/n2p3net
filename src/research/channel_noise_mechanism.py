@@ -1083,6 +1083,51 @@ def _score_whitening_error(noise, raw, white, source_error, geometry):
     return prefix_error+tail_error
 
 
+def _conditional_minimizer_norm(full_mean, matrix_norm, response_norm, smallest,
+                                design_error, data_error, optimality_error):
+    """Local minimizer perturbation bound, given the caller's resolved estimates.
+
+    For exact current minimizer theta and r=b-A theta, A.T r=0. The
+    perturbed minimizer obeys A'.T A' delta=A'.T(f-E theta)+E.T r.
+    Normwise input/singular-value estimates remain caller-owned; positive
+    arithmetic for this local relation is outward under the existing model.
+    No observed residual is substituted for a residual or optimality bound.
+    """
+    add, multiply = _projection_upper_add, _projection_upper_product
+
+    def ratio(numerator, denominator):
+        denominator = np.nextafter(denominator, -np.inf)
+        if not np.isfinite(denominator) or denominator <= 0:
+            raise DiffuseProjectionResolutionError("conditional minimizer separation is unresolved")
+        with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+            quotient = numerator/denominator
+        # A positive rounded zero is not structural zero. A rounded tiny can
+        # also conceal an exact subnormal quotient at the normal boundary.
+        if numerator > 0 and quotient <= np.finfo(float).tiny:
+            raise DiffuseProjectionResolutionError("conditional minimizer quotient may underflow")
+        return float(_projection_outward(quotient))
+
+    observed = float(_projection_norm_upper(np.abs(full_mean)[:, None])[0])
+    current = float(add(observed, ratio(optimality_error, smallest)))
+    # The caller's matrix differs from Q R by at most design_error. Include
+    # that remainder also in the reference norm before perturbing it again.
+    reference_norm = float(add(matrix_norm, design_error))
+    residual = float(add(response_norm, multiply(reference_norm, current)))
+    input_error = add(data_error, multiply(design_error, current))
+    numerator = add(multiply(add(reference_norm, design_error), input_error),
+                    multiply(design_error, residual))
+    separation = np.nextafter(smallest-design_error, -np.inf)
+    if separation <= 0 or not np.isfinite(separation):
+        raise DiffuseProjectionResolutionError("conditional minimizer separation is unresolved")
+    denominator = np.nextafter(separation*separation, -np.inf)
+    displacement = ratio(numerator, denominator)
+    local = float(add(current, displacement))
+    global_bound = ratio(add(response_norm, data_error), separation)
+    bound = max(observed, min(local, global_bound))
+    return bound, {"observed": observed, "current": current, "displacement": displacement,
+                   "local": local, "global": global_bound}
+
+
 def _conditional_score_resolution(matrix, response, prior_root, cut, prefix_q, prefix_root,
                                   prefix_smallest, full_design, full_y, full_q, full_root,
                                   full_rhs, full_mean, remaining, shift, quadratic,
@@ -1090,8 +1135,11 @@ def _conditional_score_resolution(matrix, response, prior_root, cut, prefix_q, p
     """Estimate absolute raw conditional log-density error in its actual chart.
 
     QR reconstruction and source-scale errors perturb the prefix R,c_p, then
-    the augmented tail least-squares problem. If ||delta A||<sigma_min(A),
-    any perturbed minimizer has norm <=(||b||+||delta b||)/(sigma_min-||delta A||).
+    the augmented tail least-squares problem. A normal-equation perturbation
+    relation bounds the perturbed minimizer around the current resolved one;
+    the QR optimality defect is included, rather than assuming measured theta
+    itself is an exact minimizer. The older ||b||/sigma bound remains a valid
+    independent cap; neither measured residual nor theta replaces an error bound.
     Thus its residual norm moves by at most e=||delta b||+||delta A||*max||theta||,
     and |delta q| <=2||r||e+e^2, plus actual residual/dot arithmetic.
     Determinants use the corresponding singular-value perturbation bound.
@@ -1135,8 +1183,12 @@ def _conditional_score_resolution(matrix, response, prior_root, cut, prefix_q, p
     relative = design_error/smallest
     if not np.isfinite(relative) or relative >= 1:
         raise DiffuseProjectionResolutionError("raw conditional tail posterior is numerically unresolved")
-    coefficient_norm = max(float(np.linalg.norm(full_mean)),
-                           (float(np.linalg.norm(full_y))+data_error)/(smallest-design_error))
+    # Frobenius norm upper-bounds ||A||_2; no second raw SVD/Gram program.
+    matrix_norm = float(_projection_norm_upper(
+        _projection_norm_upper(np.abs(full_design))[:, None])[0])
+    response_norm = float(_projection_norm_upper(np.abs(full_y)[:, None])[0])
+    coefficient_norm, minimizer_terms = _conditional_minimizer_norm(full_mean,
+        matrix_norm, response_norm, smallest, design_error, data_error, optimality_error)
     residual_error = data_error+design_error*coefficient_norm
     residual_error += _roundoff_gamma(width+1)*(
         float(np.linalg.norm(np.abs(full_y)+np.abs(full_design)@np.abs(full_mean))))
@@ -1154,13 +1206,18 @@ def _conditional_score_resolution(matrix, response, prior_root, cut, prefix_q, p
         raise DiffuseProjectionResolutionError(
             "raw conditional log-density is numerically unresolved: "
             f"absolute error estimate {error:.6g} exceeds {tail_rows}-row budget {target:.6g}")
-    return {"method": "raw_intercept_chart_prefix_QR_conditional_error_estimate",
+    return {"method": "raw_intercept_chart_prefix_QR_local_minimizer_error_estimate",
             "absolute_log_density_error_estimate": error, "absolute_log_density_error_budget": target,
             "actual_tail_scalar_rows": tail_rows, "quadratic_error_estimate": float(quadratic_error),
             "prefix_matrix_relative_error_estimate": float(prefix_relative),
             "compressed_prefix_root_relative_error_estimate": float(prefix_root_relative),
             "tail_matrix_relative_error_estimate": float(relative),
             "full_QR_orthogonality_error_estimate": float(full_orthogonality),
+            "observed_coefficient_norm_upper": minimizer_terms["observed"],
+            "current_minimizer_norm_estimate": minimizer_terms["current"],
+            "perturbed_minimizer_displacement_estimate": minimizer_terms["displacement"],
+            "local_coefficient_norm_estimate": minimizer_terms["local"],
+            "global_coefficient_norm_estimate": minimizer_terms["global"],
             "original_raw_identity_preserved": True, "all_input_certificate": False}
 
 
@@ -1169,6 +1226,128 @@ def _column_norms(values):
     maxima = np.max(np.abs(values), axis=0, initial=0.)
     normalized = values/np.where(maxima == 0, 1., maxima)
     return maxima*np.sqrt(np.sum(normalized*normalized, axis=0))
+
+
+def _projection_outward(values):
+    """Round positive normal results upward; retain an exact zero as zero."""
+    values = np.asarray(values, dtype=float)
+    if (not np.isfinite(values).all() or np.any(values < 0)
+            or np.any((values != 0) & (values < np.finfo(float).tiny))):
+        raise DiffuseProjectionResolutionError("projection error bound has nonnormal arithmetic")
+    result = np.where(values == 0, 0., np.nextafter(values, np.inf))
+    if not np.isfinite(result).all():
+        raise DiffuseProjectionResolutionError("projection error bound is not representable")
+    return result
+
+
+def _projection_gamma_upper(count):
+    # Shape counts below 2**53 have exact integer-to-binary64 conversion.
+    if not 0 <= count < 2**53:
+        raise DiffuseProjectionResolutionError("projection operation count is not representable")
+    if count == 0:
+        return 0.
+    product = float(_projection_outward(count*np.finfo(float).eps))
+    denominator = np.nextafter(1-product, -np.inf)
+    if denominator <= 0:
+        raise DiffuseProjectionResolutionError("projection arithmetic has no finite error bound")
+    return float(_projection_outward(product/denominator))
+
+
+def _projection_upper_product(left, right):
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        raw = np.multiply(left, right)
+    if np.any((np.asarray(left) > 0) & (np.asarray(right) > 0) & (raw == 0)):
+        raise DiffuseProjectionResolutionError("projection bound product underflowed")
+    return _projection_outward(raw)
+
+
+def _projection_upper_add(left, right):
+    with np.errstate(over="ignore", invalid="ignore"):
+        return _projection_outward(np.add(left, right))
+
+
+def _projection_reduction_upper(raw, count):
+    denominator = np.nextafter(1-_projection_gamma_upper(count), -np.inf)
+    if denominator <= 0:
+        raise DiffuseProjectionResolutionError("projection positive reduction is unresolved")
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        return _projection_outward(raw/denominator)
+
+
+def _projection_require_normal_products(left, right):
+    # A global minimum is conservative even with disjoint zero supports.
+    # This rejects possible hidden underflow before a positive dot reduction.
+    smallest_left = np.min(left, where=left > 0, initial=np.inf)
+    smallest_right = np.min(right, where=right > 0, initial=np.inf)
+    if np.isfinite(smallest_left) and np.isfinite(smallest_right):
+        with np.errstate(over="ignore", under="ignore"):
+            smallest_product = smallest_left*smallest_right
+        # A rounded tiny can conceal an exact subnormal product at the tie.
+        if smallest_product <= np.finfo(float).tiny:
+            raise DiffuseProjectionResolutionError("projection dot products may underflow")
+
+
+def _projection_upper_matmul(left, right):
+    _projection_require_normal_products(left, right)
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        raw = left@right
+    return _projection_reduction_upper(raw, left.shape[-1])
+
+
+def _projection_scaled_columns(values):
+    maxima = np.max(values, axis=0, initial=0.)
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        normalized = values/np.where(maxima == 0, 1., maxima)
+    if np.any((values > 0) & (normalized == 0)):
+        raise DiffuseProjectionResolutionError("projection column normalization underflowed")
+    return _projection_outward(normalized), maxima
+
+
+def _projection_norm_upper(values):
+    """Vectorized positive column norms with an outward reduction bound."""
+    normalized, maxima = _projection_scaled_columns(values)
+    squares = _projection_upper_product(normalized, normalized)
+    total = _projection_reduction_upper(np.sum(squares, axis=0), len(values))
+    return _projection_upper_product(maxima, _projection_outward(np.sqrt(total)))
+
+
+def _projection_arithmetic_columns(values, q, *, coefficients=None):
+    """Bound fl(X-Q fl(Q.T X))-exact(X-Q Q.T X), in stored Q coordinates.
+
+    Both positive matrix products used to compute the bound are rounded upward
+    under the same standard binary64 dot model as the existing gamma estimate.
+    Upward column normalization keeps 1e+/-200 operands away from squared overflow.
+    Nonnormal products that this model cannot certify fail explicitly.
+    """
+    absolute_values = np.abs(values)
+    absq = np.abs(q)
+    _projection_require_normal_products(absq, absolute_values)
+    coefficients = q.T@values if coefficients is None else coefficients
+    if not np.isfinite(coefficients).all():
+        raise DiffuseProjectionResolutionError("projection coefficients are not representable")
+    _projection_require_normal_products(absq, np.abs(coefficients))
+    absolute, scales = _projection_scaled_columns(absolute_values)
+    rows, width = q.shape
+    g_rows, g_width = _projection_gamma_upper(rows), _projection_gamma_upper(width)
+    projected_dot = _projection_upper_matmul(absq.T, absolute)
+    dot_error = _projection_upper_product(g_rows, projected_dot)
+    dot_bound = _projection_upper_add(projected_dot, dot_error)
+    energy = np.zeros(values.shape[1])
+    # Only the positive bound image is blocked; the mathematical projection
+    # and its original full-row reduction count are unchanged. Avoid several
+    # simultaneous N x response-width bound arrays for an actual long record.
+    for start in range(0, rows, 4096):
+        block_q, block_x = absq[start:start+4096], absolute[start:start+4096]
+        image_bound = _projection_upper_matmul(block_q, dot_bound)
+        image_error = _projection_upper_add(_projection_upper_matmul(block_q, dot_error),
+            _projection_upper_product(g_width, image_bound))
+        image_bound = _projection_upper_product(_projection_upper_add(1., g_width), image_bound)
+        subtraction_error = _projection_upper_product(_projection_gamma_upper(1),
+            _projection_upper_add(block_x, image_bound))
+        total = _projection_upper_add(image_error, subtraction_error)
+        block_norm = _projection_norm_upper(total)
+        energy = _projection_upper_add(energy, _projection_upper_product(block_norm, block_norm))
+    return _projection_upper_product(scales, _projection_outward(np.sqrt(energy)))
 
 
 def project_diffuse_nuisance(design, response, nuisance, *, prior_factor,
@@ -1253,42 +1432,54 @@ def _project_diffuse_arrays(d, y, z, q, root, scales, *, factor=None, mean=None,
         resolution = {"method": "no_diffuse_projection", "normalized_error_bound": 0.,
                       "structural_zero": False}
     else:
-        projected_d, projected_y = d-q@(q.T@d), y-q@(q.T@y)
+        coefficients_d, coefficients_y = q.T@d, q.T@y
+        projected_d, projected_y = d-q@coefficients_d, y-q@coefficients_y
         if factor is None:
             chart, projected = np.column_stack((d, y)), np.column_stack((projected_d, projected_y))
         else:
             chart = np.column_stack((d@factor, y-d@mean))
             projected = np.column_stack((projected_d@factor, projected_y-projected_d@mean))
-        subspace, orthogonality, projector_error, arithmetic_error = (
+        subspace, orthogonality, projector_error, _ = (
             _diffuse_qr_geometry(z, q, root, scales) if geometry is None else geometry)
-        source_norms = _column_norms(chart)
-        errors = projector_error*source_norms
+        source_norms = _projection_norm_upper(np.abs(chart))
+        errors = _projection_upper_product(projector_error, source_norms)
+        arithmetic = _projection_arithmetic_columns(np.column_stack((d, y)), q,
+            coefficients=np.column_stack((coefficients_d, coefficients_y)))
         # Full nonorthogonal prior factors and centered-response operands are
         # included; column maxima of a precision root are not prior deviations.
         if factor is not None:
-            absolute_chart_design = np.abs(d)@np.abs(factor)
-            absolute_chart_response = np.abs(y)+np.abs(d)@np.abs(mean)
+            absolute_chart_design = _projection_upper_matmul(np.abs(d), np.abs(factor))
+            absolute_mean = _projection_upper_matmul(np.abs(d), np.abs(mean)[:, None])
             # Projecting raw D before the full F pullback can amplify roundoff
             # hidden by cancellation in D F. Bound arithmetic in its actual
             # original operands, rather than treating those operations as exact.
-            errors[:width] += arithmetic_error*_column_norms(absolute_chart_design)
-            errors[-1] += arithmetic_error*float(_column_norms(absolute_chart_response[:, None])[0])
-            multiply_error = _roundoff_gamma(width+1)
-            errors[:width] += multiply_error*(_column_norms(absolute_chart_design)
-                +_column_norms(np.abs(projected_d)@np.abs(factor)))
-            errors[-1] += multiply_error*(float(_column_norms(y[:, None])[0])
-                +float(_column_norms((np.abs(d)@np.abs(mean))[:, None])[0])
-                +float(_column_norms(projected_y[:, None])[0])
-                +float(_column_norms((np.abs(projected_d)@np.abs(mean))[:, None])[0]))
+            factor_arithmetic = _projection_upper_matmul(arithmetic[:width][None, :], np.abs(factor))[0]
+            response_arithmetic = _projection_upper_add(arithmetic[-1],
+                _projection_upper_matmul(arithmetic[:width][None, :], np.abs(mean)[:, None])[0, 0])
+            errors[:width] = _projection_upper_add(errors[:width], factor_arithmetic)
+            errors[-1] = _projection_upper_add(errors[-1], response_arithmetic)
+            multiply_error = _projection_gamma_upper(width+1)
+            design_operands = _projection_upper_add(_projection_norm_upper(absolute_chart_design),
+                _projection_norm_upper(_projection_upper_matmul(np.abs(projected_d), np.abs(factor))))
+            errors[:width] = _projection_upper_add(errors[:width],
+                _projection_upper_product(multiply_error, design_operands))
+            response_operands = _projection_upper_add(_projection_norm_upper(np.abs(y)[:, None])[0],
+                _projection_norm_upper(absolute_mean)[0])
+            response_operands = _projection_upper_add(response_operands,
+                _projection_norm_upper(np.abs(projected_y)[:, None])[0])
+            response_operands = _projection_upper_add(response_operands,
+                _projection_norm_upper(_projection_upper_matmul(np.abs(projected_d), np.abs(mean)[:, None]))[0])
+            errors[-1] = _projection_upper_add(errors[-1],
+                _projection_upper_product(multiply_error, response_operands))
         else:
-            errors += arithmetic_error*source_norms
-        errors[-1] += response_source_error
+            errors = _projection_upper_add(errors, arithmetic)
+        errors[-1] = _projection_upper_add(errors[-1], response_source_error)
         if not np.isfinite(projected).all() or not np.isfinite(errors).all():
             raise DiffuseProjectionResolutionError("diffuse prior/noise chart is not representable")
         target = float(np.sqrt(np.finfo(float).eps))
         floor_errors = errors.copy()
-        floor_errors[-1] /= response_reference_scale
-        normalized_error = float(np.linalg.norm(floor_errors))
+        floor_errors[-1] = _projection_outward(floor_errors[-1]/response_reference_scale)
+        normalized_error = float(_projection_norm_upper(floor_errors[:, None])[0])
         reference_method = "proper_prior_and_noise_floor_bound"
         if normalized_error > target:
             # Strong, genuinely retained information can resolve large input
@@ -1297,7 +1488,8 @@ def _project_diffuse_arrays(d, y, z, q, root, scales, *, factor=None, mean=None,
             reference_floor[-1, -1] = response_reference_scale
             reference = np.linalg.qr(np.vstack((reference_floor, projected)), mode="r")
             inverse = solve_triangular(reference, np.eye(width+1))
-            normalized_error = float(np.linalg.norm(errors@np.abs(inverse)))
+            pulled_error = _projection_upper_matmul(errors[None, :], np.abs(inverse))[0]
+            normalized_error = float(_projection_norm_upper(pulled_error[:, None])[0])
             reference_method = "projected_augmented_reference_QR"
         if not np.isfinite(normalized_error) or normalized_error > target:
             raise DiffuseProjectionResolutionError(
@@ -1307,7 +1499,8 @@ def _project_diffuse_arrays(d, y, z, q, root, scales, *, factor=None, mean=None,
                       "normalized_error_bound": normalized_error, "resolution_target": target,
                       "source_chart_column_norms": source_norms.tolist(),
                       "chart_column_error_bounds": errors.tolist(),
-                      "response_reference_scale": float(response_reference_scale),
+                       "response_reference_scale": float(response_reference_scale),
+                       "arithmetic_error_method": "operation_wise_outward_positive_dot_bounds",
                       "reference_method": reference_method,
                       "subspace_error_reference": subspace,
                       "orthogonality_error_reference": orthogonality, "structural_zero": False}

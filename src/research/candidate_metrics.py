@@ -153,6 +153,7 @@ class CandidateProbabilityMetrics:
                 "tie_count": self.tie_count, "not_available_count": self.not_available_count,
                 "selection_failure_count": self.selection_failure_count,
                 "participants": [row.record() for row in self.participants],
+                "confidence_diagnostics": candidate_confidence_diagnostics(self),
                 "outcome_accounting_by_seed": {str(seed): accounting.to_record() for seed, accounting in self.accounting_by_seed},
                 "outcomes_by_seed": {str(seed): [outcome.to_record() for outcome in outcomes]
                                      for seed, outcomes in self.outcomes_by_seed}}
@@ -303,6 +304,147 @@ def evaluate_candidate_evidence(
             sum(row.failure_kind == "abstain" for row in rows), selection_failures.get(participant)))
     return CandidateProbabilityMetrics(decision_plan.digest(), vocabulary, seeds, int(evidence_level),
         tuple(participants), tuple(cells), tuple(outcomes_by_seed), tuple(accounting_by_seed))
+
+
+def candidate_confidence_diagnostics(
+    metrics: CandidateProbabilityMetrics, *,
+    bin_edges: Sequence[float] = tuple(index / 10 for index in range(11)),
+) -> dict[str, object]:
+    """Describe available probabilities; never add a selection or promotion gate.
+
+    Each seed averages its available complete-probability decisions; seeds then
+    average within requested participant, followed by an equal participant
+    average. An empty participant/seed makes the fixed-roster summary unavailable.
+    Top-label calibration uses a diagnostic uniform draw from the evidence
+    owner's tied maxima. This is expected correctness, not an EEG prediction.
+    ECE is the absolute bin gap after that same hierarchy of probability masses.
+    Wrong confidence conditions on operational unique winners that were wrong.
+    No missing distribution is replaced by uniform and no true zero is clipped.
+    """
+    edges = tuple(float(value) for value in bin_edges)
+    if (len(edges) < 2 or edges[0] != 0. or edges[-1] != 1.
+            or not all(math.isfinite(value) for value in edges)
+            or any(first >= second for first, second in zip(edges, edges[1:], strict=False))):
+        raise ValueError("confidence bins must strictly partition [0,1]")
+    count = len(edges) - 1
+    uniform_nll = math.log(len(metrics.candidate_vocabulary))
+
+    def summarize(units):
+        complete = all(unit["fixed_roster_probability_units_complete"] for unit in units)
+        fields = ("mean_max_confidence", "wrong_unique_winner_fraction",
+                  "wrong_unique_winner_confidence_mass")
+        result = {field: _mean([unit[field] for unit in units]) for field in fields}
+        result.update(requested_cell_count=sum(unit["requested_cell_count"] for unit in units),
+            missing_probability_count=sum(unit["missing_probability_count"] for unit in units),
+            probability_count=sum(unit["probability_count"] for unit in units),
+            tie_count=sum(unit["tie_count"] for unit in units),
+            wrong_unique_winner_count=sum(unit["wrong_unique_winner_count"] for unit in units),
+            fixed_roster_probability_units_complete=complete,
+            observed_max_confidence=max((unit["observed_max_confidence"] for unit in units
+                                         if unit["observed_max_confidence"] is not None), default=None),
+            observed_wrong_unique_winner_max_confidence=max(
+                (unit["observed_wrong_unique_winner_max_confidence"] for unit in units
+                 if unit["observed_wrong_unique_winner_max_confidence"] is not None), default=None))
+        fraction = result["wrong_unique_winner_fraction"]
+        result["conditional_wrong_unique_winner_mean_confidence"] = (
+            result["wrong_unique_winner_confidence_mass"] / fraction if fraction else None)
+        bins = []
+        for index in range(count):
+            rows = [unit["calibration_table"][index] for unit in units]
+            mass = _mean([row["hierarchy_mass"] for row in rows])
+            confidence_mass = _mean([row["confidence_mass"] for row in rows])
+            correctness_mass = _mean([row["correctness_mass"] for row in rows])
+            bins.append({"lower": edges[index], "upper": edges[index + 1],
+                "probability_count": sum(row["probability_count"] for row in rows),
+                "hierarchy_mass": mass, "confidence_mass": confidence_mass,
+                "correctness_mass": correctness_mass,
+                "mean_confidence": confidence_mass / mass if mass else None,
+                "expected_top_label_correctness": correctness_mass / mass if mass else None})
+        result["calibration_table"] = bins
+        result["binned_top_label_ece"] = (
+            sum(abs(row["correctness_mass"] - row["confidence_mass"]) for row in bins)
+            if complete else None)
+        return result
+
+    participants = []
+    for participant in metrics.participants:
+        seeds = []
+        for seed in metrics.seeds:
+            requested = [cell for cell in metrics.cells
+                         if cell.outcome.key.subject_id == participant.participant_key and cell.seed == seed]
+            available = [cell for cell in requested if cell.probability_available]
+            denominator = len(available)
+            bin_counts = np.zeros(count, dtype=np.int64)
+            confidence_mass = np.zeros(count)
+            correctness_mass = np.zeros(count)
+            maxima, wrong = [], []
+            for cell in available:
+                evidence = cell.evidence
+                top = evidence.top_candidate_indices
+                probability = evidence.probability
+                maximum = float(np.max(probability))
+                confidence = float(np.mean(probability[list(top)]))
+                truth_index = metrics.candidate_vocabulary.index(cell.outcome.target_candidate)
+                correctness = float(truth_index in top) / len(top)
+                # Endpoint roundoff accepted by CandidateEvidence stays unmodified.
+                index = int(np.searchsorted(edges[1:-1], confidence, side="right"))
+                bin_counts[index] += 1
+                confidence_mass[index] += confidence
+                correctness_mass[index] += correctness
+                maxima.append(maximum)
+                if cell.operational_available and not cell.correct:
+                    wrong.append(maximum)
+            table = [{"lower": edges[index], "upper": edges[index + 1],
+                "probability_count": int(bin_counts[index]),
+                "hierarchy_mass": float(bin_counts[index] / denominator) if denominator else None,
+                "confidence_mass": float(confidence_mass[index] / denominator) if denominator else None,
+                "correctness_mass": float(correctness_mass[index] / denominator) if denominator else None}
+                for index in range(count)]
+            seeds.append({"seed": seed, "requested_cell_count": len(requested),
+                "probability_count": denominator,
+                "fixed_roster_probability_units_complete": denominator > 0,
+                "missing_probability_count": len(requested) - denominator,
+                "unique_winner_count": sum(cell.operational_available for cell in available),
+                "tie_count": sum(cell.evidence.tie for cell in available),
+                "mean_max_confidence": _mean(maxima),
+                "observed_max_confidence": max(maxima, default=None),
+                "wrong_unique_winner_count": len(wrong),
+                "wrong_unique_winner_fraction": len(wrong) / denominator if denominator else None,
+                "wrong_unique_winner_confidence_mass": sum(wrong) / denominator if denominator else None,
+                "observed_wrong_unique_winner_max_confidence": max(wrong, default=None),
+                "wrong_unique_winner_confidences": sorted(wrong), "calibration_table": table,
+                "conditional_wrong_unique_winner_mean_confidence": _mean(wrong),
+                "binned_top_label_ece": sum(abs(float(correctness_mass[index] - confidence_mass[index]))
+                    for index in range(count)) / denominator if denominator else None})
+        summary = summarize(seeds)
+        summary.update(participant_key=participant.participant_key,
+            requested_decision_count=participant.requested_decisions,
+            selection_failure_reason=participant.selection_failure_reason,
+            prediction_coverage=participant.prediction_coverage,
+            probability_coverage=participant.probability_coverage,
+            available_probability_nll=_risk_record(participant.available_probability_nll),
+            available_probability_brier=participant.available_probability_brier,
+            nll_minus_same_candidate_count_uniform=_risk_record(
+                participant.available_probability_nll - uniform_nll
+                if participant.available_probability_nll is not None else None), seed_diagnostics=seeds)
+        participants.append(summary)
+    return {"schema": "n2p3_candidate_confidence_diagnostics/1", "diagnostic_only": True,
+        "decision_plan_digest": metrics.decision_plan_digest,
+        "candidate_count": len(metrics.candidate_vocabulary), "uniform_nll": uniform_nll,
+        "seeds": list(metrics.seeds), "requested_participant_count": len(participants),
+        "probability_coverage": metrics.probability_coverage, "prediction_coverage": metrics.prediction_coverage,
+        "available_probability_nll": _risk_record(metrics.available_probability_nll),
+        "available_probability_brier": metrics.available_probability_brier,
+        "nll_minus_same_candidate_count_uniform": _risk_record(
+            metrics.available_probability_nll - uniform_nll
+            if metrics.available_probability_nll is not None else None),
+        "aggregation": "available decisions within seed, then equal requested seeds within participant, then equal requested participants",
+        "tie_calibration": "expected correctness and probability of a uniform diagnostic draw over owner-defined tied maxima; no operational winner",
+        "bin_policy": "left closed/right open; final bin includes right endpoint and owner-accepted endpoint roundoff; probabilities unchanged",
+        "ece_scope": "finite-sample descriptive binned top-label gap; bin-dependent; not a calibration certificate or uncertainty interval",
+        "wrong_confidence_scope": "hierarchy-weighted confidence mass divided by hierarchy-weighted wrong unique-winner fraction; no-wrong units contribute zero masses; zero overall fraction yields null",
+        "gate_action": "none; no threshold or selection is inferred from these diagnostics",
+        **summarize(participants), "participants": participants}
 
 
 @dataclass(frozen=True)

@@ -1,5 +1,7 @@
 # 研究与工程证据
 
+- [2026-10-10愿望清单当前进展](wishlist_progress_20261010.zh.md)：123项实际出口分层、置信度/固定graph/评分数值的科研树整合，selection随机效应与真实OOF接点，以及多家族字典、空间收缩、时间shape/ERP-span的下一切片；原公共执行来源与效能边界保留。
+
 - [2026-10-10最终集成来源](research_integration_20261010.json)：修后0a/a96 cold reclaim、相关41项本地验收与496成员后置冻结；旧final5不作为未来可执行源，原491/493身份保持。私有投影界切片仅获局部科研验收，完整conditional长记录仍unresolved。
 
 - [本地科研机制与真实数据](research_mechanisms_20261009.zh.md)：八人48格fixed-noise signal-prior、MN/reference商空间等价、native可识别性与完整自适应挑战、有限整selection历史参考；保存态/独立反例、归因限制及实际执行来源。

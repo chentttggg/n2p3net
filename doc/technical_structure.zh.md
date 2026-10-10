@@ -1,5 +1,11 @@
 # 当前技术结构与完整链条
 
+2026-10-10[愿望清单整合](evidence/wishlist_progress_20261010.zh.md)继续复用原owner：`CandidateEvidence`在原tie判定处保存赢家索引；`candidate_metrics`持有requested层级的最大置信度、错时置信度、分箱ECE及实际J的uniform NLL contrast，原report consumer自动导出，现阶段只作描述性诊断。`SpatialSignalPrior.expected_whitened_signal_energy/energy_matched_graph`复用原response压缩root，以同C/noise匹配固定graph的centered信号能量；原posterior及B05物理因子继续消费该prior，learned空间估计器尚未准入。
+
+`research.latent_response_reference`只有五个科研入口：状态law、off-grid analytic basis、physical selection design、proper层级prior和有限conditional evidence。它复用`joint_response_scale`的prior/decision factory/联合Gaussian积分；global beta只一次，selection additive deviation独立零均值，full/prefix共同更新离散state权重。没有生产注册、真实产品caller或第二posterior/noise fitter。
+
+`FittedEnsemble.oof_probability_record`持有原grouped温度循环实际返回的完整C-only概率、inner producer identities及final program关联；原ensemble包保存该immutable记录，模型既有fit-binding锚定OOF digest与OOF前base数值身份。fixed/grouped共享同一final专家tuple；actual K与完整OOF标签剂量分开。不持久保存inner模型，不凭final模型回推原inner评分，不将全C OOF改称nested选择。
+
 [当前消费者](evidence/current_public_consumers_20261008.zh.md)由class_calibration持有fit风险/分数变换、FrozenTrialPredictor/2持有实际state/来源、ensemble_views持有实测线性空间与选择执行family、checkpoint集中核source/target不同入口的程序族相容。binary_probability复用共同输入比较owner及artifact SHA，确定性seed alias保留完整概率状态；旧/1不被重签proper合同。
 
 [当前source程序](evidence/public_source_pipeline_20261008.zh.md)复用source_selection/source_execution/source_resume/PreparedSourceInventory：manifest SHA一次准入、准备/合并/fit共享预算、每outer一次load三seed、恢复复用原完整view。source_config从实际identity authority解析并绑定contract/registry；SourceSeedCatalog和两个公共消费者通过expected_source_config核真实producer，不借程序同名混入历史β8。

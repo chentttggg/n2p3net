@@ -1,5 +1,7 @@
 # N2P3-Net：公开ERP预训练辅助成人猜数字
 
+2026-10-10[愿望清单科研进展](evidence/wishlist_progress_20261010.zh.md)将已有设计、数学参考、代码整合与效能分别验收。最大置信度、错误唯一赢家置信度、实际J的uniform风险contrast及分箱ECE已接候选报告，诊断保持原requested分母与tie拒判；ECE依赖分箱，不能独立决定晋升。W08.04正式风险阈值、W10.07最终边界保真以及成人确认仍需各自出口；不根据已见M1或同C角向诊断选择新默认。
+
 2026-10-08用户更新：科研云端训练只用一个完整source→target seed；大版本校验才用三个独立完整程序。当前科研计划使用20260918，大版本校验使用20260918/19/20。阶段和声明集合由实际冻结计划绑定，不能复制单seed产物补成三seed，也不能将日常研究改称大版本。单seed参与者区间只说明条件于该冻结程序的参与者不确定性。[科研与集成状态](evidence/research_integration_20261008.zh.md)记录职责、源码与未完成出口。
 
 [当前目标风险](evidence/current_public_consumers_20261008.zh.md)按完整C的固定class mass定义balanced CE，避免小batch随机分母改变目标；actualβ/π/Z来自fitC，OOF不消费held标签。posterior forecast与LLR分别输出，有限NN校准需实测而非Bayes等式保证。primary机制类权重固定，scratch仅替换迁移初始化作对照，wave/native信息控制不额外计票或影响primary温度失败分母。

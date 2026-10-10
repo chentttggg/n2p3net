@@ -1,5 +1,7 @@
 # 当前执行计划
 
+2026-10-10当前科研按[123项进展与下一步](evidence/wishlist_progress_20261010.zh.md)并行推进：B00置信度诊断、B09固定graph能量控制、B07有限selection随机响应和B03真实OOF保存链依各自证据整合；B07多家族字典、B09 learned空间收缩及B11时间shape/ERP-span归因是下一可执行切片。公共云accepted496完整单seed由云窗口继续，当前科研树的候选不自动扩大该运行scope。所有15块仍有独立剩余出口。
+
 2026-10-08最新执行规则覆盖下文待跑三seed数量：日常科研使用20260918单个完整source→target程序，重大版本校验才使用20260918/19/20三个独立程序。当前公共科研对应四个source checkpoint流程，各自选择与fresh refit，初始八个逻辑NN fit；B12两个公共面板继续按真实预算和requested账本验收。历史三seed设计与已执行身份不改写。科研线接B08可识别prior、B07字典可移植与B05/B06/B09机制，B14云底座和B12基础矩阵并行；各项代码、软件验证、公共效能分别见[集成状态](evidence/research_integration_20261008.zh.md)。
 
 [当前目标软件切片](evidence/current_public_consumers_20261008.zh.md)已实现fixed32/b64配方、匹配scratch、固定C质量loss、actualprior/β、观测Cz6 raw/原8导控制、primary温度与binary概率池；真实source K0/OOF和联合零fit源检查通过。已准备四份完整source view；上次完整源运行因worker突然终止失败，原因未确认、完整checkpoint为0，实际输入与终态见[吞吐记录](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)。云实例由用户关闭，当前先完成源码集成；恢复时按四个source流程×一个科研seed执行选择与fresh refit，接两个目标面板。源/目标效能按完整requested账本与原包重放验收。
@@ -18,23 +20,23 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 
 | 块 | 已交付出口 | 仍需完成 |
 |---|---|---|
-| B00 比较/选择 | requested风险、配对、失败与概率覆盖owner | 全流程选择与独立效能验收 |
+| B00 比较/选择 | requested风险、配对、失败与概率覆盖owner；最大/错时置信度、分箱ECE与同J uniform contrast | 正式风险阈值、全流程选择与独立效能验收 |
 | B01 信号/支持 | BNCI合法原字节、Cal/held无标签view与时间履历 | 其他candidate数据adapter与硬件/光学证据 |
 | B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
-| B03 校准/混合 | 固定算术池及完整C内分组温度 | 独立泛化/复杂gating另验收 |
+| B03 校准/混合 | 固定算术池、完整C内分组温度；真实OOF概率/producer与final数值/温度/K/source关联、原共享包保存 | inner持久重放、严格nested选择、复杂gating与独立泛化另验收 |
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
 | B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec与编译包；576原状态归因、given-noise fixed-physical-prior C fitter与完整drift crosscov | 真实noise×ERP可归因对照、finite endpoint交互与joint MLE，不把ACF/低C目标当效能 |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
-| B07 字典/历史 | A0/A1与五数组portable编译态、端点/容量、model/ensemble无重编译消费；有限历史/实际模型adapter与support×precision反例 | 真实完整history/权限caller、实际operator/support的端点对照、组合保存重放、latency/长history/随机效应 |
+| B07 字典/历史 | A0/A1 portable态、端点/容量/无重编译消费；有限history/support反例；scalar finite selection amplitude/latency/width research reference及proper soft/hard/free prior | 多家族字典、真实完整history/权限caller、actual operator/support对照、多channel随机效应、持久包与效能 |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
-| B09 空间 | 一般signal-prior后验、A01六格及八人48格/MN商空间验收 | Pz4无额外hit且NLL增，不晋升；learned prior与joint MLE另验 |
+| B09 空间 | 一般signal-prior后验、A01六格及八人48格/MN商空间验收；现owner固定graph同C/noise能量控制及完整receipt | Pz4无额外hit且NLL增，不晋升；learned d-prime/组层级、joint MLE与新效能另验 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
 | B11 动态/稳健 | noise-only Gamma、proper全C/test联合尺度；实际行数增广QR和显式β条件积分接研究owner；共同flat-Z小参考及源尺度反例 | 真实K0/独立noise/C权限、flat长记录采样/持久包、动态state、连续预测准确性与完整效能；多模态不由诊断保证 |
 | B12 公共流程 | 全局code/artifact审查；独立C/test入口与B14共同owner | 四库binary/合法candidate、K0/预算、一个完整科研流程 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
 | B14 工程/吞吐 | B12同资源owner/完整requested账、实际源码保存与同call重复扫描退役 | B12共享数据/rolling资源排程、云实际25CPU/4GPUworkers |
 
-2026-10-10两个独立范围审查已结束：actual-length raw score按现行数值界保持typed unresolved；operation-wise投影界只进入独立科研切片。flat nuisance仍为小矩阵reference，通用proper sampler和产品包不准入。下一步可在本地研究更紧的可证伪误差传播，无需等待云端或重跑1728矩阵；Linux工程门禁与公共效能保各自未完成出口，见[本轮机制证据](evidence/research_mechanisms_20261009.zh.md)。
+2026-10-10公共accepted496的actual-length raw score仍按其原数值界解释；新科研树已整合operation-wise投影界与local minimizer cap611b，精度政策和density接口不变。原3749两个7975×8 synthetic候选通过，新611b只核ratio域/连接及整合合同，不追签长记录。flat nuisance通用长记录采样、产品包、全输入精度和公共效能仍各自未完成。主线并行推进其余愿望，不以一个数值门阻塞所有方向，见[当前进展](evidence/wishlist_progress_20261010.zh.md)与[原机制证据](evidence/research_mechanisms_20261009.zh.md)。
 
 B08 [固定C-reference g-prior第一切片](evidence/calibration_g_prior_20261006.zh.md)已落实full-rank软件路径与真实prior/fit/package关系，主线整合全集2604/19及独立Spec/Standards通过；[参考能量匹配对照](evidence/prior_control_20261006.zh.md)随后完成实施、两轴质量及合并全集2670/19，完整1344格归因矩阵按冻结程序执行。当时的dynamic prior、quotient/completion、K0与新效能矩阵未由该旧运行完成；当前quotient/completion软件出口见[本轮机制](evidence/research_mechanisms_20261009.zh.md)，冻结M1保持原解释。
 首次1344运行因A02后验核验病态而受控停止，101原包及失败捕获保留；原gate误判经独立actual-W QR/SVD与held读数核实，已改QR-RHS/后向关系及peer-abort调度，40项必要验证通过。完整矩阵由[新计划](assets/prior_control_20261006/plan_v2.json)同1344科学/资源格重新执行；原包不改签为新source，整体结果未完成。

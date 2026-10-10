@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, dataclass, field, replace
 from pathlib import Path
 
 import numpy as np
@@ -491,6 +491,91 @@ class SpatialSignalPrior:
                   "variance": variance, "length_scale_m": length, "strength": strength,
                   "laplacian_sha256": array_digest(laplacian)}}
         return cls(layout, mean, temporal_covariance, covariance, design_binding, source)
+
+    def _c_energy_roots(self, blocks, noise):
+        blocks = tuple(blocks)
+        if not blocks:
+            raise ValueError("energy matching requires actual authorized C")
+        roots, receipts, supports = [], [], {}
+        for block in blocks:
+            if not isinstance(block, SpatialResponseBlock):
+                raise TypeError("signal energy requires owned spatial response blocks")
+            authority = block.authorization
+            if (authority["fit_scope"] not in {"target_calibration", "source_training"}
+                    or block.observation.layout.record() != self.layout.record()
+                    or block.design.shape[1] != self.mean.shape[0]
+                    or authority["dictionary_sha256"] != self.design_binding["dictionary_sha256"]):
+                raise ValueError("energy matching consumes only the bound C/design/layout")
+            start, stop = authority["raw_sample_support"]
+            source = authority["source_sha256"]
+            if any(max(start, a) < min(stop, b) for a, b in supports.get(source, ())):
+                raise ValueError("C energy matching cannot duplicate physical observation rows")
+            supports.setdefault(source, []).append((start, stop))
+            root = block._compressed(noise)[0]
+            roots.append(root)
+            receipts.append({"actual_C": block.record(), "root_sha256": array_digest(root)})
+        if len({b.authorization["fit_scope"] for b in blocks}) != 1:
+            raise ValueError("one energy program cannot mix source training and target calibration")
+        return tuple(roots), receipts
+
+    def _root_energy(self, roots):
+        factor = solve_triangular(self.precision_root, np.eye(self.mean.size), lower=True)
+        return float(sum(np.sum((root @ factor) ** 2) for root in roots))
+
+    def expected_whitened_signal_energy(self, blocks, *, native_noise_covariance):
+        """Centered prior signal energy on actual C, with its nuisance removed.
+
+        The bound physical prior and frozen residual noise pass through the
+        same actual observation A. Sample amplitudes do not select this prior
+        energy; the existing response owner supplies its likelihood roots.
+        """
+        roots, _ = self._c_energy_roots(blocks, native_noise_covariance)
+        return self._root_energy(roots)
+
+    def energy_matched_graph(self, blocks, *, native_noise_covariance,
+                             length_scale_m, graph_strength, source):
+        """Fixed graph shape with C-plugin variance matched to this prior.
+
+        Keep actual H/basis, mean, native layout and noise. Match centered
+        expected whitened signal energy, not effective response df/capacity.
+        Reference/gain/missing maps subsequently push the SAME S and Sigma;
+        rebuilding a graph or rematching its projected energy is another
+        program. Graph shape is declared externally, never learned here.
+        """
+        roots, receipts = self._c_energy_roots(blocks, native_noise_covariance)
+        variance = float(np.trace(self.signal_covariance) / len(self.layout.channels))
+        arguments = {"layout": self.layout, "mean": self.mean,
+                     "temporal_covariance": self.temporal_covariance,
+                     "length_scale_m": length_scale_m, "graph_strength": graph_strength,
+                     "design_binding": dict(self.design_binding), "source": dict(source)}
+        unit_graph = self.graph(variance=variance, **arguments)
+        target, initial = self._root_energy(roots), unit_graph._root_energy(roots)
+        if not np.isfinite([target, initial]).all() or target <= 0 or initial <= 0:
+            raise ValueError("C/noise prior energy must be finite and nonzero; no fallback strength")
+        multiplier = target / initial
+        receipt = {"schema": "n2p3_B09_graph_C_energy_match/1",
+                   "shape_role": "external_predeclared_layout_graph",
+                   "variance_role": "C_derived_plugin_reference",
+                   "centered_signal_energy": True, "effective_response_df_matched": False,
+                   "noise_sha256": array_digest(native_noise_covariance),
+                   "reference_prior_sha256": self.digest(), "actual_C": receipts,
+                   "target_energy": target, "unmatched_graph_energy": initial,
+                   "variance_multiplier": multiplier,
+                   "reference_native_variance": variance,
+                   "matched_native_variance": variance * multiplier,
+                   "projected_graph_rebuilt": False, "projected_energy_rematched": False,
+                   "noise_refitted": False, "shape_learned_from_C": False,
+                   "held_data_or_labels_used": False}
+        matched = self.graph(variance=variance * multiplier, **arguments)
+        actual = matched._root_energy(roots)
+        if not np.isclose(actual, target, rtol=1e-12, atol=0):
+            raise ArithmeticError("same-C/noise graph energy failed its declared match")
+        receipt["actual_matched_energy"] = actual
+        receipt["relative_energy_error"] = abs(actual / target - 1)
+        receipt["match_binding_sha256"] = metadata_digest(receipt)
+        # Publish the complete receipt once through the existing frozen owner.
+        matched = replace(matched, source={**matched.source, "C_plugin_energy_matching": receipt})
+        return matched, receipt
 
     @classmethod
     def learn(cls, *, mechanism, independent_groups=None, **kwargs):

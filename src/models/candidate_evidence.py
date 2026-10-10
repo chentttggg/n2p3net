@@ -131,6 +131,7 @@ class CandidateEvidence:
     failure_kind: str | None = None
     predicted: str | None = field(init=False)
     status: str = field(init=False)
+    top_candidate_indices: tuple[int, ...] = field(init=False)
 
     def __post_init__(self) -> None:
         if isinstance(self.candidate_vocabulary, (str, bytes)):
@@ -164,6 +165,7 @@ class CandidateEvidence:
                zip(self.observed_event_counts, self.expected_event_counts, strict=True)):
             raise ValueError("observed event counts cannot exceed the declared physical schedule")
         predicted = None
+        top_candidate_indices = ()
         if self.log_probability is None:
             if self.failure_kind not in {"fit_failure", "not_available", "incomplete", "abstain"}:
                 raise ValueError("missing probability requires an explicit failure kind")
@@ -188,11 +190,13 @@ class CandidateEvidence:
             values = np.frombuffer(values.tobytes(), dtype=np.float64)
             object.__setattr__(self, "log_probability", values)
             winners = np.flatnonzero(np.isclose(values, maximum, rtol=1e-12, atol=1e-12))
+            top_candidate_indices = tuple(int(index) for index in winners)
             status = "tie" if len(winners) != 1 else "available"
             if status == "available":
                 predicted = vocabulary[int(winners[0])]
         object.__setattr__(self, "predicted", predicted)
         object.__setattr__(self, "status", status)
+        object.__setattr__(self, "top_candidate_indices", top_candidate_indices)
 
     @property
     def probability(self) -> np.ndarray | None:

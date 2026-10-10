@@ -46,6 +46,7 @@ from transfer.recipes import TargetRecipe
 from transfer.response_dictionary import ResponseDictionary, ResponseDictionarySpec
 
 FITTED_ENSEMBLE_SCHEMA = "n2p3_fitted_candidate_ensemble/2"
+GROUPED_PROBABILITY_OOF_SCHEMA = "n2p3_complete_group_probability_oof/1"
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,11 @@ def _temperature_nll(log_temperature, log_probability, targets):
 
 def _native_observation_contract(view):
     return (view.sample_rate_hz, view.channel_names, view.channel_types, view.reference, view.signal_unit)
+
+
+def _native_observation_contract_record(record):
+    return {key: record[key] for key in
+            ("sample_rate_hz", "channel_names", "channel_types", "reference", "signal_unit")}
 
 
 @dataclass(frozen=True)
@@ -294,10 +300,44 @@ class _FittedExpert:
             expected_event_counts=counts, observed_event_counts=observed)
 
 
+def _model_fit_binding(predictor, family):
+    return (predictor.record["ensemble_fit_binding"] if family == "trial" else
+            predictor.provenance["ensemble_fit_binding"])
+
+
+def _with_model_fit_binding(predictor, family, binding):
+    return (predictor.with_fit_binding(binding) if family == "trial" else
+            replace(predictor, provenance={**predictor.provenance, "ensemble_fit_binding": binding}))
+
+
+def _expert_state_record(expert):
+    return {"program": expert.program.record(), "model_digest": expert.model_digest,
+            "fit_digest": expert.fit_digest, "source_digest": expert.source_digest,
+            "logit_offset": expert.logit_offset, "unavailable_reason": expert.unavailable_reason,
+            "unavailable_kind": expert.unavailable_kind}
+
+
+def _attach_oof_probability(fitted, temperature_record, oof_record):
+    """Bind the actual captured scores to existing final numerical producers."""
+    digest = semantic_sha256(oof_record)
+    experts = []
+    for expert in fitted._experts:
+        if expert.predictor is None:
+            experts.append(expert)
+            continue
+        binding = {**_model_fit_binding(expert.predictor, expert.program.family),
+                   "OOF_probability_sha256": digest, "OOF_base_model_digest": expert.model_digest}
+        predictor = _with_model_fit_binding(expert.predictor, expert.program.family, binding)
+        experts.append(replace(expert, predictor=predictor, model_digest=predictor.digest()))
+    return FittedEnsemble(fitted.scorer, tuple(experts), fitted._training_receipts, temperature_record,
+                          target_contract=fitted._target_contract, oof_probability_record=oof_record)
+
+
 class FittedEnsemble:
     """Own expert state, fit authority and one frozen mixture behind score(view)."""
 
-    def __init__(self, scorer, experts, training_receipts, temperature_record=None, *, target_contract=None):
+    def __init__(self, scorer, experts, training_receipts, temperature_record=None, *, target_contract=None,
+                 oof_probability_record=None):
         self._scorer = scorer
         self._experts = tuple(experts)
         self._training_receipts = tuple(freeze_metadata(row) for row in training_receipts)
@@ -333,6 +373,46 @@ class FittedEnsemble:
                 raise ValueError("temperature subset differs from actual grouped OOF producers")
         else:
             raise ValueError("unknown declared ensemble calibration strategy")
+        self._oof_probability_record = (None if oof_probability_record is None else
+                                        freeze_metadata(oof_probability_record))
+        if self._oof_probability_record is not None:
+            self._validate_oof_binding()
+
+    def _validate_oof_binding(self):
+        record = self._oof_probability_record
+        if (record["schema"] != GROUPED_PROBABILITY_OOF_SCHEMA
+                or semantic_sha256(record["final_program"]) != self.scorer.program.digest()
+                or record["final_training_receipts_sha256"] != semantic_sha256(self._training_receipts)
+                or record["final_target_contract_sha256"] != semantic_sha256(self._target_contract)):
+            raise ValueError("OOF probability evidence differs from the actual final fit authority")
+        native = self._training_receipts[0] if self._target_contract is None else self._target_contract
+        if (record["native_observation"] != _native_observation_contract_record(native)
+                or record["actual_K"] != (sum(len(row["onsets"]) for row in self._training_receipts)
+                    if self._target_contract is None else self._training_receipts[0]["label_use"]["raw"]["requested_labels"])):
+            raise ValueError("OOF probability evidence differs from actual K or native observation")
+        if self.temperature_record["strategy"] == "grouped_temperature" and (
+                semantic_sha256(record["temperature_calibration"]) != semantic_sha256(self.temperature_record)):
+            raise ValueError("OOF probability evidence differs from the actual temperature programme")
+        expected = {entry["program"]["expert_id"]: entry for entry in record["final_base_experts"]}
+        digest = semantic_sha256(record)
+        for expert in self._experts:
+            entry = expected[expert.program.expert_id]
+            if (semantic_sha256(entry["program"]) != semantic_sha256(expert.program.record())
+                    or entry["fit_digest"] != expert.fit_digest or entry["source_digest"] != expert.source_digest
+                    or entry["logit_offset"] != expert.logit_offset
+                    or entry["unavailable_reason"] != expert.unavailable_reason
+                    or entry["unavailable_kind"] != expert.unavailable_kind):
+                raise ValueError("OOF probability evidence differs from the actual final expert programme")
+            if expert.predictor is not None:
+                binding = _model_fit_binding(expert.predictor, expert.program.family)
+                if (binding.get("OOF_probability_sha256") != digest
+                        or binding.get("OOF_base_model_digest") != entry["model_digest"]):
+                    raise ValueError("OOF probability evidence differs from its actual numerical model binding")
+
+    @property
+    def oof_probability_record(self):
+        """Complete C-only cross-fit evidence; it is not nested selection or efficacy."""
+        return self._oof_probability_record
 
     @property
     def temperature_record(self):
@@ -423,6 +503,8 @@ class FittedEnsemble:
                   "temperature_calibration": self.temperature_record}
         if self._target_contract is not None:
             record["target_contract"] = self._target_contract
+        if self.oof_probability_record is not None:
+            record["OOF_probability"] = self.oof_probability_record
         atomic_write_json(directory / "ensemble.json", {"record": record, "record_sha256": semantic_sha256(record)})
         return directory
 
@@ -446,6 +528,8 @@ class FittedEnsemble:
             else:
                 if value._experts is not fitted._experts or value.scorer.program != fitted.scorer.program:
                     raise ValueError("temperature programs must share the actual all-C final expert states")
+                if semantic_sha256(value.oof_probability_record) != semantic_sha256(fitted.oof_probability_record):
+                    raise ValueError("temperature programs must share the actual captured OOF probabilities")
                 if name != value.temperature_record["strategy"]:
                     raise ValueError("temperature program name differs from its actual strategy")
                 records[name] = {"status": "completed", "temperature_calibration": value.temperature_record}
@@ -479,7 +563,8 @@ class FittedEnsemble:
         if record["participant_key"] != fitted.participant_key:
             raise ValueError("temperature program participant differs from actual final model package")
         return {name: cls(fitted.scorer, fitted._experts, fitted._training_receipts,
-            value["temperature_calibration"], target_contract=fitted._target_contract)
+            value["temperature_calibration"], target_contract=fitted._target_contract,
+            oof_probability_record=fitted.oof_probability_record)
             for name, value in record["programs"].items() if value["status"] == "completed"}
 
     @classmethod
@@ -506,20 +591,30 @@ class FittedEnsemble:
                          else ContinuousDecisionModel.load(io.BytesIO(content)))
             if predictor.digest() != entry["model_digest"]:
                 raise ValueError("frozen ensemble model state differs from its declared identity")
-            binding = (predictor.record["ensemble_fit_binding"] if program.family == "trial"
-                       else predictor.provenance["ensemble_fit_binding"])
+            binding = _model_fit_binding(predictor, program.family)
             expected_binding = {"program": program.record(), "training_receipts": record["training_receipts"],
                                 "model_source_digest": entry["source_digest"], "fit_digest": entry["fit_digest"],
                                 "logit_offset": entry["logit_offset"]}
             if "target_contract" in record:
                 expected_binding["target_contract"] = record["target_contract"]
+            if "OOF_probability" in record:
+                oof = record["OOF_probability"]
+                base = next(row for row in oof["final_base_experts"] if row["program"]["expert_id"] == program.expert_id)
+                expected_binding.update(OOF_probability_sha256=semantic_sha256(oof),
+                                        OOF_base_model_digest=base["model_digest"])
+                original = _with_model_fit_binding(predictor, program.family,
+                    {key: value for key, value in binding.items()
+                     if key not in {"OOF_probability_sha256", "OOF_base_model_digest"}})
+                if original.digest() != base["model_digest"]:
+                    raise ValueError("OOF probability evidence differs from the actual final numerical state")
             if semantic_sha256(binding) != semantic_sha256(expected_binding):
                 raise ValueError("frozen ensemble recipe and fit authority differ from the actual model")
             experts.append(_FittedExpert(program, predictor, entry["model_digest"], entry["fit_digest"],
                                          entry["source_digest"], entry["logit_offset"]))
         return cls(EnsembleScorer(EnsembleProgram.from_record(record["program"])), experts,
                    record["training_receipts"], record["temperature_calibration"],
-                   target_contract=record.get("target_contract"))
+                   target_contract=record.get("target_contract"),
+                   oof_probability_record=record.get("OOF_probability"))
 
 
 def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProgram, *,
@@ -689,10 +784,10 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
     fitted = FittedEnsemble(EnsembleScorer(program), experts, receipts, target_contract=prefix.target_contract)
     if calibration_strategy == "fixed":
         return fitted
-    return _grouped_temperature(fitted, prefix.complete_groups, specs, sources, device)
+    return _grouped_temperature(fitted, prefix.complete_groups, specs, sources, device, prefix=prefix)
 
 
-def _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids=None):
+def _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids=None, *, prefix=None):
     program = fitted.scorer.program
     selected = program.expert_ids if temperature_expert_ids is None else tuple(temperature_expert_ids)
     if not selected or len(set(selected)) != len(selected) or not set(selected) <= set(program.expert_ids):
@@ -700,7 +795,7 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
     by_expert = {name: [] for name in selected}
     inner_program = EnsembleProgram.equal_weights(program.name + ":temperature_training", selected)
     selected_specs = tuple(next(spec for spec in expert_programs if spec.expert_id == name) for name in selected)
-    producers = []
+    producers, oof_rows = [], []
     for held_index, held in enumerate(calibration):
         training = [group for index, group in enumerate(calibration) if index != held_index]
         inner = fit_calibration_ensemble(training, selected_specs, inner_program,
@@ -716,6 +811,10 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
         producers.append({"held_record_id": held.view.record_id,
             "training_record_ids": [group.view.record_id for group in training],
             "expert_fit_digests": {name: item.expert_identities[0].fit_digest for name, item in scores.items()}})
+        oof_rows.append({"held_record_id": held.view.record_id,
+            "training_record_ids": [group.view.record_id for group in training],
+            "training_receipts_sha256": semantic_sha256(inner.fit_receipts),
+            "expert_evidence": {name: scores[name].record() for name in selected}})
     temperatures = {name: 1. for name in program.expert_ids}
     for name, rows in by_expert.items():
         log_probability = np.stack([row[0] for row in rows])
@@ -733,8 +832,23 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
         "evidence_scope": "calibration_development", "OOF_groups": producers,
         "final_experts_refitted_on_all_authorized_groups": True,
         "held_prediction_labels_used_for_calibration": False}
-    return FittedEnsemble(fitted.scorer, fitted._experts, fitted._training_receipts, temperature_record,
-                          target_contract=fitted._target_contract)
+    native = fitted._training_receipts[0] if fitted._target_contract is None else fitted._target_contract
+    oof_record = {"schema": GROUPED_PROBABILITY_OOF_SCHEMA, "evidence_scope": "calibration_development",
+        "captured_expert_ids": selected, "OOF_program": inner_program.record(),
+        "OOF_expert_programs": [spec.record() for spec in selected_specs],
+        "calibration_groups": [group.record() for group in calibration], "rows": oof_rows,
+        "actual_K": sum(len(group.labels) for group in calibration) if prefix is None else prefix.budget,
+        "complete_group_labels": sum(len(group.labels) for group in calibration),
+        "fit_authority_sha256": semantic_sha256([group.record() for group in calibration]
+                                                 if prefix is None else prefix.record()),
+        "native_observation": _native_observation_contract_record(native),
+        "source_checkpoint_sha256": {name: source.digest for name, source in sources.items()},
+        "final_program": fitted.scorer.program.record(),
+        "final_training_receipts_sha256": semantic_sha256(fitted.fit_receipts),
+        "final_target_contract_sha256": semantic_sha256(fitted._target_contract),
+        "final_base_experts": [_expert_state_record(expert) for expert in fitted._experts],
+        "temperature_calibration": temperature_record, "selection_performed": False}
+    return _attach_oof_probability(fitted, temperature_record, oof_record)
 
 
 def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strategies,
@@ -758,10 +872,15 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
         else:
             try:
                 result[strategy] = _grouped_temperature(fixed, prefix.complete_groups, expert_programs, sources,
-                                                       device, temperature_expert_ids)
+                                                       device, temperature_expert_ids, prefix=prefix)
             except ExpectedSubjectError as error:
                 result[strategy] = error
             except (UnidentifiableFitError, np.linalg.LinAlgError) as error:
                 result[strategy] = ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE,
                     stage="temperature", detail=f"{type(error).__name__}: {error}")
+    grouped = result.get("grouped_temperature")
+    if "fixed" in result and isinstance(grouped, FittedEnsemble):
+        result["fixed"] = FittedEnsemble(fixed.scorer, grouped._experts, fixed._training_receipts,
+            fixed.temperature_record, target_contract=fixed._target_contract,
+            oof_probability_record=grouped.oof_probability_record)
     return result
