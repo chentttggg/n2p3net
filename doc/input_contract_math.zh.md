@@ -2,6 +2,8 @@
 
 2026-10-10[新增科研切片](evidence/wishlist_progress_20261010.zh.md)继续区分函数、先验与观测算子：固定graph的同C/noise centered信号能量相等不等于effective response df相等；reference/gain/缺导须同步推送同physical S与Sigma，剩余通道上重建graph是另一个模型。B07有限状态参考以精确`L/fs`及stored binary64的有理数半开边界统一mask、retained rows和censor；浮点秒数只用于显示。B11共同scalar改变半径但不改变逐记录角向比，跨记录shared-beta contrast在独立record尺度下须另推角向law。
 
+cubic字典的native坐标为`q=n/L`，功能端点为`T=L/fs`，区别于last sample；open-clamped端点行是首/末coefficient selector，hard-value留下`k−2`维但不约束斜率。内部C2不代表free因果截断的全局平滑性；同列数、同reference能量和同effective df分别验证，不把不同函数空间自动当匹配模型。
+
 [本轮科研合同](evidence/research_integration_20261008.zh.md)对B06任务泛函和B08 quotient预测逐非零行独立归一，不能用另一强响应的尺度授予弱未观测方向信息。零泛函自然可识别，数值unresolved与结构null分开；proper completion明确提供新的物理外推prior，不把quotient未支持方差写成零。保存的QR precision决定实际评分，dense后验H只作为原生产factor的舍入诊断。
 
 对自适应清理，完整增量是`T(x+h)-T(x)`，一般不等于单独`T(h)-T(0)`或冻结一次的线性映射。B10经验covariance factor只描述指定base与draw分布，不能代替固定Gaussian的`FΣFᵀ`；B11重尾模型仅noise受共同Gamma尺度作用，独立ERP/state Gaussian不随该scale重标。两者仍须由实际调用者保持同physical grid、单位、角色与读取截止。

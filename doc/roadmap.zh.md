@@ -27,7 +27,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
 | B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec与编译包；576原状态归因、given-noise fixed-physical-prior C fitter与完整drift crosscov | 真实noise×ERP可归因对照、finite endpoint交互与joint MLE，不把ACF/低C目标当效能 |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
-| B07 字典/历史 | A0/A1 portable态、端点/容量/无重编译消费；有限history/support反例；scalar finite selection amplitude/latency/width research reference及proper soft/hard/free prior | 多家族字典、真实完整history/权限caller、actual operator/support对照、多channel随机效应、持久包与效能 |
+| B07 字典/历史 | A0/A1 portable态与cubic free/hard-value `/3`、端点/actual prior/容量/OOF/保存链；有限history/support及scalar selection amplitude/latency/width reference | raised/multiscale/phase/wavelet、cubic off-grid/硬斜率、完整history/权限、actual operator/support、多channel随机效应与效能 |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
 | B09 空间 | 一般signal-prior后验、A01六格及八人48格/MN商空间验收；现owner固定graph同C/noise能量控制及完整receipt | Pz4无额外hit且NLL增，不晋升；learned d-prime/组层级、joint MLE与新效能另验 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |

@@ -4,6 +4,8 @@
 
 `research.latent_response_reference`只有五个科研入口：状态law、off-grid analytic basis、physical selection design、proper层级prior和有限conditional evidence。它复用`joint_response_scale`的prior/decision factory/联合Gaussian积分；global beta只一次，selection additive deviation独立零均值，full/prefix共同更新离散state权重。没有生产注册、真实产品caller或第二posterior/noise fitter。
 
+`ResponseDictionarySpec("bspline", duration, k, endpoint)`编译固定cubic/open-clamped/uniform字典，free或hard-value消费同ambient与interior selector。原`dictionary_artifact`唯一owner的 `/3`核exact rational表达，Gaussian/cosine仍 `/2`；同五数组进入已有prior/geometry/continuous/ensemble/OOF与保存链。cubic非零shift/width及off-grid导数尚unsupported，零状态直接消费保存native矩阵。
+
 `FittedEnsemble.oof_probability_record`持有原grouped温度循环实际返回的完整C-only概率、inner producer identities及final program关联；原ensemble包保存该immutable记录，模型既有fit-binding锚定OOF digest与OOF前base数值身份。fixed/grouped共享同一final专家tuple；actual K与完整OOF标签剂量分开。不持久保存inner模型，不凭final模型回推原inner评分，不将全C OOF改称nested选择。
 
 [当前消费者](evidence/current_public_consumers_20261008.zh.md)由class_calibration持有fit风险/分数变换、FrozenTrialPredictor/2持有实际state/来源、ensemble_views持有实测线性空间与选择执行family、checkpoint集中核source/target不同入口的程序族相容。binary_probability复用共同输入比较owner及artifact SHA，确定性seed alias保留完整概率状态；旧/1不被重签proper合同。

@@ -28,6 +28,8 @@ import numpy as np
 from transfer.noise_model import array_digest, frozen_array, metadata_digest
 
 DICTIONARY_SCHEMA = "n2p3_response_dictionary/2"
+BSPLINE_DICTIONARY_SCHEMA = "n2p3_response_dictionary/3"
+DICTIONARY_SCHEMAS = frozenset({DICTIONARY_SCHEMA, BSPLINE_DICTIONARY_SCHEMA})
 COMPILER_SEMANTIC_ID = "n2p3_physical_dictionary_decimal96_binary64/1"
 COMPILER_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 ARRAY_KEYS = ("times", "ambient_matrix", "matrix", "endpoint_rows", "constraint_map")
@@ -40,6 +42,14 @@ _COMPILER = {
     "decimal_rounding": "ROUND_HALF_EVEN",
     "cosine_terms": 64,
     "pi_decimal": _PI,
+    "binary64_rounding": "integer_nearest_ties_even",
+    "lift": "exact_rational_dot_of_binary64_operands_then_one_binary64_round",
+}
+_BSPLINE_COMPILER = {
+    "semantic_id": "n2p3_physical_cubic_bspline_rational_binary64/1",
+    "degree": 3,
+    "knot_program": "open_clamped_uniform_normalized_exact_rational",
+    "evaluation": "exact_rational_Cox_de_Boor_then_one_binary64_round",
     "binary64_rounding": "integer_nearest_ties_even",
     "lift": "exact_rational_dot_of_binary64_operands_then_one_binary64_round",
 }
@@ -129,14 +139,19 @@ def _program_dimensions(spec, sample_rate_hz):
     width = spec["n_basis"]
     if length < 3 or width > length:
         raise DictionaryArtifactError("ambient_dimension_outside_sample_support")
-    if spec["endpoint"] == "hard_zero" and (spec["family"] != "cosine" or width < 3):
+    if spec["family"] == "bspline" and width < 4:
+        raise DictionaryArtifactError("cubic_bspline_requires_four_ambient_functions")
+    if spec["endpoint"] == "hard_zero" and (spec["family"] not in {"cosine", "bspline"} or width < 3):
         raise DictionaryArtifactError("unsupported_or_empty_hard_endpoint_space")
     return rate, rate_ratio, length, width
 
 
-def _chart(width, hard):
+def _chart(width, hard, family="cosine"):
     if not hard:
         return np.eye(width, dtype=np.float64)
+    if family == "bspline":
+        # Open-clamped cubic endpoint rows are e_0 and e_(width-1).
+        return np.eye(width, dtype=np.float64)[:, 1:-1]
     result = np.zeros((width, width-2), dtype=np.float64)
     column = 0
     for parity in (0, 1):
@@ -150,7 +165,35 @@ def _chart(width, hard):
     return result
 
 
+def _cubic_bspline_value(length, width, sample, column):
+    """Exact uniform/open-clamped cubic value; q=1 is the inner left limit."""
+    coordinate = Fraction(sample, length)
+    values = {}
+
+    def knot(index):
+        return Fraction(0) if index < 4 else Fraction(1) if index >= width else Fraction(index-3, width-3)
+
+    def basis(index, degree):
+        key = index, degree
+        if key not in values:
+            if degree == 0:
+                values[key] = Fraction(int(knot(index) < coordinate <= knot(index+1) if sample == length
+                                           else knot(index) <= coordinate < knot(index+1)))
+            else:
+                left, right = knot(index+degree)-knot(index), knot(index+degree+1)-knot(index+1)
+                values[key] = (((coordinate-knot(index))*basis(index, degree-1)/left if left else 0)
+                               +((knot(index+degree+1)-coordinate)*basis(index+1, degree-1)/right if right else 0))
+        return values[key]
+
+    # Only the fixed cubic triangle (at most ten nodes), not every column's
+    # full ambient row. This local memo dies after the one scalar expression.
+    value = basis(column, 3)
+    return _binary64(value.numerator, value.denominator)
+
+
 def _ambient(spec, length, width, sample, column):
+    if spec["family"] == "bspline":
+        return _cubic_bspline_value(length, width, sample, column)
     if spec["family"] == "cosine":
         return _cosine(Fraction(sample*column, length))
     denominator = max(width-1, 1)
@@ -169,6 +212,13 @@ def _dot(left, right):
 
 
 def _generation(spec, rate_ratio, length, width):
+    if spec["family"] == "bspline":
+        intervals = width-3
+        knots = [Fraction()] * 4 + [Fraction(i, intervals) for i in range(1, intervals)] + [Fraction(1)] * 4
+        return {"degree": 3, "normalized_knots_exact_ratio": [[v.numerator, v.denominator] for v in knots],
+                "time_coordinate": "q=t/(L/fs); native q=n/L",
+                "endpoint_side": "left_at_q=1; right_at_other_knots",
+                "evaluation": "exact_rational_Cox_de_Boor_then_one_binary64_round"}
     if spec["family"] == "gaussian":
         denominator = max(width-1, 1)
         return {"centers_seconds": [_rounded(Fraction(j*(length-1), denominator)/rate_ratio)
@@ -183,7 +233,8 @@ def _generation(spec, rate_ratio, length, width):
 
 def _metadata(spec, rate, rate_ratio, length, width, arrays, producer, compiler_source):
     hard = spec["endpoint"] == "hard_zero"
-    return {"schema": DICTIONARY_SCHEMA, "spec": spec, "sample_rate_hz": rate,
+    cubic = spec["family"] == "bspline"
+    return {"schema": BSPLINE_DICTIONARY_SCHEMA if cubic else DICTIONARY_SCHEMA, "spec": spec, "sample_rate_hz": rate,
             "actual_seconds": _rounded(Fraction(length)/rate_ratio),
             "support_samples": [0, length],
             "last_sample_seconds": _rounded(Fraction(length-1)/rate_ratio),
@@ -191,20 +242,20 @@ def _metadata(spec, rate, rate_ratio, length, width, arrays, producer, compiler_
             "column_units": "dimensionless", "coefficient_units": "volts",
             "generation": _generation(spec, rate_ratio, length, width),
             "ambient_dimension": width, "function_dimension": width-2 if hard else width,
-            "coordinate_system": {"ambient_order": "ascending_center_or_harmonic",
-                "coefficient_chart": "helmert_even_then_odd" if hard else "identity",
-                "constraints": "analytic_cosine_endpoints" if hard else "unrestricted"},
-            "compiler": {**_COMPILER, "source_sha256": compiler_source},
+            "coordinate_system": {"ambient_order": "ascending_cubic_knot_index" if cubic else "ascending_center_or_harmonic",
+                "coefficient_chart": ("interior_clamped_coefficients" if cubic else "helmert_even_then_odd") if hard else "identity",
+                "constraints": ("clamped_cubic_endpoint_values" if cubic else "analytic_cosine_endpoints") if hard else "unrestricted"},
+            "compiler": {**(_BSPLINE_COMPILER if cubic else _COMPILER), "source_sha256": compiler_source},
             "implementation_sha256": producer,
             "state_sha256": array_digest(*(arrays[key] for key in ARRAY_KEYS))}
 
 
 def compile_state(spec, sample_rate_hz, *, implementation_sha256):
-    """Compile one new /2 state. Spec validation belongs to ResponseDictionarySpec."""
+    """Compile the declared /2 analytic or /3 cubic state using one owner."""
     rate, rate_ratio, length, width = _program_dimensions(spec, sample_rate_hz)
     hard = spec["endpoint"] == "hard_zero"
     with localcontext(_CONTEXT):
-        chart = _chart(width, hard)
+        chart = _chart(width, hard, spec["family"])
         times = np.asarray([_rounded(Fraction(i)/rate_ratio) for i in range(length)])
         ambient = np.asarray([[_ambient(spec, length, width, i, j) for j in range(width)]
                               for i in range(length)])
@@ -224,14 +275,18 @@ def _same_scalar(actual, expected, field, index):
 
 
 def admit_record(record, spec):
-    """Validate one external /2 artifact and retain its exact saved numeric state.
+    """Validate the exact declared /2 or /3 program and retain its saved state.
 
     This is not producer authentication. The package/executor must separately
     bind producer hashes to its accepted execution freeze. Rehashing a forged
     payload cannot bypass the independent physical expression checks here.
     """
-    if not isinstance(record, dict) or record.get("schema") != DICTIONARY_SCHEMA:
+    if (not isinstance(record, dict) or not isinstance(record.get("schema"), str)
+            or record["schema"] not in DICTIONARY_SCHEMAS):
         raise DictionaryArtifactError("unsupported_dictionary_schema", field="schema")
+    schema = BSPLINE_DICTIONARY_SCHEMA if spec["family"] == "bspline" else DICTIONARY_SCHEMA
+    if record["schema"] != schema:
+        raise DictionaryArtifactError("dictionary_schema_and_family_program_mismatch", field="schema")
     rate, rate_ratio, length, width = _program_dimensions(spec, record.get("sample_rate_hz"))
     hard = spec["endpoint"] == "hard_zero"
     dimension = width-2 if hard else width
@@ -261,7 +316,7 @@ def admit_record(record, spec):
             raise DictionaryArtifactError("invalid_physical_metadata") from error
         if metadata_identity != metadata_digest(expected):
             raise DictionaryArtifactError("physical_metadata_or_payload_binding_mismatch")
-        chart = _chart(width, hard)
+        chart = _chart(width, hard, spec["family"])
         for row in range(width):
             for column in range(dimension):
                 _same_scalar(arrays["constraint_map"][row, column], float(chart[row, column]),

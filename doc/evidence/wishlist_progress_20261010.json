@@ -54,7 +54,8 @@
       "binding_sha256": "af5541b6e9855470b54a40dbbdd489105921fa28a17df8d0fa95dd00db2b43ba",
       "root_review": "accepted_limited_scalar_finite_reference",
       "changes_reviewed": "private helper scope; single Gaussian object; deleted unused C design mirror; unit-amplitude local design avoids multiply/divide roundtrip",
-      "passed": 25
+      "passed": 25,
+      "source_record_role": "Original 25-case acceptance at8766f11; later cubic change only adds typed new-family offgrid guard, accepted separately under B07_CUBIC; original results are not resigned"
     },
     "B03": {
       "author_binding": "C:\\Users\\chent\\.codex\\worktrees\\wishlist-integration\\n2p3-net\\tmp\\WISHLIST_INTEGRATION\\B03\\integration_binding.json",
@@ -64,12 +65,27 @@
       "root_review": "accepted_complete_group_C_only_capture_and_original_package",
       "inner_models_persisted": false,
       "nested_selection_or_gating_done": false
+    },
+    "B07_CUBIC": {
+      "author_binding": "C:\\Users\\chent\\.codex\\worktrees\\wishlist-integration\\n2p3-net\\tmp\\WISHLIST_INTEGRATION\\B07_CUBIC_IMPLEMENTATION\\delivery.binding.json",
+      "binding_sha256": "71103859e33d0c07fb68174032012c7607ef5a052be9d5f19e75c73ecdf9bfbc",
+      "review_binding": "C:\\Users\\chent\\.codex\\worktrees\\wishlist-integration\\n2p3-net\\tmp\\WISHLIST_INTEGRATION\\REVIEWS\\B07_CUBIC_INDEPENDENT.binding.json",
+      "review_binding_sha256": "9555df4e000d5c96f49539187fd10c7026613c535049ef035a722f477b63d926",
+      "root_review": "accepted_fixed_cubic_open_clamped_uniform_free_hard_value_software",
+      "final_symbolic_native_cells": 2652,
+      "final_consumer_cases": 8,
+      "offgrid_derivative_cubic_implemented": false,
+      "legacy_numeric_schema": "n2p3_response_dictionary/2",
+      "cubic_numeric_schema": "n2p3_response_dictionary/3",
+      "compiler": "single_existing_owner_exact_rational_fixed_degree3_local_memo"
     }
   },
   "ongoing": [
-    "B09_LEARNED_NEXT shrinkage reference",
-    "B11 actual fixed-shape x declared delayed-span finite C-only diagnostic",
-    "B00_RISK_NEXT predeclared uniform and wrong-confidence policies"
+    "B07 raised/multiscale/phase/wavelet compiler and actual callers remain pending",
+    "B03 strict nested transforms/policy/gating and independent validation remain pending",
+    "B09 canonical learned effect/group factor and numerical contracts remain pending",
+    "B05/B11 identifiable alternative temporal/noise/ERP model and paired risk remain pending",
+    "B12 accepted496 public run terminal and throughput remain cloud-owned"
   ],
   "cloud_execution": {
     "source_freeze_manifest_sha256": "04ff8a07a7a801fca4d46904572ea9a2acd6696570c72454de280d773900f12e",
@@ -88,6 +104,26 @@
       "energy_per_dimension_descriptive": 7.516983817610938,
       "root_review": "accepted_source_bound_C_only_diagnostic",
       "known_record_scales_or_calibrated_p_claimed": false
+    },
+    "B11_SHAPE_SPAN_PANEL": {
+      "author_binding": "C:\\Users\\chent\\.codex\\worktrees\\wishlist-integration\\n2p3-net\\tmp\\WISHLIST_INTEGRATION\\B11_NEXT\\shape_span_panel\\binding.json",
+      "author_binding_sha256": "d724b1988ffaeb835ceb385a7f2dfee30a2a4ae99a9a0258b8dec5cf6c420778",
+      "review_binding": "C:\\Users\\chent\\.codex\\worktrees\\wishlist-integration\\n2p3-net\\tmp\\WISHLIST_INTEGRATION\\REVIEWS\\B11_SHAPE_SPAN_PANEL_INDEPENDENT.binding.json",
+      "review_binding_sha256": "e91dd7fa16447e23dfbb9fcac10f9ae03941abf05c7e23ac12eeb3d7560b703c",
+      "root_review": "accepted_fixed_input_and_frozen_shape_finite_C_only_contrast_panel",
+      "completed_requested_cells": 20,
+      "completed_controls": 10,
+      "AR8_added_span_absorption_fraction_range": [
+        0.011929,
+        0.017575
+      ],
+      "AR8_lag1_after_extension_range": [
+        0.803929,
+        0.817699
+      ],
+      "new_fit_or_held_score": false,
+      "prior_completion_for_added_response": "not_provided_contrast_only",
+      "control_white_spectrum_matched": false
     }
   },
   "accepted_research_prototypes": {
@@ -100,8 +136,32 @@
       "production_implemented": false,
       "wavelet_implemented": false,
       "raised_global_free_crop_C1_claimed": false
+    },
+    "B00_RISK_NEXT": {
+      "author_manifest": "C:\\Users\\chent\\.codex\\worktrees\\wishlist-integration\\n2p3-net\\tmp\\WISHLIST_INTEGRATION\\B00_RISK_NEXT\\manifest.json",
+      "manifest_sha256": "63b2d6e1dc09464622b4859e6b93ed616496fc8a42ac8eccb299ded9d27c903f",
+      "review_binding": "C:\\Users\\chent\\.codex\\worktrees\\wishlist-integration\\n2p3-net\\tmp\\WISHLIST_INTEGRATION\\REVIEWS\\B00_RISK_NEXT_INDEPENDENT.binding.json",
+      "review_binding_sha256": "4e18e20bd6e3f1ed95eeb367deed130314194cc074c6afb9589545c80747be24",
+      "root_review": "accepted_finite_synthetic_policy_and_one_sided_lower_bound_reference",
+      "default_policy_chosen": false,
+      "production_gate_implemented": false,
+      "negative_stored_NLL_domain": "typed_unresolved_in_auxiliary_bound_only_point_risk_unchanged"
+    },
+    "B09_LEARNED_NEXT": {
+      "fixed_source": "C:\\Users\\chent\\.codex\\worktrees\\wishlist-integration\\n2p3-net\\tmp\\WISHLIST_INTEGRATION\\B09_LEARNED_NEXT\\learned_reference.binding_fixed.py",
+      "fixed_source_sha256": "bc168225c2e6e6a6443e0e1eaaaca3753de1d1fb3b479f04c73bf8e08b98454c",
+      "postfix_author_binding": "C:\\Users\\chent\\.codex\\worktrees\\wishlist-integration\\n2p3-net\\tmp\\WISHLIST_INTEGRATION\\B09_LEARNED_NEXT\\effect_definition_fix_binding.json",
+      "binding_sha256": "80a0335a568cadf9a38dfb26e96dfef9bdd61eb9b4b426769539443fd272915a",
+      "review_binding": "C:\\Users\\chent\\.codex\\worktrees\\wishlist-integration\\n2p3-net\\tmp\\WISHLIST_INTEGRATION\\REVIEWS\\B09_LEARNED_NEXT_INDEPENDENT.binding.json",
+      "review_binding_sha256": "8805143b100051982b8665ce57f465e6958c77f70f5dd5b153a6693a4ef9e108",
+      "root_review": "accepted_private_reference_and_physical_effect_definition_P2_fix",
+      "old_19_results_resigned": false,
+      "canonical_learn_enabled": false,
+      "measurement_noise_must_be_same_across_people": false
     }
   },
+  "remaining_prototype_review_findings": {},
+  "integration_milestone": "First 5-owner integration commit8766f11 plus independently accepted cubic/compiler and finite research diagnostics; all123 wishes remain active",
   "items": [
     {"id":"W01.01","source_line":13,"blocks":["B01"],"status":"partial","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"partial","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"实际来源/reference/unit明确，硬件抗混叠、上游滤波细节、MAT写出unknown。","missing_exit":["取得设备/分发写出真实证据并逐记录完善；不假定恢复ADC。"]},
     {"id":"W01.02","source_line":14,"blocks":["B01"],"status":"contract_complete","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"not_applicable_rule","real_development_experiment":"not_applicable_rule","production_and_efficacy":"rule_only_no_efficacy_claim"},"current_detail":"分发processed MAT、项目新增算子、不可得ADC层级明确。","missing_exit":[]},
@@ -128,13 +188,13 @@
     {"id":"W02.10","source_line":38,"blocks":["B07","B06"],"status":"in_progress","layers":{"contract_software":"partial","mathematical_reference_or_mechanism":"partial","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"common/increment/history存在，早期/P300/慢漂/邻居/latency统一空间不完整。","missing_exit":["子空间可识别函数、actual support/operator、random-effect保存/C对照。"]},
     {"id":"W02.11","source_line":39,"blocks":["B06"],"status":"partial","layers":{"contract_software":"partial","mathematical_reference_or_mechanism":"partial","real_development_experiment":"historical_limited_development","production_and_efficacy":"pending"},"current_detail":"软penalty/distance历史参考已有，分段最终校正器未验。","missing_exit":["最终T的soft/分段/distance准入与ERP/noise代价。"]},
     {"id":"W02.12","source_line":40,"blocks":["B06"],"status":"partial","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"已有constraint/rank/gain诊断，未统一覆盖每最终策略。","missing_exit":["全部策略残差/condition/gain与actual来源统一报告。"]},
-    {"id":"W03.01","source_line":46,"blocks":["B07"],"status":"partial","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"partial","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"canonical只有Gaussian/cosine，无B-spline/raised cosine/wavelet/multiscale。 Independent mathematical prototype for cubic/raised/independent multiscale and overlapping coefficient phase groups accepted; canonical compiler/caller and efficacy pending.","missing_exit":["多家族physical spec/state、坐标控制和异容量真实对照。"]},
+    {"id":"W03.01","source_line":46,"blocks":["B07"],"status":"partial","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"partial","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"Gaussian/cosine及fixed cubic B-spline free/hard value已接唯一compiler、实际continuous/C-prior/capacity/OOF和保存链；raised/multiscale仅数学原型，wavelet pending。","missing_exit":["raised/multiscale/wavelet的physical compiler/实际caller、匹配容量与合法public效能。"]},
     {"id":"W03.02","source_line":47,"blocks":["B07"],"status":"in_progress","layers":{"contract_software":"partial","mathematical_reference_or_mechanism":"partial","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"一/二导数Taylor参考有，新latency候选等待root。","missing_exit":["导数/shift关系、近似误差/support、actual C识别与保存联动。"]},
     {"id":"W03.03","source_line":48,"blocks":["B07"],"status":"in_progress","layers":{"contract_software":"partial","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"有限scalar selection amplitude/latency/width reference已整合，独立proper deviation与global beta一次积分；多channel/真实完整caller未闭合。","missing_exit":["多channel真实caller/history/权限、持久程序、continuous latent精度及public风险。"]},
     {"id":"W03.04","source_line":49,"blocks":["B07"],"status":"in_progress","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"partial","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"common/target increment已分，selection-specific层为新候选。","missing_exit":["第三层contrast/proper约束、来源与真实fit/predict。"]},
     {"id":"W03.05","source_line":50,"blocks":["B07"],"status":"unverified","layers":{"contract_software":"not_implemented","mathematical_reference_or_mechanism":"design_only","real_development_experiment":"not_executed","production_and_efficacy":"pending"},"current_detail":"row/column membership不等于学习row/column ERP层。","missing_exit":["stimulus contrast识别设计、估计器/保存与配对风险。"]},
     {"id":"W03.06","source_line":51,"blocks":["B07"],"status":"partial","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"partial","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"physical support/endpoint可声明，早期/P300/晚慢波独立空间未完整。 Independent mathematical prototype for cubic/raised/independent multiscale and overlapping coefficient phase groups accepted; canonical compiler/caller and efficacy pending.","missing_exit":["独立physical子空间、cross-prior/容量与同输入C对照。"]},
-    {"id":"W03.07","source_line":52,"blocks":["B07"],"status":"partial","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"free/hard portable字典与proper soft/hard prior scalar reference已验；soft未进入canonical dictionary spec或actual operator完整三臂。","missing_exit":["soft endpoint完整physical spec/package及actual operator/support的三臂预声明效能对照。"]},
+    {"id":"W03.07","source_line":52,"blocks":["B07"],"status":"partial","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"Gaussian/cosine/cubic free/hard value软件与外部proper soft/hard prior scalar reference已验；soft、slope和真实operator三臂仍未闭合。","missing_exit":["soft endpoint完整physical spec/package及actual operator/support的三臂预声明效能对照。"]},
     {"id":"W03.08","source_line":53,"blocks":["B07"],"status":"in_progress","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"finite history及actual adapter已审，长记录/权限caller未完成。","missing_exit":["全event history/label-state来源、support证明与长期组合保存。"]},
     {"id":"W03.09","source_line":54,"blocks":["B07"],"status":"partial","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"同步F传播数学与错误support反例完成，learned filtered字典未真实控制。","missing_exit":["actual F、raw/filtered same physical prior，适应/算子收益分离开发。"]},
     {"id":"W03.10","source_line":55,"blocks":["B07"],"status":"contract_complete","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"not_applicable_rule","real_development_experiment":"not_applicable_rule","production_and_efficacy":"rule_only_no_efficacy_claim"},"current_detail":"当前dictionary绑定physical秒/actual fs/grid/support/endpoint和五数组。","missing_exit":[]},
@@ -155,10 +215,10 @@
     {"id":"W04.14","source_line":73,"blocks":["B05"],"status":"development_complete_limited","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"completed_limited_development","production_and_efficacy":"pending"},"current_detail":"M1残差门与hit/NLL门分开，11替代臂均未过，不以ACF晋升。","missing_exit":["新完整public/adult分类收益仍独立验收。"]},
     {"id":"W05.01","source_line":79,"blocks":["B09"],"status":"contract_complete","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"not_applicable_rule","real_development_experiment":"not_applicable_rule","production_and_efficacy":"rule_only_no_efficacy_claim"},"current_detail":"current Pz进入signal-prior研究，无手工noise precision默认放大。","missing_exit":[]},
     {"id":"W05.02","source_line":80,"blocks":["B09"],"status":"partial","layers":{"contract_software":"partial","mathematical_reference_or_mechanism":"partial","real_development_experiment":"historical_limited_development","production_and_efficacy":"pending"},"current_detail":"xDAWN/空间LDA历史开发已有，Riemannian owner存在，三类current matched比较缺。","missing_exit":["同input/support的Riemannian ERP/LDA/xDAWN和新完整risk。"]},
-    {"id":"W05.03","source_line":81,"blocks":["B09"],"status":"partial","layers":{"contract_software":"partial","mathematical_reference_or_mechanism":"partial","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"历史d-prime precision权重失败，current learn拒绝，新片仅收缩测量接点。","missing_exit":["C/source-only d-prime sampling cov/strong shrink estimator与group依赖。"]},
+    {"id":"W05.03","source_line":81,"blocks":["B09"],"status":"partial","layers":{"contract_software":"partial","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"已接受明确physical effect/d-prime与source-only group强锚定的私有reference、两种completion及物理定义P2修复；canonical learn仍unsupported。","missing_exit":["完整measurement factor/chart与canonical数值解析、source独立权限、variance不确定性或独立plugin验证、真实source/target配对效能。"]},
     {"id":"W05.04","source_line":82,"blocks":["B09"],"status":"partial","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"completed_limited_development","production_and_efficacy":"pending"},"current_detail":"Pz4 signal covariance48格完成，不是已学nonzero ERP mean prior。","missing_exit":["learned physical mean/cov来源、same I/tied控制和独立risk。"]},
     {"id":"W05.05","source_line":83,"blocks":["B09"],"status":"in_progress","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"固定external graph同C/noise centered energy控制已迁入SpatialSignalPrior；原两次C开发保producer。","missing_exit":["learned shape、完整public risk与跨人稳定性。"]},
-    {"id":"W05.06","source_line":84,"blocks":["B09"],"status":"partial","layers":{"contract_software":"partial","mathematical_reference_or_mechanism":"partial","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"proper通道组方程已给，group variance/estimator未实施。","missing_exit":["actual layout group design/variance来源、general prior估计保存开发。"]},
+    {"id":"W05.06","source_line":84,"blocks":["B09"],"status":"partial","layers":{"contract_software":"partial","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"已接受明确physical effect/d-prime与source-only group强锚定的私有reference、两种completion及物理定义P2修复；canonical learn仍unsupported。","missing_exit":["完整measurement factor/chart与canonical数值解析、source独立权限、variance不确定性或独立plugin验证、真实source/target配对效能。"]},
     {"id":"W05.07","source_line":85,"blocks":["B09"],"status":"in_progress","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"actual reference/gain/range基础已验，新pushforward/rebuild/missing门待root。","missing_exit":["共同授权owner组合保存与actual模型接线。"]},
     {"id":"W05.08","source_line":86,"blocks":["B09"],"status":"partial","layers":{"contract_software":"complete_for_cited_scope","mathematical_reference_or_mechanism":"complete_for_declared_reference","real_development_experiment":"completed_limited_development","production_and_efficacy":"pending"},"current_detail":"8人native/Cz/Pz归因完成，单BNCI/每人一个later decision非cross-source稳定。","missing_exit":["多源/reference与独立人Pz稳定性、C-only来源。"]},
     {"id":"W05.09","source_line":87,"blocks":["B09"],"status":"partial","layers":{"contract_software":"partial","mathematical_reference_or_mechanism":"partial","real_development_experiment":"not_verified","production_and_efficacy":"pending"},"current_detail":"Toeplitz与spatial posterior分别有，未实现共同生成spatial-weight+Toeplitz模型。","missing_exit":["统一space/time covariance、权限、prior/df与paired开发。"]},

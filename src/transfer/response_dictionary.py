@@ -10,7 +10,7 @@ import numpy as np
 
 from transfer.dictionary_artifact import (
     ARRAY_KEYS,
-    DICTIONARY_SCHEMA,
+    DICTIONARY_SCHEMAS,
     DictionaryArtifactError,
     admit_record,
     compile_state,
@@ -28,13 +28,15 @@ class ResponseDictionarySpec:
     endpoint: str = "free"
 
     def __post_init__(self):
-        if self.family not in {"gaussian", "cosine"} or self.endpoint not in {"free", "hard_zero"}:
+        if self.family not in {"gaussian", "cosine", "bspline"} or self.endpoint not in {"free", "hard_zero"}:
             raise ValueError("unsupported physical dictionary family or endpoint program")
         if (isinstance(self.response_seconds, bool) or not isinstance(self.response_seconds, (int, float))
                 or not np.isfinite(self.response_seconds) or self.response_seconds <= 0
                 or type(self.n_basis) is not int or self.n_basis < 1):
             raise ValueError("dictionary duration and ambient dimension must be positive finite values")
         object.__setattr__(self, "response_seconds", float(self.response_seconds))
+        if self.family == "bspline" and self.n_basis < 4:
+            raise ValueError("fixed cubic B-spline requires at least four ambient functions")
 
     def record(self):
         return {"family": self.family, "response_seconds": self.response_seconds,
@@ -107,7 +109,8 @@ class ResponseDictionary:
 
     @classmethod
     def from_record(cls, record):
-        if not isinstance(record, dict) or record.get("schema") != DICTIONARY_SCHEMA:
+        if (not isinstance(record, dict) or not isinstance(record.get("schema"), str)
+                or record["schema"] not in DICTIONARY_SCHEMAS):
             raise DictionaryArtifactError("unsupported_dictionary_schema", field="schema")
         try:
             spec = ResponseDictionarySpec.from_record(record["spec"])

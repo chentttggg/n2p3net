@@ -75,7 +75,7 @@ def analytic_basis(dictionary: ResponseDictionary, seconds, derivative=0):
             ambient = -omega*np.sin(phase)
         else:
             ambient = -omega**2*np.cos(phase)
-    else:
+    elif dictionary.spec.family == "gaussian":
         generation = dictionary.metadata()["generation"]
         center = np.asarray(generation["centers_seconds"])
         sigma = generation["width_seconds"]
@@ -85,6 +85,8 @@ def analytic_basis(dictionary: ResponseDictionary, seconds, derivative=0):
             ambient = -distance/sigma**2*ambient
         elif derivative == 2:
             ambient = (distance**2/sigma**4-1/sigma**2)*ambient
+    else:
+        raise NumericalResolutionError("off_grid_response_dictionary_family_is_unsupported")
     return ambient @ dictionary.constraint_map
 
 
