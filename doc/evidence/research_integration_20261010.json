@@ -1,15 +1,17 @@
 {
   "schema": "n2p3_final_source_manifest_pointer/1",
-  "integration_status": "integrated_post_unlink_pending_final_freeze",
+  "integration_status": "integrated_post_unlink_final_source_freeze",
   "integration_artifact": "tmp/FINAL_INTEGRATION/final_integration.json",
-  "integration_artifact_sha256": "d5dd85d2b17e2b0387472b4ebff42c3f049dff6f74e6d167d8e0068a420e26af",
+  "integration_artifact_sha256": "aac0a714eef60f23f1b5a8fed1962c6b7ae4d02462465beed978addffcc2766f",
   "source_freeze": {
-    "manifest": "tmp/FINAL_INTEGRATION/final_source_20261010_final5/source.manifest.json",
-    "manifest_sha256": "b193664bf5d42b74529babf04f6c27f90e25748f1696573420daf27240137b7d",
-    "archive": "tmp/FINAL_INTEGRATION/final_source_20261010_final5/source.source-only.tar.gz",
-    "archive_sha256": "5f3b2a6b6bcfd70b624131fba99eeb221a947c1ba6846716bda328e41d343b6b",
+    "manifest": "tmp/FINAL_INTEGRATION/accepted_source_20261010_post_unlink/source.manifest.json",
+    "manifest_sha256": "04ff8a07a7a801fca4d46904572ea9a2acd6696570c72454de280d773900f12e",
+    "archive": "tmp/FINAL_INTEGRATION/accepted_source_20261010_post_unlink/source.source-only.tar.gz",
+    "archive_sha256": "4b075a2df69b781f03844ad7efe2e3d4a2b64342118ea291bb85e1aa99dc2127",
     "member_count": 496,
-    "working_tree_snapshot": true
+    "working_tree_snapshot": true,
+    "materialized": false,
+    "source_commit": "c1b0dece76f4cacf1eba357cbd9b9855a3d2aacb"
   },
   "accepted_scopes": {
     "canonical_science_review": {
@@ -72,7 +74,7 @@
     "public efficacy/adult/device confirmation not established",
     "whole-tree deletion batch remains blocked by automatic approval policy"
   ],
-  "local_archive_retention": "source archive and materialized checkout remain in ignored tmp/FINAL_INTEGRATION; manifest and hashes are the tracked pointer",
+  "local_archive_retention": "one accepted post-unlink archive in ignored tmp/FINAL_INTEGRATION, no extra materialized checkout; historical producers kept; no cleanup performed",
   "integration_commit": "see current HEAD at delivery",
   "source_ingress": {
     "archive_sha256": "b5bc3277139d210bfbde5101dddbedec61314f75b04ad4295ce4ddfa31229820",
@@ -106,5 +108,27 @@
     "post_unlink_integration": "tmp/FINAL_INTEGRATION/post_unlink_integration.json",
     "post_unlink_integration_sha256": "3b4286fd287bc8304596ffc97e3102770d7a0f045a1616b334066d0c0be93482"
   },
-  "source_freeze_role": "historical_pre_post_unlink_source; current executable freeze pending"
+  "source_freeze_role": "current accepted post-unlink source; private projection candidate excluded",
+  "historical_source_freeze": {
+    "manifest": "tmp/FINAL_INTEGRATION/final_source_20261010_final5/source.manifest.json",
+    "manifest_sha256": "b193664bf5d42b74529babf04f6c27f90e25748f1696573420daf27240137b7d",
+    "archive": "tmp/FINAL_INTEGRATION/final_source_20261010_final5/source.source-only.tar.gz",
+    "archive_sha256": "5f3b2a6b6bcfd70b624131fba99eeb221a947c1ba6846716bda328e41d343b6b",
+    "member_count": 496,
+    "working_tree_snapshot": true,
+    "status": "ff4_post_unlink_defect_preserved; not_accepted_for_future_execution"
+  },
+  "private_research_audits": {
+    "score_gate": {
+      "report": "tmp/FINAL_SCORE_GATE_RESEARCH/REPORT.zh.md",
+      "binding": "tmp/FINAL_SCORE_GATE_RESEARCH/BINDING.json",
+      "current_source_status": "typed_unresolved_on_locked_actual_length_fixture",
+      "operation_wise_candidate": "independent_source_slice_in_progress; not_in_this_executable_freeze"
+    },
+    "flat_nuisance": {
+      "report": "tmp/FINAL_FLAT_NUISANCE_AUDIT/AUDIT.zh.md",
+      "binding": "tmp/FINAL_FLAT_NUISANCE_AUDIT/binding.json",
+      "status": "reference_only; generic_proper_carrier_typed_unsupported"
+    }
+  }
 }
