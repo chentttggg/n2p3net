@@ -1,8 +1,11 @@
 # 研究与工程证据
 
+- [2026-10-10最终集成来源](research_integration_20261010.json)：修后0a/a96 cold reclaim、相关41项本地验收与496成员后置冻结；旧final5不作为未来可执行源，原491/493身份保持。私有投影界切片仅获局部科研验收，完整conditional长记录仍unresolved。
+
 - [本地科研机制与真实数据](research_mechanisms_20261009.zh.md)：八人48格fixed-noise signal-prior、MN/reference商空间等价、native可识别性与完整自适应挑战、有限整selection历史参考；保存态/独立反例、归因限制及实际执行来源。
 
-- [B05固定物理先验1728格终态](../../tmp/research_line_20261009/REVIEWS/B05_MATRIX_FINAL.zh.md)：48个C unit、1728 requested logical cells、原中断恢复、source/input/array绑定、强MN门禁失败项和实际资源限制。该报告只支持给定冻结噪声与plugin prior机制读数。
+- [B05固定物理先验1728格终态](research_mechanisms_20261009.zh.md#b05-固定物理先验-1728-格终态)：48个C unit、1728 requested logical cells、原中断恢复、source/input/array绑定、强MN门禁失败项和实际资源限制。该报告只支持给定冻结噪声与plugin prior机制读数。
+  后续保存态独立归因定位59项RED到病态dense-H/Cholesky oracle精度损失，原门结果不改判；现行posterior root持久化与预测调用链另已核实。
 
 - [科研与代码集成](research_integration_20261008.zh.md)：两窗口单作者分工、总并发10、科研单seed/大版本三seed；字典重编译与容量诊断跨平台风险、独立机制代码的实际实施和未验收范围。
 

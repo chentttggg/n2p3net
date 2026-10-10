@@ -2,7 +2,7 @@
   "schema": "n2p3_final_source_manifest_pointer/1",
   "integration_status": "integrated_post_unlink_final_source_freeze",
   "integration_artifact": "tmp/FINAL_INTEGRATION/final_integration.json",
-  "integration_artifact_sha256": "aac0a714eef60f23f1b5a8fed1962c6b7ae4d02462465beed978addffcc2766f",
+  "integration_artifact_sha256": "98bf059ff1c6e591164d0f1834a5325f45058a6c862eb5126bdcfc91a00fdd72",
   "source_freeze": {
     "manifest": "tmp/FINAL_INTEGRATION/accepted_source_20261010_post_unlink/source.manifest.json",
     "manifest_sha256": "04ff8a07a7a801fca4d46904572ea9a2acd6696570c72454de280d773900f12e",
@@ -71,8 +71,7 @@
     "full final-source cloud suite after this merged source not run",
     "normal actual-length score gate remains typed unresolved at conservative full-projection bound",
     "flat nuisance long-record sampler/product package not integrated",
-    "public efficacy/adult/device confirmation not established",
-    "whole-tree deletion batch remains blocked by automatic approval policy"
+    "public efficacy/adult/device confirmation not established"
   ],
   "local_archive_retention": "one accepted post-unlink archive in ignored tmp/FINAL_INTEGRATION, no extra materialized checkout; historical producers kept; no cleanup performed",
   "integration_commit": "see current HEAD at delivery",
@@ -123,12 +122,37 @@
       "report": "tmp/FINAL_SCORE_GATE_RESEARCH/REPORT.zh.md",
       "binding": "tmp/FINAL_SCORE_GATE_RESEARCH/BINDING.json",
       "current_source_status": "typed_unresolved_on_locked_actual_length_fixture",
-      "operation_wise_candidate": "independent_source_slice_in_progress; not_in_this_executable_freeze"
+      "operation_wise_candidate": "accepted_local_research_scope_only; excluded_from_public_executable_freeze",
+      "candidate_sha256": "6e7977f2f6a48758ae18993e2aa2c3b17e9ca14428ad352469b1a5972411774b",
+      "candidate_binding": "tmp/FINAL_SCORE_GATE_RESEARCH/source_slice/BINDING.json",
+      "candidate_binding_sha256": "8108a1f800e2201a39e1aac891354551b2149fce6a67063f0533ca3947842f8c",
+      "independent_review": "tmp/REVIEWS/OPERATION_BOUND_INDEPENDENT.binding.json",
+      "independent_review_sha256": "a09421a00f3c3b281c90ed66e342c4c1a86b10019cdb077b6299746e2a9d1f38",
+      "current_candidate_outcome": "projection_gate_passed; conditional_gate_typed_unresolved",
+      "actual_conditional_error_estimate_nats": 0.001458955470623634,
+      "actual_conditional_error_budget_nats": 0.0009468793869018555,
+      "reference_normalization_scope": "ordinary reference QR/solve estimate; stored inverse outward products; no exact-C interval certificate"
     },
     "flat_nuisance": {
       "report": "tmp/FINAL_FLAT_NUISANCE_AUDIT/AUDIT.zh.md",
       "binding": "tmp/FINAL_FLAT_NUISANCE_AUDIT/binding.json",
       "status": "reference_only; generic_proper_carrier_typed_unsupported"
+    },
+    "B05_matched_MN_failure_analysis": {
+      "status": "accepted_saved_state_diagnostic_after_independent_review",
+      "root": "C:\\Users\\chent\\.codex\\worktrees\\scientific-mechanisms\\n2p3-net\\tmp\\research_line_20261009\\B05_FIXED_PRIOR_MATRIX\\MN_FAILURE_ANALYSIS",
+      "binding_sha256": "3dbde06da77f69158549e82fdd424e3fdff594a609297693db4f6347efdebd26",
+      "independent_review_binding_sha256": "b6caa747ef8ec8888a25cd521a0adc271e8fa4a5e25a4ab758ce204bd3eaa330",
+      "algebra_cells": 96,
+      "original_oracle_failed_cells": 59,
+      "original_gate_reclassified": false,
+      "new_factor_unit_error_max": 3.68706e-09,
+      "source_substage_attribution": "original posterior QR/inverse/Gram shares not recoverable",
+      "current_canonical_root_save_load_score_chain": "read and confirmed; no duplicate implementation"
     }
+  },
+  "cleanup_this_turn": {
+    "performed": false,
+    "further_cleanup_stopped_at_user_request": true
   }
 }

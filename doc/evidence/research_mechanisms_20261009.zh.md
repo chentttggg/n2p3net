@@ -157,7 +157,9 @@ C状态重建的最高8个信息方向与endpoint value/first-difference rowspac
 
 长记录已接原`joint_response_scale/sampling`，一个factory-owned增广QR载荷同时服务有限积分与唯一Gibbs循环；采样重复Gram/linear/白化堆栈已移除。原scalar行数、Jacobian、完整residual行、同prior/noise chart及实际full/prefix/tail分别绑定。新增actual raw Y/D字节流先于prior变换记录；独立wrong-prefix反例中D的原区别曾被变换舍入抹掉，现明确拒绝，reader分块不改digest。β解析估计器使用同targeted joint λ posterior，公开边界核一次，已准入内部state不在每draw重核大数组。正式载荷仍只支持proper无nuisance；flat长记录编译/概率参考不被改签为已接采样或产品持久包。
 
-实际长记录score独立审计确认：锁定7975×8 synthetic fixture在现行完整投影界下为`1.667340921211915e-8`，高于原`sqrt(eps)=1.4901161193847656e-8`，因此当前typed unresolved正确，不能用测得Q正交误差代替误差界。保留原QR geometry、按每次dot实际长度传播的operation-wise候选，在界自身向外舍入后最差为`7.272170714528766e-9`；64组90位原oracle与45组110位后续oracle各验证投影算术，不相加为完整score验收。后续仅本机OpenBLAS的准备/QR线程变体，未证明跨backend、AR32、真实MAT、conditional gate或公共效能；候选进入独立科研切片，不追签现行source。报告在本地`tmp/FINAL_SCORE_GATE_RESEARCH/`。
+实际长记录score独立审计确认：锁定7975×8 synthetic fixture在现行完整投影界下为`1.667340921211915e-8`，高于原`sqrt(eps)=1.4901161193847656e-8`，因此现行typed unresolved正确，不能用测得Q正交误差代替误差界。operation-wise隔离候选`6e7977f2…`保留原QR geometry、阈值和conditional程序，只细化实际dot长度并向上计算正算术界；22项必要案例用exact binary64 ratio/120位oracle通过，新增normal边界RED保原源。早期64/45探针只作初步诊断，不当精确binary64或完整score证书，不累计测试数。
+
+同7975×8最高score入口在该候选上得到projection界`7.272127155279335e-9`，随后仍typed unresolved：conditional绝对误差估计`0.001458955470623634`超过63544原scalar行预算`0.0009468793869018555` nats；主要项为quadratic误差`0.002907851196163434`，logdet项约`1.00596e-5`。native1实际wall3.798s、worker CPU3.781s、OS peak831.68MiB，host采样峰28.3%；不能与现行projection早退的耗时比较总吞吐。独立Spec/Standards接受局部科研scope，并以30组exact-stored-C反例明确reference QR/inverse归一仍是继承estimate：14项略低于精确参考，最差相对`−2.62e-13`，未证误准入。它不是完整区间证书，未覆盖跨backend/AR32/真实MAT或公共效能；不进入本次公共冻结。候选与绑定在本地`tmp/FINAL_SCORE_GATE_RESEARCH/source_slice/`，独立报告在`tmp/REVIEWS/OPERATION_BOUND_INDEPENDENT.zh.md`。
 
 flat nuisance范围审查完成，通用proper compiler/sampler仍不支持该载荷，窄Gaussian及dense小矩阵参考继续独立解释。跨通道共享常数的n4/c2反例中，raw单系数rank1与现有逐通道系数rank2模型的log marginal相差`1.5723649429246995` nats，证明两者不能借接口同名混用，未判定窄接口有bug。长记录接线须显式raw Z、rank/n_eff/flat volume、full/prefix/tail共同measure及序列化来源门；本轮没有生产化flat sampler或产品包。独立报告在本地`tmp/FINAL_FLAT_NUISANCE_AUDIT/`。
 
@@ -168,6 +170,10 @@ flat nuisance范围审查完成，通用proper compiler/sampler仍不支持该�
 原中断后的只读恢复已完成全部 `48 units × 36 controls = 1728/1728` logical cells。1345 个原完成记录未重算；恢复新增330次实际物理拟合和53个精确别名，得到1488个唯一数值状态、240个最终逻辑别名。4022项源码/输入/原模型/MAT/旧产物绑定逐项核对，全部来源与数组保存态一致；无数值拟合失败、无新 held score、无噪声重拟合。原一次未收到完整科学回执的 started attempt 保持 unknown，物理尝试只报已知下界1489，不把未记录次数伪造为零。
 
 强 matched-MN 对照仍是科学门禁：672 个需要强 oracle 的格中613通过、59失败，最大 covariance-unit 误差 `1.02947e-4`，原 `1e-7/1e-8` 阈值、AR8 reference prior、source producer和白化程序均未更换。代表性八个保存态独立重算的 waveform/covariance/df 最大相对误差 `3.43e-14`；这些结果只支持给定冻结噪声和 C-derived plugin prior 的机制读数，不支持替代 prior 晋升、公共泛化或成人效能。
+
+2026-10-10保存态归因与独立复核已关闭这59项失败的主因：48项AR32 profile和11项AR16 profile全部属于shape-only，matching前提成立、prior pullback最大`1.52e-15`。从同actual D/Z、原κ/startup和ridge1重算信息root的96项纯代数诊断中，新保存factor的独立precision-unit误差最大`3.68706e-9`；原dense-H门指标全部逐bit复现。最坏格80位exact binary64复算确认，stored H本身unit误差`1.220007e-4`，其Cholesky另增加`1.57364e-5`扰动，所以不能只归咎checker乘积。原/4未保存producer posterior QR，无法回溯拆分各生成子阶段误差；59项原RED保持，未换teacher改判或重跑fit/score。
+
+本次原结果/395输入哈希均保留；诊断与独立报告留在原scientific-mechanisms树`B05_FIXED_PRIOR_MATRIX/MN_FAILURE_ANALYSIS/`。当前canonical已由actual C统计产生并持久化posterior root/response/orthogonal，fit/load核绑定，conditional和stationary预测均消费该root；历史缺绑定包不自动迁移，dense H作为保存诊断，不重新实现第二套fitter。未来新oracle可绑定同原信息关系，不能追签旧1728矩阵为全绿。
 
 实际运行约1035秒，两个 worker 各一 native thread；整机 CPU 峰值 `86.7%`，9 次观察超过工程目标80%，最低可用内存约 `400.8 MiB`。这一资源例外已记录在终态 receipt，不能把矩阵写成全程资源约束达标，也不因资源例外重跑或改签结果。完整归约和身份见 `B05_FIXED_PRIOR_MATRIX/RESUME_01/HANDOFF.zh.md`、`REVIEWS/B05_MATRIX_FINAL.zh.md` 及其 binding/derived summary。
 
