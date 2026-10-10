@@ -2,7 +2,7 @@
   "schema": "n2p3_final_source_manifest_pointer/1",
   "integration_status": "integrated_post_unlink_final_source_freeze",
   "integration_artifact": "tmp/FINAL_INTEGRATION/final_integration.json",
-  "integration_artifact_sha256": "98bf059ff1c6e591164d0f1834a5325f45058a6c862eb5126bdcfc91a00fdd72",
+  "integration_artifact_sha256": "dac4d8cca4a7336df3ce7b71dd87210f723c1fd8dd343c7c5c18a7b05e76c675",
   "source_freeze": {
     "manifest": "tmp/FINAL_INTEGRATION/accepted_source_20261010_post_unlink/source.manifest.json",
     "manifest_sha256": "04ff8a07a7a801fca4d46904572ea9a2acd6696570c72454de280d773900f12e",
@@ -11,7 +11,10 @@
     "member_count": 496,
     "working_tree_snapshot": true,
     "materialized": false,
-    "source_commit": "c1b0dece76f4cacf1eba357cbd9b9855a3d2aacb"
+    "source_commit": "c1b0dece76f4cacf1eba357cbd9b9855a3d2aacb",
+    "current_tree_head_after_knowledge_updates": "e10d31f7aa72e928d12007f5d2c08c3066acf53f",
+    "included_member_reverification": "496/496 current working-tree bytes match accepted archive; later commits only update excluded evidence/index files",
+    "source_commit_role": "base_commit_only; executable/source member identity is manifest bytes"
   },
   "accepted_scopes": {
     "canonical_science_review": {
