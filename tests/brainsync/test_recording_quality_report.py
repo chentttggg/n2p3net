@@ -202,3 +202,19 @@ def test_input_change_during_generation_invalidates_the_report(recording, tmp_pa
     report = create_recording_quality_report(recording, tmp_path / "changed-report", loader=changed_input)
     assert report["status"] == "not_evaluable"
     assert "发生变化" in report["error"]["message"]
+
+
+def test_applied_epoch_qc_model_is_bound_by_digest(tmp_path, monkeypatch):
+    import experiments.report_brainsync_quality as cli
+
+    model = tmp_path / "epoch_qc.json"
+    model.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(cli, "load_epoch_quality", lambda path: object())
+    monkeypatch.setattr(cli, "load_brainsync_inference_session", lambda *args, **kwargs: None)
+    monkeypatch.setattr(cli, "resolve_brainsync_reference", lambda *args, **kwargs: None)
+    monkeypatch.setattr(cli, "apply_brainsync_reference", lambda *args: None)
+    monkeypatch.setattr(cli, "create_recording_quality_report",
+                        lambda session, output, *, loader, request, **_: (loader(session), request)[1])
+    request = cli.main(["--session-dir", str(tmp_path), "--output-dir", str(tmp_path / "out"),
+                        "--epoch-qc-model", str(model)])
+    assert request["epoch_qc_model_sha256"] == file_sha256(model)
