@@ -128,3 +128,13 @@ def test_compact_dose_views_keep_exact_old_rows_and_order(monkeypatch):
         np.testing.assert_array_equal(actual.y, whole.y[rows])
         np.testing.assert_array_equal(actual.subject_ids, whole.subject_ids[rows])
         np.testing.assert_array_equal(actual.event_timeline.event_ids, whole.event_timeline.event_ids[rows])
+
+
+def test_source_pool_workers_are_not_silently_clamped_into_the_resume_identity():
+    import pytest
+
+    from experiments.run_source_pool_matrix import checked_workers
+
+    assert checked_workers(4, 6, 25) == 4
+    with pytest.raises(ValueError, match="exceed the 8 available"):
+        checked_workers(4, 6, 8)
