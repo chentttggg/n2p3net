@@ -18,6 +18,12 @@ BI2014a按库队列由云端推进，数据准备、模型、结果和终态各�
 
 真实shell direct CLI暴露的prefix启动问题已修：入口同时加入ROOT与ROOT/src，spawn子进程可导入experiments；main依据科学result状态返回0/1，完整failed请求保留且OS exit为1。root逐读`57cf5b2`三行变更并合入`fed4c40`，Windows仓库外cwd、unset PYTHONPATH、两个真实CloudExecutor actor的成功/失败两例通过。云端同接点另在source10/527成员8abce622上验证并重新执行完整矩阵；原526启动失败、错误report文件声明及entry002保持自己的失败身份，新entry使用真正result.json。
 
+云窗口随后同步 entry003/source10 的实际科学终态为failed、OS1、4063秒：首四actor的四个K selector包已保存并重放，但parent拒绝prefit ledger；后四actor在共享文件系统/RAM预算门失败。真实完整canonical bytes/SHA一致，Python比较首差异定位为 `spatial.slot_channels` 的JSON list与FrozenMetadata tuple；云owner在隔离树做canonical准入与重复package拒绝的窄修。下一新consumer先零fit准入已完成四人，再完成其余四人；完整原八人分母与旧failed producer保持。最终receipt与新consumer源码返回后由科研root复审整合。
+
+P1 stationary panel 的基础实现与两处Path修复已合入 `929334a/71ab581`。strict export在原capsule独立进程核保存M/R/原Σ/F与noise，worker从新冻结source编 `/3` root，原scorer、requested与pair owner接最终指标。新freeze通过独立真实A01 export与7项focused gate；本地stage05两次/stage06一次均resource_blocked、完整cell0/16、进程退役，实际partial root/候选计数见[执行绑定](../assets/research_resume_20261011/stationary_program_execution_binding.json)。云端唯一执行窗口已收到源码、输入与平台门交接；本地停止重复启动，科研侧只读诊断Windows RAM采样。
+
+旧prefix/P1 software binding继续证明各自历史快照；当前HEAD的CLI、compute admission与stationary `/3`依赖已有后续变化，新执行绑定真实frozen source。stage06展开计划和日志留在本地，误纳入的四个未推送Git提交已先保存并验证恢复bundle，再从分发历史移出；原执行HEAD仍由bundle保留，源码和结果没有改签。Git保紧凑绑定及主题页，恢复base/旧HEAD/bundle SHA见上述执行绑定。
+
 近期旧日期页已经先物理归档、逐member验证，再合并为四个主题页；原binding、MAT、缓存、模型和结果保持原位置。源页面恢复方式见[主题整理历史清单](../../frozen/research_topic_documents_history.manifest.json)。后续研究结论更新主题页，代码使用方式更新原六指南。
 
 ## 恢复身份与文件所有权

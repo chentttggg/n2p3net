@@ -10,6 +10,8 @@ fixed使用温度1，grouped按完整selection生成C内OOF概率，并为参与
 
 实际fitter样本、标签、prior/noise/statistics与graph共同关联。selection行数下限是预声明策略参数；单组也可定义学习算法，later独立queue用于评价最终程序。当前group-LOO入口的三组下限继续保留其原程序身份。
 
+云窗口同步真实source10/entry003矩阵已以failed、OS1结束：首四人的K0/200/800/2000 selector包保存并重放，parent在完整prefit ledger准入时拒绝；后四人遇到共享文件系统/RAM预算失败。首四人的真实请求/ledger完整canonical bytes与SHA相同，Python首差异是 `spatial.slot_channels` 的JSON list/FrozenMetadata tuple；新consumer由云owner在隔离树核完整authority后窄修，并加重复package拒绝。下一先零fit准入原四人、再补其余四人，保原八人requested与旧failed身份；最终future指标等新终态封存后复算，当前partial package不计作整矩阵完成。
+
 ## 小组、部分标签与采样坐标
 
 BNCI原始MAT与事件坐标为256 Hz；trial/NN模型输入为128 Hz、179点。原common profile的source support为`[-51,308)`；P1 raw continuous的1.2秒basis为307点。两种几何由各自owner提供。修后A01 probe与[来源绑定](../assets/research_resume_20261011/prefix_small_group_fixed_binding.json)保存了实际窗口。

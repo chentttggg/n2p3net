@@ -28,6 +28,8 @@ paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账
 
 `stationary_noise_artifact`以原stored PARCOR的精确实数step-up和pairwise mixed Yule--Walker持有完整平稳cross-channel law，Decimal96编译一次jointroot；constructor/load以实际root的law pullback证书准入，saved root不重编。`FittedChannelNoise/3`和原`/2`compiled-W模型分别绑定；已完成的16格续评分仍属于原冻结law。作者8e1f和Git CRLF工作树621bad的compiler源码SHA分别记录，后续新模型绑定实际执行字节。
 
+`export_frozen_p1_state.py`在原capsule独立进程导出实际response/noise，两个manifest caller显式由JSON字符串转Path。`stationary_panel`持有冻结16格的输入核验、new root/模型/score receipt与同支持reduce；`local_program_control`持有PID/birth、heartbeat、descendant RSS/CPU及退出清理。科学fitter禁止重新拟合；完整cell成功须模型/score/receipt闭合。本地资源终态保partial，新host执行重新绑定路径与资源，见[执行状态](evidence/response_and_noise.zh.md#当前模型与数值任务)。
+
 更新：2026-09-06。本文件依据实际源码与入口核对，描述现状与尚缺接口；科研目标由
 [活动规范](research_program.zh.md)定义，发现和验证见[本次审计](evidence/technical_audit_20260906.zh.md)。
 源码目录不因行数大或模块多就拆分；优先保留已经集中实现的合同和算法。

@@ -20,7 +20,9 @@
 
 Windows控制文件读写竞态已独立复现，修复后原8份完整receipt逐字节复用、未封存A04/A05 private journal归档并重算，仅剩余8格新评分。实际续跑exit0、进程全部退役，CPU峰值44.6%；原terminal的64.1%对应整个历史追加日志。执行器的parent身份混搭缺口由最终独立检查器以原8份receipt SHA和固定script/config pair关闭，执行源码保持其真实历史字节。
 
-真实 stationary-law 新producer 的 stage04 首次启动在严格旧capsule export 阶段发现冻结入口把 manifest 字符串传给只接受 `Path` 的 `BoundInput`，因此在任何 export/root compile/fit/score 前退出，owned tree 清理为0，未产生科学 receipt。该运行作为 execution failure 保留；stage05 修复会使用新的 source/plan binding，旧 `/2` 与本次 compiled-W panel 不改签。
+真实 stationary-law 新producer 的 stage04 首次启动在严格旧capsule export 阶段发现冻结入口把 manifest 字符串传给只接受 `Path` 的 `BoundInput`，在 export/root compile/fit/score 前退出，owned tree 清理为0。stage05 已修复 export 与 worker 两个实际 caller，并以独立冻结 source/plan 通过 A01 原capsule strict export、独立审阅及7项 Path/资源生命周期验证；代码已整合到科研树。新实验保持原A01–A08两臂16格、seed20260918、C600/held120/unused80与完整原response/noise参数，只编译新的 `/3` stationary prefix root。
+
+stage05 两次、stage06 一次本地实际执行均由 RAM 门记为 `resource_blocked`，exit1，owned tree 全部清理为0。三次都只有 A01 一个 active actor，已实际编译 shared8 partial root并完成1/5/4个候选的conditional resolution；完整score与cell receipt均为0，新增fit为0。stage05的RSS骤降与非同步采样是待核解释；stage06则是available RAM降至约1.46GiB，按reserve/growth公式触发负余量。单worker重规划没有闭合本地完整执行，后续交云窗口按真实资源与平台合同执行同一16格。旧 `/2` panel、三次资源终态和所有partial保持原身份，实际计数与交接见[执行绑定](../assets/research_resume_20261011/stationary_program_execution_binding.json)。
 
 ## 平稳前缀的真实模型关系
 

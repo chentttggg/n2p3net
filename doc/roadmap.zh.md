@@ -2,7 +2,7 @@
 
 当前科研按[123项进展](evidence/wishlist_progress_20261010.zh.md)和四个主题页并行推进：B03完整组与真正prefix整程序nested选择、同run inner/final保存重放及public parent准入已有软件出口；当前P1数值稳定化、source cache/shared score、conditional白化和逐decision horizon已集成。B07 `/4`家族与B09可识别效应保其已有出口，下一真实opt-in独立future评价、完整公共队列、B07 off-grid/history和B13成人确认继续按各块依赖推进。旧producer与失败保原身份，云窗口拥有公共执行源码和资源调度。
 
-P1数值续评16/16完成、0新fit：原冻结compiled-W模型的shared/private命中5/8与6/8，NLL7.3365与5.5540，全部概率/失败/来源经独立复算；A01过度自信仍主导风险。真实平稳prefix compiler已集成，下一按原响应及噪声参数编译新law，完成独立producer的同支持16格对照，见[响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。B12基础公共程序独立前进。
+P1数值续评16/16完成、0新fit：原冻结compiled-W模型的shared/private命中5/8与6/8，NLL7.3365与5.5540，全部概率/失败/来源经独立复算。真实平稳prefix compiler、新producer panel和Path修复已集成，strict export/控制面经独立复审通过；本地三次执行由RAM门收敛、完整cell0/16，partial与失败保留。下一由云窗口按同一响应/噪声参数与同支持执行新的16格配对，见[响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。B12基础公共程序独立前进。
 
 原云候选面板152共同请求与80原配对账本已读数收口，见[失败分母与配对效应](evidence/public_evaluation.zh.md#原云候选面板完整分母与配对读数)。grouped K800/2000因paired NLL增加不通过原开发门；source→scratch方向K2000部分对照是scratch改善，不能倒写迁移收益。该原producer结果不等同新prefix协议执行；下一研究核合法C内整程序选择和概率风险，不从未来成绩选默认。
 
@@ -31,7 +31,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
 | B03 校准/混合 | 固定池/分组温度、完整组与真正prefix整程序strict nested；同run graph/native/OOF/future重放、温度学习关系及public parent准入；K200单组/partial80与小repetition边界 | 真实opt-in独立future评价、partial-label专用学习入口、复杂gating与独立泛化；原K200 grouped保程序结构性不可用，fixed基线保持 |
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
-| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec、given-noise physical-prior；modern M/R/原Σ转换与完整source/C权限paired入口；16格原失败终态；稳定flat chart/dot/local bound获准，A01两arm冻结W态恢复概率输出；双oracle定位private真实平稳law编译偏差 | 14个冻结W保存态续评、真实PARCOR/cross-channel平稳prefix确定性编译与保存加载、finite endpoint交互与joint MLE |
+| B05 AR/噪声 | 固定32前缀/M1、given-noise physical-prior；modern M/R/原Σ与完整source/C权限paired入口；冻结W态16格续评完成；双oracle及真实stationary `/3` compiler/save-load；新producer strict export/Path/控制面通过 | 新law同支持16格云执行与配对概率分析、Windows资源采样诊断、finite endpoint交互与joint MLE |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
 | B07 字典/历史 | A0/A1 portable、cubic `/3`及raised/multiscale `/4` native；actual prior/chart/容量/OOF/保存链，有限history与scalar latent reference | off-grid/phase/wavelet、硬斜率、完整history/权限、actual operator/support、多channel随机效应与效能；multiscale换坐标不当新增span |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
