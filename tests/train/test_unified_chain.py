@@ -304,3 +304,33 @@ def test_development_support_keeps_all_other_source_people(actual_raw_sources):
     for bad in (["unknown"], [], ["BI2013a", "BI2013a"]):
         with pytest.raises(ValueError):
             source_prior_development_fold(dataset, development_domains=bad, **args)
+
+
+def _matrix_record(tmp_path, *, target_workers, shard_subjects):
+    checkpoint = tmp_path / "source.pt"
+    plan_path = tmp_path / "outer.json"
+    plan_path.write_text(json.dumps({"source_arm": "unified", "checkpoint": str(checkpoint),
+        "target_cache": "cache", "source_seed": 1, "target_seed": 2, "target_study": "S",
+        "source_factors": {}}), encoding="utf-8")
+    subjects = [str(index) for index in range(10)]
+    entry = {"plan": str(plan_path), "argv": ["run", "--subjects", ",".join(subjects)],
+             "shards": [str(tmp_path / f"shard{index}") for index in range(4)]}
+    if shard_subjects is not None:
+        entry["shard_subjects"] = shard_subjects
+    record = {"resource_policy": {"target_workers": target_workers},
+              "tasks": [{"key": "heldout/six/source", "checkpoints": {"1": str(checkpoint)}}],
+              "outer_evaluation_jobs": [entry]}
+    return record, {"outer_folds": [{"name": "heldout"}]}, subjects
+
+
+def test_target_matrix_uses_declared_shard_membership_and_refuses_a_lossy_restride(tmp_path):
+    from experiments.run_domain_transfer_matrix import target_job_groups
+
+    # Child plans cut four shards while the parent records eight target workers.
+    record, plan, _ = _matrix_record(tmp_path, target_workers=8, shard_subjects=None)
+    with pytest.raises(ValueError, match="do not partition"):
+        target_job_groups(record, plan, tmp_path, device="cpu", program="unified")
+    declared = [[str(index) for index in range(shard, 10, 4)] for shard in range(4)]
+    record, plan, subjects = _matrix_record(tmp_path, target_workers=8, shard_subjects=declared)
+    _, declarations = target_job_groups(record, plan, tmp_path, device="cpu", program="unified")
+    assert sorted(subject for row in declarations for subject in row["subjects"]) == sorted(subjects)

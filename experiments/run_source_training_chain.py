@@ -2091,7 +2091,8 @@ def _prepare_outer_plans(report, plan, output, *, device, execute):
                     if job.get("target_stage"):
                         command.extend(("--stage", job["target_stage"]))
                     final_jobs.append({"plan": str(plan_path.resolve()), "argv": command,
-                                       "source_arm": evaluation_plan["source_arm"], "shards": []})
+                                       "source_arm": evaluation_plan["source_arm"], "shards": [],
+                                       "shard_subjects": []})
                     for shard in range(workers):
                         subjects = list(view["subjects"])[shard::workers]
                         if not subjects:
@@ -2104,6 +2105,7 @@ def _prepare_outer_plans(report, plan, output, *, device, execute):
                                  "gpu_slots": plan.get("_gpu_slots")}
                         grouped_jobs.setdefault((view["cache"], shard), []).append(entry)
                         final_jobs[-1]["shards"].append(str(shard_output))
+                        final_jobs[-1]["shard_subjects"].append(subjects)
     report["outer_evaluation_jobs"] = final_jobs
     _save_chain_report(output, report)
     if execute:
