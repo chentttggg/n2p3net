@@ -48,6 +48,10 @@ multiscale九列是fine9空间的可逆chart，并非新增span或正交wavelet�
 
 实际consumer链为spec→compiler→event design→C-reference/prior→continuous posterior/容量→原OOF→ensemble save/load/score。当前专用三臂dictionary comparison panel仍是原Gaussian/cosine设计，不静默扩大；新家族off-grid响应状态、导数/硬斜率、wavelet、完整历史与公共收益仍未完成。W03.01保持partial。
 
+后续off-grid/history方向已通过源码、方法原件与独立反例审阅，见[方向绑定](../assets/research_resume_20261011/b07_offgrid_history_direction_binding.json)。12个小矩阵数学反例与7个时钟/授权反例分别验证：同native数组不足以定义连续函数；半开裁剪不能用Taylor或舍入onset替代；邻居与当前必须共用一次kernel后验并保跨事件协方差；正确条件混合为full与prefix各自先积分再相减，prefix同时更新邻居状态。Unfold原全文的完整事件设计/线性叠加给出方法依据，当前模型仍按自己的Gaussian/有限状态假设推导。
+
+实施已在独立工作树推进五家族所有现有合法native空间的精确δ/w评价、原decoder持有的截止内完整历史、实际冻结C后验的多通道条件预测与保存重放。当前decision完整flash覆盖与response尾部右删失分别记录；next-selection的已发生前缀保完整候选词表与零贡献列。完整state-law支持包络决定历史授权范围，恒零或相同设计仅在完整先验质量可恢复时精确边缘化。计算接原stored noise和增广QR，避免构造native n×n协方差。该切片是冻结C后验的预测扩展；C本身随机响应的后验重估、实测fractional时钟、wavelet/硬斜率与公共效能分别进入后续验收。
+
 ## B09：可识别效应与source群体forecast
 
 `ERPPhysicalEffect`绑定basis/window/grid/fs/operator/dictionary、真实reference与空间观测map。`ERPChannelEstimate`只从实际joint likelihood提取可识别BLUE，不把已有收缩posterior当独立measurement；measurement noise/dependence由其owner明确绑定。若压缩观测为`y=X beta+e`，物理泛函F必须存在witness`F=W X`，则效应mean为`W y`、covariance为`W W.T`。新关系检查逐entry使用原物理坐标，零观测列不从其它强列借容差；允许界来自浮点算法与运算尺度，不是全输入区间证明。

@@ -33,7 +33,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
 | B05 AR/噪声 | 固定32前缀/M1、given-noise physical-prior；modern M/R/原Σ与完整source/C权限paired入口；冻结W态16格续评完成；双oracle及真实stationary `/3` compiler/save-load；新producer strict export/Path/控制面通过 | 新law同支持16格云执行与配对概率分析、Windows资源采样诊断、finite endpoint交互与joint MLE |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
-| B07 字典/历史 | A0/A1 portable、cubic `/3`及raised/multiscale `/4` native；actual prior/chart/容量/OOF/保存链，有限history与scalar latent reference | off-grid/phase/wavelet、硬斜率、完整history/权限、actual operator/support、多channel随机效应与效能；multiscale换坐标不当新增span |
+| B07 字典/历史 | A0/A1 portable、cubic `/3`及raised/multiscale `/4` native；actual prior/chart/容量/OOF/保存链，有限history与scalar latent reference；精确δ/w与完整history纵向方向已复审、隔离代码实施中 | 五家族off-grid/截止内history权限/真实冻结后验及保存重放接受、同支持评价；wavelet、硬斜率、C-latent多channel重新拟合与效能；multiscale换坐标不当新增span |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
 | B09 空间 | 一般signal-prior/固定graph；source-only group forecast、完整effect绑定和exact structural null软件出口 | Pz4原证据不晋升；真实source builder/跨布局reference transport/OOF与ensemble consumer、d-prime/variance不确定性、joint MLE及新效能 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
