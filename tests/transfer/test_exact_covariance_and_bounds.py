@@ -390,3 +390,10 @@ def test_information_bound_rejects_mismatched_shapes():
         mahalanobis_snr(np.zeros((5, 4)), np.zeros((5, 3)))
     with pytest.raises(ValueError, match="3-D"):
         spectral_discriminability(np.zeros((5, 4)), np.zeros((5, 4)), 64.0)
+
+
+def test_union_lower_bound_excludes_the_true_candidate_from_its_competitors():
+    from transfer.information_bound import theoretical_hit_rate_bound
+
+    assert theoretical_hit_rate_bound(1e4, 9, 45)["p_hit_lower_bound"] > 0.99
+    assert theoretical_hit_rate_bound(1e4, 36, 120)["p_hit_lower_bound"] > 0.99

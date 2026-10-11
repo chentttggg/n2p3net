@@ -311,6 +311,7 @@ def theoretical_hit_rate_bound(
     # every diff_count avoids any two-group approximation.
     from scipy.special import ndtr
     dprime_sq = 0.25 * d2_per_flash * pair_diff
+    np.fill_diagonal(dprime_sq, np.inf)  # The true candidate is not its own competitor.
     per_true_fail_bound = np.sum(ndtr(-np.sqrt(np.maximum(dprime_sq, 0.0))), axis=1)
     p_hit_lower = float(np.mean(np.maximum(0.0, 1.0 - per_true_fail_bound)))
 
