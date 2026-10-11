@@ -202,6 +202,73 @@ class FrozenERPResponse:
         return cls(mean, np.kron(left, right), **identity)
 
     @classmethod
+    def from_continuous_model(cls, model, *, geometry, source_model_sha256,
+                              response_id, training_records):
+        """Export the saved modern M/R/Sigma physical posterior, without refitting.
+
+        R is the upper row precision factor. Coefficient rows are common then
+        increment, each followed by observed channels. The original Sigma stays
+        in this factor when score-time noise changes. No legacy-H fallback.
+        """
+        from transfer.continuous_decision import ContinuousDecisionModel
+
+        if not isinstance(model, ContinuousDecisionModel):
+            raise TypeError("continuous conversion requires an admitted actual model")
+        model.assert_integrity()
+        if (model.posterior_state is None or model.provenance.get("fit_scope") not in _FIT_SCOPES
+                or geometry.channels != model.channels or geometry.sfreq != model.sfreq
+                or geometry.unit != "V" or geometry.operator_identity != model.operator_identity):
+            raise ValueError("modern response requires its actual fitted R and physical geometry")
+        records = json.loads(json.dumps(list(training_records), allow_nan=False))
+        _validate_training_ledger(records)
+        by_id = {row["record_id"]: row for row in records}
+        actual = model.provenance["records"]
+        if set(by_id) != {row["record_id"] for row in actual}:
+            raise ValueError("response export must preserve every actual producer fit record")
+        ordered = []
+        for original in actual:
+            row = by_id[original["record_id"]]
+            view = row.get("original_view")
+            if (row.get("fit_scope") != model.provenance["fit_scope"]
+                    or row.get("input_sha256") != original["input_sha256"]
+                    or row.get("n_samples") != original["n_samples"]
+                    or not isinstance(view, dict)
+                    or row["record_id"] != view.get("record_id")
+                    or row["participant_key"] != view.get("participant_key")
+                    or row["read_support"] != view.get("raw_scope")
+                    or row["source_sha256"] != view.get("source_sha256")
+                    or view.get("reference") != geometry.reference
+                    or tuple(view.get("channel_names", ())) != geometry.channels
+                    or view.get("sample_rate_hz") != geometry.sfreq or view.get("signal_unit") != geometry.unit
+                    or row["read_support"][1] - row["read_support"][0] != original["n_samples"]):
+                raise ValueError("response export differs from actual fit inputs or physical support")
+            ordered.append(row)
+        if model.provenance["fit_scope"] == "target_calibration" and len({r["participant_key"] for r in ordered}) != 1:
+            raise ValueError("one target response requires one actual participant")
+        mean = model.kernel_mean
+        p, channels = mean.shape
+        root = model.posterior_state["precision_root"]
+        if p != 2 * model.basis.shape[1] or root.shape != (p, p):
+            raise ValueError("response posterior is not the actual common/increment coefficient chart")
+        inverse = solve_triangular(root, np.eye(p), lower=False)
+        spatial = np.linalg.cholesky(model.innovation_covariance)
+        factor = np.kron(inverse, spatial)
+        if not np.isfinite(factor).all():
+            raise UnidentifiableFitError("modern physical coefficient factor is not representable")
+        conversion = {"program": "saved_continuous_M_R_original_Sigma_to_physical_beta/1",
+            "source_precision_root_sha256": array_digest(root),
+            "source_mean_sha256": array_digest(mean),
+            "source_spatial_covariance_sha256": array_digest(model.innovation_covariance),
+            "actual_basis_sha256": array_digest(model.basis),
+            "source_order": "common_then_increment_coefficients_by_observed_channel",
+            "destination_order": "row_major_coefficient_then_observed_channel",
+            "covariance_factor": "kron(R_inverse,original_spatial_Cholesky)",
+            "posterior_recomputed": False, "score_noise_rescaling": False}
+        return cls(mean, factor, geometry, source_model_sha256, response_id,
+            {"fit_scope": model.provenance["fit_scope"], "records": ordered,
+             "original_model_input_records": list(actual), "continuous_posterior_conversion": conversion})
+
+    @classmethod
     def from_spatial_posterior(cls, posterior, *, geometry, source_model_sha256,
                                response_id, training_records):
         """Convert an admitted physical B09 state without fitting response or noise.
