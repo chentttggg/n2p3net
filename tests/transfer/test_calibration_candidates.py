@@ -301,3 +301,18 @@ def test_joint_candidate_fit_keeps_requested_risk_after_qc_for_d0_and_d1(direct_
         assert fit.fit_history["fit_budget"]["updates"] == 1
         assert len(fit.fit_history["candidate_losses"]) == 1
         assert np.isfinite(fit.adapter.predict_logit(dataset.X)).all()
+
+
+def test_candidates_are_compared_on_their_common_validation_support():
+    from transfer.calibration_candidates import _score_on_common_support
+
+    labels = np.array([0, 0, 0, 1, 1, 1])
+    # A scores every row but misranks rows 2 and 3; B abstains exactly there.
+    logits = {"A": np.array([0.0, 0.1, 0.9, 0.2, 0.8, 0.9]),
+              "B": np.array([0.0, 0.1, np.nan, np.nan, 0.8, 0.9])}
+    completed = [{"candidate_id": "A", "primary_score": 7 / 9}, {"candidate_id": "B", "primary_score": 1.0}]
+    assert _score_on_common_support(completed, logits, labels, "binary_auc")
+    assert completed[0]["primary_score"] == completed[1]["primary_score"] == 1.0
+    assert completed[0]["common_support_rows"] == 4
+    one_class = [{"candidate_id": "A"}, {"candidate_id": "B"}]
+    assert not _score_on_common_support(one_class, logits, np.array([0, 0, 0, 0, 1, 1]) * 0, "binary_auc")
