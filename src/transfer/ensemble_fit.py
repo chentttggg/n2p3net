@@ -827,8 +827,9 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
             predictor = FrozenTrialPredictor.from_source(prepared, subject)
             offset = 0.
         else:
-            compute_device = (device if spec.recipe.initialization in
-                {"source", "scratch", "source_feature_lda"} else "cpu")
+            # ``source_feature_lda`` uses the source trunk only to derive CPU
+            # features before sklearn LDA; it has no CUDA fitter to admit.
+            compute_device = (device if spec.recipe.initialization in {"source", "scratch"} else "cpu")
             with worker_compute_phase(compute_device):
                 fitted = fit_calibration_candidate(data, spec.recipe, np.ones(data.n_epochs, dtype=bool),
                     source_trunk=source_trunk, source_input_stats=source_stats, device=device)
