@@ -14,6 +14,8 @@ BI2014a按库队列由云端推进，数据准备、模型、结果和终态各�
 
 逐库queue、BI独立episode准备/三trial专家持久化、BNCI C600/R10准备及共同trial programme已逐函数合入，科研prefix/OOF/条件白化/horizon和真实平稳compiler保持其当前owner。第二轴审阅核20个固定body、raw隔离、future隐藏标签、actualsource exclusion、scratch架构、独立arm恢复和完整进程资源；新增BI descriptor错映被真实零fit反例复现并在新consumer补齐。相关52项调用链与prefix回归、最终8项BI入口、Ruff/diff通过；Linux queue和原云全集各保其实际源码/平台范围。
 
+真实shell direct CLI暴露的prefix启动问题已修：入口同时加入ROOT与ROOT/src，spawn子进程可导入experiments；main依据科学result状态返回0/1，完整failed请求保留且OS exit为1。root逐读`57cf5b2`三行变更并合入`fed4c40`，Windows仓库外cwd、unset PYTHONPATH、两个真实CloudExecutor actor的成功/失败两例通过。云端同接点另在source10/527成员8abce622上验证并重新执行完整矩阵；原526启动失败、错误report文件声明及entry002保持自己的失败身份，新entry使用真正result.json。
+
 近期旧日期页已经先物理归档、逐member验证，再合并为四个主题页；原binding、MAT、缓存、模型和结果保持原位置。源页面恢复方式见[主题整理历史清单](../../frozen/research_topic_documents_history.manifest.json)。后续研究结论更新主题页，代码使用方式更新原六指南。
 
 ## 恢复身份与文件所有权

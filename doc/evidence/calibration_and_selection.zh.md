@@ -59,3 +59,5 @@ A01的后80个标签可单独编为`[11477,16648)`的suffix scope：80 raw label
 公共plan新增`prefix_selection`（schema、output_name、baseline_name、显式minimum_selection_rows及candidate records），在原fixed/grouped输出之外追加具名selected请求。整个future捕获、保存、原输入graph重放完成后才封预测；parent重编原MAT并核实际selected mixture。selector的started/failed/partial由自己的receipts持有；final ExpectedSubjectError的完整future保留typed不可用。
 
 真实C800改签C200、full-C meta搬早期v、h概率篡改、温度全摘要自签、constructor自签source权限、selector中断receipt混用等反例已闭合。作者`d0edc170…`的八个文件经root逐读、原字节集成，含当前continuous白化/P1/新horizon依赖的12项相关验证全部通过，Ruff与diff检查通过，见[接受绑定](../assets/research_resume_20261011/prefix_program_acceptance_binding.json)。旧快照/模型保原执行身份；下一步冻结真实opt-in计划，评价完整独立future队列。
+
+真实八人programme保原K0/200/800/2000、ordinary arms和source/scratch；新增primary fixed/grouped与NN+xDAWN fixed/grouped四个完整候选，minimum_selection_rows=3。零fit原MAT census确认K200/800/2000的完整组数为1/6/16、合法final选择行为0/3/13，共同Kmax future152请求/144可评分。云端以实际source checkpoint aabb2a43、递归重编finite profiles和source10/527新consumer冻结执行；本地e083 census保持自己的source身份。首次526 directCLI import在任何fit/score前失败；修复后新entry003重新执行完整矩阵，保留旧失败账本。结果终态后再评价原风险与选择效应。
