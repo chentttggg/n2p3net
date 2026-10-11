@@ -1,0 +1,186 @@
+{
+  "schema": "n2p3_stationary_crosshost_export_binding/1",
+  "status": "accepted_original_windows_state_transport",
+  "archive": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_CROSSHOST_EXPORT\\windows_strict_exports_with_proof.tar.gz",
+    "sha256": "c14f9d8cea6105befd3023da4138111c4a066faea299f03e0b3c2ff08cc96015",
+    "bytes": 5602250
+  },
+  "delivery": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_CROSSHOST_EXPORT\\delivery_with_proof.json",
+    "sha256": "baf89e566261acadbddd68137ee0e99a87327e53d03f2bc9527701ee58c1c736",
+    "bytes": 7104
+  },
+  "export_manifest": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_CROSSHOST_EXPORT\\export_manifest.json",
+    "sha256": "0feb749f7cd32afee0823e8c754a4fe3b844960529eda70c45e9bd418fc4021c",
+    "bytes": 6442606
+  },
+  "independent_review": {
+    "handoff": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_CROSSHOST_EXPORT_REVIEW\\HANDOFF.zh.md",
+      "sha256": "8d308877206118f4d3c7bf7892ec95da735c80b60cd2a509ba5411c17571daed",
+      "bytes": 6364
+    },
+    "binding": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_CROSSHOST_EXPORT_REVIEW\\binding_with_proof.json",
+      "sha256": "6db8fa88463d8112a1137ce4972dca5d7a1d61426dda4fc05da6ea5c4feb28fc",
+      "bytes": 44308
+    },
+    "status": "GO_original_windows_export_transport_identity_only"
+  },
+  "original_windows_export_plan": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-stationary-prefix\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE05\\plan.json",
+    "sha256": "0569777f5f99eaac753b0fb015ab0fcec761a2b4e9dcf14071044338f1f0485e",
+    "bytes": 14112557
+  },
+  "original_export_script_sha256": "4c7068dfd5f952dbd79bc0a3880f96519e695b25feca5ae076c080a58eb79718",
+  "seed": 20260918,
+  "subjects": [
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "A05",
+    "A06",
+    "A07",
+    "A08"
+  ],
+  "requested_cells": [
+    {
+      "subject": "A01",
+      "arm": "shared8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+      "decision_id": "A01:selection05"
+    },
+    {
+      "subject": "A01",
+      "arm": "private8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A01",
+      "decision_id": "A01:selection05"
+    },
+    {
+      "subject": "A02",
+      "arm": "shared8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+      "decision_id": "A02:selection05"
+    },
+    {
+      "subject": "A02",
+      "arm": "private8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A02",
+      "decision_id": "A02:selection05"
+    },
+    {
+      "subject": "A03",
+      "arm": "shared8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+      "decision_id": "A03:selection05"
+    },
+    {
+      "subject": "A03",
+      "arm": "private8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A03",
+      "decision_id": "A03:selection05"
+    },
+    {
+      "subject": "A04",
+      "arm": "shared8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+      "decision_id": "A04:selection05"
+    },
+    {
+      "subject": "A04",
+      "arm": "private8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A04",
+      "decision_id": "A04:selection05"
+    },
+    {
+      "subject": "A05",
+      "arm": "shared8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+      "decision_id": "A05:selection05"
+    },
+    {
+      "subject": "A05",
+      "arm": "private8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A05",
+      "decision_id": "A05:selection05"
+    },
+    {
+      "subject": "A06",
+      "arm": "shared8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+      "decision_id": "A06:selection05"
+    },
+    {
+      "subject": "A06",
+      "arm": "private8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A06",
+      "decision_id": "A06:selection05"
+    },
+    {
+      "subject": "A07",
+      "arm": "shared8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+      "decision_id": "A07:selection05"
+    },
+    {
+      "subject": "A07",
+      "arm": "private8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A07",
+      "decision_id": "A07:selection05"
+    },
+    {
+      "subject": "A08",
+      "arm": "shared8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+      "decision_id": "A08:selection05"
+    },
+    {
+      "subject": "A08",
+      "arm": "private8",
+      "participant_key": "n2p3-origin://BNCI2014-008/participant/A08",
+      "decision_id": "A08:selection05"
+    }
+  ],
+  "payload_summary": {
+    "members": 33,
+    "responses": 8,
+    "full_noise_states": 16,
+    "actual_new_export_processes": 7,
+    "A01_existing_sealed_probe_reused": true,
+    "root_verified_members": 33
+  },
+  "independent_original_hash_checks": {
+    "original_files": 130,
+    "source_files": 158,
+    "original_capsule_files": 158
+  },
+  "count_semantics": {
+    "fits": 0,
+    "held_scores": 0,
+    "new_stationary_root_compiles": 0,
+    "original_loader_relation_recompilation": true,
+    "old_reference_recompilation_count": "not_independently_counted"
+  },
+  "linux_old2_strict_load": "failed_original_exit1_preserved",
+  "next_execution": {
+    "new_law_full16": "pending",
+    "remaining_dependencies": [
+      "original-input-authorized cloud consumer and relocation factory",
+      "independently accepted controller peer ownership and prior live-tree gate"
+    ],
+    "new_cell_score_plan": "new_consumer_identity",
+    "export_authority": "original_windows_export_identity_unchanged"
+  },
+  "history": {
+    "preliminary_transport": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_CROSSHOST_EXPORT\\windows_strict_exports.tar.gz",
+      "sha256": "04669ec4c30e61e8119be70df39d1faa4650c6e69637cf6146e321beaa40d1e9",
+      "bytes": 5594260
+    },
+    "preliminary_archive_bytes_are_separate": true,
+    "source_or_results_resigned": false
+  }
+}

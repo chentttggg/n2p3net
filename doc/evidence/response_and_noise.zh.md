@@ -32,6 +32,10 @@ stage05 两次、stage06 一次本地实际执行均由 RAM 门记为 `resource_
 
 新compiler已由独立树完成并合入科研主树：`stationary_noise_artifact`以保存PARCOR的exact-real step-up、mixed Yule--Walker和joint Decimal96 Cholesky定义真实平稳law；saved root用独立向上误差证书验收，load不重编root。`/3`新state与旧`/2` compiled-W严格分开，旧P1续评仍只消费旧producer和旧law，不追签历史结果。A01新root的独立MP100 pullback谱/Frobenius误差为`3.409e-11`/`1.109e-10`，旧root为`0.0772181`/`0.167282`；stage04 underflow certificate、四种变换、save/load及实际caller均通过，0 fit/score。生产新state仍需绑定自己的producer和scope后再进入新实验。推导、两套oracle、实际旧state与源码绑定见[诊断绑定](../assets/research_resume_20261011/stationary_prefix_diagnosis_binding.json)及作者最终交接。
 
+原Windows严格loader已导出全部8人的原响应与16份完整噪声状态。A01复用既有封存出口，A02–A08七个独立进程均exit0；最终33成员包为5,602,250 B，逐成员摘要、原130输入/158源码/158 capsule及完整请求经独立复审。原导出计划保持`056977…`，与新的云评分计划分别绑定；根窗口复核最终包33成员并写入[跨主机出口绑定](../assets/research_resume_20261011/stationary_crosshost_export_binding.json)。原`/2` strict load包含旧reference-root关系重编，新`/3` root编译、fit与held score均为0。
+
+下一步由云端消费经哈希绑定的Windows原态，编译新law并完成同支持16格评分。当前科学接线正在补齐原导出计划对held样本/设计的独立授权及跨attempt互斥；Linux控制器正在修复并复审peer与迟到后代归属。完整运行在这些接点接受后直接执行，原Linux旧loader失败与本地三次RAM失败保留自己的来源。
+
 ## P1 数值门诊断与小组协议评估
 
 数值证据的第一、第二道门分别记录。前一道需要full-record quotient的正确算术估计，后一道需要prefix/tail各自的input与压缩误差；prefix basis、真实dot reduction和局部certificate按实际调用联动。只读推导及counterexample位于`tmp/P1_CHART_NEXT_HANDOFF_20261011/`，实码与独立审阅位于`tmp/P1_NUMERICS/`和`tmp/P1_NUMERICS_REVIEW/`。小组/单组结论集中在[校准与选择](calibration_and_selection.zh.md#小组部分标签与采样坐标)。
