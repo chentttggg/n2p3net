@@ -15,6 +15,7 @@ from train.source_sampling import (
 )
 
 FEATURE_SCHEMA = "n2p3_domain_feature_matrix/1"
+CALIBRATION_SCOPE = {"schema": "n2p3_target_calibration_scope/1"}
 
 
 def _write_feature_matrix(
@@ -70,7 +71,7 @@ def test_prepare_source_selection_cli_writes_bound_record(
     source_path = tmp_path / "source_features.npz"
     target_path = tmp_path / "target_features.npz"
     _write_feature_matrix(source_path, source, cache_sha256="a" * 64)
-    _write_feature_matrix(target_path, target, cache_sha256="b" * 64)
+    _write_feature_matrix(target_path, target, cache_sha256="b" * 64, dataset_scope=CALIBRATION_SCOPE)
     labels_path = tmp_path / "labels.npz"
     groups_path = tmp_path / "groups.npz"
     np.savez(labels_path, labels=np.asarray([0, 0, 1, 1, 1, 1]))
@@ -130,6 +131,7 @@ def test_prepare_source_selection_rejects_dimension_mismatch(
         target_path,
         np.zeros((2, 2)),
         cache_sha256="b" * 64,
+        dataset_scope=CALIBRATION_SCOPE,
     )
     output = tmp_path / "selection.json"
     set_preparation_cli(
@@ -167,7 +169,7 @@ def test_prepare_source_selection_dense_pds_cli_writes_dense_fields(
     source_path = tmp_path / "source_features.npz"
     target_path = tmp_path / "target_features.npz"
     _write_feature_matrix(source_path, source, cache_sha256="a" * 64)
-    _write_feature_matrix(target_path, target, cache_sha256="b" * 64)
+    _write_feature_matrix(target_path, target, cache_sha256="b" * 64, dataset_scope=CALIBRATION_SCOPE)
     labels_path = tmp_path / "labels.npz"
     np.savez(labels_path, labels=np.asarray([0, 0, 1, 1]))
     output = tmp_path / "dense_pds_selection.json"
@@ -240,7 +242,8 @@ def test_prepare_source_selection_dense_pds_rejects_invalid_options(
     target_path = tmp_path / "target_features.npz"
     labels_path = tmp_path / "labels.npz"
     _write_feature_matrix(source_path, np.zeros((4, 2)), cache_sha256="a" * 64)
-    _write_feature_matrix(target_path, np.zeros((2, 2)), cache_sha256="b" * 64)
+    _write_feature_matrix(target_path, np.zeros((2, 2)), cache_sha256="b" * 64,
+                          dataset_scope=CALIBRATION_SCOPE)
     np.savez(labels_path, labels=np.asarray([0, 0, 1, 1]))
     options = dict(
         source_features=source_path,
@@ -286,3 +289,30 @@ def test_prepare_source_selection_rejects_non_calibration_target_scope(
 
     with pytest.raises(ValueError, match="target-calibration-scoped"):
         main()
+
+
+def test_target_calibration_selection_fails_closed_on_an_unscoped_full_target_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import json
+
+    source_path = tmp_path / "source_features.npz"
+    target_path = tmp_path / "target_features.npz"
+    _write_feature_matrix(source_path, np.asarray([[-1.0], [0.0], [1.0], [2.0]]), cache_sha256="a" * 64)
+    # prepare_domain_features writes an empty scope for a full target cache, test rows included.
+    _write_feature_matrix(target_path, np.asarray([[0.5]]), cache_sha256="b" * 64, dataset_scope={})
+    output = tmp_path / "selection.json"
+    set_preparation_cli(monkeypatch, "prepare_source_selection.py", source_features=source_path,
+                        target_features=target_path, output=output, n_select="2")
+    with pytest.raises(ValueError, match="target-calibration-scoped"):
+        main()
+    assert not output.exists()
+
+    _write_feature_matrix(target_path, np.asarray([[0.5]]), cache_sha256="b" * 64,
+                          dataset_scope=CALIBRATION_SCOPE)
+    main()
+    record = json.loads(output.read_text(encoding="utf-8"))
+    record["target_feature_record"]["dataset_scope"] = {}
+    output.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(ValueError, match="without a target-calibration scope"):
+        load_pds_selection_record(output)
