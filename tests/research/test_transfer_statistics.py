@@ -427,3 +427,16 @@ def test_study_specific_contrast_does_not_redefine_fixed_study_estimand():
     assert panel["mean_difference"] is None and panel["bootstrap"]["interval"] is None
     assert panel["partial_observed_studies"]["studies"] == ["A"]
     assert panel["partial_observed_studies"]["mean_difference"] == pytest.approx(.2)
+
+
+def test_decline_gate_is_not_decided_on_the_complete_subset_alone():
+    cells = _cells()
+    for row in cells:
+        if row["participant_key"] == "authority:p2":
+            row.update(status="fit_failed", auc=None)
+    panel = _analyze(cells)["groups"][0]["contrasts"]["transfer"]["exact_K"]["200"]["by_study"]["A"]
+    assert panel["n_requested_participants"] == 2 and panel["n_complete_participants"] == 1
+    # The complete subset alone (+0.1) would pass; the missing participant's AUC bound does not.
+    assert panel["missing_result_bounds"][0] < -0.01
+    assert panel["replacement_decline_gate_passed"] is False
+    assert panel["replacement_decline_gate_basis"] == "missing_result_lower_bound"
