@@ -12,9 +12,13 @@
 
 独立审阅核完整AR历史、flat测度/Jacobian、相关proper factor、inverse solve defect、prefix压缩和后验位移。109个独立案例通过；54个conditional案例中32获准、22具名拒绝，获准案例的110位oracle最大误差`1.395e-9 nats`且在各自估计界内。root逐读全部差异及最后finite保护，按原字节接入`5b827aa4…`，核依赖/证据SHA并通过六个新增反例、Ruff与diff检查，见[数值接受绑定](../assets/research_resume_20261011/p1_numerical_acceptance_binding.json)。
 
-真实A01 shared/private各36候选已经恢复完整概率输出：原保存态由原loader准入，新数值consumer为`22bf6782…`，新增fit为0。source-scale界最大分别为`5.380e-9`/`8.263e-9`，conditional nats界最大`0.000295162`/`0.000337333`，同actual tail预算`0.000946760`；概率mass均为1。随后5b只补无FMA极端中间乘积的typed有限值保护，保72候选原source身份。其余14个保存态cell继续独立评价，原16格失败面板保持原记录。
+八人两臂的16格保存态续评已完成并独立复算，新增fit为0。A01的72候选保`22bf6782…`原评分来源，其余14格504候选由`5b827aa4…`评分；所有576候选满足原两道误差门。shared命中5/8、NLL7.336477、Brier0.679094；private命中6/8、NLL5.554012、Brier0.477679。private救回A06，未损害原正确决策，配对NLL下降1.782464；5/8人的NLL改善，其中A01贡献总改善的71.8%。两臂NLL都高于36候选均匀参考3.583519，严重错判的概率风险继续进入后续模型判断。
+
+本面板每人仅一个C-held decision，八个预声明真值均为row5/col0；结果解释原冻结compiled-W Gaussian程序。真实平稳law修正采用新的producer另做同支持配对，不从本次held结果更改response、先验或候选。终态/独立逐概率复算/CSV与图见[续评接受绑定](../assets/research_resume_20261011/p1_numeric_panel_acceptance_binding.json)，原16格数值失败面板及两个执行失败run保持原身份。
 
 这次A01消费的一次本机CPU采样为80.9%，按实际记录为超限；后续native1且检查总机余量，最多两个score workers。完整数值程序和原producer分开绑定；tree dot也改变新C-fit的舍入路径，原prior和统计模型保持。此处交付数值实现与真实保存态可用性，后续同物理支持的概率分析继续用原requested owner。
+
+Windows控制文件读写竞态已独立复现，修复后原8份完整receipt逐字节复用、未封存A04/A05 private journal归档并重算，仅剩余8格新评分。实际续跑exit0、进程全部退役，CPU峰值44.6%；原terminal的64.1%对应整个历史追加日志。执行器的parent身份混搭缺口由最终独立检查器以原8份receipt SHA和固定script/config pair关闭，执行源码保持其真实历史字节。
 
 ## 平稳前缀的真实模型关系
 

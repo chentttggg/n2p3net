@@ -28,7 +28,10 @@
   "next_action": "bind a new /3 producer and declared scope before any true-stationary experiment; keep the historical /2 panel unchanged",
   "integration": {
     "commit": "3c526ae",
-    "stationary_noise_artifact_sha256": "8e1f4aed27268b95e6e5ac6d15fff33bbd0385e0b5dc8a72e490376ec47196c7",
+    "author_stationary_noise_artifact_sha256": "8e1f4aed27268b95e6e5ac6d15fff33bbd0385e0b5dc8a72e490376ec47196c7",
+    "integrated_stationary_noise_artifact_sha256": "621badbd538bd724d24f91129f0c226db1c7001db90eeb1f013005dd81710c5f",
+    "author_to_integrated_difference": "CRLF checkout conversion only; normalized code identical; new states bind actual integrated bytes",
+    "integrated_tests": {"cases": 28, "failures": 0, "source": "actual integrated 621badbd compiler", "junit": "tmp/integrated_stationary_tests.xml"},
     "channel_noise_mechanism_sha256": "452b18bbe5ce3601f123c10638e2a5fdf6bfa351c0c5b038c240f09d2469f8b2",
     "audit_sha256": "82925aebe08b34f6e47ef6376c1dcd951612db3fcbe20f873412fd3d9fe140c1",
     "independent_stage04_certificate_sha256": "8814b4302adbbb4513b04bddaeaa9eb832d361c9c770bfebe20d6ef0a94df17d",

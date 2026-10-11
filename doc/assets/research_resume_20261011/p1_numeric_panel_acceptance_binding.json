@@ -1,0 +1,138 @@
+{
+  "schema": "p1_frozen_numeric_panel_acceptance/1",
+  "status": "accepted_completed_16_cell_payload",
+  "law": "original_frozen_compiled_W_Gaussian",
+  "seed": 20260918,
+  "participants": 8,
+  "cells": 16,
+  "candidate_count": 576,
+  "new_response_or_noise_fits": 0,
+  "original_A01_candidate_reuse": 72,
+  "remaining_scored_candidates": 504,
+  "current_run_id": "1791745612515081900",
+  "script_sha256": "78ae31b55a2bdf4a1fc4a396e75b834df430ef54718e060ec38a7cb7f76de25a",
+  "config_sha256": "b1ad598ccd9357c2e783f8481d5e1c12df83eebbbd827a033a51474c356bd539",
+  "result_sha256": "091fa663769395027e7ee5b9cdabd89079106daec62f77eb56167ec627f3ef7f",
+  "terminal_sha256": "028e250b53f78013962a1bbc6fe242e6108bd9643c468f08a298958050fa6efd",
+  "resource_journal_sha256": "7e9d20550fef5d868730764810bca4fd94441b0c3ae1a6cf4d89dd0afa570d97",
+  "parent_run_id": "1791742850275119600",
+  "parent_terminal_status": "contract_or_execution_failed",
+  "original_sealed_receipts_preserved": 8,
+  "newly_scored_receipts": 8,
+  "partial_archive": "tmp/P1_NUMERIC_PANEL/preflight/partial_archive_1791742850275119600",
+  "actual_executor_exit_code": 0,
+  "owned_processes_after_exit": 0,
+  "accepted_external_gate_sha256": "4975b689abec9aaae7e94e7d66cd1529913776da56e4f23c0f52b258dd89fdad",
+  "acceptance": "external gate pins original eight receipt bytes and script/config pairs; historical executor not resigned",
+  "summary": {
+    "shared8": {
+      "hits": 5,
+      "operational_hit": 0.625,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "nll": 7.336476583291455,
+      "brier": 0.6790937535735931,
+      "wrong_winner_confidences": [
+        0.9999999978985562,
+        0.5727253825958531,
+        0.7711031197460577
+      ]
+    },
+    "private8": {
+      "hits": 6,
+      "operational_hit": 0.75,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "nll": 5.554012191080322,
+      "brier": 0.47767850103985904,
+      "wrong_winner_confidences": [
+        0.9999998628552567,
+        0.24859877621409748
+      ]
+    }
+  },
+  "paired": {
+    "delta_hit": 0.125,
+    "paired_baseline_nll": 7.336476583291455,
+    "paired_candidate_nll": 5.5540121910803215,
+    "delta_paired_nll": -1.7824643922111338,
+    "paired_probability_count": 8,
+    "missing_probability_ledger": [],
+    "rescued_count": 1,
+    "harmed_count": 0,
+    "lost_prediction_count": 0,
+    "lost_probability_count": 0,
+    "development_gate_passed": true,
+    "gate_reasons": [],
+    "participant_delta_hit": [
+      [
+        "n2p3-origin://BNCI2014-008/participant/A01",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A02",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A03",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A04",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A05",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A06",
+        1.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A07",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A08",
+        0.0
+      ]
+    ],
+    "paired_probability_scope": "fixed seed/decision pairs, averaged within requested participant"
+  },
+  "resources": {
+    "current_run_cpu_peak_percent": 44.6,
+    "entire_resource_journal_cpu_peak_percent": 64.1,
+    "max_process_workers": 2,
+    "native_score_threads": 1,
+    "short_original_strict_load_threads": 2,
+    "max_worker_process_tree_rss_bytes": 1651781632,
+    "current_ram_pause_samples": 352,
+    "current_samples": 1657,
+    "current_elapsed_seconds": 1815.3327195644379,
+    "historical_A01_cpu_breach_percent": 80.9
+  },
+  "scope": "original_C600_R10_one_held_decision_per_person",
+  "all_eight_predeclared_truths": "row:5|column:0",
+  "consumer_source_A01": "22bf678245ccdf2b69c1ec828a2dbffd72c3bef64fbf4c1cc6c6b3988312cec0",
+  "consumer_source_remaining": "5b827aa4d94b0540754052fa845e2d9a9c42e3260af3403f28f43f2513f544bc",
+  "artifacts": {
+    "analysis_delivery": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_NUMERIC_PANEL\\analysis\\delivery.binding.json",
+      "sha256": "db4e1a68a5ddcb25323048aa72b6e84178e26eb07b11f07cc12bf4d06ccff155"
+    },
+    "independent_review": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-mechanism-paired\\n2p3-net\\tmp\\P1_NUMERICS_REVIEW\\panel_final_review_binding.json",
+      "sha256": "102f8fb767406db90cd4a47b9ccef215dcab0a06fbf9a87da5f0cf9d66ed22e5"
+    },
+    "report": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_NUMERIC_PANEL\\analysis\\final\\REPORT.zh.md",
+      "sha256": "3bebd81ca992d738930719bdb41812ce274f6050b127e95d94599d4eb70125b5"
+    },
+    "analysis": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_NUMERIC_PANEL\\analysis\\final\\analysis.json",
+      "sha256": "ef3cc95b082fadfd698b1c53cf02211713dc137a659d2e912b200f9e9da5087b"
+    }
+  },
+  "next_dependency": "new source-bound true-stationary law paired experiment with original parameters and response held fixed"
+}

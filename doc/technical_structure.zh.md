@@ -26,6 +26,8 @@ paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账
 
 `build_channel_noise_audit_manifest`与`audit_channel_noise_mechanism`的paired `/2`入口复用原public source owner和共享请求/指标：全source participants对应全requested roster，C target/labels对应原CalibrationSelection，modern mean/precision R/原Σ对应保存模型完整fit输入；两noise arm共用物理factor。shared/private AR8与prefix32的八人16格native矩阵已完成，保存态零拟合重现typed数值不可用，见[P1入口与执行](evidence/response_and_noise.zh.md#p1软件入口修后验收)。数值实现继续由B05单一owner持有。
 
+`stationary_noise_artifact`以原stored PARCOR的精确实数step-up和pairwise mixed Yule--Walker持有完整平稳cross-channel law，Decimal96编译一次jointroot；constructor/load以实际root的law pullback证书准入，saved root不重编。`FittedChannelNoise/3`和原`/2`compiled-W模型分别绑定；已完成的16格续评分仍属于原冻结law。作者8e1f和Git CRLF工作树621bad的compiler源码SHA分别记录，后续新模型绑定实际执行字节。
+
 更新：2026-09-06。本文件依据实际源码与入口核对，描述现状与尚缺接口；科研目标由
 [活动规范](research_program.zh.md)定义，发现和验证见[本次审计](evidence/technical_audit_20260906.zh.md)。
 源码目录不因行数大或模块多就拆分；优先保留已经集中实现的合同和算法。

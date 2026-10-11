@@ -2,11 +2,11 @@
 
 当前科研按[123项进展](evidence/wishlist_progress_20261010.zh.md)和四个主题页并行推进：B03完整组与真正prefix整程序nested选择、同run inner/final保存重放及public parent准入已有软件出口；当前P1数值稳定化、source cache/shared score、conditional白化和逐decision horizon已集成。B07 `/4`家族与B09可识别效应保其已有出口，下一真实opt-in独立future评价、完整公共队列、B07 off-grid/history和B13成人确认继续按各块依赖推进。旧producer与失败保原身份，云窗口拥有公共执行源码和资源调度。
 
-P1 paired `/2`接口与数值稳定化均已接受：8人16格原面板保原fit/save/load及失败身份；新数值consumer在A01两arm各36候选恢复概率输出，新增fit为0。真实reduction、nuisance换图与posterior metric误差链已经逐读并通过独立反例。下一执行其余14个保存态cell，再按完整requested支持分析，见[当前响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。B12基础公共程序独立前进。
+P1数值续评16/16完成、0新fit：原冻结compiled-W模型的shared/private命中5/8与6/8，NLL7.3365与5.5540，全部概率/失败/来源经独立复算；A01过度自信仍主导风险。真实平稳prefix compiler已集成，下一按原响应及噪声参数编译新law，完成独立producer的同支持16格对照，见[响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。B12基础公共程序独立前进。
 
 原云候选面板152共同请求与80原配对账本已读数收口，见[失败分母与配对效应](evidence/public_evaluation.zh.md#原云候选面板完整分母与配对读数)。grouped K800/2000因paired NLL增加不通过原开发门；source→scratch方向K2000部分对照是scratch改善，不能倒写迁移收益。该原producer结果不等同新prefix协议执行；下一研究核合法C内整程序选择和概率风险，不从未来成绩选默认。
 
-BI2014a按[逐库队列](evidence/public_evaluation.zh.md#跨数据集队列)推进。61人CSV清点确认episode深度可变；完整episode保留自身全部repetitions及共同未来分母，固定R8不足以支撑主终点。当前补finite-zero-none/candidate入口、实际Cz6观测mask、共同raw cutoff和逐decision horizon/save-load调用链。每库先封模型、结果和终态，再解锁下一库。
+BI2014a首五episode三臂队列已封库：61人/183模型/183receipt、真实exit0，原1287 requested和1243有概率key保留；fullfine相对scratch宏hit增加0.10896、配对NLL降低0.59048。逐episode真实R主端点和subject57 R1/R2账本分开；下一BNCI首五episode-C600/R10队列与label-K prefix selector分别冻结，见[公共评估](evidence/public_evaluation.zh.md#跨数据集队列)。每库先封模型、结果和终态，再解锁下一库。
 
 2026-10-08最新执行规则覆盖下文待跑三seed数量：日常科研使用20260918单个完整source→target程序，重大版本校验才使用20260918/19/20三个独立程序。当前公共科研对应四个source checkpoint流程，各自选择与fresh refit，初始八个逻辑NN fit；B12两个公共面板继续按真实预算和requested账本验收。历史三seed设计与已执行身份不改写。科研线接B08可识别prior、B07字典可移植与B05/B06/B09机制，B14云底座和B12基础矩阵并行；各项代码、软件验证、公共效能分别见[集成状态](evidence/research_integration_20261008.zh.md)。
 

@@ -4,7 +4,7 @@
   "programme": "first_five_complete_raw_episodes_episode_budget",
   "dataset": "BI2014a",
   "participants": 61,
-  "arms": ["zero", "fullfine", "matched_scratch"],
+  "arms": ["source_zero_shot", "source_full_fine", "matched_scratch"],
   "seed": 20260918,
   "models": 183,
   "arm_receipts": 183,
@@ -12,7 +12,8 @@
   "wall_seconds": 257.6227,
   "worker_failures": 0,
   "owned_process_tree_after_exit": 0,
-  "source_producer_sha256": "8ddd3af9d3506448f543cf668f625e5952a3a2d048539f9133ef6b021c774226",
+  "execution_source_sha256": "8ddd3af9d3506448f543cf668f625e5952a3a2d048539f9133ef6b021c774226",
+  "source_checkpoint_sha256": "fc8d8cbdef405263ff9c233e592755ceeeb2264bc8287800b8b2ffacfb199c02",
   "source_archive_sha256_preserved": "4b075a2df69b781f03844ad7efe2e3d4a2b64342118ea291bb85e1aa99dc2127",
   "main_requested_keys": 1287,
   "main_available_keys": 1243,
@@ -21,18 +22,25 @@
   "secondary_endpoint": "R2_terminal_partial",
   "secondary_endpoint_in_main_metrics": false,
   "metrics": {
-    "zero": {"participant_macro_hit": 0.0985773716, "participant_macro_nll": 3.4449344201, "denominator": 1243},
-    "fullfine": {"participant_macro_hit": 0.2407763003, "participant_macro_nll": 3.0339166286, "denominator": 1243},
-    "matched_scratch": {"participant_macro_hit": 0.1318186686, "participant_macro_nll": 3.6243966579, "denominator": 1243}
+    "source_zero_shot": {"participant_macro_hit": 0.0985773716, "participant_macro_nll": 3.4449344201, "hit_requested_count": 1287, "nll_available_count": 1243},
+    "source_full_fine": {"participant_macro_hit": 0.2407763003, "participant_macro_nll": 3.0339166286, "hit_requested_count": 1287, "nll_available_count": 1243},
+    "matched_scratch": {"participant_macro_hit": 0.1318186686, "participant_macro_nll": 3.6243966579, "hit_requested_count": 1287, "nll_available_count": 1243}
   },
   "paired_fullfine_minus_matched_scratch": {
     "hit": 0.1089576317,
     "nll": -0.5904800293,
-    "denominator": 1243
+    "hit_requested_count": 1287,
+    "nll_paired_count": 1243,
+    "rescued_count": 205,
+    "harmed_count": 70
   },
-  "report_path": "MAIN/tmp/public_dataset_queue01/BI2014a/report.json",
-  "queue_terminal_path": "MAIN/tmp/public_dataset_queue01/BI2014a/queue_terminal.BI.json",
-  "actual_exit_path": "MAIN/tmp/public_dataset_queue01/BI2014a/actual_exit.BI.json",
+  "report_path": "C:/Users/chent/.codex/worktrees/deep-research-plan/n2p3-net/tmp/public_dataset_queue01/BI2014a/report.json",
+  "report_sha256": "f67c9945262a9538eec03b5819f413afe872814521e348368b7d9a2c85abbd3b",
+  "queue_terminal_path": "C:/Users/chent/.codex/worktrees/deep-research-plan/n2p3-net/tmp/public_dataset_queue01/queue_terminal.BI.json",
+  "queue_terminal_sha256": "b2f9c563c1c439471b5d32c0cdbc38b4868ec357c65bbd749611f65b9aabbf8a",
+  "actual_exit_path": "C:/Users/chent/.codex/worktrees/deep-research-plan/n2p3-net/tmp/public_dataset_queue01/queue.actual_exit.BI.json",
+  "actual_exit_sha256": "a7868fadf97b38fb2344bcc77d423ebfa9a499f6063b5866e75a9ed1f169bf66",
+  "complete_archive_sha256": "b374ec94daff7ca5fa17f8d60b2cc3006128d3a12d35966b3f9518904ddde469",
   "cloud_report_path": "DATA/cloud_live_20261012/public_dataset_queue01/BI2014a_q1/report.json",
   "scope": "public_calibration_development_not_adult_or_product_confirmation",
   "separate_from": "B12_label_K0_K200_K800_K2000_panel"
