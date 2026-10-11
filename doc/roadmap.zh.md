@@ -6,7 +6,7 @@ P1数值续评16/16完成、0新fit：原冻结compiled-W模型的shared/private
 
 原云候选面板152共同请求与80原配对账本已读数收口，见[失败分母与配对效应](evidence/public_evaluation.zh.md#原云候选面板完整分母与配对读数)。grouped K800/2000因paired NLL增加不通过原开发门；source→scratch方向K2000部分对照是scratch改善，不能倒写迁移收益。该原producer结果不等同新prefix协议执行；下一研究核合法C内整程序选择和概率风险，不从未来成绩选默认。
 
-BI2014a首五episode三臂队列已封库：61人/183模型/183receipt、真实exit0，原1287 requested和1243有概率key保留；fullfine相对scratch宏hit增加0.10896、配对NLL降低0.59048。BNCI C600/R10八人三臂队列也已完成，24模型、每臂240请求、概率覆盖100%、真实exit0；保存结果与原owner输入证明均独立复签，fullfine−scratch宏hit−0.03333、NLL−0.204532、Brier+0.044301，NLL改善集中A04。label-K prefix selector旧entry003已failed，下一新consumer零fit准入已完成四人并补余四人，原八人分母保留；见[公共评估](evidence/public_evaluation.zh.md#跨数据集队列)。
+BI2014a首五episode三臂队列已封库：61人/183模型/183receipt、真实exit0，原1287 requested和1243有概率key保留；fullfine相对scratch宏hit增加0.10896、配对NLL降低0.59048。BNCI C600/R10八人三臂队列也已完成，24模型、每臂240请求、概率覆盖100%、真实exit0；保存结果与原owner输入证明均独立复签，fullfine−scratch宏hit−0.03333、NLL−0.204532、Brier+0.044301，NLL改善集中A04。label-K prefix selector旧entry003已failed；修后恢复代码已接受，下一新consumer先零fit重放原四人的保存产物，再拟合其余四人，完整原八人分母保留；见[公共评估](evidence/public_evaluation.zh.md#跨数据集队列)。
 
 2026-10-08最新执行规则覆盖下文待跑三seed数量：日常科研使用20260918单个完整source→target程序，重大版本校验才使用20260918/19/20三个独立程序。当前公共科研对应四个source checkpoint流程，各自选择与fresh refit，初始八个逻辑NN fit；B12两个公共面板继续按真实预算和requested账本验收。历史三seed设计与已执行身份不改写。科研线接B08可识别prior、B07字典可移植与B05/B06/B09机制，B14云底座和B12基础矩阵并行；各项代码、软件验证、公共效能分别见[集成状态](evidence/research_integration_20261008.zh.md)。
 
