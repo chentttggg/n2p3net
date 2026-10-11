@@ -50,7 +50,7 @@
         "source_to_target_fixed_recipe",
         "matched_target_scratch_same_recipe"
       ],
-      "temperature": "fixed or independently source-frozen; no target grouped-temperature selection",
+      "temperature": "T=1 or original source-frozen calibration only; no target grouped-temperature learning",
       "metrics": [
         "requested operational hit@all on complete episode",
         "probability coverage and NLL/Brier on available rows",
@@ -85,7 +85,7 @@
           "8": 86
         },
         "candidate_first_five_allocation": {
-          "status": "input_allocation_diagnostic_not_frozen_K",
+          "status": "actual_input_census_for_now_declared_episode_budget; final scoped requested ledger owned by preparation",
           "calibration_labels_min": 60,
           "calibration_labels_max": 372,
           "future_episodes": 1287,
@@ -158,8 +158,15 @@
         "audited_source_files": 22,
         "root_current_22_source_SHA_match": true
       },
-      "calibration_budget": "freeze through common actual budget compiler before target fitting; first-five allocation is a diagnostic only",
-      "test_endpoint": "each complete future episode uses all its own legal repetitions; retain actual R per decision and common future requested ledger",
+      "calibration_budget": {
+        "unit": "actual_complete_raw_episode",
+        "calibration_episode_count": 5,
+        "allocation": "earliest_five_per_participant",
+        "actual_label_budget": "persisted separately for each participant",
+        "decision_status": "explicit_episode_budget_programme_20261012",
+        "relation_to_B12_label_K_matrix": "separate from label K0/200/800/2000"
+      },
+      "test_endpoint": "all remaining raw requested episodes after the same first-five C; actual complete depth R1..R8 per key, with terminal partial/censor retained in denominator",
       "candidate_attempts": {
         "legacy_16_channel_causal_cache": "membership_prepared_but_source_input_incompatible",
         "four_zero_shot_fragments": "contract_rejected_before_fit",
@@ -167,7 +174,11 @@
         "original_RED_logs_preserved": true,
         "scoped_finite_zero_masked_cache": "in_progress"
       },
-      "independent_review_owner": "/root/prefix_replay_caller"
+      "independent_review_owner": "/root/prefix_replay_caller",
+      "caller_owner": "new scoped BI caller reusing fit_calibration_candidate and FrozenTrialPredictor; legacy SubjectAdapter caller retained as historical source",
+      "execution_target": "cloud_live_20261012/bi2014a_q1",
+      "execution_source": "new freeze from actual uploaded bytes; neither dc0e draft nor overwritten 3f38fe12 remains final source authority",
+      "next_interface": "requested_evidence_levels Mapping[DecisionKey,int] plus scoped EpochDataset/timeline, FrozenTrialPredictor fresh-load LLR and candidate probability replay"
     }
   ],
   "dataset_order_policy": "finish and seal each dataset artifacts before unlocking the next; later failure cannot overwrite completed dataset",
