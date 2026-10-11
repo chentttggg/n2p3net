@@ -83,3 +83,14 @@ def test_brainvision_payload_and_markers_are_both_verified(tmp_path):
 def test_download_status_cannot_admit_an_unsupported_parser():
     with pytest.raises(ValueError, match="download completion is not parser admission"):
         validate_source_manifest({"schema": "n2p3_source_records/1", "study": "Lee2019", "status": "complete"})
+
+
+@pytest.mark.parametrize("second", [{"subject": "02"}, {"run": "1"}, {"run": "1", "path": "copy.mat"}])
+def test_source_manifest_rejects_one_recording_declared_as_two_records(second):
+    first = dict(study="BI2015a", subject="2", session="0", run="0", reference="common",
+                 path="subject_02.mat", sha256="a" * 64)
+    with pytest.raises(ValueError, match="unique|physical recording twice"):
+        validate_source_manifest({"schema": "n2p3_source_records/1", "study": "BI2015a",
+                                  "records": [first, {**first, **second}]})
+    other = {**first, "subject": "3", "path": "subject_03.mat", "sha256": "b" * 64}
+    validate_source_manifest({"schema": "n2p3_source_records/1", "study": "BI2015a", "records": [first, other]})

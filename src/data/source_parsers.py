@@ -6,6 +6,7 @@ train, download, or silently split continuous recordings into new runs.
 from __future__ import annotations
 
 import csv
+import json
 from pathlib import Path
 
 import mne
@@ -222,16 +223,27 @@ def validate_source_manifest(manifest):
     records = manifest.get("records", [])
     if not records:
         raise ValueError("source manifest requires explicit records")
-    identities = set()
+    identities, physical, digests = set(), set(), set()
     for item in records:
         if item.get("study") != study:
             raise ValueError("source manifest mixes physical study identities")
         if any(item.get(key) is None for key in ("subject", "session", "run")):
             raise ValueError("source manifest requires physical participant/session/run identities")
-        identity = tuple(str(item.get(key, "")) for key in ("subject", "session", "run"))
-        if not all(identity) or identity in identities:
+        identity = tuple(str(item.get(key, "")).strip() for key in ("subject", "session", "run"))
+        if not all(identity):
+            raise ValueError("source manifest requires unique participant/session/run records")
+        # Integer-coded parsers read "2" and "02" as the same participant.
+        identity = (str(int(identity[0])) if identity[0].isdigit() else identity[0], *identity[1:])
+        if identity in identities:
             raise ValueError("source manifest requires unique participant/session/run records")
         identities.add(identity)
+        # One physical recording (or declared sample scope of it) is one source record.
+        scope = json.dumps(item.get("raw_scope"), sort_keys=True)
+        location, digest = (item.get("path"), item.get("member"), scope), (item.get("sha256"), item.get("member"), scope)
+        if location in physical or (item.get("sha256") and digest in digests):
+            raise ValueError("source manifest cannot declare one physical recording twice")
+        physical.add(location)
+        digests.add(digest)
         if not isinstance(item.get("reference"), str) or not item["reference"].strip():
             raise ValueError("source manifest requires an explicit reference declaration")
         path = Path(item["path"])
