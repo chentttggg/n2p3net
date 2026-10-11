@@ -1,0 +1,22 @@
+{
+  "schema": "n2p3_scientific_tree_cleanup_binding/1",
+  "status": "clean_active_tree_unaccepted_controller_preserved",
+  "accepted_scientific_head": "0d83c750458a1c6ffe67a338718d0a87b0be6176",
+  "recovery_manifest": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CONTROLLER_INTEGRATION_REVIEW\\pending_controller_WIP\\binding.json",
+    "sha256": "1cebc6da1472c5782c75a48c886817d702d1d5a9e8e1d86689e5fe0edbd5cc92",
+    "bytes": 2356
+  },
+  "preserved_file_count": 5,
+  "source_candidate": "2ae IO controller WIP; final Linux owner independent review pending",
+  "old_windows_19_receipt": "tmp/CONTROLLER_INTEGRATION_REVIEW/windows.receipt.json",
+  "original_D_dirty_checkout_modified": false,
+  "scientific_code_or_frozen_artifacts_removed": false,
+  "cache_worktree_app_archive": "separate previously queued action; retirement not confirmed",
+  "next_work": [
+    "integrate only final accepted controller and exact cloud consumer source",
+    "actual original-four prefix admission and remaining-four complete matrix",
+    "actual sealed Windows state consumption and new-law P1 full16",
+    "independent B07 off-grid/history source and mathematical review"
+  ]
+}

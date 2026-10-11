@@ -28,6 +28,8 @@ CloudExecutor的IO调度切片已在科研WIP通过Windows19个相关case。Linu
 
 旧prefix/P1 software binding继续证明各自历史快照；当前HEAD的CLI、compute admission与stationary `/3`依赖已有后续变化，新执行绑定真实frozen source。stage06展开计划和日志留在本地，误纳入的四个未推送Git提交已先保存并验证恢复bundle，再从分发历史移出；原执行HEAD仍由bundle保留，源码和结果没有改签。Git保紧凑绑定及主题页，恢复base/旧HEAD/bundle SHA见上述执行绑定。
 
+科研主树已收口Prefix与P1科学接线，未接受的旧controller候选及observer/test/两指南增量共五文件先逐字节保存恢复载荷、核SHA后移出活动树，见[整理绑定](../assets/research_resume_20261011/scientific_tree_cleanup_binding.json)。原Windows19凭证及新owner各次复审继续持有各自来源，统一controller接受后再函数级合入。公共恢复与P1执行由云窗口独占推进；B07 off-grid/history源码和数学切片独立审阅，不等待数值调度收口。
+
 近期旧日期页已经先物理归档、逐member验证，再合并为四个主题页；原binding、MAT、缓存、模型和结果保持原位置。源页面恢复方式见[主题整理历史清单](../../frozen/research_topic_documents_history.manifest.json)。后续研究结论更新主题页，代码使用方式更新原六指南。
 
 已交付cache作者树经独立恢复复核后请求应用归档：1,285个保留路径、648源码、59篇Paper与四个source owner可恢复，完整used_union为959对象/275,397,774 bytes、缺件/哈希错误0；七个活动代码/配置根与本机进程未见运行依赖，旧验收locator由恢复映射解释。应用目前返回queued，尚未确认退役；恢复载荷和冗余对象均未删除。请求与实际状态见[工作树整理绑定](../assets/research_resume_20261011/cache_author_archive_request_binding.json)。
