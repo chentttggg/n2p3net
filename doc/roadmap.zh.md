@@ -31,7 +31,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
 | B03 校准/混合 | 固定池/分组温度、完整组与真正prefix整程序strict nested；同run graph/native/OOF/future重放、温度学习关系及public parent准入；K200单组/partial80与小repetition边界 | 真实opt-in独立future评价、partial-label专用学习入口、复杂gating与独立泛化；原K200 grouped保程序结构性不可用，fixed基线保持 |
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
-| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec、given-noise physical-prior；modern M/R/原Σ转换与完整source/C权限paired入口；16格原失败终态；稳定flat chart/dot/local bound获准，A01两arm原保存态恢复概率输出 | 其余14个保存态新消费者评价、finite endpoint交互与joint MLE；后续同支持概率分析 |
+| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec、given-noise physical-prior；modern M/R/原Σ转换与完整source/C权限paired入口；16格原失败终态；稳定flat chart/dot/local bound获准，A01两arm冻结W态恢复概率输出；双oracle定位private真实平稳law编译偏差 | 14个冻结W保存态续评、真实PARCOR/cross-channel平稳prefix确定性编译与保存加载、finite endpoint交互与joint MLE |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
 | B07 字典/历史 | A0/A1 portable、cubic `/3`及raised/multiscale `/4` native；actual prior/chart/容量/OOF/保存链，有限history与scalar latent reference | off-grid/phase/wavelet、硬斜率、完整history/权限、actual operator/support、多channel随机效应与效能；multiscale换坐标不当新增span |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |

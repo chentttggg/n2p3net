@@ -1,0 +1,51 @@
+{
+  "schema": "n2p3_private_stationary_prefix_diagnosis/1",
+  "status": "true_law_mismatch_verified_new_compiler_in_progress",
+  "base_source_sha256": "5b827aa4d94b0540754052fa845e2d9a9c42e3260af3403f28f43f2513f544bc",
+  "original_noise_sha256": "b17708f4ffe8cd3711c08880c1a40fd5bf9302452a90d6a00a0355fba3498a54",
+  "law": "exact real polynomial of stored binary64 PARCOR, same primitive consumed by tail lattice; correlated innovation Sigma once",
+  "full_joint_original_root_error": {
+    "whitened_covariance_spectral": 0.0772181178022923,
+    "whitened_covariance_frobenius": 0.16728214060822946,
+    "raw_covariance_relative_error": 1.7583e-09,
+    "legacy_relation_gate": 1.6e-07
+  },
+  "correctly_rounded_high_precision_root_error": {
+    "whitened_covariance_spectral": 3.4092770849927e-11,
+    "whitened_covariance_frobenius": 1.10913962244411e-10
+  },
+  "independent_equations": "mixed 2p+1 YuleWalker and p-squared Sylvester all 36 cross pairs agree; diagonal scalar YuleWalker and unequal AR1 closed form independently checked",
+  "fit_calls": 0,
+  "score_calls": 0,
+  "original_artifacts_modified": false,
+  "old_numeric_panel": "frozen compiled-W law scores keep original body and producer; no retrospective true-stationary promotion",
+  "worktree": "C:/Users/chent/.codex/worktrees/research-stationary-prefix/n2p3-net",
+  "ownership": {
+    "author": "prefix_program_design",
+    "independent_reviewer": "b12_final_binding_review",
+    "final_integration": "root"
+  },
+  "next_action": "compile deterministic true-PARCOR joint prefix covariance/root, link constructor and save-load law identities, validate weak directions and original score caller",
+  "artifacts": {
+    "tmp/PREFIX_STATIONARITY/THEORY.zh.md": {
+      "sha256": "0df5adb3e1c7d82051c7e2ce2ef4d9738ed211f3996a07037435a17215cbe2b2",
+      "bytes": 4766
+    },
+    "tmp/PREFIX_STATIONARITY/pairwise_law_probe.py": {
+      "sha256": "ceb848a1455e11defcf2eeba8252eb5a6db986d02eb86b739e35f55d30a65aa4",
+      "bytes": 7323
+    },
+    "tmp/PREFIX_STATIONARITY/pairwise_law_probe.json": {
+      "sha256": "81799cc1b2e48632cd66a9178f1161ff25a5625cf0e56cbc3ffd43b07cbfc787",
+      "bytes": 9326
+    },
+    "tmp/PREFIX_STATIONARITY/REVIEW/stationarity_sylvester_oracle.py": {
+      "sha256": "bce2fc90a692567e7c89687e1efb093283611015a3c4abada3adbabcec597f2d",
+      "bytes": 9937
+    },
+    "tmp/PREFIX_STATIONARITY/REVIEW/stationarity_sylvester_oracle.json": {
+      "sha256": "ee161a64489bdd78cf9b900e52019f5b803c07129fbdb390b885edf781d09329",
+      "bytes": 6765
+    }
+  }
+}

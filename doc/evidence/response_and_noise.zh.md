@@ -16,6 +16,14 @@
 
 这次A01消费的一次本机CPU采样为80.9%，按实际记录为超限；后续native1且检查总机余量，最多两个score workers。完整数值程序和原producer分开绑定；tree dot也改变新C-fit的舍入路径，原prior和统计模型保持。此处交付数值实现与真实保存态可用性，后续同物理支持的概率分析继续用原requested owner。
 
+## 平稳前缀的真实模型关系
+
+续评发现private旧入口的线程依赖：A01原保存root在native2重编逐bit相同并通过原关系门，native1重编却拒绝。更深入的两个独立100位oracle对全部36个cross-channel pair求真实平稳covariance，确认问题在旧companion Lyapunov/lag-power编译；全256维root的真实covariance pullback谱差为`0.0772181`，Frobenius差`0.167282`，而raw covariance相对差仅约`1.7583e-9`。原`1.6e-7`门核的是旧数值重编关系，弱方向需要真实law oracle。
+
+尾部实际消费stored PARCOR lattice，新模型以每个binary64 PARCOR作为精确实数，经实数step-up确定AR；跨channel创新Sigma只入一次。完整pairwise mixed Yule–Walker与独立p² Sylvester在36个pair上一致；unequal AR1 closed form和diagonal scalar Yule–Walker另作参照。同真实law的高精度joint Cholesky仅舍入为binary64后，谱差`3.409e-11`、Frobenius差`1.109e-10`，支持保持原门实现稳定编译。
+
+新compiler及constructor/save/load关系在独立`research-stationary-prefix`树推进。现P1续评明确使用各原冻结compiled-W Gaussian law，保持原model与consumer身份；其结果提供该实际数值程序的概率读数。真实stationary VAR的新compiled state将以新来源交付，原文件不修签。推导、两套oracle、实际旧state与下一代码依赖见[诊断绑定](../assets/research_resume_20261011/stationary_prefix_diagnosis_binding.json)。
+
 ## P1 数值门诊断与小组协议评估
 
 数值证据的第一、第二道门分别记录。前一道需要full-record quotient的正确算术估计，后一道需要prefix/tail各自的input与压缩误差；prefix basis、真实dot reduction和局部certificate按实际调用联动。只读推导及counterexample位于`tmp/P1_CHART_NEXT_HANDOFF_20261011/`，实码与独立审阅位于`tmp/P1_NUMERICS/`和`tmp/P1_NUMERICS_REVIEW/`。小组/单组结论集中在[校准与选择](calibration_and_selection.zh.md#小组部分标签与采样坐标)。
