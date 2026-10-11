@@ -46,6 +46,8 @@ paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账
 
 score另外在raw共同intercept坐标中减首个实测样本，原samples身份保持；同full/prefix flat系数平移和tail条件坐标Jacobian皆1。prefix compressed rhs直接进入tail增广QR，不相减巨大a均值。原full相对误差门与raw conditional log-density绝对误差估计分别准入；后者预算为每actual tail scalar行`sqrt(binary64 eps)` nats，不是全输入区间证书。`student_t_numerics`集中有限ν的Gamma整数维递推/半步及径向计算，sampling与projected contrast共用，不用大log-Gamma直接相减或将有限ν重标∞。
 
+B05数值程序进一步使用真实短叶/平衡dot tree和对应gamma；score只对flat nuisance用同一个stored可逆prefix chart，full/prefix测度Jacobian抵消。误差从原raw/完整PARCOR历史按prefix/tail及列传播，经带solve-defect的inverse界和posterior metric计入conditional nats预算；proper prior与两道门保持。公共density offset先减max再归一化，Dekker非有限中间项具名拒绝。dot tree同时进入C-fit，因此新拟合按新数值源码绑定；原状态由原loader与显式新consumer分别留证据，见[数值接受](evidence/response_and_noise.zh.md#当前模型与数值任务)。
+
 `research.joint_response_scale`持有一个proper physical global β prior、各完整decision的noise scale以及明确的external/C-plugin参数程序。正离散scale rule必须显式供应，full/prefix消费同一数值态；tensor积分保β及C/test scale后验关联，有限程序正规与连续Gamma近似精度分开。`research.joint_response_sampling`复用相同prior/hyperparameter/decision类，一次准备统计和测试白化，提供global β↔各λ Gibbs、C后验prefix重加权及caller显式另跑的C+prefix程序。有限经验预测混合正规，Rhat/ESS/MCSE不认证未访问模态或真实后验准确性；二者目前无flat nuisance、默认ν或产品准入。
 
 长记录由同scale owner的`compile_decision/compile_owned_decision`工厂编成不可变`CompiledDecision`，保原scalar行数、完整增广R、actual source/map/chart与full/prefix/tail关系。B05一次白化后，从原白化行分别压缩三根；tail不能引入新Γ轴。原Y/D先于prior/mean变换流式绑定，reader分块不改身份。finite reference和唯一Gibbs/RNG循环共享QR统计，已删除sampling的重复Gram/linear/白化堆栈。`targeted_conditional_beta_predict`由caller显式选择，平均同C+prefix joint λ后验下的proper β解析组件；不自动fallback、不重标旧Gaussian后验。当前工厂只准proper无nuisance likelihood，flat-Z长记录仍是独立参考，不能借相同R高度或schema混入。

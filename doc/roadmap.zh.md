@@ -2,7 +2,7 @@
 
 2026-10-11当前科研按[123项进展与下一步](evidence/wishlist_progress_20261010.zh.md)及[科研恢复与集成](evidence/execution_and_integration.zh.md)并行推进：B03 strict nested/source-study 与同一次 run 的 inner producer replay 已完成 bounded 软件验收；B07 `/4` native family、B09 exact structural null/语义重核继续保其有限边界。B12 requested-manifest修后原15项通过，真实serial最终report与重复finalize摘要一致；CalibrationPrefix保存重放/public caller已独立复签，尚未接候选程序strict nested选择。原云producer的八人候选面板已交付完整requested零拟合恢复汇总，配对效应及原始载荷按其来源继续核查；新科研协议不追签旧结果。B11时间shape/ERP-span、B07 off-grid/history、B13成人确认继续独立推进。公共云执行源码由云窗口独占，所有15块仍有独立剩余出口。
 
-P1 paired `/2`接口已按[修后独立软件验收](evidence/response_and_noise.zh.md#p1软件入口修后验收)合入；8人×2noise、同C/prefix32的16格native面板已完成fit/save/load及零拟合失败重放。下一切片是保持原density和阈值的数值稳定化，重点审阅真实reduction、nuisance换图及posterior metric误差传播。B12基础公共程序独立前进。
+P1 paired `/2`接口与数值稳定化均已接受：8人16格原面板保原fit/save/load及失败身份；新数值consumer在A01两arm各36候选恢复概率输出，新增fit为0。真实reduction、nuisance换图与posterior metric误差链已经逐读并通过独立反例。下一执行其余14个保存态cell，再按完整requested支持分析，见[当前响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。B12基础公共程序独立前进。
 
 原云候选面板152共同请求与80原配对账本已读数收口，见[失败分母与配对效应](evidence/public_evaluation.zh.md#原云候选面板完整分母与配对读数)。grouped K800/2000因paired NLL增加不通过原开发门；source→scratch方向K2000部分对照是scratch改善，不能倒写迁移收益。该原producer结果不等同新prefix协议执行；下一研究核合法C内整程序选择和概率风险，不从未来成绩选默认。
 
@@ -31,7 +31,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
 | B03 校准/混合 | 固定池/分组温度、完整组strict nested API；同run inner持久重放、prefix actual OOF/future与parent混合概率准入；已评估K200单组/partial80与小repetition边界 | prefix整程序strict nested选择、partial-label/refit剂量与nuisance程序一致性、复杂gating与独立泛化；K200 grouped保结构性不可用，fixed作为基线 |
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
-| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec、given-noise physical-prior；modern M/R/原Σ转换与完整source/C权限paired软件入口；8人16格执行封口但16 held均数值门不可用 | 稳定nuisance basis与prefix/tail局部误差界、finite endpoint交互与joint MLE；不把本轮0 coverage当效能 |
+| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec、given-noise physical-prior；modern M/R/原Σ转换与完整source/C权限paired入口；16格原失败终态；稳定flat chart/dot/local bound获准，A01两arm原保存态恢复概率输出 | 其余14个保存态新消费者评价、finite endpoint交互与joint MLE；后续同支持概率分析 |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
 | B07 字典/历史 | A0/A1 portable、cubic `/3`及raised/multiscale `/4` native；actual prior/chart/容量/OOF/保存链，有限history与scalar latent reference | off-grid/phase/wavelet、硬斜率、完整history/权限、actual operator/support、多channel随机效应与效能；multiscale换坐标不当新增span |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |

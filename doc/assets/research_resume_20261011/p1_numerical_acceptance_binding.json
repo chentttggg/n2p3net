@@ -1,0 +1,136 @@
+{
+  "schema": "n2p3_p1_numerical_root_acceptance/1",
+  "author_commit": "fe9f348",
+  "production_source_sha256": "5b827aa4d94b0540754052fa845e2d9a9c42e3260af3403f28f43f2513f544bc",
+  "accepted_test_source_sha256": "9caff2a8b113db6f900a661cae47eb92bbbd1e070328f374fb611b2318263996",
+  "independent_test_snapshot_sha256": "66059e5fff2c24d1af6b3ab6a2c437ac529471c7a0fc3bd6b17da9e8c70ad0d8",
+  "root_tests": {
+    "new_cases": 6,
+    "pytest_exit": 0,
+    "ruff_exit": 0,
+    "diff_check_exit": 0,
+    "native_threads": 1
+  },
+  "independent_review": {
+    "scope": "independent_bounded_numerical_review_no_public_fit_or_native_panel_rerun",
+    "status": "accepted_numerical_body_with_typed_rejection_preserved",
+    "source_sha256": "5b827aa4d94b0540754052fa845e2d9a9c42e3260af3403f28f43f2513f544bc",
+    "test_source_sha256": "66059e5fff2c24d1af6b3ab6a2c437ac529471c7a0fc3bd6b17da9e8c70ad0d8",
+    "temporal_source_sha256": "81e8ad45eabc980f5ee7e2d3131ae0ee2e08b0c663fbbbfc75427c3f43b0581b",
+    "joint_scale_source_sha256": "5298e3435d64f4ab6a6c07708cb343bf22592b30350cc792c796bf2e4006db2d",
+    "entry_count": 109,
+    "conditional_cases": 54,
+    "admitted_conditional_cases": 32,
+    "typed_rejected_conditional_cases": 22,
+    "max_admitted_oracle_gap_nats": 1.3951273018323528e-09,
+    "max_admitted_error_estimate_nats": 4.2720699851179924e-08,
+    "max_gap_to_reported_bound_ratio": 0.4177849320306497,
+    "max_physical_density_oracle_gap_nats": 6.026711730883136e-14,
+    "old_dekker_red": {
+      "source_sha256": "22bf678245ccdf2b69c1ec828a2dbffd72c3bef64fbf4c1cc6c6b3988312cec0",
+      "directory": "source22bf6782",
+      "exit": 1
+    },
+    "artifacts": {
+      "independent_probe": {
+        "py": "2e5d44df163603691297f5b39f17d4a1ed03c35c7c3105659257366f98bc6c6f",
+        "json": "b664b445bcc28e2d67e8783a74e1af5cc4a381a5ded02db6b8ec85e0a6d78cb1",
+        "log": "b5abd7a9bc3063b748c1ef1a513ac1f8ba8d227b1dbab7a46affe6733477c09b",
+        "exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+      },
+      "rejection_controls": {
+        "py": "a6aa208f08b2a8fc09392d6b32e33537861b6cbeee997ed96a8a18513638e424",
+        "json": "6f43b03ea76365b70c813b2c2a0b2b38d1274d36e12a71645aebf22d10c85739",
+        "log": "1e6a531281bddff2b11b8429272c7031cc9a61673e59383c12b46a7c584a0a6d",
+        "exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+      },
+      "prefix_and_residual_probe": {
+        "py": "9df383cd26b3a73096b6220d1a22df8c08ac3a2b3afed2cafdc9cd7b99cd4678",
+        "json": "bd2cf9715b65aa4f5d2e01c0fb5252a9c4ee97062698e59123dfe7db28b6e603",
+        "log": "7964981d583e1c188b9ea214bde7cd6f53c096a68f7b955e5e99891dafabbcbb",
+        "exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+      },
+      "dekker_overflow_probe": {
+        "py": "dfbb40b4d41312d51d77438310ce22100191d99e363f068c810e3438450a446b",
+        "json": "005b49caf16ce965bc2fc22ba9f9ad7b7517a89529e884f0816dd15ebd9b6089",
+        "log": "60e6ab3ea6c20e18a75fcad007633ab5e87f3d7b4361117f2254e10ed6e6a373",
+        "exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+      }
+    },
+    "report_sha256": "13b55837f9e42b1d318916cb54cefce0050379266708fb81971ec3d082ebcf6e",
+    "source_sha_after": "5b827aa4d94b0540754052fa845e2d9a9c42e3260af3403f28f43f2513f544bc",
+    "public_or_adult_efficacy_claim": false,
+    "author_source22bf_A01_evidence_owner": "p1_chart_diagnosis",
+    "a01_native_replay_policy": "root-directed: do not repeat 72 scores to sign source5b; preserve actual source22bf rows"
+  },
+  "native_nominal_consumer_source": "22bf678245ccdf2b69c1ec828a2dbffd72c3bef64fbf4c1cc6c6b3988312cec0",
+  "native_nominal_rows": [
+    {
+      "arm": "shared8",
+      "source_sha256": "22bf678245ccdf2b69c1ec828a2dbffd72c3bef64fbf4c1cc6c6b3988312cec0",
+      "score_local_path": "C:\\Users\\chent\\.codex\\worktrees\\research-mechanism-paired\\n2p3-net\\tmp\\P1_NUMERICS\\numeric_score_shared8_stage07.json",
+      "score_sha256": "1563c8fe0238830193641310e7cfd3dfd39b5b6f3f8e15f8500e50647fde036e",
+      "candidate_count": 36,
+      "probability_mass": 1.0,
+      "max_diffuse_bound": 5.38005068906033e-09,
+      "max_conditional_nats": 0.00029516238302378545,
+      "conditional_budget_nats": 0.0009467601776123047,
+      "input_and_old_producer_binding": {
+        "input_sha256": "ab6e09e0a054c2c647804739e7aa2dad9c154449722b93308a3e3f405c9996ac",
+        "noise_file_sha256": "bf86897bf91ac5f6c896f6ddcacd9f0563d49d6675845cde522ceef5c77fbe2e",
+        "anchor_model_sha256": "631a7088d2fc5939fe55522e2e70427043f4a7966e8e6b2dd513f7d46cc80934",
+        "held_arrays_sha256": "ecbd6e09f6dfea1e59ae7f2bfffbc167c397b0a492e981b55d1a82e7b028bd89",
+        "source_capsule_manifest_sha256": "bd394193f380d1b80f7b3b65a7a6d6ab574bf65e7a883a1fd3e13a50ef1a3766",
+        "record_id": "BNCI2014-008:A01:selection05:cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+        "raw_scope": [
+          51421,
+          59395
+        ]
+      }
+    },
+    {
+      "arm": "private8",
+      "source_sha256": "22bf678245ccdf2b69c1ec828a2dbffd72c3bef64fbf4c1cc6c6b3988312cec0",
+      "score_local_path": "C:\\Users\\chent\\.codex\\worktrees\\research-mechanism-paired\\n2p3-net\\tmp\\P1_NUMERICS\\numeric_score_private8_stage07.json",
+      "score_sha256": "c0b7136ba6f1ca07c725b38f1fcf3f3b016e7eb087463ff357d3cbbbaa192fc5",
+      "candidate_count": 36,
+      "probability_mass": 1.0,
+      "max_diffuse_bound": 8.262803408612056e-09,
+      "max_conditional_nats": 0.00033733275179444856,
+      "conditional_budget_nats": 0.0009467601776123047,
+      "input_and_old_producer_binding": {
+        "input_sha256": "ab6e09e0a054c2c647804739e7aa2dad9c154449722b93308a3e3f405c9996ac",
+        "noise_file_sha256": "b17708f4ffe8cd3711c08880c1a40fd5bf9302452a90d6a00a0355fba3498a54",
+        "anchor_model_sha256": "631a7088d2fc5939fe55522e2e70427043f4a7966e8e6b2dd513f7d46cc80934",
+        "held_arrays_sha256": "ecbd6e09f6dfea1e59ae7f2bfffbc167c397b0a492e981b55d1a82e7b028bd89",
+        "source_capsule_manifest_sha256": "bd394193f380d1b80f7b3b65a7a6d6ab574bf65e7a883a1fd3e13a50ef1a3766",
+        "record_id": "BNCI2014-008:A01:selection05:cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+        "raw_scope": [
+          51421,
+          59395
+        ]
+      }
+    }
+  ],
+  "native_nominal_resources": {
+    "peak_host_cpu_percent": 80.9,
+    "peak_rss_bytes": 1563344896,
+    "cpu_less_than_80_complied": false,
+    "subsequent_policy": "native1 with local headroom check, at most two score workers"
+  },
+  "root_logic_review": [
+    "same full/prefix stored invertible flat chart and Jacobian cancellation",
+    "actual leaf/tree dot arithmetic with matching gamma and absolute Q pullback",
+    "full raw AR history and component/prefix/tail source errors",
+    "inverse solve defect and posterior metric displacement retain prior and prefix operands",
+    "two separate original thresholds with correct units, logdet factor2 and output normalizer",
+    "stable common-offset softmax and explicit finite Dekker rejection"
+  ],
+  "new_fit_numerical_program_changes": true,
+  "new_fit_statistical_prior_or_threshold_changes": false,
+  "old_models_resigned": false,
+  "old_16_cell_failure_panel_changed": false,
+  "nominal_22bf_to_5b_change": "only finite intermediate/residual/bound rejection; root reviewed exact diff; no nominal re-sign or 72-score rerun",
+  "remaining_native_cells": 14,
+  "native_panel_new_scoring_complete": false
+}

@@ -8,9 +8,13 @@
 
 八人shared/private AR8、共同prefix32的16格native诊断已完成：每人600标签fit、120标签held评价、80授权标签未使用，8 anchor/16 noise fits均保存加载。16个held评分均触发数值可分辨性门，概率覆盖0；完整保存态已零拟合重现原失败。[执行绑定](../assets/research_resume_20261011/p1_native_panel_binding.json)保存原来源和完整分母。
 
-当前改进针对两道不同单位的误差估计：full diffuse quotient是无量纲source-scale界，conditional score是nats界。原面板前一道界为`2.24e-8…7.12e-8`，超过`sqrt(eps)=1.490e-8`；后一道预算按actual tail scalar行数乘`sqrt(eps)` nats计算。prefix nuisance可逆换图、真实分块reduction及prefix/tail局部误差传播在隔离树实现，保留原density和两门阈值。独立审阅进一步检查误差在真实posterior metric中的传播。
+数值稳定化已接受并接入科研树：full diffuse quotient保无量纲source-scale界，conditional score保nats界，仍用原两道阈值。实现包含prefix nuisance可逆换图、实际256-row短叶/平衡reduction、真实prefix/tail与列误差传播，以及完整posterior metric中的局部位移界。`Q.T b`显式按`abs(Q).T abs(b)`计算dot误差，logdet的factor2与raw normalizer/输出舍入都入账。
 
-作者在机制隔离树修改B05单一owner，独立审阅核AR完整历史、flat测度/Jacobian、proper factor、实际row normalizer和误差传播。24-row dyadic反例中，旧conditional界拒绝；稳定坐标的80位oracle误差约`1.44e-15`，新估计约`2.46e-13 nats`。实际旧保存态和极端输入继续用于检查同一数值程序，原执行身份保持。
+独立审阅核完整AR历史、flat测度/Jacobian、相关proper factor、inverse solve defect、prefix压缩和后验位移。109个独立案例通过；54个conditional案例中32获准、22具名拒绝，获准案例的110位oracle最大误差`1.395e-9 nats`且在各自估计界内。root逐读全部差异及最后finite保护，按原字节接入`5b827aa4…`，核依赖/证据SHA并通过六个新增反例、Ruff与diff检查，见[数值接受绑定](../assets/research_resume_20261011/p1_numerical_acceptance_binding.json)。
+
+真实A01 shared/private各36候选已经恢复完整概率输出：原保存态由原loader准入，新数值consumer为`22bf6782…`，新增fit为0。source-scale界最大分别为`5.380e-9`/`8.263e-9`，conditional nats界最大`0.000295162`/`0.000337333`，同actual tail预算`0.000946760`；概率mass均为1。随后5b只补无FMA极端中间乘积的typed有限值保护，保72候选原source身份。其余14个保存态cell继续独立评价，原16格失败面板保持原记录。
+
+这次A01消费的一次本机CPU采样为80.9%，按实际记录为超限；后续native1且检查总机余量，最多两个score workers。完整数值程序和原producer分开绑定；tree dot也改变新C-fit的舍入路径，原prior和统计模型保持。此处交付数值实现与真实保存态可用性，后续同物理支持的概率分析继续用原requested owner。
 
 ## P1 数值门诊断与小组协议评估
 
