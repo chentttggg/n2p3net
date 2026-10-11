@@ -258,7 +258,9 @@ def worker(plan_file, subject, control):
             "--plan", str(plan_file), "--subject", subject, "--output", str(export_dir)], check=True,
             cwd=config["original_capsule"])
     exported, response = _export_state(config, subject, export_dir)
-    inputs = BoundInput(descriptor["input_manifest"]["path"])
+    # Plan JSON serializes paths as strings; BoundInput intentionally accepts
+    # a Path because its root is the manifest's parent directory.
+    inputs = BoundInput(Path(descriptor["input_manifest"]["path"]))
     samples, designs = inputs.arrays(descriptor["held"]["arrays"], "samples", "candidate_designs")
     view = descriptor["held"]["view"]
     with threadpool_limits(limits=1):

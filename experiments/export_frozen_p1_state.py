@@ -55,8 +55,13 @@ def export(plan_file, subject, output):
     continuous_decision.ContinuousDecisionModel.score = forbidden
     torch.set_num_threads(1)
     torch.set_num_interop_threads(1)
-    inputs = BoundInput(descriptor["input_manifest"]["path"])
-    payload = json.loads(Path(descriptor["input_manifest"]["path"]).read_bytes())
+    # BoundInput's public seam is a pathlib.Path: it resolves the manifest's
+    # parent before resolving descriptor-relative payload files.  The plan
+    # stores a serialized string, so coerce at this caller boundary while
+    # preserving the original manifest bytes and digest.
+    manifest_path = Path(descriptor["input_manifest"]["path"])
+    inputs = BoundInput(manifest_path)
+    payload = json.loads(manifest_path.read_bytes())
     entry = payload["participants"][0]
     with threadpool_limits(limits=1):
         authority = public_calibration_authority(payload["source_records"], inputs)
