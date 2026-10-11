@@ -154,6 +154,32 @@ def verify_job(job):
         fitted_models=fits, maximum_prediction_difference=maximum_error, failures=errors)
 
 
+def verifier_identity(snapshot) -> dict:
+    """The source that actually verified a record; reused passes must carry the same one."""
+
+    return {"runtime_snapshot": snapshot,
+            "verification_script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+
+
+def reusable(previous, record_sha256, verifier) -> bool:
+    return bool(previous) and previous.get("record_sha256") == record_sha256 and (
+        previous["status"] == "passed" and previous.get("verifier") == verifier)
+
+
+def final_status(results, record_statuses, matrix_status) -> str:
+    """Pass only a completed matrix whose every record completed and was verified as passed."""
+
+    if matrix_status not in {"completed", "failed"}:
+        return "incomplete"
+    if matrix_status != "completed" or not record_statuses:
+        return "failed"
+    if any(status != "completed" for status in record_statuses.values()):
+        return "failed"
+    if any(results.get(path, {}).get("status") != "passed" for path in record_statuses):
+        return "failed"
+    return "passed"
+
+
 def main():
     args = arguments()
     initialize(args.runtime_checkout)
@@ -163,24 +189,27 @@ def main():
     snapshot = verified_executed_snapshot(args.snapshot, root=args.runtime_checkout)
     args.output.mkdir(parents=True, exist_ok=True)
     progress = args.output / "verification.json"
-    record = json.loads(progress.read_text()) if progress.exists() else dict(results={})
-    record.update(runtime_snapshot=snapshot, verification_script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
+    record = json.loads(progress.read_text(encoding="utf-8")) if progress.exists() else dict(results={})
+    verifier = verifier_identity(snapshot)
+    record.update(verifier)
     for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
         os.environ[name] = "1"
     with ProcessPoolExecutor(max_workers=args.workers, mp_context=multiprocessing.get_context("spawn"),
                              initializer=initialize, initargs=(str(args.runtime_checkout),)) as pool:
         while True:
-            jobs = []
+            jobs, record_statuses = [], {}
             for path in sorted(args.results.glob("*/record.json")):
                 try:
-                    result = json.loads(path.read_text())
+                    result = json.loads(path.read_text(encoding="utf-8"))
                 except json.JSONDecodeError:
+                    record_statuses[str(path)] = "unreadable"
                     continue
+                record_statuses[str(path)] = result.get("status")
                 if result.get("status") != "completed":
                     continue
                 previous = record["results"].get(str(path))
                 digest = result["result_integrity"]["record_sha256"]
-                if previous and previous.get("record_sha256") == digest and previous["status"] == "passed":
+                if reusable(previous, digest, verifier):
                     continue
                 task = result["task_manifest"]["source_task"]
                 source_root = args.dose_sources if task["dose"] == "matched" else args.sources
@@ -189,13 +218,13 @@ def main():
                 jobs.append(dict(record=str(path), cache=prepared["cache"],
                                  checkpoint=source["trajectory"]["checkpoints"]["4000"]))
             for result in pool.map(verify_job, jobs):
-                record["results"][result["record"]] = result
+                record["results"][result["record"]] = {**result, "verifier": verifier}
                 record["status"] = "running"
                 atomic_write_json(progress, record)
                 print(json.dumps({k: v for k, v in result.items() if k != "failures"}), flush=True)
-            state = json.loads((args.results / "progress.json").read_text())
-            if state.get("status") == "completed" or not args.watch:
-                record.update(status="passed" if all(r["status"] == "passed" for r in record["results"].values()) else "failed",
+            state = json.loads((args.results / "progress.json").read_text(encoding="utf-8"))
+            if state.get("status") in {"completed", "failed"} or not args.watch:
+                record.update(status=final_status(record["results"], record_statuses, state.get("status")),
                     verified_cells=sum(r["cells"] for r in record["results"].values()),
                     verified_fitted_models=sum(r["fitted_models"] for r in record["results"].values()))
                 atomic_write_json(progress, record)
