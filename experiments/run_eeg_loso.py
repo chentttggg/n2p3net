@@ -146,6 +146,16 @@ def _resolve_device(choice: str) -> torch.device:
     return device
 
 
+def _claim_output_dir(output_dir: Path) -> Path:
+    """Refuse to reuse a model directory that already holds a run's progress or record."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    existing = [name for name in ("record.json", "progress.jsonl") if (output_dir / name).exists()]
+    if existing:
+        raise FileExistsError(f"{output_dir} already holds {', '.join(existing)}; choose a new --run-name")
+    return output_dir
+
+
 def main() -> None:
     deep_defaults = DeepConfig()
     architecture_defaults = DEFAULT_N2P3_ARCHITECTURE
@@ -576,8 +586,7 @@ def main() -> None:
             n2p3net_pooling_mode=args.n2p3net_pooling,
             n2p3net_architecture=n2p3net_architecture,
         )
-        output_dir = Path(args.run_dir) / run_name / model_name
-        output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir = _claim_output_dir(Path(args.run_dir) / run_name / model_name)
         model.configure_epoch_progress(output_dir / "epochs")
         progress_file = (output_dir / "progress.jsonl").open("w", encoding="utf-8")
         manifest = {

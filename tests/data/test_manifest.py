@@ -217,3 +217,14 @@ def test_artifact_policy_accepts_the_gt_n_low_variance_floor() -> None:
     FoldLocalArtifactPolicy(
         candidate_quantiles=parse_candidate_quantiles("0.99,0.995,0.999"), flat_quantile=0.0
     ).validate()
+
+
+def test_explicit_run_name_cannot_overwrite_a_completed_model_directory(tmp_path):
+    from experiments.run_eeg_loso import _claim_output_dir
+
+    output = tmp_path / "run" / "model"
+    assert _claim_output_dir(output) == output
+    (output / "record.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(FileExistsError, match="record.json"):
+        _claim_output_dir(output)
+    assert (output / "record.json").read_text(encoding="utf-8") == "{}"
