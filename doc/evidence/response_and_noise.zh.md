@@ -20,6 +20,8 @@
 
 Windows控制文件读写竞态已独立复现，修复后原8份完整receipt逐字节复用、未封存A04/A05 private journal归档并重算，仅剩余8格新评分。实际续跑exit0、进程全部退役，CPU峰值44.6%；原terminal的64.1%对应整个历史追加日志。执行器的parent身份混搭缺口由最终独立检查器以原8份receipt SHA和固定script/config pair关闭，执行源码保持其真实历史字节。
 
+真实 stationary-law 新producer 的 stage04 首次启动在严格旧capsule export 阶段发现冻结入口把 manifest 字符串传给只接受 `Path` 的 `BoundInput`，因此在任何 export/root compile/fit/score 前退出，owned tree 清理为0，未产生科学 receipt。该运行作为 execution failure 保留；stage05 修复会使用新的 source/plan binding，旧 `/2` 与本次 compiled-W panel 不改签。
+
 ## 平稳前缀的真实模型关系
 
 续评发现private旧入口的线程依赖：A01原保存root在native2重编逐bit相同并通过原关系门，native1重编却拒绝。更深入的两个独立100位oracle对全部36个cross-channel pair求真实平稳covariance，确认问题在旧companion Lyapunov/lag-power编译；全256维root的真实covariance pullback谱差为`0.0772181`，Frobenius差`0.167282`，而raw covariance相对差仅约`1.7583e-9`。原`1.6e-7`门核的是旧数值重编关系，弱方向需要真实law oracle。
