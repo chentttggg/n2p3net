@@ -27,18 +27,18 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B00 比较/选择 | requested风险、配对、失败与概率覆盖owner；最大/错时置信度、分箱ECE与同J uniform contrast | 正式风险阈值、全流程选择与独立效能验收 |
 | B01 信号/支持 | BNCI合法原字节、Cal/held无标签view与时间履历 | 其他candidate数据adapter与硬件/光学证据 |
 | B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
-| B03 校准/混合 | 固定算术池、完整C内分组温度；真实OOF概率/producer与final数值/温度/K/source关联、原共享包保存 | inner持久重放、严格nested选择、复杂gating与独立泛化另验收 |
+| B03 校准/混合 | 固定池/分组温度、完整组strict nested API；同run inner持久重放、prefix actual OOF/future与parent混合概率准入 | prefix整程序strict nested选择、partial-label/refit剂量与nuisance程序一致性、复杂gating与独立泛化 |
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
-| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec与编译包；576原状态归因、given-noise fixed-physical-prior C fitter与完整drift crosscov | 真实noise×ERP可归因对照、finite endpoint交互与joint MLE，不把ACF/低C目标当效能 |
+| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec、given-noise physical-prior；modern M/R/原Σ转换与完整source/C权限paired软件入口 | 8人16格C内frozen-response×noise实际读数、finite endpoint交互与joint MLE，不把ACF/低C目标当效能 |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
-| B07 字典/历史 | A0/A1 portable态与cubic free/hard-value `/3`、端点/actual prior/容量/OOF/保存链；有限history/support及scalar selection amplitude/latency/width reference | raised/multiscale/phase/wavelet、cubic off-grid/硬斜率、完整history/权限、actual operator/support、多channel随机效应与效能 |
+| B07 字典/历史 | A0/A1 portable、cubic `/3`及raised/multiscale `/4` native；actual prior/chart/容量/OOF/保存链，有限history与scalar latent reference | off-grid/phase/wavelet、硬斜率、完整history/权限、actual operator/support、多channel随机效应与效能；multiscale换坐标不当新增span |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
-| B09 空间 | 一般signal-prior后验、A01六格及八人48格/MN商空间验收；现owner固定graph同C/noise能量控制及完整receipt | Pz4无额外hit且NLL增，不晋升；learned d-prime/组层级、joint MLE与新效能另验 |
+| B09 空间 | 一般signal-prior/固定graph；source-only group forecast、完整effect绑定和exact structural null软件出口 | Pz4原证据不晋升；真实source builder/跨布局reference transport/OOF与ensemble consumer、d-prime/variance不确定性、joint MLE及新效能 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
 | B11 动态/稳健 | noise-only Gamma、proper全C/test联合尺度；实际行数增广QR和显式β条件积分接研究owner；共同flat-Z小参考及源尺度反例 | 真实K0/独立noise/C权限、flat长记录采样/持久包、动态state、连续预测准确性与完整效能；多模态不由诊断保证 |
-| B12 公共流程 | 全局code/artifact审查；独立C/test入口与B14共同owner | 四库binary/合法candidate、K0/预算、一个完整科研流程 |
+| B12 公共流程 | 独立C/test/K0、完整requested/final账本；原producer四库binary恢复与八人candidate完整分母/配对读数各按原身份 | 新集成科学协议下完整单seed两面板、源/目标/资源及终态统一接受、独立泛化；旧结果不追签新协议 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
-| B14 工程/吞吐 | B12同资源owner/完整requested账、实际源码保存与同call重复扫描退役 | B12共享数据/rolling资源排程、云实际25CPU/4GPUworkers |
+| B14 工程/吞吐 | B12同resource owner/完整账；旧完整candidate恢复、source prepared与共享评分实测云候选，纯CPU尾三拓扑读数 | 科研study owner/capture/replay双端缓存整合、统一新source实际25CPU/4GPU能力及ready工作路由，完整矩阵吞吐而非局部耗时 |
 
 2026-10-10公共accepted496的actual-length raw score仍按其原数值界解释；新科研树已整合operation-wise投影界与local minimizer cap611b，精度政策和density接口不变。原3749两个7975×8 synthetic候选通过，新611b只核ratio域/连接及整合合同，不追签长记录。flat nuisance通用长记录采样、产品包、全输入精度和公共效能仍各自未完成。主线并行推进其余愿望，不以一个数值门阻塞所有方向，见[当前进展](evidence/wishlist_progress_20261010.zh.md)与[原机制证据](evidence/research_mechanisms_20261009.zh.md)。
 
