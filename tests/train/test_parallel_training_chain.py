@@ -309,3 +309,39 @@ def test_spawned_e2_scoring_matches_sequential_contracts_and_predictions(tmp_pat
     with pytest.raises(ValueError, match="available CPU budget"):
         _score_e2_candidates(copy.deepcopy(dataset), path, cohort, (1, 2), workers=0,
                             progress_path=path / "invalid.json", output=path, **common)
+
+
+def test_admitted_e2_workers_use_their_reserved_native_threads(tmp_path, monkeypatch):
+    from contextlib import contextmanager
+
+    import experiments.run_source_training_chain as chain
+
+    captured = {}
+
+    class Pool:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    class Admission:
+        native_threads = 3
+
+        @contextmanager
+        def target_workers(self, requested):
+            yield 2
+
+    monkeypatch.setattr(chain, "ProcessPoolExecutor", Pool)
+    chain._score_e2_candidates("dataset", tmp_path, [], (1,), workers=2, progress_path=tmp_path / "progress.json",
+                               memory_admission=Admission())
+    assert captured["max_workers"] == 2 and captured["initargs"] == ("dataset", 3)
+    before = torch.get_num_threads()
+    try:
+        chain._initialize_e2_worker("dataset", 2)
+        assert torch.get_num_threads() == 2
+    finally:
+        torch.set_num_threads(before)

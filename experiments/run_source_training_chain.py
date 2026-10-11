@@ -393,11 +393,11 @@ def _score_checkpoint(path, dataset, cohort, *, cache_sha256, snapshot_sha256, r
 _E2_DATASET = None
 
 
-def _initialize_e2_worker(dataset):
+def _initialize_e2_worker(dataset, threads=1):
     import torch
 
     global _E2_DATASET
-    torch.set_num_threads(1)
+    torch.set_num_threads(threads)
     _E2_DATASET = dataset
 
 
@@ -414,14 +414,16 @@ def _score_e2_worker(arguments):
 
 
 def _score_e2_candidates(dataset, path, cohort, candidates, *, workers, progress_path, checkpoint_paths=None,
-                         gpu_slots=None, memory_admission=None, **options):
+                         gpu_slots=None, memory_admission=None, threads_per_worker=1, **options):
     from research.source_execution import gpu_task_slot, release_source_worker
     from train.runtime import available_cpu_threads
 
     if memory_admission is not None:
+        # The ledger charges native threads for each nested worker; use them rather than idle them.
         with memory_admission.target_workers(workers) as effective:
             return _score_e2_candidates(dataset, path, cohort, candidates, workers=effective,
-                progress_path=progress_path, checkpoint_paths=checkpoint_paths, gpu_slots=gpu_slots, **options)
+                progress_path=progress_path, checkpoint_paths=checkpoint_paths, gpu_slots=gpu_slots,
+                threads_per_worker=memory_admission.native_threads, **options)
     if type(workers) is not int or not 1 <= workers <= available_cpu_threads():
         raise ValueError("target_workers must be within the available CPU budget")
     if workers == 1:
@@ -440,7 +442,7 @@ def _score_e2_candidates(dataset, path, cohort, candidates, *, workers, progress
     shards = [set(people[index::workers]) for index in range(workers)]
     outcomes = []
     with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("spawn"),
-                             initializer=_initialize_e2_worker, initargs=(dataset,)) as pool:
+                             initializer=_initialize_e2_worker, initargs=(dataset, threads_per_worker)) as pool:
         futures = {}
         for update in candidates:
             for shard in shards:
