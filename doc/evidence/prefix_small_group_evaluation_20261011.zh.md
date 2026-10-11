@@ -2,7 +2,7 @@
 
 本评估回答两个方案：把 BNCI2014-008 的完整选择拆成更小的组，或把 grouped temperature 的最低组数降到一个。它只使用 A01 原始 MAT 的物理 owner 解码和解析温度反例，没有新增 EEG fit、future score 或公共效能读数。原 MAT SHA 为 `cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd`；只读探针见 `tmp/PREFIX_SMALL_GROUP_EVAL_20261011/probe.json`。
 
-当前一个 `CalibrationSelection` 是 120 个 flash：每次 repetition 有12个 row/column flash（6 row + 6 column）× 10 次 repetition；36 个 row/column 组合是最终 decision vocabulary。每次 repetition 只有 12 个事件、2 个目标标签，同一 selection 的10次 repetition使用相同目标位置。当前物理 owner 的响应宽度为154 samples、pre-roll为26 samples，flash间隔为64 samples。
+当前一个 `CalibrationSelection` 是 120 个 flash：每次 repetition 有12个 row/column flash（6 row + 6 column）× 10 次 repetition；36 个 row/column 组合是最终 decision vocabulary。每次 repetition 只有 12 个事件、2 个目标标签，同一 selection 的10次 repetition使用相同目标位置。原始 MAT 的 source sample rate 为256 Hz，flash间隔为64 samples。第一版小组probe错误按128 Hz换算了response/pre-roll，原154/26 samples不能作为source窗口证据；当前partial80的独立scope评审使用真实source坐标，窗口几何另按actual owner/profile修后重算，原错误产物保持原身份。
 
 因此，直接把一个 selection 切成 1、2 或 5 个 repetition 不能作为当前的独立完整组：
 
