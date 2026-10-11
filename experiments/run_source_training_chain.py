@@ -2160,7 +2160,7 @@ def _evaluate_outer_group(jobs):
                         result_reuse=reuse, target_dataset=dataset, target_prefixes=target_prefixes))
                 finally:
                     release_source_worker(job["device"])
-            record = json.loads((result_path / "record.json").read_text())
+            record = json.loads((result_path / "record.json").read_text(encoding="utf-8"))
             results.append({"output": str(result_path), "status": record["status"],
                 "completed_cells": sum(cell["status"] == "completed" for cell in record["cells"]),
                 "failed_cells": sum(cell["status"] != "completed" for cell in record["cells"]),
