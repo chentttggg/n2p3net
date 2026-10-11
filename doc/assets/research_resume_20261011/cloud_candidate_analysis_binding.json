@@ -1,0 +1,67 @@
+{
+  "schema": "n2p3_cloud_candidate_data_analysis/1",
+  "original_scientific_source_digest": "75a61532a6d668fc62e045910ce0adfb9f69fb4c31e599486c0723bb52fe3624",
+  "input_files": {
+    "paired_comparisons_export01/original_80.json": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_resume_20261011\\candidate_parent_recovery01\\closed\\paired_comparisons_export01\\original_80.json",
+      "sha256": "dc63e65ac24bb261f6ec93864d0f42153338569224e5f6f722664fc0959e7895",
+      "bytes": 5288909
+    },
+    "paired_comparisons_export01/additional_requested.json": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_resume_20261011\\candidate_parent_recovery01\\closed\\paired_comparisons_export01\\additional_requested.json",
+      "sha256": "d8a8860fddf572256aca4f39395db55ce601589dec92cac81d62446a64457290",
+      "bytes": 1916716
+    }
+  },
+  "readout_binding_sha256": "c1fa1310d0fe08117300131968d64613d97a6debdf0f682e6b44043cbfdb232a",
+  "artifacts": {
+    "all_paired_contrasts.csv": {
+      "sha256": "f15ab17e0289a89a993b4ff82f30d189f08fb4bf11b77eb32549b733ba6c9f08",
+      "bytes": 13895
+    },
+    "build_analysis.py": {
+      "sha256": "783520ba72e5ff4f3416b7f30ebb5f486e032940f320e8532efef61745b0aa43",
+      "bytes": 17598
+    },
+    "configuration_metrics.csv": {
+      "sha256": "3e3d5ef4910e347cebcb590f313c87dc2d3ef736581591ea591a4b898b76ecce",
+      "bytes": 8555
+    },
+    "overview.png": {
+      "sha256": "60895da227b97ba9b3043f438a7eb23d9c1ad756759de8f497bb097851b24e1a",
+      "bytes": 215728
+    },
+    "overview.svg": {
+      "sha256": "c51803d24e460c29d668c0a2ba7e2f625d79e2a0bacf0bb7c63e53f42e0e71e8",
+      "bytes": 151269
+    },
+    "participant_paired_metrics.csv": {
+      "sha256": "aed530a470b367012540697a28b6535665482c01827450d6007b34fda5cfdde2",
+      "bytes": 19910
+    },
+    "分析报告.zh.md": {
+      "sha256": "f53663f6595e9d6630ce61271773437a420d9542ef2b72d98c0e18f4494e1332",
+      "bytes": 5227
+    }
+  },
+  "participants": 8,
+  "requested_decisions": 152,
+  "common_probability_decisions": 144,
+  "seed_pairs": [
+    [
+      20260918,
+      20260918
+    ]
+  ],
+  "new_fits": 0,
+  "transforms": [
+    "exact original export normalization",
+    "participant mean differences",
+    "counts from exact operational rates"
+  ],
+  "uncertainty": "descriptive only; no independent-person or training-randomness inference",
+  "software": {
+    "matplotlib": "3.11.1",
+    "numpy": "2.5.2"
+  }
+}
