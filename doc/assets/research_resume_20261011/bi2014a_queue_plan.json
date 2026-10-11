@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_cross_dataset_queue_plan/1",
-  "status": "source_contract_cloud_verified_candidate_input_bridge_in_progress",
+  "status": "candidate_bridge_in_progress_original_four_prefit_contract_rejections_preserved",
   "queue": [
     {
       "dataset_id": "BI2014a",
@@ -22,7 +22,20 @@
         "source_participant_keys": 438,
         "target_participant_keys": 61,
         "participant_intersection": 0,
-        "verification_thread_id": "01a10b0f-c672-7e73-8449-4ebdaf6fc5eb"
+        "verification_thread_id": "01a10b0f-c672-7e73-8449-4ebdaf6fc5eb",
+        "source_snapshot_archive_sha256": "4b075a2df69b781f03844ad7efe2e3d4a2b64342118ea291bb85e1aa99dc2127",
+        "source_cache_sha256": "54dc83290c6d7592b34ebdc69fbb1a30549bea7937ea745ed25535d5412f7e81",
+        "preprocessing": {
+          "name": "brainsync_bidirectional_v1",
+          "baseline_mode": "none",
+          "l_freq": 0.1,
+          "h_freq": 30.0,
+          "notch_freqs_hz": [
+            50.0
+          ],
+          "filter_phase": "zero",
+          "zero_phase_edge_policy": "mne_reflect_limited"
+        }
       },
       "preflight": [
         "actual CSV candidate membership, complete episode boundaries and exact participant manifest",
@@ -87,7 +100,8 @@
             "8": 65
           },
           "fixed_R8_supported": 65,
-          "fixed_R8_support_fraction": 0.050505050505050504
+          "fixed_R8_support_fraction": 0.050505050505050504,
+          "C_future_boundaries_below_717": 0
         },
         "native_to_Cz6_observed_slots": [
           false,
@@ -117,11 +131,43 @@
           "contract_probe.json": {
             "local_path": "tmp/BI2014a_Q1_AUDIT/contract_probe.json",
             "sha256": "4619b6d1185e72edc09226d3d62dec5b1122b3bb3a23982868ba19cef56ef7a5"
+          },
+          "independent_audit.zh.md": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/independent_audit.zh.md",
+            "sha256": "b55501ef657fb1f8d3f69278d94d6368cde11a54e3c3d3488627fabe6b1bf016"
+          },
+          "audit_identity_and_edges.json": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/audit_identity_and_edges.json",
+            "sha256": "bf40a5df50ea18681a3cd806bc6b58821bb0cb17629aa85219f0ec7f88757103"
           }
-        }
+        },
+        "episode_definition": "decoder complete 12-flash repetitions; original recording terminal completion/censor remains separately accounted",
+        "future_short_gap_adjacent_episode_union_diagnostic": 60,
+        "current_strict_previous_unknown_rule_unavailable_right_episodes": 42,
+        "recording_terminal_censor": {
+          "subject": 57,
+          "raw_flashes": 1454,
+          "decoder_retained_flashes": 1452,
+          "tail_flash_onsets": [
+            452069,
+            452340
+          ],
+          "control_after_last_complete_episode": false,
+          "status": "partial_final_repetition_not_completed_episode"
+        },
+        "audited_source_files": 22,
+        "root_current_22_source_SHA_match": true
       },
       "calibration_budget": "freeze through common actual budget compiler before target fitting; first-five allocation is a diagnostic only",
-      "test_endpoint": "each complete future episode uses all its own legal repetitions; retain actual R per decision and common future requested ledger"
+      "test_endpoint": "each complete future episode uses all its own legal repetitions; retain actual R per decision and common future requested ledger",
+      "candidate_attempts": {
+        "legacy_16_channel_causal_cache": "membership_prepared_but_source_input_incompatible",
+        "four_zero_shot_fragments": "contract_rejected_before_fit",
+        "new_fits": 0,
+        "original_RED_logs_preserved": true,
+        "scoped_finite_zero_masked_cache": "in_progress"
+      },
+      "independent_review_owner": "/root/prefix_replay_caller"
     }
   ],
   "dataset_order_policy": "finish and seal each dataset artifacts before unlocking the next; later failure cannot overwrite completed dataset",
