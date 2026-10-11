@@ -899,3 +899,17 @@ def test_bi2014a_candidate_cli_refuses_an_existing_output(tmp_path, monkeypatch)
     with pytest.raises(FileExistsError, match="existing candidate cache"):
         prepare_bi2014a()
     assert output.read_bytes() == b"completed cache"
+
+
+def test_channel_selection_recomputes_qc_scale_over_the_kept_channels() -> None:
+    from data.qc_features import compute_epoch_qc_features
+
+    X = np.zeros((2, 4, 16), dtype=np.float32)
+    for channel, ptp_uv in enumerate((100.0, 100.0, 10.0, 10.0)):
+        X[:, channel, 8:] = ptp_uv * 1e-6
+    full = compute_epoch_qc_features(X, channel_mask=np.ones(4, dtype=bool))
+    selected = full.select_channels([2, 3])
+    expected = compute_epoch_qc_features(X[:, 2:], channel_mask=np.ones(2, dtype=bool))
+    np.testing.assert_allclose(selected.epoch_scale_v, expected.epoch_scale_v, rtol=1e-5)
+    np.testing.assert_allclose(selected.relative_ptp, expected.relative_ptp, rtol=1e-5)
+    assert selected.relative_ptp[0, 0] == pytest.approx(1.0, rel=1e-5)

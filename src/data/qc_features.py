@@ -90,11 +90,21 @@ class EpochQCFeatures:
             raise ValueError("QC feature channel selection must be non-empty and one-dimensional.")
         if int(channel_indices.min()) < 0 or int(channel_indices.max()) >= self.n_channels:
             raise ValueError("QC feature channel selection is out of bounds.")
+        observed = np.asarray(self.observed_mask)[:, channel_indices].copy()
+        if not bool(observed.any(axis=1).all()):
+            raise ValueError("QC feature channel selection must retain one observed channel per epoch.")
+        # The scale statistics are defined over the epoch's own observed channels,
+        # so they are recomputed for the kept channels instead of the dropped ones.
+        relative = np.asarray(self.relative_ptp)
+        raw_ptp = (relative[:, channel_indices].astype(np.float64)
+                   * np.asarray(self.epoch_scale_v, dtype=np.float64)[:, None])
+        scale = np.nanmedian(np.where(observed, raw_ptp, np.nan), axis=1)
+        rescaled = np.where(observed, raw_ptp / np.maximum(scale[:, None], np.finfo(np.float64).eps), 0.0)
         return EpochQCFeatures(
-            relative_ptp=np.asarray(self.relative_ptp)[:, channel_indices].copy(),
+            relative_ptp=rescaled.astype(relative.dtype),
             channel_std_v=np.asarray(self.channel_std_v)[:, channel_indices].copy(),
-            epoch_scale_v=np.asarray(self.epoch_scale_v).copy(),
-            observed_mask=np.asarray(self.observed_mask)[:, channel_indices].copy(),
+            epoch_scale_v=scale.astype(np.asarray(self.epoch_scale_v).dtype),
+            observed_mask=observed,
         )
 
     @classmethod
