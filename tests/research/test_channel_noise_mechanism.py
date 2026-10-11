@@ -406,6 +406,11 @@ def test_optional_truth_residual_spectrum_does_not_turn_a_valid_score_into_failu
     assert cell["truth_residual_diagnostic"]["status"] == "unavailable"
     assert "zero-energy" in cell["truth_residual_diagnostic"]["detail"]
     assert report["metrics"]["private0::anchor"]["participants"]["synthetic/A01"]["probability_coverage"] == 1
+    state = json.loads((tmp_path/"audit"/report["noise_arms"][0]["state_path"]).read_bytes())["state"]
+    repository = Path(__file__).resolve().parents[2]
+    for relative, key in (("research/stationary_noise_artifact.py", "source_sha256"),
+                          ("transfer/dictionary_artifact.py", "scalar_rounding_source_sha256")):
+        assert report["source_files"][str(repository/"src"/relative)] == state["prefix_compiler"][key]
 
 
 def test_undefined_centered_training_spectrum_does_not_turn_an_identified_noise_fit_into_failure(tmp_path):
@@ -435,18 +440,90 @@ def test_short_residual_tail_is_diagnostic_unavailable_without_weakening_invalid
 
 
 def test_noise_restore_consumes_frozen_compiled_temporal_state_without_startup_recompile(tmp_path, monkeypatch):
+    import research.stationary_noise_artifact as stationary_module
     import transfer.temporal_noise as temporal_module
     noise = _private()
     path = tmp_path / "frozen_noise.json"
     noise.save(path)
     original = noise.record()
-    assert original["schema"] == "n2p3_channel_noise_mechanism/2"
+    assert original["schema"] == "n2p3_channel_noise_mechanism/3"
     assert all(record["schema"] == "n2p3_temporal_noise/5"
                for record in original["compiled_temporal_records"])
     def forbidden_compile(*args, **kwargs):
         raise AssertionError("a frozen artifact must not regenerate startup state")
     monkeypatch.setattr(temporal_module, "_innovation_factor", forbidden_compile)
     monkeypatch.setattr(temporal_module, "_startup", forbidden_compile)
+    monkeypatch.setattr(stationary_module, "_cholesky", forbidden_compile)
     loaded = FittedChannelNoise.load(path)
     assert loaded.record() == original
     np.testing.assert_array_equal(loaded.whiten(np.ones((40, 2))), noise.whiten(np.ones((40, 2))))
+
+
+def test_old_compiled_noise_is_not_resigned_as_current_stationary_law(tmp_path):
+    noise = _private()
+    state = dict(noise.record())
+    state["schema"] = "n2p3_channel_noise_mechanism/2"
+    path = tmp_path / "old_compiled_W.json"
+    path.write_text(json.dumps({"state": state, "state_sha256": metadata_digest(state)}), encoding="utf-8")
+    with pytest.raises(ValueError, match="original frozen owner"):
+        FittedChannelNoise.load(path)
+
+
+def test_stationary_compiler_identity_and_parameters_survive_exact_save_load(tmp_path):
+    from threadpoolctl import threadpool_limits
+
+    geometry = _geometry()
+    parameters = (TemporalNoise.from_reflections([-.98, .8], innovation_variance=7., reference_id="left"),
+                  TemporalNoise.from_reflections([.4, -.7], innovation_variance=3., reference_id="right"))
+    covariance = np.array([[1., .999], [.999, 1.]])
+    with threadpool_limits(limits=1):
+        first = FittedChannelNoise(parameters, covariance, geometry, 8, "private",
+            {"fit_scope": "analytic_reference", "reference_id": "canonical", "records": []})
+    with threadpool_limits(limits=2):
+        second = FittedChannelNoise(parameters, covariance, geometry, 8, "private",
+            {"fit_scope": "analytic_reference", "reference_id": "canonical", "records": []})
+    np.testing.assert_array_equal(first.compiled_prefix_root, second.compiled_prefix_root)
+    assert first.record() == second.record()
+    assert first.record()["prefix_compiler"]["law"].startswith("exact_real_step_up")
+    assert first.temporal == parameters
+    np.testing.assert_array_equal(first.innovation_covariance, covariance)
+    path = tmp_path / "stationary.json"
+    first.save(path)
+    restored = FittedChannelNoise.load(path)
+    assert restored.record() == first.record()
+    # Re-signing only the metadata cannot change the admitted compiler law.
+    payload = json.loads(path.read_bytes())
+    payload["state"]["prefix_compiler"]["law"] = "rounded_literal_polynomial"
+    payload["state_sha256"] = metadata_digest(payload["state"])
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="compiler or exact law identity"):
+        FittedChannelNoise.load(path)
+
+
+@pytest.mark.parametrize("scale", [1e-300, 1e-304, 1e-310, 1e-320])
+def test_stationary_root_admission_does_not_turn_voltage_units_into_unavailability(scale):
+    noise = FittedChannelNoise.from_parameters(np.empty((2, 0)),
+        scale*np.array([[1., .2], [.2, 2.]]), geometry=_geometry(), conditioning_samples=4,
+        reference_id="small_but_representable_covariance")
+    assert np.isfinite(noise.compiled_prefix_root).all()
+    assert np.all(np.diag(noise.compiled_prefix_root) > 0)
+
+
+def test_high_order_prefix_law_matches_its_unchanged_actual_lattice_in_weak_directions():
+    # Fixed PARCOR from the previously independently adjudicated weak-direction
+    # counterexample. Unit independent innovations isolate temporal law from
+    # spatial estimation, data permissions and the compiler's own equations.
+    values = ([-.9199413951929074, .9403411634400759, -.897733787641884, .9181446785557763,
+               -.8463113475755626, .8840252117543678, -.8177390490105555, .7993860181691139],
+              [-.9181602914123101, .9430089053270478, -.8938468724890972, .9209438141975264,
+               -.8412360831312765, .8880755542948418, -.8092105744458239, .8046505845827467])
+    temporal = tuple(TemporalNoise.from_reflections(row, innovation_variance=1., reference_id=f"weak{index}")
+                     for index, row in enumerate(values))
+    noise = FittedChannelNoise(temporal, np.eye(2), _geometry(), 32, "private",
+        {"fit_scope": "analytic_reference", "reference_id": "fixed_weak_law", "records": []})
+    actual_lattice = np.zeros((64, 64))
+    for channel, item in enumerate(temporal):
+        actual_lattice[channel::2, channel::2] = item.whiten(np.eye(32))
+    relation = actual_lattice@noise.compiled_prefix_root
+    discrepancy = relation@relation.T-np.eye(64)
+    assert np.linalg.norm(discrepancy) < 1e-8*np.sqrt(64)

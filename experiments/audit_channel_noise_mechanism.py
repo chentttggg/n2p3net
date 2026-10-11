@@ -216,7 +216,8 @@ def audit(manifest_path, output):
               "source_files": {str(Path(__file__).resolve()): _sha(Path(__file__)),
                 **{str(Path(__file__).resolve().parents[1] / "src" / name):
                    _sha(Path(__file__).resolve().parents[1] / "src" / name)
-                   for name in ("research/channel_noise_mechanism.py", "transfer/temporal_noise.py",
+                   for name in ("research/channel_noise_mechanism.py", "research/stationary_noise_artifact.py",
+                                "transfer/dictionary_artifact.py", "transfer/temporal_noise.py",
                                 "transfer/noise_model.py", "transfer/continuous_decision.py")}}}
     atomic_write_json(output / "report.json", report)
     try:
