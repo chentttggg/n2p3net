@@ -695,7 +695,7 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
         fitted = _fixed_fit_cache[cache_key]
         if _producer_recorder is not None and _record_self:
             _producer_recorder.record_direct_fit(cache_key, fitted, expert_programs=expert_programs,
-                program=program, training=calibration, context=_producer_context)
+                program=program, training=calibration, context=_producer_context, cache_hit=True)
         return (fitted if calibration_strategy == "fixed" else
                 _grouped_temperature(fitted, calibration, expert_programs, sources, device,
                     temperature_expert_ids, _fixed_fit_cache=_fixed_fit_cache,
@@ -796,7 +796,8 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
 
 
 def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: EnsembleProgram, *,
-                            source_checkpoints=None, device="cpu", calibration_strategy="fixed"):
+                            source_checkpoints=None, device="cpu", calibration_strategy="fixed",
+                            inner_replay_recorder=None, inner_replay_context=None):
     """Fit all legitimate prefix rows; complete C groups serve only temperature."""
     if not isinstance(prefix, CalibrationPrefix):
         raise TypeError("prefix fitting requires an authorized CalibrationPrefix")
@@ -842,8 +843,18 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
         experts.append(expert)
     fitted = FittedEnsemble(EnsembleScorer(program), experts, receipts, target_contract=prefix.target_contract)
     if calibration_strategy == "fixed":
+        if inner_replay_recorder is not None:
+            inner_replay_recorder.record_prefix_programs({"fixed": fitted}, prefix=prefix,
+                expert_programs=specs, program=program, source_checkpoints=sources, context=inner_replay_context)
         return fitted
-    return _grouped_temperature(fitted, prefix.complete_groups, specs, sources, device, prefix=prefix)
+    grouped = _grouped_temperature(fitted, prefix.complete_groups, specs, sources, device, prefix=prefix,
+                                  _fixed_fit_cache={} if inner_replay_recorder is not None else None,
+                                  _producer_recorder=inner_replay_recorder,
+                                  _producer_context=inner_replay_context)
+    if inner_replay_recorder is not None:
+        inner_replay_recorder.record_prefix_programs({"grouped_temperature": grouped}, prefix=prefix,
+            expert_programs=specs, program=program, source_checkpoints=sources, context=inner_replay_context)
+    return grouped
 
 
 def _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids=None, *, prefix=None,
@@ -858,15 +869,38 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
     producers, oof_rows = [], []
     for held_index, held in enumerate(calibration):
         training = [group for index, group in enumerate(calibration) if index != held_index]
-        inner = fit_calibration_ensemble(training, selected_specs, inner_program,
-            source_checkpoints={name: source for name, source in sources.items() if name in selected},
-            device=device, calibration_strategy="fixed", _fixed_fit_cache=_fixed_fit_cache,
-            _producer_recorder=_producer_recorder,
-            _producer_context=None if _producer_context is None else {
-                **_producer_context, "phase": "temperature_oof_inner",
-                "temperature_held_record_id": held.view.record_id,
-            })
-        scores = inner.score_experts(held.view)
+        context = {**(_producer_context or {}), "phase": "temperature_oof_inner",
+                   "temperature_held_record_id": held.view.record_id}
+        cache_key = None if _producer_recorder is None else semantic_sha256({
+            "authorized_calibration": [group.record() for group in training],
+            "expert_programs": [spec.record() for spec in selected_specs],
+            "ensemble_program": inner_program.record(),
+            "source_checkpoints": {name: source.digest for name, source in sources.items() if name in selected},
+            "device": str(device), "calibration_strategy": "fixed"})
+        try:
+            inner = fit_calibration_ensemble(training, selected_specs, inner_program,
+                source_checkpoints={name: source for name, source in sources.items() if name in selected},
+                device=device, calibration_strategy="fixed", _fixed_fit_cache=_fixed_fit_cache,
+                _producer_recorder=_producer_recorder, _producer_context=context)
+        except (ExpectedSubjectError, UnidentifiableFitError, np.linalg.LinAlgError) as error:
+            if _producer_recorder is not None:
+                failure = (error if isinstance(error, ExpectedSubjectError) else ExpectedSubjectError(
+                    SubjectFailureCode.NUMERICAL_FAILURE, stage="temperature_inner_fit", detail=str(error)))
+                _producer_recorder.record_direct_fit(cache_key, failure, expert_programs=selected_specs,
+                    program=inner_program, training=training, context=context)
+            raise
+        try:
+            scores = inner.score_experts(held.view)
+        except (ExpectedSubjectError, UnidentifiableFitError, np.linalg.LinAlgError) as error:
+            if _producer_recorder is not None:
+                failure = (error if isinstance(error, ExpectedSubjectError) else ExpectedSubjectError(
+                    SubjectFailureCode.NUMERICAL_FAILURE, stage="temperature_inner_score", detail=str(error)))
+                _producer_recorder.record_oof_score_failure(cache_key, held=held, training=training,
+                                                          error=failure, context=context)
+            raise
+        if _producer_recorder is not None:
+            _producer_recorder.record_oof_score(cache_key, held=held, training=training,
+                                               scores=scores, context=context)
         target = held.view.decision.candidate_vocabulary.index(held.target_candidate)
         for name, item in scores.items():
             if not item.probability_available:
@@ -880,18 +914,6 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
             "training_record_ids": [group.view.record_id for group in training],
             "training_receipts_sha256": semantic_sha256(inner.fit_receipts),
             "expert_evidence": {name: scores[name].record() for name in selected}})
-        if _producer_recorder is not None:
-            cache_key = semantic_sha256({
-                "authorized_calibration": [group.record() for group in training],
-                "expert_programs": [spec.record() for spec in selected_specs],
-                "ensemble_program": inner_program.record(),
-                "source_checkpoints": {name: source.digest for name, source in sources.items() if name in selected},
-                "device": str(device), "calibration_strategy": "fixed"})
-            _producer_recorder.record_oof_score(cache_key, held=held, training=training,
-                scores=scores, context=None if _producer_context is None else {
-                    **_producer_context, "phase": "temperature_oof_inner",
-                    "temperature_held_record_id": held.view.record_id,
-                })
     temperatures = {name: 1. for name in program.expert_ids}
     for name, rows in by_expert.items():
         log_probability = np.stack([row[0] for row in rows])
@@ -929,7 +951,8 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
 
 
 def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strategies,
-                                    source_checkpoints=None, device="cpu", temperature_expert_ids=None):
+                                    source_checkpoints=None, device="cpu", temperature_expert_ids=None,
+                                    inner_replay_recorder=None, inner_replay_context=None):
     """Declared temperature programs share one actual all-C final expert fit."""
     if (not strategies or len(set(strategies)) != len(strategies)
             or set(strategies) - {"fixed", "grouped_temperature"}):
@@ -937,8 +960,11 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
     sources = {} if source_checkpoints is None else {name: value if isinstance(value, FrozenSourceCheckpoint)
         else FrozenSourceCheckpoint.from_path(value) for name, value in source_checkpoints.items()}
     result = {}
+    replay_cache = {} if inner_replay_recorder is not None else None
     eligible = len(prefix.complete_groups) >= 3
-    fixed = (fit_calibration_prefix(prefix, expert_programs, program, source_checkpoints=sources, device=device)
+    fixed = (fit_calibration_prefix(prefix, expert_programs, program, source_checkpoints=sources, device=device,
+                                    inner_replay_recorder=inner_replay_recorder,
+                                    inner_replay_context=inner_replay_context)
              if "fixed" in strategies or eligible else None)
     for strategy in strategies:
         if strategy == "fixed":
@@ -949,7 +975,10 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
         else:
             try:
                 result[strategy] = _grouped_temperature(fixed, prefix.complete_groups, expert_programs, sources,
-                                                       device, temperature_expert_ids, prefix=prefix)
+                                                       device, temperature_expert_ids, prefix=prefix,
+                                                       _fixed_fit_cache=replay_cache,
+                                                       _producer_recorder=inner_replay_recorder,
+                                                       _producer_context=inner_replay_context)
             except ExpectedSubjectError as error:
                 result[strategy] = error
             except (UnidentifiableFitError, np.linalg.LinAlgError) as error:
@@ -960,4 +989,10 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
         result["fixed"] = FittedEnsemble(fixed.scorer, grouped._experts, fixed._training_receipts,
             fixed.temperature_record, target_contract=fixed._target_contract,
             oof_probability_record=grouped.oof_probability_record)
+    if inner_replay_recorder is not None:
+        record = getattr(inner_replay_recorder, "record_prefix_programs", None)
+        if record is None:
+            raise TypeError("inner_replay_recorder must support prefix program capture")
+        record(result, prefix=prefix, expert_programs=expert_programs, program=program,
+               source_checkpoints=sources, context=inner_replay_context)
     return result

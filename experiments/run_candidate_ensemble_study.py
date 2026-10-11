@@ -32,9 +32,14 @@ from research.contracts import (  # noqa: E402
 from research.evaluation import verified_executed_snapshot  # noqa: E402
 from research.execution import (  # noqa: E402
     ExpectedSubjectError,
-    SubjectFailureCode,
     UnidentifiableFitError,
     atomic_write_json,
+)
+from research.nested_selection_replay import InnerReplayRecorder  # noqa: E402
+from research.prefix_inner_replay import (  # noqa: E402
+    persist_prefix_inner_replay,
+    replay_prefix_inner_replay,
+    unavailable_prefix_expert_scores,
 )
 from research.source_catalog import SourceSeedCatalog, paired_pipeline_seeds  # noqa: E402
 from train.runtime import cpu_thread_budget  # noqa: E402
@@ -55,6 +60,7 @@ from transfer.ensemble_views import (  # noqa: E402
     prepare_bnci_independent_prefixes,
 )
 from transfer.kernel_prior import KernelPriorRankError  # noqa: E402
+from transfer.noise_model import freeze_metadata  # noqa: E402
 from transfer.outcomes import CandidateCoverage, DecisionKey  # noqa: E402
 
 SCHEMA = "n2p3_candidate_ensemble_study/1"
@@ -204,7 +210,7 @@ def _fit_started(directory, request):
 
 def _fit_saved(directory, request, *, origin=None):
     package = directory / request["package"]
-    files = [_file_receipt(path, directory) for path in sorted(package.iterdir()) if path.is_file()]
+    files = [_file_receipt(path, directory) for path in sorted(package.rglob("*")) if path.is_file()]
     record = {"schema": "n2p3_candidate_fit_receipt/1", "request": request,
         "status": "saved", "files": files, "origin": origin}
     _sealed_record(directory / "fit_receipts" / f"{request['package']}.saved.json", record)
@@ -616,19 +622,29 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                 package = directory / f"source{source_seed}_target{seed}_K{budget}"
                 request = fit_requests[package.name]
                 _fit_started(directory, request)
+                recorder = InnerReplayRecorder()
+                prediction_start = len(predictions)
+                prefix_context = {
+                    "source_seed": source_seed,
+                    "target_seed": seed,
+                    "requested_Ks": [int(key) for key, actual in views.ledger["requested_to_actual_K"].items()
+                                     if actual == budget],
+                    "requested_to_actual_K": views.ledger["requested_to_actual_K"],
+                    "test_scope": views.ledger["test_scope"],
+                    "requested_decision_ids": [view.record_id for view in views.decisions],
+                    "phase": "independent_prefix",
+                }
                 programs = fit_calibration_prefix_programs(prefix, specs, roster,
                     strategies=plan["calibration_strategies"], source_checkpoints=sources, device=plan["device"],
-                    temperature_expert_ids=plan.get("temperature_expert_ids"))
+                    temperature_expert_ids=plan.get("temperature_expert_ids"),
+                    inner_replay_recorder=recorder, inner_replay_context=prefix_context)
                 FittedEnsemble.save_programs(package, programs, participant_key=prefix.target_contract["participant_key"])
-                _fit_saved(directory, request)
-                replay_programs = FittedEnsemble.load_programs(package)
                 for strategy in plan["calibration_strategies"]:
                     _abort_checkpoint()
-                    fitted = replay = None
+                    fitted = None
                     result = programs[strategy]
                     if not isinstance(result, ExpectedSubjectError):
                         fitted = result
-                        replay = replay_programs[strategy]
                         calibration = fitted.temperature_record
                     else:
                         calibration = {"strategy": strategy, "status": "unavailable",
@@ -645,25 +661,14 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                                 and spec.recipe.initialization == "source",
                             "temperature_calibrated": strategy == "grouped_temperature" and spec.expert_id in
                                 plan.get("temperature_expert_ids", roster.expert_ids)})
-                    _fits_saved(directory, package.name, [value for value in fits if value["package"] == package.name])
                     for view in views.decisions:
                         if fitted is not None:
-                            evidence, reloaded = fitted.score_experts(view), replay.score_experts(view)
-                            if any(evidence[name].record() != reloaded[name].record() for name in roster.expert_ids):
-                                raise ValueError("saved independent-prefix expert replay differs from actual fit")
+                            evidence = fitted.score_experts(view)
                         else:
-                            evidence = {}
-                            counts = tuple(int(count) for count in view.decision.membership.sum(axis=0))
-                            observed = tuple(int(count) for count in view.decision.membership[view.decision.evidence_indices >= 0].sum(axis=0))
-                            for spec in specs:
-                                identity = CandidateExpertIdentity(spec.expert_id, view.raw_input_digest, None, None,
-                                    semantic_sha256({"prefix": prefix.record(), "program": spec.record(), "strategy": strategy}),
-                                    f"temperature:{result.code.value}", False)
-                                evidence[spec.expert_id] = CandidateEvidence(view.decision.candidate_vocabulary, None,
-                                    view.participant_key, view.decision_id, view.physical_support_digest, (identity,),
-                                    view.decision.repetitions, counts, observed,
-                                    failure_reason=str(result), failure_kind="not_available"
-                                    if result.code == SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS else "fit_failure")
+                            evidence = unavailable_prefix_expert_scores(prefix.record(),
+                                [spec.record() for spec in specs], strategy,
+                                result.record(subject=prefix.target_contract["participant_key"]), view)
+                        recorder.record_prefix_future_score(strategy, view=view, evidence=evidence)
                         for mixture in mixtures:
                             if strategy not in plan.get("mixture_calibration_strategies", {}).get(mixture.name, plan["calibration_strategies"]):
                                 continue
@@ -680,7 +685,19 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                                     "filtering_scope": "independent_test_decision" if spec.family == "trial" else "native_unfiltered_decision"}
                                     for spec in specs if spec.expert_id in mixture.expert_ids},
                                 "score_source_digest": semantic_sha256(expected_source)})
-                            _prediction_saved(directory, predictions[-1])
+                persist_prefix_inner_replay(prefix, programs, package, recorder=recorder,
+                    source_checkpoints=sources, context=prefix_context, device=plan["device"])
+                _fit_saved(directory, request)
+                admitted = replay_prefix_inner_replay(package, prefix=prefix, future_views=views.decisions,
+                    source_checkpoints=sources, context=prefix_context, device=plan["device"],
+                    expected_record_sha256=recorder.prefix_receipt_sha256)
+                if (len(admitted["scores"]) != len(views.decisions)
+                        or admitted["exact_score_checks"] < len(recorder.prefix_future_scores)):
+                    raise ValueError("prefix replay did not verify its complete requested future score roster")
+                _fits_saved(directory, package.name, [value for value in fits if value["package"] == package.name])
+                for prediction in predictions[prediction_start:]:
+                    prediction["prefix_replay_receipt_sha256"] = recorder.prefix_receipt_sha256
+                    _prediction_saved(directory, prediction)
                 atomic_write_json(directory / "progress.json", {"completed_prediction_cells": len(predictions),
                     "source_seed": source_seed, "target_seed": seed, "K": budget, "status": "running"})
     result = {"status": "completed", "predictions": predictions, "fits": fits, **{key: ledger[key] for key in
@@ -750,7 +767,7 @@ def _admit_candidate_participant(task, outcome, plan, source):
     actor_plan = json.loads((group / "plan.json").read_bytes())
     actor_source = json.loads((group / "executed_source.json").read_bytes())
     ledger = _read_sealed_record(directory / "request_ledger.json")
-    if (_plan_authority(actor_plan) != _plan_authority(plan) or actor_source != source
+    if (semantic_sha256(_plan_authority(actor_plan)) != semantic_sha256(_plan_authority(plan)) or actor_source != source
             or ledger["execution_source"] != source or ledger["record_index"] != index
             or ledger["record"] != plan["records"][index]
             or ledger["plan_digest"] != semantic_sha256(_plan_authority(plan))
@@ -772,10 +789,12 @@ def _admit_candidate_participant(task, outcome, plan, source):
     requests = {value["package"]: value for value in ledger["fit_requests"]}
     expected_requests = _expected_fit_roster(plan, scopes)
     if (len(requests) != len(ledger["fit_requests"]) or set(requests) != set(expected_requests)
-            or any({key: request[key] for key in expected_requests[name]} != expected_requests[name]
+            or any(semantic_sha256({key: request[key] for key in expected_requests[name]}) !=
+                   semantic_sha256(expected_requests[name])
                    for name, request in requests.items())):
         raise ValueError("candidate fit ledger omits or changes declared physical package requests")
     seals, fits, in_flight, failed_fits, started = {}, [], [], [], set()
+    prefix_receipts = {}
     for path in sorted((directory / "fit_receipts").glob("*.saved.json")):
         seal = _read_sealed_record(path)
         request = seal["request"]
@@ -796,9 +815,9 @@ def _admit_candidate_participant(task, outcome, plan, source):
             payload = json.loads(manifest.read_bytes())
             record = payload["record"]
             if (semantic_sha256(record) != payload["record_sha256"]
-                    or record["program"] != request["ensemble_program"]
-                    or [entry["program"] for entry in record["experts"]] != request["expert_programs"]
-                    or "target_contract" in request and record["target_contract"] != request["target_contract"]):
+                    or semantic_sha256(record["program"]) != semantic_sha256(request["ensemble_program"])
+                    or semantic_sha256([entry["program"] for entry in record["experts"]]) != semantic_sha256(request["expert_programs"])
+                    or "target_contract" in request and semantic_sha256(record["target_contract"]) != semantic_sha256(request["target_contract"])):
                 raise ValueError("candidate package program or fit scope differs from its prefit authority")
             for entry in record["experts"]:
                 spec = entry["program"]
@@ -837,6 +856,34 @@ def _admit_candidate_participant(task, outcome, plan, source):
                     or record["base_package_sha256"] != file_receipts.get(f"{package_name}/ensemble.json", {}).get("sha256")
                     or set(record["programs"]) != set(plan["calibration_strategies"])):
                 raise ValueError("candidate temperature programmes differ from their saved numerical package")
+        if "K" in request:
+            prefix_receipt = package / "prefix_inner_replay.json"
+            sealed_prefix = file_receipts.get(f"{package_name}/prefix_inner_replay.json")
+            if sealed_prefix is None or not prefix_receipt.is_file():
+                raise ValueError("candidate prefix package lacks its required captured replay receipt")
+            prefix_record = _read_sealed_record(prefix_receipt)
+            expected_context = {
+                "source_seed": request["source_seed"], "target_seed": request["target_seed"],
+                "requested_Ks": [int(key) for key, actual in scopes["requested_to_actual_K"].items()
+                                 if actual == request["K"]],
+                "requested_to_actual_K": scopes["requested_to_actual_K"],
+                "test_scope": scopes["test_scope"],
+                "requested_decision_ids": [view["record_id"] for view in scopes["test_views"]],
+                "phase": "independent_prefix",
+            }
+            if (prefix_record["prefix_record_sha256"] != request["training_digest"]
+                    or semantic_sha256(prefix_record["expert_programs"]) != semantic_sha256(request["expert_programs"])
+                    or semantic_sha256(prefix_record["ensemble_program"]) != semantic_sha256(request["ensemble_program"])
+                    or prefix_record["source_checkpoint_digests"] != request["source_checkpoint_sha256"]):
+                raise ValueError("candidate prefix replay receipt differs from its prefit request")
+            prefix_digest = semantic_sha256(prefix_record)
+            replay_prefix_inner_replay(package, context=expected_context,
+                expected_record_sha256=prefix_digest, device=plan["device"])
+            prefix_receipts[package_name] = {
+                "record_sha256": prefix_digest,
+                "future_rows": {(row["strategy"], row["input"]["view"]["decision_id"]): freeze_metadata(row)
+                                for row in prefix_record["future_score_rows"]},
+            }
         origin = seal["origin"]
         if origin is not None:
             producer = (plan["resume_binding"]["original_source_digest"] if origin["reused_package_count"]
@@ -910,6 +957,19 @@ def _admit_candidate_participant(task, outcome, plan, source):
                 or evidence.evidence_level != ledger["evidence_level"]
                 or dict(zip(evidence.candidate_vocabulary, evidence.expected_event_counts, strict=True)) != coverage[key]):
             raise ValueError("candidate prediction differs from its prefit request or score source")
+        if "K" in prediction:
+            package = f"source{prediction['source_seed']}_target{prediction['seed']}_K{prediction['K']}"
+            prefix_receipt = prefix_receipts.get(package)
+            if prefix_receipt is None or prediction.get("prefix_replay_receipt_sha256") != prefix_receipt["record_sha256"]:
+                raise ValueError("candidate prediction lacks its admitted prefix replay receipt")
+            captured = prefix_receipt["future_rows"].get((strategy, evidence.decision_id))
+            if captured is None:
+                raise ValueError("candidate prediction lacks its captured requested future row")
+            mixture = next(value for value in plan["mixtures"] if value["name"] == prediction["mixture"])
+            original = EnsembleScorer(EnsembleProgram.from_record(mixture)).score({
+                name: CandidateEvidence.from_record(captured["expert_evidence"][name]) for name in mixture["expert_ids"]})
+            if semantic_sha256(original.record()) != semantic_sha256(evidence.record()):
+                raise ValueError("candidate prediction probability/failure differs from its captured experts and mixture")
         identities.add(identity)
         prediction_by_identity[identity] = prediction
         if "K" in prediction:

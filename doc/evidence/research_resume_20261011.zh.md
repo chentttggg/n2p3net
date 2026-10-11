@@ -90,6 +90,18 @@ B12 新增 `validate_b12_execution_manifest`，由 paired `run_erp_comparator._f
 
 总监逐读最终manifest、serial finalizer与participant聚合调用链后接受这组软件关系。聚合冲突分支由源码审阅确认，不冒称独立15案例实测；本轮未重新认证原始source fit/cache或完整checkpoint，跨阶段门继续消费原物理入口已核的凭证。这些证据不代表完整公共矩阵、公共效能或成人确认。CalibrationPrefix/public caller接线仍待另外的输入、OOF、common-test及保存重放反例闭合。
 
+## CalibrationPrefix保存重放与调用端复签
+
+后续prefix修稿已经独立复签、经总监逐读实际fit/OOF/save/load/future/parent admission后接受。`fit_calibration_prefix_programs`捕获同一次实际final专家和inner状态；`persist_prefix_inner_replay`绑定raw/trial样本及标签、requested aliases、实际recipe/checkpoint seed与source role。load从原数值模型的fit binding和final OOF owner核关系，不能仅重签manifest副本。成功OOF必需的inner roster/held score完整；typed inner fit失败、返回不可用evidence及直接raised score异常各保真实凭证，不虚构成功重放、不删除合法fixed程序。
+
+实际independent caller捕获完整truth-free future expert outputs，核共同Kmax test scope，保存/load/replay后才封prediction。父验收从已捕获专家用原EnsembleScorer重新计算plan mixture并核完整概率/失败记录；同一model digest不能授权改概率。iterable只消费一次，不可用温度strategy保全requested未来行。外部JSON容器与内部冻结tuple采用既有semantic owner比较，矩阵、导序、reference、fs、SHA和值变化仍拒绝。fit/cache miss的真实状态也已修复，共用造数归tests/support。
+
+最终独立原六类违规全部拒绝、两个诚实fixed/grouped对照通过；新增consumer7项及真实Cz6 caller/raised-score两项通过，源码七文件前后稳定。原caller probe因缺新必需test_scope仍exit1并保留原字节，合法scope/queue由新增独立harness验收，不把原exit冒记为绿色。作者34项compact/cache/三对caller属于spatial同义修前body；30项prefix/actual spatial属于最终body，native interruption1项另绑定最后测试字节。旧74项、source_changed失败和旧RED保持自己的source身份；详见[紧凑绑定](../assets/research_resume_20261011/prefix_replay_binding.json)。
+
+实际6包receipt从旧10.22–10.95MB缩为新1.48–2.21MB，父验收对每包只解析/核验一次并消费冻结索引，消除原1224次预测重复解析同一大凭证的路径；这里只陈述实测尺寸与调用次数，未声称训练端到端提速。当前事务粒度为整个prefix future capture/replay后逐行封预测，已计算但未封行中断时仍为partial/unknown；native退出验证只证明已封行、已处理strategy和完整requested账本保留，不证明任意中断可零fit恢复。
+
+这是实际prefix/public候选runner的软件接线；它仍没有候选程序的strict nested selection或learned gating，不完成公共效能、跨host整包或成人确认。原MAT窄输入验证另用冻结源码执行，不把上述synthetic通过重签成公共结果。
+
 ## P1后续方向：冻结响应与噪声程序的配对评分
 
 独立逐读B05/B06/B11后，总监接受下一接口切片为同一完整物理response后验下的shared/private AR8、共同C residual与32点prefix，接现有CandidateEvidence、DecisionPlan与paired metric owner。实现已分配到独立`research-mechanism-paired`工作树，不影响在途B12或当前prefix源码验证；软件接口和实际输入尚待签收，新native panel未执行。

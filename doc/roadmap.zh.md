@@ -1,6 +1,6 @@
 # 当前执行计划
 
-2026-10-11当前科研按[123项进展与下一步](evidence/wishlist_progress_20261010.zh.md)及[科研恢复与集成](evidence/research_resume_20261011.zh.md)并行推进：B03 strict nested/source-study 与同一次 run 的 inner producer replay 已完成 bounded 软件验收；B07 `/4` native family、B09 exact structural null/语义重核继续保其有限边界。B12 requested-manifest初版经独立反例否证后修复，原15项探针修后通过，真实serial最终report与重复finalize摘要一致；CalibrationPrefix replay/public caller仍在独立复审。B12完整source→target execution按实际source producer、资源、input contract和终态receipt验收，尚未签收；B11时间shape/ERP-span、B07 off-grid/history、B13成人确认继续独立推进。公共云执行源码由云窗口独占，当前科研树候选不扩大其运行scope。所有15块仍有独立剩余出口。
+2026-10-11当前科研按[123项进展与下一步](evidence/wishlist_progress_20261010.zh.md)及[科研恢复与集成](evidence/research_resume_20261011.zh.md)并行推进：B03 strict nested/source-study 与同一次 run 的 inner producer replay 已完成 bounded 软件验收；B07 `/4` native family、B09 exact structural null/语义重核继续保其有限边界。B12 requested-manifest修后原15项通过，真实serial最终report与重复finalize摘要一致；CalibrationPrefix保存重放/public caller已独立复签，尚未接候选程序strict nested选择。原云producer的八人候选面板已交付完整requested零拟合恢复汇总，配对效应及原始载荷按其来源继续核查；新科研协议不追签旧结果。B11时间shape/ERP-span、B07 off-grid/history、B13成人确认继续独立推进。公共云执行源码由云窗口独占，所有15块仍有独立剩余出口。
 
 下一P1接口切片已按[独立反例与调用链](evidence/research_resume_20261011.zh.md#p1后续方向冻结响应与噪声程序的配对评分)分配到隔离树：冻结现代response完整M/R/原Σ物理factor，shared/private AR8同C/prefix32，补实际MembershipDecision与共同requested/paired指标。8个机制反例与2个小型producer关系通过仅支持方向；v2软件接口和新native panel仍待验收，不阻塞B12基础公共程序。
 

@@ -8,15 +8,13 @@ import pytest
 import torch
 from scipy.io import savemat
 
-from data.bnci2014_008_candidate import BNCI2014_008_CHANNELS, BNCI2014_008_SOURCE_REFERENCE
-from data.contract import BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT
-from data.epochs import preprocessing_spec_from_contract
+from data.bnci2014_008_candidate import BNCI2014_008_SOURCE_REFERENCE
 from experiments.run_candidate_ensemble_study import run_study
 from research.contracts import semantic_sha256
 from research.execution import ExpectedSubjectError, SubjectFailureCode, UnidentifiableFitError
 from research.source_catalog import SourceSeedCatalog, paired_pipeline_seeds
-from tests.support.bnci import bnci_mat_fields
 from tests.support.checkpoints import write_checkpoint
+from tests.support.independent_prefix import independent_prefix_case
 from transfer.calibration_candidates import waveform_lda_recipe
 from transfer.ensemble import EnsembleProgram
 from transfer.ensemble_fit import (
@@ -26,24 +24,12 @@ from transfer.ensemble_fit import (
     fit_calibration_prefix_programs,
 )
 from transfer.ensemble_views import SelectionEpochProfile, prepare_bnci_independent_prefixes
-from transfer.recipes import TargetRecipe, erp_target_recipe
+from transfer.recipes import TargetRecipe
 
 
 @pytest.fixture(scope="module")
 def independent_case(tmp_path_factory):
-    root = tmp_path_factory.mktemp("independent-prefix")
-    fields = bnci_mat_fields()
-    fields["X"] = np.random.default_rng(39).normal(0, 4, fields["X"].shape).astype(np.float32)
-    path = root / "A01.mat"
-    savemat(path, {"data": fields})
-    spec = preprocessing_spec_from_contract(BRAIN_SYNC_BIDIRECTIONAL_DATA_CONTRACT)
-    profile = SelectionEpochProfile.from_preprocessing(replace(spec, baseline_mode="none"),
-        source_sample_rate_hz=256., channel_names=BNCI2014_008_CHANNELS, reference=BNCI2014_008_SOURCE_REFERENCE)
-    experts = (CalibrationExpertProgram("raw", "continuous_ar", noise_order=0, n_basis=2),
-               CalibrationExpertProgram("toeplitz", "trial", erp_target_recipe("toeplitz_lda", bin_width=16), profile))
-    views = prepare_bnci_independent_prefixes(path, source_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
-        budgets=(0, 200), profiles=(profile,), authorization_preprocessing=spec)
-    return root, fields, path, spec, experts, views
+    return independent_prefix_case(tmp_path_factory.mktemp("independent-prefix"))
 
 
 def test_one_unresolved_continuous_expert_keeps_trial_and_all_requested_decisions(independent_case, tmp_path, monkeypatch):

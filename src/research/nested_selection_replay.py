@@ -116,16 +116,53 @@ class InnerReplayRecorder:
         self.producers: dict[str, FittedEnsemble | ExpectedSubjectError] = {}
         self.uses: dict[str, list[dict[str, Any]]] = {}
         self.oof_rows: dict[str, list[dict[str, Any]]] = {}
+        self.oof_score_failures: dict[str, list[dict[str, Any]]] = {}
         self.selection_scores: dict[str, list[dict[str, Any]]] = {}
         self.object_keys: dict[int, str] = {}
         self.context: dict[str, Any] = {"phase": "unclassified"}
+        # Prefix callers use the same run-local sink as nested selection.  The
+        # nested persistence contract intentionally does not consume these
+        # fields; ``prefix_inner_replay`` owns their schema and receipt.
+        self.prefix_programs: dict[str, Any] = {}
+        self.prefix_context: dict[str, Any] = {}
+        self.prefix_future_scores: list[dict[str, Any]] = []
+
+    def record_prefix_programs(self, programs, *, prefix, expert_programs, program,
+                               source_checkpoints=None, context=None):
+        """Capture actual prefix results from the original fit invocation.
+
+        This stores object references only.  A later persistence call may
+        serialize them, but it never reconstructs or re-fits a prefix model.
+        """
+        context = dict(self.context if context is None else context)
+        self.prefix_context = context
+        self.prefix_programs = dict(programs)
+        self.prefix_fit_declaration = {
+            "prefix": prefix,
+            "expert_programs": tuple(expert_programs),
+            "program": program,
+            "source_checkpoints": {} if source_checkpoints is None else dict(source_checkpoints),
+            "context": context,
+        }
+        from research.prefix_inner_replay import prefix_input_identity
+
+        self.prefix_fit_declaration["input_identity"] = prefix_input_identity(prefix)
+
+    def record_prefix_future_score(self, strategy, *, view, evidence):
+        """Capture an already-scored label-free future view from this run."""
+        from research.prefix_inner_replay import future_input_identity
+
+        self.prefix_future_scores.append({"strategy": strategy,
+            "input": future_input_identity(view),
+            "expert_evidence": {name: item.record() for name, item in evidence.items()}})
 
     def set_context(self, **values):
         self.context = dict(values)
 
     def record_fit(self, fit_key, model, *, candidate, training, cache_hit=False, context=None):
         context = self.context if context is None else context
-        canonical = self.object_keys.setdefault(id(model), fit_key)
+        canonical = (fit_key if isinstance(model, ExpectedSubjectError)
+                     else self.object_keys.setdefault(id(model), fit_key))
         self.producers.setdefault(canonical, model)
         use = {
             "phase": context.get("phase", "unclassified"),
@@ -140,13 +177,14 @@ class InnerReplayRecorder:
         if use not in rows:
             rows.append(use)
 
-    def record_direct_fit(self, fit_key, model, *, expert_programs, program, training, context=None):
+    def record_direct_fit(self, fit_key, model, *, expert_programs, program, training, context=None, cache_hit=False):
         """Capture a fixed cache producer used by grouped-temperature OOF."""
         if fit_key is None:
             raise ValueError("recorder requires an immutable fixed-fit cache key")
         context = self.context if context is None else context
         candidate_name = context.get("candidate_name", program.name)
-        canonical = self.object_keys.setdefault(id(model), fit_key)
+        canonical = (fit_key if isinstance(model, ExpectedSubjectError)
+                     else self.object_keys.setdefault(id(model), fit_key))
         self.producers.setdefault(canonical, model)
         use = {
             "phase": context.get("phase", "temperature_oof_inner"),
@@ -155,7 +193,7 @@ class InnerReplayRecorder:
             "outer_held_record_id": context.get("outer_held_record_id"),
             "selection_held_record_id": context.get("selection_held_record_id"),
             "temperature_held_record_id": context.get("temperature_held_record_id"),
-            "cache_hit": True,
+            "cache_hit": bool(cache_hit),
             "program": program.record(),
             "expert_programs": [spec.record() for spec in expert_programs],
         }
@@ -171,6 +209,17 @@ class InnerReplayRecorder:
             "training_record_ids": [group.view.record_id for group in training],
             "phase": context.get("phase", "temperature_oof_inner"),
             "evidence": {name: score.record() for name, score in scores.items()},
+        })
+
+    def record_oof_score_failure(self, fit_key, *, held, training, error, context=None):
+        """Capture an actual raised score failure without inventing evidence."""
+        context = self.context if context is None else context
+        canonical = self.object_keys.get(id(self.producers.get(fit_key)), fit_key)
+        self.oof_score_failures.setdefault(canonical, []).append({
+            "held_record_id": held.view.record_id,
+            "training_record_ids": [group.view.record_id for group in training],
+            "phase": context.get("phase", "temperature_oof_inner"),
+            "failure": error.record(subject=held.view.participant_key),
         })
 
     def record_selection_score(self, fit_key, *, held, evidence):

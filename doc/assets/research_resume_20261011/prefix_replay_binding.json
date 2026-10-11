@@ -1,0 +1,99 @@
+{
+  "schema": "n2p3_prefix_replay_acceptance/1",
+  "date": "2026-10-11",
+  "scope": "same-run prefix/OOF/future/caller software contract; no strict nested selector, complete public efficacy or adult confirmation",
+  "final_files": {
+    "src/research/prefix_inner_replay.py": "f7c2a5730d6f99358e5116ed5e200faacbb91c12a3c4df43df2c141c1aeb868f",
+    "src/research/nested_selection_replay.py": "2a84a8f06368812473b19aa09528e96e70b14b5169d93f2f289b9c880108fbee",
+    "src/transfer/ensemble_fit.py": "1ae4c84e197d91b80a91ab20b93e5346a3a709baf4eaab5676c9f4e8427e33eb",
+    "experiments/run_candidate_ensemble_study.py": "1272901eb18f8813414e2c49af24a493da7ede97572b31234e29b25495359eff",
+    "tests/research/test_prefix_inner_replay.py": "9cda8034dbfaa40f092e4ab08c03718f0396d03aee2e6ef65e5f830506697ec8",
+    "tests/research/test_independent_candidate_prefix.py": "e60e4cb5b9524a8dd57025b5a4796ba46f508292632422d71031a54fb9262a87",
+    "tests/support/independent_prefix.py": "2577fccab2507fdc8ca2d5ab0169c0c0ed04f2fd54906fb0d4d687a84f825ae8",
+    "tests/research/test_candidate_cloud_execution.py": "daec1025a38266f25a7daa6b462f418b40d9502ca9a33b54a06f0a185d0eb6f9"
+  },
+  "checks": [
+    {
+      "name": "related_before_compaction",
+      "passed": 74,
+      "exit_code": 0,
+      "scope": "historical 10MB receipt body",
+      "log": "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_REPLAY/final-related-4.log",
+      "log_sha256": "7b5aebbd1529a8125437acf2b40579543562e8a7c23bc6019db9bd2586be2624",
+      "production_files": null
+    },
+    {
+      "name": "compact_cache_and_paired_caller",
+      "passed": 34,
+      "exit_code": 0,
+      "scope": "before final spatial canonical comparison",
+      "log": "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_REPLAY/final-caller-5.log",
+      "log_sha256": "6179731ff4ad19fa7040e4573f9de5a74938c9a72eebdf8981224b6eb3617539",
+      "production_files": {
+        "src/research/prefix_inner_replay.py": "a06258214e500c1f06e0a720fa3e252ea24d59486fb314c089d0371b22b207ee",
+        "src/research/nested_selection_replay.py": "2a84a8f06368812473b19aa09528e96e70b14b5169d93f2f289b9c880108fbee",
+        "src/transfer/ensemble_fit.py": "1ae4c84e197d91b80a91ab20b93e5346a3a709baf4eaab5676c9f4e8427e33eb",
+        "experiments/run_candidate_ensemble_study.py": "54c85277e0de7a852259eb4c3c87945423266443efd11a437e33009a43ee8fd8"
+      }
+    },
+    {
+      "name": "final_prefix_and_raw_spatial",
+      "passed": 30,
+      "exit_code": 0,
+      "scope": "final production body",
+      "log": "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_REPLAY/spatial-6.log",
+      "log_sha256": "19932ebea0a183b7da572b238fb5973469697826509e41c17ad341f8d17bc318",
+      "production_files": {
+        "src/research/prefix_inner_replay.py": "f7c2a5730d6f99358e5116ed5e200faacbb91c12a3c4df43df2c141c1aeb868f",
+        "src/research/nested_selection_replay.py": "2a84a8f06368812473b19aa09528e96e70b14b5169d93f2f289b9c880108fbee",
+        "src/transfer/ensemble_fit.py": "1ae4c84e197d91b80a91ab20b93e5346a3a709baf4eaab5676c9f4e8427e33eb",
+        "experiments/run_candidate_ensemble_study.py": "1272901eb18f8813414e2c49af24a493da7ede97572b31234e29b25495359eff"
+      }
+    },
+    {
+      "name": "final_native_interruption",
+      "passed": 1,
+      "exit_code": 0,
+      "scope": "author actual process exit, with unavailable strategy rows",
+      "log": "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_REPLAY/native-exit-8.log",
+      "log_sha256": "914192d0b998765b000418f37d07a01536c2ae674628eb5a10b106f2b50ebb92",
+      "production_files": {
+        "src/research/prefix_inner_replay.py": "f7c2a5730d6f99358e5116ed5e200faacbb91c12a3c4df43df2c141c1aeb868f",
+        "src/research/nested_selection_replay.py": "2a84a8f06368812473b19aa09528e96e70b14b5169d93f2f289b9c880108fbee",
+        "src/transfer/ensemble_fit.py": "1ae4c84e197d91b80a91ab20b93e5346a3a709baf4eaab5676c9f4e8427e33eb",
+        "experiments/run_candidate_ensemble_study.py": "1272901eb18f8813414e2c49af24a493da7ede97572b31234e29b25495359eff"
+      }
+    }
+  ],
+  "independent_review": {
+    "original_violations_rejected": 6,
+    "honest_fixed_and_grouped_controls": 2,
+    "new_consumer_cases_passed": 7,
+    "raw_spatial_and_raised_score_cases_passed": 2,
+    "original_future_probe_exit": 1,
+    "original_future_probe_reason": "original harness lacks newly required common test_scope; original probe unchanged",
+    "final_seven_files_unchanged": true,
+    "final_native_test_run_by": "author"
+  },
+  "artifacts": {
+    "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_REPLAY/REPORT.zh.md": "e8e84ba23ec1c7074999f9c17f618fa49fbc0a73cc4a79fbfa7fb07fffe40b4b",
+    "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_REPLAY/final-source.json": "80d8a8250f4daf532ba69c624fffb291fedcd713780fb3b038cd2513743e4a48",
+    "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_REPLAY/74-passed-source.json": "981de0f1984a46509c6bbe44c9440b0adfdbf651be13d7f1e37522fffedf48d8",
+    "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_REPLAY/compact_receipts.json": "244c5b9fb6e9178bbb8b1c29746474180b57fa668d50734a94143af41b161e9f",
+    "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_FINAL_SPATIAL_REVIEW/REVIEW_FINAL.zh.md": "c5c8b0baa866b0670689d66ab6809bd7fd135a337ca7953282045573499455e9",
+    "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_FINAL_SPATIAL_REVIEW/source_after.json": "25b28e970bf3f5964ffa311922f91a22ed663843a4da5f67bb874f573785a6d1",
+    "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_FINAL_SPATIAL_REVIEW/probe_results.json": "ac74f30bc0b5d49b961edfb4d5469865a50a28eaddfccda15a4e5e9a2b7896b6",
+    "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_FINAL_SPATIAL_REVIEW/consumer_binding_results.json": "cbf578b17f5e3b93d6016bda9a2b39770176ae94ee7034b711790ee423fb083a",
+    "tmp/RESEARCH_DIRECTOR_20261011/PREFIX_FINAL_SPATIAL_REVIEW/spatial_failure_results.json": "fdbdffe23050750221723077c1b9f9dd2eac77c3dd2465abe7bff698d9d7b016"
+  },
+  "receipt_size_bytes": {
+    "historical_min": 10222617,
+    "historical_max": 10948891,
+    "compact_min": 1484451,
+    "compact_max": 2210971
+  },
+  "admission_cache": "one verified prefix record and captured future index per physical package",
+  "performance_claim": "measured receipt sizes and repeated read counts only; no end-to-end speedup claim",
+  "interruption_boundary": "whole-prefix future capture/replay before prediction sealing; calculated but unsealed rows remain partial/unknown",
+  "native_public_mat_probe": "pending separate frozen-source execution"
+}

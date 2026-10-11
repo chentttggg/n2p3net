@@ -230,7 +230,15 @@ def test_independent_one_seed_native_exit_keeps_unscored_actual_budget_panels(tm
         "partial_decision_after_fixed_Kmax_and_original_epoch_support_purge" in row["evidence"]["failure_reason"]
         for row in predictions)
     assert all(row["K"] == 0 and row["calibration_strategy"] == "fixed" for row in predictions)
-    assert len(report["participants"][0]["fits"]) == 4
+    # Prefix replay seals the actual complete strategy roster before the first
+    # prediction is admitted.  K0 grouped-temperature has already returned its
+    # named unavailable result, even when a native exit interrupts predictions.
+    fits = report["participants"][0]["fits"]
+    assert len(fits) == 8 and {row["calibration_strategy"] for row in fits} == {"fixed", "grouped_temperature"}
+    grouped = [row for row in fits if row["calibration_strategy"] == "grouped_temperature"]
+    assert len(grouped) == 4 and all(not row["fit_available"] for row in grouped)
+    assert all(row["temperature_calibration"]["status"] == "unavailable"
+        and row["temperature_calibration"]["failure"]["error_code"] == "insufficient_calibration_groups" for row in grouped)
     assert {row["actual_K"] for row in report["requested_pipeline_cells"]} == {0, 200}
     assert all(row["status"] == "not_started" for row in report["requested_pipeline_cells"] if row["actual_K"] == 200)
     failure = executed.results[programme.tasks[0].task_id]

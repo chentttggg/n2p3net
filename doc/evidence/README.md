@@ -4,6 +4,7 @@
 
 - [2026-10-11 P0 续接：inner replay 与 B12 runner](research_resume_20261011.zh.md#p0续接)：B03 同一次 nested run 的 inner producer capture/replay、B12 requested roster/alias/failure/source producer manifest 门禁，以及 FrozenTrial list/tuple 合同修复；完整 source→target execution 仍未签收。
 - [2026-10-11 B12最终账本修后复签](research_resume_20261011.zh.md#b12最终账本修后复签)：原15项独立探针修后通过、actual terminal coverage与source声明关系恢复、真实serial最终report与重复finalize摘要一致；接受范围为跨阶段软件关系。
+- [2026-10-11 CalibrationPrefix保存重放与调用端复签](research_resume_20261011.zh.md#calibrationprefix保存重放与调用端复签)：actual prefix/inner/future捕获、真实空间与失败策略、混合概率复算准入、一次包校验和紧凑凭证；候选程序strict nested与公共效能另验。
 - [2026-10-11 P1冻结响应与噪声程序方向](research_resume_20261011.zh.md#p1后续方向冻结响应与噪声程序的配对评分)：8个反例与2个小型producer关系核验支持modern R物理转换和共同paired指标切片；接口与新native panel尚待签收。
 
 - [2026-10-10愿望清单当前进展](wishlist_progress_20261010.zh.md)：123项实际出口分层、置信度/固定graph/评分数值的科研树整合，selection随机效应与真实OOF接点，以及多家族字典、空间收缩、时间shape/ERP-span的下一切片；原公共执行来源与效能边界保留。
