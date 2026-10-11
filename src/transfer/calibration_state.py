@@ -212,9 +212,13 @@ class FrozenTrialPredictor:
                 "semantics": self.record["class_calibration"]}
 
     def save(self, path: str | Path):
-        torch.save({"schema": (FROZEN_TRIAL_SCHEMA if "class_calibration" in self.record
-                               else "n2p3_frozen_trial_predictor/1"),
-                    "record": json.loads(json.dumps(self._record)), "state": self._state}, path)
+        from research.source_execution import save_source_checkpoint
+
+        save_source_checkpoint(path, {
+            "schema": (FROZEN_TRIAL_SCHEMA if "class_calibration" in self.record
+                       else "n2p3_frozen_trial_predictor/1"),
+            "record": json.loads(json.dumps(self._record)), "state": self._state,
+        })
         return Path(path)
 
     def digest(self):

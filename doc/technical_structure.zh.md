@@ -43,6 +43,14 @@ paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账
 共享`CloudExecutor`在单库内部调度就绪准备、拟合与评估。队列不加载EEG、重新拟合模型或
 把文件存在视为成功；终态保存独立产物事实，并严格保持原已执行声明的前缀字节。
 
+`research.trial_candidate_execution`复用实际source准备/整库排除、原target fitter和
+`FrozenTrialPredictor`完成固定trial专家的逐臂拟合、持久化与loaded重放。每臂独立保存，
+恢复核C的X/y/mask/timeline/metadata/provenance、future输入和完整requested；数值模型内
+fit binding与actual probability fit再与外层receipt交叉核对。source/scratch共用target配方，
+scratch只保架构控制、无source初始化身份。`run_bi2014a_trial_study.py`只编译真实episode请求、
+调用共享CloudExecutor并准入每人产物；父层统一用`candidate_metrics`的逐key horizon评价与
+直接full-fine减matched-scratch配对contrast。secondary截断诊断不进入主指标分母。
+
 当前[集成骨干](evidence/research_integration_20261008.zh.md)以`dictionary_artifact`持有字典编译/准入，`temporal_noise/5`持有实际startup数组与scales，`continuous_decision`持有全C/prior生产QR后验；load消费原数值态，整模型仍核同implementation字节。B05一般vec冻结响应可通过真实行/列置换消费B09空间后验，评分noise独立，不重新拟合后验。数值不可识别只使对应连续专家/decision不可用，正常peer保留；artifact/输入合同错误继续传播。
 
 `research.input_contamination`复用真实harmonic/finite程序，测完整自适应`T(x+h)-T(x)`及明示扰动分布下的经验矩，接原operator CLI的`audit-clean`。`research.dynamic_identification`只作noise-only Gamma尺度与独立proper Gaussian不确定性的积分参考；prefix条件密度是joint/prefix两个生成积分的比，不是固定prior权重平均conditional输出。这些研究参考不新增生产fitter或默认算法，也不签发原始观测授权。`research.response_history_identification`枚举完整公开selection label状态，共享同MN response后验，计算proper Gaussian或共同flat-nuisance measure下的full/prefix mixture比；整mask相关和kernel cross terms保留，不能替换成独立flash Bernoulli或附加独立Γ。`research.continuous_history_adapter`经实际model integrity门后消费原basis/M/R/Σ及stored stationary whitening的inverse factor，与原共同prefix/Z相接；它只接受调用者明示的已发生actual public clocks。当前是小矩阵研究接入，生产unknownoverlap拒绝保持。
