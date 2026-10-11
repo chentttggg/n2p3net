@@ -2,7 +2,7 @@
 
 本评估回答两个方案：把 BNCI2014-008 的完整选择拆成更小的组，或把 grouped temperature 的最低组数降到一个。它只使用 A01 原始 MAT 的物理 owner 解码和解析温度反例，没有新增 EEG fit、future score 或公共效能读数。原 MAT SHA 为 `cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd`；只读探针见 `tmp/PREFIX_SMALL_GROUP_EVAL_20261011/probe.json`。
 
-当前一个 `CalibrationSelection` 是 120 个 flash：12 个候选刺激 × 10 次 repetition。每次 repetition 只有 12 个事件、2 个目标标签，而且同一 selection 的 10 次 repetition 使用相同目标位置。当前物理 owner 的响应宽度为 154 samples、pre-roll 为 26 samples，flash 间隔为 64 samples。
+当前一个 `CalibrationSelection` 是 120 个 flash：每次 repetition 有12个 row/column flash（6 row + 6 column）× 10 次 repetition；36 个 row/column 组合是最终 decision vocabulary。每次 repetition 只有 12 个事件、2 个目标标签，同一 selection 的10次 repetition使用相同目标位置。当前物理 owner 的响应宽度为154 samples、pre-roll为26 samples，flash间隔为64 samples。
 
 因此，直接把一个 selection 切成 1、2 或 5 个 repetition 不能作为当前的独立完整组：
 
@@ -16,6 +16,8 @@
 小块仍属于同一 target decision，且同一个连续记录的响应窗口受相邻未知 flash 影响。若缩短响应尾、忽略邻居或把相同 target pair 的 repetitions 当作独立 OOF 组，就改变了输入支持、AR/nuisance 模型和重复测量单位。现有 `prepare_bnci_calibration_groups` 因此要求完整 120 flash selection，并核对前后未知事件、raw scope 不重叠和完整 membership。
 
 一个完整组足以做 fixed baseline 的目标拟合：以 K200 为例，可以使用最早完整 120-label selection，保留后面的 80 个请求标签为 unused/partial，固定温度 `T=1`。它不能支持当前 grouped temperature，因为 grouped 的 leave-one-group-out 在唯一组被留出后没有任何训练组；把门槛从 3 改成 1 只会把“无 OOF 训练数据”改写成可运行的错误协议。
+
+这80个后缀不是抽象的“缺80标签”：A01实际 suffix event indices 为120–199，raw scope `[11477,16648)`，80个flash中14个target/66个non-target，末尾4个事件right-censored；continuous记录仍有5139个 conditioning32之后的行，trial侧只有76个完整epoch（13/63）。它与前一个完整selection有1753 samples的raw gap。whole-C先预处理再删行会让held输入最大变化 `3.26665e-6 V`，所以partial scope必须先从原始MAT裁剪再独立执行预处理；当前 `CalibrationPrefix`/complete-group API不能直接接它。
 
 一个组内直接同时拟合专家和温度也不能充当 OOF。温度损失在数学上可计算，但它使用了同一组的拟合输出和 truth，属于 in-sample calibration。只用一个真实观测，温度会被单个 truth 推到边界，并且 truth 翻转会把温度推向相反边界；A01 物理 probe 还显示所有 repetition 的 target pair 相同。解析反例中，真实概率已经校准时，单个观测学习的温度仍可令总体 NLL 从 1.049 增至 5.009。
 
