@@ -161,3 +161,12 @@ console.log(JSON.stringify({missing: missing.map(finiteNumber), present: present
     assert values["missing"] == [None] * 10
     assert values["present"] == [0, 0, -1, 2.5, 0.75]
     assert values["memory"] == [None, None, 0, 1.5, None]
+
+
+def test_gpu_sample_aggregates_every_nvidia_smi_line():
+    from experiments.watch_resources import _parse_gpu_query
+
+    sample = _parse_gpu_query("50, 10, 1000, 24000\n70, 30, 3000, 24000\n")
+    assert sample == {"gpu_util_pct": 60.0, "gpu_memory_util_pct": 20.0, "gpu_memory_used_mib": 4000.0,
+                      "gpu_memory_total_mib": 48000.0, "gpu_count": 2}
+    assert _parse_gpu_query("")["gpu_util_pct"] is None

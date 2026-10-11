@@ -111,13 +111,33 @@ def _smaps_memory(pid: int) -> dict[str, float | None]:
     }
 
 
-def _gpu_row() -> dict[str, object]:
-    empty = {
-        "gpu_util_pct": None,
-        "gpu_memory_util_pct": None,
-        "gpu_memory_used_mib": None,
-        "gpu_memory_total_mib": None,
+_GPU_EMPTY = {
+    "gpu_util_pct": None,
+    "gpu_memory_util_pct": None,
+    "gpu_memory_used_mib": None,
+    "gpu_memory_total_mib": None,
+}
+
+
+def _parse_gpu_query(stdout: str) -> dict[str, object]:
+    """Aggregate one CSV line per GPU: mean utilisation, summed memory."""
+
+    rows = [[float(field) for field in line.split(",")[:4]] for line in stdout.strip().splitlines()
+            if len(line.split(",")) >= 4]
+    if not rows:
+        return dict(_GPU_EMPTY)
+    columns = list(zip(*rows, strict=True))
+    return {
+        "gpu_util_pct": sum(columns[0]) / len(rows),
+        "gpu_memory_util_pct": sum(columns[1]) / len(rows),
+        "gpu_memory_used_mib": sum(columns[2]),
+        "gpu_memory_total_mib": sum(columns[3]),
+        "gpu_count": len(rows),
     }
+
+
+def _gpu_row() -> dict[str, object]:
+    empty = dict(_GPU_EMPTY)
     if shutil.which("nvidia-smi") is None:
         return empty
     query = "utilization.gpu,utilization.memory,memory.used,memory.total"
@@ -129,16 +149,7 @@ def _gpu_row() -> dict[str, object]:
             check=True,
             timeout=3,
         )
-        fields = [field.strip() for field in result.stdout.strip().split(",")]
-        if len(fields) < 4:
-            return empty
-        values = [float(field) for field in fields[:4]]
-        return {
-            "gpu_util_pct": values[0],
-            "gpu_memory_util_pct": values[1],
-            "gpu_memory_used_mib": values[2],
-            "gpu_memory_total_mib": values[3],
-        }
+        return _parse_gpu_query(result.stdout)
     except (OSError, ValueError, subprocess.SubprocessError):
         return empty
 
