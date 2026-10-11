@@ -720,6 +720,7 @@ def main() -> None:
             "balanced_acc_mean": summary.balanced_acc_mean,
             "balanced_acc_std": summary.balanced_acc_std,
             "auc_mean": summary.auc_mean,
+            "metric_undefined_folds": summary.metric_undefined_folds,
             "decision_hit_rate_mean": getattr(summary, "hit_rate_mean", None),
             "primary_decision_hit_rate": getattr(summary, "primary_hit_rate", None),
             "primary_hit_scope": getattr(summary, "primary_hit_scope", None),

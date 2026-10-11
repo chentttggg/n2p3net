@@ -38,6 +38,47 @@ def test_validation_weighted_ce_is_independent_of_batch_partition(weighted_rows)
         np.testing.assert_array_equal(observed_labels, labels.numpy())
 
 
+def test_candidate_primary_hit_rates_weight_participants_equally(monkeypatch):
+    # Participant A has ten correct decisions and B two wrong ones; pooling would report 10/12.
+    groups = np.repeat([f"A{index}" for index in range(10)] + ["B0", "B1"], 3)
+    subjects = np.array([group[0] for group in groups])
+    codes = np.tile([0, 1, 2], 12)
+    logits = np.where(subjects == "A", np.where(codes == 1, 2.0, 0.0), np.where(codes == 0, 2.0, 0.0))
+    folds = [(subjects != subject, subjects == subject) for subject in ("A", "B")]
+    binary = evaluation.BinaryFoldResult(1.0, 1.0, 3, 0.0, "fixed", 0.0)
+    monkeypatch.setattr(evaluation, "_run_fold_tasks", lambda *args, **kwargs: (
+        [(index, binary, logits[test], test, None) for index, (_, test) in enumerate(folds)],
+        "fixed_predictions", 1, "none", 1, 1, 1,
+    ))
+    result = evaluation.evaluate_candidate_selection(
+        object(), np.zeros((36, 1, 1)), (codes == 1).astype(int), codes, groups,
+        {group: 1 for group in np.unique(groups)}, folds, [0, 1, 2],
+        fit_group_ids=subjects, repetition_indices=np.zeros(36, dtype=int),
+    )
+    assert result.primary_hit_rate == pytest.approx(0.5)
+    assert result.primary_hit_rate_decision_micro == pytest.approx(10 / 12)
+    assert result.hit_at_repetition_macro == {"1": pytest.approx(0.5)}
+    assert result.hit_at_repetition_decision_micro == {"1": pytest.approx(10 / 12)}
+    assert result.primary_hit_scope["participant_count"] == 2
+
+
+def test_candidate_summary_records_folds_whose_auc_is_undefined(monkeypatch):
+    defined = evaluation.BinaryFoldResult(1.0, 1.0, 3, 0.0, "fixed", 0.0)
+    undefined = evaluation.BinaryFoldResult(float("nan"), float("nan"), 3, 0.0, "fixed", 0.0)
+    groups = np.repeat(["a", "b"], 3)
+    folds = [(groups != group, groups == group) for group in ("a", "b")]
+    monkeypatch.setattr(evaluation, "_run_fold_tasks", lambda *args, **kwargs: (
+        [(0, defined, np.zeros(3), folds[0][1], None), (1, undefined, np.zeros(3), folds[1][1], None)],
+        "fixed_predictions", 1, "none", 1, 1, 1,
+    ))
+    result = evaluation.evaluate_candidate_selection(
+        object(), np.zeros((6, 1, 1)), np.array([0, 1, 0, 0, 1, 0]), np.tile([0, 1, 2], 2), groups,
+        {"a": 1, "b": 1}, folds, [0, 1, 2], fold_id_offset=4,
+    )
+    assert result.auc_mean == 1.0
+    assert result.metric_undefined_folds == [5]
+
+
 def test_domain_lodo_validation_checks_actual_global_coverage():
     domains = np.array(["A", "A", "B", "B"])
     folds = [(domains == "A", domains == "B"), (domains == "B", domains == "A")]

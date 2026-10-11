@@ -139,6 +139,13 @@ class BinarySummary:
     cpu_threads_per_worker: int = 1
     artifact_qc_workers: int = 0
     artifact_qc_cpu_threads_per_worker: int = 0
+    metric_undefined_folds: list[int] = field(default_factory=list)
+
+
+def _metric_undefined_folds(results: Sequence[BinaryFoldResult], offset: int) -> list[int]:
+    """Folds whose effective test set lacks one class are excluded from AUC/BACC means."""
+
+    return [index + offset for index, fold in enumerate(results) if not np.isfinite(fold.auc)]
 
 
 @dataclass
@@ -1372,6 +1379,7 @@ def evaluate_binary(
         cpu_threads_per_worker=cpu_threads_per_worker,
         artifact_qc_workers=artifact_qc_workers,
         artifact_qc_cpu_threads_per_worker=artifact_qc_cpu_threads_per_worker,
+        metric_undefined_folds=_metric_undefined_folds(results, fold_id_offset),
     )
 
 
@@ -1578,6 +1586,7 @@ def evaluate_candidate_selection(
         cpu_threads_per_worker=cpu_threads_per_worker,
         artifact_qc_workers=artifact_qc_workers,
         artifact_qc_cpu_threads_per_worker=artifact_qc_cpu_threads_per_worker,
+        metric_undefined_folds=_metric_undefined_folds(results, fold_id_offset),
     )
 
 
