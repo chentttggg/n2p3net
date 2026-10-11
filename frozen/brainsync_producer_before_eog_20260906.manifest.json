@@ -1,0 +1,13 @@
+{
+  "archive": "brainsync_producer_before_eog_20260906.zip",
+  "archive_sha256": "557375c01445daadf54e0fb593baff2bfc162b2c8aad51ce921af6483689fc92",
+  "original_root": "D:\\BCI\\BrainSync_Tool_0cb0_V2.2.5_20260729\\BrainSync_Tool",
+  "files": {
+    "gtn_workstation/models.py": "a6672beab2d56249d0c923c3de8a6554952b89df4eff4e79b74ee61c973fb9cc",
+    "gtn_workstation/bids.py": "e18260d4e19f89841c4b8ccaf739536f3df60e87ed8f1bb7bd81f58b5962cecd",
+    "channel_assignments.json": "56adad2435ebb9b5d3d48cdb103e16853b0c40fab6e8ff7e55b2444855cf4623",
+    "tests/test_models.py": "06d0dbbf2c2422e1482eee7af3c3c59116c947c9e35e9a124723ebb0e2635bf9",
+    "tests/test_timeline.py": "7d01fe1a587741365595269a415ecebf9abfa2b235c3af3db0b8226ea04f66d0",
+    "RUN_GTN_WORKSTATION.md": "69042e349dce1dc01fffc79b60e6d8710e7f43f3d97b477e5731663f18b6db3b"
+  }
+}
