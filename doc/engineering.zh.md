@@ -341,7 +341,7 @@ GPU计时同步，冷启动/编译与热运行分列。缓存就绪的训练时�
 
 用户于2026-10-08再次强调多次遇到25核配额只用1核：必须核真实进程创建身份、就绪任务、有效CPU核、GPU利用、内存峰、阶段进度和完成产物；25线程/4worker配置本身不能作为验收。遇到串行压缩/解压、重复加载/哈希、I/O、锁或内存准入等待，要落实代码并验证端到端路径。2394曾GPU95%但worker突然退出、内存接近90 GiB上限，原因未确定；[原始终态与完整输入基准](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)已物理保留。本地整机CPU<80%与云端配额利用分别控制，不能混用。
 
-用户随后明确本轮交付目标是**优化底层调用算法并彻底模块化云端训练**：相近实验固定复用同一个执行模块，已有优秀训练实现按当前合同复用。实验计划提供依赖、配方、科学调用和真实输入/输出身份；公共底层统一拥有ready队列、进程与数值线程、host/GPU/暂存准入、缓存复用、阶段记录和异常退出诊断。`TrainingRuntime`、`MatrixBatchSource`、源轨迹登记表、原缓存writer/attested loader及资源owner作为复用基础；CLI消费稳定接口，资源算法集中在SRC。
+用户随后明确本轮交付目标是**优化底层调用算法并彻底模块化云端训练**：相近实验固定复用同一个执行模块，已有优秀训练实现按当前合同复用。实验计划提供依赖、配方、科学调用和真实输入/输出身份；公共底层统一拥有ready队列、进程与数值线程、host/GPU/暂存准入、缓存复用、阶段记录和异常退出诊断。`GpuPerformanceScheduler`、`MatrixBatchSource`、源轨迹登记表、原缓存writer/attested loader及资源owner作为复用基础；CLI消费稳定接口，资源算法集中在SRC。
 
 本轮统一验收包含准备→完整源选择/refit→目标校准→评估的实际调用链。一个cache组内复用加载与已准入输入，完整源产物完成后按真实依赖解锁目标工作；源/目标共用CPU、GPU与内存额度，CPU fallback按实际常驻占用转账。participant任务分片只改变排程，当前阶段声明的配对seed集合、requested预算与失败分母、C/held授权、fixed/grouped程序、模型保存重放和actual producer由原科学owner继续持有。输出与概率合同分别绑定当前binary/candidate入口。
 
@@ -456,7 +456,7 @@ batch和更新预算显式记录，不通过隐藏梯度累积或OOM重试改变
 
 预载矩阵须留显存余量；连续pinned视图可异步拷贝，随机gather走现有同步安全路径。
 不能复用仍被DMA读取的单一pinned staging buffer；未来预取须有多缓冲和完成事件。
-`--shuffle-each-epoch`会额外占一份矩阵，历史配对测量更慢，保持显式可选。
+`--materialize-shuffled-epoch`会额外占一份矩阵，历史配对测量更慢，保持显式可选。
 训练loss在设备累积、每epoch读取，预测按整pass回CPU，避免逐batch同步。
 
 GPU folds用spawned进程隔离RNG和CUDA上下文，不能共享训练线程。

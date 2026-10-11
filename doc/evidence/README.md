@@ -2,7 +2,7 @@
 
 - [2026-10-11科研恢复与集成](research_resume_20261011.zh.md)：恢复快照后的 B03 严格 nested/source-study、B07 `/4` native 字典、B09 source-group 空间先验与同 producer QR/df 修复；记录 exact structural null、保存语义门、实际调用链和未完成边界。仅为 bounded software/C-development evidence，不是公共效能或成人确认。
 
-- [2026-10-11 P0 续接：inner replay 与 B12 runner](research_resume_20261011.zh.md#p0续接)：B03 同一次 nested run 的 inner producer capture/replay、B12 requested roster/alias/failure/source producer manifest 门禁，以及 FrozenTrial list/tuple 合同修复；完整 source→target execution 仍未签收。
+- [2026-10-11 P0 续接：inner replay 与 B12 runner](research_resume_20261011.zh.md#p0续接inner-replay-与-b12-runner)：B03 同一次 nested run 的 inner producer capture/replay、B12 requested roster/alias/failure/source producer manifest 门禁，以及 FrozenTrial list/tuple 合同修复；完整 source→target execution 仍未签收。
 - [2026-10-11 B12最终账本修后复签](research_resume_20261011.zh.md#b12最终账本修后复签)：原15项独立探针修后通过、actual terminal coverage与source声明关系恢复、真实serial最终report与重复finalize摘要一致；接受范围为跨阶段软件关系。
 - [2026-10-11 CalibrationPrefix保存重放与调用端复签](research_resume_20261011.zh.md#calibrationprefix保存重放与调用端复签)：actual prefix/inner/future捕获、真实空间与失败策略、混合概率复算准入、一次包校验和紧凑凭证；候选程序strict nested与公共效能另验。
 - [2026-10-11 原云候选面板完整分母与配对读数](research_resume_20261011.zh.md#原云候选面板完整分母与配对读数)：8人/152共同请求，原80对照及20指定导出；grouped的NLL风险与source→scratch方向明确，原failed producer不改签。
@@ -22,6 +22,7 @@
 - [B05固定物理先验1728格终态](research_mechanisms_20261009.zh.md#b05-固定物理先验-1728-格终态)：48个C unit、1728 requested logical cells、原中断恢复、source/input/array绑定、强MN门禁失败项和实际资源限制。该报告只支持给定冻结噪声与plugin prior机制读数。
   后续保存态独立归因定位59项RED到病态dense-H/Cholesky oracle精度损失，原门结果不改判；现行posterior root持久化与预测调用链另已核实。
 
+- [全仓冗余审查与活动工具退役](redundancy_cleanup_20261008.zh.md)：按实际 caller、动态入口、保存格式与 Git 来源删合重复逻辑和旧临时工具；原始数据、cache、模型与结果保留。
 - [科研与代码集成](research_integration_20261008.zh.md)：两窗口单作者分工、总并发10、科研单seed/大版本三seed；字典重编译与容量诊断跨平台风险、独立机制代码的实际实施和未验收范围。
 
 - [当前公共消费者：风险、概率与实测空间](current_public_consumers_20261008.zh.md)：固定C质量loss、实际prior/β后验与LLR分开、Cz6 raw/真实执行family、温度控制子集与概率池完整分母；两轴零关键遗留、真实源K0/OOF和A01单raw验证，完整效能另验收。
