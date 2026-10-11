@@ -1,0 +1,40 @@
+{
+  "schema": "n2p3_cache_author_archive_request_binding/1",
+  "status": "requested_app_archive_queued_not_confirmed",
+  "worktree_identity_key": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net",
+  "source_commit": "d0edc17058d48e8dc577c232a21ca74b938bda7a",
+  "review": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CACHE_AUTHOR_CLEANUP\\ARCHIVE_BOUNDARY.review.json",
+    "sha256": "babdb49dee2bb86ca2fe252c37f0a780431d01c264af207dab142534b611a39f",
+    "bytes": 14409
+  },
+  "handoff": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CACHE_AUTHOR_CLEANUP\\ARCHIVE_BOUNDARY.zh.md",
+    "sha256": "afed3fdd746965cda5d9a7c865a6941e6c17a8da43aee11f21bbdcd3e1d7b2dd",
+    "bytes": 3276
+  },
+  "original_recovery_binding": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\doc\\assets\\research_resume_20261011\\cache_author_recovery_binding.json",
+    "sha256": "50e9b969d2c5096eb4fd47dd903a49af5f88ae30a56a8f7851f7fc6092758e35",
+    "bytes": 6408
+  },
+  "recovery_store": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\frozen\\local_history\\cache-author-recovery",
+  "manifest_sha256": "5535a7ef5dcc2912437d4b9e4853a33852197a94504a4d3ea90cdc966d253c79",
+  "retained_paths": 1285,
+  "source_files": 648,
+  "Paper_files": 59,
+  "cache_source_owners": 4,
+  "used_union": {
+    "object_count": 959,
+    "object_bytes": 275397774,
+    "missing_objects": [],
+    "object_SHA_mismatches": [],
+    "all_source_owner_SHA_included": true,
+    "overlap_with_initial_unreferenced_list": []
+  },
+  "runtime_dependencies": [],
+  "requested_action": "Codex app archive_worktree",
+  "tool_response": "queued",
+  "payload_objects_removed": 0,
+  "original_D_dirty_work_preserved": true
+}

@@ -1,0 +1,169 @@
+{
+  "schema": "n2p3_bnci_episode_C600_R10_local_independent_acceptance/1",
+  "status": "saved_result_archive_queue_source_passed",
+  "scope": "public_calibration_development; episode C600/R10; separate from P1 and label-K prefix selector",
+  "execution_source_sha256": "fc9d7aa507bb3b4cce5de52eff15532cd2210fb656dc2859eb5b33818bb6b030",
+  "source_checkpoint_sha256": "aabb2a43ffd7c2b862a169d319fd3a548928f653d5fb4dd274d10739900c7b68",
+  "source_producer_sha256": "4b075a2df69b781f03844ad7efe2e3d4a2b64342118ea291bb85e1aa99dc2127",
+  "source_commit": "5c8fc21879984948f08c4d0fd71b33e0f479319c",
+  "source_commit_role": "base_commit_only",
+  "source_working_tree_snapshot": true,
+  "source_archive_members_verified": 535,
+  "result_archive_sha256": "97a23a87f81e1927cdb825e359ee776e220eb6cee7a934265dce7d1d257ffb35",
+  "result_archive_members_verified": 93,
+  "report_sha256": "a300ffa8bd8980a2bc1e72f5a6ff28f7352d9000724ac14bf5a18f8b965654ec",
+  "plan_sha256": "2b3312fc28b90589d2d21e06eca8e777364977a2303756b5d9564ccb4d89009d",
+  "requested_sha256": "23ace1351971a5e9a06ca0c918a1fcba28a6552a9cbc4e3581e95ebd106d6dc7",
+  "seed_pairs": [
+    [
+      20260918,
+      20260918
+    ]
+  ],
+  "participants": 8,
+  "requested_per_arm": 240,
+  "models": 24,
+  "target_fits_in_original_run": 16,
+  "source_fits_in_original_run": 0,
+  "primary_horizon": 10,
+  "terminal_censored_episodes": 0,
+  "coverage_per_arm": 1.0,
+  "queue_exit": 0,
+  "science_exit": 0,
+  "queue_owned_processes_after_exit": 0,
+  "new_fit_score_model_load_calls": 0,
+  "maximum_numeric_error": 8.881784197001252e-16,
+  "validation_layers": {
+    "saved_probabilities_receipts_models": "local stream SHA and independent manual metrics passed",
+    "queue_science_workers": "saved terminal actual_exit and worker retirement records passed",
+    "executed_source": "local exact 535 member source archive and relevant code reviewed",
+    "preparation": "cloud read-only proof matches cohort SHA; raw cache payload not locally present",
+    "source_exclusion": "actual executed code enforces embedded admission/seed/study exclusion per arm; checkpoint payload not locally read"
+  },
+  "remaining_payload_verification": [
+    "original 8 prepared ledgers/cache arrays for local C/future raw support verification",
+    "source checkpoint embedded identity/study metadata for local exclusion proof",
+    "queue external exit receipt bytes (terminal retains SHA)"
+  ],
+  "verification": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\verification.json",
+    "sha256": "eb2e8a8e96d99c83dd6616dcfc066fa3b3f0c8a7723a7a1d7fa3dd54a33d34f1"
+  },
+  "verifier": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\verify_bnci_q1.py",
+    "sha256": "37f103e31a86efb92f66a4d05fea403f0c9ae421a1fae8e32d4df2de814e2be0",
+    "actual_exit_code": 0
+  },
+  "metrics": {
+    "source_zero_shot": {
+      "requested": 240,
+      "correct": 12,
+      "probability_count": 240,
+      "macro_hit": 0.05,
+      "micro_hit": 0.05,
+      "macro_nll": 3.544351116677722,
+      "macro_brier": 0.969382864828015,
+      "macro_probability_coverage": 1.0,
+      "micro_probability_coverage": 1.0,
+      "censored": 0
+    },
+    "source_full_fine": {
+      "requested": 240,
+      "correct": 165,
+      "probability_count": 240,
+      "macro_hit": 0.6875,
+      "micro_hit": 0.6875,
+      "macro_nll": 1.2953607279207615,
+      "macro_brier": 0.4709267266132763,
+      "macro_probability_coverage": 1.0,
+      "micro_probability_coverage": 1.0,
+      "censored": 0
+    },
+    "matched_scratch": {
+      "requested": 240,
+      "correct": 173,
+      "probability_count": 240,
+      "macro_hit": 0.7208333333333333,
+      "micro_hit": 0.7208333333333333,
+      "macro_nll": 1.4998928033149135,
+      "macro_brier": 0.4266258961660774,
+      "macro_probability_coverage": 1.0,
+      "micro_probability_coverage": 1.0,
+      "censored": 0
+    }
+  },
+  "fullfine_minus_scratch": {
+    "baseline": "matched_scratch",
+    "candidate": "source_full_fine",
+    "probability_pairs": 240,
+    "delta_macro_hit": -0.03333333333333334,
+    "delta_macro_nll": -0.20453207539415186,
+    "delta_macro_brier": 0.044300830447198875,
+    "rescued": 19,
+    "harmed": 27,
+    "delta_correct": -8
+  },
+  "root_review": {
+    "status": "accepted_saved_results_archive_queue_and_execution_source",
+    "handoff": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\HANDOFF.zh.md",
+      "sha256": "ee9c195bb2fc6e73bb869439bae9958477f00d947ab532c7f2303ffc41e779d8",
+      "bytes": 6668
+    },
+    "acceptance": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\acceptance.json",
+      "sha256": "94a6163c6121493aed1420db613bf049b4102c6008514cf529b534b2226b1021",
+      "bytes": 4429
+    },
+    "maximum_comparison_error": 8.881784197001252e-16,
+    "no_additional_fit_score_model_load": true
+  },
+  "participant_nll_diagnosis": {
+    "improved": [
+      "A01",
+      "A03",
+      "A04"
+    ],
+    "worsened": [
+      "A02",
+      "A05",
+      "A06",
+      "A07",
+      "A08"
+    ],
+    "A04_delta": -2.8585599197862477,
+    "A04_contribution_to_all8_mean": -0.35731998997328096,
+    "remaining7_contribution_to_all8_mean": 0.1527879145791291,
+    "remaining7_mean_diagnostic_only": 0.17461475951900468,
+    "main_roster_unchanged": true
+  },
+  "figure": {
+    "provenance": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\analysis\\figure_provenance.json",
+      "sha256": "c20953f671f44f37dd1fe964a8f6c28d9e1a622401e54f03de2e70e24d29f354",
+      "bytes": 1371
+    },
+    "png": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\analysis\\paired_participant_deltas.png",
+      "sha256": "c89387149bc3d67922d7876518dccbde9810298359b69ed4a8008f8fd13cf413",
+      "bytes": 146574
+    },
+    "pdf": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\analysis\\paired_participant_deltas.pdf",
+      "sha256": "31204af8ca221016126531398048656ede11716ad0feb78c7e497d281d227915",
+      "bytes": 28611
+    },
+    "csv": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\analysis\\paired_participant_data.csv",
+      "sha256": "113433368ffa125e7362546206dbf224e59d7778a70584aeb45c8b9b47a3cc7c",
+      "bytes": 1331
+    },
+    "script": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\plot_paired.py",
+      "sha256": "8ab61040e5d87a5c11a801c65ec88ee835303664fbc41db757ff08e260a92454",
+      "bytes": 6073
+    },
+    "visually_reviewed": true,
+    "description": "participant paired source full fine minus scratch; full8 mean retained; descriptive values without intervals"
+  }
+}

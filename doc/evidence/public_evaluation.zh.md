@@ -107,6 +107,22 @@ Q1 已按首五个完整 raw episode 的 episode-budget 程序封库：61 人、
 
 四个旧zero-shot分片在fit前因16-channel/causal缓存与source合同不符而拒绝，新增fit为0。新builder正接显式profile/channel owner；实际source的同名双向profile为`baseline=none`，个人默认常量的`mean_only`另保原用途。校准raw先隔离再零相位处理，缺FZ/PO8保slot mask且CZ必须实测；三臂调用继续核同architecture、固定mass风险及fresh-load重放。已完成22文件固定来源的独立审阅和零fit反例，完整本地handoff在`tmp/BI2014a_Q1_AUDIT/independent_audit.zh.md`，摘要及SHA并入上述队列计划。
 
+### BNCI C600/R10 完整 episode 队列与逐人分析
+
+BNCI2014-008首五个完整selection提供C600，随后每人30个完整R10 episode作later评价；八人三臂共24保存模型、每臂240 requested。独立流式核验完整93个结果归档成员及535个实际执行源码成员，模型/receipt/保存概率与队列终态一致；queue、science和八个worker均exit0，owned tree均退役。原程序新增source fit为0、target fit为16，每fit32 epochs/320 updates/19200 draws；本次复算新增fit/model-load/EEG-score为0。
+
+| arm | 命中（240 requested） | participant-macro hit | NLL | Brier |
+|---|---:|---:|---:|---:|
+| source_zero_shot | 12 | 0.050000 | 3.544351 | 0.969383 |
+| source_full_fine | 165 | 0.687500 | 1.295361 | 0.470927 |
+| matched_scratch | 173 | 0.720833 | 1.499893 | 0.426626 |
+
+三臂概率覆盖均100%，全部episode为R10、无censor；每人均30请求，宏/微hit在本队列相等。fullfine−scratch命中差为−3.333个百分点，救回19段、损害27段；NLL差−0.204532，Brier差+0.044301。scratch在命中和Brier上较好，全微调在平均NLL上较好。
+
+逐人配对揭示平均NLL差的来源：只有A01/A03/A04改善，另外五人变差。A04差为−2.858560，对八人主均值贡献−0.357320；其余七人的贡献合计+0.152788，其自身均值为+0.174615。这是保留完整八人主分母的影响诊断。A04 fullfine NLL为3.717597，scratch为6.576157，前者仍高于36选一均匀参考3.583519；平均风险改善主要对应A04严重错判缓解，多数人的全微调NLL与Brier本次仍较差。
+
+保存结果、归档、源码与终态已经本地独立接受；prepared/raw和source checkpoint本体的输入审阅另等云窗口返回原owner proof，记录在同一绑定的validation layers。episode预算、本次later支持与label-K prefix selector分别解释；BI与BNCI的配方/预算不同，保各库自身读数。实际来源、830项概率/指标独立复算、每人表和可导出的PNG/PDF/CSV见[BNCI终态绑定](../assets/research_resume_20261011/bnci_q1_queue_acceptance_binding.json)；逐人图的三个轴是fullfine−scratch，hit越高越好，NLL/Brier越低越好。
+
 ## 逐任务horizon接口
 
 指标owner已支持明确的完整episode模式：传入`requested_evidence_levels: Mapping[DecisionKey, int]`，省略scalar `evidence_level`。计划必须包含全部原requested keys，包括typed失败、samples缺失和两臂都没有输出的任务；每项保其真实R。指标采用`n2p3_candidate_probability_metrics/2`及`endpoint=full_episode`，保存完整不可变horizon计划和绑定原DecisionPlan的digest。原fixed-R入口保持v1结构。

@@ -13,7 +13,7 @@
 
 ## 当前研究
 
-当前按[愿望清单进展](evidence/wishlist_progress_20261010.zh.md)推进123项。B03真正prefix整程序选择及保存重放/public parent准入已经集成；P1数值续评16/16完成、0新fit，真实平稳prefix compiler已接入并准备新law配对。source cache/shared score、conditional公共白化及逐decision horizon已接入。原云候选面板完整分母和100行配对读数已复核；BI2014a首五episode三臂61人已封库，下一BNCI episode队列及独立label-K selector分别推进。结论集中维护在[校准与选择](evidence/calibration_and_selection.zh.md)、[响应与噪声](evidence/response_and_noise.zh.md)、[公共评估](evidence/public_evaluation.zh.md)和[执行与集成](evidence/execution_and_integration.zh.md)；六指南持有活动规范，各产物保持自己的来源与分母。
+当前按[愿望清单进展](evidence/wishlist_progress_20261010.zh.md)推进123项。B03真正prefix整程序选择及保存重放/public parent准入已经集成；P1数值续评16/16完成、0新fit，真实平稳compiler与新producer strict export已通过独立审阅，本地RAM阻断后交云窗口执行新law配对。source cache/shared score、conditional公共白化及逐decision horizon已接入。BI61人与BNCI8人的episode三臂队列已完成，保存结果独立复算；BNCI全微调的NLL改善集中A04，scratch命中/Brier较好。独立label-K selector旧entry003失败，按原四人完成产物与完整八人分母恢复。结论集中维护在[校准与选择](evidence/calibration_and_selection.zh.md)、[响应与噪声](evidence/response_and_noise.zh.md)、[公共评估](evidence/public_evaluation.zh.md)和[执行与集成](evidence/execution_and_integration.zh.md)；六指南持有活动规范，各产物保持自己的来源与分母。
 
 科研窗口负责科学合同与代码最终集成，云端窗口负责唯一执行调度。科研用一个完整 source→target seed，大版本校验才三个；两窗口合计最多10并发，科研子代理没有我方时间或额度上限。职责内自主推进，只集中同步重要交付、接口变化和阻塞。
 

@@ -26,6 +26,8 @@ P1 stationary panel 的基础实现与两处Path修复已合入 `929334a/71ab581
 
 近期旧日期页已经先物理归档、逐member验证，再合并为四个主题页；原binding、MAT、缓存、模型和结果保持原位置。源页面恢复方式见[主题整理历史清单](../../frozen/research_topic_documents_history.manifest.json)。后续研究结论更新主题页，代码使用方式更新原六指南。
 
+已交付cache作者树经独立恢复复核后请求应用归档：1,285个保留路径、648源码、59篇Paper与四个source owner可恢复，完整used_union为959对象/275,397,774 bytes、缺件/哈希错误0；七个活动代码/配置根与本机进程未见运行依赖，旧验收locator由恢复映射解释。应用目前返回queued，尚未确认退役；恢复载荷和冗余对象均未删除。请求与实际状态见[工作树整理绑定](../assets/research_resume_20261011/cache_author_archive_request_binding.json)。
+
 ## 恢复身份与文件所有权
 
 原`wishlist-integration`工作树已被应用归档。最后已接受科研提交为`1ca4619a79d5a8e4b536ae1960ea7029604801ad`；Git恢复快照`99352070d267141db8651c26c5749a564f6762c6`以它为直接父提交，保存12文件的待审增量。恢复快照不是科研验收。本次从该快照建立`codex/research-integration-20261011`，实际路径为`C:/Users/chent/.codex/worktrees/research-integration/n2p3-net`。原ignored暂停检查点、旧独立review与诊断目录在原路径未找到，不将其称作已恢复产物。
