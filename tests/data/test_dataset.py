@@ -161,3 +161,19 @@ def test_load_dataset(tmp_path):
     strict = load_dataset(records, preprocessing=preprocessing_spec_from_contract(DEFAULT_P300_DATA_CONTRACT))
     np.testing.assert_array_equal(strict[0].data, s.data)
     assert strict[0].metadata["preprocessing_execution"]["output"]["shape"] == list(s.data.shape)
+
+
+def test_event_table_onsets_are_relative_to_a_cropped_recording(tmp_path):
+    import mne
+
+    from data.dataset import EEGRecord, resolve_record_events
+
+    raw = mne.io.RawArray(np.zeros((1, 2000)), mne.create_info(["Cz"], 100.0, "eeg"),
+                          first_samp=1000, verbose=False)
+    table = tmp_path / "events.tsv"
+    table.write_text("onset\tevent_id\n2.0\t1\n", encoding="utf-8")
+    events, _ = resolve_record_events(raw, EEGRecord(tmp_path / "raw.fif", "s1", event_file=table))
+    assert events[0, 0] == 1000 + 200
+    np.save(tmp_path / "events.npy", np.array([[200, 0, 1]]))
+    with pytest.raises(ValueError, match="cropped recording"):
+        resolve_record_events(raw, EEGRecord(tmp_path / "raw.fif", "s1", event_file=tmp_path / "events.npy"))
