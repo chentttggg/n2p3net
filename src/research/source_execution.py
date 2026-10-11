@@ -796,7 +796,8 @@ class _HostMemoryState:
                 raise RuntimeError("nested allocation requested after the owned task tree retired")
             state, resources = self.state, self.resources
             native = resources["native_threads_per_worker"]
-            desired = min(resources["target_workers"], max(requested, resources["cpu_budget"] // max(1, state["groups"])))
+            # Never grant more nested workers than the caller has jobs; idle grants block other phases.
+            desired = min(resources["target_workers"], requested)
             cpu_free = (resources["cpu_budget"] - state["cpu_threads"]) // native + 1
             gpu_free = (resources["gpu_slots"] - state["gpu_groups"] - state["nested_gpu_workers"] + 1
                         if gpu_backed else desired)
@@ -964,6 +965,8 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
         if (not isinstance(floor, dict) or set(floor) != {"cpu_threads", "gpu_workers"}
                 or any(type(value) is not int or value < 1 for value in floor.values())):
             raise ValueError("cloud_resource_floor requires positive cpu_threads and gpu_workers")
+        if torch.device(device).type != "cuda":
+            raise ValueError("declared cloud GPU worker floor requires a CUDA device; do not run it on CPU")
         if (budget < floor["cpu_threads"] or slots < floor["gpu_workers"]
                 or target < floor["gpu_workers"] or groups < min(group_count, floor["gpu_workers"])):
             raise ValueError("resources cannot meet declared cloud CPU/GPU worker floor; do not silently serialize")

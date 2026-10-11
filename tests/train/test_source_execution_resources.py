@@ -290,3 +290,27 @@ def test_ready_whole_study_folds_do_not_drop_pending_or_failed_members():
     assert failed["ready"] == [groups[0]] and len(failed["failed"]) == 3
     assert not failed["pending"]
     assert all(len(outer["source_studies"]) == 11 for outer, _ in groups)
+
+
+def test_cloud_floor_rejects_a_cpu_device_instead_of_counting_cpu_slots_as_gpu_workers():
+    import json
+
+    plan = json.loads((Path(__file__).resolve().parents[2] / "configs/cloud_training_resources.json").read_text())
+    with pytest.raises(ValueError, match="floor requires a CUDA device"):
+        resolve_source_resources(plan, 5, "cpu", cpu_count=25, free_host_bytes=88 * 2**30)
+
+
+def test_nested_admission_never_grants_more_workers_than_requested_jobs():
+    import multiprocessing
+
+    resources = resolve_source_resources({"cpu_budget": 25, "source_workers": 4, "target_workers": 4},
+        4, "cpu", cpu_count=25, free_host_bytes=128 * 2**30)
+    with multiprocessing.get_context("spawn").Manager() as manager:
+        admission = HostMemoryAdmission(manager, resources)
+        with admission.source_group(), admission.target_workers(1) as workers:
+            assert workers == 1
+            assert admission.record()["nested_target_workers"] == 0
+            second = admission.reserve_phase("source", cpu_threads=resources["native_threads_per_worker"],
+                memory_bytes=resources["source_worker_memory_bytes"])
+            assert second is not None
+            admission.release_phase(second)
