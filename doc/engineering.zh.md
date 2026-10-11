@@ -2,6 +2,8 @@
 
 当前科研集成树为`codex/research-integration-20261011`，P1数值和prefix整程序选择各有独立作者/审阅者树，原用户dirty checkout及云端执行树保留其所有权。实际模块、调用链与能区分对错的反例优先；已通过的范围有新改动或疑点才复验。研究结论维护在四个[主题页](evidence/README.md#当前主题结论)，归并旧页前物理归档并逐member验SHA；原数据、模型、结果和producer binding留原位置。当前云状态以云窗口的实际冻结源码与终态凭证为准；下文日期化状态按其记录时期解释。
 
+Prefix恢复使用新输出和精确reviewed source transition，旧failed队列及producer只读。源码变化的角色白名单由恢复owner持有；科研主树的其它metadata/科学更新不会自动进入旧source10的恢复授权。一次调用内复用已准入包，下一调用重新准入原字节；原四人的真实parent replay仍保实际原输入和完整概率核验，新四人按原矩阵拟合。新增剩余actor输出边界已由两种原目录反例验证，见[集成证据](assets/research_resume_20261011/prefix_cloud_admission_acceptance_binding.json)。
+
 2026-10-10科研成果在独立`wishlist-integration`工作树（base `7bd984a`）整合，公共云执行继续绑定accepted496。逐读实际owner与完整调用链，迁移必要反例并执行受影响合同；已通过的旧矩阵、大probe与全集不因整理或方法更名重复运行。过程性材料只在当前仍必要时保留，本轮遵照用户最新要求不重复清理。源码、验证和剩余出口见[当前进展](evidence/wishlist_progress_20261010.zh.md)。
 
 2026-10-08用户更新：科研与代码最终集成由科研窗口持有，云端窗口持有唯一资源调度、准备、启动、监控和既有结果验收。两窗口总并发最多10，按双方实际工作与活跃数分配，不固定窗口配额；增开或恢复先核总量。科研子代理不设我方期限或额度；以完整源码审查、真实调用链和必要反例验证推进，不重复本地全集或无依据门禁。集成须仔细审阅实际模块逻辑，可交详细handoff给独立子代理，不能凭作者摘要或测试数量直接合入。当前科研云训练单seed，大版本才三seed；具体作用域见[当前集成状态](evidence/research_integration_20261008.zh.md)。外部文件、fit/时间授权和执行身份的检查保留，已准入不可变内部状态由唯一owner消费。

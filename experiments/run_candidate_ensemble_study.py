@@ -876,23 +876,25 @@ def candidate_tasks(plan_path, output, resources, *, dependencies=(), task_prefi
 
 
 def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger):
-    from research.prefix_selection_replay import _load_graph, replay_prefix_selection
+    from research.prefix_selection_replay import _SelectionReplayAdmission
 
     expected = _prefix_selection_requests(plan, scopes)
-    actual = {request["package"]: request for request in ledger.get("selection_fit_requests", [])}
-    if actual != expected:
+    request_rows = ledger.get("selection_fit_requests", [])
+    actual = {request["package"]: request for request in request_rows}
+    if len(actual) != len(request_rows) or semantic_sha256(actual) != semantic_sha256(expected):
         raise ValueError("nested prefix prefit ledger changed its declared complete programme requests")
     started = set()
     for path in sorted((directory / "selection_fit_receipts").glob("*.started.json")):
         request = _read_sealed_record(path)
-        if request != expected.get(request.get("package")):
+        if semantic_sha256(request) != semantic_sha256(expected.get(request.get("package"))):
             raise ValueError("nested prefix started receipt differs from original programme request")
         started.add(request["package"])
     failed = {}
     for path in sorted((directory / "selection_fit_receipts").glob("*.failed.json")):
         receipt = _read_sealed_record(path)
         request = receipt["request"]
-        if request != expected.get(request.get("package")) or request["package"] not in started:
+        if (semantic_sha256(request) != semantic_sha256(expected.get(request.get("package")))
+                or request["package"] not in started):
             raise ValueError("nested prefix failed receipt lacks its original programme attempt")
         failed[request["package"]] = receipt
     admitted, summaries = {}, []
@@ -916,7 +918,7 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger):
         seal = _read_sealed_record(path)
         request = seal["request"]
         name = request["package"]
-        if name not in expected or request != expected[name] or name in admitted:
+        if name not in expected or semantic_sha256(request) != semantic_sha256(expected[name]) or name in admitted:
             raise ValueError("nested prefix package differs from its prefit original programme")
         package = directory / name
         if package.is_symlink() or not package.resolve().is_relative_to(directory.resolve()):
@@ -924,7 +926,8 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger):
         for receipt in seal["files"]:
             if _file_receipt(directory / receipt["path"], directory) != receipt:
                 raise ValueError("nested prefix model/graph byte seal changed")
-        graph = _load_graph(package, expected_graph_sha256=seal["graph_sha256"])
+        graph_owner = _SelectionReplayAdmission(package, expected_graph_sha256=seal["graph_sha256"])
+        graph = graph_owner.graph
         selection = graph["selection"]
         if (semantic_sha256(selection["candidates"]) != semantic_sha256(request["candidates"])
                 or selection["baseline"] != request["baseline_name"]
@@ -942,9 +945,8 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger):
             raise ValueError("nested prefix saved replay summary changed its actual selected programme")
         sources = {expert: snapshots[request["source_seed"]] for expert in request["source_checkpoint_sha256"]}
         with cpu_thread_budget(1):
-            replay = replay_prefix_selection(package, prefix=views.calibration[request["K"]],
-                prefix_compiler=views.prefix_compiler, future_views=views.decisions, source_checkpoints=sources,
-                expected_selection_sha256=summary["selection_sha256"], expected_graph_sha256=seal["graph_sha256"])
+            replay = graph_owner.replay(prefix=views.calibration[request["K"]],
+                prefix_compiler=views.prefix_compiler, future_views=views.decisions, source_checkpoints=sources)
         if (summary["producer_count"] != replay["producer_count"]
                 or summary["exact_score_checks"] != replay["exact_score_checks"]):
             raise ValueError("nested prefix actual parent replay did not retain captured outputs")
@@ -981,7 +983,8 @@ def _admit_candidate_participant(task, outcome, plan, source):
     if scopes["source_sha256"] != plan["records"][index]["sha256"]:
         raise ValueError("candidate participant scopes differ from its actual raw record")
     selection_packages, selection_fits, selection_started, selection_failed = _admit_prefix_selection_packages(directory, group, plan, scopes, ledger)
-    if ledger["pipeline_requests"] != _resolved_pipeline_requests(plan, index, ledger["requested"], scopes):
+    if semantic_sha256(ledger["pipeline_requests"]) != semantic_sha256(
+            _resolved_pipeline_requests(plan, index, ledger["requested"], scopes)):
         raise ValueError("candidate prefit request ledger omits or changes declared pipeline requests")
     requested_keys = {(entry["participant_key"], entry["decision_id"]) for entry in ledger["requested"]}
     scope_keys = {(view["participant_key"], view["decision_id"]) for view in scopes["test_views"]} if "test_views" in scopes else {
@@ -1003,7 +1006,8 @@ def _admit_candidate_participant(task, outcome, plan, source):
         seal = _read_sealed_record(path)
         request = seal["request"]
         package_name = request["package"]
-        if package_name not in requests or request != requests[package_name] or package_name in seals:
+        if (package_name not in requests or semantic_sha256(request) != semantic_sha256(requests[package_name])
+                or package_name in seals):
             raise ValueError("saved candidate package differs from its prefit authority")
         package = directory / package_name
         if not package.resolve().is_relative_to(directory.resolve()) or package.is_symlink():
@@ -1128,14 +1132,14 @@ def _admit_candidate_participant(task, outcome, plan, source):
         fits.extend(record["fits"])
     for path in sorted((directory / "fit_receipts").glob("*.started.json")):
         request = _read_sealed_record(path)
-        if request != requests.get(request["package"]):
+        if semantic_sha256(request) != semantic_sha256(requests.get(request["package"])):
             raise ValueError("candidate inflight fit differs from its request")
         started.add(request["package"])
         if request["package"] not in seals and not path.with_name(path.name.replace(".started.json", ".failed.json")).exists():
             in_flight.append({"request": request, "status": "interrupted_unknown", "physical_successful_fits": None})
     for path in sorted((directory / "fit_receipts").glob("*.failed.json")):
         record = _read_sealed_record(path)
-        if record["request"] != requests.get(record["request"]["package"]):
+        if semantic_sha256(record["request"]) != semantic_sha256(requests.get(record["request"]["package"])):
             raise ValueError("candidate failed fit differs from its prefit request")
         failed_fits.append(record)
     predictions = [_read_sealed_record(path) for path in sorted((directory / "prediction_receipts").glob("*.json"))]
@@ -1263,6 +1267,9 @@ class CandidateCloudProgramme:
         self.task_prefix, self.dependencies = task_prefix, tuple(dependencies)
         self.input_admission = input_admission
         self.base_plan = json.loads(self.original_plan_path.read_bytes())
+        from research.prefix_recovery import preserve_prefix_producer_output
+
+        preserve_prefix_producer_output(self.base_plan, self.output)
         self.output.mkdir(parents=True, exist_ok=False)
         self.plan_path = self.output / "bound_plan.json"
         self.plan = {**self.base_plan,
@@ -1276,11 +1283,13 @@ class CandidateCloudProgramme:
             self.plan["source_seed_catalog"] = [{**entry, "path": str((self.original_plan_path.parent / entry["path"]).resolve())}
                                                 for entry in self.plan["source_seed_catalog"]]
         self.source, self.normalized, self.admitted, self.admission_failures = None, None, {}, {}
+        self.recovery_binding = None
         _write_candidate_json(self.output / "consumer_requests.json", {"schema": "n2p3_candidate_consumer_requests/1",
             "base_plan_sha256": _file_receipt(self.original_plan_path, self.original_plan_path.parent)["sha256"],
             "requests": [request for index in range(len(self.plan["records"])) for request in _pipeline_requests(self.plan, index)]}, input_admission)
         _write_candidate_json(self.plan_path, self.plan, input_admission)
         self.tasks = candidate_tasks(self.plan_path, self.output, resources, dependencies=self.dependencies, task_prefix=task_prefix)
+        self.task_roster = tuple(self.tasks)
 
     def bind_source(self, source_seed_catalog=None, source_snapshot=None):
         if source_seed_catalog is not None:
@@ -1291,7 +1300,36 @@ class CandidateCloudProgramme:
         self.normalized, self.source, _ = _prepare_candidate_plan(self.plan_path, load_sources=False)
         _write_candidate_json(self.output / "plan.json", self.normalized, self.input_admission)
         _write_candidate_json(self.output / "executed_source.json", self.source, self.input_admission)
+        if self.plan.get("prefix_recovery") is not None:
+            self._recover_participants()
         return self.tasks
+
+    def _recover_participants(self):
+        from research.cloud_execution import CloudResult
+        from research.prefix_recovery import load_prefix_recovery
+
+        producer = load_prefix_recovery(self.normalized, self.source, output=self.output, consumer_root=ROOT)
+        for participant in producer.participants:
+            current = self.task_roster[participant.record_index]
+            original = replace(current, output=str(participant.group),
+                resources=replace(current.resources, native_threads=participant.native_threads))
+            outcome = CloudResult(original.task_id, "completed",
+                str(participant.group / f"participant_{participant.record_index:03d}" / "result.json"))
+            with cpu_thread_budget(1):
+                admitted = _admit_candidate_participant(original, outcome, producer.plan, producer.source)
+            admitted["execution_binding"] = {"role": "original_producer_zero_fit_parent_replay",
+                "producer_source_digest": semantic_sha256(producer.source),
+                "producer_plan_sha256": producer.binding["original_plan_sha256"],
+                "producer_native_threads": participant.native_threads, "consumer_native_threads": 1,
+                "consumer_source_digest": semantic_sha256(self.source),
+                "original_group": str(participant.group)}
+            self.admitted[current.task_id] = admitted
+            _write_candidate_json(self.output / f"recovered_participant_{participant.record_index:03d}.json",
+                                  admitted["execution_binding"], self.input_admission)
+        self.recovery_binding = producer.binding
+        recovered = set(producer.binding["reused_record_indexes"])
+        self.tasks = [task for task in self.task_roster if task.arguments["record_index"] not in recovered]
+        _write_candidate_json(self.output / "prefix_recovery_binding.json", self.recovery_binding, self.input_admission)
 
     def on_finished(self, outcome):
         tasks = {task.task_id: task for task in self.tasks}
@@ -1304,6 +1342,10 @@ class CandidateCloudProgramme:
         try:
             result = _admit_candidate_participant(tasks[outcome.task_id], outcome, self.normalized, self.source)
             if result is not None:
+                if self.recovery_binding is not None:
+                    result["execution_binding"] = {"role": "new_producer",
+                        "producer_source_digest": semantic_sha256(self.source),
+                        "consumer_source_digest": semantic_sha256(self.source)}
                 self.admitted[outcome.task_id] = result
         except Exception as error:
             self.admission_failures[outcome.task_id] = f"{type(error).__name__}: {error}"
@@ -1316,7 +1358,7 @@ class CandidateCloudProgramme:
     def finalize(self, results, *, input_admission=None):
         owner = input_admission if input_admission is not None else self.input_admission
         outcomes = [results[task.task_id] for task in self.tasks]
-        participants = [self.admitted[task.task_id] for task in self.tasks if task.task_id in self.admitted]
+        participants = [self.admitted[task.task_id] for task in self.task_roster if task.task_id in self.admitted]
         failures = [{"task_id": value.task_id, "status": value.status, "failure": value.failure,
             "supplementary_failures": value.supplementary_failures} for value in outcomes if value.status != "completed"]
         if self.source is not None and _executing_source() != self.source:
@@ -1326,25 +1368,29 @@ class CandidateCloudProgramme:
                 "evidence_scope": self.plan["evidence_scope"], "participants": participants,
                 "requested_records": self.plan["records"], "execution_failures": failures,
                 "admission_failures": self.admission_failures,
-                "requested_pipeline_cells": [request for task in self.tasks for request in
+                "requested_pipeline_cells": [request for task in self.task_roster for request in
                     (self.admitted[task.task_id]["pipeline_requests"] if task.task_id in self.admitted else
                      [{**value, "status": results[task.task_id].status, "failure": results[task.task_id].failure}
                       for value in _pipeline_requests(self.plan, task.arguments["record_index"])])],
-                "unresolved_record_indexes": [task.arguments["record_index"] for task in self.tasks if task.task_id not in self.admitted],
-                "decision_denominator_complete": len(participants) == len(self.tasks),
+                "unresolved_record_indexes": [task.arguments["record_index"] for task in self.task_roster if task.task_id not in self.admitted],
+                "decision_denominator_complete": len(participants) == len(self.task_roster),
                 "source_digest": None if self.source is None else semantic_sha256(self.source)}
             if participants:
                 measured = _finalize_candidate_report(self.normalized, self.source, participants, self.output,
                     status="failed", persist=False)
                 report.update(decision_plan=measured["decision_plan"], metrics=measured["metrics"], contrasts=measured["contrasts"],
                     metrics_scope="all_resolved_requested_decisions" if report["decision_denominator_complete"] else "resolved_subset_with_unresolved_roster")
+            if self.recovery_binding is not None:
+                report.update(prefix_recovery=self.recovery_binding,
+                    participant_execution={str(row["record_index"]): row["execution_binding"] for row in participants})
             _write_candidate_json(self.output / "result.json", report, owner)
             _write_candidate_json(self.output / "progress.json", {"status": "failed", "resolved_subjects": len(participants),
                 "completed_subjects": sum(row["status"] == "completed" for row in participants)}, owner)
             return report
-        if len(participants) != len(self.tasks):
+        if len(participants) != len(self.task_roster):
             raise ValueError("candidate programme lacks independently admitted participant results")
-        return _finalize_candidate_report(self.normalized, self.source, participants, self.output, input_admission=owner)
+        return _finalize_candidate_report(self.normalized, self.source, participants, self.output, input_admission=owner,
+                                          recovery_binding=self.recovery_binding)
 
 
 def build_candidate_cloud_tasks(plan_path, output, resources, *, source_seed_catalog=None, source_snapshot=None,
@@ -1483,6 +1529,15 @@ def run_study(plan_path: str | Path, output: str | Path, *, _actor_index=None, _
     if execution not in {"cloud", "inline"}:
         raise ValueError("candidate execution must be cloud or inline")
     plan_path, output = Path(plan_path).resolve(), Path(output).resolve()
+    original_plan = json.loads(plan_path.read_bytes())
+    declaration = original_plan.get("prefix_recovery")
+    if declaration is not None and (execution != "cloud" or _actor_index in {
+            row["record_index"] for row in declaration["participants"]}):
+        raise ValueError("prefix recovery fits only remaining original participants through the shared cloud owner")
+    if declaration is not None:
+        from research.prefix_recovery import preserve_prefix_producer_output
+
+        preserve_prefix_producer_output(original_plan, output)
     plan, source, snapshots = _prepare_candidate_plan(plan_path,
         native_threads=_native_threads, load_sources=_actor_index is not None or execution == "inline")
     if plan["resume_binding"] is not None and any(output.is_relative_to(Path(plan["resume_binding"][name]))
@@ -1533,7 +1588,8 @@ def run_study(plan_path: str | Path, output: str | Path, *, _actor_index=None, _
         raise
 
 
-def _finalize_candidate_report(plan, source, completed, output, *, status="completed", input_admission=None, persist=True):
+def _finalize_candidate_report(plan, source, completed, output, *, status="completed", input_admission=None, persist=True,
+                               recovery_binding=None):
     independent = plan.get("evaluation_design") == "independent_prefix"
     pairs = tuple(map(tuple, plan["seed_pairs"])) if independent else None
     strategies = plan["calibration_strategies"] if independent else [plan["calibration_strategy"]]
@@ -1614,6 +1670,10 @@ def _finalize_candidate_report(plan, source, completed, output, *, status="compl
             for row in prior_panel["shape_contrasts"]]
     if dictionary_panel is not None:
         report["dictionary_panel"] = dictionary_panel
+    if recovery_binding is not None:
+        report.update(prefix_recovery=recovery_binding, requested_records=plan["records"],
+            decision_denominator_complete={row["record_index"] for row in completed} == set(range(len(plan["records"]))),
+            participant_execution={str(row["record_index"]): row["execution_binding"] for row in completed})
     if persist:
         _write_candidate_json(output / "result.json", report, input_admission)
         _write_candidate_json(output / "progress.json", {"status": status, "completed_subjects": len(completed)}, input_admission)

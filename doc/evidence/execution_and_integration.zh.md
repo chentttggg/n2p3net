@@ -18,7 +18,9 @@ BI2014a按库队列由云端推进，数据准备、模型、结果和终态各�
 
 真实shell direct CLI暴露的prefix启动问题已修：入口同时加入ROOT与ROOT/src，spawn子进程可导入experiments；main依据科学result状态返回0/1，完整failed请求保留且OS exit为1。root逐读`57cf5b2`三行变更并合入`fed4c40`，Windows仓库外cwd、unset PYTHONPATH、两个真实CloudExecutor actor的成功/失败两例通过。云端同接点另在source10/527成员8abce622上验证并重新执行完整矩阵；原526启动失败、错误report文件声明及entry002保持自己的失败身份，新entry使用真正result.json。
 
-云窗口随后同步 entry003/source10 的实际科学终态为failed、OS1、4063秒：首四actor的四个K selector包已保存并重放，但parent拒绝prefit ledger；后四actor在共享文件系统/RAM预算门失败。真实完整canonical bytes/SHA一致，Python比较首差异定位为 `spatial.slot_channels` 的JSON list与FrozenMetadata tuple；云owner在隔离树做canonical准入与重复package拒绝的窄修。下一新consumer先零fit准入已完成四人，再完成其余四人；完整原八人分母与旧failed producer保持。最终receipt与新consumer源码返回后由科研root复审整合。
+云窗口随后同步 entry003/source10 的实际科学终态为failed、OS1、4063秒：首四actor的四个K selector包已保存并重放，但parent拒绝prefit ledger；后四actor在共享文件系统/RAM预算门失败。真实完整canonical bytes/SHA一致，Python比较首差异定位为 `spatial.slot_channels` 的JSON list与FrozenMetadata tuple。完整canonical请求比较与一次graph/package准入已按函数逻辑集成，全部原字段和独立实际评分关系保留。
+
+新consumer恢复owner保原八人roster，零fit准入原四人后只派余四人。独审补发现remaining actor可绕过原输出边界；root在公共入口prepare/写入前复用同owner保护，原run/producer checkout两例RED转为拒绝，独审两例通过。科研树一次准入/ABI17项、修后恢复20项分列通过，Ruff与diff检查通过，见[接受绑定](../assets/research_resume_20261011/prefix_cloud_admission_acceptance_binding.json)。旧3021 P2与失败凭证保留。云端修后subset须绑定自己的新freeze/transition，随后实际原四人大包parent重放及新四人完整拟合由唯一执行窗口完成；科研main额外科学/metadata更新不自动取得该恢复授权。
 
 P1 stationary panel 的基础实现与两处Path修复已合入 `929334a/71ab581`。strict export在原capsule独立进程核保存M/R/原Σ/F与noise，worker从新冻结source编 `/3` root，原scorer、requested与pair owner接最终指标。新freeze通过独立真实A01 export与7项focused gate；本地stage05两次/stage06一次均resource_blocked、完整cell0/16、进程退役，实际partial root/候选计数见[执行绑定](../assets/research_resume_20261011/stationary_program_execution_binding.json)。全部8人Windows原态出口现已完成，33成员原态/实际退出包通过独立复审与root逐成员核验，见[跨主机出口绑定](../assets/research_resume_20261011/stationary_crosshost_export_binding.json)。本地停止重复启动；新cloud IO factory保留原plan056/export script/loader身份，科学评分另绑新consumer plan。
 

@@ -602,8 +602,17 @@ class FittedEnsemble:
 
     @classmethod
     def load_programs(cls, directory):
+        return cls._admit_programs(directory)[1]
+
+    @classmethod
+    def _admit_programs(cls, directory, *, package_hashes=None):
+        """Read one exact package once; keep decoded states inside this ingress."""
         directory = Path(directory)
-        payload = json.loads((directory / "temperature_programs.json").read_bytes())
+        temperature_content = (directory / "temperature_programs.json").read_bytes()
+        if (package_hashes is not None and hashlib.sha256(temperature_content).hexdigest()
+                != package_hashes["temperature_programs_json_sha256"]):
+            raise ValueError("prefix temperature_programs.json differs from captured package")
+        payload = json.loads(temperature_content)
         record = payload["record"]
         if record["schema"] != "n2p3_prefix_temperature_programs/1" or semantic_sha256(record) != payload["record_sha256"]:
             raise ValueError("frozen temperature program manifest changed")
@@ -617,13 +626,20 @@ class FittedEnsemble:
         if record["base_package_sha256"] is None:
             if any(value["status"] != "unavailable" for value in record["programs"].values()):
                 raise ValueError("available temperature programs require their actual final model package")
-            return {}
-        if hashlib.sha256((directory / "ensemble.json").read_bytes()).hexdigest() != record["base_package_sha256"]:
+            if package_hashes is not None and (package_hashes["ensemble_json_sha256"] is not None
+                    or (directory / "ensemble.json").exists()):
+                raise ValueError("prefix unavailable roster unexpectedly has an ensemble package")
+            return record, {}
+        ensemble_content = (directory / "ensemble.json").read_bytes()
+        ensemble_digest = hashlib.sha256(ensemble_content).hexdigest()
+        if package_hashes is not None and ensemble_digest != package_hashes["ensemble_json_sha256"]:
+            raise ValueError("prefix ensemble package differs from captured numerical package")
+        if ensemble_digest != record["base_package_sha256"]:
             raise ValueError("temperature programs differ from their actual final model package")
-        fitted = cls.load(directory)
+        fitted = cls._load_content(directory, ensemble_content)
         if record["participant_key"] != fitted.participant_key:
             raise ValueError("temperature program participant differs from actual final model package")
-        return {name: cls(fitted.scorer, fitted._experts, fitted._training_receipts,
+        return record, {name: cls(fitted.scorer, fitted._experts, fitted._training_receipts,
             value["temperature_calibration"], target_contract=fitted._target_contract,
             oof_probability_record=fitted.oof_probability_record)
             for name, value in record["programs"].items() if value["status"] == "completed"}
@@ -631,7 +647,12 @@ class FittedEnsemble:
     @classmethod
     def load(cls, directory: str | Path):
         directory = Path(directory)
-        payload = json.loads((directory / "ensemble.json").read_bytes())
+        return cls._load_content(directory, (directory / "ensemble.json").read_bytes())
+
+    @classmethod
+    def _load_content(cls, directory, content):
+        """Lower the same bytes whose outer package identity was admitted."""
+        payload = json.loads(content)
         record = payload["record"]
         if semantic_sha256(record) != payload["record_sha256"] or record["schema"] != FITTED_ENSEMBLE_SCHEMA:
             raise ValueError("frozen ensemble manifest changed or has an unsupported schema")

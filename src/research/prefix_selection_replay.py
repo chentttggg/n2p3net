@@ -16,13 +16,11 @@ from research.calibration_selection import (
 from research.contracts import semantic_sha256
 from research.execution import ExpectedSubjectError, atomic_write_json
 from research.prefix_inner_replay import (
-    _manifest,
+    _PrefixPackageAdmission,
     _recursive_close,
     persist_prefix_inner_replay,
     prefix_input_identity,
-    replay_prefix_inner_replay,
 )
-from transfer.ensemble_fit import FittedEnsemble
 
 SCHEMA = "n2p3_whole_prefix_selection_replay/1"
 
@@ -214,46 +212,66 @@ def _node_path(directory, node):
     return path
 
 
-def load_prefix_selection(directory, *, expected_selection_sha256=None, expected_graph_sha256=None):
-    graph = _load_graph(directory, expected_selection_sha256, expected_graph_sha256)
-    records, packages = {}, {}
-    for node in graph["nodes"]:
-        path = _node_path(directory, node)
-        replay_prefix_inner_replay(path, expected_record_sha256=node["prefix_receipt_sha256"])
-        records[node["fit_key"]] = _manifest(path)
-        packages[node["fit_key"]] = FittedEnsemble.load_programs(path)
-    _audit_graph(graph, records)
+class _SelectionReplayAdmission:
+    """One private graph snapshot, independently opened by each consumer."""
+
+    def __init__(self, directory, *, expected_selection_sha256=None, expected_graph_sha256=None):
+        self.directory = Path(directory)
+        self.graph = _load_graph(self.directory, expected_selection_sha256, expected_graph_sha256)
+
+    def load(self):
+        return _load_admitted_selection(self)
+
+    def replay(self, *, prefix, prefix_compiler, future_views=(), source_checkpoints=None):
+        return _replay_admitted_selection(self, prefix=prefix, prefix_compiler=prefix_compiler,
+                                         future_views=future_views, source_checkpoints=source_checkpoints)
+
+
+def _loaded_final_selection(graph, final_record, final_programs):
     record = graph["selection"]
     selected = CalibrationProgramCandidate.from_record(record["selected_candidate"])
-    final_record = records[record["final_refit_key"]]
     entry = final_record["programs"][selected.strategy]
-    final = (packages[record["final_refit_key"]][selected.strategy] if entry["status"] == "completed"
+    final = (final_programs[selected.strategy] if entry["status"] == "completed"
              else _failure(entry["failure"]))
     return FittedPrefixSelection(final, record)
 
 
-def replay_prefix_selection(directory, *, prefix, prefix_compiler, future_views=(), source_checkpoints=None,
-                            expected_selection_sha256=None, expected_graph_sha256=None):
-    """Rebuild original scopes and replay actual producer outputs, never fit."""
-    graph = _load_graph(directory, expected_selection_sha256, expected_graph_sha256)
+def _load_admitted_selection(admission):
+    graph, directory = admission.graph, admission.directory
+    records, final_programs = {}, None
+    for node in graph["nodes"]:
+        path = _node_path(directory, node)
+        package = _PrefixPackageAdmission(path, expected_record_sha256=node["prefix_receipt_sha256"])
+        package.replay()
+        records[node["fit_key"]] = package.record
+        if node["fit_key"] == graph["selection"]["final_refit_key"]:
+            final_programs = package.programs
+    _audit_graph(graph, records)
+    return _loaded_final_selection(graph, records[graph["selection"]["final_refit_key"]], final_programs)
+
+
+def _replay_admitted_selection(admission, *, prefix, prefix_compiler, future_views=(), source_checkpoints=None):
+    graph, directory = admission.graph, admission.directory
     prefix_compiler.assert_original_prefix(prefix)
     if semantic_sha256(prefix_input_identity(prefix)) != semantic_sha256(graph["selection"]["parent_scope"]["input"]):
         raise ValueError("nested prefix replay original parent observations/labels changed")
     future_views = tuple(future_views)
     parent_groups = {group.view.record_id: group for group in prefix.complete_groups}
-    records, results = {}, {}
+    records, results, final_programs = {}, {}, None
     for node in graph["nodes"]:
         path = _node_path(directory, node)
         current = prefix_compiler.compile(node["scope"]["actual_K"])
-        record = _manifest(path)
+        package = _PrefixPackageAdmission(path, expected_record_sha256=node["prefix_receipt_sha256"])
+        record = package.record
         views = future_views if node["fit_key"] == graph["selection"]["final_refit_key"] else tuple(
             parent_groups[name].view for name in record["fit_context"]["requested_decision_ids"])
         candidate = CalibrationProgramCandidate.from_record(node["candidate"])
         sources = {} if source_checkpoints is None else {name: source_checkpoints[name]
             for name in candidate.ensemble_program.expert_ids if name in source_checkpoints}
-        results[node["fit_key"]] = replay_prefix_inner_replay(path, prefix=current, future_views=views,
-            source_checkpoints=sources, expected_record_sha256=node["prefix_receipt_sha256"])
+        results[node["fit_key"]] = package.replay(prefix=current, future_views=views, source_checkpoints=sources)
         records[node["fit_key"]] = record
+        if node["fit_key"] == graph["selection"]["final_refit_key"]:
+            final_programs = package.programs
     _audit_graph(graph, records)
     selection = graph["selection"]
     # Recompute the actual policy on the same saved h probabilities/truths.
@@ -274,9 +292,26 @@ def replay_prefix_selection(directory, *, prefix, prefix_compiler, future_views=
         if name != trace["decision"]["selected_candidate"]:
             raise ValueError("nested prefix actual selection decision does not replay")
         _recursive_close(decision, trace["decision"])
-    load_prefix_selection(directory, expected_selection_sha256=expected_selection_sha256,
-                          expected_graph_sha256=expected_graph_sha256)
+    # All nodes were independently admitted and numerically replayed above.
+    # The final loaded-object relationship uses those same saved states; it
+    # does not reopen the graph or reload every final/inner predictor.
+    _loaded_final_selection(graph, records[selection["final_refit_key"]], final_programs)
     return {"status": "replayed", "actual_K": prefix.budget, "producer_count": len(graph["nodes"]),
         "exact_score_checks": sum(row["exact_score_checks"] for row in results.values()),
         "scores": results[selection["final_refit_key"]]["scores"], "zero_new_fits": True,
         "outer_requested": len(selection["outer_requested"]), "selected_candidate": selection["selected_candidate"]}
+
+
+def load_prefix_selection(directory, *, expected_selection_sha256=None, expected_graph_sha256=None):
+    admission = _SelectionReplayAdmission(directory, expected_selection_sha256=expected_selection_sha256,
+                                          expected_graph_sha256=expected_graph_sha256)
+    return admission.load()
+
+
+def replay_prefix_selection(directory, *, prefix, prefix_compiler, future_views=(), source_checkpoints=None,
+                            expected_selection_sha256=None, expected_graph_sha256=None):
+    """Rebuild original scopes and independently replay every saved producer."""
+    admission = _SelectionReplayAdmission(directory, expected_selection_sha256=expected_selection_sha256,
+                                          expected_graph_sha256=expected_graph_sha256)
+    return admission.replay(prefix=prefix, prefix_compiler=prefix_compiler,
+                            future_views=future_views, source_checkpoints=source_checkpoints)
