@@ -16,12 +16,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
-from scipy.linalg import solve_discrete_lyapunov, solve_triangular
+from scipy.linalg import solve_triangular
 from scipy.signal import welch
 from scipy.special import logsumexp
 from sklearn.covariance import LedoitWolf
 
 from research.execution import UnidentifiableFitError
+from research.stationary_noise_artifact import compiler_record, stationary_root
 from transfer.noise_model import (
     array_digest,
     finite_real_array,
@@ -35,7 +36,7 @@ from transfer.temporal_noise import TemporalNoise
 
 _IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _FIT_SCOPES = {"source_training", "target_calibration"}
-_SCHEMA = "n2p3_channel_noise_mechanism/2"
+_SCHEMA = "n2p3_channel_noise_mechanism/3"
 
 
 def _array(value, name, ndim):
@@ -362,43 +363,9 @@ def _overlap(recording_id, start, stop, ledger):
 
 
 def _prefix_root(temporal, covariance, prefix, family):
-    channels = len(temporal)
-    spatial = np.linalg.cholesky(covariance)
-    if family == "shared":
-        whitening = temporal[0].whiten(np.eye(prefix))
-        time_root = solve_triangular(whitening, np.eye(prefix), lower=True)
-        return np.kron(time_root, spatial)
-    order = temporal[0].order
-    if not order:
-        return np.kron(np.eye(prefix), spatial)
-    # General diagonal-lag VAR, including correlated innovations. Solving a
-    # stationary state is confined to C*p; no N*C covariance is materialized.
-    transition = np.zeros((channels * order, channels * order))
-    for lag in range(order):
-        transition[:channels, lag * channels:(lag + 1) * channels] = np.diag(
-            [noise.coefficients[lag] for noise in temporal])
-    transition[channels:, :-channels] = np.eye(channels * (order - 1))
-    driving = np.zeros_like(transition)
-    driving[:channels, :channels] = covariance
-    stationary = solve_discrete_lyapunov(transition, driving)
-    stationary = (stationary + stationary.T) / 2
-    scale = max(float(np.linalg.norm(stationary)), np.finfo(float).tiny)
-    residual = stationary - transition @ stationary @ transition.T - driving
-    if not np.isfinite(stationary).all() or np.linalg.norm(residual) > 1e-8 * scale:
-        raise UnidentifiableFitError("private VAR stationary state failed its Lyapunov backward check")
-    lags = []
-    power = np.eye(len(transition))
-    for _ in range(prefix):
-        lags.append((power @ stationary)[:channels, :channels])
-        power = transition @ power
-    matrix = np.empty((prefix * channels, prefix * channels))
-    for row in range(prefix):
-        for column in range(prefix):
-            block = lags[row - column] if row >= column else lags[column - row].T
-            matrix[row * channels:(row + 1) * channels,
-                   column * channels:(column + 1) * channels] = block
-    _, root = _positive_covariance(matrix, "private stationary prefix covariance")
-    return root
+    # Both families use the law executed by their tail: exact-real step-up of
+    # the stored PARCOR. Rounded polynomial coefficients are diagnostics.
+    return stationary_root([noise.reflection_coefficients for noise in temporal], covariance, prefix)
 
 
 def _posterior_qr(design, response, prior_root):
@@ -476,15 +443,16 @@ class FittedChannelNoise:
                 or np.any(np.diag(root) <= 0) or np.any(np.triu(root, 1) != 0)):
             raise ValueError("compiled prefix root requires a positive lower-triangular factor")
         if supplied_root:
-            expected_root = _prefix_root(temporal, covariance, prefix, self.family)
-            normalized = solve_triangular(expected_root, root, lower=True)
-            discrepancy = normalized @ normalized.T - np.eye(len(root))
-            if np.linalg.norm(discrepancy) > 1e-8 * np.sqrt(len(root)):
-                raise ValueError("compiled prefix state does not obey the declared stationary noise model")
+            # Verify exact pairwise law directly. Loading consumes the saved
+            # root; it does not regenerate a root and call itself the oracle.
+            stationary_root([noise.reflection_coefficients for noise in temporal], covariance, prefix,
+                            supplied_root=root)
         object.__setattr__(self, "temporal", temporal)
         object.__setattr__(self, "innovation_covariance", frozen_array(covariance))
         object.__setattr__(self, "compiled_prefix_root", frozen_array(root))
         object.__setattr__(self, "_spatial_root", frozen_array(spatial))
+        object.__setattr__(self, "_prefix_compiler", freeze_metadata(compiler_record(
+            [noise.reflection_coefficients for noise in temporal], covariance, prefix, root)))
         object.__setattr__(self, "provenance", freeze_metadata(provenance))
         object.__setattr__(self, "_integrity", metadata_digest(self.record()))
         object.__setattr__(self, "_runtime_guard", self._runtime_state_digest())
@@ -622,6 +590,7 @@ class FittedChannelNoise:
         # prefix factor to JSON at every matrix map in a candidate loop.
         return metadata_digest({"family": self.family, "geometry": self.geometry.record(),
             "prefix": self.conditioning_samples, "provenance": self.provenance,
+            "prefix_compiler": self._prefix_compiler,
             "numeric_state_sha256": array_digest(self.innovation_covariance, self.compiled_prefix_root,
                 np.asarray([item.coefficients for item in self.temporal]),
                 np.asarray([item.reflection_coefficients for item in self.temporal]))})
@@ -629,6 +598,7 @@ class FittedChannelNoise:
     def record(self):
         channels = len(self.geometry.channels)
         return {"schema": _SCHEMA, "geometry": self.geometry.record(), "family": self.family,
+                "prefix_compiler": self._prefix_compiler,
                 "conditioning_samples": self.conditioning_samples,
                 "coefficients": [noise.coefficients.tolist() for noise in self.temporal],
                 "reflections": [noise.reflection_coefficients.tolist() for noise in self.temporal],
@@ -658,7 +628,7 @@ class FittedChannelNoise:
             raise ValueError("channel noise artifact digest differs from its actual payload")
         state = payload["state"]
         if state.get("schema") != _SCHEMA:
-            raise ValueError("unknown channel noise artifact schema")
+            raise ValueError("unsupported channel noise artifact schema; old compiled-W states require their original frozen owner")
         temporal_records = state["compiled_temporal_records"]
         expected_count = 1 if state["family"] == "shared" else len(state["geometry"]["channels"])
         if len(temporal_records) != expected_count:
@@ -671,6 +641,8 @@ class FittedChannelNoise:
         fitted = cls(temporal, state["innovation_covariance"], NoiseGeometry(**state["geometry"]),
                      state["conditioning_samples"], state["family"], state["provenance"],
                      state["compiled_prefix_root"])
+        if fitted._prefix_compiler != state.get("prefix_compiler"):
+            raise ValueError("stationary prefix compiler or exact law identity differs from its saved state")
         if fitted._integrity != payload["state_sha256"]:
             raise ValueError("noise artifact contains unrecognized or inconsistent fields")
         return fitted

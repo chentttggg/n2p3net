@@ -349,6 +349,11 @@ context或模型仍活着时继续持有GPU claim，直到完整所属进程树�
 并发峰值扩容并结算实际留存字节，不能用尚未落盘的零字节覆盖另一个pending writer。
 这些资源边界的原失败及修后49项相关云端测试已保存；实际完整训练吞吐随单库运行记录。
 
+候选ensemble由`ensemble_fit._fit_expert`在真正调用神经fitter前进入compute phase，
+ordinary、group-LOO与整prefix选择共享该接点。source-only K0、结构上不可拟合的
+专家及零拟合重放不取得GPU；当前冻结predictor的候选评分在CPU执行。原云端49项
+资源证据保持原源码身份，科研集成后的prefix调用验证另行绑定。
+
 用户于2026-10-08再次强调多次遇到25核配额只用1核：必须核真实进程创建身份、就绪任务、有效CPU核、GPU利用、内存峰、阶段进度和完成产物；25线程/4worker配置本身不能作为验收。遇到串行压缩/解压、重复加载/哈希、I/O、锁或内存准入等待，要落实代码并验证端到端路径。2394曾GPU95%但worker突然退出、内存接近90 GiB上限，原因未确定；[原始终态与完整输入基准](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)已物理保留。本地整机CPU<80%与云端配额利用分别控制，不能混用。
 
 用户随后明确本轮交付目标是**优化底层调用算法并彻底模块化云端训练**：相近实验固定复用同一个执行模块，已有优秀训练实现按当前合同复用。实验计划提供依赖、配方、科学调用和真实输入/输出身份；公共底层统一拥有ready队列、进程与数值线程、host/GPU/暂存准入、缓存复用、阶段记录和异常退出诊断。`GpuPerformanceScheduler`、`MatrixBatchSource`、源轨迹登记表、原缓存writer/attested loader及资源owner作为复用基础；CLI消费稳定接口，资源算法集中在SRC。

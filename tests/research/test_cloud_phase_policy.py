@@ -207,3 +207,57 @@ def test_nested_gpu_upgrade_respects_already_waiting_target_fifo():
         ledger.release_phase(reservation["token"])
     assert ledger.record()["active_gpu_groups"] == 0
     assert ledger.record()["reserved_cpu_threads"] == 1
+
+
+@pytest.mark.parametrize("entry", ["grouped", "prefix_selection"])
+def test_actual_neural_fits_enter_compute_including_nested_prefix_callers(tmp_path, monkeypatch, entry):
+    from dataclasses import replace
+
+    import research.cloud_execution as cloud
+    import transfer.ensemble_fit as fit_owner
+    from tests.support.ensemble_fixtures import programs, selections
+    from train.runtime import cpu_thread_budget
+    from transfer.ensemble import EnsembleProgram
+
+    class ComputeObserver:
+        pending = False
+
+        def enter_compute(self, device):
+            assert device == "cpu"
+            self.pending = True
+
+    observer = ComputeObserver()
+    monkeypatch.setattr(cloud, "_CURRENT_WORKER_PHASES", observer)
+    original_fit = fit_owner.fit_calibration_candidate
+    entered = []
+
+    def observed_fit(*args, **kwargs):
+        assert observer.pending, "neural fit started outside its resource phase"
+        observer.pending = False
+        entered.append(len(args[0].y))
+        return original_fit(*args, **kwargs)
+
+    monkeypatch.setattr(fit_owner, "fit_calibration_candidate", observed_fit)
+    with cpu_thread_budget(1):
+        if entry == "grouped":
+            spec = programs()[-1]
+            roster = EnsembleProgram.equal_weights("scratch", (spec.expert_id,))
+            fitted = fit_owner.fit_calibration_ensemble(selections()[:3], (spec,), roster,
+                                                       calibration_strategy="grouped_temperature")
+            assert fitted.temperature_record["strategy"] == "grouped_temperature"
+            assert entered == [12, 8, 8, 8]
+        else:
+            from research.calibration_selection import (
+                CalibrationProgramCandidate,
+                fit_nested_prefix_selection,
+            )
+            from tests.support.independent_prefix import independent_prefix_case
+
+            *_, experts, views = independent_prefix_case(tmp_path)
+            spec = replace(programs()[-1], profile=experts[1].profile)
+            roster = EnsembleProgram.equal_weights("scratch", (spec.expert_id,))
+            candidate = CalibrationProgramCandidate("baseline", (spec,), roster)
+            selected = fit_nested_prefix_selection(views.calibration[200], (candidate,),
+                baseline_name="baseline", prefix_compiler=views.prefix_compiler, minimum_selection_rows=3)
+            assert selected.record["final_refit_scope"]["actual_K"] == 200
+            assert entered == [196]

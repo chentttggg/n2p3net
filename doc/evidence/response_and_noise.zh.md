@@ -22,7 +22,7 @@
 
 尾部实际消费stored PARCOR lattice，新模型以每个binary64 PARCOR作为精确实数，经实数step-up确定AR；跨channel创新Sigma只入一次。完整pairwise mixed Yule–Walker与独立p² Sylvester在36个pair上一致；unequal AR1 closed form和diagonal scalar Yule–Walker另作参照。同真实law的高精度joint Cholesky仅舍入为binary64后，谱差`3.409e-11`、Frobenius差`1.109e-10`，支持保持原门实现稳定编译。
 
-新compiler及constructor/save/load关系在独立`research-stationary-prefix`树推进。现P1续评明确使用各原冻结compiled-W Gaussian law，保持原model与consumer身份；其结果提供该实际数值程序的概率读数。真实stationary VAR的新compiled state将以新来源交付，原文件不修签。推导、两套oracle、实际旧state与下一代码依赖见[诊断绑定](../assets/research_resume_20261011/stationary_prefix_diagnosis_binding.json)。
+新compiler已由独立树完成并合入科研主树：`stationary_noise_artifact`以保存PARCOR的exact-real step-up、mixed Yule--Walker和joint Decimal96 Cholesky定义真实平稳law；saved root用独立向上误差证书验收，load不重编root。`/3`新state与旧`/2` compiled-W严格分开，旧P1续评仍只消费旧producer和旧law，不追签历史结果。A01新root的独立MP100 pullback谱/Frobenius误差为`3.409e-11`/`1.109e-10`，旧root为`0.0772181`/`0.167282`；stage04 underflow certificate、四种变换、save/load及实际caller均通过，0 fit/score。生产新state仍需绑定自己的producer和scope后再进入新实验。推导、两套oracle、实际旧state与源码绑定见[诊断绑定](../assets/research_resume_20261011/stationary_prefix_diagnosis_binding.json)及作者最终交接。
 
 ## P1 数值门诊断与小组协议评估
 
