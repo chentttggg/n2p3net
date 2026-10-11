@@ -121,7 +121,9 @@ BNCI2014-008首五个完整selection提供C600，随后每人30个完整R10 epis
 
 逐人配对揭示平均NLL差的来源：只有A01/A03/A04改善，另外五人变差。A04差为−2.858560，对八人主均值贡献−0.357320；其余七人的贡献合计+0.152788，其自身均值为+0.174615。这是保留完整八人主分母的影响诊断。A04 fullfine NLL为3.717597，scratch为6.576157，前者仍高于36选一均匀参考3.583519；平均风险改善主要对应A04严重错判缓解，多数人的全微调NLL与Brier本次仍较差。
 
-保存结果、归档、源码与终态已经本地独立接受；prepared/raw和source checkpoint本体的输入审阅另等云窗口返回原owner proof，记录在同一绑定的validation layers。episode预算、本次later支持与label-K prefix selector分别解释；BI与BNCI的配方/预算不同，保各库自身读数。实际来源、830项概率/指标独立复算、每人表和可导出的PNG/PDF/CSV见[BNCI终态绑定](../assets/research_resume_20261011/bnci_q1_queue_acceptance_binding.json)；逐人图的三个轴是fullfine−scratch，hit越高越好，NLL/Brier越低越好。
+保存结果、归档、源码与终态已经本地独立接受。云窗口补回原owner输入证明后已完成第二次只读复签：原prepared cohort、12份实际ingress证据、70份新哈希sealed JSON与24份receipt相连；C/future在原raw scope内先裁剪再滤波，source seed和整库排除来自实际embedded ledger。fine/scratch的全部epoch/batch样本顺序相同，initial state不同；八人各C600为500负/100正、future为30个R10。此次沿用原raw/cache/checkpoint读取证明，没有重复数组/model load或fit/filter/score，没有新造未发布的future-X分量digest。
+
+episode预算、本次later支持与label-K prefix selector分别解释；BI与BNCI的配方/预算不同，保各库自身读数。实际来源、830项概率/指标独立复算、输入追加证明、每人表和可导出的PNG/PDF/CSV见[BNCI终态绑定](../assets/research_resume_20261011/bnci_q1_queue_acceptance_binding.json)；逐人图的三个轴是fullfine−scratch，hit越高越好，NLL/Brier越低越好。
 
 ## 逐任务horizon接口
 

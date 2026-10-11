@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_bnci_episode_C600_R10_local_independent_acceptance/1",
-  "status": "saved_result_archive_queue_source_passed",
+  "status": "accepted_saved_results_and_original_input_provenance",
   "scope": "public_calibration_development; episode C600/R10; separate from P1 and label-K prefix selector",
   "execution_source_sha256": "fc9d7aa507bb3b4cce5de52eff15532cd2210fb656dc2859eb5b33818bb6b030",
   "source_checkpoint_sha256": "aabb2a43ffd7c2b862a169d319fd3a548928f653d5fb4dd274d10739900c7b68",
@@ -37,13 +37,11 @@
     "saved_probabilities_receipts_models": "local stream SHA and independent manual metrics passed",
     "queue_science_workers": "saved terminal actual_exit and worker retirement records passed",
     "executed_source": "local exact 535 member source archive and relevant code reviewed",
-    "preparation": "cloud read-only proof matches cohort SHA; raw cache payload not locally present",
-    "source_exclusion": "actual executed code enforces embedded admission/seed/study exclusion per arm; checkpoint payload not locally read"
+    "preparation": "closed by original cloud raw/cache acceptance10 and new sealed-JSON reconciliation",
+    "source_exclusion": "closed by original embedded checkpoint decode plus actual ScopedSource/library-exclusion admission"
   },
   "remaining_payload_verification": [
-    "original 8 prepared ledgers/cache arrays for local C/future raw support verification",
-    "source checkpoint embedded identity/study metadata for local exclusion proof",
-    "queue external exit receipt bytes (terminal retains SHA)"
+    "original queue external exit receipt body not read locally; preserved queue/science/worker exit0 and owned0 evidence accepted"
   ],
   "verification": {
     "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\verification.json",
@@ -165,5 +163,34 @@
     },
     "visually_reviewed": true,
     "description": "participant paired source full fine minus scratch; full8 mean retained; descriptive values without intervals"
+  },
+  "original_input_proof_augmentation": {
+    "binding": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\augmentation.json",
+      "sha256": "72b520a64d1ac151d836f9964afa642b986f27e88fa043f7a5fa2d9df66f4c7f",
+      "bytes": 2889
+    },
+    "review": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\BNCI_Q1_ACCEPTANCE\\INPUT_PROOF_FINAL.zh.md",
+      "sha256": "92084e73b8b701b7d0152a87bba6660a82f760edccc1b8e8f1a826b7f9c2f20f",
+      "bytes": 5652
+    },
+    "original_cloud_proof": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\BNCI_INPUT_ADMISSION_PROOF\\INPUT.PROOF.json",
+      "sha256": "19ae93826c45e88ec78162e2c7e40e48a88d0fc6f5f443e243a4e39dee4fcf18",
+      "bytes": 76898
+    },
+    "original_proof_sha256": "19ae93826c45e88ec78162e2c7e40e48a88d0fc6f5f443e243a4e39dee4fcf18",
+    "original_proof_binding_sha256": "8b4b0970b7069232741436ec0769aee49dde037ce65a44e15c0ed6cd8eee0bf3",
+    "cohort_sha256": "52d218508a319ed937a6d5cad704372aeedb176fb3453bf70b3c290a0a7fbce4",
+    "fresh_sealed_JSON_pins": 70,
+    "original_prior_evidence_pins": 12,
+    "main_metrics_or_denominator_changed": false,
+    "new_raw_array_model_fit_filter_score_calls": 0,
+    "not_freshly_verified_locally": [
+      "MAT/NPZ full byte hash and array load",
+      "source checkpoint byte hash and embedded payload load",
+      "original queue external_exit receipt body"
+    ]
   }
 }

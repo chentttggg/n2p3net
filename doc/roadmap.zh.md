@@ -6,7 +6,7 @@ P1数值续评16/16完成、0新fit：原冻结compiled-W模型的shared/private
 
 原云候选面板152共同请求与80原配对账本已读数收口，见[失败分母与配对效应](evidence/public_evaluation.zh.md#原云候选面板完整分母与配对读数)。grouped K800/2000因paired NLL增加不通过原开发门；source→scratch方向K2000部分对照是scratch改善，不能倒写迁移收益。该原producer结果不等同新prefix协议执行；下一研究核合法C内整程序选择和概率风险，不从未来成绩选默认。
 
-BI2014a首五episode三臂队列已封库：61人/183模型/183receipt、真实exit0，原1287 requested和1243有概率key保留；fullfine相对scratch宏hit增加0.10896、配对NLL降低0.59048。BNCI C600/R10八人三臂队列也已完成，24模型、每臂240请求、概率覆盖100%、真实exit0；保存结果独立接受，fullfine−scratch宏hit−0.03333、NLL−0.204532、Brier+0.044301，NLL改善集中A04。输入payload provenance由云窗口补原owner proof。label-K prefix selector旧entry003已failed，下一新consumer零fit准入已完成四人并补余四人，原八人分母保留；见[公共评估](evidence/public_evaluation.zh.md#跨数据集队列)。
+BI2014a首五episode三臂队列已封库：61人/183模型/183receipt、真实exit0，原1287 requested和1243有概率key保留；fullfine相对scratch宏hit增加0.10896、配对NLL降低0.59048。BNCI C600/R10八人三臂队列也已完成，24模型、每臂240请求、概率覆盖100%、真实exit0；保存结果与原owner输入证明均独立复签，fullfine−scratch宏hit−0.03333、NLL−0.204532、Brier+0.044301，NLL改善集中A04。label-K prefix selector旧entry003已failed，下一新consumer零fit准入已完成四人并补余四人，原八人分母保留；见[公共评估](evidence/public_evaluation.zh.md#跨数据集队列)。
 
 2026-10-08最新执行规则覆盖下文待跑三seed数量：日常科研使用20260918单个完整source→target程序，重大版本校验才使用20260918/19/20三个独立程序。当前公共科研对应四个source checkpoint流程，各自选择与fresh refit，初始八个逻辑NN fit；B12两个公共面板继续按真实预算和requested账本验收。历史三seed设计与已执行身份不改写。科研线接B08可识别prior、B07字典可移植与B05/B06/B09机制，B14云底座和B12基础矩阵并行；各项代码、软件验证、公共效能分别见[集成状态](evidence/research_integration_20261008.zh.md)。
 
@@ -38,7 +38,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B09 空间 | 一般signal-prior/固定graph；source-only group forecast、完整effect绑定和exact structural null软件出口 | Pz4原证据不晋升；真实source builder/跨布局reference transport/OOF与ensemble consumer、d-prime/variance不确定性、joint MLE及新效能 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
 | B11 动态/稳健 | noise-only Gamma、proper全C/test联合尺度；实际行数增广QR和显式β条件积分接研究owner；共同flat-Z小参考及源尺度反例 | 真实K0/独立noise/C权限、flat长记录采样/持久包、动态state、连续预测准确性与完整效能；多模态不由诊断保证 |
-| B12 公共流程 | 独立C/test/K0、完整requested/final账本；原producer四库binary/八人candidate读数；BI61人与BNCI8人episode三臂终态及保存结果独立复算 | episode输入payload原owner proof、label-K selector新consumer完整八人恢复、源/目标/资源统一接受与独立泛化 |
+| B12 公共流程 | 独立C/test/K0、完整requested/final账本；原producer四库binary/八人candidate读数；BI61人与BNCI8人episode三臂终态、保存结果和原输入证明独立复签 | label-K selector新consumer完整八人恢复、源/目标/资源统一接受与独立泛化 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
 | B14 工程/吞吐 | B12同resource owner/完整账；旧完整candidate恢复、source prepared与共享评分实测云候选，纯CPU尾三拓扑读数；source cache/shared current-view scoring及conditional公共白化已合入并完成相关复核 | 统一新source实际25CPU/4GPU能力及ready工作路由，完整矩阵吞吐、跨host整包和新study owner边界 |
 
