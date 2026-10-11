@@ -13,7 +13,7 @@
 
 ## 当前研究
 
-2026-10-11继续按[愿望清单当前进展](evidence/wishlist_progress_20261010.zh.md)推进123项，恢复科研树已完成 B03 严格 nested/source-study、B03 inner producer replay、B07 `/4` native family与B09 exact structural null的bounded软件验收。B12最终账本修后和CalibrationPrefix/public caller保存重放已分别复签。云端已交付原独立producer的候选面板零拟合恢复汇总，正在核查配对效应与完整原始载荷；历史失败保留原身份，科研新协议不追签云旧结果。新证据见[科研恢复与集成](evidence/research_resume_20261011.zh.md)。软件出口不代表公共效能、跨host整包或成人确认；各公共结果按自己的分母与执行来源解释。单个数值门不作为所有方向的串行前置。
+2026-10-11继续按[愿望清单当前进展](evidence/wishlist_progress_20261010.zh.md)推进123项，恢复科研树已完成 B03 严格 nested/source-study、B03 inner producer replay、B07 `/4` native family与B09 exact structural null的bounded软件验收。B12最终账本修后和CalibrationPrefix/public caller保存重放已分别复签，原MAT窄链exit0。原云候选面板完整分母和80/20配对读数已核来源：grouped的NLL增加未通过开发门，source/scratch差异按方向、预算和逐人异质性解释。历史失败保留原身份，科研新协议不追签云旧结果。新证据见[科研恢复与集成](evidence/research_resume_20261011.zh.md)。软件出口不代表公共效能、跨host整包或成人确认；各公共结果按自己的分母与执行来源解释。单个数值门不作为所有方向的串行前置。
 
 科研窗口负责科学合同与代码最终集成，云端窗口负责唯一执行调度。科研用一个完整 source→target seed，大版本校验才三个；两窗口合计最多10并发，科研子代理没有我方时间或额度上限。职责内自主推进，只集中同步重要交付、接口变化和阻塞。
 

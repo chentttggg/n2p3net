@@ -95,5 +95,9 @@
   "admission_cache": "one verified prefix record and captured future index per physical package",
   "performance_claim": "measured receipt sizes and repeated read counts only; no end-to-end speedup claim",
   "interruption_boundary": "whole-prefix future capture/replay before prediction sealing; calculated but unsealed rows remain partial/unknown",
-  "native_public_mat_probe": "pending separate frozen-source execution"
+  "native_public_mat_probe": {
+    "status": "completed",
+    "binding": "native_prefix_replay_binding.json",
+    "actual_exit_code": 0
+  }
 }

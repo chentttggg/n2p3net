@@ -4,6 +4,8 @@
 
 下一P1接口切片已按[独立反例与调用链](evidence/research_resume_20261011.zh.md#p1后续方向冻结响应与噪声程序的配对评分)分配到隔离树：冻结现代response完整M/R/原Σ物理factor，shared/private AR8同C/prefix32，补实际MembershipDecision与共同requested/paired指标。8个机制反例与2个小型producer关系通过仅支持方向；v2软件接口和新native panel仍待验收，不阻塞B12基础公共程序。
 
+原云候选面板152共同请求与80原配对账本已读数收口，见[失败分母与配对效应](evidence/research_resume_20261011.zh.md#原云候选面板完整分母与配对读数)。grouped K800/2000因paired NLL增加不通过原开发门；source→scratch方向K2000部分对照是scratch改善，不能倒写迁移收益。该原producer结果不等同新prefix协议执行；下一研究核合法C内整程序选择和概率风险，不从未来成绩选默认。
+
 2026-10-08最新执行规则覆盖下文待跑三seed数量：日常科研使用20260918单个完整source→target程序，重大版本校验才使用20260918/19/20三个独立程序。当前公共科研对应四个source checkpoint流程，各自选择与fresh refit，初始八个逻辑NN fit；B12两个公共面板继续按真实预算和requested账本验收。历史三seed设计与已执行身份不改写。科研线接B08可识别prior、B07字典可移植与B05/B06/B09机制，B14云底座和B12基础矩阵并行；各项代码、软件验证、公共效能分别见[集成状态](evidence/research_integration_20261008.zh.md)。
 
 [当前目标软件切片](evidence/current_public_consumers_20261008.zh.md)已实现fixed32/b64配方、匹配scratch、固定C质量loss、actualprior/β、观测Cz6 raw/原8导控制、primary温度与binary概率池；真实source K0/OOF和联合零fit源检查通过。已准备四份完整source view；上次完整源运行因worker突然终止失败，原因未确认、完整checkpoint为0，实际输入与终态见[吞吐记录](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)。云实例由用户关闭，当前先完成源码集成；恢复时按四个source流程×一个科研seed执行选择与fresh refit，接两个目标面板。源/目标效能按完整requested账本与原包重放验收。

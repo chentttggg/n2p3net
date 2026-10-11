@@ -102,6 +102,24 @@ B12 新增 `validate_b12_execution_manifest`，由 paired `run_erp_comparator._f
 
 这是实际prefix/public候选runner的软件接线；它仍没有候选程序的strict nested selection或learned gating，不完成公共效能、跨host整包或成人确认。原MAT窄输入验证另用冻结源码执行，不把上述synthetic通过重签成公共结果。
 
+原A01 MAT后续窄验证已exit0：从clean已接受源码按实际工作字节冻结971成员（保CRLF/LF字节），只跑预声明raw+Toeplitz、K200/K800、fixed/grouped两个程序与共同独立未来队列。29 requested decisions产生232 prediction行；每K捕获58个future strategy行。raw使用200/800标签，trial实际使用196/796标签；K200 grouped不足组具名不可用，K800保6个真实inner producer并成功重放。所有模型load/future replay及实际parent mixture准入通过，原MAT前后SHA一致；源checkpoint拟合0，没有用未来truth选方。它只证明原公共输入的软件链，未签收分类效能。源码/原MAT/脚本/退出码/包摘要见[原MAT前缀绑定](../assets/research_resume_20261011/native_prefix_replay_binding.json)。
+
+## 原云候选面板：完整分母与配对读数
+
+云窗口独立零拟合恢复已完成8人、152共同requested decisions、13376预测、448 fit records、32物理包、88指标与原80配对对照。科研总监实际读取本地terminal/actual exit/delivery/independent statistics，逐字核其SHA与delivery吻合，再读完整80原对照及20指定导出；其中8行已有原对照、12行为原保存预测的新只读派生。原executor exit1、scientific source `75a61532…`及其499冻结manifest均保留，恢复exit0、新source/target fit均0。完整失败账本留本地，不以科研新prefix协议改签。
+
+主迁移pool在正预算fixed/grouped的概率coverage均144/152，8个不可用决策仍在操作分母中。paired NLL仅在144共同概率决策上按原participant/seed层级归约，不把条件概率分母改成152。
+
+| K | fixed hit@all | grouped hit@all | fixed NLL | grouped NLL | grouped−fixed配对门 |
+|---|---:|---:|---:|---:|---|
+| 200 | 83/152 | 0/152（全部不可用） | 1.744632 | 不可用 | false：输出丢失、无paired NLL |
+| 800 | 113/152 | 114/152 | 0.851218 | 0.999665 | false：NLL增加0.148447 |
+| 2000 | 132/152 | 136/152 | 0.367592 | 0.485101 | false：NLL增加0.117508 |
+
+因此grouped的少量hit提升没有通过原开发风险门，不能据它晋升默认。完整source→matched scratch方向为candidate−baseline：K2000 fixed单NN的scratch比source多7/152 hit、paired NLL低0.036876；matched scratch pool多1/152、NLL低0.034934，两者原点估计门true。这是scratch在该条件下改善source，不是迁移收益。低预算fixed pool的source读数较scratch高1/152、NLL较低；K800 fixed单NN在hit/NLL上存在取舍，不能合并成统一“source更好”或“source无用”的结论。逐人也有异质性，K2000 fixed单NN的A03/A05在scratch方向hit与NLL均变差。
+
+这些出口只属于BNCI八人、一个实际`20260918` seed的公共校准开发程序；不覆盖训练随机性、独立确认、健康成人九选一或产品保证。当前研究依赖转向合法C内整程序选择、温度风险解释及独立P1机制，不用这份未来读数直接指定participant/budget默认策略。原始result约346MB、完整80/20失败账本、producer及具体读数指针见[紧凑来源与读数](../assets/research_resume_20261011/cloud_candidate_readout_binding.json)；科研根没有再次重放全部大模型或重新计算原346MB预测。
+
 ## P1后续方向：冻结响应与噪声程序的配对评分
 
 独立逐读B05/B06/B11后，总监接受下一接口切片为同一完整物理response后验下的shared/private AR8、共同C residual与32点prefix，接现有CandidateEvidence、DecisionPlan与paired metric owner。实现已分配到独立`research-mechanism-paired`工作树，不影响在途B12或当前prefix源码验证；软件接口和实际输入尚待签收，新native panel未执行。

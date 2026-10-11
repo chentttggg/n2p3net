@@ -1,0 +1,520 @@
+{
+  "schema": "n2p3_cloud_candidate_scientific_readout/1",
+  "date": "2026-10-11",
+  "scope": "Original one-seed eight-person public calibration development; compact readout of independently exported ledger",
+  "original_scientific_source_digest": "75a61532a6d668fc62e045910ce0adfb9f69fb4c31e599486c0723bb52fe3624",
+  "original_source_manifest_sha256": "6f2874e4fac9a3b7a52b0f50722a571936029c470c209ccf2f82f503187541dd",
+  "original_executor_status": "failed; preserved",
+  "recovery_status": "completed",
+  "recovery_actual_exit_code": 0,
+  "new_source_fits": 0,
+  "new_target_fits": 0,
+  "requested_decisions": 152,
+  "participants": 8,
+  "predictions": 13376,
+  "fit_records": 448,
+  "physical_packages": 32,
+  "metric_configurations": 88,
+  "original_contrasts": 80,
+  "additional_export_rows": 20,
+  "new_derived_rows_within_additional_export": 12,
+  "seed_pairs": [
+    [
+      20260918,
+      20260918
+    ]
+  ],
+  "direction": "candidate minus baseline",
+  "gate_scope": "Original development point-estimate rule; no adult or training-randomness acceptance",
+  "artifact_root": "C:\\Users\\chent\\.codex\\worktrees\\deep-research-plan\\n2p3-net\\tmp\\cloud_resume_20261011\\candidate_parent_recovery01\\closed",
+  "artifact_sha256": {
+    "terminal.json": "d8bc81a573df5027bc9ae424935d6add30d03cf9bef2cb3d86aec8deb4f9ec72",
+    "actual_exit.json": "03f9219defe34e8058cd5bcc09568d4e9e21eefbbe3008d2d266b671ea59eb62",
+    "delivery.json": "ac4ab954460e4e2d688183331250def13fe3b192a07838a4c4a3cea2dc4deb56",
+    "independent_statistics.json": "12ec170dba48c06348fceca422a4786d34735b0678c9488b24d6ae6f1dcdde1a",
+    "paired_comparisons_export01/terminal.json": "eea8a4ff070e780a4489b5b4f63d51da6ad2aadb486cfd3665d200f7d82531bd",
+    "paired_comparisons_export01/original_80.json": "dc63e65ac24bb261f6ec93864d0f42153338569224e5f6f722664fc0959e7895",
+    "paired_comparisons_export01/additional_requested.json": "d8a8860fddf572256aca4f39395db55ce601589dec92cac81d62446a64457290"
+  },
+  "large_original_result": {
+    "path": "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261011/candidate_parent_recovery01/result.json",
+    "sha256": "288bb3f54b529c6d1029fe7ac60370d64335d115355d90a237f27041048ae4ee",
+    "bytes": 346025851
+  },
+  "independent_statistics_producer": {
+    "path": "/root/n2p3-runtime-20261011-control/control/candidate_parent_recovery01/verify_statistics.py",
+    "sha256": "bf11c4d593bb15a8de1176aecdb2e46073e17341f9b9dcfacb1010c50e1dc318",
+    "bytes": 9457
+  },
+  "paired_export_producer": {
+    "path": "/root/n2p3-runtime-20261011-control/control/candidate_parent_recovery01/export_paired_comparisons.py",
+    "sha256": "f978892badbdc91dc1771bbf1605215ca936f86e84c2f5b642920cc9c09a713d",
+    "bytes": 16554
+  },
+  "primary_metrics": [
+    {
+      "configuration": "primary_transfer_pool@fixed@K0",
+      "requested_decisions": 152,
+      "requested_participant_operational_hit_rate": 0.0,
+      "decision_micro_hit_rate": 0.0,
+      "prediction_coverage": 0.0,
+      "probability_coverage": 0.0,
+      "available_probability_nll": null,
+      "available_probability_brier": null,
+      "tie_count": 0,
+      "not_available_count": 144
+    },
+    {
+      "configuration": "primary_transfer_pool@fixed@K200",
+      "requested_decisions": 152,
+      "requested_participant_operational_hit_rate": 0.5460526315789473,
+      "decision_micro_hit_rate": 0.5460526315789473,
+      "prediction_coverage": 0.9473684210526315,
+      "probability_coverage": 0.9473684210526315,
+      "available_probability_nll": 1.7446320112419622,
+      "available_probability_brier": 0.5748885129121157,
+      "tie_count": 0,
+      "not_available_count": 0
+    },
+    {
+      "configuration": "primary_transfer_pool@fixed@K2000",
+      "requested_decisions": 152,
+      "requested_participant_operational_hit_rate": 0.8684210526315789,
+      "decision_micro_hit_rate": 0.868421052631579,
+      "prediction_coverage": 0.9473684210526315,
+      "probability_coverage": 0.9473684210526315,
+      "available_probability_nll": 0.36759247789489335,
+      "available_probability_brier": 0.16745149070186133,
+      "tie_count": 0,
+      "not_available_count": 0
+    },
+    {
+      "configuration": "primary_transfer_pool@fixed@K800",
+      "requested_decisions": 152,
+      "requested_participant_operational_hit_rate": 0.743421052631579,
+      "decision_micro_hit_rate": 0.743421052631579,
+      "prediction_coverage": 0.9473684210526315,
+      "probability_coverage": 0.9473684210526315,
+      "available_probability_nll": 0.8512176663875578,
+      "available_probability_brier": 0.3299090389445491,
+      "tie_count": 0,
+      "not_available_count": 0
+    },
+    {
+      "configuration": "primary_transfer_pool@grouped_temperature@K0",
+      "requested_decisions": 152,
+      "requested_participant_operational_hit_rate": 0.0,
+      "decision_micro_hit_rate": 0.0,
+      "prediction_coverage": 0.0,
+      "probability_coverage": 0.0,
+      "available_probability_nll": null,
+      "available_probability_brier": null,
+      "tie_count": 0,
+      "not_available_count": 152
+    },
+    {
+      "configuration": "primary_transfer_pool@grouped_temperature@K200",
+      "requested_decisions": 152,
+      "requested_participant_operational_hit_rate": 0.0,
+      "decision_micro_hit_rate": 0.0,
+      "prediction_coverage": 0.0,
+      "probability_coverage": 0.0,
+      "available_probability_nll": null,
+      "available_probability_brier": null,
+      "tie_count": 0,
+      "not_available_count": 152
+    },
+    {
+      "configuration": "primary_transfer_pool@grouped_temperature@K2000",
+      "requested_decisions": 152,
+      "requested_participant_operational_hit_rate": 0.8947368421052632,
+      "decision_micro_hit_rate": 0.8947368421052632,
+      "prediction_coverage": 0.9473684210526315,
+      "probability_coverage": 0.9473684210526315,
+      "available_probability_nll": 0.4851008577021119,
+      "available_probability_brier": 0.19567130411328726,
+      "tie_count": 0,
+      "not_available_count": 0
+    },
+    {
+      "configuration": "primary_transfer_pool@grouped_temperature@K800",
+      "requested_decisions": 152,
+      "requested_participant_operational_hit_rate": 0.75,
+      "decision_micro_hit_rate": 0.75,
+      "prediction_coverage": 0.9473684210526315,
+      "probability_coverage": 0.9473684210526315,
+      "available_probability_nll": 0.999664792814092,
+      "available_probability_brier": 0.37072580984300935,
+      "tie_count": 0,
+      "not_available_count": 0
+    }
+  ],
+  "selected_paired_readouts": [
+    {
+      "family": "primary_fixed_vs_grouped",
+      "baseline": "primary_transfer_pool@fixed@K0",
+      "candidate": "primary_transfer_pool@grouped_temperature@K0",
+      "was_original_contrast": false,
+      "delta_hit": 0.0,
+      "delta_paired_nll": null,
+      "paired_probability_count": 0,
+      "rescued_count": 0,
+      "harmed_count": 0,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "paired_nll_unavailable"
+      ],
+      "missing_probability_rows": 152
+    },
+    {
+      "family": "single_source_NN_vs_matched_scratch",
+      "baseline": "nn@fixed@K0",
+      "candidate": "scratch@fixed@K0",
+      "was_original_contrast": true,
+      "delta_hit": -0.046052631578947366,
+      "delta_paired_nll": null,
+      "paired_probability_count": 0,
+      "rescued_count": 0,
+      "harmed_count": 7,
+      "lost_prediction_count": 144,
+      "lost_probability_count": 144,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "hit_decreased",
+        "paired_nll_unavailable",
+        "baseline_prediction_output_lost",
+        "baseline_probability_output_lost",
+        "participant_failure_increased"
+      ],
+      "missing_probability_rows": 152
+    },
+    {
+      "family": "source_pool_vs_matched_scratch_pool",
+      "baseline": "primary_transfer_pool@fixed@K0",
+      "candidate": "matched_scratch_pool@fixed@K0",
+      "was_original_contrast": false,
+      "delta_hit": 0.0,
+      "delta_paired_nll": null,
+      "paired_probability_count": 0,
+      "rescued_count": 0,
+      "harmed_count": 0,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "paired_nll_unavailable"
+      ],
+      "missing_probability_rows": 152
+    },
+    {
+      "family": "single_source_NN_vs_matched_scratch",
+      "baseline": "nn@grouped_temperature@K0",
+      "candidate": "scratch@grouped_temperature@K0",
+      "was_original_contrast": true,
+      "delta_hit": 0.0,
+      "delta_paired_nll": null,
+      "paired_probability_count": 0,
+      "rescued_count": 0,
+      "harmed_count": 0,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "paired_nll_unavailable"
+      ],
+      "missing_probability_rows": 152
+    },
+    {
+      "family": "source_pool_vs_matched_scratch_pool",
+      "baseline": "primary_transfer_pool@grouped_temperature@K0",
+      "candidate": "matched_scratch_pool@grouped_temperature@K0",
+      "was_original_contrast": false,
+      "delta_hit": 0.0,
+      "delta_paired_nll": null,
+      "paired_probability_count": 0,
+      "rescued_count": 0,
+      "harmed_count": 0,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "paired_nll_unavailable"
+      ],
+      "missing_probability_rows": 152
+    },
+    {
+      "family": "primary_fixed_vs_grouped",
+      "baseline": "primary_transfer_pool@fixed@K200",
+      "candidate": "primary_transfer_pool@grouped_temperature@K200",
+      "was_original_contrast": false,
+      "delta_hit": -0.5460526315789473,
+      "delta_paired_nll": null,
+      "paired_probability_count": 0,
+      "rescued_count": 0,
+      "harmed_count": 83,
+      "lost_prediction_count": 144,
+      "lost_probability_count": 144,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "hit_decreased",
+        "paired_nll_unavailable",
+        "baseline_prediction_output_lost",
+        "baseline_probability_output_lost",
+        "participant_failure_increased"
+      ],
+      "missing_probability_rows": 152
+    },
+    {
+      "family": "single_source_NN_vs_matched_scratch",
+      "baseline": "nn@fixed@K200",
+      "candidate": "scratch@fixed@K200",
+      "was_original_contrast": true,
+      "delta_hit": 0.006578947368421073,
+      "delta_paired_nll": 0.052668488072601605,
+      "paired_probability_count": 144,
+      "rescued_count": 18,
+      "harmed_count": 17,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "nll_increased"
+      ],
+      "missing_probability_rows": 8
+    },
+    {
+      "family": "source_pool_vs_matched_scratch_pool",
+      "baseline": "primary_transfer_pool@fixed@K200",
+      "candidate": "matched_scratch_pool@fixed@K200",
+      "was_original_contrast": false,
+      "delta_hit": -0.006578947368421018,
+      "delta_paired_nll": 0.03938232941881248,
+      "paired_probability_count": 144,
+      "rescued_count": 8,
+      "harmed_count": 9,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "hit_decreased",
+        "nll_increased"
+      ],
+      "missing_probability_rows": 8
+    },
+    {
+      "family": "single_source_NN_vs_matched_scratch",
+      "baseline": "nn@grouped_temperature@K200",
+      "candidate": "scratch@grouped_temperature@K200",
+      "was_original_contrast": true,
+      "delta_hit": 0.0,
+      "delta_paired_nll": null,
+      "paired_probability_count": 0,
+      "rescued_count": 0,
+      "harmed_count": 0,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "paired_nll_unavailable"
+      ],
+      "missing_probability_rows": 152
+    },
+    {
+      "family": "source_pool_vs_matched_scratch_pool",
+      "baseline": "primary_transfer_pool@grouped_temperature@K200",
+      "candidate": "matched_scratch_pool@grouped_temperature@K200",
+      "was_original_contrast": false,
+      "delta_hit": 0.0,
+      "delta_paired_nll": null,
+      "paired_probability_count": 0,
+      "rescued_count": 0,
+      "harmed_count": 0,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "paired_nll_unavailable"
+      ],
+      "missing_probability_rows": 152
+    },
+    {
+      "family": "primary_fixed_vs_grouped",
+      "baseline": "primary_transfer_pool@fixed@K800",
+      "candidate": "primary_transfer_pool@grouped_temperature@K800",
+      "was_original_contrast": false,
+      "delta_hit": 0.006578947368421018,
+      "delta_paired_nll": 0.14844712642653424,
+      "paired_probability_count": 144,
+      "rescued_count": 5,
+      "harmed_count": 4,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "nll_increased"
+      ],
+      "missing_probability_rows": 8
+    },
+    {
+      "family": "single_source_NN_vs_matched_scratch",
+      "baseline": "nn@fixed@K800",
+      "candidate": "scratch@fixed@K800",
+      "was_original_contrast": true,
+      "delta_hit": 0.019736842105263164,
+      "delta_paired_nll": 0.18006319544260307,
+      "paired_probability_count": 144,
+      "rescued_count": 14,
+      "harmed_count": 11,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "nll_increased"
+      ],
+      "missing_probability_rows": 8
+    },
+    {
+      "family": "source_pool_vs_matched_scratch_pool",
+      "baseline": "primary_transfer_pool@fixed@K800",
+      "candidate": "matched_scratch_pool@fixed@K800",
+      "was_original_contrast": false,
+      "delta_hit": 0.0,
+      "delta_paired_nll": 0.05678830117522404,
+      "paired_probability_count": 144,
+      "rescued_count": 4,
+      "harmed_count": 4,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "nll_increased"
+      ],
+      "missing_probability_rows": 8
+    },
+    {
+      "family": "single_source_NN_vs_matched_scratch",
+      "baseline": "nn@grouped_temperature@K800",
+      "candidate": "scratch@grouped_temperature@K800",
+      "was_original_contrast": true,
+      "delta_hit": 0.019736842105263164,
+      "delta_paired_nll": -0.01569942722476203,
+      "paired_probability_count": 144,
+      "rescued_count": 14,
+      "harmed_count": 11,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": true,
+      "gate_reasons": [],
+      "missing_probability_rows": 8
+    },
+    {
+      "family": "source_pool_vs_matched_scratch_pool",
+      "baseline": "primary_transfer_pool@grouped_temperature@K800",
+      "candidate": "matched_scratch_pool@grouped_temperature@K800",
+      "was_original_contrast": false,
+      "delta_hit": 0.013157894736842035,
+      "delta_paired_nll": -0.04550372370035727,
+      "paired_probability_count": 144,
+      "rescued_count": 6,
+      "harmed_count": 4,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": true,
+      "gate_reasons": [],
+      "missing_probability_rows": 8
+    },
+    {
+      "family": "primary_fixed_vs_grouped",
+      "baseline": "primary_transfer_pool@fixed@K2000",
+      "candidate": "primary_transfer_pool@grouped_temperature@K2000",
+      "was_original_contrast": false,
+      "delta_hit": 0.026315789473684292,
+      "delta_paired_nll": 0.11750837980721857,
+      "paired_probability_count": 144,
+      "rescued_count": 6,
+      "harmed_count": 2,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "nll_increased"
+      ],
+      "missing_probability_rows": 8
+    },
+    {
+      "family": "single_source_NN_vs_matched_scratch",
+      "baseline": "nn@fixed@K2000",
+      "candidate": "scratch@fixed@K2000",
+      "was_original_contrast": true,
+      "delta_hit": 0.046052631578947345,
+      "delta_paired_nll": -0.036875572989119365,
+      "paired_probability_count": 144,
+      "rescued_count": 11,
+      "harmed_count": 4,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": true,
+      "gate_reasons": [],
+      "missing_probability_rows": 8
+    },
+    {
+      "family": "source_pool_vs_matched_scratch_pool",
+      "baseline": "primary_transfer_pool@fixed@K2000",
+      "candidate": "matched_scratch_pool@fixed@K2000",
+      "was_original_contrast": false,
+      "delta_hit": 0.006578947368421129,
+      "delta_paired_nll": -0.034934189752838685,
+      "paired_probability_count": 144,
+      "rescued_count": 4,
+      "harmed_count": 3,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": true,
+      "gate_reasons": [],
+      "missing_probability_rows": 8
+    },
+    {
+      "family": "single_source_NN_vs_matched_scratch",
+      "baseline": "nn@grouped_temperature@K2000",
+      "candidate": "scratch@grouped_temperature@K2000",
+      "was_original_contrast": true,
+      "delta_hit": 0.046052631578947345,
+      "delta_paired_nll": -0.03872412267726211,
+      "paired_probability_count": 144,
+      "rescued_count": 11,
+      "harmed_count": 4,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": true,
+      "gate_reasons": [],
+      "missing_probability_rows": 8
+    },
+    {
+      "family": "source_pool_vs_matched_scratch_pool",
+      "baseline": "primary_transfer_pool@grouped_temperature@K2000",
+      "candidate": "matched_scratch_pool@grouped_temperature@K2000",
+      "was_original_contrast": false,
+      "delta_hit": -0.006578947368421129,
+      "delta_paired_nll": -0.029319505351254938,
+      "paired_probability_count": 144,
+      "rescued_count": 2,
+      "harmed_count": 3,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": false,
+      "gate_reasons": [
+        "hit_decreased"
+      ],
+      "missing_probability_rows": 8
+    }
+  ],
+  "root_verification": "actual local receipt/export byte digests match; full original result and all models were not replayed again by research root",
+  "interpretation": [
+    "grouped K800 and K2000 raise hit and paired NLL; both fail the original development rule",
+    "source-to-scratch positive hit and negative NLL at K2000 denotes scratch improving source, not transfer benefit",
+    "missing decisions remain in 152 operational denominator; paired probability count144 is separately reported",
+    "no research-prefix protocol re-signing, adult acceptance or training-randomness stability claim"
+  ]
+}

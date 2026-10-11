@@ -1,0 +1,68 @@
+{
+  "schema": "n2p3_native_prefix_replay_check/1",
+  "status": "completed",
+  "scope": "one public MAT software prefix/caller check; no efficacy acceptance",
+  "mat_sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+  "source_fit_calls": 0,
+  "seed_pair": [
+    0,
+    20260918
+  ],
+  "plan_sha256": "c333f8e54ad2dc67ee3c312bb32958ca5062ec4bdb3fddf3af62f6b6af90a6c0",
+  "script_sha256": "cc1174516be5138751e43d2a7e9d4874fd7903259ff6b541de563fd2e39350a9",
+  "executed_source_file_sha256": "c2f6b1890ed42dafdd56ed2ca8c5bdee49e410e4c13a446d2c20fb707f9d4c42",
+  "requested_decisions": 29,
+  "prediction_rows": 232,
+  "packages": [
+    {
+      "actual_K": 200,
+      "requested_Ks": [
+        200
+      ],
+      "raw_labels_used": 200,
+      "trial_labels_used": {
+        "98ff056eebdb78a5297ea9d3dc22a886704182dee8a117720ea8dfbf29853d44": 196
+      },
+      "strategies": {
+        "fixed": "completed",
+        "grouped_temperature": "unavailable"
+      },
+      "inner_producers": 0,
+      "captured_future_rows": 58,
+      "prediction_rows": 116,
+      "probability_available_rows": 56,
+      "prefix_receipt_sha256": "d4c7e23399e38d17b9b05803e790c4cddc44dd0f87cd7f40f474665175306ce5",
+      "prefix_receipt_file_sha256": "8a4c27db4fd606f7c3cf585b36f15d366f9202472620ec85f98ee5c60cc0772f"
+    },
+    {
+      "actual_K": 800,
+      "requested_Ks": [
+        800
+      ],
+      "raw_labels_used": 800,
+      "trial_labels_used": {
+        "98ff056eebdb78a5297ea9d3dc22a886704182dee8a117720ea8dfbf29853d44": 796
+      },
+      "strategies": {
+        "fixed": "completed",
+        "grouped_temperature": "completed"
+      },
+      "inner_producers": 6,
+      "captured_future_rows": 58,
+      "prediction_rows": 116,
+      "probability_available_rows": 112,
+      "prefix_receipt_sha256": "4f255597ab4f9ff3f99c5555e76f71fe788ec2186e2b4bb06fd0f9f5132dc6ed",
+      "prefix_receipt_file_sha256": "4c053fb2bc4e17b719ba74db6a2422f684ccbba842d5b27545571ec6ec250a6f"
+    }
+  ],
+  "numerical_replay_and_parent_admission": "required by the actual run_study caller",
+  "future_truth_role": "external reporting only; fixed declared programmes",
+  "source_git_commit": "01ec906b1276149885184615750036257ba90e51",
+  "source_archive_sha256": "1db057855bcf5e6229913b3065182721c7ba5bb1807a401f790dc4608e396098",
+  "source_manifest_file_sha256": "f6a3c0ddd1c5bb370c082fe5797f75eb783a8f9358fcd0b897b4def1768b3832",
+  "source_archive_members": 971,
+  "source_exact_bytes_match": true,
+  "actual_exit_code": 0,
+  "local_artifacts_root": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\NATIVE_PREFIX_20261011",
+  "binding_report_sha256": "eb78ba6f5d0b75cfe1c1cb8fcde03317c08019f2d1ffd2c213be95d9811bc4b3"
+}
