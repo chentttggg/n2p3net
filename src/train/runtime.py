@@ -208,17 +208,22 @@ def cpu_thread_budget(threads: int) -> Iterator[None]:
                 pass
 
 
-def configure_spawned_worker_threads(threads: int) -> None:
+def configure_spawned_worker_threads(threads: int, *, interop_threads: int | None = None) -> None:
     """Set the one-time PyTorch inter-op budget in a fresh spawned worker."""
 
     if threads < 1:
         raise ValueError("threads must be positive.")
+    if interop_threads is not None and (type(interop_threads) is not int or interop_threads < 1):
+        raise ValueError("explicit inter-op threads must be a positive integer.")
+    requested = min(2, int(threads)) if interop_threads is None else interop_threads
     try:
-        torch.set_num_interop_threads(min(2, int(threads)))
+        torch.set_num_interop_threads(requested)
     except RuntimeError:
         # PyTorch permits this exactly once before inter-op execution. A worker
         # that has already used it keeps its existing safe configuration.
         pass
+    if interop_threads is not None and torch.get_num_interop_threads() != requested:
+        raise RuntimeError("worker cannot establish its declared inter-op thread budget")
 
 
 @dataclass(frozen=True)

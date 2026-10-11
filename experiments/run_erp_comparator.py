@@ -41,6 +41,7 @@ from research.binary_probability import (  # noqa: E402
     binary_probability_metrics,
     export_binary_pools,
 )
+from research.cloud_execution import worker_compute_phase  # noqa: E402
 from research.comparison import (  # noqa: E402
     ContrastPlan,
     evaluation_input_identity,
@@ -533,19 +534,22 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
                             report["physical_target_fits"] += 1
                             cell.update(physical_target_fit=None, physical_target_fit_state="invocation_pending")
                             atomic_write_json(output / "result.json", report)
-                            fitted = fit_calibration_candidate(data, TargetRecipe(**cell["recipe"]), mask,
-                                source_trunk=source, source_input_stats=stats, device=device,
-                                source_temporal_basis=bases[arm["name"]])
+                            with worker_compute_phase(device if arm["family"] in NN_FAMILIES else "cpu"):
+                                fitted = fit_calibration_candidate(data, TargetRecipe(**cell["recipe"]), mask,
+                                    source_trunk=source, source_input_stats=stats, device=device,
+                                    source_temporal_basis=bases[arm["name"]])
                             predictor = FrozenTrialPredictor.from_fitted(fitted)
                             history, tolerance = fitted.fit_history, 1e-6 if fitted.adapter is not None else 0.
                             cell.update(physical_target_fit=True, physical_target_fit_state="returned", fit_history=history)
                             atomic_write_json(output / "result.json", report)
-                        probability = (predictor.probability_scores(data.X[test], observed[test], device=device)
-                                       if predictor.posterior_available else None)
+                        with worker_compute_phase(device if arm["family"] in NN_FAMILIES else "cpu"):
+                            probability = (predictor.probability_scores(data.X[test], observed[test], device=device)
+                                           if predictor.posterior_available else None)
                         if plan.get("require_probability_output") and probability is None:
                             raise ValueError("declared proper probability output requires its actual fitted posterior programme")
-                        scores = probability["llr"] if probability is not None else predictor.predict_logit(
-                            data.X[test], observed[test], device=device)
+                        with worker_compute_phase(device if arm["family"] in NN_FAMILIES else "cpu"):
+                            scores = probability["llr"] if probability is not None else predictor.predict_logit(
+                                data.X[test], observed[test], device=device)
                         if not np.isfinite(scores).all() or set(np.unique(data.y[test])) != {0, 1}:
                             raise ValueError("primary AUC requires all requested test trials and both classes")
                         model_path, prediction_path = output / f"{index:05d}.pt", output / f"{index:05d}.npz"
@@ -555,10 +559,11 @@ def _run_comparison_serial(plan_path: Path, output: Path, *, selected_subjects=N
                             "sha256": hashlib.sha256(model_path.read_bytes()).hexdigest()},
                             model_state_digest=restored.digest(), fit_history=history)
                         atomic_write_json(output / "result.json", report)
-                        probability_replay = (restored.probability_scores(data.X[test], observed[test], device=device)
-                                              if probability is not None else None)
-                        replay = probability_replay["llr"] if probability is not None else restored.predict_logit(
-                            data.X[test], observed[test], device=device)
+                        with worker_compute_phase(device if arm["family"] in NN_FAMILIES else "cpu"):
+                            probability_replay = (restored.probability_scores(data.X[test], observed[test], device=device)
+                                                  if probability is not None else None)
+                            replay = probability_replay["llr"] if probability is not None else restored.predict_logit(
+                                data.X[test], observed[test], device=device)
                         np.testing.assert_allclose(scores, replay, atol=tolerance, rtol=tolerance)
                         if roc_auc_score(data.y[test], scores) != roc_auc_score(data.y[test], replay):
                             raise ValueError("saved replay changed scored ranking/AUC")
@@ -705,7 +710,7 @@ def _participant_output_estimate(plan, plan_path, subject):
 
 
 def comparison_tasks(plan_path, output, resources, *, dependencies=(), task_prefix="binary"):
-    from research.cloud_execution import CloudTask, PhaseResources
+    from research.cloud_execution import CloudTask, target_phase_resources
 
     plan_path, output = Path(plan_path).resolve(), Path(output).resolve()
     plan = json.loads(plan_path.read_bytes())
@@ -715,8 +720,7 @@ def comparison_tasks(plan_path, output, resources, *, dependencies=(), task_pref
         "experiments.run_erp_comparator:comparison_participant_adapter",
         {"plan": str(plan_path), "output": str(output / "participants" / f"participant_{index:03d}"), "subject": subject, **binding},
         str(output / "participants" / f"participant_{index:03d}"),
-        PhaseResources("calibration", resources["native_threads_per_worker"], resources["target_worker_memory_bytes"],
-                       resources["native_threads_per_worker"], plan.get("device", "cpu")), tuple(dependencies))
+        target_phase_resources(resources, plan.get("device", "cpu")), tuple(dependencies))
         for index, subject in enumerate(plan["subjects"])]
 
 

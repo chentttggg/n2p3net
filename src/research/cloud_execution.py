@@ -10,6 +10,7 @@ admission owner and are not released with a process reservation.
 
 from __future__ import annotations
 
+import ctypes
 import gc
 import importlib
 import multiprocessing
@@ -17,6 +18,7 @@ import os
 import pickle
 import sys
 import time
+import uuid
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from multiprocessing.connection import wait
@@ -40,6 +42,70 @@ class PhaseResources:
     memory_bytes: int
     native_threads: int
     device: str = "cpu"
+    interop_threads: int | None = None
+    defer_gpu: bool = False
+
+
+def target_phase_resources(resources, device):
+    """Opt in CUDA targets to an explicit native/inter-op and lazy GPU policy."""
+    native = resources["native_threads_per_worker"]
+    target_native = resources.get("target_native_threads_per_worker")
+    if str(device).startswith("cuda") and target_native is not None:
+        return PhaseResources("calibration", target_native + 1, resources["target_worker_memory_bytes"],
+                              target_native, str(device), interop_threads=1, defer_gpu=True)
+    return PhaseResources("calibration", native, resources["target_worker_memory_bytes"], native, str(device))
+
+
+_CURRENT_WORKER_PHASES = None
+
+
+class _TargetWorkerPhases:
+    """GPU admission precedes CUDA initialization and lasts through tree exit."""
+
+    def __init__(self, admission, task):
+        self.admission, self.task = admission, task
+        self.gpu_active = not task.resources.defer_gpu
+
+    def enter_compute(self, device):
+        if not self.task.resources.defer_gpu:
+            return
+        import torch
+
+        if (torch.get_num_threads() != self.task.resources.native_threads
+                or torch.get_num_interop_threads() != self.task.resources.interop_threads):
+            raise RuntimeError("target compute differs from its actual native/inter-op claim")
+        if str(device).startswith("cuda") and not self.gpu_active:
+            if str(device) != self.task.resources.device:
+                raise ValueError("target compute device differs from its declared phase device")
+            if torch.cuda.is_initialized():
+                raise RuntimeError("target CUDA initialized before acquiring its GPU claim")
+            worker_diagnostic_phase("waiting_target_gpu_resources", native_threads=torch.get_num_threads(),
+                                    interop_threads=torch.get_num_interop_threads())
+            row = None
+            while row is None:
+                row = self.admission._ledger.try_activate_target_gpu(self.task.task_id)
+                if row is None:
+                    time.sleep(.05)
+            self.gpu_active = True
+            worker_diagnostic_phase("target_gpu_resources_admitted", actual_phase_reservation=row,
+                                    native_threads=torch.get_num_threads(),
+                                    interop_threads=torch.get_num_interop_threads())
+        worker_diagnostic_phase("target_compute", compute_device=str(device),
+                                retained_gpu_claim=int(self.gpu_active))
+
+    def verify_cuda_admission(self):
+        torch = sys.modules.get("torch")
+        if self.task.resources.defer_gpu and torch is not None and torch.cuda.is_initialized() and not self.gpu_active:
+            raise RuntimeError("target adapter initialized CUDA outside an admitted compute phase")
+
+
+@contextmanager
+def worker_compute_phase(device):
+    """Caller marks actual fit/predict work; inline scientific calls stay valid."""
+    if _CURRENT_WORKER_PHASES is not None:
+        _CURRENT_WORKER_PHASES.enter_compute(device)
+    yield
+    # No downgrade: model state, CUDA context and allocator may remain resident.
 
 
 @dataclass(frozen=True)
@@ -78,13 +144,14 @@ def _failure(error, stage):
 
 
 @contextmanager
-def _native_environment(threads, task_id):
+def _native_environment(threads, task_id, tree_token):
     names = ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS",
-             "TORCHINDUCTOR_COMPILE_THREADS", "N2P3_CLOUD_TASK_ID")
+             "TORCHINDUCTOR_COMPILE_THREADS", "N2P3_CLOUD_TASK_ID", "N2P3_CLOUD_TREE_TOKEN")
     previous = {name: os.environ.get(name) for name in names}
     try:
         for name in names:
-            os.environ[name] = (task_id if name == "N2P3_CLOUD_TASK_ID" else
+            os.environ[name] = (tree_token if name == "N2P3_CLOUD_TREE_TOKEN" else
+                               task_id if name == "N2P3_CLOUD_TASK_ID" else
                                "1" if name == "TORCHINDUCTOR_COMPILE_THREADS" else str(threads))
         yield
     finally:
@@ -116,33 +183,48 @@ def _device_snapshot(device):
 
 
 def _worker_entry(encoded, sender, directory, identity):
+    global _CURRENT_WORKER_PHASES
+
     if os.name != "nt":
         os.setsid()
-    task, input_admission = pickle.loads(encoded)
+    task, input_admission, admission = pickle.loads(encoded)
     from research.source_execution import install_input_admission
 
     install_input_admission(input_admission)
+    _CURRENT_WORKER_PHASES = _TargetWorkerPhases(admission, task)
     initialize_worker_diagnostics(directory, {**identity, "cloud_task_id": task.task_id})
     sender.send({"event": "ready", "pid": os.getpid(), "create_time": psutil.Process().create_time(),
-                 "process_group": os.getpgrp() if os.name != "nt" else None})
+                 "process_group": os.getpgrp() if os.name != "nt" else None,
+                 "tree_token": os.environ["N2P3_CLOUD_TREE_TOKEN"]})
     if sender.recv() != "execute":
         return
     result = CloudResult(task.task_id, "completed")
     try:
         with diagnostic_task(task.output, {"task_id": task.task_id, "phase": task.resources.phase,
                 "adapter": task.adapter, "resources": asdict(task.resources)}):
+            if task.resources.interop_threads is not None:
+                from train.runtime import configure_spawned_worker_threads
+
+                # Inter-op is process-global and immutable after work begins.
+                # Establish the explicit policy before importing the adapter.
+                configure_spawned_worker_threads(task.resources.native_threads, interop_threads=task.resources.interop_threads)
             worker_diagnostic_phase("adapter_import")
             function = _adapter(task.adapter)
             if "torch" in sys.modules:
                 from train.runtime import configure_spawned_worker_threads, cpu_thread_budget
 
-                configure_spawned_worker_threads(task.resources.native_threads)
+                configure_spawned_worker_threads(task.resources.native_threads, interop_threads=task.resources.interop_threads)
                 with cpu_thread_budget(task.resources.native_threads):
+                    _CURRENT_WORKER_PHASES.verify_cuda_admission()
+                    if (task.resources.defer_gpu and
+                            sys.modules["torch"].get_num_threads() != task.resources.native_threads):
+                        raise RuntimeError("worker cannot establish its declared target native thread budget")
                     worker_diagnostic_phase("adapter_execution")
                     result.value = function(task.arguments)
             else:
                 worker_diagnostic_phase("adapter_execution")
                 result.value = function(task.arguments)
+            _CURRENT_WORKER_PHASES.verify_cuda_admission()
     except BaseException as error:
         result.status, result.failure = "failed", _failure(error, "adapter_execution")
     before = {"host": system_snapshot(), "device": _device_snapshot(task.resources.device)}
@@ -161,7 +243,8 @@ def _worker_entry(encoded, sender, directory, identity):
             result.supplementary_failures.append(cleanup_failure)
     after = {"host": system_snapshot(), "device": _device_snapshot(task.resources.device)}
     result.worker = {"pid": os.getpid(), "create_time": after["host"].get("create_time"),
-                     "cleanup_before": before, "cleanup_after": after}
+                     "cleanup_before": before, "cleanup_after": after,
+                     "target_gpu_claim_activated": task.resources.defer_gpu and _CURRENT_WORKER_PHASES.gpu_active}
     worker_diagnostic_phase("cache_group_cleanup_returned", status=result.status)
     try:
         sender.send(result)
@@ -169,10 +252,10 @@ def _worker_entry(encoded, sender, directory, identity):
         sender.close()
 
 
-def _make_process(context, task, sender, directory, identity, input_admission):
+def _make_process(context, task, sender, directory, identity, input_admission, admission):
     # Encoding before creating a process makes a bad lightweight argument fail
     # before an unregistered child can be created by spawn's reduction step.
-    encoded = pickle.dumps((task, input_admission), protocol=pickle.HIGHEST_PROTOCOL)
+    encoded = pickle.dumps((task, input_admission, admission), protocol=pickle.HIGHEST_PROTOCOL)
     return context.Process(target=_worker_entry, args=(encoded, sender, str(directory), identity))
 
 
@@ -187,12 +270,17 @@ class _Running:
     containment: object = None
     bootstrap: dict | None = None
     retirement: dict | None = None
+    tree_token: str | None = None
+    owned_processes: dict = field(default_factory=dict)
+    infrastructure_children: set = field(default_factory=set)
 
 
 def _admit_bootstrap(item, message):
     """Science waits for its own containment; a rejection belongs to this task."""
     if item.bootstrap is not None or message.get("pid") != item.process.pid:
         raise ValueError("bootstrap PID differs from the owned process handle or repeated its admission")
+    if message.get("tree_token") != item.tree_token:
+        raise ValueError("bootstrap process-tree ownership token differs from the owned task")
     if os.name == "nt":
         item.containment = _WindowsJob(item.process)
     elif message.get("process_group") != item.process.pid:
@@ -268,15 +356,94 @@ class _WindowsJob:
         return self.retirement
 
 
-def _retire_tree(item):
-    if item.retirement is not None:
-        return item.retirement
-    if item.containment is not None:
-        item.retirement = item.containment.retire()
-        return item.retirement
-    if item.bootstrap is None:
-        return {"backend": "bootstrap_not_admitted", "science_execution_started": False}
-    group = item.bootstrap["process_group"]
+def _enable_task_subreaper():
+    if sys.platform != "linux":
+        return None
+    libc = ctypes.CDLL(None, use_errno=True)
+    previous = ctypes.c_int()
+    if libc.prctl(37, ctypes.byref(previous), 0, 0, 0) or libc.prctl(36, 1, 0, 0, 0):
+        raise OSError(ctypes.get_errno(), "cannot establish cloud descendant ownership")
+    return previous.value
+
+
+def _restore_task_subreaper(previous):
+    if previous is not None:
+        libc = ctypes.CDLL(None, use_errno=True)
+        if libc.prctl(36, previous, 0, 0, 0):
+            raise OSError(ctypes.get_errno(), "cannot restore cloud descendant ownership")
+
+
+def _remember_task_tree(item):
+    def remember(process):
+        try:
+            item.owned_processes[process.pid] = {"pid": process.pid,
+                "create_time": process.create_time(), "process_group": os.getpgid(process.pid)}
+        except (psutil.NoSuchProcess, ProcessLookupError):
+            pass
+
+    try:
+        leader = psutil.Process(item.bootstrap["pid"])
+        if leader.create_time() == item.bootstrap["create_time"]:
+            remember(leader)
+            for process in leader.children(recursive=True):
+                remember(process)
+    except psutil.NoSuchProcess:
+        pass
+    # Native leader exit adopts even setsid descendants into the subreaper.
+    # A per-launch inherited token attributes a late orphan to its task, while
+    # generation checks preserve Manager/tracker processes and independent peers.
+    for process in psutil.Process().children():
+        try:
+            if ((process.pid, process.create_time()) in item.infrastructure_children
+                    or not _owned_process_alive(process)
+                    or process.environ().get("N2P3_CLOUD_TREE_TOKEN") != item.tree_token):
+                continue
+            remember(process)
+            for descendant in process.children(recursive=True):
+                remember(descendant)
+        except psutil.NoSuchProcess:
+            pass
+
+
+def _retire_posix_task_tree(item):
+    groups = []
+    while True:
+        _remember_task_tree(item)
+        live = []
+        for identity in item.owned_processes.values():
+            try:
+                process = psutil.Process(identity["pid"])
+                if process.create_time() == identity["create_time"] and _owned_process_alive(process):
+                    live.append(process)
+            except psutil.NoSuchProcess:
+                pass
+        if not live:
+            break
+        process_groups = set()
+        for process in live:
+            try:
+                process_groups.add(os.getpgid(process.pid))
+            except ProcessLookupError:
+                pass
+        if os.getpgrp() in process_groups:
+            raise RuntimeError("owned science descendant joined the coordinator process group")
+        groups.extend(_retire_process_group(group) for group in sorted(process_groups))
+    # Reap only this task's adopted children; never waitpid(-1) and consume an
+    # independent multiprocessing handle's real OS exit.
+    for identity in item.owned_processes.values():
+        try:
+            process = psutil.Process(identity["pid"])
+            if process.create_time() == identity["create_time"]:
+                process.wait(timeout=.5)
+        except psutil.NoSuchProcess:
+            pass
+    return {"backend": "linux_subreaper_and_owned_process_groups",
+        "process_group": item.bootstrap["process_group"], "groups": groups,
+        "owned_processes": list(item.owned_processes.values()),
+        "active_owned_processes_after_exit": 0}
+
+
+def _retire_process_group(group):
     members = []
     for process in psutil.process_iter(["pid", "create_time", "status"]):
         try:
@@ -293,9 +460,21 @@ def _retire_tree(item):
             process.kill()
     while any(_owned_process_alive(process) for process in alive):
         time.sleep(.01)
-    item.retirement = {"backend": "posix_session", "process_group": group,
+    return {"backend": "posix_session", "process_group": group,
             "retired_descendant_pids": [process.pid for process in members],
             "active_owned_processes_after_exit": 0, "orphan_zombies_may_await_init_reaping": True}
+
+
+def _retire_tree(item):
+    if item.retirement is not None:
+        return item.retirement
+    if item.containment is not None:
+        item.retirement = item.containment.retire()
+        return item.retirement
+    if item.bootstrap is None:
+        return {"backend": "bootstrap_not_admitted", "science_execution_started": False}
+    item.retirement = (_retire_posix_task_tree(item) if sys.platform == "linux" and item.bootstrap.get("tree_token")
+                       else _retire_process_group(item.bootstrap["process_group"]))
     return item.retirement
 
 
@@ -341,6 +520,14 @@ class CloudExecutor:
             if (type(task.resources.native_threads) is not int or
                     not 1 <= task.resources.native_threads <= task.resources.cpu_threads):
                 raise ValueError("native threads must fit the phase CPU reservation")
+            if task.resources.interop_threads is not None and (
+                    type(task.resources.interop_threads) is not int or task.resources.interop_threads < 1
+                    or task.resources.native_threads + task.resources.interop_threads > task.resources.cpu_threads):
+                raise ValueError("native and explicit inter-op threads must fit the phase CPU reservation")
+            if type(task.resources.defer_gpu) is not bool or task.resources.defer_gpu and (
+                    task.resources.phase != "calibration" or not task.resources.device.startswith("cuda")
+                    or task.resources.interop_threads is None):
+                raise ValueError("lazy GPU admission requires an explicit target native/inter-op policy")
         requested.update((task.task_id, task) for task in additions)
 
     def run(self, tasks, *, on_finished=None, on_observation=None):
@@ -353,9 +540,12 @@ class CloudExecutor:
 
         def finish(outcome):
             if on_finished is not None:
+                from train.runtime import cpu_thread_budget
+
                 before_wall, before_cpu = time.perf_counter(), time.process_time()
                 try:
-                    additions = tuple(on_finished(outcome) or ())
+                    with cpu_thread_budget(max(1, self.admission.coordinator_threads)):
+                        additions = tuple(on_finished(outcome) or ())
                     self._add_tasks(requested, additions)
                 except Exception as error:
                     failure = _failure(error, "artifact_admission")
@@ -382,6 +572,7 @@ class CloudExecutor:
                 except Exception as error:
                     observation_failures.append(_failure(error, "observation_callback"))
 
+        previous_subreaper = _enable_task_subreaper()
         try:
             while len(results) < len(requested):
                 pending = [task for key, task in requested.items() if key not in results and key not in active]
@@ -400,15 +591,17 @@ class CloudExecutor:
                         continue
                     reservation = self.admission.reserve_phase(task.resources.phase,
                         cpu_threads=task.resources.cpu_threads, memory_bytes=task.resources.memory_bytes,
-                        gpu_workers=int(task.resources.device.startswith("cuda")), task_id=task.task_id)
+                        gpu_workers=int(task.resources.device.startswith("cuda") and not task.resources.defer_gpu), task_id=task.task_id,
+                        gpu_capable=task.resources.phase == "calibration" and task.resources.device.startswith("cuda"))
                     if reservation is None:
                         continue
                     receiver, sender = None, None
                     try:
                         receiver, sender = self.context.Pipe(duplex=True)
-                        with _native_environment(task.resources.native_threads, task.task_id):
+                        tree_token = uuid.uuid4().hex
+                        with _native_environment(task.resources.native_threads, task.task_id, tree_token):
                             process = _make_process(self.context, task, sender, diagnostics.directory, diagnostics.identity,
-                                                    self.admission.input_admission)
+                                                    self.admission.input_admission, self.admission)
                             process.start()
                     except Exception as error:
                         if receiver is not None:
@@ -416,7 +609,10 @@ class CloudExecutor:
                         self.admission.release_phase(reservation)
                         finish(CloudResult(task.task_id, "failed", failure=_failure(error, "spawn")))
                     else:
-                        active[task.task_id] = _Running(task, reservation, process, receiver)
+                        infrastructure = {(child.pid, child.create_time()) for child in psutil.Process().children()
+                                          if child.pid != process.pid}
+                        active[task.task_id] = _Running(task, reservation, process, receiver,
+                            tree_token=tree_token, infrastructure_children=infrastructure)
                         self._processes[process.pid] = process
                         diagnostics.remember_processes(self)
                     finally:
@@ -436,6 +632,8 @@ class CloudExecutor:
                 handles.extend(item.receiver for item in active.values() if item.receiving)
                 ready = wait(handles, timeout=self.poll_seconds)
                 for key, item in list(active.items()):
+                    if sys.platform == "linux" and item.bootstrap is not None:
+                        _remember_task_tree(item)
                     if item.receiving and item.receiver in ready:
                         try:
                             message = item.receiver.recv()
@@ -517,6 +715,7 @@ class CloudExecutor:
                 self.admission.release_phase(item.reservation)
             for process in self._processes.values():
                 process.close()
+            _restore_task_subreaper(previous_subreaper)
             if settlement_failures:
                 primary = sys.exception()
                 if primary is None:

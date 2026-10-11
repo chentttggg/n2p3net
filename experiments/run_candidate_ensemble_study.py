@@ -24,6 +24,7 @@ from research.candidate_metrics import (  # noqa: E402
     compare_candidate_probability_metrics,
     evaluate_candidate_evidence,
 )
+from research.cloud_execution import worker_compute_phase  # noqa: E402
 from research.contracts import (  # noqa: E402
     DecisionPlanContract,
     DecisionPlanEntry,
@@ -564,9 +565,12 @@ def _subject_impl(row, plan, directory, expected_source, source_snapshots):
                             plan["records"].index(row), seed, fold, expert_index, spec, one, training, package)
                         if fitted is None:
                             origin["physical_fit_attempts"] = 1
-                            fitted = fit_calibration_ensemble(training, (spec,), one,
-                                source_checkpoints=sources, device=plan["device"],
-                                calibration_strategy=plan["calibration_strategy"])
+                            compute_device = (plan["device"] if spec.family == "trial" and
+                                spec.recipe.initialization in {"source", "scratch", "source_feature_lda"} else "cpu")
+                            with worker_compute_phase(compute_device):
+                                fitted = fit_calibration_ensemble(training, (spec,), one,
+                                    source_checkpoints=sources, device=plan["device"],
+                                    calibration_strategy=plan["calibration_strategy"])
                             origin["physical_successful_fits"] = 1
                             fitted.save(package)
                         else:
@@ -738,11 +742,14 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                     "requested_decision_ids": [view.record_id for view in views.decisions],
                     "phase": "independent_prefix",
                 }
-                programs = fit_calibration_prefix_programs(prefix, specs, roster,
-                    strategies=plan["calibration_strategies"], source_checkpoints=sources, device=plan["device"],
-                    temperature_expert_ids=plan.get("temperature_expert_ids"),
-                    inner_replay_recorder=recorder, inner_replay_context=prefix_context,
-                    _source_preparation=source_preparation)
+                compute_device = (plan["device"] if budget > 0 and any(spec.family == "trial" and
+                    spec.recipe.initialization in {"source", "scratch", "source_feature_lda"} for spec in specs) else "cpu")
+                with worker_compute_phase(compute_device):
+                    programs = fit_calibration_prefix_programs(prefix, specs, roster,
+                        strategies=plan["calibration_strategies"], source_checkpoints=sources, device=plan["device"],
+                        temperature_expert_ids=plan.get("temperature_expert_ids"),
+                        inner_replay_recorder=recorder, inner_replay_context=prefix_context,
+                        _source_preparation=source_preparation)
                 FittedEnsemble.save_programs(package, programs, participant_key=prefix.target_contract["participant_key"])
                 for strategy in plan["calibration_strategies"]:
                     _abort_checkpoint()
@@ -861,17 +868,16 @@ def candidate_participant_adapter(arguments):
 
 
 def candidate_tasks(plan_path, output, resources, *, dependencies=(), task_prefix="candidate"):
-    from research.cloud_execution import CloudTask, PhaseResources
+    from research.cloud_execution import CloudTask, target_phase_resources
 
     plan_path, output = Path(plan_path).resolve(), Path(output).resolve()
     plan = json.loads(plan_path.read_bytes())
     return [CloudTask(f"{task_prefix}:{index:03d}",
         "experiments.run_candidate_ensemble_study:candidate_participant_adapter",
         {"plan": str(plan_path), "output": str(output / "participant_groups" / f"participant_{index:03d}"),
-         "record_index": index, "output_estimate_bytes": resources["target_worker_memory_bytes"]},
+         "record_index": index, "output_estimate_bytes": min(2**30, resources["target_worker_memory_bytes"])},
         str(output / "participant_groups" / f"participant_{index:03d}"),
-        PhaseResources("calibration", resources["native_threads_per_worker"], resources["target_worker_memory_bytes"],
-                       resources["native_threads_per_worker"], plan.get("device", "cpu")), tuple(dependencies))
+        target_phase_resources(resources, plan.get("device", "cpu")), tuple(dependencies))
         for index in range(len(plan["records"]))]
 
 
