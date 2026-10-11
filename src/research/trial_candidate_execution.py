@@ -98,6 +98,7 @@ def execute_trial_candidate_participant(
     recipes: Sequence[TargetRecipe], local_subject: str, output: str | Path,
     source_snapshot_sha256: str, execution_source_sha256: str,
     device: str = "cpu", excluded_source_datasets: Sequence[str] = (),
+    source_seed: int | None = None,
 ) -> dict:
     """Keep target fitting, shared future input and independent loaded replay together.
 
@@ -129,6 +130,7 @@ def execute_trial_candidate_participant(
               "local_subject": local_subject, "source_checkpoint_sha256": source.digest,
               "source_snapshot_sha256": source_snapshot_sha256,
               "execution_source_sha256": execution_source_sha256,
+              "source_seed": source_seed,
               "future_input_digest": input_digest,
               "calibration_input_digest": array_digest(calibration.X),
               "calibration_labels_digest": array_digest(calibration.y),
@@ -154,6 +156,8 @@ def execute_trial_candidate_participant(
         prepared = owner.prepare(source.content, binding_data, local_subject)
         if prepared.payload["training_contract"]["source_snapshot_sha256"] != source_snapshot_sha256:
             raise ValueError("declared source snapshot differs from the admitted checkpoint producer")
+        if source_seed is not None and prepared.payload["training_contract"]["seed"] != source_seed:
+            raise ValueError("declared source seed differs from the admitted checkpoint producer")
         prepared.assert_library_exclusion(target_membership=dataset_study_membership(binding_data),
                                           excluded_source_datasets=excluded_source_datasets)
         fit_record = {"arm": arm["name"], "recipe": None if recipe is None else recipe.record(),

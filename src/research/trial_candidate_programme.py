@@ -73,6 +73,7 @@ def trial_participant_adapter(arguments):
         source_snapshot_sha256=arguments["source_snapshot_sha256"],
         execution_source_sha256=arguments["execution_source_sha256"], device=arguments["device"],
         excluded_source_datasets=(arguments["dataset_id"],),
+        source_seed=arguments["source_seed"],
     )
     path = Path(arguments["output"]) / "result.json"
     return {"participant_key": arguments["participant_key"], "result_path": str(path),
@@ -92,6 +93,7 @@ def _admit_participant(value, arguments):
             or result["source_checkpoint_sha256"] != arguments["source_checkpoint"]["sha256"]
             or result["source_snapshot_sha256"] != arguments["source_snapshot_sha256"]
             or result["execution_source_sha256"] != arguments["execution_source_sha256"]
+            or result["source_seed"] != arguments["source_seed"]
             or result["recipes"] != arguments["recipes"]
             or semantic_sha256(result["requested"]) != semantic_sha256([row.authority_record() for row in requests])
             or [row["arm"] for row in result["arms"]] != ["source_zero_shot", *[row["name"] for row in arguments["recipes"]]]):
@@ -131,6 +133,8 @@ def compile_participants(plan, execution_source, output):
         if ledger["source_profile_checkpoint"]["sha256"] != plan["source_checkpoint"]["sha256"]:
             raise ValueError("prepared input profile differs from the admitted source checkpoint")
         subject = ledger["subject"]
+        if not subject or Path(subject).name != subject or subject in {".", ".."}:
+            raise ValueError("prepared participant identity must be one exact output path component")
         participant = calibration.identity_table.record_for(subject).authority_key("source_or_global")
         requests = []
         for descriptor in ledger["future_decisions"]:
@@ -170,7 +174,8 @@ def compile_participants(plan, execution_source, output):
             "source_checkpoint": plan["source_checkpoint"], "requests": requests,
             "recipes": plan["recipes"], "source_snapshot_sha256": plan["source_snapshot_sha256"],
             "execution_source_sha256": execution_source, "device": plan["device"],
-            "output": str(output / "participants" / directory.name)})
+            "source_seed": plan["seed_pairs"][0][0],
+            "output": str(output / "participants" / subject)})
     decision_plan = DecisionPlanContract(plan["preparation_cohort"]["sha256"],
         semantic_sha256([row["participant_key"] for row in actors]),
         tuple(row["participant_key"] for row in actors), tuple(entries))

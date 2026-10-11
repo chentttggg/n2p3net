@@ -50,7 +50,8 @@ def test_generic_requests_keep_original_keys_depth_output_identity_and_censor(
         "participants": [{"preparation": {"path": str(preparation), "sha256": file_sha256(preparation)}}]}))
     plan = {"dataset_id": dataset_id, "preparation_cohort": {"path": str(cohort), "sha256": file_sha256(cohort)},
         "calibration_episode_count": 5, "maximum_horizon": depth, "source_checkpoint": source,
-        "recipes": [], "source_snapshot_sha256": "c" * 64, "device": "cpu"}
+        "recipes": [], "source_snapshot_sha256": "c" * 64, "device": "cpu",
+        "seed_pairs": [[20260918, 20260918]]}
     actors, decisions, horizons, coverage, _ = compile_participants(plan, "d" * 64, tmp_path / "output")
     assert len(decisions.entries) == len(horizons) == len(coverage) == 1
     assert set(horizons.values()) == {depth}

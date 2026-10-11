@@ -78,6 +78,10 @@ def test_trial_real_three_arms_and_interrupted_exact_reuse(tmp_path, monkeypatch
     changed = dict(arguments, future=replace(future, X=future.X * 2))
     with pytest.raises(ValueError, match="actual input/recipe/source"):
         execute_trial_candidate_participant(**changed)
+    with pytest.raises(ValueError, match="source seed"):
+        execute_trial_candidate_participant(**{**arguments, "source_seed": 1,
+            "output": tmp_path / "wrong_source_seed"})
+    assert calls == ["source", "scratch"]
 
 
 def test_labelled_future_rejected_before_any_output(tmp_path):
