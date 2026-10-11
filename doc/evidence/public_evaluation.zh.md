@@ -103,7 +103,7 @@ Q1 已按首五个完整 raw episode 的 episode-budget 程序封库：61 人、
 
 独立审阅在本地流式核验完整676个归档成员的SHA与字节数、61×3模型/receipt、请求/实际fit身份及全部保存概率，未加载模型或重算EEG评分；三臂宏hit/NLL/Brier及配对效应与原报告一致。审阅另核实际529成员执行源码8ddd与原checkpoint/source角色，见`tmp/BI_Q1_ACCEPTANCE/verification.json`。
 
-新consumer审阅复现BI外部descriptor与actual timeline错映缺口；修后builder/load共用label-free schedule compiler，逐字段核episode、global evidence rows、R/censor和完整horizon prefixes。五个旧门反例先RED，再由新门拒绝；相关52项调用链验证及最终8项BI入口验证通过。原封库模型、缓存与报告保持原字节，原61cohort的实际映射另作零拟合只读核验。
+新consumer审阅复现BI外部descriptor与actual timeline错映缺口；修后builder/load共用label-free schedule compiler，逐字段核episode、global evidence rows、R/censor和完整horizon prefixes。五个旧门反例先RED，再由新门拒绝；相关52项调用链验证及最终8项BI入口验证通过。原61cohort独立只读核验已完成：1287条原descriptor、全部key、C/future隔离及原文件SHA逐项一致，9.524秒、0fit/score/filter/model-load。旧映射审计consumer与最终2e646c2b reader分别留SHA；原封库模型、缓存与报告保持原字节。
 
 四个旧zero-shot分片在fit前因16-channel/causal缓存与source合同不符而拒绝，新增fit为0。新builder正接显式profile/channel owner；实际source的同名双向profile为`baseline=none`，个人默认常量的`mean_only`另保原用途。校准raw先隔离再零相位处理，缺FZ/PO8保slot mask且CZ必须实测；三臂调用继续核同architecture、固定mass风险及fresh-load重放。已完成22文件固定来源的独立审阅和零fit反例，完整本地handoff在`tmp/BI2014a_Q1_AUDIT/independent_audit.zh.md`，摘要及SHA并入上述队列计划。
 

@@ -55,6 +55,21 @@
     "model_deserializations": 0,
     "new_fits_or_scores": 0
   },
+  "original_preparation_descriptor_audit": {
+    "path": "tmp/CLOUD_PROGRAMME_INTEGRATION_REVIEW/original_bi_descriptor_audit.json",
+    "sha256": "9e8508a806a8d136b491be2e78ccff9c0790994b204e01dcefd78914dbaeab5a",
+    "auditor_sha256": "ae94d52488256e3f0924498d918911c1e60daef368fed78a11aa934d68fcf580",
+    "actual_auditing_consumer_sha256": "1560b0195b42ddf4f4d221b64540e4af20b27f32937709352cd02f930c303911",
+    "final_new_reader_sha256": "2e646c2b9ced63d6976f51b21887bceef634af0f08e15ae3c5ffc6a96db97e7b",
+    "original_cohort_sha256": "3fe66d1348d9147f707788526ef34f5936f3cb72c61f882084dc7f7aed960c11",
+    "participants": 61,
+    "requested_episodes": 1287,
+    "actual_exit_code": 0,
+    "wall_seconds": 9.52363108098507,
+    "all_mapping_keys_scope_and_original_file_checks": "passed",
+    "new_fits_scores_filters_model_loads": 0,
+    "old_producer_resigned": false
+  },
   "cloud_report_path": "DATA/cloud_live_20261012/public_dataset_queue01/BI2014a_q1/report.json",
   "scope": "public_calibration_development_not_adult_or_product_confirmation",
   "separate_from": "B12_label_K0_K200_K800_K2000_panel"
