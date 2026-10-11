@@ -900,7 +900,8 @@ class ContinuousDecisionModel:
         record IDs and digests retain the concrete input used here. Ridge and
         dictionary must be fixed before held-out scoring.
 
-        Omitting noise_order executes the original clipped AR1 fit exactly.
+        Omitting noise_order retains the clipped AR1 estimation program. All
+        stationary variants use the same producer QR for the numerical posterior.
         An explicit integer order selects one feasible GLS update using pooled
         Burg residual noise and a stationary latent startup. Ridge refers to
         the unit-innovation row prior; the channel covariance owns voltage
@@ -986,7 +987,6 @@ class ContinuousDecisionModel:
             else:
                 D = np.vstack([_whiten_and_project(d, phi) for d in designs])
                 Y = np.vstack([_whiten_and_project(x, phi) for x in samples])
-            gram = D.T @ D
             statistics = _qr_fit_statistics(np.linalg.qr(np.column_stack((D, Y)), mode="r"), p,
                 _fitted_noise_digest(phi if isinstance(phi, TemporalNoise) else None,
                                      None if isinstance(phi, TemporalNoise) else phi))
@@ -997,9 +997,9 @@ class ContinuousDecisionModel:
             posterior_state = {"precision_root": root, "response": response, "orthogonal": orthogonal}
             # Fit, noise residuals and persistence consume this same posterior.
             # A second raw-row QR can differ in a tiny cancelling mean entry.
-            return D, Y, mean, row_cov, gram, statistics, posterior_state
+            return D, Y, mean, row_cov, statistics, posterior_state
 
-        D, Y, initial, _, _, _, _ = solve(0.)
+        D, Y, initial, _, _, _ = solve(0.)
         initial_residual = Y - D @ initial
         offsets = np.cumsum([0] + [len(x) for x in samples])
         pairs = [initial_residual[a:b] for a, b in zip(offsets[:-1], offsets[1:], strict=True)]
@@ -1038,14 +1038,19 @@ class ContinuousDecisionModel:
             denominator = sum(float(np.sum(r[:-1] ** 2)) for r in pairs)
             phi = float(np.clip(numerator / max(denominator, np.finfo(float).tiny), -0.95, 0.95))
             noise_model = None
-            D, Y, mean, row_cov, gram, statistics, posterior_state = solve(phi)
+            D, Y, mean, row_cov, statistics, posterior_state = solve(phi)
         else:
             phi = None
             noise_model = TemporalNoise.fit(pairs, order=noise_order, record_ids=ids,
                                             fit_scope=fit_scope, startup_mode="stationary_innovations")
-            D, Y, mean, row_cov, gram, statistics, posterior_state = solve(noise_model)
+            D, Y, mean, row_cov, statistics, posterior_state = solve(noise_model)
         residual = Y - D @ mean
-        effective_parameters = float(np.trace(gram @ row_cov))
+        # tr(D.T D H) = ||R_D R_posterior^-1||_F^2. The producer's
+        # information root avoids cancelling products of a large Gram and H,
+        # which can invent degrees of freedom for duplicate basis columns.
+        information = np.asarray(statistics["information_root"])
+        smoothing_factor = solve_triangular(posterior_state["precision_root"].T, information.T, lower=True).T
+        effective_parameters = float(np.sum(smoothing_factor**2))
         residual_df = len(Y) - 2 * len(records) - effective_parameters
         if residual_df <= 1:
             raise ValueError("insufficient residual degrees of freedom for noise estimation")

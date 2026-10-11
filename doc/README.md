@@ -13,7 +13,7 @@
 
 ## 当前研究
 
-2026-10-10继续按[愿望清单当前进展](evidence/wishlist_progress_20261010.zh.md)推进123项，分别记录软件、数学参考、真实开发和产品出口。置信度诊断、固定graph先验、selection随机响应及真实OOF捕获在独立科研树整合；多家族字典、learned空间先验与时间shape/ERP-span归因继续研究。单个数值门不作为所有方向的串行前置。
+2026-10-11继续按[愿望清单当前进展](evidence/wishlist_progress_20261010.zh.md)推进123项，恢复科研树已完成 B03 严格 nested/source-study 与 B07 `/4` native family 的 bounded 软件验收；B09 source-group 现保存 exact structural null 与派生语义关系，并通过本地 source/B05 组合验证。新证据见[科研恢复与集成](evidence/research_resume_20261011.zh.md)。这些出口不代表 inner 持久重放、公共效能、跨host整包或成人确认。单个数值门不作为所有方向的串行前置。
 
 科研窗口负责科学合同与代码最终集成，云端窗口负责唯一执行调度。科研用一个完整 source→target seed，大版本校验才三个；两窗口合计最多10并发，科研子代理没有我方时间或额度上限。职责内自主推进，只集中同步重要交付、接口变化和阻塞。
 

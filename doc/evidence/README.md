@@ -1,5 +1,7 @@
 # 研究与工程证据
 
+- [2026-10-11科研恢复与集成](research_resume_20261011.zh.md)：恢复快照后的 B03 严格 nested/source-study、B07 `/4` native 字典、B09 source-group 空间先验与同 producer QR/df 修复；记录 exact structural null、保存语义门、实际调用链和未完成边界。仅为 bounded software/C-development evidence，不是公共效能或成人确认。
+
 - [2026-10-10愿望清单当前进展](wishlist_progress_20261010.zh.md)：123项实际出口分层、置信度/固定graph/评分数值的科研树整合，selection随机效应与真实OOF接点，以及多家族字典、空间收缩、时间shape/ERP-span的下一切片；原公共执行来源与效能边界保留。
 
 - [2026-10-10最终集成来源](research_integration_20261010.json)：修后0a/a96 cold reclaim、相关41项本地验收与496成员后置冻结；旧final5不作为未来可执行源，原491/493身份保持。私有投影界切片仅获局部科研验收，完整conditional长记录仍unresolved。

@@ -27,7 +27,7 @@ from research.execution import (
 )
 from transfer.calibration_candidates import fit_calibration_candidate
 from transfer.calibration_state import FrozenTrialPredictor
-from transfer.checkpoint import PreparedTransferCheckpoint
+from transfer.checkpoint import PreparedTransferCheckpoint, assert_checkpoint_library_exclusion
 from transfer.continuous_decision import (
     CalibrationRecord,
     ContinuousDecisionModel,
@@ -189,7 +189,7 @@ class CalibrationExpertProgram:
         return cls(**values)
 
 
-@dataclass
+@dataclass(frozen=True)
 class _FittedExpert:
     program: CalibrationExpertProgram
     predictor: FrozenTrialPredictor | ContinuousDecisionModel | None
@@ -617,28 +617,30 @@ class FittedEnsemble:
                    oof_probability_record=record.get("OOF_probability"))
 
 
-def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProgram, *,
-                             source_checkpoints=None, device="cpu", calibration_strategy="fixed", temperature_expert_ids=None,
-                             _fixed_fit_cache=None):
-    """Fit only supplied authorized groups; no prediction data or truth is accepted."""
-    calibration = tuple(calibration)
-    expert_programs = tuple(expert_programs)
+def validate_calibration_ensemble_groups(calibration, expert_programs):
+    """Admit a complete physical roster before fitting or taking nested subsets."""
     if not calibration or any(not isinstance(group, CalibrationSelection) for group in calibration):
         raise ValueError("ensemble fitting requires authorized CalibrationSelection groups")
-    if calibration_strategy not in {"fixed", "grouped_temperature"}:
-        raise ValueError("unknown declared ensemble calibration strategy")
-    if calibration_strategy == "grouped_temperature" and len(calibration) < 3:
-        raise ValueError("grouped probability calibration needs at least three complete groups")
-    if tuple(spec.expert_id for spec in expert_programs) != program.expert_ids:
-        raise ValueError("fit programs must match the frozen ensemble roster and order")
     participant = calibration[0].view.participant_key
     vocabulary = calibration[0].view.decision.candidate_vocabulary
     if any(group.view.participant_key != participant or group.view.decision.candidate_vocabulary != vocabulary
+           or group.view.decision.protocol != calibration[0].view.decision.protocol
            for group in calibration):
         raise ValueError("ensemble calibration requires one participant and frozen candidate task")
-    if any(not group.view.decision.schedule_complete or np.any(group.view.decision.evidence_indices < 0)
+    if any(group.view.samples is None or not group.view.decision.schedule_complete
+           or np.any(group.view.decision.evidence_indices < 0)
            for group in calibration):
         raise ValueError("ensemble calibration requires complete observed physical groups")
+    views = tuple(group.view for group in calibration)
+    identities = DatasetIdentityTable.from_source_rows(
+        [view.source_subject_id for view in views], [view.source_dataset_id for view in views])
+    if any(identities.record_for(view.source_subject_id).authority_key() != participant for view in views):
+        raise ValueError("calibration participant key disagrees with the shared identity contract")
+    if len({view.decision_id for view in views}) != len(views):
+        raise ValueError("calibration decision identities must be unique")
+    events = [event for view in views for event in view.decision.event_ids]
+    if len(set(events)) != len(events):
+        raise ValueError("calibration event identities must be globally unique")
     if any(spec.family == "continuous_ar" for spec in expert_programs) and any(
         _native_observation_contract(group.view) != _native_observation_contract(calibration[0].view)
         for group in calibration[1:]
@@ -652,6 +654,28 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
                 left.view.raw_scope[0] < right.view.raw_scope[1] and right.view.raw_scope[0] < left.view.raw_scope[1]
             ):
                 raise ValueError("calibration group raw scopes overlap")
+
+
+def _calibration_expert_fit_digest(spec, fit_inputs, checkpoint_digest):
+    """Bind the actual authorized labels/observations and source role once."""
+    return semantic_sha256({"program": spec.record(), "authorized_calibration": fit_inputs,
+        "source_checkpoint_sha256": checkpoint_digest, "checkpoint_role": (None if checkpoint_digest is None else
+            "pretrained_weights" if spec.recipe.initialization == "source" else "architecture_only")})
+
+
+def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProgram, *,
+                             source_checkpoints=None, device="cpu", calibration_strategy="fixed", temperature_expert_ids=None,
+                             _fixed_fit_cache=None):
+    """Fit only supplied authorized groups; no prediction data or truth is accepted."""
+    calibration = tuple(calibration)
+    expert_programs = tuple(expert_programs)
+    if calibration_strategy not in {"fixed", "grouped_temperature"}:
+        raise ValueError("unknown declared ensemble calibration strategy")
+    if calibration_strategy == "grouped_temperature" and len(calibration) < 3:
+        raise ValueError("grouped probability calibration needs at least three complete groups")
+    if tuple(spec.expert_id for spec in expert_programs) != program.expert_ids:
+        raise ValueError("fit programs must match the frozen ensemble roster and order")
+    validate_calibration_ensemble_groups(calibration, expert_programs)
     sources = {} if source_checkpoints is None else {
         name: value if isinstance(value, FrozenSourceCheckpoint) else FrozenSourceCheckpoint.from_path(value)
         for name, value in source_checkpoints.items()}
@@ -694,9 +718,24 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
         source_trunk = source_stats = prepared = None
         if source is not None:
             prepared = PreparedTransferCheckpoint(io.BytesIO(source.content), data)
-            source_identity = DatasetIdentityTable.from_payload(prepared.payload["training_identity_ledger"])
-            if set(source_dataset_ids_from_identity(source_identity)) & set(source_dataset_ids_from_identity(data.identity_table)):
-                raise ValueError("ensemble source must exclude the complete target study")
+            source_membership = prepared.payload.get("source_study_membership")
+            target_membership = None
+            if source_membership is not None:
+                from data.study import _from_metadata, dataset_study_membership
+
+                if source_only:
+                    from data.lineage import DataLineage
+
+                    # K0 has physical metadata, never an EpochDataset or target
+                    # observations. Use the same study compiler on that authority.
+                    lineage = DataLineage.source(parameters={"source_dataset_ids":
+                        list(source_dataset_ids_from_identity(data.identity_table)),
+                        "target_contract": target_contract, "source_provenance": data.provenance})
+                    target_membership = _from_metadata(data.identity_table, lineage, data.provenance)
+                else:
+                    target_membership = dataset_study_membership(data)
+            assert_checkpoint_library_exclusion(prepared.payload, data.identity_table,
+                source_membership=source_membership, target_membership=target_membership)
             subject = data.identity_table.local_subject_ids[0]
             source_trunk = prepared.trunk_for_target(subject)
             source_stats = prepared.input_statistics
@@ -737,9 +776,7 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
         if spatial_receipts:
             predictor = replace(predictor, provenance={**predictor.provenance, "raw_spatial_execution": spatial_receipts})
         offset = 0.
-    fit_digest = semantic_sha256({"program": spec.record(), "authorized_calibration": fit_inputs,
-        "source_checkpoint_sha256": checkpoint_digest, "checkpoint_role": (None if checkpoint_digest is None else
-            "pretrained_weights" if spec.recipe.initialization == "source" else "architecture_only")})
+    fit_digest = _calibration_expert_fit_digest(spec, fit_inputs, checkpoint_digest)
     binding = {"program": spec.record(), "training_receipts": receipts,
                "model_source_digest": source_digest, "fit_digest": fit_digest, "logit_offset": offset}
     if target_contract is not None:

@@ -8,7 +8,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-from research.channel_noise_mechanism import FrozenERPResponse, NoiseGeometry
+from research.channel_noise_mechanism import FittedChannelNoise, FrozenERPResponse, NoiseGeometry
 from transfer.noise_model import array_digest, metadata_digest
 from transfer.spatial_signal_prior import (
     ERPChannelEstimate,
@@ -22,6 +22,7 @@ from transfer.spatial_signal_prior import (
     SpatialResponseBlock,
     SpatialSignalPosterior,
     SpatialSignalPrior,
+    _exact_structural_null,
 )
 from transfer.temporal_noise import TemporalNoise
 
@@ -124,7 +125,7 @@ def test_joint_estimable_effect_from_owned_likelihood_matches_dense_oracle(rank_
 @pytest.mark.parametrize("rank_case", ["true_null", "weak"])
 def test_true_null_effect_is_unsupported_and_no_raw_array_entry(rank_case):
     inputs = make_source(rank_case=rank_case)
-    with pytest.raises(SpatialPriorIdentificationError, match="not_identified_by_joint_C"):
+    with pytest.raises(SpatialPriorIdentificationError, match="(?:not_identified_by_joint_C|structural_C)"):
         estimate(inputs)
     with pytest.raises(TypeError):
         ERPChannelEstimate(np.ones(3), np.eye(3))
@@ -207,6 +208,33 @@ def test_complete_source_forecast_mean_covariance_save_load_and_target_chain(tmp
     order = [channel * 4 + row for row in range(4) for channel in range(3)]
     np.testing.assert_allclose(response.coefficient_factor @ response.coefficient_factor.T,
                               fitted.covariance[np.ix_(order, order)], rtol=1e-12, atol=1e-13)
+    # The real B05 frozen-response consumer also scores this learned state.
+    # The score-time noise law is independent of the source or target fit law.
+    rng = np.random.default_rng(41)
+    y, d = rng.normal(size=(12, 3)), rng.normal(size=(12, 4))
+    score_noise = FittedChannelNoise.from_parameters(np.empty((3, 0)), np.eye(3),
+        geometry=geometry, conditioning_samples=4, reference_id="independent_score_noise", family="shared")
+    scored = score_noise.score(y, d[None, ...], response, candidate_ids=("candidate",), geometry=geometry,
+        record_id="new-held-record", recording_id="target-recording", sample_start=200)
+    covariance = fitted.covariance[np.ix_(order, order)]
+    x = np.kron(d, np.eye(3))
+    marginal = np.eye(y.size) + x @ covariance @ x.T
+    centered = y.ravel() - x @ fitted.mean.ravel()
+    z = np.kron(np.column_stack((np.ones(len(y)), (2 * np.arange(len(y)) - 3) / 3)), np.eye(3))
+
+    def flat_log_density(count):
+        rows = 3 * count
+        k, values, nuisance = marginal[:rows, :rows], centered[:rows], z[:rows]
+        precision = np.linalg.inv(k)
+        nuisance_information = nuisance.T @ precision @ nuisance
+        residual_precision = precision - precision @ nuisance @ np.linalg.solve(
+            nuisance_information, nuisance.T @ precision)
+        return -.5 * ((rows - 6) * np.log(2 * np.pi) + np.linalg.slogdet(k)[1]
+            + np.linalg.slogdet(nuisance_information)[1] + values @ residual_precision @ values)
+
+    expected_density = flat_log_density(len(y)) - flat_log_density(4)
+    np.testing.assert_allclose(scored["log_density"], [expected_density], rtol=2e-12, atol=1e-12)
+    assert scored["truth_used"] is False and scored["parameters_updated"] is False
     assert temporal.order == 0
     with pytest.raises(ValueError, match="independent declared target C"):
         wrong_blocks = [replace(b, authorization={**b.authorization,
@@ -328,3 +356,249 @@ def test_zero_functional_is_identified_and_roundtrips_as_exact_zero(tmp_path):
     loaded = ERPChannelEstimate.load(path, posterior=posterior, temporal_noise=temporal,
                                     expected_artifact_sha256=measured.record()["artifact_sha256"])
     np.testing.assert_array_equal(loaded.mean, measured.mean)
+
+
+@pytest.mark.parametrize("null_weight", [1e-10, 1e-30])
+def test_small_real_null_component_cannot_be_hidden_by_an_observed_functional(null_weight):
+    posterior, effect, dependence, temporal, _ = make_source(rank_case="true_null")
+    # The first basis row measures the identified target coefficient, while
+    # the last row contributes ONLY the exactly unobserved target coefficient.
+    weights = np.array([1., 0., 0., null_weight])
+    effect = ERPPhysicalEffect.from_prior(posterior.prior, basis=effect.basis,
+        waveform_weights=weights, grid_seconds=effect.grid_seconds, observation=effect.observation)
+    assert np.all(np.vstack(posterior.information_roots)[:, [3, 7, 11]] == 0)
+    assert np.all(effect.functional[:, [3, 7, 11]].diagonal() != 0)
+    with pytest.raises(SpatialPriorIdentificationError, match="(?:not_identified_by_joint_C|structural_C)"):
+        posterior.estimate_effect(effect, dependence, temporal_noise=temporal)
+
+
+def test_learned_target_ownership_is_checked_by_saved_posterior_admission():
+    program = learn([estimate(make_source(i)) for i in range(3)])
+    target, effect, _, _, blocks = make_source(10, scope="target_calibration")
+    prior = program.spatial_prior(target.prior, effect=effect, completion="separable",
+        target_participant_key="person-10")
+    fitted = SpatialSignalPosterior.fit(prior, blocks,
+        native_noise_covariance=target.native_noise_covariance, noise_binding=dict(target.noise_binding))
+    saved = fitted.record()
+    for record in saved["fit_records"]:
+        record["authorization"]["original_view"]["participant_key"] = "person-0"
+    saved["fit_sha256"] = metadata_digest(saved["fit_records"])
+    saved["artifact_sha256"] = metadata_digest({k: v for k, v in saved.items() if k != "artifact_sha256"})
+    with pytest.raises(ValueError, match="independent declared target C"):
+        SpatialSignalPosterior.from_record(saved)
+
+
+def test_effect_measurement_rejects_resigned_dprime_relationship_mutation(tmp_path):
+    posterior, effect, dependence, temporal, _ = make_source()
+    measured = posterior.estimate_effect(effect, dependence, temporal_noise=temporal)
+    saved = measured.record()
+    saved["dprime_mean"][0] += .1
+    saved["artifact_sha256"] = metadata_digest({k: v for k, v in saved.items() if k != "artifact_sha256"})
+    path = tmp_path / "inconsistent-dprime.json"
+    path.write_text(json.dumps(saved), encoding="utf-8")
+    with pytest.raises(ValueError, match="d-prime"):
+        ERPChannelEstimate.load(path, posterior=posterior, temporal_noise=temporal,
+            expected_artifact_sha256=saved["artifact_sha256"])
+
+
+@pytest.mark.parametrize("field,value", [("fit_scope", "target_calibration"), ("independent_unit", "record")])
+def test_population_load_rechecks_source_authority_relationship(tmp_path, field, value):
+    program = learn([estimate(make_source(i)) for i in range(3)])
+    saved = json.loads(json.dumps(program.record()))
+    saved["fit_binding"]["source_authority"][field] = value
+    saved["artifact_sha256"] = metadata_digest({k: v for k, v in saved.items() if k != "artifact_sha256"})
+    path = tmp_path / "inconsistent-authority.json"
+    path.write_text(json.dumps(saved), encoding="utf-8")
+    with pytest.raises(ValueError, match="source.*scope|source.*authority"):
+        SourceGroupPrior.load(path, expected_artifact_sha256=saved["artifact_sha256"])
+
+
+@pytest.mark.parametrize("rank_case", ["full", "only_effect", "local_deficient"])
+def test_effect_blue_does_not_inherit_a_nonorthogonal_prior_chart(rank_case):
+    posterior, effect, _, temporal, blocks = make_source(rank_case=rank_case)
+    original = estimate((posterior, effect, SpatialLikelihoodDependence.independent(
+        posterior, authority_sha256="e" * 64), temporal, blocks))
+    temporal_root = np.array([[1., 0., 0., 0.], [.4, 2., 0., 0.],
+        [-.2, .3, .7, 0.], [.5, -.1, .2, 1.3]])
+    spatial_root = np.array([[1., 0., 0.], [.6, 2., 0.], [-.3, .4, .9]])
+    prior = replace(posterior.prior, mean=np.full((4, 3), 30.),
+        temporal_covariance=temporal_root @ temporal_root.T,
+        signal_covariance=spatial_root @ spatial_root.T)
+    changed = SpatialSignalPosterior.fit(prior, blocks,
+        native_noise_covariance=posterior.native_noise_covariance, noise_binding=dict(posterior.noise_binding))
+    measured = changed.estimate_effect(effect,
+        SpatialLikelihoodDependence.independent(changed, authority_sha256="e" * 64), temporal_noise=temporal)
+    np.testing.assert_allclose(measured.mean, original.mean, rtol=2e-12, atol=2e-13)
+    np.testing.assert_allclose(measured.covariance, original.covariance, rtol=2e-12, atol=2e-13)
+
+
+def test_cz_measurement_does_not_authorize_unobserved_native_functionals():
+    posterior, effect, dependence, temporal, _ = make_source(observation="cz")
+    native = ERPPhysicalEffect.from_prior(posterior.prior, basis=effect.basis,
+        waveform_weights=effect.waveform_weights, grid_seconds=effect.grid_seconds,
+        observation=SpatialObservation.native(effect.layout))
+    with pytest.raises(SpatialPriorIdentificationError, match="(?:not_identified_by_joint_C|structural_C)"):
+        posterior.estimate_effect(native, dependence, temporal_noise=temporal)
+
+
+def test_population_mean_uncertainty_and_new_person_covariance_match_dense_oracle():
+    estimates = [estimate(make_source(i)) for i in range(4)]
+    original = policy()
+    scalar_policy = replace(original, template_names=("independent",), templates=np.eye(3)[None, ...],
+        component_anchor=original.component_anchor[:1], component_ceiling=original.component_ceiling[:1])
+    program = learn(estimates, scalar_policy)
+    means = np.array([e.mean for e in estimates])
+    errors = np.array([e.covariance for e in estimates])
+    moment = np.cov(means, rowvar=False, ddof=1) - errors.mean(axis=0)
+    raw_variance = max(np.trace(moment) / 3, 0.)
+    weight = 3 / 23
+    between = np.eye(3) * ((1 - weight) * .03 + weight * raw_variance)
+    information = np.linalg.inv(scalar_policy.mean_anchor_covariance)
+    rhs = information @ scalar_policy.mean_anchor
+    for mean, error in zip(means, errors, strict=True):
+        precision = np.linalg.inv(between + error)
+        information += precision
+        rhs += precision @ mean
+    mean_covariance = np.linalg.inv(information)
+    np.testing.assert_allclose(program.between_covariance, between, rtol=1e-12, atol=1e-14)
+    np.testing.assert_allclose(program.mean, mean_covariance @ rhs, rtol=1e-12, atol=1e-14)
+    np.testing.assert_allclose(program.mean_covariance, mean_covariance, rtol=1e-12, atol=1e-14)
+    np.testing.assert_allclose(program.forecast_covariance, between + mean_covariance, rtol=1e-12, atol=1e-14)
+    assert np.linalg.norm(program.forecast_covariance - between) > .01
+
+
+def test_effect_binding_cannot_reorder_common_and_increment_groups():
+    posterior, effect, *_ = make_source()
+    changed = replace(posterior.prior, design_binding={**posterior.prior.design_binding,
+        "coefficient_groups": ["target_increment", "common"]})
+    with pytest.raises(ValueError, match="coefficient groups"):
+        effect.validate_prior(changed)
+
+
+def test_dependent_nonzero_columns_separate_a_real_null_from_roundoff():
+    posterior, effect, _, temporal, blocks = make_source()
+    changed_blocks = []
+    for block in blocks:
+        d = block.design.copy()
+        d[:, 3] = d[:, 2]
+        changed_blocks.append(replace(block, design=d))
+    posterior = SpatialSignalPosterior.fit(posterior.prior, changed_blocks,
+        native_noise_covariance=posterior.native_noise_covariance, noise_binding=dict(posterior.noise_binding))
+    dependency = SpatialLikelihoodDependence.independent(posterior, authority_sha256="e" * 64)
+    for delta in (0., 1e-10):
+        weights = np.array([1., 0., 0., (1. + delta) / .6])
+        functional = ERPPhysicalEffect.from_prior(posterior.prior, basis=effect.basis,
+            waveform_weights=weights, grid_seconds=effect.grid_seconds, observation=effect.observation)
+        if delta:
+            with pytest.raises(SpatialPriorIdentificationError, match="(?:not_identified_by_joint_C|structural_C)"):
+                posterior.estimate_effect(functional, dependency, temporal_noise=temporal)
+        else:
+            measured = posterior.estimate_effect(functional, dependency, temporal_noise=temporal)
+            x, y = np.vstack(posterior.information_roots), np.concatenate(posterior.responses)
+            np.testing.assert_allclose(measured.mean, functional.functional @ np.linalg.lstsq(x, y, rcond=None)[0],
+                rtol=1e-12, atol=1e-12)
+
+
+@pytest.mark.parametrize("delta", [1e-14, 1e-12])
+def test_exact_structural_null_rejects_tiny_effect_without_prior_fallback(delta):
+    posterior, effect, _, temporal, blocks = make_source()
+    changed_blocks = [replace(block, design=np.column_stack((block.design[:, :3], block.design[:, 2])))
+                      for block in blocks]
+    posterior = SpatialSignalPosterior.fit(posterior.prior, changed_blocks,
+        native_noise_covariance=posterior.native_noise_covariance, noise_binding=dict(posterior.noise_binding))
+    dependence = SpatialLikelihoodDependence.independent(posterior, authority_sha256="e" * 64)
+    weights = np.array([1., 0., 0., (1. + delta) / .6])
+    functional = ERPPhysicalEffect.from_prior(posterior.prior, basis=effect.basis,
+        waveform_weights=weights, grid_seconds=effect.grid_seconds, observation=effect.observation)
+    with pytest.raises(SpatialPriorIdentificationError, match="structural_C"):
+        posterior.estimate_effect(functional, dependence, temporal_noise=temporal)
+
+
+def test_exact_structural_null_budget_fails_closed():
+    with pytest.raises(SpatialPriorIdentificationError, match="structural_identifiability_unresolved"):
+        _exact_structural_null((np.zeros((1000, 300)),), 10)
+
+
+def test_saved_structural_operator_and_null_certificate_cannot_be_resigned(tmp_path):
+    posterior, _, _, _, _ = make_source()
+    saved = posterior.record()
+    saved["structural_null_basis"] = [[[1, 1]]]
+    saved["artifact_sha256"] = metadata_digest({key: item for key, item in saved.items()
+                                                 if key != "artifact_sha256"})
+    path = tmp_path / "bad-null.json"
+    path.write_text(json.dumps(saved), encoding="utf-8")
+    with pytest.raises(ValueError, match="structural C null basis"):
+        SpatialSignalPosterior.from_record(saved)
+    saved = posterior.record()
+    saved["structural_operators"][0][0][0] += 1.
+    saved["artifact_sha256"] = metadata_digest({key: item for key, item in saved.items()
+                                                 if key != "artifact_sha256"})
+    path.write_text(json.dumps(saved), encoding="utf-8")
+    with pytest.raises(ValueError, match="structural C identifiability binding"):
+        SpatialSignalPosterior.from_record(saved)
+
+
+def test_fixed_cohort_outlier_is_not_capped_or_silently_dropped():
+    inputs = [make_source(i) for i in range(3)]
+    originals = [estimate(s) for s in inputs]
+    posterior, effect, _, temporal, blocks = inputs[-1]
+    # Same participants, actual C/design/noise, and declared policy throughout.
+    # Add a physical effect to ONE participant, rather than changing n/weights.
+    changed_blocks = [replace(block, samples=block.samples + 1e4 * block.design[:, 2, None]
+        * np.ones((1, 3))) for block in blocks]
+    changed_posterior = SpatialSignalPosterior.fit(posterior.prior, changed_blocks,
+        native_noise_covariance=posterior.native_noise_covariance, noise_binding=dict(posterior.noise_binding))
+    outlier = changed_posterior.estimate_effect(effect,
+        SpatialLikelihoodDependence.independent(changed_posterior, authority_sha256="e" * 64), temporal_noise=temporal)
+    chosen_policy = policy()
+    accepted = learn(originals, chosen_policy)
+    assert accepted.fit_binding["source_participant_keys"] == ("person-0", "person-1", "person-2")
+    with pytest.raises(SpatialPriorIdentificationError, match="whole_source_program_exceeds_component_scale") as rejected:
+        learn([*originals[:-1], outlier], chosen_policy)
+    assert rejected.value.record()["participant_keys"] == ["person-0", "person-1", "person-2"]
+
+
+def test_exact_zero_effect_cannot_learn_a_nonzero_proper_population_forecast():
+    measurements = []
+    for person in range(3):
+        posterior, effect, dependence, temporal, _ = make_source(person, zero_sample=True)
+        zero = ERPPhysicalEffect.from_prior(posterior.prior, basis=effect.basis,
+            waveform_weights=np.array([0., 1., 0., 0.]), grid_seconds=effect.grid_seconds,
+            observation=effect.observation)
+        measurements.append(posterior.estimate_effect(zero, dependence, temporal_noise=temporal))
+    with pytest.raises(SpatialPriorIdentificationError, match="zero_effect"):
+        learn(measurements)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("component_source_weight", 0.), ("component_fit_residual", 12345.),
+    ("variance_noise_dependency_uncertainty_integrated", True), ("forecast", "between_only"),
+])
+def test_source_group_load_rejects_resigned_derived_semantics(field, value, tmp_path):
+    program = learn([estimate(make_source(i)) for i in range(3)])
+    saved = json.loads(json.dumps(program.record()))
+    saved["fit_binding"][field] = value
+    saved["artifact_sha256"] = metadata_digest({key: item for key, item in saved.items()
+                                                 if key != "artifact_sha256"})
+    path = tmp_path / (field + ".json")
+    path.write_text(json.dumps(saved), encoding="utf-8")
+    with pytest.raises(ValueError, match="semantic|component|NNLS|forecast"):
+        SourceGroupPrior.load(path, expected_artifact_sha256=saved["artifact_sha256"])
+
+
+@pytest.mark.parametrize("field,value", [
+    ("completion", "mean_only"), ("variance_uncertainty_integrated", True),
+    ("unseen_spatial_directions", "zero_filled"), ("source_forecast_uncertainty_propagated", False),
+    ("effect_definition_sha256", "not-a-sha"),
+])
+def test_target_source_learning_load_rejects_resigned_completion_semantics(field, value):
+    program = learn([estimate(make_source(i)) for i in range(3)])
+    target, effect, _, _, _ = make_source(10, scope="target_calibration")
+    learned = program.spatial_prior(target.prior, effect=effect, completion="separable",
+        target_participant_key="person-10")
+    saved = json.loads(json.dumps(learned.record()))
+    saved["source"]["source_learning"][field] = value
+    saved["artifact_sha256"] = metadata_digest({key: item for key, item in saved.items()
+                                                 if key != "artifact_sha256"})
+    with pytest.raises(ValueError, match="semantic|completion|source-learned"):
+        SpatialSignalPrior.from_record(saved)

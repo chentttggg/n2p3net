@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import InitVar, dataclass, field, replace
+from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
@@ -37,6 +38,8 @@ _PRIOR_SCHEMA = "n2p3_spatial_signal_prior/2"
 _POSTERIOR_SCHEMA = "n2p3_spatial_signal_posterior/3"
 _OBSERVATION_SCHEMA = "n2p3_spatial_observation/2"
 _IDENTITY_RESOLUTION = float(np.sqrt(np.finfo(float).eps))
+_STRUCTURAL_MAX_SCALARS = 250_000
+_STRUCTURAL_MAX_COLUMNS = 512
 
 
 def _matrix(value, name):
@@ -44,6 +47,88 @@ def _matrix(value, name):
     if result.ndim != 2 or min(result.shape) == 0:
         raise ValueError(f"{name} must be a nonempty matrix")
     return result
+
+
+def _exact_structural_null(operators, width):
+    """Exact binary64 structural null of actual design plus record nuisances.
+
+    The operators are the physical `X|Z` rows before noise/QR compression.
+    Every stored finite operand is promoted to its exact dyadic Fraction; no
+    tolerance can turn an exact nonzero functional on this null into signal.
+    """
+    operators = tuple(_matrix(value, "actual structural C operator") for value in operators)
+    if not operators or any(operator.shape[1] < width for operator in operators):
+        raise ValueError("structural C operators require shared coefficients and local nuisance columns")
+    nuisance_width = sum(operator.shape[1] - width for operator in operators)
+    rows = sum(len(operator) for operator in operators)
+    columns = width + nuisance_width
+    if rows * columns > _STRUCTURAL_MAX_SCALARS or columns > _STRUCTURAL_MAX_COLUMNS:
+        raise SpatialPriorIdentificationError("structural_identifiability_unresolved",
+            rows=rows, columns=columns, scalar_budget=_STRUCTURAL_MAX_SCALARS,
+            column_budget=_STRUCTURAL_MAX_COLUMNS)
+    matrix = []
+    offset = width
+    for operator in operators:
+        local = operator.shape[1] - width
+        for row in operator:
+            values = [Fraction.from_float(float(value)) for value in row[:width]]
+            values.extend(Fraction(0) for _ in range(nuisance_width))
+            values[offset:offset + local] = (Fraction.from_float(float(value)) for value in row[width:])
+            matrix.append(values)
+        offset += local
+    rank = 0
+    pivots = []
+    for column in range(columns):
+        pivot = next((row for row in range(rank, rows) if matrix[row][column]), None)
+        if pivot is None:
+            continue
+        matrix[rank], matrix[pivot] = matrix[pivot], matrix[rank]
+        divisor = matrix[rank][column]
+        matrix[rank] = [value / divisor for value in matrix[rank]]
+        for row in range(rows):
+            if row == rank or not matrix[row][column]:
+                continue
+            scale = matrix[row][column]
+            matrix[row] = [left - scale * right for left, right in zip(matrix[row], matrix[rank], strict=True)]
+        pivots.append(column)
+        rank += 1
+        if rank == rows:
+            break
+    free = [column for column in range(columns) if column not in pivots]
+    basis = []
+    for free_column in free:
+        vector = [Fraction(0)] * columns
+        vector[free_column] = Fraction(1)
+        for row, pivot in enumerate(pivots):
+            vector[pivot] = -matrix[row][free_column]
+        beta = tuple(vector[:width])
+        if any(beta):
+            basis.append(beta)
+    return tuple(tuple(value for value in beta) for beta in basis), {
+        "rows": rows, "columns": columns, "rank": rank, "nullity": len(free),
+        "beta_nullity": len(basis), "arithmetic": "exact_binary64_fraction_rref",
+    }
+
+
+def _structural_operator_digest(operators):
+    return array_digest(*(np.asarray(operator, dtype=np.float64) for operator in operators))
+
+
+def _validate_source_learning_semantics(source):
+    learning = source.get("source_learning")
+    if learning is None:
+        return
+    if (learning.get("mechanism") != "source_group"
+            or learning.get("completion") not in {"mean_only", "separable"}
+            or learning.get("variance_uncertainty_integrated") is not False
+            or learning.get("unseen_spatial_directions") != "proper_reference_conditional_completion"
+            or learning.get("source_forecast_uncertainty_propagated") is not (learning.get("completion") == "separable")):
+        raise ValueError("source-learned prior semantic contract differs from its canonical completion")
+    require_sha256(learning.get("effect_definition_sha256"), "source-learned effect definition")
+    require_identifiers(learning.get("source_participant_keys", ()), "source-learned source participants")
+    target = learning.get("target_participant_key")
+    if not isinstance(target, str) or not target.strip() or target in learning["source_participant_keys"]:
+        raise ValueError("source-learned prior target participant must be an independent declared identity")
 
 
 def _positive(value, name):
@@ -467,6 +552,7 @@ class SpatialSignalPrior:
         if self.source.get("role") not in {"predeclared", "source_training"}:
             raise ValueError("signal prior source must be predeclared or source-only training")
         require_sha256(self.source.get("authority_sha256"), "signal prior source authority")
+        _validate_source_learning_semantics(self.source)
         root = np.kron(solve_triangular(signal_root, np.eye(len(signal)), lower=True),
                        solve_triangular(temporal_root, np.eye(len(temporal)), lower=True))
         for name, value in (("mean", mean), ("temporal_covariance", temporal),
@@ -769,6 +855,9 @@ class SpatialSignalPosterior:
     responses: tuple[np.ndarray, ...] = field(repr=False, compare=False)
     fit_records: tuple[dict, ...]
     noise_binding: dict
+    structural_operators: tuple[np.ndarray, ...] = field(repr=False, compare=False, default=())
+    structural_null_basis: tuple[tuple[Fraction, ...], ...] = field(repr=False, compare=False, default=())
+    structural_binding: dict = field(default_factory=dict)
     restore_state: InitVar[dict | None] = None
     mean: np.ndarray = field(init=False, repr=False, compare=False)
     covariance: np.ndarray = field(init=False, repr=False, compare=False)
@@ -799,6 +888,13 @@ class SpatialSignalPosterior:
                     or authorization["dictionary_sha256"] != self.prior.design_binding["dictionary_sha256"]
                     or authorization["fit_scope"] not in {"source_training", "target_calibration"}):
                 raise ValueError("C layout or response design differs from signal prior authority")
+            learning = self.prior.source.get("source_learning")
+            if learning is not None:
+                participant = authorization.get("original_view", {}).get("participant_key")
+                if (authorization["fit_scope"] != "target_calibration"
+                        or participant != learning["target_participant_key"]
+                        or participant in learning["source_participant_keys"]):
+                    raise ValueError("source-learned prior requires its independent declared target C")
             if record["compression"]["native_noise_sha256"] != array_digest(noise):
                 raise ValueError("C compressed likelihood differs from its actual noise coordinates")
             if record["compression"]["likelihood_sha256"] != array_digest(root, response):
@@ -816,6 +912,18 @@ class SpatialSignalPosterior:
             by_source.setdefault(source, []).append(tuple(support))
         if not isinstance(self.noise_binding, dict):
             raise ValueError("posterior needs actual fitted noise provenance")
+        operators = tuple(_matrix(operator, "saved structural C operator") for operator in self.structural_operators)
+        if len(operators) != len(roots):
+            raise ValueError("posterior needs one exact structural C operator per actual fit record")
+        null_basis, structural_resolution = _exact_structural_null(operators, width)
+        saved_basis = tuple(tuple(Fraction(value) for value in vector) for vector in self.structural_null_basis)
+        if saved_basis != null_basis:
+            raise ValueError("saved structural C null basis differs from its exact actual design relation")
+        if (not isinstance(self.structural_binding, dict)
+                or self.structural_binding.get("operator_sha256") != _structural_operator_digest(operators)
+                or self.structural_binding.get("arithmetic") != "exact_binary64_fraction_rref"
+                or self.structural_binding.get("resolution") != structural_resolution):
+            raise ValueError("saved structural C identifiability binding differs from actual operators")
         require_sha256(self.noise_binding.get("authority_sha256"), "fitted noise authority")
         if restore_state is not None:
             saved_native_root = _matrix(restore_state["native_noise_root"], "producer native noise factor")
@@ -847,13 +955,16 @@ class SpatialSignalPosterior:
             object.__setattr__(self, name, frozen_array(value))
         object.__setattr__(self, "information_roots", tuple(roots))
         object.__setattr__(self, "responses", tuple(responses))
+        object.__setattr__(self, "structural_operators", tuple(frozen_array(operator) for operator in operators))
+        object.__setattr__(self, "structural_null_basis", null_basis)
+        object.__setattr__(self, "structural_binding", freeze_metadata(self.structural_binding))
         object.__setattr__(self, "fit_records", tuple(freeze_metadata(r) for r in self.fit_records))
         object.__setattr__(self, "noise_binding", freeze_metadata(self.noise_binding))
 
     @classmethod
     def fit(cls, prior, blocks, *, native_noise_covariance, noise_binding):
         noise, native_root = _spd(native_noise_covariance, "native residual noise")
-        roots, responses, records = [], [], []
+        roots, responses, records, structural_operators = [], [], [], []
         for block in blocks:
             if (not isinstance(block, SpatialResponseBlock)
                     or block.authorization["fit_scope"] not in {"target_calibration", "source_training"}
@@ -861,13 +972,6 @@ class SpatialSignalPosterior:
                     or block.design.shape[1] != prior.mean.shape[0]
                     or block.authorization["dictionary_sha256"] != prior.design_binding["dictionary_sha256"]):
                 raise ValueError("C actual input differs from the bound spatial signal prior")
-            learning = prior.source.get("source_learning")
-            if learning is not None:
-                participant = block.authorization.get("original_view", {}).get("participant_key")
-                if (block.authorization["fit_scope"] != "target_calibration"
-                        or participant != learning["target_participant_key"]
-                        or participant in learning["source_participant_keys"]):
-                    raise ValueError("source-learned prior requires its independent declared target C")
             root, response, *_ = block._compressed(noise, native_root)
             roots.append(root)
             responses.append(response)
@@ -877,7 +981,16 @@ class SpatialSignalPosterior:
                                      "noise_factorization": "actual_range_square_root_pushforward_QR",
                                      "likelihood_sha256": array_digest(root, response)}
             records.append(record)
-        return cls(prior, noise, tuple(roots), tuple(responses), tuple(records), noise_binding)
+            mapping = block.observation.normalized_support_basis.T @ block.observation.normalized_matrix
+            operator = np.kron(mapping, block.design)
+            nuisance = (np.kron(np.eye(mapping.shape[0]), block.nuisance)
+                        if block.nuisance is not None else np.empty((len(operator), 0)))
+            structural_operators.append(np.column_stack((operator, nuisance)))
+        null_basis, structural_resolution = _exact_structural_null(structural_operators, prior.mean.size)
+        structural_binding = {"operator_sha256": _structural_operator_digest(structural_operators),
+            "arithmetic": "exact_binary64_fraction_rref", "resolution": structural_resolution}
+        return cls(prior, noise, tuple(roots), tuple(responses), tuple(records), noise_binding,
+                   tuple(structural_operators), null_basis, structural_binding)
 
     def log_density(self, block):
         """Exact predictive likelihood on actual spatial range.
@@ -937,6 +1050,10 @@ class SpatialSignalPosterior:
                  "information_roots": [root.tolist() for root in self.information_roots],
                  "responses": [response.tolist() for response in self.responses],
                  "fit_records": json.loads(json.dumps(self.fit_records)),
+                 "structural_operators": [operator.tolist() for operator in self.structural_operators],
+                 "structural_null_basis": [[[value.numerator, value.denominator] for value in vector]
+                                            for vector in self.structural_null_basis],
+                 "structural_binding": json.loads(json.dumps(self.structural_binding)),
                  "mean": self.mean.tolist(), "covariance": self.covariance.tolist(),
                  "precision_root": self.precision_root.tolist(), "response": self.response.tolist(),
                  "orthogonal_factor": self.orthogonal_factor.tolist(),
@@ -967,9 +1084,13 @@ class SpatialSignalPosterior:
         state_names = ("precision_root", "response", "mean", "covariance", "orthogonal_factor", "qr_column_scales",
                        "native_noise_root")
         state = {name: payload[name] for name in state_names}
+        structural_basis = tuple(tuple(Fraction(numerator, denominator) for numerator, denominator in vector)
+                                 for vector in payload["structural_null_basis"])
         model = cls(SpatialSignalPrior.from_record(payload["prior"]), payload["native_noise_covariance"],
                     tuple(payload["information_roots"]), tuple(payload["responses"]),
-                    tuple(payload["fit_records"]), payload["noise_binding"], restore_state=state)
+                    tuple(payload["fit_records"]), payload["noise_binding"],
+                    tuple(payload["structural_operators"]), structural_basis,
+                    payload["structural_binding"], restore_state=state)
         if payload["numeric_sha256"] != array_digest(model.mean, model.covariance, model.native_noise_covariance,
             model.precision_root, model.response, model.orthogonal_factor, model.qr_column_scales, model.native_noise_root):
             raise ValueError("saved spatial posterior numeric identity mismatch")
@@ -1060,6 +1181,8 @@ class ERPPhysicalEffect:
                 or any(prior.design_binding.get(key) != self.design_binding.get(key) for key in
                        ("dictionary_sha256", "actual_basis_sha256", "sample_rate_hz", "operator_identity"))):
             raise ValueError("physical effect differs from the actual prior/design destination")
+        if tuple(prior.design_binding.get("coefficient_groups", ())) != tuple(self.design_binding["coefficient_groups"]):
+            raise ValueError("physical effect differs from the actual prior/design coefficient groups")
 
     def record(self):
         payload = {"schema": "n2p3_physical_ERP_effect_state/1", "layout": self.layout.record(),
@@ -1136,6 +1259,21 @@ class SpatialLikelihoodDependence:
 
 def _effect_measurement(posterior, effect, dependence):
     """Joint identifiable functional BLUE; proper prior is only its numeric chart."""
+    structural_witness = []
+    for basis in posterior.structural_null_basis:
+        witness = []
+        for row in effect.functional:
+            value = sum((Fraction.from_float(float(coefficient)) * coefficient_null
+                         for coefficient, coefficient_null in zip(row, basis, strict=True)), Fraction(0))
+            witness.append(value)
+        structural_witness.append(witness)
+    nonzero = [(index, row_index, value) for index, witness in enumerate(structural_witness)
+               for row_index, value in enumerate(witness) if value]
+    if nonzero:
+        raise SpatialPriorIdentificationError("physical_effect_not_identified_by_structural_C",
+            structural_null_witness=[{ "basis_index": index, "effect_row": row, "exact_value": str(value)}
+                                     for index, row, value in nonzero],
+            structural_resolution=posterior.structural_binding["resolution"])
     x = np.vstack(posterior.information_roots)
     y = np.concatenate(posterior.responses)
     x = solve_triangular(dependence.factor, x, lower=True)
@@ -1153,12 +1291,9 @@ def _effect_measurement(posterior, effect, dependence):
     row_norm = np.linalg.norm(functional, axis=1)
     relative_outside = np.divide(np.linalg.norm(outside, axis=1), row_norm,
                                  out=np.zeros_like(row_norm), where=row_norm > 0)
-    if np.any(relative_outside > _IDENTITY_RESOLUTION):
-        raise SpatialPriorIdentificationError("physical_effect_not_identified_by_joint_C",
-            functional_relative_null=relative_outside.tolist(), joint_rank=rank,
-            singular_values=singular.tolist(), resolution_threshold=float(threshold))
     if rank == 0 or not np.any(row_norm):
         mean, factor = np.zeros(len(functional)), np.empty((len(functional), 0))
+        weights = np.zeros((len(functional), len(x)))
     else:
         reduced = actual @ vectors
         q, root = np.linalg.qr(reduced, mode="reduced")
@@ -1166,13 +1301,43 @@ def _effect_measurement(posterior, effect, dependence):
         _unit_information_relation(reduced, root)
         inverse = solve_triangular(root, np.eye(rank))
         factor = (functional @ vectors) @ inverse
+        weights = factor @ q.T
         mean = factor @ (q.T @ y)
+    # A numerical row-space projection can hide a small genuine null component
+    # behind another coefficient. Certify the candidate witness F = W X in the
+    # original physical coefficient units, separately for every entry. The
+    # construction allowance uses the W row and original X column norms:
+    # orthogonal factors/triangular solves can mix rows even when F_ij is zero.
+    # An exactly zero X column has no allowance from other columns, regardless
+    # of the size of its nonzero F component.
+    reconstructed = weights @ x
+    magnitude = np.abs(weights) @ np.abs(x)
+    construction = _gamma(6 * (x.size + x.shape[1] ** 2)) * np.outer(
+        np.linalg.norm(weights, axis=1), np.linalg.norm(x, axis=0))
+    relation_bound = (construction + 4 * _gamma(len(x)) * magnitude
+                      + np.finfo(float).eps * (np.abs(effect.functional) + np.abs(reconstructed)))
+    relation_error = np.abs(effect.functional - reconstructed)
+    physical_norm = np.linalg.norm(effect.functional, axis=1)
+    relative_bound = np.divide(np.linalg.norm(relation_bound, axis=1), physical_norm,
+        out=np.zeros_like(physical_norm), where=physical_norm > 0)
+    if (not np.isfinite(relation_bound).all()
+            or np.any(relation_error > relation_bound)):
+        raise SpatialPriorIdentificationError("physical_effect_not_identified_by_joint_C",
+            functional_relative_null=relative_outside.tolist(), joint_rank=rank,
+            singular_values=singular.tolist(), resolution_threshold=float(threshold),
+            functional_relation_error=relation_error.tolist(),
+            functional_relation_rounding_bound=relation_bound.tolist())
+    if np.any(relative_bound > _IDENTITY_RESOLUTION):
+        raise SpatialPriorIdentificationError("physical_effect_relation_resolution_unresolved",
+            functional_relative_error_bound=relative_bound.tolist(), identity_resolution=_IDENTITY_RESOLUTION)
     if not np.isfinite(mean).all() or not np.isfinite(factor).all():
         raise SpatialPriorIdentificationError("effect_measurement_not_representable")
     return mean, factor, {"joint_rank": rank, "coefficient_dimensions": x.shape[1],
         "functional_relative_null": relative_outside.tolist(), "singular_values": singular.tolist(),
+        "functional_relative_error_bound": relative_bound.tolist(),
+        "structural_null_basis_count": len(posterior.structural_null_basis),
         "resolution_threshold": float(threshold), "prior_information_used": False,
-        "method": "joint_owned_likelihood_resolved_row_space_thin_QR"}
+        "method": "joint_owned_likelihood_thin_QR_componentwise_physical_F_equals_WX"}
 
 
 @dataclass(frozen=True, init=False)
@@ -1248,7 +1413,9 @@ class ERPChannelEstimate:
     def load(cls, path, *, posterior, temporal_noise, expected_artifact_sha256):
         saved = json.loads(Path(path).read_text(encoding="utf-8"))
         payload = {key: value for key, value in saved.items() if key != "artifact_sha256"}
-        if saved.get("artifact_sha256") != expected_artifact_sha256 or metadata_digest(payload) != expected_artifact_sha256:
+        if (payload.get("schema") != "n2p3_ERP_effect_measurement/1"
+                or saved.get("artifact_sha256") != expected_artifact_sha256
+                or metadata_digest(payload) != expected_artifact_sha256):
             raise ValueError("effect measurement differs from its external artifact identity")
         effect = ERPPhysicalEffect.from_record(saved["effect"])
         dependency = saved["receipt"]["dependency"]
@@ -1261,6 +1428,8 @@ class ERPChannelEstimate:
         factor = finite_real_array(saved["covariance_factor"], name="producer effect covariance factor")
         if mean.shape != actual.mean.shape or factor.shape != actual.covariance_factor.shape:
             raise ValueError("producer effect dimensions differ from its actual functionals")
+        if not np.array_equal(mean / actual.noise_sd, saved["dprime_mean"]):
+            raise ValueError("saved physical d-prime differs from its effect mean and frozen noise SD")
         if factor.shape[1] == 0:
             if not np.array_equal(mean, actual.mean) or not np.array_equal(factor, actual.covariance_factor):
                 raise ValueError("zero physical effect differs from its exact zero measurement")
@@ -1341,6 +1510,47 @@ def _population_rows(measurements, covariances, between, policy):
     return np.vstack(rows), np.concatenate(rhs)
 
 
+def _validate_source_authority(authority, ids):
+    require_sha256(authority.get("authority_sha256"), "source participant authority")
+    if (authority.get("fit_scope") != "source_training"
+            or authority.get("independent_unit") != "participant"
+            or tuple(authority.get("participant_keys", ())) != tuple(ids)):
+        raise ValueError("source participant request/scope must match the complete actual source estimates")
+
+
+def _validate_source_group_binding(binding, policy, means, errors, between, components):
+    """Recompute source-program derived numbers and immutable semantic roles."""
+    if (binding.get("whole_program_policy") != "external_actual_unit_bounds_no_person_drop_no_capping"
+            or binding.get("variance_noise_dependency_uncertainty_integrated") is not False
+            or binding.get("forecast") != "between_person_plus_conditional_source_mean_uncertainty"
+            or binding.get("centered_energy_or_effective_df_matched") is not False):
+        raise ValueError("saved source population semantic contract differs from its canonical program")
+    if binding.get("component_fit_residual_resolution") != "64_gamma_columns_plus_8_eps_norm_scale":
+        raise ValueError("saved source population residual resolution contract differs")
+    count = len(means)
+    alpha = (count - 1) / (count - 1 + policy.component_anchor_df)
+    raw = finite_real_array(binding.get("raw_components"), name="saved raw source components")
+    expected_components = (1 - alpha) * policy.component_anchor + alpha * raw
+    expected_between = np.einsum("k,kij->ij", expected_components, policy.templates)
+    if (not np.array_equal(float(binding.get("component_source_weight")), alpha)
+            or not np.array_equal(components, expected_components)
+            or not np.array_equal(between, expected_between)):
+        raise ValueError("saved source population component weight/covariance differs from its actual program")
+    _, metric_root = _spd(policy.metric_covariance, "saved source metric")
+    inverse_metric = solve_triangular(metric_root, np.eye(len(metric_root)), lower=True)
+    moment = np.cov(means, rowvar=False, ddof=1).reshape(errors.shape[1:]) - errors.mean(axis=0)
+    columns = np.column_stack([(inverse_metric @ template @ inverse_metric.T).ravel()
+                               for template in policy.templates])
+    target = (inverse_metric @ moment @ inverse_metric.T).ravel()
+    residual_vector = columns @ raw - target
+    expected_residual = float(np.linalg.norm(residual_vector))
+    residual_scale = float(np.linalg.norm(np.abs(columns) @ np.abs(raw)) + np.linalg.norm(np.abs(target)))
+    residual_bound = (64 * _gamma(max(columns.shape)) * residual_scale
+                      + 8 * np.finfo(float).eps * max(1., expected_residual))
+    if abs(float(binding.get("component_fit_residual")) - expected_residual) > residual_bound:
+        raise ValueError("saved source population NNLS residual differs from its actual moment relation")
+
+
 @dataclass(frozen=True, init=False)
 class SourceGroupPrior:
     """Source-only learned physical forecast, conditional on variance plug-ins."""
@@ -1363,11 +1573,8 @@ class SourceGroupPrior:
             raise ValueError("source-group learning needs owned effects for at least two source participants")
         ids = tuple(e.receipt["participant_key"] for e in estimates)
         require_identifiers(ids, "independent source participants")
-        require_sha256(source_authority.get("authority_sha256"), "source participant authority")
-        if (source_authority.get("fit_scope") != "source_training"
-                or source_authority.get("independent_unit") != "participant"
-                or tuple(source_authority.get("participant_keys", ())) != ids
-                or any(e.receipt["fit_scope"] != "source_training" for e in estimates)):
+        _validate_source_authority(source_authority, ids)
+        if any(e.receipt["fit_scope"] != "source_training" for e in estimates):
             raise ValueError("source participant request/scope must match the complete actual source estimates")
         effect = estimates[0].effect
         if any(metadata_digest(e.effect.definition) != metadata_digest(effect.definition) for e in estimates):
@@ -1427,14 +1634,18 @@ class SourceGroupPrior:
             "producer_implementation_sha256": IMPLEMENTATION_SHA256,
             "raw_components": raw_components.tolist(), "component_source_weight": weight,
             "component_fit_residual": float(residual),
+            "component_fit_residual_resolution": "64_gamma_columns_plus_8_eps_norm_scale",
             "whole_program_policy": "external_actual_unit_bounds_no_person_drop_no_capping",
             "variance_noise_dependency_uncertainty_integrated": False,
             "forecast": "between_person_plus_conditional_source_mean_uncertainty",
             "centered_energy_or_effective_df_matched": False}
+        _validate_source_group_binding(binding, policy, means, errors, between, components)
         return cls._install(effect, policy, mean, between, root, components, means, errors, binding)
 
     @classmethod
     def _install(cls, effect, policy, mean, between, root, components, means, errors, binding):
+        if not np.any(effect.response_functional != 0):
+            raise SpatialPriorIdentificationError("zero_effect_has_no_proper_population_forecast")
         result = object.__new__(cls)
         object.__setattr__(result, "effect", effect)
         object.__setattr__(result, "policy", policy)
@@ -1520,6 +1731,7 @@ class SourceGroupPrior:
         binding = saved["fit_binding"]
         ids, count = binding["source_participant_keys"], len(means)
         require_identifiers(ids, "saved source participants")
+        _validate_source_authority(binding["source_authority"], ids)
         if (count < 2 or len(ids) != count or binding["fit_scope"] != "source_training"
                 or binding["source_authority"]["participant_keys"] != ids
                 or any(e["fit_scope"] != "source_training"
@@ -1531,6 +1743,7 @@ class SourceGroupPrior:
                 or root.shape != policy.metric_covariance.shape or np.any(np.tril(root, -1) != 0)
                 or np.any(np.diag(root) == 0)):
             raise ValueError("saved population physical definition or numerical dimensions differ")
+        _validate_source_group_binding(binding, policy, means, errors, between, components)
         weight = (count - 1) / (count - 1 + policy.component_anchor_df)
         actual_components = (1 - weight) * policy.component_anchor + weight * np.asarray(binding["raw_components"])
         if (not np.array_equal(components, actual_components)

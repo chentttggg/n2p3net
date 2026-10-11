@@ -30,7 +30,10 @@ from transfer.ensemble_fit import (
     CalibrationExpertProgram,
     FittedEnsemble,
     FrozenSourceCheckpoint,
+    _calibration_expert_fit_digest,
+    _expert_state_record,
     fit_calibration_ensemble,
+    validate_calibration_ensemble_groups,
 )
 from transfer.ensemble_views import CalibrationSelection
 from transfer.noise_model import freeze_metadata
@@ -93,9 +96,7 @@ def _metrics(groups, evidence):
 def _final_identity(fitted):
     return {"program": fitted.scorer.program.record(), "training_receipts": fitted.fit_receipts,
         "temperature_calibration": fitted.temperature_record,
-        "experts": [{"program": expert.program.record(), "model_digest": expert.model_digest,
-            "fit_digest": expert.fit_digest, "source_digest": expert.source_digest,
-            "unavailable_reason": expert.unavailable_reason} for expert in fitted._experts],
+        "experts": [_expert_state_record(expert) for expert in fitted._experts],
         "OOF_probability_sha256": semantic_sha256(fitted.oof_probability_record)}
 
 
@@ -207,17 +208,45 @@ class FittedCalibrationSelection:
     def __init__(self, final, record):
         self._final = final
         self._record = freeze_metadata(record)
+        if (self.record["schema"] != "n2p3_strict_nested_calibration_selection/1"
+                or self.record["evidence_scope"] != "calibration_development"):
+            raise ValueError("unsupported nested calibration selection receipt")
+        selected = CalibrationProgramCandidate.from_record(self.record["selected_candidate"])
+        declared = {candidate["name"]: candidate for candidate in self.record["candidates"]}
+        if (len(declared) != len(self.record["candidates"]) or selected.name not in declared
+                or semantic_sha256(selected.record()) != semantic_sha256(declared[selected.name])
+                or selected.name != self.record["final_selection"]["decision"]["selected_candidate"]):
+            raise ValueError("selected declaration differs from the frozen selection programme")
+        scope = self.record["calibration_scope"]
+        if (semantic_sha256(scope) != semantic_sha256(self.record["final_refit_scope"])
+                or semantic_sha256(scope) != semantic_sha256(self.record["final_selection"]["training_scope"])):
+            raise ValueError("nested final refit authority differs from its calibration scope")
         if isinstance(final, ExpectedSubjectError):
-            if final.record(subject=self.record["participant_key"]) != self.record["final_failure"]:
+            if (final.record(subject=self.record["participant_key"]) != self.record["final_failure"]
+                    or self.record["final_producer_sha256"] is not None):
                 raise ValueError("nested final failure differs from its requested receipt")
             return
-        if semantic_sha256(_final_identity(final)) != self.record["final_producer_sha256"]:
+        if (self.record["final_failure"] is not None
+                or semantic_sha256(_final_identity(final)) != self.record["final_producer_sha256"]):
             raise ValueError("nested selection differs from its actual final model/program/temperature")
-        selected = CalibrationProgramCandidate.from_record(self.record["selected_candidate"])
         if (selected.ensemble_program != final.scorer.program
                 or selected.strategy != final.temperature_record["strategy"]
                 or [spec.record() for spec in selected.expert_programs] != [expert.program.record() for expert in final._experts]):
             raise ValueError("selected declaration differs from the actual final fitted programme")
+        if selected.strategy == "grouped_temperature" and tuple(final.temperature_record.get(
+            "temperature_expert_ids", final.scorer.program.expert_ids)) != (
+                selected.ensemble_program.expert_ids if selected.temperature_expert_ids is None
+                else selected.temperature_expert_ids):
+            raise ValueError("selected temperature subset differs from the actual final programme")
+        fit_inputs = scope["group_records"]
+        if (final.participant_key != self.record["participant_key"]
+                or semantic_sha256(final.fit_receipts) != semantic_sha256([group["view"] for group in fit_inputs])
+                or scope["actual_group_labels"] != sum(group["authorized_label_count"] for group in fit_inputs)):
+            raise ValueError("nested final model authority differs from its actual calibration scope")
+        for expert in final._experts:
+            checkpoint_digest = self.record["source_checkpoint_sha256"].get(expert.program.expert_id)
+            if _calibration_expert_fit_digest(expert.program, fit_inputs, checkpoint_digest) != expert.fit_digest:
+                raise ValueError("nested final label/source authority differs from the actual fitted model")
 
     @property
     def record(self):
@@ -273,6 +302,7 @@ def fit_nested_calibration_selection(calibration, candidates, *, baseline_name, 
            group.view.decision.candidate_vocabulary != first.decision.candidate_vocabulary or
            group.view.decision.repetitions != first.decision.repetitions for group in groups):
         raise ValueError("nested calibration requires one participant, task and evidence level")
+    validate_calibration_ensemble_groups(groups, tuple(spec for candidate in candidates for spec in candidate.expert_programs))
     sources = {} if source_checkpoints is None else {name: value if isinstance(value, FrozenSourceCheckpoint)
         else FrozenSourceCheckpoint.from_path(value) for name, value in source_checkpoints.items()}
     declared_experts = {spec.expert_id for candidate in candidates for spec in candidate.expert_programs}

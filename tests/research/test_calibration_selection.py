@@ -2,15 +2,19 @@
 
 import json
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import pytest
+import torch
 
+from data.identity import DatasetIdentityTable
 from models.candidate_evidence import CandidateEvidence, CandidateExpertIdentity
 from research.calibration_selection import (
     CalibrationProgramCandidate,
     FittedCalibrationSelection,
     _failure_evidence,
+    _final_identity,
     _metrics,
     _selection,
     _SubsetFits,
@@ -39,6 +43,7 @@ def groups(count=5):
     for index in range(len(result), count):
         original = result[index % len(result)]
         view = replace(original.view, record_id=f"nested{index}", decision_id=f"nested_selection{index}",
+            decision=replace(original.view.decision, event_ids=tuple(f"nested{index}/flash{row}" for row in range(len(original.labels)))),
             samples=np.asarray(original.view.samples)+np.random.default_rng(782+index).normal(0, .2e-6, original.view.samples.shape),
             raw_scope=(1000+600*index, 1551+600*index),
             available_sample=1551+600*index)
@@ -267,6 +272,7 @@ def test_normal_multiple_basis_conditional_g_prior_nested_caller(tmp_path):
 def test_original_ridge_qr_red_and_complete_nested_caller_now_green(tmp_path):
     base = selections()
     copied = replace(base[0], view=replace(base[0].view, record_id="nested4", decision_id="nested_selection4",
+        decision=replace(base[0].view.decision, event_ids=tuple(f"nested4/flash{row}" for row in range(len(base[0].labels)))),
         samples=np.asarray(base[0].view.samples)*1.01, raw_scope=(3400, 3951), available_sample=3951))
     saved = (base[3], copied)
     spec = replace(programs()[0], noise_order=0)
@@ -286,3 +292,193 @@ def test_original_ridge_qr_red_and_complete_nested_caller_now_green(tmp_path):
     directory = result.save(tmp_path/"ridge_nested")
     restored = FittedCalibrationSelection.load(directory, expected_selection_sha256=semantic_sha256(result.record))
     assert restored.record == result.record
+
+
+@pytest.mark.parametrize("conflict", ["raw_overlap", "record_id", "decision_id", "event_id"])
+def test_invalid_complete_roster_is_rejected_before_any_subset_fit(monkeypatch, conflict):
+    import transfer.ensemble_fit as owner
+
+    calibration = list(groups(3))
+    left, right = calibration[:2]
+    if conflict == "raw_overlap":
+        view = replace(right.view, raw_scope=left.view.raw_scope)
+    elif conflict == "record_id":
+        view = replace(right.view, record_id=left.view.record_id)
+    elif conflict == "decision_id":
+        view = replace(right.view, decision_id=left.view.decision_id)
+    else:
+        view = replace(right.view, decision=replace(right.view.decision, event_ids=left.view.decision.event_ids))
+    calibration[1] = replace(right, view=view)
+    calls = []
+    original = owner._fit_expert
+
+    def fitted(*args, **kwargs):
+        calls.append(args[0].expert_id)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(owner, "_fit_expert", fitted)
+    with pytest.raises(ValueError, match="repeat|overlap|unique"):
+        fit_nested_calibration_selection(calibration, candidates()[:1], baseline_name="fixed")
+    assert calls == [], "invalid physical roster reached a real subset fit"
+
+
+def test_final_label_authority_cannot_be_redeclared_around_same_numerical_package(nested_case):
+    _, result = nested_case
+    record = json.loads(json.dumps(result.record))
+    record["calibration_scope"]["group_records"][0]["labels_sha256"] = "e" * 64
+    record["final_refit_scope"] = record["calibration_scope"]
+    record["final_selection"]["training_scope"] = record["calibration_scope"]
+    with pytest.raises(ValueError, match="authority|scope"):
+        FittedCalibrationSelection(result.final, record)
+
+
+def test_selected_temperature_subset_must_match_actual_final_program():
+    spec = replace(programs()[0], noise_order=0, n_basis=1)
+    second = replace(spec, expert_id="second_raw")
+    programme = EnsembleProgram.equal_weights("paired-nested", (spec.expert_id, second.expert_id))
+    candidate = CalibrationProgramCandidate("paired", (spec, second), programme, "grouped_temperature")
+    result = fit_nested_calibration_selection(groups(3), (candidate,), baseline_name="paired")
+    record = json.loads(json.dumps(result.record))
+    record["selected_candidate"]["temperature_expert_ids"] = [spec.expert_id]
+    record["candidates"][0] = record["selected_candidate"]
+    assert semantic_sha256(_final_identity(result.final)) == record["final_producer_sha256"]
+    with pytest.raises(ValueError, match="temperature|programme|declaration"):
+        FittedCalibrationSelection(result.final, record)
+
+
+def test_outer_held_signal_and_truth_cannot_change_full_inner_temperature_program(nested_case):
+    calibration, original = nested_case
+    altered = replace(calibration[0], labels=~calibration[0].labels, target_candidate="b",
+        view=replace(calibration[0].view, samples=np.asarray(calibration[0].view.samples) * -7. + 15e-6))
+    changed = fit_nested_calibration_selection((altered, *calibration[1:]), candidates(), baseline_name="fixed")
+    before, after = original.record["outer_rows"][0], changed.record["outer_rows"][0]
+    for name in ("selection", "selected_candidate", "refit_scope", "refit_key", "producer"):
+        assert semantic_sha256(before[name]) == semantic_sha256(after[name])
+    assert before["evidence"] != after["evidence"]
+
+
+def test_real_trial_preprocessing_and_neural_statistics_exclude_outer_held(monkeypatch):
+    import research.calibration_selection as selector
+    import transfer.ensemble_fit as owner
+
+    root = Path(__file__).resolve().parents[2]
+    assert Path(selector.__file__).resolve() == root / "src/research/calibration_selection.py"
+    assert Path(owner.__file__).resolve() == root / "src/transfer/ensemble_fit.py"
+    calibration = groups(4)
+    specs = (programs()[1], programs()[-1])
+    programme = EnsembleProgram.equal_weights("trial-nested", tuple(spec.expert_id for spec in specs))
+    declared = (CalibrationProgramCandidate("trial", specs, programme),)
+    fitted = []
+    original = owner._fit_expert
+
+    def actual_fit(*args, **kwargs):
+        result = original(*args, **kwargs)
+        fitted.append((args[0].expert_id, tuple(row["record_id"] for row in args[5]), result.predictor.digest()))
+        return result
+
+    monkeypatch.setattr(owner, "_fit_expert", actual_fit)
+    before = fit_nested_calibration_selection(calibration, declared, baseline_name="trial")
+    original_calls = tuple(fitted)
+    fitted.clear()
+    altered = replace(calibration[0], labels=~calibration[0].labels, target_candidate="b",
+        view=replace(calibration[0].view, samples=np.asarray(calibration[0].view.samples) * -7. + 15e-6))
+    after = fit_nested_calibration_selection((altered, *calibration[1:]), declared, baseline_name="trial")
+    for name in ("selection", "selected_candidate", "refit_scope", "refit_key", "producer"):
+        assert semantic_sha256(before.record["outer_rows"][0][name]) == semantic_sha256(after.record["outer_rows"][0][name])
+    assert [row for row in original_calls if "record0" not in row[1]] == [row for row in fitted if "record0" not in row[1]]
+
+
+def test_exact_cached_fixed_state_and_inputs_remain_immutable_after_temperature_fit():
+    calibration = groups(4)
+    fits = _SubsetFits({}, "cpu")
+    fixed, key = fits.fit(calibration[:3], candidates()[0])
+    before = semantic_sha256(_final_identity(fixed))
+    score = fixed.score(calibration[3].view).record()
+    calibrated, _ = fits.fit(calibration[:3], candidates()[1])
+    again, repeated_key = fits.fit(calibration[:3], candidates()[0])
+    assert again is fixed and repeated_key == key
+    assert semantic_sha256(_final_identity(fixed)) == before
+    assert fixed.score(calibration[3].view).record() == score
+    assert calibrated.oof_probability_record["final_base_experts"][0]["model_digest"] == fixed._experts[0].model_digest
+    with pytest.raises(TypeError):
+        fixed.fit_receipts[0]["record_id"] = "other"
+    with pytest.raises(TypeError):
+        calibrated.oof_probability_record["rows"][0]["held_record_id"] = "other"
+    with pytest.raises(ValueError):
+        fixed._experts[0].predictor.kernel_mean.setflags(write=True)
+    with pytest.raises(ValueError):
+        calibration[0].view.samples.setflags(write=True)
+    with pytest.raises(ValueError):
+        calibration[0].labels.setflags(write=True)
+
+
+def test_shared_cached_expert_declaration_cannot_be_mutated():
+    fits = _SubsetFits({}, "cpu")
+    fixed, _ = fits.fit(groups(3), candidates()[0])
+    with pytest.raises(AttributeError):
+        fixed._experts[0].program = replace(fixed._experts[0].program, noise_order=1)
+
+
+def test_tied_probability_does_not_remove_requested_row_or_pass_lost_prediction_gate():
+    calibration = groups(3)
+    baseline = _metrics(calibration, [finite_evidence(group, probability) for group, probability in zip(
+        calibration, ([.9, .1], [.01, .99], [.9, .1]), strict=True)])
+    candidate = _metrics(calibration, [finite_evidence(group, probability) for group, probability in zip(
+        calibration, ([.5, .5], [.8, .2], [.8, .2]), strict=True)])
+    selected, trace = select_calibration_candidate({"baseline": baseline, "candidate": candidate},
+        baseline_name="baseline", tie_order=("candidate", "baseline"))
+    assert candidate.probability_coverage == 1. and candidate.prediction_coverage == 2/3
+    assert candidate.requested_participant_operational_hit_rate == baseline.requested_participant_operational_hit_rate
+    assert candidate.available_probability_nll < baseline.available_probability_nll
+    assert selected == "baseline"
+    assert "baseline_prediction_output_lost" in trace["comparisons"]["candidate"]["paired"]["gate_reasons"]
+
+
+def test_nested_source_admission_excludes_other_participant_of_entire_target_study(tmp_path):
+    calibration = groups(3)
+    scratch = programs()[-1]
+    source = replace(scratch, expert_id="source", recipe=replace(scratch.recipe, name="source", initialization="source"))
+    data = build_calibration_epoch_dataset(calibration, source.profile)
+    checkpoint = write_checkpoint(tmp_path / "source.pt", data, source_snapshot_sha256="c" * 64)
+    payload = torch.load(checkpoint, weights_only=True)
+    identities = DatasetIdentityTable.from_source_rows(["other"], [calibration[0].view.source_dataset_id])
+    payload["training_identity_ledger"] = identities.payload()
+    payload["training_identity_ledger_digest"] = identities.digest()
+    contract = payload["training_contract"]
+    contract["source_identity_digest"] = identities.digest()
+    contract["training_participant_keys"] = identities.authority_keys("source")
+    membership = {"schema": "n2p3_source_study_membership/1",
+        "stream_to_study": {calibration[0].view.source_dataset_id: calibration[0].view.source_dataset_id},
+        "evidence": [{"basis": "synthetic_test_fixture", "study_id": calibration[0].view.source_dataset_id}]}
+    membership["digest"] = semantic_sha256(membership)
+    payload["source_study_membership"] = membership
+    contract["objective"]["source_study_membership"] = membership
+    payload["training_contract_digest"] = semantic_sha256(contract)
+    torch.save(payload, checkpoint)
+    programme = EnsembleProgram.equal_weights("source-only-candidate", (source.expert_id,))
+    candidate = CalibrationProgramCandidate("source", (source,), programme)
+    with pytest.raises(ValueError, match="excluded target libraries"):
+        fit_nested_calibration_selection(calibration, (candidate,), baseline_name="source",
+            source_checkpoints={source.expert_id: checkpoint})
+
+
+def test_nested_source_admission_uses_bound_study_proof_across_distinct_stream_ids(tmp_path):
+    calibration = groups(3)
+    scratch = programs()[-1]
+    source = replace(scratch, expert_id="source", recipe=replace(scratch.recipe, name="source", initialization="source"))
+    data = build_calibration_epoch_dataset(calibration, source.profile)
+    checkpoint = write_checkpoint(tmp_path / "same-study.pt", data, source_snapshot_sha256="c" * 64)
+    payload = torch.load(checkpoint, weights_only=True)
+    membership = {"schema": "n2p3_source_study_membership/1",
+        "stream_to_study": {"external-source": calibration[0].view.source_dataset_id},
+        "evidence": [{"basis": "synthetic_test_fixture", "study_id": calibration[0].view.source_dataset_id}]}
+    membership["digest"] = semantic_sha256(membership)
+    payload["source_study_membership"] = membership
+    payload["training_contract"]["objective"]["source_study_membership"] = membership
+    payload["training_contract_digest"] = semantic_sha256(payload["training_contract"])
+    torch.save(payload, checkpoint)
+    programme = EnsembleProgram.equal_weights("source-candidate", (source.expert_id,))
+    candidate = CalibrationProgramCandidate("source", (source,), programme)
+    with pytest.raises(ValueError, match="excluded target libraries"):
+        fit_nested_calibration_selection(calibration, (candidate,), baseline_name="source",
+            source_checkpoints={source.expert_id: checkpoint})

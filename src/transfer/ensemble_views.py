@@ -1047,7 +1047,8 @@ def build_calibration_epoch_dataset(groups, profile: SelectionEpochProfile, *, t
                               "target_candidate_id": group.target_candidate if decision.protocol == "direct" else "",
                               "repetition_index": int(decision.repetition_indices[index])}
                              for index, event in enumerate(decision.event_ids))
-        parents.append(DataLineage.source(parameters=view.record()))
+        parents.append(DataLineage.source(parameters={**view.record(),
+            "source_dataset_ids": [view.source_dataset_id]}))
     count = len(timeline_rows)
     timeline = ScheduledEventTimeline(
         event_ids=np.array([row["event_id"] for row in timeline_rows]),
