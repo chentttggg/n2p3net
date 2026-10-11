@@ -1,0 +1,19 @@
+{
+  "schema": "prefix_program_independent_review_binding/1",
+  "review_head": "4830ef9a6155d797fcb401cd5f5c56886670974b",
+  "tree_status": " M doc/evidence/README.md\n M doc/technical_structure.zh.md\n?? doc/evidence/prefix_small_group_evaluation_20261011.zh.md\n",
+  "handoff_sha256": "ffeda4395ad459bd1c5081df3203f8f963896b5f18168fa6bcc6f02813e48f48",
+  "source_binding_sha256": "8e3e659c932c8d31f13645cbff017ecc9543bd368b99d52ed9d10fa564f45223",
+  "partial_probe_source_sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+  "new_source_fits": 0,
+  "new_target_fits": 0,
+  "held_task_metrics_computed": false,
+  "files": {
+    "REVIEW.zh.md": "69bda8f9a5608d9a639844c342abdd3b23a21a8c5ddadd0844ac9f68369952e8",
+    "partial80_scope_probe.py": "2f954e42cfdf6911b0c478ab9d88b2616f0bea074eff59cb38f4f7b43c251c00",
+    "partial80_scope_probe.json": "f60e809180fb3b830bf56c237f40979afe4b79e32c3f2897634915604fc6e354",
+    "partial80_scope_probe.log": "0a7cf904e8a73a9a99bf5e507a19475d8557a7e37dea52da07b708cd4c0562b0",
+    "partial80_scope_probe.exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "review_source.binding.json": "8e3e659c932c8d31f13645cbff017ecc9543bd368b99d52ed9d10fa564f45223"
+  }
+}

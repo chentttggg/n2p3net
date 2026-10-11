@@ -17,7 +17,7 @@
 
 一个完整组足以做 fixed baseline 的目标拟合：以 K200 为例，可以使用最早完整 120-label selection，保留后面的 80 个请求标签为 unused/partial，固定温度 `T=1`。它不能支持当前 grouped temperature，因为 grouped 的 leave-one-group-out 在唯一组被留出后没有任何训练组；把门槛从 3 改成 1 只会把“无 OOF 训练数据”改写成可运行的错误协议。
 
-这80个后缀不是抽象的“缺80标签”：A01实际 suffix event indices 为120–199，raw scope `[11477,16648)`，80个flash中14个target/66个non-target，末尾4个事件right-censored；continuous记录仍有5139个 conditioning32之后的行，trial侧只有76个完整epoch（13/63）。它与前一个完整selection有1753 samples的raw gap。whole-C先预处理再删行会让held输入最大变化 `3.26665e-6 V`，所以partial scope必须先从原始MAT裁剪再独立执行预处理；当前 `CalibrationPrefix`/complete-group API不能直接接它。
+这80个后缀不是抽象的“缺80标签”：A01实际 suffix event indices 为120–199，raw scope `[11477,16648)`，80个flash中14个target/66个non-target，末尾4个事件right-censored；continuous记录仍有5139个 conditioning32之后的行，trial侧只有76个完整epoch（13/63）。它与前一个完整selection有1753 samples的raw gap。whole-C先预处理再删行会让held输入最大变化 `3.26665e-6 V`，所以partial scope必须先从原始MAT裁剪再独立执行预处理；当前 `CalibrationPrefix`/complete-group API不能直接接它。普通 event-level trial recipe 在数学上可处理这些76行，但含 `candidate_loss_weight` 的现有 calibration decision-group 路径会拒绝 incomplete schedule；因此它仍不能直接进入当前 36-choice candidate loss、temperature 或 scorer。
 
 一个组内直接同时拟合专家和温度也不能充当 OOF。温度损失在数学上可计算，但它使用了同一组的拟合输出和 truth，属于 in-sample calibration。只用一个真实观测，温度会被单个 truth 推到边界，并且 truth 翻转会把温度推向相反边界；A01 物理 probe 还显示所有 repetition 的 target pair 相同。解析反例中，真实概率已经校准时，单个观测学习的温度仍可令总体 NLL 从 1.049 增至 5.009。
 
@@ -33,4 +33,4 @@
 
 当前裁决：**不把完整组拆小，也不把 grouped temperature 的正式下限降为一个。** K200 先保 fixed baseline；若研究需要低剂量温度，优先实现 source-global frozen temperature 或显式 regularized diagnostic，并单独标记其估计量和不具备的独立风险证据。真正 target 内 grouped temperature 至少需要多个互不重叠的完整 selection；数量下限仍应由冻结的学习程序和资格规则决定，不能根据某次结果临时降低。
 
-这项评估不阻塞已集成的 source cache/shared scoring，也不改变 P1 16 格 native 面板的失败账本。后者的数值门诊断另见 `tmp/P1_CHART_DIAGNOSIS_20261011/HANDOFF.zh.md`。
+这项评估不阻塞已集成的 source cache/shared scoring，也不改变 P1 16 格 native 面板的失败账本。当前源码调用链和 partial80 反例的独立复签见[评审绑定](../assets/research_resume_20261011/prefix_program_review_binding.json)；后者的数值门诊断另见 `tmp/P1_CHART_DIAGNOSIS_20261011/HANDOFF.zh.md`。
