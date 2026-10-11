@@ -1,0 +1,82 @@
+{
+  "schema": "n2p3_native_nested_replay_acceptance/1",
+  "core_commit": "cf48f78c875ac4d3537305e6e266c6371c4437de",
+  "source_zip_sha256": "fab38d1c463fc5bc05bc14e60cb797712f64dd2ba8e8d290c30778830a4eb6c7",
+  "mat_sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+  "original_fit_source_manifest_sha256": "1427c16dce73228061a17a43c092a235a3b445d6f6d917b09a9fe0488f6da34d",
+  "fit_scope": "authorized C800 complete groups; 720 group labels; six correlated folds",
+  "original_fit_counters": {
+    "fit_calls": 64,
+    "actual_fixed_fit_states": 78,
+    "exact_subset_cache_hits": 51
+  },
+  "original_harness_outcome": "repeat-calibration guard rejected the harness after a valid package was saved",
+  "corrected_consumer_exit_code": 0,
+  "original_models_refitted_for_correction": 0,
+  "replays": 29,
+  "probability_available": 28,
+  "requested_denominator": 29,
+  "scorable_input_decisions": 28,
+  "test_scope": {
+    "schema": "n2p3_raw_sample_scope/1",
+    "name": "recording:heldout",
+    "start_sample": 66564,
+    "stop_sample": 347704,
+    "event_indices_count": 3400,
+    "event_indices_sha256": "938a632359a6f43178a8e478161b55ec684f1b4dab0a233ee608d2cec7e722c4"
+  },
+  "requested_to_actual_K": {
+    "800": 800
+  },
+  "all_saved_model_package_bytes_identical": true,
+  "artifacts": {
+    "accepted-source.zip": {
+      "path": "tmp/NATIVE_NESTED_20261011/accepted-source.zip",
+      "sha256": "fab38d1c463fc5bc05bc14e60cb797712f64dd2ba8e8d290c30778830a4eb6c7",
+      "bytes": 1899456
+    },
+    "actual-A01.log": {
+      "path": "tmp/NATIVE_NESTED_20261011/actual-A01.log",
+      "sha256": "2fcfde1fce6bfc6ae3e99e63aee8236e09677d841167ac6aa30eed05f05fc64d",
+      "bytes": 1489
+    },
+    "actual-A01/spec.json": {
+      "path": "tmp/NATIVE_NESTED_20261011/actual-A01/spec.json",
+      "sha256": "3d1d50bb4d5cfbec6555553a4f483a9c0d0590d15253322a4c5763d208e3cd05",
+      "bytes": 19214
+    },
+    "actual-A01/package/calibration_selection.json": {
+      "path": "tmp/NATIVE_NESTED_20261011/actual-A01/package/calibration_selection.json",
+      "sha256": "e405205e806fd0505b9e1206da2c4ef537af0175f9bd343f0a163b558140a5c8",
+      "bytes": 182932493
+    },
+    "actual-A01/package/ensemble.json": {
+      "path": "tmp/NATIVE_NESTED_20261011/actual-A01/package/ensemble.json",
+      "sha256": "f702345bf50bdfb2c7496e665bcfb835fa808003ae3cbeec53dcf8c52ba8f257",
+      "bytes": 650541
+    },
+    "actual-A01/package/expert_000.npz": {
+      "path": "tmp/NATIVE_NESTED_20261011/actual-A01/package/expert_000.npz",
+      "sha256": "27c07ee2cbc3d3fc4226b520065ebeda9269709597c3c5524f8dc1c13a341cbb",
+      "bytes": 37701
+    },
+    "future-replay/report.json": {
+      "path": "tmp/NATIVE_NESTED_20261011/future-replay/report.json",
+      "sha256": "9bb454bed3c23f3eea8c5b3aa9e735a43a3fde55c27b8408e0228462007e5fe4",
+      "bytes": 13060
+    },
+    "future-replay/future_ledger.json": {
+      "path": "tmp/NATIVE_NESTED_20261011/future-replay/future_ledger.json",
+      "sha256": "7475c535419f7015d854f3fc1bf503e4f3a802639999e9e5d24ffe3c607d0727",
+      "bytes": 3686010
+    },
+    "future-replay.log": {
+      "path": "tmp/NATIVE_NESTED_20261011/future-replay.log",
+      "sha256": "533de4c9dd94c17b6721b3ec017a72683ffb521920d2ea80251758cf9b23f074",
+      "bytes": 102
+    }
+  },
+  "scientific_scope": "public-data software saved-package replay only; no accuracy or new efficacy claim",
+  "new_caller_integration_status": "prefix WIP not consumed",
+  "formal_product_promotion": false
+}

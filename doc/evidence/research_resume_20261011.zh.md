@@ -70,6 +70,12 @@ B03 新增 opt-in InnerReplayRecorder，在同一次 `fit_nested_calibration_sel
 
 B12 新增 `validate_b12_execution_manifest`，由 paired `run_erp_comparator._finalize_comparison` 写入 `b12_execution_binding`，校验 requested K×arm×seed roster、实际K alias、失败/不可用分母、target authority/input manifest和 public source producer catalog。软件 scope不虚构producer。另修复 FrozenTrial list/tuple JSON metadata 比较，保留真实 preprocessing 差异拒绝，相关校验5项通过。云端 candidate8 的6个 input-contract RED已缩小到该类型问题并修复科研树版本；2个FS/RAM失败、四库 Errno28 和完整source→target终态仍保留，未放宽 gate或改写旧producer。
 
-这批 P0 代码已提交到隔离科研分支 `c3278b7`；B12 只有 software/synthetic contract evidence，不能宣称完整单seed执行、公共效能或成人确认。
+这批 P0 代码已提交到隔离科研分支，之后独立复审继续核对其实际行为；B12 只有 software/synthetic contract evidence，不能宣称完整单seed执行、公共效能或成人确认。
 
 云端后续交接：数据盘清理从约0.949GB free恢复到25.176GB，原科研文件无计划外变化；B08 tuple helper 修正以独立新 producer完成 exit0，1344包/576 energy/48 C reference/28 native/20000 bootstrap等按新 acceptance 身份解释，旧失败不改签。该结果不替代B12 source→target execution，科研侧继续保留 candidate input-contract、资源 admission和四库终态边界。
+
+## 原 MAT 保存重放验收
+
+从已接受 `cf48f78` 物理导出源码，在原 A01 MAT（SHA `cdf9bca4…`）的授权 C800 中拟合六个完整组，实际使用720 group labels。原 harness 在有效模型已保存后错误地重评 calibration views，被原 `ensemble prediction repeats a calibration observation` 门正确拒绝。模型状态没有因此失效；没有放宽该门。
+
+修后使用原 independent-prefix owner 的 C800 之后 future queue，只消费 label-free view，不读取 queue truth 选择程序。重放保留全部29 requested decisions，其中28有合法概率，1项不可用仍在分母；原模型→重新保存→加载的证据29/29一致，三份package文件逐字节相同，纠正过程中新增拟合0。这个结果是公开数据上的软件保存重放证据，不报告hit/NLL或新效能。原失败日志、原包和修后消费者身份各自保留，详见[紧凑绑定](../assets/research_resume_20261011/native_nested_replay_binding.json)。
