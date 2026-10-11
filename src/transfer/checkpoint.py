@@ -9,7 +9,10 @@ the GTN and BI runners cannot silently disagree about what was pretrained.
 from __future__ import annotations
 
 import copy
+import hashlib
+import io
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -354,14 +357,15 @@ def _model_source_domain_axis_from_payload(
     return axis_record
 
 
-def _validate_metadata(
-    payload: Mapping[str, object],
-    dataset: object,
-    *,
-    target_subject: str | None,
-    identity_exclusion_policy: IdentityExclusionPolicy,
-) -> None:
-    assert_physical_epoch_dataset(dataset)
+@dataclass(frozen=True)
+class _SourceMetadataAdmission:
+    training_identity: DatasetIdentityTable
+    expected_execution: object
+    preprocessing: PreprocessingSpec
+
+
+def _validate_source_metadata(payload):
+    """Verify source-owned contracts independently of any target or fold."""
     if payload.get("schema") != CHECKPOINT_SCHEMA:
         raise ValueError("checkpoint schema is unsupported; regenerate the checkpoint.")
     state = payload.get("trunk_state_dict")
@@ -536,18 +540,27 @@ def _validate_metadata(
     if semantic_sha256(input_signature) != semantic_sha256(contract_preprocessing):
         raise ValueError("checkpoint input signature disagrees with its training contract.")
     expected_execution = execution_binding.get("execution_identity")
-    if expected_execution is not None and preprocessing_execution_identity(dataset) != expected_execution:
-        from transfer.ensemble_views import validate_selection_checkpoint_execution
-
-        validate_selection_checkpoint_execution(dataset, payload["input_preprocessing_execution"],
-                                               PreprocessingSpec(**payload["input_preprocessing"]))
     checkpoint_classifier_is_trained(payload)
-    input_mean, input_std = checkpoint_input_stats(payload, int(dataset.n_channels))
+    input_mean, input_std = checkpoint_input_stats(payload, int(payload["n_channels"]))
     optimizer_config = training_contract.optimizer.get("config", {})
     if isinstance(optimizer_config, Mapping) and optimizer_config.get("standardize_input") is False:
         if np.any(input_mean != 0) or np.any(input_std != 1):
             raise ValueError("checkpoint with disabled standardization requires an identity input transform")
 
+    return _SourceMetadataAdmission(training_identity_ledger, expected_execution,
+                                    PreprocessingSpec(**payload["input_preprocessing"]))
+
+
+def _validate_target_metadata(payload, dataset, admission, *, target_subject,
+                              identity_exclusion_policy):
+    """Recheck the actual current physical input and participant on every bind."""
+    training_identity_ledger = admission.training_identity
+    expected_execution = admission.expected_execution
+    if expected_execution is not None and preprocessing_execution_identity(dataset) != expected_execution:
+        from transfer.ensemble_views import validate_selection_checkpoint_execution
+
+        validate_selection_checkpoint_execution(dataset, payload["input_preprocessing_execution"],
+                                               PreprocessingSpec(**payload["input_preprocessing"]))
     if target_subject is not None:
         target = str(target_subject)
         target_identity_table = getattr(dataset, "identity_table", None)
@@ -624,6 +637,14 @@ def _validate_metadata(
             + ", ".join(input_mismatches)
             + "; use an explicit stem/re-reference/domain-shift adapter."
         )
+
+
+
+def _validate_metadata(payload, dataset, *, target_subject, identity_exclusion_policy):
+    assert_physical_epoch_dataset(dataset)
+    admission = _validate_source_metadata(payload)
+    _validate_target_metadata(payload, dataset, admission, target_subject=target_subject,
+                              identity_exclusion_policy=identity_exclusion_policy)
 
 
 def checkpoint_input_stats(
@@ -854,6 +875,12 @@ def load_n2p3_trunk_checkpoint(
         target_subject=target_subject,
         identity_exclusion_policy=identity_exclusion_policy,
     )
+    trunk = _trunk_from_checkpoint(payload, int(dataset.n_channels), int(dataset.n_times),
+        float(dataset.preprocessing.sfreq), float(dataset.preprocessing.tmin_ms) / 1000.0)
+    return trunk, payload
+
+
+def _trunk_from_checkpoint(payload, n_channels, n_times, sfreq, tmin_s):
     (
         architecture,
         pooling,
@@ -863,10 +890,10 @@ def load_n2p3_trunk_checkpoint(
         pooling_kwargs,
     ) = _architecture_from_payload(payload)
     core = N2P3Net(
-        int(dataset.n_channels),
-        n_times=int(dataset.n_times),
-        sfreq=float(dataset.preprocessing.sfreq),
-        tmin_s=float(dataset.preprocessing.tmin_ms) / 1000.0,
+        n_channels,
+        n_times=n_times,
+        sfreq=sfreq,
+        tmin_s=tmin_s,
         pooling_mode=pooling,
         **architecture.model_kwargs(),
         **({} if splitbn_config is None else splitbn_config.model_kwargs()),
@@ -909,7 +936,7 @@ def load_n2p3_trunk_checkpoint(
         )
     if transfer_config is not None and not isinstance(trunk, FeatureDomainTransfer):
         raise RuntimeError("feature_transfer checkpoint did not reconstruct its wrapper.")
-    return trunk, payload
+    return trunk
 
 
 class PreparedTransferCheckpoint:
@@ -938,6 +965,144 @@ class PreparedTransferCheckpoint:
     def model_origin(self, checkpoint_sha256):
         return {"kind": "checkpoint", "checkpoint_sha256": checkpoint_sha256,
                 "training_contract_digest": self.training_contract_digest}
+
+
+
+class _AdmittedTransferSource:
+    """Private immutable-source prototype, never fitted or exposed to callers."""
+
+    def __init__(self, content):
+        from transfer.noise_model import freeze_metadata
+
+        payload = load_checkpoint_payload(io.BytesIO(content))
+        self.admission = _validate_source_metadata(payload)
+        self.source_membership_present = payload.get("source_study_membership") is not None
+        if self.source_membership_present:
+            from data.study import study_ids_for_identity
+
+            self.source_studies = frozenset(study_ids_for_identity(
+                self.admission.training_identity, payload["source_study_membership"]))
+        else:
+            self.source_studies = None
+        self._trunk = _trunk_from_checkpoint(payload, int(payload["n_channels"]), int(payload["n_times"]),
+            float(payload["input_sample_rate_hz"]), float(payload["input_tmin_s"]))
+        self._input_statistics = checkpoint_input_stats(payload, int(payload["n_channels"]))
+        # Only label-free metadata consumed by FrozenTrialPredictor is exposed.
+        # Numeric source tensors and statistics remain in this private owner.
+        self.metadata = freeze_metadata({name: payload[name] for name in (
+            "training_contract", "training_contract_digest", "training_identity_ledger",
+            "training_identity_ledger_digest", "source_calibration", "source_study_membership") if name in payload})
+        self.source_snapshot_sha256 = payload["training_contract"]["source_snapshot_sha256"]
+        self.input_domain_digest = semantic_sha256({
+            "channels": payload["input_channel_names"], "preprocessing": payload["input_preprocessing"],
+            "source_reference": payload["input_source_reference"],
+            "execution_identity": self.admission.expected_execution})
+        # Retire the decoded source fit diagnostics and mutable contract copy.
+        # Subsequent target gates consume only these unchanged small signatures;
+        # the one frozen metadata record owns source provenance for predictors.
+        self._payload = {name: payload.get(name) for name in (
+            "n_channels", "n_times", "input_sample_rate_hz", "input_tmin_s",
+            "input_channel_names", "input_preprocessing", "input_source_reference",
+            "input_preprocessing_execution")}
+
+    def bind(self, dataset, subject):
+        assert_physical_epoch_dataset(dataset)
+        _validate_target_metadata(self._payload, dataset, self.admission, target_subject=subject,
+                                  identity_exclusion_policy="source_or_global")
+        return _BoundTransferSource(self, dataset)
+
+
+class _BoundTransferSource:
+    """A current-target view; numerical state and BN are copied per fit."""
+
+    def __init__(self, source, dataset):
+        self._source = source
+        self._target_identity = dataset.identity_table
+        self.source_membership_present = source.source_membership_present
+        self.payload = source.metadata
+        self.selection_epoch_capability = dataset.provenance.get("selection_epoch_capability")
+        self.input_statistics = tuple(value.copy() for value in source._input_statistics)
+
+    @property
+    def training_identity(self):
+        """Present the admitted ledger without creating a second authority."""
+        return self._source.admission.training_identity
+
+    def assert_target_excluded(self, subject):
+        assert_target_identity_excluded(self._source.admission.training_identity,
+            self._target_identity.record_for(str(subject)), policy="source_or_global")
+
+    def trunk_for_target(self, subject):
+        self.assert_target_excluded(subject)
+        return copy.deepcopy(self._source._trunk)
+
+    def assert_library_exclusion(self, *, target_membership=None, excluded_source_datasets=()):
+        """Recheck current target studies against the admitted source proof.
+
+        Frozen provenance is presentation metadata.  Source permission comes
+        from the original once-validated source ledger/proof; current target
+        permission still comes from the original strict study compiler.
+        """
+        if self._source.source_studies is None and target_membership is None:
+            actual_source = set(source_dataset_ids_from_identity(self._source.admission.training_identity))
+            target_studies = set(source_dataset_ids_from_identity(self._target_identity))
+        elif self._source.source_studies is None or target_membership is None:
+            raise ValueError("whole-study exclusion requires both source and target membership proofs")
+        else:
+            from data.study import study_ids_for_identity
+
+            actual_source = self._source.source_studies
+            target_studies = set(study_ids_for_identity(self._target_identity, target_membership))
+        overlap = actual_source & (target_studies | set(excluded_source_datasets))
+        if overlap:
+            raise ValueError(f"checkpoint source contains excluded target libraries: {sorted(overlap)}")
+
+
+class ScopedSourceCheckpointPreparation:
+    """Source decode reuse owned by one participant's programme lifetime.
+
+    Every call binds its current dataset, identity, preprocessing execution and
+    source/input domain. No target rows, labels, fitted statistics or models
+    are reused, and the first target never owns subsequent fold identities.
+    """
+
+    def __init__(self):
+        self._participant = None
+        self._sources = {}
+        self._source_keys = {}
+        self.source_admissions = 0
+        self.target_bindings = 0
+
+    def prepare(self, content, dataset, subject):
+        if not isinstance(content, bytes) or not content:
+            raise ValueError("scoped source preparation requires immutable checkpoint bytes")
+        if not isinstance(getattr(dataset, "identity_table", None), DatasetIdentityTable):
+            raise ValueError("scoped source preparation requires current target identities")
+        target = dataset.identity_table.record_for(str(subject))
+        if len(dataset.identity_table.records) != 1:
+            raise ValueError("scoped source preparation belongs to one actual participant")
+        participant = (target.origin_subject_keys, target.global_person_keys, target.identity_status)
+        if self._participant is not None and participant != self._participant:
+            raise ValueError("source preparation owner cannot cross participant identities")
+        content_digest = hashlib.sha256(content).hexdigest()
+        key = self._source_keys.get(content_digest)
+        source = None if key is None else self._sources[key]
+        if source is None:
+            source = _AdmittedTransferSource(content)
+            key = (source.source_snapshot_sha256, content_digest, source.input_domain_digest)
+        bound = source.bind(dataset, subject)
+        # Failed inputs never enter the reusable admission map or bind an owner.
+        if content_digest not in self._source_keys:
+            self._sources[key] = source
+            self._source_keys[content_digest] = key
+            self.source_admissions += 1
+        self._participant = participant
+        self.target_bindings += 1
+        return bound
+
+    def record(self):
+        return {"source_admissions": self.source_admissions, "target_bindings": self.target_bindings,
+                "source_keys": [list(key) for key in self._sources]}
 
 
 def checkpoint_architecture_record(payload: Mapping[str, object]) -> dict[str, object]:
@@ -986,6 +1151,7 @@ def checkpoint_architecture_record(payload: Mapping[str, object]) -> dict[str, o
 __all__ = [
     "CHECKPOINT_SCHEMA",
     "PreparedTransferCheckpoint",
+    "ScopedSourceCheckpointPreparation",
     "assert_checkpoint_target_identity_excluded",
     "checkpoint_architecture_record",
     "checkpoint_classifier_is_trained",

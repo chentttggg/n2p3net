@@ -44,6 +44,7 @@ from research.prefix_inner_replay import (  # noqa: E402
 from research.source_catalog import SourceSeedCatalog, paired_pipeline_seeds  # noqa: E402
 from train.runtime import cpu_thread_budget  # noqa: E402
 from transfer.checkpoint import (  # noqa: E402
+    ScopedSourceCheckpointPreparation,
     checkpoint_architecture_record,
     load_checkpoint_payload,
 )
@@ -616,6 +617,7 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
     predictions, fits = [], []
     with cpu_thread_budget(plan["cpu_threads_per_worker"]):
         for source_seed, seed in plan["seed_pairs"]:
+            source_preparation = ScopedSourceCheckpointPreparation()
             specs, sources, controls = paired_specs[source_seed], paired_sources[source_seed], paired_controls[source_seed]
             for budget, prefix in views.calibration.items():
                 roster = EnsembleProgram.equal_weights("prefix_fit", tuple(spec.expert_id for spec in specs))
@@ -637,7 +639,8 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                 programs = fit_calibration_prefix_programs(prefix, specs, roster,
                     strategies=plan["calibration_strategies"], source_checkpoints=sources, device=plan["device"],
                     temperature_expert_ids=plan.get("temperature_expert_ids"),
-                    inner_replay_recorder=recorder, inner_replay_context=prefix_context)
+                    inner_replay_recorder=recorder, inner_replay_context=prefix_context,
+                    _source_preparation=source_preparation)
                 FittedEnsemble.save_programs(package, programs, participant_key=prefix.target_contract["participant_key"])
                 for strategy in plan["calibration_strategies"]:
                     _abort_checkpoint()
@@ -661,9 +664,18 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                                 and spec.recipe.initialization == "source",
                             "temperature_calibrated": strategy == "grouped_temperature" and spec.expert_id in
                                 plan.get("temperature_expert_ids", roster.expert_ids)})
-                    for view in views.decisions:
+                predictions_by_strategy = {strategy: [] for strategy in plan["calibration_strategies"]}
+                for view in views.decisions:
+                    _abort_checkpoint()
+                    shared = FittedEnsemble.score_programs(programs, view)
+                    for strategy in plan["calibration_strategies"]:
+                        result = programs[strategy]
+                        fitted = None if isinstance(result, ExpectedSubjectError) else result
+                        calibration = (fitted.temperature_record if fitted is not None else
+                            {"strategy": strategy, "status": "unavailable",
+                             "failure": result.record(subject=prefix.target_contract["participant_key"])})
                         if fitted is not None:
-                            evidence = fitted.score_experts(view)
+                            evidence = shared[strategy]
                         else:
                             evidence = unavailable_prefix_expert_scores(prefix.record(),
                                 [spec.record() for spec in specs], strategy,
@@ -673,7 +685,7 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                             if strategy not in plan.get("mixture_calibration_strategies", {}).get(mixture.name, plan["calibration_strategies"]):
                                 continue
                             value = EnsembleScorer(mixture).score({name: evidence[name] for name in mixture.expert_ids})
-                            predictions.append({"source_seed": source_seed, "target_seed": seed, "seed": seed,
+                            predictions_by_strategy[strategy].append({"source_seed": source_seed, "target_seed": seed, "seed": seed,
                                 "K": budget, "calibration_strategy": strategy, "mixture": mixture.name, "evidence": value.record(),
                                 "truth": views.scoring_truth[view.decision_id], "actual_authorized_labels": budget,
                                 "requested_Ks": [int(key) for key, actual in views.ledger["requested_to_actual_K"].items() if actual == budget],
@@ -685,6 +697,10 @@ def _independent_subject_impl(row, plan, directory, expected_source, source_snap
                                     "filtering_scope": "independent_test_decision" if spec.family == "trial" else "native_unfiltered_decision"}
                                     for spec in specs if spec.expert_id in mixture.expert_ids},
                                 "score_source_digest": semantic_sha256(expected_source)})
+                # Preserve the established strategy-major terminal and seal
+                # order while sharing raw expert scores only in this view.
+                for strategy in plan["calibration_strategies"]:
+                    predictions.extend(predictions_by_strategy[strategy])
                 persist_prefix_inner_replay(prefix, programs, package, recorder=recorder,
                     source_checkpoints=sources, context=prefix_context, device=plan["device"])
                 _fit_saved(directory, request)

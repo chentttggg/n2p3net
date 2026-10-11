@@ -27,7 +27,7 @@ from research.execution import (
 )
 from transfer.calibration_candidates import fit_calibration_candidate
 from transfer.calibration_state import FrozenTrialPredictor
-from transfer.checkpoint import PreparedTransferCheckpoint, assert_checkpoint_library_exclusion
+from transfer.checkpoint import ScopedSourceCheckpointPreparation
 from transfer.continuous_decision import (
     CalibrationRecord,
     ContinuousDecisionModel,
@@ -249,7 +249,7 @@ class _FittedExpert:
             view.decision_id, view.physical_support_digest, (identity,), view.decision.repetitions,
             counts, observed, failure_reason=reason, failure_kind=failure_kind)
 
-    def score(self, view: PredictionDecisionView):
+    def score(self, view: PredictionDecisionView, *, _epoch_cache=None):
         if self.predictor is None:
             return self.unavailable(view, self.unavailable_reason, self.unavailable_kind)
         if view.samples is None:
@@ -257,7 +257,17 @@ class _FittedExpert:
         if not view.decision.schedule_complete or np.any(view.decision.evidence_indices < 0):
             return self.unavailable(view, "incomplete_physical_decision")
         if self.program.family == "trial":
-            epochs, mask, receipt = self.program.profile.transform(view)
+            if _epoch_cache is None:
+                epochs, mask, receipt = self.program.profile.transform(view)
+            else:
+                # This cache exists only inside one current-view score call.
+                # Fitted and separately loaded ensembles each compute their
+                # own transforms; no cross-view or programme cache is retained.
+                key = (self.program.profile.digest, view.source_sha256,
+                       view.physical_support_digest, view.raw_input_digest)
+                if key not in _epoch_cache:
+                    _epoch_cache[key] = self.program.profile.transform(view)
+                epochs, mask, receipt = _epoch_cache[key]
             logits = self.predictor.predict_logit(epochs, mask)
             numerical_digest = receipt["numerical_input_digest"]
             scores = membership_decision_scores(logits, view.decision, logit_offset=self.logit_offset)
@@ -438,7 +448,7 @@ class FittedEnsemble:
     def expert_fit_available(self):
         return {expert.program.expert_id: expert.predictor is not None for expert in self._experts}
 
-    def score_experts(self, view: PredictionDecisionView):
+    def _score_raw_experts(self, view: PredictionDecisionView):
         if view.participant_key != self.participant_key:
             raise ValueError("personal ensemble cannot score another participant identity")
         task = (self._training_receipts[0]["decision"] if self._target_contract is None else self._target_contract)
@@ -460,7 +470,12 @@ class FittedEnsemble:
                 view.raw_scope[0] < receipt["raw_scope"][1] and view.raw_scope[1] > receipt["raw_scope"][0]
             ):
                 raise ValueError("ensemble prediction raw support overlaps calibration")
-        scored = {expert.program.expert_id: expert.score(view) for expert in self._experts}
+        epoch_cache = {}
+        scored = {expert.program.expert_id: expert.score(view, _epoch_cache=epoch_cache)
+                  for expert in self._experts}
+        return scored
+
+    def _apply_probability_program(self, scored):
         if self.temperature_record["strategy"] == "fixed":
             return scored
         calibrated = {}
@@ -476,6 +491,38 @@ class FittedEnsemble:
             values = item.log_probability / self.temperature_record["temperatures"][name]
             calibrated[name] = replace(item, log_probability=values - logsumexp(values), expert_identities=identities)
         return calibrated
+
+    def score_experts(self, view: PredictionDecisionView):
+        return self._apply_probability_program(self._score_raw_experts(view))
+
+    @classmethod
+    def score_programs(cls, programs, view: PredictionDecisionView):
+        """Score one current view from genuinely shared final expert objects.
+
+        Fitted and reloaded program groups invoke this independently. Raw
+        evidence lives only in this call; each probability program applies its
+        original transform and keeps unavailable experts in the full roster.
+        """
+        if not programs or set(programs) - {"fixed", "grouped_temperature"}:
+            raise ValueError("shared scoring requires declared probability programs")
+        available = []
+        for name, value in programs.items():
+            if isinstance(value, ExpectedSubjectError):
+                continue
+            if not isinstance(value, cls) or value.temperature_record["strategy"] != name:
+                raise ValueError("shared probability name differs from its actual program")
+            available.append(value)
+        if not available:
+            return dict(programs)
+        first = available[0]
+        for value in available[1:]:
+            if (value._experts is not first._experts or value.scorer.program != first.scorer.program
+                    or value._training_receipts != first._training_receipts
+                    or value._target_contract != first._target_contract):
+                raise ValueError("probability programs must share actual final experts and fit authority")
+        scored = first._score_raw_experts(view)
+        return {name: value if isinstance(value, ExpectedSubjectError)
+                else value._apply_probability_program(scored) for name, value in programs.items()}
 
     def score(self, view: PredictionDecisionView):
         return self.scorer.score(self.score_experts(view))
@@ -666,10 +713,11 @@ def _calibration_expert_fit_digest(spec, fit_inputs, checkpoint_digest):
 def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProgram, *,
                              source_checkpoints=None, device="cpu", calibration_strategy="fixed", temperature_expert_ids=None,
                              _fixed_fit_cache=None, _producer_recorder=None, _producer_context=None,
-                             _record_self=True):
+                             _record_self=True, _source_preparation=None):
     """Fit only supplied authorized groups; no prediction data or truth is accepted."""
     calibration = tuple(calibration)
     expert_programs = tuple(expert_programs)
+    preparation = _source_preparation or ScopedSourceCheckpointPreparation()
     if calibration_strategy not in {"fixed", "grouped_temperature"}:
         raise ValueError("unknown declared ensemble calibration strategy")
     if calibration_strategy == "grouped_temperature" and len(calibration) < 3:
@@ -699,14 +747,15 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
         return (fitted if calibration_strategy == "fixed" else
                 _grouped_temperature(fitted, calibration, expert_programs, sources, device,
                     temperature_expert_ids, _fixed_fit_cache=_fixed_fit_cache,
-                    _producer_recorder=_producer_recorder, _producer_context=_producer_context))
+                    _producer_recorder=_producer_recorder, _producer_context=_producer_context,
+                    _source_preparation=preparation))
     experts = []
     for spec in expert_programs:
         data = build_calibration_epoch_dataset(calibration, spec.profile) if spec.family == "trial" else None
         records = [CalibrationRecord(group.view.record_id, group.view.samples, group.view.onsets, group.labels)
                    for group in calibration] if spec.family == "continuous_ar" else []
         experts.append(_fit_expert(spec, data, records, receipts[0], sources.get(spec.expert_id),
-            receipts, fit_inputs, device=device))
+            receipts, fit_inputs, device=device, source_preparation=preparation))
     fitted = FittedEnsemble(EnsembleScorer(program), experts, receipts)
     if cache_key is not None:
         _fixed_fit_cache[cache_key] = fitted
@@ -717,19 +766,20 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
         return fitted
     return _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids,
                                 _fixed_fit_cache=_fixed_fit_cache, _producer_recorder=_producer_recorder,
-                                _producer_context=_producer_context)
+                                _producer_context=_producer_context, _source_preparation=preparation)
 
 
 def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *, device,
-                source_only=False, target_contract=None):
+                source_only=False, target_contract=None, source_preparation=None):
     source_digest = checkpoint_digest = None
     if spec.family == "trial":
         source_trunk = source_stats = prepared = None
         if source is not None:
-            prepared = PreparedTransferCheckpoint(io.BytesIO(source.content), data)
-            source_membership = prepared.payload.get("source_study_membership")
+            preparation = source_preparation or ScopedSourceCheckpointPreparation()
+            subject = data.identity_table.local_subject_ids[0]
+            prepared = preparation.prepare(source.content, data, subject)
             target_membership = None
-            if source_membership is not None:
+            if prepared.source_membership_present:
                 from data.study import _from_metadata, dataset_study_membership
 
                 if source_only:
@@ -743,8 +793,7 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
                     target_membership = _from_metadata(data.identity_table, lineage, data.provenance)
                 else:
                     target_membership = dataset_study_membership(data)
-            assert_checkpoint_library_exclusion(prepared.payload, data.identity_table,
-                source_membership=source_membership, target_membership=target_membership)
+            prepared.assert_library_exclusion(target_membership=target_membership)
             subject = data.identity_table.local_subject_ids[0]
             source_trunk = prepared.trunk_for_target(subject)
             source_stats = prepared.input_statistics
@@ -797,11 +846,12 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
 
 def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: EnsembleProgram, *,
                             source_checkpoints=None, device="cpu", calibration_strategy="fixed",
-                            inner_replay_recorder=None, inner_replay_context=None):
+                            inner_replay_recorder=None, inner_replay_context=None, _source_preparation=None):
     """Fit all legitimate prefix rows; complete C groups serve only temperature."""
     if not isinstance(prefix, CalibrationPrefix):
         raise TypeError("prefix fitting requires an authorized CalibrationPrefix")
     prefix.validate()
+    preparation = _source_preparation or ScopedSourceCheckpointPreparation()
     specs = tuple(expert_programs)
     if tuple(spec.expert_id for spec in specs) != program.expert_ids:
         raise ValueError("prefix fit programs must match the complete frozen expert roster")
@@ -835,7 +885,7 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
             try:
                 expert = _fit_expert(spec, data, [] if prefix.raw is None else [prefix.raw], prefix.target_contract,
                     sources.get(spec.expert_id), receipts, prefix.record(), device=device, source_only=source_only,
-                    target_contract=prefix.target_contract)
+                    target_contract=prefix.target_contract, source_preparation=preparation)
             except (ExpectedSubjectError, UnidentifiableFitError, np.linalg.LinAlgError) as error:
                 reason = f"{type(error).__name__}: {error}"
                 fit_digest = semantic_sha256({"program": spec.record(), "prefix": prefix.record(), "fit_failure": reason})
@@ -850,7 +900,7 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
     grouped = _grouped_temperature(fitted, prefix.complete_groups, specs, sources, device, prefix=prefix,
                                   _fixed_fit_cache={} if inner_replay_recorder is not None else None,
                                   _producer_recorder=inner_replay_recorder,
-                                  _producer_context=inner_replay_context)
+                                  _producer_context=inner_replay_context, _source_preparation=preparation)
     if inner_replay_recorder is not None:
         inner_replay_recorder.record_prefix_programs({"grouped_temperature": grouped}, prefix=prefix,
             expert_programs=specs, program=program, source_checkpoints=sources, context=inner_replay_context)
@@ -858,7 +908,7 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
 
 
 def _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids=None, *, prefix=None,
-                         _fixed_fit_cache=None, _producer_recorder=None, _producer_context=None):
+                         _fixed_fit_cache=None, _producer_recorder=None, _producer_context=None, _source_preparation=None):
     program = fitted.scorer.program
     selected = program.expert_ids if temperature_expert_ids is None else tuple(temperature_expert_ids)
     if not selected or len(set(selected)) != len(selected) or not set(selected) <= set(program.expert_ids):
@@ -881,7 +931,7 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
             inner = fit_calibration_ensemble(training, selected_specs, inner_program,
                 source_checkpoints={name: source for name, source in sources.items() if name in selected},
                 device=device, calibration_strategy="fixed", _fixed_fit_cache=_fixed_fit_cache,
-                _producer_recorder=_producer_recorder, _producer_context=context)
+                _producer_recorder=_producer_recorder, _producer_context=context, _source_preparation=_source_preparation)
         except (ExpectedSubjectError, UnidentifiableFitError, np.linalg.LinAlgError) as error:
             if _producer_recorder is not None:
                 failure = (error if isinstance(error, ExpectedSubjectError) else ExpectedSubjectError(
@@ -952,7 +1002,7 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
 
 def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strategies,
                                     source_checkpoints=None, device="cpu", temperature_expert_ids=None,
-                                    inner_replay_recorder=None, inner_replay_context=None):
+                                    inner_replay_recorder=None, inner_replay_context=None, _source_preparation=None):
     """Declared temperature programs share one actual all-C final expert fit."""
     if (not strategies or len(set(strategies)) != len(strategies)
             or set(strategies) - {"fixed", "grouped_temperature"}):
@@ -960,11 +1010,12 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
     sources = {} if source_checkpoints is None else {name: value if isinstance(value, FrozenSourceCheckpoint)
         else FrozenSourceCheckpoint.from_path(value) for name, value in source_checkpoints.items()}
     result = {}
+    preparation = _source_preparation or ScopedSourceCheckpointPreparation()
     replay_cache = {} if inner_replay_recorder is not None else None
     eligible = len(prefix.complete_groups) >= 3
     fixed = (fit_calibration_prefix(prefix, expert_programs, program, source_checkpoints=sources, device=device,
                                     inner_replay_recorder=inner_replay_recorder,
-                                    inner_replay_context=inner_replay_context)
+                                    inner_replay_context=inner_replay_context, _source_preparation=preparation)
              if "fixed" in strategies or eligible else None)
     for strategy in strategies:
         if strategy == "fixed":
@@ -978,7 +1029,7 @@ def fit_calibration_prefix_programs(prefix, expert_programs, program, *, strateg
                                                        device, temperature_expert_ids, prefix=prefix,
                                                        _fixed_fit_cache=replay_cache,
                                                        _producer_recorder=inner_replay_recorder,
-                                                       _producer_context=inner_replay_context)
+                                                       _producer_context=inner_replay_context, _source_preparation=preparation)
             except ExpectedSubjectError as error:
                 result[strategy] = error
             except (UnidentifiableFitError, np.linalg.LinAlgError) as error:

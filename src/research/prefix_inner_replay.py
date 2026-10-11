@@ -608,6 +608,12 @@ def replay_prefix_inner_replay(directory, *, prefix=None, future_views=None,
     scores = []
     if future_views is not None and requested_ids is not None and [view.record_id for view in future_views] != requested_ids:
         raise ValueError("prefix future queue differs from requested denominator")
+    # This group is loaded independently from the original captured fit group.
+    # Share only its genuine all-C expert tuple within this current-view call;
+    # C-inner single-fixed checks above retain their original scoring path.
+    replay_programs = {name: loaded[name] if name in loaded else ExpectedSubjectError(
+        programme["failure"]["error_code"], stage=programme["failure"]["stage"], detail=programme["failure"]["detail"])
+        for name, programme in record["programs"].items()}
     for view in future_views or ():
         if isinstance(view, dict) and ({"truth", "target_candidate", "labels"} & set(view)):
             raise ValueError("prefix future replay cannot accept truth or target labels")
@@ -615,8 +621,9 @@ def replay_prefix_inner_replay(directory, *, prefix=None, future_views=None,
             raise ValueError("prefix future replay cannot accept truth or target labels")
         identity = _validate_future(view, record)
         row = {"decision_id": getattr(view, "decision_id", None), "strategies": {}}
+        shared = FittedEnsemble.score_programs(replay_programs, view)
         for name, programme in record["programs"].items():
-            evidence = (loaded[name].score_experts(view) if name in loaded else
+            evidence = (shared[name] if not isinstance(shared[name], ExpectedSubjectError) else
                 unavailable_prefix_expert_scores(authority, record["expert_programs"], name, programme["failure"], view))
             expected = captured.get((name, view.record_id))
             if expected is not None:
