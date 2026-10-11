@@ -279,3 +279,14 @@ def test_target_subject_file_rejects_ambiguous_offset_or_limit(tmp_path, monkeyp
 
     with pytest.raises(SystemExit):
         run_transfer_main()
+
+
+def test_subject_window_keeps_excluded_groups_in_the_requested_denominator():
+    from experiments.run_within_subject_transfer import window_target_groups
+
+    requested = {"g1", "g2", "g3", "g4"}
+    usable = ("g1", "g3", "g4")  # g2 failed its calibration decision.
+    first, first_usable = window_target_groups(requested, usable, 0, 2)
+    second, second_usable = window_target_groups(requested, usable, 2, None)
+    assert first == {"g1", "g2"} and first_usable == ("g1",)
+    assert second == {"g3", "g4"} and second_usable == ("g3", "g4")

@@ -127,6 +127,16 @@ def _wilson_interval(successes: int, total: int, z: float = 1.959963984540054) -
     return [float(max(0.0, center - radius)), float(min(1.0, center + radius))]
 
 
+def window_target_groups(
+    requested: set[str], usable: tuple[str, ...], offset: int, limit: int | None
+) -> tuple[set[str], tuple[str, ...]]:
+    """Window the full requested schedule so excluded groups stay in one block's denominator."""
+
+    ordered = sorted(requested)
+    window = set(ordered[offset:] if limit is None else ordered[offset : offset + limit])
+    return window, tuple(group for group in usable if group in window)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-cache", required=True)
@@ -246,7 +256,7 @@ def main() -> None:
         type=int,
         default=0,
         help=(
-            "Skip this many leading usable groups before --max-subjects. Combined "
+            "Skip this many leading requested groups (usable or excluded) before --max-subjects. Combined "
             "with a leave-block-out checkpoint this lets one checkpoint serve "
             "exactly one contiguous block of targets."
         ),
@@ -283,6 +293,8 @@ def main() -> None:
         )
     if not np.isfinite(args.evidence_count_power) or not 0.0 <= args.evidence_count_power <= 1.0:
         parser.error("--evidence-count-power must be finite and in [0, 1]")
+    if args.subject_offset < 0 or (args.max_subjects is not None and args.max_subjects < 1):
+        parser.error("--subject-offset must be non-negative and --max-subjects positive")
     if args.target_subjects_file is not None and (
         args.subject_offset or args.max_subjects is not None
     ):
@@ -441,12 +453,10 @@ def main() -> None:
             if len(subjects) == 1 and str(subjects[0]) in target_subject_filter:
                 filtered_groups.append(group)
         groups = tuple(filtered_groups)
-    if args.subject_offset:
-        groups = groups[args.subject_offset :]
-    if args.max_subjects is not None:
-        groups = groups[: args.max_subjects]
     if args.target_subjects_file is None and (args.subject_offset or args.max_subjects is not None):
-        requested_groups = set(groups)
+        requested_groups, groups = window_target_groups(
+            requested_groups, groups, args.subject_offset, args.max_subjects
+        )
     if not groups:
         raise ValueError("No usable target groups remain after subject filtering.")
     for group in groups:
