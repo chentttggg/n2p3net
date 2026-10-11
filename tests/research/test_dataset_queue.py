@@ -1,9 +1,9 @@
 """Real cloud process/lock/exit probes, without EEG or model fitting."""
 from __future__ import annotations
 
+import ast
 import inspect
 import json
-import runpy
 import subprocess
 import sys
 import time
@@ -370,7 +370,13 @@ def test_runtime_closure_binds_actual_decorated_lock_and_rejects_private_drift(t
     private_owner = tmp_path / "private_source_execution.py"
     original_body = implementation.read_bytes()
     private_owner.write_bytes(original_body)
-    private_lock = runpy.run_path(str(private_owner))["process_file_lock"]
+    # Compile the actual lock definition without executing unrelated Manager
+    # registrations from the private module in the shared pytest interpreter.
+    definition = next(node for node in ast.parse(original_body).body
+                      if isinstance(node, ast.FunctionDef) and node.name == "process_file_lock")
+    namespace = dict(inspect.unwrap(queue_module.process_file_lock).__globals__)
+    exec(compile(ast.Module(body=[definition], type_ignores=[]), str(private_owner), "exec"), namespace)
+    private_lock = namespace["process_file_lock"]
     monkeypatch.setattr(queue_module, "process_file_lock", private_lock)
     plan, root = _fixture(tmp_path, ("ok",))
     original_result = DatasetQueue(plan, root).run()
