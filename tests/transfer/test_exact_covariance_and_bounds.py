@@ -264,6 +264,7 @@ def test_log_likelihood_correction_is_zero_when_covariances_match():
     object.__setattr__(result, "K_ar", K)
     object.__setattr__(result, "cholesky_propagated", L)
     object.__setattr__(result, "n_samples", n)
+    object.__setattr__(result, "null_dimension", 0)
     object.__setattr__(result, "operator_digest", "x")
     object.__setattr__(result, "noise_digest", "y")
     object.__setattr__(result, "relative_error_trace", 0.0)
@@ -314,25 +315,25 @@ def test_exact_covariance_rejects_conditional_prefix_estimand():
 
 
 def test_theoretical_hit_bound_increases_with_snr_and_decreases_with_candidates():
-    low = theoretical_hit_rate_bound(0.01, 36, 120)
-    high = theoretical_hit_rate_bound(1.0, 36, 120)
+    low = theoretical_hit_rate_bound(0.01, 36, 120, membership_kind="row_column")
+    high = theoretical_hit_rate_bound(1.0, 36, 120, membership_kind="row_column")
     assert high["p_hit_monte_carlo"] >= low["p_hit_monte_carlo"]
     assert high["p_hit_lower_bound"] >= low["p_hit_lower_bound"]
     # More candidates is strictly harder at fixed d2.
-    few = theoretical_hit_rate_bound(0.5, 9, 120)
-    many = theoretical_hit_rate_bound(0.5, 36, 120)
+    few = theoretical_hit_rate_bound(0.5, 9, 120, membership_kind="row_column")
+    many = theoretical_hit_rate_bound(0.5, 36, 120, membership_kind="row_column")
     assert few["p_hit_monte_carlo"] >= many["p_hit_monte_carlo"]
 
 
 def test_theoretical_hit_bound_is_monotone_in_flash_count():
-    short = theoretical_hit_rate_bound(0.3, 36, 45)
-    long = theoretical_hit_rate_bound(0.3, 36, 120)
+    short = theoretical_hit_rate_bound(0.3, 36, 45, membership_kind="row_column")
+    long = theoretical_hit_rate_bound(0.3, 36, 120, membership_kind="row_column")
     assert long["p_hit_monte_carlo"] >= short["p_hit_monte_carlo"]
     assert long["d2_effective_per_selection"] > short["d2_effective_per_selection"]
 
 
 def test_required_d2_for_targets_is_ordered():
-    bound = theoretical_hit_rate_bound(0.2, 36, 120)
+    bound = theoretical_hit_rate_bound(0.2, 36, 120, membership_kind="row_column")
     req = bound["required_d2_for_targets"]
     # Higher target hit rate requires a larger d2.
     assert req["p_hit_95"] > req["p_hit_90"] > req["p_hit_85"] > req["p_hit_75"]
@@ -340,13 +341,13 @@ def test_required_d2_for_targets_is_ordered():
 
 def test_information_bound_rejects_bad_arguments():
     with pytest.raises(ValueError, match="finite"):
-        theoretical_hit_rate_bound(float("nan"), 36, 120)
+        theoretical_hit_rate_bound(float("nan"), 36, 120, membership_kind="row_column")
     with pytest.raises(ValueError, match="nonneg"):
-        theoretical_hit_rate_bound(-1.0, 36, 120)
+        theoretical_hit_rate_bound(-1.0, 36, 120, membership_kind="row_column")
     with pytest.raises(ValueError, match="n_candidates"):
-        theoretical_hit_rate_bound(0.5, 1, 120)
+        theoretical_hit_rate_bound(0.5, 1, 120, membership_kind="row_column")
     with pytest.raises(ValueError, match="n_flashes"):
-        theoretical_hit_rate_bound(0.5, 36, 0)
+        theoretical_hit_rate_bound(0.5, 36, 0, membership_kind="row_column")
 
 
 def test_spectral_discriminability_puts_information_in_the_signal_band():
@@ -374,7 +375,7 @@ def test_information_bound_report_shapes_and_efficiency():
     target = rng.normal(0, 0.5, size=(200, length, n_channels)) + erp
     nontarget = rng.normal(0, 0.5, size=(200, length, n_channels))
     report = InformationBoundReport.compute(
-        target, nontarget, n_candidates=36, n_flashes_per_selection=120,
+        target, nontarget, n_candidates=36, n_flashes_per_selection=120, membership_kind="row_column",
         sfreq=64.0, empirical_hit_rate=0.5,
     )
     summary = report.summary()
@@ -395,5 +396,39 @@ def test_information_bound_rejects_mismatched_shapes():
 def test_union_lower_bound_excludes_the_true_candidate_from_its_competitors():
     from transfer.information_bound import theoretical_hit_rate_bound
 
-    assert theoretical_hit_rate_bound(1e4, 9, 45)["p_hit_lower_bound"] > 0.99
-    assert theoretical_hit_rate_bound(1e4, 36, 120)["p_hit_lower_bound"] > 0.99
+    assert theoretical_hit_rate_bound(1e4, 9, 45, membership_kind="row_column")["p_hit_lower_bound"] > 0.99
+    assert theoretical_hit_rate_bound(1e4, 36, 120, membership_kind="row_column")["p_hit_lower_bound"] > 0.99
+
+
+def test_activation_layout_is_declared_not_inferred_from_the_candidate_count():
+    grid = theoretical_hit_rate_bound(0.3, 9, 45, membership_kind="row_column")
+    single = theoretical_hit_rate_bound(0.3, 9, 45, membership_kind="single_item")
+    assert single["activations_per_candidate"] == 5 and single["min_differing_flashes"] == 10
+    assert grid["min_differing_flashes"] != single["min_differing_flashes"]
+    assert theoretical_hit_rate_bound(0.3, 2, 40, membership_kind="single_item")["p_hit_monte_carlo"] > 0.5
+    with pytest.raises(ValueError, match="perfect-square"):
+        theoretical_hit_rate_bound(0.3, 2, 40, membership_kind="row_column")
+
+
+def test_plugin_d2_bias_is_removed_before_the_bound():
+    rng = np.random.default_rng(4)
+    target, nontarget = rng.normal(size=(40, 60)), rng.normal(size=(200, 60))
+    snr = mahalanobis_snr(target, nontarget, shrinkage=0.0)
+    assert snr["d2_plugin_null_bias"] == pytest.approx(60 * (1 / 40 + 1 / 200))
+    assert snr["d2_mahalanobis"] > 1.0 > snr["d2_mahalanobis_debiased"]
+
+
+def test_kronecker_discriminability_is_invariant_to_voltage_units():
+    rng = np.random.default_rng(6)
+    target, nontarget = rng.normal(size=(60, 16, 3)) + 0.5, rng.normal(size=(120, 16, 3))
+    volts = spectral_discriminability(target * 1e-6, nontarget * 1e-6, 64.0)["d2_kronecker_approx"]
+    micro = spectral_discriminability(target, nontarget, 64.0)["d2_kronecker_approx"]
+    assert volts == pytest.approx(micro, rel=1e-6)
+
+
+def test_log_likelihood_correction_refuses_a_ridge_dominated_null_space():
+    noise = _ar_from_coefficients([0.7, -0.2], 1.0)
+    result = ExactPropagatedCovariance.compute(_operator(), noise, 60)
+    assert result.null_dimension > 0
+    with pytest.raises(ValueError, match="null space"):
+        result.log_likelihood_correction(np.zeros((60, 2)))
