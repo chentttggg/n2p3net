@@ -125,7 +125,7 @@ def main() -> None:
         adapted = namespace_epoch_dataset(adapted, args.subject_namespace, name=args.name)
     if args.event_contract == "binary_evidence":
         adapted = project_binary_evidence_source_view(adapted)
-    output = save_epoch_dataset(args.output, adapted, compressed=not args.uncompressed)
+    output = save_epoch_dataset(args.output, adapted, compressed=not args.uncompressed, exclusive=True)
     print(f"[adapted] {output} reference_mode={args.reference_mode}", flush=True)
 
 

@@ -36,6 +36,7 @@ from data.epochs import (  # noqa: E402
     save_epoch_dataset,
 )
 from data.exclusions import select_allowed_subjects  # noqa: E402
+from research.execution import atomic_write_json  # noqa: E402
 
 DEFAULT_BI_ROOT = ROOT / "mne_data" / "MNE-braininvaders2014a-data" / "zenodo" / "3266223"
 
@@ -56,6 +57,8 @@ def main() -> None:
     parser.add_argument("--max-subjects", type=int, default=None)
     parser.add_argument("--uncompressed", action="store_true")
     args = parser.parse_args()
+    if Path(args.output).exists():
+        raise FileExistsError(f"refusing to replace an existing candidate cache: {args.output}")
 
     root = Path(args.root)
     if not root.is_dir():
@@ -133,9 +136,8 @@ def main() -> None:
         },
     )
     assert_causal_p300_input_contract(dataset.preprocessing)
-    output = save_epoch_dataset(args.output, dataset, compressed=not args.uncompressed)
-    audit_path = output.with_suffix(".candidate_audit.json")
-    audit_path.write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
+    output = save_epoch_dataset(args.output, dataset, compressed=not args.uncompressed, exclusive=True)
+    audit_path = atomic_write_json(output.with_suffix(".candidate_audit.json"), audit)
     print(f"[prepared] {output}", flush=True)
     print(f"[audit] {audit_path}", flush=True)
 
