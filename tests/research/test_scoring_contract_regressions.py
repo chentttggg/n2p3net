@@ -62,6 +62,23 @@ def test_candidate_primary_hit_rates_weight_participants_equally(monkeypatch):
     assert result.primary_hit_scope["participant_count"] == 2
 
 
+def test_candidate_summary_records_folds_whose_auc_is_undefined(monkeypatch):
+    defined = evaluation.BinaryFoldResult(1.0, 1.0, 3, 0.0, "fixed", 0.0)
+    undefined = evaluation.BinaryFoldResult(float("nan"), float("nan"), 3, 0.0, "fixed", 0.0)
+    groups = np.repeat(["a", "b"], 3)
+    folds = [(groups != group, groups == group) for group in ("a", "b")]
+    monkeypatch.setattr(evaluation, "_run_fold_tasks", lambda *args, **kwargs: (
+        [(0, defined, np.zeros(3), folds[0][1], None), (1, undefined, np.zeros(3), folds[1][1], None)],
+        "fixed_predictions", 1, "none", 1, 1, 1,
+    ))
+    result = evaluation.evaluate_candidate_selection(
+        object(), np.zeros((6, 1, 1)), np.array([0, 1, 0, 0, 1, 0]), np.tile([0, 1, 2], 2), groups,
+        {"a": 1, "b": 1}, folds, [0, 1, 2], fold_id_offset=4,
+    )
+    assert result.auc_mean == 1.0
+    assert result.metric_undefined_folds == [5]
+
+
 def test_domain_lodo_validation_checks_actual_global_coverage():
     domains = np.array(["A", "A", "B", "B"])
     folds = [(domains == "A", domains == "B"), (domains == "B", domains == "A")]
