@@ -1,0 +1,39 @@
+{
+  "schema": "n2p3_cross_dataset_queue_plan/1",
+  "status": "design_ready_waiting_source07_catalog_and_target_preflight",
+  "queue": [
+    {
+      "dataset_id": "BI2014a",
+      "order": 1,
+      "seed_pair": [20260918, 20260918],
+      "target_owner": "data.bi2014a_candidate + experiments.prepare_bi2014a_candidate",
+      "candidate_task": "p300_row_column_speller_6x6",
+      "runner_owner": "experiments.run_candidate_cross_decision",
+      "source_owner": "SourceSeedCatalog entry outer_target_study=BI2014a/source_seed=20260918",
+      "source_resolution": "must resolve actual source07 catalog/checkpoint/content SHA before fitting",
+      "preflight": [
+        "attested BI2014a candidate cache and exact participant manifest",
+        "raw CSV candidate codebook/membership and physical selection support",
+        "source checkpoint study/participant/global exclusion",
+        "source checkpoint channel, preprocessing, task and execution contract",
+        "calibration_selections=5 and test_reps=8 only after actual BI2014a split support check"
+      ],
+      "arms": [
+        "source_zero_shot_if_checkpoint_contract_allows",
+        "source_to_target_fixed_recipe",
+        "matched_target_scratch_same_recipe"
+      ],
+      "temperature": "fixed or independently source-frozen; no target grouped-temperature selection",
+      "metrics": [
+        "requested operational hit@R",
+        "probability coverage and NLL/Brier on available rows",
+        "ties, abstentions, typed failures and participant macro"
+      ],
+      "artifact_boundary": "output/datasets/BI2014a/attempt_<id>/",
+      "resource_owner": "cloud source07 actual per-dataset 25 CPU budget and 4 GPU capacity",
+      "promotion": "none; independent development evidence only"
+    }
+  ],
+  "dataset_order_policy": "finish and seal each dataset artifacts before unlocking the next; later failure cannot overwrite completed dataset",
+  "old_results": "do not reuse or resign historical four-study/candidate results"
+}
