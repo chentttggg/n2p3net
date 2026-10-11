@@ -36,6 +36,8 @@ from models.n2p3net import (  # noqa: E402
     N2P3ArchitectureConfig,
     scale_architecture_preserving_spans,
 )
+from research.contracts import semantic_sha256  # noqa: E402
+from research.execution import atomic_write_json  # noqa: E402
 from train.device import get_device  # noqa: E402
 from train.factory import build_binary_model, describe_binary_model  # noqa: E402
 
@@ -264,6 +266,25 @@ def _anchor_subjects_for_folds(
     return output
 
 
+def candidate_input_digest(inputs: dict[str, object], candidate: SensitivityCandidate) -> str:
+    """Bind one candidate record to every input that changes its fitted result."""
+
+    return semantic_sha256({"inputs": inputs, "candidate": asdict(candidate)})
+
+
+def reusable_candidate_record(record_path: Path, input_digest: str) -> dict[str, object] | None:
+    """Return a completed record only when it was produced from the same inputs."""
+
+    if not record_path.exists():
+        return None
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    if record.get("input_digest") != input_digest:
+        raise ValueError(
+            f"{record_path} was produced from different inputs; use a new --run-name."
+        )
+    return record
+
+
 def main() -> None:
     defaults = DeepConfig()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -421,6 +442,25 @@ def main() -> None:
         "artifact_qc_sidecar": artifact_qc_sidecar,
         "started_utc": datetime.now(UTC).isoformat(),
     }
+    fit_inputs = {
+        "cache_sha256": cache_sha256,
+        "sample_rate_hz": args.sample_rate_hz,
+        "selected_subjects": selected_subjects.tolist(),
+        "fold_indices": list(fold_indices),
+        "epochs": args.epochs,
+        "early_stop_patience": args.early_stop_patience,
+        "seed": args.seed,
+        "precision": args.precision,
+        "fused_adam": args.fused_adam,
+        "compile_mode": args.compile_mode,
+        "materialize_shuffled_epoch": args.materialize_shuffled_epoch,
+        "base_architecture": base_architecture.model_kwargs(),
+        "defaults": {
+            "lr": defaults.lr,
+            "weight_decay": defaults.weight_decay,
+            "pos_weight": defaults.pos_weight,
+        },
+    }
     (output_root / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -428,8 +468,10 @@ def main() -> None:
     for index, candidate in enumerate(candidates, start=1):
         candidate_dir = output_root / candidate.name
         record_path = candidate_dir / "record.json"
-        if record_path.exists():
-            records.append(json.loads(record_path.read_text(encoding="utf-8")))
+        input_digest = candidate_input_digest(fit_inputs, candidate)
+        reused = reusable_candidate_record(record_path, input_digest)
+        if reused is not None:
+            records.append(reused)
             continue
         candidate_dir.mkdir(parents=True, exist_ok=True)
         architecture: N2P3ArchitectureConfig = replace(
@@ -485,6 +527,7 @@ def main() -> None:
             raise RuntimeError(f"Candidate {candidate.name} produced non-finite inner metrics.")
         record = {
             "candidate_index": index,
+            "input_digest": input_digest,
             "candidate": asdict(candidate),
             "architecture": architecture.model_kwargs(),
             "model": describe_binary_model("n2p3net_full_unfold", model),
@@ -514,7 +557,7 @@ def main() -> None:
             ],
             "finished_utc": datetime.now(UTC).isoformat(),
         }
-        record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+        atomic_write_json(record_path, record)
         records.append(record)
         print(
             f"[{index}/{len(candidates)}] {candidate.name} "

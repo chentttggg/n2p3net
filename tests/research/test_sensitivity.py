@@ -15,6 +15,8 @@ from experiments.run_n2p3_sensitivity import (
     build_kernel_range_candidates,
     build_lower_boundary_candidates,
     build_secondary_candidates,
+    candidate_input_digest,
+    reusable_candidate_record,
 )
 
 
@@ -106,3 +108,21 @@ def test_batch_retry_grid_contains_only_baseline_and_real_batch_variants() -> No
     assert all(
         candidate.architecture_overrides == {"temporal_kernel_size": 35} for candidate in candidates
     )
+
+
+def test_resume_rejects_a_candidate_record_produced_from_different_inputs(tmp_path) -> None:
+    candidate = build_candidates(base_batch_size=512)[0]
+    first = candidate_input_digest({"cache_sha256": "a" * 64, "epochs": 20}, candidate)
+    rerun = candidate_input_digest({"cache_sha256": "a" * 64, "epochs": 60}, candidate)
+    assert first != rerun
+    record_path = tmp_path / candidate.name / "record.json"
+    assert reusable_candidate_record(record_path, rerun) is None
+    record_path.parent.mkdir()
+    record_path.write_text(f'{{"input_digest": "{first}"}}', encoding="utf-8")
+
+    assert reusable_candidate_record(record_path, first) == {"input_digest": first}
+    with pytest.raises(ValueError, match="different inputs"):
+        reusable_candidate_record(record_path, rerun)
+    record_path.write_text("{}", encoding="utf-8")
+    with pytest.raises(ValueError, match="different inputs"):
+        reusable_candidate_record(record_path, first)
