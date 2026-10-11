@@ -93,6 +93,11 @@ def checkpoint_training_identity_ledger(
     """Validate and return the participant ledger bound to a checkpoint."""
 
     training_contract = checkpoint_training_contract(payload)
+    return _training_identity_ledger_from_contract(payload, training_contract)
+
+
+def _training_identity_ledger_from_contract(payload, training_contract):
+    """Consume one contract validated in the same private source admission."""
     ledger_payload = payload.get("training_identity_ledger")
     if not isinstance(ledger_payload, Mapping):
         raise ValueError("pretraining checkpoint lacks a structured training_identity_ledger.")
@@ -521,7 +526,7 @@ def _validate_source_metadata(payload):
         )
     ):
         raise ValueError("checkpoint carries decision metadata without a decision loss contract.")
-    training_identity_ledger = checkpoint_training_identity_ledger(payload)
+    training_identity_ledger = _training_identity_ledger_from_contract(payload, training_contract)
 
     architecture_record = payload.get("architecture")
     if not isinstance(architecture_record, Mapping) or semantic_sha256(
@@ -972,7 +977,9 @@ class _AdmittedTransferSource:
     """Private immutable-source prototype, never fitted or exposed to callers."""
 
     def __init__(self, content):
-        from transfer.noise_model import freeze_metadata
+        from research.frozen_metadata import freeze_metadata
+        from transfer.noise_model import _FrozenMetadata
+        from transfer.noise_model import freeze_metadata as freeze_source_calibration
 
         payload = load_checkpoint_payload(io.BytesIO(content))
         self.admission = _validate_source_metadata(payload)
@@ -989,7 +996,10 @@ class _AdmittedTransferSource:
         self._input_statistics = checkpoint_input_stats(payload, int(payload["n_channels"]))
         # Only label-free metadata consumed by FrozenTrialPredictor is exposed.
         # Numeric source tensors and statistics remain in this private owner.
-        self.metadata = freeze_metadata({name: payload[name] for name in (
+        # Preserve calibration scalar types until the original probability gate;
+        # only validated complete JSON source records own canonical caches here.
+        self.metadata = _FrozenMetadata({name: (freeze_source_calibration(payload[name])
+            if name == "source_calibration" else freeze_metadata(payload[name])) for name in (
             "training_contract", "training_contract_digest", "training_identity_ledger",
             "training_identity_ledger_digest", "source_calibration", "source_study_membership") if name in payload})
         self.source_snapshot_sha256 = payload["training_contract"]["source_snapshot_sha256"]

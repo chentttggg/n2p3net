@@ -10,9 +10,11 @@ import hashlib
 import json
 import math
 from collections.abc import Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import Any, Literal
+
+from research.frozen_metadata import FrozenMetadata
 
 TRAINING_RUN_CONTRACT_SCHEMA = "n2p3_training_run_contract/2"
 EVALUATION_RUN_CONTRACT_SCHEMA = "n2p3_evaluation_run_contract/2"
@@ -58,7 +60,12 @@ def _canonical_value(value: Any) -> Any:
 def canonical_json_bytes(value: Any) -> bytes:
     """Return deterministic UTF-8 JSON for a JSON-like semantic record."""
 
-    canonical = _canonical_value(value)
+    if isinstance(value, FrozenMetadata):
+        return value.canonical_bytes()
+    return _encode_canonical_tree(_canonical_value(value))
+
+
+def _encode_canonical_tree(canonical: Any) -> bytes:
     return json.dumps(
         canonical,
         sort_keys=True,
@@ -69,6 +76,8 @@ def canonical_json_bytes(value: Any) -> bytes:
 
 
 def semantic_sha256(value: Any) -> str:
+    if isinstance(value, FrozenMetadata):
+        return value.semantic_digest()
     return hashlib.sha256(canonical_json_bytes(value)).hexdigest()
 
 
@@ -195,7 +204,9 @@ class TrainingRunContract:
         return _canonical_value(asdict(self))
 
     def digest(self) -> str:
-        return semantic_sha256(self.record())
+        # Every declared field remains in the old canonical document. Nested
+        # mappings may be mutable, so read their current values on each call.
+        return semantic_sha256({field.name: getattr(self, field.name) for field in fields(self)})
 
 
 @dataclass(frozen=True)
