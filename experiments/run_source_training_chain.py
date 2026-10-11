@@ -811,12 +811,13 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
         HostMemoryAdmission,
         SourceInputAdmission,
         resolve_source_resources,
+        with_cloud_resource_floor,
     )
     from research.source_selection import resolve_source_program
     from transfer.target_experiments import resolve_target_batch_rule
 
     program = resolve_source_program(plan, stages)
-    resources = resolve_source_resources(plan, len(groups), device)
+    resources = resolve_source_resources(with_cloud_resource_floor(plan, device), len(groups), device)
     snapshot = verified_executed_snapshot(plan["source_snapshot_manifest"], root=ROOT)
     independent = program["name"] == "independent_selection_refit"
     prepared_directory = plan.get("prepared_source_directory")

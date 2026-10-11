@@ -909,6 +909,26 @@ def source_group_input_status(groups, state):
     return {"ready": ready, "pending": pending, "failed": failed}
 
 
+CLOUD_RESOURCE_CONFIG = Path(__file__).resolve().parents[2] / "configs" / "cloud_training_resources.json"
+
+
+def with_cloud_resource_floor(plan, device):
+    """Apply the central cloud CPU/GPU floor to CUDA plans that do not declare their own.
+
+    Local GPU development and software-correctness probes opt out explicitly, so a cloud
+    plan that omits the floor can no longer resolve to fewer workers without an error.
+    """
+
+    import torch
+
+    exempt = (plan.get("resource_scope") == "local_development"
+              or plan.get("evidence_scope") == "software_correctness")
+    if torch.device(device).type != "cuda" or exempt or "cloud_resource_floor" in plan:
+        return plan
+    floor = json.loads(CLOUD_RESOURCE_CONFIG.read_text(encoding="utf-8"))["cloud_resource_floor"]
+    return {**plan, "cloud_resource_floor": floor}
+
+
 def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_device_bytes=None, free_host_bytes=None):
     import torch
 

@@ -1125,6 +1125,7 @@ def run_comparison(plan_path: Path, output: Path):
         HostMemoryAdmission,
         SourceInputAdmission,
         resolve_source_resources,
+        with_cloud_resource_floor,
     )
 
     plan_path, output = Path(plan_path).resolve(), Path(output).resolve()
@@ -1132,7 +1133,8 @@ def run_comparison(plan_path: Path, output: Path):
     _validate_declaration(plan, plan_path, require_source_binding=True)
     resource_plan = {"source_worker_memory_gib": plan.get("target_worker_memory_gib", .25 if plan["evidence_scope"] == "software_correctness" else 4.),
                      "target_worker_memory_gib": .25 if plan["evidence_scope"] == "software_correctness" else 4., **plan}
-    resources = resolve_source_resources(resource_plan, len(plan["subjects"]), plan.get("device", "cpu"))
+    resources = resolve_source_resources(with_cloud_resource_floor(resource_plan, plan.get("device", "cpu")),
+                                         len(plan["subjects"]), plan.get("device", "cpu"))
     programme = build_binary_cloud_tasks(plan_path, output, resources)
     with get_context("spawn").Manager() as manager:
         inputs = SourceInputAdmission(manager, capacity_bytes=resources["shared_staging_memory_bytes"],

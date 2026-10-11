@@ -8,6 +8,7 @@ from research.source_execution import (
     SharedTrajectoryRegistry,
     resolve_source_resources,
     source_group_input_status,
+    with_cloud_resource_floor,
 )
 from tests.support.datasets import epoch_dataset, source_dataset
 from tests.support.io import read_json, write_json
@@ -314,3 +315,16 @@ def test_nested_admission_never_grants_more_workers_than_requested_jobs():
                 memory_bytes=resources["source_worker_memory_bytes"])
             assert second is not None
             admission.release_phase(second)
+
+
+def test_cuda_plans_without_a_declared_floor_inherit_the_central_cloud_floor():
+    plan = with_cloud_resource_floor({}, "cuda")
+    assert plan["cloud_resource_floor"] == {"cpu_threads": 25, "gpu_workers": 4}
+    # Eight visible CPUs used to resolve to a serialized run without any error.
+    with pytest.raises(ValueError, match="floor"):
+        resolve_source_resources(plan, 5, "cuda", cpu_count=8, free_device_bytes=32 * 2**30,
+                                 free_host_bytes=88 * 2**30)
+    assert with_cloud_resource_floor({}, "cpu") == {}
+    assert "cloud_resource_floor" not in with_cloud_resource_floor({"resource_scope": "local_development"}, "cuda")
+    declared = {"cloud_resource_floor": {"cpu_threads": 8, "gpu_workers": 1}}
+    assert with_cloud_resource_floor(declared, "cuda") == declared
