@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -17,6 +18,7 @@ if str(SRC) not in sys.path:
 from data.candidate_task import candidate_task_contract_from_provenance  # noqa: E402
 from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
 from research.contracts import semantic_sha256  # noqa: E402
+from research.execution import publish_exclusive  # noqa: E402
 
 SCHEMA = "n2p3_candidate_subject_partition_manifest/1"
 
@@ -58,12 +60,15 @@ def main() -> None:
     candidate_task = candidate_task_contract_from_provenance(dataset.provenance)
     partitions = balanced_subject_partitions(dataset.subject_ids, n_partitions=args.partitions)
     output = Path(args.output_dir)
-    output.mkdir(parents=True, exist_ok=True)
+    # A frozen partition set is immutable: a rerun must not leave stale partition files beside a new manifest.
+    if output.exists() and any(output.iterdir()):
+        raise FileExistsError(f"partition directory is not empty: {output}")
     records = []
     subject_ids = np.asarray(dataset.subject_ids).astype(str)
     for index, subjects in enumerate(partitions):
         path = output / f"partition_{index}.json"
-        path.write_text(json.dumps(list(subjects), indent=2), encoding="utf-8")
+        content = json.dumps(list(subjects), indent=2).encode("utf-8")
+        publish_exclusive(path, lambda stream, content=content: stream.write(content))
         records.append(
             {
                 "partition": index,
@@ -71,6 +76,7 @@ def main() -> None:
                 "n_subjects": len(subjects),
                 "n_epochs": int(np.isin(subject_ids, subjects).sum()),
                 "file": path.name,
+                "sha256": hashlib.sha256(content).hexdigest(),
             }
         )
     manifest = {
@@ -91,8 +97,8 @@ def main() -> None:
         "n_epochs": len(subject_ids),
         "partitions": records,
     }
-    manifest_path = output / "manifest.json"
-    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    encoded = json.dumps(manifest, indent=2).encode("utf-8")
+    publish_exclusive(output / "manifest.json", lambda stream: stream.write(encoded))
     print(json.dumps(manifest), flush=True)
 
 
