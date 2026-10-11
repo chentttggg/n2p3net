@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_p1_numerical_root_acceptance/1",
-  "author_commit": "fe9f348",
+  "author_commit": "fe9f348d6f315fa1017903857d92107abb0f9efe",
   "production_source_sha256": "5b827aa4d94b0540754052fa845e2d9a9c42e3260af3403f28f43f2513f544bc",
   "accepted_test_source_sha256": "9caff2a8b113db6f900a661cae47eb92bbbd1e070328f374fb611b2318263996",
   "independent_test_snapshot_sha256": "66059e5fff2c24d1af6b3ab6a2c437ac529471c7a0fc3bd6b17da9e8c70ad0d8",
@@ -132,5 +132,17 @@
   "old_16_cell_failure_panel_changed": false,
   "nominal_22bf_to_5b_change": "only finite intermediate/residual/bound rejection; root reviewed exact diff; no nominal re-sign or 72-score rerun",
   "remaining_native_cells": 14,
-  "native_panel_new_scoring_complete": false
+  "native_panel_new_scoring_complete": false,
+  "author_delivery_binding": {
+    "local_path": "C:\\Users\\chent\\.codex\\worktrees\\research-mechanism-paired\\n2p3-net\\tmp\\P1_NUMERICS\\delivery.binding.json",
+    "sha256": "c77a31fd37b6f44db5d9510dbd185e32a36ec0b5cb6a6fe69a13bd90154036ca"
+  },
+  "author_software_validation": {
+    "cases": 76,
+    "tested_source_sha256": "5b827aa4d94b0540754052fa845e2d9a9c42e3260af3403f28f43f2513f544bc",
+    "tested_test_sha256": "66059e5fff2c24d1af6b3ab6a2c437ac529471c7a0fc3bd6b17da9e8c70ad0d8",
+    "current_test_sha256": "9caff2a8b113db6f900a661cae47eb92bbbd1e070328f374fb611b2318263996",
+    "test_delta": "only known giant-Sigma fixture constructor overflow-warning context; score/assertions unchanged",
+    "current_six_new_cases_verified_separately_not_added_twice": true
+  }
 }
