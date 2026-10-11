@@ -156,10 +156,18 @@ class CandidateFoldResult(BinaryFoldResult):
 class CandidateSummary(BinarySummary):
     hit_rate_mean: float = float("nan")
     primary_hit_rate: float | None = None
+    primary_hit_rate_decision_micro: float | None = None
     primary_hit_scope: dict[str, object] | None = None
     raw_all_hit_rate: float = float("nan")
     subject_records: list[tuple[object, object, str]] = field(default_factory=list)
     hit_at_repetition_macro: dict[str, float] | None = None
+    hit_at_repetition_decision_micro: dict[str, float] | None = None
+
+
+def _participant_macro(outcomes: Mapping[str, list[bool]]) -> float:
+    """Average each participant's hit rate with equal weight, whatever their decision count."""
+
+    return float(np.mean([np.mean(values) for values in outcomes.values()])) if outcomes else float("nan")
 
 
 def _candidate_repetition_predictions(
@@ -1455,6 +1463,14 @@ def evaluate_candidate_selection(
     if any(group not in truth_by_group or truth_by_group[group] not in candidate_vocab
            for groups in requested_groups for group in groups):
         raise ValueError("every requested group needs truth in the frozen vocabulary")
+    owners: dict[str, set[str]] = {}
+    for group, owner in zip(group_ids.tolist(), fit_groups.tolist(), strict=True):
+        owners.setdefault(group, set()).add(owner)
+    if any(len(owners[group]) != 1 for groups in requested_groups for group in groups):
+        raise ValueError("each requested decision group must belong to exactly one fit group")
+    participant_by_group = {group: next(iter(owners[group])) for groups in requested_groups for group in groups}
+    terminal_outcomes: dict[str, list[bool]] = {}
+    level_outcomes: dict[str, dict[str, list[bool]]] = {}
     schedules = ([] if repetitions is None else [
         {group: (codes[test & (group_ids == group)], repetitions[test & (group_ids == group)])
          for group in groups}
@@ -1523,6 +1539,13 @@ def evaluate_candidate_selection(
             hit_total = {str(level): len(values) for level, values in predictions.items()}
             fold_records = [(predictions[terminals[group]][group], truth_by_group[group], group)
                             for group in requested_groups[fold_index]]
+            for level, values in predictions.items():
+                by_participant = level_outcomes.setdefault(str(level), {})
+                for group, predicted in values.items():
+                    by_participant.setdefault(participant_by_group[group], []).append(
+                        predicted is not None and predicted == truth_by_group[group])
+        for predicted, truth, group in fold_records:
+            terminal_outcomes.setdefault(participant_by_group[group], []).append(predicted == truth)
         hit_rate = float(np.mean([predicted == truth for predicted, truth, _ in fold_records]))
         result = CandidateFoldResult(
             **binary.__dict__,
@@ -1548,6 +1571,7 @@ def evaluate_candidate_selection(
         else float("nan")
     )
     macro_hits: dict[str, float] | None = None
+    micro_hits: dict[str, float] | None = None
     if repetition_indices is not None and results:
         sum_correct: dict[str, int] = {}
         sum_total: dict[str, int] = {}
@@ -1556,22 +1580,26 @@ def evaluate_candidate_selection(
                 sum_correct[key] = sum_correct.get(key, 0) + int(value)
             for key, value in (fold.hit_total_by_repetition or {}).items():
                 sum_total[key] = sum_total.get(key, 0) + int(value)
-        macro_hits = {
+        micro_hits = {
             key: float(sum_correct[key]) / sum_total[key]
             for key in sorted(sum_total, key=lambda item: int(item))
             if sum_total[key] > 0
         }
+        macro_hits = {key: _participant_macro(level_outcomes[key]) for key in micro_hits}
     return CandidateSummary(
         balanced_acc_mean=float(np.nanmean(bacc)),
         balanced_acc_std=float(np.nanstd(bacc)),
         auc_mean=float(np.nanmean(auc)),
         per_fold=results,
         hit_rate_mean=float(np.nanmean(hit)),
-        primary_hit_rate=overall if repetitions is not None else None,
-        primary_hit_scope=hit_scope,
+        primary_hit_rate=_participant_macro(terminal_outcomes) if repetitions is not None else None,
+        primary_hit_rate_decision_micro=overall if repetitions is not None else None,
+        primary_hit_scope={**hit_scope, "reduction": "participant_macro_equal_weight",
+                           "participant_count": len(terminal_outcomes)},
         raw_all_hit_rate=float(np.mean([predicted == truth for predicted, truth, _ in raw_records])),
         subject_records=records,
         hit_at_repetition_macro=macro_hits,
+        hit_at_repetition_decision_micro=micro_hits,
         execution_backend=backend,
         effective_n_jobs=effective_n_jobs,
         input_transport=input_transport,

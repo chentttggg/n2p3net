@@ -713,9 +713,15 @@ def main() -> None:
             "auc_mean": summary.auc_mean,
             "decision_hit_rate_mean": getattr(summary, "hit_rate_mean", None),
             "primary_decision_hit_rate": getattr(summary, "primary_hit_rate", None),
+            "primary_decision_hit_rate_decision_micro": getattr(
+                summary, "primary_hit_rate_decision_micro", None
+            ),
             "primary_hit_scope": getattr(summary, "primary_hit_scope", None),
             "raw_all_hit_rate": getattr(summary, "raw_all_hit_rate", None),
             "hit_at_repetition_macro": getattr(summary, "hit_at_repetition_macro", None),
+            "hit_at_repetition_decision_micro": getattr(
+                summary, "hit_at_repetition_decision_micro", None
+            ),
             "execution": {
                 "requested_n_jobs": args.fold_jobs,
                 "requested_backend": args.fold_backend,
