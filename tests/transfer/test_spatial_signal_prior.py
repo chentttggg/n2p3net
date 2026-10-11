@@ -412,9 +412,8 @@ class TestSpatialSignalPrior(unittest.TestCase):
             SpatialSignalPrior.graph(layout=layout(positions=False), mean=self.prior.mean,
                 temporal_covariance=self.prior.temporal_covariance, variance=3., length_scale_m=.1,
                 graph_strength=2., design_binding=dict(self.prior.design_binding), source=dict(self.prior.source))
-        with self.assertRaises(SpatialPriorIdentificationError) as captured:
-            SpatialSignalPrior.learn(mechanism="dprime", independent_groups=("only",))
-        self.assertEqual(captured.exception.record()["reason"], "independent_training_groups_required")
+        with self.assertRaisesRegex(ValueError, "unknown source-learning mechanism"):
+            SpatialSignalPrior.learn(mechanism="dprime", estimates=(), policy=None, source_authority={})
 
     def test_read_only_prediction_cannot_fit_and_authority_mismatch_rejected(self):
         held = block(self.rng, self.geometry, "held", scope="read_only_prediction")

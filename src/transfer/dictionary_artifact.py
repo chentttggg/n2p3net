@@ -29,7 +29,11 @@ from transfer.noise_model import array_digest, frozen_array, metadata_digest
 
 DICTIONARY_SCHEMA = "n2p3_response_dictionary/2"
 BSPLINE_DICTIONARY_SCHEMA = "n2p3_response_dictionary/3"
-DICTIONARY_SCHEMAS = frozenset({DICTIONARY_SCHEMA, BSPLINE_DICTIONARY_SCHEMA})
+FAMILY_DICTIONARY_SCHEMA = "n2p3_response_dictionary/4"
+_FAMILY_SCHEMAS = {"gaussian": DICTIONARY_SCHEMA, "cosine": DICTIONARY_SCHEMA,
+                   "bspline": BSPLINE_DICTIONARY_SCHEMA, "raised_cosine": FAMILY_DICTIONARY_SCHEMA,
+                   "multiscale_bspline": FAMILY_DICTIONARY_SCHEMA}
+DICTIONARY_SCHEMAS = frozenset(_FAMILY_SCHEMAS.values())
 COMPILER_SEMANTIC_ID = "n2p3_physical_dictionary_decimal96_binary64/1"
 COMPILER_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 ARRAY_KEYS = ("times", "ambient_matrix", "matrix", "endpoint_rows", "constraint_map")
@@ -53,6 +57,12 @@ _BSPLINE_COMPILER = {
     "binary64_rounding": "integer_nearest_ties_even",
     "lift": "exact_rational_dot_of_binary64_operands_then_one_binary64_round",
 }
+_RAISED_COMPILER = {**_COMPILER, "semantic_id": "n2p3_regular_raised_cosine_decimal96_composed_binary64/1",
+                    "evaluation": "exact_rational_phase_then_Decimal96_(1+cos)/2_then_one_binary64_round"}
+_MULTISCALE_COMPILER = {**_BSPLINE_COMPILER, "semantic_id": "n2p3_coarse6_detail3_cubic_rational_binary64/1",
+                        "evaluation": "independent_coarse6_and_fine9_columns_exact_rational_then_one_binary64_round"}
+_FAMILY_COMPILERS = {"gaussian": _COMPILER, "cosine": _COMPILER, "bspline": _BSPLINE_COMPILER,
+                     "raised_cosine": _RAISED_COMPILER, "multiscale_bspline": _MULTISCALE_COMPILER}
 
 
 class DictionaryArtifactError(ValueError):
@@ -108,23 +118,28 @@ def _rounded(value):
     return _binary64(numerator, denominator)
 
 
-def _cosine(phase):
-    """Evaluate cos(pi*phase); exact symmetry reduces the series to [0, pi/2]."""
+def _cosine_decimal(phase):
+    """Shared Decimal96 cosine core; composition precedes binary64 rounding."""
     phase %= 2
     if phase > 1:
         phase = 2-phase
     sign = 1 if phase < Fraction(1, 2) else -1
     phase = phase if sign == 1 else 1-phase
     if phase == Fraction(1, 2):
-        return 0.
+        return Decimal(0)
     if phase == 0:
-        return float(sign)
+        return Decimal(sign)
     x = Decimal(_PI)*Decimal(phase.numerator)/Decimal(phase.denominator)
     square, term, total = x*x, Decimal(1), Decimal(1)
     for order in range(1, 64):
         term = -term*square/Decimal((2*order-1)*(2*order))
         total += term
-    return _rounded(sign*total)
+    return sign*total
+
+
+def _cosine(phase):
+    """Original /2 one-final-round cos(pi*phase) wrapper, with its exact anchors."""
+    return _rounded(_cosine_decimal(phase))
 
 
 def _program_dimensions(spec, sample_rate_hz):
@@ -141,7 +156,11 @@ def _program_dimensions(spec, sample_rate_hz):
         raise DictionaryArtifactError("ambient_dimension_outside_sample_support")
     if spec["family"] == "bspline" and width < 4:
         raise DictionaryArtifactError("cubic_bspline_requires_four_ambient_functions")
-    if spec["endpoint"] == "hard_zero" and (spec["family"] not in {"cosine", "bspline"} or width < 3):
+    if spec["family"] == "raised_cosine" and width < 2:
+        raise DictionaryArtifactError("regular_raised_cosine_requires_two_ambient_functions")
+    if spec["family"] == "multiscale_bspline" and width != 9:
+        raise DictionaryArtifactError("fixed_coarse6_detail3_requires_nine_ambient_functions")
+    if spec["endpoint"] == "hard_zero" and (spec["family"] not in {"cosine", "bspline", "raised_cosine", "multiscale_bspline"} or width < 3):
         raise DictionaryArtifactError("unsupported_or_empty_hard_endpoint_space")
     return rate, rate_ratio, length, width
 
@@ -149,9 +168,13 @@ def _program_dimensions(spec, sample_rate_hz):
 def _chart(width, hard, family="cosine"):
     if not hard:
         return np.eye(width, dtype=np.float64)
-    if family == "bspline":
+    if family in {"bspline", "raised_cosine"}:
         # Open-clamped cubic endpoint rows are e_0 and e_(width-1).
         return np.eye(width, dtype=np.float64)[:, 1:-1]
+    if family == "multiscale_bspline":
+        # Coarse endpoint functions are columns0/5; the three fine details
+        # vanish at both physical endpoints. Restrict this actual ambient chart.
+        return np.eye(9, dtype=np.float64)[:, (1, 2, 3, 4, 6, 7, 8)]
     result = np.zeros((width, width-2), dtype=np.float64)
     column = 0
     for parity in (0, 1):
@@ -165,7 +188,7 @@ def _chart(width, hard, family="cosine"):
     return result
 
 
-def _cubic_bspline_value(length, width, sample, column):
+def _cubic_bspline_fraction(length, width, sample, column):
     """Exact uniform/open-clamped cubic value; q=1 is the inner left limit."""
     coordinate = Fraction(sample, length)
     values = {}
@@ -187,13 +210,27 @@ def _cubic_bspline_value(length, width, sample, column):
 
     # Only the fixed cubic triangle (at most ten nodes), not every column's
     # full ambient row. This local memo dies after the one scalar expression.
-    value = basis(column, 3)
+    return basis(column, 3)
+
+
+def _cubic_bspline_value(length, width, sample, column):
+    value = _cubic_bspline_fraction(length, width, sample, column)
     return _binary64(value.numerator, value.denominator)
 
 
 def _ambient(spec, length, width, sample, column):
     if spec["family"] == "bspline":
         return _cubic_bspline_value(length, width, sample, column)
+    if spec["family"] == "multiscale_bspline":
+        # Direct independent functions, not rounded fine-matrix products or
+        # all coarse/fine columns duplicated in the coefficient prior.
+        return (_cubic_bspline_value(length, 6, sample, column) if column < 6 else
+                _cubic_bspline_value(length, 9, sample, (2, 4, 6)[column-6]))
+    if spec["family"] == "raised_cosine":
+        phase = Fraction(sample*(width-1), length)-column
+        if abs(phase) >= 1:
+            return 0.
+        return _rounded((1+_cosine_decimal(phase))/2)
     if spec["family"] == "cosine":
         return _cosine(Fraction(sample*column, length))
     denominator = max(width-1, 1)
@@ -219,6 +256,27 @@ def _generation(spec, rate_ratio, length, width):
                 "time_coordinate": "q=t/(L/fs); native q=n/L",
                 "endpoint_side": "left_at_q=1; right_at_other_knots",
                 "evaluation": "exact_rational_Cox_de_Boor_then_one_binary64_round"}
+    if spec["family"] == "raised_cosine":
+        return {"normalized_centers_exact_ratio": [[j, width-1] for j in range(width)],
+                "normalized_radius_exact_ratio": [1, width-1],
+                "evaluation": "exact_rational_phase_then_Decimal96_(1+cos)/2_then_one_binary64_round",
+                "atom_support": "abs(phase)<1; exact_zero_at_plus_minus_one_and_outside",
+                "atom_zero_extension_smoothness": "C1; second_derivative_jumps_at_support_boundary",
+                "global_crop": "half_open_0_T; free_endpoint_values_may_jump; hard_value_zero_is_C1"}
+    if spec["family"] == "multiscale_bspline":
+        refinement = ((1, 0, 0, 0, 0, 0), (Fraction(1, 2), Fraction(1, 2), 0, 0, 0, 0),
+            (0, Fraction(3, 4), Fraction(1, 4), 0, 0, 0),
+            (0, Fraction(3, 16), Fraction(11, 16), Fraction(1, 8), 0, 0),
+            (0, 0, Fraction(1, 2), Fraction(1, 2), 0, 0),
+            (0, 0, Fraction(1, 8), Fraction(11, 16), Fraction(3, 16), 0),
+            (0, 0, 0, Fraction(1, 4), Fraction(3, 4), 0),
+            (0, 0, 0, 0, Fraction(1, 2), Fraction(1, 2)), (0, 0, 0, 0, 0, 1))
+        return {"degree": 3, "coarse_uniform_intervals": 3, "fine_uniform_intervals": 6,
+                "coarse_width": 6, "fine_width": 9, "fine_detail_indices": [2, 4, 6],
+                "coarse_in_fine_exact_ratio": [[[v.numerator, v.denominator] for v in row] for row in refinement],
+                "evaluation": "direct_exact_coarse6_and_fine_detail3_then_one_binary64_round",
+                "span": "independent_nine_column_chart_of_uniform_fine9_space; not_orthogonal_wavelets",
+                "endpoint_coordinate_indices": [0, 5], "endpoint_side": "left_at_q=1; right_at_other_knots"}
     if spec["family"] == "gaussian":
         denominator = max(width-1, 1)
         return {"centers_seconds": [_rounded(Fraction(j*(length-1), denominator)/rate_ratio)
@@ -233,8 +291,18 @@ def _generation(spec, rate_ratio, length, width):
 
 def _metadata(spec, rate, rate_ratio, length, width, arrays, producer, compiler_source):
     hard = spec["endpoint"] == "hard_zero"
-    cubic = spec["family"] == "bspline"
-    return {"schema": BSPLINE_DICTIONARY_SCHEMA if cubic else DICTIONARY_SCHEMA, "spec": spec, "sample_rate_hz": rate,
+    family = spec["family"]
+    cubic = family == "bspline"
+    order = ("coarse6_then_fine_details_2_4_6" if family == "multiscale_bspline" else
+             "ascending_normalized_center" if family == "raised_cosine" else
+             "ascending_cubic_knot_index" if cubic else "ascending_center_or_harmonic")
+    chart = ("omit_coarse_endpoint_coefficients_0_5" if family == "multiscale_bspline" else
+             "interior_center_coefficients" if family == "raised_cosine" else
+             "interior_clamped_coefficients" if cubic else "helmert_even_then_odd")
+    constraint = ("coarse_detail_endpoint_values" if family == "multiscale_bspline" else
+                  "regular_raised_cosine_endpoint_values" if family == "raised_cosine" else
+                  "clamped_cubic_endpoint_values" if cubic else "analytic_cosine_endpoints")
+    return {"schema": _FAMILY_SCHEMAS[family], "spec": spec, "sample_rate_hz": rate,
             "actual_seconds": _rounded(Fraction(length)/rate_ratio),
             "support_samples": [0, length],
             "last_sample_seconds": _rounded(Fraction(length-1)/rate_ratio),
@@ -242,16 +310,15 @@ def _metadata(spec, rate, rate_ratio, length, width, arrays, producer, compiler_
             "column_units": "dimensionless", "coefficient_units": "volts",
             "generation": _generation(spec, rate_ratio, length, width),
             "ambient_dimension": width, "function_dimension": width-2 if hard else width,
-            "coordinate_system": {"ambient_order": "ascending_cubic_knot_index" if cubic else "ascending_center_or_harmonic",
-                "coefficient_chart": ("interior_clamped_coefficients" if cubic else "helmert_even_then_odd") if hard else "identity",
-                "constraints": ("clamped_cubic_endpoint_values" if cubic else "analytic_cosine_endpoints") if hard else "unrestricted"},
-            "compiler": {**(_BSPLINE_COMPILER if cubic else _COMPILER), "source_sha256": compiler_source},
+            "coordinate_system": {"ambient_order": order, "coefficient_chart": chart if hard else "identity",
+                                  "constraints": constraint if hard else "unrestricted"},
+            "compiler": {**_FAMILY_COMPILERS[family], "source_sha256": compiler_source},
             "implementation_sha256": producer,
             "state_sha256": array_digest(*(arrays[key] for key in ARRAY_KEYS))}
 
 
 def compile_state(spec, sample_rate_hz, *, implementation_sha256):
-    """Compile the declared /2 analytic or /3 cubic state using one owner."""
+    """Compile the exact declared family/schema state using one owner."""
     rate, rate_ratio, length, width = _program_dimensions(spec, sample_rate_hz)
     hard = spec["endpoint"] == "hard_zero"
     with localcontext(_CONTEXT):
@@ -275,7 +342,7 @@ def _same_scalar(actual, expected, field, index):
 
 
 def admit_record(record, spec):
-    """Validate the exact declared /2 or /3 program and retain its saved state.
+    """Validate the exact declared family/schema program and retain saved state.
 
     This is not producer authentication. The package/executor must separately
     bind producer hashes to its accepted execution freeze. Rehashing a forged
@@ -284,7 +351,7 @@ def admit_record(record, spec):
     if (not isinstance(record, dict) or not isinstance(record.get("schema"), str)
             or record["schema"] not in DICTIONARY_SCHEMAS):
         raise DictionaryArtifactError("unsupported_dictionary_schema", field="schema")
-    schema = BSPLINE_DICTIONARY_SCHEMA if spec["family"] == "bspline" else DICTIONARY_SCHEMA
+    schema = _FAMILY_SCHEMAS[spec["family"]]
     if record["schema"] != schema:
         raise DictionaryArtifactError("dictionary_schema_and_family_program_mismatch", field="schema")
     rate, rate_ratio, length, width = _program_dimensions(spec, record.get("sample_rate_hz"))

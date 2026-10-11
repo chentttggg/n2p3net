@@ -17,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy.linalg import solve_triangular
+from scipy.optimize import nnls
 from scipy.special import logsumexp
 
 from research.execution import UnidentifiableFitError, atomic_write_json
@@ -29,6 +30,7 @@ from transfer.noise_model import (
     require_identifiers,
     require_sha256,
 )
+from transfer.temporal_noise import TemporalNoise
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _PRIOR_SCHEMA = "n2p3_spatial_signal_prior/2"
@@ -578,14 +580,11 @@ class SpatialSignalPrior:
         return matched, receipt
 
     @classmethod
-    def learn(cls, *, mechanism, independent_groups=None, **kwargs):
-        # No unvalidated d-prime/graph estimator can silently replace this prior.
-        if mechanism not in {"dprime", "graph"}:
-            raise ValueError("unknown learned spatial signal prior")
-        groups = () if independent_groups is None else tuple(independent_groups)
-        reason = "independent_training_groups_required" if len(set(groups)) < 2 else "learned_spatial_prior_not_implemented"
-        raise SpatialPriorIdentificationError(reason, mechanism=mechanism,
-                                              independent_training_groups=len(set(groups)))
+    def learn(cls, *, mechanism, estimates, policy, source_authority):
+        """Learn a source population program from owned physical measurements."""
+        if mechanism != "source_group":
+            raise ValueError("unknown source-learning mechanism")
+        return SourceGroupPrior.fit(estimates, policy=policy, source_authority=source_authority)
 
     def record(self):
         state = {"schema": _PRIOR_SCHEMA, "layout": self.layout.record(), "mean": self.mean.tolist(),
@@ -862,6 +861,13 @@ class SpatialSignalPosterior:
                     or block.design.shape[1] != prior.mean.shape[0]
                     or block.authorization["dictionary_sha256"] != prior.design_binding["dictionary_sha256"]):
                 raise ValueError("C actual input differs from the bound spatial signal prior")
+            learning = prior.source.get("source_learning")
+            if learning is not None:
+                participant = block.authorization.get("original_view", {}).get("participant_key")
+                if (block.authorization["fit_scope"] != "target_calibration"
+                        or participant != learning["target_participant_key"]
+                        or participant in learning["source_participant_keys"]):
+                    raise ValueError("source-learned prior requires its independent declared target C")
             root, response, *_ = block._compressed(noise, native_root)
             roots.append(root)
             responses.append(response)
@@ -903,6 +909,11 @@ class SpatialSignalPosterior:
         return float(-0.5 * (rows * channels * np.log(2 * np.pi) + rows * logdet_noise
                             + channels * logdet_nuisance + logdet + quadratic)
                      + channels * block.temporal_log_abs_det)
+
+    def estimate_effect(self, effect, dependence, *, temporal_noise):
+        """Estimate an identifiable physical functional from joint actual C."""
+        return ERPChannelEstimate.from_posterior(self, effect=effect, dependence=dependence,
+                                                temporal_noise=temporal_noise)
 
     def conditional_log_density(self, full, prefix):
         """p(full tail | actual prefix,C), retaining response and nuisance updates."""
@@ -977,3 +988,575 @@ class SpatialSignalPosterior:
         if expected_artifact_sha256 is not None and record.get("artifact_sha256") != expected_artifact_sha256:
             raise ValueError("spatial signal posterior differs from external artifact authority")
         return cls.from_record(record)
+
+
+@dataclass(frozen=True)
+class ERPPhysicalEffect:
+    """Explicit physical window and actual observed spatial functionals."""
+
+    layout: SpatialLayout
+    design_binding: dict
+    basis: np.ndarray = field(repr=False, compare=False)
+    waveform_weights: np.ndarray = field(repr=False, compare=False)
+    grid_seconds: np.ndarray = field(repr=False, compare=False)
+    observation: SpatialObservation
+    response_functional: np.ndarray = field(init=False, repr=False, compare=False)
+    spatial_map: np.ndarray = field(init=False, repr=False, compare=False)
+    functional: np.ndarray = field(init=False, repr=False, compare=False)
+    definition: dict = field(init=False)
+
+    def __post_init__(self):
+        basis = _matrix(self.basis, "effect actual physical basis")
+        weights = finite_real_array(self.waveform_weights, name="effect window weights")
+        grid = finite_real_array(self.grid_seconds, name="effect physical time grid")
+        binding = self.design_binding
+        rate, operator = binding.get("sample_rate_hz"), binding.get("operator_identity")
+        if (isinstance(rate, bool) or not np.isscalar(rate) or not np.isfinite(rate) or rate <= 0
+                or not isinstance(operator, str) or not operator.strip()):
+            raise SpatialPriorIdentificationError("effect_requires_explicit_rate_operator")
+        if (weights.shape != (len(basis),) or grid.shape != weights.shape
+                or not np.any(weights != 0)
+                or (len(grid) > 1 and not np.allclose(np.diff(grid), 1 / rate, rtol=1e-12, atol=0))
+                or binding.get("actual_basis_sha256") != array_digest(basis)
+                or tuple(binding.get("coefficient_groups", ())) != ("common", "target_increment")
+                or not isinstance(self.observation, SpatialObservation)
+                or self.observation.layout.record() != self.layout.record()):
+            raise ValueError("effect basis/window/grid/observation differs from its actual design")
+        require_sha256(binding.get("dictionary_sha256"), "effect dictionary identity")
+        f = np.r_[np.zeros(basis.shape[1]), weights @ basis]
+        mapping = self.observation.support_basis.T @ self.observation.matrix
+        functional = np.kron(mapping, f[None, :])
+        # Participant-specific layout authority and noise are measurement law;
+        # actual electrodes/reference/units and A are the common effect chart.
+        physical_layout = {key: self.layout.record()[key] for key in
+                           ("channels", "channel_types", "acquisition_reference", "signal_unit")}
+        definition = {"schema": "n2p3_physical_ERP_effect/1", "layout": physical_layout,
+            "dictionary_sha256": binding["dictionary_sha256"], "actual_basis_sha256": array_digest(basis),
+            "waveform_weights": weights.tolist(), "grid_seconds": grid.tolist(),
+            "sample_rate_hz": float(rate), "operator_identity": operator,
+            "coefficient_groups": ["common", "target_increment"],
+            "vectorization": "column_major_response_by_native_EEG",
+            "output_names": list(self.observation.output_names),
+            "output_reference": self.observation.output_reference,
+            "spatial_map": mapping.tolist(), "observed_rank": len(mapping)}
+        for name, value in (("basis", basis), ("waveform_weights", weights), ("grid_seconds", grid),
+                            ("response_functional", f), ("spatial_map", mapping), ("functional", functional)):
+            object.__setattr__(self, name, frozen_array(value))
+        object.__setattr__(self, "design_binding", freeze_metadata(binding))
+        object.__setattr__(self, "definition", freeze_metadata(definition))
+
+    @classmethod
+    def from_prior(cls, prior, *, basis, waveform_weights, grid_seconds, observation):
+        if not isinstance(prior, SpatialSignalPrior):
+            raise TypeError("effect definition requires an owned physical prior")
+        effect = cls(prior.layout, dict(prior.design_binding), basis, waveform_weights,
+                     grid_seconds, observation)
+        effect.validate_prior(prior)
+        return effect
+
+    def validate_prior(self, prior):
+        if (prior.layout.record() != self.layout.record()
+                or prior.mean.shape[0] != len(self.response_functional)
+                or any(prior.design_binding.get(key) != self.design_binding.get(key) for key in
+                       ("dictionary_sha256", "actual_basis_sha256", "sample_rate_hz", "operator_identity"))):
+            raise ValueError("physical effect differs from the actual prior/design destination")
+
+    def record(self):
+        payload = {"schema": "n2p3_physical_ERP_effect_state/1", "layout": self.layout.record(),
+            "design_binding": dict(self.design_binding), "basis": self.basis.tolist(),
+            "waveform_weights": self.waveform_weights.tolist(), "grid_seconds": self.grid_seconds.tolist(),
+            "observation": self.observation.record(), "definition": dict(self.definition)}
+        return {**payload, "artifact_sha256": metadata_digest(payload)}
+
+    @classmethod
+    def from_record(cls, record):
+        payload = json.loads(json.dumps(record, allow_nan=False))
+        digest = payload.pop("artifact_sha256", None)
+        if payload.get("schema") != "n2p3_physical_ERP_effect_state/1" or metadata_digest(payload) != digest:
+            raise ValueError("physical effect state identity mismatch")
+        layout = SpatialLayout.from_record(payload["layout"])
+        observed = payload["observation"]
+        observation = SpatialObservation(layout, observed["matrix"], tuple(observed["output_names"]),
+                                         observed["output_reference"], observed["declaration"])
+        effect = cls(layout, payload["design_binding"], payload["basis"], payload["waveform_weights"],
+                     payload["grid_seconds"], observation)
+        if metadata_digest(effect.record()) != metadata_digest(record):
+            raise ValueError("physical effect state differs from actual physical relations")
+        return effect
+
+
+def _likelihood_frame(posterior):
+    return {"posterior_artifact_sha256": posterior.record()["artifact_sha256"],
+        "coordinates": "block_then_column_major_observed_response_QR_rows",
+        "blocks": [{"record_id": record["authorization"]["record_id"], "rows": len(root),
+                    "root_response_sha256": array_digest(root, response)}
+                   for root, response, record in zip(posterior.information_roots, posterior.responses,
+                                                    posterior.fit_records, strict=True)]}
+
+
+@dataclass(frozen=True)
+class SpatialLikelihoodDependence:
+    """External full error factor in the exact owned compressed-response frame."""
+
+    frame: dict
+    factor: np.ndarray = field(repr=False, compare=False)
+    authority: dict
+
+    def __post_init__(self):
+        factor = _matrix(self.factor, "complete compressed error factor")
+        rows = sum(block["rows"] for block in self.frame["blocks"])
+        if (factor.shape != (rows, rows) or np.any(np.triu(factor, 1) != 0)
+                or np.any(np.diag(factor) <= 0)):
+            raise ValueError("dependency factor must be proper lower triangular in its actual full frame")
+        singular = np.linalg.svd(factor / np.max(np.abs(factor), axis=1)[:, None], compute_uv=False)
+        if singular[-1] <= 64 * _gamma(rows) * singular[0]:
+            raise SpatialPriorIdentificationError("dependency_factor_numerically_unresolved")
+        require_sha256(self.authority.get("authority_sha256"), "dependency law authority")
+        if self.authority.get("law") not in {"independent_compressed_errors", "external_full_compressed_errors"}:
+            raise ValueError("dependency law requires an explicit complete frame declaration")
+        object.__setattr__(self, "factor", frozen_array(factor))
+        object.__setattr__(self, "frame", freeze_metadata(self.frame))
+        object.__setattr__(self, "authority", freeze_metadata(self.authority))
+
+    @classmethod
+    def from_factor(cls, posterior, factor, *, authority):
+        if not isinstance(posterior, SpatialSignalPosterior):
+            raise TypeError("dependency frame requires an owned spatial posterior")
+        return cls(_likelihood_frame(posterior), factor, authority)
+
+    @classmethod
+    def independent(cls, posterior, *, authority_sha256):
+        frame = _likelihood_frame(posterior)
+        return cls(frame, np.eye(sum(b["rows"] for b in frame["blocks"])),
+                   {"authority_sha256": authority_sha256, "law": "independent_compressed_errors"})
+
+    def record(self):
+        return {"frame": dict(self.frame), "factor": self.factor.tolist(), "authority": dict(self.authority)}
+
+
+def _effect_measurement(posterior, effect, dependence):
+    """Joint identifiable functional BLUE; proper prior is only its numeric chart."""
+    x = np.vstack(posterior.information_roots)
+    y = np.concatenate(posterior.responses)
+    x = solve_triangular(dependence.factor, x, lower=True)
+    y = solve_triangular(dependence.factor, y, lower=True)
+    chart = solve_triangular(posterior.prior.precision_root, np.eye(posterior.mean.size), lower=True)
+    with np.errstate(over="ignore", invalid="ignore"):
+        actual, functional = x @ chart, effect.functional @ chart
+    if not np.isfinite(actual).all() or not np.isfinite(functional).all():
+        raise SpatialPriorIdentificationError("joint_effect_physical_chart_not_representable")
+    _, singular, right = np.linalg.svd(actual, full_matrices=False)
+    threshold = 64 * _gamma(max(actual.shape)) * singular[0]
+    rank = int(np.sum(singular > threshold))
+    vectors = right[:rank].T
+    outside = functional - (functional @ vectors) @ vectors.T
+    row_norm = np.linalg.norm(functional, axis=1)
+    relative_outside = np.divide(np.linalg.norm(outside, axis=1), row_norm,
+                                 out=np.zeros_like(row_norm), where=row_norm > 0)
+    if np.any(relative_outside > _IDENTITY_RESOLUTION):
+        raise SpatialPriorIdentificationError("physical_effect_not_identified_by_joint_C",
+            functional_relative_null=relative_outside.tolist(), joint_rank=rank,
+            singular_values=singular.tolist(), resolution_threshold=float(threshold))
+    if rank == 0 or not np.any(row_norm):
+        mean, factor = np.zeros(len(functional)), np.empty((len(functional), 0))
+    else:
+        reduced = actual @ vectors
+        q, root = np.linalg.qr(reduced, mode="reduced")
+        _qr_column_relation(reduced, q, root)
+        _unit_information_relation(reduced, root)
+        inverse = solve_triangular(root, np.eye(rank))
+        factor = (functional @ vectors) @ inverse
+        mean = factor @ (q.T @ y)
+    if not np.isfinite(mean).all() or not np.isfinite(factor).all():
+        raise SpatialPriorIdentificationError("effect_measurement_not_representable")
+    return mean, factor, {"joint_rank": rank, "coefficient_dimensions": x.shape[1],
+        "functional_relative_null": relative_outside.tolist(), "singular_values": singular.tolist(),
+        "resolution_threshold": float(threshold), "prior_information_used": False,
+        "method": "joint_owned_likelihood_resolved_row_space_thin_QR"}
+
+
+@dataclass(frozen=True, init=False)
+class ERPChannelEstimate:
+    """Factory-owned identifiable physical effect, independent of posterior shrinkage."""
+
+    effect: ERPPhysicalEffect
+    mean: np.ndarray
+    covariance_factor: np.ndarray
+    noise_sd: np.ndarray
+    receipt: dict
+
+    @classmethod
+    def from_posterior(cls, posterior, *, effect, dependence, temporal_noise):
+        if (not isinstance(posterior, SpatialSignalPosterior) or not isinstance(effect, ERPPhysicalEffect)
+                or not isinstance(dependence, SpatialLikelihoodDependence)):
+            raise TypeError("effect estimation needs owned posterior/effect/dependency inputs")
+        effect.validate_prior(posterior.prior)
+        if metadata_digest(dependence.frame) != metadata_digest(_likelihood_frame(posterior)):
+            raise ValueError("dependency factor belongs to different actual likelihood rows/frame")
+        if (not isinstance(temporal_noise, TemporalNoise) or temporal_noise.innovation_variance != 1.
+                or temporal_noise.startup_mode == "conditional_prefix"):
+            raise SpatialPriorIdentificationError("effect_noise_functional_requires_complete_unit_innovation_map")
+        records = posterior.fit_records
+        scopes = {r["authorization"]["fit_scope"] for r in records}
+        participants = {r["authorization"].get("original_view", {}).get("participant_key") for r in records}
+        temporal_sha = temporal_noise.record()["artifact_sha256"]
+        if (len(scopes) != 1 or len(participants) != 1 or None in participants
+                or any(r["authorization"]["temporal_program_sha256"] != temporal_sha for r in records)):
+            raise ValueError("effect C scope/participant or functional noise differs from its actual producer")
+        mean, factor, resolution = _effect_measurement(posterior, effect, dependence)
+        w = effect.waveform_weights
+        inverse_white = np.linalg.solve(temporal_noise.whiten(np.eye(len(w))), np.eye(len(w)))
+        temporal_variance = float(np.sum((w @ inverse_white) ** 2))
+        noise_factor = effect.spatial_map @ posterior.native_noise_root
+        noise_sd = np.sqrt(temporal_variance * np.sum(noise_factor ** 2, axis=1))
+        if not np.isfinite(noise_sd).all() or np.any(noise_sd <= 0):
+            raise SpatialPriorIdentificationError("effect_noise_functional_SD_unresolved")
+        result = object.__new__(cls)
+        object.__setattr__(result, "effect", effect)
+        for name, value in (("mean", mean), ("covariance_factor", factor), ("noise_sd", noise_sd)):
+            object.__setattr__(result, name, frozen_array(value))
+        receipt = {"fit_scope": next(iter(scopes)), "participant_key": next(iter(participants)),
+            "producer_implementation_sha256": IMPLEMENTATION_SHA256,
+            "posterior_artifact_sha256": posterior.record()["artifact_sha256"],
+            "actual_C": list(records), "dependency": dependence.record(), "resolution": resolution,
+            "temporal_noise_sha256": temporal_sha,
+            "native_noise_sha256": array_digest(posterior.native_noise_covariance),
+            "noise_or_dependency_uncertainty_integrated": False, "posterior_mean_used_as_measurement": False}
+        object.__setattr__(result, "receipt", freeze_metadata(receipt))
+        return result
+
+    @property
+    def covariance(self):
+        return self.covariance_factor @ self.covariance_factor.T
+
+    @property
+    def dprime_covariance(self):
+        factor = self.covariance_factor / self.noise_sd[:, None]
+        return factor @ factor.T
+
+    def record(self):
+        payload = {"schema": "n2p3_ERP_effect_measurement/1", "effect": self.effect.record(),
+            "mean": self.mean.tolist(), "covariance_factor": self.covariance_factor.tolist(),
+            "noise_sd": self.noise_sd.tolist(), "dprime_mean": (self.mean / self.noise_sd).tolist(),
+            "receipt": dict(self.receipt)}
+        return {**payload, "artifact_sha256": metadata_digest(payload)}
+
+    def save(self, path):
+        atomic_write_json(path, self.record())
+
+    @classmethod
+    def load(cls, path, *, posterior, temporal_noise, expected_artifact_sha256):
+        saved = json.loads(Path(path).read_text(encoding="utf-8"))
+        payload = {key: value for key, value in saved.items() if key != "artifact_sha256"}
+        if saved.get("artifact_sha256") != expected_artifact_sha256 or metadata_digest(payload) != expected_artifact_sha256:
+            raise ValueError("effect measurement differs from its external artifact identity")
+        effect = ERPPhysicalEffect.from_record(saved["effect"])
+        dependency = saved["receipt"]["dependency"]
+        dependence = SpatialLikelihoodDependence(dependency["frame"], dependency["factor"], dependency["authority"])
+        actual = cls.from_posterior(posterior, effect=effect, dependence=dependence, temporal_noise=temporal_noise)
+        if (metadata_digest(actual.receipt) != metadata_digest(saved["receipt"])
+                or not np.array_equal(actual.noise_sd, saved["noise_sd"])):
+            raise ValueError("effect measurement differs from its actual likelihood producer")
+        mean = finite_real_array(saved["mean"], name="producer effect mean")
+        factor = finite_real_array(saved["covariance_factor"], name="producer effect covariance factor")
+        if mean.shape != actual.mean.shape or factor.shape != actual.covariance_factor.shape:
+            raise ValueError("producer effect dimensions differ from its actual functionals")
+        if factor.shape[1] == 0:
+            if not np.array_equal(mean, actual.mean) or not np.array_equal(factor, actual.covariance_factor):
+                raise ValueError("zero physical effect differs from its exact zero measurement")
+            return actual
+        _, upper = np.linalg.qr(factor.T, mode="reduced")
+        _unit_information_relation(actual.covariance_factor.T, upper)
+        _, covariance_root = _spd(actual.covariance, "resolved physical effect covariance")
+        error = solve_triangular(covariance_root, mean - actual.mean, lower=True)
+        scale = np.linalg.norm(solve_triangular(covariance_root, actual.mean, lower=True))
+        if np.linalg.norm(error) > 256 * _gamma(len(dependence.factor)) * max(1., scale):
+            raise ValueError("saved physical effect mean differs from its actual measurement")
+        object.__setattr__(actual, "mean", frozen_array(mean))
+        object.__setattr__(actual, "covariance_factor", frozen_array(factor))
+        return actual
+
+
+@dataclass(frozen=True)
+class SourceGroupPolicy:
+    """External physical templates, strong anchors and whole-program bounds."""
+
+    template_names: tuple[str, ...]
+    templates: np.ndarray = field(repr=False, compare=False)
+    metric_covariance: np.ndarray = field(repr=False, compare=False)
+    component_anchor: np.ndarray = field(repr=False, compare=False)
+    component_ceiling: np.ndarray = field(repr=False, compare=False)
+    component_anchor_df: float
+    mean_anchor: np.ndarray = field(repr=False, compare=False)
+    mean_anchor_covariance: np.ndarray = field(repr=False, compare=False)
+    maximum_mean_metric_energy: float
+    authority_sha256: str
+
+    def __post_init__(self):
+        require_identifiers(self.template_names, "source group templates")
+        require_sha256(self.authority_sha256, "external group policy authority")
+        metric, _ = _spd(self.metric_covariance, "external physical covariance-fit metric")
+        mean_covariance, _ = _spd(self.mean_anchor_covariance, "external population mean anchor")
+        templates = finite_real_array(self.templates, name="external group covariance templates")
+        anchor = finite_real_array(self.component_anchor, name="external variance components")
+        ceiling = finite_real_array(self.component_ceiling, name="external variance-component ceilings")
+        mean = finite_real_array(self.mean_anchor, name="external population mean")
+        width, count = len(metric), len(self.template_names)
+        if (templates.shape != (count, width, width) or anchor.shape != (count,)
+                or ceiling.shape != anchor.shape or mean.shape != (width,)
+                or mean_covariance.shape != metric.shape or np.any(anchor < 0)
+                or anchor[0] <= 0 or np.any(ceiling < anchor)):
+            raise ValueError("external group policy dimensions/anchors/ceilings disagree")
+        _spd(templates[0], "proper independent signal template")
+        for template in templates:
+            if (not np.array_equal(template, template.T)
+                    or np.linalg.eigvalsh(template).min() < -64 * _gamma(width) * np.linalg.norm(template)):
+                raise ValueError("signal variance components require positive semidefinite templates")
+        for name, value in (("templates", templates), ("metric_covariance", metric),
+                            ("component_anchor", anchor), ("component_ceiling", ceiling),
+                            ("mean_anchor", mean), ("mean_anchor_covariance", mean_covariance)):
+            object.__setattr__(self, name, frozen_array(value))
+        object.__setattr__(self, "template_names", tuple(self.template_names))
+        object.__setattr__(self, "component_anchor_df", _positive(self.component_anchor_df, "external anchor df"))
+        object.__setattr__(self, "maximum_mean_metric_energy",
+                           _positive(self.maximum_mean_metric_energy, "external mean-scale bound"))
+
+    def record(self):
+        return {"template_names": list(self.template_names), "templates": self.templates.tolist(),
+            "metric_covariance": self.metric_covariance.tolist(), "component_anchor": self.component_anchor.tolist(),
+            "component_ceiling": self.component_ceiling.tolist(), "component_anchor_df": self.component_anchor_df,
+            "mean_anchor": self.mean_anchor.tolist(), "mean_anchor_covariance": self.mean_anchor_covariance.tolist(),
+            "maximum_mean_metric_energy": self.maximum_mean_metric_energy, "authority_sha256": self.authority_sha256}
+
+
+def _population_rows(measurements, covariances, between, policy):
+    _, anchor_root = _spd(policy.mean_anchor_covariance, "source mean anchor")
+    anchor_precision = solve_triangular(anchor_root, np.eye(len(between)), lower=True)
+    rows, rhs = [anchor_precision], [anchor_precision @ policy.mean_anchor]
+    for mean, covariance in zip(measurements, covariances, strict=True):
+        _, factor = _spd(between + covariance, "between-person plus measurement covariance")
+        precision = solve_triangular(factor, np.eye(len(between)), lower=True)
+        rows.append(precision)
+        rhs.append(precision @ mean)
+    return np.vstack(rows), np.concatenate(rhs)
+
+
+@dataclass(frozen=True, init=False)
+class SourceGroupPrior:
+    """Source-only learned physical forecast, conditional on variance plug-ins."""
+
+    effect: ERPPhysicalEffect
+    policy: SourceGroupPolicy
+    mean: np.ndarray
+    between_covariance: np.ndarray
+    mean_precision_root: np.ndarray
+    components: np.ndarray
+    measurements: np.ndarray
+    measurement_covariances: np.ndarray
+    fit_binding: dict
+
+    @classmethod
+    def fit(cls, estimates, *, policy, source_authority):
+        estimates = tuple(estimates)
+        if (len(estimates) < 2 or any(not isinstance(e, ERPChannelEstimate) for e in estimates)
+                or not isinstance(policy, SourceGroupPolicy)):
+            raise ValueError("source-group learning needs owned effects for at least two source participants")
+        ids = tuple(e.receipt["participant_key"] for e in estimates)
+        require_identifiers(ids, "independent source participants")
+        require_sha256(source_authority.get("authority_sha256"), "source participant authority")
+        if (source_authority.get("fit_scope") != "source_training"
+                or source_authority.get("independent_unit") != "participant"
+                or tuple(source_authority.get("participant_keys", ())) != ids
+                or any(e.receipt["fit_scope"] != "source_training" for e in estimates)):
+            raise ValueError("source participant request/scope must match the complete actual source estimates")
+        effect = estimates[0].effect
+        if any(metadata_digest(e.effect.definition) != metadata_digest(effect.definition) for e in estimates):
+            raise ValueError("source estimates have different physical effect definitions; explicit transport required")
+        supports = {}
+        for estimate in estimates:
+            for record in estimate.receipt["actual_C"]:
+                authority = record["authorization"]
+                start, stop = authority["raw_sample_support"]
+                source = authority["source_sha256"]
+                if any(max(start, a) < min(stop, b) for a, b in supports.get(source, ())):
+                    raise ValueError("independent source participants duplicate actual physical C support")
+                supports.setdefault(source, []).append((start, stop))
+        means = np.asarray([e.mean for e in estimates])
+        errors = np.asarray([e.covariance for e in estimates])
+        if policy.metric_covariance.shape != errors.shape[1:]:
+            raise ValueError("source group policy differs from the actual observed effect coordinates")
+        moment = np.cov(means, rowvar=False, ddof=1).reshape(errors.shape[1:]) - errors.mean(axis=0)
+        _, metric_root = _spd(policy.metric_covariance, "source component metric")
+        inverse_metric = solve_triangular(metric_root, np.eye(len(moment)), lower=True)
+        columns = np.column_stack([(inverse_metric @ q @ inverse_metric.T).ravel() for q in policy.templates])
+        singular = np.linalg.svd(columns, compute_uv=False)
+        if len(singular) < columns.shape[1] or singular[-1] <= 64 * _gamma(max(columns.shape)) * singular[0]:
+            raise SpatialPriorIdentificationError("source_variance_templates_not_identified")
+        raw_components, residual = nnls(columns, (inverse_metric @ moment @ inverse_metric.T).ravel())
+        if np.any(raw_components > policy.component_ceiling):
+            raise SpatialPriorIdentificationError("whole_source_program_exceeds_component_scale",
+                participant_keys=list(ids), actual_components=raw_components.tolist(),
+                external_ceilings=policy.component_ceiling.tolist())
+        weight = (len(estimates) - 1) / (len(estimates) - 1 + policy.component_anchor_df)
+        components = (1 - weight) * policy.component_anchor + weight * raw_components
+        between = np.einsum("k,kij->ij", components, policy.templates)
+        _spd(between, "proper learned between-person signal covariance")
+        rows, rhs = _population_rows(means, errors, between, policy)
+        scales = _column_scales(rows)
+        q, normalized_root = np.linalg.qr(rows / scales, mode="reduced")
+        _qr_column_relation(rows / scales, q, normalized_root)
+        _unit_information_relation(rows / scales, normalized_root)
+        mean = solve_triangular(normalized_root, q.T @ rhs) / scales
+        root = normalized_root * scales
+        mean_energy = float(np.sum((inverse_metric @ (mean - policy.mean_anchor)) ** 2))
+        if mean_energy > policy.maximum_mean_metric_energy:
+            raise SpatialPriorIdentificationError("whole_source_program_exceeds_mean_scale",
+                participant_keys=list(ids), actual_metric_energy=mean_energy,
+                external_maximum=policy.maximum_mean_metric_energy)
+        binding = {"schema": "n2p3_source_group_fit/1", "fit_scope": "source_training",
+            "source_authority": source_authority, "source_participant_keys": list(ids),
+            "source_estimates": [{"artifact_sha256": e.record()["artifact_sha256"],
+                "physical_moments_sha256": array_digest(e.mean, e.covariance),
+                "effect_definition_sha256": metadata_digest(e.effect.definition),
+                "fit_scope": e.receipt["fit_scope"], "participant_key": e.receipt["participant_key"],
+                "posterior_artifact_sha256": e.receipt["posterior_artifact_sha256"],
+                "dependency_frame_factor_sha256": metadata_digest(e.receipt["dependency"]),
+                "producer_implementation_sha256": e.receipt["producer_implementation_sha256"]}
+                for e in estimates],
+            "effect_definition_sha256": metadata_digest(effect.definition),
+            "producer_implementation_sha256": IMPLEMENTATION_SHA256,
+            "raw_components": raw_components.tolist(), "component_source_weight": weight,
+            "component_fit_residual": float(residual),
+            "whole_program_policy": "external_actual_unit_bounds_no_person_drop_no_capping",
+            "variance_noise_dependency_uncertainty_integrated": False,
+            "forecast": "between_person_plus_conditional_source_mean_uncertainty",
+            "centered_energy_or_effective_df_matched": False}
+        return cls._install(effect, policy, mean, between, root, components, means, errors, binding)
+
+    @classmethod
+    def _install(cls, effect, policy, mean, between, root, components, means, errors, binding):
+        result = object.__new__(cls)
+        object.__setattr__(result, "effect", effect)
+        object.__setattr__(result, "policy", policy)
+        for name, value in (("mean", mean), ("between_covariance", between), ("mean_precision_root", root),
+                            ("components", components), ("measurements", means), ("measurement_covariances", errors)):
+            object.__setattr__(result, name, frozen_array(value))
+        object.__setattr__(result, "fit_binding", freeze_metadata(binding))
+        return result
+
+    @property
+    def mean_covariance(self):
+        inverse = solve_triangular(self.mean_precision_root, np.eye(len(self.mean)))
+        return inverse @ inverse.T
+
+    @property
+    def forecast_covariance(self):
+        return self.between_covariance + self.mean_covariance
+
+    def spatial_prior(self, reference, *, effect, completion, target_participant_key):
+        if not isinstance(reference, SpatialSignalPrior) or not isinstance(effect, ERPPhysicalEffect):
+            raise TypeError("source completion requires owned prior and explicit destination effect")
+        effect.validate_prior(reference)
+        if metadata_digest(effect.definition) != metadata_digest(self.effect.definition):
+            raise ValueError("source completion destination physical effect definition differs")
+        if completion not in {"mean_only", "separable"}:
+            raise ValueError("choose an explicit source mean-only or separable completion")
+        if (not isinstance(target_participant_key, str) or not target_participant_key.strip()
+                or target_participant_key in self.fit_binding["source_participant_keys"]):
+            raise ValueError("source forecast requires an independent declared target participant")
+        f, a, h, s = effect.response_functional, effect.spatial_map, reference.temporal_covariance, reference.signal_covariance
+        variance = float(f @ h @ f)
+        if variance <= 0:
+            raise SpatialPriorIdentificationError("effect_has_no_proper_temporal_completion")
+        _, native_factor = _spd(s, "reference spatial completion")
+        mapped_factor = a @ native_factor
+        _, upper = np.linalg.qr(mapped_factor.T, mode="reduced")
+        upper = np.sign(np.diag(upper))[:, None] * upper
+        _unit_information_relation(mapped_factor.T, upper)
+        covariance_inverse = solve_triangular(upper, solve_triangular(upper.T, np.eye(len(a)), lower=True))
+        spatial_lift = s @ a.T @ covariance_inverse
+        temporal_lift = h @ f / variance
+        mean = reference.mean + np.outer(temporal_lift, spatial_lift @ (self.mean - a @ (f @ reference.mean)))
+        signal = s
+        if completion == "separable":
+            _, forecast_factor = _spd(self.forecast_covariance / variance, "new-person effect forecast")
+            conditional_factor = (np.eye(len(s)) - spatial_lift @ a) @ native_factor
+            factor = np.column_stack((conditional_factor, spatial_lift @ forecast_factor))
+            signal = factor @ factor.T
+        source = {"role": "source_training", "authority_sha256": self.record()["artifact_sha256"],
+            "source_learning": {"mechanism": "source_group", "completion": completion,
+                "source_participant_keys": list(self.fit_binding["source_participant_keys"]),
+                "target_participant_key": target_participant_key,
+                "effect_definition_sha256": metadata_digest(effect.definition),
+                "variance_uncertainty_integrated": False,
+                "unseen_spatial_directions": "proper_reference_conditional_completion",
+                "source_forecast_uncertainty_propagated": completion == "separable"}}
+        return SpatialSignalPrior(reference.layout, mean, h, signal, dict(reference.design_binding), source)
+
+    def record(self):
+        payload = {"schema": "n2p3_source_group_prior/1", "effect": self.effect.record(),
+            "policy": self.policy.record(), "mean": self.mean.tolist(),
+            "between_covariance": self.between_covariance.tolist(),
+            "mean_precision_root": self.mean_precision_root.tolist(), "components": self.components.tolist(),
+            "measurements": self.measurements.tolist(), "measurement_covariances": self.measurement_covariances.tolist(),
+            "fit_binding": dict(self.fit_binding)}
+        return {**payload, "artifact_sha256": metadata_digest(payload)}
+
+    def save(self, path):
+        atomic_write_json(path, self.record())
+
+    @classmethod
+    def load(cls, path, *, expected_artifact_sha256):
+        saved = json.loads(Path(path).read_text(encoding="utf-8"))
+        payload = {key: value for key, value in saved.items() if key != "artifact_sha256"}
+        if (payload.get("schema") != "n2p3_source_group_prior/1"
+                or saved.get("artifact_sha256") != expected_artifact_sha256
+                or metadata_digest(payload) != expected_artifact_sha256):
+            raise ValueError("source population prior differs from its external artifact identity")
+        effect = ERPPhysicalEffect.from_record(saved["effect"])
+        policy = SourceGroupPolicy(**saved["policy"])
+        mean, between, root, components, means, errors = (finite_real_array(saved[key], name=key) for key in
+            ("mean", "between_covariance", "mean_precision_root", "components", "measurements", "measurement_covariances"))
+        binding = saved["fit_binding"]
+        ids, count = binding["source_participant_keys"], len(means)
+        require_identifiers(ids, "saved source participants")
+        if (count < 2 or len(ids) != count or binding["fit_scope"] != "source_training"
+                or binding["source_authority"]["participant_keys"] != ids
+                or any(e["fit_scope"] != "source_training"
+                       or e["participant_key"] != identity for e, identity in
+                       zip(binding["source_estimates"], ids, strict=True))):
+            raise ValueError("saved source population producer scope/participant relationship differs")
+        if (metadata_digest(effect.definition) != binding["effect_definition_sha256"]
+                or components.shape != policy.component_anchor.shape or mean.shape != policy.mean_anchor.shape
+                or root.shape != policy.metric_covariance.shape or np.any(np.tril(root, -1) != 0)
+                or np.any(np.diag(root) == 0)):
+            raise ValueError("saved population physical definition or numerical dimensions differ")
+        weight = (count - 1) / (count - 1 + policy.component_anchor_df)
+        actual_components = (1 - weight) * policy.component_anchor + weight * np.asarray(binding["raw_components"])
+        if (not np.array_equal(components, actual_components)
+                or not np.array_equal(between, np.einsum("k,kij->ij", components, policy.templates))
+                or np.any(np.asarray(binding["raw_components"]) > policy.component_ceiling)
+                or any(e["physical_moments_sha256"] != array_digest(m, v)
+                       or e["effect_definition_sha256"] != metadata_digest(effect.definition)
+                       for e, m, v in zip(binding["source_estimates"], means, errors, strict=True))):
+            raise ValueError("saved source population covariance differs from its actual source summaries")
+        moment = np.cov(means, rowvar=False, ddof=1).reshape(errors.shape[1:]) - errors.mean(axis=0)
+        _, metric_root = _spd(policy.metric_covariance, "saved source metric")
+        inverse_metric = solve_triangular(metric_root, np.eye(len(moment)), lower=True)
+        columns = np.column_stack([(inverse_metric @ q @ inverse_metric.T).ravel() for q in policy.templates])
+        raw = np.asarray(binding["raw_components"])
+        residual = columns @ raw - (inverse_metric @ moment @ inverse_metric.T).ravel()
+        gradient = columns.T @ residual
+        bound = 256 * _gamma(len(columns)) * (np.abs(columns).T @ (
+            np.abs(columns) @ np.abs(raw) + np.abs((inverse_metric @ moment @ inverse_metric.T).ravel())))
+        if np.any(raw < 0) or np.any(gradient < -bound) or np.any(np.abs(raw * gradient) > np.abs(raw) * bound):
+            raise ValueError("saved source components violate their actual moment NNLS relationship")
+        rows, rhs = _population_rows(means, errors, between, policy)
+        _unit_information_relation(rows, root)
+        residual = rows.T @ (rows @ mean - rhs)
+        budget = 256 * _gamma(len(rows)) * (np.abs(rows).T @ (np.abs(rows) @ np.abs(mean) + np.abs(rhs)))
+        if np.any(np.abs(residual) > budget):
+            raise ValueError("saved population mean violates actual source information")
+        if float(np.sum((inverse_metric @ (mean - policy.mean_anchor)) ** 2)) > policy.maximum_mean_metric_energy:
+            raise ValueError("saved source mean exceeds its external whole-program scale")
+        return cls._install(effect, policy, mean, between, root, components, means, errors, binding)

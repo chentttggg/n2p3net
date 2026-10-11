@@ -12,7 +12,6 @@ from transfer.noise_model import array_digest, metadata_digest
 from transfer.spatial_signal_prior import (
     SpatialLayout,
     SpatialObservation,
-    SpatialPriorIdentificationError,
     SpatialResponseBlock,
     SpatialSignalPosterior,
     SpatialSignalPrior,
@@ -225,5 +224,5 @@ def test_energy_matching_rejects_invalid_c_without_fallback(graph_c, failure):
     with pytest.raises(ValueError):
         reference.energy_matched_graph(requested, native_noise_covariance=noise,
             length_scale_m=.06, graph_strength=1., source=source)
-    with pytest.raises(SpatialPriorIdentificationError, match="learned_spatial_prior_not_implemented"):
-        SpatialSignalPrior.learn(mechanism="graph", independent_groups=("C1", "C2"))
+    with pytest.raises(ValueError, match="unknown source-learning mechanism"):
+        SpatialSignalPrior.learn(mechanism="graph", estimates=(), policy=None, source_authority={})

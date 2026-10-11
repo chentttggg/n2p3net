@@ -28,7 +28,7 @@ class ResponseDictionarySpec:
     endpoint: str = "free"
 
     def __post_init__(self):
-        if self.family not in {"gaussian", "cosine", "bspline"} or self.endpoint not in {"free", "hard_zero"}:
+        if self.family not in {"gaussian", "cosine", "bspline", "raised_cosine", "multiscale_bspline"} or self.endpoint not in {"free", "hard_zero"}:
             raise ValueError("unsupported physical dictionary family or endpoint program")
         if (isinstance(self.response_seconds, bool) or not isinstance(self.response_seconds, (int, float))
                 or not np.isfinite(self.response_seconds) or self.response_seconds <= 0
@@ -37,6 +37,10 @@ class ResponseDictionarySpec:
         object.__setattr__(self, "response_seconds", float(self.response_seconds))
         if self.family == "bspline" and self.n_basis < 4:
             raise ValueError("fixed cubic B-spline requires at least four ambient functions")
+        if self.family == "raised_cosine" and self.n_basis < 2:
+            raise ValueError("regular raised cosine requires at least two ambient functions")
+        if self.family == "multiscale_bspline" and self.n_basis != 9:
+            raise ValueError("fixed coarse6/detail3 cubic requires exactly nine ambient functions")
 
     def record(self):
         return {"family": self.family, "response_seconds": self.response_seconds,

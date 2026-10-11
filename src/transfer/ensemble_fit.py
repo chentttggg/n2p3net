@@ -618,7 +618,8 @@ class FittedEnsemble:
 
 
 def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProgram, *,
-                             source_checkpoints=None, device="cpu", calibration_strategy="fixed", temperature_expert_ids=None):
+                             source_checkpoints=None, device="cpu", calibration_strategy="fixed", temperature_expert_ids=None,
+                             _fixed_fit_cache=None):
     """Fit only supplied authorized groups; no prediction data or truth is accepted."""
     calibration = tuple(calibration)
     expert_programs = tuple(expert_programs)
@@ -661,6 +662,15 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
         raise ValueError("source checkpoints belong only to source weights or matched scratch architecture")
     receipts = [dict(group.view.record()) for group in calibration]
     fit_inputs = [group.record() for group in calibration]
+    cache_key = None if _fixed_fit_cache is None else semantic_sha256({
+        "authorized_calibration": fit_inputs, "expert_programs": [spec.record() for spec in expert_programs],
+        "ensemble_program": program.record(), "source_checkpoints": {name: source.digest for name, source in sources.items()},
+        "device": str(device), "calibration_strategy": "fixed"})
+    if cache_key is not None and cache_key in _fixed_fit_cache:
+        fitted = _fixed_fit_cache[cache_key]
+        return (fitted if calibration_strategy == "fixed" else
+                _grouped_temperature(fitted, calibration, expert_programs, sources, device,
+                    temperature_expert_ids, _fixed_fit_cache=_fixed_fit_cache))
     experts = []
     for spec in expert_programs:
         data = build_calibration_epoch_dataset(calibration, spec.profile) if spec.family == "trial" else None
@@ -669,9 +679,12 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
         experts.append(_fit_expert(spec, data, records, receipts[0], sources.get(spec.expert_id),
             receipts, fit_inputs, device=device))
     fitted = FittedEnsemble(EnsembleScorer(program), experts, receipts)
+    if cache_key is not None:
+        _fixed_fit_cache[cache_key] = fitted
     if calibration_strategy == "fixed":
         return fitted
-    return _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids)
+    return _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids,
+                                _fixed_fit_cache=_fixed_fit_cache)
 
 
 def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *, device,
@@ -787,7 +800,8 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
     return _grouped_temperature(fitted, prefix.complete_groups, specs, sources, device, prefix=prefix)
 
 
-def _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids=None, *, prefix=None):
+def _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids=None, *, prefix=None,
+                         _fixed_fit_cache=None):
     program = fitted.scorer.program
     selected = program.expert_ids if temperature_expert_ids is None else tuple(temperature_expert_ids)
     if not selected or len(set(selected)) != len(selected) or not set(selected) <= set(program.expert_ids):
@@ -800,7 +814,7 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
         training = [group for index, group in enumerate(calibration) if index != held_index]
         inner = fit_calibration_ensemble(training, selected_specs, inner_program,
             source_checkpoints={name: source for name, source in sources.items() if name in selected},
-            device=device, calibration_strategy="fixed")
+            device=device, calibration_strategy="fixed", _fixed_fit_cache=_fixed_fit_cache)
         scores = inner.score_experts(held.view)
         target = held.view.decision.candidate_vocabulary.index(held.target_candidate)
         for name, item in scores.items():

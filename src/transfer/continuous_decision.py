@@ -987,19 +987,19 @@ class ContinuousDecisionModel:
                 D = np.vstack([_whiten_and_project(d, phi) for d in designs])
                 Y = np.vstack([_whiten_and_project(x, phi) for x in samples])
             gram = D.T @ D
-            if noise_order is None:
-                row_cov = np.linalg.inv(gram + ridge * np.eye(p))
-                mean = row_cov @ D.T @ Y
-            else:
-                # Augmented QR does not square the conditioning of the design.
-                prior_root = np.sqrt(ridge)*np.eye(p) if compiled_prior is None else compiled_prior.precision_root
-                Q, root = np.linalg.qr(np.vstack([D, prior_root]), mode="reduced")
-                inverse_root = solve_triangular(root, np.eye(p))
-                row_cov = inverse_root @ inverse_root.T
-                mean = solve_triangular(root, Q[:len(Y)].T @ Y)
-            return D, Y, mean, (row_cov + row_cov.T) / 2, gram
+            statistics = _qr_fit_statistics(np.linalg.qr(np.column_stack((D, Y)), mode="r"), p,
+                _fitted_noise_digest(phi if isinstance(phi, TemporalNoise) else None,
+                                     None if isinstance(phi, TemporalNoise) else phi))
+            prior_root = np.sqrt(ridge)*np.eye(p) if compiled_prior is None else compiled_prior.precision_root
+            root, response, row_cov, _, orthogonal = _kernel_posterior_factors(prior_root,
+                np.asarray(statistics["information_root"]), np.asarray(statistics["score"]), with_factor=True)
+            mean = solve_triangular(root, response)
+            posterior_state = {"precision_root": root, "response": response, "orthogonal": orthogonal}
+            # Fit, noise residuals and persistence consume this same posterior.
+            # A second raw-row QR can differ in a tiny cancelling mean entry.
+            return D, Y, mean, row_cov, gram, statistics, posterior_state
 
-        D, Y, initial, _, _ = solve(0.)
+        D, Y, initial, _, _, _, _ = solve(0.)
         initial_residual = Y - D @ initial
         offsets = np.cumsum([0] + [len(x) for x in samples])
         pairs = [initial_residual[a:b] for a, b in zip(offsets[:-1], offsets[1:], strict=True)]
@@ -1038,12 +1038,12 @@ class ContinuousDecisionModel:
             denominator = sum(float(np.sum(r[:-1] ** 2)) for r in pairs)
             phi = float(np.clip(numerator / max(denominator, np.finfo(float).tiny), -0.95, 0.95))
             noise_model = None
-            D, Y, mean, row_cov, gram = solve(phi)
+            D, Y, mean, row_cov, gram, statistics, posterior_state = solve(phi)
         else:
             phi = None
             noise_model = TemporalNoise.fit(pairs, order=noise_order, record_ids=ids,
                                             fit_scope=fit_scope, startup_mode="stationary_innovations")
-            D, Y, mean, row_cov, gram = solve(noise_model)
+            D, Y, mean, row_cov, gram, statistics, posterior_state = solve(noise_model)
         residual = Y - D @ mean
         effective_parameters = float(np.trace(gram @ row_cov))
         residual_df = len(Y) - 2 * len(records) - effective_parameters
@@ -1076,14 +1076,7 @@ class ContinuousDecisionModel:
                               noise_fit_passes=1, monotone_likelihood_optimization_claimed=False,
                               likelihood_assumptions=["linear_event_superposition", "shared_class_noise",
                                                       "stationary_shared_AR_spectrum", "complete_event_history"])
-        provenance["kernel_prior_fit_statistics"] = _qr_fit_statistics(
-            np.linalg.qr(np.column_stack((D, Y)), mode="r"), p, _fitted_noise_digest(noise_model, phi))
-        statistics = provenance["kernel_prior_fit_statistics"]
-        posterior_root, posterior_response, _, _, posterior_orthogonal = _kernel_posterior_factors(
-            np.sqrt(ridge)*np.eye(p), np.asarray(statistics["information_root"]),
-            np.asarray(statistics["score"]), with_factor=True)
-        posterior_state = {"precision_root": posterior_root, "response": posterior_response,
-                           "orthogonal": posterior_orthogonal}
+        provenance["kernel_prior_fit_statistics"] = statistics
         geometry = (None if dictionary is None else _fit_dictionary_geometry(dictionary, records, designs,
             np.asarray(provenance["kernel_prior_fit_statistics"]["information_root"]), ridge, compiled_prior))
         return cls(basis, mean, row_cov, noise, phi, sfreq, tuple(channels),
