@@ -14,19 +14,25 @@
 
 [B12独立前缀切片](evidence/independent_prefix_20261008.zh.md)由CalibrationPrefix持有一次验证的不可变授权，fit_calibration_prefix_programs持有共享all-C状态及各温度程序，FittedEnsemble.save_programs/load_programs保存单份数值模型。请求预算、来源选择/refit和matched-control筛选各由共同owner派生。
 
-`prefix_inner_replay`已接该prefix入口及实际independent candidate caller：同run捕获final/inner专家、typed失败与future专家evidence，保存后核原模型fit binding、完整成功OOF与共同test scope，再封prediction。parent按每包一次准入并从捕获专家复算declared mixture，核最终概率/失败；requested alias与seed消费原views ledger。全prefix未来捕获前的中断仍为partial/unknown，不冒称全部已算输出可恢复。该前缀温度重放没有执行候选程序strict nested selection，见[复签范围](evidence/research_resume_20261011.zh.md#calibrationprefix保存重放与调用端复签)。
+`prefix_inner_replay`已接该prefix入口及实际independent candidate caller：同run捕获final/inner专家、typed失败与future专家evidence，保存后核原模型fit binding、完整成功OOF与共同test scope，再封prediction。parent按每包一次准入并从捕获专家复算declared mixture，核最终概率/失败；requested alias与seed消费原views ledger。全prefix未来捕获前的中断仍为partial/unknown，不冒称全部已算输出可恢复。该前缀温度重放没有执行候选程序strict nested selection，见[复签范围](evidence/calibration_and_selection.zh.md#calibrationprefix保存重放与调用端复签)。
 
-2026-10-11 source cache 与 shared programme score 已接入当前 prefix 调用链（固定源码见[独立复签](evidence/research_resume_20261011.zh.md#缓存与共享评分独立复签)）：source prototype 只缓存一次准入的私有 source ledger/model，当前 target 的 physical、identity、execution 与 study proof 每次重核；不缓存 target fit/BN/OOF/temperature。`FittedEnsemble.score_programs` 只在同一 current view、同一实际 experts tuple、fit receipts 与 target contract 下共享 raw expert score，fixed/grouped 仍分别应用自己的概率程序；capture 与 loaded future replay 各自实际计算，C-inner fixed 不改。该接口没有实现 prefix 候选 strict nested 选择，也不改变旧 producer 身份。
+后续opt-in整程序选择已经接通：`CalibrationPrefixCompiler`从verified原MAT bytes唯一解析，`fit_nested_prefix_selection`在各真实更早P_h/P_v执行完整原A(P)，`prefix_selection_replay`保存并重放同run graph。`prefix_inner_replay/2`将原生raw/trial输入及inner原始operands连回compiler；唯一temperature owner只读复核原OOF有限meta学习结果。公共caller的selected输出在整future保存/实际graph重放后封预测，parent重编scope并重算概率；selector独立持有started/failed/partial账本。当前代码/接口与源绑定见[整程序接线](evidence/calibration_and_selection.zh.md#整程序接线与复签)。
 
-paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账本关系：requested K×arm×seed必须完整，coverage逐项匹配actual terminal status，source catalog保持唯一study/seed键并核plan checkpoint/procedure与producer seed/kind/study exclusion。失败actor缺失authority或source保持显式unresolved；completed NN/scratch cell必须有源凭证。聚合器拒绝同键冲突凭证；统计完成后才绑定最终report，摘要排除顶层binding以保持重复finalize幂等。物理raw/cache/checkpoint门继续由原入口持有，见[修后独立复签](evidence/research_resume_20261011.zh.md#b12最终账本修后复签)。
+2026-10-11 source cache 与 shared programme score 已接入当前 prefix 调用链（固定源码见[独立复签](evidence/execution_and_integration.zh.md#缓存与共享评分独立复签)）：source prototype 只缓存一次准入的私有 source ledger/model，当前 target 的 physical、identity、execution 与 study proof 每次重核；不缓存 target fit/BN/OOF/temperature。`FittedEnsemble.score_programs` 只在同一 current view、同一实际 experts tuple、fit receipts 与 target contract 下共享 raw expert score，fixed/grouped 仍分别应用自己的概率程序；capture 与 loaded future replay 各自实际计算，C-inner fixed 不改。该接口没有实现 prefix 候选 strict nested 选择，也不改变旧 producer 身份。
 
-`build_channel_noise_audit_manifest`与`audit_channel_noise_mechanism`的paired `/2`入口复用原public source owner和共享请求/指标：全source participants对应全requested roster，C target/labels对应原CalibrationSelection，modern mean/precision R/原Σ对应保存模型完整fit输入；两noise arm共用物理factor。shared/private AR8与prefix32的后续native矩阵另执行，不把软件反例或原noise的旧winner改签为公共成绩，见[P1入口验收](evidence/research_resume_20261011.zh.md#p1软件入口修后验收)。
+paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账本关系：requested K×arm×seed必须完整，coverage逐项匹配actual terminal status，source catalog保持唯一study/seed键并核plan checkpoint/procedure与producer seed/kind/study exclusion。失败actor缺失authority或source保持显式unresolved；completed NN/scratch cell必须有源凭证。聚合器拒绝同键冲突凭证；统计完成后才绑定最终report，摘要排除顶层binding以保持重复finalize幂等。物理raw/cache/checkpoint门继续由原入口持有，见[修后独立复签](evidence/execution_and_integration.zh.md#b12最终账本修后复签)。
+
+`build_channel_noise_audit_manifest`与`audit_channel_noise_mechanism`的paired `/2`入口复用原public source owner和共享请求/指标：全source participants对应全requested roster，C target/labels对应原CalibrationSelection，modern mean/precision R/原Σ对应保存模型完整fit输入；两noise arm共用物理factor。shared/private AR8与prefix32的八人16格native矩阵已完成，保存态零拟合重现typed数值不可用，见[P1入口与执行](evidence/response_and_noise.zh.md#p1软件入口修后验收)。数值实现继续由B05单一owner持有。
 
 更新：2026-09-06。本文件依据实际源码与入口核对，描述现状与尚缺接口；科研目标由
 [活动规范](research_program.zh.md)定义，发现和验证见[本次审计](evidence/technical_audit_20260906.zh.md)。
 源码目录不因行数大或模块多就拆分；优先保留已经集中实现的合同和算法。
 
 ## 主链与接口
+
+`continuous_decision._conditional_posterior`持有原prefix/full joint QR公式，fit/profile与score消费同一完整kernel和各record diffuse drift。条件score的`_ConditionalRecordWhitening`在本次已准入record内共享`W(Y)`、`W(D0)`、`W(Z)`；各candidate全record白化`D1`后再split prefix/tail并完成独立QR。当前科研fit/posterior/df及load门保持原实现，详见[白化集成](evidence/execution_and_integration.zh.md#条件评分公共白化集成)。
+
+完整episode指标通过`evaluate_candidate_evidence(..., requested_evidence_levels={DecisionKey: actual_R})`接入；其规范化不可变计划包含全部requested keys及缺失输出，并绑定原DecisionPlan digest。`transfer.outcomes`按每key唯一R记账，各R保自身分母，整体和participant风险仍用原episode；paired compare核完整horizon计划。原scalar fixed-R入口继续消费其原cross-product。预算、raw scope与实际R由reader/caller冻结，详见[逐任务horizon](evidence/public_evaluation.zh.md#逐任务horizon接口)。
 
 当前[集成骨干](evidence/research_integration_20261008.zh.md)以`dictionary_artifact`持有字典编译/准入，`temporal_noise/5`持有实际startup数组与scales，`continuous_decision`持有全C/prior生产QR后验；load消费原数值态，整模型仍核同implementation字节。B05一般vec冻结响应可通过真实行/列置换消费B09空间后验，评分noise独立，不重新拟合后验。数值不可识别只使对应连续专家/decision不可用，正常peer保留；artifact/输入合同错误继续传播。
 
@@ -41,6 +47,8 @@ paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账
 `project_diffuse_nuisance`由同B05 owner集中判断源尺度的数值可分辨性，使用完整proper prior factor与noise unit，不以投影后微小残差自己定尺度。C fit和score消费同规则；score保原proper+diffuse prefix/tail与a后验程序。`whitening_logabsdet`只读实际冻结方阵的leading prefix和tail spatial root，不另编噪声或授予读取权限。极端有限输入的原反例、修复范围与未覆盖项见[本轮证据](evidence/research_mechanisms_20261009.zh.md)。
 
 score另外在raw共同intercept坐标中减首个实测样本，原samples身份保持；同full/prefix flat系数平移和tail条件坐标Jacobian皆1。prefix compressed rhs直接进入tail增广QR，不相减巨大a均值。原full相对误差门与raw conditional log-density绝对误差估计分别准入；后者预算为每actual tail scalar行`sqrt(binary64 eps)` nats，不是全输入区间证书。`student_t_numerics`集中有限ν的Gamma整数维递推/半步及径向计算，sampling与projected contrast共用，不用大log-Gamma直接相减或将有限ν重标∞。
+
+B05数值程序进一步使用真实短叶/平衡dot tree和对应gamma；score只对flat nuisance用同一个stored可逆prefix chart，full/prefix测度Jacobian抵消。误差从原raw/完整PARCOR历史按prefix/tail及列传播，经带solve-defect的inverse界和posterior metric计入conditional nats预算；proper prior与两道门保持。公共density offset先减max再归一化，Dekker非有限中间项具名拒绝。dot tree同时进入C-fit，因此新拟合按新数值源码绑定；原状态由原loader与显式新consumer分别留证据，见[数值接受](evidence/response_and_noise.zh.md#当前模型与数值任务)。
 
 `research.joint_response_scale`持有一个proper physical global β prior、各完整decision的noise scale以及明确的external/C-plugin参数程序。正离散scale rule必须显式供应，full/prefix消费同一数值态；tensor积分保β及C/test scale后验关联，有限程序正规与连续Gamma近似精度分开。`research.joint_response_sampling`复用相同prior/hyperparameter/decision类，一次准备统计和测试白化，提供global β↔各λ Gibbs、C后验prefix重加权及caller显式另跑的C+prefix程序。有限经验预测混合正规，Rhat/ESS/MCSE不认证未访问模态或真实后验准确性；二者目前无flat nuisance、默认ν或产品准入。
 

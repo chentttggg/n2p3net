@@ -13,7 +13,7 @@
 
 ## 当前研究
 
-2026-10-11继续按[愿望清单当前进展](evidence/wishlist_progress_20261010.zh.md)推进123项，恢复科研树已完成 B03 严格 nested/source-study、B03 inner producer replay、B07 `/4` native family与B09 exact structural null的bounded软件验收。B12最终账本修后和CalibrationPrefix/public caller保存重放已分别复签，原MAT窄链exit0。原云候选面板完整分母和80/20配对读数已核来源：grouped的NLL增加未通过开发门，source/scratch差异按方向、预算和逐人异质性解释。历史失败保留原身份，科研新协议不追签云旧结果。新证据见[科研恢复与集成](evidence/research_resume_20261011.zh.md)。软件出口不代表公共效能、跨host整包或成人确认；各公共结果按自己的分母与执行来源解释。单个数值门不作为所有方向的串行前置。
+当前按[愿望清单进展](evidence/wishlist_progress_20261010.zh.md)推进123项。B03真正prefix整程序选择及actual graph/温度重放/public parent准入已经集成；P1数值稳定化在A01恢复两arm完整概率，剩14个保存态按新consumer续接。source cache/shared score、conditional公共白化及逐decision horizon已接入。原云候选面板完整分母和100行配对读数已复核；BI2014a明确首五episode预算、完整R主端点和独立terminal censor账本，三臂由云窗口执行并封各库终态。结论集中维护在[校准与选择](evidence/calibration_and_selection.zh.md)、[响应与噪声](evidence/response_and_noise.zh.md)、[公共评估](evidence/public_evaluation.zh.md)和[执行与集成](evidence/execution_and_integration.zh.md)；六指南持有活动规范，各产物保持自己的来源与分母。
 
 科研窗口负责科学合同与代码最终集成，云端窗口负责唯一执行调度。科研用一个完整 source→target seed，大版本校验才三个；两窗口合计最多10并发，科研子代理没有我方时间或额度上限。职责内自主推进，只集中同步重要交付、接口变化和阻塞。
 

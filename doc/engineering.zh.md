@@ -1,6 +1,6 @@
 # 工程指南
 
-2026-10-11科研恢复树为`codex/research-integration-20261011`，原用户dirty checkout及云端运行源码保持各自所有权。相关B12修复采用原反例修后复验、实际serial finalizer与不可变副本上的局部聚合回归；前缀作者并发工作不混入其接受来源。最终跨阶段门证明凭证与账本相容，不能替代原始fit/cache/checkpoint或公共效能验收，见[科研恢复证据](evidence/research_resume_20261011.zh.md)。下文日期化执行状态按各自记录时期解释，当前云执行状态由云窗口的实际冻结源码与终态凭证确定。
+当前科研集成树为`codex/research-integration-20261011`，P1数值和prefix整程序选择各有独立作者/审阅者树，原用户dirty checkout及云端执行树保留其所有权。实际模块、调用链与能区分对错的反例优先；已通过的范围有新改动或疑点才复验。研究结论维护在四个[主题页](evidence/README.md#当前主题结论)，归并旧页前物理归档并逐member验SHA；原数据、模型、结果和producer binding留原位置。当前云状态以云窗口的实际冻结源码与终态凭证为准；下文日期化状态按其记录时期解释。
 
 2026-10-10科研成果在独立`wishlist-integration`工作树（base `7bd984a`）整合，公共云执行继续绑定accepted496。逐读实际owner与完整调用链，迁移必要反例并执行受影响合同；已通过的旧矩阵、大probe与全集不因整理或方法更名重复运行。过程性材料只在当前仍必要时保留，本轮遵照用户最新要求不重复清理。源码、验证和剩余出口见[当前进展](evidence/wishlist_progress_20261010.zh.md)。
 
@@ -338,6 +338,16 @@ GPU计时同步，冷启动/编译与热运行分列。缓存就绪的训练时�
 它是合成prepared-array探针；云端正式4/8worker及真实raw吞吐需在当前实例重新测量。
 
 ### 云端训练性能优先
+
+条件连续score按本次actual record共享公共白化列；各candidate保完整AR history、prefix/full QR及原密度。公共函数抽取与新score接点已做相关Gaussian、multi-record和precision反例验证；当前科研fit/posterior/df逐函数保持原逻辑。性能以prepare＋load＋score阶段和完整矩阵墙钟实测；旧模型由原loader准入，显式新数值consumer另记身份。
+
+CUDA target可由`target_native_threads_per_worker`显式声明native线程，并另计一个interop
+线程；worker在第一次实际fit/predict前按FIFO取得GPU资源，CPU准备可先执行。CUDA
+context或模型仍活着时继续持有GPU claim，直到完整所属进程树退出。Linux以subreaper、
+每任务继承标记与PID创建时间核验迟到/setsid后代，保留独立peer和Manager；nested GPU
+升级同样尊重已排队target。嵌套artifact writer分别登记尚未写出的预算，outer按完整
+并发峰值扩容并结算实际留存字节，不能用尚未落盘的零字节覆盖另一个pending writer。
+这些资源边界的原失败及修后49项相关云端测试已保存；实际完整训练吞吐随单库运行记录。
 
 用户于2026-10-08再次强调多次遇到25核配额只用1核：必须核真实进程创建身份、就绪任务、有效CPU核、GPU利用、内存峰、阶段进度和完成产物；25线程/4worker配置本身不能作为验收。遇到串行压缩/解压、重复加载/哈希、I/O、锁或内存准入等待，要落实代码并验证端到端路径。2394曾GPU95%但worker突然退出、内存接近90 GiB上限，原因未确定；[原始终态与完整输入基准](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)已物理保留。本地整机CPU<80%与云端配额利用分别控制，不能混用。
 

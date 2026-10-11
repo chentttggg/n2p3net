@@ -1,0 +1,93 @@
+{
+  "schema": "n2p3_prefix_program_root_acceptance/1",
+  "author_commit": "d0edc17058d48e8dc577c232a21ca74b938bda7a",
+  "integration_commit": "5b83129",
+  "production_files_sha256": {
+    "experiments/run_candidate_ensemble_study.py": "e2c9c64cd30fe59220bf7a11788d57d897700e83e97f0c23a5206a585ad26f92",
+    "src/research/calibration_selection.py": "a3c6e939b9c43686ef8ccc5ac9a815a68f1e5aec43f1b4704ec82ed06d63bfe4",
+    "src/research/nested_selection_replay.py": "7acbf0262c15817ecd1eee7d8312faf6db68cb720a8988c26ee25582e112f298",
+    "src/research/prefix_inner_replay.py": "e4ba2b8d07344aa6c92c76c7a06fa3c916dc4f5362d02e41cf088dd502776ef1",
+    "src/research/prefix_selection_replay.py": "c5c26ab7d34848bc1ee54c99d1e1f66cc75f0158dc61489ee6c11a0d131ce034",
+    "src/transfer/ensemble_fit.py": "6239982d19fa16147f32b80f6a93cd899a625337d655134d093ad0cb63f6c44b",
+    "src/transfer/ensemble_views.py": "4dad231f2027d66d90347cb9a767a566b3d3a549a18bf815d75d220677a4dfed",
+    "tests/research/test_prefix_program_selection.py": "2b5e660bd69c1091f076424a2079900de0781ae02941de292d8aecb760cebb11"
+  },
+  "integrated_scientific_dependencies_sha256": {
+    "src/transfer/continuous_decision.py": "f3d603202ad8893c9339b302af22cac74abf88274eba5808cd34b12c457b3925",
+    "src/research/candidate_metrics.py": "74767720e2976957592dff278062c147360ea2705222dea40aab450fe36f85c9",
+    "src/transfer/outcomes.py": "88d52f899e23bd7a3d7fa0b69bd5960544a2808bbb40422e52b19c19d037eab4",
+    "src/research/channel_noise_mechanism.py": "5b827aa4d94b0540754052fa845e2d9a9c42e3260af3403f28f43f2513f544bc"
+  },
+  "root_validation": {
+    "pytest_cases": 12,
+    "pytest_exit": 0,
+    "ruff_exit": 0,
+    "diff_check_exit": 0,
+    "native_threads": 1,
+    "junit_sha256": "a2d6bc95ba3a3f509300a851a5e3766d24d049b81125456a66e0ba2f25489117"
+  },
+  "independent_review": {
+    "local_report": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net\\tmp\\PREFIX_PROGRAM_REVIEW\\HANDOFF_FINAL.zh.md",
+    "sha256": "da0266838143d8dc704eace2ceef191915e97cea80b26f29724ebd754b447c73",
+    "artifacts": {
+      "scope_stage1_probe.json": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net\\tmp\\PREFIX_PROGRAM_REVIEW\\scope_stage1_probe.json",
+        "sha256": "f8e65d193f2575896309ee3bf868a1538263aea01db64c9691cf2d72b2995085"
+      },
+      "compiler_factory_snapshot02_probe.json": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net\\tmp\\PREFIX_PROGRAM_REVIEW\\compiler_factory_snapshot02_probe.json",
+        "sha256": "fbe77e887d01b81b19fcf6a1d5f81bb7509da959de8dfd6e90a360f32d03dcaa"
+      },
+      "core_snapshot01_probe.json": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net\\tmp\\PREFIX_PROGRAM_REVIEW\\core_snapshot01_probe.json",
+        "sha256": "31afff344b169b7e457572cab8490e93df4c814dfc889b957e2ea6808b9a5749"
+      },
+      "coherent_tau_current_gate_GREEN.json": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net\\tmp\\PREFIX_PROGRAM_REVIEW\\coherent_tau_current_gate_GREEN.json",
+        "sha256": "0cb7ea6722a1f81601c5ded631bc1f83a152a07f53e434b8a43b14519a471704"
+      },
+      "final_failure_caller_probe.json": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net\\tmp\\PREFIX_PROGRAM_REVIEW\\final_failure_caller_probe.json",
+        "sha256": "8403b41ca32596b40ff930ebfd99ba26dcde658f5e6c3649c2e68fbe886c65e8"
+      },
+      "partial_request_current_GREEN.json": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net\\tmp\\PREFIX_PROGRAM_REVIEW\\partial_request_current_GREEN.json",
+        "sha256": "b8156fabd843dea6037cd0cc5e156348126ef67b4897fdb3e56013f3142627da"
+      },
+      "partial_owned_started_failed_GREEN.json": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net\\tmp\\PREFIX_PROGRAM_REVIEW\\partial_owned_started_failed_GREEN.json",
+        "sha256": "f71d13051f2b21312b869e4d7f665fde158b078cd4c2751cfbc7627fc9fdd6da"
+      },
+      "partial_terminal_summary_final_GREEN.json": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net\\tmp\\PREFIX_PROGRAM_REVIEW\\partial_terminal_summary_final_GREEN.json",
+        "sha256": "6bf65f02d173b1f5038400e6d3126ed6e685a40c12ecfa856b0aeea00d3ca6a0"
+      }
+    }
+  },
+  "algorithm": "each h/v runs original full A(P): single-prefix final fit plus declared group-LOO temperature; selected final refits full authorized P",
+  "full_final_dose": {
+    "K200": {
+      "raw_labels": 200,
+      "trial_rows": 196
+    },
+    "K800": {
+      "raw_labels": 800,
+      "trial_rows": 796
+    }
+  },
+  "root_logic_review": [
+    "original verified bytes are parsed once; earlier prefix raw is isolated before preprocessing",
+    "actual native raw/trial fit inputs and exact inner operands are linked to the original compiler",
+    "h/outer/final graph replays actual captured expert pools and requested structural schedule",
+    "OOF temperature replays the same finite meta learner once; zero new EEG fit does not mean zero optimizer",
+    "public caller seals only after entire future capture/save/original-input replay; parent recomputes selected evidence",
+    "selector started/failed/not-started/partial status owns its own receipts",
+    "old ordinary fixed/grouped requests remain declared; opt-in selected output adds its own requested rows"
+  ],
+  "replay_schema": "n2p3_prefix_inner_replay/2; old /1 requires original frozen owner",
+  "minimum_selection_rows": "explicit positive policy parameter, not a mathematical group theorem",
+  "new_public_training": false,
+  "old_producer_or_model_resigned": false,
+  "root_tests_scope": "integrated source synthetic/contract/caller; not public efficacy",
+  "remaining": "freeze a real opt-in research plan and evaluate its complete independent future queue; BrainSync and adult confirmation separate"
+}

@@ -1,0 +1,45 @@
+{
+  "schema": "n2p3_variable_horizon_root_acceptance/1",
+  "base_commit": "9562c88f6b5827de7a00ad101606733a9975bd1f",
+  "patch_sha256": "24b6aff382c86a3f52a17384f32df0c102718afb20c302446d45100c27afe3db",
+  "files": {
+    "src/research/candidate_metrics.py": {
+      "sha256": "74767720e2976957592dff278062c147360ea2705222dea40aab450fe36f85c9",
+      "bytes": 34723
+    },
+    "src/transfer/outcomes.py": {
+      "sha256": "88d52f899e23bd7a3d7fa0b69bd5960544a2808bbb40422e52b19c19d037eab4",
+      "bytes": 16780
+    },
+    "tests/research/test_candidate_probability_metrics.py": {
+      "sha256": "c933d7b734b4864691e8b7993ead123bf3bcc7390e0a9b6587d51d6369a611db",
+      "bytes": 23508
+    },
+    "tests/transfer/test_candidate_outcomes.py": {
+      "sha256": "aa6c06bbb7e55abf1280b255d30360702b49955e6303e8a1c8f2e6d92deac0e5",
+      "bytes": 4777
+    }
+  },
+  "validation": {
+    "new_API_RED_cases": 22,
+    "targeted_final_passed": 107,
+    "final_tests_exit": 0,
+    "ruff_exit": 0,
+    "diff_check_exit": 0,
+    "full_suite_run": false,
+    "training_executed": false
+  },
+  "root_review": [
+    "complete requested-key horizon mapping is normalized before any output is consumed",
+    "missing output and fit failures use the same externally declared horizon",
+    "accounting expected keys are one key/R pair per decision, with each R own denominator",
+    "participant and seed risks preserve original aggregation and selection failures",
+    "complete horizon and plan digest are compared even for jointly missing outputs",
+    "fixed scalar record and cross-product remain the original branch"
+  ],
+  "author_delivery_local_path": "tmp\\BI2014a_Q1_AUDIT\\variable_horizon_delivery01\\delivery.json",
+  "author_delivery_sha256": "200fd823c9b1f2f28e55d4e7071212c4c3cb5ce674294fce3ee0d220040ea426",
+  "caller_handoff": "evaluate_candidate_evidence(..., requested_evidence_levels=Mapping[DecisionKey,int], requested_coverage=...), scalar evidence_level omitted",
+  "remaining_integration": "BI scoped reader/caller supplies all requested keys and actual R, binds same future plan and fresh-load replay; this slice does not choose raw scopes or budgets",
+  "public_new_fits": 0
+}

@@ -268,6 +268,7 @@ class _SourceInputState:
         self.capacity, self.load_workers = capacity, load_workers
         self.lock = RLock()
         self.leases, self.filesystems, self.retired_tasks = {}, {}, set()
+        self.nested_artifacts = {}
         self.reclaimed_paths = {}
         self.free = capacity
         self.nn_waiting = self.nn_active = self.load_active = 0
@@ -395,11 +396,40 @@ class _SourceInputState:
             covering = next((row for row in self.leases.values()
                 if row["kind"] == "persistent_artifact" and row["directory"] and not row["committed"]
                 and row["pid"] == identity["pid"] and row["task_id"] == identity["task_id"]
+                and row["filesystem"] == key and row["uses_host_memory"] == ram_backed
                 and all(Path(item).is_relative_to(row["path"]) for item in paths)), None)
             if covering is not None:
-                # The outer writer has already admitted this directory's full
-                # peak. Inner cache/JSON hooks must not charge the same bytes.
-                return {"token": None, "owns_transaction": False}
+                # The inner writer knows its actual encoded size before writing.
+                # Grow the same outer lease to cover surviving bytes plus this
+                # atomic temporary; a large late-bound scientific state must be
+                # admitted here, never discovered only at final settlement.
+                pending = 0
+                for row in self.nested_artifacts.values():
+                    if row["covering_token"] != covering["token"]:
+                        continue
+                    materialized = max(0, sum(_named_output_bytes(item, row["directory"])
+                        for item in row["paths"]) - row["baseline_bytes"])
+                    pending += max(0, row["disk_bytes"] - materialized)
+                actual = max(0, _named_output_bytes(covering["path"], True) - covering["baseline_bytes"])
+                required = actual + pending + nbytes
+                addition = max(0, required - covering["disk_bytes"])
+                if addition:
+                    parent = str(Path(covering["path"]).parent)
+                    state = self._filesystem(parent, key, required, ram_backed)
+                    additional_ram = addition if covering["uses_host_memory"] else 0
+                    if self._filesystem_room(state, parent, key) < addition or self.free < additional_ram:
+                        raise ValueError("nested artifact actual peak exceeds the remaining shared filesystem/RAM budget")
+                    self.free -= additional_ram
+                    state["reserved_bytes"] += addition
+                    state["peak_reserved_bytes"] = max(state["peak_reserved_bytes"], state["reserved_bytes"])
+                    covering["disk_bytes"] += addition
+                    covering["nbytes"] += additional_ram
+                    self._peak()
+                token = uuid.uuid4().hex
+                self.nested_artifacts[token] = {"covering_token": covering["token"], "paths": paths,
+                    "directory": directory, "disk_bytes": nbytes, **identity,
+                    "baseline_bytes": sum(_named_output_bytes(item, directory) for item in paths)}
+                return {"token": token, "owns_transaction": False}
             matches = [(token, row) for token, row in self.leases.items()
                        if row["kind"] == "persistent_artifact" and row["path"] == path]
             token, previous = matches[0] if matches else (uuid.uuid4().hex, None)
@@ -421,7 +451,7 @@ class _SourceInputState:
             self.free -= ram_bytes
             state["reserved_bytes"] += nbytes
             state["peak_reserved_bytes"] = max(state["peak_reserved_bytes"], state["reserved_bytes"])
-            self.leases[token] = {"kind": "persistent_artifact", "path": path, "paths": paths,
+            self.leases[token] = {"kind": "persistent_artifact", "token": token, "path": path, "paths": paths,
                 "directory": directory, "baseline_bytes": baseline, "phase": "artifact", "filesystem": key,
                 "uses_host_memory": ram_backed,
                 "nbytes": ram_bytes + (previous["nbytes"] if previous else 0),
@@ -432,6 +462,8 @@ class _SourceInputState:
     def settle_artifact(self, token):
         with self.lock:
             row = self.leases[token]
+            if any(item["covering_token"] == token for item in self.nested_artifacts.values()):
+                raise ValueError("outer artifact writer ended with pending nested writers")
             total = sum(_named_output_bytes(path, row["directory"]) for path in row["paths"])
             actual = max(0, total - row["baseline_bytes"])
             difference = row["disk_bytes"] - actual
@@ -448,6 +480,10 @@ class _SourceInputState:
                 raise ValueError("actual working artifact exceeds its pre-admitted estimate; surviving bytes remain charged")
             return {"path": row["path"], "surviving_total_bytes": total,
                     "baseline_bytes": row["baseline_bytes"], "charged_bytes": actual}
+
+    def settle_nested_artifact(self, token):
+        with self.lock:
+            self.nested_artifacts.pop(token)
 
     def remove_external_file(self, path, expected_identity, ram_backed, identity):
         """Delete one verified external file, never an owner-managed output."""
@@ -500,6 +536,9 @@ class _SourceInputState:
     def retire_task(self, task_id):
         with self.lock:
             self.retired_tasks.add(task_id)
+            for token, row in list(self.nested_artifacts.items()):
+                if row["task_id"] == task_id:
+                    del self.nested_artifacts[token]
             failures = []
             for token, row in list(self.leases.items()):
                 if row["task_id"] != task_id:
@@ -524,6 +563,7 @@ class _SourceInputState:
                 "filesystem_pools": {key: {**row, "live_unsettled_reserved_bytes": self._unsettled_disk_bytes(key)}
                     for key, row in self.filesystems.items()},
                 "external_file_reclaims": [dict(row) for row in self.reclaimed_paths.values()],
+                "pending_nested_artifacts": [dict(row) for row in self.nested_artifacts.values()],
                 "active_leases": [dict(row) for row in self.leases.values()]}
 
 
@@ -614,7 +654,10 @@ class SourceInputAdmission:
     def artifact_writer(self, path, nbytes, *, temporary_paths=(), directory=False):
         allocation = self.reserve_artifact(path, nbytes, temporary_paths=temporary_paths, directory=directory)
         if not allocation["owns_transaction"]:
-            yield None
+            try:
+                yield None
+            finally:
+                self._ledger.settle_nested_artifact(allocation["token"])
             return
         token = allocation["token"]
         primary = None
@@ -710,7 +753,7 @@ def gpu_task_slot(semaphore):
 def release_source_worker(device):
     import torch
 
-    if torch.device(device).type == "cuda":
+    if torch.device(device).type == "cuda" and torch.cuda.is_initialized():
         torch.compiler.reset()
         from train.device import release_device_memory
 
@@ -746,17 +789,46 @@ class _HostMemoryState:
         self.state = {"free": resources["host_memory_budget_bytes"] - resources.get("shared_staging_memory_bytes", 0),
             "cpu_threads": coordinator, "groups": 0, "child_cpus": 0,
             "preparation_groups": 0, "calibration_groups": 0, "gpu_calibration_groups": 0,
+            "gpu_capable_calibration_actors": 0,
             "evaluation_groups": 0, "gpu_groups": 0, "nested_gpu_workers": 0}
         self.phases, self.nested, self.retired_tasks = {}, {}, set()
+        self.target_gpu_waiters = []
 
-    def reserve_phase(self, phase, cpu_threads, memory_bytes, gpu_workers, task_id):
+    def try_activate_target_gpu(self, task_id):
+        """Upgrade the same resident target actor before its first CUDA work."""
+        with self.lock:
+            if task_id in self.retired_tasks:
+                raise RuntimeError("target GPU requested after task retirement")
+            rows = [row for row in self.phases.values() if row["task_id"] == task_id]
+            if len(rows) != 1 or rows[0]["phase"] != "calibration" or not rows[0]["gpu_capable"]:
+                raise ValueError("target GPU activation requires its one calibration reservation")
+            row = rows[0]
+            if row["gpu_workers"]:
+                return dict(row)
+            if any(item["task_id"] == task_id for item in self.nested.values()):
+                raise ValueError("target GPU activation cannot overlap nested worker reservations")
+            if task_id not in self.target_gpu_waiters:
+                self.target_gpu_waiters.append(task_id)
+            if (self.target_gpu_waiters[0] != task_id
+                    or self.state["gpu_groups"] + self.state["nested_gpu_workers"] >= self.resources["gpu_slots"]
+                    or self.state["gpu_calibration_groups"] >= self.resources["target_workers"]):
+                return None
+            self.state["gpu_groups"] += 1
+            self.state["gpu_calibration_groups"] += 1
+            row["gpu_workers"] = 1
+            self.target_gpu_waiters.remove(task_id)
+            return dict(row)
+
+    def reserve_phase(self, phase, cpu_threads, memory_bytes, gpu_workers, task_id, gpu_capable):
         with self.lock:
             if task_id is not None and task_id in self.retired_tasks:
                 raise RuntimeError("phase allocation requested after the owned task tree retired")
             state, resources = self.state, self.resources
-            if (state["free"] < memory_bytes or state["cpu_threads"] + cpu_threads > resources["cpu_budget"]
+            if (gpu_workers and self.target_gpu_waiters
+                    or state["free"] < memory_bytes or state["cpu_threads"] + cpu_threads > resources["cpu_budget"]
                     or gpu_workers and state["gpu_groups"] + state["nested_gpu_workers"] >= resources["gpu_slots"]
                     or phase == "source" and state["groups"] >= resources["source_workers"]
+                    or gpu_capable and state["gpu_capable_calibration_actors"] >= resources["target_workers"]
                     or phase == "calibration" and gpu_workers and state["gpu_calibration_groups"] >= resources["target_workers"]):
                 return None
             state["free"] -= memory_bytes
@@ -765,8 +837,10 @@ class _HostMemoryState:
             state["groups" if phase == "source" else f"{phase}_groups"] += 1
             if phase == "calibration":
                 state["gpu_calibration_groups"] += gpu_workers
+                state["gpu_capable_calibration_actors"] += int(gpu_capable)
             reservation = {"token": uuid.uuid4().hex, "phase": phase, "cpu_threads": cpu_threads,
-                "memory_bytes": memory_bytes, "gpu_workers": gpu_workers, "task_id": task_id}
+                "memory_bytes": memory_bytes, "gpu_workers": gpu_workers, "task_id": task_id,
+                "gpu_capable": gpu_capable}
             self.phases[reservation["token"]] = reservation
             return dict(reservation)
 
@@ -778,6 +852,8 @@ class _HostMemoryState:
             task_id = reservation["task_id"]
             if task_id is not None:
                 self.retired_tasks.add(task_id)
+                if task_id in self.target_gpu_waiters:
+                    self.target_gpu_waiters.remove(task_id)
                 for nested_token, row in list(self.nested.items()):
                     if row["task_id"] == task_id:
                         self.release_nested(nested_token)
@@ -789,6 +865,7 @@ class _HostMemoryState:
             state["groups" if phase == "source" else f"{phase}_groups"] -= 1
             if phase == "calibration":
                 state["gpu_calibration_groups"] -= reservation["gpu_workers"]
+                state["gpu_capable_calibration_actors"] -= int(reservation["gpu_capable"])
 
     def reserve_nested(self, requested, gpu_backed, task_id):
         with self.lock:
@@ -801,6 +878,8 @@ class _HostMemoryState:
             cpu_free = (resources["cpu_budget"] - state["cpu_threads"]) // native + 1
             gpu_free = (resources["gpu_slots"] - state["gpu_groups"] - state["nested_gpu_workers"] + 1
                         if gpu_backed else desired)
+            if gpu_backed and self.target_gpu_waiters:
+                gpu_free = 1  # Existing parent work continues; new slots go to queued targets.
             allowed = min(desired, state["free"] // resources["target_worker_memory_bytes"], cpu_free, gpu_free)
             workers = int(allowed) if allowed >= 2 else 1
             memory = workers * resources["target_worker_memory_bytes"] if workers > 1 else 0
@@ -832,8 +911,10 @@ class _HostMemoryState:
                 "free_worker_memory_bytes": state["free"], "source_groups": state["groups"],
                 "preparation_groups": state["preparation_groups"], "calibration_groups": state["calibration_groups"],
                 "gpu_calibration_groups": state["gpu_calibration_groups"], "evaluation_groups": state["evaluation_groups"],
+                "gpu_capable_calibration_actors": state["gpu_capable_calibration_actors"],
                 "active_gpu_groups": state["gpu_groups"], "nested_target_workers": state["child_cpus"],
-                "nested_gpu_workers": state["nested_gpu_workers"]}
+                "nested_gpu_workers": state["nested_gpu_workers"],
+                "waiting_target_gpu_tasks": list(self.target_gpu_waiters)}
 
 
 class HostMemoryAdmission:
@@ -841,6 +922,7 @@ class HostMemoryAdmission:
 
     def __init__(self, manager, resources, *, input_admission=None):
         self.input_admission = input_admission
+        self.coordinator_threads = resources.get("coordinator_cpu_threads", 0)
         self.group_bytes = resources["source_worker_memory_bytes"]
         self.target_bytes = resources["target_worker_memory_bytes"]
         self.target_limit = resources["target_workers"]
@@ -851,7 +933,7 @@ class HostMemoryAdmission:
         self.gpu_backed = resources.get("gpu_backed_workers", True)
         self._ledger = manager.HostMemoryState(resources)
 
-    def reserve_phase(self, phase, *, cpu_threads, memory_bytes, gpu_workers=None, task_id=None):
+    def reserve_phase(self, phase, *, cpu_threads, memory_bytes, gpu_workers=None, task_id=None, gpu_capable=None):
         if phase not in {"source", "preparation", "calibration", "evaluation"}:
             raise ValueError("unknown source pipeline phase")
         if type(cpu_threads) is not int or cpu_threads < 1 or type(memory_bytes) is not int or memory_bytes < 1:
@@ -859,7 +941,11 @@ class HostMemoryAdmission:
         gpu_workers = int(self.gpu_backed and phase in {"source", "calibration"}) if gpu_workers is None else gpu_workers
         if gpu_workers not in (0, 1):
             raise ValueError("one cache-group task claims zero or one actual GPU worker")
-        return self._ledger.reserve_phase(phase, cpu_threads, memory_bytes, gpu_workers, task_id)
+        gpu_capable = (phase == "calibration" and bool(gpu_workers)) if gpu_capable is None else gpu_capable
+        if (type(gpu_capable) is not bool or gpu_capable and phase != "calibration"
+                or phase == "calibration" and gpu_workers and not gpu_capable):
+            raise ValueError("GPU-capable actor capacity belongs to actual CUDA target tasks")
+        return self._ledger.reserve_phase(phase, cpu_threads, memory_bytes, gpu_workers, task_id, gpu_capable)
 
     def release_phase(self, reservation):
         self._ledger.release_phase(reservation["token"])
@@ -991,6 +1077,14 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
                 or target < floor["gpu_workers"] or groups < min(group_count, floor["gpu_workers"])):
             raise ValueError("resources cannot meet declared cloud CPU/GPU worker floor; do not silently serialize")
     native_threads = max(1, worker_cpu_budget // max(groups, target))
+    target_native = plan.get("target_native_threads_per_worker")
+    if target_native is not None:
+        if type(target_native) is not int or target_native < 1:
+            raise ValueError("target native threads must be a positive integer")
+        # This opt-in policy uses one immutable inter-op thread per fresh actor.
+        # Keep the requested GPU capacity; reject an impossible CPU topology.
+        if (target_native + 1) * target > worker_cpu_budget:
+            raise ValueError("target native/inter-op claims cannot meet the declared target worker capacity")
     return {"policy": "automatic_resource_admission", "available_cpu_threads": available,
             "cpu_budget": budget, "worker_cpu_budget": worker_cpu_budget,
             "max_cache_group_processes": worker_cpu_budget,
@@ -1006,4 +1100,5 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
                                              if torch.device(device).type == "cuda" else None),
             "available_host_memory_bytes": free_host_bytes, "host_memory_budget_bytes": host_budget,
             "host_memory_fraction": host_fraction, "shared_staging_memory_bytes": staging_bytes,
-            "source_worker_memory_bytes": group_bytes, "target_worker_memory_bytes": target_bytes}
+            "source_worker_memory_bytes": group_bytes, "target_worker_memory_bytes": target_bytes,
+            **({"target_native_threads_per_worker": target_native} if target_native is not None else {})}

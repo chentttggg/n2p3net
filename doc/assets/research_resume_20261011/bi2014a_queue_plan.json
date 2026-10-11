@@ -1,39 +1,213 @@
 {
   "schema": "n2p3_cross_dataset_queue_plan/1",
-  "status": "design_ready_waiting_source07_catalog_and_target_preflight",
+  "status": "candidate_bridge_in_progress_original_four_prefit_contract_rejections_preserved",
   "queue": [
     {
       "dataset_id": "BI2014a",
       "order": 1,
-      "seed_pair": [20260918, 20260918],
+      "seed_pair": [
+        20260918,
+        20260918
+      ],
       "target_owner": "data.bi2014a_candidate + experiments.prepare_bi2014a_candidate",
       "candidate_task": "p300_row_column_speller_6x6",
       "runner_owner": "experiments.run_candidate_cross_decision",
-      "source_owner": "SourceSeedCatalog entry outer_target_study=BI2014a/source_seed=20260918",
-      "source_resolution": "must resolve actual source07 catalog/checkpoint/content SHA before fitting",
+      "source_resolution": "existing leave_BI2014a checkpoint passed cloud load/replay and study/participant exclusion; retain original producer identity",
+      "source_owner": {
+        "outer_target_study": "BI2014a",
+        "source_seed": 20260918,
+        "checkpoint_sha256": "fc8d8cbdef405263ff9c233e592755ceeeb2264bc8287800b8b2ffacfb199c02",
+        "procedure": "selection_refit",
+        "verification_status": "cloud_report_load_replay_and_target_exclusion_verified",
+        "source_participant_keys": 438,
+        "target_participant_keys": 61,
+        "participant_intersection": 0,
+        "verification_thread_id": "01a10b0f-c672-7e73-8449-4ebdaf6fc5eb",
+        "source_snapshot_archive_sha256": "4b075a2df69b781f03844ad7efe2e3d4a2b64342118ea291bb85e1aa99dc2127",
+        "source_cache_sha256": "54dc83290c6d7592b34ebdc69fbb1a30549bea7937ea745ed25535d5412f7e81",
+        "preprocessing": {
+          "name": "brainsync_bidirectional_v1",
+          "baseline_mode": "none",
+          "l_freq": 0.1,
+          "h_freq": 30.0,
+          "notch_freqs_hz": [
+            50.0
+          ],
+          "filter_phase": "zero",
+          "zero_phase_edge_policy": "mne_reflect_limited"
+        }
+      },
       "preflight": [
-        "attested BI2014a candidate cache and exact participant manifest",
-        "raw CSV candidate codebook/membership and physical selection support",
-        "source checkpoint study/participant/global exclusion",
-        "source checkpoint channel, preprocessing, task and execution contract",
-        "calibration_selections=5 and test_reps=8 only after actual BI2014a split support check"
+        "actual CSV candidate membership, complete episode boundaries and exact participant manifest",
+        "finite-zero-none preprocessing accepted by candidate owner and actual caller",
+        "observed masked Cz6 projection with measured CZ, plus native-control identity",
+        "generic original-onset/prefix authority and common future scope derived once from Kmax raw cutoff",
+        "per-decision full-episode evidence depth and participant/requested metrics",
+        "same-run model save/load, future replay and parent mixture admission"
       ],
       "arms": [
         "source_zero_shot_if_checkpoint_contract_allows",
         "source_to_target_fixed_recipe",
         "matched_target_scratch_same_recipe"
       ],
-      "temperature": "fixed or independently source-frozen; no target grouped-temperature selection",
+      "temperature": "T=1 or original source-frozen calibration only; no target grouped-temperature learning",
       "metrics": [
-        "requested operational hit@R",
+        "requested operational hit@all on complete episode",
         "probability coverage and NLL/Brier on available rows",
-        "ties, abstentions, typed failures and participant macro"
+        "actual repetition depth, ties, abstentions, typed failures and participant macro"
       ],
       "artifact_boundary": "output/datasets/BI2014a/attempt_<id>/",
       "resource_owner": "cloud source07 actual per-dataset 25 CPU budget and 4 GPU capacity",
-      "promotion": "none; independent development evidence only"
+      "promotion": "none; independent development evidence only",
+      "binary_target_preparation": {
+        "target_manifest_sha256": "9d939e16a75f8e6297ad856ea63b6d5adbd69694aeae03b79ec9d98d4f96ede4",
+        "target_preparation_sha256": "e656ce30e5f2991776b1873064d8ef5a5ca69bd9c21a50be286975d1a4d3e85b",
+        "records": 61,
+        "raw_sample_rate_hz": 512.0,
+        "model_sample_rate_hz": 128.0,
+        "model_n_times": 179,
+        "files": 976,
+        "source_catalog_search": "resolved_leave_BI2014a_checkpoint",
+        "target_fit_started": false,
+        "artifact_role": "binary_prefix_preparation_not_candidate_cache"
+      },
+      "candidate_input_audit": {
+        "scope": "61_subject_actual_CSV_zero_fit",
+        "episode_count": 1592,
+        "repetition_depth_histogram": {
+          "1": 412,
+          "2": 400,
+          "3": 298,
+          "4": 161,
+          "5": 109,
+          "6": 78,
+          "7": 48,
+          "8": 86
+        },
+        "candidate_first_five_allocation": {
+          "status": "actual_input_census_for_now_declared_episode_budget; final scoped requested ledger owned by preparation",
+          "calibration_labels_min": 60,
+          "calibration_labels_max": 372,
+          "future_episodes": 1287,
+          "future_depth_histogram": {
+            "1": 351,
+            "2": 329,
+            "3": 242,
+            "4": 123,
+            "5": 79,
+            "6": 62,
+            "7": 36,
+            "8": 65
+          },
+          "fixed_R8_supported": 65,
+          "fixed_R8_support_fraction": 0.050505050505050504,
+          "C_future_boundaries_below_717": 0
+        },
+        "native_to_Cz6_observed_slots": [
+          false,
+          true,
+          true,
+          true,
+          false,
+          true
+        ],
+        "measured_CZ_required": true,
+        "future_gap_samples_min": 677,
+        "future_gap_below_profile_source_support_717": 42,
+        "physical_boundary_action": "isolate raw first; right-censor or retain explicit unavailable status where response support crosses the unauthorized next flash",
+        "artifacts": {
+          "schedule_probe.py": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/schedule_probe.py",
+            "sha256": "d53e06c1eebb78c1ce54b735c5c5d090c68290628c221c179eae2f0559d7b904"
+          },
+          "schedule_probe.json": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/schedule_probe.json",
+            "sha256": "3872c7cfc4dce888fe7e039430ef7fe00c8e2eaac8914dea049e08170cc13a80"
+          },
+          "contract_probe.py": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/contract_probe.py",
+            "sha256": "5dad55a09850193d614bfe32c2e5fb07af0443187f043d1421cdcd1907850bc4"
+          },
+          "contract_probe.json": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/contract_probe.json",
+            "sha256": "4619b6d1185e72edc09226d3d62dec5b1122b3bb3a23982868ba19cef56ef7a5"
+          },
+          "independent_audit.zh.md": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/independent_audit.zh.md",
+            "sha256": "b55501ef657fb1f8d3f69278d94d6368cde11a54e3c3d3488627fabe6b1bf016"
+          },
+          "audit_identity_and_edges.json": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/audit_identity_and_edges.json",
+            "sha256": "bf40a5df50ea18681a3cd806bc6b58821bb0cb17629aa85219f0ec7f88757103"
+          }
+        },
+        "episode_definition": "decoder complete 12-flash repetitions; original recording terminal completion/censor remains separately accounted",
+        "future_short_gap_adjacent_episode_union_diagnostic": 60,
+        "current_strict_previous_unknown_rule_unavailable_right_episodes": 42,
+        "recording_terminal_censor": {
+          "subject": 57,
+          "raw_flashes": 1454,
+          "decoder_retained_flashes": 1452,
+          "tail_flash_onsets": [
+            452069,
+            452340
+          ],
+          "control_after_last_complete_episode": false,
+          "status": "partial_final_repetition_not_completed_episode",
+          "primary_episode_policy": "subject57 selection23 complete R1 is a primary requested episode; two tail flashes remain secondary terminal censor and do not create a new primary episode",
+          "secondary_horizon_R": 2,
+          "primary_horizon_R": 1,
+          "included_in_primary_1287": true,
+          "creates_episode_1288": false
+        },
+        "audited_source_files": 22,
+        "root_current_22_source_SHA_match": true
+      },
+      "calibration_budget": {
+        "unit": "actual_complete_raw_episode",
+        "calibration_episode_count": 5,
+        "allocation": "earliest_five_per_participant",
+        "actual_label_budget": "persisted separately for each participant",
+        "decision_status": "explicit_episode_budget_programme_20261012",
+        "relation_to_B12_label_K_matrix": "separate from label K0/200/800/2000"
+      },
+      "test_endpoint": "primary requested endpoint uses each decoder complete episode and its complete_raw_repetitions R1..R8; subject57 selection23 primary R1 remains in the 1287 requested ledger; terminal partial flashes are a separate censor ledger only",
+      "candidate_attempts": {
+        "legacy_16_channel_causal_cache": "membership_prepared_but_source_input_incompatible",
+        "four_zero_shot_fragments": "contract_rejected_before_fit",
+        "new_fits": 0,
+        "original_RED_logs_preserved": true,
+        "scoped_finite_zero_masked_cache": "in_progress"
+      },
+      "independent_review_owner": "/root/prefix_replay_caller",
+      "caller_owner": "new scoped BI caller reusing fit_calibration_candidate and FrozenTrialPredictor; legacy SubjectAdapter caller retained as historical source",
+      "execution_target": "cloud_live_20261012/bi2014a_q1",
+      "execution_source": "new freeze from actual uploaded bytes; neither dc0e draft nor overwritten 3f38fe12 remains final source authority",
+      "next_interface": "requested_evidence_levels Mapping[DecisionKey,int] plus scoped EpochDataset/timeline, FrozenTrialPredictor fresh-load LLR and candidate probability replay",
+      "primary_endpoint_contract": {
+        "requested_decisions": 1287,
+        "horizon_rule": "complete_raw_repetitions per decoder episode",
+        "subject57_selection23": {
+          "primary_horizon_R": 1,
+          "primary_status": "complete_R1",
+          "extra_terminal_flash_count": 2,
+          "extra_schedule_repetitions": 2,
+          "extra_schedule_events": 14
+        },
+        "terminal_partial_primary_inclusion": "primary R1 decision remains included; extra two flashes do not erase it",
+        "secondary_terminal_censor": {
+          "status": "separate_operational_censor_ledger",
+          "horizon_R": 2,
+          "included_in_primary_metrics": false,
+          "creates_new_episode": false,
+          "new_requested_key": false
+        },
+        "metrics_api": "requested_evidence_levels maps selection23 to 1; secondary terminal record is not passed to primary full_episode evaluator"
+      },
+      "next_action": "finish/repair primary R1 horizon ledger plus separate subject57 terminal censor ledger, then seal the three declared target arms"
     }
   ],
   "dataset_order_policy": "finish and seal each dataset artifacts before unlocking the next; later failure cannot overwrite completed dataset",
-  "old_results": "do not reuse or resign historical four-study/candidate results"
+  "old_results": "do not reuse or resign historical four-study/candidate results",
+  "next_action": "complete candidate input/montage/prefix/horizon bridge, bind new dataset plan, then execute and seal the three declared target arms"
 }

@@ -31,7 +31,7 @@ from transfer.ensemble_fit import (
 from transfer.ensemble_views import CalibrationPrefix, PredictionDecisionView
 from transfer.noise_model import array_digest
 
-SCHEMA = "n2p3_prefix_inner_replay/1"
+SCHEMA = "n2p3_prefix_inner_replay/2"
 
 
 def _sha256(path: Path) -> str:
@@ -65,6 +65,89 @@ def _array_identity(value, *extra):
     return array_digest(value, *extra)
 
 
+def actual_expert_fit_inputs(spec, data, raw_records, target, *, source_only=False):
+    """Expected native fitter inputs from the actual authorized arrays.
+
+    These are distinct from the consumer wrapper's programme/receipt digest.
+    Spatial raw operands and trial byte order use their original owners.
+    """
+    from transfer.calibration_candidates import _observed, waveform_lda_training_selection
+    from transfer.ensemble_views import project_raw_observations
+
+    def training_sha(samples, labels, observed):
+        digest = hashlib.sha256()
+        for value in (samples, labels, observed):
+            digest.update(np.ascontiguousarray(value).tobytes())
+        return digest.hexdigest()
+
+    if source_only:
+        return {"origin": "source_only_or_unavailable", "actual_K": 0}
+    if spec.family == "continuous_ar":
+        records = []
+        for raw in raw_records:
+            values, _, _, _ = project_raw_observations(raw.samples,
+                target["channel_names"], target["reference"], spec.spatial,
+                sample_rate_hz=target["sample_rate_hz"])
+            records.append({"record_id": raw.record_id, "n_samples": len(values),
+                "n_events": len(raw.onsets), "n_targets": int(raw.target_mask.sum()),
+                "input_sha256": array_digest(values, raw.onsets, raw.target_mask),
+                "raw_input_sha256": array_digest(values, raw.onsets, raw.target_mask),
+                "original_input_sha256": array_digest(raw.samples, raw.onsets, raw.target_mask),
+                "right_censored": raw.right_censored, "read_sample_support": [0, len(values)]})
+        return {"origin": "target_continuous", "records": records}
+    if data is None:
+        return {"origin": "unavailable_trial_rows"}
+    observed = _observed(data)
+    channels, training, _ = waveform_lda_training_selection(data, np.ones(data.n_epochs, dtype=bool))
+    return {"origin": "target_trial",
+        "original_numerical_input_digest": array_digest(data.X, data.y, data.trial_channel_mask),
+        "full_training_data_sha256": training_sha(data.X, data.y, observed),
+        "full_class_counts": np.bincount(data.y, minlength=2).tolist(),
+        "waveform_training_data_sha256": training_sha(data.X[training][:, channels],
+            data.y[training], observed[training][:, channels]),
+        "waveform_class_counts": np.bincount(data.y[training], minlength=2).tolist(),
+        "waveform_channels": channels.tolist()}
+
+
+def prefix_native_fit_inputs(prefix, expert_programs):
+    return {spec.expert_id: actual_expert_fit_inputs(spec,
+        prefix.trial_datasets.get(spec.profile.digest) if spec.family == "trial" else None,
+        [] if prefix.raw is None else [prefix.raw], prefix.target_contract, source_only=prefix.budget == 0)
+        for spec in expert_programs}
+
+
+def check_native_fit_inputs(expected_inputs, model, *, actual_K=None):
+    """Reject a real different-dose/label producer with a reassigned wrapper."""
+    for expert in model._experts:
+        if expert.predictor is None:
+            continue
+        expected = expected_inputs[expert.program.expert_id]
+        if expert.program.family == "continuous_ar":
+            actual = expert.predictor.provenance["records"]
+            if expert.program.spatial is None and any(row["input_sha256"] != row["original_input_sha256"]
+                                                      for row in expected["records"]):
+                raise ValueError("native raw input capture is not the original unprojected observations")
+            if len(actual) != len(expected["records"]) or any(
+                any(semantic_sha256(saved.get(key)) != semantic_sha256(value)
+                    for key, value in wanted.items() if key != "original_input_sha256")
+                for saved, wanted in zip(actual, expected["records"], strict=True)):
+                raise ValueError("prefix native continuous fitter input/dose differs from authorized observations")
+        elif actual_K != 0:
+            predictor = expert.predictor
+            calibration = predictor.record["class_calibration"]
+            fit = calibration["fit_contract"]
+            generative = predictor.record["kind"] != "n2p3"
+            stem = "waveform" if generative else "full"
+            if (fit["training_data_sha256"] != expected[f"{stem}_training_data_sha256"]
+                    or tuple(fit["class_counts"]) != tuple(expected[f"{stem}_class_counts"])
+                    or semantic_sha256(fit["recipe"]) != semantic_sha256(expert.program.recipe.record())):
+                raise ValueError("prefix native trial fitter samples/labels/recipe differ from authorized observations")
+            if generative and tuple(predictor._state["waveform_channels"].numpy()) != tuple(expected["waveform_channels"]):
+                raise ValueError("prefix native trial fitter observed channel scope changed")
+        elif expert.predictor.record.get("class_calibration", {}).get("origin") != "source_mixture":
+            raise ValueError("K0 native predictor is not the actual source-only numerical programme")
+
+
 def prefix_input_identity(prefix: CalibrationPrefix) -> dict[str, Any]:
     """Return numerical and label identities for one frozen prefix.
 
@@ -85,6 +168,7 @@ def prefix_input_identity(prefix: CalibrationPrefix) -> dict[str, Any]:
             "samples_sha256": _array_identity(raw.samples, raw.onsets),
             "fit_input_digest": array_digest(raw.samples, raw.onsets, raw.target_mask),
             "onsets_sha256": _array_identity(raw.onsets),
+            "event_onsets": raw.onsets.tolist(),
             "labels_sha256": _array_identity(raw.target_mask),
             "label_use": prefix.label_use["raw"],
         }
@@ -222,6 +306,18 @@ def _check_final_authority(record, loaded):
     for digest, trial in identity["trial_datasets"].items():
         if trial["numerical_input_digest"] != identity["label_use"]["trial"][digest]["numerical_input_digest"]:
             raise ValueError("prefix actual trial samples/labels differ from fit authority")
+    for spec in specs:
+        native = record["native_fit_inputs"][spec.expert_id]
+        if spec.family == "continuous_ar" and identity["raw"] is not None:
+            rows = native["records"]
+            if (len(rows) != 1 or rows[0]["record_id"] != identity["raw"]["record_id"]
+                    or rows[0]["n_events"] != record["actual_K"]
+                    or rows[0]["n_samples"] != identity["target_contract"]["raw_scope"][1]
+                    or rows[0]["original_input_sha256"] != identity["raw"]["fit_input_digest"]):
+                raise ValueError("native continuous input capture differs from original prefix authority")
+        elif spec.family == "trial" and spec.profile.digest in identity["trial_datasets"]:
+            if native["original_numerical_input_digest"] != identity["trial_datasets"][spec.profile.digest]["numerical_input_digest"]:
+                raise ValueError("native trial input capture differs from original prefix authority")
     for model in loaded.values():
         if (model.scorer.program != program
                 or semantic_sha256([expert.program.record() for expert in model._experts]) !=
@@ -242,7 +338,46 @@ def _check_final_authority(record, loaded):
                                            kind: expert.unavailable_reason})
             if expert.fit_digest != expected:
                 raise ValueError("prefix label/source authority differs from numerical producer fit binding")
+        check_native_fit_inputs(record["native_fit_inputs"], model, actual_K=record["actual_K"])
+    _check_oof_temperature_learning(loaded)
     return authority
+
+
+def _check_oof_temperature_learning(loaded):
+    """Bind saved temperatures to the original captured learner, once per OOF.
+
+    This small meta-objective replay never fits an EEG model, consumes future
+    scores, modifies frozen state, or silently changes the declared estimator.
+    """
+    from transfer.ensemble_fit import temperature_from_oof
+
+    seen = set()
+    for model in loaded.values():
+        oof = model.oof_probability_record
+        if oof is None or semantic_sha256(oof) in seen:
+            continue
+        seen.add(semantic_sha256(oof))
+        groups = {group["view"]["record_id"]: group for group in oof["calibration_groups"]}
+        calibration = oof["temperature_calibration"]
+        selected = tuple(oof["captured_expert_ids"])
+        if (tuple(calibration["temperature_expert_ids"]) != selected
+                or tuple(calibration["temperature_bounds"]) != (.05, 20.)
+                or calibration["score_transform"] != "posterior_power_temperature/1"
+                or len(oof["rows"]) != len(groups)
+                or len(groups) < 3):
+            raise ValueError("prefix temperature learner declaration differs from original OOF programme")
+        for name in selected:
+            values, targets = [], []
+            for row in oof["rows"]:
+                evidence = row["expert_evidence"][name]
+                values.append(evidence["log_probability"])
+                targets.append(tuple(evidence["candidate_vocabulary"]).index(groups[row["held_record_id"]]["target_candidate"]))
+            expected = temperature_from_oof(np.asarray(values, dtype=np.float64), np.asarray(targets, dtype=int))
+            if expected != calibration["temperatures"][name]:
+                raise ValueError("prefix saved temperature is not the original captured OOF learning result")
+        for name in calibration["fixed_control_expert_ids"]:
+            if calibration["temperatures"][name] != 1.:
+                raise ValueError("prefix fixed temperature control changed its frozen unit value")
 
 
 def _inner_path(directory, producer):
@@ -269,13 +404,15 @@ def unavailable_prefix_expert_scores(prefix_record, spec_records, strategy, fail
             else "fit_failure") for spec in spec_records}
 
 
-def _load_inner_roster(directory, record, loaded, authority):
+def _load_inner_roster(directory, record, loaded, authority, *, calibration_groups=None):
     producers = record["inner_producers"]
     keys = [row["fit_key"] for row in producers]
     if len(set(keys)) != len(keys):
         raise ValueError("prefix inner producer roster repeats a fit key")
     groups = {row["view"]["record_id"]: row for row in authority["temperature_group_records"]}
+    actual_groups = {row["record_id"]: row for row in record["prefix_input"]["complete_groups"]}
     models = {}
+    epoch_inputs = {}
     captured_rows = []
     for producer in producers:
         if producer["status"] == "unavailable":
@@ -295,6 +432,41 @@ def _load_inner_roster(directory, record, loaded, authority):
         models[producer["fit_key"]] = model
         if semantic_sha256(_final_identity(model)) != semantic_sha256(producer["model_identity"]):
             raise ValueError("prefix inner producer numerical identity changed")
+        check_native_fit_inputs(producer["native_fit_inputs"], model)
+        for expert in model._experts:
+            if calibration_groups is not None and expert.program.family == "continuous_ar":
+                from transfer.continuous_decision import CalibrationRecord
+
+                training = [calibration_groups[name] for name in producer["training_record_ids"]]
+                raw_records = [CalibrationRecord(group.view.record_id, group.view.samples,
+                                                group.view.onsets, group.labels) for group in training]
+                fresh = actual_expert_fit_inputs(expert.program, None, raw_records, training[0].view.record())
+                if semantic_sha256(fresh) != semantic_sha256(producer["native_fit_inputs"][expert.program.expert_id]):
+                    raise ValueError("prefix inner native raw operands differ from original C group owner")
+            if expert.program.family == "trial" and calibration_groups is not None:
+                from transfer.ensemble_views import build_calibration_epoch_dataset
+
+                key = (tuple(producer["training_record_ids"]), expert.program.profile.digest)
+                if key not in epoch_inputs:
+                    data = build_calibration_epoch_dataset(
+                        [calibration_groups[name] for name in producer["training_record_ids"]], expert.program.profile)
+                    epoch_inputs[key] = data
+                fresh = actual_expert_fit_inputs(expert.program, epoch_inputs[key], [],
+                                                calibration_groups[producer["training_record_ids"][0]].view.record())
+                if semantic_sha256(fresh) != semantic_sha256(producer["native_fit_inputs"][expert.program.expert_id]):
+                    raise ValueError("prefix inner trial native input differs from original C group transformation")
+            if expert.program.family != "continuous_ar":
+                continue
+            captured_native = producer["native_fit_inputs"][expert.program.expert_id]["records"]
+            if len(captured_native) != len(producer["training_record_ids"]):
+                raise ValueError("prefix inner native fitter lost original training records")
+            for name, native in zip(producer["training_record_ids"], captured_native, strict=True):
+                original = actual_groups[name]
+                if (native["record_id"] != name
+                        or native["original_input_sha256"] != original["native_raw_fit_input_digest"]
+                        or native["n_events"] != original["group"]["authorized_label_count"]
+                        or native["n_samples"] != original["raw_scope"][1] - original["raw_scope"][0]):
+                    raise ValueError("prefix inner actual native inputs differ from authorized C group")
         training_ids = [row["record_id"] for row in model.fit_receipts]
         if (training_ids != producer["training_record_ids"] or set(training_ids) - set(groups)
                 or semantic_sha256(model.fit_receipts) != semantic_sha256([groups[name]["view"] for name in training_ids])):
@@ -368,7 +540,7 @@ def _manifest(directory: Path):
     payload = json.loads(path.read_bytes())
     record = payload.get("record")
     if not isinstance(record, dict) or record.get("schema") != SCHEMA:
-        raise ValueError("prefix replay manifest has an unsupported schema")
+        raise ValueError("prefix replay manifest has an unsupported schema; historical /1 requires its original frozen owner")
     if payload.get("record_sha256") != semantic_sha256(record):
         raise ValueError("prefix replay manifest digest changed")
     if record.get("truth_free_future_replay") is not True or record.get("selection_performed") is not False:
@@ -477,6 +649,7 @@ def persist_prefix_inner_replay(prefix, programs, directory, *, recorder=None,
             "oof_rows": recorder.oof_rows.get(key, []),
             "oof_score_failures": recorder.oof_score_failures.get(key, []),
             "temperature_record": model.temperature_record,
+            "native_fit_inputs": recorder.native_fit_inputs[id(model)],
         })
     package_hashes = {
         "ensemble_json_sha256": None if not (directory / "ensemble.json").exists() else _sha256(directory / "ensemble.json"),
@@ -495,6 +668,7 @@ def persist_prefix_inner_replay(prefix, programs, directory, *, recorder=None,
         "target_seed": context.get("target_seed"),
         "device": str(device),
         "prefix_input": prefix_input_identity(prefix),
+        "native_fit_inputs": declaration["native_fit_inputs"],
         "prefix_record_sha256": semantic_sha256(prefix.record()),
         "expert_programs": [spec.record() for spec in expert_programs],
         "ensemble_program": program.record(),
@@ -583,6 +757,8 @@ def replay_prefix_inner_replay(directory, *, prefix=None, future_views=None,
             raise ValueError("prefix replay actual K changed")
         sources = _normalise_sources(source_checkpoints)
         specs = tuple(CalibrationExpertProgram.from_record(value) for value in record["expert_programs"])
+        if semantic_sha256(prefix_native_fit_inputs(prefix, specs)) != semantic_sha256(record["native_fit_inputs"]):
+            raise ValueError("prefix native fitter operands differ from freshly compiled original input owner")
         if _source_roles(specs, sources) != record["source_checkpoint_roles"]:
             raise ValueError("prefix replay source checkpoint role or digest changed")
         if _check_seeds(specs, sources, record["fit_context"]) != record["actual_source_seeds"]:
@@ -591,7 +767,8 @@ def replay_prefix_inner_replay(directory, *, prefix=None, future_views=None,
     else:
         groups = {}
     exact_checks = 0
-    for _, row, model in _load_inner_roster(directory, record, loaded, authority):
+    for _, row, model in _load_inner_roster(directory, record, loaded, authority,
+                                          calibration_groups=groups if prefix is not None else None):
         if prefix is not None:
             held = groups[row["held_record_id"]]
             score = {name: item.record() for name, item in model.score_experts(held.view).items()}

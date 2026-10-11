@@ -735,6 +735,7 @@ class IndependentSubjectViews:
     decisions: tuple[PredictionDecisionView, ...]
     scoring_truth: dict[str, str]
     ledger: dict
+    prefix_compiler: CalibrationPrefixCompiler | None = None
 
 
 def _bnci_prediction_view(record, indices, start, stop, *, available_sample, reason=None,
@@ -758,6 +759,149 @@ def _bnci_prediction_view(record, indices, start, stop, *, available_sample, rea
         available_sample=available_sample, unavailable_reason=reason)
 
 
+def _compile_bnci_calibration_prefix(record, raw, events, budget, *, maximum, profiles,
+                                     authorization_preprocessing, width, preroll, target):
+    source_sha256 = record.source_sha256
+    selections = [np.flatnonzero(record.selection_index == selection)
+                  for selection in np.unique(record.selection_index)]
+    datasets, groups = {}, []
+    authorized, _ = prefix_raw_scopes(raw, events, authorization_preprocessing,
+        calibration_events=budget, maximum_calibration_events=maximum) if budget else (None, None)
+    cutoff = min(authorized.stop_sample, int(record.flash_sample[budget])) if budget else 0
+    prefix_contract = {**target, "raw_scope": [0, cutoff], "available_sample": cutoff}
+    fitted_raw = (CalibrationRecord(f"{target['participant_key']}:C{budget}:{source_sha256}",
+        np.asarray(record.eeg_uv[:cutoff], dtype=np.float64) * 1e-6,
+        record.flash_sample[:budget], record.raw_is_target[:budget], right_censored=True) if budget else None)
+    label_use = {"raw": {"requested_labels": budget, "used_labels": budget, "unused_label_indices": [],
+        "authorization_scope": None if authorized is None else authorized.record(),
+        "next_unknown_flash_sample": int(record.flash_sample[budget]) if budget else None,
+        "read_sample_support": [0, cutoff] if budget else None, "available_sample": cutoff,
+        "right_censored": True, "observed_response_samples":
+            np.minimum(width, cutoff - record.flash_sample[:budget]).tolist()}, "trial": {}}
+    prefix = CalibrationPrefix(budget, fitted_raw, datasets, tuple(groups), prefix_contract, label_use)
+    for digest, profile in profiles.items():
+        prefix.trial_target(profile)
+        epoch_starts = record.flash_sample[:budget] + profile._source_start
+        epoch_stops = record.flash_sample[:budget] + profile._source_stop
+        available = (epoch_starts >= 0) & (epoch_stops <= cutoff)
+        used = np.flatnonzero(available)
+        receipt = {"requested_labels": budget, "used_labels": len(used), "used_label_indices": used.tolist(),
+            "unused_label_indices": np.flatnonzero(~available).tolist(), "profile": profile.record(),
+            "read_sample_support": [0, cutoff] if len(used) else None, "available_sample": cutoff,
+            "source_epoch_scopes": np.column_stack((epoch_starts[available], epoch_stops[available])).tolist()}
+        if len(used):
+            scope = RawSampleScope(f"recording:C{budget}-before-next-flash", 0, cutoff, tuple(range(budget)))
+            data = build_bnci2014_008_subject_dataset(record, preprocessing=profile.preprocessing,
+                raw_scope=scope, raw=raw, output_dtype=profile.output_dtype)
+            if tuple(map(canonical_channel_name, profile.channel_names)) != data.channel_names or profile.reference_channel is not None:
+                data = adapt_observed_montage(data, profile.channel_names, reference_channel=profile.reference_channel)
+            materialize_dataset_identity(data)
+            if not np.array_equal(data.metadata["flash_sample_matlab_1based"].to_numpy() - 1,
+                                  record.flash_sample[used]):
+                raise ValueError("actual trial preprocessing evidence differs from prefix availability")
+            datasets[digest] = data
+            receipt.update(numerical_input_digest=array_digest(data.X, data.y, data.trial_channel_mask),
+                preprocessing_execution=data.provenance["preprocessing_execution"],
+                actual_reference=data.provenance["source_reference"])
+        label_use["trial"][digest] = receipt
+    for indices in selections:
+        first, last = int(record.flash_sample[indices[0]]), int(record.flash_sample[indices[-1]])
+        start, stop = first - preroll, last + width
+        if indices[-1] >= budget or start < 0 or stop > cutoff:
+            continue
+        if ((indices[0] > 0 and record.flash_sample[indices[0] - 1] + width > start)
+                or (indices[-1] + 1 < len(events) and record.flash_sample[indices[-1] + 1] < stop)):
+            continue
+        view = _bnci_prediction_view(record, indices, start, stop, available_sample=stop)
+        truth = row_column_target(int(record.target_row[indices[0]]), int(record.target_col[indices[0]]))
+        groups.append(CalibrationSelection(view, record.raw_is_target[indices], truth))
+    return CalibrationPrefix(budget, fitted_raw, datasets, tuple(groups), prefix_contract, label_use)
+
+
+def calibration_prefix_identity(prefix):
+    """Actual immutable observations and labels, beyond a presentation digest."""
+    return semantic_sha256({"prefix": prefix.record(),
+        "raw": None if prefix.raw is None else array_digest(
+            prefix.raw.samples, prefix.raw.onsets, prefix.raw.target_mask),
+        "trial": {key: array_digest(data.X, data.y, data.trial_channel_mask)
+                  for key, data in prefix.trial_datasets.items()}})
+
+
+class CalibrationPrefixCompiler:
+    """Run-local original-source owner for genuinely earlier C prefixes.
+
+    The public builder installs the decoded MAT and its declared input programme.
+    Every derived scope is compiled before preprocessing; a filtered parent epoch
+    cache is never cropped to impersonate an earlier experiment.
+    """
+
+    def __init__(self, payload, *, source_sha256, source_relative_path, budgets, profiles,
+                 authorization_preprocessing, response_seconds=1.2, pre_roll_seconds=.2):
+        if not isinstance(payload, bytes) or hashlib.sha256(payload).hexdigest() != source_sha256:
+            raise ValueError("prefix compiler requires the actual original verified MAT bytes")
+        record = read_bnci2014_008_candidate_record(io.BytesIO(payload),
+            source_relative_path=source_relative_path, source_sha256=source_sha256)
+        profiles = {profile.digest: profile for profile in profiles}
+        rate = BNCI2014_008_SOURCE_SAMPLE_RATE_HZ
+        width = max([round(response_seconds * rate), *(profile._source_stop for profile in profiles.values())])
+        preroll = max([round(pre_roll_seconds * rate), *(-profile._source_start for profile in profiles.values())])
+        raw, events, _ = bnci2014_008_raw(record)
+        starts, stops = source_epoch_support(events, rate, authorization_preprocessing)
+        splits, adjustments = resolve_calibration_splits(budgets,
+            lambda count, maximum: binary_time_split(events[:, 0] / rate, stops / rate,
+                calibration_trials=count, maximum_calibration_trials=maximum,
+                tmin_s=authorization_preprocessing.tmin_ms / 1000),
+            minimum_test_trials=1, available_trials=len(events))
+        target = {"participant_key": origin_subject_key(BNCI2014_008_DATASET_ID, record.subject_id),
+            "candidate_vocabulary": [row_column_target(row, col) for row in range(6) for col in range(6)],
+            "sample_rate_hz": rate, "channel_names": list(BNCI2014_008_CHANNELS),
+            "channel_types": ["EEG"] * len(BNCI2014_008_CHANNELS), "reference": BNCI2014_008_SOURCE_REFERENCE,
+            "signal_unit": "V", "source_sha256": source_sha256, "source_dataset_id": BNCI2014_008_DATASET_ID,
+            "source_subject_id": record.subject_id, "source_relative_path": record.source_relative_path}
+        self._record, self._raw, self._events = record, raw, events
+        self._starts, self._stops = starts, stops
+        self._splits, self._adjustments = splits, adjustments
+        self._arguments = {"maximum": max(splits), "profiles": profiles,
+            "authorization_preprocessing": authorization_preprocessing,
+            "width": width, "preroll": preroll, "target": target}
+        self._prefixes = {}
+
+    def compile(self, budget):
+        if type(budget) is not int or not 0 <= budget <= self._arguments["maximum"]:
+            raise ValueError("derived prefix exceeds original parent authorization")
+        if budget not in self._prefixes:
+            self._prefixes[budget] = _compile_bnci_calibration_prefix(
+                self._record, self._raw, self._events, budget, **self._arguments)
+        return self._prefixes[budget]
+
+    def assert_original_prefix(self, prefix):
+        if not isinstance(prefix, CalibrationPrefix):
+            raise TypeError("prefix compiler requires original CalibrationPrefix authority")
+        actual = self.compile(prefix.budget)
+        if calibration_prefix_identity(actual) != calibration_prefix_identity(prefix):
+            raise ValueError("actual parent differs from original source prefix owner")
+        return actual
+
+    def before_group(self, parent, held):
+        parent = self.assert_original_prefix(parent)
+        matching = [group for group in parent.complete_groups
+                    if semantic_sha256(group.record()) == semantic_sha256(held.record())]
+        if len(matching) != 1:
+            raise ValueError("held group differs from original parent group authority")
+        absolute = held.view.onsets + held.view.raw_scope[0]
+        indices = np.searchsorted(parent.raw.onsets, absolute)
+        if (np.any(indices >= parent.budget)
+                or not np.array_equal(parent.raw.onsets[indices], absolute)
+                or not np.array_equal(parent.raw.target_mask[indices], held.labels)):
+            raise ValueError("held group labels/onsets differ from actual original parent")
+        earlier = self.compile(int(indices[0]))
+        if earlier.target_contract["raw_scope"][1] > held.view.raw_scope[0]:
+            raise ValueError("earlier prefix raw observations overlap held group support")
+        if any(group.view.decision_id == held.view.decision_id for group in earlier.complete_groups):
+            raise ValueError("earlier prefix retains held selection labels")
+        return earlier
+
+
 def prepare_bnci_independent_prefixes(path, *, source_sha256, budgets, profiles,
                                       authorization_preprocessing, response_seconds=1.2, pre_roll_seconds=.2):
     """Native MAT → strict C prefixes and one independent requested future queue.
@@ -770,23 +914,15 @@ def prepare_bnci_independent_prefixes(path, *, source_sha256, budgets, profiles,
     if (not budgets or len(set(budgets)) != len(budgets)
             or any(type(k) is not int or k < 0 for k in budgets)):
         raise ValueError("independent calibration budgets must be distinct nonnegative integers")
-    payload = Path(path).read_bytes()
-    if hashlib.sha256(payload).hexdigest() != source_sha256:
-        raise ValueError("original raw bytes differ from the frozen BNCI source declaration")
-    record = read_bnci2014_008_candidate_record(io.BytesIO(payload), source_relative_path=Path(path).name,
-                                               source_sha256=source_sha256)
-    profiles = {profile.digest: profile for profile in profiles}
-    rate = BNCI2014_008_SOURCE_SAMPLE_RATE_HZ
-    width = max([round(response_seconds * rate), *(profile._source_stop for profile in profiles.values())])
-    preroll = max([round(pre_roll_seconds * rate), *(-profile._source_start for profile in profiles.values())])
-    raw, events, _ = bnci2014_008_raw(record)
-    starts, stops = source_epoch_support(events, rate, authorization_preprocessing)
-    splits, adjustments = resolve_calibration_splits(budgets,
-        lambda count, maximum: binary_time_split(events[:, 0] / rate, stops / rate,
-            calibration_trials=count, maximum_calibration_trials=maximum,
-            tmin_s=authorization_preprocessing.tmin_ms / 1000),
-        minimum_test_trials=1, available_trials=len(events))
-    maximum = max(splits)
+    compiler = CalibrationPrefixCompiler(Path(path).read_bytes(), source_sha256=source_sha256,
+        source_relative_path=Path(path).name, budgets=budgets, profiles=profiles,
+        authorization_preprocessing=authorization_preprocessing,
+        response_seconds=response_seconds, pre_roll_seconds=pre_roll_seconds)
+    record, raw, events = compiler._record, compiler._raw, compiler._events
+    starts, stops = compiler._starts, compiler._stops
+    splits, adjustments = compiler._splits, compiler._adjustments
+    maximum = compiler._arguments["maximum"]
+    width, preroll = compiler._arguments["width"], compiler._arguments["preroll"]
     requested_to_actual = {budget: row["actual_K"] for budget, row in
         calibration_budget_requests(budgets, sorted(splits), adjustments).items()}
     _, test_scope = prefix_raw_scopes(raw, events, authorization_preprocessing,
@@ -795,66 +931,9 @@ def prepare_bnci_independent_prefixes(path, *, source_sha256, budgets, profiles,
     later = np.arange(len(events)) >= maximum
     test_available = later & (starts >= test_scope.start_sample) & (stops <= test_scope.stop_sample)
     selections = [np.flatnonzero(record.selection_index == selection) for selection in np.unique(record.selection_index)]
-    target = {"participant_key": origin_subject_key(BNCI2014_008_DATASET_ID, record.subject_id),
-              "candidate_vocabulary": [row_column_target(row, col) for row in range(6) for col in range(6)],
-              "sample_rate_hz": rate, "channel_names": list(BNCI2014_008_CHANNELS),
-              "channel_types": ["EEG"] * len(BNCI2014_008_CHANNELS), "reference": BNCI2014_008_SOURCE_REFERENCE,
-              "signal_unit": "V", "source_sha256": source_sha256, "source_dataset_id": BNCI2014_008_DATASET_ID,
-              "source_subject_id": record.subject_id, "source_relative_path": record.source_relative_path}
     calibration = {}
     for budget in splits:
-        datasets, groups = {}, []
-        authorized, _ = prefix_raw_scopes(raw, events, authorization_preprocessing,
-            calibration_events=budget, maximum_calibration_events=maximum) if budget else (None, test_scope)
-        cutoff = min(authorized.stop_sample, int(record.flash_sample[budget])) if budget else 0
-        prefix_contract = {**target, "raw_scope": [0, cutoff], "available_sample": cutoff}
-        fitted_raw = (CalibrationRecord(f"{target['participant_key']}:C{budget}:{source_sha256}",
-            np.asarray(record.eeg_uv[:cutoff], dtype=np.float64) * 1e-6,
-            record.flash_sample[:budget], record.raw_is_target[:budget], right_censored=True) if budget else None)
-        label_use = {"raw": {"requested_labels": budget, "used_labels": budget, "unused_label_indices": [],
-            "authorization_scope": None if authorized is None else authorized.record(),
-            "next_unknown_flash_sample": int(record.flash_sample[budget]) if budget else None,
-            "read_sample_support": [0, cutoff] if budget else None, "available_sample": cutoff,
-            "right_censored": True, "observed_response_samples":
-                np.minimum(width, cutoff - record.flash_sample[:budget]).tolist()}, "trial": {}}
-        prefix = CalibrationPrefix(budget, fitted_raw, datasets, tuple(groups), prefix_contract, label_use)
-        for digest, profile in profiles.items():
-            prefix.trial_target(profile)
-            epoch_starts = record.flash_sample[:budget] + profile._source_start
-            epoch_stops = record.flash_sample[:budget] + profile._source_stop
-            available = (epoch_starts >= 0) & (epoch_stops <= cutoff)
-            used = np.flatnonzero(available)
-            receipt = {"requested_labels": budget, "used_labels": len(used), "used_label_indices": used.tolist(),
-                "unused_label_indices": np.flatnonzero(~available).tolist(), "profile": profile.record(),
-                "read_sample_support": [0, cutoff] if len(used) else None, "available_sample": cutoff,
-                "source_epoch_scopes": np.column_stack((epoch_starts[available], epoch_stops[available])).tolist()}
-            if len(used):
-                scope = RawSampleScope(f"recording:C{budget}-before-next-flash", 0, cutoff, tuple(range(budget)))
-                data = build_bnci2014_008_subject_dataset(record, preprocessing=profile.preprocessing,
-                    raw_scope=scope, raw=raw, output_dtype=profile.output_dtype)
-                if tuple(map(canonical_channel_name, profile.channel_names)) != data.channel_names or profile.reference_channel is not None:
-                    data = adapt_observed_montage(data, profile.channel_names, reference_channel=profile.reference_channel)
-                materialize_dataset_identity(data)
-                if not np.array_equal(data.metadata["flash_sample_matlab_1based"].to_numpy() - 1,
-                                      record.flash_sample[used]):
-                    raise ValueError("actual trial preprocessing evidence differs from prefix availability")
-                datasets[digest] = data
-                receipt.update(numerical_input_digest=array_digest(data.X, data.y, data.trial_channel_mask),
-                    preprocessing_execution=data.provenance["preprocessing_execution"],
-                    actual_reference=data.provenance["source_reference"])
-            label_use["trial"][digest] = receipt
-        for indices in selections:
-            first, last = int(record.flash_sample[indices[0]]), int(record.flash_sample[indices[-1]])
-            start, stop = first - preroll, last + width
-            if indices[-1] >= budget or start < 0 or stop > cutoff:
-                continue
-            if ((indices[0] > 0 and record.flash_sample[indices[0] - 1] + width > start)
-                    or (indices[-1] + 1 < len(events) and record.flash_sample[indices[-1] + 1] < stop)):
-                continue
-            view = _bnci_prediction_view(record, indices, start, stop, available_sample=stop)
-            truth = row_column_target(int(record.target_row[indices[0]]), int(record.target_col[indices[0]]))
-            groups.append(CalibrationSelection(view, record.raw_is_target[indices], truth))
-        calibration[budget] = CalibrationPrefix(budget, fitted_raw, datasets, tuple(groups), prefix_contract, label_use)
+        calibration[budget] = compiler.compile(budget)
     decisions, truths = [], {}
     for indices in selections:
         if not np.any(later[indices]):
@@ -884,7 +963,7 @@ def prepare_bnci_independent_prefixes(path, *, source_sha256, budgets, profiles,
         "requested_decisions": len(decisions), "scorable_decisions": sum(view.samples is not None for view in decisions),
         "test_views": [view.record() for view in decisions], "operator_identity": "native_unfiltered_volts/1",
         "filtering_scope": "strict_C_prefix_or_each_independent_test_decision",
-        "same_physical_calibration_cutoff_for_all_experts": True})
+        "same_physical_calibration_cutoff_for_all_experts": True}, prefix_compiler=compiler)
 
 
 def prepare_bnci_calibration_groups(path, *, source_sha256, authorized_labels=800, group_count=6,

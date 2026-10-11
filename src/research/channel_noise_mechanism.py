@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -406,7 +407,7 @@ def _posterior_qr(design, response, prior_root):
     singular = np.linalg.svd(root, compute_uv=False)
     if len(singular) != width or singular[-1] <= np.finfo(float).eps * max(design.shape) * singular[0]:
         raise UnidentifiableFitError("actual prefix cannot identify the declared diffuse nuisance")
-    rhs = q.T @ np.r_[response, np.zeros(len(prior_root))]
+    rhs = _row_dot(q, np.r_[response, np.zeros(len(prior_root))])
     return rhs, root, q, singular[-1]
 
 
@@ -776,18 +777,23 @@ class FittedChannelNoise:
         same_sign = np.signbit(y) == np.signbit(y[0])
         exact_subtraction = ((same_sign & (np.abs(y)/2 <= np.abs(y[0]))
                               & (np.abs(y[0])/2 <= np.abs(y))) | (y == 0) | (y[0] == 0))
-        chart_error = _roundoff_gamma(1)*float(np.linalg.norm(np.where(exact_subtraction, 0., chart_y)))
+        chart_error = _roundoff_gamma(1)*np.abs(np.where(exact_subtraction, 0., chart_y))
         white_y = self._whiten(chart_y)
         map_geometry = _score_whitening_geometry(self)
         white_y_error = _score_whitening_error(self, chart_y, white_y, chart_error, map_geometry)
         nuisance_error = _score_whitening_error(self, nuisance, white_nuisance.reshape(nuisance.shape),
-            _roundoff_gamma(3)*float(np.linalg.norm(nuisance)), map_geometry)
+            _roundoff_gamma(3)*np.abs(nuisance), map_geometry)
+        # Only the flat coordinate block changes. The same stored transform
+        # defines full/prefix da and is shared by all candidates in this record.
+        score_nuisance, nuisance_transform, nuisance_logabsdet = _prefix_nuisance_chart(
+            white_nuisance, prefix_rows)
+        nuisance_error = _nuisance_chart_error(nuisance_error, white_nuisance,
+                                               nuisance_transform, prefix_rows)
         for design in designs:
             mean = design @ response.mean
             mean_contrasts.append(mean)
             white_mean = self._whiten(mean)
-            mean_error = _roundoff_gamma(design.shape[1])*float(
-                np.linalg.norm(np.abs(design)@np.abs(response.mean)))
+            mean_error = _roundoff_gamma(design.shape[1])*(np.abs(design)@np.abs(response.mean))
             white_mean_error = _score_whitening_error(self, mean, white_mean, mean_error, map_geometry)
             white_means.append(white_mean.ravel())
             residual = (white_y - white_mean).ravel()
@@ -795,47 +801,50 @@ class FittedChannelNoise:
                 uncertainty = np.einsum("nk,kcr->ncr", design,
                     factor.reshape(response.mean.shape[0], channels, rank))
                 white_uncertainty = self._whiten(uncertainty).reshape(len(y) * channels, rank)
-                uncertainty_error = _roundoff_gamma(design.shape[1])*float(np.linalg.norm(
-                    np.einsum("nk,kcr->ncr", np.abs(design),
-                        np.abs(factor).reshape(response.mean.shape[0], channels, rank))))
+                uncertainty_error = _roundoff_gamma(design.shape[1])*np.einsum("nk,kcr->ncr", np.abs(design),
+                        np.abs(factor).reshape(response.mean.shape[0], channels, rank))
                 white_uncertainty_error = _score_whitening_error(self, uncertainty,
                     white_uncertainty.reshape(uncertainty.shape), uncertainty_error, map_geometry)
             else:
                 white_uncertainty = np.empty((len(y) * channels, 0))
-                white_uncertainty_error = 0.
+                white_uncertainty_error = _SegmentError(0., 0., np.empty(0), np.empty(0))
             # The actual frozen covariance image is already the full proper
             # latent prior chart. Reuse record Z-QR only for numerical admission;
             # the raw prefix/tail conditional posterior below is unchanged.
-            centering_error = _roundoff_gamma(1)*float(
-                _column_norms((np.abs(white_y)+np.abs(white_mean)).reshape(-1, 1))[0])
+            centering_bounds = _roundoff_gamma(1)*(np.abs(white_y)+np.abs(white_mean))
+            centering_error = _SegmentError(float(np.linalg.norm(centering_bounds[:prefix])),
+                                            float(np.linalg.norm(centering_bounds[prefix:])))
             _, _, resolution = _project_diffuse_arrays(white_uncertainty, residual, white_nuisance,
                 nuisance_q, nuisance_root, nuisance_scales, geometry=projection_geometry,
-                response_source_error=centering_error)
-            matrix = np.column_stack((white_uncertainty, white_nuisance))
+                response_source_error=centering_error.prefix+centering_error.tail)
+            matrix = np.column_stack((white_uncertainty, score_nuisance))
             prefix_rhs, prefix_root, prefix_q, prefix_smallest = _posterior_qr(
                 matrix[:prefix_rows], residual[:prefix_rows], proper_root)
             tail_design, tail_y = matrix[prefix_rows:], residual[prefix_rows:]
             full_design = np.vstack((tail_design, prefix_root))
             full_y = np.r_[tail_y, prefix_rhs]
             q, full_root = np.linalg.qr(full_design, mode="reduced")
-            full_rhs = q.T@full_y
+            full_rhs = _row_dot(q, full_y)
             full_mean = solve_triangular(full_root, full_rhs)
             remaining = tail_y - tail_design @ full_mean
             # c_p=R_p mu_p encodes the same raw-prefix proper+flat posterior.
             # Avoid subtracting two large nuisance means before applying R_p.
             shift = prefix_root@full_mean-prefix_rhs
             quadratic = float(remaining @ remaining + shift @ shift)
+            noise_logs = 2*np.log(np.diag(self._spatial_root))
+            tail_normalizer = (len(y)-prefix)*(float(noise_logs.sum())+channels*np.log(2*np.pi))
+            normalizer_error = .5*(len(y)-prefix)*_roundoff_gamma(channels+5)*(
+                float(np.abs(noise_logs).sum())+channels*abs(float(np.log(2*np.pi))))
             conditional_resolution = _conditional_score_resolution(
                 matrix, residual, proper_root, prefix_rows, prefix_q, prefix_root,
                 prefix_smallest, full_design, full_y, q, full_root, full_rhs, full_mean,
                 remaining, shift, quadratic,
-                white_uncertainty_error+nuisance_error,
-                white_y_error+white_mean_error+centering_error)
+                white_uncertainty_error.join_columns(nuisance_error),
+                white_y_error+white_mean_error+centering_error,
+                normalizer_error=normalizer_error, normalizer_magnitude=abs(tail_normalizer))
             logdet = float(2 * (np.log(np.abs(np.diag(full_root))).sum()
                                - np.log(np.abs(np.diag(prefix_root))).sum()))
-            noise_logdet = 2 * np.log(np.diag(self._spatial_root)).sum()
-            density = -0.5 * (quadratic + logdet + (len(y) - prefix) *
-                              (noise_logdet + channels * np.log(2 * np.pi)))
+            density = -0.5 * (quadratic + logdet + tail_normalizer)
             if not np.isfinite(density):
                 raise UnidentifiableFitError("conditional candidate likelihood is nonfinite")
             densities.append(float(density))
@@ -843,9 +852,15 @@ class FittedChannelNoise:
                                 "prefix_information_condition": float(np.linalg.cond(prefix_root)),
                                 "kernel_uncertainty_columns": rank,
                                 "diffuse_projection_resolution": resolution,
-                                "conditional_numerical_resolution": conditional_resolution})
+                                "conditional_numerical_resolution": conditional_resolution,
+                                "flat_coordinate_transform_sha256": array_digest(nuisance_transform),
+                                "flat_coordinate_logabsdet": nuisance_logabsdet,
+                                "flat_coordinate_measure": "same_full_prefix_da_Jacobian_cancels"})
         evidence = np.asarray(densities) + np.log(prior)
-        log_probability = evidence - logsumexp(evidence)
+        # The raw V-density can have a common offset above 1e6 nats. Remove
+        # that exact common gauge before logsumexp to retain probability mass.
+        centered_evidence = evidence-evidence.max()
+        log_probability = centered_evidence-logsumexp(centered_evidence)
         probability = np.exp(log_probability)
         maxima = np.flatnonzero(np.isclose(evidence, evidence.max(), rtol=0, atol=1e-10))
         pairs = []
@@ -875,6 +890,7 @@ class FittedChannelNoise:
                 "score_estimand": "conditional_tail_frozen_prior_prefix_updates_kernel_and_diffuse_drift",
                 "samples_sha256": array_digest(y), "candidate_designs_sha256": array_digest(designs),
                 "noise_sha256": self._integrity, "response": response.record(),
+                "scoring_implementation_sha256": _IMPLEMENTATION_SHA256,
                 "candidate_diagnostics": diagnostics, "signal_geometry": pairs,
                 "signal_geometry_role": "full_record_nuisance_overlap_diagnostic_not_oracle_information",
                 "truth_used": False, "parameters_updated": False}
@@ -1103,6 +1119,94 @@ class DiffuseProjectionResolutionError(UnidentifiableFitError):
 
 
 @dataclass(frozen=True)
+class _SegmentError:
+    """Norm bounds on disjoint native prefix and tail operands."""
+
+    prefix: float
+    tail: float
+    prefix_columns: np.ndarray | None = field(default=None, repr=False)
+    tail_columns: np.ndarray | None = field(default=None, repr=False)
+
+    def __add__(self, other):
+        return _SegmentError(float(_projection_upper_add(self.prefix, other.prefix)),
+                             float(_projection_upper_add(self.tail, other.tail)))
+
+    def join_columns(self, other):
+        prefix = np.r_[self.prefix_columns, other.prefix_columns]
+        tail = np.r_[self.tail_columns, other.tail_columns]
+        return _SegmentError(float(np.linalg.norm(prefix)), float(np.linalg.norm(tail)),
+                             prefix, tail)
+
+
+_DOT_LEAF_ROWS = 256
+
+
+def _row_dot(left, right):
+    """left.T @ right with fixed short dots and a balanced addition tree.
+
+    The numerical program has at most leaf_rows product/add operations and
+    ceil(log2(number_of_leaves)) further additions on every scalar path.
+    _row_dot_gamma describes this actual tree, never a full-length BLAS dot.
+    """
+    leaves = [left[start:start+_DOT_LEAF_ROWS].T @ right[start:start+_DOT_LEAF_ROWS]
+              for start in range(0, len(left), _DOT_LEAF_ROWS)]
+    if not leaves:
+        return left.T @ right
+    while len(leaves) > 1:
+        leaves = [leaves[index]+leaves[index+1] if index+1 < len(leaves) else leaves[index]
+                  for index in range(0, len(leaves), 2)]
+    return leaves[0]
+
+
+def _row_dot_gamma(rows):
+    leaves = max(1, (rows+_DOT_LEAF_ROWS-1)//_DOT_LEAF_ROWS)
+    depth = (leaves-1).bit_length()
+    return _projection_gamma_upper(min(rows, _DOT_LEAF_ROWS)+depth)
+
+
+def _row_dot_error(left, response):
+    """Norm dot error with the actual |Q|.T |b| image, including cancellation.
+
+    Orthogonality controls ||Q||, not ||abs(Q)||. The positive image is bounded
+    by its own ordinary reduction enclosure; actual signed dots use the short
+    tree. Neither a small Q.T b nor another QR error pays for this dot term.
+    """
+    image = _projection_upper_matmul(np.abs(left).T, np.abs(response)[:, None])
+    return float(_projection_upper_product(_row_dot_gamma(len(left)),
+        _projection_norm_upper(image)[0]))
+
+
+def _prefix_nuisance_chart(nuisance, cut):
+    """One invertible flat-only chart, fixed by Z/noise and the public cut.
+
+    Zp = Q R diag(scales), T = diag(scales)^-1 R^-1, a=T a'.
+    The same stored T is used on all full/prefix candidates: da=|det T| da'
+    cancels in the conditional ratio. T's stored finite values define the
+    exact coordinate change; only applying Z @ T adds multiplication error.
+    This grants neither extra prefix rank nor a proper prior on flat a'.
+    """
+    _, root, scales = _response_nuisance_qr(nuisance[:cut])
+    transform = solve_triangular(root, np.eye(len(root)))/scales[:, None]
+    _response_resolved_root(transform, "prefix flat nuisance coordinate transform")
+    chart = nuisance @ transform
+    if not np.isfinite(chart).all():
+        raise DiffuseProjectionResolutionError("prefix nuisance coordinate image is not representable")
+    logabsdet = float(np.log(np.abs(np.diag(transform))).sum())
+    return chart, transform, logabsdet
+
+
+def _nuisance_chart_error(error, original, transform, cut):
+    """Pull original white-Z errors through the exact stored invertible T."""
+    multiplication = _roundoff_gamma(len(transform))*(np.abs(original)@np.abs(transform))
+    # Intercept and slope have very different absolute source error and T
+    # scales. A single ||T||*||error|| bound would apply the intercept gain to
+    # the huge slope operands and recreate the full-record false rejection.
+    prefix = error.prefix_columns@np.abs(transform)+_column_norms(multiplication[:cut])
+    tail = error.tail_columns@np.abs(transform)+_column_norms(multiplication[cut:])
+    return _SegmentError(float(np.linalg.norm(prefix)), float(np.linalg.norm(tail)), prefix, tail)
+
+
+@dataclass(frozen=True)
 class DiffuseProjection:
     design: np.ndarray
     response: np.ndarray
@@ -1120,34 +1224,151 @@ def _roundoff_gamma(operations):
 
 
 def _score_whitening_geometry(noise):
-    """Fixed numerical-map error geometry, computed once for the held record."""
+    """Fixed absolute inverse images, computed once for the held record."""
     roots = (noise.compiled_prefix_root, noise._spatial_root)
     result = []
     for root in roots:
-        inverse = solve_triangular(root, np.eye(len(root)), lower=True)
-        inverse_norm = float(np.linalg.norm(np.abs(inverse), ord=2))
-        root_norm = float(np.linalg.norm(np.abs(root), ord=2))
-        perturbation = _roundoff_gamma(len(root))*inverse_norm*root_norm
-        if not np.isfinite(perturbation) or perturbation >= 1:
-            raise DiffuseProjectionResolutionError("conditional whitening solve is numerically unresolved")
-        result.append((inverse_norm/(1-perturbation), root_norm))
-    # Each PARCOR forward/backward pair has norm <=1+|k|. Initial
-    # duplicated history has norm <=sqrt(2); discarded rows only contract it.
-    lattice_gain = max(float(np.sqrt(2)*np.prod(1+np.abs(item.reflection_coefficients)))
-                       if item.order else 1. for item in noise.temporal)
-    return (*result, lattice_gain)
+        inverse_bound, _ = _inverse_root_geometry(root, lower=True)
+        result.append((inverse_bound, root))
+    return tuple(result)
+
+
+def _inverse_root_geometry(root, *, lower=False):
+    """Bound the exact real inverse, including the computed solve's defect.
+
+    If X is the stored approximate inverse and E=I-R X, then
+    R^-1=X (I-E)^-1. ||E||<1 gives both a norm inverse bound and
+    ||R^-1-X|| <= ||X|| ||E||/(1-||E||), also an entrywise error bound.
+    Thus no floating X is silently assumed to be the exact root inverse.
+    """
+    inverse = solve_triangular(root, np.eye(len(root)), lower=lower)
+    inverse_norm = float(np.linalg.norm(inverse, ord=2))
+    perturbation = float(np.linalg.norm(np.eye(len(root))-root@inverse, ord=2))
+    perturbation += _roundoff_gamma(len(root)+1)*float(np.linalg.norm(
+        np.abs(root)@np.abs(inverse), ord=2))
+    if not np.isfinite(perturbation) or perturbation >= 1:
+        raise DiffuseProjectionResolutionError("conditional root inverse is numerically unresolved")
+    inverse_error = perturbation*inverse_norm/(1-perturbation)
+    return np.nextafter(np.abs(inverse)+inverse_error, np.inf), inverse_norm/(1-perturbation)
+
+
+def _triangular_residual(root, values, image):
+    """Accurate stored-input residual using two-product and an fsum reduction.
+
+    A normal product has an exactly representable FMA (or Dekker) remainder.
+    fsum reduces both limbs and rhs together: roundoff follows the small
+    residual, not the cancelling L*x operands. This is a residual certificate,
+    not a new whitening map. Nonnormal/overflowing operands remain unresolved.
+    """
+    residual = np.empty_like(values)
+    error = np.empty_like(values)
+    fma = getattr(math, "fma", None)
+    splitter = 134217729.
+    for row in range(len(root)):
+        left = root[row, :row+1, None]
+        right = image[:row+1]
+        product = left*right
+        if not np.isfinite(product).all():
+            raise DiffuseProjectionResolutionError("whitening residual products are not representable")
+        if fma is None:
+            split_left, split_right = splitter*left, splitter*right
+            if not np.isfinite(split_left).all() or not np.isfinite(split_right).all():
+                raise DiffuseProjectionResolutionError("whitening residual splitting is not representable")
+            high_left = split_left-(split_left-left)
+            high_right = split_right-(split_right-right)
+            low_left, low_right = left-high_left, right-high_right
+            with np.errstate(over="ignore", invalid="ignore"):
+                remainder = ((high_left*high_right-product)+high_left*low_right
+                             +low_left*high_right)+low_left*low_right
+        else:
+            remainder = np.asarray([[fma(float(a), float(b), -float(c))
+                for b, c in zip(right[index], product[index], strict=True)]
+                for index, a in enumerate(left[:, 0])])
+        if not np.isfinite(remainder).all():
+            raise DiffuseProjectionResolutionError("whitening residual remainder is not representable")
+        try:
+            for column in range(values.shape[1]):
+                residual[row, column] = math.fsum([float(values[row, column]),
+                    *map(float, -product[:, column]), *map(float, -remainder[:, column])])
+        except OverflowError as error:
+            raise DiffuseProjectionResolutionError("whitening residual sum is not representable") from error
+        # Include possible two-product underflow, independent of cancellation.
+        # tiny is deliberately a normal upper bound on each subnormal loss.
+        underflow = ((np.abs(product) < np.finfo(float).tiny/np.finfo(float).eps**2) & (left != 0) & (right != 0)
+                     | ((remainder != 0) & (np.abs(remainder) < np.finfo(float).tiny)))
+        error[row] = (2*np.finfo(float).eps*np.abs(residual[row])
+                      +np.sum(underflow, axis=0)*np.finfo(float).tiny)
+        if not np.isfinite(residual[row]).all() or not np.isfinite(error[row]).all():
+            raise DiffuseProjectionResolutionError("whitening residual bound is not representable")
+    return residual, error
+
+
+def _triangular_image_error(root, raw, white, source_error, inverse_bound, *, accurate=False):
+    """Bound stored L^-1 input errors separately from solve arithmetic.
+
+    Prefix uses accurate residual/refinement because its stationary L can be
+    ill conditioned. Tail spatial L is small: the standard componentwise solve
+    bound suffices and leaves the full native PARCOR history unchanged.
+    """
+    if not np.any(raw) and not np.any(white) and not np.any(source_error):
+        return np.zeros_like(white)
+    if accurate:
+        residual, residual_error = _triangular_residual(root, raw, white)
+        correction = solve_triangular(root, residual, lower=True)
+        remainder, remainder_error = _triangular_residual(root, residual, correction)
+        local = inverse_bound @ (np.abs(remainder)+remainder_error+residual_error+source_error)
+        bound = np.abs(correction)+local
+        return np.where(bound == 0, 0., np.nextafter(bound, np.inf))
+    operands = np.abs(root) @ np.abs(white)
+    residual = np.abs(raw-root@white)
+    bound = source_error+residual+_roundoff_gamma(len(root)+1)*(operands+np.abs(raw))
+    bound = inverse_bound@bound
+    return np.where(bound == 0, 0., np.nextafter(bound, np.inf))
 
 
 def _score_whitening_error(noise, raw, white, source_error, geometry):
-    """Normwise source/lattice/triangular-solve roundoff estimate, not a new map."""
-    (prefix_inverse, prefix_root), (spatial_inverse, spatial_root), gain = geometry
+    """Local prefix/tail bounds with actual full-record PARCOR error history.
+
+    source_error is componentwise in the original raw coordinates. Prefix
+    triangular-solve error is not fed back as a raw tail-history operand.
+    The tail recursion carries raw prefix history and its source error itself.
+    """
+    (prefix_inverse, prefix_root), (spatial_inverse, spatial_root) = geometry
     cut = noise.conditioning_samples
-    prefix_error = prefix_inverse*(source_error+_roundoff_gamma(cut*len(noise.temporal))*
-                                  prefix_root*float(np.linalg.norm(white[:cut])))
-    lattice_error = gain*(source_error+_roundoff_gamma(2*noise.order)*float(np.linalg.norm(raw)))
-    tail_error = spatial_inverse*(lattice_error+_roundoff_gamma(len(noise.temporal))*
-                                 spatial_root*float(np.linalg.norm(white[cut:])))
-    return prefix_error+tail_error
+    native, channels = raw.shape[:2]
+    values = raw.reshape(native, channels, -1)
+    image = white.reshape(native, channels, -1)
+    errors = source_error.reshape(values.shape)
+    prefix = _triangular_image_error(prefix_root, values[:cut].reshape(cut*channels, -1),
+        image[:cut].reshape(cut*channels, -1), errors[:cut].reshape(cut*channels, -1),
+        prefix_inverse, accurate=True)
+    tail = np.empty_like(values[cut:])
+    tail_errors = np.empty_like(tail)
+    for channel, temporal in enumerate(noise.temporal):
+        x, e = values[:, channel], errors[:, channel]
+        if temporal.order:
+            forward, backward = x[1:].copy(), x[:-1].copy()
+            ef, eb = e[1:].copy(), e[:-1].copy()
+            for index, reflection in enumerate(temporal.reflection_coefficients, 1):
+                nf, nb = forward+reflection*backward, backward+reflection*forward
+                ne_f = ef+abs(reflection)*eb+_roundoff_gamma(2)*(np.abs(forward)+abs(reflection)*np.abs(backward))
+                ne_b = eb+abs(reflection)*ef+_roundoff_gamma(2)*(np.abs(backward)+abs(reflection)*np.abs(forward))
+                if index < temporal.order:
+                    forward, backward = nf[1:], nb[:-1]
+                    ef, eb = ne_f[1:], ne_b[:-1]
+                else:
+                    tail[:, channel] = nf[cut-temporal.order:]
+                    tail_errors[:, channel] = ne_f[cut-temporal.order:]
+        else:
+            tail[:, channel], tail_errors[:, channel] = x[cut:], e[cut:]
+    rows = native-cut
+    error = _triangular_image_error(spatial_root, tail.transpose(1, 0, 2).reshape(channels, -1),
+        image[cut:].transpose(1, 0, 2).reshape(channels, -1),
+        tail_errors.transpose(1, 0, 2).reshape(channels, -1), spatial_inverse)
+    prefix_columns = _column_norms(prefix)
+    tail_columns = _column_norms(error.reshape(channels, rows, -1).reshape(channels*rows, -1))
+    return _SegmentError(float(np.linalg.norm(prefix_columns)), float(np.linalg.norm(tail_columns)),
+                         prefix_columns, tail_columns)
 
 
 def _conditional_minimizer_norm(full_mean, matrix_norm, response_norm, smallest,
@@ -1198,7 +1419,8 @@ def _conditional_minimizer_norm(full_mean, matrix_norm, response_norm, smallest,
 def _conditional_score_resolution(matrix, response, prior_root, cut, prefix_q, prefix_root,
                                   prefix_smallest, full_design, full_y, full_q, full_root,
                                   full_rhs, full_mean, remaining, shift, quadratic,
-                                  matrix_source_error, response_source_error):
+                                  matrix_source_error, response_source_error, *,
+                                  normalizer_error=0., normalizer_magnitude=0.):
     """Estimate absolute raw conditional log-density error in its actual chart.
 
     QR reconstruction and source-scale errors perturb the prefix R,c_p, then
@@ -1219,55 +1441,87 @@ def _conditional_score_resolution(matrix, response, prior_root, cut, prefix_q, p
     width = matrix.shape[1]
     prefix_design = np.vstack((matrix[:cut], prior_root))
     prefix_y = np.r_[response[:cut], np.zeros(len(prior_root))]
-    prefix_error = matrix_source_error+float(np.linalg.norm(prefix_design-prefix_q@prefix_root))
+    prefix_error = matrix_source_error.prefix+float(np.linalg.norm(prefix_design-prefix_q@prefix_root))
     prefix_error += _roundoff_gamma(width)*float(np.linalg.norm(np.abs(prefix_q)@np.abs(prefix_root)))
     prefix_relative = prefix_error/prefix_smallest
     if not np.isfinite(prefix_relative) or prefix_relative >= 1:
         raise DiffuseProjectionResolutionError("raw conditional prefix posterior is numerically unresolved")
     q_error = (2*prefix_relative/(1-prefix_relative)
-               +float(np.linalg.norm(prefix_q.T@prefix_q-np.eye(width), ord=2))
-               +_roundoff_gamma(len(prefix_q))*float(np.linalg.norm(np.abs(prefix_q).T@np.abs(prefix_q), ord=2)))
+               +float(np.linalg.norm(_row_dot(prefix_q, prefix_q)-np.eye(width), ord=2))
+               +_row_dot_gamma(len(prefix_q))*float(np.linalg.norm(_row_dot(np.abs(prefix_q), np.abs(prefix_q)), ord=2)))
     root_error = prefix_error+q_error*float(np.linalg.norm(prefix_design))
     prefix_root_relative = root_error/prefix_smallest
     if not np.isfinite(prefix_root_relative) or prefix_root_relative >= 1:
         raise DiffuseProjectionResolutionError("raw conditional compressed prefix root is numerically unresolved")
-    rhs_error = response_source_error+(q_error+_roundoff_gamma(len(prefix_q)))*float(np.linalg.norm(prefix_y))
-    design_error = matrix_source_error+root_error+float(np.linalg.norm(full_design-full_q@full_root))
-    design_error += _roundoff_gamma(width)*float(np.linalg.norm(np.abs(full_q)@np.abs(full_root)))
-    full_orthogonality = (float(np.linalg.norm(full_q.T@full_q-np.eye(width), ord=2))
-        +_roundoff_gamma(len(full_q))*float(np.linalg.norm(np.abs(full_q).T@np.abs(full_q), ord=2)))
+    rhs_error = response_source_error.prefix+q_error*float(np.linalg.norm(prefix_y))
+    rhs_dot_error = _row_dot_error(prefix_q, prefix_y)
+    rhs_error += rhs_dot_error
+    reconstruction_error = float(np.linalg.norm(full_design-full_q@full_root))
+    reconstruction_error += _roundoff_gamma(width)*float(np.linalg.norm(np.abs(full_q)@np.abs(full_root)))
+    full_orthogonality = (float(np.linalg.norm(_row_dot(full_q, full_q)-np.eye(width), ord=2))
+        +_row_dot_gamma(len(full_q))*float(np.linalg.norm(_row_dot(np.abs(full_q), np.abs(full_q)), ord=2)))
     if not np.isfinite(full_orthogonality) or full_orthogonality >= 1:
         raise DiffuseProjectionResolutionError("raw conditional tail QR is numerically unresolved")
-    projected_error = (_roundoff_gamma(len(full_y))*float(np.linalg.norm(full_y))
+    full_rhs_dot_error = _row_dot_error(full_q, full_y)
+    projected_error = (full_rhs_dot_error
         +float(np.linalg.norm(full_root@full_mean-full_rhs))
         +_roundoff_gamma(width)*float(np.linalg.norm(np.abs(full_root)@np.abs(full_mean))))
     # Q.T Q=S: the true least-squares R theta is S^-1 Q.T b, whereas
     # the computed solve uses Q.T b. Account for this optimality defect.
     optimality_error = np.sqrt(1+full_orthogonality)/(1-full_orthogonality)*(
         projected_error+full_orthogonality*float(np.linalg.norm(full_root@full_mean)))
-    data_error = response_source_error+rhs_error+optimality_error
-    smallest = float(np.linalg.svd(full_root, compute_uv=False)[-1])*np.sqrt(1-full_orthogonality)
+    data_error = response_source_error.tail+rhs_error+optimality_error
+    # Evaluate input perturbations in the full-posterior metric v=R_full theta.
+    # This is a fixed exact coordinate change for the error proof, not a
+    # replacement proper prior, a different Z span or a new score program.
+    # A strong nuisance column cannot spend its absolute error on an unrelated
+    # weak proper direction. Column norm bounds pull back through full R^-1.
+    inverse, inverse_norm = _inverse_root_geometry(full_root)
+    if matrix_source_error.tail_columns is None:
+        source_design_error = matrix_source_error.tail*inverse_norm
+    else:
+        source_design_error = float(np.linalg.norm(matrix_source_error.tail_columns@inverse))
+    design_error = source_design_error+(root_error+reconstruction_error)*inverse_norm
+    metric_reconstruction = reconstruction_error*inverse_norm
+    smallest = np.sqrt(1-full_orthogonality)-metric_reconstruction
     relative = design_error/smallest
     if not np.isfinite(relative) or relative >= 1:
         raise DiffuseProjectionResolutionError("raw conditional tail posterior is numerically unresolved")
-    # Frobenius norm upper-bounds ||A||_2; no second raw SVD/Gram program.
-    matrix_norm = float(_projection_norm_upper(
-        _projection_norm_upper(np.abs(full_design))[:, None])[0])
+    # full_design R^-1 = Q + (full_design-Q R) R^-1. The Frobenius
+    # bound below includes that reconstruction remainder in this same metric.
+    matrix_norm = np.sqrt(width*(1+full_orthogonality))+metric_reconstruction
     response_norm = float(_projection_norm_upper(np.abs(full_y)[:, None])[0])
-    coefficient_norm, minimizer_terms = _conditional_minimizer_norm(full_mean,
+    metric_mean = full_root@full_mean
+    coefficient_norm, minimizer_terms = _conditional_minimizer_norm(metric_mean,
         matrix_norm, response_norm, smallest, design_error, data_error, optimality_error)
-    residual_error = data_error+design_error*coefficient_norm
+    # The local perturbation theorem also bounds displacement from the
+    # current minimizer. Use original operand-column bounds at the observed
+    # theta and bound only its displacement in the posterior metric. This
+    # retains error on weak directions while not spending a strong slope's
+    # full absolute error on an unrelated large response coefficient.
+    if matrix_source_error.tail_columns is None:
+        directional_design_error = matrix_source_error.tail*float(np.linalg.norm(full_mean))
+    else:
+        directional_design_error = float(matrix_source_error.tail_columns@np.abs(full_mean))
+    directional_design_error += (root_error+reconstruction_error)*float(np.linalg.norm(full_mean))
+    displacement = minimizer_terms["displacement"]+optimality_error/smallest
+    residual_error = data_error+directional_design_error+design_error*displacement
     residual_error += _roundoff_gamma(width+1)*(
         float(np.linalg.norm(np.abs(full_y)+np.abs(full_design)@np.abs(full_mean))))
     quadratic_error = (2*np.sqrt(quadratic)*residual_error+residual_error**2
                        +_roundoff_gamma(len(remaining)+len(shift))*quadratic)
     logdet_error = 2*width*(-np.log1p(-relative)-np.log1p(-prefix_root_relative))
     logdet_error -= width*np.log1p(-full_orthogonality)
-    logdet_error += _roundoff_gamma(width+1)*float(
+    absolute_root_logs = float(
         np.sum(np.abs(np.log(np.abs(np.diag(prefix_root)))))
         +np.sum(np.abs(np.log(np.abs(np.diag(full_root))))))
+    # logdet is twice the difference of the two root-log reductions.
+    # Its factor two must remain in the error before density multiplies .5.
+    logdet_arithmetic_error = 2*_roundoff_gamma(width+1)*absolute_root_logs
+    logdet_error += logdet_arithmetic_error
     tail_rows = len(response)-cut
-    error = float(.5*(quadratic_error+logdet_error)+_roundoff_gamma(3)*(quadratic+tail_rows))
+    output_error = _roundoff_gamma(3)*(quadratic+2*absolute_root_logs+normalizer_magnitude+tail_rows)
+    error = float(.5*(quadratic_error+logdet_error)+normalizer_error+output_error)
     target = float(tail_rows*np.sqrt(np.finfo(float).eps))
     if not np.isfinite(error) or error > target:
         raise DiffuseProjectionResolutionError(
@@ -1276,15 +1530,29 @@ def _conditional_score_resolution(matrix, response, prior_root, cut, prefix_q, p
     return {"method": "raw_intercept_chart_prefix_QR_local_minimizer_error_estimate",
             "absolute_log_density_error_estimate": error, "absolute_log_density_error_budget": target,
             "actual_tail_scalar_rows": tail_rows, "quadratic_error_estimate": float(quadratic_error),
+            "raw_noise_normalizer_error_estimate": normalizer_error,
+            "output_density_roundoff_error_estimate": output_error,
+            "predictive_logdet_arithmetic_error_estimate": logdet_arithmetic_error,
             "prefix_matrix_relative_error_estimate": float(prefix_relative),
             "compressed_prefix_root_relative_error_estimate": float(prefix_root_relative),
             "tail_matrix_relative_error_estimate": float(relative),
             "full_QR_orthogonality_error_estimate": float(full_orthogonality),
+            "prefix_rhs_dot_error_estimate": rhs_dot_error,
+            "full_rhs_dot_error_estimate": full_rhs_dot_error,
             "observed_coefficient_norm_upper": minimizer_terms["observed"],
             "current_minimizer_norm_estimate": minimizer_terms["current"],
             "perturbed_minimizer_displacement_estimate": minimizer_terms["displacement"],
             "local_coefficient_norm_estimate": minimizer_terms["local"],
             "global_coefficient_norm_estimate": minimizer_terms["global"],
+            "directional_source_design_error_estimate": directional_design_error,
+            "posterior_metric_minimizer_displacement_estimate": displacement,
+            "prefix_source_design_error_estimate": matrix_source_error.prefix,
+            "tail_source_design_error_estimate": matrix_source_error.tail,
+            "tail_source_design_posterior_metric_error_estimate": source_design_error,
+            "conditional_error_coordinate": "fixed_actual_full_posterior_root_metric",
+            "prefix_source_response_error_estimate": response_source_error.prefix,
+            "tail_source_response_error_estimate": response_source_error.tail,
+            "dot_program": "fixed_256_row_leaves_balanced_addition_tree",
             "original_raw_identity_preserved": True, "all_input_certificate": False}
 
 
@@ -1389,19 +1657,19 @@ def _projection_arithmetic_columns(values, q, *, coefficients=None):
     absolute_values = np.abs(values)
     absq = np.abs(q)
     _projection_require_normal_products(absq, absolute_values)
-    coefficients = q.T@values if coefficients is None else coefficients
+    coefficients = _row_dot(q, values) if coefficients is None else coefficients
     if not np.isfinite(coefficients).all():
         raise DiffuseProjectionResolutionError("projection coefficients are not representable")
     _projection_require_normal_products(absq, np.abs(coefficients))
     absolute, scales = _projection_scaled_columns(absolute_values)
     rows, width = q.shape
-    g_rows, g_width = _projection_gamma_upper(rows), _projection_gamma_upper(width)
+    g_rows, g_width = _row_dot_gamma(rows), _projection_gamma_upper(width)
     projected_dot = _projection_upper_matmul(absq.T, absolute)
     dot_error = _projection_upper_product(g_rows, projected_dot)
     dot_bound = _projection_upper_add(projected_dot, dot_error)
     energy = np.zeros(values.shape[1])
-    # Only the positive bound image is blocked; the mathematical projection
-    # and its original full-row reduction count are unchanged. Avoid several
+    # The positive bound image is blocked; actual coefficient dots use the
+    # fixed short-leaf tree above. Avoid several
     # simultaneous N x response-width bound arrays for an actual long record.
     for start in range(0, rows, 4096):
         block_q, block_x = absq[start:start+4096], absolute[start:start+4096]
@@ -1471,13 +1739,13 @@ def _diffuse_qr_geometry(z, q, root, scales):
         np.linalg.norm(np.abs(q)@np.abs(root), ord=2))
     smallest = float(np.linalg.svd(root, compute_uv=False)[-1])
     subspace = reconstruction/smallest
-    orthogonality = float(np.linalg.norm(q.T@q-np.eye(len(scales)), ord=2))
-    absolute_q_squared_norm = float(np.linalg.norm(np.abs(q).T@np.abs(q), ord=2))
-    orthogonality += _roundoff_gamma(len(z))*absolute_q_squared_norm
+    orthogonality = float(np.linalg.norm(_row_dot(q, q)-np.eye(len(scales)), ord=2))
+    absolute_q_squared_norm = float(np.linalg.norm(_row_dot(np.abs(q), np.abs(q)), ord=2))
+    orthogonality += _row_dot_gamma(len(z))*absolute_q_squared_norm
     if not np.isfinite(subspace) or subspace >= 1:
         raise DiffuseProjectionResolutionError("diffuse nuisance subspace is numerically unresolved")
     projector_error = (2*subspace+subspace*subspace)/(1-subspace)+orthogonality
-    arithmetic_error = _roundoff_gamma(2*len(z)+2*len(scales)+4)*(1+absolute_q_squared_norm)
+    arithmetic_error = (2*_row_dot_gamma(len(z))+_roundoff_gamma(2*len(scales)+4))*(1+absolute_q_squared_norm)
     return subspace, orthogonality, projector_error, arithmetic_error
 
 
@@ -1499,7 +1767,7 @@ def _project_diffuse_arrays(d, y, z, q, root, scales, *, factor=None, mean=None,
         resolution = {"method": "no_diffuse_projection", "normalized_error_bound": 0.,
                       "structural_zero": False}
     else:
-        coefficients_d, coefficients_y = q.T@d, q.T@y
+        coefficients_d, coefficients_y = _row_dot(q, d), _row_dot(q, y)
         projected_d, projected_y = d-q@coefficients_d, y-q@coefficients_y
         if factor is None:
             chart, projected = np.column_stack((d, y)), np.column_stack((projected_d, projected_y))
@@ -1568,6 +1836,7 @@ def _project_diffuse_arrays(d, y, z, q, root, scales, *, factor=None, mean=None,
                       "chart_column_error_bounds": errors.tolist(),
                        "response_reference_scale": float(response_reference_scale),
                        "arithmetic_error_method": "operation_wise_outward_positive_dot_bounds",
+                      "dot_program": "fixed_256_row_leaves_balanced_addition_tree",
                       "reference_method": reference_method,
                       "subspace_error_reference": subspace,
                       "orthogonality_error_reference": orthogonality, "structural_zero": False}
@@ -1660,7 +1929,7 @@ def _fit_response_likelihood_core(prior, records, likelihood_records, *, geometr
         quotient = project_diffuse_nuisance(design, y, z, prior_factor=prior_factor,
             prior_mean=prior.mean.ravel(), require_prefix=conditioning_samples*channels)
         qz, rz, zscales = quotient.nuisance_q, quotient.nuisance_root, quotient.nuisance_scales
-        zy, zd = qz.T@y, qz.T@design
+        zy, zd = _row_dot(qz, y), _row_dot(qz, design)
         projected_y, projected_d = quotient.response, quotient.design
         update = np.column_stack((projected_d/scales, projected_y))
         record_root = np.linalg.qr(update, mode="r")

@@ -47,6 +47,7 @@ def _group_identity(group):
         # make a changed numerical sample appear to be the original input.
         "samples_sha256": array_digest(view.samples, view.onsets),
         "labels_sha256": array_digest(group.labels),
+        "native_raw_fit_input_digest": array_digest(view.samples, view.onsets, group.labels),
     }
 
 
@@ -126,6 +127,11 @@ class InnerReplayRecorder:
         self.prefix_programs: dict[str, Any] = {}
         self.prefix_context: dict[str, Any] = {}
         self.prefix_future_scores: list[dict[str, Any]] = []
+        self.native_fit_inputs: dict[int, dict[str, Any]] = {}
+
+    def record_native_fit_inputs(self, model, inputs):
+        """Capture the original fit owner's actual data operands, never a wrapper."""
+        self.native_fit_inputs[id(model)] = inputs
 
     def record_prefix_programs(self, programs, *, prefix, expert_programs, program,
                                source_checkpoints=None, context=None):
@@ -144,9 +150,10 @@ class InnerReplayRecorder:
             "source_checkpoints": {} if source_checkpoints is None else dict(source_checkpoints),
             "context": context,
         }
-        from research.prefix_inner_replay import prefix_input_identity
+        from research.prefix_inner_replay import prefix_input_identity, prefix_native_fit_inputs
 
         self.prefix_fit_declaration["input_identity"] = prefix_input_identity(prefix)
+        self.prefix_fit_declaration["native_fit_inputs"] = prefix_native_fit_inputs(prefix, expert_programs)
 
     def record_prefix_future_score(self, strategy, *, view, evidence):
         """Capture an already-scored label-free future view from this run."""

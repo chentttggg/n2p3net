@@ -245,7 +245,7 @@ def test_actual_conditional_score_consumes_cached_precision_and_preserves_diagno
     rounded[1, 1] = np.nextafter(rounded[1, 1], np.inf)
     retained = replace(model, kernel_row_covariance=rounded)
     calls = []
-    original = owner._conditional_prediction
+    original = owner._conditional_posterior
 
     def capture(*args, **kwargs):
         assert kwargs["prior_precision_root"] is not None
@@ -256,7 +256,7 @@ def test_actual_conditional_score_consumes_cached_precision_and_preserves_diagno
     def no_rebuild(*args, **kwargs):
         raise AssertionError("held score rebuilt the actual C posterior")
 
-    monkeypatch.setattr(owner, "_conditional_prediction", capture)
+    monkeypatch.setattr(owner, "_conditional_posterior", capture)
     monkeypatch.setattr(owner, "_kernel_posterior_factors", no_rebuild)
     values, settings = held(model)
     before = model.score(*values, **settings)

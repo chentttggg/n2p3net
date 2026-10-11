@@ -1,10 +1,12 @@
 # 当前执行计划
 
-2026-10-11当前科研按[123项进展与下一步](evidence/wishlist_progress_20261010.zh.md)及[科研恢复与集成](evidence/research_resume_20261011.zh.md)并行推进：B03 strict nested/source-study 与同一次 run 的 inner producer replay 已完成 bounded 软件验收；B07 `/4` native family、B09 exact structural null/语义重核继续保其有限边界。B12 requested-manifest修后原15项通过，真实serial最终report与重复finalize摘要一致；CalibrationPrefix保存重放/public caller已独立复签，尚未接候选程序strict nested选择。原云producer的八人候选面板已交付完整requested零拟合恢复汇总，配对效应及原始载荷按其来源继续核查；新科研协议不追签旧结果。B11时间shape/ERP-span、B07 off-grid/history、B13成人确认继续独立推进。公共云执行源码由云窗口独占，所有15块仍有独立剩余出口。
+当前科研按[123项进展](evidence/wishlist_progress_20261010.zh.md)和四个主题页并行推进：B03完整组与真正prefix整程序nested选择、同run inner/final保存重放及public parent准入已有软件出口；当前P1数值稳定化、source cache/shared score、conditional白化和逐decision horizon已集成。B07 `/4`家族与B09可识别效应保其已有出口，下一真实opt-in独立future评价、完整公共队列、B07 off-grid/history和B13成人确认继续按各块依赖推进。旧producer与失败保原身份，云窗口拥有公共执行源码和资源调度。
 
-P1 paired `/2`接口已按[修后独立软件验收](evidence/research_resume_20261011.zh.md#p1软件入口修后验收)合入：冻结现代response完整M/R/原Σ物理factor，actual source全requested及真实C标签、MembershipDecision和共同paired指标保持。原两处科学关系RED已在fit前拒绝。下一执行8人×2noise、同C/prefix32的16格native面板，代码验收与native结果分别解释；不阻塞B12基础公共程序。
+P1 paired `/2`接口与数值稳定化均已接受：8人16格原面板保原fit/save/load及失败身份；新数值consumer在A01两arm各36候选恢复概率输出，新增fit为0。真实reduction、nuisance换图与posterior metric误差链已经逐读并通过独立反例。下一执行其余14个保存态cell，再按完整requested支持分析，见[当前响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。B12基础公共程序独立前进。
 
-原云候选面板152共同请求与80原配对账本已读数收口，见[失败分母与配对效应](evidence/research_resume_20261011.zh.md#原云候选面板完整分母与配对读数)。grouped K800/2000因paired NLL增加不通过原开发门；source→scratch方向K2000部分对照是scratch改善，不能倒写迁移收益。该原producer结果不等同新prefix协议执行；下一研究核合法C内整程序选择和概率风险，不从未来成绩选默认。
+原云候选面板152共同请求与80原配对账本已读数收口，见[失败分母与配对效应](evidence/public_evaluation.zh.md#原云候选面板完整分母与配对读数)。grouped K800/2000因paired NLL增加不通过原开发门；source→scratch方向K2000部分对照是scratch改善，不能倒写迁移收益。该原producer结果不等同新prefix协议执行；下一研究核合法C内整程序选择和概率风险，不从未来成绩选默认。
+
+BI2014a按[逐库队列](evidence/public_evaluation.zh.md#跨数据集队列)推进。61人CSV清点确认episode深度可变；完整episode保留自身全部repetitions及共同未来分母，固定R8不足以支撑主终点。当前补finite-zero-none/candidate入口、实际Cz6观测mask、共同raw cutoff和逐decision horizon/save-load调用链。每库先封模型、结果和终态，再解锁下一库。
 
 2026-10-08最新执行规则覆盖下文待跑三seed数量：日常科研使用20260918单个完整source→target程序，重大版本校验才使用20260918/19/20三个独立程序。当前公共科研对应四个source checkpoint流程，各自选择与fresh refit，初始八个逻辑NN fit；B12两个公共面板继续按真实预算和requested账本验收。历史三seed设计与已执行身份不改写。科研线接B08可识别prior、B07字典可移植与B05/B06/B09机制，B14云底座和B12基础矩阵并行；各项代码、软件验证、公共效能分别见[集成状态](evidence/research_integration_20261008.zh.md)。
 
@@ -24,12 +26,12 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 
 | 块 | 已交付出口 | 仍需完成 |
 |---|---|---|
-| B00 比较/选择 | requested风险、配对、失败与概率覆盖owner；最大/错时置信度、分箱ECE与同J uniform contrast | 正式风险阈值、全流程选择与独立效能验收 |
+| B00 比较/选择 | requested风险、配对、失败与概率覆盖owner；最大/错时置信度、分箱ECE与同J uniform contrast；逐decision真实horizon计划与同分母accounting/paired接口 | 正式风险阈值、全流程选择与独立效能验收 |
 | B01 信号/支持 | BNCI合法原字节、Cal/held无标签view与时间履历 | 其他candidate数据adapter与硬件/光学证据 |
 | B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
-| B03 校准/混合 | 固定池/分组温度、完整组strict nested API；同run inner持久重放、prefix actual OOF/future与parent混合概率准入；已评估K200单组/partial80与小repetition边界 | prefix整程序strict nested选择、partial-label/refit剂量与nuisance程序一致性、复杂gating与独立泛化；K200 grouped保结构性不可用，fixed作为基线 |
+| B03 校准/混合 | 固定池/分组温度、完整组与真正prefix整程序strict nested；同run graph/native/OOF/future重放、温度学习关系及public parent准入；K200单组/partial80与小repetition边界 | 真实opt-in独立future评价、partial-label专用学习入口、复杂gating与独立泛化；原K200 grouped保程序结构性不可用，fixed基线保持 |
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
-| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec、given-noise physical-prior；modern M/R/原Σ转换与完整source/C权限paired软件入口；8人16格执行封口但16 held均数值门不可用 | 稳定nuisance basis与prefix/tail局部误差界、finite endpoint交互与joint MLE；不把本轮0 coverage当效能 |
+| B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec、given-noise physical-prior；modern M/R/原Σ转换与完整source/C权限paired入口；16格原失败终态；稳定flat chart/dot/local bound获准，A01两arm冻结W态恢复概率输出；双oracle定位private真实平稳law编译偏差 | 14个冻结W保存态续评、真实PARCOR/cross-channel平稳prefix确定性编译与保存加载、finite endpoint交互与joint MLE |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
 | B07 字典/历史 | A0/A1 portable、cubic `/3`及raised/multiscale `/4` native；actual prior/chart/容量/OOF/保存链，有限history与scalar latent reference | off-grid/phase/wavelet、硬斜率、完整history/权限、actual operator/support、多channel随机效应与效能；multiscale换坐标不当新增span |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
@@ -38,7 +40,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B11 动态/稳健 | noise-only Gamma、proper全C/test联合尺度；实际行数增广QR和显式β条件积分接研究owner；共同flat-Z小参考及源尺度反例 | 真实K0/独立noise/C权限、flat长记录采样/持久包、动态state、连续预测准确性与完整效能；多模态不由诊断保证 |
 | B12 公共流程 | 独立C/test/K0、完整requested/final账本；原producer四库binary恢复与八人candidate完整分母/配对读数各按原身份 | 新集成科学协议下完整单seed两面板、源/目标/资源及终态统一接受、独立泛化；旧结果不追签新协议 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
-| B14 工程/吞吐 | B12同resource owner/完整账；旧完整candidate恢复、source prepared与共享评分实测云候选，纯CPU尾三拓扑读数；source cache/shared current-view scoring已合入并完成独立复签 | 统一新source实际25CPU/4GPU能力及ready工作路由，完整矩阵吞吐、跨host整包和新study owner边界 |
+| B14 工程/吞吐 | B12同resource owner/完整账；旧完整candidate恢复、source prepared与共享评分实测云候选，纯CPU尾三拓扑读数；source cache/shared current-view scoring及conditional公共白化已合入并完成相关复核 | 统一新source实际25CPU/4GPU能力及ready工作路由，完整矩阵吞吐、跨host整包和新study owner边界 |
 
 2026-10-10公共accepted496的actual-length raw score仍按其原数值界解释；新科研树已整合operation-wise投影界与local minimizer cap611b，精度政策和density接口不变。原3749两个7975×8 synthetic候选通过，新611b只核ratio域/连接及整合合同，不追签长记录。flat nuisance通用长记录采样、产品包、全输入精度和公共效能仍各自未完成。主线并行推进其余愿望，不以一个数值门阻塞所有方向，见[当前进展](evidence/wishlist_progress_20261010.zh.md)与[原机制证据](evidence/research_mechanisms_20261009.zh.md)。
 
