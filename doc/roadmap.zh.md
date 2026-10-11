@@ -1,6 +1,6 @@
 # 当前执行计划
 
-2026-10-11当前科研按[123项进展与下一步](evidence/wishlist_progress_20261010.zh.md)及[科研恢复与集成](evidence/execution_and_integration.zh.md)并行推进：B03 strict nested/source-study 与同一次 run 的 inner producer replay 已完成 bounded 软件验收；B07 `/4` native family、B09 exact structural null/语义重核继续保其有限边界。B12 requested-manifest修后原15项通过，真实serial最终report与重复finalize摘要一致；CalibrationPrefix保存重放/public caller已独立复签，尚未接候选程序strict nested选择。原云producer的八人候选面板已交付完整requested零拟合恢复汇总，配对效应及原始载荷按其来源继续核查；新科研协议不追签旧结果。B11时间shape/ERP-span、B07 off-grid/history、B13成人确认继续独立推进。公共云执行源码由云窗口独占，所有15块仍有独立剩余出口。
+当前科研按[123项进展](evidence/wishlist_progress_20261010.zh.md)和四个主题页并行推进：B03完整组与真正prefix整程序nested选择、同run inner/final保存重放及public parent准入已有软件出口；当前P1数值稳定化、source cache/shared score、conditional白化和逐decision horizon已集成。B07 `/4`家族与B09可识别效应保其已有出口，下一真实opt-in独立future评价、完整公共队列、B07 off-grid/history和B13成人确认继续按各块依赖推进。旧producer与失败保原身份，云窗口拥有公共执行源码和资源调度。
 
 P1 paired `/2`接口与数值稳定化均已接受：8人16格原面板保原fit/save/load及失败身份；新数值consumer在A01两arm各36候选恢复概率输出，新增fit为0。真实reduction、nuisance换图与posterior metric误差链已经逐读并通过独立反例。下一执行其余14个保存态cell，再按完整requested支持分析，见[当前响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。B12基础公共程序独立前进。
 
@@ -29,7 +29,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B00 比较/选择 | requested风险、配对、失败与概率覆盖owner；最大/错时置信度、分箱ECE与同J uniform contrast；逐decision真实horizon计划与同分母accounting/paired接口 | 正式风险阈值、全流程选择与独立效能验收 |
 | B01 信号/支持 | BNCI合法原字节、Cal/held无标签view与时间履历 | 其他candidate数据adapter与硬件/光学证据 |
 | B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
-| B03 校准/混合 | 固定池/分组温度、完整组strict nested API；同run inner持久重放、prefix actual OOF/future与parent混合概率准入；已评估K200单组/partial80与小repetition边界 | prefix整程序strict nested选择、partial-label/refit剂量与nuisance程序一致性、复杂gating与独立泛化；K200 grouped保结构性不可用，fixed作为基线 |
+| B03 校准/混合 | 固定池/分组温度、完整组与真正prefix整程序strict nested；同run graph/native/OOF/future重放、温度学习关系及public parent准入；K200单组/partial80与小repetition边界 | 真实opt-in独立future评价、partial-label专用学习入口、复杂gating与独立泛化；原K200 grouped保程序结构性不可用，fixed基线保持 |
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
 | B05 AR/噪声 | 固定32前缀/M1、shared/private一般vec、given-noise physical-prior；modern M/R/原Σ转换与完整source/C权限paired入口；16格原失败终态；稳定flat chart/dot/local bound获准，A01两arm原保存态恢复概率输出 | 其余14个保存态新消费者评价、finite endpoint交互与joint MLE；后续同支持概率分析 |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |

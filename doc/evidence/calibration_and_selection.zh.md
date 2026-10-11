@@ -6,7 +6,7 @@
 
 fixed使用温度1，grouped按完整selection生成C内OOF概率，并为参与校准的专家学习温度；两个程序共用最终专家。现有K200最终拟合保全部200个raw标签和196个合法trial，完整selection有一个，后80个标签已经参与合法final fit。
 
-整程序选择的实现正在隔离分支`codex/prefix-program-selection`推进：每个h/v从原source重编真正更早的prefix，完整运行候选学习算法，再对held group评分；最终选定程序用原授权K全部合法标签refit。候选可以明确包含“单prefix final + group-LOO温度inner”；inner/final剂量不同是这个算法的一部分。候选排序复用已有hit/NLL/Brier与baseline policy，保存同run模型/输出，加载后零拟合重放，父进程从真实专家重算混合概率。
+整程序选择已作为opt-in接入实际公共caller：每个h/v从原source重编真正更早的prefix，完整运行候选学习算法，再对held group评分；最终选定程序用原授权K全部合法标签refit。候选明确包含“单prefix final + group-LOO温度inner”；inner/final剂量不同是这个算法的一部分。排序复用已有hit/NLL/Brier与baseline policy，同run模型/输出保存后零新EEG拟合重放，父进程从真实专家重算混合概率。当前入口与接受来源见[整程序接线与复签](#整程序接线与复签)。
 
 实际fitter样本、标签、prior/noise/statistics与graph共同关联。selection行数下限是预声明策略参数；单组也可定义学习算法，later独立queue用于评价最终程序。当前group-LOO入口的三组下限继续保留其原程序身份。
 
@@ -28,7 +28,7 @@ A01的后80个标签可单独编为`[11477,16648)`的suffix scope：80 raw label
 
 审查复现：重复/重叠raw或record未在split前拒绝、decision身份延迟拒绝、event身份重复被接受、同final数值包可重写label authority、选定温度子集与actual final不一致，以及可变expert wrapper漂移。修复以原ensemble owner的`validate_calibration_ensemble_groups`统一完整roster准入；`_calibration_expert_fit_digest`复用原fit身份公式，constructor/load将最终scope、labels、checkpoint角色和温度子集绑定回原FittedEnsemble。
 
-本切片交付完整组科研API及final包；opt-in inner producer capture/replay及公共B12 prefix温度调用已在后续接通。真正prefix整程序选择正在实现，BrainSync尚未接该选择程序。W06.11/W09.06的程序隔离已有出口；W07.13 gating与新participant评价另行推进。
+本切片交付完整组科研API及final包；opt-in inner producer capture/replay、公共B12 prefix温度调用及真正prefix整程序选择已在后续接通。BrainSync入口按工作站计划推进。W06.11/W09.06的程序隔离已有软件出口；W07.13 gating与新participant评价另行推进。
 
 ## 原 MAT 保存重放验收
 
@@ -49,3 +49,13 @@ A01的后80个标签可单独编为`[11477,16648)`的suffix scope：80 raw label
 这是实际prefix/public候选runner的软件接线；它仍没有候选程序的strict nested selection或learned gating，不完成公共效能、跨host整包或成人确认。原MAT窄输入验证另用冻结源码执行，不把上述synthetic通过重签成公共结果。
 
 原A01 MAT后续窄验证已exit0：从clean已接受源码按实际工作字节冻结971成员（保CRLF/LF字节），只跑预声明raw+Toeplitz、K200/K800、fixed/grouped两个程序与共同独立未来队列。29 requested decisions产生232 prediction行；每K捕获58个future strategy行。raw使用200/800标签，trial实际使用196/796标签；K200 grouped不足组具名不可用，K800保6个真实inner producer并成功重放。所有模型load/future replay及实际parent mixture准入通过，原MAT前后SHA一致；源checkpoint拟合0，没有用未来truth选方。它只证明原公共输入的软件链，未签收分类效能。源码/原MAT/脚本/退出码/包摘要见[原MAT前缀绑定](../assets/research_resume_20261011/native_prefix_replay_binding.json)。
+
+## 整程序接线与复签
+
+`fit_nested_prefix_selection`复用原fitter执行完整`A(P)`，`CalibrationPrefixCompiler`只从verified MAT bytes解析一次并编译各真实before-group scope。候选共享结构h schedule，数值失败仍占原请求；`minimum_selection_rows`显式写入计划，结构不足按原baseline policy处理。outer只描述同一参与者的相关learning path，final独立future另行评价。
+
+`prefix_selection_replay`保存同run的h/v/final graph和各原模型包；actual replay从原compiler重建所有prefix及native输入，核真实h概率和选方规则。`prefix_inner_replay/2`绑定final与inner raw/trial原生输入，旧`/1`继续由原冻结owner重放。温度通过唯一`temperature_from_oof`只读复核同一有限meta learner；每包一次小优化，新EEG fit为0。
+
+公共plan新增`prefix_selection`（schema、output_name、baseline_name、显式minimum_selection_rows及candidate records），在原fixed/grouped输出之外追加具名selected请求。整个future捕获、保存、原输入graph重放完成后才封预测；parent重编原MAT并核实际selected mixture。selector的started/failed/partial由自己的receipts持有；final ExpectedSubjectError的完整future保留typed不可用。
+
+真实C800改签C200、full-C meta搬早期v、h概率篡改、温度全摘要自签、constructor自签source权限、selector中断receipt混用等反例已闭合。作者`d0edc170…`的八个文件经root逐读、原字节集成，含当前continuous白化/P1/新horizon依赖的12项相关验证全部通过，Ruff与diff检查通过，见[接受绑定](../assets/research_resume_20261011/prefix_program_acceptance_binding.json)。旧快照/模型保原执行身份；下一步冻结真实opt-in计划，评价完整独立future队列。

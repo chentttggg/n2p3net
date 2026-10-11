@@ -13,7 +13,7 @@
 
 ## 当前研究
 
-当前按[愿望清单进展](evidence/wishlist_progress_20261010.zh.md)推进123项。B03完整组nested/inner producer replay、B07 `/4` native family、B09可识别效应及B12账本/prefix保存重放已有软件出口；source cache/shared评分已集成。完整prefix选择与P1数值稳定化在独立作者/审阅者两路推进；P1八人16格原生面板已完成，保存态重现数值不可用。原云候选面板完整分母和100行配对读数已复核。BI2014a真实CSV清点已完成，当前接合观测通道、完整episode和finite-zero输入，随后逐库执行。结论集中维护在[校准与选择](evidence/calibration_and_selection.zh.md)、[响应与噪声](evidence/response_and_noise.zh.md)、[公共评估](evidence/public_evaluation.zh.md)和[执行与集成](evidence/execution_and_integration.zh.md)；六指南持有活动规范，各产物保持自己的来源与分母。
+当前按[愿望清单进展](evidence/wishlist_progress_20261010.zh.md)推进123项。B03真正prefix整程序选择及actual graph/温度重放/public parent准入已经集成；P1数值稳定化在A01恢复两arm完整概率，剩14个保存态按新consumer续接。source cache/shared score、conditional公共白化及逐decision horizon已接入。原云候选面板完整分母和100行配对读数已复核；BI2014a明确首五episode预算、完整R主端点和独立terminal censor账本，三臂由云窗口执行并封各库终态。结论集中维护在[校准与选择](evidence/calibration_and_selection.zh.md)、[响应与噪声](evidence/response_and_noise.zh.md)、[公共评估](evidence/public_evaluation.zh.md)和[执行与集成](evidence/execution_and_integration.zh.md)；六指南持有活动规范，各产物保持自己的来源与分母。
 
 科研窗口负责科学合同与代码最终集成，云端窗口负责唯一执行调度。科研用一个完整 source→target seed，大版本校验才三个；两窗口合计最多10并发，科研子代理没有我方时间或额度上限。职责内自主推进，只集中同步重要交付、接口变化和阻塞。
 
