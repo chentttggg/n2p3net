@@ -193,6 +193,18 @@ def execute_fit(job):
         return dict(id=task["id"], status="completed", seconds=record["seconds"])
 
 
+def missing_source_error(sources: Path, source_task: str) -> str | None:
+    """A missing source result is final once the source matrix has stopped running."""
+
+    progress = sources / "progress.json"
+    if not progress.exists():
+        return None
+    status = json.loads(progress.read_text(encoding="utf-8")).get("status")
+    if status in {"completed", "failed"}:
+        return f"source matrix ended ({status}) without a result for {source_task}"
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prepared", type=Path, required=True)
@@ -233,6 +245,10 @@ def main():
                     break
                 source_path = args.sources / task["source_task"] / "result.json"
                 if not source_path.exists():
+                    missing = missing_source_error(args.sources, task["source_task"])
+                    if missing is not None:
+                        results.append(dict(id=task["id"], status="failed", error=missing))
+                        pending.remove(task)
                     continue
                 source_record = json.loads(source_path.read_text())
                 checkpoint = source_record["trajectory"]["checkpoints"]["4000"]
@@ -261,9 +277,11 @@ def main():
             atomic_write_json(args.output / "progress.json", dict(status="running", results=results,
                 active=[t["id"] for t in active.values()], pending=[t["id"] for t in pending],
                 plan_sha256=plan_digest, plan_path=str(plan_path)))
-    atomic_write_json(args.output / "progress.json", dict(status="completed", results=results,
-        failed_fits=sum(r["status"] != "completed" for r in results),
-        plan_sha256=plan_digest, plan_path=str(plan_path)))
+    failed = sum(r["status"] != "completed" for r in results)
+    atomic_write_json(args.output / "progress.json", dict(status="failed" if failed else "completed",
+        results=results, failed_fits=failed, plan_sha256=plan_digest, plan_path=str(plan_path)))
+    if failed:
+        raise RuntimeError("personal EOG matrix has unresolved failures; see progress.json")
 
 
 if __name__ == "__main__":
