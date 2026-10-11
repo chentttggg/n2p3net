@@ -107,3 +107,19 @@ def test_fit_galia_cli_fast_aligns_target_calibration(tmp_path: Path) -> None:
         assert archive["aligned_features"].shape == (12, 4)
         assert archive["domain_ids"].tolist() == ["T"] * 12
         assert archive["fast_alignment_state_digest"].item() == fast["state_digest"]
+
+
+def test_fit_galia_cli_refuses_existing_outputs_before_writing_any(tmp_path: Path) -> None:
+    rng = np.random.default_rng(47)
+    source_a, source_b, target = tmp_path / "a.npz", tmp_path / "b.npz", tmp_path / "target.npz"
+    np.savez(source_a, features=rng.normal(size=(30, 4)))
+    np.savez(source_b, features=rng.normal(size=(30, 4)))
+    np.savez(target, features=rng.normal(size=(12, 4)))
+    state_path = tmp_path / "state.json"
+    state_path.write_text("{}", encoding="utf-8")
+    fast_path = tmp_path / "target-fast.npz"
+    with pytest.raises(FileExistsError, match="ACW output already exists"):
+        main(["--source", f"A={source_a}", "--source", f"B={source_b}", "--output", str(state_path),
+              "--target-calibration", str(target), "--fast-output", str(fast_path)])
+    assert not fast_path.exists()
+    assert state_path.read_text(encoding="utf-8") == "{}"

@@ -103,12 +103,20 @@ def main(argv: list[str] | None = None) -> None:
             max_iter=args.max_iter,
         )
     )
-    state = adapter.fit(domains)
     if (args.target_calibration is None) != (args.fast_output is None):
         parser.error("--target-calibration and --fast-output must be supplied together")
-    if args.target_calibration is not None and args.fast_output is not None:
-        if args.fast_output.suffix.lower() != ".npz":
-            parser.error("--fast-output must end with .npz")
+    if args.fast_output is not None and args.fast_output.suffix.lower() != ".npz":
+        parser.error("--fast-output must end with .npz")
+    # Refuse every existing output before writing any, so a collision cannot leave a partial run behind.
+    output = args.output.resolve(strict=False)
+    aligned_output = None if args.aligned_output is None else args.aligned_output.resolve(strict=False)
+    fast_output = None if args.fast_output is None else args.fast_output.resolve(strict=False)
+    for label, path in (("ACW output", output), ("aligned ACW output", aligned_output),
+                        ("fast-aligned output", fast_output)):
+        if path is not None and path.exists():
+            raise FileExistsError(f"{label} already exists: {path}")
+    state = adapter.fit(domains)
+    if args.target_calibration is not None:
         target = _load_features(args.target_calibration, args.feature_key)
         fast = state.fast_alignment(
             target,
@@ -116,9 +124,6 @@ def main(argv: list[str] | None = None) -> None:
             fit_scope=args.fast_fit_scope,
             regularization=args.regularization,
         )
-        fast_output = args.fast_output.resolve(strict=False)
-        if fast_output.exists():
-            raise FileExistsError(f"fast-aligned output already exists: {fast_output}")
         aligned_target = state.transform_fast(target, fast)
         fast_output.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(
@@ -133,14 +138,6 @@ def main(argv: list[str] | None = None) -> None:
     else:
         fast_record = None
 
-    output = args.output.resolve(strict=False)
-    if output.exists():
-        raise FileExistsError(f"ACW output already exists: {output}")
-    aligned_output = (
-        None if args.aligned_output is None else args.aligned_output.resolve(strict=False)
-    )
-    if aligned_output is not None and aligned_output.exists():
-        raise FileExistsError(f"aligned ACW output already exists: {aligned_output}")
     record = {
         "schema": "n2p3_acw_fit/1",
         "state": state.record(),
