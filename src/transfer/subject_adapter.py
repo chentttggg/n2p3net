@@ -1090,8 +1090,7 @@ class SubjectAdapter:
                     self.trunk,
                     Xt_train,
                     device=self.device,
-                    eval_buffer_source="source_domain",
-                    domain_index=0,
+                    channel_masks=train_channels,
                 )
             if (
                 live_splitbn
@@ -1456,8 +1455,7 @@ class SubjectAdapter:
                 self.trunk,
                 inputs,
                 device=self.device,
-                eval_buffer_source="source_domain",
-                domain_index=0,
+                channel_masks=channel_masks,
             )
 
         trunk_trainable = self.config.head_kind == "full_fine"

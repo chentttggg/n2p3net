@@ -556,17 +556,18 @@ def install_splitbn_target_calibration_buffers(
     batch_size: int = 256,
     eval_buffer_source: str = SPLITBN_SOURCE_DOMAIN_BUFFER,
     domain_index: int = 0,
+    channel_masks: torch.Tensor | list[torch.Tensor] | None = None,
 ) -> dict[str, dict[str, float | int | str]]:
     """Compute and install frozen target-calibration buffers for every SplitBN site.
 
-    The calibration forward runs in eval mode so neither source-domain nor target
-    running statistics are mutated while the pre-normalization activations are
-    captured. By default the forward normalizes with the source-domain buffer at
-    ``domain_index`` (``eval_buffer_source="source_domain"``); pass
-    ``eval_buffer_source="target_calibration"`` to normalize with target buffers
-    when they have already been installed. If every target buffer is already
-    frozen, the returned statistics are diagnostic only and the installed values
-    are left untouched.
+    The calibration forwards run in eval mode so no running statistics are mutated.
+    Sites are installed in execution order: each site's buffers are estimated from
+    the activations it receives at evaluation, i.e. with every upstream site already
+    normalizing with its installed target buffers. ``eval_buffer_source`` and
+    ``domain_index`` therefore select only the forward of the diagnostic pass taken
+    when every target buffer is already frozen; installed values are then left
+    untouched. ``channel_masks`` align with ``inputs`` and are required for
+    observed-channel-norm models, whose zero-filled slots must not enter the moments.
     """
 
     if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
@@ -623,114 +624,146 @@ def install_splitbn_target_calibration_buffers(
             raise ValueError(f"calibration batch {chunk_index} is empty.")
     resolved_device = torch.device(device)
     chunks = [chunk.detach().to(resolved_device) for chunk in raw_chunks]
+    if channel_masks is None:
+        if bool(getattr(model, "observed_channel_norm", False)):
+            raise ValueError("observed-channel-norm models require the calibration channel_masks.")
+        mask_chunks: list[torch.Tensor | None] = [None] * len(chunks)
+    else:
+        supplied = [channel_masks] if isinstance(channel_masks, torch.Tensor) else list(channel_masks)
+        if len(supplied) != len(chunks) or any(
+            tuple(mask.shape) != tuple(chunk.shape[:2]) for mask, chunk in zip(supplied, chunks, strict=True)
+        ):
+            raise ValueError("channel_masks must align with the calibration batches as (B, C).")
+        mask_chunks = [mask.detach().to(device=resolved_device, dtype=torch.bool) for mask in supplied]
 
     forward = getattr(model, "forward_features", None)
     if not callable(forward):
         forward = model.forward
 
-    captured: dict[str, torch.Tensor | None] = {path: None for path, _ in splitbn_modules}
-
-    def capture_hook(
-        module: nn.Module,
-        args: tuple[torch.Tensor, ...],
-        *,
-        module_path: str,
-    ) -> None:
-        if not args or not isinstance(args[0], torch.Tensor):
-            raise RuntimeError(f"SplitBN module {module_path!r} received no tensor input.")
-        captured[module_path] = args[0].detach()
-
-    handles = [
-        module.register_forward_pre_hook(
-            lambda _module, _args, _path=path: capture_hook(
-                _module, _args, module_path=_path
-            )
-        )
-        for path, module in splitbn_modules
-    ]
     means: dict[str, torch.Tensor] = {}
-    variances: dict[str, torch.Tensor] = {}
     second_moments: dict[str, torch.Tensor] = {}
     counts: dict[str, int] = {}
+
+    def accumulate(path: str, module: nn.Module, value: torch.Tensor) -> None:
+        if value.ndim < 2 or value.shape[1] != module.num_features:
+            raise RuntimeError(
+                f"SplitBN module {path!r} captured malformed pre-normalization "
+                f"input {tuple(value.shape)}."
+            )
+        reduction = (0, *tuple(range(2, value.ndim)))
+        count = value.numel() // int(module.num_features)
+        chunk_mean = value.double().mean(dim=reduction)
+        chunk_variance = value.double().var(dim=reduction, unbiased=False)
+        previous_count = counts.get(path, 0)
+        total_count = previous_count + count
+        if path not in means:
+            means[path] = chunk_mean.clone()
+            second_moments[path] = chunk_variance * count
+        else:
+            previous_mean = means[path]
+            delta = chunk_mean - previous_mean
+            updated_mean = previous_mean + delta * (count / total_count)
+            delta_after = chunk_mean - updated_mean
+            second_moments[path] = (
+                second_moments[path] + chunk_variance * count + delta * delta_after * count
+            )
+            means[path] = updated_mean
+        counts[path] = total_count
+
+    class _SiteCapturedError(Exception):
+        """Stops a staged forward once the next uninstalled site has its input."""
+
+    def calibration_pass(sites, forward_kwargs, *, stop_at_first: bool) -> tuple[int, list[str]]:
+        reached: list[str] = []
+
+        def hook(module: nn.Module, args: tuple[torch.Tensor, ...], *, module_path: str) -> None:
+            if not args or not isinstance(args[0], torch.Tensor):
+                raise RuntimeError(f"SplitBN module {module_path!r} received no tensor input.")
+            accumulate(module_path, module, args[0].detach())
+            reached.append(module_path)
+            if stop_at_first:
+                raise _SiteCapturedError
+
+        handles = [
+            module.register_forward_pre_hook(
+                lambda _module, _args, _path=path: hook(_module, _args, module_path=_path)
+            )
+            for path, module in sites
+        ]
+        rows = 0
+        expected = sorted(path for path, _ in sites)
+        try:
+            for chunk, mask in zip(chunks, mask_chunks, strict=True):
+                for start in range(0, chunk.shape[0], batch_size):
+                    batch = chunk[start : start + batch_size]
+                    kwargs = forward_kwargs(batch)
+                    if mask is not None:
+                        kwargs["channel_mask"] = mask[start : start + batch_size]
+                    before = len(reached)
+                    try:
+                        forward(batch, **kwargs)
+                    except _SiteCapturedError:
+                        pass
+                    batch_reached = reached[before:]
+                    if stop_at_first and (len(batch_reached) != 1 or batch_reached[0] != reached[0]):
+                        raise RuntimeError("SplitBN execution order differs between calibration batches.")
+                    if not stop_at_first and sorted(batch_reached) != expected:
+                        raise RuntimeError(
+                            "every SplitBN module must be reached exactly once per calibration "
+                            "forward; the model architecture is unsupported."
+                        )
+                    rows += int(batch.shape[0])
+        finally:
+            for handle in handles:
+                handle.remove()
+        return rows, reached
+
+    def diagnostic_kwargs(batch: torch.Tensor) -> dict[str, object]:
+        if eval_buffer_source == SPLITBN_SOURCE_DOMAIN_BUFFER:
+            return {
+                "eval_buffer_source": SPLITBN_SOURCE_DOMAIN_BUFFER,
+                "domain_indices": torch.full(
+                    (batch.shape[0],), int(domain_index), device=batch.device, dtype=torch.long
+                ),
+            }
+        return {"eval_buffer_source": eval_buffer_source}
+
+    variances: dict[str, torch.Tensor] = {}
     calibration_rows = 0
     was_training = bool(model.training)
     model.eval()
     try:
         with torch.no_grad():
-            for chunk in chunks:
-                for path in captured:
-                    captured[path] = None
-                for start in range(0, chunk.shape[0], batch_size):
-                    batch = chunk[start : start + batch_size]
-                    if eval_buffer_source == SPLITBN_SOURCE_DOMAIN_BUFFER:
-                        domain_indices = torch.full(
-                            (batch.shape[0],),
-                            int(domain_index),
-                            device=batch.device,
-                            dtype=torch.long,
-                        )
-                        forward_kwargs: dict[str, object] = {
-                            "eval_buffer_source": SPLITBN_SOURCE_DOMAIN_BUFFER,
-                            "domain_indices": domain_indices,
-                        }
-                    else:
-                        forward_kwargs = {"eval_buffer_source": eval_buffer_source}
-                    forward(batch, **forward_kwargs)
-                    calibration_rows += int(batch.shape[0])
-                    for path, module in splitbn_modules:
-                        value = captured[path]
-                        if value is None:
-                            raise RuntimeError(
-                                f"SplitBN module {path!r} was not reached during the "
-                                "calibration forward; the model architecture is unsupported."
-                            )
-                        if value.ndim < 2 or value.shape[1] != module.num_features:
-                            raise RuntimeError(
-                                f"SplitBN module {path!r} captured malformed pre-normalization "
-                                f"input {tuple(value.shape)}."
-                            )
-                        reduction = (0, *tuple(range(2, value.ndim)))
-                        count = value.numel() // int(module.num_features)
-                        chunk_mean = value.double().mean(dim=reduction)
-                        chunk_variance = value.double().var(dim=reduction, unbiased=False)
-                        previous_count = counts.get(path, 0)
-                        total_count = previous_count + count
-                        if path not in means:
-                            means[path] = chunk_mean.clone()
-                            second_moments[path] = chunk_variance * count
-                        else:
-                            previous_mean = means[path]
-                            delta = chunk_mean - previous_mean
-                            updated_mean = previous_mean + delta * (count / total_count)
-                            delta_after = chunk_mean - updated_mean
-                            second_moments[path] = (
-                                second_moments[path]
-                                + chunk_variance * count
-                                + delta * delta_after * count
-                            )
-                            means[path] = updated_mean
-                        counts[path] = total_count
+            if any_initialized:
+                calibration_rows, _ = calibration_pass(splitbn_modules, diagnostic_kwargs, stop_at_first=False)
+                estimand = f"diagnostic_{eval_buffer_source}"
+            else:
+                pending = dict(splitbn_modules)
+                while pending:
+                    calibration_rows, reached = calibration_pass(
+                        list(pending.items()),
+                        lambda _batch: {"eval_buffer_source": "target_calibration"},
+                        stop_at_first=True,
+                    )
+                    path = reached[0]
+                    module = pending.pop(path)
+                    module.install_target_calibration_buffer(
+                        means[path].to(
+                            device=module.target_running_mean.device,
+                            dtype=module.target_running_mean.dtype,
+                        ),
+                        (second_moments[path] / counts[path]).to(
+                            device=module.target_running_var.device,
+                            dtype=module.target_running_var.dtype,
+                        ),
+                        frozen=True,
+                    )
+                estimand = "sequential_target_calibration"
         for path, _module in splitbn_modules:
-            count = counts.get(path, 0)
-            if count <= 0:
+            if counts.get(path, 0) <= 0:
                 raise RuntimeError(f"SplitBN module {path!r} observed no calibration rows.")
-            variances[path] = second_moments[path] / count
-        if not any_initialized:
-            for path, module in splitbn_modules:
-                module.install_target_calibration_buffer(
-                    means[path].to(
-                        device=module.target_running_mean.device,
-                        dtype=module.target_running_mean.dtype,
-                    ),
-                    variances[path].to(
-                        device=module.target_running_var.device,
-                        dtype=module.target_running_var.dtype,
-                    ),
-                    frozen=True,
-                )
+            variances[path] = second_moments[path] / counts[path]
     finally:
-        for handle in handles:
-            handle.remove()
         model.train(was_training)
 
     def _tensor_digest(*tensors: torch.Tensor) -> str:
@@ -750,6 +783,7 @@ def install_splitbn_target_calibration_buffers(
             "shape": list(means[path].shape),
             "sample_count": int(calibration_rows),
             "observation_count": int(counts[path]),
+            "estimand": estimand,
         }
         for path, _ in splitbn_modules
     }

@@ -402,3 +402,51 @@ def test_install_target_calibration_buffers_rejects_wrong_contract() -> None:
             torch.randn(4, 4, 9),
             device=torch.device("cpu"),
         )
+
+
+class _TwoSplitBNProbe(nn.Module):
+    def __init__(self, *, observed_channel_norm: bool = False) -> None:
+        super().__init__()
+        self.observed_channel_norm = observed_channel_norm
+        self.first = SplitBN1d(4, domain_count=2, target_buffer_source="target_calibration")
+        self.second = SplitBN1d(4, domain_count=2, target_buffer_source="target_calibration")
+
+    def forward_features(self, x, *, domain_indices=None, eval_buffer_source=None,
+                         eval_buffer_index=None, channel_mask=None):
+        if channel_mask is not None:
+            x = x[channel_mask[:, 0]]
+        selectors = dict(domain_indices=domain_indices, eval_buffer_source=eval_buffer_source,
+                         eval_buffer_index=eval_buffer_index)
+        return self.second(2.0 * self.first(x, **selectors) + 1.0, **selectors)
+
+
+def test_target_buffers_are_installed_in_execution_order_independent_of_domain_index() -> None:
+    calibration = torch.randn(16, 4, 9) * 3.0 + 2.0
+    installed = []
+    for domain_index in (0, 1):
+        model = _TwoSplitBNProbe()
+        with torch.no_grad():
+            model.first.running_mean[0].fill_(5.0)
+            model.first.running_mean[1].fill_(-5.0)
+        install_splitbn_target_calibration_buffers(
+            model, calibration, device=torch.device("cpu"), domain_index=domain_index)
+        installed.append(model.second.target_running_mean.clone())
+        model.eval()
+        with torch.no_grad():
+            upstream = 2.0 * model.first(calibration, eval_buffer_source="target_calibration") + 1.0
+        torch.testing.assert_close(model.second.target_running_mean,
+                                   upstream.double().mean(dim=(0, 2)).float())
+    torch.testing.assert_close(installed[0], installed[1])
+
+
+def test_target_buffers_use_only_observed_slots_for_observed_norm_models() -> None:
+    calibration = torch.randn(12, 4, 9)
+    mask = torch.ones(12, 4, dtype=torch.bool)
+    mask[::2, 0] = False
+    model = _TwoSplitBNProbe(observed_channel_norm=True)
+    with pytest.raises(ValueError, match="channel_masks"):
+        install_splitbn_target_calibration_buffers(model, calibration, device=torch.device("cpu"))
+    install_splitbn_target_calibration_buffers(model, calibration, device=torch.device("cpu"),
+                                               channel_masks=mask)
+    torch.testing.assert_close(model.first.target_running_mean,
+                               calibration[mask[:, 0]].double().mean(dim=(0, 2)).float())
