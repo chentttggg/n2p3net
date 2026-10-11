@@ -55,7 +55,6 @@ def _aligned_axes(
         raise ValueError("domain fold construction requires non-empty rows.")
     if np.any(np.char.strip(subjects) == "") or np.any(np.char.strip(domains) == ""):
         raise ValueError("subject_ids and domain_ids must contain non-empty values.")
-    pairs = np.column_stack((subjects, domains))
     for subject in np.unique(subjects):
         subject_domains = np.unique(domains[subjects == subject])
         if len(subject_domains) != 1:
@@ -63,7 +62,6 @@ def _aligned_axes(
                 f"subject {subject!r} occurs in multiple domains; "
                 "domain folds require one domain per subject."
             )
-    del pairs
     return subjects, domains
 
 

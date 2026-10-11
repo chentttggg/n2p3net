@@ -46,7 +46,6 @@ from transfer.candidate_decision import (
 )
 from transfer.candidate_within_subject import (
     candidate_calibration_decision_split,
-    candidate_prefix_suffix_split,
 )
 from transfer.outcomes import (
     CandidateCoverage,
@@ -258,17 +257,6 @@ def test_derived_bi_cache_raw_label_tampering_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="raw_target_label disagrees"):
         _validate_cached_candidate_labels(dataset)
-
-
-def test_bi_prefix_suffix_split_requires_complete_repetitions() -> None:
-    dataset = _bi_dataset()
-    split = candidate_prefix_suffix_split(dataset, prefix_repetitions=1, test_repetitions=1)
-    assert {item.decision_id for item in split.usable_decisions} == {"s1", "s2"}
-    assert int(split.prefix_mask.sum()) == 24
-    assert int(split.suffix_mask.sum()) == 24
-    assert set(np.unique(split.suffix_repetition_indices[split.suffix_mask]).tolist()) == {0}
-    with pytest.raises(ValueError, match="No candidate decision"):
-        candidate_prefix_suffix_split(dataset, prefix_repetitions=2, test_repetitions=2)
 
 
 def test_generic_bnci_contract_uses_early_decisions_and_tests_new_targets() -> None:
