@@ -81,9 +81,9 @@ K2000单NN的scratch多7个命中且NLL低0.036876，matched scratch pool多1个
 
 下一跨数据集队列先做 **BI2014a**，每库完成并封存产物后再进入下一库。已有`finite_zero_none_targets`的61份记录、976文件属于binary prefix preparation，raw512Hz→model128Hz/179点；candidate准备复用`data.bi2014a_candidate`/`prepare_bi2014a_candidate`恢复CSV中的真实membership、episode和物理支持。
 
-61人的零拟合CSV清点得到1,592个由完整12-flash repetition构成的decoder episode，R1–R8数量依次为412/400/298/161/109/78/48/86。按“首五段校准”的候选分配，后续共同1,287段的R1–R8为351/329/242/123/79/62/36/65，只有65段（5.05%）达到R8。首五段各人使用60–372标签。2026-10-12已明确将本轮Q1冻结为首五个实际完整raw episodes的episode预算程序，各人actual labels另记；与B12的label-K0/200/800/2000矩阵分列。新队列采用每段自身全部合法repetitions的终点，并保留每段R和requested分母。原metric入口要求单一R，需接逐decision horizon或正确加权的分层汇总。
+61人的零拟合CSV清点得到1,592个由完整12-flash repetition构成的decoder episode，R1–R8数量依次为412/400/298/161/109/78/48/86。按“首五段校准”的候选分配，后续共同1,287段的R1–R8为351/329/242/123/79/62/36/65，只有65段（5.05%）达到R8。首五段各人使用60–372标签。2026-10-12已明确将本轮Q1冻结为首五个实际完整raw episodes的episode预算程序，各人actual labels另记；与B12的label-K0/200/800/2000矩阵分列。新队列主端点采用每段自身全部完整repetitions的终点，并保留每段R和requested分母；subject57 selection23主R=1，末尾R2 partial单列。原metric入口要求单一R，需接逐decision horizon或正确加权的分层汇总。
 
-完整记录的末段另核completion/censor：subject57原有1,454 flashes，decoder保1,452，其余两闪仍属于未闭合末段，不能靠floor-trim认作完整episode。首五段输入清点的42个短gap涉及60个相邻段；按现strict mapper的pre-roll规则，实际拒42个右侧未来段，60是支持重叠并集诊断。共同未来从每人固定Kmax raw cutoff一次派生，所有K和三臂保同requested episode及具体不可用原因。
+完整记录的末段另核completion/censor：subject57原有1,454 flashes，decoder保1,452。selection23的完整R1仍是1,287主请求中的一个，主horizon为R1并进入主指标；末尾额外2 flashes按R2 terminal_partial单独记censor/operational账本，不进入主指标、不新增第1,288个episode，不能靠floor-trim认作完整R2 episode。首五段输入清点的42个短gap涉及60个相邻段；按现strict mapper的pre-roll规则，实际拒42个右侧未来段，60是支持重叠并集诊断。共同未来从每人固定Kmax raw cutoff一次派生，所有K和三臂保同requested episode及具体不可用原因。
 
 cloud source07已报告原leave-BI2014a producer完成load/replay及排除审计：seed20260918，checkpoint SHA `fc8d8cbdef405263ff9c233e592755ceeeb2264bc8287800b8b2ffacfb199c02`，438个source participant key与61个target identity无交集。该source的producer身份保持。当前接合finite-zero-none入口、实际观测Cz6 projection与逐decision horizon；新caller复用原fit_calibration_candidate/FrozenTrialPredictor，完成三臂fresh-load LLR及36-choice概率重放后自主执行61人。target grouped temperature不在该队列学习。每库保存plan、输入/source binding、participant receipts、模型重放、完整失败账本、指标和资源终态；进展见[BI2014a队列计划](../assets/research_resume_20261011/bi2014a_queue_plan.json)。
 

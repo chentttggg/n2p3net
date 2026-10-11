@@ -153,7 +153,12 @@
             452340
           ],
           "control_after_last_complete_episode": false,
-          "status": "partial_final_repetition_not_completed_episode"
+          "status": "partial_final_repetition_not_completed_episode",
+          "primary_episode_policy": "subject57 selection23 complete R1 is a primary requested episode; two tail flashes remain secondary terminal censor and do not create a new primary episode",
+          "secondary_horizon_R": 2,
+          "primary_horizon_R": 1,
+          "included_in_primary_1287": true,
+          "creates_episode_1288": false
         },
         "audited_source_files": 22,
         "root_current_22_source_SHA_match": true
@@ -166,7 +171,7 @@
         "decision_status": "explicit_episode_budget_programme_20261012",
         "relation_to_B12_label_K_matrix": "separate from label K0/200/800/2000"
       },
-      "test_endpoint": "all remaining raw requested episodes after the same first-five C; actual complete depth R1..R8 per key, with terminal partial/censor retained in denominator",
+      "test_endpoint": "primary requested endpoint uses each decoder complete episode and its complete_raw_repetitions R1..R8; subject57 selection23 primary R1 remains in the 1287 requested ledger; terminal partial flashes are a separate censor ledger only",
       "candidate_attempts": {
         "legacy_16_channel_causal_cache": "membership_prepared_but_source_input_incompatible",
         "four_zero_shot_fragments": "contract_rejected_before_fit",
@@ -178,7 +183,28 @@
       "caller_owner": "new scoped BI caller reusing fit_calibration_candidate and FrozenTrialPredictor; legacy SubjectAdapter caller retained as historical source",
       "execution_target": "cloud_live_20261012/bi2014a_q1",
       "execution_source": "new freeze from actual uploaded bytes; neither dc0e draft nor overwritten 3f38fe12 remains final source authority",
-      "next_interface": "requested_evidence_levels Mapping[DecisionKey,int] plus scoped EpochDataset/timeline, FrozenTrialPredictor fresh-load LLR and candidate probability replay"
+      "next_interface": "requested_evidence_levels Mapping[DecisionKey,int] plus scoped EpochDataset/timeline, FrozenTrialPredictor fresh-load LLR and candidate probability replay",
+      "primary_endpoint_contract": {
+        "requested_decisions": 1287,
+        "horizon_rule": "complete_raw_repetitions per decoder episode",
+        "subject57_selection23": {
+          "primary_horizon_R": 1,
+          "primary_status": "complete_R1",
+          "extra_terminal_flash_count": 2,
+          "extra_schedule_repetitions": 2,
+          "extra_schedule_events": 14
+        },
+        "terminal_partial_primary_inclusion": "primary R1 decision remains included; extra two flashes do not erase it",
+        "secondary_terminal_censor": {
+          "status": "separate_operational_censor_ledger",
+          "horizon_R": 2,
+          "included_in_primary_metrics": false,
+          "creates_new_episode": false,
+          "new_requested_key": false
+        },
+        "metrics_api": "requested_evidence_levels maps selection23 to 1; secondary terminal record is not passed to primary full_episode evaluator"
+      },
+      "next_action": "finish/repair primary R1 horizon ledger plus separate subject57 terminal censor ledger, then seal the three declared target arms"
     }
   ],
   "dataset_order_policy": "finish and seal each dataset artifacts before unlocking the next; later failure cannot overwrite completed dataset",
