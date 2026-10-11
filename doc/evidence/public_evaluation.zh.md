@@ -88,3 +88,11 @@ K2000单NN的scratch多7个命中且NLL低0.036876，matched scratch pool多1个
 cloud source07已报告原leave-BI2014a producer完成load/replay及排除审计：seed20260918，checkpoint SHA `fc8d8cbdef405263ff9c233e592755ceeeb2264bc8287800b8b2ffacfb199c02`，438个source participant key与61个target identity无交集。该source的producer身份保持。当前接合finite-zero-none入口、实际观测Cz6 projection与逐decision horizon；新caller复用原fit_calibration_candidate/FrozenTrialPredictor，完成三臂fresh-load LLR及36-choice概率重放后自主执行61人。target grouped temperature不在该队列学习。每库保存plan、输入/source binding、participant receipts、模型重放、完整失败账本、指标和资源终态；进展见[BI2014a队列计划](../assets/research_resume_20261011/bi2014a_queue_plan.json)。
 
 四个旧zero-shot分片在fit前因16-channel/causal缓存与source合同不符而拒绝，新增fit为0。新builder正接显式profile/channel owner；实际source的同名双向profile为`baseline=none`，个人默认常量的`mean_only`另保原用途。校准raw先隔离再零相位处理，缺FZ/PO8保slot mask且CZ必须实测；三臂调用继续核同architecture、固定mass风险及fresh-load重放。已完成22文件固定来源的独立审阅和零fit反例，完整本地handoff在`tmp/BI2014a_Q1_AUDIT/independent_audit.zh.md`，摘要及SHA并入上述队列计划。
+
+## 逐任务horizon接口
+
+指标owner已支持明确的完整episode模式：传入`requested_evidence_levels: Mapping[DecisionKey, int]`，省略scalar `evidence_level`。计划必须包含全部原requested keys，包括typed失败、samples缺失和两臂都没有输出的任务；每项保其真实R。指标采用`n2p3_candidate_probability_metrics/2`及`endpoint=full_episode`，保存完整不可变horizon计划和绑定原DecisionPlan的digest。原fixed-R入口保持v1结构。
+
+outcome owner按每key一个R生成cell，各R组分母分别为其任务数，整体用原任务数；participant/seed层级继续保原权重。例如R1/R1/R8三段分别正确、平局、缺失，整体命中为1/3，各R均值再平均会错误得到1/4。完整平局保概率进入NLL/Brier，失败和缺失保operational分母；没有概率的整人/seed保原风险可用性。paired compare核完整计划，包括共同缺失key的R。
+
+作者107项直接相关验证通过。root逐读两个owner和调用路径，核四个固定body、patch与验证日志SHA后接受该软件接口，见[接受绑定](../assets/research_resume_20261011/variable_horizon_acceptance_binding.json)。BI reader/caller继续负责原raw scope、预算、requested horizon及保存重放关系；本接口不从模型结果选择这些字段。

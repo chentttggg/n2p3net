@@ -11,13 +11,13 @@ from __future__ import annotations
 import math
 from collections import Counter
 from collections.abc import Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from numbers import Integral
 
 import numpy as np
 
 from models.candidate_evidence import CandidateEvidence
-from research.contracts import DecisionPlanContract
+from research.contracts import DecisionPlanContract, semantic_sha256
 from transfer.outcomes import (
     CandidateCoverage,
     DecisionKey,
@@ -25,6 +25,8 @@ from transfer.outcomes import (
     DecisionOutcomeAccounting,
     DecisionStatus,
     build_decision_outcome_accounting,
+    normalize_requested_evidence_levels,
+    requested_evidence_levels_record,
 )
 
 
@@ -88,11 +90,25 @@ class CandidateProbabilityMetrics:
     decision_plan_digest: str
     candidate_vocabulary: tuple[str, ...]
     seeds: tuple[int, ...]
-    evidence_level: int
+    evidence_level: int | None
     participants: tuple[ParticipantCandidateMetrics, ...]
     cells: tuple[CandidateEvaluationCell, ...]
     outcomes_by_seed: tuple[tuple[int, tuple[DecisionOutcome, ...]], ...]
     accounting_by_seed: tuple[tuple[int, DecisionOutcomeAccounting], ...]
+    requested_evidence_levels: tuple[tuple[DecisionKey, int], ...] | None = None
+    requested_evidence_levels_digest: str | None = field(default=None, init=False)
+
+    def __post_init__(self) -> None:
+        if self.requested_evidence_levels is None:
+            return
+        if self.evidence_level is not None:
+            raise ValueError("scalar evidence level and requested horizon plan are mutually exclusive")
+        pairs = tuple(self.requested_evidence_levels)
+        horizons = normalize_requested_evidence_levels(dict(pairs), requested_decisions=tuple(key for key, _ in pairs))
+        object.__setattr__(self, "requested_evidence_levels", horizons)
+        object.__setattr__(self, "requested_evidence_levels_digest", semantic_sha256({
+            "schema": "n2p3_requested_evidence_levels/1", "decision_plan_digest": self.decision_plan_digest,
+            "requested_evidence_levels": requested_evidence_levels_record(horizons)}))
 
     @property
     def requested_participant_count(self) -> int:
@@ -136,7 +152,7 @@ class CandidateProbabilityMetrics:
         return sum(row.selection_failure_reason is not None for row in self.participants)
 
     def record(self) -> dict[str, object]:
-        return {"schema": "n2p3_candidate_probability_metrics/1",
+        result = {"schema": "n2p3_candidate_probability_metrics/1",
                 "decision_plan_digest": self.decision_plan_digest,
                 "candidate_vocabulary": list(self.candidate_vocabulary),
                 "seeds": list(self.seeds), "evidence_level": self.evidence_level,
@@ -157,6 +173,12 @@ class CandidateProbabilityMetrics:
                 "outcome_accounting_by_seed": {str(seed): accounting.to_record() for seed, accounting in self.accounting_by_seed},
                 "outcomes_by_seed": {str(seed): [outcome.to_record() for outcome in outcomes]
                                      for seed, outcomes in self.outcomes_by_seed}}
+        if self.requested_evidence_levels is not None:
+            result.pop("evidence_level")
+            result.update(schema="n2p3_candidate_probability_metrics/2", endpoint="full_episode",
+                requested_evidence_levels=requested_evidence_levels_record(self.requested_evidence_levels),
+                requested_evidence_levels_digest=self.requested_evidence_levels_digest)
+        return result
 
 
 def evaluate_candidate_evidence(
@@ -165,7 +187,8 @@ def evaluate_candidate_evidence(
     decision_plan: DecisionPlanContract,
     seeds: Sequence[int],
     candidate_vocabulary: Sequence[str],
-    evidence_level: int,
+    evidence_level: int | None = None,
+    requested_evidence_levels: Mapping[DecisionKey, int] | None = None,
     participant_failures_by_seed: Mapping[int, Mapping[str, str]] | None = None,
     requested_coverage: Mapping[DecisionKey, CandidateCoverage] | None = None,
 ) -> CandidateProbabilityMetrics:
@@ -177,6 +200,8 @@ def evaluate_candidate_evidence(
     empty coverage. No final-choice schedule is inferred from the labels.
     ``participant_failures_by_seed`` records expected fit failures only. Contract
     and source-admission errors must propagate from their validation boundary.
+    A full-episode request supplies one actual positive horizon per original
+    decision instead of a scalar level; missing outputs retain that horizon.
     """
     if not isinstance(decision_plan, DecisionPlanContract):
         raise ValueError("evaluation requires a frozen DecisionPlanContract")
@@ -195,9 +220,18 @@ def evaluate_candidate_evidence(
         not isinstance(value, str) or not value or value != value.strip() for value in vocabulary
     ):
         raise ValueError("candidate vocabulary requires unique exact string identities")
-    if isinstance(evidence_level, bool) or not isinstance(evidence_level, Integral) or evidence_level < 1:
-        raise ValueError("evidence_level must be a positive integer")
     entries = {DecisionKey(entry.participant_key, entry.decision_id): entry for entry in decision_plan.entries}
+    if (evidence_level is None) == (requested_evidence_levels is None):
+        raise ValueError("provide exactly one of evidence_level or requested_evidence_levels")
+    horizons = None
+    if requested_evidence_levels is not None:
+        horizons = normalize_requested_evidence_levels(requested_evidence_levels, requested_decisions=tuple(entries))
+        levels_by_key = dict(horizons)
+    else:
+        if isinstance(evidence_level, bool) or not isinstance(evidence_level, Integral) or evidence_level < 1:
+            raise ValueError("evidence_level must be a positive integer")
+        evidence_level = int(evidence_level)
+        levels_by_key = dict.fromkeys(entries, evidence_level)
     if any(entry.target_candidate not in vocabulary for entry in entries.values()):
         raise ValueError("external truth lies outside the frozen candidate vocabulary")
     participant_failures = participant_failures_by_seed or {}
@@ -227,7 +261,7 @@ def evaluate_candidate_evidence(
                 raise ValueError("output contains an unrequested participant/decision")
             if cell_key in indexed:
                 raise ValueError("duplicate output for one requested seed/decision")
-            if evidence.candidate_vocabulary != vocabulary or evidence.evidence_level != evidence_level:
+            if evidence.candidate_vocabulary != vocabulary or evidence.evidence_level != levels_by_key[key]:
                 raise ValueError("output vocabulary or evidence level differs from the requested task")
             if key in support and support[key] != evidence.physical_support_digest:
                 raise ValueError("seed outputs disagree on physical support identity")
@@ -265,7 +299,7 @@ def evaluate_candidate_evidence(
                 status = {"fit_failure": DecisionStatus.FIT_FAILURE, "incomplete": DecisionStatus.INCOMPLETE,
                           "not_available": DecisionStatus.ABSTAIN, "abstain": DecisionStatus.ABSTAIN}[failure_kind]
                 reason = evidence.failure_reason
-            outcome = DecisionOutcome(key, int(evidence_level), status, candidate_coverage,
+            outcome = DecisionOutcome(key, levels_by_key[key], status, candidate_coverage,
                 target_candidate=entry.target_candidate, predicted_candidate=evidence.predicted if evidence else None,
                 failure_reason=reason)
             nll = brier = None
@@ -280,7 +314,9 @@ def evaluate_candidate_evidence(
         outcomes = tuple(outcomes)
         outcomes_by_seed.append((seed, outcomes))
         accounting_by_seed.append((seed, build_decision_outcome_accounting(
-            outcomes, requested_decisions=tuple(entries), evidence_levels=(int(evidence_level),))))
+            outcomes, requested_decisions=tuple(entries),
+            **({"evidence_levels": (evidence_level,)} if horizons is None
+               else {"requested_evidence_levels": levels_by_key}))))
     selection_failures = {row.participant_key: row.reason for row in decision_plan.participant_selection_failures}
     participants = []
     for participant in decision_plan.requested_participant_keys:
@@ -302,8 +338,8 @@ def evaluate_candidate_evidence(
             sum(row.failure_kind == "not_available" for row in rows),
             sum(row.failure_kind == "incomplete" for row in rows),
             sum(row.failure_kind == "abstain" for row in rows), selection_failures.get(participant)))
-    return CandidateProbabilityMetrics(decision_plan.digest(), vocabulary, seeds, int(evidence_level),
-        tuple(participants), tuple(cells), tuple(outcomes_by_seed), tuple(accounting_by_seed))
+    return CandidateProbabilityMetrics(decision_plan.digest(), vocabulary, seeds, evidence_level,
+        tuple(participants), tuple(cells), tuple(outcomes_by_seed), tuple(accounting_by_seed), horizons)
 
 
 def candidate_confidence_diagnostics(
@@ -497,6 +533,9 @@ def compare_candidate_probability_metrics(
         raise ValueError("paired evaluation requires identical decision plan identity")
     if baseline.seeds != candidate.seeds or baseline.candidate_vocabulary != candidate.candidate_vocabulary or baseline.evidence_level != candidate.evidence_level:
         raise ValueError("paired evaluation seed/vocabulary/evidence support differs")
+    if (baseline.requested_evidence_levels != candidate.requested_evidence_levels
+            or baseline.requested_evidence_levels_digest != candidate.requested_evidence_levels_digest):
+        raise ValueError("paired evaluation requested horizon plan differs")
     first = {(row.seed, row.outcome.key): row for row in baseline.cells}
     second = {(row.seed, row.outcome.key): row for row in candidate.cells}
     paired: dict[tuple[str, int], list[tuple[float, float]]] = {}

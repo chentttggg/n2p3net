@@ -11,6 +11,7 @@ from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from numbers import Integral
 
 
 class DecisionStatus(StrEnum):
@@ -30,6 +31,35 @@ class DecisionKey:
     def __post_init__(self) -> None:
         if not self.subject_id or not self.decision_id:
             raise ValueError("subject_id and decision_id must be non-empty.")
+
+
+def normalize_requested_evidence_levels(
+    requested_evidence_levels: Mapping[DecisionKey, int],
+    *,
+    requested_decisions: Sequence[DecisionKey],
+) -> tuple[tuple[DecisionKey, int], ...]:
+    """Freeze one actual horizon for every original requested decision."""
+    requested = tuple(requested_decisions)
+    if len(set(requested)) != len(requested):
+        raise ValueError("requested_decisions contains duplicates.")
+    if not isinstance(requested_evidence_levels, Mapping) or any(
+        not isinstance(key, DecisionKey) for key in requested_evidence_levels
+    ):
+        raise ValueError("requested evidence levels require a mapping with DecisionKey keys.")
+    if set(requested_evidence_levels) != set(requested):
+        raise ValueError("requested evidence levels must identify every requested decision exactly.")
+    if any(isinstance(level, bool) or not isinstance(level, Integral) or level < 1
+           for level in requested_evidence_levels.values()):
+        raise ValueError("requested evidence levels must be positive integers.")
+    return tuple(sorted((key, int(level)) for key, level in requested_evidence_levels.items()))
+
+
+def requested_evidence_levels_record(
+    levels: tuple[tuple[DecisionKey, int], ...],
+) -> list[dict[str, str | int]]:
+    """Serialize an already normalized immutable decision/horizon plan."""
+    return [{"subject": key.subject_id, "decision_id": key.decision_id, "evidence_level": level}
+            for key, level in levels]
 
 
 def _canonical_counts(
@@ -264,8 +294,24 @@ class EvidenceOutcomeCounts:
 class DecisionOutcomeAccounting:
     requested_decisions: int
     counts_by_evidence: tuple[EvidenceOutcomeCounts, ...]
+    requested_evidence_levels: tuple[tuple[DecisionKey, int], ...] | None = None
 
     def to_record(self) -> dict[str, object]:
+        if self.requested_evidence_levels is not None:
+            requested_by_level = Counter(level for _, level in self.requested_evidence_levels)
+            totals = {status.value: sum(getattr(counts, status.value) for counts in self.counts_by_evidence)
+                      for status in DecisionStatus}
+            valid = totals["correct"] + totals["incorrect"] + totals["tie"]
+            overall = {"requested": self.requested_decisions, "accounted": sum(totals.values()), **totals,
+                       "valid": valid,
+                       "operational_hit_rate": totals["correct"] / self.requested_decisions if self.requested_decisions else 0.,
+                       "valid_hit_rate": totals["correct"] / valid if valid else 0.}
+            return {"schema": "n2p3_decision_outcome_accounting/2", "endpoint": "full_episode",
+                    "requested": self.requested_decisions,
+                    "requested_evidence_levels": requested_evidence_levels_record(self.requested_evidence_levels),
+                    "by_evidence_level": {str(counts.evidence_level): counts.to_record(
+                        requested=requested_by_level[counts.evidence_level]) for counts in self.counts_by_evidence},
+                    "overall": overall}
         return {
             "requested": self.requested_decisions,
             "by_evidence_level": {
@@ -281,17 +327,28 @@ def build_decision_outcome_accounting(
     outcomes: Sequence[DecisionOutcome],
     *,
     requested_decisions: Sequence[DecisionKey],
-    evidence_levels: Sequence[int],
+    evidence_levels: Sequence[int] | None = None,
+    requested_evidence_levels: Mapping[DecisionKey, int] | None = None,
 ) -> DecisionOutcomeAccounting:
-    """Validate the requested cross-product and count primary statuses."""
+    """Count either the fixed cross-product or one input horizon per decision."""
 
     requested = tuple(requested_decisions)
-    levels = tuple(int(level) for level in evidence_levels)
     if len(set(requested)) != len(requested):
         raise ValueError("requested_decisions contains duplicates.")
-    if not levels or any(level < 1 for level in levels) or len(set(levels)) != len(levels):
-        raise ValueError("evidence_levels must be unique positive integers.")
-    expected_keys = {(key, level) for key in requested for level in levels}
+    if (evidence_levels is None) == (requested_evidence_levels is None):
+        raise ValueError("provide exactly one of evidence_levels or requested_evidence_levels.")
+    horizons = None
+    if requested_evidence_levels is not None:
+        horizons = normalize_requested_evidence_levels(requested_evidence_levels, requested_decisions=requested)
+        levels = tuple(sorted({level for _, level in horizons}))
+        expected_keys = set(horizons)
+        requested_by_level = Counter(level for _, level in horizons)
+    else:
+        levels = tuple(int(level) for level in evidence_levels)
+        if not levels or any(level < 1 for level in levels) or len(set(levels)) != len(levels):
+            raise ValueError("evidence_levels must be unique positive integers.")
+        expected_keys = {(key, level) for key in requested for level in levels}
+        requested_by_level = dict.fromkeys(levels, len(requested))
     observed_keys = [(outcome.key, outcome.evidence_level) for outcome in outcomes]
     duplicates = [key for key, count in Counter(observed_keys).items() if count > 1]
     if duplicates:
@@ -318,10 +375,11 @@ def build_decision_outcome_accounting(
             incomplete=status_counts[DecisionStatus.INCOMPLETE],
             fit_failure=status_counts[DecisionStatus.FIT_FAILURE],
         )
-        if counts.accounted != len(requested):
+        if counts.accounted != requested_by_level[level]:
             raise AssertionError("validated outcome keys produced invalid status accounting.")
         counts_by_evidence.append(counts)
     return DecisionOutcomeAccounting(
         requested_decisions=len(requested),
         counts_by_evidence=tuple(counts_by_evidence),
+        requested_evidence_levels=horizons,
     )

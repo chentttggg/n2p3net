@@ -275,3 +275,152 @@ def test_paired_macro_risks_do_not_silently_drop_an_entire_requested_probability
     assert comparison.paired_candidate_nll is None
     assert comparison.delta_paired_nll is None
     assert not comparison.development_gate_passed
+
+
+def _evaluate_episode(by_seed, plan, horizons, **kwargs):
+    return evaluate_candidate_evidence(by_seed, decision_plan=plan, seeds=kwargs.pop("seeds", (1,)),
+        candidate_vocabulary=("a", "b"), requested_evidence_levels=horizons, **kwargs)
+
+
+def test_full_episode_counts_original_decisions_instead_of_averaging_r_groups():
+    plan = _plan(entries=(("p1", "d1", "a"), ("p1", "d2", "a"), ("p1", "d3", "a")))
+    horizons = {DecisionKey("p1", "d1"): 1, DecisionKey("p1", "d2"): 1, DecisionKey("p1", "d3"): 8}
+    coverage = {key: CandidateCoverage.from_mappings({"a": r, "b": r}, {}) for key, r in horizons.items()}
+    rows = [_evidence(decision="d1", evidence_level=1, expected_event_counts=(1, 1), observed_event_counts=(1, 1)),
+            _evidence(decision="d2", probability=(.5, .5), evidence_level=1,
+                      expected_event_counts=(1, 1), observed_event_counts=(1, 1))]
+    metrics = _evaluate_episode({1: rows}, plan, horizons, requested_coverage=coverage)
+    assert metrics.evidence_level is None
+    assert metrics.requested_participant_operational_hit_rate == pytest.approx(1 / 3)
+    assert metrics.prediction_coverage == pytest.approx(1 / 3)
+    assert metrics.probability_coverage == pytest.approx(2 / 3)
+    assert metrics.available_probability_nll == pytest.approx((-np.log(.8) - np.log(.5)) / 2)
+    assert metrics.available_probability_brier == pytest.approx((.08 + .5) / 2)
+    assert [row.evidence_level for row in metrics.outcomes_by_seed[0][1]] == [1, 1, 8]
+    assert metrics.outcomes_by_seed[0][1][-1].coverage.expected_events == 16
+    accounting = metrics.accounting_by_seed[0][1].to_record()
+    assert accounting["requested"] == 3
+    assert accounting["by_evidence_level"]["1"]["requested"] == 2
+    assert accounting["by_evidence_level"]["8"]["requested"] == 1
+    assert accounting["overall"]["operational_hit_rate"] == pytest.approx(1 / 3)
+    assert accounting["overall"]["accounted"] == 3
+
+
+def test_full_episode_plan_is_canonical_immutable_and_includes_absent_outputs():
+    horizons = {DecisionKey("p2", "d2"): np.int64(8), DecisionKey("p1", "d1"): np.int64(1)}
+    metrics = _evaluate_episode({1: []}, _plan(), horizons)
+    original = metrics.record()
+    horizons[DecisionKey("p2", "d2")] = 77
+    assert metrics.requested_evidence_levels == ((DecisionKey("p1", "d1"), 1), (DecisionKey("p2", "d2"), 8))
+    assert len(metrics.requested_evidence_levels_digest) == 64
+    assert original == metrics.record()
+    assert original["schema"] == "n2p3_candidate_probability_metrics/2"
+    assert original["endpoint"] == "full_episode"
+    assert "evidence_level" not in original
+    assert original["requested_evidence_levels"] == [
+        {"subject": "p1", "decision_id": "d1", "evidence_level": 1},
+        {"subject": "p2", "decision_id": "d2", "evidence_level": 8}]
+    json.dumps(original, allow_nan=False)
+
+
+@pytest.mark.parametrize("horizons", [
+    {DecisionKey("p1", "d1"): 1},
+    {DecisionKey("p1", "d1"): 1, DecisionKey("other", "d2"): 8},
+    {"p1/d1": 1, DecisionKey("p2", "d2"): 8},
+    {DecisionKey("p1", "d1"): True, DecisionKey("p2", "d2"): 8},
+    {DecisionKey("p1", "d1"): 1., DecisionKey("p2", "d2"): 8},
+    {DecisionKey("p1", "d1"): 0, DecisionKey("p2", "d2"): 8},
+    {DecisionKey("p1", "d1"): -1, DecisionKey("p2", "d2"): 8},
+])
+def test_full_episode_rejects_wrong_plan_even_when_every_output_is_missing(horizons):
+    with pytest.raises(ValueError, match="requested|DecisionKey|positive integer"):
+        _evaluate_episode({1: []}, _plan(), horizons)
+
+
+def test_full_episode_rejects_output_r_different_from_requested_r():
+    horizons = {DecisionKey("p1", "d1"): 1, DecisionKey("p2", "d2"): 8}
+    with pytest.raises(ValueError, match="evidence level"):
+        _evaluate_episode({1: [_evidence()]}, _plan(), horizons)
+
+
+def test_full_episode_and_scalar_request_are_mutually_exclusive():
+    horizons = {DecisionKey("p1", "d1"): 1, DecisionKey("p2", "d2"): 8}
+    with pytest.raises(ValueError, match="exactly one|mutually exclusive"):
+        _evaluate_episode({1: []}, _plan(), horizons, evidence_level=2)
+
+
+def test_paired_full_episode_rejects_different_r_for_an_absent_output():
+    first = {DecisionKey("p1", "d1"): 1, DecisionKey("p2", "d2"): 8}
+    second = {**first, DecisionKey("p2", "d2"): 7}
+    baseline = _evaluate_episode({1: []}, _plan(), first)
+    candidate = _evaluate_episode({1: []}, _plan(), second)
+    with pytest.raises(ValueError, match="horizon|evidence support"):
+        compare_candidate_probability_metrics(baseline, candidate)
+
+
+def test_paired_full_episode_averages_inside_original_participant_after_matching_horizons():
+    plan = _plan(entries=(("p1", "d1", "a"), ("p1", "d2", "a"), ("p2", "d3", "a")))
+    horizons = {DecisionKey("p1", "d1"): 1, DecisionKey("p1", "d2"): 8, DecisionKey("p2", "d3"): 3}
+
+    def rows(probabilities):
+        return [_evidence(key.subject_id, key.decision_id, probability,
+            evidence_level=r, expected_event_counts=(r, r), observed_event_counts=(r, r))
+            for (key, r), probability in zip(horizons.items(), probabilities, strict=True)]
+
+    before = _evaluate_episode({1: rows(((.6, .4), (.4, .6), (.5, .5)))}, plan, horizons)
+    after = _evaluate_episode({1: rows(((.8, .2), (.8, .2), (.8, .2)))}, plan, horizons)
+    comparison = compare_candidate_probability_metrics(before, after)
+    assert comparison.paired_probability_count == 3
+    assert comparison.delta_hit == .75
+    assert comparison.paired_baseline_nll == pytest.approx(((-np.log(.6) - np.log(.4)) / 2 - np.log(.5)) / 2)
+    assert comparison.paired_candidate_nll == pytest.approx(-np.log(.8))
+    assert comparison.rescued_count == 2
+    assert comparison.development_gate_passed
+
+
+def test_full_episode_missing_fit_failure_and_selection_failure_keep_macro():
+    plan = _plan(entries=(("p1", "d1", "a"), ("p1", "d2", "a"), ("p2", "d3", "a")),
+                 failures=(("p3", "no legal completed episode"),))
+    horizons = {DecisionKey("p1", "d1"): 1, DecisionKey("p1", "d2"): 8, DecisionKey("p2", "d3"): 2}
+    row = _evidence(evidence_level=1, expected_event_counts=(1, 1), observed_event_counts=(1, 1))
+    metrics = _evaluate_episode({1: [row], 2: []}, plan, horizons, seeds=(1, 2),
+        participant_failures_by_seed={1: {"p2": "fit failed"}, 2: {"p2": "fit failed"}})
+    assert metrics.requested_participant_count == 3
+    assert metrics.requested_participant_operational_hit_rate == pytest.approx(1 / 12)
+    assert [row.requested_decisions for row in metrics.participants] == [2, 1, 0]
+    assert metrics.participants[1].fit_failure_count == 2
+    assert metrics.not_available_count == 3
+    assert metrics.selection_failure_count == 1
+    assert metrics.available_probability_nll is None
+    assert all(accounting.requested_decisions == 3 for _, accounting in metrics.accounting_by_seed)
+
+
+def test_full_episode_all_selection_failures_accept_empty_plan_without_fake_r():
+    plan = _plan(entries=(), failures=(("p1", "no legal episode"), ("p2", "no legal episode")))
+    metrics = _evaluate_episode({1: []}, plan, {})
+    assert metrics.requested_evidence_levels == ()
+    assert metrics.evidence_level is None
+    assert metrics.requested_participant_count == 2
+    assert metrics.requested_participant_operational_hit_rate == 0.
+    assert metrics.accounting_by_seed[0][1].to_record()["overall"]["requested"] == 0
+    assert metrics.accounting_by_seed[0][1].to_record()["by_evidence_level"] == {}
+    assert not compare_candidate_probability_metrics(metrics, metrics).development_gate_passed
+
+
+def test_opt_in_same_r_plan_does_not_change_fixed_r_outputs_or_contract():
+    rows = {1: [_evidence(), _evidence("p2", "d2", (.5, .5))]}
+    fixed = _evaluate(rows)
+    variable = _evaluate_episode(rows, _plan(), {DecisionKey("p1", "d1"): 2, DecisionKey("p2", "d2"): 2})
+    assert fixed.record()["schema"] == "n2p3_candidate_probability_metrics/1"
+    assert "endpoint" not in fixed.record() and "requested_evidence_levels" not in fixed.record()
+    assert fixed.requested_evidence_levels is None
+    assert fixed.requested_evidence_levels_digest is None
+    assert fixed.participants == variable.participants
+    assert fixed.available_probability_nll == variable.available_probability_nll
+    assert fixed.accounting_by_seed[0][1].to_record() == {
+        "requested": 2, "by_evidence_level": {"2": {
+            "requested": 2, "accounted": 2, "correct": 1, "incorrect": 0, "tie": 1,
+            "abstain": 0, "incomplete": 0, "fit_failure": 0, "valid": 2,
+            "operational_hit_rate": .5, "valid_hit_rate": .5}}}
+    with pytest.raises(ValueError, match="horizon|evidence support"):
+        compare_candidate_probability_metrics(fixed, variable)
