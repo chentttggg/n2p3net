@@ -2,6 +2,7 @@
 
 import json
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -276,3 +277,23 @@ def test_archive_member_verification_binds_consumed_bytes(tmp_path):
         stream.writestr("subject/record.mat", b"changed input")
     with pytest.raises(ValueError, match="changed"):
         verify_source_record_inputs(item, root=tmp_path)
+
+
+def test_completed_resume_reads_a_utf8_ledger_regardless_of_locale(huebner_record, tmp_path, monkeypatch):
+    runner, _, _, _, _, manifest = huebner_record
+    output = tmp_path / "run"
+    argv = ["--manifest", str(manifest), "--output", str(output), "--workers", "1"]
+    runner.main(argv)
+    ledger_path = output / "preparation.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["previous_errors"] = [{"message": "[WinError 2] 系统找不到指定的文件。"}]
+    ledger_path.write_text(json.dumps(ledger, ensure_ascii=False), encoding="utf-8")
+    original = Path.read_text
+
+    def utf8_only(self, *args, **kwargs):
+        if self.name == "preparation.json" and kwargs.get("encoding", args[0] if args else None) != "utf-8":
+            raise UnicodeDecodeError("cp936", b"", 0, 1, "locale-dependent ledger read")
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", utf8_only)
+    runner.main(argv)

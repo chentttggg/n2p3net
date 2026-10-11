@@ -112,7 +112,7 @@ def main(argv=None, *, merge_gate=None):
             else:
                 raise ValueError("unsupported explicit target protocol in source manifest")
     method = source_preparation_method() if spec == SOURCE_EOG_PREPROCESSING else source_preparation_method(spec)
-    result = json.loads(result_path.read_text()) if result_path.exists() else {
+    result = json.loads(result_path.read_text(encoding="utf-8")) if result_path.exists() else {
         "schema": SOURCE_PREPARATION_SCHEMA, "study": manifest["study"],
         "preparation_method": method,
         "target_prefixes": prefixes,
