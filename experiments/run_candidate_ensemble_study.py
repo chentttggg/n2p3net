@@ -13,6 +13,7 @@ from multiprocessing import get_context
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
 import numpy as np  # noqa: E402
@@ -1626,7 +1627,8 @@ def main():
     args = parser.parse_args()
     report = run_study(args.plan, args.output)
     print(json.dumps({"status": report["status"], "output": str(args.output.resolve())}))
+    return 0 if report["status"] == "completed" else 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
