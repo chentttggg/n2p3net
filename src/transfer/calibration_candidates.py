@@ -513,6 +513,8 @@ def fit_calibration_candidate(
     source_temporal_basis=None,
 ) -> FittedCalibrationCandidate:
     """Fit declared rows; validation either replays selection or records fixed-budget diagnostics."""
+    if recipe.refit_full_prefix:
+        raise ValueError("calibration candidates fit their declared rows only; refit_full_prefix is unsupported")
     validate_calibration_quality_ingress(dataset)
     validate_epoch_quality_fit_scope(dataset, training_mask, policy=epoch_quality_policy, model=epoch_quality_model)
     return _fit_calibration_candidate(
@@ -684,11 +686,6 @@ def _fit_calibration_candidate(
                    fitted_lda.steps[1][1].priors_[1] if fitted_lda is not None else float(np.mean(labels)))
     risk = None if adapter is None else copy.deepcopy(adapter.training_class_risk_)
     probability_training_digest = history["training_data_sha256"]
-    if adapter is not None and history.get("refit_full_prefix"):
-        digest = hashlib.sha256()
-        for array in (dataset.X[scope], dataset.y[scope], observed[scope]):
-            digest.update(np.ascontiguousarray(array).tobytes())
-        probability_training_digest = digest.hexdigest()
     history["probability_fit"] = {"prior": float(actual_prior),
         "prior_dtype": fitted_lda.steps[1][1].priors_.dtype.str if fitted_lda is not None else np.dtype(np.float64).str,
         "class_counts": np.bincount(labels, minlength=2).tolist() if risk is None else risk["class_counts"],

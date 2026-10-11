@@ -1383,9 +1383,11 @@ def write_epoch_dataset_record(
 
     admission = current_input_admission()
     encoded_size = len(text.encode("utf-8")) + text.count("\n") * (len(os.linesep) - 1)
-    with (admission.artifact_writer(record_path, encoded_size)
+    temporary = record_path.with_name(f".{record_path.name}.tmp")
+    with (admission.artifact_writer(record_path, encoded_size, temporary_paths=(temporary,))
           if admission is not None else nullcontext()):
-        record_path.write_text(text, encoding="utf-8")
+        temporary.write_text(text, encoding="utf-8")
+        temporary.replace(record_path)
     return record_path
 
 

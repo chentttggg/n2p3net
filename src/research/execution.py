@@ -83,6 +83,25 @@ def atomic_write_json(path: str | Path, payload: Mapping[str, Any], *, input_adm
     return target
 
 
+def publish_exclusive(path: str | Path, write) -> Path:
+    """Publish a new immutable artifact; a crash never leaves a partial file at ``path``."""
+
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists():
+        raise FileExistsError(f"refusing to replace an existing artifact: {target}")
+    temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
+    try:
+        with temporary.open("xb") as stream:
+            write(stream)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.link(temporary, target)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return target
+
+
 def partial_run_record(
     *,
     schema: str,

@@ -95,3 +95,22 @@ def test_atomic_replace_read_lock_is_bounded_and_preserves_old_bytes(tmp_path, m
         assert read_json(output) == {"completed": 2}
         assert len(attempts) == 3
     assert list(tmp_path.iterdir()) == [output]
+
+
+def test_publish_exclusive_refuses_replacement_and_leaves_no_partial_file(tmp_path):
+    import pytest
+
+    from research.execution import publish_exclusive
+
+    target = publish_exclusive(tmp_path / "model.npz", lambda stream: stream.write(b"first"))
+    with pytest.raises(FileExistsError, match="existing artifact"):
+        publish_exclusive(target, lambda stream: stream.write(b"second"))
+
+    def crash(stream):
+        stream.write(b"partial")
+        raise RuntimeError("interrupted")
+
+    with pytest.raises(RuntimeError, match="interrupted"):
+        publish_exclusive(tmp_path / "other.npz", crash)
+    assert target.read_bytes() == b"first"
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["model.npz"]

@@ -139,7 +139,10 @@ class SWLDA(Baseline):
         Fs = (F - self._mean) / self._std
         self.selected_ = self._select_features(Fs, y)
         if not self.selected_:
-            self.selected_ = [0]
+            raise ValueError(
+                f"SWLDA selected no feature below p_entry={self.p_entry}; each class needs at "
+                "least two non-degenerate trials"
+            )
         self.lda.fit(Fs[:, self.selected_], y)
         return self
 
