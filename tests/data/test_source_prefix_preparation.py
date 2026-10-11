@@ -9,7 +9,7 @@ import pytest
 
 from data.epochs import load_epoch_dataset
 from data.source_records import load_target_prefixes, prepare_source_record_prefixes
-from tests.support.raw_prefix import write_real_record
+from tests.support.raw_prefix import write_bdf, write_real_record
 
 
 @pytest.fixture
@@ -184,12 +184,16 @@ def test_cli_prefix_manifest_is_consumable_and_resume_does_not_parse_raw(real_re
 def _multiple_records(item, tmp_path):
     import shutil
 
+    from data.source_records import file_sha256
+
     first = {**item, "session": "earlier", "run": "first"}
     later = []
-    for name, session, run in [("middle", "earlier", "second"), ("last", "later", "first")]:
-        for suffix in ("eeg.bdf", "channels.tsv", "events.tsv"):
+    # Each recording has its own signal: a byte copy would put calibration data in the test session.
+    for seed, (name, session, run) in enumerate([("middle", "earlier", "second"), ("last", "later", "first")], 509):
+        source = write_bdf(tmp_path / (name + "_eeg.bdf"), seed)
+        for suffix in ("channels.tsv", "events.tsv"):
             shutil.copyfile(tmp_path / ("person_" + suffix), tmp_path / (name + "_" + suffix))
-        later.append({**item, "path": name + "_eeg.bdf", "session": session, "run": run})
+        later.append({**item, "path": source.name, "sha256": file_sha256(source), "session": session, "run": run})
     protocol = dict(kind="last_session_holdout", session_order=["earlier", "later"],
                     run_order=["first", "second"], test_session="later", minimum_test_trials=2)
     return [later[1], later[0], first], protocol  # File list order does not define chronology.
