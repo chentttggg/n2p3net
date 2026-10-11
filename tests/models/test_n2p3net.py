@@ -586,3 +586,13 @@ def test_n2p3net_exposes_trunk_features_without_changing_logits() -> None:
     assert logits.shape == (2, 2)
     # forward_features is part of forward, so repeated calls are finite.
     assert torch.isfinite(features).all()
+
+
+def test_warm_start_rejects_shape_mismatched_trunk_tensors():
+    reference = N2P3NetBaseline(3, 64, 128.0, device=torch.device("cpu"))
+    key, value = next(iter(reference._make_model().state_dict().items()))
+    baseline = N2P3NetBaseline(3, 64, 128.0, device=torch.device("cpu"),
+                               pretrained_state_dict={key: torch.zeros(*value.shape, 2)})
+    baseline.model_ = baseline._make_model()
+    with pytest.raises(ValueError, match="shape_mismatch"):
+        baseline._apply_pretrained_state_dict()
