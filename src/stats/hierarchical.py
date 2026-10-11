@@ -20,6 +20,8 @@ class PairedInterval:
     bootstrap_interval: tuple[float, float]
     bootstrap_iterations: int
     bootstrap_seed: int
+    interval_method: str = "percentile_bootstrap"
+    interval_estimable: bool = True
 
     def record(self) -> dict[str, object]:
         record = asdict(self)
@@ -69,6 +71,9 @@ def paired_interval(
         offset += take
     alpha = 1.0 - confidence_level
     lower, upper = np.quantile(sampled, [alpha / 2.0, 1.0 - alpha / 2.0])
+    # When resampling every unit identically is at least alpha/2 likely, the tails
+    # are the sample range itself rather than a confidence interval.
+    estimable = (1.0 / len(values)) ** len(values) < alpha / 2.0
     return PairedInterval(
         inference_scope=inference_scope,
         sampling_unit=unit,
@@ -78,6 +83,8 @@ def paired_interval(
         bootstrap_interval=(float(lower), float(upper)),
         bootstrap_iterations=iterations,
         bootstrap_seed=seed,
+        interval_method="percentile_bootstrap" if estimable else "not_estimable_sample_range",
+        interval_estimable=estimable,
     )
 
 

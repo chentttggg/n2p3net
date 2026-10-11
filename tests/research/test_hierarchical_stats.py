@@ -34,3 +34,13 @@ def test_interval_preserves_the_declared_independent_sampling_unit(
 def test_interval_rejects_fold_or_single_replicate_shortcuts(differences, scope, message):
     with pytest.raises(ValueError, match=message):
         paired_interval(np.asarray(differences), inference_scope=scope, iterations=1000, seed=3)
+
+
+@pytest.mark.parametrize("differences,estimable", [([0.1, 0.3], False), ([0.1, 0.2, 0.3], False),
+                                                   ([0.1, 0.2, 0.3, 0.4], True)])
+def test_interval_marks_sample_range_tails_as_not_estimable(differences, estimable):
+    result = paired_interval(np.asarray(differences), inference_scope="training_procedure",
+                             iterations=1000, seed=5)
+    assert result.interval_estimable is estimable
+    assert result.record()["interval_method"] == (
+        "percentile_bootstrap" if estimable else "not_estimable_sample_range")
