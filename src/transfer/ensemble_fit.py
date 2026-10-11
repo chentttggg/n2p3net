@@ -73,6 +73,19 @@ def _temperature_nll(log_temperature, log_probability, targets):
     return float(np.mean(logsumexp(values, axis=1) - values[np.arange(len(values)), targets]))
 
 
+def temperature_from_oof(log_probability, targets):
+    """Replay the original finite meta learner on captured C-only probabilities.
+
+    No EEG fitter, future evidence, new state, or optimization policy is involved.
+    """
+    solution = minimize_scalar(_temperature_nll, args=(log_probability, targets),
+                               bounds=(np.log(.05), np.log(20.)), method="bounded")
+    if not solution.success or not np.isfinite(solution.fun):
+        raise ExpectedSubjectError(SubjectFailureCode.NONFINITE_OPTIMIZATION, stage="temperature",
+            detail="grouped temperature fit did not produce a finite declared calibration")
+    return float(np.exp(solution.x))
+
+
 def _native_observation_contract(view):
     return (view.sample_rate_hz, view.channel_names, view.channel_types, view.reference, view.signal_unit)
 
@@ -750,13 +763,20 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
                     _producer_recorder=_producer_recorder, _producer_context=_producer_context,
                     _source_preparation=preparation))
     experts = []
+    native_fit_inputs = {}
     for spec in expert_programs:
         data = build_calibration_epoch_dataset(calibration, spec.profile) if spec.family == "trial" else None
         records = [CalibrationRecord(group.view.record_id, group.view.samples, group.view.onsets, group.labels)
                    for group in calibration] if spec.family == "continuous_ar" else []
         experts.append(_fit_expert(spec, data, records, receipts[0], sources.get(spec.expert_id),
             receipts, fit_inputs, device=device, source_preparation=preparation))
+        if _producer_recorder is not None:
+            from research.prefix_inner_replay import actual_expert_fit_inputs
+
+            native_fit_inputs[spec.expert_id] = actual_expert_fit_inputs(spec, data, records, receipts[0])
     fitted = FittedEnsemble(EnsembleScorer(program), experts, receipts)
+    if _producer_recorder is not None:
+        _producer_recorder.record_native_fit_inputs(fitted, native_fit_inputs)
     if cache_key is not None:
         _fixed_fit_cache[cache_key] = fitted
     if calibration_strategy == "fixed":
@@ -969,12 +989,7 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
         log_probability = np.stack([row[0] for row in rows])
         targets = np.asarray([row[1] for row in rows], dtype=int)
 
-        solution = minimize_scalar(_temperature_nll, args=(log_probability, targets),
-                                   bounds=(np.log(.05), np.log(20.)), method="bounded")
-        if not solution.success or not np.isfinite(solution.fun):
-            raise ExpectedSubjectError(SubjectFailureCode.NONFINITE_OPTIMIZATION, stage="temperature",
-                detail="grouped temperature fit did not produce a finite declared calibration")
-        temperatures[name] = float(np.exp(solution.x))
+        temperatures[name] = temperature_from_oof(log_probability, targets)
     temperature_record = {"strategy": "grouped_temperature", "temperatures": temperatures,
         "temperature_expert_ids": list(selected), "fixed_control_expert_ids": [name for name in program.expert_ids if name not in selected],
         "temperature_bounds": [.05, 20.], "score_transform": "posterior_power_temperature/1",
