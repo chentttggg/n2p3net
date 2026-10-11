@@ -476,10 +476,20 @@ S1观测域/被试统计在通道c的真实观测集合内逐级等权：域、�
 旧B0固定updates接口使用`U_ref=60*ceil(n_fit/128)`，本轮不调用；跨batch不能同时声称
 draws及updates匹配。缺导、尾批、失败或OOM不能静默重定义标签池、风险质量或更新上限。
 
-- BI2014a raw CSV candidate path 可恢复多 character decisions。causal-v2 与其
-  cross-decision 结果已压缩隔离；当前须从 64 人 raw source 重建 causal-v3，不能
-  改 cache 名称或 metadata 冒充新合同。
+- BI2014a raw CSV candidate path 可恢复多 character decisions。历史causal-v2
+  cross-decision产物保持原身份；causal-v3与独立raw episode双向程序分别从真实raw生成，
+  不能改cache名称或metadata冒充新合同。
 - GTN 的参考电极并非逐文件完整记录，跨数据集前需要独立重参考方案。
 - GTN candidate occurrence 异步；不能把相同 occurrence index 当同步 block。
 - 128 Hz 与 256 Hz 的比较必须共享源事件、带宽、基线、QC、fold、seed 和
   校准；只允许采样率及其跨度匹配核发生变化。
+
+BI2014a独立episode程序先按raw完整episode划分C与未来，再在各自raw范围内执行实际
+source checkpoint的全部预处理字段。六槽FZ/P3/PZ/P4/PO8/OZ中，P3/PZ/P4/OZ为实际观测；
+FZ/PO8保持缺导mask，使用实际native CZ重参考。512 Hz raw与128 Hz模型输入分别记账；
+`brainsync_bidirectional_v1`的source `baseline=none`不能用同名但`mean_only`的个人合同替代。
+每人最早5个完整raw episode构成C，保存实际保留标签数；未来y为空，刺激码规范为0–11，
+原CSV target-coded字段与真实答案只留在父评分账本。缺失或purged事件保留-1映射。
+主评价对每个原DecisionKey使用实际完整raw重复深度，按原participant与decision等权，
+不等权平均各R组。subject57 selection23完整R1进入主端点；额外2 flash对应的R2截断
+另存同key的secondary censor诊断，概率为空，不增加主episode或混入主分母。
