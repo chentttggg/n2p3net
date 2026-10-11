@@ -34,7 +34,7 @@ stage05 两次、stage06 一次本地实际执行均由 RAM 门记为 `resource_
 
 原Windows严格loader已导出全部8人的原响应与16份完整噪声状态。A01复用既有封存出口，A02–A08七个独立进程均exit0；最终33成员包为5,602,250 B，逐成员摘要、原130输入/158源码/158 capsule及完整请求经独立复审。原导出计划保持`056977…`，与新的云评分计划分别绑定；根窗口复核最终包33成员并写入[跨主机出口绑定](../assets/research_resume_20261011/stationary_crosshost_export_binding.json)。原`/2` strict load包含旧reference-root关系重编，新`/3` root编译、fit与held score均为0。
 
-下一步由云端消费经哈希绑定的Windows原态，编译新law并完成同支持16格评分。当前科学接线正在补齐原导出计划对held样本/设计的独立授权及跨attempt互斥；Linux控制器正在修复并复审peer与迟到后代归属。完整运行在这些接点接受后直接执行，原Linux旧loader失败与本地三次RAM失败保留自己的来源。
+云科学接线已完成原导出计划对held样本/设计的独立授权及跨attempt互斥，修后独审33项与科研树集成5项分别通过，见[科学接受绑定](../assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)。合法原A01可进入native5数值池，重签错误样本/设计及原输出争用均在计算前拒绝；这一验证没有执行新law评分。下一步在实际factory、统一controller和Linux门接受后，云端直接编译新law并完成同支持16格评分；原Linux旧loader失败与本地三次RAM失败保留自己的来源。
 
 ## P1 数值门诊断与小组协议评估
 

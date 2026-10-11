@@ -22,6 +22,7 @@ from research.local_program_control import (  # noqa: E402
     LocalResourceBlockedError,
     LocalResourceMonitor,
     OwnedProcessTree,
+    actual_alive,
     assert_no_owned_live,
     atomic_record,
 )
@@ -53,12 +54,8 @@ def run(plan_file):
     lease = directory/"controller.lease.json"
     if lease.exists():
         old = read(lease)
-        try:
-            process = psutil.Process(old["controller_pid"])
-            if abs(process.create_time()-old["controller_created"]) < .01:
-                raise RuntimeError("another live controller owns this program")
-        except psutil.NoSuchProcess:
-            pass
+        if actual_alive(old["controller_pid"], old["controller_created"]):
+            raise RuntimeError("another live controller owns this program")
         assert_no_owned_live(directory)
         lease.rename(directory/f"controller.expired.{old['run_id']}.json")
     pending, active, logs, trees = [], {}, [], []

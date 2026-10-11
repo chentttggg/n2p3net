@@ -23,6 +23,25 @@ class LocalResourceBlockedError(LocalProgramStoppedError):
     """Current memory cannot safely admit even the remaining single actor."""
 
 
+def _identified_process(pid, created):
+    """Return only the same process birth; access errors remain blocking errors."""
+    try:
+        process = psutil.Process(pid)
+        return process if abs(process.create_time()-created) < .01 else None
+    except psutil.NoSuchProcess:
+        return None
+
+
+def actual_alive(pid, created):
+    """A reused PID or Linux zombie cannot own a live controller/worker lease."""
+    process = _identified_process(pid, created)
+    try:
+        return (process is not None and process.is_running()
+                and process.status() != psutil.STATUS_ZOMBIE)
+    except psutil.NoSuchProcess:
+        return False
+
+
 def atomic_record(path, record):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -49,9 +68,8 @@ def read_control(path, *, run_id, controller_pid, controller_created, plan_file_
                 raise LocalProgramStoppedError("control belongs to another controller attempt")
             if plan_file_sha256 is not None and record.get("plan_file_sha256") != plan_file_sha256:
                 raise LocalProgramStoppedError("control belongs to another prepared program")
-            process = psutil.Process(controller_pid)
-            if abs(process.create_time()-controller_created) > .01:
-                raise LocalProgramStoppedError("controller PID was reused")
+            if not actual_alive(controller_pid, controller_created):
+                raise LocalProgramStoppedError("controller no longer exists or its PID was reused")
             now, updated = time.time(), record["updated_time"]
             if (type(updated) not in (int, float) or not math.isfinite(updated)
                     or updated > now+8*math.ulp(now)):
@@ -94,8 +112,10 @@ class OwnedProcessTree:
 
     def _alive(self):
         try:
-            process = psutil.Process(self.pid)
-            if abs(process.create_time()-self.created) < .01:
+            # Discover descendants even when the same-birth launcher is already
+            # a zombie: a live child still owns resources and blocks resume.
+            process = _identified_process(self.pid, self.created)
+            if process is not None:
                 for child in process.children(recursive=True):
                     with self.known_lock:
                         self.known[child.pid] = child.create_time()
@@ -106,9 +126,8 @@ class OwnedProcessTree:
             known = tuple(self.known.items())
         for pid, created in known:
             try:
-                process = psutil.Process(pid)
-                if abs(process.create_time()-created) < .01 and process.is_running():
-                    result.append(process)
+                if actual_alive(pid, created):
+                    result.append(psutil.Process(pid))
             except psutil.NoSuchProcess:
                 pass
         return result
@@ -136,7 +155,7 @@ class OwnedProcessTree:
         for process in remaining:
             # Recheck the original birth after the bounded wait.
             try:
-                if abs(process.create_time()-self.known[process.pid]) < .01:
+                if actual_alive(process.pid, self.known[process.pid]):
                     process.kill()
             except psutil.NoSuchProcess:
                 pass
@@ -192,12 +211,8 @@ def assert_no_owned_live(directory):
             for worker in row["workers"]:
                 members.update((value["pid"], value["created"]) for value in worker["actual_processes"])
     for pid, created in members:
-        try:
-            process = psutil.Process(pid)
-            if abs(process.create_time()-created) < .01 and process.is_running():
-                raise LocalProgramStoppedError("prior owned worker or descendant remains live")
-        except psutil.NoSuchProcess:
-            pass
+        if actual_alive(pid, created):
+            raise LocalProgramStoppedError("prior owned worker or descendant remains live")
 
 
 class LocalResourceMonitor:

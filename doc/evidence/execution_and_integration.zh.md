@@ -24,7 +24,7 @@ BI2014a按库队列由云端推进，数据准备、模型、结果和终态各�
 
 P1 stationary panel 的基础实现与两处Path修复已合入 `929334a/71ab581`。strict export在原capsule独立进程核保存M/R/原Σ/F与noise，worker从新冻结source编 `/3` root，原scorer、requested与pair owner接最终指标。新freeze通过独立真实A01 export与7项focused gate；本地stage05两次/stage06一次均resource_blocked、完整cell0/16、进程退役，实际partial root/候选计数见[执行绑定](../assets/research_resume_20261011/stationary_program_execution_binding.json)。全部8人Windows原态出口现已完成，33成员原态/实际退出包通过独立复审与root逐成员核验，见[跨主机出口绑定](../assets/research_resume_20261011/stationary_crosshost_export_binding.json)。本地停止重复启动；新cloud IO factory保留原plan056/export script/loader身份，科学评分另绑新consumer plan。
 
-CloudExecutor的IO调度切片已在科研WIP通过Windows19个相关case。Linux迟到fork修复`c45be40e…`仍待修后接受：出生时间与空token不能唯一证明任务归属，已记录peer误收路径并交回云sole owner。P1科学patch`4742f6ea…`独审定位原held数值自签及跨attempt互斥缺口，作者正按原Windows export plan、共享file lock和统一历史活树接口修复。修后模块/调用链复审与实际平台窄gate闭合后再冻结完整16格；已有出口包不重签，旧controller receipts各自保原执行源码。
+CloudExecutor的IO调度切片已在科研WIP通过Windows19个相关case。Linux迟到fork修复`c45be40e…`被独审拒绝：出生时间与空token不能唯一证明任务归属；新owner版本正在按exec-time token、真实双peer和历史pool覆盖修复，长科学callback期间ready补位也须保留。P1首版`4742f6ea…`的原held数值自签及跨attempt互斥缺口已由`db46076…`关闭，root逐读并按原字节接入：独审33facts与科研树lease/path5项分别通过，见[科学接受绑定](../assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)。实际factory/controller/Linux平台门闭合后再冻结并直接执行完整16格；已有出口包不重签，旧controller receipts各自保原执行源码。
 
 旧prefix/P1 software binding继续证明各自历史快照；当前HEAD的CLI、compute admission与stationary `/3`依赖已有后续变化，新执行绑定真实frozen source。stage06展开计划和日志留在本地，误纳入的四个未推送Git提交已先保存并验证恢复bundle，再从分发历史移出；原执行HEAD仍由bundle保留，源码和结果没有改签。Git保紧凑绑定及主题页，恢复base/旧HEAD/bundle SHA见上述执行绑定。
 
