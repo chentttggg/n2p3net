@@ -185,3 +185,18 @@ def test_pretraining_runner_rejects_tampered_source_archive(tmp_path, monkeypatc
 
     with pytest.raises(ValueError, match="archive hash disagrees"):
         run_pretrain_main()
+
+
+def test_pretraining_runner_survives_a_batch_without_probe_training_rows(tmp_path, monkeypatch) -> None:
+    # Batch size one yields batches made only of probe-validation rows.
+    dataset = causal_candidate_dataset()
+    cache = save_epoch_dataset(tmp_path / "pretrain.npz", dataset)
+    checkpoint = tmp_path / "pretrained.pt"
+    source_manifest, _, _ = write_source_snapshot(tmp_path)
+    monkeypatch.setattr("sys.argv", [
+        "run_pretrain.py", "--source-cache", str(cache), "--source-snapshot-manifest", str(source_manifest),
+        "--checkpoint", str(checkpoint), "--cohort", "causal", "--holdout-subjects", "g3",
+        "--epochs", "1", "--batch-size", "1", "--device", "cpu",
+    ])
+    run_pretrain_main()
+    assert torch.load(checkpoint, map_location="cpu", weights_only=False)["subject_probe_audit"]["enabled"]
