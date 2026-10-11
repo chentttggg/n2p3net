@@ -61,3 +61,9 @@ B12 新增 `validate_b12_execution_manifest`，由 paired `run_erp_comparator._f
 ## 缓存与共享评分独立复签
 
 source cache 与 shared programme score 已在科研主树 `4830ef9` 集成。修后 checkpoint 的 whole-study literal 权限只读私有 admitted source ledger；当前 target 的 physical、identity、execution 与 study proof 每次重核，source prototype 不缓存 target fit、BN、OOF 或 temperature。`FittedEnsemble.score_programs` 只在同一 current view、同一实际 experts tuple、fit receipts 与 target contract 下共享 raw score，fixed/grouped 仍分别应用自己的概率程序；capture 与 loaded future replay 各自真实计算，parent 保原混合准入。独立 authority/fresh-state/lifecycle probes 和两条真实 K0/full-C/OOF caller 路径通过，原权限绕过和失败日志保留。固定源码及证据边界见[独立复签 binding](../assets/research_resume_20261011/cache_shared_acceptance_binding.json)；这仍是软件/有限调用链验收，没有完整矩阵吞吐、跨host整包或公共效能声明。
+
+## 条件评分公共白化集成
+
+云source07的固定白化patch（`bf09e072…`）已按函数逻辑接入科研树：只抽取原conditional QR helper，条件score在当前record共享公共列，各candidate继续全record白化增量设计并分别积分。root逐读实际白化、event design、prefix/full QR和precision调用；AST核对全部其它现有函数一致，保留科研树较新的单producer QR及稳定df。相关23项验证、Ruff与diff检查通过，来源见[集成绑定](../assets/research_resume_20261011/common_whitening_integration_binding.json)。
+
+云端原32 records×36 candidates的数值桥与352-record阶段计时保其原来源；科研侧当前接受公式/调用相容和相关行为，完整矩阵耗时继续由云窗口实测。旧模型保持原producer，新训练包使用实际执行源码身份。

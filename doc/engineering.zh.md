@@ -339,6 +339,8 @@ GPU计时同步，冷启动/编译与热运行分列。缓存就绪的训练时�
 
 ### 云端训练性能优先
 
+条件连续score按本次actual record共享公共白化列；各candidate保完整AR history、prefix/full QR及原密度。公共函数抽取与新score接点已做相关Gaussian、multi-record和precision反例验证；当前科研fit/posterior/df逐函数保持原逻辑。性能以prepare＋load＋score阶段和完整矩阵墙钟实测；旧模型由原loader准入，显式新数值consumer另记身份。
+
 用户于2026-10-08再次强调多次遇到25核配额只用1核：必须核真实进程创建身份、就绪任务、有效CPU核、GPU利用、内存峰、阶段进度和完成产物；25线程/4worker配置本身不能作为验收。遇到串行压缩/解压、重复加载/哈希、I/O、锁或内存准入等待，要落实代码并验证端到端路径。2394曾GPU95%但worker突然退出、内存接近90 GiB上限，原因未确定；[原始终态与完整输入基准](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)已物理保留。本地整机CPU<80%与云端配额利用分别控制，不能混用。
 
 用户随后明确本轮交付目标是**优化底层调用算法并彻底模块化云端训练**：相近实验固定复用同一个执行模块，已有优秀训练实现按当前合同复用。实验计划提供依赖、配方、科学调用和真实输入/输出身份；公共底层统一拥有ready队列、进程与数值线程、host/GPU/暂存准入、缓存复用、阶段记录和异常退出诊断。`TrainingRuntime`、`MatrixBatchSource`、源轨迹登记表、原缓存writer/attested loader及资源owner作为复用基础；CLI消费稳定接口，资源算法集中在SRC。

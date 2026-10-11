@@ -251,7 +251,17 @@ def _conditional_prediction(samples, designs, noise, prefix, prior_mean, prior_c
         prefix_y.append(transformed[:prefix, :channels])
         tail_design.append(matrix[prefix:])
         tail_y.append(transformed[prefix:, :channels])
+    return _conditional_posterior(prefix_design, prefix_y, tail_design, tail_y,
+                                  prior_mean, prior_covariance, posterior=posterior,
+                                  prior_precision_root=prior_precision_root)
+
+
+def _conditional_posterior(prefix_design, prefix_y, tail_design, tail_y, prior_mean, prior_covariance, *,
+                           posterior=False, prior_precision_root=None):
+    """The same prefix/full QR owner for fitting and read-only scoring."""
     A_u, Y_u, A_s, Y_s = map(np.vstack, (prefix_design, prefix_y, tail_design, tail_y))
+    kernel_width = prior_mean.shape[0]
+    width = A_u.shape[1]
     prior_root = (solve_triangular(np.linalg.cholesky(prior_covariance), np.eye(kernel_width), lower=True)
                   if prior_precision_root is None else prior_precision_root)
     prefix_mean, prefix_information_root = _joint_posterior(A_u, Y_u, prior_mean, prior_root)
@@ -269,6 +279,29 @@ def _conditional_prediction(samples, designs, noise, prefix, prior_mean, prior_c
         mean = full_mean[:kernel_width]
         covariance = full_root[:kernel_width] @ full_root[:kernel_width].T
     return scatter, logdet, len(Y_s), mean, covariance
+
+
+class _ConditionalRecordWhitening:
+    """One internally derived record's common columns, never a cross-call cache."""
+
+    def __init__(self, samples, common_design, noise, prefix):
+        self.noise, self.prefix = noise, prefix
+        self.channels = samples.shape[1]
+        self.rank = common_design.shape[1]
+        drift = np.column_stack((np.ones(len(samples)),
+            (2 * np.arange(len(samples)) - (prefix - 1)) / (prefix - 1)))
+        self.common = noise.whiten(np.column_stack((samples, common_design, drift)))
+
+    def predict(self, design, prior_mean, prior_covariance, *, prior_precision_root=None):
+        # Always whiten the candidate over its complete actual record. The
+        # prefix and tail are split only afterwards, preserving AR startup.
+        target = self.noise.whiten(design[:, self.rank:])
+        matrix = np.column_stack((self.common[:, self.channels:self.channels + self.rank],
+                                  target, self.common[:, -2:]))
+        samples = self.common[:, :self.channels]
+        return _conditional_posterior([matrix[:self.prefix]], [samples[:self.prefix]],
+            [matrix[self.prefix:]], [samples[self.prefix:]], prior_mean, prior_covariance,
+            prior_precision_root=prior_precision_root)
 
 
 def _fit_fixed_prefix(samples, designs, residuals, ids, *, order, prefix, ridge, strategy, fit_scope, kernel_prior=None):
@@ -1129,12 +1162,16 @@ class ContinuousDecisionModel:
             spatial_root = np.linalg.cholesky(self.innovation_covariance)
             logdet_spatial = 2 * float(np.log(np.diag(spatial_root)).sum())
             evidence = []
+            first_design = _event_design(onsets, member[:, 0], len(X), self.basis)
+            whitening = _ConditionalRecordWhitening(X, first_design[:, :self.basis.shape[1]],
+                                                      self.noise, self.conditioning_samples)
             for candidate in range(len(self.candidate_ids)):
-                design = _event_design(onsets, member[:, candidate], len(X), self.basis)
+                design = (first_design if candidate == 0 else
+                          _event_design(onsets, member[:, candidate], len(X), self.basis))
                 posterior_arguments = ({} if self._posterior_precision_root is None else
                                        {"prior_precision_root": self._posterior_precision_root})
-                scatter, logdet, n_tail, _, _ = _conditional_prediction(
-                    [X], [design], self.noise, self.conditioning_samples, self._predictive_kernel_mean,
+                scatter, logdet, n_tail, _, _ = whitening.predict(
+                    design, self._predictive_kernel_mean,
                     self.kernel_row_covariance if self._posterior_precision_root is None else None,
                     **posterior_arguments)
                 spatial_precision_scatter = solve_triangular(spatial_root, scatter, lower=True)

@@ -1,0 +1,53 @@
+{
+  "schema": "research_common_whitening_integration/1",
+  "base_commit": "17002f711fcae96005c926baef49ce6283a6a7d8",
+  "upstream_commit": "68c18961d633bd4250978d1667a70dcc80d1ebba",
+  "upstream_patch_sha256": "bf09e07282f96e019a13e0ea530cc26ba97f9a796b805b2e1e69f510805f15eb",
+  "integration_scope": "only conditional common whitening, shared original QR helper and its targeted tests; preserve newer research fit/posterior/df",
+  "baseline_continuous_source_sha256": "c530c37d92f9adbd4b2eb905575b44602e0618538f3392b5e2a5c3f82f0c7f69",
+  "files": {
+    "src/transfer/continuous_decision.py": {
+      "sha256": "f3d603202ad8893c9339b302af22cac74abf88274eba5808cd34b12c457b3925",
+      "bytes": 89399
+    },
+    "tests/transfer/test_common_conditional_whitening.py": {
+      "sha256": "3c797f482196a7f6e03bbd71d4b3e85a1b97821556317bc7aa20a988761bcaa1",
+      "bytes": 6061
+    },
+    "tests/transfer/test_continuous_posterior_binding.py": {
+      "sha256": "09e69a44696d1da5ab4880b52e0e96d977a9dfb0b90743296e41ee74404c9f71",
+      "bytes": 16387
+    }
+  },
+  "function_review": {
+    "changed_functions": [
+      "ContinuousDecisionModel.score",
+      "_conditional_prediction"
+    ],
+    "added_functions": [
+      "_ConditionalRecordWhitening.__init__",
+      "_ConditionalRecordWhitening.predict",
+      "_conditional_posterior"
+    ],
+    "removed_functions": [],
+    "all_other_existing_functions_AST_equal": true
+  },
+  "root_validation": {
+    "pytest_cases": 23,
+    "pytest_exit_code": 0,
+    "ruff_exit_code": 0,
+    "diff_check_exit_code": 0,
+    "junit_sha256": "a0487bcb5bdd76ad537ac5b868981ae8a6190dfae7da748d9375c1d2cd86b5d4"
+  },
+  "upstream_validation_scope": "32 actual records x 36 candidates in explicit original-loader/new-numeric-consumer bridge; 352-record bounded phase timings",
+  "root_logic_review": [
+    "common D0 is candidate independent by original event design",
+    "candidate D1 whitens complete record before prefix/tail split",
+    "prefix/full QR and proper/flat measures share original formula",
+    "state lifetime is one current score call",
+    "all previous production functions except two score/helper entries remain AST equal"
+  ],
+  "public_new_fits": 0,
+  "old_producer_or_model_resigned": false,
+  "full_matrix_throughput_measured": false
+}
