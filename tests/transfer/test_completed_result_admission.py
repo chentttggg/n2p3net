@@ -591,3 +591,15 @@ def test_personal_main_selective_resume_preserves_original_plan_identity(persona
         assert (output / "plan.json").read_bytes() == original_plan_bytes
         assert progress["results"] == [{"id": task["id"], "status": "completed", "reused": True}]
         assert read_json(case.path) == original
+
+
+def test_personal_matrix_fails_tasks_whose_source_matrix_ended_without_them(tmp_path):
+    import json
+
+    from experiments.run_personal_eog_matrix import missing_source_error
+
+    assert missing_source_error(tmp_path, "B0-s1") is None
+    (tmp_path / "progress.json").write_text(json.dumps({"status": "running"}), encoding="utf-8")
+    assert missing_source_error(tmp_path, "B0-s1") is None
+    (tmp_path / "progress.json").write_text(json.dumps({"status": "failed"}), encoding="utf-8")
+    assert "without a result for B0-s1" in missing_source_error(tmp_path, "B0-s1")
