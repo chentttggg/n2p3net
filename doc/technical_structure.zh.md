@@ -18,6 +18,8 @@
 
 paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账本关系：requested K×arm×seed必须完整，coverage逐项匹配actual terminal status，source catalog保持唯一study/seed键并核plan checkpoint/procedure与producer seed/kind/study exclusion。失败actor缺失authority或source保持显式unresolved；completed NN/scratch cell必须有源凭证。聚合器拒绝同键冲突凭证；统计完成后才绑定最终report，摘要排除顶层binding以保持重复finalize幂等。物理raw/cache/checkpoint门继续由原入口持有，见[修后独立复签](evidence/research_resume_20261011.zh.md#b12最终账本修后复签)。
 
+`build_channel_noise_audit_manifest`与`audit_channel_noise_mechanism`的paired `/2`入口复用原public source owner和共享请求/指标：全source participants对应全requested roster，C target/labels对应原CalibrationSelection，modern mean/precision R/原Σ对应保存模型完整fit输入；两noise arm共用物理factor。shared/private AR8与prefix32的后续native矩阵另执行，不把软件反例或原noise的旧winner改签为公共成绩，见[P1入口验收](evidence/research_resume_20261011.zh.md#p1软件入口修后验收)。
+
 更新：2026-09-06。本文件依据实际源码与入口核对，描述现状与尚缺接口；科研目标由
 [活动规范](research_program.zh.md)定义，发现和验证见[本次审计](evidence/technical_audit_20260906.zh.md)。
 源码目录不因行数大或模块多就拆分；优先保留已经集中实现的合同和算法。

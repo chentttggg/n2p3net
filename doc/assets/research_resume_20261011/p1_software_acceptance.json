@@ -1,0 +1,33 @@
+{
+  "schema": "n2p3_p1_cohort_C_authority_independent_acceptance/1",
+  "status": "accepted_bounded_software_slice",
+  "source_files": {
+    "experiments/build_channel_noise_audit_manifest.py": "8782bc96ab389744f2d4cdb027241e8b074a5b8c3d56f7b61fe6dec7c4e563a2",
+    "src/research/channel_noise_mechanism.py": "2f6464cc02a577f5231d349d49fe6a7d4339012f8d47a8a459a504d805d88d08",
+    "experiments/audit_channel_noise_mechanism.py": "7586edb9f1d40bfe18ca96447ff9896d8c120173c8d31bcfd30b88776d4a8c94",
+    "tests/research/test_channel_noise_paired.py": "1b28a0831530b602f650f6baed178b9323a0f6d721ac841d2cffb99ae53cbf0e"
+  },
+  "author_cases": 16,
+  "author_test_exit": 0,
+  "independent_original_main_probe_passed": 6,
+  "independent_main_exit": 0,
+  "independent_original_wrong_label_probe_exit": 1,
+  "wrong_label_exit_reason": "Expected fail-fast ValueError at actual source C labels/target gate, not resigned as a successful command",
+  "independent_admission_cases": 3,
+  "independent_admission_exit": 0,
+  "independent_review_path": "tmp/P1_INDEPENDENT_POSTFIX_20261011/REVIEW_FINAL.zh.md",
+  "independent_review_sha256": "793c0ff9c028f5275f9cecd77c90227ee23edfe87a1fff837f7fa871e7666a60",
+  "native_panel_fits": 0,
+  "native_panel_scores": 0,
+  "original_RED_preserved": true,
+  "scope": "Modern full physical factor, actual source cohort and C label authorization, requested paired risk and saved software replay; native panel/root integration remain separate",
+  "integration_commit": "896211a",
+  "integrated_files": {
+    "experiments/build_channel_noise_audit_manifest.py": "e91467ada755e53da7339015bd2b59e40abed1d70c996832a29d67af2cf10161",
+    "src/research/channel_noise_mechanism.py": "2f6464cc02a577f5231d349d49fe6a7d4339012f8d47a8a459a504d805d88d08",
+    "experiments/audit_channel_noise_mechanism.py": "7586edb9f1d40bfe18ca96447ff9896d8c120173c8d31bcfd30b88776d4a8c94",
+    "tests/research/test_channel_noise_paired.py": "d4c4e197722216d59a0aa7ff2a7bc96b068f8b2a7eff213a6fe3419fa5877dec"
+  },
+  "native_panel_status": "not executed; full8person x2noise programme next",
+  "local_evidence_root": "C:\\Users\\chent\\.codex\\worktrees\\research-mechanism-paired\\n2p3-net\\tmp\\P1_MECHANISM_20261011"
+}

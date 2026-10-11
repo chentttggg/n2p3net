@@ -129,3 +129,11 @@ B12 新增 `validate_b12_execution_manifest`，由 paired `run_erp_comparator._f
 现代Continuous保存的上三角row precision为R，完整系数M前半为common、后半为target increment；row-major系数×channel物理factor为`kron(R^-1, chol(原Sigma_ref))`，保持同一保存M/R和原spatial covariance。真实小型scorer图像关系误差约`1.39e-17`；误用R转置的图像误差约`0.04657`。不能从派生H重造现代producer，不能随新noise换response不确定性；这是模块化plugin预测程序，不称各臂joint posterior或joint MLE。
 
 新physical入口须消费实际PredictionDecisionView/MembershipDecision的onsets、membership、source/support、事件counts和evidence level，design按原basis核验；旧generic数组manifest不能猜counts补身份。建议后续16格C内诊断为8实际participants×2noise，各用C800授权中最早6完整组、前5组600标签拟合、第6组120标签later-held，其余标签另列。它不称C800全fit、独立公共终测或成人确认。现代转换、共同指标与该实际输入先在代码/反例/保存重放中验收，再执行新panel。原ignored B11 payload未恢复，不重跑旧panel来补签；证据指针与hash见[方向绑定](../assets/research_resume_20261011/p1_direction_binding.json)。
+
+## P1软件入口修后验收
+
+`FrozenERPResponse.from_continuous_model`和paired audit `/2`已集成：保存M/R/原Σ转换为完整物理factor，公共入口从原MAT owner重建view、onsets/membership/design/support及标签权限，输出共同CandidateEvidence/DecisionPlan/paired指标。C-side残差明确不扣nuisance，可含drift/ERP失配；held原flat affine nuisance和noise数值程序保持原定义。本接口是固定base-C后验后的plugin比较，不把新noise当重估joint posterior，不从噪声诊断决定产品默认。
+
+独立审阅否证了作者65项通过的初版：保两份实际source records却同时删A02 participant与plan能缩分母；另将C labels改成另一合法candidate并真正重拟modern R模型，也能越过public admission。修后公共requested集合来自全部actual source CalibrationSelection，resolved与selection-failure由共享DecisionPlan完整分割；每个C target/label逐项核原owner。两攻击均在noise.fit之前拒绝，合法失败participant仍保宏分母。原RED、原65-body与修后身份分开，不累加成一组证据。
+
+修后作者16项、原独立主probe6项及专门admission3项通过；原wrong-label脚本因更早builder拒绝仍exit1，保原字节，另用旧wrong-label输入直接audit确认0fit拒绝。root逐读source、C、modern factor、held、指标及失败消费者后接受有限软件切片，Ruff/diff检查通过。两人四格诚实actual-owner synthetic输入完整fit/save/load/replay通过，不代表新native成绩。八原MAT的16格面板尚未执行；现代转换源码和root集成字节见[软件接受绑定](../assets/research_resume_20261011/p1_software_acceptance.json)。
