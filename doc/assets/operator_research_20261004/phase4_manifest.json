@@ -1,0 +1,13 @@
+{
+  "schema": "n2p3_operator_phase4_manifest/1",
+  "files": {
+    "doc\\assets\\operator_research_20261004\\phase4_plan.json": "dbcfa1528d3b5a5e32fe0244f0d3b9e806587f418c04b9a47ae7f078c175b07f",
+    "doc\\assets\\operator_research_20261004\\phase4_hybrid_study.py": "82afb55809da01a36011a390bc0a62dcc1b4abd770c465d69d0facec08db908b",
+    "doc\\assets\\operator_research_20261004\\phase4_report.zh.md": "2651d7f5d527a4d90477612d13df1c71e499885be65f9900c840faae81316034",
+    "doc\\assets\\operator_research_20261004\\phase4_report.json": "83906bb8a5aedeb30f2e9095271f0fb33977b85805b0d9220875625e5b262580",
+    "doc\\assets\\operator_research_20261004\\state_identifiability\\probe_constraint_pareto.py": "1e3679f8b4cb27f2c5fdfb1e85c91acf30589f69b1c6e5db9ebd6524a9d210f6",
+    "doc\\assets\\operator_research_20261004\\state_identifiability\\constraint_pareto_results.json": "0fdebac2f671786903eb0ef8f7173e19cfb67c6e6bc203a43d092fde480c4073"
+  },
+  "evidence_scope": "public_calibration_development",
+  "status": "complete"
+}

@@ -1,0 +1,75 @@
+{
+  "schema": "n2p3_stationary_innovations_derivation/1",
+  "precision_digits": 100,
+  "seed": 109493,
+  "records": [
+    {
+      "order": 1,
+      "repeated_pole": 0.7,
+      "parcor": [
+        -0.7
+      ],
+      "float_polynomial_max_pole_radius": 0.7,
+      "startup_factor_condition": 1.0,
+      "factor_relative_error_vs_100digit_covariance": 1.5546231902119452e-16,
+      "rounded_covariance_Cholesky_factor_relative_error": 0.0,
+      "finite_observation_quantization_innovation_error": 0.0,
+      "double_factor_application_error_given_float_observation": 1.1102230246251565e-16,
+      "marginal_variance_per_unit_innovation": 1.9607843137254901
+    },
+    {
+      "order": 2,
+      "repeated_pole": 0.8,
+      "parcor": [
+        -0.975609756097561,
+        0.64
+      ],
+      "float_polynomial_max_pole_radius": 0.8,
+      "startup_factor_condition": 8.999999999999995,
+      "factor_relative_error_vs_100digit_covariance": 7.662726430799249e-17,
+      "rounded_covariance_Cholesky_factor_relative_error": 1.1562002140529554e-15,
+      "finite_observation_quantization_innovation_error": 0.0,
+      "double_factor_application_error_given_float_observation": 8.326672684688674e-17,
+      "marginal_variance_per_unit_innovation": 35.15089163237305
+    },
+    {
+      "order": 4,
+      "repeated_pole": 0.99,
+      "parcor": [
+        -0.9999898988878573,
+        0.9999595933073165,
+        -0.9997475232032873,
+        0.96059601
+      ],
+      "float_polynomial_max_pole_radius": 0.9901877548124143,
+      "startup_factor_condition": 9850649.25409641,
+      "factor_relative_error_vs_100digit_covariance": 3.5181136130840257e-16,
+      "rounded_covariance_Cholesky_factor_relative_error": 0.0008594526367010867,
+      "finite_observation_quantization_innovation_error": 4.347574341253101e-10,
+      "double_factor_application_error_given_float_observation": 1.1972551546298678e-09,
+      "marginal_variance_per_unit_innovation": 15703755520083.69
+    },
+    {
+      "order": 8,
+      "repeated_pole": 0.99,
+      "parcor": [
+        -0.9999961149865101,
+        0.9999901108404076,
+        -0.9999801038304161,
+        0.999961519006537,
+        -0.9999206301468053,
+        0.9997979222646003,
+        -0.9989401968753808,
+        0.9227446944279201
+      ],
+      "float_polynomial_max_pole_radius": 1.0084759696286714,
+      "startup_factor_condition": 1.5109267760793112e+16,
+      "factor_relative_error_vs_100digit_covariance": 2.877095234014656e-16,
+      "rounded_covariance_Cholesky_factor_relative_error": null,
+      "finite_observation_quantization_innovation_error": 0.005796259584121675,
+      "double_factor_application_error_given_float_observation": 0.03171555065808088,
+      "marginal_variance_per_unit_innovation": 1.0526407263533427e+29
+    }
+  ],
+  "interpretation": "factorization repairs covariance construction, not information lost to finite observation precision"
+}

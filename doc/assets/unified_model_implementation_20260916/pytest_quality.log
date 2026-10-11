@@ -1,0 +1,52 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_unified_full_calibration_reloads_identical_masked_scores_and_membership[fold-local-quality] _
+
+tmp_path = WindowsPath('C:/Users/chent/AppData/Local/Temp/pytest-of-chent/pytest-762/test_unified_full_calibration_0')
+quality = True
+
+    @pytest.mark.parametrize("quality", [False, True], ids=["plain", "fold-local-quality"])
+    def test_unified_full_calibration_reloads_identical_masked_scores_and_membership(tmp_path, quality):
+        calibration = write_bids_session(tmp_path / "cal", session_id="cal", target=3,
+            started_utc="2026-09-14T10:00:00+08:00", blocks=(tuple(range(1, 10)) * 5,))
+        calibration2 = write_bids_session(tmp_path / "cal2", session_id="cal2", target=5,
+            started_utc="2026-09-15T10:00:00+08:00", blocks=(tuple(range(1, 10)) * 5,))
+        testing = write_bids_session(tmp_path / "test", session_id="test", target=0,
+            started_utc="2026-09-16T10:00:00+08:00", blocks=(tuple(range(1, 10)) * 5,))
+        data = load_brainsync_sessions((calibration, calibration2))
+        stopping = GlobalEarlyStoppingPolicy(target_max_epochs=2, patience=1).record()
+        recipe = TargetRecipe("unified_scratch", initialization="scratch", batch_size=16,
+            bn_buffers="calibration", bn_affine="trainable", dropout="off", epochs=2,
+            seed=20260906, candidate_loss_weight=1.0)
+        quality_options = {"epoch_quality_policy": FoldLocalArtifactPolicy(min_clean_epochs=2)} if quality else {}
+        plan = preflight_calibrated_predictor(data, selector_mode="unified", transfer_policy=recipe,
+                                             global_early_stopping=stopping, **quality_options)
+        assert plan["execution_ready"], plan["execution_blockers"]
+        assert plan["inner_selection_planned"] and not plan["fallback_planned"]
+        predictor = fit_calibrated_predictor(data, selector_mode="unified", transfer_policy=recipe,
+                                             global_early_stopping=stopping, **quality_options)
+        assert predictor.metadata["selection"]["mode"] == "unified_global_early_stopping"
+        assert predictor.metadata["selection"]["fit_execution"]["fit_calls"] == 2
+        assert predictor.trunk.observed_channel_norm
+        if quality:
+            selection = predictor.metadata["selection"]
+            assert selection["inner_history"]["epoch_quality"]["requested_training_rows"] == 45
+            assert selection["refit_history"]["epoch_quality"]["requested_training_rows"] == 90
+>           assert predictor.epoch_quality.record() == predictor.metadata["epoch_quality"]["model"]
+E           AssertionError: assert {'method': 'f...chs': 90, ...} == {'method': 'f...chs': 90, ...}
+E             
+E             Omitting 15 identical items, use -vv to show
+E             Differing items:
+E             {'policy': {'candidate_quantiles': (0.9, 0.95, 0.975, 0.99), 'candidate_bad_channel_fractions': (0.125, 0.25, 0.375, 0.5), 'flat_quantile': 0.005, 'max_bad_channel_fraction': None, ...}} != {'policy': {'candidate_quantiles': [0.9, 0.95, 0.975, 0.99], 'candidate_bad_channel_fractions': [0.125, 0.25, 0.375, 0.5], 'flat_quantile': 0.005, 'max_bad_channel_fraction': None, ...}}
+E             Use -v to get more diff
+
+tests\brainsync\test_unified_predictor.py:49: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Reading 0 ... 17499  =      0.000 ...    69.996 secs...
+Reading 0 ... 17499  =      0.000 ...    69.996 secs...
+------------------------------ Captured log call ------------------------------
+INFO     mne:base.py:598 Reading 0 ... 17499  =      0.000 ...    69.996 secs...
+INFO     mne:base.py:598 Reading 0 ... 17499  =      0.000 ...    69.996 secs...
+=========================== short test summary info ===========================
+FAILED tests/brainsync/test_unified_predictor.py::test_unified_full_calibration_reloads_identical_masked_scores_and_membership[fold-local-quality]
+1 failed, 4 deselected in 13.29s

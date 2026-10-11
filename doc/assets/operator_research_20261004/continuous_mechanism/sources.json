@@ -1,0 +1,16 @@
+[
+  {
+    "name": "burg_statsmodels",
+    "url": "https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.burg.html",
+    "status": 200,
+    "sha256": "062797cff811a13f8c1768b94e2876dc052bb6aab957ba327f23017d7f00b728",
+    "bytes": 41413
+  },
+  {
+    "name": "lyapunov_scipy",
+    "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_discrete_lyapunov.html",
+    "status": 200,
+    "sha256": "747e5c0f347c7afbd643f041a9461f4278f3de06aaf1a21219c8d630a132a787",
+    "bytes": 31978
+  }
+]

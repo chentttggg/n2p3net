@@ -1,0 +1,485 @@
+{
+  "date": "2026-09-16",
+  "scope": "External evidence and protocol/operator probes; not trained performance attribution",
+  "records": {
+    "filter": {
+      "retrieval_date": "2026-09-16",
+      "europepmc_query": "DOI:10.1016/j.jneumeth.2014.08.002 OR DOI:10.1016/j.jneumeth.2012.06.011 OR DOI:10.1111/psyp.12437 OR DOI:10.1111/psyp.13451 OR DOI:10.1007/s12021-012-9171-0",
+      "references": [
+        {
+          "title": "How much baseline correction do we need in ERP research? Extended GLM model can replace baseline correction while lifting its limits.",
+          "authorString": "Alday PM.",
+          "doi": "10.1111/psyp.13451",
+          "id": "31403187",
+          "pmcid": null,
+          "abstractText": "Baseline correction plays an important role in past and current methodological debates in ERP research (e.g., the Tanner vs. Maess debate in the Journal of Neuroscience Methods), serving as a potential alternative to strong high-pass filtering. However, the very assumptions that underlie traditional baseline also undermine it, implying a reduction in the signal-to-noise ratio. In other words, traditional baseline correction is statistically unnecessary and even undesirable. Including the baseline interval as a predictor in a GLM-based statistical approach allows the data to determine how much baseline correction is needed, including both full traditional and no baseline correction as special cases. This reduces the amount of variance in the residual error term and thus has the potential to increase statistical power.",
+          "pubYear": "2019",
+          "isOpenAccess": "N",
+          "verified_scope": "EuropePMC abstract and bibliographic record"
+        },
+        {
+          "title": "How inappropriate high-pass filters can produce artifactual effects and incorrect conclusions in ERP studies of language and cognition.",
+          "authorString": "Tanner D, Morgan-Short K, Luck SJ.",
+          "doi": "10.1111/psyp.12437",
+          "id": "25903295",
+          "pmcid": "PMC4506207",
+          "abstractText": "Although it is widely known that high-pass filters can reduce the amplitude of slow ERP components, these filters can also introduce artifactual peaks that lead to incorrect conclusions. To demonstrate this and provide evidence about optimal filter settings, we recorded ERPs in a typical language processing paradigm involving syntactic and semantic violations. Unfiltered results showed standard N400 and P600 effects in the semantic and syntactic violation conditions, respectively. However, high-pass filters with cutoffs at 0.3 Hz and above produced artifactual effects of opposite polarity before the true effect. That is, excessive high-pass filtering introduced a significant N400 effect preceding the P600 in the syntactic condition, and a significant P2 effect preceding the N400 in the semantic condition. Thus, inappropriate use of high-pass filters can lead to false conclusions about which components are influenced by a given manipulation. The present results also lead to practical recommendations for high-pass filter settings that maximize statistical power while minimizing filtering artifacts.",
+          "pubYear": "2015",
+          "isOpenAccess": "N",
+          "verified_scope": "EuropePMC abstract and bibliographic record"
+        },
+        {
+          "title": "Digital filter design for electrophysiological data--a practical approach.",
+          "authorString": "Widmann A, Schröger E, Maess B.",
+          "doi": "10.1016/j.jneumeth.2014.08.002",
+          "id": "25128257",
+          "pmcid": null,
+          "abstractText": "<h4>Background</h4>Filtering is a ubiquitous step in the preprocessing of electroencephalographic (EEG) and magnetoencephalographic (MEG) data. Besides the intended effect of the attenuation of signal components considered as noise, filtering can also result in various unintended adverse filter effects (distortions such as smoothing) and filter artifacts.<h4>Method</h4>We give some practical guidelines for the evaluation of filter responses (impulse and frequency response) and the selection of filter types (high-pass/low-pass/band-pass/band-stop; finite/infinite impulse response, FIR/IIR) and filter parameters (cutoff frequencies, filter order and roll-off, ripple, delay and causality) to optimize signal-to-noise ratio and avoid or reduce signal distortions for selected electrophysiological applications.<h4>Results</h4>Various filter implementations in common electrophysiology software packages are introduced and discussed. Resulting filter responses are compared and evaluated.<h4>Conclusion</h4>We present strategies for recognizing common adverse filter effects and filter artifacts and demonstrate them in practical examples. Best practices and recommendations for the selection and reporting of filter parameters, limitations, and alternatives to filtering are discussed.",
+          "pubYear": "2015",
+          "isOpenAccess": "N",
+          "verified_scope": "EuropePMC abstract and bibliographic record"
+        },
+        {
+          "title": "Interactions between pre-processing and classification methods for event-related-potential classification: best-practice guidelines for brain-computer interfacing.",
+          "authorString": "Farquhar J, Hill NJ.",
+          "doi": "10.1007/s12021-012-9171-0",
+          "id": "23250668",
+          "pmcid": null,
+          "abstractText": "Detecting event related potentials (ERPs) from single trials is critical to the operation of many stimulus-driven brain computer interface (BCI) systems. The low strength of the ERP signal compared to the noise (due to artifacts and BCI irrelevant brain processes) makes this a challenging signal detection problem. Previous work has tended to focus on how best to detect a single ERP type (such as the visual oddball response). However, the underlying ERP detection problem is essentially the same regardless of stimulus modality (e.g., visual or tactile), ERP component (e.g., P300 oddball response, or the error-potential), measurement system or electrode layout. To investigate whether a single ERP detection method might work for a wider range of ERP BCIs we compare detection performance over a large corpus of more than 50 ERP BCI datasets whilst systematically varying the electrode montage, spectral filter, spatial filter and classifier training methods. We identify an interesting interaction between spatial whitening and regularised classification which made detection performance independent of the choice of spectral filter low-pass frequency. Our results show that pipeline consisting of spectral filtering, spatial whitening, and regularised classification gives near maximal performance in all cases. Importantly, this pipeline is simple to implement and completely automatic with no expert feature selection or parameter tuning required. Thus, we recommend this combination as a \"best-practice\" method for ERP detection problems.",
+          "pubYear": "2013",
+          "isOpenAccess": "N",
+          "verified_scope": "EuropePMC abstract and bibliographic record"
+        },
+        {
+          "title": "Systematic biases in early ERP and ERF components as a result of high-pass filtering.",
+          "authorString": "Acunzo DJ, Mackenzie G, van Rossum MC.",
+          "doi": "10.1016/j.jneumeth.2012.06.011",
+          "id": "22743800",
+          "pmcid": null,
+          "abstractText": "The event-related potential (ERP) and event-related field (ERF) techniques provide valuable insights into the time course of processes in the brain. Because neural signals are typically weak, researchers commonly filter the data to increase the signal-to-noise ratio. However, filtering may distort the data, leading to false results. Using our own EEG data, we show that acausal high-pass filtering can generate a systematic bias easily leading to misinterpretations of neural activity. In particular, we show that the early ERP component C1 is very sensitive to such effects. Moreover, we found that about half of the papers reporting modulations in the C1 range used a high-pass digital filter cut-off above the recommended maximum of 0.1 Hz. More generally, among 185 relevant ERP/ERF publications, 80 used cutoffs above 0.1 Hz. As a consequence, part of the ERP/ERF literature may need to be re-analyzed. We provide guidelines on how to minimize filtering artifacts.",
+          "pubYear": "2012",
+          "isOpenAccess": "N",
+          "verified_scope": "EuropePMC abstract and bibliographic record"
+        }
+      ],
+      "fulltext_and_official": [
+        {
+          "title": "Tanner full text",
+          "url": "https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/PMC4506207/unicode",
+          "status": 200,
+          "length": 109650,
+          "excerpts": [
+            "et\": 7800, \"infons\": {\"section_type\": \"INTRO\", \"type\": \"paragraph\"}, \"text\": \"To show how the distortion depends on the specific cutoff frequency, Figure 2 overlays the effects of six different filter settings (0.01 Hz, 0.1 Hz, 0.3 Hz, 0.5 Hz., 0.7 Hz, and 1 Hz; 24 dB/octave roll-off) on the same simulated P600 effect. There were virtually no differences between the 0.01 and 0.1 Hz filters (and these waveforms were nearly identical to the unfiltered waveform; see Figure 1). However, beginning with the 0.3 Hz filters and above, the peak amplitude decreased approximately linearly as the cutoff increased, and this was acc",
+            "erlays the effects of six different filter settings (0.01 Hz, 0.1 Hz, 0.3 Hz, 0.5 Hz., 0.7 Hz, and 1 Hz; 24 dB/octave roll-off) on the same simulated P600 effect. There were virtually no differences between the 0.01 and 0.1 Hz filters (and these waveforms were nearly identical to the unfiltered waveform; see Figure 1). However, beginning with the 0.3 Hz filters and above, the peak amplitude decreased approximately linearly as the cutoff increased, and this was accompanied by artifactual negative peaks on either side of the positive peak.\", \"sentences\": [], \"annotations\": [], \"relations\": []}, {\"offset\": 8424, \"infons\":",
+            "], \"relations\": []}, {\"offset\": 9306, \"infons\": {\"section_type\": \"INTRO\", \"type\": \"paragraph\"}, \"text\": \"Not all variation in high-pass filters necessarily leads to excessive distortions. High-pass cutoff frequencies of 0.1 Hz and lower have relatively little effect on ERP components, including slower endogenous components like the P300 and LPP (; Widmann et al., in press). Indeed a widely cited methodological review for the elicitation of commonly-studied slower ERP components\\u2014including the mismatch negativity (MMN), P300, and N400\\u2014recommends data recording parameters with high-pass filter settings between 0",
+            "review for the elicitation of commonly-studied slower ERP components\\u2014including the mismatch negativity (MMN), P300, and N400\\u2014recommends data recording parameters with high-pass filter settings between 0.01 and 0.1 Hz, and similar recommendations are made in a widely-used introductory text on ERPs. Some recent studies and methodological reviews in the clinical and cognitive EEG literature have also cautioned against the use of excessive high-pass filters precisely because of the possibility for introducing artifacts (; see also Widmann et al., in press). Whereas the vast majority of studies report filter cutof",
+            "paradigm involving syntactic and semantic violations. Unfiltered results showed standard N400 and P600 effects in the semantic and syntactic violation conditions, respectively. However, high-pass filters with cutoffs at 0.3 Hz and above produced artifactual effects of opposite polarity before the true effect. That is, excessive high-pass filtering introduced a significant N400 effect preceding the P600 in the syntactic condition, and a significant P2 effect preceding the N400 in the semantic condition. Thus, inappropriate use of high-pass filters can lead to false conclusions about which components are influenced by a ",
+            "0, \"infons\": {\"section_type\": \"INTRO\", \"type\": \"paragraph\"}, \"text\": \"To show how the distortion depends on the specific cutoff frequency, Figure 2 overlays the effects of six different filter settings (0.01 Hz, 0.1 Hz, 0.3 Hz, 0.5 Hz., 0.7 Hz, and 1 Hz; 24 dB/octave roll-off) on the same simulated P600 effect. There were virtually no differences between the 0.01 and 0.1 Hz filters (and these waveforms were nearly identical to the unfiltered waveform; see Figure 1). However, beginning with the 0.3 Hz filters and above, the peak amplitude decreased approximately linearly as the cutoff increased, and this was accompanied",
+            "n the same simulated P600 effect. There were virtually no differences between the 0.01 and 0.1 Hz filters (and these waveforms were nearly identical to the unfiltered waveform; see Figure 1). However, beginning with the 0.3 Hz filters and above, the peak amplitude decreased approximately linearly as the cutoff increased, and this was accompanied by artifactual negative peaks on either side of the positive peak.\", \"sentences\": [], \"annotations\": [], \"relations\": []}, {\"offset\": 8424, \"infons\": {\"section_type\": \"INTRO\", \"type\": \"paragraph\"}, \"text\": \"The negative peak preceding the simulated P600 wave has a latency that ",
+            "ype\": \"paragraph\"}, \"text\": \"The negative peak preceding the simulated P600 wave has a latency that is very similar to the latency of the N400 component (see below). Consequently, the use of a high-pass filter cutoff of 0.3 Hz or higher may create an artifactual peak that is interpreted as being an N400. Moreover, the artifactual N400-like peak causes the apparent onset of the true P600 peak to increase in latency, and this latency shift increases as the high-pass filter cutoff increases, with a 1 Hz filter delaying the onset of the positivity by approximately 200 ms. Similarly, the application of such a filter to a P3",
+            "s file is available for text mining. It may also be used consistent with the principles of fair use under the copyright law.\\n \", \"lpage\": \"1009\", \"name_0\": \"surname:Tanner;given-names:Darren\", \"name_1\": \"surname:Morgan-Short;given-names:Kara\", \"name_2\": \"surname:Luck;given-names:Steven J.\", \"section_type\": \"TITLE\", \"type\": \"front\", \"volume\": \"52\", \"year\": \"2016\"}, \"text\": \"How inappropriate high-pass filters can produce artifactual effects and incorrect conclusions in ERP studies of language and cognition\", \"sentences\": [], \"annotations\": [], \"relations\": []}, {\"offset\": 135, \"infons\": {\"section_type\": \"ABSTRACT\", \"t",
+            "verb in each sentence (underlined, above), relative to a 200 ms prestimulus baseline. Trials characterized by excessive ocular, motor, or other artifact were excluded from analysis. Artifact detection was carried out on epochs in two stages beginning 200 ms prior to and ending 1000 ms following the onset of the critical word. In stage one, a moving window peak-to-peak threshold criterion was applied to the two bipolar eye channels. The window was 200 ms wide and was advanced in 100 ms increments. Epochs with peak-to-peak amplitudes exceeding 50\\u03bcV were marked for exclusion. This screening targeted large, rapid ocu",
+            " ms following the onset of the critical word. In stage one, a moving window peak-to-peak threshold criterion was applied to the two bipolar eye channels. The window was 200 ms wide and was advanced in 100 ms increments. Epochs with peak-to-peak amplitudes exceeding 50\\u03bcV were marked for exclusion. This screening targeted large, rapid ocular artifacts, such as blinks and eye saccades. Second, scalp channels were screened for large drifts or deviations (e.g., large skin potentials, excessive motor artifact, excessive alpha); specifically, epochs in which the voltage exceeded an absolute threshold of \\u00b1100\\u03bcV",
+            "large, rapid ocular artifacts, such as blinks and eye saccades. Second, scalp channels were screened for large drifts or deviations (e.g., large skin potentials, excessive motor artifact, excessive alpha); specifically, epochs in which the voltage exceeded an absolute threshold of \\u00b1100\\u03bcV were excluded from analysis. So that an identical set of trials was included for each high-pass filter setting, artifact rejection was carried out on the DC-30 Hz filtered data for each participant, and then applied to each of that participant's subsequent filtered datasets. Data from any participant with more than 25% rejec",
+            "ffect), and brain responses to ill-formed sentences in the semantic condition showed a negative-going effect beginning at approximately 300 ms poststimulus (an N400 effect), which also continued throughout the recording epoch. Statistical analysis confirmed these observations (Tables 1 and 2): syntactic violations led to a significant positivity in the 500-800 ms time window, and semantic violations led to a significant negativity in the 300-500 ms window. Note that the N400 effect extended beyond the canonical measurement, leading to significant effects in the later time window; extended N400 effects of this nature h",
+            "# sanded while the boy held his nose). Sentence pairs were counterbalanced across two lists, such that there were 35 semantically well-formed and 35 ill-formed sentences per list. Each participant saw each critical verb twice, once in a well-formed and once in an ill-formed sentence. However, each sentence frame was only presented to each participant once.\", \"sentences\": [], \"annotations\": [], \"relations\": []}, {\"offset\": 17866, \"infons\": {\"section_type\": \"METHODS\", \"type\": \"paragraph\"}, \"text\": \"Each list of sentences contained 140 total sentences. Both lists were pseudorandomized such that no more than three well-fo",
+            "ocessing was carried out using the EEGLAB and ERPLAB Matlab toolboxes. Filtering was accomplished via ERPLAB's Butterworth filters, which are infinite impulse response filters that are applied bidirectionally to achieve zero phase shift. Fourth order filters were used to achieve an intermediate roll-off slope of 24 dB/octave (after the second pass of the filter). The filters were applied to the continuous EEG to avoid edge artifacts. The data were low-pass filtered at 30 Hz in all cases, and with seven different high-pass cutoffs: DC (no filter), 0.01 Hz, 0.1 Hz, 0.3 Hz, 0.5 Hz, 0.7 Hz, and 1 Hz. Note that the half-amplitu"
+          ]
+        },
+        {
+          "title": "MNE resampling",
+          "url": "https://mne.tools/stable/auto_tutorials/preprocessing/30_filtering_resampling.html",
+          "status": 200,
+          "length": 180483,
+          "excerpts": [
+            " top = 0.9 ) fig . suptitle ( f &quot; High-pass filtered at { cutoff } Hz &quot; , size = &quot; xx-large &quot; , weight = &quot; bold &quot; ) Filtering raw data in 1 contiguous segment Setting up high-pass filter at 0.1 Hz FIR filter parameters --------------------- Designing a one-pass, zero-phase, non-causal highpass filter: - Windowed time-domain design (firwin) method - Hamming window with 0.0194 passband ripple and 53 dB stopband attenuation - Lower passband edge: 0.10 - Lower transition bandwidth: 0.10 Hz (-6 dB cutoff frequency: 0.05 Hz) - Filter length: 19821 samples (33.001 s) Using matplotlib as 2D backen",
+            "attenuation - Lower passband edge: 0.20 - Lower transition bandwidth: 0.20 Hz (-6 dB cutoff frequency: 0.10 Hz) - Filter length: 9911 samples (16.501 s) Using matplotlib as 2D backend. Using qt as 2D backend. Looks like 0.1 Hz was not quite high enough to fully remove the slow drifts. Notice that the text output summarizes the relevant characteristics of the filter that was created. If you want to visualize the filter, you can pass the same arguments used in the call to raw.filter() above to the function mne.filter.create_filter() to get the filter parameters, and then pass the filter parameters to mne.viz.plot_filter(",
+            "6-09-13 04:07 UTC . function formatTimestamp() { document.querySelectorAll(\"time.localized\").forEach(el => { const d = new Date(el.getAttribute(\"datetime\")); el.textContent = d.toLocaleString(\"sv-SE\", { \"timeZoneName\": \"short\" }); }); } if (document.readyState !== \"loading\") { formatTimestamp(); } else { document.addEventListener(\"DOMContentLoaded\", formatTimestamp); } Built with the PyData Sphinx Theme 0.21.0. ",
+            "d Maxwell filtering Preprocessing functional near-infrared spectroscopy (fNIRS) data Preprocessing optically pumped magnetometer (OPM) MEG data Working with eye tracker data in MNE-Python Segmenting continuous data into epochs The Epochs data structure: discontinuous data Regression-based baseline correction Visualizing epoched data Working with Epoch metadata Auto-generating Epochs metadata Exporting Epochs to Pandas DataFrames Divide continuous data into equally-spaced epochs Estimating evoked responses The Evoked data structure: evoked/averaged data Visualizing Evoked data EEG analysis - Event-Related Potentials (E",
+            "iltering Preprocessing functional near-infrared spectroscopy (fNIRS) data Preprocessing optically pumped magnetometer (OPM) MEG data Working with eye tracker data in MNE-Python Segmenting continuous data into epochs The Epochs data structure: discontinuous data Regression-based baseline correction Visualizing epoched data Working with Epoch metadata Auto-generating Epochs metadata Exporting Epochs to Pandas DataFrames Divide continuous data into equally-spaced epochs Estimating evoked responses The Evoked data structure: evoked/averaged data Visualizing Evoked data EEG analysis - Event-Related Potentials (ERPs) Plotti",
+            "ically pumped magnetometer (OPM) MEG data Working with eye tracker data in MNE-Python Segmenting continuous data into epochs The Epochs data structure: discontinuous data Regression-based baseline correction Visualizing epoched data Working with Epoch metadata Auto-generating Epochs metadata Exporting Epochs to Pandas DataFrames Divide continuous data into equally-spaced epochs Estimating evoked responses The Evoked data structure: evoked/averaged data Visualizing Evoked data EEG analysis - Event-Related Potentials (ERPs) Plotting whitened data Time-frequency analysis The Spectrum and EpochsSpectrum classes: frequency",
+            " (OPM) MEG data Working with eye tracker data in MNE-Python Segmenting continuous data into epochs The Epochs data structure: discontinuous data Regression-based baseline correction Visualizing epoched data Working with Epoch metadata Auto-generating Epochs metadata Exporting Epochs to Pandas DataFrames Divide continuous data into equally-spaced epochs Estimating evoked responses The Evoked data structure: evoked/averaged data Visualizing Evoked data EEG analysis - Event-Related Potentials (ERPs) Plotting whitened data Time-frequency analysis The Spectrum and EpochsSpectrum classes: frequency-domain data Frequency and"
+          ]
+        },
+        {
+          "title": "SciPy filtfilt",
+          "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html",
+          "status": 200,
+          "length": 48470,
+          "excerpts": [
+            "nal. filtfilt ( b , a , x , axis = -1 , padtype = 'odd' , padlen = None , method = 'pad' , irlen = None ) [source] # Apply a digital filter forward and backward to a signal. This function applies a linear digital filter twice, once forward and once backwards. The combined filter has zero phase and a filter order twice that of the original. The function provides options for handling the edges of the signal. The function sosfiltfilt (and filter design using output='sos' ) should be preferred over filtfilt for most filtering tasks, as second-order sections have fewer numerical problems. Parameters : b (N,) array_like The",
+            "en = None ) [source] # Apply a digital filter forward and backward to a signal. This function applies a linear digital filter twice, once forward and once backwards. The combined filter has zero phase and a filter order twice that of the original. The function provides options for handling the edges of the signal. The function sosfiltfilt (and filter design using output='sos' ) should be preferred over filtfilt for most filtering tasks, as second-order sections have fewer numerical problems. Parameters : b (N,) array_like The numerator coefficient vector of the filter. a (N,) array_like The denominator coefficient vec",
+            " = None , method = 'pad' , irlen = None ) [source] # Apply a digital filter forward and backward to a signal. This function applies a linear digital filter twice, once forward and once backwards. The combined filter has zero phase and a filter order twice that of the original. The function provides options for handling the edges of the signal. The function sosfiltfilt (and filter design using output='sos' ) should be preferred over filtfilt for most filtering tasks, as second-order sections have fewer numerical problems. Parameters : b (N,) array_like The numerator coefficient vector of the filter. a (N,) array_like The de"
+          ]
+        }
+      ],
+      "production_sos_probe": [
+        {
+          "fs": 250.0,
+          "freq_hz": [
+            0.05,
+            0.1,
+            0.2,
+            0.5,
+            1.0,
+            2.0,
+            5.0,
+            10.0,
+            20.0,
+            30.0,
+            50.0
+          ],
+          "forward_backward_amplitude": [
+            0.003817776932545412,
+            0.49999999709710324,
+            0.9963955227052651,
+            0.9999984996643118,
+            0.9999994186267428,
+            0.9999976715249911,
+            0.9999850868068361,
+            0.9998521084980443,
+            0.9703810744016587,
+            0.4994177408305588,
+            7.008999288971395e-31
+          ],
+          "notch_only_extra_db": [
+            -1.2605052191229789e-08,
+            -5.0420438329734605e-08,
+            -2.0168600302385727e-07,
+            -1.2607236787981786e-06,
+            -5.04555613371157e-06,
+            -2.0224899228237284e-05,
+            -0.00012829867633458743,
+            -0.0005418068790208072,
+            -0.002748084872368004,
+            -0.010120771829635541,
+            -560.6822341240853
+          ]
+        },
+        {
+          "fs": 256.0,
+          "freq_hz": [
+            0.05,
+            0.1,
+            0.2,
+            0.5,
+            1.0,
+            2.0,
+            5.0,
+            10.0,
+            20.0,
+            30.0,
+            50.0
+          ],
+          "forward_backward_amplitude": [
+            0.003817606732584712,
+            0.4999999972068544,
+            0.9963961735279773,
+            0.9999985035775016,
+            0.9999994258619973,
+            0.9999977004848891,
+            0.9999852662630474,
+            0.9998513646308926,
+            0.9700752941622879,
+            0.49942272788093917,
+            7.352320971693176e-33
+          ],
+          "notch_only_extra_db": [
+            -1.2448065465526513e-08,
+            -4.979254542790136e-08,
+            -1.9917438703572688e-07,
+            -1.245024866243798e-06,
+            -4.982742881328091e-06,
+            -1.997335796136335e-05,
+            -0.00012671381069017605,
+            -0.0005352783074738554,
+            -0.002718409435306859,
+            -0.010034037319802645,
+            -600.6160229345973
+          ]
+        },
+        {
+          "fs": 512.0,
+          "freq_hz": [
+            0.05,
+            0.1,
+            0.2,
+            0.5,
+            1.0,
+            2.0,
+            5.0,
+            10.0,
+            20.0,
+            30.0,
+            50.0
+          ],
+          "forward_backward_amplitude": [
+            0.003814998872177915,
+            0.4999999975953898,
+            0.9964061375200245,
+            0.9999985604644712,
+            0.999999525853051,
+            0.9999981007041937,
+            0.999987734620515,
+            0.9998359297336608,
+            0.9651338084088645,
+            0.4994919621150755,
+            1.3014230070189758e-30
+          ],
+          "notch_only_extra_db": [
+            -1.0278764540377493e-08,
+            -4.1115256849459806e-08,
+            -1.6446489300622743e-07,
+            -1.0280729099449752e-06,
+            -4.114683637805417e-06,
+            -1.6497092265100462e-05,
+            -0.00010480919162415413,
+            -0.00044501634988105513,
+            -0.002307551191267633,
+            -0.008830008739889981,
+            -560.5067228471663
+          ]
+        }
+      ],
+      "counterexamples": {
+        "baseline_samples": 26,
+        "white_noise_post_variance_before": 0.9999120148646033,
+        "white_noise_post_variance_after": 1.037930388201516,
+        "theoretical_variance_ratio": 1.0384615384615385,
+        "Cz_common_mode_max_abs": 0.0,
+        "Cz_projection_rank": 6,
+        "iid_native_noise_variance": 1,
+        "iid_Cz_noise_variance": 2,
+        "iid_Cz_between_channel_covariance": 1
+      }
+    },
+    "decision": [
+      {
+        "title": "On Calibration of Modern Neural Networks",
+        "authors": "Chuan Guo, Geoff Pleiss, Yu Sun, Kilian Q. Weinberger",
+        "year": 2017,
+        "url": "https://proceedings.mlr.press/v70/guo17a.html",
+        "full_text_pdf": "https://proceedings.mlr.press/v70/guo17a/guo17a.pdf",
+        "verification": "Publisher full text PDF read",
+        "full_text_url": "https://proceedings.mlr.press/v70/guo17a/guo17a.pdf",
+        "relevant_passages": [
+          "ing, but also provide a simple and\nstraightforward recipe for practical settings: on\nmost datasets, temperature scaling – a single-\nparameter variant of Platt Scaling – is surpris-\ningly effective at calibrating predictions.\n1. Introduction\nRecent advances in deep learning have dramatically im-\nproved neural network accuracy (Simonyan & Zisserman,\n2015; Srivastava et al., 2015; He et al., 2016; Huang et al.,\n2016; 2017). As a result, neural networks are now entrusted\nwith making complex decisions in applications, such as ob-\nject detection (Girshick, 2015), speech recognition (Han-\nnun et al., 2014), and medical diagnosis (Caruana et al.,\n2015). In these settings, neural networks are an esse",
+          "er of\nclassesK, we deﬁne vector scaling as a variant where W\nis restricted to be a diagonal matrix.\nTemperature scaling, the simplest extension of Platt\nscaling, uses a single scalar parameterT >0 for all classes.\nGiven the logit vector zi, the new conﬁdence prediction is\nˆqi = max\nk\nσSM(zi/T )(k). (9)\nT is called the temperature, and it “softens” the softmax\n(i.e. raises the output entropy) with T > 1. As T →∞ ,\nthe probability ˆqi approaches 1/K, which represents max-\nimum uncertainty. With T = 1 , we recover the original\nprobability ˆpi. As T → 0, the probability collapses to a\npoint mass (i.e. ˆqi = 1 ). T is optimized with respect to\nNLL on the validation set. Because the parameter T do",
+          "y′\ni remains unchanged. In other words, temper-\nature scaling does not affect the model’s accuracy.\nTemperature scaling is commonly used in settings such as\nknowledge distillation (Hinton et al., 2015) and statistical\nmechanics (Jaynes, 1957). To the best of our knowledge,\nwe are not aware of any prior use in the context of calibrat-\ning probabilistic models.3 The model is equivalent to max-\nimizing the entropy of the output probability distribution\nsubject to certain constraints on the logits (see Section S2).\n4.3. Other Related Works\nCalibration and conﬁdence scores have been studied in var-\nious contexts in recent years. Kuleshov & Ermon (2016)\nstudy the problem of calibration in the onli",
+          " is comparable to other datasets.\nOur most important discovery is the surprising effective-\nness of temperature scaling despite its remarkable simplic-\nity. Temperature scaling outperforms all other methods on\nthe vision tasks, and performs comparably to other methods\non the NLP datasets. What is perhaps even more surpris-\ning is that temperature scaling outperforms the vector and\nmatrix Platt scaling variants, which are strictly more gen-\neral methods. In fact, vector scaling recovers essentially\nthe same solution as temperature scaling – the learned vec-\ntor has nearly constant entries, and therefore is no different\nthan a scalar transformation. In other words, network mis-\ncalibration is ",
+          "es a\nweighted average of all gaps. For perfectly calibrated clas-\nsiﬁers, MCE and ECE both equal 0.\nNegative log likelihood is a standard measure of a prob-\nabilistic model’s quality (Friedman et al., 2001). It is also\nreferred to as the cross entropy loss in the context of deep\nlearning (Bengio et al., 2015). Given a probabilistic model\nˆπ(Y|X) andn samples, NLL is deﬁned as:\nL =−\nn∑\ni=1\nlog(ˆπ(yi|xi)) (6)\nIt is a standard result (Friedman et al., 2001) that, in expec-\ntation, NLL is minimized if and only if ˆπ(Y|X) recovers\nthe ground truth conditional distributionπ(Y|X).\n3. Observing Miscalibration\nThe architecture and training procedures of neural net-\nworks have rapidly evolved in recen",
+          "tions.\n1. Introduction\nRecent advances in deep learning have dramatically im-\nproved neural network accuracy (Simonyan & Zisserman,\n2015; Srivastava et al., 2015; He et al., 2016; Huang et al.,\n2016; 2017). As a result, neural networks are now entrusted\nwith making complex decisions in applications, such as ob-\nject detection (Girshick, 2015), speech recognition (Han-\nnun et al., 2014), and medical diagnosis (Caruana et al.,\n2015). In these settings, neural networks are an essential\ncomponent of larger decision making pipelines.\nIn real-world decision making systems, classiﬁcation net-\nworks must not only be accurate, but also should indicate\nwhen they are likely to be incorrect. As an examp",
+          " 2017\nby the author(s).\n0.0 0.2 0.4 0.6 0.8 1.0\n0.0\n0.2\n0.4\n0.6\n0.8\n1.0\n% of Samples\nAvg. conﬁdence\nAccuracy\nLeNet (1998)\nCIFAR-100\n0.0 0.2 0.4 0.6 0.8 1.0\nAvg. conﬁdence\nAccuracy\nResNet (2016)\nCIFAR-100\n0.0 0.2 0.4 0.6 0.8 1.0\n0.0\n0.2\n0.4\n0.6\n0.8\n1.0\nAccuracy\nError=44.9\nOutputs\nGap\n0.0 0.2 0.4 0.6 0.8 1.0\nError=30.6\nOutputs\nGap\nConﬁdence\nFigure 1. Conﬁdence histograms (top) and reliability diagrams\n(bottom) for a 5-layer LeNet (left) and a 110-layer ResNet (right)\non CIFAR-100. Refer to the text below for detailed illustration.\nIf the detection network is not able to conﬁdently predict\nthe presence or absence of immediate obstructions, the car\nshould rely more on the output of other sensors",
+          "\n% of Samples\nAvg. conﬁdence\nAccuracy\nLeNet (1998)\nCIFAR-100\n0.0 0.2 0.4 0.6 0.8 1.0\nAvg. conﬁdence\nAccuracy\nResNet (2016)\nCIFAR-100\n0.0 0.2 0.4 0.6 0.8 1.0\n0.0\n0.2\n0.4\n0.6\n0.8\n1.0\nAccuracy\nError=44.9\nOutputs\nGap\n0.0 0.2 0.4 0.6 0.8 1.0\nError=30.6\nOutputs\nGap\nConﬁdence\nFigure 1. Conﬁdence histograms (top) and reliability diagrams\n(bottom) for a 5-layer LeNet (left) and a 110-layer ResNet (right)\non CIFAR-100. Refer to the text below for detailed illustration.\nIf the detection network is not able to conﬁdently predict\nthe presence or absence of immediate obstructions, the car\nshould rely more on the output of other sensors for braking.\nAlternatively, in automated health care, control should b",
+          "1.0\nAvg. conﬁdence\nAccuracy\nResNet (2016)\nCIFAR-100\n0.0 0.2 0.4 0.6 0.8 1.0\n0.0\n0.2\n0.4\n0.6\n0.8\n1.0\nAccuracy\nError=44.9\nOutputs\nGap\n0.0 0.2 0.4 0.6 0.8 1.0\nError=30.6\nOutputs\nGap\nConﬁdence\nFigure 1. Conﬁdence histograms (top) and reliability diagrams\n(bottom) for a 5-layer LeNet (left) and a 110-layer ResNet (right)\non CIFAR-100. Refer to the text below for detailed illustration.\nIf the detection network is not able to conﬁdently predict\nthe presence or absence of immediate obstructions, the car\nshould rely more on the output of other sensors for braking.\nAlternatively, in automated health care, control should be\npassed on to human doctors when the conﬁdence of a dis-\nease diagnosis network "
+        ]
+      },
+      {
+        "title": "Using the detectability index to predict P300 speller performance.",
+        "authorString": "Mainsah BO, Collins LM, Throckmorton CS.",
+        "doi": "10.1088/1741-2560/13/6/066007",
+        "abstractText": "<h4>Objective</h4>The P300 speller is a popular brain-computer interface (BCI) system that has been investigated as a potential communication alternative for individuals with severe neuromuscular limitations. To achieve acceptable accuracy levels for communication, the system requires repeated data measurements in a given signal condition to enhance the signal-to-noise ratio of elicited brain responses. These elicited brain responses, which are used as control signals, are embedded in noisy electroencephalography (EEG) data. The discriminability between target and non-target EEG responses defines a user's performance with the system. A previous P300 speller model has been proposed to estimate system accuracy given a certain amount of data collection. However, the approach was limited to a static stopping algorithm, i.e. averaging over a fixed number of measurements, and the row-column paradigm. A generalized method that is also applicable to dynamic stopping (DS) algorithms and other stimulus paradigms is desirable.<h4>Approach</h4>We developed a new probabilistic model-based approach to predicting BCI performance, where performance functions can be derived analytically or via Monte Carlo methods. Within this framework, we introduce a new model for the P300 speller with the Bayesian DS algorithm, by simplifying a multi-hypothesis to a binary hypothesis problem using the likelihood ratio test. Under a normality assumption, the performance functions for the Bayesian algorithm can be parameterized with the detectability index, a measure which quantifies the discriminability between target and non-target EEG responses.<h4>Main results</h4>Simulations with synthetic and empirical data provided initial verification of the proposed method of estimating performance with Bayesian DS using the detectability index. Analysis of results from previous online studies validated the proposed method.<h4>Significance</h4>The proposed method could serve as a useful tool to initially assess BCI performance without extensive online testing, in order to estimate the amount of data required to achieve a desired accuracy level.",
+        "fullTextUrlList": {
+          "fullTextUrl": [
+            {
+              "availability": "Subscription required",
+              "availabilityCode": "S",
+              "documentStyle": "doi",
+              "site": "DOI",
+              "url": "https://doi.org/10.1088/1741-2560/13/6/066007"
+            },
+            {
+              "availability": "Free",
+              "availabilityCode": "F",
+              "documentStyle": "html",
+              "site": "Europe_PMC",
+              "url": "https://europepmc.org/articles/PMC5793925"
+            },
+            {
+              "availability": "Free",
+              "availabilityCode": "F",
+              "documentStyle": "pdf",
+              "site": "Europe_PMC",
+              "url": "https://europepmc.org/articles/PMC5793925?pdf=render"
+            },
+            {
+              "availability": "Free",
+              "availabilityCode": "F",
+              "documentStyle": "doi",
+              "site": "DOI",
+              "url": "https://doi.org/10.1088/1741-2560/13/6/066007"
+            }
+          ]
+        },
+        "verification": "Europe PMC indexed DOI/title/abstract verified"
+      },
+      {
+        "title": "Optimizing the stimulus presentation paradigm design for the P300-based brain-computer interface using performance prediction.",
+        "authorString": "Mainsah BO, Reeves G, Collins LM, Throckmorton CS.",
+        "doi": "10.1088/1741-2552/aa7525",
+        "abstractText": "<h4>Objective</h4>The role of a brain-computer interface (BCI) is to discern a user's intended message or action by extracting and decoding relevant information from brain signals. Stimulus-driven BCIs, such as the P300 speller, rely on detecting event-related potentials (ERPs) in response to a user attending to relevant or target stimulus events. However, this process is error-prone because the ERPs are embedded in noisy electroencephalography (EEG) data, representing a fundamental problem in communication of the uncertainty in the information that is received during noisy transmission. A BCI can be modeled as a noisy communication system and an information-theoretic approach can be exploited to design a stimulus presentation paradigm to maximize the information content that is presented to the user. However, previous methods that focused on designing error-correcting codes failed to provide significant performance improvements due to underestimating the effects of psycho-physiological factors on the P300 ERP elicitation process and a limited ability to predict online performance with their proposed methods. Maximizing the information rate favors the selection of stimulus presentation patterns with increased target presentation frequency, which exacerbates refractory effects and negatively impacts performance within the context of an oddball paradigm. An information-theoretic approach that seeks to understand the fundamental trade-off between information rate and reliability is desirable.<h4>Approach</h4>We developed a performance-based paradigm (PBP) by tuning specific parameters of the stimulus presentation paradigm to maximize performance while minimizing refractory effects. We used a probabilistic-based performance prediction method as an evaluation criterion to select a final configuration of the PBP.<h4>Main results</h4>With our PBP, we demonstrate statistically significant improvements in online performance, both in accuracy and spelling rate, compared to the conventional row-column paradigm.<h4>Significance</h4>By accounting for refractory effects, an information-theoretic approach can be exploited to significantly improve BCI performance across a wide range of performance levels.",
+        "fullTextUrlList": {
+          "fullTextUrl": [
+            {
+              "availability": "Free",
+              "availabilityCode": "F",
+              "documentStyle": "pdf",
+              "site": "Unpaywall",
+              "url": "https://europepmc.org/articles/pmc6038809?pdf=render"
+            },
+            {
+              "availability": "Subscription required",
+              "availabilityCode": "S",
+              "documentStyle": "doi",
+              "site": "DOI",
+              "url": "https://doi.org/10.1088/1741-2552/aa7525"
+            },
+            {
+              "availability": "Free",
+              "availabilityCode": "F",
+              "documentStyle": "html",
+              "site": "Europe_PMC",
+              "url": "https://europepmc.org/articles/PMC6038809"
+            },
+            {
+              "availability": "Free",
+              "availabilityCode": "F",
+              "documentStyle": "pdf",
+              "site": "Europe_PMC",
+              "url": "https://europepmc.org/articles/PMC6038809?pdf=render"
+            },
+            {
+              "availability": "Free",
+              "availabilityCode": "F",
+              "documentStyle": "doi",
+              "site": "DOI",
+              "url": "https://doi.org/10.1088/1741-2552/aa7525"
+            }
+          ]
+        },
+        "verification": "Europe PMC indexed DOI/title/abstract verified"
+      },
+      {
+        "title": "Overlap and refractory effects in a brain-computer interface speller based on the visual P300 event-related potential.",
+        "authorString": "Martens SM, Hill NJ, Farquhar J, Schölkopf B.",
+        "doi": "10.1088/1741-2560/6/2/026003",
+        "abstractText": "We reveal the presence of refractory and overlap effects in the event-related potentials in visual P300 speller datasets, and we show their negative impact on the performance of the system. This finding has important implications for how to encode the letters that can be selected for communication. However, we show that such effects are dependent on stimulus parameters: an alternative stimulus type based on apparent motion suffers less from the refractory effects and leads to an improved letter prediction performance.",
+        "fullTextUrlList": {
+          "fullTextUrl": [
+            {
+              "availability": "Subscription required",
+              "availabilityCode": "S",
+              "documentStyle": "doi",
+              "site": "DOI",
+              "url": "https://doi.org/10.1088/1741-2560/6/2/026003"
+            }
+          ]
+        },
+        "verification": "Europe PMC indexed DOI/title/abstract verified"
+      }
+    ],
+    "split": {
+      "scope": "Read-only mechanism and split-contract audit; no training or performance-based selection",
+      "retrieved_at": "2026-09-16",
+      "references": [
+        {
+          "id": "R1",
+          "authors": "White J; Power SD",
+          "year": 2023,
+          "title": "k-Fold Cross-Validation Can Significantly Over-Estimate True Classification Accuracy in Common EEG-Based Passive BCI Experimental Designs: An Empirical Investigation",
+          "doi": "10.3390/s23136077",
+          "url": "https://doi.org/10.3390/s23136077",
+          "verified": "Crossref deposited abstract and metadata; publisher full text returned 403",
+          "evidence": "<jats:p>In passive BCI studies, a common approach is to collect data from mental states of interest during relatively long trials and divide these trials into shorter “epochs” to serve as individual samples in classification. While it is known that using k-fold cross-validation (CV) in this scenario can result in unreliable estimates of mental state separability (due to autocorrelation in the samples derived from the same trial), k-fold CV is still commonly used and reported in passive BCI studies. What is not known is the extent to which k-fold CV misrepresents true mental state separability. This makes it difficult to interpret the results of studies that use it. Furthermore, if the seriousness of the problem were clearly known, perhaps more researchers would be aware that they should avoid it. In this work, a novel experiment explored how the degree of correlation among samples within a class affects EEG-based mental state classification accuracy estimated by k-fold CV. Results were compared to a ground-truth (GT) accuracy and to “block-wise” CV, an alternative to k-fold which is purported to alleviate the autocorrelation issues. Factors such as the degree of true class separability and the feature set and classifier used were also explored. The results show that, under some conditions, k-fold CV inflated the GT classification accuracy by up to 25%, but block-wise CV underestimated the GT accuracy by as much as 11%. It is our recommendation that the number of samples derived from the same trial should be reduced whenever possible in single-subject analysis, and that both the k-fold and block-wise CV results are reported.</jats:p>",
+          "boundary": "Passive BCI correlated epochs; not a quantitative estimate for this P300 pipeline. Their up-to-25% inflation and up-to-11% blockwise underestimation must not be transplanted as project effect sizes."
+        },
+        {
+          "id": "R2",
+          "authors": "Huebner D et al.",
+          "year": 2017,
+          "title": "Learning from label proportions in brain-computer interfaces: Online unsupervised learning with guarantees",
+          "doi": "10.1371/journal.pone.0175856",
+          "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0175856",
+          "verified": "Publisher full text HTTP200",
+          "evidence": "oad: \" title=\"original image\"> TIFF \" title=\"large image\"> PNG Figures Abstract Objective Using traditional approaches, a brain-computer interface (BCI) requires the collection of calibration data for new subjects prior to online use. Calibration time can be reduced or eliminated e.g., by subject-to-subject transfer of a pre-trained classifier or unsupervised adaptive classification methods which learn from scratch and adapt over time. While such heuristics work well in practice, none of them can provide theoretical guarantees. Our objective is to modify an event-related potential (ER\ne\"> PNG Figures Abstract Objective Using traditional approaches, a brain-computer interface (BCI) requires the collection of calibration data for new subjects prior to online use. Calibration time can be reduced or eliminated e.g., by subject-to-subject transfer of a pre-trained classifier or unsupervised adaptive classification methods which learn from scratch and adapt over time. While such heuristics work well in practice, none of them can provide theoretical guarantees. Our objective is to modify an event-related potential (ERP) paradigm to work in unison with the machine learning\nl guarantees. Our objective is to modify an event-related potential (ERP) paradigm to work in unison with the machine learning decoder, and thus to achieve a reliable unsupervised calibrationless decoding with a guarantee to recover the true class means. Method We introduce learning from label proportions (LLP) to the BCI community as a new unsupervised, and easy-to-implement classification approach for ERP-based BCIs. The LLP estimates the mean target and non-target responses based on known proportions of these two classes in different groups of the data. We present a visual ERP spel\no a corresponding supervised classifier. LLP performed well in simulations and in the online application, where 84.5% of characters were spelled correctly on average without prior calibration. Significance The continuously adapting LLP classifier is the first unsupervised decoder for ERP BCIs guaranteed to find the optimal decoder. This makes it an ideal solution to avoid tedious calibration sessions. Additionally, LLP works on complementary principles compared to existing unsupervised methods, opening the door for their further enhancement when combined with LLP. Citation: Hübner D, \nce The continuously adapting LLP classifier is the first unsupervised decoder for ERP BCIs guaranteed to find the optimal decoder. This makes it an ideal solution to avoid tedious calibration sessions. Additionally, LLP works on complementary principles compared to existing unsupervised methods, opening the door for their further enhancement when combined with LLP. Citation: Hübner D, Verhoeven T, Schmid K, Müller K-R, Tangermann M, Kindermans P-J (2017) Learning from label proportions in brain-computer interfaces: Online unsupervised learning with guarantees. PLoS ONE 12(4): e0175856\nis work was supported by BrainLinks-BrainTools Cluster of Excellence funded by the German Research Foundation (DFG), grant number EXC 1086; by the bwHPC initiative, grant INST 39/963-1 FUGG; by the European Union’s Horizon 2020 research and innovation programme under the Marie Sklodowska-Curie grant agreement No 657679; by the Special Research Fund from Ghent University, and the BK21 program funded by Korean National Research Foundation grant No. 2012-005741. The funders had no role in study design, data collection and analysis, decision to publish, or preparation of the manu\nsubject. Thus, subject-specific data is necessary to obtain optimal decoding performance. Unsupervised methods, in contrast to supervised methods, have the benefit of skipping the calibration session to collect labelled data and learn directly on unlabelled data collected during the online use of the decoder [ 20 – 23 ]. This is desirable, because it reduces the preparation time, avoids the problem of potentially measuring wrongly labelled data in the calibration session, e.g. due to mistakes in the communication between instructor and user, and circumvents the difficulty of dealing w\ning the online use of the decoder [ 20 – 23 ]. This is desirable, because it reduces the preparation time, avoids the problem of potentially measuring wrongly labelled data in the calibration session, e.g. due to mistakes in the communication between instructor and user, and circumvents the difficulty of dealing with changes in the distribution of class-informative ERP features in the data from the calibration phase to the online application. These may occur due to changes in the human-computer interaction [ 24 ], e.g. by introducing feedback to the user. Several attempts have previou\nin the communication between instructor and user, and circumvents the difficulty of dealing with changes in the distribution of class-informative ERP features in the data from the calibration phase to the online application. These may occur due to changes in the human-computer interaction [ 24 ], e.g. by introducing feedback to the user. Several attempts have previously been made to reduce or eliminate the calibration time. Transfer learning methods have been successfully introduced where a new experiment of the same subject [ 25 ] or a new subject [ 26 – 28 ] can profit from the data\n may occur due to changes in the human-computer interaction [ 24 ], e.g. by introducing feedback to the user. Several attempts have previously been made to reduce or eliminate the calibration time. Transfer learning methods have been successfully introduced where a new experiment of the same subject [ 25 ] or a new subject [ 26 – 28 ] can profit from the database of existing subjects. Furthermore, unsupervised adaptation methods are able to drastically decrease the calibration time in ERP paradigms [ 24 , 29 ] or even completely avoid them [ 20 , 22 , 23 ]. However, the ability to lea\nme subject [ 25 ] or a new subject [ 26 – 28 ] can profit from the database of existing subjects. Furthermore, unsupervised adaptation methods are able to drastically decrease the calibration time in ERP paradigms [ 24 , 29 ] or even completely avoid them [ 20 , 22 , 23 ]. However, the ability to learn from unlabelled examples comes at a price. While these methods generally work well in practice, there is currently no unsupervised algorithm which is guaranteed to converge to the optimal decoder, even if sufficient data is available. The main contribution of this paper is the introduct\nwn in Fig 1 . Download: PNG larger image TIFF original image Fig 1. Scheme of the experimental structure and LLP classifier. Top to bottom: The sentence “Franzy jagt …” is spelled three times. To spell a single character in one trial, 68 highlighting events occur, with 32 belonging to sequence 1 and 36 belonging to sequence 2. The resulting 68 ERP responses (epochs) are averaged for each sequence, and these averages are exploited to reconstruct the mean target and non-target ERP responses. https://doi.org/10.1371/journal.pone.0175856.g001 Experimental protocol, data quantity and task \ngt im komplett verwahrlosten T axi quer durch F reiburg ”. The sentence was chosen because it contains each letter used in German at least once. Each subject spelled this sentence three times. The stimulus onset asynchrony (SOA) was 250 ms (corresponding to 15 frames on the LCD screen utilized) while the stimulus duration was 100 ms (corresponding to 6 frames on the LCD screen utilized). For each character, 68 highlighting events occurred and a total of 63 characters were spelled three times. This resulted in a total of 68 ⋅ 63 ⋅ 3 = 12852 EEG epochs per subject. Spelling one characte\n screen utilized) while the stimulus duration was 100 ms (corresponding to 6 frames on the LCD screen utilized). For each character, 68 highlighting events occurred and a total of 63 characters were spelled three times. This resulted in a total of 68 ⋅ 63 ⋅ 3 = 12852 EEG epochs per subject. Spelling one character took around 25 s including 4 s for cueing the current symbol, 17 s for highlighting and 4 s to provide feedback to the user. Assuming a perfect decoding, these timing constraints would allow for a maximum spelling speed of 2.4 characters per minute. Fig 1 shows the c\n stimulus duration was 100 ms (corresponding to 6 frames on the LCD screen utilized). For each character, 68 highlighting events occurred and a total of 63 characters were spelled three times. This resulted in a total of 68 ⋅ 63 ⋅ 3 = 12852 EEG epochs per subject. Spelling one character took around 25 s including 4 s for cueing the current symbol, 17 s for highlighting and 4 s to provide feedback to the user. Assuming a perfect decoding, these timing constraints would allow for a maximum spelling speed of 2.4 characters per minute. Fig 1 shows the complete experimental structure and h\no 6 frames on the LCD screen utilized). For each character, 68 highlighting events occurred and a total of 63 characters were spelled three times. This resulted in a total of 68 ⋅ 63 ⋅ 3 = 12852 EEG epochs per subject. Spelling one character took around 25 s including 4 s for cueing the current symbol, 17 s for highlighting and 4 s to provide feedback to the user. Assuming a perfect decoding, these timing constraints would allow for a maximum spelling speed of 2.4 characters per minute. Fig 1 shows the complete experimental structure and how LLP is used to reconstruct average\ne the same bias is summed up for each symbol and thus, its effect cancels out when taking the maximum. Visual blanks (’#’) were excluded from being chosen as selected symbols. The classifier was reset and started from scratch for each of the three spellings of the sentence “F ranzy jagt …” in the online experiment. After collecting the data of a new character, the classifier was retrained. Label information (target / non-target role of characters) were used exclusively to evaluate the performance during offline analyses, but never to train the LLP classifier or generate the sequences during on\nstimated by LLP evolve using a growing amount of data. As an example the target mean for subject S6 is provided in Fig 5C . Using epochs that correspond to 1, 3, 7, 14, 28, 42 and 63 symbols, the mean target pattern in the interval [120 200] ms stabilizes towards the supervised true mean. While the negative potential over occipital channels undergoes a linear development from strong to weak intensity, the activity in frontal and central channels reveals jumps between negative and positive potentials specifically during the first 10 symbols until finally converging towards the\n% and 90% whereas the EM performance is very spread out with instances below chance level (50%) and cases with almost perfect performance. After having learned on the full data of 63 characters, the EM-based approach outperforms LLP on most sentences almost reaching the performance of a supervised classifier. Download: PNG larger image TIFF original image Fig 7. Comparison of LLP to an unsupervised EM-based classification approach for each sentence (A) and after 5 characters (B). A : Thin lines represent the binary target vs. non-target AUC performance of the two learning mod\n vs. non-target AUC performance of the two learning models with every line corresponding to the spelling of a single sentence. Each of the subjects ( N = 13) spelled each sentence three times resulting in 39 lines. Dashed lines depict average performances. Please note that the supervised shrinkage-LDA was trained and tested in a 5-fold crossvalidation to avoid overfitting. This means that the supervised method only had 80% of the data compared to the unsupervised methods. B : Each dot represents the EM and LLP performance after 5 characters for the same subject and sentence. https://d\nper time. Hence, the spelling speed with a maximum number of 2.4 characters per minute is not yet competitive to state-of-the-art unsupervised or supervised methods, even when the calibration time is taken into account. The fastest current supervised speller is based on steady-state visual evoked potential (SSVEP) with around 60 characters per minute [ 42 ]. Possible extensions We believe that extensions based on the LLP principle are necessary to obtain a competitive unsupervised method. We want to specifically mention two ideas. First, LLP could be combined with other unsupervised m\nnot realistic for ERP-EEG data. In the online scenario, 12 out of 13 untrained healthy young participants were able to use the LLP-controlled spelling application without explicit calibration. Comparisons with an EM-based unsupervised classification approach indicate that LLP’s performance on small unlabelled data sets is highly competitive, but that its theoretical guarantees come at the cost of slower convergence for larger number of data. Future work will investigate the combination of LLP with other unsupervised classification and transfer learning approaches. Additionally, applic\n J, Hinterberger T, Tangermann M, Bogdan M, et al. Nessi: An EEG-Controlled Web Browser for Severely Paralyzed Patients. Computational Intelligence and Neuroscience. 2007;2007:e71863. View Article Google Scholar 9. Finke A, Lenhardt A, Ritter H. The MindGame: a P300-based brain—computer interface game. Neural Networks. 2009;22(9):1329–1333. pmid:19635654 View Article PubMed/NCBI Google Scholar 10. Congedo M, Goyat M, Tarrin N, Ionescu G, Varnet L, Rivet B, et al. “Brain Invaders”: a prototype of an open-source P300-based video game working with the OpenViBE platform. In: 5th \n;2007:e71863. View Article Google Scholar 9. Finke A, Lenhardt A, Ritter H. The MindGame: a P300-based brain—computer interface game. Neural Networks. 2009;22(9):1329–1333. pmid:19635654 View Article PubMed/NCBI Google Scholar 10. Congedo M, Goyat M, Tarrin N, Ionescu G, Varnet L, Rivet B, et al. “Brain Invaders”: a prototype of an open-source P300-based video game working with the OpenViBE platform. In: 5th International Brain-Computer Interface Conference 2011 (BCI 2011); 2011. p. 280–283. 11. Kaplan AY, Shishkin SL, Ganin IP, Basyul IA, Zhigalov AY. Adapting the P300-based\nPJ, Verstraeten D, Schrauwen B. A Bayesian model for exploiting application constraints to enable unsupervised training of a P300-based BCI. PloS one. 2012;7(4):e33758. pmid:22496763 View Article PubMed/NCBI Google Scholar 22. Kindermans PJ, Schreuder M, Schrauwen B, Müller K-R, Tangermann M. True zero-training brain-computer interfacing—an online study. PloS one. 2014;9(7):e102504. pmid:25068464 View Article PubMed/NCBI Google Scholar 23. Kindermans PJ, Tangermann M, Müller K-R, Schrauwen B. Integrating dynamic stopping, transfer learning and language models in an adaptive z\nuder M, Sagebaum M, Blankertz B, Ramsay A, et al. Data driven neuroergonomic optimization of BCI stimuli. In: Proceedings of 5th International BCI Conference, Graz.; 2011. p. 160–163. 50. Sugiyama M, Krauledat M, Müller K-R. Covariate shift adaptation by importance weighted cross validation. Journal of Machine Learning Research. 2007;8:1027–1061. View Article Google Scholar 51. von Bünau P, Meinecke FC, Király F, Müller K-R. Finding stationary subspaces in multivariate time series. Physical Review Letters. 2009;103:214101. pmid:20366040 View Article PubMed/NCBI Google Scholar",
+          "boundary": "Each person repeats the same 63-character sentence three times; classifier resets for each. Imported sessions must not imply across-day independence. Paper score is a different paradigm and protocol."
+        },
+        {
+          "id": "R3",
+          "authors": "Riccio A et al.",
+          "year": 2013,
+          "title": "Attention and P300-based BCI performance in people with amyotrophic lateral sclerosis",
+          "doi": "10.3389/fnhum.2013.00732",
+          "url": "https://www.frontiersin.org/journals/human-neuroscience/articles/10.3389/fnhum.2013.00732/full",
+          "verified": "Publisher full text HTTP200, Crossref title/DOI verified",
+          "evidence": " yielding a 250 ms lag between the appearance of two stimuli (stimulus onset asynchrony, SOA). For each character selection (trial) all rows and columns were intensified 10 times (stimuli repetitions) thus each single item on the interface was intensified 20 times. Participants were seated facing a 15” computer screen placed at eye level approximately one meter in front of them. The angular distance subtended by the speller was of 15 degrees. A single flash of a letter at the beginning of each trial cued the target to focus. In the first three runs (15 trials in total) EE\negrees. A single flash of a letter at the beginning of each trial cued the target to focus. In the first three runs (15 trials in total) EEG data was stored to perform a calibration of the BCI classifier. Thus no feedback was provided to the participant up to this point. A stepwise linear discriminant analysis (SWLDA) was applied to the data from the three calibration runs (i.e., runs 1–3) to determine the classifier weights (i.e., classifier coefficients) (Krusienski et al., 2006 ). These weights were then applied during the subsequent four testing runs (i.e., testing set; \nBCI classifier. Thus no feedback was provided to the participant up to this point. A stepwise linear discriminant analysis (SWLDA) was applied to the data from the three calibration runs (i.e., runs 1–3) to determine the classifier weights (i.e., classifier coefficients) (Krusienski et al., 2006 ). These weights were then applied during the subsequent four testing runs (i.e., testing set; runs 4–7) when participants were provided with feedback. EEG potentials between 0 and 800 ms after each stimulus onset were decimated by replacing each sequence of 12 samples with their mea\n by means of the CD task (K b and K a ), were performed on seven participants when considering the K b scores, and six participants when considering the K a scores. Mean online accuracy in performing the BCI task was 97.5% (SD = 3.8, range = 90–100%, N = 8; Table 2 ), the offline BA was on average of 87.4% (SD = 2.4%, range = 84.5–92.3%, N = 8; Table 2 ). The mean amplitude for P300 amp in Cz, was 3.3 μV (SD = 1.6, range = 1.1–6.5 μV, N = 8). Table 2 Participants T1% T2% P300 amp K b α BA% Online acc % 1 69.4 60.8 1.90 3.2 0.2 84.5 95 2 73.7 77.3 2.45 – – 86.3 100 3 73.7 77.9 4.\nz (P300-speller task); K b : K index (number of items held in memory) for the baseline task; α: spatial filtering capacity ( K b −K s ); BA% : offline BA ; Online acc %: online accuracy in P300-speller task In the RSVP task, mean accuracy of detection for T1 was 77.2% (SD = 10.4%, range = 65–96.25%, N = 7) and for T2 67.7% (SD = 14.1%, range = 50.3–87.1%, N = 7). A significant positive correlation was observed between T1% and the offline BA ( r = 0.79, p &lt; 0.05), showing that participants with higher T1% had a higher accuracy in the offline binary classification. To estimate \nration theory: past, present, and future . Psychol. Bull. 129 , 643 – 673 . 10.1037/0033-2909.129.5.643 Pubmed Abstract CrossRef Google Scholar View reference in article 35 Raymond J. E. Shapiro K. L. Arnell K. M. ( 1992 ). Temporary suppression of visual processing in an RSVP task: an attentional blink? J. Exp. Psychol. Hum. Percept. Perform. 18 , 849 – 860 . 10.1037/0096-1523.18.3.849 Pubmed Abstract CrossRef Google Scholar View reference in article 36 Riccio A. Leotta F. Bianchi L. Aloise F. Zickler C. Hoogerwerf E.-J. et al . ( 2011 ). Workload measurement in a c",
+          "boundary": "Original 15 calibration selections then 20 feedback test selections; current prefix test mixes phases. Original online accuracy is not a project benchmark."
+        }
+      ],
+      "non_supporting_fetches": [
+        {
+          "url": "https://www.biorxiv.org/content/10.1101/2020.12.05.403402v1.full",
+          "status": 429
+        },
+        {
+          "url": "https://www.mdpi.com/1424-8220/23/13/6077",
+          "status": 403
+        }
+      ],
+      "raw_geometry_probe": {
+        "reader": "data.bnci2014_008_candidate.read_bnci2014_008_candidate_record",
+        "files": "A01.mat through A08.mat; each loaded from original_path in frozen raw manifest and SHA256 validated by reader",
+        "all_eight_identical_counts": {
+          "original_events": 4200,
+          "test_epoch_rows": 3395,
+          "first_test_event_zero_based": 805,
+          "purged_events_after_Kmax800": 5,
+          "test_physical_selections": 29,
+          "test_complete_selections": 28,
+          "K200": {
+            "full_selections": 1,
+            "partial_flashes": 80,
+            "positive_labels": 34,
+            "distinct_target_intersections_in_trial_prefix": 2
+          },
+          "K800": {
+            "full_selections": 6,
+            "partial_flashes": 80,
+            "positive_labels": 133,
+            "distinct_target_intersections_in_trial_prefix": 7
+          }
+        },
+        "A01_interselection_gap_seconds": "8.25 within five-selection runs; 12.28125 after every fifth selection, consistent with seven five-selection runs. Reader currently flattens them into one run.",
+        "phase_mapping": {
+          "direct_mat_phase_field": false,
+          "direct_mat_run_field": false,
+          "inference": "7 runs of 5 selections, chronological source-paper protocol; A01 every-fifth selection gap corroborates. Not a native field.",
+          "original_calibration_selection_indices": [
+            0,
+            14
+          ],
+          "original_testing_selection_indices": [
+            15,
+            34
+          ],
+          "original_calibration_flashes": 1800,
+          "original_testing_flashes": 2400,
+          "original_testing_complete_selections": 20,
+          "all_eight_identical_geometry": {
+            "last_calibration_flash_sample": 147672,
+            "last_calibration_epoch_stop_exclusive": 147980,
+            "first_test_flash_sample": 150816,
+            "first_test_epoch_start": 150765,
+            "last_test_epoch_stop_exclusive": 346668,
+            "raw_stop_exclusive": 347704,
+            "sample_rate_hz": 256,
+            "test_epoch_support_seconds": [
+              588.92578125,
+              1354.171875
+            ]
+          }
+        }
+      }
+    }
+  }
+}

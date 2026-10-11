@@ -1,0 +1,1342 @@
+
+--- PAGE 1 ---
+arXiv:0906.3465v4  [stat.AP]  9 Nov 2010
+The Annals of Applied Statistics
+2010, Vol. 4, No. 2, 764–790
+DOI: 10.1214/09-AOAS314
+c© Institute of Mathematical Statistics , 2010
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS WITH
+AN APPLICATION TO MISSING DATA IMPUTATION
+By Genevera I. Allen and Robert Tibshirani
+Stanford University
+Missing data estimation is an important challenge with high -
+dimensional data arranged in the form of a matrix. Typically this
+data matrix is transposable, meaning that either the rows, columns
+or both can be treated as features. To model transposable dat a,
+we present a modiﬁcation of the matrix-variate normal, the mean-
+restricted matrix-variate normal , in which the rows and columns each
+have a separate mean vector and covariance matrix. By placin g ad-
+ditive penalties on the inverse covariance matrices of the r ows and
+columns, these so-called transposable regularized covari ance models
+allow for maximum likelihood estimation of the mean and nons ingu-
+lar covariance matrices. Using these models, we formulate E M-type
+algorithms for missing data imputation in both the multivar iate and
+transposable frameworks. We present theoretical results e xploiting
+the structure of our transposable models that allow these mo dels and
+imputation methods to be applied to high-dimensional data. Simula-
+tions and results on microarray data and the Netﬂix data show that
+these imputation techniques often outperform existing met hods and
+oﬀer a greater degree of ﬂexibility.
+1. Introduction. As large data sets have become more common in bio-
+logical and data mining applications, missing data imputat ion is a signiﬁcant
+challenge. We motivate missing data estimation in matrix da ta with the ex-
+ample of the Netﬂix movie rating data [Bennett and Lanning ( 2007)]. This
+data set has around 18,000 movies (columns) and several hund red thousand
+customers (rows). Customers have rated some of the movies, b ut the data
+matrix is very sparse with a only small percentage of the rati ngs present.
+The goal is to predict the ratings for unrated movies so as to b etter recom-
+mend movies to customers. The movies and customers, however , are very
+correlated and an imputation method should take advantage o f these rela-
+tionships. Customers who enjoy horror ﬁlms, for example, ar e likely to rate
+Received April 2009; revised November 2009.
+Key words and phrases. Matrix-variate normal, covariance estimation, imputation, EM
+algorithm, transposable data.
+This is an electronic reprint of the original article published by the
+Institute of Mathematical Statistics in The Annals of Applied Statistics ,
+2010, Vol. 4, No. 2, 764–790 . This reprint diﬀers from the original in pagination
+and typographic detail.
+1
+
+--- PAGE 2 ---
+2 G. I. ALLEN AND R. TIBSHIRANI
+movies similarly, in the same way that horror ﬁlms are likely to have similar
+ratings from these customers. Modeling the ratings by the re lationships be-
+tween only the movies or only the customers, as with multivar iate methods
+andk-nearest neighbor methods, seems shortsighted. Customer A ’s rating of
+Movie 1, for example, is related to Customer B’s rating of Mov ie 2 by more
+than simply the connection between Customer A and B or Movie 1 and 2. In
+addition, modeling ratings as a linear combination of the ra tings of movies
+or a combination of customer ratings as with singular value d ecomposition
+(SVD) methods fails to capture a more sophisticated connect ion between
+the movies and customers [Troyanskaya et al. ( 2001)]. Bell et al., in their
+discussion of imputation for the Netﬂix data, call all of the se methods either
+“movie-centric” or “user-centric” [Bell, Koren and Volins ky ( 2007)].
+We propose to directly model the correlations among and betw een both
+the customers (rows) and the movies (columns). Thus, our mod el is trans-
+posable in the sense that it treats both the rows and columns as featur es
+of interest. The model is based on the matrix-variate normal distribution
+brought to our attention by Efron ( 2009), which has separate covariance
+matrix parameters for both the rows and the columns. Thus, bo th the re-
+lationships between customers and between movies are incor porated in the
+model. If matrix-variate normal data is strung out in a long v ector, then it is
+distributed as multivariate normal with the covariance rel ated to the original
+row and column covariance matrices through their Kronecker product. This
+means that the relationship between Customer A’s rating of M ovie 1 and
+Customer B’s rating of Movie 2 can be modeled directly as the i nteraction
+between Customers A and B and Movies 1 and 2.
+In practice, however, transposable models based on the matr ix-variate
+normal distribution have largely been of theoretical inter est and have rarely
+applied to real data sets because of the computational burde n of high-
+dimensional parameters [Gupta and Nagar ( 1999)]. In this paper we in-
+troduce modiﬁcations of the matrix-variate normal distrib ution, speciﬁcally
+restrictions on the means and penalties on the inverse covar iances, that allow
+us to ﬁt this transposable model to a single matrix of data. Th e penalties we
+employ give us nonsingular covariance estimates that have c onnections to
+the singular value decomposition and graphical models. Wit h this theoretical
+foundation, we present computationally eﬃcient Expectati on Maximization-
+type (EM) algorithms for missing data imputation. We also de velop a two-
+step process for calculating conditional distributions an d an algorithm for
+calculating conditional expectations of scattered missin g data that has the
+computational cost of comparable multivariate methods. Th ese contribu-
+tions allow one to ﬁt this parametric transposable model to a single data
+matrix at reasonable computational cost, opening the door t o numerous
+applications including user-ratings data.
+
+--- PAGE 3 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 3
+We organize the paper beginning with a review of the multivar iate regu-
+larized covariance models (RCM) and a new imputation method based on
+these models, Section 2. The RCMs form the foundation for the transpos-
+able regularized covariance models (TRCM) introduced in Se ction 3. We
+then present new EM-type imputation algorithms for transpo sable data,
+Section 4, along with a one-step approximation in Section 4.2. Simulations
+and results on microarray and the Netﬂix data are given in Sec tion 5, and
+we conclude with a discussion of our methods in Section 6.
+2. Regularized covariance models and imputation with multiv ariate data.
+Several recent papers have presented algorithms and discus sed applications
+of regularized covariance models (RCM) for the multivariat e normal dis-
+tribution [Friedman, Hastie and Tibshirani ( 2007); Witten and Tibshirani
+(2009)]. These models regularize the maximum likelihood estimat e of the
+covariance matrix by placing an additive penalty on the inve rse covariance
+or concentration matrix. The resulting estimates are nonsi ngular, thus en-
+abling covariance estimation when the number of features is greater than
+the number of observations. In this section we give a review o f these models
+and brieﬂy describe a new penalized EM algorithm for imputat ion of missing
+values using the regularized covariance model.
+LetXi ∼N (0, ∆) for i = 1,...,n , i.i.d. observations and p features. Thus,
+our data matrix, X, isn ×p with covariance matrix ∆ ∈ ℜp×p. The penalized
+log-likelihood of the regularized covariance model is then proportional to
+ℓ(∆) =n
+2 log |∆−1| − 1
+2 tr(XT X∆−1) −ρ‖∆−1‖q,(1)
+where ‖ · ‖q =∑ p2
+i=1 | · |q andq is either 1 or 2, that is, the sum of the absolute
+value or square of the elements of ∆−1. The penalty parameter is ρ. With
+anL2 penalty, we can write the penalty term as ρ tr(∆−1∆−1) =ρ‖∆−1‖2
+F.
+Maximizingℓ(∆) gives the penalized-maximum likelihood estimate (MLE)
+of ∆. Friedman, Hastie and Tibshirani ( 2007) present the graphical lasso
+algorithm to solve the problem with an L1 penalty. The graphical lasso uses
+the lasso method iteratively on the rows of ˆ∆−1, and gives a sparse solu-
+tion for ˆ∆−1. A zero in the ijth component of ∆−1 implies that variables i
+and j are conditionally independent given the other variables. T hus, these
+penalized-maximum likelihood models with L1 penalties can be used to es-
+timate sparse undirected graphs. With an L2 penalty, the problem has an
+analytical solution [Witten and Tibshirani ( 2009)]. If we take the singular
+value decomposition (SVD) of X, X = UDVT , with d = diag(D), then
+ˆ∆ = V diag(θ)VT, θ i =
+d2
+i +
+√
+d4
+i + 16nρ
+2n .(2)
+
+--- PAGE 4 ---
+4 G. I. ALLEN AND R. TIBSHIRANI
+Thus, the inclusion of the L2 penalty simply regularizes the eigenvalues of
+the covariance matrix. When p>n and letting r be the rank of X, the ﬁnal
+n −r values of θ are constant and are equal to 2
+√
+ρ/n. While a rank- k
+SVD approximation uses only the ﬁrst k eigenvalues, the L2 RCM gives
+a covariance estimate with all nonzero eigenvalues. Regula rized covariance
+models provide an alternative method of estimating the cova riance matrix
+with many desirable properties [Rothman et al. ( 2008)].
+With this underlying model, we can form a new missing data imp uta-
+tion algorithm by maximizing the observed penalized log-li kelihood of the
+regularized covariance model via the EM algorithm. Our meth od is the
+same as that of the EM algorithm for the multivariate normal d escribed
+in Little and Rubin [Little and Rubin ( 2002)], except for an addition in
+the maximization step. In our M step, we ﬁnd the MLE of the RCM c o-
+variance matrix instead of the multivariate normal MLE. Thu s, our method
+ﬁts into a class of penalized EM algorithms which give nonsin gular covari-
+ance estimates [Green ( 1990)], thus enabling use of the EM framework when
+p>n . We give full details of the algorithm, which we call RCMimpute, in
+the Supplementary Materials [Allen and Tibshirani ( 2010)]. As we will dis-
+cuss later, this imputation algorithm is a special case of ou r algorithm for
+transposable data and forms an integral part of our one-step approximation
+algorithm presented in Section 4.2.
+3. Transposable regularized covariance models. As previously mentioned,
+we model the possible dependencies between and within the ro ws and columns
+using the matrix-variate normal distribution. In this sect ion we ﬁrst present
+a modiﬁcation of this model, the mean-restricted matrix-va riate normal dis-
+tribution. We conﬁne the means to limit the total number of pa rameters and
+to provide interpretable marginal distributions. We then i ntroduce our trans-
+posable regularized covariance models by applying penalti es to the covari-
+ances of our matrix-variate distribution. Finally, we pres ent the penalized-
+maximum likelihood parameter estimates and illustrate the connections be-
+tween these estimates and those of multivariate models, the singular value
+decomposition and graphical models.
+3.1. Mean-restricted matrix-variate normal distribution. We introduce
+the mean-restricted matrix-variate normal, a variation on the matrix-variate
+normal, presented by Gupta and Nagar [Gupta and Nagar ( 1999)]. A re-
+striction on the means is needed because the matrix-variate normal has a
+mean matrix, M, of the same dimension as X, meaning that there are n ×p
+mean parameters. Since the matrix-variate normal is mostly applied in in-
+stances where there are several independent samples of the r andom matrix
+X [Dutilleul (1999)], this parameter formulation is appropriate. We propose,
+
+--- PAGE 5 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 5
+however, to use the model when we only have one matrix X from which to es-
+timate the parameters. Also, we wish to parameterize our mod el so that the
+marginals are multivariate normal, thus easing computatio ns and improving
+interpretability.
+We denote the mean-restricted matrix-variate normal distr ibution by X ∼
+Nn,p(ν, µ, Σ, ∆) with X ∈ ℜn×p, the row mean ν ∈ ℜn, the column mean
+µ ∈ ℜp, the row covariance Σ ∈ ℜn×n and the column covariance ∆ ∈ ℜp×p.
+If we place the matrix X into a vector of length np, we have vec( X) ∼
+N (vec(M), Ω), where M =ν1T
+(p) + 1(n)µT , and Ω = ∆ ⊗ Σ. Thus, our mean-
+restricted matrix-variate normal model is a multivariate n ormal with a mean
+matrix composed of additive elements from the row and column mean vectors
+and a covariance matrix given by the Kronecker product betwe en the row
+and column covariance matrices. This covariance structure can be seen as
+a tensor product Gaussian process on the rows and columns, an approach
+explored in Bonilla, Chai and Williams ( 2008) and Yu et al. ( 2007).
+This distribution implies that a single element, Xij , has mean νi +µj
+along with variance Σii∆jj , a mean and variance component from the row
+and column to which it belongs. As pointed out by a referee, th is can be
+viewed as the following random eﬀects model: Xij =νi +µj +εij , where
+εij ∼N (0, Σii∆jj ), which has two additive ﬁxed eﬀects depending on the
+row and column means and a random eﬀect whose variance depends on the
+product of the corresponding row and column covariances. Th is model shares
+the same ﬁrst and second moments as elements from the mean-re stricted
+matrix-variate normal. It does not, however, capture the Kr onecker covari-
+ance structure between the elements of X unless both the row and column
+covariances, Σ and ∆, are diagonal. This random eﬀect model diﬀers from
+the more common two-way random eﬀects model with additive err ors, which
+assumes that errors from the two sources are independent. Ou r model, how-
+ever, assumes that the errors are related and models them as a n interaction
+eﬀect. A similar random eﬀects approach was taken in Yu et al. ( 2009), also
+using a Kronecker product covariance matrix.
+To further illustrate the model, we note that the rows and col umns are
+both marginally multivariate normal. The ith row, denoted as Xir, is dis-
+tributed as Xir ∼N (νi +µ, Σii∆) and the jth column, denoted by Xcj,
+is distributed as Xcj ∼N (ν +µj, ∆jj Σ). The familiar multivariate normal
+distribution is a special case of the mean-restricted matri x-variate nor-
+mal as seen by the following two statements. If Σ = I and ν = 0, then
+X ∼N (µ, ∆), and if ∆ = I and µ = 0, then X ∼N (ν, Σ). Also, two ele-
+ments from diﬀerent rows or columns are distributed as a bivar iate normal,
+(Xij,Xi′j′) ∼N (
+( νi+µj
+νi′ +µj′
+)
+, ( Σii∆jj
+Σi′i∆j′j
+Σii′ ∆jj ′
+Σi′i′ ∆j′j′
+)). Thus, our model is more gen-
+eral than the multivariate normal, with the ﬂexibility to en compass many
+diﬀerent marginal multivariate models.
+
+--- PAGE 6 ---
+6 G. I. ALLEN AND R. TIBSHIRANI
+For completeness, the density function of this distributio n is
+p(ν,µ, Σ, ∆)
+= (2π)−np/2|Σ|−p/2|∆|−n/2
+× etr(− 1
+2 (X −ν1T
+(p) − 1(n)µT )∆−1(X −ν1T
+(p) − 1(n)µT )T Σ−1),
+where etr( ·) is the exponential of the trace function. Hence, our formul ation
+of the matrix-variate normal distribution adds restrictio ns on the means, giv-
+ing the distribution desirable properties in terms of its ma rginals and easing
+computation of parameter estimates, discussed in the follo wing section.
+3.2. Transposable Regularized Covariance Model (TRCM). In the previ-
+ous section we have reformulated the distribution to limit t he mean parame-
+ters and in this section we regularize the covariance parame ters. This allows
+us to obtain nonsingular covariance estimates which are imp ortant for use
+in any application, including missing data imputation.
+As in the multivariate case, we seek to penalize the inverse c ovariance
+matrix. Instead of penalizing the overall covariance, Ω, we add two sepa-
+rate penalty terms, penalizing the inverse covariance of th e rows and of the
+columns. The penalized log-likelihood is thus
+ℓ(ν,µ, Σ, ∆)
+=p
+2 log |Σ−1| +n
+2 log |∆−1|
+(3)
+− 1
+2 tr(Σ−1(X −ν1T
+(p) − 1(n)µT )∆−1(X −ν1T
+(p) − 1(n)µT )T )
+−ρr‖Σ−1‖qr −ρc‖∆−1‖qc,
+where ‖ · ‖qr =∑ m2
+i=1 | · |qr and qr and qc are either 1 or 2, that is, the sum
+of the absolute value of the matrix elements or squared eleme nts.ρr and ρc
+are the two penalty parameters. Note that we will refer to the four possible
+types of penalties as Lqr :Lqc. Placing separate penalties on the two covari-
+ance matrices is not equivalent to placing a single penalty o n the Kronecker
+product covariance matrix Ω. Using two separate penalties gives greater
+ﬂexibility, as the covariance of the rows and columns can be m odeled sep-
+arately using diﬀering penalties and penalty parameters. Al so, having two
+penalty terms leads to simple parameter estimation strateg ies.
+With transposable regularized covariance models, as with t heir multivari-
+ate counterpart, the penalties are placed on the inverse cov ariance matrix,
+or concentration matrix. Estimation of the concentration m atrix has long
+been associated with graphical models, especially with an L1 penalty which
+is useful to model sparse graphical models [Friedman, Hasti e and Tibshirani
+
+--- PAGE 7 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 7
+(2007)]. Here, a nonzero entry of the concentration matrix, Σij ⁄= 0, means
+that the ith row conditional on all other rows is correlated with row j. Thus,
+a “link” is formed in the graph structure between nodes i andj. Conversely,
+zeros in the concentration matrix imply conditional indepe ndence. Hence,
+since we are estimating both a regularized row and column con centration
+matrix, our model can be interpreted as modeling both the row s and columns
+with a graphical model.
+3.3. Parameter estimation. We estimate the means and covariances via
+penalized maximum likelihood estimation. The estimates, h owever, are not
+unique, but the overall mean, ˆM, and overall covariance ˆΩ are unique.
+Hence, ˆν and ˆµ are unique up to an additive constant and ˆΣ and ˆ∆ are
+unique up to a multiplicative constant. We ﬁrst begin with th e maximum
+likelihood estimation of the mean parameters.
+Proposition 1. The MLE estimates for ν and µ are
+ˆν =
+p∑
+j=1
+(Xcj − ˆµj)
+p , ˆµ =
+n∑
+i=1
+(Xir − ˆνi)
+n ,(4)
+whereXcj denotes the jth column and Xir the ith row of X ∈ ℜn×p.
+Proof. See Supplementary Materials . □
+The estimates for ν and µ are obtained by centering with respect to the
+rows and then the columns. Note that centering by the columns ﬁrst will
+change ˆµ and ˆν, but will still give the same additive result. Thus, the orde r
+in which we center is unimportant.
+Maximum likelihood estimation of the covariance matrices i s more diﬃ-
+cult. Here, we will assume that the data has been centered, M = 0. Then,
+the penalized log-likelihood, ℓ(Σ, ∆), is a bi-concave function of Σ−1 and
+∆−1. In words, this means that for any ﬁxed Σ−1′, ℓ(Σ′, ∆) is a concave
+function of ∆−1, and for any ﬁxed ∆−1′, ℓ(Σ, ∆′) is a concave function
+of Σ−1. We exploit this structure to maximize the penalized likeli hood by
+iteratively maximizing along each coordinate, either Σ−1 or ∆−1.
+Proposition 2. Iterative block coordinate-wise maximization ofℓ(Σ, ∆)
+with respect to Σ−1 and ∆−1 converges to a stationary point of ℓ(Σ, ∆) for
+bothL1 and L2 penalty types.
+Proof. See Supplementary Materials . □
+While block coordinate-wise maximization (Proposition 2) reaches a sta-
+tionary point of ℓ(Σ, ∆), it is not guaranteed to reach the global maximum.
+
+--- PAGE 8 ---
+8 G. I. ALLEN AND R. TIBSHIRANI
+There are potentially many stationary points, especially w ith L1 penalties,
+due to the high-dimensional nature of the parameter space. W e also note
+a few straightforward properties of the coordinate-wise ma ximization pro-
+cedure, namely, that each iteration monotonically increas es the penalized
+log-likelihood and the order of maximization is unimportan t.
+The coordinate-wise maximization is accomplished by setti ng the gra-
+dients with respect to Σ−1 and ∆−1 equal to zero and solving. We list
+the gradients with L2 penalties. With L1 penalties, only the third term is
+changed and is given in parentheses:
+∂ℓ
+∂Σ−1 = Σ − X∆−1XT/p − 4ρr
+p Σ−1
+( 2ρr
+p sign(Σ−1)
+)
+,
+(5)
+∂ℓ
+∂∆−1 = ∆ − XT Σ−1X/n − 4ρc
+n ∆−1
+( 2ρc
+n sign(∆−1)
+)
+.
+Maximization with L1 penalties can be achieved by applying the graphical
+lasso algorithm to the second term with the coeﬃcient of the t hird term
+as the penalty parameter. With L2 penalties, we maximize by taking the
+eigenvalue decomposition of the second term and regularizi ng the eigenvalues
+as in the multivariate case, ( 2). Thus, coordinate-wise maximization leads
+to a simple iterative algorithm, but it comes at a cost since i t does not
+necessarily converge to the global maximum. When both penal ty terms are
+L2 penalties, however, we can ﬁnd the global maximum.
+3.3.1. Covariance estimation for L2 penalties. Covariance estimation
+when both penalties of the transposable regularized covari ance model are
+L2 penalties reduces to a minimization problem involving the e igenvalues of
+the covariance matrices. This problem has a unique analytic al solution and,
+thus, our estimates, ˆΣ and ˆ∆, are globally optimal.
+Theorem 1. The global unique solution maximizing ℓ(Σ, ∆) with L2
+penalties on both covariance parameters is given by the foll owing: Denote
+the SVD of X as X = UDVT with d = diag(D) and let r be the rank of X,
+then
+Σ∗ = U diag(β∗)UT and ∆∗ = V diag(θ∗)VT,(6)
+whereβ∗ ∈ ℜn+ and θ∗ ∈ ℜp+ given by
+β∗
+i =
+
+
+
+2
+√ ρr
+p, if i ≥r,
+/radicaltp/radicalvertex/radicalvertex/radicalvertex√ −c(i)
+2 −
+√
+c(i)
+2 2 − 4c(i)
+1 c(i)
+3
+2c(i)
+1
+, otherwise,
+
+--- PAGE 9 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 9
+θ∗
+i =
+
+
+
+2
+√ ρc
+n, if i ≥r,
+d2
+iβ∗
+i
+pβ∗
+i 2 − 4ρr
+, otherwise,
+with coeﬃcients
+c(i)
+1 = −4ρcp2, c (i)
+2 = 32ρrρcp +d4
+i (n −p), and
+c(i)
+3 = 4ρr(d4
+i − 16ρrρc).
+Proof. See Supplementary Materials . □
+With L2 penalties, maximum likelihood covariance estimates ˆΣ and ˆ∆
+have eigenvectors given by the left and right singular vecto rs of X, respec-
+tively. To reveal some intuition as to how these covariance estimates compare
+to other possible eigenvalue regularization methods, we pr esent the two gra-
+dient equations in terms of the eigenvalues β andθ (these are discussed fully
+in the proof of Theorem 1):
+pθiβ2
+i −d2
+iβi − 4ρrθi = 0 and nβiθ2
+i −d2
+iθi − 4ρcβi = 0.
+These are two quadratic functions in β andθ, so the quadratic formula gives
+us the eigenvalues in terms of each other. We see that the eige nvalues regu-
+larize the square of the singular values by a function of the d imensions, the
+penalty parameters and the eigenvalues of the other covaria nce estimate.
+From Theorem 1, L2 :L2 covariance estimation has a unique and globally
+optimal solution, which cannot be said of the other combinat ions of penal-
+ties. We give numerical results comparing our TRCM covarian ce estimates
+to other shrinkage covariance estimators in the Supplementary Materials .
+Here, we also pause to compare our TRCM model with L2 penalties to
+the singular value decomposition model commonly employed w ith matrix
+data. If we include both row and column intercepts, we can wri te the rank-
+reduced SVD model as Xij =νi +µj + uT
+i Drvj +ε, where ui and vj are
+the ith and jth right and left singular vectors, Dr is the rank-reduced di-
+agonal matrix of singular values and ε ∼N (0,σ 2). Thus, the model appears
+similar to L2 TRCM, which can be written as Xij =νi +µj +εij where
+εij ∼N (0, uT
+i diag(β)ui ∗ vT
+j diag(θ)vj). There are important diﬀerences be-
+tween the models, however. First, the left and right singula r vectors are
+incorporated directly into the SVD model, whereas they form the bases of
+the variance component of TRCM. Second, a rank-reduced SVD i ncorpo-
+rates only the ﬁrst r left and right singular vectors. Our model uses all the
+singular vectors as β and θ are of lengths n and p, respectively. Finally,
+the SVD allows the covariances of the rows to vary with ui, whereas with
+
+--- PAGE 10 ---
+10 G. I. ALLEN AND R. TIBSHIRANI
+TRCM the rows share a common covariance matrix. Thus, while t he SVD
+and TRCM share similarities, the models diﬀer in structure an d, hence, each
+oﬀers a separate approach to matrix-data.
+4. Imputation for transposable data. Imputation methods for transpos-
+able data are the main focus of this paper. We formulate metho ds based on
+the transposable regularized covariance models introduce d in Section 3. Be-
+cause computational costs have limited use of the matrix-va riate normal in
+applications, we let computational considerations motiva te the formulation
+of our imputation methods.
+We propose a Multi-Cycle Expectation Conditional Maximiza tion
+(MCECM) algorithm, given by Meng and Rubin ( 1993), maximizing the
+observed penalized log-likelihood of the transposable reg ularized covariance
+models. The algorithm exploits the structure of our model by maximizing
+with respect to one block of coordinates at a time, saving con siderable math-
+ematical and computational time. First, we develop the algo rithm mathe-
+matically, provide some rationale behind the structure of t he algorithm via
+numerical examples, and then brieﬂy discuss computational strategies and
+considerations.
+In high-dimensional data, however, the MCECM algorithm we p ropose for
+imputation is not computationally feasible. Hence, we sugg est a computation-
+saving one-step approximation in Section 4.2. The foundation of our ap-
+proximation lies in new methods, given in Theorems 2 and 3, for calculating
+conditional distributions with the mean-restricted matri x-variate normal.
+We also demonstrate the utility of this one-step procedure i n numerical ex-
+amples. A Bayesian variation of the one-step approximation using Gibbs
+sampling is given in the Supplementary Materials .
+Prior to formulating the imputation algorithm for transpos able models,
+we pause to address a logical question: Why do we not use the mu ltivariate
+imputation method based on regularized covariance models, given that the
+mean-restricted matrix normal distribution can be written as a multivari-
+ate normal with vec( X) ∼N (vec(M), Ω)? There are two reasons why this
+is inadvisable. First, notice that TRCMs place an additive p enalty on both
+the inverse covariance matrices of the rows and the columns. The overall
+covariance matrix, Ω, however, is their Kronecker product. Thus, convert-
+ing the TRCM into a multivariate form yields a messy penalty t erm leading
+to a diﬃcult maximization step. The second reason to avoid mu ltivariate
+methods is computational. Recall that Ω is a np ×np matrix which is ex-
+pensive to repeatedly invert. We will see that the mathemati cal form of the
+ECM imputation algorithm we propose leads to computational strategies
+that avoid the expensive inversion of Ω.
+
+--- PAGE 11 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 11
+4.1. Multi-cycle ECM algorithm for imputation. Before presenting the
+algorithm, we ﬁrst review the notation used throughout the r emainder of
+this paper. As previously mentioned, we use i to denote the row index and
+j the column index. The observed and missing parts of row i are oi andmi,
+respectively, and oj and mj are the analogous parts of column j. We let
+m and o denote the totality of missing and observed elements, respe ctively.
+Since with transposable data there is no natural orientatio n, we set n to
+always be the larger dimension of X and p the smaller.
+4.1.1. Algorithm. We develop the ECM-type algorithm for imputation
+mathematically, beginning with the observed data log-like lihood which we
+seek to maximize. Letting x∗
+oj,j = Σ−1/2
+oj,oj (xoj,j −νoj ),
+ℓ(ν,µ, Σ, ∆) = 1
+2
+[ p∑
+j=1
+log |Σ−1
+oj,oj | +
+n∑
+i=1
+|∆−1
+oi,oi|
+]
+− 1
+2 tr
+( n∑
+i=1
+(x∗
+i,oi −µoi)T (x∗
+i,oi −µoi)∆−1
+oi,oi
+)
+(7)
+−ρr‖Σ−1‖qr −ρc‖∆−1‖qc.
+One can show that this is indeed the observed log-likelihood by starting
+with the multivariate observed log-likelihood and using ve c(X) and the cor-
+responding vec( M) and Ω. We maximize ( 7) via an EM-type algorithm
+which, similarly to the multivariate case, gives the impute d values as a part
+of the Expectation step.
+We present two forms of the E step, one which leads to simple ma xi-
+mization with respect to Σ−1 and the other with respect to ∆−1. This is
+possible because of the structure of the matrix-variate mod el, speciﬁcally the
+trace term. Letting θ = {ν,µ, Σ, ∆}, the parameters of the mean-restricted
+matrix-variate normal, and letting o be the indices of the observed values,
+the E step, denoted by Q(θ|θ′,Xo), has the following form. Here, we assume
+that X is centered:
+Q(θ|θ′,Xo) = E(ℓ(ν,µ, Σ, ∆)|Xo,θ ′) ∝ E[tr(XT Σ−1X∆−1)|Xo,θ ′]
+∝ tr[E(XT Σ−1X|Xo,θ ′)∆−1] ∝ tr[E(X∆−1XT |Xo,θ ′)Σ−1].
+Thus, we have two equivalent forms of the conditional expect ation which we
+give below.
+Proposition 3. The E step is proportional to the following form:
+E[tr(XT Σ−1X∆−1)|Xo,θ ′] = tr[( ˆXT Σ−1 ˆX + G(Σ−1))∆−1]
+(8)
+= tr[( ˆX∆−1 ˆXT + F(∆−1))Σ−1],
+
+--- PAGE 12 ---
+12 G. I. ALLEN AND R. TIBSHIRANI
+where ˆX = E(X|Xo,θ ′) and
+G(Σ−1) =
+
+
+tr(C(11)Σ−1) · · · tr(C(1p)Σ−1)
+... . . . ...
+tr(C(p1)Σ−1) · · · tr(C(pp)Σ−1)
+
+,
+C(jj ′) = Cov(Xcj,Xcj′|Xo,θ ′),
+F(∆−1) =
+
+
+tr(D(11)∆−1) · · · tr(D(1n)∆−1)
+... . . . ...
+tr(D(n1)∆−1) · · · tr(D(nn)∆−1)
+
+,
+D(ii′) = Cov(Xir,Xi′r|Xo,θ ′).
+Proof. See Supplementary Materials . □
+The E step in the matrix-variate normal framework has a simil ar structure
+to that of the multivariate normal (see Supplementary Materials ) with an
+imputation step ( ˆX) and a covariance correction step [ C(jj ′) and D(ii′)].
+The matrices C(jj ′) ∈ ℜn×n and D(ii′) ∈ ℜp×p, while G(Σ−1) ∈ ℜp×p and
+F(∆−1) ∈ ℜn×n. Note that C(jj ′) is sparse and only nonzero at C(jj ′)
+ii′ when
+xij and xi′j′ are both missing. C(jj ′) is not symmetric, but C(jj ′)T = C(j′j),
+hence, G(Σ−1) is symmetric. The matrices D(ii′) and F(∆−1) are structured
+analogously. Thus, we have two equivalent forms of the E step , which will
+be inserted between the two Conditional Maximization (CM) s teps to form
+the MCECM algorithm.
+The CM steps which maximize the conditional expectation fun ctions, in
+Proposition 3, along with either Σ−1 or ∆−1 are direct extensions of the
+MLE solvers for the multivariate RCMs. This is easily seen fr om the gradi-
+ents. Note that we only show the gradients with an L2 penalty, since an L1
+penalty diﬀers only in the last term:
+∂Q
+∂Σ−1 = Σ − [ ˆX∆−1 ˆXT + F(∆−1)]/p − 4ρr
+p Σ−1,
+∂Q
+∂∆−1 = ∆ − [ ˆXT Σ−1 ˆX + G(Σ−1)]/n − 4ρc
+n ∆−1.
+With an L2 penalty, the estimate is given by taking the eigenvalue deco m-
+position of the second term and regularizing the eigenvalue s as in ( 2). The
+graphical lasso algorithm applied to the second term gives t he estimate in
+the case with an L1 penalty.
+We now put these steps together and present the Multi-Cycle E CM algo-
+rithm for imputation with transposable data, TRCMimpute, i n Algorithm
+
+--- PAGE 13 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 13
+1. A brief comment regarding the initialization of parameter estimates is
+needed. Estimating the mean parameters when missing values are present
+is not as simple as centering the rows and columns as in ( 4). Instead, we
+iterate centering by rows and columns, ignoring the missing values by sum-
+ming over the observed values, until convergence. Second, t he initial esti-
+mates of ˆΣ−1 and ˆ∆−1 must be nonsingular in order to preform the needed
+computations in the E step. While any nonsingular matrices w ill work, we
+ﬁnd that the algorithm converges faster if we start with the M LE estimates
+with the missing values ﬁxed and set to the estimated mean. So me prop-
+erties and numerical comparisons of the MCECM algorithm are given in
+the Supplementary Materials .
+4.1.2. Computational considerations. We have presented our imputation
+algorithm for transposable data, TRCMimpute, but have not y et discussed
+the computations required. Calculation of the terms for the two E steps
+can be especially troublesome and, thus, we concentrate on t hese. Particu-
+larly, we need to ﬁnd ˆX = E(X|Xo,θ ′), and the covariance terms, C(jj ′) =
+Cov(Xcj,Xcj′|Xo,θ ′) and D(ii′) = Cov(Xir,Xi′r|Xo,θ ′). The simplest but
+not always the most eﬃcient way to compute these is to use the m ulti-
+variate normal conditional formulas with the Kronecker cov ariance matrix
+Ω, that is, if we let m be the indices of the missing values of vec( X) and o
+be the observed,
+vec( ˆX)k =
+{ vec(M)k + ΩkoΩ−1
+oo (vec(X)o − vec(M)o), if k ∈m,
+vec(X)k, if k ∈o,(9)
+Algorithm 1 Imputation with Transposable Regularized Covariance Mode ls
+(TRCMimpute)
+1. Initialization:
+(a) Estimate ˆν and ˆµ from the observed data.
+(b) If xij is missing, set xij = ˆνi + ˆµj .
+(c) Start with nonsingular estimates ˆΣ and ˆ∆.
+2. E Step ( ∆): Calculate ˆXT ˆΣ−1 ˆX + G( ˆΣ−1).
+3. M Step ( ∆):
+(a) Update estimates of ˆν and ˆµ.
+(b) Maximize Q with respect to ∆−1 to obtain ˆ∆.
+4. E Step ( Σ): Calculate ˆX ˆ∆−1 ˆXT + F( ˆ∆−1),
+5. M Step ( Σ):
+(a) Update estimates of ˆν and ˆµ.
+(b) Maximize Q with respect to Σ−1 to obtain ˆΣ.
+6. Repeat Steps 2–5 until convergence.
+
+--- PAGE 14 ---
+14 G. I. ALLEN AND R. TIBSHIRANI
+and the nonzero elements of C and D corresponding to covariances between
+pairs of missing values come from
+Cov(vec(X)m, vec(X)m|Xo,θ ′) = Ωmm − ΩmoΩ−1
+oo Ωom.(10)
+This computational strategy may be appropriate for small da ta matrices, but
+even when n andp are medium-sized, this approach can be computationally
+expensive. Inverting Ω can be of order O(n3p3), depending on the amount
+of missing data. So, even if we have a relatively small matrix of dimension
+100 × 50, this inversion costs around O(1010)! Using Gibbs sampling to ap-
+proximate the calculations of the E steps in either a Stochas tic or Stochastic
+Approximation EM-type algorithm [Celeux, Chauveau and Die bolt ( 1996)]
+is one computational approach (we present Gibbs sampling as part of our
+Bayesian one-step approximation in the Supplementary Materials ). A stochas-
+tic approach, however, is still computationally expensive and, thus, an ap-
+proximation to our MCECM algorithm is needed.
+4.2. One-step approximation to TRCMimpute. For high-dimensional
+transposable data, the imputation algorithm, TRCMimpute, can be com-
+putationally prohibitive. Thus, we propose a one-step appr oximation which
+has computational costs comparable to multivariate imputa tion methods.
+4.2.1. One-step algorithm. The MCECM algorithm for imputation with
+transposable regularized covariance models iterates betw een the E step, tak-
+ing conditional expectations, and the CM steps, maximizing with respect
+to the inverse covariances. Both of these steps are computat ionally inten-
+sive for high-dimensional data. While each iterate increas es the observed
+log-likelihood, the ﬁrst step usually produces the steepes t increase in the
+objective. Thus, we propose an algorithm that instead of ite rating between
+E and CM steps, approximates the solution of the MCECM algori thm by
+stopping after only one step.
+Many have noted in other iterative maximum likelihood-type algorithms
+that a one-step algorithm from a good initial starting point often produces
+an eﬃcient, if not comparable, approximation to the fully-i terated solution
+[Lin and Zhang ( 2006); Fan and Li ( 2001)]. Thus, for our one-step approx-
+imation we seek a good initial solution from which to start ou r CM and
+E steps. For this, we turn to the multivariate regularized co variance mod-
+els. Recall that all marginals of the mean-restricted matri x-variate normal
+are multivariate normal and, hence, if one of the penalty par ameters for the
+TRCM model is inﬁnitely large, we obtain the RCM solution (i. e., if ρr = ∞,
+we get the RCM solution with penalized covariance among the c olumns). We
+propose to use the estimates from the two marginal distribut ions with penal-
+ized row covariances and penalized column covariances to ob tain our initial
+
+--- PAGE 15 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 15
+starting point. This is similar to the COSSO one-step algori thm which uses
+a marginal solution as a good initial starting point [Lin and Zhang ( 2006)].
+Since the ﬁnal goal of our approximation algorithm is missin g value impu-
+tation, and not parameter estimation, we then tailor our one -step algorithm
+to favor imputation. First, instead of using the marginal RC M covariance
+estimates as starting values for the subsequent TRCMimpute E and CM
+steps, we use the marginal estimates to obtain two sets of imp uted missing
+values through applying the RCMimpute method to the rows and then the
+columns. We then average the two sets of missing value estima tes and ﬁx
+these to ﬁnd the maximum likelihood parameter estimates for the TRCM
+model, completing the maximization step. In summary, our in itial estimates
+are obtained by applying an EM-type method to the marginal mo dels. Bier-
+nacki, Celeux and Govaert ( 2003) similarly use other EM-type algorithms
+to ﬁnd good initial starting values for their EM mixture mode l algorithm.
+The ﬁnal step of our algorithm is the Expectation step where w e take the
+conditional expectation of the missing values given the obs erved values and
+the TRCM estimates. Note that the E step of the MCECM algorith m in-
+cludes both an imputation part and a covariance correction p art (see Propo-
+sition 3). For our one-step algorithm, however, the covariance corr ection part
+is unnecessary since our ﬁnal goal is missing value imputati on. We give the
+one-step approximation, called TRCMAimpute, in Algorithm 2.
+Algorithm 2 One-step algorithm approximating TRCMimpute (TRCMAim-
+pute)
+1. Initial imputation:
+(a) Impute missing values with RCMimpute assuming Σ = I.
+(b) Impute missing values with RCMimpute assuming ∆ = I.
+(c) Average the two estimates.
+2. Find the MLE’s of the transposable regularized covarianc e model, ˆν, ˆµ,
+ˆΣ and ˆ∆ with the imputed missing values ﬁxed.
+3. Set the missing values to their conditional expectation g iven these pa-
+rameters: ˆXm = E(Xm|Xo, ˆν, ˆµ, ˆΣ, ˆ∆).
+Before discussing the calculations necessary in the ﬁnal st ep of the al-
+gorithm, we pause to note a major advantage of our one-step me thod. If
+the sets of missing values from the marginal models using RCM impute are
+saved in the ﬁrst step, then TRCMAimpute can give three sets o f missing
+value estimates. Since it is often unknown whether a given da ta set may
+have independent rows or columns, cross-validation, for ex ample, can be
+used to determine whether penalizing the covariances of the rows, columns
+or both is best for missing value imputation. This is discuss ed in detail in
+the Supplementary Materials .
+
+--- PAGE 16 ---
+16 G. I. ALLEN AND R. TIBSHIRANI
+4.2.2. Conditional expectations. We now discuss the ﬁnal conditional ex-
+pectation step of our one-step approximation algorithm. Re call that the
+conditional expectation can be computed via ( 9), but this requires inverting
+Ω and is therefore avoided. Instead, we exploit a property of t he mean-
+restricted matrix-variate normal, namely, that all margin als of our model
+are multivariate normal. This allows us to ﬁnd the condition al distributions
+in a two step process given by Theorem 2.
+Theorem 2. Let X ∼Nn,p(ν,µ, Σ, ∆), M =ν1T +µT 1 and partition
+X, M, Σ, ∆ as
+X =
+( Xi,mi Xi,oi
+Xk,mi Xk,oi
+)
+=
+( Xmj,j Xmj,l
+Xoj,j Xoj,l
+)
+, M =
+( Mi,r
+Mk,r
+)
+= ( Mc,j Mc,l ),
+Σ =
+( Σi,i Σi,k
+Σk,i Σk,k
+)
+, and ∆ =
+( ∆j,j ∆j,l
+∆l,j ∆l,l
+)
+,
+where i and j denote indices of a row and column, respectively, k and l
+are vectors of indices of length n − 1 and p − 1, respectively, and mi and oi
+denote vectors of indices within row i and mj and oj indices within column
+j.
+Deﬁne
+ψ = Mi,r + Σi,kΣ−1
+k,k(Xk,r − Mk,r), η = Mc,j + (Xc,l − Mc,l)∆−1
+l,l ∆l,j,
+Γ = [Σi,i − Σi,kΣ−1
+k,kΣk,i] ⊗ ∆, and Φ = Σ ⊗ [∆j,j − ∆j,l∆−1
+l,l ∆l,j].
+Partition ψ, η, Γ and Φ as ψ =
+( ψmi
+ψoi
+)
+,η = (ηmj ηoj ),
+Γ =
+(
+Γmi,mi Γmi,oi
+Γoi,mi Γoi,oi
+)
+, and Φ =
+(
+Φmj,mj Φmj,oj
+Φoj,mj Φoj,oj
+)
+.
+Then,
+(a) (Xi,mi|Xi,oi, Xk,r)
+∼N (ψmi + Γmi,oiΓ −1
+oi,oi(Xi,oi −ψoi), Γmi,mi − Γmi,oiΓ −1
+oi,oiΓoi,mi).
+(b) (Xmj,j|Xoj,j, Xc,l)
+∼N (ηmj + Φmj,oj Φ−1
+oj,oj (Xoj,j −ηoj ),
+Φmj,mj − Φmj,oj Φ−1
+oj,oj Φoj,mj ).
+Proof. See Supplementary Materials . □
+Thus, from Theorem 2, the conditional distribution of values in a row or
+column given the rest of the matrix can be calculated in a two s tep pro-
+cess where each step takes at most the number of computations as required
+
+--- PAGE 17 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 17
+for calculating multivariate conditional distributions. The ﬁrst step ﬁnds the
+distribution of an entire row or column conditional on the re st of the matrix,
+and the second step ﬁnds the conditional distribution of the values of inter-
+est within the row or column. By splitting the calculations i n this manner,
+we avoid inverting the np ×np Kronecker product covariance. This alterna-
+tive form for the conditional distributions of elements in a row or column
+leads to an iterative algorithm for calculating the conditi onal expectation of
+the missing values given the observed values. We call this th e Alternating
+Conditional Expectations Algorithm, given in Algorithm 3.
+Theorem 3. Let X ∼ Nn,p(ν,µ, Σ, ∆) and partition vec(X) =
+(vec(Xm) vec( Xo)) wherem and o are indices partitioned by rows ( mi and
+oi) and columns (mj andoj), so that a row Xi,r = (Xi,mi Xi,oi) and a column
+Xc,j =
+( Xmj ,j
+Xoj ,j
+)
+. Then, the Alternating Conditional Expectations Algorithm,
+Algorithm 3, converges to E(Xm|Xo).
+Proof. See Supplementary Materials . □
+Theorem 3 shows that the conditional expectations needed in Step 3 of
+the one-step approximation algorithm can be calculated in a n iterative man-
+ner from the conditional distributions of elements in a row a nd column, as
+in Algorithm 3. Thus, Theorems 2 and 3 mean that the conditional ex-
+pectations can be calculated by separately inverting the ro w and column
+covariance matrices, instead of the overall Kronecker prod uct covariance.
+This reduces the order of operations from around O(n3p3) to O(n3 +p3), a
+substantial savings. In addition, if both the covariance es timates and their
+inverses are known, then one can use the properties of the Sch ur comple-
+ment to further speed computation. For extremely sparse mat rices or data
+with few missing elements, the order of operations is nearly linear in n and
+Algorithm 3 Alternating Conditional Expectations Algorithm
+1. Initialize ˆX(0)
+i,j = ˆνi + ˆµj for Xi,j ∈ Xm.
+2. For each row, i, with missing values:
+• Set ˆX(k+1)
+i,mi = E(Xi,mi|X(k)
+i,oi, X(k)
+⁄=i,r).
+3. For each column, j, with missing values:
+• Set ˆX(k+1)
+mj,j = E(Xmj,j|X(k)
+oj,j, X(k)
+c,⁄=j).
+4. Repeat Steps 1 and 2 until convergence.
+
+--- PAGE 18 ---
+18 G. I. ALLEN AND R. TIBSHIRANI
+p (See Supplementary Materials ). We also note that the structure of the Al-
+ternating Conditional Expectations Algorithm often leads to a faster rate of
+convergence, as discussed in the proof of Theorem 3. For high-dimensional
+data, these two results mean that matrix-variate models can be used in any
+application where multivariate models are computationall y feasible, thus
+opening the door to applications of transposable models!
+4.2.3. Numerical comparisons. We now investigate the accuracy of the
+one-step approximation algorithm in terms of observed log- likelihood and
+imputation accuracy with a numerical example. Here, we simu late ﬁfty data
+sets, 25 × 25, from the matrix-variate normal model with autoregressi ve
+covariance matrices:
+• Autoregressive: Σij = 0.8|i−j| and ∆ij = 0.6|i−j|.
+We delete values at random according to certain percentages and report the
+mean MSE for both the MCECM algorithm, TRCMimpute, and the on e-
+step approximation, TRCMAimpute on the right in Figure 1. The one-step
+approximation performs comparably, or slightly better, in terms of imputa-
+tion error to the MCECM algorithm for all percentages of miss ing values.
+We note that TRCMAimpute could give better missing value est imates if
+the MCECM algorithm converges to a sub-optimal stationary p oint of the
+observed log-likelihood. For a data set with 25% missing val ues, we apply
+the MCECM algorithm and also apply our approximation extend ed beyond
+the ﬁrst step, but denote the observed log-likelihood after the ﬁrst step with
+a star on the right in Figure 1. This shows that using marginals to provide a
+good starting value does indeed start the algorithm at a high er observed log-
+likelihood. Also, after the ﬁrst step, the observed log-lik elihood is very close
+to the fully-iterated maximum. Thus, the one-step approxim ation appears to
+be a comparable approximation to the TRCMimpute approximat ion which
+is feasible for use with high-dimensional data sets.
+5. Results and simulations. The following results indicate that imputa-
+tion with transposable regularized covariance models is us eful in a variety of
+situations and data types, often giving much better error ra tes than existing
+methods. We ﬁrst assess the performance of our one-step appr oximation,
+TRCMAimpute, under a variety of simulations with both full a nd sparse co-
+variance matrices. Authors have suggested that microarray s and user-ratings
+data, such as the Netﬂix movie-rating data, are transposabl e or matrix-
+distributed [Efron ( 2009); Bell, Koren and Volinsky ( 2007)], hence, we also
+assess the performance of our methods on these types of data s ets. We com-
+pare performances to three commonly used single imputation methods—
+SVD methods (SVDimpute), k-nearest neighbors (KNNimpute) and local
+least squares (LLSimpute) [Troyanskaya et al. ( 2001); Kim, Golub and Park
+
+--- PAGE 19 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 19
+Fig. 1. Comparison of the mean MSE with standard errors (left) of the MCECM im-
+putation algorithm (TRCMimpute) and the one-step approxim ation (TRCMAimpute) for
+transposable data of dimension 25 × 25 with various percentages of missing data. Fifty
+data sets were simulated from the matrix-variate normal dis tribution with autoregressive
+covariances as given in Section 4.2.3. Observed log-likelihood (right) verses iterations for
+TRCMimpute and TRCMAimpute with 25% missing values. The one -step approximation
+begins at the TRCM parameter estimates using the imputed val ues from RCMimpute. The
+observed log-likelihood of one-step approximation is give n by a star after the ﬁrst step. All
+methods use L2 penalties with ρr = ρc = 1 for comparison purposes.
+(2005)]. For the SVD method, we use a reduced rank model with a colum n
+mean eﬀect. The rank of the SVD is determined by cross-validat ion; regu-
+larization is not used on the singular vectors so that only on e parameter is
+needed for selection by cross-validation. For k-nearest neighbors and local
+least squares also, a column mean eﬀect is used and the number o f neigh-
+bors, k, is selected via cross-validation. If the number of observe d elements
+is limited, the pairwise-complete correlation matrix is us ed to determine the
+closest neighbors.
+5.1. Simulations. We test our imputation method for transposable data
+under a variety of simulated distributions, both multivari ate and matrix-
+variate. All simulations use one of four covariance types gi ven below. These
+are numbered as they appear in the simulation table:
+1. Autoregressive: Σij = 0.8|i−j| and ∆ij = 0.6|i−j|.
+2. Equal oﬀ-diagonals: Σij = 0.5 and ∆ij = 0.5 for i ⁄=j, and Σii = 1 and
+∆ii = 1.
+3. Blocked diagonal: Σii = 1 and ∆ii = 1 with oﬀ-diagonal elements of 5 × 5
+blocks of Σ are 0.8 and of ∆, 0.6.
+4. Banded oﬀ-diagonals: Σii = 1 and ∆ii = 1 with
+Σij =
+{
+0.8, if |i −j| divisible by 5,
+0, otherwise.
+
+--- PAGE 20 ---
+20 G. I. ALLEN AND R. TIBSHIRANI
+∆ij =
+{
+0.6, if |i −j| divisible by 5,
+0, otherwise.
+The ﬁrst simulation, with results in Table 1, compares performances with
+both multivariate distributions, only Σ given, and matrix-variate distribu-
+tions, both Σ and ∆ given. In these simulations, the data is of dimension
+50 × 50 with either 25% or 75% of the values missing at random. The s imu-
+lation given in Table 2 gives results for matrix-variate distributions with one
+dimension much larger than the other, 100 × 10 and 10% of values missing
+at random. The ﬁnal simulation, in Table 3, tests the performance of our
+method when the data has a transposable covariance structur e, but is not
+normally distributed. Here, the data, of dimension 50 × 50 with 25% of val-
+ues missing at random, is either distributed Chi-square wit h three degrees
+of freedom or Poisson with mean three. The Chi-square and Poi sson distri-
+butions introduce large outliers and the Poisson distribut ion is discrete. All
+three sets of simulations are compared to SVD imputation and k-nearest
+neighbor imputation.
+These simulations show that TRCMAimpute is competitive wit h two of
+the most commonly used single imputation methods, SVD and k-nearest
+neighbor imputation. First, TRCM with L2 penalties outperforms the other
+possible TRCM penalty types. This may be due to the fact that t he covari-
+ance estimates with L2 penalties has a globally unique solution, Theorem 1,
+while the estimation procedure for other penalty types only reaches a station-
+ary point, Proposition 2. The one-step approximation permits the ﬂexibility
+to choose either multivariate or transposable models. As se en with smaller
+percentages of missing values, cross-validation generall y chooses the correct
+model for the L1 :L1 penalty-type, but seems to prefer the marginal mul-
+tivariate models for the L2 :L2 penalties. However, with 75% of the values
+missing, the transposable model is often chosen even if the u nderlying dis-
+tribution is multivariate. The additional structure of the TRCM covariances
+may allow for more information to be gleaned from the few obse rved val-
+ues, perhaps explaining the better performance of the matri x-variate model.
+TRCMAimpute seems to perform best in comparison to SVD and k-nearest
+neighbor imputation for the full covariances with equal oﬀ-d iagonal ele-
+ments. Our TRCM-based imputation methods appear particula rly robust
+to departures from normality and perform well even in the pre sence of large
+outliers, as shown in Table 3. Overall, imputation methods based on trans-
+posable covariance models compare favorably in these simul ations.
+5.2. Microarray data. Microarrays are high-dimensional matrix-data that
+often contain missing values. Usually, one assumes that the genes are cor-
+related while the arrays are independent. Efron questions t his assumption,
+however, and suggests using a matrix-variate normal model [ Efron ( 2009)].
+
+--- PAGE 21 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 21
+Table 1
+Mean MSE with standard error computed over 50 data sets of dim ension 50 × 50
+simulated under the matrix-variate normal distribution wi th covariances given in
+Section 5.1. In the upper portion of the table, 25% of values are missing a nd in the
+lower, 75% missing. The TRCM one-step approximation with L1 : L1, L1 : L2 and L2 : L2
+penalties was used as well as the SVD and k-nearest neighbor imputation. Below the
+errors for TRCMAimpute, we give the number of simulations ou t of 50 in which a
+marginal, multivariate method (RCMimpute) was chosen over the matrix-variate method.
+Parameters were chosen for all methods via 5-fold cross-val idation. Best performing
+methods are given in bold
+TRCMAimpute Others
+L1 : L1 L1 : L2 L2 : L2 SVD KNN
+Σ1 0.8936 (0.01) 0.725 (0.0069) 0.5919 (0.0056) 0.634 (0.0081) 0.448 (0.005)
+45/50 0 /50 50 /50
+Σ1, ∆1 0.8255 (0.012) 0.6315 (0.0078) 0.5402 (0.0067) 0.4603 (0.0083) 0.8034 (0.016)
+0/50 0 /50 0 /50
+Σ2 0.895 (0.016) 0.7829 (0.013) 0.6392 (0.008) 0.993 (0.019) 0.9498 (0.017)
+43/50 0 /50 48 /50
+Σ2, ∆2 0.749 (0.044) 0.6867 (0.034) 0.4556 (0.0098) 0.6821 (0.051) 0.8273 (0.055)
+0/50 0 /50 48 /50
+Σ3 1.04 (0.017) 1.02 (0.017) 0.9348 (0.016) 0.7384 (0.012) 0.9115 (0.014)
+37/50 9 /50 49 /50
+Σ3, ∆3 1.012 (0.02) 0.9477 (0.019) 0.8585 (0.017) 0.7271 (0.016) 0.9886 (0.019)
+5/50 0 /50 37 /50
+Σ4 0.9986 (0.018) 0.9407 (0.017) 0.8067 (0.014) 0.4903 (0.0076) 0.9057 (0.014)
+37/50 3 /50 48 /50
+Σ4, ∆4 0.9726 (0.033) 0.855 (0.028) 0.6999 (0.022) 0.5282 (0.024) 0.9366 (0.031)
+6/50 0 /50 39 /50
+Σ1 0.9134 (0.0096) 0.9083 (0.0092) 0.8948 (0.009) 1.173 (0.013) 0.9349 (0.0092)
+21/50 18 /50 21 /50
+Σ1, ∆1 0.867 (0.011) 0.8569 (0.01) 0.845 (0.0096) 0.9535 (0.01) 0.9736 (0.013)
+0/50 0 /50 0 /50
+Σ3 1.053 (0.01) 1.052 (0.01) 1.048 (0.01) 1.22 (0.013) 1.03 (0.01)
+7/50 7 /50 7 /50
+Σ3, ∆3 1.001 (0.014) 0.9968 (0.014) 0.9945 (0.014) 1.11 (0.016) 1.006 (0.014)
+0/50 0 /50 1 /50
+Indeed, the matrix-variate framework, and, more speciﬁcal ly, the TRCM
+model seem appropriate models for microarray data for sever al reasons.
+First, one usually centers both the genes and the arrays befo re analysis,
+a structure which is built in to our model. Second, TRCMs have the ability
+to span many models which include a marginal model where the r ows are
+
+--- PAGE 22 ---
+22 G. I. ALLEN AND R. TIBSHIRANI
+Table 2
+Mean MSE with standard errors over 50 data sets of dimension 100 × 10 with 10%
+missing values simulated under the matrix-variate normal w ith covariances given in
+Section 5.1. The TRCM one-step approximation with L2 : L1 and L2 : L2 penalties was
+used as well as the SVD and k-nearest neighbor imputation. Parameters were chosen for
+all methods via 5-fold cross-validation. Best performing m ethods are given in bold
+TRCMAimpute Others
+L2 : L1 L2 : L2 SVD KNN
+Σ1, ∆1 0.8227 (0.019) 0.7072 (0.016) 1.075 (0.024) 0.6971 (0.018)
+Σ2, ∆2 1.019 (0.15) 0.9441 (0.13) 1.306 (0.23) 1.057 (0.17)
+Σ3, ∆3 0.9372 (0.047) 0.841 (0.042) 1.121 (0.05) 0.9241 (0.042)
+Σ4, ∆4 0.7044 (0.059) 0.6148 (0.049) 0.9751 (0.074) 1.118 (0.089)
+distributed as a multivariate normal and the arrays are inde pendent. Hence,
+if a microarray is truly multivariate, our model can accommo date this. But,
+if there are true correlations within the arrays, TRCM can ap propriately
+measure this correlation and account for it when imputing mi ssing values.
+Last, the graphical nature of our model can estimate the gene network and
+then use this information to more accurately estimate missi ng data.
+For our analysis, we use a microarray data set of kidney cance r tumor
+samples [Zhao, Tibshirani and Brooks ( 2005)]. The data set contains 14,814
+genes and 178 samples. About 10% of the data is missing. For th e following
+ﬁgures, all of the genes with no missing values were taken, to taling 1031
+genes. Missing values were then placed at random. Errors wer e assessed by
+comparing the imputed values to the true observed values.
+Table 3
+Mean MSE with standard error computed over 50 data sets of dim ension 50 × 50 with
+25% missing values simulated under the Chi-square distribu tion with 3 degrees of freedom
+or the Poisson distribution with mean 3 with Kronecker produ ct covariance structure
+given by the covariances in Section 5.1. The TRCM one-step approximation with L2 : L1
+and L2 : L2 penalties was used as well as the SVD and k-nearest neighbor imputation.
+Parameters were chosen for all methods via 5-fold cross-val idation. Best performing
+methods are given in bold
+TRCMAimpute Others
+L2 : L1 L2 : L2 KNN SVD
+Chi-square Σ1, ∆1 3.824 (0.065) 2.611 (0.044) 6.85 (0.34) 7.684 (0.15)
+Σ3, ∆3 5.525 (0.14) 5.068 (0.15) 29.41 (0.83) 50.16 (0.74)
+Poisson Σ1, ∆1 2.442 (0.05) 1.571 (0.021) 8.04 (0.34) 5.824 (0.11)
+Σ3, ∆3 3.045 (0.075) 2.813 (0.081) 29.13 (0.95) 49.2 (0.68)
+
+--- PAGE 23 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 23
+Fig. 2. Left: Comparison of MSE for imputation methods on kidney can cer microarray
+data with diﬀerent proportions of missing values. Genes in wh ich all samples are observed
+are taken with values deleted at random. TRCMAimpute, L2 : L2 and common imputation
+methods KNNimpute, SVDimpute and LLSimpute are compared wi th all parameters cho-
+sen by 5-fold cross-validation. Cross-validation chose to penalize only the arrays for the
+one-step approximation algorithm, TRCMAimpute. Right: Bo xplots of individual absolute
+errors for various imputation methods. Genes in which all sa mples are observed were taken
+and deleted in the same pattern as a random gene in the origina l data set. Lines are drawn
+at the 50%, 75%, 95%, 99% and 99.9% quantiles. TRCMAimpute, L2 : L2 has a mean ab-
+solute error of 0.37 and has lower errors at every quantile th an its closest competitor,
+SVDimpute, which has a mean absolute error of 0.46.
+We assess the performance of TRCM imputation methods on this microar-
+ray data and compare them to existing methods for various per centages of
+missing values, deleted at random, on the right in Figure 2. Here, we use L2
+penalties since these are computationally less expensive f or high-dimensional
+data. TRCMAimpute outperforms competing methods in terms o f imputa-
+tion error for all percentages of missing values. We note tha t cross-validation
+exclusively chose the marginal, multivariate model from th e one-step ap-
+proximation. This indicates that the arrays in this microar ray data set may
+indeed by independent.
+Often, microarray data sets are not missing randomly. Also, researchers
+are interested in not only the error in terms of MSE, but the in dividual errors
+made as well. To investigate these issues, we assess individ ual absolute errors
+of data that is missing in the same pattern as the original dat a. For each
+complete gene, values were set to missing in the same arrays a s a randomly
+sampled gene from the original data set. The right panel of Fi gure 2 displays
+the boxplots of the absolute imputation errors. Lines are dr awn at quantiles
+
+--- PAGE 24 ---
+24 G. I. ALLEN AND R. TIBSHIRANI
+to assess the relative performances of each method. Here, TR CMAimpute
+has lower absolute errors at each quantile. Also, the set of i mputed values
+has far fewer outliers than competing methods. The mean abso lute error
+for TRCMAimpute is 0.37, far below the next two methods, LLSi mpute
+and SVDimpute which have a mean absolute error of 0.46. Altog ether, our
+results illustrate the utility and ﬂexibility of using TRCM s for missing value
+imputation in microarray data.
+5.3. Netﬂix data. We compare transposable regularized covariance mod-
+els and existing methods on the Netﬂix movie rating data [Ben nett and Lan-
+ning ( 2007)]. The TRCM framework seems well-suited to model this user-
+ratings data. As discussed in the Introduction, our model allows for not only
+correlations among both the customers and movies, but also b etween them
+as well. In addition, TRCM models the graph structure of the c ustomers and
+the movies. Thus, we can ﬁll in a customer’s rating of a partic ular movie
+based on the customer’s links with other customers and the mo vie’s links
+with other movies. Also, many have noted that the unrated mov ies in the
+Netﬂix data are not simply missing at random and may contain m eaningful
+information. A customer, for example, may not have rated a mo vie because
+the movie was not of interest and, thus, they never saw it. Whi le it may
+appear that our method requires a missing at random assumpti on, this is
+not necessarily the case. When two customers have similar se ts of unrated
+movies, after removing the means, our algorithm begins with the unrated
+movies set to zero. Thus, these two customers would exhibit h igh correla-
+tion simply due to the pattern of missing values. This correl ation could yield
+an estimated “link” between the customers in the inverse cov ariance matrix.
+This would then be used to estimate the missing ratings. Henc e, our method
+can ﬁnd relationships between sets of missing values and use these to impute
+the missing values.
+The Netﬂix data set is extremely high-dimensional, with ove r 480,000
+customers and over 17,000 movies, and is very sparse, with ov er 98% of the
+ratings missing. Hence, assessing the utility of our method s from this data
+as a whole is not currently feasible. Instead, we rank both th e movies and
+the customers by the number of ratings and take as a subset the top 250
+customer’s ratings of the top 250 movies. This subset has aro und 12% of
+the ratings missing. We then delete more data at random to eva luate the
+performance of the methods. In addition, for each customer i n this subset
+ratings were deleted for movies corresponding to the unrate d movies of a
+randomly selected customer with at least one rating out of th e 250 movies.
+This leaves 74% of ratings missing. Figure 3 compares the performances of
+the TRCM methods to existing methods for both subsets with bo th missing
+at random and missing in the pattern of the original values.
+
+--- PAGE 25 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 25
+Fig. 3. Left: Comparison of the root MSE (RMSE) for a subset of the Net ﬂix data for
+TRCMAimpute, L2 : L2 and L1 : L1, to KNNimpute and SVDimpute. A dense subset was
+obtained by ranking the movies and customers in terms of numb er of ratings and taking the
+top 250 movies and 250 customers. This subset has around 12% m issing and additional
+values were deleted at random, up to 95%. With 95% missing, th e RMSE of TRCMAimpute
+is 1.049 compared to 1.084 of the SVD and 1.354 using the movie averages. Right: Boxplots
+of absolute errors for the dense subset with missing entries in the pattern of the original
+data. Customers with at least one ranking out of the 250 movie s were selected at random
+and entries were deleted according to these customers leavi ng 74% missing. Quantiles of
+the absolute errors are shown at 50%, 75%, 95%, 99% and 99.9%. The RMSE of the
+methods are as follows L2 : L2: 1.005, L1 : L1: 1.029, SVD: 1.032, KNN: 1.184.
+Before discussing these results, we ﬁrst make a note about th e compara-
+bility of our errors rates to those for the Netﬂix Prize [Benn ett and Lanning
+(2007)]. Because we chose the subset of data based on the number of o b-
+served ratings, we can expect the RMSE to be higher here than a pplying
+these methods to the full data set. This method of obtaining a subset leaves
+out potentially thousands of highly correlated customers o r movies that
+would greatly increase a method’s predictive ability. In fa ct, the RMSE of
+the SVD method on the entire Netﬂix data is 0.91 [Salakhutdin ov, Mnih
+and Hinton ( 2008)], much less than the observed RMSE of 1.084 for the
+SVD on our subset with 95% missing. Thus, we can conjecture th at all of
+the methods we present would do better in terms of RMSE using t he entire
+data set than the small subset on which we present results.
+The results indicate that TRCM imputation methods, particu larly with
+L2 penalties, are competitive with existing methods on the mis sing at ran-
+dom data. At higher percentages of missing values, our metho ds perform
+notably well. With 95% missing values in our subset, TRCMAim pute has a
+
+--- PAGE 26 ---
+26 G. I. ALLEN AND R. TIBSHIRANI
+RMSE of 1.049 compared to the SVD at 1.084 and 1.354 using the m ovie
+averages. This is of potentially great interest for missing data imputation
+on a larger scale where the percentage of missing data is grea ter than 98%.
+We note that at smaller percentages of missing values, margi nal models pe-
+nalizing the movies were often chosen by cross-validation, indicating that
+the movies may have more predictive power, whereas, at large r percentages
+of missing values, cross-validation chose to penalize both the rows and the
+columns, indicating that possibly more information can be g leaned from few
+observed values using transposable methods.
+Our methods also preform well when the data is missing in the s ame
+pattern as the original. The L2 :L2 method had the best results with a
+RMSE of 1.005 followed by L1 :L1 with 1.029, SVD with 1.032 and k-nearest
+neighbors with 1.184. From the boxplots of absolute values F igure 3 (right),
+we see that the SVD has many large outliers in absolute value, while the L1
+penalties led to the fewest number of large errors. Since lea ding imputation
+methods for the Netﬂix Prize are ensembles of many diﬀerent me thods [Bell,
+Koren and Volinsky ( 2007)], we do not believe that TRCM methods alone
+would outperform ensemble methods. If, however, our method s outperform
+other individual methods, they could prove to be beneﬁcial a dditions to
+imputation ensembles.
+6. Discussion. We have formulated a parametric model for matrix-data
+along with computational advances that allow this model to b e applied to
+missing value estimation in high-dimensional data sets wit h possibly com-
+plex correlations between and among the rows and columns.
+Our MCECM and one-step approximation imputation approache s are re-
+stricted to data sets where for each pair of rows, there is at l east one column
+in which both entries are observed and vice versa for each pai r of columns.
+A major drawback of TRCM imputation methods is computationa l cost.
+First, RCMimpute using the columns as features costs O(p3). This is roughly
+on the order of other common imputation methods such as the SV Dim-
+pute which costs O(np2). Our one-step approximation, TRCMAimpute, us-
+ing the computations for the Alternating Conditional Expec tations algo-
+rithm given in the Supplementary Materials , costsO(∑ n
+i=1 min{|mi|, |oi|}3 +∑ p
+j=1 min{|mj|, |oj|}3 +n3 +p3), where |mi| and |oi| are the number of miss-
+ing and observed elements of row i, respectively.
+The main application of this paper has been to missing value i mputation.
+We note that this is separate from the matrix-completion met hods via convex
+optimization of Candes and Recht [Candes and Recht ( 2009)], which focuses
+on matrix-reconstruction instead of imputation. Also, we h ave presented a
+single imputation procedure, but our techniques can easily be extended to in-
+corporate multiple imputation. We present a repeated imput ations approach
+
+--- PAGE 27 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 27
+by taking samples from the posterior distribution [Rubin ( 1996)] with the
+Bayesian one-step approximation in the Supplementary Materials . In addi-
+tion, we have not discussed ultimate use or analysis of the im puted data,
+which will often dictate the imputation approach. Our imput ation methods
+form a foundation that can be extended to further address the se issues.
+We also pause to address the appropriateness of the Kronecke r product
+covariance matrix to model the covariances observed in real data. While we
+do not assume that this particular structure is suitable for all data, we feel
+comfortable using the model because of its ﬂexibility. Reca ll that all marginal
+distributions of the mean-restricted matrix-variate norm al are multivariate
+normal. This includes the distribution of elements within a row or column,
+or the distribution of elements from diﬀerent rows or columns . All of the
+marginals of a set of elements are given by the mean and covari ance pa-
+rameters of the elements’ rows and columns. Thus, our model s ays that the
+location of elements within a matrix determine their distri bution, often a
+reasonable assumption. Also, if either the covariance matr ix of the rows or
+the columns is the identity matrix, then we are back to the fam iliar multi-
+variate normal model. This ﬂexibility to ﬁt numerous multiv ariate models
+and to adapt to structure within a matrix is an important adva ntage of our
+matrix-variate model.
+Transposable regularized covariance models may be of poten tial math-
+ematical and practical interest in numerous ﬁelds. TRCMs al low for non-
+singular estimation of the covariances of the rows and colum ns, which is
+essential for any application. Adding restrictions to the m ean of the TRCM
+allows one to estimate all parameters from a single observed data matrix.
+Also, introduction of eﬃcient methods of calculating condi tional distribu-
+tions and expectations make this model computationally fea sible for many
+applications. Hence, transposable regularized covarianc e models have many
+potential future uses in areas such as hypothesis testing, c lassiﬁcation and
+prediction, and data mining.
+Acknowledgments. Thanks to Steven Boyd for a discussion about the
+minimization of biconvex functions. We also thank two refer ees and the
+Editor for their helpful comments that led to several improv ements in this
+paper.
+SUPPLEMENTARY MATERIAL
+Additional methods and proofs (DOI: 10.1214/09-AOAS314SUPP; .pdf).
+This includes sections on the multivariate imputation meth od RCMimpute,
+numerical results on TRCM covariance estimation, a discuss ion of properties
+of the MCECM algorithm for imputation, computations for the Alternating
+Conditional Expectations Algorithm, a Bayesian one-step a pproximation to
+
+--- PAGE 28 ---
+28 G. I. ALLEN AND R. TIBSHIRANI
+TRCMimpute along with a Gibbs sampling algorithm, discussion of cross-
+validation for estimating penalty parameters, and proofs o f theorems and
+propositions.
+REFERENCES
+Allen, G. I. and Tibshirani, R. (2010). Supplement to “Transposable regular-
+ized covariance models with an application to missing data i mputation.” DOI:
+10.1214/09-AOAS314SUPP.
+Bell, R. M. , Koren, Y. and Volinsky, C. (2007). Modeling relationships at multiple
+scales to imporve accuracy of large recommender systems. In Proceedings of KDD Cup
+and Workshop 95–104. San Jose.
+Bennett, J. and Lanning, S. (2007). The Netlﬂix prize. In Proceedings of KDD Cup and
+Workshop. San Jose.
+Biernacki, C. , Celeux, G. and Govaert, G. (2003). Choosing starting values for the
+EM algorithm for getting the highest likelihood in multivar iate Gaussian mixture mod-
+els. Comput. Statist. Data Anal. 41 561–575. MR1968069
+Bonilla, E. , Chai, K. M. and Williams, C. (2008). Multi-task Gaussian process pre-
+diction. Advances in Neural Information Processing Systems 20 153–160.
+Candes, E. J. and Recht, B. (2009). Exact matrix completion via convex optimization.
+Found. Comput. Math. 9 717–772.
+Celeux, G. , Chauveau, D. and Diebolt, J. (1996). Stochastic versions of the EM
+algorithm: An experimental study in the mixture case. J. Stat. Comput. Simul. 55
+287–314.
+Dutilleul, P. (1999). The MLE algorithm for the matrix normal distributio n. J. Stat.
+Comput. Simul. 64 105–123.
+Efron, B. (2009). Are a set of microarrays independent of each other? Ann. Appl. Statist.
+3 922–942.
+Efron, B. (2009). Correlated z-values and the accuracy of large-scale statistical estima tes.
+Working paper, Stanford Univ.
+F an, J. and Li, R. (2001). Variable selection via penalized likelihood and it s oracle prop-
+erties. J. Amer. Stat. Assoc. 96 1348–1360. MR1946581
+Friedman, J. , Hastie, T. and Tibshirani, R. (2007). Sparse inverse covariance estima-
+tion with the lasso. Biostatistics 9 432–441.
+Green, P. J. (1990). On use of the EM algorithm for penalized likelihood e stimation. J.
+Roy. Statist. Soc. Ser. B 52 443–452. MR1086796
+Gupta, A. K. and Nagar, D. K. (1999). Matrix Variate Distributions . CRC Press, Boca
+Raton, FL. MR1738933
+Kim, H. , Golub, G. and P ark, H. (2005). Missing value estimation for DNA microarray
+gene expression data: Local least squares imputation. Bioinformatics 21 187–198.
+Lin, Y. and Zhang, H. H. (2006). Component selection and smoothing in multivariate
+nonparametric regression. Ann. Statist. 34 2272–2297. MR2291500
+Little, R. J. A. and Rubin, D. B. (2002). Statistical Analysis with Missing Data . Wiley,
+Hoboken, NJ. MR1925014
+Meng, X.-L. and Rubin, D. (1993). Maximum likelihood estimation via the ECM algo-
+rithm: A general framework. Biometrika 80 267–278. MR1243503
+Rothman, A. J. , Bickel, P. J. , Levina, E. and Zhu, J. (2008). Sparse permutation
+invariant covariance estimation. Electron. J. Stat. 2 494–515. MR2417391
+Rubin, D. B. (1996). Multiple imputation after 18+ years. J. Amer. Statist. Assoc. 91
+473–489.
+
+--- PAGE 29 ---
+TRANSPOSABLE REGULARIZED COV ARIANCE MODELS 29
+Salakhutdinov, R. , Mnih, A. and Hinton, G. (2008). Restricted Boltzmann machines
+for collaborative ﬁltering. Technical report, Univ. Toron to.
+Troyanskaya, O., Cantor, M. , Sherlock, G. , Brown, P. , Hastie, T. , Tibshirani,
+R., Botstein, D. and Altman, R. B. (2001). Missing value estimation methods for
+DNA microarrays. Bioinformatics 17 520–525.
+Witten, D. M. and Tibshirani, R. (2009). Covariance-regularized regression and clas-
+siﬁcation for high-dimensional problems. J. R. Stat. Soc. Ser. B Stat. Methodol. 71
+615–636.
+Yu, K. , Chu, W. , Yu, S. , Tresp, V. and Xu, Z. (2007). Stochastic relational models for
+discriminative link prediction. Advances in Neural Information Processing Systems 19
+1553–1560.
+Yu, K. , Lafferty, J. D. , Zhu, S. and Gong, Y. (2009). Large-scale collaborative predic-
+tion using a nonparametric random eﬀects model. In Proceedings of the 26th Annual In-
+ternational Conference on Machine Learning, ICML 2009, Mon treal, Quebec, Canada,
+June 14–18, 2009 (A. P. Danyluk, L. Bottou, M. L. Littman, eds.). ACM International
+Conference Proceeding Series 382. ACM Press, New York.
+Zhao, H. , Tibshirani, R. and Brooks, J. (2005). Gene expression proﬁling predicts
+survival in conventional renal cell carcinoma. PLOS Medicine 3 511–533.
+Department of Statistics
+Stanford University
+Stanford, California 94305
+USA
+E-mail: giallen@stanford.edu
+tibs@stanford.edu

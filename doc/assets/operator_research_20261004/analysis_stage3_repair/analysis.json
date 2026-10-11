@@ -1,0 +1,648 @@
+{
+  "schema": "n2p3_independent_calibration_analysis/2",
+  "run": "D:\\BCI\\n2p3-net\\experiments\\runs\\operator_research_20261004\\calibration_groups_stage3_repair",
+  "result_sha256": "c568c9db784df37d6a36cd407e2e6ca37e386bd27fd84415f3cea953193fa134",
+  "source_sha256": "2f4f405d834943dbfa874b0ec150fc4a5ddf18c1e1ad310767e00b950e7f7343",
+  "analysis_script_sha256": "0ba10f0f547606ede7eece7aabc739f9b9f11ced8d7db637e58a5f4efca713ee",
+  "evidence_scope": "public_calibration_development",
+  "prediction_integrity_checked": 48,
+  "all_requested_cells_checked": 48,
+  "source_snapshot_members_checked": 121,
+  "status_counts": {
+    "completed": 48
+  },
+  "failure_reasons": {},
+  "participants": [
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "A05",
+    "A06",
+    "A07",
+    "A08"
+  ],
+  "arms": [
+    "raw_ar32_lattice_marginal3"
+  ],
+  "participant_metrics": {
+    "A01": {
+      "raw_ar32_lattice_marginal3": {
+        "requested": 6,
+        "coverage": 1.0,
+        "requested_hit": 0.3333333333333333,
+        "conditional_nll": 2.8750095035684353,
+        "uniform_abstention_nll": 2.8750095035684353
+      }
+    },
+    "A02": {
+      "raw_ar32_lattice_marginal3": {
+        "requested": 6,
+        "coverage": 1.0,
+        "requested_hit": 0.6666666666666666,
+        "conditional_nll": 6.17340309079312,
+        "uniform_abstention_nll": 6.17340309079312
+      }
+    },
+    "A03": {
+      "raw_ar32_lattice_marginal3": {
+        "requested": 6,
+        "coverage": 1.0,
+        "requested_hit": 0.16666666666666666,
+        "conditional_nll": 5.998159623137933,
+        "uniform_abstention_nll": 5.998159623137933
+      }
+    },
+    "A04": {
+      "raw_ar32_lattice_marginal3": {
+        "requested": 6,
+        "coverage": 1.0,
+        "requested_hit": 0.0,
+        "conditional_nll": 10.731893230632826,
+        "uniform_abstention_nll": 10.731893230632826
+      }
+    },
+    "A05": {
+      "raw_ar32_lattice_marginal3": {
+        "requested": 6,
+        "coverage": 1.0,
+        "requested_hit": 0.8333333333333334,
+        "conditional_nll": 2.334891473939327,
+        "uniform_abstention_nll": 2.334891473939327
+      }
+    },
+    "A06": {
+      "raw_ar32_lattice_marginal3": {
+        "requested": 6,
+        "coverage": 1.0,
+        "requested_hit": 0.8333333333333334,
+        "conditional_nll": 0.22077218756809694,
+        "uniform_abstention_nll": 0.22077218756809694
+      }
+    },
+    "A07": {
+      "raw_ar32_lattice_marginal3": {
+        "requested": 6,
+        "coverage": 1.0,
+        "requested_hit": 0.8333333333333334,
+        "conditional_nll": 1.6691093967480508,
+        "uniform_abstention_nll": 1.6691093967480508
+      }
+    },
+    "A08": {
+      "raw_ar32_lattice_marginal3": {
+        "requested": 6,
+        "coverage": 1.0,
+        "requested_hit": 0.6666666666666666,
+        "conditional_nll": 3.734182545063353,
+        "uniform_abstention_nll": 3.734182545063353
+      }
+    }
+  },
+  "aggregate": {
+    "raw_ar32_lattice_marginal3": {
+      "coverage": 1.0,
+      "requested_hit": 0.5416666666666667,
+      "uniform_abstention_nll": 4.217177631431392,
+      "conditional_nll": 4.217177631431392,
+      "conditional_nll_all_participants_available": true,
+      "requested": 48,
+      "scored": 48,
+      "correct": 26,
+      "completed_participants": 8,
+      "failed_requests": 0,
+      "family": "continuous_gls",
+      "median_max_probability": 0.9220809292497418,
+      "mean_max_probability": 0.7670888251822762,
+      "mean_brier": 0.6529019172244547,
+      "mean_entropy": 0.6806038734363526,
+      "nll_max": 28.65294578099565,
+      "nll_median": 0.5562862526712706,
+      "held_acf1_mean": 0.42677663978231656,
+      "held_acf1_median_abs": 0.4313067883626874,
+      "held_train_variance_ratio_median": 0.9887437816910675,
+      "held_train_variance_ratio_range": [
+        0.5083458497288099,
+        2.303038828805866
+      ],
+      "held_predictive_quadratic_ratio_median": 0.9834252712182986,
+      "lattice_numerics": {
+        "models": 48,
+        "warning_threshold": 1e-06,
+        "precision_warning_models": 0,
+        "factor_condition_range": [
+          25067446.390951958,
+          71783424.8154798
+        ],
+        "eps_condition_range": [
+          5.566091230358329e-09,
+          1.59391222033189e-08
+        ],
+        "precision_warning_participants": []
+      }
+    }
+  },
+  "paired_contrasts": {},
+  "baseline_chance_nll": 3.58351893845611,
+  "mechanism_contrasts": {},
+  "previous_reference_run": "D:\\BCI\\n2p3-net\\experiments\\runs\\operator_research_20261004\\calibration_groups_stage3",
+  "unchanged_arm_replay": [
+    {
+      "subject": "A01",
+      "fold": 0,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A01",
+      "fold": 1,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A01",
+      "fold": 2,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A01",
+      "fold": 3,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A01",
+      "fold": 4,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A01",
+      "fold": 5,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A02",
+      "fold": 0,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A02",
+      "fold": 1,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A02",
+      "fold": 2,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A02",
+      "fold": 3,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A02",
+      "fold": 4,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A02",
+      "fold": 5,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A03",
+      "fold": 0,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A03",
+      "fold": 1,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A03",
+      "fold": 2,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A03",
+      "fold": 3,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A03",
+      "fold": 4,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A03",
+      "fold": 5,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A04",
+      "fold": 0,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A04",
+      "fold": 1,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A04",
+      "fold": 2,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A04",
+      "fold": 3,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A04",
+      "fold": 4,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A04",
+      "fold": 5,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A05",
+      "fold": 0,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A05",
+      "fold": 1,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A05",
+      "fold": 2,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A05",
+      "fold": 3,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A05",
+      "fold": 4,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A05",
+      "fold": 5,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A06",
+      "fold": 0,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A06",
+      "fold": 1,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A06",
+      "fold": 2,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A06",
+      "fold": 3,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A06",
+      "fold": 4,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A06",
+      "fold": 5,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A07",
+      "fold": 0,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A07",
+      "fold": 1,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A07",
+      "fold": 2,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A07",
+      "fold": 3,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A07",
+      "fold": 4,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A07",
+      "fold": 5,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A08",
+      "fold": 0,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "failed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A08",
+      "fold": 1,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A08",
+      "fold": 2,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A08",
+      "fold": 3,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A08",
+      "fold": 4,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    },
+    {
+      "subject": "A08",
+      "fold": 5,
+      "arm": "raw_ar32_lattice_marginal3",
+      "previous_status": "completed",
+      "exact_log_evidence": false,
+      "repair_source_changed": true
+    }
+  ],
+  "probability_interpretation": "method_declared_approximate_posterior_not_certified_calibration",
+  "fit_budget": {
+    "labels_available": 800,
+    "labels_fit_per_fold": 600,
+    "held_labels": 120,
+    "unused_labels": 80,
+    "K200_group_validation": "not_estimable"
+  },
+  "statistical_unit": "eight_participants_each_contributing_six_dependent_CV_folds",
+  "diagnostic_truth_role": "after_sealed_predictions_no_refit_no_T_use",
+  "no_cross_record_lags": true,
+  "all_completed_frozen_scores_replayed_exactly": true,
+  "elapsed_seconds": 39.19552339999791,
+  "model_sha256": {
+    "A01/0/raw_ar32_lattice_marginal3": "735e4051c95642b2c4df760139748712e7ebcf954b745672f4de47e16bef645f",
+    "A01/1/raw_ar32_lattice_marginal3": "e7f467954c0de855981840821e0a3566929642baf1196070e1a82dfc31e5c18d",
+    "A01/2/raw_ar32_lattice_marginal3": "2f5981560e49ff24e214b78bd42177003b1219364ec5b16945dce5f586d681cf",
+    "A01/3/raw_ar32_lattice_marginal3": "a35e1e592d98e89c626dd18b4c985bd7f90783c9808d4eb1be5a5d7fdfb5c92b",
+    "A01/4/raw_ar32_lattice_marginal3": "7be4f343597c605bc6090e56e54acd5dcd524919f9e04631cc2ebf8d37bd112a",
+    "A01/5/raw_ar32_lattice_marginal3": "25865b72e96d2c73edcf6eb7eac95ede0607c4c8e5f5c850a8dcf3ad2ff77ebf",
+    "A02/0/raw_ar32_lattice_marginal3": "e2cb9fcf335482488906bcbdbeff21ff47b24b3f7396455b49fe0382cbd26233",
+    "A02/1/raw_ar32_lattice_marginal3": "2abda48da4b86471fc89f0bfe394baa96a63311c22088b17086a2d3980706a7c",
+    "A02/2/raw_ar32_lattice_marginal3": "bf27bf69f6f94768a1098a24057f4f290e5443120014bc1404909b3805047ad1",
+    "A02/3/raw_ar32_lattice_marginal3": "21f93545ba0d1df36975fa0ba1ef62eb12e146aa9efc874bafa7d1f44f4b0348",
+    "A02/4/raw_ar32_lattice_marginal3": "7e10f3ae6e8d1f396a6a999fc84e31b19be14bb8f7e5f5e00004e59acd206dd6",
+    "A02/5/raw_ar32_lattice_marginal3": "0b7f590ce8c8d53e70201217f4fde1d3b356e117dce6cf33eb580ac97810c213",
+    "A03/0/raw_ar32_lattice_marginal3": "05744a9ed0e16891285c1fe6cdeda2d425dc0d033eb2cd1d53069ceae2f70f0a",
+    "A03/1/raw_ar32_lattice_marginal3": "bcac981be85535e63d331f987df532dba4650d7af5531a7520cd1ece0e1cef2a",
+    "A03/2/raw_ar32_lattice_marginal3": "98acdd093c3a29a0fee5ad1c123448e9b0f049c775a9fe5f1cb7e6aea373a0dd",
+    "A03/3/raw_ar32_lattice_marginal3": "fe4f5494635edc998bc7ed431657bc05424d24e81491e62975004e8abb50676d",
+    "A03/4/raw_ar32_lattice_marginal3": "f7c6eddd6112dd5a3233ebef6ef4ec93c5a116474cb6fcc314eca7a65ceccbb6",
+    "A03/5/raw_ar32_lattice_marginal3": "f6d25e7a8be89e38a611085ea6f60e5d2039893076cfecfe86046f8499535448",
+    "A04/0/raw_ar32_lattice_marginal3": "79edaebe73068e94f4e488be6ebfcbf80b29c71276b51f11f648fedb4669e1ad",
+    "A04/1/raw_ar32_lattice_marginal3": "557649920716a856455f89ef2f7ebbe7066e2b40275a0c738562751a0331a6af",
+    "A04/2/raw_ar32_lattice_marginal3": "8508920a364f593d73c88d70a3038360b1a2f3b993d6bbbfdfd4b9b1adee332f",
+    "A04/3/raw_ar32_lattice_marginal3": "33e69bf3399220892ff036d48c0d1bd89a7a9ea27d218ab707719b4afc27c35c",
+    "A04/4/raw_ar32_lattice_marginal3": "cd1034c96a11432446233d36e0d11828e9d7965287e3cefeadf69e353761dbd0",
+    "A04/5/raw_ar32_lattice_marginal3": "5352b25e68f92b7a3b211b410933c0b7f03d53c2e2c26b65c6fa7d7eab543e24",
+    "A05/0/raw_ar32_lattice_marginal3": "bcf29c539484ccdd249fb6d8a345c9f707d694703191771f89730f354a28e345",
+    "A05/1/raw_ar32_lattice_marginal3": "1246653e603d25f65a32c701687fd44fb09acb25b0889b9ff67f90eaf8cd586c",
+    "A05/2/raw_ar32_lattice_marginal3": "5dbb152c8801d31439330597d5e2c1b9b09e386fb79f29293cf6be76a591f06b",
+    "A05/3/raw_ar32_lattice_marginal3": "809c14e5456eee5bdb130cd6e1c9e8015ff404fefab539a259d6e6b32578bb36",
+    "A05/4/raw_ar32_lattice_marginal3": "5dd875492ac31b80998ef10c4ebd0fd2e0ba34c558c71055f3054c7b88069b30",
+    "A05/5/raw_ar32_lattice_marginal3": "371a5713255597d842ce7ce5b3fd01ac5759f9fa84ddc6f16f2b5c88774448cc",
+    "A06/0/raw_ar32_lattice_marginal3": "d4bccc0b314297ed60c697c2bfd376dcb0915e9e8862eb6fffdd753f11102e0f",
+    "A06/1/raw_ar32_lattice_marginal3": "d9ec648f0f8af5264757010cba41dadf9dc4c87c94204c397d2271a98937c9ff",
+    "A06/2/raw_ar32_lattice_marginal3": "983623652350481b1470009a4d43e34be86936a71c44ea5c5122f8c3acf35512",
+    "A06/3/raw_ar32_lattice_marginal3": "fe9fb1b1d8a9c881d3c186854b82a553fa5079005d1487bf4e27aefd6cc8c191",
+    "A06/4/raw_ar32_lattice_marginal3": "06d82a5540e279034e73d7129e02322945313d34d01d5b1cbe5fd4bf462d7b15",
+    "A06/5/raw_ar32_lattice_marginal3": "4310272f23b3ccfd1b0e87d3bb0a96e2c97b76ab864dec5a2e72ecdac3579e21",
+    "A07/0/raw_ar32_lattice_marginal3": "a1681ae72a25cbee5dd5f0e6c14df0f418cd33e6a5e073783fd15714a2174bb9",
+    "A07/1/raw_ar32_lattice_marginal3": "a929dfbea02b5760df648e6c9bf4e77a01faef600ab3da099ec1210a5a356f2e",
+    "A07/2/raw_ar32_lattice_marginal3": "62a344c0aafc1d24e1fce95094d37bce9ee330e38b2e7021131ca1ae35317d82",
+    "A07/3/raw_ar32_lattice_marginal3": "56ab1bab12ea6d45654eb7dabf832a2176d5c777a2afb371c22db61647ec8173",
+    "A07/4/raw_ar32_lattice_marginal3": "791ffbdbad242239be01de5fbb9a7c79a35e4b778b644d0acd46c313d1322639",
+    "A07/5/raw_ar32_lattice_marginal3": "3756b255f38221228632ca24e72475c9cfdcf0029e78852689e07f2e12ae9fb4",
+    "A08/0/raw_ar32_lattice_marginal3": "da1ed84bea33d6cd9d4aa95747af4485160e6042aa6a8e75a125e95621f1ec55",
+    "A08/1/raw_ar32_lattice_marginal3": "6fa91a365ef1d1def0002f3b4a3cc2e4eac6aed035cc1860dcbadb7b5bbb6e7e",
+    "A08/2/raw_ar32_lattice_marginal3": "029478f47dcc72275d2564294488722057f897de618087b290ac8ba18692a00a",
+    "A08/3/raw_ar32_lattice_marginal3": "a5ad59d37a5349c4e2942bc48c8f24326b6e9189f67f091922d30c0f80c26158",
+    "A08/4/raw_ar32_lattice_marginal3": "713a527202fa34a2ac94a58c0d00f38cb940412427e2910d1df8565fc3a202e3",
+    "A08/5/raw_ar32_lattice_marginal3": "de33ccfd3978a86eb4e178574aa389061a9d1d76fb0572bc1235f6589d418c9e"
+  },
+  "prediction_sha256": {
+    "A01/0/raw_ar32_lattice_marginal3": "7320d934da75aceaef5ba184b3e8516054fced57d1ba78816d508c22c3dc09cf",
+    "A01/1/raw_ar32_lattice_marginal3": "f17339ba8ded2b34869b773fb2b7a9899fc76bf804ab97da42838bc9d5c89f41",
+    "A01/2/raw_ar32_lattice_marginal3": "fd0c9509341e2ea92f260f74ab7c0605f03d6abb5e1d8d095721e5fc20a4a4be",
+    "A01/3/raw_ar32_lattice_marginal3": "c9f604a25cafdcc69b9e1baa6d477df47cc87b84ff85d4a22e94b6addfadbc53",
+    "A01/4/raw_ar32_lattice_marginal3": "d0d4827b5c86f491cbf78573c0c9c69623932245e8b727b482fc1b8ff1b9830c",
+    "A01/5/raw_ar32_lattice_marginal3": "162e9f0b26f6b005111103e18837e71e5de0a6d660f35242aa20ab3034a6df88",
+    "A02/0/raw_ar32_lattice_marginal3": "673559f74eaae0a29618c807426348ac571575c3e51bedcac71e1f4633e87495",
+    "A02/1/raw_ar32_lattice_marginal3": "3021f85c043c75050417a9c70f28daedac84e5e029f12beb309621193c29bda1",
+    "A02/2/raw_ar32_lattice_marginal3": "6cdf5219fd0294dd1661d9c9bde38c8ed20139badae9bcd2433f77847abbf2a3",
+    "A02/3/raw_ar32_lattice_marginal3": "ee449e38705885bf17c96e0974bf823d660bbb7020788271f4bbef4d234f60ce",
+    "A02/4/raw_ar32_lattice_marginal3": "beb90d958185cd7e2fe26a83eab234eb626f63f896a5a38b5404ae4bfe0acdfc",
+    "A02/5/raw_ar32_lattice_marginal3": "53d138ebd99f382303c0c36bb9b474c216aecb78a70dbe464ceb93f5cfcb56fa",
+    "A03/0/raw_ar32_lattice_marginal3": "9e23a2c4f72f5d3f9db2db7664d3db6e31b4f92bf983be8d0fcc4ae899a3d546",
+    "A03/1/raw_ar32_lattice_marginal3": "9cefadb5e2beaf9edd00b67edee771361732cab32cb0dff90af81e2418bb5762",
+    "A03/2/raw_ar32_lattice_marginal3": "0c41b4306838a96670505144948189a35d64bc967a23b5de1a2f6a466a67671e",
+    "A03/3/raw_ar32_lattice_marginal3": "1ebcbccac7769d48a61e3e35ef74b7d16f42705869dda3fbba26764915b25760",
+    "A03/4/raw_ar32_lattice_marginal3": "1839516755285aa44996770df1e29574dec5f72c3abeb9bb9dad3109f20d222d",
+    "A03/5/raw_ar32_lattice_marginal3": "cf38947d85cdaacbf57117b8f81e8a836fc8a2182e2e367a238f255240a50b8d",
+    "A04/0/raw_ar32_lattice_marginal3": "efecedf3a872cc7dd664d649999c6ee9bdc1a12fb2f0c24a50c55f4a771361c1",
+    "A04/1/raw_ar32_lattice_marginal3": "14a49b7d08d29aa4feaeb5c67a78631491fae4d80cd5203e9194c045b8dcf908",
+    "A04/2/raw_ar32_lattice_marginal3": "1a2937a7b79279dfd6a30f8f890c384d770c79b1c203eb190bf4330cdc7a9100",
+    "A04/3/raw_ar32_lattice_marginal3": "fea6ca37da48a7afb0735f047ce492933d7809c2123a1fb47747c62e1a01be70",
+    "A04/4/raw_ar32_lattice_marginal3": "989c263adf7db351452e29fab91a3274907c74d9ad0348ec4bc1d54fb7041fa5",
+    "A04/5/raw_ar32_lattice_marginal3": "ade34bbd52adfa2e7d2d3fa0886c5a7638d6dd2b8322488b747ee617e29b4a4e",
+    "A05/0/raw_ar32_lattice_marginal3": "f568b2a06ae9d4e7cac97f445b323ce8543144d07f166f18aa54e052e8562220",
+    "A05/1/raw_ar32_lattice_marginal3": "c69777f8cf00c37d30c02dfd35d98b740857b149f9d9b748c69e5bd73924fcf9",
+    "A05/2/raw_ar32_lattice_marginal3": "12d24632a2fc05c03c905638b6e18297b7957b4371a37917fe2a2cb9f9ae657d",
+    "A05/3/raw_ar32_lattice_marginal3": "11d0719b7513899feea20cb6ed44904a1a7c5a9e255da771aa894671ecafd82b",
+    "A05/4/raw_ar32_lattice_marginal3": "c7c8e81d7c540405164f96215f2d63bab7157c89974c96b66191f0aa5ff23ba0",
+    "A05/5/raw_ar32_lattice_marginal3": "f97e034d76b9163a0a52f37a60ccee9aedf00bfc923b8ab47f40b3a321bb1a84",
+    "A06/0/raw_ar32_lattice_marginal3": "30c3c88c9c55b191e5728092918bc35613687f8d098a3851f092a27d3a7bc1e4",
+    "A06/1/raw_ar32_lattice_marginal3": "292e080dac410b09f87c186d4aa6c4d44b1095b149f034c6c7ec4136f98fdaad",
+    "A06/2/raw_ar32_lattice_marginal3": "eecbec21a17fe7eee2a39a8da0a61b304712ad59361906ab1bd241d7a0026357",
+    "A06/3/raw_ar32_lattice_marginal3": "1f7db26331b3e575946841925878249d17ebe025be508a824bf59ac326594da7",
+    "A06/4/raw_ar32_lattice_marginal3": "fa7823ce6a9f5f7bfd94b4a6a951e98bae6d04884e907040fb08b4f133ec3f30",
+    "A06/5/raw_ar32_lattice_marginal3": "60e9afc89d0bc3f4d872b8cff17f11c020882f84657fdd17bc398da2bdc5740f",
+    "A07/0/raw_ar32_lattice_marginal3": "b1cfc4535e8fbd4b7f3bbc888e32b12b164701271a5d846e7399aa72ee0541f1",
+    "A07/1/raw_ar32_lattice_marginal3": "2c5d31d555640f1344aa305e113aeeade813bae23f5806bab872489da6049884",
+    "A07/2/raw_ar32_lattice_marginal3": "4290980c60c9484267a722cf8ee108ba459793408e1da39db840a0ee2f250dbb",
+    "A07/3/raw_ar32_lattice_marginal3": "6daee42e76330a0dbb1116b179a35f1ef7de987079e7e5b2711f24667d298aff",
+    "A07/4/raw_ar32_lattice_marginal3": "7105d7b57918fc63131dbd1fc9adf90af2ea50d3d47743417fb8739487743407",
+    "A07/5/raw_ar32_lattice_marginal3": "88eebb3e662185a8f69032ca618a0d6e95c6a76912e0d63357d724dd72c55221",
+    "A08/0/raw_ar32_lattice_marginal3": "d0a5322eb2a501657b8f823fc2eb693ecf8d75ffe6285956714b72a09c73ad93",
+    "A08/1/raw_ar32_lattice_marginal3": "a2ef3a8712c5c9d63ec5363de53e99b28f8e513d030bda2284679eaba3a41387",
+    "A08/2/raw_ar32_lattice_marginal3": "f158f2fb620d0ca17932f1707c68a924ab25a9d765c6ad1766a84c104b62e6e9",
+    "A08/3/raw_ar32_lattice_marginal3": "4e1e1247caa44ba6b62f49d0f8cced211053e2d9bdb64016f70c5f92c38e8ae1",
+    "A08/4/raw_ar32_lattice_marginal3": "9273dfeb463ca063af769b20352ee253ac38b240963cc63b9c8f7856bb967dbf",
+    "A08/5/raw_ar32_lattice_marginal3": "27495ab315c0527374086f0c1b9265366ccf584b160febeb05d5f4e1cd79a9db"
+  }
+}

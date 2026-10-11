@@ -1,0 +1,124 @@
+legal C800: A01, 259.062s, cumulative cuts=188
+legal C800: A02, 259.062s, cumulative cuts=376
+legal C800: A03, 259.062s, cumulative cuts=564
+legal C800: A04, 259.062s, cumulative cuts=752
+legal C800: A05, 259.062s, cumulative cuts=940
+legal C800: A06, 259.062s, cumulative cuts=1128
+legal C800: A07, 259.062s, cumulative cuts=1316
+legal C800: A08, 259.062s, cumulative cuts=1504
+[
+  {
+    "length_s": 16.0,
+    "distance_s": 0.0,
+    "physical_participants": 8,
+    "conditional_mse_reduction_macro": 0.8131055781228238,
+    "conditional_better_than_zero_participants": 8,
+    "mean_cross_trace_relative": -0.006503823311979049,
+    "mean_delta_trace_relative": 0.2075491492305392,
+    "finite_covariance_mean_nll": {
+      "direct_finite": 3.6864201226256474,
+      "full_paired": 3.6864201226256466,
+      "omit_cross": 3.6557636268328304,
+      "double_count": 3.666134809954735
+    },
+    "delta_mean_nll": {
+      "unconditional": 1.464999517839836,
+      "conditional": 1.4181823430719875
+    }
+  },
+  {
+    "length_s": 16.0,
+    "distance_s": 2.0,
+    "physical_participants": 8,
+    "conditional_mse_reduction_macro": 0.6646891363139973,
+    "conditional_better_than_zero_participants": 8,
+    "mean_cross_trace_relative": 0.025965530782302508,
+    "mean_delta_trace_relative": 0.07578633830779778,
+    "finite_covariance_mean_nll": {
+      "direct_finite": 3.6247371830236332,
+      "full_paired": 3.624737183023634,
+      "omit_cross": 3.5941646816924866,
+      "double_count": 3.6048659237889797
+    },
+    "delta_mean_nll": {
+      "unconditional": 0.9065804230927037,
+      "conditional": 0.8749876361454219
+    }
+  },
+  {
+    "length_s": 16.0,
+    "distance_s": 8.0,
+    "physical_participants": 8,
+    "conditional_mse_reduction_macro": 0.4619824282366749,
+    "conditional_better_than_zero_participants": 8,
+    "mean_cross_trace_relative": 0.007219562245579756,
+    "mean_delta_trace_relative": 0.007979496597538315,
+    "finite_covariance_mean_nll": {
+      "direct_finite": 3.5383167499656727,
+      "full_paired": 3.538316749965672,
+      "omit_cross": 3.5254454735237433,
+      "double_count": 3.5275506474110774
+    },
+    "delta_mean_nll": {
+      "unconditional": -0.22772526571302099,
+      "conditional": -0.2514908082272391
+    }
+  },
+  {
+    "length_s": 64.0,
+    "distance_s": 0.0,
+    "physical_participants": 8,
+    "conditional_mse_reduction_macro": 0.8113714361105527,
+    "conditional_better_than_zero_participants": 8,
+    "mean_cross_trace_relative": 0.001341715040797703,
+    "mean_delta_trace_relative": 0.2040009667784241,
+    "finite_covariance_mean_nll": {
+      "direct_finite": 3.7217897297356264,
+      "full_paired": 3.7217897297356206,
+      "omit_cross": 3.679334024925319,
+      "double_count": 3.6920928480748287
+    },
+    "delta_mean_nll": {
+      "unconditional": 1.4583483937784156,
+      "conditional": 1.4116138837579362
+    }
+  },
+  {
+    "length_s": 64.0,
+    "distance_s": 2.0,
+    "physical_participants": 8,
+    "conditional_mse_reduction_macro": 0.6624606180781791,
+    "conditional_better_than_zero_participants": 8,
+    "mean_cross_trace_relative": 0.025099369282275706,
+    "mean_delta_trace_relative": 0.07425281396572515,
+    "finite_covariance_mean_nll": {
+      "direct_finite": 3.657431255540575,
+      "full_paired": 3.6574312555405744,
+      "omit_cross": 3.6192578525660255,
+      "double_count": 3.631158339440368
+    },
+    "delta_mean_nll": {
+      "unconditional": 0.8945096107417463,
+      "conditional": 0.8641610693367616
+    }
+  },
+  {
+    "length_s": 64.0,
+    "distance_s": 8.0,
+    "physical_participants": 8,
+    "conditional_mse_reduction_macro": 0.4414604523738498,
+    "conditional_better_than_zero_participants": 8,
+    "mean_cross_trace_relative": -0.001607991415190706,
+    "mean_delta_trace_relative": 0.001424620206606675,
+    "finite_covariance_mean_nll": {
+      "direct_finite": 3.537453952195379,
+      "full_paired": 3.537453952195375,
+      "omit_cross": 3.531481545936577,
+      "double_count": 3.532028793032718
+    },
+    "delta_mean_nll": {
+      "unconditional": -1.1257350912817772,
+      "conditional": -1.1366351369026448
+    }
+  }
+]

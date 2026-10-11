@@ -1,0 +1,165 @@
+{
+  "scope": "read-only independent scoring audit; no training or model replay",
+  "full_results_local_only": true,
+  "total_prediction_files": 48250,
+  "matrices": {
+    "four_dataset_20260907b": {
+      "archive": "experiments\\runs\\four_dataset_20260907\\four_study_development_20260907b.results.tar.gz",
+      "archive_sha256": "4b311349f18c9f487d8ea9ec80bdc1834a6dfd4fcc335212b02dd61587bb93c8",
+      "records": 13,
+      "cells": 2214,
+      "independent_auc_max_error": 2.9797555756161387e-08,
+      "independent_bacc_max_error": 0.0,
+      "sigmoid_auc_max_change": 0.13123995065689087,
+      "exactly_zero_scores": 0
+    },
+    "four_dataset_20260907c": {
+      "archive": "experiments\\runs\\four_dataset_20260907\\four_study_development_20260907c.analysis.tar.gz",
+      "archive_sha256": "ad401451b0a3565bedb2fc0296210f6722cc5b987e3d7b7e88cfef66320e1de6",
+      "records": 16,
+      "cells": 1648,
+      "independent_auc_max_error": 2.9753062347204207e-08,
+      "independent_bacc_max_error": 0.0,
+      "sigmoid_auc_max_change": 0.06964138150215149,
+      "exactly_zero_scores": 0
+    },
+    "unified_20260916": {
+      "archive": "experiments\\runs\\unified_cloud_20260916\\export\\verified_results.tar.gz",
+      "archive_bytes": 1097847401,
+      "cells": 12150,
+      "prediction_files": 12150,
+      "maximum_metric_errors": {
+        "auc": 2.220446049250313e-16,
+        "ap": 3.3306690738754696e-16,
+        "bacc_at_raw_score_zero": 0.0,
+        "brier_raw_sigmoid": 5.551115123125783e-17,
+        "nll_raw_sigmoid": 8.881784197001252e-16
+      },
+      "failures": [],
+      "paired_row_label_mismatches": []
+    },
+    "domain_20260916": {
+      "archive": "experiments\\runs\\domain_transfer_cloud_20260916\\export\\results.tar.gz",
+      "archive_bytes": 1628798632,
+      "cells": 32238,
+      "prediction_files": 32238,
+      "maximum_metric_errors": {
+        "auc": 3.3306690738754696e-16,
+        "ap": 4.440892098500626e-16,
+        "bacc_at_raw_score_zero": 0.0,
+        "brier_raw_sigmoid": 1.1102230246251565e-16,
+        "nll_raw_sigmoid": 4.440892098500626e-16
+      },
+      "failures": [],
+      "paired_row_label_mismatches": []
+    }
+  },
+  "local_outputs": [
+    {
+      "name": "public_prediction_audit.json",
+      "bytes": 3081097,
+      "sha256": "8e60ab10d3a5450a6747fdabe83bf51cbe1138256641a41c0a1bef8ab6c9dcc5",
+      "verified": true
+    },
+    {
+      "name": "unified_20260916_prediction_audit.json",
+      "bytes": 15152375,
+      "sha256": "20ff804a5a8a0e2ac6ebace33a6df64d8aee0c1c1e7d2f85b004f972a3117555",
+      "verified": true
+    },
+    {
+      "name": "domain_20260916_prediction_audit.json",
+      "bytes": 40504737,
+      "sha256": "72cbdaf0f17cd468ab45c66bc8aefad19eb3a2972daa8624cd1dc14e7fc795f8",
+      "verified": true
+    }
+  ],
+  "same_checkpoint_test_cohort_change": {
+    "participants": 123,
+    "changed_test_size": 69,
+    "maximum_common_score_difference": 4.76837158203125e-07,
+    "maximum_common_auc_difference": 0.0,
+    "largest_auc_changes": [
+      {
+        "study": "BI2014a",
+        "participant_key": "n2p3-origin://BI2014a-candidate%3A13/participant/13",
+        "same_checkpoint": true,
+        "old_test_n": 299,
+        "new_test_n": 96,
+        "common_test_n": 96,
+        "old_auc": 0.5749387755102041,
+        "new_auc": 0.76171875,
+        "old_auc_on_common_rows": 0.76171875,
+        "new_auc_on_common_rows": 0.76171875,
+        "max_common_score_difference": 0.0,
+        "old_member": "four_study_development_20260907b/results_BI2014a_20260906/012_192_zero_shot.npz",
+        "new_member": "four_study_development_20260907c/results_BI2014a_20260906_part0/003_0_zero_shot.npz"
+      },
+      {
+        "study": "BI2014a",
+        "participant_key": "n2p3-origin://BI2014a-candidate%3A02/participant/02",
+        "same_checkpoint": true,
+        "old_test_n": 300,
+        "new_test_n": 96,
+        "common_test_n": 96,
+        "old_auc": 0.57008,
+        "new_auc": 0.69921875,
+        "old_auc_on_common_rows": 0.69921875,
+        "new_auc_on_common_rows": 0.69921875,
+        "max_common_score_difference": 0.0,
+        "old_member": "four_study_development_20260907b/results_BI2014a_20260906/001_192_zero_shot.npz",
+        "new_member": "four_study_development_20260907c/results_BI2014a_20260906_part1/000_0_zero_shot.npz"
+      },
+      {
+        "study": "BI2014a",
+        "participant_key": "n2p3-origin://BI2014a-candidate%3A25/participant/25",
+        "same_checkpoint": true,
+        "old_test_n": 408,
+        "new_test_n": 120,
+        "common_test_n": 120,
+        "old_auc": 0.5219723183391003,
+        "new_auc": 0.402,
+        "old_auc_on_common_rows": 0.402,
+        "new_auc_on_common_rows": 0.402,
+        "max_common_score_difference": 0.0,
+        "old_member": "four_study_development_20260907b/results_BI2014a_20260906/024_192_zero_shot.npz",
+        "new_member": "four_study_development_20260907c/results_BI2014a_20260906_part0/006_0_zero_shot.npz"
+      }
+    ]
+  },
+  "same_predictions_different_estimand_K2000": {
+    "participants": 21,
+    "studies": [
+      "BNCI2014-008",
+      "Huebner2017"
+    ],
+    "arm_metrics": {
+      "full_fine": {
+        "K": 2000,
+        "arm": "full_fine",
+        "participants": 21,
+        "study_counts": {
+          "BNCI2014-008": 8,
+          "Huebner2017": 13
+        },
+        "study_equal_auc": 0.8347467238364155,
+        "pooled_participant_mean_auc": 0.8333349145418861,
+        "pooled_trial_auc": 0.8415018740804799
+      },
+      "target_only": {
+        "K": 2000,
+        "arm": "target_only",
+        "participants": 21,
+        "study_counts": {
+          "BNCI2014-008": 8,
+          "Huebner2017": 13
+        },
+        "study_equal_auc": 0.8307857139579711,
+        "pooled_participant_mean_auc": 0.8310973628398792,
+        "pooled_trial_auc": 0.8420254145298766
+      }
+    },
+    "study_equal_transfer_effect": 0.003961009878444388,
+    "pooled_trial_transfer_effect": -0.00052354044939662
+  }
+}

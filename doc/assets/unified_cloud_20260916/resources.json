@@ -1,0 +1,229 @@
+{
+  "accelerators": {
+    "candidate_counts": {
+      "cuda": 1,
+      "metal": 0,
+      "rocm": 0
+    },
+    "candidate_upper_bounds": {
+      "cuda": 1,
+      "metal": null,
+      "rocm": null
+    },
+    "devices": [
+      {
+        "backend_candidate": "cuda",
+        "compute_capability": "12.0",
+        "device_class": "gpu",
+        "device_permission": "not_tested",
+        "driver_version": "595.71.05",
+        "local_index": 0,
+        "management_query": "visible",
+        "memory": {
+          "dedicated_free_bytes": 33669775360,
+          "dedicated_total_bytes": 34190917632,
+          "model": "dedicated"
+        },
+        "name": "NVIDIA GeForce RTX 5090",
+        "runtime_compatibility": "not_tested",
+        "vendor": "nvidia"
+      }
+    ],
+    "runtime_usable_devices": null,
+    "visibility_environment": {
+      "CUDA_VISIBLE_DEVICES": {
+        "entry_count": null,
+        "set": false,
+        "state": "unset",
+        "value_redacted": true
+      },
+      "HIP_VISIBLE_DEVICES": {
+        "entry_count": null,
+        "set": false,
+        "state": "unset",
+        "value_redacted": true
+      },
+      "NVIDIA_VISIBLE_DEVICES": {
+        "entry_count": null,
+        "set": false,
+        "state": "unset",
+        "value_redacted": true
+      },
+      "ROCR_VISIBLE_DEVICES": {
+        "entry_count": null,
+        "set": false,
+        "state": "unset",
+        "value_redacted": true
+      }
+    }
+  },
+  "cgroup_v2": {
+    "detected": true,
+    "scope": "root"
+  },
+  "completeness": "complete_with_informational_notes",
+  "container": {
+    "detected": true,
+    "evidence": [
+      "cgroup_limit",
+      "docker_marker"
+    ],
+    "runtime": "docker_or_compatible"
+  },
+  "cpu": {
+    "cgroup_v2": {
+      "cpuset_logical": 208,
+      "quota_cores": 25.0
+    },
+    "effective": {
+      "capacity_cores": 25.0,
+      "limiting_sources": [
+        "cgroup_quota"
+      ],
+      "worker_ceiling": 25
+    },
+    "host": {
+      "logical": 208,
+      "physical": 104
+    },
+    "process": {
+      "affinity_logical": 208,
+      "python_available_logical": null
+    }
+  },
+  "disk": {
+    "capacity_bytes": 32212254720,
+    "free_bytes": 4724916224,
+    "scope": "working_filesystem_path_redacted",
+    "user_available_bytes": 4724916224,
+    "writability_check": "os_access_only_no_write_probe",
+    "writable": true
+  },
+  "memory": {
+    "cgroup_v2": {
+      "available_bytes": 95667867648,
+      "current_bytes": 968896512,
+      "high_bytes": 94489280512,
+      "max_bytes": 96636764160
+    },
+    "effective": {
+      "available_bytes": 95667867648,
+      "available_limiting_sources": [
+        "cgroup_memory_remaining"
+      ],
+      "hard_limit_bytes": 96636764160,
+      "hard_limit_sources": [
+        "cgroup_memory_max"
+      ],
+      "pressure_threshold_bytes": 94489280512
+    },
+    "host": {
+      "available_bytes": 726373928960,
+      "total_bytes": 810155810816
+    },
+    "model": "system_ram",
+    "swap": {
+      "free_bytes": 0,
+      "total_bytes": 0
+    }
+  },
+  "observed_at": "2026-09-16T10:27:54Z",
+  "platform": {
+    "machine": "x86_64",
+    "python_version": "3.12.3",
+    "system": "Linux"
+  },
+  "privacy": {
+    "absolute_paths_included": false,
+    "environment_values_included": false,
+    "hostnames_included": false,
+    "identifiers_redacted_by_default": true
+  },
+  "provenance": [
+    {
+      "component": "accelerators.amd",
+      "source": "rocm-smi",
+      "status": "not_found"
+    },
+    {
+      "component": "accelerators.nvidia",
+      "source": "nvidia-smi",
+      "status": "ok"
+    },
+    {
+      "component": "cgroup_v2",
+      "source": "procfs_and_cgroupfs",
+      "status": "ok"
+    },
+    {
+      "component": "cpu.host.logical",
+      "source": "os.cpu_count",
+      "status": "ok"
+    },
+    {
+      "component": "cpu.host.physical",
+      "source": "psutil.cpu_count",
+      "status": "ok"
+    },
+    {
+      "component": "cpu.process.affinity_logical",
+      "source": "os.sched_getaffinity",
+      "status": "ok"
+    },
+    {
+      "component": "disk",
+      "source": "shutil.disk_usage",
+      "status": "ok"
+    },
+    {
+      "component": "disk.user_available",
+      "source": "os.statvfs",
+      "status": "ok"
+    },
+    {
+      "component": "inventory.psutil",
+      "source": "optional_import",
+      "status": "ok"
+    },
+    {
+      "component": "memory.host",
+      "source": "psutil.virtual_memory",
+      "status": "ok"
+    },
+    {
+      "component": "memory.swap",
+      "source": "psutil.swap_memory",
+      "status": "ok"
+    },
+    {
+      "component": "scheduler",
+      "source": "named_slurm_environment",
+      "status": "absent"
+    }
+  ],
+  "scheduler": {
+    "allocation": {
+      "cpu_per_process": null,
+      "cpus_on_node": null,
+      "gpus_on_node": null,
+      "gpus_per_process": null,
+      "memory_effective_bytes": null,
+      "memory_scope": null,
+      "tasks": null
+    },
+    "detected": false,
+    "enforcement": "not_applicable",
+    "fields_read": [],
+    "kind": null
+  },
+  "schema_version": "1.1",
+  "snapshot_kind": "effective_resource_snapshot",
+  "warnings": [
+    {
+      "code": "ACCELERATOR_RUNTIME_NOT_TESTED",
+      "component": "accelerators",
+      "message": "Management visibility does not prove permission or framework/runtime compatibility.",
+      "severity": "info"
+    }
+  ]
+}

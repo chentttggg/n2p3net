@@ -1,0 +1,439 @@
+{
+  "schema": "n2p3_source_training_chain/1",
+  "evidence_scope": "development",
+  "source_seeds": [
+    20260916,
+    20260917,
+    20260918
+  ],
+  "target_seeds": [
+    20260916,
+    20260917,
+    20260918
+  ],
+  "target_batch_size": 512,
+  "source_layouts": [
+    "six"
+  ],
+  "paired_source_target_seeds": true,
+  "batch_rule": {
+    "schema": "n2p3_target_batch_rule/1",
+    "batch_size": 512,
+    "policy": "operator_fixed",
+    "provenance": "run_configuration",
+    "selection_evidence": false,
+    "selection_scope": "predeclared_no_score_selection",
+    "rationale": "Predeclared unified exposure/epoch budgets with physical batch cap512; eager selected by same-host benchmark; resource-admitted parallel workers."
+  },
+  "source_snapshot_manifest": "/root/autodl-tmp/n2p3-runs/unified_20260916/runtime/source.manifest.json",
+  "evaluation_snapshot_manifest": "/root/autodl-tmp/n2p3-runs/unified_20260916/runtime/source.manifest.json",
+  "outer_folds": [
+    {
+      "name": "exclude_BI2014a",
+      "source_cache": "/dev/shm/n2p3-unified_20260916/pools/exclude_BI2014a.npz",
+      "source_cache_sha256": "c402f459befd1fff541a6813eee56803df341338d69f661b421340cbe3b0b30f",
+      "excluded_source_datasets": [
+        "BI2014a"
+      ],
+      "source_protocols": {
+        "BI2015a": {
+          "kind": "last_session_holdout",
+          "session_order": [
+            "0",
+            "1",
+            "2"
+          ],
+          "run_order": [
+            "0"
+          ],
+          "test_session": "2",
+          "minimum_test_trials": 200
+        },
+        "BNCI2014-008": {
+          "kind": "single_recording_prefix",
+          "minimum_test_trials": 200
+        },
+        "Huebner2017": {
+          "kind": "last_session_holdout",
+          "session_order": [
+            "0",
+            "1",
+            "2"
+          ],
+          "run_order": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8"
+          ],
+          "test_session": "2",
+          "minimum_test_trials": 200
+        }
+      },
+      "target_study": "BI2014a",
+      "target_protocol": {
+        "kind": "single_recording_prefix",
+        "minimum_test_trials": 200
+      },
+      "family_exclusion": false,
+      "source_prior_selection": {
+        "prefix_manifests": [
+          "/dev/shm/n2p3-unified_20260916/prepared/BI2015a/prefixes/target_prefixes.json",
+          "/dev/shm/n2p3-unified_20260916/prepared/BNCI2014-008/prefixes/target_prefixes.json",
+          "/dev/shm/n2p3-unified_20260916/prepared/Huebner2017/prefixes/target_prefixes.json"
+        ],
+        "candidates": [
+          0.0,
+          0.001,
+          0.01,
+          0.1
+        ],
+        "calibration_trials": 200
+      },
+      "target_prefix_manifest": "/dev/shm/n2p3-unified_20260916/prepared/BI2014a/prefixes/target_prefixes.json"
+    },
+    {
+      "name": "exclude_BI2015a",
+      "source_cache": "/dev/shm/n2p3-unified_20260916/pools/exclude_BI2015a.npz",
+      "source_cache_sha256": "6d3c935515158de73aacb0d1989531a2ec784ccf7a60c0c9ae4caa00e43118e4",
+      "excluded_source_datasets": [
+        "BI2015a"
+      ],
+      "source_protocols": {
+        "BI2014a": {
+          "kind": "single_recording_prefix",
+          "minimum_test_trials": 200
+        },
+        "BNCI2014-008": {
+          "kind": "single_recording_prefix",
+          "minimum_test_trials": 200
+        },
+        "Huebner2017": {
+          "kind": "last_session_holdout",
+          "session_order": [
+            "0",
+            "1",
+            "2"
+          ],
+          "run_order": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8"
+          ],
+          "test_session": "2",
+          "minimum_test_trials": 200
+        }
+      },
+      "target_study": "BI2015a",
+      "target_protocol": {
+        "kind": "last_session_holdout",
+        "session_order": [
+          "0",
+          "1",
+          "2"
+        ],
+        "run_order": [
+          "0"
+        ],
+        "test_session": "2",
+        "minimum_test_trials": 200
+      },
+      "family_exclusion": false,
+      "source_prior_selection": {
+        "prefix_manifests": [
+          "/dev/shm/n2p3-unified_20260916/prepared/BI2014a/prefixes/target_prefixes.json",
+          "/dev/shm/n2p3-unified_20260916/prepared/BNCI2014-008/prefixes/target_prefixes.json",
+          "/dev/shm/n2p3-unified_20260916/prepared/Huebner2017/prefixes/target_prefixes.json"
+        ],
+        "candidates": [
+          0.0,
+          0.001,
+          0.01,
+          0.1
+        ],
+        "calibration_trials": 200
+      },
+      "target_prefix_manifest": "/dev/shm/n2p3-unified_20260916/prepared/BI2015a/prefixes/target_prefixes.json"
+    },
+    {
+      "name": "exclude_BNCI2014-008",
+      "source_cache": "/dev/shm/n2p3-unified_20260916/pools/exclude_BNCI2014-008.npz",
+      "source_cache_sha256": "16c97bc091679386ea9084779fb558b0f622b885050650db71a69ce390d6b9d9",
+      "excluded_source_datasets": [
+        "BNCI2014-008"
+      ],
+      "source_protocols": {
+        "BI2014a": {
+          "kind": "single_recording_prefix",
+          "minimum_test_trials": 200
+        },
+        "BI2015a": {
+          "kind": "last_session_holdout",
+          "session_order": [
+            "0",
+            "1",
+            "2"
+          ],
+          "run_order": [
+            "0"
+          ],
+          "test_session": "2",
+          "minimum_test_trials": 200
+        },
+        "Huebner2017": {
+          "kind": "last_session_holdout",
+          "session_order": [
+            "0",
+            "1",
+            "2"
+          ],
+          "run_order": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8"
+          ],
+          "test_session": "2",
+          "minimum_test_trials": 200
+        }
+      },
+      "target_study": "BNCI2014-008",
+      "target_protocol": {
+        "kind": "single_recording_prefix",
+        "minimum_test_trials": 200
+      },
+      "family_exclusion": false,
+      "source_prior_selection": {
+        "prefix_manifests": [
+          "/dev/shm/n2p3-unified_20260916/prepared/BI2014a/prefixes/target_prefixes.json",
+          "/dev/shm/n2p3-unified_20260916/prepared/BI2015a/prefixes/target_prefixes.json",
+          "/dev/shm/n2p3-unified_20260916/prepared/Huebner2017/prefixes/target_prefixes.json"
+        ],
+        "candidates": [
+          0.0,
+          0.001,
+          0.01,
+          0.1
+        ],
+        "calibration_trials": 200
+      },
+      "target_prefix_manifest": "/dev/shm/n2p3-unified_20260916/prepared/BNCI2014-008/prefixes/target_prefixes.json"
+    },
+    {
+      "name": "exclude_Huebner2017",
+      "source_cache": "/dev/shm/n2p3-unified_20260916/pools/exclude_Huebner2017.npz",
+      "source_cache_sha256": "66c6054b8c930b70a3c5d7aee3fcd8ea6f6c68d26b1511d2a2697a0644a3c2cc",
+      "excluded_source_datasets": [
+        "Huebner2017"
+      ],
+      "source_protocols": {
+        "BI2014a": {
+          "kind": "single_recording_prefix",
+          "minimum_test_trials": 200
+        },
+        "BI2015a": {
+          "kind": "last_session_holdout",
+          "session_order": [
+            "0",
+            "1",
+            "2"
+          ],
+          "run_order": [
+            "0"
+          ],
+          "test_session": "2",
+          "minimum_test_trials": 200
+        },
+        "BNCI2014-008": {
+          "kind": "single_recording_prefix",
+          "minimum_test_trials": 200
+        }
+      },
+      "target_study": "Huebner2017",
+      "target_protocol": {
+        "kind": "last_session_holdout",
+        "session_order": [
+          "0",
+          "1",
+          "2"
+        ],
+        "run_order": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ],
+        "test_session": "2",
+        "minimum_test_trials": 200
+      },
+      "family_exclusion": false,
+      "source_prior_selection": {
+        "prefix_manifests": [
+          "/dev/shm/n2p3-unified_20260916/prepared/BI2014a/prefixes/target_prefixes.json",
+          "/dev/shm/n2p3-unified_20260916/prepared/BI2015a/prefixes/target_prefixes.json",
+          "/dev/shm/n2p3-unified_20260916/prepared/BNCI2014-008/prefixes/target_prefixes.json"
+        ],
+        "candidates": [
+          0.0,
+          0.001,
+          0.01,
+          0.1
+        ],
+        "calibration_trials": 200
+      },
+      "target_prefix_manifest": "/dev/shm/n2p3-unified_20260916/prepared/Huebner2017/prefixes/target_prefixes.json"
+    },
+    {
+      "name": "exclude_BI2014a_BI2015a",
+      "source_cache": "/dev/shm/n2p3-unified_20260916/pools/exclude_BI2014a_BI2015a.npz",
+      "source_cache_sha256": "3c9f64c0eb96335fa425df1e4e6b8b7857ce941f8f8cdc21f422ef21242adfe2",
+      "excluded_source_datasets": [
+        "BI2014a",
+        "BI2015a"
+      ],
+      "source_protocols": {
+        "BNCI2014-008": {
+          "kind": "single_recording_prefix",
+          "minimum_test_trials": 200
+        },
+        "Huebner2017": {
+          "kind": "last_session_holdout",
+          "session_order": [
+            "0",
+            "1",
+            "2"
+          ],
+          "run_order": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8"
+          ],
+          "test_session": "2",
+          "minimum_test_trials": 200
+        }
+      },
+      "targets": [
+        {
+          "study": "BI2014a",
+          "protocol": {
+            "kind": "single_recording_prefix",
+            "minimum_test_trials": 200
+          },
+          "prefix_manifest": "/dev/shm/n2p3-unified_20260916/prepared/BI2014a/prefixes/target_prefixes.json"
+        },
+        {
+          "study": "BI2015a",
+          "protocol": {
+            "kind": "last_session_holdout",
+            "session_order": [
+              "0",
+              "1",
+              "2"
+            ],
+            "run_order": [
+              "0"
+            ],
+            "test_session": "2",
+            "minimum_test_trials": 200
+          },
+          "prefix_manifest": "/dev/shm/n2p3-unified_20260916/prepared/BI2015a/prefixes/target_prefixes.json"
+        }
+      ],
+      "family_exclusion": true,
+      "source_prior_selection": {
+        "prefix_manifests": [
+          "/dev/shm/n2p3-unified_20260916/prepared/BNCI2014-008/prefixes/target_prefixes.json",
+          "/dev/shm/n2p3-unified_20260916/prepared/Huebner2017/prefixes/target_prefixes.json"
+        ],
+        "candidates": [
+          0.0,
+          0.001,
+          0.01,
+          0.1
+        ],
+        "calibration_trials": 200
+      }
+    }
+  ],
+  "compile_mode": null,
+  "cpu_budget": 24,
+  "source_workers": 3,
+  "target_workers": 8,
+  "source_worker_memory_gib": 12,
+  "target_worker_memory_gib": 6,
+  "gpu_task_memory_gib": 3,
+  "calibration_trials": [
+    0,
+    200,
+    800
+  ],
+  "source_preprocessing": {
+    "name": "brainsync_bidirectional_v1",
+    "sfreq": 128.0,
+    "l_freq": 0.1,
+    "h_freq": 30.0,
+    "tmin_ms": -200.0,
+    "tmax_ms": 1200.0,
+    "n_times": 179,
+    "baseline_mode": "mean_only",
+    "signal_unit": "V",
+    "filter_method": "iir",
+    "filter_order": 4,
+    "filter_phase": "zero",
+    "causal_iir_initial_state": "not_applicable",
+    "notch_freqs_hz": [
+      50.0
+    ],
+    "notch_quality_factor": 30.0,
+    "zero_phase_edge_policy": "mne_reflect_limited",
+    "resample_domain": "epoched",
+    "resample_method": "fft",
+    "resample_npad": "auto",
+    "resample_window": "auto",
+    "resample_pad": "edge",
+    "trial_reference_window_ms": null,
+    "trial_reference_center": "mean",
+    "trial_reference_scale": "none",
+    "reject_threshold_v": null
+  },
+  "unified_training_budget": {
+    "reference_patience": 3,
+    "reference_min_delta": 0.0001,
+    "reference_max_epochs": 12,
+    "source_validation_fraction": 0.2,
+    "target_epochs": 90,
+    "development_people_per_domain": 2,
+    "development_seed": 20260906
+  },
+  "resume_source_run": {
+    "inventory": "/root/autodl-tmp/n2p3-runs/unified_20260916/early_source_inventory.json",
+    "sha256": "9e8fdee92319c80c3838342b8cdce648262a6356c6d40d26ea4aa1f4cf7d5dbb"
+  }
+}

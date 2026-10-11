@@ -1,0 +1,123 @@
+{
+  "schema": "n2p3_source_training_chain_run/1",
+  "dry_run": false,
+  "status": "running",
+  "source_snapshot": {
+    "archive_sha256": "d888db506ceba2885eafdeaa33463739ef30536d251b153f971d4dbbf0b099a5",
+    "manifest_sha256": "43cb01c21126018eab808d7dfd9d25ef42df61fb62c9f116eb3f67e50c883bd9",
+    "source_commit": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+    "byte_size": 1417099,
+    "member_count": 339,
+    "working_tree_snapshot": true,
+    "source_commit_role": "base_commit_only",
+    "executed_files_verified": 339
+  },
+  "resource_policy": {
+    "policy": "automatic_resource_admission",
+    "available_cpu_threads": 25,
+    "cpu_budget": 24,
+    "requested_source_workers": 3,
+    "source_groups": 5,
+    "source_workers": 3,
+    "gpu_slots": 8,
+    "target_workers": 8,
+    "inner_workers_per_group": 7,
+    "native_threads_per_worker": 1,
+    "compiler_threads_per_worker": 1,
+    "gpu_task_memory_gib": 3.0,
+    "free_device_bytes": 33138868224,
+    "available_host_memory_bytes": 61828034560,
+    "host_memory_budget_bytes": 52553829376,
+    "source_worker_memory_bytes": 12884901888,
+    "target_worker_memory_bytes": 6442450944
+  },
+  "evidence_scope": "development",
+  "batch_rule": {
+    "schema": "n2p3_target_batch_rule/1",
+    "batch_size": 512,
+    "policy": "operator_fixed",
+    "provenance": "run_configuration",
+    "selection_evidence": false,
+    "selection_scope": "predeclared_no_score_selection",
+    "rationale": "Predeclared unified exposure/epoch budgets with physical batch cap512; eager selected by same-host benchmark; resource-admitted parallel workers."
+  },
+  "source_seeds": [
+    20260916,
+    20260917,
+    20260918
+  ],
+  "target_seeds": [
+    20260916,
+    20260917,
+    20260918
+  ],
+  "groups": [
+    {
+      "outer": "exclude_BI2014a",
+      "layout": "six",
+      "directory": "/root/autodl-tmp/n2p3-runs/unified_20260916/matrix/sources/groups/00_exclude_BI2014a_six",
+      "status": "running",
+      "progress": {
+        "pid": 7009,
+        "updated_unix": 1789559627.6492333,
+        "task_count": 0,
+        "completed_tasks": 0,
+        "failed_tasks": 0,
+        "resumed_tasks": 0,
+        "physical_optimizer_updates": 0,
+        "last_task": null,
+        "completed_selections": 0
+      }
+    },
+    {
+      "outer": "exclude_BI2015a",
+      "layout": "six",
+      "directory": "/root/autodl-tmp/n2p3-runs/unified_20260916/matrix/sources/groups/01_exclude_BI2015a_six",
+      "status": "running",
+      "progress": {
+        "pid": 7012,
+        "updated_unix": 1789559627.6330314,
+        "task_count": 0,
+        "completed_tasks": 0,
+        "failed_tasks": 0,
+        "resumed_tasks": 0,
+        "physical_optimizer_updates": 0,
+        "last_task": null,
+        "completed_selections": 0
+      }
+    },
+    {
+      "outer": "exclude_BNCI2014-008",
+      "layout": "six",
+      "directory": "/root/autodl-tmp/n2p3-runs/unified_20260916/matrix/sources/groups/02_exclude_BNCI2014-008_six",
+      "status": "running",
+      "progress": {
+        "pid": 7013,
+        "updated_unix": 1789559627.7071502,
+        "task_count": 0,
+        "completed_tasks": 0,
+        "failed_tasks": 0,
+        "resumed_tasks": 0,
+        "physical_optimizer_updates": 0,
+        "last_task": null,
+        "completed_selections": 0
+      }
+    },
+    {
+      "outer": "exclude_Huebner2017",
+      "layout": "six",
+      "directory": "/root/autodl-tmp/n2p3-runs/unified_20260916/matrix/sources/groups/03_exclude_Huebner2017_six",
+      "status": "running"
+    },
+    {
+      "outer": "exclude_BI2014a_BI2015a",
+      "layout": "six",
+      "directory": "/root/autodl-tmp/n2p3-runs/unified_20260916/matrix/sources/groups/04_exclude_BI2014a_BI2015a_six",
+      "status": "running"
+    }
+  ],
+  "tasks": [],
+  "selection": [],
+  "preflight_failures": [],
+  "outer_evaluation_jobs": []
+}

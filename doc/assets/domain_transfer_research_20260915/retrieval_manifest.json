@@ -1,0 +1,971 @@
+{
+  "date": "2026-09-15",
+  "review_kind": "bounded scoping retrieval and focused appraisal; not exhaustive systematic review",
+  "broad_successful_queries": 17,
+  "broad_records_before_deduplication": 291,
+  "local_raw_directory": "experiments/runs/domain_transfer_research_20260915",
+  "provenance": [
+    {
+      "tag": "arxiv_01",
+      "provider": "arxiv",
+      "date": "2026-09-15",
+      "endpoint": "https://export.arxiv.org/api/query",
+      "parameters": {
+        "search_query": "(all:P300 OR all:ERP) AND (all:\"transfer learning\" OR all:\"domain adaptation\" OR all:contrastive)",
+        "max_results": "25",
+        "sortBy": "relevance"
+      },
+      "http_status": "429",
+      "exit_code": 0,
+      "seconds": 1.46,
+      "path": "arxiv_01.xml",
+      "parser_exit_code": 5,
+      "parser_stderr": "error: arXiv is throttling: it returned the plain-text body 'Rate exceeded.' instead of a feed. Its limit is one request per three seconds; wait and retry, and serialize arXiv calls rather than running them alongside other work.\n"
+    },
+    {
+      "tag": "arxiv_02",
+      "provider": "arxiv",
+      "date": "2026-09-15",
+      "endpoint": "https://export.arxiv.org/api/query",
+      "parameters": {
+        "search_query": "all:EEG AND (all:FiLM OR all:\"conditional modulation\" OR all:\"low-rank\" OR all:meta-learning)",
+        "max_results": "25",
+        "sortBy": "relevance"
+      },
+      "http_status": "429",
+      "exit_code": 0,
+      "seconds": 0.57,
+      "path": "arxiv_02.xml",
+      "parser_exit_code": 5,
+      "parser_stderr": "error: arXiv is throttling: it returned the plain-text body 'Rate exceeded.' instead of a feed. Its limit is one request per three seconds; wait and retry, and serialize arXiv calls rather than running them alongside other work.\n"
+    },
+    {
+      "tag": "arxiv_03",
+      "provider": "arxiv",
+      "date": "2026-09-15",
+      "endpoint": "https://export.arxiv.org/api/query",
+      "parameters": {
+        "search_query": "all:EEG AND (all:\"foundation model\" OR all:LaBraM OR all:BIOT OR all:CBraMod) AND submittedDate:[202401010000 TO 202609152359]",
+        "max_results": "25",
+        "sortBy": "relevance"
+      },
+      "http_status": "429",
+      "exit_code": 0,
+      "seconds": 15.87,
+      "path": "arxiv_03.xml",
+      "parser_exit_code": 5,
+      "parser_stderr": "error: arXiv is throttling: it returned the plain-text body 'Rate exceeded.' instead of a feed. Its limit is one request per three seconds; wait and retry, and serialize arXiv calls rather than running them alongside other work.\n"
+    },
+    {
+      "tag": "crossref_01",
+      "provider": "crossref",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "P300 transfer learning domain adaptation Riemannian geometry",
+        "rows": "12",
+        "filter": "from-pub-date:2009-01-01,until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 3.54,
+      "path": "crossref_01.json",
+      "total": 3319059,
+      "retrieved": 12
+    },
+    {
+      "tag": "crossref_02",
+      "provider": "crossref",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "Transfer Learning for Brain Computer Interfaces A Euclidean Space Data Alignment Approach",
+        "rows": "12",
+        "filter": "from-pub-date:2009-01-01,until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 2.73,
+      "path": "crossref_02.json",
+      "total": 797478,
+      "retrieved": 12
+    },
+    {
+      "tag": "crossref_03",
+      "provider": "crossref",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "Riemannian Procrustes analysis transfer learning brain computer interfaces",
+        "rows": "12",
+        "filter": "from-pub-date:2009-01-01,until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 2.51,
+      "path": "crossref_03.json",
+      "total": 9593483,
+      "retrieved": 12
+    },
+    {
+      "tag": "crossref_04",
+      "provider": "crossref",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "P300 speller supervised contrastive learning minimal calibration",
+        "rows": "12",
+        "filter": "from-pub-date:2009-01-01,until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 2.98,
+      "path": "crossref_04.json",
+      "total": 2505268,
+      "retrieved": 12
+    },
+    {
+      "tag": "crossref_05",
+      "provider": "crossref",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "EEG cross subject FiLM conditional modulation meta learning",
+        "rows": "12",
+        "filter": "from-pub-date:2009-01-01,until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 2.42,
+      "path": "crossref_05.json",
+      "total": 4103301,
+      "retrieved": 12
+    },
+    {
+      "tag": "crossref_06",
+      "provider": "crossref",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "EEG foundation model benchmark cross dataset generalization 2025 2026",
+        "rows": "12",
+        "filter": "from-pub-date:2009-01-01,until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 2.63,
+      "path": "crossref_06.json",
+      "total": 19704914,
+      "retrieved": 12
+    },
+    {
+      "tag": "crossref_07",
+      "provider": "crossref",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "P300 transfer learning label alignment class conditional distribution",
+        "rows": "12",
+        "filter": "from-pub-date:2009-01-01,until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 5.14,
+      "path": "crossref_07.json",
+      "total": 3745074,
+      "retrieved": 12
+    },
+    {
+      "tag": "crossref_08",
+      "provider": "crossref",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "cross subject P300 latency variability xDAWN transfer learning",
+        "rows": "12",
+        "filter": "from-pub-date:2009-01-01,until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 2.85,
+      "path": "crossref_08.json",
+      "total": 3709458,
+      "retrieved": 12
+    },
+    {
+      "tag": "epmc_01",
+      "provider": "epmc",
+      "date": "2026-09-15",
+      "endpoint": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+      "parameters": {
+        "query": "((P300 OR \"event-related potential\") AND (EEG OR \"brain-computer\") AND (\"transfer learning\" OR \"domain adaptation\" OR \"cross-subject\")) AND FIRST_PDATE:[2009-01-01 TO 2026-09-15]",
+        "format": "json",
+        "pageSize": "25",
+        "resultType": "core"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 1.87,
+      "path": "epmc_01.json",
+      "total": 574,
+      "retrieved": 25
+    },
+    {
+      "tag": "epmc_02",
+      "provider": "epmc",
+      "date": "2026-09-15",
+      "endpoint": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+      "parameters": {
+        "query": "((P300 OR \"event-related potential\") AND (\"Riemannian\" OR \"Euclidean alignment\" OR xDAWN)) AND FIRST_PDATE:[2009-01-01 TO 2026-09-15]",
+        "format": "json",
+        "pageSize": "25",
+        "resultType": "core"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 1.6,
+      "path": "epmc_02.json",
+      "total": 252,
+      "retrieved": 25
+    },
+    {
+      "tag": "epmc_03",
+      "provider": "epmc",
+      "date": "2026-09-15",
+      "endpoint": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+      "parameters": {
+        "query": "((P300 OR EEG) AND (\"few-shot\" OR \"meta-learning\" OR \"feature-wise linear modulation\" OR FiLM) AND (calibration OR subject)) AND FIRST_PDATE:[2009-01-01 TO 2026-09-15]",
+        "format": "json",
+        "pageSize": "25",
+        "resultType": "core"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 1.48,
+      "path": "epmc_03.json",
+      "total": 3773,
+      "retrieved": 25
+    },
+    {
+      "tag": "epmc_04",
+      "provider": "epmc",
+      "date": "2026-09-15",
+      "endpoint": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+      "parameters": {
+        "query": "((P300 OR EEG) AND (\"negative transfer\" OR \"source selection\" OR \"conditional alignment\")) AND FIRST_PDATE:[2009-01-01 TO 2026-09-15]",
+        "format": "json",
+        "pageSize": "25",
+        "resultType": "core"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 1.58,
+      "path": "epmc_04.json",
+      "total": 216,
+      "retrieved": 25
+    },
+    {
+      "tag": "epmc_05",
+      "provider": "epmc",
+      "date": "2026-09-15",
+      "endpoint": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+      "parameters": {
+        "query": "(EEG AND (\"foundation model\" OR \"channel-independent\" OR \"heterogeneous channels\")) AND FIRST_PDATE:[2009-01-01 TO 2026-09-15]",
+        "format": "json",
+        "pageSize": "25",
+        "resultType": "core"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 1.82,
+      "path": "epmc_05.json",
+      "total": 221,
+      "retrieved": 25
+    },
+    {
+      "tag": "epmc_06",
+      "provider": "epmc",
+      "date": "2026-09-15",
+      "endpoint": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+      "parameters": {
+        "query": "((P300 OR \"event-related potential\") AND (EEG OR \"brain-computer\") AND (contrastive OR adaptation OR transfer) AND FIRST_PDATE:[2025-01-01 TO 2026-09-15]) AND FIRST_PDATE:[2009-01-01 TO 2026-09-15]",
+        "format": "json",
+        "pageSize": "25",
+        "resultType": "core"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 1.85,
+      "path": "epmc_06.json",
+      "total": 1038,
+      "retrieved": 25
+    },
+    {
+      "tag": "openalex_01",
+      "provider": "openalex",
+      "date": "2026-09-15",
+      "endpoint": "https://api.openalex.org/works",
+      "parameters": {
+        "search": "EEG FiLM subject adaptation",
+        "per_page": "15",
+        "filter": "from_publication_date:2009-01-01,to_publication_date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 3.76,
+      "path": "openalex_01.json",
+      "total": 5332,
+      "retrieved": 15
+    },
+    {
+      "tag": "openalex_02",
+      "provider": "openalex",
+      "date": "2026-09-15",
+      "endpoint": "https://api.openalex.org/works",
+      "parameters": {
+        "search": "EEG foundation models P300 benchmark",
+        "per_page": "15",
+        "filter": "from_publication_date:2009-01-01,to_publication_date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 2.06,
+      "path": "openalex_02.json",
+      "total": 947,
+      "retrieved": 15
+    },
+    {
+      "tag": "openalex_03",
+      "provider": "openalex",
+      "date": "2026-09-15",
+      "endpoint": "https://api.openalex.org/works",
+      "parameters": {
+        "search": "P300 negative transfer domain adaptation",
+        "per_page": "15",
+        "filter": "from_publication_date:2009-01-01,to_publication_date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "seconds": 3.38,
+      "path": "openalex_03.json",
+      "total": 6744,
+      "retrieved": 15
+    },
+    {
+      "tag": "arxiv_1901.09453",
+      "date": "2026-09-15",
+      "endpoint": "https://arxiv.org/abs/1901.09453",
+      "parameters": {},
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "arxiv_1901.09453.html"
+    },
+    {
+      "tag": "arxiv_2007.01434",
+      "date": "2026-09-15",
+      "endpoint": "https://arxiv.org/abs/2007.01434",
+      "parameters": {},
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "arxiv_2007.01434.html"
+    },
+    {
+      "tag": "arxiv_2306.05609",
+      "date": "2026-09-15",
+      "endpoint": "https://arxiv.org/abs/2306.05609",
+      "parameters": {},
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "arxiv_2306.05609.html"
+    },
+    {
+      "tag": "arxiv_2402.17764",
+      "date": "2026-09-15",
+      "endpoint": "https://arxiv.org/abs/2402.17764",
+      "parameters": {},
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "arxiv_2402.17764.html"
+    },
+    {
+      "tag": "arxiv_2406.04328",
+      "date": "2026-09-15",
+      "endpoint": "https://arxiv.org/abs/2406.04328",
+      "parameters": {},
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "arxiv_2406.04328.html"
+    },
+    {
+      "tag": "arxiv_2411.09789",
+      "date": "2026-09-15",
+      "endpoint": "https://arxiv.org/abs/2411.09789",
+      "parameters": {},
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "arxiv_2411.09789.html"
+    },
+    {
+      "tag": "arxiv_2412.07236",
+      "date": "2026-09-15",
+      "endpoint": "https://arxiv.org/abs/2412.07236",
+      "parameters": {},
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "arxiv_2412.07236.html"
+    },
+    {
+      "date": "2026-09-15",
+      "tag": "film_original",
+      "endpoint": "https://arxiv.org/abs/1709.07871",
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "film_original.html"
+    },
+    {
+      "date": "2026-09-15",
+      "tag": "full_cbramod",
+      "endpoint": "https://arxiv.org/html/2412.07236",
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "full_cbramod.html"
+    },
+    {
+      "date": "2026-09-15",
+      "tag": "full_ea_revisit",
+      "endpoint": "https://arxiv.org/html/2502.09203",
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "full_ea_revisit.html"
+    },
+    {
+      "date": "2026-09-15",
+      "tag": "full_film_meg",
+      "endpoint": "https://arxiv.org/html/2406.04328",
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "full_film_meg.html"
+    },
+    {
+      "date": "2026-09-15",
+      "tag": "full_samba",
+      "endpoint": "https://arxiv.org/html/2511.18571",
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "full_samba.html"
+    },
+    {
+      "date": "2026-09-15",
+      "tag": "latent_readme",
+      "endpoint": "https://raw.githubusercontent.com/StylianosBakas/LatentAlignment/main/README.md",
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "latent_readme.html"
+    },
+    {
+      "date": "2026-09-15",
+      "tag": "maml_original",
+      "endpoint": "https://arxiv.org/abs/1703.03400",
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "maml_original.html"
+    },
+    {
+      "tag": "PMC11272559",
+      "date": "2026-09-15",
+      "endpoint": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11272559/fullTextXML",
+      "parameters": {},
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "PMC11272559.xml"
+    },
+    {
+      "tag": "PMC13562021",
+      "date": "2026-09-15",
+      "endpoint": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC13562021/fullTextXML",
+      "parameters": {},
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "PMC13562021.xml"
+    },
+    {
+      "date": "2026-09-15",
+      "tag": "supcon_original",
+      "endpoint": "https://arxiv.org/abs/2004.11362",
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "supcon_original.html"
+    },
+    {
+      "tag": "target_crossref_1",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "Latent alignment in deep learning models for EEG decoding",
+        "rows": "4",
+        "filter": "until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "target_crossref_1.json"
+    },
+    {
+      "tag": "target_crossref_2",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "CBraMod A Criss Cross Brain Foundation Model for EEG Decoding",
+        "rows": "4",
+        "filter": "until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "target_crossref_2.json"
+    },
+    {
+      "tag": "target_crossref_3",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "Large Brain Model for Learning Generic Representations with Tremendous EEG Data in BCI",
+        "rows": "4",
+        "filter": "until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "target_crossref_3.json"
+    },
+    {
+      "tag": "target_crossref_4",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "Beyond covariate shift latent adaptive EEG decoding subject conditioning FiLM",
+        "rows": "4",
+        "filter": "until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "target_crossref_4.json"
+    },
+    {
+      "tag": "target_crossref_5",
+      "date": "2026-09-15",
+      "endpoint": "https://api.crossref.org/works",
+      "parameters": {
+        "query.bibliographic": "Revisiting Euclidean alignment for transfer learning in EEG based brain computer interfaces",
+        "rows": "4",
+        "filter": "until-pub-date:2026-09-15"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "target_crossref_5.json"
+    },
+    {
+      "tag": "target_epmc",
+      "date": "2026-09-15",
+      "endpoint": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+      "parameters": {
+        "query": "DOI:\"10.1109/tbme.2019.2913914\" OR DOI:\"10.1109/tbme.2018.2889705\" OR DOI:\"10.3390/app10051804\" OR DOI:\"10.3390/app13106283\" OR DOI:\"10.1109/jbhi.2026.3712320\" OR DOI:\"10.1109/thms.2025.3639248\" OR DOI:\"10.1016/j.patcog.2024.111114\" OR DOI:\"10.1088/1741-2552/addd49\" OR DOI:\"10.1088/1741-2552/adb336\" OR DOI:\"10.3389/fnins.2024.1360709\"",
+        "format": "json",
+        "pageSize": "25",
+        "resultType": "core"
+      },
+      "http_status": "200",
+      "exit_code": 0,
+      "path": "target_epmc.json"
+    }
+  ],
+  "initial_probe": {
+    "file": "probe_epmc.json",
+    "returned_records": 20,
+    "reported_total": 216,
+    "scope": "pilot query, excluded from the 291 scoped broad records"
+  },
+  "citations": [
+    {
+      "number": 1,
+      "id": "10.1109/tbme.2019.2913914",
+      "title": "Transfer Learning for Brain–Computer Interfaces: A Euclidean Space Data Alignment Approach",
+      "url": "https://doi.org/10.1109/tbme.2019.2913914",
+      "verified": true,
+      "reading_level": "abstract",
+      "scope": "ERP and MI",
+      "metadata_files": [
+        "crossref_02.json",
+        "target_crossref_5.json",
+        "target_epmc.json"
+      ]
+    },
+    {
+      "number": 2,
+      "id": "10.1088/1741-2552/addd49",
+      "title": "Revisiting Euclidean alignment for transfer learning in EEG-based brain–computer interfaces",
+      "url": "https://doi.org/10.1088/1741-2552/addd49",
+      "verified": true,
+      "reading_level": "full_text",
+      "scope": "EA methodology review",
+      "metadata_files": [
+        "crossref_02.json",
+        "target_crossref_5.json",
+        "target_epmc.json"
+      ]
+    },
+    {
+      "number": 3,
+      "id": "10.1109/tbme.2018.2889705",
+      "title": "Riemannian Procrustes Analysis: Transfer Learning for Brain–Computer Interfaces",
+      "url": "https://doi.org/10.1109/tbme.2018.2889705",
+      "verified": true,
+      "reading_level": "abstract",
+      "scope": "three BCI paradigms",
+      "metadata_files": [
+        "crossref_03.json",
+        "target_epmc.json"
+      ]
+    },
+    {
+      "number": 4,
+      "id": "10.3390/app10051804",
+      "title": "Transfer Learning Algorithm of P300-EEG Signal Based on XDAWN Spatial Filter and Riemannian Geometry Classifier",
+      "url": "https://doi.org/10.3390/app10051804",
+      "verified": true,
+      "reading_level": "abstract",
+      "scope": "P300 cross subject",
+      "metadata_files": [
+        "crossref_01.json",
+        "crossref_08.json"
+      ]
+    },
+    {
+      "number": 5,
+      "id": "10.3389/fnins.2024.1360709",
+      "title": "Optimization of transfer learning based on source sample selection in Euclidean space for P300-based brain-computer interfaces",
+      "url": "https://doi.org/10.3389/fnins.2024.1360709",
+      "verified": true,
+      "reading_level": "full_text",
+      "scope": "P300 and RSVP; repetition costs differ",
+      "metadata_files": [
+        "crossref_02.json",
+        "epmc_02.json",
+        "epmc_04.json",
+        "target_epmc.json"
+      ]
+    },
+    {
+      "number": 6,
+      "id": "10.1088/1741-2552/adb336",
+      "title": "Latent alignment in deep learning models for EEG decoding.",
+      "url": "https://doi.org/10.1088/1741-2552/adb336",
+      "verified": true,
+      "reading_level": "abstract_and_author_readme",
+      "scope": "includes P300; class proportion limitation",
+      "metadata_files": [
+        "epmc_01.json",
+        "target_crossref_1.json",
+        "target_epmc.json"
+      ]
+    },
+    {
+      "number": 7,
+      "id": "10.1109/jbhi.2026.3712320",
+      "title": "Supervised Contrastive Learning Enables High Performance P300 Spelling with Minimal Calibration",
+      "url": "https://doi.org/10.1109/jbhi.2026.3712320",
+      "verified": true,
+      "reading_level": "abstract",
+      "scope": "P300 within session",
+      "metadata_files": [
+        "crossref_04.json",
+        "epmc_06.json",
+        "probe_epmc.json",
+        "target_epmc.json"
+      ]
+    },
+    {
+      "number": 8,
+      "id": "arXiv:2004.11362",
+      "title": "Supervised Contrastive Learning",
+      "url": "https://arxiv.org/abs/2004.11362",
+      "verified": true,
+      "reading_level": "landing_page",
+      "scope": "general method",
+      "metadata_files": [
+        "supcon_original.html"
+      ]
+    },
+    {
+      "number": 9,
+      "id": "arXiv:1709.07871",
+      "title": "FiLM: Visual Reasoning with a General Conditioning Layer",
+      "url": "https://arxiv.org/abs/1709.07871",
+      "verified": true,
+      "reading_level": "landing_page",
+      "scope": "general method",
+      "metadata_files": [
+        "film_original.html"
+      ]
+    },
+    {
+      "number": 10,
+      "id": "arXiv:2406.04328",
+      "title": "The Brain's Bitter Lesson: Scaling Speech Decoding With Self-Supervised Learning",
+      "url": "https://arxiv.org/abs/2406.04328",
+      "verified": true,
+      "reading_level": "full_text",
+      "scope": "MEG speech, not P300",
+      "metadata_files": [
+        "arxiv_2406.04328.html"
+      ]
+    },
+    {
+      "number": 11,
+      "id": "arXiv:1901.09453",
+      "title": "On Learning Invariant Representation for Domain Adaptation",
+      "url": "https://arxiv.org/abs/1901.09453",
+      "verified": true,
+      "reading_level": "abstract",
+      "scope": "general domain adaptation theory",
+      "metadata_files": [
+        "arxiv_1901.09453.html"
+      ]
+    },
+    {
+      "number": 12,
+      "id": "arXiv:2007.01434",
+      "title": "In Search of Lost Domain Generalization",
+      "url": "https://arxiv.org/abs/2007.01434",
+      "verified": true,
+      "reading_level": "abstract",
+      "scope": "general domain generalization benchmark",
+      "metadata_files": [
+        "arxiv_2007.01434.html"
+      ]
+    },
+    {
+      "number": 13,
+      "id": "arXiv:1703.03400",
+      "title": "Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks",
+      "url": "https://arxiv.org/abs/1703.03400",
+      "verified": true,
+      "reading_level": "landing_page",
+      "scope": "general method",
+      "metadata_files": [
+        "maml_original.html"
+      ]
+    },
+    {
+      "number": 14,
+      "id": "arXiv:2412.07236",
+      "title": "CBraMod: A Criss-Cross Brain Foundation Model for EEG Decoding",
+      "url": "https://arxiv.org/abs/2412.07236",
+      "verified": true,
+      "reading_level": "full_text",
+      "scope": "EEG foundation model; no P300 evaluation in inspected text",
+      "metadata_files": [
+        "arxiv_2412.07236.html"
+      ]
+    },
+    {
+      "number": 15,
+      "id": "arXiv:2511.18571",
+      "title": "SAMBA: Toward a Long-Context EEG Foundation Model via Spatial Embedding and Differential Mamba",
+      "url": "https://arxiv.org/html/2511.18571",
+      "verified": true,
+      "reading_level": "full_text",
+      "scope": "P300-A/B/C each single subject; particular probing protocol",
+      "metadata_files": [
+        "full_samba.html"
+      ]
+    },
+    {
+      "number": 16,
+      "id": "10.1016/j.patcog.2024.111114",
+      "title": "Self-distillation with beta label smoothing-based cross-subject transfer learning for P300 classification",
+      "url": "https://doi.org/10.1016/j.patcog.2024.111114",
+      "verified": true,
+      "reading_level": "metadata_only",
+      "scope": "P300; efficacy not used",
+      "metadata_files": [
+        "crossref_07.json",
+        "crossref_08.json"
+      ]
+    },
+    {
+      "number": 17,
+      "id": "10.1109/thms.2025.3639248",
+      "title": "P3-FSLNet: A Compact Spatio-Temporal Model With Contrastive Few-Shot Learning for Subject-Independent P300 Detection in Devanagari Script-Based P300 Speller",
+      "url": "https://doi.org/10.1109/thms.2025.3639248",
+      "verified": true,
+      "reading_level": "metadata_only",
+      "scope": "P300; efficacy not used",
+      "metadata_files": [
+        "crossref_04.json"
+      ]
+    },
+    {
+      "number": 18,
+      "id": "10.3389/fnhum.2026.1895016",
+      "title": "A confidence-gated source selection strategy for cross-session transfer in brain-computer interfaces.",
+      "url": "https://doi.org/10.3389/fnhum.2026.1895016",
+      "verified": true,
+      "reading_level": "abstract",
+      "scope": "MI cross session; full text saved but not fully appraised",
+      "metadata_files": [
+        "epmc_01.json",
+        "epmc_04.json"
+      ]
+    }
+  ],
+  "limitations": [
+    "Parallel CLI and key unavailable",
+    "Three arXiv search API requests throttled; direct paper pages used",
+    "Returned top-k records are not exhaustive",
+    "Two cited discovery leads have metadata only",
+    "Previously seen public studies and P001 remain development data"
+  ],
+  "identifier_rejections": {
+    "arXiv:2411.09789": "Resting-state MI concatenation paper, not HyperEEGNet as stated in the old skill",
+    "arXiv:2306.05609": "Word sense extension; rejected as an incorrect candidate identifier for BIOT",
+    "arXiv:2402.17764": "1-bit LLM paper; rejected as an incorrect candidate identifier for LaBraM"
+  },
+  "design_checks": {
+    "scope": "synthetic mathematics and model instantiation; no training or performance validation",
+    "model": {
+      "channels": 6,
+      "samples": 179,
+      "parameters": 1202,
+      "classifier_parameters": 354,
+      "direct_film_coefficients_at_8_16_4_channels": 56
+    },
+    "equal_marginals_do_not_imply_equal_class_conditionals": {
+      "source_second_moment": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "target_second_moment": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "source_auc_fixed_first_coordinate": 1.0,
+      "target_auc_fixed_first_coordinate": 0.5
+    },
+    "diagonal_modulation_cannot_represent_general_rotation": {
+      "squared_frobenius_residual_at_best_diagonal": 2.0,
+      "limitation": "statement about the linear map, not impossibility of a complete FiLM network with a trainable head"
+    },
+    "zero_filled_missing_channel_second_moment_rank": 1,
+    "equal_count_positive_affine_preserves_winner": true
+  },
+  "inspected_file_sha256": {
+    "src/models/n2p3net.py": "886d53058d3dea1ec79cbbae3103c9ff5071ccd38d09e700465b771a2ab6346f",
+    "src/models/adapters.py": "926de0cfd89e01c314293ed04624eebf33bea7ae5445d533efda184cff666e55",
+    "src/transfer/subject_adapter.py": "f499393f49c866586dd3669720efff2d38c285f419516d0fb91d9c4ea3eb073f",
+    "src/data/euclidean_alignment.py": "224aad79c630e5161b7b743a834b843d9d14b09e81201cadf3d298c25ae0e26f",
+    "src/baselines/riemann.py": "c7d554326b07ec9e1452b97ca576cc5e2e56faacee02cfedd65feaf40fdc284e",
+    "src/transfer/alignment.py": "517ed9895e3efff1e4a4d1b0624ad5005f99a3719815ab22df972b5bdb9dc1fc",
+    "src/transfer/checkpoint.py": "a2c5b808a4b31197d5339f2cf2324b6164140b82127f17187fc0afb45368326e",
+    "src/transfer/calibrated.py": "fe01bace176a97e41b0d68d1b2bf48364f537bbfe6698ad0f6fba9b66f2257f7",
+    "src/transfer/recipes.py": "cc9e2ec81333a80b7e1ce6599305e422b9be785da48bb89592779391d55cc256",
+    "src/transfer/target_experiments.py": "dca4e7bda2bc62d9cb21ad33bd73e89c05c999c93a0dbc488cb94124d4699af3",
+    "doc/evidence/source_eog_training_20260909.zh.md": "a183f97146b2ebfe527bf3d2c184f73d29919b0bb331338b6c81f4b7bf8871df",
+    "doc/evidence/training_chain_results_20260907.zh.md": "36fb1ea517147b343cfba3d888dea0ba9ddda97dd4a2b1afc538037fe210a584"
+  },
+  "raw_file_sha256": {
+    "arxiv_01.parsed.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "arxiv_01.xml": "467622e2f17f01d302d6c790b13078569f17d71cd83910558535019a594e07c1",
+    "arxiv_02.parsed.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "arxiv_02.xml": "467622e2f17f01d302d6c790b13078569f17d71cd83910558535019a594e07c1",
+    "arxiv_03.parsed.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "arxiv_03.xml": "467622e2f17f01d302d6c790b13078569f17d71cd83910558535019a594e07c1",
+    "arxiv_1901.09453.html": "5f75ca3838d7a65c5b6e85b33b499fbb8ee42ca68aaf6a17ed3c8d38a6c01879",
+    "arxiv_1901.09453.meta.json": "4bd1cd84bf225715aabce41035646c373d448b67e0a4c49d4ffa7f50105a3186",
+    "arxiv_2007.01434.html": "0fd7ec4e595287fc66990558aeacfb170036724b7342e36d3d9b6796a114f2f5",
+    "arxiv_2007.01434.meta.json": "1eb5afc99a5ddf8dc652b2bc88de1c98e17f88ec3bd467571630572a563bf150",
+    "arxiv_2306.05609.html": "1fe90919191093ff993bffdc8c3faa7da0c0ace9d534f34084703370565ac784",
+    "arxiv_2306.05609.meta.json": "fe04c8188382d75319d0e24d479a90e3183dc73dd7f6e8edbccfaa05c25e7daf",
+    "arxiv_2402.17764.html": "630e6e2211050e527d2dc1ff92817e04aeee3db167045f57e6c9a3c9d8b94c20",
+    "arxiv_2402.17764.meta.json": "744155892ba07dcb628bf5578591e56c7d11b65555ea3a742fda703f935d8251",
+    "arxiv_2406.04328.html": "0874e3039d2ccdf51637a1aa7e53525a6f81ed03ecc7678de1bdbf82913eddfa",
+    "arxiv_2406.04328.meta.json": "c17014aea599fa0d82f1783c25f22425b693cff7defb7f15bff74123bcb8738c",
+    "arxiv_2411.09789.html": "cc1efcdb9706c4115f6a4de56a89e856a2d60e99337975721d0d2db88a46f04e",
+    "arxiv_2411.09789.meta.json": "dbc34dad276bdbf370a5d44417ef3e4cf427ae9af32c46aeb099b5477f98cc60",
+    "arxiv_2412.07236.html": "069df36cd85c06a0f2d5ee1a7b413c461a02166c16c1ec9e7f9f4bbcd863e117",
+    "arxiv_2412.07236.meta.json": "e4f0da5fe84aac588d999ede6c3ff2c4377c659e8b6b034ef0b7f92ce6552f9b",
+    "arxiv_provenance.json": "94b4cc116b28bd37736a46f41ca9b7b2ba39e39ec1669bac30ea3a3a1c43e88f",
+    "crossref_01.json": "3f6b1d7bd9e727cade706178073bee83596fe1d90d758f2f5ff703f7470c87df",
+    "crossref_02.json": "f5d0322869b84d2cfa949c573e1097021cfc5f5cfaf9240be66750a875cc8b80",
+    "crossref_03.json": "9f197bdd6d015dd709c9d1548913b6465de5db31604ce51f0ecc5b6f5f10fe01",
+    "crossref_04.json": "05f0de91eab87fffd67d8894ebf722cba5c07a7904d1ae8a3aa9e88d104b6acf",
+    "crossref_05.json": "debe7fd4df80c4499dabeb35e545cf2b2992a686c480f74a6633beb2f829643b",
+    "crossref_06.json": "c51565ab156fd0e7a4e24301f3d049fd133f579c6188f0abda7b538ec96a9e77",
+    "crossref_07.json": "39703f00662f082a94793d2a77583d9c6996b84e12635026cdbfa9c7a815bab8",
+    "crossref_08.json": "b3a1829185cf621f0489186c09d05c429f732491f15d60470a6f4ae1eae37f30",
+    "crossref_provenance.json": "451e52f64e2d299d421a3a8ed958477c5b396ebf05abc0c085c0e8f13805f16f",
+    "design_checks.json": "06197cd05fe05ea7638c9da09a961846db846c707b57c31b2182748d2f82b72f",
+    "design_checks.py": "7f0b6f27ad230f359d1251a12f75166f88912c871148c8daf67de35f0edcfbfe",
+    "epmc_01.json": "3cc39c54b62b382673a6e6286a6e42295ac70a294eb8fd8cd189155c3ad9470d",
+    "epmc_02.json": "acf305aa91d54782c7248a4968a2a8c72f55e0757bbff15fc98530f3e4a22d84",
+    "epmc_03.json": "27ff3cfe1b434200f736aa9203d9aa051b5e9e4b61a1068ca427d9ab7306e53b",
+    "epmc_04.json": "d0e0742ca7818f0a002be088584cdf2848e3d7d3b5759c83e6389021c4caf967",
+    "epmc_05.json": "4f163c93c17aa72c446e749484d2270f75f42ddedfceb1e790f9d0ba995ea272",
+    "epmc_06.json": "30b4ec9af2f1c76d2070e43cb1148fe0da1a64e8c32a3eef35c02eb81576d926",
+    "epmc_provenance.json": "ccbd1b97e7ea5da46d7bbbc5ae867b20ac6321d1fee412887d379b6c9a05fdae",
+    "film_original.html": "1f700651134b7b03586c65bc11759c92b423e0f02074ced7cce16f92582abece",
+    "film_original.meta.json": "662c358a668cfc25f093bf3f9d9ba61577f32eb17a9e587862b78dbcbaf5969d",
+    "followup.py": "64854a0a01c50cdd7639dafec5571ed16f7e1f6318255a189a45d2d2b329ead4",
+    "full_cbramod.html": "7c182492af821a7d155b7f01fd0acdbb05295b4dcd3c214e42bcedd9ee2e4a45",
+    "full_cbramod.meta.json": "a72928f42e25c468f90a70f9c4ec69a869ea3424729414a0f17100d9b46983a4",
+    "full_cbramod.txt": "e0d258289b7f813326ad646b5c291261bcfe7876f49d8c532353b01d40cbea9f",
+    "full_ea_revisit.html": "6809db132f91bfdad8991b6e207ef0c40845f1c2b0754b123d5cacdbc362b218",
+    "full_ea_revisit.meta.json": "252ef865da75b63adac24cf8b5ff18ed25f569db5cb7de11f98552df7ea1286c",
+    "full_ea_revisit.txt": "634ba8cca13f0ce38b35ed8cd088dec4cd7fb19ecc98a5b2a14e27e792bf9563",
+    "full_film_meg.html": "67c0bd19e2d5d2447f8272722bd0e6d1825040d7d698b39dce094a0da2138e6e",
+    "full_film_meg.meta.json": "1eedc509484182b58de81b3b4d674fa8cde82b7d4e0766b79b094159fa93ccbc",
+    "full_film_meg.txt": "754e8dcae4fcb7e99cb47f31ed2ae02590f5c1c58f64f794d1fdfd00d1e921fe",
+    "full_samba.html": "43c975406e61f8a1bd2b02c1b59f0e9a7d334c4c6a33afa62e469d72ef997cb7",
+    "full_samba.meta.json": "3033b8b9ce4152922fa6f4df969198306a1ef70cc60b6bc0322815d2964854c6",
+    "full_samba.txt": "5717ff049a77a2050dcaaf6cd9a6d67e31d85cebbdce7023e7d3a7fb54dc027a",
+    "inspected_files.json": "22bd00f47a92c5de337a9bc4a74fd14421b03fde3d2c797e0a925b105f4322ce",
+    "latent_readme.html": "9fba956cc535c246225a4a8277c7e9a1238986f26dfec527e95b875dafbd49e0",
+    "latent_readme.meta.json": "33c3cf2ac067761dd5e0e196db637aa5c15ffe2b3f537d91249a1643a7c9d071",
+    "maml_original.html": "5878760dba846ce1895af7304e2b98d7303fc821608448cc39e026e4feb34ee8",
+    "maml_original.meta.json": "b8e5b4ec691dcb2d86cea7ebbf0811e6d10f1f069774c22ece66ab6c53b882aa",
+    "manifest.py": "d59e89f1338e9ca6eae90ca01156ff90009949ef56b6a6adfeeb8e2988468f19",
+    "openalex_01.json": "1976686ce78a7e7a20cb65e4d0cfdd266c236e074717afa0cba4f87590cfe211",
+    "openalex_02.json": "c6af8bf723d1d4fea964bab056c59a037ca2120ca77e1765bf6c2383f5207d00",
+    "openalex_03.json": "4220ace3921e22c9817bc138001d640a523504d725364b250336f7e39a090a17",
+    "openalex_provenance.json": "349f4e46e583b49a509d2f8f34a6048401de1b75c62ceb0bfc0ae77947d161a7",
+    "PMC11272559.meta.json": "6f8cf45dd64fa863961a5f36c5f89eaecb15e11117bbd5d243aa0253dc3e53cb",
+    "PMC11272559.xml": "32ab5599ca2da4792392e24b894613566530bdf8fd5a9585be950e9af8d2218c",
+    "PMC13562021.meta.json": "e7a5765e835aa1ee3c0d18980599c66f7d2bf7d8668a6fc90fe046e3673d5c32",
+    "PMC13562021.xml": "2d7f7bb76f76930302ff9f4f82ecda0ab82ecd61e765999e84ea898a6f1d3eff",
+    "probe_epmc.json": "0dcca2415d0ff255deadc52c258a99d4a5847f4d1db8b3b6ceee6f35e5e0d8e0",
+    "search.py": "54829aa4617ffe1d0e0482766195852047a86443ed003113479c14e142d70abc",
+    "supcon_original.html": "2b6cb0537b395281a4cad6f7aa986917c997cf707b135083e27f10f238c0f8fe",
+    "supcon_original.meta.json": "f2bb9114ed8ad1f489247f4286763b67d26b80e16bee10fbfb9457ed8d14aedf",
+    "target_crossref_1.json": "94423fb7719cae31b3e60baaf6a147bb1c2da92418a3043c7a3110df50358344",
+    "target_crossref_1.meta.json": "4949f05e3de38f1b8d156c631fa1e877071b97ff8797f1404fed2664c9aee782",
+    "target_crossref_2.json": "e1e62158403631962943d47e4e2e3f2e10919af603c7a136b8fd568651152b82",
+    "target_crossref_2.meta.json": "ee9d7dc5ec630a1cbc34a68db20575bf1540b13f2ac2ca9455382ed26d3cc7d7",
+    "target_crossref_3.json": "1ec10070bda0d40f2f4c3c07267c29232796e04fea5d123636efc1eb656aac1e",
+    "target_crossref_3.meta.json": "7320d331c1e76df26718cf688e113fc4dc54fcc2c8d0085aba450bcd26e2e543",
+    "target_crossref_4.json": "8860543bea99e701a9e41681cebcf7936194e6fb18b3ff795b7ad51783bda569",
+    "target_crossref_4.meta.json": "b5e541781ab2cc4c05baac82f79d38d3afd79e2e189a525ebdbcc12188a97a4b",
+    "target_crossref_5.json": "eeb4d7ee8669b9fbd8d098e8ecea05705f17afbf9560a760e461163c89f04103",
+    "target_crossref_5.meta.json": "71839ec9eba0ca41435ac2d699846d857742f13fd984f740b6dfa26bce9a589a",
+    "target_epmc.json": "76df16f3d8b08282c11ac9bde4c715013b5c5c6f52ea71239def595acd204b8f",
+    "target_epmc.meta.json": "a575fd61aa4e53c01debd27e922c1f585c84af954f2ee2cf98af30d5da8aceb2"
+  }
+}

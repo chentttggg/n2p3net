@@ -1,0 +1,107 @@
+{
+  "schema": "n2p3_operator_calibration_group_study/1",
+  "evidence_scope": "public_calibration_development",
+  "source_baseline": "frozen/system_implementation_20261004_after/source.manifest.json",
+  "records": [
+    {
+      "subject": "A01",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A01.mat",
+      "sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd"
+    },
+    {
+      "subject": "A02",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A02.mat",
+      "sha256": "0023ee04e4a113231c125bcfdf59780ed95d858a5e5c0bc993701eb6c9652894"
+    },
+    {
+      "subject": "A03",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A03.mat",
+      "sha256": "820287459d83e5512e3ac00cdb25d1806b26518daba14281c61983b230f9dd9f"
+    },
+    {
+      "subject": "A04",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A04.mat",
+      "sha256": "65b14803eb38fda4910cca1103e4b527be1624155f106fe8083861bbf3e644e3"
+    },
+    {
+      "subject": "A05",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A05.mat",
+      "sha256": "d372ae2c39ece0c8dded986307e70ebb7f4bdf2c5c2fa2382c8ba489fb59f200"
+    },
+    {
+      "subject": "A06",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A06.mat",
+      "sha256": "8320e78fb0d73baa03857c4976a4b4d8e605b1c9a7a4cf2e5e80e1bb6fd30337"
+    },
+    {
+      "subject": "A07",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A07.mat",
+      "sha256": "444d9da58332f58e89e7cdd39f9d9e7b0cb8ee4fd01ce03ef3ce57e53068f47c"
+    },
+    {
+      "subject": "A08",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A08.mat",
+      "sha256": "7b5d249058dcac4ad477ea8591256d51c19df384551eba82b6c88e3ae6333571"
+    }
+  ],
+  "authorized_labels_per_participant": 800,
+  "group_selection": "first_six_complete_120_flash_selections",
+  "folds": "leave_one_physical_selection_out_within_participant",
+  "requested_fold_count": 48,
+  "remaining_80_labels": "unused_for_group_cross_validation",
+  "K200_group_CV": "not_estimable_one_complete_selection",
+  "sample_rate_hz": 256,
+  "channels": "BNCI_native_8",
+  "pre_roll_seconds": 0.2,
+  "response_seconds": 1.2,
+  "basis_rank": 8,
+  "ridge": 1.0,
+  "filter": "existing_0.1_30Hz_order4_50Hz_Q30_bidirectional_per_independent_selection",
+  "arms": [
+    {
+      "filter": false,
+      "filter_design": true,
+      "noise_method": "burg",
+      "order": 32,
+      "name": "raw_ar32_lattice_marginal3",
+      "startup_mode": "stationary_innovations",
+      "channel_weighted_noise": true,
+      "feasible_iterations": 3,
+      "kernel_prior_scale": "marginal"
+    }
+  ],
+  "primary_estimand": "participant_equal_mean_held_decision_NLL_difference_vs_old_filtered_y",
+  "secondary": [
+    "requested_hit_rate",
+    "coverage",
+    "innovation_ACF",
+    "fit_time",
+    "independent_held_data_readout"
+  ],
+  "failure_policy": "preserve_all_768_requests_probability_NLL_null_and_separately_report_uniform_abstention_loss",
+  "parameter_selection": "all_sixteen_fixed_arms_reported; sequential_calibration_development_not_blind_confirmation; no_T_use",
+  "interpretation": "mechanism_development_only_not_new_test_confirmation_or_production_promotion",
+  "workers": 2,
+  "cpu_threads_per_worker": 2,
+  "seed": 20261004,
+  "development_stage": "stage3_numeric_repair",
+  "motivation": "Stage2 fixed numeric ridge changes physical kernel prior with innovation scale; normalize declared kernel prior to marginal variance. Test stable stationary innovations factorization without changing stationary estimand, and mature ERP anchors.",
+  "stage1_evidence": "experiments/runs/operator_research_20261004/calibration_groups_v2/result.json",
+  "selection_policy": "Fixed mechanism follow-ups after stage1 calibration development; not an untouched validation claim. No T fitting/scoring/selection.",
+  "basis_boundary_treatment": "sin squared window with exact zero endpoints, each column rescaled to original L2 norm; a declared prior/dictionary change, not an equivalent coordinate change.",
+  "joint_estimation": "fixed finite feasible GLS, segmented Burg and spatial shrinkage; not claimed stationary ML or monotone optimization",
+  "raw_signal_definition": "original_distributed_MAT_X_not_ADC; official_source_declares_0.1_30Hz_bandpass_with_unknown_stage_order_phase",
+  "kernel_prior_contract": "innovation prior uses lambda=1; marginal prior uses lambda_eff=1/r0 per estimated AR model; this is a declared prior change relative to previous variants, with exact covariance-gauge invariance required when prior is held fixed.",
+  "conditional_prefix_not_in_this_stage": "implemented as a separate conditional-likelihood protocol; omitted here because unknown nuisance prefix conditioning changes the estimand",
+  "mature_epoch_grid": "source closed [-51,+306] at256Hz=358samples; shared FFT179 then canonical crop178 at128Hz; no extra sample307",
+  "stage2_evidence": "experiments/runs/operator_research_20261004/calibration_groups_stage2/result.json",
+  "numerical_interpretation": {
+    "lattice_factor_eps_condition": "report_per_model_as_worst_case_float_sensitivity_not_performance",
+    "promotion_precision_warning_threshold": 1e-06,
+    "predictions_above_threshold": "retained_in_requested_development_ledger_but_not_admitted_as_robust_route"
+  },
+  "repair_of": "experiments/runs/operator_research_20261004/calibration_groups_stage3/result.json",
+  "failure_scope": "originally_failed raw_ar32_lattice_marginal3 cells; all six folds rerun per participant to preserve a complete arm ledger",
+  "repair_iteration": 2,
+  "previous_repair": "experiments/runs/operator_research_20261004/calibration_groups_stage3_repair/result.json"
+}

@@ -1,0 +1,68 @@
+{
+  "claims": [
+    {
+      "file": "joint_existence_arxiv.pdf",
+      "locator": "Section1.3 p3 Eq1.2 and1.3, immediately following flip-flop updates; pp2-4",
+      "claim": "matrix normal likelihood, reciprocal scale freedom, block covariance updates, existence/uniqueness caveats",
+      "limit": "unstructured covariance sample thresholds do not transfer directly to AR(p)",
+      "access": {
+        "file": "joint_existence_arxiv.pdf",
+        "requested_url": "https://arxiv.org/pdf/2003.06024v2",
+        "fetched_utc": "2026-10-04T13:40:19.684137+00:00",
+        "status": 200,
+        "final_url": "https://arxiv.org/pdf/2003.06024v2",
+        "content_type": "application/pdf",
+        "bytes": 638011,
+        "sha256": "762eb347544190f87036a0ebb8991217353b583c1b29023298a16f72b62f5bd3"
+      }
+    },
+    {
+      "file": "joint_trcm_arxiv.pdf",
+      "locator": "Sections3.2-3.3 Eq3 and5, Proposition2, PDF pp6-8",
+      "claim": "exact coordinate optimization of a declared penalized matrix normal likelihood is monotone and reaches stationary point; not generally global",
+      "limit": "does not prove mixed Burg/ridge/LW iteration optimizes that objective",
+      "access": {
+        "file": "joint_trcm_arxiv.pdf",
+        "requested_url": "https://arxiv.org/pdf/0906.3465",
+        "fetched_utc": "2026-10-04T13:37:46.296386+00:00",
+        "status": 200,
+        "final_url": "https://arxiv.org/pdf/0906.3465",
+        "content_type": "application/pdf",
+        "bytes": 466995,
+        "sha256": "de976d3d0313a5195b9a45503c045de097f4f1900581c9ba777b0e93dc1d0a2c"
+      }
+    },
+    {
+      "file": "joint_statsmodels_glsar.py",
+      "locator": "GLSAR.iterative_fit lines1301-1364; whiten1366-1389; burg1506 onward",
+      "claim": "iterated regression plus AR estimation on original residuals, conditional whitening drops first p rows, scalar Burg public API",
+      "limit": "not multichannel weighted Burg and not stationary startup ML",
+      "access": {
+        "file": "joint_statsmodels_glsar.py",
+        "requested_url": "https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.6/statsmodels/regression/linear_model.py",
+        "fetched_utc": "2026-10-04T13:32:24.680319+00:00",
+        "status": 200,
+        "final_url": "https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.6/statsmodels/regression/linear_model.py",
+        "content_type": "text/plain; charset=utf-8",
+        "bytes": 118429,
+        "sha256": "9d7994924b8e12928c95eaf51cadbf1681f6f17e8f1903f1cfd43bfc3464e6c0"
+      }
+    }
+  ],
+  "metadata_only": [
+    "joint_crossref_dutilleul.json",
+    "joint_crossref_werner.json"
+  ],
+  "not_fulltext": [
+    "joint_trcm_full.xml",
+    "joint_trcm_projecteuclid.pdf",
+    "joint_trcm_epmc.pdf"
+  ],
+  "numerical_evidence": {
+    "path": "joint_estimator_counterexamples.json",
+    "sha256": "1fd14d7c3eafc04fa6215fb1548edf11d4a068403a44f01261a7c57274bc4629",
+    "script_path": "joint_estimator_counterexamples.py",
+    "script_sha256": "607ab77c62180442b640fccdb5bde5306443e7a0e3e4d3898679627616824bee",
+    "scope": "synthetic software correctness; no test or calibration real records consumed"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "initial_python_files_including_local_archives": 6905,
+  "active_python_files_recorded": 317,
+  "active_python_files_changed": [],
+  "local_runtime_helpers_changed_during_research": [
+    "experiments/runs/domain_transfer_cloud_20260916/export_results.py",
+    "experiments/runs/domain_transfer_cloud_20260916/finalize.py"
+  ]
+}

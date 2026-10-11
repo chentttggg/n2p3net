@@ -1,0 +1,81 @@
+{
+  "schema": "n2p3_source_eog_delivery/1",
+  "status": "completed",
+  "model_promoted": false,
+  "main_archive": {
+    "status": "passed",
+    "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\export\\source_eog_20260909_results.tar.gz",
+    "archive_sha256": "405baaa34f22576d750f43f8639d6975d4c42ff550fa8595fd0516d7fae491f0",
+    "archive_bytes": 1945091885,
+    "verified_members": 48852,
+    "matrix_completion": {
+      "schema": "n2p3_source_eog_matrix_completion/1",
+      "status": "completed",
+      "source_models": 153,
+      "public_target_fits": 12200,
+      "public_scoring_cells": 16628,
+      "personal_fits": 104,
+      "personal_K0_scores": 9,
+      "personal_prediction_files": 226,
+      "public_fit_or_scoring_failures": 0,
+      "resolved_personal_prefit_failures": 7,
+      "original_personal_failure_evidence_preserved": true,
+      "model_promoted": false,
+      "verification_sha256": {
+        "source_verification.json": "c33a51759a7273de987215adbc46163a93e54bfaf69c850c8ac6a867c92ef9df",
+        "public_verification/verification.json": "fa4e698b3553724b5a1f19a922e37ec791f9058b9947ebcf6c979a5f32d6e2a0",
+        "personal_verification.json": "18b524e2c13e7e830a86d306ff3148353e5e9865225f58a45283437f434bf1ce"
+      }
+    }
+  },
+  "lineage_archive": {
+    "status": "passed",
+    "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\export\\source_eog_20260909_lineage.tar.gz",
+    "archive_sha256": "9a2f2c02aba1ab458bf445464cf4a321580077f888030e4bfb02e5391b58569a",
+    "manifest_sha256": "cfece69f9a39edb4d3c9ee6a9e5993937703d5006f4bd034bd73c8233cb74755",
+    "archive_bytes": 254148941,
+    "verified_members": 231,
+    "verified_original_trajectories": 33,
+    "lineage_verifier_sha256": "882b7aebb709311b83bca66d02ecdd9b472b55c74fe992707b4b7d56c9d0e9cc"
+  },
+  "files": {
+    "doc/evidence/source_eog_training_20260909.zh.md": {
+      "sha256": "a183f97146b2ebfe527bf3d2c184f73d29919b0bb331338b6c81f4b7bf8871df",
+      "bytes": 18120
+    },
+    "doc/assets/source_eog_design_20260909/results_summary.json": {
+      "sha256": "1dd42f0c04ce26902a2be5e6a22715163053247436841bc69c00e3082abd018c",
+      "bytes": 1381554
+    },
+    "doc/assets/source_eog_design_20260909/C_by_session.csv": {
+      "sha256": "4c2f517c6e72325a6f2cda302b6cb42267982ae1e1ff6ef13540ce50f7156bdd",
+      "bytes": 6328
+    },
+    "experiments/runs/source_eog_20260909/source_models/index.json": {
+      "sha256": "740f109de46b8b1ace23b592ba7f8bc84c7d21f05510416038d36e1df943447c",
+      "bytes": 21756
+    },
+    "experiments/runs/source_eog_20260909/seal_source_lineage.py": {
+      "sha256": "882b7aebb709311b83bca66d02ecdd9b472b55c74fe992707b4b7d56c9d0e9cc",
+      "bytes": 4742
+    },
+    "experiments/runs/source_eog_20260909/finish_local_delivery.py": {
+      "sha256": "84d7729286131a95f68452b73cad51049b305e59757e1c7b197bcc7744b75c92",
+      "bytes": 6316
+    },
+    "experiments/runs/source_eog_20260909/download_lineage.py": {
+      "sha256": "4a67f69feddcfcdbdeb7ae590b35161653a54405ca322b1ea2d48e792ebf5d29",
+      "bytes": 3162
+    }
+  },
+  "validation": {
+    "ruff": "passed",
+    "targeted_contract_tests": 37,
+    "targeted_contract_test_exit_code": 0,
+    "full_suite_prior_run": {
+      "passed": 1727,
+      "skipped": 4
+    },
+    "scientific_replications_added_by_closeout_checks": 0
+  }
+}

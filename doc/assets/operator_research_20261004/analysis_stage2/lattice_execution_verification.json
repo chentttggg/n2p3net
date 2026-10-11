@@ -1,0 +1,21 @@
+{
+  "source_sha256": "07d7529a7f6cffcc2b1f32a2862e1dd47f3ed4900341cd2e1183e77f1fe8caa2",
+  "high_precision_reference_script_sha256": "74f45e2c19d3986e978103842871713ec591fd37a5cdd2a8a3dda189d3029752",
+  "default_AR0_AR1_AR2_record_and_whiten_exact_stage2_replay": true,
+  "lattice_precision": [
+    {
+      "order": 4,
+      "max_abs_error_given_float_observations": 1.4017814686795305e-11,
+      "relative_factor_error": 3.5181136130840257e-16,
+      "condition": 9850649.25409641,
+      "float_precision_indicator": 2.1872835218808915e-09
+    },
+    {
+      "order": 8,
+      "max_abs_error_given_float_observations": 0.0021915925960004114,
+      "relative_factor_error": 2.877095234014656e-16,
+      "condition": 1.5109267760793112e+16,
+      "float_precision_indicator": 3.354931390651819
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "scope": "synthetic mathematics and production operators only; no training",
+  "status": "PASS",
+  "checks": {
+    "spatial_projection": {
+      "rank": 6,
+      "common_signal_remaining": 0.0,
+      "native_information_for_unit_covariance": 7.0,
+      "projected_information": 0.0
+    },
+    "baseline_white_noise": {
+      "post_variance_ratio": 1.0384615384615385
+    },
+    "production_bidirectional_response": {
+      "0.1": 0.49999999709710324,
+      "0.2": 0.9963955227052651,
+      "1.0": 0.9999994186267428,
+      "10.0": 0.9998521084980443,
+      "20.0": 0.9703810744016587,
+      "30.0": 0.4994177408305588
+    },
+    "direct_9_R5": {
+      "ratio_at_zero": 17.77777777777778,
+      "geometry_loss_coefficient": 0.056250000000000015
+    },
+    "row_column_6x6_R10": {
+      "ratio_at_zero": 66.66666666666667,
+      "geometry_loss_coefficient": 0.015000000000000001
+    },
+    "row_column_factorization": "PASS",
+    "adam_collinear_counterexample": {
+      "max_update_difference_per_lr": 9.852116771624786e-06
+    },
+    "correlation_does_not_necessarily_change_order": "PASS",
+    "parameter_center_not_function_center": {
+      "prior": 0,
+      "old": 2.0,
+      "new": 0.5
+    },
+    "same_trial_auc_different_decisions": {
+      "auc": 0.75,
+      "hits": [
+        1.0,
+        0.5
+      ]
+    }
+  }
+}

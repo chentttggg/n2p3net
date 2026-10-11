@@ -1,0 +1,30 @@
+{
+  "real_raw_sha256": "c4e72cb9d5693215b602fb9864129742121ca2ffd07ccaec61728d785877afb5",
+  "input_valid_and_attested": true,
+  "CLI_accepted_static_missing_channel": true,
+  "input_channel_names": [
+    "FZ",
+    "PZ",
+    "OZ"
+  ],
+  "input_static_mask": [
+    true,
+    true,
+    false
+  ],
+  "input_trial_mask": null,
+  "output_static_mask": [
+    true,
+    true,
+    true
+  ],
+  "output_trial_mask": null,
+  "unmeasured_Oz_peak_abs": 0.0,
+  "output_QC_says_Oz_observed": true,
+  "source_cache": "D:\\BCI\\n2p3-net\\doc\\assets\\deep_chain_audit_20260929\\input\\ea_static_mask\\source.npz",
+  "output_cache": "D:\\BCI\\n2p3-net\\doc\\assets\\deep_chain_audit_20260929\\input\\ea_static_mask\\ea.npz",
+  "cloud_inputs_static_mask_inventory": {
+    "records_inspected": 10,
+    "matching": []
+  }
+}

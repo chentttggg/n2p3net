@@ -1,0 +1,228 @@
+{
+  "schema": "n2p3_continuous_operator_mechanisms/1",
+  "evidence_scope": "synthetic_mathematical_counterexample",
+  "script_sha256": "847cf0f43319a9b0421109d1c81144189a53a6a48e6f7de92fcc9fe1e37d38b4",
+  "source_sha256": {
+    "src/transfer/continuous_decision.py": "19e8073f3fb0afa5d88bceeec9f978d5749cb4aa12008f1aaaaf2f6f251b72c0",
+    "src/data/preprocess.py": "a03495aa4347fe78ba3c36f40add50861f69eda5995a7d8eb08ed509187b51d6"
+  },
+  "invertible_transform": {
+    "seed": 472901,
+    "n_draws": 400,
+    "dimension": 36,
+    "max_bayesfactor_log_error_full_transform": 1.3500311979441904e-13,
+    "full_transform_same_argmax": true,
+    "data_only_winner_changes": 97,
+    "data_and_mean_wrong_covariance_winner_changes": 115,
+    "raw": {
+      "accuracy": 0.855,
+      "nll": 0.35062631523333093,
+      "mean_max_probability": 0.8652785048508241
+    },
+    "exact_transformed": {
+      "accuracy": 0.855,
+      "nll": 0.35062631523333093,
+      "mean_max_probability": 0.8652785048508248
+    },
+    "data_only": {
+      "accuracy": 0.725,
+      "nll": 0.7509464587826764,
+      "mean_max_probability": 0.8301088752759176
+    },
+    "data_and_mean_wrong_covariance": {
+      "accuracy": 0.6825,
+      "nll": 0.929527616712452,
+      "mean_max_probability": 0.8499715853118596
+    }
+  },
+  "actual_finite_filter": {
+    "sfreq_hz": 256.0,
+    "padding_limit": 2253,
+    "samples": 8500,
+    "basis_length": 307,
+    "basis_rank": 8,
+    "FD_outside_span_D_after_same_nuisance_projection_per_column": [
+      0.38000289191144954,
+      0.5974005941491909,
+      0.7320309039871564,
+      0.7595314083434425,
+      0.7798860345456178,
+      0.7858522967671547,
+      0.6187792094767729,
+      0.3720670169113228,
+      0.1187337302742964,
+      0.09673480522368166,
+      0.1091927197554825,
+      0.11028289936386079,
+      0.10655408789251512,
+      0.1029840066153754,
+      0.09757217517903626,
+      0.1212761957741324
+    ],
+    "FD_relative_frobenius_projection_residual": 0.39261493193373376,
+    "smooth_mean_best_old_dictionary_relative_residual": 0.13819291841623182,
+    "crop_filter_noncommutation_relative_norm": 0.16297690578998458,
+    "crop_filter_noncommutation_max_abs": 0.1513503517902024,
+    "interpretation": "A deterministic operator must transform the full event design on identical scope; learned effective kernels can absorb part, not all, of the discrepancy."
+  },
+  "AR1_information": {
+    "seed": 548200,
+    "n_draws": 6000,
+    "known_raw_process": {
+      "a1": 1.8624600061335244,
+      "a2": -0.9216,
+      "innovation_variance": 1
+    },
+    "known_signal_mahalanobis_squared": 4.0,
+    "per_frequency": [
+      {
+        "signal_frequency_hz": 2.0,
+        "exact": {
+          "accuracy": 0.8406666666666667,
+          "nll": 0.3598682422101945,
+          "mean_max_probability": 0.8401650591345903
+        },
+        "population_ar1": {
+          "phi": 0.9692235668888033,
+          "expected_true_log_odds": 0.3137335334235358,
+          "actual_log_odds_variance": 0.10743741272865914,
+          "optimal_linear_logit_calibration_slope": 5.84030321385144,
+          "accuracy": 0.8276666666666667,
+          "nll": 0.5631462963590607,
+          "mean_max_probability": 0.589883458696383
+        },
+        "current_clip_ar1": {
+          "phi": 0.95,
+          "expected_true_log_odds": 0.4511154757224012,
+          "actual_log_odds_variance": 0.21288034092540103,
+          "optimal_linear_logit_calibration_slope": 4.2382070017492515,
+          "accuracy": 0.8371666666666666,
+          "nll": 0.5196774901325523,
+          "mean_max_probability": 0.6245000234755917
+        }
+      },
+      {
+        "signal_frequency_hz": 6.0,
+        "exact": {
+          "accuracy": 0.8415,
+          "nll": 0.35010597355558803,
+          "mean_max_probability": 0.8404173242206272
+        },
+        "population_ar1": {
+          "phi": 0.9692235668888033,
+          "expected_true_log_odds": 4.136409760697994,
+          "actual_log_odds_variance": 18.13025076216292,
+          "optimal_linear_logit_calibration_slope": 0.4562992332494936,
+          "accuracy": 0.8323333333333334,
+          "nll": 0.4681272300146066,
+          "mean_max_probability": 0.9198139736918571
+        },
+        "current_clip_ar1": {
+          "phi": 0.95,
+          "expected_true_log_odds": 4.3233090368759575,
+          "actual_log_odds_variance": 19.72904066735537,
+          "optimal_linear_logit_calibration_slope": 0.4382685513978908,
+          "accuracy": 0.8338333333333333,
+          "nll": 0.47837400232997607,
+          "mean_max_probability": 0.9231636203385897
+        }
+      },
+      {
+        "signal_frequency_hz": 10.0,
+        "exact": {
+          "accuracy": 0.8483333333333334,
+          "nll": 0.3525688896156658,
+          "mean_max_probability": 0.8442017737688687
+        },
+        "population_ar1": {
+          "phi": 0.9692235668888033,
+          "expected_true_log_odds": 46.259467927543426,
+          "actual_log_odds_variance": 2151.237660892534,
+          "optimal_linear_logit_calibration_slope": 0.0430073057649527,
+          "accuracy": 0.8461666666666666,
+          "nll": 3.86722272518185,
+          "mean_max_probability": 0.9931599964978544
+        },
+        "current_clip_ar1": {
+          "phi": 0.95,
+          "expected_true_log_odds": 46.28934032655592,
+          "actual_log_odds_variance": 2153.738472543117,
+          "optimal_linear_logit_calibration_slope": 0.042985107910430594,
+          "accuracy": 0.8458333333333333,
+          "nll": 3.8692002092426336,
+          "mean_max_probability": 0.993139801401778
+        }
+      },
+      {
+        "signal_frequency_hz": 16.0,
+        "exact": {
+          "accuracy": 0.8403333333333334,
+          "nll": 0.3558802154596177,
+          "mean_max_probability": 0.8434645212940357
+        },
+        "population_ar1": {
+          "phi": 0.9692235668888033,
+          "expected_true_log_odds": 5.233021299736853,
+          "actual_log_odds_variance": 27.662584776395807,
+          "optimal_linear_logit_calibration_slope": 0.3783465169315729,
+          "accuracy": 0.838,
+          "nll": 0.5177817290324971,
+          "mean_max_probability": 0.9379253465897534
+        },
+        "current_clip_ar1": {
+          "phi": 0.95,
+          "expected_true_log_odds": 5.153158938625721,
+          "actual_log_odds_variance": 26.827457677821407,
+          "optimal_linear_logit_calibration_slope": 0.38417050176811207,
+          "accuracy": 0.838,
+          "nll": 0.5122022020719833,
+          "mean_max_probability": 0.9369493399618722
+        }
+      },
+      {
+        "signal_frequency_hz": 24.0,
+        "exact": {
+          "accuracy": 0.8375,
+          "nll": 0.3578824778130933,
+          "mean_max_probability": 0.8441678114101672
+        },
+        "population_ar1": {
+          "phi": 0.9692235668888033,
+          "expected_true_log_odds": 1.3693405494922792,
+          "actual_log_odds_variance": 1.8787257544019789,
+          "optimal_linear_logit_calibration_slope": 1.457733302781232,
+          "accuracy": 0.8383333333333334,
+          "nll": 0.37295508481742234,
+          "mean_max_probability": 0.788734498562298
+        },
+        "current_clip_ar1": {
+          "phi": 0.95,
+          "expected_true_log_odds": 1.3405738726638532,
+          "actual_log_odds_variance": 1.8006436398231949,
+          "optimal_linear_logit_calibration_slope": 1.4889940941290127,
+          "accuracy": 0.8383333333333334,
+          "nll": 0.3746638664032107,
+          "mean_max_probability": 0.785411171999346
+        }
+      }
+    ],
+    "interpretation": "AR1 can produce both underconfidence and overconfidence; effect follows the discriminative spectral direction, not sample count alone."
+  },
+  "unknown_scale": {
+    "seed": 96000,
+    "n_draws": 12000,
+    "nu": 6.0,
+    "dimension": 24,
+    "normal": {
+      "accuracy": 0.8213333333333334,
+      "nll": 0.4533901975075942,
+      "mean_max_probability": 0.8488397328440557
+    },
+    "correct_scale_marginal": {
+      "accuracy": 0.8213333333333334,
+      "nll": 0.38880083575320484,
+      "mean_max_probability": 0.820908178246099
+    },
+    "counterclaim": "The Student likelihood can improve NLL without changing winner here, but its prior degrees of freedom must come from legal data; software sample count is not independent scale evidence."
+  }
+}

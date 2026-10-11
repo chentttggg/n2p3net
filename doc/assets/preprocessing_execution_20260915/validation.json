@@ -1,0 +1,39 @@
+{
+  "schema": "n2p3_preprocessing_execution_validation/1",
+  "started_utc": "2026-09-15T13:21:11.759967+00:00",
+  "head": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+  "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+  "active_python_files": 313,
+  "source_files": 331,
+  "source_manifest_sha256": "46798055df1949db280d3b30a8fe53851248462922473db89b45b04d73c6b280",
+  "scope": "synthetic software acceptance; no cloud training or real cache rebuild",
+  "checks": {
+    "ruff": {
+      "exit_code": 0,
+      "seconds": 0.302,
+      "log": "tmp/preprocessing_execution_20260915/ruff.log",
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    "diff_check": {
+      "exit_code": 0,
+      "seconds": 0.157,
+      "log": "tmp/preprocessing_execution_20260915/diff_check.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "full_suite": {
+      "exit_code": 0,
+      "seconds": 338.56,
+      "log": "tmp/preprocessing_execution_20260915/full_suite.log",
+      "log_sha256": "38eb5c216aa7dc3579850aba4efcb35df4ae72ac5d7484585dfcd61d943cf918",
+      "tests": 1820,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4,
+      "passed": 1816
+    }
+  },
+  "finished_utc": "2026-09-15T13:26:50.966625+00:00",
+  "source_unchanged": true,
+  "changed_files": [],
+  "passed": true
+}

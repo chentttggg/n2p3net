@@ -1,0 +1,34 @@
+{
+  "scope": "analytic_counterexamples_not_estimated_EEG_noise",
+  "correlated_state": {
+    "naive_independent_variance": 2.0,
+    "true_joint_variance": 4.0,
+    "anticorrelated_true_variance": 0.0
+  },
+  "overlapping_raw_cross_covariance": [
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      1.0,
+      0.0
+    ]
+  ],
+  "kernel_uncertainty": {
+    "plugin_probability": 0.9999999979388463,
+    "integrated_predictive_probability": 0.8603478165832398,
+    "C_q_logdet_example_scores": [
+      -0.04765508990216247,
+      -1.1041372067614021
+    ]
+  },
+  "script_sha256": "eecad24ecf6ec94dd0baafd7fbd267d9e983b39428979de9a9879ecd188facbd"
+}

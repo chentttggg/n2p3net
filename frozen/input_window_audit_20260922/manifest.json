@@ -1,0 +1,17 @@
+{
+  "reason": "Archive superseded audit claims and conflicting route gates before correction",
+  "archive": "before.zip",
+  "archive_sha256": "b03101616760dbeffc4a12831b9bf0967d25369c120b04cd99b2436e79749a48",
+  "verified_members": [
+    {
+      "path": "doc/evidence/input_contract_review_20260922.zh.md",
+      "sha256": "035aa8bb5ecfbbd6df7c41044fb0f64986191626ab0a9e8e622250865b9151df",
+      "bytes": 11848
+    },
+    {
+      "path": "doc/evidence/zero_shot_transfer_routes_20260920.zh.md",
+      "sha256": "a0a4e01fa07eed2bd662e8c86899b9969096e61f28f41d524ce786282ce35f0d",
+      "bytes": 16804
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "status": "completed",
+  "jobs": [
+    {
+      "study": "BI2014a",
+      "kind": "prefixes",
+      "seconds": 4.7815704345703125
+    },
+    {
+      "study": "BNCI2014-008",
+      "kind": "source",
+      "seconds": 2.9274373054504395
+    },
+    {
+      "study": "BI2015a",
+      "kind": "source",
+      "seconds": 6.546770811080933
+    },
+    {
+      "study": "BI2014a",
+      "kind": "source",
+      "seconds": 4.493279695510864
+    },
+    {
+      "study": "BI2015a",
+      "kind": "prefixes",
+      "seconds": 6.596567869186401
+    },
+    {
+      "study": "BNCI2014-008",
+      "kind": "prefixes",
+      "seconds": 2.9480392932891846
+    },
+    {
+      "study": "Huebner2017",
+      "kind": "prefixes",
+      "seconds": 40.790759325027466
+    },
+    {
+      "study": "Huebner2017",
+      "kind": "source",
+      "seconds": 82.81352829933167
+    }
+  ]
+}

@@ -1,0 +1,952 @@
+{
+  "schema": "n2p3_unified_model_eligibility_inventory/1",
+  "date": "2026-09-16",
+  "scope": "metadata_only_bounded_inventory",
+  "method": {
+    "raw_payload_reads": 0,
+    "cache_payload_reads": 0,
+    "archive_payload_reads": 0,
+    "raw_hash_recomputations": 0,
+    "path_checks": "one representative primary input per study plus listed small sidecars; no claim of full corpus availability",
+    "metadata_hashes": "existing declared digests copied; unknown remains unknown"
+  },
+  "matrix_plan": {
+    "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\domain_transfer_cloud_20260916\\matrix_plan.json",
+    "exists": true,
+    "sha256": "unknown_not_previously_declared_in_read_metadata",
+    "source_seeds": [
+      20260916,
+      20260917,
+      20260918
+    ],
+    "target_seeds": [
+      20260916,
+      20260917,
+      20260918
+    ],
+    "folds": [
+      {
+        "name": "exclude_BI2014a",
+        "target_study": "BI2014a",
+        "excluded_source_datasets": [
+          "BI2014a"
+        ],
+        "source_cache": "/root/autodl-tmp/n2p3-runs/four_study_development_20260907a/source_except_BI2014a.npz",
+        "source_cache_sha256": "3624b124f0996655abe49cb6510f5198bc44b8a1fa5ba905d8ca589ed6f91df0",
+        "target_cache": "/root/autodl-tmp/n2p3-runs/four_study_development_20260907a/target_BI2014a.npz",
+        "target_protocol": {
+          "kind": "single_recording_prefix",
+          "minimum_test_trials": 200
+        },
+        "source_protocols": {
+          "BI2015a": {
+            "kind": "last_session_holdout",
+            "session_order": [
+              "0",
+              "1",
+              "2"
+            ],
+            "run_order": [
+              "0"
+            ],
+            "test_session": "2",
+            "minimum_test_trials": 200
+          },
+          "BNCI2014-008": {
+            "kind": "single_recording_prefix",
+            "minimum_test_trials": 200
+          },
+          "Huebner2017": {
+            "kind": "last_session_holdout",
+            "session_order": [
+              "0",
+              "1",
+              "2"
+            ],
+            "run_order": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8"
+            ],
+            "test_session": "2",
+            "minimum_test_trials": 200
+          }
+        },
+        "family_exclusion": false
+      },
+      {
+        "name": "exclude_BI2015a",
+        "target_study": "BI2015a",
+        "excluded_source_datasets": [
+          "BI2015a"
+        ],
+        "source_cache": "/root/autodl-tmp/n2p3-runs/four_study_development_20260907a/source_except_BI2015a.npz",
+        "source_cache_sha256": "8eb6469df1d082462710047f3449624b37b8ce75f088848960ee96ad1df36d8d",
+        "target_cache": "/root/autodl-tmp/n2p3-runs/four_study_development_20260907a/target_BI2015a.npz",
+        "target_protocol": {
+          "kind": "last_session_holdout",
+          "session_order": [
+            "0",
+            "1",
+            "2"
+          ],
+          "run_order": [
+            "0"
+          ],
+          "test_session": "2",
+          "minimum_test_trials": 200
+        },
+        "source_protocols": {
+          "BI2014a": {
+            "kind": "single_recording_prefix",
+            "minimum_test_trials": 200
+          },
+          "BNCI2014-008": {
+            "kind": "single_recording_prefix",
+            "minimum_test_trials": 200
+          },
+          "Huebner2017": {
+            "kind": "last_session_holdout",
+            "session_order": [
+              "0",
+              "1",
+              "2"
+            ],
+            "run_order": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8"
+            ],
+            "test_session": "2",
+            "minimum_test_trials": 200
+          }
+        },
+        "family_exclusion": false
+      },
+      {
+        "name": "exclude_BNCI2014-008",
+        "target_study": "BNCI2014-008",
+        "excluded_source_datasets": [
+          "BNCI2014-008"
+        ],
+        "source_cache": "/root/autodl-tmp/n2p3-runs/four_study_development_20260907a/source_except_BNCI2014-008.npz",
+        "source_cache_sha256": "644c2de95cb619fdd87adbd186daa0cfdc60c858c9a75b5bc46d52d0121f9bbf",
+        "target_cache": "/root/autodl-tmp/n2p3-runs/four_study_development_20260907a/target_BNCI2014-008.npz",
+        "target_protocol": {
+          "kind": "single_recording_prefix",
+          "minimum_test_trials": 200
+        },
+        "source_protocols": {
+          "BI2014a": {
+            "kind": "single_recording_prefix",
+            "minimum_test_trials": 200
+          },
+          "BI2015a": {
+            "kind": "last_session_holdout",
+            "session_order": [
+              "0",
+              "1",
+              "2"
+            ],
+            "run_order": [
+              "0"
+            ],
+            "test_session": "2",
+            "minimum_test_trials": 200
+          },
+          "Huebner2017": {
+            "kind": "last_session_holdout",
+            "session_order": [
+              "0",
+              "1",
+              "2"
+            ],
+            "run_order": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8"
+            ],
+            "test_session": "2",
+            "minimum_test_trials": 200
+          }
+        },
+        "family_exclusion": false
+      },
+      {
+        "name": "exclude_Huebner2017",
+        "target_study": "Huebner2017",
+        "excluded_source_datasets": [
+          "Huebner2017"
+        ],
+        "source_cache": "/root/autodl-tmp/n2p3-runs/four_study_development_20260907a/source_except_Huebner2017.npz",
+        "source_cache_sha256": "6d4d2acc7622ea1b67abad3df5a24b60e358783fe9397c347be73be1ed2120f0",
+        "target_cache": "/root/autodl-tmp/n2p3-runs/four_study_development_20260907a/target_Huebner2017.npz",
+        "target_protocol": {
+          "kind": "last_session_holdout",
+          "session_order": [
+            "0",
+            "1",
+            "2"
+          ],
+          "run_order": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8"
+          ],
+          "test_session": "2",
+          "minimum_test_trials": 200
+        },
+        "source_protocols": {
+          "BI2014a": {
+            "kind": "single_recording_prefix",
+            "minimum_test_trials": 200
+          },
+          "BI2015a": {
+            "kind": "last_session_holdout",
+            "session_order": [
+              "0",
+              "1",
+              "2"
+            ],
+            "run_order": [
+              "0"
+            ],
+            "test_session": "2",
+            "minimum_test_trials": 200
+          },
+          "BNCI2014-008": {
+            "kind": "single_recording_prefix",
+            "minimum_test_trials": 200
+          }
+        },
+        "family_exclusion": false
+      },
+      {
+        "name": "exclude_BI2014a_BI2015a",
+        "target_study": null,
+        "excluded_source_datasets": [
+          "BI2014a",
+          "BI2015a"
+        ],
+        "source_cache": "/root/autodl-tmp/n2p3-runs/training_chain_20260907/source_inputs/source_except_BI2014a_BI2015a.npz",
+        "source_cache_sha256": "6dbc6922cf18a1a9c3f7c4dd427fc586ee2f8215737857add665cb34307e7261",
+        "target_cache": null,
+        "target_protocol": null,
+        "source_protocols": {
+          "BNCI2014-008": {
+            "kind": "single_recording_prefix",
+            "minimum_test_trials": 200
+          },
+          "Huebner2017": {
+            "kind": "last_session_holdout",
+            "session_order": [
+              "0",
+              "1",
+              "2"
+            ],
+            "run_order": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8"
+            ],
+            "test_session": "2",
+            "minimum_test_trials": 200
+          }
+        },
+        "family_exclusion": true,
+        "targets": [
+          {
+            "study": "BI2014a",
+            "cache": "/root/autodl-tmp/n2p3-runs/four_study_development_20260907a/target_BI2014a.npz",
+            "protocol": {
+              "kind": "single_recording_prefix",
+              "minimum_test_trials": 200
+            }
+          },
+          {
+            "study": "BI2015a",
+            "cache": "/root/autodl-tmp/n2p3-runs/four_study_development_20260907a/target_BI2015a.npz",
+            "protocol": {
+              "kind": "last_session_holdout",
+              "session_order": [
+                "0",
+                "1",
+                "2"
+              ],
+              "run_order": [
+                "0"
+              ],
+              "test_session": "2",
+              "minimum_test_trials": 200
+            }
+          }
+        ]
+      }
+    ],
+    "remote_paths_checked": false
+  },
+  "source_trajectory_planning": {
+    "source_factor_states": 8,
+    "declared_fold_count": 5,
+    "paired_seed_count": 3,
+    "nominal_trajectory_count": 120,
+    "status": "conditional_nominal_planning_count_not_launch_ready",
+    "qualification_complete": false,
+    "excludes_costs": [
+      "source inner development",
+      "refits",
+      "failed/retried tasks",
+      "additional declared controls"
+    ]
+  },
+  "datasets": [
+    {
+      "study": "BI2014a",
+      "evidence_index": {
+        "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\local_prepared\\BI2014a\\preparation.json",
+        "exists": true,
+        "sha256": "unknown",
+        "sha256_basis": "not_present_in_read_metadata",
+        "member": null,
+        "verification": "path_exists_only; raw bytes and archive members not read or rehashed"
+      },
+      "index_role": "historical_explicit_raw_record_preparation; not_new_profile_admission",
+      "historical_listed_records": 61,
+      "historical_participants": 61,
+      "reference_values": [
+        "right earlobe"
+      ],
+      "sample_rate_values_hz": [
+        512.0
+      ],
+      "sample_raw": [
+        {
+          "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-braininvaders2014a-data\\zenodo\\3266223\\subject_01\\subject_01.mat",
+          "exists": true,
+          "sha256": "eecb29c236f21b5d8d1b8b3cc07e4aa96b107eeb29033201fcab407d94fdd759",
+          "sha256_basis": "historical_preparation_manifest_claim_not_reverified",
+          "member": null,
+          "verification": "path_exists_only; raw bytes and archive members not read or rehashed",
+          "sha256_target": "file"
+        }
+      ],
+      "historical_six_slot_order": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ"
+      ],
+      "historical_six_slot_mask_patterns": [
+        [
+          false,
+          true,
+          true,
+          true,
+          false,
+          true
+        ]
+      ],
+      "representative_measured_common_channels": [
+        "P3",
+        "PZ",
+        "P4",
+        "OZ",
+        "CZ"
+      ],
+      "channel_basis": "historical_preparation_observed_mask_plus_required_measured_Cz; not_current_waveform_validation",
+      "new_common_profile": "pending_raw_rebuild_and_scope_definition",
+      "new_profile_K_counts": "pending",
+      "new_profile_complete_group_counts": "pending",
+      "current_ready": false,
+      "decision_membership": "data.bi2014a_candidate adapter exists; binary preparation index does not certify candidate groups under new profile",
+      "blocking_reasons": [
+        "single_recording_prefix requires raw split before filtfilt and support purge",
+        "new mask-aware stem/BN baseline and new candidate groups/counts not materialized"
+      ]
+    },
+    {
+      "study": "BI2015a",
+      "evidence_index": {
+        "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\local_prepared\\BI2015a\\preparation.json",
+        "exists": true,
+        "sha256": "unknown",
+        "sha256_basis": "not_present_in_read_metadata",
+        "member": null,
+        "verification": "path_exists_only; raw bytes and archive members not read or rehashed"
+      },
+      "index_role": "historical_explicit_raw_record_preparation; not_new_profile_admission",
+      "historical_listed_records": 123,
+      "historical_participants": 41,
+      "reference_values": [
+        "right earlobe"
+      ],
+      "sample_rate_values_hz": [
+        512.0
+      ],
+      "sample_raw": [
+        {
+          "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-braininvaders2015a-data\\zenodo\\3266930\\subject_02_mat.zip",
+          "exists": true,
+          "sha256": "2be09de7dbf7351e9d66a020a6ec8780d4ddbaee78797348d2719390cbf5126e",
+          "sha256_basis": "historical_preparation_manifest_claim_not_reverified",
+          "member": "subject_02_session_03.mat",
+          "verification": "path_exists_only; raw bytes and archive members not read or rehashed",
+          "sha256_target": "archive_member"
+        }
+      ],
+      "historical_six_slot_order": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ"
+      ],
+      "historical_six_slot_mask_patterns": [
+        [
+          false,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      ],
+      "representative_measured_common_channels": [
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ",
+        "CZ"
+      ],
+      "channel_basis": "historical_preparation_observed_mask_plus_required_measured_Cz; not_current_waveform_validation",
+      "new_common_profile": "pending_raw_rebuild_and_scope_definition",
+      "new_profile_K_counts": "pending",
+      "new_profile_complete_group_counts": "pending",
+      "current_ready": false,
+      "decision_membership": "binary labels present in preparation/parser; no dedicated candidate-membership adapter verified in this bounded inventory",
+      "blocking_reasons": [
+        "archive-member SHA claim preserved; archive bytes/member contents not reverified",
+        "last-session raw isolation and new filtered/QC K counts pending; decision factor unavailable until membership proven"
+      ]
+    },
+    {
+      "study": "BNCI2014-008",
+      "evidence_index": {
+        "path": "src/data/bnci2014_008_candidate.py",
+        "exists": true,
+        "role": "active raw/candidate adapter; bounded inventory did not locate canonical per-raw hash manifest"
+      },
+      "raw_manifest_status": "unknown_not_located_in_bounded_inventory",
+      "sample_raw": [
+        {
+          "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A01.mat",
+          "exists": true,
+          "sha256": "unknown",
+          "sha256_basis": "not_present_in_read_metadata",
+          "member": null,
+          "verification": "path_exists_only; raw bytes and archive members not read or rehashed",
+          "sha256_target": "file"
+        }
+      ],
+      "reference_values": [
+        "right earlobe"
+      ],
+      "reference_basis": "active adapter constant BNCI2014_008_SOURCE_REFERENCE",
+      "sample_rate_values_hz": [
+        256.0
+      ],
+      "representative_native_channels": [
+        "Fz",
+        "Cz",
+        "Pz",
+        "Oz",
+        "P3",
+        "P4",
+        "PO7",
+        "PO8"
+      ],
+      "representative_measured_common_channels": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ",
+        "CZ"
+      ],
+      "channel_basis": "adapter schema; actual MAT channel list not reopened",
+      "decision_membership": "active physical row/column candidate adapter available; new scoped membership and complete group counts pending",
+      "new_common_profile": "pending_raw_rebuild_and_scope_definition",
+      "new_profile_K_counts": "pending",
+      "new_profile_complete_group_counts": "pending",
+      "current_ready": false,
+      "blocking_reasons": [
+        "raw SHA unknown in metadata read this turn; integrity admission required before rebuild",
+        "single_recording_prefix must be split before filtfilt; complete row/column groups and purge counts pending"
+      ]
+    },
+    {
+      "study": "Huebner2017",
+      "evidence_index": {
+        "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\local_prepared\\Huebner2017\\preparation.json",
+        "exists": true,
+        "sha256": "unknown",
+        "sha256_basis": "not_present_in_read_metadata",
+        "member": null,
+        "verification": "path_exists_only; raw bytes and archive members not read or rehashed"
+      },
+      "index_role": "historical_explicit_raw_record_preparation; not_new_profile_admission",
+      "historical_listed_records": 342,
+      "historical_participants": 13,
+      "reference_values": [
+        "nose"
+      ],
+      "sample_rate_values_hz": [
+        1000.0
+      ],
+      "sample_raw": [
+        {
+          "path": "D:\\BCI\\n2p3-net\\mne_data\\huebner2017_nemar_nm000199_v1.0.2\\sub-1\\ses-0\\eeg\\sub-1_ses-0_task-p300_run-0_eeg.bdf",
+          "exists": true,
+          "sha256": "c4e72cb9d5693215b602fb9864129742121ca2ffd07ccaec61728d785877afb5",
+          "sha256_basis": "historical_preparation_manifest_claim_not_reverified",
+          "member": null,
+          "verification": "path_exists_only; raw bytes and archive members not read or rehashed",
+          "sha256_target": "file"
+        }
+      ],
+      "historical_six_slot_order": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ"
+      ],
+      "historical_six_slot_mask_patterns": [
+        [
+          true,
+          true,
+          true,
+          true,
+          false,
+          false
+        ]
+      ],
+      "representative_measured_common_channels": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "CZ"
+      ],
+      "channel_basis": "historical_preparation_observed_mask_plus_required_measured_Cz; not_current_waveform_validation",
+      "new_common_profile": "pending_raw_rebuild_and_scope_definition",
+      "new_profile_K_counts": "pending",
+      "new_profile_complete_group_counts": "pending",
+      "current_ready": false,
+      "sample_sidecars": [
+        {
+          "path": "D:\\BCI\\n2p3-net\\mne_data\\huebner2017_nemar_nm000199_v1.0.2\\sub-1\\ses-0\\eeg\\sub-1_ses-0_task-p300_run-0_channels.tsv",
+          "exists": true,
+          "sha256": "unknown",
+          "sha256_basis": "not_present_in_read_metadata",
+          "member": null,
+          "verification": "path_exists_only; raw bytes and archive members not read or rehashed"
+        },
+        {
+          "path": "D:\\BCI\\n2p3-net\\mne_data\\huebner2017_nemar_nm000199_v1.0.2\\sub-1\\ses-0\\eeg\\sub-1_ses-0_task-p300_run-0_events.tsv",
+          "exists": true,
+          "sha256": "unknown",
+          "sha256_basis": "not_present_in_read_metadata",
+          "member": null,
+          "verification": "path_exists_only; raw bytes and archive members not read or rehashed"
+        }
+      ],
+      "representative_native_channel_roles": [
+        {
+          "name": "Fp1",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "Fp2",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "F3",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "F4",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "C3",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "C4",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "P3",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "P4",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "O1",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "O2",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "F7",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "F8",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "T7",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "T8",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "P7",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "P8",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "Fz",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "Cz",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "Pz",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "FC1",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "FC2",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "CP1",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "CP2",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "FC5",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "FC6",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "CP5",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "CP6",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "F9",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "F10",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "P9",
+          "type": "EEG",
+          "status": "good"
+        },
+        {
+          "name": "P10",
+          "type": "EEG",
+          "status": "good"
+        }
+      ],
+      "decision_membership": "Target/NonTarget events parser available; no candidate-membership reconstruction verified in this bounded inventory",
+      "blocking_reasons": [
+        "historical sidecar hashes absent in read preparation index; new preparation must attest channels/events",
+        "PO8/Oz absent in historical six-slot masks; masked stem/BN mandatory",
+        "last-session raw isolation and new profile K/group counts pending"
+      ]
+    },
+    {
+      "study": "GTN",
+      "evidence_index": {
+        "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\local_prepared\\GTN\\preparation.json",
+        "exists": true,
+        "sha256": "unknown",
+        "sha256_basis": "not_present_in_read_metadata",
+        "member": null,
+        "verification": "path_exists_only; raw bytes and archive members not read or rehashed"
+      },
+      "index_role": "historical_explicit_raw_record_preparation; not_new_profile_admission",
+      "historical_listed_records": 245,
+      "historical_participants": 245,
+      "reference_values": [
+        "nose"
+      ],
+      "sample_rate_values_hz": [
+        1000.0
+      ],
+      "sample_raw": [
+        {
+          "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-P3-data\\Experiment_341_P3_Numbers\\Experiment_341_P3_Numbers.nix",
+          "exists": true,
+          "sha256": "9d7967c8c2e636e60ea449ab8b68ab2f2961a9cf8929cc5f312c4125188afec3",
+          "sha256_basis": "historical_preparation_manifest_claim_not_reverified",
+          "member": null,
+          "verification": "path_exists_only; raw bytes and archive members not read or rehashed",
+          "sha256_target": "file"
+        }
+      ],
+      "historical_six_slot_order": [
+        "FZ",
+        "P3",
+        "PZ",
+        "P4",
+        "PO8",
+        "OZ"
+      ],
+      "historical_six_slot_mask_patterns": [
+        [
+          true,
+          false,
+          true,
+          false,
+          false,
+          false
+        ]
+      ],
+      "representative_measured_common_channels": [
+        "FZ",
+        "PZ",
+        "CZ"
+      ],
+      "channel_basis": "historical_preparation_observed_mask_plus_required_measured_Cz; not_current_waveform_validation",
+      "new_common_profile": "pending_raw_rebuild_and_scope_definition",
+      "new_profile_K_counts": "pending",
+      "new_profile_complete_group_counts": "pending",
+      "current_ready": false,
+      "reference_caveat": "Original record declared unspecified; nose assignment in historical manifest cites study Methods DOI 10.1038/sdata.2016.121. Per-record authority must remain explicit.",
+      "metadata_directory_exists": true,
+      "decision_membership": "nine-candidate adapter available; per-record thought/stimulus metadata and complete groups pending new scoped rebuild",
+      "blocking_reasons": [
+        "only Fz/Cz/Pz measured: two Cz differences; cannot serve as full Cz6 standalone source",
+        "new profile raw scopes and post-QC membership/K counts not materialized"
+      ]
+    },
+    {
+      "study": "BrainSync",
+      "evidence_index": {
+        "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\inputs\\P001_20260904_171926_01\\session.json",
+        "exists": true,
+        "sha256": "unknown",
+        "sha256_basis": "not_present_in_read_metadata",
+        "member": null,
+        "verification": "path_exists_only; raw bytes and archive members not read or rehashed"
+      },
+      "index_role": "preserved historical experiment input session; current live acquisition root and adult confirmation cohort not inventoried",
+      "session_status": "completed",
+      "reference_values": [
+        "left earlobe"
+      ],
+      "reference_details": {
+        "schema": "brainsync-acquisition-reference/1",
+        "label": "left earlobe",
+        "side": "left",
+        "site": "earlobe",
+        "electrode": "ear_clip"
+      },
+      "representative_native_channel_roles": [
+        {
+          "name": "Fz",
+          "type": "eeg"
+        },
+        {
+          "name": "Cz",
+          "type": "eeg"
+        },
+        {
+          "name": "P3",
+          "type": "eeg"
+        },
+        {
+          "name": "Pz",
+          "type": "eeg"
+        },
+        {
+          "name": "P4",
+          "type": "eeg"
+        },
+        {
+          "name": "PO8",
+          "type": "eeg"
+        },
+        {
+          "name": "EOG",
+          "type": "eog"
+        },
+        {
+          "name": "Oz",
+          "type": "eeg"
+        }
+      ],
+      "sample_rate_values_hz": [
+        250.0
+      ],
+      "sample_raw": [
+        {
+          "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\inputs\\P001_20260904_171926_01\\sub-P001\\ses-20260904T17192601\\eeg\\sub-P001_ses-20260904T17192601_task-gtn_run-01_eeg.edf",
+          "exists": true,
+          "sha256": "unknown",
+          "sha256_basis": "not_present_in_read_metadata",
+          "member": null,
+          "verification": "path_exists_only; raw bytes and archive members not read or rehashed",
+          "sha256_target": "file"
+        }
+      ],
+      "sample_sidecars": [
+        {
+          "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\inputs\\P001_20260904_171926_01\\sub-P001\\ses-20260904T17192601\\eeg\\sub-P001_ses-20260904T17192601_task-gtn_run-01_eeg.json",
+          "exists": true,
+          "sha256": "unknown",
+          "sha256_basis": "not_present_in_read_metadata",
+          "member": null,
+          "verification": "path_exists_only; raw bytes and archive members not read or rehashed"
+        },
+        {
+          "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\inputs\\P001_20260904_171926_01\\sub-P001\\ses-20260904T17192601\\eeg\\sub-P001_ses-20260904T17192601_task-gtn_run-01_channels.tsv",
+          "exists": true,
+          "sha256": "unknown",
+          "sha256_basis": "not_present_in_read_metadata",
+          "member": null,
+          "verification": "path_exists_only; raw bytes and archive members not read or rehashed"
+        },
+        {
+          "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\source_eog_20260909\\inputs\\P001_20260904_171926_01\\sub-P001\\ses-20260904T17192601\\eeg\\sub-P001_ses-20260904T17192601_task-gtn_run-01_events.tsv",
+          "exists": true,
+          "sha256": "unknown",
+          "sha256_basis": "not_present_in_read_metadata",
+          "member": null,
+          "verification": "path_exists_only; raw bytes and archive members not read or rehashed"
+        }
+      ],
+      "decision_membership": "session v4 nine-candidate protocol; thought digit and per-event validity must be checked by active loader; no membership revalidation performed",
+      "historical_scheduled_configuration": {
+        "blocks": 10,
+        "digits_per_block": 45,
+        "note": "configuration only; not surviving event/group count"
+      },
+      "new_common_profile": "numerical bidirectional executor exists; scoped Cz6 datasets and frozen QC/EOG still pending",
+      "new_profile_K_counts": "pending",
+      "new_profile_complete_group_counts": "pending",
+      "current_ready": false,
+      "blocking_reasons": [
+        "historical P001 is development evidence, not new adult confirmation",
+        "raw/sidecar hashes not present in session fields read; new attestation required",
+        "short-record contexts, raw splits, QC/EOG fit scopes and operational group coverage pending"
+      ]
+    }
+  ],
+  "new_profile_status": "none_certified_ready_by_this_metadata_inventory",
+  "required_next_W0_W1": [
+    "freeze raw scope boundaries and absolute source support before filtfilt for each actual K",
+    "verify full raw+sidecar identity and excluded participants with active adapters",
+    "implement/test common masked temporal BN and final reference dependency masks",
+    "rebuild scoped new-profile caches and QC/EOG states from legal training scopes",
+    "enumerate actual-K post-purge rows, binary class counts, physical membership and complete decision groups",
+    "mark binary-only D unavailable; compute actual design rank and expected-study coverage separately"
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "schema": "n2p3_operator_research_validation/1",
+  "status": "completed_research_development_not_promotion",
+  "full_suite": {
+    "tests": 2293,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 8,
+    "passed": 2285,
+    "seconds": 406.074,
+    "junit": "doc/assets/operator_research_20261004/full_suite_final.xml"
+  },
+  "ruff_passed": true,
+  "diff_check_passed": true,
+  "final_source": {
+    "manifest": "frozen\\operator_research_20261005_final2\\source.manifest.json",
+    "archive_sha256": "f4f64f946edc51b3d5801d8767ee6f71b40a09edd420034872a1dda2bcee36f5",
+    "members": 390,
+    "current_bytes_equal": true
+  },
+  "runs": {
+    "stage1": {
+      "path": "experiments\\runs\\operator_research_20261004\\calibration_groups_v2",
+      "status": "completed",
+      "requested": 240,
+      "completed": 240,
+      "failed": 0,
+      "source_sha256": "7460571d56a0d875ebc4b9724f2fc901c933824854ecacedbb5f5de94270a6d3"
+    },
+    "stage2": {
+      "path": "experiments\\runs\\operator_research_20261004\\calibration_groups_stage2",
+      "status": "completed",
+      "requested": 624,
+      "completed": 576,
+      "failed": 48,
+      "source_sha256": "e614882ba12c55753b66fdd7cea34226ad5e4ff03e93cbacc2568674e37f4639"
+    },
+    "stage3_original": {
+      "path": "experiments\\runs\\operator_research_20261004\\calibration_groups_stage3",
+      "status": "completed",
+      "requested": 768,
+      "completed": 752,
+      "failed": 16,
+      "source_sha256": "e67dbe39f4ddfc058636ba05f5af0f5dcd79a687f53ddcdffe7f702035b3bc24"
+    },
+    "stage3_repair_current": {
+      "path": "experiments\\runs\\operator_research_20261004\\calibration_groups_stage3_repair3",
+      "status": "completed",
+      "requested": 48,
+      "completed": 48,
+      "failed": 0,
+      "source_sha256": "08a23413632ad4ca064ea9bc5a251b250c2abc15588542fa64899994584b95fb"
+    }
+  },
+  "review_closure": {
+    "standards": "doc/assets/operator_research_20261004/review_standards_closure_final.md",
+    "spec": "doc/assets/operator_research_20261004/review_spec_closure_final.md",
+    "historical_red_preserved": true
+  },
+  "claims_not_made": [
+    "overall_operator_superiority",
+    "real_Gamma_Omega_physiological_identification",
+    "event_specific_A_i_B_i_identification",
+    "twelve_study_three_seed_confirmation",
+    "adult_device_confirmation"
+  ],
+  "evidence_scope": "public_calibration_development"
+}

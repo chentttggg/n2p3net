@@ -1,0 +1,42 @@
+[
+  {
+    "file": "joint_trcm_epmc.pdf",
+    "requested_url": "https://europepmc.org/articles/PMC4751046?pdf=render",
+    "fetched_utc": "2026-10-04T13:35:55.140043+00:00",
+    "status": 403,
+    "final_url": "https://europepmc.org/articles/PMC4751046?pdf=render",
+    "content_type": "text/html; charset=UTF-8",
+    "bytes": 5616,
+    "sha256": "806969ce673cfd90dbd09b6d5cb8579221938f61830426dda9497c88de41b59a"
+  },
+  {
+    "file": "joint_openalex_trcm.json",
+    "requested_url": "https://api.openalex.org/works/https://doi.org/10.1214/09-AOAS314",
+    "fetched_utc": "2026-10-04T13:35:55.140463+00:00",
+    "status": 200,
+    "final_url": "https://api.openalex.org/works/https://doi.org/10.1214/09-AOAS314",
+    "content_type": "application/json",
+    "bytes": 19058,
+    "sha256": "bc6c94988b0b866612fae94c53841901bf3767041b875199b7db834391a59244"
+  },
+  {
+    "file": "joint_hoff_author.html",
+    "requested_url": "https://pdhoff.github.io/Research/",
+    "fetched_utc": "2026-10-04T13:35:55.140681+00:00",
+    "status": 404,
+    "final_url": "https://pdhoff.github.io/Research/",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 9379,
+    "sha256": "b620507312c5e97566a3c6cfaf99144fefc18a0da7d941401dfa0f5f58fb0368"
+  },
+  {
+    "file": "joint_trcm_arxiv_query.xml",
+    "requested_url": "https://export.arxiv.org/api/query?search_query=ti:%22Transposable%20regularized%20covariance%20models%22&max_results=2",
+    "fetched_utc": "2026-10-04T13:35:55.140842+00:00",
+    "status": 200,
+    "final_url": "https://export.arxiv.org/api/query?search_query=ti:%22Transposable%20regularized%20covariance%20models%22&max_results=2",
+    "content_type": "application/atom+xml; charset=utf-8",
+    "bytes": 3240,
+    "sha256": "db5e470031ca773099ea8c5cdddb1e9239feebf521a89f63934076dc2db3faca"
+  }
+]

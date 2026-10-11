@@ -1,0 +1,13 @@
+{
+  "status": "verified",
+  "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\domain_transfer_cloud_20260916\\export\\results.tar.gz",
+  "bytes": 1628798632,
+  "sha256": "d9ec2c88aabbe409f3eead25649c567d9f5cc8c1b826ed152c42a321960d97b9",
+  "verified_members": 94624,
+  "artifacts": {
+    "models": 29538,
+    "predictions": 32238,
+    "cells": 32238
+  },
+  "elapsed_seconds": 16.92618489265442
+}

@@ -1,0 +1,23 @@
+{
+  "scope": "continuous_operator_mechanisms_and_temporal_noise",
+  "baseline_archive_sha256": "043893ac95e4ff8e9b5f3db718e216ed6c33c4178af5a01e826f2237c4b3973a",
+  "baseline_dependencies_match": true,
+  "native_threads_max": 2,
+  "files": {
+    "src/transfer/temporal_noise.py": "b62ea190863b6ebfd2e895d102a05a8d20b58f215471293c58123a11f48a4fd5",
+    "tests/transfer/test_temporal_noise.py": "ff6185573945202721f58a6454281db076fd7669180942703d26b44d7def9ce6",
+    "doc/assets/operator_research_20261004/continuous_mechanism/burg_statsmodels.html": "062797cff811a13f8c1768b94e2876dc052bb6aab957ba327f23017d7f00b728",
+    "doc/assets/operator_research_20261004/continuous_mechanism/calibration_group_plan.json": "a0b3910f0eb73aa6b68cbba011eba40c725b627ef5a0db726fdcc027de4bf0aa",
+    "doc/assets/operator_research_20261004/continuous_mechanism/lyapunov_scipy.html": "747e5c0f347c7afbd643f041a9461f4278f3de06aaf1a21219c8d630a132a787",
+    "doc/assets/operator_research_20261004/continuous_mechanism/mechanism_results.json": "0286375bb9ca92c9edc0d24cc82023afb4ae1508a1983c715b5ea7f28a235b96",
+    "doc/assets/operator_research_20261004/continuous_mechanism/probe_mechanisms.py": "847cf0f43319a9b0421109d1c81144189a53a6a48e6f7de92fcc9fe1e37d38b4",
+    "doc/assets/operator_research_20261004/continuous_mechanism/probe_run.log": "0286375bb9ca92c9edc0d24cc82023afb4ae1508a1983c715b5ea7f28a235b96",
+    "doc/assets/operator_research_20261004/continuous_mechanism/report.zh.md": "a94fca4aef459d90bcbd6c99028dec2512427c4130d5a92bc95c4ae09afb0a2e",
+    "doc/assets/operator_research_20261004/continuous_mechanism/sources.json": "7ac82b4d06afb2eac526d47b04d9e53523dd8254b2371ab10d966a7131165e60",
+    "doc/assets/operator_research_20261004/continuous_mechanism/temporal_noise_tests.xml": "5e71a7d09676d131c66bf533aa821ce37ac07c2d85c161fdb826c87b3c018b20",
+    "tests/data/test_finite_filter_operator.py": "ff7fbd86bde9cbbf5276776031d4912f9d316449f3063e35a8c04a26f62e2c61",
+    "doc/assets/operator_research_20261004/continuous_mechanism/finite_filter_tests.xml": "5454d84cde43694e6082ed3196570ad083063dd2522e58f5849c508b865f52c9",
+    "doc/assets/operator_research_20261004/continuous_mechanism/gls_verification.json": "bbb2adf7a93d886f9a23ff81267dbe67a405ca89176652bdafd65e57b36213c2",
+    "doc/assets/operator_research_20261004/continuous_mechanism/verify_gls.py": "d38d8e10463c82ca1ca88f705c663326b213924a3a371ebfd70a4ef785a283c5"
+  }
+}

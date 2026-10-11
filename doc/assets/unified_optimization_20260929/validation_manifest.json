@@ -1,0 +1,51 @@
+{
+  "scope": "research proposal, exploratory reanalysis and mathematical/software checks; no training",
+  "date": "2026-09-29",
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/data/test_euclidean_alignment.py tests/train/test_source_objectives.py tests/train/test_unified_chain.py",
+      "exit_code": 0,
+      "tests_passed": 75
+    },
+    {
+      "command": ".venv/Scripts/python.exe tmp/counterexample_verification_20260929.py",
+      "exit_code": 0,
+      "assertion_groups": 11
+    },
+    {
+      "command": ".venv/Scripts/python.exe doc/assets/unified_optimization_20260929/recompute_evidence.py --check",
+      "exit_code": 0,
+      "result": "all saved numerical sections match"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m ruff check src experiments tests tmp/counterexample_verification_20260929.py doc/assets/unified_optimization_20260929/recompute_evidence.py",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "notes": "existing CRLF conversion warnings only"
+    },
+    {
+      "command": "local report link and new markdown trailing-whitespace check",
+      "exit_code": 0
+    }
+  ],
+  "limitations": [
+    "No new efficacy experiment",
+    "No full dirty-tree test suite",
+    "No new replay of old saved predictions/models",
+    "Final cloud prepared record masks not all locally available",
+    "HAL RPA/GALIA PDF blocked; access levels in literature_audit.md"
+  ],
+  "sha256": {
+    "doc\\evidence\\unified_optimization_20260929.zh.md": "4408bc497a809469a93a18375f07a2fcdbeb42792d7eafe1877ac8ab324fcd72",
+    "doc\\assets\\unified_optimization_20260929\\evidence_audit.json": "e88589548118f0cc1e499e3aeec4f123386c35f1b3daf64713061f9a6cbab28c",
+    "doc\\assets\\unified_optimization_20260929\\evidence_audit.md": "10c675f46733b56f1d252eeec83303d745989af655f004681423919ae5d9981e",
+    "doc\\assets\\unified_optimization_20260929\\literature_audit.md": "58bd2bd16333d9a3eb5cd7a583f4b6c7aeb1fae9de600bc165e76aa4072e9b6c",
+    "doc\\assets\\unified_optimization_20260929\\math_probes.json": "b0e827c20b2b55ef37eb5aec72e75bae2a22a6903487965ecfe1c0746d9ecffa",
+    "doc\\assets\\unified_optimization_20260929\\mechanism_audit.md": "7a38d127f6861d78c661168687d197c22c721dff4a3dbbd310dc8d1e35e4b7a0",
+    "doc\\assets\\unified_optimization_20260929\\recompute_evidence.py": "ed42784a8f1c7b02bd1ec71ff0e9c77356567bf0b8ebfb811137982b654333eb",
+    "tmp\\counterexample_verification_20260929.py": "552f46edc15952215f3c50c65c5f28b42314391bebac156d4ff61fe1de996fa6"
+  }
+}

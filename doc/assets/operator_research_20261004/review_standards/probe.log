@@ -1,0 +1,59 @@
+{
+  "scope_source_sha256": {
+    "src/data/finite_filter_operator.py": "c0e03099ef5a2eb16871a8d588b4bb210e2691154bcedc9660c7670b1cdea9f4",
+    "src/transfer/temporal_noise.py": "d5e2383cfdabd4991765aa57f6ae6ba2d42da948968e39375e9b377b96a8ea05",
+    "tests/data/test_finite_filter_operator.py": "ff7fbd86bde9cbbf5276776031d4912f9d316449f3063e35a8c04a26f62e2c61",
+    "tests/transfer/test_temporal_noise.py": "9eaffbe5e23e416055a08173ba745c4dc986be679af35b36e6a93977990c757e",
+    "doc/assets/operator_research_20261004/continuous_model.py": "b3425072b820d7694ab01204cb697e81d7e00eae2ee0532fb38387de990056c8",
+    "doc/assets/operator_research_20261004/selection_erp_model.py": "5492acf6002b10d4ecb2660684999dea6089e3ed8c7b3f115917bfafb2976076",
+    "doc/assets/operator_research_20261004/run_calibration_study.py": "84df211a6241af85061331b417951e333457780189836804efca701fd507be7e",
+    "doc/assets/operator_research_20261004/analyze_calibration_study.py": "768c44ce1c7f8157f647111ada61164d83eccfd24c34035d0ba5e426811153b8",
+    "doc/assets/operator_research_20261004/calibration_group_plan_stage3.json": "36ba7a1efcaab59435102cb4a9907e5f3061ca7ad7ba8dd0eaf9b1ae46ebf2dc"
+  },
+  "baseline_archive_sha256": "043893ac95e4ff8e9b5f3db718e216ed6c33c4178af5a01e826f2237c4b3973a",
+  "files_absent_from_baseline": [
+    "src/data/finite_filter_operator.py",
+    "src/transfer/temporal_noise.py",
+    "tests/data/test_finite_filter_operator.py",
+    "tests/transfer/test_temporal_noise.py",
+    "doc/assets/operator_research_20261004/continuous_model.py",
+    "doc/assets/operator_research_20261004/selection_erp_model.py",
+    "doc/assets/operator_research_20261004/run_calibration_study.py",
+    "doc/assets/operator_research_20261004/analyze_calibration_study.py",
+    "doc/assets/operator_research_20261004/calibration_group_plan_stage3.json"
+  ],
+  "evidence_scope": "software_correctness_independent_review",
+  "missing_training_ledger_closed": {
+    "original_training_record_rejected": true,
+    "load_rejected": "research GLS artifact requires a nonempty target calibration ledger"
+  },
+  "operator_declaration_closed": {
+    "saved_edge_rule": "zero_extension",
+    "load_rejected": "finite filter operator record has an unknown edge or state contract"
+  },
+  "asymmetric_covariance_closed": {
+    "load_rejected": "research GLS channel covariance must be symmetric",
+    "mutated_upper_minus_lower": 10.0
+  },
+  "loaded_source_vs_disk_identity": {
+    "loaded_sha256": "b3425072b820d7694ab01204cb697e81d7e00eae2ee0532fb38387de990056c8",
+    "changed_disk_sha256": "60b78dab0f208d2e6292eda3c8c6359d2163396a8f51679642194562e0c9d2d3",
+    "claimed_sha256": "60b78dab0f208d2e6292eda3c8c6359d2163396a8f51679642194562e0c9d2d3",
+    "changed_disk_fit_would_raise": true,
+    "loaded_old_fit_succeeded": true
+  },
+  "wrong_loader_negative_control": {
+    "model": "experiments\\runs\\operator_research_20261004\\calibration_groups_stage3\\A01\\fold0_waveform_baseline\\model.npz",
+    "family": "waveform_lda",
+    "sha256": "7cdfe8d979beedad0b736ab8c7051b085373cf045ce6ab29f68266872b3bf2b8",
+    "exception_type": "KeyError",
+    "message": "'basis is not a file in the archive'"
+  },
+  "executor_setup_failure_state": {
+    "raised": "review-only executor startup failure",
+    "persisted_status": "running",
+    "requested_cells": 768,
+    "materialized_cells": 0
+  },
+  "live_scope_unchanged_during_probes": true
+}

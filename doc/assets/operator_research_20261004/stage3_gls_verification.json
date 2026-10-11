@@ -1,0 +1,180 @@
+{
+  "schema": "n2p3_stage3_fixed_route_verification/1",
+  "source_sha256": {
+    "doc/assets/operator_research_20261004/continuous_model.py": "650832d589eb0c4323aca1f7677d7bd2cee80f52f1235fab2eae3a7704a135b5",
+    "doc/assets/operator_research_20261004/run_calibration_study.py": "4228b2b7e50379a1f5182c70ee7f543165ab27eadd6190a761b0a628da318d4d",
+    "doc/assets/operator_research_20261004/selection_erp_model.py": "5492acf6002b10d4ecb2660684999dea6089e3ed8c7b3f115917bfafb2976076",
+    "src/transfer/temporal_noise.py": "07d7529a7f6cffcc2b1f32a2862e1dd47f3ed4900341cd2e1183e77f1fe8caa2"
+  },
+  "script_sha256": "0a15841752f20ad189dc0d2a0a196650dd03610cc8d6e6ee93d0ce6bb8363858",
+  "legacy_bridge": {
+    "record_lengths": [
+      240,
+      259,
+      275,
+      208
+    ],
+    "last_record_right_censored": true,
+    "max_absolute_differences": {
+      "mean": 0.0,
+      "row_covariance": 0.0,
+      "innovation_covariance": 0.0,
+      "phi": 0.0,
+      "log_evidence": 0.0,
+      "probability": 0.0
+    },
+    "old_winner": "b",
+    "new_winner": "b"
+  },
+  "stationary_versus_lattice_marginal_prior_max_log_evidence_error": 1.1368683772161603e-13,
+  "marginal_effective_ridge_matches_explicit_innovation_ridge_exactly": true,
+  "physical_covariance_gauge_probe": {
+    "covariance_factor": 200.0,
+    "unchanged_ridge_max_log_BF_change": 216.61950249695633,
+    "ridge_divided_by_factor_BF_error": 1.7053025658242404e-13,
+    "same_likelihood_noise_different_prior_if_ridge_not_scaled": true,
+    "canonical_marginal_scale_prior": "unit-innovation representation uses effective ridge = declared ridge / stationary marginal variance per unit innovation"
+  },
+  "arms": [
+    {
+      "arm": "old_filtered_y",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "raw_ar8",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "raw_ar8_iter3",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "raw_ar8_weighted3",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "raw_ar8_smooth3",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "raw_ar8_marginal1",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "raw_ar8_marginal3",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "raw_ar8_smooth_marginal3",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "raw_ar32_lattice3",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary_innovations",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "raw_ar32_lattice_marginal3",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary_innovations",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "raw_ar8_lattice_marginal3",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary_innovations",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "raw_ar8_lattice_smooth_marginal3",
+      "family": "continuous_gls",
+      "exact_numeric_replay": true,
+      "effective_ridge_each_pass_checked": true,
+      "same_training_only_record_ids": true,
+      "startup_mode": "stationary_innovations",
+      "all_prefix_rows_retained": true
+    },
+    {
+      "arm": "waveform_baseline",
+      "family": "waveform_lda",
+      "exact_numeric_replay": true,
+      "validation_origin": "source-matched independently executed owner audit",
+      "owner_logit_max_error": 0.0
+    },
+    {
+      "arm": "waveform_no_baseline",
+      "family": "waveform_lda",
+      "exact_numeric_replay": true,
+      "validation_origin": "source-matched independently executed owner audit",
+      "owner_logit_max_error": 0.0
+    },
+    {
+      "arm": "toeplitz_no_baseline",
+      "family": "toeplitz_lda",
+      "exact_numeric_replay": true,
+      "validation_origin": "source-matched independently executed owner audit",
+      "owner_logit_max_error": 0.0
+    },
+    {
+      "arm": "xdawn_erp_baseline",
+      "family": "xdawn_erp",
+      "exact_numeric_replay": true,
+      "validation_origin": "source-matched independently executed owner audit",
+      "owner_logit_max_error": 0.0
+    }
+  ],
+  "n_arms": 16,
+  "erp_owner_evidence_sha256": "4353a4bd7b9882994e3da6b46f3ebd330db92fb7a537a357701f2ce090ce5c55",
+  "no_real_data_used": true,
+  "evidence_scope": "software_and_math_verification"
+}

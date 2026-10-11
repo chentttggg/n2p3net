@@ -1,0 +1,105 @@
+{
+  "schema": "n2p3_gls_independent_verification/1",
+  "evidence_scope": "software_mathematical_correctness",
+  "source_sha256": {
+    "doc/assets/operator_research_20261004/continuous_model.py": "30197962f36bf30a8281649f4f673b3a637f3651f9db53626d974e78c3a08be8",
+    "src/data/finite_filter_operator.py": "c0e03099ef5a2eb16871a8d588b4bb210e2691154bcedc9660c7670b1cdea9f4",
+    "src/transfer/continuous_decision.py": "19e8073f3fb0afa5d88bceeec9f978d5749cb4aa12008f1aaaaf2f6f251b72c0",
+    "src/transfer/temporal_noise.py": "d5e2383cfdabd4991765aa57f6ae6ba2d42da948968e39375e9b377b96a8ea05"
+  },
+  "script_sha256": "1146aa798850901398d6fbf743a54b7775f6ae8e95ff22642236d974e57503c4",
+  "legacy_bridge": {
+    "record_lengths": [
+      240,
+      259,
+      275,
+      208
+    ],
+    "last_record_right_censored": true,
+    "max_absolute_differences": {
+      "mean": 2.4424906541753444e-15,
+      "row_covariance": 1.5265566588595902e-16,
+      "innovation_covariance": 0.0,
+      "phi": 0.0,
+      "log_evidence": 5.684341886080802e-14,
+      "probability": 2.409163534060693e-23
+    },
+    "old_winner": "b",
+    "new_winner": "b"
+  },
+  "dense_gaussian": [
+    {
+      "order": 0,
+      "max_log_bayes_factor_error": 3.552713678800501e-15
+    },
+    {
+      "order": 1,
+      "max_log_bayes_factor_error": 4.263256414560601e-14
+    },
+    {
+      "order": 2,
+      "max_log_bayes_factor_error": 4.121147867408581e-13
+    }
+  ],
+  "replay_and_truth_separation": [
+    {
+      "arm": "legacy_none",
+      "order": 1,
+      "winner": "b",
+      "exact_numeric_replay": true,
+      "candidate_permutation": true,
+      "score_has_no_truth_parameter": true,
+      "renamed_calibration_rejected": true
+    },
+    {
+      "arm": "filtered_old_design",
+      "order": 1,
+      "winner": "b",
+      "exact_numeric_replay": true,
+      "candidate_permutation": true,
+      "score_has_no_truth_parameter": true,
+      "renamed_calibration_rejected": true
+    },
+    {
+      "arm": "filtered_matched_design",
+      "order": 1,
+      "winner": "b",
+      "exact_numeric_replay": true,
+      "candidate_permutation": true,
+      "score_has_no_truth_parameter": true,
+      "renamed_calibration_rejected": true
+    },
+    {
+      "arm": "raw_Burg8",
+      "order": 8,
+      "winner": "b",
+      "exact_numeric_replay": true,
+      "candidate_permutation": true,
+      "score_has_no_truth_parameter": true,
+      "renamed_calibration_rejected": true
+    },
+    {
+      "arm": "raw_Burg32",
+      "order": 32,
+      "winner": "b",
+      "exact_numeric_replay": true,
+      "candidate_permutation": true,
+      "score_has_no_truth_parameter": true,
+      "renamed_calibration_rejected": true
+    }
+  ],
+  "filtering_reference_and_units": {
+    "global_uV_to_V_max_log_evidence_error": 2.2737367544323206e-13,
+    "post_processing_common_drift_max_log_evidence_error": 0.0,
+    "filtered_coordinate_dense_references": [
+      {
+        "filter_design": false,
+        "max_log_bayes_factor_error": 0.0
+      },
+      {
+        "filter_design": true,
+        "max_log_bayes_factor_error": 2.6645352591003757e-15
+      }
+    ]
+  }
+}

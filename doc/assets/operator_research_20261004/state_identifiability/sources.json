@@ -1,0 +1,26 @@
+[
+  {
+    "name": "scipy_filtfilt",
+    "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html",
+    "status": 200,
+    "bytes": 48470,
+    "sha256": "6d9acd9f3b055e1c34e2682e81b3dddf05308f81f0cceeadd2294055612de4ee",
+    "local": "scipy_filtfilt.html"
+  },
+  {
+    "name": "scipy_discrete_lyapunov",
+    "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_discrete_lyapunov.html",
+    "status": 200,
+    "bytes": 31978,
+    "sha256": "747e5c0f347c7afbd643f041a9461f4278f3de06aaf1a21219c8d630a132a787",
+    "local": "scipy_discrete_lyapunov.html"
+  },
+  {
+    "name": "gpml_chapter2",
+    "url": "https://gaussianprocess.org/gpml/chapters/RW2.pdf",
+    "status": 200,
+    "bytes": 466925,
+    "sha256": "33eb573e1a15abbc04191cc57f74076e1df83024d14b934eebfac3b30a3f57ce",
+    "local": "gpml_chapter2.pdf"
+  }
+]

@@ -1,0 +1,150 @@
+{
+  "schema": "n2p3_research_validation/1",
+  "date": "2026-09-15",
+  "status": "research_decision_complete_production_implementation_pending",
+  "evidence_scope": "synthetic_operator_counterexamples_and_existing_software_tests",
+  "baseline_tests": {
+    "passed": 93,
+    "warnings": 4,
+    "seconds": 28.2,
+    "command": "python -X utf8 -m pytest tests/data/test_preprocess.py tests/data/test_notch_filter.py tests/data/test_filter_phase.py tests/data/test_bidirectional_recovery.py tests/brainsync/test_brainsync_input_replay.py -q -o addopts= -ra -p no:cacheprovider"
+  },
+  "probe_count": 14,
+  "probes": [
+    {
+      "id": "01_explicit_contract_lowering_same_operator",
+      "passed": true,
+      "max_abs_v": 0.0,
+      "samples": 179
+    },
+    {
+      "id": "02_lowlevel_allows_shape_spec_rejects",
+      "passed": true,
+      "spec_rejection": "Physical time axis with an exclusive right endpoint requires floor(179.2)=179 samples, not n_times=100.",
+      "lowlevel_output_samples": 100,
+      "interpretation": "Confirmed validation-surface mismatch, not an observed production cache failure"
+    },
+    {
+      "id": "03_record_readable_not_executable",
+      "passed": true,
+      "executable_rejection": "Fixed absolute-voltage epoch rejection is retired; use fold-local artifact QC.",
+      "interpretation": "Separate historical decoding from executable validation"
+    },
+    {
+      "id": "04_mean_baseline_linear_and_adjoint",
+      "passed": true,
+      "linearity_error": 4.440892098500626e-16,
+      "constant_shift_error": 8.881784197001252e-16,
+      "gradient_error": 1.7763568394002505e-15
+    },
+    {
+      "id": "05_median_center_not_linear",
+      "passed": true,
+      "max_abs": 2.0,
+      "interpretation": "No shared linear projection/certificate without a baseline capability guard"
+    },
+    {
+      "id": "06_filter_crop_do_not_commute",
+      "passed": true,
+      "max_abs_v": 6.74387036054449e-06
+    },
+    {
+      "id": "07_spatial_filter_commute_only_same_support",
+      "passed": true,
+      "common_segments_error_v": 9.117462644245289e-18,
+      "different_segments_error_v": 8.730430456501992e-06
+    },
+    {
+      "id": "08_same_sos_different_padding_not_same_operator",
+      "passed": true,
+      "max_abs_v": 9.31452752111459e-06
+    },
+    {
+      "id": "09_reverse_support_and_recording_separation",
+      "passed": true,
+      "future_influence_v": 0.0004966429389376193,
+      "isolated_prefix_v": 0.0
+    },
+    {
+      "id": "10_recovery_epoch_map_matches_production",
+      "passed": true,
+      "max_abs_v": 0.0,
+      "source_epoch_samples": 351
+    },
+    {
+      "id": "11_closed_endpoint_can_exceed_declared_availability",
+      "passed": true,
+      "endpoint_influence_v": 7.61711344239302e-05,
+      "latest_source_sample_s": 5.2,
+      "reported_available_s": 5.199,
+      "deficit_ms": 1.000000000000334,
+      "interpretation": "Valid 1199 ms raw control at 250 Hz; not a failure claim about the current 1200 ms product default"
+    },
+    {
+      "id": "12_historical_missing_fields_preserve_identity",
+      "passed": true,
+      "old_notch": [],
+      "old_edge": "legacy",
+      "current_phase": "zero"
+    },
+    {
+      "id": "13_baseline_resample_commutator",
+      "passed": true,
+      "formula_error": 1.0130785099704553e-15,
+      "max_abs_difference_v": 1.1218090405705588e-08
+    },
+    {
+      "id": "14_absolute_samples_separate_from_array_offsets",
+      "passed": true,
+      "first_samp": 1000,
+      "absolute_event_sample": 2000,
+      "max_abs_v": 0.0
+    }
+  ],
+  "versions": {
+    "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+    "mne": "1.12.1",
+    "numpy": "2.5.2",
+    "scipy": "1.18.1",
+    "torch": "2.13.0+cu130"
+  },
+  "source_sha256": {
+    "src/data/contract.py": "4e3d178c06cbc7923cf91de17aebf0326450e4cd43048c2ac990405ed618e874",
+    "src/data/epochs.py": "f14f122fdb34e3f32a2a31e4c4c17602c023d98f0d34e0797178d6961f345af7",
+    "src/data/preprocess.py": "2375ced47f2b631a968274b491da6f2a36987c9db5a6c1707c201582c97e5f94",
+    "src/data/recovery.py": "cb00d87ec780e42546d79fbd37cf6ac5a296f8dd8835734d588f5ab45977d953",
+    "src/data/bidirectional.py": "2c17742fce6d398603029faf8ec3be6a27582703a6362abd0e697a8a959ba929",
+    "src/data/continuous_qc.py": "99798236cc43caa132d6605413a8e7ae833201b8492a65e7624b9d4998e69e17",
+    "src/data/brainsync.py": "1bffa6509cf7dbc864bc8271bf473f8006cfc551e89f9db334f03e533566dafc",
+    "src/data/moabb.py": "a8fbc34bca18a86be47bcea09a315db8cbe9e0fbd15ee54156121250f8b3f4d2",
+    "src/data/gtn_dataset.py": "93c4da5bb68b1cae27fd80e2dd20e0de1cac74e80cb74c4fd73a0ae3340e5ca3",
+    "src/data/bi2014a_candidate.py": "e8f53e4334c59f7fe1917d6df2f70ec4c81503559a609b99be7f5dd464d1b8ef",
+    "src/data/bnci2014_008_candidate.py": "b3f963e68556e60421ac268b7738bf439ea3bc6bf78e41fc5d3c14968934d076",
+    "src/data/manifest.py": "75eaf5cef20837c02bb25f970c52116c639866ec19d2c98385fef9805095f141",
+    "src/data/dataset.py": "42ad91035e88a897da3dafdaec338d7ed11441dddb6389148531e05070b71b08"
+  },
+  "checks": {
+    "active_python_files": 308,
+    "ruff_exit": 0,
+    "ruff_output": "All checks passed!\n",
+    "probe_ruff_exit": 0,
+    "probe_ruff_output": "All checks passed!\n",
+    "diff_exit": 0,
+    "diff_errors": ""
+  },
+  "independent_review": {
+    "scope": "code axis and research draft",
+    "formula_corrected": "absolute MNE sample indices minus first_samp for array slices",
+    "correction_tested": true
+  },
+  "production_code_modified": false,
+  "classifier_training_performed": false,
+  "real_data_processed": false,
+  "limitations": [
+    "Probes characterize current kernels; all adapter equivalence after a proposed refactor is not yet demonstrated",
+    "1199ms endpoint counterexample is not a claim that the default 1200ms complete-recording BrainSync path fails",
+    "No classifier accuracy or runtime improvement claim",
+    "Tanner full-text relevant passages verified by subagent; original HTTP response not retained; later main request did not return article text"
+  ],
+  "archive_manifest": "../../../frozen/preprocessing_contract_research_20260915/manifest.json"
+}

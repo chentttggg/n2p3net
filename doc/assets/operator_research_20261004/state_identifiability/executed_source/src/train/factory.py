@@ -1,0 +1,170 @@
+"""Construct performance candidates from the universal epoch contract."""
+
+from __future__ import annotations
+
+from dataclasses import asdict
+from typing import Any
+
+import numpy as np
+import torch
+
+from baselines.classic import SWLDA, TemplateMatching, WindowLogisticRegression
+from baselines.deep import DEEP_MODEL_NAMES, DeepBaseline, DeepConfig
+from baselines.n2p3net import N2P3NetBaseline
+from baselines.riemann import XdawnRiemann
+from data.epochs import EpochDataset
+from models.n2p3net import (
+    BROAD_REFERENCE_N2P3_ARCHITECTURE,
+    DEFAULT_N2P3_ARCHITECTURE,
+    DEFAULT_N2P3_POOLING_MODE,
+    TUNED_FULL_UNFOLD_ARCHITECTURE,
+    TUNED_FULL_UNFOLD_SOURCE_SAMPLE_RATE_HZ,
+    N2P3ArchitectureConfig,
+    scale_architecture_preserving_spans,
+)
+from train.runtime import GpuPerformanceScheduler
+
+N2P3_POOLING_BY_MODEL = {
+    "n2p3net_lmbc": "latency_marginal_contrast",
+    "n2p3net_global_average": "global_average",
+    "ms_eegnet": "ms_flatten",
+    "n2p3net_full_unfold": "full_unfold",
+    "n2p3net_full_unfold_k35": "full_unfold",
+    "n2p3net_mlp_full_unfold": "mlp_full_unfold",
+    "n2p3net_quadratic_full_unfold": "quadratic_full_unfold",
+}
+
+BINARY_MODEL_NAMES = (
+    "swdla",
+    "window_lr",
+    "template",
+    "xdawn_rg",
+    "n2p3net",
+    *N2P3_POOLING_BY_MODEL,
+    *DEEP_MODEL_NAMES,
+)
+
+
+def _validate_binary_dataset(dataset: EpochDataset) -> None:
+    if not isinstance(dataset, EpochDataset):
+        raise TypeError("Binary model construction requires an EpochDataset instance.")
+    dataset.validate(require_labels=True)
+    if set(np.unique(dataset.y).tolist()) != {0, 1}:
+        raise ValueError("Binary oddball training requires labels {0,1}.")
+
+
+def _deep_config(
+    *,
+    epochs: int,
+    batch_size: int,
+    seed: int,
+    validation_group_fraction: float,
+    overrides: dict[str, Any] | None,
+) -> DeepConfig:
+    values: dict[str, Any] = {
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "seed": seed,
+        "val_group_frac": validation_group_fraction,
+    }
+    values.update(overrides or {})
+    return DeepConfig(**values)
+
+
+def build_binary_model(
+    model_name: str,
+    dataset: EpochDataset,
+    *,
+    epochs: int,
+    batch_size: int,
+    seed: int = 0,
+    validation_group_fraction: float = 0.1,
+    deep_config_overrides: dict[str, Any] | None = None,
+    device: torch.device | None = None,
+    runtime: GpuPerformanceScheduler | None = None,
+    n2p3net_pooling_mode: str = DEFAULT_N2P3_POOLING_MODE,
+    n2p3net_architecture: N2P3ArchitectureConfig = DEFAULT_N2P3_ARCHITECTURE,
+):
+    """Return one candidate using only the data and performance contracts."""
+
+    _validate_binary_dataset(dataset)
+    key = str(model_name).strip().lower()
+    sfreq = float(dataset.preprocessing.sfreq)
+    tmin = float(dataset.preprocessing.tmin_ms) / 1000.0
+    common_mask = np.asarray(dataset.channel_mask, dtype=bool)
+    if key == "swdla":
+        return SWLDA(sfreq=sfreq, tmin=tmin)
+    if key == "window_lr":
+        return WindowLogisticRegression(sfreq=sfreq, tmin=tmin)
+    if key == "template":
+        return TemplateMatching(sfreq=sfreq, tmin=tmin, window_ms=(250.0, 600.0))
+    if key == "xdawn_rg":
+        return XdawnRiemann(nfilter=min(4, dataset.n_channels))
+    config = _deep_config(
+        epochs=epochs,
+        batch_size=batch_size,
+        seed=seed,
+        validation_group_fraction=validation_group_fraction,
+        overrides=deep_config_overrides,
+    )
+    if key == "n2p3net" or key in N2P3_POOLING_BY_MODEL:
+        pooling_mode = N2P3_POOLING_BY_MODEL.get(key, n2p3net_pooling_mode)
+        if key == "ms_eegnet":
+            architecture = scale_architecture_preserving_spans(
+                BROAD_REFERENCE_N2P3_ARCHITECTURE,
+                source_sample_rate_hz=TUNED_FULL_UNFOLD_SOURCE_SAMPLE_RATE_HZ,
+                target_sample_rate_hz=sfreq,
+            )
+        elif key == "n2p3net_full_unfold_k35":
+            architecture = scale_architecture_preserving_spans(
+                TUNED_FULL_UNFOLD_ARCHITECTURE,
+                source_sample_rate_hz=TUNED_FULL_UNFOLD_SOURCE_SAMPLE_RATE_HZ,
+                target_sample_rate_hz=sfreq,
+            )
+        else:
+            architecture = n2p3net_architecture
+        return N2P3NetBaseline(
+            dataset.n_channels,
+            dataset.n_times,
+            sfreq,
+            config=config,
+            device=device,
+            runtime=runtime,
+            channel_mask=common_mask,
+            tmin_s=tmin,
+            pooling_mode=pooling_mode,
+            architecture=architecture,
+        )
+    if key in DEEP_MODEL_NAMES:
+        return DeepBaseline(
+            key,
+            n_chans=dataset.n_channels,
+            n_times=dataset.n_times,
+            sfreq=sfreq,
+            config=config,
+            device=device,
+            runtime=runtime,
+            channel_mask=common_mask,
+        )
+    raise ValueError(f"Unknown binary model {model_name!r}; choose from {BINARY_MODEL_NAMES}.")
+
+
+def describe_binary_model(model_name: str, model: object) -> dict[str, Any]:
+    """Return a stable, model-neutral manifest entry."""
+
+    key = str(model_name).strip().lower()
+    if key in {"swdla", "window_lr", "template", "xdawn_rg"}:
+        return {"name": key, "class": type(model).__name__}
+    config = getattr(model, "cfg", None)
+    record = {
+        "name": key,
+        "class": type(model).__name__,
+        "config": asdict(config) if config is not None else {},
+        "n_chans": int(model.n_chans),
+        "n_times": int(model.n_times),
+        "sfreq": float(model.sfreq),
+        "parameter_count": int(model.parameter_count()),
+    }
+    if key == "n2p3net" or key in N2P3_POOLING_BY_MODEL:
+        record["architecture"] = model.architecture_record()
+    return record

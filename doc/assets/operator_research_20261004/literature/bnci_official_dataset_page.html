@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en-gb" dir="ltr">
+
+
+<head>
+<script type="text/javascript">window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments);};gtag('consent', 'default', {"ad_storage":"denied","ad_user_data":"denied","ad_personalization":"denied","analytics_storage":"denied","functionality_storage":"denied","personalization_storage":"denied","security_storage":"granted","wait_for_update":500});gtag('set', 'ads_data_redaction', true);window.reDimCC={"cookieName":"reDimCookieConsent","ajaxUrl":"https://bnci-horizon-2020.eu/index.php?option=com_ajax&group=system&plugin=cookiehint&format=json","statistics":true,"impressions":"session","i18n":{"provider":"Provider","duration":"Duration","reallyReject":"A refusal will affect the functions of the website. Do you really want to decline?","iframeNotice":"This content is provided by %s. Loading it transfers data to the provider.","iframeLoad":"Load content","pending":"not loaded yet"},"categories":[{"key":"essential","locked":true,"defaultOn":true,"label":"Essential","description":"Necessary for the operation of the website. These cookies cannot be disabled.","gtag":["security_storage"]},{"key":"functional","locked":false,"defaultOn":false,"label":"Functional","description":"Enable convenient features and the storing of preferences.","gtag":["functionality_storage","personalization_storage"]},{"key":"statistics","locked":false,"defaultOn":false,"label":"Statistics","description":"Help us understand how visitors use the website (audience measurement).","gtag":["analytics_storage"]},{"key":"marketing","locked":false,"defaultOn":false,"label":"Marketing","description":"Used for advertising and tracking visitors across websites.","gtag":["ad_storage","ad_user_data","ad_personalization"]},{"key":"unknown","locked":false,"defaultOn":false,"label":"Other","description":"","gtag":[]}],"ruleset":[{"p":"PHPSESSID","m":"exact","c":"essential"},{"p":"[0-9a-f]{32}","m":"regex","c":"essential"},{"p":"joomla_user_state","m":"exact","c":"essential"},{"p":"joomla_remember_me_","m":"prefix","c":"essential"},{"p":"wordpress_logged_in_","m":"prefix","c":"essential"},{"p":"wordpress_sec_","m":"prefix","c":"essential"},{"p":"wordpress_test_cookie","m":"exact","c":"essential"},{"p":"wp-settings-","m":"prefix","c":"functional"},{"p":"wp_lang","m":"exact","c":"functional"},{"p":"comment_author_","m":"prefix","c":"functional"},{"p":"__zlcstore","m":"exact","c":"functional"},{"p":"ZD-suid","m":"exact","c":"functional"},{"p":"ZD-store","m":"exact","c":"functional"},{"p":"zte2095","m":"exact","c":"functional"},{"p":"__cf_bm","m":"exact","c":"essential"},{"p":"cf_clearance","m":"exact","c":"essential"},{"p":"__cflb","m":"exact","c":"essential"},{"p":"__cfduid","m":"exact","c":"essential"},{"p":"AWSALB","m":"prefix","c":"essential"},{"p":"BIGipServer","m":"prefix","c":"essential"},{"p":"XSRF-TOKEN","m":"exact","c":"essential"},{"p":"csrftoken","m":"exact","c":"essential"},{"p":"reDimCookieHint","m":"exact","c":"essential"},{"p":"reDimCookieConsent","m":"exact","c":"essential"},{"p":"reDimCookieConsentId","m":"exact","c":"essential"},{"p":"CookieConsent","m":"exact","c":"essential"},{"p":"cookieconsent_status","m":"exact","c":"essential"},{"p":"_GRECAPTCHA","m":"exact","c":"essential"},{"p":"_ga","m":"exact","c":"statistics"},{"p":"_ga_","m":"prefix","c":"statistics"},{"p":"_gid","m":"exact","c":"statistics"},{"p":"_gat","m":"exact","c":"statistics"},{"p":"_gat_","m":"prefix","c":"statistics"},{"p":"_gac_","m":"prefix","c":"marketing"},{"p":"AMP_TOKEN","m":"exact","c":"statistics"},{"p":"_dc_gtm_","m":"prefix","c":"statistics"},{"p":"__utma","m":"exact","c":"statistics"},{"p":"__utmb","m":"exact","c":"statistics"},{"p":"__utmc","m":"exact","c":"statistics"},{"p":"__utmt","m":"exact","c":"statistics"},{"p":"__utmz","m":"exact","c":"statistics"},{"p":"_gcl_au","m":"exact","c":"marketing"},{"p":"_gcl_ls","m":"exact","c":"marketing"},{"p":"_gcl_aw","m":"exact","c":"marketing"},{"p":"_gcl_dc","m":"exact","c":"marketing"},{"p":"_gcl_gb","m":"exact","c":"marketing"},{"p":"IDE","m":"exact","c":"marketing"},{"p":"test_cookie","m":"exact","c":"marketing"},{"p":"NID","m":"exact","c":"marketing"},{"p":"DSID","m":"exact","c":"marketing"},{"p":"1P_JAR","m":"exact","c":"marketing"},{"p":"ANID","m":"exact","c":"marketing"},{"p":"CONSENT","m":"exact","c":"essential"},{"p":"SOCS","m":"exact","c":"essential"},{"p":"receive-cookie-deprecation","m":"exact","c":"marketing"},{"p":"__gads","m":"exact","c":"marketing"},{"p":"__gpi","m":"exact","c":"marketing"},{"p":"VISITOR_INFO1_LIVE","m":"exact","c":"marketing"},{"p":"YSC","m":"exact","c":"marketing"},{"p":"PREF","m":"exact","c":"functional"},{"p":"DV","m":"exact","c":"marketing"},{"p":"_fbp","m":"exact","c":"marketing"},{"p":"_fbc","m":"exact","c":"marketing"},{"p":"fr","m":"exact","c":"marketing"},{"p":"tr","m":"exact","c":"marketing"},{"p":"li_sugr","m":"exact","c":"marketing"},{"p":"lidc","m":"exact","c":"marketing"},{"p":"bcookie","m":"exact","c":"marketing"},{"p":"bscookie","m":"exact","c":"marketing"},{"p":"UserMatchHistory","m":"exact","c":"marketing"},{"p":"AnalyticsSyncHistory","m":"exact","c":"marketing"},{"p":"li_gc","m":"exact","c":"marketing"},{"p":"_ttp","m":"exact","c":"marketing"},{"p":"tt_","m":"prefix","c":"marketing"},{"p":"ttwid","m":"exact","c":"marketing"},{"p":"personalization_id","m":"exact","c":"marketing"},{"p":"guest_id","m":"exact","c":"marketing"},{"p":"muc_ads","m":"exact","c":"marketing"},{"p":"_pinterest_sess","m":"exact","c":"marketing"},{"p":"_pin_unauth","m":"exact","c":"marketing"},{"p":"_routing_id","m":"exact","c":"marketing"},{"p":"MUID","m":"exact","c":"marketing"},{"p":"_uetsid","m":"exact","c":"marketing"},{"p":"_uetvid","m":"exact","c":"marketing"},{"p":"_pk_id","m":"prefix","c":"statistics"},{"p":"_pk_ses","m":"prefix","c":"statistics"},{"p":"_pk_ref","m":"prefix","c":"statistics"},{"p":"MATOMO_SESSID","m":"exact","c":"statistics"},{"p":"_hjSessionUser_","m":"prefix","c":"statistics"},{"p":"_hjSession_","m":"prefix","c":"statistics"},{"p":"_hjIncludedInSessionSample","m":"prefix","c":"statistics"},{"p":"_hjAbsoluteSessionInProgress","m":"exact","c":"statistics"},{"p":"_hjTLDTest","m":"exact","c":"statistics"},{"p":"_clck","m":"exact","c":"statistics"},{"p":"_clsk","m":"exact","c":"statistics"},{"p":"CLID","m":"exact","c":"statistics"},{"p":"_ym_uid","m":"exact","c":"statistics"},{"p":"_ym_d","m":"exact","c":"statistics"},{"p":"_ym_isad","m":"exact","c":"statistics"},{"p":"_ym_visorc","m":"exact","c":"statistics"},{"p":"VISITOR_PRIVACY_METADATA","m":"exact","c":"functional"},{"p":"__Secure-YEC","m":"exact","c":"marketing"},{"p":"yt-remote-","m":"prefix","c":"functional"},{"p":"vuid","m":"exact","c":"statistics"},{"p":"player","m":"exact","c":"functional"},{"p":"AEC","m":"exact","c":"essential"},{"p":"__stripe_mid","m":"exact","c":"essential"},{"p":"__stripe_sid","m":"exact","c":"essential"},{"p":"ts","m":"exact","c":"essential"},{"p":"tsrce","m":"exact","c":"essential"},{"p":"x-pp-s","m":"exact","c":"essential"},{"p":"LANG","m":"exact","c":"functional"},{"p":"enforce_policy","m":"exact","c":"essential"},{"p":"l7_az","m":"exact","c":"essential"},{"p":"mobilemenuck-lock-hide","m":"exact","c":"functional"},{"p":"sppb_user_timezone","m":"exact","c":"functional"},{"p":"sppbActiveColorMode","m":"exact","c":"functional"},{"p":"wpEmojiSettingsSupports","m":"exact","c":"functional"},{"p":"chtl_last_pageview","m":"exact","c":"functional"},{"p":"chtl_cus_","m":"prefix","c":"functional"},{"p":"fslightbox-types","m":"exact","c":"functional"},{"p":"fslightbox-scrollbar-width","m":"exact","c":"functional"}],"accepted":["essential"],"consentMode":{"enabled":true,"adsRedaction":true},"iframe":{"enabled":true},"sessionCookies":[{"name":"18de103605a393f02699afb8abee8b33","service":"Joomla Session-Cookie","category":"essential","show":true},{"name":"9f91b9fa322ba2e6e9b666ccd77fbf01","service":"Joomla Session-Cookie","category":"essential","show":false},{"name":"joomla_user_state","service":"Joomla Session-Cookie","category":"essential","show":false}],"cookie":{"days":0,"secure":true,"sameSite":"lax"}};(function () {     var cc = window.reDimCC || {};     var rules = cc.ruleset || [];     function readPrefs() {         try {             var m = document.cookie.match(/(?:^|; )reDimCookieConsent=([^;]*)/);             if (m) { return JSON.parse(decodeURIComponent(m[1])); }         } catch (e) {}         return null;     }     var prefs = readPrefs();     var accepted = (prefs && prefs.c) ? prefs.c : (cc.accepted || ['essential']);     var overrides = (prefs && prefs.o) ? prefs.o : {};     function categoryOf(name) {         var best = null, score = -1;         for (var i = 0; i < rules.length; i++) {             var r = rules[i], ok = false, sp = 0;             if (r.m === 'prefix') { ok = name.indexOf(r.p) === 0; sp = 2000 + r.p.length; }             else if (r.m === 'regex') { try { if (!r._re) { r._re = new RegExp('^(?:' + r.p + ')$'); } ok = r._re.test(name); } catch (e) { ok = false; } sp = 1000 + r.p.length; }             else { ok = (name === r.p); sp = 3000 + r.p.length; }             if (ok && sp > score) { best = r.c; score = sp; }         }         return best;     }     var sessionCookies = cc.sessionCookies || (cc.sessionCookie ? [cc.sessionCookie] : []);     function allowed(name) {         if (name === 'reDimCookieHint' || name === 'reDimCookieConsent' || name === 'reDimCookieConsentId') { return true; }         /* The host's own session/login cookies are essential — never block them (the            classic blocker whitelists them by name too; passed via window.reDimCC). */         for (var s = 0; s < sessionCookies.length; s++) {             if (sessionCookies[s] && name === sessionCookies[s].name) { return true; }         }         var cat = categoryOf(name);         if (cat === null) { cat = 'unknown'; }         if (cat === 'essential') { return true; }         if (Object.prototype.hasOwnProperty.call(overrides, name)) { return !!overrides[name]; }         return accepted.indexOf(cat) !== -1;     }     /* Genuine-deletion check: parse attributes (max-age wins) rather than substring-        matching, so a disallowed cookie can't be smuggled in behind a fake "expired"        string that also carries a future max-age/expires. */     function isDeletion(s) {         var maxAge = null, expTs = null, parts = s.split(';');         for (var i = 1; i < parts.length; i++) {             var seg = parts[i], eq = seg.indexOf('=');             var k = (eq < 0 ? seg : seg.slice(0, eq)).trim().toLowerCase();             var val = eq < 0 ? '' : seg.slice(eq + 1).trim();             if (k === 'max-age') { maxAge = parseInt(val, 10); }             else if (k === 'expires') { expTs = Date.parse(val); }         }         if (maxAge !== null && !isNaN(maxAge)) { return maxAge <= 0; }         if (expTs !== null && !isNaN(expTs)) { return expTs < Date.now(); }         return false;     }     /* Deletion must hit the cookie's exact path: target '/', every ancestor        directory of the current path (sub-directory installs!) and each parent        domain — a path=/ only delete would miss e.g. path=/wordpress/ cookies. */     function cookiePaths() {         var out = ['/'];         try {             var segs = location.pathname.split('/'), acc = '';             for (var i = 0; i < segs.length; i++) {                 if (!segs[i]) { continue; }                 acc += '/' + segs[i];                 out.push(acc);                 out.push(acc + '/');             }         } catch (e) {}         return out;     }     function deleteCookieEverywhere(name) {         var domains = [''];         try {             var parts = location.hostname.split('.');             for (var i = 0; i < parts.length - 1; i++) { domains.push('; domain=.' + parts.slice(i).join('.')); }         } catch (e) {}         cookiePaths().forEach(function (p) {             domains.forEach(function (d) {                 document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=' + p + d;             });         });     }     window.reDimCCAllowed = allowed;     /* Provenance ("own") tracking: only names this site is actually observed        WRITING (through the hooked document.cookie setter / Storage.setItem —        blocked attempts included) may later be recorded as discovered. Names that        are merely present in the jar can be visitor-brought (parent-domain cookies        of sibling subdomains, other apps on the same host, browser extensions) and        carry no provenance. Persisted per tab in sessionStorage, because writes        often happen only after the banner's scan request — the next page view then        still knows them. The bookkeeping key itself stays invisible: skipped by        the sweep below and by the banner's detection. */     var OWNKEY = 'reDimCCOwn';     /* Second internal key: the banner's "impression already reported" flag of the        statistics beacon (banner script / classic inline script) — equally        invisible: never gated, swept, detected or recorded as "own". */     var SHOWNKEY = 'reDimCCShown';     function isInternal(n) { return n === OWNKEY || n === SHOWNKEY; }     var nativeSetItem = null;     try { nativeSetItem = Storage.prototype.setItem; } catch (e) {}     window.reDimCCOwnTypes = window.reDimCCOwnTypes || {};     try {         var persistedOwn = JSON.parse(window.sessionStorage.getItem(OWNKEY) || '{}');         for (var pk in persistedOwn) {             if (pk && !isInternal(pk) && !window.reDimCCOwnTypes[pk]) { window.reDimCCOwnTypes[pk] = String(persistedOwn[pk] || 'cookie'); }         }     } catch (e) {}     function recordOwn(name, kind) {         try {             if (!name || isInternal(name) || window.reDimCCOwnTypes[name] === kind) { return; }             window.reDimCCOwnTypes[name] = kind;             if (nativeSetItem) { nativeSetItem.call(window.sessionStorage, OWNKEY, JSON.stringify(window.reDimCCOwnTypes)); }         } catch (e) {}     }     try {         /* The document.cookie accessor lives on Document.prototype in Chromium and on            HTMLDocument.prototype in some other engines — walk the prototype chain so the            override installs everywhere. NOTE: this script is minified (newlines -> spaces),            so only block comments are safe here; a line comment would swallow the rest. */         var native = null, proto = document;         while (proto) {             native = Object.getOwnPropertyDescriptor(proto, 'cookie');             if (native) { break; }             proto = Object.getPrototypeOf(proto);         }         if (native && native.configurable && native.set) {             Object.defineProperty(document, 'cookie', {                 configurable: true,                 get: function () { return native.get.call(document); },                 set: function (v) {                     var s = (v || '');                     var name = s.split('=')[0].trim();                     var isDelete = isDeletion(s);                     if (name !== '' && !isDelete) { recordOwn(name, 'cookie'); }                     if (name === '' || isDelete || allowed(name)) { native.set.call(document, s); }                     return true;                 }             });         }     } catch (e) {}     try {         /* Report the pre-sweep cookie names so the deferred scan can still discover /            display cookies this early blocker is about to delete (else unknown cookies            would vanish before they are ever seen). */         window.reDimCCSwept = window.reDimCCSwept || [];         window.reDimCCSweptTypes = window.reDimCCSweptTypes || {};         document.cookie.split(';').forEach(function (c) {             var name = c.split('=')[0].trim();             if (!name) { return; }             window.reDimCCSwept.push(name);             window.reDimCCSweptTypes[name] = 'cookie';             if (!allowed(name)) {                 deleteCookieEverywhere(name);             }         });     } catch (e) {}     try {         /* localStorage / sessionStorage are consent-gated exactly like cookies            (ePrivacy / §25 TDDDG is technology-neutral): gate new writes through the            same category rules and sweep what earlier visits already stored. Swept            keys are reported like swept cookies so the scan can still list them. */         window.reDimCCSwept = window.reDimCCSwept || [];         window.reDimCCSweptTypes = window.reDimCCSweptTypes || {};         if (nativeSetItem) {             Storage.prototype.setItem = function (k, v) {                 var key = String(k);                 recordOwn(key, this === window.sessionStorage ? 'session' : 'local');                 if (isInternal(key) || allowed(key)) { return nativeSetItem.call(this, k, v); }             };         }         ['localStorage', 'sessionStorage'].forEach(function (prop) {             try {                 var store = window[prop];                 var kind = prop === 'localStorage' ? 'local' : 'session';                 var keys = [];                 for (var i = 0; i < store.length; i++) { keys.push(store.key(i)); }                 keys.forEach(function (k) {                     if (!k || isInternal(k)) { return; }                     window.reDimCCSwept.push(k);                     window.reDimCCSweptTypes[k] = kind;                     if (!allowed(k)) { store.removeItem(k); }                 });             } catch (e) {}         });     } catch (e) {} })(); (function(){var HOST=location.hostname.replace(/^www\./,'');function tp(u){try{var p=new URL(u,location.href);if(p.protocol!=='http:'&&p.protocol!=='https:'){return null;}var h=p.hostname.replace(/^www\./,'');return h===HOST?null:p.href;}catch(e){return null;}}function block(f){try{if(f.getAttribute('data-redim-cc-blocked')||f.getAttribute('data-redim-cc-allowed')){return;}var s=f.getAttribute('src');if(!s){return;}var u=tp(s);if(!u){return;}f.setAttribute('data-redim-cc-src',u);f.setAttribute('data-redim-cc-blocked','1');f.setAttribute('src','about:blank');}catch(e){}}new MutationObserver(function(ms){for(var i=0;i<ms.length;i++){var a=ms[i].addedNodes;for(var j=0;j<a.length;j++){var n=a[j];if(!n.tagName){continue;}if(n.tagName==='IFRAME'){block(n);}else if(n.querySelectorAll){var fr=n.querySelectorAll('iframe');for(var k=0;k<fr.length;k++){block(fr[k]);}}}}}).observe(document.documentElement,{childList:true,subtree:true});window.reDimCCIframeGuard=1;})();</script>
+
+    <meta charset="utf-8">
+	<meta name="author" content="Reinmar">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="This website contains information about brain-computer interfaces.">
+	<meta name="generator" content="Joomla! - Open Source Content Management">
+	<title>Data sets - BNCI Horizon 2020</title>
+	<link href="/media/templates/site/cassiopeia/images/joomla-favicon.svg" rel="icon" type="image/svg+xml">
+	<link href="/media/system/images/favicon.ico" rel="alternate icon" type="image/vnd.microsoft.icon">
+	<link href="/media/templates/site/cassiopeia/images/joomla-favicon-pinned.svg" rel="mask-icon" color="#000">
+
+    <link href="/media/system/css/joomla-fontawesome.min.css?30eea0" rel="lazy-stylesheet"><noscript><link href="/media/system/css/joomla-fontawesome.min.css?30eea0" rel="stylesheet"></noscript>
+	<link href="/media/templates/site/cassiopeia/css/template.min.css?30eea0" rel="stylesheet">
+	<link href="/media/templates/site/cassiopeia/css/global/colors_standard.min.css?30eea0" rel="stylesheet">
+	<link href="/media/templates/site/cassiopeia/css/vendor/joomla-custom-elements/joomla-alert.min.css?0.4.1" rel="stylesheet">
+	<link href="/plugins/system/cookiehint/css/style-flatline.css?30eea0" rel="stylesheet">
+	<link href="/plugins/system/cookiehint/lib/assets/css/cookieconsent.css?30eea0" rel="stylesheet">
+	<link href="/media/templates/site/cassiopeia/css/user.css?30eea0" rel="stylesheet">
+	<style>:root {
+		--hue: 214;
+		--template-bg-light: #f0f4fb;
+		--template-text-dark: #495057;
+		--template-text-light: #ffffff;
+		--template-link-color: var(--link-color);
+		--template-special-color: #001B4C;
+		
+	}</style>
+	<style>#redim-cookiehint-modal {position: fixed !important; top: 0 !important; bottom: 0 !important; left: 0 !important; right: 0 !important; z-index: 99998 !important; display: flex !important; justify-content: center !important; align-items: center !important; background: rgba(96, 98, 103, 0.6) !important;}:root{--redim-cc-btn-bg:#008511 !important;--redim-cc-btn-fg:#ffffff !important;--redim-cc-accent:#008511 !important;}#redim-cookiehint#redim-cookiehint .redim-cc-accept-all,#redim-cookiehint#redim-cookiehint .redim-cc-reject,#redim-cookiehint#redim-cookiehint #cookiehintsubmit,#redim-cookiehint#redim-cookiehint #cookiehintsubmitno{background:#008511 !important;border-color:#008511 !important}#redim-cookiehint#redim-cookiehint .redim-cc-accept-all,#redim-cookiehint#redim-cookiehint .redim-cc-reject,#redim-cookiehint#redim-cookiehint #cookiehintsubmit,#redim-cookiehint#redim-cookiehint #cookiehintsubmitno{color:#ffffff !important}#redim-cookiehint#redim-cookiehint .redim-cc-switch input:checked + .redim-cc-slider,#redim-cookiehint#redim-cookiehint .redim-cc-switch input:disabled + .redim-cc-slider{background-color:#008511 !important}#redim-cookiehint.redim-tpl{color-scheme:light !important}</style>
+
+    <script src="/media/vendor/metismenujs/js/metismenujs.min.js?1.4.0" defer></script>
+	<script src="/media/templates/site/cassiopeia/js/mod_menu/menu-metismenu.min.js?30eea0" defer></script>
+	<script type="application/json" class="joomla-script-options new">{"joomla.jtext":{"ERROR":"Error","MESSAGE":"Message","NOTICE":"Notice","WARNING":"Warning","SUCCESS":"Success","JCLOSE":"Close","JOK":"OK","JOPEN":"Open"},"system.paths":{"root":"","rootFull":"https:\/\/bnci-horizon-2020.eu\/","base":"","baseFull":"https:\/\/bnci-horizon-2020.eu\/"},"csrf.token":"c27e2425cf2f92ba414b3305170fe713"}</script>
+	<script src="/media/system/js/core.min.js?a3d8f8"></script>
+	<script src="/media/templates/site/cassiopeia/js/template.min.js?30eea0" type="module"></script>
+	<script src="/media/vendor/bootstrap/js/collapse.min.js?5.3.8" type="module"></script>
+	<script src="/media/system/js/joomla-hidden-mail.min.js?80d9c7" type="module"></script>
+	<script src="/media/system/js/messages.min.js?9a4811" type="module"></script>
+	<script src="/plugins/system/cookiehint/lib/assets/js/cookieconsent.js?30eea0" defer></script>
+	<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","@id":"https://bnci-horizon-2020.eu/#/schema/BreadcrumbList/17","itemListElement":[{"@type":"ListItem","position":1,"item":{"@id":"https://bnci-horizon-2020.eu/","name":"Home"}},{"@type":"ListItem","position":2,"item":{"@id":"https://bnci-horizon-2020.eu/database","name":"Database"}},{"@type":"ListItem","position":3,"item":{"@id":"https://bnci-horizon-2020.eu/database/data-sets","name":"Data sets"}}]}</script>
+	<script>(function(){var c={"ad_storage":"denied","ad_user_data":"denied","ad_personalization":"denied","analytics_storage":"denied","functionality_storage":"denied","personalization_storage":"denied","security_storage":"granted"};window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments);};gtag('consent', 'update', c);gtag('set', 'ads_data_redaction', c.ad_storage!=='granted');window.dataLayer.push({event:'cookie_consent_update',cookie_consent:c});})();</script>
+	<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://bnci-horizon-2020.eu/#/schema/Organization/base","name":"BNCI Horizon 2020","url":"https://bnci-horizon-2020.eu/"},{"@type":"WebSite","@id":"https://bnci-horizon-2020.eu/#/schema/WebSite/base","url":"https://bnci-horizon-2020.eu/","name":"BNCI Horizon 2020","publisher":{"@id":"https://bnci-horizon-2020.eu/#/schema/Organization/base"}},{"@type":"WebPage","@id":"https://bnci-horizon-2020.eu/#/schema/WebPage/base","url":"https://bnci-horizon-2020.eu/database/data-sets","name":"Data sets - BNCI Horizon 2020","description":"This website contains information about brain-computer interfaces.","isPartOf":{"@id":"https://bnci-horizon-2020.eu/#/schema/WebSite/base"},"about":{"@id":"https://bnci-horizon-2020.eu/#/schema/Organization/base"},"inLanguage":"en-GB","breadcrumb":{"@id":"https://bnci-horizon-2020.eu/#/schema/BreadcrumbList/17"}},{"@type":"Article","@id":"https://bnci-horizon-2020.eu/#/schema/com_content/article/50","name":"Data sets","headline":"Data sets","inLanguage":"en-GB","isPartOf":{"@id":"https://bnci-horizon-2020.eu/#/schema/WebPage/base"}}]}</script>
+
+</head>
+
+<body id="top" class="site com_content wrapper-static view-article no-layout no-task itemid-241">
+    <header class="header container-header full-width position-sticky sticky-top">
+
+        
+        
+                    <div class="grid-child">
+                <div class="navbar-brand">
+                    <a class="brand-logo" href="/">
+                        <img loading="eager" decoding="async" src="https://bnci-horizon-2020.eu/images/logo_BNCI.png" alt="BNCI Horizon 2020" width="200" height="71">                    </a>
+                                    </div>
+            </div>
+        
+                    <div class="grid-child container-nav">
+                                    
+<nav class="navbar navbar-expand-lg" aria-label="Main Menu">
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse" data-bs-target="#navbar1" aria-controls="navbar1" aria-expanded="false" aria-label="Toggle Navigation">
+        <span class="icon-menu" aria-hidden="true"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbar1">
+        <ul class="mod-menu mod-menu_dropdown-metismenu metismenu mod-list ">
+<li class="metismenu-item item-101 level-1 default"><a href="/" >Home</a></li><li class="metismenu-item item-198 level-1 deeper parent"><a href="/project" >Project</a><button class="mm-collapsed mm-toggler mm-toggler-link" aria-haspopup="true" aria-expanded="false" aria-label="Project"></button><ul class="mm-collapse"><li class="metismenu-item item-201 level-2"><a href="/project/consortium" >Consortium</a></li><li class="metismenu-item item-202 level-2"><a href="/project/details" >Details</a></li><li class="metismenu-item item-366 level-2"><a href="/project/advisory-board" >Advisory Board</a></li><li class="metismenu-item item-203 level-2"><a href="/project/deliverables" >Deliverables</a></li><li class="metismenu-item item-219 level-2"><a href="/project/milestones" >Milestones</a></li><li class="metismenu-item item-204 level-2"><a href="/project/dissemination" >Dissemination</a></li><li class="metismenu-item item-205 level-2"><a href="/project/retreat" >Retreat</a></li><li class="metismenu-item item-226 level-2"><a href="/project/related-projects" >Related Projects</a></li><li class="metismenu-item item-200 level-2"><a href="/project/contact" >Contact</a></li></ul></li><li class="metismenu-item item-102 level-1 deeper parent"><a href="/about" >About BCIs</a><button class="mm-collapsed mm-toggler mm-toggler-link" aria-haspopup="true" aria-expanded="false" aria-label="About BCIs"></button><ul class="mm-collapse"><li class="metismenu-item item-212 level-2"><a href="/about/basics" >Basics</a></li><li class="metismenu-item item-220 level-2"><a href="/about/glossary" >Glossary</a></li><li class="metismenu-item item-278 level-2"><a href="/about/bibliography" >Bibliography</a></li><li class="metismenu-item item-218 level-2"><a href="/about/links" >Links</a></li></ul></li><li class="metismenu-item item-206 level-1 deeper parent"><a href="/community" >Community</a><button class="mm-collapsed mm-toggler mm-toggler-link" aria-haspopup="true" aria-expanded="false" aria-label="Community"></button><ul class="mm-collapse"><li class="metismenu-item item-210 level-2"><a href="/community/bci-society" >BCI Society</a></li><li class="metismenu-item item-209 level-2"><a href="/community/end-users" >End Users</a></li><li class="metismenu-item item-208 level-2"><a href="/community/companies" >Companies</a></li><li class="metismenu-item item-207 level-2"><a href="/community/research-groups" >Research Groups</a></li><li class="metismenu-item item-261 level-2"><a href="/community/software" >Software</a></li><li class="metismenu-item item-238 level-2"><a href="/community/news" >News</a></li><li class="metismenu-item item-237 level-2"><a href="/community/events" >Events</a></li><li class="metismenu-item item-243 level-2"><a href="/community/jobs" >Jobs</a></li></ul></li><li class="metismenu-item item-239 level-1 active deeper parent"><a href="/database" >Database</a><button class="mm-collapsed mm-toggler mm-toggler-link" aria-haspopup="true" aria-expanded="false" aria-label="Database"></button><ul class="mm-collapse"><li class="metismenu-item item-241 level-2 current active"><a href="/database/data-sets" aria-current="page">Data sets</a></li><li class="metismenu-item item-240 level-2"><a href="/database/submit-new-data-set" >Submit new data set</a></li></ul></li><li class="metismenu-item item-132 level-1"><a href="/roadmap" >Roadmap</a></li><li class="metismenu-item item-659 level-1"><a href="/login" class="login-toggle">Login</a></li></ul>
+    </div>
+</nav>
+
+                                            </div>
+            </header>
+
+    <div class="site-grid">
+        
+        
+        
+        
+        <div class="grid-child container-component">
+            <nav class="mod-breadcrumbs__wrapper" aria-label="Breadcrumbs">
+    <ol class="mod-breadcrumbs breadcrumb px-3 py-2">
+                    <li class="mod-breadcrumbs__divider float-start">
+                <span class="divider icon-location icon-fw" aria-hidden="true"></span>
+            </li>
+        
+        <li class="mod-breadcrumbs__item breadcrumb-item"><a href="/" class="pathway"><span>Home</span></a></li><li class="mod-breadcrumbs__item breadcrumb-item"><a href="/database" class="pathway"><span>Database</span></a></li><li class="mod-breadcrumbs__item breadcrumb-item active"><span>Data sets</span></li>    </ol>
+    </nav>
+
+            
+            <div id="system-message-container" aria-live="polite"></div>
+
+            <main>
+                <div class="com-content-article item-page">
+    <meta itemprop="inLanguage" content="en-GB">
+    
+    
+        <div class="page-header">
+        <h1>
+            Data sets        </h1>
+                            </div>
+        
+        
+    
+    
+        
+                                                <div class="com-content-article__body">
+        <div class="container">
+<div class="row">
+<div class="col-12">
+<p>All data sets in this database are open access. This means that you can freely download and use the data according to their licenses. Additionally, if there is an associated publication, please make sure to cite it.</p>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">1. Four class motor imagery (001-2014)</h3>
+<p>This four class motor imagery data set was originally released as data set 2a of the <a href="http://www.bbci.de/competition/iv/#datasets" target="_blank" rel="noopener noreferrer">BCI Competition IV</a>.</p>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>9</dd>
+<dt>Signals</dt>
+<dd>22 EEG, 3 EOG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/001-2014/A01T.mat">A01T</a>, <a href="/database/data-sets/001-2014/A01E.mat">A01E</a>, <a href="/database/data-sets/001-2014/A02T.mat">A02T</a>, <a href="/database/data-sets/001-2014/A02E.mat">A02E</a>, <a href="/database/data-sets/001-2014/A03T.mat">A03T</a>, <a href="/database/data-sets/001-2014/A03E.mat">A03E</a>, <a href="/database/data-sets/001-2014/A04T.mat">A04T</a>, <a href="/database/data-sets/001-2014/A04E.mat">A04E</a>, <a href="/database/data-sets/001-2014/A05T.mat">A05T</a>, <a href="/database/data-sets/001-2014/A05E.mat">A05E</a>, <a href="/database/data-sets/001-2014/A06T.mat">A06T</a>, <a href="/database/data-sets/001-2014/A06E.mat">A06E</a>, <a href="/database/data-sets/001-2014/A07T.mat">A07T</a>, <a href="/database/data-sets/001-2014/A07E.mat">A07E</a>, <a href="/database/data-sets/001-2014/A08T.mat">A08T</a>, <a href="/database/data-sets/001-2014/A08E.mat">A08E</a>, <a href="/database/data-sets/001-2014/A09T.mat">A09T</a>, <a href="/database/data-sets/001-2014/A09E.mat">A09E</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution No Derivatives license (CC BY-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd><a href="http://bci.tugraz.at/" target="_blank" rel="noopener noreferrer">Institute for Knowledge Discovery</a>, <a href="http://portal.tugraz.at/portal/page/portal/TU_Graz" target="_blank" rel="noopener noreferrer">Graz University of Technology</a></dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/001-2014/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a> (will be updated and extended soon)</dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.3389/fnins.2012.00055" target="_blank" rel="noopener noreferrer">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="Y2xlbWVucy5icnVubmVy" last="dHVncmF6LmF0" text="Q2xlbWVucyBCcnVubmVy" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">2. Two class motor imagery (002-2014)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>14</dd>
+<dt>Signals</dt>
+<dd>15 EEG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/002-2014/S01T.mat">S01T</a>, <a href="/database/data-sets/002-2014/S01E.mat">S01E</a>, <a href="/database/data-sets/002-2014/S02T.mat">S02T</a>, <a href="/database/data-sets/002-2014/S02E.mat">S02E</a>, <a href="/database/data-sets/002-2014/S03T.mat">S03T</a>, <a href="/database/data-sets/002-2014/S03E.mat">S03E</a>, <a href="/database/data-sets/002-2014/S04T.mat">S04T</a>, <a href="/database/data-sets/002-2014/S04E.mat">S04E</a>, <a href="/database/data-sets/002-2014/S05T.mat">S05T</a>, <a href="/database/data-sets/002-2014/S05E.mat">S05E</a>, <a href="/database/data-sets/002-2014/S06T.mat">S06T</a>, <a href="/database/data-sets/002-2014/S06E.mat">S06E</a>, <a href="/database/data-sets/002-2014/S07T.mat">S07T</a>, <a href="/database/data-sets/002-2014/S07E.mat">S07E</a>, <a href="/database/data-sets/002-2014/S08T.mat">S08T</a>, <a href="/database/data-sets/002-2014/S08E.mat">S08E</a>, <a href="/database/data-sets/002-2014/S09T.mat">S09T</a>, <a href="/database/data-sets/002-2014/S09E.mat">S09E</a>, <a href="/database/data-sets/002-2014/S10T.mat">S10T</a>, <a href="/database/data-sets/002-2014/S10E.mat">S10E</a>, <a href="/database/data-sets/002-2014/S11T.mat">S11T</a>, <a href="/database/data-sets/002-2014/S11E.mat">S11E</a>, <a href="/database/data-sets/002-2014/S12T.mat">S12T</a>, <a href="/database/data-sets/002-2014/S12E.mat">S12E</a>, <a href="/database/data-sets/002-2014/S13T.mat">S13T</a>, <a href="/database/data-sets/002-2014/S13E.mat">S13E</a>, <a href="/database/data-sets/002-2014/S14T.mat">S14T</a>, <a href="/database/data-sets/002-2014/S14E.mat">S14E</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution No Derivatives license (CC BY-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd><a href="http://bci.tugraz.at/" target="_blank" rel="noopener noreferrer">Institute for Knowledge Discovery</a>, <a href="http://portal.tugraz.at/portal/page/portal/TU_Graz" target="_blank" rel="noopener noreferrer">Graz University of Technology</a></dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/002-2014/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a> (will be updated and extended soon)</dd>
+<dt>Publication</dt>
+<dd><a href="http://www.degruyter.com/view/j/bmte.ahead-of-print/bmt-2014-0117/bmt-2014-0117.xml" target="_blank" rel="noopener noreferrer">Link</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="ZGF2aWQuc3RleXJs" last="dHVncmF6LmF0" text="RGF2aWQgU3RleXJs" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">3. Mental arithmetic (003-2014)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>8</dd>
+<dt>Signals</dt>
+<dd>52 fNIRS</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/003-2014/S01.mat">S01</a>, <a href="/database/data-sets/003-2014/S02.mat">S02</a>, <a href="/database/data-sets/003-2014/S03.mat">S03</a>, <a href="/database/data-sets/003-2014/S04.mat">S04</a>, <a href="/database/data-sets/003-2014/S05.mat">S05</a>, <a href="/database/data-sets/003-2014/S06.mat">S06</a>, <a href="/database/data-sets/003-2014/S07.mat">S07</a>, <a href="/database/data-sets/003-2014/S08.mat">S08</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution No Derivatives license (CC BY-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd><a href="http://bci.tugraz.at/" target="_blank" rel="noopener noreferrer">Institute for Knowledge Discovery</a>, <a href="http://portal.tugraz.at/portal/page/portal/TU_Graz" target="_blank" rel="noopener noreferrer">Graz University of Technology</a></dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/003-2014/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1007/s11517-011-0792-5" target="_blank" rel="noopener noreferrer">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="Zy5iYXVlcm5mZWluZA==" last="dHVncmF6LmF0" text="R8O8bnRoZXIgQmF1ZXJuZmVpbmQ=" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">4. Two class motor imagery (004-2014)</h3>
+<p>This two class motor imagery data set was originally released as data set 2b of the <a href="http://www.bbci.de/competition/iv/#datasets" target="_blank" rel="noopener noreferrer">BCI Competition IV</a>.</p>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>9</dd>
+<dt>Signals</dt>
+<dd>3 EEG, 3 EOG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/004-2014/B01T.mat">B01T</a>, <a href="/database/data-sets/004-2014/B01E.mat">B01E</a>, <a href="/database/data-sets/004-2014/B02T.mat">B02T</a>, <a href="/database/data-sets/004-2014/B02E.mat">B02E</a>, <a href="/database/data-sets/004-2014/B03T.mat">B03T</a>, <a href="/database/data-sets/004-2014/B03E.mat">B03E</a>, <a href="/database/data-sets/004-2014/B04T.mat">B04T</a>, <a href="/database/data-sets/004-2014/B04E.mat">B04E</a>, <a href="/database/data-sets/004-2014/B05T.mat">B05T</a>, <a href="/database/data-sets/004-2014/B05E.mat">B05E</a>, <a href="/database/data-sets/004-2014/B06T.mat">B06T</a>, <a href="/database/data-sets/004-2014/B06E.mat">B06E</a>, <a href="/database/data-sets/004-2014/B07T.mat">B07T</a>, <a href="/database/data-sets/004-2014/B07E.mat">B07E</a>, <a href="/database/data-sets/004-2014/B08T.mat">B08T</a>, <a href="/database/data-sets/004-2014/B08E.mat">B08E</a>, <a href="/database/data-sets/004-2014/B09T.mat">B09T</a>, <a href="/database/data-sets/004-2014/B09E.mat">B09E</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution No Derivatives license (CC BY-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd><a href="http://bci.tugraz.at/" target="_blank" rel="noopener noreferrer">Institute for Knowledge Discovery</a>, <a href="http://portal.tugraz.at/portal/page/portal/TU_Graz" target="_blank" rel="noopener noreferrer">Graz University of Technology</a></dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/004-2014/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a> (will be updated and extended soon)</dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1109/TNSRE.2007.906956" target="_blank" rel="noopener noreferrer">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="Y2xlbWVucy5icnVubmVy" last="dHVncmF6LmF0" text="Q2xlbWVucyBCcnVubmVy" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">5. Auditory oddball during hypnosis (005-2014)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>2</dd>
+<dt>Signals</dt>
+<dd>27 EEG, 4 EOG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/005-2014/S01.mat">S01</a>, <a href="/database/data-sets/005-2014/S02.mat">S02</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd><a href="http://www.i1.psychologie.uni-wuerzburg.de/en/int/staff/kuebler_andrea_prof_dr/" target="_blank" rel="noopener noreferrer">Prof. Dr. Andrea Kübler</a>, <a href="http://www.i1.psychologie.uni-wuerzburg.de/en/" target="_blank" rel="noopener noreferrer">Department of Psychology I</a>, <a href="http://www.psychologie.uni-wuerzburg.de/" target="_blank" rel="noopener noreferrer">Institute for Psychology</a>, <a href="http://www.uni-wuerzburg.de/en/ueber/university/" target="_blank" rel="noopener noreferrer">University of Würzburg</a></dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/005-2014/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="cnViZW4ucmVhbA==" last="dW5pLXd1ZXJ6YnVyZy5kZQ==" text="UnViZW4gUmVhbA==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">6. SCP training in stroke (006-2014)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>2</dd>
+<dt>Signals</dt>
+<dd>1 EEG, 1 EOG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/006-2014/S01.mat">S01</a>, <a href="/database/data-sets/006-2014/S02.mat">S02</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd><a href="http://www.i1.psychologie.uni-wuerzburg.de/en/int/staff/kuebler_andrea_prof_dr/" target="_blank" rel="noopener noreferrer">Prof. Dr. Andrea Kübler</a>, <a href="http://www.i1.psychologie.uni-wuerzburg.de/en/" target="_blank" rel="noopener noreferrer">Department of Psychology I</a>, <a href="http://www.psychologie.uni-wuerzburg.de/" target="_blank" rel="noopener noreferrer">Institute for Psychology</a>, <a href="http://www.uni-wuerzburg.de/en/ueber/university/" target="_blank" rel="noopener noreferrer">University of Würzburg</a></dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/006-2014/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="c29uamEua2xlaWg=" last="dW5pLXd1ZXJ6YnVyZy5kZQ==" text="U29uamEgS2xlaWg=" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">7. Two-finger gameplay with deliberately failing controller (007-2014)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>10</dd>
+<dt>Signals</dt>
+<dd>32 EEG, 4 EOG, 4 EMG, temperature, GSR, respiration</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/007-2014/S00.mat">S00</a>, <a href="/database/data-sets/007-2014/S01.mat">S01</a>, <a href="/database/data-sets/007-2014/S02.mat">S02</a>, <a href="/database/data-sets/007-2014/S04.mat">S04</a>, <a href="/database/data-sets/007-2014/S05.mat">S05</a>, <a href="/database/data-sets/007-2014/S06.mat">S06</a>, <a href="/database/data-sets/007-2014/S07.mat">S07</a>, <a href="/database/data-sets/007-2014/S09.mat">S09</a>, <a href="/database/data-sets/007-2014/S10.mat">S10</a>, <a href="/database/data-sets/007-2014/S11.mat">S11</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd><a href="http://hmi.ewi.utwente.nl/" target="_blank" rel="noopener noreferrer">Human Media Interaction</a>, <a href="http://www.utwente.nl/" target="_blank" rel="noopener noreferrer">University of Twente</a></dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/007-2014/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1109/TNSRE.2011.2166562" target="_blank" rel="noopener noreferrer">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="Yi5yZXVkZXJpbms=" last="dXR3ZW50ZS5ubA==" text="Qm9yaXMgUmV1ZGVyaW5r" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">8. P300 speller with ALS patients (008-2014)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>8</dd>
+<dt>Signals</dt>
+<dd>8 EEG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/008-2014/A01.mat">A01</a>, <a href="/database/data-sets/008-2014/A02.mat">A02</a>, <a href="/database/data-sets/008-2014/A03.mat">A03</a>, <a href="/database/data-sets/008-2014/A04.mat">A04</a>, <a href="/database/data-sets/008-2014/A05.mat">A05</a>, <a href="/database/data-sets/008-2014/A06.mat">A06</a>, <a href="/database/data-sets/008-2014/A07.mat">A07</a>, <a href="/database/data-sets/008-2014/A08.mat">A08</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Neuroelectrical Imaging and BCI Laboratory, IRCCS Fondazione Santa Lucia, Rome, Italy</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/008-2014/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.3389/fnhum.2013.00732" target="_blank" rel="noopener noreferrer">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="Zi5zY2hldHRpbmk=" last="aHNhbnRhbHVjaWEuaXQ=" text="RnJhbmNlc2NhIFNjaGV0dGluaQ==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">9. Covert and overt ERP-based BCI (009-2014)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>10</dd>
+<dt>Signals</dt>
+<dd>16 EEG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/009-2014/A01S.mat">A01S</a>, <a href="/database/data-sets/009-2014/A01G.mat">A01G</a>, <a href="/database/data-sets/009-2014/A02S.mat">A02S</a>, <a href="/database/data-sets/009-2014/A02G.mat">A02G</a>, <a href="/database/data-sets/009-2014/A03S.mat">A03S</a>, <a href="/database/data-sets/009-2014/A03G.mat">A03G</a>, <a href="/database/data-sets/009-2014/A04S.mat">A04S</a>, <a href="/database/data-sets/009-2014/A04G.mat">A04G</a>, <a href="/database/data-sets/009-2014/A05S.mat">A05S</a>, <a href="/database/data-sets/009-2014/A05G.mat">A05G</a>, <a href="/database/data-sets/009-2014/A06S.mat">A06S</a>, <a href="/database/data-sets/009-2014/A06G.mat">A06G</a>, <a href="/database/data-sets/009-2014/A07S.mat">A07S</a>, <a href="/database/data-sets/009-2014/A07G.mat">A07G</a>, <a href="/database/data-sets/009-2014/A08S.mat">A08S</a>, <a href="/database/data-sets/009-2014/A08G.mat">A08G</a>, <a href="/database/data-sets/009-2014/A09S.mat">A09S</a>, <a href="/database/data-sets/009-2014/A09G.mat">A09G</a>, <a href="/database/data-sets/009-2014/A10S.mat">A10S</a>, <a href="/database/data-sets/009-2014/A10G.mat">A10G</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Neuroelectrical Imaging and BCI Laboratory, IRCCS Fondazione Santa Lucia, Rome, Italy</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/009-2014/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1088/1741-2560/11/3/035008" target="_blank" rel="noopener noreferrer">DOI</a>, <a href="http://dx.doi.org/10.1080/00140139.2012.661084" target="_blank" rel="noopener noreferrer">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="Zi5zY2hldHRpbmk=" last="aHNhbnRhbHVjaWEuaXQ=" text="RnJhbmNlc2NhIFNjaGV0dGluaQ==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">10. Autocalibration and recurrent adaptation (001-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>12</dd>
+<dt>Signals</dt>
+<dd>13 EEG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/001-2015/S01A.mat">S01A</a>, <a href="/database/data-sets/001-2015/S01B.mat">S01B</a>, <a href="/database/data-sets/001-2015/S02A.mat">S02A</a>, <a href="/database/data-sets/001-2015/S02B.mat">S02B</a>, <a href="/database/data-sets/001-2015/S03A.mat">S03A</a>, <a href="/database/data-sets/001-2015/S03B.mat">S03B</a>, <a href="/database/data-sets/001-2015/S04A.mat">S04A</a>, <a href="/database/data-sets/001-2015/S04B.mat">S04B</a>, <a href="/database/data-sets/001-2015/S05A.mat">S05A</a>, <a href="/database/data-sets/001-2015/S05B.mat">S05B</a>, <a href="/database/data-sets/001-2015/S06A.mat">S06A</a>, <a href="/database/data-sets/001-2015/S06B.mat">S06B</a>, <a href="/database/data-sets/001-2015/S07A.mat">S07A</a>, <a href="/database/data-sets/001-2015/S07B.mat">S07B</a>, <a href="/database/data-sets/001-2015/S08A.mat">S08A</a>, <a href="/database/data-sets/001-2015/S08B.mat">S08B</a>, <a href="/database/data-sets/001-2015/S08C.mat">S08C</a>, <a href="/database/data-sets/001-2015/S09A.mat">S09A</a>, <a href="/database/data-sets/001-2015/S09B.mat">S09B</a>, <a href="/database/data-sets/001-2015/S09C.mat">S09C</a>, <a href="/database/data-sets/001-2015/S10A.mat">S10A</a>, <a href="/database/data-sets/001-2015/S10B.mat">S10B</a>, <a href="/database/data-sets/001-2015/S10C.mat">S10C</a>, <a href="/database/data-sets/001-2015/S11A.mat">S11A</a>, <a href="/database/data-sets/001-2015/S11B.mat">S11B</a>, <a href="/database/data-sets/001-2015/S11C.mat">S11C</a>, <a href="/database/data-sets/001-2015/S12A.mat">S12A</a>, <a href="/database/data-sets/001-2015/S12B.mat">S12B</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd><a href="http://bci.tugraz.at/" target="_blank" rel="noopener noreferrer">Institute for Knowledge Discovery</a>, <a href="http://portal.tugraz.at/portal/page/portal/TU_Graz" target="_blank" rel="noopener noreferrer">Graz University of Technology</a></dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/001-2015/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1109/tnsre.2012.2189584" target="_blank" rel="noopener noreferrer">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="cmVpbmhvbGQuc2NoZXJlcg==" last="dHVncmF6LmF0" text="UmVpbmhvbGQgU2NoZXJlcg==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">11. Neuroprosthetic control of an EEG/EOG BNCI (002-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>1</dd>
+<dt>Signals</dt>
+<dd>5 EEG, 1 EOG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/002-2015/S01.mat">S01</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd><a href="https://www.medizin.uni-tuebingen.de/Patienten/Kliniken/Psychiatrie+und+Psychotherapie/Allgemeine+Psychiatrie/Forschung/Angewandte+Neurotechnologie.html" target="_blank" rel="noopener noreferrer">Applied Neurotechnology Lab, Institute of Medical Psychology and Behavioral Neurobiology and Department of Psychiatry and Psychotherapy, University Hospital of Tübingen, Germany</a></dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/002-2015/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1186/1743-0003-11-165" target="_blank" rel="noopener noreferrer">DOI</a>, <a href="http://dx.doi.org/10.1515/bmt-2014-0126" target="_blank" rel="noopener noreferrer">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="c3Vyam8=" last="c29la2FkYXIuY29t" text="U3Vyam8gU29la2FkYXI=" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">12. Visual P300 speller (003-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>10</dd>
+<dt>Signals</dt>
+<dd>8 EEG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/003-2015/s1.mat">s1</a>, <a href="/database/data-sets/003-2015/s2.mat">s2</a>, <a href="/database/data-sets/003-2015/s3.mat">s3</a>, <a href="/database/data-sets/003-2015/s4.mat">s4</a>, <a href="/database/data-sets/003-2015/s5.mat">s5</a>, <a href="/database/data-sets/003-2015/s6.mat">s6</a>, <a href="/database/data-sets/003-2015/s7.mat">s7</a>, <a href="/database/data-sets/003-2015/s8.mat">s8</a>, <a href="/database/data-sets/003-2015/s9.mat">s9</a>, <a href="/database/data-sets/003-2015/s10.mat">s10</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd><a href="http://www.gtec.at/" target="_blank" rel="noopener noreferrer">g.tec medical engineering</a></dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/003-2015/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1016/j.neulet.2009.06.045" target="_blank" rel="noopener noreferrer">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="b3J0bmVy" last="Z3RlYy5hdA==" text="UnVwZXJ0IE9ydG5lcg==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">13. Individual imagery (004-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>9</dd>
+<dt>Signals</dt>
+<dd>30 EEG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/004-2015/A.mat">A</a>, <a href="/database/data-sets/004-2015/C.mat">C</a>, <a href="/database/data-sets/004-2015/D.mat">D</a>, <a href="/database/data-sets/004-2015/E.mat">E</a>, <a href="/database/data-sets/004-2015/F.mat">F</a>, <a href="/database/data-sets/004-2015/G.mat">G</a>, <a href="/database/data-sets/004-2015/H.mat">H</a>, <a href="/database/data-sets/004-2015/J.mat">J</a>, <a href="/database/data-sets/004-2015/L.mat">L</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd><a href="http://bci.tugraz.at/" target="_blank" rel="noopener noreferrer">Institute for Knowledge Discovery</a>, <a href="http://portal.tugraz.at/portal/page/portal/TU_Graz" target="_blank" rel="noopener noreferrer">Graz University of Technology</a></dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/004-2015/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Publication</dt>
+<dd>Coming soon</dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="cmVpbmhvbGQuc2NoZXJlcg==" last="dHVncmF6LmF0" text="UmVpbmhvbGQgU2NoZXJlcg==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">14. Covert shifts of attention (005-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>8</dd>
+<dt>Signals</dt>
+<dd>60 EEG, 2 EOG</dd>
+<dt>Data</dt>
+<dd><a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-Covert/covertShiftsOfAttention_VPiac.mat">VPiac</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-Covert/covertShiftsOfAttention_VPiae.mat">VPiae</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-Covert/covertShiftsOfAttention_VPnh.mat">VPnh</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-Covert/covertShiftsOfAttention_VPmk.mat">VPmk</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-Covert/covertShiftsOfAttention_VPgao.mat">VPgao</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-Covert/covertShiftsOfAttention_VPiah.mat">VPiah</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-Covert/covertShiftsOfAttention_VPiaa.mat">VPiaa</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-Covert/covertShiftsOfAttention_VPiai.mat">VPiai</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Neurotechnology Group, Technische Universität Berlin, Germany</dd>
+<dt>Description</dt>
+<dd><a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-Covert/BNCI_CovertShiftOfAttention.pdf">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1186/1743-0003-8-24">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="bWF0dGhpYXMudHJlZGVy" last="Z21haWwuY29t" text="TWF0dGhpYXMgVHJlZGVy" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="YmVuamFtaW4uYmxhbmtlcnR6" last="dHUtYmVybGluLmRl" text="QmVuamFtaW4gQmxhbmtlcnR6" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">15. Music BCI (006-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>11</dd>
+<dt>Signals</dt>
+<dd>64 EEG</dd>
+<dt>Data</dt>
+<dd><a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/musicbci_VPaak.mat">VPaak</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/musicbci_VPaan.mat">VPaan</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/musicbci_VPgcc.mat">VPgcc</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/musicbci_VPaap.mat">VPaap</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/musicbci_VPaaq.mat">VPaaq</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/musicbci_VPjaq.mat">VPjaq</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/musicbci_VPaar.mat">VPaar</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/musicbci_VPjat.mat">VPjat</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/musicbci_VPgeo.mat">VPgeo</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/musicbci_VPaas.mat">VPaas</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/musicbci_VPaat.mat">VPaat</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/MusicBCI-Samples.zip">music-samples</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Neurotechnology Group, Technische Universität Berlin, Germany</dd>
+<dt>Description</dt>
+<dd><a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MusicBCI/BNCI_MusicBCI.pdf">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1088/1741-2560/11/2/026009">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="bWF0dGhpYXMudHJlZGVy" last="Z21haWwuY29t" text="TWF0dGhpYXMgVHJlZGVy" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="YmVuamFtaW4uYmxhbmtlcnR6" last="dHUtYmVybGluLmRl" text="QmVuamFtaW4gQmxhbmtlcnR6" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">16. Motion VEP Speller (007-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>16</dd>
+<dt>Signals</dt>
+<dd>63 EEG</dd>
+<dt>Data</dt>
+<dd><a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPfat.mat">VPfat</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPgdf.mat">VPgdf</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPgdg.mat">VPgdg</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPiac.mat">VPiac</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPiba.mat">VPiba</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPibe.mat">VPibe</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPibq.mat">VPibq</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPibs.mat">VPibs</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPibt.mat">VPibt</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPibu.mat">VPibu</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPibv.mat">VPibv</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPibw.mat">VPibw</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPibx.mat">VPibx</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPiby.mat">VPiby</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPice.mat">VPice</a>,<a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-MVEP/MVEP_VPicv.mat">VPicv</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Neurotechnology Group, Technische Universität Berlin, Germany</dd>
+<dt>Description</dt>
+<dd>Coming soon</dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1088/1741-2560/9/4/045006">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="YmVuamFtaW4uYmxhbmtlcnR6" last="dHUtYmVybGluLmRl" text="QmVuamFtaW4gQmxhbmtlcnR6" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">17. Center Speller (008-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>13</dd>
+<dt>Signals</dt>
+<dd>63 EEG</dd>
+<dt>Data</dt>
+<dd><a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPiac.mat">VPiac</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPiba.mat">VPiba</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPibb.mat">VPibb</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPibc.mat">VPibc</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPibd.mat">VPibd</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPibe.mat">VPibe</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPibf.mat">VPibf</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPibg.mat">VPibg</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPibh.mat">VPibh</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPibi.mat">VPibi</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPibj.mat">VPibj</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPica.mat">VPica</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/CenterSpeller_VPsaf.mat">VPsaf</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Neurotechnology Group, Technische Universität Berlin, Germany</dd>
+<dt>Description</dt>
+<dd><a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-CenterSpeller/BNCI_CenterSpeller.pdf">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1088/1741-2560/8/6/066003">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="bWF0dGhpYXMudHJlZGVy" last="Z21haWwuY29t" text="TWF0dGhpYXMgVHJlZGVy" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="YmVuamFtaW4uYmxhbmtlcnR6" last="dHUtYmVybGluLmRl" text="QmVuamFtaW4gQmxhbmtlcnR6" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">18. AMUSE - an auditory speller based on spatial hearing (009-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>21</dd>
+<dt>Signals</dt>
+<dd>60 EEG, 2 EOG</dd>
+<dt>Data</dt>
+<dd><a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfce.mat">VPfce</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPkw.mat">VPkw</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfaz.mat">VPfaz</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfcj.mat">VPfcj</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfcg.mat">VPfcg</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfar.mat">VPfar</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfaw.mat">VPfaw</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfax.mat">VPfax</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfcc.mat">VPfcc</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfcm.mat">VPfcm</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfas.mat">VPfas</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfch.mat">VPfch</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfcd.mat">VPfcd</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfca.mat">VPfca</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfcb.mat">VPfcb</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfau.mat">VPfau</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfci.mat">VPfci</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfav.mat">VPfav</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfat.mat">VPfat</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfcl.mat">VPfcl</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-AMUSE/AMUSE_VPfck.mat">VPfck</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Neurotechnology Group, Technische Universität Berlin, Germany</dd>
+<dt>Description</dt>
+<dd>Coming soon</dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1371/journal.pone.0009813">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="YmVuamFtaW4uYmxhbmtlcnR6" last="dHUtYmVybGluLmRl" text="QmVuamFtaW4gQmxhbmtlcnR6" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="ZW1hcnRpam5zY2hyZXVkZXI=" last="Z21haWwuY29t" text="TWFydGlqbiBTY2hyZXVkZXI=" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">19. RSVP speller (010-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>12</dd>
+<dt>Signals</dt>
+<dd>63 EEG</dd>
+<dt>Data</dt>
+<dd><a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPfat.mat">VPfat</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPgcb.mat">VPgcb</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPgcc.mat">VPgcc</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPgcd.mat">VPgcd</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPgce.mat">VPgce</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPgcf.mat">VPgcf</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPgcg.mat">VPgcg</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPgch.mat">VPgch</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPiay.mat">VPiay</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPicn.mat">VPicn</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPicr.mat">VPicr</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-RSVP/RSVP_VPpia.mat">VPpia</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Neurotechnology Group, Technische Universität Berlin, Germany</dd>
+<dt>Description</dt>
+<dd>Coming soon</dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1016/j.clinph.2012.12.050">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="bGF1cmEuYWNxdWFsYWduYQ==" last="dHUtYmVybGluLmRl" text="TGF1cmEgQWNxdWFsYWduYQ==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="YmVuamFtaW4uYmxhbmtlcnR6" last="dHUtYmVybGluLmRl" text="QmVuamFtaW4gQmxhbmtlcnR6" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">20. ECoG-based BCI based on cognitive control (011-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>1</dd>
+<dt>Signals</dt>
+<dd>112 subdural ECoG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/011-2015/011-2015-1.mat">1</a>, <a href="/database/data-sets/011-2015/011-2015-2.mat">2</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution No Derivatives license (CC BY-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Brain Center Rudolf Magnus, UMC Utrecht, Netherlands</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/011-2015/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1002/ana.21985">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="ZS5qLmFhcm5vdXRzZQ==" last="dW1jdXRyZWNodC5ubA==" text="RXJpayBBYXJub3V0c2U=" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="bS5qLnZhbnN0ZWVuc2Vs" last="dW1jdXRyZWNodC5ubA==" text="TWFyaXNrYSB2YW4gU3RlZW5zZWw=" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">21. PASS2D - auditory ERP Speller (012-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>12</dd>
+<dt>Signals</dt>
+<dd>63 EEG</dd>
+<dt>Data</dt>
+<dd><a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPnv.mat">VPnv</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPnw.mat">VPnw</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPnx.mat">VPnx</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPny.mat">VPny</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPnz.mat">VPnz</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPmg.mat">VPmg</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPoa.mat">VPoa</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPob.mat">VPob</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPoc.mat">VPoc</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPod.mat">VPod</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPja.mat">VPja</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-PASS2D/PASS2D_VPoe.mat">VPoe</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Neurotechnology Group, Technische Universität Berlin, Germany</dd>
+<dt>Description</dt>
+<dd>Coming soon</dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.3389/fnins.2011.00099">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="ai5ob2VobmU=" last="dHUtYmVybGluLmRl" text="Sm9oYW5uZXMgSMO2aG5l" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="bWljaGFlbC50YW5nZXJtYW5u" last="YmxidC51bmktZnJlaWJ1cmcuZGU=" text="TWljaGFlbCBUYW5nZXJtYW5u" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">22. Monitoring error-related potentials (013-2015)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>6</dd>
+<dt>Signals</dt>
+<dd>64 EEG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/013-2015/Subject01_s1.mat">S01-1</a>, <a href="/database/data-sets/013-2015/Subject01_s2.mat">S01-2</a>, <a href="/database/data-sets/013-2015/Subject02_s1.mat">S02-1</a>, <a href="/database/data-sets/013-2015/Subject02_s2.mat">S02-2</a>, <a href="/database/data-sets/013-2015/Subject03_s1.mat">S03-1</a>, <a href="/database/data-sets/013-2015/Subject03_s2.mat">S03-2</a>, <a href="/database/data-sets/013-2015/Subject04_s1.mat">S04-1</a>, <a href="/database/data-sets/013-2015/Subject04_s2.mat">S04-2</a>, <a href="/database/data-sets/013-2015/Subject05_s1.mat">S05-1</a>, <a href="/database/data-sets/013-2015/Subject05_s2.mat">S05-2</a>, <a href="/database/data-sets/013-2015/Subject06_s1.mat">S06-1</a>, <a href="/database/data-sets/013-2015/Subject06_s2.mat">S06-2</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Chair on Brain-Machine Interface (CNBI), Ecole Polytechnique Fédérale de Lausanne, Lausanne, Switzerland</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/013-2015/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1109/TNSRE.2010.2053387">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="cmljYXJkby5jaGF2YXJyaWFnYQ==" last="ZXBmbC5jaA==" text="UmljYXJkbyBDaGF2YXJyaWFnYQ==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">23. ECoG-based 1-class motor imagery BCI (001-2016)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>10</dd>
+<dt>Signals</dt>
+<dd>64-106 subdural ECoG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/001-2016/S1.mat">S01</a>, <a href="/database/data-sets/001-2016/S2.mat">S02</a>, <a href="/database/data-sets/001-2016/S3.mat">S03</a>, <a href="/database/data-sets/001-2016/S4.mat">S04</a>, <a href="/database/data-sets/001-2016/S5.mat">S05</a>, <a href="/database/data-sets/001-2016/S6.mat">S06</a>, <a href="/database/data-sets/001-2016/S7.mat">S07</a>, <a href="/database/data-sets/001-2016/S8.mat">S08</a>, <a href="/database/data-sets/001-2016/S9.mat">S09</a>, <a href="/database/data-sets/001-2016/S10.mat">S10</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution No Derivatives license (CC BY-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Jeffrey Ojemann, Department of Neurological Surgery, University of Washington, Seattle, WA, USA</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/001-2016/description.pdf" target="_blank" rel="noopener noreferrer">PDF</a></dd>
+<dt>Publication</dt>
+<dd>DOI</dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="amR3YW5kZXI=" last="dXcuZWR1" text="SmVyZW1pYWggV2FuZGVy" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="am9qZW1hbm4=" last="dXcuZWR1" text="SmVmZnJleSBPamVtYW5u" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">24. Emergency braking during simulated driving (002-2016)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>18</dd>
+<dt>Signals</dt>
+<dd>59 EEG, 2 EOG, 1 EMG, 7 others</dd>
+<dt>Data</dt>
+<dd><a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPae.mat">VPae</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPbba.mat">VPbba</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPgab.mat">VPgab</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPgag.mat">VPgag</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPgam.mat">VPgam</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPja.mat">VPja</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPbad.mat">VPbad</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPdx.mat">VPdx</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPgac.mat">VPgac</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPgah.mat">VPgah</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPih.mat">VPih</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPsaj.mat">VPsaj</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPbax.mat">VPbax</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPgaa.mat">VPgaa</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPgae.mat">VPgae</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPgal.mat">VPgal</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPii.mat">VPii</a>, <a href="http://doc.ml.tu-berlin.de/bbci/BNCIHorizon2020-EmergencyBraking/VPsal.mat">VPsal</a></dd>
+<dt>License</dt>
+<dd><a href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution Non-Commercial No Derivatives license (CC BY-NC-ND 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Neurotechnology Group, Technische Universität Berlin, Germany</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/002-2016/description.txt" target="_blank" rel="noopener noreferrer">TXT</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1088/1741-2560/8/5/056001">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="c3RlZmFuaGF1ZmU=" last="Z21haWwuY29t" text="U3RlZmFuIEhhdWZl" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">25. Upper limb movement decoding from EEG (001-2017)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>15</dd>
+<dt>Signals</dt>
+<dd>61 EEG, 3 EOG, movement data</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/001-2017/S01_ME.zip">S01_ME</a>, <a href="/database/data-sets/001-2017/S01_MI.zip">S01_MI</a>, <a href="/database/data-sets/001-2017/S02_ME.zip">S02_ME</a>, <a href="/database/data-sets/001-2017/S02_MI.zip">S02_MI</a>, <a href="/database/data-sets/001-2017/S03_ME.zip">S03_ME</a>, <a href="/database/data-sets/001-2017/S03_MI.zip">S03_MI</a>, <a href="/database/data-sets/001-2017/S04_ME.zip">S04_ME</a>, <a href="/database/data-sets/001-2017/S04_MI.zip">S04_MI</a>, <a href="/database/data-sets/001-2017/S05_ME.zip">S05_ME</a>, <a href="/database/data-sets/001-2017/S05_MI.zip">S05_MI</a>, <a href="/database/data-sets/001-2017/S06_ME.zip">S06_ME</a>, <a href="/database/data-sets/001-2017/S06_MI.zip">S06_MI</a>, <a href="/database/data-sets/001-2017/S07_ME.zip">S07_ME</a>, <a href="/database/data-sets/001-2017/S07_MI.zip">S07_MI</a>, <a href="/database/data-sets/001-2017/S08_ME.zip">S08_ME</a>, <a href="/database/data-sets/001-2017/S08_MI.zip">S08_MI</a>, <a href="/database/data-sets/001-2017/S09_ME.zip">S09_ME</a>, <a href="/database/data-sets/001-2017/S09_MI.zip">S09_MI</a>, <a href="/database/data-sets/001-2017/S10_ME.zip">S10_ME</a>, <a href="/database/data-sets/001-2017/S10_MI.zip">S10_MI</a>, <a href="/database/data-sets/001-2017/S11_ME.zip">S11_ME</a>, <a href="/database/data-sets/001-2017/S11_MI.zip">S11_MI</a>, <a href="/database/data-sets/001-2017/S12_ME.zip">S12_ME</a>, <a href="/database/data-sets/001-2017/S12_MI.zip">S12_MI, </a><a href="/database/data-sets/001-2017/S13_ME.zip">S13_ME</a>, <a href="/database/data-sets/001-2017/S13_MI.zip">S13_MI</a>, <a href="/database/data-sets/001-2017/S14_ME.zip">S14_ME</a>, <a href="/database/data-sets/001-2017/S14_MI.zip">S14_MI</a>, <a href="/database/data-sets/001-2017/S15_ME.zip">S15_ME</a>, <a href="/database/data-sets/001-2017/S15_MI.zip">S15_MI</a></dd>
+<dt>License</dt>
+<dd><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution license (CC BY 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Institute of Neural Engineering, Graz University of Technology</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/001-2017/dataset_description.pdf">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="http://dx.doi.org/10.1371/journal.pone.0182578">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="cGF0cmljaw==" last="b2ZuZXIuc2NpZW5jZQ==" text="UGF0cmljayBPZm5lcg==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="Z2Vybm90Lm11ZWxsZXI=" last="dHVncmF6LmF0" text="R2Vybm90IE3DvGxsZXItUHV0eg==" base=""  data-mce-tmp="1">This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">26. Attempted arm and hand movements in persons with spinal cord injury (001-2019)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>10</dd>
+<dt>Signals</dt>
+<dd>61 EEG, 3 EOG, movement data</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/001-2019/P01.zip">P01</a>, <a href="/database/data-sets/001-2019/P02.zip">P02</a>, <a href="/database/data-sets/001-2019/P03.zip">P03</a>, <a href="/database/data-sets/001-2019/P04.zip">P04</a>, <a href="/database/data-sets/001-2019/P05.zip">P05</a>, <a href="/database/data-sets/001-2019/P06.zip">P06</a>, <a href="/database/data-sets/001-2019/P07.zip">P07</a>, <a href="/database/data-sets/001-2019/P08.zip">P08</a>, <a href="/database/data-sets/001-2019/P09.zip">P09</a>, <a href="/database/data-sets/001-2019/P09 Online Session 1 Train.zip">P09 online session 1 train</a>, <a href="/database/data-sets/001-2019/P09 Online Session 1 Test.zip">P09 online session 1 test</a>, <a href="/database/data-sets/001-2019/P09 Online Session 2 Train.zip">P09 online session 2 train</a>, <a href="/database/data-sets/001-2019/P09 Online Session 2 Test.zip">P09 online session 2 test</a>, <a href="/database/data-sets/001-2019/P10.zip">P10</a></dd>
+<dt>License</dt>
+<dd><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution license (CC BY 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Institute of Neural Engineering, Graz University of Technology</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/001-2019/dataset_description_v1-1.pdf">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="https://doi.org/10.1038/s41598-019-43594-9">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="cGF0cmljaw==" last="b2ZuZXIuc2NpZW5jZQ==" text="UGF0cmljayBPZm5lcg==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="Z2Vybm90Lm11ZWxsZXI=" last="dHVncmF6LmF0" text="R2Vybm90IE3DvGxsZXItUHV0eg==" base=""  data-mce-tmp="1">This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">27. Reach and Grasp movement decoding from EEG with gel, water and dry electrodes (001-2020)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>15 each recording</dd>
+<dt>Signals</dt>
+<dd>32 EEG, 6 EOG, movement data</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/001-2020/G01.mat">G01</a>, <a href="/database/data-sets/001-2020/G02.mat">G02</a>, <a href="/database/data-sets/001-2020/G03.mat">G03</a>, <a href="/database/data-sets/001-2020/G04.mat">G04</a>, <a href="/database/data-sets/001-2020/G05.mat">G05</a>, <a href="/database/data-sets/001-2020/G06.mat">G06</a>, <a href="/database/data-sets/001-2020/G07.mat">G07</a>, <a href="/database/data-sets/001-2020/G08.mat">G08</a>, <a href="/database/data-sets/001-2020/G09.mat">G09</a>, <a href="/database/data-sets/001-2020/G10.mat">G10</a>, <a href="/database/data-sets/001-2020/G11.mat">G11</a>, <a href="/database/data-sets/001-2020/G12.mat">G12</a>, <a href="/database/data-sets/001-2020/G13.mat">G13</a>, <a href="/database/data-sets/001-2020/G14.mat">G14</a>, <a href="/database/data-sets/001-2020/G15.mat">G15</a>, <a href="/database/data-sets/001-2020/V01.mat">V01</a>, <a href="/database/data-sets/001-2020/V02.mat">V02</a>, <a href="/database/data-sets/001-2020/V03.mat">V03</a>, <a href="/database/data-sets/001-2020/V04.mat">V04</a>, <a href="/database/data-sets/001-2020/V05.mat">V05</a>, <a href="/database/data-sets/001-2020/V06.mat">V06</a>, <a href="/database/data-sets/001-2020/V07.mat">V07</a>, <a href="/database/data-sets/001-2020/V08.mat">V08</a>, <a href="/database/data-sets/001-2020/V09.mat">V09</a>, <a href="/database/data-sets/001-2020/V10.mat">V10</a>, <a href="/database/data-sets/001-2020/V11.mat">V11</a>, <a href="/database/data-sets/001-2020/V12.mat">V12</a>, <a href="/database/data-sets/001-2020/V13.mat">V13</a>, <a href="/database/data-sets/001-2020/V14.mat">V14</a>, <a href="/database/data-sets/001-2020/V15.mat">V15</a>, <a href="/database/data-sets/001-2020/H01.mat">H01</a>, <a href="/database/data-sets/001-2020/H02.mat">H02</a>, <a href="/database/data-sets/001-2020/H03.mat">H03</a>, <a href="/database/data-sets/001-2020/H04.mat">H04</a>, <a href="/database/data-sets/001-2020/H05.mat">H05</a>, <a href="/database/data-sets/001-2020/H06.mat">H06</a>, <a href="/database/data-sets/001-2020/H07.mat">H07</a>, <a href="/database/data-sets/001-2020/H08.mat">H08</a>, <a href="/database/data-sets/001-2020/H09.mat">H09</a>, <a href="/database/data-sets/001-2020/H10.mat">H10</a>, <a href="/database/data-sets/001-2020/H11.mat">H11</a>, <a href="/database/data-sets/001-2020/H12.mat">H12</a>, <a href="/database/data-sets/001-2020/H13.mat">H13</a>, <a href="/database/data-sets/001-2020/H14.mat">H14</a>, <a href="/database/data-sets/001-2020/H15.mat">H15</a></dd>
+<dt>License</dt>
+<dd><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution license (CC BY 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Institute of Neural Engineering, Graz University of Technology / BitBrain, Spain</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/001-2020/Dataset_description.pdf">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="https://doi.org/10.3389/fnins.2020.00849">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="Z2Vybm90Lm11ZWxsZXI=" last="dHVncmF6LmF0" text="R2Vybm90IE3DvGxsZXItUHV0eiwg" base=""  data-mce-tmp="1">This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail><joomla-hidden-mail  is-link="1" is-email="0" first="bHVpcy5tb250ZXNhbm8=" last="Yml0YnJhaW4uZXM=" text="THVpcyBNb250ZXNhbm8=" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">28. Spatial attention shifts to colored items - an EEG-based BCI (002-2020)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>18</dd>
+<dt>Signals</dt>
+<dd>29 EEG, 2 EOG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/002-2020/P01.mat">P01</a>, <a href="/database/data-sets/002-2020/P02.mat">P02</a>,<a href="/database/data-sets/002-2020/P03.mat"> P03</a>, <a href="/database/data-sets/002-2020/P04.mat">P04</a>, <a href="/database/data-sets/002-2020/P05.mat">P05</a>, <a href="/database/data-sets/002-2020/P06.mat">P06</a>, <a href="/database/data-sets/002-2020/P07.mat">P07</a>, <a href="/database/data-sets/002-2020/P08.mat">P08</a>, <a href="/database/data-sets/002-2020/P09.mat">P09</a>, <a href="/database/data-sets/002-2020/P10.mat">P10</a>, <a href="/database/data-sets/002-2020/P11.mat">P11</a>, <a href="/database/data-sets/002-2020/P12.mat">P12</a>, <a href="/database/data-sets/002-2020/P13.mat">P13</a>, <a href="/database/data-sets/002-2020/P14.mat">P14</a>, <a href="/database/data-sets/002-2020/P15.mat">P15</a>, <a href="/database/data-sets/002-2020/P16.mat">P16</a>, <a href="/database/data-sets/002-2020/P17.mat">P17</a>, <a href="/database/data-sets/002-2020/P18.mat">P18</a></dd>
+<dt>License</dt>
+<dd><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution license (CC BY 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Department of Behavioral Neurology, Leibniz Institute for Neurobiology, Magdeburg, Germany</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/002-2020/Dataset_description.pdf">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="https://doi.org/10.3389/fnins.2020.591777">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="Y2hyaXN0b3BoLnJlaWNoZXJ0" last="bGluLW1hZ2RlYnVyZy5kZQ==" text="Q2hyaXN0b3BoIFJlaWNoZXJ0" base=""  data-mce-tmp="1">This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">29. EEG Correlates of Difficulty Level (001-2022)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>13</dd>
+<dt>Signals</dt>
+<dd>EEG, EOG</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/001-2022/s1b.mat">P01b</a>, <a href="/database/data-sets/001-2022/s1w.mat">P01w</a>, <a href="/database/data-sets/001-2022/s2b.mat">P02b</a>, <a href="/database/data-sets/001-2022/s2w.mat">P02w</a>, <a href="/database/data-sets/001-2022/s3b.mat">P03b</a>, <a href="/database/data-sets/001-2022/s3w.mat">P03w</a>, <a href="/database/data-sets/001-2022/s4b.mat">P04b</a>, <a href="/database/data-sets/001-2022/s4w.mat">P04w</a>, <a href="/database/data-sets/001-2022/s5b.mat">P05b</a>, <a href="/database/data-sets/001-2022/s5w.mat">P05w</a>, <a href="/database/data-sets/001-2022/s6b.mat">P06b</a>, <a href="/database/data-sets/001-2022/s6w.mat">P06w</a>, <a href="/database/data-sets/001-2022/s7b.mat">P07b</a>, <a href="/database/data-sets/001-2022/s7w.mat">P07w</a>, <a href="/database/data-sets/001-2022/s8b.mat">P08b</a>, <a href="/database/data-sets/001-2022/s8w.mat">P08w</a>, <a href="/database/data-sets/001-2022/s9b.mat">P09b</a>, <a href="/database/data-sets/001-2022/s9w.mat">P09w</a>, <a href="/database/data-sets/001-2022/s10b.mat">P10b</a>, <a href="/database/data-sets/001-2022/s10w.mat">P10w</a>, <a href="/database/data-sets/001-2022/s11b.mat">P11b</a>, <a href="/database/data-sets/001-2022/s11w.mat">P11w</a>, <a href="/database/data-sets/001-2022/s12b.mat">P12b</a>, <a href="/database/data-sets/001-2022/s12w.mat">P12w</a>, <a href="/database/data-sets/001-2022/s13b.mat">P13b</a>, <a href="/database/data-sets/001-2022/s13w.mat">P13w</a></dd>
+<dt>License</dt>
+<dd><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution license (CC BY 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Defitech Chair in Brain-Machine Interface (CNBI), Ecole Polytechnique Fédérale de Lausanne, 1202 Geneva, Switzerland,</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/001-2022/description.pdf">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="https://doi.org/10.1109/TAFFC.2021.3059688">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="cGluZy1rZW5nLmphbw==" last="YWx1bW5pLmVwZmwuY2g=" text="UGluZy1LZW5nIEphbw==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="cmljYXJkby5jaGF2YXJyaWFnYQ==" last="emhhdy5jaA==" text="UmljYXJkbyBDaGF2YXJyaWFnYQ==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="am9zZS5taWxsYW4=" last="YXVzdGluLnV0ZXhhcy5lZHU=" text="Sm9zw6kgZGVsIFIuIE1pbGzDoW4=" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">30. Handwritten Character Classification from EEG through Continuous Kinematic Decoding (001-2024)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>20</dd>
+<dt>Signals</dt>
+<dd>60 EEG, 4 EOG, Movement</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/001-2024/S01.mat">S01</a>, <a href="/database/data-sets/001-2024/S02.mat">S02</a>, <a href="/database/data-sets/001-2024/S03.mat">S03</a>, <a href="/database/data-sets/001-2024/S04.mat">S04</a>, <a href="/database/data-sets/001-2024/S05.mat">S05</a>, <a href="/database/data-sets/001-2024/S06.mat">S06</a>, <a href="/database/data-sets/001-2024/S07.mat">S07</a>, <a href="/database/data-sets/001-2024/S08.mat">S08</a>, <a href="/database/data-sets/001-2024/S09.mat">S09</a>, <a href="/database/data-sets/001-2024/S10.mat">S10</a>, <a href="/database/data-sets/001-2024/S11.mat">S11</a>, <a href="/database/data-sets/001-2024/S12.mat">S12</a>, <a href="/database/data-sets/001-2024/S13.mat">S13</a>, <a href="/database/data-sets/001-2024/S14.mat">S14</a>, <a href="/database/data-sets/001-2024/S15.mat">S15</a>, <a href="/database/data-sets/001-2024/S16.mat">S16</a>, <a href="/database/data-sets/001-2024/S17.mat">S17</a>, <a href="/database/data-sets/001-2024/S18.mat">S18</a>, <a href="/database/data-sets/001-2024/S19.mat">S19</a>, <a href="/database/data-sets/001-2024/S20.mat">S20</a></dd>
+<dt>License</dt>
+<dd><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution license (CC BY 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Institute of Neural Engineering, Graz University of Technology</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/001-2024/description.pdf">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="https://doi.org/10.1016/j.compbiomed.2024.109132">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="bWFya3VzLmNyZWxs" last="dHVncmF6LmF0" text="TWFya3VzIENyZWxs" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail>, <joomla-hidden-mail  is-link="1" is-email="0" first="Z2Vybm90Lm11ZWxsZXI=" last="dHVncmF6LmF0" text="R2Vybm90IE3DvGxsZXItUHV0eg==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">31. Simultaneous encoding of speed, distance, and direction in discrete reaching: an EEG study (001-2025)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>20</dd>
+<dt>Signals</dt>
+<dd>60 EEG, 4 EOG, Movement</dd>
+<dt>Data</dt>
+<dd> <a href="/database/data-sets/001-2025/p001.zip">p001</a>, <a href="/database/data-sets/001-2025/p002.zip">p002</a>, <a href="/database/data-sets/001-2025/p003.zip">p003</a>, <a href="/database/data-sets/001-2025/p004.zip">p004</a>, <a href="/database/data-sets/001-2025/p005.zip">p005</a>, <a href="/database/data-sets/001-2025/p006.zip">p006</a>, <a href="/database/data-sets/001-2025/p007.zip">p007</a>, <a href="/database/data-sets/001-2025/p008.zip">p008</a>, <a href="/database/data-sets/001-2025/p009.zip">p009</a>, <a href="/database/data-sets/001-2025/p010.zip">p010</a>, <a href="/database/data-sets/001-2025/p011.zip">p011</a>, <a href="/database/data-sets/001-2025/p012.zip">p012</a>, <a href="/database/data-sets/001-2025/p013.zip">p013</a>, <a href="/database/data-sets/001-2025/p014.zip">p014</a>, <a href="/database/data-sets/001-2025/p015.zip">p015</a>, <a href="/database/data-sets/001-2025/p016.zip">p016</a>, <a href="/database/data-sets/001-2025/p017.zip">p017</a>, <a href="/database/data-sets/001-2025/p018.zip">p018</a>, <a href="/database/data-sets/001-2025/p019.zip">p019</a>, <a href="/database/data-sets/001-2025/p020.zip">p020</a></dd>
+<dt>License</dt>
+<dd><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution license (CC BY 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Institute of Neural Engineering, Graz University of Technology</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/001-2025/Simultaneous%20encoding%20of%20speed.pdf">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="https://doi.org/10.1088/1741-2552/ada0ea">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="Z2Vybm90Lm11ZWxsZXI=" last="dHVncmF6LmF0" text="R2Vybm90IE3DvGxsZXItUHV0eg==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">32. Continuous 2D trajectory decoding from attempted movement in able-bodied participants  (002-2025)</h3>
+<dl class="uk-description-list uk-description-list-horizontal">
+<dt>Participants</dt>
+<dd>20</dd>
+<dt>Signals</dt>
+<dd>60 EEG, 4 EOG, Movement</dd>
+<dt>Data</dt>
+<dd><a href="/database/data-sets/002-2025/fe3_ses1_perc0.mat">fe3_ses1_perc0</a>, <a href="/database/data-sets/002-2025/fe3_ses1_perc50.mat">fe3_ses1_perc50</a>, <a href="/database/data-sets/002-2025/fe3_ses1_perc100.mat">fe3_ses1_perc100</a>, <a href="/database/data-sets/002-2025/fe3_ses2_perc0.mat">fe3_ses2_perc0</a>, <a href="/database/data-sets/002-2025/fe3_ses2_perc50.mat">fe3_ses2_perc50</a>, <a href="/database/data-sets/002-2025/fe3_ses2_perc100.mat">fe3_ses2_perc100</a>, <a href="/database/data-sets/002-2025/fe3_ses3_perc0.mat">fe3_ses3_perc0</a>, <a href="/database/data-sets/002-2025/fe3_ses3_perc50.mat">fe3_ses3_perc50</a>, <a href="/database/data-sets/002-2025/fe3_ses3_perc100.mat">fe3_ses3_perc100</a>, <a href="/database/data-sets/002-2025/fe4_ses1_perc0.mat">fe4_ses1_perc0</a>, <a href="/database/data-sets/002-2025/fe4_ses1_perc50.mat">fe4_ses1_perc50</a>, <a href="/database/data-sets/002-2025/fe4_ses1_perc100.mat">fe4_ses1_perc100</a>, <a href="/database/data-sets/002-2025/fe4_ses2_perc0.mat">fe4_ses2_perc0</a>, <a href="/database/data-sets/002-2025/fe4_ses2_perc50.mat">fe4_ses2_perc50</a>, <a href="/database/data-sets/002-2025/fe4_ses2_perc100.mat">fe4_ses2_perc100</a>, <a href="/database/data-sets/002-2025/fe4_ses3_perc0.mat">fe4_ses3_perc0</a>, <a href="/database/data-sets/002-2025/fe4_ses3_perc50.mat">fe4_ses3_perc50</a>, <a href="/database/data-sets/002-2025/fe4_ses3_perc100.mat">fe4_ses3_perc100</a>, <a href="/database/data-sets/002-2025/fe5_ses1_perc0.mat">fe5_ses1_perc0</a>, <a href="/database/data-sets/002-2025/fe5_ses1_perc50.mat">fe5_ses1_perc50</a>, <a href="/database/data-sets/002-2025/fe5_ses1_perc100.mat">fe5_ses1_perc100</a>, <a href="/database/data-sets/002-2025/fe5_ses2_perc0.mat">fe5_ses2_perc0</a>, <a href="/database/data-sets/002-2025/fe5_ses2_perc50.mat">fe5_ses2_perc50</a>, <a href="/database/data-sets/002-2025/fe5_ses2_perc100.mat">fe5_ses2_perc100</a>, <a href="/database/data-sets/002-2025/fe5_ses3_perc0.mat">fe5_ses3_perc0</a>, <a href="/database/data-sets/002-2025/fe5_ses3_perc50.mat">fe5_ses3_perc50</a>, <a href="/database/data-sets/002-2025/fe5_ses3_perc100.mat">fe5_ses3_perc100</a>, <a href="/database/data-sets/002-2025/fe6_ses1_perc0.mat">fe6_ses1_perc0</a>, <a href="/database/data-sets/002-2025/fe6_ses1_perc50.mat">fe6_ses1_perc50</a>, <a href="/database/data-sets/002-2025/fe6_ses1_perc100.mat">fe6_ses1_perc100</a>, <a href="/database/data-sets/002-2025/fe6_ses2_perc0.mat">fe6_ses2_perc0</a>, <a href="/database/data-sets/002-2025/fe6_ses2_perc50.mat">fe6_ses2_perc50</a>, <a href="/database/data-sets/002-2025/fe6_ses2_perc100.mat">fe6_ses2_perc100</a>, <a href="/database/data-sets/002-2025/fe6_ses3_perc0.mat">fe6_ses3_perc0</a>, <a href="/database/data-sets/002-2025/fe6_ses3_perc50.mat">fe6_ses3_perc50</a>, <a href="/database/data-sets/002-2025/fe6_ses3_perc100.mat">fe6_ses3_perc100</a>, <a href="/database/data-sets/002-2025/fe7_ses1_perc0.mat">fe7_ses1_perc0</a>, <a href="/database/data-sets/002-2025/fe7_ses1_perc50.mat">fe7_ses1_perc50</a>, <a href="/database/data-sets/002-2025/fe7_ses1_perc100.mat">fe7_ses1_perc100</a>, <a href="/database/data-sets/002-2025/fe7_ses2_perc0.mat">fe7_ses2_perc0</a>, <a href="/database/data-sets/002-2025/fe7_ses2_perc50.mat">fe7_ses2_perc50</a>, <a href="/database/data-sets/002-2025/fe7_ses2_perc100.mat">fe7_ses2_perc100</a>, <a href="/database/data-sets/002-2025/fe7_ses3_perc0.mat">fe7_ses3_perc0</a>, <a href="/database/data-sets/002-2025/fe7_ses3_perc50.mat">fe7_ses3_perc50</a>, <a href="/database/data-sets/002-2025/fe7_ses3_perc100.mat">fe7_ses3_perc100</a>, <a href="/database/data-sets/002-2025/fe8_ses1_perc0.mat">fe8_ses1_perc0</a>, <a href="/database/data-sets/002-2025/fe8_ses1_perc50.mat">fe8_ses1_perc50</a>, <a href="/database/data-sets/002-2025/fe8_ses1_perc100.mat">fe8_ses1_perc100</a>, <a href="/database/data-sets/002-2025/fe8_ses2_perc0.mat">fe8_ses2_perc0</a>, <a href="/database/data-sets/002-2025/fe8_ses2_perc50.mat">fe8_ses2_perc50</a>, <a href="/database/data-sets/002-2025/fe8_ses2_perc100.mat">fe8_ses2_perc100</a>, <a href="/database/data-sets/002-2025/fe8_ses3_perc0.mat">fe8_ses3_perc0</a>, <a href="/database/data-sets/002-2025/fe8_ses3_perc50.mat">fe8_ses3_perc50</a>, <a href="/database/data-sets/002-2025/fe8_ses3_perc100.mat">fe8_ses3_perc100</a>, <a href="/database/data-sets/002-2025/fg1_ses1_perc0.mat">fg1_ses1_perc0</a>, <a href="/database/data-sets/002-2025/fg1_ses1_perc50.mat">fg1_ses1_perc50</a>, <a href="/database/data-sets/002-2025/fg1_ses1_perc100.mat">fg1_ses1_perc100</a>, <a href="/database/data-sets/002-2025/fg1_ses2_perc0.mat">fg1_ses2_perc0</a>, <a href="/database/data-sets/002-2025/fg1_ses2_perc50.mat">fg1_ses2_perc50</a>, <a href="/database/data-sets/002-2025/fg1_ses2_perc100.mat">fg1_ses2_perc100</a>, <a href="/database/data-sets/002-2025/fg1_ses3_perc0.mat">fg1_ses3_perc0</a>, <a href="/database/data-sets/002-2025/fg1_ses3_perc50.mat">fg1_ses3_perc50</a>, <a href="/database/data-sets/002-2025/fg1_ses3_perc100.mat">fg1_ses3_perc100</a>, <a href="/database/data-sets/002-2025/fg2_ses1_perc0.mat">fg2_ses1_perc0</a>, <a href="/database/data-sets/002-2025/fg2_ses1_perc50.mat">fg2_ses1_perc50</a>, <a href="/database/data-sets/002-2025/fg2_ses1_perc100.mat">fg2_ses1_perc100</a>, <a href="/database/data-sets/002-2025/fg2_ses2_perc0.mat">fg2_ses2_perc0</a>, <a href="/database/data-sets/002-2025/fg2_ses2_perc50.mat">fg2_ses2_perc50</a>, <a href="/database/data-sets/002-2025/fg2_ses2_perc100.mat">fg2_ses2_perc100</a>, <a href="/database/data-sets/002-2025/fg2_ses3_perc0.mat">fg2_ses3_perc0</a>, <a href="/database/data-sets/002-2025/fg2_ses3_perc50.mat">fg2_ses3_perc50</a>, <a href="/database/data-sets/002-2025/fg2_ses3_perc100.mat">fg2_ses3_perc100</a>, <a href="/database/data-sets/002-2025/fg3_ses1_perc0.mat">fg3_ses1_perc0</a>, <a href="/database/data-sets/002-2025/fg3_ses1_perc50.mat">fg3_ses1_perc50</a>, <a href="/database/data-sets/002-2025/fg3_ses1_perc100.mat">fg3_ses1_perc100</a>, <a href="/database/data-sets/002-2025/fg3_ses2_perc0.mat">fg3_ses2_perc0</a>, <a href="/database/data-sets/002-2025/fg3_ses2_perc50.mat">fg3_ses2_perc50</a>, <a href="/database/data-sets/002-2025/fg3_ses2_perc100.mat">fg3_ses2_perc100</a>, <a href="/database/data-sets/002-2025/fg3_ses3_perc0.mat">fg3_ses3_perc0</a>, <a href="/database/data-sets/002-2025/fg3_ses3_perc50.mat">fg3_ses3_perc50</a>, <a href="/database/data-sets/002-2025/fg3_ses3_perc100.mat">fg3_ses3_perc100</a>, <a href="/database/data-sets/002-2025/fg4_ses1_perc0.mat">fg4_ses1_perc0</a>, <a href="/database/data-sets/002-2025/fg4_ses1_perc50.mat">fg4_ses1_perc50</a>, <a href="/database/data-sets/002-2025/fg4_ses1_perc100.mat">fg4_ses1_perc100</a>, <a href="/database/data-sets/002-2025/fg4_ses2_perc0.mat">fg4_ses2_perc0</a>, <a href="/database/data-sets/002-2025/fg4_ses2_perc50.mat">fg4_ses2_perc50</a>, <a href="/database/data-sets/002-2025/fg4_ses2_perc100.mat">fg4_ses2_perc100</a>, <a href="/database/data-sets/002-2025/fg4_ses3_perc0.mat">fg4_ses3_perc0</a>, <a href="/database/data-sets/002-2025/fg4_ses3_perc50.mat">fg4_ses3_perc50</a>, <a href="/database/data-sets/002-2025/fg4_ses3_perc100.mat">fg4_ses3_perc100 </a></dd>
+<dt>License</dt>
+<dd><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution license (CC BY 4.0)</a></dd>
+<dt>Licensor</dt>
+<dd>Institute of Neural Engineering, Graz University of Technology</dd>
+<dt>Description</dt>
+<dd><a href="/database/data-sets/002-2025/Dataset_Description.pdf">PDF</a></dd>
+<dt>Publication</dt>
+<dd><a href="https://www.doi.org/10.1088/1741-2552/ac689f" target="_blank" rel="noopener">DOI</a></dd>
+<dt>Contact</dt>
+<dd><joomla-hidden-mail  is-link="1" is-email="0" first="Z2Vybm90Lm11ZWxsZXI=" last="dHVncmF6LmF0" text="R2Vybm90IE3DvGxsZXItUHV0eg==" base="" >This email address is being protected from spambots. You need JavaScript enabled to view it.</joomla-hidden-mail></dd>
+</dl>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-body">
+<h3 class="card-title">External links</h3>
+<ul>
+<li>BCI Competition II (4 data sets, <a href="https://www.bbci.de/competition/ii/" target="_blank" rel="noopener noreferrer">https://www.bbci.de/competition/ii/</a>)</li>
+<li>BCI Competition III (5 data sets, <a href="https://www.bbci.de/competition/iii/" target="_blank" rel="noopener noreferrer">https://www.bbci.de/competition/iii/</a>)</li>
+<li>BCI Competition IV (4 data sets, <a href="https://www.bbci.de/competition/iv/" target="_blank" rel="noopener noreferrer">https://www.bbci.de/competition/iv/</a>)</li>
+<li>BCI2000 EEG motor movement/imagery (<a href="http://physionet.org/pn4/eegmmidb/" target="_blank" rel="noopener noreferrer">http://physionet.org/pn4/eegmmidb/</a>)</li>
+<li>List of various publicly available data sets (<a href="http://sccn.ucsd.edu/~arno/fam2data/publicly_available_EEG_data.html" target="_blank" rel="noopener noreferrer">http://sccn.ucsd.edu/~arno/fam2data/publicly_available_EEG_data.html</a>)</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>     </div>
+
+        
+                                        </div>
+
+            </main>
+            
+        </div>
+
+        
+        
+            </div>
+
+            <footer class="container-footer footer full-width">
+            <div class="grid-child">
+                
+<div id="mod-custom32" class="mod-custom custom">
+    <p>Copyright © 2022 <a href="https://www.tugraz.at/institute/ine/home/">Institute of Neural Engineering</a>, <a href="http://www.tugraz.at" target="_blank" rel="noopener noreferrer">Graz University of Technology</a>.</p></div>
+
+            </div>
+        </footer>
+    
+            <a href="#top" id="back-top" class="back-to-top-link" aria-label="Back to Top">
+            <span class="icon-arrow-up icon-fw" aria-hidden="true"></span>
+        </a>
+    
+    
+
+<script type="text/javascript">   function cookiehintsubmitnoc(obj) {     if (confirm("A refusal will affect the functions of the website. Do you really want to decline?")) {       document.cookie = 'reDimCookieHint=-1; expires=0; path=/';       cookiehintfadeOut(document.getElementById('redim-cookiehint-modal'));       return true;     } else {       return false;     }   } </script> <style> /* Struktur/Mechanik — der Look kommt aus dem gewaehlten Skin (CSS-Style;  ohne Auswahl laedt automatisch style-softcard.css). */ #redim-cookiehint.redim-tpl-flyout-right{position:relative !important;padding:26px 28px !important;text-align:left !important} #redim-cookiehint-modal .redim-tpl-flyout-right{width:min(92vw,440px) !important;box-sizing:border-box !important;max-height:92vh !important;overflow-x:hidden !important;overflow-y:auto !important;overscroll-behavior:contain !important} #redim-cookiehint-top .redim-tpl-flyout-right,#redim-cookiehint-bottom .redim-tpl-flyout-right{max-width:none !important;width:100% !important;box-sizing:border-box !important;margin:0 !important;padding:16px 28px !important} #redim-cookiehint-top .redim-tpl-flyout-right .redim-cc-cookiebuttons,#redim-cookiehint-bottom .redim-tpl-flyout-right .redim-cc-cookiebuttons{display:flex !important;flex-wrap:wrap !important;gap:10px !important;align-items:center !important;justify-content:flex-start !important;max-width:1200px !important} #redim-cookiehint-top .redim-tpl-flyout-right .redim-cc-btn,#redim-cookiehint-bottom .redim-tpl-flyout-right .redim-cc-btn{width:auto !important;flex:0 1 auto !important;margin-top:0 !important} #redim-cookiehint-top .redim-tpl-flyout-right #cookiehintinfo,#redim-cookiehint-bottom .redim-tpl-flyout-right #cookiehintinfo{flex-basis:100% !important;margin-top:4px !important} .redim-tpl-flyout-right .redim-cc-head{display:flex !important;align-items:center !important;gap:11px !important;margin-bottom:12px !important} .redim-tpl-flyout-right .redim-cc-icon{display:flex !important;align-items:center !important;flex:0 0 auto !important} .redim-tpl-flyout-right .redim-cc-icon img{width:26px !important;height:auto !important;display:block !important} .redim-tpl-flyout-right .redim-cc-headline{display:block !important} .redim-tpl-flyout-right .redim-cc-btn{display:flex !important;align-items:center !important;justify-content:center !important;min-height:44px !important;width:100% !important;box-sizing:border-box !important;text-align:center !important;padding:11px 16px !important;margin-top:9px !important;cursor:pointer !important;text-decoration:none !important} .redim-tpl-flyout-right .redim-cc-detail-toggle{background:none !important;border:0 !important;cursor:pointer !important} .redim-tpl-flyout-right .redim-cc-toggle-caret{display:inline-block !important;transition:transform .25s ease !important} .redim-tpl-flyout-right .redim-cc-toggle-details.redim-cc-is-open .redim-cc-toggle-caret{transform:rotate(180deg) !important} /* Dynamisch (Backend-Farbauswahl) — bleibt bewusst im Template. Kette:  Farbfelder (--redim-cc-*) > Skin (--redim-cc-skin-*) > Template-Standard.  #redim-cookiehint-Praefix: haelt die Regeln per Spezifitaet ueber den  (ebenfalls !important-)Skin-Regeln wie "... .redim-cc-btn". */ #redim-cookiehint.redim-tpl-flyout-right #cookiehintsubmit,#redim-cookiehint.redim-tpl-flyout-right #cookiehintsubmitno,#redim-cookiehint.redim-tpl-flyout-right .redim-cc-accept-all,#redim-cookiehint.redim-tpl-flyout-right .redim-cc-reject{background:var(--redim-cc-btn-bg,var(--redim-cc-skin-btn-bg,#4338ca)) !important;color:var(--redim-cc-btn-fg,var(--redim-cc-skin-btn-fg,#fff)) !important;border-color:var(--redim-cc-btn-bg,var(--redim-cc-skin-btn-bg,#4338ca)) !important} #redim-cookiehint.redim-tpl-flyout-right .redim-cc-switch input:checked + .redim-cc-slider,#redim-cookiehint.redim-tpl-flyout-right .redim-cc-switch input:disabled + .redim-cc-slider{background-color:var(--redim-cc-accent,var(--redim-cc-skin-accent,#4338ca)) !important} @media (min-width:900px){ #redim-cookiehint-modal .redim-tpl-flyout-right{transition:width .35s cubic-bezier(.2,.75,.3,1),height .35s cubic-bezier(.2,.75,.3,1) !important} #redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open{width:min(92vw,940px) !important;min-height:min(66vh,540px) !important;display:flex !important;flex-direction:column !important;justify-content:center !important;align-items:flex-start !important} #redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open > .redim-cc-head,#redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open > .redim-cc-content,#redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open > .redim-cc,#redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open > .redim-cc-watermark{width:384px !important;max-width:100% !important} #redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open .redim-cc-details{position:absolute !important;top:24px !important;bottom:24px !important;left:440px !important;right:auto !important;width:calc(min(92vw,940px) - 466px) !important;box-sizing:border-box !important;overflow-y:auto !important;overscroll-behavior:contain !important;margin:0 !important;padding:4px 6px 0 24px !important;border-left:2px dashed var(--redim-cc-skin-divider,#d5dbe4) !important} #redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open .redim-cc-details:not([hidden]){animation:redimccPaneInR .3s cubic-bezier(.2,.75,.3,1) .1s both !important} #redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open .redim-cc-details.redim-cc-closing{display:block !important;animation:redimccPaneOutR .18s ease-in forwards !important} #redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open .redim-cc-details .redim-cc-categories{max-height:none !important;overflow:visible !important;margin-top:0 !important} #redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open .redim-cc-save-row{position:sticky !important;bottom:0 !important;background:var(--redim-cc-skin-surface,#ffffff) !important;margin:0 !important;padding:12px 0 14px !important;box-shadow:var(--redim-cc-skin-surface-shadow,0 -10px 16px -14px rgba(15,23,42,.4)) !important} #redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open .redim-cc-toggle-details.redim-cc-is-open .redim-cc-toggle-caret{transform:rotate(-90deg) !important} } @keyframes redimccPaneInR{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}} @keyframes redimccPaneOutR{from{opacity:1;transform:none}to{opacity:0;transform:translateX(16px)}} @media (prefers-reduced-motion:reduce){#redim-cookiehint-modal .redim-tpl-flyout-right{transition:none !important}#redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open .redim-cc-details:not([hidden]),#redim-cookiehint-modal .redim-tpl-flyout-right.redim-cc-flyout-open .redim-cc-details.redim-cc-closing{animation:none !important}.redim-tpl-flyout-right .redim-cc-toggle-caret{transition:none !important}} /* Frueher Host-Utilities: ".text-center" kam aus Bootstrap, ".clr" aus Joomla.  Seit der Namensraum-Umstellung gehoeren beide uns - also hier ausdruecklich  setzen statt auf das Theme zu hoffen (galt in BEIDEN Modi, deshalb im  Template und nicht in cookieconsent.css, das klassisch nicht laedt). */ .redim-tpl-flyout-right .redim-cc-text-center{text-align:center !important} .redim-tpl-flyout-right .redim-cc-clr{clear:both !important} </style> <div id="redim-cookiehint-modal">   <div id="redim-cookiehint" class="redim-tpl redim-tpl-flyout-right">     <div class="redim-cc-head">       <span class="redim-cc-icon"><img src="/plugins/system/cookiehint/lib/assets/img/little_cookie.png?b024f4" alt="" aria-hidden="true" width="26" height="24"></span>       <span class="redim-cc-headline">We use cookies</span>     </div>     <div class="redim-cc-content">       <p>We use cookies on our website. Some of them are essential for viewing Videos on the side, while others are used for displaying a map. You can decide for yourself whether you want to allow cookies or not. Please note that if you reject them, you may not be able to use all the functionalities of the site.</p>    </div>     <div class="redim-cc"> <div class="redim-cc-cookiebuttons redim-cc-buttons">   <button type="button" class="redim-cc-btn redim-cc-accept-all">Accept all</button>   <button type="button" class="redim-cc-btn redim-cc-reject">Reject all</button>   <button type="button" class="redim-cc-btn redim-cc-toggle-details" aria-expanded="false" aria-controls="redim-cc-details">     <span class="redim-cc-toggle-text">Cookie settings</span>     <span class="redim-cc-toggle-caret" aria-hidden="true">&#9662;</span>   </button> </div> <div class="redim-cc-details" id="redim-cc-details" hidden> <div class="redim-cc-categories">       <div class="redim-cc-cat" data-cat="essential">       <div class="redim-cc-cat-head">         <label class="redim-cc-switch" title="Essential">           <input type="checkbox" class="redim-cc-cat-toggle" data-cat="essential"             aria-labelledby="redim-cc-catlabel-essential"             checked disabled />           <span class="redim-cc-slider"></span>         </label>         <span class="redim-cc-cat-label" id="redim-cc-catlabel-essential">Essential<span class="redim-cc-cat-count" data-cat="essential"></span></span>         <button type="button" class="redim-cc-detail-toggle" data-cat="essential"             aria-expanded="false" aria-controls="redim-cc-cookies-essential"             aria-label="Settings: Essential">&#9662;</button>       </div>               <div class="redim-cc-cat-desc">Necessary for the operation of the website. These cookies cannot be disabled.</div>             <div class="redim-cc-cookies" id="redim-cc-cookies-essential" data-cat="essential" hidden></div>     </div>       <div class="redim-cc-cat" data-cat="functional">       <div class="redim-cc-cat-head">         <label class="redim-cc-switch" title="Functional">           <input type="checkbox" class="redim-cc-cat-toggle" data-cat="functional"             aria-labelledby="redim-cc-catlabel-functional"              />           <span class="redim-cc-slider"></span>         </label>         <span class="redim-cc-cat-label" id="redim-cc-catlabel-functional">Functional<span class="redim-cc-cat-count" data-cat="functional"></span></span>         <button type="button" class="redim-cc-detail-toggle" data-cat="functional"             aria-expanded="false" aria-controls="redim-cc-cookies-functional"             aria-label="Settings: Functional">&#9662;</button>       </div>               <div class="redim-cc-cat-desc">Enable convenient features and the storing of preferences.</div>             <div class="redim-cc-cookies" id="redim-cc-cookies-functional" data-cat="functional" hidden></div>     </div>       <div class="redim-cc-cat" data-cat="statistics">       <div class="redim-cc-cat-head">         <label class="redim-cc-switch" title="Statistics">           <input type="checkbox" class="redim-cc-cat-toggle" data-cat="statistics"             aria-labelledby="redim-cc-catlabel-statistics"              />           <span class="redim-cc-slider"></span>         </label>         <span class="redim-cc-cat-label" id="redim-cc-catlabel-statistics">Statistics<span class="redim-cc-cat-count" data-cat="statistics"></span></span>         <button type="button" class="redim-cc-detail-toggle" data-cat="statistics"             aria-expanded="false" aria-controls="redim-cc-cookies-statistics"             aria-label="Settings: Statistics">&#9662;</button>       </div>               <div class="redim-cc-cat-desc">Help us understand how visitors use the website (audience measurement).</div>             <div class="redim-cc-cookies" id="redim-cc-cookies-statistics" data-cat="statistics" hidden></div>     </div>       <div class="redim-cc-cat" data-cat="marketing">       <div class="redim-cc-cat-head">         <label class="redim-cc-switch" title="Marketing">           <input type="checkbox" class="redim-cc-cat-toggle" data-cat="marketing"             aria-labelledby="redim-cc-catlabel-marketing"              />           <span class="redim-cc-slider"></span>         </label>         <span class="redim-cc-cat-label" id="redim-cc-catlabel-marketing">Marketing<span class="redim-cc-cat-count" data-cat="marketing"></span></span>         <button type="button" class="redim-cc-detail-toggle" data-cat="marketing"             aria-expanded="false" aria-controls="redim-cc-cookies-marketing"             aria-label="Settings: Marketing">&#9662;</button>       </div>               <div class="redim-cc-cat-desc">Used for advertising and tracking visitors across websites.</div>             <div class="redim-cc-cookies" id="redim-cc-cookies-marketing" data-cat="marketing" hidden></div>     </div>       <div class="redim-cc-cat" data-cat="unknown" hidden>       <div class="redim-cc-cat-head">         <label class="redim-cc-switch" title="Other">           <input type="checkbox" class="redim-cc-cat-toggle" data-cat="unknown"             aria-labelledby="redim-cc-catlabel-unknown"              />           <span class="redim-cc-slider"></span>         </label>         <span class="redim-cc-cat-label" id="redim-cc-catlabel-unknown">Other<span class="redim-cc-cat-count" data-cat="unknown"></span></span>         <button type="button" class="redim-cc-detail-toggle" data-cat="unknown"             aria-expanded="false" aria-controls="redim-cc-cookies-unknown"             aria-label="Settings: Other">&#9662;</button>       </div>             <div class="redim-cc-cookies" id="redim-cc-cookies-unknown" data-cat="unknown" hidden></div>     </div>   </div> <div class="redim-cc-cookiebuttons redim-cc-save-row">   <button type="button" class="redim-cc-btn redim-cc-save">Save selection</button> </div> </div> <noscript>   <style>.redim-cc-buttons, .redim-cc-toggle-details, .redim-cc-details { display: none !important; }</style>   <div class="redim-cc-noscript">     <p>JavaScript is disabled. You can accept or reject all cookies:</p>     <div class="redim-cc-cookiebuttons">       <a class="redim-cc-btn" rel="nofollow" href="https://bnci-horizon-2020.eu/database/data-sets?rCH=2">Accept all</a>       <a class="redim-cc-btn" rel="nofollow" href="https://bnci-horizon-2020.eu/database/data-sets?rCH=-2">Reject all</a>     </div>   </div> </noscript> <div class="redim-cc-text-center" id="cookiehintinfo">       </div> </div>     <div class="redim-cc-clr"></div>     <div class="redim-cc-watermark" style="clear:both !important;margin-top:6px !important;text-align:center !important;font-size:11px !important;line-height:1.4 !important;">   CookieHint and Consent by  <a href="https://www.redim.de/" target="_blank" rel="noopener"    style="color:inherit !important;text-decoration:underline !important;">reDim GmbH</a> </div>   </div> </div> <script type="text/javascript"> (function () {   /* Pane choreography: the shared UI script toggles [hidden] on the injected    category block instantly; this observer mirrors that state as a    .redim-cc-flyout-open class on the card (drives the smooth width transition and    the side-pane layout) and replays the close as a short fade-out BEFORE    the card narrows. Purely cosmetic - consent state is untouched. Without    MutationObserver the block simply opens as the regular accordion. NOTE:    this file is minified (newlines become spaces) - block comments only. */   var host = document.getElementById('redim-cookiehint-modal');   if (!host || !window.MutationObserver) { return; }   var card = host.querySelector('.redim-tpl-flyout-right');   var panel = host.querySelector('.redim-tpl-flyout-right .redim-cc-details');   if (!card || !panel) { return; }   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;   function paneMode() {     return host.id === 'redim-cookiehint-modal'       && window.matchMedia && window.matchMedia('(min-width: 900px)').matches;   }   var closing = false;   var naturalH = 0;   function clearSizing(e) {     /* only the height transition ends the pinning - width ends separately */     if (e && e.propertyName !== 'height') { return; }     card.style.removeProperty('height');     card.style.removeProperty('min-height');     card.removeEventListener('transitionend', clearSizing);   }   function animateHeight(from, to) {     /* FLIP-style pinning: transition real pixel heights in sync with the      width transition - a raw min-height transition interpolates from 0      and only becomes visible in the last frames (perceived stutter). */     /* priority "important": the banner stylesheets are fully !important      (hardened against page CSS), so a plain inline pin would lose against      the .redim-cc-flyout-open min-height rule */     card.style.setProperty('min-height', '0px', 'important');     card.style.setProperty('height', from + 'px', 'important');     void card.offsetHeight; /* flush the pin before the target applies */     card.style.setProperty('height', to + 'px', 'important');     card.removeEventListener('transitionend', clearSizing);     card.addEventListener('transitionend', clearSizing);   }   function finish() {     closing = false;     panel.classList.remove('redim-cc-closing');     if (!card.classList.contains('redim-cc-flyout-open')) { return; }     if (!reduce && paneMode() && naturalH > 0) {       var current = card.offsetHeight;       card.classList.remove('redim-cc-flyout-open');       animateHeight(current, naturalH);     } else {       card.classList.remove('redim-cc-flyout-open');     }   }   new MutationObserver(function (list) {     for (var i = 0; i < list.length; i++) {       if (list[i].attributeName !== 'hidden') { continue; }       if (!panel.hasAttribute('hidden')) {         /* opening (also re-opening mid-close) */         closing = false;         panel.classList.remove('redim-cc-closing');         if (!card.classList.contains('redim-cc-flyout-open') && !reduce && paneMode()) {           /* measure the card WITHOUT the pane: [hidden] is already            removed here, so in-flow the pane would inflate the            "natural" height to the accordion height */           panel.style.setProperty('display', 'none', 'important');           naturalH = card.offsetHeight;           panel.style.removeProperty('display');           card.classList.add('redim-cc-flyout-open');           animateHeight(naturalH, Math.max(naturalH, Math.min(window.innerHeight * 0.66, 540)));         } else {           card.classList.add('redim-cc-flyout-open');         }       } else if (!closing) {         if (reduce || !paneMode()) { clearSizing(); card.classList.remove('redim-cc-flyout-open'); continue; }         closing = true;         panel.classList.add('redim-cc-closing');         var timer = window.setTimeout(function () { if (closing) { finish(); } }, 400);         panel.addEventListener('animationend', function h() {           window.clearTimeout(timer);           panel.removeEventListener('animationend', h);           if (closing) { finish(); }         });       }     }   }).observe(panel, { attributes: true, attributeFilter: ['hidden'] }); }()); </script> 
+</body>
+
+</html>

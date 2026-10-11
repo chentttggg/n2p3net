@@ -1,0 +1,39 @@
+[
+  {
+    "file": "joint_trcm_full.xml",
+    "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4751046/fullTextXML",
+    "fetched_utc": "2026-10-04T13:33:55.114823+00:00",
+    "status": 500,
+    "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4751046/fullTextXML",
+    "content_type": "application/json",
+    "bytes": 150,
+    "sha256": "3e20430223d39ced93d8362bf6318a14a4fb216290ea7218fc075bcb3020c3db"
+  },
+  {
+    "file": "joint_statsmodels_stattools.py",
+    "requested_url": "https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.6/statsmodels/tsa/stattools.py",
+    "fetched_utc": "2026-10-04T13:33:55.115215+00:00",
+    "error": "('Connection aborted.', ConnectionResetError(10054, '\u8fdc\u7a0b\u4e3b\u673a\u5f3a\u8feb\u5173\u95ed\u4e86\u4e00\u4e2a\u73b0\u6709\u7684\u8fde\u63a5\u3002', None, 10054, None))",
+    "status": null
+  },
+  {
+    "file": "joint_glsar_docs.html",
+    "requested_url": "https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.GLSAR.iterative_fit.html",
+    "fetched_utc": "2026-10-04T13:33:55.116117+00:00",
+    "status": 200,
+    "final_url": "https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.GLSAR.iterative_fit.html",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 42026,
+    "sha256": "8e6b7eeeb69b13ec129c826153fe27fd3e03422198d3d5b39b98c42245acd7d2"
+  },
+  {
+    "file": "joint_flipflop_search.json",
+    "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=(%22Kronecker%22%20AND%20%22maximum%20likelihood%22%20AND%20%22existence%22)&format=json&resultType=core&pageSize=5",
+    "fetched_utc": "2026-10-04T13:33:55.116430+00:00",
+    "status": 200,
+    "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=(%22Kronecker%22%20AND%20%22maximum%20likelihood%22%20AND%20%22existence%22)&format=json&resultType=core&pageSize=5",
+    "content_type": "application/json;charset=UTF-8",
+    "bytes": 25959,
+    "sha256": "61ed31b510b20e01f699396a657d326c210fe7729bbc45805babc60b9cc6c3ce"
+  }
+]

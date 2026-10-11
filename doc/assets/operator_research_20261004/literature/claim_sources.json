@@ -1,0 +1,211 @@
+{
+  "evidence_scope": "methodological_research",
+  "claims": [
+    {
+      "id": "L01",
+      "file": "sarkka_book.pdf",
+      "locator": "Appendix A.1, Lemma A.1/A.2, printed pp209-210, PDF pp229-230",
+      "supports": "linear Gaussian covariance propagation and conditional mean/covariance",
+      "limits": "does not estimate EEG boundary covariance or establish stationarity",
+      "access": {
+        "file": "sarkka_book.pdf",
+        "requested_url": "https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf",
+        "fetched_utc": "2026-10-04T12:55:06.628839+00:00",
+        "status": 200,
+        "final_url": "https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf",
+        "content_type": "application/pdf",
+        "bytes": 4498379,
+        "sha256": "41c30a59b4e6d2418634959a5991f60b1e6cba881eb2643adba3f432394b23f2"
+      },
+      "verification": "primary_fulltext_or_pinned_author_code"
+    },
+    {
+      "id": "L02",
+      "file": "gpml_ch2.pdf",
+      "locator": "Section 2.1 Eq2.5-2.9; Section 2.2",
+      "supports": "Gaussian linear weight posterior and predictive uncertainty",
+      "limits": "average-kernel uncertainty is not per-event biological variability",
+      "access": {
+        "file": "gpml_ch2.pdf",
+        "requested_url": "https://gaussianprocess.org/gpml/chapters/RW2.pdf",
+        "fetched_utc": "2026-10-04T12:55:06.629376+00:00",
+        "status": 200,
+        "final_url": "https://gaussianprocess.org/gpml/chapters/RW2.pdf",
+        "content_type": "application/pdf",
+        "bytes": 466925,
+        "sha256": "33eb573e1a15abbc04191cc57f74076e1df83024d14b934eebfac3b30a3f57ce"
+      },
+      "verification": "primary_fulltext_or_pinned_author_code"
+    },
+    {
+      "id": "L03",
+      "file": "minka_linear.pdf",
+      "locator": "Section5 Eq47-62 PDF pp8-9",
+      "supports": "inverse-Wishart output covariance integration gives matrix-T joint prediction",
+      "limits": "requires correct conditional residual model; scalar t is a different hierarchy",
+      "access": {
+        "file": "minka_linear.pdf",
+        "requested_url": "https://tminka.github.io/papers/minka-linear.pdf",
+        "fetched_utc": "2026-10-04T12:55:06.629827+00:00",
+        "status": 200,
+        "final_url": "https://tminka.github.io/papers/minka-linear.pdf",
+        "content_type": "application/pdf",
+        "bytes": 159478,
+        "sha256": "cc11d04d488571f5cb9f9bfc49bac64c0f065562b7768439a613956fdc0c65dc"
+      },
+      "verification": "primary_fulltext_or_pinned_author_code"
+    },
+    {
+      "id": "L04",
+      "file": "shah_student.pdf",
+      "locator": "hierarchical GP covariance model and analytic predictive sections",
+      "supports": "Student-t predictive arises from a declared covariance prior and marginalization",
+      "limits": "no P300 result; no arbitrary-score calibration guarantee",
+      "access": {
+        "file": "shah_student.pdf",
+        "requested_url": "https://proceedings.mlr.press/v33/shah14.pdf",
+        "fetched_utc": "2026-10-04T12:55:06.630524+00:00",
+        "status": 200,
+        "final_url": "https://proceedings.mlr.press/v33/shah14.pdf",
+        "content_type": "application/pdf",
+        "bytes": 1200651,
+        "sha256": "4ce4d557ac0dee2a7165a973f73ed8c71c0a2bcdc9a514e39dc02781f9b7f201"
+      },
+      "verification": "primary_fulltext_or_pinned_author_code"
+    },
+    {
+      "id": "L05",
+      "file": "guo_calibration.pdf",
+      "locator": "Section4 opening, Section4.2 Eq9, PDF p6",
+      "supports": "positive temperature fit on held-out validation NLL leaves argmax unchanged",
+      "limits": "does not raise fixed argmax accuracy; observed test cannot fit temperature",
+      "access": {
+        "file": "guo_calibration.pdf",
+        "requested_url": "https://proceedings.mlr.press/v70/guo17a/guo17a.pdf",
+        "fetched_utc": "2026-10-04T12:55:08.627105+00:00",
+        "status": 200,
+        "final_url": "https://proceedings.mlr.press/v70/guo17a/guo17a.pdf",
+        "content_type": "application/pdf",
+        "bytes": 828420,
+        "sha256": "df7c93f97204f8a3c2b10f6d5bf5265baac25f00c1ae3b473a3e1dbc102dacb2"
+      },
+      "verification": "primary_fulltext_or_pinned_author_code"
+    },
+    {
+      "id": "L06",
+      "file": "spm_spm.m",
+      "locator": "lines106-109,438,445,589",
+      "supports": "same filtered whitened design and observations, with transformed noise covariance",
+      "limits": "fMRI GLM engineering precedent, not EEG noise estimator",
+      "access": {
+        "file": "spm_spm.m",
+        "requested_url": "https://raw.githubusercontent.com/spm/spm/9b8590ecaacdcee15ffb03eb084e6ce3a7a01048/spm_spm.m",
+        "fetched_utc": "2026-10-04T12:59:05.717760+00:00",
+        "status": 200,
+        "final_url": "https://raw.githubusercontent.com/spm/spm/9b8590ecaacdcee15ffb03eb084e6ce3a7a01048/spm_spm.m",
+        "content_type": "text/plain; charset=utf-8",
+        "bytes": 30551,
+        "sha256": "a875f92603f4d72ec2593c7eae9cc08fc15333908e421496a87fd4e0641c9479"
+      },
+      "verification": "primary_fulltext_or_pinned_author_code"
+    },
+    {
+      "id": "L07",
+      "file": "unfold_filter_simulation.m",
+      "locator": "EEG=pop_eegfiltnew; subsequent timelimits=[-0.8,1] and uf_timeexpandDesignmat",
+      "supports": "author fits a full lag response after filtering EEG",
+      "limits": "does not filter design; does not support equivalence with compact causal basis",
+      "access": {
+        "file": "unfold_filter_simulation.m",
+        "requested_url": "https://raw.githubusercontent.com/unfoldtoolbox/unfold/7961dc7fe446332e75dfd132e514a103929da6ff/src/simulations/filter_effects.m",
+        "fetched_utc": "2026-10-04T12:56:55.655337+00:00",
+        "status": 200,
+        "final_url": "https://raw.githubusercontent.com/unfoldtoolbox/unfold/7961dc7fe446332e75dfd132e514a103929da6ff/src/simulations/filter_effects.m",
+        "content_type": "text/plain; charset=utf-8",
+        "bytes": 2358,
+        "sha256": "d4d9ce1148d732469b65d32222b49ee7435ff0639c4cb15ea0a0d8b6062755d5"
+      },
+      "verification": "primary_fulltext_or_pinned_author_code"
+    },
+    {
+      "id": "L08",
+      "file": "mtrf_full.xml",
+      "locator": "Regularized linear regression, TRF optimization, worked example",
+      "supports": "ridge deconvolution, regularization selection, negative lag response modeling",
+      "limits": "stimulus autocorrelation adjustment is not EEG residual whitening",
+      "access": {
+        "file": "mtrf_full.xml",
+        "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5127806/fullTextXML",
+        "fetched_utc": "2026-10-04T12:56:55.654996+00:00",
+        "status": 200,
+        "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5127806/fullTextXML",
+        "content_type": "application/xml",
+        "bytes": 164876,
+        "sha256": "83e293182791c9c46d79adea2a1cd812204e5e0c37cedb13dbf1229d00e08fa2"
+      },
+      "verification": "primary_fulltext_or_pinned_author_code"
+    },
+    {
+      "id": "L09",
+      "file": "mtrf_train.m",
+      "locator": "lines115-164",
+      "supports": "explicit time lag and Cxx/Cxy/ridge construction",
+      "limits": "not a Bayesian P300 candidate likelihood",
+      "access": {
+        "file": "mtrf_train.m",
+        "requested_url": "https://raw.githubusercontent.com/mickcrosse/mTRF-Toolbox/42d43ffbddb084905c1b57c667e3690d80152bd2/mtrf/mTRFtrain.m",
+        "fetched_utc": "2026-10-04T12:56:55.655575+00:00",
+        "status": 200,
+        "final_url": "https://raw.githubusercontent.com/mickcrosse/mTRF-Toolbox/42d43ffbddb084905c1b57c667e3690d80152bd2/mtrf/mTRFtrain.m",
+        "content_type": "text/plain; charset=utf-8",
+        "bytes": 9171,
+        "sha256": "2afc54eea5589e4bd870c51e62442e1648cf504acbd6eae4a2c495d0964fd989"
+      },
+      "verification": "primary_fulltext_or_pinned_author_code"
+    },
+    {
+      "id": "L10",
+      "file": "scipy_filter_code.py",
+      "locator": "sosfiltfilt lines5031-5143; _filtfilt_gust",
+      "supports": "fixed-length fixed-padding fixed-SOS operator is deterministic linear",
+      "limits": "does not supply a prior for unknown external samples",
+      "access": {
+        "file": "scipy_filter_code.py",
+        "requested_url": "https://raw.githubusercontent.com/scipy/scipy/v1.16.2/scipy/signal/_signaltools.py",
+        "fetched_utc": "2026-10-04T12:55:09.539097+00:00",
+        "status": 200,
+        "final_url": "https://raw.githubusercontent.com/scipy/scipy/v1.16.2/scipy/signal/_signaltools.py",
+        "content_type": "text/plain; charset=utf-8",
+        "bytes": 192737,
+        "sha256": "4d65f6b4876612c61d5c4e68505cac33ada350acb6d2e34565abd6b1d78212ec"
+      },
+      "verification": "primary_fulltext_or_pinned_author_code"
+    }
+  ],
+  "access_failures": [
+    {
+      "file": "rerp_ii_full.xml",
+      "reason": "HTTP500; metadata only"
+    },
+    {
+      "file": "rerp_ii_full.html",
+      "reason": "HTTP200 recaptcha challenge, not article"
+    },
+    {
+      "file": "gustafsson_author.pdf",
+      "reason": "request failure; no fulltext claim"
+    },
+    {
+      "file": "mtrf_crossval.m",
+      "reason": "request failure; no code claim"
+    }
+  ],
+  "local_primary_previously_verified": [
+    {
+      "path": "doc/assets/system_research_20261004/literature/unfold_full.xml",
+      "sha256": "0d91af1490feb9cf8e5340abec4091e5ac3ba4ddf1a09b5fa942345431eda60e",
+      "locator": "Fig6, Basic settings Epoch size, Time-frequency discussion",
+      "claim": "full response support and temporal basis/filter boundary cautions"
+    }
+  ]
+}

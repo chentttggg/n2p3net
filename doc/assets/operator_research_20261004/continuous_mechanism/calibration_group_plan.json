@@ -1,0 +1,33 @@
+{
+  "schema": "n2p3_continuous_operator_calibration_design/1",
+  "evidence_scope": "public_development_calibration_only",
+  "source_baseline_archive_sha256": "043893ac95e4ff8e9b5f3db718e216ed6c33c4178af5a01e826f2237c4b3973a",
+  "records_plan": "doc/assets/system_implementation_20261004/bnci_continuous_plan.json",
+  "subjects": ["A01", "A02", "A03", "A04", "A05", "A06", "A07", "A08"],
+  "authorized_label_budget": 800,
+  "complete_decision_groups": 6,
+  "group_validation": "leave_one_complete_selection_out",
+  "fit_groups_per_fold": 5,
+  "held_groups_per_fold": 1,
+  "fit_event_count": 600,
+  "held_event_count": 120,
+  "last_incomplete_calibration_events": {"count": 80, "usage": "unused_for_group_crossvalidation"},
+  "K200": {"complete_groups": 1, "status": "group_crossvalidation_not_identifiable"},
+  "sample_scope": "independent_selection_first_onset_minus_round_0.2fs_to_last_onset_plus_round_1.2fs_half_open",
+  "scope_checks": ["inside_authorized_C800", "complete_event_history", "adjacent_unknown_flash_response_does_not_overlap", "independent_filter_each_group"],
+  "fixed_shared_model": {"native_sfreq_hz": 256, "native_channels": 8, "response_seconds": 1.2, "n_basis": 8, "ridge": 1.0, "nuisance": ["constant", "linear"]},
+  "arms": [
+    {"id": "legacy_filtered_AR1", "signal": "F(Y)", "design": "D", "noise": "legacy_OLS_AR1_clipped_0.95"},
+    {"id": "matched_design_filtered_AR1", "signal": "F(Y)", "design": "F(D)", "noise": "legacy_OLS_AR1_clipped_0.95"},
+    {"id": "raw_Burg_AR1", "signal": "Y", "design": "D", "noise": "segmented_Burg_AR1_stationary_startup"},
+    {"id": "raw_Burg_AR8", "signal": "Y", "design": "D", "noise": "segmented_Burg_AR8_stationary_startup"},
+    {"id": "raw_Burg_AR32", "signal": "Y", "design": "D", "noise": "segmented_Burg_AR32_stationary_startup"}
+  ],
+  "primary_outputs": ["all_requested_group_outcomes", "subject_macro_hit", "conditional_NLL", "coverage", "failure_reasons", "innovation_ACF", "held_out_noise_energy_ratio"],
+  "failure_denominator": "all_8_subjects_times_6_groups_times_5_arms_retained",
+  "analysis": "fixed_arms_reported_all_no_arm_selection_no_T_access_no_temperature_fitting",
+  "execution_owner": "root_shared_runner",
+  "cpu_native_threads_max": 2,
+  "loading": "one_subject_at_a_time",
+  "scope_limitations": ["C800_validation_fits_use_600_labels", "same_participant_group_validation_not_new_subject_confirmation", "none_of_these_arms_is_promoted_by_this_plan"]
+}

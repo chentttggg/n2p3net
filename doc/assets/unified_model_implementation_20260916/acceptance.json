@@ -1,0 +1,57 @@
+{
+  "schema": "n2p3_unified_implementation_acceptance/1",
+  "created_utc": "2026-09-16T08:22:07.944444+00:00",
+  "source_snapshot": {
+    "validation_manifest": "frozen/unified_model_20260916_validation/source.manifest.json",
+    "validation_archive_sha256": "41564c4d2036b4b44a2b7c93ff94fd0d29556f44cf14a8e46ce71659c73007f4",
+    "final_manifest": "frozen/unified_model_20260916_acceptance/source.manifest.json",
+    "final_archive_sha256": "7b0b177fa27175d5609f09fef73dfd80cedf8da28ef1912964931fadd01b4429",
+    "runtime_tests_configs_identical_to_validated": true,
+    "verified_files": 339
+  },
+  "validation": {
+    "command": ".venv/Scripts/python.exe -B -X utf8 -m pytest --junitxml=doc/assets/unified_model_implementation_20260916/pytest_acceptance.xml",
+    "exit_code": 0,
+    "passed": 2095,
+    "skipped": [
+      {
+        "class": "tests.brainsync.test_brainsync",
+        "test": "test_paused_producer_events_exclude_boundary_crossing_epochs",
+        "reason": "set BRAIN_SYNC_WORKSTATION_ROOT for producer integration"
+      },
+      {
+        "class": "tests.brainsync.test_brainsync",
+        "test": "test_actual_workstation_producer_roundtrips_seven_eeg_one_eog",
+        "reason": "set BRAIN_SYNC_WORKSTATION_ROOT for the independent producer integration"
+      },
+      {
+        "class": "tests.data.test_moabb_adapter",
+        "test": "test_private_parser_snapshot_cleanup_does_not_follow_symlinks",
+        "reason": "symlink creation is unavailable: [WinError 1314] 客户端没有所需的特权。: 'C:\\\\Users\\\\chent\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-chent\\\\pytest-767\\\\test_private_parser_snapshot_c0\\\\outside.bin' -> 'C:\\\\Users\\\\chent\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-chent\\\\pytest-767\\\\test_private_parser_snapshot_c0\\\\private-snapshot\\\\escape-link'"
+      },
+      {
+        "class": "tests.data.test_raw_artifacts",
+        "test": "test_snapshot_root_escape_and_symlink_are_rejected",
+        "reason": "The platform does not permit a test directory symlink."
+      }
+    ],
+    "pytest_reported_seconds": 294.48,
+    "ruff": {
+      "command": ".venv/Scripts/python.exe -m ruff check src tests experiments",
+      "exit_code": 0
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  },
+  "scope": {
+    "software_acceptance": true,
+    "real_raw_probe": "Huebner2017 three recordings; no model fit",
+    "real_full_unified_matrix_executed": false,
+    "adult_device_confirmation": false,
+    "brainsync_unified_minimum_calibration_recordings": 2,
+    "validation_monitor": "trial_cross_entropy"
+  },
+  "worktree": "Concurrent changes and original data preserved; no reset or broad staging performed."
+}

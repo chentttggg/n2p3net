@@ -1,0 +1,352 @@
+{
+  "scope": "synthetic operator diagnostic; zero ERP; no fitted model and no efficacy claim",
+  "input": {
+    "frequency_hz": 50,
+    "amplitude_uv": 8000,
+    "sampling_rate_hz": 512.0,
+    "event_sample": 64734,
+    "epoch_source_start": 64632,
+    "epoch_source_stop": 65349,
+    "independent_raw_stop": 65349,
+    "longer_context_seconds": 30,
+    "phase_count": 16,
+    "preprocessing": {
+      "name": "brainsync_bidirectional_v1",
+      "sfreq": 128.0,
+      "l_freq": 0.1,
+      "h_freq": 30.0,
+      "tmin_ms": -200.0,
+      "tmax_ms": 1200.0,
+      "n_times": 179,
+      "baseline_mode": "mean_only",
+      "signal_unit": "V",
+      "filter_method": "iir",
+      "filter_order": 4,
+      "filter_phase": "zero",
+      "causal_iir_initial_state": "not_applicable",
+      "notch_freqs_hz": [
+        50.0
+      ],
+      "notch_quality_factor": 30.0,
+      "zero_phase_edge_policy": "mne_reflect_limited",
+      "resample_domain": "epoched",
+      "resample_method": "fft",
+      "resample_npad": "auto",
+      "resample_window": "auto",
+      "resample_pad": "edge",
+      "trial_reference_window_ms": null,
+      "trial_reference_center": "mean",
+      "trial_reference_scale": "none",
+      "reject_threshold_v": null
+    }
+  },
+  "mne_padding_limit_samples": 4472,
+  "maximum_difference_from_scipy_same_odd_padding_volts": 0.0,
+  "per_phase": [
+    {
+      "cut_phase_radians": 0.0,
+      "endpoint_raw_uv": 0.0,
+      "zero_independent": {
+        "peak_abs_uv": 1.606128767105297e-10,
+        "rms_uv": 9.586170969844652e-11,
+        "ptp_uv": 1.9204237156552647e-10
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 1.3738711873228385e-10,
+        "rms_uv": 8.362166717686177e-11,
+        "ptp_uv": 1.68350670639274e-10
+      },
+      "forward_independent": {
+        "peak_abs_uv": 2.918691779211853e-10,
+        "rms_uv": 1.618599533188441e-10,
+        "ptp_uv": 3.4680636253174465e-10
+      }
+    },
+    {
+      "cut_phase_radians": 0.39269908169872414,
+      "endpoint_raw_uv": 3061.4674589207184,
+      "zero_independent": {
+        "peak_abs_uv": 2054.64003546455,
+        "rms_uv": 876.7146686958989,
+        "ptp_uv": 2162.019484046364
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 0.4540817864520815,
+        "rms_uv": 0.21231530334270216,
+        "ptp_uv": 0.46446812037735546
+      },
+      "forward_independent": {
+        "peak_abs_uv": 1.8562802497304808e-10,
+        "rms_uv": 9.988064992036232e-11,
+        "ptp_uv": 2.1858342702597707e-10
+      }
+    },
+    {
+      "cut_phase_radians": 0.7853981633974483,
+      "endpoint_raw_uv": 5656.854249492381,
+      "zero_independent": {
+        "peak_abs_uv": 3796.479750877292,
+        "rms_uv": 1619.9574765140533,
+        "ptp_uv": 3994.89110039054
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 0.8390337372927389,
+        "rms_uv": 0.3923075264651555,
+        "ptp_uv": 0.858225179940605
+      },
+      "forward_independent": {
+        "peak_abs_uv": 9.290056410798686e-11,
+        "rms_uv": 2.669157533172588e-11,
+        "ptp_uv": 1.4485641832127317e-10
+      }
+    },
+    {
+      "cut_phase_radians": 1.1780972450961724,
+      "endpoint_raw_uv": 7391.0362600902945,
+      "zero_independent": {
+        "peak_abs_uv": 4960.33983941549,
+        "rms_uv": 2116.576443497069,
+        "ptp_uv": 5219.576760501129
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 1.0962504075329278,
+        "rms_uv": 0.5125744849782945,
+        "ptp_uv": 1.1213252357272834
+      },
+      "forward_independent": {
+        "peak_abs_uv": 1.185571718516622e-10,
+        "rms_uv": 6.267449702282927e-11,
+        "ptp_uv": 1.600222702413692e-10
+      }
+    },
+    {
+      "cut_phase_radians": 1.5707963267948966,
+      "endpoint_raw_uv": 8000.0,
+      "zero_independent": {
+        "peak_abs_uv": 5369.033152974049,
+        "rms_uv": 2290.9658337585415,
+        "ptp_uv": 5649.629174384214
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 1.1865728907171522,
+        "rms_uv": 0.5548066246344882,
+        "ptp_uv": 1.2137136891731144
+      },
+      "forward_independent": {
+        "peak_abs_uv": 2.4394623527961336e-10,
+        "rms_uv": 1.3414880038205369e-10,
+        "ptp_uv": 2.8477692749216467e-10
+      }
+    },
+    {
+      "cut_phase_radians": 1.9634954084936207,
+      "endpoint_raw_uv": 7391.0362600902945,
+      "zero_independent": {
+        "peak_abs_uv": 4960.339839399014,
+        "rms_uv": 2116.5764434879393,
+        "ptp_uv": 5219.576760483865
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 1.0962504076011081,
+        "rms_uv": 0.5125744850228985,
+        "ptp_uv": 1.1213252357846548
+      },
+      "forward_independent": {
+        "peak_abs_uv": 3.322508849105942e-10,
+        "rms_uv": 1.8432906274351138e-10,
+        "ptp_uv": 3.8263349639580686e-10
+      }
+    },
+    {
+      "cut_phase_radians": 2.356194490192345,
+      "endpoint_raw_uv": 5656.854249492381,
+      "zero_independent": {
+        "peak_abs_uv": 3796.4797508814154,
+        "rms_uv": 1619.95747651713,
+        "ptp_uv": 3994.891100394864
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 0.8390337374905115,
+        "rms_uv": 0.39230752658139423,
+        "ptp_uv": 0.858225180113837
+      },
+      "forward_independent": {
+        "peak_abs_uv": 3.717958494753208e-10,
+        "rms_uv": 2.0816033002444112e-10,
+        "ptp_uv": 4.347752829256244e-10
+      }
+    },
+    {
+      "cut_phase_radians": 2.748893571891069,
+      "endpoint_raw_uv": 3061.4674589207193,
+      "zero_independent": {
+        "peak_abs_uv": 2054.64003546401,
+        "rms_uv": 876.7146686947498,
+        "ptp_uv": 2162.0194840453746
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 0.4540817866931132,
+        "rms_uv": 0.21231530348610772,
+        "ptp_uv": 0.46446812058825626
+      },
+      "forward_independent": {
+        "peak_abs_uv": 3.5679674294013537e-10,
+        "rms_uv": 1.9999939253734518e-10,
+        "ptp_uv": 4.272496681536288e-10
+      }
+    },
+    {
+      "cut_phase_radians": 3.141592653589793,
+      "endpoint_raw_uv": 9.797174393178826e-13,
+      "zero_independent": {
+        "peak_abs_uv": 1.6069780016465358e-10,
+        "rms_uv": 9.640723894133654e-11,
+        "ptp_uv": 1.9318084480410646e-10
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 1.379375206870148e-10,
+        "rms_uv": 8.41001354265546e-11,
+        "ptp_uv": 1.6995732394507671e-10
+      },
+      "forward_independent": {
+        "peak_abs_uv": 2.929673250955923e-10,
+        "rms_uv": 1.611684837136279e-10,
+        "ptp_uv": 3.4726352109113086e-10
+      }
+    },
+    {
+      "cut_phase_radians": 3.5342917352885173,
+      "endpoint_raw_uv": -3061.4674589207175,
+      "zero_independent": {
+        "peak_abs_uv": 2054.6400354681423,
+        "rms_uv": 876.7146686981657,
+        "ptp_uv": 2162.0194840503277
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 0.45408178644291913,
+        "rms_uv": 0.2123153033394245,
+        "ptp_uv": 0.4644681203669799
+      },
+      "forward_independent": {
+        "peak_abs_uv": 1.8405502474972092e-10,
+        "rms_uv": 9.919895246622393e-11,
+        "ptp_uv": 2.1749187084814405e-10
+      }
+    },
+    {
+      "cut_phase_radians": 3.9269908169872414,
+      "endpoint_raw_uv": -5656.85424949238,
+      "zero_independent": {
+        "peak_abs_uv": 3796.479750886584,
+        "rms_uv": 1619.9574765206885,
+        "ptp_uv": 3994.8911004001206
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 0.8390337373088268,
+        "rms_uv": 0.3923075264737479,
+        "ptp_uv": 0.8582251799586489
+      },
+      "forward_independent": {
+        "peak_abs_uv": 6.960836061015273e-11,
+        "rms_uv": 2.7628244985159847e-11,
+        "ptp_uv": 1.2678090856811564e-10
+      }
+    },
+    {
+      "cut_phase_radians": 4.319689898685965,
+      "endpoint_raw_uv": -7391.036260090293,
+      "zero_independent": {
+        "peak_abs_uv": 4960.3398394146725,
+        "rms_uv": 2116.576443496137,
+        "ptp_uv": 5219.576760500319
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 1.0962504075329509,
+        "rms_uv": 0.5125744849824595,
+        "ptp_uv": 1.1213252357305714
+      },
+      "forward_independent": {
+        "peak_abs_uv": 1.0114162730227877e-10,
+        "rms_uv": 5.508070501873224e-11,
+        "ptp_uv": 1.4285051878303254e-10
+      }
+    },
+    {
+      "cut_phase_radians": 4.71238898038469,
+      "endpoint_raw_uv": -8000.0,
+      "zero_independent": {
+        "peak_abs_uv": 5369.0331529905425,
+        "rms_uv": 2290.965833765364,
+        "ptp_uv": 5649.629174401154
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 1.186572890736771,
+        "rms_uv": 0.5548066246458212,
+        "ptp_uv": 1.2137136891936815
+      },
+      "forward_independent": {
+        "peak_abs_uv": 2.425208699530339e-10,
+        "rms_uv": 1.3342324844647604e-10,
+        "ptp_uv": 2.813983545633172e-10
+      }
+    },
+    {
+      "cut_phase_radians": 5.105088062083414,
+      "endpoint_raw_uv": -7391.036260090294,
+      "zero_independent": {
+        "peak_abs_uv": 4960.3398394144515,
+        "rms_uv": 2116.5764434963785,
+        "ptp_uv": 5219.576760500006
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 1.0962504076232844,
+        "rms_uv": 0.5125744850337676,
+        "ptp_uv": 1.121325235807875
+      },
+      "forward_independent": {
+        "peak_abs_uv": 3.318755449836395e-10,
+        "rms_uv": 1.8472756418555774e-10,
+        "ptp_uv": 3.789444200263009e-10
+      }
+    },
+    {
+      "cut_phase_radians": 5.497787143782138,
+      "endpoint_raw_uv": -5656.854249492382,
+      "zero_independent": {
+        "peak_abs_uv": 3796.4797508688916,
+        "rms_uv": 1619.957476510795,
+        "ptp_uv": 3994.8911003815683
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 0.8390337374941639,
+        "rms_uv": 0.3923075265836297,
+        "ptp_uv": 0.8582251801180776
+      },
+      "forward_independent": {
+        "peak_abs_uv": 3.715799842080429e-10,
+        "rms_uv": 2.077130779152234e-10,
+        "ptp_uv": 4.341016887357241e-10
+      }
+    },
+    {
+      "cut_phase_radians": 5.890486225480862,
+      "endpoint_raw_uv": -3061.467458920723,
+      "zero_independent": {
+        "peak_abs_uv": 2054.640035466139,
+        "rms_uv": 876.7146686957195,
+        "ptp_uv": 2162.01948404771
+      },
+      "zero_longer_context": {
+        "peak_abs_uv": 0.4540817866968625,
+        "rms_uv": 0.21231530348835242,
+        "ptp_uv": 0.4644681205920835
+      },
+      "forward_independent": {
+        "peak_abs_uv": 3.6081600301991567e-10,
+        "rms_uv": 2.000826011552006e-10,
+        "ptp_uv": 4.202998396193906e-10
+      }
+    }
+  ],
+  "interpretation": "Large stopband sinusoid plus phase-dependent finite odd reflection creates a low-frequency endpoint artifact; agreement with scipy excludes an error in the manual SOS implementation for this probe. Longer context is diagnostic only, not authorization to read target test EEG."
+}

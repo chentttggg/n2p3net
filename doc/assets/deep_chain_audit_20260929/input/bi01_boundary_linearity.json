@@ -1,0 +1,29 @@
+{
+  "scope": "Descriptive spectral projection and exact linear operator decomposition, not a trained EEG model or correction efficacy",
+  "raw_sha256": "eecb29c236f21b5d8d1b8b3cc07e4aa96b107eeb29033201fcab407d94fdd759",
+  "sample_rate_hz": 512.0,
+  "C200_stop_exclusive_sample": 65349,
+  "last_event_sample": 64734,
+  "padding_samples": 4472,
+  "dominant_40_60Hz_Welch_bin_Hz": 50.0,
+  "last10seconds_best_sinusoid_Hz": 50.01218709383658,
+  "last10seconds_sinusoid_amplitude_uV": 6687.582562273909,
+  "last10seconds_raw_difference_RMS_uV": 4790.4426835620425,
+  "last10seconds_sinusoid_residual_RMS_uV": 726.7149366066425,
+  "last_event_edge_difference_RMS_uV": 1522.8824915066912,
+  "line_component_edge_difference_RMS_uV": 1629.5073008179775,
+  "residual_component_edge_difference_RMS_uV": 106.63170300462055,
+  "relative_edge_error_remaining_after_subtracting_sinusoid": 0.07001965259914607,
+  "native_edge_components_RMS_uV": {
+    "P3": 127.21920829391208,
+    "Cz": 1650.1011726674549
+  },
+  "C200_global_std_before_model_normalizer_uV": {
+    "independent": 207.6552416955038,
+    "full_record_same_events": 61.094427844838435
+  },
+  "linear_decomposition_max_abs_error_V": 5.565128436205158e-15,
+  "warning": "Spectral component is estimated only for diagnosis. No raw replacement is saved as an admitted dataset; no participants or epochs were removed.",
+  "local_numeric_evidence": "D:\\BCI\\n2p3-net\\experiments\\runs\\deep_chain_audit_20260929\\input\\bi01_boundary_linear_components.npz",
+  "local_numeric_evidence_sha256": "5ce07a5ab9cf74940956caeeff16850aec2406b452fdeaf857ce1bbe382d6025"
+}

@@ -1,0 +1,131 @@
+{
+  "counts": {
+    "core6": 1202,
+    "core7": 1218,
+    "core_groups": {
+      "spatial": 96,
+      "temporal": 696,
+      "readout": 354,
+      "normalization": 56
+    },
+    "feature_shape": [
+      2,
+      4,
+      44
+    ],
+    "wrapper_total": 1344,
+    "wrapper_groups": {
+      "spatial": 96,
+      "temporal": 696,
+      "readout": 354,
+      "normalization": 56,
+      "target_adapter": 77,
+      "source_extensions": 65
+    },
+    "minimal_residual_total": 1279,
+    "film_pre_elu_total": 1242,
+    "p1_trainable": [
+      {
+        "name": "p1_full_fine",
+        "total": 1202,
+        "trainable": 1202
+      },
+      {
+        "name": "p1_scratch",
+        "total": 1202,
+        "trainable": 1202
+      },
+      {
+        "name": "p1_s0t0",
+        "total": 1202,
+        "trainable": 354
+      },
+      {
+        "name": "p1_s1t0",
+        "total": 1202,
+        "trainable": 450
+      },
+      {
+        "name": "p1_s0t1",
+        "total": 1202,
+        "trainable": 1050
+      },
+      {
+        "name": "p1_s1t1",
+        "total": 1202,
+        "trainable": 1146
+      },
+      {
+        "name": "p1_affine_head",
+        "total": 1202,
+        "trainable": 410
+      },
+      {
+        "name": "p1_residual_head",
+        "total": 1344,
+        "trainable": 431
+      }
+    ]
+  },
+  "last_film_folding_max_abs": 2.842170943040401e-14,
+  "film_before_bn_max_abs": {
+    "1e-12": 1.822719752908597e-11,
+    "1e-05": 0.00018213136417255527
+  },
+  "residual_default": {
+    "identity_error": 0.0,
+    "grad_norms": {
+      "gate": 0.8624349236488342,
+      "depthwise.weight": 0.0,
+      "down.weight": 0.0,
+      "down.bias": 0.0,
+      "up.weight": 0.0,
+      "up.bias": 0.0
+    }
+  },
+  "residual_double_zero": {
+    "identity_error": 0.0,
+    "grad_norms": {
+      "gate": 0.0,
+      "depthwise.weight": 0.0,
+      "down.weight": 0.0,
+      "down.bias": 0.0,
+      "up.weight": 0.0,
+      "up.bias": 0.0
+    }
+  },
+  "bounded_gate_residual_norm_ratio": 19.020729064941406,
+  "missing_channel_affine": {
+    "without_post_affine_mask": [
+      [
+        1.9000000953674316,
+        1.9000000953674316,
+        1.9000000953674316,
+        1.9000000953674316
+      ]
+    ],
+    "with_post_affine_mask": [
+      [
+        1.2000000476837158,
+        1.2000000476837158,
+        1.2000000476837158,
+        1.2000000476837158
+      ]
+    ]
+  },
+  "pre_elu_shift_best_head_max_error": 0.37582746776547976,
+  "actual_encoder_exact_maml_one_step": {
+    "query_finite": true,
+    "all_meta_gradients_finite": true,
+    "nonzero_groups": 16,
+    "buffers_unchanged": true
+  },
+  "active_maxnorm_two_step_exact_meta": {
+    "raw_spatial_norm_min": 39.18896484375,
+    "effective_spatial_norm_max": 1.0000001192092896,
+    "all_meta_gradients_finite": true,
+    "base_parameters_unchanged": true,
+    "model_parameters_unchanged": true,
+    "buffers_unchanged": true
+  }
+}

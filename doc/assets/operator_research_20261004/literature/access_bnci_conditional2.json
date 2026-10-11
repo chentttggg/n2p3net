@@ -1,0 +1,12 @@
+[
+  {
+    "file": "bnci_riccio_doi_epmc.json",
+    "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.3389/fnhum.2013.00732&format=json&resultType=core",
+    "fetched_utc": "2026-10-04T13:55:22.227484+00:00",
+    "status": 200,
+    "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.3389/fnhum.2013.00732&format=json&resultType=core",
+    "content_type": "application/json;charset=UTF-8",
+    "bytes": 4955,
+    "sha256": "e34627120d5340c1442a61df41fbdfe8ea180260c837c9477c42d7e55e4363d6"
+  }
+]

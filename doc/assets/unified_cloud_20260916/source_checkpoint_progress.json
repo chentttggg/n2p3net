@@ -1,0 +1,34 @@
+[
+  {
+    "key": "exclude_Huebner2017/six/source_prior_reference",
+    "updates": 5952,
+    "checkpoint": "/root/autodl-tmp/n2p3-runs/unified_20260916/early_source/exclude_Huebner2017/six/source_prior_selection/reference/source.u3324.pt",
+    "selected_epochs": 12,
+    "stop_reason": "epoch_limit",
+    "snapshot": "d888db506ceba2885eafdeaa33463739ef30536d251b153f971d4dbbf0b099a5"
+  },
+  {
+    "key": "exclude_Huebner2017/six/seed20260916/unified_r1s0m0",
+    "updates": 3636,
+    "checkpoint": "/root/autodl-tmp/n2p3-runs/unified_20260916/early_source/exclude_Huebner2017/six/seed20260916/unified_r1s0m0/source.u3636.pt",
+    "selected_epochs": null,
+    "stop_reason": null,
+    "snapshot": "d888db506ceba2885eafdeaa33463739ef30536d251b153f971d4dbbf0b099a5"
+  },
+  {
+    "key": "exclude_Huebner2017/six/seed20260916/unified_r1s1m1",
+    "updates": 3636,
+    "checkpoint": "/root/autodl-tmp/n2p3-runs/unified_20260916/early_source/exclude_Huebner2017/six/seed20260916/unified_r1s1m1/source.u3636.pt",
+    "selected_epochs": null,
+    "stop_reason": null,
+    "snapshot": "d888db506ceba2885eafdeaa33463739ef30536d251b153f971d4dbbf0b099a5"
+  },
+  {
+    "key": "exclude_Huebner2017/six/seed20260917/unified_r1s0m0",
+    "updates": 3636,
+    "checkpoint": "/root/autodl-tmp/n2p3-runs/unified_20260916/early_source/exclude_Huebner2017/six/seed20260917/unified_r1s0m0/source.u3636.pt",
+    "selected_epochs": null,
+    "stop_reason": null,
+    "snapshot": "d888db506ceba2885eafdeaa33463739ef30536d251b153f971d4dbbf0b099a5"
+  }
+]

@@ -1,0 +1,98 @@
+{
+  "validation_batch_ranking_reversal": {
+    "confirmed": true,
+    "values": {
+      "A": {
+        "full_risk": 0.45000001788139343,
+        "batch_6": 0.45000000794728595,
+        "batch_4": 0.5666666825612386,
+        "batch_2": 0.5666666825612386,
+        "batch_1": 0.5666667222976685
+      },
+      "B": {
+        "full_risk": 0.5,
+        "batch_6": 0.5,
+        "batch_4": 0.36666667461395264,
+        "batch_2": 0.36666667461395264,
+        "batch_1": 0.3666667143503825
+      }
+    },
+    "scope": "DeepBaseline._validation_pass; fixed-update unified source validation uses a different additive path"
+  },
+  "lmbc_nondefault_checkpoint_roundtrip": {
+    "previous_suspicion_refuted": true,
+    "max_abs_error": 0.0,
+    "resolved_pooling": {
+      "evidence_window_ms": [
+        200.0,
+        550.0
+      ],
+      "reference_window_ms": [
+        -180.0,
+        -20.0
+      ],
+      "latency_offsets_ms": [
+        -50.0,
+        0.0,
+        50.0
+      ],
+      "latency_temperature": 0.8
+    }
+  },
+  "scratch_matching_architecture_and_independent_seed": {
+    "confirmed_matched": true,
+    "trainable_parameters": 1279,
+    "observed_channel_norm": true
+  },
+  "baseline_recipe_drift": {
+    "p1_full_fine": {
+      "name": "p1_full_fine",
+      "initialization": "source",
+      "input_statistics": "target_prefix",
+      "bn_buffers": "online",
+      "bn_affine": "trainable",
+      "weights": "non_bn",
+      "dropout": "checkpoint",
+      "batch_size": 512,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "epochs": 60,
+      "max_updates": 200,
+      "seed": 29,
+      "refit_full_prefix": false
+    },
+    "unified_q0": {
+      "name": "unified_q0",
+      "initialization": "source",
+      "input_statistics": "target_prefix",
+      "bn_buffers": "calibration",
+      "bn_affine": "trainable",
+      "weights": "non_bn",
+      "dropout": "off",
+      "batch_size": 512,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "epochs": 90,
+      "max_updates": null,
+      "seed": 29,
+      "refit_full_prefix": false
+    }
+  },
+  "frozen_calibration_bn_is_not_updated_with_filters": {
+    "implemented_as_declared": true,
+    "initial_calibration_rows": 24,
+    "buffers_stay_frozen": true,
+    "actual_variance_ratio_after_filter_scaling": [
+      9.0,
+      9.0,
+      9.0,
+      9.000000953674316,
+      9.0,
+      9.0,
+      8.999999046325684,
+      9.0
+    ],
+    "layers_recomputed": 4,
+    "interpretation": "protocol difference from historical online BN, not proof of efficacy or a hidden implementation violation"
+  }
+}

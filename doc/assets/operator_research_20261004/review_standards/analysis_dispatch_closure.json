@@ -1,0 +1,8 @@
+{
+  "analysis_sha256": "768c44ce1c7f8157f647111ada61164d83eccfd24c34035d0ba5e426811153b8",
+  "new_dispatch_present": true,
+  "real_mature_artifact_load_passed": true,
+  "family": "waveform_lda",
+  "model_sha256": "7cdfe8d979beedad0b736ab8c7051b085373cf045ce6ab29f68266872b3bf2b8",
+  "scope": "dispatch-only closure; full 768-cell analysis remains main owner responsibility"
+}

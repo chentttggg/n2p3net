@@ -1,0 +1,282 @@
+{
+  "scope": "synthetic mathematical behavior, not observed performance or model training",
+  "missing_candidate_primary_vs_curve": {
+    "inputs": {
+      "scores": [
+        2.0,
+        0.0,
+        2.0
+      ],
+      "codes": [
+        0,
+        1,
+        0
+      ],
+      "groups": [
+        "complete",
+        "complete",
+        "incomplete"
+      ]
+    },
+    "baseline_overall_decisions": [
+      0,
+      0
+    ],
+    "baseline_primary_hit": 1.0,
+    "baseline_repetition_hit": 0.5,
+    "explicit_outcome_accounting": {
+      "requested": 2,
+      "by_evidence_level": {
+        "1": {
+          "requested": 2,
+          "accounted": 2,
+          "correct": 1,
+          "incorrect": 0,
+          "tie": 0,
+          "abstain": 0,
+          "incomplete": 1,
+          "fit_failure": 0,
+          "valid": 1,
+          "operational_hit_rate": 0.5,
+          "valid_hit_rate": 1.0
+        }
+      }
+    },
+    "active_route": "evaluate_candidate_selection uses decide_by_group at evaluate.py:1443, then strict repetition helper at :1468",
+    "actual_summary": {
+      "primary_hit_rate": 1.0,
+      "hit_at_repetition_macro": {
+        "1": 0.5
+      }
+    }
+  },
+  "future_score_changes_earlier_centered_curve": {
+    "inputs": {
+      "scores_before": [
+        1.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "scores_after": [
+        1.0,
+        0.0,
+        1.0,
+        100.0
+      ],
+      "codes": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "repetitions": [
+        0,
+        0,
+        1,
+        2
+      ]
+    },
+    "curves": {
+      "future_zero": {
+        "1": 1.0,
+        "2": 1.0,
+        "3": 1.0
+      },
+      "future_100": {
+        "1": 1.0,
+        "2": 0.0,
+        "3": 0.0
+      }
+    },
+    "trigger": "center_logits=True and surviving candidate counts unequal after QC; centering uses all max_repetitions rows before scoring each prefix"
+  },
+  "conditional_endpoint_is_not_operational": {
+    "conditional": {
+      "1": 1.0
+    },
+    "direct_operational": {
+      "1": 0.5
+    },
+    "reconstructed_operational": 0.5,
+    "scope_correction": "run_within_subject_transfer already reconstructs requested-group operational rates separately; helper difference alone does not prove an inflated operational report"
+  },
+  "valid_metric_pairs_different_replicate_subsets": {
+    "available_cells": [
+      {
+        "arm": "A",
+        "replicate": "r1",
+        "participant": "p1",
+        "hit": 0.9
+      },
+      {
+        "arm": "B",
+        "replicate": "r2",
+        "participant": "p1",
+        "hit": 0.1
+      },
+      {
+        "arm": "A",
+        "replicate": "r1",
+        "participant": "p2",
+        "hit": 0.5
+      },
+      {
+        "arm": "A",
+        "replicate": "r2",
+        "participant": "p2",
+        "hit": 0.5
+      },
+      {
+        "arm": "B",
+        "replicate": "r1",
+        "participant": "p2",
+        "hit": 0.5
+      },
+      {
+        "arm": "B",
+        "replicate": "r2",
+        "participant": "p2",
+        "hit": 0.5
+      }
+    ],
+    "metrics": {
+      "A": {
+        "conditional_frozen_model_valid_subject_operational_hit_rate": 0.7,
+        "per_training_replicate_valid_subject_operational_hit_rate": {
+          "r1": 0.7,
+          "r2": 0.5
+        },
+        "valid_participant_counts": {
+          "A": 2,
+          "B": 2
+        }
+      },
+      "B": {
+        "conditional_frozen_model_valid_subject_operational_hit_rate": 0.3,
+        "per_training_replicate_valid_subject_operational_hit_rate": {
+          "r1": 0.5,
+          "r2": 0.3
+        },
+        "valid_participant_counts": {
+          "A": 2,
+          "B": 2
+        }
+      }
+    },
+    "contrasts": [
+      {
+        "left": "A",
+        "right": "B",
+        "paired_unit": "participant",
+        "paired_unit_differences": {
+          "p1": 0.8,
+          "p2": 0.0
+        },
+        "paired_bootstrap_interval": {
+          "status": "estimated",
+          "inference_scope": "conditional_frozen_models",
+          "sampling_unit": "participant",
+          "n_units": 2,
+          "mean_difference": 0.4,
+          "confidence_level": 0.95,
+          "bootstrap_interval": [
+            0.0,
+            0.8
+          ],
+          "bootstrap_iterations": 1000,
+          "bootstrap_seed": 7
+        }
+      }
+    ],
+    "claim": "conditional_on_manifest_declared_frozen_models_and_target_cohort",
+    "matched_valid_participant_replicate_differences": [
+      0.0,
+      0.0
+    ],
+    "interpretation": "p1 has no replicate evaluable in both arms, yet receives difference +0.8; only p2 supplies a matched comparison, and both of its differences are zero"
+  },
+  "row_indices_alone_do_not_bind_input_or_labels": {
+    "rows": [
+      {
+        "study": "S",
+        "participant_key": "participant",
+        "K": 200,
+        "source_seed": 1,
+        "target_seed": 1,
+        "status": "completed",
+        "calibration_rows_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "test_rows_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "arm": "A",
+        "auc": 0.9,
+        "input_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "test_labels_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      {
+        "study": "S",
+        "participant_key": "participant",
+        "K": 200,
+        "source_seed": 1,
+        "target_seed": 1,
+        "status": "completed",
+        "calibration_rows_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "test_rows_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "arm": "B",
+        "auc": 0.1,
+        "input_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "test_labels_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    ],
+    "accepted_mean_difference": 0.8,
+    "limitation": "current analyzer checks index digests but not differing input or label identities; this proves an analysis API gap, not that a frozen executed matrix mixed inputs"
+  },
+  "domain_lodo_validation": {
+    "exception": "UnboundLocalError",
+    "message": "cannot access local variable 'test_counts' where it is not associated with a value",
+    "scope": "currently advertised domain_lodo entry, no model fitting; actual unified matrix does not call this evaluator"
+  },
+  "zero_weight_pollution_in_extended_aggregators": {
+    "scores": [
+      1.0,
+      100.0,
+      2.0
+    ],
+    "codes": [
+      0,
+      0,
+      1
+    ],
+    "weights": [
+      1.0,
+      0.0,
+      1.0
+    ],
+    "results": {
+      "trim0.2": {
+        "scores_with_zero_weight_row": {
+          "0": 101.0,
+          "1": 2.0
+        },
+        "prediction_with_zero_weight_row": 0,
+        "scores_after_removing_zero_weight_row": {
+          "0": 1.0,
+          "1": 2.0
+        },
+        "prediction_after_removing_zero_weight_row": 1
+      },
+      "precision": {
+        "scores_with_zero_weight_row": {
+          "0": 50.5,
+          "1": 2.0
+        },
+        "prediction_with_zero_weight_row": 0,
+        "scores_after_removing_zero_weight_row": {
+          "0": 1.0,
+          "1": 2.0
+        },
+        "prediction_after_removing_zero_weight_row": 1
+      }
+    },
+    "scope": "direct candidate_evidence_scores API; current only caller forwarding trial_weights is decide_by_group, which rejects these extended aggregation modes"
+  }
+}

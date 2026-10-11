@@ -1,0 +1,12 @@
+[
+  {
+    "file": "bnci_riccio_full.xml",
+    "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3825256/fullTextXML",
+    "fetched_utc": "2026-10-04T13:56:01.280395+00:00",
+    "status": 200,
+    "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3825256/fullTextXML",
+    "content_type": "application/xml",
+    "bytes": 96475,
+    "sha256": "3ca9d83befbceab8622f14b2054d89cc96ddc92f4d1dc89c521443787f25faa6"
+  }
+]

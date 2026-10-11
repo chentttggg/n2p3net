@@ -1,0 +1,84 @@
+{
+  "status": "full_matrix_resumed_after_performance_verification",
+  "updated_unix": 1789713332.2880993,
+  "source_snapshot_sha256": "c71a4d2109eaed23bea734c76845940bcf05d51a3af4478ac3c1db54fe75fd24",
+  "software": {
+    "status": "passed",
+    "pytest_exit_code": 0,
+    "pytest_passed": 2104,
+    "pytest_skipped": 4,
+    "pytest_log_sha256": "73fcf3a4ef6e9a88393e6443b43eee4f7dc66ce5ffe7c0d25e937ebcfa213332",
+    "ruff_exit_code": 0,
+    "diff_check_exit_code": 0,
+    "source_archive_sha256": "c71a4d2109eaed23bea734c76845940bcf05d51a3af4478ac3c1db54fe75fd24"
+  },
+  "throughput_probe": {
+    "scope": "Throughput probe: same eight A1 fits on 60000 real prepared rows; not formal evidence",
+    "old_seconds": 44.26796264201403,
+    "new_seconds": 32.44678561761975,
+    "speedup": 1.3643250571475702,
+    "numerical_note": "Default BF16 autotuning yielded nonidentical training trajectories; numerical equivalence was verified separately under controlled FP32 deterministic kernels."
+  },
+  "controlled_equivalence": {
+    "status": "passed",
+    "old_seconds": 41.049444414675236,
+    "new_seconds": 23.48426302522421,
+    "speedup": 1.7479554019040089,
+    "max_prediction_difference": 0,
+    "new_torch_threads": [
+      6
+    ],
+    "batch_sequences_identical": true
+  },
+  "four_worker_full_shape": {
+    "status": "passed",
+    "workers": 4,
+    "threads_per_worker": [
+      6
+    ],
+    "fit_rows_per_worker": [
+      1102996
+    ],
+    "all_gpu_preloaded": true,
+    "any_transfer_fallback": false,
+    "oom_retries": 0,
+    "max_individual_peak_rss_gib": 23.06264877319336,
+    "seconds": 548.1592493057251,
+    "scope": "four 200-update performance probes on source-only participant-disjoint fit scopes, no formal scientific checkpoint output"
+  },
+  "actual_executor_resources": {
+    "policy": "automatic_resource_admission",
+    "available_cpu_threads": 25,
+    "cpu_budget": 25,
+    "requested_source_workers": 4,
+    "source_groups": 5,
+    "source_workers": 4,
+    "gpu_slots": 4,
+    "target_workers": 4,
+    "inner_workers_per_group": 4,
+    "native_threads_per_worker": 6,
+    "compiler_threads_per_worker": 1,
+    "cloud_resource_floor": {
+      "cpu_threads": 25,
+      "gpu_workers": 4
+    },
+    "gpu_task_memory_gib": 4.0,
+    "free_device_bytes": 32611106816,
+    "resident_memory_budget_bytes": 7337499033,
+    "available_host_memory_bytes": 95494848512,
+    "host_memory_budget_bytes": 90720106086,
+    "host_memory_fraction": 0.95,
+    "shared_staging_memory_bytes": 10737418240,
+    "source_worker_memory_bytes": 19327352832,
+    "target_worker_memory_bytes": 4294967296
+  },
+  "plan_files": {
+    "matrix_plan.json": "d28048f599e7c636f9642a6aab22f2af5cd26bc3e08c6558b9ea4b86c635e8b7",
+    "deployment_plan.json": "51bc930b1ed130b87d9399ab238433d0c046c4194db4473d9ea39f3573073641",
+    "full_execution_plan.json": "502d436249a7ce54aacc8800c43c040d30a15444ee01fe9b54516f8702c13ced"
+  },
+  "phase": "training",
+  "training_complete": false,
+  "actual_worker_processes": 4,
+  "preserved_source_artifacts": 3
+}

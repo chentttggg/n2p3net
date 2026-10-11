@@ -1,0 +1,89 @@
+[
+  {
+    "name": "labram",
+    "url": "https://arxiv.org/abs/2402.08772",
+    "actual_url": "https://arxiv.org/abs/2402.08772",
+    "http_status": 200,
+    "level": "abstract_and_metadata",
+    "title": "Title: Optimal Task Assignment and Path Planning using Conflict-Based Search with Precedence and Temporal Constraints",
+    "retrieved_utc": "2026-09-16T05:46:02.905707+00:00",
+    "excluded_reason": "Identifier resolves to unrelated paper; excluded from EEG evidence",
+    "accepted_for_eeg_evidence": false
+  },
+  {
+    "name": "biot",
+    "url": "https://arxiv.org/abs/2305.10351",
+    "actual_url": "https://arxiv.org/abs/2305.10351",
+    "http_status": 200,
+    "level": "abstract_and_metadata",
+    "title": "Title: BIOT: Cross-data Biosignal Learning in the Wild",
+    "retrieved_utc": "2026-09-16T05:46:03.115614+00:00",
+    "accepted_for_eeg_evidence": true,
+    "verified_summary_zh": "摘要描述按通道分段token与channel/时间编码，支持不同通道布局、长度和缺失；本文未将其非P300结果外推。"
+  },
+  {
+    "name": "eegpt",
+    "url": "https://arxiv.org/abs/2406.11423",
+    "actual_url": "https://arxiv.org/abs/2406.11423",
+    "http_status": 200,
+    "level": "abstract_and_metadata",
+    "title": "Title: Bridging Social Media and Search Engines: Dredge Words and the Detection of Unreliable Domains",
+    "retrieved_utc": "2026-09-16T05:46:03.498909+00:00",
+    "excluded_reason": "Identifier resolves to unrelated paper; excluded from EEG evidence",
+    "accepted_for_eeg_evidence": false
+  },
+  {
+    "name": "zhao_invariance",
+    "url": "https://arxiv.org/abs/1901.09453",
+    "actual_url": "https://arxiv.org/abs/1901.09453",
+    "http_status": 200,
+    "level": "abstract_and_metadata",
+    "title": "Title: On Learning Invariant Representation for Domain Adaptation",
+    "retrieved_utc": "2026-09-16T05:46:03.089232+00:00",
+    "accepted_for_eeg_evidence": true,
+    "verified_summary_zh": "摘要给出低源误差加域不变表示仍不足的反例，并讨论标签边缘不同下不变性和联合误差的取舍。",
+    "short_excerpt": "tradeoff between learning invariant representations and achieving small joint error"
+  },
+  {
+    "name": "domain_separation",
+    "url": "https://arxiv.org/abs/1608.06019",
+    "actual_url": "https://arxiv.org/abs/1608.06019",
+    "http_status": 200,
+    "level": "abstract_and_metadata",
+    "title": "Title: Domain Separation Networks",
+    "retrieved_utc": "2026-09-16T05:46:02.900813+00:00",
+    "accepted_for_eeg_evidence": true,
+    "verified_summary_zh": "摘要说明共享/私有表示配合任务与重构目标；证据来自图像域适配，不等于已验证P300生理分解。",
+    "short_excerpt": "partitioned into two subspaces"
+  },
+  {
+    "name": "euclidean_alignment",
+    "url": "https://arxiv.org/abs/1808.05464",
+    "actual_url": "https://arxiv.org/abs/1808.05464",
+    "http_status": 200,
+    "level": "abstract_and_metadata",
+    "title": "Title: Transfer Learning for Brain-Computer Interfaces: A Euclidean Space Data Alignment Approach",
+    "retrieved_utc": "2026-09-16T05:46:03.123977+00:00",
+    "accepted_for_eeg_evidence": true,
+    "verified_summary_zh": "摘要含ERP与MI、离线和模拟在线实验，描述直接在欧氏空间作无监督对齐；未核实具体数值。",
+    "short_excerpt": "Both offline and simulated online experiments"
+  },
+  {
+    "name": "biot_full",
+    "url": "https://arxiv.org/html/2305.10351v1",
+    "http_status": 200,
+    "level": "full_text_sections",
+    "text_chars": 75308,
+    "retrieved_utc": "2026-09-16T05:47:30.008548+00:00",
+    "accepted_for_eeg_evidence": true,
+    "verified_summary_zh": "核验正文2.1与3.3：片段为频域能量向量；人工删导实验假设标签不变，不能直接证明ERP有符号波形或GTN到七导适配。",
+    "short_excerpt": "A fully connected network (FCN) is then applied on the energy vector to obtain the segment embedding."
+  },
+  {
+    "name": "zhao_full",
+    "url": "https://arxiv.org/html/1901.09453v3",
+    "error": "<HTTPError 404: 'Not Found'>",
+    "level": "not_retrieved",
+    "accepted_for_eeg_evidence": false
+  }
+]

@@ -1,0 +1,39 @@
+{
+  "reason": "user confirmed GTN and specified existing multisource configuration for EOG; initial B7/GTN-source-EOG design superseded without execution",
+  "archive": "superseded_design.zip",
+  "archive_sha256": "e5eac4309f6b516fed4563dfb71994f06f49f5746ad9db6b0a56742386d8f5b5",
+  "files": [
+    {
+      "path": "doc/roadmap.zh.md",
+      "sha256": "c430162ec5d8369c6e54eae3216238e8e300832190d23c10c301fa5a082cd1b0"
+    },
+    {
+      "path": "doc/README.md",
+      "sha256": "bba3d099bdccd46ed04f627f4e33b169d2f5adde641a5fdc04815ece1d33f168"
+    },
+    {
+      "path": "doc/evidence/README.md",
+      "sha256": "f01d9358134bf583661077480228083c9c12b2ffe0665c6ace38ab78dd1ea1f7"
+    },
+    {
+      "path": "doc/assets/source_eog_design_20260909/build_design.py",
+      "sha256": "3836cffd0496a38cdd188f90980c638931cd0f4e8f1ef196429d308b88ae6798"
+    },
+    {
+      "path": "doc/assets/source_eog_design_20260909/design.json",
+      "sha256": "b846fb757877aef80b82d5a526d627df5d6830b64d10bbae8487ef6af3d21736"
+    },
+    {
+      "path": "doc/assets/source_eog_design_20260909/source_conditions.csv",
+      "sha256": "e7fc08846a9181d8c72834de38bdac2616ca9623c5be39ab5fb2574fc409b2d5"
+    },
+    {
+      "path": "doc/assets/source_eog_design_20260909/target_conditions.csv",
+      "sha256": "917b0151f718a7e5ec46b46e49953051ac8f37d65f836c204a30a628c1bd4997"
+    },
+    {
+      "path": "doc/assets/source_eog_design_20260909/validation.json",
+      "sha256": "826207b157038efbc92369c4c5a71560542a00ede4763bfa11408c68088e4731"
+    }
+  ]
+}
