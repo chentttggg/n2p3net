@@ -87,6 +87,20 @@ K2000单NN的scratch多7个命中且NLL低0.036876，matched scratch pool多1个
 
 cloud source07已报告原leave-BI2014a producer完成load/replay及排除审计：seed20260918，checkpoint SHA `fc8d8cbdef405263ff9c233e592755ceeeb2264bc8287800b8b2ffacfb199c02`，438个source participant key与61个target identity无交集。该source的producer身份保持。当前接合finite-zero-none入口、实际观测Cz6 projection与逐decision horizon；新caller复用原fit_calibration_candidate/FrozenTrialPredictor，完成三臂fresh-load LLR及36-choice概率重放后自主执行61人。target grouped temperature不在该队列学习。每库保存plan、输入/source binding、participant receipts、模型重放、完整失败账本、指标和资源终态；进展见[BI2014a队列计划](../assets/research_resume_20261011/bi2014a_queue_plan.json)。
 
+### BI2014a Q1 完整 episode 队列终态
+
+Q1 已按首五个完整 raw episode 的 episode-budget 程序封库：61 人、三臂（`zero`、`fullfine`、`matched_scratch`），183 个模型与183个 arm receipts，queue/science真实 exit 0，实际墙钟 257.6227 s，0 worker failure，owned process tree 终态为0。该运行使用新的 source producer `8ddd3af9d3506448f543cf668f625e5952a3a2d048539f9133ef6b021c774226`；不重签原 `4b075a2d...` source archive 或 accepted03 producer。
+
+主 1,287 个同 key 的逐 episode census 保留原始 R 分母：1,243 个可用，44 个 incomplete。subject57/selection23 的完整 R1 进入主指标；末尾 R2 保留为独立 secondary terminal ledger，R2 缺失不填入主端点，也不新增 episode。
+
+| arm | participant-macro hit | participant-macro NLL | 分母 |
+|---|---:|---:|---:|
+| zero | 0.0985773716 | 3.4449344201 | 1243 |
+| fullfine | 0.2407763003 | 3.0339166286 | 1243 |
+| matched_scratch | 0.1318186686 | 3.6243966579 | 1243 |
+
+`fullfine−matched_scratch` 的 paired hit 差为 `+0.1089576317`，paired NLL 差为 `−0.5904800293`，两项均在共同 1,243 个可用 key 上计算。这是本轮 BI Q1 public-calibration development evidence，与前述 B12 label-K0/200/800/2000 面板分开，不能合并 requested 分母或改写旧 producer。报告、queue terminal 和实际 exit 由云端保存于 `MAIN/tmp/public_dataset_queue01/BI2014a/` 及 `DATA/cloud_live_20261012/public_dataset_queue01/BI2014a_q1/`，紧凑绑定见[BI Q1终态绑定](../assets/research_resume_20261011/bi_q1_queue_acceptance_binding.json)。
+
 四个旧zero-shot分片在fit前因16-channel/causal缓存与source合同不符而拒绝，新增fit为0。新builder正接显式profile/channel owner；实际source的同名双向profile为`baseline=none`，个人默认常量的`mean_only`另保原用途。校准raw先隔离再零相位处理，缺FZ/PO8保slot mask且CZ必须实测；三臂调用继续核同architecture、固定mass风险及fresh-load重放。已完成22文件固定来源的独立审阅和零fit反例，完整本地handoff在`tmp/BI2014a_Q1_AUDIT/independent_audit.zh.md`，摘要及SHA并入上述队列计划。
 
 ## 逐任务horizon接口
