@@ -1,0 +1,119 @@
+{
+  "evidence_scope": "software_correctness",
+  "seed": 1042026,
+  "nonseparable_gain_counterexample": {
+    "true_channel_phis": [
+      0.05,
+      0.92,
+      0.92,
+      0.92,
+      0.92,
+      0.92,
+      0.92,
+      0.92
+    ],
+    "pooled_burg_before_gain": 0.8102939188108953,
+    "pooled_burg_after_first_channel_gain100": 0.05811977655361271,
+    "covariance_weighted_burg": 0.811277823775711,
+    "weighted_after_gain": 0.811277823775711,
+    "global_unit_scale_error": 0.0,
+    "residual_channel_acf1_unweighted_gain": [
+      -0.0005007672897353854,
+      0.911516682329771,
+      0.9134288845028007,
+      0.9071418108266038,
+      0.9100122014593681,
+      0.9072884037111065,
+      0.9069402135450124,
+      0.9078165632052508
+    ],
+    "residual_channel_acf1_weighted": [
+      -0.45865634985025505,
+      0.16612776207835347,
+      0.17738398258820529,
+      0.15801982916728885,
+      0.16222901260071154,
+      0.15983051865855316,
+      0.16780175944167786,
+      0.15743641395580285
+    ],
+    "interpretation": "gain equivariance fixed; shared temporal shape still misspecified"
+  },
+  "shrinkage_gain_equivariance": {
+    "raw_ledoit_wolf_relative_error_after_inverse_gain": 0.1473226524801714,
+    "correlation_shrinkage_relative_error": 2.5655088865102624e-16,
+    "scope": "nonzero diagonal gain; not arbitrary spatial mixing"
+  },
+  "exact_stationary_alternating_ML": {
+    "true_phi": 0.86,
+    "fitted_phi": 0.8587943705015212,
+    "after_gain_phi": 0.8587943705008961,
+    "history": [
+      {
+        "phi": 0.8422345501058451,
+        "objective": 2302.9582477295226
+      },
+      {
+        "phi": 0.8586140232185576,
+        "objective": 1390.1777508842624
+      },
+      {
+        "phi": 0.858792278534412,
+        "objective": 1390.1581578066546
+      },
+      {
+        "phi": 0.8587943464902308,
+        "objective": 1390.1581555425303
+      },
+      {
+        "phi": 0.8587943705015212,
+        "objective": 1390.1581555422265
+      }
+    ],
+    "history_after_gain": [
+      {
+        "phi": 0.8422345625879982,
+        "objective": 5544.573154684427
+      },
+      {
+        "phi": 0.8586140233471534,
+        "objective": 4631.792657808418
+      },
+      {
+        "phi": 0.8587922785352814,
+        "objective": 4631.773064761555
+      },
+      {
+        "phi": 0.8587943464905414,
+        "objective": 4631.773062497435
+      },
+      {
+        "phi": 0.8587943705008961,
+        "objective": 4631.773062497131
+      }
+    ],
+    "beta_gain_relative_error": 2.499750769100575e-13,
+    "covariance_gain_relative_error": 7.780618944465802e-14,
+    "objective_jacobian_shift_error": 0.0,
+    "scope": "three independent AR1 records, fixed mean+nuisance design, no ridge or shrinkage"
+  },
+  "reciprocal_covariance_scale_error": 2.220446049250313e-16,
+  "ridge_diffuse_nuisance_marginal_dense_parity": [
+    {
+      "phi": 0.0,
+      "scatter_max_error": 1.0658141036401503e-14,
+      "logdet_error": 1.0658141036401503e-14
+    },
+    {
+      "phi": 0.5,
+      "scatter_max_error": 1.0658141036401503e-14,
+      "logdet_error": 3.552713678800501e-15
+    },
+    {
+      "phi": 0.9,
+      "scatter_max_error": 3.552713678800501e-14,
+      "logdet_error": 3.552713678800501e-15
+    }
+  ],
+  "script_sha256": "607ab77c62180442b640fccdb5bde5306443e7a0e3e4d3898679627616824bee"
+}

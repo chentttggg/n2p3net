@@ -1,0 +1,21 @@
+{
+  "archive": "research_execution_pass1.tar.gz",
+  "archive_sha256": "0316d0dd6cf96297bfc743123631a0d9683293c1f7cab2d0557364ab38c69fc9",
+  "members": {
+    "constrained_plan.json": "c97188e0fa54dad72feff83d3dc49e1f1e8c8caea46698db772f0e81b460f6e8",
+    "constrained_results.json": "2e55d9812be5315fecaf7a541aa46af976995d5bc9591f8f86066cb2022089ec",
+    "counterexamples.json": "592ef63ad3e26506c621fd514e0b2b995769fbbab6375e3e419b92e5c48a6f13",
+    "erp_increment_results.json": "d2ec38dda0e86a187022f7051378e5b1999454ab545eee1cc061031966b556a0",
+    "execution.json": "0a5eabb63c9e764f85c6f4b55b2a353899a82de6f31f8a001eab6fca453bc2e1",
+    "independent_verification.json": "421607147fbb35ac92de950216c16f5548470d8564be0a609fe6e7bdd082a53a",
+    "plan.json": "388f0cf546268f9683d48cd98f4486e05d107706038cb0513418ffcaa303000a",
+    "probe.py": "72e56a14385c0cfd55822f7134ae019ddd2dfb8504427057f095a99670ed5cf8",
+    "probe_constrained.py": "c20242729b991ecdb96e463395aaa7f2c4179e8505e390c9a67d469a81ec7592",
+    "probe_erp_increment.py": "feb6d52d96384be09eb37bcd6f708aa222d1c049ad4cb4cd9de8f43ba5958afc",
+    "projected_draws.npz": "e4c369703f93f634c5db5525b10b99b9bc5f587837663288f9e369b85eb2fd17",
+    "raw_support_ledger.json": "3a2952c07d1ca6c35814e904fbd6c61979ee5cd3b9d2e55e1d2d082a832611b0",
+    "results.json": "1b5aaf25a2e0afe682a5a3b9e387a002e4d3328c0098ea5cd1f2f0f5dde8bd3f",
+    "sources.json": "0170bf2967f074e5c42593eca5c1ce59980520ed69c43a443c749af85d6ef62d",
+    "verify_independent.py": "8db828325706a4c475d6be38b21ceb50cacb405f14c6ed5ba9a01303b2f9a48f"
+  }
+}

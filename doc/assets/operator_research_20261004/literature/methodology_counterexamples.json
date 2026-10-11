@@ -1,0 +1,70 @@
+{
+  "evidence_scope": "software_correctness",
+  "seed": 61004,
+  "invertible_joint_transform": {
+    "log_bayes_factor": 1.586707042651664,
+    "transformed_log_bayes_factor": 1.5867070426516623,
+    "absolute_error": 1.7763568394002505e-15
+  },
+  "rank_reduction": {
+    "raw_mahalanobis_energy": 6.2771566587748975,
+    "projected_mahalanobis_energy": 1.0441612751648905
+  },
+  "filter_signal_without_mean_reversal": {
+    "sample": [
+      -0.8265059645875141,
+      0.02205510481399199
+    ],
+    "means": [
+      [
+        -0.07913398286264146,
+        0.422453090935596
+      ],
+      [
+        0.326183266537535,
+        0.10771062834061812
+      ]
+    ],
+    "correct_log_bayes_factor": 0.30857295295233894,
+    "signal_only_wrong_log_bayes_factor": -1.96422609448534
+  },
+  "finite_filter_compact_causal_mismatch": {
+    "relative_mean_error": 0.4326945397520585,
+    "pre_onset_energy_fraction": 0.10759935281744809,
+    "exact_finite_matrix_max_error": 2.020605904817785e-14,
+    "settings": {
+      "sfreq": 100.0,
+      "band_hz": [
+        0.5,
+        15.0
+      ],
+      "order": 2,
+      "n_samples": 360,
+      "response_samples": 80,
+      "onset": 250
+    }
+  },
+  "discarding_raw_state_cross_terms": {
+    "correct_variance": 0.3999999999999999,
+    "wrong_independent_sum": 2.0,
+    "wrong_over_correct": 5.000000000000001
+  },
+  "conditional_state_covariance": {
+    "prior_gamma": 1.0,
+    "gamma_given_observed_residual": 0.3599999999999999,
+    "state_mean_per_observed_unit": -0.8
+  },
+  "inverse_gamma_global_scale_marginal": {
+    "closed_log_density": -5.148145675224188,
+    "quadrature_log_density": -5.148145675224186,
+    "scipy_multivariate_t_log_density": -5.148145675224186,
+    "scope": "one shared scalar variance, NOT inverse-Wishart matrix-t regression"
+  },
+  "temperature_preserves_argmax": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "script_sha256": "28dafdc386f96abdceeb1d4b96a65eb13703b9cd28f2aa47d00723e9def3020e"
+}

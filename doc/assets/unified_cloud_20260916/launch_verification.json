@@ -1,0 +1,29 @@
+{
+  "checked_unix": 1789556593.942663,
+  "status": "waiting_for_preparation",
+  "runtime_archive_sha256": "d888db506ceba2885eafdeaa33463739ef30536d251b153f971d4dbbf0b099a5",
+  "verified_source_tasks": 7,
+  "live_pipeline_pids": [
+    5537,
+    4499,
+    4657
+  ],
+  "huebner_verified_files": 213,
+  "huebner_requested_files": 342,
+  "huebner_verified_bytes": 3436332990,
+  "huebner_errors": [],
+  "full_matrix_program": "unified",
+  "expected_source_artifacts": 35,
+  "expected_main_source_artifacts": 30,
+  "target_seeds": [
+    20260916,
+    20260917,
+    20260918
+  ],
+  "calibration_trials": [
+    0,
+    200,
+    800
+  ],
+  "target_epochs": 90
+}

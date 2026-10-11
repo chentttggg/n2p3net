@@ -1,0 +1,142 @@
+[
+  {
+    "time": 1789557238.7147005,
+    "total": 25731305472,
+    "anon": 546361344,
+    "shmem": 14391508992,
+    "disk_file_cache": 10561425408,
+    "events": {
+      "low": "0",
+      "high": "0",
+      "max": "0",
+      "oom": "0",
+      "oom_kill": "0"
+    },
+    "processes": [
+      {
+        "pid": 4657,
+        "rss_kib": 206396,
+        "rss_anon_kib": 194984,
+        "threads": "65"
+      },
+      {
+        "pid": 4499,
+        "rss_kib": 24656,
+        "rss_anon_kib": 15004,
+        "threads": "9"
+      },
+      {
+        "pid": 5537,
+        "rss_kib": 17560,
+        "rss_anon_kib": 8004,
+        "threads": "1"
+      }
+    ],
+    "verified_files": 304
+  },
+  {
+    "time": 1789557248.7174318,
+    "total": 25732173824,
+    "anon": 546578432,
+    "shmem": 14392557568,
+    "disk_file_cache": 10561425408,
+    "events": {
+      "low": "0",
+      "high": "0",
+      "max": "0",
+      "oom": "0",
+      "oom_kill": "0"
+    },
+    "processes": [
+      {
+        "pid": 4657,
+        "rss_kib": 206396,
+        "rss_anon_kib": 194984,
+        "threads": "65"
+      },
+      {
+        "pid": 4499,
+        "rss_kib": 24656,
+        "rss_anon_kib": 15004,
+        "threads": "9"
+      },
+      {
+        "pid": 5537,
+        "rss_kib": 17560,
+        "rss_anon_kib": 8004,
+        "threads": "1"
+      }
+    ],
+    "verified_files": 304
+  },
+  {
+    "time": 1789557258.7188888,
+    "total": 25735585792,
+    "anon": 546603008,
+    "shmem": 14396092416,
+    "disk_file_cache": 10561425408,
+    "events": {
+      "low": "0",
+      "high": "0",
+      "max": "0",
+      "oom": "0",
+      "oom_kill": "0"
+    },
+    "processes": [
+      {
+        "pid": 4657,
+        "rss_kib": 206396,
+        "rss_anon_kib": 194984,
+        "threads": "65"
+      },
+      {
+        "pid": 4499,
+        "rss_kib": 24656,
+        "rss_anon_kib": 15004,
+        "threads": "9"
+      },
+      {
+        "pid": 5537,
+        "rss_kib": 17560,
+        "rss_anon_kib": 8004,
+        "threads": "1"
+      }
+    ],
+    "verified_files": 305
+  },
+  {
+    "time": 1789557268.7222364,
+    "total": 25738801152,
+    "anon": 546619392,
+    "shmem": 14399238144,
+    "disk_file_cache": 10561425408,
+    "events": {
+      "low": "0",
+      "high": "0",
+      "max": "0",
+      "oom": "0",
+      "oom_kill": "0"
+    },
+    "processes": [
+      {
+        "pid": 4657,
+        "rss_kib": 206396,
+        "rss_anon_kib": 194984,
+        "threads": "65"
+      },
+      {
+        "pid": 4499,
+        "rss_kib": 24656,
+        "rss_anon_kib": 15004,
+        "threads": "9"
+      },
+      {
+        "pid": 5537,
+        "rss_kib": 17560,
+        "rss_anon_kib": 8004,
+        "threads": "1"
+      }
+    ],
+    "verified_files": 305
+  }
+]

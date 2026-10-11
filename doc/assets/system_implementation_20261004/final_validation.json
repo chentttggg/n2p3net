@@ -1,0 +1,303 @@
+{
+  "schema": "n2p3_system_implementation_validation/1",
+  "status": "passed_declared_software_and_diagnostics",
+  "performance_promotion": false,
+  "final_source_manifest": "frozen\\system_implementation_20261004_after\\source.manifest.json",
+  "final_source_archive_sha256": "043893ac95e4ff8e9b5f3db718e216ed6c33c4178af5a01e826f2237c4b3973a",
+  "verified_members": 386,
+  "frozen_files_unchanged_after_full_suite": true,
+  "full_suite": {
+    "tests": 2263,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 8,
+    "passed": 2255,
+    "duration_seconds": 450.106,
+    "junit": "doc/assets/system_implementation_20261004/full_suite_final.xml",
+    "junit_sha256": "02edef01f0f7a8c718eb42177ab3fec039e8bff36d1644dae7c7767801fae362",
+    "skips": [
+      {
+        "test": "tests.brainsync.test_brainsync::test_paused_producer_events_exclude_boundary_crossing_epochs",
+        "reason": "set BRAIN_SYNC_WORKSTATION_ROOT for producer integration"
+      },
+      {
+        "test": "tests.brainsync.test_brainsync::test_actual_workstation_producer_roundtrips_seven_eeg_one_eog",
+        "reason": "set BRAIN_SYNC_WORKSTATION_ROOT for the independent producer integration"
+      },
+      {
+        "test": "tests.data.test_moabb_adapter::test_private_parser_snapshot_cleanup_does_not_follow_symlinks",
+        "reason": "symlink creation is unavailable: [WinError 1314] 客户端没有所需的特权。: 'C:\\\\Users\\\\chent\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-chent\\\\pytest-102\\\\test_private_parser_snapshot_c0\\\\outside.bin' -> 'C:\\\\Users\\\\chent\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-chent\\\\pytest-102\\\\test_private_parser_snapshot_c0\\\\private-snapshot\\\\escape-link'"
+      },
+      {
+        "test": "tests.data.test_raw_artifacts::test_snapshot_root_escape_and_symlink_are_rejected",
+        "reason": "The platform does not permit a test directory symlink."
+      },
+      {
+        "test": "tests.train.test_source_objectives::test_combined_source_objective_and_observation_masks_execute_on_cuda",
+        "reason": "CUDA is unavailable"
+      },
+      {
+        "test": "tests.train.test_source_training_chain::test_nonfinite_source_loss_invalidates_fitted_model[cuda]",
+        "reason": "CUDA unavailable"
+      },
+      {
+        "test": "tests.train.test_source_training_chain::test_nonfinite_source_gradient_is_detected_even_after_optimizer_sanitizes_it[cuda]",
+        "reason": "CUDA unavailable"
+      },
+      {
+        "test": "tests.train.test_source_training_chain::test_nonfinite_source_parameter_after_update_invalidates_fitted_model[cuda]",
+        "reason": "CUDA unavailable"
+      }
+    ]
+  },
+  "ruff": {
+    "command": ".venv/Scripts/python.exe -m ruff check src experiments/*.py tests",
+    "exit_code": 0
+  },
+  "diff_check": {
+    "command": "git -c core.safecrlf=false diff --check",
+    "exit_code": 0
+  },
+  "outside_cwd_cli_help": {
+    "commands": 5,
+    "exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "operator_real_subprocesses": {
+    "commands": 7,
+    "all_passed": true,
+    "evidence_scope": "software_correctness"
+  },
+  "independent_reviews": {
+    "spec": "doc/assets/system_implementation_20261004/review_spec_closure.md",
+    "standards": "doc/assets/system_implementation_20261004/review_standards_closure.md",
+    "original_red_preserved": true,
+    "unresolved_confirmed_P1_in_review_scope": 0
+  },
+  "bnci_continuous": {
+    "status": "verified",
+    "cells": 16,
+    "requested_decisions": 464,
+    "scored_decisions": 448,
+    "unscorable_retained": 16,
+    "v1_v2_metric_identity": true,
+    "by_K": {
+      "200": {
+        "requested_subjects": 8,
+        "accounted_subjects": 8,
+        "scored_subjects": 8,
+        "participant_macro_hit_all": 0.4051724137931034,
+        "participant_macro_coverage": 0.9655172413793104,
+        "conditional_participant_macro_nll": 6.90182540770601
+      },
+      "800": {
+        "requested_subjects": 8,
+        "accounted_subjects": 8,
+        "scored_subjects": 8,
+        "participant_macro_hit_all": 0.5905172413793104,
+        "participant_macro_coverage": 0.9655172413793104,
+        "conditional_participant_macro_nll": 3.2426752333369677
+      }
+    },
+    "cell_recomputation": [
+      {
+        "subject": "A01",
+        "K": 200,
+        "requested": 29,
+        "scored": 28,
+        "correct": 7,
+        "hit_all": 0.2413793103448276,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 3.702933474861181,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A01",
+        "K": 800,
+        "requested": 29,
+        "scored": 28,
+        "correct": 12,
+        "hit_all": 0.41379310344827586,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 3.0008768936796906,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A02",
+        "K": 200,
+        "requested": 29,
+        "scored": 28,
+        "correct": 5,
+        "hit_all": 0.1724137931034483,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 33.16741663372717,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A02",
+        "K": 800,
+        "requested": 29,
+        "scored": 28,
+        "correct": 14,
+        "hit_all": 0.4827586206896552,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 9.852126343932598,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A03",
+        "K": 200,
+        "requested": 29,
+        "scored": 28,
+        "correct": 13,
+        "hit_all": 0.4482758620689655,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 2.937350581219237,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A03",
+        "K": 800,
+        "requested": 29,
+        "scored": 28,
+        "correct": 20,
+        "hit_all": 0.6896551724137931,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 1.3268696940652132,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A04",
+        "K": 200,
+        "requested": 29,
+        "scored": 28,
+        "correct": 5,
+        "hit_all": 0.1724137931034483,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 5.213929701353403,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A04",
+        "K": 800,
+        "requested": 29,
+        "scored": 28,
+        "correct": 12,
+        "hit_all": 0.41379310344827586,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 2.1098773370560076,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A05",
+        "K": 200,
+        "requested": 29,
+        "scored": 28,
+        "correct": 13,
+        "hit_all": 0.4482758620689655,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 4.089885840915356,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A05",
+        "K": 800,
+        "requested": 29,
+        "scored": 28,
+        "correct": 15,
+        "hit_all": 0.5172413793103449,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 5.1600160071160905,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A06",
+        "K": 200,
+        "requested": 29,
+        "scored": 28,
+        "correct": 12,
+        "hit_all": 0.41379310344827586,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 2.8161036073609336,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A06",
+        "K": 800,
+        "requested": 29,
+        "scored": 28,
+        "correct": 16,
+        "hit_all": 0.5517241379310345,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 1.8380892171024763,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A07",
+        "K": 200,
+        "requested": 29,
+        "scored": 28,
+        "correct": 18,
+        "hit_all": 0.6206896551724138,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 2.6118423019758796,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A07",
+        "K": 800,
+        "requested": 29,
+        "scored": 28,
+        "correct": 20,
+        "hit_all": 0.6896551724137931,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 2.6052735234161446,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A08",
+        "K": 200,
+        "requested": 29,
+        "scored": 28,
+        "correct": 21,
+        "hit_all": 0.7241379310344828,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 0.6751411202349118,
+        "minimum_selection_gap_s": 8.25
+      },
+      {
+        "subject": "A08",
+        "K": 800,
+        "requested": 29,
+        "scored": 28,
+        "correct": 28,
+        "hit_all": 0.9655172413793104,
+        "coverage": 0.9655172413793104,
+        "scored_nll_mean": 0.048272850327521155,
+        "minimum_selection_gap_s": 8.25
+      }
+    ],
+    "execution_source_sha256": "a1b9d41e086d8d2c2a8dcb9de80c75aaab9a3b26b0d9ef6dda6c0d6c7475cfa6",
+    "verified_loaded_source_files": 35
+  },
+  "unresolved_research": [
+    "real_Gamma_Omega_identification_and_event_specific_operators",
+    "four_study_matched_ERP_performance_matrix",
+    "three_paired_full_pipeline_seeds",
+    "full_dual_sided_EA_N2P3_consumer",
+    "independent_adult_device_confirmation"
+  ],
+  "evidence_sha256": {
+    "doc\\evidence\\system_implementation_20261004.zh.md": "fcd61d5254f239d595c45858a23d897f800b3f7d282b7a4f3e1a9442b572d07a",
+    "doc\\assets\\system_implementation_20261004\\changed_files.json": "3dae240c2bf56292923b6068983128492616475ad364fe33b739b3b05ea054ec",
+    "doc\\assets\\system_implementation_20261004\\implementation.diff": "64da1f5ee607bf604a03194c82710eb23007f757e2f9080bcf51e20a4b074a3b",
+    "doc\\assets\\system_implementation_20261004\\review_spec_closure.md": "1c43705338b1ccf6a9f7f0607c8c419d8a135368d96768b0ff0d1c7333b6ce9c",
+    "doc\\assets\\system_implementation_20261004\\review_standards_closure.md": "d4502bd9e5365a11cab7c6620bfc6ec3dbe6e86d3d82b7c886b0cb0317955696",
+    "doc\\assets\\system_implementation_20261004\\archive_verification.json": "2e1d8d85f48e27f7d4a2cab0cbce11f7e2db9fa7eff163d54935978dd58d8953"
+  }
+}

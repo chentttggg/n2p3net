@@ -1,0 +1,45 @@
+{
+  "status": "PASS",
+  "oracle_groups": 7,
+  "checks": {
+    "finite_prior_quadratic_solution": {
+      "0.0": [
+        3.0,
+        -2.0
+      ],
+      "0.5": [
+        1.6666666666666667,
+        -1.6666666666666667
+      ],
+      "5.0": [
+        -0.3333333333333333,
+        -0.3333333333333333
+      ],
+      "5000.0": [
+        -0.9992001599680064,
+        0.9976019184652278
+      ]
+    },
+    "precision_meta_gradient": {
+      "1": 0.0,
+      "2": -0.12677920000000004
+    },
+    "mean_sum_prior_scale": 1.608695652173913,
+    "preconditioned_gradient_counterexample": {
+      "raw_gradient_dot": 0.10000000000000009,
+      "linear_main_loss_change_per_unit_step": 8.7
+    },
+    "factorial_design": {
+      "rows": 16,
+      "rank": 16,
+      "source_states": 8,
+      "synthetic_positive_interaction": 0.08000000000000007
+    },
+    "label_entropy_upper_bound_bits": 3.169925001442312,
+    "masked_normalization_oracle": {
+      "all_observed_max_abs": 5.551115123125783e-16,
+      "missing_nan_large_value_outputs_and_gradients_equal": true,
+      "scope": "independent formula oracle; production masked BN not implemented"
+    }
+  }
+}

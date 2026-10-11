@@ -1,0 +1,13 @@
+{
+  "schema": "n2p3_cloud_cleanup/1",
+  "archive": "/root/n2p3-runs/source_eog_20260909/export/source_eog_20260909_results.tar.gz",
+  "archive_sha256": "405baaa34f22576d750f43f8639d6975d4c42ff550fa8595fd0516d7fae491f0",
+  "before_free_bytes": 3161718784,
+  "retained_mismatches": [],
+  "after_free_bytes": 11001061376,
+  "status": "completed",
+  "released_bytes": 7839342592,
+  "deleted_file_count": 48154,
+  "verified_removed_bytes": 7737848631,
+  "detail_manifest": "experiments/runs/domain_transfer_cloud_20260916/cleanup_manifest.json"
+}

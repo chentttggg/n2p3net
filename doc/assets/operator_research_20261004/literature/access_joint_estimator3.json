@@ -1,0 +1,29 @@
+[
+  {
+    "file": "joint_trcm_projecteuclid.pdf",
+    "requested_url": "https://projecteuclid.org/journals/annals-of-applied-statistics/volume-4/issue-2/Transposable-regularized-covariance-models-with-an-application-to-missing-data/10.1214/09-AOAS314.pdf",
+    "fetched_utc": "2026-10-04T13:35:30.174359+00:00",
+    "status": 200,
+    "final_url": "https://projecteuclid.org/journals/annals-of-applied-statistics/volume-4/issue-2/Transposable-regularized-covariance-models-with-an-application-to-missing-data/10.1214/09-AOAS314.pdf",
+    "content_type": "text/html",
+    "bytes": 1165,
+    "sha256": "affe8f92552d887419e0fc45d1f9de8148b5395592806b0ee4ade7e71cf6d152"
+  },
+  {
+    "file": "joint_trcm_author.pdf",
+    "requested_url": "https://statweb.stanford.edu/~tibs/ftp/transposable.pdf",
+    "fetched_utc": "2026-10-04T13:35:30.174848+00:00",
+    "error": "('Connection aborted.', ConnectionAbortedError(10053, '\u4f60\u7684\u4e3b\u673a\u4e2d\u7684\u8f6f\u4ef6\u4e2d\u6b62\u4e86\u4e00\u4e2a\u5df2\u5efa\u7acb\u7684\u8fde\u63a5\u3002', None, 10053, None))",
+    "status": null
+  },
+  {
+    "file": "joint_statsmodels_burg_docs.html",
+    "requested_url": "https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.burg.html",
+    "fetched_utc": "2026-10-04T13:35:30.175205+00:00",
+    "status": 200,
+    "final_url": "https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.burg.html",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 41413,
+    "sha256": "062797cff811a13f8c1768b94e2876dc052bb6aab957ba327f23017d7f00b728"
+  }
+]

@@ -1,0 +1,54 @@
+{
+  "evidence_scope": "software_correctness",
+  "seed": 43251,
+  "fixed_parameters_candidate_independent_prefix": {
+    "full_BF": 1.4450462126185286,
+    "conditional_BF": 1.4450462126185233,
+    "absolute_error": 5.329070518200751e-15
+  },
+  "uncertain_kernel_no_prefix_effect_known_nuisance": {
+    "BF_error": 8.881784197001252e-15
+  },
+  "flat_nuisance_counterexample": {
+    "y": [
+      4.0,
+      5.0,
+      5.0
+    ],
+    "candidate_means": [
+      [
+        0.0,
+        1.0,
+        1.0
+      ],
+      [
+        0.0,
+        -1.0,
+        -1.0
+      ]
+    ],
+    "full_BF": 7.27272727272728,
+    "conditional_rows_only_BF": 2.5600000000000023,
+    "prefix_has_no_candidate_mean": true,
+    "ranking_reversal": {
+      "y": [
+        4.0,
+        1.0,
+        -2.0
+      ],
+      "full_BF": -24.0,
+      "conditional_rows_only_BF": 1.9199999999999968
+    }
+  },
+  "proper_nuisance_prior_conditioning": {
+    "full_BF": 7.322033898305275,
+    "properly_conditioned_BF": 7.322033898305277,
+    "naive_unupdated_nuisance_prior_BF": 2.967272727272727,
+    "exact_conditioning_error": 1.7763568394002505e-15
+  },
+  "candidate_dependent_prefix": {
+    "full_minus_conditional_BF": 23.039999999999992,
+    "prefix_BF": 23.039999999999992
+  },
+  "script_sha256": "0a4fc989823b4609a14367cff9d7d530681982c64b78e844a07f1ab8ae6cc9d6"
+}

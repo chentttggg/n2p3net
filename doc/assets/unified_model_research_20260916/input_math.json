@@ -1,0 +1,20 @@
+{
+  "rank_Cz_difference": 6,
+  "rank_difference_plus_native_Cz": 7,
+  "reconstruction_max_error": 4.440892098500626e-16,
+  "reference_shift_difference_error": 8.881784197001252e-16,
+  "GTN_available_contrast_rank": 2,
+  "GTN_native_rank": 3,
+  "positive_negative_wave_energy_distance": 0.0,
+  "zero_gate_zero_residual_gradients": [
+    -0.0,
+    -0.0
+  ],
+  "zero_gate_nonzero_residual_gradients": [
+    -4.0,
+    -0.0
+  ],
+  "gate_rescale_same_function": true,
+  "interaction_missed_by_baseline_single_ablation": 0.030000000000000027,
+  "orthogonal_but_deterministic_dependent_features_covariance": 0.0
+}

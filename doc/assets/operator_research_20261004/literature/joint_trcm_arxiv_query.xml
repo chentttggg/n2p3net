@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/Hfr7PATZUKNAx0uKaR6xYGTN1Qg</id>
+  <title>arXiv Query: search_query=ti:"Transposable regularized covariance models"&amp;id_list=&amp;start=0&amp;max_results=2</title>
+  <updated>2026-10-04T13:36:12Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=ti:%22Transposable+regularized+covariance+models%22&amp;start=0&amp;max_results=2&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>2</opensearch:itemsPerPage>
+  <opensearch:totalResults>1</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/0906.3465v4</id>
+    <title>Transposable regularized covariance models with an application to missing data imputation</title>
+    <updated>2010-11-09T07:31:12Z</updated>
+    <link href="https://arxiv.org/abs/0906.3465v4" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/0906.3465v4" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Missing data estimation is an important challenge with high-dimensional data arranged in the form of a matrix. Typically this data matrix is transposable, meaning that either the rows, columns or both can be treated as features. To model transposable data, we present a modification of the matrix-variate normal, the mean-restricted matrix-variate normal, in which the rows and columns each have a separate mean vector and covariance matrix. By placing additive penalties on the inverse covariance matrices of the rows and columns, these so-called transposable regularized covariance models allow for maximum likelihood estimation of the mean and nonsingular covariance matrices. Using these models, we formulate EM-type algorithms for missing data imputation in both the multivariate and transposable frameworks. We present theoretical results exploiting the structure of our transposable models that allow these models and imputation methods to be applied to high-dimensional data. Simulations and results on microarray data and the Netflix data show that these imputation techniques often outperform existing methods and offer a greater degree of flexibility.</summary>
+    <category term="stat.AP" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ME" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2009-06-18T17:42:31Z</published>
+    <arxiv:comment>Published in at http://dx.doi.org/10.1214/09-AOAS314 the Annals of Applied Statistics (http://www.imstat.org/aoas/) by the Institute of Mathematical Statistics (http://www.imstat.org)</arxiv:comment>
+    <arxiv:primary_category term="stat.AP"/>
+    <arxiv:journal_ref>Annals of Applied Statistics 2010, Vol. 4, No. 2, 764-790</arxiv:journal_ref>
+    <author>
+      <name>Genevera I. Allen</name>
+    </author>
+    <author>
+      <name>Robert Tibshirani</name>
+    </author>
+    <arxiv:doi>10.1214/09-AOAS314</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1214/09-AOAS314" title="doi"/>
+  </entry>
+</feed>

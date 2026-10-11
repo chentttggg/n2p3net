@@ -1,0 +1,61 @@
+{
+  "torch": "2.13.0+cu130",
+  "checks": [
+    {
+      "check": "direct9_bayes_gradient_permutations_equal_coverage",
+      "status": "PASS"
+    },
+    {
+      "check": "rowcol2x3_bayes_gradient_permutations_equal_coverage",
+      "status": "PASS"
+    },
+    {
+      "check": "row_column_joint_nll_equals_two_axes",
+      "status": "PASS",
+      "nll": 0.6734845146092575
+    },
+    {
+      "check": "sum_mean_same_argmax_different_probability",
+      "status": "PASS",
+      "sum_max_probability": 0.16773841554894456,
+      "mean_max_probability": 0.12147623376592137
+    },
+    {
+      "check": "unequal_coverage_prior_offset_changes_winner",
+      "status": "PASS",
+      "raw_scores": [
+        0.2,
+        -0.4
+      ],
+      "llr_scores": [
+        2.279441541679836,
+        3.7588830833596716
+      ]
+    },
+    {
+      "check": "duplicate_evidence_artificially_increases_confidence",
+      "status": "PASS",
+      "once": 0.7310585786300049,
+      "twice": 0.8807970779778823
+    },
+    {
+      "check": "missing_not_at_random_has_nonzero_evidence",
+      "status": "PASS",
+      "posterior_from_missingness": [
+        0.888888888888889,
+        0.11111111111111112
+      ],
+      "neutral_mask_posterior": [
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "check": "fixed_failure_penalty_alone_does_not_prevent_learned_reject_escape",
+      "status": "PASS",
+      "all_included": 2.55,
+      "learned_drop_hard_case": 1.1486122886681098
+    }
+  ],
+  "count": 8
+}

@@ -1,0 +1,81 @@
+{
+  "schema": "n2p3_research_design_validation/1",
+  "completed_utc": "2026-09-16T06:30:10.354831+00:00",
+  "python": "D:\\BCI\\n2p3-net\\.venv\\Scripts\\python.exe",
+  "status": "PASS",
+  "production_code_changed_by_this_task": false,
+  "production_integrity": {
+    "initial_python_files_including_local_archives": 6905,
+    "active_python_files_recorded": 317,
+    "active_python_files_changed": [],
+    "local_runtime_helpers_changed_during_research": [
+      "experiments/runs/domain_transfer_cloud_20260916/export_results.py",
+      "experiments/runs/domain_transfer_cloud_20260916/finalize.py"
+    ]
+  },
+  "checks": {
+    "math_probes": [
+      {
+        "script": "doc/assets/unified_model_research_20260916/architecture_math.py",
+        "script_sha256": "8afbe0d0f84d771c5c561cf581f42fcb414ca9b9ca0b7545789cef6d3459e135",
+        "result": "doc/assets/unified_model_research_20260916/architecture_math.json",
+        "result_sha256": "b1a370bff72450b7c1800858299485d39eed2cbd96d1bd9239683d2df0042515",
+        "execution_exit_code": 0,
+        "execution_evidence": "executed by assigned reviewer and reviewed",
+        "data_kind": "synthetic_math_and_current_model_probes; no_real_training"
+      },
+      {
+        "script": "doc/assets/unified_model_research_20260916/decision_math.py",
+        "script_sha256": "0ad3ea835786494816972bedbad56c613ed5f2762f8d1f0d5beb203043a8c7da",
+        "result": "doc/assets/unified_model_research_20260916/decision_math.json",
+        "result_sha256": "0a9f85e39f265286274d60443655be914b4dd892a3e5b4387ea44c08c9db1e26",
+        "execution_exit_code": 0,
+        "execution_evidence": "executed by assigned reviewer and reviewed",
+        "data_kind": "synthetic_math_and_current_model_probes; no_real_training"
+      },
+      {
+        "script": "doc/assets/unified_model_research_20260916/input_math.py",
+        "script_sha256": "5fab6d808f29b80521be96c1869fcdbc0822998a25b6d7677b3a80dd6f27d1a2",
+        "result": "doc/assets/unified_model_research_20260916/input_math.json",
+        "result_sha256": "a6f1435a52a6895c474484ef999f073a90c170e392fd76e6f5eb2647fa356972",
+        "execution_exit_code": 0,
+        "execution_evidence": "executed by assigned reviewer and reviewed",
+        "data_kind": "synthetic_math_and_current_model_probes; no_real_training"
+      },
+      {
+        "script": "doc/assets/unified_model_research_20260916/synthesis_math.py",
+        "script_sha256": "ded8bb8e32518d66a15183a340ac5d52696740cb70fe662aa51adc9846ec44b1",
+        "result": "doc/assets/unified_model_research_20260916/synthesis_math.json",
+        "result_sha256": "8d2b154b34cbcf23549e57f9a21a977aa3c032ddf7baa22645f71e695156c088",
+        "execution_exit_code": 0,
+        "execution_evidence": "executed by root; seven oracle groups passed",
+        "data_kind": "synthetic_math_and_current_model_probes; no_real_training"
+      }
+    ],
+    "ruff_exit_code": 0,
+    "ruff_command": ".venv/Scripts/python.exe -m ruff check doc/assets/unified_model_research_20260916",
+    "git_diff_check_exit_code": 0,
+    "local_link_count": 13,
+    "broken_new_links": []
+  },
+  "scope": "research design and mathematical checks only; new unified training program not implemented; no real training or cloud mutation",
+  "limitations": [
+    "new-profile row/group counts pending raw-scope reconstruction",
+    "full adult target-switch confirmation not available",
+    "meta probe covers fixed BN parameter derivatives; support-state derivatives not yet implemented"
+  ],
+  "review_corrections": [
+    "quadratic minimum conditions",
+    "residual.forward vs residual body",
+    "394 vs existing 410 affine parameters",
+    "masked BN numeric rule and pre-convolution NaN handling",
+    "strict R5 and group boundaries within budget",
+    "pointwise vs online-BN batch risk",
+    "scratch reuse conditions",
+    "raw-scope boundaries and exposure",
+    "Q7 fused auxiliary location",
+    "EA common observed sublayout",
+    "eligibility inventory",
+    "exact meta support-state gradients"
+  ]
+}

@@ -1,0 +1,29 @@
+[
+  {
+    "file": "spm_repo.json",
+    "requested_url": "https://api.github.com/repos/spm/spm/commits/main",
+    "fetched_utc": "2026-10-04T12:58:36.160911+00:00",
+    "status": 200,
+    "final_url": "https://api.github.com/repos/spm/spm/commits/main",
+    "content_type": "application/json; charset=utf-8",
+    "bytes": 5556,
+    "sha256": "ac4bf3416582dfa414e4835004b56afbb9abe23bbc8a86473403f081aacc0699"
+  },
+  {
+    "file": "rerp_ii_full.html",
+    "requested_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5306445/",
+    "fetched_utc": "2026-10-04T12:58:36.161425+00:00",
+    "status": 200,
+    "final_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5306445/",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 21313,
+    "sha256": "45a407328063e98155997d08ea12fdcc95047b6f0a751a8c4b1b3b65c2108baa"
+  },
+  {
+    "file": "gustafsson_author.pdf",
+    "requested_url": "https://www.diva-portal.org/smash/get/diva2:315708/FULLTEXT02.pdf",
+    "fetched_utc": "2026-10-04T12:58:36.161654+00:00",
+    "error": "('Connection aborted.', ConnectionResetError(10054, '\u8fdc\u7a0b\u4e3b\u673a\u5f3a\u8feb\u5173\u95ed\u4e86\u4e00\u4e2a\u73b0\u6709\u7684\u8fde\u63a5\u3002', None, 10054, None))",
+    "status": null
+  }
+]

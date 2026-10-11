@@ -1,0 +1,7 @@
+{
+  "status": "rejected_no_valid_results",
+  "error": "source/held pseudo-cut data have zero targets due to step24 schedule aliasing; source class1 mean NaN, JSON allow_nan=False rejects report",
+  "n_cuts": 1040,
+  "n_participants": 8,
+  "correction": "predeclared index step17 coprime with12/120, explicit two-class support gate; no hyperparameters or participant inclusion tuned by performance"
+}

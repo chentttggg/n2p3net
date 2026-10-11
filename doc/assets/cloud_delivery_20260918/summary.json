@@ -1,0 +1,68 @@
+{
+  "schema": "n2p3_cloud_delivery_summary/1",
+  "status": "completed",
+  "scope": {
+    "source_studies": 12,
+    "seed": 20260918,
+    "Lee_included": false,
+    "training_started": false
+  },
+  "cleanup": {
+    "rebuildable_cache_files": 846,
+    "verified_duplicate_files": 64014,
+    "freed_bytes": 27916914688,
+    "freed_GiB": 25.999652862548828,
+    "raw_and_unique_historical_artifacts_preserved": true
+  },
+  "input_verification": {
+    "schema": "n2p3_full_input_delivery/1",
+    "status": "verified",
+    "raw_files": 3324,
+    "raw_bytes": 31269165704,
+    "record_declarations": 1964,
+    "archive_members_verified": 885,
+    "source_studies": 12,
+    "seeds": [
+      20260918
+    ],
+    "Lee_included": false,
+    "training_started": false,
+    "seconds": 119.50553631782532
+  },
+  "deployment": {
+    "status": "verified",
+    "runtime": "/root/autodl-tmp/n2p3-stage-20260918/runtime",
+    "source_sha256": "bac9654edfe63610f4775aa34569efc524c782eac81a0496b35a9e0ac79a54f7",
+    "source_files": 345,
+    "studies": 12,
+    "records": 1964,
+    "source_tasks": 16,
+    "seeds": [
+      20260918
+    ],
+    "training_started": false
+  },
+  "publication_conflicts": {
+    "original_count": 7,
+    "rechecked": 8,
+    "unresolved": 0,
+    "all_existing_bytes_matched": true
+  },
+  "finish": {
+    "status": "completed",
+    "partial_bytes_removed": 24790037,
+    "filesystems": {
+      "/root/autodl-tmp": {
+        "total_bytes": 53687091200,
+        "available_bytes": 34034118656
+      },
+      "/root/autodl-fs": {
+        "total_bytes": 214748364800,
+        "available_bytes": 153048584192
+      }
+    },
+    "runtime_cli_exit_code": 0,
+    "training_started": false,
+    "partial_file_count": 8
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "schema": "n2p3_research_evidence_snapshot/1",
+  "created_at": "2026-09-16T13:57:18.082473+00:00",
+  "scope": "Independent theory, current inspected source subset, protocol metadata and synthetic counterexamples. Not a full runnable source snapshot; not the prior cloud execution identity. No new training.",
+  "archive": "research_evidence.zip",
+  "sha256": "4d56c678e1c0a24429be0bc8a067d5f625a41ce2998cd6b672df6c2352492de1",
+  "members": [
+    {
+      "path": "doc/README.md",
+      "bytes": 10855,
+      "sha256": "cff3d5ff869d41143b89db30a221431d6392b8a68408f8b71ddc5f0939dabda8"
+    },
+    {
+      "path": "doc/roadmap.zh.md",
+      "bytes": 67309,
+      "sha256": "2a72d3ee77468bb5eb197bf6689730d9b2513841eede3aa72aba8df8643308d8"
+    },
+    {
+      "path": "doc/research_program.zh.md",
+      "bytes": 29632,
+      "sha256": "797e361dccf3058f2327770abf332b895b0d1958f1725fff070d656b8101671a"
+    },
+    {
+      "path": "doc/evidence/README.md",
+      "bytes": 18490,
+      "sha256": "b029b48a96b27e74db22b3ac2f5d8db56700e4dcc6b91628ee4bff52798f8682"
+    },
+    {
+      "path": "doc/evidence/chain_mechanism_20260916.zh.md",
+      "bytes": 21633,
+      "sha256": "e8e33569b29f686d90fb151d675a56a2e3633baeebb2f6a51c6b86145dd5c970"
+    },
+    {
+      "path": "doc/assets/chain_mechanism_20260916/references.json",
+      "bytes": 71117,
+      "sha256": "c0b035aadd7da580cd3c16f2093d923ceb284c8e073f7cf82c46bb1ed7931c13"
+    },
+    {
+      "path": "doc/assets/chain_mechanism_20260916/verification.json",
+      "bytes": 1373,
+      "sha256": "8ceee434fccae005b49cf68aa9e5c42978c232ede8679bb4c6e8e199b323fb4e"
+    },
+    {
+      "path": "doc/assets/chain_mechanism_20260916/verify_mechanisms.py",
+      "bytes": 7583,
+      "sha256": "52c18e690b372a2d75970242b23d1dc6ddbe6a73133ccf560fe87a3d52e1579b"
+    },
+    {
+      "path": "experiments/runs/chain_attribution_20260916/filter_evidence.md",
+      "bytes": 11528,
+      "sha256": "7409221274d6b1dbd871b1afc311c421e6f840b298d3b6fb65992960f263a57f"
+    },
+    {
+      "path": "experiments/runs/chain_attribution_20260916/decision_evidence.md",
+      "bytes": 14966,
+      "sha256": "7a918654404f5ad011ffcd76e9c0091f435f9f9ff8d6713909ee841e6f87278e"
+    },
+    {
+      "path": "experiments/runs/chain_attribution_20260916/split_evidence.md",
+      "bytes": 14555,
+      "sha256": "4c82d69a81e4b500f47fb27dee5889b9606d556834e88c541b6116301d0af550"
+    },
+    {
+      "path": "experiments/runs/chain_attribution_20260916/references_filter.json",
+      "bytes": 28343,
+      "sha256": "e586e175e5241bead8183468d6aa72072fedfc7cecb10dad35cbd32a85232f81"
+    },
+    {
+      "path": "experiments/runs/chain_attribution_20260916/references_decision.json",
+      "bytes": 15540,
+      "sha256": "5767566f8564bf68101ba599ed7b8593fee72d3f543991362df036846cb06af4"
+    },
+    {
+      "path": "experiments/runs/chain_attribution_20260916/references_split.json",
+      "bytes": 25128,
+      "sha256": "a56c1227fa5bc3aedc96b0d268ff3d32ef731a6035a142b896a1de42acb6825b"
+    },
+    {
+      "path": "src/data/source_records.py",
+      "bytes": 64204,
+      "sha256": "affe6f765fc2e7cbd463b1e527548bf9dc2781da4c46cc8b7ac8868f4f75fc3c"
+    },
+    {
+      "path": "src/data/preprocess.py",
+      "bytes": 52608,
+      "sha256": "a03495aa4347fe78ba3c36f40add50861f69eda5995a7d8eb08ed509187b51d6"
+    },
+    {
+      "path": "src/data/domain.py",
+      "bytes": 37786,
+      "sha256": "3eedd6e69e3835a80f8ef28734f2e92dfdc60025b5185ed0f7fccfc25393ce82"
+    },
+    {
+      "path": "src/data/bnci2014_008_candidate.py",
+      "bytes": 29635,
+      "sha256": "3cfb395f590ac74d69c13d50f65cb32c368126103552d0e0ea22e486d6b406c1"
+    },
+    {
+      "path": "src/transfer/calibration_candidates.py",
+      "bytes": 49166,
+      "sha256": "f884675d795e6791ab1b18aeb407bf8d7e4d3edb52f1ec88631ba12ca218967d"
+    },
+    {
+      "path": "src/transfer/subject_adapter.py",
+      "bytes": 92958,
+      "sha256": "3deebd464e02cf1959ed8d7c7da8378fe44b06ab36db7ee897426b22485e7dfe"
+    },
+    {
+      "path": "src/transfer/decision_loss.py",
+      "bytes": 62530,
+      "sha256": "29660eab1d9aa034a3baf799c6f5274ec5bb9ebf4ea31026bdd44af7ae4d6bc5"
+    },
+    {
+      "path": "src/transfer/source_objective.py",
+      "bytes": 21063,
+      "sha256": "3c46c384442971b011724f6acf9063c5d4b3c1166e26a6ffcf90157a393d49ac"
+    },
+    {
+      "path": "src/transfer/recipes.py",
+      "bytes": 16028,
+      "sha256": "6cfd6ddaa92ad9d68963d3f7e3de3089daf7b646ec4bb7afbbc2cf52046cda36"
+    },
+    {
+      "path": "src/models/parameter_groups.py",
+      "bytes": 4751,
+      "sha256": "c5634d05049618dae87c8e3bf75b47f2a140ee0f41baa34e25f493e5ee0c286b"
+    },
+    {
+      "path": "src/models/candidate_evidence.py",
+      "bytes": 23149,
+      "sha256": "26fa87aad9bccc6b8061d49475a63a75c77eaeab1b071c21f1ad5a3fb5652857"
+    },
+    {
+      "path": "src/models/n2p3net.py",
+      "bytes": 55549,
+      "sha256": "00384bb166b10ae63660fcdf79801ed1f7fc5eb4e77d4b52ba87cfdbcd950404"
+    },
+    {
+      "path": "configs/brainsync_bidirectional_preprocessing.json",
+      "bytes": 759,
+      "sha256": "deffab5f529e8a780fdfe63f6ed19817ade4d56dff0fca55946627b0d0c5ab93"
+    },
+    {
+      "path": "configs/unified_training_budget.json",
+      "bytes": 223,
+      "sha256": "666f82c92a64685c22b1358b6527910afb35e46380212b27d3a771a7741182fe"
+    }
+  ],
+  "validation": {
+    "archive_crc_and_member_sha256": "PASS",
+    "counterexample_groups": 10,
+    "ruff": "PASS",
+    "git_diff_check": "PASS",
+    "report_local_links": "PASS",
+    "production_code_changed_by_this_audit": false
+  }
+}

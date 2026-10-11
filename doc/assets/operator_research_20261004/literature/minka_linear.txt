@@ -1,0 +1,641 @@
+
+--- PAGE 1 ---
+Bayesian linear regression
+Thomas P. Minka
+1998 (revised 2010)
+Abstract
+This note derives the posterior, evidence, and predictive d ensity for linear multivariate
+regression under zero-mean Gaussian noise. Many Bayesian t exts, such as Box & Tiao
+(1973), cover linear regression. This note contributes to t he discussion by paying careful
+attention to invariance issues, demonstrating model selec tion based on the evidence, and
+illustrating the shape of the predictive density. Piecewis e regression and basis function
+regression are also discussed.
+1 Introduction
+The data model is that an input vector x of length m multiplies a coeﬃcient matrix A to
+produce an output vector y of length d, with Gaussian noise added:
+y = Ax + e (1)
+e ∼ N (0, V) (2)
+p(y|x, A, V) ∼ N (Ax, V) (3)
+This is a conditional model for y only: the distribution of x is not needed and in fact irrelevant
+to all inferences in this paper. As we shall see, conditional m odels create subtleties in Bayesian
+inference. In the special case x = 1 and m = 1, the conditioning disappears and we simply have
+a Gaussian distribution for y, with arbitrary mean and variance. This case is useful as a ch eck
+on the results.
+The scenario is that we are given a data set of exchangeable pa irs D = {(y1, x1), ..., (yN , xN )}.
+Collect Y = [y1 · · · yN ] and X = [x1 · · · xN ]. The distribution of Y given X under the model is
+p(Y|X, A, V) =
+∏
+i
+p(yi|xi, A, V) (4)
+= 1
+|2πV|N/2 exp(− 1
+2
+∑
+i
+(yi − Axi)TV−1(yi − Axi)) (5)
+= 1
+|2πV|N/2 exp(− 1
+2 tr(V−1(Y − AX)(Y − AX)T)) (6)
+= 1
+|2πV|N/2 exp(− 1
+2 tr(V−1 [
+AXXTAT − 2YXTAT + YYT]
+)) (7)
+1
+
+--- PAGE 2 ---
+2 The matrix-normal density
+A conjugate prior for A is the matrix-normal density, which implies the posterior f or A as well
+as for Y will be matrix-normal. Since this density arises so often le t’s take some time out to
+study it. A random d by m matrix A is matrix-normal distributed with parameters M, V, and
+K if the density of A is
+p(A) ∼ N (M, V, K) (8)
+= |K|d/2
+|2πV|m/2 exp(− 1
+2 tr((A − M)TV−1(A − M)K)) (9)
+where M is d by m, V is d by d, and K is m by m. This distribution has two covariance matrices:
+V for the rows and K for the columns. If V is diagonal, then the rows of A are independent
+normal vectors. If K is diagonal, then the columns of A are independent normal vectors. If
+vec(A) denotes the stacked columns of A, we have
+p(vec(A)) ∼ N (vec(M), K−1 ⊗ V) (10)
+From this formula we can derive properties of the matrix-nor mal distribution from the normal
+distribution. Note that the covariance of vec( A) is highly structured. This means that, in
+general, the sum of two normal matrices is not normal, unless they have the same V or K
+parameter.
+The matrix Y = XA has derived density
+p(Y) ∼ N (XM, XVXT, K) (11)
+The matrix AT has derived density
+p(AT) ∼ N (MT, K−1, V−1) (12)
+Hence Y = AX has derived density
+p(Y) ∼ N (MX, V, (XTK−1X)−1) (13)
+which we will use later.
+2
+
+--- PAGE 3 ---
+3 An invariant prior
+When our knowledge about A is vague, we can use invariance arguments to derive a prior.
+Typically Y is a set of measurements like wind speed, blood pressure, or s tock price and X is
+some other set of measurements like location, drug dosage, o r fed interest rate. In such cases,
+we would like our inferences to be invariant to the units of me asurement. That is, our inferences
+under one system of measurement should simply be a scaled ver sion of those under another
+system. For measurements like 2D location, we would also wan t to be invariant to the choice of
+basis, i.e. an aﬃne transformation of the measurement matri x should transform our inferences
+in precisely the same way. For example, if given ( Y, X) we infer A = A0, then given ( BY, CX)
+we should infer A = BA0C−1.
+This condition is satisﬁed by any distribution of the form
+p(A|X, V, W) ∼ N (0, V, XWXT) (14)
+where XWXT is nonsingular. You can verify that this density transforms in the correct way if
+you transform either Y (and therefore V) or X. Other priors, such as the ridge regression prior
+(MacKay, 1992)
+p(A) ∼ N (0, Id, αIm) (15)
+are not invariant; inferences can change, even qualitative ly, when you rescale a measurement.
+This paper focuses on the case W = αI:
+p(A|X, V, α) ∼ N (0, V, αXXT) (16)
+The Jeﬀreys prior for linear regression is obtained as the li mit
+p(A|X, V) ∼ lim
+α→0
+N (0, V, αXXT) (17)
+∝
+⏐⏐XXT⏐⏐d/2
+|2πV|−m/2 (18)
+The problem with the Jeﬀreys prior is that it is improper. Thi s is avoided by leaving α as a free
+parameter to be optimized or integrated out. This regressio n technique was also advocated by
+Gull (1988). In this paper, α is optimized via empirical Bayes.
+Note that the mean of A under the prior must be zero in order to achieve invariance. T his is
+interesting because, even though shrinkage priors are wide ly used in regression, it ﬁnally gives
+a precise reason why the shrinkage point should be zero.
+In the non-regression case, when we are just estimating a Gau ssian distribution for y, the
+invariant prior is
+p(a|V) ∼ N (0, V
+αN ) (19)
+3
+
+--- PAGE 4 ---
+4 Known V
+Now back to the problem. Let
+Sxx = XXT + K (20)
+Syx = YXT + MK (21)
+Syy = YYT + MKMT (22)
+Sy|x = Syy − SyxS−1
+xx ST
+yx (23)
+Then the likelihood (7) times conjugate prior (8) is
+p(Y, A|X, V) ∝ exp(− 1
+2 tr(V−1 [
+ASxxAT − 2SyxAT + Syy
+]
+)) (24)
+∝ exp(− 1
+2 tr(V−1 [
+(A − SyxS−1
+xx )Sxx(A − SyxS−1
+xx )T + Sy|x
+]
+)) (25)
+so the posterior for A is matrix-normal:
+p(A|D, V) ∼ N (SyxS−1
+xx , V, Sxx) (26)
+With the invariant prior (16) this becomes
+p(A|D, V, α) ∼ N (YXT(XXT)−1(α + 1)−1, V, XXT(α + 1)) (27)
+For the non-regression model, the posterior is
+p(a|Y, V, α) ∼ N ((α + 1)−1 ¯y, 1
+(α + 1)N V) (28)
+¯y = 1
+N
+∑
+i
+yi (29)
+The mode of the posterior diﬀers from the likelihood maximum by the shrinkage factor ( α+1) −1,
+which provides some protection against overﬁtting.
+4.1 Model selection via the evidence
+Returning to the joint distribution (25) and integrating ou t A gives the evidence for linearity,
+with V known:
+p(Y|X, V) = |K|d/2
+|Sxx|d/2 |2πV|N/2 exp(− 1
+2 tr(V−1Sy|x)) (30)
+∼ N (MX, V, IN − XTS−1
+xx X) (31)
+4
+
+--- PAGE 5 ---
+This can also be derived from (1), (8), and the properties of t he matrix-normal distribution.
+The invariant prior reduces this to
+p(Y|X, V, α) =
+( α
+α + 1
+)md/2
+|2πV|−N/2 exp(− 1
+2tr(V−1Sy|x)) (32)
+Sy|x = YYT − (α + 1)−1YXT(XXT)−1XYT (33)
+When α = 0, Sy|x attains its smallest value of
+Sy|x = Y(IN − XT(XXT)−1X)YT (34)
+which has an intuitive geometrical interpretation. The mat rix XT(XXT)−1X is the projection
+matrix for the subspace spanned by the columns of X. Therefore IN − XT(XXT)−1X extracts
+the component of Y orthogonal to the input, which is precisely the noise e.
+However, even though α = 0 provides the best ﬁt to the data, the probability of the dat a is
+zero. This is because the prior is so broad that any particula r dataset must get vanishingly
+small probability. The only way to increase the probability assigned to D is to make the prior
+narrower, which also means shrinking the regression coeﬃci ents toward zero.
+By zeroing the gradient with respect to α, we ﬁnd that the evidence is maximized when
+α = md
+tr(V−1YXT(XXT)−1XYT) − md (35)
+This estimator behaves in a reasonable way: it shrinks more w hen N is small, m is large, or the
+noise level V is large, in order to reduce overﬁtting.
+The evidence for linearity is useful for selecting among diﬀ erent linear models, namely models
+with diﬀerent inputs. The diﬀerent inputs might be diﬀerent nonlinear transformations of the
+measurements. If we consider the diﬀerent inputs as separat e models with separate priors, then
+we compute (35) and (30) for each model and see which is larges t. Figure 1 has an example
+of using this rule to select polynomial order. The data is syn thetic with N = 50 and known
+variance V = 10. For order k, the input vector is x = [1 x x 2 · · · xk]T. Because of the invariant
+prior, it doesn’t matter if we use monomials versus Legendre polynomials or Hermite polynomials
+(though for MacKay (1992), it did matter).
+Another approach is to construct a composite model with all po ssible inputs and determine
+which coeﬃcients to set to zero. This method is mathematical ly identical to the ﬁrst except
+that all models use the same value of α. Unfortunately, this makes model selection more diﬃcult
+because typically the best model depends on α.
+5
+
+--- PAGE 6 ---
+−4 −2 0 2 4
+−50
+−40
+−30
+−20
+−10
+0
+10
+20
+30
+k = 1
+−4 −2 0 2 4
+−50
+−40
+−30
+−20
+−10
+0
+10
+20
+30
+k = 2
+−4 −2 0 2 4
+−50
+−40
+−30
+−20
+−10
+0
+10
+20
+30
+k = 3
+−4 −2 0 2 4
+−50
+−40
+−30
+−20
+−10
+0
+10
+20
+30
+k = 4
+−4 −2 0 2 4
+−50
+−40
+−30
+−20
+−10
+0
+10
+20
+30
+k = 5
+−4 −2 0 2 4
+−50
+−40
+−30
+−20
+−10
+0
+10
+20
+30
+k = 6
+1 1.5 2 2.5 3 3.5 4 4.5 5 5.5 6
+0
+0.2
+0.4
+0.6
+0.8
+1
+1.2
+1.4
+1.6
+1.8
+x 10
+−57 Likelihood
+k
+1 1.5 2 2.5 3 3.5 4 4.5 5 5.5 6
+0
+0.5
+1
+1.5
+2
+2.5
+3
+3.5
+4
+4.5
+5
+x 10
+−64 Evidence
+k
+Figure 1: Example of using the evidence to select model order . A synthetic data set is approx-
+imated by polynomials of varying order. The likelihood curv e always increases with increasing
+order while the evidence curve has a clear maximum at k = 3 (the true order in this case).
+6
+
+--- PAGE 7 ---
+In the non-regression case, the evidence for Gaussianity is
+p(D|V, α) =
+( α
+α + 1
+)md/2
+|2πV|−N/2 exp(− 1
+2 tr(V−1S) (36)
+S = (
+∑
+i
+yiyT
+i ) − N
+(α + 1) ¯y¯yT (37)
+= Y(IN − 1
+(α + 1)N 11T)YT (38)
+which incorporates shrinkage of the mean. This formula can b e used for a variety of purposes,
+such as testing whether two populations with the same varian ce also have the same mean. The
+evidence is maximized when
+α = d
+N ¯yTV−1 ¯y − d (39)
+4.2 Predicting new outputs
+To predict the y output for a new x input, combine the matrix-normal distribution (26) for A
+with the deﬁnition (1) of y to get
+p(y|x, D, V) = N (SyxS−1
+xx x, Vc−1) (40)
+c = (1 + xTS−1
+xx x)−1 = 1 − xT(Sxx + xxT)−1x (41)
+This result can also be derived by considering an augmented d ata set D′ = {y, x} ∪ D and then
+computing the evidence ratio p(D′|V)/p(D|V).
+Since E[y|x, D] = E[A|D]x, the expected value of y given x is identical to substituting the
+posterior mean (or mode) for A. But the variance of y is not simply V; it depends on the input
+x. Figure 2 plots the contours of the predictive density condi tional on x. The mean is a straight
+line with slope SyxS−1
+xx , while the standard deviation lines are curved to account fo r uncertainty
+in the model. That is, the model is allowed to wiggle within th e constraints provided by the
+data. Only near the training data can predictions be conside red reliable.
+In the non-regression case, we have c−1 = 1 + 1
+N (α+1) so the predictive density is
+p(y|D) ∼ N ((α + 1)−1 ¯y, N (α + 1) + 1
+N (α + 1) V) (42)
+which again incorporates wiggle of the unknown mean.
+The predictive density for K new samples ( Y′, X′) is derived in the same way, via (13):
+p(Y′|X′, D, V) ∼ N (SyxS−1
+xx X′, V, C) (43)
+C = ( IK + (X′)TS−1
+xx X′)−1 = IK − (X′)T(Sxx + X′(X′)T)−1X′ (44)
+7
+
+--- PAGE 8 ---
+−5 −4 −3 −2 −1 0 1 2 3 4 5
+−10
+−8
+−6
+−4
+−2
+0
+2
+4
+6
+8
+10
+x
+y
+Figure 2: Contours of the predictive density for y, given three training points (circles). The
+model is y = ax (a line through the origin).
+In the non-regression case, we have
+C = IK − 11T/(N (α + 1) + K) (45)
+p(Y′|Y, V) ∼ N ((α + 1)−1 ¯y1T, V, C) (46)
+5 Unknown V
+A conjugate prior for V is the inverse Wishart distribution:
+p(V) ∼ W −1(S0, n) (47)
+= 1
+Znd |V|(d+1)/2
+⏐⏐⏐⏐
+V−1S0
+2
+⏐⏐⏐⏐
+n/2
+exp(− 1
+2 tr(V−1S0)) (48)
+where Znd = πd(d−1)/4
+d∏
+i=1
+Γ(( n + 1 − i)/2)
+The invariant prior used in this paper is
+p(V|N0) ∼ W −1(N0Id, N0) (49)
+where N0 is optimized via empirical Bayes. The Jeﬀreys prior for V is obtained in the limit
+N0 → 0.
+The marginal likelihood (30) times the conjugate prior is
+p(Y, V|X) ∝ 1
+|V|(d+1)/2 |2πV|(N +N0)/2 exp(− 1
+2 tr(V−1(Sy|x + S0))) (50)
+8
+
+--- PAGE 9 ---
+so the posterior for V is inverse Wishart:
+p(V|D) ∼ W −1(Sy|x + S0, N + N0) (51)
+Integrating V out of (50) gives the evidence for linearity:
+p(Y|X) = Z(N +N0)d
+ZN0d
+|K|d/2
+|Sxx|d/2
+|S0|N0/2
+πN d/2
+⏐⏐Sy|x + S0
+⏐⏐(N +N0)/2 (52)
+∼ T (MX, S0, I − XTS−1
+xx X, N + N0) (53)
+This is a matrix-T distribution, analogous to the matrix-no rmal. A d × m matrix A is matrix-T
+distributed if
+p(A) ∼ T (M, V, K, n) (54)
+=
+∏d
+i=1 Γ(( n + 1 − i)/2)∏d
+i=1 Γ(( n − m + 1 − i)/2)
+|K|d/2
+|πV|m/2
+⏐⏐(A − M)TV−1(A − M)K + Im
+⏐⏐−n/2
+(55)
+Substituting the invariant prior gives
+p(Y|X) =
+∏d
+i=1 Γ(( N + N0 + 1 − i)/2)∏d
+i=1 Γ(( N0 + 1 − i)/2)
+( α
+α + 1
+)md/2
+(πN0)−N d/2
+⏐⏐⏐⏐
+Sy|x
+N0
++ Id
+⏐⏐⏐⏐
+−(N +N0)/2
+(56)
+The optimum ( α, N0) can be computed by iterating the ﬁxed-point equations
+ˆV = ( Sy|x + N0Id)/(N + N0) (57)
+α = md
+tr( ˆV−1YXT(XXT)−1XYT) − md
+(58)
+N new
+0 = d − 1 + (N0 + 1 − d)
+∑d
+i=1 Ψ((N + N0 + 1 − i)/2) − Ψ((N0 + 1 − i)/2)
+log
+⏐⏐⏐
+Sy|x
+N0
++ Id
+⏐⏐⏐ + tr( ˆV−1) − d
+(59)
+Similarly, we can multiply the predictive distribution (40 ) by the posterior for V and integrate
+out V, to get the predictive density
+p(y|x, D) = T (SyxS−1
+xx x, (Sy|x + S0)c−1, N + N0 + 1) (60)
+In the non-regression case, c−1 = 1 + 1
+N (α+1) so
+p(y|D) ∼ T ((α + 1)−1 ¯y, N (α + 1) + 1
+N (α + 1) (S + S0), N + N0 + 1) (61)
+The prediction for K new samples is
+p(Y′|X′, D) ∼ T (SyxS−1
+xx X′, Sy|x + S0, C, N + N0 + K) (62)
+In the non-regression case, this is
+p(Y′|D) ∼ T ((α + 1)−1 ¯y1T, S + S0, C, N + N0 + K) (63)
+9
+
+--- PAGE 10 ---
+6 Piecewise regression
+Piecewise regression allows diﬀerent parts of the data to fo llow diﬀerent regression laws. Consider
+the model
+p(yi|xi, A1, V1, A2, V2) ∼
+{
+N (A1xi, V1) if i < t
+N (A2xi, V2) if i ≥ t (64)
+This is known as a changepoint model: the ﬁrst t − 1 observations follow one model, and the
+rest follow another. The changepoint t is unknown and must be estimated. This model and its
+generalizations are useful for segmenting time-series dat a such as speech. See Broemeling (1985)
+for more discussion of this model.
+In this model, the x values need not be increasing or have any other pattern, thou gh in the
+examples they will be increasing. Also, the linear pieces do n ot necessarily meet.
+Given a prior p(t) on the changepoint location, the posterior can be readily c omputed via
+p(t|D) ∝ p(t)p(y1..yt−1|x1..xt−1)p(yt..yN |xt..xN ) (65)
+where the last two terms are given by separate applications o f (52). The normalizing constant
+is the evidence for the existence of a changepoint:
+p(D|changepoint) =
+N∑
+t=1
+p(t)p(y1..yt−1|x1..xt−1)p(yt..yN |xt..xN ) (66)
+Fitting a line is meaningless if there are less than two data p oints, so a reasonable p(t) is uniform
+from 3 to N − 1.
+Figure 3 shows two examples: one where there is a changepoint and one where there is not. In
+the ﬁrst example, the odds of a changepoint ((66) divided by ( 52)) are overwhelming, while in
+the second example the odds are 300:1 against a changepoint. The optimal ( α, N0) was used in
+each evaluation of (52).
+Seber & Wild (1989) describe a variety of ways to enforce cont inuity of the piecewise linear
+function. For example, we could use a coupled prior on A1 and A2 that requires the lines (or
+planes) to meet at a given point (or edge). But the simplest an d most general way to get a
+continuous piecewise regression is the method of basis func tions, described in section 7.
+A model more ﬂexible than the changepoint model is the switching regression model, where the
+regression law can switch back and forth throughout the data . For a recent paper see Chen &
+Liu (1996).
+10
+
+--- PAGE 11 ---
+−4 −3 −2 −1 0 1 2 3 4
+−4
+−3.5
+−3
+−2.5
+−2
+−1.5
+−1
+−0.5
+0
+0.5
+1
+x
+y
+−2 −1.5 −1 −0.5 0 0.5 1 1.5 2
+−1
+−0.8
+−0.6
+−0.4
+−0.2
+0
+0.2
+0.4
+0.6
+0.8
+1
+x
+y
+log p(t|D) log p(t|D)
+4 6 8 10 12 14 16 18
+−30
+−25
+−20
+−15
+−10
+4 6 8 10 12 14 16 18
+−3
+−2.5
+−2
+−1.5
+−1
+−0.5
+0
+0.5
+1
+1.5
+2
+Figure 3: Example of changepoint analysis. On the left, the c hangepoint at t = 9 is correctly
+found. On the right, there is no changepoint.
+11
+
+--- PAGE 12 ---
+7 Basis function regression
+Basis function regression is the special case where the inpu ts xi are functions of a common
+quantity z:
+xi = fi(z) (67)
+All formulas remain the same, but now the predictive density p(y|x, D) can be viewed as a
+function of z. This technique was already used in ﬁgure 1, where fi(z) = zi−1. Other choices
+include fi(z) = |z − ti|, which yields a piecewise linear regression with changepoi nts ti, fi(z) =
+exp(− 1
+2h (z − ti)2), which superimposes smooth bumps, and fi(z) = tanh( hi(x − ti)), which
+superimposes smooth ramps. Figure 4 shows examples of these three bases.
+0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1
+−2.5
+−2
+−1.5
+−1
+−0.5
+0
+0.5
+1
+1.5
+2
+z
+y
+0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1
+−4
+−3
+−2
+−1
+0
+1
+2
+3
+z
+y
+0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1
+−1
+−0.5
+0
+0.5
+1
+1.5
+2
+z
+y
+−0.5 0 0.5 1 1.5
+−2.5
+−2
+−1.5
+−1
+−0.5
+0
+0.5
+1
+1.5
+z
+y
+Figure 4: Example of basis function regression. The contour s of the predictive density are shown
+for a polynomial basis, a piecewise linear basis, a Gaussian basis, and a tanh basis.
+The evidence formula (52) can be used to tune parameters with in the basis functions, such as the
+ti’s. This is an alternative to least-squares procedures for “ generalized basis functions” (Poggio
+& Girosi, 1990). Bretthorst (1988) used the evidence techni que for spectrum analysis: the basis
+12
+
+--- PAGE 13 ---
+functions were sinusoids with ﬂexible frequency and phase p arameters. Multi-layer perceptrons
+(MLPs) can also be viewed as basis function regressors with ﬂ exible basis functions. The basis
+functions are the hidden unit responses; typically tanh fun ctions.
+References
+[1] George E. P. Box and George C. Tiao. Bayesian Inference in Statistical Analysis .
+Addison-Wesley, 1973.
+[2] G. Larry Bretthorst. Bayesian Spectrum Analysis and Parameter Estimation .
+Springer-Verlag, 1988. http://bayes.wustl.edu/glb/book.pdf.
+[3] Lyle Broemeling. Bayesian analysis of linear models . Marcel Dekker, 1985.
+[4] R. Chen and J. S. Liu. Predictive updating methods with ap plication to Bayesian
+classiﬁcation. Journal of the Royal Statistical Society B , 58:397–415, 1996.
+http://playfair.stanford.edu/reports/jliu/pre-up.ps.Z.
+[5] S. F. Gull. Bayesian inductive inference and maximum ent ropy. In G. J. Erickson and
+C. R. Smith, editors, Maximum Entropy and Bayesian Methods , pages 53–74. Kluwer
+Academic Publishers, 1988. http://bayes.wustl.edu/sfg/gull.html.
+[6] D. J. C. MacKay. Bayesian interpolation. Neural Computation , 4(3):415–447, 1992.
+http://wol.ra.phy.cam.ac.uk/mackay/inter.nc.ps.gz.
+[7] T. Poggio and F. Girosi. Networks for approximation and le arning. Proc. of IEEE ,
+78:1481–1497, 1990.
+[8] G. A. F. Seber and C. J. Wild. Nonlinear Regression. John Wiley & Sons, 1989.
+13

@@ -1,0 +1,17 @@
+[
+  {
+    "source_path": "D:\\BCI\\n2p3-net\\.venv\\Lib\\site-packages\\moabb\\datasets\\bnci\\bnci_2014.py",
+    "file": "bnci_reader_bnci_2014.py",
+    "sha256": "ec4b3ce868bb839f6cc070de6e4ad1896e2c441dc127d89c4081b187da005d91"
+  },
+  {
+    "source_path": "D:\\BCI\\n2p3-net\\.venv\\Lib\\site-packages\\moabb\\datasets\\bnci\\utils.py",
+    "file": "bnci_reader_utils.py",
+    "sha256": "0ed74bc5e6d866dcba6c91c87d3371a2a4e6f7af0d4c889ad9b00d73856f6fbd"
+  },
+  {
+    "source_path": "D:\\BCI\\n2p3-net\\src\\data\\bnci2014_008_candidate.py",
+    "file": "bnci_reader_bnci2014_008_candidate.py",
+    "sha256": "3cfb395f590ac74d69c13d50f65cb32c368126103552d0e0ea22e486d6b406c1"
+  }
+]

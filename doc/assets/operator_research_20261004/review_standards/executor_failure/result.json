@@ -1,0 +1,9 @@
+{
+  "status": "running",
+  "plan_sha256": "36ba7a1efcaab59435102cb4a9907e5f3061ca7ad7ba8dd0eaf9b1ae46ebf2dc",
+  "source_sha256": "2f4f405d834943dbfa874b0ec150fc4a5ddf18c1e1ad310767e00b950e7f7343",
+  "requested_cells": 768,
+  "cells": [],
+  "subject_failures": [],
+  "evidence_scope": "public_calibration_development"
+}

@@ -1,0 +1,57 @@
+{
+  "status": "passed",
+  "folds": 48,
+  "models_per_fold": 3,
+  "erp_challenges": 2016,
+  "pseudo_cuts": 1504,
+  "unavailable_preserved": 80,
+  "participants": 8,
+  "source_target_disjoint": true,
+  "both_classes_each_fold": true,
+  "inconsistent_operator_constraints_rejected": 32,
+  "cleanup_numeric_identity_preserved": true,
+  "ruff": "passed",
+  "independent": {
+    "ar3_spectral_radius": 0.561157320621996,
+    "ar3_whitening_max_error": 2.220446049250313e-16,
+    "ar3_dense_innovations_quadratic_max_error": 4.263256414560601e-14,
+    "ar3_logdet_difference": 5.329070518200751e-15,
+    "ar3_external_state_stationary_covariance": [
+      [
+        1.819195046439629,
+        0.93374613003096,
+        0.2897832817337462
+      ],
+      [
+        0.93374613003096,
+        1.819195046439629,
+        0.93374613003096
+      ],
+      [
+        0.2897832817337461,
+        0.93374613003096,
+        1.819195046439629
+      ]
+    ],
+    "ar3_external_state_given_observed_covariance": [
+      [
+        1.3000000000000003,
+        0.7800000000000002,
+        0.20800000000000002
+      ],
+      [
+        0.7800000000000002,
+        1.7680000000000005,
+        0.9048000000000002
+      ],
+      [
+        0.208,
+        0.9048000000000002,
+        1.8012800000000004
+      ]
+    ],
+    "constrained_svd_vs_kkt_max_error": 6.661338147750939e-16,
+    "physical_prefix_draws": 1504,
+    "validation_scope": "Independent numerical mathematics and saved data identity; not classifier performance"
+  }
+}

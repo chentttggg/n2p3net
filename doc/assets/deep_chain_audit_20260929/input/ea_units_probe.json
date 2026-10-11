@@ -1,0 +1,299 @@
+{
+  "scope": "Read-only historical state verification and real-data algebra; no training",
+  "historical": [
+    {
+      "path": "D:\\BCI\\n2p3-net\\cloud_inputs\\bi2014a_ea_target_calibration_relaxed_eligible61.record.json",
+      "sha256": "84f401074be13b2abcd400b24649c107a78ad3280924f9852ff3a0e97c601a37",
+      "shape": [
+        12252,
+        16,
+        179
+      ],
+      "declared_signal_unit": "V",
+      "scope": "target_calibration",
+      "state": {
+        "input_second_moment_eigenvalues_V2": [
+          4.0497697158510115e-09,
+          5.790040383213345e-09,
+          6.060054275961185e-09,
+          6.698511746936656e-09,
+          8.735895311249121e-09,
+          1.1114367968740445e-08,
+          1.314451452142163e-08,
+          1.7687579409555002e-08,
+          1.9595112305699773e-08,
+          2.3097827143911153e-08,
+          2.821337754915699e-08,
+          3.8357372381994704e-08,
+          4.538443573163144e-08,
+          5.92431371642279e-08,
+          6.791010017970383e-08,
+          4.5113075828184014e-07
+        ],
+        "input_condition_number": 111.39664473169688,
+        "configured_floor_V2": 1e-06,
+        "actual_added_isotropic_V2": 9.95950230284149e-07,
+        "floor_over_trace_mean": 19.845875588816977,
+        "reported_condition_number": 1.4470809885659894,
+        "output_second_moment_eigenvalues": [
+          0.0040497697158510286,
+          0.005779981650688751,
+          0.0060478962834414176,
+          0.006680815988825104,
+          0.00869514875212599,
+          0.011036400234922618,
+          0.013026045957611523,
+          0.01744960501710145,
+          0.019295162395928232,
+          0.022666082306468372,
+          0.027547725122594843,
+          0.03708507245148398,
+          0.043582949087132034,
+          0.05614434187307965,
+          0.06383366146390143,
+          0.31175225287763353
+        ],
+        "output_condition_number": 76.98024202645833,
+        "relative_frobenius_whitening_residual": 0.9617949648174152,
+        "best_scalar_transform": 980.5179404941944,
+        "W_relative_difference_from_scalar_I": 0.04034377197768783
+      },
+      "EA_fit_sample_count": 12900,
+      "participant_exclusion": {
+        "policy": "bi2014a_exclude_62_64_20260906",
+        "author_source": "https://hal.science/hal-02171575/document#page=4",
+        "parent_cache_sha256": "24a36f75e1f1f38f13f40ca5579131b1e6adf5cc9e027c065554cc9470bbaafd",
+        "excluded_origin_keys": [
+          "n2p3-origin://BI2014a-candidate%3A62/participant/62",
+          "n2p3-origin://BI2014a-candidate%3A63/participant/63",
+          "n2p3-origin://BI2014a-candidate%3A64/participant/64"
+        ],
+        "removed_rows": 648,
+        "retained_rows_unchanged": true
+      },
+      "EA_then_exclusion_lineage": [
+        {
+          "operation": "euclidean_alignment",
+          "parent_entity_digests": [
+            "271cf14a39e1c368decddd46e086193988697a80e962b20fbda5487377c29381"
+          ],
+          "parameters": {
+            "fit_scope": "target_calibration",
+            "max_condition_number": 1000000000000.0,
+            "reference_mode": "native_preserve",
+            "regularization": 1e-06,
+            "shrinkage": 0.0
+          },
+          "entity_digest": "6ded4ea8b87df94dd8f30ce74ba9fd66476696ed3f87f6d15a5fbfe1f5c11124"
+        },
+        {
+          "operation": "exclude_author_rejected_participants",
+          "parent_entity_digests": [
+            "6ded4ea8b87df94dd8f30ce74ba9fd66476696ed3f87f6d15a5fbfe1f5c11124"
+          ],
+          "parameters": {
+            "policy": "bi2014a_exclude_62_64_20260906",
+            "author_source": "https://hal.science/hal-02171575/document#page=4",
+            "parent_cache_sha256": "24a36f75e1f1f38f13f40ca5579131b1e6adf5cc9e027c065554cc9470bbaafd",
+            "excluded_origin_keys": [
+              "n2p3-origin://BI2014a-candidate%3A62/participant/62",
+              "n2p3-origin://BI2014a-candidate%3A63/participant/63",
+              "n2p3-origin://BI2014a-candidate%3A64/participant/64"
+            ],
+            "removed_rows": 648,
+            "retained_rows_unchanged": true
+          },
+          "entity_digest": "b586d848a2adfa92023d1d5ba85f2af8f89d46ed083b6f27e81e590d0039e553"
+        }
+      ]
+    },
+    {
+      "path": "D:\\BCI\\n2p3-net\\cloud_inputs\\bi2014a_ea_source_rows_relaxed_eligible61.record.json",
+      "sha256": "0b6cb7f4428c7278df584fe95cba62c8882b76326c87ee02b2e5d2e7472fbf78",
+      "shape": [
+        57437,
+        16,
+        179
+      ],
+      "declared_signal_unit": "V",
+      "scope": "source_rows",
+      "state": {
+        "input_second_moment_eigenvalues_V2": [
+          5.077179950138005e-09,
+          7.779033491161733e-09,
+          9.48168897136979e-09,
+          1.2122848095311593e-08,
+          1.5097169102761416e-08,
+          1.7067019339825905e-08,
+          2.1547011792529657e-08,
+          2.555132134202425e-08,
+          3.054973797493725e-08,
+          4.3024236422867446e-08,
+          5.3170863928638986e-08,
+          6.268093960171897e-08,
+          7.761195819041196e-08,
+          1.6792313254054696e-07,
+          2.41942444454023e-07,
+          1.4306955863449986e-06
+        ],
+        "input_condition_number": 281.7894186133998,
+        "configured_floor_V2": 1e-06,
+        "actual_added_isotropic_V2": 9.94922820049862e-07,
+        "floor_over_trace_mean": 7.202917345791395,
+        "reported_condition_number": 2.4256184063948623,
+        "output_second_moment_eigenvalues": [
+          0.005077179950138034,
+          0.007758072316003237,
+          0.00944010992205668,
+          0.012038032115902006,
+          0.014947396353440057,
+          0.01686481294132235,
+          0.021197886171864938,
+          0.02503867595035118,
+          0.029790887855429448,
+          0.04145128227356537,
+          0.050731022180007496,
+          0.05926694097831941,
+          0.072363115644372,
+          0.14440703187423432,
+          0.19560937751054697,
+          0.5898271478205874
+        ],
+        "output_condition_number": 116.17219669445669,
+        "relative_frobenius_whitening_residual": 0.9297589405595207,
+        "best_scalar_transform": 957.2638959039502,
+        "W_relative_difference_from_scalar_I": 0.08918792674033987
+      },
+      "EA_fit_sample_count": 61011,
+      "participant_exclusion": {
+        "policy": "bi2014a_exclude_62_64_20260906",
+        "author_source": "https://hal.science/hal-02171575/document#page=4",
+        "parent_cache_sha256": "31551ba725cca0cf3f98ce28ea4d827a24ccec61791b822a9d93df3ecab7e5c5",
+        "excluded_origin_keys": [
+          "n2p3-origin://BI2014a-candidate%3A62/participant/62",
+          "n2p3-origin://BI2014a-candidate%3A63/participant/63",
+          "n2p3-origin://BI2014a-candidate%3A64/participant/64"
+        ],
+        "removed_rows": 3574,
+        "retained_rows_unchanged": true
+      },
+      "EA_then_exclusion_lineage": [
+        {
+          "operation": "euclidean_alignment",
+          "parent_entity_digests": [
+            "563853a170ddd166ed2f3182f8b3d79572d6c0704b8813a5fd736046d8bcaab1"
+          ],
+          "parameters": {
+            "fit_scope": "source_rows",
+            "max_condition_number": 1000000000000.0,
+            "reference_mode": "native_preserve",
+            "regularization": 1e-06,
+            "shrinkage": 0.0
+          },
+          "entity_digest": "5417cf7ab5bb47c5dd03712a7b8259577a6650596c0bd2e5796511215e9a5f83"
+        },
+        {
+          "operation": "exclude_author_rejected_participants",
+          "parent_entity_digests": [
+            "5417cf7ab5bb47c5dd03712a7b8259577a6650596c0bd2e5796511215e9a5f83"
+          ],
+          "parameters": {
+            "policy": "bi2014a_exclude_62_64_20260906",
+            "author_source": "https://hal.science/hal-02171575/document#page=4",
+            "parent_cache_sha256": "31551ba725cca0cf3f98ce28ea4d827a24ccec61791b822a9d93df3ecab7e5c5",
+            "excluded_origin_keys": [
+              "n2p3-origin://BI2014a-candidate%3A62/participant/62",
+              "n2p3-origin://BI2014a-candidate%3A63/participant/63",
+              "n2p3-origin://BI2014a-candidate%3A64/participant/64"
+            ],
+            "removed_rows": 3574,
+            "retained_rows_unchanged": true
+          },
+          "entity_digest": "17e296f070f5c52354214e0237b1b1340513355f52f362cc07de7fb4592c402c"
+        }
+      ]
+    }
+  ],
+  "real_huebner": {
+    "raw_sha256": "c4e72cb9d5693215b602fb9864129742121ca2ffd07ccaec61728d785877afb5",
+    "rows": 64,
+    "channels": [
+      "P3",
+      "P4",
+      "Fz",
+      "Cz",
+      "Pz"
+    ],
+    "default_state": {
+      "input_second_moment_eigenvalues_V2": [
+        2.6083253622807198e-11,
+        5.2639048005487385e-11,
+        6.898364030378849e-11,
+        2.6568138337332366e-10,
+        6.784311838898286e-10
+      ],
+      "input_condition_number": 26.01022072248718,
+      "configured_floor_V2": 1e-06,
+      "actual_added_isotropic_V2": 9.99973916746377e-07,
+      "floor_over_trace_mean": 4579.5156959607075,
+      "reported_condition_number": 1.0006523479302671,
+      "output_second_moment_eigenvalues": [
+        2.6083253622807178e-05,
+        5.2637650170872684e-05,
+        6.898068100589983e-05,
+        0.0002656177418591459,
+        0.0006779888992346683
+      ],
+      "output_condition_number": 25.993264070469923,
+      "relative_frobenius_whitening_residual": 0.9997817683854149,
+      "best_scalar_transform": 999.9038961709912,
+      "W_relative_difference_from_scalar_I": 0.0001225586986769027
+    },
+    "scale_aware_diagnostic_state": {
+      "input_second_moment_eigenvalues_V2": [
+        2.6083253622807198e-11,
+        5.2639048005487385e-11,
+        6.898364030378849e-11,
+        2.6568138337332366e-10,
+        6.784311838898286e-10
+      ],
+      "input_condition_number": 26.01022072248718,
+      "configured_floor_V2": 2.1836370212025001e-16,
+      "actual_added_isotropic_V2": 0,
+      "floor_over_trace_mean": 1.0000000012877736e-06,
+      "reported_condition_number": 26.010220722487176,
+      "output_second_moment_eigenvalues": [
+        0.9999999999999963,
+        0.9999999999999982,
+        0.9999999999999987,
+        0.9999999999999992,
+        1.000000000000001
+      ],
+      "output_condition_number": 1.0000000000000049,
+      "relative_frobenius_whitening_residual": 1.8671006592444683e-15,
+      "best_scalar_transform": 110755.39695720891,
+      "W_relative_difference_from_scalar_I": 0.45186553243260985
+    },
+    "actual_standardizer_relative_rms_difference": 0.06970220804214478,
+    "epsilon_free_standardizer_relative_rms_difference": 0.00011838784121209756,
+    "same_default_on_V_vs_uV_output_relative_difference": 0.9874294400215149,
+    "relative_default_outputs_std": [
+      0.01473473384976387,
+      0.9992298483848572,
+      0.9992298483848572
+    ]
+  },
+  "current_loader_historical_cache": {
+    "status": "accepted",
+    "n_subjects": 61,
+    "shape": [
+      12252,
+      16,
+      179
+    ],
+    "signal_unit": "V",
+    "median_channel_std_claimed_V": 0.030435241758823395,
+    "peak_abs_claimed_V": 9.588746070861816,
+    "EA_fit_sample_count": 12900
+  }
+}

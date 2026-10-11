@@ -1,0 +1,59 @@
+[
+  {
+    "file": "rerp_ii_full.xml",
+    "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5306445/fullTextXML",
+    "fetched_utc": "2026-10-04T12:56:55.654430+00:00",
+    "status": 500,
+    "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5306445/fullTextXML",
+    "content_type": "application/json",
+    "bytes": 150,
+    "sha256": "859ffb72e68066096737409618ddf4a43bc7757cb0ae7dbe16ec32bab7eead7a"
+  },
+  {
+    "file": "mtrf_full.xml",
+    "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5127806/fullTextXML",
+    "fetched_utc": "2026-10-04T12:56:55.654996+00:00",
+    "status": 200,
+    "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5127806/fullTextXML",
+    "content_type": "application/xml",
+    "bytes": 164876,
+    "sha256": "83e293182791c9c46d79adea2a1cd812204e5e0c37cedb13dbf1229d00e08fa2"
+  },
+  {
+    "file": "unfold_filter_simulation.m",
+    "requested_url": "https://raw.githubusercontent.com/unfoldtoolbox/unfold/7961dc7fe446332e75dfd132e514a103929da6ff/src/simulations/filter_effects.m",
+    "fetched_utc": "2026-10-04T12:56:55.655337+00:00",
+    "status": 200,
+    "final_url": "https://raw.githubusercontent.com/unfoldtoolbox/unfold/7961dc7fe446332e75dfd132e514a103929da6ff/src/simulations/filter_effects.m",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 2358,
+    "sha256": "d4d9ce1148d732469b65d32222b49ee7435ff0639c4cb15ea0a0d8b6062755d5"
+  },
+  {
+    "file": "mtrf_train.m",
+    "requested_url": "https://raw.githubusercontent.com/mickcrosse/mTRF-Toolbox/42d43ffbddb084905c1b57c667e3690d80152bd2/mtrf/mTRFtrain.m",
+    "fetched_utc": "2026-10-04T12:56:55.655575+00:00",
+    "status": 200,
+    "final_url": "https://raw.githubusercontent.com/mickcrosse/mTRF-Toolbox/42d43ffbddb084905c1b57c667e3690d80152bd2/mtrf/mTRFtrain.m",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 9171,
+    "sha256": "2afc54eea5589e4bd870c51e62442e1648cf504acbd6eae4a2c495d0964fd989"
+  },
+  {
+    "file": "mtrf_crossval.m",
+    "requested_url": "https://raw.githubusercontent.com/mickcrosse/mTRF-Toolbox/42d43ffbddb084905c1b57c667e3690d80152bd2/mtrf/mTRFcrossval.m",
+    "fetched_utc": "2026-10-04T12:56:57.002475+00:00",
+    "error": "('Connection aborted.', ConnectionResetError(10054, '\u8fdc\u7a0b\u4e3b\u673a\u5f3a\u8feb\u5173\u95ed\u4e86\u4e00\u4e2a\u73b0\u6709\u7684\u8fde\u63a5\u3002', None, 10054, None))",
+    "status": null
+  },
+  {
+    "file": "scipy_filtfilt.html",
+    "requested_url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html",
+    "fetched_utc": "2026-10-04T12:56:57.329525+00:00",
+    "status": 200,
+    "final_url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html",
+    "content_type": "text/html",
+    "bytes": 48470,
+    "sha256": "6d9acd9f3b055e1c34e2682e81b3dddf05308f81f0cceeadd2294055612de4ee"
+  }
+]

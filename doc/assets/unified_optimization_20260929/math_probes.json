@@ -1,0 +1,61 @@
+{
+  "scope": "synthetic mathematics and existing EA contract; no training or efficacy claim",
+  "script_sha256": "552f46edc15952215f3c50c65c5f28b42314391bebac156d4ff61fe1de996fa6",
+  "torch": "2.13.0+cu130",
+  "numpy": "2.5.2",
+  "passed": 11,
+  "results": [
+    {
+      "name": "negative_interaction_without_decision_or_gradient_conflict",
+      "status": "PASS",
+      "interaction": -0.12
+    },
+    {
+      "name": "zero_parameter_prior_does_not_anchor_normalized_function",
+      "status": "PASS"
+    },
+    {
+      "name": "direct_decision_gradient_and_zero_logit_scale",
+      "status": "PASS",
+      "coefficient": 0.056250000000000015
+    },
+    {
+      "name": "row_column_decision_gradient_and_zero_logit_scale",
+      "status": "PASS",
+      "coefficient": 0.015000000000000001
+    },
+    {
+      "name": "loss_weight_and_score_temperature_are_not_equivalent",
+      "status": "PASS"
+    },
+    {
+      "name": "positive_temperature_and_joint_permutation_preserve_ranking_or_loss",
+      "status": "PASS"
+    },
+    {
+      "name": "nonconflicting_raw_gradients_can_harm_primary_under_adam_metric",
+      "status": "PASS",
+      "raw_dot": 1.0,
+      "preconditioned_dot": -7.89
+    },
+    {
+      "name": "bilateral_ea_gain_invariance_does_not_justify_plain_checkpoint_plus_target_whitening",
+      "status": "PASS"
+    },
+    {
+      "name": "identical_covariance_does_not_identify_label_orientation",
+      "status": "PASS"
+    },
+    {
+      "name": "frozen_calibration_state_is_read_only_and_roundtrips",
+      "status": "PASS"
+    },
+    {
+      "name": "equal_trial_auc_can_have_different_decision_hit",
+      "status": "PASS",
+      "auc": 0.75,
+      "hit_b": 1.0,
+      "hit_c": 0.5
+    }
+  ]
+}

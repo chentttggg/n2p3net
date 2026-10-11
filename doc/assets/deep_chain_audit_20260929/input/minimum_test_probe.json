@@ -1,0 +1,74 @@
+{
+  "synthetic": [
+    {
+      "available_calibration_or_all": 300,
+      "requested_K": 200,
+      "minimum_test_trials": 200,
+      "separate_test_recordings": false,
+      "returned_budgets": [
+        0,
+        200
+      ],
+      "actual_test_rows": {
+        "0": 100,
+        "200": 100
+      },
+      "adjustments": {}
+    },
+    {
+      "available_calibration_or_all": 300,
+      "requested_K": 200,
+      "minimum_test_trials": 200,
+      "separate_test_recordings": true,
+      "returned_budgets": [
+        0,
+        200
+      ],
+      "actual_test_rows": {
+        "0": 100,
+        "200": 100
+      },
+      "adjustments": {}
+    },
+    {
+      "available_calibration_or_all": 1000,
+      "requested_K": 200,
+      "minimum_test_trials": 200,
+      "separate_test_recordings": true,
+      "returned_budgets": [
+        0,
+        200
+      ],
+      "actual_test_rows": {
+        "0": 100,
+        "200": 100
+      },
+      "adjustments": {}
+    }
+  ],
+  "real_huebner": {
+    "raw_sha256": "c4e72cb9d5693215b602fb9864129742121ca2ffd07ccaec61728d785877afb5",
+    "declared_protocol": {
+      "kind": "single_recording_prefix",
+      "minimum_test_trials": 200
+    },
+    "requested_budgets": [
+      0,
+      200,
+      800
+    ],
+    "effective_budgets": [
+      0,
+      200,
+      380
+    ],
+    "adjustments": {
+      "800": "requested calibration would leave less than about 20% for testing; limited-data 80% policy: requested=800, effective=380"
+    },
+    "actual_test_rows": 91,
+    "prepare_status": "returned",
+    "verify_prepared_prefixes": "accepted",
+    "load_target_prefixes": "accepted",
+    "manifest": "D:\\BCI\\n2p3-net\\doc\\assets\\deep_chain_audit_20260929\\input\\minimum_test_real_prefix\\target_prefixes.json"
+  }
+}

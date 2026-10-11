@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-16",
+  "requests": 6,
+  "records": [
+    {
+      "url": "https://arxiv.org/abs/1802.01483",
+      "status": "success",
+      "read_scope": "official title authors abstract",
+      "retrieved_bytes": 42423,
+      "retrieved_sha256": "538a67d4107f614efc6d7734f764a7424f8b57680c4ef78d4cec326bd0bcb627"
+    },
+    {
+      "url": "https://arxiv.org/html/1802.01483v2",
+      "status": "success",
+      "read_scope": "section 3 and equations 1 through 6; source-centered penalties",
+      "retrieved_bytes": 373701,
+      "retrieved_sha256": "93ec10dc4c58b69b622e7f294729f44a5f91edee6d3a022436972ed2742123c4"
+    },
+    {
+      "url": "https://proceedings.mlr.press/v70/finn17a.html",
+      "status": "success",
+      "read_scope": "official title authors abstract",
+      "retrieved_bytes": 14866,
+      "retrieved_sha256": "4b68e18cff32b5ad8eb4bca248b8d96741ea0966a8f98e0983d739ac64f3d744"
+    },
+    {
+      "url": "https://proceedings.neurips.cc/paper/2020/hash/d89a66c7c80a29b1bdbab0f2a1a94af8-Abstract.html",
+      "status": "success",
+      "read_scope": "official title authors abstract",
+      "retrieved_bytes": 10255,
+      "retrieved_sha256": "f7de222551069374741151e3b9245599f0ebc41ae71976600c13ef9eecf8834f"
+    },
+    {
+      "url": "https://www.jmlr.org/papers/v13/gretton12a.html",
+      "status": "connection_failed",
+      "attempts": 2,
+      "tools": [
+        "curl",
+        "requests"
+      ],
+      "read_scope": "none; excluded from newly verified literature"
+    }
+  ]
+}

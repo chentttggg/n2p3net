@@ -1,0 +1,17 @@
+{
+  "evidence_scope": "source_ingestion_audit",
+  "moabb_version": "1.6.1",
+  "source_file": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A01.mat",
+  "source_sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+  "sample_shape": [
+    347704,
+    8
+  ],
+  "X_dtype": "float64",
+  "conversion": "X microvolt to volt, transpose, metadata/montage assignment",
+  "bitwise_equal_to_X_times_1e_minus_6": true,
+  "max_abs_difference": 0.0,
+  "loader_contains_no_filter_call": true,
+  "warning": "loader transparency does not establish upstream acquisition/distribution processing",
+  "base_source_sha256": "920e327b8131bd6f63a6991863b4b69eff67a18075ea13da916aa09712cf5f5d"
+}

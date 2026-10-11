@@ -1,0 +1,102 @@
+{
+  "confirmed": true,
+  "synthetic_no_fit_probe": true,
+  "old_scope": "software_correctness",
+  "new_scope": "development",
+  "old_evaluation_snapshot": {
+    "archive_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "new_evaluation_snapshot": {
+    "archive_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "old_evaluation_contract": {
+    "arm_name": "zero_shot",
+    "model_origin": {
+      "kind": "checkpoint",
+      "checkpoint_sha256": "3bbcf63bd1751b9354d5d43736b7cdb0d1397c844ab6db466833a52eab80205f",
+      "training_contract_digest": "7361e3d4252db9f724cd7c0996b7c7d32202457d5fa98e154b09a126655c0dc4"
+    },
+    "target_cache_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "target_identity_digest": "63111dd2853efa501c72a499b3cbafa75fc3807fd6209acb68ca71f7e6d66996",
+    "source_snapshot_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "target_protocol": {
+      "kind": "single_recording_prefix"
+    },
+    "adaptation": {
+      "stage": "compact",
+      "actual_K": 0,
+      "recipe": null,
+      "selector_mode": null,
+      "score_scope": "final_test"
+    },
+    "decision": {
+      "kind": "binary_no_candidate_claim"
+    },
+    "requested_participant_keys": [
+      "n2p3-origin://synthetic_p300/participant/p1"
+    ],
+    "evidence_scope": {
+      "stage": "software_correctness",
+      "product_confirmation": false,
+      "heldout_study": "synthetic_p300",
+      "source_study_membership_digest": null,
+      "target_study_membership_digest": null
+    },
+    "schema": "n2p3_evaluation_run_contract/2"
+  },
+  "new_evaluation_contract": {
+    "arm_name": "zero_shot",
+    "model_origin": {
+      "kind": "checkpoint",
+      "checkpoint_sha256": "3bbcf63bd1751b9354d5d43736b7cdb0d1397c844ab6db466833a52eab80205f",
+      "training_contract_digest": "7361e3d4252db9f724cd7c0996b7c7d32202457d5fa98e154b09a126655c0dc4"
+    },
+    "target_cache_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "target_identity_digest": "63111dd2853efa501c72a499b3cbafa75fc3807fd6209acb68ca71f7e6d66996",
+    "source_snapshot_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "target_protocol": {
+      "kind": "single_recording_prefix"
+    },
+    "adaptation": {
+      "stage": "compact",
+      "actual_K": 0,
+      "recipe": null,
+      "selector_mode": null,
+      "score_scope": "final_test"
+    },
+    "decision": {
+      "kind": "binary_no_candidate_claim"
+    },
+    "requested_participant_keys": [
+      "n2p3-origin://synthetic_p300/participant/p1"
+    ],
+    "evidence_scope": {
+      "stage": "development",
+      "product_confirmation": false,
+      "heldout_study": "synthetic_p300",
+      "source_study_membership_digest": null,
+      "target_study_membership_digest": null
+    },
+    "schema": "n2p3_evaluation_run_contract/2"
+  },
+  "prediction_reuse": {
+    "origin_record": "D:\\BCI\\n2p3-net\\tmp\\deep_chain_audit_20260929\\import_probe_kgsll_bs\\old\\record.json",
+    "origin_cell": 0,
+    "origin_contract_digest": "6d9e726585b67108f921100d22dad261d8c86ffed43a414770e1afcd9993c267",
+    "origin_result_integrity": {
+      "schema": "n2p3_result_integrity/1",
+      "files": {
+        "prediction": {
+          "name": "00000.npz",
+          "sha256": "83a957673069a6ee5f6738b0768fd7682317320a8049aab43c78a438882ac5a8",
+          "byte_size": 892
+        }
+      },
+      "record_sha256": "fa330b0e26f89ddb9c35fa25b81b2a3d58793f8e642544f5023414000b86a3e2"
+    },
+    "fit_executed": false
+  },
+  "same_auc": true,
+  "artifacts": "D:\\BCI\\n2p3-net\\tmp\\deep_chain_audit_20260929\\import_probe_kgsll_bs",
+  "scope_limit": "Explicit compact cross-run import accepts the change; no evidence of this relabeling in unified12 supplied by this probe"
+}

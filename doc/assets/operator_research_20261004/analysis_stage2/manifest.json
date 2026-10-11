@@ -1,0 +1,18 @@
+{
+  "analysis_source_snapshot": "doc\\assets\\operator_research_20261004\\analysis_stage2\\executed_analysis\\analyze_calibration_study.py",
+  "analysis_source_sha256": "24fac9f34f912c4ec6adf36fbe012c347539d763733b26f58de7f41edc1945c1",
+  "files": {
+    "analysis.json": "47ec44d95b994cf4ad220e304631733d367e9679525da4683c91d5b7d77aee1e",
+    "conditioning_probe.json": "e004787d0b6047418f10e4bff062f405758f3defe4927d29a2d4ed252c65281f",
+    "diagnostic_cells.json": "efb6e93f309023798022dd453ce56faca8880be95f32e319d9042a193b3cb2db",
+    "probe_conditioning.py": "deacc578894c19e4d195836319edd3da85d8b4aa0c326fb91bc501fc54d1510e",
+    "report.zh.md": "40d6a66abdb51b305675b97e96bd4ef222b06898f5fa71e619acddd6bcbdd1bc",
+    "temporal_noise_conditional_tests.xml": "50d63bcd3d4c7db0c18e2e560e2e55764e56e1bca1fea76af0344eafc969db5d",
+    "executed_analysis/analyze_calibration_study.py": "24fac9f34f912c4ec6adf36fbe012c347539d763733b26f58de7f41edc1945c1",
+    "lattice_execution_verification.json": "17d4c10b6bf620ee863a215db202db5923eea398f3e302cfd150ef7ebb917239",
+    "probe_stationary_innovations.py": "74f45e2c19d3986e978103842871713ec591fd37a5cdd2a8a3dda189d3029752",
+    "stationary_innovations_probe.json": "f0ba844eeffb95296d33727f9859e5cb5033fe33b3150a0538eabaf499c50da1",
+    "stationary_innovations_tests.xml": "6ea96e87bfa3c04b767d96fb8b1f7a0c3e4c1c9bd79a9803deb739c5a8c3ab35",
+    "__pycache__/probe_stationary_innovations.cpython-314.pyc": "dfe822650b162dd6c9fd25f5ac84fb8ff471a5e8db8d0d1098911d264568453c"
+  }
+}

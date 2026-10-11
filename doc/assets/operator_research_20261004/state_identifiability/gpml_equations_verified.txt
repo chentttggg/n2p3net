@@ -1,0 +1,357 @@
+PDF PAGE 10
+C. E. Rasmussen & C. K. I. Williams, Gaussian Processes for Machine Learning, the MIT Press, 2006,
+ISBN 026218253X. c© 2006 Massachusetts Institute of Technology. www.GaussianProcess.org/gpml
+16 Regression
+though this strategy would not be computationally very eﬃcient. Fortunately,
+in probabilistic terms this operation is extremely simple, corresponding to con-
+ditioning the joint Gaussian prior distribution on the observations (see section
+A.2 for further details) to givenoise-free predictive
+distribution
+f∗|X∗,X, f ∼ N
+(
+K(X∗,X )K(X,X )−1f,
+K(X∗,X ∗)−K(X∗,X )K(X,X )−1K(X,X ∗)
+)
+.
+(2.19)
+Function values f∗ (corresponding to test inputs X∗) can be sampled from the
+joint posterior distribution by evaluating the mean and covariance matrix from
+eq. (2.19) and generating samples according to the method described in section
+A.2.
+Figure 2.2(b) shows the results of these computations given the ﬁve data-
+points marked with + symbols. Notice that it is trivial to extend these compu-
+tations to multidimensional inputs – one simply needs to change the evaluation
+of the covariance function in accordance with eq. (2.16), although the resulting
+functions may be harder to display graphically.
+Prediction using Noisy Observations
+It is typical for more realistic modelling situations that we do not have access
+to function values themselves, but only noisy versions thereof y = f (x) + ε.8
+Assuming additive independent identically distributed Gaussian noise ε with
+varianceσ2
+n, the prior on the noisy observations becomes
+cov(yp,y q) = k(xp, xq) +σ2
+nδpq or cov( y) = K(X,X ) +σ2
+nI, (2.20)
+where δpq is a Kronecker delta which is one iﬀ p = q and zero otherwise. It
+follows from the independence 9 assumption about the noise, that a diagonal
+matrix10 is added, in comparison to the noise free case, eq. (2.16). Introducing
+the noise term in eq. (2.18) we can write the joint distribution of the observed
+target values and the function values at the test locations under the prior as
+[
+y
+f∗
+]
+∼ N
+(
+0,
+[
+K(X,X ) +σ2
+nI K (X,X ∗)
+K(X∗,X ) K(X∗,X ∗)
+])
+. (2.21)
+Deriving the conditional distribution corresponding to eq. (2.19) we arrive atpredictive distribution
+the key predictive equations for Gaussian process regression
+f∗|X, y,X ∗ ∼ N
+(¯f∗, cov(f∗)
+)
+, where (2.22)
+¯f∗ ≜ E[f∗|X, y,X ∗] = K(X∗,X )[K(X,X ) +σ2
+nI]−1y, (2.23)
+cov(f∗) = K(X∗,X ∗)−K(X∗,X )[K(X,X ) +σ2
+nI
+]−1
+K(X,X ∗). (2.24)
+8There are some situations where it is reasonable to assume that the observations are
+noise-free, for example for computer simulations, see e.g. Sacks et al. [1989].
+9More complicated noise models with non-trivial covariance structure can also be handled,
+see section 9.2.
+10Notice that the Kronecker delta is on the index of the cases, not the value of the input;
+for the signal part of the covariance function the input value is the index set to the random
+variables describing the function, for the noise part it is the identity of the point.
+
+PDF PAGE 12
+C. E. Rasmussen & C. K. I. Williams, Gaussian Processes for Machine Learning, the MIT Press, 2006,
+ISBN 026218253X. c© 2006 Massachusetts Institute of Technology. www.GaussianProcess.org/gpml
+18 Regression
+−5 0 5
+−2
+−1
+0
+1
+2
+input, x
+output, f(x)
+−5 0 5
+−0.2
+0
+0.2
+0.4
+0.6
+input, x
+post. covariance, cov(f(x),f(x’))
+x’=−2
+x’=1
+x’=3
+(a), posterior (b), posterior covariance
+Figure 2.4: Panel (a) is identical to Figure 2.2(b) showing three random functions
+drawn from the posterior. Panel (b) shows the posterior co-variance between f (x) and
+f (x′) for the same data for three diﬀerent values of x′. Note, that the covariance at
+close points is high, falling to zero at the training points (where there is no variance,
+since it is a noise-free process), then becomes negative, etc. This happens because if
+the smooth function happens to be less than the mean on one side of the data point,
+it tends to exceed the mean on the other side, causing a reversal of the sign of the
+covariance at the data points. Note for contrast that the prior covariance is simply
+of Gaussian shape and never negative.
+making predictions at x∗ we only care about the (n+1)-dimensional distribution
+deﬁned by the n training points and the test point. As a Gaussian distribu-
+tion is marginalized by just taking the relevant block of the joint covariance
+matrix (see section A.2) it is clear that conditioning this ( n + 1)-dimensional
+distribution on the observations gives us the desired result. A graphical model
+representation of a GP is given in Figure 2.3.
+Note also that the variance in eq. (2.24) does not depend on the observed
+targets, but only on the inputs; this is a property of the Gaussian distribution.
+The variance is the diﬀerence between two terms: the ﬁrst term K(X∗,X ∗) is
+simply the prior covariance; from that is subtracted a (positive) term, repre-
+senting the information the observations gives us about the function. We can
+very simply compute the predictive distribution of test targets y∗ by addingnoisy predictions
+σ2
+nI to the variance in the expression for cov( f∗).
+The predictive distribution for the GP model gives more than just pointwisejoint predictions
+errorbars of the simpliﬁed eq. (2.26). Although not stated explicitly, eq. (2.24)
+holds unchanged when X∗ denotes multiple test inputs; in this case the co-
+variance of the test targets are computed (whose diagonal elements are the
+pointwise variances). In fact, eq. (2.23) is the mean function and eq. (2.24) the
+covariance function of the (Gaussian) posterior process; recall the deﬁnitionposterior process
+of Gaussian process from page 13. The posterior covariance in illustrated in
+Figure 2.4(b).
+It will be useful (particularly for chapter 5) to introduce the marginal likeli-
+hood (or evidence) p(y|X) at this point. The marginal likelihood is the integralmarginal likelihood
+
+PDF PAGE 14
+C. E. Rasmussen & C. K. I. Williams, Gaussian Processes for Machine Learning, the MIT Press, 2006,
+ISBN 026218253X. c© 2006 Massachusetts Institute of Technology. www.GaussianProcess.org/gpml
+20 Regression
+−5 0 5
+−3
+−2
+−1
+0
+1
+2
+3
+input, x
+output, y
+(a), 𝓁 = 1
+−5 0 5
+−3
+−2
+−1
+0
+1
+2
+3
+input, x
+output, y
+−5 0 5
+−3
+−2
+−1
+0
+1
+2
+3
+input, x
+output, y
+(b), 𝓁 = 0.3 (c), 𝓁 = 3
+Figure 2.5: (a) Data is generated from a GP with hyperparameters ( 𝓁, σf , σn) =
+(1, 1, 0.1), as shown by the + symbols. Using Gaussian process prediction with these
+hyperparameters we obtain a 95% conﬁdence region for the underlying function f
+(shown in grey). Panels (b) and (c) again show the 95% conﬁdence region, but this
+time for hyperparameter values (0 .3, 1.08, 0.00005) and (3 .0, 1.16, 0.89) respectively.
+The covariance is denoted ky as it is for the noisy targets y rather than for the
+underlying function f . Observe that the length-scale 𝓁, the signal variance σ2
+f
+and the noise variance σ2
+n can be varied. In general we call the free parametershyperparameters
+hyperparameters.11
+In chapter 5 we will consider various methods for determining the hyperpa-
+rameters from training data. However, in this section our aim is more simply to
+explore the eﬀects of varying the hyperparameters on GP prediction. Consider
+the data shown by + signs in Figure 2.5(a). This was generated from a GP
+with the SE kernel with ( 𝓁,σ f,σ n) = (1 , 1, 0.1). The ﬁgure also shows the 2
+standard-deviation error bars for the predictions obtained using these values of
+the hyperparameters, as per eq. (2.24). Notice how the error bars get larger
+for input values that are distant from any training points. Indeed if the x-axis
+11We refer to the parameters of the covariance function as hyperparameters to emphasize
+that they are parameters of a non-parametric model; in accordance with the weight-space
+view, section 2.1, the parameters (weights) of the underlying parametric model have been
+integrated out.
+
+PDF PAGE 21
+C. E. Rasmussen & C. K. I. Williams, Gaussian Processes for Machine Learning, the MIT Press, 2006,
+ISBN 026218253X. c© 2006 Massachusetts Institute of Technology. www.GaussianProcess.org/gpml
+2.7 Incorporating Explicit Basis F unctions 27
+(b)—it averages over a wider area. The more oscillatory equivalent kernel for
+lower noise levels can be understood in terms of the eigenanalysis above; at
+higher noise levels only the large λ (slowly varying) components of y remain,
+while for smaller noise levels the more oscillatory components are also retained.
+In Figure 2.6(d) we have plotted the equivalent kernel for n = 10 and n =
+250 datapoints in [0, 1]; notice how the width of the equivalent kernel decreases
+as n increases. We discuss this behaviour further in section 7.1.
+The plots of equivalent kernels in Figure 2.6 were made by using a dense
+grid of ngrid points on [0, 1] and then computing the smoother matrix K(K +
+σ2
+gridI)−1. Each row of this matrix is the equivalent kernel at the appropriate
+location. However, in order to get the scaling right one has to set σ2
+grid =
+σ2
+nngrid/n; for ngrid > n this means that the eﬀective variance at each of the
+ngrid points is larger, but as there are correspondingly more points this eﬀect
+cancels out. This can be understood by imagining the situation if there were
+ngrid/n independent Gaussian observations with variance σ2
+grid at a single x-
+position; this would be equivalent to one Gaussian observation with variance
+σ2
+n. In eﬀect the n observations have been smoothed out uniformly along the
+interval. The form of the equivalent kernel can be obtained analytically if we
+go to the continuum limit and look to smooth a noisy function. The relevant
+theory and some example equivalent kernels are given in section 7.1.
+2.7 Incorporating Explicit Basis Functions ∗
+It is common but by no means necessary to consider GPs with a zero mean func-
+tion. Note that this is not necessarily a drastic limitation, since the mean of the
+posterior process is not conﬁned to be zero. Yet there are several reasons why
+one might wish to explicitly model a mean function, including interpretability
+of the model, convenience of expressing prior information and a number of an-
+alytical limits which we will need in subsequent chapters. The use of explicit
+basis functions is a way to specify a non-zero mean over functions, but as we
+will see in this section, one can also use them to achieve other interesting eﬀects.
+Using a ﬁxed (deterministic) mean function m(x) is trivial: Simply apply ﬁxed mean function
+the usual zero mean GP to the diﬀerence between the observations and the
+ﬁxed mean function. With
+f (x) ∼ GP
+(
+m(x), k(x, x′)
+)
+, (2.37)
+the predictive mean becomes
+¯f∗ = m(X∗) +K(X∗,X )K −1
+y (y− m(X)), (2.38)
+where Ky = K +σ2
+nI, and the predictive variance remains unchanged from
+eq. (2.24).
+However, in practice it can often be diﬃcult to specify a ﬁxed mean function.
+In many cases it may be more convenient to specify a few ﬁxed basis functions,
+
+PDF PAGE 22
+C. E. Rasmussen & C. K. I. Williams, Gaussian Processes for Machine Learning, the MIT Press, 2006,
+ISBN 026218253X. c© 2006 Massachusetts Institute of Technology. www.GaussianProcess.org/gpml
+28 Regression
+whose coeﬃcients, β, are to be inferred from the data. Considerstochastic mean
+function
+g(x) = f (x) + h(x)⊤β, where f (x) ∼ GP
+(
+0,k (x, x′)
+)
+, (2.39)
+here f (x) is a zero mean GP, h(x) are a set of ﬁxed basis functions, and β are
+additional parameters. This formulation expresses that the data is close to a
+global linear model with the residuals being modelled by a GP. This idea was
+explored explicitly as early as 1975 by Blight and Ott [1975], who used the GP
+to model the residuals from a polynomial regression, i.e. h(x) = (1,x,x 2,... ).polynomial regression
+When ﬁtting the model, one could optimize over the parameters β jointly with
+the hyperparameters of the covariance function. Alternatively, if we take the
+prior on β to be Gaussian, β ∼ N(b,B ), we can also integrate out these
+parameters. Following O’Hagan [1978] we obtain another GP
+g(x) ∼ GP
+(
+h(x)⊤b, k(x, x′) + h(x)⊤Bh(x′)
+)
+, (2.40)
+now with an added contribution in the covariance function caused by the un-
+certainty in the parameters of the mean. Predictions are made by plugging
+the mean and covariance functions of g(x) into eq. (2.39) and eq. (2.24). After
+rearranging, we obtain
+¯g(X∗) = H ⊤
+∗ ¯β +K ⊤
+∗ K −1
+y (y−H ⊤ ¯β) = ¯f (X∗) +R⊤ ¯β,
+cov(g∗) = cov( f∗) +R⊤(B−1 +HK −1
+y H ⊤)−1R,
+(2.41)
+where the H matrix collects the h(x) vectors for all training (and H∗ all test)
+cases, ¯β = (B−1 +HK −1
+y H ⊤)−1(HK −1
+y y +B−1b), and R =H∗−HK −1
+y K∗.
+Notice the nice interpretation of the mean expression, eq. (2.41) top line: ¯β is
+the mean of the global linear model parameters, being a compromise between
+the data term and prior, and the predictive mean is simply the mean linear
+output plus what the GP model predicts from the residuals. The covariance is
+the sum of the usual covariance term and a new non-negative contribution.
+Exploring the limit of the above expressions as the prior on the β param-
+eter becomes vague, B−1→ O (where O is the matrix of zeros), we obtain a
+predictive distribution which is independent of b
+¯g(X∗) = ¯f (X∗) +R⊤ ¯β,
+cov(g∗) = cov( f∗) +R⊤(HK −1
+y H ⊤)−1R,
+(2.42)
+where the limiting ¯β = (HK −1
+y H ⊤)−1HK −1
+y y. Notice that predictions under
+the limitB−1→O should not be implemented na ¨ ıvely by plugging the modiﬁed
+covariance function from eq. (2.40) into the standard prediction equations, since
+the entries of the covariance function tend to inﬁnity, thus making it unsuitable
+for numerical implementation. Instead eq. (2.42) must be used. Even if the
+non-limiting case is of interest, eq. (2.41) is numerically preferable to a direct
+implementation based on eq. (2.40), since the global linear part will often add
+some very large eigenvalues to the covariance matrix, aﬀecting its condition
+number.
+
+PDF PAGE 24
+C. E. Rasmussen & C. K. I. Williams, Gaussian Processes for Machine Learning, the MIT Press, 2006,
+ISBN 026218253X. c© 2006 Massachusetts Institute of Technology. www.GaussianProcess.org/gpml
+30 Regression
+Gaussian process prediction is also well known in the geostatistics ﬁeld (see,geostatistics
+e.g. Matheron, 1973; Journel and Huijbregts, 1978) where it is known as krig-
+ing,17 and in meteorology [Thompson, 1956, Daley, 1991] although this litera-kriging
+ture naturally has focussed mostly on two- and three-dimensional input spaces.
+Whittle [1963, sec. 5.4] also suggests the use of such methods for spatial pre-
+diction. Ripley [1981] and Cressie [1993] provide useful overviews of Gaussian
+process prediction in spatial statistics.
+Gradually it was realized that Gaussian process prediction could be used in
+a general regression context. For example O’Hagan [1978] presents the general
+theory as given in our equations 2.23 and 2.24, and applies it to a number of
+one-dimensional regression problems. Sacks et al. [1989] describe GPR in the
+context of computer experiments (where the observations y are noise free) andcomputer experiments
+discuss a number of interesting directions such as the optimization of parameters
+in the covariance function (see our chapter 5) and experimental design (i.e. the
+choice of x-points that provide most information on f ). The authors describe
+a number of computer simulations that were modelled, including an example
+where the response variable was the clock asynchronization in a circuit and the
+inputs were six transistor widths. Santner et al. [2003] is a recent book on the
+use of GPs for the design and analysis of computer experiments.
+Williams and Rasmussen [1996] described Gaussian process regression inmachine learning
+a machine learning context, and described optimization of the parameters in
+the covariance function, see also Rasmussen [1996]. They were inspired to use
+Gaussian process by the connection to inﬁnite neural networks as described in
+section 4.2.3 and in Neal [1996]. The “kernelization” of linear ridge regression
+described above is also known as kernel ridge regression see e.g. Saunders et al.
+[1998].
+Relationships between Gaussian process prediction and regularization the-
+ory, splines, support vector machines (SVMs) and relevance vector machines
+(R VMs) are discussed in chapter 6.
+2.9 Exercises
+1. Replicate the generation of random functions from Figure 2.2. Use a
+regular (or random) grid of scalar inputs and the covariance function from
+eq. (2.16). Hints on how to generate random samples from multi-variate
+Gaussian distributions are given in section A.2. Invent some training
+data points, and make random draws from the resulting GP posterior
+using eq. (2.19).
+2. In eq. (2.11) we saw that the predictive variance at x∗ under the feature
+space regression model was var( f (x∗)) = φ(x∗)⊤A−1φ(x∗). Show that
+cov(f (x∗),f (x′
+∗)) =φ(x∗)⊤A−1φ(x′
+∗). Check that this is compatible with
+the expression given in eq. (2.24).
+17Matheron named the method after the South African mining engineer D. G. Krige.

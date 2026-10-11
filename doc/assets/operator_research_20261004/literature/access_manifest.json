@@ -1,0 +1,122 @@
+[
+  {
+    "file": "sarkka_book.pdf",
+    "requested_url": "https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf",
+    "fetched_utc": "2026-10-04T12:55:06.628839+00:00",
+    "status": 200,
+    "final_url": "https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf",
+    "content_type": "application/pdf",
+    "bytes": 4498379,
+    "sha256": "41c30a59b4e6d2418634959a5991f60b1e6cba881eb2643adba3f432394b23f2"
+  },
+  {
+    "file": "gpml_ch2.pdf",
+    "requested_url": "https://gaussianprocess.org/gpml/chapters/RW2.pdf",
+    "fetched_utc": "2026-10-04T12:55:06.629376+00:00",
+    "status": 200,
+    "final_url": "https://gaussianprocess.org/gpml/chapters/RW2.pdf",
+    "content_type": "application/pdf",
+    "bytes": 466925,
+    "sha256": "33eb573e1a15abbc04191cc57f74076e1df83024d14b934eebfac3b30a3f57ce"
+  },
+  {
+    "file": "minka_linear.pdf",
+    "requested_url": "https://tminka.github.io/papers/minka-linear.pdf",
+    "fetched_utc": "2026-10-04T12:55:06.629827+00:00",
+    "status": 200,
+    "final_url": "https://tminka.github.io/papers/minka-linear.pdf",
+    "content_type": "application/pdf",
+    "bytes": 159478,
+    "sha256": "cc11d04d488571f5cb9f9bfc49bac64c0f065562b7768439a613956fdc0c65dc"
+  },
+  {
+    "file": "murphy_gauss.pdf",
+    "requested_url": "https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf",
+    "fetched_utc": "2026-10-04T12:55:06.630099+00:00",
+    "status": 200,
+    "final_url": "https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf",
+    "content_type": "application/pdf",
+    "bytes": 735707,
+    "sha256": "d9004b197ad4c90600ab35eef22c69e7185103158d342ee7d769a97f52576749"
+  },
+  {
+    "file": "shah_student.pdf",
+    "requested_url": "https://proceedings.mlr.press/v33/shah14.pdf",
+    "fetched_utc": "2026-10-04T12:55:06.630524+00:00",
+    "status": 200,
+    "final_url": "https://proceedings.mlr.press/v33/shah14.pdf",
+    "content_type": "application/pdf",
+    "bytes": 1200651,
+    "sha256": "4ce4d557ac0dee2a7165a973f73ed8c71c0a2bcdc9a514e39dc02781f9b7f201"
+  },
+  {
+    "file": "guo_calibration.pdf",
+    "requested_url": "https://proceedings.mlr.press/v70/guo17a/guo17a.pdf",
+    "fetched_utc": "2026-10-04T12:55:08.627105+00:00",
+    "status": 200,
+    "final_url": "https://proceedings.mlr.press/v70/guo17a/guo17a.pdf",
+    "content_type": "application/pdf",
+    "bytes": 828420,
+    "sha256": "df7c93f97204f8a3c2b10f6d5bf5265baac25f00c1ae3b473a3e1dbc102dacb2"
+  },
+  {
+    "file": "scipy_filter_code.py",
+    "requested_url": "https://raw.githubusercontent.com/scipy/scipy/v1.16.2/scipy/signal/_signaltools.py",
+    "fetched_utc": "2026-10-04T12:55:09.539097+00:00",
+    "status": 200,
+    "final_url": "https://raw.githubusercontent.com/scipy/scipy/v1.16.2/scipy/signal/_signaltools.py",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 192737,
+    "sha256": "4d65f6b4876612c61d5c4e68505cac33ada350acb6d2e34565abd6b1d78212ec"
+  },
+  {
+    "file": "unfold_repo.json",
+    "requested_url": "https://api.github.com/repos/unfoldtoolbox/unfold/git/trees/main?recursive=1",
+    "fetched_utc": "2026-10-04T12:55:10.798658+00:00",
+    "status": 200,
+    "final_url": "https://api.github.com/repos/unfoldtoolbox/unfold/git/trees/main?recursive=1",
+    "content_type": "application/json; charset=utf-8",
+    "bytes": 131052,
+    "sha256": "43e9305af07953b78e34c849c93e59aa30f21c97078dec7ae82d7f5613f42a7b"
+  },
+  {
+    "file": "mtrf_repo.json",
+    "requested_url": "https://api.github.com/repos/mickcrosse/mTRF-Toolbox/git/trees/master?recursive=1",
+    "fetched_utc": "2026-10-04T12:55:12.599922+00:00",
+    "status": 200,
+    "final_url": "https://api.github.com/repos/mickcrosse/mTRF-Toolbox/git/trees/master?recursive=1",
+    "content_type": "application/json; charset=utf-8",
+    "bytes": 27859,
+    "sha256": "e1d51da15ea84e2e6a6bdd530949f4bf498cd5dafe2bd4f1c0458264a4db9e3f"
+  },
+  {
+    "file": "epmc_rerp.json",
+    "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1111/psyp.12320&format=json&resultType=core",
+    "fetched_utc": "2026-10-04T12:55:13.012564+00:00",
+    "status": 200,
+    "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1111/psyp.12320&format=json&resultType=core",
+    "content_type": "application/json;charset=UTF-8",
+    "bytes": 5398,
+    "sha256": "f926731cce635fea4d5cce0086ef03bcb64b3220260ed252ea711932f2ed550b"
+  },
+  {
+    "file": "epmc_mtrf.json",
+    "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE:%22multivariate%20temporal%20response%20function%22&format=json&resultType=core&pageSize=5",
+    "fetched_utc": "2026-10-04T12:55:13.939504+00:00",
+    "status": 200,
+    "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE:%22multivariate%20temporal%20response%20function%22&format=json&resultType=core&pageSize=5",
+    "content_type": "application/json;charset=UTF-8",
+    "bytes": 23084,
+    "sha256": "98ab93848410038da544c4c93eb8d274c5ae6f7e69866838574de6c6816fd577"
+  },
+  {
+    "file": "epmc_regression_filter.json",
+    "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=(EEG%20AND%20deconvolution%20AND%20filtering)&format=json&resultType=core&pageSize=10",
+    "fetched_utc": "2026-10-04T12:55:14.370697+00:00",
+    "status": 200,
+    "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=(EEG%20AND%20deconvolution%20AND%20filtering)&format=json&resultType=core&pageSize=10",
+    "content_type": "application/json;charset=UTF-8",
+    "bytes": 67617,
+    "sha256": "3eb9f50333428ba89f84a54748b259a248c13eea1099b852be126a2f2c55c511"
+  }
+]

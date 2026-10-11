@@ -1,0 +1,144 @@
+{
+  "schema": "n2p3_operator_stage2_gls_verification/1",
+  "source_sha256": {
+    "doc/assets/operator_research_20261004/continuous_model.py": "bd8f02f466f1cce523b6122615941d9a4dc7e42e88577d595715eda49b1bafba",
+    "doc/assets/operator_research_20261004/run_calibration_study.py": "7c5cc3d04f2621a893d098b85d540064d29fb5281e00592f90db8377505cd30b",
+    "src/transfer/temporal_noise.py": "b62ea190863b6ebfd2e895d102a05a8d20b58f215471293c58123a11f48a4fd5",
+    "src/data/finite_filter_operator.py": "7ba21765c152d5ed4cf981ceff645119491e63d2d3fb66ae25bd33abc518a399"
+  },
+  "script_sha256": "d5b15ff0562ba3144bde5fd0d40bd15b26ce246198917eac9fc2f12e4bc930cd",
+  "stage1_reference_source_sha256": "c3c07920a8da772dc92312473d93b4e3b7ee8c9e8f339acaf2ce19135673be32",
+  "old_continuous_reference_bridge": {
+    "record_lengths": [
+      240,
+      259,
+      275,
+      208
+    ],
+    "last_record_right_censored": true,
+    "max_absolute_differences": {
+      "mean": 0.0,
+      "row_covariance": 0.0,
+      "innovation_covariance": 0.0,
+      "phi": 0.0,
+      "log_evidence": 0.0,
+      "probability": 0.0
+    },
+    "old_winner": "b",
+    "new_winner": "b"
+  },
+  "arms": [
+    {
+      "arm": "old_filtered_y",
+      "passes": 1,
+      "weighted": false,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true,
+      "stage1_default_exact_numeric_bridge": true
+    },
+    {
+      "arm": "filtered_design",
+      "passes": 1,
+      "weighted": false,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true,
+      "stage1_default_exact_numeric_bridge": true
+    },
+    {
+      "arm": "raw_ar1",
+      "passes": 1,
+      "weighted": false,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true,
+      "stage1_default_exact_numeric_bridge": true
+    },
+    {
+      "arm": "raw_ar8",
+      "passes": 1,
+      "weighted": false,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true,
+      "stage1_default_exact_numeric_bridge": true
+    },
+    {
+      "arm": "raw_ar32",
+      "passes": 1,
+      "weighted": false,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true,
+      "stage1_default_exact_numeric_bridge": true
+    },
+    {
+      "arm": "raw_ar8_iter3",
+      "passes": 3,
+      "weighted": false,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true
+    },
+    {
+      "arm": "raw_ar8_weighted1",
+      "passes": 1,
+      "weighted": true,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true
+    },
+    {
+      "arm": "raw_ar8_weighted3",
+      "passes": 3,
+      "weighted": true,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true
+    },
+    {
+      "arm": "raw_ar1_weighted3",
+      "passes": 3,
+      "weighted": true,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true
+    },
+    {
+      "arm": "raw_ar32_weighted3",
+      "passes": 3,
+      "weighted": true,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true
+    },
+    {
+      "arm": "raw_ar8_standardized3",
+      "passes": 3,
+      "weighted": true,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true
+    },
+    {
+      "arm": "raw_ar8_smooth1",
+      "passes": 1,
+      "weighted": false,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true
+    },
+    {
+      "arm": "raw_ar8_smooth3",
+      "passes": 3,
+      "weighted": false,
+      "all_training_ids_exclude_held": true,
+      "score_does_not_update_model": true,
+      "exact_saved_replay": true
+    }
+  ],
+  "n_arms": 13,
+  "no_real_data_used": true,
+  "evidence_scope": "software_correctness"
+}

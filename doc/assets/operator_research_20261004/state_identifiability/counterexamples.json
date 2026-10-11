@@ -1,0 +1,44 @@
+{
+  "negative_cross_term": {
+    "true_variance": 0.04018868089640078,
+    "omit_cross_variance": 1.647735916752433,
+    "double_count_variance": 0.6832075752388136,
+    "omit_cross_inflation": 41.00000000000003,
+    "double_count_inflation": 17.00000000000001
+  },
+  "positive_cross_term": {
+    "true_variance": 3.255283152608465,
+    "omit_cross_variance": 1.647735916752433
+  },
+  "state_coordinate_gauge": {
+    "projected_covariance_difference": 4.440892098500626e-16,
+    "isotropic_state_ridge_effect_ratio": 735294.1176473236,
+    "original_regularized_trace": 8.456,
+    "rescaled_regularized_trace": 600007.640000216
+  },
+  "latent_decomposition_gauge": {
+    "exact_observation_identity": true,
+    "conclusion": "Gamma/Omega not identified from z without fixed A, B, residual definition and state origin"
+  },
+  "ar_startup_schur": {
+    "stationary_state_variance": 6.126126126126124,
+    "state_variance_given_observed_segment": 1.6999999999999984,
+    "known_innovation_variance": 1.7,
+    "whitening_identity_max_error": 1.2656542480726785e-15,
+    "warning": "Gamma stationary is identifiable only under the fitted stable AR assumptions; add no independent startup covariance after exact stationary whitening"
+  },
+  "observed_state_degeneracy": {
+    "conditional_variance": 0.0
+  },
+  "pseudo_replication": {
+    "rows": 800,
+    "physical_groups": 8,
+    "equicorrelated_mean_effective_n": 8.879023307436182,
+    "naive_standard_error_underestimate_factor": 9.49210198006743
+  },
+  "mean_not_variance": {
+    "delta_class_mean_difference": 2.0,
+    "centred_delta_within_class_variance": 0.0,
+    "implication": "zero within-class Gamma does not imply zero class-dependent boundary distortion"
+  }
+}

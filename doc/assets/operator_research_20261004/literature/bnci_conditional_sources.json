@@ -1,0 +1,106 @@
+{
+  "claims": [
+    {
+      "file": "bnci_official_description.pdf",
+      "locator": "Experimental Protocol pp1-2; Data set p2",
+      "claim": "Dataset description declares 256Hz and band-pass0.1-30Hz; X samples by channels",
+      "limits": "No implementation stage, order, phase, coefficients or MAT export script",
+      "access": {
+        "file": "bnci_official_description.pdf",
+        "requested_url": "https://bnci-horizon-2020.eu/database/data-sets/008-2014/description.pdf",
+        "fetched_utc": "2026-10-04T13:54:11.719405+00:00",
+        "status": 200,
+        "final_url": "https://lampx.tugraz.at/~bci/database/008-2014/description.pdf",
+        "content_type": "application/pdf",
+        "bytes": 178802,
+        "sha256": "25d2c244c48ff9652017b48f86b2207221e88f5779980b891bfa309ed2db75f0"
+      }
+    },
+    {
+      "file": "bnci_riccio_full.xml",
+      "locator": "Materials and methods BCI task; Offline data analysis P300 morphology; Offline BCI control performance",
+      "claim": "Acquisition system/reference;0.1-10Hz Butterworth,50Hz notch,rejection,baseline belong to offline analyses",
+      "limits": "Does not attest these offline transformations are already stored in distributed continuous X",
+      "access": {
+        "file": "bnci_riccio_full.xml",
+        "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3825256/fullTextXML",
+        "fetched_utc": "2026-10-04T13:56:01.280395+00:00",
+        "status": 200,
+        "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3825256/fullTextXML",
+        "content_type": "application/xml",
+        "bytes": 96475,
+        "sha256": "3ca9d83befbceab8622f14b2054d89cc96ddc92f4d1dc89c521443787f25faa6"
+      }
+    },
+    {
+      "file": "bnci_official_dataset_page.html",
+      "locator": "008-2014 card lines276-289",
+      "claim": "Official same entry links eight MAT files and description.pdf",
+      "limits": "Index is not signal processing execution receipt",
+      "access": {
+        "file": "bnci_official_dataset_page.html",
+        "requested_url": "https://bnci-horizon-2020.eu/database/data-sets",
+        "fetched_utc": "2026-10-04T13:54:11.719958+00:00",
+        "status": 200,
+        "final_url": "https://bnci-horizon-2020.eu/database/data-sets",
+        "content_type": "text/html; charset=utf-8",
+        "bytes": 133765,
+        "sha256": "7973b28676e5a2c2e0e76cf431087cee510e7dc356b039a9593fe797bba07779"
+      }
+    },
+    {
+      "file": "conditional_ar_statsmodels_source.py",
+      "locator": "L66; AutoReg._setup_regressors L350-385; loglike L500-518; hold_back L129-135",
+      "claim": "Mature conditional AR likelihood and common hold_back for order comparisons",
+      "limits": "Single response ARX implementation; not project Bayesian candidate integration",
+      "access": {
+        "file": "conditional_ar_statsmodels_source.py",
+        "requested_url": "https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.6/statsmodels/tsa/ar_model.py",
+        "fetched_utc": "2026-10-04T13:54:12.542647+00:00",
+        "status": 200,
+        "final_url": "https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.6/statsmodels/tsa/ar_model.py",
+        "content_type": "text/plain; charset=utf-8",
+        "bytes": 79731,
+        "sha256": "2af124540e9fa5e078001c318fb3a0a32a3989f54af388b89cd4bb0b1412f671"
+      }
+    }
+  ],
+  "local_evidence": [
+    {
+      "file": "bnci_reader_snapshot.json",
+      "sha256": "61ffabdf54c965a09effb1a4048698eda2c9b33c5f8af9bf77aafe8ffc9b9f13"
+    },
+    {
+      "file": "bnci_reader_base.py",
+      "sha256": "920e327b8131bd6f63a6991863b4b69eff67a18075ea13da916aa09712cf5f5d"
+    },
+    {
+      "file": "bnci_reader_bnci_2014.py",
+      "sha256": "ec4b3ce868bb839f6cc070de6e4ad1896e2c441dc127d89c4081b187da005d91"
+    },
+    {
+      "file": "bnci_reader_bnci2014_008_candidate.py",
+      "sha256": "3cfb395f590ac74d69c13d50f65cb32c368126103552d0e0ea22e486d6b406c1"
+    },
+    {
+      "file": "bnci_reader_numeric_audit.json",
+      "sha256": "125b1a770d7425b176c7ac3d5a7deb54f4bd37e315dacf453904878babf6cccb"
+    },
+    {
+      "file": "conditional_likelihood_counterexamples.py",
+      "sha256": "0a4fc989823b4609a14367cff9d7d530681982c64b78e844a07f1ab8ae6cc9d6"
+    },
+    {
+      "file": "conditional_likelihood_counterexamples.json",
+      "sha256": "a12ed1d22d3b2bbabc815a204b298040a728b5870c7ae73929ba949ba008f2ad"
+    }
+  ],
+  "historical_artifact_manifest": {
+    "path": "experiments/results_history/tmp_20260906/retained/generated_manifests_final/bnci2014_008.json",
+    "sha256": "6c5ccaff675398451b7359c03d7e2f727919c19dbf85b43a46323e7a53c9a676",
+    "limit": "source bytes inventory only; no upstream filter implementation"
+  },
+  "production_modified": false,
+  "stationary_gate_changed": false,
+  "test_labels_used_to_fit": false
+}

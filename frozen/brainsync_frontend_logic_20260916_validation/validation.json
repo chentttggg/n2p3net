@@ -1,0 +1,43 @@
+{
+  "schema": "brainsync_frontend_logic_validation/1",
+  "date": "2026-09-16",
+  "frontend": {
+    "passed": 277,
+    "new_tests": 56,
+    "seconds": 82.171,
+    "returncode": 0,
+    "command": ".venv/Scripts/python.exe tests/run_headless.py"
+  },
+  "backend_contracts": {
+    "passed": 50,
+    "returncode": 0,
+    "files": [
+      "test_acquisition_contract.py",
+      "test_recording_clock.py",
+      "test_brainsync_input_replay.py"
+    ]
+  },
+  "workflow_returncodes": {
+    "pause_resume": 0,
+    "pause_save": 0,
+    "pause_discard": 0,
+    "quality": 0,
+    "layout": 0
+  },
+  "checks": {
+    "frontend_ruff": true,
+    "uv_pip_check": true,
+    "backend_git_diff_check": true,
+    "frontend_snapshot_whitespace_check": true
+  },
+  "changed_frontend_modules": [
+    "decoding.py",
+    "quality_reports.py",
+    "recording.py",
+    "runtime.py",
+    "signal_processing.py",
+    "storage.py",
+    "ui.py"
+  ],
+  "scope": "Synthetic EEG, FakeSdk, local subprocess and Qt software validation only; no hardware or adult accuracy certification."
+}

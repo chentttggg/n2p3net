@@ -1,0 +1,10 @@
+{
+  "run": "experiments/runs/operator_research_20261004/calibration_groups_stage3_repair",
+  "analysis_sha256": "fd24019d07f05cff4251782e1b4d67a484da872d8bff317ca052a810ca31eb7e",
+  "run_source_json_sha256": "eaf5429e39afc7e187f9bb08813880c27c249fac5089f6a465fb7e8ccf9f656f",
+  "files": {
+    "analysis.json": "fd24019d07f05cff4251782e1b4d67a484da872d8bff317ca052a810ca31eb7e",
+    "diagnostic_cells.json": "843a7c3a0afc2880821e9d33bf17cc201a6f478e18ee6b9ac79dfa6c9a658b1c",
+    "report.zh.md": "c98f2955c854c911823512ef486d7f3af21d30512a72f3eb0c8b067fffe779fe"
+  }
+}

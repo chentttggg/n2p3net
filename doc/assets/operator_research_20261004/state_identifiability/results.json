@@ -1,0 +1,3636 @@
+{
+  "execution": {
+    "archive_sha256": "043893ac95e4ff8e9b5f3db718e216ed6c33c4178af5a01e826f2237c4b3973a",
+    "source_archive": "D:\\BCI\\n2p3-net\\frozen\\system_implementation_20261004_after\\source.source-only.tar.gz",
+    "execution_root": "D:\\BCI\\n2p3-net\\doc\\assets\\operator_research_20261004\\state_identifiability\\executed_source",
+    "probe_sha256": "611c9724c940394a9fe6403c84b20133940a08e7fe274881bf596ff021c0e2a4",
+    "plan_sha256": "388f0cf546268f9683d48cd98f4486e05d107706038cb0513418ffcaa303000a",
+    "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+    "numpy": "2.5.2",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "mathematics": {
+    "negative_cross_term": {
+      "true_variance": 0.04018868089640078,
+      "omit_cross_variance": 1.647735916752433,
+      "double_count_variance": 0.6832075752388136,
+      "omit_cross_inflation": 41.00000000000003,
+      "double_count_inflation": 17.00000000000001
+    },
+    "positive_cross_term": {
+      "true_variance": 3.255283152608465,
+      "omit_cross_variance": 1.647735916752433
+    },
+    "state_coordinate_gauge": {
+      "projected_covariance_difference": 4.440892098500626e-16,
+      "isotropic_state_ridge_effect_ratio": 735294.1176473236,
+      "original_regularized_trace": 8.456,
+      "rescaled_regularized_trace": 600007.640000216
+    },
+    "latent_decomposition_gauge": {
+      "exact_observation_identity": true,
+      "conclusion": "Gamma/Omega not identified from z without fixed A, B, residual definition and state origin"
+    },
+    "ar_startup_schur": {
+      "stationary_state_variance": 6.126126126126124,
+      "state_variance_given_observed_segment": 1.6999999999999984,
+      "known_innovation_variance": 1.7,
+      "whitening_identity_max_error": 1.2656542480726785e-15,
+      "warning": "Gamma stationary is identifiable only under the fitted stable AR assumptions; add no independent startup covariance after exact stationary whitening"
+    },
+    "observed_state_degeneracy": {
+      "conditional_variance": 0.0
+    },
+    "pseudo_replication": {
+      "rows": 800,
+      "physical_groups": 8,
+      "equicorrelated_mean_effective_n": 8.879023307436182,
+      "naive_standard_error_underestimate_factor": 9.49210198006743
+    },
+    "mean_not_variance": {
+      "delta_class_mean_difference": 2.0,
+      "centred_delta_within_class_variance": 0.0,
+      "implication": "zero within-class Gamma does not imply zero class-dependent boundary distortion"
+    }
+  },
+  "public": {
+    "folds": [
+      {
+        "target": "A01",
+        "length_s": 16.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.7284841053187847e-12,
+        "cross_trace_relative_to_finite": -0.018702647577841312,
+        "delta_trace_relative_to_finite": 0.17855894844978723,
+        "cross_frobenius_relative_to_finite": 0.12934400522377423,
+        "delta_class_mean_distance": 13.925824526158731,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.524930047093063,
+            "mahalanobis_per_dimension": 1.1596730695956026,
+            "marginal_95_coverage": 0.959280303030303,
+            "covariance_trace": 41449.43825345023
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.524930047093065,
+            "mahalanobis_per_dimension": 1.159673069595605,
+            "marginal_95_coverage": 0.959280303030303,
+            "covariance_trace": 41449.43825345024
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.4917880103204983,
+            "mahalanobis_per_dimension": 1.0519251480425393,
+            "marginal_95_coverage": 0.9602272727272727,
+            "covariance_trace": 42223.87804960785
+          },
+          "double_count": {
+            "nll_per_dimension": 3.501568584646573,
+            "mahalanobis_per_dimension": 1.0086657946172706,
+            "marginal_95_coverage": 0.9753787878787878,
+            "covariance_trace": 48843.21258748665
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.419343117437434,
+            "mahalanobis_per_dimension": 0.15741956805243196,
+            "marginal_95_coverage": 0.9365530303030303,
+            "covariance_trace": 7500.446653300541
+          },
+          "conditional": {
+            "nll_per_dimension": 1.3680722053116594,
+            "mahalanobis_per_dimension": 0.14572910355383714,
+            "marginal_95_coverage": 0.9734848484848485,
+            "covariance_trace": 1572.0353117988557
+          }
+        },
+        "delta_mse_zero": 234.43299450486384,
+        "delta_mse_source_mean": 235.09749016049892,
+        "delta_mse_conditional": 31.141853645125316
+      },
+      {
+        "target": "A02",
+        "length_s": 16.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 3.637978807091713e-12,
+        "cross_trace_relative_to_finite": -0.0040280990548655785,
+        "delta_trace_relative_to_finite": 0.19647729746667306,
+        "cross_frobenius_relative_to_finite": 0.11802896833634048,
+        "delta_class_mean_distance": 13.354727097480978,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.572483641492563,
+            "mahalanobis_per_dimension": 1.2672058902129757,
+            "marginal_95_coverage": 0.9815340909090909,
+            "covariance_trace": 42332.2227722402
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.5724836414925667,
+            "mahalanobis_per_dimension": 1.2672058902129808,
+            "marginal_95_coverage": 0.9815340909090909,
+            "covariance_trace": 42332.222772240195
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.5502769167477224,
+            "mahalanobis_per_dimension": 1.1841879843610852,
+            "marginal_95_coverage": 0.9815340909090909,
+            "covariance_trace": 42502.570810740915
+          },
+          "double_count": {
+            "nll_per_dimension": 3.5560175517319705,
+            "mahalanobis_per_dimension": 1.1315803649298901,
+            "marginal_95_coverage": 0.9867424242424242,
+            "covariance_trace": 50641.23448657278
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4713581753683662,
+            "mahalanobis_per_dimension": 0.16098093725648382,
+            "marginal_95_coverage": 0.9853219696969697,
+            "covariance_trace": 8422.206574013659
+          },
+          "conditional": {
+            "nll_per_dimension": 1.4217221538047897,
+            "mahalanobis_per_dimension": 0.14910076613059475,
+            "marginal_95_coverage": 0.9900568181818182,
+            "covariance_trace": 1685.075241895041
+          }
+        },
+        "delta_mse_zero": 133.34147118978075,
+        "delta_mse_source_mean": 138.00196421210487,
+        "delta_mse_conditional": 22.495966045950933
+      },
+      {
+        "target": "A03",
+        "length_s": 16.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.0463630789890885e-12,
+        "cross_trace_relative_to_finite": -0.004254748099137971,
+        "delta_trace_relative_to_finite": 0.22075110522458807,
+        "cross_frobenius_relative_to_finite": 0.12576296258310718,
+        "delta_class_mean_distance": 14.355927058542767,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.800225811073528,
+            "mahalanobis_per_dimension": 1.7636184499531347,
+            "marginal_95_coverage": 0.900094696969697,
+            "covariance_trace": 38916.79095442545
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.8002258110735267,
+            "mahalanobis_per_dimension": 1.7636184499531282,
+            "marginal_95_coverage": 0.900094696969697,
+            "covariance_trace": 38916.79095442544
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.7554925368422376,
+            "mahalanobis_per_dimension": 1.6341115194592333,
+            "marginal_95_coverage": 0.9005681818181818,
+            "covariance_trace": 39082.20668103673
+          },
+          "double_count": {
+            "nll_per_dimension": 3.7812488968720395,
+            "mahalanobis_per_dimension": 1.6218246309261994,
+            "marginal_95_coverage": 0.9095643939393939,
+            "covariance_trace": 47499.13322713641
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4614299973028686,
+            "mahalanobis_per_dimension": 0.10671380290787798,
+            "marginal_95_coverage": 0.9891098484848485,
+            "covariance_trace": 8702.953527760536
+          },
+          "conditional": {
+            "nll_per_dimension": 1.4123271052294433,
+            "mahalanobis_per_dimension": 0.09626690310143599,
+            "marginal_95_coverage": 0.9957386363636364,
+            "covariance_trace": 1716.491206570348
+          }
+        },
+        "delta_mse_zero": 105.05662688357391,
+        "delta_mse_source_mean": 104.81762682730832,
+        "delta_mse_conditional": 18.4559028140347
+      },
+      {
+        "target": "A04",
+        "length_s": 16.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 4.547473508864641e-12,
+        "cross_trace_relative_to_finite": 0.004687792865552556,
+        "delta_trace_relative_to_finite": 0.2172640730131565,
+        "cross_frobenius_relative_to_finite": 0.12872701662957206,
+        "delta_class_mean_distance": 13.626928097919034,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 4.243480694466796,
+            "mahalanobis_per_dimension": 2.7243279696122498,
+            "marginal_95_coverage": 0.8252840909090909,
+            "covariance_trace": 36347.29980091985
+          },
+          "full_paired": {
+            "nll_per_dimension": 4.2434806944667836,
+            "mahalanobis_per_dimension": 2.7243279696122156,
+            "marginal_95_coverage": 0.8252840909090909,
+            "covariance_trace": 36347.29980091985
+          },
+          "omit_cross": {
+            "nll_per_dimension": 4.178833739043282,
+            "mahalanobis_per_dimension": 2.5552425239481185,
+            "marginal_95_coverage": 0.8248106060606061,
+            "covariance_trace": 36177.08140662529
+          },
+          "double_count": {
+            "nll_per_dimension": 4.177636581266221,
+            "mahalanobis_per_dimension": 2.489204938501664,
+            "marginal_95_coverage": 0.8513257575757576,
+            "covariance_trace": 44236.37312537353
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.474607468257661,
+            "mahalanobis_per_dimension": 0.21957008414452828,
+            "marginal_95_coverage": 0.9673295454545454,
+            "covariance_trace": 7999.3085190356915
+          },
+          "conditional": {
+            "nll_per_dimension": 1.43484901388968,
+            "mahalanobis_per_dimension": 0.23056901103608948,
+            "marginal_95_coverage": 0.9763257575757576,
+            "covariance_trace": 1552.3536043475428
+          }
+        },
+        "delta_mse_zero": 180.58335226766332,
+        "delta_mse_source_mean": 181.46372976238015,
+        "delta_mse_conditional": 33.24909530431607
+      },
+      {
+        "target": "A05",
+        "length_s": 16.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.2737367544323206e-12,
+        "cross_trace_relative_to_finite": -0.020754422646836763,
+        "delta_trace_relative_to_finite": 0.21778244945396164,
+        "cross_frobenius_relative_to_finite": 0.12865718028596387,
+        "delta_class_mean_distance": 9.477588534610689,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.5157576241888417,
+            "mahalanobis_per_dimension": 1.1417855933383425,
+            "marginal_95_coverage": 0.9512310606060606,
+            "covariance_trace": 40356.49893867553
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.515757624188846,
+            "mahalanobis_per_dimension": 1.141785593338341,
+            "marginal_95_coverage": 0.9512310606060606,
+            "covariance_trace": 40356.49893867554
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.505974834251976,
+            "mahalanobis_per_dimension": 1.0835532832459351,
+            "marginal_95_coverage": 0.9517045454545454,
+            "covariance_trace": 41193.238035099
+          },
+          "double_count": {
+            "nll_per_dimension": 3.522460123219362,
+            "mahalanobis_per_dimension": 1.0520183544918065,
+            "marginal_95_coverage": 0.953125,
+            "covariance_trace": 49136.655971893284
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4610179499099816,
+            "mahalanobis_per_dimension": 0.08526756355979347,
+            "marginal_95_coverage": 0.9976325757575758,
+            "covariance_trace": 8883.120746334293
+          },
+          "conditional": {
+            "nll_per_dimension": 1.4140265017750273,
+            "mahalanobis_per_dimension": 0.08053461785974415,
+            "marginal_95_coverage": 0.993844696969697,
+            "covariance_trace": 1711.5354689248475
+          }
+        },
+        "delta_mse_zero": 84.56966793218893,
+        "delta_mse_source_mean": 85.99342879504856,
+        "delta_mse_conditional": 14.84714475647906
+      },
+      {
+        "target": "A06",
+        "length_s": 16.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 3.183231456205249e-12,
+        "cross_trace_relative_to_finite": -0.008043792792595955,
+        "delta_trace_relative_to_finite": 0.2091070469083175,
+        "cross_frobenius_relative_to_finite": 0.12074336917601732,
+        "delta_class_mean_distance": 10.57759012399085,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.4687217112578583,
+            "mahalanobis_per_dimension": 1.0383757761876107,
+            "marginal_95_coverage": 0.9706439393939394,
+            "covariance_trace": 41956.84533414099
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.468721711257863,
+            "mahalanobis_per_dimension": 1.0383757761876315,
+            "marginal_95_coverage": 0.9706439393939394,
+            "covariance_trace": 41956.84533414099
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.455519863862605,
+            "mahalanobis_per_dimension": 0.974340765888094,
+            "marginal_95_coverage": 0.9711174242424242,
+            "covariance_trace": 42294.000349224734
+          },
+          "double_count": {
+            "nll_per_dimension": 3.4652085417249716,
+            "mahalanobis_per_dimension": 0.9291627805914126,
+            "marginal_95_coverage": 0.9730113636363636,
+            "covariance_trace": 50721.55265223414
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4799583417515165,
+            "mahalanobis_per_dimension": 0.12979652541232095,
+            "marginal_95_coverage": 0.9947916666666666,
+            "covariance_trace": 8871.240320187417
+          },
+          "conditional": {
+            "nll_per_dimension": 1.432567584287812,
+            "mahalanobis_per_dimension": 0.12212844016848848,
+            "marginal_95_coverage": 0.9895833333333334,
+            "covariance_trace": 1704.7238967111468
+          }
+        },
+        "delta_mse_zero": 86.49009974047475,
+        "delta_mse_source_mean": 86.5607037801326,
+        "delta_mse_conditional": 20.234374436249638
+      },
+      {
+        "target": "A07",
+        "length_s": 16.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.5011104298755527e-12,
+        "cross_trace_relative_to_finite": 0.002760197824655219,
+        "delta_trace_relative_to_finite": 0.21678709732450233,
+        "cross_frobenius_relative_to_finite": 0.10986676189692164,
+        "delta_class_mean_distance": 11.28486080260625,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.9794440220155636,
+            "mahalanobis_per_dimension": 2.146237630111308,
+            "marginal_95_coverage": 0.9053030303030303,
+            "covariance_trace": 37578.970244518736
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.979444022015557,
+            "mahalanobis_per_dimension": 2.1462376301112993,
+            "marginal_95_coverage": 0.9053030303030303,
+            "covariance_trace": 37578.97024451874
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.9356274634632897,
+            "mahalanobis_per_dimension": 2.022128382430995,
+            "marginal_95_coverage": 0.9053030303030303,
+            "covariance_trace": 37475.34847436719
+          },
+          "double_count": {
+            "nll_per_dimension": 3.9279127148857143,
+            "mahalanobis_per_dimension": 1.941580864265788,
+            "marginal_95_coverage": 0.9147727272727273,
+            "covariance_trace": 45717.46762688943
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4898802189928937,
+            "mahalanobis_per_dimension": 0.22422469630846742,
+            "marginal_95_coverage": 0.9763257575757576,
+            "covariance_trace": 8241.378338451963
+          },
+          "conditional": {
+            "nll_per_dimension": 1.446997248516901,
+            "mahalanobis_per_dimension": 0.22575898268585917,
+            "marginal_95_coverage": 0.9715909090909091,
+            "covariance_trace": 1532.3322208735308
+          }
+        },
+        "delta_mse_zero": 154.72065128762793,
+        "delta_mse_source_mean": 154.79785288876957,
+        "delta_mse_conditional": 40.79887812431304
+      },
+      {
+        "target": "A08",
+        "length_s": 16.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 1.8189894035458565e-12,
+        "cross_trace_relative_to_finite": -0.0036948670147625897,
+        "delta_trace_relative_to_finite": 0.20366517600332726,
+        "cross_frobenius_relative_to_finite": 0.11336810020856118,
+        "delta_class_mean_distance": 12.223198380195637,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.3863174294169665,
+            "mahalanobis_per_dimension": 0.8533105244361412,
+            "marginal_95_coverage": 0.9891098484848485,
+            "covariance_trace": 43819.73957299691
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.3863174294169656,
+            "mahalanobis_per_dimension": 0.853310524436136,
+            "marginal_95_coverage": 0.9891098484848485,
+            "covariance_trace": 43819.739572996914
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.3725956501310304,
+            "mahalanobis_per_dimension": 0.7860142206926568,
+            "marginal_95_coverage": 0.9891098484848485,
+            "covariance_trace": 43981.48593697668
+          },
+          "double_count": {
+            "nll_per_dimension": 3.3970254852910284,
+            "mahalanobis_per_dimension": 0.7712380311403529,
+            "marginal_95_coverage": 0.9910037878787878,
+            "covariance_trace": 52735.378906218066
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.462400873697968,
+            "mahalanobis_per_dimension": 0.07224763910653965,
+            "marginal_95_coverage": 0.9971590909090909,
+            "covariance_trace": 9030.01511800048
+          },
+          "conditional": {
+            "nll_per_dimension": 1.4148969317605875,
+            "mahalanobis_per_dimension": 0.06541937389989803,
+            "marginal_95_coverage": 0.9962121212121212,
+            "covariance_trace": 1764.3014814842738
+          }
+        },
+        "delta_mse_zero": 69.53805729015723,
+        "delta_mse_source_mean": 69.30299618312593,
+        "delta_mse_conditional": 11.168197010296264
+      },
+      {
+        "target": "A01",
+        "length_s": 16.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.7284841053187847e-12,
+        "cross_trace_relative_to_finite": 0.014675739608418637,
+        "delta_trace_relative_to_finite": 0.052942627398365597,
+        "cross_frobenius_relative_to_finite": 0.053878501925986415,
+        "delta_class_mean_distance": 6.268929862272799,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.4663349328219426,
+            "mahalanobis_per_dimension": 1.1742477404621738,
+            "marginal_95_coverage": 0.9498106060606061,
+            "covariance_trace": 37348.96007039526
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.4663349328219426,
+            "mahalanobis_per_dimension": 1.174247740462161,
+            "marginal_95_coverage": 0.9498106060606061,
+            "covariance_trace": 37348.96007039526
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.44355454352007,
+            "mahalanobis_per_dimension": 1.095934286507065,
+            "marginal_95_coverage": 0.9479166666666666,
+            "covariance_trace": 36801.38403379352
+          },
+          "double_count": {
+            "nll_per_dimension": 3.4410840291161233,
+            "mahalanobis_per_dimension": 1.0352706315030087,
+            "marginal_95_coverage": 0.9607007575757576,
+            "covariance_trace": 39324.33677041861
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.8006412140333645,
+            "mahalanobis_per_dimension": 0.2263150193836336,
+            "marginal_95_coverage": 0.8470643939393939,
+            "covariance_trace": 2001.7641040401454
+          },
+          "conditional": {
+            "nll_per_dimension": 0.7684334354598933,
+            "mahalanobis_per_dimension": 0.22420327411313482,
+            "marginal_95_coverage": 0.9128787878787878,
+            "covariance_trace": 648.1935528439449
+          }
+        },
+        "delta_mse_zero": 123.67512272379935,
+        "delta_mse_source_mean": 123.81996773226241,
+        "delta_mse_conditional": 30.20300857377209
+      },
+      {
+        "target": "A02",
+        "length_s": 16.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.7284841053187847e-12,
+        "cross_trace_relative_to_finite": 0.027094422982404782,
+        "delta_trace_relative_to_finite": 0.07164044046687208,
+        "cross_frobenius_relative_to_finite": 0.07236952357455158,
+        "delta_class_mean_distance": 9.014158248268537,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.539953805940103,
+            "mahalanobis_per_dimension": 1.3388238369935523,
+            "marginal_95_coverage": 0.9810606060606061,
+            "covariance_trace": 37930.48132713224
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.5399538059401086,
+            "mahalanobis_per_dimension": 1.338823836993563,
+            "marginal_95_coverage": 0.9810606060606061,
+            "covariance_trace": 37930.48132713225
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.5045454628962203,
+            "mahalanobis_per_dimension": 1.234332528583336,
+            "marginal_95_coverage": 0.9796401515151515,
+            "covariance_trace": 36903.8034999559
+          },
+          "double_count": {
+            "nll_per_dimension": 3.5059981080052243,
+            "mahalanobis_per_dimension": 1.182314982101023,
+            "marginal_95_coverage": 0.9829545454545454,
+            "covariance_trace": 40645.123074780815
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.9296613448361885,
+            "mahalanobis_per_dimension": 0.20980204636062694,
+            "marginal_95_coverage": 0.974905303030303,
+            "covariance_trace": 2755.503778617586
+          },
+          "conditional": {
+            "nll_per_dimension": 0.8997561152629443,
+            "mahalanobis_per_dimension": 0.20325805304543285,
+            "marginal_95_coverage": 0.9834280303030303,
+            "covariance_trace": 889.1523351696169
+          }
+        },
+        "delta_mse_zero": 41.13530682883892,
+        "delta_mse_source_mean": 41.710134780560374,
+        "delta_mse_conditional": 11.245511432581676
+      },
+      {
+        "target": "A03",
+        "length_s": 16.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.0463630789890885e-12,
+        "cross_trace_relative_to_finite": 0.02668484113848887,
+        "delta_trace_relative_to_finite": 0.0850497482734794,
+        "cross_frobenius_relative_to_finite": 0.07197892167971995,
+        "delta_class_mean_distance": 10.743490009881981,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.7256248502685874,
+            "mahalanobis_per_dimension": 1.746381944252704,
+            "marginal_95_coverage": 0.9019886363636364,
+            "covariance_trace": 34326.95579308253
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.7256248502685905,
+            "mahalanobis_per_dimension": 1.7463819442527035,
+            "marginal_95_coverage": 0.9019886363636364,
+            "covariance_trace": 34326.95579308254
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.6894011432910148,
+            "mahalanobis_per_dimension": 1.6411791656972583,
+            "marginal_95_coverage": 0.900094696969697,
+            "covariance_trace": 33411.861525244036
+          },
+          "double_count": {
+            "nll_per_dimension": 3.713375842047441,
+            "mahalanobis_per_dimension": 1.632755435646073,
+            "marginal_95_coverage": 0.9067234848484849,
+            "covariance_trace": 37243.53815991222
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.9211598421784518,
+            "mahalanobis_per_dimension": 0.119899170943669,
+            "marginal_95_coverage": 1.0,
+            "covariance_trace": 2965.231182429159
+          },
+          "conditional": {
+            "nll_per_dimension": 0.8913331519869683,
+            "mahalanobis_per_dimension": 0.11428966450507205,
+            "marginal_95_coverage": 0.9981060606060606,
+            "covariance_trace": 913.6280097978089
+          }
+        },
+        "delta_mse_zero": 18.852963057173113,
+        "delta_mse_source_mean": 19.02937896317704,
+        "delta_mse_conditional": 6.240561206652564
+      },
+      {
+        "target": "A04",
+        "length_s": 16.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.7284841053187847e-12,
+        "cross_trace_relative_to_finite": 0.021032526470711372,
+        "delta_trace_relative_to_finite": 0.08284493627018105,
+        "cross_frobenius_relative_to_finite": 0.06254219094140792,
+        "delta_class_mean_distance": 5.765177266106717,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 4.173440367574627,
+            "mahalanobis_per_dimension": 2.7175625061805224,
+            "marginal_95_coverage": 0.821969696969697,
+            "covariance_trace": 31558.12694651145
+          },
+          "full_paired": {
+            "nll_per_dimension": 4.173440367574633,
+            "mahalanobis_per_dimension": 2.71756250618054,
+            "marginal_95_coverage": 0.821969696969697,
+            "covariance_trace": 31558.12694651145
+          },
+          "omit_cross": {
+            "nll_per_dimension": 4.126992313255507,
+            "mahalanobis_per_dimension": 2.597226800685795,
+            "marginal_95_coverage": 0.821969696969697,
+            "covariance_trace": 30895.042890199195
+          },
+          "double_count": {
+            "nll_per_dimension": 4.120926030588499,
+            "mahalanobis_per_dimension": 2.5276355006554354,
+            "marginal_95_coverage": 0.8338068181818182,
+            "covariance_trace": 34169.946143004985
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.9611414025901867,
+            "mahalanobis_per_dimension": 0.3208954531466487,
+            "marginal_95_coverage": 0.9682765151515151,
+            "covariance_trace": 2643.5477417835064
+          },
+          "conditional": {
+            "nll_per_dimension": 0.9200749166997126,
+            "mahalanobis_per_dimension": 0.29117229907728925,
+            "marginal_95_coverage": 0.959280303030303,
+            "covariance_trace": 737.8958642644973
+          }
+        },
+        "delta_mse_zero": 53.72365949248864,
+        "delta_mse_source_mean": 53.74809738167866,
+        "delta_mse_conditional": 19.155438466303334
+      },
+      {
+        "target": "A05",
+        "length_s": 16.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.5011104298755527e-12,
+        "cross_trace_relative_to_finite": 0.030665065284021777,
+        "delta_trace_relative_to_finite": 0.07767776680124036,
+        "cross_frobenius_relative_to_finite": 0.07825423410823786,
+        "delta_class_mean_distance": 9.912321201015258,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.472938437287797,
+            "mahalanobis_per_dimension": 1.1914455706680287,
+            "marginal_95_coverage": 0.9540719696969697,
+            "covariance_trace": 36342.597525154546
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.4729384372877963,
+            "mahalanobis_per_dimension": 1.1914455706680278,
+            "marginal_95_coverage": 0.9540719696969697,
+            "covariance_trace": 36342.597525154546
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.448910855722243,
+            "mahalanobis_per_dimension": 1.108868095502099,
+            "marginal_95_coverage": 0.9540719696969697,
+            "covariance_trace": 35229.26273424567
+          },
+          "double_count": {
+            "nll_per_dimension": 3.4674910787295516,
+            "mahalanobis_per_dimension": 1.0905871047562967,
+            "marginal_95_coverage": 0.9564393939393939,
+            "covariance_trace": 39162.789149040946
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.9014453861225951,
+            "mahalanobis_per_dimension": 0.10945756523636445,
+            "marginal_95_coverage": 0.9881628787878788,
+            "covariance_trace": 2864.9785454446974
+          },
+          "conditional": {
+            "nll_per_dimension": 0.8702636119633791,
+            "mahalanobis_per_dimension": 0.10000192513532535,
+            "marginal_95_coverage": 0.9933712121212122,
+            "covariance_trace": 912.1020959108664
+          }
+        },
+        "delta_mse_zero": 29.893817228489752,
+        "delta_mse_source_mean": 29.740758239717877,
+        "delta_mse_conditional": 7.678354096564309
+      },
+      {
+        "target": "A06",
+        "length_s": 16.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 4.092726157978177e-12,
+        "cross_trace_relative_to_finite": 0.027798527177206024,
+        "delta_trace_relative_to_finite": 0.07652210942056412,
+        "cross_frobenius_relative_to_finite": 0.07611123073734807,
+        "delta_class_mean_distance": 8.43977958642584,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.38652741796393,
+            "mahalanobis_per_dimension": 1.0029486614470882,
+            "marginal_95_coverage": 0.9701704545454546,
+            "covariance_trace": 37425.07290946157
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.3865274179639333,
+            "mahalanobis_per_dimension": 1.0029486614471066,
+            "marginal_95_coverage": 0.9701704545454546,
+            "covariance_trace": 37425.07290946157
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.3762758739405534,
+            "mahalanobis_per_dimension": 0.9502037091889725,
+            "marginal_95_coverage": 0.9673295454545454,
+            "covariance_trace": 36385.750325662775
+          },
+          "double_count": {
+            "nll_per_dimension": 3.391849246116382,
+            "mahalanobis_per_dimension": 0.9246805087719775,
+            "marginal_95_coverage": 0.9730113636363636,
+            "covariance_trace": 40286.057449172265
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.8997269371728247,
+            "mahalanobis_per_dimension": 0.09312451920594558,
+            "marginal_95_coverage": 1.0,
+            "covariance_trace": 2901.6177794546415
+          },
+          "conditional": {
+            "nll_per_dimension": 0.8694065906042724,
+            "mahalanobis_per_dimension": 0.08694980180762434,
+            "marginal_95_coverage": 0.9962121212121212,
+            "covariance_trace": 897.3238417574939
+          }
+        },
+        "delta_mse_zero": 25.745691780014084,
+        "delta_mse_source_mean": 25.77989658860802,
+        "delta_mse_conditional": 7.124544675815631
+      },
+      {
+        "target": "A07",
+        "length_s": 16.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.7284841053187847e-12,
+        "cross_trace_relative_to_finite": 0.03249195464805024,
+        "delta_trace_relative_to_finite": 0.08276618057301277,
+        "cross_frobenius_relative_to_finite": 0.08964175439320116,
+        "delta_class_mean_distance": 7.806172011021397,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.9184720228038104,
+            "mahalanobis_per_dimension": 2.1580114025239103,
+            "marginal_95_coverage": 0.9057765151515151,
+            "covariance_trace": 33149.340096133084
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.9184720228038037,
+            "mahalanobis_per_dimension": 2.1580114025238855,
+            "marginal_95_coverage": 0.9057765151515151,
+            "covariance_trace": 33149.34009613309
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.8582918999992812,
+            "mahalanobis_per_dimension": 2.0021248631720563,
+            "marginal_95_coverage": 0.9015151515151515,
+            "covariance_trace": 32073.32925196091
+          },
+          "double_count": {
+            "nll_per_dimension": 3.8717602794289383,
+            "mahalanobis_per_dimension": 1.9740877931853247,
+            "marginal_95_coverage": 0.9100378787878788,
+            "covariance_trace": 35890.24346104093
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.9264083629458856,
+            "mahalanobis_per_dimension": 0.19574542604441997,
+            "marginal_95_coverage": 0.9777462121212122,
+            "covariance_trace": 2778.5982705604374
+          },
+          "conditional": {
+            "nll_per_dimension": 0.8953846894826546,
+            "mahalanobis_per_dimension": 0.18647435035977034,
+            "marginal_95_coverage": 0.990530303030303,
+            "covariance_trace": 857.4346499637711
+          }
+        },
+        "delta_mse_zero": 38.02635848539224,
+        "delta_mse_source_mean": 39.7609787810362,
+        "delta_mse_conditional": 12.95246161436772
+      },
+      {
+        "target": "A08",
+        "length_s": 16.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.2737367544323206e-12,
+        "cross_trace_relative_to_finite": 0.02728116894911836,
+        "delta_trace_relative_to_finite": 0.07684689725866682,
+        "cross_frobenius_relative_to_finite": 0.07234940062682593,
+        "delta_class_mean_distance": 10.223036978860456,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.3146056295282698,
+            "mahalanobis_per_dimension": 0.8407349561585757,
+            "marginal_95_coverage": 0.9924242424242424,
+            "covariance_trace": 39131.81269379657
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.314605629528266,
+            "mahalanobis_per_dimension": 0.8407349561585599,
+            "marginal_95_coverage": 0.9924242424242424,
+            "covariance_trace": 39131.812693796586
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.3053453609150054,
+            "mahalanobis_per_dimension": 0.7891129668841893,
+            "marginal_95_coverage": 0.9919507575757576,
+            "covariance_trace": 38065.31759551015
+          },
+          "double_count": {
+            "nll_per_dimension": 3.3264427762796753,
+            "mahalanobis_per_dimension": 0.7757164093230303,
+            "marginal_95_coverage": 0.9924242424242424,
+            "covariance_trace": 42135.96692918676
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.9124588948621325,
+            "mahalanobis_per_dimension": 0.07266899682753458,
+            "marginal_95_coverage": 1.0,
+            "covariance_trace": 3051.836840522583
+          },
+          "conditional": {
+            "nll_per_dimension": 0.885248577703551,
+            "mahalanobis_per_dimension": 0.07321550046474752,
+            "marginal_95_coverage": 0.9971590909090909,
+            "covariance_trace": 906.6175490384742
+          }
+        },
+        "delta_mse_zero": 9.524808988781116,
+        "delta_mse_source_mean": 9.514020845728648,
+        "delta_mse_conditional": 5.744686303258735
+      },
+      {
+        "target": "A01",
+        "length_s": 16.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 3.183231456205249e-12,
+        "cross_trace_relative_to_finite": 0.00527694065432163,
+        "delta_trace_relative_to_finite": 0.005956774593932757,
+        "cross_frobenius_relative_to_finite": 0.022148570226700266,
+        "delta_class_mean_distance": 2.6140316956162977,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.354859077723558,
+            "mahalanobis_per_dimension": 1.1000427382896392,
+            "marginal_95_coverage": 0.9791666666666666,
+            "covariance_trace": 35219.12601396683
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.354859077723556,
+            "mahalanobis_per_dimension": 1.1000427382896296,
+            "marginal_95_coverage": 0.9791666666666666,
+            "covariance_trace": 35219.12601396684
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.348218367063294,
+            "mahalanobis_per_dimension": 1.0783663031580253,
+            "marginal_95_coverage": 0.9791666666666666,
+            "covariance_trace": 35033.46243966836
+          },
+          "double_count": {
+            "nll_per_dimension": 3.3476631755928286,
+            "mahalanobis_per_dimension": 1.0537112148288137,
+            "marginal_95_coverage": 0.9820075757575758,
+            "covariance_trace": 35428.7088262151
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -0.2898169360421092,
+            "mahalanobis_per_dimension": 0.24895532782873234,
+            "marginal_95_coverage": 0.9057765151515151,
+            "covariance_trace": 212.83205798758877
+          },
+          "conditional": {
+            "nll_per_dimension": -0.3091440587355572,
+            "mahalanobis_per_dimension": 0.25524524952340133,
+            "marginal_95_coverage": 0.8963068181818182,
+            "covariance_trace": 109.9991760255198
+          }
+        },
+        "delta_mse_zero": 9.626923859642986,
+        "delta_mse_source_mean": 9.62172412905898,
+        "delta_mse_conditional": 5.283299183113982
+      },
+      {
+        "target": "A02",
+        "length_s": 16.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.9558577807620168e-12,
+        "cross_trace_relative_to_finite": 0.007133152716920579,
+        "delta_trace_relative_to_finite": 0.007865724843414955,
+        "cross_frobenius_relative_to_finite": 0.02877524687963803,
+        "delta_class_mean_distance": 2.870993122654372,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.417883532239596,
+            "mahalanobis_per_dimension": 1.2420834965668732,
+            "marginal_95_coverage": 0.9848484848484849,
+            "covariance_trace": 34705.97104301931
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.4178835322395997,
+            "mahalanobis_per_dimension": 1.242083496566873,
+            "marginal_95_coverage": 0.9848484848484849,
+            "covariance_trace": 34705.9710430193
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.411573203126951,
+            "mahalanobis_per_dimension": 1.221761888936521,
+            "marginal_95_coverage": 0.9848484848484849,
+            "covariance_trace": 34458.65536705638
+          },
+          "double_count": {
+            "nll_per_dimension": 3.4107533909828254,
+            "mahalanobis_per_dimension": 1.1956739735354958,
+            "marginal_95_coverage": 0.9853219696969697,
+            "covariance_trace": 34978.68594676348
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -0.19964588978393635,
+            "mahalanobis_per_dimension": 0.20728904240318924,
+            "marginal_95_coverage": 0.9910037878787878,
+            "covariance_trace": 276.8333796958741
+          },
+          "conditional": {
+            "nll_per_dimension": -0.22343951971396067,
+            "mahalanobis_per_dimension": 0.19819047093196182,
+            "marginal_95_coverage": 0.9919507575757576,
+            "covariance_trace": 148.72981580633152
+          }
+        },
+        "delta_mse_zero": 2.687190688263276,
+        "delta_mse_source_mean": 2.6920719295938627,
+        "delta_mse_conditional": 1.5659418546360495
+      },
+      {
+        "target": "A03",
+        "length_s": 16.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.0463630789890885e-12,
+        "cross_trace_relative_to_finite": 0.007377088538592315,
+        "delta_trace_relative_to_finite": 0.008530923581184041,
+        "cross_frobenius_relative_to_finite": 0.028752551497799157,
+        "delta_class_mean_distance": 1.4114845608120312,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.671877878280256,
+            "mahalanobis_per_dimension": 1.8002435544823183,
+            "marginal_95_coverage": 0.8963068181818182,
+            "covariance_trace": 30984.346846944216
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.6718778782802555,
+            "mahalanobis_per_dimension": 1.8002435544823148,
+            "marginal_95_coverage": 0.8963068181818182,
+            "covariance_trace": 30984.346846944216
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.650509472852965,
+            "mahalanobis_per_dimension": 1.748877773653252,
+            "marginal_95_coverage": 0.8953598484848485,
+            "covariance_trace": 30756.00092286793
+          },
+          "double_count": {
+            "nll_per_dimension": 3.6580782924130304,
+            "mahalanobis_per_dimension": 1.738635144457134,
+            "marginal_95_coverage": 0.8977272727272727,
+            "covariance_trace": 31248.407881074265
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -0.2216554265821432,
+            "mahalanobis_per_dimension": 0.19213723635220226,
+            "marginal_95_coverage": 0.978219696969697,
+            "covariance_trace": 267.03793694378174
+          },
+          "conditional": {
+            "nll_per_dimension": -0.24838038969942028,
+            "mahalanobis_per_dimension": 0.17481876880899988,
+            "marginal_95_coverage": 0.9919507575757576,
+            "covariance_trace": 154.04972940481306
+          }
+        },
+        "delta_mse_zero": 3.779997718005631,
+        "delta_mse_source_mean": 3.7609053107120713,
+        "delta_mse_conditional": 1.4672073731975188
+      },
+      {
+        "target": "A04",
+        "length_s": 16.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 3.183231456205249e-12,
+        "cross_trace_relative_to_finite": 0.00855021345308264,
+        "delta_trace_relative_to_finite": 0.008742451594386419,
+        "cross_frobenius_relative_to_finite": 0.03370521339089196,
+        "delta_class_mean_distance": 3.7873099706158047,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 4.105187620588312,
+            "mahalanobis_per_dimension": 2.737278418875974,
+            "marginal_95_coverage": 0.8134469696969697,
+            "covariance_trace": 28777.590015463655
+          },
+          "full_paired": {
+            "nll_per_dimension": 4.10518762058831,
+            "mahalanobis_per_dimension": 2.7372784188759676,
+            "marginal_95_coverage": 0.8134469696969697,
+            "covariance_trace": 28777.59001546366
+          },
+          "omit_cross": {
+            "nll_per_dimension": 4.078906582621616,
+            "mahalanobis_per_dimension": 2.6762231623398325,
+            "marginal_95_coverage": 0.8120265151515151,
+            "covariance_trace": 28531.781286894715
+          },
+          "double_count": {
+            "nll_per_dimension": 4.071271545762717,
+            "mahalanobis_per_dimension": 2.6352270731453498,
+            "marginal_95_coverage": 0.818655303030303,
+            "covariance_trace": 29028.925367824588
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -0.20243612222597002,
+            "mahalanobis_per_dimension": 0.27464866069034305,
+            "marginal_95_coverage": 0.9720643939393939,
+            "covariance_trace": 256.26988313399767
+          },
+          "conditional": {
+            "nll_per_dimension": -0.22586237234015227,
+            "mahalanobis_per_dimension": 0.2654204782798728,
+            "marginal_95_coverage": 0.9640151515151515,
+            "covariance_trace": 134.43004249592948
+          }
+        },
+        "delta_mse_zero": 4.83694394032064,
+        "delta_mse_source_mean": 4.9497838422098175,
+        "delta_mse_conditional": 2.997729468601868
+      },
+      {
+        "target": "A05",
+        "length_s": 16.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.0463630789890885e-12,
+        "cross_trace_relative_to_finite": 0.009160711598456753,
+        "delta_trace_relative_to_finite": 0.007914698314097145,
+        "cross_frobenius_relative_to_finite": 0.03188308295552279,
+        "delta_class_mean_distance": 2.3205905332462464,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.38403004898911,
+            "mahalanobis_per_dimension": 1.1677000357238265,
+            "marginal_95_coverage": 0.9540719696969697,
+            "covariance_trace": 32968.08108245774
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.38403004898911,
+            "mahalanobis_per_dimension": 1.1677000357238212,
+            "marginal_95_coverage": 0.9540719696969697,
+            "covariance_trace": 32968.08108245775
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.3766428058342686,
+            "mahalanobis_per_dimension": 1.1456169134222929,
+            "marginal_95_coverage": 0.9540719696969697,
+            "covariance_trace": 32666.371709080187
+          },
+          "double_count": {
+            "nll_per_dimension": 3.3829207432530177,
+            "mahalanobis_per_dimension": 1.1321686703665625,
+            "marginal_95_coverage": 0.9550189393939394,
+            "covariance_trace": 33228.75282647607
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -0.2662718095517832,
+            "mahalanobis_per_dimension": 0.10147661048305306,
+            "marginal_95_coverage": 0.9796401515151515,
+            "covariance_trace": 264.18745733780815
+          },
+          "conditional": {
+            "nll_per_dimension": -0.28725257410936517,
+            "mahalanobis_per_dimension": 0.09988973214389106,
+            "marginal_95_coverage": 0.9834280303030303,
+            "covariance_trace": 145.41423975630454
+          }
+        },
+        "delta_mse_zero": 4.02543364455761,
+        "delta_mse_source_mean": 4.068172437644705,
+        "delta_mse_conditional": 1.858466797389718
+      },
+      {
+        "target": "A06",
+        "length_s": 16.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 3.183231456205249e-12,
+        "cross_trace_relative_to_finite": 0.00709399989060449,
+        "delta_trace_relative_to_finite": 0.008109998948081249,
+        "cross_frobenius_relative_to_finite": 0.02878968316357145,
+        "delta_class_mean_distance": 2.312457702560082,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.3195203506140856,
+            "mahalanobis_per_dimension": 1.0269366431911229,
+            "marginal_95_coverage": 0.9678030303030303,
+            "covariance_trace": 34038.38504553157
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.3195203506140887,
+            "mahalanobis_per_dimension": 1.0269366431911275,
+            "marginal_95_coverage": 0.9678030303030303,
+            "covariance_trace": 34038.38504553157
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.313453686196305,
+            "mahalanobis_per_dimension": 1.0074450473521037,
+            "marginal_95_coverage": 0.9673295454545454,
+            "covariance_trace": 33797.15797281494
+          },
+          "double_count": {
+            "nll_per_dimension": 3.3144741207657065,
+            "mahalanobis_per_dimension": 0.9849020838761694,
+            "marginal_95_coverage": 0.9696969696969697,
+            "covariance_trace": 34314.1605369538
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -0.20958219273927545,
+            "mahalanobis_per_dimension": 0.17680681136872634,
+            "marginal_95_coverage": 0.9966856060606061,
+            "covariance_trace": 279.4358819767533
+          },
+          "conditional": {
+            "nll_per_dimension": -0.23320831706155176,
+            "mahalanobis_per_dimension": 0.16679455319803482,
+            "marginal_95_coverage": 0.9962121212121212,
+            "covariance_trace": 151.57470547609663
+          }
+        },
+        "delta_mse_zero": 2.420691424648805,
+        "delta_mse_source_mean": 2.4214176622207755,
+        "delta_mse_conditional": 1.5857275380499494
+      },
+      {
+        "target": "A07",
+        "length_s": 16.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A08"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 2.2737367544323206e-12,
+        "cross_trace_relative_to_finite": 0.006332869474486606,
+        "delta_trace_relative_to_finite": 0.008664067433103669,
+        "cross_frobenius_relative_to_finite": 0.025502511107123014,
+        "delta_class_mean_distance": 4.58509031135535,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.823794624150801,
+            "mahalanobis_per_dimension": 2.12186319855189,
+            "marginal_95_coverage": 0.8991477272727273,
+            "covariance_trace": 29775.14494296802
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.823794624150793,
+            "mahalanobis_per_dimension": 2.1218631985518783,
+            "marginal_95_coverage": 0.8991477272727273,
+            "covariance_trace": 29775.14494296802
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.797261154145936,
+            "mahalanobis_per_dimension": 2.060387251563087,
+            "marginal_95_coverage": 0.8982007575757576,
+            "covariance_trace": 29586.77121019306
+          },
+          "double_count": {
+            "nll_per_dimension": 3.8015846457984885,
+            "mahalanobis_per_dimension": 2.0443463181560877,
+            "marginal_95_coverage": 0.8991477272727273,
+            "covariance_trace": 30032.86109043686
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -0.20283855055161626,
+            "mahalanobis_per_dimension": 0.24646203747804016,
+            "marginal_95_coverage": 0.9758522727272727,
+            "covariance_trace": 263.84193854176254
+          },
+          "conditional": {
+            "nll_per_dimension": -0.23185342714105373,
+            "mahalanobis_per_dimension": 0.2243251655381031,
+            "marginal_95_coverage": 0.9839015151515151,
+            "covariance_trace": 146.27379701530285
+          }
+        },
+        "delta_mse_zero": 4.12463035193224,
+        "delta_mse_source_mean": 4.102084361042504,
+        "delta_mse_conditional": 1.9420697730969263
+      },
+      {
+        "target": "A08",
+        "length_s": 16.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07"
+        ],
+        "source_cut_count": 231,
+        "target_cut_count": 33,
+        "source_label_count": [
+          182,
+          49
+        ],
+        "target_label_count": [
+          26,
+          7
+        ],
+        "paired_covariance_max_error": 1.8189894035458565e-12,
+        "cross_trace_relative_to_finite": 0.006831521638173038,
+        "delta_trace_relative_to_finite": 0.008051333472106282,
+        "cross_frobenius_relative_to_finite": 0.02781179634699306,
+        "delta_class_mean_distance": 2.870040565835821,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.2293808671396627,
+            "mahalanobis_per_dimension": 0.8239872635816683,
+            "marginal_95_coverage": 0.9895833333333334,
+            "covariance_trace": 35586.724779529395
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.2293808671396604,
+            "mahalanobis_per_dimension": 0.8239872635816561,
+            "marginal_95_coverage": 0.9895833333333334,
+            "covariance_trace": 35586.72477952941
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.2269985163486132,
+            "mahalanobis_per_dimension": 0.8123530473011433,
+            "marginal_95_coverage": 0.9895833333333334,
+            "covariance_trace": 35343.856167778096
+          },
+          "double_count": {
+            "nll_per_dimension": 3.233659264720006,
+            "mahalanobis_per_dimension": 0.8000676784700347,
+            "marginal_95_coverage": 0.9900568181818182,
+            "covariance_trace": 35872.95913355543
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -0.22955519822733408,
+            "mahalanobis_per_dimension": 0.09492144102607321,
+            "marginal_95_coverage": 1.0,
+            "covariance_trace": 290.4871013866819
+          },
+          "conditional": {
+            "nll_per_dimension": -0.25278580701685155,
+            "mahalanobis_per_dimension": 0.08612281373262769,
+            "marginal_95_coverage": 0.9995265151515151,
+            "covariance_trace": 156.36562283538396
+          }
+        },
+        "delta_mse_zero": 1.216253236445141,
+        "delta_mse_source_mean": 1.211535881242471,
+        "delta_mse_conditional": 0.701882023407891
+      },
+      {
+        "target": "A01",
+        "length_s": 64.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 1.8189894035458565e-12,
+        "cross_trace_relative_to_finite": -0.009587159599544117,
+        "delta_trace_relative_to_finite": 0.17856025331821185,
+        "cross_frobenius_relative_to_finite": 0.125736054437153,
+        "delta_class_mean_distance": 10.119599436173875,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.551376931523847,
+            "mahalanobis_per_dimension": 1.243920072016111,
+            "marginal_95_coverage": 0.9633620689655172,
+            "covariance_trace": 41785.8238797617
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.551376931523844,
+            "mahalanobis_per_dimension": 1.2439200720161105,
+            "marginal_95_coverage": 0.9633620689655172,
+            "covariance_trace": 41785.823879761694
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.510102020942774,
+            "mahalanobis_per_dimension": 1.1152818950679964,
+            "marginal_95_coverage": 0.9649784482758621,
+            "covariance_trace": 42186.03103514004
+          },
+          "double_count": {
+            "nll_per_dimension": 3.5254090466738783,
+            "mahalanobis_per_dimension": 1.0848018833694435,
+            "marginal_95_coverage": 0.9752155172413793,
+            "covariance_trace": 49239.65734337852
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4160508391132918,
+            "mahalanobis_per_dimension": 0.14542782446916586,
+            "marginal_95_coverage": 0.9509698275862069,
+            "covariance_trace": 7545.343723441213
+          },
+          "conditional": {
+            "nll_per_dimension": 1.3654100081724514,
+            "mahalanobis_per_dimension": 0.13327945390541115,
+            "marginal_95_coverage": 0.9800646551724138,
+            "covariance_trace": 1596.1576980317702
+          }
+        },
+        "delta_mse_zero": 213.08317026925027,
+        "delta_mse_source_mean": 214.33248708889764,
+        "delta_mse_conditional": 27.44182202699989
+      },
+      {
+        "target": "A02",
+        "length_s": 64.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 2.2737367544323206e-12,
+        "cross_trace_relative_to_finite": 0.004754279702201476,
+        "delta_trace_relative_to_finite": 0.19334241146695624,
+        "cross_frobenius_relative_to_finite": 0.12235167721102469,
+        "delta_class_mean_distance": 10.46459217681737,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.5752833118485188,
+            "mahalanobis_per_dimension": 1.2982153287155873,
+            "marginal_95_coverage": 0.9827586206896551,
+            "covariance_trace": 42601.77991003382
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.5752833118485197,
+            "mahalanobis_per_dimension": 1.29821532871559,
+            "marginal_95_coverage": 0.9827586206896551,
+            "covariance_trace": 42601.779910033816
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.543902280229603,
+            "mahalanobis_per_dimension": 1.1924864274139675,
+            "marginal_95_coverage": 0.9838362068965517,
+            "covariance_trace": 42399.44147096896
+          },
+          "double_count": {
+            "nll_per_dimension": 3.550699431297036,
+            "mahalanobis_per_dimension": 1.1436635762786709,
+            "marginal_95_coverage": 0.9881465517241379,
+            "covariance_trace": 50830.28226826606
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4680258501284773,
+            "mahalanobis_per_dimension": 0.16550713099726005,
+            "marginal_95_coverage": 0.9881465517241379,
+            "covariance_trace": 8328.93623050939
+          },
+          "conditional": {
+            "nll_per_dimension": 1.4169713563718944,
+            "mahalanobis_per_dimension": 0.14796626036355234,
+            "marginal_95_coverage": 0.9897629310344828,
+            "covariance_trace": 1685.4471938518136
+          }
+        },
+        "delta_mse_zero": 128.0091172590528,
+        "delta_mse_source_mean": 132.42157432718446,
+        "delta_mse_conditional": 24.09234975100544
+      },
+      {
+        "target": "A03",
+        "length_s": 64.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 3.183231456205249e-12,
+        "cross_trace_relative_to_finite": 0.004837334777907344,
+        "delta_trace_relative_to_finite": 0.2169608588778398,
+        "cross_frobenius_relative_to_finite": 0.1300797476981113,
+        "delta_class_mean_distance": 12.447739794418824,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.8354525958448047,
+            "mahalanobis_per_dimension": 1.864962999965129,
+            "marginal_95_coverage": 0.9014008620689655,
+            "covariance_trace": 38740.17552066248
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.835452595844807,
+            "mahalanobis_per_dimension": 1.8649629999651383,
+            "marginal_95_coverage": 0.9014008620689655,
+            "covariance_trace": 38740.17552066247
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.790323771594611,
+            "mahalanobis_per_dimension": 1.7313502680701982,
+            "marginal_95_coverage": 0.9008620689655172,
+            "covariance_trace": 38552.96353430051
+          },
+          "double_count": {
+            "nll_per_dimension": 3.8157948226399894,
+            "mahalanobis_per_dimension": 1.7198305695132485,
+            "marginal_95_coverage": 0.9110991379310345,
+            "covariance_trace": 47136.880569654684
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4512008018130114,
+            "mahalanobis_per_dimension": 0.10719473885835472,
+            "marginal_95_coverage": 0.9865301724137931,
+            "covariance_trace": 8506.35153465267
+          },
+          "conditional": {
+            "nll_per_dimension": 1.4012633151680336,
+            "mahalanobis_per_dimension": 0.09270190613175455,
+            "marginal_95_coverage": 0.9967672413793104,
+            "covariance_trace": 1721.9892243526583
+          }
+        },
+        "delta_mse_zero": 110.01636209693845,
+        "delta_mse_source_mean": 110.17539650371795,
+        "delta_mse_conditional": 18.067846894182257
+      },
+      {
+        "target": "A04",
+        "length_s": 64.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 1.8189894035458565e-12,
+        "cross_trace_relative_to_finite": 0.008147878248630532,
+        "delta_trace_relative_to_finite": 0.21564600766646752,
+        "cross_frobenius_relative_to_finite": 0.13585961945821512,
+        "delta_class_mean_distance": 16.236626431325924,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 4.291411434165903,
+            "mahalanobis_per_dimension": 2.847524828093292,
+            "marginal_95_coverage": 0.8243534482758621,
+            "covariance_trace": 36392.09110846228
+          },
+          "full_paired": {
+            "nll_per_dimension": 4.291411434165888,
+            "mahalanobis_per_dimension": 2.8475248280932495,
+            "marginal_95_coverage": 0.8243534482758621,
+            "covariance_trace": 36392.091108462286
+          },
+          "omit_cross": {
+            "nll_per_dimension": 4.211023872759914,
+            "mahalanobis_per_dimension": 2.6424329784469416,
+            "marginal_95_coverage": 0.8254310344827587,
+            "covariance_trace": 36095.869003002925
+          },
+          "double_count": {
+            "nll_per_dimension": 4.21609862150261,
+            "mahalanobis_per_dimension": 2.590468493845792,
+            "marginal_95_coverage": 0.8512931034482759,
+            "covariance_trace": 44232.06029744753
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4684546093846558,
+            "mahalanobis_per_dimension": 0.21122935341326024,
+            "marginal_95_coverage": 0.9692887931034483,
+            "covariance_trace": 7962.060291003982
+          },
+          "conditional": {
+            "nll_per_dimension": 1.4279930499376723,
+            "mahalanobis_per_dimension": 0.21894477752406497,
+            "marginal_95_coverage": 0.978448275862069,
+            "covariance_trace": 1573.4526709959296
+          }
+        },
+        "delta_mse_zero": 168.07948095493376,
+        "delta_mse_source_mean": 169.2007518212951,
+        "delta_mse_conditional": 30.711498963394156
+      },
+      {
+        "target": "A05",
+        "length_s": 64.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 2.5011104298755527e-12,
+        "cross_trace_relative_to_finite": -0.015099272921481825,
+        "delta_trace_relative_to_finite": 0.21381905504329635,
+        "cross_frobenius_relative_to_finite": 0.12796737060484975,
+        "delta_class_mean_distance": 6.75087833638274,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.5838985098466494,
+            "mahalanobis_per_dimension": 1.3160605415368585,
+            "marginal_95_coverage": 0.9428879310344828,
+            "covariance_trace": 40148.812526807385
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.5838985098466507,
+            "mahalanobis_per_dimension": 1.3160605415368536,
+            "marginal_95_coverage": 0.9428879310344828,
+            "covariance_trace": 40148.812526807385
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.5567149598041934,
+            "mahalanobis_per_dimension": 1.2177029838978675,
+            "marginal_95_coverage": 0.943426724137931,
+            "covariance_trace": 40754.4247923575
+          },
+          "double_count": {
+            "nll_per_dimension": 3.5760925978543514,
+            "mahalanobis_per_dimension": 1.193947636663522,
+            "marginal_95_coverage": 0.9450431034482759,
+            "covariance_trace": 48724.81767724935
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4536616833061378,
+            "mahalanobis_per_dimension": 0.09378409963093391,
+            "marginal_95_coverage": 0.9973060344827587,
+            "covariance_trace": 8669.31829833357
+          },
+          "conditional": {
+            "nll_per_dimension": 1.4078081053421043,
+            "mahalanobis_per_dimension": 0.09053627662115522,
+            "marginal_95_coverage": 0.9913793103448276,
+            "covariance_trace": 1672.5496606199451
+          }
+        },
+        "delta_mse_zero": 90.94693095432811,
+        "delta_mse_source_mean": 93.08322005975631,
+        "delta_mse_conditional": 17.395513837994073
+      },
+      {
+        "target": "A06",
+        "length_s": 64.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 2.7284841053187847e-12,
+        "cross_trace_relative_to_finite": -0.0019389066759571744,
+        "delta_trace_relative_to_finite": 0.20504160422067466,
+        "cross_frobenius_relative_to_finite": 0.12097233998995445,
+        "delta_class_mean_distance": 7.088581547838162,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.489490069507292,
+            "mahalanobis_per_dimension": 1.1112598648988616,
+            "marginal_95_coverage": 0.9719827586206896,
+            "covariance_trace": 42021.30103352031
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.489490069507286,
+            "mahalanobis_per_dimension": 1.1112598648988348,
+            "marginal_95_coverage": 0.9719827586206896,
+            "covariance_trace": 42021.301033520314
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.4738852729649143,
+            "mahalanobis_per_dimension": 1.0387372118657132,
+            "marginal_95_coverage": 0.9725215517241379,
+            "covariance_trace": 42102.6950206395
+          },
+          "double_count": {
+            "nll_per_dimension": 3.4829214329624563,
+            "mahalanobis_per_dimension": 0.9936036037842592,
+            "marginal_95_coverage": 0.974676724137931,
+            "covariance_trace": 50628.808501405314
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4718916155081148,
+            "mahalanobis_per_dimension": 0.13168227660193524,
+            "marginal_95_coverage": 0.994073275862069,
+            "covariance_trace": 8701.910205605078
+          },
+          "conditional": {
+            "nll_per_dimension": 1.4258791466308476,
+            "mahalanobis_per_dimension": 0.12583090151858317,
+            "marginal_95_coverage": 0.9897629310344828,
+            "covariance_trace": 1703.8635373196928
+          }
+        },
+        "delta_mse_zero": 88.8718898731569,
+        "delta_mse_source_mean": 88.78701258845916,
+        "delta_mse_conditional": 20.266987709839846
+      },
+      {
+        "target": "A07",
+        "length_s": 64.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 1.8189894035458565e-12,
+        "cross_trace_relative_to_finite": 0.013238904017191418,
+        "delta_trace_relative_to_finite": 0.2100653428568153,
+        "cross_frobenius_relative_to_finite": 0.11572650897315569,
+        "delta_class_mean_distance": 8.306440054870473,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 4.048595354972776,
+            "mahalanobis_per_dimension": 2.316991360956014,
+            "marginal_95_coverage": 0.90625,
+            "covariance_trace": 37785.184853966115
+          },
+          "full_paired": {
+            "nll_per_dimension": 4.048595354972755,
+            "mahalanobis_per_dimension": 2.316991360955974,
+            "marginal_95_coverage": 0.90625,
+            "covariance_trace": 37785.184853966115
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.972230544529485,
+            "mahalanobis_per_dimension": 2.1214279271213092,
+            "marginal_95_coverage": 0.90625,
+            "covariance_trace": 37285.450153113474
+          },
+          "double_count": {
+            "nll_per_dimension": 3.966790438773569,
+            "mahalanobis_per_dimension": 2.0478793797663166,
+            "marginal_95_coverage": 0.9154094827586207,
+            "covariance_trace": 45714.613236839774
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4825565791969564,
+            "mahalanobis_per_dimension": 0.23528744443154254,
+            "marginal_95_coverage": 0.9709051724137931,
+            "covariance_trace": 8020.157618411269
+          },
+          "conditional": {
+            "nll_per_dimension": 1.438312281668313,
+            "mahalanobis_per_dimension": 0.2321960526924311,
+            "marginal_95_coverage": 0.9703663793103449,
+            "covariance_trace": 1517.0717778273859
+          }
+        },
+        "delta_mse_zero": 162.54786295095442,
+        "delta_mse_source_mean": 162.6082559603783,
+        "delta_mse_conditional": 41.87950150467021
+      },
+      {
+        "target": "A08",
+        "length_s": 64.0,
+        "distance_s": 0.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 2.2737367544323206e-12,
+        "cross_trace_relative_to_finite": 0.00638066277743397,
+        "delta_trace_relative_to_finite": 0.1985722007771312,
+        "cross_frobenius_relative_to_finite": 0.11667164235134754,
+        "delta_class_mean_distance": 10.297318729529948,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.3988096301752204,
+            "mahalanobis_per_dimension": 0.9085061367360862,
+            "marginal_95_coverage": 0.9929956896551724,
+            "covariance_trace": 44158.2450405056
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.398809630175216,
+            "mahalanobis_per_dimension": 0.9085061367360798,
+            "marginal_95_coverage": 0.9929956896551724,
+            "covariance_trace": 44158.2450405056
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.3764894765770586,
+            "mahalanobis_per_dimension": 0.8187863610403935,
+            "marginal_95_coverage": 0.9929956896551724,
+            "covariance_trace": 43876.76764745189
+          },
+          "double_count": {
+            "nll_per_dimension": 3.4029363928947363,
+            "mahalanobis_per_dimension": 0.8101365078672401,
+            "marginal_95_coverage": 0.994073275862069,
+            "covariance_trace": 52918.085100594544
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 1.4549451717766808,
+            "mahalanobis_per_dimension": 0.07473180385093914,
+            "marginal_95_coverage": 0.9967672413793104,
+            "covariance_trace": 8865.011738529533
+          },
+          "conditional": {
+            "nll_per_dimension": 1.409273806772173,
+            "mahalanobis_per_dimension": 0.0706089091150848,
+            "marginal_95_coverage": 0.9967672413793104,
+            "covariance_trace": 1757.8387255386176
+          }
+        },
+        "delta_mse_zero": 71.24735573231602,
+        "delta_mse_source_mean": 71.02010056550553,
+        "delta_mse_conditional": 11.978438254412007
+      },
+      {
+        "target": "A01",
+        "length_s": 64.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 2.5011104298755527e-12,
+        "cross_trace_relative_to_finite": 0.017986906371072597,
+        "delta_trace_relative_to_finite": 0.053116502164642074,
+        "cross_frobenius_relative_to_finite": 0.06201247972668401,
+        "delta_class_mean_distance": 7.232668607640421,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.4854932961422054,
+            "mahalanobis_per_dimension": 1.2435888069084904,
+            "marginal_95_coverage": 0.9509698275862069,
+            "covariance_trace": 37383.21817983558
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.485493296142208,
+            "mahalanobis_per_dimension": 1.243588806908502,
+            "marginal_95_coverage": 0.9509698275862069,
+            "covariance_trace": 37383.21817983559
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.4570823552090055,
+            "mahalanobis_per_dimension": 1.1502492016722679,
+            "marginal_95_coverage": 0.9509698275862069,
+            "covariance_trace": 36711.48147129405
+          },
+          "double_count": {
+            "nll_per_dimension": 3.4614340959194756,
+            "mahalanobis_per_dimension": 1.1043723933799696,
+            "marginal_95_coverage": 0.9633620689655172,
+            "covariance_trace": 39366.90028709884
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.7928853068899301,
+            "mahalanobis_per_dimension": 0.20819911645486974,
+            "marginal_95_coverage": 0.8512931034482759,
+            "covariance_trace": 2012.1885789890398
+          },
+          "conditional": {
+            "nll_per_dimension": 0.762690158848998,
+            "mahalanobis_per_dimension": 0.20622558853367237,
+            "marginal_95_coverage": 0.9181034482758621,
+            "covariance_trace": 667.8864494660427
+          }
+        },
+        "delta_mse_zero": 113.5392873743418,
+        "delta_mse_source_mean": 114.02833222371324,
+        "delta_mse_conditional": 28.404276994800504
+      },
+      {
+        "target": "A02",
+        "length_s": 64.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 2.2737367544323206e-12,
+        "cross_trace_relative_to_finite": 0.026834926283847146,
+        "delta_trace_relative_to_finite": 0.06898565191135504,
+        "cross_frobenius_relative_to_finite": 0.07653188273548056,
+        "delta_class_mean_distance": 8.90421193688629,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.5536054846602805,
+            "mahalanobis_per_dimension": 1.3942751671934464,
+            "marginal_95_coverage": 0.9811422413793104,
+            "covariance_trace": 37782.88628129685
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.5536054846602854,
+            "mahalanobis_per_dimension": 1.3942751671934503,
+            "marginal_95_coverage": 0.9811422413793104,
+            "covariance_trace": 37782.88628129685
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.5065757359512575,
+            "mahalanobis_per_dimension": 1.2620331434575993,
+            "marginal_95_coverage": 0.9806034482758621,
+            "covariance_trace": 36769.99820122735
+          },
+          "double_count": {
+            "nll_per_dimension": 3.506533234424217,
+            "mahalanobis_per_dimension": 1.208435896360506,
+            "marginal_95_coverage": 0.984375,
+            "covariance_trace": 40386.75944933667
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.9189204981801673,
+            "mahalanobis_per_dimension": 0.22880935686723428,
+            "marginal_95_coverage": 0.9709051724137931,
+            "covariance_trace": 2643.0519020227634
+          },
+          "conditional": {
+            "nll_per_dimension": 0.8871006909494559,
+            "mahalanobis_per_dimension": 0.21536079472855058,
+            "marginal_95_coverage": 0.9816810344827587,
+            "covariance_trace": 858.4591122133756
+          }
+        },
+        "delta_mse_zero": 44.99120992235814,
+        "delta_mse_source_mean": 45.47269934757161,
+        "delta_mse_conditional": 12.076487015347572
+      },
+      {
+        "target": "A03",
+        "length_s": 64.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 2.2737367544323206e-12,
+        "cross_trace_relative_to_finite": 0.02529848035483066,
+        "delta_trace_relative_to_finite": 0.08398951450406156,
+        "cross_frobenius_relative_to_finite": 0.07412366863463449,
+        "delta_class_mean_distance": 10.808955239916763,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.7696924085154313,
+            "mahalanobis_per_dimension": 1.8669597982966688,
+            "marginal_95_coverage": 0.9046336206896551,
+            "covariance_trace": 33846.714082962106
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.769692408515441,
+            "mahalanobis_per_dimension": 1.8669597982966923,
+            "marginal_95_coverage": 0.9046336206896551,
+            "covariance_trace": 33846.714082962106
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.7270622960105357,
+            "mahalanobis_per_dimension": 1.744196495377786,
+            "marginal_95_coverage": 0.9035560344827587,
+            "covariance_trace": 32991.299066675005
+          },
+          "double_count": {
+            "nll_per_dimension": 3.752590468287114,
+            "mahalanobis_per_dimension": 1.7403761537316034,
+            "marginal_95_coverage": 0.9073275862068966,
+            "covariance_trace": 36686.643237193646
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.9047512427486427,
+            "mahalanobis_per_dimension": 0.11145443817559217,
+            "marginal_95_coverage": 0.9989224137931034,
+            "covariance_trace": 2887.69141259276
+          },
+          "conditional": {
+            "nll_per_dimension": 0.8742826395323217,
+            "mahalanobis_per_dimension": 0.1011788958512462,
+            "marginal_95_coverage": 0.9989224137931034,
+            "covariance_trace": 898.5439402382149
+          }
+        },
+        "delta_mse_zero": 18.577073736368337,
+        "delta_mse_source_mean": 19.008197771460747,
+        "delta_mse_conditional": 5.414916601129843
+      },
+      {
+        "target": "A04",
+        "length_s": 64.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 1.8189894035458565e-12,
+        "cross_trace_relative_to_finite": 0.018618959998889347,
+        "delta_trace_relative_to_finite": 0.08015338892798864,
+        "cross_frobenius_relative_to_finite": 0.06279239653089808,
+        "delta_class_mean_distance": 6.300851328168285,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 4.233325381096028,
+            "mahalanobis_per_dimension": 2.8674239818038707,
+            "marginal_95_coverage": 0.8227370689655172,
+            "covariance_trace": 31343.649508631544
+          },
+          "full_paired": {
+            "nll_per_dimension": 4.233325381096008,
+            "mahalanobis_per_dimension": 2.8674239818038263,
+            "marginal_95_coverage": 0.8227370689655172,
+            "covariance_trace": 31343.649508631544
+          },
+          "omit_cross": {
+            "nll_per_dimension": 4.171697761824586,
+            "mahalanobis_per_dimension": 2.7127772171091924,
+            "marginal_95_coverage": 0.822198275862069,
+            "covariance_trace": 30760.64635536439
+          },
+          "double_count": {
+            "nll_per_dimension": 4.166441512425162,
+            "mahalanobis_per_dimension": 2.6460489271178376,
+            "marginal_95_coverage": 0.8318965517241379,
+            "covariance_trace": 33853.439448179895
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.9518049319327807,
+            "mahalanobis_per_dimension": 0.34047453448440124,
+            "marginal_95_coverage": 0.9644396551724138,
+            "covariance_trace": 2541.4674910167646
+          },
+          "conditional": {
+            "nll_per_dimension": 0.9129458156004543,
+            "mahalanobis_per_dimension": 0.31324639115453823,
+            "marginal_95_coverage": 0.9542025862068966,
+            "covariance_trace": 711.0192758260529
+          }
+        },
+        "delta_mse_zero": 56.28228576262183,
+        "delta_mse_source_mean": 56.39111288132806,
+        "delta_mse_conditional": 19.623565548699872
+      },
+      {
+        "target": "A05",
+        "length_s": 64.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 2.7284841053187847e-12,
+        "cross_trace_relative_to_finite": 0.02910239602611148,
+        "delta_trace_relative_to_finite": 0.07755776172789233,
+        "cross_frobenius_relative_to_finite": 0.0800258148398675,
+        "delta_class_mean_distance": 9.942642778908587,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.533008775766694,
+            "mahalanobis_per_dimension": 1.34875251897516,
+            "marginal_95_coverage": 0.9439655172413793,
+            "covariance_trace": 36011.43453777803
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.5330087757666973,
+            "mahalanobis_per_dimension": 1.348752518975166,
+            "marginal_95_coverage": 0.9439655172413793,
+            "covariance_trace": 36011.43453777803
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.499802639282959,
+            "mahalanobis_per_dimension": 1.2428682467967365,
+            "marginal_95_coverage": 0.943426724137931,
+            "covariance_trace": 34964.46248044855
+          },
+          "double_count": {
+            "nll_per_dimension": 3.5198451928475314,
+            "mahalanobis_per_dimension": 1.2288438847143892,
+            "marginal_95_coverage": 0.947198275862069,
+            "covariance_trace": 38801.610621055326
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.889401296115836,
+            "mahalanobis_per_dimension": 0.09565165081654733,
+            "marginal_95_coverage": 0.9897629310344828,
+            "covariance_trace": 2834.4613988661895
+          },
+          "conditional": {
+            "nll_per_dimension": 0.8646632710306913,
+            "mahalanobis_per_dimension": 0.09832573014907547,
+            "marginal_95_coverage": 0.994073275862069,
+            "covariance_trace": 883.093804548039
+          }
+        },
+        "delta_mse_zero": 24.611623226758546,
+        "delta_mse_source_mean": 24.601854621737658,
+        "delta_mse_conditional": 8.248805701268353
+      },
+      {
+        "target": "A06",
+        "length_s": 64.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 2.2737367544323206e-12,
+        "cross_trace_relative_to_finite": 0.024542130191290968,
+        "delta_trace_relative_to_finite": 0.07506991457148587,
+        "cross_frobenius_relative_to_finite": 0.07325990402903122,
+        "delta_class_mean_distance": 10.215635738577168,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.407311341670451,
+            "mahalanobis_per_dimension": 1.0763295200584557,
+            "marginal_95_coverage": 0.9741379310344828,
+            "covariance_trace": 37191.369836184735
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.40731134167045,
+            "mahalanobis_per_dimension": 1.0763295200584526,
+            "marginal_95_coverage": 0.9741379310344828,
+            "covariance_trace": 37191.36983618475
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.394014765199816,
+            "mahalanobis_per_dimension": 1.0141228286755979,
+            "marginal_95_coverage": 0.9709051724137931,
+            "covariance_trace": 36279.52623926956
+          },
+          "double_count": {
+            "nll_per_dimension": 3.410480197824985,
+            "mahalanobis_per_dimension": 0.991152040777926,
+            "marginal_95_coverage": 0.9768318965517241,
+            "covariance_trace": 39980.53362879106
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.8893358535334854,
+            "mahalanobis_per_dimension": 0.09533389763375204,
+            "marginal_95_coverage": 1.0,
+            "covariance_trace": 2834.351015768606
+          },
+          "conditional": {
+            "nll_per_dimension": 0.8596886811170417,
+            "mahalanobis_per_dimension": 0.08787970486487788,
+            "marginal_95_coverage": 0.9967672413793104,
+            "covariance_trace": 882.598065768833
+          }
+        },
+        "delta_mse_zero": 24.508056273450663,
+        "delta_mse_source_mean": 24.622297610824397,
+        "delta_mse_conditional": 6.853301630553166
+      },
+      {
+        "target": "A07",
+        "length_s": 64.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A08"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 2.9558577807620168e-12,
+        "cross_trace_relative_to_finite": 0.03242789786219846,
+        "delta_trace_relative_to_finite": 0.07997612138210371,
+        "cross_frobenius_relative_to_finite": 0.09283169984218922,
+        "delta_class_mean_distance": 9.084457519880964,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.953965666457525,
+            "mahalanobis_per_dimension": 2.2587773381538323,
+            "marginal_95_coverage": 0.9051724137931034,
+            "covariance_trace": 33064.1341820516
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.9539656664575236,
+            "mahalanobis_per_dimension": 2.2587773381538265,
+            "marginal_95_coverage": 0.9051724137931034,
+            "covariance_trace": 33064.13418205161
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.890377619292917,
+            "mahalanobis_per_dimension": 2.0933728113822614,
+            "marginal_95_coverage": 0.9035560344827587,
+            "covariance_trace": 31993.00494513093
+          },
+          "double_count": {
+            "nll_per_dimension": 3.900982079794974,
+            "mahalanobis_per_dimension": 2.060086256108353,
+            "marginal_95_coverage": 0.9110991379310345,
+            "covariance_trace": 35705.8336912803
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.9094520737970601,
+            "mahalanobis_per_dimension": 0.19472757665418824,
+            "marginal_95_coverage": 0.974676724137931,
+            "covariance_trace": 2681.7938700901213
+          },
+          "conditional": {
+            "nll_per_dimension": 0.8778078236708692,
+            "mahalanobis_per_dimension": 0.1818271882743924,
+            "marginal_95_coverage": 0.9881465517241379,
+            "covariance_trace": 838.5706370693032
+          }
+        },
+        "delta_mse_zero": 40.338760347604854,
+        "delta_mse_source_mean": 41.96747611724388,
+        "delta_mse_conditional": 12.031080255578088
+      },
+      {
+        "target": "A08",
+        "length_s": 64.0,
+        "distance_s": 2.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07"
+        ],
+        "source_cut_count": 203,
+        "target_cut_count": 29,
+        "source_label_count": [
+          161,
+          42
+        ],
+        "target_label_count": [
+          23,
+          6
+        ],
+        "paired_covariance_max_error": 1.5916157281026244e-12,
+        "cross_trace_relative_to_finite": 0.025983257169965007,
+        "delta_trace_relative_to_finite": 0.07517365653627202,
+        "cross_frobenius_relative_to_finite": 0.0733804320558167,
+        "delta_class_mean_distance": 10.215490957056941,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.3230476900159833,
+            "mahalanobis_per_dimension": 0.8875995356365765,
+            "marginal_95_coverage": 0.9951508620689655,
+            "covariance_trace": 39058.97125456191
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.3230476900159815,
+            "mahalanobis_per_dimension": 0.8875995356365722,
+            "marginal_95_coverage": 0.9951508620689655,
+            "covariance_trace": 39058.97125456191
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.3074496477571276,
+            "mahalanobis_per_dimension": 0.8188901372530881,
+            "marginal_95_coverage": 0.9951508620689655,
+            "covariance_trace": 38045.105825089835
+          },
+          "double_count": {
+            "nll_per_dimension": 3.330959933999484,
+            "mahalanobis_per_dimension": 0.8116674940848346,
+            "marginal_95_coverage": 0.9951508620689655,
+            "covariance_trace": 41992.243671895136
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": 0.8995256827360677,
+            "mahalanobis_per_dimension": 0.06944242285035754,
+            "marginal_95_coverage": 1.0,
+            "covariance_trace": 2979.9002365014603
+          },
+          "conditional": {
+            "nll_per_dimension": 0.8741094739442614,
+            "mahalanobis_per_dimension": 0.07134969529737463,
+            "marginal_95_coverage": 0.9978448275862069,
+            "covariance_trace": 889.2646578264788
+          }
+        },
+        "delta_mse_zero": 8.808505421688151,
+        "delta_mse_source_mean": 8.857244196220783,
+        "delta_mse_conditional": 5.536437145820113
+      },
+      {
+        "target": "A01",
+        "length_s": 64.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 217,
+        "target_cut_count": 31,
+        "source_label_count": [
+          175,
+          42
+        ],
+        "target_label_count": [
+          25,
+          6
+        ],
+        "paired_covariance_max_error": 2.5011104298755527e-12,
+        "cross_trace_relative_to_finite": 2.7505468912745342e-05,
+        "delta_trace_relative_to_finite": 0.001222478147013287,
+        "cross_frobenius_relative_to_finite": 0.007533803151169938,
+        "delta_class_mean_distance": 1.1280824246342247,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.344844337238344,
+            "mahalanobis_per_dimension": 1.1274499883005904,
+            "marginal_95_coverage": 0.984375,
+            "covariance_trace": 33922.70148747679
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.3448443372383445,
+            "mahalanobis_per_dimension": 1.1274499883005913,
+            "marginal_95_coverage": 0.984375,
+            "covariance_trace": 33922.7014874768
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.343480601461455,
+            "mahalanobis_per_dimension": 1.1238725105415308,
+            "marginal_95_coverage": 0.984375,
+            "covariance_trace": 33921.76935979328
+          },
+          "double_count": {
+            "nll_per_dimension": 3.3429089410401556,
+            "mahalanobis_per_dimension": 1.1135389526192265,
+            "marginal_95_coverage": 0.984375,
+            "covariance_trace": 33964.12982039997
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -1.1386099456425882,
+            "mahalanobis_per_dimension": 0.21274213120275928,
+            "marginal_95_coverage": 0.938508064516129,
+            "covariance_trace": 42.043234721135015
+          },
+          "conditional": {
+            "nll_per_dimension": -1.1393873595161979,
+            "mahalanobis_per_dimension": 0.23648311702921562,
+            "marginal_95_coverage": 0.9254032258064516,
+            "covariance_trace": 22.646559160403147
+          }
+        },
+        "delta_mse_zero": 1.0387137883237678,
+        "delta_mse_source_mean": 1.0334764133234848,
+        "delta_mse_conditional": 0.6600162538608316
+      },
+      {
+        "target": "A02",
+        "length_s": 64.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 217,
+        "target_cut_count": 31,
+        "source_label_count": [
+          175,
+          42
+        ],
+        "target_label_count": [
+          25,
+          6
+        ],
+        "paired_covariance_max_error": 1.3642420526593924e-12,
+        "cross_trace_relative_to_finite": -0.0025368016772390808,
+        "delta_trace_relative_to_finite": 0.0012810266907364856,
+        "cross_frobenius_relative_to_finite": 0.008907911798821286,
+        "delta_class_mean_distance": 1.0264960156898255,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.3847636867050763,
+            "mahalanobis_per_dimension": 1.2183406390613454,
+            "marginal_95_coverage": 0.9873991935483871,
+            "covariance_trace": 33338.22315187664
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.3847636867050745,
+            "mahalanobis_per_dimension": 1.2183406390613438,
+            "marginal_95_coverage": 0.9873991935483871,
+            "covariance_trace": 33338.223151876635
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.38300002781571,
+            "mahalanobis_per_dimension": 1.2137506050130535,
+            "marginal_95_coverage": 0.9873991935483871,
+            "covariance_trace": 33422.71112431205
+          },
+          "double_count": {
+            "nll_per_dimension": 3.3818591457791274,
+            "mahalanobis_per_dimension": 1.2024467830489818,
+            "marginal_95_coverage": 0.9873991935483871,
+            "covariance_trace": 33380.88764106673
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -1.1268262907236606,
+            "mahalanobis_per_dimension": 0.21219020861557872,
+            "marginal_95_coverage": 0.954133064516129,
+            "covariance_trace": 43.257247143013004
+          },
+          "conditional": {
+            "nll_per_dimension": -1.1380313593803144,
+            "mahalanobis_per_dimension": 0.20969668835251862,
+            "marginal_95_coverage": 0.9455645161290323,
+            "covariance_trace": 24.057899935879536
+          }
+        },
+        "delta_mse_zero": 0.9005033108047504,
+        "delta_mse_source_mean": 0.8994078105810466,
+        "delta_mse_conditional": 0.5761130366613935
+      },
+      {
+        "target": "A03",
+        "length_s": 64.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A04",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 217,
+        "target_cut_count": 31,
+        "source_label_count": [
+          175,
+          42
+        ],
+        "target_label_count": [
+          25,
+          6
+        ],
+        "paired_covariance_max_error": 3.183231456205249e-12,
+        "cross_trace_relative_to_finite": -0.002501045042224156,
+        "delta_trace_relative_to_finite": 0.0015473917767651459,
+        "cross_frobenius_relative_to_finite": 0.00909231952792866,
+        "delta_class_mean_distance": 1.7768876923315937,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.7143415474369808,
+            "mahalanobis_per_dimension": 1.9391802217788088,
+            "marginal_95_coverage": 0.8870967741935484,
+            "covariance_trace": 29296.747658429766
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.7143415474369808,
+            "mahalanobis_per_dimension": 1.9391802217788099,
+            "marginal_95_coverage": 0.8870967741935484,
+            "covariance_trace": 29296.74765842977
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.6959222768734454,
+            "mahalanobis_per_dimension": 1.9003554561864529,
+            "marginal_95_coverage": 0.8876008064516129,
+            "covariance_trace": 29369.946944627984
+          },
+          "double_count": {
+            "nll_per_dimension": 3.703951349059349,
+            "mahalanobis_per_dimension": 1.9069603879780386,
+            "marginal_95_coverage": 0.8886088709677419,
+            "covariance_trace": 29342.03591658423
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -1.1215665199979818,
+            "mahalanobis_per_dimension": 0.16141641086473257,
+            "marginal_95_coverage": 0.9884072580645161,
+            "covariance_trace": 46.2388883691824
+          },
+          "conditional": {
+            "nll_per_dimension": -1.133493272858442,
+            "mahalanobis_per_dimension": 0.15553311377923768,
+            "marginal_95_coverage": 0.9934475806451613,
+            "covariance_trace": 27.703631899806968
+          }
+        },
+        "delta_mse_zero": 0.5781754957339023,
+        "delta_mse_source_mean": 0.5790513440368946,
+        "delta_mse_conditional": 0.26716299302325613
+      },
+      {
+        "target": "A04",
+        "length_s": 64.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A05",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 217,
+        "target_cut_count": 31,
+        "source_label_count": [
+          175,
+          42
+        ],
+        "target_label_count": [
+          25,
+          6
+        ],
+        "paired_covariance_max_error": 1.3642420526593924e-12,
+        "cross_trace_relative_to_finite": -7.344096737138123e-05,
+        "delta_trace_relative_to_finite": 0.0016316866595765455,
+        "cross_frobenius_relative_to_finite": 0.006974991186726772,
+        "delta_class_mean_distance": 0.5893841585887776,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 4.137556069249964,
+            "mahalanobis_per_dimension": 2.85020558314639,
+            "marginal_95_coverage": 0.8140120967741935,
+            "covariance_trace": 27621.181675967637
+          },
+          "full_paired": {
+            "nll_per_dimension": 4.137556069249949,
+            "mahalanobis_per_dimension": 2.850205583146352,
+            "marginal_95_coverage": 0.8140120967741935,
+            "covariance_trace": 27621.181675967644
+          },
+          "omit_cross": {
+            "nll_per_dimension": 4.127455513789451,
+            "mahalanobis_per_dimension": 2.829461426771162,
+            "marginal_95_coverage": 0.8130040322580645,
+            "covariance_trace": 27623.208175770065
+          },
+          "double_count": {
+            "nll_per_dimension": 4.119605942229614,
+            "mahalanobis_per_dimension": 2.8027468512083678,
+            "marginal_95_coverage": 0.8145161290322581,
+            "covariance_trace": 27666.205765540486
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -1.1136031259963486,
+            "mahalanobis_per_dimension": 0.19483888443492392,
+            "marginal_95_coverage": 0.9758064516129032,
+            "covariance_trace": 45.529093333805115
+          },
+          "conditional": {
+            "nll_per_dimension": -1.124506145572288,
+            "mahalanobis_per_dimension": 0.19209913543373405,
+            "marginal_95_coverage": 0.9868951612903226,
+            "covariance_trace": 26.59541489888946
+          }
+        },
+        "delta_mse_zero": 0.6491458685657706,
+        "delta_mse_source_mean": 0.6540056361813252,
+        "delta_mse_conditional": 0.31551405820177975
+      },
+      {
+        "target": "A05",
+        "length_s": 64.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A06",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 217,
+        "target_cut_count": 31,
+        "source_label_count": [
+          175,
+          42
+        ],
+        "target_label_count": [
+          25,
+          6
+        ],
+        "paired_covariance_max_error": 1.3642420526593924e-12,
+        "cross_trace_relative_to_finite": -0.002393698520801232,
+        "delta_trace_relative_to_finite": 0.001451220324243357,
+        "cross_frobenius_relative_to_finite": 0.00830854219877586,
+        "delta_class_mean_distance": 1.0861023900594977,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.3964164702541106,
+            "mahalanobis_per_dimension": 1.2437155527294579,
+            "marginal_95_coverage": 0.9440524193548387,
+            "covariance_trace": 31352.59504810392
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.3964164702541084,
+            "mahalanobis_per_dimension": 1.2437155527294474,
+            "marginal_95_coverage": 0.9440524193548387,
+            "covariance_trace": 31352.595048103925
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.3901726333652222,
+            "mahalanobis_per_dimension": 1.2303864582035544,
+            "marginal_95_coverage": 0.9440524193548387,
+            "covariance_trace": 31427.56873480715
+          },
+          "double_count": {
+            "nll_per_dimension": 3.3942904185985094,
+            "mahalanobis_per_dimension": 1.2287519148661816,
+            "marginal_95_coverage": 0.9440524193548387,
+            "covariance_trace": 31398.049117186423
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -1.1513053866566854,
+            "mahalanobis_per_dimension": 0.09716404188932394,
+            "marginal_95_coverage": 0.9848790322580645,
+            "covariance_trace": 46.094574588990056
+          },
+          "conditional": {
+            "nll_per_dimension": -1.1638029982382159,
+            "mahalanobis_per_dimension": 0.09198693787589304,
+            "marginal_95_coverage": 1.0,
+            "covariance_trace": 26.739358104811682
+          }
+        },
+        "delta_mse_zero": 0.5968086138842047,
+        "delta_mse_source_mean": 0.5960770122825665,
+        "delta_mse_conditional": 0.2623518031899932
+      },
+      {
+        "target": "A06",
+        "length_s": 64.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A07",
+          "A08"
+        ],
+        "source_cut_count": 217,
+        "target_cut_count": 31,
+        "source_label_count": [
+          175,
+          42
+        ],
+        "target_label_count": [
+          25,
+          6
+        ],
+        "paired_covariance_max_error": 2.7284841053187847e-12,
+        "cross_trace_relative_to_finite": -0.0020117868851691465,
+        "delta_trace_relative_to_finite": 0.0014080648354206735,
+        "cross_frobenius_relative_to_finite": 0.006833306116796963,
+        "delta_class_mean_distance": 1.0520219412018912,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.3036610216038285,
+            "mahalanobis_per_dimension": 1.0423782108101542,
+            "marginal_95_coverage": 0.9702620967741935,
+            "covariance_trace": 32619.908448988914
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.3036610216038262,
+            "mahalanobis_per_dimension": 1.0423782108101487,
+            "marginal_95_coverage": 0.9702620967741935,
+            "covariance_trace": 32619.90844898892
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.301959471281241,
+            "mahalanobis_per_dimension": 1.0388922323687655,
+            "marginal_95_coverage": 0.9702620967741935,
+            "covariance_trace": 32685.467194256744
+          },
+          "double_count": {
+            "nll_per_dimension": 3.302781279777665,
+            "mahalanobis_per_dimension": 1.0306435659899744,
+            "marginal_95_coverage": 0.9707661290322581,
+            "covariance_trace": 32665.793509949617
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -1.1226362073371905,
+            "mahalanobis_per_dimension": 0.15356289422473626,
+            "marginal_95_coverage": 0.9818548387096774,
+            "covariance_trace": 46.518388833537934
+          },
+          "conditional": {
+            "nll_per_dimension": -1.1366446020811003,
+            "mahalanobis_per_dimension": 0.14384906305679132,
+            "marginal_95_coverage": 0.9939516129032258,
+            "covariance_trace": 26.976076002938147
+          }
+        },
+        "delta_mse_zero": 0.5175781955660693,
+        "delta_mse_source_mean": 0.5581407596655704,
+        "delta_mse_conditional": 0.27920525330488494
+      },
+      {
+        "target": "A07",
+        "length_s": 64.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A08"
+        ],
+        "source_cut_count": 217,
+        "target_cut_count": 31,
+        "source_label_count": [
+          175,
+          42
+        ],
+        "target_label_count": [
+          25,
+          6
+        ],
+        "paired_covariance_max_error": 1.1368683772161603e-12,
+        "cross_trace_relative_to_finite": -0.001508973460960848,
+        "delta_trace_relative_to_finite": 0.0014499256100160421,
+        "cross_frobenius_relative_to_finite": 0.007896615952670044,
+        "delta_class_mean_distance": 0.7181297293669755,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.8034477773654394,
+            "mahalanobis_per_dimension": 2.1262128351110077,
+            "marginal_95_coverage": 0.9027217741935484,
+            "covariance_trace": 28768.350836764344
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.8034477773654323,
+            "mahalanobis_per_dimension": 2.126212835110982,
+            "marginal_95_coverage": 0.9027217741935484,
+            "covariance_trace": 28768.35083676435
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.7960445676384,
+            "mahalanobis_per_dimension": 2.1103087738982604,
+            "marginal_95_coverage": 0.9032258064516129,
+            "covariance_trace": 28811.718147382016
+          },
+          "double_count": {
+            "nll_per_dimension": 3.7957567155839382,
+            "mahalanobis_per_dimension": 2.1006487416354114,
+            "marginal_95_coverage": 0.9027217741935484,
+            "covariance_trace": 28810.021135102157
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -1.1021551190349446,
+            "mahalanobis_per_dimension": 0.2928728334311371,
+            "marginal_95_coverage": 0.9546370967741935,
+            "covariance_trace": 42.16830216582447
+          },
+          "conditional": {
+            "nll_per_dimension": -1.1168148129326967,
+            "mahalanobis_per_dimension": 0.28106183459791934,
+            "marginal_95_coverage": 0.9586693548387096,
+            "covariance_trace": 24.494195496670464
+          }
+        },
+        "delta_mse_zero": 1.022982991156307,
+        "delta_mse_source_mean": 1.0215230596593814,
+        "delta_mse_conditional": 0.5597393310941416
+      },
+      {
+        "target": "A08",
+        "length_s": 64.0,
+        "distance_s": 8.0,
+        "source_participants": [
+          "A01",
+          "A02",
+          "A03",
+          "A04",
+          "A05",
+          "A06",
+          "A07"
+        ],
+        "source_cut_count": 217,
+        "target_cut_count": 31,
+        "source_label_count": [
+          175,
+          42
+        ],
+        "target_label_count": [
+          25,
+          6
+        ],
+        "paired_covariance_max_error": 2.7284841053187847e-12,
+        "cross_trace_relative_to_finite": -0.0018656902366725502,
+        "delta_trace_relative_to_finite": 0.0014051676090818639,
+        "cross_frobenius_relative_to_finite": 0.007629611024018037,
+        "delta_class_mean_distance": 1.2890036306259582,
+        "finite_covariance_scores": {
+          "direct_finite": {
+            "nll_per_dimension": 3.214600707709289,
+            "mahalanobis_per_dimension": 0.8413873422778961,
+            "marginal_95_coverage": 0.9919354838709677,
+            "covariance_trace": 34266.56140677287
+          },
+          "full_paired": {
+            "nll_per_dimension": 3.214600707709286,
+            "mahalanobis_per_dimension": 0.8413873422778901,
+            "marginal_95_coverage": 0.9919354838709677,
+            "covariance_trace": 34266.56140677286
+          },
+          "omit_cross": {
+            "nll_per_dimension": 3.21381727526769,
+            "mahalanobis_per_dimension": 0.8398348717522217,
+            "marginal_95_coverage": 0.9919354838709677,
+            "covariance_trace": 34330.42832891167
+          },
+          "double_count": {
+            "nll_per_dimension": 3.2150765521933864,
+            "mahalanobis_per_dimension": 0.831937653627419,
+            "marginal_95_coverage": 0.9919354838709677,
+            "covariance_trace": 34314.66356677627
+          }
+        },
+        "delta_scores": {
+          "unconditional": {
+            "nll_per_dimension": -1.129178134864817,
+            "mahalanobis_per_dimension": 0.09173638651900959,
+            "marginal_95_coverage": 0.998991935483871,
+            "covariance_trace": 48.845119011876136
+          },
+          "conditional": {
+            "nll_per_dimension": -1.1404005446419045,
+            "mahalanobis_per_dimension": 0.08897558263658863,
+            "marginal_95_coverage": 0.9979838709677419,
+            "covariance_trace": 27.341129147465754
+          }
+        },
+        "delta_mse_zero": 0.29204670571048846,
+        "delta_mse_source_mean": 0.2949182762355789,
+        "delta_mse_conditional": 0.2099251479464285
+      }
+    ],
+    "summary": [
+      {
+        "length_s": 16.0,
+        "distance_s": 0.0,
+        "physical_participants": 8,
+        "conditional_mse_reduction_macro": 0.8131055781228238,
+        "conditional_better_than_zero_participants": 8,
+        "mean_cross_trace_relative": -0.006503823311979049,
+        "mean_delta_trace_relative": 0.2075491492305392,
+        "finite_covariance_mean_nll": {
+          "direct_finite": 3.6864201226256474,
+          "full_paired": 3.6864201226256466,
+          "omit_cross": 3.6557636268328304,
+          "double_count": 3.666134809954735
+        },
+        "delta_mean_nll": {
+          "unconditional": 1.464999517839836,
+          "conditional": 1.4181823430719875
+        }
+      },
+      {
+        "length_s": 16.0,
+        "distance_s": 2.0,
+        "physical_participants": 8,
+        "conditional_mse_reduction_macro": 0.6646891363139973,
+        "conditional_better_than_zero_participants": 8,
+        "mean_cross_trace_relative": 0.025965530782302508,
+        "mean_delta_trace_relative": 0.07578633830779778,
+        "finite_covariance_mean_nll": {
+          "direct_finite": 3.6247371830236332,
+          "full_paired": 3.624737183023634,
+          "omit_cross": 3.5941646816924866,
+          "double_count": 3.6048659237889797
+        },
+        "delta_mean_nll": {
+          "unconditional": 0.9065804230927037,
+          "conditional": 0.8749876361454219
+        }
+      },
+      {
+        "length_s": 16.0,
+        "distance_s": 8.0,
+        "physical_participants": 8,
+        "conditional_mse_reduction_macro": 0.4619824282366749,
+        "conditional_better_than_zero_participants": 8,
+        "mean_cross_trace_relative": 0.007219562245579756,
+        "mean_delta_trace_relative": 0.007979496597538315,
+        "finite_covariance_mean_nll": {
+          "direct_finite": 3.5383167499656727,
+          "full_paired": 3.538316749965672,
+          "omit_cross": 3.5254454735237433,
+          "double_count": 3.5275506474110774
+        },
+        "delta_mean_nll": {
+          "unconditional": -0.22772526571302099,
+          "conditional": -0.2514908082272391
+        }
+      },
+      {
+        "length_s": 64.0,
+        "distance_s": 0.0,
+        "physical_participants": 8,
+        "conditional_mse_reduction_macro": 0.8113714361105527,
+        "conditional_better_than_zero_participants": 8,
+        "mean_cross_trace_relative": 0.001341715040797703,
+        "mean_delta_trace_relative": 0.2040009667784241,
+        "finite_covariance_mean_nll": {
+          "direct_finite": 3.7217897297356264,
+          "full_paired": 3.7217897297356206,
+          "omit_cross": 3.679334024925319,
+          "double_count": 3.6920928480748287
+        },
+        "delta_mean_nll": {
+          "unconditional": 1.4583483937784156,
+          "conditional": 1.4116138837579362
+        }
+      },
+      {
+        "length_s": 64.0,
+        "distance_s": 2.0,
+        "physical_participants": 8,
+        "conditional_mse_reduction_macro": 0.6624606180781791,
+        "conditional_better_than_zero_participants": 8,
+        "mean_cross_trace_relative": 0.025099369282275706,
+        "mean_delta_trace_relative": 0.07425281396572515,
+        "finite_covariance_mean_nll": {
+          "direct_finite": 3.657431255540575,
+          "full_paired": 3.6574312555405744,
+          "omit_cross": 3.6192578525660255,
+          "double_count": 3.631158339440368
+        },
+        "delta_mean_nll": {
+          "unconditional": 0.8945096107417463,
+          "conditional": 0.8641610693367616
+        }
+      },
+      {
+        "length_s": 64.0,
+        "distance_s": 8.0,
+        "physical_participants": 8,
+        "conditional_mse_reduction_macro": 0.4414604523738498,
+        "conditional_better_than_zero_participants": 8,
+        "mean_cross_trace_relative": -0.001607991415190706,
+        "mean_delta_trace_relative": 0.001424620206606675,
+        "finite_covariance_mean_nll": {
+          "direct_finite": 3.537453952195379,
+          "full_paired": 3.537453952195375,
+          "omit_cross": 3.531481545936577,
+          "double_count": 3.532028793032718
+        },
+        "delta_mean_nll": {
+          "unconditional": -1.1257350912817772,
+          "conditional": -1.1366351369026448
+        }
+      }
+    ],
+    "physical_participants": 8,
+    "n_pseudo_cuts": 1504,
+    "n_unavailable_cuts": 80,
+    "limitation": "Source C800-only mechanism diagnostic. Class-centred EEG is not an identified deconvolved noise process. No prediction performance or K200 same-budget claim."
+  }
+}

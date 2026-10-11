@@ -1,0 +1,388 @@
+"""Within-subject decision evaluation helpers.
+
+These functions evaluate a **held-out chronological suffix** only. Repetition
+indices may retain their original scheduled origin (for example, 8, 9, ...
+after an eight-repetition prefix); the validated contiguous suffix is normalized
+internally for the 1..R curve. Do not pass training prefix trials here.
+
+All candidate scoring goes through the unified
+:func:`models.candidate_evidence.candidate_evidence_scores` core; this module
+only owns the suffix/hit@R/outcome bookkeeping around it.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+
+import numpy as np
+
+from models.candidate_evidence import (
+    DEFAULT_EVIDENCE_AGGREGATION,
+    DEFAULT_EVIDENCE_COUNT_POWER,
+    candidate_evidence_scores,
+)
+from transfer.outcomes import CandidateCoverage, DecisionKey, DecisionOutcome, DecisionStatus
+
+
+def hit_at_repetition(
+    logits: Sequence[float],
+    digits: Sequence[int],
+    group_ids: Sequence,
+    truth_by_group: Mapping[object, object],
+    repetition_indices: Sequence[int],
+    *,
+    aggregation: str = DEFAULT_EVIDENCE_AGGREGATION,
+    max_repetitions: int | None = None,
+    logit_variances: Sequence[float] | None = None,
+    candidate_vocabulary: Sequence[int] | None = None,
+    evidence_count_power: float = DEFAULT_EVIDENCE_COUNT_POWER,
+) -> dict[int, float]:
+    """Return 9-choice hit rate at every repetition prefix 1..R."""
+
+    logits = np.asarray(logits, dtype=float)
+    digits = np.asarray(digits, dtype=np.int64)
+    group_ids = np.asarray(group_ids).astype(str)
+    repetition_indices = np.asarray(repetition_indices, dtype=np.int64)
+    if not (len(logits) == len(digits) == len(group_ids) == len(repetition_indices)):
+        raise ValueError("logits/digits/group_ids/repetition_indices must be aligned.")
+    if len(repetition_indices) == 0:
+        raise ValueError("repetition_indices cannot be empty.")
+    if np.any(repetition_indices < 0):
+        raise ValueError("repetition_indices must be non-negative.")
+    unique_repetitions = np.unique(repetition_indices)
+    if not np.array_equal(
+        unique_repetitions,
+        np.arange(unique_repetitions[0], unique_repetitions[-1] + 1, dtype=np.int64),
+    ):
+        raise ValueError(
+            "repetition_indices must be contiguous; missing suffix repetitions cannot be "
+            "compressed."
+        )
+    # Keep the splitter's output auditable in the original schedule while using
+    # a zero-based view for the public 1..R aggregation curve.
+    repetition_indices = repetition_indices - unique_repetitions[0]
+    if not np.isfinite(logits).all():
+        raise ValueError("logits contain NaN/inf.")
+    variances = None if logit_variances is None else np.asarray(logit_variances, dtype=float)
+    if variances is not None and variances.shape != logits.shape:
+        raise ValueError("logit_variances must align with logits.")
+    vocabulary = (
+        np.unique(digits)
+        if candidate_vocabulary is None
+        else np.asarray(candidate_vocabulary, dtype=np.int64)
+    )
+    if vocabulary.ndim != 1 or len(np.unique(vocabulary)) != len(vocabulary):
+        raise ValueError("candidate_vocabulary must be one-dimensional and unique.")
+    if len(vocabulary) < 2:
+        raise ValueError("candidate selection requires at least two candidate codes.")
+    groups = np.unique(group_ids)
+    if max_repetitions is None:
+        max_repetitions = int(repetition_indices.max()) + 1
+    if max_repetitions < 1:
+        raise ValueError("max_repetitions must be positive.")
+    hits: dict[int, float] = {}
+    for r in range(1, max_repetitions + 1):
+        correct = 0
+        total = 0
+        for group in groups:
+            truth = truth_by_group.get(group)
+            if truth is None:
+                continue
+            sel = (group_ids == group) & (repetition_indices < r)
+            if not sel.any():
+                continue
+            # A candidate with no surviving trial is an incomplete decision,
+            # not a candidate that should disappear from the argmax.  Count the
+            # group as a miss while keeping it in the requested denominator.
+            if not all(np.any(digits[sel] == candidate) for candidate in vocabulary):
+                total += 1
+                continue
+            predicted = candidate_evidence_scores(
+                logits[sel],
+                digits[sel],
+                vocabulary,
+                aggregation=aggregation,
+                logit_variances=None if variances is None else variances[sel],
+                evidence_count_power=evidence_count_power,
+            ).predicted
+            correct += int(predicted is not None and predicted == int(truth))
+            total += 1
+        hits[r] = float(correct / total) if total else float("nan")
+    return hits
+
+
+def candidate_decision_outcomes(
+    logits: Sequence[float],
+    digits: Sequence[int],
+    group_ids: Sequence,
+    truth_by_group: Mapping[object, object],
+    repetition_indices: Sequence[int],
+    subject_by_group: Mapping[object, object],
+    *,
+    aggregation: str,
+    max_repetitions: int,
+    candidate_vocabulary: Sequence[int],
+    evidence_count_power: float = DEFAULT_EVIDENCE_COUNT_POWER,
+    onset_times_s: Sequence[float] | None = None,
+    evidence_available_times_s: Sequence[float] | None = None,
+) -> tuple[DecisionOutcome, ...]:
+    """Return one auditable outcome for every available decision and evidence level."""
+
+    values = np.asarray(logits, dtype=float)
+    candidates = np.asarray(digits, dtype=np.int64)
+    groups = np.asarray(group_ids).astype(str)
+    repetitions = np.asarray(repetition_indices, dtype=np.int64)
+    vocabulary = np.asarray(candidate_vocabulary, dtype=np.int64)
+    if not (
+        values.ndim == candidates.ndim == groups.ndim == repetitions.ndim == 1
+        and len(values) == len(candidates) == len(groups) == len(repetitions)
+    ):
+        raise ValueError("candidate outcome arrays must be aligned one-dimensional vectors.")
+    if len(values) == 0 or not np.isfinite(values).all():
+        raise ValueError("candidate outcome logits must be finite and non-empty.")
+    if max_repetitions < 1 or len(vocabulary) < 2 or len(np.unique(vocabulary)) != len(
+        vocabulary
+    ):
+        raise ValueError("candidate outcome budget and vocabulary are invalid.")
+    onsets = None if onset_times_s is None else np.asarray(onset_times_s, dtype=float)
+    available = (
+        None
+        if evidence_available_times_s is None
+        else np.asarray(evidence_available_times_s, dtype=float)
+    )
+    if onsets is not None and (onsets.shape != values.shape or not np.isfinite(onsets).all()):
+        raise ValueError("onset_times_s must be finite and align with logits.")
+    if available is not None and (
+        available.shape != values.shape or not np.isfinite(available).all()
+    ):
+        raise ValueError("evidence_available_times_s must be finite and align with logits.")
+
+    outcomes: list[DecisionOutcome] = []
+    for group in np.unique(groups):
+        group = str(group)
+        truth = truth_by_group.get(group)
+        subject = subject_by_group.get(group)
+        if truth is None or subject is None:
+            raise ValueError(f"decision {group!r} lacks truth or subject identity.")
+        group_rows = groups == group
+        for level in range(1, max_repetitions + 1):
+            selected = group_rows & (repetitions < level)
+            observed = {
+                str(int(candidate)): int(np.count_nonzero(selected & (candidates == candidate)))
+                for candidate in vocabulary
+            }
+            coverage = CandidateCoverage.from_mappings(
+                {str(int(candidate)): level for candidate in vocabulary}, observed
+            )
+            timing_rows = np.flatnonzero(selected)
+            timing = {
+                "onset_start_s": (
+                    float(np.min(onsets[timing_rows]))
+                    if onsets is not None and len(timing_rows)
+                    else None
+                ),
+                "onset_end_s": (
+                    float(np.max(onsets[timing_rows]))
+                    if onsets is not None and len(timing_rows)
+                    else None
+                ),
+                "evidence_available_s": (
+                    float(np.max(available[timing_rows]))
+                    if available is not None and len(timing_rows)
+                    else None
+                ),
+            }
+            key = DecisionKey(str(subject), group)
+            if not coverage.complete:
+                outcomes.append(
+                    DecisionOutcome(
+                        key=key,
+                        evidence_level=level,
+                        status=DecisionStatus.INCOMPLETE,
+                        coverage=coverage,
+                        target_candidate=str(int(truth)),
+                        failure_reason="incomplete_candidate_coverage",
+                        **timing,
+                    )
+                )
+                continue
+            predicted = candidate_evidence_scores(
+                values[selected],
+                candidates[selected],
+                vocabulary,
+                aggregation=aggregation,
+                evidence_count_power=evidence_count_power,
+            ).predicted
+            if predicted is None:
+                status = DecisionStatus.TIE
+            elif int(predicted) == int(truth):
+                status = DecisionStatus.CORRECT
+            else:
+                status = DecisionStatus.INCORRECT
+            outcomes.append(
+                DecisionOutcome(
+                    key=key,
+                    evidence_level=level,
+                    status=status,
+                    coverage=coverage,
+                    target_candidate=str(int(truth)),
+                    predicted_candidate=(None if predicted is None else str(int(predicted))),
+                    **timing,
+                )
+            )
+    return tuple(outcomes)
+
+
+def candidate_evidence_endpoints(
+    logits: Sequence[float],
+    digits: Sequence[int],
+    group_ids: Sequence,
+    truth_by_group: Mapping[object, object],
+    repetition_indices: Sequence[int],
+    *,
+    aggregation: str = DEFAULT_EVIDENCE_AGGREGATION,
+    max_repetitions: int | None = None,
+    candidate_vocabulary: Sequence[int] | None = None,
+    evidence_count_power: float = DEFAULT_EVIDENCE_COUNT_POWER,
+) -> dict[str, object]:
+    """Evaluate raw-all, balanced-all, and complete balanced hit@R endpoints.
+
+    ``raw_all`` consumes every post-boundary observation. ``balanced_all`` uses
+    the first ``R_s=min_d n_{s,d}`` observations from every candidate in a
+    group. The hit@R curve includes a group only while every candidate supplies
+    at least R observations; callers can use the returned correct/eligible
+    counts with their full requested-group denominator for operational misses.
+    """
+
+    values = np.asarray(logits, dtype=float)
+    candidates = np.asarray(digits, dtype=np.int64)
+    groups_array = np.asarray(group_ids).astype(str)
+    repetitions = np.asarray(repetition_indices, dtype=np.int64)
+    if not (
+        values.ndim
+        == candidates.ndim
+        == groups_array.ndim
+        == repetitions.ndim
+        == 1
+    ) or not (
+        len(values) == len(candidates) == len(groups_array) == len(repetitions)
+    ):
+        raise ValueError("endpoint arrays must be aligned one-dimensional vectors.")
+    if len(values) == 0 or not np.isfinite(values).all():
+        raise ValueError("endpoint logits must be finite and non-empty.")
+    if np.any(repetitions < 0):
+        raise ValueError("endpoint repetition_indices must be non-negative.")
+    vocabulary = (
+        np.unique(candidates)
+        if candidate_vocabulary is None
+        else np.asarray(candidate_vocabulary, dtype=np.int64)
+    )
+    if (
+        vocabulary.ndim != 1
+        or len(vocabulary) < 2
+        or len(np.unique(vocabulary)) != len(vocabulary)
+    ):
+        raise ValueError(
+            "candidate_vocabulary must be a unique one-dimensional vector with at least two codes."
+        )
+
+    raw_correct = 0
+    balanced_correct = 0
+    total = 0
+    raw_predictions: dict[str, int | None] = {}
+    balanced_predictions: dict[str, int | None] = {}
+    counts_by_group: dict[str, dict[str, int]] = {}
+    balanced_repetitions_by_group: dict[str, int] = {}
+    group_rows: dict[str, np.ndarray] = {}
+    for group in np.unique(groups_array):
+        group = str(group)
+        truth = truth_by_group.get(group)
+        if truth is None:
+            continue
+        rows = np.flatnonzero(groups_array == group)
+        group_rows[group] = rows
+        counts = {
+            str(int(candidate)): int(np.count_nonzero(candidates[rows] == candidate))
+            for candidate in vocabulary
+        }
+        counts_by_group[group] = counts
+        balanced_repetitions = min(counts.values())
+        balanced_repetitions_by_group[group] = balanced_repetitions
+        total += 1
+        if balanced_repetitions == 0:
+            raw_predictions[group] = None
+            balanced_predictions[group] = None
+            continue
+        raw_predicted = candidate_evidence_scores(
+            values[rows],
+            candidates[rows],
+            vocabulary,
+            aggregation=aggregation,
+            evidence_count_power=evidence_count_power,
+        ).predicted
+        balanced_rows = rows[repetitions[rows] < balanced_repetitions]
+        balanced_predicted = candidate_evidence_scores(
+            values[balanced_rows],
+            candidates[balanced_rows],
+            vocabulary,
+            aggregation=aggregation,
+            evidence_count_power=evidence_count_power,
+        ).predicted
+        raw_predictions[group] = raw_predicted
+        balanced_predictions[group] = balanced_predicted
+        raw_correct += int(raw_predicted is not None and raw_predicted == int(truth))
+        balanced_correct += int(
+            balanced_predicted is not None and balanced_predicted == int(truth)
+        )
+
+    if max_repetitions is None:
+        max_repetitions = max(
+            balanced_repetitions_by_group.values(),
+            default=0,
+        )
+    if max_repetitions < 1:
+        raise ValueError("max_repetitions must be positive when endpoint groups exist.")
+    correct_by_repetition: dict[int, int] = {}
+    eligible_by_repetition: dict[int, int] = {}
+    hit_by_repetition: dict[int, float] = {}
+    for repetition_count in range(1, max_repetitions + 1):
+        correct = 0
+        eligible = 0
+        for group, rows in group_rows.items():
+            counts = counts_by_group[group]
+            if any(count < repetition_count for count in counts.values()):
+                continue
+            selected = rows[repetitions[rows] < repetition_count]
+            predicted = candidate_evidence_scores(
+                values[selected],
+                candidates[selected],
+                vocabulary,
+                aggregation=aggregation,
+                evidence_count_power=evidence_count_power,
+            ).predicted
+            eligible += 1
+            correct += int(
+                predicted is not None and predicted == int(truth_by_group[group])
+            )
+        correct_by_repetition[repetition_count] = correct
+        eligible_by_repetition[repetition_count] = eligible
+        hit_by_repetition[repetition_count] = (
+            float(correct / eligible) if eligible else float("nan")
+        )
+
+    return {
+        "raw_all_hit_rate": float(raw_correct / total) if total else float("nan"),
+        "balanced_all_hit_rate": (
+            float(balanced_correct / total) if total else float("nan")
+        ),
+        "raw_all_correct": raw_correct,
+        "balanced_all_correct": balanced_correct,
+        "total_groups": total,
+        "raw_predictions_by_group": raw_predictions,
+        "balanced_predictions_by_group": balanced_predictions,
+        "candidate_counts_by_group": counts_by_group,
+        "balanced_repetitions_by_group": balanced_repetitions_by_group,
+        "hit_by_repetition": hit_by_repetition,
+        "correct_by_repetition": correct_by_repetition,
+        "eligible_by_repetition": eligible_by_repetition,
+    }

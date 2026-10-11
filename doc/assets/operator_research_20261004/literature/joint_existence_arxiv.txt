@@ -1,0 +1,3001 @@
+
+--- PAGE 1 ---
+EXISTENCE AND UNIQUENESS OF THE KRONECKER
+COVARIANCE MLE
+MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+Abstract. In matrix-valued datasets the sampled matrices often exhibit correlations among
+both their rows and their columns. A useful and parsimonious model of such dependence
+is the matrix normal model, in which the covariances among the elements of a random
+matrix are parameterized in terms of the Kronecker product of two covariance matrices, one
+representing row covariances and one representing column covariance. An appealing feature
+of such a matrix normal model is that the Kronecker covariance structure allows for standard
+likelihood inference even when only a very small number of data matrices is available. For
+instance, in some cases a likelihood ratio test of dependence may be performed with a sample
+size of one. However, more generally the sample size required to ensure boundedness of the
+matrix normal likelihood or the existence of a unique maximizer depends in a complicated
+way on the matrix dimensions. This motivates the study of how large a sample size is needed
+to ensure that maximum likelihood estimators exist, and exist uniquely with probability one.
+Our main result gives precise sample size thresholds in the paradigm where the number of
+rows and the number of columns of the data matrices diﬀer by at most a factor of two. Our
+proof uses invariance properties that allow us to consider data matrices in canonical form,
+as obtained from the Kronecker canonical form for matrix pencils.
+1. Introduction
+1.1. Kronecker covariances and matrix normal models. A matrix-valued dataset con-
+sists of a sample of matricesY1,...,Y n, each taking values in Rm1×m2 for integersm1,m 2≥ 2.
+Such data arise in spatial statistics [KLL20] as well as in a variety of experimental settings
+where outcomes are obtained under combinations of two conditions, such as international trade
+between pairs of countries [VH15], studies involving multivariate time-series of EEG measure-
+ments on multiple individuals [MKM +12], age by period human mortality data [FH14], and
+factorial experiments arising in genomics [AT12], to name a few. In these applications the ma-
+tricesY1,...,Y n often exhibit substantial covariance among their rows and covariance among
+their columns, in the sense that (after appropriately subtracting out any mean or regression
+eﬀects) the two empirical covariance matrices 1
+n
+∑n
+i=1YiYT
+i and 1
+n
+∑n
+i=1YT
+i Yi are substan-
+tially non-diagonal. This motivates the use of a statistical model that can represent such data
+features.
+One suitable and widely-used model is based on matrix normal distributions; see [Daw81,
+ORAvR13, GH15, GC18] or also the work on graphical modeling in [YL12, ZL18, CL19,
+Zho14, AT10]. Let Z be an m1×m2 random matrix with i.i.d. standard normal entries. A
+random matrix Y taking values in Rm1×m2 is said to have a matrix normal distribution if
+there exist (deterministic) matrices M∈ Rm1×m2, A∈ Rm1×m1, and B∈ Rm2×m2 such that
+Y d=M +AZBT . In this case, we write Y ∼N (M, Σ2⊗Σ1), where Σ1 =AAT and Σ2 =BBT
+and “⊗” denotes the Kronecker product. This notation reﬂects that Σ 2⊗Σ1 is the covariance
+Key words and phrases. Gaussian distribution, Kronecker canonical form, matrix normal model, maximum
+likelihood estimation, separable covariance.
+1
+arXiv:2003.06024v2  [math.ST]  14 Jan 2021
+
+--- PAGE 2 ---
+2 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+matrix of the vectorization of Y . If A and B, and thus also Σ 1 and Σ2, are invertible then
+the matrix normal distribution N (M, Σ2⊗ Σ1) is regular and has a Lebesgue density.
+For ﬁxed m1 and m2, the matrix normal model is the set of all regular matrix normal
+distributions. The number of its covariance parameters is on the order of m2
+1 +m2
+2, which
+is a substantial reduction as compared to the normal model with unrestricted covariance
+and on the order of m2
+1m2
+2 parameters. As a result, matrix normal models can be used to
+make likelihood-based inference with sample sizes that would preclude use of an unrestricted
+covariance model. For example, in [VH15], matrix normal models were used to construct
+non-trivial tests of dependence for square data matrices even when the sample size was one.
+1.2. Practical relevance of sample size conditions. Numerical experiments indicate that
+the sample size required for a bounded likelihood or unique maximum likelihood estimator
+(MLE) depends in subtle ways on the dimensions m1 and m2 of the data matrices; see Ex-
+ample 1.1 below. Despite recent progress on suﬃcient sample size conditions, the precise
+behavior of the matrix normal likelihood function in settings with small sample size n is not
+fully understood [ST16]. Speciﬁcally, from prior literature it is not known when precisely the
+Kronecker MLE, i.e., MLE of the covariance matrix Σ2⊗ Σ1, exists or exists uniquely. This is
+the problem we consider in this article, which gives new sample size conditions that provide
+a full solution to the problem for matrices whose dimensions m1 and m2 diﬀer by a factor of
+at most 2; this is the regime where prior results leave the largest gaps. Precise sample size
+conditions are of great practical relevance as they are useful for the development of numeri-
+cal methods to obtain MLEs, the design of experiments, and as a guide to alternative data
+analysis strategies when conditions for existence or uniqueness are not met.
+Regarding numerical methods, matrix normal models generally do not admit a closed form
+MLE. Hence, a data analyst relies on iterative methods of computation, for which suitable
+convergence criteria need to be set [Dut99]. However, as we will describe below, iteration
+of such an algorithm will either converge to a unique maximizer, converge to a non-unique
+maximizer, or not converge. Absent knowledge of the sample size conditions for existence of
+the Kronecker MLE, at each iteration the algorithm would have to distinguish in an ad-hoc
+manner between a situation in which the procedure has not yet suﬃciently converged but will
+converge eventually, and one in which it will never converge. Additionally, in cases where the
+MLE exists, the analyst would certainly want to know if it exists uniquely, as non-uniqueness
+implies multiple explanations of the data generating mechanism that are equally valid (based
+on likelihood). Absent knowledge of the sample size conditions for uniqueness, the data analyst
+might not be aware that an MLE obtained via the iterative procedure was not unique. Even if
+the procedure was run from several diﬀerent starting values, an assessment of non-uniqueness
+could be imprecise, as diﬀerences from diﬀerent runs could be due to non-uniqueness, or just
+an indication that the algorithm has not been suﬃciently iterated. In contrast, precise sample
+size conditions allow one to side-step these numerical issues.
+Knowledge of sample size conditions can also assist with study design. For example, con-
+sider an experiment in which each replication produces a matrix of gene expression levels for
+a set of tissue types. If interest is inferring dependencies among genes and among types using
+the matrix normal model (see, e.g., [Efr09]), then knowledge of the sample size requirement
+for existence and uniqueness of the Kronecker MLE would certainly be useful. Additionally, in
+cases where the study has been completed and the sample size conditions have not been met,
+our results still provide a guide to alternative methods for making inference. For example,
+suppose we wish to test a null hypothesis H : Σ 2 = I of exchangeability within each row.
+If the sample size is insuﬃcient for existence of the MLE, then the likelihood ratio statistic
+
+--- PAGE 3 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 3
+is inﬁnity with probability one and a non-trivial level- α likelihood ratio test is unavailable.
+However, suppose the maximum numberm′
+2 of columns for which the maximized likelihood is
+bounded, and thus for which a likelihood ratio test with non-trivial power may be obtained,
+were known. In this case, the null hypothesis H could be evaluated by properly combining
+the results of multiple tests of exchangeability on subsets of m′
+2 columns, even at sample sizes
+as small as n = 1, 2.
+1.3. Maximum likelihood thresholds and known results. For notational simplicity, we
+obtain results for samples of size n from a mean-zero matrix normal model, that is,
+(1.1) Y1,...,Y n∼ i.i.d.N (0, Σ2⊗ Σ1).
+As noted in Remark 1.1, sample-size thresholds for the case of an unknown mean will be equal
+to those in this mean-zero case, plus one additional data matrix. Let PD(m) be the cone of
+positive deﬁnite m×m matrices. Let Ψ 1 = Σ−1
+1 and Ψ 2 = Σ−1
+2 be the precision matrices.
+Ignoring an additive constant, two times the log-likelihood function for the matrix normal
+model can be written as
+(1.2) 𝓁(Ψ1, Ψ2) =nm2 log det(Ψ1) +nm1 log det(Ψ2)− tr
+(
+Ψ1
+n∑
+i=1
+YiΨ2YT
+i
+)
+.
+The log-likelihood function only depends on the Kronecker product Ψ 2⊗ Ψ1 and
+(1.3) 𝓁
+(
+cΨ1,c−1Ψ2
+)
+= 𝓁(Ψ1, Ψ2)
+for all scalars c> 0.
+A standard method to compute the MLE of Ψ 2⊗ Ψ1 is block-coordinate descent, also
+referred to as the “ﬂip-ﬂop algorithm” [Dut99]. If Ψ 2 is ﬁxed to be a value ˜Ψ2, the likelihood
+function is maximized by ˜Ψ1 = ˜Σ−1
+1 with ˜Σ1 = 1
+nm2
+∑
+iYi ˜Ψ2YT
+i . Similarly, since the trace
+term in (1.2) can be alternatively written as tr
+(
+Ψ2
+∑
+iYT
+i Ψ1Yi
+)
+, the maximizer when ﬁxing
+Ψ1 = ˜Ψ1 is ˜Ψ2 = ˜Σ−1
+2 with ˜Σ2 = 1
+nm1
+∑
+iYT
+i ˜Ψ1Yi. The ﬂip-ﬂop algorithm proceeds by
+iteratively updating ˜Ψ1 and ˜Ψ2 (or equivalently ˜Σ1 and ˜Σ2) using these formulas. Evidently,
+the updates are well-deﬁned as long as both ∑
+iYi ˜Ψ2YT
+i and∑
+iYT
+i ˜Ψ1Yi are invertible. As
+will be made precise later in Lemma 2.3, this condition will be met a.s. as long as the “row
+sample size” nm2 is as big as the number of rows m1, and similarly nm1 is as big as m2.
+Example 1.1. Consider the case of n = 2 data matrices of size (m1,m 2), where we ﬁx m2 = 4
+and consider m1 = 5, 6, 7, 8. In each case we take the data to be in a canonical form (as
+speciﬁed in Theorem 5.1) and run the ﬂip-ﬂop algorithm starting from a random choice for
+Ψ1. Figure 1 depicts the behavior of the algorithm in terms of the function g deﬁned as
+−2/n times the log-likelihood (solid line), where we also omitted additive constants from the
+log-likelihood; see (2.2). In addition, the ﬁgure shows the diﬀerence in g from one iteration to
+the next (dashed line). The top left ﬁgure, which is for ( m1,m 2) = (5, 4), shows the function
+g =−(2/n)𝓁 converging to its minimum. The top right ﬁgure, for (m1,m 2) = (6, 4), shows the
+function g converging similarly. In the bottom left ﬁgure, for ( m1,m 2) = (7, 4), the function
+g diverges to−∞; the dashed line stays at a nonzero negative value. Finally, in the bottom
+right ﬁgure, for (m1,m 2) = (8, 4), the algorithm converges in one step. These four settings
+correspond to the cases where the MLE exists uniquely (top left), MLEs exist non-uniquely
+(top and bottom right), and an MLE does not exist (bottom left). We emphasize that while
+our ﬁgure pertains to one particular initialization the observed behavior is similar for other
+random starting values.
+
+--- PAGE 4 ---
+4 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+(a)
+� �� �� �� �
+-��
+-��
+-��
+��
+��
+� (b)
+� �� �� �� �
+-��
+-��
+-��
+-�
+�
+(c)
+� �� �� �� �
+-��
+-��
+-��
+-��
+-��
+-��
+-�
+� (d)
+� �� �� �� �
+-��
+-��
+-��
+-��
+-��
+-��
+-�
+�
+Figure 1. Plots of proﬁle log-likelihood function g (solid line) and its one-
+step diﬀerences (dashed line) against the number of iterations t of the ﬂip-ﬂop
+algorithm: (a) ( m1,m 2) = (5 , 4) with unique MLE, (b) ( m1,m 2) = (6 , 4)
+with the MLE existing non-uniquely, (c) (m1,m 2) = (7, 4) with the MLE non-
+existing, (d) (m1,m 2) = (8, 4) with the MLE existing non-uniquely.
+As explained in Section 5, the behavior of the log-likelihood function with respect to ex-
+istence and uniqueness of the Kronecker MLE is essentially independent of the realizations
+Yi, and merely depends on the triple ( m1,m 2,n ). It is well known that for large enough n
+the Kronecker MLE exists uniquely a.s.; this is simply a consequence of the properties of the
+usual (vector) normal model. However, special and at times somewhat paradoxical properties
+of the matrix normal model emerge for small sample size n. Indeed, as we noted in Exam-
+ple 1.1, for ﬁxed m2 minor diﬀerences of m1 may cause substantially diﬀerent behavior of the
+log-likelihood function when the sample size n is small. To capture this behavior, we deﬁne in
+this paper three types of sample size thresholds, which are critical sample sizes at which the
+a.s. behavior of the likelihood function changes. Our terminology follows [GS18, DFKP19].
+Deﬁnition 1.1. (i) The Kronecker MLE exists if the function 𝓁 achieves its maximum over
+the domain of deﬁnition PD(m1)× PD(m2). It exists uniquely if in addition all local maxima
+of 𝓁 have the same Kronecker product.
+(ii) We deﬁne three positive integer thresholds for the sample size. The existence thresh-
+old Ne(m1,m 2) is the integer such that the Kronecker MLE exists a.s. if and only if n≥
+Ne(m1,m 2). The uniqueness threshold Nu(m1,m 2) is the integer such that the Kronecker
+MLE exist uniquely a.s. if and only if n≥ Nu(m1,m 2). Finally, the boundedness threshold
+Nb(m1,m 2) is the integer such that 𝓁 is bounded a.s. if and only if n≥Nb(m1,m 2).
+Remark 1.1. Throughout the paper we assume the expectation of Yi to be zero and known.
+Standard results yield that Nb(m1,m 2) + 1, Ne(m1,m 2) + 1, and Nu(m1,m 2) + 1 are the
+relevant thresholds for the case where the mean matrix in Rm1×m2 is unknown and also
+estimated by maximum likelihood [And03, Section 3.3].
+The three thresholds from Deﬁnition 1.1 are ﬁnite and no larger than m1m2. Speciﬁcally,
+the well-known results on estimation of an unconstrained Gaussian covariance matrix collected
+in [And03, Section 3.2] together with Lemma 2.2 below yield that n≥m1m2 is suﬃcient for
+
+--- PAGE 5 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 5
+a.s. unique existence of the Kronecker MLE. However, this condition is far from necessary.
+Indeed, the main theorem of [ST16] states that unique existence holds a.s. under the much
+weaker requirement that
+n > m1
+m2
++ m2
+m1
+.
+To our knowledge, this is the best known suﬃcient condition for a.s. (unique) existence.
+The condition
+(1.4) n≥ max
+{m1
+m2
+,m2
+m1
+}
+is necessary for existence; compare also Theorem 1(1) in [ST16]. This is a consequence of the
+following simple lemma, for which we include a proof in the appendix.
+Lemma 1.2. Suppose m1≥m2. If Y = (Y1,...,Y n)∈ Rm1×nm2 has row rank smaller than
+m1, then 𝓁(Ψ1, Ψ2) is not bounded above on PD (m1)× PD(m2).
+Note from our earlier discussion that the condition from (1.4) is precisely the requirement
+needed for the ﬂip-ﬂop algorithm to have well-deﬁned iterative update steps. Somewhat
+confusingly, some of the literature refers to (1.4) as the necessary and suﬃcient condition
+for existence of the Kronecker MLE; see, e.g., [Dut99]. However, even when (1.4) holds, the
+likelihood function need not achieve its maximum, or even be bounded (recall Example 1.1).
+In terms of the thresholds we deﬁned, the known results from the literature may be sum-
+marized as follows. The ﬂoor and ceiling functions are denoted by ⌊·⌋ and⌈·⌉, respectively.
+Proposition 1.3. The three ML thresholds satisfy
+max
+{m1
+m2
+,m2
+m1
+}
+≤ Nb(m1,m 2) ≤ Ne(m1,m 2) ≤ Nu(m1,m 2) ≤
+⌊m1
+m2
++ m2
+m1
+⌋
++ 1.
+We remark that m1
+m2
++ m2
+m1
+is integer if and only if m1 = m2. So, for rectangular matrices
+(m1⁄=m2), the upper bound on Nu(m1,m 2) can be written as ⌈m1
+m2
++ m2
+m1
+⌉.
+1.4. New contributions. Our interest is in precise formulas for the thresholds. The case
+where one matrix dimension divides the other is the simplest. We derive the following result
+in the appendix. The result considers m2≥ 2. The case m2 = 1 reduces to the vector case in
+which the MLE exists uniquely a.s. forn≥m1 and does not exist (with unbounded likelihood)
+if n<m 1 [And03, Section 3.2]; so Nb(m1, 1) =Ne(m1, 1) =Nu(m1, 1) =m1.
+Theorem 1.4. Supposem1≥m2≥ 2 and m2|m1, i.e., m1 is divisible by m2. Then
+Nb(m1,m 2) = Ne(m1,m 2) = m1
+m2
+, N u(m1,m 2) =
+{
+3 if m1 =m2,
+m1
+m2
++ 1 if m1>m 2.
+For the case where the matrix dimensions do not divide each other, Proposition 1.3 yields
+a solution when one matrix dimension is suﬃciently large compared to the other.
+Corollary 1.5. Suppose that m1>m 2≥ 2. Let r =m1 modm2 be the remainder in integer
+division, so r∈{ 0,...,m 2− 1}. If r≥ 1 and
+⌊m1
+m2
+⌋
+> 1 + r2
+m2(m2−r),
+then
+Nb(m1,m 2) = Ne(m1,m 2) = Nu(m1,m 2) =
+⌊m1
+m2
+⌋
++ 1.
+This formula holds, in particular, when m1≥m2
+2 and r≥ 1.
+
+--- PAGE 6 ---
+6 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+Our new results in Theorem 1.4 and Corollary 1.5 can be roughly interpreted as saying that,
+as long as m1 is divisible or approximately divisible by m2, then the sample size requirements
+for existence of an MLE are the same as the sample size requirements for the steps of the
+ﬂip-ﬂop algorithm to be well deﬁned. This equivalence is perhaps the reason why in the early
+literature on Kronecker MLEs, these two sample sizes were conﬂated. However, as illustrated
+in Example 1.1, the ﬂip-ﬂop algorithm can diverge even though each step is well-deﬁned.
+The main additional results in our paper are to understand and describe this discrepancy as
+well as the diﬀerence between existence and unique existence of the MLE. Speciﬁcally, we
+provide formulas for the three thresholds we deﬁned in the regime where the upper bound
+from Proposition 1.3 leaves the largest gap, namely, the case where
+2m2 ≥ m1 ≥ m2.
+We state our main theorem here.
+Theorem 1.6. Suppose that 2m2≥m1≥m2. Then
+Nu(m1,m 2) =
+
+
+
+3 if m1 =m2,
+2 if m1 =m2 + 1,
+3 otherwise,
+and
+Ne(m1,m 2) =Nb(m1,m 2) =
+
+
+
+1 if m1 =m2,
+2 if m1>m 2 and m1−m2|m2,
+3 otherwise.
+The ingredients needed to establish Theorem 1.6 will be developed in the remainder of the
+paper. How they ﬁt together is also outlined in the proof of Theorem 1.6 that we include in
+the appendix. When combined with additional calculations using Gr¨ obner basis methods to
+check algebraic conditions given in Theorems 3.1 and 3.3, Theorem 1.6 provides Nu(m1,m 2),
+Ne(m1,m 2), and Nb(m1,m 2) for small m1 and m2; see Table 1.
+The remainder of the paper is organized as follows. We begin by recalling preliminary results
+concerning convexity properties of the negated log-likelihood function, and we introduce a
+proﬁle likelihood function (Section 2). We then give algebraic conditions for existence and
+uniqueness of the Kronecker MLE (Section 3). These are formulated in terms of rank drops,
+meaning the extent to which the rank of a data matrix may be reduced through certain linear
+transformations. The suﬃcient condition also appears in a more geometric form in the proofs
+in [ST16]. The key ingredients for the proof of Theorem 1.4 are derived in Section 4. The
+proof of Theorem 1.6 requires a study of the case of sample size n = 2 and is developed in
+Section 5. Our arguments use invariance of the likelihood surface under group actions, and
+we use certain canonical forms for generic data matrices under the group action. For data in
+such canonical form, we are able to explicitly give the critical points of the likelihood function
+(Section 7). We end with a brief conclusion (Section 8).
+2. Preliminaries
+2.1. Geodesic convexity and uniqueness of MLE. The log-likelihood function 𝓁 deﬁned
+in (1.2) is not concave. However, it can be shown to be g-concave, that is, 𝓁 is concave along
+suitable geodesics between any pair of matrices in PD(m1)× PD(m2). The geodesics are
+
+--- PAGE 7 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 7
+Table 1. ML thresholds: Unique existence Nu(m1,m 2) (left);
+Bounded likelihood/existence Ne(m1,m 2) =Nb(m1,m 2) (right).
+m1
+m2 1 2 3 4 5 6 7 8 9 10
+1 1
+2 2 3
+3 3 2 3
+4 4 3 2 3
+5 5 3 3 2 3
+6 6 4 3 3 2 3
+7 7 4 3 3 3 2 3
+8 8 5 3 3 3 3 2 3
+9 9 5 4 3 3 3 3 2 3
+10 10 6 4 3 3 3 3 3 2 3
+m1
+m2 1 2 3 4 5 6 7 8 9 10
+1 1
+2 2 1
+3 3 2 1
+4 4 2 2 1
+5 5 3 3 2 1
+6 6 3 2 2 2 1
+7 7 4 3 3 3 2 1
+8 8 4 3 2 3 2 2 1
+9 9 5 3 3 3 2 3 2 1
+10 10 5 4 3 2 3 3 2 2 1
+obtained from the geodesics in PD(m1) and in PD(m2), which take the form
+(2.1) γ(j)
+t (Q0,Q 1) = Q
+1
+2
+0
+(
+Q
+− 1
+2
+0 Q1Q
+− 1
+2
+0
+)t
+Q
+1
+2
+0, t ∈ [0, 1],
+when linking two matrices Q0,Q 1∈ PD(mj), j = 1, 2. The g-concavity of 𝓁 amounts to
+𝓁
+(
+γ(1)
+t
+(
+Q(1)
+0 ,Q (1)
+1
+)
+,γ (2)
+t
+(
+Q(2)
+0 ,Q (2)
+1
+))
+≥t·𝓁
+(
+Q(1)
+0 ,Q (2)
+0
+)
++ (1−t)·𝓁
+(
+Q(1)
+1 ,Q (2)
+1
+)
+for all t∈ [0, 1], Q(j)
+0 ,Q (j)
+1 ∈ PD(mj), j = 1, 2. This property of 𝓁 was observed in [Wie12]
+and yields the following fact; see also [Rap97, Chap. 6].
+Lemma 2.1. Every critical point (i.e., point of zero gradient) and, in particular, every local
+maximum of 𝓁 is a global maximum.
+Suppose 𝓁 has two distinct maxima. Then, by concavity, 𝓁 is constant along the geodesic
+linking them. We may extend the geodesic by considering t∈ R in (2.1). Along this extended
+geodesic,𝓁 remains constant even as the underlying matrices diverge or approach the boundary
+of PD(m1) or PD(m2). This can be used to guarantee uniqueness of the Kronecker MLE as
+noted in [ST16]. Call the log-likelihood function 𝓁 coercive if
+lim
+t→∞
+𝓁
+(
+Ψ(t)
+1 , Ψ(t)
+2
+)
+= −∞
+for all sequences
+(
+Ψ(t)
+1 , Ψ(t)
+2
+)
+that diverge or approach the boundary of PD(m1)× PD(m2).
+If 𝓁 is coercive, then clearly the Kronecker MLE exists and it exists uniquely based on our
+above discussion. However, more is true according to the following lemma that is proven as
+part of Lemma 4 in [ST16].
+Lemma 2.2. The Kronecker MLE exists uniquely if and only if the log-likelihood function 𝓁
+is coercive.
+In the following we will often consider properties that the normal data matrices Y1,...,Y n
+possess almost surely. More precisely, the properties will hold as long as the data lie outside
+certain, not further speciﬁed lower-dimensional sets that are deﬁned by polynomial equations.
+We indicate this fact by speaking of data matrices that are generic.
+
+--- PAGE 8 ---
+8 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+2.2. Proﬁle likelihood. For any Ψ2∈ PD(m2), the log-likelihood function admits a section
+𝓁Ψ2 : PD(m1)→ R given by 𝓁Ψ2(Ψ1) =𝓁(Ψ1, Ψ2).
+Lemma 2.3. Suppose nm2 ≥ m1 ≥ m2. For generic data Y1,...,Y n, every section 𝓁Ψ2,
+Ψ2∈ PD(m2), achieves its maximum on PD (m1) uniquely at
+Ψ1(Ψ2) =
+(
+1
+nm2
+n∑
+i=1
+YiΨ2YT
+i
+)−1
+.
+Proof. According to the well-known results for ML estimation of a Gaussian covariance matrix
+[And03, Section 3.2], the claim is true for a particular restriction 𝓁Ψ2 if the positive semi-
+deﬁnite m1×m1 matrix
+n∑
+i=1
+YiΨ2YT
+i
+is non-singular. The matrix is a sum of positive semi-deﬁnite matrices. Hence, a vector
+v∈ Rm2 is in its kernel if and only if vTYiΨ2YT
+i v = 0 for all i = 1,...,n . Since Ψ 2 is positive
+deﬁnite, this holds if and only if v is in the kernel of each matrix YT
+i if and only if v is in the
+kernel of
+n∑
+i=1
+YiYT
+i .
+Being a sum of nm2≥ m1 generic rank 1 matrices, this m1×m1 matrix has full rank m1.
+The kernel is thus zero. □
+In the regime of interest, with nm2≥m1≥m2, Lemma 2.3 ensures that for generic data
+Y1,...,Y n the proﬁle log-likelihood function
+𝓁prof : Ψ2↦→𝓁(Ψ1(Ψ2), Ψ2)
+is well-deﬁned on PD(m2). Now, 𝓁 is bounded above/achieves its maximum on PD(m1)×
+PD(m2) if and only if 𝓁prof is bounded above/achieves its maximum on PD(m2). This in turn
+is equivalent to the function
+(2.2) g(Ψ) =m2 log det
+( n∑
+i=1
+YiΨYT
+i
+)
+−m1 log det(Ψ)
+being bounded below/achieving its minimum on PD(m2). We note that
+g(Ψ) =m2 log det
+(
+Y [In⊗ Ψ]YT)
+−m1 log det(Ψ),(2.3)
+where Y =
+(Y1,...,Y n
+)
+∈ Rm1×nm2. The function g is geodesically convex (g-convex). This
+follows from its deﬁnition as negatived proﬁle of a g-concave log-likelihood function. It can
+also be seen directly by observing that log det(·) is linear along the geodesics from (2.1) and
+verifying that the ﬁrst term in (2.2) is g-convex; see Lemma 2 in [Wie12].
+Call g coercive if g
+(
+Ψ(t))
+tends to +∞ for any sequence Ψ (t) that diverges or approaches
+the boundary of PD(m2). Then our observations may be summarized as follows.
+Lemma 2.4. The Kronecker MLE exists if and only if the function g from (2.2) achieves its
+minimum on PD (m2). The Kronecker MLE exists uniquely if and only if g is coercive.
+Proof. The ﬁrst assertion of this lemma is clear from the deﬁnition of g, and the second claim
+follows from Lemma 2.2. □
+
+--- PAGE 9 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 9
+2.3. Group action. An important ingredient to our later analysis is the fact that a group
+action allows one to consider data in canonical position. Let GL( m, R) be the general linear
+group of m×m real invertible matrices. The direct product GL( m1, R)× GL(m2, R) acts
+naturally on a data set comprised of matrices Y1,...,Y n∈ Rm1×m2. For A∈ GL(m1, R) and
+B∈ GL(m2, R), the action is
+Yi↦→AYiB, i = 1,...,n.
+Now two data sets (Y1,...,Y n) and (Y′
+1,...,Y ′
+n) are in the same orbit under the group action
+if one can be transformed into the other using a pair ( A,B )∈ GL(m1, R)× GL(m2, R).
+Recall that the log-likelihood surface of a model is the graph of its log-likelihood function.
+Lemma 2.5. If two data sets are in the same GL(m1, R)× GL(m2, R)-orbit, then their log-
+likelihood surfaces are translations of one another.
+Proof. Let 𝓁 be the log-likelihood function from (1.2) for data Y1,...,Y n ∈ Rm1×m2. Let
+A∈ GL(m1, R) and B∈ GL(m2, R). Deﬁne Y′
+i = AYiB for i = 1,...,n . The log-likelihood
+function for the data (Y′
+1,...,Y ′
+n) is
+𝓁′(Ψ1, Ψ2) =nm2 log det(Ψ1) +nm1 log det(Ψ2)− tr
+(
+Ψ1A
+n∑
+i=1
+YiBΨ2BTYT
+i AT
+)
+=𝓁
+(
+AT Ψ1A,B Ψ2BT)
++c,
+where c is a constant that depends on n, m1, m2, det(A) and det( B). The maps Ψ 1 ↦→
+AT Ψ1A and Ψ2↦→BΨ2BT are bijections from PD(m1) to PD(m1) and PD(m2) to PD(m2),
+respectively. Therefore, subtracting c from each function value translates the graph of 𝓁′ into
+the graph of 𝓁. □
+3. Algebraic conditions for existence and uniqueness
+In this section we prove a necessary condition for existence of the Kronecker MLE as well
+as a suﬃcient condition for its unique existence. Both conditions involve the rank of
+(3.1) Y = (Y1,...,Y n)∈ Rm1×nm2
+after linear transformation using certain nm2×nm2 matrices in Kronecker product form.
+3.1. Necessary condition for existence. The following condition strengthens the neces-
+sary condition from Lemma 1.2.
+Theorem 3.1. (i) If there exists a matrix X∈ Rm2×m2 such that
+rank
+(Y1X,...,Y nX)
+< m1
+m2
+rank(X),
+then the log-likelihood function 𝓁 is unbounded and the Kronecker MLE does not exist.
+(ii) If there exists a non-zero and singular matrix X∈ Rm2×m2 such that
+rank
+(Y1X,...,Y nX)
+≤ m1
+m2
+rank(X),
+then the log-likelihood function 𝓁 is not coercive and the Kronecker MLE does not exist
+uniquely.
+
+--- PAGE 10 ---
+10 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+Proof. (i) Let X∈ Rm2×m2 satisfy the assumed rank condition. If X is invertible, then the
+data matrix Y from (3.1) has rank( Y ) < m1 and the likelihood function is unbounded by
+Lemma 1.2. Hence, only the case where rank( X) =k<m 1 needs to be considered.
+Let q1,...,q m2 be the eigenvectors of XXT , with corresponding eigenvalues d1,...,d m2.
+Since rank(XXT ) = rank(X) =k, we may assume that dj = 0 for j≥k + 1, in which case
+XXT =
+k∑
+j=1
+djqjqT
+j .
+Deﬁne the positive semideﬁnite matrix
+Ψ =
+m2∑
+j=k+1
+qjqT
+j .
+Then XXT + Ψ is positive deﬁnite. We claim that
+(3.2) lim
+λ→∞
+g(λXXT + Ψ) = −∞,
+which implies the theorem’s assertion via Lemma 2.4.
+Let r be the rank of
+(Y1X,...,Y nX) = Y (In⊗X).
+Then r is also the rank of
+Y (In⊗X)(In⊗X)TYT = Y (In⊗XXT )YT.
+By Lemma 3.2 below, the determinant of
+Y [In⊗ (λXXT + Ψ)]YT =λ·Y [In⊗XXT ]YT +Y [In⊗ Ψ]YT
+is a polynomial of degree r inλ. Lemma 3.2 also yields that det( λXXT + Ψ) is a polynomial
+of degree k in λ. By assumption rm2<km 1. Therefore,
+(3.3) lim
+λ→∞
+eg(λXX T +Ψ) = lim
+λ→∞
+{
+det
+(
+Y
+[
+In⊗ (λXXT + Ψ)
+]
+YT)}m2
+{det(λXXT + Ψ)}m1 = 0.
+Taking the logarithm yields the claim from (3.2).
+(ii) Proceeding as in case (i) we obtain in (3.3) a ratio of two polynomials of equal degree
+and a ﬁnite and positive limit. It follows that g converges to a ﬁnite limit and, thus, is not
+coercive. An application of Lemma 2.4 yields the claim. □
+Lemma 3.2. Let A,B ∈ Rm×m be two positive semideﬁnite matrices whose sum A +B is
+positive deﬁnite. Let rank(A) =r. Then det(γA +B) is a degree r polynomial in γ.
+Proof. Choose an invertible matrix C such that CTC = A +B. Let QTDQ be the spectral
+decomposition of C−TAC−1 with D = diag(d1,...,d r, 0,..., 0) and dj > 0 for j≤r. Then
+det(γA +B) = det
+(
+(γ− 1)A + (A +B)
+)
+= det(C)2 det
+(
+(γ− 1)D +I
+)
+= det(A +B)2
+r∏
+j=1
+(djγ + 1−dj).
+□
+
+--- PAGE 11 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 11
+Remark 3.1. The eigenvalues dj in the above proof are also the eigenvalues of ( A +B)−1A.
+If v∈ ker(B) then
+(A +B)−1Av = (A +B)−1(A +B)v =v,
+so that v is an eigenvector for eigenvalue 1.
+3.2. Suﬃcient conditions for existence and uniqueness.
+Theorem 3.3. Let rank(Y1,...,Y n) =m1.
+(i) If all singular matrices X∈ Rm2×m2 satisfy
+rank
+(Y1X,...,Y nX)
+≥ m1
+m2
+rank(X),
+then the log-likelihood function 𝓁 is bounded from above.
+(ii) If all non-zero singular matrices X∈ Rm2×m2 satisfy
+rank
+(Y1X,...,Y nX)
+> m1
+m2
+rank(X),
+then the log-likelihood function 𝓁 is coercive and the Kronecker MLE exists uniquely.
+Proof. (i) Assume that the log-likelihood function 𝓁 is not bounded from above. Then there
+exists a sequence Ψ (t), t = 1, 2,... , in PD(m2) such that g
+(
+Ψ(t))
+→−∞ as t→∞ . Let
+Ψ(t) = Q(t)Λ(t)(
+Q(t))T be the spectral decomposition. The set of orthogonal matrices is
+compact and, passing to a subsequence if necessary, we may assume the sequence Q(t) to be
+convergent. By Lemma A.1 in the appendix, again passing to a subsequence if necessary, we
+may assume the diagonal elements of Λ(t) to be such that the resulting sequence Ψ (t) is of the
+form
+(3.4) Ψ (t) =ϵ(t)
+1 Ψ(t)
+1 +ϵ(t)
+2 Ψ(t)
+2 +··· +ϵ(t)
+K Ψ(t)
+K, K ≤m2,
+where Ψ (t)
+k is a sequence of positive semideﬁnite matrices that converges to a limit Ψ k and
+such that for all t it holds that rank Ψ(t)
+k = rank Ψk and
+(3.5) Im Ψ (t)
+1 ⊕···⊕ Im Ψ(t)
+K = Rm2.
+Moreover, the scalars in (3.4) are positive, ϵ(t)
+k > 0, and satisfy ϵ(t)
+k+1/ϵ(t)
+k → 0. Note also
+that in (3.4) we must have K≥ 2 because if K = 1, then limt→∞ Ψ(t)
+1 = Ψ1∈ PD(m2) and
+limt→∞g
+(
+Ψ(t))
+= limt→∞g
+(
+ϵ(t)
+1 Ψ(t)
+1
+)
+= limt→∞g
+(
+Ψ(t)
+1
+)
+= limt→∞g(Ψ1)>−∞.
+Next, we redeﬁne Ψ (t)
+k and ϵ(t)
+k as
+ϵ(t)
+k :=ϵ(t)
+k −ϵ(t)
+k+1, k = 1,...,K − 1, ϵ (t)
+K :=ϵ(t)
+K,
+Ψ(t)
+k := Ψ(t)
+1 +··· + Ψ(t)
+k , Ψk := Ψ1 +··· + Ψk, k = 1,...,K.
+The new Ψ (t) remains of the form (3.4) with Ψ (t)
+k → Ψk, rank Ψ(t)
+k = rank Ψk. Similarly, the
+new ϵ(t)
+k remains positive with ϵ(t)
+k+1/ϵ(t)
+k → 0. However, instead of (3.5), we now have
+(3.6) Im Ψ (t)
+1 ⊂···⊂ Im Ψ(t)
+K = Rm2.
+
+--- PAGE 12 ---
+12 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+Writerk = rank Ψk. Then, by (3.6) and Lemma 3.2,
+det
+(
+Ψ(t))
+= det
+(
+ϵ(t)
+1 Ψ(t)
+1 +ϵ(t)
+2 Ψ(t)
+2 +··· +ϵ(t)
+K Ψ(t)
+K
+)
+=
+(
+ϵ(t)
+K
+)m2
+det
+((
+ϵ(t)
+1 /ϵ(t)
+K
+)
+Ψ(t)
+1 +
+(
+ϵ(t)
+2 /ϵ(t)
+K
+)
+Ψ(t)
+2 +··· + Ψ(t)
+K
+)
+≍
+(
+ϵ(t)
+K
+)m2(
+ϵ(t)
+1 /ϵ(t)
+K
+)r1(
+ϵ(t)
+2 /ϵ(t)
+K
+)r2−r1
+···
+(
+ϵ(t)
+K−1/ϵ(t)
+K
+)rK−1−rK−2
+=
+(
+ϵ(t)
+K
+)m2(
+ϵ(t)
+1 /ϵ(t)
+2
+)r1(
+ϵ(t)
+2 /ϵ(t)
+3
+)r2
+···
+(
+ϵ(t)
+K−1/ϵ(t)
+K
+)rK−1
+=
+(
+ϵ(t)
+K
+)m2(
+γ(t)
+1
+)r1(
+γ(t)
+2
+)r2
+···
+(
+γ(t)
+K−1
+)rK−1,
+where γ(t)
+k =ϵ(t)
+k /ϵ(t)
+k+1. Note that γ(t)
+k →∞ as t→∞ .
+Let M (t) =∑n
+i=1YiΨ(t)YT
+i and M (t)
+k =∑n
+i=1YiΨ(t)
+k YT
+i . Then, as t→∞ , M (t)
+k → Mk =∑n
+i=1YiΨkYT
+i . The monotonicity property (3.6) is inherited as
+ImM (t)
+1 ⊂···⊂ ImM (t)
+K = Rm1,
+and therefore
+det
+(
+M (t))
+≍
+(
+ϵ(t)
+K
+)m2(
+γ(t)
+1
+)rank(M (t)
+1 )(
+γ(t)
+2
+)rank(M (t)
+2 )···
+(
+γ(t)
+K−1
+)rank(M (t)
+K−1).
+Deﬁne
+R(k) := min
+X∈Rm2×m2, rankX=k
+rank(Y1X,...,Y nX).
+The assumption in part (i) of the theorem is that
+(3.7) R(r)− (m1/m2)r≥ 0, r = 1,...,m 2− 1.
+Then, the order of det(M (t)) is bounded from below by
+(
+ϵ(t)
+K
+)m1(
+γ(t)
+0
+)R(r0)(
+γ(t)
+1
+)R(r1)···
+(
+γ(t)
+K−1
+)R(rK−1),
+and the order of
+eg(Ψ(t)) = det
+(
+M (t))m2
+det
+(
+Ψ(t))m1
+is bounded from below by
+(3.8)
+(
+γ(t)
+0
+)m2R(r0)−m1r0(
+γ(t)
+1
+)m2R(r1)−m1r1
+···
+(
+γ(t)
+K−1
+)m2R(rK−1)−m1rK−1.
+Under the condition (3.7), the product in (3.8) and, thus, also eg(Ψ(t)) does not converge to
+0. This means that g
+(
+Ψ(t))
+is bounded from below and cannot diverge to −∞. This is a
+contradiction.
+(ii) The assumption is now that
+(3.9) R(r)− (m1/m2)r> 0, r = 1,...,m 2− 1.
+Let Ψ(t) be a sequence in PD(m2) such that Ψ (t)→ Ψ0, where Ψ 0 is singular. Assume that
+the likelihood function 𝓁 is not coercive and g
+(
+Ψ(t))
+is bounded from above. As in the proof
+of (i), we can take a subsequence of the form (3.4) with Ψ 1 = Ψ 0 and ϵ(t)
+1 → 1. Under
+the assumption (3.9), the lower bound (3.8) of eg(Ψ(t)) always diverges to inﬁnity, which is a
+contradiction. □
+
+--- PAGE 13 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 13
+3.3. Minimal ranks. Assume, as throughout, that we have data matrices Y1,...,Y n ∈
+Rm1×m2 with m1≥m2. For k = 1,...,m 2, deﬁne the minimal rank
+(3.10) rn(m1,m 2,k ) = min
+{
+rank
+(
+Y1X,...,Y nX
+)
+:X∈ Rm2×k, rank(X) =k
+}
+.
+Now deﬁne
+(3.11) Sn(m1,m 2) = min
+1≤k<m2
+{
+m2rn(m1,m 2,k )−m1k
+}
+.
+For generic data matrices, the results in this section can be summarized as follows.
+Theorem 3.4. The likelihood function is a.s. bounded if and only if a.s. Sn(m1,m 2)≥ 0.
+The Kronecker MLE exists uniquely a.s. if and only if a.s. Sn(m1,m 2)> 0.
+4. Square matrices
+This section treats the case of square data matrices. So, m1 = m2 and we denote this
+common value also by m. The results we develop, speciﬁcally, Corollaries 4.3, 4.6, and 4.9,
+yield the following statement about the three sample size thresholds.
+Theorem 4.1. For square data matrices of any size m ≥ 2, it holds that Ne(m,m ) =
+Nb(m,m ) = 1 and Nu(m,m ) = 3.
+Throughout the remainder of this section we tacitly assume that each one of the data
+matrices Y1,...,Y n is invertible, as is the case almost surely.
+4.1. One square data matrix. We begin with an observation utilized in [VH15].
+Proposition 4.2. If m1 =m2 and n = 1, then the proﬁle likelihood function g from (2.2) is
+constant.
+Proof. The single m×m data matrix Y1 being invertible, we have
+g(Ψ) = m log det(Y1ΨYT
+1 )−m log det(Ψ) = 2 m log| det(Y1)|,
+which does not depend on Ψ. □
+The proposition implies that for n = 1 the likelihood function achieves its maximum but
+not uniquely so. We may deduce from the rank conditions in Section 3 that r1(m,m,k )≥k
+for all m≥ 2 and k = 1,...,m . As rn(m1,m 2,k ) is non-decreasing in n, we obtain that
+rn(m,m,k )≥k always, which implies Sn(m,m )≥ 0. By Theorem 3.4(i), we have:
+Corollary 4.3. The boundedness threshold of square matrices of size m≥ 2 isNb(m,m ) = 1.
+4.2. Two square data matrices. Moving to the case of n = 2 square data matrices, we
+ﬁrst provide detail on the ranks r2(m,m,k ).
+Lemma 4.4. Let Y1,Y 2 ∈ Rm×m be generic, and let 1 ≤ k ≤ m. If Y−1
+1 Y2 has a real
+eigenvalue, or if k is even, then
+r2(m,m,k ) =k.
+If all eigenvalues of Y−1
+1 Y2 are complex and if k is odd, then
+r2(m,m,k ) =k + 1.
+
+--- PAGE 14 ---
+14 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+Proof. Let W =Y−1
+1 Y2. We evaluate
+r2(m,m,k ) = min
+rank(X)=k
+rank
+(Y1X,Y 2X)
+= min
+rank(X)=k
+rank
+(X,WX )
+.
+SinceW is real and generic, its characteristic function does not have multiple zeros and all of
+its (complex) Jordan blocks are of size 1. For any real eigenvalue λj, let xj∈ Rm\{ 0} be an
+associated real eigenvector such that
+Wxj =λjxj.
+For any pair of complex eigenvalues µj±iνj, let yj,zj∈ Rm\{ 0} be real vectors such that
+yj±izj∈ Cm are eigenvectors corresponding to µj±iνj, so
+W (yj±izj) = (µj±iνj)(yj±izj) ⇐⇒ W
+(yj,zj
+)
+=
+(yj,zj
+)(
+µj νj
+−νj µj
+)
+.
+Altogether the vectors xj, yj, and zj form a basis of Rm.
+Suppose now thatW has at least one real eigenvalue ork is even. Choose a full rank matrix
+X∗∈ Rm×k by selecting its columns as individual vectors xj or pairs (yj,zj), that is,
+X∗ = (x1,...,x s,y 1,z 1,...,y t,zt), s + 2t =k.
+Then
+r2(m,m,k )≤ rank
+(X∗,WX∗)
+=k.
+On the other hand, trivially we have
+r2(m,m,k ) = min
+rank(X)=k
+rank
+(X,WX )
+≥ min
+rank(X)=k
+rank(X) =k.
+In the remaining case where k is odd and all eigenvalues complex, we may reduce the
+rank of (X,WX ) to k + 1 by choosing choose k− 1 columns of X based on eigenvectors.
+However, we cannot reduce rank further as this would contradict the linear independence of
+eigenvectors. □
+Lemma 4.5. Square matrices of size m≥ 2 have
+S2(m,m ) =
+{
+2 if m = 2 and Y−1
+1 Y2 has complex eigenvalues,
+0 otherwise.
+Proof. When m = 2 and Y−1
+1 Y2 has complex eigenvalues, r2(2, 2, 1) = 1 + 1, and S2(2, 2) =
+min1≤k≤2−1{2r2(2, 2,k )− 2k} = 2r2(2, 2, 1)− 2× 1 = 2.
+When m = 2 and Y−1
+1 Y2 has real eigenvalues, r2(2, 2, 1) = 1, and S2(2, 2) = 2r2(2, 2, 1)−
+2× 1 = 0.
+Whenm≥ 3, because ofr2(m,m,k )≥k,S2(m,m ) = min1≤k≤m−1{mr2(m,m,k )−mk}≥
+0 holds, and the equality always attains at k = 2, r2(m,m,k ) =r2(m,m, 2) = 2. □
+Corollary 4.6. The uniqueness threshold of square matrices of size m≥ 2 is Nu(m,m ) = 3.
+Proof. We know from Proposition 1.3 that Nu(m,m )≤ 3. If m≥ 3, then Lemma 4.4 yields
+thatS2(m,m ) = 0 generically and thus a sample size of n = 2 is not suﬃcient for a.s. unique
+existence of the Kronecker MLE. Hence, Nu(m,m ) = 3.
+If m = 2, then there is the subtlety that S2(m,m ) = 0 if Y−1
+1 Y2 has real eigenvalues, and
+S2(m,m ) = 1 if Y−1
+1 Y2 has complex eigenvalues. However, as either case arises with positive
+probability,Nu(m,m ) = 3 also for m = 2. □
+Remark 4.1. Contrasting cases (i) and (iii) in Proposition 4.7, we see that the minimal rank
+rn(m1,m 2,k ) may change when we minimize over complex instead of real matrices.
+
+--- PAGE 15 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 15
+4.3. Achieving maximum likelihood for two square data matrices. As we know that
+Nu(m,m ) = 3 and Nb(m,m ) = 1, with maximum achieved, there only remains the question
+whether the (bounded) likelihood function achieves its maximum for a sample of n = 2
+invertible data matrices. We begin with the smallest case ofm = 2, which exhibits exceptional
+behavior as noted in the proof of Corollary 4.6; see also [ST16, Section 4.3]. The following
+proposition considers all possible cases and gives their probabilities.
+Proposition 4.7. Supposen = 2 with invertible data matrices Y1 andY2 of size 2× 2. Three
+cases are possible:
+(i) The matrix Y−1
+1 Y2 has real eigenvalues and is diagonalizable. The likelihood function
+is then bounded and achieves its maximum, but not uniquely so.
+(ii) The matrix Y−1
+1 Y2 has real eigenvalues but is not diagonalizable. The likelihood func-
+tion is then bounded but fails to achieve its maximum.
+(iii) The eigenvalues of W = (wjk) =Y−1
+1 Y2 are complex. The Kronecker MLE then exists
+uniquely and is given by any positive deﬁnite matrix of the form
+Ψ = λ
+(
+w12 1
+2(w22−w11)
+1
+2(w22−w11) −w21
+)
+, λ ∈ R.
+Only cases (i) and (iii) occur with positive probability. If the entries of Y1 and Y2 are
+i.i.d.N (0, 1), then case (i) has probability π/4≈ 0.7854.
+Proof. We may putY1 andY2 in special position through the action of GL(m, R)× GL(m, R)
+discussed in Section 2.3. With A =B−1Y−1
+1 , we have
+AY1B =Im, AY 2B =B−1Y−1
+1 Y2B.
+Now choose B such that AY2B becomes the real-valued Jordan form of W =Y−1
+1 Y2.
+Case (iii): If the two eigenvalues are complex then S2(2, 2) = 1 as noted in the proof of
+Corollary 4.6. By Theorem 3.4 the Kronecker MLE exists uniquely. In special form, our data
+matrices take the form
+Y1 =I2, Y 2 =
+(
+a b
+−b a
+)
+(4.1)
+with a,b∈ R. Then the negated proﬁle log-likelihood function from (2.2) is
+g(Ψ) = 2 log
+(
+1 + 2a2 +a4 +b4 + 2a2b2 + b2‖Ψ‖2
+F
+det(Ψ)
+)
+.
+Let λ1≥λ2> 0 be the two eigenvalues of the positive deﬁnite 2 × 2 matrix Ψ. Then
+‖Ψ‖2
+F
+det(Ψ) =
+(λ1
+λ2
+)2
++
+(λ2
+λ1
+)2
+is minimal when λ1 =λ2, which occurs if and only if Ψ = λI2 for λ> 0. Translating back to
+the original data yields the claimed formula for the MLE.
+Case (i): By the diagonalizability assumption, the special form of our data matrices is
+Y1 =I2, Y 2 =
+(
+a 0
+0 b
+)
+with a,b∈ R. The negated proﬁle log-likelihood function from (2.2) now equals
+(4.2) g(Ψ) = 2 log
+(
+(1 +ab)2 + (a−b)2ψ11ψ22
+det(Ψ)
+)
+.
+
+--- PAGE 16 ---
+16 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+Let ρ≡ρ(Ψ) =ψ12/√ψ11ψ22 be the correlation. Then
+ψ11ψ22
+det(Ψ) = 1
+1−ρ2
+is minimized uniquely forρ = 0. Hence, the function g from (4.2) is minimized by all diagonal
+matrices. The likelihood function achieves its maximum but not uniquely so.
+Case (ii): The special form of our data matrices is now
+Y1 =I2, Y 2 =
+(
+a 1
+0 a
+)
+with a∈ R. The negated proﬁle log-likelihood function from (2.2) is
+(4.3) g(Ψ) = 2 log
+(
+(1 +a2)2 + ψ2
+22
+det(Ψ)
+)
+> 2 log
+(
+(1 +a2)2)
+as ψ22, det(Ψ) > 0. If we ﬁx the values ψ11 = 1 and ψ12 = 0, and let ψ22→ 0, then g(Ψ)
+converges to 2 log((1 +a2)2). Hence,
+2 log((1 +a2)2) = inf {g(Ψ) : Ψ∈ PD(2)}
+but this inﬁmum is not achieved.
+Finally, case (ii) occurs with probability zero as Y−1
+1 Y2 has to have an eigenvalue of multi-
+plicity two. The probability of case (i) is found in Lemma A.2 in the appendix. □
+The dichotomy from the case of 2 × 2 matrices disappears for larger matrices.
+Proposition 4.8. If n = 2 with square data matrices of size m≥ 3, then the likelihood
+function is a.s. bounded and achieves its maximum, but not uniquely so.
+Proof. We prove the claim by exhibiting an at least two-dimensional set of critical points,
+which must all be global optima by Lemma 2.1.
+As in the proof of Proposition 4.7, assume that Y1 = Im is the identity and that Y2 is in
+real Jordan form for the almost surely occurring case of all eigenvalues being distinct. Then
+Y2 is block-diagonal with blocks of size 1 or 2; the 2 × 2 blocks are as in (4.1). As the matrix
+size is m≥ 3, there are k≥ 2 blocks, which we denote by Y21,...,Y 2k. Let b1,...,b k∈{ 1, 2}
+be the sizes of these blocks.
+The proﬁle function we minimize is
+(4.4) g(Ψ) = m log det
+(
+Ψ +Y2ΨYT
+2
+)
+−m log det(Ψ), Ψ∈ PD(m).
+For each block deﬁne an analogous function
+gl(Ψl) =bl log det
+(
+Ψl +Y2lΨlYT
+2l
+)
+−bl log det(Ψl), Ψl∈ PD(bl).
+The logarithm of the determinant has diﬀerential
+d log det(Ψ) = tr
+(
+Ψ−1dΨ
+)
+.
+It follows that the diﬀerential of g in (4.4) is
+dg(Ψ;U) =m tr
+{(
+Ψ +Y2ΨYT
+2
+)−1
+U
+}
+−m tr
+(
+Ψ−1U
+)
+.
+As candidates, consider block-diagonal matrices Ψ0 withk blocks Ψ01,..., Ψ0k of sizesb1,...,b k,
+respectively. Then Ψ 0 +Y2Ψ0YT
+2 is block-diagonal, and we have
+1
+mdg(Ψ0;U) =
+k∑
+l=1
+1
+bl
+dgl(Ψ0l;Ul).
+
+--- PAGE 17 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 17
+Now, take each block of Ψ 0 to be a multiple of the identity, so Ψ 0l =λlIbl for l = 1,...,k . If
+bl = 1, then dgl(Ψ0l;Ul) = 0 trivially becausegl is then constant. If bl = 2, then dgl(Ψ0l;Ul) =
+0 as we showed in the proof of Proposition 4.7 that gl is minimized by multiples of I2. We
+conclude that block-diagonal matrices with blocks equal to multiples of the identity are critical
+points. As there are k≥ 2 blocks the critical points we exhibited form a set of dimension at
+least 2. Hence, the likelihood function achieves its maximum, but not uniquely so. □
+Corollary 4.9. The existence threshold of square matrices of size m≥ 2 is
+Ne(m,m ) = 1.
+5. Rectangular matrices
+In this section we consider n = 2 rectangular matrices Y1 and Y2 of size m1×m2 with
+m1 > m2. As discussed in Section 1, the nontrivial case is then nm2 = 2m2 > m1 > m2.
+For this case, we derive explicit solutions for the minimal rank r2(m1,m 2,k ) in (3.10) and
+S2(m1,m 2) in (3.11).
+5.1. Kronecker canonical form. As discussed in Section 2.3, our problem is invariant with
+respect to the group action Yi↦→ AYiB, (A,B )∈ GL(m1, R)× GL(m2, R). The theorem
+below states that when Y1 andY2 are generic, by choosing A andB appropriately (depending
+on the data Yi), the problem can be reduced into a simpliﬁed canonical form.
+In the sequel, we write 0 k,l for the k×l matrix with all entries zero.
+Theorem 5.1. Let Y1 and Y2 be generic rectangular matrices of size m1×m2 with 2m2 >
+m1>m 2. There exist A∈ GL(m1, R) and B∈ GL(m2, R) such that
+(5.1) AY1B =
+(
+Im2
+0m1−m2,m2
+)
+, AY 2B =
+(
+0m1−m2,m2
+Im2
+)
+.
+Proof. This is a variation of the Kronecker canonical form (see Remark 5.1). For constructive
+proofs, see [TBK99] and [Mur00, Theorem 5.1.8]. □
+Remark 5.1. Let
+Ul =
+(
+Il
+01,l
+)
+∈ R(l+1)×l, L l =
+(
+01,l
+Il
+)
+∈ R(l+1)×l.
+It is known that for generic matrices Y1 and Y2 in Theorem 5.1, there exist A∈ GL(m1, R)
+and B∈ GL(m2, R) such that
+(5.2) AY1B = diag(Ul+1,...,U l+1| {z }
+na
+,Ul,...,U l| {z }
+nb
+), AY 2B = diag(Ll+1,...,L l+1| {z }
+na
+,Ll,...,L l| {z }
+nb
+),
+where l, na and nb are functions of (m1,m 2) deﬁned in (5.6) and (5.7); see [EEK97, Section
+3.3]. The pair of block diagonal matrices in (5.2) is referred to as the Kronecker canonical
+form. We easily see that the form in (5.1) may be obtained from that in (5.2) by permuting
+rows and columns.
+In the remainder of this section, we assume without loss of generality that Y1 and Y2 are
+already in the canonical form in (5.1). The minimal rank (3.10) we will determine then
+becomes
+r2(m1,m 2,k ) = min
+{
+rank
+(
+XY T
+1
+XY T
+2
+)
+:X∈ Rk×m2, rank(X) =k
+}
+= min
+{
+rank
+( X 0
+0 X
+)
+2k×m1
+:X∈ Rk×m2, rank(X) =k
+}
+,
+
+--- PAGE 18 ---
+18 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+where for ease of presentation the matrix whose rank we consider has been transposed.
+5.2. Gr¨ obner basis computation.When m2 is small, the minimal rank r2(m1,m 2,k ) can
+be found by algebraic computations. Since
+rank
+( X 0
+0 X
+)
+= rank
+( SX 0
+0 SX
+)
+, S ∈ GL(k, R),
+we can set k columns of X∈ Rk×m2 to form an identity matrix. We thus proceed through
+the following steps:
+Step 1. For each set {l1,...,l k} with 1≤l1<··· <l k≤m2, repeat (i) and (ii) below:
+(i) Let
+X =
+
+
+x11 ··· x1m2
+... ...
+xk1 ··· xkm2
+
+ with
+
+
+x1l1 ··· x1lk
+... ...
+xkl1 ··· xklk
+
+ =
+
+
+1 0
+...
+0 1
+
+.
+(ii) For i = 0, 1,... , try to solve the polynomial system
+(5.3) all (2 k−i)× (2k−i) minors of
+(
+X 0k,m1−m2
+0k,m1−m2 X
+)
+= 0
+by computing and inspecting a Gr¨ obner basis. If a real solution X∗ exists for
+i =i∗ but not for i =i∗ + 1, let
+(5.4) Rank[{l1,...,l k}] := rank
+( X∗ 0
+0 X∗
+)
+.
+Step 2. Take the minimum for all possible 1 ≤l1<··· <l k≤m2:
+r2(m1,m 2,k ) = min
+1≤l1<···<lk≤m2
+Rank[{l1,...,l k}].
+Example 5.1. Suppose m1 = 5, m2 = 3, k = 2. For{l1,l 2} ={1, 3}, X =
+( 1 x12 0
+0 x22 1
+)
+, and
+(5.5)
+( X 0
+0 X
+)
+4×5
+=
+
+
+1 x12 0 0 0
+0 x22 1 0 0
+0 0 1 x12 0
+0 0 0 x22 1
+
+.
+The ﬁrst, third, and ﬁfth column of this 4 × 5 matrix are linearly independent so its rank
+cannot drop below 3. This is reﬂected in the 3×3 minors being{x12,x 22,x 2
+12,x 2
+22,x 12x22, 1, 0},
+with Gr¨ obner basis{1} and no solution (real or complex) for (5.3) when i = 1. However, for
+i = 0, the set of 4× 4 minors of the matrix is {x12,x 22,x 2
+12,x 2
+22,x 12x22} with a Gr¨ obner basis
+being{x12,x 22}. This conﬁrms that x12 = x22 = 0 is the (evident) solution for (5.3) when
+i = 0. Our procedure concludes
+Rank[{1, 3}] = rank
+( X 0
+0 X
+)⏐⏐⏐⏐
+x12=x22=0
+= rank
+
+
+1 0 0 0 0
+0 0 1 0 0
+0 0 1 0 0
+0 0 0 0 1
+
+ = 3< 2k = 4.
+We observe a drop in rank. For the other combinations {l1,l 2} ={1, 2} and{2, 3}, no rank
+drop occurs, i.e., Rank[{l1,l 2}] = 4. Hence, r2(m1,m 2,k ) =r2(5, 3, 2) = 3.
+In the example just given a well-devised 0-1 matrix X attains the minimal rank. We shall
+see that such a matrix exists for general ( m1,m 2,k ); see the construction in (5.10).
+
+--- PAGE 19 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 19
+5.3. Evaluation of the minimal rank. Our strategy to determine r2(m1,m 2,k ) is to ﬁrst
+provide an upper bound by specifying a special 0-1 matrix X. We then prove that no other
+matrix can achieve lower rank than X. In order to state our results, some further notation is
+needed.
+Let
+l(m1,m 2) = max{l∈ N| (l + 1)m2−lm1> 0} =
+⌈ m2
+m1−m2
+⌉
+− 1≥ 1.(5.6)
+Based on the value l(m1,m 2), the set of pairs (m1,m 2) of interest is disjointly divided as
+{
+(m1,m 2)|m1< 2m2
+}
+=
+⨆
+l≥1
+{
+(m1,m 2)|l =l(m1,m 2)
+}
+=
+⨆
+l≥1
+{
+(m1,m 2)| (l + 1)m2−lm1> 0, (l + 1)m1− (l + 2)m2≥ 0
+}
+.
+Let
+(5.7) na = (l + 1)m2−lm1> 0, n b = (l + 1)m1− (l + 2)m2≥ 0 with l =l(m1,m 2).
+Now we partition the columns of X as
+X =
+(
+X1|{z}
+na
+, X2|{z}
+nb
+, X3|{z}
+na
+, X4|{z}
+nb
+,...,X 2l+1|{z}
+na
+)
+k×m2
+.
+Indeed, the number of columns of X is
+(l + 1)na +lnb =m2.
+Accordingly,
+(5.8)
+( X 0
+0 X
+)
+2k×m1
+=
+(
+X1 X2 X3 X4 ··· X2l+1 0 0
+0 0 X1 X2 ··· X2l−1 X2l X2l+1
+)
+2k×m1
+.
+Theorem 5.2. For given (m1,m 2) with 2m2 > m1 > m2, let l = l(m1,m 2), na, and nb
+be deﬁned as in (5.6) and (5.7). Then the minimal rank r2(m1,m 2,k ) is the solution of the
+integer programming problem
+(5.9) r2(m1,m 2,k ) = min
+{
+a1 +b1 +k|k≤a1(l + 1) +b1l, 0≤a1≤na, 0≤b1≤nb
+}
+,
+wherea1 and b1 are non-negative integers.
+Proof. [Upper bound] We ﬁrst show that the right-hand side of (5.9) is an upper bound on
+r2(m1,m 2,k ). To do this, we specify a particular matrix X that gives a rank equal to the
+right-hand side of (5.9).
+Let na ≥ a1 ≥···≥ al+1 ≥ 0 and nb ≥ b1 ≥···≥ bl ≥ 0 such that ka = ∑l+1
+j=1aj,
+kb =∑l
+j=1bj with ka +kb =k. For integer i≥ 1, deﬁne the matrices
+(5.10) X2i−1 =
+
+
+0∑i−1
+j=1aj,na
+(
+Iai, 0ai,na−ai
+)
+0∑l+1
+j=i+1aj,na
+0kb,na
+
+
+, X 2i =
+
+
+0ka,nb
+0∑i−1
+j=1bj,nb
+(
+Ibi, 0bi,nb−bi
+)
+0∑l
+j=i+1bj,nb
+
+
+.
+
+--- PAGE 20 ---
+20 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+The matrices X2i−1 are of size k×na and deﬁned for i≤l + 1. The matrices X2i are of size
+k×nb and deﬁned for i≤l. Then,
+rank
+(
+X1 X2 X3 X4 ··· X2l+1 0 0
+0 0 X1 X2 ··· X2l−1 X2l X2l+1
+)
+2k×m1
+=a1 +b1 +k.
+We may now minimize this rank a1 +b1 +k by varyinga1,...,a l+1 andb1,...,b l. Our claim
+is then that this optimization over 2l + 1 variables gives the minimum on the right-hand side
+of (5.9). To show this, we ﬁrst show that
+(5.11)
+{
+(a1,b 1)|na≥a1≥···≥ al+1≥ 0, nb≥b1≥···≥ bl≥ 0, k =
+∑
+i
+ai +
+∑
+j
+bj
+}
+=
+{
+(a1,b 1)| 0≤a1≤na, 0≤b1≤nb, a1 +b1≤k≤a1(l + 1) +b1l
+}
+.
+The inclusion “⊂” for the two sets in (5.11) is obvious. To prove “ ⊃”, let (a1,b 1) be a
+point in the set on the right-hand side of (5.11). We then need to argue that there exist
+a2,...,a l+1,b 2,...,b l such that a1 ≥ a2 ≥···≥ al+1 ≥ 0, b1 ≥ b2 ≥···≥ bl ≥ 0, and∑l+1
+i=2ai +∑l
+i=2bi =k−a1−b1 hold. But this is obvious because
+{l+1∑
+i=2
+ai +
+l∑
+j=2
+bj|a1≥a2≥···≥ al+1≥ 0, b1≥b2≥···≥ bl≥ 0
+}
+=
+{l+1∑
+i=2
+ai +
+l∑
+j=2
+bj| 0≤a2,...,a l+1≤a1, 0≤b2,...,b l≤b1
+}
+=
+{
+0, 1,...,a 1l +b1(l− 1)
+}
+covers all possible values for k−a1−b1.
+Finally, the feasible set for the minimization in (5.9) diﬀers from the set on the right-hand
+side of (5.11) only by the constrainta1+b1≤k. However, a pair (a1,b 1) cannot be a minimizer
+for (5.9) if a1 +b1>k . Hence, the minimum in (5.9) equals the minimum over the right-hand
+side of (5.11).
+[Lower bound] To obtain a lower bound, it is convenient to rearrange the columns of (5.8) as
+(5.12)
+(
+X1 X3 ··· X2l+1 0 X2 X4 ··· X2l 0
+0 X1 ··· X2l−1 X2l+1 0 X2 ··· X2l−2 X2l
+)
+2k×m1
+.
+We ﬁrst ﬁnd a lower bound of the rank of (5.12) for a ﬁxed matrixX, and then obtain a lower
+bound for all possible X.
+Let ka = rank(X1,X 3,...,X 2l+1), and kb =k−ka. There is a ( k−ka)×k matrix T such
+that TX =T (X1,X 3,...,X 2l+1) = 0. Let S be a ka×k matrix such that
+(
+S
+T
+)
+∈ GL(k, R).
+Multiplying the matrix 
+
+S 0
+0 S
+T 0
+0 T
+
+∈ GL(2k, R)
+
+--- PAGE 21 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 21
+to (5.12) from the left yields
+
+
+X(1)
+1 X(1)
+3 ··· X(1)
+2l+1 0 ∗ ∗ ··· ∗ 0
+0 X(1)
+1 ··· X(1)
+2l−1 X(1)
+2l+1 0 ∗ ··· ∗ ∗
+0 0 ··· 0 0 X(1)
+2 X(1)
+4 ··· X(1)
+2l 0
+0 0 ··· 0 0 0 X(1)
+2 ··· X(1)
+2l−2 X(1)
+2l
+
+
+2k×m1
+,
+where we deﬁne X(1)
+2i−1 =SX2i−1 and X(1)
+2i =TX 2i. The rank of (5.12) is bounded below by
+the sum of the ranks of the two matrices:
+(5.13)
+(
+X(1)
+1 X(1)
+3 ··· X(1)
+2l+1 0
+0 X(1)
+1 ··· X(1)
+2l−1 X(1)
+2l+1
+)
+2ka×na(l+2)
+and
+(5.14)
+(
+X(1)
+2 X(1)
+4 ··· X(1)
+2l 0
+0 X(1)
+2 ··· X(1)
+2l−2 X(1)
+2l
+)
+2kb×nb(l+1)
+.
+Note here that
+rank
+(
+X(1)
+1 ,...,X (1)
+2l+1
+)
+=ka, rank
+(
+X(1)
+2 ,...,X (1)
+2l
+)
+=kb,
+because
+(
+S
+T
+)
+(X1,...,X 2l+1,X 2,...,X 2l) =
+(
+X(1)
+1 ··· X(1)
+2l+1 ∗ ··· ∗
+0 ··· 0 X(1)
+2 ··· X(1)
+2l
+)
+is of row full rank k =ka +kb.
+Let r(1)
+a be the rank of (5.13), and let a1 = rank
+(
+X(1)
+1
+)
+. Then we obviously have
+(5.15) r(1)
+a ≥a1 +ka.
+TakeA∈ GL(ka, R) and P ∈ GL(na, R) such that AX(1)
+1 P =
+(
+Ia1
+0
+)
+; these are the ﬁrst ka
+rows of X1 in (5.10). Consider then transforming (5.13) by multiplying the 2 ka× 2ka block-
+diagonal matrix diag(A,A ) from the left and the ( l + 2)na× (l + 2)na block-diagonal matrix
+diag(P,...,P ) from the right. This transformation preserves rank and turns the matrix in
+(5.13) into
+(5.16)
+
+
+(
+Ia1
+0
+)
+~X3 ~X5 ··· ~X2l+1 0
+0
+(
+Ia1
+0
+)
+~X3 ··· ~X2l−1 ~X2l+1
+
+
+2ka×na(l+2)
+,
+where ~X2i−1 =AX(1)
+2i−1P . For each i, let X(2)
+2i−1 be the submatrix consisting of the ( a1 + 1)st
+to kath row of ~X2i−1. Note that
+rank
+(
+X(1)
+1 ,...,X (1)
+2l+1
+)
+= rank
+(Ia1 ∗ ··· ∗
+0 X(2)
+3 ··· X(2)
+2l+1
+)
+and hence
+rank
+(
+X(2)
+3 ,...,X (2)
+2l+1
+)
+= rank
+(
+X(1)
+1 ,...,X (1)
+2l+1
+)
+−a1 =ka−a1.
+
+--- PAGE 22 ---
+22 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+Deleting the rows with indices between ka + 1 andka +a1 from (5.16), we have the inequality
+r(1)
+a ≥ rank
+
+
+(
+Ia1
+0
+)
+~X3 ~X5 ··· ~X2l+1 0
+0 0 X(2)
+3 ··· X(2)
+2l−1 X(2)
+2l+1
+
+
+(2ka−a1)×na(l+2)
+=a1 + rank
+(
+X(2)
+3 X(2)
+5 ··· X(2)
+2l+1 0
+0 X(2)
+3 ··· X(2)
+2l−1 X(2)
+2l+1
+)
+2(ka−a1)×na(l+1)
+=:a1 +r(2)
+a .(5.17)
+Repeating the procedure in the preceding paragraph ( i− 1) times, we obtain the matrices
+X(i)
+2i−1,...,X (i)
+2l+1. Let
+ai = rank
+(
+X(i)
+2i−1
+)
+and
+r(i)
+a = rank
+(
+X(i)
+2i−1 X(i)
+2i+1 ··· X(i)
+2l+1 0
+0 X(i)
+2i−1 ··· X(i)
+2l−1 X(i)
+2l+1
+)
+2(ka−∑i−1
+j=1aj)×na(l+3−i)
+.
+Noting that
+(5.18) rank
+(
+X(i)
+2i−1,...,X (i)
+2l+1
+)
+= rank
+(
+X(i−1)
+2i−3 ,...,X (i−1)
+2l+1
+)
+−ai−1 =ka−
+i−1∑
+j=1
+aj,
+we obtain that the inequalities in (5.15) and (5.17) extend to
+r(i)
+a ≥ai +
+(
+ka−
+i−1∑
+j=1
+aj
+)
+,(5.19)
+r(i)
+a ≥ai +r(i+1)
+a ,(5.20)
+respectively. Here we let r(l+2)
+a = 0.
+From (5.19) and (5.20), we ﬁnd that
+r(1)
+a =
+i−1∑
+j=1
+(
+r(j)
+a −r(j+1)
+a
+)
++r(i)
+a ≥
+i−1∑
+j=1
+aj +ai +
+(
+ka−
+i−1∑
+j=1
+aj
+)
+=ai +ka
+for all i. This is equivalent to
+(5.21) r(1)
+a ≥ max
+i
+ai +ka.
+From the construction (5.18), we have
+(5.22) ka =
+l+1∑
+i=1
+ai.
+Applying the same arguments, the rank r(1)
+b of (5.14) is seen to satisfy the inequality
+(5.23) r(1)
+b ≥ max
+j
+bj +kb,
+
+--- PAGE 23 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 23
+where the bj = rank
+(
+X(j)
+2j
+)
+are deﬁned in analogy to the ai and satisfy the identity
+(5.24) kb =
+l∑
+j=1
+bj.
+Combining (5.21) and (5.23), the rank of the matrix (5.12) can be bounded from below as
+(5.25) rank of (5 .12)≥ max
+i
+ai + max
+j
+bj +k.
+The bound in (5.25) is for a given ﬁxed matrix X and in terms of the ranks ai and bj
+the matrix determines. To obtain a lower bound for all possible X, we may minimize the
+right-hand side of (5.25) under the constraints the ai andbj should satisfy. These constraints
+are given by (5.22) and (5.24). We, thus, minimize over the set
+{(
+maxai, maxbj
+)
+| 0≤ai≤na, 0≤bj≤nb, k =∑
+iai +∑
+jbj
+}
+=
+{(
+maxai, maxbj
+)
+| 0≤ minai≤ maxai≤na, 0≤ minbj≤ maxbj≤nb,
+maxai + maxbj≤k≤ maxai(l + 1) + maxbjl
+}
+.
+As this set is contained in{(
+maxai, maxbj
+)
+| 0≤ maxai≤na, 0≤ maxbj≤nb, k≤ maxai(l + 1) + maxbjl
+}
+,
+we see that r2(m1,m 2,k ) is bounded from below by the right-hand side of (5.9). □
+5.4. Evaluation of S2(m1,m 2). Our next goal is to evaluate the quantity
+(5.26) S2(m1,m 2) = min
+1≤k≤m2−1
+{
+m2r2(m1,m 2,k )−m1k
+}
+whose sign determines the (in-)existence of the MLE. As in the previous subsection, we refer
+to the numbers l(m1,m 2), na, and nb deﬁned in (5.6) and (5.7), respectively. Note ﬁrst that
+m2
+m1−m2
+is an integer ⇐⇒ nb = 0.
+Theorem 5.3. (i) If m1 =m2 + 1, then na = 1, nb = 0, and
+S2(m1,m 2) = 1,
+with the minimum in (5.26) attained iﬀ k =m2− 1.
+(ii) If m1>m 2 + 1 and m2
+m1−m2
+is an integer, then na≥ 2, nb = 0, and
+S2(m1,m 2) = 0,
+with the minimum in (5.26) attained iﬀ k is an integer multiple of m2
+m1−m2
+.
+(iii) If m1>m 2 + 1 and m2
+m1−m2
+is not an integer, then na≥ 1, nb≥ 1, and
+S2(m1,m 2) =−nanb,
+with the minimum in (5.26) attained iﬀ k = (l + 1)na.
+Proof. (i) When m1 = m2 + 1, we have l = m2− 1, na = 1, and nb = 0. It follows from
+Theorem 5.2 that r2(m1,m 2,k ) =k + 1. We obtain that
+S2(m1,m 2) = min
+1≤k≤m2−1
+{
+m2(k + 1)− (m2 + 1)k
+}
+= min
+1≤k≤m2−1
+(m2−k) = 1.
+
+--- PAGE 24 ---
+24 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+(ii) When m1>m 2 + 1 and m2
+m1−m2
+is an integer, it holds that l = m2
+m1−m2
+− 1,na =m1−m2
+and nb = 0. Theorem 5.2 yields that
+r2(m1,m 2,k ) =k +
+⌈
+km1−m2
+m2
+⌉
+.
+Consequently,
+S2(m1,m 2) = min
+1≤k≤m2−1
+m2
+(⌈
+km1−m2
+m2
+⌉
+−km1−m2
+m2
+)
+≥ 0.
+The lower bound 0 is attained when km1−m2
+m2
+is an integer.
+(iii) Finally, consider the case where m2
+m1−m2
+is not an integer (triviallym1−m2> 1). Then
+S2(m1,m 2) equals the minimum of the function
+(5.27) h(k,a,b ) = m2(a +b +k)−km1 = m2(a +b)− (m1−m2)k
+over the set
+{
+(k,a,b )| 1≤k≤m2− 1, k≤a(l + 1) +bl, 0≤a≤na, 0≤b≤nb
+}
+.
+We distinguish two cases of how the minimum may be attained, namely, case 1 withm2−1≥
+a(l + 1) +bl, and case 2 with m2− 1<a (l + 1) +bl. Accordingly,
+S2(m1,m 2) = min{S′
+2(m1,m 2),S′′
+2(m1,m 2)},
+where S′
+2(m1,m 2) and S′′
+2(m1,m 2) are the minima of h(k,a,b ) from (5.27) over the sets
+{
+(k,a,b )| 1≤k≤a(l + 1) +bl≤m2− 1, 0≤a≤na, 0≤b≤nb
+}
+and
+{
+(k,a,b )| 1≤k≤m2− 1<a (l + 1) +bl, 0≤a≤na, 0≤b≤nb
+}
+,(5.28)
+respectively.
+Case 1: The minimum S′
+2(m1,m 2) is attained iﬀ k =a(l + 1) +bl, in which case
+h(k,a,b ) =m2(a +b)− (m1−m2){a(l + 1) +bl} =−nba +nab.
+Therefore,
+S′
+2(m1,m 2) = min
+{
+−nba +nab|a(l + 1) +bl≤m2− 1, 0≤a≤na, 0≤b≤nb
+}
+.
+This minimum is achieved by takingb as small as possible, so b = 0, anda is large as possible.
+Indeed, (a,b ) = (na, 0) is feasible as
+(m2− 1)− [na(l + 1) + 0·l] =lnb− 1≥ 0.
+We conclude that S′
+2(m1,m 2) =−nanb, with the minimum attained at k =na(l + 1).
+Case 2: Because
+m2− 1<a (l + 1) +bl≤na(l + 1) +nbl =m2,
+the set (5.28) is
+{(k,a,b )| 1≤k≤m2− 1, a=na, b=nb}.
+The minimum S′′
+2(m1,m 2) is attained iﬀ k =m2− 1, in which case
+h(k,a,b ) =m2(na +nb)− (m1−m2)(m2− 1) =m1−m2> 0.
+In summary, S2(m1,m 2) = min{S′
+2(m1,m 2),S′′
+2(m1,m 2)} =−nanb, and this minimum is
+attained iﬀ k =na(l + 1) + 0 =na(l + 1). □
+Remark 5.2. When S2(m1,m 2) = 0, neither m1 nor m2 is a prime number.
+
+--- PAGE 25 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 25
+Including the square case, the possible values of S2(m1,m 2) may be summarized as follows.
+The values are tabulated up to m1≤ 17 in Table 2.
+Proposition 5.4. Forn = 2 generic data matrices Y1,Y 2∈ Rm1×m2 with m2≤m1< 2m2,
+S2(m1,m 2) =
+
+
+
+0 ( m1 =m2≥ 3 or
+m1 =m2 = 2 and Y−1
+1 Y2 has real eigenvalues),
+2 ( m1 =m2 = 2 and Y−1
+1 Y2 has complex eigenvalues ),
+1 ( m1 =m2 + 1),
+0 ( m1>m 2 + 1, m1−m2|m2),
+−nanb (m1−m2⁄|m2).
+We recall that the MLE exists uniquely ifS2(m1,m 2)> 0, exists non-uniquely ifS2(m1,m 2) =
+0, and does not exist if S2(m1,m 2)< 0.
+Table 2. S2(m1,m 2) (m1≥m2).
+m1
+m2 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
+2 0/2
+3 1 0
+4 0 1 0
+5 –1 1 0
+6 0 0 1 0
+7 –2 –1 1 0
+8 0 –2 0 1 0
+9 –3 0 –1 1 0
+10 0 –4 –2 0 1 0
+11 –4 –3 –2 –1 1 0
+12 0 –6 0 0 0 1 0
+13 –5 –6 –3 –2 –1 1 0
+14 0 –8 –4 –4 –2 0 1 0
+15 –6 –9 0 –3 0 –1 1 0
+16 0 –10 –8 –4 0 –2 0 1 0
+17 –7 –12 –5 –6 –3 –2 –1 1
+: MLE exists uniquely.
+: MLE exists non-uniquely.
+: MLE does not exist.
+6. When the column size of matrices is 2
+When the matrix size of Yi ism1×2, that is, m2 = 2, we can ﬁndSn(m1, 2) as a byproduct
+of the casen = 2 discussed in Sections 4 and 5. Indeed, from the deﬁnitions (3.11) and (3.10),
+Sn(m1, 2) = min
+1≤k<2
+{
+2rn(m1, 2,k )−m1k
+}
+= 2rn(m1, 2, 1)−m1,
+and
+rn(m1, 2, 1) = min
+X∈R2×1:rank(X)=1
+rank(Y1X,...,Y nX)
+= min
+(x1,x2)∈R2\{0}
+rank
+(
+x1Y(1) +x2Y(2)
+)
+,
+
+--- PAGE 26 ---
+26 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+where Y(j) = (y1j,...,y nj), j = 1, 2, with yij the jth column vector of Yi. The matrices Y(j)
+are m1×n generic matrices. We examine the cases (i) m1 =n and (ii) m1⁄=n separately.
+(i) Let m =m1 =n. Since the Y(j) are non-singular, we may deﬁne W =Y−1
+(1)Y(2). Then,
+rn(m1, 2, 1) = minx∈R rank(xIm+W ) =m−1 ifW has a real eigenvalue, andrn(m1, 2, 1) =m
+otherwise. Therefore, Sn(m, 2) = 2rm(m, 2, 1)−m = m− 2 if W has a real eigenvalue, and
+Sn(m, 2) =m otherwise.
+(ii) Suppose that m1>n . Then, by multiplying a suitable (A,C )∈ GL(m1)× GL(n) from
+left and right to get the Kronecker canonical form, we have
+(6.1) rn(m1, 2, 1) = min
+(x1,x2)⁄=0
+rank
+(
+x1
+(
+In
+0
+)
++x2
+(
+0
+In
+))
+=n.
+Hence, Sn(m1, 2) = 2 n−m1. Similarly, when m1 < n, we have rn(m1, 2, 1) = m1 and
+Sn(m1, 2) = m1. Recall that we are examining the region m2≤ m1 < nm2, or equivalently
+1≤m1/2<n when m2 = 2.
+Proposition 6.1. For generic data matrices Y1,...,Y n∈ Rm1×2 with 1≤m1/2<n ,
+Sn(m1, 2) =
+
+
+
+2n−m1 (n<m 1),
+m1 (m1<n ),
+m (m1 =n =m, W does not have real eigenvalues ),
+m− 2 ( m1 =n =m, W has a real eigenvalue ).
+That is, (i) Sn(m1, 2) > 0 when m1⁄= n, or when m1 = n >2, or when m1 = n = 2 and
+W does not have real eigenvalues; (ii) Sn(m1, 2) = 0 when m1 = n = 2 and W has a real
+eigenvalue.
+Remark 6.1. The transformation from Yi’s to the Kronecker form in (6.1) is written as
+(Y1,...,Y n) ↦→ A(Y1,...,Y n)(C⊗Im2), where C is an n×n non-singular matrix. Here
+we used the fact that rank(Y1,...,Y n)(C⊗In) is invariant as long as C∈ GL(n). Combined
+with the group action discussed in Section 2.3, the group action
+(Y1,...,Y n)↦→A(Y1,...,Y n)(C⊗B), (A,B,C )∈ GL(m1)× GL(m2)× GL(n)
+keeps the values rn(m1,m 2,k ), and hence also Sn(m1,m 2), invariant.
+7. Maximum likelihood estimation for two data matrices
+In this section we derive the precise form of maximizers of the likelihood function for n = 2
+rectangular data matrices of size m1×m2 with 2m2≥m1>m 2. We ﬁrst give the MLE when
+it exists uniquely. This then allows us to show existence of maximizers in the cases where the
+study of ranks in Section 5 implies that the likelihood function is bounded.
+7.1. Closed form MLEs for m1 = m2 + 1. Consider the case where m1 = m2 + 1 and
+n = 2, so that a unique MLE exists almost surely. For simpler notation, let m := m2. By
+Theorem 5.1, we may assume that the two data matrices are
+Y1 =
+(
+Im
+01,m
+)
+, Y 2 =
+(
+01,m
+Im
+)
+.(7.1)
+Then the negated proﬁle log-likelihood function takes the form
+g0(Φ) =m log det
+((
+Φ 0
+0 0
+)
++
+(
+0 0
+0 Φ
+))
+− (m + 1) log det(Φ).
+
+--- PAGE 27 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 27
+Proposition 7.1. When restricted to matrices Φ = (φjk) with φ11 = 1, the function g0 is
+uniquely minimized by the diagonal matrix
+Φ0 = diag
+((m− 1
+j− 1
+)
+:j = 1,...,m
+)
+.
+Proof. The existence of a unique minimizer is clear from Theorem 5.3. It thus suﬃces to show
+that Φ0 is a critical point of g0.
+The logarithm of the determinant has diﬀerential
+d log det(Φ) = tr
+(
+Φ−1dΦ
+)
+.
+It follows that the diﬀerential of g0 is
+dg0(Φ;U) =
+m tr
+{[(
+Φ 0
+0 0
+)
++
+(
+0 0
+0 Φ
+)]−1[(
+U 0
+0 0
+)
++
+(
+0 0
+0 U
+)]}
+− (m + 1) tr
+(
+Φ−1U
+)
+.
+Since our candidate Φ 0 is diagonal,
+dg0(Φ0;U) =m
+
+u11
+φ1
++ umm
+φm
++
+m−1∑
+j=1
+ujj +uj+1,j+1
+φj +φj+1
+
+− (m + 1)
+m∑
+j=1
+ujj
+φj
+,
+where φj is the j-th diagonal entry of Φ 0, and U = (ujk). The diﬀerential dg0(Φ0;U) is zero
+if
+m + 1
+φ1
+=m
+( 1
+φ1
++ 1
+φ1 +φ2
+)
+,(7.2)
+m + 1
+φj
+=m
+( 1
+φj +φj−1
++ 1
+φj +φj+1
+)
+, j = 2,...,m − 1,(7.3)
+m + 1
+φm
+=m
+( 1
+φm
++ 1
+φm +φm−1
+)
+.(7.4)
+It is easy to see that the ﬁrst equation, that in (7.2), holds for our choice of Φ 0. Indeed,
+after clearing denominators, the equation becomes
+(m + 1) (φ1 +φ2) = m (2φ1 +φ2) ⇐⇒ φ2 = (m− 1)φ1,
+which clearly holds whenφ1 =
+(m−1
+0
+)
+= 1 andφ2 =
+(m−1
+1
+)
+=m−1. The last equation in (7.4)
+holds similarly as we have φm =
+(m−1
+m−1
+)
+= 1 and φm−1 =
+(m−1
+m−2
+)
+=m− 1.
+Let 2≤j≤m− 1. Solving the j-th equation in (7.3) for φj+1 we obtain
+(7.5) φj+1 = φj· (m− 1)φj−φj−1
+φj + (m + 1)φj−1
+.
+Using that (m− 1
+j− 1
+)
+= m−j + 1
+j− 1
+(m− 1
+j− 2
+)
+,
+we derive that
+(m− 1)φj−φj−1
+φj + (m + 1)φj−1
+=
+(m− 1)
+(m−1
+j−1
+)
+−
+(m−1
+j−2
+)
+(m−1
+j−1
+)
++ (m + 1)
+(m−1
+j−2
+) =
+(m− 1)m−j+1
+j−1 − 1
+m−j+1
+j−1 + (m + 1)
+= m−j
+j .
+
+--- PAGE 28 ---
+28 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+We see that (7.5) holds because
+φj+1 =
+(m− 1
+j
+)
+= m−j
+j
+(m− 1
+j− 1
+)
+= m−j
+j φj.
+We have thus shown that our choice of Φ 0 satisﬁes dg0(Φ0;U)≡ 0. □
+Simple calculations yield that, at the critical point,
+(7.6) g0(Φ0) =m logd(m)− (m + 1) loge(m),
+where
+d(m) = det
+( 2∑
+i=1
+YiΦ−1
+0 YT
+i
+)
+=
+( m
+m− 1
+)m−1 1∏m−1
+j=1
+(m−2
+j−1
+)
+and
+e(m) = det Ψ(m) = 1∏m
+j=1
+(m−1
+j−1
+).
+7.2. Critical points when MLEs exist non-uniquely. Non-unique existence corresponds
+to case (ii) in Theorem 5.3. So, nb = 0 and na =m1−m2≥ 2. Moreover, m1 = (l + 2)na and
+m2 = (l + 1)na. Assume, as before, that the two m1×m2 data matrices are
+Y1 =
+(
+Im2
+0m1−m2,m2
+)
+, Y 2 =
+(
+0m1−m2,m2
+Im2
+)
+.(7.7)
+As seen in Remark 5.1, by permuting the rows and the columns of Y1 and Y2 simultanously,
+we may transform Y1 and Y2 into
+Y1 =
+
+
+Ul+1 0
+...
+0 Ul+1
+
+, U l+1 =
+(
+Il+1
+01,l+1
+)
+∈ R(l+2)×(l+1)
+and
+Y2 =
+
+
+Ll+1 0
+...
+0 Ll+1
+
+, L l+1 =
+(
+01,l+1
+Il+1
+)
+∈ R(l+2)×(l+1).
+Let Φ = diag(Φ 1,..., Φna) with Φ j∈ R(l+1)×(l+1). Then the negated proﬁle log-likelihood
+function takes the form
+g0(Φ) =
+na∑
+j=1
+[
+m2 log det
+((
+Φj 0
+0 0
+)
++
+(
+0 0
+0 Φ j
+))
+−m1 log det(Φj)
+]
+.
+Applying Proposition 7.1 to each summand we may determine critical points Φ 0j for each
+summand in g0(Φ). These may then be combined to obtain critical points of g0.
+Proposition 7.2. When restricted to matrices Φ = (φjk) with φ11 = 1, the function g0 has a
+critical point at every diagonal matrix Φ0 = (φ0
+jk) whose diagonal entries are
+φ0
+(j−1)na+k,(j−1)na+k = cj
+( 𝓁
+k− 1
+)
+, j = 1,...,n a, k = 1,...,𝓁 + 1,
+wherec1 = 1 and cj > 0 arbitrary for j = 2,...,n a.
+
+--- PAGE 29 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 29
+Note that for the critical points Φ 0 from Proposition 7.2 it holds that
+g0(Φ0) =
+na∑
+j=1
+[
+m2 logcl+2
+j d(l + 1)−m1 logcl+1
+j e(l + 1)
+]
+=
+na∑
+j=1
+[
+m2 logd(l + 1)−m1 loge(l + 1)
+]
+,
+which is independent of cj’s. This is a conﬁrmation of the fact that all of the critical points
+deﬁne minima of g0.
+8. Conclusion
+In this paper we considered uniqueness and existence of the maximum likelihood estimator
+in the matrix normal model. In other words, we considered Gaussian models for i.i.d. matrix-
+valued observationsY1,...,Y n that posit a Kronecker product for the joint covariance matrix
+of the entries of each random matrix Yi. Our goal was give precise formulas for maximum
+likelihood thresholds, which are deﬁned to be the sample sizes that are minimally needed for
+almost sure existence of the MLE, unique existence of the MLE, or possibly mere bounded-
+ness of the likelihood function. Our main result solves this problem for data matrices whose
+dimensions m1 and m2 diﬀer at most by a factor of two. Our solution exhibits subtle de-
+pendencies on m1 and m2. From a statistical perspective our work clariﬁes that very small
+sample sizes are suﬃcient to make matrix normal models amenable to likelihood inference.
+As observed in the introduction, prior work of [ST16] can be used to determine the maxi-
+mum likelihood thresholds for settings where one matrix dimension is suﬃciently large com-
+pared to the other or, more precisely put, where dividing one matrix dimension by the other
+leaves a suﬃciently small remainder. In intermediate settings, however, the maximum likeli-
+hood thresholds remain unknown. Although good bounds exist, it would be of obvious interest
+to determine the thresholds in full generality. Here it should be noted that our solution for
+the setting 2m2≥m1≥m2 crucially relies on invariance properties that allowed us to exploit
+the Kroncker canonical form for matrix pencils. For larger sample sizes, new additional ideas
+are needed as a similarly simple canonical form does not exist [Lan12, Chap. 10].
+In all cases covered by our results almost sure boundedness of the likelihood function implies
+almost sure existence of a maximizer. We conjecture this to be true in general. This said,
+there do exist individual data sets for which the likelihood function is bounded but does not
+achieve its maximum; recall Proposition 4.7.
+Finally, we would like to note that since our paper was submitted a new preprint was
+posted on arXiv, which makes a connection between maximum likelihood estimation and
+computational invariant theory for a series of problems including the matrix normal models
+considered here [AKRS20]. A further preprint appeared later announcing that a full solution
+to the (unique) existence problem can be achieved via quiver representation theory [DM20].
+Acknowledgements
+We are grateful to Satoru Iwata, Lek-Heng Lim and Fumihiro Sato for their comments
+on the Kronecker canonical form. SK was partially supported by JSPS KAKENHI Grant
+Number JP16H02792.
+
+--- PAGE 30 ---
+30 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+Appendix A. Some lemmas and proofs
+Proof of Lemma 1.2. Them1×m1 matrix∑n
+i=1YiYT
+i is positive semideﬁnite of rank at most
+nm2<m 1. By spectral decomposition,
+n∑
+i=1
+YiYT
+i =QTDQ
+where Q =Q(Y ) is m1×m1 orthogonal, and D is diagonal with Dm1m1 = 0. Let Im be the
+m×m identity matrix, and let em = (0,..., 0, 1)T the m-th canonical basis vector of Rm.
+Deﬁne Ψ(t)
+1 =Q(Im1 +t·em1eT
+m1)QT∈ PD(m1). Then
+𝓁(Ψ(t)
+1 ,Im2) =nm2 log det(Im1 +t·em2eT
+m2)− tr[(Im1 +t·em2eT
+m2)D]
+=nm2 log(1 +t)− tr(D)
+tends to∞ as t→∞ . □
+Proof of Theorem 1.4. We are assuming that m1/m2 is an integer. Take n =m1/m2. Then
+Y = (Y1,...,Y n) is n×n, and the proﬁle log-likelihood function g(Ψ) in (2.3) is easily seen
+to be constant. Indeed,
+g(Ψ) =m2 log det(Y )2 +m2 log det(Ψ)n−m1 log det(Ψ) = 2m2 log| det(Y )|.
+Hence, the function is maximized by any matrix Ψ∈ PD(m2), and we obtain thatNb(m1,m 2) =
+Ne(m1,m 2)≤ m1/m2 and Nu(m1,m 2) > m1/m2. The lower bound in Proposition 1.3 now
+implies that Nb(m1,m 2) =Ne(m1,m 2) =m1/m2.
+When m1 = m2, Corollary 4.6 gives Nu(m1,m 2) = 3. When m1 > m2, Proposition 1.3
+gives the upper boundNu(m1,m 2)≤m1/m2+1, which impliesNu(m1,m 2) =m1/m2+1. □
+Proof of Corollary 1.5. Let m1 = hm2 +r with quotient h =⌊m1/m2⌋≥ 1 and remainder
+r =m1 modm2. Applying Proposition 1.3, we have
+h + 1 ≤ Nb(m1,m 2) ≤ Ne(m1,m 2) ≤ Nu(m1,m 2).
+The upper bound from Proposition 1.3 implies that all thresholds are equal to h + 1 if
+m1
+m2
++ m2
+m1
+<h + 1 ⇐⇒ m2
+1 +m2
+2< (h + 1)m1m2.
+Substituting m1 =hm2 +r and simplifying, this condition is equivalent to
+m2(m2−r)h− (m2
+2−m2r +r2) > 0,
+and so equivalent to the claimed inequality
+h > m2
+2−m2r +r2
+m2(m2−r) .
+The right-hand side of the inequality just given is increasing in the remainder r. Thus, for
+ﬁxed m2, it never exceeds
+m2
+2−m2(m2− 1) + (m2− 1)2
+m2(m2−m2 + 1) = m2− m2− 1
+m2
+<m 2.
+Hence, h≥m2 is suﬃcient for all thresholds being equal to h + 1. □
+
+--- PAGE 31 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 31
+Proof of Theorem 1.6. Proposition 4.2 gives Ne(m1,m 2) = Nb(m1,m 2) for m1 =m2. Corol-
+lary 4.6 gives Nu(m1,m 2) for m1 = m2. Theorem 1.4 yields Ne(m1,m 2) = Nb(m1,m 2)
+and Nu(m1,m 2) when 2m2 = m1. When 2 m2 > m1 > m2, by Theorem 5.2, we have that
+Nu(m1,m 2) = 2 if m1 = m2 + 1, and Nu(m1,m 2) > 2 otherwise, and that Nb(m1,m 2) =
+Ne(m1,m 2) = 2 if m1−m2|m2, and Nu(m1,m 2) > 2 otherwise. On the other hand, by
+Proposition 1.3, Nb(m1,m 2)≤Ne(m1,m 2)≤Nu(m1,m 2)≤⌊m1/m2 +m2/m1⌋ + 1≤ 3. □
+Lemma A.1. Let x(t)
+i > 0, 1≤ i≤ m, t = 1, 2,... , be positive sequences. After suitable
+relabeling of the indices i of x(t)
+i , we can take a subsequence of the form
+(A.1)
+
+
+x(t)
+1
+...
+x(t)
+r1
+x(t)
+r1+1
+...
+x(t)
+r1+r2
+...
+x(t)
+m−rK+1
+...
+x(t)
+m
+
+
+=ϵ(t)
+1
+
+
+y(t)
+11
+...
+y(t)
+1r1
+0
+...
+0
+...
+0
+...
+0
+
+
++ϵ(t)
+2
+
+
+0
+...
+0
+y(t)
+21
+...
+y(t)
+2r2
+...
+0
+...
+0
+
+
++··· +ϵ(t)
+K
+
+
+0
+...
+0
+0
+...
+0
+...
+y(t)
+K1
+...
+y(t)
+KrK
+
+
+where r1 +··· +rK =m, each sequence y(t)
+ij converges to a limit y0
+ij > 0, and ϵ(t)
+i+1/ϵ(t)
+i → 0,
+1≤i≤K− 1, as t→∞ .
+Proof. When comparing two sequencesx(t)
+i andx(t)
+j , at least one of the two statements “x(t)
+i ≥
+x(t)
+j for inﬁnitely manyt” or “x(t)
+i ≤x(t)
+j for inﬁnitely manyt” holds. By relabeling the indices,
+we can assume that x(t)
+1 ≥x(t)
+i (1<i ≤m) for inﬁnitely many t. Take subsequences so that
+x(t)
+i /x(t)
+1 ∈ (0, 1] have ﬁnite limits for all i. Suppose that the limits for i = 2,...,r 1 are
+positive, and the others are zero. Then we set ϵ(t)
+1 =x(t)
+1 , y(t)
+1i =x(t)
+i /x(t)
+1 , i = 1,...,r 1.
+Next, we apply the same procedure to x(t)
+r1+1,...,x (t)
+m . Suppose that x(t)
+r1+1≥x(t)
+i (r1 + 1<
+i≤m) for inﬁnitely manyt. Take subsequences so thatx(t)
+i /x(t)
+r1+1∈ (0, 1] have ﬁnite limits for
+allr1 + 1<i ≤m again, and classify the limits by their signs (i.e., positive or zero). Suppose
+that the limits for i =r1 + 2,...,r 1 +r2 are positive, and the others are zero. Then we take
+ϵ(t)
+2 =x(t)
+r1+1 andy(t)
+2i =x(t)
+r1+i/x(t)
+r1+1,i =r1+1,...,r 1+r2. Note that ϵ(t)
+2 /ϵ(t)
+1 =x(t)
+r1+1/x(t)
+1 → 0.
+By repeating this procedure, we get the form (A.1). □
+Lemma A.2. Let Y1 and Y2 be two independent random 2× 2 matrices whose entries are
+i.i.d.N (0, 1). Then the matrix Y−1
+1 Y2 has real eigenvalues with probability π/4≈ 0.7854.
+Proof. We ﬁrst obtain the distribution of Z =Y−1
+1 Y2, which we do for general matrix size m.
+We use|A| as a shorthand for the determinant of a matrix A. Then noting that Y2 = Y1Z
+
+--- PAGE 32 ---
+32 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+and dY2 =|Y1|mdZ, the joint density of (Y1,Y 2) is
+1
+(2π)m2 exp
+{
+− 1
+2 tr
+(
+Y1YT
+1 +Y2YT
+2
+)}
+dY1dY2
+= 1
+(2π)m2 exp
+{
+− 1
+2 tr
+(
+Y1YT
+1 +Y1ZZTYT
+1
+)}
+dY1|Y1|mdZ
+= 1
+(2π)m2 exp
+{
+− 1
+2 tr
+(
+YT
+1 Y1(I +ZZT )
+)}
+|Y1|mdY1dZ.
+Let Y1 = HT be the QR decomposition. That is, H ∈ O(m) and T = (tij) is an upper-
+triangular matrix with tii> 0. Let S =YT
+1 Y1 =TTT . Then the mapping Y1↦→ (S,H ) is one
+to one, and according to Theorem 2.1.14 in [Mui82, p. 66], its Jacobian is
+dY1 = 2−m|S|−1/2dS (dH), (dH) =
+⋀
+1≤i<j≤m
+hT
+jdhi,
+where hi is the ith column of H. By Theorems 2.1.12 and 2.1.15 in [Mui82],
+∫
+O(m)
+(dH) = 2mπm2/2
+Γm(m
+2 ) , Γm(a) =πm(m−1)/4
+m∏
+i=1
+Γ
+(2a−i + 1
+2
+)
+,
+and we have the joint density of (Z,S ) as
+πm2/2
+(2π)m2
+Γm(m
+2 ) exp
+{
+− 1
+2 trS(I +ZZT )
+}
+|S|(m−1)/2dZdS.
+Moreover, by letting n = 2m in the Wishart integral∫
+exp
+{
+− 1
+2 trSΣ−1}
+|S|(n−m−1)/2dS = 2mn/2Γm
+(n
+2
+)
+|Σ|n/2,
+we have ∫
+exp
+{
+− 1
+2 trSΣ−1}
+|S|(m−1)/2dS = 2m2
+Γm(m)|Σ|m.
+Hence, the marginal of Z is
+πm2/22m2
+Γm(m)
+(2π)m2
+Γm(m
+2 ) |I +ZZT|−mdZ =
+∏m
+i=1 Γ( 2m−i+1
+2 )
+πm2/2∏m
+i=1 Γ(m−i+1
+2 )|I +ZZT|−mdZ.
+We now restrict our attentions to the case m = 2. The density of Z is then
+1
+π2
+Γ( 4
+2)Γ( 3
+2)
+Γ( 2
+2)Γ( 1
+2)|I +ZZT|−2dZ = 1
+2π2|I +ZZT|−2dZ.
+Suppose that Z has real eigenvalues. For such Z, we have the decomposition Z = PLP−1,
+where L = diag(l1,l 2), l1 > l2, and P = (pij)2×2 is a non-singular matrix. Without loss of
+generality, we may assume that the eigenvectors
+(
+p1i
+p2i
+)
+are unit vectors with p1i > 0. Then
+the map Z↦→ (L,P ) is one to one. However, it will be convenient to also allow pi1< 0 in the
+below calculations. In this parameterization, Z↦→ (L,P ) is 1 to 2 2.
+Write (
+p1i
+p2i
+)
+=
+(
+cosθi
+sinθi
+)
+, i = 1, 2.
+The Jacobian of Z↦→ (L,P ) is
+dZ = (l1−l2)2
+sin(θ1−θ2)2dLdθ1dθ2.
+
+--- PAGE 33 ---
+EXISTENCE OF KRONECKER COVARIANCE MLE 33
+Integrating we ﬁnd that
+1
+2π2|I +ZZT|−2dZ =
+1
+2π2
+sin(θ1−θ2)2
+{(1 +l2
+1)(1 +l2
+2)− (1 +l1l2)2 cos(θ1−θ2)2}2
+(l1−l2)2
+sin(θ1−θ2)2dLdθ1dθ2
+overθ1,θ 2∈ [0, 2π). Dividing by 2 2, we obtain the density (not probability density) of (l1,l 2)
+as
+1
+4
+l1−l2
+(1 +l2
+1)3/2(1 +l2
+2)3/2dL.
+Taking the integral over−∞<l 2<l 1<∞,∫
+−∞<l2<l1<∞
+1
+4
+l1−l2
+(1 +l2
+1)3/2(1 +l2
+2)3/2dl1dl2 = π
+4.
+This is the integral over the space whereZ has real eigenvalues, and our proof is complete. □
+References
+[AKRS20] Carlos Am´ endola, Kathl´ en Kohn, Philipp Reichenbach, and Anna Seigal, Invariant theory and
+scaling algorithms for maximum likelihood estimation , 2020.
+[And03] T. W. Anderson, An introduction to multivariate statistical analysis , third ed., Wiley Series
+in Probability and Statistics, Wiley-Interscience [John Wiley & Sons], Hoboken, NJ, 2003.
+MR 1990662
+[AT10] Genevera I. Allen and Robert Tibshirani, Transposable regularized covariance models with an
+application to missing data imputation , Ann. Appl. Stat. 4 (2010), no. 2, 764–790. MR 2758420
+[AT12] , Inference with transposable data: modelling the eﬀects of row and column correlations , J.
+R. Stat. Soc. Ser. B. Stat. Methodol. 74 (2012), no. 4, 721–743. MR 2965957
+[CL19] Xi Chen and Weidong Liu, Graph estimation for matrix-variate Gaussian data , Statist. Sinica 29
+(2019), no. 1, 479–504. MR 3889377
+[Daw81] A. P. Dawid, Some matrix-variate distribution theory: notational considerations and a Bayesian
+application, Biometrika 68 (1981), no. 1, 265–274. MR MR614963 (83m:62083)
+[DFKP19] Mathias Drton, Christopher Fox, Andreas K¨ auﬂ, and Guillaume Pouliot, The maximum likelihood
+threshold of a path diagram , Ann. Statist. 47 (2019), no. 3, 1536–1553. MR 3911121
+[DM20] Harm Derksen and Visu Makam, Maximum likelihood estimation for matrix normal models via
+quiver representations, 2020.
+[Dut99] Pierre Dutilleul, The mle algorithm for the matrix normal distribution , J. Statist. Comput. Simul.
+64 (1999), no. 2, 105–123.
+[EEK97] Alan Edelman, Erik Elmroth, and Bo K˚ agstr¨ om, A geometric approach to perturbation theory of
+matrices and matrix pencils. Part I. Versal deformations , SIAM J. Matrix Anal. Appl. 18 (1997),
+no. 3, 653–692. MR 1453545
+[Efr09] Bradley Efron, Are a set of microarrays independent of each other? , Ann. Appl. Stat. 3 (2009),
+no. 3, 922–942. MR 2750220
+[FH14] Bailey K. Fosdick and Peter D. Hoﬀ, Separable factor analysis with applications to mortality data ,
+Ann. Appl. Stat. 8 (2014), no. 1, 120–147. MR 3191985
+[GC18] Hunter Glanz and Luis Carvalho, An expectation-maximization algorithm for the matrix nor-
+mal distribution with an application in remote sensing , J. Multivariate Anal. 167 (2018), 31–48.
+MR 3830632
+[GH15] K. Greenewald and A. O. Hero, Robust kronecker product pca for spatio-temporal covariance esti-
+mation, IEEE Transactions on Signal Processing 63 (2015), no. 23, 6368–6378.
+[GS18] Elizabeth Gross and Seth Sullivant, The maximum likelihood threshold of a graph , Bernoulli 24
+(2018), no. 1, 386–407. MR 3706762
+[KLL20] Dean Koch, Subhash Lele, and Mark A. Lewis, Computationally simple anisotropic lattice covar-
+iograms, Environ. Ecol. Stat. 27 (2020), 665–688.
+[Lan12] J. M. Landsberg, Tensors: geometry and applications, Graduate Studies in Mathematics, vol. 128,
+American Mathematical Society, Providence, RI, 2012. MR 2865915
+
+--- PAGE 34 ---
+34 MATHIAS DRTON, SATOSHI KURIKI, AND PETER HOFF
+[MKM+12] Scott Makeig, Christian Kothe, Tim Mullen, Nima Bigdely-Shamlo, Zhilin Zhang, and Kenneth
+Kreutz-Delgado, Evolving signal processing for brain–computer interfaces, Proceedings of the IEEE
+100 (2012), no. Special Centennial Issue, 1567–1584.
+[Mui82] Robb J. Muirhead, Aspects of multivariate statistical theory , John Wiley & Sons, Inc., New York,
+1982, Wiley Series in Probability and Mathematical Statistics. MR 652932
+[Mur00] Kazuo Murota, Matrices and matroids for systems analysis , Algorithms and Combinatorics,
+vol. 20, Springer-Verlag, Berlin, 2000. MR 1739147
+[ORAvR13] Martin Ohlson, M. Rauf Ahmad, and Dietrich von Rosen, The multilinear normal distribution:
+introduction and some basic properties , J. Multivariate Anal. 113 (2013), 37–47. MR 2984354
+[Rap97] Tam´ as Rapcs´ ak, Smooth nonlinear optimization in Rn, Nonconvex Optimization and its Applica-
+tions, vol. 19, Kluwer Academic Publishers, Dordrecht, 1997. MR 1480415
+[ST16] I. Soloveychik and D. Trushin, Gaussian and robust Kronecker product covariance estimation:
+existence and uniqueness , J. Multivariate Anal. 149 (2016), 92–113. MR 3507317
+[TBK99] Jos M. F. Ten Berge and Henk A. L. Kiers, Simplicity of core arrays in three-way principal
+component analysis and the typical rank of p × q × 2 arrays, Linear Algebra Appl. 294 (1999),
+no. 1-3, 169–179. MR 1693919
+[VH15] Alexander Volfovsky and Peter D. Hoﬀ, Testing for nodal dependence in relational data matrices ,
+J. Amer. Statist. Assoc. 110 (2015), no. 511, 1037–1046. MR 3420682
+[Wie12] Ami Wiesel, Geodesic convexity and covariance estimation, IEEE Trans. Signal Process.60 (2012),
+no. 12, 6182–6189. MR 3006411
+[YL12] Jianxin Yin and Hongzhe Li, Model selection and estimation in the matrix normal graphical model,
+J. Multivariate Anal. 107 (2012), 119–140. MR 2890437
+[Zho14] Shuheng Zhou, Gemini: graph estimation with matrix variate normal instances , Ann. Statist. 42
+(2014), no. 2, 532–562. MR 3210978
+[ZL18] Yunzhang Zhu and Lexin Li, Multiple matrix Gaussian graphs estimation , J. R. Stat. Soc. Ser. B.
+Stat. Methodol. 80 (2018), no. 5, 927–950. MR 3874304
+Department of Mathematics, Technical University of Munich, Boltzmannstraße 3, 85748
+Garching b. M ¨unchen, Germany
+The Institute of Statistical Mathematics, 10-3 Midoricho, Tachikawa, Tokyo 190-8562, Japan
+Department of Statistical Science, Duke University, Durham, NC 27708-0251, United States

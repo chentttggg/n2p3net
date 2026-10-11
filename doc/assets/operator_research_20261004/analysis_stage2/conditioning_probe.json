@@ -1,0 +1,17 @@
+{
+  "schema": "n2p3_conditioning_prior_gauge_counterexamples/1",
+  "conditioning": {
+    "known_nuisance_candidate_free_prefix_BF_error": 3.979039320256561e-13,
+    "informative_prefix_dropping_changes_log_BF": -3.865140123985796,
+    "naive_unknown_nuisance_conditioning_changes_log_BF": -0.0005635627421440859,
+    "scope": "conditional_likelihood_is_equal_only_under_explicit_conditioning_assumptions"
+  },
+  "prior_scale_gauge": {
+    "covariance_factor": 200.0,
+    "unchanged_ridge_max_log_BF_change": 216.61950249695633,
+    "ridge_divided_by_factor_BF_error": 1.7053025658242404e-13,
+    "same_likelihood_noise_different_prior_if_ridge_not_scaled": true,
+    "canonical_marginal_scale_prior": "unit-innovation representation uses effective ridge = declared ridge / stationary marginal variance per unit innovation"
+  },
+  "no_real_data": true
+}

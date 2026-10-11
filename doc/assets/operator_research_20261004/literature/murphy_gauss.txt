@@ -1,0 +1,2390 @@
+
+--- PAGE 1 ---
+Conjugate Bayesian analysis of the Gaussian distribution
+Kevin P. Murphy∗
+murphyk@cs.ubc.ca
+Last updated October 3, 2007
+1 Introduction
+The Gaussian or normal distribution is one of the most widely used in statistics. Estimating its parameters using
+Bayesian inference and conjugate priors is also widely used . The use of conjugate priors allows all the results to be
+derived in closed form. Unfortunately, different books use different conventions on how to parameterize the various
+distributions (e.g., put the prior on the precision or the va riance, use an inverse gamma or inverse chi-squared, etc),
+which can be very confusing for the student. In this report, w e summarize all of the most commonly used forms. We
+provide detailed derivations for some of these results; the rest can be obtained by simple reparameterization. See the
+appendix for the deﬁnition the distributions that are used.
+2 Normal prior
+Let us consider Bayesian estimation of the mean of a univaria te Gaussian, whose variance is assumed to be known.
+(We discuss the unknown variance case later.)
+2.1 Likelihood
+Let D = (x1, . . . , xn) be the data. The likelihood is
+p(D|µ, σ2) =
+n∏
+i=1
+p(xi|µ, σ2) = (2 πσ2)− n/2 exp
+{
+− 1
+2σ2
+n∑
+i=1
+(xi − µ)2
+}
+(1)
+Let us deﬁne the empirical mean and variance
+x = 1
+n
+n∑
+i=1
+xi (2)
+s2 = 1
+n
+n∑
+i=1
+(xi − x)2 (3)
+(Note that other authors (e.g., [GCSR04]) deﬁne s2 = 1
+n− 1
+∑n
+i=1(xi − x)2.) We can rewrite the term in the exponent
+as follows
+∑
+i
+(xi − µ)2 =
+∑
+i
+[(xi − x) − (µ − x)]2 (4)
+=
+∑
+i
+(xi − x)2 +
+∑
+i
+(x − µ)2 − 2
+∑
+i
+(xi − x)(µ − x) (5)
+= ns2 + n(x − µ)2 (6)
+since
+∑
+i
+(xi − x)(µ − x) = ( µ − x)
+(
+(
+∑
+i
+xi) − nx
+)
+= (µ − x)(nx − nx) = 0 (7)
+∗Thanks to Hoyt Koepke for proof reading.
+1
+
+--- PAGE 2 ---
+Hence
+p(D|µ, σ2) = 1
+(2π)n/2
+1
+σn exp
+(
+− 1
+2σ2
+[
+ns2 + n(x − µ)2])
+(8)
+∝
+( 1
+σ2
+)n/2
+exp
+(
+− n
+2σ2 (x − µ)2
+)
+exp
+(
+− ns2
+2σ2
+)
+(9)
+If σ2 is a constant, we can write this as
+p(D|µ) ∝ exp
+(
+− n
+2σ2 (x − µ)2
+)
+∝ N (x|µ, σ2
+n ) (10)
+since we are free to drop constant factors in the deﬁnition of the likelihood. Thus n observations with variance σ2 and
+mean x is equivalent to 1 observation x1 = x with variance σ2/n.
+2.2 Prior
+Since the likelihood has the form
+p(D|µ) ∝ exp
+(
+− n
+2σ2 (x − µ)2
+)
+∝ N (x|µ, σ2
+n ) (11)
+the natural conjugate prior has the form
+p(µ) ∝ exp
+(
+− 1
+2σ2
+0
+(µ − µ0)2
+)
+∝ N (µ|µ0, σ2
+0) (12)
+(Do not confuse σ2
+0, which is the variance of the prior, with σ2, which is the variance of the observation noise.) (A
+natural conjugate prior is one that has the same form as the likelihood.)
+2.3 Posterior
+Hence the posterior is given by
+p(µ|D) ∝ p(D|µ, σ)p(µ|µ0, σ2
+0) (13)
+∝ exp
+[
+− 1
+2σ2
+∑
+i
+(xi − µ)2
+]
+× exp
+[
+− 1
+2σ2
+0
+(µ − µ0)2
+]
+(14)
+= exp
+[
+−1
+2σ2
+∑
+i
+(x2
+i + µ2 − 2xiµ) + −1
+2σ2
+0
+(µ2 + µ2
+0 − 2µ0µ)
+]
+(15)
+Since the product of two Gaussians is a Gaussian, we will rewrite this in the form
+p(µ|D) ∝ exp
+[
+− µ2
+2
+( 1
+σ2
+0
++ n
+σ2
+)
++ µ
+( µ0
+σ2
+0
++
+∑
+i xi
+σ2
+)
+−
+( µ2
+0
+2σ2
+0
++
+∑
+i x2
+i
+2σ2
+)]
+(16)
+def
+= exp
+[
+− 1
+2σ2n
+(µ2 − 2µµn + µ2
+n)
+]
+= exp
+[
+− 1
+2σ2n
+(µ − µn)2
+]
+(17)
+Matching coefﬁcients of µ2, we ﬁnd σ2
+n is given by
+−µ2
+2σ2n
+= −µ2
+2
+( 1
+σ2
+0
++ n
+σ2
+)
+(18)
+1
+σ2n
+= 1
+σ2
+0
++ n
+σ2 (19)
+σ2
+n = σ2σ2
+0
+nσ2
+0 + σ2 = 1
+n
+σ2 + 1
+σ2
+0
+(20)
+2
+
+--- PAGE 3 ---
+N = 0
+N = 1
+N = 2
+N = 10
+−1 0 1
+0
+5
+Figure 1: Sequentially updating a Gaussian mean starting with a prior centered on µ0 = 0 . The true parameters are µ∗ = 0 .8
+(unknown), (σ2)∗ = 0 .1 (known). Notice how the data quickly overwhelms the prior, a nd how the posterior becomes narrower.
+Source: Figure 2.12 [Bis06].
+Matching coefﬁcients of µ we get
+−2µµn
+−2σ2n
+= µ
+(∑n
+i=1 xi
+σ2 + µ0
+σ2
+0
+)
+(21)
+µn
+σ2n
+=
+∑n
+i=1 xi
+σ2 + µ0
+σ2
+0
+(22)
+= σ2
+0nx + σ2µ0
+σ2σ2
+0
+(23)
+Hence
+µn = σ2
+nσ2
+0 + σ2 µ0 + nσ2
+0
+nσ2
+0 + σ2 x = σ2
+n
+( µ0
+σ2
+0
++ nx
+σ2
+)
+(24)
+This operation of matching ﬁrst and second powers of µ is called completing the square.
+Another way to understand these results is if we work with the precision of a Gaussian, which is 1/variance (high
+precision means low variance, low precision means high variance). Let
+λ = 1 /σ2 (25)
+λ0 = 1 /σ2
+0 (26)
+λn = 1 /σ2
+n (27)
+Then we can rewrite the posterior as
+p(µ|D, λ) = N (µ|µn, λn) (28)
+λn = λ0 + nλ (29)
+µn = xnλ + µ0λ0
+λn
+= wµM L + (1 − w)µ0 (30)
+3
+
+--- PAGE 4 ---
+−5 0 5
+0
+0.05
+0.1
+0.15
+0.2
+0.25
+0.3
+0.35
+0.4
+0.45
+prior sigma 10.000
+prior
+lik
+post
+−5 0 5
+0
+0.1
+0.2
+0.3
+0.4
+0.5
+0.6
+0.7
+prior sigma 1.000
+prior
+lik
+post
+(a) (b)
+Figure 2: Bayesian estimation of the mean of a Gaussian from one sample. (a) Weak prior N (0, 10). (b) Strong prior N (0, 1). In
+the latter case, we see the posterior mean is “shrunk” towards the prior mean, which is 0. Figure produced bygaussBayesDemo.
+where nx = ∑n
+i=1 xi and w = nλ
+λn
+. The precision of the posterior λn is the precision of the prior λ0 plus one
+contribution of data precision λ for each observed data point. Also, we see the mean of the post erior is a convex
+combination of the prior and the MLE, with weights proportional to the relative precisions.
+To gain further insight into these equations, consider the e ffect of sequentially updating our estimate of µ (see
+Figure 1). After observing one data point x (so n = 1), we have the following posterior mean
+µ1 = σ2
+σ2 + σ2
+0
+µ0 + σ2
+0
+σ2 + σ2
+0
+x (31)
+= µ0 + (x − µ0) σ2
+0
+σ2 + σ2
+0
+(32)
+= x − (x − µ0) σ2
+σ2 + σ2
+0
+(33)
+The ﬁrst equation is a convex combination of the prior and MLE . The second equation is the prior mean ajusted
+towards the data x. The third equation is the data x adjusted towads the prior mean; this is called shrinkage. These
+are all equivalent ways of expressing the tradeoff between likelihood and prior. See Figure 2 for an example.
+2.4 Posterior predictive
+The posterior predictive is given by
+p(x|D) =
+∫
+p(x|µ)p(µ|D)dµ (34)
+=
+∫
+N (x|µ, σ2)N (µ|µn, σ2
+n)dµ (35)
+= N (x|µn, σ2
+n + σ2) (36)
+This follows from general properties of the Gaussian distribution (see Equation 2.115 of [Bis06]). An alternative proof
+is to note that
+x = ( x − µ) + µ (37)
+x − µ ∼ N (0, σ2) (38)
+µ ∼ N (µn, σ2
+n) (39)
+Since E[X1 + X2] = E[X1] + E[X2] and Var [X1 + X2] = Var [X1] + Var [X2] if X1, X2 are independent, we have
+X ∼ N (µn, σ2
+n + σ2) (40)
+4
+
+--- PAGE 5 ---
+since we assume that the residual error is conditionally ind ependent of the parameter. Thus the predictive variance is
+the uncertainty due to the observation noise σ2 plus the uncertainty due to the parameters, σ2
+n.
+2.5 Marginal likelihood
+Writing m = µ0 and τ 2 = σ2
+0 for the hyper-parameters, we can derive the marginal likelihood as follows:
+𝓁 = p(D|m, σ2, τ 2) =
+∫
+[
+n∏
+i=1
+N (xi|µ, σ2)]N (µ|m, τ 2)dµ (41)
+= σ
+(
+√
+2πσ)n√
+nτ 2 + σ2 exp
+(
+−
+∑
+i x2
+i
+2σ2 − m2
+2τ 2
+)
+exp
+(
+τ 2n2x2
+σ2 + σ2m2
+τ 2 + 2nxm
+2(nτ 2 + σ2)
+)
+(42)
+The proof is below, based on the on the appendix of [DMP+06].
+We have
+𝓁 = p(D|m, σ2, τ 2) =
+∫
+[
+n∏
+i=1
+N (xi|µ, σ2)]N (µ|m, τ 2)dµ (43)
+= 1
+(σ
+√
+2π)n(τ
+√
+2π)
+∫
+exp
+(
+− 1
+2σ2
+∑
+i
+(xi − µ)2 − 1
+2τ 2 (µ − m)2
+)
+dµ (44)
+Let us deﬁne S2 = 1/σ2 and T 2 = 1/τ 2. Then
+𝓁 = 1
+(
+√
+2π/S)n(
+√
+2π/T )
+∫
+exp
+(
+− S2
+2 (
+∑
+i
+x2
+i + nµ2 − 2µ
+∑
+i
+xi) − T 2
+2 (µ2 + m2 − 2µm)
+)
+dµ (45)
+= c
+∫
+exp
+(
+− 1
+2 (S2nµ2 − 2S2∑
+i
+xi + T 2µ2 − 2T 2µm)
+)
+dµ (46)
+where
+c = exp
+{
+− 1
+2 (S2∑
+i x2
+i + T 2m2)
+)
+(
+√
+2π/S)n(
+√
+2π/T ) (47)
+So
+𝓁 = c
+∫
+exp
+[
+− 1
+2 (S2n + T 2)
+(
+µ2 − 2µ S2∑
+i xi + T 2m
+S2n + T 2
+)]
+dµ (48)
+= c exp
+( (S2nx + T 2m)2
+2(S2n + T 2)
+)∫
+exp
+[
+− 1
+2 (S2n + T 2)
+(
+µ − S2nx + T 2m
+S2n + T 2
+)2]
+dµ (49)
+= c exp
+( (S2nx + T 2m)2
+2(S2n + T 2)
+) √
+2π√
+S2n + T 2 (50)
+= exp
+{
+− 1
+2 (S2∑
+i x2
+i + T 2m2)
+)
+(
+√
+2π/S)n(
+√
+2π/T ) exp
+( (S2nx + T 2m)2
+2(S2n + T 2)
+) √
+2π√
+S2n + T 2 (51)
+Now
+1√
+(2π)/T
+√
+2π√
+S2n + T 2 = σ√
+N τ2 + σ2 (52)
+and
+( nx
+σ2 + m
+τ 2 )2
+2( n
+σ2 + 1
+τ 2 ) = (nxτ 2 + mσ2)2
+2σ2τ 2(nτ 2 + σ2) (53)
+= n2x2τ 2/σ2 + σ2m2/τ 2 + 2nxm
+2(nτ 2 + σ2) (54)
+5
+
+--- PAGE 6 ---
+So
+p(D) = σ
+(
+√
+2πσ)n√
+nτ 2 + σ2 exp
+(
+−
+∑
+i x2
+i
+2σ2 − m2
+2τ 2
+)
+exp
+(
+τ 2n2x2
+σ2 + σ2m2
+τ 2 + 2nxm
+2(nτ 2 + σ2)
+)
+(55)
+To check this, we should ensure that we get
+p(x|D) = p(x, D)
+p(D) = N (x|µn, σ2
+n + σ2) (56)
+(To be completed)
+2.6 Conditional prior p(µ|σ2)
+Note that the previous prior is not, strictly speaking, conj ugate, since it has the form p(µ) whereas the posterior has
+the form p(µ|D, σ), i.e., σ occurs in the posterior but not the prior. We can rewrite the p rior in conditional form as
+follows
+p(µ|σ) = N (µ|µ0, σ2/κ0) (57)
+This means that if σ2 is large, the variance on the prior of µ is also large. This is reasonable since σ2 deﬁnes the
+measurement scale of x, so the prior belief about µ is equivalent to κ0 observations of µ0 on this scale. (Hence a
+noninformative prior is κ0 = 0.) Then the posterior is
+p(µ|D) = N (µ|µn, σ2/κn) (58)
+where κn = κ0 + n. In this form, it is clear that κ0 plays a role analogous to n. Hence κ0 is the equivalent sample
+size of the prior.
+2.7 Reference analysis
+To get an uninformative prior, we just set the prior varianceto inﬁnity to simulate a uniform prior on µ.
+p(µ) ∝ 1 = N (µ|·, ∞) (59)
+p(µ|D) = N (µ|x, σ2/n) (60)
+3 Normal-Gamma prior
+We will now suppose that both the mean m and the precision λ = σ− 2 are unknown. We will mostly follow the
+notation in [DeG70, p169].
+3.1 Likelihood
+The likelihood can be written in this form
+p(D|µ, λ) = 1
+(2π)n/2 λn/2 exp
+(
+− λ
+2
+n∑
+i=1
+(xi − µ)2
+)
+(61)
+= 1
+(2π)n/2 λn/2 exp
+(
+− λ
+2
+[
+n(µ − x)2 +
+n∑
+i=1
+(xi − x)2
+])
+(62)
+3.2 Prior
+The conjugate prior is the normal-Gamma:
+N G(µ, λ|µ0, κ0, α0, β0)
+def
+= N (µ|µ0, (κ0λ)− 1)Ga(λ|α0, rate = β0) (63)
+= 1
+ZN G(µ0, κ0, α0, β0) λ
+1
+2 exp(− κ0λ
+2 (µ − µ0)2)λα0− 1e− λβ0 (64)
+= 1
+ZN G
+λα0− 1
+2 exp
+(
+− λ
+2
+[
+κ0(µ − µ0)2 + 2β0
+])
+(65)
+ZN G(µ0, κ0, α0, β0) = Γ( α0)
+βα0
+0
+( 2π
+κ0
+) 1
+2
+(66)
+6
+
+--- PAGE 7 ---
+−2
+0
+2
+0
+2
+4
+0
+0.2
+0.4
+µ
+NG(κ=2.0, a=1.0, b=1.0)
+λ −2
+0
+2
+0
+2
+4
+0
+0.2
+0.4
+µ
+NG(κ=2.0, a=3.0, b=1.0)
+λ
+−2
+0
+2
+0
+2
+4
+0
+0.2
+0.4
+µ
+NG(κ=2.0, a=5.0, b=1.0)
+λ −2
+0
+2
+0
+2
+4
+0
+0.2
+0.4
+µ
+NG(κ=2.0, a=5.0, b=3.0)
+λ
+Figure 3: Some Normal-Gamma distributions. Produced byNGplot2.
+See Figure 3 for some plots.
+We can compute the prior marginal on µ as follows:
+p(µ) ∝
+∫ ∞
+0
+p(µ, λ)dλ (67)
+=
+∫ ∞
+0
+λα0+ 1
+2 − 1 exp
+(
+−λ(β0 + κ0(µ − µ0)2
+2 )
+)
+dλ (68)
+We recognize this as an unnormalized Ga(a = α0 + 1
+2 , b = β0 + κ0(µ− µ0)2
+2 ) distribution, so we can just write down
+p(µ) ∝ Γ( a)
+ba (69)
+∝ b− a (70)
+= ( β0 + κ0
+2 (µ − µ0)2)− α0− 1
+2 (71)
+= (1 + 1
+2α0
+α0κ0(µ − µ0)2
+β0
+)− (2α0+1)/2 (72)
+which we recognize as as a T2α0(µ|µ0, β0/(α0κ0)) distribution.
+7
+
+--- PAGE 8 ---
+3.3 Posterior
+The posterior can be derived as follows.
+p(µ, λ|D) ∝ N G(µ, λ|µ0, κ0, α0, β0)p(D|µ, λ) (73)
+∝ λ
+1
+2 e− (κ0λ(µ− µ0)2)/2λα0− 1e− β0λ × λn/2e− λ
+2
+Pn
+i=1(xi− µ)2
+(74)
+∝ λ
+1
+2 λα0+n/2− 1e− β0λe− (λ/2)[κ0(µ− µ0)2+P
+i(xi− µ)2] (75)
+From Equation 6 we have
+n∑
+i=1
+(xi − µ)2 = n(µ − x)2 +
+n∑
+i=1
+(xi − x)2 (76)
+Also, it can be shown that
+κ0(µ − µ0)2 + n(µ − x)2 = (κ0 + n)(µ − µn)2 + κ0n(x − µ0)2
+κ0 + n (77)
+where
+µn = κ0µ0 + nx
+κ0 + n (78)
+Hence
+κ0(µ − µ0)2 +
+∑
+i
+(xi − µ)2 = κ0(µ − µ0)2 + n(µ − x)2 +
+∑
+i
+(xi − x)2 (79)
+= ( κ0 + n)(µ − µn)2 + κ0n(x − µ0)2
+κ0 + n +
+∑
+i
+(xi − x)2 (80)
+So
+p(µ, λ|D) ∝ λ
+1
+2 e− (λ/2)(κ0+n)(µ− µn)2
+(81)
+×λα0+n/2− 1e− β0λe− (λ/2) P
+i(xi− x)2
+e− (λ/2) κ0n(x−µ0 )2
+κ0 +n (82)
+∝ N (µ|µn, ((κ + n)λ)− 1) × Ga(λ|α0 + n/2, βn) (83)
+where
+βn = β0 + 1
+2
+n∑
+i=1
+(xi − x)2 + κ0n(x − µ0)2
+2(κ0 + n) (84)
+In summary,
+p(µ, λ|D) = N G(µ, λ|µn, κn, αn, βn) (85)
+µn = κ0µ0 + nx
+κ0 + n (86)
+κn = κ0 + n (87)
+αn = α0 + n/2 (88)
+βn = β0 + 1
+2
+n∑
+i=1
+(xi − x)2 + κ0n(x − µ0)2
+2(κ0 + n) (89)
+We see that the posterior sum of squares, βn, combines the prior sum of squares, β0, the sample sum of squares,∑
+i(xi − x)2, and a term due to the discrepancy between the prior mean and s ample mean. As can be seen from
+Figure 3, the range of probable values for µ and σ2 can be quite large even after for moderate n. Keep this picture in
+mind whenever someones claims to have “ﬁt a Gaussian” to their data.
+8
+
+--- PAGE 9 ---
+3.3.1 Posterior marginals
+The posterior marginals are (using Equation 72)
+p(λ|D) = Ga(λ|αn, βn) (90)
+p(µ|D) = T2αn (µ|µn, βn/(αnκn)) (91)
+3.4 Marginal likelihood
+To derive the marginal likelihood, we just dererive the posterior, but this time we keep track of all the constant factors.
+Let N G′(µ, λ|µ0, κ0, α0, β0) denote an unnormalized Normal-Gamma distribution, and letZ0 = ZN G(µ0, κ0, α0, β0)
+be the normalization constant of the prior; similarly let Zn be the normalization constant of the posterior. Let
+N ′(xi|µ, λ) denote an unnormalized Gaussian with normalization constant 1/
+√
+2π. Then
+p(µ, λ|D) = 1
+p(D)
+1
+Z0
+N G′(µ, λ|µ0, κ0, α0, β0)
+( 1
+2π
+)n/2∏
+i
+N ′(xi|µ, λ) (92)
+The N G′ and N ′ terms combine to make the posterior N G′:
+p(µ, λ|D) = 1
+Zn
+N G′(µ, λ|µn, κn, αn, βn) (93)
+Hence
+p(D) = Zn
+Z0
+(2π)− n/2 (94)
+= Γ( αn)
+Γ( α0)
+βα0
+0
+βαn
+n
+( κ0
+κn
+)
+1
+2 (2π)− n/2 (95)
+3.5 Posterior predictive
+The posterior predictive for m new observations is given by
+p(Dnew|D) = p(Dnew, D)
+p(D) (96)
+= Zn+m
+Z0
+(2π)− (n+m)/2 Z0
+Zn
+(2π)n/2 (97)
+= Zn+m
+Zn
+(2π)− m/2 (98)
+= Γ( αn+m)
+Γ( αn)
+βαn
+n
+βαn+m
+n+m
+( κn
+κn+m
+) 1
+2
+(2π)− m/2 (99)
+In the special case that m = 1, it can be shown (see below) that this is a T-distribution
+p(x|D) = t2αn (x|µn, βn(κn + 1)
+αnκn
+) (100)
+To derive the m = 1 result, we proceed as follows. (This proof is by Xiang Xuan, a nd is based on [GH94, p10].)
+When m = 1, the posterior parameters are
+αn+1 = αn + 1/2 (101)
+κn+1 = κn + 1 (102)
+βn+1 = βn + 1
+2
+1∑
+i=1
+(xi − ¯x)2 + κn(¯x − µn)2
+2(κn + 1) (103)
+9
+
+--- PAGE 10 ---
+Use the fact that whenm = 1, we havex1 = ¯x (since there is only one observation), hence we have1
+2
+∑1
+i=1(xi− ¯x)2 =
+0. Let’s usex denote Dnew, then βn+1 is
+βn+1 = βn + κn(x − µn)2
+2(κn + 1) (104)
+Substituting, we have the following,
+p(Dnew|D) = Γ( αn+1)
+Γ( αn)
+βαn
+n
+βαn+1
+n+1
+( κn
+κn+1
+) 1
+2
+(2π)− 1/2 (105)
+= Γ( αn + 1/2)
+Γ( αn)
+βαn
+n
+(βn + κn(x− µn)2
+2(κn+1) )αn+1/2
+( κn
+κn + 1
+) 1
+2
+(2π)− 1/2 (106)
+= Γ((2 αn + 1)/2)
+Γ((2 αn)/2)
+
+ βn
+βn + κn(x− µn)2
+2(κn+1)
+
+
+αn+1/2
+1
+β
+1
+2n
+( κn
+2(κn + 1)
+) 1
+2
+π)− 1/2 (107)
+= Γ((2 αn + 1)/2)
+Γ((2 αn)/2)
+
+ 1
+1 + κn(x− µn)2
+2βn(κn+1)
+
+
+αn+1/2( κn
+2βn(κn + 1)
+) 1
+2
+(π)− 1/2 (108)
+= ( π)− 1/2 Γ((2 αn + 1)/2)
+Γ((2 αn)/2)
+( αnκn
+2αnβn(κn + 1)
+) 1
+2
+(
+1 + αnκn(x − µn)2
+2αnβn(κn + 1)
+)− (2αn+1)/2
+(109)
+Let Λ = αnκn
+βn(κn+1), then we have,
+p(Dnew|D) = ( π)− 1/2 Γ((2 αn + 1)/2)
+Γ((2 αn)/2)
+( Λ
+2αn
+) 1
+2
+(
+1 + Λ(x − µn)2
+2αn
+)− (2αn+1)/2
+(110)
+We can see this is a T-distribution with center atµn, precision Λ = αnκn
+βn(κn+1), and degree of freedom 2αn.
+3.6 Reference analysis
+The reference prior for NG is
+p(m, λ) ∝ λ− 1 = N G(m, λ|µ = ·, κ = 0, α = − 1
+2 , β = 0) (111)
+So the posterior is
+p(m, λ|D) = N G(µn = x, κn = n, αn = (n − 1)/2, βn = 1
+2
+n∑
+i=1
+(xi − x)2) (112)
+So the posterior marginal of the mean is
+p(m|D) = tn− 1(m|x,
+∑
+i(xi − x)2
+n(n − 1) ) (113)
+which corresponds to the frequentist sampling distributio n of the MLE ˆµ. Thus in this case, the conﬁdence interval
+and credible interval coincide.
+4 Gamma prior
+If µ is known, and only λ is unknown (e.g., when implementing Gibbs sampling), we can use the following results,
+which can be derived by simplifying the results for the Normal-NG model.
+10
+
+--- PAGE 11 ---
+4.1 Likelihood
+p(D|λ) ∝ λn/2 exp
+(
+− λ
+2
+n∑
+i=1
+(xi − µ)2
+)
+(114)
+4.2 Prior
+p(λ) = Ga(λ|α, β) ∝ λα− 1e− λβ (115)
+4.3 Posterior
+p(λ|D) = Ga(λ|αn, βn) (116)
+αn = α + n/2 (117)
+βn = β + 1
+2
+n∑
+i=1
+(xi − µ)2 (118)
+4.4 Marginal likelihood
+To be completed.
+4.5 Posterior predictive
+p(x|D) = t2αn (x|µ, σ2 = βn/αn) (119)
+4.6 Reference analysis
+p(λ) ∝ λ− 1 = Ga(λ|0, 0) (120)
+p(λ|D) = Ga(λ|n/2, 1
+2
+m∑
+i=1
+(xi − µ)2) (121)
+5 Normal-inverse-chi-squared (NIX) prior
+We will see that the natural conjugate prior for σ2 is the inverse-chi-squared distribution.
+5.1 Likelihood
+The likelihood can be written in this form
+p(D|µ, σ2) = 1
+(2π)n/2 (σ2)− n/2 exp
+(
+− 1
+2σ2
+[
+n
+n∑
+i=1
+(xi − x)2 + n(x − µ)2
+])
+(122)
+5.2 Prior
+The normal-inverse-chi-squared prior is
+p(µ, σ2) = N Iχ2(µ0, κ0, ν0, σ2
+0) (123)
+= N (µ|µ0, σ2/κ0) × χ− 2(σ2|ν0, σ2
+0) (124)
+= 1
+Zp(µ0, κ0, ν0, σ2
+0) σ− 1(σ2)− (ν0/2+1) exp
+(
+− 1
+2σ2 [ν0σ2
+0 + κ0(µ0 − µ)2]
+)
+(125)
+Zp(µ0, κ0, ν0, σ2
+0) =
+√
+(2π)√κ0
+Γ( ν0/2)
+( 2
+ν0σ2
+0
+)ν0/2
+(126)
+11
+
+--- PAGE 12 ---
+−1
+−0.5
+0
+0.5
+1
+0
+0.5
+1
+1.5
+2
+0
+0.1
+0.2
+0.3
+0.4
+µ
+NIX(µ0=0.0, κ0=1.0, ν0=1.0, σ2
+0=1.0)
+sigma2 −1
+−0.5
+0
+0.5
+1
+0
+0.5
+1
+1.5
+2
+0
+0.2
+0.4
+0.6
+0.8
+µ
+NIX(µ0=0.0, κ0=5.0, ν0=1.0, σ2
+0=1.0)
+sigma2
+(a) (b)
+−1
+−0.5
+0
+0.5
+1
+0
+0.5
+1
+1.5
+2
+0
+0.1
+0.2
+0.3
+0.4
+µ
+NIX(µ0=0.0, κ0=1.0, ν0=5.0, σ2
+0=1.0)
+sigma2 −1
+−0.5
+0
+0.5
+1
+0
+0.5
+1
+1.5
+2
+0
+0.5
+1
+1.5
+2
+2.5
+µ
+NIX(µ0=0.5, κ0=5.0, ν0=5.0, σ2
+0=0.5)
+sigma2
+(c) (d)
+Figure 4: The N Iχ2(µ0, κ0, ν0, σ2
+0) distribution. µ0 is the prior mean and κ0 is how strongly we believe this; σ2
+0 is the prior
+variance and ν0 is how strongly we believe this. (a) µ0 = 0, κ0 = 1, ν0 = 1, σ2
+0 = 1. Notice that the contour plot (underneath the
+surface) is shaped like a “squashed egg”. (b) We increase the strenght of our belief in the mean, so it gets narrower: µ0 = 0 , κ0 =
+5, ν0 = 1, σ2
+0 = 1. (c) We increase the strenght of our belief in the variance, so it gets narrower: µ0 = 0, κ0 = 1, ν0 = 5, σ2
+0 = 1.
+(d) We strongly believe the mean and variance are 0.5: µ0 = 0 .5, κ0 = 5 , ν0 = 5 , σ2
+0 = 0 .5. These plots were produced with
+NIXdemo2.
+See Figure 4 for some plots. The hyperparameters µ0 and σ2/κ0 can be interpreted as the location and scale of µ, and
+the hyperparameters u0 and σ2
+0 as the degrees of freedom and scale of σ2.
+For future reference, it is useful to note that the quadratic term in the prior can be written as
+Q0(µ) = S0 + κ0(µ − µ0)2 (127)
+= κ0µ2 − 2(κ0µ0)µ + (κ0µ2
+0 + S0) (128)
+where S0 = ν0σ2
+0 is the prior sum of squares.
+12
+
+--- PAGE 13 ---
+5.3 Posterior
+(The following derivation is based on [Lee04, p67].) The posterior is
+p(µ, σ2|D) ∝ N (µ|µ0, σ2/κ0)χ− 2(σ2|ν0, σ2
+0)p(D|µ, σ2) (129)
+∝
+[
+σ− 1(σ2)− (ν0/2+1) exp
+(
+− 1
+2σ2 [ν0σ2
+0 + κ0(µ0 − µ)2]
+)]
+(130)
+×
+[
+(σ2)− n/2 exp
+(
+− 1
+2σ2
+[
+ns2 + n(x − µ)2])]
+(131)
+∝ σ− 3(σ2)− (νn/2) exp
+(
+− 1
+2σ2 [νnσ2
+n + κn(µn − µ)2]
+)
+= N Iχ2(µn, κn, νn, σ2
+n) (132)
+Matching powers of σ2, we ﬁnd
+νn = ν0 + n (133)
+To derive the other terms, we will complete the square. Let S0 = ν0σ2
+0 and Sn = νnσ2
+n for brevity. Grouping the
+terms inside the exponential, we have
+S0 + κ0(µ0 − µ)2 + ns2 + n(x − µ)2 = ( S0 + κ0µ2
+0 + ns2 + nx2) + µ2(κ0 + n) − 2(κ0µ0 + nx)µ(134)
+Comparing to Equation 128, we have
+κn = κ0 + n (135)
+κnµn = κ0µ0 + nx (136)
+Sn + κnµ2
+n = ( S0 + κ0µ2
+0 + ns2 + nx2) (137)
+Sn = S0 + ns2 + κ0µ2
+0 + nx2 − κnµ2
+n (138)
+One can rearrange this to get
+Sn = S0 + ns2 + (κ− 1
+0 + n− 1)− 1(µ0 − x)2 (139)
+= S0 + ns2 + nκ0
+κ0 + n (µ0 − x)2 (140)
+We see that the posterior sum of squares, Sn = νnσ2
+n, combines the prior sum of squares, S0 = ν0σ2
+0, the sample sum
+of squares, ns2, and a term due to the uncertainty in the mean.
+In summary,
+µn = κ0µ0 + nx
+κn
+(141)
+κn = κ0 + n (142)
+νn = ν0 + n (143)
+σ2
+n = 1
+νn
+(ν0σ2
+0 +
+∑
+i
+(xi − x)2 + nκ0
+κ0 + n (µ0 − x)2) (144)
+The posterior mean is given by
+E[µ|D] = µn (145)
+E[σ2|D] = νn
+νn − 2 σ2
+n (146)
+The posterior mode is given by (Equation 14 of [BL01]):
+mode[µ|D] = µn (147)
+mode[σ2|D] = νnσ2
+n
+νn − 1 (148)
+13
+
+--- PAGE 14 ---
+The modes of the marginal posterior are
+mode[µ|D] = µn (149)
+mode[σ2|D] = νnσ2
+n
+νn + 2 (150)
+5.3.1 Marginal posterior of σ2
+First we integrate out µ, which is just a Gaussian integral.
+p(σ2|D) =
+∫
+p(σ2, µ|D)dµ (151)
+∝ σ− 1(σ2)− (νn/2+1) exp
+(
+− 1
+2σ2 [νnσ2
+n]
+)∫
+exp
+(
+− κn
+2σ2 (µn − µ)2]
+)
+dµ (152)
+∝ σ− 1(σ2)− (νn/2+1) exp
+(
+− 1
+2σ2 [νnσ2
+n]
+) σ
+√
+(2π)√κn
+(153)
+∝ (σ2)− (νn/2+1) exp
+(
+− 1
+2σ2 [νnσ2
+n]
+)
+(154)
+= χ− 2(σ2|νn, σ2
+n) (155)
+5.3.2 Marginal posterior of µ
+Let us rewrite the posterior as
+p(µ, σ2|D) = Cφ− αφ− 1 exp
+(
+− 1
+2φ [νnσ2
+n + κn(µn − µ)2]
+)
+(156)
+where φ = σ2 and α = (νn + 1)/2. This follows since
+σ− 1(σ2)− (νn/2+1) = σ− 1σ− νn σ− 2 = φ− νn +1
+2 φ− 1 = φ− α− 1 (157)
+Now make the substitutions
+A = νnσ2
+n + κn(µn − µ)2 (158)
+x = A
+2φ (159)
+dφ
+dx = − A
+2 x− 2 (160)
+so
+p(µ|D) =
+∫
+Cφ− (α+1)e− A/2φdφ (161)
+= −(A/2)
+∫
+C( A
+2x )− (α+1)e− xx− 2dx (162)
+∝ A− α
+∫
+xα− 1e− xdx (163)
+∝ A− α (164)
+= ( νnσ2
+n + κn(µn − µ)2)− (νn+1)/2 (165)
+∝
+[
+1 + κn
+νnσ2n
+(µ − µn)2
+]− (νn+1)/2
+(166)
+∝ tνn (µ|µn, σ2
+n/κn) (167)
+14
+
+--- PAGE 15 ---
+5.4 Marginal likelihood
+Repeating the derivation of the posterior, but keeping track of the normalization constants, gives the following.
+p(D) =
+∫ ∫
+P (D|µ, σ2)P (µ, σ2)dµdσ2 (168)
+= Zp(µn, κn, νn, σ2
+n)
+Zp(µ0, κ0, ν0, σ2
+0)
+1
+Z N
+l
+(169)
+=
+√κ0
+√κn
+Γ( νn/2)
+Γ( ν0/2)
+( ν0σ2
+0
+2
+)ν0/2( 2
+νnσ2n
+)νn/2 1
+(2π)(n/2) (170)
+= Γ( νn/2)
+Γ( ν0/2)
+√ κ0
+κn
+(ν0σ2
+0)ν0/2
+(νnσ2n)νn/2
+1
+πn/2 (171)
+5.5 Posterior predictive
+p(x|D) =
+∫ ∫
+p(x|µ, σ2)p(µ, σ2|D)dµdσ2 (172)
+= p(x, D)
+p(D) (173)
+= Γ(( νn + 1)/2)
+Γ( νn/2)
+√ κn
+κn + 1
+(νnσ2
+n)νn/2
+(νnσ2n + κn
+κn+1 (x − µn)2))(νn+1)/2
+1
+π1/2 (174)
+= Γ(( νn + 1)/2)
+Γ( νn/2)
+( κn
+(κn + 1)πνnσ2n
+) 1
+2
+(
+1 + κn(x − µn)2
+(κn + 1)νnσ2n
+)− (νn+1)/2
+(175)
+= tνn (µn, (1 + κn)σ2
+n
+κn
+) (176)
+5.6 Reference analysis
+The reference prior is p(µ, σ2) ∝ (σ2)− 1 which can be modeled by κ0 = 0, ν0 = −1, σ0 = 0, since then we get
+p(µ, σ2) ∝ σ− 1(σ2)− (− 1
+2 +1)e0 = σ− 1(σ2)− 1/2 = σ− 2 (177)
+(See also [DeG70, p197] and [GCSR04, p88].)
+With the reference prior, the posterior is
+µn = x (178)
+νn = n − 1 (179)
+κn = n (180)
+σ2
+n =
+∑
+i(xi − x)2
+n − 1 (181)
+p(µ, σ2|D) ∝ σ− n− 2 exp
+(
+− 1
+2σ2 [
+∑
+i
+(xi − x)2 + n(x − µ)2]
+)
+(182)
+The posterior marginals are
+p(σ2|D) = χ− 2(σ2|n − 1,
+∑
+i(xi − x)2
+n − 1 ) (183)
+p(µ|D) = tn− 1(µ|x,
+∑
+i(xi − x)2
+n(n − 1) ) (184)
+15
+
+--- PAGE 16 ---
+which are very closely related to the sampling distribution of the MLE. The posterior predictive is
+p(x|D) = tn− 1
+(
+x, (1 + n)∑
+i(xi − x)2
+n(n − 1)
+)
+(185)
+Note that [Min00] argues that Jeffrey’s principle says the uninformative prior should be of the form
+lim
+k→0
+N (µ|µ0, σ2/k)χ− 2(σ2|k, σ2
+0) ∝ (2πσ2)− 1
+2 (σ2)− 1 ∝ σ− 3 (186)
+This can be achieved by setting ν0 = 0 instead of ν0 = −1.
+6 Normal-inverse-Gamma (NIG) prior
+Another popular parameterization is the following:
+p(µ, σ2) = NIG(m, V, a, b) (187)
+= N (µ|m, σ2V )IG(σ2|a, b) (188)
+6.1 Likelihood
+The likelihood can be written in this form
+p(D|µ, σ2) = 1
+(2π)n/2 (σ2)− n/2 exp
+(
+− 1
+2σ2
+[
+ns2 + n(x − µ)2])
+(189)
+6.2 Prior
+p(µ, σ2) = NIG(m0, V0, a0, b0) (190)
+= N (µ|m0, σ2V0)IG(σ2|a0, b0) (191)
+This is equivalent to the N Iχ2 prior, where we make the following substitutions.
+m0 = µ0 (192)
+V0 = 1
+κ0
+(193)
+a0 = ν0
+2 (194)
+b0 = ν0σ2
+0
+2 (195)
+6.3 Posterior
+We can show that the posterior is also NIG:
+p(µ, σ2|D) = N IG(mn, Vn, an, bn) (196)
+V − 1
+n = V − 1
+0 + n (197)
+mn
+Vn
+= V − 1
+0 m0 + nx (198)
+an = a0 + n/2 (199)
+bn = b0 + 1
+2 [m2
+0V − 1
+0 +
+∑
+i
+x2
+i − m2
+nV − 1
+n ] (200)
+The NIG posterior follows directly from the N Iχ2 results using the speciﬁed substitutions. (The bn term requires
+some tedious algebra...)
+16
+
+--- PAGE 17 ---
+6.3.1 Posterior marginals
+To be derived.
+6.4 Marginal likelihood
+For the marginal likelihood, substituting into Equation 171 we have
+p(D) = Γ( an)
+Γ( a0)
+√
+Vn
+V0
+(2b0)a0
+(2bn)an
+1
+πn/2 (201)
+= |Vn|
+1
+2
+|V0|
+1
+2
+ba0
+0
+ban
+n
+Γ( an)
+Γ( a0)
+1
+πn/2 2a0− an (202)
+= |Vn|
+1
+2
+|V0|
+1
+2
+ba0
+0
+ban
+n
+Γ( an)
+Γ( a0)
+1
+πn/22n (203)
+6.5 Posterior predictive
+For the predictive density, substituting into Equation 176we have
+κn
+(1 + κn)σ2n
+= 1
+( 1
+κn
++ 1)σ2n
+(204)
+= 2an
+2bn(1 + Vn) (205)
+So
+p(y|D) = t2an (mn, bn(1 + Vn)
+an
+) (206)
+These results follow from [DHMS02, p240] by setting x = 1 , β = µ, BT B = n, BT X = nx, X T X =∑
+i x2
+i .
+Note that we use a difference parameterization of the student-t. Also, our equations for p(D) differ by a 2− n term.
+7 Multivariate Normal prior
+If we assume Σ is known, then a conjugate analysis of the mean is very simple, since the conjugate prior for the mean
+is Gaussian, the likelihood is Gaussian, and hence the poste rior is Gaussian. The results are analogous to the scalar
+case. In particular, we use the general result from [Bis06, p92] with the following substitutions:
+x = µ, y = x, Λ− 1 = Σ 0, A = I, b = 0, L− 1 = Σ/N (207)
+7.1 Prior
+p(µ) = N (µ|µ0, Σ0) (208)
+7.2 Likelihood
+p(D|µ, Σ) ∝ N (x|µ, 1
+N Σ) (209)
+7.3 Posterior
+p(µ|D, Σ) = N (µ|µN , ΣN ) (210)
+ΣN =
+{
+Σ− 1
+0 + N Σ− 1)− 1
+(211)
+µN = Σ N
+{
+N Σ− 1x + Σ− 1
+0 µ0
+)
+(212)
+17
+
+--- PAGE 18 ---
+7.4 Posterior predictive
+p(x|D) = N (x|µN , Σ + ΣN ) (213)
+7.5 Reference analysis
+p(µ) ∝ 1 = N (µ|·, ∞I) (214)
+p(µ|D) = N (x, Σ/n) (215)
+8 Normal-Wishart prior
+The multivariate analog of the normal-gamma prior is the normal-Wishart prior. Here we just state the results without
+proof; see [DeG70, p178] for details. We assume X is a d-dimensional.
+8.1 Likelihood
+p(D|µ, Λ) = (2 π)− nd/2|Λ|n/2 exp
+(
+− 1
+2
+n∑
+i=1
+(xi − µ)T Λ(xi − µ)
+)
+(216)
+8.2 Prior
+p(µ, Λ) = N W i(µ, Λ|µ0, κ, ν, T) = N (µ|µ0, (κΛ)− 1)W iν(Λ|T ) (217)
+= 1
+Z |Λ|
+1
+2 exp
+(
+− κ
+2 (µ − µ0)T Λ(µ − µ0)
+)
+|Λ|(κ− d− 1)/2 exp
+{
+− 1
+2 tr(T − 1Λ)
+)
+(218)
+Z =
+( κ
+2π
+)d/2
+|T |κ/22dκ/2Γ d(κ/2) (219)
+Here T is the prior covariance. To see the connection to the scalar case, make the substitutions
+α0 = ν0
+2 , β0 = T0
+2 (220)
+8.3 Posterior
+p(µ, Λ|D) = N (µ|µn, (κnΛ)− 1)W iνn (Λ|Tn) (221)
+µn = κµ0 + nx
+κ + n (222)
+Tn = T + S + κn
+κ + n (µ0 − x)(µ0 − x)T (223)
+S =
+n∑
+i=1
+(xi − x)(xi − x)T (224)
+νn = ν + n (225)
+κn = κ + n (226)
+Posterior marginals
+p(Λ|D) = W iνn(Tn) (227)
+p(µ|D) = tνn− d+1(µ|µn, Tn
+κn(νn − d + 1) ) (228)
+18
+
+--- PAGE 19 ---
+The MAP estimates are given by
+(ˆµ, ˆΛ) = arg max
+µ,Λ
+p(D|µ, Λ)N W i(µ, Λ) (229)
+ˆµ =
+n∑
+i=1
+xi + κ0µ0N + κ0 (230)
+ˆΣ =
+∑n
+i=1(xi − ˆµ)(xi − ˆµ)T + κ0(ˆµ − µ0)(ˆµ − µ0)T + T − 1
+0
+N + ν0 − d (231)
+This reduces to the MLE if κ0 = 0, ν0 = d and |T0| = 0.
+8.4 Posterior predictive
+p(x|D) = tνn− d+1(µn, Tn(κn + 1)
+κn(νn − d + 1) ) (232)
+If d = 1, this reduces to Equation 100.
+8.5 Marginal likelihood
+This can be computed as a ratio of normalization constants.
+p(D) = Zn
+Z0
+1
+(2π)nd/2 (233)
+= 1
+πnd/2
+Γ d(νn/2)
+Γ d(ν0/2)
+|T0|ν0/2
+|Tn|νn/2
+( κ0
+κn
+)d/2
+(234)
+This reduces to Equation 95 if d = 1.
+8.6 Reference analysis
+We set
+µ0 = 0, κ 0 = 0, ν 0 = −1, |T0| = 0 (235)
+to give
+p(µ, Λ) ∝ | Λ|− (d+1)/2 (236)
+Then the posterior parameters become
+µn = x, T n = S, κ n = n, ν n = n − 1 (237)
+the posterior marginals become
+p(µ|D) = tn− d(µ|x, S
+n(n − d) ) (238)
+p(Λ|D) = W in− d(Λ|S) (239)
+and the posterior predictive becomes
+p(x|D) = tn− d(x, S(n + 1)
+n(n − d) (240)
+9 Normal-Inverse-Wishart prior
+The multivariate analog of the normal inverse chi-squared (NIX) distribution is the normal inverse Wishart (NIW) (see
+also [GCSR04, p85]).
+19
+
+--- PAGE 20 ---
+9.1 Likelihood
+The likelihood is
+p(D|µ, Σ) ∝ | Σ|− n
+2 exp
+(
+− 1
+2
+n∑
+i=1
+(xi − µ)T Σ− 1(xi − µ)
+)
+(241)
+= |Σ|− n
+2 exp
+(
+− 1
+2 tr(Σ− 1S)
+)
+(242)
+(243)
+where S is the matrix of sum of squares (scatter matrix)
+S =
+N∑
+i=1
+(xi − x)(xi − x)T (244)
+9.2 Prior
+The natural conjugate prior is normal-inverse-wishart
+Σ ∼ IW ν0 (Λ− 1
+0 ) (245)
+µ|Σ ∼ N (µ0, Σ/κ0) (246)
+p(µ, Σ)
+def
+= N IW (µ0, κ0, Λ0, ν0) (247)
+= 1
+Z |Σ|− ((ν0+d)/2+1) exp
+(
+− 1
+2 tr(Λ0Σ− 1) − κ0
+2 (µ − µ0)T Σ− 1(µ − µ0)
+)
+(248)
+Z = 2v0d/2Γ d(ν0/2)(2π/κ0)d/2
+|Λ0|ν0/2 (249)
+9.3 Posterior
+The posterior is
+p(µ, Σ|D, µ0, κ0, Λ0, ν0) = N IW (µ, Σ|µn, κn, Λn, νn) (250)
+µn = κ0µ + 0 + ny
+κn
+= κ0
+κ0 + n µ0 + n
+κ0 + n y (251)
+κn = κ0 + n (252)
+νn = ν0 + n (253)
+Λn = Λ 0 + S + κ0n
+κ0 + n (x − µ0)(x − µ0)T (254)
+The marginals are
+Σ|D ∼ IW (Λ− 1
+n , νn) (255)
+µ|D = tνn− d+1(µn, Λn
+κn(νn − d + 1) ) (256)
+To see the connection with the scalar case, note that Λn plays the role of νnσ2
+n (posterior sum of squares), so
+Λn
+κn(νn − d + 1) = Λn
+κnνn
+= σ2
+κn
+(257)
+20
+
+--- PAGE 21 ---
+9.4 Posterior predictive
+p(x|D) = tνn− d+1(µn, Λn(κn + 1)
+κn(νn − d + 1) ) (258)
+To see the connection with the scalar case, note that
+Λn(κn + 1)
+κn(νn − d + 1) = Λn(κn + 1)
+κnνn
+= σ2(κn + 1)
+κn
+(259)
+9.5 Marginal likelihood
+The posterior is given by
+p(µ, Σ|D) = 1
+p(D)
+1
+Z0
+N IW ′(µ, Σ|α0) 1
+(2π)nd/2 N ′(D|µ, Σ) (260)
+= 1
+Zn
+N IW ′(µ, Σ|αn) (261)
+where
+N IW ′(µ, Σ|α0) = |Σ|− ((ν0+d)/2+1) exp
+(
+− 1
+2 tr(Λ0Σ− 1) − κ0
+2 (µ − µ0)T Σ− 1(µ − µ0)
+)
+(262)
+N ′(D|µ, Σ) = |Σ|− n
+2 exp
+(
+− 1
+2 tr(Σ− 1S)
+)
+(263)
+is the unnormalized prior and likelihood. Hence
+p(D) = Zn
+Z0
+1
+(2π)nd/2 = 2νnd/2Γ d(νn/2)(2π/κn)d/2
+|Λn|νn/2
+|Λ0|ν0/2
+2ν0d/2Γ d(ν0/2)(2π/κ0)d/2
+1
+(2π)nd/2 (264)
+= 1
+(2π)nd/2
+2νnd/2
+2ν0d/2
+(2π/κn)d/2
+(2π/κ0)d/2
+Γ d(νn/2)
+Γ d(ν0/2) (265)
+= 1
+πnd/2
+Γ d(νn/2)
+Γ d(ν0/2)
+|Λ0|ν0/2
+|Λn|νn/2
+( κ0
+κn
+)d/2
+(266)
+This reduces to Equation 171 if d = 1.
+9.6 Reference analysis
+A noninformative (Jeffrey’s) prior isp(µ, Σ) ∝ |Σ|− (d+1)/2 which is the limit of κ0→0, ν0→ − 1, |Λ0|→0 [GCSR04,
+p88]. Then the posterior becomes
+µn = x (267)
+κn = n (268)
+νn = n − 1 (269)
+Λn = S =
+∑
+i
+(xi − x)(xi − x)T (270)
+p(Σ|D) = IW n− 1(Σ|S) (271)
+p(µ|D) = tn− d(µ|x, S
+n(n − d) ) (272)
+p(x|D) = tn− d(x|x, S(n + 1)
+n(n − d) ) (273)
+Note that [Min00] argues that Jeffrey’s principle says the uninformative prior should be of the form
+lim
+k→0
+N (µ|µ0, Σ/k)IW k(Σ|kΣ) ∝ |2πΣ|− 1
+2 |Σ|− (d+1)/2 ∝ |Σ|− ( d
+2 +1) (274)
+This can be achieved by setting ν0 = 0 instead of ν0 = −1.
+21
+
+--- PAGE 22 ---
+0 1 2 3 4 5
+0
+0.2
+0.4
+0.6
+0.8
+1
+1.2
+1.4
+1.6
+1.8
+Gamma(shape=a,rate=b)
+ 
+ 
+a=0.5, b=1.0
+a=1.0, b=1.0
+a=1.5, b=1.0
+a=2.0, b=1.0
+a=5.0, b=1.0
+0 1 2 3 4 5
+0
+0.5
+1
+1.5
+2
+2.5
+3
+Gamma(shape=a,rate=b)
+ 
+ 
+a=0.5, b=3.0
+a=1.0, b=3.0
+a=1.5, b=3.0
+a=2.0, b=3.0
+a=5.0, b=3.0
+Figure 5: Some Ga(a, b) distributions. If a < 1, the peak is at 0. As we increase b, we squeeze everything leftwards and upwards.
+Figures generated bygammaDistPlot2.
+10 Appendix: some standard distributions
+10.1 Gamma distribution
+The gamma distribution is a ﬂexible distribution for positi ve real valued rv’s, x > 0. It is deﬁned in terms of two
+parameters. There are two common parameterizations. This i s the one used by Bishop [Bis06] (and many other
+authors):
+Ga(x|shape = a, rate = b) = ba
+Γ( a) xa− 1e− xb, x, a, b > 0 (275)
+The second parameterization (and the one used by Matlab’sgampdf) is
+Ga(x|shape = α, scale = β) = 1
+βαΓ( α) xα− 1e− x/β = Garate(x|α, 1/β) (276)
+Note that the shape parameter controls the shape; the scale p arameter merely deﬁnes the measurement scale (the
+horizontal axis). The rate parameter is just the inverse of the scale. See Figure 5 for some examples. This distribution
+has the following properties (using the rate parameterization):
+mean = a
+b (277)
+mode = a − 1
+b for a ≥ 1 (278)
+var = a
+b2 (279)
+10.2 Inverse Gamma distribution
+Let X ∼ Ga(shape = a, rate = b) and Y = 1 /X. Then it is easy to show that Y ∼ IG(shape = a, scale = b), where
+the inverse Gamma distribution is given by
+IG(x|shape = a, scale = b) = ba
+Γ( a) x− (a+1)e− b/x, x, a, b > 0 (280)
+22
+
+--- PAGE 23 ---
+0 0.5 1 1.5 2
+0
+0.2
+0.4
+0.6
+0.8
+1
+1.2
+1.4
+IG(a,b)
+a=0.10, b=1.00
+a=1.00, b=1.00
+a=2.00, b=1.00
+a=0.10, b=2.00
+a=1.00, b=2.00
+a=2.00, b=2.00
+Figure 6: Some inverse gamma distributions (a=shape, b=rate). These plots were produced by invchi2plot.
+The distribution has these properties
+mean = b
+a − 1 , a > 1 (281)
+mode = b
+a + 1 (282)
+var = b2
+(a − 1)2(a − 2) , a > 2 (283)
+See Figure 6 for some plots. We see that increasing b just stretches the horizontal axis, but increasing a moves the
+peak up and closer to the left.
+There is also another parameterization, using the rate (inverse scale):
+IG(x|shape = α, rate = β) = 1
+βa Γ( a)x− (α+1)e− 1/(βx), x, α, β > 0 (284)
+10.3 Scaled Inverse-Chi-squared
+The scaled inverse-chi-squared distribution is a reparameterization of the inverse Gamma [GCSR04, p575].
+χ− 2(x|ν, σ2) = 1
+Γ( ν/2)
+( νσ 2
+2
+)ν/2
+x− ν
+2 − 1 exp[− νσ 2
+2x ], x > 0 (285)
+= IG(x|shape= ν
+2 , scale= νσ 2
+2 ) (286)
+where the parameter ν > 0 is called the degrees of freedom, and σ2 > 0 is the scale. See Figure 7 for some plots. We
+see that increasing ν lifts the curve up and moves it slightly to the right. Later, when we consider Bayesian parameter
+estimation, we will use this distribution as a conjugate prior for a scale parameter (such as the variance of a Gaussian);
+increasing ν corresponds to increasing the effective strength of the prior.
+23
+
+--- PAGE 24 ---
+0 0.5 1 1.5 2
+0
+0.5
+1
+1.5
+χ−2(ν,σ2)
+ν=1.00, σ2=0.50
+ν=1.00, σ2=1.00
+ν=1.00, σ2=2.00
+ν=5.00, σ2=0.50
+ν=5.00, σ2=1.00
+ν=5.00, σ2=2.00
+Figure 7: Some inverse scaled χ2 distributions. These plots were produced byinvchi2plot.
+The distribution has these properties
+mean = νσ 2
+ν − 2 for ν > 2 (287)
+mode = νσ 2
+ν + 2 (288)
+var = 2ν2σ4
+(ν − 2)2(ν − 4)for ν > 4 (289)
+The inverse chi-squared distribution, written χ− 2
+ν (x), is the special case where νσ 2 = 1 (i.e., σ2 = 1 /ν). This
+corresponds to IG(a = ν/2, b = scale = 1/2).
+10.4 Wishart distribution
+Let X be a p dimensional symmetric positive deﬁnite matrix. The Wishar t is the multidimensional generalization of
+the Gamma. Since it is a distribution over matrices, it is har d to plot as a density function. However, we can easily
+sample from it, and then use the eigenvectors of the resulting matrix to deﬁne an ellipse. See Figure 8.
+There are several possible parameterizations. Some authors (e.g., [Bis06, p693], [DeG70, p.57],[GCSR04, p574],
+wikipedia) as well as WinBUGS and Matlab ( wishrnd), deﬁne the Wishart in terms of degrees of freedom ν ≥ p
+and the scale matrix S as follows:
+W iν(X|S) = 1
+Z |X|(ν− p− 1)/2 exp[− 1
+2tr(S− 1X)] (290)
+Z = 2 νp/2Γ p(ν/2)|S|ν/2 (291)
+where Γ p(a) is the generalized gamma function
+Γ p(α) = πp(p− 1)/4
+p∏
+i=1
+Γ
+( 2α + 1 − i
+2
+)
+(292)
+(So Γ 1(α) = Γ( α).) The mean and mode are given by (see also [Pre05])
+mean = νS (293)
+mode = ( ν − p − 1)S, ν > p + 1 (294)
+24
+
+--- PAGE 25 ---
+−5 0 5
+−5
+0
+5
+−5 0 5
+−5
+0
+5
+−4 −2 0 2 4
+−2
+0
+2
+−10 0 10
+−5
+0
+5
+−5 0 5
+−4
+−2
+0
+2
+4
+−5 0 5
+−5
+0
+5
+−5 0 5
+−4
+−2
+0
+2
+4
+−10 0 10
+−5
+0
+5
+Wishart(dof=2.0,S=[4 3; 3 4])
+−10 0 10
+−5
+0
+5
+−10 0 10
+−10
+−5
+0
+5
+10
+−20 0 20
+−10
+0
+10
+−20 0 20
+−10
+0
+10
+−10 0 10
+−10
+−5
+0
+5
+10
+−10 0 10
+−5
+0
+5
+−20 0 20
+−10
+0
+10
+−10 0 10
+−10
+−5
+0
+5
+10
+−10 0 10
+−10
+−5
+0
+5
+10
+Wishart(dof=10.0,S=[4 3; 3 4])
+−10 0 10
+−10
+−5
+0
+5
+10
+Figure 8: Some samples from the Wishart distribution. Left: ν = 2 , right: ν = 10 . We see that if if ν = 2 (the smallest valid
+value in 2 dimensions), we often sample nearly singular matr ices. As ν increases, we put more mass on the S matrix. If S = I2,
+the samples would look (on average) like circles. Generated bywishplot.
+In 1D, this becomes Ga(shape = ν/2, rate = S/2).
+Note that if X ∼ W iu(S), and Y = X − 1, then Y ∼ IW ν (S− 1) and E[Y ] = S
+ν− d− 1.
+In [BS94, p.138], and thewishpdf in Tom Minka’s lightspeed toolbox, they use the following parameterization
+W i(X|a, B) = |B|a
+Γ p(a) |X|a− (p+1)/2 exp[−tr(BX)] (295)
+We require that B is a p × p symmetric positive deﬁnite matrix, and 2a > p − 1. If p = 1, so B is a scalar, this reduces
+to the Ga(shape = a, rate= b) density.
+To get some intuition for this distribution, recall that tr (AB) is a vector which contains the inner product of the
+rows of A and the columns of B. In Matlab notation we have
+trace(A B) = [a(1,:)*b(:,1), ..., a(n,:)*b(:,n)]
+If X ∼ W iν(S), then we are performing a kind of template matching between the columns of X and S− 1 (recall that
+both X and S are symmetric). This is a natural way to deﬁne the distance between two matrices.
+10.5 Inverse Wishart
+This is the multidimensional generalization of the inverseGamma. Consider a d × d positive deﬁnite (covariance) ma-
+trix X and a dof parameter ν > d − 1 and psd matrix S. Some authors (eg [GCSR04, p574]) use this parameterization:
+IW ν (X|S− 1) = 1
+Z |X|− (ν+d+1)/2 exp
+(
+− 1
+2 T r(SX− 1)
+)
+(296)
+Z = |S|ν/2
+2νd/2Γ d(ν/2) (297)
+where
+Γ d(ν/2) = πd(d− 1)/4
+d∏
+i=1
+Γ( ν + 1 − i
+2 ) (298)
+25
+
+--- PAGE 26 ---
+The distribution has mean
+E X = S
+ν − d − 1 (299)
+In Matlab, useiwishrnd. In the 1d case, we have
+χ− 2(Σ|ν0, σ2
+0) = IW ν0 (Σ|(ν0σ2
+0)− 1) (300)
+Other authors (e.g., [Pre05, p117]) use a slightly different formulation (with 2d < ν )
+IW ν(X|Q) =
+
+2(ν− d− 1)d/2πd(d− 1)/4
+d∏
+j=1
+Γ(( ν − d − j)/2)
+
+
+− 1
+(301)
+×|Q|(ν− d− 1)/2|X|− ν/2 exp
+(
+− 1
+2 T r(X− 1Q)
+)
+(302)
+which has mean
+E X = Q
+ν − 2d − 2 (303)
+10.6 Student t distribution
+The generalized t-distribution is given as
+tν(x|µ, σ2) = c
+[
+1 + 1
+ν ( x − µ
+σ )2
+]− ( ν+1
+2 )
+(304)
+c = Γ( ν/2 + 1/2)
+Γ( ν/2)
+1√νπσ (305)
+where c is the normalization consant. µ is the mean, ν > 0 is the degrees of freedom, and σ2 > 0 is the scale. (Note
+that the ν parameter is often written as a subscript.) In Matlab, use tpdf.
+The distribution has the following properties:
+mean = µ, ν > 1 (306)
+mode = µ (307)
+var = νσ 2
+(ν − 2) , ν > 2 (308)
+Note: if x ∼ tν (µ, σ2), then
+x − µ
+σ ∼ tν (309)
+which corresponds to a standard t-distribution with µ = 0, σ2 = 1:
+tν (x) = Γ(( ν + 1)/2)√νπ Γ( ν/2) (1 + x2/ν)− (ν+1)/2 (310)
+In Figure 9, we plot the density for different parameter valu es. As ν → ∞ , the T approaches a Gaussian. T-
+distributions are like Gaussian distributions with heavy tails. Hence they are more robust to outliers (see Figure 10).
+If ν = 1, this is called aCauchy distribution. This is an interesting distribution since if X ∼ Cauchy, then E[X]
+does not exist, since the corresponding integral diverges. Essentially this is because the tails are so heavy that samples
+from the distribution can get very far from the center µ.
+It can be shown that the t-distribution is like an inﬁnite sum of Gaussians, where each Gaussian has a different
+precision:
+p(x|µ, a, b) =
+∫
+N (x|µ, τ − 1)Ga(τ |a, rate = b)dτ (311)
+= t2a(x|µ, b/a) (312)
+(See exercise 2.46 of [Bis06].)
+26
+
+--- PAGE 27 ---
+−6 −4 −2 0 2 4 6
+−0.05
+0
+0.05
+0.1
+0.15
+0.2
+0.25
+0.3
+0.35
+0.4
+Student T distributions
+t(ν=0.1)
+t(ν=1.0)
+t(ν=5.0)
+N(0,1)
+Figure 9: Student t-distributions T (µ, σ2, ν) for µ = 0 . The effect of σ is just to scale the horizontal axis. As ν→∞, the
+distribution approaches a Gaussian. SeestudentTplot.
+(a)
+−5 0 5 10
+0
+0.1
+0.2
+0.3
+0.4
+0.5
+(b)
+−5 0 5 10
+0
+0.1
+0.2
+0.3
+0.4
+0.5
+Figure 10: Fitting a Gaussian and a Student distribution to some data (l eft) and to some data with outliers (right). The Student
+distribution (red) is much less affected by outliers than the Gaussian (green). Source: [Bis06] Figure 2.16.
+27
+
+--- PAGE 28 ---
+−2
+−1
+0
+1
+2
+−2
+−1
+0
+1
+2
+0
+0.05
+0.1
+0.15
+0.2
+T distribution, dof 2.0
+−2
+−1
+0
+1
+2
+−2
+−1
+0
+1
+2
+0
+0.5
+1
+1.5
+2
+Gaussian
+Figure 11: Left: T distribution in 2d with dof=2 and Σ = 0 .1I2. Right: Gaussian density with Σ = 0 .1I2 and µ = (0 , 0); we see
+it goes to zero faster. Produced bymultivarTplot.
+10.7 Multivariate t distributions
+The multivariate T distribution in d dimensions is given by
+tν(x|µ, Σ) = Γ( ν/2 + d/2)
+Γ( ν/2)
+|Σ|− 1/2
+vd/2πd/2 ×
+[
+1 + 1
+ν (x − µ)T Σ− 1(x − µ)
+]− ( ν+d
+2 )
+(313)
+(314)
+where Σ is called the scale matrix (since it is not exactly the covariance matrix). This has fatter tails than a Gaussian:
+see Figure 11. In Matlab, use mvtpdf.
+The distribution has the following properties
+E x = µ if ν > 1 (315)
+mode x = µ (316)
+Cov x = ν
+ν − 2 Σ for ν > 2 (317)
+(The following results are from [Koo03, p328].) Suppose Y ∼ T (µ, Σ, ν) and we partition the variables into 2
+blocks. Then the marginals are
+Yi ∼ T (µi, Σii, ν) (318)
+and the conditionals are
+Y1|y2 ∼ T (µ1|2, Σ1|2, ν + d1) (319)
+µ1|2 = µ1 + Σ12Σ− 1
+22 (y2 − µ2) (320)
+Σ1|2 = h1|2(Σ11 − Σ12Σ− 1
+22 ΣT
+12) (321)
+h1|2 = 1
+ν + d2
+[
+ν + (y2 − µ2)T Σ− 1
+22 (y2 − µ2)
+]
+(322)
+We can also show linear combinations of Ts are Ts:
+Y ∼ T (µ, Σ, ν) ⇒ AY ∼ T (Aµ, AΣA′, ν) (323)
+We can sample from a y ∼ T (µ, Σ, ν) by sampling x ∼ T (0, 1, ν) and then transforming y = µ + RT x, where
+R = chol(Σ), so RT R = Σ.
+28
+
+--- PAGE 29 ---
+References
+[Bis06] C. Bishop. Pattern recognition and machine learning. Springer, 2006.
+[BL01] P. Baldi and A. Long. A Bayesian framework for the anal ysis of microarray expression data: regularized
+t-test and statistical inferences of gene changes. Bioinformatics, 17(6):509–519, 2001.
+[BS94] J. Bernardo and A. Smith. Bayesian Theory. John Wiley, 1994.
+[DeG70] M. DeGroot. Optimal Statistical Decisions. McGraw-Hill, 1970.
+[DHMS02] D. Denison, C. Holmes, B. Mallick, and A. Smith. Bayesian methods for nonlinear classiﬁcation and
+regression. Wiley, 2002.
+[DMP+06] F. Demichelis, P. Magni, P. Piergiorgi, M. Rubin, and R. B ellazzi. A hierarchical Naive Bayes model
+for handling sample heterogeneity in classiﬁcation proble ms: an application to tissue microarrays. BMC
+Bioinformatics, 7:514, 2006.
+[GCSR04] A. Gelman, J. Carlin, H. Stern, and D. Rubin. Bayesian data analysis. Chapman and Hall, 2004. 2nd
+edition.
+[GH94] D. Geiger and D. Heckerman. Learning Gaussian networ ks. Technical Report MSR-TR-94-10, Microsoft
+Research, 1994.
+[Koo03] Gary Koop. Bayesian econometrics. Wiley, 2003.
+[Lee04] Peter Lee. Bayesian statistics: an introduction. Arnold Publishing, 2004. Third edition.
+[Min00] T. Minka. Inferring a Gaussian distribution. Techn ical report, MIT, 2000.
+[Pre05] S. J. Press. Applied multivariate analysis, using Bayesian and frequen tist methods of inference. Dover,
+2005. Second edition.
+29

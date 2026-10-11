@@ -1,0 +1,377 @@
+
+--- PAGE 1 ---
+P300 Speller with patients with ALS
+ 
+Summary
+ 
+This dataset represents a complete record of P300 evoked potentials rec
+orded with BCI2000
+[1]
+ 
+using a 
+paradigm originally described by Farwell and Donchin 
+[2]
+. In these sessions, 8 users with amyotrophic 
+lateral sclerosis (ALS) focused on one out of 36 different characters. The objective in this contest is to 
+predict the correct character in each of the provided character selection epochs.
+ 
+The paradigm
+ 
+The use
+r was presented
+ 
+with a 6 by6 matrix of characters (see Figure 1).The
+ 
+user’s task was to focus 
+attention on characters in a word
+ 
+that was prescribed by
+ 
+the
+ 
+investigator
+ 
+(i.e., one charac
+ter at
+ 
+a time). 
+All 
+rows and columns of
+ 
+this matrix were
+ 
+successively
+ 
+and randomly intensified at a rate
+ 
+of 4 
+Hz. Two out of
+ 
+12 
+intensifications
+ 
+of rows or columns contained
+ 
+the desired
+ 
+character (i.e.,
+ 
+one particular row and one
+ 
+particular column). The responses evoked by these infrequent
+ 
+stimuli (i.e., the 2 out of 12
+ 
+stim
+uli that did 
+contain the desired character) are different from
+ 
+those evoked by the
+ 
+stimuli that did not contain the 
+desired character and they are similar to the P300responses previously reported
+[2], [3]
+.
+ 
+ 
+Figure 1: User display fo
+r this paradigm
+ 
+Experimental Protocol
+ 
+W
+e included in the study a total of 
+eight
+ 
+volunteers, all
+ 
+naïve to BCI training, (
+3
+ 
+women; mean age=
+58
+ 
+±
+ 
+12
+)
+ 
+with definite, probable, or probable with laboratory support ALS
+ 
+diagnosis (mean ALSFRS
+-
+R scores: 
+3
+2
+ 
+±
+ 
+8 
+[4]
+).
+ 
+Scalp EEG signals were recorded (g.MOBILAB, g.tec, Austria)
+ 
+from eight channels according to 10
+–
+10 
+standard (Fz, Cz, Pz,
+ 
+Oz, P3, P4, PO7 and PO8) using active electrodes (g.Ladybird, g.tec, Austria).
+ 
+All 
+channels were referenced to the right earlobe and grounded
+ 
+to the left mastoid. The EEG signal was 
+
+
+--- PAGE 2 ---
+digitized at 256 Hz
+ 
+and band
+-
+pass filtered betwee
+n 0.1 and 30 Hz
+. Participants were required to copy spell 
+seven
+ 
+predefined
+ 
+words of five characters each (runs), by controlling a P300 
+matrix 
+speller
+. 
+Rows
+ 
+and 
+columns on the interface were randomly intensified for 125ms, with an inter stimulus interval (I
+SI) of 125 
+ms, yielding
+ 
+a 250 ms lag between the appearance of two stimuli (stimulus
+ 
+onset asynchrony, SOA). For 
+each character selection (trial) all
+ 
+rows and columns were intensified 10 times (stimuli repetitions)
+ 
+thus 
+each single item on the interface wa
+s intensified 20 times.
+ 
+Participants were seated facing a 15” computer screen placed at
+ 
+eye level approximately one meter in front 
+of them. The angular
+ 
+distance subtended by the speller was of 15 degrees. 
+A single flash of a letter at the 
+beginning of each
+ 
+trial cued the target to focus. In the first three runs (15 trials in total) EEG data was 
+stored to perform a calibration of the BCI classifier. Thus no feedback was provided to the participant up to 
+this point. A stepwise linear discriminant analysis (SW
+LDA) was applied to the data from the three 
+calibration runs (i.e., runs 1
+–
+3) to determine the classifier weights (i.e., classifier coefficients). These 
+weights were then applied during the subsequent four testing runs (i.e., runs 4
+–
+7) when participants we
+re 
+provided with feedback
+[5]
+.
+ 
+Table I: Demographic and clinical related data of 
+participants (N=8)
+ 
+ 
+Age
+ 
+Sex
+ 
+ALSfrs
+-
+r
+ 
+Onset
+ 
+A01
+ 
+56
+ 
+M
+ 
+13
+ 
+Spinal
+ 
+A02
+ 
+59
+ 
+M
+ 
+37
+ 
+Spinal
+ 
+A03
+ 
+43
+ 
+M
+ 
+33
+ 
+Spinal
+ 
+A04
+ 
+75
+ 
+F
+ 
+38
+ 
+Bulbar
+ 
+A05
+ 
+60
+ 
+F
+ 
+34
+ 
+Bulbar
+ 
+A06
+ 
+40
+ 
+M
+ 
+31
+ 
+Spinal
+ 
+A07
+ 
+61
+ 
+M
+ 
+28
+ 
+Bulbar
+ 
+A08
+ 
+72
+ 
+F
+ 
+41
+ 
+Bulbar
+ 
+ 
+Data set
+ 
+X=[samples X Channels]
+ 
+Y=[StimType X 1] ( 1 = NonTarget stimulus, 2 = Target Stimulus)
+ 
+Y_stim= [StimClass X 1] intensified stimulus classes
+ 
+(Figure 2)
+ 
+Trial=[Trials X 1]
+ 
+trial start in samples
+ 
+Classes = 
+textual 
+description of conditions related to Y
+ 
+Classes_stim = 
+textual description of conditions related to Y
+_stim
+ 
+
+--- PAGE 3 ---
+ 
+Figure 2: this figure illustrates the assignment of the variable Y_stim to different row/column 
+intensifications
+ 
+ 
+References
+ 
+[1]
+ 
+G. Schalk, D. J. McFarland, T. Hinterberger, N. Birbaumer, e J. R. Wolpaw, «BCI2000: a general
+-
+purpose 
+brain
+-
+computer interface (BCI) system», 
+IEEE Trans. Biomed. Eng.
+, vol. 51, n. 6, pagg. 1034
+–
+1043, 2004.
+ 
+[2]
+ 
+L. A. Farwell e E. Donchin, «
+Talking off the top of your head: toward a mental prosthesis utilizing event
+-
+related brain potentials», 
+Electroencephalogr. Clin. Neurophysiol.
+, vol. 70, n. 6, pagg. 510
+–
+523, 1988.
+ 
+[3]
+ 
+E. Donchin, K. M. Spencer, e R. Wijesinghe, «The mental prosthesis: ass
+essing the speed of a P300
+-
+based brain
+-
+computer interface», 
+IEEE Trans. Rehabil. Eng. Publ. IEEE Eng. Med. Biol. Soc.
+, vol. 8, n. 2, 
+pagg. 174
+–
+179, giu. 2000.
+ 
+[4]
+ 
+J. M. Cedarbaum, N. Stambler, E. Malta, C. Fuller, D. Hilt, B. Thurmond, e A. Nakanishi, «The
+ 
+ALSFRS
+-
+R: 
+a revised ALS functional rating scale that incorporates assessments of respiratory function», 
+J. Neurol. 
+Sci.
+, vol. 169, n. 1
+–
+2, pagg. 13
+–
+21, ott. 1999.
+ 
+[5]
+ 
+A. Riccio, L. Simione, F. Schettini, A. Pizzimenti, M. Inghilleri, M. O. Belardinelli, D
+. Mattia, e F. Cincotti, 
+«Attention and P300
+-
+based BCI performance in people with amyotrophic lateral sclerosis», 
+Front. Hum. 
+Neurosci.
+, vol. 7:, pag. 732, 2013.
+ 
+ 

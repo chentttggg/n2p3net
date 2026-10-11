@@ -1,0 +1,1 @@
+{"version":"6.9","hitCount":0,"request":{"queryString":"(AUTH_FIRST:Y AND AUTH_LAST:Riccio) AND (P300 AND amyotrophic)","resultType":"core","cursorMark":"*","pageSize":10,"sort":"","synonym":false},"resultList":{"result":[]}}

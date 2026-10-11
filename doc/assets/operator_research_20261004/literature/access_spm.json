@@ -1,0 +1,22 @@
+[
+  {
+    "file": "spm_spm.m",
+    "requested_url": "https://raw.githubusercontent.com/spm/spm/9b8590ecaacdcee15ffb03eb084e6ce3a7a01048/spm_spm.m",
+    "fetched_utc": "2026-10-04T12:59:05.717760+00:00",
+    "status": 200,
+    "final_url": "https://raw.githubusercontent.com/spm/spm/9b8590ecaacdcee15ffb03eb084e6ce3a7a01048/spm_spm.m",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 30551,
+    "sha256": "a875f92603f4d72ec2593c7eae9cc08fc15333908e421496a87fd4e0641c9479"
+  },
+  {
+    "file": "spm_filter.m",
+    "requested_url": "https://raw.githubusercontent.com/spm/spm/9b8590ecaacdcee15ffb03eb084e6ce3a7a01048/spm_filter.m",
+    "fetched_utc": "2026-10-04T12:59:05.718104+00:00",
+    "status": 200,
+    "final_url": "https://raw.githubusercontent.com/spm/spm/9b8590ecaacdcee15ffb03eb084e6ce3a7a01048/spm_filter.m",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 3312,
+    "sha256": "76ae73abc580bd265634a3c718601c072b04c658de7d51fcc562ae6afb13200b"
+  }
+]

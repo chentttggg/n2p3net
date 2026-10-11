@@ -1,0 +1,383 @@
+{
+  "scope": "completed investigation; no production repair or new model training",
+  "completed_utc": "2026-09-29T08:43:29.549970+00:00",
+  "production_snapshot_files_checked": 410,
+  "production_changed": [],
+  "independent_scoring_prediction_members": 48250,
+  "total_distinct_archive_prediction_members_reviewed": 85818,
+  "prediction_count_note": "Archive member counts include repeated baselines; not independent experiment counts. The 48250 are included within 85818.",
+  "BI_test_scope": {
+    "requested": 61,
+    "completed": 61,
+    "failed": 0,
+    "pending": 0,
+    "test_length_total": 16499,
+    "test_length_min": 85,
+    "test_length_max": 948
+  },
+  "BI_calibration": "61/61 zero + 61/61 forward, 12200 epochs per phase; no failures",
+  "personal_replays": 11,
+  "existing_contract_tests": {
+    "tests": "53",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "24.596"
+  },
+  "ruff": {
+    "exit_code": 0,
+    "targets": "src experiments tests doc/assets/deep_chain_audit_20260929"
+  },
+  "git_diff_check": {
+    "exit_code": 0
+  },
+  "limitations": [
+    "No new source/target training or efficacy claim",
+    "No original prediction replay for legacy 0.74511 or unified12 20260918 because complete artifacts are not locally available",
+    "Full-record EEG is an operator diagnostic oracle, not a legal replacement for isolated fitting/scoring",
+    "API counterexamples do not establish historical activation",
+    "New failures are reproduced, not repaired"
+  ],
+  "artifacts": {
+    "doc\\evidence\\deep_chain_audit_20260929.zh.md": {
+      "bytes": 33170,
+      "sha256": "3fb62b702909e458d3e4423a4cee5c0043167d55ed5ecf6d80228be8e432c22b"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\audit_status.md": {
+      "bytes": 3362,
+      "sha256": "db0c740bcdb1e13233ea355639dd34ac73846ec36b25fdb6a8e4c651269c9735"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\bi_quality\\__pycache__\\audit_bi61_c200.cpython-314.pyc": {
+      "bytes": 36300,
+      "sha256": "9c2df3f24c00781bd020400bf978b566783311dfe16bb9a728bb2484d42bb532"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\bi_quality\\audit_bi61_c200.py": {
+      "bytes": 21535,
+      "sha256": "30b9496bcd0d0a7b1fe8568bf93318d948c6387747a318b546ca535c67e21b52"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\bi_quality\\audit_bi61_test_support.py": {
+      "bytes": 16871,
+      "sha256": "225f6652285180ce272b39db860708a04bba7b96d0c32e341dbf69ea6d0dd3e4"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\bi_quality\\bi61_c200_quality.png": {
+      "bytes": 134099,
+      "sha256": "58ada55dd079ba3ab33472d8cd3452c2720ddf066bebb559f4fc2a27aa7d5845"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\bi_quality\\compare_forward_c200.py": {
+      "bytes": 10655,
+      "sha256": "27e27c9dfe2758a9726a0aeb0416d87239ff29bc2185c5dc7dc8afbfbf85bf7a"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\bi_quality\\phase_summary.json": {
+      "bytes": 18039,
+      "sha256": "dc6ef7f60b31daa6862fdec836e7e4422f1aee31a1ef060b8fa449bb34ac7b9b"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\bi_quality\\provenance.json": {
+      "bytes": 17781,
+      "sha256": "a20166a3cb4e96f35f0dc3a175d6e08acd0570f712c72c23003ad49a3119c7ef"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\bi_quality\\report.md": {
+      "bytes": 12429,
+      "sha256": "2ff85534a33813fd293832511a111da2a63e73457ee132ed55f5c70835f5b2d0"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\bi_quality\\summary.json": {
+      "bytes": 8099,
+      "sha256": "e53bf78c493e2753558d133f0176e171fdd4bfbf139640e07cbbe7ea435693bf"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\bi_quality\\temporal_aggregate_summary.json": {
+      "bytes": 15223,
+      "sha256": "72e709f2bc79d5656abebab83f4ab4d3834dedad496f8784beb7376cd9b4f24a"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\bi_quality\\test_scope_summary.json": {
+      "bytes": 27714,
+      "sha256": "d8d1e290255e26715d27f4c7caba3dcebcea542262574861dcd0674251148f1a"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\comparability\\baseline_reuse_checks.json": {
+      "bytes": 1067,
+      "sha256": "621bba068ccd80a084d34cfc530d911a0443df4ef3d8cca1b13325d041316299"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\comparability\\cohorts.json": {
+      "bytes": 8233,
+      "sha256": "0002eea7c76c69de1180189cb28323ded24c83e4e5b162694bc6bf971e224f3c"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\comparability\\ea_consumer_trace.json": {
+      "bytes": 19370,
+      "sha256": "311e55c2852348c292a41059a2e99735866b8d52ee458ac7d7e21a0f3e71b3c2"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\comparability\\inspect_archives.py": {
+      "bytes": 8499,
+      "sha256": "1c18942d8846f923c97fd8bdb212d6a94445b1697c69239441b4d9bd67d06e13"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\comparability\\local_artifacts.manifest.json": {
+      "bytes": 4309,
+      "sha256": "1130758db02c0587124e0e6d0e200e2c424c180f94fd9e2de0607084f319c151"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\comparability\\report.zh.md": {
+      "bytes": 15039,
+      "sha256": "1d3aa876af5ee9ad43c0ec2b1337ad2dc55d64c4e68323df168f481666eb24ec"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\comparability\\summarize_comparability.py": {
+      "bytes": 9695,
+      "sha256": "2a78b9aa7d9696fcdd2e22becfa3bc0c6b7b095037c1bcec1a09c1d487a5a091"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\comparability\\target_recipe_examples.json": {
+      "bytes": 67573,
+      "sha256": "adde6c45a71b29cc146f882252422dc7570564102e8152390bc95511ab3c4ef3"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\entry_manifest.json": {
+      "bytes": 65677,
+      "sha256": "f3c8b8dc17677a2338ee417bc3ebc3e2adba0572dedd41d603d0ebfcead90e93"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\artifact_locations.json": {
+      "bytes": 9788,
+      "sha256": "e89b4c745939c857f5eba8043aa22f6a164daa4ac89fdb550209b6dd24c71981"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi01_boundary_linearity.json": {
+      "bytes": 1634,
+      "sha256": "7023db6ddd5ce61c971602c51bb87caa70fec11acc3cfe5aa30b61e90690f160"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi01_boundary_linearity.log": {
+      "bytes": 1540,
+      "sha256": "77f3d9c54c85c512605ad392f4c2d932dfa72dbf1e7f523db032a65a1b87fc7e"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi01_boundary_linearity.png": {
+      "bytes": 243547,
+      "sha256": "10c56a42ba5a6e135a379bced96a93d1abf0edd88e58b54a45f4f52a3fa4efcf"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi01_raw_extreme_anchor.json": {
+      "bytes": 9128,
+      "sha256": "d4fe8b12c9d4e82c3fe90116efc847691000caeb7c71c8f5d36b757b413b13d6"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi01_raw_extreme_anchor.log": {
+      "bytes": 3644,
+      "sha256": "7e96ba4da485e13623036dc4f9b655d2a4b32b62c15ca3290521875ed6f47274"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi01_raw_extreme_anchor.png": {
+      "bytes": 909643,
+      "sha256": "27d8abf814e165b2a22fca98b618ad2bb8ebbfcca0b7fe27ae5416de776b81e8"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi26_raw_extreme_anchor.json": {
+      "bytes": 21421,
+      "sha256": "e5261dad1564bd1c554933524cf53bf537a7ec2292eca9dcf7186bf14ade33f2"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi26_raw_extreme_anchor.log": {
+      "bytes": 5877,
+      "sha256": "3c1a4250f1eb036dc85662640ca6b3add5d9ad2ed68deff23b754c2d5cd83da8"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi26_raw_extreme_anchor.png": {
+      "bytes": 867946,
+      "sha256": "b6444e2cb20d12b0691781aab0ec51b81c92f9a0ed69ac445fefdd39cd96d3c8"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi49_raw_extreme_anchor.json": {
+      "bytes": 22973,
+      "sha256": "05780f87499b1f436a8a6b79292be19998e01b9c7ba5a19b0bd9c7f417e7350a"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi49_raw_extreme_anchor.log": {
+      "bytes": 6202,
+      "sha256": "bc1cbef1387eae0e4aca553778d114ed75fb4d59363ca06bed31c01c2cce5f0f"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\bi49_raw_extreme_anchor.png": {
+      "bytes": 540628,
+      "sha256": "770c552b7c0af5ec4ba34c1d31715ecdbf5f11c35ad7420552092783467cb4eb"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\diagnose_signal_quality.py": {
+      "bytes": 9016,
+      "sha256": "3b31f6f09c050b1ff940c386df07dd2bff072fa3ebb2374837dac55e04cc666d"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\ea_static_mask_probe.json": {
+      "bytes": 831,
+      "sha256": "426c45a5515b313f9d06abfa14bad6fdd00fc265ec929d5207333f16110000c3"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\ea_static_mask_probe.log": {
+      "bytes": 999,
+      "sha256": "ada199a219cb0e01ebd1249d1290dc659ae97cc5840fcabf85c665dda0d40c4a"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\ea_units_probe.json": {
+      "bytes": 11440,
+      "sha256": "6de0887e3a7dd2b1fdb689683487f9c46cd85c2893dd1c8d8b36dc9ccb60d08f"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\ea_units_probe.log": {
+      "bytes": 8458,
+      "sha256": "945e4a6d5ed716b1eb1368f546aa65458ea6c0c50c1e9d580b3c4ced517f3791"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\findings.md": {
+      "bytes": 20730,
+      "sha256": "c4ce0fb79a6605652a22af1fde5ea438250d1d85eeb5806c99c4f6839f4abced"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\input_probes.json": {
+      "bytes": 25085,
+      "sha256": "c46667e3ae11a97169ed3757bf2f2de709c3d8f4da41ecf6fdcd17e49a24de3d"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\mask_domain_probe.json": {
+      "bytes": 2941,
+      "sha256": "a7278fa4b54264af540f04dcc1b282eb6248643b32d80db05066f04fe4156666"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\mask_domain_probe.log": {
+      "bytes": 2118,
+      "sha256": "f6199d3cda21ad7faad26d956ed3343bd0fad39b35f88c1ccb804f2277c6fc5c"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\minimum_test_probe.json": {
+      "bytes": 1828,
+      "sha256": "1fa90228a161213c84f38402a2f4990fc6d3f4726e239173be208fde70d05c59"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\minimum_test_probe.log": {
+      "bytes": 1292,
+      "sha256": "791a71b8c37f85e0e0ec7ddbfa4315c8d93f5c10c129120b65a7697e33ee6eb6"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\probe_bi_artifact.py": {
+      "bytes": 9540,
+      "sha256": "f63e36500cc836221a98a8032419be78186b5c5147bad0ba503f6f427bfb2a68"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\probe_bi_boundary_linearity.py": {
+      "bytes": 9208,
+      "sha256": "395a89432ced7eb241f0df28b0ceb005415903671486dfba1ea5493bf743d38a"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\probe_ea_static_mask.py": {
+      "bytes": 5078,
+      "sha256": "22d35a806aaea9adf92540d796877bd6952689bb48ec6fa6b928080363fe9c10"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\probe_ea_units.py": {
+      "bytes": 6588,
+      "sha256": "cf742a146755152000822d2c6babd3f3b04f13a36bffedc18e73e54b59ffaa46"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\probe_inputs.py": {
+      "bytes": 9862,
+      "sha256": "03f069019eb365b648cfe44d408a7f652b1c41dca5a51c482d41e8ec3e7f4c5a"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\probe_mask_mechanism.py": {
+      "bytes": 4068,
+      "sha256": "cee8ce8dcb59ac145e522c1b3a07466973ab5a22f585a058696906e78a0b45d4"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\probe_minimum_test.py": {
+      "bytes": 3345,
+      "sha256": "efb5d0a45dc462c3b687f4cf0df4fc804279155be6c6a7a52ea10cd4fd1df166"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\probe_public_raw.py": {
+      "bytes": 13601,
+      "sha256": "ea8cea28d8d745b366c8678a5d1d9b719b393202edef439d214ffeb4a9458b39"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\public_raw_probe.json": {
+      "bytes": 15157,
+      "sha256": "f0bad902fee2c7265ea593a09cf4abd7743bb81126794ac0831c704df86e43cf"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\public_raw_probe.log": {
+      "bytes": 9135,
+      "sha256": "94f6c699455df8e516e3a18086e6554e0fceb95777514edfb18d91f704b03da6"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\relocation_manifest.json": {
+      "bytes": 18824,
+      "sha256": "b075eaff6617a982d8bb5702f6717c2c1ec4fe71c2bfca709f3bfd9ec035d380"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\signal_channel_summary.csv": {
+      "bytes": 5492,
+      "sha256": "dc16f9b5d578fdc3d721517b824f81e9e6e1311db5452236f49bfdd282ff9c1b"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\signal_erp_curves.csv": {
+      "bytes": 53667,
+      "sha256": "6b1fca0eadc5d8233fee8f4a5b30957035e20cb1cb366801ba797bc6ea6a4eea"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\signal_quality_diagnostics.json": {
+      "bytes": 21700,
+      "sha256": "e26c3fbc41ed3991186d67bb6c251dc8a4d8da40d37ae949ab6b1ec90d648426"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\signal_quality_diagnostics.log": {
+      "bytes": 315,
+      "sha256": "ca439a244b205aef7fa06dbae92827ec0783eba1b413e97079be436fa394054b"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\signal_quality_diagnostics.png": {
+      "bytes": 348106,
+      "sha256": "0d9922fd33fd73924294368aa3052e5a1ddc7d97a47a4fcacb46c04eb440ba0a"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\input\\source_identity_comparison.json": {
+      "bytes": 4267,
+      "sha256": "d0f0b3959e545364c3a17edec8e9761f66f881f3d2de8447db220fdae46268c6"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\personal\\eog_replay_metrics.json": {
+      "bytes": 265,
+      "sha256": "84ef16f1b487d769afdebd7f10584ec21cb7150b51272f51cbbcbb2e1b88121f"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\personal\\gpu_replay.json": {
+      "bytes": 202,
+      "sha256": "37040d5fad438f85f2c6cafc5cb93de24545a3e7d6f81b4d7824c274e55bf28f"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\personal\\local_artifacts.manifest.json": {
+      "bytes": 2257,
+      "sha256": "43ccb229dd0c5c2e03b9030ab32a0b194542469b9aca73920b3a82b8fbddf463"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\personal\\replay_probe.json": {
+      "bytes": 332462,
+      "sha256": "a7225e957dd1df3455949fe033d2a1500789d58245ae03888d50a5511945de7d"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\personal\\replay_probe.py": {
+      "bytes": 14158,
+      "sha256": "e971f38f66442fa88770660edd78a24b888fff544141c23c4555a38cf75529dd"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\personal\\report.zh.md": {
+      "bytes": 11404,
+      "sha256": "f89fbb27f7359b48d50ac602369408cb2a0def5d8988c49ba31584b51f95df1d"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\scoring\\audit_provenance.json": {
+      "bytes": 5525,
+      "sha256": "4dd67e4f17f43332620f135535fdb823e0ae0c30e012022896a8db5f8aab9e3a"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\scoring\\audit_public_predictions.py": {
+      "bytes": 7864,
+      "sha256": "b9b3ddd4a0cca8f328f32e7ab64195d780a2d9a3fa1fa698125ff2508a272aaa"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\scoring\\audit_unified_archive.py": {
+      "bytes": 6141,
+      "sha256": "4b34fd2ef110f1f89040118d336c84ec431baff5c127ebbc5c3b53b9e506913c"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\scoring\\counterexamples.json": {
+      "bytes": 7809,
+      "sha256": "9dea4122f7323ac90f9b544929d54e75784436440eb28ba983e8123e1cefa296"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\scoring\\counterexamples.py": {
+      "bytes": 10404,
+      "sha256": "b27460be0bf60b39692607ea44fc3efdbef4affa27ac06e85ca99c72558697c2"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\scoring\\entry_map.json": {
+      "bytes": 21358,
+      "sha256": "f75f93372c4ae339e05784cc090d57af7e7299eae846f5c0fd158020db83ef57"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\scoring\\legacy_loso_record_inventory.json": {
+      "bytes": 277,
+      "sha256": "231ed378f184a3ea7bff52e216ea6a2e6c7832f707f2999eedb039df096a067f"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\scoring\\local_results_manifest.json": {
+      "bytes": 1339,
+      "sha256": "e8812080149312f00b059ee8e8fd5a835b3f9de2275865160d6be696cb46cf8b"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\scoring\\report.md": {
+      "bytes": 16396,
+      "sha256": "2a3776af2272292550d589c9d0f538c69960918db0a00d4b136b8ee8080a3206"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\scoring\\summary.json": {
+      "bytes": 6153,
+      "sha256": "a9869aee8c1d226206c646641f5f8b5d67434fcffe1be53103754fdabfab48c1"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\training\\probe_boundary_sinusoid.json": {
+      "bytes": 11327,
+      "sha256": "3d7633f33e435eec35e3fcba295915c9e221f54103da683e7fc0cced5350662c"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\training\\probe_boundary_sinusoid.py": {
+      "bytes": 4554,
+      "sha256": "d2841457d6237591f82c2c009d2db23dc33fb415093e9d5b75d40864c1e86c35"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\training\\probe_import_relabel.json": {
+      "bytes": 3965,
+      "sha256": "a462203285e27e18dde0d8abd65a7d77d9da2f3ff5ddeeb10bc1d7e098eb3cc1"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\training\\probe_import_relabel.py": {
+      "bytes": 3943,
+      "sha256": "4886927425c6f52a682d545da864f48fb2220619e9ad9f7b6b3e833049189072"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\training\\probe_training_semantics.json": {
+      "bytes": 2658,
+      "sha256": "35a5e6f9d7c7a49b634c7bdce7e2c776fa972bfd4a549a8bee1ba162dfeae552"
+    },
+    "doc\\assets\\deep_chain_audit_20260929\\training\\probe_training_semantics.py": {
+      "bytes": 6815,
+      "sha256": "c212fcafe7b1be5caa174d41452cc5c7a154a4c76df9c01eb94be34cd05bf4dd"
+    }
+  }
+}

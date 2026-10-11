@@ -1,0 +1,12 @@
+[
+  {
+    "file": "joint_existence_arxiv.pdf",
+    "requested_url": "https://arxiv.org/pdf/2003.06024v2",
+    "fetched_utc": "2026-10-04T13:40:19.684137+00:00",
+    "status": 200,
+    "final_url": "https://arxiv.org/pdf/2003.06024v2",
+    "content_type": "application/pdf",
+    "bytes": 638011,
+    "sha256": "762eb347544190f87036a0ebb8991217353b583c1b29023298a16f72b62f5bd3"
+  }
+]

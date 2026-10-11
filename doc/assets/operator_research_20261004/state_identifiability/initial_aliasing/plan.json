@@ -1,0 +1,22 @@
+{
+  "schema": "n2p3_state_identifiability_research/1",
+  "evidence_scope": "public_development_mechanism_diagnostic",
+  "fit_authority": "Each BNCI participant's previously authorized C800 only; stop before flash 801 onset; no samples or labels from T in numerical research inputs",
+  "subjects": ["A01", "A02", "A03", "A04", "A05", "A06", "A07", "A08"],
+  "split_unit": "leave-one-participant-out; multiple pseudo-cuts within one record are dependent repeated measurements",
+  "source_prior_interpretation": "Seven source participants form each training prior; target participant excluded. This is not a K200 personal fit or a transfer performance estimate",
+  "calibration_budget": 800,
+  "cut_lengths_seconds": [16.0, 64.0],
+  "epoch_distance_from_right_edge_seconds": [0.0, 2.0, 8.0],
+  "event_indices": "zero-based 128 through 672 inclusive, step 24; no score-based exclusions",
+  "reference": "production filter on C800 only; finite conditional reference, not ideal infinite-context ground truth",
+  "transform": "existing production 0.1-30 Hz / 50 Hz Q30 SOS; epoch FFT/crop/baseline; native eight physical channels; fixed first eight DCT coordinates per channel",
+  "conditional_context": "finite output's 64 coordinates plus per-channel left/right means and endpoint slopes; all obtained inside the pseudo-cut",
+  "conditional_fit": "standardized ridge, alpha = number of source cuts; no model selection",
+  "covariance_fit": "class means on seven source participants, unshrunk paired empirical covariance plus shared 0.001 relative ridge for scores; exact algebra also checked without ridge",
+  "controls": ["direct finite covariance", "full paired covariance including cross term", "long covariance plus delta covariance omitting cross term", "finite covariance plus delta covariance (double count)", "conditional delta prediction with residual covariance"],
+  "primary_diagnostics": ["paired covariance identity", "delta prediction squared error", "held participant projected Gaussian score", "marginal interval coverage", "cross-term energy and sign", "participant-level consistency"],
+  "independent_counterexamples": ["determinism given observed input", "cross-covariance sign", "double counting", "coordinate gauge", "hard projection removes signal", "pseudo-replication", "AR startup conditional Schur covariance"],
+  "native_threads": 2,
+  "forbidden_claims": ["clinical/adult performance", "T-label fit", "identified physiological noise from total signal covariance", "independent pseudo-cuts", "global optimum", "Γ=estimated just because its basis represents oracle differences"]
+}

@@ -1,0 +1,78 @@
+{
+  "time": 1789559707.7296176,
+  "matrix_status": "running_sources",
+  "memory_GiB": {
+    "total": 56.14262771606445,
+    "anon": 21.698219299316406,
+    "shmem": 21.713817596435547
+  },
+  "memory_events": {
+    "low": "0",
+    "high": "0",
+    "max": "0",
+    "oom": "0",
+    "oom_kill": "0"
+  },
+  "groups": [
+    {
+      "outer": "exclude_BI2014a",
+      "status": "running",
+      "progress": {
+        "pid": 7009,
+        "updated_unix": 1789559627.6492333,
+        "task_count": 0,
+        "completed_tasks": 0,
+        "failed_tasks": 0,
+        "resumed_tasks": 0,
+        "physical_optimizer_updates": 0,
+        "last_task": null,
+        "completed_selections": 0
+      },
+      "failure": null
+    },
+    {
+      "outer": "exclude_BI2015a",
+      "status": "running",
+      "progress": {
+        "pid": 7012,
+        "updated_unix": 1789559627.6330314,
+        "task_count": 0,
+        "completed_tasks": 0,
+        "failed_tasks": 0,
+        "resumed_tasks": 0,
+        "physical_optimizer_updates": 0,
+        "last_task": null,
+        "completed_selections": 0
+      },
+      "failure": null
+    },
+    {
+      "outer": "exclude_BNCI2014-008",
+      "status": "running",
+      "progress": {
+        "pid": 7013,
+        "updated_unix": 1789559627.7071502,
+        "task_count": 0,
+        "completed_tasks": 0,
+        "failed_tasks": 0,
+        "resumed_tasks": 0,
+        "physical_optimizer_updates": 0,
+        "last_task": null,
+        "completed_selections": 0
+      },
+      "failure": null
+    },
+    {
+      "outer": "exclude_Huebner2017",
+      "status": "running",
+      "progress": null,
+      "failure": null
+    },
+    {
+      "outer": "exclude_BI2014a_BI2015a",
+      "status": "running",
+      "progress": null,
+      "failure": null
+    }
+  ]
+}

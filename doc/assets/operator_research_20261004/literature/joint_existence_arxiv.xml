@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/fjZjEfN+7ncTlJBhZiGdi6SlPe8</id>
+  <title>arXiv Query: search_query=ti:"Existence and Uniqueness of the Kronecker Covariance MLE"&amp;id_list=&amp;start=0&amp;max_results=2</title>
+  <updated>2026-10-04T13:38:19Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=ti:%22Existence+and+Uniqueness+of+the+Kronecker+Covariance+MLE%22&amp;start=0&amp;max_results=2&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>2</opensearch:itemsPerPage>
+  <opensearch:totalResults>1</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2003.06024v2</id>
+    <title>Existence and Uniqueness of the Kronecker Covariance MLE</title>
+    <updated>2021-01-14T19:51:37Z</updated>
+    <link href="https://arxiv.org/abs/2003.06024v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2003.06024v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>In matrix-valued datasets the sampled matrices often exhibit correlations among both their rows and their columns. A useful and parsimonious model of such dependence is the matrix normal model, in which the covariances among the elements of a random matrix are parameterized in terms of the Kronecker product of two covariance matrices, one representing row covariances and one representing column covariance. An appealing feature of such a matrix normal model is that the Kronecker covariance structure allows for standard likelihood inference even when only a very small number of data matrices is available. For instance, in some cases a likelihood ratio test of dependence may be performed with a sample size of one. However, more generally the sample size required to ensure boundedness of the matrix normal likelihood or the existence of a unique maximizer depends in a complicated way on the matrix dimensions. This motivates the study of how large a sample size is needed to ensure that maximum likelihood estimators exist, and exist uniquely with probability one. Our main result gives precise sample size thresholds in the paradigm where the number of rows and the number of columns of the data matrices differ by at most a factor of two. Our proof uses invariance properties that allow us to consider data matrices in canonical form, as obtained from the Kronecker canonical form for matrix pencils.</summary>
+    <category term="math.ST" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ME" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-03-12T21:19:18Z</published>
+    <arxiv:primary_category term="math.ST"/>
+    <author>
+      <name>Mathias Drton</name>
+    </author>
+    <author>
+      <name>Satoshi Kuriki</name>
+    </author>
+    <author>
+      <name>Peter Hoff</name>
+    </author>
+  </entry>
+</feed>

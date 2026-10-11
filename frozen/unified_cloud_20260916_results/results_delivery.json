@@ -1,0 +1,19 @@
+{
+  "status": "verified",
+  "archive": "D:\\BCI\\n2p3-net\\experiments\\runs\\unified_cloud_20260916\\export\\verified_results.tar.gz",
+  "sha256": "59a7a982a000cd9ef83cfa4f46dc7309658ffb962bb722feb9a742e39700dbbb",
+  "bytes": 1097847401,
+  "members": 36411,
+  "seconds": 8.16625428199768,
+  "models": 10800,
+  "predictions": 12150,
+  "cloud_archive": "/root/autodl-fs/n2p3-runs/unified_20260916/verified_results.tar.gz",
+  "manifest_local": "D:\\BCI\\n2p3-net\\experiments\\runs\\unified_cloud_20260916\\export\\verified_results.manifest.json",
+  "manifest_sha256": "c368ace1f243f11bf2a8a3b78259a59b1c2c57f50365fa5df97536206063a913",
+  "prepared_inputs": {
+    "archive": "/root/autodl-fs/n2p3-runs/unified_20260916/prepared_inputs.tar.gz",
+    "sha256": "8d2259a6ba025d02af68e322d2a67bcf9278555638fec31ac6548988f1d33f49",
+    "bytes": 6187878006,
+    "restore_root": "/dev/shm/n2p3-unified_20260916"
+  }
+}

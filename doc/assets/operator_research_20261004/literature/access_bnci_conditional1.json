@@ -1,0 +1,52 @@
+[
+  {
+    "file": "bnci_official_description.pdf",
+    "requested_url": "https://bnci-horizon-2020.eu/database/data-sets/008-2014/description.pdf",
+    "fetched_utc": "2026-10-04T13:54:11.719405+00:00",
+    "status": 200,
+    "final_url": "https://lampx.tugraz.at/~bci/database/008-2014/description.pdf",
+    "content_type": "application/pdf",
+    "bytes": 178802,
+    "sha256": "25d2c244c48ff9652017b48f86b2207221e88f5779980b891bfa309ed2db75f0"
+  },
+  {
+    "file": "bnci_official_dataset_page.html",
+    "requested_url": "https://bnci-horizon-2020.eu/database/data-sets",
+    "fetched_utc": "2026-10-04T13:54:11.719958+00:00",
+    "status": 200,
+    "final_url": "https://bnci-horizon-2020.eu/database/data-sets",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 133765,
+    "sha256": "7973b28676e5a2c2e0e76cf431087cee510e7dc356b039a9593fe797bba07779"
+  },
+  {
+    "file": "bnci_riccio_epmc.json",
+    "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=(AUTH_FIRST:Y%20AND%20AUTH_LAST:Riccio)%20AND%20(P300%20AND%20amyotrophic)&format=json&resultType=core&pageSize=10",
+    "fetched_utc": "2026-10-04T13:54:11.720164+00:00",
+    "status": 200,
+    "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=(AUTH_FIRST:Y%20AND%20AUTH_LAST:Riccio)%20AND%20(P300%20AND%20amyotrophic)&format=json&resultType=core&pageSize=10",
+    "content_type": "application/json;charset=UTF-8",
+    "bytes": 225,
+    "sha256": "6b0c26a55c621c27db5997b1c3a3d182f434918b642966f1563e9d4298c6f25f"
+  },
+  {
+    "file": "conditional_ar_statsmodels_docs.html",
+    "requested_url": "https://www.statsmodels.org/stable/generated/statsmodels.tsa.ar_model.AutoReg.html",
+    "fetched_utc": "2026-10-04T13:54:11.720315+00:00",
+    "status": 200,
+    "final_url": "https://www.statsmodels.org/stable/generated/statsmodels.tsa.ar_model.AutoReg.html",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 80878,
+    "sha256": "688209148a9d01826fd86009a33f3f1750f6aeff20763dfb573b224ee4e6deb1"
+  },
+  {
+    "file": "conditional_ar_statsmodels_source.py",
+    "requested_url": "https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.6/statsmodels/tsa/ar_model.py",
+    "fetched_utc": "2026-10-04T13:54:12.542647+00:00",
+    "status": 200,
+    "final_url": "https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.6/statsmodels/tsa/ar_model.py",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 79731,
+    "sha256": "2af124540e9fa5e078001c318fb3a0a32a3989f54af388b89cd4bb0b1412f671"
+  }
+]

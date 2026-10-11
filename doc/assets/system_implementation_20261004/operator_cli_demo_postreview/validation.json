@@ -1,0 +1,106 @@
+{
+  "evidence_scope": "software_synthetic_only",
+  "commands": [
+    {
+      "argv": [
+        "clean",
+        "--plan",
+        "harmonic_plan.json",
+        "--output",
+        "cleaned"
+      ],
+      "returncode": 0,
+      "stdout": "{\"status\": \"complete\", \"command\": \"clean\", \"output\": \"cleaned\"}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "fit",
+        "--plan",
+        "fit_plan.json",
+        "--output",
+        "continuous"
+      ],
+      "returncode": 0,
+      "stdout": "{\"status\": \"complete\", \"command\": \"fit\", \"output\": \"continuous\"}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "predict",
+        "--model",
+        "continuous/model.npz",
+        "--input",
+        "test.npz",
+        "--metadata",
+        "test_metadata.json",
+        "--output",
+        "prediction"
+      ],
+      "returncode": 0,
+      "stdout": "{\"status\": \"complete\", \"command\": \"predict\", \"output\": \"prediction\"}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "noise-fit",
+        "--plan",
+        "noise_plan.json",
+        "--output",
+        "noise"
+      ],
+      "returncode": 0,
+      "stdout": "{\"status\": \"complete\", \"command\": \"noise-fit\", \"output\": \"noise\"}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "noise-project",
+        "--model",
+        "noise/noise.npz",
+        "--input",
+        "operators.npz",
+        "--output",
+        "projection"
+      ],
+      "returncode": 0,
+      "stdout": "{\"status\": \"complete\", \"command\": \"noise-project\", \"output\": \"projection\"}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "operator-lda-fit",
+        "--plan",
+        "lda_plan.json",
+        "--output",
+        "lda"
+      ],
+      "returncode": 0,
+      "stdout": "{\"status\": \"complete\", \"command\": \"operator-lda-fit\", \"output\": \"lda\"}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "operator-lda-predict",
+        "--model",
+        "lda/model.npz",
+        "--input",
+        "lda_test.npz",
+        "--metadata",
+        "lda_metadata.json",
+        "--output",
+        "lda_prediction"
+      ],
+      "returncode": 0,
+      "stdout": "{\"status\": \"complete\", \"command\": \"operator-lda-predict\", \"output\": \"lda_prediction\"}\n",
+      "stderr": ""
+    }
+  ],
+  "winner": "c",
+  "logits": [
+    171.86835893796152,
+    -168.8205204947777
+  ],
+  "harmonic_max_error_uv": 0.00029640690803933907,
+  "truth_only_in_this_external_scorer": "c"
+}

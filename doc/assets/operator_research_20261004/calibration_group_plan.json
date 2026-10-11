@@ -1,0 +1,111 @@
+{
+  "schema": "n2p3_operator_calibration_group_study/1",
+  "evidence_scope": "public_calibration_development",
+  "source_baseline": "frozen/system_implementation_20261004_after/source.manifest.json",
+  "records": [
+    {
+      "subject": "A01",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A01.mat",
+      "sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd"
+    },
+    {
+      "subject": "A02",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A02.mat",
+      "sha256": "0023ee04e4a113231c125bcfdf59780ed95d858a5e5c0bc993701eb6c9652894"
+    },
+    {
+      "subject": "A03",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A03.mat",
+      "sha256": "820287459d83e5512e3ac00cdb25d1806b26518daba14281c61983b230f9dd9f"
+    },
+    {
+      "subject": "A04",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A04.mat",
+      "sha256": "65b14803eb38fda4910cca1103e4b527be1624155f106fe8083861bbf3e644e3"
+    },
+    {
+      "subject": "A05",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A05.mat",
+      "sha256": "d372ae2c39ece0c8dded986307e70ebb7f4bdf2c5c2fa2382c8ba489fb59f200"
+    },
+    {
+      "subject": "A06",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A06.mat",
+      "sha256": "8320e78fb0d73baa03857c4976a4b4d8e605b1c9a7a4cf2e5e80e1bb6fd30337"
+    },
+    {
+      "subject": "A07",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A07.mat",
+      "sha256": "444d9da58332f58e89e7cdd39f9d9e7b0cb8ee4fd01ce03ef3ce57e53068f47c"
+    },
+    {
+      "subject": "A08",
+      "path": "D:\\BCI\\n2p3-net\\mne_data\\MNE-bnci-data\\~bci\\database\\008-2014\\A08.mat",
+      "sha256": "7b5d249058dcac4ad477ea8591256d51c19df384551eba82b6c88e3ae6333571"
+    }
+  ],
+  "authorized_labels_per_participant": 800,
+  "group_selection": "first_six_complete_120_flash_selections",
+  "folds": "leave_one_physical_selection_out_within_participant",
+  "requested_fold_count": 48,
+  "remaining_80_labels": "unused_for_group_cross_validation",
+  "K200_group_CV": "not_estimable_one_complete_selection",
+  "sample_rate_hz": 256,
+  "channels": "BNCI_native_8",
+  "pre_roll_seconds": 0.2,
+  "response_seconds": 1.2,
+  "basis_rank": 8,
+  "ridge": 1.0,
+  "filter": "existing_0.1_30Hz_order4_50Hz_Q30_bidirectional_per_independent_selection",
+  "arms": [
+    {
+      "name": "old_filtered_y",
+      "filter": true,
+      "filter_design": false,
+      "noise_method": "legacy_clipped_ar1",
+      "order": 1
+    },
+    {
+      "name": "filtered_design",
+      "filter": true,
+      "filter_design": true,
+      "noise_method": "legacy_clipped_ar1",
+      "order": 1
+    },
+    {
+      "name": "raw_ar1",
+      "filter": false,
+      "filter_design": true,
+      "noise_method": "burg",
+      "order": 1
+    },
+    {
+      "name": "raw_ar8",
+      "filter": false,
+      "filter_design": true,
+      "noise_method": "burg",
+      "order": 8
+    },
+    {
+      "name": "raw_ar32",
+      "filter": false,
+      "filter_design": true,
+      "noise_method": "burg",
+      "order": 32
+    }
+  ],
+  "primary_estimand": "participant_equal_mean_held_decision_NLL_difference_vs_old_filtered_y",
+  "secondary": [
+    "requested_hit_rate",
+    "coverage",
+    "innovation_ACF",
+    "fit_time",
+    "independent_held_data_readout"
+  ],
+  "failure_policy": "preserve_all_240_requests_probability_NLL_null_and_separately_report_uniform_abstention_loss",
+  "parameter_selection": "none_all_five_predeclared_arms_reported_no_T_use_no_posthoc_participant_winners",
+  "interpretation": "mechanism_development_only_not_new_test_confirmation_or_production_promotion",
+  "workers": 2,
+  "cpu_threads_per_worker": 2,
+  "seed": 20261004
+}

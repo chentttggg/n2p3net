@@ -1,0 +1,9 @@
+{
+  "status": "completed",
+  "target": "/root/autodl-tmp/n2p3-runs/domain_transfer_20260916/matrix/targets",
+  "archive": "/root/autodl-fs/n2p3-runs/domain_transfer_20260916/results.tar.gz",
+  "archive_sha256": "d9ec2c88aabbe409f3eead25649c567d9f5cc8c1b826ed152c42a321960d97b9",
+  "files": 94590,
+  "bytes": 4088173971,
+  "authorization": "user: old materials may be deleted; verified physical archive retained"
+}

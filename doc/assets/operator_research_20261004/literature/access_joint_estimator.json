@@ -1,0 +1,62 @@
+[
+  {
+    "file": "joint_crossref_dutilleul.json",
+    "requested_url": "https://api.crossref.org/works?query.title=The%20MLE%20algorithm%20for%20the%20matrix%20normal%20distribution&rows=3",
+    "fetched_utc": "2026-10-04T13:32:24.678904+00:00",
+    "status": 200,
+    "final_url": "https://api.crossref.org/works?query.title=The%20MLE%20algorithm%20for%20the%20matrix%20normal%20distribution&rows=3",
+    "content_type": "application/json",
+    "bytes": 14799,
+    "sha256": "00c6ca4a5faac4dff5c0f9c43e1188aed411b8d1ae80ade632ab48687697394c"
+  },
+  {
+    "file": "joint_epmc_trcm.json",
+    "requested_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE:%22Transposable%20regularized%20covariance%20models%22&format=json&resultType=core",
+    "fetched_utc": "2026-10-04T13:32:24.679400+00:00",
+    "status": 200,
+    "final_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE:%22Transposable%20regularized%20covariance%20models%22&format=json&resultType=core",
+    "content_type": "application/json;charset=UTF-8",
+    "bytes": 4274,
+    "sha256": "27f573e209c0c6d5be2146d08bab4b8fd25a80d2af3275b359d285cf066bbd8c"
+  },
+  {
+    "file": "joint_crossref_werner.json",
+    "requested_url": "https://api.crossref.org/works?query.title=On%20estimation%20of%20covariance%20matrices%20with%20Kronecker%20product%20structure&rows=3",
+    "fetched_utc": "2026-10-04T13:32:24.680000+00:00",
+    "status": 200,
+    "final_url": "https://api.crossref.org/works?query.title=On%20estimation%20of%20covariance%20matrices%20with%20Kronecker%20product%20structure&rows=3",
+    "content_type": "application/json",
+    "bytes": 9834,
+    "sha256": "8afc51893f3ab7d913e9e36f6a2d169f1d3fdad9783a34df93977bc70b9f359d"
+  },
+  {
+    "file": "joint_statsmodels_glsar.py",
+    "requested_url": "https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.6/statsmodels/regression/linear_model.py",
+    "fetched_utc": "2026-10-04T13:32:24.680319+00:00",
+    "status": 200,
+    "final_url": "https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.6/statsmodels/regression/linear_model.py",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 118429,
+    "sha256": "9d7994924b8e12928c95eaf51cadbf1681f6f17e8f1903f1cfd43bfc3464e6c0"
+  },
+  {
+    "file": "joint_statsmodels_burg.py",
+    "requested_url": "https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.6/statsmodels/tsa/stattools/_stattools.py",
+    "fetched_utc": "2026-10-04T13:32:25.806839+00:00",
+    "status": 404,
+    "final_url": "https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.6/statsmodels/tsa/stattools/_stattools.py",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 14,
+    "sha256": "d5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed"
+  },
+  {
+    "file": "joint_spectrum_burg.py",
+    "requested_url": "https://raw.githubusercontent.com/cokelaer/spectrum/master/src/spectrum/burg.py",
+    "fetched_utc": "2026-10-04T13:32:25.856711+00:00",
+    "status": 200,
+    "final_url": "https://raw.githubusercontent.com/cokelaer/spectrum/master/src/spectrum/burg.py",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 8939,
+    "sha256": "7428becdc404cd55b5add799834fbf962aede6e1cad01593d588f1e7f6821fc8"
+  }
+]

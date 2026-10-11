@@ -1,0 +1,32 @@
+{
+  "schema": "n2p3_constrained_boundary_research/1",
+  "purpose": "Continue after unconstrained delta predictor damaged ERP; same source C800 draws, same eight participant exclusion and all 48 geometry folds",
+  "models": [
+    "unconstrained",
+    "preserve_finite_ERP_increment",
+    "match_long_reference_ERP_increment"
+  ],
+  "constraints": [
+    "K U_ERP=0",
+    "K U_ERP=Delta_ERP"
+  ],
+  "dictionary": "Per native channel: eight fixed Gaussian smooth response basis functions on [0,1.2), one Gaussian negative prestimulus basis on [-0.2,0), constant and linear raw components across the complete 259.0625s synthetic parent. No held EEG used",
+  "dictionary_amplitude_uv": 10.0,
+  "ridge": "alpha=source cut count, source-only standardization; equality-constrained minimizer using Cholesky and SVD, no hyperparameter search",
+  "svd_relative_threshold": 1e-10,
+  "relative_constraint_residual_rejection": 1e-06,
+  "condition_number_reporting": "Report ridge objective condition and retained constraint singular ratio; do not hide discarded directions",
+  "robustness": "Original six ERP injections plus predeclared neighboring-flash/early/late/narrow templates; fixed 32 white raw noise draws per geometry, seed20261004; ratios descriptive, no pass threshold selected after results",
+  "no_performance_claim": true,
+  "soft_constraint_penalties": [
+    0.0,
+    0.0001,
+    0.001,
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    10000.0
+  ]
+}

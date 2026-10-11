@@ -1,0 +1,22 @@
+[
+  {
+    "file": "joint_trcm_arxiv.pdf",
+    "requested_url": "https://arxiv.org/pdf/0906.3465",
+    "fetched_utc": "2026-10-04T13:37:46.296386+00:00",
+    "status": 200,
+    "final_url": "https://arxiv.org/pdf/0906.3465",
+    "content_type": "application/pdf",
+    "bytes": 466995,
+    "sha256": "de976d3d0313a5195b9a45503c045de097f4f1900581c9ba777b0e93dc1d0a2c"
+  },
+  {
+    "file": "joint_existence_arxiv.xml",
+    "requested_url": "https://export.arxiv.org/api/query?search_query=ti:%22Existence%20and%20Uniqueness%20of%20the%20Kronecker%20Covariance%20MLE%22&max_results=2",
+    "fetched_utc": "2026-10-04T13:37:46.296767+00:00",
+    "status": 200,
+    "final_url": "https://export.arxiv.org/api/query?search_query=ti:%22Existence%20and%20Uniqueness%20of%20the%20Kronecker%20Covariance%20MLE%22&max_results=2",
+    "content_type": "application/atom+xml; charset=utf-8",
+    "bytes": 3020,
+    "sha256": "041116450227a1856b85fd3e12cdf023de4ff421b8b8642be2f3f8461c42707c"
+  }
+]

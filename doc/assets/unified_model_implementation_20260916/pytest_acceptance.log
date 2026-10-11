@@ -1,0 +1,89 @@
+.......................s....s........................................... [  3%]
+........................................................................ [  6%]
+........................................................................ [ 10%]
+........................................................................ [ 13%]
+........................................................................ [ 17%]
+........................................................................ [ 20%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................s............................................... [ 30%]
+........................................................................ [ 34%]
+.........................s.............................................. [ 37%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 48%]
+........................................................................ [ 51%]
+........................................................................ [ 54%]
+........................................................................ [ 58%]
+........................................................................ [ 61%]
+........................................................................ [ 65%]
+........................................................................ [ 68%]
+........................................................................ [ 72%]
+........................................................................ [ 75%]
+........................................................................ [ 78%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+........................................................................ [ 96%]
+........................................................................ [ 99%]
+...........                                                              [100%]
+============================== warnings summary ===============================
+tests/brainsync/test_brainsync.py::test_v4_rejects_block_balanced_but_non_permutation_cycles
+  D:\BCI\n2p3-net\tests\support\brainsync.py:111: RuntimeWarning: EDF format requires equal-length data blocks, so 0.5 seconds of edge values were appended to all channels when writing the final block.
+    mne.io.RawArray(values, info, verbose=False).export(
+
+tests/brainsync/test_brainsync.py::test_brainsync_runner_derives_scope_and_keeps_policy_failure_in_denominator[target_shrinkage_lda-target_prefix-False]
+tests/brainsync/test_brainsync.py::test_brainsync_runner_derives_scope_and_keeps_policy_failure_in_denominator[target_shrinkage_lda-target_prefix-False]
+tests/data/test_filter_phase.py::test_edge_policy_round_trip_and_forward_recovery_rejection
+tests/data/test_notch_filter.py::test_notch_survives_cache_and_personal_model_and_rejects_old_source
+  D:\BCI\n2p3-net\.venv\Lib\site-packages\sklearn\covariance\_shrunk_covariance.py:349: UserWarning: Only one sample available. You may want to reshape your data array
+    warnings.warn(
+
+tests/brainsync/test_brainsync.py::test_brainsync_runner_derives_scope_and_keeps_policy_failure_in_denominator[target_shrinkage_lda-target_prefix-False]
+tests/brainsync/test_brainsync.py::test_brainsync_runner_derives_scope_and_keeps_policy_failure_in_denominator[target_shrinkage_lda-target_prefix-False]
+tests/data/test_filter_phase.py::test_edge_policy_round_trip_and_forward_recovery_rejection
+tests/data/test_notch_filter.py::test_notch_survives_cache_and_personal_model_and_rejects_old_source
+  D:\BCI\n2p3-net\.venv\Lib\site-packages\sklearn\covariance\_empirical_covariance.py:100: UserWarning: Only one sample available. You may want to reshape your data array
+    warnings.warn(
+
+tests/data/test_gtn.py::test_gtn_multi_txt_matches_nix_internal_subject[Experiment_515_P3_Numbers]
+  D:\BCI\n2p3-net\tests\data\test_gtn.py:85: UserWarning: D:\BCI\n2p3-net\mne_data\MNE-P3-data\Experiment_515_P3_Numbers\Data 存在未匹配 NIX 内部被试的 .txt（孤儿文件）：['P3Numbers_20141124_f_13_001']；将按 NIX 内部 data_array 名精确匹配（review v6 P0-3）。
+    d = read_gtn_experiment(exp_dir)
+
+tests/data/test_gtn.py::test_gtn_multi_txt_matches_nix_internal_subject[Experiment_531_P3_Numbers]
+  D:\BCI\n2p3-net\tests\data\test_gtn.py:85: UserWarning: D:\BCI\n2p3-net\mne_data\MNE-P3-data\Experiment_531_P3_Numbers\Data 存在未匹配 NIX 内部被试的 .txt（孤儿文件）：['P3Numbers_20141124_m_14_003']；将按 NIX 内部 data_array 名精确匹配（review v6 P0-3）。
+    d = read_gtn_experiment(exp_dir)
+
+tests/data/test_recovery_contamination.py::test_local_contamination_preserves_other_channels_and_voltage_budget[pulse]
+tests/data/test_recovery_contamination.py::test_local_contamination_preserves_other_channels_and_voltage_budget[plateau]
+tests/data/test_recovery_contamination.py::test_local_contamination_preserves_other_channels_and_voltage_budget[step]
+tests/data/test_recovery_contamination.py::test_local_contamination_preserves_other_channels_and_voltage_budget[exponential]
+tests/data/test_recovery_contamination.py::test_local_contamination_preserves_other_channels_and_voltage_budget[exponential_2s]
+tests/data/test_recovery_contamination.py::test_local_contamination_preserves_other_channels_and_voltage_budget[exponential_8s]
+tests/data/test_recovery_contamination.py::test_local_contamination_preserves_other_channels_and_voltage_budget[multiple]
+  tests\data\test_recovery_contamination.py:95: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize("waveform", [
+
+tests/data/test_recovery_contamination.py::test_reference_contamination_preserves_retained_voltage_budget
+  tests\data\test_recovery_contamination.py:114: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_reference_contamination_preserves_retained_voltage_budget(
+
+tests/models/test_deep.py::test_eegnet_learns_and_returns_probabilities
+tests/models/test_deep.py::test_cpu_runtime_record_uses_bounded_matrix_batches
+tests/models/test_deep.py::test_all_models_fit_predict[eegnet]
+tests/models/test_deep.py::test_model_name_normalization
+tests/models/test_deep.py::test_input_statistics_row_mask_changes_stats_without_dropping_training_rows
+tests/models/test_deep.py::test_static_channel_mask_is_enforced
+tests/models/test_deep.py::test_group_disjoint_early_stopping_and_calibration
+tests/models/test_deep.py::test_multisource_selection_uses_only_declared_target_domain
+tests/train/test_multidomain_validation.py::test_all_domain_validation_preserves_declared_risk_mass
+  D:\BCI\n2p3-net\.venv\Lib\site-packages\braindecode\models\eegnet.py:172: DeprecationWarning: Parameter 'final_layer_with_constraint=False' is deprecated and will be removed in a future release. Please use `final_layer_linear=True`.
+    warn(
+
+tests/models/test_deep.py::test_all_models_fit_predict[inception]
+  D:\BCI\n2p3-net\.venv\Lib\site-packages\torch\nn\modules\conv.py:560: UserWarning: Using padding='same' with even kernel lengths and odd dilation may require a zero-padded copy of the input be created (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\aten\src\ATen\native\Convolution.cpp:1102.)
+    return F.conv2d(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2095 passed, 4 skipped, 29 warnings in 294.48s (0:04:54)
