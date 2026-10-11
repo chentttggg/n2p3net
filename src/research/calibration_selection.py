@@ -114,10 +114,15 @@ def _failure_evidence(group, candidate, key, error):
 class _SubsetFits:
     """Run-local memoization of exact immutable C subsets and declared programs."""
 
-    def __init__(self, sources, device):
+    def __init__(self, sources, device, producer_recorder=None):
         self.sources, self.device, self.cache = freeze_metadata(sources), device, {}
         self._fixed_fit_cache = {}
         self.fit_calls = self.cache_hits = 0
+        self.producer_recorder = producer_recorder
+        self.producer_context = {"phase": "unclassified"}
+
+    def set_context(self, **context):
+        self.producer_context = dict(context)
 
     def fit(self, groups, candidate):
         sources = {name: self.sources[name] for name in candidate.ensemble_program.expert_ids if name in self.sources}
@@ -125,20 +130,31 @@ class _SubsetFits:
             "sources": {name: source.digest for name, source in sources.items()}, "device": self.device})
         if key in self.cache:
             self.cache_hits += 1
-            return self.cache[key], key
+            fitted = self.cache[key]
+            if self.producer_recorder is not None:
+                self.producer_recorder.record_fit(key, fitted, candidate=candidate, training=groups,
+                                                  cache_hit=True, context=self.producer_context)
+            return fitted, key
         self.fit_calls += 1
         try:
             if candidate.strategy == "grouped_temperature" and len(groups) < 3:
                 raise ExpectedSubjectError(SubjectFailureCode.INSUFFICIENT_CALIBRATION_GROUPS,
                     stage="nested_temperature", detail="fewer than three complete training groups")
+            producer_context = {**self.producer_context, "candidate_name": candidate.name,
+                                "candidate_record": candidate.record()}
             fitted = fit_calibration_ensemble(groups, candidate.expert_programs, candidate.ensemble_program,
                 source_checkpoints=sources, device=self.device, calibration_strategy=candidate.strategy,
-                temperature_expert_ids=candidate.temperature_expert_ids, _fixed_fit_cache=self._fixed_fit_cache)
+                temperature_expert_ids=candidate.temperature_expert_ids, _fixed_fit_cache=self._fixed_fit_cache,
+                _producer_recorder=self.producer_recorder, _producer_context=producer_context,
+                _record_self=False)
         except ExpectedSubjectError as error:
             fitted = error
         except (UnidentifiableFitError, np.linalg.LinAlgError) as error:
             fitted = ExpectedSubjectError(SubjectFailureCode.NUMERICAL_FAILURE, stage="nested_fit", detail=str(error))
         self.cache[key] = fitted
+        if self.producer_recorder is not None:
+            self.producer_recorder.record_fit(key, fitted, candidate=candidate, training=groups,
+                                              cache_hit=False, context=self.producer_context)
         return fitted, key
 
 
@@ -148,6 +164,10 @@ def _selection(groups, candidates, baseline_name, fits):
         predictions, rows = [], []
         for index, held in enumerate(groups):
             training = groups[:index]+groups[index+1:]
+            if hasattr(fits, "set_context"):
+                context = dict(fits.producer_context)
+                context["selection_held_record_id"] = held.view.record_id
+                fits.set_context(**context)
             fitted, key = fits.fit(training, candidate)
             row = {"held_record_id": held.view.record_id, "fit_scope": _scope(training), "fit_key": key}
             if isinstance(fitted, ExpectedSubjectError):
@@ -156,10 +176,14 @@ def _selection(groups, candidates, baseline_name, fits):
                 failed = _failure_evidence(held, candidate, key, fitted)
                 predictions.append(failed)
                 row["evidence"] = failed.record()
+                if getattr(fits, "producer_recorder", None) is not None:
+                    fits.producer_recorder.record_selection_score(key, held=held, evidence=failed)
             else:
                 evidence = fitted.score(held.view)
                 predictions.append(evidence)
                 row.update(status="scored", producer=_final_identity(fitted), evidence=evidence.record())
+                if getattr(fits, "producer_recorder", None) is not None:
+                    fits.producer_recorder.record_selection_score(key, held=held, evidence=evidence)
             rows.append(row)
         scores[candidate.name] = _metrics(groups, predictions)
         traces[candidate.name] = rows
@@ -288,7 +312,8 @@ class FittedCalibrationSelection:
         return cls(FittedEnsemble.load(directory), payload["record"])
 
 
-def fit_nested_calibration_selection(calibration, candidates, *, baseline_name, source_checkpoints=None, device="cpu"):
+def fit_nested_calibration_selection(calibration, candidates, *, baseline_name, source_checkpoints=None, device="cpu",
+                                     inner_replay_recorder=None):
     """Evaluate the complete selector outside each held group, then fit it on all C."""
     groups, candidates = tuple(calibration), tuple(candidates)
     if len(groups) < 3 or any(not isinstance(group, CalibrationSelection) for group in groups):
@@ -308,11 +333,13 @@ def fit_nested_calibration_selection(calibration, candidates, *, baseline_name, 
     declared_experts = {spec.expert_id for candidate in candidates for spec in candidate.expert_programs}
     if set(sources)-declared_experts:
         raise ValueError("source declaration contains an unrequested candidate expert")
-    fits = _SubsetFits(sources, device)
+    fits = _SubsetFits(sources, device, producer_recorder=inner_replay_recorder)
     outer_rows, outer_predictions = [], []
     for index, held in enumerate(groups):
         training = groups[:index]+groups[index+1:]
+        fits.set_context(phase="outer_selection_inner", outer_held_record_id=held.view.record_id)
         selected, selection = _selection(training, candidates, baseline_name, fits)
+        fits.set_context(phase="outer_refit", outer_held_record_id=held.view.record_id)
         fitted, key = fits.fit(training, selected)
         row = {"held_record_id": held.view.record_id, "selection": selection,
                "selected_candidate": selected.record(), "refit_scope": _scope(training), "refit_key": key}
@@ -326,7 +353,9 @@ def fit_nested_calibration_selection(calibration, candidates, *, baseline_name, 
             outer_predictions.append(evidence)
             row.update(status="scored", producer=_final_identity(fitted), evidence=evidence.record())
         outer_rows.append(row)
+    fits.set_context(phase="final_selection_inner")
     selected, final_selection = _selection(groups, candidates, baseline_name, fits)
+    fits.set_context(phase="final_refit")
     final, key = fits.fit(groups, selected)
     record = {"schema": "n2p3_strict_nested_calibration_selection/1", "evidence_scope": "calibration_development",
         "participant_key": first.participant_key,

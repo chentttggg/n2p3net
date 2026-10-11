@@ -18,7 +18,7 @@
 
 审查复现：重复/重叠raw或record未在split前拒绝、decision身份延迟拒绝、event身份重复被接受、同final数值包可重写label authority、选定温度子集与actual final不一致，以及可变expert wrapper漂移。修复以原ensemble owner的`validate_calibration_ensemble_groups`统一完整roster准入；`_calibration_expert_fit_digest`复用原fit身份公式，constructor/load将最终scope、labels、checkpoint角色和温度子集绑定回原FittedEnsemble。
 
-本切片为完整组科研API及final包。inner模型仍未持久化，公共B12 prefix runner与BrainSync尚未接nested程序；外层C内相关组读数不等于新participant效能或成人确认。W06.11/W09.06的程序隔离推进，不把W07.13 gating或全部B03算完成。
+本切片为完整组科研API及final包；后续 P0 续接已增加 opt-in inner producer capture/replay，但公共B12 prefix runner与BrainSync尚未接nested程序；外层C内相关组读数不等于新participant效能或成人确认。W06.11/W09.06的程序隔离推进，不把W07.13 gating或全部B03算完成。
 
 ## B07：固定native新家族及真实坐标关系
 
@@ -60,4 +60,16 @@ source group以participant为单位，对效应measurement covariance与人际va
 
 ## 云端交接边界
 
-2026-10-11 云窗口报告新纯性能 consumer 已实际启动：physical freeze archive 655dea8b19d1d1a9b2664cf3a175cfed9186349d27cb26940f55acedd437794、manifest 8827a42e8a3fe6ea25f8f1fb0871d308dee89350864075c66cf9ac49aaeeb74、隔离候选 commit 3747bf1bc1a9138f9c771aca7461403db8079222。该 execution 使用新 owner/API，与旧 accepted496/source producer 分离；科研树不修改其运行文件，也不从未终态云结果选择科研 route。云端实际吞吐、完成矩阵和效能由云窗口继续验收。
+2026-10-11 云窗口报告新纯性能 consumer 已实际启动：physical freeze archive `f655dea8b19d1d1a9b2664cf3a175cfed9186349d27cb26940f55acedd437794`、manifest `a8827a42e8a3fe6ea25f8f1fb0871d308dee89350864075c66cf9ac49aaeeb74`、隔离候选 commit `3747bf1bc1a9138f9c771aca7461403db8079222`。该 execution 使用新 owner/API，与旧 accepted496/source producer 分离；科研树不修改其运行文件，也不从未终态云结果选择科研 route。云端实际吞吐、完成矩阵和效能由云窗口继续验收。
+
+## P0续接：inner replay 与 B12 runner
+
+全局审阅把下一顺序定为 B12+B14 单 seed 公共 execution 最高优先，B03 inner producer replay 并行；B05/B06/B11 固定输入机制面板为诊断支线，B09 standalone learner 与 B13 成人确认不阻塞 P0。依据见 `tmp/RESEARCH_DIRECTOR_20261011/GLOBAL_ROUTE/REPORT.zh.md`。
+
+B03 新增 opt-in InnerReplayRecorder，在同一次 `fit_nested_calibration_selection` run 捕获实际 cache producer、grouped-temperature OOF fixed producer/held score、v/h/t context、失败 receipt与 source role。persist_inner_replay 没有原 recorder 会 fail-closed；有 recorder 才保存实际 ensemble package 和完整 manifest，replay_inner_replay 只加载、审计 forbidden scope并重放 score，不二次拟合。8 项 inner 测试、原 selection/ensemble 41 项通过；B12 CalibrationPrefix/public caller仍未接。
+
+B12 新增 `validate_b12_execution_manifest`，由 paired `run_erp_comparator._finalize_comparison` 写入 `b12_execution_binding`，校验 requested K×arm×seed roster、实际K alias、失败/不可用分母、target authority/input manifest和 public source producer catalog。软件 scope不虚构producer。另修复 FrozenTrial list/tuple JSON metadata 比较，保留真实 preprocessing 差异拒绝，相关校验5项通过。云端 candidate8 的6个 input-contract RED已缩小到该类型问题并修复科研树版本；2个FS/RAM失败、四库 Errno28 和完整source→target终态仍保留，未放宽 gate或改写旧producer。
+
+这批 P0 代码已提交到隔离科研分支 `c3278b7`；B12 只有 software/synthetic contract evidence，不能宣称完整单seed执行、公共效能或成人确认。
+
+云端后续交接：数据盘清理从约0.949GB free恢复到25.176GB，原科研文件无计划外变化；B08 tuple helper 修正以独立新 producer完成 exit0，1344包/576 energy/48 C reference/28 native/20000 bootstrap等按新 acceptance 身份解释，旧失败不改签。该结果不替代B12 source→target execution，科研侧继续保留 candidate input-contract、资源 admission和四库终态边界。

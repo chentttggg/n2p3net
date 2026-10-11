@@ -66,7 +66,11 @@ class FrozenTrialPredictor:
                 from data.channel import canonical_channel_name
 
                 source_input = record["class_calibration"]["fit_contract"]["training_contract"]["preprocessing"]
-                if (source_input["epoch"] != profile.preprocessing.record()
+                # ``freeze_metadata`` canonicalizes JSON arrays to tuples when
+                # a fit binding is attached.  Compare the serialized
+                # contract, which treats list/tuple as the same JSON array,
+                # while retaining every value and rejecting real changes.
+                if (semantic_sha256(source_input["epoch"]) != semantic_sha256(profile.preprocessing.record())
                         or tuple(map(canonical_channel_name, source_input["channel_names"])) != tuple(map(canonical_channel_name, profile.channel_names))
                         or profile.reference_channel is not None and source_input["source_reference"] != "measured_channel:" + profile.reference_channel):
                     raise ValueError("source inference capability differs from its actual trained input contract")

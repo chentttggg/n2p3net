@@ -665,7 +665,8 @@ def _calibration_expert_fit_digest(spec, fit_inputs, checkpoint_digest):
 
 def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProgram, *,
                              source_checkpoints=None, device="cpu", calibration_strategy="fixed", temperature_expert_ids=None,
-                             _fixed_fit_cache=None):
+                             _fixed_fit_cache=None, _producer_recorder=None, _producer_context=None,
+                             _record_self=True):
     """Fit only supplied authorized groups; no prediction data or truth is accepted."""
     calibration = tuple(calibration)
     expert_programs = tuple(expert_programs)
@@ -692,9 +693,13 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
         "device": str(device), "calibration_strategy": "fixed"})
     if cache_key is not None and cache_key in _fixed_fit_cache:
         fitted = _fixed_fit_cache[cache_key]
+        if _producer_recorder is not None and _record_self:
+            _producer_recorder.record_direct_fit(cache_key, fitted, expert_programs=expert_programs,
+                program=program, training=calibration, context=_producer_context)
         return (fitted if calibration_strategy == "fixed" else
                 _grouped_temperature(fitted, calibration, expert_programs, sources, device,
-                    temperature_expert_ids, _fixed_fit_cache=_fixed_fit_cache))
+                    temperature_expert_ids, _fixed_fit_cache=_fixed_fit_cache,
+                    _producer_recorder=_producer_recorder, _producer_context=_producer_context))
     experts = []
     for spec in expert_programs:
         data = build_calibration_epoch_dataset(calibration, spec.profile) if spec.family == "trial" else None
@@ -706,9 +711,13 @@ def fit_calibration_ensemble(calibration, expert_programs, program: EnsembleProg
     if cache_key is not None:
         _fixed_fit_cache[cache_key] = fitted
     if calibration_strategy == "fixed":
+        if _producer_recorder is not None and _record_self:
+            _producer_recorder.record_direct_fit(cache_key, fitted, expert_programs=expert_programs,
+                program=program, training=calibration, context=_producer_context)
         return fitted
     return _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids,
-                                _fixed_fit_cache=_fixed_fit_cache)
+                                _fixed_fit_cache=_fixed_fit_cache, _producer_recorder=_producer_recorder,
+                                _producer_context=_producer_context)
 
 
 def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *, device,
@@ -838,7 +847,7 @@ def fit_calibration_prefix(prefix: CalibrationPrefix, expert_programs, program: 
 
 
 def _grouped_temperature(fitted, calibration, expert_programs, sources, device, temperature_expert_ids=None, *, prefix=None,
-                         _fixed_fit_cache=None):
+                         _fixed_fit_cache=None, _producer_recorder=None, _producer_context=None):
     program = fitted.scorer.program
     selected = program.expert_ids if temperature_expert_ids is None else tuple(temperature_expert_ids)
     if not selected or len(set(selected)) != len(selected) or not set(selected) <= set(program.expert_ids):
@@ -851,7 +860,12 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
         training = [group for index, group in enumerate(calibration) if index != held_index]
         inner = fit_calibration_ensemble(training, selected_specs, inner_program,
             source_checkpoints={name: source for name, source in sources.items() if name in selected},
-            device=device, calibration_strategy="fixed", _fixed_fit_cache=_fixed_fit_cache)
+            device=device, calibration_strategy="fixed", _fixed_fit_cache=_fixed_fit_cache,
+            _producer_recorder=_producer_recorder,
+            _producer_context=None if _producer_context is None else {
+                **_producer_context, "phase": "temperature_oof_inner",
+                "temperature_held_record_id": held.view.record_id,
+            })
         scores = inner.score_experts(held.view)
         target = held.view.decision.candidate_vocabulary.index(held.target_candidate)
         for name, item in scores.items():
@@ -866,6 +880,18 @@ def _grouped_temperature(fitted, calibration, expert_programs, sources, device, 
             "training_record_ids": [group.view.record_id for group in training],
             "training_receipts_sha256": semantic_sha256(inner.fit_receipts),
             "expert_evidence": {name: scores[name].record() for name in selected}})
+        if _producer_recorder is not None:
+            cache_key = semantic_sha256({
+                "authorized_calibration": [group.record() for group in training],
+                "expert_programs": [spec.record() for spec in selected_specs],
+                "ensemble_program": inner_program.record(),
+                "source_checkpoints": {name: source.digest for name, source in sources.items() if name in selected},
+                "device": str(device), "calibration_strategy": "fixed"})
+            _producer_recorder.record_oof_score(cache_key, held=held, training=training,
+                scores=scores, context=None if _producer_context is None else {
+                    **_producer_context, "phase": "temperature_oof_inner",
+                    "temperature_held_record_id": held.view.record_id,
+                })
     temperatures = {name: 1. for name in program.expert_ids}
     for name, rows in by_expert.items():
         log_probability = np.stack([row[0] for row in rows])

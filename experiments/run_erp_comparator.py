@@ -36,6 +36,7 @@ from data.study import (  # noqa: E402
     study_ids_for_identity,
 )
 from models.n2p3net import N2P3Net  # noqa: E402
+from research.b12_contract import validate_b12_execution_manifest  # noqa: E402
 from research.binary_probability import (  # noqa: E402
     binary_probability_metrics,
     export_binary_pools,
@@ -635,6 +636,8 @@ def _finalize_comparison(report, plan, output, tree):
         "completed_cells": sum(row["requested_K"] == budget and cells[row["cell_index"]]["status"] == "completed" for row in requests),
         "protocol_unavailable_cells": sum(row["requested_K"] == budget and cells[row["cell_index"]]["status"] == "protocol_unavailable" for row in requests),
         "failed_cells": sum(row["requested_K"] == budget and cells[row["cell_index"]]["status"] == "failed" for row in requests)} for budget in budgets]
+    if "seed_pairs" in plan:
+        report["b12_execution_binding"] = validate_b12_execution_manifest(report, plan)
     positive_budgets = [budget for budget in budgets if budget > 0]
     unresolved = [row for row in requests if row.get("participant_key") is None or row.get("study") is None]
     if unresolved:
@@ -1028,6 +1031,7 @@ class BinaryCloudProgramme:
             "budget_program": "owner_resolved_requests" if "seed_pairs" in self.plan else "exact_prepared_budget",
             "reuse": "deterministic_arm_predictions_with_bound_origin", "cells": [], "requested_participants": [],
             "participant_authority": {}, "source_seed_catalog": [], "matched_controls": [],
+            "input_manifests": _prefix_bindings(self.plan, self.plan_path),
             "omitted_unmatched_default_contrasts": {}, "execution_failures": [], "physical_target_fits_lower_bound": 0,
             "physical_target_fits_unknown": [], "actual_fit_score_cells": 0}
         catalog = {}
