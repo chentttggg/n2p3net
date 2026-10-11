@@ -136,4 +136,14 @@ B12 新增 `validate_b12_execution_manifest`，由 paired `run_erp_comparator._f
 
 独立审阅否证了作者65项通过的初版：保两份实际source records却同时删A02 participant与plan能缩分母；另将C labels改成另一合法candidate并真正重拟modern R模型，也能越过public admission。修后公共requested集合来自全部actual source CalibrationSelection，resolved与selection-failure由共享DecisionPlan完整分割；每个C target/label逐项核原owner。两攻击均在noise.fit之前拒绝，合法失败participant仍保宏分母。原RED、原65-body与修后身份分开，不累加成一组证据。
 
-修后作者16项、原独立主probe6项及专门admission3项通过；原wrong-label脚本因更早builder拒绝仍exit1，保原字节，另用旧wrong-label输入直接audit确认0fit拒绝。root逐读source、C、modern factor、held、指标及失败消费者后接受有限软件切片，Ruff/diff检查通过。两人四格诚实actual-owner synthetic输入完整fit/save/load/replay通过，不代表新native成绩。八原MAT的16格面板尚未执行；现代转换源码和root集成字节见[软件接受绑定](../assets/research_resume_20261011/p1_software_acceptance.json)。
+修后作者16项、原独立主probe6项及专门admission3项通过；原wrong-label脚本因更早builder拒绝仍exit1，保原字节，另用旧wrong-label输入直接audit确认0fit拒绝。root逐读source、C、modern factor、held、指标及失败消费者后接受有限软件切片，Ruff/diff检查通过。两人四格诚实actual-owner synthetic输入完整fit/save/load/replay通过，不代表新native成绩。八原MAT的16格面板随后完成，但16个held cell均因完整proper-prior/noise chart的数值可分辨性门记为typed `not_available`，概率覆盖0、paired NLL/Brier为空；这不是分类错误率读数。执行身份、8 anchor/16 noise fit、保存态零拟合失败重放和资源边界见[native面板绑定](../assets/research_resume_20261011/p1_native_panel_binding.json)。原面板完整执行说明保留在本地 `tmp/P1_NATIVE_20261011/attempt02_absolute_paths/`。
+
+## 缓存与共享评分独立复签
+
+source cache 与 shared programme score 已在科研主树 `4830ef9` 集成。修后 checkpoint 的 whole-study literal 权限只读私有 admitted source ledger；当前 target 的 physical、identity、execution 与 study proof 每次重核，source prototype 不缓存 target fit、BN、OOF 或 temperature。`FittedEnsemble.score_programs` 只在同一 current view、同一实际 experts tuple、fit receipts 与 target contract 下共享 raw score，fixed/grouped 仍分别应用自己的概率程序；capture 与 loaded future replay 各自真实计算，parent 保原混合准入。独立 authority/fresh-state/lifecycle probes 和两条真实 K0/full-C/OOF caller 路径通过，原权限绕过和失败日志保留。固定源码及证据边界见[独立复签 binding](../assets/research_resume_20261011/cache_shared_acceptance_binding.json)；这仍是软件/有限调用链验收，没有完整矩阵吞吐、跨host整包或公共效能声明。
+
+## P1 数值门诊断与小组协议评估
+
+16格 native panel 的失败主要来自全记录 `gamma_N`/nuisance/proper chart 的保守误差上界；实际 Q 正交误差约 `2e-13`，A01 dense 高精度密度差约 `1e-10`，对 nuisance 做可逆坐标变换后 density 逐bit不变而误差估计显著下降。当前建议是稳定、预声明的 nuisance basis 与 prefix/tail 局部误差界，不能直接放宽阈值或 fallback；详细只读诊断留在 `tmp/P1_CHART_DIAGNOSIS_20261011/HANDOFF.zh.md`。
+
+A01 原始 owner 的每个 selection 是120 flash、10 repetition；切成1/2/5 repetition时响应尾会覆盖未纳入 flash，且同一 selection 的 target pair不变。K200的后80 labels可成为另行声明的 right-censored C内训练记录，但不是第二个完整 selection；用它训练再评价更早完整 selection只能叫 offline backcast。单完整组可支持fixed baseline或预冻结source-global温度，不能把target grouped OOF下限直接降到1。详细边界见[小选择组评估](prefix_small_group_evaluation_20261011.zh.md)。

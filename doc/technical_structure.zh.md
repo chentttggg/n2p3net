@@ -16,6 +16,8 @@
 
 `prefix_inner_replay`已接该prefix入口及实际independent candidate caller：同run捕获final/inner专家、typed失败与future专家evidence，保存后核原模型fit binding、完整成功OOF与共同test scope，再封prediction。parent按每包一次准入并从捕获专家复算declared mixture，核最终概率/失败；requested alias与seed消费原views ledger。全prefix未来捕获前的中断仍为partial/unknown，不冒称全部已算输出可恢复。该前缀温度重放没有执行候选程序strict nested selection，见[复签范围](evidence/research_resume_20261011.zh.md#calibrationprefix保存重放与调用端复签)。
 
+2026-10-11 source cache 与 shared programme score 已接入当前 prefix 调用链（固定源码见[独立复签](evidence/research_resume_20261011.zh.md#缓存与共享评分独立复签)）：source prototype 只缓存一次准入的私有 source ledger/model，当前 target 的 physical、identity、execution 与 study proof 每次重核；不缓存 target fit/BN/OOF/temperature。`FittedEnsemble.score_programs` 只在同一 current view、同一实际 experts tuple、fit receipts 与 target contract 下共享 raw expert score，fixed/grouped 仍分别应用自己的概率程序；capture 与 loaded future replay 各自实际计算，C-inner fixed 不改。该接口没有实现 prefix 候选 strict nested 选择，也不改变旧 producer 身份。
+
 paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账本关系：requested K×arm×seed必须完整，coverage逐项匹配actual terminal status，source catalog保持唯一study/seed键并核plan checkpoint/procedure与producer seed/kind/study exclusion。失败actor缺失authority或source保持显式unresolved；completed NN/scratch cell必须有源凭证。聚合器拒绝同键冲突凭证；统计完成后才绑定最终report，摘要排除顶层binding以保持重复finalize幂等。物理raw/cache/checkpoint门继续由原入口持有，见[修后独立复签](evidence/research_resume_20261011.zh.md#b12最终账本修后复签)。
 
 `build_channel_noise_audit_manifest`与`audit_channel_noise_mechanism`的paired `/2`入口复用原public source owner和共享请求/指标：全source participants对应全requested roster，C target/labels对应原CalibrationSelection，modern mean/precision R/原Σ对应保存模型完整fit输入；两noise arm共用物理factor。shared/private AR8与prefix32的后续native矩阵另执行，不把软件反例或原noise的旧winner改签为公共成绩，见[P1入口验收](evidence/research_resume_20261011.zh.md#p1软件入口修后验收)。

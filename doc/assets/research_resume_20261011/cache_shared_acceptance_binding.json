@@ -1,0 +1,29 @@
+{
+  "schema": "n2p3_cache_shared_independent_acceptance/1",
+  "workspace": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net",
+  "baseline": "3886f4649fcce48e8ebb6b939fe9015cbc9af80f",
+  "source": {
+    "src/transfer/checkpoint.py": "78a7c1a6cf1737bce2f8a6f6b642672c222e209bf553047399cce1307edc97cb",
+    "src/transfer/ensemble_fit.py": "283d5fff4276afc7023362078d27811371d7b3cf28122eda01c4e2c99f2cc4ad",
+    "src/research/prefix_inner_replay.py": "ea25b42054bbd13cb99d36a1b5d387917cb30a88fd1852674e26f44ff39f9b93",
+    "experiments/run_candidate_ensemble_study.py": "a98bf794b9f2c168ef8b7a10b15f48d34f9a8d8e2ee3f12bae4cd39fc14dd0fc"
+  },
+  "evidence": {
+    "source_authority_adapted_results.json": "d5435b4dcf2b0a1d56db4df0a95f400acada412b4f27b41ac0c0fea24146fe6e",
+    "target_state_results.json": "6b0aa1697ffe3232545a7677bbd4dfa40bb7cb0b7bdba8f0ed4ddcd0de216e2b",
+    "shared_lifecycle_results.json": "5fc43f46c9b9eebd14b9034db03817929990ce9e1a595ee0385e9e3abcd58c51"
+  },
+  "report_sha256": "5e7476780127806398d77e99f52d3b2b73261b33f8fbc3a3ed8688d3e27c2240",
+  "execution_status": {
+    "original_probe_exit": 1,
+    "original_probe_reason": "readonly_setter_rejection_expected",
+    "adapted_authority_exit": 0,
+    "target_state_exit": 0,
+    "shared_lifecycle_exit": 0,
+    "k0_and_source_caller_pytest_exit": 0,
+    "ruff_exit": 0,
+    "diff_check_exit": 0
+  },
+  "source_stable": true,
+  "acceptance_scope": "immutable_source_authority_fresh_current_target_shared_current_view_prefix_lifecycle_software_only"
+}
