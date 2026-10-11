@@ -493,3 +493,8 @@ FZ/PO8保持缺导mask，使用实际native CZ重参考。512 Hz raw与128 Hz模
 主评价对每个原DecisionKey使用实际完整raw重复深度，按原participant与decision等权，
 不等权平均各R组。subject57 selection23完整R1进入主端点；额外2 flash对应的R2截断
 另存同key的secondary censor诊断，概率为空，不增加主episode或混入主分母。
+
+BI prepared loader从无标签future timeline重建原episode membership和global evidence映射，
+核对完整R、partial/censor、retained counts及各horizon prefix。scheduled完整性必须来自
+actual timeline；外部descriptor或cache SHA相同不能单独授予另一episode的EEG行。
+builder与loader消费同一schedule compiler，旧producer保存的horizon范围保持其原声明。

@@ -18,6 +18,11 @@
   "main_requested_keys": 1287,
   "main_available_keys": 1243,
   "main_incomplete_keys": 44,
+  "incomplete_by_subject": {"34": 1, "52": 43},
+  "actual_retained_calibration_labels": {"min": 57, "max": 372},
+  "raw_scheduled_calibration_labels": {"min": 60, "max": 372},
+  "participant_macro_probability_coverage": 0.9885145151772479,
+  "decision_micro_probability_coverage": 0.9658119658119658,
   "subject57_selection23_main_endpoint": "R1",
   "secondary_endpoint": "R2_terminal_partial",
   "secondary_endpoint_in_main_metrics": false,
@@ -41,6 +46,15 @@
   "actual_exit_path": "C:/Users/chent/.codex/worktrees/deep-research-plan/n2p3-net/tmp/public_dataset_queue01/queue.actual_exit.BI.json",
   "actual_exit_sha256": "a7868fadf97b38fb2344bcc77d423ebfa9a499f6063b5866e75a9ed1f169bf66",
   "complete_archive_sha256": "b374ec94daff7ca5fa17f8d60b2cc3006128d3a12d35966b3f9518904ddde469",
+  "independent_review": {
+    "verification_path": "tmp/BI_Q1_ACCEPTANCE/verification.json",
+    "verification_sha256": "affdcc0532ebd63a5733d5014e78233c18e62094057ea45120b717efffeae105",
+    "review_report_sha256": "bd96ab8aa75f43964b90aa5b32287e64416f6a233e4a286a5e7c4722605155d1",
+    "source_identity_verification_sha256": "13c269afd294a70076d33d14dc9f1e8d058226628c583ad2d81b4a4473b7e16d",
+    "locally_verified_archive_members": 676,
+    "model_deserializations": 0,
+    "new_fits_or_scores": 0
+  },
   "cloud_report_path": "DATA/cloud_live_20261012/public_dataset_queue01/BI2014a_q1/report.json",
   "scope": "public_calibration_development_not_adult_or_product_confirmation",
   "separate_from": "B12_label_K0_K200_K800_K2000_panel"

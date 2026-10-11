@@ -46,6 +46,10 @@ BNCI episode程序固定前5 selection C600、后30个原selection R10，与labe
 分开声明。只读loader重构物理schedule并核整个descriptor，外层R/count/censor不能改变
 同一个已封存schedule的解释。旧source/cache/model保持原producer，由各执行快照分别绑定。
 
+BI同样由`_prepared_future_decisions`从label-free timeline构建descriptor；load重建并核其
+episode、evidence rows、R/censor及horizon列表。C实际标签/episode、future原key与父truth
+key一并相连，未知schedule完整性不推断为完整R。新consumer不重写原prepared数值缓存。
+
 `research.dataset_queue`只拥有逐库声明、独立supervisor、所属进程树、真实退出和恢复绑定；
 `experiments/run_dataset_queue.py`是其命令行入口。每库科学CLI继续持有训练合同和数值验收，
 共享`CloudExecutor`在单库内部调度就绪准备、拟合与评估。队列不加载EEG、重新拟合模型或

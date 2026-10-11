@@ -91,7 +91,7 @@ cloud source07已报告原leave-BI2014a producer完成load/replay及排除审计
 
 Q1 已按首五个完整 raw episode 的 episode-budget 程序封库：61 人、三臂（`source_zero_shot`、`source_full_fine`、`matched_scratch`），183 个模型与183个 arm receipts，queue/science真实 exit 0，实际墙钟 257.6227 s，0 worker failure，owned process tree 终态为0。实际执行源码摘要为`8ddd3af9d3506448f543cf668f625e5952a3a2d048539f9133ef6b021c774226`，消费原leave-BI checkpoint `fc8d8cbd...`；原`4b075a2d...` source archive及producer保持自己的来源。
 
-主 1,287 个同 key 的逐 episode census 保留原始 R 分母：1,243 个可用，44 个 incomplete。subject57/selection23 的完整 R1 进入主指标；末尾 R2 保留为独立 secondary terminal ledger，R2 缺失不填入主端点，也不新增 episode。
+主1287个同key的逐episode census保留原始R分母：1243个可用，44个incomplete（subject34一个、subject52共43个）。宏概率覆盖为98.851%，micro覆盖为1243/1287=96.581%，两种权重分列。实际保留的C拟合标签为57–372，原raw首五episode安排为60–372。subject57/selection23完整R1进入主三臂指标，三臂均错；额外R2保持独立secondary null-probability账本。
 
 | arm | participant-macro hit（全部1287请求） | participant-macro NLL（1243有概率） |
 |---|---:|---:|
@@ -100,6 +100,10 @@ Q1 已按首五个完整 raw episode 的 episode-budget 程序封库：61 人、
 | matched_scratch | 0.1318186686 | 3.6243966579 |
 
 `source_full_fine−matched_scratch` 的 paired hit 差为 `+0.1089576317`，以每人的全部requested key为分母后跨61人平均；paired NLL差为`−0.5904800293`，在共同1243个有概率key上先人内再人际平均。全微调救回205段、损害70段，概率覆盖没有损失。这是本轮BI Q1公开校准开发读数，episode-budget与前述B12 label-K面板分别记录。报告位于云窗口主树`tmp/public_dataset_queue01/BI2014a/report.json`，queue/actual exit分别为其上级目录`queue_terminal.BI.json`和`queue.actual_exit.BI.json`；本地完整模型压缩包及云报告保持原位置，见[终态绑定](../assets/research_resume_20261011/bi_q1_queue_acceptance_binding.json)。
+
+独立审阅在本地流式核验完整676个归档成员的SHA与字节数、61×3模型/receipt、请求/实际fit身份及全部保存概率，未加载模型或重算EEG评分；三臂宏hit/NLL/Brier及配对效应与原报告一致。审阅另核实际529成员执行源码8ddd与原checkpoint/source角色，见`tmp/BI_Q1_ACCEPTANCE/verification.json`。
+
+新consumer审阅复现BI外部descriptor与actual timeline错映缺口；修后builder/load共用label-free schedule compiler，逐字段核episode、global evidence rows、R/censor和完整horizon prefixes。五个旧门反例先RED，再由新门拒绝；相关52项调用链验证及最终8项BI入口验证通过。原封库模型、缓存与报告保持原字节，原61cohort的实际映射另作零拟合只读核验。
 
 四个旧zero-shot分片在fit前因16-channel/causal缓存与source合同不符而拒绝，新增fit为0。新builder正接显式profile/channel owner；实际source的同名双向profile为`baseline=none`，个人默认常量的`mean_only`另保原用途。校准raw先隔离再零相位处理，缺FZ/PO8保slot mask且CZ必须实测；三臂调用继续核同architecture、固定mass风险及fresh-load重放。已完成22文件固定来源的独立审阅和零fit反例，完整本地handoff在`tmp/BI2014a_Q1_AUDIT/independent_audit.zh.md`，摘要及SHA并入上述队列计划。
 

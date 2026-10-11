@@ -494,6 +494,31 @@ class BI2014APreparedParticipant:
     ledger: dict
 
 
+def _prepared_future_decisions(future, maximum_horizon):
+    """Compile membership and every outer field from label-free scheduled rows."""
+    if type(maximum_horizon) is not int or maximum_horizon < 1:
+        raise ValueError("BI physical decision ledger requires a positive horizon declaration")
+    timeline = future.event_timeline
+    if not timeline.complete:
+        raise ValueError("BI physical decision ledger requires its known original schedule")
+    decisions, descriptors = [], []
+    for name in dict.fromkeys(timeline.selection_ids.tolist()):
+        rows = np.flatnonzero(timeline.selection_ids == name)
+        repetitions = int(timeline.repetition_indices[rows].max()) + 1
+        decision = MembershipDecision.row_column(timeline.stimulus_ids[rows], n_rows=6, n_columns=6,
+            event_ids=tuple(timeline.event_ids[rows]), repetition_indices=timeline.repetition_indices[rows],
+            repetitions=repetitions, evidence_indices=timeline.evidence_indices[rows], timeline_complete=timeline.complete)
+        full_depth = len(rows) // 12
+        decisions.append(decision)
+        descriptors.append({"episode_id": name, "scheduled_flashes": len(rows),
+            "retained_flashes": int(np.count_nonzero(timeline.evidence_indices[rows] >= 0)),
+            "complete_raw_repetitions": full_depth, "terminal_partial_flashes": len(rows) % 12,
+            "terminal_censor": len(rows) % 12 != 0, "membership_decision": decision.record(),
+            "horizons": [{"repetitions": horizon, "decision": decision.prefix(horizon).record()}
+                         for horizon in range(1, min(full_depth, maximum_horizon) + 1)]})
+    return tuple(decisions), descriptors
+
+
 def build_bi2014a_prepared_participant(subject_dir: str | Path, *, preprocessing: PreprocessingSpec,
         calibration_episode_count: int = 5, output_channels: tuple[str, ...] = ("FZ", "P3", "PZ", "P4", "PO8", "OZ"),
         observed_raw_channels: tuple[str, ...] = ("P3", "PZ", "P4", "OZ"), reference_channel: str = "CZ",
@@ -522,28 +547,10 @@ def build_bi2014a_prepared_participant(subject_dir: str | Path, *, preprocessing
     calibration = select_scheduled_events(dataset, c_mask, reason="authorized_complete_raw_episode_calibration")
     future = select_scheduled_events(dataset, f_mask, reason="common_future_after_declared_episode_budget")
     truths = {}
-    decisions, descriptors = [], []
     for name in future_ids:
-        rows = np.flatnonzero(future.event_timeline.selection_ids == name)
-        t = future.event_timeline
-        stimuli = np.asarray([BI2014A_FLASH_SCHEDULE.decode(code).candidate_index +
-            (6 if BI2014A_FLASH_SCHEDULE.decode(code).axis == "column" else 0) for code in t.stimulus_ids[rows]])
-        repetitions = int(t.repetition_indices[rows].max()) + 1
-        decision = MembershipDecision.row_column(stimuli, n_rows=6, n_columns=6,
-            event_ids=tuple(t.event_ids[rows]), repetition_indices=t.repetition_indices[rows],
-            repetitions=repetitions, evidence_indices=t.evidence_indices[rows], timeline_complete=True)
-        decisions.append(decision)
-        full_depth = len(rows) // 12
         known = dataset.metadata[dataset.metadata.selection_id == name]
         target = None if known.empty else int(known.target_row.iloc[0] * 6 + known.target_col.iloc[0])
         truths[name] = target
-        descriptors.append({"episode_id": name, "scheduled_flashes": len(rows),
-            "retained_flashes": int(np.count_nonzero(t.evidence_indices[rows] >= 0)),
-            "complete_raw_repetitions": full_depth, "terminal_partial_flashes": len(rows) % 12,
-            "terminal_censor": len(rows) % 12 != 0,
-            "membership_decision": decision.record(),
-            "horizons": [{"repetitions": horizon, "decision": decision.prefix(horizon).record()}
-                         for horizon in range(1, min(full_depth, maximum_horizon) + 1)]})
     # Public CSV codes 60/80 encode truth. Future inference receives only the
     # physical row/column flash-set index; raw codes and label audits stay with
     # the scientific parent, not the inference dataset.
@@ -556,6 +563,7 @@ def build_bi2014a_prepared_participant(subject_dir: str | Path, *, preprocessing
                                               "flash_code", "selection_boundary_reason"]),
         provenance={key: value for key, value in future.provenance.items() if key != "flash_schedule"})
     future.validate(require_labels=False)
+    decisions, descriptors = _prepared_future_decisions(future, maximum_horizon)
     scopes = dataset.provenance["raw_episode_scopes"]
     c_scope = [row for row in scopes if row["name"] in calibration_ids]
     f_scope = [row for row in scopes if row["name"] in future_ids]
@@ -564,6 +572,7 @@ def build_bi2014a_prepared_participant(subject_dir: str | Path, *, preprocessing
         "model_input_sample_rate_hz": preprocessing.sfreq, "preprocessing": preprocessing.record(),
         "observed_spatial_projection": dataset.provenance["observed_spatial_projection"],
         "calibration_episode_count": calibration_episode_count, "calibration_episode_ids": list(calibration_ids),
+        "maximum_horizon": maximum_horizon,
         "actual_calibration_labels": calibration.n_epochs, "requested_calibration_flashes": calibration.event_timeline.n_events,
         "future_episode_ids": list(future_ids), "future_requested_flashes": future.event_timeline.n_events,
         "calibration_raw_scopes": c_scope, "future_raw_scopes": f_scope,
@@ -589,7 +598,24 @@ def load_bi2014a_prepared_participant(directory: str | Path) -> BI2014APreparedP
     calibration = load_epoch_dataset(directory / "calibration.npz", require_labels=True)
     future = load_epoch_dataset(directory / "future.npz", require_labels=False)
     if (future.y is not None or not set(future.event_timeline.stimulus_ids).issubset(range(12))
+            or np.any(future.event_timeline.target_candidate_ids != "")
             or {"flash_code", "raw_target_label", "target_row", "target_col", "raw_is_target"} & set(future.metadata)):
         raise ValueError("BI future cache exposes target labels instead of physical flash sets")
-    decisions = tuple(MembershipDecision.from_record(row["membership_decision"]) for row in ledger["future_decisions"])
+    # Older producers saved the actual horizon list rather than its ceiling.
+    # Retain that declared extent while rebuilding every descriptor from the
+    # numeric cache's actual timeline; no original cache or producer is changed.
+    maximum_horizon = ledger.get("maximum_horizon")
+    if maximum_horizon is None:
+        maximum_horizon = max((row["repetitions"] for descriptor in ledger["future_decisions"]
+                               for row in descriptor["horizons"]), default=1)
+    decisions, descriptors = _prepared_future_decisions(future, maximum_horizon)
+    c_ids = list(dict.fromkeys(calibration.event_timeline.selection_ids.tolist()))
+    f_ids = list(dict.fromkeys(future.event_timeline.selection_ids.tolist()))
+    if (descriptors != ledger["future_decisions"] or f_ids != ledger["future_episode_ids"]
+            or set(ledger["parent_scoring_truth"]) != set(f_ids)
+            or c_ids != ledger["calibration_episode_ids"] or len(c_ids) != ledger["calibration_episode_count"]
+            or calibration.n_epochs != ledger["actual_calibration_labels"]
+            or calibration.event_timeline.n_events != ledger["requested_calibration_flashes"]
+            or future.event_timeline.n_events != ledger["future_requested_flashes"]):
+        raise ValueError("BI prepared pair differs from its original physical decision ledger")
     return BI2014APreparedParticipant(calibration, future, decisions, ledger)
