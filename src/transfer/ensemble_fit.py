@@ -18,6 +18,7 @@ from models.candidate_evidence import (
     CandidateExpertIdentity,
     membership_decision_scores,
 )
+from research.cloud_execution import worker_compute_phase
 from research.contracts import semantic_sha256
 from research.execution import (
     ExpectedSubjectError,
@@ -826,8 +827,11 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
             predictor = FrozenTrialPredictor.from_source(prepared, subject)
             offset = 0.
         else:
-            fitted = fit_calibration_candidate(data, spec.recipe, np.ones(data.n_epochs, dtype=bool),
-                source_trunk=source_trunk, source_input_stats=source_stats, device=device)
+            compute_device = (device if spec.recipe.initialization in
+                {"source", "scratch", "source_feature_lda"} else "cpu")
+            with worker_compute_phase(compute_device):
+                fitted = fit_calibration_candidate(data, spec.recipe, np.ones(data.n_epochs, dtype=bool),
+                    source_trunk=source_trunk, source_input_stats=source_stats, device=device)
             predictor = FrozenTrialPredictor.from_fitted(fitted)
             offset = 0.
     else:

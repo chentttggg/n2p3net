@@ -10,6 +10,8 @@
 
 BI2014a按库队列由云端推进，数据准备、模型、结果和终态各自持久化；一库完成后解锁下一库。科研日常seed为20260918，大版本使用三个完整独立程序。资源owner传递25 CPU总预算和至少4 GPU容量，真实ready work与阶段资源决定并发；本机合计CPU低于80%。
 
+云端资源交付`c916de4`已逐函数审阅并合入科研树`e0832c5`：显式native+interop预算、FIFO延迟GPU准入、完整进程树退出后释放及nested artifact并发峰值登记。科研随后把candidate的compute phase集中到`ensemble_fit._fit_expert`真实神经拟合接点，覆盖新增prefix selector内部拟合，并避免K0/不可用分支提前取得GPU。原云49项验证保原源码；本地资源与prefix相关验证通过，新增两例分别穿过真实神经group-LOO和完整prefix selector，核实际12/8/8/8及196行。Linux后代退出与tmpfs两例由原云证据验证，本机按平台跳过；没有重复本地全套测试。
+
 近期旧日期页已经先物理归档、逐member验证，再合并为四个主题页；原binding、MAT、缓存、模型和结果保持原位置。源页面恢复方式见[主题整理历史清单](../../frozen/research_topic_documents_history.manifest.json)。后续研究结论更新主题页，代码使用方式更新原六指南。
 
 ## 恢复身份与文件所有权

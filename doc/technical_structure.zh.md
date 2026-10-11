@@ -18,6 +18,8 @@
 
 后续opt-in整程序选择已经接通：`CalibrationPrefixCompiler`从verified原MAT bytes唯一解析，`fit_nested_prefix_selection`在各真实更早P_h/P_v执行完整原A(P)，`prefix_selection_replay`保存并重放同run graph。`prefix_inner_replay/2`将原生raw/trial输入及inner原始operands连回compiler；唯一temperature owner只读复核原OOF有限meta学习结果。公共caller的selected输出在整future保存/实际graph重放后封预测，parent重编scope并重算概率；selector独立持有started/failed/partial账本。当前代码/接口与源绑定见[整程序接线](evidence/calibration_and_selection.zh.md#整程序接线与复签)。
 
+ensemble神经计算的资源接点集中于`_fit_expert`实际神经fitter调用前，覆盖普通final、group-LOO、完整prefix选择及其inner learner。source准备仍在CPU，source-only K0不调用神经fitter；冻结候选评分和保存重放使用CPU。`CloudExecutor`拥有首次CUDA准入及完整进程树的资源释放，科学配方和拟合输入由原ensemble owner持有。
+
 2026-10-11 source cache 与 shared programme score 已接入当前 prefix 调用链（固定源码见[独立复签](evidence/execution_and_integration.zh.md#缓存与共享评分独立复签)）：source prototype 只缓存一次准入的私有 source ledger/model，当前 target 的 physical、identity、execution 与 study proof 每次重核；不缓存 target fit/BN/OOF/temperature。`FittedEnsemble.score_programs` 只在同一 current view、同一实际 experts tuple、fit receipts 与 target contract 下共享 raw expert score，fixed/grouped 仍分别应用自己的概率程序；capture 与 loaded future replay 各自实际计算，C-inner fixed 不改。该接口没有实现 prefix 候选 strict nested 选择，也不改变旧 producer 身份。
 
 paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账本关系：requested K×arm×seed必须完整，coverage逐项匹配actual terminal status，source catalog保持唯一study/seed键并核plan checkpoint/procedure与producer seed/kind/study exclusion。失败actor缺失authority或source保持显式unresolved；completed NN/scratch cell必须有源凭证。聚合器拒绝同键冲突凭证；统计完成后才绑定最终report，摘要排除顶层binding以保持重复finalize幂等。物理raw/cache/checkpoint门继续由原入口持有，见[修后独立复签](evidence/execution_and_integration.zh.md#b12最终账本修后复签)。
