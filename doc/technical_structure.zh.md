@@ -38,6 +38,14 @@ paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账
 
 完整episode指标通过`evaluate_candidate_evidence(..., requested_evidence_levels={DecisionKey: actual_R})`接入；其规范化不可变计划包含全部requested keys及缺失输出，并绑定原DecisionPlan digest。`transfer.outcomes`按每key唯一R记账，各R保自身分母，整体和participant风险仍用原episode；paired compare核完整horizon计划。原scalar fixed-R入口继续消费其原cross-product。预算、raw scope与实际R由reader/caller冻结，详见[逐任务horizon](evidence/public_evaluation.zh.md#逐任务horizon接口)。
 
+`research.trial_candidate_programme`是固定三trial专家的共同程序owner：dataset adapter提供
+已封存C/future、原raw decision与父truth，程序统一编译逐key实际horizon、调用CloudExecutor、
+核逐人模型/概率产物并输出matched-control contrast。BI与BNCI的CLI都调用这一实现，
+source整库排除来自显式dataset_id；原参与者目录身份保留，不将A01猜作数字别名。
+BNCI episode程序固定前5 selection C600、后30个原selection R10，与label-K prefix selector
+分开声明。只读loader重构物理schedule并核整个descriptor，外层R/count/censor不能改变
+同一个已封存schedule的解释。旧source/cache/model保持原producer，由各执行快照分别绑定。
+
 `research.dataset_queue`只拥有逐库声明、独立supervisor、所属进程树、真实退出和恢复绑定；
 `experiments/run_dataset_queue.py`是其命令行入口。每库科学CLI继续持有训练合同和数值验收，
 共享`CloudExecutor`在单库内部调度就绪准备、拟合与评估。队列不加载EEG、重新拟合模型或
