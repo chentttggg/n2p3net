@@ -1,6 +1,6 @@
 {
   "schema": "n2p3_cross_dataset_queue_plan/1",
-  "status": "target_preflight_complete_source_owner_missing",
+  "status": "target_preflight_complete_source_owner_found_contract_verification_pending",
   "queue": [
     {
       "dataset_id": "BI2014a",
@@ -9,8 +9,14 @@
       "target_owner": "data.bi2014a_candidate + experiments.prepare_bi2014a_candidate",
       "candidate_task": "p300_row_column_speller_6x6",
       "runner_owner": "experiments.run_candidate_cross_decision",
-      "source_owner": "SourceSeedCatalog entry outer_target_study=BI2014a/source_seed=20260918",
-      "source_resolution": "source07 catalog search returned no outer_target_study=BI2014a checkpoint; prepare leave_BI2014a source owner before target fitting",
+      "source_resolution": "source07 catalog now resolves an existing leave_BI2014a checkpoint; verify source snapshot, roster, task and target exclusion before fitting",
+      "source_owner": {
+        "outer_target_study": "BI2014a",
+        "source_seed": 20260918,
+        "checkpoint_sha256": "fc8d8cbdef405263ff9c233e592755ceeeb2264bc8287800b8b2ffacfb199c02",
+        "procedure": "selection_refit",
+        "verification_status": "pending_source_snapshot_and_target_exclusion"
+      },
       "target_preflight": {
         "target_manifest_sha256": "9d939e16a75f8e6297ad856ea63b6d5adbd69694aeae03b79ec9d98d4f96ede4",
         "target_preparation_sha256": "e656ce30e5f2991776b1873064d8ef5a5ca69bd9c21a50be286975d1a4d3e85b",
@@ -19,7 +25,7 @@
         "model_sample_rate_hz": 128.0,
         "model_n_times": 179,
         "files": 976,
-        "source_catalog_search": "empty",
+        "source_catalog_search": "resolved_leave_BI2014a_checkpoint",
         "target_fit_started": false
       },
       "preflight": [
@@ -47,5 +53,5 @@
   ],
   "dataset_order_policy": "finish and seal each dataset artifacts before unlocking the next; later failure cannot overwrite completed dataset",
   "old_results": "do not reuse or resign historical four-study/candidate results",
-  "next_action": "compile and fit a fresh source program excluding BI2014a under the same 20260918 seed before unlocking target arms"
+  "next_action": "verify existing leave_BI2014a source producer and bind a new BI2014a target plan before unlocking target arms"
 }
