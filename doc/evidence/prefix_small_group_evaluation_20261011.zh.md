@@ -15,7 +15,7 @@
 
 小块仍属于同一 target decision，且同一个连续记录的响应窗口受相邻未知 flash 影响。若缩短响应尾、忽略邻居或把相同 target pair 的 repetitions 当作独立 OOF 组，就改变了输入支持、AR/nuisance 模型和重复测量单位。现有 `prepare_bnci_calibration_groups` 因此要求完整 120 flash selection，并核对前后未知事件、raw scope 不重叠和完整 membership。
 
-一个完整组足以做 fixed baseline 的目标拟合：以 K200 为例，可以使用最早完整 120-label selection，保留后面的 80 个请求标签为 unused/partial，固定温度 `T=1`。它不能支持当前 grouped temperature，因为 grouped 的 leave-one-group-out 在唯一组被留出后没有任何训练组；把门槛从 3 改成 1 只会把“无 OOF 训练数据”改写成可运行的错误协议。
+一个完整组足以做 fixed baseline 的目标拟合：以 K200 为例，可以使用最早完整 120-label selection，保留后面的 80 个请求标签为 unused/partial，固定温度 `T=1`。此时必须记录 `requested_K=200`、`actual_fit_K=120` 和明确的 budget adjustment，不能把它报告成 200-label fit。若把连续 raw/partial adapter 的80个后缀也纳入拟合，AR/Z/response authority已经改变，必须注册为另一个程序身份。它不能支持当前 grouped temperature，因为 grouped 的 leave-one-group-out 在唯一组被留出后没有任何训练组；把门槛从 3 改成 1 只会把“无 OOF 训练数据”改写成可运行的错误协议。
 
 这80个后缀不是抽象的“缺80标签”：A01实际 suffix event indices 为120–199，raw scope `[11477,16648)`，80个flash中14个target/66个non-target，末尾4个事件right-censored；continuous记录仍有5139个 conditioning32之后的行，trial侧只有76个完整epoch（13/63）。它与前一个完整selection有1753 samples的raw gap。whole-C先预处理再删行会让held输入最大变化 `3.26665e-6 V`，所以partial scope必须先从原始MAT裁剪再独立执行预处理；当前 `CalibrationPrefix`/complete-group API不能直接接它。普通 event-level trial recipe 在数学上可处理这些76行，但含 `candidate_loss_weight` 的现有 calibration decision-group 路径会拒绝 incomplete schedule；因此它仍不能直接进入当前 36-choice candidate loss、temperature 或 scorer。
 
