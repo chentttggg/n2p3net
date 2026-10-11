@@ -163,8 +163,23 @@ def _decisions(future):
     return tuple(MembershipDecision.row_column(timeline.stimulus_ids[rows], n_rows=6, n_columns=6,
         event_ids=tuple(timeline.event_ids[rows]), repetition_indices=timeline.repetition_indices[rows],
         repetitions=BNCI2014_008_REPETITIONS_PER_SELECTION, evidence_indices=timeline.evidence_indices[rows],
-        timeline_complete=True) for selection in dict.fromkeys(timeline.selection_ids.tolist())
+        timeline_complete=timeline.complete) for selection in dict.fromkeys(timeline.selection_ids.tolist())
         for rows in [np.flatnonzero(timeline.selection_ids == selection)])
+
+
+def _decision_descriptors(future, decisions):
+    """Derive the compiler's outer fields from the actual physical schedule."""
+    episode_ids = tuple(dict.fromkeys(future.event_timeline.selection_ids.tolist()))
+    descriptors = []
+    for episode, decision in zip(episode_ids, decisions, strict=True):
+        if not decision.schedule_complete:
+            raise ValueError("BNCI actual future schedule lacks its complete original R10 selection")
+        descriptors.append({"episode_id": episode, "scheduled_flashes": len(decision.event_ids),
+            "retained_flashes": int(np.count_nonzero(decision.evidence_indices >= 0)),
+            "complete_raw_repetitions": decision.repetitions, "primary_horizon": decision.repetitions,
+            "terminal_partial_flashes": len(decision.event_ids) % len(decision.stimulus_vocabulary),
+            "terminal_censor": not decision.schedule_complete, "membership_decision": decision.record()})
+    return descriptors
 
 
 def build_bnci_trial_prepared_participant(record: BNCI2014008CandidateRecord, *,
@@ -230,7 +245,8 @@ def load_bnci_trial_prepared_participant(directory: str | Path) -> BNCITrialPrep
             or np.any(future.event_timeline.target_candidate_ids != "")):
         raise ValueError("BNCI future cache exposes target labels instead of physical flash sets")
     decisions = _decisions(future)
-    if ([decision.record() for decision in decisions] != [row["membership_decision"] for row in ledger["future_decisions"]]
+    expected_descriptors = _decision_descriptors(future, decisions)
+    if (json.dumps(expected_descriptors, sort_keys=True) != json.dumps(ledger["future_decisions"], sort_keys=True)
             or list(dict.fromkeys(future.event_timeline.selection_ids.tolist())) != ledger["future_episode_ids"]
             or set(ledger["parent_scoring_truth"]) != set(ledger["future_episode_ids"])
             or len(decisions) != BNCI2014_008_SELECTION_COUNT - BNCI_TRIAL_CALIBRATION_EPISODES

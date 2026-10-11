@@ -10,7 +10,11 @@ from scipy.io import savemat
 
 from data import bnci_trial_preparation as preparation
 from data.bnci2014_008_candidate import read_bnci2014_008_candidate_record
-from data.epochs import preprocessing_spec_from_contract, save_epoch_dataset
+from data.epochs import (
+    preprocessing_spec_from_contract,
+    save_epoch_dataset,
+    select_scheduled_events,
+)
 from data.preprocess import RawSampleScope
 from tests.support.bnci import bnci_mat_fields
 
@@ -150,6 +154,43 @@ def test_sealed_descriptor_must_match_actual_evidence_axis(tmp_path, prepared):
     (tmp_path / "preparation.json").write_text(json.dumps(ledger))
     with pytest.raises(ValueError, match="physical decision ledger"):
         preparation.load_bnci_trial_prepared_participant(tmp_path)
+
+
+@pytest.mark.parametrize(("field", "replacement"), [
+    ("episode_id", "different-original-selection"),
+    ("scheduled_flashes", 119),
+    ("retained_flashes", 119),
+    ("complete_raw_repetitions", 8),
+    ("primary_horizon", 8),
+    ("terminal_partial_flashes", 2),
+    ("terminal_censor", True),
+    ("primary_horizon", 10.0),
+    ("terminal_censor", 0),
+])
+def test_sealed_outer_descriptor_must_match_actual_schedule(tmp_path, prepared, field, replacement):
+    ledger = json.loads(json.dumps(_seal(tmp_path, prepared)))
+    ledger["future_decisions"][0][field] = replacement
+    (tmp_path / "preparation.json").write_text(json.dumps(ledger))
+    with pytest.raises(ValueError, match="physical decision ledger"):
+        preparation.load_bnci_trial_prepared_participant(tmp_path)
+
+
+def test_descriptor_compiler_keeps_raw_r10_when_all_episode_eeg_is_missing(prepared):
+    future = prepared.future
+    scoped = select_scheduled_events(future,
+        future.event_timeline.selection_ids != future.event_timeline.selection_ids[0],
+        reason="entire_future_episode_eeg_unavailable_counterexample", preserve_schedule=True)
+    descriptors = preparation._decision_descriptors(scoped, preparation._decisions(scoped))
+    assert descriptors[0]["scheduled_flashes"] == 120
+    assert descriptors[0]["retained_flashes"] == 0
+    assert descriptors[0]["complete_raw_repetitions"] == descriptors[0]["primary_horizon"] == 10
+    assert descriptors[0]["terminal_censor"] is False
+
+
+def test_descriptor_compiler_cannot_invent_timeline_completeness(prepared):
+    future = replace(prepared.future, event_timeline=replace(prepared.future.event_timeline, complete=False))
+    with pytest.raises(ValueError, match="actual future schedule"):
+        preparation._decision_descriptors(future, preparation._decisions(future))
 
 
 def test_source_none_baseline_is_not_replaced_by_product_mean_only(record, profile):
