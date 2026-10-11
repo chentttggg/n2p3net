@@ -17,11 +17,14 @@ from tests.support.raw_prefix import write_real_record
 def manifest_fixture(*, public=False):
     plan = {"schema": "n2p3_erp_comparator_plan/1", "subjects": ["p"], "budgets": [200, 800],
             "arms": [{"name": "nn", "family": "full_fine"}], "seed_pairs": [[11, 21]],
-            "source_seed_catalog": [{}], "evidence_scope": "public_development" if public else "software_correctness"}
-    producer = {"kind": "selection_refit", "source_seed": 11, "source_studies": ["source"]}
+            "source_seed_catalog": [{"outer_target_study": "target", "source_seed": 11,
+                "sha256": "a" * 64, "procedure": {"kind": "selection_refit"}}],
+            "evidence_scope": "public_development" if public else "software_correctness"}
+    producer = {"kind": "selection_refit", "selection": "per_source_seed",
+                "source_seed": 11, "source_studies": ["source"]}
     source = {"outer_target_study": "target", "source_seed": 11, "checkpoint_sha256": "a" * 64,
               "procedure": {"kind": "selection_refit"}, "producer": producer,
-              "producer_digest": semantic_sha256(producer)}
+              "producer_digest": semantic_sha256(producer), "source_studies": ["source"]}
     cell = {"subject": "p", "arm": "nn", "K": 160, "actual_K": 160, "requested_K": 200,
             "requested_Ks": [200, 800], "source_seed": 11, "target_seed": 21, "status": "completed"}
     report = {"schema": "n2p3_erp_comparator_result/2", "seed_pairs": [[11, 21]], "cells": [cell],
@@ -82,6 +85,67 @@ def test_software_fixture_does_not_invent_public_producer_identity():
         report["source_seed_catalog"][0].pop(field)
     binding = validate_b12_execution_manifest(report, plan)
     assert binding["source_producers"][0]["producer_digest"] is None
+
+
+@pytest.mark.parametrize("mutation", ["false_coverage", "failed_cell", "duplicate_source", "checkpoint",
+    "source_seed", "kind", "target_study", "study_mirror"])
+def test_bound_report_requires_consistent_terminal_and_source_facts(mutation):
+    plan, report = manifest_fixture(public=True)
+    source = report["source_seed_catalog"][0]
+    if mutation == "false_coverage":
+        report["requested_budget_coverage"][0].update(completed_cells=0, failed_cells=1)
+    elif mutation == "failed_cell":
+        report["cells"][0].update(status="failed", error="actual numerical failure")
+    elif mutation == "duplicate_source":
+        report["source_seed_catalog"].append(copy.deepcopy(source))
+    elif mutation == "checkpoint":
+        source["checkpoint_sha256"] = "d" * 64
+    elif mutation == "source_seed":
+        source["producer"]["source_seed"] += 1
+    elif mutation == "kind":
+        source["producer"].update(kind="fixed_recipe", selection="not_applicable")
+    elif mutation == "target_study":
+        source["producer"]["source_studies"].append("target")
+        source["source_studies"] = source["producer"]["source_studies"]
+    else:
+        source["source_studies"] = ["different_source"]
+    source["producer_digest"] = semantic_sha256(source["producer"])
+    with pytest.raises(ValueError, match="B12"):
+        validate_b12_execution_manifest(report, plan)
+
+
+def test_unresolved_peer_cannot_remove_a_completed_peers_source():
+    plan, report = manifest_fixture(public=True)
+    plan["subjects"].append("unresolved")
+    failed = copy.deepcopy(report["cells"][0])
+    failed.update(subject="unresolved", status="failed", error="worker exited before preparation")
+    report["cells"].append(failed)
+    report["requested_participants"].extend({**request, "subject": "unresolved", "cell_index": 1}
+        for request in list(report["requested_participants"]))
+    for coverage in report["requested_budget_coverage"]:
+        coverage.update(requested_cells=2, failed_cells=1)
+    assert validate_b12_execution_manifest(report, plan)["status"] == "unresolved_target_authority"
+    report["source_seed_catalog"] = []
+    with pytest.raises(ValueError, match="required source producer"):
+        validate_b12_execution_manifest(report, plan)
+
+
+def test_failed_known_target_retains_missing_source_as_unresolved():
+    plan, report = manifest_fixture(public=True)
+    report["cells"][0].update(status="failed", error="source dependency unavailable")
+    for coverage in report["requested_budget_coverage"]:
+        coverage.update(completed_cells=0, failed_cells=1)
+    report["source_seed_catalog"] = []
+    binding = validate_b12_execution_manifest(report, plan)
+    assert binding["status"] == "unresolved_source_producers"
+    assert binding["unresolved_source_producers"] == [{"outer_target_study": "target", "source_seed": 11}]
+
+
+def test_report_binding_digest_excludes_previous_binding():
+    plan, report = manifest_fixture()
+    first = validate_b12_execution_manifest(report, plan)
+    report["b12_execution_binding"] = first
+    assert validate_b12_execution_manifest(report, plan) == first
 
 
 def test_failed_actor_preserves_denominators_and_unresolved_authority():

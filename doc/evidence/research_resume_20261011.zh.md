@@ -79,3 +79,13 @@ B12 新增 `validate_b12_execution_manifest`，由 paired `run_erp_comparator._f
 从已接受 `cf48f78` 物理导出源码，在原 A01 MAT（SHA `cdf9bca4…`）的授权 C800 中拟合六个完整组，实际使用720 group labels。原 harness 在有效模型已保存后错误地重评 calibration views，被原 `ensemble prediction repeats a calibration observation` 门正确拒绝。模型状态没有因此失效；没有放宽该门。
 
 修后使用原 independent-prefix owner 的 C800 之后 future queue，只消费 label-free view，不读取 queue truth 选择程序。重放保留全部29 requested decisions，其中28有合法概率，1项不可用仍在分母；原模型→重新保存→加载的证据29/29一致，三份package文件逐字节相同，纠正过程中新增拟合0。这个结果是公开数据上的软件保存重放证据，不报告hit/NLL或新效能。原失败日志、原包和修后消费者身份各自保留，详见[紧凑绑定](../assets/research_resume_20261011/native_nested_replay_binding.json)。
+
+## B12最终账本修后复签
+
+独立审阅否证了此前manifest初版：coverage只核总数、重复source键消失、可重签的producer声明与plan不一致、unresolved peer掩盖completed peer缺源，以及statistics之后的report不在摘要内、重复finalize滚动绑定旧摘要。原RED、原probe和历史producer保留；本轮修复后才重新接受对应关系，不能沿用初版的通过数量作修后证据。
+
+修后coverage逐bucket核实际referenced cell终态；source catalog拒绝重复和foreign study/seed，checkpoint/procedure与plan一致，public producer的seed/kind/selection/source-study mirror及target exclusion互核。failed actor的缺失source保持显式`unresolved_source_producers`，completed NN/scratch cell缺源直接拒绝。participant聚合遇到同键不同完整凭证拒绝，相同凭证可合并。最终statistics写完后绑定report，摘要排除顶层`b12_execution_binding`，重复finalize不消费旧binding。
+
+原独立15项探针字节未改，修后15 PASS、exit0；真实source7 selection/refit（inner3/refit2）及unresolved-peer正控仍通过。实际paired waveform serial finalizer保留8 requested aliases、6 resolved cells；首次最终report、去binding独立canonical和repeat-finalize摘要均为`13d3bb70…`。正式B12合同与actual caller22项通过。另从`e9ef642`导出不可变副本，仅覆盖本轮B12三文件，对实际spawned participant部分失败、全失败及source dependency unreachable三个聚合路径验证通过；未混入并发prefix WIP。各命令退出码0，相关Ruff与diff检查通过。source/file/日志摘要和实际coverage见[紧凑绑定](../assets/research_resume_20261011/b12_postfix_binding.json)。
+
+总监逐读最终manifest、serial finalizer与participant聚合调用链后接受这组软件关系。聚合冲突分支由源码审阅确认，不冒称独立15案例实测；本轮未重新认证原始source fit/cache或完整checkpoint，跨阶段门继续消费原物理入口已核的凭证。这些证据不代表完整公共矩阵、公共效能或成人确认。CalibrationPrefix/public caller接线仍待另外的输入、OOF、common-test及保存重放反例闭合。

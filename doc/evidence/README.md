@@ -3,6 +3,7 @@
 - [2026-10-11科研恢复与集成](research_resume_20261011.zh.md)：恢复快照后的 B03 严格 nested/source-study、B07 `/4` native 字典、B09 source-group 空间先验与同 producer QR/df 修复；记录 exact structural null、保存语义门、实际调用链和未完成边界。仅为 bounded software/C-development evidence，不是公共效能或成人确认。
 
 - [2026-10-11 P0 续接：inner replay 与 B12 runner](research_resume_20261011.zh.md#p0续接)：B03 同一次 nested run 的 inner producer capture/replay、B12 requested roster/alias/failure/source producer manifest 门禁，以及 FrozenTrial list/tuple 合同修复；完整 source→target execution 仍未签收。
+- [2026-10-11 B12最终账本修后复签](research_resume_20261011.zh.md#b12最终账本修后复签)：原15项独立探针修后通过、actual terminal coverage与source声明关系恢复、真实serial最终report与重复finalize摘要一致；接受范围为跨阶段软件关系。
 
 - [2026-10-10愿望清单当前进展](wishlist_progress_20261010.zh.md)：123项实际出口分层、置信度/固定graph/评分数值的科研树整合，selection随机效应与真实OOF接点，以及多家族字典、空间收缩、时间shape/ERP-span的下一切片；原公共执行来源与效能边界保留。
 

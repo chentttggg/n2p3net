@@ -6,13 +6,15 @@
 
 `ResponseDictionarySpec("bspline", duration, k, endpoint)`编译固定cubic/open-clamped/uniform字典，free或hard-value消费同ambient与interior selector。原`dictionary_artifact`唯一owner的 `/3`核exact rational表达，Gaussian/cosine仍 `/2`；同五数组进入已有prior/geometry/continuous/ensemble/OOF与保存链。cubic非零shift/width及off-grid导数尚unsupported，零状态直接消费保存native矩阵。
 
-`FittedEnsemble.oof_probability_record`持有原grouped温度循环实际返回的完整C-only概率、inner producer identities及final program关联；原ensemble包保存该immutable记录，模型既有fit-binding锚定OOF digest与OOF前base数值身份。fixed/grouped共享同一final专家tuple；actual K与完整OOF标签剂量分开。不持久保存inner模型，不凭final模型回推原inner评分，不将全C OOF改称nested选择。
+`FittedEnsemble.oof_probability_record`持有原grouped温度循环实际返回的完整C-only概率、inner producer identities及final program关联；原ensemble包保存该immutable记录，模型既有fit-binding锚定OOF digest与OOF前base数值身份。fixed/grouped共享同一final专家tuple；actual K与完整OOF标签剂量分开。完整组nested研究入口可显式使用`InnerReplayRecorder`保存同一次run的实际inner模型和评分并零拟合重放；不从final模型回推原inner评分，不将全C OOF改称nested选择。CalibrationPrefix/public consumer的相应接线仍待独立复签。
 
 [当前消费者](evidence/current_public_consumers_20261008.zh.md)由class_calibration持有fit风险/分数变换、FrozenTrialPredictor/2持有实际state/来源、ensemble_views持有实测线性空间与选择执行family、checkpoint集中核source/target不同入口的程序族相容。binary_probability复用共同输入比较owner及artifact SHA，确定性seed alias保留完整概率状态；旧/1不被重签proper合同。
 
-[当前source程序](evidence/public_source_pipeline_20261008.zh.md)复用source_selection/source_execution/source_resume/PreparedSourceInventory：manifest SHA一次准入、准备/合并/fit共享预算、每outer一次load三seed、恢复复用原完整view。source_config从实际identity authority解析并绑定contract/registry；SourceSeedCatalog和两个公共消费者通过expected_source_config核真实producer，不借程序同名混入历史β8。
+[当前source程序](evidence/public_source_pipeline_20261008.zh.md)复用source_selection/source_execution/source_resume/PreparedSourceInventory：manifest SHA一次准入、准备/合并/fit共享预算、每outer一次load后消费实际声明seed、恢复复用原完整view。日常科研声明一个完整seed，三seed只用于重大版本校验。source_config从实际identity authority解析并绑定contract/registry；SourceSeedCatalog和两个公共消费者通过expected_source_config核真实producer，不借程序同名混入历史β8。
 
 [B12独立前缀切片](evidence/independent_prefix_20261008.zh.md)由CalibrationPrefix持有一次验证的不可变授权，fit_calibration_prefix_programs持有共享all-C状态及各温度程序，FittedEnsemble.save_programs/load_programs保存单份数值模型。请求预算、来源选择/refit和matched-control筛选各由共同owner派生。
+
+paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账本关系：requested K×arm×seed必须完整，coverage逐项匹配actual terminal status，source catalog保持唯一study/seed键并核plan checkpoint/procedure与producer seed/kind/study exclusion。失败actor缺失authority或source保持显式unresolved；completed NN/scratch cell必须有源凭证。聚合器拒绝同键冲突凭证；统计完成后才绑定最终report，摘要排除顶层binding以保持重复finalize幂等。物理raw/cache/checkpoint门继续由原入口持有，见[修后独立复签](evidence/research_resume_20261011.zh.md#b12最终账本修后复签)。
 
 更新：2026-09-06。本文件依据实际源码与入口核对，描述现状与尚缺接口；科研目标由
 [活动规范](research_program.zh.md)定义，发现和验证见[本次审计](evidence/technical_audit_20260906.zh.md)。

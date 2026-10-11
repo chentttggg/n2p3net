@@ -636,8 +636,6 @@ def _finalize_comparison(report, plan, output, tree):
         "completed_cells": sum(row["requested_K"] == budget and cells[row["cell_index"]]["status"] == "completed" for row in requests),
         "protocol_unavailable_cells": sum(row["requested_K"] == budget and cells[row["cell_index"]]["status"] == "protocol_unavailable" for row in requests),
         "failed_cells": sum(row["requested_K"] == budget and cells[row["cell_index"]]["status"] == "failed" for row in requests)} for budget in budgets]
-    if "seed_pairs" in plan:
-        report["b12_execution_binding"] = validate_b12_execution_manifest(report, plan)
     positive_budgets = [budget for budget in budgets if budget > 0]
     unresolved = [row for row in requests if row.get("participant_key") is None or row.get("study") is None]
     if unresolved:
@@ -657,6 +655,8 @@ def _finalize_comparison(report, plan, output, tree):
         stats["transfer_effect_interpretation"] = "only matched_transfer_effects identify source initialization effects"
         stats["requested_budget_coverage"] = report["requested_budget_coverage"]
         atomic_write_json(output / "statistics.json", stats)
+    if "seed_pairs" in plan:
+        report["b12_execution_binding"] = validate_b12_execution_manifest(report, plan)
     atomic_write_json(output / "result.json", report)
     return report
 
@@ -1080,7 +1080,10 @@ class BinaryCloudProgramme:
             report["physical_target_fits_lower_bound"] += sum(cell.get("physical_target_fit") is True for cell in cells)
             report["participant_authority"].update(participant["participant_authority"])
             for entry in participant.get("source_seed_catalog") or []:
-                catalog[(entry["outer_target_study"], entry["source_seed"])] = entry
+                key = (entry["outer_target_study"], entry["source_seed"])
+                if key in catalog and semantic_sha256(catalog[key]) != semantic_sha256(entry):
+                    raise ValueError("binary participants name conflicting source producers for one study/seed")
+                catalog[key] = entry
         report["source_seed_catalog"] = list(catalog.values()) or None
         report["physical_target_fits"] = (None if report["physical_target_fits_unknown"] else report["physical_target_fits_lower_bound"])
         report["requested_cells"] = len(report["requested_participants"])

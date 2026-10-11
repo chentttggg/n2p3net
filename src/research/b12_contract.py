@@ -144,6 +144,11 @@ def validate_b12_execution_manifest(report: Mapping, plan: Mapping) -> dict:
             raise ValueError("B12 requested coverage changes its denominator")
         if sum(counts[1:]) != counts[0]:
             raise ValueError("B12 requested coverage drops a completed, unavailable or failed cell")
+        actual_counts = tuple(sum(request["requested_K"] == row["requested_K"]
+            and cells[request["cell_index"]]["status"] == status for request in requests)
+            for status in ("completed", "protocol_unavailable", "failed"))
+        if counts[1:] != actual_counts:
+            raise ValueError("B12 requested coverage disagrees with actual terminal cell statuses")
 
     authority = report.get("participant_authority")
     if not isinstance(authority, Mapping) or set(authority) - set(subject_names):
@@ -170,45 +175,81 @@ def validate_b12_execution_manifest(report: Mapping, plan: Mapping) -> dict:
 
     source_catalog = report.get("source_seed_catalog")
     source_producers = []
+    unresolved_sources = []
     needs_source = any(arm.get("family") in {"full_fine", "scratch"} for arm in arms)
     if plan.get("source_seed_catalog") is not None and needs_source:
+        declared = {}
+        for entry in plan["source_seed_catalog"]:
+            key = (entry.get("outer_target_study"), entry.get("source_seed"))
+            if (key in declared or not isinstance(key[0], str)
+                    or type(key[1]) is not int or key[1] not in {source for source, _ in pairs}):
+                raise ValueError("B12 declared source catalog has invalid or duplicate study/seed keys")
+            digest = entry.get("sha256", entry.get("checkpoint_sha256"))
+            _sha256(digest, field="declared source checkpoint")
+            if not isinstance(entry.get("procedure"), Mapping):
+                raise ValueError("B12 declared source catalog lacks its procedure")
+            declared[key] = (digest, entry["procedure"])
         if isinstance(source_catalog, Mapping):
             source_catalog = source_catalog.get("entries")
+        if source_catalog is None:
+            source_catalog = []
         if not isinstance(source_catalog, Sequence):
             raise ValueError("B12 public source pipeline lacks admitted source producer records")
         studies = {authority[subject]["study"] for subject in authority}
         expected_sources = {(study, source) for study in studies for source, _ in pairs}
-        if unresolved_subjects:
-            # A target worker may fail before it can emit target authority.
-            # Preserve known producer entries and leave the missing target
-            # identities in the result's unresolved ledger.
-            expected_sources = {(entry.get("outer_target_study"), entry.get("source_seed"))
-                                for entry in source_catalog}
+        required_sources = {(authority[cell["subject"]]["study"], cell["source_seed"])
+            for cell in cells if cell["status"] == "completed" and cell["subject"] in authority
+            and cell["arm"] in {arm["name"] for arm in arms if arm.get("family") in {"full_fine", "scratch"}}}
+        seen_sources = set()
         for entry in source_catalog:
             if not isinstance(entry, Mapping):
                 raise ValueError("B12 source producer catalog contains a non-record")
             key = (entry.get("outer_target_study"), entry.get("source_seed"))
-            if key not in expected_sources:
+            if key in seen_sources:
+                raise ValueError("B12 source producer catalog duplicates a study/seed key")
+            if key not in declared or (not unresolved_subjects and key not in expected_sources):
                 raise ValueError("B12 source producer catalog contains an undeclared study/seed")
+            seen_sources.add(key)
             _sha256(entry.get("checkpoint_sha256"), field="source checkpoint producer")
             if not isinstance(entry.get("procedure"), Mapping):
                 raise ValueError("B12 source producer lacks its executed procedure")
+            if (entry["checkpoint_sha256"] != declared[key][0]
+                    or semantic_sha256(entry["procedure"]) != semantic_sha256(declared[key][1])):
+                raise ValueError("B12 source checkpoint or procedure differs from the declared producer")
             if entry.get("producer_digest") is not None:
                 _sha256(entry["producer_digest"], field="source producer")
-            if plan.get("evidence_scope") == "public_development":
+            if plan.get("evidence_scope") in {"public_development", "public_calibration_development"}:
                 producer = entry.get("producer")
                 if not isinstance(producer, Mapping) or entry.get("producer_digest") != semantic_sha256(producer):
                     raise ValueError("B12 public source producer is missing or differs from its digest")
+                expected_selection = "per_source_seed" if entry["procedure"]["kind"] == "selection_refit" else "not_applicable"
+                if (producer.get("source_seed") != key[1]
+                        or producer.get("kind") != entry["procedure"]["kind"]
+                        or producer.get("selection") != expected_selection
+                        or not isinstance(producer.get("source_studies"), Sequence)
+                        or not producer["source_studies"]
+                        or key[0] in producer["source_studies"]
+                        or semantic_sha256(entry.get("source_studies")) != semantic_sha256(producer["source_studies"])):
+                    raise ValueError("B12 public source producer contradicts its seed, procedure or study exclusion")
             source_producers.append({"outer_target_study": key[0], "source_seed": key[1],
                                     "checkpoint_sha256": entry["checkpoint_sha256"],
                                     "producer_digest": entry.get("producer_digest"),
                                     "procedure": entry["procedure"]})
-        if {(entry["outer_target_study"], entry["source_seed"]) for entry in source_producers} != expected_sources:
-            raise ValueError("B12 source producer catalog does not cover every target-study/seed pair")
+        if required_sources - seen_sources:
+            raise ValueError("B12 completed target cells lack their required source producer")
+        # Missing producers of failed actors stay explicitly unresolved. A
+        # failed peer cannot weaken source authority for any completed cell.
+        unresolved_sources = sorted((expected_sources if not unresolved_subjects else set(declared)) - seen_sources)
 
-    return {"schema": "n2p3_b12_execution_binding/1", "status": "unresolved_target_authority" if unresolved_subjects else "bound",
-            "unresolved_subjects": sorted(unresolved_subjects), "plan_digest": semantic_sha256(plan),
-            "report_digest": semantic_sha256(report), "arm_roster": list(arm_names),
+    status = ("unresolved_target_authority" if unresolved_subjects else
+              "unresolved_source_producers" if unresolved_sources else "bound")
+    return {"schema": "n2p3_b12_execution_binding/1", "status": status,
+            "unresolved_subjects": sorted(unresolved_subjects),
+            "unresolved_source_producers": [{"outer_target_study": study, "source_seed": seed}
+                                             for study, seed in unresolved_sources],
+            "plan_digest": semantic_sha256(plan),
+            "report_digest": semantic_sha256({key: value for key, value in report.items()
+                                               if key != "b12_execution_binding"}), "arm_roster": list(arm_names),
             "subjects": list(subject_names), "requested_Ks": list(budgets),
             "seed_pairs": [list(pair) for pair in pairs], "source_producers": source_producers,
             "target_producers": target_producers,

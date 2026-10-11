@@ -1,0 +1,83 @@
+{
+  "schema": "n2p3_b12_postfix_acceptance/1",
+  "date": "2026-10-11",
+  "base_commit": "e9ef64251d60c1d0fbe81b0ef15d782b34c2595c",
+  "accepted_scope": "final cross-stage ledger relations and serial finalizer; no renewed raw/source-cache/full-checkpoint admission or efficacy claim",
+  "source_files": {
+    "src/research/b12_contract.py": "bade349a962c531da6c767cff67b226875fb207ffe0c0e583611328bb8f58028",
+    "experiments/run_erp_comparator.py": "3105aadf705e9c30fd38bf197980bdf719048d57ceeef47e5f725cffa0d80f0b",
+    "tests/research/test_b12_contract.py": "5c9e6d784c3326efcc5e58f39823e644e84c4c11ce8a01a330ce6154154a34e5",
+    "src/research/source_catalog.py": "3ecd71d823c6a153ee41f79db8c8dc824882b8345995c1aab26a263310ff3a1d",
+    "src/research/source_selection.py": "9b15c98cb113c3293d27fe59c9a27748999776b228009ab9077cba3b3a8c3708",
+    "tmp/RESEARCH_DIRECTOR_20261011/B12_INDEPENDENT/test_b12_independent.py": "437f7821c3bca33e655323e4d81c997fd37d7337508b47084c3b270f337234c0"
+  },
+  "source_unchanged_during_independent_probes": true,
+  "independent_artifacts": {
+    "tmp/RESEARCH_DIRECTOR_20261011/B12_INDEPENDENT/REVIEW_POSTFIX.zh.md": "48e4d0ae8efde7f45c66164a0e1fb688e397c5e4f6d7fe44993295489fc1f5de",
+    "tmp/RESEARCH_DIRECTOR_20261011/B12_INDEPENDENT/test_b12_independent.py": "437f7821c3bca33e655323e4d81c997fd37d7337508b47084c3b270f337234c0",
+    "tmp/RESEARCH_DIRECTOR_20261011/B12_INDEPENDENT/actual_runner_report_postfix_20261011.json": "10e622c74c9a2880882aa1534a97fb7ac6e08b67218b4b27eebf211296979d63",
+    "tmp/RESEARCH_DIRECTOR_20261011/B12_INDEPENDENT/observations_postfix_20261011.jsonl": "e9d3eebb277d37ae315bc8dc73997e38254a34c3add8d9a8da98457796cfc41c"
+  },
+  "checks": [
+    {
+      "name": "original_independent_probes",
+      "passed": 15,
+      "exit_code": 0,
+      "log": "tmp/RESEARCH_DIRECTOR_20261011/B12_INDEPENDENT/pytest_postfix_20261011.log",
+      "log_sha256": "1c4e0c4945ea268c3bc11a7a613907555ed512b9eeaf46afe02b9e771b929bcc"
+    },
+    {
+      "name": "b12_contract_and_actual_serial",
+      "passed": 22,
+      "exit_code": 0,
+      "log": "tmp/RESEARCH_DIRECTOR_20261011/B12_REPAIR/tests.log",
+      "log_sha256": "627411bcb179d12d924bb68fcc9bc4e0fea33fbc02239769a47564128184c710"
+    },
+    {
+      "name": "immutable_aggregate_partial_and_failure",
+      "passed": 3,
+      "exit_code": 0,
+      "log": "tmp/RESEARCH_DIRECTOR_20261011/B12_REPAIR/cloud-regression.log",
+      "log_sha256": "a1ff7b18c450107a2b647ba9a8ab650d70cebe1a13a13684583ac4450ea9425a"
+    }
+  ],
+  "serial_finalizer": {
+    "executing_tree_digest": "11aa8f1387f31201dbd8a7c6830247c241e06c8ca252471e87e6c8e0287d7f1a",
+    "requested_cells": 8,
+    "resolved_cells": 6,
+    "first_final_report_and_repeat_digest": "13d3bb701bb01eff332557bc3aa1f8f4268cf88ac9ba8bced9ce3d768ff40ea7",
+    "coverage": [
+      {
+        "requested_K": 0,
+        "requested_cells": 2,
+        "completed_cells": 0,
+        "protocol_unavailable_cells": 2,
+        "failed_cells": 0
+      },
+      {
+        "requested_K": 8,
+        "requested_cells": 2,
+        "completed_cells": 2,
+        "protocol_unavailable_cells": 0,
+        "failed_cells": 0
+      },
+      {
+        "requested_K": 200,
+        "requested_cells": 2,
+        "completed_cells": 2,
+        "protocol_unavailable_cells": 0,
+        "failed_cells": 0
+      },
+      {
+        "requested_K": 800,
+        "requested_cells": 2,
+        "completed_cells": 2,
+        "protocol_unavailable_cells": 0,
+        "failed_cells": 0
+      }
+    ]
+  },
+  "aggregate_conflicting_catalog": "reviewed in source; not counted among 15 independent measured cases",
+  "prefix_concurrent_wip": "excluded from immutable aggregate regression",
+  "full_public_matrix": "not accepted here"
+}
