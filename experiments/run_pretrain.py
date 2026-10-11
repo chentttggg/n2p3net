@@ -314,7 +314,7 @@ def main() -> None:
                 epoch_loss += loss.detach().float() * len(x)
                 epoch_wave += components["waveform"].detach().float() * len(x)
                 epoch_spec += components["spectral"].detach().float() * len(x)
-                if probe_optimizer is not None:
+                if probe_optimizer is not None and probe_components is not None:
                     epoch_probe += (
                         probe_components["loss"].detach().float() * int(probe_train.sum())
                     )
