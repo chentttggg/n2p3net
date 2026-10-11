@@ -2,6 +2,8 @@
 
 2026-10-11当前科研按[123项进展与下一步](evidence/wishlist_progress_20261010.zh.md)及[科研恢复与集成](evidence/research_resume_20261011.zh.md)并行推进：B03 strict nested/source-study 与同一次 run 的 inner producer replay 已完成 bounded 软件验收；B07 `/4` native family、B09 exact structural null/语义重核继续保其有限边界。B12 requested-manifest初版经独立反例否证后修复，原15项探针修后通过，真实serial最终report与重复finalize摘要一致；CalibrationPrefix replay/public caller仍在独立复审。B12完整source→target execution按实际source producer、资源、input contract和终态receipt验收，尚未签收；B11时间shape/ERP-span、B07 off-grid/history、B13成人确认继续独立推进。公共云执行源码由云窗口独占，当前科研树候选不扩大其运行scope。所有15块仍有独立剩余出口。
 
+下一P1接口切片已按[独立反例与调用链](evidence/research_resume_20261011.zh.md#p1后续方向冻结响应与噪声程序的配对评分)分配到隔离树：冻结现代response完整M/R/原Σ物理factor，shared/private AR8同C/prefix32，补实际MembershipDecision与共同requested/paired指标。8个机制反例与2个小型producer关系通过仅支持方向；v2软件接口和新native panel仍待验收，不阻塞B12基础公共程序。
+
 2026-10-08最新执行规则覆盖下文待跑三seed数量：日常科研使用20260918单个完整source→target程序，重大版本校验才使用20260918/19/20三个独立程序。当前公共科研对应四个source checkpoint流程，各自选择与fresh refit，初始八个逻辑NN fit；B12两个公共面板继续按真实预算和requested账本验收。历史三seed设计与已执行身份不改写。科研线接B08可识别prior、B07字典可移植与B05/B06/B09机制，B14云底座和B12基础矩阵并行；各项代码、软件验证、公共效能分别见[集成状态](evidence/research_integration_20261008.zh.md)。
 
 [当前目标软件切片](evidence/current_public_consumers_20261008.zh.md)已实现fixed32/b64配方、匹配scratch、固定C质量loss、actualprior/β、观测Cz6 raw/原8导控制、primary温度与binary概率池；真实source K0/OOF和联合零fit源检查通过。已准备四份完整source view；上次完整源运行因worker突然终止失败，原因未确认、完整checkpoint为0，实际输入与终态见[吞吐记录](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)。云实例由用户关闭，当前先完成源码集成；恢复时按四个source流程×一个科研seed执行选择与fresh refit，接两个目标面板。源/目标效能按完整requested账本与原包重放验收。

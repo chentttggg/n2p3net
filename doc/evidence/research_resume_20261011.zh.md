@@ -89,3 +89,13 @@ B12 新增 `validate_b12_execution_manifest`，由 paired `run_erp_comparator._f
 原独立15项探针字节未改，修后15 PASS、exit0；真实source7 selection/refit（inner3/refit2）及unresolved-peer正控仍通过。实际paired waveform serial finalizer保留8 requested aliases、6 resolved cells；首次最终report、去binding独立canonical和repeat-finalize摘要均为`13d3bb70…`。正式B12合同与actual caller22项通过。另从`e9ef642`导出不可变副本，仅覆盖本轮B12三文件，对实际spawned participant部分失败、全失败及source dependency unreachable三个聚合路径验证通过；未混入并发prefix WIP。各命令退出码0，相关Ruff与diff检查通过。source/file/日志摘要和实际coverage见[紧凑绑定](../assets/research_resume_20261011/b12_postfix_binding.json)。
 
 总监逐读最终manifest、serial finalizer与participant聚合调用链后接受这组软件关系。聚合冲突分支由源码审阅确认，不冒称独立15案例实测；本轮未重新认证原始source fit/cache或完整checkpoint，跨阶段门继续消费原物理入口已核的凭证。这些证据不代表完整公共矩阵、公共效能或成人确认。CalibrationPrefix/public caller接线仍待另外的输入、OOF、common-test及保存重放反例闭合。
+
+## P1后续方向：冻结响应与噪声程序的配对评分
+
+独立逐读B05/B06/B11后，总监接受下一接口切片为同一完整物理response后验下的shared/private AR8、共同C residual与32点prefix，接现有CandidateEvidence、DecisionPlan与paired metric owner。实现已分配到独立`research-mechanism-paired`工作树，不影响在途B12或当前prefix源码验证；软件接口和实际输入尚待签收，新native panel未执行。
+
+方向依据包括8个数学/实际owner反例和一次current synthetic fit/save/load上的2个关系核验，均exit0。完整可逆白化不自动损失判别信息；非可逆投影可降低ACF却删除ERP；相同秩不排除错误span；Schur covariance正确而漏候选相关条件均值仍可翻转赢家；无候选信息的prefix仍更新共享不确定response。另实测近似平局在B05原门与共同CandidateEvidence门会得到不同赢家；删困难决策使可用NLL下降却降低coverage，被共同paired gate拒绝。新panel预声明共同赢家程序，原B05 winner仅作其原程序诊断，不追签旧输出。
+
+现代Continuous保存的上三角row precision为R，完整系数M前半为common、后半为target increment；row-major系数×channel物理factor为`kron(R^-1, chol(原Sigma_ref))`，保持同一保存M/R和原spatial covariance。真实小型scorer图像关系误差约`1.39e-17`；误用R转置的图像误差约`0.04657`。不能从派生H重造现代producer，不能随新noise换response不确定性；这是模块化plugin预测程序，不称各臂joint posterior或joint MLE。
+
+新physical入口须消费实际PredictionDecisionView/MembershipDecision的onsets、membership、source/support、事件counts和evidence level，design按原basis核验；旧generic数组manifest不能猜counts补身份。建议后续16格C内诊断为8实际participants×2noise，各用C800授权中最早6完整组、前5组600标签拟合、第6组120标签later-held，其余标签另列。它不称C800全fit、独立公共终测或成人确认。现代转换、共同指标与该实际输入先在代码/反例/保存重放中验收，再执行新panel。原ignored B11 payload未恢复，不重跑旧panel来补签；证据指针与hash见[方向绑定](../assets/research_resume_20261011/p1_direction_binding.json)。
