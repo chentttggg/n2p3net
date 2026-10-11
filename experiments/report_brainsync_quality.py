@@ -50,6 +50,9 @@ def main(argv=None):
             state["epoch"] = predictor.epoch_quality
             request["model_sha256"] = file_sha256(args.model_artifact)
             return predictor.load_inference_session(root)
+        for name in ("preprocessing_config", "continuous_qc_model", "epoch_qc_model", "ocular_model"):
+            if getattr(args, name) is not None:
+                request[f"{name}_sha256"] = file_sha256(getattr(args, name))
         preprocessing = load_preprocessing_spec(args.preprocessing_config) if args.preprocessing_config else BRAIN_SYNC_PREPROCESSING
         continuous = load_continuous_qc(args.continuous_qc_model) if args.continuous_qc_model else None
         ocular = load_eog_regression(args.ocular_model) if args.ocular_model else None
