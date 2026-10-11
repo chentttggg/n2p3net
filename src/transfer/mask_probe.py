@@ -50,6 +50,32 @@ def _state_digest(trunk: N2P3Net) -> str:
     return digest.hexdigest()
 
 
+def _per_slot_moments(values: np.ndarray, mask: np.ndarray, *, packed: bool) -> tuple[np.ndarray, np.ndarray]:
+    """Per (trial, electrode) BN moments.
+
+    Observed-channel-norm trunks feed BN a packed (N_observed, F, 1, T) tensor, so
+    its rows are scattered back to their electrode slots and absent slots stay NaN.
+    """
+
+    if not packed:
+        return values.mean(axis=(1, 3)), np.square(values).mean(axis=(1, 3))
+    mean, square = np.full(mask.shape, np.nan), np.full(mask.shape, np.nan)
+    mean[mask] = values.mean(axis=(1, 2, 3))
+    square[mask] = np.square(values).mean(axis=(1, 2, 3))
+    return mean, square
+
+
+def _slot_average(values: np.ndarray) -> np.ndarray:
+    observed = np.isfinite(values)
+    totals = np.where(observed, values, 0.0).sum(axis=0)
+    counts = observed.sum(axis=0)
+    return np.where(counts > 0, totals / np.maximum(counts, 1), np.nan)
+
+
+def _finite_or_none(values: np.ndarray) -> list[float | None]:
+    return [float(value) if np.isfinite(value) else None for value in values]
+
+
 def run_checkpoint_mask_probe(
     dataset: EpochDataset,
     payload: Mapping[str, object],
@@ -229,9 +255,12 @@ def run_checkpoint_mask_probe(
                     raise ValueError("mask probe produced non-finite logits")
                 trace["logits"].append(logits)
                 for name in ("bn_pre", "bn_post"):
-                    values = captures[name].astype(np.float64)
-                    trace[f"{name}_mean"].append(values.mean(axis=(1, 3)))
-                    trace[f"{name}_square"].append(np.square(values).mean(axis=(1, 3)))
+                    mean, square = _per_slot_moments(
+                        captures[name].astype(np.float64), mask[start : start + batch_size],
+                        packed=bool(getattr(trunk, "observed_channel_norm", False)),
+                    )
+                    trace[f"{name}_mean"].append(mean)
+                    trace[f"{name}_square"].append(square)
                 spatial = captures["spatial"].astype(np.float64)
                 if full_spatial is None:
                     full_spatial = spatial
@@ -254,10 +283,12 @@ def run_checkpoint_mask_probe(
                 "activations": {
                     **{
                         name: {
-                            "channel_mean": np.concatenate(trace[f"{name}_mean"]).mean(0).tolist(),
-                            "channel_rms": np.sqrt(
-                                np.concatenate(trace[f"{name}_square"]).mean(0)
-                            ).tolist(),
+                            "channel_mean": _finite_or_none(
+                                _slot_average(np.concatenate(trace[f"{name}_mean"]))
+                            ),
+                            "channel_rms": _finite_or_none(
+                                np.sqrt(_slot_average(np.concatenate(trace[f"{name}_square"])))
+                            ),
                         }
                         for name in ("bn_pre", "bn_post")
                     },

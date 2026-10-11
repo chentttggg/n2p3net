@@ -147,3 +147,17 @@ def test_probe_dry_run_from_outside_repository_has_no_predictions_or_fit(tmp_pat
     assert result["requested_tasks"] == 5
     assert result["execution_snapshot_status"] == "required_before_execution"
     assert all("logits" not in arm for arm in result["records"][0]["arms"])
+
+
+def test_probe_records_per_electrode_bn_moments_for_observed_norm_trunks():
+    data, payload = _fixture()
+    payload["architecture"] = {**payload["architecture"], "channel_masking": "observed_temporal_bn/1"}
+    contract = replace(TrainingRunContract(**payload["training_contract"]), architecture=payload["architecture"])
+    payload.update(training_contract=contract.record(), training_contract_digest=contract.digest())
+    removed = _probe(data, payload, batch_size=3)["arms"][1]
+    assert removed["removed_channels"] == ["FZ"]
+    for name in ("bn_pre", "bn_post"):
+        moments = removed["activations"][name]
+        assert len(moments["channel_mean"]) == len(moments["channel_rms"]) == 6
+        assert moments["channel_mean"][0] is None and moments["channel_rms"][0] is None
+        assert all(value is not None for value in moments["channel_mean"][1:])
