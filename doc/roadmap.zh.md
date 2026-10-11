@@ -1,10 +1,12 @@
 # 当前执行计划
 
-2026-10-11当前科研按[123项进展与下一步](evidence/wishlist_progress_20261010.zh.md)及[科研恢复与集成](evidence/research_resume_20261011.zh.md)并行推进：B03 strict nested/source-study 与同一次 run 的 inner producer replay 已完成 bounded 软件验收；B07 `/4` native family、B09 exact structural null/语义重核继续保其有限边界。B12 requested-manifest修后原15项通过，真实serial最终report与重复finalize摘要一致；CalibrationPrefix保存重放/public caller已独立复签，尚未接候选程序strict nested选择。原云producer的八人候选面板已交付完整requested零拟合恢复汇总，配对效应及原始载荷按其来源继续核查；新科研协议不追签旧结果。B11时间shape/ERP-span、B07 off-grid/history、B13成人确认继续独立推进。公共云执行源码由云窗口独占，所有15块仍有独立剩余出口。
+2026-10-11当前科研按[123项进展与下一步](evidence/wishlist_progress_20261010.zh.md)及[科研恢复与集成](evidence/execution_and_integration.zh.md)并行推进：B03 strict nested/source-study 与同一次 run 的 inner producer replay 已完成 bounded 软件验收；B07 `/4` native family、B09 exact structural null/语义重核继续保其有限边界。B12 requested-manifest修后原15项通过，真实serial最终report与重复finalize摘要一致；CalibrationPrefix保存重放/public caller已独立复签，尚未接候选程序strict nested选择。原云producer的八人候选面板已交付完整requested零拟合恢复汇总，配对效应及原始载荷按其来源继续核查；新科研协议不追签旧结果。B11时间shape/ERP-span、B07 off-grid/history、B13成人确认继续独立推进。公共云执行源码由云窗口独占，所有15块仍有独立剩余出口。
 
-P1 paired `/2`接口已按[修后独立软件验收](evidence/research_resume_20261011.zh.md#p1软件入口修后验收)合入：冻结现代response完整M/R/原Σ物理factor，actual source全requested及真实C标签、MembershipDecision和共同paired指标保持。原两处科学关系RED已在fit前拒绝。下一执行8人×2noise、同C/prefix32的16格native面板，代码验收与native结果分别解释；不阻塞B12基础公共程序。
+P1 paired `/2`接口已按[修后独立软件验收](evidence/response_and_noise.zh.md#p1软件入口修后验收)合入；8人×2noise、同C/prefix32的16格native面板已完成fit/save/load及零拟合失败重放。下一切片是保持原density和阈值的数值稳定化，重点审阅真实reduction、nuisance换图及posterior metric误差传播。B12基础公共程序独立前进。
 
-原云候选面板152共同请求与80原配对账本已读数收口，见[失败分母与配对效应](evidence/research_resume_20261011.zh.md#原云候选面板完整分母与配对读数)。grouped K800/2000因paired NLL增加不通过原开发门；source→scratch方向K2000部分对照是scratch改善，不能倒写迁移收益。该原producer结果不等同新prefix协议执行；下一研究核合法C内整程序选择和概率风险，不从未来成绩选默认。
+原云候选面板152共同请求与80原配对账本已读数收口，见[失败分母与配对效应](evidence/public_evaluation.zh.md#原云候选面板完整分母与配对读数)。grouped K800/2000因paired NLL增加不通过原开发门；source→scratch方向K2000部分对照是scratch改善，不能倒写迁移收益。该原producer结果不等同新prefix协议执行；下一研究核合法C内整程序选择和概率风险，不从未来成绩选默认。
+
+BI2014a按[逐库队列](evidence/public_evaluation.zh.md#跨数据集队列)推进。61人CSV清点确认episode深度可变；完整episode保留自身全部repetitions及共同未来分母，固定R8不足以支撑主终点。当前补finite-zero-none/candidate入口、实际Cz6观测mask、共同raw cutoff和逐decision horizon/save-load调用链。每库先封模型、结果和终态，再解锁下一库。
 
 2026-10-08最新执行规则覆盖下文待跑三seed数量：日常科研使用20260918单个完整source→target程序，重大版本校验才使用20260918/19/20三个独立程序。当前公共科研对应四个source checkpoint流程，各自选择与fresh refit，初始八个逻辑NN fit；B12两个公共面板继续按真实预算和requested账本验收。历史三seed设计与已执行身份不改写。科研线接B08可识别prior、B07字典可移植与B05/B06/B09机制，B14云底座和B12基础矩阵并行；各项代码、软件验证、公共效能分别见[集成状态](evidence/research_integration_20261008.zh.md)。
 

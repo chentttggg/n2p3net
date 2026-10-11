@@ -1,39 +1,36 @@
 {
   "schema": "n2p3_cross_dataset_queue_plan/1",
-  "status": "target_preflight_complete_source_owner_found_contract_verification_pending",
+  "status": "source_contract_cloud_verified_candidate_input_bridge_in_progress",
   "queue": [
     {
       "dataset_id": "BI2014a",
       "order": 1,
-      "seed_pair": [20260918, 20260918],
+      "seed_pair": [
+        20260918,
+        20260918
+      ],
       "target_owner": "data.bi2014a_candidate + experiments.prepare_bi2014a_candidate",
       "candidate_task": "p300_row_column_speller_6x6",
       "runner_owner": "experiments.run_candidate_cross_decision",
-      "source_resolution": "source07 catalog now resolves an existing leave_BI2014a checkpoint; verify source snapshot, roster, task and target exclusion before fitting",
+      "source_resolution": "existing leave_BI2014a checkpoint passed cloud load/replay and study/participant exclusion; retain original producer identity",
       "source_owner": {
         "outer_target_study": "BI2014a",
         "source_seed": 20260918,
         "checkpoint_sha256": "fc8d8cbdef405263ff9c233e592755ceeeb2264bc8287800b8b2ffacfb199c02",
         "procedure": "selection_refit",
-        "verification_status": "pending_source_snapshot_and_target_exclusion"
-      },
-      "target_preflight": {
-        "target_manifest_sha256": "9d939e16a75f8e6297ad856ea63b6d5adbd69694aeae03b79ec9d98d4f96ede4",
-        "target_preparation_sha256": "e656ce30e5f2991776b1873064d8ef5a5ca69bd9c21a50be286975d1a4d3e85b",
-        "records": 61,
-        "raw_sample_rate_hz": 512.0,
-        "model_sample_rate_hz": 128.0,
-        "model_n_times": 179,
-        "files": 976,
-        "source_catalog_search": "resolved_leave_BI2014a_checkpoint",
-        "target_fit_started": false
+        "verification_status": "cloud_report_load_replay_and_target_exclusion_verified",
+        "source_participant_keys": 438,
+        "target_participant_keys": 61,
+        "participant_intersection": 0,
+        "verification_thread_id": "01a10b0f-c672-7e73-8449-4ebdaf6fc5eb"
       },
       "preflight": [
-        "attested BI2014a candidate cache and exact participant manifest",
-        "raw CSV candidate codebook/membership and physical selection support",
-        "source checkpoint study/participant/global exclusion",
-        "source checkpoint channel, preprocessing, task and execution contract",
-        "calibration_selections=5 and test_reps=8 only after actual BI2014a split support check"
+        "actual CSV candidate membership, complete episode boundaries and exact participant manifest",
+        "finite-zero-none preprocessing accepted by candidate owner and actual caller",
+        "observed masked Cz6 projection with measured CZ, plus native-control identity",
+        "generic original-onset/prefix authority and common future scope derived once from Kmax raw cutoff",
+        "per-decision full-episode evidence depth and participant/requested metrics",
+        "same-run model save/load, future replay and parent mixture admission"
       ],
       "arms": [
         "source_zero_shot_if_checkpoint_contract_allows",
@@ -42,16 +39,92 @@
       ],
       "temperature": "fixed or independently source-frozen; no target grouped-temperature selection",
       "metrics": [
-        "requested operational hit@R",
+        "requested operational hit@all on complete episode",
         "probability coverage and NLL/Brier on available rows",
-        "ties, abstentions, typed failures and participant macro"
+        "actual repetition depth, ties, abstentions, typed failures and participant macro"
       ],
       "artifact_boundary": "output/datasets/BI2014a/attempt_<id>/",
       "resource_owner": "cloud source07 actual per-dataset 25 CPU budget and 4 GPU capacity",
-      "promotion": "none; independent development evidence only"
+      "promotion": "none; independent development evidence only",
+      "binary_target_preparation": {
+        "target_manifest_sha256": "9d939e16a75f8e6297ad856ea63b6d5adbd69694aeae03b79ec9d98d4f96ede4",
+        "target_preparation_sha256": "e656ce30e5f2991776b1873064d8ef5a5ca69bd9c21a50be286975d1a4d3e85b",
+        "records": 61,
+        "raw_sample_rate_hz": 512.0,
+        "model_sample_rate_hz": 128.0,
+        "model_n_times": 179,
+        "files": 976,
+        "source_catalog_search": "resolved_leave_BI2014a_checkpoint",
+        "target_fit_started": false,
+        "artifact_role": "binary_prefix_preparation_not_candidate_cache"
+      },
+      "candidate_input_audit": {
+        "scope": "61_subject_actual_CSV_zero_fit",
+        "episode_count": 1592,
+        "repetition_depth_histogram": {
+          "1": 412,
+          "2": 400,
+          "3": 298,
+          "4": 161,
+          "5": 109,
+          "6": 78,
+          "7": 48,
+          "8": 86
+        },
+        "candidate_first_five_allocation": {
+          "status": "input_allocation_diagnostic_not_frozen_K",
+          "calibration_labels_min": 60,
+          "calibration_labels_max": 372,
+          "future_episodes": 1287,
+          "future_depth_histogram": {
+            "1": 351,
+            "2": 329,
+            "3": 242,
+            "4": 123,
+            "5": 79,
+            "6": 62,
+            "7": 36,
+            "8": 65
+          },
+          "fixed_R8_supported": 65,
+          "fixed_R8_support_fraction": 0.050505050505050504
+        },
+        "native_to_Cz6_observed_slots": [
+          false,
+          true,
+          true,
+          true,
+          false,
+          true
+        ],
+        "measured_CZ_required": true,
+        "future_gap_samples_min": 677,
+        "future_gap_below_profile_source_support_717": 42,
+        "physical_boundary_action": "isolate raw first; right-censor or retain explicit unavailable status where response support crosses the unauthorized next flash",
+        "artifacts": {
+          "schedule_probe.py": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/schedule_probe.py",
+            "sha256": "d53e06c1eebb78c1ce54b735c5c5d090c68290628c221c179eae2f0559d7b904"
+          },
+          "schedule_probe.json": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/schedule_probe.json",
+            "sha256": "3872c7cfc4dce888fe7e039430ef7fe00c8e2eaac8914dea049e08170cc13a80"
+          },
+          "contract_probe.py": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/contract_probe.py",
+            "sha256": "5dad55a09850193d614bfe32c2e5fb07af0443187f043d1421cdcd1907850bc4"
+          },
+          "contract_probe.json": {
+            "local_path": "tmp/BI2014a_Q1_AUDIT/contract_probe.json",
+            "sha256": "4619b6d1185e72edc09226d3d62dec5b1122b3bb3a23982868ba19cef56ef7a5"
+          }
+        }
+      },
+      "calibration_budget": "freeze through common actual budget compiler before target fitting; first-five allocation is a diagnostic only",
+      "test_endpoint": "each complete future episode uses all its own legal repetitions; retain actual R per decision and common future requested ledger"
     }
   ],
   "dataset_order_policy": "finish and seal each dataset artifacts before unlocking the next; later failure cannot overwrite completed dataset",
   "old_results": "do not reuse or resign historical four-study/candidate results",
-  "next_action": "verify existing leave_BI2014a source producer and bind a new BI2014a target plan before unlocking target arms"
+  "next_action": "complete candidate input/montage/prefix/horizon bridge, bind new dataset plan, then execute and seal the three declared target arms"
 }

@@ -1,6 +1,6 @@
 # 工程指南
 
-2026-10-11科研恢复树为`codex/research-integration-20261011`，原用户dirty checkout及云端运行源码保持各自所有权。相关B12修复采用原反例修后复验、实际serial finalizer与不可变副本上的局部聚合回归；前缀作者并发工作不混入其接受来源。最终跨阶段门证明凭证与账本相容，不能替代原始fit/cache/checkpoint或公共效能验收，见[科研恢复证据](evidence/research_resume_20261011.zh.md)。下文日期化执行状态按各自记录时期解释，当前云执行状态由云窗口的实际冻结源码与终态凭证确定。
+当前科研集成树为`codex/research-integration-20261011`，P1数值和prefix整程序选择各有独立作者/审阅者树，原用户dirty checkout及云端执行树保留其所有权。实际模块、调用链与能区分对错的反例优先；已通过的范围有新改动或疑点才复验。研究结论维护在四个[主题页](evidence/README.md#当前主题结论)，归并旧页前物理归档并逐member验SHA；原数据、模型、结果和producer binding留原位置。当前云状态以云窗口的实际冻结源码与终态凭证为准；下文日期化状态按其记录时期解释。
 
 2026-10-10科研成果在独立`wishlist-integration`工作树（base `7bd984a`）整合，公共云执行继续绑定accepted496。逐读实际owner与完整调用链，迁移必要反例并执行受影响合同；已通过的旧矩阵、大probe与全集不因整理或方法更名重复运行。过程性材料只在当前仍必要时保留，本轮遵照用户最新要求不重复清理。源码、验证和剩余出口见[当前进展](evidence/wishlist_progress_20261010.zh.md)。
 

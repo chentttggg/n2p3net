@@ -1,17 +1,17 @@
 # 研究与工程证据
 
-- [2026-10-11科研恢复与集成](research_resume_20261011.zh.md)：恢复快照后的 B03 严格 nested/source-study、B07 `/4` native 字典、B09 source-group 空间先验与同 producer QR/df 修复；记录 exact structural null、保存语义门、实际调用链和未完成边界。仅为 bounded software/C-development evidence，不是公共效能或成人确认。
+## 当前主题结论
 
-- [2026-10-11 P0 续接：inner replay 与 B12 runner](research_resume_20261011.zh.md#p0续接)：B03 同一次 nested run 的 inner producer capture/replay、B12 requested roster/alias/failure/source producer manifest 门禁，以及 FrozenTrial list/tuple 合同修复；完整 source→target execution 仍未签收。
-- [2026-10-11 B12最终账本修后复签](research_resume_20261011.zh.md#b12最终账本修后复签)：原15项独立探针修后通过、actual terminal coverage与source声明关系恢复、真实serial最终report与重复finalize摘要一致；接受范围为跨阶段软件关系。
-- [2026-10-11 CalibrationPrefix保存重放与调用端复签](research_resume_20261011.zh.md#calibrationprefix保存重放与调用端复签)：actual prefix/inner/future捕获、真实空间与失败策略、混合概率复算准入、一次包校验和紧凑凭证；候选程序strict nested与公共效能另验。
-- [2026-10-11 原云候选面板完整分母与配对读数](research_resume_20261011.zh.md#原云候选面板完整分母与配对读数)：8人/152共同请求，原80对照及20指定导出；grouped的NLL风险与source→scratch方向明确，原failed producer不改签。
-- [2026-10-11 八人候选数据分析](cloud_candidate_analysis_20261011.zh.md)：逐人复算100行配对差值，比较88配置；校准剂量、温度概率风险、NN+xDAWN及匹配scratch读数。保152请求/144概率分母、原来源与单seed开发边界，新拟合0。
-- [小选择组与单完整组评估](research_resume_20261011.zh.md#p1数值门诊断与小组协议评估)：A01原始物理owner显示每个selection为120 flash/10 repetition；256 Hz原始支持与128 Hz模型输入分开绑定，小块会遇到未知响应支持与同target重复测量，单组只能支持fixed或预冻结source温度。
-- [2026-10-11 P1冻结响应与噪声程序方向](research_resume_20261011.zh.md#p1后续方向冻结响应与噪声程序的配对评分)：8个反例与2个小型producer关系核验支持modern R物理转换和共同paired指标切片；接口与新native panel尚待签收。
-- [2026-10-11 P1软件入口修后验收](research_resume_20261011.zh.md#p1软件入口修后验收)：公共source cohort与真实C labels两RED修后拒绝，modern R物理转换与共同指标已合入；16格native执行另验。
-- [2026-10-11 P1 native面板封口](research_resume_20261011.zh.md#p1软件入口修后验收)：8人×shared/private共16格完成8 anchor/16 noise fit和保存态重放；16 held均数值门不可用，概率覆盖0，不构成效能结果。
-- [2026-10-11 缓存与共享评分独立复签](research_resume_20261011.zh.md#缓存与共享评分独立复签)：source权限、fresh target state、current-view共享评分、capture/loaded replay与parent admission固定源码复签通过。
+| 主题 | 维护内容 |
+|---|---|
+| [校准与选择](calibration_and_selection.zh.md) | fixed/grouped温度、完整学习算法、前缀剂量、小组/单组、actual OOF与保存重放 |
+| [响应与噪声](response_and_noise.zh.md) | B05/B07/B08/B09物理模型、给定noise、QR/df、P1原生面板和数值稳定化 |
+| [公共数据评估](public_evaluation.zh.md) | requested分母、八人88配置/配对分析、预算/温度/迁移读数和逐库队列 |
+| [执行与集成](execution_and_integration.zh.md) | actual source、完整账本、source cache/shared score、ownership、资源与恢复 |
+
+四页按主题持续更新；运行身份由原紧凑binding记录，六指南继续维护活动规范。原日期页已经物理归档并逐member校验，见[恢复清单](../../frozen/research_topic_documents_history.manifest.json)。
+
+## 历史与来源
 
 - [2026-10-10愿望清单当前进展](wishlist_progress_20261010.zh.md)：123项实际出口分层、置信度/固定graph/评分数值的科研树整合，selection随机效应与真实OOF接点，以及多家族字典、空间收缩、时间shape/ERP-span的下一切片；原公共执行来源与效能边界保留。
 
