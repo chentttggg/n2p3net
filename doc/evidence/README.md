@@ -7,7 +7,7 @@
 - [2026-10-11 CalibrationPrefix保存重放与调用端复签](research_resume_20261011.zh.md#calibrationprefix保存重放与调用端复签)：actual prefix/inner/future捕获、真实空间与失败策略、混合概率复算准入、一次包校验和紧凑凭证；候选程序strict nested与公共效能另验。
 - [2026-10-11 原云候选面板完整分母与配对读数](research_resume_20261011.zh.md#原云候选面板完整分母与配对读数)：8人/152共同请求，原80对照及20指定导出；grouped的NLL风险与source→scratch方向明确，原failed producer不改签。
 - [2026-10-11 八人候选数据分析](cloud_candidate_analysis_20261011.zh.md)：逐人复算100行配对差值，比较88配置；校准剂量、温度概率风险、NN+xDAWN及匹配scratch读数。保152请求/144概率分母、原来源与单seed开发边界，新拟合0。
-- [2026-10-11 小选择组与单完整组评估](prefix_small_group_evaluation_20261011.zh.md)：A01原始物理owner显示每个selection为120 flash/10 repetition；小块会遇到未知响应支持与同target重复测量，单组只能支持fixed或预冻结source温度，不能直接把grouped OOF下限改为1。
+- [小选择组与单完整组评估](research_resume_20261011.zh.md#p1数值门诊断与小组协议评估)：A01原始物理owner显示每个selection为120 flash/10 repetition；256 Hz原始支持与128 Hz模型输入分开绑定，小块会遇到未知响应支持与同target重复测量，单组只能支持fixed或预冻结source温度。
 - [2026-10-11 P1冻结响应与噪声程序方向](research_resume_20261011.zh.md#p1后续方向冻结响应与噪声程序的配对评分)：8个反例与2个小型producer关系核验支持modern R物理转换和共同paired指标切片；接口与新native panel尚待签收。
 - [2026-10-11 P1软件入口修后验收](research_resume_20261011.zh.md#p1软件入口修后验收)：公共source cohort与真实C labels两RED修后拒绝，modern R物理转换与共同指标已合入；16格native执行另验。
 - [2026-10-11 P1 native面板封口](research_resume_20261011.zh.md#p1软件入口修后验收)：8人×shared/private共16格完成8 anchor/16 noise fit和保存态重放；16 held均数值门不可用，概率覆盖0，不构成效能结果。

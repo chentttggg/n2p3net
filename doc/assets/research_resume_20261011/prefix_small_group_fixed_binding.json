@@ -1,0 +1,58 @@
+{
+  "schema": "prefix_small_group_fixed_evaluation_binding/1",
+  "base_commit": "f887952ef8083a668d40318c0fc3002a7b490346",
+  "source_mat_sha256": "cdf9bca4f48c61ee9c9ba998382a4e84392918c9dbc5a43f45ee0052614e25bd",
+  "native_source_rate_hz": 256.0,
+  "fixed_common_response_samples": 308,
+  "fixed_common_preroll_samples": 51,
+  "p1_raw_model_response_samples": 307,
+  "fixed_artifacts": {
+    "probe.json": {
+      "bytes": 64251,
+      "sha256": "ea4b75c2cb01d1ae31f497f3b2798f089c5b57765db480c92effd55d63a8b19a"
+    },
+    "probe.log": {
+      "bytes": 2510,
+      "sha256": "e7587a009ee7203df883a456c139d81aa55ea6ccd7a560350a32a7bedb14ba88"
+    },
+    "probe.py": {
+      "bytes": 9854,
+      "sha256": "aa640b1e87f603dc228c9d3d80cb06e18e79797a8f0035c6cbe5e45af39b355b"
+    },
+    "REPORT.zh.md": {
+      "bytes": 14118,
+      "sha256": "58e26477b1db94e3887d8e21cbf9024d0a16a7e0f8dbe4884d93552d5e18d7c1"
+    }
+  },
+  "preserved_parent_red": {
+    "binding.json": {
+      "bytes": 1322,
+      "sha256": "bf8b45d759760264fe4d5b7354efc35de17638b498191bfcead14d97c7edfb2b"
+    },
+    "probe.json": {
+      "bytes": 32092,
+      "sha256": "48a8922fd5156fb0c633bb3c3820974c78769f1e8c267a7b7148de7a62f9fb4e"
+    },
+    "probe.log": {
+      "bytes": 3627,
+      "sha256": "7847f66a18c03fb44cbd7d7770c75e533820e4f6c2e166ed7761816e52e543dc"
+    },
+    "REPORT.zh.md": {
+      "bytes": 12914,
+      "sha256": "70d2c77f1b720a48f29f08c46e0a60b34b69f622f04b393e4d3d5f848d9c7fa2"
+    },
+    "small_group_probe.py": {
+      "bytes": 9255,
+      "sha256": "33f040645ffb8ae1a6564f78a4413bbbcef1a415fa9e9097bb932df11b634747"
+    }
+  },
+  "new_source_fits": 0,
+  "new_target_fits": 0,
+  "future_scores": 0,
+  "future_results_used_for_method_choice": false,
+  "production_modified": false,
+  "public_matrix_modified": false,
+  "scope": "A01 native owner; first three selections; all 30 repetition recoveries; R=1,2,5 blocks; analytic true single-row temperature; no model fit",
+  "end_commit_after_probe": "933c45c92ab49b4e47cbd6f4df2fa09144de2c3e",
+  "post_probe_tree_note": "Root commits after probe; no production files in this fixed scope were edited by probe."
+}
