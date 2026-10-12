@@ -272,10 +272,10 @@ class OperatorAwareLDA:
         arrays = self._arrays()
         metadata = self._metadata()
         metadata["artifact_sha256"] = metadata_digest(metadata)
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("xb") as handle:
-            np.savez_compressed(handle, **arrays, metadata=np.asarray(json.dumps(metadata, sort_keys=True)))
+        from research.execution import publish_exclusive
+
+        publish_exclusive(path, lambda handle: np.savez_compressed(
+            handle, **arrays, metadata=np.asarray(json.dumps(metadata, sort_keys=True))))
 
     @classmethod
     def load(cls, path):

@@ -562,13 +562,18 @@ def save_ea_feature_artifact(
         "fit_plan_json": np.asarray(json.dumps(artifact.fit_plan.record(), sort_keys=True)),
         "alignment_json": np.asarray(json.dumps(artifact.alignment, sort_keys=True)),
     }
+    if path.exists() or _record_path(path).exists():
+        raise FileExistsError(f"refusing to replace an existing EA artifact: {path}")
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp.npz")
     (np.savez_compressed if compressed else np.savez)(temporary, **payload)
     temporary.replace(path)
     file_sha, size = _file_digest(path)
-    _record_path(path).write_text(json.dumps(artifact.record(cache_sha256=file_sha, byte_size=size),
-                                          ensure_ascii=False, indent=2), encoding="utf-8")
+    record = _record_path(path)
+    temporary_record = record.with_name(f".{record.name}.tmp")
+    temporary_record.write_text(json.dumps(artifact.record(cache_sha256=file_sha, byte_size=size),
+                                           ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary_record.replace(record)
     return path
 
 

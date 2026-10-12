@@ -48,18 +48,21 @@ def main(argv=None):
     args.output.mkdir(parents=True, exist_ok=False)
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
     payload = json.loads(args.quality.read_text(encoding="utf-8"))
-    assert payload["digest"] == semantic_sha256(payload["model"])
+    if payload["digest"] != semantic_sha256(payload["model"]):
+        raise ValueError("quality model digest differs from its payload")
     quality = load_epoch_quality(args.quality)
     arms = {arm["name"]: arm for arm in plan["pipelines"]}
     sessions, counts, arrays = [], [], {}
     for index, session in enumerate(plan["evaluation_sessions"]):
         paths = [arms[name]["evaluation_caches"][index] for name in ("historical_no_qc", "local_recovery")]
         for path in paths:
-            assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == plan["input_sha256"][path]
+            if hashlib.sha256(Path(path).read_bytes()).hexdigest() != plan["input_sha256"][path]:
+                raise ValueError(f"evaluation cache differs from the planned input: {path}")
         historical, continuous = [load_epoch_dataset(path, require_labels=True) for path in paths]
         final = apply_epoch_quality(continuous, quality)
         np.testing.assert_array_equal(historical.event_timeline.event_ids, final.event_timeline.event_ids)
-        assert historical.channel_names == final.channel_names
+        if historical.channel_names != final.channel_names:
+            raise ValueError("historical and recovered caches disagree on channel order")
         old, old_mask = dense(historical)
         _, intermediate = dense(continuous)
         new, mask = dense(final)
