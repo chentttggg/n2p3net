@@ -98,6 +98,8 @@ Claude review 分支的 U5a-04、U7-19、U7-24、U7-26 和 U1-01 fixture 修复�
 
 整树中的candidate common-support实现没有直接保留：它按候选 finite logits 求交，允许候选以abstain缩小比较支持，且没有保存support indices/digest和R5完整block合同。纯数组反例已复现该选择偏差；`refit_full_prefix`早拒则保留，并在selector入口提前拒绝，避免把合同错误降级为候选失败。后续需先建设候选无关、可重放的validation support再恢复该选择修复，范围和来源见[calibration selection review](../assets/research_resume_20261012/calibration_selection_review.json)。
 
+整树合并后的当前覆盖审计固定主树 `19d32e1`：73条 commit/path 逻辑项中，39条已等价接收、8条由主树新实现取代、26条仍是实际待接，0条仅凭历史保留。594份 evidence、9个 frozen manifest及cleanup manifest逐字节保持；分支祖先关系、逐路径触发器、调用者和科学合同见[当前覆盖JSON](../assets/research_resume_20261012/claude_current_coverage.json)与[覆盖说明](../assets/research_resume_20261012/claude_current_coverage.md)。这份审计没有运行模型、fixture、fit/load、public score或全套测试。
+
 云端 entry005 在10:14的权威快照为 `running`：原0–3四人重放已准入，4–7四worker各自保存1672个内部 prediction cells，actual exit、terminal receipt、complete result 和 8人/152 requested future decision receipt 当时尚未闭合。5.51秒资源采样为 aggregate CPU 835.83%、GPU样本 7/95/95/94/0%、controller RSS 2.439 GiB，cgroup memory约59.85 GiB、OOM 0；快照与源码/owner状态见[entry005记录](../assets/research_resume_20261012/entry005_status_20261012_101415.json)。entry005继续消费自己的冻结源。P1按既定完整16格计划推进：在原Windows export、科学caller/lease、最终controller和Linux资源门闭合并有资源后，由唯一云窗口自主冻结执行；科研代码修复不要求重跑entry005。
 
 整树候选的审阅checkout已完成用途并退役：候选commit仍由 `codex/claude-merge-candidate-20261012` 保存，四份审阅/白名单文件按原字节迁入主树 `tmp/CANDIDATE_MERGE_REVIEW_20261012/`，哈希逐份一致，见[恢复定位](../assets/research_resume_20261012/review_checkout_retirement.json)。指标和SplitBN实施树继续保留。证据索引恢复为四主题入口，已归档日期页通过原恢复清单追溯，当前索引的本地链接均可解析。

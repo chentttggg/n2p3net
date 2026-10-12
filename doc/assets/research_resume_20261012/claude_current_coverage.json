@@ -1,0 +1,1880 @@
+{
+  "schema": "n2p3_candidate_current_coverage/1",
+  "main_head": "19d32e1d323fe0775b2da29a49aff90d7afdd529",
+  "claude_head": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+  "candidate_scope_base": "1badd3cdca929619560462e9052f9eeae64e125d",
+  "runtime_scope_manifest": "current_coverage_manifest.json",
+  "specialist_audits": {
+    "training": "coverage_training.json",
+    "data": "coverage_data.json",
+    "science": "coverage_science.json"
+  },
+  "row_count": 73,
+  "status_counts": {
+    "真实待接": 26,
+    "已等价接收": 39,
+    "主树新实现取代": 8
+  },
+  "rows": [
+    {
+      "payload_source_sha": "7e1f219467118c1c76eabf5f901b1fb558ff9ccd",
+      "path": "src/research/source_execution.py",
+      "status": "真实待接",
+      "claude_anchor": "reserve_nested caps desired by requested jobs; resolve_source_resources rejects cloud floor on CPU.",
+      "main_anchor": "e022:876 still uses max(requested,cpu_budget//groups); :1048-1055 lacks CPU-device rejection.",
+      "trigger": "One-job nested tail can reserve target_workers; a declared GPU floor can be evaluated on CPU.",
+      "scientific_contract": "Cloud floor CPU=25/GPU=4 and requested-ready-job accounting must fail closed.",
+      "callers": "HostMemoryAdmission.target_workers and resolve_source_resources in source-chain target scoring.",
+      "source_commit_sha": "7e1f219467118c1c76eabf5f901b1fb558ff9ccd",
+      "status_en": "real_pending"
+    },
+    {
+      "payload_source_sha": "fe5c8678ab534cede05d3e852a2c07cdcd3173ff",
+      "path": "experiments/run_domain_transfer_matrix.py",
+      "status": "真实待接",
+      "claude_anchor": "Consumes entry.shard_subjects and rejects a non-partition.",
+      "main_anchor": "e022:44-48 re-strides subjects by parent target_workers.",
+      "trigger": "Child inner_workers_per_group and parent target_workers can differ, dropping/repeating subjects.",
+      "scientific_contract": "Each declared target participant is evaluated exactly once with the requested denominator.",
+      "callers": "main calls target_job_groups after source_chain_record.",
+      "source_commit_sha": "fe5c8678ab534cede05d3e852a2c07cdcd3173ff",
+      "status_en": "real_pending"
+    },
+    {
+      "payload_source_sha": "fe5c8678ab534cede05d3e852a2c07cdcd3173ff",
+      "path": "experiments/run_source_training_chain.py",
+      "status": "真实待接",
+      "claude_anchor": "_prepare_outer_plans persists final_jobs.shard_subjects and each child subject list.",
+      "main_anchor": "e022:2096-2109 persists shards only.",
+      "trigger": "The matrix has no authoritative membership from actual child plans.",
+      "scientific_contract": "Actual child target membership and producer identity must flow into matrix records.",
+      "callers": "_prepare_outer_plans creates outer_evaluation_jobs.",
+      "source_commit_sha": "fe5c8678ab534cede05d3e852a2c07cdcd3173ff",
+      "status_en": "real_pending"
+    },
+    {
+      "payload_source_sha": "4faf130510f419e762d3d5f73e1ba46ad06d1127",
+      "path": "experiments/prepare_source_selection.py",
+      "status": "真实待接",
+      "claude_anchor": "Empty target scope becomes invalid for target_calibration; schema is required.",
+      "main_anchor": "e022:208-216 checks schema only when target_scope is truthy.",
+      "trigger": "Full target cache records dataset_scope={} and can feed target calibration selection.",
+      "scientific_contract": "Selection consumes only target-calibration-scoped features; test rows cannot enter source selection.",
+      "callers": "CLI loads target feature record then writes target_feature_record.",
+      "source_commit_sha": "4faf130510f419e762d3d5f73e1ba46ad06d1127",
+      "status_en": "real_pending"
+    },
+    {
+      "payload_source_sha": "4faf130510f419e762d3d5f73e1ba46ad06d1127",
+      "path": "src/train/source_sampling.py",
+      "status": "真实待接",
+      "claude_anchor": "load_pds_selection_record rechecks embedded target_feature_record scope.",
+      "main_anchor": "e022:457-480 checks source cache/rows only.",
+      "trigger": "A selection JSON bypassing the CLI can carry unscoped target features.",
+      "scientific_contract": "Every consumer revalidates target calibration scope at artifact admission.",
+      "callers": "run_pretrain_supervised and run_candidate_cross_decision.",
+      "source_commit_sha": "4faf130510f419e762d3d5f73e1ba46ad06d1127",
+      "status_en": "real_pending"
+    },
+    {
+      "payload_source_sha": "72fa9cad7579db75b3dae2b82aee6730761b1923",
+      "path": "experiments/run_source_training_chain.py",
+      "status": "已等价接收",
+      "claude_anchor": "record.json read uses UTF-8.",
+      "main_anchor": "e022:2163 already uses encoding=utf-8.",
+      "trigger": "Localized JSON ledger text must resume across Windows locales.",
+      "scientific_contract": "Resume bytes and producer identity are locale-stable.",
+      "callers": "_evaluate_outer_group.",
+      "source_commit_sha": "72fa9cad7579db75b3dae2b82aee6730761b1923",
+      "status_en": "already_equivalent"
+    },
+    {
+      "payload_source_sha": "ad6a266de1ddecbfd615fde0a3d0e5ff0e1c3f19",
+      "path": "experiments/run_pretrain.py",
+      "status": "已等价接收",
+      "claude_anchor": "Probe step/accounting requires probe_components.",
+      "main_anchor": "e022:312-321 already guards both paths.",
+      "trigger": "Probe-validation-only batch leaves probe_components=None.",
+      "scientific_contract": "Probe split accounting cannot dereference absent training rows.",
+      "callers": "run_pretrain epoch loop.",
+      "source_commit_sha": "ad6a266de1ddecbfd615fde0a3d0e5ff0e1c3f19",
+      "status_en": "already_equivalent"
+    },
+    {
+      "payload_source_sha": "38fd4c33a5213365c8c0dd2c44cb85d19bfb5f45",
+      "path": "src/train/runtime.py",
+      "status": "真实待接",
+      "claude_anchor": "make_generator always CPU; randperm moves once for preloaded data.",
+      "main_anchor": "e022:567-587 creates a device generator for preloaded CUDA data.",
+      "trigger": "Live preload admission changes the seeded row order.",
+      "scientific_contract": "Seed identifies one permutation independent of preload; labels/residual masks remain aligned.",
+      "callers": "DeepBaseline.fit -> MatrixBatchSource.make_generator/iter_batches.",
+      "source_commit_sha": "38fd4c33a5213365c8c0dd2c44cb85d19bfb5f45",
+      "status_en": "real_pending"
+    },
+    {
+      "payload_source_sha": "1f9c9c8bb92dc99fd78cf9f9af3405c6af00ef33",
+      "path": "experiments/watch_resources.py",
+      "status": "已等价接收",
+      "claude_anchor": "_parse_gpu_query aggregates mean utilization, summed memory, gpu_count.",
+      "main_anchor": "e022:122-152 already has multi-line parser.",
+      "trigger": "nvidia-smi emits one line per GPU.",
+      "scientific_contract": "Resource evidence must report actual multi-GPU utilization and remain diagnostic.",
+      "callers": "watch_resources sampling loop.",
+      "source_commit_sha": "1f9c9c8bb92dc99fd78cf9f9af3405c6af00ef33",
+      "status_en": "already_equivalent"
+    },
+    {
+      "payload_source_sha": "fc2c957d98d82f74fffb551be3739bee505c42cf",
+      "path": "experiments/verify_pool_matrix.py",
+      "status": "已等价接收",
+      "claude_anchor": "Verifier snapshot/script identity and complete per-record final_status.",
+      "main_anchor": "e022:157-180 and :189-230 already contain gates.",
+      "trigger": "Empty/partial or old-verifier passes must not pass a matrix.",
+      "scientific_contract": "Verification is producer-bound; requested failures remain failures.",
+      "callers": "verify_pool_matrix scans result records/progress.",
+      "source_commit_sha": "fc2c957d98d82f74fffb551be3739bee505c42cf",
+      "status_en": "already_equivalent"
+    },
+    {
+      "payload_source_sha": "3f91c6e04316be3722220d2b2ad1248f8e1fe011",
+      "path": "experiments/run_source_pool_matrix.py",
+      "status": "真实待接",
+      "claude_anchor": "checked_workers raises on requested*threads > available and preserves requested count.",
+      "main_anchor": "e022:170-173 silently clamps workers.",
+      "trigger": "Same command changes plan/resume identity on a smaller host.",
+      "scientific_contract": "Requested worker/thread budget must be explicit failure, never silent serialization.",
+      "callers": "run_source_pool_matrix.main plan construction.",
+      "source_commit_sha": "3f91c6e04316be3722220d2b2ad1248f8e1fe011",
+      "status_en": "real_pending"
+    },
+    {
+      "payload_source_sha": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "path": "experiments/run_source_training_chain.py",
+      "status": "真实待接",
+      "claude_anchor": "_execute_source_groups calls with_cloud_resource_floor before resolve.",
+      "main_anchor": "e022:821 calls resolver directly.",
+      "trigger": "CUDA chain plan without floor bypasses central cloud config.",
+      "scientific_contract": "Cloud launches enforce CPU=25/GPU=4 unless explicitly exempt; utilization still needs measurement.",
+      "callers": "source-chain execution owner.",
+      "source_commit_sha": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "status_en": "real_pending"
+    },
+    {
+      "payload_source_sha": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "path": "src/research/source_execution.py",
+      "status": "真实待接",
+      "claude_anchor": "with_cloud_resource_floor loads central config; resolver rejects floor on CPU.",
+      "main_anchor": "e022 has neither helper nor CPU-device floor rejection.",
+      "trigger": "Unannotated CUDA plan or CPU plan with GPU floor reaches resolver.",
+      "scientific_contract": "Resource policy is centralized, typed and fail-closed before fits.",
+      "callers": "source-chain/resource resolver entry points.",
+      "source_commit_sha": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "status_en": "real_pending"
+    },
+    {
+      "payload_source_sha": "8a0d32e42ec828a6ed7671aa3475d8016f919743",
+      "path": "src/baselines/n2p3net.py",
+      "status": "真实待接",
+      "claude_anchor": "Passes strict_load=pretrained_state_dict is not None.",
+      "main_anchor": "e022:70-79 forwards pretrained_state_dict without strict_load.",
+      "trigger": "run_pretrain_supervised passes initial trunk_state_dict to selection/refit; DeepBaseline skips shape/missing tensors.",
+      "scientific_contract": "Declared warm-start must fully initialize or fail before fit; checkpoint SHA cannot certify a partial random trunk.",
+      "callers": "run_pretrain_supervised:1035-1056 and :1139-1160.",
+      "source_commit_sha": "8a0d32e42ec828a6ed7671aa3475d8016f919743",
+      "status_en": "real_pending"
+    },
+    {
+      "payload_source_sha": "b0e3196b8a09fd14597a3bcb4f542f142c29c2c4",
+      "path": "src/models/splitbn.py",
+      "status": "主树新实现取代",
+      "replacement_source": "ddcd834/49dea0df756f6bc175627cd45c6e52561884d49c",
+      "claude_anchor": "Sequential target moments and aligned channel_masks.",
+      "main_anchor": "e022:561-860 is newer ddcd/49de implementation with actual order, masks, scope/input digests, rollback and receipt validation; SubjectAdapter passes masks and validates.",
+      "trigger": "Downstream moments must use installed upstream target buffers and packed observed channels.",
+      "scientific_contract": "Target-buffer estimand is actual-site population with persisted scope/mask/source identity.",
+      "callers": "SubjectAdapter initial/refit and target-install receipt validators.",
+      "source_commit_sha": "b0e3196b8a09fd14597a3bcb4f542f142c29c2c4",
+      "status_en": "main_replacement"
+    },
+    {
+      "payload_source_sha": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "path": "src/baselines/deep.py",
+      "status": "已等价接收",
+      "claude_anchor": "Deletes save_checkpoint/load_state_dict_file.",
+      "main_anchor": "e022:569-593 retains definitions, but no production or active test caller; active loaders use transfer.checkpoint. Current HEAD removed this orphan definition/unused allocation; scoped callers remain unaffected.",
+      "trigger": "No active runtime trigger; helpers are orphaned.",
+      "scientific_contract": "Removal is cleanup and must not be confused with warm-start strictness.",
+      "callers": "No scoped caller found; active checkpoint path is src/transfer/checkpoint.py.",
+      "source_commit_sha": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "status_en": "already_equivalent",
+      "current_main_commit": "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021"
+    },
+    {
+      "payload_source_sha": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "path": "src/research/domain_folds.py",
+      "status": "已等价接收",
+      "claude_anchor": "Deletes unused pairs allocation.",
+      "main_anchor": "e022:46-67 creates/deletes pairs without consuming it. Current HEAD removed this orphan definition/unused allocation; scoped callers remain unaffected.",
+      "trigger": "No runtime trigger; fold outputs do not depend on allocation.",
+      "scientific_contract": "Domain LODO/ceiling membership and one-domain-per-subject validation are unchanged.",
+      "callers": "domain_lodo_folds/domain_ceiling_folds call _aligned_axes.",
+      "source_commit_sha": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "status_en": "already_equivalent",
+      "current_main_commit": "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021"
+    },
+    {
+      "payload_source_sha": "b36000c86530583c75415413e79caf2360422248",
+      "path": "experiments/run_source_training_chain.py",
+      "status": "已等价接收",
+      "claude_anchor": "Propagates memory_admission.native_threads to E2 initializer and torch.set_num_threads.",
+      "main_anchor": "e022:396-445 already has threads_per_worker/initargs.",
+      "trigger": "Ledger reserves native threads; one-thread E2 workers waste CPU and block ready work.",
+      "scientific_contract": "Effective worker CPU must match ledger; nominal capacity is not acceptance.",
+      "callers": "E2 path at e022:1700-1704 passes memory_admission.",
+      "source_commit_sha": "b36000c86530583c75415413e79caf2360422248",
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D01",
+      "candidate_commit": "72fa9cad7579db75b3dae2b82aee6730761b1923",
+      "path": "experiments/prepare_source_records.py",
+      "candidate_hunk": "resume preparation.json as explicit UTF-8",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；main读取preparation.json显式UTF-8，失败账本由atomic_write_json以UTF-8写回。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_source_records.py",
+          "line": 115,
+          "function": "main",
+          "line_text": "    result = json.loads(result_path.read_text(encoding=\"utf-8\")) if result_path.exists() else {"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_source_records.py",
+          "line": 184,
+          "function": "main",
+          "line_text": "            atomic_write_json(result_path, result)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/research/execution.py",
+          "line": 54,
+          "function": "atomic_write_json",
+          "line_text": "    encoded = (json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + \"\\n\").encode(\"utf-8\")"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "原有完成/失败账本保持可续读，不改原preparation method、manifest和prefix binding。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D02",
+      "candidate_commit": "311e70df6868cc9fa0011e82260c80e358496d52",
+      "path": "experiments/report_brainsync_quality.py",
+      "candidate_hunk": "record digests of explicit preprocessing/continuous-QC/epoch-QC/ocular inputs",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；非个人包loader路径hash四类显式文件并放入request；recording_quality在loader调用后继续持有同一request dict。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/report_brainsync_quality.py",
+          "line": 53,
+          "function": "main.loader",
+          "line_text": "        for name in (\"preprocessing_config\", \"continuous_qc_model\", \"epoch_qc_model\", \"ocular_model\"):"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/report_brainsync_quality.py",
+          "line": 57,
+          "function": "main.loader",
+          "line_text": "        continuous = load_continuous_qc(args.continuous_qc_model) if args.continuous_qc_model else None"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/research/recording_quality.py",
+          "line": 237,
+          "function": "create_recording_quality_report",
+          "line_text": "              \"request\": request or {}, \"notes\": [], \"sections\": [], \"plots\": [],"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/research/recording_quality.py",
+          "line": 261,
+          "function": "create_recording_quality_report",
+          "line_text": "        dataset = loader(root)"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "只读质量报告记录实际请求输入身份，无target读取或重新fit。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "候选本身hash后另行load；覆盖判定只证明相同实现已接，不扩大为并发路径替换下的同bytes消费证明。",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D03",
+      "candidate_commit": "ad3c6301aaeb2fc97272b0cb10cfaaa212a09985",
+      "path": "experiments/adapt_eeg_domain.py",
+      "candidate_hunk": "derived-cache caller opts into exclusive save",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；attested parent载入并绑定后，最终save_epoch_dataset显式exclusive=True。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/adapt_eeg_domain.py",
+          "line": 109,
+          "function": "main",
+          "line_text": "    source_path = Path(args.dataset_cache).resolve(strict=True)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/adapt_eeg_domain.py",
+          "line": 128,
+          "function": "main",
+          "line_text": "    output = save_epoch_dataset(args.output, adapted, compressed=not args.uncompressed, exclusive=True)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/epochs.py",
+          "line": 962,
+          "function": "save_epoch_dataset",
+          "line_text": "    if exclusive and any(candidate.exists() for candidate in (Path(path), _cache_record_path(path))):"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "派生view不能覆盖其attested parent或既有cache/record。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "exclusive模式是保存前存在检查；不宣称hard-link式并发exclusive publication。",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D04",
+      "candidate_commit": "ad3c6301aaeb2fc97272b0cb10cfaaa212a09985",
+      "path": "experiments/prepare_bi2014a_candidate.py",
+      "candidate_hunk": "early existing-output rejection",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "最终main和Claude文件blob相同；main在participant raw工作之前拒绝既有cache或episode directory。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 176,
+          "function": "main",
+          "line_text": "    if Path(args.output).exists():"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 178,
+          "function": "main",
+          "line_text": "    directories = sorted((p for p in args.root.glob('subject_*') if p.is_dir()), key=lambda p: int(p.name.split('_')[-1]))"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "旧候选缓存和完成participant目录保持原身份。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D05",
+      "candidate_commit": "ad3c6301aaeb2fc97272b0cb10cfaaa212a09985",
+      "path": "experiments/prepare_bi2014a_candidate.py",
+      "candidate_hunk": "candidate-cache save uses exclusive=True",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "旧单cache分支的拒绝覆盖意图仍由main最终save_epoch_dataset(...exclusive=True)实现；episode路径先以exist_ok=False创建独立participant目录。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 216,
+          "function": "main",
+          "line_text": "        save_epoch_dataset(args.output, combined, compressed=not args.uncompressed, exclusive=True)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 70,
+          "function": "prepare_episode_subject",
+          "line_text": "    output.mkdir(parents=True, exist_ok=False)"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "新派生cache使用新输出路径，不能重写旧prepared字节或成绩。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D06",
+      "candidate_commit": "ad3c6301aaeb2fc97272b0cb10cfaaa212a09985",
+      "path": "experiments/prepare_bi2014a_candidate.py",
+      "candidate_hunk": "old .candidate_audit.json switches to atomic_write_json",
+      "status": "主树新实现取代",
+      "status_zh": "主树新实现取代",
+      "evidence": "旧aggregate candidate_audit调用已由当前raw BI builder和episode preparation ledger程序取代；main/Claude最终文件均无该旧sidecar调用。builder在provenance中保存raw/后预处理label audit、schedule、raw scope和execution receipt，episode路径atomic写preparation.json并绑定cache/file/module SHA。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/bi2014a_candidate.py",
+          "line": 466,
+          "function": "build_bi2014a_subject_dataset",
+          "line_text": "    provenance = {\"source\": \"bi2014a_raw_csv\", \"subject_dir\": str(subject_dir.resolve()), \"source_sha256\": source_sha,"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/bi2014a_candidate.py",
+          "line": 475,
+          "function": "build_bi2014a_subject_dataset",
+          "line_text": "            \"raw_label_audit\": recovered.raw_label_audit.to_record(BI2014A_FLASH_SCHEDULE),"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 81,
+          "function": "prepare_episode_subject",
+          "line_text": "    ledger = {**prepared.ledger, 'source_profile_checkpoint': arguments['source_profile_checkpoint'],"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 85,
+          "function": "prepare_episode_subject",
+          "line_text": "    atomic_write_json(output / 'preparation.json', ledger, input_admission=owner)"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "沿当前builder的真实输入/时间/schedule审计和ledger保存，不恢复旧独立sidecar owner。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "这是当前程序取代旧发布点，不声称旧sidecar与新ledger schema/字节相同。",
+      "source_commit_sha": null,
+      "status_en": "main_replacement"
+    },
+    {
+      "id": "D07",
+      "candidate_commit": "ad3c6301aaeb2fc97272b0cb10cfaaa212a09985",
+      "path": "src/data/epochs.py",
+      "candidate_hunk": "opt-in exclusive parameter and cache/record collision gate",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main包含完全相同exclusive参数、文档和cache/record存在拒绝；整个epochs文件差异只在后来QC通道选择实现。两个授权caller仍显式传exclusive=True。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/epochs.py",
+          "line": 949,
+          "function": "save_epoch_dataset",
+          "line_text": "def save_epoch_dataset("
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/epochs.py",
+          "line": 962,
+          "function": "save_epoch_dataset",
+          "line_text": "    if exclusive and any(candidate.exists() for candidate in (Path(path), _cache_record_path(path))):"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/adapt_eeg_domain.py",
+          "line": 128,
+          "function": "main",
+          "line_text": "    output = save_epoch_dataset(args.output, adapted, compressed=not args.uncompressed, exclusive=True)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 216,
+          "function": "main",
+          "line_text": "        save_epoch_dataset(args.output, combined, compressed=not args.uncompressed, exclusive=True)"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "保持完成缓存/record及attested parent，默认其他合法writer行为不由本hunk改变。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D08",
+      "candidate_commit": "448b9b2992b3b1cb4fe2ea153637c101de482bbe",
+      "path": "src/data/source_parsers.py",
+      "candidate_hunk": "canonical integer subject identities before uniqueness checks",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；manifest验证对subject/session/run strip，整数subject规范化后去重；prepare_source_records在启动准备前调用该validator。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/source_parsers.py",
+          "line": 232,
+          "function": "validate_source_manifest",
+          "line_text": "        identity = tuple(str(item.get(key, \"\")).strip() for key in (\"subject\", \"session\", \"run\"))"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_source_records.py",
+          "line": 89,
+          "function": "main",
+          "line_text": "    validate_source_manifest(manifest)"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "实际participant身份不得由2/02别名变成两个拟合/评估参与者。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D09",
+      "candidate_commit": "448b9b2992b3b1cb4fe2ea153637c101de482bbe",
+      "path": "src/data/source_parsers.py",
+      "candidate_hunk": "reject duplicate path/member/raw_scope or digest/member/raw_scope declarations",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；validator使用json序列化raw_scope，对path/member/scope和非空sha256/member/scope分别去重，运行前fail closed。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/source_parsers.py",
+          "line": 240,
+          "function": "validate_source_manifest",
+          "line_text": "        # One physical recording (or declared sample scope of it) is one source record."
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_source_records.py",
+          "line": 89,
+          "function": "main",
+          "line_text": "    validate_source_manifest(manifest)"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "同一声明的物理recording/scope只准作一个source record；不同显式scope仍按其本身授权核对。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D10",
+      "candidate_commit": "18ac536a193edee0960f94558cdb948af68a4596",
+      "path": "src/data/dataset.py",
+      "candidate_hunk": "add raw.first_samp to file-relative TSV/CSV/JSON samples",
+      "status": "真实待接",
+      "status_zh": "真实待接",
+      "evidence": "main resolve_record_events原样返回read_event_table结果。表格sample和round(onset*sfreq)从文件0起；后续build_subject→preprocess直接把events送mne.Epochs，并按绝对源samples写timeline。无上游补偿、无first_samp==0门禁。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/dataset.py",
+          "line": 172,
+          "function": "read_event_table",
+          "line_text": "        if \"sample\" in table:"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/dataset.py",
+          "line": 228,
+          "function": "resolve_record_events",
+          "line_text": "        events, labels = read_event_table("
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/dataset.py",
+          "line": 399,
+          "function": "load_dataset",
+          "line_text": "        events, labels = resolve_record_events(raw, record)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/preprocess.py",
+          "line": 926,
+          "function": "preprocess",
+          "line_text": "    epochs = mne.Epochs("
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/preprocess.py",
+          "line": 948,
+          "function": "preprocess",
+          "line_text": "    event_samples = np.asarray(events[:, 0], dtype=np.int64).copy()"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/manifest.py",
+          "line": 298,
+          "function": "build_manifest_dataset",
+          "line_text": "            load_dataset("
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_eeg_dataset.py",
+          "line": 235,
+          "function": "main",
+          "line_text": "        dataset = build_manifest_dataset(load_manifest(args.manifest))"
+        }
+      ],
+      "trigger": "通用prepare_eeg_dataset --source manifest导入first_samp非零的cropped FIF，并使用文件相对onset/sample的TSV/CSV/JSON。例sfreq100、first_samp1000、onset2秒：main给200，正确MNE绝对index为1200；可变成NO_DATA，或偏早10秒取错数据。",
+      "scientific_contract": "doc/input_contract_math.zh.md:290-297要求e_i、p_i、q_i是绝对源index，数组切片减raw.first_samp；刺激与信号和失败分母必须同一时间轴。",
+      "priority": "P2",
+      "integration_action": "在event-file表格路径转换为MNE绝对samples；保留record.events/annotations原本绝对语义，并同步真实manifest调用反例及新执行身份。",
+      "caveat": "没有证据证明本问题已污染当前BI/BNCI公共prepared；真实触发限于这个仍可调用的通用manifest入口。未运行fixture/model/public任务。",
+      "source_commit_sha": null,
+      "status_en": "real_pending"
+    },
+    {
+      "id": "D11",
+      "candidate_commit": "18ac536a193edee0960f94558cdb948af68a4596",
+      "path": "src/data/dataset.py",
+      "candidate_hunk": "reject ambiguous NPY/NPZ event-file coordinates on nonzero first_samp",
+      "status": "真实待接",
+      "status_zh": "真实待接",
+      "evidence": "main NPY/NPZ event arrays在read_event_table载入后直接返回，无数组坐标约定字段或nonzero-first_samp拒绝；Claude hunk对该歧义明确fail closed。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/dataset.py",
+          "line": 153,
+          "function": "read_event_table",
+          "line_text": "    if suffix == \".npy\":"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/dataset.py",
+          "line": 156,
+          "function": "read_event_table",
+          "line_text": "    elif suffix == \".npz\":"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/dataset.py",
+          "line": 227,
+          "function": "resolve_record_events",
+          "line_text": "    if record.event_file is not None:"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/manifest.py",
+          "line": 298,
+          "function": "build_manifest_dataset",
+          "line_text": "            load_dataset("
+        }
+      ],
+      "trigger": "同一cropped recording配NPY/NPZ事件文件；相对sample200和绝对sample1200都满足当前(n,3)整数shape门禁，消费者无法证明约定。",
+      "scientific_contract": "事件/信号必须共享实际绝对源支持，不能猜NPY/NPZ的坐标约定。",
+      "priority": "P2",
+      "integration_action": "纳入同一U1-02修正：first_samp非零且event_file是NPY/NPZ时拒绝，直到存在显式样本约定接口。",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "real_pending"
+    },
+    {
+      "id": "D12",
+      "candidate_commit": "cd9e41f2379b50ed9a08e8b0238b8d9a0f32ec04",
+      "path": "src/data/qc_features.py",
+      "candidate_hunk": "recompute selected montage scale and relative PTP via cached ratio inversion",
+      "status": "主树新实现取代",
+      "status_zh": "主树新实现取代",
+      "evidence": "main已以actual selected_X重算PTP/STD/scale：EpochQCFeatures.select_channels要求已选X、保留原observed bits，调用唯一compute_epoch_qc_features；select_epoch_channels真实caller传values，并在provenance/lineage持有QC_CHANNEL_SELECTION_PROGRAM。Claude ratio×stored-float32-scale逆推不应回接。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/qc_features.py",
+          "line": 18,
+          "function": "QC_CHANNEL_SELECTION_PROGRAM",
+          "line_text": "QC_CHANNEL_SELECTION_PROGRAM = \"selected_preprocessed_X_observed_QC_recompute/1\""
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/qc_features.py",
+          "line": 88,
+          "function": "EpochQCFeatures.select_channels",
+          "line_text": "    def select_channels("
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/qc_features.py",
+          "line": 118,
+          "function": "EpochQCFeatures.select_channels",
+          "line_text": "        return compute_epoch_qc_features("
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/qc_features.py",
+          "line": 201,
+          "function": "compute_epoch_qc_features",
+          "line_text": "        raw_ptp = np.ptp(values, axis=2)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/epochs.py",
+          "line": 1798,
+          "function": "select_epoch_channels",
+          "line_text": "            dataset.qc_features.select_channels(picks, selected_X=values)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/epochs.py",
+          "line": 1805,
+          "function": "select_epoch_channels",
+          "line_text": "            parameters={\"target_channels\": list(targets), \"qc_feature_program\": qc_program},"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "median/max(scale,eps)再经float32缓存有信息损失；实际选后统计必须从原X和保留观测mask派生，旧cache不补签。",
+      "priority": null,
+      "integration_action": "保留main实现及真实selected_X caller；禁止回退到Claude ratio inverse。",
+      "caveat": "覆盖结论来自固定源码和caller，不从8d9ad76 ancestry或既往测试数推断。",
+      "source_commit_sha": null,
+      "status_en": "main_replacement"
+    },
+    {
+      "id": "D13",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "path": "experiments/analyze_brainsync_recovery.py",
+      "candidate_hunk": "replace bare quality-payload digest assertion with explicit ValueError",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；在load_epoch_quality之前显式核payload digest，不受python -O移除assert影响。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/analyze_brainsync_recovery.py",
+          "line": 51,
+          "function": "main",
+          "line_text": "    if payload[\"digest\"] != semantic_sha256(payload[\"model\"]):"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/analyze_brainsync_recovery.py",
+          "line": 53,
+          "function": "main",
+          "line_text": "    quality = load_epoch_quality(args.quality)"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "研究对照只能消费原冻结质量状态，不以优化模式跳过完整性。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D14",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "path": "experiments/analyze_brainsync_recovery.py",
+      "candidate_hunk": "replace cache-SHA/channel-order assertions with explicit ValueError",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；两臂cache加载前核plan input SHA，最终比较前核channel_names，timeline事件一致仍由np.testing.assert_array_equal核对。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/analyze_brainsync_recovery.py",
+          "line": 59,
+          "function": "main",
+          "line_text": "            if hashlib.sha256(Path(path).read_bytes()).hexdigest() != plan[\"input_sha256\"][path]:"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/analyze_brainsync_recovery.py",
+          "line": 63,
+          "function": "main",
+          "line_text": "        np.testing.assert_array_equal(historical.event_timeline.event_ids, final.event_timeline.event_ids)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/analyze_brainsync_recovery.py",
+          "line": 64,
+          "function": "main",
+          "line_text": "        if historical.channel_names != final.channel_names:"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "原始对照输入、事件身份和通道顺序必须相同，禁止悄悄对比替换cache。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D15",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "path": "src/data/continuous_qc.py",
+      "candidate_hunk": "name the required empirical epoch recovery in zero-phase exception",
+      "status": "真实待接",
+      "status_zh": "真实待接",
+      "evidence": "main在epoch_recovery存在时先核preprocessing并return；无epoch_recovery且zero时同样拒绝，但仍提示bidirectional boundary recovery。Claude将提示改为准确的fitted empirical epoch recovery model。数值、准入和调用行为已等价，准确文案仍未接。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/continuous_qc.py",
+          "line": 98,
+          "function": "validate_recovery_contract",
+          "line_text": "def validate_recovery_contract(model, preprocessing, *, source_reference, ocular_model=None):"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/continuous_qc.py",
+          "line": 105,
+          "function": "validate_recovery_contract",
+          "line_text": "        raise ValueError(\"channel-local zero-phase QC requires fitted bidirectional boundary recovery\")"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/brainsync.py",
+          "line": 290,
+          "function": "shared BrainSync preprocessing",
+          "line_text": "        validate_recovery_contract(continuous_qc_model, preprocessing,"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/transfer/quality.py",
+          "line": 72,
+          "function": "_validate_dataset_raw_quality",
+          "line_text": "                validate_recovery_contract(frozen, dataset.preprocessing,"
+        }
+      ],
+      "trigger": "BrainSync zero-phase预处理配没有model.epoch_recovery的continuous QC；current ValueError描述没有准确命名实际被检查的model字段。",
+      "scientific_contract": "失败消息应描述实际所需经验epoch恢复合同；这条hunk本身不新增或放松恢复证书。",
+      "priority": "P3",
+      "integration_action": "可接准确诊断文字；不把它计为未接数值/安全门禁。",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "real_pending"
+    },
+    {
+      "id": "D16",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "path": "src/data/ea_artifact.py",
+      "candidate_hunk": "refuse existing EA NPZ or record before publication",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；save_ea_feature_artifact先核actual parent/expected plan关系，写前拒绝npz或record冲突；prepare_euclidean_alignment_cache caller也有新路径门禁和独立fit-plan SHA。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/ea_artifact.py",
+          "line": 550,
+          "function": "save_ea_feature_artifact",
+          "line_text": "    assert_parent_replay(artifact, parent=parent, expected_plan=expected_plan)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/ea_artifact.py",
+          "line": 565,
+          "function": "save_ea_feature_artifact",
+          "line_text": "    if path.exists() or _record_path(path).exists():"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_euclidean_alignment_cache.py",
+          "line": 40,
+          "function": "main",
+          "line_text": "    if any(path.exists() for path in (output, output.with_suffix(\".record.json\"))):"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_euclidean_alignment_cache.py",
+          "line": 50,
+          "function": "main",
+          "line_text": "    saved = save_ea_feature_artifact("
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "EA组件维持非物理dimensionless合同与原授权parent；完成artifact不覆盖。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "存在检查+replace不等于并发无覆盖hard-link publication；候选本身也无此更强保证。",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D17",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "path": "src/data/ea_artifact.py",
+      "candidate_hunk": "replace EA attestation record through temporary file",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；NPZ发布后计算真实file SHA/size，再写temporary_record并replace；loader随后验证record中cache SHA且从verified bytes解码和parent replay。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/ea_artifact.py",
+          "line": 571,
+          "function": "save_ea_feature_artifact",
+          "line_text": "    file_sha, size = _file_digest(path)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/ea_artifact.py",
+          "line": 573,
+          "function": "save_ea_feature_artifact",
+          "line_text": "    temporary_record = record.with_name(f\".{record.name}.tmp\")"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/ea_artifact.py",
+          "line": 580,
+          "function": "load_ea_feature_artifact",
+          "line_text": "def load_ea_feature_artifact("
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "record不暴露半份JSON；父输入/fit plan与EA实际数值关系仍由原owner核验。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D18",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "path": "src/data/epochs.py",
+      "candidate_hunk": "atomically replace epoch-cache attestation record under input admission",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main相同hunk以temporary path写UTF-8再replace，并将temporary_paths报给admission；save_epoch_dataset实际调用write_epoch_dataset_record。epochs整文件其他差异来自main QC新程序。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/epochs.py",
+          "line": 1065,
+          "function": "save_epoch_dataset",
+          "line_text": "    write_epoch_dataset_record(path, dataset)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/epochs.py",
+          "line": 1374,
+          "function": "write_epoch_dataset_record",
+          "line_text": "    record[\"cache_attestation\"] = {"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/epochs.py",
+          "line": 1386,
+          "function": "write_epoch_dataset_record",
+          "line_text": "    temporary = record_path.with_name(f\".{record_path.name}.tmp\")"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "实际缓存sha/size和完整合同attestation绑定，资源owner计入暂存写入。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D19",
+      "candidate_commit": "c2fa49e8b95c2a4882278f43807a50ba321e3a55",
+      "path": "src/data/domain_alignment.py",
+      "candidate_hunk": "source_weighted buffer_digest hashes actual source operands",
+      "status": "真实待接",
+      "status_zh": "真实待接",
+      "evidence": "main source_weighted mean/covariance完全由source weights、means、covariances派生，仍buffer_digest=array_digest(values)。FastAlignmentState.record把buffer_digest纳入state_digest；fit_galia_alignment CLI保存该digest和fast_record，因而无关target buffer改变冻结state identity。Claude hunk对source_weighted改hash实际source operands，target_calibration保持target-buffer digest。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/domain_alignment.py",
+          "line": 402,
+          "function": "AcwState.fast_alignment",
+          "line_text": "        if fit_scope == \"source_weighted\":"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/domain_alignment.py",
+          "line": 445,
+          "function": "AcwState.fast_alignment",
+          "line_text": "            buffer_digest=array_digest(values),"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/domain_alignment.py",
+          "line": 217,
+          "function": "FastAlignmentState.record",
+          "line_text": "    def record(self) -> dict[str, object]:"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/data/domain_alignment.py",
+          "line": 449,
+          "function": "AcwState.transform_fast",
+          "line_text": "        if fast_state.parent_state_digest != self.state_digest:"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/fit_galia_alignment.py",
+          "line": 77,
+          "function": "main",
+          "line_text": "        choices=(\"target_calibration\", \"source_weighted\"),"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/fit_galia_alignment.py",
+          "line": 121,
+          "function": "main",
+          "line_text": "        fast = state.fast_alignment("
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/fit_galia_alignment.py",
+          "line": 135,
+          "function": "main",
+          "line_text": "            fast_alignment_state_digest=np.asarray(fast.record()[\"state_digest\"]),"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/fit_galia_alignment.py",
+          "line": 152,
+          "function": "main",
+          "line_text": "        \"fast_alignment\": fast_record,"
+        }
+      ],
+      "trigger": "fit_galia_alignment --fast-fit-scope source_weighted，冻结同一source state，分别提供两个合法不同target_calibration feature buffer；mean/scales不变但main fast buffer_digest/state_digest变。",
+      "scientific_contract": "doc/research_program.zh.md:313和doc/technical_structure.zh.md:160要求actual fit来源与声明关系绑定；source-only状态身份不应假装由未参与fit的target-buffer数值决定。",
+      "priority": "P2",
+      "integration_action": "接source_weighted专用source-operand digest；保持parent_state_digest覆盖完整ACW state，target feature输出身份另由调用者绑定，不重签既有fast artifacts。",
+      "caveat": "该hunk影响provenance/state identity，transform数值无差异；当前生产搜索只发现fit_galia_alignment CLI调用，不宣称默认NN/EA主链受影响。",
+      "source_commit_sha": null,
+      "status_en": "real_pending"
+    },
+    {
+      "id": "D20",
+      "candidate_commit": "7a3df6f91c052669e26ec60fecc8247e88b81c61",
+      "path": "experiments/fit_galia_alignment.py",
+      "candidate_hunk": "validate paired flags and all output collisions before fit or any write",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；paired target/fast flags、suffix和三个resolved outputs存在检查都先于adapter.fit，fast output首写前全部已检查；旧后置重复门禁已删除。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/fit_galia_alignment.py",
+          "line": 106,
+          "function": "main",
+          "line_text": "    if (args.target_calibration is None) != (args.fast_output is None):"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/fit_galia_alignment.py",
+          "line": 111,
+          "function": "main",
+          "line_text": "    output = args.output.resolve(strict=False)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/fit_galia_alignment.py",
+          "line": 118,
+          "function": "main",
+          "line_text": "    state = adapter.fit(domains)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/fit_galia_alignment.py",
+          "line": 129,
+          "function": "main",
+          "line_text": "        np.savez_compressed("
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "既有state/aligned/fast artifact冲突不留下新orphan fast输出。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "本hunk是预检查顺序修复；不宣称三个文件构成跨文件事务或并发exclusive发布。",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D21",
+      "candidate_commit": "976f012d03411ba0b266e63ddba9786a33cf59b0",
+      "path": "experiments/correct_brainsync_reference.py",
+      "candidate_hunk": "serialize JSON only after collecting every missing declared sidecar",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；session和eeg_json先保留同一correction dict，allow_incomplete缺channels.tsv时append进入shared dict，所有JSON最后统一序列化；correct_sessions真实调用该builder。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/correct_brainsync_reference.py",
+          "line": 46,
+          "function": "prepare_session_correction",
+          "line_text": "    correction = {\"schema\": \"brainsync-reference-correction/1\", \"authority\": authority,"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/correct_brainsync_reference.py",
+          "line": 54,
+          "function": "prepare_session_correction",
+          "line_text": "    changes = {session_path: corrected}"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/correct_brainsync_reference.py",
+          "line": 66,
+          "function": "prepare_session_correction",
+          "line_text": "                correction[\"missing_declared_sidecars\"].append(relative)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/correct_brainsync_reference.py",
+          "line": 75,
+          "function": "prepare_session_correction",
+          "line_text": "            sidecar[\"ReferenceCorrection\"] = correction"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/correct_brainsync_reference.py",
+          "line": 90,
+          "function": "prepare_session_correction",
+          "line_text": "    return {path: value if isinstance(value, bytes)"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/correct_brainsync_reference.py",
+          "line": 101,
+          "function": "correct_sessions",
+          "line_text": "        changes.update(prepare_session_correction(root, previous=previous, authority=authority, allow_incomplete=allow_incomplete))"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "显式reference更正的authority、原session SHA、缺sidecar事实在每个更正JSON内一致；不改EEG samples或软件重参考。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D22",
+      "candidate_commit": "5ab8ee819f90ca6b29900aece07be310ae54d1b6",
+      "path": "experiments/prepare_candidate_subject_partitions.py",
+      "candidate_hunk": "refuse non-empty frozen partition output directory",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；非空directory在任何partition写入前拒绝，避免较少partition的rerun遗留旧partition_N.json。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 63,
+          "function": "main",
+          "line_text": "    # A frozen partition set is immutable: a rerun must not leave stale partition files beside a new manifest."
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 68,
+          "function": "main",
+          "line_text": "    for index, subjects in enumerate(partitions):"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "冻结subject分区完整membership与manifest同一集合，历史分母不可混入新partition。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D23",
+      "candidate_commit": "5ab8ee819f90ca6b29900aece07be310ae54d1b6",
+      "path": "experiments/prepare_candidate_subject_partitions.py",
+      "candidate_hunk": "publish each partition and manifest exclusively",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；partition和manifest都使用publish_exclusive，该shared owner先temporary xb/fsync再os.link发布，不覆盖existing destination。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 71,
+          "function": "main",
+          "line_text": "        publish_exclusive(path, lambda stream, content=content: stream.write(content))"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 101,
+          "function": "main",
+          "line_text": "    publish_exclusive(output / \"manifest.json\", lambda stream: stream.write(encoded))"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/research/execution.py",
+          "line": 86,
+          "function": "publish_exclusive",
+          "line_text": "def publish_exclusive(path: str | Path, write) -> Path:"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "src/research/execution.py",
+          "line": 99,
+          "function": "publish_exclusive",
+          "line_text": "        os.link(temporary, target)"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "冻结每份partition文件和manifest使用新artifact身份，禁止覆盖旧结果。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "整个partition set非跨文件事务；中断可留下partial set，rerun需要新目录。",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "id": "D24",
+      "candidate_commit": "5ab8ee819f90ca6b29900aece07be310ae54d1b6",
+      "path": "experiments/prepare_candidate_subject_partitions.py",
+      "candidate_hunk": "bind per-partition exact output bytes by sha256",
+      "status": "已等价接收",
+      "status_zh": "已等价接收",
+      "evidence": "main和Claude文件blob相同；写入partition的同一content bytes直接计算sha256并放manifest，manifest另绑定attested source cache与candidate task。",
+      "main_anchors": [
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 70,
+          "function": "main",
+          "line_text": "        content = json.dumps(list(subjects), indent=2).encode(\"utf-8\")"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 79,
+          "function": "main",
+          "line_text": "                \"sha256\": hashlib.sha256(content).hexdigest(),"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 85,
+          "function": "main",
+          "line_text": "        \"dataset_cache_sha256\": cache[\"sha256\"],"
+        },
+        {
+          "ref": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+          "path": "experiments/run_candidate_cross_decision.py",
+          "line": 691,
+          "function": "main",
+          "line_text": "        read_subject_manifest(args.target_subjects_file)"
+        }
+      ],
+      "trigger": "",
+      "scientific_contract": "分区输出bytes与原cache/task/membership一起记录。",
+      "priority": null,
+      "integration_action": "",
+      "caveat": "该候选hunk是producer-side manifest binding；未发现consumer自动读取该manifest per-file sha字段，因此不扩大为所有subject-list consumer已经严格校验这些sha。",
+      "source_commit_sha": null,
+      "status_en": "already_equivalent"
+    },
+    {
+      "commit": "7a808406698ab93d0cafff123350482b9d9b1763",
+      "title": "Bind sensitivity candidate reuse to its fit inputs (U7-01)",
+      "path": "experiments/run_n2p3_sensitivity.py",
+      "candidate_blob": "ddb22e470d2dd123cb92e2b854b6ebee6bd587c3",
+      "main_blob": "ddb22e470d2dd123cb92e2b854b6ebee6bd587c3",
+      "claude_blob": "ddb22e470d2dd123cb92e2b854b6ebee6bd587c3",
+      "parent_blob": "cf52fd1b2c9622b48040434bdaf358d85ebf8f79",
+      "adjudication": "candidate_input_digest/reusable_candidate_record bind cache, subjects, folds, epochs, seed and architecture; main=Claude=candidate.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "candidate_input_digest:269; reusable_candidate_record:275",
+      "claude_anchors": "same:269-281",
+      "status": "已等价接收",
+      "source_commit_sha": "7a808406698ab93d0cafff123350482b9d9b1763",
+      "status_en": "already_equivalent"
+    },
+    {
+      "commit": "7ed96fb5b69ad75391cca383ab1f23de91c7f67a",
+      "title": "Exclude the true candidate from the union bound (U4a-01)",
+      "path": "src/transfer/information_bound.py",
+      "candidate_blob": "0cc276d79f2b35e233311f34629e5ba21b21a704",
+      "main_blob": "5cec2947912ebb20e68d55a226965cf4423897fc",
+      "claude_blob": "4fb962735d6706668c1dba79ce6064cdfa4f9010",
+      "parent_blob": "5cec2947912ebb20e68d55a226965cf4423897fc",
+      "adjudication": "main is parent; Claude excludes diagonal q*=q in theoretical_hit_rate_bound. Trigger current union lower bound adds self competitor; contract q != q* plus declared layout.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "theoretical_hit_rate_bound:228-358 (old API)",
+      "claude_anchors": "theoretical_hit_rate_bound:228-366 (diag/layout fixes)",
+      "status": "真实待接",
+      "source_commit_sha": "7ed96fb5b69ad75391cca383ab1f23de91c7f67a",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "87d0a97b0cce11577ce43509d8f35dd7e43cc4bd",
+      "title": "Bound target noise draws by the classifier calibration IDs (U4a-02)",
+      "path": "src/transfer/operator_lda.py",
+      "candidate_blob": "e97c58020969ebfeb2849b68c8b15e60c7dd179f",
+      "main_blob": "222e47c9ac84d6de7595b8ced6e679db11e70089",
+      "claude_blob": "5df96937c66f828e609b6ec15e708de054b9275e",
+      "parent_blob": "181a16b41a7eb3059dbfb9578df8a49dc401a385",
+      "adjudication": "OperatorAwareLDA.__post_init__ must enforce target noise draw_ids subset of classifier calibration_ids for unconditional and conditional paths; main lacks unconditional gate.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "OperatorAwareLDA.__post_init__:132-157 (conditional-only draw check)",
+      "claude_anchors": "OperatorAwareLDA.__post_init__:143-155 (all target-calibration paths)",
+      "status": "真实待接",
+      "source_commit_sha": "87d0a97b0cce11577ce43509d8f35dd7e43cc4bd",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "8a5fe7d4704115b6fa4e12a32efa57924d01eb75",
+      "title": "Decide the replacement decline gate on the requested denominator (U6a-04)",
+      "path": "src/stats/transfer.py",
+      "candidate_blob": "02de5017033a890dfe8986aa0945ad0506e538a5",
+      "main_blob": "8af3bd41fc5e4bd65d44df33048fc2543f668944",
+      "claude_blob": "02de5017033a890dfe8986aa0945ad0506e538a5",
+      "parent_blob": "8af3bd41fc5e4bd65d44df33048fc2543f668944",
+      "adjudication": "_summary gate must use all requested participants or missing-result lower bound; main uses complete subset and has no gate basis.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "_summary:178-211",
+      "claude_anchors": "_summary:178-213 (requested denominator/basis)",
+      "status": "真实待接",
+      "source_commit_sha": "8a5fe7d4704115b6fa4e12a32efa57924d01eb75",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "d87a002fb08c5bed8eadc261c4541854f20120bb",
+      "title": "Mark sample-range bootstrap tails as not estimable (U6a-05)",
+      "path": "src/stats/hierarchical.py",
+      "candidate_blob": "c454015c8899724ca630a6dcd1d8cd23dca26cb6",
+      "main_blob": "50a7cafe6897f814fb7b39e348fcdaffbda65bd4",
+      "claude_blob": "c454015c8899724ca630a6dcd1d8cd23dca26cb6",
+      "parent_blob": "50a7cafe6897f814fb7b39e348fcdaffbda65bd4",
+      "adjudication": "PairedInterval must mark n=2/3 percentile bootstrap sample-range tails not estimable; main lacks interval_method/interval_estimable.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "PairedInterval:10-29; paired_interval:30-83",
+      "claude_anchors": "PairedInterval fields + paired_interval estimability:10-87",
+      "status": "真实待接",
+      "source_commit_sha": "d87a002fb08c5bed8eadc261c4541854f20120bb",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "ab5c0dbed1f8ce8234dccda501f519dd4fba0940",
+      "title": "End personal EOG runs on missing sources and report failures (U7-16)",
+      "path": "experiments/run_personal_eog_matrix.py",
+      "candidate_blob": "c5d20e75420e6a831d51cbe521ac35d8a883490e",
+      "main_blob": "c5d20e75420e6a831d51cbe521ac35d8a883490e",
+      "claude_blob": "c5d20e75420e6a831d51cbe521ac35d8a883490e",
+      "parent_blob": "37e2591f4aa9d130b604c0fc814421a86a85fc6e",
+      "adjudication": "missing_source_error and failed run status/raise are identical main/Claude; unresolved source or fit cannot be completed.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "missing_source_error:196; main:208-282",
+      "claude_anchors": "same",
+      "status": "已等价接收",
+      "source_commit_sha": "ab5c0dbed1f8ce8234dccda501f519dd4fba0940",
+      "status_en": "already_equivalent"
+    },
+    {
+      "commit": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "title": "Apply the central cloud floor to CUDA plans by default (U7-03)",
+      "path": "experiments/run_candidate_ensemble_study.py",
+      "candidate_blob": "c3354ec9bc5490120c6085eb76018b6e07e31844",
+      "main_blob": "ec46f7bd6e93e4d2a4524ab3a38e211a879b7699",
+      "claude_blob": "5f8010d85c6696677a2e1accf56fa50c3351f55b",
+      "parent_blob": "9ae20bc13cc00a2219829fe9524fb20eee3c8b9e",
+      "adjudication": "run_study cloud path directly resolves resources on main; Claude applies with_cloud_resource_floor. Trigger omitted CUDA floor; contract configs floor CPU25/GPU4.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "run_study:1576-1584",
+      "claude_anchors": "run_study import/wrapper:1576-1584",
+      "status": "真实待接",
+      "source_commit_sha": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "title": "Apply the central cloud floor to CUDA plans by default (U7-03)",
+      "path": "experiments/run_erp_comparator.py",
+      "candidate_blob": "1c612d1fbf1a30ff4cc5199485114246afd4107c",
+      "main_blob": "1ff536aea04c1a7331da05466a42dded2f4ec614",
+      "claude_blob": "cc0178bc1876aa48d197c6cb99ef5921368be903",
+      "parent_blob": "e4fbe78485bcbb1aa08227a6779e6f7f98f3afba",
+      "adjudication": "run_comparison has same missing with_cloud_resource_floor wrapper; actual cloud floor must be applied at entry.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "run_comparison:1127-1139",
+      "claude_anchors": "run_comparison import/wrapper:1127-1139",
+      "status": "真实待接",
+      "source_commit_sha": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "219fd38aa00c9e999514aba2eb8ccec845971336",
+      "title": "Window target blocks over the full requested schedule (U7-09)",
+      "path": "experiments/run_within_subject_transfer.py",
+      "candidate_blob": "cb99cc0727681267637374b1ea3b6589fa7bfcf4",
+      "main_blob": "5ee3948c157cb847a68b28a63789b5231844be6d",
+      "claude_blob": "cb99cc0727681267637374b1ea3b6589fa7bfcf4",
+      "parent_blob": "7ff14c0b8f019fb729b6b79facbddfac307ac34d",
+      "adjudication": "window_target_groups must window requested usable+excluded schedule; main slices usable groups then resets denominator, violating requested denominator.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "main:445-450 (usable-only window)",
+      "claude_anchors": "window_target_groups:130; main:453",
+      "status": "真实待接",
+      "source_commit_sha": "219fd38aa00c9e999514aba2eb8ccec845971336",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "af2a20029989aab181bf6abc45f50858cd3bd65d",
+      "title": "Fix information-bound numerics and declare the flash layout (U4a-03..06)",
+      "path": "src/transfer/exact_covariance.py",
+      "candidate_blob": "c18c236c0a270b93c4fb2fa0254293223015322d",
+      "main_blob": "426a4468dba0f6349c8557b7dd2d521aff7967a6",
+      "claude_blob": "c18c236c0a270b93c4fb2fa0254293223015322d",
+      "parent_blob": "426a4468dba0f6349c8557b7dd2d521aff7967a6",
+      "adjudication": "ExactPropagatedCovariance.log_likelihood_correction must fail on null_dimension; ridge-dominated Cholesky is a changed singular model.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "ExactPropagatedCovariance.log_likelihood_correction:396-433",
+      "claude_anchors": "same + null_dimension fail-closed:411-416",
+      "status": "真实待接",
+      "source_commit_sha": "af2a20029989aab181bf6abc45f50858cd3bd65d",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "af2a20029989aab181bf6abc45f50858cd3bd65d",
+      "title": "Fix information-bound numerics and declare the flash layout (U4a-03..06)",
+      "path": "src/transfer/information_bound.py",
+      "candidate_blob": "4fb962735d6706668c1dba79ce6064cdfa4f9010",
+      "main_blob": "5cec2947912ebb20e68d55a226965cf4423897fc",
+      "claude_blob": "4fb962735d6706668c1dba79ce6064cdfa4f9010",
+      "parent_blob": "0cc276d79f2b35e233311f34629e5ba21b21a704",
+      "adjudication": "Claude adds plugin-null debias, explicit membership_kind single_item/row_column, self exclusion, unit-trace time factor and Report.compute propagation. Main old implicit API and old estimand.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "mahalanobis_snr:87-178; _activation_matrix:185-225; InformationBoundReport.compute:501-577",
+      "claude_anchors": "mahalanobis_snr:87-178; _activation_matrix:185-226; Report.compute membership_kind:501-577",
+      "status": "真实待接",
+      "source_commit_sha": "af2a20029989aab181bf6abc45f50858cd3bd65d",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "9e6296b710190a5b226ef58f8df46d56c172b9d7",
+      "title": "Compare calibration candidates on their common validation support (U3-01)",
+      "path": "src/transfer/calibration_candidates.py",
+      "candidate_blob": "d973cae63f6707b02090b1e4781da56d67658220",
+      "main_blob": "5dfb7c4f01274666e600b1b9d894a3c005d31b67",
+      "claude_blob": "214a27b8b4e97d5d0c1b4661f6b586ad05ca432d",
+      "parent_blob": "5dfb7c4f01274666e600b1b9d894a3c005d31b67",
+      "adjudication": "_score_on_common_support re-scores all candidates on shared finite rows; main compares candidate-specific support, rewarding abstention.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "score_calibration_candidate:709-778; select:780-879",
+      "claude_anchors": "_score_on_common_support:780-800; select:816-879",
+      "status": "主树新实现取代",
+      "source_commit_sha": "9e6296b710190a5b226ef58f8df46d56c172b9d7",
+      "status_en": "main_replacement",
+      "current_main_commit": "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021",
+      "main_anchor": " Current main explicitly rejects unsafe common-support re-scoring: candidate-dependent validation/abstention remains the declared behavior.",
+      "scientific_contract": " Common support is rejected as unsafe under candidate-dependent abstention."
+    },
+    {
+      "commit": "710e5c2c252e4feacdee391ab699a25926812807",
+      "title": "Scatter packed BN moments back to electrode slots in the mask probe (U4b-01)",
+      "path": "src/transfer/mask_probe.py",
+      "candidate_blob": "937b92621ca22a4ce352299caa9e464f4262f21a",
+      "main_blob": "937b92621ca22a4ce352299caa9e464f4262f21a",
+      "claude_blob": "937b92621ca22a4ce352299caa9e464f4262f21a",
+      "parent_blob": "55e8820b0d3d56f0b929b88554cd56c6ff85f96f",
+      "adjudication": "packed observed-channel BN moments scatter back to electrode slots with null absent slots; main=Claude=candidate.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "_per_slot_moments/_slot_average:53-75; run_checkpoint_mask_probe:79-304",
+      "claude_anchors": "same",
+      "status": "已等价接收",
+      "source_commit_sha": "710e5c2c252e4feacdee391ab699a25926812807",
+      "status_en": "already_equivalent"
+    },
+    {
+      "commit": "b0e3196b8a09fd14597a3bcb4f542f142c29c2c4",
+      "title": "Install SplitBN target buffers in execution order with channel masks (U6b-01, U6b-02)",
+      "path": "src/transfer/subject_adapter.py",
+      "candidate_blob": "8433d00c5e64576b2290a0c7169d336623ccdadc",
+      "main_blob": "3cad048823ee3e1aea4d90bc6b3d689bb5e804d5",
+      "claude_blob": "8433d00c5e64576b2290a0c7169d336623ccdadc",
+      "parent_blob": "89fd54b8f5b79abd4ccc282264f1771d75a4ad0e",
+      "adjudication": "Claude removes receipts; main SubjectAdapter.fit/_refit_full_prefix passes channel masks and keeps validates n2p3_splitbn_target_install/1 execution-order/scope receipts. Main is stronger actual implementation.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "SubjectAdapter.fit:1083-1117,1312-1320; _refit_full_prefix:1460-1483",
+      "claude_anchors": "SubjectAdapter.fit:1083-1099,1296-1308; _refit_full_prefix:1460-1477 (receipts removed)",
+      "status": "主树新实现取代",
+      "source_commit_sha": "b0e3196b8a09fd14597a3bcb4f542f142c29c2c4",
+      "status_en": "main_replacement"
+    },
+    {
+      "commit": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "title": "Remove dead helpers and the undocumented fold-model dump hook (U3-04, U3-05, U4a-09, U5a-05, U6a-07)",
+      "path": "src/transfer/alignment.py",
+      "candidate_blob": "6233a7b73c4d61b33a780ceb2ab1efad8cf20dde",
+      "main_blob": "d0f8496dbbc8cf0ebcf6f21ff9b08f2974b7ab5b",
+      "claude_blob": "6233a7b73c4d61b33a780ceb2ab1efad8cf20dde",
+      "parent_blob": "d0f8496dbbc8cf0ebcf6f21ff9b08f2974b7ab5b",
+      "adjudication": "Claude removes test-only conditional_rbf_mmd_loss/adaptive_target_weight; production uses conditional_domain_rbf_mmd_loss. Retire after test migration.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "conditional_rbf_mmd_loss:110; adaptive_target_weight:248",
+      "claude_anchors": "removed; live conditional_domain_rbf_mmd_loss:110",
+      "status": "已等价接收",
+      "source_commit_sha": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "status_en": "already_equivalent",
+      "current_main_commit": "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021",
+      "main_anchor": " Current HEAD no longer contains this orphan definition/hook; no production caller was found."
+    },
+    {
+      "commit": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "title": "Remove dead helpers and the undocumented fold-model dump hook (U3-04, U3-05, U4a-09, U5a-05, U6a-07)",
+      "path": "src/transfer/candidate_within_subject.py",
+      "candidate_blob": "fc6288a57ddbf03c7d8c801c8554d4aab343e796",
+      "main_blob": "15fddf031090cd234fc62456a4ac2a0fdda4a82e",
+      "claude_blob": "fc6288a57ddbf03c7d8c801c8554d4aab343e796",
+      "parent_blob": "15fddf031090cd234fc62456a4ac2a0fdda4a82e",
+      "adjudication": "Claude removes test-only candidate_prefix_suffix_split; production uses causal_prefix_suffix_split/candidate_calibration_decision_split with embargo contract.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "candidate_prefix_suffix_split:254-317",
+      "claude_anchors": "removed; live causal split in runner",
+      "status": "已等价接收",
+      "source_commit_sha": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "status_en": "already_equivalent",
+      "current_main_commit": "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021",
+      "main_anchor": " Current HEAD no longer contains this orphan definition/hook; no production caller was found."
+    },
+    {
+      "commit": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "title": "Remove dead helpers and the undocumented fold-model dump hook (U3-04, U3-05, U4a-09, U5a-05, U6a-07)",
+      "path": "src/transfer/evaluation.py",
+      "candidate_blob": "419b78389bf2745c978c4286739ab5602ace982f",
+      "main_blob": "a0c7fb7bb27aed3b8e4756b9eeaf4864aabf2abe",
+      "claude_blob": "419b78389bf2745c978c4286739ab5602ace982f",
+      "parent_blob": "a0c7fb7bb27aed3b8e4756b9eeaf4864aabf2abe",
+      "adjudication": "Claude removes test-only hit_at_repetition; production uses candidate_decision_outcomes/evidence_endpoints and baseline macro curves.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "hit_at_repetition:27-113",
+      "claude_anchors": "removed; live candidate_decision_outcomes:114",
+      "status": "已等价接收",
+      "source_commit_sha": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "status_en": "already_equivalent",
+      "current_main_commit": "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021",
+      "main_anchor": " Current HEAD no longer contains this orphan definition/hook; no production caller was found."
+    },
+    {
+      "commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "title": "Fail loudly and write artifacts atomically (U2-02, U2-03, U2-04, U3-03, U4a-07, U4a-08, U6a-06, U7-21)",
+      "path": "src/transfer/asmmd.py",
+      "candidate_blob": "34cc3933c6f8271ba9ff278abf7f2a4bd99b97db",
+      "main_blob": "f4964543fb6a1500849193e6da07841d9324d470",
+      "claude_blob": "34cc3933c6f8271ba9ff278abf7f2a4bd99b97db",
+      "parent_blob": "f4964543fb6a1500849193e6da07841d9324d470",
+      "adjudication": "asmmd_joint_loss must reject pos_weight<=0; main permits zero and silently removes positive-class CE weight.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "asmmd_joint_loss:249-337",
+      "claude_anchors": "asmmd_joint_loss:249-337 (positive check)",
+      "status": "真实待接",
+      "source_commit_sha": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "title": "Fail loudly and write artifacts atomically (U2-02, U2-03, U2-04, U3-03, U4a-07, U4a-08, U6a-06, U7-21)",
+      "path": "src/transfer/calibration_candidates.py",
+      "candidate_blob": "214a27b8b4e97d5d0c1b4661f6b586ad05ca432d",
+      "main_blob": "5dfb7c4f01274666e600b1b9d894a3c005d31b67",
+      "claude_blob": "214a27b8b4e97d5d0c1b4661f6b586ad05ca432d",
+      "parent_blob": "d973cae63f6707b02090b1e4781da56d67658220",
+      "adjudication": "fit_calibration_candidate must reject unsupported recipe.refit_full_prefix; callers at run_candidate_cross_decision.py:1050 and run_within_subject_transfer.py:552 can request it while main records misleading refit.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "fit_calibration_candidate:504-527; _fit:527-707",
+      "claude_anchors": "fit rejection:504-511; _fit:527-702",
+      "status": "已等价接收",
+      "source_commit_sha": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "status_en": "already_equivalent",
+      "current_main_commit": "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021",
+      "main_anchor": " fit_calibration_candidate now rejects refit_full_prefix before fit; selector also rejects it."
+    },
+    {
+      "commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "title": "Fail loudly and write artifacts atomically (U2-02, U2-03, U2-04, U3-03, U4a-07, U4a-08, U6a-06, U7-21)",
+      "path": "src/transfer/operator_lda.py",
+      "candidate_blob": "5df96937c66f828e609b6ec15e708de054b9275e",
+      "main_blob": "222e47c9ac84d6de7595b8ced6e679db11e70089",
+      "claude_blob": "5df96937c66f828e609b6ec15e708de054b9275e",
+      "parent_blob": "e97c58020969ebfeb2849b68c8b15e60c7dd179f",
+      "adjudication": "OperatorAwareLDA.save must use publish_exclusive atomic publication; main still direct xb write, risking partial frozen artifact.",
+      "source_sha": {
+        "main": "6e3f2de874dac3d86d1e1bf822c13c8680001882",
+        "claude": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+        "merge_base": "1badd3cdca929619560462e9052f9eeae64e125d"
+      },
+      "main_anchors": "OperatorAwareLDA.save:270-278 (open xb)",
+      "claude_anchors": "save:270-278 publish_exclusive",
+      "status": "真实待接",
+      "source_commit_sha": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "8da4e9c",
+      "path": "src/baselines/evaluate.py",
+      "status": "主树新实现取代",
+      "main_anchor": "Current evaluator preserves decision-micro legacy fields and adds /2 participant authority/macro schema; integration a745ea7.",
+      "trigger": "Candidate hit aggregation meaning.",
+      "scientific_contract": "Old fields retain old meaning; macro requires versioned authority and requested denominator.",
+      "caller": "run_eeg_loso._summary_metric_fields",
+      "source_commit_sha": "8da4e9c",
+      "status_en": "main_replacement"
+    },
+    {
+      "commit": "8da4e9c",
+      "path": "experiments/run_eeg_loso.py",
+      "status": "主树新实现取代",
+      "main_anchor": "Current /2 writer validates aliases/scope before record publication.",
+      "trigger": "LOSO result field meaning.",
+      "scientific_contract": "No silent reinterpretation of historical fields.",
+      "caller": "run_eeg_loso.main",
+      "source_commit_sha": "8da4e9c",
+      "status_en": "main_replacement"
+    },
+    {
+      "commit": "141589d",
+      "path": "src/baselines/evaluate.py",
+      "status": "已等价接收",
+      "main_anchor": "metric_undefined_folds derives from nonfinite fold AUC in binary/candidate summaries.",
+      "trigger": "Undefined AUC/BACC fold.",
+      "scientific_contract": "Undefined folds remain explicit.",
+      "caller": "evaluate_binary/evaluate_candidate_selection",
+      "source_commit_sha": "141589d",
+      "status_en": "already_equivalent"
+    },
+    {
+      "commit": "141589d",
+      "path": "experiments/run_eeg_loso.py",
+      "status": "已等价接收",
+      "main_anchor": "record includes metric_undefined_folds.",
+      "trigger": "Undefined fold reporting.",
+      "scientific_contract": "Failure ledger binds actual fold.",
+      "caller": "run_eeg_loso record writer",
+      "source_commit_sha": "141589d",
+      "status_en": "already_equivalent"
+    },
+    {
+      "commit": "5fc0431",
+      "path": "experiments/run_eeg_loso.py",
+      "status": "主树新实现取代",
+      "main_anchor": "_claim_output_dir now rejects every nonempty directory; current 2c3b75 guard is stricter than candidate completed-marker check.",
+      "trigger": "Partial/completed LOSO directory reuse.",
+      "scientific_contract": "Never overwrite prior artifacts.",
+      "caller": "run_eeg_loso.main",
+      "source_commit_sha": "5fc0431",
+      "status_en": "main_replacement"
+    },
+    {
+      "commit": "5e933ac",
+      "path": "src/models/candidate_evidence.py",
+      "status": "已等价接收",
+      "main_anchor": "decide_by_group abstains all-zero group weights with empty scores; active caller keeps requested group.",
+      "trigger": "All-zero reliability weights.",
+      "scientific_contract": "Unavailable group remains in denominator.",
+      "caller": "baselines.evaluate",
+      "source_commit_sha": "5e933ac",
+      "status_en": "already_equivalent"
+    },
+    {
+      "commit": "0a483ee",
+      "path": "src/baselines/classic.py",
+      "status": "真实待接",
+      "main_anchor": "SWLDA.fit still substitutes feature 0 if no p-entry feature passes; swdla is active in train.factory.",
+      "trigger": "No selected feature/degenerate class trials.",
+      "scientific_contract": "Fail typed subject-local, never fit unrelated feature.",
+      "caller": "train.factory -> SWLDA -> evaluate._fit",
+      "source_commit_sha": "0a483ee",
+      "status_en": "real_pending"
+    },
+    {
+      "commit": "0a483ee",
+      "path": "src/research/execution.py",
+      "status": "已等价接收",
+      "main_anchor": "publish_exclusive is present and active partition/operator artifact callers use it.",
+      "trigger": "Immutable artifact publication.",
+      "scientific_contract": "No partial replacement/existing artifact overwrite.",
+      "caller": "prepare_candidate_subject_partitions/operator artifacts",
+      "source_commit_sha": "0a483ee",
+      "status_en": "already_equivalent"
+    },
+    {
+      "commit": "f045a93",
+      "path": "src/baselines/evaluate.py",
+      "status": "已等价接收",
+      "main_anchor": "P300_SAVE_FOLD_MODELS_DIR remains only as orphan _fold_result hook; no active launcher sets it. Current HEAD no longer contains this orphan definition/hook; no production caller was found.",
+      "trigger": "Undocumented non-atomic fold model dump.",
+      "scientific_contract": "Explicit checkpoint owner/receipt only.",
+      "caller": "No scoped production caller",
+      "source_commit_sha": "f045a93",
+      "status_en": "already_equivalent",
+      "current_main_commit": "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021"
+    },
+    {
+      "commit": "f045a93",
+      "path": "src/baselines/evaluate.py",
+      "status": "已等价接收",
+      "main_anchor": "paired_permutation_test remains definition plus test import; no production caller. Current HEAD no longer contains this orphan definition/hook; no production caller was found.",
+      "trigger": "Dead duplicate sign-flip helper.",
+      "scientific_contract": "One owned tested stats producer; current docs identify this as dead.",
+      "caller": "Tests only; stats modules own active intervals",
+      "source_commit_sha": "f045a93",
+      "status_en": "already_equivalent",
+      "current_main_commit": "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021"
+    },
+    {
+      "commit": "f045a93",
+      "path": "src/baselines/validation.py",
+      "status": "已等价接收",
+      "main_anchor": "SubjectAuditSplit and subject_disjoint_audit_split have no production caller. Current HEAD no longer contains this orphan definition/hook; no production caller was found.",
+      "trigger": "Unowned audit split helper.",
+      "scientific_contract": "No active estimator depends on this test-only API.",
+      "caller": "No production caller",
+      "source_commit_sha": "f045a93",
+      "status_en": "already_equivalent",
+      "current_main_commit": "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021"
+    }
+  ],
+  "evidence_restoration": [
+    {
+      "commit": "1c2ff8f/674d923",
+      "path_count": 594,
+      "status": "历史证据/冻结清单已恢复且当前字节一致",
+      "scope": "non-runtime evidence"
+    },
+    {
+      "commit": "60ffc51/fa725df",
+      "path_count": 9,
+      "status": "历史冻结manifest已恢复且当前字节一致",
+      "scope": "non-runtime frozen manifests"
+    },
+    {
+      "commit": "4637dc9",
+      "path_count": 1,
+      "status": "workspace cleanup manifest已恢复且当前字节一致",
+      "scope": "non-runtime archive manifest"
+    }
+  ],
+  "runtime_intervening_main_commits": {
+    "from": "e0224e40c613b1b859917e01c5f534194f729c85",
+    "to": "19d32e1d323fe0775b2da29a49aff90d7afdd529",
+    "verified_committed_runtime_updates": [
+      "d562b6099dcdd1a7bbbbfe5ba2dbeae65c958d59",
+      "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021"
+    ],
+    "updates": [
+      "event coordinates and CPU row order",
+      "retired dead evaluate/validation/deep/domain helpers and fold dump hook",
+      "candidate common-support proposal rejected; refit_full_prefix rejected before fit"
+    ],
+    "docs_only_after": "0c6d4e791e8ceb85bb7b4b550b4e4010766a7021"
+  },
+  "public_fit": 0,
+  "public_score": 0,
+  "model_fit": 0,
+  "model_load": 0,
+  "full_suite": false,
+  "status_counts_en": {
+    "real_pending": 26,
+    "already_equivalent": 39,
+    "main_replacement": 8
+  }
+}
