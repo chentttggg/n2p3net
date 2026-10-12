@@ -774,25 +774,6 @@ def score_calibration_candidate(
     return result
 
 
-def _score_on_common_support(completed, validation_logits, labels, protocol) -> bool:
-    """Re-score completed candidates on the validation rows every one of them scored.
-
-    Candidates abstain on different rows under channel-local quality; comparing AUCs
-    computed on different supports would reward abstention rather than quality.
-    """
-
-    common = np.logical_and.reduce([np.isfinite(validation_logits[item["candidate_id"]]) for item in completed])
-    comparable = len(np.unique(labels[common])) == 2
-    for item in completed:
-        item["common_support_rows"] = int(common.sum())
-        item["common_support_auc"] = (
-            float(roc_auc_score(labels[common], validation_logits[item["candidate_id"]][common]))
-            if comparable else None)
-        if protocol == "binary_auc":
-            item["primary_score"] = item["common_support_auc"]
-    return comparable
-
-
 def select_calibration_candidate(
     dataset: EpochDataset, recipes: Sequence[TargetRecipe], *, calibration_mask: np.ndarray,
     source_trunk: N2P3Net | None = None,
@@ -810,13 +791,14 @@ def select_calibration_candidate(
     candidates = tuple(recipes)
     if not candidates or len({recipe.name for recipe in candidates}) != len(candidates):
         raise ValueError("candidate recipes must have unique names and be nonempty")
+    if any(recipe.refit_full_prefix for recipe in candidates):
+        raise ValueError("selector candidates cannot request refit_full_prefix; use the chronological refit owner")
     split = dataset_calibration_inner_split(dataset, allowed, recording_order=recording_order)
     record = {**split.record(), "selector_mode": selector_mode, "scoring_protocol": protocol,
               "selection_evidence": split.legal, "recipes": [], "refit_rows": int(allowed.sum()),
               "tie_rule": "primary_desc_auc_desc_lda_scratch_source_low_high_candidate_id"}
     before = fit_cache.record() if fit_cache is not None else None
     fit_calls = 0
-    validation_logits: dict[str, np.ndarray] = {}
     if selector_mode == "legacy_product":
         record.update(scoring_protocol="legacy_epoch_validation_cross_entropy",
                       tie_rule="minimum_validation_ce_then_predeclared_candidate_order")
@@ -850,7 +832,6 @@ def select_calibration_candidate(
                     **({"phase": "inner"} if fit_cache is not None else {}),
                 )
                 logits = fitted.predict_logit(dataset.X[split.validation_mask], _observed(dataset)[split.validation_mask])
-                validation_logits[recipe.name] = np.asarray(logits, dtype=float)
                 item.update(status="completed", **score_calibration_candidate(
                     dataset, logits, split.validation_mask, protocol=protocol),
                     fitted_state_sha256=_state_digest(fitted.state),
@@ -864,17 +845,13 @@ def select_calibration_candidate(
                 item.update(status="failed", failure={"type": type(error).__name__, "message": str(error)})
             record["recipes"].append(item)
     completed = [item for item in record["recipes"] if item["status"] == "completed"]
-    if completed and selector_mode != "legacy_product" and not _score_on_common_support(
-            completed, validation_logits, dataset.y[split.validation_mask], protocol) and protocol == "binary_auc":
-        record["common_support_reason"] = "common candidate validation support lacks both classes"
-        completed = []
     if completed:
         rank = {"waveform_lda": 0, "source_feature_lda": 0, "scratch": 1, "source": 2,
                 **{family: 0 for family in ERP_FAMILIES}}
         selected = (
             min(completed, key=lambda item: -item["primary_score"])
             if selector_mode == "legacy_product" else min(completed, key=lambda item: (
-                -item["primary_score"], -(item["common_support_auc"] if item["common_support_auc"] is not None else -1), rank[item["initialization"]],
+                -item["primary_score"], -(item["validation_auc"] if item["validation_auc"] is not None else -1), rank[item["initialization"]],
                 item["epochs"], item["candidate_id"],
             ))
         )
@@ -889,7 +866,7 @@ def select_calibration_candidate(
         recipe = waveform_lda_recipe(seed=candidates[0].seed, batch_size=candidates[0].batch_size)
         record.update(selection_evidence=False, selected=None, validation_auc=None,
                       fallback="full_calibration_waveform_lda",
-                      fallback_reason=record.get("common_support_reason") or record["reason"] or "all_candidates_failed")
+                      fallback_reason=record["reason"] or "all_candidates_failed")
     fit_calls += 1
     fit_function = fit_calibration_candidate if fit_cache is None else fit_cache.fit
     fitted = fit_function(

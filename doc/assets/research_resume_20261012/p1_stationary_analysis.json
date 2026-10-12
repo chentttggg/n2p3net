@@ -1,0 +1,498 @@
+{
+  "schema": "n2p3_p1_stationary_analysis/1",
+  "created_utc": "2026-10-12T04:20:35.295916+00:00",
+  "status": "accepted_science_result_and_independent_replay_scope",
+  "program": "frozen_P1_primitives_correct_stationary_law_paired/1",
+  "result_schema": "p1_correct_stationary_program_result/1",
+  "plan_file_sha256": "5e92a7cca89a8d2adb8517e44509e4e39fbeb361a4925c2b108ddc1a41c02664",
+  "source_files": [
+    {
+      "name": "result.json",
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\P1_ANALYSIS\\raw\\result.json",
+      "bytes": 303226,
+      "sha256": "f34dfce0f49202748f331b3aed3bc0a5f036743454b162205c0fc67e8f6ac9c0"
+    },
+    {
+      "name": "cloud_queue.json",
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\P1_ANALYSIS\\raw\\cloud_queue.json",
+      "bytes": 64305,
+      "sha256": "e2ae740fcb44f97b5b5b2351c1355339ed8be25987f492d05912bfd1ec05190f"
+    },
+    {
+      "name": "queue_terminal.json",
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\P1_ANALYSIS\\raw\\queue_terminal.json",
+      "bytes": 2783,
+      "sha256": "883640396fbc90f1c72a4d6f32ff36d21e0e1431c0c4746e72abb0ace5c2a742"
+    },
+    {
+      "name": "queue_exit.json",
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\P1_ANALYSIS\\raw\\queue_exit.json",
+      "bytes": 2120,
+      "sha256": "638c5ec863892dda372aaab9c27f2fd74ff296184cb895f5201dc3e69a472d0b"
+    },
+    {
+      "name": "queue_transport.json",
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\P1_ANALYSIS\\raw\\queue_transport.json",
+      "bytes": 1678,
+      "sha256": "d9abb0312bd9c0350007d2e9615356fb0f32da43112ac66bd1356f902227fc8a"
+    }
+  ],
+  "requested_cells": 16,
+  "cell_scope": {
+    "participants": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07",
+      "A08"
+    ],
+    "arms": [
+      "shared8",
+      "private8"
+    ],
+    "decisions_per_participant": 1,
+    "decision_id_pattern": "Axx:selection05",
+    "truth": "row:5|column:0",
+    "candidates_per_cell": 36,
+    "candidate_slots": 576,
+    "new_fit_calls": 0,
+    "response_fit_calls": 0,
+    "public_fit_calls": 0,
+    "public_score_calls": 0
+  },
+  "terminal": {
+    "science_exit_code": 0,
+    "owned_processes_after_exit": 0,
+    "queue_supervisor_exit_code": 1,
+    "queue_failure_is_preserved": true
+  },
+  "metrics": {
+    "shared8": {
+      "requested_participant_operational_hit_rate": 0.625,
+      "decision_micro_hit_rate": 0.625,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "available_probability_nll": 7.336476583233339,
+      "available_probability_brier": 0.6790937535672317,
+      "tie_count": 0,
+      "not_available_count": 0,
+      "selection_failure_count": 0,
+      "probability_participant_count": 8,
+      "probability_complete_seed_participant_count": 8
+    },
+    "private8": {
+      "requested_participant_operational_hit_rate": 0.75,
+      "decision_micro_hit_rate": 0.75,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "available_probability_nll": 5.554012101289389,
+      "available_probability_brier": 0.47767849487482034,
+      "tie_count": 0,
+      "not_available_count": 0,
+      "selection_failure_count": 0,
+      "probability_participant_count": 8,
+      "probability_complete_seed_participant_count": 8
+    }
+  },
+  "shared_private_comparison": {
+    "delta_hit": 0.125,
+    "paired_baseline_nll": 7.336476583233339,
+    "paired_candidate_nll": 5.554012101289389,
+    "delta_paired_nll": -1.7824644819439506,
+    "paired_probability_count": 8,
+    "missing_probability_ledger": [],
+    "rescued_count": 1,
+    "harmed_count": 0,
+    "lost_prediction_count": 0,
+    "lost_probability_count": 0,
+    "development_gate_passed": true,
+    "gate_reasons": [],
+    "participant_delta_hit": [
+      [
+        "n2p3-origin://BNCI2014-008/participant/A01",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A02",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A03",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A04",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A05",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A06",
+        1.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A07",
+        0.0
+      ],
+      [
+        "n2p3-origin://BNCI2014-008/participant/A08",
+        0.0
+      ]
+    ],
+    "paired_probability_scope": "fixed seed/decision pairs, averaged within requested participant"
+  },
+  "law_change_comparisons": {
+    "shared8": {
+      "delta_hit": 0.0,
+      "paired_baseline_nll": 7.336476583291455,
+      "paired_candidate_nll": 7.336476583233339,
+      "delta_paired_nll": -5.8116178536238294e-11,
+      "paired_probability_count": 8,
+      "missing_probability_ledger": [],
+      "rescued_count": 0,
+      "harmed_count": 0,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": true,
+      "gate_reasons": [],
+      "participant_delta_hit": [
+        [
+          "n2p3-origin://BNCI2014-008/participant/A01",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A02",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A03",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A04",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A05",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A06",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A07",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A08",
+          0.0
+        ]
+      ],
+      "paired_probability_scope": "fixed seed/decision pairs, averaged within requested participant"
+    },
+    "private8": {
+      "delta_hit": 0.0,
+      "paired_baseline_nll": 5.5540121910803215,
+      "paired_candidate_nll": 5.554012101289389,
+      "delta_paired_nll": -8.979093291117124e-08,
+      "paired_probability_count": 8,
+      "missing_probability_ledger": [],
+      "rescued_count": 0,
+      "harmed_count": 0,
+      "lost_prediction_count": 0,
+      "lost_probability_count": 0,
+      "development_gate_passed": true,
+      "gate_reasons": [],
+      "participant_delta_hit": [
+        [
+          "n2p3-origin://BNCI2014-008/participant/A01",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A02",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A03",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A04",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A05",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A06",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A07",
+          0.0
+        ],
+        [
+          "n2p3-origin://BNCI2014-008/participant/A08",
+          0.0
+        ]
+      ],
+      "paired_probability_scope": "fixed seed/decision pairs, averaged within requested participant"
+    }
+  },
+  "cells": [
+    {
+      "participant": "A01",
+      "arm": "shared8",
+      "decision_id": "A01:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:0|column:0",
+      "old_winner": "row:0|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -48.49073907617145,
+      "truth_log_probability_old": -48.49073907640428,
+      "truth_log_probability_delta": 2.3283064365386963e-10,
+      "max_abs_log_probability_delta": 2.3283064365386963e-10,
+      "new_winner_probability": 0.9999999978985562,
+      "new_truth_probability": 8.724480891982275e-22
+    },
+    {
+      "participant": "A01",
+      "arm": "private8",
+      "decision_id": "A01:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:0|column:0",
+      "old_winner": "row:0|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -38.24899277510876,
+      "truth_log_probability_old": -38.24899325054889,
+      "truth_log_probability_delta": 4.7544013170863764e-07,
+      "max_abs_log_probability_delta": 8.863862319685722e-07,
+      "new_winner_probability": 0.9999998628552177,
+      "new_truth_probability": 2.4472227393301022e-17
+    },
+    {
+      "participant": "A02",
+      "arm": "shared8",
+      "decision_id": "A02:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:5|column:0",
+      "old_winner": "row:5|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -1.5740055207734182e-06,
+      "truth_log_probability_old": -1.5740055207723458e-06,
+      "truth_log_probability_delta": -1.0723437112239442e-18,
+      "max_abs_log_probability_delta": 2.3283064365386963e-10,
+      "new_winner_probability": 0.999998425995718,
+      "new_truth_probability": 0.999998425995718
+    },
+    {
+      "participant": "A02",
+      "arm": "private8",
+      "decision_id": "A02:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:5|column:0",
+      "old_winner": "row:5|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -0.00024648936612009883,
+      "truth_log_probability_old": -0.0002464893794803531,
+      "truth_log_probability_delta": 1.3360254254909248e-11,
+      "max_abs_log_probability_delta": 8.172221974689364e-07,
+      "new_winner_probability": 0.9997535410098879,
+      "new_truth_probability": 0.9997535410098879
+    },
+    {
+      "participant": "A03",
+      "arm": "shared8",
+      "decision_id": "A03:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:5|column:0",
+      "old_winner": "row:5|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -2.372990837577799,
+      "truth_log_probability_old": -2.372990837643043,
+      "truth_log_probability_delta": 6.524425444354165e-11,
+      "max_abs_log_probability_delta": 1.6758683329953783e-10,
+      "new_winner_probability": 0.09320155829025933,
+      "new_truth_probability": 0.09320155829025933
+    },
+    {
+      "participant": "A03",
+      "arm": "private8",
+      "decision_id": "A03:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:5|column:0",
+      "old_winner": "row:5|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -1.7302511218343188,
+      "truth_log_probability_old": -1.7302512408248691,
+      "truth_log_probability_delta": 1.1899055030184513e-07,
+      "max_abs_log_probability_delta": 4.020844297514259e-07,
+      "new_winner_probability": 0.17723989557315245,
+      "new_truth_probability": 0.17723989557315245
+    },
+    {
+      "participant": "A04",
+      "arm": "shared8",
+      "decision_id": "A04:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:0|column:1",
+      "old_winner": "row:0|column:1",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -6.232372689170957,
+      "truth_log_probability_old": -6.232372689339334,
+      "truth_log_probability_delta": 1.6837642391465124e-10,
+      "max_abs_log_probability_delta": 1.6837642391465124e-10,
+      "new_winner_probability": 0.5727253825589381,
+      "new_truth_probability": 0.001964784538736235
+    },
+    {
+      "participant": "A04",
+      "arm": "private8",
+      "decision_id": "A04:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:0|column:1",
+      "old_winner": "row:0|column:1",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -4.355889154800592,
+      "truth_log_probability_old": -4.355889283586345,
+      "truth_log_probability_delta": 1.2878575272878834e-07,
+      "max_abs_log_probability_delta": 2.088794941457195e-07,
+      "new_winner_probability": 0.24859875173782006,
+      "new_truth_probability": 0.012831025742459045
+    },
+    {
+      "participant": "A05",
+      "arm": "shared8",
+      "decision_id": "A05:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:5|column:0",
+      "old_winner": "row:5|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -0.0018851405109366905,
+      "truth_log_probability_old": -0.0018851405108604045,
+      "truth_log_probability_delta": -7.628598273912157e-14,
+      "max_abs_log_probability_delta": 2.3275603666661482e-10,
+      "new_winner_probability": 0.9981166352504078,
+      "new_truth_probability": 0.9981166352504078
+    },
+    {
+      "participant": "A05",
+      "arm": "private8",
+      "decision_id": "A05:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:5|column:0",
+      "old_winner": "row:5|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -0.018609095460964332,
+      "truth_log_probability_old": -0.018609097196733173,
+      "truth_log_probability_delta": 1.7357688411601124e-09,
+      "max_abs_log_probability_delta": 4.927755981043447e-07,
+      "new_winner_probability": 0.9815629846841066,
+      "new_truth_probability": 0.9815629846841066
+    },
+    {
+      "participant": "A06",
+      "arm": "shared8",
+      "decision_id": "A06:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:4|column:0",
+      "old_winner": "row:4|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -1.5919548297454387,
+      "truth_log_probability_old": -1.5919548297439972,
+      "truth_log_probability_delta": -1.4415135751733033e-12,
+      "max_abs_log_probability_delta": 2.3138913007869633e-10,
+      "new_winner_probability": 0.7711031197449462,
+      "new_truth_probability": 0.20352736126529153
+    },
+    {
+      "participant": "A06",
+      "arm": "private8",
+      "decision_id": "A06:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:5|column:0",
+      "old_winner": "row:5|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -0.07792724480311665,
+      "truth_log_probability_old": -0.07792723816679434,
+      "truth_log_probability_delta": -6.636322311126541e-09,
+      "max_abs_log_probability_delta": 5.470349471181635e-07,
+      "new_winner_probability": 0.9250317249606277,
+      "new_truth_probability": 0.9250317249606277
+    },
+    {
+      "participant": "A07",
+      "arm": "shared8",
+      "decision_id": "A07:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:5|column:0",
+      "old_winner": "row:5|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -9.135893663495313e-09,
+      "truth_log_probability_old": -9.135893663495301e-09,
+      "truth_log_probability_delta": -1.1580528575742387e-23,
+      "max_abs_log_probability_delta": 1.1641532182693481e-10,
+      "new_winner_probability": 0.9999999908641063,
+      "new_truth_probability": 0.9999999908641063
+    },
+    {
+      "participant": "A07",
+      "arm": "private8",
+      "decision_id": "A07:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:5|column:0",
+      "old_winner": "row:5|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -3.675949192734387e-06,
+      "truth_log_probability_old": -3.6759489035608348e-06,
+      "truth_log_probability_delta": -2.8917355206412834e-13,
+      "max_abs_log_probability_delta": 9.116480939042049e-07,
+      "new_winner_probability": 0.9999963240575636,
+      "new_truth_probability": 0.9999963240575636
+    },
+    {
+      "participant": "A08",
+      "arm": "shared8",
+      "decision_id": "A08:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:5|column:0",
+      "old_winner": "row:5|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -0.001868509548711963,
+      "truth_log_probability_old": -0.001868509548712001,
+      "truth_log_probability_delta": 3.7947076036992655e-17,
+      "max_abs_log_probability_delta": 2.3283064365386963e-10,
+      "new_winner_probability": 0.9981332350284993,
+      "new_truth_probability": 0.9981332350284993
+    },
+    {
+      "participant": "A08",
+      "arm": "private8",
+      "decision_id": "A08:selection05",
+      "truth": "row:5|column:0",
+      "new_winner": "row:5|column:0",
+      "old_winner": "row:5|column:0",
+      "winner_unchanged": true,
+      "truth_log_probability_new": -0.0001772529920487353,
+      "truth_log_probability_old": -0.00017725299055938547,
+      "truth_log_probability_delta": -1.489349821855862e-12,
+      "max_abs_log_probability_delta": 4.703030143105025e-08,
+      "new_winner_probability": 0.9998227627163347,
+      "new_truth_probability": 0.9998227627163347
+    }
+  ],
+  "interpretation": {
+    "new_stationary_law_changes_decisions": false,
+    "shared_private_result_difference_is_model_arm_effect": true,
+    "law_comparison_scope": "same held decisions, same response/noise inputs, old compiled-W producer versus new stationary-law producer",
+    "claim_boundary": "one BNCI2014-008 eight-person C-held development panel; not product efficacy, adult confirmation, or three-seed stability",
+    "queue_boundary": "science completed with exit0; outer seven-item queue remains exit1 and is retained as an infrastructure/queue fact"
+  }
+}

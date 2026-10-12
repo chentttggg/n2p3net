@@ -1,0 +1,35 @@
+{
+  "schema": "n2p3_calibration_selection_review/1",
+  "status": "common_support_patch_rejected_refit_preflight_accepted",
+  "current_source": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\transfer\\calibration_candidates.py",
+    "sha256": "571e238984924876152d3298088d2663cba62140b2907ea952c6cbcef749e6a9"
+  },
+  "review_handoff": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CALIBRATION_COMMON_SUPPORT_REVIEW\\HANDOFF.zh.md",
+    "sha256": "88e3724fb532ec4d880794899d2ca0e5911d6ce978e473df4484c1dbf03db123"
+  },
+  "review_binding": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CALIBRATION_COMMON_SUPPORT_REVIEW\\review_binding.json",
+    "sha256": "db6ec13916984c595de208b14931064df3820b27ecf115aed4cdc8f054026cbc"
+  },
+  "rejected_patch": {
+    "commit": "9e6296b",
+    "reason": "candidate-dependent finite-logit intersection permits abstention to shrink support; R5 primary score remains per-candidate and support has no replay digest",
+    "counterexample": "labels 000111; candidate A full AUC 1/3, candidate B finite rows 0 and 3 only; intersection ranks B 1 and A 0",
+    "public_fit": 0,
+    "public_score": 0,
+    "model_load": 0
+  },
+  "accepted_patch": {
+    "commit": "0a483ee",
+    "scope": "fit_calibration_candidate rejects refit_full_prefix; selector preflight now rejects such candidate recipes before fit/fallback",
+    "legal_refit_owner": "SubjectAdapter chronological epoch selection"
+  },
+  "required_future_contract": [
+    "candidate-independent support built before fit",
+    "support indices and requested-mask/label digests persisted",
+    "complete BrainSync 45-flash block gate for every candidate",
+    "replay consumer verifies support contract before selection"
+  ]
+}

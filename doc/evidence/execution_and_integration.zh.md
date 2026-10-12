@@ -96,6 +96,8 @@ Claude review 分支的 U5a-04、U7-19、U7-24、U7-26 和 U1-01 fixture 修复�
 
 随后对Claude review分支`33603f7`的整树三方合并候选`e91be9f`做了独立模块审阅。候选当时跨约688个路径，运行时变化涉及结果字段、SplitBN、输入/QC/训练行序、候选选择和信息界估计量。`b26c099`阶段已接收历史evidence/frozen manifest恢复、原子/独占发布、重复物理recording拒绝、UTF-8 resume、verifier/output collision、GPU/无状态诊断和undefined-fold/partial-output账本；其阶段范围见[安全整合绑定](../assets/research_resume_20261012/claude_review_safe_integration_binding.json)。恢复提交`1c2ff8f`含594文件，`60ffc51`恢复9个manifest。后续participant-macro、SplitBN和QC已分别接受，见下文，分支未成为祖先不代表这些修复缺失。剩余运行时差异按当前源码逐项审阅，新程序持有自己的身份。
 
+整树中的candidate common-support实现没有直接保留：它按候选 finite logits 求交，允许候选以abstain缩小比较支持，且没有保存support indices/digest和R5完整block合同。纯数组反例已复现该选择偏差；`refit_full_prefix`早拒则保留，并在selector入口提前拒绝，避免把合同错误降级为候选失败。后续需先建设候选无关、可重放的validation support再恢复该选择修复，范围和来源见[calibration selection review](../assets/research_resume_20261012/calibration_selection_review.json)。
+
 云端 entry005 在10:14的权威快照为 `running`：原0–3四人重放已准入，4–7四worker各自保存1672个内部 prediction cells，actual exit、terminal receipt、complete result 和 8人/152 requested future decision receipt 当时尚未闭合。5.51秒资源采样为 aggregate CPU 835.83%、GPU样本 7/95/95/94/0%、controller RSS 2.439 GiB，cgroup memory约59.85 GiB、OOM 0；快照与源码/owner状态见[entry005记录](../assets/research_resume_20261012/entry005_status_20261012_101415.json)。entry005继续消费自己的冻结源。P1按既定完整16格计划推进：在原Windows export、科学caller/lease、最终controller和Linux资源门闭合并有资源后，由唯一云窗口自主冻结执行；科研代码修复不要求重跑entry005。
 
 整树候选的审阅checkout已完成用途并退役：候选commit仍由 `codex/claude-merge-candidate-20261012` 保存，四份审阅/白名单文件按原字节迁入主树 `tmp/CANDIDATE_MERGE_REVIEW_20261012/`，哈希逐份一致，见[恢复定位](../assets/research_resume_20261012/review_checkout_retirement.json)。指标和SplitBN实施树继续保留。证据索引恢复为四主题入口，已归档日期页通过原恢复清单追溯，当前索引的本地链接均可解析。
@@ -106,6 +108,6 @@ SplitBN target安装随后集成 `ddcd834/49dea0d`。真实core/wrapper的tempor
 
 QC通道选择 `8d9ad76` 完成实际数据关系修复：原路径保留全montage median，Claude的ratio×scale逆推又在eps分母以下失真；新路径直接从实际选后X复用唯一QC compute。普通幅度、极小/zero、观测mask、多次selection、cache保存/attestation和fold-local threshold调用链已核对；作者相关验证与主树5项定向入口分列，见[QC整合绑定](../assets/research_resume_20261012/qc_channel_integration.json)。新派生lineage明确记录程序，原cache/阈值/结果保其已有身份。
 
-云端后续[实际转场记录](../assets/research_resume_20261012/entry005_p1_transition.json)显示entry005已完成8/8，保存科学result为451,241,859 bytes、SHA `4b249832…`，science terminal exit0、owned_after0；外层queue supervisor另有exit1，原因及完整requested ledger由云窗口分开复核。P1完整16格随后启动，首次5秒采样四个评分actor并行在diffuse projection阶段，合计CPU971.59%，当时cell receipt/result/terminal尚未产生。各状态持自己的执行来源，旧running快照保留。
+云端后续[实际转场记录](../assets/research_resume_20261012/entry005_p1_transition.json)显示entry005已完成8/8，保存科学result为451,241,859 bytes、SHA `4b249832…`，science terminal exit0、owned_after0；外层queue supervisor另有exit1，原因及完整requested ledger由云窗口分开复核。P1完整16格随后运行并已闭合：科学进程真实exit0、16/16 cell均有36候选评分、owned_after0；外层七项queue仍exit1，原失败保留。原始result及16-cell账本的独立分析见[stationary P1分析绑定](../assets/research_resume_20261012/p1_stationary_analysis.json)。各状态持自己的执行来源，entry005与P1不混用。
 
 B07中央history整合`a1042ef/0ea4529`已按最终主树raw字节和两路独立审阅接受。full/prefix/conditional、mixture估计及typed unavailable随capsule保存重放；C-law按实际C-conditioned正joint质量核准，动态零轴及时进入失败账本。主树54项software/synthetic验证复用一次结果，最后零轴行由actual-main小型探针复签；独立数学11案例/32扰动与误调用4-case合成fixture分别列账，不合并成研究重复。10份实际源码及作者CRLF/LF差异、原WIP保持、零public fit/score见[整合绑定](../assets/research_resume_20261012/history_central_integration.json)。下一推进公共opt-in评价、C-latent posterior及实测时钟authority。
