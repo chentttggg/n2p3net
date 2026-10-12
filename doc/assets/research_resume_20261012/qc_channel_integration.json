@@ -1,0 +1,66 @@
+{
+  "schema": "n2p3_qc_channel_integration/1",
+  "status": "accepted",
+  "author_commit": "5de8d880c4ddfd6cd18b6b8a8156c634b858960b",
+  "integration_commit": "8d9ad7671022932cd5808bdbf08d66c524ca61fb",
+  "integrated_files": {
+    "src/data/qc_features.py": {
+      "integrated_raw_sha256": "e8a4ba94482dd711e330b7463fe6e98447046e62057a785e39ea5f190a96d77e",
+      "author_raw_sha256": "e8a4ba94482dd711e330b7463fe6e98447046e62057a785e39ea5f190a96d77e",
+      "raw_equal": true,
+      "difference": null
+    },
+    "src/data/epochs.py": {
+      "integrated_raw_sha256": "d434200c48a50d19ab4e462513880b148b63b4dbd165f31c1b477f51c6ba2a19",
+      "author_raw_sha256": "d434200c48a50d19ab4e462513880b148b63b4dbd165f31c1b477f51c6ba2a19",
+      "raw_equal": true,
+      "difference": null
+    },
+    "tests/data/test_qc_channel_selection.py": {
+      "integrated_raw_sha256": "c067f51318a3a295075e2d8bc14477d5b123b7df6e56eec61c70855fa3187b26",
+      "author_raw_sha256": "c067f51318a3a295075e2d8bc14477d5b123b7df6e56eec61c70855fa3187b26",
+      "raw_equal": true,
+      "difference": null
+    }
+  },
+  "program": "selected_preprocessed_X_observed_QC_recompute/1",
+  "feature_schema": "n2p3net_epoch_qc_features/1",
+  "author_validation": {
+    "related_slice": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\qc-selection-20261012\\n2p3-net\\tmp\\QC_CHANNEL_SELECTION_ACCEPTANCE\\tests.xml",
+      "sha256": "359040e629227c707d58faa22805789959809b0986b2231290214b89b09e2582",
+      "tests": 146,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "final_selection_slice": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\qc-selection-20261012\\n2p3-net\\tmp\\QC_CHANNEL_SELECTION_ACCEPTANCE\\selection_tests_final.xml",
+      "sha256": "5b415bf85e9623143c74f7aeb2afe17f2b81adb32b9d472e7435a9f87b646513",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "ruff_exit_code": 0,
+    "diff_check_exit_code": 0,
+    "tests_are_not_independent_research_replicates": true
+  },
+  "root_validation": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\QC_CHANNEL_INTEGRATION\\root.xml",
+    "sha256": "9d361fbfb115d45f1c64ed27bb3206ea382b97b23d2b185e42af46c5f83cb072",
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "contract": {
+    "owner": "compute_epoch_qc_features(selected_X, original_retained_observed_bits)",
+    "derived_identity": "select_channels lineage/provenance includes actual QC program",
+    "threshold_definition_changed": false,
+    "historical_cache_rewritten": false,
+    "old_selected_cache": "retains original producer; new derivation has new bytes/attestation",
+    "software_empty_features": "retained; active EpochDataset requires observations",
+    "public_fit_score_model_load": 0
+  }
+}

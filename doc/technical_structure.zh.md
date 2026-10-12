@@ -42,6 +42,13 @@ P1云科学接线已由[修后复签](assets/research_resume_20261011/stationary
 
 ## 主链与接口
 
+`select_epoch_channels` 对已缓存QC的通道子集使用实际选后 `X` 和保留的观测bit，
+经唯一 `compute_epoch_qc_features` 重算median PTP、relative PTP和std。
+`EpochQCFeatures.select_channels` 要求调用者提供已选数组；float32 ratio/scale无法
+精确反推出原PTP，尤其原分母采用 `max(scale,eps)`。原阈值与feature schema保持，
+新子集程序写入原lineage/provenance以产生真实派生cache身份。旧cache保持原producer，
+需要新子集时从原样本派生；见[QC整合绑定](assets/research_resume_20261012/qc_channel_integration.json)。
+
 `baselines.evaluate.evaluate_candidate_selection` 将 `participant_ids` 作为调用者显式提供的
 identity authority key；`fit_group_ids` 与 `domain_ids` 只持有防泄漏划分，不定义参与者。
 `run_eeg_loso` 在实际 subject 子集选定后，用 `materialize_dataset_identity(dataset)` 的

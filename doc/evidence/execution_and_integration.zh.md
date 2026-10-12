@@ -103,3 +103,5 @@ Claude review 分支的 U5a-04、U7-19、U7-24、U7-26 和 U1-01 fixture 修复�
 LOSO participant-macro 延期项随后完成闭环并集成 `a745ea7`：新增指标 `/2` 保留旧字段值，参与者由共享authority逐行声明，requested仅取pre-QC测试组；同人跨session/domain等权，整组不可用保为错。原无schema记录保其原值、macro未知。总监逐读公式、authority、实际writer和consumer，补回训练组/fit-group混淆反例后接受；作者21项与主树5项验证分列，来源见[指标整合绑定](../assets/research_resume_20261012/participant_macro_integration.json)。
 
 SplitBN target安装随后集成 `ddcd834/49dea0d`。真实core/wrapper的temporal先打包已观测电极，spatial/MST接完整混合feature；此前“所有站点零槽污染”的静态结论已修正。按实际前向顺序安装、initial/refit分开持久receipt，并接回两个runner的JSON出口。作者100项与主树12项software/synthetic检查分别通过，旧normalization/state字段保其读取含义，新target fit绑定实际source和安装程序，见[SplitBN整合绑定](../assets/research_resume_20261012/splitbn_target_integration.json)。binding分别记录作者CRLF与主树LF执行摘要，不将文本等价写作字节同一。
+
+QC通道选择 `8d9ad76` 完成实际数据关系修复：原路径保留全montage median，Claude的ratio×scale逆推又在eps分母以下失真；新路径直接从实际选后X复用唯一QC compute。普通幅度、极小/zero、观测mask、多次selection、cache保存/attestation和fold-local threshold调用链已核对；作者相关验证与主树5项定向入口分列，见[QC整合绑定](../assets/research_resume_20261012/qc_channel_integration.json)。新派生lineage明确记录程序，原cache/阈值/结果保其已有身份。
