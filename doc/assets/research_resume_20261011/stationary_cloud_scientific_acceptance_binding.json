@@ -1,0 +1,134 @@
+{
+  "schema": "n2p3_stationary_cloud_scientific_acceptance/1",
+  "status": "accepted_scientific_input_authority_lease_and_native_budget",
+  "author_commit": "db46076ac29cd7b185323dd3044c0bd683a89a39",
+  "base_commit": "75855bf",
+  "actual_source_pins": {
+    "src/research/stationary_panel.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\research\\stationary_panel.py",
+      "sha256": "192144ccb4389a481366b66fd870501c8b3490638e107b9e25000f8c51541792",
+      "bytes": 36303
+    },
+    "src/research/local_program_control.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\research\\local_program_control.py",
+      "sha256": "55c2ad163dcc7c38d92a25441c3bae48ec11c0f3aafaa0384fac2fea89fc45bd",
+      "bytes": 13323
+    },
+    "experiments/run_stationary_channel_noise_panel.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\experiments\\run_stationary_channel_noise_panel.py",
+      "sha256": "3d13c13f08da0048f625aa2bcef85cd893884b71e8eafdabb8af2be94c9d1e3d",
+      "bytes": 12847
+    },
+    "experiments/run_stationary_cloud_panel.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\experiments\\run_stationary_cloud_panel.py",
+      "sha256": "9e6b89b4c3b715d66fbceb3ea57b8e63df1c9a04e7f13145c5c806e1bc39da8e",
+      "bytes": 12668
+    },
+    "tests/research/test_stationary_cloud_control.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_stationary_cloud_control.py",
+      "sha256": "bb2d0ac5ea0ab86dbd6ce2091ac8e975697fca8d8ea30ba96bc911188816f558",
+      "bytes": 6149
+    },
+    "tests/research/test_stationary_cloud_programme.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_stationary_cloud_programme.py",
+      "sha256": "3c2dad0d6a8b622a4d3e9e9051e81c8ba36cee5a24f460f5f5cab5dc9fe93b2c",
+      "bytes": 11576
+    },
+    "tests/research/test_stationary_programme_lease.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_stationary_programme_lease.py",
+      "sha256": "7da6ede45c1686fd4e8502c7b7c7dd9824bdbbe5af0119006ebd732a9418238e",
+      "bytes": 3262
+    },
+    "doc/assets/research_resume_20261011/stationary_cloud_patch_handoff.zh.md": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\doc\\assets\\research_resume_20261011\\stationary_cloud_patch_handoff.zh.md",
+      "sha256": "8f64d968a11d25099681e5463bbc23f62b0b7c2fd448b32dd2f75987e4b9314e",
+      "bytes": 15908
+    }
+  },
+  "independent_review": {
+    "handoff": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\STATIONARY_CLOUD_CODE_REVIEW\\FINAL_DB46076\\HANDOFF.zh.md",
+      "sha256": "1c363d61ada1d53db8da2c905895be199e5bea4e1b7c3a2e17a48c26b7f417c1",
+      "bytes": 8648
+    },
+    "contract": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\STATIONARY_CLOUD_CODE_REVIEW\\FINAL_DB46076\\contract.json",
+      "sha256": "405bea8a2d044dc31644125f2bc2e38c3ccde8c582b12342b0cc6aec13ebe20d",
+      "bytes": 9116
+    },
+    "bootstrap": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\STATIONARY_CLOUD_CODE_REVIEW\\FINAL_DB46076\\bootstrap.json",
+      "sha256": "37e6f9b593914a770141ffb43ccecb8b960f0edafd9bf8f259aa61619e4f3dd2",
+      "bytes": 969
+    },
+    "probe_script": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\STATIONARY_CLOUD_CODE_REVIEW\\final_probe.py",
+      "sha256": "047477d384933a06612cd34305718f72efd317a2f93975213f3a7a57675a2145",
+      "bytes": 22767
+    },
+    "facts": 33,
+    "exit_code": 0,
+    "before_proof_sha256": {
+      "contract_probe.py": "a3b1a43f2f616f2010691c498428641ef1877b6311d64e61790e3ba6bf11c561",
+      "contract_probe.json": "c6bb5416f37e3cbb6a125850307b2c2c27f9b009e2d0cd186c3183a28e8e8ded",
+      "HANDOFF.zh.md": "dfa92cd3a18fd0a5f96d472a885d8cf1bdcd63df9f9b58a8549f2ea9405dda04"
+    }
+  },
+  "root_integration": {
+    "junit": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\STATIONARY_CLOUD_CODE_REVIEW\\FINAL_DB46076\\root_integration.junit.xml",
+      "sha256": "de5a479a13dc569e40b542781809aae73981918b64b6c242593a26fb13f9337b",
+      "bytes": 1042
+    },
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "5",
+        "time": "5.351",
+        "timestamp": "2026-10-12T07:07:37.670083+08:00",
+        "hostname": "Tonger"
+      }
+    ],
+    "exit_code": 0,
+    "ruff_exit": 0,
+    "diff_check_exit": 0,
+    "author_bytes_installed_exactly": true
+  },
+  "scientific_scope": {
+    "subjects": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07",
+      "A08"
+    ],
+    "requested_cells": 16,
+    "seed": 20260918,
+    "original_windows_export_plan_sha256": "0569777f5f99eaac753b0fb015ab0fcec761a2b4e9dcf14071044338f1f0485e",
+    "export_manifest_sha256": "0feb749f7cd32afee0823e8c754a4fe3b844960529eda70c45e9bd418fc4021c",
+    "new_fits": 0,
+    "new_stationary_roots": 0,
+    "new_scores": 0
+  },
+  "contracts": {
+    "held_input": "immutable original Windows plan plus actual input manifest/native view and decoded operands",
+    "attempt": "shared whole-run file lock and exclusive PID/birth/plan/source lease",
+    "history_api": "assert_no_prior_owned_live(Path) -> None; live/unknown/error/non-None rejects",
+    "resource_claim": "four CPU actors: native5+interop1 each, coordinator1; CPU25; GPU claim0",
+    "ACK": "both original arms admitted serially after settled actor; all eight required for reduction"
+  },
+  "full16_execution": "pending",
+  "remaining_dependencies": [
+    "accepted shared controller peer ownership and historical coverage API",
+    "actual exact-SHA input relocation/sealed export factory",
+    "actual Linux host narrow gates then full16 directly under existing authorization"
+  ],
+  "controller_included_in_scientific_acceptance": false,
+  "original_frozen_sources_plans_failures_or_exports_resigned": false
+}

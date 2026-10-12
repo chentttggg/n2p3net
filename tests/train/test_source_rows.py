@@ -84,6 +84,7 @@ def test_lazy_source_rows_execute_exact_fixed_updates_with_cpu_resident_transfer
     import json
     import multiprocessing
 
+    import psutil
     import torch
 
     from research.source_execution import SourceInputAdmission
@@ -100,7 +101,11 @@ def test_lazy_source_rows_execute_exact_fixed_updates_with_cpu_resident_transfer
         owner = SourceInputAdmission(manager, capacity_bytes=40 * 2**20, load_workers=1)
         lazy = N2P3NetBaseline(6, 179, 128., config=cfg, device="cpu")
         lazy.runtime.input_staging_gate = owner
-        lazy.runtime.configure_host_process_resident_budget(2 * 2**30)
+        # Whole-process admission includes allocator state retained by earlier
+        # suite cases, plus this fixture's bounded source/normalization work.
+        baseline_rss = psutil.Process().memory_info().rss
+        fixture_headroom = 8 * len(rows) * 6 * 179 * 4
+        lazy.runtime.configure_host_process_resident_budget(baseline_rss + fixture_headroom)
         lazy.configure_epoch_progress(tmp_path / "progress")
         lazy.configure_evaluation_fold(0)
         lazy.fit(SourceRows(X, rows), y, **arguments)

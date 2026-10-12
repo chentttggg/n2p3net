@@ -1,0 +1,119 @@
+{
+  "schema": "n2p3_cache_author_archive_readiness_binding/1",
+  "status": "recovery_verified_root_archive_review_ready",
+  "author_worktree_identity_key": "C:\\Users\\chent\\.codex\\worktrees\\research-cache-integration\\n2p3-net",
+  "author_recovery_commit": "d0edc17058d48e8dc577c232a21ca74b938bda7a",
+  "historical_source_base_commit": "18c1294785f63c1535c3d8b502c41be29446e06c",
+  "local_store": "frozen/local_history/cache-author-recovery",
+  "local_files_sha256": {
+    "manifest.json": "5535a7ef5dcc2912437d4b9e4853a33852197a94504a4d3ea90cdc966d253c79",
+    "physical_inventory.json": "ec62a8ebf32d5ba92257e08e5123282aea52fcab5818c9495a66ca49bff25e71",
+    "all_files_decisions.json": "c777781bb79d91a2ace892cd9be05b9a4d82e1565d1b8d5c8aca4cc4fa00f1af",
+    "verification.json": "e7b4897019ba8de8d915d79e8e2b3962d616f407933a97f93c429a6d26f7e729",
+    "recover.py": "c27c8d345303e1c21a9ae37d30664004c2c1d23c8f72e5c5f77dbd2f001791bd",
+    "full_recovery_verification.json": "d7317b75ff5c41de33eac2c4c4bfb20aa994c0b7a4fa3bd370484a4724fdaca0",
+    "source_owner_recovery.json": "1ac9c520afb553ed31c8b962e88b002d5709e68d8ee84920ffa127e42e2a3b4b",
+    "external_dependencies.json": "805d5121e8c9f949de739bef183089bea3db11e6fb0129c49988ce985661d0d7",
+    "README.zh.md": "8c626584fd2c246664b35c4fd189597638db5b6dd27b94c08187eac6455b71ec"
+  },
+  "full_original_inventory": {
+    "files": 4364,
+    "bytes": 947711550,
+    "enumeration": "Path.walk; no silent path errors; every physical regular file SHA256"
+  },
+  "retained": {
+    "logical_original_paths": 1285,
+    "exact_file_paths": 1264,
+    "exact_MAT_prefix_body_paths": 21,
+    "used_objects": 956,
+    "used_object_bytes": 275192303,
+    "Paper_Git_recovery_files": 59,
+    "historical_source_stage_files": [
+      152,
+      248,
+      248
+    ],
+    "actual_source_overlay_files": [
+      6,
+      8,
+      8
+    ],
+    "accepted_cache_source_owner_files": 4
+  },
+  "full_recovery": {
+    "reads_original_author_tree": false,
+    "restored_SHA_mismatches": 0,
+    "fit_score_model_load_calls": 0,
+    "actual_script_sha256": "c27c8d345303e1c21a9ae37d30664004c2c1d23c8f72e5c5f77dbd2f001791bd"
+  },
+  "root_binding_closures": [
+    "doc/assets/research_resume_20261011/prefix_program_acceptance_binding.json",
+    "doc/assets/research_resume_20261011/cache_shared_acceptance_binding.json"
+  ],
+  "key_original_path_mappings": {
+    "tmp/PREFIX_PROGRAM/HANDOFF.zh.md": {
+      "sha256": "8f784c98b0a76028f3d9d37946c8a2e4a82f48b960dd24ddbaa5cca971288ea1",
+      "saved_relative_path": "objects/8f784c98b0a76028f3d9d37946c8a2e4a82f48b960dd24ddbaa5cca971288ea1",
+      "mode": "exact_file_copy"
+    },
+    "tmp/PREFIX_PROGRAM/final_validation.json": {
+      "sha256": "ef6e1408de20eae3671a733402dc780804dcadeca2ea17c5729ee65ebbf23649",
+      "saved_relative_path": "objects/ef6e1408de20eae3671a733402dc780804dcadeca2ea17c5729ee65ebbf23649",
+      "mode": "exact_file_copy"
+    },
+    "tmp/PREFIX_PROGRAM_REVIEW/HANDOFF_FINAL.zh.md": {
+      "sha256": "da0266838143d8dc704eace2ceef191915e97cea80b26f29724ebd754b447c73",
+      "saved_relative_path": "objects/da0266838143d8dc704eace2ceef191915e97cea80b26f29724ebd754b447c73",
+      "mode": "exact_file_copy"
+    },
+    "tmp/CACHE_INDEPENDENT_FIXED_20261011/REVIEW_FINAL.zh.md": {
+      "sha256": "5e7476780127806398d77e99f52d3b2b73261b33f8fbc3a3ed8688d3e27c2240",
+      "saved_relative_path": "objects/5e7476780127806398d77e99f52d3b2b73261b33f8fbc3a3ed8688d3e27c2240",
+      "mode": "exact_file_copy"
+    },
+    "tmp/CACHE_INDEPENDENT_FIXED_20261011/source_authority_adapted_results.json": {
+      "sha256": "d5435b4dcf2b0a1d56db4df0a95f400acada412b4f27b41ac0c0fea24146fe6e",
+      "saved_relative_path": "objects/d5435b4dcf2b0a1d56db4df0a95f400acada412b4f27b41ac0c0fea24146fe6e",
+      "mode": "exact_file_copy"
+    },
+    "tmp/CACHE_INDEPENDENT_FIXED_20261011/target_state_results.json": {
+      "sha256": "6b0aa1697ffe3232545a7677bbd4dfa40bb7cb0b7bdba8f0ed4ddcd0de216e2b",
+      "saved_relative_path": "objects/6b0aa1697ffe3232545a7677bbd4dfa40bb7cb0b7bdba8f0ed4ddcd0de216e2b",
+      "mode": "exact_file_copy"
+    },
+    "tmp/CACHE_INDEPENDENT_FIXED_20261011/shared_lifecycle_results.json": {
+      "sha256": "5fc43f46c9b9eebd14b9034db03817929990ce9e1a595ee0385e9e3abcd58c51",
+      "saved_relative_path": "objects/5fc43f46c9b9eebd14b9034db03817929990ce9e1a595ee0385e9e3abcd58c51",
+      "mode": "exact_file_copy"
+    },
+    "tmp/PREFIX_PROGRAM_REVIEW/coherent_temperature_probe.json": {
+      "sha256": "38ca6e6637f7a96783204b22396e104957440bf3f276a5ebcfeecf050a7ebe23",
+      "saved_relative_path": "objects/38ca6e6637f7a96783204b22396e104957440bf3f276a5ebcfeecf050a7ebe23",
+      "mode": "exact_file_copy"
+    },
+    "tmp/PREFIX_PROGRAM_REVIEW/baseline_actual_fit_scope_red.json": {
+      "sha256": "8c43b7499ced58418343058babf05fc7cdbc25a9ac593cbec7b8d3f9aab0eaa8",
+      "saved_relative_path": "objects/8c43b7499ced58418343058babf05fc7cdbc25a9ac593cbec7b8d3f9aab0eaa8",
+      "mode": "exact_file_copy"
+    }
+  },
+  "full_path_mapping": "local manifest.json/files maps every original absolute path to saved container/mode/SHA/recovery commit",
+  "redundant_preparation_objects": {
+    "count": 100,
+    "bytes": 266160600,
+    "exact_list": "manifest.json/unreferenced_preparation_objects_for_root_review",
+    "disjoint_from_needed_payload_and_added_source_owners": true,
+    "delete_performed": false,
+    "required_recheck": "Before root deletion rebuild used_union from manifest exact objects, all MAT recipe component SHA, every source_owner_recovery.json physical SHA, and full_verification additional_source_objects; compare against exact listed path and SHA."
+  },
+  "archive_performed": false,
+  "original_D_dirty_checkout_modified": false,
+  "other_research_and_cloud_worktrees": "remain active and unchanged",
+  "restore_command": "D:/BCI/n2p3-net/.venv/Scripts/python.exe frozen/local_history/cache-author-recovery/recover.py --restore-to <new-directory>",
+  "validation": {
+    "ruff_three_preparation_recovery_scripts": "passed",
+    "git_diff_check": "passed",
+    "original_author_tracked_tree": "clean at d0edc170",
+    "independent_full_recovery": "1285 paths, 648 stage sources, 59 Paper, 4 accepted-cache owner files; no author tree reads, 0 mismatch"
+  }
+}

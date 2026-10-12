@@ -12,9 +12,17 @@
 
 独立审阅核完整AR历史、flat测度/Jacobian、相关proper factor、inverse solve defect、prefix压缩和后验位移。109个独立案例通过；54个conditional案例中32获准、22具名拒绝，获准案例的110位oracle最大误差`1.395e-9 nats`且在各自估计界内。root逐读全部差异及最后finite保护，按原字节接入`5b827aa4…`，核依赖/证据SHA并通过六个新增反例、Ruff与diff检查，见[数值接受绑定](../assets/research_resume_20261011/p1_numerical_acceptance_binding.json)。
 
-真实A01 shared/private各36候选已经恢复完整概率输出：原保存态由原loader准入，新数值consumer为`22bf6782…`，新增fit为0。source-scale界最大分别为`5.380e-9`/`8.263e-9`，conditional nats界最大`0.000295162`/`0.000337333`，同actual tail预算`0.000946760`；概率mass均为1。随后5b只补无FMA极端中间乘积的typed有限值保护，保72候选原source身份。其余14个保存态cell继续独立评价，原16格失败面板保持原记录。
+八人两臂的16格保存态续评已完成并独立复算，新增fit为0。A01的72候选保`22bf6782…`原评分来源，其余14格504候选由`5b827aa4…`评分；所有576候选满足原两道误差门。shared命中5/8、NLL7.336477、Brier0.679094；private命中6/8、NLL5.554012、Brier0.477679。private救回A06，未损害原正确决策，配对NLL下降1.782464；5/8人的NLL改善，其中A01贡献总改善的71.8%。两臂NLL都高于36候选均匀参考3.583519，严重错判的概率风险继续进入后续模型判断。
+
+本面板每人仅一个C-held decision，八个预声明真值均为row5/col0；结果解释原冻结compiled-W Gaussian程序。真实平稳law修正采用新的producer另做同支持配对，不从本次held结果更改response、先验或候选。终态/独立逐概率复算/CSV与图见[续评接受绑定](../assets/research_resume_20261011/p1_numeric_panel_acceptance_binding.json)，原16格数值失败面板及两个执行失败run保持原身份。
 
 这次A01消费的一次本机CPU采样为80.9%，按实际记录为超限；后续native1且检查总机余量，最多两个score workers。完整数值程序和原producer分开绑定；tree dot也改变新C-fit的舍入路径，原prior和统计模型保持。此处交付数值实现与真实保存态可用性，后续同物理支持的概率分析继续用原requested owner。
+
+Windows控制文件读写竞态已独立复现，修复后原8份完整receipt逐字节复用、未封存A04/A05 private journal归档并重算，仅剩余8格新评分。实际续跑exit0、进程全部退役，CPU峰值44.6%；原terminal的64.1%对应整个历史追加日志。执行器的parent身份混搭缺口由最终独立检查器以原8份receipt SHA和固定script/config pair关闭，执行源码保持其真实历史字节。
+
+真实 stationary-law 新producer 的 stage04 首次启动在严格旧capsule export 阶段发现冻结入口把 manifest 字符串传给只接受 `Path` 的 `BoundInput`，在 export/root compile/fit/score 前退出，owned tree 清理为0。stage05 已修复 export 与 worker 两个实际 caller，并以独立冻结 source/plan 通过 A01 原capsule strict export、独立审阅及7项 Path/资源生命周期验证；代码已整合到科研树。新实验保持原A01–A08两臂16格、seed20260918、C600/held120/unused80与完整原response/noise参数，只编译新的 `/3` stationary prefix root。
+
+stage05 两次、stage06 一次本地实际执行均由 RAM 门记为 `resource_blocked`，exit1，owned tree 全部清理为0。三次都只有 A01 一个 active actor，已实际编译 shared8 partial root并完成1/5/4个候选的conditional resolution；完整score与cell receipt均为0，新增fit为0。stage05的RSS骤降与非同步采样是待核解释；stage06则是available RAM降至约1.46GiB，按reserve/growth公式触发负余量。单worker重规划没有闭合本地完整执行，后续交云窗口按真实资源与平台合同执行同一16格。旧 `/2` panel、三次资源终态和所有partial保持原身份，实际计数与交接见[执行绑定](../assets/research_resume_20261011/stationary_program_execution_binding.json)。
 
 ## 平稳前缀的真实模型关系
 
@@ -23,6 +31,10 @@
 尾部实际消费stored PARCOR lattice，新模型以每个binary64 PARCOR作为精确实数，经实数step-up确定AR；跨channel创新Sigma只入一次。完整pairwise mixed Yule–Walker与独立p² Sylvester在36个pair上一致；unequal AR1 closed form和diagonal scalar Yule–Walker另作参照。同真实law的高精度joint Cholesky仅舍入为binary64后，谱差`3.409e-11`、Frobenius差`1.109e-10`，支持保持原门实现稳定编译。
 
 新compiler已由独立树完成并合入科研主树：`stationary_noise_artifact`以保存PARCOR的exact-real step-up、mixed Yule--Walker和joint Decimal96 Cholesky定义真实平稳law；saved root用独立向上误差证书验收，load不重编root。`/3`新state与旧`/2` compiled-W严格分开，旧P1续评仍只消费旧producer和旧law，不追签历史结果。A01新root的独立MP100 pullback谱/Frobenius误差为`3.409e-11`/`1.109e-10`，旧root为`0.0772181`/`0.167282`；stage04 underflow certificate、四种变换、save/load及实际caller均通过，0 fit/score。生产新state仍需绑定自己的producer和scope后再进入新实验。推导、两套oracle、实际旧state与源码绑定见[诊断绑定](../assets/research_resume_20261011/stationary_prefix_diagnosis_binding.json)及作者最终交接。
+
+原Windows严格loader已导出全部8人的原响应与16份完整噪声状态。A01复用既有封存出口，A02–A08七个独立进程均exit0；最终33成员包为5,602,250 B，逐成员摘要、原130输入/158源码/158 capsule及完整请求经独立复审。原导出计划保持`056977…`，与新的云评分计划分别绑定；根窗口复核最终包33成员并写入[跨主机出口绑定](../assets/research_resume_20261011/stationary_crosshost_export_binding.json)。原`/2` strict load包含旧reference-root关系重编，新`/3` root编译、fit与held score均为0。
+
+云科学接线已完成原导出计划对held样本/设计的独立授权及跨attempt互斥，修后独审33项与科研树集成5项分别通过，见[科学接受绑定](../assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)。合法原A01可进入native5数值池，重签错误样本/设计及原输出争用均在计算前拒绝；这一验证没有执行新law评分。下一步在实际factory、统一controller和Linux门接受后，云端直接编译新law并完成同支持16格评分；原Linux旧loader失败与本地三次RAM失败保留自己的来源。
 
 ## P1 数值门诊断与小组协议评估
 
@@ -35,6 +47,12 @@
 multiscale九列是fine9空间的可逆chart，并非新增span或正交wavelet。若`D_new=D_fine S`，保持同物理prior要求`Lambda_new=S.T Lambda_fine S`；同坐标ridge会改变prior及有效自由度，不能宣称同容量。g-reference沿真实C设计重编译并接受独立换图预测检验；hard端点为真实ambient chart内的约束。fs、`L=round(fs*T)`、实际端点`L/fs`、最后样本和半开支持继续分别保存。
 
 实际consumer链为spec→compiler→event design→C-reference/prior→continuous posterior/容量→原OOF→ensemble save/load/score。当前专用三臂dictionary comparison panel仍是原Gaussian/cosine设计，不静默扩大；新家族off-grid响应状态、导数/硬斜率、wavelet、完整历史与公共收益仍未完成。W03.01保持partial。
+
+后续off-grid/history方向已通过源码、方法原件与独立反例审阅，见[方向绑定](../assets/research_resume_20261011/b07_offgrid_history_direction_binding.json)。12个小矩阵数学反例与7个时钟/授权反例分别验证：同native数组不足以定义连续函数；半开裁剪不能用Taylor或舍入onset替代；邻居与当前必须共用一次kernel后验并保跨事件协方差；正确条件混合为full与prefix各自先积分再相减，prefix同时更新邻居状态。Unfold原全文的完整事件设计/线性叠加给出方法依据，当前模型仍按自己的Gaussian/有限状态假设推导。
+
+实施已在独立工作树推进五家族所有现有合法native空间的精确δ/w评价、原decoder持有的截止内完整历史、实际冻结C后验的多通道条件预测与保存重放。当前decision完整flash覆盖与response尾部右删失分别记录；next-selection的已发生前缀保完整候选词表与零贡献列。完整state-law支持包络决定历史授权范围，恒零或相同设计仅在完整先验质量可恢复时精确边缘化。计算接原stored noise和增广QR，避免构造native n×n协方差。该切片是冻结C后验的预测扩展；C本身随机响应的后验重估、实测fractional时钟、wavelet/硬斜率与公共效能分别进入后续验收。
+
+B05 数值中枢已固定接入 B07：`native_history_marginal_program` 直接消费保存的 `TemporalNoise`、M/R/Σ 和实际 full/prefix 观测，按通道展开 flat nuisance，分别生成 full/prefix absolute potential、稳定 conditional companion 与 source-scale/nats certificate。真实 A01 drift=0 被接受，drift=1e3/1e6 在计算前 typed reject；history adapter 尚待切换到该中枢并重新完成 capsule replay 验收。
 
 ## B09：可识别效应与source群体forecast
 

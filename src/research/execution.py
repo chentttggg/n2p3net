@@ -84,7 +84,7 @@ def atomic_write_json(path: str | Path, payload: Mapping[str, Any], *, input_adm
 
 
 def publish_exclusive(path: str | Path, write) -> Path:
-    """Publish a new immutable artifact; a crash never leaves a partial file at ``path``."""
+    """Publish a new immutable artifact without replacing an existing file."""
 
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)

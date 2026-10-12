@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from dataclasses import asdict
 from pathlib import Path
 
@@ -12,7 +11,8 @@ import torch
 
 from baselines.structured_erp import StructuredERP
 from models.n2p3net import N2P3ArchitectureConfig, N2P3Net
-from research.contracts import semantic_sha256
+from research.contracts import canonical_json_bytes, semantic_sha256
+from research.frozen_metadata import freeze_metadata, plain_metadata
 from transfer.binary import plain_trunk_configuration, target_shrinkage_features
 from transfer.calibration_candidates import FittedCalibrationCandidate
 from transfer.checkpoint import (
@@ -21,7 +21,6 @@ from transfer.checkpoint import (
     predict_n2p3_checkpoint,
 )
 from transfer.class_calibration import TrialProbabilityTransform
-from transfer.noise_model import freeze_metadata
 
 FROZEN_TRIAL_SCHEMA = "n2p3_frozen_trial_predictor/2"
 
@@ -44,7 +43,14 @@ class FrozenTrialPredictor:
             if (record["kind"] not in expected_kinds.get(calibration["origin"], set())
                     or calibration["raw_score_kind"] != score_kinds.get(calibration["origin"])):
                 raise ValueError("probability transform differs from its actual numerical producer kind")
-            self._probability_transform = TrialProbabilityTransform.from_record(record["class_calibration"])
+            probability_calibration = calibration
+            if calibration["origin"] == "source_mixture":
+                # Retain the original external scalar/type gates while sharing
+                # only the complete source contract snapshot owned by metadata.
+                probability_calibration = {**calibration, "fit_contract": {
+                    **calibration["fit_contract"], "training_contract": self._record[
+                        "class_calibration"]["fit_contract"]["training_contract"]}}
+            self._probability_transform = TrialProbabilityTransform.from_record(probability_calibration)
             fit = record["class_calibration"]["fit_contract"]
             if fit.get("frozen_state_digest") != _numeric_state_digest(self._state):
                 raise ValueError("frozen probability contract differs from the actual numeric state")
@@ -212,9 +218,13 @@ class FrozenTrialPredictor:
                 "semantics": self.record["class_calibration"]}
 
     def save(self, path: str | Path):
-        torch.save({"schema": (FROZEN_TRIAL_SCHEMA if "class_calibration" in self.record
-                               else "n2p3_frozen_trial_predictor/1"),
-                    "record": json.loads(json.dumps(self._record)), "state": self._state}, path)
+        from research.source_execution import save_source_checkpoint
+
+        save_source_checkpoint(path, {
+            "schema": (FROZEN_TRIAL_SCHEMA if "class_calibration" in self.record
+                       else "n2p3_frozen_trial_predictor/1"),
+            "record": plain_metadata(self._record), "state": self._state,
+        })
         return Path(path)
 
     def digest(self):
@@ -223,7 +233,15 @@ class FrozenTrialPredictor:
             value = tensor.contiguous()
             state[key] = {"shape": list(value.shape), "dtype": str(value.dtype),
                           "sha256": hashlib.sha256(value.reshape(-1).view(torch.uint8).numpy().tobytes()).hexdigest()}
-        return semantic_sha256({"record": self.record, "state": state})
+        # Metadata belongs to the immutable owner; numerical tensors remain
+        # mutable private storage and must be hashed afresh, including numpy views.
+        digest = hashlib.sha256()
+        digest.update(b'{"record":')
+        digest.update(canonical_json_bytes(self.record))
+        digest.update(b',"state":')
+        digest.update(canonical_json_bytes(state))
+        digest.update(b'}')
+        return digest.hexdigest()
 
     @classmethod
     def load(cls, path: str | Path):

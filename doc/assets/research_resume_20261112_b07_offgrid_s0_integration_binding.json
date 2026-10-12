@@ -1,0 +1,107 @@
+{
+  "schema": "n2p3_b07_offgrid_s0_integration_binding/1",
+  "status": "accepted_software_slice_s0",
+  "author_commit": "4e6939223eb08452265cb6be724544d4ddda85c8",
+  "base_commit": "5d55853",
+  "actual_root_source_pins": {
+    "src/transfer/dictionary_artifact.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\transfer\\dictionary_artifact.py",
+      "sha256": "8ed091213d2584a791d2b6d75e165af770fa44d907c10bb760f4fcdbb743a906",
+      "bytes": 30064
+    },
+    "src/transfer/response_dictionary.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\transfer\\response_dictionary.py",
+      "sha256": "f2b3e5f5f37cb9e625138cff1f1e67bda9ab5f110c60a9972ddc38f14fed2df0",
+      "bytes": 8358
+    },
+    "src/research/latent_response_reference.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\research\\latent_response_reference.py",
+      "sha256": "46069322fc3739870ce8a423eaaa26cfd81a33c71da7afc80d1422bc1bf2f377",
+      "bytes": 19452
+    },
+    "tests/research/test_latent_offgrid_design.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_latent_offgrid_design.py",
+      "sha256": "12c48e70ffc976e0ad726385725fb363fe0fb6fe9e4c2b5769b38d980f5599be",
+      "bytes": 6456
+    },
+    "tests/transfer/test_dictionary_offgrid.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\transfer\\test_dictionary_offgrid.py",
+      "sha256": "427602c909d64755118019cae698cf7e38007e035580c7c0ac3cc31dfb5d8d92",
+      "bytes": 9888
+    },
+    "tests/transfer/test_cubic_dictionary.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\transfer\\test_cubic_dictionary.py",
+      "sha256": "fed904b643230fe5242e70bea11f0eeea2d721ac79ca1455cc7aec5d6b156961",
+      "bytes": 11828
+    }
+  },
+  "author_handoff": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-offgrid-history\\n2p3-net\\tmp\\B07_IMPLEMENTATION\\offgrid\\HANDOFF.zh.md",
+    "sha256": "a80209302d950d394f2f8779d452dc31c9e2e3def62f1b236759deb94512338a",
+    "bytes": 11902
+  },
+  "author_binding": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-offgrid-history\\n2p3-net\\tmp\\B07_IMPLEMENTATION\\offgrid\\binding.json",
+    "sha256": "628be81cf3f36cc3021578047cf004ca8f129c4517326e11b898df50e847f067",
+    "bytes": 2531
+  },
+  "independent_review": {
+    "handoff": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_OFFGRID_HISTORY_CODE_REVIEW\\offgrid\\HANDOFF.zh.md",
+      "sha256": "a836b298c29cc4ded0d65fb676f9fa66da5a62b3e8797f8d0a796e02c3d7699a",
+      "bytes": 5929
+    },
+    "binding": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_OFFGRID_HISTORY_CODE_REVIEW\\offgrid\\review_binding.json",
+      "sha256": "71236315e958e2660fb0f14a02959ed0d565faeb1205a8489c019bbfaa43f123",
+      "bytes": 11889
+    },
+    "review_script": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_OFFGRID_HISTORY_CODE_REVIEW\\offgrid\\review.py",
+      "sha256": "6acd95af8e992414e8d22cb45674b78fc731d47f2d7ee9033c74f55f1988bafb",
+      "bytes": 17836
+    },
+    "facts": 43,
+    "exit_code": 0
+  },
+  "root_validation": {
+    "junit": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_IMPLEMENTATION\\offgrid\\root_s0.junit.xml",
+      "sha256": "87fe0b3316dd460a162675c67aee18c609fda2d7bb98dbd2d6c686562b6aad43",
+      "bytes": 15913
+    },
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "91",
+        "time": "9.655",
+        "timestamp": "2026-10-12T08:16:58.688718+08:00",
+        "hostname": "Tonger"
+      }
+    ],
+    "tests": 91,
+    "ruff_exit": 0,
+    "diff_check_exit": 0
+  },
+  "scope": [
+    "five-family exact rational off-grid evaluator",
+    "legal Gaussian free and other four free/hard spaces; Gaussian hard typed unsupported",
+    "native saved-byte/constraint-map anchors",
+    "exact query artifact save/load/replay",
+    "integer actual event clock with exact delta/width and censor design"
+  ],
+  "not_scope": [
+    "complete history authority/cutoff",
+    "frozen-C history posterior and central noise marginal",
+    "public fit/score",
+    "C-latent fit",
+    "fractional measured clock",
+    "wavelet/hard slope"
+  ],
+  "source_identity_note": "root actual executable source pins are authoritative; consumer declaration source is separate from native producer; old native packages unchanged",
+  "public_fits": 0,
+  "public_scores": 0
+}

@@ -1,0 +1,103 @@
+{
+  "schema": "n2p3_claude_review_fix_integration_binding/1",
+  "status": "accepted_targeted_fixes",
+  "review_branch": "claude/review-20261011",
+  "review_tip": "a2b9269480b4af099e8566e686a50290a8ffa8e0",
+  "local_pin": "claude/review-20261011-pin",
+  "fix_commits": {
+    "U5a-04": "b36000c86530583c75415413e79caf2360422248",
+    "U7-19": "7a3df6f",
+    "U7-24": "976f012",
+    "U7-26": "5ab8ee8",
+    "U1-01_fixture": "f045350"
+  },
+  "integrated_commit": "4acb63d",
+  "integrated_files": {
+    "experiments/correct_brainsync_reference.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\experiments\\correct_brainsync_reference.py",
+      "sha256": "393ec08da87ded43387ab1b0bf230ce4587185d72dd013175be9d12f74486b63",
+      "bytes": 11091
+    },
+    "experiments/fit_galia_alignment.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\experiments\\fit_galia_alignment.py",
+      "sha256": "cb2ddba2b36143ece543c19e322fd4b8129ed5a034bec738a1a763d6ad30bcc3",
+      "bytes": 7395
+    },
+    "experiments/prepare_candidate_subject_partitions.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\experiments\\prepare_candidate_subject_partitions.py",
+      "sha256": "408eb72272d5176baea654dffca93933dc2f32a082a92d9e296278cd57a88dc6",
+      "bytes": 4478
+    },
+    "experiments/run_source_training_chain.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\experiments\\run_source_training_chain.py",
+      "sha256": "6e5d4113b52befad300608282864242c54c0193ce3adb5a282ff596ec22fed03",
+      "bytes": 147244
+    },
+    "src/research/execution.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\research\\execution.py",
+      "sha256": "ba008501965e5636a1d6f878b371df5e25a56d87d36fa2c4ff910dacfc6765df",
+      "bytes": 6014
+    },
+    "tests/brainsync/test_brainsync_reference.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\brainsync\\test_brainsync_reference.py",
+      "sha256": "da1a881ee2b3bd62d777e30f252b9236c1c276337b8e12f6243d02b96a50ed95",
+      "bytes": 4605
+    },
+    "tests/data/test_source_prefix_preparation.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\data\\test_source_prefix_preparation.py",
+      "sha256": "7d45278ebc421881092b642bff3bb4911cf66e7e81dec54244ed3ce8500afab1",
+      "bytes": 18014
+    },
+    "tests/research/test_candidate_subject_partitions.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_candidate_subject_partitions.py",
+      "sha256": "e5516752243f810ae41be1320ff35cde923cf161d2d52135e2c9c49644a255f4",
+      "bytes": 2437
+    },
+    "tests/support/raw_prefix.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\support\\raw_prefix.py",
+      "sha256": "f073123dfc7890bc8095d8b638925ff31c1d8bc8b82c51d9a833f25386b83c6d",
+      "bytes": 1629
+    },
+    "tests/train/test_parallel_training_chain.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\train\\test_parallel_training_chain.py",
+      "sha256": "4a73babceb1821e7a36a372206cf9be48d60492c59cc04300d9733fb0b0583c5",
+      "bytes": 16038
+    },
+    "tests/transfer/test_fit_galia_alignment.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\transfer\\test_fit_galia_alignment.py",
+      "sha256": "dfd5d6e31722ceaa49228048e3c2fe876167ff826d52308c3f420d0bbfbbea1e",
+      "bytes": 4692
+    }
+  },
+  "publish_exclusive": "added to src/research/execution.py because current root lacked the Claude review helper; required by U7-26 partition publisher",
+  "targeted_validation": {
+    "junit": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CLAUDE_REVIEW_INTEGRATION_TARGETED.junit.xml",
+      "sha256": "78817df7880d1862ac25b8e39a879d62c1c01c332f6151f65b096a57fd694a10",
+      "bytes": 3053
+    },
+    "tests_passed": 19,
+    "failures": 0,
+    "errors": 0,
+    "ruff_exit": 0,
+    "diff_check_exit": 0
+  },
+  "full_suite_report_from_review_branch": {
+    "passed": 3726,
+    "skipped": 25,
+    "failed": 3,
+    "scope": "Claude branch report; 1 base flaky, 2 first appear in director strict nested selection commit 5b83129; not rerun here"
+  },
+  "main_branch_pin": {
+    "requested_tip": "a2b9269",
+    "blocked_by": "main is checked out by dirty D:/BCI/n2p3-net worktree",
+    "safe_pin_ref": "claude/review-20261011-pin",
+    "push": false
+  },
+  "remaining": [
+    "director verdicts on deferred items and domain-feature retirement",
+    "cloud chores safe-point/liveness and cleanup",
+    "strict nested prefix selection two failures need director review"
+  ],
+  "original_dirty_D_checkout_untouched": true
+}

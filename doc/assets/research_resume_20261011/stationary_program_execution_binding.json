@@ -1,0 +1,237 @@
+{
+  "schema": "n2p3_stationary_program_execution_binding/1",
+  "status": "software_integrated_full16_execution_pending_cloud",
+  "source_integration_commits": [
+    "929334a",
+    "71ab581"
+  ],
+  "executed_source_root": "C:\\Users\\chent\\.codex\\worktrees\\research-stationary-prefix\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE05\\source",
+  "source_closure": {
+    "source_files": {
+      "count": 158,
+      "mismatches": 0,
+      "unchanged_from_stage05": true
+    },
+    "original_files": {
+      "count": 130,
+      "mismatches": 0,
+      "unchanged_from_stage05": true
+    },
+    "original_capsule_files": {
+      "count": 158,
+      "mismatches": 0,
+      "unchanged_from_stage05": true
+    }
+  },
+  "science_scope": {
+    "seed": 20260918,
+    "participants": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07",
+      "A08"
+    ],
+    "requested_cells": 16,
+    "C_fit_labels": 600,
+    "held_scorer_only_labels": 120,
+    "unused_authorized_labels": 80,
+    "new_response_fits_allowed": 0,
+    "new_noise_fits_allowed": 0,
+    "new_law": "stationary_PARCOR_exact_real_step_up_mixed_Yule_Walker_joint_prefix_root/3",
+    "baseline": "original_compiled_W/2"
+  },
+  "stages": {
+    "stage05": {
+      "plan": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-stationary-prefix\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE05\\plan.json",
+        "sha256": "0569777f5f99eaac753b0fb015ab0fcec761a2b4e9dcf14071044338f1f0485e",
+        "bytes": 14112557
+      },
+      "binding": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-stationary-prefix\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE05\\binding.json",
+        "sha256": "618cab811ba1be649dd22a80a3b1c90b3f5bd6baaa7c84fec51de9595831d625",
+        "bytes": 39173
+      },
+      "review": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-stationary-prefix\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE05\\HANDOFF_FINAL.zh.md",
+        "sha256": "4f56a7b064f708d465e15402920f24af57bd09732f1f18ce5879bebe24ec2a8f",
+        "bytes": 5165
+      },
+      "strict_export_probe": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-stationary-prefix\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE05\\probes\\strict_export_A01.json",
+        "sha256": "42ac223c4be28f35a3f0224ee5846e781318dfc34838d30e1d2a0d69a7e53329",
+        "bytes": 3232
+      }
+    },
+    "stage06": {
+      "plan": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE06\\plan.json",
+        "sha256": "00f1975ef6be5fb536bb849ed480f23922c521acd72d672bb14414ae04118e4a",
+        "bytes": 14116041
+      },
+      "binding": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE06\\binding.json",
+        "sha256": "4454b1bea5efe6c05a31e9b467344144ffd18df629e5dccdc0a6d324d9020dbd",
+        "bytes": 43803
+      },
+      "control_probe": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE06\\control_probe\\result.json",
+        "sha256": "61a82f5fab83475245a9b4f04963f9038b00feaf3aca89472c2612668e9bf4c9",
+        "bytes": 4950
+      },
+      "review": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE06\\HANDOFF_FINAL.zh.md",
+        "sha256": "acde6d561488e967b9c6b19857fdd0e57f5bb0e3f2a2ff872b10d0d5b767050b",
+        "bytes": 6047
+      },
+      "resources": {
+        "max_workers": 1,
+        "native_threads": 1,
+        "short_original_load_threads": 2,
+        "launch_cpu_threshold_percent": 60.0,
+        "worker_cpu_threshold_percent": 72.0,
+        "resume_cpu_threshold_percent": 60.0,
+        "required_quiet_samples": 3,
+        "growth_safety_factor": 1.15,
+        "memory_reserve_bytes": 1073741824,
+        "worker_rss_estimate_bytes": 1610612736
+      }
+    }
+  },
+  "actual_execution_attempts": [
+    {
+      "run_id": "ff1bd676ddd24ace87b1b8c85fdca2e6",
+      "terminal": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-stationary-prefix\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE05\\terminal.ff1bd676ddd24ace87b1b8c85fdca2e6.json",
+        "sha256": "1aada78f44b3c97eebc7b7c537db2510d58d2047f14c76475c3228467fe8dd3c",
+        "bytes": 1345
+      },
+      "status": "resource_blocked",
+      "actual_exit_code": 1,
+      "owned_processes_remaining": 0,
+      "completed_cells": 0,
+      "response_fits": 0,
+      "noise_fits": 0,
+      "partial_stationary_roots": 1,
+      "partial_candidate_resolutions": 1,
+      "reason": "current RAM cannot admit the declared remaining actor growth"
+    },
+    {
+      "run_id": "0fb0afda535d46048305b4371fd49a1d",
+      "terminal": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-stationary-prefix\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE05\\terminal.0fb0afda535d46048305b4371fd49a1d.json",
+        "sha256": "c93b55a62820d6384f57da58af072486229d4eb06830d8384674232e72d26b89",
+        "bytes": 1344
+      },
+      "status": "resource_blocked",
+      "actual_exit_code": 1,
+      "owned_processes_remaining": 0,
+      "completed_cells": 0,
+      "response_fits": 0,
+      "noise_fits": 0,
+      "partial_stationary_roots": 1,
+      "partial_candidate_resolutions": 5,
+      "reason": "current RAM cannot admit the declared remaining actor growth"
+    },
+    {
+      "run_id": "5b32c225f22d450f9b3a6bb5014b3deb",
+      "terminal": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_STATIONARY_PROGRAM_STAGE06\\terminal.5b32c225f22d450f9b3a6bb5014b3deb.json",
+        "sha256": "b7dde5267532b355a9fd13c5ec90cac288d1f8c3ab30fc6590cfae8814428ce2",
+        "bytes": 1345
+      },
+      "status": "resource_blocked",
+      "actual_exit_code": 1,
+      "owned_processes_remaining": 0,
+      "completed_cells": 0,
+      "response_fits": 0,
+      "noise_fits": 0,
+      "partial_stationary_roots": 1,
+      "partial_candidate_resolutions": 4,
+      "reason": "current RAM cannot admit the declared remaining actor growth"
+    }
+  ],
+  "completed_scientific_cell_receipts": 0,
+  "scope_of_partial_work": "three actual A01 shared8 stationary root compilation attempts and 1/5/4 candidate resolutions; no completed score.json or cell receipt",
+  "resource_diagnosis": {
+    "stage05": "both blocked runs had a large same-PID RSS fall; working-set trimming and non-atomic available/RSS sampling remain hypotheses",
+    "stage06": "available memory fell to 1571504128 B while actor RSS rose; the declared 1 GiB reserve and growth estimate produced negative slack",
+    "all_attempts_actual_active_subjects": [
+      "A01"
+    ],
+    "two_actors_were_not_launched": true,
+    "next": "cloud owner verifies inputs and resource/runtime contract before a separately bound full16 execution",
+    "report": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\WINDOWS_RESOURCE_DIAGNOSIS\\HANDOFF.zh.md",
+      "sha256": "f50bbcdf8629290fd05d2c8bd8c4f17d744042da0a63eb26ea12ad173cdf28b5",
+      "bytes": 13607
+    },
+    "evidence": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\WINDOWS_RESOURCE_DIAGNOSIS\\evidence.json",
+      "sha256": "d9d230d2b4ac00e211c49b46139b2d2126a37621bb57f4a6c9f78232708aafb9",
+      "bytes": 49315
+    },
+    "extractor": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\WINDOWS_RESOURCE_DIAGNOSIS\\extract.py",
+      "sha256": "742349d39d63c596b5904221a20ad1c0ec959da2a6f84f4282aed9c90b61848e",
+      "bytes": 8169
+    },
+    "actual_resource_rows_replayed": 347,
+    "budget_decision_mismatches": 0,
+    "stage06_final_slack_bytes": -14575206.4,
+    "linux_required_gate": "real actor lifecycle/zombie/reparenting probes; Windows retirement is not Linux verification",
+    "old_stage06_rationale_correction": "all three runs had only one actual actor; max_workers=1 does not explain or resolve prior observed pressure"
+  },
+  "old_reference": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\P1_NUMERIC_PANEL\\result.json",
+    "sha256": "091fa663769395027e7ee5b9cdabd89079106daec62f77eb56167ec627f3ef7f",
+    "bytes": 311854
+  },
+  "current_integration_verification": {
+    "focused_tests": {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "junit": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\stationary_integrated_tests.xml",
+      "sha256": "1365761a95cf1c763b54caf67af505a85e8e94d032bff3a2e761ed7ea680e847",
+      "bytes": 1333
+    },
+    "scope": "Path ingress and local process/resource lifecycle; no repeated full suite",
+    "relevant_files": {
+      "experiments/export_frozen_p1_state.py": "a158f2b3ff9c24631cc9fde49f1b71db104872ad11d6e56f8a28ea9732e1cdb4",
+      "experiments/run_stationary_channel_noise_panel.py": "e806d4bc2d0b061a5cb59e309549213848c114d2f7c1d161f809832ab67e8b9b",
+      "src/research/local_program_control.py": "2c2fb34c627d2293e882d2bde82edb24ddfb640f6be14b1dfe7d3cbba5c9ce69",
+      "src/research/stationary_panel.py": "556ff1390e924709f48132bf7b9a8077bb18ed04f70ae1824fb28af5059f20c4",
+      "tests/research/test_local_program_control.py": "934fc0941ee49d985d96f0235e93f50f5d23f96209c6f36d90da46287d30ec3b",
+      "tests/research/test_stationary_panel_path_contract.py": "7509ac9495aefc4ec5f6648501a473553aa587185f5dd000701c83fae406ef23"
+    },
+    "ruff_exit": 0,
+    "diff_check_exit": 0
+  },
+  "local_history_recovery": {
+    "bundle": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\frozen\\local_history\\stationary-plan-history\\stage06-unpublished.bundle",
+      "sha256": "f069b3df211cdc3232180d18e42a7829aec157fe84f1f9dffe884184d02d46e3",
+      "bytes": 440107
+    },
+    "verified_with": "git bundle verify",
+    "required_base_commit": "71ab581ef193d2a13887ec67a933d5420b96d7f3",
+    "archived_head": "abfa7a53c635fef684ce916245662fa641bbae87",
+    "archived_commits": [
+      "79a4ccc33dcc2f44282d9fa2129680cf5063fcd5",
+      "55742688d508dc804d0acc019fdeafd219aa7ab2",
+      "5ea955388934513a637b6a8956d64050d9e6bccd",
+      "abfa7a53c635fef684ce916245662fa641bbae87"
+    ],
+    "reason": "expanded plans and runtime artifacts stay local; only compact binding and active guidance tracked",
+    "source_or_result_resigned": false
+  },
+  "cloud_handoff_thread": "01a10b0f-c672-7e73-8449-4ebdaf6fc5eb"
+}

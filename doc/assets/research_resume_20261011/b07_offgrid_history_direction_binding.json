@@ -1,0 +1,79 @@
+{
+  "schema": "n2p3_b07_offgrid_history_direction_binding/1",
+  "status": "accepted_science_direction_implementation_started",
+  "source_base_commit": "5d55853a41c8081a78eb437625ed0307f2bef609",
+  "science_review": {
+    "handoff": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_OFFGRID_HISTORY_REVIEW\\HANDOFF.zh.md",
+      "sha256": "b3cbc21d88c933c53caf4699c5440a62a77c926afa4e5a89882e7ff0b9e99ce8",
+      "bytes": 21464
+    },
+    "binding": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_OFFGRID_HISTORY_REVIEW\\review_binding.json",
+      "sha256": "d8c3d41a3b37386d8348335659f2845e4a5dd2b9cceb4bd9abce4c288b6ea3e1",
+      "bytes": 19841
+    },
+    "mathematical_counterexamples": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_OFFGRID_HISTORY_REVIEW\\math_counterexamples.json",
+      "sha256": "22f7a20544fcb1a6691b16ab3fea4b3d1a672afc446e186b2d0877286e1ed697",
+      "bytes": 5786
+    },
+    "actual_executed_math_script": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_OFFGRID_HISTORY_REVIEW\\math_counterexamples.py",
+      "sha256": "581f57e1e1e268129fabc8155f60cd5b2db425b432dd45236734c57b2201ee7b",
+      "bytes": 16111
+    },
+    "clock_history_review": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_OFFGRID_HISTORY_REVIEW\\clock_history\\review_binding.json",
+      "sha256": "0e7bb842a4d516505e39dc23264896ec494808359249722e457fedd8b657d092",
+      "bytes": 33355
+    },
+    "clock_counterexamples": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_OFFGRID_HISTORY_REVIEW\\clock_history\\counterexamples.json",
+      "sha256": "0f2041bec06ba74ff200e425f9cdd3c56876ee82cf93e7d0f4dff77d08e85166",
+      "bytes": 5948
+    },
+    "external_claim_ledger": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_OFFGRID_HISTORY_REVIEW\\literature\\claim_sources.json",
+      "sha256": "9c1086a1de0ce24738cb3ee09e3bb3c87eea9b4041d1269e0ebc4d9cd1e10c65",
+      "bytes": 1488
+    }
+  },
+  "direction_evidence": {
+    "mathematical_cases": 12,
+    "zero_production_call_ledger_entries": 1,
+    "clock_cases": 7,
+    "public_fits": 0,
+    "public_scores": 0,
+    "model_loads": 0,
+    "root_reread_source_hashes": 29
+  },
+  "implementation": {
+    "tree": "C:/Users/chent/.codex/worktrees/research-offgrid-history/n2p3-net",
+    "branch": "codex/research-offgrid-history-20261012",
+    "scientific_owner": "root",
+    "offgrid_author": "/root/stationary_stage05_author",
+    "history_author": "/root/stationary_stage06_resource_author",
+    "mathematical_reviewer": "/root/p1_chart_diagnosis",
+    "status": "in_progress_no_public_execution"
+  },
+  "accepted_scope": [
+    "all existing legal native dictionary spaces: Gaussian free; other four free/hard; causal delta>=0 and width>0",
+    "integer actual events with exact rational off-grid kernel lag; explicit physical half-open support",
+    "complete decoder-owned history through cutoff and complete-vocabulary neighbor prefixes",
+    "current event coverage and explicit observed right-censor; original read/conditioning/score supports",
+    "frozen C posterior predictive extension; one shared kernel covariance across events",
+    "finite joint-minus-prefix mixture under the same proper or common flat measure",
+    "structured native-noise execution and original-bytes authority save/load/replay"
+  ],
+  "analytic_marginalization": "exact identical or zero design state/axes only with full frozen law and recoverable mass/identity; no low-mass pruning or inferred independence",
+  "not_completed_by_direction_review": [
+    "S0-S3 code implementation and independent review",
+    "actual opt-in same-support public evaluation",
+    "C-latent posterior refit producer",
+    "fractional measured event clock authority",
+    "wavelet and new endpoint/slope families",
+    "adult confirmation"
+  ],
+  "original_producer_or_default_changed": false
+}

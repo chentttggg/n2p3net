@@ -1143,7 +1143,8 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                             for study in entry["source_studies"] or ()) for entry in report["groups"]),
                     "pending_source_groups": sum(entry["status"] == "pending" for entry in report["groups"]),
                     "active_pipeline_nodes": len(observation["running"]),
-                    "running_tasks": observation["running"], "pending_tasks": observation["pending"]}
+                    "running_tasks": observation["running"], "pending_tasks": observation["pending"],
+                    "admitting_tasks": observation["admitting"]}
                 if merged != previous_observation:
                     report["resource_observations"].append({"observed_unix": observation["observed_unix"], **merged})
                     previous_observation = merged

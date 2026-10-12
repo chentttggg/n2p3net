@@ -1,0 +1,66 @@
+{
+  "schema": "n2p3_b07_central_marginal_integration_binding/1",
+  "status": "accepted_numerical_owner_pending_history_consumer",
+  "author_commit": "eac98bc",
+  "source_pins": {
+    "src/research/channel_noise_mechanism.py": {
+      "path": "src\\research\\channel_noise_mechanism.py",
+      "sha256": "51c6ba703f69f2f6aaf7e673b5953fc249774cdf056a65eb99eca21b51ce900d",
+      "bytes": 149112
+    },
+    "tests/research/test_structured_gaussian_marginal_program.py": {
+      "path": "tests\\research\\test_structured_gaussian_marginal_program.py",
+      "sha256": "ddef53b9dbd9c1b4578ee12bf3b8de0633a83172b9a23e297fb33045684708f6",
+      "bytes": 4351
+    }
+  },
+  "author_handoff": {
+    "path": "C:/Users/chent/.codex/worktrees/research-offgrid-history/n2p3-net/tmp/B07_IMPLEMENTATION/numerics/HANDOFF.zh.md",
+    "sha256": "unknown_external_artifact_not_copied"
+  },
+  "root_validation": {
+    "junit": {
+      "path": "tmp\\B07_IMPLEMENTATION\\numerics\\root_central.junit.xml",
+      "sha256": "5eb577a1d2b3a3ae1fddcdc23125c3deb12757ff5393d860957ea2f891a428eb",
+      "bytes": 874
+    },
+    "tests": 4,
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "4",
+        "time": "4.280",
+        "timestamp": "2026-10-12T08:34:25.857738+08:00",
+        "hostname": "Tonger"
+      }
+    ],
+    "ruff_exit": 0,
+    "diff_check_exit": 0
+  },
+  "actual_probe": {
+    "path": "C:/Users/chent/.codex/worktrees/research-offgrid-history/n2p3-net/tmp/B07_IMPLEMENTATION/numerics/central_drift_probe.json",
+    "sha256": "55e350a3b6c37c6f543138a21eb5fcb87ba659033fe41d52a32155d22b32c156",
+    "public_fits": 0,
+    "public_scores": 0,
+    "model_loads": 0,
+    "drift0": "finite accepted",
+    "drift1e3": "typed DiffuseProjectionResolutionError",
+    "drift1e6": "typed DiffuseProjectionResolutionError"
+  },
+  "scope": [
+    "stored TemporalNoise full transform and leading prefix",
+    "Sigma once",
+    "independent channel flat nuisance",
+    "absolute full/prefix potentials and conditional companion",
+    "source-scale/nats certificate"
+  ],
+  "not_yet": [
+    "history adapter switch from NativeHistoryMarginals",
+    "history capsule/replay after central consumer",
+    "public fit/score",
+    "full B07 history acceptance"
+  ]
+}

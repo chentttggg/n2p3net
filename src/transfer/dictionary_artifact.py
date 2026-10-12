@@ -15,6 +15,7 @@ from decimal import (
     ROUND_HALF_EVEN,
     Context,
     Decimal,
+    DecimalException,
     DivisionByZero,
     InvalidOperation,
     Overflow,
@@ -63,6 +64,17 @@ _MULTISCALE_COMPILER = {**_BSPLINE_COMPILER, "semantic_id": "n2p3_coarse6_detail
                         "evaluation": "independent_coarse6_and_fine9_columns_exact_rational_then_one_binary64_round"}
 _FAMILY_COMPILERS = {"gaussian": _COMPILER, "cosine": _COMPILER, "bspline": _BSPLINE_COMPILER,
                      "raised_cosine": _RAISED_COMPILER, "multiscale_bspline": _MULTISCALE_COMPILER}
+EVALUATION_SCHEMA = "n2p3_response_dictionary_evaluation/1"
+EVALUATION_PROGRAM = {
+    "semantic_id": "n2p3_physical_dictionary_exact_query_and_saved_chart/1",
+    "coordinate_arithmetic": "exact_integer_or_stored_binary64_or_rational; seconds_times_exact_stored_fs",
+    "scalar_expression": "original_family_compiler_expression_at_exact_sample_coordinate",
+    "chart_lift": "exact_rational_dot_of_binary64_ambient_and_saved_constraint_map_then_one_binary64_round",
+    "derivative": 0,
+    "column_units": "dimensionless",
+    "sample_site": "n_exact; seconds_site=n/exact_stored_fs; rounded_native_times_are_not_exact_sites",
+    "right_endpoint": "analytic_value_at_exact_L; cropped_function_excludes_L",
+}
 
 
 class DictionaryArtifactError(ValueError):
@@ -402,3 +414,122 @@ def admit_record(record, spec):
                 _same_scalar(arrays["endpoint_rows"][row, column],
                              _ambient(spec, length, width, sample, column), "endpoint_rows", (row, column))
     return arrays, expected
+
+
+def exact_query(query):
+    """Keep every query value as a real rational, never snap it to a grid."""
+    try:
+        values = np.asarray(query, dtype=object)
+    except (TypeError, ValueError) as error:
+        raise DictionaryArtifactError("invalid_exact_query") from error
+    if values.size == 0:
+        raise DictionaryArtifactError("empty_exact_query")
+    ratios = []
+    for value in values.flat:
+        if isinstance(value, Fraction):
+            exact = value
+        elif isinstance(value, (int, np.integer)) and not isinstance(value, (bool, np.bool_)):
+            exact = Fraction(int(value))
+        elif isinstance(value, (float, np.floating)) and np.asarray(value).dtype.itemsize <= 8 and np.isfinite(value):
+            exact = Fraction.from_float(float(value))
+        else:
+            raise DictionaryArtifactError("query_requires_finite_binary64_integer_or_Fraction")
+        ratios.append(exact)
+    return values.shape, tuple(ratios)
+
+
+def _evaluation_metadata(dictionary_record, dictionary_digest, shape, ratios, coordinate, support, arrays,
+                         evaluator_source, compiler_source):
+    rate = Fraction.from_float(dictionary_record["sample_rate_hz"])
+    samples = tuple(value*rate if coordinate == "seconds" else value for value in ratios)
+    return {"schema": EVALUATION_SCHEMA, "program": EVALUATION_PROGRAM,
+        "query_shape": list(shape), "query_exact_ratio": [[v.numerator, v.denominator] for v in ratios],
+        "query_coordinate": coordinate, "query_units": "s" if coordinate == "seconds" else "native_sample_coordinate",
+        "sample_coordinates_exact_ratio": [[v.numerator, v.denominator] for v in samples],
+        "support_program": support, "support_exact_sample_interval": [0, dictionary_record["support_samples"][1]],
+        "dictionary": {"identity_digest": dictionary_digest, "schema": dictionary_record["schema"],
+            "spec": dictionary_record["spec"], "sample_rate_hz": dictionary_record["sample_rate_hz"],
+            "state_sha256": dictionary_record["state_sha256"], "implementation_sha256": dictionary_record["implementation_sha256"],
+            "compiler": dictionary_record["compiler"]},
+        "consumer": {"implementation_sha256": evaluator_source, "compiler_source_sha256": compiler_source},
+        "state_sha256": array_digest(arrays["ambient_matrix"], arrays["matrix"], arrays["support_mask"])}
+
+
+def evaluate_state(dictionary_record, dictionary_digest, query, *, coordinate, support, implementation_sha256):
+    """Evaluate the same scalar family expression and admitted saved chart.
+
+    The caller owns an admitted immutable dictionary. Native samples remain the
+    original scalar expression, including Gaussian centers at L-1. Analytic
+    evaluation and causal [0,L) cropping are separate named functions.
+    """
+    if coordinate not in {"seconds", "sample"} or support not in {"analytic", "half_open"}:
+        raise DictionaryArtifactError("unknown_query_coordinate_or_support")
+    shape, ratios = exact_query(query)
+    spec = dictionary_record["spec"]
+    _, rate, length, width = _program_dimensions(spec, dictionary_record["sample_rate_hz"])
+    chart = np.asarray(dictionary_record["constraint_map"], dtype=np.float64)
+    samples = tuple(value*rate if coordinate == "seconds" else value for value in ratios)
+    mask = np.asarray([0 <= value < length for value in samples], dtype=bool).reshape(shape)
+    ambient = np.zeros((len(samples), width), dtype=np.float64)
+    matrix = np.zeros((len(samples), chart.shape[1]), dtype=np.float64)
+    with localcontext(_CONTEXT):
+        for index, value in enumerate(samples):
+            if support == "half_open" and not 0 <= value < length:
+                continue
+            try:
+                ambient[index] = [_ambient(spec, length, width, value, column) for column in range(width)]
+                matrix[index] = ([_dot(ambient[index], column) for column in chart.T]
+                                 if spec["endpoint"] == "hard_zero" else ambient[index])
+            except (DecimalException, OverflowError) as error:
+                raise DictionaryArtifactError("query_scalar_expression_not_representable", index=(index,)) from error
+    if not np.isfinite(ambient).all() or not np.isfinite(matrix).all():
+        raise DictionaryArtifactError("query_scalar_expression_not_representable")
+    arrays = {"ambient_matrix": frozen_array(ambient.reshape((*shape, width))),
+              "matrix": frozen_array(matrix.reshape((*shape, chart.shape[1]))),
+              "support_mask": np.frombuffer(mask.tobytes(), dtype=bool).reshape(shape)}
+    metadata = _evaluation_metadata(dictionary_record, dictionary_digest, shape, ratios, coordinate, support,
+                                    arrays, implementation_sha256, COMPILER_SOURCE_SHA256)
+    return arrays, metadata
+
+
+def admit_evaluation_record(record, dictionary_record, dictionary_digest):
+    """Check query, program, parent and exact output; retain the saved values."""
+    if not isinstance(record, dict) or record.get("schema") != EVALUATION_SCHEMA:
+        raise DictionaryArtifactError("unsupported_evaluation_schema")
+    try:
+        shape = record["query_shape"]
+        if (not isinstance(shape, list) or any(type(v) is not int or v < 0 for v in shape)):
+            raise ValueError("invalid shape")
+        raw_ratios = record["query_exact_ratio"]
+        if any(not isinstance(pair, list) or len(pair) != 2 or any(type(v) is not int for v in pair)
+               or pair[1] <= 0 for pair in raw_ratios):
+            raise ValueError("invalid ratio")
+        ratios = tuple(Fraction(*pair) for pair in raw_ratios)
+        query = np.asarray(ratios, dtype=object).reshape(shape)
+        source = record["consumer"]
+        if any(not isinstance(source.get(key), str) or re.fullmatch("[0-9a-f]{64}", source[key]) is None
+               for key in ("implementation_sha256", "compiler_source_sha256")):
+            raise ValueError("invalid evaluator source")
+        expected_arrays, _ = evaluate_state(dictionary_record, dictionary_digest, query,
+            coordinate=record["query_coordinate"], support=record["support_program"],
+            implementation_sha256=source["implementation_sha256"])
+        expected_metadata = _evaluation_metadata(dictionary_record, dictionary_digest, tuple(shape), ratios,
+            record["query_coordinate"], record["support_program"], expected_arrays,
+            source["implementation_sha256"], source["compiler_source_sha256"])
+    except (KeyError, TypeError, ValueError, OverflowError) as error:
+        raise DictionaryArtifactError("invalid_evaluation_query_or_program") from error
+    arrays = {}
+    for key, expected in expected_arrays.items():
+        value = np.asarray(record.get(key))
+        required_kind = "b" if key == "support_mask" else "f"
+        if (value.shape != expected.shape or value.dtype.kind != required_kind
+                or (required_kind == "f" and (value.dtype.itemsize != 8 or not np.isfinite(value).all()))):
+            raise DictionaryArtifactError("invalid_evaluation_payload", field=key)
+        if value.tobytes() != expected.tobytes():
+            raise DictionaryArtifactError("query_expression_relation_mismatch", field=key)
+        arrays[key] = (np.frombuffer(value.tobytes(), dtype=bool).reshape(value.shape)
+                       if key == "support_mask" else frozen_array(value).reshape(value.shape))
+    metadata = {key: value for key, value in record.items() if key not in arrays}
+    if metadata_digest(metadata) != metadata_digest(expected_metadata):
+        raise DictionaryArtifactError("evaluation_query_program_parent_or_binding_mismatch")
+    return arrays, expected_metadata

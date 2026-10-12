@@ -8,6 +8,8 @@
 
 `FittedEnsemble.oof_probability_record`持有原grouped温度循环实际返回的完整C-only概率、inner producer identities及final program关联；原ensemble包保存该immutable记录，模型既有fit-binding锚定OOF digest与OOF前base数值身份。fixed/grouped共享同一final专家tuple；actual K与完整OOF标签剂量分开。完整组nested研究入口可显式使用`InnerReplayRecorder`保存同一次run的实际inner模型和评分并零拟合重放；不从final模型回推原inner评分，不将全C OOF改称nested选择。
 
+`_SelectionReplayAdmission`与`_PrefixPackageAdmission`分别持有一次调用内的实际graph、receipt和数值包；parent从原MAT重编输入并独立实评分，全部OOF/future/forbidden-scope/temperature关系继续核验。新调用重新读取原字节并取得独立predictor；完整canonical请求比较允许JSON list与immutable tuple的等价表示，真实字段变化和重复package仍拒绝。`prefix_recovery`独立绑定原failed队列的request/实际exit/原源码、完成participant和精确reviewed transition；八人task_roster保留，已准入原四人不派新fit，仅余四人执行，原/新producer分别入账。公共主入口、remaining actor及programme构造都在写入前复用同owner原输出边界；云端恢复另用经精确复审的subset freeze，见[接受绑定](assets/research_resume_20261011/prefix_cloud_admission_acceptance_binding.json)。
+
 [当前消费者](evidence/current_public_consumers_20261008.zh.md)由class_calibration持有fit风险/分数变换、FrozenTrialPredictor/2持有实际state/来源、ensemble_views持有实测线性空间与选择执行family、checkpoint集中核source/target不同入口的程序族相容。binary_probability复用共同输入比较owner及artifact SHA，确定性seed alias保留完整概率状态；旧/1不被重签proper合同。
 
 [当前source程序](evidence/public_source_pipeline_20261008.zh.md)复用source_selection/source_execution/source_resume/PreparedSourceInventory：manifest SHA一次准入、准备/合并/fit共享预算、每outer一次load后消费实际声明seed、恢复复用原完整view。日常科研声明一个完整seed，三seed只用于重大版本校验。source_config从实际identity authority解析并绑定contract/registry；SourceSeedCatalog和两个公共消费者通过expected_source_config核真实producer，不借程序同名混入历史β8。
@@ -26,6 +28,14 @@ paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账
 
 `build_channel_noise_audit_manifest`与`audit_channel_noise_mechanism`的paired `/2`入口复用原public source owner和共享请求/指标：全source participants对应全requested roster，C target/labels对应原CalibrationSelection，modern mean/precision R/原Σ对应保存模型完整fit输入；两noise arm共用物理factor。shared/private AR8与prefix32的八人16格native矩阵已完成，保存态零拟合重现typed数值不可用，见[P1入口与执行](evidence/response_and_noise.zh.md#p1软件入口修后验收)。数值实现继续由B05单一owner持有。
 
+`stationary_noise_artifact`以原stored PARCOR的精确实数step-up和pairwise mixed Yule--Walker持有完整平稳cross-channel law，Decimal96编译一次jointroot；constructor/load以实际root的law pullback证书准入，saved root不重编。`FittedChannelNoise/3`和原`/2`compiled-W模型分别绑定；已完成的16格续评分仍属于原冻结law。作者8e1f和Git CRLF工作树621bad的compiler源码SHA分别记录，后续新模型绑定实际执行字节。
+
+`export_frozen_p1_state.py`在原capsule独立进程导出实际response/noise，两个manifest caller显式由JSON字符串转Path。`stationary_panel`持有冻结16格的输入核验、new root/模型/score receipt与同支持reduce；`local_program_control`持有PID/birth、heartbeat、descendant RSS/CPU及退出清理。科学fitter禁止重新拟合；完整cell成功须模型/score/receipt闭合。本地资源终态保partial，新host执行重新绑定路径与资源，见[执行状态](evidence/response_and_noise.zh.md#当前模型与数值任务)。
+
+P1云科学接线已由[修后复签](assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)接受：新score plan显式消费原Windows export plan056，完整held descriptor/view/array keys及实际解码样本/设计由原authority核验。`run_stationary_cloud_panel`复用共享file lock持整个attempt，PID/birth lease在写入前独占；共享历史树接口成功返回None，live/unknown/接口缺失明确阻止派发。`actual_alive`统一排除PID复用和zombie，仍保实际live后代门。8 subject各顺序两arm，4个native5+interop1 actor与coordinator1共同使用CPU25；main串行准入两arm，全部ACK后归约。实际factory、统一controller和Linux平台门由各自owner另行验收。
+
+云端调度控制器已按最终源码`204304f…`接入：process-private exec环境、PID/birth在execute前闭合、逐pool历史凭证、共享subreaper寿命、journal失败后的完整peer清理和ready工作补位均有独立云/Linux3.12及WSL3.14凭证；同一诊断根的Windows Job成功历史可在第二次零fit marker运行中重新准入。控制器源码、测试和平台分层证据见[controller绑定](assets/research_resume_20261011/controller_execution_acceptance_binding.json)。这组证据只接受执行底座与生命周期，不替代完整科研矩阵吞吐。
+
 更新：2026-09-06。本文件依据实际源码与入口核对，描述现状与尚缺接口；科研目标由
 [活动规范](research_program.zh.md)定义，发现和验证见[本次审计](evidence/technical_audit_20260906.zh.md)。
 源码目录不因行数大或模块多就拆分；优先保留已经集中实现的合同和算法。
@@ -36,9 +46,36 @@ paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账
 
 完整episode指标通过`evaluate_candidate_evidence(..., requested_evidence_levels={DecisionKey: actual_R})`接入；其规范化不可变计划包含全部requested keys及缺失输出，并绑定原DecisionPlan digest。`transfer.outcomes`按每key唯一R记账，各R保自身分母，整体和participant风险仍用原episode；paired compare核完整horizon计划。原scalar fixed-R入口继续消费其原cross-product。预算、raw scope与实际R由reader/caller冻结，详见[逐任务horizon](evidence/public_evaluation.zh.md#逐任务horizon接口)。
 
+`research.trial_candidate_programme`是固定三trial专家的共同程序owner：dataset adapter提供
+已封存C/future、原raw decision与父truth，程序统一编译逐key实际horizon、调用CloudExecutor、
+核逐人模型/概率产物并输出matched-control contrast。BI与BNCI的CLI都调用这一实现，
+source整库排除来自显式dataset_id；原参与者目录身份保留，不将A01猜作数字别名。
+BNCI episode程序固定前5 selection C600、后30个原selection R10，与label-K prefix selector
+分开声明。只读loader重构物理schedule并核整个descriptor，外层R/count/censor不能改变
+同一个已封存schedule的解释。旧source/cache/model保持原producer，由各执行快照分别绑定。
+
+BI同样由`_prepared_future_decisions`从label-free timeline构建descriptor；load重建并核其
+episode、evidence rows、R/censor及horizon列表。C实际标签/episode、future原key与父truth
+key一并相连，未知schedule完整性不推断为完整R。新consumer不重写原prepared数值缓存。
+
+`research.dataset_queue`只拥有逐库声明、独立supervisor、所属进程树、真实退出和恢复绑定；
+`experiments/run_dataset_queue.py`是其命令行入口。每库科学CLI继续持有训练合同和数值验收，
+共享`CloudExecutor`在单库内部调度就绪准备、拟合与评估。队列不加载EEG、重新拟合模型或
+把文件存在视为成功；终态保存独立产物事实，并严格保持原已执行声明的前缀字节。
+
+`research.trial_candidate_execution`复用实际source准备/整库排除、原target fitter和
+`FrozenTrialPredictor`完成固定trial专家的逐臂拟合、持久化与loaded重放。每臂独立保存，
+恢复核C的X/y/mask/timeline/metadata/provenance、future输入和完整requested；数值模型内
+fit binding与actual probability fit再与外层receipt交叉核对。source/scratch共用target配方，
+scratch只保架构控制、无source初始化身份。`run_bi2014a_trial_study.py`只编译真实episode请求、
+调用共享CloudExecutor并准入每人产物；父层统一用`candidate_metrics`的逐key horizon评价与
+直接full-fine减matched-scratch配对contrast。secondary截断诊断不进入主指标分母。
+
 当前[集成骨干](evidence/research_integration_20261008.zh.md)以`dictionary_artifact`持有字典编译/准入，`temporal_noise/5`持有实际startup数组与scales，`continuous_decision`持有全C/prior生产QR后验；load消费原数值态，整模型仍核同implementation字节。B05一般vec冻结响应可通过真实行/列置换消费B09空间后验，评分noise独立，不重新拟合后验。数值不可识别只使对应连续专家/decision不可用，正常peer保留；artifact/输入合同错误继续传播。
 
 `research.input_contamination`复用真实harmonic/finite程序，测完整自适应`T(x+h)-T(x)`及明示扰动分布下的经验矩，接原operator CLI的`audit-clean`。`research.dynamic_identification`只作noise-only Gamma尺度与独立proper Gaussian不确定性的积分参考；prefix条件密度是joint/prefix两个生成积分的比，不是固定prior权重平均conditional输出。这些研究参考不新增生产fitter或默认算法，也不签发原始观测授权。`research.response_history_identification`枚举完整公开selection label状态，共享同MN response后验，计算proper Gaussian或共同flat-nuisance measure下的full/prefix mixture比；整mask相关和kernel cross terms保留，不能替换成独立flash Bernoulli或附加独立Γ。`research.continuous_history_adapter`经实际model integrity门后消费原basis/M/R/Σ及stored stationary whitening的inverse factor，与原共同prefix/Z相接；它只接受调用者明示的已发生actual public clocks。当前是小矩阵研究接入，生产unknownoverlap拒绝保持。
+
+B07下一纵向接线正在独立树实施：连续评价复用唯一dictionary表达owner，原decoder新增窄history scope工厂持有完整实际事件/权限和state-law支持包络，actual frozen posterior consumer复用stored noise与增广QR的full/prefix原始量，capsule从原bytes重建并重放。current完整coverage与context事件前缀分角色，右删失按原支持执行；baseline caller保持原合同。当前方向与文件所有权见[绑定](assets/research_resume_20261011/b07_offgrid_history_direction_binding.json)，代码及actual native调用接受另记。
 
 [B07 `transfer.response_dictionary`](evidence/erp_dictionary_20261006.zh.md)拥有analytic spec、actual basis/grid、E/N与immutable数值状态；`ContinuousDecisionModel`仍唯一fit/score owner，kernel prior、精确目标、ensemble/OOF和CLI消费同basis。capacity直接消费actual fit statistics及compiled reference/design，cal-prior三份dict mirror已删除；ridge保存一次真实R/rhs并与precision/M/H/noise或legacyφ关系绑定。字典包声明base_model_schema并保存物理/约束数值，不能仅改metadata换函数或重签容量。
 

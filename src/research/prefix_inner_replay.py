@@ -426,9 +426,12 @@ def _load_inner_roster(directory, record, loaded, authority, *, calibration_grou
         if producer["status"] != "completed":
             raise ValueError("prefix inner producer requires explicit completed/unavailable status")
         path = _inner_path(directory, producer)
-        if not path.is_dir() or _sha256(path / "ensemble.json") != producer["package_sha256"]:
+        if not path.is_dir():
             raise ValueError("prefix inner producer package changed")
-        model = FittedEnsemble.load(path)
+        ensemble_content = (path / "ensemble.json").read_bytes()
+        if hashlib.sha256(ensemble_content).hexdigest() != producer["package_sha256"]:
+            raise ValueError("prefix inner producer package changed")
+        model = FittedEnsemble._load_content(path, ensemble_content)
         models[producer["fit_key"]] = model
         if semantic_sha256(_final_identity(model)) != semantic_sha256(producer["model_identity"]):
             raise ValueError("prefix inner producer numerical identity changed")
@@ -533,7 +536,7 @@ def _load_inner_roster(directory, record, loaded, authority, *, calibration_grou
     return captured_rows
 
 
-def _manifest(directory: Path):
+def _manifest(directory: Path, *, expected_record_sha256=None):
     path = directory / "prefix_inner_replay.json"
     if directory.is_symlink() or path.is_symlink():
         raise ValueError("prefix replay receipt path is a symlink")
@@ -541,8 +544,11 @@ def _manifest(directory: Path):
     record = payload.get("record")
     if not isinstance(record, dict) or record.get("schema") != SCHEMA:
         raise ValueError("prefix replay manifest has an unsupported schema; historical /1 requires its original frozen owner")
-    if payload.get("record_sha256") != semantic_sha256(record):
+    digest = semantic_sha256(record)
+    if payload.get("record_sha256") != digest:
         raise ValueError("prefix replay manifest digest changed")
+    if expected_record_sha256 is not None and digest != expected_record_sha256:
+        raise ValueError("prefix replay receipt differs from the externally sealed producer receipt")
     if record.get("truth_free_future_replay") is not True or record.get("selection_performed") is not False:
         raise ValueError("prefix replay is truth-free and performs no candidate selection")
     return record
@@ -695,31 +701,42 @@ def persist_prefix_inner_replay(prefix, programs, directory, *, recorder=None,
     return directory
 
 
-def replay_prefix_inner_replay(directory, *, prefix=None, future_views=None,
-                               source_checkpoints=None, context=None, expected_record_sha256=None,
-                               device=None, atol=0.0, rtol=0.0):
-    """Load the captured package and score truth-free future views row by row."""
-    directory = Path(directory)
-    record = _manifest(directory)
-    if expected_record_sha256 is not None and semantic_sha256(record) != expected_record_sha256:
-        raise ValueError("prefix replay receipt differs from the externally sealed producer receipt")
-    future_views = None if future_views is None else tuple(future_views)
-    package_hashes = record["package_hashes"]
-    ensemble_path = directory / "ensemble.json"
-    temperature_path = directory / "temperature_programs.json"
-    if ensemble_path.is_symlink() or temperature_path.is_symlink():
-        raise ValueError("prefix numerical package manifest path is a symlink")
-    if package_hashes["temperature_programs_json_sha256"] != _sha256(temperature_path):
-        raise ValueError("prefix temperature_programs.json differs from captured package")
-    if package_hashes["ensemble_json_sha256"] is None:
-        if ensemble_path.exists():
-            raise ValueError("prefix unavailable roster unexpectedly has an ensemble package")
-        loaded = {}
-    else:
-        if not ensemble_path.exists() or _sha256(ensemble_path) != package_hashes["ensemble_json_sha256"]:
+class _PrefixPackageAdmission:
+    """Private numerical state belonging to one actual synchronous ingress.
+
+    The owner never crosses a caller invocation. Its record and predictors are
+    not supplied by a caller, and a fresh ingress always rereads saved bytes.
+    """
+
+    def __init__(self, directory, *, expected_record_sha256=None):
+        self.directory = Path(directory)
+        self.record = _manifest(self.directory, expected_record_sha256=expected_record_sha256)
+        if ((self.directory / "ensemble.json").is_symlink()
+                or (self.directory / "temperature_programs.json").is_symlink()):
+            raise ValueError("prefix numerical package manifest path is a symlink")
+        if (self.record["package_hashes"]["ensemble_json_sha256"] is not None
+                and not (self.directory / "ensemble.json").exists()):
             raise ValueError("prefix ensemble package differs from captured numerical package")
-        loaded = FittedEnsemble.load_programs(directory)
-    actual_programs = json.loads(temperature_path.read_bytes())["record"]["programs"]
+        temperature, self.programs = FittedEnsemble._admit_programs(
+            self.directory, package_hashes=self.record["package_hashes"])
+        self._admit_declarations(temperature["programs"])
+
+    def _admit_declarations(self, actual_programs):
+        record, loaded = self.record, self.programs
+        _check_program_declarations(record, loaded, actual_programs)
+        self.authority = _check_final_authority(record, loaded)
+        alias_owner = type("PrefixBudget", (), {"budget": record["actual_K"]})()
+        aliases, alias_map = _check_aliases(alias_owner, record["fit_context"])
+        if aliases != record["requested_Ks"] or alias_map != record["requested_to_actual_K"]:
+            raise ValueError("prefix requested K aliases differ from the captured caller fit context")
+
+    def replay(self, *, prefix=None, future_views=None, source_checkpoints=None,
+               context=None, device=None, atol=0.0, rtol=0.0):
+        return _replay_admitted_prefix(self, prefix=prefix, future_views=future_views,
+            source_checkpoints=source_checkpoints, context=context, device=device, atol=atol, rtol=rtol)
+
+
+def _check_program_declarations(record, loaded, actual_programs):
     if set(actual_programs) != set(record["programs"]):
         raise ValueError("prefix strategy/failure roster changed")
     for name, value in record["programs"].items():
@@ -733,8 +750,6 @@ def replay_prefix_inner_replay(directory, *, prefix=None, future_views=None,
                     semantic_sha256(value["temperature_calibration"])
                 or semantic_sha256(_final_identity(loaded[name])) != semantic_sha256(value["model_identity"])):
             raise ValueError("prefix completed program numerical or temperature identity changed")
-    if context is not None and semantic_sha256(context) != semantic_sha256(record["fit_context"]):
-        raise ValueError("prefix source/target seed pair or requested fit context changed")
     if (record["source_seed"] != record["fit_context"].get("source_seed")
             or record["target_seed"] != record["fit_context"].get("target_seed")
             or record["requested_Ks"] != record["requested_denominator"]["requested_Ks"]
@@ -742,13 +757,17 @@ def replay_prefix_inner_replay(directory, *, prefix=None, future_views=None,
             or record["source_seed"] != record["requested_denominator"]["source_seed"]
             or record["target_seed"] != record["requested_denominator"]["target_seed"]):
         raise ValueError("prefix requested denominator or seed pair differs from fit context")
+
+
+def _replay_admitted_prefix(admission, *, prefix=None, future_views=None,
+                            source_checkpoints=None, context=None, device=None, atol=0.0, rtol=0.0):
+    directory, record, loaded = admission.directory, admission.record, admission.programs
+    authority = admission.authority
+    future_views = None if future_views is None else tuple(future_views)
+    if context is not None and semantic_sha256(context) != semantic_sha256(record["fit_context"]):
+        raise ValueError("prefix source/target seed pair or requested fit context changed")
     if device is not None and str(device) != record["device"]:
         raise ValueError("prefix replay device differs from captured fit")
-    authority = _check_final_authority(record, loaded)
-    alias_owner = prefix if prefix is not None else type("PrefixBudget", (), {"budget": record["actual_K"]})()
-    aliases, alias_map = _check_aliases(alias_owner, record["fit_context"])
-    if aliases != record["requested_Ks"] or alias_map != record["requested_to_actual_K"]:
-        raise ValueError("prefix requested K aliases differ from the captured caller fit context")
     if prefix is not None:
         actual = prefix_input_identity(prefix)
         if semantic_sha256(actual) != semantic_sha256(record["prefix_input"]):
@@ -817,6 +836,15 @@ def replay_prefix_inner_replay(directory, *, prefix=None, future_views=None,
             "preserved_oof_score_failures": [{"fit_key": producer["fit_key"], **failure}
                 for producer in record["inner_producers"] for failure in producer.get("oof_score_failures", ())],
             "scores": scores, "truth_free": True}
+
+
+def replay_prefix_inner_replay(directory, *, prefix=None, future_views=None,
+                               source_checkpoints=None, context=None, expected_record_sha256=None,
+                               device=None, atol=0.0, rtol=0.0):
+    """Admit saved state once and replay every actual requested observation."""
+    admission = _PrefixPackageAdmission(directory, expected_record_sha256=expected_record_sha256)
+    return admission.replay(prefix=prefix, future_views=future_views, source_checkpoints=source_checkpoints,
+                            context=context, device=device, atol=atol, rtol=rtol)
 
 
 __all__ = [

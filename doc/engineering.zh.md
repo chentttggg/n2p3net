@@ -2,6 +2,12 @@
 
 当前科研集成树为`codex/research-integration-20261011`，P1数值和prefix整程序选择各有独立作者/审阅者树，原用户dirty checkout及云端执行树保留其所有权。实际模块、调用链与能区分对错的反例优先；已通过的范围有新改动或疑点才复验。研究结论维护在四个[主题页](evidence/README.md#当前主题结论)，归并旧页前物理归档并逐member验SHA；原数据、模型、结果和producer binding留原位置。当前云状态以云窗口的实际冻结源码与终态凭证为准；下文日期化状态按其记录时期解释。
 
+Prefix恢复使用新输出和精确reviewed source transition，旧failed队列及producer只读。源码变化的角色白名单由恢复owner持有；科研主树的其它metadata/科学更新不会自动进入旧source10的恢复授权。一次调用内复用已准入包，下一调用重新准入原字节；原四人的真实parent replay仍保实际原输入和完整概率核验，新四人按原矩阵拟合。新增剩余actor输出边界已由两种原目录反例验证，见[集成证据](assets/research_resume_20261011/prefix_cloud_admission_acceptance_binding.json)。
+
+P1云数值程序使用原Windows全8人严格出口和新的score-source身份；原export plan、script、loader及原失败保持。科学接线修后独审33项、科研树lease/path集成5项分列通过，见[接受绑定](assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)。入口持共享整run文件锁，复用统一历史树API；实际云factory和controller接受后，做实际Linux资源/路径窄门并直接完整16格，不重复本地RAM失败启动或旧全集。
+
+最终controller已接受为独立执行底座：固定540成员源码归档、Linux3.12 52例、WSL3.14 20例和本机Windows15项窄验证均通过，另有同诊断根实际Windows Job成功后的第二轮准入。平台凭证、源码SHA与scope见[controller绑定](assets/research_resume_20261011/controller_execution_acceptance_binding.json)；旧controller receipts不重签，正式矩阵吞吐仍单独验收。
+
 2026-10-10科研成果在独立`wishlist-integration`工作树（base `7bd984a`）整合，公共云执行继续绑定accepted496。逐读实际owner与完整调用链，迁移必要反例并执行受影响合同；已通过的旧矩阵、大probe与全集不因整理或方法更名重复运行。过程性材料只在当前仍必要时保留，本轮遵照用户最新要求不重复清理。源码、验证和剩余出口见[当前进展](evidence/wishlist_progress_20261010.zh.md)。
 
 2026-10-08用户更新：科研与代码最终集成由科研窗口持有，云端窗口持有唯一资源调度、准备、启动、监控和既有结果验收。两窗口总并发最多10，按双方实际工作与活跃数分配，不固定窗口配额；增开或恢复先核总量。科研子代理不设我方期限或额度；以完整源码审查、真实调用链和必要反例验证推进，不重复本地全集或无依据门禁。集成须仔细审阅实际模块逻辑，可交详细handoff给独立子代理，不能凭作者摘要或测试数量直接合入。当前科研云训练单seed，大版本才三seed；具体作用域见[当前集成状态](evidence/research_integration_20261008.zh.md)。外部文件、fit/时间授权和执行身份的检查保留，已准入不可变内部状态由唯一owner消费。
@@ -353,6 +359,15 @@ context或模型仍活着时继续持有GPU claim，直到完整所属进程树�
 ordinary、group-LOO与整prefix选择共享该接点。source-only K0、结构上不可拟合的
 专家及零拟合重放不取得GPU；当前冻结predictor的候选评分在CPU执行。原云端49项
 资源证据保持原源码身份，科研集成后的prefix调用验证另行绑定。
+
+公开数据集按独立队列逐库执行：`experiments/run_dataset_queue.py`消费逐库冻结声明，
+每库仍由原科学CLI持有完整矩阵、25线程/至少4个GPU worker和验收。先保存该库模型、预测、
+重载结果与真实终态，再进入下一库；一个库失败保留其部分产物并继续其他已声明库。
+队列以独立supervisor保存真实OS退出与进程创建身份，重启后接回在途任务，避免重复启动。
+所属进程树退休后才推进队列；未知退出不写成成功，也不覆盖迟到的真实退出。
+恢复同时核计划、科学源码和真正文件锁实现的字节；增加数据集须严格保留原队列前缀。
+队列的退出事实不代替科学CLI的完整模型/预测准入。Linux冻结副本的21项正式测试及
+父进程中断、重复启动、逃逸后代、终态篡改、迟到退出、声明追加和锁实现漂移反例已通过。
 
 用户于2026-10-08再次强调多次遇到25核配额只用1核：必须核真实进程创建身份、就绪任务、有效CPU核、GPU利用、内存峰、阶段进度和完成产物；25线程/4worker配置本身不能作为验收。遇到串行压缩/解压、重复加载/哈希、I/O、锁或内存准入等待，要落实代码并验证端到端路径。2394曾GPU95%但worker突然退出、内存接近90 GiB上限，原因未确定；[原始终态与完整输入基准](evidence/public_source_throughput_20261008.zh.md#完整输入基准与后续源运行终态)已物理保留。本地整机CPU<80%与云端配额利用分别控制，不能混用。
 

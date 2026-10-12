@@ -10,6 +10,8 @@ fixed使用温度1，grouped按完整selection生成C内OOF概率，并为参与
 
 实际fitter样本、标签、prior/noise/statistics与graph共同关联。selection行数下限是预声明策略参数；单组也可定义学习算法，later独立queue用于评价最终程序。当前group-LOO入口的三组下限继续保留其原程序身份。
 
+云窗口同步真实source10/entry003矩阵已以failed、OS1结束：首四人的K0/200/800/2000 selector包保存并重放，parent在完整prefit ledger准入时拒绝；后四人遇到共享文件系统/RAM预算失败。首四人的真实请求/ledger完整canonical bytes与SHA相同，Python首差异是 `spatial.slot_channels` 的JSON list/FrozenMetadata tuple；新consumer由云owner在隔离树核完整authority后窄修，并加重复package拒绝。下一先零fit准入原四人、再补其余四人，保原八人requested与旧failed身份；最终future指标等新终态封存后复算，当前partial package不计作整矩阵完成。
+
 ## 小组、部分标签与采样坐标
 
 BNCI原始MAT与事件坐标为256 Hz；trial/NN模型输入为128 Hz、179点。原common profile的source support为`[-51,308)`；P1 raw continuous的1.2秒basis为307点。两种几何由各自owner提供。修后A01 probe与[来源绑定](../assets/research_resume_20261011/prefix_small_group_fixed_binding.json)保存了实际窗口。
@@ -59,3 +61,5 @@ A01的后80个标签可单独编为`[11477,16648)`的suffix scope：80 raw label
 公共plan新增`prefix_selection`（schema、output_name、baseline_name、显式minimum_selection_rows及candidate records），在原fixed/grouped输出之外追加具名selected请求。整个future捕获、保存、原输入graph重放完成后才封预测；parent重编原MAT并核实际selected mixture。selector的started/failed/partial由自己的receipts持有；final ExpectedSubjectError的完整future保留typed不可用。
 
 真实C800改签C200、full-C meta搬早期v、h概率篡改、温度全摘要自签、constructor自签source权限、selector中断receipt混用等反例已闭合。作者`d0edc170…`的八个文件经root逐读、原字节集成，含当前continuous白化/P1/新horizon依赖的12项相关验证全部通过，Ruff与diff检查通过，见[接受绑定](../assets/research_resume_20261011/prefix_program_acceptance_binding.json)。旧快照/模型保原执行身份；下一步冻结真实opt-in计划，评价完整独立future队列。
+
+真实八人programme保原K0/200/800/2000、ordinary arms和source/scratch；新增primary fixed/grouped与NN+xDAWN fixed/grouped四个完整候选，minimum_selection_rows=3。零fit原MAT census确认K200/800/2000的完整组数为1/6/16、合法final选择行为0/3/13，共同Kmax future152请求/144可评分。云端以实际source checkpoint aabb2a43、递归重编finite profiles和source10/527新consumer冻结执行；本地e083 census保持自己的source身份。首次526 directCLI import在任何fit/score前失败；修复后新entry003重新执行完整矩阵，保留旧失败账本。结果终态后再评价原风险与选择效应。

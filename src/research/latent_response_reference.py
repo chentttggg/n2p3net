@@ -10,9 +10,11 @@ declared research choices. No product caller or default is registered here.
 """
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from fractions import Fraction
 from itertools import product
+from pathlib import Path
 
 import numpy as np
 from scipy.linalg import block_diag
@@ -32,6 +34,7 @@ from transfer.response_dictionary import ResponseDictionary
 __all__ = ["ResponseState", "analytic_basis", "hierarchical_prior", "selection_design",
            "finite_selection_evidence"]
 _GAUSSIAN_NOISE = FixedHyperparameters(np.inf, 1., "externally_fixed")
+IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -59,19 +62,22 @@ def _admit_law(states):
 def analytic_basis(dictionary: ResponseDictionary, seconds, derivative=0):
     """Off-grid continuation of the saved analytic family, in seconds.
 
-    This NumPy evaluator does not claim the portable /2 decimal compiler's bit
-    identity. The zero-state native grid explicitly retains saved matrix bytes.
-    Derivatives have units s^-derivative. The saved Helmert chart is unchanged.
+    Values (derivative=0) use the exact continuous dictionary owner for all five
+    legal families/charts. Float seconds denote their binary64 real values.
+    Derivatives 1/2 retain the historical NumPy research-only helper and units
+    s^-derivative; they are not a new portable derivative artifact protocol.
     """
+    if derivative not in (0, 1, 2):
+        raise ValueError("finite physical time and derivatives 0, 1 or 2 are required")
+    if derivative == 0:
+        return dictionary.evaluate(seconds, coordinate="seconds", support="analytic").matrix
     u = np.asarray(seconds, dtype=np.float64)
-    if not np.isfinite(u).all() or derivative not in (0, 1, 2):
+    if not np.isfinite(u).all():
         raise ValueError("finite physical time and derivatives 0, 1 or 2 are required")
     if dictionary.spec.family == "cosine":
         omega = np.asarray(dictionary.metadata()["generation"]["angular_frequencies_per_second"])
         phase = u[..., None]*omega
-        if derivative == 0:
-            ambient = np.cos(phase)
-        elif derivative == 1:
+        if derivative == 1:
             ambient = -omega*np.sin(phase)
         else:
             ambient = -omega**2*np.cos(phase)
@@ -114,6 +120,7 @@ def selection_design(dictionary, onsets, labels, *, origin_sample, observed_samp
             or type(observed_samples) is not int or observed_samples < 1):
         raise ValueError("ordered actual public sample clock and binary event design are required")
     n, k = observed_samples, dictionary.matrix.shape[1]
+    dictionary.digest()
     design = np.zeros((n, 2*k))
     ledger = []
     rate = Fraction.from_float(float(dictionary.sample_rate_hz))
@@ -133,18 +140,23 @@ def selection_design(dictionary, onsets, labels, *, origin_sample, observed_samp
         first, last = max(origin_sample, sample_start), min(origin_sample+n, sample_stop)
         retained = max(0, last-first)
         basis = np.zeros((n, k))
+        evaluation = None
         if retained:
             if state.latency_seconds == 0 and state.width_multiplier == 1:
                 basis[first-origin_sample:last-origin_sample] = dictionary.matrix[first-int(event):last-int(event)]
+                evaluation = {"program": "original_saved_native_matrix_slice/1",
+                    "dictionary_identity_digest": dictionary.identity_digest,
+                    "native_rows": [first-int(event), last-int(event)],
+                    "matrix_sha256": array_digest(dictionary.matrix[first-int(event):last-int(event)])}
             else:
-                # A coordinate can round to T even though its exact cell is
-                # inside support. Evaluate that cell; never remask by float.
-                try:
-                    coordinate = np.asarray([float((Fraction(sample-int(event), 1)/rate-latency)/width)
-                                             for sample in range(first, last)])
-                except OverflowError as error:
-                    raise NumericalResolutionError("physical_response_coordinate_is_not_representable") from error
-                basis[first-origin_sample:last-origin_sample] = analytic_basis(dictionary, coordinate)
+                # Keep r=(sample-event-fs*delta)/w as its actual rational.
+                # Binary64 conversion can collapse an interior cell onto L;
+                # support and scalar evaluation must consume the same real r.
+                coordinate = [(Fraction(sample-int(event))-rate*latency)/width for sample in range(first, last)]
+                artifact = dictionary.evaluate(coordinate, coordinate="sample",
+                    support="half_open" if support == "translated_physical" else "analytic")
+                basis[first-origin_sample:last-origin_sample] = artifact.matrix
+                evaluation = artifact.record()
         design[:, :k] += state.common_amplitude*basis
         design[:, k:] += float(target)*state.target_amplitude*basis
         try:
@@ -153,15 +165,24 @@ def selection_design(dictionary, onsets, labels, *, origin_sample, observed_samp
             raise NumericalResolutionError("physical_support_seconds_display_is_not_representable") from error
         if not np.isfinite(displayed_seconds).all():
             raise NumericalResolutionError("physical_support_seconds_display_is_not_representable")
-        ledger.append({"onset_sample": int(event), "response_seconds": displayed_seconds,
+        ledger.append({"onset_sample": int(event), "target_indicator": int(target), "response_seconds": displayed_seconds,
                        "response_seconds_display_only": True,
                        "response_seconds_exact_ratio": [[physical_start.numerator, physical_start.denominator],
                                                         [physical_stop.numerator, physical_stop.denominator]],
                        "response_sample_centers_half_open": [sample_start, sample_stop],
                        "retained_native_rows": retained,
+                       "response_evaluation": evaluation,
                        "left_censored": sample_start < origin_sample,
                        "right_censored": sample_stop > origin_sample+n})
     return design, {"support_program": support, "observed_sample_support": [origin_sample, origin_sample+n],
+                    "schema": "n2p3_exact_selection_response_design/1",
+                    "program": "integer_actual_event_clock_exact_finite_delta_width_dictionary_design/1",
+                    "dictionary_identity_digest": dictionary.identity_digest,
+                    "dictionary_producer": dictionary.metadata()["implementation_sha256"],
+                    "consumer_implementation_sha256": IMPLEMENTATION_SHA256,
+                    "state_exact_ratio": {"latency_seconds": [latency.numerator, latency.denominator],
+                        "width_multiplier": [width.numerator, width.denominator]},
+                    "common_amplitude": float(state.common_amplitude), "target_amplitude": float(state.target_amplitude),
                     "physical_duration_definition": "exact_L_over_stored_sample_rate",
                     "native_support_arithmetic": "exact_stored_binary64_rational_half_open",
                     "events": ledger, "design_sha256": array_digest(design)}

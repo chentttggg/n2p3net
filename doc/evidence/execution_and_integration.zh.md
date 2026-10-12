@@ -12,7 +12,29 @@ BI2014a按库队列由云端推进，数据准备、模型、结果和终态各�
 
 云端资源交付`c916de4`已逐函数审阅并合入科研树`e0832c5`：显式native+interop预算、FIFO延迟GPU准入、完整进程树退出后释放及nested artifact并发峰值登记。科研随后把candidate的compute phase集中到`ensemble_fit._fit_expert`真实神经拟合接点，覆盖新增prefix selector内部拟合，并避免K0/不可用分支提前取得GPU。原云49项验证保原源码；本地资源与prefix相关验证通过，新增两例分别穿过真实神经group-LOO和完整prefix selector，核实际12/8/8/8及196行。Linux后代退出与tmpfs两例由原云证据验证，本机按平台跳过；没有重复本地全套测试。
 
+逐库queue、BI独立episode准备/三trial专家持久化、BNCI C600/R10准备及共同trial programme已逐函数合入，科研prefix/OOF/条件白化/horizon和真实平稳compiler保持其当前owner。第二轴审阅核20个固定body、raw隔离、future隐藏标签、actualsource exclusion、scratch架构、独立arm恢复和完整进程资源；新增BI descriptor错映被真实零fit反例复现并在新consumer补齐。相关52项调用链与prefix回归、最终8项BI入口、Ruff/diff通过；Linux queue和原云全集各保其实际源码/平台范围。
+
+共享source metadata owner的四个函数级切片已由云端 source tree `f66cdb4` 独立验证后合入：`FrozenMetadata`持有完整canonical bytes/digest，checkpoint在同一source admission内复用已验证training contract，FrozenTrialPredictor保存/重载使用owned metadata和numpy/torch state digest。source calibration的scalar/type gates仍由原调用者核验；不把metadata cache变成source权限或训练合同的替代。云端 final13 archive/531 members、178个实际OS case和55,679,485-byte save→fresh-load/900 predictions exact receipt保留其独立来源，性能计时另待同条件切片。
+
+真实shell direct CLI暴露的prefix启动问题已修：入口同时加入ROOT与ROOT/src，spawn子进程可导入experiments；main依据科学result状态返回0/1，完整failed请求保留且OS exit为1。root逐读`57cf5b2`三行变更并合入`fed4c40`，Windows仓库外cwd、unset PYTHONPATH、两个真实CloudExecutor actor的成功/失败两例通过。云端同接点另在source10/527成员8abce622上验证并重新执行完整矩阵；原526启动失败、错误report文件声明及entry002保持自己的失败身份，新entry使用真正result.json。
+
+云窗口随后同步 entry003/source10 的实际科学终态为failed、OS1、4063秒：首四actor的四个K selector包已保存并重放，但parent拒绝prefit ledger；后四actor在共享文件系统/RAM预算门失败。真实完整canonical bytes/SHA一致，Python比较首差异定位为 `spatial.slot_channels` 的JSON list与FrozenMetadata tuple。完整canonical请求比较与一次graph/package准入已按函数逻辑集成，全部原字段和独立实际评分关系保留。
+
+新consumer恢复owner保原八人roster，零fit准入原四人后只派余四人。独审补发现remaining actor可绕过原输出边界；root在公共入口prepare/写入前复用同owner保护，原run/producer checkout两例RED转为拒绝，独审两例通过。科研树一次准入/ABI17项、修后恢复20项分列通过，Ruff与diff检查通过，见[接受绑定](../assets/research_resume_20261011/prefix_cloud_admission_acceptance_binding.json)。旧3021 P2与失败凭证保留。云端修后subset须绑定自己的新freeze/transition，随后实际原四人大包parent重放及新四人完整拟合由唯一执行窗口完成；科研main额外科学/metadata更新不自动取得该恢复授权。
+
+P1 stationary panel 的基础实现与两处Path修复已合入 `929334a/71ab581`。strict export在原capsule独立进程核保存M/R/原Σ/F与noise，worker从新冻结source编 `/3` root，原scorer、requested与pair owner接最终指标。新freeze通过独立真实A01 export与7项focused gate；本地stage05两次/stage06一次均resource_blocked、完整cell0/16、进程退役，实际partial root/候选计数见[执行绑定](../assets/research_resume_20261011/stationary_program_execution_binding.json)。全部8人Windows原态出口现已完成，33成员原态/实际退出包通过独立复审与root逐成员核验，见[跨主机出口绑定](../assets/research_resume_20261011/stationary_crosshost_export_binding.json)。本地停止重复启动；新cloud IO factory保留原plan056/export script/loader身份，科学评分另绑新consumer plan。
+
+CloudExecutor的IO调度切片已在科研WIP通过Windows19个相关case。Linux迟到fork修复`c45be40e…`被独审拒绝：出生时间与空token不能唯一证明任务归属；新owner版本正在按exec-time token、真实双peer和历史pool覆盖修复，长科学callback期间ready补位也须保留。P1首版`4742f6ea…`的原held数值自签及跨attempt互斥缺口已由`db46076…`关闭，root逐读并按原字节接入：独审33facts与科研树lease/path5项分别通过，见[科学接受绑定](../assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)。实际factory/controller/Linux平台门闭合后再冻结并直接执行完整16格；已有出口包不重签，旧controller receipts各自保原执行源码。
+
+旧prefix/P1 software binding继续证明各自历史快照；当前HEAD的CLI、compute admission与stationary `/3`依赖已有后续变化，新执行绑定真实frozen source。stage06展开计划和日志留在本地，误纳入的四个未推送Git提交已先保存并验证恢复bundle，再从分发历史移出；原执行HEAD仍由bundle保留，源码和结果没有改签。Git保紧凑绑定及主题页，恢复base/旧HEAD/bundle SHA见上述执行绑定。
+
+科研主树已收口Prefix与P1科学接线，未接受的旧controller候选及observer/test/两指南增量共五文件先逐字节保存恢复载荷、核SHA后移出活动树，见[整理绑定](../assets/research_resume_20261011/scientific_tree_cleanup_binding.json)。原Windows19凭证及新owner各次复审继续持有各自来源，统一controller接受后再函数级合入。公共恢复与P1执行由云窗口独占推进；B07 off-grid/history源码和数学切片独立审阅，不等待数值调度收口。
+
+统一controller现已以最终`204304f…`源码接入，旧2ae/c45候选保持历史身份。云端owner报告的Linux3.12 52项、WSL3.14 20项和本机Windows15项窄验证均为0失败/跳过；同一诊断根的真实Windows Job成功历史已完成第二次marker运行并恢复预算。journal故障、跨executor subreaper、partial spawn、peer late fork、逐pool foreign receipt与连续补位都在对应最终证据中分列。controller绑定只证明生命周期与执行调度，未将既有局部验证改称完整科研训练。
+
 近期旧日期页已经先物理归档、逐member验证，再合并为四个主题页；原binding、MAT、缓存、模型和结果保持原位置。源页面恢复方式见[主题整理历史清单](../../frozen/research_topic_documents_history.manifest.json)。后续研究结论更新主题页，代码使用方式更新原六指南。
+
+已交付cache作者树经独立恢复复核后请求应用归档：1,285个保留路径、648源码、59篇Paper与四个source owner可恢复，完整used_union为959对象/275,397,774 bytes、缺件/哈希错误0；七个活动代码/配置根与本机进程未见运行依赖，旧验收locator由恢复映射解释。应用目前返回queued，尚未确认退役；恢复载荷和冗余对象均未删除。请求与实际状态见[工作树整理绑定](../assets/research_resume_20261011/cache_author_archive_request_binding.json)。
 
 ## 恢复身份与文件所有权
 
@@ -69,3 +91,5 @@ source cache 与 shared programme score 已在科研主树 `4830ef9` 集成。�
 云source07的固定白化patch（`bf09e072…`）已按函数逻辑接入科研树：只抽取原conditional QR helper，条件score在当前record共享公共列，各candidate继续全record白化增量设计并分别积分。root逐读实际白化、event design、prefix/full QR和precision调用；AST核对全部其它现有函数一致，保留科研树较新的单producer QR及稳定df。相关23项验证、Ruff与diff检查通过，来源见[集成绑定](../assets/research_resume_20261011/common_whitening_integration_binding.json)。
 
 云端原32 records×36 candidates的数值桥与352-record阶段计时保其原来源；科研侧当前接受公式/调用相容和相关行为，完整矩阵耗时继续由云窗口实测。旧模型保持原producer，新训练包使用实际执行源码身份。
+
+Claude review 分支的 U5a-04、U7-19、U7-24、U7-26 和 U1-01 fixture 修复已按实际文件逐项接入，提交 `4acb63d`；当前源码缺少其依赖的 exclusive publisher，因此补入 `research.execution.publish_exclusive` 后定向回归 19 项通过。复核分支报告的全套 3726/25/3 结果仍按其原身份保存：一个基线既有波动，两个失败首次出现于 director 的 strict nested selection 提交，留给该模块复审，不把它们改写成此次修复通过。

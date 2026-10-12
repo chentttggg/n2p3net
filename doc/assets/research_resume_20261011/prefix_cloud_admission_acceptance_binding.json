@@ -1,0 +1,159 @@
+{
+  "schema": "n2p3_prefix_cloud_admission_acceptance_binding/1",
+  "status": "accepted_function_integration_and_recovery_logic",
+  "base_commit": "9fd4bdd",
+  "author_commits": [
+    "b6a9e8648fe09806ed2c2eb56f051f8cc2c8b1c8",
+    "51cdf07e38e9316c87a2284cde45a14d213f1e81",
+    "3021d0530446e5a9c742e257339081d351e3407c"
+  ],
+  "actual_source_pins": {
+    "experiments/run_candidate_ensemble_study.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\experiments\\run_candidate_ensemble_study.py",
+      "sha256": "ad42e5dede0252d47dc8f970826e831cacc0068c9ad6724c0e94d9624aa6d4a4",
+      "bytes": 120136
+    },
+    "src/research/prefix_inner_replay.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\research\\prefix_inner_replay.py",
+      "sha256": "c5759579bdf51e1d89a5f216c21e5a15c9bda83b1f99bbdc93aac2409476a70c",
+      "bytes": 53066
+    },
+    "src/research/prefix_selection_replay.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\research\\prefix_selection_replay.py",
+      "sha256": "5ae6a334ff57f8248539cd3b3f8723ec640e63f769af3b98eb016a8f69d1a1ae",
+      "bytes": 19293
+    },
+    "src/transfer/ensemble_fit.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\transfer\\ensemble_fit.py",
+      "sha256": "e5b8c4e13ef5b4b3575fd335e874220014e7e49eddaed1a45dbfd8e16f138f24",
+      "bytes": 70241
+    },
+    "src/research/prefix_recovery.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\research\\prefix_recovery.py",
+      "sha256": "007da7df542c4de336ff2051c238fdc3e11c63a7126bb94f194d3b91b79fdc86",
+      "bytes": 11442
+    },
+    "tests/research/test_prefix_replay_admission.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_prefix_replay_admission.py",
+      "sha256": "3e176d72864b6332e5a8f7fb3f35686727767feee91a9012adb9421025ed8367",
+      "bytes": 6919
+    },
+    "tests/research/test_prefix_request_admission.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_prefix_request_admission.py",
+      "sha256": "27dea8c795198c6fa99b0f13c31f424c2cd13ba0833617bfc85fe3141b10e89a",
+      "bytes": 6011
+    },
+    "tests/research/test_prefix_participant_recovery.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_prefix_participant_recovery.py",
+      "sha256": "698865b496c25f187f3f2dee879dac54b0d93b0739db441dfb8c80cc60769ce8",
+      "bytes": 16457
+    }
+  },
+  "independent_review": {
+    "handoff": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\PREFIX_CLOUD_INTEGRATION_REVIEW\\HANDOFF.zh.md",
+      "sha256": "5d22270179433b24e0821e35abb16dd2dba21614f4da8c6e3ee76b751c479b0e",
+      "bytes": 11871
+    },
+    "binding": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\PREFIX_CLOUD_INTEGRATION_REVIEW\\binding.json",
+      "sha256": "19881bbc480b7ce98049c92fae45cb98de2727ce55015f4929fb12f1eeb2f40c",
+      "bytes": 6076
+    },
+    "root_fixed_evidence": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\PREFIX_CLOUD_INTEGRATION_REVIEW\\root_fixed_evidence.json",
+      "sha256": "c2d71bc04d44a7ad97688b3cb2d822f34d4c70ac077d7b77749332c639fde2d7",
+      "bytes": 3418
+    }
+  },
+  "root_patch": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\PREFIX_CLOUD_INTEGRATION_REVIEW\\recovery_output_boundary.patch",
+    "sha256": "6d4c4b936df150df260be71094ddd428f1181dc392083f6cb8669e67936131c9",
+    "bytes": 2765
+  },
+  "validation_records": [
+    {
+      "source_stage": "b6+51 six-file slice; before recovery integration",
+      "exit_code": 0,
+      "junit": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\PREFIX_CLOUD_INTEGRATION_REVIEW\\integration.junit.xml",
+        "sha256": "59605f4b138e0168726216f5a279d9d2f8529c1f3298ee9b6db84f0c39f40723",
+        "bytes": 3171
+      },
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "17",
+          "time": "72.922",
+          "timestamp": "2026-10-12T06:54:26.101139+08:00",
+          "hostname": "Tonger"
+        }
+      ]
+    },
+    {
+      "source_stage": "3021 recovery before remaining-actor output fix",
+      "exit_code": 1,
+      "junit": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\PREFIX_CLOUD_INTEGRATION_REVIEW\\output_boundary.red.junit.xml",
+        "sha256": "e286d56660a88b0fcff4719eb00fb4f5470bc1467427cae79279dd3977b41e6f",
+        "bytes": 5288
+      },
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "2",
+          "skipped": "0",
+          "tests": "2",
+          "time": "6.086",
+          "timestamp": "2026-10-12T06:57:35.587305+08:00",
+          "hostname": "Tonger"
+        }
+      ]
+    },
+    {
+      "source_stage": "root fixed recovery at actual source pins",
+      "exit_code": 0,
+      "junit": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\PREFIX_CLOUD_INTEGRATION_REVIEW\\recovery.fixed.junit.xml",
+        "sha256": "274d101df68802437f082dc3b927b193268d2004e4b816da982b539d28e2417b",
+        "bytes": 3767
+      },
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "20",
+          "time": "71.544",
+          "timestamp": "2026-10-12T06:57:57.515706+08:00",
+          "hostname": "Tonger"
+        }
+      ]
+    }
+  ],
+  "ruff_exit": 0,
+  "diff_check_exit": 0,
+  "public_new_fits": 0,
+  "full_training_or_throughput_claim": false,
+  "invariants": [
+    "all canonical scientific request fields; duplicate selection package rejection",
+    "independent callers load actual bytes; immutable-private admission within one call",
+    "original OOF/future/temperature/exclusion relationships and actual scores",
+    "original failed producer preserved; full participant/task/failure roster",
+    "original-output boundary before remaining actor preparation/writes"
+  ],
+  "cloud_execution": {
+    "original_source10_producer_preserved": true,
+    "old_transition_16058": "withdrawn_after_output_boundary_P2",
+    "fixed_subset_source_transition": "requires new owner freeze and exact review",
+    "scientific_main_full_runtime_authorized_for_old_source10_recovery": false,
+    "actual_old_four_parent_admission": "pending",
+    "remaining_four_full_matrix": "pending",
+    "controller": "separate_HOLD_not_accepted_by_this_binding"
+  }
+}

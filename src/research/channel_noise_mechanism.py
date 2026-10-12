@@ -1157,6 +1157,8 @@ def _prefix_nuisance_chart(nuisance, cut):
     exact coordinate change; only applying Z @ T adds multiplication error.
     This grants neither extra prefix rank nor a proper prior on flat a'.
     """
+    if nuisance.shape[1] == 0:
+        return nuisance.copy(), np.empty((0, 0)), 0.
     _, root, scales = _response_nuisance_qr(nuisance[:cut])
     transform = solve_triangular(root, np.eye(len(root)))/scales[:, None]
     _response_resolved_root(transform, "prefix flat nuisance coordinate transform")
@@ -1961,3 +1963,446 @@ def _fit_response_likelihood_core(prior, records, likelihood_records, *, geometr
                                "measurement_authority": "external_caller", "matrix_normal_claimed": False})
     return FixedNoiseResponseFit(response, frozen_array(root), frozen_array(rhs), tuple(information_roots),
                                 tuple(information_responses), frozen_array(compressed), tuple(drifts), binding)
+
+
+@dataclass(frozen=True)
+class StructuredGaussianMarginalPair:
+    """Absolute component potentials and their stable conditional companion.
+
+    The flat measure is the supplied physical coefficient Lebesgue measure.
+    Numerical estimates are program-specific, not all-input interval proofs.
+    """
+
+    joint_log_marginal: float | None
+    prefix_log_marginal: float | None
+    conditional_log_density: float
+    resolution: dict
+    mean: np.ndarray = field(repr=False)
+    white_mean: np.ndarray = field(repr=False)
+
+
+class StructuredGaussianMarginalProgram:
+    """One raw record/chart and the B05 proper-plus-flat QR calculation.
+
+    Whiten complete records once; the prefix always takes the actual leading
+    rows. A frozen vec coefficient factor owns the proper latent law; noise
+    owns its original square map. No fitter, temporal compiler or n-square
+    observation covariance is invoked here.
+    """
+
+    def __init__(self, noise, samples, mean, coefficient_factor, nuisance, *,
+                 intercept_chart=False, factor_source_error=None):
+        self.mean = _array(mean, "frozen marginal mean", 2)
+        y = _array(samples, "marginal samples", 2)
+        coefficient_factor = _array(coefficient_factor, "frozen proper image", 2)
+        nuisance = _array(nuisance, "physical flat nuisance image", 3)
+        prefix, channels = noise.conditioning_samples, y.shape[1]
+        if (not 0 < prefix < len(y) or self.mean.shape[1] != channels
+                or coefficient_factor.shape[0] != self.mean.size
+                or nuisance.shape[:2] != y.shape):
+            raise ValueError("structured marginal operands disagree in physical coordinates")
+        if intercept_chart:
+            # This seam requires an explicit raw constant column for every
+            # observed channel. Translation cannot be assumed for arbitrary Z.
+            constants = nuisance[0]
+            invariant = np.all(nuisance == constants[None, :, :], axis=0)
+            columns = np.flatnonzero(np.all(invariant, axis=0))
+            if np.linalg.matrix_rank(constants[:, columns]) != channels:
+                raise ValueError("raw intercept chart is outside the supplied flat span")
+        self.noise, self.samples = noise, y
+        self.factor_source_error = factor_source_error
+        factor = coefficient_factor
+        rank = factor.shape[1]
+        # Diffuse nuisance coordinate scaling cancels in the conditional ratio.
+        # It keeps volt/microvolt changes from changing the QR rank decision.
+        white_nuisance = noise._whiten(nuisance).reshape(len(y) * channels, nuisance.shape[2])
+        proper_root = np.zeros((rank, rank + nuisance.shape[2]))
+        proper_root[:, :rank] = np.eye(rank)
+        prefix_rows = prefix * channels
+        nuisance_q, nuisance_root, nuisance_scales = _response_nuisance_qr(
+            white_nuisance, require_prefix=prefix_rows)
+        projection_geometry = _diffuse_qr_geometry(white_nuisance, nuisance_q, nuisance_root, nuisance_scales)
+        # Both marginal potentials use a*=a-y[0]/scale in their common
+        # intercept coordinates. This Lebesgue translation has Jacobian one;
+        # conditional on the prefix, the raw-tail translation also has unit
+        # Jacobian. The original y remains the source/read-support identity.
+        chart_y = y-y[0] if intercept_chart else y.copy()
+        if not np.isfinite(chart_y).all():
+            raise DiffuseProjectionResolutionError("raw intercept chart is not representable")
+        same_sign = np.signbit(y) == np.signbit(y[0])
+        exact_subtraction = ((same_sign & (np.abs(y)/2 <= np.abs(y[0]))
+                              & (np.abs(y[0])/2 <= np.abs(y))) | (y == 0) | (y[0] == 0))
+        chart_error = (_roundoff_gamma(1)*np.abs(np.where(exact_subtraction, 0., chart_y))
+                       if intercept_chart else np.zeros_like(y))
+        white_y = noise._whiten(chart_y)
+        map_geometry = (_score_whitening_geometry(noise) if isinstance(noise, FittedChannelNoise)
+                        else noise.error_geometry)
+        white_y_error = _structured_whitening_error(noise, chart_y, white_y, chart_error, map_geometry)
+        nuisance_error = _structured_whitening_error(noise, nuisance, white_nuisance.reshape(nuisance.shape),
+            _roundoff_gamma(3)*np.abs(nuisance), map_geometry)
+        # Only the flat coordinate block changes. The same stored transform
+        # defines full/prefix da and is shared by all candidates in this record.
+        score_nuisance, nuisance_transform, nuisance_logabsdet = _prefix_nuisance_chart(
+            white_nuisance, prefix_rows)
+        nuisance_error = _nuisance_chart_error(nuisance_error, white_nuisance,
+                                               nuisance_transform, prefix_rows)
+        self.nuisance_q = nuisance_q
+        self.context = (factor, rank, channels, prefix, prefix_rows, proper_root,
+            white_nuisance, nuisance_q, nuisance_root, nuisance_scales,
+            projection_geometry, white_y, map_geometry, white_y_error,
+            score_nuisance, nuisance_error, nuisance_transform, nuisance_logabsdet)
+
+    def __call__(self, design):
+        return self.evaluate(design)
+
+    def evaluate(self, design, *, absolute_marginals=True):
+        design = _array(design, "complete state design", 2)
+        y, noise = self.samples, self.noise
+        if design.shape != (len(y), len(self.mean)):
+            raise ValueError("state design differs from the frozen coefficient image")
+        (factor, rank, channels, prefix, prefix_rows, proper_root,
+         white_nuisance, nuisance_q, nuisance_root, nuisance_scales,
+         projection_geometry, white_y, map_geometry, white_y_error,
+         score_nuisance, nuisance_error, nuisance_transform, nuisance_logabsdet) = self.context
+        mean = design @ self.mean
+        white_mean = noise._whiten(mean)
+        mean_error = _roundoff_gamma(design.shape[1])*(np.abs(design)@np.abs(self.mean))
+        white_mean_error = _structured_whitening_error(noise, mean, white_mean, mean_error, map_geometry)
+        residual = (white_y - white_mean).ravel()
+        if rank:
+            uncertainty = np.einsum("nk,kcr->ncr", design,
+                factor.reshape(self.mean.shape[0], channels, rank))
+            white_uncertainty = noise._whiten(uncertainty).reshape(len(y) * channels, rank)
+            uncertainty_error = _roundoff_gamma(design.shape[1])*np.einsum("nk,kcr->ncr", np.abs(design),
+                    np.abs(factor).reshape(self.mean.shape[0], channels, rank))
+            if self.factor_source_error is not None:
+                uncertainty_error += np.einsum("nk,kcr->ncr", np.abs(design),
+                    self.factor_source_error.reshape(self.mean.shape[0], channels, rank))
+            white_uncertainty_error = _structured_whitening_error(noise, uncertainty,
+                white_uncertainty.reshape(uncertainty.shape), uncertainty_error, map_geometry)
+        else:
+            white_uncertainty = np.empty((len(y) * channels, 0))
+            white_uncertainty_error = _SegmentError(0., 0., np.empty(0), np.empty(0))
+        # The actual frozen covariance image is already the full proper
+        # latent prior chart. Reuse record Z-QR only for numerical admission;
+        # the raw prefix/tail conditional posterior below is unchanged.
+        centering_bounds = _roundoff_gamma(1)*(np.abs(white_y)+np.abs(white_mean))
+        centering_error = _SegmentError(float(np.linalg.norm(centering_bounds[:prefix])),
+                                        float(np.linalg.norm(centering_bounds[prefix:])))
+        _, _, resolution = _project_diffuse_arrays(white_uncertainty, residual, white_nuisance,
+            nuisance_q, nuisance_root, nuisance_scales, geometry=projection_geometry,
+            response_source_error=centering_error.prefix+centering_error.tail)
+        matrix = np.column_stack((white_uncertainty, score_nuisance))
+        prefix_rhs, prefix_root, prefix_q, prefix_smallest = _posterior_qr(
+            matrix[:prefix_rows], residual[:prefix_rows], proper_root)
+        tail_design, tail_y = matrix[prefix_rows:], residual[prefix_rows:]
+        full_design = np.vstack((tail_design, prefix_root))
+        full_y = np.r_[tail_y, prefix_rhs]
+        q, full_root = np.linalg.qr(full_design, mode="reduced")
+        full_rhs = _row_dot(q, full_y)
+        full_mean = solve_triangular(full_root, full_rhs)
+        remaining = tail_y - tail_design @ full_mean
+        # c_p=R_p mu_p encodes the same raw-prefix proper+flat posterior.
+        # Avoid subtracting two large nuisance means before applying R_p.
+        shift = prefix_root@full_mean-prefix_rhs
+        quadratic = float(remaining @ remaining + shift @ shift)
+        if isinstance(noise, FittedChannelNoise):
+            noise_logs = 2*np.log(np.diag(noise._spatial_root))
+            tail_normalizer = (len(y)-prefix)*(float(noise_logs.sum())+channels*np.log(2*np.pi))
+            normalizer_error = .5*(len(y)-prefix)*_roundoff_gamma(channels+5)*(
+                float(np.abs(noise_logs).sum())+channels*abs(float(np.log(2*np.pi))))
+        else:
+            tail_normalizer, normalizer_error = noise.conditional_normalizer(len(y), prefix)
+        conditional_resolution = _conditional_score_resolution(
+            matrix, residual, proper_root, prefix_rows, prefix_q, prefix_root,
+            prefix_smallest, full_design, full_y, q, full_root, full_rhs, full_mean,
+            remaining, shift, quadratic,
+            white_uncertainty_error.join_columns(nuisance_error),
+            white_y_error+white_mean_error+centering_error,
+            normalizer_error=normalizer_error, normalizer_magnitude=abs(tail_normalizer))
+        logdet = float(2 * (np.log(np.abs(np.diag(full_root))).sum()
+                           - np.log(np.abs(np.diag(prefix_root))).sum()))
+        density = -0.5 * (quadratic + logdet + tail_normalizer)
+        if not np.isfinite(density):
+            raise UnidentifiableFitError("conditional candidate likelihood is nonfinite")
+        diagnostics = {"quadratic": quadratic, "predictive_logdet": logdet,
+                            "prefix_information_condition": float(np.linalg.cond(prefix_root)),
+                            "kernel_uncertainty_columns": rank,
+                            "diffuse_projection_resolution": resolution,
+                            "conditional_numerical_resolution": conditional_resolution,
+                            "flat_coordinate_transform_sha256": array_digest(nuisance_transform),
+                            "flat_coordinate_logabsdet": nuisance_logabsdet,
+                            "flat_coordinate_measure": "same_full_prefix_da_Jacobian_cancels"}
+        resolution = {"score_diagnostics": diagnostics,
+                      "conditional": conditional_resolution,
+                      "source_sha256": _IMPLEMENTATION_SHA256}
+        joint, leading = None, None
+        if absolute_marginals:
+            joint, leading, absolute_resolution = _absolute_gaussian_marginals(
+                noise, matrix, residual, proper_root, prefix_rows, prefix_q,
+                prefix_root, prefix_rhs, prefix_smallest, q, full_root,
+                quadratic, conditional_resolution, nuisance_logabsdet,
+                white_uncertainty_error.join_columns(nuisance_error),
+                white_y_error+white_mean_error+centering_error)
+            resolution.update(absolute_resolution)
+        return StructuredGaussianMarginalPair(joint, leading, float(density),
+            resolution, mean, white_mean.ravel())
+
+
+def _structured_whitening_error(noise, raw, white, source_error, geometry):
+    if isinstance(noise, FittedChannelNoise):
+        return _score_whitening_error(noise, raw, white, source_error, geometry)
+    return noise.whitening_error(raw, white, source_error)
+
+
+def _stored_temporal_image_error(temporal, raw, image, source_error):
+    """Source/operation error for the exact stored square temporal program.
+
+    This bounds the actual operation graph; it never compiles a substitute
+    stationary root or uses an expanded AR tail to stand for a lattice tail.
+    """
+    order = temporal.order
+    if order == 0:
+        return source_error.copy()
+    error = np.empty_like(raw)
+    if temporal.startup_mode == "stationary":
+        inverse, _ = _inverse_root_geometry(temporal._startup_root, lower=True)
+        error[:order] = _triangular_image_error(temporal._startup_root,
+            raw[:order], image[:order], source_error[:order], inverse, accurate=True)
+        remaining, bounds = raw[order:].copy(), source_error[order:].copy()
+        for lag, coefficient in enumerate(temporal.coefficients, 1):
+            history = raw[order-lag:len(raw)-lag]
+            bounds += (abs(coefficient)*source_error[order-lag:len(raw)-lag]
+                +_roundoff_gamma(2)*(np.abs(remaining)+abs(coefficient)*np.abs(history)))
+            remaining -= coefficient*history
+        error[order:] = bounds
+    elif temporal.startup_mode == "stationary_innovations":
+        scales = temporal._startup_scales
+        error[0] = abs(scales[0])*source_error[0]+_roundoff_gamma(1)*np.abs(image[0])
+        forward, backward = raw[1:].copy(), raw[:-1].copy()
+        ef, eb = source_error[1:].copy(), source_error[:-1].copy()
+        for step, reflection in enumerate(temporal.reflection_coefficients, 1):
+            nf, nb = forward+reflection*backward, backward+reflection*forward
+            ne_f = ef+abs(reflection)*eb+_roundoff_gamma(2)*(np.abs(forward)+abs(reflection)*np.abs(backward))
+            ne_b = eb+abs(reflection)*ef+_roundoff_gamma(2)*(np.abs(backward)+abs(reflection)*np.abs(forward))
+            if step < order:
+                error[step] = abs(scales[step])*ne_f[0]+_roundoff_gamma(1)*np.abs(image[step])
+                forward, backward, ef, eb = nf[1:], nb[:-1], ne_f[1:], ne_b[:-1]
+            else:
+                error[order:] = ne_f
+    else:
+        raise ValueError("conditional-prefix transform has no joint marginal measure")
+    if not np.isfinite(error).all():
+        raise DiffuseProjectionResolutionError("stored temporal source error is not representable")
+    return error
+
+
+class _StoredTemporalNoiseAdapter:
+    """The admitted stored temporal map followed by spatial whitening once."""
+
+    def __init__(self, temporal, covariance, prefix):
+        if not isinstance(temporal, TemporalNoise):
+            raise TypeError("native marginal requires its admitted stored TemporalNoise")
+        temporal.assert_integrity()
+        if temporal.startup_mode not in {"stationary", "stationary_innovations"}:
+            raise ValueError("stored temporal map has no full native joint density")
+        if type(prefix) is not int or prefix < 2:
+            raise ValueError("native marginal requires an actual positive prefix")
+        covariance, spatial = _positive_covariance(covariance, "native innovation covariance")
+        self.temporal, self.innovation_covariance = temporal, covariance
+        self._spatial_root, self.conditioning_samples = spatial, prefix
+        self.error_geometry = _inverse_root_geometry(spatial, lower=True)[0]
+
+    def _whiten(self, values):
+        self.temporal.assert_integrity()
+        values = finite_real_array(values, name="native marginal operand")
+        native, channels = values.shape[:2]
+        if values.ndim not in {2, 3} or channels != len(self._spatial_root):
+            raise ValueError("native whitening coordinates differ from original spatial root")
+        if values.size == 0:
+            return values.copy()
+        time_image = self.temporal.whiten(values.reshape(native, -1)).reshape(native, channels, -1)
+        white = solve_triangular(self._spatial_root,
+            time_image.transpose(1, 0, 2).reshape(channels, -1), lower=True)
+        return white.reshape(channels, native, -1).transpose(1, 0, 2).reshape(values.shape)
+
+    def whitening_error(self, raw, white, source_error):
+        native, channels = raw.shape[:2]
+        if raw.size == 0:
+            return _SegmentError(0., 0., np.empty(0), np.empty(0))
+        values, errors = raw.reshape(native, -1), source_error.reshape(native, -1)
+        temporal_image = self.temporal.whiten(values)
+        temporal_error = _stored_temporal_image_error(self.temporal, values, temporal_image, errors)
+        width = values.shape[1]//channels
+        bounds = _triangular_image_error(self._spatial_root,
+            temporal_image.reshape(native, channels, width).transpose(1, 0, 2).reshape(channels, -1),
+            white.reshape(native, channels, width).transpose(1, 0, 2).reshape(channels, -1),
+            temporal_error.reshape(native, channels, width).transpose(1, 0, 2).reshape(channels, -1),
+            self.error_geometry)
+        bounds = bounds.reshape(channels, native, width).transpose(1, 0, 2).reshape(native*channels, width)
+        cut = self.conditioning_samples*channels
+        prefix, tail = _column_norms(bounds[:cut]), _column_norms(bounds[cut:])
+        return _SegmentError(float(np.linalg.norm(prefix)), float(np.linalg.norm(tail)), prefix, tail)
+
+    def whitening_logabsdet(self, native_samples):
+        temporal = self.temporal
+        leading = min(native_samples, temporal.order)
+        if temporal.startup_mode == "stationary_innovations":
+            temporal_log = float(np.log(temporal._startup_scales[:leading]).sum())
+        else:
+            temporal_log = -float(np.log(np.diag(temporal._startup_root)[:leading]).sum())
+        return (len(self._spatial_root)*temporal_log
+                -native_samples*float(np.log(np.diag(self._spatial_root)).sum()))
+
+    def conditional_normalizer(self, native_samples, prefix):
+        channels = len(self._spatial_root)
+        logs = 2*np.log(np.diag(self._spatial_root))
+        if prefix >= self.temporal.order:
+            value = (native_samples-prefix)*(float(logs.sum())+channels*np.log(2*np.pi))
+        else:
+            value = ((native_samples-prefix)*channels*np.log(2*np.pi)
+                -2*(self.whitening_logabsdet(native_samples)-self.whitening_logabsdet(prefix)))
+        error = .5*(native_samples+prefix)*_roundoff_gamma(channels+self.temporal.order+5)*(
+            float(np.abs(logs).sum())+channels*abs(float(np.log(2*np.pi))))
+        return float(value), float(error)
+
+
+def native_history_marginal_program(*, mean, precision_root, innovation_covariance,
+        temporal_noise, samples, nuisance, conditioning_samples):
+    """Consume actual frozen MN M/R/Sigma through the general vec owner.
+
+    TemporalNoise.whiten preserves the stored startup and full-record history.
+    Sigma enters the physical coefficient factor and noise whitening once each.
+    Each channel has its own flat coefficient vector in the original Z chart.
+    The caller owns all permission, producer identity and replay validation.
+    """
+    mean, root, z = (_array(value, name, 2) for value, name in (
+        (mean, "saved MN mean"), (precision_root, "saved MN precision root"),
+        (nuisance, "native common flat basis")))
+    if root.shape != (len(mean), len(mean)) or np.any(np.tril(root, -1) != 0):
+        raise ValueError("native marginal requires its actual upper posterior root")
+    noise = _StoredTemporalNoiseAdapter(temporal_noise, innovation_covariance, conditioning_samples)
+    inverse = solve_triangular(root, np.eye(len(root)))
+    # The stored R, not a rounded inverse, defines the posterior law. Include
+    # its solve defect before constructing the physical unit-latent factor.
+    inverse_norm = float(np.linalg.norm(inverse, ord=2))
+    defect = float(np.linalg.norm(np.eye(len(root))-root@inverse, ord=2))
+    defect += _roundoff_gamma(len(root)+1)*float(np.linalg.norm(np.abs(root)@np.abs(inverse), ord=2))
+    if not np.isfinite(defect) or defect >= 1:
+        raise DiffuseProjectionResolutionError("stored MN posterior inverse is unresolved")
+    inverse_error = inverse_norm*defect/(1-defect)
+    spatial = noise._spatial_root
+    factor = np.kron(inverse, spatial)
+    factor_error = (np.kron(np.full(inverse.shape, inverse_error), np.abs(spatial))
+                    +_roundoff_gamma(1)*np.abs(factor))
+    channels = mean.shape[1]
+    flat = np.einsum("nj,cd->ncjd", z, np.eye(channels)).reshape(len(z), channels, z.shape[1]*channels)
+    constant = np.any(np.all(z == z[0], axis=0) & (z[0] != 0)) if len(z) else False
+    return StructuredGaussianMarginalProgram(noise, samples, mean, factor, flat,
+        intercept_chart=bool(constant), factor_source_error=factor_error)
+
+
+def _absolute_marginal_resolution(design, response, prior, q, root, rhs,
+        source_columns, response_source_error, *, normalizer_error, normalizer_magnitude,
+        coordinate_logabsdet):
+    """Absolute potential error in the actual augmented posterior metric.
+
+    Source design errors, raw response errors, QR defects and minimizer
+    displacement propagate before the quadratic/logdet enter a nats estimate.
+    This uses the same local perturbation owner as the conditional score.
+    """
+    augmented = np.vstack((design, prior))
+    y = np.r_[response, np.zeros(len(prior))]
+    width = design.shape[1]
+    theta = solve_triangular(root, rhs)
+    remaining = y-augmented@theta
+    quadratic = float(remaining@remaining)
+    reconstruction = float(np.linalg.norm(augmented-q@root))
+    reconstruction += _roundoff_gamma(width)*float(np.linalg.norm(np.abs(q)@np.abs(root)))
+    orthogonality = (float(np.linalg.norm(_row_dot(q, q)-np.eye(width), ord=2))
+        +_row_dot_gamma(len(q))*float(np.linalg.norm(_row_dot(np.abs(q), np.abs(q)), ord=2)))
+    if not np.isfinite(orthogonality) or orthogonality >= 1:
+        raise DiffuseProjectionResolutionError("absolute marginal QR orthogonality is unresolved")
+    inverse, inverse_norm = _inverse_root_geometry(root)
+    metric_reconstruction = reconstruction*inverse_norm
+    source_metric = float(np.linalg.norm(source_columns@inverse))
+    design_error = source_metric+metric_reconstruction
+    smallest = np.sqrt(1-orthogonality)-metric_reconstruction
+    relative = design_error/smallest
+    if not np.isfinite(relative) or relative >= 1:
+        raise DiffuseProjectionResolutionError("absolute marginal source posterior is unresolved")
+    rhs_dot = _row_dot_error(q, y)
+    solve_error = (float(np.linalg.norm(root@theta-rhs))
+        +_roundoff_gamma(width)*float(np.linalg.norm(np.abs(root)@np.abs(theta))))
+    optimality = np.sqrt(1+orthogonality)/(1-orthogonality)*(
+        rhs_dot+solve_error+orthogonality*float(np.linalg.norm(root@theta)))
+    data_error = response_source_error+optimality
+    matrix_norm = np.sqrt(width*(1+orthogonality))+metric_reconstruction
+    _, minimizer = _conditional_minimizer_norm(root@theta, matrix_norm,
+        float(_projection_norm_upper(np.abs(y)[:, None])[0]), smallest,
+        design_error, data_error, optimality)
+    directional = float(source_columns@np.abs(theta))+reconstruction*float(np.linalg.norm(theta))
+    displacement = minimizer["displacement"]+optimality/smallest
+    residual_error = data_error+directional+design_error*displacement
+    residual_error += _roundoff_gamma(width+1)*float(np.linalg.norm(np.abs(y)+np.abs(augmented)@np.abs(theta)))
+    quadratic_error = (2*np.sqrt(quadratic)*residual_error+residual_error**2
+        +_roundoff_gamma(len(y))*quadratic)
+    logs = np.log(np.abs(np.diag(root)))
+    logdet_error = (2*width*(-np.log1p(-relative))-width*np.log1p(-orthogonality)
+        +2*_roundoff_gamma(width+1)*float(np.abs(logs).sum()))
+    flat_width = design.shape[1]-prior.shape[0]
+    normalizer = (len(response)-flat_width)*np.log(2*np.pi)
+    value = (-.5*(quadratic+2*float(logs.sum())+normalizer)
+        +normalizer_magnitude+coordinate_logabsdet)
+    output_error = _roundoff_gamma(5)*(quadratic+2*float(np.abs(logs).sum())
+        +abs(normalizer)+abs(normalizer_magnitude)+abs(coordinate_logabsdet))
+    # coordinate_logabsdet belongs to an exact stored upper-triangular flat
+    # change of variables; its log reduction is a numerical operation too.
+    error = float(.5*(quadratic_error+logdet_error)+normalizer_error+output_error)
+    budget = float(len(response)*np.sqrt(np.finfo(float).eps))
+    if not np.isfinite(error) or error > budget:
+        raise DiffuseProjectionResolutionError(
+            f"absolute marginal log-potential error {error:.6g} exceeds {len(response)}-row budget {budget:.6g}")
+    return float(value), {"method": "raw_augmented_QR_source_local_minimizer_nats_estimate",
+        "absolute_log_density_error_estimate": error,
+        "absolute_log_density_error_budget": budget,
+        "actual_observation_scalar_rows": len(response), "flat_dimensions": flat_width,
+        "effective_observation_scalar_rows": len(response)-flat_width,
+        "quadratic_error_estimate": float(quadratic_error),
+        "logdet_error_estimate": float(logdet_error),
+        "source_design_posterior_metric_error_estimate": source_metric,
+        "source_response_error_estimate": float(response_source_error),
+        "directional_source_design_error_estimate": directional,
+        "minimizer_displacement_estimate": displacement,
+        "raw_noise_normalizer_error_estimate": float(normalizer_error),
+        "output_roundoff_error_estimate": float(output_error), "all_input_certificate": False}
+
+
+def _absolute_gaussian_marginals(noise, matrix, residual, proper_root, prefix_rows,
+        prefix_q, prefix_root, prefix_rhs, prefix_smallest, q, full_root, quadratic,
+        conditional_resolution, nuisance_logabsdet, matrix_source_error, response_source_error):
+    """Absolute full/prefix potentials; stable conditional is kept separately."""
+    del prefix_smallest, q, full_root, quadratic, conditional_resolution
+    channels = len(noise.innovation_covariance)
+    full_rhs, full_root, full_q, _ = _posterior_qr(matrix, residual, proper_root)
+    values, certificates = [], []
+    for stop, aq, ar, rhs, source_columns, data_error in (
+            (prefix_rows, prefix_q, prefix_root, prefix_rhs,
+             matrix_source_error.prefix_columns, response_source_error.prefix),
+            (len(residual), full_q, full_root, full_rhs,
+             matrix_source_error.prefix_columns+matrix_source_error.tail_columns,
+             response_source_error.prefix+response_source_error.tail)):
+        logwhite = noise.whitening_logabsdet(stop//channels)
+        normalizer_error = _roundoff_gamma(stop+matrix.shape[1]+5)*(
+            abs(logwhite)+abs(nuisance_logabsdet)+stop*abs(float(np.log(2*np.pi))))
+        value, certificate = _absolute_marginal_resolution(matrix[:stop], residual[:stop],
+            proper_root, aq, ar, rhs, source_columns, data_error,
+            normalizer_error=normalizer_error, normalizer_magnitude=logwhite,
+            coordinate_logabsdet=nuisance_logabsdet)
+        values.append(value)
+        certificates.append(certificate)
+    return values[1], values[0], {"full": certificates[1], "prefix": certificates[0],
+        "flat_coordinate_logabsdet": nuisance_logabsdet,
+        "same_flat_measure": "original_physical_da_full_and_prefix",
+        "full_prefix_whitening": "one_actual_stored_full_record_leading_rows",
+        "n_raw_full": len(residual), "n_raw_prefix": prefix_rows}
