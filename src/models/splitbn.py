@@ -670,13 +670,14 @@ def install_splitbn_target_calibration_buffers(
     class _SiteCapturedError(Exception):
         pass
 
-    def calibration_pass(sites, kwargs_factory, *, stop_at_first: bool):
+    def calibration_pass(sites, kwargs_factory, *, stop_at_first: bool, collect: bool = True):
         reached: list[str] = []
         active_mask: torch.Tensor | None = None
         def hook(module, args, *, path):
             if not args or not isinstance(args[0], torch.Tensor):
                 raise RuntimeError(f"SplitBN module {path!r} received no tensor input.")
-            accumulate(path, module, args[0])
+            if collect:
+                accumulate(path, module, args[0])
             reached.append(path)
             if stop_at_first:
                 raise _SiteCapturedError
@@ -745,6 +746,11 @@ def install_splitbn_target_calibration_buffers(
                         (second[path] / counts[path]).to(module.target_running_var.device),
                         frozen=True)
                 estimand = "sequential_target_calibration"
+                # With all sites installed, confirm the complete actual graph
+                # reaches each site once. This pass installs no extra moments.
+                calibration_pass(splitbn_modules,
+                    lambda _batch: {"eval_buffer_source": "target_calibration"},
+                    stop_at_first=False, collect=False)
         if any(path not in counts for path, _ in splitbn_modules):
             raise RuntimeError("a SplitBN site observed no calibration rows.")
         succeeded = True

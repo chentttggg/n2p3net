@@ -163,3 +163,19 @@ def test_real_observed_population_is_invariant_to_batch_and_trial_order():
         actual, expected = dict(core.named_modules())[path], dict(reference.named_modules())[path]
         torch.testing.assert_close(actual.target_running_mean, expected.target_running_mean, atol=1e-12, rtol=1e-12)
         torch.testing.assert_close(actual.target_running_var, expected.target_running_var, atol=1e-12, rtol=1e-12)
+
+
+def test_reused_site_is_rejected_instead_of_certifying_one_of_two_populations():
+    class Reused(_Chain):
+        def forward_features(self, x, *, eval_buffer_source=None, channel_mask=None):
+            x = self.first(x, eval_buffer_source=eval_buffer_source)
+            x = self.first(x + 7, eval_buffer_source=eval_buffer_source)
+            return self.second(x, eval_buffer_source=eval_buffer_source)
+
+    model = Reused().double()
+    before = deepcopy(model.state_dict())
+    values, mask = _values()
+    with pytest.raises(RuntimeError, match="exactly once"):
+        install_splitbn_target_calibration_buffers(model, values, device="cpu", channel_masks=mask)
+    for name, value in before.items():
+        assert torch.equal(value, model.state_dict()[name]), name
