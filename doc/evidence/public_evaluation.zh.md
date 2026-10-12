@@ -88,6 +88,8 @@ K2000单NN的scratch多7个命中且NLL低0.036876，matched scratch pool多1个
 
 后续落实C内整程序选择及独立later评价。P1同支持新stationary law的16格噪声面板已经完成：两臂均8/8有概率，shared命中5/8、private命中6/8，winner与旧law一致；完整分母、queue exit和逐cell差异见[响应与噪声](response_and_noise.zh.md)及[分析绑定](../assets/research_resume_20261012/p1_stationary_analysis.json)。缓存和白化优化以相同概率输出及实际耗时评价。
 
+entry005修后前缀程序也已完成8人×19个请求：92个面板、13,984条prediction，结构异常0。K2000的C内选择程序保持132/152命中，NLL/Brier为`0.262927/0.140190`，固定主迁移pool为`132/152`、`0.367674/0.167180`；matched scratch单NN为`135/152`、`0.255743/0.103933`，预声明NN+xDAWN为`133/152`、`0.219293/0.118436`。K800选择少1个命中且两个概率指标变差，K200与主程序均回落`primary_fixed`；四候选选择图只证明冻结外部source条件下的目标端嵌套软件与结果账本，不能外推到source、架构或prior全链。完整前缀和P1统一分析保存在[云端候选结果分析](../assets/research_resume_20261012/cloud_candidate_analysis_20261012.zh.md)。
+
 图和完整CSV保存在本地科研树 `tmp/DATA_ANALYSIS_20261011/`：overview.png、configuration_metrics.csv、all_paired_contrasts.csv、participant_paired_metrics.csv。来源、分析程序与产物SHA见[紧凑绑定](../assets/research_resume_20261011/cloud_candidate_analysis_binding.json)；原始云结果保持原位置及producer身份。
 
 只读[指标分母审计](../assets/research_resume_20261012/metric_scope_audit/REPORT.zh.md)直接从16份原始36维 `log_probability` 和原 `DecisionPlan` 真值/请求表复算winner、NLL、Brier、行列概率及8人配对差，再核旧row、summary、三份CSV和接受绑定；2427项比较一致，最大数值差 `8.88e-16`，46份输入SHA前后不变。P1、BNCI 152/144、BI 1287/1243、BNCI C600/R10 240/arm分别保留各自分母。原14次续评score和A01两格复用与本次0 fit/score/model-load分列。复算脚本使用显式 `--root/--output`，迁入证据目录后已实际运行通过；完整交付及逐文件SHA见同目录 `delivery.binding.json` 和 `verification.json`。
