@@ -99,3 +99,5 @@ Claude review 分支的 U5a-04、U7-19、U7-24、U7-26 和 U1-01 fixture 修复�
 云端 entry005 在10:14的权威快照为 `running`：原0–3四人重放已准入，4–7四worker各自保存1672个内部 prediction cells，actual exit、terminal receipt、complete result 和 8人/152 requested future decision receipt 当时尚未闭合。5.51秒资源采样为 aggregate CPU 835.83%、GPU样本 7/95/95/94/0%、controller RSS 2.439 GiB，cgroup memory约59.85 GiB、OOM 0；快照与源码/owner状态见[entry005记录](../assets/research_resume_20261012/entry005_status_20261012_101415.json)。entry005继续消费自己的冻结源。P1按既定完整16格计划推进：在原Windows export、科学caller/lease、最终controller和Linux资源门闭合并有资源后，由唯一云窗口自主冻结执行；科研代码修复不要求重跑entry005。
 
 整树候选的审阅checkout已完成用途并退役：候选commit仍由 `codex/claude-merge-candidate-20261012` 保存，四份审阅/白名单文件按原字节迁入主树 `tmp/CANDIDATE_MERGE_REVIEW_20261012/`，哈希逐份一致，见[恢复定位](../assets/research_resume_20261012/review_checkout_retirement.json)。指标和SplitBN实施树继续保留。证据索引恢复为四主题入口，已归档日期页通过原恢复清单追溯，当前索引的本地链接均可解析。
+
+LOSO participant-macro 延期项随后完成闭环并集成 `a745ea7`：新增指标 `/2` 保留旧字段值，参与者由共享authority逐行声明，requested仅取pre-QC测试组；同人跨session/domain等权，整组不可用保为错。原无schema记录保其原值、macro未知。总监逐读公式、authority、实际writer和consumer，补回训练组/fit-group混淆反例后接受；作者21项与主树5项验证分列，来源见[指标整合绑定](../assets/research_resume_20261012/participant_macro_integration.json)。

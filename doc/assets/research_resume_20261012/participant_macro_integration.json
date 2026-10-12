@@ -1,0 +1,51 @@
+{
+  "schema": "n2p3_loso_metric_integration/1",
+  "status": "accepted",
+  "author_commit": "dc4e1d546cf43a010c663f8fa075f5fadc3c38c5",
+  "integration_commit": "a745ea74f6c6abcec3795052cb8f131737573388",
+  "code_files": {
+    "src/baselines/evaluate.py": {
+      "integrated_raw_sha256": "6f8cce823ad39fcc7193ea048737b77873443e7137e5d2455f1c00c0bd2403f2",
+      "author_raw_sha256": "6f8cce823ad39fcc7193ea048737b77873443e7137e5d2455f1c00c0bd2403f2",
+      "raw_equal": true,
+      "difference": null
+    },
+    "experiments/run_eeg_loso.py": {
+      "integrated_raw_sha256": "4572282c426c2f103a2222818004647450f2b0ddcff5e26b0f167d7cbdbe290a",
+      "author_raw_sha256": "4572282c426c2f103a2222818004647450f2b0ddcff5e26b0f167d7cbdbe290a",
+      "raw_equal": true,
+      "difference": null
+    },
+    "tests/research/test_eeg_loso_metric_schema.py": {
+      "integrated_raw_sha256": "e017ecb8241714d7e5b4a975e86b88aa1c66e0015c3f7c164d6036cd68139515",
+      "author_raw_sha256": "740dcc0508590e862d21c16d990fa8fb54b287a725ebc8a18bce68fc967d9a62",
+      "raw_equal": false,
+      "difference": "checkout LF to CRLF only; root checks used integrated bytes"
+    }
+  },
+  "author_review": "C:\\Users\\chent\\.codex\\worktrees\\claude-safe-integration-20261012\\n2p3-net\\tmp\\PARTICIPANT_MACRO_METRIC_SCHEMA_20261012\\HANDOFF.zh.md",
+  "author_tests": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\claude-safe-integration-20261012\\n2p3-net\\tmp\\PARTICIPANT_MACRO_METRIC_SCHEMA_20261012\\final.junit.xml",
+    "sha256": "6ebbc29f10e87ab5efddba7c1fc83037777719d0a3766232cd56fb644271ed89",
+    "tests": 21,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "root_tests": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\PARTICIPANT_MACRO_SCHEMA_REVIEW_20261012\\root_acceptance.xml",
+    "sha256": "7390499ce7ff157f98f538b6144b10cffdb189adb6ef227ff9ea50cd94458d87",
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "contract": {
+    "metric_schema": "n2p3_eeg_loso_metrics/2",
+    "participant_identity": "caller_supplied_shared_authority_key",
+    "population": "pre_QC_test_requests",
+    "legacy_fields": "unchanged_values; legacy_macro_unknown",
+    "public_fit_score_model_load": 0,
+    "dashboard_metric_consumer": false
+  }
+}

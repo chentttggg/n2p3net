@@ -13,6 +13,8 @@
 不从旧标量推导 macro、不改写历史 artifact。该切片只通过软件反例与合成 CLI JSON
 写出链，不产生新公共效能结果；现 dashboard 尚未消费新增 macro 字段。
 
+该指标切片已在 `a745ea7` 集成：作者21项反例及主树5项实际CLI/旧分母检查分别通过，两个运行模块原字节与作者提交一致。字段、scope、参与者authority和验证来源见[指标整合绑定](../assets/research_resume_20261012/participant_macro_integration.json)。
+
 ## 原云候选面板：完整分母与配对读数
 
 云窗口独立零拟合恢复已完成8人、152共同requested decisions、13376预测、448 fit records、32物理包、88指标与原80配对对照。科研总监实际读取本地terminal/actual exit/delivery/independent statistics，逐字核其SHA与delivery吻合，再读完整80原对照及20指定导出；其中8行已有原对照、12行为原保存预测的新只读派生。原executor exit1、scientific source `75a61532…`及其499冻结manifest均保留，恢复exit0、新source/target fit均0。完整失败账本留本地，不以科研新prefix协议改签。
