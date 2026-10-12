@@ -4,7 +4,9 @@
   "created": "2026-10-12",
   "worktree": "C:/Users/chent/.codex/worktrees/research-integration/n2p3-net",
   "branch": "codex/research-integration-20261011",
-  "head": "4672e08a1530d9c9ffab2090c15a642108951857",
+  "head": "732c42eba149c4bfa22845337c404ec9ba98f8e0",
+  "checkpoint_commit": "732c42eba149c4bfa22845337c404ec9ba98f8e0",
+  "post_checkpoint_changes": "documentation-only handoff metadata",
   "worktree_clean_at_checkpoint": true,
   "claude_merge": {
     "tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
