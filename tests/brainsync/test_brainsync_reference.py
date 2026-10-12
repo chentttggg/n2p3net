@@ -38,6 +38,16 @@ def test_explicit_correction_preserves_edf_and_records_real_native_reference(tmp
         correct_sessions([root], previous="A2", authority="again", output=tmp_path / "second")
 
 
+def test_incomplete_correction_embeds_one_complete_record_in_every_file(tmp_path):
+    root = _session(tmp_path)
+    bids = read_json(root / "session.json")["recording"]["bids"]
+    (root / bids["channels_tsv"]).unlink()
+    correct_sessions([root], previous="A2", authority="test", output=tmp_path / "correction", allow_incomplete=True)
+    recorded = read_json(root / "session.json")["reference_correction"]
+    assert recorded["missing_declared_sidecars"] == [bids["channels_tsv"]]
+    assert read_json(root / bids["eeg_json"])["ReferenceCorrection"] == recorded
+
+
 def test_reference_correction_prevalidates_all_sessions_before_mutation(tmp_path):
     root = _session(tmp_path)
     before = (root / "session.json").read_bytes()

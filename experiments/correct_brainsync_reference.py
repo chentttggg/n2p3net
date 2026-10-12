@@ -50,7 +50,8 @@ def prepare_session_correction(root: Path, *, previous: str, authority: str, all
     corrected = _correct_reference_fields(session, previous, replacement)
     corrected["montage"]["reference_details"] = reference
     corrected["reference_correction"] = correction
-    changes = {session_path: (json.dumps(corrected, indent=2, ensure_ascii=False) + "\n").encode("utf-8")}
+    # JSON documents are serialized last, so each embeds the complete correction record.
+    changes = {session_path: corrected}
     recording = session.get("recording", {})
     bids = recording.get("bids", {})
     for key in ("eeg_json", "channels_tsv"):
@@ -72,7 +73,7 @@ def prepare_session_correction(root: Path, *, previous: str, authority: str, all
             sidecar = _correct_reference_fields(sidecar, previous, replacement)
             sidecar["EEGReferenceDetails"] = reference
             sidecar["ReferenceCorrection"] = correction
-            changes[path] = (json.dumps(sidecar, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+            changes[path] = sidecar
         else:
             with path.open(encoding="utf-8-sig", newline="") as stream:
                 reader = csv.DictReader(stream, delimiter="\t")
@@ -86,8 +87,9 @@ def prepare_session_correction(root: Path, *, previous: str, authority: str, all
                 writer.writeheader()
                 writer.writerows(rows)
                 changes[path] = output.getvalue().encode("utf-8")
-    changes[session_path] = (json.dumps(corrected, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
-    return changes
+    return {path: value if isinstance(value, bytes)
+            else (json.dumps(value, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+            for path, value in changes.items()}
 
 
 def correct_sessions(roots, *, previous: str, authority: str, output: Path, allow_incomplete: bool = False):
