@@ -7,6 +7,7 @@ from research.execution import (
     SubjectFailureCode,
     atomic_write_json,
     partial_run_record,
+    publish_exclusive,
 )
 from tests.support.io import read_json
 
@@ -94,4 +95,13 @@ def test_atomic_replace_read_lock_is_bounded_and_preserves_old_bytes(tmp_path, m
         atomic_write_json(output, {"completed": 2})
         assert read_json(output) == {"completed": 2}
         assert len(attempts) == 3
+    assert list(tmp_path.iterdir()) == [output]
+
+
+def test_publish_exclusive_refuses_replacement_and_cleans_temporary_files(tmp_path):
+    output = publish_exclusive(tmp_path / "artifact.bin", lambda stream: stream.write(b"first"))
+    assert output.read_bytes() == b"first"
+    with pytest.raises(FileExistsError):
+        publish_exclusive(output, lambda stream: stream.write(b"second"))
+    assert output.read_bytes() == b"first"
     assert list(tmp_path.iterdir()) == [output]
