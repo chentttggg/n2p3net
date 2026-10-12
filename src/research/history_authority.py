@@ -380,6 +380,7 @@ def _issue_history_scope(compiler, view, *, prefix, model, law):
                 break
         if witness is None:
             zero_axes.append(selection.selection_id)
+            binding["exact_zero_design_axis_marginalization"]["selection_ids"] = list(zero_axes)
             binding["C_selection_state_admission"].append({"selection_id": selection.selection_id,
                 "program": "all_C_conditioned_positive_q_state_designs_exactly_zero",
                 "positive_state_indices": positive_states})
