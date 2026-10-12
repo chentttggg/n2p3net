@@ -1,0 +1,193 @@
+{
+  "schema": "n2p3_prefix_p1_transition_observation/1",
+  "observed_unix": 1791776554.542673,
+  "source_receipt": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\prefix-recovery-consumer\\n2p3-net\\tmp\\prefix_catalog_recovery02\\observe_transition01.receipt.json",
+    "sha256": "ffb9fd4bce76be89987dc5c7783dcb9bc0fa5b2300b3a7b72ba170d2fdad6205"
+  },
+  "entry005": {
+    "progress": {
+      "status": "completed",
+      "completed_subjects": 8
+    },
+    "scientific_result": {
+      "sha256": "4b2498325c4a78bc80c0be9066f2baf8ad442424fb75bc72bb272aeae507626f",
+      "bytes": 451241859,
+      "status": "completed",
+      "keys": [
+        "schema",
+        "status",
+        "evidence_scope",
+        "randomness_scope",
+        "comparison_role",
+        "ar_panel",
+        "decision_plan",
+        "source_digest",
+        "participants",
+        "metrics",
+        "contrasts",
+        "prefix_selection",
+        "evaluation_design",
+        "seed_pairs",
+        "calibration_strategies",
+        "requested_budgets",
+        "actual_budgets",
+        "source_seed_catalog",
+        "source_replication",
+        "prefix_recovery",
+        "requested_records",
+        "decision_denominator_complete",
+        "participant_execution"
+      ],
+      "requested": null,
+      "requested_cells": null
+    },
+    "scientific_terminal": {
+      "dataset_id": "BNCI2014-008_prefix_selector_recovery02",
+      "process_status": "completed",
+      "exit_code": 0,
+      "child": {
+        "pid": 114896,
+        "create_time": 1791766684.31,
+        "process_group": 114896
+      },
+      "failure": null,
+      "missing_result_files": [],
+      "active_owned_after_exit": 0
+    },
+    "queue_actual_exit": {
+      "queue_pid": 114894,
+      "create_time": 1791766683.92,
+      "supervisor_pid": 114893,
+      "command": [
+        "/root/autodl-tmp/n2p3-research-20261008/environment/.venv/bin/python",
+        "-u",
+        "-B",
+        "/root/n2p3-runtime-20261011-control/bi_trial_final_source02/checkout/experiments/run_dataset_queue.py",
+        "--plan",
+        "/root/n2p3-runtime-20261011-control/cloud_dataset_queue01/queue.prefix_recovery02.accepted.json",
+        "--output",
+        "/root/autodl-tmp/n2p3-research-20261008/cloud_live_20261012/public_dataset_queue01"
+      ],
+      "started_unix": 1791766684.0323417,
+      "exit_code": 1,
+      "observed_unix": 1791776529.2426062,
+      "observed_by": "independent_queue_supervisor.wait"
+    },
+    "full_scientific_denominator_review": "pending independent saved-result review"
+  },
+  "P1": {
+    "science_child": {
+      "schema": "n2p3_dataset_queue_launch/2",
+      "dataset_id": "BNCI2014-008_P1_stationary16",
+      "request_sha256": "6924e2c9c27f51eea796586228f607384b396274ff3e8f2e6b67844cee26a7b5",
+      "child": {
+        "pid": 120233,
+        "create_time": 1791776531.61
+      },
+      "process_group": 120233,
+      "invocation_state": "registered_before_exec"
+    },
+    "processes": [
+      {
+        "pid": 120233,
+        "birth": 1791776531.61,
+        "status": "sleeping",
+        "cpu_percent": 0.19999703143473413,
+        "rss_bytes": 704196608,
+        "threads": 2
+      },
+      {
+        "pid": 120236,
+        "birth": 1791776535.14,
+        "status": "sleeping",
+        "cpu_percent": 0.0,
+        "rss_bytes": 12566528,
+        "threads": 1
+      },
+      {
+        "pid": 120237,
+        "birth": 1791776535.14,
+        "status": "sleeping",
+        "cpu_percent": 0.0,
+        "rss_bytes": 25964544,
+        "threads": 3
+      },
+      {
+        "pid": 120244,
+        "birth": 1791776535.27,
+        "status": "running",
+        "cpu_percent": 241.99640803602267,
+        "rss_bytes": 1213673472,
+        "threads": 13
+      },
+      {
+        "pid": 120245,
+        "birth": 1791776535.27,
+        "status": "running",
+        "cpu_percent": 241.99640803602267,
+        "rss_bytes": 1449484288,
+        "threads": 13
+      },
+      {
+        "pid": 120246,
+        "birth": 1791776535.28,
+        "status": "running",
+        "cpu_percent": 247.19633085332572,
+        "rss_bytes": 1192652800,
+        "threads": 13
+      },
+      {
+        "pid": 120247,
+        "birth": 1791776535.29,
+        "status": "running",
+        "cpu_percent": 240.1964347531102,
+        "rss_bytes": 1282641920,
+        "threads": 13
+      }
+    ],
+    "sample_seconds": 5.000074215233326,
+    "aggregate_cpu_percent": 971.585578709916,
+    "phase_progress": [
+      {
+        "plan_file_sha256": "5e92a7cca89a8d2adb8517e44509e4e39fbeb361a4925c2b108ddc1a41c02664",
+        "task_id": "stationary:A01",
+        "subject": "A01",
+        "phase": "candidate_diffuse_projection",
+        "time": 1791776555.808084,
+        "native_threads": 5,
+        "interop_threads": 1
+      },
+      {
+        "plan_file_sha256": "5e92a7cca89a8d2adb8517e44509e4e39fbeb361a4925c2b108ddc1a41c02664",
+        "task_id": "stationary:A02",
+        "subject": "A02",
+        "phase": "candidate_diffuse_projection",
+        "time": 1791776555.071686,
+        "native_threads": 5,
+        "interop_threads": 1
+      },
+      {
+        "plan_file_sha256": "5e92a7cca89a8d2adb8517e44509e4e39fbeb361a4925c2b108ddc1a41c02664",
+        "task_id": "stationary:A03",
+        "subject": "A03",
+        "phase": "candidate_diffuse_projection",
+        "time": 1791776555.5967314,
+        "native_threads": 5,
+        "interop_threads": 1
+      },
+      {
+        "plan_file_sha256": "5e92a7cca89a8d2adb8517e44509e4e39fbeb361a4925c2b108ddc1a41c02664",
+        "task_id": "stationary:A04",
+        "subject": "A04",
+        "phase": "candidate_diffuse_projection",
+        "time": 1791776555.3231533,
+        "native_threads": 5,
+        "interop_threads": 1
+      }
+    ],
+    "cell_receipts": [],
+    "result": null,
+    "terminal": null
+  }
+}

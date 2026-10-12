@@ -105,3 +105,5 @@ LOSO participant-macro 延期项随后完成闭环并集成 `a745ea7`：新增�
 SplitBN target安装随后集成 `ddcd834/49dea0d`。真实core/wrapper的temporal先打包已观测电极，spatial/MST接完整混合feature；此前“所有站点零槽污染”的静态结论已修正。按实际前向顺序安装、initial/refit分开持久receipt，并接回两个runner的JSON出口。作者100项与主树12项software/synthetic检查分别通过，旧normalization/state字段保其读取含义，新target fit绑定实际source和安装程序，见[SplitBN整合绑定](../assets/research_resume_20261012/splitbn_target_integration.json)。binding分别记录作者CRLF与主树LF执行摘要，不将文本等价写作字节同一。
 
 QC通道选择 `8d9ad76` 完成实际数据关系修复：原路径保留全montage median，Claude的ratio×scale逆推又在eps分母以下失真；新路径直接从实际选后X复用唯一QC compute。普通幅度、极小/zero、观测mask、多次selection、cache保存/attestation和fold-local threshold调用链已核对；作者相关验证与主树5项定向入口分列，见[QC整合绑定](../assets/research_resume_20261012/qc_channel_integration.json)。新派生lineage明确记录程序，原cache/阈值/结果保其已有身份。
+
+云端后续[实际转场记录](../assets/research_resume_20261012/entry005_p1_transition.json)显示entry005已完成8/8，保存科学result为451,241,859 bytes、SHA `4b249832…`，science terminal exit0、owned_after0；外层queue supervisor另有exit1，原因及完整requested ledger由云窗口分开复核。P1完整16格随后启动，首次5秒采样四个评分actor并行在diffuse projection阶段，合计CPU971.59%，当时cell receipt/result/terminal尚未产生。各状态持自己的执行来源，旧running快照保留。
