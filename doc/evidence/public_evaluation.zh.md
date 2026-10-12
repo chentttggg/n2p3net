@@ -86,7 +86,7 @@ K2000单NN的scratch多7个命中且NLL低0.036876，matched scratch pool多1个
 
 本面板以八名参与者为独立单位，152次决策为其内部重复测量；一个seed的读数用于公开校准开发。原开发gate是hit/NLL的点估计规则；大版本的完整seed与新数据评价将补充训练随机性和泛化证据。
 
-后续落实C内整程序选择及独立later评价。P1固定response的16格噪声面板已经完成，数值稳定化正在[响应与噪声](response_and_noise.zh.md)推进。缓存和白化优化以相同概率输出及实际耗时评价。
+后续落实C内整程序选择及独立later评价。P1同支持新stationary law的16格噪声面板已经完成：两臂均8/8有概率，shared命中5/8、private命中6/8，winner与旧law一致；完整分母、queue exit和逐cell差异见[响应与噪声](response_and_noise.zh.md)及[分析绑定](../assets/research_resume_20261012/p1_stationary_analysis.json)。缓存和白化优化以相同概率输出及实际耗时评价。
 
 图和完整CSV保存在本地科研树 `tmp/DATA_ANALYSIS_20261011/`：overview.png、configuration_metrics.csv、all_paired_contrasts.csv、participant_paired_metrics.csv。来源、分析程序与产物SHA见[紧凑绑定](../assets/research_resume_20261011/cloud_candidate_analysis_binding.json)；原始云结果保持原位置及producer身份。
 
