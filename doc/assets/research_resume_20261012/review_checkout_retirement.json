@@ -1,0 +1,28 @@
+{
+  "schema": "n2p3_review_checkout_retirement/1",
+  "former_checkout": "C:\\Users\\chent\\.codex\\worktrees\\claude-merge-review-20261012\\n2p3-net",
+  "commit": "e91be9fe47e7687d3b3dff81a5e5970d3a19270a",
+  "recovery_ref": "codex/claude-merge-candidate-20261012",
+  "retained_review_directory": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CANDIDATE_MERGE_REVIEW_20261012",
+  "retained_review_files": {
+    "binding.json": {
+      "sha256": "7441116b1b3a48349a1426a1fcc83c45a8fe9cf243ad459e86f1a39c0aed182f",
+      "bytes": 877
+    },
+    "HANDOFF.zh.md": {
+      "sha256": "ba60b01548e9d06a4708fbfd688e0d0a2842cb8b196e75a6de6b011fed6eafa6",
+      "bytes": 5751
+    },
+    "WHITELIST_BLACKLIST.binding.json": {
+      "sha256": "855317c317eab9e48b5f891db0e1ca53872ed83ae9964c8b4e4beb7f7fb3ae8d",
+      "bytes": 1029
+    },
+    "WHITELIST_BLACKLIST.zh.md": {
+      "sha256": "a06b3d0b62ada93d8f282e2aad640e1a63fa7240288834f77c4b53aed2bcc123",
+      "bytes": 6609
+    }
+  },
+  "tracked_dirty": false,
+  "owned_running_processes": 0,
+  "disposable_ignored": "pytest/ruff/python caches only; all four review files retained"
+}
