@@ -1,0 +1,151 @@
+{
+  "schema": "n2p3_cloud_controller_scientific_integration_acceptance/1",
+  "status": "accepted",
+  "cloud_execution_sha256": "fbe2a9c09a13886ad9eb5f0145b878336db9f0a63a9f929b89492907c2992db1",
+  "late_orphan_gate_accepted": true,
+  "source_commit": "204304fdef619d5dd85e8237d30c76ed3861367d",
+  "scientific_base_commit": "b8e0982",
+  "actual_source_pins": {
+    "src/research/cloud_execution.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\src\\research\\cloud_execution.py",
+      "sha256": "fbe2a9c09a13886ad9eb5f0145b878336db9f0a63a9f929b89492907c2992db1",
+      "bytes": 67751
+    },
+    "tests/research/test_cloud_private_spawn.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_cloud_private_spawn.py",
+      "sha256": "c890ac963c05b9075a2d9bbfef1ee0d515d697a857b7eef7fd65ae8f203c9e15",
+      "bytes": 12891
+    },
+    "tests/research/test_cloud_ownership_gate.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_cloud_ownership_gate.py",
+      "sha256": "9d23596fe4a01ac3c45c6ce1a6ecb84e7715c56e354aa9098e3ae1e02420702e",
+      "bytes": 4612
+    },
+    "tests/research/test_cloud_execution.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_cloud_execution.py",
+      "sha256": "2d448243c08e4171f6499ef8bd6dd4be833bdeee7c7c7d3569f50bd29091f182",
+      "bytes": 24055
+    },
+    "tests/research/test_cloud_admission_scheduling.py": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tests\\research\\test_cloud_admission_scheduling.py",
+      "sha256": "f5ba21b704662cbd5a9f41d41f1c16f57cf951386e8c997e87944393762f2234",
+      "bytes": 17138
+    }
+  },
+  "source_observer": {
+    "file": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\experiments\\run_source_training_chain.py",
+      "sha256": "3569017c9290b5a552bf3e963fb21db4dd73567d650d58635731ea280aaeeab1",
+      "bytes": 147018
+    },
+    "scope": "only add admitting_tasks observation field; current scientific caller preserved"
+  },
+  "owner_delivery": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\DELIVERY.controller.final.json",
+    "sha256": "ce922e5f4323638d63a0a6a070207b3006541b49ea018477864d9a7f6c7709be",
+    "bytes": 2796
+  },
+  "owner_independent_review": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\REVIEW.controller.final.binding.json",
+    "sha256": "ebf3ac656846ed80f97ed9cdc907697845e2783c9ca3fa6a0c65510cbc77f911",
+    "bytes": 1957
+  },
+  "root_independent_review": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CONTROLLER_INTEGRATION_REVIEW\\FINAL.204304f.binding.json",
+    "sha256": "e8fc6caf6725cd2aae2298cd4c6cb05d002fdbd9cb5a3fc0dd3d7cf34ea3f1bc",
+    "bytes": 7823
+  },
+  "physical_freeze": {
+    "manifest": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\private_spawn_final_source\\source.manifest.json",
+      "sha256": "eb97e71209455f6115442475461a75e0e9f07c528fae5471ccf5b0ba0d5c05a0",
+      "bytes": 60456
+    },
+    "archive": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\private_spawn_final_source\\source.source-only.tar.gz",
+      "sha256": "5b21d0b2cc8bf33e765b174e9857238c3b036414eb23836e7864bbefdf743866",
+      "bytes": 2315065
+    },
+    "members": 540,
+    "all_member_sha_independently_verified": true
+  },
+  "platform_records": {
+    "cloud_linux_312": {
+      "proof": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\controller_linux_final.actual_exit.json",
+        "sha256": "4c842ecf0c25dbadabbcca2222aeba9e48844503b59ab65cc7ec36f30a321c39",
+        "bytes": 5056
+      },
+      "junit": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\controller_linux_final.xml",
+        "sha256": "3282f96fd1a08a6272ae44f22161e4f212169b653103530c4489a23a6a4a1457",
+        "bytes": 8306
+      },
+      "tests": 52,
+      "exit_code": 0
+    },
+    "wsl_linux_314": {
+      "proof": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\launcher_314_final.actual_exit.json",
+        "sha256": "5629e23965d324c546f6d32391d8af02f341002b4a42431ee1493ff9b608cb57",
+        "bytes": 2368
+      },
+      "junit": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\cloud-resource-integration\\n2p3-net\\tmp\\admission_scheduling_review\\launcher_314_final.xml",
+        "sha256": "0218a99e04e606db048d7160e05b8cdd69e374a83a53fd24f22e73f00d235543",
+        "bytes": 3144
+      },
+      "tests": 20,
+      "exit_code": 0
+    },
+    "windows_314": {
+      "junit": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CONTROLLER_INTEGRATION_REVIEW\\windows.final204.junit.xml",
+        "sha256": "d5006e419a59b86dd025bfdf440b4a53b30e6e59966a0eddd3f40752043268dd",
+        "bytes": 2547
+      },
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "15",
+          "time": "14.971",
+          "timestamp": "2026-10-12T08:11:08.990300+08:00",
+          "hostname": "Tonger"
+        }
+      ],
+      "exit_code": 0,
+      "actual_job_history_and_second_run": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CONTROLLER_INTEGRATION_REVIEW\\windows.final204.actual_history\\receipt.json",
+        "sha256": "4a7c4dcf97a507c0acec5e991dd0e86e17329d16aa966bf5726b2bec9dd3a454",
+        "bytes": 5049
+      },
+      "fixture_correction": {
+        "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CONTROLLER_INTEGRATION_REVIEW\\windows.final204.actual_history.failed_fixture01\\probe_exit.json",
+        "sha256": "23cb899bb6e71efedcd26058481b74c787a1406f2563e63ed57dce882e094143",
+        "bytes": 184
+      }
+    }
+  },
+  "validation": {
+    "ruff_exit": 0,
+    "diff_check_exit": 0,
+    "new_public_fits": 0,
+    "new_public_scores": 0,
+    "training_throughput_claim": false
+  },
+  "accepted_contracts": [
+    "process-private exec environment",
+    "PID/birth admission before execute",
+    "created-PID cleanup before resource release",
+    "per-pool history receipt and state identity",
+    "shared subreaper lifetime until final executor exits",
+    "journal failure preserves original error and completes peer cleanup",
+    "scientific callbacks remain serial while independent ready work refills"
+  ],
+  "old_receipts_and_failed_producers_resigned": false,
+  "prior_WIP_recovery": "tmp/CONTROLLER_INTEGRATION_REVIEW/pending_controller_WIP/binding.json",
+  "next": "exact P1 factory/host gates and full16; exact prefix subset transition and original-four replay then remaining-four fits under cloud sole owner"
+}

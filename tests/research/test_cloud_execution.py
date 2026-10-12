@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import multiprocessing
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -26,6 +27,68 @@ ADAPTER = "tests.research.test_cloud_execution:_probe"
 def _probe(arguments):
     mode, output = arguments["mode"], Path(arguments["output"])
     worker_diagnostic_phase("probe_started", probe_mode=mode)
+    if mode == "native_exit_wait_peer":
+        fatal_ready = Path(arguments["fatal_ready"])
+        fatal_ready.parent.mkdir(parents=True, exist_ok=True)
+        fatal_ready.write_text("fatal-ready")
+        peer_ready = Path(arguments["peer_ready"])
+        deadline = time.monotonic() + 10
+        while not peer_ready.exists():
+            if time.monotonic() > deadline:
+                raise TimeoutError("peer did not bootstrap")
+            time.sleep(.01)
+        os._exit(7)
+    if mode == "peer_fork_after_retirement_snapshot":
+        peer_ready = Path(arguments["peer_ready"])
+        peer_ready.parent.mkdir(parents=True, exist_ok=True)
+        peer_ready.write_text("peer-ready")
+        snapshot = Path(arguments["retirement_snapshot"])
+        deadline = time.monotonic() + 10
+        while not snapshot.exists():
+            if time.monotonic() > deadline:
+                raise TimeoutError("retirement snapshot was not taken")
+            time.sleep(.01)
+        child = os.fork()
+        if child == 0:
+            os.setsid()
+            adopted = os.fork()
+            if adopted == 0:
+                record = {"pid": os.getpid(), "create_time": psutil.Process().create_time(),
+                          "parent_pid": os.getppid(),
+                          "tree_token": os.environ.get("N2P3_CLOUD_TREE_TOKEN"),
+                          "proc_tree_token": psutil.Process().environ().get("N2P3_CLOUD_TREE_TOKEN")}
+                Path(arguments["child_record"]).write_text(json.dumps(record))
+                while not Path(arguments["stop_child"]).exists():
+                    time.sleep(.01)
+                os._exit(0)
+            os._exit(0)
+        os.waitpid(child, 0)
+        child_record = Path(arguments["child_record"])
+        deadline = time.monotonic() + 10
+        while not child_record.exists():
+            if time.monotonic() > deadline:
+                raise TimeoutError("peer escaped child did not initialize")
+            time.sleep(.01)
+        Path(arguments["peer_armed"]).write_text("peer-child-adopted")
+        retired = Path(arguments["retired"])
+        deadline = time.monotonic() + 10
+        while not retired.exists():
+            if time.monotonic() > deadline:
+                raise TimeoutError("fatal task did not retire")
+            time.sleep(.01)
+        child_info = json.loads(child_record.read_text())
+        try:
+            process = psutil.Process(child_info["pid"])
+            survived = (process.create_time() == child_info["create_time"] and process.is_running()
+                        and process.status() != psutil.STATUS_ZOMBIE)
+        except psutil.NoSuchProcess:
+            survived = False
+        Path(arguments["peer_survived"]).write_text(json.dumps({"survived": survived,
+                                                                    "child": child_info}))
+        Path(arguments["stop_child"]).write_text("stop")
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps({"peer_child_survived": survived}))
+        return str(output)
     if mode == "native_exit":
         os._exit(7)
     if mode == "native_input_exit":
@@ -186,6 +249,55 @@ def test_native_actor_exit_retires_its_grandchild_before_returning_phase_budget(
     assert run.results["fatal"].worker["process_tree_retirement"]["active_owned_processes_after_exit"] == 0
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="requires Linux subreaper and process sessions")
+def test_two_active_peers_keep_late_setsid_child_out_of_fatal_retirement(tmp_path, monkeypatch):
+    """A peer born after A's exclusion snapshot must survive A retirement."""
+    import research.cloud_execution as module
+
+    ready = tmp_path / "fatal-ready"
+    peer_ready = tmp_path / "peer-ready"
+    peer_armed = tmp_path / "peer-armed"
+    snapshot = tmp_path / "retirement-snapshot"
+    retired = tmp_path / "fatal-retired"
+    child_record = tmp_path / "peer-child.json"
+    peer_survived = tmp_path / "peer-survived.json"
+    stop_child = tmp_path / "stop-child"
+    original_retire = module._retire_tree
+
+    def retire_with_probe(item):
+        if item.task.task_id == "fatal" and item.retirement is None:
+            snapshot.write_text("peer exclusion snapshot completed")
+            deadline = time.monotonic() + 10
+            while not peer_armed.exists():
+                if time.monotonic() > deadline:
+                    raise TimeoutError("peer child was not born after the exclusion snapshot")
+                time.sleep(.01)
+            result = original_retire(item)
+            retired.write_text("fatal retirement completed")
+            return result
+        return original_retire(item)
+
+    monkeypatch.setattr(module, "_retire_tree", retire_with_probe)
+    fatal_arguments = {"fatal_ready": ready, "peer_ready": peer_ready}
+    peer_arguments = {"peer_ready": peer_ready, "peer_armed": peer_armed,
+                      "retirement_snapshot": snapshot, "retired": retired,
+                      "child_record": child_record, "peer_survived": peer_survived,
+                      "stop_child": stop_child}
+    with multiprocessing.get_context("spawn").Manager() as manager:
+        run = _executor(tmp_path, _admission(manager)).run([
+            _task(tmp_path, "fatal", "native_exit_wait_peer", **fatal_arguments),
+            _task(tmp_path, "peer", "peer_fork_after_retirement_snapshot", **peer_arguments),
+        ])
+    assert run.results["fatal"].status == "failed"
+    assert run.results["fatal"].failure["stage"] == "process_exit"
+    assert run.results["peer"].status == "completed"
+    survived = json.loads(peer_survived.read_text())
+    assert survived["survived"] is True
+    assert survived["child"]["tree_token"]
+    assert survived["child"]["proc_tree_token"] == survived["child"]["tree_token"]
+    assert json.loads((tmp_path / "peer" / "artifact.json").read_text())["peer_child_survived"] is True
+
+
 @pytest.mark.parametrize("mode", ["native_input_exit", "native_nested_exit", "native_artifact_oversize"])
 def test_native_exit_settles_same_owner_without_stranding_peer_or_budget(tmp_path, mode):
     with multiprocessing.get_context("spawn").Manager() as manager:
@@ -257,6 +369,33 @@ def test_spawn_failure_returns_the_reservation_exactly_once(tmp_path, monkeypatc
         assert admission.record() == initial
     assert run.results["spawn_failed"].failure["type"] == "OSError"
     assert run.results["spawn_failed"].failure["stage"] == "spawn"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="requires the private Linux spawn launcher")
+def test_private_spawn_prep_pipe_failure_retires_created_child(tmp_path, monkeypatch):
+    import builtins
+
+    real_open = builtins.open
+
+    def fail_prep_pipe(path, mode="r", *args, **kwargs):
+        if isinstance(path, int) and mode == "wb":
+            raise OSError("forced preparation pipe failure")
+        return real_open(path, mode, *args, **kwargs)
+
+    with multiprocessing.get_context("spawn").Manager() as manager:
+        monkeypatch.setattr(builtins, "open", fail_prep_pipe)
+        admission = _admission(manager)
+        initial = admission.record()
+        run = _executor(tmp_path, admission).run([_task(tmp_path, "prep_pipe_failed")])
+        assert admission.record() == initial
+    outcome = run.results["prep_pipe_failed"]
+    assert outcome.failure["type"] == "OSError" and outcome.failure["stage"] == "spawn"
+    receipt = next((tmp_path / "diagnostics").rglob(".cloud_controller.*.json"))
+    record = json.loads(receipt.read_text())
+    row = record["tasks"][0]
+    assert row["status"] == "spawn_failed"
+    assert row["retirement"]["active_owned_processes_after_exit"] == 0
+    assert row["launch"]["pid"] > 0 and row["launch"]["create_time"] > 0
 
 
 def test_pipe_creation_failure_returns_the_reservation_exactly_once(tmp_path, monkeypatch):

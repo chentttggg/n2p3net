@@ -34,6 +34,8 @@ paired comparator的`validate_b12_execution_manifest`只持有最终跨阶段账
 
 P1云科学接线已由[修后复签](assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)接受：新score plan显式消费原Windows export plan056，完整held descriptor/view/array keys及实际解码样本/设计由原authority核验。`run_stationary_cloud_panel`复用共享file lock持整个attempt，PID/birth lease在写入前独占；共享历史树接口成功返回None，live/unknown/接口缺失明确阻止派发。`actual_alive`统一排除PID复用和zombie，仍保实际live后代门。8 subject各顺序两arm，4个native5+interop1 actor与coordinator1共同使用CPU25；main串行准入两arm，全部ACK后归约。实际factory、统一controller和Linux平台门由各自owner另行验收。
 
+云端调度控制器已按最终源码`204304f…`接入：process-private exec环境、PID/birth在execute前闭合、逐pool历史凭证、共享subreaper寿命、journal失败后的完整peer清理和ready工作补位均有独立云/Linux3.12及WSL3.14凭证；同一诊断根的Windows Job成功历史可在第二次零fit marker运行中重新准入。控制器源码、测试和平台分层证据见[controller绑定](assets/research_resume_20261011/controller_execution_acceptance_binding.json)。这组证据只接受执行底座与生命周期，不替代完整科研矩阵吞吐。
+
 更新：2026-09-06。本文件依据实际源码与入口核对，描述现状与尚缺接口；科研目标由
 [活动规范](research_program.zh.md)定义，发现和验证见[本次审计](evidence/technical_audit_20260906.zh.md)。
 源码目录不因行数大或模块多就拆分；优先保留已经集中实现的合同和算法。

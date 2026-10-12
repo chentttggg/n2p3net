@@ -30,6 +30,8 @@ CloudExecutor的IO调度切片已在科研WIP通过Windows19个相关case。Linu
 
 科研主树已收口Prefix与P1科学接线，未接受的旧controller候选及observer/test/两指南增量共五文件先逐字节保存恢复载荷、核SHA后移出活动树，见[整理绑定](../assets/research_resume_20261011/scientific_tree_cleanup_binding.json)。原Windows19凭证及新owner各次复审继续持有各自来源，统一controller接受后再函数级合入。公共恢复与P1执行由云窗口独占推进；B07 off-grid/history源码和数学切片独立审阅，不等待数值调度收口。
 
+统一controller现已以最终`204304f…`源码接入，旧2ae/c45候选保持历史身份。云端owner报告的Linux3.12 52项、WSL3.14 20项和本机Windows15项窄验证均为0失败/跳过；同一诊断根的真实Windows Job成功历史已完成第二次marker运行并恢复预算。journal故障、跨executor subreaper、partial spawn、peer late fork、逐pool foreign receipt与连续补位都在对应最终证据中分列。controller绑定只证明生命周期与执行调度，未将既有局部验证改称完整科研训练。
+
 近期旧日期页已经先物理归档、逐member验证，再合并为四个主题页；原binding、MAT、缓存、模型和结果保持原位置。源页面恢复方式见[主题整理历史清单](../../frozen/research_topic_documents_history.manifest.json)。后续研究结论更新主题页，代码使用方式更新原六指南。
 
 已交付cache作者树经独立恢复复核后请求应用归档：1,285个保留路径、648源码、59篇Paper与四个source owner可恢复，完整used_union为959对象/275,397,774 bytes、缺件/哈希错误0；七个活动代码/配置根与本机进程未见运行依赖，旧验收locator由恢复映射解释。应用目前返回queued，尚未确认退役；恢复载荷和冗余对象均未删除。请求与实际状态见[工作树整理绑定](../assets/research_resume_20261011/cache_author_archive_request_binding.json)。
