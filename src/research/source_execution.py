@@ -873,7 +873,8 @@ class _HostMemoryState:
                 raise RuntimeError("nested allocation requested after the owned task tree retired")
             state, resources = self.state, self.resources
             native = resources["native_threads_per_worker"]
-            desired = min(resources["target_workers"], max(requested, resources["cpu_budget"] // max(1, state["groups"])))
+            # Never grant more nested workers than the caller has jobs; idle grants block other phases.
+            desired = min(resources["target_workers"], requested)
             cpu_free = (resources["cpu_budget"] - state["cpu_threads"]) // native + 1
             gpu_free = (resources["gpu_slots"] - state["gpu_groups"] - state["nested_gpu_workers"] + 1
                         if gpu_backed else desired)
@@ -994,6 +995,26 @@ def source_group_input_status(groups, state):
     return {"ready": ready, "pending": pending, "failed": failed}
 
 
+CLOUD_RESOURCE_CONFIG = Path(__file__).resolve().parents[2] / "configs" / "cloud_training_resources.json"
+
+
+def with_cloud_resource_floor(plan, device):
+    """Apply the central cloud CPU/GPU floor to CUDA plans that do not declare their own.
+
+    Local GPU development and software-correctness probes opt out explicitly, so a cloud
+    plan that omits the floor can no longer resolve to fewer workers without an error.
+    """
+
+    import torch
+
+    exempt = (plan.get("resource_scope") == "local_development"
+              or plan.get("evidence_scope") == "software_correctness")
+    if torch.device(device).type != "cuda" or exempt or "cloud_resource_floor" in plan:
+        return plan
+    floor = json.loads(CLOUD_RESOURCE_CONFIG.read_text(encoding="utf-8"))["cloud_resource_floor"]
+    return {**plan, "cloud_resource_floor": floor}
+
+
 def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_device_bytes=None, free_host_bytes=None):
     import torch
 
@@ -1050,6 +1071,8 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
         if (not isinstance(floor, dict) or set(floor) != {"cpu_threads", "gpu_workers"}
                 or any(type(value) is not int or value < 1 for value in floor.values())):
             raise ValueError("cloud_resource_floor requires positive cpu_threads and gpu_workers")
+        if torch.device(device).type != "cuda":
+            raise ValueError("declared cloud GPU worker floor requires a CUDA device; do not run it on CPU")
         if (budget < floor["cpu_threads"] or slots < floor["gpu_workers"]
                 or target < floor["gpu_workers"] or groups < min(group_count, floor["gpu_workers"])):
             raise ValueError("resources cannot meet declared cloud CPU/GPU worker floor; do not silently serialize")

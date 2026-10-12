@@ -694,6 +694,9 @@ def decide_by_group(
     scores_by_group: dict[str, dict[int, float]] = {}
     for index, group in enumerate(unique_groups):
         mask = groups == group
+        if not float(weights[mask].sum()) > 0.0:
+            scores_by_group[str(group)] = {}
+            continue
         result = candidate_evidence_scores(
             aligned[mask],
             membership[mask],

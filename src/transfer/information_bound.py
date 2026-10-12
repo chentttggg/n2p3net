@@ -161,12 +161,17 @@ def mahalanobis_snr(
 
     whitened_delta = solve_triangular(L, delta, lower=True)
     d2 = float(whitened_delta @ whitened_delta)
+    # The same rows estimate the mean difference and the covariance, so under
+    # no signal E[d2] ~= p (1/n1 + 1/n0); bounds must not treat that as signal.
+    plugin_bias = float(n_features * (1.0 / len(tgt) + 1.0 / len(non)))
     d2_euclidean = float(delta @ delta)
     noise_cond = float(np.linalg.cond(Sigma))
     erp_snr_db = 10.0 * np.log10(max(d2 / n_features, np.finfo(float).tiny))
 
     return {
         "d2_mahalanobis": d2,
+        "d2_plugin_null_bias": plugin_bias,
+        "d2_mahalanobis_debiased": max(0.0, d2 - plugin_bias),
         "d2_euclidean": d2_euclidean,
         "erp_snr_db": erp_snr_db,
         "n_target": len(tgt),
@@ -182,7 +187,7 @@ def mahalanobis_snr(
 # Theoretical upper bound on hit rate
 # ---------------------------------------------------------------------------
 
-def _activation_matrix(n_candidates: int, n_flashes: int, n_lines: int | None = None):
+def _activation_matrix(n_candidates: int, n_flashes: int, *, membership_kind: str):
     """Balanced row/column activation matrix A of shape (n_flashes, n_candidates).
 
     For a Q = L×L row/column paradigm, there are 2L lines (L rows + L columns)
@@ -190,15 +195,20 @@ def _activation_matrix(n_candidates: int, n_flashes: int, n_lines: int | None = 
     Candidate q is activated whenever its row or its column flashes, so
     |activations of any candidate| = n_flashes / L = n_flashes / sqrt(Q).
 
-    If n_candidates is not a perfect square, fall back to an injective
-    assignment where each flash activates exactly round(sqrt(Q)) candidates
-    in a cyclic pattern; this keeps the total activation count well-defined
-    without pretending a physical grid exists.
+    ``membership_kind="single_item"`` flashes one candidate per event in
+    balanced cycles (BrainSync); a 3x3 row/column layout is never inferred
+    from Q = 9. Row/column layouts require a perfect-square Q.
     """
     Q = n_candidates
     F = n_flashes
+    if membership_kind == "single_item":
+        A = np.zeros((F, Q), dtype=float)
+        A[np.arange(F), np.arange(F) % Q] = 1.0
+        return A, Q
+    if membership_kind != "row_column":
+        raise ValueError("membership_kind must be 'row_column' or 'single_item'")
     root = int(round(np.sqrt(Q)))
-    if root * root == Q and (n_lines is None or n_lines == 2 * root):
+    if root * root == Q and root >= 2:
         L = root
         lines = 2 * L
         per_line = F // lines
@@ -215,20 +225,15 @@ def _activation_matrix(n_candidates: int, n_flashes: int, n_lines: int | None = 
             A[flash:flash + count, members] = 1.0
             flash += count
         return A, L
-    # Non-square fallback: cyclic groups of size round(sqrt(Q)).
-    group = max(2, root)
-    A = np.zeros((F, Q), dtype=float)
-    for i in range(F):
-        start = (i * group) % Q
-        members = [(start + k) % Q for k in range(group)]
-        A[i, members] = 1.0
-    return A, group
+    raise ValueError("a row/column layout needs a perfect-square candidate count of at least 4")
 
 
 def theoretical_hit_rate_bound(
     d2_per_flash: float,
     n_candidates: int,
     n_flashes_per_selection: int,
+    *,
+    membership_kind: str,
 ) -> dict:
     """Gaussian-model hit estimate and pairwise lower bound.
 
@@ -274,7 +279,7 @@ def theoretical_hit_rate_bound(
 
     Q = n_candidates
     F = n_flashes_per_selection
-    A, lines = _activation_matrix(Q, F)
+    A, lines = _activation_matrix(Q, F, membership_kind=membership_kind)
     base_activation = A[:, 0]
     activations_per_candidate = float(base_activation.sum())
     p_act = activations_per_candidate / F
@@ -311,6 +316,7 @@ def theoretical_hit_rate_bound(
     # every diff_count avoids any two-group approximation.
     from scipy.special import ndtr
     dprime_sq = 0.25 * d2_per_flash * pair_diff
+    np.fill_diagonal(dprime_sq, np.inf)  # The true candidate is not its own competitor.
     per_true_fail_bound = np.sum(ndtr(-np.sqrt(np.maximum(dprime_sq, 0.0))), axis=1)
     p_hit_lower = float(np.mean(np.maximum(0.0, 1.0 - per_true_fail_bound)))
 
@@ -340,7 +346,8 @@ def theoretical_hit_rate_bound(
         "d2_effective_per_selection": float(activations_per_candidate * d2_per_flash),
         "n_candidates": Q,
         "n_flashes": F,
-        "grid_lines": lines,
+        "membership_kind": membership_kind,
+        "grid_lines": lines if membership_kind == "row_column" else None,
         "activations_per_candidate": activations_per_candidate,
         "p_activation": float(p_act),
         "n_competitors_sharing_line": n_shared,
@@ -349,7 +356,7 @@ def theoretical_hit_rate_bound(
         "max_differing_flashes": max_diff,
         "required_d2_for_targets": required_d2,
         "interpretation": (
-            f"Balanced {lines}-line row/column grid: each candidate activates on "
+            f"Balanced {membership_kind} layout: each candidate activates on "
             f"{activations_per_candidate:.0f}/{F} flashes (p={p_act:.3f}). "
             f"With d2_per_flash={d2_per_flash:.4f}, the declared Gaussian-model "
             f"hit estimate is {p_hit_mc:.3f} (MC); the pairwise lower bound is "
@@ -411,7 +418,9 @@ def spectral_discriminability(
     # Time covariance (pooled over channels)
     pooled_t = pooled.reshape(len(pooled), T, C).transpose(0, 2, 1).reshape(-1, T)
     lw_t = LedoitWolf(assume_centered=True).fit(pooled_t)
-    K_time = lw_t.covariance_  # (T, T)
+    # Both factors are pooled covariances, so each carries the noise scale;
+    # unit-trace-per-sample time keeps the product equal to Sigma, not Sigma*scale.
+    K_time = lw_t.covariance_ / (np.trace(lw_t.covariance_) / T)  # (T, T)
 
     # Space covariance (pooled over time)
     pooled_s = pooled.reshape(len(pooled), T, C).reshape(-1, C)
@@ -506,6 +515,7 @@ class InformationBoundReport:
         *,
         n_candidates: int,
         n_flashes_per_selection: int,
+        membership_kind: str,
         sfreq: float,
         empirical_hit_rate: float | None = None,
         compute_spectral: bool = True,
@@ -513,9 +523,10 @@ class InformationBoundReport:
         participant_id: str = "unknown",
     ) -> InformationBoundReport:
         snr = mahalanobis_snr(target_epochs, nontarget_epochs)
-        d2 = snr["d2_mahalanobis"]
+        d2 = snr["d2_mahalanobis_debiased"]
 
-        bound = theoretical_hit_rate_bound(d2, n_candidates, n_flashes_per_selection)
+        bound = theoretical_hit_rate_bound(d2, n_candidates, n_flashes_per_selection,
+                                           membership_kind=membership_kind)
 
         spec = None
         tgt = np.asarray(target_epochs, dtype=float)

@@ -130,6 +130,15 @@ def execute_group(arguments):
         return result
 
 
+def checked_workers(requested: int, threads_per_worker: int, available: int) -> int:
+    """Return the requested worker count, failing instead of silently serializing."""
+
+    if requested * threads_per_worker > available:
+        raise ValueError(f"{requested} workers x {threads_per_worker} threads exceed the {available} available "
+                         "CPU threads; lower --workers or --threads-per-worker explicitly")
+    return requested
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prepared", required=True, type=Path)
@@ -168,7 +177,8 @@ def main(argv=None):
         raise ValueError("nonstandard update budget is permitted only for explicitly selected probes")
     args.output.mkdir(parents=True, exist_ok=True)
     plan = dict(schema="n2p3_explicit_source_matrix/2", tasks=list(tasks), config=config,
-                source_snapshot=snapshot, workers=max(1, min(args.workers, available_cpu_threads() // args.threads_per_worker)),
+                source_snapshot=snapshot,
+                workers=checked_workers(args.workers, args.threads_per_worker, available_cpu_threads()),
                 threads_per_worker=args.threads_per_worker, device=args.device,
                 preprocessing=spec.record(), dose_comparison_tasks=list(dose_tasks))
     plan_path = args.output / "plan.json"

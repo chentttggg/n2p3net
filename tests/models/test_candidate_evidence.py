@@ -221,3 +221,16 @@ def test_count_tempered_evidence_scores_contract() -> None:
         count_tempered_evidence_scores(
             np.asarray([1.0]), np.asarray([1.0]), np.asarray([1.0]), count_power=2.0
         )
+
+
+def test_group_with_only_zero_weights_abstains_without_failing_other_groups() -> None:
+    decision = decide_by_group([0.0, 3.0, 3.0, 0.0], [1, 2, 1, 2], ["a", "a", "b", "b"], [1, 2],
+                               center_logits=False, trial_weights=[1.0, 1.0, 0.0, 0.0])
+    assert decision.predicted.tolist() == [2, None]
+    assert decision.scores_by_group["b"] == {}
+
+
+@pytest.mark.parametrize("logits,expected", [([2.0, 1.0, 0.0, 0.0], 1), ([0.0] * 4, None)])
+def test_trim_with_two_values_keeps_both_and_exact_ties_abstain(logits, expected) -> None:
+    scores = candidate_evidence_scores(logits, [1, 1, 2, 2], [1, 2], aggregation="trim0.2")
+    assert scores.predicted == expected

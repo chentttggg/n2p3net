@@ -205,15 +205,16 @@ def main() -> None:
         args.target_features, feature_key=args.feature_key
     )
 
-    target_scope = target_record.get("dataset_scope")
-    if args.selection_scope == "target_calibration" and target_scope:
-        if target_scope.get("schema") != TARGET_CALIBRATION_SCOPE_SCHEMA:
-            raise ValueError(
-                "selection_scope='target_calibration' requires target features derived "
-                "from a target-calibration-scoped cache "
-                f"({TARGET_CALIBRATION_SCOPE_SCHEMA}); target feature record declares "
-                f"{target_scope.get('schema')!r}."
-            )
+    # An empty scope means the features came from a full target cache, test rows included.
+    target_scope = target_record.get("dataset_scope") or {}
+    if (args.selection_scope == "target_calibration"
+            and target_scope.get("schema") != TARGET_CALIBRATION_SCOPE_SCHEMA):
+        raise ValueError(
+            "selection_scope='target_calibration' requires target features derived "
+            "from a target-calibration-scoped cache "
+            f"({TARGET_CALIBRATION_SCOPE_SCHEMA}); target feature record declares "
+            f"{target_scope.get('schema')!r}."
+        )
 
     if source_features.shape[1] != target_features.shape[1]:
         raise ValueError(

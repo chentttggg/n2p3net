@@ -230,6 +230,15 @@ def resolve_record_events(
             sfreq=float(raw.info["sfreq"]),
             label_map=record.label_map,
         )
+        # Event tables count samples from the file start; MNE events are absolute.
+        if raw.first_samp:
+            if Path(record.event_file).suffix.lower() in {".npy", ".npz"}:
+                raise ValueError(
+                    "array event files on a cropped recording (first_samp != 0) need an "
+                    "explicit sample convention; use a TSV/CSV/JSON event table"
+                )
+            events = events.copy()
+            events[:, 0] += int(raw.first_samp)
         if record.labels is not None:
             if labels is not None:
                 raise ValueError("Labels are present in both EEGRecord and its event file.")

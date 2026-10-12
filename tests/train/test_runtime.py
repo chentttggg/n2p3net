@@ -295,3 +295,14 @@ def test_admitted_resident_budget_uses_remaining_process_quota(monkeypatch):
     assert runtime.can_preload(2 * 2**30)
     with pytest.raises(ValueError):
         runtime.configure_resident_memory_budget(0)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="preload changes the device only on CUDA")
+def test_shuffle_order_for_a_seed_does_not_depend_on_preload_admission():
+    runtime = GpuPerformanceScheduler(torch.device("cuda"))
+    X = torch.arange(257, dtype=torch.float32).reshape(257, 1)
+    orders = []
+    for preload in (True, False):
+        source = MatrixBatchSource(X, None, runtime, preload=preload)
+        orders.append(source.random_permutation(source.make_generator(7)).cpu())
+    assert torch.equal(orders[0], orders[1])

@@ -102,7 +102,7 @@ def validate_recovery_contract(model, preprocessing, *, source_reference, ocular
         return
     recovery = model.recovery
     if preprocessing.filter_phase == "zero":
-        raise ValueError("channel-local zero-phase QC requires fitted bidirectional boundary recovery")
+        raise ValueError("zero-phase continuous QC requires a fitted empirical epoch recovery model")
     if recovery is None:
         return
     if preprocessing.filter_method != "iir" or preprocessing.filter_phase != "forward":

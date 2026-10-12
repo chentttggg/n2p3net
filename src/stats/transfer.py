@@ -196,19 +196,23 @@ def _summary(rows: list[dict], studies: tuple[str, ...], *, iterations: int, see
             "decline_over_0_01_fraction": float(np.mean(values < -0.01)) if len(values) else None,
             "p10": float(np.quantile(values, 0.1)) if len(values) else None,
             "worst": float(values.min()) if len(values) else None,
-            "replacement_decline_gate_passed": bool(values.mean() >= -0.01) if len(values) else None,
+            # The gate is defined on every requested participant, not the complete subset.
+            "replacement_decline_gate_passed": (
+                bool(values.mean() >= -0.01) if len(values) and len(values) == len(requested) else None),
+            "replacement_decline_gate_basis": (
+                "complete_requested" if len(values) and len(values) == len(requested) else None),
             "paired_interval": interval,
         }
         if contrast_bounds is not None:
             bound = contrast_bounds.get(study)
             missing = len(requested) - len(values)
-            by_study[study].update(
-                contrast_bound=bound,
-                missing_result_bounds=(
-                    [(float(values.sum()) - missing * bound) / len(requested),
-                     (float(values.sum()) + missing * bound) / len(requested)]
-                    if len(requested) and bound is not None else None),
-            )
+            bounds = ([(float(values.sum()) - missing * bound) / len(requested),
+                       (float(values.sum()) + missing * bound) / len(requested)]
+                      if len(requested) and bound is not None else None)
+            by_study[study].update(contrast_bound=bound, missing_result_bounds=bounds)
+            if missing and bounds is not None:
+                by_study[study].update(replacement_decline_gate_passed=bool(bounds[0] >= -0.01),
+                                       replacement_decline_gate_basis="missing_result_lower_bound")
     overall_interval = None
     if with_intervals and any(len(values) > 1 for values in samples.values()):
         rng = np.random.default_rng(seed)

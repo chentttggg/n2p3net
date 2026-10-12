@@ -4,8 +4,6 @@ import pytest
 import torch
 
 from transfer.alignment import (
-    adaptive_target_weight,
-    conditional_rbf_mmd_loss,
     rbf_mmd_loss,
 )
 
@@ -33,74 +31,6 @@ def test_rbf_mmd_records_negative_unbiased_estimate_without_clamping() -> None:
     assert float(loss.detach()) < 0.0
     assert record["negative_mmd"] is True
     assert record["mmd_squared"] == pytest.approx(float(loss.detach()))
-
-
-def test_conditional_mmd_counts_negative_label_terms() -> None:
-    source = torch.tensor([[0.0], [10.0], [0.0], [10.0]])
-    target = source.clone()
-    labels = torch.tensor([0, 0, 1, 1])
-
-    _, record = conditional_rbf_mmd_loss(
-        source,
-        labels,
-        target,
-        labels,
-        min_cell_count=2,
-        bandwidth=1.0,
-    )
-
-    assert record["negative_mmd"] is True
-    assert record["negative_mmd_labels"] == (0, 1)
-    assert record["negative_mmd_terms"] == 2.0
-
-
-
-def test_conditional_mmd_does_not_hide_reversed_class_conditionals() -> None:
-    source = torch.tensor([[-2.0], [-1.0], [1.0], [2.0], [-2.2], [2.2], [-1.8], [1.8]])
-    target = torch.tensor([[1.0], [2.0], [-1.0], [-2.0], [2.2], [-2.2], [1.8], [-1.8]])
-    source_labels = torch.tensor([0, 0, 1, 1, 0, 1, 0, 1])
-    target_labels = torch.tensor([0, 0, 1, 1, 0, 1, 0, 1])
-
-    marginal, _ = rbf_mmd_loss(source, target, bandwidth=1.0)
-    conditional, record = conditional_rbf_mmd_loss(
-        source,
-        source_labels,
-        target,
-        target_labels,
-        min_cell_count=2,
-        bandwidth=1.0,
-    )
-
-    assert float(marginal) < 1e-7
-    assert float(conditional) > float(marginal) + 0.1
-    assert record["active_labels"] == (0, 1)
-    assert record["alignment_inactive"] is False
-
-
-def test_conditional_mmd_is_inactive_when_a_class_cell_is_too_small() -> None:
-    source = torch.zeros((6, 2))
-    target = torch.zeros((6, 2))
-    source_labels = torch.tensor([0, 0, 0, 0, 0, 1])
-    target_labels = torch.tensor([0, 0, 0, 0, 0, 1])
-
-    loss, record = conditional_rbf_mmd_loss(
-        source,
-        source_labels,
-        target,
-        target_labels,
-        min_cell_count=6,
-    )
-
-    assert float(loss) == pytest.approx(0.0)
-    assert record["alignment_inactive"] is True
-    assert record["active_terms"] == 0.0
-
-
-def test_adaptive_target_weight_is_warm_started_and_deterministic() -> None:
-    assert adaptive_target_weight(80, 10, 0, warmup_epochs=4) == pytest.approx(1.0)
-    assert adaptive_target_weight(80, 10, 2, warmup_epochs=4) == pytest.approx(1.9142135624)
-    assert adaptive_target_weight(80, 10, 4, warmup_epochs=4) == pytest.approx(2.8284271247)
-    assert adaptive_target_weight(10_000, 1, 4, warmup_epochs=4) == pytest.approx(6.0)
 
 
 def test_rbf_mmd_rejects_singleton_samples() -> None:

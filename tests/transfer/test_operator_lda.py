@@ -33,7 +33,9 @@ def test_operator_lda_uses_estimated_joint_covariance_and_frozen_replay(tmp_path
 def test_operator_lda_does_not_invent_uncertainty_in_unobserved_directions():
     rng = np.random.default_rng(9)
     raw = np.column_stack([rng.normal(size=100), np.zeros(100)])
-    noise = JointNoiseModel.fit(raw, np.empty((100, 0)), fit_scope="target_calibration",
+    noise = JointNoiseModel.fit(raw[:20], np.empty((20, 0)), fit_scope="target_calibration",
+                                scope_id="C", draw_ids=[str(i) for i in range(20)])
+    wider = JointNoiseModel.fit(raw, np.empty((100, 0)), fit_scope="target_calibration",
                                 scope_id="C", draw_ids=[str(i) for i in range(100)])
     y = np.arange(20) % 2
     X = np.column_stack([rng.normal(size=20) + y, np.zeros(20)])
@@ -43,6 +45,11 @@ def test_operator_lda_does_not_invent_uncertainty_in_unobserved_directions():
     assert model.covariance[1, 1] == 0
     with pytest.raises(ValueError, match="identifiable support"):
         model.predict_logit(np.array([[1., 1.]]), input_identity="observed")
+    # Noise estimated from 80 rows outside the classifier's authorized calibration IDs.
+    with pytest.raises(ValueError, match="noise draws exceed"):
+        OperatorAwareLDA.fit(X, y, noise=wider, raw_operator=np.eye(2),
+                             state_operator=np.empty((2, 0)), calibration_ids=list(map(str, range(20))),
+                             scope_id="C", input_identity="observed")
     with pytest.raises(ValueError, match="exceeds"):
         OperatorAwareLDA.fit(X, y, noise=noise, raw_operator=np.eye(2),
                              state_operator=np.empty((2, 0)), calibration_ids=list(map(str, range(20))),

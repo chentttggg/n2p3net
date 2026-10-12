@@ -8,6 +8,7 @@ from research.source_execution import (
     SharedTrajectoryRegistry,
     resolve_source_resources,
     source_group_input_status,
+    with_cloud_resource_floor,
 )
 from tests.support.datasets import epoch_dataset, source_dataset
 from tests.support.io import read_json, write_json
@@ -290,3 +291,40 @@ def test_ready_whole_study_folds_do_not_drop_pending_or_failed_members():
     assert failed["ready"] == [groups[0]] and len(failed["failed"]) == 3
     assert not failed["pending"]
     assert all(len(outer["source_studies"]) == 11 for outer, _ in groups)
+
+
+def test_cloud_floor_rejects_a_cpu_device_instead_of_counting_cpu_slots_as_gpu_workers():
+    import json
+
+    plan = json.loads((Path(__file__).resolve().parents[2] / "configs/cloud_training_resources.json").read_text())
+    with pytest.raises(ValueError, match="floor requires a CUDA device"):
+        resolve_source_resources(plan, 5, "cpu", cpu_count=25, free_host_bytes=88 * 2**30)
+
+
+def test_nested_admission_never_grants_more_workers_than_requested_jobs():
+    import multiprocessing
+
+    resources = resolve_source_resources({"cpu_budget": 25, "source_workers": 4, "target_workers": 4},
+        4, "cpu", cpu_count=25, free_host_bytes=128 * 2**30)
+    with multiprocessing.get_context("spawn").Manager() as manager:
+        admission = HostMemoryAdmission(manager, resources)
+        with admission.source_group(), admission.target_workers(1) as workers:
+            assert workers == 1
+            assert admission.record()["nested_target_workers"] == 0
+            second = admission.reserve_phase("source", cpu_threads=resources["native_threads_per_worker"],
+                memory_bytes=resources["source_worker_memory_bytes"])
+            assert second is not None
+            admission.release_phase(second)
+
+
+def test_cuda_plans_without_a_declared_floor_inherit_the_central_cloud_floor():
+    plan = with_cloud_resource_floor({}, "cuda")
+    assert plan["cloud_resource_floor"] == {"cpu_threads": 25, "gpu_workers": 4}
+    # Eight visible CPUs used to resolve to a serialized run without any error.
+    with pytest.raises(ValueError, match="floor"):
+        resolve_source_resources(plan, 5, "cuda", cpu_count=8, free_device_bytes=32 * 2**30,
+                                 free_host_bytes=88 * 2**30)
+    assert with_cloud_resource_floor({}, "cpu") == {}
+    assert "cloud_resource_floor" not in with_cloud_resource_floor({"resource_scope": "local_development"}, "cuda")
+    declared = {"cloud_resource_floor": {"cpu_threads": 8, "gpu_workers": 1}}
+    assert with_cloud_resource_floor(declared, "cuda") == declared

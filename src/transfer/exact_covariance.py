@@ -409,6 +409,11 @@ class ExactPropagatedCovariance:
         model assigns higher probability.
         """
         self.assert_integrity()
+        if self.null_dimension:
+            raise ValueError(
+                f"propagated covariance has a {self.null_dimension}-dimensional null space; its "
+                "log determinant would be set by the numerical ridge, not by the noise model"
+            )
         r = np.asarray(whitened_residuals, dtype=float)
         if r.ndim != 2 or r.shape[0] != self.n_samples:
             raise ValueError(

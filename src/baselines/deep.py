@@ -19,7 +19,6 @@ import warnings
 from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from dataclasses import dataclass
-from pathlib import Path
 
 import numpy as np
 import torch
@@ -565,32 +564,6 @@ class DeepBaseline(Baseline):
                 name.startswith(prefix) for prefix in self.freeze_prefixes
             ):
                 param.requires_grad = False
-
-    def save_checkpoint(self, path: str | Path) -> Path:
-        """保存 P9 预训练 checkpoint：state_dict + 构造元数据。"""
-        if not hasattr(self, "model_") or self.model_ is None:
-            raise RuntimeError("模型尚未构造，无法保存 checkpoint。")
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
-            "model_name": self.model_name,
-            "n_chans": self.n_chans,
-            "n_times": self.n_times,
-            "sfreq": self.sfreq,
-            "channel_mask": self.channel_mask.copy(),
-            "config": self.cfg,
-            "model_state_dict": self.model_.state_dict(),
-        }
-        torch.save(payload, path)
-        return path
-
-    @staticmethod
-    def load_state_dict_file(path: str | Path) -> dict:
-        """读取 checkpoint 的 state_dict（供其他模型作为 pretrained_state_dict 传入）。"""
-        payload = torch.load(Path(path), map_location="cpu", weights_only=False)
-        if "model_state_dict" in payload:
-            return payload["model_state_dict"]
-        return payload
 
     # ---------------- 训练 ----------------
 

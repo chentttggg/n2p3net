@@ -19,17 +19,6 @@ class GroupValidationSplit:
         return len(self.validation_groups)
 
 
-@dataclass(frozen=True)
-class SubjectAuditSplit:
-    optimization_mask: np.ndarray
-    audit_mask: np.ndarray
-    audit_subjects: tuple[object, ...]
-
-    @property
-    def n_audit_subjects(self) -> int:
-        return len(self.audit_subjects)
-
-
 def domain_stratified_group_validation_split(
     group_ids: np.ndarray,
     domain_ids: np.ndarray,
@@ -110,37 +99,3 @@ def group_disjoint_validation_split(
     selected = tuple(rng.choice(unique, size=count, replace=False).tolist())
     validation_mask = np.isin(group_ids, selected)
     return GroupValidationSplit(~validation_mask, validation_mask, selected)
-
-
-def subject_disjoint_audit_split(
-    subject_ids: np.ndarray,
-    *,
-    eligible_mask: np.ndarray,
-    candidate_mask: np.ndarray | None = None,
-    n_subjects: int = 4,
-    min_optimization_subjects: int = 4,
-    seed: int = 0,
-) -> SubjectAuditSplit:
-    """Hold out untouched audit subjects from an existing optimization pool."""
-
-    subject_ids = np.asarray(subject_ids)
-    eligible_mask = np.asarray(eligible_mask, dtype=bool)
-    if subject_ids.ndim != 1 or eligible_mask.shape != subject_ids.shape:
-        raise ValueError("subject_ids and eligible_mask must be aligned one-dimensional arrays.")
-    if candidate_mask is None:
-        candidate_mask = np.ones_like(eligible_mask)
-    else:
-        candidate_mask = np.asarray(candidate_mask, dtype=bool)
-        if candidate_mask.shape != subject_ids.shape:
-            raise ValueError("candidate_mask must align with subject_ids.")
-    if n_subjects < 0 or min_optimization_subjects < 1:
-        raise ValueError("Invalid audit subject counts.")
-    candidates = np.unique(subject_ids[eligible_mask & candidate_mask])
-    count = min(int(n_subjects), max(0, len(candidates) - int(min_optimization_subjects)))
-    if count < 2:
-        return SubjectAuditSplit(eligible_mask.copy(), np.zeros_like(eligible_mask), ())
-    rng = np.random.default_rng(int(seed) + 9173)
-    selected = tuple(rng.choice(candidates, size=count, replace=False).tolist())
-    audit_mask = eligible_mask & np.isin(subject_ids, selected)
-    optimization_mask = eligible_mask & ~audit_mask
-    return SubjectAuditSplit(optimization_mask, audit_mask, selected)

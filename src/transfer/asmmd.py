@@ -296,6 +296,8 @@ def asmmd_joint_loss(
     target_count_value = _positive_float(target_count, "target_count")
     _validated_target_weight_bounds(target_weight_min, target_weight_max)
     pos_weight_value = _nonnegative_float(pos_weight, "pos_weight")
+    if pos_weight_value <= 0.0:
+        raise ValueError("pos_weight must be positive.")
 
     target_w = target_weight(
         epoch_value,

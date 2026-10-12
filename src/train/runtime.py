@@ -565,26 +565,15 @@ class MatrixBatchSource:
         return self.cpu_row_domains is not None
 
     def make_generator(self, seed: int) -> torch.Generator:
-        if self.preloaded:
-            try:
-                generator = torch.Generator(device=self.runtime.device)
-            except RuntimeError:
-                generator = torch.Generator()
-        else:
-            generator = torch.Generator()
+        # Preload admission depends on live free device memory, so a device-side
+        # stream would make the shuffle order for a fixed seed depend on it.
+        generator = torch.Generator()
         generator.manual_seed(int(seed))
         return generator
 
     def random_permutation(self, generator: torch.Generator) -> torch.Tensor:
-        if self.preloaded:
-            generator_device = getattr(generator, "device", None)
-            if generator_device is not None and generator_device.type == self.runtime.device.type:
-                return torch.randperm(self.n_rows, generator=generator, device=self.runtime.device)
-            # A backend without accelerator Generator support received a CPU
-            # fallback generator. Generate on CPU and move the permutation once;
-            # row order and label alignment are unchanged.
-            return torch.randperm(self.n_rows, generator=generator).to(self.runtime.device)
-        return torch.randperm(self.n_rows, generator=generator)
+        permutation = torch.randperm(self.n_rows, generator=generator)
+        return permutation.to(self.runtime.device) if self.preloaded else permutation
 
     def shuffled_batches(
         self,

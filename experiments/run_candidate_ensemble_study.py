@@ -1575,13 +1575,15 @@ def run_study(plan_path: str | Path, output: str | Path, *, _actor_index=None, _
             HostMemoryAdmission,
             SourceInputAdmission,
             resolve_source_resources,
+            with_cloud_resource_floor,
         )
 
         resource_plan = {"source_workers": plan["workers"], "target_workers": plan["workers"],
             "cpu_budget": plan["workers"] * plan["cpu_threads_per_worker"] + 1,
             "source_worker_memory_gib": plan.get("target_worker_memory_gib", .25 if plan["evidence_scope"] == "software_correctness" else 4.),
             "target_worker_memory_gib": .25 if plan["evidence_scope"] == "software_correctness" else 4., **plan}
-        resources = resolve_source_resources(resource_plan, len(plan["records"]), plan.get("device", "cpu"))
+        resources = resolve_source_resources(with_cloud_resource_floor(resource_plan, plan.get("device", "cpu")),
+                                             len(plan["records"]), plan.get("device", "cpu"))
         context = get_context("spawn")
         with context.Manager() as manager:
             input_owner = SourceInputAdmission(manager, capacity_bytes=resources["shared_staging_memory_bytes"],

@@ -143,6 +143,9 @@ class OperatorAwareLDA:
         if (self.noise.provenance["fit_scope"] == "target_calibration"
                 and self.noise.provenance["scope_id"] != provenance["scope_id"]):
             raise ValueError("target noise fit exceeds the classifier calibration scope")
+        if (self.noise.provenance["fit_scope"] == "target_calibration"
+                and not set(self.noise.provenance["draw_ids"]) <= set(provenance["calibration_ids"])):
+            raise ValueError("target noise draws exceed actual authorized calibration IDs")
         if conditional:
             if (provenance.get("implementation_sha256") != _IMPLEMENTATION_SHA256
                     or provenance.get("conditioning_program") != "conditional_tail_with_fixed_class_prior"
@@ -150,9 +153,6 @@ class OperatorAwareLDA:
                     or metadata_digest(provenance.get("observation_support")) != metadata_digest(self.observation_support.record())
                     or provenance.get("conditional_noise_sha256") != self.noise.digest()):
                 raise ValueError("conditional operator producer/support differs from its actual frozen program")
-            if (self.noise.provenance["fit_scope"] == "target_calibration"
-                    and not set(self.noise.provenance["draw_ids"]) <= set(provenance["calibration_ids"])):
-                raise ValueError("conditional noise draws exceed actual authorized calibration IDs")
         elif "conditioning_program" in provenance:
             raise ValueError("conditional operator cannot be relabeled as unconditional LDA")
         object.__setattr__(self, "provenance", freeze_metadata(provenance))

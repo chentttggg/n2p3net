@@ -98,3 +98,13 @@ def test_template_nan_raises():
     y = np.array([1, 0] * 10)
     with pytest.raises(ValueError):
         TemplateMatching().fit(X, y)
+
+
+def test_swlda_refuses_to_fall_back_to_an_arbitrary_feature():
+    import numpy as np
+    import pytest
+
+    from baselines.classic import SWLDA
+
+    with pytest.raises(ValueError, match="selected no feature"):
+        SWLDA().fit(np.zeros((4, 2, 128)), np.array([0, 0, 1, 1]))

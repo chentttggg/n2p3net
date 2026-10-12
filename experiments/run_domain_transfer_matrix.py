@@ -42,9 +42,15 @@ def target_job_groups(source_record, plan, output, *, device, program="P1_P2"):
                 continue
             outer_name = task_outer[str(Path(payload["checkpoint"]).resolve())]
             all_subjects = entry["argv"][entry["argv"].index("--subjects") + 1].split(",")
-            for shard, old_output in enumerate(entry["shards"]):
-                # The source runner declares subjects in the same strided shard order.
-                subjects = all_subjects[shard::workers]
+            shard_subjects = entry.get("shard_subjects")
+            if shard_subjects is None:
+                # Records written before shard membership was persisted used the parent stride.
+                shard_subjects = [all_subjects[shard::workers] for shard in range(len(entry["shards"]))]
+            if (len(shard_subjects) != len(entry["shards"])
+                    or sorted(subject for part in shard_subjects for subject in part) != sorted(all_subjects)):
+                raise ValueError(f"{source_plan.name}: declared shards do not partition --subjects; "
+                                 "refusing to drop or repeat target subjects")
+            for shard, (old_output, subjects) in enumerate(zip(entry["shards"], shard_subjects, strict=True)):
                 if not subjects:
                     continue
                 destination = output / "targets" / stage / source_plan.stem / f"shard{shard}"
