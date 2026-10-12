@@ -951,9 +951,16 @@ def save_epoch_dataset(
     dataset: EpochDataset,
     *,
     compressed: bool = True,
+    exclusive: bool = False,
 ) -> Path:
-    """Persist an EpochDataset without pickle-dependent object arrays."""
+    """Persist an EpochDataset without pickle-dependent object arrays.
 
+    ``exclusive`` refuses an existing cache or record, e.g. a derived view whose
+    output path names its own parent.
+    """
+
+    if exclusive and any(candidate.exists() for candidate in (Path(path), _cache_record_path(path))):
+        raise FileExistsError(f"refusing to replace an existing epoch cache: {path}")
     dataset.validate()
     identity_table = materialize_dataset_identity(dataset)
     lineage = materialize_dataset_lineage(dataset)

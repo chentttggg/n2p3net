@@ -173,6 +173,8 @@ def main():
     parser.add_argument('--cpu-budget', type=int, default=25)
     parser.add_argument('--workers', type=int)
     args = parser.parse_args()
+    if Path(args.output).exists():
+        raise FileExistsError(f'refusing to replace an existing candidate cache or episode directory: {args.output}')
     directories = sorted((p for p in args.root.glob('subject_*') if p.is_dir()), key=lambda p: int(p.name.split('_')[-1]))
     if args.subjects:
         chosen = []
@@ -211,7 +213,7 @@ def main():
         combined = concatenate_epoch_datasets(datasets, name='BI2014a-candidate', provenance={
             'source': 'bi2014a_raw_csv', 'source_reference': datasets[0].provenance['source_reference'],
             'source_root': str(args.root.resolve()), 'candidate_task_contract': datasets[0].provenance['candidate_task_contract']})
-        save_epoch_dataset(args.output, combined, compressed=not args.uncompressed)
+        save_epoch_dataset(args.output, combined, compressed=not args.uncompressed, exclusive=True)
 
 
 if __name__ == '__main__':

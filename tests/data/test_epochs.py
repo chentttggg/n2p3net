@@ -879,3 +879,23 @@ def test_explicit_readonly_same_channel_view_avoids_matrix_copy():
     assert not shared.X.flags.writeable and source.X.flags.writeable
     np.testing.assert_array_equal(shared.X, default.X)
     assert shared.lineage.payload() == default.lineage.payload()
+
+
+def test_exclusive_save_refuses_to_replace_an_existing_cache(tmp_path) -> None:
+    path = save_epoch_dataset(tmp_path / "parent.npz", epoch_dataset())
+    before = path.read_bytes()
+    with pytest.raises(FileExistsError, match="existing epoch cache"):
+        save_epoch_dataset(path, epoch_dataset(), exclusive=True)
+    assert path.read_bytes() == before
+
+
+def test_bi2014a_candidate_cli_refuses_an_existing_output(tmp_path, monkeypatch) -> None:
+    from experiments.prepare_bi2014a_candidate import main as prepare_bi2014a
+
+    output = tmp_path / "bi2014a.npz"
+    output.write_bytes(b"completed cache")
+    monkeypatch.setattr("sys.argv", ["prepare_bi2014a_candidate.py", "--root", str(tmp_path / "absent"),
+                                     "--output", str(output)])
+    with pytest.raises(FileExistsError, match="existing candidate cache"):
+        prepare_bi2014a()
+    assert output.read_bytes() == b"completed cache"
