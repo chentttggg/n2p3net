@@ -3,7 +3,8 @@
   "review_branch": "claude/review-20261011",
   "review_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
   "safe_candidate": "e91be9fe47e7687d3b3dff81a5e5970d3a19270a",
-  "accepted_head": "7fef43b",
+  "accepted_head": "eefdc77",
+  "code_head_before_binding": "7fef43b",
   "status": "bounded_safe_subset_accepted",
   "accepted_scope": [
     "historical evidence and frozen manifest restoration",
