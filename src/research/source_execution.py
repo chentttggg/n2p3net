@@ -869,6 +869,8 @@ class _HostMemoryState:
 
     def reserve_nested(self, requested, gpu_backed, task_id):
         with self.lock:
+            if type(requested) is not int or requested < 1:
+                raise ValueError("nested worker request must contain at least one ready job")
             if task_id is not None and task_id in self.retired_tasks:
                 raise RuntimeError("nested allocation requested after the owned task tree retired")
             state, resources = self.state, self.resources
@@ -968,6 +970,8 @@ class HostMemoryAdmission:
 
     @contextmanager
     def target_workers(self, requested, *, device=None):
+        if type(requested) is not int or requested < 1:
+            raise ValueError("nested worker request must contain at least one ready job")
         gpu_backed = self.gpu_backed if device is None else str(device).startswith("cuda")
         reservation = self._ledger.reserve_nested(requested, gpu_backed, os.environ.get("N2P3_CLOUD_TASK_ID"))
         try:

@@ -138,3 +138,20 @@ def test_source_pool_workers_are_not_silently_clamped_into_the_resume_identity()
     assert checked_workers(4, 6, 25) == 4
     with pytest.raises(ValueError, match="exceed the 8 available"):
         checked_workers(4, 6, 8)
+
+
+def test_cuda_source_pool_consumes_central_floor_before_writing_plan():
+    import pytest
+
+    from experiments.run_source_pool_matrix import checked_workers
+
+    with pytest.raises(ValueError, match="central cloud CPU25/GPU4 floor"):
+        checked_workers(2, 2, 25, device="cuda")
+    assert checked_workers(4, 6, 25, device="cuda") == 4
+
+
+def test_cuda_source_pool_can_explicitly_run_local_or_software_probe_scope():
+    from experiments.run_source_pool_matrix import checked_workers
+
+    assert checked_workers(1, 1, 2, device="cuda", resource_scope="local_development") == 1
+    assert checked_workers(1, 1, 2, device="cuda", resource_scope="software_correctness") == 1

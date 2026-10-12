@@ -317,6 +317,18 @@ def test_nested_admission_never_grants_more_workers_than_requested_jobs():
             admission.release_phase(second)
 
 
+def test_nested_admission_rejects_empty_ready_job_set_instead_of_granting_one():
+    import multiprocessing
+
+    resources = resolve_source_resources({"cpu_budget": 25, "source_workers": 4, "target_workers": 4},
+        4, "cpu", cpu_count=25, free_host_bytes=128 * 2**30)
+    with multiprocessing.get_context("spawn").Manager() as manager:
+        admission = HostMemoryAdmission(manager, resources)
+        with pytest.raises(ValueError, match="at least one ready job"):
+            with admission.target_workers(0):
+                pass
+
+
 def test_cuda_plans_without_a_declared_floor_inherit_the_central_cloud_floor():
     plan = with_cloud_resource_floor({}, "cuda")
     assert plan["cloud_resource_floor"] == {"cpu_threads": 25, "gpu_workers": 4}

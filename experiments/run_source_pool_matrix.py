@@ -37,7 +37,10 @@ from experiments.run_source_training_chain import fit_or_reuse_source_trajectory
 from research.contracts import semantic_sha256  # noqa: E402
 from research.evaluation import verified_executed_snapshot  # noqa: E402
 from research.execution import atomic_write_json  # noqa: E402
-from research.source_execution import SharedTrajectoryRegistry  # noqa: E402
+from research.source_execution import (  # noqa: E402
+    SharedTrajectoryRegistry,
+    with_cloud_resource_floor,
+)
 from research.source_matrix import (  # noqa: E402
     freeze_matched_dose,
     matched_dose_rows,
@@ -130,12 +133,26 @@ def execute_group(arguments):
         return result
 
 
-def checked_workers(requested: int, threads_per_worker: int, available: int) -> int:
-    """Return the requested worker count, failing instead of silently serializing."""
+def checked_workers(requested: int, threads_per_worker: int, available: int, *, device="cpu",
+                    resource_scope="cloud") -> int:
+    """Validate process-pool workers against the central cloud floor.
+
+    This historical entry uses a direct process pool rather than CloudExecutor,
+    so its coordinator is one additional CPU thread and each process is one
+    declared GPU worker when the device is CUDA. Local/software probes opt out
+    explicitly; cloud CUDA runs fail closed instead of silently running 2x2.
+    """
 
     if requested * threads_per_worker > available:
         raise ValueError(f"{requested} workers x {threads_per_worker} threads exceed the {available} available "
                          "CPU threads; lower --workers or --threads-per-worker explicitly")
+    if str(device).startswith("cuda") and resource_scope not in {"local_development", "software_correctness"}:
+        floor = with_cloud_resource_floor({}, device)["cloud_resource_floor"]
+        coordinator_threads = int(available > 1)
+        if (available < floor["cpu_threads"] or requested < floor["gpu_workers"]
+                or requested * threads_per_worker + coordinator_threads < floor["cpu_threads"]):
+            raise ValueError("source pool CUDA run cannot meet the central cloud CPU25/GPU4 floor; "
+                             "raise --workers/--threads-per-worker or use an explicit local/software scope")
     return requested
 
 
@@ -152,6 +169,8 @@ def main(argv=None):
     parser.add_argument("--matrix-plan", type=Path, help="Explicit source pool plan; omission preserves all 153 historical tasks")
     parser.add_argument("--preprocessing-config", type=Path, help="Complete preprocessing profile shared by all source caches")
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--resource-scope", choices=("cloud", "local_development", "software_correctness"),
+                        default="cloud", help="Resource contract; CUDA cloud runs enforce CPU25/GPU4")
     parser.add_argument("--dry-run", action="store_true", help="Check inputs and publish the plan without fitting")
     parser.add_argument("--wait-for-preparation-seconds", type=float, default=0,
                         help="Bounded input wait; positive values allow preparation and training to overlap")
@@ -178,8 +197,12 @@ def main(argv=None):
     args.output.mkdir(parents=True, exist_ok=True)
     plan = dict(schema="n2p3_explicit_source_matrix/2", tasks=list(tasks), config=config,
                 source_snapshot=snapshot,
-                workers=checked_workers(args.workers, args.threads_per_worker, available_cpu_threads()),
+                workers=checked_workers(args.workers, args.threads_per_worker, available_cpu_threads(),
+                                        device=args.device, resource_scope=args.resource_scope),
                 threads_per_worker=args.threads_per_worker, device=args.device,
+                resource_scope=args.resource_scope,
+                cloud_resource_floor=(with_cloud_resource_floor({}, args.device).get("cloud_resource_floor")
+                                      if str(args.device).startswith("cuda") and args.resource_scope == "cloud" else None),
                 preprocessing=spec.record(), dose_comparison_tasks=list(dose_tasks))
     plan_path = args.output / "plan.json"
     if plan_path.exists() and json.loads(plan_path.read_text()) != plan:
