@@ -54,8 +54,6 @@ multiscale九列是fine9空间的可逆chart，并非新增span或正交wavelet�
 
 B05 数值中枢已固定接入 B07：`native_history_marginal_program` 直接消费保存的 `TemporalNoise`、M/R/Σ 和实际 full/prefix 观测，按通道展开 flat nuisance，分别生成 full/prefix absolute potential、稳定 conditional companion 与 source-scale/nats certificate。真实 A01 drift=0 被接受，drift=1e3/1e6 在计算前 typed reject；history adapter 尚待切换到该中枢并重新完成 capsule replay 验收。
 
-B05 数值中枢已固定接入 B07：`native_history_marginal_program` 直接消费保存的 `TemporalNoise`、M/R/Σ 和实际 full/prefix 观测，按通道展开 flat nuisance，分别生成 full/prefix absolute potential、稳定 conditional companion 与 source-scale/nats certificate。真实 A01 drift=0 被接受，drift=1e3/1e6 在计算前 typed reject；history adapter 尚待切换到该中枢并重新完成 capsule replay 验收。
-
 ## B09：可识别效应与source群体forecast
 
 `ERPPhysicalEffect`绑定basis/window/grid/fs/operator/dictionary、真实reference与空间观测map。`ERPChannelEstimate`只从实际joint likelihood提取可识别BLUE，不把已有收缩posterior当独立measurement；measurement noise/dependence由其owner明确绑定。若压缩观测为`y=X beta+e`，物理泛函F必须存在witness`F=W X`，则效应mean为`W y`、covariance为`W W.T`。新关系检查逐entry使用原物理坐标，零观测列不从其它强列借容差；允许界来自浮点算法与运算尺度，不是全输入区间证明。
