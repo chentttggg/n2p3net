@@ -36,7 +36,7 @@ stage05 两次、stage06 一次本地实际执行均由 RAM 门记为 `resource_
 
 云科学接线已完成原导出计划对held样本/设计的独立授权及跨attempt互斥，修后独审33项与科研树集成5项分别通过，见[科学接受绑定](../assets/research_resume_20261011/stationary_cloud_scientific_acceptance_binding.json)。合法原A01可进入native5数值池，重签错误样本/设计及原输出争用均在计算前拒绝；原Linux旧loader失败与本地三次RAM失败保留自己的来源。
 
-同支持的新stationary law云端16格已完成：8人×`shared8/private8`、每cell 36候选，共576 slots；每人一个`selection05` held decision，truth均为`row:5|column:0`。科学进程真实exit0，owned processes after exit为0；外层七项queue仍exit1，作为独立队列事实保留。两臂均prediction/probability coverage 8/8：shared命中5/8、NLL `7.3364765832`、Brier `0.6790937536`；private命中6/8、NLL `5.5540121013`、Brier `0.4776784949`。private相对shared救回A06、没有损害正确决策，paired NLL下降`1.7824644819`。新旧stationary law在同一16格的winner完全不变；shared最大log-probability差`2.33e-10`，private最大差`8.86e-7`，law替换不是这次shared/private差异的来源。每cell fit/response-fit均为0，原response/noise与held支持保持。逐cell差异、terminal和原始result/queue SHA见[分析绑定](../assets/research_resume_20261012/p1_stationary_analysis.json)。
+同支持的新stationary law云端16格已完成：8人×`shared8/private8`、每cell 36候选，共576 slots；每人一个`selection05` held decision，truth均为`row:5|column:0`。科学进程真实exit0，owned processes after exit为0；外层七项queue仍exit1，作为独立队列事实保留。两臂均prediction/probability coverage 8/8：shared命中5/8、NLL `7.3364765832`、Brier `0.6790937536`；private命中6/8、NLL `5.5540121013`、Brier `0.4776784949`。private相对shared救回A06、没有损害正确决策，paired NLL下降`1.7824644819`。A01贡献约71.82%的NLL改善但仍是接近1置信度的错误；A06贡献约75.71%的Brier改善。新旧stationary law在同一16格的winner完全不变；shared最大log-probability差`2.33e-10`，private最大差`8.86e-7`，实际概率最大差约`3.69e-11/2.45e-8`，law替换不是这次shared/private差异的来源。每cell fit/response-fit均为0，原response/noise与held支持保持。逐cell差异、terminal和原始result/queue SHA见[分析绑定](../assets/research_resume_20261012/p1_stationary_analysis.json)。
 
 ## P1 数值门诊断与小组协议评估
 
