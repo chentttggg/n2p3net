@@ -1,0 +1,27 @@
+{
+  "schema": "n2p3_cloud_floor_nested_review/1",
+  "status": "accepted_narrow_resource_contract",
+  "commit": "2e54ee0",
+  "base": "d562b6099dcdd1a7bbbbfe5ba2dbeae65c958d59",
+  "handoff_sha256": "c4d706904f573742fa0da2dec756f69d0773d6bae19c2b700ec6a4fd41ebe16c",
+  "scope": [
+    "source_pool CUDA cloud entry applies CPU25/GPU4 floor before plan publication",
+    "resource_scope and cloud_resource_floor are persisted in resume plans",
+    "nested worker requests 0, negative, bool and noninteger fail before allocation"
+  ],
+  "preserved": [
+    "local_development and software_correctness explicit exemptions",
+    "ready-job cap and no-silent-clamp source-pool behavior",
+    "historical producers, models, results and failure denominators"
+  ],
+  "checks": {
+    "source_pool_floor_nested": "9 passed",
+    "cloud_phase_nested_floor": "3 passed, 1 skip",
+    "ruff": 0,
+    "public_fit": 0,
+    "public_score": 0,
+    "model_load": 0,
+    "full_suite": false
+  },
+  "boundary": "configuration and admission contract only; actual GPU utilization, RSS, ready work and wall time require a future cloud run"
+}

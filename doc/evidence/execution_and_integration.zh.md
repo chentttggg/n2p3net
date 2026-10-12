@@ -102,6 +102,8 @@ Claude review 分支的 U5a-04、U7-19、U7-24、U7-26 和 U1-01 fixture 修复�
 
 InformationBound 的 `membership_kind` 显式化方向已通过窄反例审阅；operator-LDA 的 calibration draw-id 子集门已接受。InformationBound 的 plugin debias、非整除 flash 的“balanced”激活、ridge null方向以及缺少保存重放绑定仍延期，不能把 debiased d² 或 bound 当生产效能估计；审阅范围和下一步见[信息界与operator审阅](../assets/research_resume_20261012/information_operator_review.json)。
 
+云端资源切片 `2e54ee0` 已接入：source-pool 的默认 CUDA cloud 入口在写 plan 前执行 CPU25/GPU4 floor，保存 `resource_scope/cloud_resource_floor` 并让 resume identity 随合同变化；nested worker 的空或非法 ready-job 请求在 ledger 分配前拒绝。local/software scope需显式声明；实际 GPU利用率、RSS、ready工作和墙钟仍由未来云运行验收，见[资源审阅绑定](../assets/research_resume_20261012/cloud_floor_nested_review.json)。
+
 云端 entry005 在10:14的权威快照为 `running`：原0–3四人重放已准入，4–7四worker各自保存1672个内部 prediction cells，actual exit、terminal receipt、complete result 和 8人/152 requested future decision receipt 当时尚未闭合。5.51秒资源采样为 aggregate CPU 835.83%、GPU样本 7/95/95/94/0%、controller RSS 2.439 GiB，cgroup memory约59.85 GiB、OOM 0；快照与源码/owner状态见[entry005记录](../assets/research_resume_20261012/entry005_status_20261012_101415.json)。entry005继续消费自己的冻结源。P1按既定完整16格计划推进：在原Windows export、科学caller/lease、最终controller和Linux资源门闭合并有资源后，由唯一云窗口自主冻结执行；科研代码修复不要求重跑entry005。
 
 整树候选的审阅checkout已完成用途并退役：候选commit仍由 `codex/claude-merge-candidate-20261012` 保存，四份审阅/白名单文件按原字节迁入主树 `tmp/CANDIDATE_MERGE_REVIEW_20261012/`，哈希逐份一致，见[恢复定位](../assets/research_resume_20261012/review_checkout_retirement.json)。指标和SplitBN实施树继续保留。证据索引恢复为四主题入口，已归档日期页通过原恢复清单追溯，当前索引的本地链接均可解析。
