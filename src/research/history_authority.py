@@ -20,13 +20,17 @@ from transfer.noise_model import array_digest, freeze_metadata
 
 
 class HistoryUnavailableError(ValueError):
-    def __init__(self, reason, *, failure_kind="not_available"):
+    def __init__(self, reason, *, failure_kind="not_available", evidence=None):
         self.reason, self.failure_kind = reason, failure_kind
+        self.evidence = None if evidence is None else freeze_metadata(evidence)
         super().__init__(reason)
 
     def record(self):
-        return {"kind": "authorized_history_unavailable", "reason": self.reason,
-                "failure_kind": self.failure_kind}
+        record = {"kind": "authorized_history_unavailable", "reason": self.reason,
+                  "failure_kind": self.failure_kind}
+        if self.evidence is not None:
+            record["evidence"] = self.evidence
+        return record
 
 
 @dataclass(frozen=True, init=False)
@@ -81,11 +85,15 @@ class FrozenHistoryLaw:
             if (mass.shape != shape or not np.isfinite(mass).all() or np.any(mass < 0)
                     or not np.isclose(mass.sum(), 1., rtol=0, atol=64*np.finfo(float).eps)):
                 raise ValueError("explicit prior must preserve complete target/response state Cartesian mass")
-            probabilities = np.array([state.probability for state in states])
+            amplitudes = np.array([[state.common_amplitude, state.target_amplitude] for state in states])
             for axis in range(len(names), len(shape)):
                 marginal = mass.sum(axis=tuple(a for a in range(mass.ndim) if a != axis))
-                if not np.allclose(marginal, probabilities, rtol=0, atol=64*np.finfo(float).eps):
-                    raise ValueError("joint prior response-state marginal differs from its frozen finite law")
+                # The global table normalization is admitted above. Multiple
+                # axis reductions can have a different binary64 sum; the
+                # physical mean anchor uses this marginal's normalized mass.
+                if not np.allclose((marginal/marginal.sum())@amplitudes, [1., 1.],
+                                   rtol=0, atol=64*np.finfo(float).eps):
+                    raise ValueError("each explicit selection-state marginal must preserve the declared amplitude mean-one anchor")
             mass = frozen_array(mass)
         result = object.__new__(cls)
         object.__setattr__(result, "states", states)
@@ -102,13 +110,44 @@ class FrozenHistoryLaw:
 
     def support(self, dictionary, onset):
         """Exact union over every state, never a caller-selected nominal L."""
+        ranges = self.state_supports(dictionary, onset)
+        return min(start for start, _ in ranges), max(stop for _, stop in ranges)
+
+    def state_supports(self, dictionary, onset):
+        """Every exact half-open interval; gaps in the envelope are not data."""
         rate = Fraction.from_float(float(dictionary.sample_rate_hz))
         ranges = []
         for state in self.states:
             start = Fraction(int(onset))+rate*Fraction.from_float(float(state.latency_seconds))
             stop = start+Fraction.from_float(float(state.width_multiplier))*len(dictionary.matrix)
             ranges.append((-(-start.numerator//start.denominator), -(-stop.numerator//stop.denominator)))
-        return min(start for start, _ in ranges), max(stop for _, stop in ranges)
+        return tuple(ranges)
+
+    def condition_on_c_labels(self, selections, target_factors):
+        """Exact full joint mass conditioned on original-owner C binary labels.
+
+        State probabilities in response_states are the independent-law defaults.
+        An explicit joint table owns its per-selection state marginals, including
+        an exactly nominal C axis and nonnominal future axes.
+        """
+        from transfer.noise_model import frozen_array
+
+        if self.joint_mass is None:
+            return None
+        if (tuple(self.record["selection_ids"]) != tuple(s.selection_id for s in selections)
+                or tuple(tuple(v) for v in self.record["candidate_vocabularies"])
+                != tuple(s.candidate_ids for s in selections)):
+            raise ValueError("explicit joint prior axes differ from original cutoff history")
+        mass = np.array(self.joint_mass, copy=True)
+        for axis, selection in enumerate(selections):
+            possible = np.asarray(target_factors[selection.selection_id]) > 0
+            shape = [1]*mass.ndim
+            shape[axis] = len(possible)
+            mass *= possible.reshape(shape)
+        total = mass.sum()
+        if not np.isfinite(total) or total <= 0:
+            raise ValueError("frozen joint history prior assigns zero mass to authorized C labels")
+        return frozen_array(mass/total)
 
 
 @dataclass(frozen=True, init=False)
@@ -118,6 +157,7 @@ class AuthorizedResponseHistory:
     view: object
     law: FrozenHistoryLaw
     binding: dict
+    conditioned_joint_mass: np.ndarray | None
 
     @property
     def digest(self):
@@ -228,7 +268,7 @@ def _issue_history_scope(compiler, view, *, prefix, model, law):
     if law.support(model.dictionary, 0)[1] > start:
         raise HistoryUnavailableError("outside_record_event_history_can_affect_observed_union_support")
     occurred = np.flatnonzero(raw.flash_sample < view.available_sample)
-    event_ledger, selections, prior_factors, zero_axes = [], [], {}, []
+    event_ledger, selections, prior_factors, zero_axes, c_selections = [], [], {}, [], []
     for name in dict.fromkeys(raw.selection_id[occurred]):
         indices = occurred[raw.selection_id[occurred] == name]
         member = MembershipDecision.row_column(raw.candidate_id[indices],
@@ -243,12 +283,13 @@ def _issue_history_scope(compiler, view, *, prefix, model, law):
         known = indices < prefix.budget
         possible = np.ones(len(member.candidate_vocabulary), dtype=bool)
         if known.any():
+            c_selections.append(str(name))
             possible = np.all(member.membership[known] == prefix.raw.target_mask[indices[known], None], axis=0)
         if not possible.any():
             raise ValueError("authorized C labels contradict original public history membership")
         prior_factors[str(name)] = (possible.astype(float)/possible.sum()).tolist()
-        union_visible = any(max(law.support(model.dictionary, int(o))[0], start)
-                            < min(law.support(model.dictionary, int(o))[1], stop) for o in onsets)
+        union_visible = any(max(lo, start) < min(hi, stop) for o in onsets
+                            for lo, hi in law.state_supports(model.dictionary, int(o)))
         if not union_visible and name != view.decision_id:
             zero_axes.append(str(name))
         for row, onset in zip(indices, onsets, strict=True):
@@ -275,6 +316,7 @@ def _issue_history_scope(compiler, view, *, prefix, model, law):
         "target_prior_factors": prior_factors,
         "prior_factorization": "predeclared_independent_uniform_targets_conditioned_only_on_authorized_C_labels",
         "response_state_factors": [state.probability for state in law.states],
+        "C_fit_selection_ids": c_selections,
         "exact_zero_design_axis_marginalization": {"selection_ids": zero_axes,
             "proof": "all_original_events_all_frozen_response_states_support_disjoint_from_read_and_prefix",
             "mass_operation": "sum_complete_independent_target_and_response_state_mass_equals_one",
@@ -295,8 +337,66 @@ def _issue_history_scope(compiler, view, *, prefix, model, law):
         binding["prior_factorization"] = "explicit_frozen_joint_mass_exact_C_conditioning_and_axis_marginalization"
         binding["exact_zero_design_axis_marginalization"]["mass_operation"] = (
             "condition_complete_joint_mass_on_authorized_C_then_sum_the_actual_zero_image_axes")
+    conditioned_mass = law.condition_on_c_labels(selections, prior_factors)
+    binding["C_label_conditioned_joint_mass_sha256"] = (
+        None if conditioned_mass is None else array_digest(conditioned_mass))
+    binding["C_selection_state_admission"] = []
+    binding["exact_zero_design_axis_marginalization"]["proof"] = (
+        "complete_original_ledger_union_support_or_actual_C_conditioned_positive_state_full_prefix_zero_design")
+    from research.latent_response_reference import selection_design
+
+    for axis, selection in enumerate(selections):
+        if selection.selection_id not in c_selections:
+            continue
+        if conditioned_mass is None:
+            # Support is an exact Boolean predicate. Multiplying a tiny
+            # positive state mass by q=1/36 can underflow and must not erase
+            # a physically active C state before the mixture sees it.
+            local_mass = np.logical_and(np.asarray(prior_factors[selection.selection_id])[:, None] > 0,
+                np.asarray([state.probability for state in law.states])[None, :] > 0)
+        else:
+            retained_axes = (axis, axis+len(selections))
+            local_mass = conditioned_mass.sum(axis=tuple(a for a in range(conditioned_mass.ndim) if a not in retained_axes))
+        positive = np.argwhere(local_mass > 0)
+        positive_states = sorted(set(int(state) for _, state in positive))
+        nominal = all((law.states[state].common_amplitude, law.states[state].target_amplitude,
+                       law.states[state].latency_seconds, law.states[state].width_multiplier) == (1., 1., 0., 1.)
+                      for state in positive_states)
+        if selection.selection_id in zero_axes:
+            binding["C_selection_state_admission"].append({"selection_id": selection.selection_id,
+                "program": "complete_union_support_structural_zero", "positive_state_indices": positive_states})
+            continue
+        # A theta is owned by the whole selection, including its continuation
+        # after a partial C fit. Inspect the complete, C-conditioned positive
+        # q/theta support; global defaults cannot override an explicit C clamp.
+        witness = None
+        for candidate, state_index in positive:
+            design, execution = selection_design(model.dictionary, selection.onsets,
+                selection.membership[:, candidate], origin_sample=start, observed_samples=stop-start,
+                state=law.states[state_index], support="translated_physical")
+            if np.any(design != 0):
+                witness = {"response_state_index": int(state_index), "candidate_index": int(candidate),
+                    "actual_design_sha256": array_digest(design), "execution": execution}
+                break
+        if witness is None:
+            zero_axes.append(selection.selection_id)
+            binding["C_selection_state_admission"].append({"selection_id": selection.selection_id,
+                "program": "all_C_conditioned_positive_q_state_designs_exactly_zero",
+                "positive_state_indices": positive_states})
+        elif nominal:
+            binding["C_selection_state_admission"].append({"selection_id": selection.selection_id,
+                "program": "all_C_conditioned_positive_states_are_original_nominal",
+                "positive_state_indices": positive_states, "actual_nonzero_image": witness})
+        else:
+            raise HistoryUnavailableError("C_history_latent_state_not_conditioned_by_original_frozen_fit",
+                evidence={"original_authority": binding, "C_fit_selection_id": selection.selection_id,
+                    "positive_state_indices": positive_states, **witness,
+                    "old_C_posterior": "beta_given_C_nominal_selection_state",
+                    "new_C_latent_producer_required": True})
+    binding["exact_zero_design_axis_marginalization"]["selection_ids"] = zero_axes
     result = object.__new__(AuthorizedResponseHistory)
     for name, value in {"selections": tuple(selections), "current_selection_id": view.decision_id,
-                        "view": view, "law": law, "binding": freeze_metadata(binding)}.items():
+                        "view": view, "law": law, "binding": freeze_metadata(binding),
+                        "conditioned_joint_mass": conditioned_mass}.items():
         object.__setattr__(result, name, value)
     return result

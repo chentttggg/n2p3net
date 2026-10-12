@@ -21,11 +21,20 @@ import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.special import logsumexp
 
-from transfer.noise_model import finite_real_array, frozen_array, require_identifiers
+from transfer.noise_model import (
+    finite_real_array,
+    freeze_metadata,
+    frozen_array,
+    require_identifiers,
+)
 
 
 class HistoryNuisanceResolutionError(ValueError):
     """The actual prefix cannot identify the declared common diffuse measure."""
+
+
+class HistoryMixtureResolutionError(HistoryNuisanceResolutionError):
+    """Component estimates do not resolve the actual complete state mixture."""
 
 
 def _matrix(value, name):
@@ -242,11 +251,91 @@ class ConditionalHistoryEvidence:
     measure_kind: str
     evaluated_states: int
     identical_design_state_groups: tuple[tuple[int, ...], ...]
+    state_resolution: tuple[dict | None, ...] = ()
+    mixture_resolution: dict | None = None
     program: str = field(default="finite_history_conditional_tail_fixed_current_prior", init=False)
 
     @property
     def probabilities(self):
         return frozen_array(np.exp(self.log_candidate_probability))
+
+
+def _history_mixture_resolution(history, observation, states, prior, prefix, conditional,
+                                resolutions, current_prior, evidence):
+    """Propagate central estimates through the actual stable logsumexp program.
+
+    logsumexp is 1-Lipschitz in the infinity norm. Prefix posterior weights
+    therefore contribute at most twice the maximum prefix error; the state
+    conditional potentials contribute their maximum conditional error. These
+    source estimates and the stated binary64 arithmetic estimate are kept
+    separate. This does not turn the central estimates into interval proofs.
+    """
+    if not any(resolution is not None for resolution in resolutions):
+        return None
+    axis = tuple(s.selection_id for s in history.selections).index(history.current_selection_id)
+    current = history.selections[axis]
+    tail_rows = (len(observation.samples)-observation.conditioning_samples)*observation.samples.shape[1]
+    budget = float(tail_rows*np.sqrt(np.finfo(float).eps))
+    records = []
+    for q in range(len(current.candidate_ids)):
+        indices = [i for i, state in enumerate(states) if state[axis] == q and prior[i] > 0]
+        selected = [resolutions[i] for i in indices]
+        if any(resolution is None or not {"full", "prefix", "conditional", "source_sha256"} <= resolution.keys()
+               for resolution in selected):
+            raise HistoryMixtureResolutionError("complete state mixture lacks its central full/prefix certificates")
+        if any(resolution["conditional"]["actual_tail_scalar_rows"] != tail_rows for resolution in selected):
+            raise HistoryMixtureResolutionError("mixture certificates disagree with actual native tail rows")
+        full_error = max(float(r["full"]["absolute_log_density_error_estimate"]) for r in selected)
+        prefix_error = max(float(r["prefix"]["absolute_log_density_error_estimate"]) for r in selected)
+        conditional_error = max(float(r["conditional"]["absolute_log_density_error_estimate"]) for r in selected)
+        if not np.isfinite([full_error, prefix_error, conditional_error]).all() or min(
+                full_error, prefix_error, conditional_error) < 0:
+            raise HistoryMixtureResolutionError("mixture source error estimates are invalid")
+        p, c = prefix[indices], conditional[indices]
+        logs = np.log(prior[indices])
+        # Actual leading-potential centering, two logsumexp reductions, log
+        # prior and scalar additions. gamma uses the full surviving state
+        # count, rather than assuming pairwise summation or a small mixture.
+        operations = len(indices)+16
+        product = operations*np.finfo(float).eps
+        if product >= 1:
+            raise HistoryMixtureResolutionError("complete mixture has no finite arithmetic error estimate")
+        gamma = product/(1-product)
+        magnitude = (4*float(np.max(np.abs(p)))+4*float(np.max(np.abs(c)))
+                     +4*float(np.max(np.abs(logs)))+2*np.log(len(indices))+1.)
+        arithmetic_error = float(gamma*magnitude)
+        source_error = 2*prefix_error+conditional_error
+        error = source_error+arithmetic_error
+        if not np.isfinite(error) or error > budget:
+            raise HistoryMixtureResolutionError(
+                f"complete history mixture error estimate {error:.6g} exceeds {tail_rows}-row nats budget {budget:.6g}")
+        records.append({"candidate_id": current.candidate_ids[q], "positive_mass_states": len(indices),
+            "maximum_full_potential_error_estimate": full_error,
+            "maximum_prefix_potential_error_estimate": prefix_error,
+            "maximum_conditional_potential_error_estimate": conditional_error,
+            "mixture_source_error_estimate": source_error,
+            "mixture_arithmetic_error_estimate": arithmetic_error,
+            "absolute_log_density_error_estimate": error,
+            "absolute_log_density_error_budget": budget})
+    maximum = max(record["absolute_log_density_error_estimate"] for record in records)
+    probabilities_operations = len(records)+8
+    product = probabilities_operations*np.finfo(float).eps
+    gamma = product/(1-product)
+    normalization_error = float(gamma*(4*float(np.max(np.abs(evidence)))
+        +4*float(np.max(np.abs(np.log(current_prior))))+np.log(len(records))+1.))
+    log_probability_error = 2*maximum+normalization_error
+    if not np.isfinite(log_probability_error) or log_probability_error > budget:
+        raise HistoryMixtureResolutionError(
+            f"history normalized log-mass error estimate {log_probability_error:.6g} exceeds nats budget {budget:.6g}")
+    return freeze_metadata({"method": "prefix_posterior_weights_conditional_logsumexp_Lipschitz_nats_estimate",
+        "component_source_sha256": sorted({r["source_sha256"] for r in resolutions if r is not None}),
+        "candidates": records, "actual_tail_scalar_rows": tail_rows,
+        "absolute_log_density_error_budget": budget,
+        "normalized_log_probability_error_estimate": log_probability_error,
+        "normalization_arithmetic_error_estimate": normalization_error,
+        "normalization_program": "max_centered_complete_candidate_log_mass",
+        "arithmetic_model": "binary64_scalar_and_full_count_gamma_estimate_not_interval_certificate",
+        "all_input_certificate": False})
 
 
 def response_history_design(posterior, history, observation, state):
@@ -343,6 +432,7 @@ def conditional_history_evidence(posterior, history, observation, *, full_state_
     logprior = np.full(len(states), -np.inf)
     logprior[active] = np.log(prior[active])
     joint, prefix, conditional = (np.full(len(states), -np.inf) for _ in range(3))
+    resolutions = [None]*len(states)
     u = observation.conditioning_samples
     design_groups = {}
     for i, state in enumerate(states):
@@ -360,6 +450,7 @@ def conditional_history_evidence(posterior, history, observation, *, full_state_
             if hasattr(pair, "conditional_log_density"):
                 joint[i], prefix[i], conditional[i] = (
                     pair.joint_log_marginal, pair.prefix_log_marginal, pair.conditional_log_density)
+                resolutions[i] = freeze_metadata(pair.resolution)
             else:
                 joint[i], prefix[i] = pair
         if marginal_evaluator is None or not hasattr(pair, "conditional_log_density"):
@@ -369,19 +460,26 @@ def conditional_history_evidence(posterior, history, observation, *, full_state_
     weights = np.zeros((len(current.candidate_ids), len(states)))
     for q in range(len(current.candidate_ids)):
         selected = q_index == q
-        past = float(logsumexp(logprior[selected]+prefix[selected]))
+        positive = selected & active
+        anchor = float(np.max(prefix[positive]))
+        centered = logprior[positive]+(prefix[positive]-anchor)
+        past = float(logsumexp(centered))
         # This is the same sum(full)/sum(prefix) ratio in a stable chart:
         # prefix updates the state mass, then its conditional density is
         # integrated. These are posterior prefix weights, never prior weights.
-        prefix_weights = logprior[selected]+prefix[selected]-past
-        evidence.append(float(logsumexp(prefix_weights+conditional[selected])))
+        prefix_weights = centered-past
+        evidence.append(float(logsumexp(prefix_weights+conditional[positive])))
         current_prior.append(float(prior[selected].sum()))
-        weights[q, selected] = np.exp(prefix_weights)
+        weights[q, positive] = np.exp(prefix_weights)
     scores = np.asarray(evidence)+np.log(current_prior)
     if not np.isfinite(scores).all():
         raise ValueError("requested candidate conditional mixture is not representable")
-    normalized = scores-logsumexp(scores)
+    centered_scores = scores-np.max(scores)
+    normalized = centered_scores-logsumexp(centered_scores)
     arrays = [frozen_array(a) for a in (evidence, normalized, joint, prefix, conditional, weights, current_prior)]
     kind = "proper_Gaussian_density_ratio" if observation.nuisance.shape[1] == 0 else "common_sigma_finite_nuisance_marginal_ratio"
     groups = tuple(tuple(indices) for indices in design_groups.values() if len(indices) > 1)
-    return ConditionalHistoryEvidence(current.candidate_ids, states, *arrays, kind, int(active.sum()), groups)
+    resolution = _history_mixture_resolution(history, observation, states, prior, prefix, conditional,
+        resolutions, np.asarray(current_prior), np.asarray(evidence))
+    return ConditionalHistoryEvidence(current.candidate_ids, states, *arrays, kind, int(active.sum()), groups,
+        tuple(resolutions), resolution)

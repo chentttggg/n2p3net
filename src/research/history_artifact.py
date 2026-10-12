@@ -13,6 +13,10 @@ from pathlib import Path
 import numpy as np
 
 from data.epochs import parse_preprocessing_spec
+from research.channel_noise_mechanism import (
+    _IMPLEMENTATION_SHA256 as _CENTRAL_CONSUMER_SOURCE_SHA256,
+)
+from research.channel_noise_mechanism import DiffuseProjectionResolutionError
 from research.continuous_history_adapter import score_authorized_history
 from research.contracts import semantic_sha256
 from research.history_authority import FrozenHistoryLaw, HistoryUnavailableError
@@ -24,6 +28,8 @@ from transfer.ensemble_views import (
     PredictionDecisionView,
     SelectionEpochProfile,
 )
+
+_ARTIFACT_CONSUMER_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def _raw_sha(payload):
@@ -63,6 +69,7 @@ def predict_history(parent, expert_id, compiler, prefix, view, law, *, maximum_e
     requested = {"participant_key": view.participant_key, "decision_id": view.decision_id,
                  "candidate_vocabulary": list(view.decision.candidate_vocabulary),
                  "physical_support_digest": view.physical_support_digest}
+    capability = None
     try:
         capability = compiler.history_scope(view, prefix=prefix, model=model, law=law)
         evidence, binding = score_authorized_history(model, capability,
@@ -71,10 +78,16 @@ def predict_history(parent, expert_id, compiler, prefix, view, law, *, maximum_e
         return {"schema": "n2p3_history_prediction_outcome/1", "requested": requested,
                 "status": error.failure_kind, "failure": error.record(), "probability": None,
                 "model_digest": model.digest(), "fits": 0, "response_fits": 0}
-    except (HistoryNuisanceResolutionError, NumericalResolutionError, np.linalg.LinAlgError) as error:
+    except (DiffuseProjectionResolutionError, HistoryNuisanceResolutionError,
+            NumericalResolutionError, np.linalg.LinAlgError) as error:
         return {"schema": "n2p3_history_prediction_outcome/1", "requested": requested,
                 "status": "not_available", "failure": {"kind": "history_numerical_unavailable",
-                    "reason": str(error)}, "probability": None, "model_digest": model.digest(),
+                    "reason": str(error), "exception_type": type(error).__name__,
+                    "central_consumer_source_sha256": _CENTRAL_CONSUMER_SOURCE_SHA256,
+                    "artifact_consumer_source_sha256": _ARTIFACT_CONSUMER_SOURCE_SHA256,
+                    "all_input_certificate": False},
+                "capability_digest": None if capability is None else capability.digest,
+                "probability": None, "model_digest": model.digest(),
                 "fits": 0, "response_fits": 0}
     return {"schema": "n2p3_history_prediction_outcome/1", "requested": requested,
             "status": "complete", "probability": evidence.probabilities.tolist(),

@@ -164,30 +164,29 @@ def score_authorized_history(model, capability, *, maximum_evaluated_states=1000
         raise HistoryUnavailableError(f"complete_finite_history_resource_limit:{count}>{maximum_evaluated_states}")
     if law.joint_mass is None:
         mass = np.ones(full_shape)
+
+        def multiply_mass(factor):
+            nonlocal mass
+            result = mass*factor
+            if np.any((mass > 0) & (factor > 0) & (result == 0)):
+                raise HistoryUnavailableError("complete_finite_prior_positive_mass_underflow")
+            mass = result
+
         for axis, selection in enumerate(selections):
             factor = np.asarray(capability.binding["target_prior_factors"][selection.selection_id])
             shape = [1]*len(full_shape)
             shape[axis] = len(factor)
-            mass *= factor.reshape(shape)
+            multiply_mass(factor.reshape(shape))
         probabilities = np.asarray([s.probability for s in law.states])
         for axis in range(len(selections), len(full_shape)):
             shape = [1]*len(full_shape)
             shape[axis] = len(probabilities)
-            mass *= probabilities.reshape(shape)
+            multiply_mass(probabilities.reshape(shape))
     else:
         # Condition only on source-owner-authorized C labels. A zero-image
         # axis may be correlated with current: sum its real joint mass, never
         # replace it with an assumed independent uniform factor.
-        mass = np.array(law.joint_mass, copy=True)
-        for axis, selection in enumerate(capability.selections):
-            possible = np.asarray(capability.binding["target_prior_factors"][selection.selection_id]) > 0
-            shape = [1]*mass.ndim
-            shape[axis] = len(possible)
-            mass *= possible.reshape(shape)
-        total = mass.sum()
-        if not np.isfinite(total) or total <= 0:
-            raise ValueError("frozen joint history prior assigns zero mass to authorized C labels")
-        mass /= total
+        mass = capability.conditioned_joint_mass
         axes = tuple(axis for axis, s in enumerate(capability.selections) if s.selection_id in omitted)
         axes += tuple(axis+len(capability.selections) for axis in axes)
         if axes:
@@ -239,6 +238,10 @@ def score_authorized_history(model, capability, *, maximum_evaluated_states=1000
         "posterior_precision_sha256": array_digest(model._posterior_precision_root),
         "complete_finite_state_shape": list(full_shape), "joint_mass_sha256": array_digest(mass),
         "state_designs": design_records, "maximum_evaluated_states": maximum_evaluated_states,
+        "state_numerical_resolution": [{"state_indices": list(state), "resolution": resolution}
+            for state, resolution in zip(evidence.state_indices, evidence.state_resolution, strict=True)],
+        "mixture_numerical_resolution": evidence.mixture_resolution,
+        "central_consumer_source_sha256": evidence.mixture_resolution["component_source_sha256"],
         "measure_kind": evidence.measure_kind, "score_program": evidence.program,
         "structured_primitive": "stored_noise_full_record_whitening_existing_augmented_QR_full_prefix/1",
         "n_raw_full": n, "n_raw_prefix": prefix,
@@ -248,6 +251,7 @@ def score_authorized_history(model, capability, *, maximum_evaluated_states=1000
         "log_probability": evidence.log_candidate_probability.tolist(),
         "state_joint_log_marginal": [float(x) if np.isfinite(x) else None for x in evidence.state_joint_log_marginal],
         "state_prefix_log_marginal": [float(x) if np.isfinite(x) else None for x in evidence.state_prefix_log_marginal],
+        "state_conditional_log_density": [float(x) if np.isfinite(x) else None for x in evidence.state_conditional_log_density],
         "current_prior": evidence.current_prior.tolist(),
         "fits": 0, "response_fits": 0, "new_noise_producers": 0})
     return evidence, binding
