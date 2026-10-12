@@ -228,3 +228,13 @@ def test_explicit_run_name_cannot_overwrite_a_completed_model_directory(tmp_path
     with pytest.raises(FileExistsError, match="record.json"):
         _claim_output_dir(output)
     assert (output / "record.json").read_text(encoding="utf-8") == "{}"
+
+
+def test_partial_epoch_directory_cannot_be_reused(tmp_path):
+    from experiments.run_eeg_loso import _claim_output_dir
+
+    output = tmp_path / "run" / "model"
+    output.mkdir(parents=True)
+    (output / "epochs").mkdir()
+    with pytest.raises(FileExistsError, match="epochs"):
+        _claim_output_dir(output)

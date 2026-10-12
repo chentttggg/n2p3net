@@ -147,12 +147,12 @@ def _resolve_device(choice: str) -> torch.device:
 
 
 def _claim_output_dir(output_dir: Path) -> Path:
-    """Refuse to reuse a model directory that already holds a run's progress or record."""
+    """Refuse to reuse any model directory that contains a prior run artifact."""
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    existing = [name for name in ("record.json", "progress.jsonl") if (output_dir / name).exists()]
+    existing = sorted(path.name for path in output_dir.iterdir())
     if existing:
-        raise FileExistsError(f"{output_dir} already holds {', '.join(existing)}; choose a new --run-name")
+        raise FileExistsError(f"{output_dir} already holds artifacts {', '.join(existing)}; choose a new --run-name")
     return output_dir
 
 
