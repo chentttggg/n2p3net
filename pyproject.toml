@@ -12,6 +12,7 @@ dependencies = [
     "scipy>=1.14",
     "scikit-learn>=1.5",
     "psutil>=5.9",
+    "threadpoolctl>=3.1",
     "torch==2.8.0; sys_platform == 'linux' and platform_machine == 'x86_64' and python_version < '3.14'",
     "torchaudio==2.8.0; sys_platform == 'linux' and platform_machine == 'x86_64' and python_version < '3.14'",
     "torch>=2.4; sys_platform != 'linux' or platform_machine != 'x86_64' or python_version >= '3.14'",
@@ -31,7 +32,7 @@ baselines = ["structured_erp.LICENSE"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-q"
+addopts = "-q -rs --strict-markers"
 
 [tool.ruff]
 target-version = "py311"

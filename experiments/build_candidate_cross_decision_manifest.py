@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
 import json
 import os
 import sys
@@ -321,10 +323,11 @@ def build_manifest(
             checkpoint_by_result[path] = None
             continue
         checkpoint_path = Path(str(result.get("checkpoint"))).resolve()
-        checkpoint_sha = file_sha256(checkpoint_path)
+        checkpoint_bytes = checkpoint_path.read_bytes()
+        checkpoint_sha = hashlib.sha256(checkpoint_bytes).hexdigest()
         if checkpoint_sha != result.get("checkpoint_sha256"):
             raise ValueError(f"result {path} checkpoint SHA mismatch.")
-        payload = load_checkpoint_payload(checkpoint_path)
+        payload = load_checkpoint_payload(io.BytesIO(checkpoint_bytes))
         training = checkpoint_training_contract(payload)
         if training.source_snapshot_sha256 != source_sha256:
             raise ValueError(f"checkpoint {checkpoint_path} source snapshot mismatch.")

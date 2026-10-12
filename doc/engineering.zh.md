@@ -36,8 +36,10 @@ Python至少3.11；Linux x86_64且Python<3.14的Torch/Torchaudio固定2.8.0，
 其他平台/版本按项目声明的Torch>=2.4开发分支安装，不能当作RTX5090训练验证。
 历史GPU环境为Torch2.8.0/CUDA12.8，当前硬件与可用资源须在运行前重新核对。
 
-BrainSync源模型加载保留`weights_only=True`，对NumPy产生的Unicode身份标量提供受限allowlist，
-不回退到任意对象反序列化。冻结恢复模型跨Windows/Linux重载时保留原序列化模态身份，
+源checkpoint、公共结果复用模型及BrainSync源模型统一经`transfer.checkpoint.load_weights_only`以`weights_only=True`读取，
+仅对NumPy产生的Unicode身份标量提供受限allowlist，不回退到任意对象反序列化；先核验摘要的调用者直接解码同一份已读字节。
+2026-10-12本机全部3,806个唯一`.pt`产物逐一比对一致，见[读取兼容绑定](assets/research_resume_20261012/checkpoint_weights_only_integration.json)。
+冻结恢复模型跨Windows/Linux重载时保留原序列化模态身份，
 重算特征值仅容许1e-12绝对舍入差；原QC摘要不改写，错序/明显变化仍拒绝。
 复现实测差1.51e-13且恢复样本数一致，见[新源校准记录](evidence/brainsync_s1_calibration_20260908.zh.md)。
 
@@ -54,6 +56,7 @@ git diff --check
 ```
 
 测试文件按改动范围选择，上例不是每轮必跑全集。入口/import变更还要从项目外目录验证CLI。
+pytest默认`-rs --strict-markers`：汇总列出跳过原因并拒绝未注册marker；独立前端与Linux云端专用测试的跳过不等于通过。
 BrainSync原生SDK/Qt使用采集端自己的Python3.10环境，通过结构化进程参数调用后端；
 不向后端注入另一minor版本的原生扩展，实际启动方式见[工作站指南](workstation.zh.md)。
 
@@ -492,7 +495,8 @@ batch和更新预算显式记录，不通过隐藏梯度累积或OOM重试改变
 GPU folds用spawned进程隔离RNG和CUDA上下文，不能共享训练线程。
 自动GPU worker数依设备显存及总预算决定；显式并发覆盖须有当前设备吞吐/显存证据。
 `--cpu-threads`是总预算，经`resolve_cpu_worker_plan`与`cpu_thread_budget`按worker分配，
-同时约束Torch/BLAS/OpenMP并读取cgroup配额。源数组共享只读，fold-local拟合状态各自私有。
+同时约束Torch/BLAS/OpenMP并读取cgroup配额；`threadpoolctl`为显式依赖，缺失时导入即失败，不静默跳过BLAS限制。
+源数组共享只读，fold-local拟合状态各自私有。
 同一外层划分的公共QC可跨候选复用；校准内部选择不能复用只满足outer-fit范围的QC。
 
 优化先测预处理、训练、目标适配和写结果各段耗时；记录冷/热编译、峰值显存及延迟中位/p95。

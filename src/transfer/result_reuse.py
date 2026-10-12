@@ -109,11 +109,13 @@ def _decode_predictions(content: Mapping[str, bytes]) -> dict:
 
 def read_result_artifacts(record: Mapping, directory: str | Path) -> tuple[dict, dict | None]:
     """Load predictions and the optional model from their verified byte snapshots."""
+    from transfer.checkpoint import load_weights_only
+
     content = _read_artifact_bytes(record, directory)
     predictions = _decode_predictions(content)
     try:
         model = (None if "model" not in content else
-                 torch.load(io.BytesIO(content["model"]), map_location="cpu", weights_only=False))
+                 load_weights_only(io.BytesIO(content["model"])))
         if model is not None and not isinstance(model, dict):
             raise ValueError("model payload must be a mapping")
     except Exception as error:

@@ -18,13 +18,9 @@ from threading import Lock, RLock
 from typing import Literal
 
 import torch
+from threadpoolctl import threadpool_limits
 
 from train.device import optimize_device_for_training, release_device_memory
-
-try:
-    from threadpoolctl import threadpool_limits
-except ImportError:  # pragma: no cover - sklearn installations normally provide it.
-    threadpool_limits = None
 
 PrecisionPreference = Literal["auto", "bf16", "fp32"]
 CompileMode = Literal["default", "reduce-overhead", "max-autotune"]
@@ -193,14 +189,11 @@ def cpu_thread_budget(threads: int) -> Iterator[None]:
         changed_torch_threads = True
     except RuntimeError:
         # A pre-existing parallel region can reject a late change. BLAS limits
-        # still protect the workload when threadpoolctl is available.
+        # still protect the workload.
         pass
     try:
-        if threadpool_limits is None:
+        with threadpool_limits(limits=int(threads)):
             yield
-        else:
-            with threadpool_limits(limits=int(threads)):
-                yield
     finally:
         if changed_torch_threads:
             try:

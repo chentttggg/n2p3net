@@ -11,6 +11,7 @@ import pytest
 import torch
 
 from research.execution import atomic_write_json
+from tests.support import pickles
 from tests.support.checkpoints import write_checkpoint
 from tests.support.datasets import binary_dataset, source_dataset
 from tests.support.io import read_json, write_json
@@ -345,3 +346,15 @@ def test_admitted_e2_workers_use_their_reserved_native_threads(tmp_path, monkeyp
         assert torch.get_num_threads() == 2
     finally:
         torch.set_num_threads(before)
+
+
+def test_result_model_payload_rejects_pickled_code_without_running_it(tmp_path):
+    prediction = tmp_path / "prediction.npz"
+    np.savez_compressed(prediction, scores=np.array([0.1, 0.9]))
+    model = tmp_path / "model.pt"
+    torch.save({"state": pickles.ExecutesOnLoad()}, model)
+    record = seal_result_record({"status": "completed"}, files={"prediction": prediction, "model": model})
+    pickles.EXECUTED.clear()
+    with pytest.raises(ResultIntegrityError, match="invalid model payload"):
+        read_result_artifacts(record, tmp_path)
+    assert pickles.EXECUTED == []

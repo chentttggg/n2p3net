@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import io
+import pickle
 from dataclasses import asdict, replace
 
 import numpy as np
@@ -17,6 +19,7 @@ from experiments.run_within_subject_transfer import (
 from models.adapters import source_domain_axis_record
 from models.n2p3net import N2P3Net
 from research.contracts import semantic_sha256
+from tests.support import pickles
 from tests.support.candidate import causal_candidate_dataset
 from tests.support.checkpoints import (
     checkpoint_identity_fields,
@@ -25,11 +28,13 @@ from tests.support.checkpoints import (
     small_trunk,
 )
 from transfer.checkpoint import (
+    CHECKPOINT_SCHEMA,
     checkpoint_architecture_record,
     checkpoint_classifier_is_trained,
     checkpoint_input_stats,
     checkpoint_scores_to_llr,
     checkpoint_training_contract,
+    load_checkpoint_payload,
     load_n2p3_trunk_checkpoint,
     predict_n2p3_checkpoint,
     predict_n2p3_checkpoint_with_features,
@@ -351,3 +356,29 @@ def test_checkpoint_identity_digest_tampering_fails_closed() -> None:
 
     with pytest.raises(ValueError, match="digest disagrees"):
         load_n2p3_trunk_checkpoint(payload, dataset, target_subject="g1")
+
+
+def test_checkpoint_loading_rejects_pickled_code_without_running_it(tmp_path) -> None:
+    path = tmp_path / "hostile.pt"
+    torch.save({"schema": CHECKPOINT_SCHEMA, "classifier": pickles.ExecutesOnLoad()}, path)
+    pickles.EXECUTED.clear()
+    with pytest.raises(pickle.UnpicklingError):
+        load_checkpoint_payload(path)
+    with pytest.raises(pickle.UnpicklingError):
+        load_checkpoint_payload(io.BytesIO(path.read_bytes()))
+    assert pickles.EXECUTED == []
+
+
+def test_checkpoint_path_and_verified_bytes_decode_identically(tmp_path) -> None:
+    payload = {
+        "schema": CHECKPOINT_SCHEMA,
+        "weights": torch.arange(4, dtype=torch.float32).reshape(2, 2),
+        "channels": [np.str_("Cz"), np.str_("Pz")],
+        "roles": {np.str_("Cz"): "eeg"},
+    }
+    path = tmp_path / "source.pt"
+    torch.save(payload, path)
+    for loaded in (load_checkpoint_payload(path), load_checkpoint_payload(io.BytesIO(path.read_bytes()))):
+        assert torch.equal(loaded["weights"], payload["weights"])
+        assert loaded["channels"] == payload["channels"]
+        assert all(type(name) is np.str_ for name in [*loaded["channels"], *loaded["roles"]])
