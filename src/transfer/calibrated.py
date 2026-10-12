@@ -74,6 +74,7 @@ from transfer.checkpoint import (
     checkpoint_input_stats,
     checkpoint_training_contract,
     load_n2p3_trunk_checkpoint,
+    load_weights_only,
     predict_n2p3_checkpoint,
 )
 from transfer.quality import (
@@ -162,10 +163,7 @@ def _resolve_legacy_calibration_recipes(
 
 
 def _load_calibration_checkpoint(source):
-    # NumPy-written source identity ledgers can contain Unicode scalar keys.
-    scalar_constructor = np.str_("").__reduce__()[0]
-    with torch.serialization.safe_globals([scalar_constructor, np.dtype, type(np.dtype("U"))]):
-        return torch.load(source, map_location="cpu", weights_only=True)
+    return load_weights_only(source)
 
 
 def load_calibration_source_checkpoint(dataset: EpochDataset, source_checkpoint: str | Path | None):

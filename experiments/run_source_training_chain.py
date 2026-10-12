@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import gc
 import hashlib
+import io
 import json
 import multiprocessing
 import os
@@ -184,9 +185,10 @@ def _materialize_source_trajectory(*, registry, dataset, rows, config, destinati
         membership = dataset_study_membership(dataset)
         for update in requested_updates:
             origin = existing["checkpoints"][update]
-            if not Path(origin["path"]).is_file() or _sha256(origin["path"]) != origin["sha256"]:
+            content = Path(origin["path"]).read_bytes() if Path(origin["path"]).is_file() else None
+            if content is None or hashlib.sha256(content).hexdigest() != origin["sha256"]:
                 raise ValueError("cached source checkpoint changed after its original training")
-            payload = load_checkpoint_payload(origin["path"])
+            payload = load_checkpoint_payload(io.BytesIO(content))
             original = checkpoint_training_contract(payload)
             from research.source_selection import source_architecture_record
             if semantic_sha256(original.architecture) != semantic_sha256(source_architecture_record(dataset, architecture)):

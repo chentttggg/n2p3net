@@ -1,0 +1,103 @@
+{
+  "schema": "n2p3_checkpoint_weights_only_integration/1",
+  "status": "implemented_on_codex_claude_improvements_20261012",
+  "base_head": "ed274bb82b4b57dc396b7326f3a1893c0bd2cb86",
+  "source_sha256_staged_blobs": {
+    "doc/assets/research_resume_20261012/checkpoint_weights_only_sweep.py": "529c94efe46add312b5bc2dd53b80702ec5b142a9ec42b836213beeae4386baa",
+    "doc/engineering.zh.md": "26eced92eb890ef83d2ca5cc0ed6453496ba58935e92e8815eed54f8caff1052",
+    "doc/evidence/execution_and_integration.zh.md": "fe56526b949682e758e325621a4173ba69975c5d1c1b29842accb6ffb2b1211a",
+    "experiments/build_candidate_cross_decision_manifest.py": "71bbdccb968d26df26c4af6b16827c4a452914154cfcab725f24962e92969f1b",
+    "experiments/run_candidate_promotion_matrix.py": "de4b22e31d2e50a194e6f2fa55f45cf5ca4664af9003f9e82577dc5870a4fa6f",
+    "experiments/run_public_pool_targets.py": "d60fb29f7a4ebd7121a05129d8dc0939c6355c93bb3b0857363f80524965111d",
+    "experiments/run_source_training_chain.py": "4b4597cd2cb5a8440efa6d5421da2b6f640282c055c657afda09460e6147c23e",
+    "pyproject.toml": "2754e73819422a0764ba2ce6b18bc5e42f3e01ef4346d0f008b102e9e0a66156",
+    "src/train/runtime.py": "3370903d94620851e9ed36bb74b29a53e8034beb1648a48aa9d7c935a8870fc0",
+    "src/transfer/calibrated.py": "2d824b20d78895958c6a83180a6ab03e9261fe2fd72fac003798641f5a340570",
+    "src/transfer/checkpoint.py": "be7d178834832a3220cd621831f222d19734a168d6b323e076658584ce0dc9f5",
+    "src/transfer/result_reuse.py": "94ffce64b7c5a177bb2ab71fbe297adc9abc44c40f423ad7a6b8265d5660368a",
+    "tests/support/pickles.py": "0ea0218328f2a9dafd16d8815bc831dab5e9f1fde5c2ddd7d2d9251e97c51bd2",
+    "tests/train/test_parallel_training_chain.py": "ad01f58d4c6914ef944d40c95163d267634ce6471d5fa95b22526c0b0ae0caa3",
+    "tests/train/test_runtime.py": "15c50c8609c44b67910ee3e5fb6e7350ca3581ae8eb7644999ad6c084670b91e",
+    "tests/transfer/test_checkpoint.py": "3c2b77fcbba28e6d2de947102ef7d020531999774d9dcd27a7bbdef7b82f828d",
+    "uv.lock": "5cd2807569bcb3f8d52011a1f818f1458be7710f15abddb05814e246e1ddacb2"
+  },
+  "contract": {
+    "loader_owner": "transfer.checkpoint.load_weights_only: torch.load(weights_only=True) inside safe_globals of exactly np.str_ scalar reconstructor, np.dtype, type(np.dtype('U'))",
+    "consumers": [
+      "transfer.checkpoint.load_checkpoint_payload",
+      "transfer.result_reuse.read_result_artifacts",
+      "transfer.calibrated._load_calibration_checkpoint"
+    ],
+    "rejection": "any other pickled global raises pickle.UnpicklingError before execution; result_reuse keeps wrapping it as ResultIntegrityError",
+    "read_once_callers": [
+      "experiments/run_source_training_chain.py cached source trajectory",
+      "experiments/run_public_pool_targets.py source_payload",
+      "experiments/run_candidate_promotion_matrix.py checkpoint batch record",
+      "experiments/build_candidate_cross_decision_manifest.py result checkpoint"
+    ],
+    "caller_messages": "unchanged",
+    "thread_budget": "train.runtime.cpu_thread_budget always applies threadpoolctl limits; threadpoolctl>=3.1 declared; uv.lock root package +2 lines, resolution unchanged (offline relock)",
+    "pytest_addopts": "-q -rs --strict-markers; only builtin markers (parametrize, skipif) are used"
+  },
+  "artifact_sweep": {
+    "script": "doc/assets/research_resume_20261012/checkpoint_weights_only_sweep.py",
+    "script_sha256": "529c94efe46add312b5bc2dd53b80702ec5b142a9ec42b836213beeae4386baa",
+    "scope": "every *.pt/*.pth under experiments/runs, experiments/results_history, experiments/cache and cloud_inputs of every local git worktree; cloud-only artifacts not on this machine are not covered",
+    "environment": {
+      "python": "3.14.3",
+      "torch": "2.13.0+cpu",
+      "numpy": "2.5.2"
+    },
+    "files": 4038,
+    "unique_sha256": 3806,
+    "bytes": 2455293461,
+    "seconds": 231.4,
+    "unique_by_kind": {
+      "n2p3_calibrated_predictor/3": 74,
+      "n2p3_calibrated_predictor/4": 139,
+      "other": 297,
+      "target_model": 3054,
+      "transfer_checkpoint": 241,
+      "unreadable": 1
+    },
+    "readable_identical_with_baseline_allowlist": 3805,
+    "readable_needing_extended_allowlist": 0,
+    "deep_compare_mismatches": 0,
+    "unreadable_under_both_modes": [
+      {
+        "path": "D:\\BCI\\n2p3-net\\experiments\\runs\\brainsync_s1_local_20260908\\sources\\exclude_BNCI2014-008.pt",
+        "sha256": "dee541110452b023c1ad170d8899064877c440b9a377fdb7aaa315397fd1b419",
+        "bytes": 31555584,
+        "error": "RuntimeError: PytorchStreamReader failed reading zip archive: failed finding central directory. This is an internal mini"
+      }
+    ],
+    "originals_modified": 0
+  },
+  "checks": {
+    "ruff": 0,
+    "git_diff_check": "passed with core.whitespace=cr-at-eol (CRLF-stored files keep CRLF lines, as in d562b60)",
+    "pytest_targeted": {
+      "files": 50,
+      "passed": 834,
+      "skipped": 7,
+      "failed": 3,
+      "failed_tests": [
+        "tests/research/test_independent_candidate_prefix.py::test_actual_caller_three_pairs_k0_nn_strict_four_and_partial_requested_denominator",
+        "tests/train/test_source_ready_queue.py::test_source_owner_composes_additional_successors_and_preserves_native_failure_requests[native_failure]",
+        "tests/train/test_source_ready_queue.py::test_source_owner_composes_additional_successors_and_preserves_native_failure_requests[final_artifact_rejection]"
+      ],
+      "failures_reproduce_on_unmodified_base": true,
+      "environment": "main .venv Python 3.14.3, torch 2.13.0+cpu"
+    },
+    "full_suite": false,
+    "public_fit": 0,
+    "public_score": 0,
+    "model_load_of_real_artifacts": 3806
+  },
+  "deferred": {
+    "src_to_experiments_import": "src/research/stationary_panel.py imports experiments.audit_channel_noise_mechanism; active unmerged commits on codex/p1-cloud-execution and codex/p1-stationary-program touch it",
+    "gitattributes_eol_and_ruff_format": "changes recorded working-tree bytes; per-file eol=lf list is appended by many active branches; requires a freeze boundary",
+    "canonical_size1_arrays": "research.contracts scalarizes size-1 arrays; changing it would alter recorded semantic digests",
+    "large_units_and_layering": "DeepBaseline._fit_attempt, SubjectAdapter.fit and bidirectional package imports need a coordinated refactor window"
+  }
+}

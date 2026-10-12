@@ -53,10 +53,31 @@ from transfer.decision_loss import DecisionLossConfig
 CHECKPOINT_SCHEMA = "n2p3_transfer_checkpoint/2"
 
 
-def load_checkpoint_payload(path: str | Path) -> dict[str, object]:
-    """Load a checkpoint payload and require the mapping format used by runners."""
+def _numpy_safe_globals() -> list[object]:
+    # NumPy-written source identity ledgers can contain Unicode scalar keys.
+    return [np.str_("").__reduce__()[0], np.dtype, type(np.dtype("U"))]
 
-    payload = torch.load(path, map_location="cpu", weights_only=False)
+
+def load_weights_only(source) -> object:
+    """Decode audited Torch bytes without executing arbitrary pickled objects.
+
+    Transfer checkpoints and target model payloads hold tensors, JSON-like
+    records and NumPy Unicode scalars only. Any other pickled global raises
+    ``pickle.UnpicklingError`` before it can run.
+    """
+
+    with torch.serialization.safe_globals(_numpy_safe_globals()):
+        return torch.load(source, map_location="cpu", weights_only=True)
+
+
+def load_checkpoint_payload(path: str | Path) -> dict[str, object]:
+    """Load a checkpoint payload and require the mapping format used by runners.
+
+    ``path`` may be an already verified byte stream; callers that check a
+    digest decode those same bytes instead of reopening the file.
+    """
+
+    payload = load_weights_only(path)
     if not isinstance(payload, dict):
         raise ValueError(f"{path} is not a mapping checkpoint payload.")
     if payload.get("schema") != CHECKPOINT_SCHEMA:

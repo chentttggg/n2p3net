@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import os
 import re
@@ -2222,9 +2223,10 @@ def _embedded_artifact_record(task: MatrixTask) -> dict[str, Any]:
             digest = _validate_sha(
                 job.get("checkpoint_sha256"), "checkpoint batch checkpoint_sha256"
             )
-            if checkpoint.stat().st_size != byte_size or file_sha256(checkpoint) != digest:
+            content = checkpoint.read_bytes()
+            if len(content) != byte_size or hashlib.sha256(content).hexdigest() != digest:
                 raise ValueError("checkpoint batch checkpoint bytes changed after completion.")
-            payload = load_checkpoint_payload(checkpoint)
+            payload = load_checkpoint_payload(io.BytesIO(content))
             training = checkpoint_training_contract(payload)
             training_digest = _validate_sha(
                 job.get("training_contract_digest"),

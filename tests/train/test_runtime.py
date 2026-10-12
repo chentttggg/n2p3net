@@ -320,3 +320,18 @@ def test_shuffle_order_for_a_seed_does_not_depend_on_preload_admission():
         source = MatrixBatchSource(X, None, runtime, preload=preload)
         orders.append(source.random_permutation(source.make_generator(7)).cpu())
     assert torch.equal(orders[0], orders[1])
+
+
+def test_cpu_thread_budget_always_bounds_native_thread_pools(monkeypatch) -> None:
+    from contextlib import contextmanager
+
+    requested = []
+
+    @contextmanager
+    def record_limits(*, limits):
+        requested.append(limits)
+        yield
+
+    monkeypatch.setattr(runtime_module, "threadpool_limits", record_limits)
+    with cpu_thread_budget(3):
+        assert requested == [3]

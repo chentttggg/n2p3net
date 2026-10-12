@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
 import json
 import multiprocessing
 import os
@@ -51,9 +53,10 @@ def target_data(path, digest):
 
 @lru_cache(maxsize=4)
 def source_payload(path, digest):
-    if file_sha256(path) != digest:
+    content = Path(path).read_bytes()
+    if hashlib.sha256(content).hexdigest() != digest:
         raise ValueError("public source checkpoint changed")
-    return load_checkpoint_payload(path)
+    return load_checkpoint_payload(io.BytesIO(content))
 
 
 def build_manifest(data, task, subjects, *, policy=None):
