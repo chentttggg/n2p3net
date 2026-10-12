@@ -26,6 +26,7 @@ from models.splitbn import (
     SplitBN1d,
     SplitBN2d,
     install_splitbn_target_calibration_buffers,
+    validate_splitbn_target_install_receipt,
 )
 from research.execution import ExpectedSubjectError, SubjectFailureCode
 from train.early_stopping import DEFAULT_EARLY_STOP_PATIENCE, PatienceStopper
@@ -240,6 +241,7 @@ class SubjectAdapter:
         self._fit_budget: dict[str, object] = {}
         self._refit_budget: dict[str, object] = {}
         self.feature_cache_key_: str | None = None
+        self._splitbn_install_receipts: dict[str, object] = {"initial": None, "refit": None}
 
     def _features(
         self,
@@ -752,6 +754,7 @@ class SubjectAdapter:
         self._fit_budget = {}
         self._refit_budget = {}
         self.feature_cache_key_ = None
+        self._splitbn_install_receipts = {"initial": None, "refit": None}
         self.trunk.zero_grad(set_to_none=True)
         self.trunk.eval()
         if self.head is not None:
@@ -1086,12 +1089,21 @@ class SubjectAdapter:
                     not bool(module.target_buffer_initialized) for module in self._splitbn_modules()
                 )
             ):
-                install_splitbn_target_calibration_buffers(
+                self._splitbn_install_receipts["initial"] = install_splitbn_target_calibration_buffers(
                     self.trunk,
                     Xt_train,
                     device=self.device,
-                    eval_buffer_source="source_domain",
-                    domain_index=0,
+                    channel_masks=train_channels,
+                    scope_record={
+                        "phase": "initial_fit",
+                        "prefix_mask_sha256": hashlib.sha256(prefix_scope.tobytes()).hexdigest(),
+                        "training_mask_sha256": hashlib.sha256(train_mask.tobytes()).hexdigest(),
+                        "channel_mask_sha256": hashlib.sha256(
+                            train_channels.cpu().contiguous().numpy().tobytes()
+                        ).hexdigest(),
+                        "row_count": int(len(train_channels)),
+                        "input_statistics_source": statistics_mode,
+                    },
                 )
             if (
                 live_splitbn
@@ -1297,9 +1309,14 @@ class SubjectAdapter:
                 )
             splitbn_source_buffer_digest_after = self._splitbn_digest(target=False)
             splitbn_target_buffer_digest_after = self._splitbn_digest(target=True)
+            final_install_receipt = (self._splitbn_install_receipts["refit"]
+                                     or self._splitbn_install_receipts["initial"])
+            if final_install_receipt is not None:
+                validate_splitbn_target_install_receipt(self.trunk, final_install_receipt)
             if self.device.type == "cuda":
                 torch.cuda.synchronize(self.device)
             self.last_history = {
+                "splitbn_install_receipts": self._splitbn_install_receipts,
                 "source_parameter_prior": (None if self._source_prior is None else {
                     **self._source_prior.record(), "weight": self.config.source_prior_weight,
                     "final_unweighted_penalty": float(self._source_prior.loss().detach().cpu()),
@@ -1452,12 +1469,20 @@ class SubjectAdapter:
             # ``initial_state`` predates the frozen target-calibration install,
             # so the full-prefix refit must reinstall it before its first
             # target-buffer forward.
-            install_splitbn_target_calibration_buffers(
+            self._splitbn_install_receipts["refit"] = install_splitbn_target_calibration_buffers(
                 self.trunk,
                 inputs,
                 device=self.device,
-                eval_buffer_source="source_domain",
-                domain_index=0,
+                channel_masks=channel_masks,
+                scope_record={
+                    "phase": "refit_full_prefix",
+                    "prefix_mask_sha256": hashlib.sha256(scope.tobytes()).hexdigest(),
+                    "channel_mask_sha256": hashlib.sha256(
+                        channel_masks.cpu().contiguous().numpy().tobytes()
+                    ).hexdigest(),
+                    "row_count": int(len(channel_masks)),
+                    "input_statistics_source": statistics_mode,
+                },
             )
 
         trunk_trainable = self.config.head_kind == "full_fine"

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from copy import deepcopy
 
 import numpy as np
 import pytest
@@ -24,6 +25,7 @@ from tests.support.snapshots import write_source_snapshot
 from transfer.checkpoint import (
     checkpoint_scores_to_llr,
 )
+from transfer.subject_adapter import SubjectAdapter
 
 
 def test_target_fixed_budget_adapter_uses_current_calibration_contract() -> None:
@@ -60,6 +62,15 @@ def _transfer_argv(cache, manifest, output, *extra):
 def test_within_subject_runner_declares_prefix_for_chronological_refit(
     tmp_path, monkeypatch
 ) -> None:
+    receipt = {"initial": None, "refit": {"site": {"receipt_sha256": "b" * 64}}}
+    original_fit = SubjectAdapter.fit
+
+    def with_receipt(self, *args, **kwargs):
+        result = original_fit(self, *args, **kwargs)
+        self.last_history["splitbn_install_receipts"] = deepcopy(receipt)
+        return result
+
+    monkeypatch.setattr(SubjectAdapter, "fit", with_receipt)
     dataset = causal_candidate_dataset()
     cache = save_epoch_dataset(tmp_path / "refit-cache.npz", dataset)
     manifest, _, _ = write_source_snapshot(tmp_path)
@@ -94,6 +105,7 @@ def test_within_subject_runner_declares_prefix_for_chronological_refit(
         assert scope["prefix_mask_explicit"]
         assert scope["refit_rows"] == record["n_prefix_after_qc"]
         assert scope["outside_prefix_rows"] == 0
+        assert record["prefix_refit"]["splitbn_install_receipts"] == receipt
 
 
 @pytest.fixture
@@ -151,6 +163,8 @@ def test_session_start_zero_shot_runner_never_requires_prefix_training(
     assert record["prefix_reps"] == 0
     assert record["estimand"] == "target_excluded_session_start_zero_calibration"
     assert record["n_groups"] == 3
+    assert all(item["prefix_refit"] == {"enabled": False, "mode": "zero_shot"}
+               for item in record["records"])
     assert record["source_snapshot_manifest"] == str(source_manifest.resolve())
     assert record["source_snapshot_sha256"] == source_digest
     assert record["evaluation_snapshot_manifest"] == str(evaluation_manifest.resolve())

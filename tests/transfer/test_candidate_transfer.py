@@ -843,7 +843,16 @@ def _bi_runner_linear_fixture(tmp_path, name: str) -> tuple[object, object]:
     return cache, source_manifest
 
 
-def test_candidate_runner_declares_prefix_for_chronological_refit(tmp_path) -> None:
+def test_candidate_runner_declares_prefix_for_chronological_refit(tmp_path, monkeypatch) -> None:
+    receipt = {"initial": None, "refit": {"site": {"receipt_sha256": "b" * 64}}}
+    original_fit = SubjectAdapter.fit
+
+    def with_receipt(self, *args, **kwargs):
+        result = original_fit(self, *args, **kwargs)
+        self.last_history["splitbn_install_receipts"] = copy.deepcopy(receipt)
+        return result
+
+    monkeypatch.setattr(SubjectAdapter, "fit", with_receipt)
     cache, manifest = _bi_runner_linear_fixture(tmp_path, "refit-scope")
     output = tmp_path / "refit-result.json"
     argv = _runner_argv(
@@ -867,6 +876,7 @@ def test_candidate_runner_declares_prefix_for_chronological_refit(tmp_path) -> N
         assert scope["outside_prefix_rows"] == 0
         assert record["prefix_refit"]["as_mmd_losses"] == []
         assert record["prefix_refit"]["initial_fit_as_mmd_losses"] == []
+        assert record["prefix_refit"]["splitbn_install_receipts"] == receipt
 
 
 def test_bi_runner_converts_subject_fit_oom_to_fit_failure_with_preserved_denominator(

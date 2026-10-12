@@ -9,6 +9,7 @@ import platform
 import sys
 import tempfile
 from collections.abc import Mapping, Sequence
+from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -1218,6 +1219,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             trainable_parameters = adapter.parameter_count()
             refit_record = {
                 "enabled": bool(adapter.last_history.get("refit_full_prefix")),
+                "splitbn_install_receipts": deepcopy(adapter.last_history.get("splitbn_install_receipts")),
                 "selected_epochs": adapter.last_history.get("best_epoch"),
                 "refit_epochs": adapter.last_history.get("refit_epochs"),
                 "fit_scope": dict(adapter.last_history["fit_scope"]),

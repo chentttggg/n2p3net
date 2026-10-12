@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
 
@@ -615,6 +616,7 @@ def main() -> None:
             trainable_parameters = adapter.parameter_count()
             refit_record = {
                 "enabled": bool(adapter.last_history.get("refit_full_prefix")),
+                "splitbn_install_receipts": deepcopy(adapter.last_history.get("splitbn_install_receipts")),
                 "selected_epochs": adapter.last_history.get("best_epoch"),
                 "refit_epochs": adapter.last_history.get("refit_epochs"),
                 "fit_scope": dict(adapter.last_history["fit_scope"]),
