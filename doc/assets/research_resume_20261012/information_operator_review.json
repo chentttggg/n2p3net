@@ -1,0 +1,32 @@
+{
+  "schema": "n2p3_information_operator_review/1",
+  "status": "operator_draw_gate_accepted_information_bound_deferred",
+  "main_head": "7485f1f05ce992ede11f4f468b8b045059434516",
+  "review_artifacts": {
+    "handoff_sha256": "8cf171a3f8d316def8fb36eb482420c6a7e2637764e8f21dcbd65b6816b9a724",
+    "binding_sha256": "e9b85c9db5fdfb1dadd9ed4fdfc011120237fc58b76b124d883e5b73e22c0644",
+    "probe_sha256": "fe444130783d75f1c820e4db129d1681f1557e948538698ff1957fdc16d6a40d"
+  },
+  "operator_lda": {
+    "status": "accepted_narrow_gate",
+    "contract": "target_calibration noise draw_ids subset of classifier calibration_ids with matching scope/provenance and save/load identity",
+    "public_fit": 0,
+    "public_score": 0
+  },
+  "information_bound": {
+    "status": "deferred",
+    "reasons": [
+      "plugin debias p*(1/n1+1/n0) is invalid for same-batch mean/covariance estimation with inverse Ledoit-Wolf shrinkage",
+      "row_column and single_item activation counts are not balanced when flashes are not divisible by lines; candidate0-only summaries are inconsistent",
+      "ridge whitening in null directions remains a finite diagnostic and cannot be treated as exact likelihood or production comparison"
+    ],
+    "required_next": [
+      "independent mean/covariance split or finite-sample bound with explicit estimand",
+      "require divisibility or emit per-candidate activation bounds",
+      "identified-subspace or typed-unavailable semantics for exact covariance diagnostics"
+    ]
+  },
+  "public_fit": 0,
+  "public_score": 0,
+  "full_suite": false
+}
