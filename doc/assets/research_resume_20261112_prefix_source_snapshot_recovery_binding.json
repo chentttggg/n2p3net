@@ -1,0 +1,55 @@
+{
+  "schema": "n2p3_prefix_recovery_source_snapshot_integration_binding/1",
+  "status": "integrated_source_snapshot_recovery_fix_pending_cloud_entry005",
+  "author_commit": "bc6e60a441bcfa7ce96ce5c538a0172d5c0e4cf0",
+  "author_base": "86dc287",
+  "actual_root_sources": {
+    "experiments/run_candidate_ensemble_study.py": {
+      "path": "experiments\\run_candidate_ensemble_study.py",
+      "sha256": "684765db0e876b5b9e4174a2835cf751638f7bb93ccfdcc6b86703c0f866a49c",
+      "bytes": 120959
+    },
+    "tests/research/test_prefix_participant_recovery.py": {
+      "path": "tests\\research\\test_prefix_participant_recovery.py",
+      "sha256": "0f77edd3d3b3912f39a37450b180ae12ec813edae0151ae56934384cc05b0400",
+      "bytes": 23621
+    }
+  },
+  "root_validation": {
+    "junit": {
+      "path": "tmp\\PREFIX_CLOUD_PREPARATION\\root_bc6e60a.junit.xml",
+      "sha256": "27be548d42f283fcce12fb5ff6a41b5057f30fc315b32a75b4c8ecb6325f1d3a",
+      "bytes": 4710
+    },
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "25",
+        "time": "122.086",
+        "timestamp": "2026-10-12T08:51:10.033374+08:00",
+        "hostname": "Tonger"
+      }
+    ],
+    "tests": 25,
+    "ruff_exit": 0,
+    "diff_check_exit": 0,
+    "public_fits": 0,
+    "public_scores": 0
+  },
+  "behavior": [
+    "reuse canonical FrozenSourceCheckpoint snapshots",
+    "normalized source catalog never reinterpreted as paths",
+    "parent and callback receive same snapshots",
+    "wrong seed/bytes/study/missing snapshot rejected before raw/model ingress",
+    "original failed run/output and complete denominator preserved"
+  ],
+  "pending": [
+    "cloud entry005/new consumer freeze and transition",
+    "actual old-four zero-fit parent replay receipt",
+    "remaining-four full matrix"
+  ],
+  "old_entry003_entry004_failures_preserved": true
+}

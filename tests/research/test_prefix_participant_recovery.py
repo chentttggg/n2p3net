@@ -3,10 +3,12 @@ import hashlib
 import io
 import json
 import tarfile
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
 import pytest
+import torch
 from scipy.io import savemat
 
 import experiments.run_candidate_ensemble_study as runner
@@ -15,9 +17,13 @@ from research.cloud_execution import CloudResult
 from research.contracts import semantic_sha256
 from research.prefix_recovery import _reviewed_transition, load_prefix_recovery
 from tests.research.test_candidate_cloud_execution import resources
+from tests.support.checkpoints import write_checkpoint
 from tests.support.independent_prefix import independent_prefix_case
 from train.runtime import cpu_thread_budget
+from transfer.calibration_candidates import waveform_lda_recipe
 from transfer.ensemble import EnsembleProgram
+from transfer.ensemble_fit import CalibrationExpertProgram, FrozenSourceCheckpoint
+from transfer.recipes import TargetRecipe
 
 
 def write_json(path, value):
@@ -47,6 +53,16 @@ def freeze_runtime(directory):
 @pytest.fixture(scope="module")
 def original_prefix_run(tmp_path_factory):
     root = tmp_path_factory.mktemp("completed-prefix-producer")
+    return completed_prefix_producer(root)
+
+
+@pytest.fixture(scope="module")
+def original_neural_prefix_run(tmp_path_factory):
+    root = tmp_path_factory.mktemp("completed-neural-prefix-producer")
+    return completed_prefix_producer(root, neural=True)
+
+
+def completed_prefix_producer(root, *, neural=False):
     with cpu_thread_budget(1):
         _, fields, path, preprocessing, experts, views = independent_prefix_case(root)
     second = root / "A02.mat"
@@ -67,6 +83,31 @@ def original_prefix_run(tmp_path_factory):
         "source_snapshot_manifest": source_manifest["path"], "calibration_strategies": ["fixed", "grouped_temperature"],
         "prefix_selection": {"schema": "n2p3_prefix_selection_plan/1", "output_name": "selected",
             "baseline_name": candidate.name, "minimum_selection_rows": 3, "candidates": [candidate.record()]}}
+    if neural:
+        profile = experts[1].profile
+        checkpoint = write_checkpoint(root / "source.pt", views.calibration[200].trial_datasets[profile.digest],
+                                      source_snapshot_sha256="b" * 64)
+        payload = torch.load(checkpoint, weights_only=True)
+        payload["training_contract"]["seed"] = 20260918
+        payload["training_contract"]["optimizer"]["config"] = {
+            "pos_weight": payload["source_calibration"]["pos_weight"]}
+        payload["training_contract_digest"] = semantic_sha256(payload["training_contract"])
+        torch.save(payload, checkpoint)
+        recipe = TargetRecipe("NN", initialization="source", input_statistics="source", epochs=1,
+                              batch_size=128, bn_buffers="calibration", dropout="off")
+        nn = CalibrationExpertProgram("NN", "trial", recipe, profile)
+        scratch = CalibrationExpertProgram("scratch", "trial",
+            replace(recipe, name="scratch", initialization="scratch", input_statistics="target_prefix"), profile)
+        waveform = CalibrationExpertProgram("waveform", "trial", waveform_lda_recipe(), profile)
+        nn_pool = EnsembleProgram.equal_weights("NN", (nn.expert_id,))
+        nn_candidate = CalibrationProgramCandidate("nn_fixed", (nn,), nn_pool)
+        plan.update(experts=[raw.record(), nn.record(), scratch.record(), waveform.record()],
+            mixtures=[ensemble.record(), nn_pool.record()],
+            baseline_mixture="NN", source_seed_catalog=[{"outer_target_study": "BNCI2014-008",
+                "source_seed": 20260918, "path": str(checkpoint),
+                "sha256": hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
+                "procedure": {"kind": "fixed_recipe", "selection": "not_applicable"}}])
+        plan["prefix_selection"].update(baseline_name=nn_candidate.name, candidates=[nn_candidate.record()])
     plan_receipt = write_json(root / "input_plan.json", plan)
     actual_resources = resources(Path(plan_receipt["path"]))
     programme = runner.build_candidate_cloud_tasks(plan_receipt["path"], root / "failed_parent", actual_resources)
@@ -74,7 +115,13 @@ def original_prefix_run(tmp_path_factory):
     with cpu_thread_budget(1):
         runner.run_study(programme.plan_path, task.output, _actor_index=0, _native_threads=1)
         completed = CloudResult(task.task_id, "completed", str(Path(task.output) / "participant_000/result.json"))
-        programme.on_finished(completed)
+        if not neural:
+            programme.on_finished(completed)
+        else:
+            # The real failed programme has complete worker packages that its
+            # parent could not admit. Preserve that boundary in this fixture.
+            completed = CloudResult(task.task_id, "failed",
+                failure={"type": "SoftwareFixtureOriginalParentAdmissionUnavailable", "stage": "artifact_admission"})
     failed = CloudResult(programme.tasks[1].task_id, "failed", failure={"type": "SoftwareFixtureInterruption"})
     programme.finalize({completed.task_id: completed, failed.task_id: failed})
     source = json.loads((programme.output / "executed_source.json").read_bytes())
@@ -110,6 +157,74 @@ def original_prefix_run(tmp_path_factory):
 
 def forbid_fit(*args, **kwargs):
     raise AssertionError("completed producer must be replayed with zero new fits")
+
+
+def test_neural_normalized_catalog_recovers_actual_source_models_without_reopening_records_as_paths(
+        original_neural_prefix_run, tmp_path, monkeypatch):
+    _, plan, original, actual_resources, source, declaration = original_neural_prefix_run
+    before = (original.output / "result.json").read_bytes()
+    assert "path" in plan["source_seed_catalog"][0]
+    record = original.normalized["source_seed_catalog"][0]
+    assert "path" not in record and record["checkpoint_sha256"] == plan["source_seed_catalog"][0]["sha256"]
+    path = tmp_path / "new_plan.json"
+    write_json(path, {**plan, "prefix_recovery": declaration})
+    canonical = runner.SourceSeedCatalog
+    catalog_calls = []
+
+    def catalog_owner(entries, **kwargs):
+        catalog_calls.append(entries)
+        return canonical(entries, **kwargs)
+
+    monkeypatch.setattr(runner, "SourceSeedCatalog", catalog_owner)
+    monkeypatch.setattr(runner, "fit_calibration_prefix_programs", forbid_fit)
+    monkeypatch.setattr(runner, "fit_calibration_ensemble", forbid_fit)
+    import research.calibration_selection as selection
+    monkeypatch.setattr(selection, "fit_nested_prefix_selection", forbid_fit)
+    with cpu_thread_budget(1):
+        consumer = runner.build_candidate_cloud_tasks(path, tmp_path / "consumer", actual_resources)
+    assert len(catalog_calls) == 1 and "path" in catalog_calls[0][0]
+    assert consumer.normalized["source_seed_catalog"] == original.normalized["source_seed_catalog"]
+    assert [task.arguments["record_index"] for task in consumer.tasks] == [1] and len(consumer.task_roster) == 2
+    recovered = consumer.admitted["candidate:000"]
+    assert recovered["status"] == "completed" and len(recovered["selection_fits"]) == 2
+    nn = [row for row in recovered["predictions"] if row["mixture"] == "NN"
+          and row["calibration_strategy"] == "fixed" and row["evidence"]["log_probability"] is not None]
+    assert nn and {row["K"] for row in nn} == {0, 200}
+    assert all(row["score_source_digest"] == semantic_sha256(source) for row in recovered["predictions"])
+    checkpoint = consumer.source_snapshots[("BNCI2014-008", 20260918)]
+    assert isinstance(checkpoint, FrozenSourceCheckpoint) and checkpoint.digest == record["checkpoint_sha256"]
+    # The fresh worker callback uses the same snapshots and full parent gate.
+    callback = CloudResult(consumer.task_roster[0].task_id, "completed",
+        str(Path(original.task_roster[0].output) / "participant_000/result.json"))
+    original.on_finished(callback)
+    assert len(catalog_calls) == 1 and original.admitted[callback.task_id]["status"] == "completed"
+    assert (original.output / "result.json").read_bytes() == before
+
+
+@pytest.mark.parametrize("mutation", ["missing", "wrong_seed", "wrong_bytes", "foreign_study"])
+def test_neural_parent_rejects_missing_or_changed_snapshot_before_raw_and_model_ingress(
+        original_neural_prefix_run, tmp_path, monkeypatch, mutation):
+    _, _, original, _, source, _ = original_neural_prefix_run
+    task = original.task_roster[0]
+    snapshots = dict(original.source_snapshots)
+    checkpoint = snapshots[("BNCI2014-008", 20260918)]
+    if mutation == "missing":
+        snapshots = {}
+    elif mutation == "wrong_seed":
+        snapshots = {("BNCI2014-008", 20260919): checkpoint}
+    elif mutation == "foreign_study":
+        snapshots = {("BI2014a", 20260918): checkpoint}
+    else:
+        payload = torch.load(io.BytesIO(checkpoint.content), weights_only=True)
+        payload["training_contract"]["seed"] += 1
+        payload["training_contract_digest"] = semantic_sha256(payload["training_contract"])
+        altered = tmp_path / "different_source.pt"
+        torch.save(payload, altered)
+        snapshots[("BNCI2014-008", 20260918)] = FrozenSourceCheckpoint.from_path(altered)
+    monkeypatch.setattr(runner, "prepare_bnci_independent_prefixes", forbid_fit)
+    outcome = CloudResult(task.task_id, "completed", str(Path(task.output) / "participant_000/result.json"))
+    with pytest.raises(ValueError, match="declared canonical source snapshots"):
+        runner._admit_candidate_participant(task, outcome, original.normalized, source, source_snapshots=snapshots)
 
 
 def test_recovery_replays_original_prefix_and_selection_with_zero_fit_and_keeps_missing_denominator(

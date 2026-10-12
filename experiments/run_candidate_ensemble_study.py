@@ -875,7 +875,7 @@ def candidate_tasks(plan_path, output, resources, *, dependencies=(), task_prefi
         for index in range(len(plan["records"]))]
 
 
-def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger):
+def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, source_snapshots=None):
     from research.prefix_selection_replay import _SelectionReplayAdmission
 
     expected = _prefix_selection_requests(plan, scopes)
@@ -901,6 +901,16 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger):
     paths = sorted((directory / "selection_fit_receipts").glob("*.saved.json"))
     if not paths:
         return admitted, summaries, started, failed
+    # The normalized catalog is a producer record, not a second raw path
+    # declaration. Reuse the exact bytes admitted by the canonical preparer.
+    declared_sources = {(entry["outer_target_study"], entry["source_seed"]): entry["checkpoint_sha256"]
+        for entry in plan["source_seed_catalog"] if entry["outer_target_study"] == BNCI2014_008_DATASET_ID
+        and entry["source_seed"] in {pair[0] for pair in plan["seed_pairs"]}}
+    prepared = {} if source_snapshots is None else source_snapshots
+    if (set(prepared) != set(declared_sources) or any(not isinstance(prepared[key], FrozenSourceCheckpoint)
+            or prepared[key].digest != digest for key, digest in declared_sources.items())):
+        raise ValueError("nested prefix parent requires its declared canonical source snapshots")
+    snapshots = {key[1]: snapshot for key, snapshot in prepared.items()}
     row = ledger["record"]
     declared = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
     with cpu_thread_budget(1):
@@ -910,10 +920,6 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger):
             response_seconds=plan["observation_response_seconds"], pre_roll_seconds=plan["pre_roll_seconds"])
     if semantic_sha256(views.ledger) != semantic_sha256(scopes):
         raise ValueError("nested prefix parent original source compilation differs from actor scopes")
-    catalog = SourceSeedCatalog(plan["source_seed_catalog"], base_directory=group, evidence_scope=plan["evidence_scope"],
-                                expected_source_config=plan.get("expected_source_config"))
-    snapshots = {entry["source_seed"]: FrozenSourceCheckpoint(catalog.content(BNCI2014_008_DATASET_ID, entry["source_seed"]))
-                 for entry in catalog.record() if entry["outer_target_study"] == BNCI2014_008_DATASET_ID}
     for path in paths:
         seal = _read_sealed_record(path)
         request = seal["request"]
@@ -957,7 +963,7 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger):
     return admitted, summaries, started, failed
 
 
-def _admit_candidate_participant(task, outcome, plan, source):
+def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshots=None):
     """One parent ingress for both complete and native-interrupted actors."""
     group = Path(task.output).resolve()
     index = task.arguments["record_index"]
@@ -982,7 +988,8 @@ def _admit_candidate_participant(task, outcome, plan, source):
     scopes = json.loads((directory / "scopes.json").read_bytes())
     if scopes["source_sha256"] != plan["records"][index]["sha256"]:
         raise ValueError("candidate participant scopes differ from its actual raw record")
-    selection_packages, selection_fits, selection_started, selection_failed = _admit_prefix_selection_packages(directory, group, plan, scopes, ledger)
+    selection_packages, selection_fits, selection_started, selection_failed = _admit_prefix_selection_packages(
+        directory, group, plan, scopes, ledger, source_snapshots=source_snapshots)
     if semantic_sha256(ledger["pipeline_requests"]) != semantic_sha256(
             _resolved_pipeline_requests(plan, index, ledger["requested"], scopes)):
         raise ValueError("candidate prefit request ledger omits or changes declared pipeline requests")
@@ -1283,6 +1290,7 @@ class CandidateCloudProgramme:
             self.plan["source_seed_catalog"] = [{**entry, "path": str((self.original_plan_path.parent / entry["path"]).resolve())}
                                                 for entry in self.plan["source_seed_catalog"]]
         self.source, self.normalized, self.admitted, self.admission_failures = None, None, {}, {}
+        self.source_snapshots = {}
         self.recovery_binding = None
         _write_candidate_json(self.output / "consumer_requests.json", {"schema": "n2p3_candidate_consumer_requests/1",
             "base_plan_sha256": _file_receipt(self.original_plan_path, self.original_plan_path.parent)["sha256"],
@@ -1297,7 +1305,8 @@ class CandidateCloudProgramme:
         if source_snapshot is not None:
             self.plan["source_snapshot_manifest"] = str(Path(source_snapshot).resolve())
         _write_candidate_json(self.plan_path, self.plan, self.input_admission)
-        self.normalized, self.source, _ = _prepare_candidate_plan(self.plan_path, load_sources=False)
+        self.normalized, self.source, self.source_snapshots = _prepare_candidate_plan(
+            self.plan_path, load_sources=self.plan.get("prefix_selection") is not None)
         _write_candidate_json(self.output / "plan.json", self.normalized, self.input_admission)
         _write_candidate_json(self.output / "executed_source.json", self.source, self.input_admission)
         if self.plan.get("prefix_recovery") is not None:
@@ -1316,7 +1325,8 @@ class CandidateCloudProgramme:
             outcome = CloudResult(original.task_id, "completed",
                 str(participant.group / f"participant_{participant.record_index:03d}" / "result.json"))
             with cpu_thread_budget(1):
-                admitted = _admit_candidate_participant(original, outcome, producer.plan, producer.source)
+                admitted = _admit_candidate_participant(original, outcome, producer.plan, producer.source,
+                                                       source_snapshots=self.source_snapshots)
             admitted["execution_binding"] = {"role": "original_producer_zero_fit_parent_replay",
                 "producer_source_digest": semantic_sha256(producer.source),
                 "producer_plan_sha256": producer.binding["original_plan_sha256"],
@@ -1340,7 +1350,8 @@ class CandidateCloudProgramme:
                 raise ValueError("candidate consumer cannot execute before its actual source binding")
             return ()
         try:
-            result = _admit_candidate_participant(tasks[outcome.task_id], outcome, self.normalized, self.source)
+            result = _admit_candidate_participant(tasks[outcome.task_id], outcome, self.normalized, self.source,
+                                                  source_snapshots=self.source_snapshots)
             if result is not None:
                 if self.recovery_binding is not None:
                     result["execution_binding"] = {"role": "new_producer",
