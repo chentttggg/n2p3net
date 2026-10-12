@@ -91,3 +91,5 @@ source cache 与 shared programme score 已在科研主树 `4830ef9` 集成。�
 云source07的固定白化patch（`bf09e072…`）已按函数逻辑接入科研树：只抽取原conditional QR helper，条件score在当前record共享公共列，各candidate继续全record白化增量设计并分别积分。root逐读实际白化、event design、prefix/full QR和precision调用；AST核对全部其它现有函数一致，保留科研树较新的单producer QR及稳定df。相关23项验证、Ruff与diff检查通过，来源见[集成绑定](../assets/research_resume_20261011/common_whitening_integration_binding.json)。
 
 云端原32 records×36 candidates的数值桥与352-record阶段计时保其原来源；科研侧当前接受公式/调用相容和相关行为，完整矩阵耗时继续由云窗口实测。旧模型保持原producer，新训练包使用实际执行源码身份。
+
+Claude review 分支的 U5a-04、U7-19、U7-24、U7-26 和 U1-01 fixture 修复已按实际文件逐项接入，提交 `4acb63d`；当前源码缺少其依赖的 exclusive publisher，因此补入 `research.execution.publish_exclusive` 后定向回归 19 项通过。复核分支报告的全套 3726/25/3 结果仍按其原身份保存：一个基线既有波动，两个失败首次出现于 director 的 strict nested selection 提交，留给该模块复审，不把它们改写成此次修复通过。
