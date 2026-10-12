@@ -163,17 +163,40 @@ def test_load_dataset(tmp_path):
     assert strict[0].metadata["preprocessing_execution"]["output"]["shape"] == list(s.data.shape)
 
 
-def test_event_table_onsets_are_relative_to_a_cropped_recording(tmp_path):
+def test_table_events_are_file_relative_but_array_events_are_mne_absolute(tmp_path):
     import mne
 
-    from data.dataset import EEGRecord, resolve_record_events
+    from data.dataset import resolve_record_events
 
     raw = mne.io.RawArray(np.zeros((1, 2000)), mne.create_info(["Cz"], 100.0, "eeg"),
                           first_samp=1000, verbose=False)
     table = tmp_path / "events.tsv"
     table.write_text("onset\tevent_id\n2.0\t1\n", encoding="utf-8")
     events, _ = resolve_record_events(raw, EEGRecord(tmp_path / "raw.fif", "s1", event_file=table))
-    assert events[0, 0] == 1000 + 200
-    np.save(tmp_path / "events.npy", np.array([[200, 0, 1]]))
-    with pytest.raises(ValueError, match="cropped recording"):
-        resolve_record_events(raw, EEGRecord(tmp_path / "raw.fif", "s1", event_file=tmp_path / "events.npy"))
+    assert events[0, 0] == 1200
+
+    array_path = tmp_path / "events.npy"
+    np.save(array_path, np.array([[1200, 0, 1]], dtype=np.int64))
+    events, _ = resolve_record_events(raw, EEGRecord(tmp_path / "raw.fif", "s1", event_file=array_path))
+    assert events[0, 0] == 1200
+
+
+def test_loaded_table_event_identity_records_the_coordinate_conversion(tmp_path):
+    import json
+
+    import mne
+
+    raw = mne.io.RawArray(np.zeros((1, 2000)), mne.create_info(["Cz"], 100.0, "eeg"),
+                          verbose=False)
+    raw.crop(tmin=1.0)
+    raw_path = tmp_path / "cropped_raw.fif"
+    raw.save(raw_path, overwrite=True, verbose=False)
+    table = tmp_path / "events.csv"
+    table.write_text("onset,event_id\n2.0,1\n", encoding="utf-8")
+    loaded = load_dataset([
+        EEGRecord(raw_path, "s1", event_file=table, metadata={"reference": "synthetic"})
+    ], preprocess_kwargs={"l_freq": None, "h_freq": None, "channels": ["Cz"]})
+    binding = json.loads(loaded[0].metadata["event_sample_coordinates"])
+    assert binding["input_sample_coordinate"] == "loaded_file_relative"
+    assert binding["output_sample_coordinate"] == "MNE_absolute"
+    assert binding["applied_sample_offset"] == raw.first_samp

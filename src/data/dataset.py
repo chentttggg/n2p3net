@@ -18,6 +18,8 @@ from data.events import ScheduledEventTimeline, selection_group_id
 from data.metadata import build_subject_embedding, normalize_sex
 from data.preprocess import PreprocessResult, execute_preprocessing, preprocess
 
+EVENT_COORDINATE_PROGRAM = "external_table_file_relative_to_MNE_absolute_arrays_preserved/1"
+
 
 def _normalize_label_map(label_map: Mapping[str, int]) -> dict[str, int]:
     if any(
@@ -30,7 +32,11 @@ def _normalize_label_map(label_map: Mapping[str, int]) -> dict[str, int]:
 
 @dataclass(frozen=True)
 class EEGRecord:
-    """One continuous recording and its event-level supervision."""
+    """One continuous recording and its event-level supervision.
+
+    Inline events and NPY/NPZ event arrays use absolute MNE sample indices.
+    TSV/CSV/JSON event tables use sample/onset relative to the loaded file.
+    """
 
     path: Path
     subject_id: str
@@ -146,7 +152,11 @@ def read_event_table(
     sfreq: float,
     label_map: Mapping[str, int] | None = None,
 ) -> tuple[np.ndarray, np.ndarray | None]:
-    """Read BIDS-like TSV/CSV/JSON or NumPy event arrays."""
+    """Read relative BIDS-like tables or absolute MNE NumPy event arrays.
+
+    This reader preserves the input sample convention; resolve_record_events
+    converts file-relative table samples to the raw object's absolute axis.
+    """
 
     path = Path(path)
     suffix = path.suffix.lower()
@@ -230,13 +240,9 @@ def resolve_record_events(
             sfreq=float(raw.info["sfreq"]),
             label_map=record.label_map,
         )
-        # Event tables count samples from the file start; MNE events are absolute.
-        if raw.first_samp:
-            if Path(record.event_file).suffix.lower() in {".npy", ".npz"}:
-                raise ValueError(
-                    "array event files on a cropped recording (first_samp != 0) need an "
-                    "explicit sample convention; use a TSV/CSV/JSON event table"
-                )
+        if Path(record.event_file).suffix.lower() not in {".npy", ".npz"} and raw.first_samp:
+            # The file-relative table boundary is converted exactly once.
+            # Inline, annotation, and NumPy MNE events already use this axis.
             events = events.copy()
             events[:, 0] += int(raw.first_samp)
         if record.labels is not None:
@@ -406,6 +412,15 @@ def load_dataset(
     for record in records:
         raw = read_raw(record.path, **dict(record.reader_kwargs))
         events, labels = resolve_record_events(raw, record)
+        relative_table = (record.event_file is not None
+                          and Path(record.event_file).suffix.lower() not in {".npy", ".npz"})
+        coordinate_binding = {
+            "program": EVENT_COORDINATE_PROGRAM,
+            "input_sample_coordinate": "loaded_file_relative" if relative_table else "MNE_absolute",
+            "output_sample_coordinate": "MNE_absolute",
+            "raw_first_samp": int(raw.first_samp),
+            "applied_sample_offset": int(raw.first_samp) if relative_table else 0,
+        }
         output.append(
             build_subject(
                 raw,
@@ -414,7 +429,11 @@ def load_dataset(
                 age=record.age,
                 sex=record.sex,
                 subject_id=record.subject_id,
-                metadata=record.metadata,
+                # Subject metadata is also consumed as scalar DataFrame
+                # columns by the manifest caller; retain this structured
+                # binding as canonical JSON rather than an unsupported dict.
+                metadata={**record.metadata, "event_sample_coordinates": json.dumps(
+                    coordinate_binding, sort_keys=True, separators=(",", ":"))},
                 candidate_ids=record.candidate_ids,
                 target_candidate_ids=record.target_candidate_ids,
                 repetition_indices=record.repetition_indices,

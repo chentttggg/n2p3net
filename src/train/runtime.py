@@ -31,6 +31,7 @@ CompileMode = Literal["default", "reduce-overhead", "max-autotune"]
 DEFAULT_FUSED_ADAM = True
 DEFAULT_COMPILE_MODE: CompileMode = "reduce-overhead"
 _ACCELERATOR_TYPES = frozenset({"cuda", "xpu"})
+MATRIX_ROW_ORDER_PROGRAM = "torch_CPU_generator_randperm_then_device_gather/1"
 
 
 def is_accelerator(device: torch.device) -> bool:
@@ -417,6 +418,8 @@ class MatrixBatchSource:
     optimizer-batch loop.
     """
 
+    row_order_program = MATRIX_ROW_ORDER_PROGRAM
+
     def __init__(
         self,
         X: torch.Tensor,
@@ -565,14 +568,16 @@ class MatrixBatchSource:
         return self.cpu_row_domains is not None
 
     def make_generator(self, seed: int) -> torch.Generator:
-        # Preload admission depends on live free device memory, so a device-side
-        # stream would make the shuffle order for a fixed seed depend on it.
-        generator = torch.Generator()
+        # Preload admission depends on live memory, so a device RNG would make
+        # a fixed seed depend on whether this source happened to be resident.
+        generator = torch.Generator(device="cpu")
         generator.manual_seed(int(seed))
         return generator
 
     def random_permutation(self, generator: torch.Generator) -> torch.Tensor:
-        permutation = torch.randperm(self.n_rows, generator=generator)
+        if not isinstance(generator, torch.Generator) or generator.device.type != "cpu":
+            raise ValueError("MatrixBatchSource row permutations require an explicit CPU generator.")
+        permutation = torch.randperm(self.n_rows, generator=generator, device="cpu")
         return permutation.to(self.runtime.device) if self.preloaded else permutation
 
     def shuffled_batches(

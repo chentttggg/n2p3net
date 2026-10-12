@@ -213,6 +213,20 @@ def test_matrix_batch_source_one_shot_shuffle_preserves_permutation() -> None:
     assert torch.equal(observed_y, y[permutation])
 
 
+def test_preloaded_and_streamed_cpu_permutation_use_the_same_cpu_stream(monkeypatch) -> None:
+    runtime = GpuPerformanceScheduler(torch.device("cpu"))
+    values = torch.arange(40, dtype=torch.float32).reshape(10, 2, 2)
+    labels = torch.arange(10)
+    source = MatrixBatchSource(values, labels, runtime, preload=False)
+    source.preloaded = True
+    source.device_X, source.device_y = values, labels
+    assert source.make_generator(17).device.type == "cpu"
+    preloaded = source.random_permutation(source.make_generator(17))
+    source.preloaded = False
+    streamed = source.random_permutation(source.make_generator(17))
+    assert torch.equal(preloaded.cpu(), streamed)
+
+
 @pytest.mark.parametrize("preloaded,materialize", [(False, False), (True, False), (True, True)])
 @pytest.mark.parametrize("shuffle", [False, True])
 def test_matrix_source_preserves_channel_masks_across_all_batch_paths(
