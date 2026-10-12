@@ -46,13 +46,15 @@ stage05 两次、stage06 一次本地实际执行均由 RAM 门记为 `resource_
 
 multiscale九列是fine9空间的可逆chart，并非新增span或正交wavelet。若`D_new=D_fine S`，保持同物理prior要求`Lambda_new=S.T Lambda_fine S`；同坐标ridge会改变prior及有效自由度，不能宣称同容量。g-reference沿真实C设计重编译并接受独立换图预测检验；hard端点为真实ambient chart内的约束。fs、`L=round(fs*T)`、实际端点`L/fs`、最后样本和半开支持继续分别保存。
 
-实际consumer链为spec→compiler→event design→C-reference/prior→continuous posterior/容量→原OOF→ensemble save/load/score。当前专用三臂dictionary comparison panel仍是原Gaussian/cosine设计，不静默扩大；新家族off-grid响应状态、导数/硬斜率、wavelet、完整历史与公共收益仍未完成。W03.01保持partial。
+实际consumer链为spec→compiler→event design→C-reference/prior→continuous posterior/容量→原OOF→ensemble save/load/score。五家族所有现有合法空间的精确off-grid δ/w评价及完整历史预测已完成下述软件切片。专用三臂dictionary comparison panel保持原Gaussian/cosine设计；下一出口为同支持公共评价、wavelet及导数/硬斜率，W03.01保持partial。
 
 后续off-grid/history方向已通过源码、方法原件与独立反例审阅，见[方向绑定](../assets/research_resume_20261011/b07_offgrid_history_direction_binding.json)。12个小矩阵数学反例与7个时钟/授权反例分别验证：同native数组不足以定义连续函数；半开裁剪不能用Taylor或舍入onset替代；邻居与当前必须共用一次kernel后验并保跨事件协方差；正确条件混合为full与prefix各自先积分再相减，prefix同时更新邻居状态。Unfold原全文的完整事件设计/线性叠加给出方法依据，当前模型仍按自己的Gaussian/有限状态假设推导。
 
-实施已在独立工作树推进五家族所有现有合法native空间的精确δ/w评价、原decoder持有的截止内完整历史、实际冻结C后验的多通道条件预测与保存重放。当前decision完整flash覆盖与response尾部右删失分别记录；next-selection的已发生前缀保完整候选词表与零贡献列。完整state-law支持包络决定历史授权范围，恒零或相同设计仅在完整先验质量可恢复时精确边缘化。计算接原stored noise和增广QR，避免构造native n×n协方差。该切片是冻结C后验的预测扩展；C本身随机响应的后验重估、实测fractional时钟、wavelet/硬斜率与公共效能分别进入后续验收。
+五家族精确δ/w评价、原decoder持有的截止内完整历史、冻结C后验的多通道条件预测及capsule保存重放已集成。当前decision完整flash覆盖与response尾部右删失分别记录；next-selection已发生前缀保完整候选词表和零贡献列。每个state的精确半开支持参与事件可见性判断，包络用于读取边界和ledger；恒零轴按完整实际joint质量边缘化，严格正质量不按阈值裁剪。原decoder整数event sample、response latency和width分别保存；实测fractional时钟由后续独立输入authority提供。
 
-B05 数值中枢已固定接入 B07：`native_history_marginal_program` 直接消费保存的 `TemporalNoise`、M/R/Σ 和实际 full/prefix 观测，按通道展开 flat nuisance，分别生成 full/prefix absolute potential、稳定 conditional companion 与 source-scale/nats certificate。真实 A01 drift=0 被接受，drift=1e3/1e6 在计算前 typed reject；history adapter 尚待切换到该中枢并重新完成 capsule replay 验收。
+B05数值中枢与history adapter已接通：`native_history_marginal_program`消费原`TemporalNoise`、M/R/Σ及实际full/prefix观测，复用增广QR，按通道展开共同flat nuisance，生成full/prefix absolute potential、稳定conditional companion和原source-scale/nats估计。每状态及完整mixture的数值记录随prediction/capsule持久化。mixture先由prefix更新状态权重，再积分direct conditional；误差传播为`2*max(prefix_error)+max(conditional_error)`加实际算术估计，full误差保留且不重复相加。最终candidate scores先减max再logsumexp，保存概率保持归一关系；数值失败返回完整requested词表、capability和源码身份。
+
+冻结C后验的合法state范围按实际C标签条件化的正joint质量判断：每个C-owned selection的正质量状态全部nominal，或它们的full/prefix design均精确为0。显式C-nominal/future-variable joint law获准；更宽C随机响应模型进入新posterior producer。主树54项相关software/synthetic检查通过，最终C-law六案例和多C失败账本另在实际主树复签；mixture独审11项数学案例与32组Decimal110扰动通过。软件验证包含合成拟合/加载/预测，独审曾误调用的4-case fixture按1次合成C fit、7次顶层load、6次prediction attempt单列，public fit/score为0。实际raw源码、行尾差异、验证范围及后续公共评价见[整合绑定](../assets/research_resume_20261012/history_central_integration.json)。真实A01 drift=0与drift=1e3/1e6的原接受/拒绝证据保留其来源。
 
 ## B09：可识别效应与source群体forecast
 

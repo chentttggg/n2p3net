@@ -1,6 +1,6 @@
 # 当前执行计划
 
-当前科研按[123项进展](evidence/wishlist_progress_20261010.zh.md)和四个主题页并行推进：B03完整组与真正prefix整程序nested选择、同run inner/final保存重放及public parent准入已有软件出口；当前P1数值稳定化、source cache/shared score、conditional白化和逐decision horizon已集成。B07 `/4`家族与B09可识别效应保其已有出口，下一真实opt-in独立future评价、完整公共队列、B07 off-grid/history和B13成人确认继续按各块依赖推进。旧producer与失败保原身份，云窗口拥有公共执行源码和资源调度。
+当前科研按[123项进展](evidence/wishlist_progress_20261010.zh.md)和四个主题页并行推进：B03完整组与真正prefix整程序nested选择、同run inner/final保存重放及public parent准入已有软件出口；P1数值稳定化、source cache/shared score、conditional白化和逐decision horizon已集成。B07五家族off-grid/完整history及中央评分/capsule软件切片已接受，B09可识别效应保已有出口；下一真实opt-in独立future评价、完整公共队列、C-latent新producer及B13成人确认按各块依赖推进。旧producer与失败保原身份，云窗口拥有公共执行源码和资源调度。
 
 P1数值续评16/16完成、0新fit：原冻结compiled-W模型的shared/private命中5/8与6/8，NLL7.3365与5.5540，全部概率/失败/来源经独立复算。真实平稳prefix compiler、新producer panel和Path修复已集成；全部8人Windows原态严格出口及33成员传输包已独立接受。本地三次执行由RAM门收敛、完整cell0/16，partial与失败保留。云科学接线的原输入授权/跨attempt互斥已修后接受；实际factory/统一controller/Linux门闭合后，按同一响应/噪声参数与同支持直接执行新16格配对，见[响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。B12基础公共程序独立前进。
 
@@ -33,7 +33,7 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
 | B05 AR/噪声 | 固定32前缀/M1、given-noise physical-prior；modern M/R/原Σ与完整source/C权限paired入口；冻结W态16格续评完成；双oracle及真实stationary `/3` compiler/save-load；新producer strict export/Path/控制面通过 | 新law同支持16格云执行与配对概率分析、Windows资源采样诊断、finite endpoint交互与joint MLE |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
-| B07 字典/历史 | A0/A1 portable、cubic `/3`及raised/multiscale `/4` native；actual prior/chart/容量/OOF/保存链，有限history与scalar latent reference；精确δ/w与完整history纵向方向已复审、隔离代码实施中 | 五家族off-grid/截止内history权限/真实冻结后验及保存重放接受、同支持评价；wavelet、硬斜率、C-latent多channel重新拟合与效能；multiscale换坐标不当新增span |
+| B07 字典/历史 | A0/A1 portable、cubic `/3`及raised/multiscale `/4` native；actual prior/chart/容量/OOF/保存链；五家族精确δ/w、截止内history权限、中央full/prefix/conditional、有限joint mixture/C-law及capsule保存重放软件接受 | 冻结同支持公共opt-in评价；实测fractional时钟authority、wavelet、硬斜率、C-latent多channel新posterior与效能；multiscale按换坐标解释 |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
 | B09 空间 | 一般signal-prior/固定graph；source-only group forecast、完整effect绑定和exact structural null软件出口 | Pz4原证据不晋升；真实source builder/跨布局reference transport/OOF与ensemble consumer、d-prime/variance不确定性、joint MLE及新效能 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |

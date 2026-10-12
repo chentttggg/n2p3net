@@ -1,0 +1,194 @@
+{
+  "schema": "n2p3_history_central_integration/1",
+  "created_utc": "2026-10-12T04:04:34.440570+00:00",
+  "status": "accepted_software_synthetic_and_independent_math",
+  "code_head_before_binding": "e0224e40c613b1b859917e01c5f534194f729c85",
+  "author_to_integration": {
+    "1160795cc15fefbdaabf21c8a94c132df7dc1555": "a1042ef303324e7acff1c08f697905bbcb64d3f1",
+    "e10994b551bb41eddef61d12d35642e88e290059": "0ea452939c5005d94766e1c0c22e3320cc767112"
+  },
+  "integrated_sources": {
+    "src/research/history_authority.py": {
+      "integrated_raw_sha256": "be449b713224dbaaa0c0d59c5b685857e0daccf76a24c3233032bd3bc23694f0",
+      "author_raw_sha256": "d9ee31672ed9fcd310073976051e91dc08a2991e2a749bfe01dc70f2f590c06d",
+      "raw_equal": false,
+      "LF_normalized_bytes_equal": true,
+      "AST_equal": true
+    },
+    "src/research/continuous_history_adapter.py": {
+      "integrated_raw_sha256": "b093b87f2b0f14bbc4aecebdfa54b1d215ac69b75b19f6a859a0d37c1a557b65",
+      "author_raw_sha256": "b093b87f2b0f14bbc4aecebdfa54b1d215ac69b75b19f6a859a0d37c1a557b65",
+      "raw_equal": true,
+      "LF_normalized_bytes_equal": true,
+      "AST_equal": true
+    },
+    "src/research/history_artifact.py": {
+      "integrated_raw_sha256": "3959efc620c15e7ac740918ecc095b2b2fc84d744995852d586f18e504ebd271",
+      "author_raw_sha256": "1ca261b1036c04e4a80f3ab53d06e12e02d7b80a8a0569a422f300137d31cc13",
+      "raw_equal": false,
+      "LF_normalized_bytes_equal": true,
+      "AST_equal": true
+    },
+    "src/research/response_history_identification.py": {
+      "integrated_raw_sha256": "e78cb276a9942c8bfb78e687001aef9db32bf2323742465adc0dac24e77ec7a5",
+      "author_raw_sha256": "e78cb276a9942c8bfb78e687001aef9db32bf2323742465adc0dac24e77ec7a5",
+      "raw_equal": true,
+      "LF_normalized_bytes_equal": true,
+      "AST_equal": true
+    },
+    "src/research/channel_noise_mechanism.py": {
+      "integrated_raw_sha256": "51c6ba703f69f2f6aaf7e673b5953fc249774cdf056a65eb99eca21b51ce900d",
+      "author_raw_sha256": "51c6ba703f69f2f6aaf7e673b5953fc249774cdf056a65eb99eca21b51ce900d",
+      "raw_equal": true,
+      "LF_normalized_bytes_equal": true,
+      "AST_equal": true
+    },
+    "src/research/latent_response_reference.py": {
+      "integrated_raw_sha256": "46069322fc3739870ce8a423eaaa26cfd81a33c71da7afc80d1422bc1bf2f377",
+      "author_raw_sha256": "46069322fc3739870ce8a423eaaa26cfd81a33c71da7afc80d1422bc1bf2f377",
+      "raw_equal": true,
+      "LF_normalized_bytes_equal": true,
+      "AST_equal": true
+    },
+    "src/transfer/continuous_decision.py": {
+      "integrated_raw_sha256": "f3d603202ad8893c9339b302af22cac74abf88274eba5808cd34b12c457b3925",
+      "author_raw_sha256": "f3d603202ad8893c9339b302af22cac74abf88274eba5808cd34b12c457b3925",
+      "raw_equal": true,
+      "LF_normalized_bytes_equal": true,
+      "AST_equal": true
+    },
+    "src/transfer/response_dictionary.py": {
+      "integrated_raw_sha256": "f2b3e5f5f37cb9e625138cff1f1e67bda9ab5f110c60a9972ddc38f14fed2df0",
+      "author_raw_sha256": "f2b3e5f5f37cb9e625138cff1f1e67bda9ab5f110c60a9972ddc38f14fed2df0",
+      "raw_equal": true,
+      "LF_normalized_bytes_equal": true,
+      "AST_equal": true
+    },
+    "src/transfer/ensemble_views.py": {
+      "integrated_raw_sha256": "8b4d2d406812368957af295bbda0f4e0b67823a97ca530c8efd7ed1e222610d9",
+      "author_raw_sha256": "8b4d2d406812368957af295bbda0f4e0b67823a97ca530c8efd7ed1e222610d9",
+      "raw_equal": true,
+      "LF_normalized_bytes_equal": true,
+      "AST_equal": true
+    },
+    "tests/research/test_history_central_evidence.py": {
+      "integrated_raw_sha256": "c8b2a28eace2d1b5f4ffeb2cb3daf5628be047a656ca0cd7f9a98622a3f0c656",
+      "author_raw_sha256": "c8b2a28eace2d1b5f4ffeb2cb3daf5628be047a656ca0cd7f9a98622a3f0c656",
+      "raw_equal": true,
+      "LF_normalized_bytes_equal": true,
+      "AST_equal": true
+    }
+  },
+  "root_validation": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_HISTORY_ROOT_ACCEPTANCE\\root.xml",
+    "sha256": "f9d736739610106df83747ed775222758279facd4099c7cca9acd56f312ec672",
+    "bytes": 9568,
+    "tests": 54,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "source_commit": "a1042ef303324e7acff1c08f697905bbcb64d3f1",
+    "scope": "software and synthetic C-fit/parent-load/history-score/capsule replay plus affected recovery contracts",
+    "last_zero_axis_line": "0ea4529 accepted separately by actual-main C-law guard and multi-C failure proof",
+    "full_suite": false,
+    "rerun_for_documentation": false,
+    "synthetic_fit_load_score": "included; exact aggregate call counts were not instrumented",
+    "public_fit": 0,
+    "public_score": 0
+  },
+  "C_law_final_review": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\claude-safe-integration-20261012\\n2p3-net\\tmp\\B07_C_LAW_SCIENCE_REVIEW_20261012\\final_binding.json",
+    "sha256": "cae820012a7231b413ce0cf9c953f0c8b8fde4ccba7c37c9d599725290ae062b",
+    "bytes": 8951,
+    "handoff": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\claude-safe-integration-20261012\\n2p3-net\\tmp\\B07_C_LAW_SCIENCE_REVIEW_20261012\\FINAL_HANDOFF.zh.md",
+      "sha256": "9845f149c92c2344cbe15a6d1a2491e26df623ec0c1d76ec6366834e5cc0ff3b",
+      "bytes": 2934
+    },
+    "checks": {
+      "revised_guard_probe.py": {
+        "command": [
+          "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+          "tmp\\B07_C_LAW_SCIENCE_REVIEW_20261012\\final_main_probes\\revised_guard_probe.py"
+        ],
+        "exit_code": 0
+      },
+      "failure_proof_probe.py": {
+        "command": [
+          "D:/BCI/n2p3-net/.venv/Scripts/python.exe",
+          "tmp\\B07_C_LAW_SCIENCE_REVIEW_20261012\\final_main_probes\\failure_proof_probe.py"
+        ],
+        "exit_code": 0
+      }
+    },
+    "main_review_head": "e0224e40c613b1b859917e01c5f534194f729c85",
+    "scope": "real_main_guard_AST_actual_protocol_admission_C_conditioning_and_selection_design_only",
+    "model_fit": 0,
+    "model_load": 0,
+    "public_score": 0
+  },
+  "mixture_final_review": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_MIXTURE_REVIEW\\binding.json",
+    "sha256": "7cf262bb0f1f276c2c746d10316ae480aba26fa740af65f8e95d3dc7ab0e5161",
+    "bytes": 5133,
+    "handoff": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_MIXTURE_REVIEW\\HANDOFF.zh.md",
+      "sha256": "fa178938553de7d92df79f3c774f7c377195929e1e9ec4de63fff46fc6dfcc65",
+      "bytes": 5998
+    },
+    "oracle": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\B07_MIXTURE_REVIEW\\mixture_oracle.json",
+      "sha256": "28089743116e842bc60186313d6fe5a6d5283a57e96bda3ee224407a155cb736",
+      "bytes": 21507
+    },
+    "mathematical_cases": 11,
+    "Decimal110_perturbation_patterns": 32,
+    "math_probe_model_fit_load_native_component_calls": 0,
+    "separate_synthetic_fixture_ledger": {
+      "status": "accidental_out_of_scope_synthetic_fixture_invocation_disclosed_not_repeated",
+      "executed_selection": "test_each_component_can_pass_while_complete_mixture_requires_numerical_unavailable plus test_actual_parent_central_certificate_and_typed_rejection_survive_original_byte_capsule[2/3/4]",
+      "test_result": "4 passed; separate from independent mathematical probe evidence",
+      "synthetic_C_fit_calibration_prefix_top_level_calls": 1,
+      "FittedEnsemble_load_top_level_calls": 7,
+      "load_count_basis": "one module fixture load plus three capsule saves each with one load plus three replays each with one load; all test paths completed",
+      "predict_history_attempts": 6,
+      "prediction_count_basis": "three capsule saves and three corresponding replays",
+      "native_Gaussian_component_evaluation_attempts": {
+        "lower_bound": 72,
+        "upper_bound": 216,
+        "exact_count": "not instrumented",
+        "basis": "two complete normal predictions retain 36 positive states each; six prediction attempts have at most 36 states each"
+      },
+      "nested_fit_load_constructor_counts": "not instrumented; top-level counts are not a total of all nested model/noise operations",
+      "actual_public_fits": 0,
+      "actual_public_scores": 0,
+      "actual_public_EEG_inputs": 0,
+      "synthetic_MAT_decoder_constructors": 4,
+      "decoder_count_basis": "module fixture compiler plus three original-byte replay compilers",
+      "production_source_edits": 0,
+      "repeated_fixture_runs": 0,
+      "must_not_be_added_to_pure_tiny_or_root_54_suite_counts": true,
+      "input_effect": "pytest-generated software parent/capsules in isolated test temp; original sources and historical public prediction inputs unchanged"
+    },
+    "author_main_EOL_difference": "artifact author CRLF differs from integrated LF; sources bound separately"
+  },
+  "contract": {
+    "central_owner": "native_history_marginal_program with stored M/R/Sigma/TemporalNoise and actual full/prefix observations",
+    "mixture": "prefix posterior weights integrate direct stable conditional companions; final scores max-centered before normalization",
+    "source_error": "2*max(prefix_error)+max(conditional_error); full errors retained without double counting",
+    "certificate_kind": "finite-program normwise and binary64 arithmetic estimates; all_input_certificate=false",
+    "C_state_permission": "actual_C_label_conditioned_positive_theta_nominal_or_all_full_prefix_C_images_zero",
+    "typed_numerical_unavailable": "preserves complete requested roster, capability and source identities",
+    "capsule": "saved result includes full/prefix/conditional/mixture estimates and is compared on original-byte replay",
+    "event_clock": "original decoder integer event sample; response latency/width are separate latent states"
+  },
+  "historical_artifacts_resigned": false,
+  "public_fit": 0,
+  "public_score": 0,
+  "next": [
+    "opt-in public evaluation on frozen supported history",
+    "new C-latent posterior producer",
+    "measured fractional-clock authority and save/replay",
+    "wavelet and hard-slope mechanisms"
+  ]
+}
