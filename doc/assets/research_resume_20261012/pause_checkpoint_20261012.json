@@ -1,0 +1,64 @@
+{
+  "schema": "n2p3_research_pause_checkpoint/1",
+  "status": "paused_by_user",
+  "created": "2026-10-12",
+  "worktree": "C:/Users/chent/.codex/worktrees/research-integration/n2p3-net",
+  "branch": "codex/research-integration-20261011",
+  "head": "4672e08a1530d9c9ffab2090c15a642108951857",
+  "worktree_clean_at_checkpoint": true,
+  "claude_merge": {
+    "tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+    "merge_commit": "e2bececff0c37c2c0e901ef76bb911533b2495ef",
+    "ancestor_check": "passed"
+  },
+  "completed": [
+    "Claude branch ancestry merged; conflicts preserved accepted research semantics",
+    "P1 stationary 16-cell and entry005 prefix analyses bound in existing topic documents",
+    "event coordinate and CPU row-order contract integrated",
+    "dead fold dump/permutation and orphan helper retirement integrated",
+    "unsafe candidate-dependent common-support selection rejected with counterexample",
+    "cloud CPU25/GPU4 admission floor and empty nested request rejection integrated",
+    "target calibration scope gate independently rechecked",
+    "InformationBound/operator review recorded; operator narrow gate accepted, information bound deferred"
+  ],
+  "evidence": [
+    "doc/assets/research_resume_20261012/cloud_candidate_analysis_20261012.zh.md",
+    "doc/assets/research_resume_20261012/p1_stationary_analysis.json",
+    "doc/assets/research_resume_20261012/claude_current_coverage.json",
+    "doc/assets/research_resume_20261012/cloud_floor_nested_review.json",
+    "doc/assets/research_resume_20261012/source_scope_review.json",
+    "doc/assets/research_resume_20261012/information_operator_review.json",
+    "tmp/claude_codex_20261011/FROM_director.md",
+    "tmp/claude_codex_20261011/FROM_chores.md"
+  ],
+  "validation": {
+    "affected_module_pytest": "passed",
+    "ruff": "passed",
+    "git_diff_check": "passed",
+    "full_suite": "not run by design",
+    "public_fit": 0,
+    "public_score": 0,
+    "model_load": 0
+  },
+  "cloud_state": {
+    "entry005_science_exit": 0,
+    "entry005_owned_after": 0,
+    "p1_science_exit": 0,
+    "p1_owned_after": 0,
+    "outer_queue_exit": 1,
+    "retirement": "wait for cloud owner confirmation before worktree retirement or git gc"
+  },
+  "remaining": [
+    "26 real pending rows from the 19d32e1 coverage snapshot; cloud floor and source scope followups are documented separately",
+    "InformationBound estimand/activation/null-subspace redesign",
+    "B07 public opt-in evaluation, C-latent producer and fractional-clock authority",
+    "B09/B10/B11/B12/B13 research exits and adult/device confirmation",
+    "future cloud topology optimization must preserve exact replay and completed producer identities"
+  ],
+  "resume": [
+    "Read this checkpoint, AGENTS.md, doc/README.md and the four topic pages",
+    "Revalidate current git and cloud state before touching code",
+    "Choose one pending row with a complete caller/save/replay contract and delegate a bounded review",
+    "Do not rerun the local full suite unless a broad source change justifies it"
+  ]
+}
