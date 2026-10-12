@@ -12,8 +12,10 @@ from transfer.dictionary_artifact import (
     ARRAY_KEYS,
     DICTIONARY_SCHEMAS,
     DictionaryArtifactError,
+    admit_evaluation_record,
     admit_record,
     compile_state,
+    evaluate_state,
 )
 from transfer.noise_model import freeze_metadata, metadata_digest
 
@@ -111,6 +113,21 @@ class ResponseDictionary:
         self.digest()
         return self._record()
 
+    def evaluate(self, query, *, coordinate="seconds", support="analytic"):
+        """Continuous exact-site values in the original admitted coefficient chart.
+
+        Integer sample sites reproduce native state exactly. Float seconds are
+        their exact binary64 values, so rounded stored times are not snapped to
+        n/fs. Pass Fraction(n)/Fraction.from_float(fs) for that exact time site,
+        or simply pass n with coordinate='sample'. No derivative is implied.
+        """
+        self.digest()
+        arrays, metadata = evaluate_state(self._record(), self.identity_digest, query,
+            coordinate=coordinate, support=support, implementation_sha256=IMPLEMENTATION_SHA256)
+        result = object.__new__(ResponseDictionaryEvaluation)
+        result._install(self, arrays, metadata)
+        return result
+
     @classmethod
     def from_record(cls, record):
         if (not isinstance(record, dict) or not isinstance(record.get("schema"), str)
@@ -125,3 +142,59 @@ class ResponseDictionary:
         object.__setattr__(result, "spec", spec)
         result._install(arrays, metadata)
         return result
+
+
+class ResponseDictionaryEvaluation:
+    """Immutable query/result artifact bound to an original dictionary package.
+
+    Reload requires that admitted dictionary. The stored parent identities are
+    retained; evaluator source is a consumer identity, not a new native producer.
+    """
+
+    def _install(self, dictionary, arrays, metadata):
+        self.dictionary = dictionary
+        for key, value in arrays.items():
+            setattr(self, key, value)
+        self._metadata = freeze_metadata(metadata)
+        self._integrity = metadata_digest(self._record())
+
+    def _record(self):
+        return {**json.loads(json.dumps(self._metadata, allow_nan=False)),
+            **{key: getattr(self, key).tolist() for key in ("ambient_matrix", "matrix", "support_mask")}}
+
+    @property
+    def identity_digest(self):
+        return self._integrity
+
+    def metadata(self):
+        return json.loads(json.dumps(self._metadata, allow_nan=False))
+
+    def digest(self):
+        if (self.dictionary.digest() != self._metadata["dictionary"]["identity_digest"]
+                or metadata_digest(self._record()) != self._integrity):
+            raise DictionaryArtifactError("immutable_evaluation_state_changed")
+        return self._integrity
+
+    def record(self):
+        self.digest()
+        return self._record()
+
+    def save(self, path):
+        from research.execution import atomic_write_json
+
+        atomic_write_json(Path(path), self.record())
+        return Path(path)
+
+    @classmethod
+    def from_record(cls, record, *, dictionary):
+        if not isinstance(dictionary, ResponseDictionary):
+            raise DictionaryArtifactError("evaluation_requires_admitted_dictionary")
+        dictionary.digest()
+        arrays, metadata = admit_evaluation_record(record, dictionary._record(), dictionary.identity_digest)
+        result = object.__new__(cls)
+        result._install(dictionary, arrays, metadata)
+        return result
+
+    @classmethod
+    def load(cls, path, *, dictionary):
+        return cls.from_record(json.loads(Path(path).read_bytes()), dictionary=dictionary)

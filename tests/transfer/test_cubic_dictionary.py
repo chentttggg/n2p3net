@@ -126,17 +126,20 @@ def test_schema_family_and_knot_metadata_cannot_relabel_saved_numbers():
         ResponseDictionary.from_record(record)
 
 
-def test_bspline_transformed_latent_reference_is_typed_unsupported_and_zero_state_keeps_saved_rows():
+def test_bspline_transformed_latent_reference_uses_exact_owner_and_zero_state_keeps_saved_rows():
     actual = dictionary()
     onsets, labels = np.array([7, 49]), np.array([0, 1])
     design, _ = selection_design(actual, onsets, labels, origin_sample=0, observed_samples=100,
         state=ResponseState(1., 1., 0., 1., 1.))
     np.testing.assert_array_equal(design, _event_design(onsets, labels, 100, actual.matrix))
+    assert analytic_basis(actual, np.array([.1])).tobytes() == actual.evaluate([.1]).matrix.tobytes()
+    shifted, ledger = selection_design(actual, onsets, labels, origin_sample=0, observed_samples=100,
+        state=ResponseState(1., 1., .01, 1., 1.))
+    assert np.isfinite(shifted).all() and not np.array_equal(shifted, design)
+    assert ledger["events"][0]["response_evaluation"]["schema"] == "n2p3_response_dictionary_evaluation/1"
+    # The exact finite-shift feature does not claim a new derivative protocol.
     with pytest.raises(NumericalResolutionError, match="off_grid.*unsupported"):
-        analytic_basis(actual, np.array([.1]))
-    with pytest.raises(NumericalResolutionError, match="off_grid.*unsupported"):
-        selection_design(actual, onsets, labels, origin_sample=0, observed_samples=100,
-            state=ResponseState(1., 1., .01, 1., 1.))
+        analytic_basis(actual, np.array([.1]), derivative=1)
 
 
 @pytest.mark.parametrize("endpoint,prior", [("free", KernelPriorSpec.calibration_g(4.)),
