@@ -76,8 +76,6 @@ class N2P3NetBaseline(DeepBaseline):
             runtime=runtime,
             channel_mask=channel_mask,
             pretrained_state_dict=pretrained_state_dict,
-            # A warm start that silently skips mismatched tensors is a partly random trunk.
-            strict_load=pretrained_state_dict is not None,
         )
         self.model_name = "n2p3net"
         self.tmin_s = float(tmin_s)
