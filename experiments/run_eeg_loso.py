@@ -26,11 +26,15 @@ from baselines.deep import (  # noqa: E402
     DeepConfig,
 )
 from baselines.evaluate import (  # noqa: E402
+    LOSO_METRICS_SCHEMA_V2,
+    BinarySummary,
+    CandidateSummary,
     evaluate_binary,
     evaluate_candidate_selection,
     loso_folds,
     resolve_artifact_qc_workers,
     resolve_fold_local_artifact_models,
+    validate_loso_metric_record,
 )
 from data.artifact import (  # noqa: E402
     FoldLocalArtifactPolicy,
@@ -53,7 +57,11 @@ COHORT_CONTRACTS = {
     "gtn_paper_offline": PAPER_GTN_DATA_CONTRACT,
     "gtn_paper": PAPER_GTN_CAUSAL_DATA_CONTRACT,
 }
-from data.epochs import load_epoch_dataset, loaded_epoch_cache_attestation  # noqa: E402
+from data.epochs import (  # noqa: E402
+    load_epoch_dataset,
+    loaded_epoch_cache_attestation,
+    materialize_dataset_identity,
+)
 from models.n2p3net import (  # noqa: E402
     DEFAULT_N2P3_ARCHITECTURE,
     DEFAULT_N2P3_POOLING_MODE,
@@ -154,6 +162,40 @@ def _claim_output_dir(output_dir: Path) -> Path:
     if existing:
         raise FileExistsError(f"{output_dir} already holds artifacts {', '.join(existing)}; choose a new --run-name")
     return output_dir
+
+
+def _participant_authority_ids(dataset, subject_ids: np.ndarray) -> np.ndarray:
+    table = materialize_dataset_identity(dataset)
+    authorities = {local: table.record_for(local).authority_key() for local in np.unique(subject_ids)}
+    return np.asarray([authorities[local] for local in subject_ids])
+
+
+def _summary_metric_fields(summary: BinarySummary) -> dict[str, object]:
+    """Build and validate the metric fields used by the actual record writer."""
+
+    candidate = isinstance(summary, CandidateSummary)
+    fields = {
+        "metric_schema": LOSO_METRICS_SCHEMA_V2,
+        "decision_hit_rate_mean": summary.hit_rate_mean if candidate else None,
+        "primary_decision_hit_rate": summary.primary_hit_rate if candidate else None,
+        "primary_decision_hit_rate_decision_micro": summary.primary_hit_rate if candidate else None,
+        "primary_participant_macro_hit_rate": (
+            summary.primary_participant_macro_hit_rate if candidate else None
+        ),
+        "primary_hit_scope": summary.primary_hit_scope if candidate else None,
+        "participant_macro_scope": summary.participant_macro_scope if candidate else {
+            "reduction": "not_applicable_binary", "participant_count": 0,
+            "denominator": "not_applicable",
+        },
+        "raw_all_hit_rate": summary.raw_all_hit_rate if candidate else None,
+        "hit_at_repetition_macro": summary.hit_at_repetition_macro if candidate else None,
+        "hit_at_repetition_decision_micro": summary.hit_at_repetition_macro if candidate else None,
+        "hit_at_repetition_participant_macro": (
+            summary.hit_at_repetition_participant_macro if candidate else None
+        ),
+    }
+    validate_loso_metric_record(fields)
+    return fields
 
 
 def main() -> None:
@@ -548,6 +590,9 @@ def main() -> None:
         if timeline.supports_full_candidate_chain
         else None
     )
+    participant_ids = (
+        _participant_authority_ids(dataset, subject_ids) if candidate_selection is not None else None
+    )
     device = _resolve_device(args.device)
     run_name = (
         _validate_run_name(args.run_name)
@@ -693,6 +738,7 @@ def main() -> None:
                     folds,
                     candidate_vocab=tuple(range(len(candidate_selection.vocabulary))),
                     fit_group_ids=subject_ids,
+                    participant_ids=participant_ids,
                     event_timeline=timeline,
                     repetition_indices=candidate_selection.repetition_indices,
                     center_decision_logits=args.center_decision_logits,
@@ -717,15 +763,11 @@ def main() -> None:
             progress_file.close()
         record = {
             **manifest,
+            **_summary_metric_fields(summary),
             "balanced_acc_mean": summary.balanced_acc_mean,
             "balanced_acc_std": summary.balanced_acc_std,
             "auc_mean": summary.auc_mean,
             "metric_undefined_folds": summary.metric_undefined_folds,
-            "decision_hit_rate_mean": getattr(summary, "hit_rate_mean", None),
-            "primary_decision_hit_rate": getattr(summary, "primary_hit_rate", None),
-            "primary_hit_scope": getattr(summary, "primary_hit_scope", None),
-            "raw_all_hit_rate": getattr(summary, "raw_all_hit_rate", None),
-            "hit_at_repetition_macro": getattr(summary, "hit_at_repetition_macro", None),
             "execution": {
                 "requested_n_jobs": args.fold_jobs,
                 "requested_backend": args.fold_backend,

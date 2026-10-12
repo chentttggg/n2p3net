@@ -42,6 +42,18 @@ P1云科学接线已由[修后复签](assets/research_resume_20261011/stationary
 
 ## 主链与接口
 
+`baselines.evaluate.evaluate_candidate_selection` 将 `participant_ids` 作为调用者显式提供的
+identity authority key；`fit_group_ids` 与 `domain_ids` 只持有防泄漏划分，不定义参与者。
+`run_eeg_loso` 在实际 subject 子集选定后，用 `materialize_dataset_identity(dataset)` 的
+`record_for(local).authority_key()` 逐行对齐该键。terminal 与 hit@R 的 participant-macro
+先在每人全部 pre-QC requested test decisions 内求均值，再等权平均参与者；不可用记错，
+训练组不进入分母。API 未提供 authority 时不产生 macro。
+实际 writer 的 `_summary_metric_fields` 验证 `n2p3_eeg_loso_metrics/2`，同时保存原
+`primary_decision_hit_rate` / `hit_at_repetition_macro` 值和显式 decision-micro 别名、
+participant-macro 与 scope。无 schema 的历史记录按 `/1` 读取原字段，macro 未知；
+不补签旧分母。新版候选缺 authority/scope、alias 或 repetition 范围冲突均拒绝写出。
+二分类记录的候选指标为 null，scope 为 `not_applicable_binary`。
+
 `continuous_decision._conditional_posterior`持有原prefix/full joint QR公式，fit/profile与score消费同一完整kernel和各record diffuse drift。条件score的`_ConditionalRecordWhitening`在本次已准入record内共享`W(Y)`、`W(D0)`、`W(Z)`；各candidate全record白化`D1`后再split prefix/tail并完成独立QR。当前科研fit/posterior/df及load门保持原实现，详见[白化集成](evidence/execution_and_integration.zh.md#条件评分公共白化集成)。
 
 完整episode指标通过`evaluate_candidate_evidence(..., requested_evidence_levels={DecisionKey: actual_R})`接入；其规范化不可变计划包含全部requested keys及缺失输出，并绑定原DecisionPlan digest。`transfer.outcomes`按每key唯一R记账，各R保自身分母，整体和participant风险仍用原episode；paired compare核完整horizon计划。原scalar fixed-R入口继续消费其原cross-product。预算、raw scope与实际R由reader/caller冻结，详见[逐任务horizon](evidence/public_evaluation.zh.md#逐任务horizon接口)。

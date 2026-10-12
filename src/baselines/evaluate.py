@@ -45,6 +45,9 @@ from train.runtime import (
     resolve_cpu_threads,
 )
 
+LOSO_METRICS_SCHEMA_V1 = "n2p3_eeg_loso_metrics/1"
+LOSO_METRICS_SCHEMA_V2 = "n2p3_eeg_loso_metrics/2"
+
 
 def loso_folds(subject_ids: Sequence[object]) -> list[tuple[np.ndarray, np.ndarray]]:
     subjects = np.asarray(subject_ids).astype(str)
@@ -167,6 +170,114 @@ class CandidateSummary(BinarySummary):
     raw_all_hit_rate: float = float("nan")
     subject_records: list[tuple[object, object, str]] = field(default_factory=list)
     hit_at_repetition_macro: dict[str, float] | None = None
+    primary_participant_macro_hit_rate: float | None = None
+    participant_macro_scope: dict[str, object] | None = None
+    hit_at_repetition_participant_macro: dict[str, float] | None = None
+
+
+def _participant_macro(
+    outcomes: Mapping[str, Sequence[bool]], participants: Sequence[str]
+) -> float:
+    """Average participant means, retaining unavailable participants as misses."""
+
+    values = []
+    for participant in participants:
+        decisions = outcomes.get(participant, ())
+        values.append(float(np.mean(decisions)) if len(decisions) else 0.0)
+    return float(np.mean(values)) if values else float("nan")
+
+
+def validate_loso_metric_record(record: Mapping[str, object]) -> dict[str, object]:
+    """Read a metric view; legacy values do not certify a requested denominator."""
+
+    schema = record.get("metric_schema", LOSO_METRICS_SCHEMA_V1)
+    if schema == LOSO_METRICS_SCHEMA_V1:
+        if any(key in record for key in (
+            "primary_participant_macro_hit_rate", "hit_at_repetition_participant_macro",
+            "participant_macro_scope", "primary_decision_hit_rate_decision_micro",
+            "hit_at_repetition_decision_micro",
+        )):
+            raise ValueError("legacy LOSO metric record mixes version-2 participant-macro fields")
+        return {
+            "metric_schema": LOSO_METRICS_SCHEMA_V1,
+            "primary_decision_hit_rate": record.get("primary_decision_hit_rate"),
+            "primary_decision_hit_rate_decision_micro": None,
+            "primary_participant_macro_hit_rate": None,
+            "hit_at_repetition_macro": record.get("hit_at_repetition_macro"),
+            "hit_at_repetition_decision_micro": None,
+            "hit_at_repetition_participant_macro": None,
+            "participant_macro_scope": None,
+        }
+    if schema != LOSO_METRICS_SCHEMA_V2:
+        raise ValueError(f"unsupported LOSO metric schema: {schema!r}")
+    required = (
+        "primary_decision_hit_rate", "primary_decision_hit_rate_decision_micro",
+        "primary_participant_macro_hit_rate", "hit_at_repetition_macro",
+        "hit_at_repetition_decision_micro", "hit_at_repetition_participant_macro",
+        "primary_hit_scope", "participant_macro_scope",
+    )
+    missing = [key for key in required if key not in record]
+    if missing:
+        raise ValueError(f"LOSO metric schema v2 lacks fields: {missing}")
+    if record["primary_decision_hit_rate"] != record["primary_decision_hit_rate_decision_micro"]:
+        raise ValueError("LOSO decision-micro aliases disagree")
+    if record["hit_at_repetition_macro"] != record["hit_at_repetition_decision_micro"]:
+        raise ValueError("LOSO repetition decision-micro aliases disagree")
+    scope = record["participant_macro_scope"]
+    if not isinstance(scope, Mapping) or scope.get("reduction") not in {
+        "participant_macro_equal_weight", "not_applicable_binary"
+    }:
+        raise ValueError("LOSO participant-macro scope is missing its reduction contract")
+    count = scope.get("participant_count")
+    if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+        raise ValueError("LOSO participant-macro scope has an invalid participant count")
+    if scope["reduction"] == "participant_macro_equal_weight" and count < 1:
+        raise ValueError("LOSO participant-macro scope needs a positive participant count")
+    if scope["reduction"] == "not_applicable_binary" and count != 0:
+        raise ValueError("binary LOSO participant-macro scope must have zero participants")
+    if scope["reduction"] == "not_applicable_binary":
+        if scope.get("denominator") != "not_applicable" or any(
+            record[key] is not None for key in required if key != "participant_macro_scope"
+        ):
+            raise ValueError("binary LOSO metric scope must have no candidate metrics")
+    else:
+        primary_scope = record["primary_hit_scope"]
+        if (scope.get("denominator") != "requested_pre_qc_decision_groups"
+                or scope.get("unavailable_policy") != "incorrect"
+                or scope.get("participant_identity") != "explicit_authority_key"
+                or not isinstance(primary_scope, Mapping)
+                or primary_scope.get("denominator") != scope["denominator"]
+                or primary_scope.get("kind") != "complete_repetition_terminal"):
+            raise ValueError("LOSO participant-macro scope disagrees with the requested decision contract")
+        for key in ("primary_decision_hit_rate_decision_micro", "primary_participant_macro_hit_rate"):
+            _validate_hit_rate(record[key], key)
+        micro_curve = record["hit_at_repetition_decision_micro"]
+        macro_curve = record["hit_at_repetition_participant_macro"]
+        if (not isinstance(micro_curve, Mapping) or not micro_curve
+                or not isinstance(macro_curve, Mapping) or micro_curve.keys() != macro_curve.keys()):
+            raise ValueError("LOSO repetition micro/macro scopes disagree")
+        for curve in (micro_curve, macro_curve):
+            for level, value in curve.items():
+                if not isinstance(level, str) or not level.isdecimal() or int(level) < 1:
+                    raise ValueError("LOSO repetition levels must be positive integer strings")
+                _validate_hit_rate(value, f"hit@{level}")
+    return {
+        "metric_schema": LOSO_METRICS_SCHEMA_V2,
+        "primary_decision_hit_rate_decision_micro": record["primary_decision_hit_rate_decision_micro"],
+        "primary_decision_hit_rate": record["primary_decision_hit_rate_decision_micro"],
+        "primary_participant_macro_hit_rate": record["primary_participant_macro_hit_rate"],
+        "primary_hit_scope": record["primary_hit_scope"],
+        "hit_at_repetition_macro": record["hit_at_repetition_macro"],
+        "hit_at_repetition_decision_micro": record["hit_at_repetition_decision_micro"],
+        "hit_at_repetition_participant_macro": record["hit_at_repetition_participant_macro"],
+        "participant_macro_scope": dict(scope),
+    }
+
+
+def _validate_hit_rate(value: object, name: str) -> None:
+    if (isinstance(value, bool) or not isinstance(value, (int, float))
+            or not np.isfinite(value) or not 0.0 <= value <= 1.0):
+        raise ValueError(f"LOSO {name} must be a finite hit rate in [0, 1]")
 
 
 def _candidate_repetition_predictions(
@@ -1394,6 +1505,7 @@ def evaluate_candidate_selection(
     candidate_vocab: Sequence[int],
     *,
     fit_group_ids: np.ndarray | None = None,
+    participant_ids: np.ndarray | None = None,
     domain_ids: np.ndarray | None = None,
     event_timeline: object | None = None,
     trial_channel_mask: np.ndarray | None = None,
@@ -1413,7 +1525,11 @@ def evaluate_candidate_selection(
     max_gpu_jobs: int | None = None,
     cpu_threads: int | None = None,
 ) -> CandidateSummary:
-    """Evaluate calibrated 9-choice candidate evidence on held-out groups."""
+    """Evaluate held-out decisions, with macro only for explicit participant authority.
+
+    participant_ids are canonical identity keys supplied by the caller. Neither
+    fit_group_ids nor domain_ids defines the participant reduction unit.
+    """
 
     del event_timeline  # Candidate-chain validation remains an ingress responsibility.
     X, y = np.asarray(X), np.asarray(y)
@@ -1423,6 +1539,10 @@ def evaluate_candidate_selection(
     _validate_binary_inputs(X, y, group_ids)
     if fit_groups.shape != (len(X),) or np.any(np.char.strip(fit_groups) == ""):
         raise ValueError("fit_group_ids must contain one non-empty group per epoch.")
+    if participant_ids is not None:
+        participant_ids = np.asarray(participant_ids).astype(str)
+        if participant_ids.shape != (len(X),) or np.any(np.char.strip(participant_ids) == ""):
+            raise ValueError("participant_ids must contain one non-empty authority key per epoch.")
     if domain_ids is not None:
         domain_ids = np.asarray(domain_ids).astype(str)
         if domain_ids.shape != (len(X),) or np.any(np.char.strip(domain_ids) == ""):
@@ -1463,6 +1583,16 @@ def evaluate_candidate_selection(
     if any(group not in truth_by_group or truth_by_group[group] not in candidate_vocab
            for groups in requested_groups for group in groups):
         raise ValueError("every requested group needs truth in the frozen vocabulary")
+    participant_by_group: dict[str, str] = {}
+    if participant_ids is not None:
+        for _, test in validated_folds:
+            for group, owner in zip(group_ids[test], participant_ids[test], strict=True):
+                if group in participant_by_group and participant_by_group[group] != owner:
+                    raise ValueError("each requested decision group must belong to exactly one participant")
+                participant_by_group[group] = str(owner)
+    requested_participants = tuple(dict.fromkeys(participant_by_group.values()))
+    terminal_outcomes: dict[str, list[bool]] = {}
+    level_outcomes: dict[str, dict[str, list[bool]]] = {}
     schedules = ([] if repetitions is None else [
         {group: (codes[test & (group_ids == group)], repetitions[test & (group_ids == group)])
          for group in groups}
@@ -1531,6 +1661,16 @@ def evaluate_candidate_selection(
             hit_total = {str(level): len(values) for level, values in predictions.items()}
             fold_records = [(predictions[terminals[group]][group], truth_by_group[group], group)
                             for group in requested_groups[fold_index]]
+            if participant_ids is not None:
+                for level, values in predictions.items():
+                    outcomes = level_outcomes.setdefault(str(level), {})
+                    for group, predicted in values.items():
+                        outcomes.setdefault(participant_by_group[group], []).append(
+                            predicted is not None and predicted == truth_by_group[group]
+                        )
+        if participant_ids is not None:
+            for predicted, truth, group in fold_records:
+                terminal_outcomes.setdefault(participant_by_group[group], []).append(predicted == truth)
         hit_rate = float(np.mean([predicted == truth for predicted, truth, _ in fold_records]))
         result = CandidateFoldResult(
             **binary.__dict__,
@@ -1556,6 +1696,7 @@ def evaluate_candidate_selection(
         else float("nan")
     )
     macro_hits: dict[str, float] | None = None
+    participant_macro_hits: dict[str, float] | None = None
     if repetition_indices is not None and results:
         sum_correct: dict[str, int] = {}
         sum_total: dict[str, int] = {}
@@ -1569,6 +1710,11 @@ def evaluate_candidate_selection(
             for key in sorted(sum_total, key=lambda item: int(item))
             if sum_total[key] > 0
         }
+        if participant_ids is not None:
+            participant_macro_hits = {
+                level: _participant_macro(outcomes, requested_participants)
+                for level, outcomes in level_outcomes.items()
+            }
     return CandidateSummary(
         balanced_acc_mean=float(np.nanmean(bacc)),
         balanced_acc_std=float(np.nanstd(bacc)),
@@ -1576,10 +1722,23 @@ def evaluate_candidate_selection(
         per_fold=results,
         hit_rate_mean=float(np.nanmean(hit)),
         primary_hit_rate=overall if repetitions is not None else None,
+        primary_participant_macro_hit_rate=(
+            _participant_macro(terminal_outcomes, requested_participants)
+            if repetitions is not None and participant_ids is not None else None
+        ),
         primary_hit_scope=hit_scope,
+        participant_macro_scope=(
+            {"reduction": "participant_macro_equal_weight",
+             "participant_count": len(requested_participants),
+             "participant_identity": "explicit_authority_key",
+             "denominator": "requested_pre_qc_decision_groups",
+             "unavailable_policy": "incorrect"}
+            if repetitions is not None and participant_ids is not None else None
+        ),
         raw_all_hit_rate=float(np.mean([predicted == truth for predicted, truth, _ in raw_records])),
         subject_records=records,
         hit_at_repetition_macro=macro_hits,
+        hit_at_repetition_participant_macro=participant_macro_hits,
         execution_backend=backend,
         effective_n_jobs=effective_n_jobs,
         input_transport=input_transport,

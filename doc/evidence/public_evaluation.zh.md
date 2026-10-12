@@ -2,6 +2,17 @@
 
 数据范围：BNCI2014-008 八人、一个完整 source/target seed（20260918）、每人19个共同请求，共152个36选1决策。读取原80配对对照和20指定只读导出，核对原文件SHA并从逐人数据复算全部100行配对差值。本次新增拟合0。
 
+## LOSO 新结果指标口径
+
+`run_eeg_loso` 新生成记录使用 `n2p3_eeg_loso_metrics/2`，原
+`primary_decision_hit_rate` 和 `hit_at_repetition_macro` 保留当前 decision-micro 值；新增
+显式 micro 别名及 participant-macro terminal/曲线。参与者由共享 identity authority
+显式传入；在各人全部 pre-QC requested test decisions 内平均后，再跨人等权平均。
+训练组不计入，QC 后全部不可用的人仍保留为错。二分类明确无候选指标。
+无 schema 或 `/1` 的历史记录保持原值，macro 未知，旧分母正确性由原执行证据另判；
+不从旧标量推导 macro、不改写历史 artifact。该切片只通过软件反例与合成 CLI JSON
+写出链，不产生新公共效能结果；现 dashboard 尚未消费新增 macro 字段。
+
 ## 原云候选面板：完整分母与配对读数
 
 云窗口独立零拟合恢复已完成8人、152共同requested decisions、13376预测、448 fit records、32物理包、88指标与原80配对对照。科研总监实际读取本地terminal/actual exit/delivery/independent statistics，逐字核其SHA与delivery吻合，再读完整80原对照及20指定导出；其中8行已有原对照、12行为原保存预测的新只读派生。原executor exit1、scientific source `75a61532…`及其499冻结manifest均保留，恢复exit0、新source/target fit均0。完整失败账本留本地，不以科研新prefix协议改签。

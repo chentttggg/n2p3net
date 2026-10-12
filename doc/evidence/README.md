@@ -6,7 +6,7 @@
 |---|---|
 | [校准与选择](calibration_and_selection.zh.md) | fixed/grouped温度、完整学习算法、前缀剂量、小组/单组、actual OOF与保存重放 |
 | [响应与噪声](response_and_noise.zh.md) | B05/B07/B08/B09物理模型、给定noise、QR/df、P1原生面板和数值稳定化 |
-| [公共数据评估](public_evaluation.zh.md) | requested分母、八人88配置/配对分析、预算/温度/迁移读数和逐库队列 |
+| [公共数据评估](public_evaluation.zh.md) | requested分母、八人88配置/配对分析、预算/温度/迁移读数、逐库队列与LOSO指标版本口径 |
 | [执行与集成](execution_and_integration.zh.md) | actual source、完整账本、source cache/shared score、ownership、资源与恢复 |
 
 四页按主题持续更新；运行身份由原紧凑binding记录，六指南继续维护活动规范。原日期页已经物理归档并逐member校验，见[恢复清单](../../frozen/research_topic_documents_history.manifest.json)。
