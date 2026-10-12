@@ -124,12 +124,3 @@ def test_galia_state_record_tampering_is_rejected() -> None:
     record["diagonal_scales"][0][0] *= 2.0
     with pytest.raises(ValueError, match="digest"):
         AcwState.from_record(record)
-
-
-def test_source_weighted_state_does_not_bind_the_unused_target_buffer() -> None:
-    rng = np.random.default_rng(3)
-    state = AjdCongruenceWhitening().fit({"a": rng.normal(size=(20, 2)), "b": rng.normal(size=(20, 2))})
-    first = state.fast_alignment(rng.normal(size=(10, 2)), domain_id="target", fit_scope="source_weighted")
-    second = state.fast_alignment(rng.normal(size=(10, 2)), domain_id="target", fit_scope="source_weighted")
-    assert first.buffer_digest == second.buffer_digest
-    np.testing.assert_array_equal(first.mean, second.mean)

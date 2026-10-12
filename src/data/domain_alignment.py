@@ -442,12 +442,7 @@ class AcwState:
             scales=scales,
             covariance_condition_number=condition_number,
             target_offdiag_residual=target_offdiag_residual,
-            buffer_digest=array_digest(
-                np.concatenate([np.asarray(self.domain_weights, dtype=np.float64).ravel(),
-                                np.asarray(self.means, dtype=np.float64).ravel(),
-                                np.asarray(self.covariances, dtype=np.float64).ravel()])
-                if fit_scope == "source_weighted" else values
-            ),
+            buffer_digest=array_digest(values),
         )
 
     def transform_fast(self, features: object, fast_state: FastAlignmentState) -> np.ndarray:
