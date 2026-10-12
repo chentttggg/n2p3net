@@ -1,0 +1,25 @@
+{
+  "schema": "n2p3_source_selection_scope_review/1",
+  "status": "accepted_existing_4faf_scope_gate",
+  "main_head": "eb6739c5ebbc1fb34b0494b516736bfec056a4ec",
+  "source_sha256": {
+    "experiments/prepare_source_selection.py": "fc400d05bf8a409d312f1abf63db959cace7120948dccdb7c8026f0d914ef61d",
+    "src/train/source_sampling.py": "07a28de9ff8f21eeb6b2e2b5424e2c1da32263bb9b25228bc678f8dbbcb22f30",
+    "tests/train/test_prepare_source_selection.py": "938ce023dc247fab894ca461f2a5c126fc4a52a08ec49a2ac0a06e6084c0df51",
+    "tests/train/test_source_sampling.py": "6484a9c267fe6e7bb556d116f8a773b7dcbb5e76961f0c0a5e66740d7a2783df"
+  },
+  "contract": {
+    "target_calibration": "requires n2p3_target_calibration_scope/1 in the target feature record",
+    "empty_scope": "rejected before selection; it is interpreted as unrestricted/full target cache",
+    "consumer_recheck": "load_pds_selection_record rechecks embedded target_feature_record scope",
+    "cache_identity": "source and target feature records remain embedded in the selection record"
+  },
+  "checks": {
+    "ruff": 0,
+    "pytest": "tests/train/test_prepare_source_selection.py tests/train/test_source_sampling.py passed",
+    "public_fit": 0,
+    "public_score": 0,
+    "model_load": 0,
+    "full_suite": false
+  }
+}
