@@ -1,0 +1,232 @@
+{
+  "schema": "n2p3_metric_scope_crosswalk/1",
+  "status": "passed_read_only_recompute",
+  "generated_from_main_head": "b26c099",
+  "source_files": [
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/analysis/final/analysis.json",
+      "sha256": "ef3cc95b082fadfd698b1c53cf02211713dc137a659d2e912b200f9e9da5087b",
+      "bytes": 64937,
+      "schema": "independent_p1_numeric_panel_readout/1",
+      "role": "P1 row-level readout",
+      "scope": "original_C_held_development_zero_fit_new_numerical_consumers_not_public152_or_product"
+    },
+    {
+      "path": "doc/assets/research_resume_20261011/p1_numeric_panel_acceptance_binding.json",
+      "sha256": "5d7a4df46eb57f374406cda8fe6377a0f00aff98ed67277909e838791157aa14",
+      "bytes": 5342,
+      "schema": "p1_frozen_numeric_panel_acceptance/1",
+      "role": "P1 producer/consumer acceptance",
+      "scope": "original_C600_R10_one_held_decision_per_person"
+    },
+    {
+      "path": "doc/evidence/public_evaluation.zh.md",
+      "sha256": "06d94c3340c9aeb7f8cd728259c0d4b4cbd4c1d7a19713a2f4a3d423a21e6994",
+      "bytes": 15864,
+      "schema": "markdown-evidence",
+      "role": "BNCI public candidate panel",
+      "scope": "BNCI2014-008 eight people, seed 20260918, 152 requested / 144 probability units"
+    },
+    {
+      "path": "doc/assets/research_resume_20261011/cloud_candidate_analysis_binding.json",
+      "sha256": "90ef4ab1d761591f3ee1bccd80719e1a30da9fafc6d987f821dbf3e1e5a541eb",
+      "bytes": 2585,
+      "schema": "n2p3_cloud_candidate_data_analysis/1",
+      "role": "cloud candidate analysis binding",
+      "scope": "eight people, 152 requested / 144 common probability decisions"
+    },
+    {
+      "path": "doc/assets/research_resume_20261011/bi_q1_queue_acceptance_binding.json",
+      "sha256": "8b074587161a8ba60f389acddb1a82f7516f0480a9026f743f8965a0209645e1",
+      "bytes": 4398,
+      "schema": "bi2014a_q1_public_dataset_queue_acceptance/1",
+      "role": "BI2014a Q1 queue binding",
+      "scope": "public_calibration_development_not_adult_or_product_confirmation",
+      "participants": 61,
+      "requested_decisions": 1287,
+      "probability_decisions": 1243
+    },
+    {
+      "path": "doc/assets/research_resume_20261011/bnci_q1_queue_acceptance_binding.json",
+      "sha256": "7494dd1dc84bcc0b160a6ff44698f5c344770255b595c7552f7c6dc9ff5da310",
+      "bytes": 8623,
+      "schema": "n2p3_bnci_episode_C600_R10_local_independent_acceptance/1",
+      "role": "BNCI C600/R10 binding",
+      "scope": "public_calibration_development; episode C600/R10; separate from P1 and label-K prefix selector",
+      "participants": 8,
+      "requested_per_arm": 240,
+      "arms": 3,
+      "probability_coverage": 1.0
+    },
+    {
+      "path": "src/models/candidate_evidence.py",
+      "sha256": "f83afc43b758791bdb59da8e26a553054bdde59e6b57bb59c8e8fddb74295c4d",
+      "bytes": 36474,
+      "schema": "n2p3_candidate_probability_evidence/1",
+      "role": "generic evidence schema source"
+    },
+    {
+      "path": "src/research/candidate_metrics.py",
+      "sha256": "74767720e2976957592dff278062c147360ea2705222dea40aab450fe36f85c9",
+      "bytes": 34723,
+      "schema": "n2p3_candidate_probability_metrics/1 and /2",
+      "role": "generic metrics and paired comparison source"
+    }
+  ],
+  "denominator_crosswalk": [
+    {
+      "name": "P1_shared8/private8",
+      "requested_participants": 8,
+      "requested_cells_per_arm": 8,
+      "probability_cells_per_arm": 8,
+      "candidate_count": 36,
+      "truth_support": [
+        "row:5|column:0"
+      ],
+      "aggregation": "one held decision per participant; equal participant mean",
+      "fit_calls": 0,
+      "score_calls": 0,
+      "claim_scope": "C-held development diagnostic only"
+    },
+    {
+      "name": "BNCI_public_candidate_panel",
+      "requested_participants": 8,
+      "requested_decisions": 152,
+      "probability_decisions": 144,
+      "candidate_count": 36,
+      "aggregation": "participant-first NLL over available common decisions; requested operational hit",
+      "fit_calls": 0,
+      "score_calls": 0,
+      "claim_scope": "public calibration development, one seed"
+    },
+    {
+      "name": "BI2014a_Q1",
+      "requested_participants": 61,
+      "requested_decisions": 1287,
+      "probability_decisions": 1243,
+      "candidate_count": 36,
+      "aggregation": "participant macro plus micro coverage separately; 44 incomplete retained",
+      "fit_calls": 0,
+      "score_calls": 0,
+      "claim_scope": "public calibration development, not adult/product"
+    },
+    {
+      "name": "BNCI_C600_R10",
+      "requested_participants": 8,
+      "requested_decisions_per_arm": 240,
+      "probability_decisions_per_arm": 240,
+      "arms": 3,
+      "candidate_count": 36,
+      "aggregation": "participant macro equals micro because each participant has 30 R10 episodes",
+      "fit_calls_in_original_run": 16,
+      "new_fit_score_model_load_calls_in_review": 0,
+      "claim_scope": "public calibration development; separate from P1 and label-K selector"
+    }
+  ],
+  "p1_recomputed": {
+    "private8": {
+      "requested_participants": 8,
+      "requested_cells": 8,
+      "hits": 6,
+      "operational_hit": 0.75,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "nll_macro_one_decision_per_participant": 5.554012191080322,
+      "brier_macro_one_decision_per_participant": 0.47767850103985904,
+      "candidate_count": [
+        36
+      ],
+      "truths": [
+        "row:5|column:0"
+      ],
+      "fit_calls": 0,
+      "scorer_calls": 7
+    },
+    "shared8": {
+      "requested_participants": 8,
+      "requested_cells": 8,
+      "hits": 5,
+      "operational_hit": 0.625,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "nll_macro_one_decision_per_participant": 7.336476583291455,
+      "brier_macro_one_decision_per_participant": 0.6790937535735931,
+      "candidate_count": [
+        36
+      ],
+      "truths": [
+        "row:5|column:0"
+      ],
+      "fit_calls": 0,
+      "scorer_calls": 7
+    }
+  },
+  "p1_paired_recomputed": {
+    "participants": 8,
+    "delta_hit_macro": 0.125,
+    "delta_nll_macro": -1.7824643922111332,
+    "delta_nll_sum_row_values": -14.259715137689065,
+    "delta_brier_macro": -0.20141525253373407,
+    "rescued": 1,
+    "harmed": 0,
+    "probability_pairs": 8,
+    "A01_share_of_row_sum_nll_improvement": 0.7182293423790772
+  },
+  "generic_schema_rejection_rules": [
+    {
+      "custom_field": "P1 status=scored",
+      "generic_target": "CandidateEvidence.status",
+      "decision": "reject_direct_import",
+      "reason": "generic statuses are available/tie/fit_failure/not_available/incomplete/abstain and require schema validation"
+    },
+    {
+      "custom_field": "P1 hits/operational_hit",
+      "generic_target": "requested_participant_operational_hit_rate",
+      "decision": "conditional_mapping_only",
+      "reason": "valid only with one held decision per participant and explicit P1 scope"
+    },
+    {
+      "custom_field": "P1 nll/brier",
+      "generic_target": "available_probability_nll/available_probability_brier",
+      "decision": "conditional_mapping_only",
+      "reason": "requires same 36-way distribution, target identity, participant-first aggregation and probability denominator"
+    },
+    {
+      "custom_field": "P1 probability_available",
+      "generic_target": "CandidateEvidence.probability_available",
+      "decision": "conditional_mapping_only",
+      "reason": "boolean availability does not certify calibration or public scope"
+    },
+    {
+      "custom_field": "P1 all_input_certificate",
+      "generic_target": "failure/status",
+      "decision": "reject_direct_import",
+      "reason": "false means local normwise certificate is not an all-input interval proof; it is not a failed score"
+    },
+    {
+      "custom_field": "P1 probability_mass_of_true_row/column",
+      "generic_target": "log_probability",
+      "decision": "reject_direct_import",
+      "reason": "diagnostic marginals cannot replace the 36-way joint candidate vector"
+    },
+    {
+      "custom_field": "P1 paired delta_nll row values",
+      "generic_target": "CandidateProbabilityComparison.delta_paired_nll",
+      "decision": "aggregate_before_mapping",
+      "reason": "row sum is -14.259715; declared participant macro delta is -1.782464"
+    }
+  ],
+  "claims": {
+    "current_allowed": [
+      "P1 private8 has 6/8 versus shared8 5/8, delta hit +0.125 and participant-macro delta NLL -1.782464 on the fixed eight held decisions",
+      "P1 is fully available numerically but is not public efficacy or adult confirmation",
+      "central B07 numerical owner is accepted separately; history consumer/replay and public B07 score remain pending"
+    ],
+    "current_forbidden": [
+      "P1 5/8 or 6/8 as BNCI public 152-request hit@all",
+      "P1 custom scored rows as generic CandidateEvidence v1 records",
+      "P1 fixed truth row/column panel as balanced 36-candidate risk",
+      "P1 local density error estimate as an all-input numerical interval certificate"
+    ]
+  }
+}

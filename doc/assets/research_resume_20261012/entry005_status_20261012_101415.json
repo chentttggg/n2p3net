@@ -1,0 +1,52 @@
+{
+  "observed_utc": "2026-10-12T02:14:15.368222+00:00",
+  "entry005": {
+    "status": "running",
+    "actual_exit_observed": false,
+    "terminal_receipt_exists": false,
+    "complete_result_exists": false,
+    "scientific_8_participant_152_decision_receipt_closed": false,
+    "queue_pid": 114894,
+    "queue_create_time": 1791766683.92,
+    "science_pid": 114896,
+    "source_commit": "bc6e60a441bcfa7ce96ce5c538a0172d5c0e4cf0",
+    "source_archive_sha256": "dac410ffdc208fe378b490045545a3ac8db336fd3df336f21ff25098b22bf4ee",
+    "original_indexes_0_to_3_replayed": true,
+    "original_replay_barrier_seconds": 2994.637,
+    "fresh_indexes_4_to_7_stage": "K2000",
+    "fresh_prediction_cells_each": 1672
+  },
+  "live_resources": {
+    "sample_seconds": 5.508296512067318,
+    "aggregate_process_cpu_percent": 835.8300955501761,
+    "cpu_quota_cores": 25,
+    "gpu_utilization_samples_percent": [7, 95, 95, 94, 0],
+    "gpu_memory_mib": 3264,
+    "controller_rss_gib": 2.439037322998047,
+    "fresh_worker_rss_gib": [3.400707244873047, 3.3537063598632812, 3.367046356201172, 3.4484710693359375],
+    "sum_process_rss_gib_includes_shared_pages": 16.633174896240234,
+    "later_cgroup_memory_current_bytes": 64263446528,
+    "cgroup_memory_max_bytes": 96636764160,
+    "cgroup_oom_kill": 0
+  },
+  "code_delivery": {
+    "cloud_resource_integration_head": "36ccfd1cd161454873df6eaf400c5d37e0329047",
+    "peer_containment_commit": "204304fdef619d5dd85e8237d30c76ed3861367d",
+    "peer_containment_independent_review": "accepted",
+    "P1_preparation_independent_review": "accepted",
+    "P1_preparation_delivery_sha256": "9de863040579e809cb1dfebff60171cd8b148d6bdafa6356abc6bb826fd70b19",
+    "P1_lease_or_stationary_source_git_patch_in_cloud_tree": false,
+    "P1_prepared_combined_source_science_commit": "db46076ac29cd7b185323dd3044c0bd683a89a39",
+    "P1_full16_started": false,
+    "prefix_scheduler_commit": "a0c3220592d8d6ab69dd8de6a842855261f4ba2b",
+    "prefix_scheduler_publicly_deployed": false,
+    "cloud_validation_driver_commits": ["6ba93e39756e72df27b3470b08d3760ea84722a6", "36ccfd1cd161454873df6eaf400c5d37e0329047"],
+    "cloud_validation_driver_final_runtime_proof": "pending",
+    "managed_cloud_worktrees_clean": true
+  },
+  "authorization": {
+    "existing_entry005_continues": true,
+    "new_full_training_launch_allowed": false,
+    "new_P1_full16_launch_allowed": false
+  }
+}

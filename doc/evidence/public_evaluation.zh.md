@@ -77,6 +77,8 @@ K2000单NN的scratch多7个命中且NLL低0.036876，matched scratch pool多1个
 
 图和完整CSV保存在本地科研树 `tmp/DATA_ANALYSIS_20261011/`：overview.png、configuration_metrics.csv、all_paired_contrasts.csv、participant_paired_metrics.csv。来源、分析程序与产物SHA见[紧凑绑定](../assets/research_resume_20261011/cloud_candidate_analysis_binding.json)；原始云结果保持原位置及producer身份。
 
+2026-10-12增加了一份只读指标分母审计：[metric scope audit](../assets/research_resume_20261012/metric_scope_audit/REPORT.zh.md)。它从P1 16-cell底表复算 shared8/private8 的5/8、6/8、NLL、Brier及8人配对差，并列出P1、BNCI 152/144、BI 1287/1243、BNCI C600/R10 240/arm的独立分母。P1自定义字段与通用 `CandidateEvidence`/`CandidateProbabilityMetrics` schema 的直接映射被明确拒绝；复算没有模型加载、fit或score。JSON crosswalk、逐行错误账本和复算脚本保存在同目录，来源与SHA见 `metric_crosswalk.json`。
+
 ## 跨数据集队列
 
 下一跨数据集队列先做 **BI2014a**，每库完成并封存产物后再进入下一库。已有`finite_zero_none_targets`的61份记录、976文件属于binary prefix preparation，raw512Hz→model128Hz/179点；candidate准备复用`data.bi2014a_candidate`/`prepare_bi2014a_candidate`恢复CSV中的真实membership、episode和物理支持。
