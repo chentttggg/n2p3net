@@ -54,6 +54,18 @@ participant-macro 与 scope。无 schema 的历史记录按 `/1` 读取原字段
 不补签旧分母。新版候选缺 authority/scope、alias 或 repetition 范围冲突均拒绝写出。
 二分类记录的候选指标为 null，scope 为 `not_applicable_binary`。
 
+`install_splitbn_target_calibration_buffers` 按实际前向顺序安装各站点：先在授权C中
+合并当前站点的总体均值/方差，再用其target buffer前向到下一站点。原
+`N2P3Net._observed_temporal_features` 将已观测电极打包，temporal每filter的样本数为
+`sum(channel_mask)*T`；spatial/MST统计完整混合feature，使用各自实际输入population。
+helper向core/wrapper传原mask，站点之间不猜electrode/feature映射。每站点只执行一次，
+失败时恢复原target buffers和各module模式。
+`n2p3_splitbn_target_install/1` receipt保存实际站点顺序、scope/mask/input摘要、
+总体方差约定、计数、统计与源码摘要；`SubjectAdapter.last_history` 分列initial/refit，
+两个原CLI的`prefix_refit`保存同一receipt。旧initialized buffer只作只读加载和诊断；
+新拟合的安装程序按实际source/consumer/model身份保存，软件接受见
+[整合绑定](assets/research_resume_20261012/splitbn_target_integration.json)。
+
 `continuous_decision._conditional_posterior`持有原prefix/full joint QR公式，fit/profile与score消费同一完整kernel和各record diffuse drift。条件score的`_ConditionalRecordWhitening`在本次已准入record内共享`W(Y)`、`W(D0)`、`W(Z)`；各candidate全record白化`D1`后再split prefix/tail并完成独立QR。当前科研fit/posterior/df及load门保持原实现，详见[白化集成](evidence/execution_and_integration.zh.md#条件评分公共白化集成)。
 
 完整episode指标通过`evaluate_candidate_evidence(..., requested_evidence_levels={DecisionKey: actual_R})`接入；其规范化不可变计划包含全部requested keys及缺失输出，并绑定原DecisionPlan digest。`transfer.outcomes`按每key唯一R记账，各R保自身分母，整体和participant风险仍用原episode；paired compare核完整horizon计划。原scalar fixed-R入口继续消费其原cross-product。预算、raw scope与实际R由reader/caller冻结，详见[逐任务horizon](evidence/public_evaluation.zh.md#逐任务horizon接口)。

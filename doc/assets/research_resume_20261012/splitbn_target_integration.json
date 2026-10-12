@@ -1,0 +1,92 @@
+{
+  "schema": "n2p3_splitbn_target_integration/1",
+  "status": "accepted_software_and_synthetic",
+  "author_commits": [
+    "ef3f5fdef747fb75212c1cd01d2fcca73fa0f82b",
+    "67ada51559f8fb3d88d00caa10bc6c8beebc4568"
+  ],
+  "integration_commit": "49dea0df756f6bc175627cd45c6e52561884d49c",
+  "integrated_files": {
+    "src/models/splitbn.py": {
+      "integrated_raw_sha256": "03270bccd62dc72d86c7f8c17d3a7ff74056f471cec3e86c94dc000469e9f8a3",
+      "author_raw_sha256": "b3a10587764e3925895c85caac85544121a33598317ec5d7be234183ffd338da",
+      "raw_equal": false,
+      "difference": "CRLF to LF only; root checks consume integrated bytes"
+    },
+    "src/transfer/subject_adapter.py": {
+      "integrated_raw_sha256": "ca6bf48f9cf847c9d9236541a2ced6e00fe8d8fbcdee021bd499092d21e90de7",
+      "author_raw_sha256": "ca6bf48f9cf847c9d9236541a2ced6e00fe8d8fbcdee021bd499092d21e90de7",
+      "raw_equal": true,
+      "difference": null
+    },
+    "experiments/run_candidate_cross_decision.py": {
+      "integrated_raw_sha256": "ea04adfaca1fcd421ad13b62bef6198da9f707489029817605b105a38a5aadbb",
+      "author_raw_sha256": "ea04adfaca1fcd421ad13b62bef6198da9f707489029817605b105a38a5aadbb",
+      "raw_equal": true,
+      "difference": null
+    },
+    "experiments/run_within_subject_transfer.py": {
+      "integrated_raw_sha256": "539d483040b7350150ce85d3b58f16d8239cc7e597a6e049be67bfd95605f9cf",
+      "author_raw_sha256": "539d483040b7350150ce85d3b58f16d8239cc7e597a6e049be67bfd95605f9cf",
+      "raw_equal": true,
+      "difference": null
+    },
+    "tests/models/test_splitbn_target_install.py": {
+      "integrated_raw_sha256": "0726405b4c9ef204b64f254f81017438ea21b3e6950d763d0fdc623afaca8094",
+      "author_raw_sha256": "9753aa9f302a799bf74081ad56078f6f7340fbe8c585592e22fa84cbe1202e7a",
+      "raw_equal": false,
+      "difference": "CRLF to LF only; root checks consume integrated bytes"
+    },
+    "tests/transfer/test_splitbn_install_receipts.py": {
+      "integrated_raw_sha256": "6773e3476d392f10684b97deb74aaf5762f9242e2301d56389f57aa83071335e",
+      "author_raw_sha256": "6773e3476d392f10684b97deb74aaf5762f9242e2301d56389f57aa83071335e",
+      "raw_equal": true,
+      "difference": null
+    },
+    "tests/transfer/test_candidate_transfer.py": {
+      "integrated_raw_sha256": "b3b411efcc8b192d03a0c130ff3f1bd49a998111d4d57cb2be910561e452cd15",
+      "author_raw_sha256": "b3b411efcc8b192d03a0c130ff3f1bd49a998111d4d57cb2be910561e452cd15",
+      "raw_equal": true,
+      "difference": null
+    },
+    "tests/transfer/test_within_subject_runner.py": {
+      "integrated_raw_sha256": "011121a1798fa5ca00c5f6dad20fdc6024ae1af7e7f8a833236ad934386b3a3e",
+      "author_raw_sha256": "011121a1798fa5ca00c5f6dad20fdc6024ae1af7e7f8a833236ad934386b3a3e",
+      "raw_equal": true,
+      "difference": null
+    }
+  },
+  "author_handoff": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\splitbn-target-mask-20261012\\n2p3-net\\tmp\\SPLITBN_TARGET_MASK_ACCEPTANCE\\HANDOFF.zh.md",
+    "sha256": "bc1f28c6748a3f2c46685c3b708eed8ab548cbd130081ba8ee8b48e9eb0602b7"
+  },
+  "author_validation": {
+    "tests": 100,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "junit_path": "C:\\Users\\chent\\.codex\\worktrees\\splitbn-target-mask-20261012\\n2p3-net\\tmp\\SPLITBN_TARGET_MASK_ACCEPTANCE\\tests_terminal.xml",
+    "junit_sha256": "c1b3eabd80b2d0ff1a375e50d9a062a063e7c5fbcb7e131606cab02f5730ae4f",
+    "ruff_exit_code": 0,
+    "diff_check_exit_code": 0
+  },
+  "root_validation": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\SPLITBN_TARGET_INTEGRATION\\root.xml",
+    "sha256": "b51433e4d4d77013156fe3ec02a79fd2c657adfda5dd8e8380b367cda59c18f8",
+    "tests": 12,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "contract": {
+    "mask_transport": "actual_core_and_wrapper_forward; packed temporal then complete spatial/MST features",
+    "installation": "execution order; ddof0 count weighted moments; frozen",
+    "receipt": "initial and refit scopes; actual tensors; runner JSON",
+    "failure": "restore target buffers and per-module training modes",
+    "normalization_schema": "n2p3_normalization/1 unchanged",
+    "old_initialized_buffers": "read only; diagnostic only; not resigned",
+    "new_program": "new target fit and actual source/consumer/model identities",
+    "public_fit_score_model_load": 0
+  },
+  "review_correction": "all-site zero-fill pollution claim refuted by actual packed temporal path"
+}
