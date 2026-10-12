@@ -17,6 +17,7 @@ from research.response_history_identification import (
     PublicResponseHistory,
     ResponseObservation,
     ResponsePosterior,
+    StructuredResponseObservation,
     conditional_history_evidence,
 )
 from transfer.continuous_decision import ContinuousDecisionModel
@@ -131,3 +132,122 @@ def adapt_continuous_history(model, history, samples, *, origin_sample, availabl
         "authority": "external_caller_proves_source_permission_reference_time_and_complete_history",
     })
     return ContinuousHistoryInputs(posterior, history, observation, binding)
+
+
+def score_authorized_history(model, capability, *, maximum_evaluated_states=100000):
+    """Opt-in native full-history prediction with original-source authority.
+
+    The legacy external-authority/dense research bridge above stays distinct.
+    This route reuses actual C/noise/dictionary and the same finite mixture
+    owner; no fit, covariance restart, producer replacement or future read.
+    """
+    from math import prod
+
+    from research.channel_noise_mechanism import native_history_marginal_program
+    from research.history_authority import AuthorizedResponseHistory, HistoryUnavailableError
+    from research.latent_response_reference import selection_design
+    from transfer.noise_model import metadata_digest
+
+    if not isinstance(capability, AuthorizedResponseHistory):
+        raise TypeError("native history requires its original-source-owned capability")
+    capability.assert_model(model)
+    if type(maximum_evaluated_states) is not int or maximum_evaluated_states < 1:
+        raise ValueError("history resource limit must be a positive declared integer")
+    view, law = capability.view, capability.law
+    omitted = set(capability.binding["exact_zero_design_axis_marginalization"]["selection_ids"])
+    selections = tuple(s for s in capability.selections if s.selection_id not in omitted)
+    labels_shape = tuple(len(s.candidate_ids) for s in selections)
+    states_shape = (len(law.states),)*len(selections)
+    full_shape = labels_shape+states_shape
+    count = prod(full_shape)
+    if count > maximum_evaluated_states:
+        raise HistoryUnavailableError(f"complete_finite_history_resource_limit:{count}>{maximum_evaluated_states}")
+    if law.joint_mass is None:
+        mass = np.ones(full_shape)
+        for axis, selection in enumerate(selections):
+            factor = np.asarray(capability.binding["target_prior_factors"][selection.selection_id])
+            shape = [1]*len(full_shape)
+            shape[axis] = len(factor)
+            mass *= factor.reshape(shape)
+        probabilities = np.asarray([s.probability for s in law.states])
+        for axis in range(len(selections), len(full_shape)):
+            shape = [1]*len(full_shape)
+            shape[axis] = len(probabilities)
+            mass *= probabilities.reshape(shape)
+    else:
+        # Condition only on source-owner-authorized C labels. A zero-image
+        # axis may be correlated with current: sum its real joint mass, never
+        # replace it with an assumed independent uniform factor.
+        mass = np.array(law.joint_mass, copy=True)
+        for axis, selection in enumerate(capability.selections):
+            possible = np.asarray(capability.binding["target_prior_factors"][selection.selection_id]) > 0
+            shape = [1]*mass.ndim
+            shape[axis] = len(possible)
+            mass *= possible.reshape(shape)
+        total = mass.sum()
+        if not np.isfinite(total) or total <= 0:
+            raise ValueError("frozen joint history prior assigns zero mass to authorized C labels")
+        mass /= total
+        axes = tuple(axis for axis, s in enumerate(capability.selections) if s.selection_id in omitted)
+        axes += tuple(axis+len(capability.selections) for axis in axes)
+        if axes:
+            mass = mass.sum(axis=axes)
+    latent_axes = tuple(range(len(selections), len(full_shape)))
+    label_mass = mass.sum(axis=latent_axes)
+    history = PublicResponseHistory(selections, capability.current_selection_id, label_mass)
+    prefix, n = model.conditioning_samples, len(view.samples)
+    if not 2 <= prefix < n:
+        raise HistoryUnavailableError("original_frozen_prefix_cannot_identify_common_flat_trend")
+    observation = StructuredResponseObservation(view.samples, view.raw_scope[0],
+        np.column_stack((np.ones(n), (2*np.arange(n)-(prefix-1))/(prefix-1))), prefix,
+        capability.binding["current_response_right_censored"])
+    posterior = ResponsePosterior(model.basis, model._predictive_kernel_mean, model._posterior_precision_root,
+        np.linalg.cholesky(model.innovation_covariance), model.sfreq)
+    primitive = native_history_marginal_program(
+        mean=model._predictive_kernel_mean,
+        precision_root=model._posterior_precision_root,
+        innovation_covariance=model.innovation_covariance,
+        temporal_noise=model.noise,
+        samples=view.samples,
+        nuisance=observation.nuisance,
+        conditioning_samples=prefix,
+    )
+    design_records = {}
+
+    def design_builder(state):
+        design = np.zeros((n, model.kernel_mean.shape[0]))
+        ledger = []
+        for axis, selection in enumerate(selections):
+            contribution, receipt = selection_design(model.dictionary, selection.onsets,
+                selection.membership[:, state[axis]], origin_sample=view.raw_scope[0], observed_samples=n,
+                state=law.states[state[len(selections)+axis]], support="translated_physical")
+            design += contribution
+            ledger.append({"selection_id": selection.selection_id, "execution": receipt})
+        design_records[str(state)] = {"design_sha256": array_digest(design),
+                                     "ledger_sha256": metadata_digest(ledger)}
+        return design
+
+    evidence = conditional_history_evidence(posterior, history, observation,
+        full_state_prior=mass, design_builder=design_builder, marginal_evaluator=primitive)
+    binding = freeze_metadata({"schema": "n2p3_authorized_history_prediction/1",
+        "capability_digest": capability.digest, "model_digest": model.digest(),
+        "old_model_producer_source": model.provenance["implementation_sha256"],
+        "consumer_source_sha256": __import__("hashlib").sha256(__import__("pathlib").Path(__file__).read_bytes()).hexdigest(),
+        "noise_digest": model.noise.identity_digest, "dictionary_digest": model.dictionary.digest(),
+        "law_digest": law.digest, "samples_sha256": array_digest(view.samples),
+        "nuisance_sha256": array_digest(observation.nuisance),
+        "posterior_precision_sha256": array_digest(model._posterior_precision_root),
+        "complete_finite_state_shape": list(full_shape), "joint_mass_sha256": array_digest(mass),
+        "state_designs": design_records, "maximum_evaluated_states": maximum_evaluated_states,
+        "measure_kind": evidence.measure_kind, "score_program": evidence.program,
+        "structured_primitive": "stored_noise_full_record_whitening_existing_augmented_QR_full_prefix/1",
+        "n_raw_full": n, "n_raw_prefix": prefix,
+        "conditioning_support": list(capability.binding["conditioning_support"]),
+        "score_support": list(capability.binding["score_support"]),
+        "log_evidence": evidence.conditional_log_likelihood.tolist(),
+        "log_probability": evidence.log_candidate_probability.tolist(),
+        "state_joint_log_marginal": [float(x) if np.isfinite(x) else None for x in evidence.state_joint_log_marginal],
+        "state_prefix_log_marginal": [float(x) if np.isfinite(x) else None for x in evidence.state_prefix_log_marginal],
+        "current_prior": evidence.current_prior.tolist(),
+        "fits": 0, "response_fits": 0, "new_noise_producers": 0})
+    return evidence, binding

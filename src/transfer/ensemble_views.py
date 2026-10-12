@@ -865,6 +865,14 @@ class CalibrationPrefixCompiler:
             "authorization_preprocessing": authorization_preprocessing,
             "width": width, "preroll": preroll, "target": target}
         self._prefixes = {}
+        self._history_source_payload = payload
+        self._history_source_identity = array_digest(record.eeg_uv, record.flash_sample,
+            record.candidate_id, record.selection_index, record.repetition_index)
+        self._history_ingress = freeze_metadata({"source_sha256": source_sha256,
+            "source_relative_path": source_relative_path, "budgets": list(budgets),
+            "profiles": [profile.record() for profile in profiles.values()],
+            "authorization_preprocessing": authorization_preprocessing.record(),
+            "response_seconds": response_seconds, "pre_roll_seconds": pre_roll_seconds})
 
     def compile(self, budget):
         if type(budget) is not int or not 0 <= budget <= self._arguments["maximum"]:
@@ -881,6 +889,26 @@ class CalibrationPrefixCompiler:
         if calibration_prefix_identity(actual) != calibration_prefix_identity(prefix):
             raise ValueError("actual parent differs from original source prefix owner")
         return actual
+
+    @property
+    def history_owner_source(self):
+        return _SELECTION_EXECUTION_SOURCE_SHA256
+
+    def history_scope(self, view, *, prefix, model, law):
+        """Opt-in history from this exact decoder and original C/held authority.
+
+        Existing current-only views/gates are unchanged. Future actual clocks
+        and targets never leave this owner; the new capability owns only the
+        already occurred public event prefix and the original observed block.
+        """
+        from research.history_authority import _issue_history_scope
+
+        if (hashlib.sha256(self._history_source_payload).hexdigest() != self._record.source_sha256
+                or self._history_source_identity != array_digest(self._record.eeg_uv,
+                    self._record.flash_sample, self._record.candidate_id, self._record.selection_index,
+                    self._record.repetition_index)):
+            raise ValueError("original history decoder operands changed after source-byte admission")
+        return _issue_history_scope(self, view, prefix=prefix, model=model, law=law)
 
     def before_group(self, parent, held):
         parent = self.assert_original_prefix(parent)

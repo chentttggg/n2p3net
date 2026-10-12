@@ -105,6 +105,39 @@ class PublicSelection:
 
 
 @dataclass(frozen=True)
+class NeighborEventPrefix:
+    """All already occurred events of one neighbouring selection.
+
+    Its complete target vocabulary stays present even if an as-yet-unflashed
+    candidate has zero design, or several targets induce identical designs.
+    Completeness of the event prefix is proved by a source owner, not this type.
+    The current selection continues to use the strict PublicSelection gate.
+    """
+
+    selection_id: str
+    candidate_ids: tuple[str, ...]
+    onsets: np.ndarray
+    membership: np.ndarray
+
+    def __post_init__(self):
+        ids = tuple(self.candidate_ids)
+        require_identifiers(ids, "complete neighbouring target vocabulary")
+        onsets, member = np.asarray(self.onsets), np.asarray(self.membership)
+        if (len(ids) < 2 or not isinstance(self.selection_id, str) or not self.selection_id.strip()
+                or onsets.ndim != 1 or onsets.dtype.kind not in "iu" or not len(onsets)
+                or np.any(onsets < 0) or np.any(onsets > np.iinfo(np.int64).max)
+                or np.any(np.diff(onsets.astype(np.int64)) <= 0)
+                or member.shape != (len(onsets), len(ids)) or member.dtype.kind not in "bfiu"
+                or not np.isin(member, [0, 1]).all()
+                or np.any(member.sum(axis=1) == 0) or np.any(member.sum(axis=1) == len(ids))):
+            raise ValueError("neighbour prefix requires actual ordered events and full proper row masks")
+        object.__setattr__(self, "candidate_ids", ids)
+        values = np.ascontiguousarray(onsets, dtype=np.int64)
+        object.__setattr__(self, "onsets", np.frombuffer(values.tobytes(), dtype=np.int64))
+        object.__setattr__(self, "membership", frozen_array(member))
+
+
+@dataclass(frozen=True)
 class PublicResponseHistory:
     """Complete supplied finite selections and explicit joint target prior.
 
@@ -114,18 +147,20 @@ class PublicResponseHistory:
     complete or that its source/C prior was lawfully estimated.
     """
 
-    selections: tuple[PublicSelection, ...]
+    selections: tuple[PublicSelection | NeighborEventPrefix, ...]
     current_selection_id: str
     joint_label_prior: np.ndarray
 
     def __post_init__(self):
         selections = tuple(self.selections)
-        if not selections or any(not isinstance(s, PublicSelection) for s in selections):
+        if not selections or any(not isinstance(s, (PublicSelection, NeighborEventPrefix)) for s in selections):
             raise ValueError("history needs owned public selections")
         names = tuple(s.selection_id for s in selections)
         require_identifiers(names, "history selection identities")
         if self.current_selection_id not in names:
             raise ValueError("requested current selection is missing from the supplied history")
+        if not isinstance(selections[names.index(self.current_selection_id)], PublicSelection):
+            raise ValueError("current selection requires complete candidate evidence; a neighbour prefix is insufficient")
         onsets = np.concatenate([s.onsets for s in selections])
         if len(np.unique(onsets)) != len(onsets):
             raise ValueError("a public flash may not be counted in two supplied selections")
@@ -151,6 +186,7 @@ class ResponseObservation:
     temporal_root: np.ndarray
     nuisance: np.ndarray
     conditioning_samples: int
+    current_right_censored: bool = False
 
     def __post_init__(self):
         samples, nuisance = _matrix(self.samples, "actual observed volts"), _matrix(self.nuisance, "common nuisance coordinates")
@@ -159,8 +195,37 @@ class ResponseObservation:
                 or nuisance.shape[0] != len(samples) or type(self.origin_sample) is not int or self.origin_sample < 0
                 or type(self.conditioning_samples) is not int or not 1 <= self.conditioning_samples < len(samples)):
             raise ValueError("actual block, native origin, common nuisance and nonempty prefix/tail must align")
+        if type(self.current_right_censored) is not bool:
+            raise ValueError("current response censoring must be explicitly declared")
         for key, value in (("samples", samples), ("temporal_root", temporal), ("nuisance", nuisance)):
             object.__setattr__(self, key, frozen_array(value))
+
+
+@dataclass(frozen=True)
+class StructuredResponseObservation:
+    """Native production operands; the stored noise map is evaluated structurally.
+
+    No dense temporal covariance/root is materialized. Its scientific caller
+    must supply the same full/prefix marginal evaluator from the actual noise.
+    """
+
+    samples: np.ndarray
+    origin_sample: int
+    nuisance: np.ndarray
+    conditioning_samples: int
+    current_right_censored: bool
+
+    def __post_init__(self):
+        samples, nuisance = _matrix(self.samples, "actual native history samples"), _matrix(
+            self.nuisance, "same full/prefix nuisance chart")
+        if (not len(samples) or not samples.shape[1] or nuisance.shape[0] != len(samples)
+                or type(self.origin_sample) is not int or self.origin_sample < 0
+                or type(self.conditioning_samples) is not int
+                or not 1 <= self.conditioning_samples < len(samples)
+                or type(self.current_right_censored) is not bool):
+            raise ValueError("structured history requires actual prefix/tail and explicit censoring")
+        object.__setattr__(self, "samples", frozen_array(samples))
+        object.__setattr__(self, "nuisance", frozen_array(nuisance))
 
 
 @dataclass(frozen=True)
@@ -171,6 +236,7 @@ class ConditionalHistoryEvidence:
     log_candidate_probability: np.ndarray
     state_joint_log_marginal: np.ndarray
     state_prefix_log_marginal: np.ndarray
+    state_conditional_log_density: np.ndarray
     state_prefix_probability_given_current: np.ndarray
     current_prior: np.ndarray
     measure_kind: str
@@ -238,7 +304,8 @@ def _log_marginal(samples, design, noise_root, nuisance, posterior):
     return float(result)
 
 
-def conditional_history_evidence(posterior, history, observation):
+def conditional_history_evidence(posterior, history, observation, *, full_state_prior=None,
+                                 design_builder=None, marginal_evaluator=None):
     """Exact finite-state conditional-tail mixture with the frozen current prior.
 
     Both integrals use the same nuisance columns/coordinate volume. The prefix
@@ -246,45 +313,75 @@ def conditional_history_evidence(posterior, history, observation):
     The output does not claim a full-data Bayes current-candidate posterior.
     """
     if (not isinstance(posterior, ResponsePosterior) or not isinstance(history, PublicResponseHistory)
-            or not isinstance(observation, ResponseObservation)
+            or not isinstance(observation, (ResponseObservation, StructuredResponseObservation))
             or observation.samples.shape[1] != posterior.mean.shape[1]):
         raise ValueError("history evidence requires aligned owned posterior/history/observations")
+    if isinstance(observation, StructuredResponseObservation) and marginal_evaluator is None:
+        raise ValueError("structured observations require their actual full/prefix marginal owner")
     axis = tuple(s.selection_id for s in history.selections).index(history.current_selection_id)
     current = history.selections[axis]
     end = observation.origin_sample+len(observation.samples)
-    if current.onsets[0] < observation.origin_sample or int(current.onsets[-1])+len(posterior.basis) > end:
+    if (current.onsets[0] < observation.origin_sample or current.onsets[-1] >= end
+            or not observation.current_right_censored and int(current.onsets[-1])+len(posterior.basis) > end):
         raise ValueError("requested current selection needs its complete observed native response tails")
-    states = tuple(product(*(range(len(s.candidate_ids)) for s in history.selections)))
-    prior = history.joint_label_prior.reshape(-1)
+    table = history.joint_label_prior if full_state_prior is None else finite_real_array(
+        full_state_prior, name="complete frozen joint target/response-state prior")
+    label_shape = tuple(len(s.candidate_ids) for s in history.selections)
+    if (table.shape[:len(label_shape)] != label_shape or np.any(table < 0)
+            or not np.isclose(table.sum(), 1., rtol=0, atol=64*np.finfo(float).eps)):
+        raise ValueError("full finite state mass must preserve every target axis and sum to one")
+    if full_state_prior is not None:
+        extra = tuple(range(len(label_shape), table.ndim))
+        label_mass = table.sum(axis=extra) if extra else table
+        if not np.array_equal(label_mass, history.joint_label_prior):
+            raise ValueError("joint response-state mass differs from the frozen label marginal")
+        if design_builder is None:
+            raise ValueError("complete response-state mass requires its actual owned design builder")
+    states = tuple(product(*(range(size) for size in table.shape)))
+    prior = table.reshape(-1)
     active = prior > 0
     logprior = np.full(len(states), -np.inf)
     logprior[active] = np.log(prior[active])
-    joint, prefix = np.full(len(states), -np.inf), np.full(len(states), -np.inf)
+    joint, prefix, conditional = (np.full(len(states), -np.inf) for _ in range(3))
     u = observation.conditioning_samples
     design_groups = {}
     for i, state in enumerate(states):
         if not active[i]:
             continue
-        design = response_history_design(posterior, history, observation, state)
+        design = (response_history_design(posterior, history, observation, state) if design_builder is None
+                  else design_builder(state))
         design_groups.setdefault((state[axis], design.tobytes()), []).append(i)
-        joint[i] = _log_marginal(observation.samples, design, observation.temporal_root, observation.nuisance, posterior)
-        prefix[i] = _log_marginal(observation.samples[:u], design[:u], observation.temporal_root[:u, :u],
-                                  observation.nuisance[:u], posterior)
+        if marginal_evaluator is None:
+            joint[i] = _log_marginal(observation.samples, design, observation.temporal_root, observation.nuisance, posterior)
+            prefix[i] = _log_marginal(observation.samples[:u], design[:u], observation.temporal_root[:u, :u],
+                                      observation.nuisance[:u], posterior)
+        else:
+            pair = marginal_evaluator(design)
+            if hasattr(pair, "conditional_log_density"):
+                joint[i], prefix[i], conditional[i] = (
+                    pair.joint_log_marginal, pair.prefix_log_marginal, pair.conditional_log_density)
+            else:
+                joint[i], prefix[i] = pair
+        if marginal_evaluator is None or not hasattr(pair, "conditional_log_density"):
+            conditional[i] = joint[i]-prefix[i]
     q_index = np.asarray([state[axis] for state in states])
     evidence, current_prior = [], []
     weights = np.zeros((len(current.candidate_ids), len(states)))
     for q in range(len(current.candidate_ids)):
         selected = q_index == q
-        full = float(logsumexp(logprior[selected]+joint[selected]))
         past = float(logsumexp(logprior[selected]+prefix[selected]))
-        evidence.append(full-past)
+        # This is the same sum(full)/sum(prefix) ratio in a stable chart:
+        # prefix updates the state mass, then its conditional density is
+        # integrated. These are posterior prefix weights, never prior weights.
+        prefix_weights = logprior[selected]+prefix[selected]-past
+        evidence.append(float(logsumexp(prefix_weights+conditional[selected])))
         current_prior.append(float(prior[selected].sum()))
-        weights[q, selected] = np.exp(logprior[selected]+prefix[selected]-past)
+        weights[q, selected] = np.exp(prefix_weights)
     scores = np.asarray(evidence)+np.log(current_prior)
     if not np.isfinite(scores).all():
         raise ValueError("requested candidate conditional mixture is not representable")
     normalized = scores-logsumexp(scores)
-    arrays = [frozen_array(a) for a in (evidence, normalized, joint, prefix, weights, current_prior)]
+    arrays = [frozen_array(a) for a in (evidence, normalized, joint, prefix, conditional, weights, current_prior)]
     kind = "proper_Gaussian_density_ratio" if observation.nuisance.shape[1] == 0 else "common_sigma_finite_nuisance_marginal_ratio"
     groups = tuple(tuple(indices) for indices in design_groups.values() if len(indices) > 1)
     return ConditionalHistoryEvidence(current.candidate_ids, states, *arrays, kind, int(active.sum()), groups)
