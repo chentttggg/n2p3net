@@ -15,6 +15,7 @@ from dataclasses import dataclass
 import numpy as np
 
 QC_FEATURE_SCHEMA = "n2p3net_epoch_qc_features/1"
+QC_CHANNEL_SELECTION_PROGRAM = "selected_preprocessed_X_observed_QC_recompute/1"
 
 
 @dataclass(frozen=True)
@@ -84,17 +85,38 @@ class EpochQCFeatures:
             observed_mask=np.asarray(self.observed_mask)[indices].copy(),
         )
 
-    def select_channels(self, indices: Sequence[int]) -> EpochQCFeatures:
+    def select_channels(
+        self, indices: Sequence[int], *, selected_X: np.ndarray,
+    ) -> EpochQCFeatures:
+        """Recompute the selected montage's statistics from its actual samples.
+
+        The float32 cached summaries cannot recover raw PTP: relative PTP was
+        divided by max(median, float64 eps) before storage. Even above that
+        floor, reversing rounded summaries loses the original sample values.
+        The caller supplies the already selected array to avoid another EEG
+        copy; retained observation bits still come from this parent payload.
+        """
         channel_indices = np.asarray(indices, dtype=np.int64)
         if channel_indices.ndim != 1 or not len(channel_indices):
             raise ValueError("QC feature channel selection must be non-empty and one-dimensional.")
         if int(channel_indices.min()) < 0 or int(channel_indices.max()) >= self.n_channels:
             raise ValueError("QC feature channel selection is out of bounds.")
-        return EpochQCFeatures(
-            relative_ptp=np.asarray(self.relative_ptp)[:, channel_indices].copy(),
-            channel_std_v=np.asarray(self.channel_std_v)[:, channel_indices].copy(),
-            epoch_scale_v=np.asarray(self.epoch_scale_v).copy(),
-            observed_mask=np.asarray(self.observed_mask)[:, channel_indices].copy(),
+        values = np.asarray(selected_X)
+        if values.ndim != 3 or values.shape[:2] != (self.n_epochs, len(channel_indices)):
+            raise ValueError("Selected QC samples must align with the retained epoch/channel axes.")
+        observed = np.asarray(self.observed_mask)[:, channel_indices]
+        if self.n_epochs == 0:
+            # A row-subset QC payload may be empty, even though active
+            # EpochDataset ingress rejects a zero-epoch dataset. There are no
+            # montage moments to recompute in this typed empty representation.
+            return EpochQCFeatures(
+                relative_ptp=np.asarray(self.relative_ptp)[:, channel_indices].copy(),
+                channel_std_v=np.asarray(self.channel_std_v)[:, channel_indices].copy(),
+                epoch_scale_v=np.asarray(self.epoch_scale_v).copy(),
+                observed_mask=observed.copy(),
+            )
+        return compute_epoch_qc_features(
+            values, channel_mask=observed.any(axis=0), trial_channel_mask=observed,
         )
 
     @classmethod

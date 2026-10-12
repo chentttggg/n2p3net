@@ -1759,6 +1759,8 @@ def select_epoch_channels(
 ) -> EpochDataset:
     """Select an exact channel subset; never pad or substitute a different electrode."""
 
+    from data.qc_features import QC_CHANNEL_SELECTION_PROGRAM
+
     dataset.validate()
     present = {
         canonical_channel_name(name, aliases=aliases): index
@@ -1775,6 +1777,7 @@ def select_epoch_channels(
     values = dataset.X[:, picks, :] if copy or not same_order else dataset.X.view()
     if not copy:
         values.flags.writeable = False
+    qc_program = QC_CHANNEL_SELECTION_PROGRAM if dataset.qc_features is not None else None
     selected = EpochDataset(
         name=dataset.name,
         X=values,
@@ -1786,18 +1789,20 @@ def select_epoch_channels(
         preprocessing=dataset.preprocessing,
         event_timeline=dataset.event_timeline,
         metadata=dataset.metadata,
-        provenance={**dataset.provenance, "selected_channels": list(targets)},
+        provenance={**dataset.provenance, "selected_channels": list(targets),
+                    "channel_selection_qc_program": qc_program},
         trial_channel_mask=(
             dataset.trial_channel_mask[:, picks] if dataset.trial_channel_mask is not None else None
         ),
         qc_features=(
-            dataset.qc_features.select_channels(picks) if dataset.qc_features is not None else None
+            dataset.qc_features.select_channels(picks, selected_X=values)
+            if dataset.qc_features is not None else None
         ),
         identity_table=materialize_dataset_identity(dataset),
         lineage=DataLineage.derive(
             [materialize_dataset_lineage(dataset)],
             operation="select_channels",
-            parameters={"target_channels": list(targets)},
+            parameters={"target_channels": list(targets), "qc_feature_program": qc_program},
         ),
     )
     selected.validate()
