@@ -1,0 +1,35 @@
+{
+  "schema": "n2p3_claude_review_safe_integration/1",
+  "review_branch": "claude/review-20261011",
+  "review_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+  "safe_candidate": "e91be9fe47e7687d3b3dff81a5e5970d3a19270a",
+  "accepted_head": "7fef43b",
+  "status": "bounded_safe_subset_accepted",
+  "accepted_scope": [
+    "historical evidence and frozen manifest restoration",
+    "atomic and exclusive artifact publication",
+    "duplicate physical recording admission rejection",
+    "UTF-8 resume ledger reads",
+    "verifier identity and output collision gates",
+    "GPU observation aggregation and stateless diagnostic fixes",
+    "undefined-fold ledger and explicit partial-output failure boundaries"
+  ],
+  "deferred_scope": [
+    "participant-macro metric semantics and result schema version",
+    "SplitBN sequential target-buffer installation and channel masks",
+    "event first-sample offsets, QC recomputation, and CPU shuffle order",
+    "candidate common-support/refit selection behavior",
+    "information-bound estimand and membership_kind API",
+    "public helper retirement",
+    "cloud floor, nested grant, and worker-thread scheduling changes"
+  ],
+  "validation": {
+    "focused_pytest": "passed",
+    "ruff_changed_python": "passed",
+    "diff_check_core_whitespace_cr_at_eol": "passed",
+    "public_fit": 0,
+    "public_score": 0,
+    "model_load": 0
+  },
+  "historical_artifacts_resigned": false
+}

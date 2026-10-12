@@ -93,3 +93,5 @@ source cache 与 shared programme score 已在科研主树 `4830ef9` 集成。�
 云端原32 records×36 candidates的数值桥与352-record阶段计时保其原来源；科研侧当前接受公式/调用相容和相关行为，完整矩阵耗时继续由云窗口实测。旧模型保持原producer，新训练包使用实际执行源码身份。
 
 Claude review 分支的 U5a-04、U7-19、U7-24、U7-26 和 U1-01 fixture 修复已按实际文件逐项接入，提交 `4acb63d`；当前源码缺少其依赖的 exclusive publisher，因此补入 `research.execution.publish_exclusive` 后定向回归 19 项通过。复核分支报告的全套 3726/25/3 结果仍按其原身份保存：一个基线既有波动，两个失败首次出现于 director 的 strict nested selection 提交，留给该模块复审，不把它们改写成此次修复通过。
+
+随后对 Claude review 分支 `33603f7` 的整树三方合并候选 `e91be9f` 做了独立模块审阅。候选会新增约 688 个路径，其中有一批运行时变化会改写结果字段、SplitBN 状态、输入/QC/训练行序、候选选择或信息界估计量；这些没有随证据恢复一起合入。当前主树 `7fef43b` 只接收历史 evidence/frozen manifest 恢复、原子/独占发布、重复物理 recording 拒绝、UTF-8 resume、verifier/output collision、GPU/无状态诊断和显式 undefined-fold/partial-output 失败账本。participant-macro、SplitBN、输入/QC/行序、candidate selection、information-bound、公共 API 退役及 cloud resource scheduling 仍保留原实现，等待各自的新 source/cache/model/report identity 与窄验收；具体范围和验证见[安全整合绑定](../assets/research_resume_20261012/claude_review_safe_integration_binding.json)。没有重签历史 artifact，也没有因这次整合启动 public fit/score/model load。
