@@ -30,7 +30,8 @@
     "diff_check_core_whitespace_cr_at_eol": "passed",
     "public_fit": 0,
     "public_score": 0,
-    "model_load": 0
+    "public_model_load": 0,
+    "software_fixture_model_load": "included in focused regression scope"
   },
   "historical_artifacts_resigned": false
 }
