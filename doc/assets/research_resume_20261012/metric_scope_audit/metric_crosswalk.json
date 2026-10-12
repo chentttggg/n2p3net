@@ -1,164 +1,512 @@
 {
-  "schema": "n2p3_metric_scope_crosswalk/1",
-  "status": "passed_read_only_recompute",
-  "generated_from_main_head": "b26c099",
+  "schema": "n2p3_metric_scope_crosswalk/2",
+  "status": "passed_independent_log_probability_recompute",
+  "review_scope_head": "b26c099",
+  "observed_execution_head": "268973007ba6a02720e630a095e54df4a416d20b",
+  "script_sha256": "66700e23b49c632e8a0ad369fa82e8dadc431f4ded80b34a995a0d4944845489",
   "source_files": [
-    {
-      "path": "tmp/P1_NUMERIC_PANEL/analysis/final/analysis.json",
-      "sha256": "ef3cc95b082fadfd698b1c53cf02211713dc137a659d2e912b200f9e9da5087b",
-      "bytes": 64937,
-      "schema": "independent_p1_numeric_panel_readout/1",
-      "role": "P1 row-level readout",
-      "scope": "original_C_held_development_zero_fit_new_numerical_consumers_not_public152_or_product"
-    },
     {
       "path": "doc/assets/research_resume_20261011/p1_numeric_panel_acceptance_binding.json",
       "sha256": "5d7a4df46eb57f374406cda8fe6377a0f00aff98ed67277909e838791157aa14",
       "bytes": 5342,
-      "schema": "p1_frozen_numeric_panel_acceptance/1",
-      "role": "P1 producer/consumer acceptance",
-      "scope": "original_C600_R10_one_held_decision_per_person"
+      "role": "original P1 acceptance",
+      "schema": "p1_frozen_numeric_panel_acceptance/1"
     },
     {
-      "path": "doc/evidence/public_evaluation.zh.md",
-      "sha256": "06d94c3340c9aeb7f8cd728259c0d4b4cbd4c1d7a19713a2f4a3d423a21e6994",
-      "bytes": 15864,
-      "schema": "markdown-evidence",
-      "role": "BNCI public candidate panel",
-      "scope": "BNCI2014-008 eight people, seed 20260918, 152 requested / 144 probability units"
+      "path": "tmp/P1_NUMERIC_PANEL/analysis/final/analysis.json",
+      "sha256": "ef3cc95b082fadfd698b1c53cf02211713dc137a659d2e912b200f9e9da5087b",
+      "bytes": 64937,
+      "role": "old readout; comparison only",
+      "schema": "independent_p1_numeric_panel_readout/1"
     },
     {
-      "path": "doc/assets/research_resume_20261011/cloud_candidate_analysis_binding.json",
-      "sha256": "90ef4ab1d761591f3ee1bccd80719e1a30da9fafc6d987f821dbf3e1e5a541eb",
-      "bytes": 2585,
-      "schema": "n2p3_cloud_candidate_data_analysis/1",
-      "role": "cloud candidate analysis binding",
-      "scope": "eight people, 152 requested / 144 common probability decisions"
+      "path": "tmp/P1_NUMERIC_PANEL/execution_config.json",
+      "sha256": "b1ad598ccd9357c2e783f8481d5e1c12df83eebbbd827a033a51474c356bd539",
+      "bytes": 13087349,
+      "role": "original requested roster/vocabulary/DecisionPlan truth",
+      "schema": "p1_numeric_panel_execution/1"
     },
     {
-      "path": "doc/assets/research_resume_20261011/bi_q1_queue_acceptance_binding.json",
-      "sha256": "8b074587161a8ba60f389acddb1a82f7516f0480a9026f743f8965a0209645e1",
-      "bytes": 4398,
-      "schema": "bi2014a_q1_public_dataset_queue_acceptance/1",
-      "role": "BI2014a Q1 queue binding",
-      "scope": "public_calibration_development_not_adult_or_product_confirmation",
-      "participants": 61,
-      "requested_decisions": 1287,
-      "probability_decisions": 1243
-    },
-    {
-      "path": "doc/assets/research_resume_20261011/bnci_q1_queue_acceptance_binding.json",
-      "sha256": "7494dd1dc84bcc0b160a6ff44698f5c344770255b595c7552f7c6dc9ff5da310",
-      "bytes": 8623,
-      "schema": "n2p3_bnci_episode_C600_R10_local_independent_acceptance/1",
-      "role": "BNCI C600/R10 binding",
-      "scope": "public_calibration_development; episode C600/R10; separate from P1 and label-K prefix selector",
-      "participants": 8,
-      "requested_per_arm": 240,
-      "arms": 3,
-      "probability_coverage": 1.0
+      "path": "tmp/P1_NUMERIC_PANEL/result.json",
+      "sha256": "091fa663769395027e7ee5b9cdabd89079106daec62f77eb56167ec627f3ef7f",
+      "bytes": 311854,
+      "role": "saved generic metric owner; comparison only",
+      "schema": "p1_zero_fit_numeric_panel/1"
     },
     {
       "path": "src/models/candidate_evidence.py",
       "sha256": "f83afc43b758791bdb59da8e26a553054bdde59e6b57bb59c8e8fddb74295c4d",
       "bytes": 36474,
-      "schema": "n2p3_candidate_probability_evidence/1",
-      "role": "generic evidence schema source"
+      "role": "actual generic constructor/tie contract"
     },
     {
       "path": "src/research/candidate_metrics.py",
       "sha256": "74767720e2976957592dff278062c147360ea2705222dea40aab450fe36f85c9",
       "bytes": 34723,
-      "schema": "n2p3_candidate_probability_metrics/1 and /2",
-      "role": "generic metrics and paired comparison source"
+      "role": "generic macro/micro/risk schema"
+    },
+    {
+      "path": "src/research/continuous_history_adapter.py",
+      "sha256": "6331e4e11e0389a7e5e112b80020b91bdbab91c93a0cf315a677bc0eb09dab1e",
+      "bytes": 14838,
+      "role": "actual B07 central callsite"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/analysis/final/participants.csv",
+      "sha256": "13792c804fbeb5e2b84c27dcf930e87a73bc98fa2559d2b3ca53f2438ee6a256",
+      "bytes": 13713,
+      "role": "reported row CSV"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/analysis/final/paired.csv",
+      "sha256": "f24ebd9d21c04a2aacf5894539aa095e81c974674748306acca442720c1c156d",
+      "bytes": 686,
+      "role": "reported paired CSV"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/analysis/final/summary.csv",
+      "sha256": "1c66885ae230bfce97d6a1a026b16d2c89312f5b25188b16c12c6dbfffdc65f1",
+      "bytes": 205,
+      "role": "reported summary CSV"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A01_private8/score.json",
+      "sha256": "c0b7136ba6f1ca07c725b38f1fcf3f3b016e7eb087463ff357d3cbbbaa192fc5",
+      "bytes": 1328011,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A01_private8/receipt.json",
+      "sha256": "91c6c09991d977be74799f061515b306ead4e60f6ae75d47fd40a93b68ca65cc",
+      "bytes": 691863,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A01_shared8/score.json",
+      "sha256": "1563c8fe0238830193641310e7cfd3dfd39b5b6f3f8e15f8500e50647fde036e",
+      "bytes": 1327835,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A01_shared8/receipt.json",
+      "sha256": "e9a5fed55841ce9fcec433616fd716b90273bd88ac2992bbb3b9a553759a6ee2",
+      "bytes": 691861,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A02_private8/score.json",
+      "sha256": "951e21c721bfe10cc58f85dc718ec15d4fb6ff4c78c5e2f8b3db41a184099927",
+      "bytes": 1326964,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A02_private8/receipt.json",
+      "sha256": "9e67b58af1ea710bea5798bb960554a9a8ff7c2bd0cec9c21b2674aebe65a8cd",
+      "bytes": 694681,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A02_shared8/score.json",
+      "sha256": "0ab4d62a60e08c68f8bd9d39c15766954e3cfd03aa9d841249c1bd659f689158",
+      "bytes": 1327864,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A02_shared8/receipt.json",
+      "sha256": "295eb0c382fcc46065cd634678ea59d7ae5d450d489fc83ac6f456b9f1bf6131",
+      "bytes": 694679,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A03_private8/score.json",
+      "sha256": "d8a3bd910eecfd77714063b0f2bbf74e30f50602c0fd4582e223f50abc27628a",
+      "bytes": 1327487,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A03_private8/receipt.json",
+      "sha256": "e50e0bb7f9bff58a9837de42a188c957e59e51ba7e5e71cb6c3a4d86540a1548",
+      "bytes": 694679,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A03_shared8/score.json",
+      "sha256": "182560030398d21c844dca56de514b1a803f6ddf6a1a825b857456717b5935a0",
+      "bytes": 1327675,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A03_shared8/receipt.json",
+      "sha256": "7c9050c09c8f21ca8cb69c78b339052e44fbae7ccc6f70c13ea6cb540523bfe6",
+      "bytes": 694679,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A04_private8/score.json",
+      "sha256": "9bd2362de19e1fd54f4cdcae1d44fbd8788c11870f5159d4dea15ab038a2f993",
+      "bytes": 1327600,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A04_private8/receipt.json",
+      "sha256": "cb4d20e93d919402c2605a8ffa8bc1b5a12b05bee10066bbcfb5505fedf74d52",
+      "bytes": 694681,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A04_shared8/score.json",
+      "sha256": "f9960ddec6d6b75b1ad4ea3e327dc31b78d5e1bea5cf7dd73c4165a938ee95de",
+      "bytes": 1327309,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A04_shared8/receipt.json",
+      "sha256": "cf1ad83761c3a10934ab0e80ed6af701875b42fa0c32c9d96abb812e793f7233",
+      "bytes": 694679,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A05_private8/score.json",
+      "sha256": "d65d02def9c2e997a0d399c67c0f47c742d6b5f50d339b0353e6805240c3ad53",
+      "bytes": 1326898,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A05_private8/receipt.json",
+      "sha256": "748c00a7de57992a3b211850244677cae5bd1882a4a3c44461e3618423a6d077",
+      "bytes": 694681,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A05_shared8/score.json",
+      "sha256": "5fd102f24dab806c1bd7028e6188ea268ed6bd08d6c5603f34e9a14ed5fc03af",
+      "bytes": 1327758,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A05_shared8/receipt.json",
+      "sha256": "bcd1b6e0e8b2016534ed8ad3e5fd1680ae610be2069d3b4bf1263a629820f8f6",
+      "bytes": 694679,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A06_private8/score.json",
+      "sha256": "574ca8fb773046d26587f797f1ce25d75e0cc4cdd663bcd1246b9e1a51bd51e2",
+      "bytes": 1326540,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A06_private8/receipt.json",
+      "sha256": "a29c943ccab0c7cfae243c16c0a113ab58a01e9b3cf0c935761e60e598ac7b95",
+      "bytes": 694681,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A06_shared8/score.json",
+      "sha256": "dc5994fc75a440414a008f900e32c109a3dd854cea7e9ec6c7a6df9cf3628fcc",
+      "bytes": 1326780,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A06_shared8/receipt.json",
+      "sha256": "49ff14dceca94b349dc3e23bd89fe087e186ff77a20d8f9bfdfdb2466a454b15",
+      "bytes": 694679,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A07_private8/score.json",
+      "sha256": "bd50897deb7344bf909d3082a9d17619e965879ed7903dd672b73aadfbed044a",
+      "bytes": 1327804,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A07_private8/receipt.json",
+      "sha256": "4804c2b53ba7819edd9a94137ca29d69cddce65f6855680d4c2c9be3cb7dc5e6",
+      "bytes": 694681,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A07_shared8/score.json",
+      "sha256": "08351401ece3976040eeeaeda8323d2c7b24f3dbb91e063043282678ec69b10a",
+      "bytes": 1326470,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A07_shared8/receipt.json",
+      "sha256": "763417bf8e19a9af95352d4ee1b27a2e8292a3ffd53cc6c4503b14a72d8e996e",
+      "bytes": 694680,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A08_private8/score.json",
+      "sha256": "08c6da6108c82f55508d2fb09fb5fdddf1e3cda9a5eeffb0d80928691383e1e9",
+      "bytes": 1325845,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A08_private8/receipt.json",
+      "sha256": "5dd700b59e2f8fc93dddc88171215210f55d62aad0ca38e7f42ce5e792908358",
+      "bytes": 694681,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A08_shared8/score.json",
+      "sha256": "06947da8b301bb1ce7cd3276b2ddd535dd6adeb818eea90b4ca5ec3168d195cd",
+      "bytes": 1325867,
+      "role": "original saved 36-way log probability/diagnostics",
+      "schema": "n2p3_channel_noise_candidate_score/1"
+    },
+    {
+      "path": "tmp/P1_NUMERIC_PANEL/cells/A08_shared8/receipt.json",
+      "sha256": "11382dbeca12de7e5d1c8ace7200dc315106dc39ae7cfd1f108a191c2f7901c6",
+      "bytes": 694679,
+      "role": "original saved call ledger and producer identity",
+      "schema": "p1_numeric_panel_cell_receipt/1"
+    },
+    {
+      "path": "doc/assets/research_resume_20261011/cloud_candidate_analysis_binding.json",
+      "sha256": "90ef4ab1d761591f3ee1bccd80719e1a30da9fafc6d987f821dbf3e1e5a541eb",
+      "bytes": 2585,
+      "role": "public BNCI summary/denominator binding only",
+      "schema": "n2p3_cloud_candidate_data_analysis/1"
+    },
+    {
+      "path": "doc/assets/research_resume_20261011/bi_q1_queue_acceptance_binding.json",
+      "sha256": "8b074587161a8ba60f389acddb1a82f7516f0480a9026f743f8965a0209645e1",
+      "bytes": 4398,
+      "role": "BI queue acceptance binding only",
+      "schema": "bi2014a_q1_public_dataset_queue_acceptance/1"
+    },
+    {
+      "path": "doc/assets/research_resume_20261011/bnci_q1_queue_acceptance_binding.json",
+      "sha256": "7494dd1dc84bcc0b160a6ff44698f5c344770255b595c7552f7c6dc9ff5da310",
+      "bytes": 8623,
+      "role": "BNCI C600/R10 acceptance binding only",
+      "schema": "n2p3_bnci_episode_C600_R10_local_independent_acceptance/1"
+    },
+    {
+      "path": "doc/evidence/public_evaluation.zh.md",
+      "sha256": "43c2cd586c9648fc3416ab54ab9782fa8e091a68a5db12346774d1586fdc7248",
+      "bytes": 16454,
+      "role": "public scopes and denominator description"
     }
   ],
   "denominator_crosswalk": [
     {
       "name": "P1_shared8/private8",
+      "source_ref": "doc/assets/research_resume_20261011/p1_numeric_panel_acceptance_binding.json",
       "requested_participants": 8,
-      "requested_cells_per_arm": 8,
-      "probability_cells_per_arm": 8,
+      "requested_decisions_per_arm": 8,
+      "probability_decisions_per_arm": 8,
       "candidate_count": 36,
       "truth_support": [
         "row:5|column:0"
       ],
-      "aggregation": "one held decision per participant; equal participant mean",
-      "fit_calls": 0,
-      "score_calls": 0,
-      "claim_scope": "C-held development diagnostic only"
+      "aggregation": "one decision per participant; equal eight-person mean; macro equals micro only for this panel",
+      "claim_scope": "original_C600_R10_one_held_decision_per_person",
+      "verification_depth": "all original 16 log-probability vectors independently recomputed",
+      "original_saved_call_ledger": {
+        "saved_rescoring_score_calls": 14,
+        "saved_rescoring_new_response_or_noise_fit_calls": 0,
+        "reused_A01_score_cells": 2,
+        "reused_A01_candidates": 72,
+        "other_scored_candidates": 504,
+        "original_anchor_and_noise_fit_calls": "not recounted; original fitted producers are preserved"
+      },
+      "this_review_new_calls": {
+        "fit": 0,
+        "score": 0,
+        "model_load": 0,
+        "EEG_read": 0,
+        "filter": 0
+      }
     },
     {
       "name": "BNCI_public_candidate_panel",
+      "source_ref": "doc/assets/research_resume_20261011/cloud_candidate_analysis_binding.json",
       "requested_participants": 8,
       "requested_decisions": 152,
-      "probability_decisions": 144,
+      "common_probability_decisions": 144,
       "candidate_count": 36,
-      "aggregation": "participant-first NLL over available common decisions; requested operational hit",
-      "fit_calls": 0,
-      "score_calls": 0,
-      "claim_scope": "public calibration development, one seed"
+      "aggregation": "participant-first common available-decision risk; requested operational hit",
+      "claim_scope": "public calibration development, one seed",
+      "verification_depth": "accepted summary/denominator binding inspected; no 152-vector recomputation here",
+      "original_calls": "not recounted",
+      "this_review_new_calls": {
+        "fit": 0,
+        "score": 0,
+        "model_load": 0,
+        "EEG_read": 0,
+        "filter": 0
+      }
     },
     {
       "name": "BI2014a_Q1",
+      "source_ref": "doc/assets/research_resume_20261011/bi_q1_queue_acceptance_binding.json",
       "requested_participants": 61,
       "requested_decisions": 1287,
       "probability_decisions": 1243,
+      "incomplete_decisions": 44,
       "candidate_count": 36,
-      "aggregation": "participant macro plus micro coverage separately; 44 incomplete retained",
-      "fit_calls": 0,
-      "score_calls": 0,
-      "claim_scope": "public calibration development, not adult/product"
+      "participant_macro_probability_coverage": 0.9885145151772479,
+      "decision_micro_probability_coverage": 0.9658119658119658,
+      "aggregation": "equal participant mean; micro coverage separately; full original episode horizons",
+      "claim_scope": "public_calibration_development_not_adult_or_product_confirmation",
+      "verification_depth": "acceptance binding inspected; no 1287-vector recomputation here",
+      "original_calls": "not recounted; saved model count is not new audit calls",
+      "this_review_new_calls": {
+        "fit": 0,
+        "score": 0,
+        "model_load": 0,
+        "EEG_read": 0,
+        "filter": 0
+      }
     },
     {
       "name": "BNCI_C600_R10",
+      "source_ref": "doc/assets/research_resume_20261011/bnci_q1_queue_acceptance_binding.json",
       "requested_participants": 8,
       "requested_decisions_per_arm": 240,
       "probability_decisions_per_arm": 240,
       "arms": 3,
       "candidate_count": 36,
-      "aggregation": "participant macro equals micro because each participant has 30 R10 episodes",
-      "fit_calls_in_original_run": 16,
-      "new_fit_score_model_load_calls_in_review": 0,
-      "claim_scope": "public calibration development; separate from P1 and label-K selector"
+      "aggregation": "equal participant mean; 30 R10 episodes per person implies macro=micro",
+      "claim_scope": "public_calibration_development; episode C600/R10; separate from P1 and label-K prefix selector",
+      "verification_depth": "acceptance binding inspected; no 240-vector-per-arm recomputation here",
+      "original_target_fit_calls": 16,
+      "original_source_fit_calls": 0,
+      "this_review_new_calls": {
+        "fit": 0,
+        "score": 0,
+        "model_load": 0,
+        "EEG_read": 0,
+        "filter": 0
+      }
     }
   ],
-  "p1_recomputed": {
-    "private8": {
-      "requested_participants": 8,
-      "requested_cells": 8,
-      "hits": 6,
-      "operational_hit": 0.75,
-      "prediction_coverage": 1.0,
-      "probability_coverage": 1.0,
-      "nll_macro_one_decision_per_participant": 5.554012191080322,
-      "brier_macro_one_decision_per_participant": 0.47767850103985904,
-      "candidate_count": [
-        36
+  "ledger_field_contracts": {
+    "winner/correct/tie/NLL/Brier/confidence/rank/entropy": {
+      "score_schema": "n2p3_channel_noise_candidate_score/1",
+      "score_fields": [
+        "candidate_ids",
+        "log_probability"
       ],
-      "truths": [
-        "row:5|column:0"
-      ],
-      "fit_calls": 0,
-      "scorer_calls": 7
+      "truth_field": "execution_config.producer_plan.decision_plan.entries.target_candidate",
+      "source_SHA": "each ledger row.source_files.score and truth_vocabulary_roster",
+      "formula": "actual generic log-space tie rule; -log_p_true; sum_j(exp(log_p_j)-onehot_j)^2; no renormalization"
     },
+    "row_column_masses_and_NLL": {
+      "score_fields": [
+        "candidate_ids",
+        "log_probability"
+      ],
+      "source_SHA": "each ledger row.source_files.score and truth_vocabulary_roster",
+      "formula": "sum declared six-member row/column groups; stable row logsumexp; exact NLL chain rule; no independence assumption"
+    },
+    "error_bounds_and_density_decomposition": {
+      "score_fields": [
+        "candidate_diagnostics",
+        "log_density",
+        "signal_geometry"
+      ],
+      "source_SHA": "each ledger row.source_files.score",
+      "formula": "saved estimates/maxima/budgets and Q/logdet differences; no EEG scoring recomputation"
+    },
+    "producer_consumer_and_original_calls": {
+      "receipt_fields": [
+        "anchor_model_sha256",
+        "noise_file_sha256",
+        "score_calls",
+        "fit_calls"
+      ],
+      "source_SHA": "each ledger row.source_files.receipt and score",
+      "restriction": "historical rescoring calls separate from this_review_new_calls"
+    },
+    "paired_and_summary": {
+      "source_SHA": "all sixteen original score SHA plus original plan SHA",
+      "formula": "computed row risks -> same subject/support shared-private deltas -> eight-person mean"
+    }
+  },
+  "generic_evidence_contract": {
+    "schema": "n2p3_candidate_probability_evidence/1",
+    "constructor_fields": [
+      "candidate_vocabulary",
+      "decision_id",
+      "evidence_level",
+      "expected_event_counts",
+      "expert_identities",
+      "failure_kind",
+      "failure_reason",
+      "log_probability",
+      "observed_event_counts",
+      "participant_key",
+      "physical_support_digest"
+    ],
+    "rtol": 1e-12,
+    "atol": 1e-12,
+    "tie_rule_source_line": 192,
+    "source_sha256": "f83afc43b758791bdb59da8e26a553054bdde59e6b57bb59c8e8fddb74295c4d"
+  },
+  "generic_schema_rejection": {
+    "P1_custom_fields_direct_import_allowed": false,
+    "rejected_rows": 16,
+    "reason": "source schema/constructor fields differ from generic evidence/metrics v1"
+  },
+  "p1_recomputed": {
     "shared8": {
-      "requested_participants": 8,
-      "requested_cells": 8,
       "hits": 5,
       "operational_hit": 0.625,
       "prediction_coverage": 1.0,
       "probability_coverage": 1.0,
-      "nll_macro_one_decision_per_participant": 7.336476583291455,
-      "brier_macro_one_decision_per_participant": 0.6790937535735931,
-      "candidate_count": [
-        36
-      ],
-      "truths": [
-        "row:5|column:0"
-      ],
-      "fit_calls": 0,
-      "scorer_calls": 7
+      "nll": 7.336476583291455,
+      "brier": 0.6790937535735931,
+      "wrong_winner_confidences": [
+        0.9999999978985562,
+        0.5727253825958531,
+        0.7711031197460577
+      ]
+    },
+    "private8": {
+      "hits": 6,
+      "operational_hit": 0.75,
+      "prediction_coverage": 1.0,
+      "probability_coverage": 1.0,
+      "nll": 5.554012191080322,
+      "brier": 0.47767850103985904,
+      "wrong_winner_confidences": [
+        0.9999998628552567,
+        0.24859877621409748
+      ]
     }
   },
   "p1_paired_recomputed": {
@@ -172,61 +520,38 @@
     "probability_pairs": 8,
     "A01_share_of_row_sum_nll_improvement": 0.7182293423790772
   },
-  "generic_schema_rejection_rules": [
-    {
-      "custom_field": "P1 status=scored",
-      "generic_target": "CandidateEvidence.status",
-      "decision": "reject_direct_import",
-      "reason": "generic statuses are available/tie/fit_failure/not_available/incomplete/abstain and require schema validation"
-    },
-    {
-      "custom_field": "P1 hits/operational_hit",
-      "generic_target": "requested_participant_operational_hit_rate",
-      "decision": "conditional_mapping_only",
-      "reason": "valid only with one held decision per participant and explicit P1 scope"
-    },
-    {
-      "custom_field": "P1 nll/brier",
-      "generic_target": "available_probability_nll/available_probability_brier",
-      "decision": "conditional_mapping_only",
-      "reason": "requires same 36-way distribution, target identity, participant-first aggregation and probability denominator"
-    },
-    {
-      "custom_field": "P1 probability_available",
-      "generic_target": "CandidateEvidence.probability_available",
-      "decision": "conditional_mapping_only",
-      "reason": "boolean availability does not certify calibration or public scope"
-    },
-    {
-      "custom_field": "P1 all_input_certificate",
-      "generic_target": "failure/status",
-      "decision": "reject_direct_import",
-      "reason": "false means local normwise certificate is not an all-input interval proof; it is not a failed score"
-    },
-    {
-      "custom_field": "P1 probability_mass_of_true_row/column",
-      "generic_target": "log_probability",
-      "decision": "reject_direct_import",
-      "reason": "diagnostic marginals cannot replace the 36-way joint candidate vector"
-    },
-    {
-      "custom_field": "P1 paired delta_nll row values",
-      "generic_target": "CandidateProbabilityComparison.delta_paired_nll",
-      "decision": "aggregate_before_mapping",
-      "reason": "row sum is -14.259715; declared participant macro delta is -1.782464"
-    }
-  ],
+  "this_review_new_calls": {
+    "fit": 0,
+    "score": 0,
+    "model_load": 0,
+    "EEG_read": 0,
+    "filter": 0
+  },
+  "original_saved_call_ledger": {
+    "saved_rescoring_score_calls": 14,
+    "saved_rescoring_new_response_or_noise_fit_calls": 0,
+    "reused_A01_score_cells": 2,
+    "reused_A01_candidates": 72,
+    "other_scored_candidates": 504,
+    "original_anchor_and_noise_fit_calls": "not recounted; original fitted producers are preserved"
+  },
+  "B07_status": {
+    "history_adapter_connected_commit": "948c485850c068083bc1240d9475b3fd382f8869",
+    "actual_central_callsite_verified": true,
+    "central_certificate_and_capsule_independent_review": "in_progress",
+    "public_B07_fit_score_claim": "none from this audit"
+  },
   "claims": {
-    "current_allowed": [
-      "P1 private8 has 6/8 versus shared8 5/8, delta hit +0.125 and participant-macro delta NLL -1.782464 on the fixed eight held decisions",
-      "P1 is fully available numerically but is not public efficacy or adult confirmation",
-      "central B07 numerical owner is accepted separately; history consumer/replay and public B07 score remain pending"
+    "allowed": [
+      "P1 fixed eight C-held diagnostics improve with private8",
+      "948c485 connected B07 history adapter; certificate/capsule review continues"
     ],
-    "current_forbidden": [
-      "P1 5/8 or 6/8 as BNCI public 152-request hit@all",
-      "P1 custom scored rows as generic CandidateEvidence v1 records",
-      "P1 fixed truth row/column panel as balanced 36-candidate risk",
-      "P1 local density error estimate as an all-input numerical interval certificate"
+    "forbidden": [
+      "P1 hit as public152 hit@all",
+      "P1 custom record as generic v1",
+      "fixed P1 truth as balanced 36-way risk",
+      "local estimate as all-input interval proof",
+      "new audit zero calls as historical zero training/scoring"
     ]
   }
 }

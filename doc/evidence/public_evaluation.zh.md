@@ -90,7 +90,7 @@ K2000单NN的scratch多7个命中且NLL低0.036876，matched scratch pool多1个
 
 图和完整CSV保存在本地科研树 `tmp/DATA_ANALYSIS_20261011/`：overview.png、configuration_metrics.csv、all_paired_contrasts.csv、participant_paired_metrics.csv。来源、分析程序与产物SHA见[紧凑绑定](../assets/research_resume_20261011/cloud_candidate_analysis_binding.json)；原始云结果保持原位置及producer身份。
 
-2026-10-12增加了一份只读指标分母审计：[metric scope audit](../assets/research_resume_20261012/metric_scope_audit/REPORT.zh.md)。它从P1 16-cell底表复算 shared8/private8 的5/8、6/8、NLL、Brier及8人配对差，并列出P1、BNCI 152/144、BI 1287/1243、BNCI C600/R10 240/arm的独立分母。P1自定义字段与通用 `CandidateEvidence`/`CandidateProbabilityMetrics` schema 的直接映射被明确拒绝；复算没有模型加载、fit或score。JSON crosswalk、逐行错误账本和复算脚本保存在同目录，来源与SHA见 `metric_crosswalk.json`。
+只读[指标分母审计](../assets/research_resume_20261012/metric_scope_audit/REPORT.zh.md)直接从16份原始36维 `log_probability` 和原 `DecisionPlan` 真值/请求表复算winner、NLL、Brier、行列概率及8人配对差，再核旧row、summary、三份CSV和接受绑定；2427项比较一致，最大数值差 `8.88e-16`，46份输入SHA前后不变。P1、BNCI 152/144、BI 1287/1243、BNCI C600/R10 240/arm分别保留各自分母。原14次续评score和A01两格复用与本次0 fit/score/model-load分列。复算脚本使用显式 `--root/--output`，迁入证据目录后已实际运行通过；完整交付及逐文件SHA见同目录 `delivery.binding.json` 和 `verification.json`。
 
 ## 跨数据集队列
 

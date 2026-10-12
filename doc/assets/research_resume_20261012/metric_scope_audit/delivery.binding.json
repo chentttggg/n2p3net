@@ -1,0 +1,61 @@
+{
+  "schema": "n2p3_metric_scope_audit_delivery/2",
+  "status": "ready_for_root_review",
+  "review_scope_head": "b26c099",
+  "observed_execution_head": "268973007ba6a02720e630a095e54df4a416d20b",
+  "script_sha256": "66700e23b49c632e8a0ad369fa82e8dadc431f4ded80b34a995a0d4944845489",
+  "independent_rows": 16,
+  "independent_pairs": 8,
+  "comparison_count": 2427,
+  "consumed_input_files": 46,
+  "input_SHA_before_after_equal": true,
+  "this_review_new_calls": {
+    "fit": 0,
+    "score": 0,
+    "model_load": 0,
+    "EEG_read": 0,
+    "filter": 0
+  },
+  "saved_original_score_calls": 14,
+  "original_version_not_resigned": true,
+  "field_rule": "original log probabilities and original DecisionPlan truth; no old row risk/correct or paired field as calculation input",
+  "B07_status": "948c485 connected; central certificate/capsule independent review in progress",
+  "files": {
+    "build_metric_audit.py": {
+      "sha256": "66700e23b49c632e8a0ad369fa82e8dadc431f4ded80b34a995a0d4944845489",
+      "bytes": 37675
+    },
+    "build_metric_audit.previous.py": {
+      "sha256": "2a52176cc68d2a960c2b538f04143738a2d7b1982bfd1df747bf60d588a33381",
+      "bytes": 12989
+    },
+    "build_metric_audit.diff": {
+      "sha256": "53478ef6b83b084d026a13b0f6b50251293c87be2ae8a05083c994054cb5817a",
+      "bytes": 51760
+    },
+    "metric_crosswalk.json": {
+      "sha256": "bc3c1d472dbcba0b8975cba7e90239777750930c0fd7fc9270b04aa6b610571b",
+      "bytes": 23013
+    },
+    "p1_error_ledger.json": {
+      "sha256": "7f8885df1fa182ceeb3a4729fb77a46e4037c13463d57eeab9ea63250e9a9245",
+      "bytes": 123919
+    },
+    "p1_error_ledger.csv": {
+      "sha256": "c6ea09e8c573a38498eee1acf1c54858dca2c90cec3682245920afbb71f7879f",
+      "bytes": 8925
+    },
+    "verification.json": {
+      "sha256": "0d6f93727cad1b0694fc9bc65c8bb0b01c4c73993aa481c8e01ea7f72ae4753c",
+      "bytes": 13180
+    },
+    "REPORT.zh.md": {
+      "sha256": "beaa115d351d0a3c09251ae4d9b57236ef2a1277f27756f0ac682a645eade5f0",
+      "bytes": 2434
+    },
+    "HANDOFF.zh.md": {
+      "sha256": "0faae360b7e3452351b28ad608f1e80341f69f9210ab7d0f131495d088ec9e2b",
+      "bytes": 5728
+    }
+  }
+}

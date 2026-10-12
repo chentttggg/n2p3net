@@ -1,21 +1,23 @@
-# 指标分母与字段审阅（只读复算）
+# 指标分母与字段审阅：独立概率复算
 
-生成于主树 `b26c099`。本交付只读取已封存 JSON、CSV、binding、证据文档和指标 schema 源码；没有模型加载、fit、score 或 EEG 读取。
+审阅范围主树 `b26c099`。脚本使用必填 `--root`、`--output`；放进其他artifact目录后仍消费明确指定的原仓库。只读保存JSON/CSV、binding和源码文本，本次fit、score、model load、EEG read、filter各0。
 
-## 已复算
+## 复算与核对
 
-P1 16 cell 底表有 8 个参与者、shared8/private8 各 8 个 held decision、36 个候选，两个方案概率和预测覆盖均为 100%。shared8 命中 5/8、NLL 7.3364765833、Brier 0.6790937536；private8 命中 6/8、NLL 5.5540121911、Brier 0.4776785010。配对 delta hit 的参与者宏平均为 0.125，配对 delta NLL 的参与者宏平均为 -1.7824643922；8 行 delta NLL 直接求和为 -14.2597151377，不能把行和当作声明的宏平均。A01 行占该行和改善约 71.8%。
+逐格读取原36维 `log_probability`，从原执行配置的DecisionPlan取得truth并核原vocabulary/complete roster。NLL直接取 `−log_p_true`；Brier由 `exp(log_p)`计算；winner/tie按当前generic源码中原log-space容差独立计算。没有使用旧row的nll/brier/correct作为计算输入，也没有归一化或clip原概率。行/列边缘质量与NLL链式分解同样复核。
 
-P1 每人只有一个 held decision，因此 participant macro 与 decision micro 恰好相等。这个偶合关系不能推广到公共 BNCI 的 152 requested decisions、BI2014a 的 1287 requested episodes 或 BNCI C600/R10 的 240 requested decisions per arm。
+shared8：5/8，NLL 7.3364765833，Brier 0.6790937536；private8：6/8，NLL 5.5540121911，Brier 0.4776785010。覆盖均100%。八人macro Δhit 0.125，ΔNLL -1.7824643922，ΔBrier -0.2014152525；救回1人、损害0人。八行ΔNLL和为 -14.2597151377，不可替代宏平均。A01贡献约 71.8229%。
 
-## 字段边界
+独立结果与原row、paired、summary、三份CSV、accepted binding及保存generic metric owner逐项核对，共2427项比较；最大数值绝对差 8.88e-16。消费输入SHA前后不变；重复subject-arm、missing roster、P1 custom fields直接导入generic v1均拒绝。
 
-P1 使用 `independent_p1_numeric_panel_readout/1` 自定义 schema。`status=scored`、`hits`、`nll`、`brier`、`probability_available`、行列边缘概率和局部 density error 字段不能直接当作 `CandidateEvidence` 或 `CandidateProbabilityMetrics` v1 字段。映射前必须保留源 schema、候选数、真值、分母和聚合顺序。
+## 调用数与分母
 
-`all_input_certificate=false` 表示误差估计不是全输入 interval certificate，不表示评分失败。P1 的 row/column probability 是 36-way joint 分布的诊断边缘，不得替代 joint `p_true`。
+本次审阅0调用。原完成receipt合计14次score；A01两格复用72候选，其余14格评分504候选。原续评新增response/noise fit=0，原anchor/noise已有拟合，其历史拟合数本次没有重数。不能把本次0调用写成原训练/评分0调用。
 
-## 当前结论与缺口
+P1每臂8人各1个C-held decision、36候选、全真值row5/col0；macro=micro只在此面板成立。public BNCI保持152/144，BI保持61人1287/1243且宏微coverage分列，BNCI C600/R10每臂240/240。后三项本次只核接受binding/文档，没有声称重算其全部概率向量。
 
-P1 private8 在固定八人、固定 held、固定 36-way truth support 上改善了命中和 participant-macro NLL；它是 C-held development diagnostic。公共 BNCI、BI2014a、BNCI C600/R10 各自有独立 requested/probability 分母和 source/producer；它们不能合并成一个总体指标。B07 central numerical owner 已单独绑定，history consumer、capsule replay 和 public B07 score 仍是缺口。
+P1是固定C-held诊断，非公共/成人效能；两臂NLL均高于ln36。`all_input_certificate=false`不是评分失败，row/column边缘概率不能替换joint p_true。每格producer/noise文件/consumer与score/receipt/plan SHA均进入账本。
 
-交付文件：`metric_crosswalk.json`、`p1_error_ledger.json`、`p1_error_ledger.csv`。重新运行同目录的 `build_metric_audit.py` 可复算。
+B07 history adapter已在 `948c485` 接central；中央certificate/capsule独立复签进行中。本报告不写consumer未接，不声明新B07训练结果。
+
+产物：metric_crosswalk.json、p1_error_ledger.json/.csv、verification.json。
