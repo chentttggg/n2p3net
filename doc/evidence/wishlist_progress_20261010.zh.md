@@ -1,4 +1,6 @@
-# 愿望清单：当前科研进展与下一切片
+# 愿望清单：阶段出口与当前主题入口
+
+本文保留2026-10-10逐项出口和原源码绑定。当前科研状态由[校准与选择](calibration_and_selection.zh.md)、[响应与噪声](response_and_noise.zh.md)、[公共评估](public_evaluation.zh.md)、[执行与集成](execution_and_integration.zh.md)及[路线图](../roadmap.zh.md)持续维护。真正prefix整程序选择、inner保存重放、多家族off-grid和native多通道frozen-C history已在后续源码中接通；续接以主题页和实际调用链为入口，原阶段的待办按其来源解释。
 
 2026-10-10。原愿望清单123项、B00–B14共15块继续全部保留；本轮以逐项状态核查推进，不能把已有设计或单个数学参考计为整体完成。原需求和依赖仍由[原清单](../assets/deep_research_plan_20261005/wishlist_source.zh.md)及[分块规格](deep_research_plan_20261005.zh.md)持有，当前逐项出口见[进展绑定](wishlist_progress_20261010.json)。
 

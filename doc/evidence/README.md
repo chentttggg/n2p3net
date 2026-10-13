@@ -15,7 +15,7 @@
 
 近期科研续接、八人候选分析、小组协议、P1数值和缓存重放分别更新上方四个主题页。日期页原文与哈希由[主题页历史恢复清单](../../frozen/research_topic_documents_history.manifest.json)保存。
 
-- [2026-10-10愿望清单当前进展](wishlist_progress_20261010.zh.md)：123项实际出口分层、置信度/固定graph/评分数值的科研树整合，selection随机效应与真实OOF接点，以及多家族字典、空间收缩、时间shape/ERP-span的下一切片；原公共执行来源与效能边界保留。
+- [愿望清单阶段出口与当前导航](wishlist_progress_20261010.zh.md)：保原123项出口及来源，活动状态由上方四主题页和路线图维护。
 
 - [2026-10-10最终集成来源](research_integration_20261010.json)：修后0a/a96 cold reclaim、相关41项本地验收与496成员后置冻结；旧final5不作为未来可执行源，原491/493身份保持。私有投影界切片仅获局部科研验收，完整conditional长记录仍unresolved。
 
