@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import io
 from copy import deepcopy
-from dataclasses import dataclass, field, fields, replace
+from dataclasses import dataclass, field, fields, is_dataclass, replace
 from numbers import Integral
 from pathlib import Path
 
@@ -60,7 +60,7 @@ from data.preprocess import (
     transform_epoch_samples,
 )
 from research.contracts import semantic_sha256
-from research.prefix_replay_inputs import immutable_input_array
+from research.prefix_replay_inputs import immutable_input_array, immutable_input_array_geometry
 from transfer.binary import (
     binary_time_split,
     calibration_budget_requests,
@@ -835,6 +835,47 @@ def calibration_prefix_identity(prefix):
                   for key, data in prefix.trial_datasets.items()}})
 
 
+def _prefix_owner_snapshot(prefix):
+    """Public frozen records and array headers, without reading numeric payloads."""
+    arrays = []
+
+    def snapshot(value):
+        if isinstance(value, np.ndarray):
+            arrays.append(value)
+            return ("array", len(arrays) - 1)
+        if isinstance(value, dict):
+            return (type(value), tuple((key, snapshot(item)) for key, item in value.items()))
+        if isinstance(value, (tuple, list)):
+            return (type(value), tuple(snapshot(item) for item in value))
+        if is_dataclass(value):
+            # Tables and provenance are exposed only by copy-on-read. Their
+            # authorization relationship already lives in immutable label_use.
+            omitted = {"metadata", "provenance"} if isinstance(value, _FrozenPrefixDataset) else set()
+            return (type(value), tuple((item.name, snapshot(getattr(value, item.name)))
+                                      for item in fields(value) if item.name not in omitted))
+        return (type(value), value)
+
+    return snapshot(prefix), tuple(arrays)
+
+
+class _OwnedCalibrationPrefix:
+    """The compiler's original numerical identity and immutable ingress geometry."""
+
+    def __init__(self, prefix, identity):
+        self.prefix, self.identity = prefix, identity
+        self.structure, arrays = _prefix_owner_snapshot(prefix)
+        self.arrays = tuple((array, *immutable_input_array_geometry(array)) for array in arrays)
+
+    def assert_unchanged(self, prefix):
+        structure, arrays = _prefix_owner_snapshot(prefix)
+        if prefix is not self.prefix or structure != self.structure or len(arrays) != len(self.arrays):
+            raise ValueError("owned prefix physical or label authority changed after compiler admission")
+        for array, (original, backing, geometry) in zip(arrays, self.arrays, strict=True):
+            current_backing, current_geometry = immutable_input_array_geometry(array)
+            if array is not original or current_backing is not backing or current_geometry != geometry:
+                raise ValueError("owned prefix array header or immutable backing changed after compiler admission")
+
+
 class CalibrationPrefixCompiler:
     """Run-local original-source owner for genuinely earlier C prefixes.
 
@@ -872,7 +913,7 @@ class CalibrationPrefixCompiler:
         self._arguments = {"maximum": max(splits), "profiles": profiles,
             "authorization_preprocessing": authorization_preprocessing,
             "width": width, "preroll": preroll, "target": target}
-        self._prefixes = {}
+        self._prefixes, self._prefix_ownership = {}, {}
         self._history_source_payload = payload
         self._history_source_identity = array_digest(record.eeg_uv, record.flash_sample,
             record.candidate_id, record.selection_index, record.repetition_index)
@@ -886,15 +927,20 @@ class CalibrationPrefixCompiler:
         if type(budget) is not int or not 0 <= budget <= self._arguments["maximum"]:
             raise ValueError("derived prefix exceeds original parent authorization")
         if budget not in self._prefixes:
-            self._prefixes[budget] = _compile_bnci_calibration_prefix(
+            prefix = _compile_bnci_calibration_prefix(
                 self._record, self._raw, self._events, budget, **self._arguments)
+            ownership = _OwnedCalibrationPrefix(prefix, calibration_prefix_identity(prefix))
+            self._prefixes[budget], self._prefix_ownership[budget] = prefix, ownership
+        else:
+            self._prefix_ownership[budget].assert_unchanged(self._prefixes[budget])
         return self._prefixes[budget]
 
     def assert_original_prefix(self, prefix):
         if not isinstance(prefix, CalibrationPrefix):
             raise TypeError("prefix compiler requires original CalibrationPrefix authority")
         actual = self.compile(prefix.budget)
-        if calibration_prefix_identity(actual) != calibration_prefix_identity(prefix):
+        ownership = self._prefix_ownership[prefix.budget]
+        if prefix is not actual and calibration_prefix_identity(prefix) != ownership.identity:
             raise ValueError("actual parent differs from original source prefix owner")
         return actual
 
@@ -941,14 +987,17 @@ class CalibrationPrefixCompiler:
 class _PreparedCalibrationPrefixCompiler(CalibrationPrefixCompiler):
     """Only the actual K admitted by the external original-producer capsule."""
 
-    def __init__(self, prefixes, *, producer_source_sha256, consumer_source_sha256):
+    def __init__(self, prefixes, *, identities, producer_source_sha256, consumer_source_sha256):
         self._prefixes = dict(prefixes)
+        self._prefix_ownership = {budget: _OwnedCalibrationPrefix(prefix, identities[budget])
+                                  for budget, prefix in prefixes.items()}
         self.producer_source_sha256 = producer_source_sha256
         self.consumer_source_sha256 = consumer_source_sha256
 
     def compile(self, budget):
         if type(budget) is not int or budget not in self._prefixes:
             raise ValueError("requested actual K was not compiled by the admitted original producer")
+        self._prefix_ownership[budget].assert_unchanged(self._prefixes[budget])
         return self._prefixes[budget]
 
 

@@ -7,6 +7,7 @@ import mmap
 import os
 import subprocess
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -18,10 +19,11 @@ from research.prefix_replay_inputs import (
     PrefixReplayInputHolder,
     export_prepared_views,
     immutable_input_array,
+    immutable_input_array_geometry,
     open_prepared_inputs,
     read_scoring_truth,
 )
-from tests.support.independent_prefix import independent_prefix_case
+from tests.support.prefix_replay_inputs import prepared_prefix_inputs
 from transfer.ensemble_views import calibration_prefix_identity
 
 
@@ -48,28 +50,9 @@ def _outcome(descriptor, request):
         "process_tree_retirement": {"active_owned_processes_after_exit": 0}})
 
 
-def _request(views, spec, profiles):
-    import transfer.ensemble_views as owner
-
-    prefix = views.calibration[max(views.calibration)]
-    return {"schema": "n2p3_prefix_replay_input_request/1", "preparation_task_id": "prepare-original-inputs",
-        "original_source_sha256": prefix.target_contract["source_sha256"],
-        "producer_source_sha256": hashlib.sha256(Path(owner.__file__).read_bytes()).hexdigest(),
-        "participant_key": prefix.target_contract["participant_key"],
-        "source_relative_path": prefix.target_contract["source_relative_path"],
-        "requested_Ks": views.ledger["requested_Ks"], "actual_Ks": sorted(views.calibration),
-        "profiles": [profile.record() for profile in profiles], "authorization_preprocessing": spec.record(),
-        "observation_response_seconds": 1.2, "pre_roll_seconds": .2}
-
-
 @pytest.fixture(scope="module")
 def prepared(tmp_path_factory):
-    root = tmp_path_factory.mktemp("shared-prefix-inputs")
-    _, _, _, spec, experts, views = independent_prefix_case(root)
-    profiles = (experts[1].profile,)
-    request = _request(views, spec, profiles)
-    descriptor = export_prepared_views(views, profiles, root / "prepared", request)
-    return views, profiles, request, descriptor
+    return prepared_prefix_inputs(tmp_path_factory.mktemp("shared-prefix-inputs"))
 
 
 def _holder(prepared, admission=None):
@@ -303,7 +286,7 @@ spec.loader.exec_module(module)
 from tests.support.independent_prefix import independent_prefix_case
 from research.prefix_replay_inputs import export_prepared_views
 from research.prefix_inner_replay import prefix_input_identity, prefix_native_fit_inputs
-from tests.research.test_prefix_replay_inputs import _request
+from tests.support.prefix_replay_inputs import prefix_input_request as _request
 case = root / "case"
 case.mkdir()
 _, _, path, preprocessing, experts, views = independent_prefix_case(case)
@@ -344,3 +327,226 @@ descriptor = export_prepared_views(views, profiles, root / "old_prepared", reque
             assert semantic_sha256(prefix_input_identity(prefix)) == semantic_sha256(identity)
             assert semantic_sha256(prefix_native_fit_inputs(prefix, experts)) == semantic_sha256(result["native"][key])
     holder.close()
+
+
+def test_owned_identity_is_hashed_once_and_foreign_inputs_still_use_full_identity(prepared, monkeypatch):
+    import transfer.ensemble_views as owner
+
+    holder = _holder(prepared)
+    original_identity, calls = owner.calibration_prefix_identity, []
+
+    def measured(prefix):
+        calls.append(prefix)
+        return original_identity(prefix)
+
+    monkeypatch.setattr(owner, "calibration_prefix_identity", measured)
+    with _open(holder, prepared) as borrowed:
+        compiler = borrowed.views.prefix_compiler
+        owned = borrowed.views.calibration[200]
+        assert len(calls) == len(compiler._prefixes)
+        calls.clear()
+        for _ in range(3):
+            assert compiler.assert_original_prefix(owned) is owned
+            for group in owned.complete_groups:
+                compiler.before_group(owned, group)
+        assert not calls
+        foreign = replace(owned)
+        assert foreign is not owned
+        assert compiler.assert_original_prefix(foreign) is owned
+        assert len(calls) == 1 and calls[0] is foreign
+        values = owned.raw.samples.copy()
+        covered = np.zeros(len(values), dtype=bool)
+        for group in owned.complete_groups:
+            covered[slice(*group.view.raw_scope)] = True
+        outside = np.flatnonzero(~covered)
+        assert len(outside)
+        values[outside[0], 0] += 1
+        changed = replace(owned, raw=replace(owned.raw, samples=values))
+        with pytest.raises(ValueError, match="original source prefix owner"):
+            compiler.assert_original_prefix(changed)
+        assert len(calls) == 2 and calls[-1] is changed
+    holder.close()
+
+
+def _owned_array(prefix, name):
+    data = next(iter(prefix.trial_datasets.values()))
+    group = prefix.complete_groups[0]
+    arrays = {"raw_samples": prefix.raw.samples, "raw_onsets": prefix.raw.onsets,
+        "raw_labels": prefix.raw.target_mask, "trial_X": data.X, "trial_y": data.y,
+        "trial_mask": data.trial_channel_mask, "timeline_onsets": data.event_timeline.onset_samples,
+        "group_samples": group.view.samples, "group_onsets": group.view.onsets,
+        "membership": group.view.decision.membership, "stimulus_indices": group.view.decision.stimulus_indices,
+        "group_labels": group.labels}
+    return arrays[name]
+
+
+@pytest.mark.parametrize("name", ["raw_samples", "raw_onsets", "raw_labels", "trial_X", "trial_y",
+                                  "timeline_onsets", "group_samples", "group_onsets",
+                                  "membership", "stimulus_indices", "group_labels"])
+@pytest.mark.parametrize("mutation", ["shape", "dtype", "strides"])
+@pytest.mark.filterwarnings("ignore:Setting the (shape|dtype|strides) on a NumPy array:DeprecationWarning")
+def test_owned_header_mutation_is_rejected_before_any_numeric_hash(prepared, monkeypatch, name, mutation):
+    import transfer.ensemble_views as owner
+
+    holder = _holder(prepared)
+    with _open(holder, prepared) as borrowed:
+        prefix = borrowed.views.calibration[200]
+        array = _owned_array(prefix, name)
+        if mutation == "shape":
+            array.shape = (array.size,) if array.ndim != 1 else (1, array.size)
+        elif mutation == "dtype":
+            array.dtype = np.uint8 if array.dtype != np.dtype(np.uint8) else np.int8
+        else:
+            array.strides = (0,) * array.ndim
+
+        def no_hash(prefix):
+            raise AssertionError("changed owned geometry must be rejected before scanning numeric payloads")
+
+        monkeypatch.setattr(owner, "calibration_prefix_identity", no_hash)
+        with pytest.raises(ValueError, match="array header or immutable backing changed"):
+            borrowed.views.prefix_compiler.assert_original_prefix(prefix)
+    holder.close()
+
+
+def test_owned_absent_trial_mask_cannot_be_replaced_by_a_self_signed_array(prepared):
+    holder = _holder(prepared)
+    with _open(holder, prepared) as borrowed:
+        prefix = borrowed.views.calibration[200]
+        data = next(iter(prefix.trial_datasets.values()))
+        assert data.trial_channel_mask is None
+        mask = immutable_input_array(np.ones((data.n_epochs, data.n_channels), dtype=bool), bool)
+        object.__setattr__(data, "trial_channel_mask", mask)
+        with pytest.raises(ValueError, match="physical or label authority changed"):
+            borrowed.views.prefix_compiler.assert_original_prefix(prefix)
+    holder.close()
+
+
+@pytest.mark.parametrize("mutation", ["shape", "dtype", "strides"])
+@pytest.mark.filterwarnings("ignore:Setting the (shape|dtype|strides) on a NumPy array:DeprecationWarning")
+def test_explicit_mask_software_prefix_header_mutations_are_rejected(prepared, mutation):
+    """A current software fixture; its changed mask is not an old producer receipt."""
+    from dataclasses import fields
+
+    from data.epochs import EpochDataset
+    from transfer.ensemble_views import CalibrationPrefix, _OwnedCalibrationPrefix
+    from transfer.noise_model import array_digest
+
+    original = prepared[0].calibration[200]
+    key, data = next(iter(original.trial_datasets.items()))
+    values = {item.name: getattr(data, item.name) for item in fields(EpochDataset) if item.init}
+    values["trial_channel_mask"] = np.ones((data.n_epochs, data.n_channels), dtype=bool)
+    masked = EpochDataset(**values)
+    use = json.loads(json.dumps(original.label_use))
+    use["trial"][key]["numerical_input_digest"] = array_digest(masked.X, masked.y, masked.trial_channel_mask)
+    prefix = CalibrationPrefix(original.budget, original.raw, {key: masked}, original.complete_groups,
+                               original.target_contract, use)
+    ownership = _OwnedCalibrationPrefix(prefix, calibration_prefix_identity(prefix))
+    ownership.assert_unchanged(prefix)
+    mask = prefix.trial_datasets[key].trial_channel_mask
+    if mutation == "shape":
+        mask.shape = (mask.size,)
+    elif mutation == "dtype":
+        mask.dtype = np.uint8
+    else:
+        mask.strides = (0, 0)
+    with pytest.raises(ValueError, match="array header or immutable backing changed"):
+        ownership.assert_unchanged(prefix)
+
+
+@pytest.mark.parametrize("scope", ["physical", "label_use", "group_truth", "capability"])
+def test_owned_frozen_record_changes_are_rejected(prepared, scope):
+    holder = _holder(prepared)
+    with _open(holder, prepared) as borrowed:
+        prefix = borrowed.views.calibration[200]
+        if scope == "physical":
+            dict.__setitem__(prefix.target_contract, "available_sample", -1)
+        elif scope == "label_use":
+            dict.__setitem__(prefix.label_use["raw"], "used_labels", 0)
+        elif scope == "group_truth":
+            object.__setattr__(prefix.complete_groups[0], "target_candidate", "changed_truth")
+        else:
+            capability = next(iter(prefix._prepared_capabilities.values()))
+            dict.__setitem__(capability, "producer_source_sha256", "f" * 64)
+        with pytest.raises(ValueError, match="physical or label authority changed"):
+            borrowed.views.prefix_compiler.assert_original_prefix(prefix)
+    holder.close()
+
+
+def test_readonly_arrays_cannot_self_sign_owned_geometry_and_foreign_values_are_copied(prepared, tmp_path):
+    holder = _holder(prepared)
+    with _open(holder, prepared) as borrowed:
+        prefix = borrowed.views.calibration[200]
+        ordinary = prefix.raw.samples.copy()
+        ordinary.setflags(write=False)
+        with pytest.raises(ValueError, match="terminal bytes or verified kernel seals"):
+            immutable_input_array_geometry(ordinary)
+        foreign = replace(prefix, raw=replace(prefix.raw, samples=ordinary))
+        assert not np.shares_memory(foreign.raw.samples, ordinary)
+        assert borrowed.views.prefix_compiler.assert_original_prefix(foreign) is prefix
+        path = tmp_path / "ordinary-readonly.bin"
+        path.write_bytes(prefix.raw.samples.tobytes())
+        with path.open("rb") as stream:
+            mapping = mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ)
+            readonly = np.ndarray(prefix.raw.samples.shape, dtype=prefix.raw.samples.dtype, buffer=mapping)
+            with pytest.raises(ValueError, match="terminal bytes or verified kernel seals"):
+                immutable_input_array_geometry(readonly)
+            foreign = replace(prefix, raw=replace(prefix.raw, samples=readonly))
+            assert not np.shares_memory(foreign.raw.samples, readonly)
+            assert borrowed.views.prefix_compiler.assert_original_prefix(foreign) is prefix
+            del readonly
+            mapping.close()
+    holder.close()
+
+
+def _entrypoint_compiler(prepared, tmp_path, origin):
+    from data.epochs import parse_preprocessing_spec
+    from tests.support.prefix_replay_inputs import prefix_input_request
+    from transfer.ensemble_views import prepare_bnci_independent_prefixes
+
+    _, profiles, request, original_descriptor = prepared
+    source = Path(original_descriptor["path"]).parent.parent / request["source_relative_path"]
+    views = prepare_bnci_independent_prefixes(source, source_sha256=request["original_source_sha256"],
+        budgets=(0, 400), profiles=profiles,
+        authorization_preprocessing=parse_preprocessing_spec(request["authorization_preprocessing"]))
+    if origin == "original":
+        return views.prefix_compiler, None, None
+    current_request = prefix_input_request(views, parse_preprocessing_spec(request["authorization_preprocessing"]), profiles)
+    descriptor = export_prepared_views(views, profiles, tmp_path / "entrypoint_inputs", current_request)
+    holder = PrefixReplayInputHolder.from_prepared(descriptor, request_sha=semantic_sha256(current_request),
+        prep_outcome=_outcome(descriptor, current_request), admission=Admission())
+    borrowed = open_prepared_inputs(holder.descriptor, expected_request_sha=semantic_sha256(current_request),
+                                    expected_capsule_sha=descriptor["sha256"])
+    return borrowed.views.prefix_compiler, borrowed, holder
+
+
+@pytest.mark.parametrize("origin", ["original", "prepared"])
+@pytest.mark.filterwarnings("ignore:Setting the shape on a NumPy array:DeprecationWarning")
+def test_direct_cached_compile_rejects_changed_owned_header(prepared, tmp_path, origin):
+    compiler, borrowed, holder = _entrypoint_compiler(prepared, tmp_path, origin)
+    try:
+        prefix = compiler.compile(120)
+        prefix.raw.samples.shape = (prefix.raw.samples.size,)
+        with pytest.raises(ValueError, match="array header or immutable backing changed"):
+            compiler.compile(120)
+    finally:
+        if borrowed is not None:
+            borrowed.close()
+            holder.close()
+
+
+@pytest.mark.parametrize("origin", ["original", "prepared"])
+@pytest.mark.filterwarnings("ignore:Setting the shape on a NumPy array:DeprecationWarning")
+def test_before_group_rejects_changed_earlier_owner_header(prepared, tmp_path, origin):
+    compiler, borrowed, holder = _entrypoint_compiler(prepared, tmp_path, origin)
+    try:
+        parent = compiler.compile(400)
+        held = parent.complete_groups[-1]
+        earlier = compiler.before_group(parent, held)
+        assert 0 < earlier.budget < parent.budget
+        earlier.raw.samples.shape = (earlier.raw.samples.size,)
+        with pytest.raises(ValueError, match="array header or immutable backing changed"):
+            compiler.before_group(parent, held)
+    finally:
+        if borrowed is not None:
+            borrowed.close()
+            holder.close()

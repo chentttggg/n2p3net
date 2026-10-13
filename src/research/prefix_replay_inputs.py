@@ -42,16 +42,29 @@ def _sha256_buffer(buffer):
     return digest.hexdigest()
 
 
-def _immutable_backing(value):
-    """Only terminal bytes and personally verified sealed mappings are immutable."""
+def immutable_input_backing(value):
+    """Return only terminal bytes or a personally verified kernel-sealed mapping."""
     while isinstance(value, (np.ndarray, memoryview)):
         value = value.base if isinstance(value, np.ndarray) else value.obj
     if isinstance(value, bytes):
-        return True
+        return value
     if isinstance(value, mmap.mmap):
         with _MAPPING_LOCK:
-            return value in _SEALED_MAPPINGS
-    return False
+            if value in _SEALED_MAPPINGS:
+                return value
+    return None
+
+
+def immutable_input_array_geometry(value):
+    """Header-only geometry; read-only flags never establish immutable ownership."""
+    if not isinstance(value, np.ndarray) or value.dtype.hasobject:
+        raise ValueError("owned prefix arrays require plain immutable NumPy storage")
+    backing = immutable_input_backing(value)
+    if backing is None:
+        raise ValueError("owned prefix arrays require terminal bytes or verified kernel seals")
+    geometry = (type(value), value.dtype.str, tuple(value.shape), tuple(value.strides),
+                value.__array_interface__["data"][0], value.nbytes)
+    return backing, geometry
 
 
 def immutable_input_array(values, dtype):
@@ -59,7 +72,7 @@ def immutable_input_array(values, dtype):
     array = np.ascontiguousarray(values, dtype=dtype)
     if array.dtype.hasobject:
         raise TypeError("immutable numeric inputs cannot contain Python object pointers")
-    if _immutable_backing(array):
+    if immutable_input_backing(array) is not None:
         return np.ndarray(array.shape, dtype=array.dtype, buffer=array)
     return np.frombuffer(array.tobytes(), dtype=array.dtype).reshape(array.shape)
 
@@ -565,7 +578,7 @@ def _restore_views(document, reader):
     )
     from transfer.noise_model import freeze_metadata
 
-    prefixes = {}
+    prefixes, identities = {}, {}
     for key, record in document["prefixes"].items():
         raw = record["raw"]
         if raw is not None:
@@ -577,11 +590,13 @@ def _restore_views(document, reader):
                                        group["target_candidate"]) for group in record["complete_groups"]),
             record["target_contract"], record["label_use"])
         object.__setattr__(prefix, "_prepared_capabilities", freeze_metadata(record["capabilities"]))
-        if calibration_prefix_identity(prefix) != record["identity"]:
+        identity = calibration_prefix_identity(prefix)
+        if identity != record["identity"]:
             raise ValueError("restored prefix numeric input/authority differs from the actual original compilation")
         prefixes[int(key)] = prefix
+        identities[int(key)] = identity
 
-    compiler = _PreparedCalibrationPrefixCompiler(prefixes,
+    compiler = _PreparedCalibrationPrefixCompiler(prefixes, identities=identities,
         producer_source_sha256=document["producer_source_sha256"],
         consumer_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     # Re-run the unchanged original structural authority, never synthesize missing K.
