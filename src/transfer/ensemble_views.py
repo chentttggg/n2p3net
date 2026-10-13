@@ -60,6 +60,7 @@ from data.preprocess import (
     transform_epoch_samples,
 )
 from research.contracts import semantic_sha256
+from research.prefix_replay_inputs import immutable_input_array
 from transfer.binary import (
     binary_time_split,
     calibration_budget_requests,
@@ -73,8 +74,7 @@ _SELECTION_EXECUTION_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes())
 
 
 def _immutable_array(values, dtype):
-    array = np.ascontiguousarray(values, dtype=dtype)
-    return np.frombuffer(array.tobytes(), dtype=array.dtype).reshape(array.shape)
+    return immutable_input_array(values, dtype)
 
 
 def observed_spatial_projection(native_channels, slot_channels, *, reference_channel=None):
@@ -588,6 +588,11 @@ class _FrozenPrefixDataset(EpochDataset):
             value = getattr(timeline, item.name)
             if isinstance(value, np.ndarray):
                 object.__setattr__(timeline, item.name, _immutable_array(value, value.dtype))
+        if result.qc_features is not None:
+            quality = result.qc_features
+            object.__setattr__(result, "qc_features", replace(quality, **{
+                item.name: _immutable_array(getattr(quality, item.name), getattr(quality, item.name).dtype)
+                for item in fields(quality) if isinstance(getattr(quality, item.name), np.ndarray)}))
         object.__setattr__(result, "event_timeline", timeline)
         object.__setattr__(result, "_prefix_metadata", data.metadata.copy(deep=True))
         object.__setattr__(result, "_prefix_provenance", deepcopy(data.provenance))
@@ -615,6 +620,7 @@ class CalibrationPrefix:
     complete_groups: tuple[CalibrationSelection, ...]
     target_contract: dict
     label_use: dict
+    _prepared_capabilities: dict | None = field(default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self):
         self._validate_authority()
@@ -719,9 +725,11 @@ class CalibrationPrefix:
             raise ValueError("prefix profile must use the actual measured native channels/reference")
         reference = ("measured_channel:" + profile.reference_channel if profile.reference_channel is not None else
                      contract["reference"] if channels == native else "native:" + contract["reference"])
+        capability = (profile.execution_capability() if self._prepared_capabilities is None else
+                      self._prepared_capabilities[profile.digest])
         return TrialCheckpointTarget(profile.preprocessing, channels,
             DatasetIdentityTable.from_source_rows([contract["source_subject_id"]], [contract["source_dataset_id"]]),
-            {"source_reference": reference, "selection_epoch_capability": profile.execution_capability()})
+            {"source_reference": reference, "selection_epoch_capability": capability})
 
     def record(self):
         return {"budget": self.budget, "target_contract": self.target_contract,
@@ -928,6 +936,20 @@ class CalibrationPrefixCompiler:
         if any(group.view.decision_id == held.view.decision_id for group in earlier.complete_groups):
             raise ValueError("earlier prefix retains held selection labels")
         return earlier
+
+
+class _PreparedCalibrationPrefixCompiler(CalibrationPrefixCompiler):
+    """Only the actual K admitted by the external original-producer capsule."""
+
+    def __init__(self, prefixes, *, producer_source_sha256, consumer_source_sha256):
+        self._prefixes = dict(prefixes)
+        self.producer_source_sha256 = producer_source_sha256
+        self.consumer_source_sha256 = consumer_source_sha256
+
+    def compile(self, budget):
+        if type(budget) is not int or budget not in self._prefixes:
+            raise ValueError("requested actual K was not compiled by the admitted original producer")
+        return self._prefixes[budget]
 
 
 def prepare_bnci_independent_prefixes(path, *, source_sha256, budgets, profiles,
