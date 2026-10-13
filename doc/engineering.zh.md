@@ -1,6 +1,8 @@
 # 工程指南
 
-当前科研集成树为`codex/research-integration-20261011`，P1数值和prefix整程序选择各有独立作者/审阅者树，原用户dirty checkout及云端执行树保留其所有权。实际模块、调用链与能区分对错的反例优先；已通过的范围有新改动或疑点才复验。研究结论维护在四个[主题页](evidence/README.md#当前主题结论)，归并旧页前物理归档并逐member验SHA；原数据、模型、结果和producer binding留原位置。当前云状态以云窗口的实际冻结源码与终态凭证为准；下文日期化状态按其记录时期解释。
+当前科研恢复树为`codex/research-director-resume-20261013`，位置`C:/Users/chent/.codex/worktrees/research-director-resume/n2p3-net`，从保留的科研提交`f1d0ec0`恢复；原D树dirty checkout保其并发修改。旧checkout目录及ignored大载荷定位已失效，历史Git提交/完成绑定与原始载荷恢复分列，云owner继续核恢复来源。实际模块、调用链与能区分对错的反例优先，已通过范围有新改动或疑点才复验。研究结论维护在四个[主题页](evidence/README.md#当前主题结论)，工作树整理保恢复证据；活动科研源的行尾通过`.gitattributes`明确LF，冻结仍按实际执行raw bytes。当前云状态以唯一云窗口的实际凭证为准。
+
+中央CUDA floor由`source_execution._resolved_cloud_resource_floor`统一供helper和direct resolver解释：非豁免计划的省略/null使用`configs/cloud_training_resources.json`最低值，显式override可提高两轴，低于中央CPU25/GPU4则拒绝；local/software probe须明确scope。CPU准备与单ready source依赖尾保持各自资源角色。两类入口旁路反例、31项定向检查及来源见[中央floor修复](assets/research_resume_20261012/cloud_floor_authority_repair.json)，未来云执行另核actual source/config/plan和真实利用率。
 
 Prefix恢复使用新输出和精确reviewed source transition，旧failed队列及producer只读。源码变化的角色白名单由恢复owner持有；科研主树的其它metadata/科学更新不会自动进入旧source10的恢复授权。一次调用内复用已准入包，下一调用重新准入原字节；原四人的真实parent replay仍保实际原输入和完整概率核验，新四人按原矩阵拟合。新增剩余actor输出边界已由两种原目录反例验证，见[集成证据](assets/research_resume_20261011/prefix_cloud_admission_acceptance_binding.json)。
 

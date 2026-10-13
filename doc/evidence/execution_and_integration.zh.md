@@ -98,9 +98,9 @@ Claude review 分支的 U5a-04、U7-19、U7-24、U7-26 和 U1-01 fixture 修复�
 
 整树中的candidate common-support实现没有直接保留：它按候选 finite logits 求交，允许候选以abstain缩小比较支持，且没有保存support indices/digest和R5完整block合同。纯数组反例已复现该选择偏差；`refit_full_prefix`早拒则保留，并在selector入口提前拒绝，避免把合同错误降级为候选失败。后续需先建设候选无关、可重放的validation support再恢复该选择修复，范围和来源见[calibration selection review](../assets/research_resume_20261012/calibration_selection_review.json)。
 
-整树合并后的当前覆盖审计固定主树 `19d32e1`：73条 commit/path 逻辑项中，39条已等价接收、8条由主树新实现取代、26条仍是实际待接，0条仅凭历史保留。594份 evidence、9个 frozen manifest及cleanup manifest逐字节保持；分支祖先关系、逐路径触发器、调用者和科学合同见[当前覆盖JSON](../assets/research_resume_20261012/claude_current_coverage.json)与[覆盖说明](../assets/research_resume_20261012/claude_current_coverage.md)。这份审计没有运行模型、fixture、fit/load、public score或全套测试。
+原覆盖表标注`19d32e1`但混用了合并前anchor和状态，其“26项待接”已被固定`f1d0ec0`的实际源码复核替代。73条原审阅域中53条已等价接收、8条正确替代、8条退役/历史、1条原提案否决、3条consumer仍有余缺；后3条随后经训练准入和中央floor修复闭合。594份evidence、9个frozen manifest及cleanup manifest在Git中逐path/blob一致，旧ignored辅助审阅材料缺失另列为恢复定位问题。逐行当前代码和caller见[固定源码覆盖复核](../assets/research_resume_20261012/runtime_coverage_review.json)，[旧表](../assets/research_resume_20261012/claude_current_coverage.json)保其原历史字节。下一科学问题包括binary selector选择性abstention风险和真正独立效能，覆盖条数用于导航。
 
-InformationBound 的 `membership_kind` 显式化方向已通过窄反例审阅；operator-LDA 的 calibration draw-id 子集门已接受。InformationBound 的 plugin debias、非整除 flash 的“balanced”激活、ridge null方向以及缺少保存重放绑定仍延期，不能把 debiased d² 或 bound 当生产效能估计；审阅范围和下一步见[信息界与operator审阅](../assets/research_resume_20261012/information_operator_review.json)。
+原[信息界与operator审阅](../assets/research_resume_20261012/information_operator_review.json)指出plugin扣偏、activation均衡叙述、ridge/null测度与报告完整性问题。本轮信息界和exact-covariance `/2`已完成实现及两轴独审：raw plug-in、全候选geometry/uniform tie、完整不可变JSON重放和明确Gaussian测度分别交付，原错误扣偏移除。最终源码、原作者验证、6项后续数值未解决构造反例和28项旧测试迁移按实际版本分列见[数学整合绑定](../assets/research_resume_20261012/diagnostic_mathematics_integration.json)。operator-LDA的draw-id子集门保其窄接受范围，实际paired输入和独立population估计仍各有后续合同。
 
 云端资源切片 `2e54ee0` 已接入：source-pool 的默认 CUDA cloud 入口在写 plan 前执行 CPU25/GPU4 floor，保存 `resource_scope/cloud_resource_floor` 并让 resume identity 随合同变化；nested worker 的空或非法 ready-job 请求在 ledger 分配前拒绝。local/software scope需显式声明；实际 GPU利用率、RSS、ready工作和墙钟仍由未来云运行验收，见[资源审阅绑定](../assets/research_resume_20261012/cloud_floor_nested_review.json)。
 

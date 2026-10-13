@@ -4,6 +4,10 @@
 
 ## 当前模型与数值任务
 
+信息界诊断的`/2`已完成数学与状态审阅：保同C估计mean/inverse-shrinkage-covariance的raw plug-in d²，并完整保存实际或显式canonical activation及全部候选pair geometry。在已声明的独立flash、共同已知covariance和uniform prior模型下，pairwise error为`Phi(-sqrt(d²*h)/2)`；相同activation列按uniform tie，有限Monte Carlo另记录seed、trial数及相关candidate的trial-level误差。`Q=3/F=1`的解析高信噪极限为`2/3`，旧严格比较得到`1/3`的错误已修。候选曝光均衡与line-cycle均衡分列，`Q=9/F=45`每候选均15次，但line counts为8/8/8/7/7/7。
+
+`ExactPropagatedCovariance/2`保存真实有限F对应的`F K_AR F.T`，SPD密度用无ridge的factor；显式正交支撑Q拥有自己的Euclidean测度，支撑外残差拒绝。数值分解未解决时保raw诊断，factor/密度明确不可用；ridge只通过独立显式诊断入口。白化偏差按`L_AR^-1 K_prop L_AR^-T`计算，修正旧square-root chart误差。信息界报告的完整JSON保存/load/model-only replay已闭合；exact类当前是内存诊断接口。相关验证与两轴独审分来源记录在[数学整合绑定](../assets/research_resume_20261012/diagnostic_mathematics_integration.json)，没有新增公共数据实验。
+
 固定响应的完整物理factor由保存的M、上三角precision R和原Sigma导出：`F=kron(R^-1,chol(Sigma_ref))`。它保持common/increment系数及channel坐标，噪声变化时复用同一物理响应分布。
 
 八人shared/private AR8、共同prefix32的16格native诊断已完成：每人600标签fit、120标签held评价、80授权标签未使用，8 anchor/16 noise fits均保存加载。16个held评分均触发数值可分辨性门，概率覆盖0；完整保存态已零拟合重现原失败。[执行绑定](../assets/research_resume_20261011/p1_native_panel_binding.json)保存原来源和完整分母。

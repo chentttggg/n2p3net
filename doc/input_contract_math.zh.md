@@ -1,5 +1,7 @@
 # P300 模型输入合同：离散时间、单位与分组
 
+信息界`/2`的估计量分列：同C的raw Mahalanobis plug-in保留拟合偏差；独立flash/共同已知covariance模型用完整binary activation A和`h[t,q]=sum_i(A[i,q]-A[i,t])²`定义候选log-likelihood差的mean `-d²h/2`、variance `d²h`。pairwise上下界、finite MC、实际生产tie/abstention分别持有自己的角色。有限算子传播用pre-filter AR输入law的`F K_AR F.T`；SPD ambient密度、显式正交支撑的Euclidean密度和regularized ridge诊断分别保存测度。符号公式和小型反例接受见[响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。
+
 2026-10-10[新增科研切片](evidence/wishlist_progress_20261010.zh.md)继续区分函数、先验与观测算子：固定graph的同C/noise centered信号能量相等不等于effective response df相等；reference/gain/缺导须同步推送同physical S与Sigma，剩余通道上重建graph是另一个模型。B07有限状态参考以精确`L/fs`及stored binary64的有理数半开边界统一mask、retained rows和censor；浮点秒数只用于显示。B11共同scalar改变半径但不改变逐记录角向比，跨记录shared-beta contrast在独立record尺度下须另推角向law。
 
 cubic字典的native坐标为`q=n/L`，功能端点为`T=L/fs`，区别于last sample；open-clamped端点行是首/末coefficient selector，hard-value留下`k−2`维但不约束斜率。内部C2不代表free因果截断的全局平滑性；同列数、同reference能量和同effective df分别验证，不把不同函数空间自动当匹配模型。

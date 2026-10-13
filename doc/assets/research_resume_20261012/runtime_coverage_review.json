@@ -1,0 +1,3485 @@
+{
+  "schema": "n2p3_current_logical_coverage_review/2",
+  "main_head": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+  "claude_head": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+  "read_source": "fixed Git blobs; concurrent worktree WIP neither read as current source nor signed",
+  "previous_report": {
+    "path": "doc/assets/research_resume_20261012/claude_current_coverage.json",
+    "sha256": "66102f7b4951dc8372d1a9e6e918f86b000a7f3a11a3a002020af8b27e1191cc",
+    "declared_main_head": "19d32e1d323fe0775b2da29a49aff90d7afdd529",
+    "declared_counts": {
+      "真实待接": 26,
+      "已等价接收": 39,
+      "主树新实现取代": 8
+    },
+    "assessment": "header and runtime binding/anchors/statuses mix historical versions; superseded by this fixed-source review"
+  },
+  "row_count": 73,
+  "status_counts": {
+    "已等价接收": 53,
+    "真实仍未解决": 3,
+    "主树正确替代": 8,
+    "故意退役/历史": 8,
+    "原提案已否决": 1
+  },
+  "rows": [
+    {
+      "row_index": 0,
+      "id": "R00",
+      "path": "src/research/source_execution.py",
+      "candidate_commit": "7e1f219467118c1c76eabf5f901b1fb558ff9ccd",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "c6afb81f81d881913673aa9289676c5955e8ea6e",
+      "current_blob": "e143db623a64ebbe5f4072ecbf006c97d644c46f",
+      "current_git_blob_raw_sha256": "7c0300f462eb4a8b7af9a823930cf31683073c10672f05210089c756542cf641",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "c688cf63d50e6d8a0f59ae13f0679eb19601d5f1414c71357f5f4f463f98e770",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "nested grant以真实requested为上界；当前还拒空请求。GPU floor的CPU-device gate已接。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/source_execution.py",
+          "line": 879,
+          "line_text": "            desired = min(resources[\"target_workers\"], requested)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/source_execution.py",
+          "line": 1079,
+          "line_text": "            raise ValueError(\"declared cloud GPU worker floor requires a CUDA device; do not run it on CPU\")"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_source_execution_resources.py",
+          "current_blob": "99b696ce0651168357ec986b70f45f44c3254601",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 1,
+      "id": "R01",
+      "path": "experiments/run_domain_transfer_matrix.py",
+      "candidate_commit": "fe5c8678ab534cede05d3e852a2c07cdcd3173ff",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "53ab4ada676abe2de778b7c5014746226453af44",
+      "current_blob": "53ab4ada676abe2de778b7c5014746226453af44",
+      "current_git_blob_raw_sha256": "e6ef1c819a64831014a0aa8c04900eda53c6f3d6101728dd9e1098425e42b752",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "cf39e02b9bc04f54babd590cdb1eec3c24da111cccb5e3bac75d0d6689916a23",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "当前consumer使用记录的shard_subjects；旧记录fallback仍核完整partition，drop/repeat均拒绝。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_domain_transfer_matrix.py",
+          "line": 45,
+          "line_text": "            shard_subjects = entry.get(\"shard_subjects\")"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_domain_transfer_matrix.py",
+          "line": 50,
+          "line_text": "                    or sorted(subject for part in shard_subjects for subject in part) != sorted(all_subjects)):"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_domain_transfer_matrix.py",
+          "line": 53,
+          "line_text": "            for shard, (old_output, subjects) in enumerate(zip(entry[\"shards\"], shard_subjects, strict=True)):"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_unified_chain.py",
+          "current_blob": "e2057d28ea4137218229da86531e6a6485504a7e",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 2,
+      "id": "R02",
+      "path": "experiments/run_source_training_chain.py",
+      "candidate_commit": "fe5c8678ab534cede05d3e852a2c07cdcd3173ff",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "cccbd48182e47ed4764d7bfa6ce4077edd894477",
+      "current_blob": "858dfd35a449460f617af85f8dd3a8b409243670",
+      "current_git_blob_raw_sha256": "4b4597cd2cb5a8440efa6d5421da2b6f640282c055c657afda09460e6147c23e",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "b3b8e2392d2c8191f12b0e7814911c0d140b5b7e574c39249199ba0a17d308f8",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "producer每个非空child shard保存真实subjects，matrix消费同一列表。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_source_training_chain.py",
+          "line": 2101,
+          "line_text": "                                       \"shard_subjects\": []})"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_source_training_chain.py",
+          "line": 2114,
+          "line_text": "                        final_jobs[-1][\"shard_subjects\"].append(subjects)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_unified_chain.py",
+          "current_blob": "e2057d28ea4137218229da86531e6a6485504a7e",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 3,
+      "id": "R03",
+      "path": "experiments/prepare_source_selection.py",
+      "candidate_commit": "4faf130510f419e762d3d5f73e1ba46ad06d1127",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "d73cd21668d7cbda901d7e3891a1406c0b21e44c",
+      "current_blob": "d73cd21668d7cbda901d7e3891a1406c0b21e44c",
+      "current_git_blob_raw_sha256": "fc400d05bf8a409d312f1abf63db959cace7120948dccdb7c8026f0d914ef61d",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "46179a36d686a10e8cf938c18245f71a047fbd8b70b8b637778f66d4fe17e037",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "CLI对target_calibration的空dataset_scope与不支持schema均拒绝。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_source_selection.py",
+          "line": 209,
+          "line_text": "    target_scope = target_record.get(\"dataset_scope\") or {}"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_source_selection.py",
+          "line": 211,
+          "line_text": "            and target_scope.get(\"schema\") != TARGET_CALIBRATION_SCOPE_SCHEMA):"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_prepare_source_selection.py",
+          "current_blob": "0a3eba5658a28c299685b7f73d758d4208e83502",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 4,
+      "id": "R04",
+      "path": "src/train/source_sampling.py",
+      "candidate_commit": "4faf130510f419e762d3d5f73e1ba46ad06d1127",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "d3fc3062aef8de8192df413bae468f9655b5511f",
+      "current_blob": "d3fc3062aef8de8192df413bae468f9655b5511f",
+      "current_git_blob_raw_sha256": "07a28de9ff8f21eeb6b2e2b5424e2c1da32263bb9b25228bc678f8dbbcb22f30",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "f664f2be9f80bc3ad350371469ee31977ccdc7fdd92b65435d9f7734c80484d6",
+      "old_status": "真实待接",
+      "status": "真实仍未解决",
+      "status_en": "real_unresolved",
+      "current_judgment": "原补丁已接，但目标feature record缺失/null/非Mapping时跳过scope门；生产consumer可接受无校准scope证据的target-calibration selection。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/train/source_sampling.py",
+          "line": 471,
+          "line_text": "    target_feature_record = record.get(\"target_feature_record\")"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/train/source_sampling.py",
+          "line": 472,
+          "line_text": "    if selection.selection_scope == \"target_calibration\" and isinstance(target_feature_record, Mapping):"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/train/source_sampling.py",
+          "line": 490,
+          "line_text": "    return selection, record"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_pretrain_supervised.py",
+          "line": 776,
+          "line_text": "        source_selection, source_selection_record = load_pds_selection_record("
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_candidate_cross_decision.py",
+          "line": 870,
+          "line_text": "            selection, _ = load_pds_selection_record("
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/train/source_sampling.py",
+          "line": 427,
+          "line_text": "            selection_scope=str(record[\"selection_scope\"]),"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "tests/train/test_prepare_source_selection.py",
+          "line": 315,
+          "line_text": "    record[\"target_feature_record\"][\"dataset_scope\"] = {}"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_prepare_source_selection.py",
+          "current_blob": "0a3eba5658a28c299685b7f73d758d4208e83502",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 5,
+      "id": "R05",
+      "path": "experiments/run_source_training_chain.py",
+      "candidate_commit": "72fa9cad7579db75b3dae2b82aee6730761b1923",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "cccbd48182e47ed4764d7bfa6ce4077edd894477",
+      "current_blob": "858dfd35a449460f617af85f8dd3a8b409243670",
+      "current_git_blob_raw_sha256": "4b4597cd2cb5a8440efa6d5421da2b6f640282c055c657afda09460e6147c23e",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "7b4aca1458fd02945b90a188477fd555571b9cc05435b5ef98f0864b8b79fd18",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "source-chain恢复record.json显式UTF-8，不依赖Windows locale。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_source_training_chain.py",
+          "line": 2168,
+          "line_text": "            record = json.loads((result_path / \"record.json\").read_text(encoding=\"utf-8\"))"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_source_records.py",
+          "current_blob": "597c2998c3951ca5471bd85767827be262c3bda2",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 6,
+      "id": "R06",
+      "path": "experiments/run_pretrain.py",
+      "candidate_commit": "ad6a266de1ddecbfd615fde0a3d0e5ff0e1c3f19",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "498185aa263860dfa50651730eb7e0df35313e81",
+      "current_blob": "498185aa263860dfa50651730eb7e0df35313e81",
+      "current_git_blob_raw_sha256": "bc9888f5efea5f388d125a12ef79c31b135e17e20a01c62977f11bfbe240d90a",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "f61cc8bb7f95242930744ae9847d61cbe2b32a1b12d76581266bc42855b27086",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "epoch probe累计仅在optimizer与实际probe_components同时存在时执行；probe-only validation批不会解引用None。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_pretrain.py",
+          "line": 312,
+          "line_text": "                if probe_optimizer is not None and probe_components is not None:"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_pretraining.py",
+          "current_blob": "05b18b8883216dea127429529a1d14be0228aa03",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 7,
+      "id": "R07",
+      "path": "src/train/runtime.py",
+      "candidate_commit": "38fd4c33a5213365c8c0dd2c44cb85d19bfb5f45",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "cd79d0aa141ee52de737a6bd1bced12985939421",
+      "current_blob": "a2ea65d95cc7feb0e87e3d212d24566daf9c3468",
+      "current_git_blob_raw_sha256": "3370903d94620851e9ed36bb74b29a53e8034beb1648a48aa9d7c935a8870fc0",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "92c7494a70652b4cf2e2c45b71e3b3e24062e151cd9078343cf00b74d179b5ad",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "真实make_generator固定CPU；random_permutation显式CPU再一次device gather；preload不会改变seed行序。当前多了program身份与generator ingress。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/train/runtime.py",
+          "line": 30,
+          "line_text": "MATRIX_ROW_ORDER_PROGRAM = \"torch_CPU_generator_randperm_then_device_gather/1\""
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/train/runtime.py",
+          "line": 566,
+          "line_text": "        generator = torch.Generator(device=\"cpu\")"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/train/runtime.py",
+          "line": 573,
+          "line_text": "        permutation = torch.randperm(self.n_rows, generator=generator, device=\"cpu\")"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/train/runtime.py",
+          "line": 574,
+          "line_text": "        return permutation.to(self.runtime.device) if self.preloaded else permutation"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_runtime.py",
+          "current_blob": "cf512572a6d66506f986968de17540a214f91e3f",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 8,
+      "id": "R08",
+      "path": "experiments/watch_resources.py",
+      "candidate_commit": "1f9c9c8bb92dc99fd78cf9f9af3405c6af00ef33",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "90ba1945574efb82baa94a8b59cb12ce9c4f34f9",
+      "current_blob": "90ba1945574efb82baa94a8b59cb12ce9c4f34f9",
+      "current_git_blob_raw_sha256": "d7a7cf7fbb1472077432615f94cb7aa74a46a186726f670393e9aab2818fe1dd",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "dca6e2178a51371212c751d7aa97c92d0edce256b9fdc7ecd9dd78a6ffccefc4",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "资源监测逐GPU解析，util取mean、显存求sum，数量显式记录；仅诊断。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/watch_resources.py",
+          "line": 122,
+          "line_text": "def _parse_gpu_query(stdout: str) -> dict[str, object]:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/watch_resources.py",
+          "line": 135,
+          "line_text": "        \"gpu_count\": len(rows),"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/watch_resources.py",
+          "line": 152,
+          "line_text": "        return _parse_gpu_query(result.stdout)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_dashboard.py",
+          "current_blob": "b41b7278337478bc1088dfe82423fbd263151139",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 9,
+      "id": "R09",
+      "path": "experiments/verify_pool_matrix.py",
+      "candidate_commit": "fc2c957d98d82f74fffb551be3739bee505c42cf",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "42efe78dd4431d9f0cb6a6407f3750acfe220cd5",
+      "current_blob": "42efe78dd4431d9f0cb6a6407f3750acfe220cd5",
+      "current_git_blob_raw_sha256": "6fe7e1acef8a9af5d4e166065e917aeb9e39215a310dcb8899cb51ec6cd0b7ec",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "d0faa35e47ad751a69dc600d9107c72ebe2d949c69cd500bbeb3d075da70c672",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "旧验证复用核实际runtime snapshot与script SHA；final_status要求非空完整matrix且每record均verified passed。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/verify_pool_matrix.py",
+          "line": 157,
+          "line_text": "def verifier_identity(snapshot) -> dict:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/verify_pool_matrix.py",
+          "line": 164,
+          "line_text": "def reusable(previous, record_sha256, verifier) -> bool:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/verify_pool_matrix.py",
+          "line": 169,
+          "line_text": "def final_status(results, record_statuses, matrix_status) -> str:"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_verify_pool_matrix.py",
+          "current_blob": "3a394bd1211896885e7f2cd3695ec1e38c54a28c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 10,
+      "id": "R10",
+      "path": "experiments/run_source_pool_matrix.py",
+      "candidate_commit": "3f91c6e04316be3722220d2b2ad1248f8e1fe011",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "f1953c68defd575bbb10c6d186b83583c469b0ff",
+      "current_blob": "4c7fa479bd60c241d0932876ce1f0458b3370550",
+      "current_git_blob_raw_sha256": "1edd8d595b04d744b09fe68804173ff8a9db5c1c9281519b5f435a008a904013",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "801a8e4fb6582962780742153bbde50d56bb43d2b36d0617bd59ec9d1285e9ef",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "checked_workers保请求worker数并对超预算报错；当前CUDA cloud入口还额外核中央CPU25/GPU4及effective thread总量。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_source_pool_matrix.py",
+          "line": 136,
+          "line_text": "def checked_workers(requested: int, threads_per_worker: int, available: int, *, device=\"cpu\","
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_source_pool_matrix.py",
+          "line": 146,
+          "line_text": "    if requested * threads_per_worker > available:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_source_pool_matrix.py",
+          "line": 156,
+          "line_text": "    return requested"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_source_pool_matrix.py",
+          "line": 201,
+          "line_text": "                                        device=args.device, resource_scope=args.resource_scope),"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_source_pool_matrix.py",
+          "current_blob": "33eec512e0329f870384641972949eedf7aeeb9c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 11,
+      "id": "R11",
+      "path": "experiments/run_source_training_chain.py",
+      "candidate_commit": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "cccbd48182e47ed4764d7bfa6ce4077edd894477",
+      "current_blob": "858dfd35a449460f617af85f8dd3a8b409243670",
+      "current_git_blob_raw_sha256": "4b4597cd2cb5a8440efa6d5421da2b6f640282c055c657afda09460e6147c23e",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "5ecadab6918be95143a1029e693f907b60f6dadc53a2361e0fabf9f08556e6b1",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "source-chain执行入口先应用with_cloud_resource_floor再resolve。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_source_training_chain.py",
+          "line": 824,
+          "line_text": "    resources = resolve_source_resources(with_cloud_resource_floor(plan, device), len(groups), device)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_source_execution_resources.py",
+          "current_blob": "99b696ce0651168357ec986b70f45f44c3254601",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 12,
+      "id": "R12",
+      "path": "src/research/source_execution.py",
+      "candidate_commit": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "c6afb81f81d881913673aa9289676c5955e8ea6e",
+      "current_blob": "e143db623a64ebbe5f4072ecbf006c97d644c46f",
+      "current_git_blob_raw_sha256": "7c0300f462eb4a8b7af9a823930cf31683073c10672f05210089c756542cf641",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "6198a4f104abdc7e0e3e0a71d86076c80df6ee4f27369bff611ac6d54da3a573",
+      "old_status": "真实待接",
+      "status": "真实仍未解决",
+      "status_en": "real_unresolved",
+      "current_judgment": "中央默认配置与CPU-device gate已接；但非豁免CUDA plan显式给cloud_resource_floor=None或更小floor会保留，绕过CPU25/GPU4中央下限。原默认补丁部分接收，override合同未闭合。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/source_execution.py",
+          "line": 1005,
+          "line_text": "def with_cloud_resource_floor(plan, device):"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/source_execution.py",
+          "line": 1016,
+          "line_text": "    if torch.device(device).type != \"cuda\" or exempt or \"cloud_resource_floor\" in plan:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/source_execution.py",
+          "line": 1073,
+          "line_text": "    floor = plan.get(\"cloud_resource_floor\")"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/source_execution.py",
+          "line": 1074,
+          "line_text": "    if floor is not None:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/source_execution.py",
+          "line": 1018,
+          "line_text": "    floor = json.loads(CLOUD_RESOURCE_CONFIG.read_text(encoding=\"utf-8\"))[\"cloud_resource_floor\"]"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/source_execution.py",
+          "line": 1079,
+          "line_text": "            raise ValueError(\"declared cloud GPU worker floor requires a CUDA device; do not run it on CPU\")"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_source_execution_resources.py",
+          "current_blob": "99b696ce0651168357ec986b70f45f44c3254601",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 13,
+      "id": "R13",
+      "path": "src/baselines/n2p3net.py",
+      "candidate_commit": "8a0d32e42ec828a6ed7671aa3475d8016f919743",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "b72d1d7fb7f6488e4534f12b28242f1d7410c7cb",
+      "current_blob": "b72d1d7fb7f6488e4534f12b28242f1d7410c7cb",
+      "current_git_blob_raw_sha256": "9b15791c6bf86f1d0960b3951c98dd22f0c10b6efa70b7a56fd3bdff92c7b4cb",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "95633553ae558d04ce92ab1906fd50c1db6a057cdc9cd21652766ac6f7352fa7",
+      "old_status": "真实待接",
+      "status": "真实仍未解决",
+      "status_en": "real_unresolved",
+      "current_judgment": "N2P3NetBaseline已启strict_load，但DeepBaseline仍将缺少的目标键仅记not_in_source，blocking遗漏它；非空合法shape的partial trunk会随机补全。原提案部分接收、合同尚未闭合。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/n2p3net.py",
+          "line": 80,
+          "line_text": "            strict_load=pretrained_state_dict is not None,"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/deep.py",
+          "line": 512,
+          "line_text": "        if not self.pretrained_state_dict:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/deep.py",
+          "line": 546,
+          "line_text": "                self.load_report.append({\"event\": \"not_in_source\", \"key\": key})"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/deep.py",
+          "line": 549,
+          "line_text": "            e[\"event\"] in (\"missing_target\", \"shape_mismatch\") for e in self.load_report"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_pretrain_supervised.py",
+          "line": 764,
+          "line_text": "            raise ValueError(\"--initial-checkpoint lacks a non-empty trunk_state_dict.\")"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_n2p3net.py",
+          "current_blob": "82e41afed414a3f4afd42c0bc2558f2b87e1b897",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 14,
+      "id": "R14",
+      "path": "src/models/splitbn.py",
+      "candidate_commit": "b0e3196b8a09fd14597a3bcb4f542f142c29c2c4",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "12d94bad6e32aa43304257983d27923ed335b32e",
+      "current_blob": "bd70e9154a23587e47c384720680cc01f3a0d749",
+      "current_git_blob_raw_sha256": "03270bccd62dc72d86c7f8c17d3a7ff74056f471cec3e86c94dc000469e9f8a3",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "4f22a9faa91b1904c7033c21b5999f1acc3e1884de8c7ffa8483810a64d5fc34",
+      "old_status": "主树新实现取代",
+      "status": "主树正确替代",
+      "status_en": "main_correct_replacement",
+      "current_judgment": "当前顺序安装以实际forward站点为准，已pack的temporal数真实计数；保存input/mask/scope/source/order receipt，失败回滚全部buffer与module模式。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/models/splitbn.py",
+          "line": 561,
+          "line_text": "def install_splitbn_target_calibration_buffers("
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/models/splitbn.py",
+          "line": 741,
+          "line_text": "                    execution_order.append(path)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/models/splitbn.py",
+          "line": 659,
+          "line_text": "        variance = value.var(dim=reduction, unbiased=False)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/models/splitbn.py",
+          "line": 758,
+          "line_text": "        if not succeeded:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/models/splitbn.py",
+          "line": 773,
+          "line_text": "            \"record_kind\": \"diagnostic\" if any_initialized else \"installation\","
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/transfer/test_asmmd_live.py",
+          "current_blob": "92c6d8f7a4bfac87fa70828ad5606790818e75a7",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 15,
+      "id": "R15",
+      "path": "src/baselines/deep.py",
+      "candidate_commit": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "19b95ac1a68a3be26630c849024880ba14dbd45a",
+      "current_blob": "19b95ac1a68a3be26630c849024880ba14dbd45a",
+      "current_git_blob_raw_sha256": "0a883c92cada2f3ee238c49113817ee700ae225d32ad485ca10f7fedbd5091ec",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "93aa6ef67656271252046514d3bef32d38277da11cf51d100201ea636cd08df2",
+      "old_status": "已等价接收",
+      "status": "故意退役/历史",
+      "status_en": "intentionally_retired_historical",
+      "current_judgment": "无owner的save_checkpoint/load_state_dict_file已经移除；实际checkpoint消费由transfer.checkpoint拥有。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/deep.py",
+          "line": 502,
+          "line_text": "    def _apply_pretrained_state_dict(self) -> None:"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_candidate_evidence.py",
+          "current_blob": "dfea0806fe57a2e12bc1654c52f81d064fc1fdc1",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_evaluate.py",
+          "current_blob": "4f8fd9010e33f58a9a1806766246da445987fb3f",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_alignment.py",
+          "current_blob": "6a87b6992c59bc6a755e2e6cccff4bd0e8561dbe",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_candidate_transfer.py",
+          "current_blob": "f1da991cf97ac90e1f5b3c87364f9c329b7bc921",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_decision_evaluation.py",
+          "current_blob": "ebdbb414f6f60a39eacdfc1c62fecc8d739b1709",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 16,
+      "id": "R16",
+      "path": "src/research/domain_folds.py",
+      "candidate_commit": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "d44644da98e262bf62e07bf3a004263a85b2a624",
+      "current_blob": "d44644da98e262bf62e07bf3a004263a85b2a624",
+      "current_git_blob_raw_sha256": "d828f73d4f2cc4dfaee6e83d87d2762047912222bfb058f4e880ea08673e7bd8",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "c3f614b118513e1541a0b8949531d9530c4268b5ac257cbb96f71284b1b7acdc",
+      "old_status": "已等价接收",
+      "status": "故意退役/历史",
+      "status_en": "intentionally_retired_historical",
+      "current_judgment": "未消费的pairs分配已删，domain membership检验与fold输出保留。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/domain_folds.py",
+          "line": 46,
+          "line_text": "def _aligned_axes("
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/domain_folds.py",
+          "line": 59,
+          "line_text": "        subject_domains = np.unique(domains[subjects == subject])"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_candidate_evidence.py",
+          "current_blob": "dfea0806fe57a2e12bc1654c52f81d064fc1fdc1",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_evaluate.py",
+          "current_blob": "4f8fd9010e33f58a9a1806766246da445987fb3f",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_alignment.py",
+          "current_blob": "6a87b6992c59bc6a755e2e6cccff4bd0e8561dbe",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_candidate_transfer.py",
+          "current_blob": "f1da991cf97ac90e1f5b3c87364f9c329b7bc921",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_decision_evaluation.py",
+          "current_blob": "ebdbb414f6f60a39eacdfc1c62fecc8d739b1709",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 17,
+      "id": "R17",
+      "path": "experiments/run_source_training_chain.py",
+      "candidate_commit": "b36000c86530583c75415413e79caf2360422248",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "cccbd48182e47ed4764d7bfa6ce4077edd894477",
+      "current_blob": "858dfd35a449460f617af85f8dd3a8b409243670",
+      "current_git_blob_raw_sha256": "4b4597cd2cb5a8440efa6d5421da2b6f640282c055c657afda09460e6147c23e",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "91cd5df38ca016cf91d294e6ca7199c003ce1ff885fe27f39379c3f19ed1d66b",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "E2 nested reservation的native_threads传给子初始化器并torch.set_num_threads，保资源账与实际线程一致。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_source_training_chain.py",
+          "line": 398,
+          "line_text": "def _initialize_e2_worker(dataset, threads=1):"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_source_training_chain.py",
+          "line": 428,
+          "line_text": "                threads_per_worker=memory_admission.native_threads, **options)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_source_training_chain.py",
+          "line": 447,
+          "line_text": "                             initializer=_initialize_e2_worker, initargs=(dataset, threads_per_worker)) as pool:"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_parallel_training_chain.py",
+          "current_blob": "70d852ae2913427ba2c2dccba88eeb76133d0b59",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 18,
+      "id": "D01",
+      "path": "experiments/prepare_source_records.py",
+      "candidate_commit": "72fa9cad7579db75b3dae2b82aee6730761b1923",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "ce4874d955c3dae61c5cf0801a9327bbb2908e9a",
+      "current_blob": "ce4874d955c3dae61c5cf0801a9327bbb2908e9a",
+      "current_git_blob_raw_sha256": "a686edbb78bd576e0ae86f26f9a0d10bae91577d0caa2c7e3535eb269981363a",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "84576e85c8440c28a840c76a8b84a65be959151169055f5dcf3d7990c3423fa2",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "preparation.json恢复显式UTF-8，实际状态按原记录继续。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_source_records.py",
+          "line": 115,
+          "line_text": "    result = json.loads(result_path.read_text(encoding=\"utf-8\")) if result_path.exists() else {"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_source_records.py",
+          "current_blob": "597c2998c3951ca5471bd85767827be262c3bda2",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 19,
+      "id": "D02",
+      "path": "experiments/report_brainsync_quality.py",
+      "candidate_commit": "311e70df6868cc9fa0011e82260c80e358496d52",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "50ac2ebff60054f3bd7ae9d9600e7e8bc43f29fc",
+      "current_blob": "50ac2ebff60054f3bd7ae9d9600e7e8bc43f29fc",
+      "current_git_blob_raw_sha256": "b7d4bb766e9eaec90f44513bdd4c5d8f049dae2b31a9854ab68665973cb4f41d",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "879b248b913d92aac58eb327c2ff2444e96f7b8e38e65790513bce410a6556f6",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "显式preprocessing/QC/ocular输入实际file SHA写入请求身份，质量结果可追溯。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/report_brainsync_quality.py",
+          "line": 53,
+          "line_text": "        for name in (\"preprocessing_config\", \"continuous_qc_model\", \"epoch_qc_model\", \"ocular_model\"):"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/report_brainsync_quality.py",
+          "line": 55,
+          "line_text": "                request[f\"{name}_sha256\"] = file_sha256(getattr(args, name))"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/brainsync/test_recording_quality_report.py",
+          "current_blob": "b910dc87c9ef23fcf887a0e89bf527eccae72978",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 20,
+      "id": "D03",
+      "path": "experiments/adapt_eeg_domain.py",
+      "candidate_commit": "ad3c6301aaeb2fc97272b0cb10cfaaa212a09985",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "c96cf3a09dbbac03328e898955335bf8bf2cac98",
+      "current_blob": "c96cf3a09dbbac03328e898955335bf8bf2cac98",
+      "current_git_blob_raw_sha256": "54835ba9bc742d8cfd867213202c51e08872a2f98579dc42ae9892a09903a0f4",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "d60b46c00efb1a5a9d02a461329e21f15ff8d0ebe18f1b692c73925e1003911f",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "派生EA cache保存caller显式exclusive=True，拒既有parent/record覆盖。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/adapt_eeg_domain.py",
+          "line": 128,
+          "line_text": "    output = save_epoch_dataset(args.output, adapted, compressed=not args.uncompressed, exclusive=True)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_epochs.py",
+          "current_blob": "ce2f3be119acfa158f765969f5459335a06424fa",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 21,
+      "id": "D04",
+      "path": "experiments/prepare_bi2014a_candidate.py",
+      "candidate_commit": "ad3c6301aaeb2fc97272b0cb10cfaaa212a09985",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "486b2e87a6ff7b1adb75dee3cdc3f57ea591fef0",
+      "current_blob": "486b2e87a6ff7b1adb75dee3cdc3f57ea591fef0",
+      "current_git_blob_raw_sha256": "878c98b8a0835726439799426d2f4634fe40a8a5ecad0cf9fc04fea84b77f127",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "ef27187c3f576d07e3ca785d01b4316bc582f776513c42260c830dfd6c4b8948",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "新版BI准备CLI在实际准备前拒绝已有output；episode programme/subject目录独占创建。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 176,
+          "line_text": "    if Path(args.output).exists():"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 70,
+          "line_text": "    output.mkdir(parents=True, exist_ok=False)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_epochs.py",
+          "current_blob": "ce2f3be119acfa158f765969f5459335a06424fa",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 22,
+      "id": "D05",
+      "path": "experiments/prepare_bi2014a_candidate.py",
+      "candidate_commit": "ad3c6301aaeb2fc97272b0cb10cfaaa212a09985",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "486b2e87a6ff7b1adb75dee3cdc3f57ea591fef0",
+      "current_blob": "486b2e87a6ff7b1adb75dee3cdc3f57ea591fef0",
+      "current_git_blob_raw_sha256": "878c98b8a0835726439799426d2f4634fe40a8a5ecad0cf9fc04fea84b77f127",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "ef27187c3f576d07e3ca785d01b4316bc582f776513c42260c830dfd6c4b8948",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "兼容combined-cache路径保exclusive=True；新episode路径先以独占目录建立产物身份，禁止既有输出复用。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 216,
+          "line_text": "        save_epoch_dataset(args.output, combined, compressed=not args.uncompressed, exclusive=True)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 70,
+          "line_text": "    output.mkdir(parents=True, exist_ok=False)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_epochs.py",
+          "current_blob": "ce2f3be119acfa158f765969f5459335a06424fa",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 23,
+      "id": "D06",
+      "path": "experiments/prepare_bi2014a_candidate.py",
+      "candidate_commit": "ad3c6301aaeb2fc97272b0cb10cfaaa212a09985",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "486b2e87a6ff7b1adb75dee3cdc3f57ea591fef0",
+      "current_blob": "486b2e87a6ff7b1adb75dee3cdc3f57ea591fef0",
+      "current_git_blob_raw_sha256": "878c98b8a0835726439799426d2f4634fe40a8a5ecad0cf9fc04fea84b77f127",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "ef27187c3f576d07e3ca785d01b4316bc582f776513c42260c830dfd6c4b8948",
+      "old_status": "主树新实现取代",
+      "status": "主树正确替代",
+      "status_en": "main_correct_replacement",
+      "current_judgment": "旧.candidate_audit.json出口已由新版episode preparation/cohort账本取代，统一atomic_write_json写出；不要求复活旧audit文件。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 85,
+          "line_text": "    atomic_write_json(output / 'preparation.json', ledger, input_admission=owner)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_bi2014a_candidate.py",
+          "line": 152,
+          "line_text": "        atomic_write_json(output / 'cohort.json', report, input_admission=inputs)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_epochs.py",
+          "current_blob": "ce2f3be119acfa158f765969f5459335a06424fa",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 24,
+      "id": "D07",
+      "path": "src/data/epochs.py",
+      "candidate_commit": "ad3c6301aaeb2fc97272b0cb10cfaaa212a09985",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "9fcbb7a9ca6c0f919418a0fb01fecd4b73ab70ea",
+      "current_blob": "b7c1dfc55b44e1745c4b4fdbbe1834de10106ba8",
+      "current_git_blob_raw_sha256": "d434200c48a50d19ab4e462513880b148b63b4dbd165f31c1b477f51c6ba2a19",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "729dd5d9e5a49ec076565780650472b9a85fa3a0d392091dd1c18c0b77e5416b",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "save_epoch_dataset拥有exclusive可选参数，在dataset处理前检查cache和record冲突；原派生caller接该门。此项范围是已有输出拒绝，不额外主张并发多writer原子事务。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/epochs.py",
+          "line": 954,
+          "line_text": "    exclusive: bool = False,"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/epochs.py",
+          "line": 962,
+          "line_text": "    if exclusive and any(candidate.exists() for candidate in (Path(path), _cache_record_path(path))):"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_epochs.py",
+          "current_blob": "ce2f3be119acfa158f765969f5459335a06424fa",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 25,
+      "id": "D08",
+      "path": "src/data/source_parsers.py",
+      "candidate_commit": "448b9b2992b3b1cb4fe2ea153637c101de482bbe",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "c1bbbcfa2b947846e7570622a2d55f3d877c0fdd",
+      "current_blob": "c1bbbcfa2b947846e7570622a2d55f3d877c0fdd",
+      "current_git_blob_raw_sha256": "5150897310e8d3c43ff0a1249034968bcab2ff0edff74ec59a90bb8d0095a680",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "67115acf57ed5de87432a8d007a7da2fc298ffc8220ced46e9ef601ce41e4592",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "manifest先trim并canonicalize整数participant，2/02按同一identity做唯一性检验。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/source_parsers.py",
+          "line": 236,
+          "line_text": "        identity = (str(int(identity[0])) if identity[0].isdigit() else identity[0], *identity[1:])"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/source_parsers.py",
+          "line": 237,
+          "line_text": "        if identity in identities:"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_source_parsers.py",
+          "current_blob": "9d8801ef8fc992b8c7ca97b80ee5578173ece945",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 26,
+      "id": "D09",
+      "path": "src/data/source_parsers.py",
+      "candidate_commit": "448b9b2992b3b1cb4fe2ea153637c101de482bbe",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "c1bbbcfa2b947846e7570622a2d55f3d877c0fdd",
+      "current_blob": "c1bbbcfa2b947846e7570622a2d55f3d877c0fdd",
+      "current_git_blob_raw_sha256": "5150897310e8d3c43ff0a1249034968bcab2ff0edff74ec59a90bb8d0095a680",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "67115acf57ed5de87432a8d007a7da2fc298ffc8220ced46e9ef601ce41e4592",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "同(path/member/raw_scope)或(sha/member/raw_scope)的物理录制重复声明均拒绝。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/source_parsers.py",
+          "line": 226,
+          "line_text": "    identities, physical, digests = set(), set(), set()"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/source_parsers.py",
+          "line": 243,
+          "line_text": "        if location in physical or (item.get(\"sha256\") and digest in digests):"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_source_parsers.py",
+          "current_blob": "9d8801ef8fc992b8c7ca97b80ee5578173ece945",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 27,
+      "id": "D10",
+      "path": "src/data/dataset.py",
+      "candidate_commit": "18ac536a193edee0960f94558cdb948af68a4596",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "561c55f1e012b87e58b1c2619dcbc54c48f18bbc",
+      "current_blob": "ba9eefc550ca79da816bbd4bf83e3cf446939851",
+      "current_git_blob_raw_sha256": "9addf53d08a58bd64db1a0b11a82a7b5aea0a51210d12529d777e46ebb7c3128",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "5443e09b56440bb7ebd2923a5edf86217494e24f89e84a3b1289b0fe8050c156",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "CSV/TSV/JSON file-relative事件边界精确加first_samp一次；inline/annotations/NPY/NPZ保持absolute。caller保存program与offset。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/dataset.py",
+          "line": 21,
+          "line_text": "EVENT_COORDINATE_PROGRAM = \"external_table_file_relative_to_MNE_absolute_arrays_preserved/1\""
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/dataset.py",
+          "line": 247,
+          "line_text": "            events[:, 0] += int(raw.first_samp)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/dataset.py",
+          "line": 422,
+          "line_text": "            \"applied_sample_offset\": int(raw.first_samp) if relative_table else 0,"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/manifest.py",
+          "line": 298,
+          "line_text": "            load_dataset("
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_dataset.py",
+          "current_blob": "546de3327b649f7bc37da8f04863700f38d450ac",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 28,
+      "id": "D11",
+      "path": "src/data/dataset.py",
+      "candidate_commit": "18ac536a193edee0960f94558cdb948af68a4596",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "561c55f1e012b87e58b1c2619dcbc54c48f18bbc",
+      "current_blob": "ba9eefc550ca79da816bbd4bf83e3cf446939851",
+      "current_git_blob_raw_sha256": "9addf53d08a58bd64db1a0b11a82a7b5aea0a51210d12529d777e46ebb7c3128",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "5443e09b56440bb7ebd2923a5edf86217494e24f89e84a3b1289b0fe8050c156",
+      "old_status": "真实待接",
+      "status": "主树正确替代",
+      "status_en": "main_correct_replacement",
+      "current_judgment": "数组事件没有继续 blanket拒绝；现在明确契约NPY/NPZ使用MNE absolute、表用file-relative，并保存坐标转换receipt，消除原歧义。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/dataset.py",
+          "line": 37,
+          "line_text": "    Inline events and NPY/NPZ event arrays use absolute MNE sample indices."
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/dataset.py",
+          "line": 243,
+          "line_text": "        if Path(record.event_file).suffix.lower() not in {\".npy\", \".npz\"} and raw.first_samp:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/dataset.py",
+          "line": 419,
+          "line_text": "            \"input_sample_coordinate\": \"loaded_file_relative\" if relative_table else \"MNE_absolute\","
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "tests/data/test_dataset.py",
+          "line": 166,
+          "line_text": "def test_table_events_are_file_relative_but_array_events_are_mne_absolute(tmp_path):"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_dataset.py",
+          "current_blob": "546de3327b649f7bc37da8f04863700f38d450ac",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 29,
+      "id": "D12",
+      "path": "src/data/qc_features.py",
+      "candidate_commit": "cd9e41f2379b50ed9a08e8b0238b8d9a0f32ec04",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "4eab4855549e47e7ce212b37cbb1582b452d63d7",
+      "current_blob": "79da60aa8cab2e1bee104b4617080bb9e90d4b0e",
+      "current_git_blob_raw_sha256": "e8a4ba94482dd711e330b7463fe6e98447046e62057a785e39ea5f190a96d77e",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "17a01288de33ea78ffc2d4198798dc04a2106d042fdaee32ffa2362b9948252a",
+      "old_status": "主树新实现取代",
+      "status": "主树正确替代",
+      "status_en": "main_correct_replacement",
+      "current_judgment": "Claude cached-ratio逆推会丢eps分母与float32精度；当前唯一caller传已选X并用唯一compute_epoch_qc_features重算，保持真实observed bits与程序lineage。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/qc_features.py",
+          "line": 89,
+          "line_text": "        self, indices: Sequence[int], *, selected_X: np.ndarray,"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/qc_features.py",
+          "line": 93,
+          "line_text": "        The float32 cached summaries cannot recover raw PTP: relative PTP was"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/qc_features.py",
+          "line": 118,
+          "line_text": "        return compute_epoch_qc_features("
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/epochs.py",
+          "line": 1798,
+          "line_text": "            dataset.qc_features.select_channels(picks, selected_X=values)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/epochs.py",
+          "line": 1793,
+          "line_text": "                    \"channel_selection_qc_program\": qc_program},"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_epochs.py",
+          "current_blob": "ce2f3be119acfa158f765969f5459335a06424fa",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 30,
+      "id": "D13",
+      "path": "experiments/analyze_brainsync_recovery.py",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "d174d699f8ec4e74aa0647503a119df9526ead69",
+      "current_blob": "d174d699f8ec4e74aa0647503a119df9526ead69",
+      "current_git_blob_raw_sha256": "63c288ef87613b7f2b09f0519aae4afdb8fa90ea93af543316e23af8bbe1e505",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "fcfdbaa76eacf769150e1367f1f0f3d0c6bc584df3aeab213df2522086fa1405",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "质量payload digest检查是显式ValueError，python -O不会跳过。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/analyze_brainsync_recovery.py",
+          "line": 51,
+          "line_text": "    if payload[\"digest\"] != semantic_sha256(payload[\"model\"]):"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/analyze_brainsync_recovery.py",
+          "line": 52,
+          "line_text": "        raise ValueError(\"quality model digest differs from its payload\")"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_baselines.py",
+          "current_blob": "8c2440ab1469f80033c9cf8004c26470fed2def9",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_research_execution.py",
+          "current_blob": "70f06f657b52e9617d31f44a2aef0e93985f108c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 31,
+      "id": "D14",
+      "path": "experiments/analyze_brainsync_recovery.py",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "d174d699f8ec4e74aa0647503a119df9526ead69",
+      "current_blob": "d174d699f8ec4e74aa0647503a119df9526ead69",
+      "current_git_blob_raw_sha256": "63c288ef87613b7f2b09f0519aae4afdb8fa90ea93af543316e23af8bbe1e505",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "fcfdbaa76eacf769150e1367f1f0f3d0c6bc584df3aeab213df2522086fa1405",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "输入cache SHA与历史/恢复channel order均用显式ValueError门。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/analyze_brainsync_recovery.py",
+          "line": 60,
+          "line_text": "                raise ValueError(f\"evaluation cache differs from the planned input: {path}\")"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/analyze_brainsync_recovery.py",
+          "line": 65,
+          "line_text": "            raise ValueError(\"historical and recovered caches disagree on channel order\")"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_baselines.py",
+          "current_blob": "8c2440ab1469f80033c9cf8004c26470fed2def9",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_research_execution.py",
+          "current_blob": "70f06f657b52e9617d31f44a2aef0e93985f108c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 32,
+      "id": "D15",
+      "path": "src/data/continuous_qc.py",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "9aec603f0baa1563aa57548cae850f7e8295bff2",
+      "current_blob": "9aec603f0baa1563aa57548cae850f7e8295bff2",
+      "current_git_blob_raw_sha256": "27cf1a3d5250adda6ea5557db58ebb4ceab90f7535a0b53d29c68758c81c64c1",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "d7944dc526dafff342ab46dad8f434c6c798f5748ef31e0cef3e930f67e78a21",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "zero-phase QC错误准确要求fitted empirical epoch recovery，原验证入口保留真实epoch operator匹配。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/continuous_qc.py",
+          "line": 98,
+          "line_text": "def validate_recovery_contract(model, preprocessing, *, source_reference, ocular_model=None):"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/continuous_qc.py",
+          "line": 105,
+          "line_text": "        raise ValueError(\"zero-phase continuous QC requires a fitted empirical epoch recovery model\")"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_baselines.py",
+          "current_blob": "8c2440ab1469f80033c9cf8004c26470fed2def9",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_research_execution.py",
+          "current_blob": "70f06f657b52e9617d31f44a2aef0e93985f108c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 33,
+      "id": "D16",
+      "path": "src/data/ea_artifact.py",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "8aabf51ef39b778fea13f4a4db87ff25cf5cb77a",
+      "current_blob": "8aabf51ef39b778fea13f4a4db87ff25cf5cb77a",
+      "current_git_blob_raw_sha256": "0bac7930e00484ac57571db03164aa1bb53740ab10749b9ff7e4318629c9ae0c",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "6e7f3b89b0a413672add839aa94d4e1faddc0db68501997a8f2936e6662ee858",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "EA保存前同时拒已有NPZ或record；既有输出不被替换。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/ea_artifact.py",
+          "line": 565,
+          "line_text": "    if path.exists() or _record_path(path).exists():"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/ea_artifact.py",
+          "line": 566,
+          "line_text": "        raise FileExistsError(f\"refusing to replace an existing EA artifact: {path}\")"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_baselines.py",
+          "current_blob": "8c2440ab1469f80033c9cf8004c26470fed2def9",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_research_execution.py",
+          "current_blob": "70f06f657b52e9617d31f44a2aef0e93985f108c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 34,
+      "id": "D17",
+      "path": "src/data/ea_artifact.py",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "8aabf51ef39b778fea13f4a4db87ff25cf5cb77a",
+      "current_blob": "8aabf51ef39b778fea13f4a4db87ff25cf5cb77a",
+      "current_git_blob_raw_sha256": "0bac7930e00484ac57571db03164aa1bb53740ab10749b9ff7e4318629c9ae0c",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "6e7f3b89b0a413672add839aa94d4e1faddc0db68501997a8f2936e6662ee858",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "EA attestation完整JSON写temporary再replace，避免目标record出现截断。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/ea_artifact.py",
+          "line": 573,
+          "line_text": "    temporary_record = record.with_name(f\".{record.name}.tmp\")"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/ea_artifact.py",
+          "line": 576,
+          "line_text": "    temporary_record.replace(record)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_baselines.py",
+          "current_blob": "8c2440ab1469f80033c9cf8004c26470fed2def9",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_research_execution.py",
+          "current_blob": "70f06f657b52e9617d31f44a2aef0e93985f108c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 35,
+      "id": "D18",
+      "path": "src/data/epochs.py",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "9fcbb7a9ca6c0f919418a0fb01fecd4b73ab70ea",
+      "current_blob": "b7c1dfc55b44e1745c4b4fdbbe1834de10106ba8",
+      "current_git_blob_raw_sha256": "d434200c48a50d19ab4e462513880b148b63b4dbd165f31c1b477f51c6ba2a19",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "773476364a482e5b45dc8815a1ddba9bb46c7a2a3566818f1fb50671590e7fa7",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "epoch cache record在同input admission内temporary写完整UTF-8再replace，temporary路径计入资源owner。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/epochs.py",
+          "line": 1386,
+          "line_text": "    temporary = record_path.with_name(f\".{record_path.name}.tmp\")"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/epochs.py",
+          "line": 1061,
+          "line_text": "    with (admission.artifact_writer(path, estimate, temporary_paths=(temporary,))"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/epochs.py",
+          "line": 1390,
+          "line_text": "        temporary.replace(record_path)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_baselines.py",
+          "current_blob": "8c2440ab1469f80033c9cf8004c26470fed2def9",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_research_execution.py",
+          "current_blob": "70f06f657b52e9617d31f44a2aef0e93985f108c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 36,
+      "id": "D19",
+      "path": "src/data/domain_alignment.py",
+      "candidate_commit": "c2fa49e8b95c2a4882278f43807a50ba321e3a55",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "12c30f1d449dc9c3df3c52bdb66db722d21a5ac2",
+      "current_blob": "12c30f1d449dc9c3df3c52bdb66db722d21a5ac2",
+      "current_git_blob_raw_sha256": "84eb2fe584dc06f8f38004a662e6eda042ce7a575bdf7c64ef3f7b9886e06543",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "64f90bae42f569a79e949653ca382321714d4e20b64d953d7ee6146983d7fa79",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "source_weighted fast buffer_digest绑定实际source weights/means/covariances；target-only数值变化不再改变source-only fit operand digest。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/domain_alignment.py",
+          "line": 402,
+          "line_text": "        if fit_scope == \"source_weighted\":"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/domain_alignment.py",
+          "line": 445,
+          "line_text": "            buffer_digest=array_digest("
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/data/domain_alignment.py",
+          "line": 403,
+          "line_text": "            mean = np.average(self.means, axis=0, weights=np.asarray(self.domain_weights))"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_domain_alignment.py",
+          "current_blob": "13b32550b57c2d0fa316974503186f689df08806",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 37,
+      "id": "D20",
+      "path": "experiments/fit_galia_alignment.py",
+      "candidate_commit": "7a3df6f91c052669e26ec60fecc8247e88b81c61",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "57be4f2b87b11060e42e383e026bae00313074ce",
+      "current_blob": "57be4f2b87b11060e42e383e026bae00313074ce",
+      "current_git_blob_raw_sha256": "cb2ddba2b36143ece543c19e322fd4b8129ed5a034bec738a1a763d6ad30bcc3",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "cac0e3fa71d71fe4f1053f60eebf0dae3c2d8fa420f0b01637f08a5c2e2ac69b",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "ACW配对参数与三个输出冲突在fit或任何写入之前检查，避免既有name collision留下orphan输出。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/fit_galia_alignment.py",
+          "line": 106,
+          "line_text": "    if (args.target_calibration is None) != (args.fast_output is None):"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/fit_galia_alignment.py",
+          "line": 114,
+          "line_text": "    for label, path in ((\"ACW output\", output), (\"aligned ACW output\", aligned_output),"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/fit_galia_alignment.py",
+          "line": 118,
+          "line_text": "    state = adapter.fit(domains)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/transfer/test_fit_galia_alignment.py",
+          "current_blob": "da3582977ffaa2336521285774c080a6ca39d663",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 38,
+      "id": "D21",
+      "path": "experiments/correct_brainsync_reference.py",
+      "candidate_commit": "976f012d03411ba0b266e63ddba9786a33cf59b0",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "bff9305caff9a1ec3eed019212f96937b1efce63",
+      "current_blob": "bff9305caff9a1ec3eed019212f96937b1efce63",
+      "current_git_blob_raw_sha256": "393ec08da87ded43387ab1b0bf230ce4587185d72dd013175be9d12f74486b63",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "b70a48031819d81fbd4c5211325d70d42dd46674309699f644a8804ac6d618f8",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "reference correction先收集完整missing sidecars，再统一序列化所有JSON，共用一份完整更正record。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/correct_brainsync_reference.py",
+          "line": 53,
+          "line_text": "    # JSON documents are serialized last, so each embeds the complete correction record."
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/correct_brainsync_reference.py",
+          "line": 49,
+          "line_text": "                  \"software_rereference_changed\": False, \"missing_declared_sidecars\": []}"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/correct_brainsync_reference.py",
+          "line": 90,
+          "line_text": "    return {path: value if isinstance(value, bytes)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/brainsync/test_brainsync_reference.py",
+          "current_blob": "5cfca3790e46240e4650a2feb829432f38013586",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 39,
+      "id": "D22",
+      "path": "experiments/prepare_candidate_subject_partitions.py",
+      "candidate_commit": "5ab8ee819f90ca6b29900aece07be310ae54d1b6",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "a576ef68bec4ff435591885750bfc813728113c2",
+      "current_blob": "a576ef68bec4ff435591885750bfc813728113c2",
+      "current_git_blob_raw_sha256": "408eb72272d5176baea654dffca93933dc2f32a082a92d9e296278cd57a88dc6",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "91ca735782783ab4efdbacfb748eb179fd48c6fe145bf70478d615c984e840e9",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "frozen partitions拒非空output，rerun不会混入旧subject文件。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 64,
+          "line_text": "    if output.exists() and any(output.iterdir()):"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_candidate_subject_partitions.py",
+          "current_blob": "c62c72e2e2aafcfe87650ec1434b42a54059f762",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 40,
+      "id": "D23",
+      "path": "experiments/prepare_candidate_subject_partitions.py",
+      "candidate_commit": "5ab8ee819f90ca6b29900aece07be310ae54d1b6",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "a576ef68bec4ff435591885750bfc813728113c2",
+      "current_blob": "a576ef68bec4ff435591885750bfc813728113c2",
+      "current_git_blob_raw_sha256": "408eb72272d5176baea654dffca93933dc2f32a082a92d9e296278cd57a88dc6",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "91ca735782783ab4efdbacfb748eb179fd48c6fe145bf70478d615c984e840e9",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "每partition与manifest由publish_exclusive独占发布，保存原bytes，caller保持新产物身份。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 71,
+          "line_text": "        publish_exclusive(path, lambda stream, content=content: stream.write(content))"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 101,
+          "line_text": "    publish_exclusive(output / \"manifest.json\", lambda stream: stream.write(encoded))"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_candidate_subject_partitions.py",
+          "current_blob": "c62c72e2e2aafcfe87650ec1434b42a54059f762",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 41,
+      "id": "D24",
+      "path": "experiments/prepare_candidate_subject_partitions.py",
+      "candidate_commit": "5ab8ee819f90ca6b29900aece07be310ae54d1b6",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "a576ef68bec4ff435591885750bfc813728113c2",
+      "current_blob": "a576ef68bec4ff435591885750bfc813728113c2",
+      "current_git_blob_raw_sha256": "408eb72272d5176baea654dffca93933dc2f32a082a92d9e296278cd57a88dc6",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "91ca735782783ab4efdbacfb748eb179fd48c6fe145bf70478d615c984e840e9",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "每份partition sha256绑定实际UTF-8 content，manifest同时保cache/membership身份。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 70,
+          "line_text": "        content = json.dumps(list(subjects), indent=2).encode(\"utf-8\")"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 79,
+          "line_text": "                \"sha256\": hashlib.sha256(content).hexdigest(),"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/prepare_candidate_subject_partitions.py",
+          "line": 85,
+          "line_text": "        \"dataset_cache_sha256\": cache[\"sha256\"],"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_candidate_subject_partitions.py",
+          "current_blob": "c62c72e2e2aafcfe87650ec1434b42a54059f762",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 42,
+      "id": "R42",
+      "path": "experiments/run_n2p3_sensitivity.py",
+      "candidate_commit": "7a808406698ab93d0cafff123350482b9d9b1763",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "ddb22e470d2dd123cb92e2b854b6ebee6bd587c3",
+      "current_blob": "ddb22e470d2dd123cb92e2b854b6ebee6bd587c3",
+      "current_git_blob_raw_sha256": "fb324a220f01161f2cee10dad1acec080ed1084b6b67f73d3b206667263a9487",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "7abefcd5a323ff727c62af61bca265393b0955e2132cd8ad9114e30fd854199a",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "sensitivity复用绑定cache、subject、fold、epochs、seed、architecture等fit_inputs/candidate digest，不按目录名复用异质结果。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_n2p3_sensitivity.py",
+          "line": 269,
+          "line_text": "def candidate_input_digest(inputs: dict[str, object], candidate: SensitivityCandidate) -> str:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_n2p3_sensitivity.py",
+          "line": 275,
+          "line_text": "def reusable_candidate_record(record_path: Path, input_digest: str) -> dict[str, object] | None:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_n2p3_sensitivity.py",
+          "line": 445,
+          "line_text": "    fit_inputs = {"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_n2p3_sensitivity.py",
+          "line": 530,
+          "line_text": "            \"input_digest\": input_digest,"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_sensitivity.py",
+          "current_blob": "0d8ee145a748fdbf965172752f95694f05779061",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 43,
+      "id": "R43",
+      "path": "src/transfer/information_bound.py",
+      "candidate_commit": "7ed96fb5b69ad75391cca383ab1f23de91c7f67a",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "4fb962735d6706668c1dba79ce6064cdfa4f9010",
+      "current_blob": "4fb962735d6706668c1dba79ce6064cdfa4f9010",
+      "current_git_blob_raw_sha256": "baf33ab5c6812a5f6c099032110538908112e680b73448ed6aa02525961f7fa4",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "281b3615c8348c786a953b74830359babaafd0167a0909bdb39e6e7072e430fc",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "原修复的union self-competitor排除已接：dprime diagonal置inf。新的不可辨识schedule tie问题另列，不把已接修复重新说成遗漏。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/information_bound.py",
+          "line": 319,
+          "line_text": "    np.fill_diagonal(dprime_sq, np.inf)  # The true candidate is not its own competitor."
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/transfer/test_exact_covariance_and_bounds.py",
+          "current_blob": "304055ccd64149e6219991efe02bf5a642c97336",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 44,
+      "id": "R44",
+      "path": "src/transfer/operator_lda.py",
+      "candidate_commit": "87d0a97b0cce11577ce43509d8f35dd7e43cc4bd",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "5df96937c66f828e609b6ec15e708de054b9275e",
+      "current_blob": "5df96937c66f828e609b6ec15e708de054b9275e",
+      "current_git_blob_raw_sha256": "0327a4d32a9b4f71feb505d669e3d31e7030577234cda8091af55b123855c69f",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "3913dff1a847b45741a9af5a0e17fdacb1c7e8e542003ed2616cd0f4056554d2",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "无条件与条件LDA都在共同constructor核target noise draw_ids subset classifier calibration_ids。save/load重建同constructor。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/operator_lda.py",
+          "line": 147,
+          "line_text": "                and not set(self.noise.provenance[\"draw_ids\"]) <= set(provenance[\"calibration_ids\"])):"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/operator_lda.py",
+          "line": 148,
+          "line_text": "            raise ValueError(\"target noise draws exceed actual authorized calibration IDs\")"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/operator_lda.py",
+          "line": 281,
+          "line_text": "    def load(cls, path):"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/operator_lda.py",
+          "line": 204,
+          "line_text": "        model = cls(means, noise, raw_operator, state_operator, ridge_relative,"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/transfer/test_operator_lda.py",
+          "current_blob": "aa7934fa42da099c30e4d26505a43d7d12e65a26",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 45,
+      "id": "R45",
+      "path": "src/stats/transfer.py",
+      "candidate_commit": "8a5fe7d4704115b6fa4e12a32efa57924d01eb75",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "02de5017033a890dfe8986aa0945ad0506e538a5",
+      "current_blob": "02de5017033a890dfe8986aa0945ad0506e538a5",
+      "current_git_blob_raw_sha256": "9987c4a069c857ae2d36a82d19579d83f14dac945941e310ce0deca464d1f783",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "59ba687d789fdd4392c6af9b459ea89099f0f6692518bad16d039f01226c1b6d",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "replacement decline gate使用完整requested；缺项时由声明contrast bound得到lower-bound gate，basis显式保存。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/stats/transfer.py",
+          "line": 199,
+          "line_text": "            # The gate is defined on every requested participant, not the complete subset."
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/stats/transfer.py",
+          "line": 202,
+          "line_text": "            \"replacement_decline_gate_basis\": ("
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/stats/transfer.py",
+          "line": 215,
+          "line_text": "                                       replacement_decline_gate_basis=\"missing_result_lower_bound\")"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_transfer_statistics.py",
+          "current_blob": "8ea4901a6feb8c0d8c39c7984255281211ef2158",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 46,
+      "id": "R46",
+      "path": "src/stats/hierarchical.py",
+      "candidate_commit": "d87a002fb08c5bed8eadc261c4541854f20120bb",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "c454015c8899724ca630a6dcd1d8cd23dca26cb6",
+      "current_blob": "c454015c8899724ca630a6dcd1d8cd23dca26cb6",
+      "current_git_blob_raw_sha256": "7a359c81ad580ba40b10fd1fa9b6ca86cd7aa5cb4eeef6b9f935dafabcbbf9ff",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "8d07f49f3d5d6c19a904c61cf11697cd66f3767366f4e606ff50de534a6a4ea5",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "n=2/3的95% percentile tails按sample range标not estimable；方法与独立抽样单位写入record。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/stats/hierarchical.py",
+          "line": 23,
+          "line_text": "    interval_method: str = \"percentile_bootstrap\""
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/stats/hierarchical.py",
+          "line": 24,
+          "line_text": "    interval_estimable: bool = True"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/stats/hierarchical.py",
+          "line": 76,
+          "line_text": "    estimable = (1.0 / len(values)) ** len(values) < alpha / 2.0"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/stats/hierarchical.py",
+          "line": 86,
+          "line_text": "        interval_method=\"percentile_bootstrap\" if estimable else \"not_estimable_sample_range\","
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_hierarchical_stats.py",
+          "current_blob": "f90d734614cc8057b261eeaaedf13fd9db2156f8",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 47,
+      "id": "R47",
+      "path": "experiments/run_personal_eog_matrix.py",
+      "candidate_commit": "ab5c0dbed1f8ce8234dccda501f519dd4fba0940",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "c5d20e75420e6a831d51cbe521ac35d8a883490e",
+      "current_blob": "c5d20e75420e6a831d51cbe521ac35d8a883490e",
+      "current_git_blob_raw_sha256": "d962376234acb0fe0f4050c435270c24c4706d6ac76e810419d31e58ece7ef7c",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "065bf8d8d6d9588d4222b4226ae28ac5a1ed08f61637c421824948cfa2bc80eb",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "上游source matrix terminal后missing source退出；本矩阵failed而非completed，真实失败写progress并抛错。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_personal_eog_matrix.py",
+          "line": 196,
+          "line_text": "def missing_source_error(sources: Path, source_task: str) -> str | None:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_personal_eog_matrix.py",
+          "line": 203,
+          "line_text": "    if status in {\"completed\", \"failed\"}:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_personal_eog_matrix.py",
+          "line": 281,
+          "line_text": "    atomic_write_json(args.output / \"progress.json\", dict(status=\"failed\" if failed else \"completed\","
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_personal_eog_matrix.py",
+          "line": 284,
+          "line_text": "        raise RuntimeError(\"personal EOG matrix has unresolved failures; see progress.json\")"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/transfer/test_completed_result_admission.py",
+          "current_blob": "a13dabe7227a2661265619dde8eab30ff775652c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 48,
+      "id": "R48",
+      "path": "experiments/run_candidate_ensemble_study.py",
+      "candidate_commit": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "5f8010d85c6696677a2e1accf56fa50c3351f55b",
+      "current_blob": "47dcce213e294c1bad74da9653a364dd98fb2ab8",
+      "current_git_blob_raw_sha256": "0f028882438c52baedcc61284ecc6ac5c237fb1335c298ba0d2eb9ea5cb47206",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "9c98bf4eecd4cdb3f1cc93497dfed41406776c60b12de6221bacf7ceb42c5a78",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "candidate ensemble cloud入口已先应用中央floor再resolve；新版source snapshot parent准入改动保留该资源接点。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_candidate_ensemble_study.py",
+          "line": 1585,
+          "line_text": "        resources = resolve_source_resources(with_cloud_resource_floor(resource_plan, plan.get(\"device\", \"cpu\")),"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_source_execution_resources.py",
+          "current_blob": "99b696ce0651168357ec986b70f45f44c3254601",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 49,
+      "id": "R49",
+      "path": "experiments/run_erp_comparator.py",
+      "candidate_commit": "1c8bf691459457506a0b5023d68495a8c3e1300d",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "cc0178bc1876aa48d197c6cb99ef5921368be903",
+      "current_blob": "cc0178bc1876aa48d197c6cb99ef5921368be903",
+      "current_git_blob_raw_sha256": "9ef1769a94328abe5eca8fafe6e0fc0802135216e2988d3f866d23a0d55b8841",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "08ef9d4251f29c663f2e2293f9c876dd8b4a2b9b58ed7bb84a30b722320a16b5",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "ERP comparator实际cloud入口应用同floor helper，不再省略GPU25/4声明。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_erp_comparator.py",
+          "line": 1140,
+          "line_text": "    resources = resolve_source_resources(with_cloud_resource_floor(resource_plan, plan.get(\"device\", \"cpu\")),"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/train/test_source_execution_resources.py",
+          "current_blob": "99b696ce0651168357ec986b70f45f44c3254601",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 50,
+      "id": "R50",
+      "path": "experiments/run_within_subject_transfer.py",
+      "candidate_commit": "219fd38aa00c9e999514aba2eb8ccec845971336",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "cb99cc0727681267637374b1ea3b6589fa7bfcf4",
+      "current_blob": "68dc52d15582e42779d12dfbeab26cec87391c7c",
+      "current_git_blob_raw_sha256": "74c5c6eff30117a3fd225d1b6eec08cfee7fcfcd77675c07effd02fa742c4c00",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "a57427b3a5dc6c084f3b54178ff82f711d37d36614a48fe484365f6483b7d279",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "window_target_groups在全部requested usable+excluded上先取窗口，再过滤usable，excluded留正确分母。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_within_subject_transfer.py",
+          "line": 131,
+          "line_text": "def window_target_groups("
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_within_subject_transfer.py",
+          "line": 136,
+          "line_text": "    ordered = sorted(requested)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_within_subject_transfer.py",
+          "line": 458,
+          "line_text": "        requested_groups, groups = window_target_groups("
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/transfer/test_within_subject_runner.py",
+          "current_blob": "bf934457b088aa210619ff755cf5699c10a09c72",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 51,
+      "id": "R51",
+      "path": "src/transfer/exact_covariance.py",
+      "candidate_commit": "af2a20029989aab181bf6abc45f50858cd3bd65d",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "c18c236c0a270b93c4fb2fa0254293223015322d",
+      "current_blob": "c18c236c0a270b93c4fb2fa0254293223015322d",
+      "current_git_blob_raw_sha256": "e9912f6594c63b8c0db3c9d10a4051ef077f8ca1b354ef860ca558fd9d785fd0",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "844b8e59790fd7b95182e446792a09bd17a057f2e66ee66fe48aa659453d6e9b",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "exact covariance correction遇结构null先拒绝，不用ridge决定singular模型logdet。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/exact_covariance.py",
+          "line": 412,
+          "line_text": "        if self.null_dimension:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/exact_covariance.py",
+          "line": 415,
+          "line_text": "                \"log determinant would be set by the numerical ridge, not by the noise model\""
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/transfer/test_exact_covariance_and_bounds.py",
+          "current_blob": "304055ccd64149e6219991efe02bf5a642c97336",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 52,
+      "id": "R52",
+      "path": "src/transfer/information_bound.py",
+      "candidate_commit": "af2a20029989aab181bf6abc45f50858cd3bd65d",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "4fb962735d6706668c1dba79ce6064cdfa4f9010",
+      "current_blob": "4fb962735d6706668c1dba79ce6064cdfa4f9010",
+      "current_git_blob_raw_sha256": "baf33ab5c6812a5f6c099032110538908112e680b73448ed6aa02525961f7fa4",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "e05acd3274b44ca3714a4a29dae9af3488d803044a69d6cc5ce2dae143daba86",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "原af2加入membership_kind、plugin-null correction与time factor单位尺度均在当前源码；其完整统计可解释性和schedule tie/schema收口作为下一科学slice，现为diagnostic。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/information_bound.py",
+          "line": 173,
+          "line_text": "        \"d2_plugin_null_bias\": plugin_bias,"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/information_bound.py",
+          "line": 174,
+          "line_text": "        \"d2_mahalanobis_debiased\": max(0.0, d2 - plugin_bias),"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/information_bound.py",
+          "line": 190,
+          "line_text": "def _activation_matrix(n_candidates: int, n_flashes: int, *, membership_kind: str):"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/information_bound.py",
+          "line": 423,
+          "line_text": "    K_time = lw_t.covariance_ / (np.trace(lw_t.covariance_) / T)  # (T, T)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/information_bound.py",
+          "line": 526,
+          "line_text": "        d2 = snr[\"d2_mahalanobis_debiased\"]"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/transfer/test_exact_covariance_and_bounds.py",
+          "current_blob": "304055ccd64149e6219991efe02bf5a642c97336",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 53,
+      "id": "R53",
+      "path": "src/transfer/calibration_candidates.py",
+      "candidate_commit": "9e6296b710190a5b226ef58f8df46d56c172b9d7",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "214a27b8b4e97d5d0c1b4661f6b586ad05ca432d",
+      "current_blob": "be01ce83338dcd1654aae4daf1db355b7be6828b",
+      "current_git_blob_raw_sha256": "1daae545164f9d1ba0e836a7ef67f43f779394d2deb71e5ce4babe9e31357668",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "83093242ee6bba84f94554610d86e93c72ff7604a3cf3b67bd00556d0065dd4f",
+      "old_status": "主树新实现取代",
+      "status": "原提案已否决",
+      "status_en": "proposal_rejected",
+      "current_judgment": "9e的candidate-dependent finite intersection会让abstention改变比较支持，当前已删除该proposal；未将现有binary finite-only AUC冒称正确替代。固定requested风险与availability policy仍待独立设计。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/calibration_candidates.py",
+          "line": 706,
+          "line_text": "def score_calibration_candidate("
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/calibration_candidates.py",
+          "line": 716,
+          "line_text": "    usable = np.isfinite(values)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/calibration_candidates.py",
+          "line": 777,
+          "line_text": "def select_calibration_candidate("
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/transfer/test_calibration_candidates.py",
+          "current_blob": "b293d642612d8ab39ec2f5c35e0a8ef1e15f4cca",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 54,
+      "id": "R54",
+      "path": "src/transfer/mask_probe.py",
+      "candidate_commit": "710e5c2c252e4feacdee391ab699a25926812807",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "937b92621ca22a4ce352299caa9e464f4262f21a",
+      "current_blob": "937b92621ca22a4ce352299caa9e464f4262f21a",
+      "current_git_blob_raw_sha256": "2b2432e5dcc67402b5e6ca82e46931c05ad881c47fb6ad40c9fe9e22a56e335b",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "37701b6ed325ec31bfdb4007441e37103703c1b5a3f5509e9db4315b145a9406",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "mask probe把temporal BN packed observed rows散回真实electrode slots，缺失slot为NaN/null，逐slot平均只取实际观察。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/mask_probe.py",
+          "line": 53,
+          "line_text": "def _per_slot_moments(values: np.ndarray, mask: np.ndarray, *, packed: bool) -> tuple[np.ndarray, np.ndarray]:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/mask_probe.py",
+          "line": 63,
+          "line_text": "    mean[mask] = values.mean(axis=(1, 2, 3))"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/mask_probe.py",
+          "line": 68,
+          "line_text": "def _slot_average(values: np.ndarray) -> np.ndarray:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/mask_probe.py",
+          "line": 260,
+          "line_text": "                        packed=bool(getattr(trunk, \"observed_channel_norm\", False)),"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/transfer/test_mask_probe.py",
+          "current_blob": "dd1e755d0b7ce4ec8910da5800001754ec83db3a",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 55,
+      "id": "R55",
+      "path": "src/transfer/subject_adapter.py",
+      "candidate_commit": "b0e3196b8a09fd14597a3bcb4f542f142c29c2c4",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "8433d00c5e64576b2290a0c7169d336623ccdadc",
+      "current_blob": "3cad048823ee3e1aea4d90bc6b3d689bb5e804d5",
+      "current_git_blob_raw_sha256": "ca6bf48f9cf847c9d9236541a2ced6e00fe8d8fbcdee021bd499092d21e90de7",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "c3ffe3a19fd993e2c516f2fa213c24f67556bf9be8af397bf736903474ba13d7",
+      "old_status": "主树新实现取代",
+      "status": "主树正确替代",
+      "status_en": "main_correct_replacement",
+      "current_judgment": "SubjectAdapter initial/refit均传真实mask与scope，分别保存install receipts；发布前核最后安装buffers；真实runner输出receipt。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/subject_adapter.py",
+          "line": 1092,
+          "line_text": "                self._splitbn_install_receipts[\"initial\"] = install_splitbn_target_calibration_buffers("
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/subject_adapter.py",
+          "line": 1312,
+          "line_text": "            final_install_receipt = (self._splitbn_install_receipts[\"refit\"]"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/subject_adapter.py",
+          "line": 29,
+          "line_text": "    validate_splitbn_target_install_receipt,"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/subject_adapter.py",
+          "line": 1312,
+          "line_text": "            final_install_receipt = (self._splitbn_install_receipts[\"refit\"]"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_within_subject_transfer.py",
+          "line": 629,
+          "line_text": "                \"splitbn_install_receipts\": deepcopy(adapter.last_history.get(\"splitbn_install_receipts\")),"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_candidate_cross_decision.py",
+          "line": 1222,
+          "line_text": "                \"splitbn_install_receipts\": deepcopy(adapter.last_history.get(\"splitbn_install_receipts\")),"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/transfer/test_asmmd_live.py",
+          "current_blob": "92c6d8f7a4bfac87fa70828ad5606790818e75a7",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 56,
+      "id": "R56",
+      "path": "src/transfer/alignment.py",
+      "candidate_commit": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "6233a7b73c4d61b33a780ceb2ab1efad8cf20dde",
+      "current_blob": "6233a7b73c4d61b33a780ceb2ab1efad8cf20dde",
+      "current_git_blob_raw_sha256": "52bd9c501c7260c563bfe8cf54d46b3b9c097db8c0c9420151a9e6021a543630",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "1fb54aca22e83fbe640c1b6b93f3ac7c3470d99534f9b1ff172c39c3278fb095",
+      "old_status": "已等价接收",
+      "status": "故意退役/历史",
+      "status_en": "intentionally_retired_historical",
+      "current_judgment": "test-only conditional_rbf_mmd_loss/adaptive_target_weight已退役；生产conditional_domain_rbf_mmd_loss保留。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/alignment.py",
+          "line": 110,
+          "line_text": "def conditional_domain_rbf_mmd_loss("
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_candidate_evidence.py",
+          "current_blob": "dfea0806fe57a2e12bc1654c52f81d064fc1fdc1",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_evaluate.py",
+          "current_blob": "4f8fd9010e33f58a9a1806766246da445987fb3f",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_alignment.py",
+          "current_blob": "6a87b6992c59bc6a755e2e6cccff4bd0e8561dbe",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_candidate_transfer.py",
+          "current_blob": "f1da991cf97ac90e1f5b3c87364f9c329b7bc921",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_decision_evaluation.py",
+          "current_blob": "ebdbb414f6f60a39eacdfc1c62fecc8d739b1709",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 57,
+      "id": "R57",
+      "path": "src/transfer/candidate_within_subject.py",
+      "candidate_commit": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "fc6288a57ddbf03c7d8c801c8554d4aab343e796",
+      "current_blob": "fc6288a57ddbf03c7d8c801c8554d4aab343e796",
+      "current_git_blob_raw_sha256": "ba0de531fc49f4d43784f38791980f4ad168360da22a9468f927143a102fde44",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "0c0ac9eb7f3aa4becc2233c026329780aa66209fa38deb899967654b3af91baf",
+      "old_status": "已等价接收",
+      "status": "故意退役/历史",
+      "status_en": "intentionally_retired_historical",
+      "current_judgment": "旧candidate_prefix_suffix_split已退役；实际caller使用causal/chronological split owner。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/candidate_within_subject.py",
+          "line": 109,
+          "line_text": "def candidate_calibration_decision_split("
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_candidate_evidence.py",
+          "current_blob": "dfea0806fe57a2e12bc1654c52f81d064fc1fdc1",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_evaluate.py",
+          "current_blob": "4f8fd9010e33f58a9a1806766246da445987fb3f",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_alignment.py",
+          "current_blob": "6a87b6992c59bc6a755e2e6cccff4bd0e8561dbe",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_candidate_transfer.py",
+          "current_blob": "f1da991cf97ac90e1f5b3c87364f9c329b7bc921",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_decision_evaluation.py",
+          "current_blob": "ebdbb414f6f60a39eacdfc1c62fecc8d739b1709",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 58,
+      "id": "R58",
+      "path": "src/transfer/evaluation.py",
+      "candidate_commit": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "419b78389bf2745c978c4286739ab5602ace982f",
+      "current_blob": "419b78389bf2745c978c4286739ab5602ace982f",
+      "current_git_blob_raw_sha256": "6fb5b090d0ff1785f782cd5869c64f0e06a2acab9188025b18b1a359d2a55d64",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "bb35dd70d6ad48d7b83e2f2112b175d0e80b6cc706df466b7edaa9d209c3120c",
+      "old_status": "已等价接收",
+      "status": "故意退役/历史",
+      "status_en": "intentionally_retired_historical",
+      "current_judgment": "旧hit_at_repetition helper已退役，active candidate_decision_outcomes等保存requested evidence支持。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/evaluation.py",
+          "line": 27,
+          "line_text": "def candidate_decision_outcomes("
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_candidate_evidence.py",
+          "current_blob": "dfea0806fe57a2e12bc1654c52f81d064fc1fdc1",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_evaluate.py",
+          "current_blob": "4f8fd9010e33f58a9a1806766246da445987fb3f",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_alignment.py",
+          "current_blob": "6a87b6992c59bc6a755e2e6cccff4bd0e8561dbe",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_candidate_transfer.py",
+          "current_blob": "f1da991cf97ac90e1f5b3c87364f9c329b7bc921",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_decision_evaluation.py",
+          "current_blob": "ebdbb414f6f60a39eacdfc1c62fecc8d739b1709",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 59,
+      "id": "R59",
+      "path": "src/transfer/asmmd.py",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "34cc3933c6f8271ba9ff278abf7f2a4bd99b97db",
+      "current_blob": "34cc3933c6f8271ba9ff278abf7f2a4bd99b97db",
+      "current_git_blob_raw_sha256": "f016443a2ba9561d4b3501452481d33bdb88e40814320c70a9f53400eebe191a",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "70eb03f8f618cf98d52e0d93bfadf245cd8d42207e8eb882f1257ddcdfb6fa89",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "AS-MMD CE正类pos_weight须严格正值，zero不再静默删除正类监督。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/asmmd.py",
+          "line": 299,
+          "line_text": "    if pos_weight_value <= 0.0:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/asmmd.py",
+          "line": 300,
+          "line_text": "        raise ValueError(\"pos_weight must be positive.\")"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_baselines.py",
+          "current_blob": "8c2440ab1469f80033c9cf8004c26470fed2def9",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_research_execution.py",
+          "current_blob": "70f06f657b52e9617d31f44a2aef0e93985f108c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 60,
+      "id": "R60",
+      "path": "src/transfer/calibration_candidates.py",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "214a27b8b4e97d5d0c1b4661f6b586ad05ca432d",
+      "current_blob": "be01ce83338dcd1654aae4daf1db355b7be6828b",
+      "current_git_blob_raw_sha256": "1daae545164f9d1ba0e836a7ef67f43f779394d2deb71e5ce4babe9e31357668",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "78cbd1b95ecacb092f9e2715638af6d15d5e9df1e8c241c29569621c56c0d1d1",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "fit_calibration_candidate和selector preflight均拒unsupported refit_full_prefix，合法chronological owner独立执行。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/calibration_candidates.py",
+          "line": 516,
+          "line_text": "    if recipe.refit_full_prefix:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/calibration_candidates.py",
+          "line": 794,
+          "line_text": "    if any(recipe.refit_full_prefix for recipe in candidates):"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_baselines.py",
+          "current_blob": "8c2440ab1469f80033c9cf8004c26470fed2def9",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_research_execution.py",
+          "current_blob": "70f06f657b52e9617d31f44a2aef0e93985f108c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 61,
+      "id": "R61",
+      "path": "src/transfer/operator_lda.py",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "5df96937c66f828e609b6ec15e708de054b9275e",
+      "current_blob": "5df96937c66f828e609b6ec15e708de054b9275e",
+      "current_git_blob_raw_sha256": "0327a4d32a9b4f71feb505d669e3d31e7030577234cda8091af55b123855c69f",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "ea2398354bb578b13a3013a54fa0fba8321bfc3c5e926ed9f8eeed83619f807c",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "operator LDA save使用publish_exclusive+np.savez写完整临时bytes，再原子独占发布，原direct xb目标写已撤。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/operator_lda.py",
+          "line": 275,
+          "line_text": "        from research.execution import publish_exclusive"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/transfer/operator_lda.py",
+          "line": 277,
+          "line_text": "        publish_exclusive(path, lambda handle: np.savez_compressed("
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_baselines.py",
+          "current_blob": "8c2440ab1469f80033c9cf8004c26470fed2def9",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_research_execution.py",
+          "current_blob": "70f06f657b52e9617d31f44a2aef0e93985f108c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 62,
+      "id": "R62",
+      "path": "src/baselines/evaluate.py",
+      "candidate_commit": "8da4e9c3420f1b2ecc14f93fd10ab82f90cf4d4b",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "9716e7229621780d9c456edcea06f17418edb40c",
+      "current_blob": "f636971d2e19d587f6235688b99cc537c6c730c7",
+      "current_git_blob_raw_sha256": "144d9b6059f6986189cf0915bc760b4feb99621515fb76a444f9bdf82d71c9e9",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "7b855286cafbb734f309d591aeaf3db848629e63bac70bb238fff207e48b0448",
+      "old_status": "主树新实现取代",
+      "status": "主树正确替代",
+      "status_en": "main_correct_replacement",
+      "current_judgment": "LOSO /2保留legacy decision-micro语义、增加participant authority macro，所有pre-QC requested缺失为错，train-only不进入分母。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/evaluate.py",
+          "line": 1497,
+          "line_text": "    participant_ids are canonical identity keys supplied by the caller. Neither"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/evaluate.py",
+          "line": 1549,
+          "line_text": "    requested_groups = [tuple(np.unique(group_ids[test])) for _, test in validated_folds]"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/evaluate.py",
+          "line": 1553,
+          "line_text": "    participant_by_group: dict[str, str] = {}"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/evaluate.py",
+          "line": 1692,
+          "line_text": "        primary_participant_macro_hit_rate=("
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_scoring_contract_regressions.py",
+          "current_blob": "dd1dd1e7a19d2928c70a17fcd6f6a13ad7f2dbc0",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 63,
+      "id": "R63",
+      "path": "experiments/run_eeg_loso.py",
+      "candidate_commit": "8da4e9c3420f1b2ecc14f93fd10ab82f90cf4d4b",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "1cde9fab7608fe9db17a3172224f6e064e259e63",
+      "current_blob": "61c4ef884a37c83d23ccd0e2c2d279d254f1d7a5",
+      "current_git_blob_raw_sha256": "4572282c426c2f103a2222818004647450f2b0ddcff5e26b0f167d7cbdbe290a",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "6214ba24ae5149aef583ba1675e2e0fea40e340751a36c454d1a68ec655e56a0",
+      "old_status": "主树新实现取代",
+      "status": "主树正确替代",
+      "status_en": "main_correct_replacement",
+      "current_judgment": "真实LOSO caller从identity authority逐行对齐，writer校验/2 alias与scope；历史/1不被reinterpret。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_eeg_loso.py",
+          "line": 167,
+          "line_text": "def _participant_authority_ids(dataset, subject_ids: np.ndarray) -> np.ndarray:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_eeg_loso.py",
+          "line": 169,
+          "line_text": "    authorities = {local: table.record_for(local).authority_key() for local in np.unique(subject_ids)}"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_eeg_loso.py",
+          "line": 178,
+          "line_text": "        \"metric_schema\": LOSO_METRICS_SCHEMA_V2,"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_eeg_loso.py",
+          "line": 197,
+          "line_text": "    validate_loso_metric_record(fields)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_scoring_contract_regressions.py",
+          "current_blob": "dd1dd1e7a19d2928c70a17fcd6f6a13ad7f2dbc0",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 64,
+      "id": "R64",
+      "path": "src/baselines/evaluate.py",
+      "candidate_commit": "141589db5c1144c411380da6fe9bc3fd5e3748a1",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "9716e7229621780d9c456edcea06f17418edb40c",
+      "current_blob": "f636971d2e19d587f6235688b99cc537c6c730c7",
+      "current_git_blob_raw_sha256": "144d9b6059f6986189cf0915bc760b4feb99621515fb76a444f9bdf82d71c9e9",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "03f2a8048e8ddd2c9fcbbff5f6e3e7b4de30e72ab4b10f531fb30d8adec71b42",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "binary与candidate summary保存undefined fold index及实际offset，finite summary不吞未知fold。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/evaluate.py",
+          "line": 148,
+          "line_text": "def _metric_undefined_folds(results: Sequence[BinaryFoldResult], offset: int) -> list[int]:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/evaluate.py",
+          "line": 1460,
+          "line_text": "        metric_undefined_folds=_metric_undefined_folds(results, fold_id_offset),"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_scoring_contract_regressions.py",
+          "current_blob": "dd1dd1e7a19d2928c70a17fcd6f6a13ad7f2dbc0",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 65,
+      "id": "R65",
+      "path": "experiments/run_eeg_loso.py",
+      "candidate_commit": "141589db5c1144c411380da6fe9bc3fd5e3748a1",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "1cde9fab7608fe9db17a3172224f6e064e259e63",
+      "current_blob": "61c4ef884a37c83d23ccd0e2c2d279d254f1d7a5",
+      "current_git_blob_raw_sha256": "4572282c426c2f103a2222818004647450f2b0ddcff5e26b0f167d7cbdbe290a",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "44abb445f2bc7fea9db5ea15c68cb51369e8b76d7ecc9facaa1c6c0dc7977837",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "LOSO record writer保存summary的实际metric_undefined_folds。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_eeg_loso.py",
+          "line": 770,
+          "line_text": "            \"metric_undefined_folds\": summary.metric_undefined_folds,"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/research/test_scoring_contract_regressions.py",
+          "current_blob": "dd1dd1e7a19d2928c70a17fcd6f6a13ad7f2dbc0",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 66,
+      "id": "R66",
+      "path": "experiments/run_eeg_loso.py",
+      "candidate_commit": "5fc0431968ba0669f1c15489a42394802ee18084",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "1cde9fab7608fe9db17a3172224f6e064e259e63",
+      "current_blob": "61c4ef884a37c83d23ccd0e2c2d279d254f1d7a5",
+      "current_git_blob_raw_sha256": "4572282c426c2f103a2222818004647450f2b0ddcff5e26b0f167d7cbdbe290a",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "62e1f8e24e6b7d3c6c2cc063a1f3ccbe9e4471784d9cff6914cf474cb3516769",
+      "old_status": "主树新实现取代",
+      "status": "主树正确替代",
+      "status_en": "main_correct_replacement",
+      "current_judgment": "当前_claim_output_dir拒任何非空model目录；比只检查completed marker更完整，保失败/partial原产物。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_eeg_loso.py",
+          "line": 157,
+          "line_text": "def _claim_output_dir(output_dir: Path) -> Path:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_eeg_loso.py",
+          "line": 162,
+          "line_text": "    if existing:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "experiments/run_eeg_loso.py",
+          "line": 634,
+          "line_text": "        output_dir = _claim_output_dir(Path(args.run_dir) / run_name / model_name)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/data/test_manifest.py",
+          "current_blob": "f68a37c69d6fbb029975d4ed0b7f75a072034a17",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 67,
+      "id": "R67",
+      "path": "src/models/candidate_evidence.py",
+      "candidate_commit": "5e933acabc7c4a5765d26aa45ebb8bc429e79528",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "737cb744e0ba0bccc959f12d9102c3fccd1c2b97",
+      "current_blob": "737cb744e0ba0bccc959f12d9102c3fccd1c2b97",
+      "current_git_blob_raw_sha256": "ed132e58fb2ecd6d7ca1ce2a06b1f9dd2278b4528a582f0b145e218a70f47d5c",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "0abead70759484829744a0802f5a013f41ca774be8f221623945ff2b95eec33b",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "group reliability全zero产生None prediction和空scores；evaluate按pre-QC requested group记失败。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/models/candidate_evidence.py",
+          "line": 697,
+          "line_text": "        if not float(weights[mask].sum()) > 0.0:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/evaluate.py",
+          "line": 1612,
+          "line_text": "        fold_raw_records = [(raw_predictions.get(group), truth_by_group[group], group)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/evaluate.py",
+          "line": 1613,
+          "line_text": "                            for group in requested_groups[fold_index]]"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_candidate_evidence.py",
+          "current_blob": "dfea0806fe57a2e12bc1654c52f81d064fc1fdc1",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 68,
+      "id": "R68",
+      "path": "src/baselines/classic.py",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "55bb756668e65528b5f942988e0bff9ab3490516",
+      "current_blob": "55bb756668e65528b5f942988e0bff9ab3490516",
+      "current_git_blob_raw_sha256": "9580c85efe285f0ae666eb5522c38a910a0e066ffe023a49e9814aaeffc0c1b6",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "01e8d69a8b7b79df23d026c4cf1f5b38c7a59a9bd829fb01e51c6734acaac20d",
+      "old_status": "真实待接",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "SWLDA无p-entry feature时抛ValueError，已撤feature0 fallback；active factory/evaluate调用不会得到伪造feature fit。此原修复不包含整个LOSO失败恢复改造。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/classic.py",
+          "line": 141,
+          "line_text": "        if not self.selected_:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/classic.py",
+          "line": 143,
+          "line_text": "                f\"SWLDA selected no feature below p_entry={self.p_entry}; each class needs at \""
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_baselines.py",
+          "current_blob": "8c2440ab1469f80033c9cf8004c26470fed2def9",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_research_execution.py",
+          "current_blob": "70f06f657b52e9617d31f44a2aef0e93985f108c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 69,
+      "id": "R69",
+      "path": "src/research/execution.py",
+      "candidate_commit": "0a483eed23c8b4496f22e9ec9e0f5b52a6eb93dc",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "d28401827eeb282cba1151024aa86317217cf20d",
+      "current_blob": "d28401827eeb282cba1151024aa86317217cf20d",
+      "current_git_blob_raw_sha256": "ba008501965e5636a1d6f878b371df5e25a56d87d36fa2c4ff910dacfc6765df",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "a2c000a8af1ddb8d680a15c79f0f04b75b8cca2e286a288dea8d1ab481ff67a5",
+      "old_status": "已等价接收",
+      "status": "已等价接收",
+      "status_en": "accepted_equivalent",
+      "current_judgment": "publish_exclusive写随机临时文件、flush/fsync、hardlink独占发布、finally清临时；partition/operator caller消费同owner。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/execution.py",
+          "line": 86,
+          "line_text": "def publish_exclusive(path: str | Path, write) -> Path:"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/execution.py",
+          "line": 65,
+          "line_text": "                stream.flush()"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/execution.py",
+          "line": 66,
+          "line_text": "                os.fsync(stream.fileno())"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/execution.py",
+          "line": 99,
+          "line_text": "        os.link(temporary, target)"
+        },
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/research/execution.py",
+          "line": 101,
+          "line_text": "        temporary.unlink(missing_ok=True)"
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_baselines.py",
+          "current_blob": "8c2440ab1469f80033c9cf8004c26470fed2def9",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_research_execution.py",
+          "current_blob": "70f06f657b52e9617d31f44a2aef0e93985f108c",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 70,
+      "id": "R70",
+      "path": "src/baselines/evaluate.py",
+      "candidate_commit": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "9716e7229621780d9c456edcea06f17418edb40c",
+      "current_blob": "f636971d2e19d587f6235688b99cc537c6c730c7",
+      "current_git_blob_raw_sha256": "144d9b6059f6986189cf0915bc760b4feb99621515fb76a444f9bdf82d71c9e9",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "55a465fbc6fcc195cd8dc8120f09b9b6889c32434cc66e52db7225eab1cf377d",
+      "old_status": "已等价接收",
+      "status": "故意退役/历史",
+      "status_en": "intentionally_retired_historical",
+      "current_judgment": "无owner的P300_SAVE_FOLD_MODELS_DIR hook已删；当前src/experiments/tests无定义或caller。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/evaluate.py",
+          "line": 645,
+          "line_text": "def _fold_result("
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_candidate_evidence.py",
+          "current_blob": "dfea0806fe57a2e12bc1654c52f81d064fc1fdc1",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_evaluate.py",
+          "current_blob": "4f8fd9010e33f58a9a1806766246da445987fb3f",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_alignment.py",
+          "current_blob": "6a87b6992c59bc6a755e2e6cccff4bd0e8561dbe",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_candidate_transfer.py",
+          "current_blob": "f1da991cf97ac90e1f5b3c87364f9c329b7bc921",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_decision_evaluation.py",
+          "current_blob": "ebdbb414f6f60a39eacdfc1c62fecc8d739b1709",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 71,
+      "id": "R71",
+      "path": "src/baselines/evaluate.py",
+      "candidate_commit": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "9716e7229621780d9c456edcea06f17418edb40c",
+      "current_blob": "f636971d2e19d587f6235688b99cc537c6c730c7",
+      "current_git_blob_raw_sha256": "144d9b6059f6986189cf0915bc760b4feb99621515fb76a444f9bdf82d71c9e9",
+      "exact_tip_blob_equal": false,
+      "original_hunk_sha256_ignore_eol": "55a465fbc6fcc195cd8dc8120f09b9b6889c32434cc66e52db7225eab1cf377d",
+      "old_status": "已等价接收",
+      "status": "故意退役/历史",
+      "status_en": "intentionally_retired_historical",
+      "current_judgment": "未被生产消费的paired_permutation_test已退役，active stats模块独立拥有区间。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/evaluate.py",
+          "line": 1464,
+          "line_text": "def evaluate_candidate_selection("
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_candidate_evidence.py",
+          "current_blob": "dfea0806fe57a2e12bc1654c52f81d064fc1fdc1",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_evaluate.py",
+          "current_blob": "4f8fd9010e33f58a9a1806766246da445987fb3f",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_alignment.py",
+          "current_blob": "6a87b6992c59bc6a755e2e6cccff4bd0e8561dbe",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_candidate_transfer.py",
+          "current_blob": "f1da991cf97ac90e1f5b3c87364f9c329b7bc921",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_decision_evaluation.py",
+          "current_blob": "ebdbb414f6f60a39eacdfc1c62fecc8d739b1709",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    },
+    {
+      "row_index": 72,
+      "id": "R72",
+      "path": "src/baselines/validation.py",
+      "candidate_commit": "f045a936fe189d6f779de43f23d6b9b21968512e",
+      "candidate_tip": "33603f7431ca50465e2d1678eef51145a1c63f3c",
+      "candidate_tip_blob": "31741e25243c58433bad87e47345949000698954",
+      "current_blob": "31741e25243c58433bad87e47345949000698954",
+      "current_git_blob_raw_sha256": "b806fea830c169589a3c53df6282bb555aaf4ea80d13e50d42111fc5e4634e8d",
+      "exact_tip_blob_equal": true,
+      "original_hunk_sha256_ignore_eol": "1211869780727eaf4c01250f5d75fe767012b5ef3b5bf6724a9e7819fe4e24d3",
+      "old_status": "已等价接收",
+      "status": "故意退役/历史",
+      "status_en": "intentionally_retired_historical",
+      "current_judgment": "SubjectAuditSplit/subject_disjoint_audit_split及旧test-only路径已删；现存group_disjoint_validation_split属于不同active合同。",
+      "current_anchors": [
+        {
+          "ref": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+          "path": "src/baselines/validation.py",
+          "line": 58,
+          "line_text": "def group_disjoint_validation_split("
+        }
+      ],
+      "original_commit_test_sources": [
+        {
+          "path": "tests/models/test_candidate_evidence.py",
+          "current_blob": "dfea0806fe57a2e12bc1654c52f81d064fc1fdc1",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/research/test_evaluate.py",
+          "current_blob": "4f8fd9010e33f58a9a1806766246da445987fb3f",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_alignment.py",
+          "current_blob": "6a87b6992c59bc6a755e2e6cccff4bd0e8561dbe",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_candidate_transfer.py",
+          "current_blob": "f1da991cf97ac90e1f5b3c87364f9c329b7bc921",
+          "state": "source_present_not_run"
+        },
+        {
+          "path": "tests/transfer/test_decision_evaluation.py",
+          "current_blob": "ebdbb414f6f60a39eacdfc1c62fecc8d739b1709",
+          "state": "source_present_not_run"
+        }
+      ],
+      "validation": "original_hunk_and_current_source_call_chain_read_only; no behavioral run"
+    }
+  ],
+  "scope_note": "73 logical rows are the old audit universe, not all project requirements or all Claude findings. A merged ancestor proves history retention only; row judgments use original diff plus current actual branches/callers.",
+  "unresolved_next_slices": [
+    {
+      "id": "CLOUD_FLOOR_OVERRIDE_BYPASS",
+      "related_row": 12,
+      "priority": "first_ingress_slice",
+      "status": "static_branch_proof",
+      "counterexample": "非local/software的CUDA plan含cloud_resource_floor=None；with_cloud_resource_floor因键已存在直接return，resolver因floor None不核下限。含floor={cpu_threads:1,gpu_workers:1}也只核该小值。group_count=1、available/budget=2且充足host/device memory时可resolve为1worker，中央25/4未被执行。",
+      "callers": [
+        "experiments/run_source_training_chain.py:824",
+        "experiments/run_candidate_ensemble_study.py cloud resource path",
+        "experiments/run_erp_comparator.py cloud resource path",
+        "src/research/source_execution.py:1016"
+      ],
+      "next_contract": "非豁免CUDA入口从中央配置得最小floor；显式覆盖可要求更高容量，不能以None/小值降级。local_development/software_correctness仍由明确role豁免。实际资源利用继续由云owner真实run验收。"
+    },
+    {
+      "id": "PDS_TARGET_SCOPE_MISSING",
+      "related_row": 4,
+      "priority": "first_ingress_slice",
+      "status": "static_branch_proof",
+      "counterexample": "从CLI合法产生的selection JSON删除target_feature_record，或赋null；selected_indices/cache/row digests不改。pds_selection_from_record不消费该字段，loader的isinstance条件为false，return正常。",
+      "callers": [
+        "experiments/run_pretrain_supervised.py:776",
+        "experiments/run_candidate_cross_decision.py:870"
+      ],
+      "next_contract": "生产target_calibration selection在consumer统一要求实际target-feature/scope证据；source-only/explicit legacy diagnostics按版本与角色保持原历史身份。无需重复各caller的scope散装门。",
+      "test_gap": "原测试只清空embedded dataset_scope，没有移除整个target_feature_record；低层selection.record roundtrip测试故意无feature record，需要明确研究生产与低层diagnostic角色。"
+    },
+    {
+      "id": "PARTIAL_WARM_START_KEYS",
+      "related_row": 13,
+      "priority": "first_ingress_slice",
+      "status": "static_branch_proof",
+      "counterexample": "初始trunk_state_dict保留至少一键且shape正确，删除任一必须加载的trainable tensor。caller非空mapping准入；strict consumer仅记not_in_source，不算has_blocking，被删tensor保随机初始化。",
+      "callers": [
+        "experiments/run_pretrain_supervised.py:762",
+        "src/baselines/n2p3net.py:80",
+        "src/baselines/deep.py:543"
+      ],
+      "next_contract": "把完整warm-start与有明确mapping的transfer policy分开；严格入口核目标required-key coverage，再应用权重。合法显式head omission用独立transfer合同，checkpoint身份不冒称完整初始化。"
+    },
+    {
+      "id": "BOUND_UNIDENTIFIABLE_TIES",
+      "related_rows": [
+        43,
+        52
+      ],
+      "priority": "active_information_bound_author",
+      "status": "exact_symbolic_counterexample_no_execution",
+      "counterexample": "Q=3,F=1,single_item产生A=[[1,0,0]]。q1/q2完全同列。d2正且趋于infinity时strict all(S<0)的MC命中极限1/3，而pairwise lower (1+.5+.5)/3=2/3。uniform随机tie的Bayes命中极限2/3；当前出现lower高于自身模型estimate。",
+      "callers": [
+        "transfer.information_bound.theoretical_hit_rate_bound:298",
+        "transfer.information_bound.InformationBoundReport.compute:528",
+        "untracked experiments/run_information_bound.py if retained by root"
+      ],
+      "next_contract": "显式可辨识候选partition与tie policy、实际schedule/model law、版本化report与caller一起验收。原self-diagonal/membership/time-gauge修复已经接入，不重复接旧commit。"
+    },
+    {
+      "id": "BINARY_ABSTENTION_RISK",
+      "related_row": 53,
+      "priority": "next_calibration_selection_slice",
+      "status": "exact_auc_counterexample_no_execution",
+      "counterexample": "truth=[0,0,1,1]；全输出[0,2,1,3]有4个pair、3正确→AUC=.75。选择性输出[0,NaN,1,NaN]仅1个pair→AUC=1，current selector不比较unavailable数量而选后者。intersection proposal仍可被abstain操纵，已正确否决。",
+      "callers": [
+        "src/transfer/calibration_candidates.py:716",
+        "src/transfer/calibration_candidates.py:854",
+        "experiments/run_within_subject_transfer.py",
+        "experiments/run_candidate_cross_decision.py"
+      ],
+      "next_contract": "先固定requested风险与合法availability policy，再设计二分类的risk比较和保存重放。operational_r5已经对缺失block计错，保其原45-flash requested合同。"
+    }
+  ],
+  "archive_restoration": {
+    "checks": [
+      {
+        "original_commit": "1c2ff8f4109493865a343eaa9db77abda949dde6",
+        "payload_count": 594,
+        "mismatches": [],
+        "comparison": "Git path/blob identity; no raw archive/result reread"
+      },
+      {
+        "original_commit": "674d9231d562c950e52b5b9e01513c6ec61ac3c4",
+        "payload_count": 594,
+        "mismatches": [],
+        "comparison": "Git path/blob identity; no raw archive/result reread"
+      },
+      {
+        "original_commit": "60ffc51c8f4c4f32288fbd9d48234383360abe25",
+        "payload_count": 9,
+        "mismatches": [],
+        "comparison": "Git path/blob identity; no raw archive/result reread"
+      },
+      {
+        "original_commit": "fa725dfdd68fb46a9ffefa74f18f9e778994c5c8",
+        "payload_count": 9,
+        "mismatches": [],
+        "comparison": "Git path/blob identity; no raw archive/result reread"
+      },
+      {
+        "original_commit": "4637dc90d83677a1f2fd80753d434e1feb972f4f",
+        "payload_count": 1,
+        "mismatches": [],
+        "comparison": "Git path/blob identity; no raw archive/result reread"
+      }
+    ],
+    "unique_payloads": "594 evidence assets, 9 frozen manifests, 1 cleanup manifest",
+    "role": "historical evidence restored byte-identically by Git blob; no new experiment or external raw ZIP validation claimed"
+  },
+  "missing_old_aux_evidence": [
+    {
+      "name": "current_coverage_manifest.json",
+      "old_declared_sha256": null,
+      "tracked_paths": [],
+      "recovered_tmp_paths": [],
+      "classification": "missing_old_aux_evidence_not_a_missing_runtime_fix"
+    },
+    {
+      "name": "coverage_training.json",
+      "old_declared_sha256": "4abcb0b4c5c29c35b3333a20bf89d05b66876dcb8b1f1a838ba57b151cb18bcf",
+      "tracked_paths": [],
+      "recovered_tmp_paths": [],
+      "classification": "missing_old_aux_evidence_not_a_missing_runtime_fix"
+    },
+    {
+      "name": "coverage_training.md",
+      "old_declared_sha256": "9086a875026bf1437011e64cc213efa9618ed8cf69b5b0a222d589063ae06e61",
+      "tracked_paths": [],
+      "recovered_tmp_paths": [],
+      "classification": "missing_old_aux_evidence_not_a_missing_runtime_fix"
+    },
+    {
+      "name": "coverage_data.json",
+      "old_declared_sha256": "4d82427b61ff0e30d706b2caec100df597837d931bf771a4c77a6e2595c8bdcc",
+      "tracked_paths": [],
+      "recovered_tmp_paths": [],
+      "classification": "missing_old_aux_evidence_not_a_missing_runtime_fix"
+    },
+    {
+      "name": "coverage_data.md",
+      "old_declared_sha256": "4e47f6673fb37c546c4a74e37923724914a71c5b897e8febeaf4e37bff6c1b88",
+      "tracked_paths": [],
+      "recovered_tmp_paths": [],
+      "classification": "missing_old_aux_evidence_not_a_missing_runtime_fix"
+    },
+    {
+      "name": "coverage_science.json",
+      "old_declared_sha256": "93c815fbb7311b546ab43bcc7f883c6a98c31f3dacefc6b19cd72283f313f2d9",
+      "tracked_paths": [],
+      "recovered_tmp_paths": [],
+      "classification": "missing_old_aux_evidence_not_a_missing_runtime_fix"
+    },
+    {
+      "name": "coverage_science.md",
+      "old_declared_sha256": "5548dfa715ec4fee9f934b70e2a03dd816fe84a91a5c1ca77299a3a295a180b1",
+      "tracked_paths": [],
+      "recovered_tmp_paths": [],
+      "classification": "missing_old_aux_evidence_not_a_missing_runtime_fix"
+    }
+  ],
+  "external_review_locators": [
+    {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CALIBRATION_COMMON_SUPPORT_REVIEW\\HANDOFF.zh.md",
+      "sha256": "88e3724fb532ec4d880794899d2ca0e5911d6ce978e473df4484c1dbf03db123",
+      "role": "historical_external_tmp_locator",
+      "exists_now": false,
+      "classification": "locator availability only; original scientific verdict corroborated by pinned rejection record and current source"
+    },
+    {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-integration\\n2p3-net\\tmp\\CALIBRATION_COMMON_SUPPORT_REVIEW\\review_binding.json",
+      "sha256": "db6ec13916984c595de208b14931064df3820b27ecf115aed4cdc8f054026cbc",
+      "role": "historical_external_tmp_locator",
+      "exists_now": false,
+      "classification": "locator availability only; original scientific verdict corroborated by pinned rejection record and current source"
+    }
+  ],
+  "validation_account": {
+    "tests_run": 0,
+    "model_fit": 0,
+    "model_load": 0,
+    "public_fit": 0,
+    "public_score": 0,
+    "full_suite": false,
+    "production_edits": 0,
+    "historical_suite_results_reused_as_current": false,
+    "method": "original commit hunks/current Git source + callers + test-source gaps + exact symbolic branches"
+  }
+}

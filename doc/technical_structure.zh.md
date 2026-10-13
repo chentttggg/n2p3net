@@ -1,5 +1,7 @@
 # 当前技术结构与完整链条
 
+`transfer.information_bound`持有`/2`完整activation/模型诊断、raw plug-in估计量及不可变JSON报告，`save/load/replay_model`保护全部输出与原producer。`transfer.exact_covariance/2`持有raw传播、resolved SPD/显式identified support及独立ridge诊断，当前是内存诊断接口。二者没有生产调用；来源、反例和完整性验收见[数学整合](assets/research_resume_20261012/diagnostic_mathematics_integration.json)。原D树local-only `run_information_bound.py`保原字节，迁移membership、actual activation和报告schema后才可复用。
+
 2026-10-10[愿望清单整合](evidence/wishlist_progress_20261010.zh.md)继续复用原owner：`CandidateEvidence`在原tie判定处保存赢家索引；`candidate_metrics`持有requested层级的最大置信度、错时置信度、分箱ECE及实际J的uniform NLL contrast，原report consumer自动导出，现阶段只作描述性诊断。`SpatialSignalPrior.expected_whitened_signal_energy/energy_matched_graph`复用原response压缩root，以同C/noise匹配固定graph的centered信号能量；原posterior及B05物理因子继续消费该prior，learned空间估计器尚未准入。
 
 `research.latent_response_reference`只有五个科研入口：状态law、off-grid analytic basis、physical selection design、proper层级prior和有限conditional evidence。它复用`joint_response_scale`的prior/decision factory/联合Gaussian积分；global beta只一次，selection additive deviation独立零均值，full/prefix共同更新离散state权重。没有生产注册、真实产品caller或第二posterior/noise fitter。
@@ -481,6 +483,7 @@ ES的`epoch_selection`还可声明`epochs/treatments/modes/include_baselines`，
 `train.source_sampling`的普通概率采样与已有TSD/PDS显式分开。`research.source_selection`
 持有源内候选轨迹、身份/观测账本、剂量与选中预算的从头refit；
 `run_pretrain_supervised.py --source-chain-plan`和`run_source_training_chain.py`提供生产入口。
+进入训练的PDS/TSD artifact由`load_pds_selection_record`要求明示target feature scope；纯数学record解析由`pds_selection_from_record`持有。N2P3严格warm-start通过`DeepBaseline._apply_pretrained_state_dict`核全部目标parameter/buffer覆盖，缺项或空state在复制前拒绝，完整初始化随后进入原selection/refit。
 source runner的共享trajectory registry仅对有序真实event/person/domain、X/y/mask、
 完整训练配方、seed、设备及源码一致的已有update快照复用。原checkpoint不改写，消费方容器
 保留自己的父cache/fit ledger，并记录原checkpoint SHA及TrainingRunContract digest；

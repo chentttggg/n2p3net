@@ -10,7 +10,7 @@ fixed使用温度1，grouped按完整selection生成C内OOF概率，并为参与
 
 实际fitter样本、标签、prior/noise/statistics与graph共同关联。selection行数下限是预声明策略参数；单组也可定义学习算法，later独立queue用于评价最终程序。当前group-LOO入口的三组下限继续保留其原程序身份。
 
-云窗口同步真实source10/entry003矩阵已以failed、OS1结束：首四人的K0/200/800/2000 selector包保存并重放，parent在完整prefit ledger准入时拒绝；后四人遇到共享文件系统/RAM预算失败。首四人的真实请求/ledger完整canonical bytes与SHA相同，Python首差异是 `spatial.slot_channels` 的JSON list/FrozenMetadata tuple；新consumer由云owner在隔离树核完整authority后窄修，并加重复package拒绝。下一先零fit准入原四人、再补其余四人，保原八人requested与旧failed身份；最终future指标等新终态封存后复算，当前partial package不计作整矩阵完成。
+原source10/entry003以failed、OS1结束：首四人包保存重放后由parent因JSON list/FrozenMetadata tuple比较拒绝，后四人遇到FS/RAM预算失败。修后entry005已零fit准入原四人、仅补原未完成四人，完整八人152请求及92面板闭合；32份selection replay对应600个整程序节点、3290次exact-score检查。K2000选择保命中并改善主pool概率风险，K800少1命中且概率指标变差；实际结果与目标端nested范围见[公共评估](public_evaluation.zh.md#估计量与下一步)。原failed终态和各producer保留；下一研究进入合法C内风险与异质性，下一执行底座由云owner优化分块重放和只读输入。
 
 ## 小组、部分标签与采样坐标
 
