@@ -4,6 +4,8 @@
 
 ## 当前职责与交付
 
+科研恢复树已迁至`D:/BCI/worktrees/research-director`。本轮接受binary固定requested选择、共同CE风险、产品共用fit/refit与完整选择保存准入；空间接受物理效应/reference输运、CAR精确结构和原BLUE/完整noise链。root逐读实际模块及调用、保存加载路径后，分别完成6个binary独立delta案例与5个空间最终案例，Ruff与diff检查通过；阶段失败和实际源码保在[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。已整合binary任务树及clean Claude旧树移除，关键提交/交接保留；空间代码树复用给下一精确因子任务。
+
 科研主树拥有科学合同和最终集成，云窗口拥有唯一云端资源与实际执行。P1数值作者/审阅者在机制树工作，prefix selector作者/审阅者在已接cache的隔离树工作；cloud resource-phase和continuous score优化在云端独立树交付，root按函数逻辑合入。检查实际模块、调用、保存和重放，针对新风险运行必要反例；源码与产物身份随交付记录。
 
 近期已合入source-only准备缓存和current-view共享评分（`4830ef9`），source权限始终来自私有admitted ledger/set，每次current target proof重新核对，target state/BN/statistics保持fresh。live与loaded各自实际计算，wholeprefix捕获/持久化/重放完成后封prediction；parent复算声明混合的完整概率。

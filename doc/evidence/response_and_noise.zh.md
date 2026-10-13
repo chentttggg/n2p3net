@@ -79,7 +79,7 @@ B05数值中枢与history adapter已接通：`native_history_marginal_program`�
 
 ## B09：可识别效应与source群体forecast
 
-当前推进跨reference的共同物理效应输运：直接在source真实joint likelihood中测目标reference-free泛函，保存BLUE均值、完整measurement covariance和native noise归一化，再进入群体forecast与目标prior。共同电极和参考关系来自共享authority；declared CAR的结构零与生成舍入需一起核对，任意未观测参考方向保其真实可识别性。原source builder、独立测量和消费者仍各自绑定实际来源。
+跨reference的共同物理效应输运已接通：直接在source真实joint likelihood中测目标reference-free泛函，保存BLUE均值、完整measurement covariance和native noise归一化，再进入群体forecast与目标prior。共同电极和参考关系来自共享authority；declared CAR的结构零与生成舍入一起核对。三种已声明source路径及source→群体→target→B05有独立逻辑和实际调用证据。最终入口修复冻结tuple/list的等价序列关系后，5项delta验证通过，见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。
 
 独立审阅确认一般full-row source的下一修复：结构可识别性应由物理空间map、时间design及record-local nuisance的精确因子乘积计算。四导单行`[1,3,5,−9]`的真实beta-nullity为12，现浮点归一化再Kronecker的逐项舍入却能给出0；微小但真实未观测泛函随后可能获准。下一切片保存并重建factorized physical law，数值likelihood/BLUE继续用原程序及逐项witness核对。当前输运先闭合已有生成authority的native、实测参考和CAR三条source路径。
 

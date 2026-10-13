@@ -1,0 +1,83 @@
+{
+  "schema": "n2p3_research_integration_acceptance/1",
+  "source_head": "2bf27138efa871bb8f9212577c31dd43920fa606",
+  "worktree": "D:/BCI/worktrees/research-director",
+  "status": "accepted",
+  "review": "root module/caller/save/load read plus independent Spec/Standards reviews",
+  "source_sha256": {
+    "src/transfer/calibration_candidates.py": "4f3f868d70cb7348af67541a193c47a3bdce8f22f37fbbf23bb1402604f7249b",
+    "src/transfer/calibrated.py": "5096320461c45c47fb9e3316e12e9545c1ee0e8607551da6f79bbeae6cf4dfab",
+    "src/transfer/result_reuse.py": "a75c70587679c8f0efc15be42b6d7944f301bae9aeb5729c81cb043665af8ac0",
+    "src/transfer/target_experiments.py": "86c9e966470beede9c4434832724277bc0417f992189a9a9aa262897ffa1624f",
+    "src/transfer/spatial_signal_prior.py": "3899022837ca36894ed9a9ab3246a488f82788de63972a753823b0760675334f",
+    "tests/transfer/test_requested_calibration_scoring.py": "c98104b0e9163590a761a5e3ff0ab09736cb48d74666262bf4e3aff7484be570",
+    "tests/transfer/test_spatial_effect_transport.py": "a0fbd1bcba9c53237977315631e6626fead34e290e367ebbc5eab6b7edfb8dd4",
+    "tests/brainsync/test_calibrated_predictor.py": "a11b111e9557524ecb299b8f16f679c269b3070b9b7a630b9cb78c799a43cd7a"
+  },
+  "binary": {
+    "author_commit": "ccd212c6d875a1c92624142c5d58cb86e8b9a839",
+    "integrated_commits": [
+      "9edc355",
+      "0dbac03"
+    ],
+    "final_delta_unique_cases": 6,
+    "final_source_runtime": "2 pure+4 actual entry cases passed; first setup path error retained",
+    "actual_old_new_product_compatibility": "state,independent prediction,save/load bit equal; author source binding kept"
+  },
+  "spatial": {
+    "author_commit": "fa27eda8bd628900e9dc5e0a7ed5369810be79bc",
+    "integrated_commits": [
+      "71522f3",
+      "2bf2713"
+    ],
+    "final_delta_cases": 5,
+    "final_source_runtime": "5 RED tuple/list -> central semantic sequence fix -> 5 GREEN",
+    "posterior_schema": "n2p3_spatial_signal_posterior/4",
+    "independent_actual_chain": "CAR3/6/7 source BLUE,group,target,B05; pre-final source retained separately"
+  },
+  "runs": {
+    "binary": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 4,
+      "sha256": "2a6e2602adab4db5cc1bc63700bd2eb6e4c3c56c47e0fc2649b12ea08acb37e2",
+      "path": "tmp\\integration_guards\\binary.xml"
+    },
+    "binary_entries": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "4c228de402156df021b0072f29a4abda7cca19cdfa1623eada0669eaa5d89bcf",
+      "path": "tmp\\integration_guards\\binary_entries.xml"
+    },
+    "spatial": {
+      "tests": 5,
+      "failures": 5,
+      "errors": 0,
+      "sha256": "3a819fcb389f099705be23c90dab1f73ddefa251e8cc3acbd68576bf6da4ff1d",
+      "path": "tmp\\integration_guards\\spatial.xml"
+    },
+    "spatial_fixed": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "2b676b515e6301b0dccf35e30352b1d9b81e14c7bc942fcaa613c1af1c569532",
+      "path": "tmp\\integration_guards\\spatial_fixed.xml"
+    }
+  },
+  "validation": {
+    "ruff_exit": 0,
+    "diff_check_exit": 0,
+    "native_threads": 1,
+    "full_suite": "not run; focused review/delta checks",
+    "public_fit": 0,
+    "public_score": 0,
+    "evidence_scope": "software_correctness"
+  },
+  "next": {
+    "four_fixed_family": "in_progress in root owned calibration_selection.py/test file",
+    "spatial_exact_factors": "in_progress independent codex/spatial-exact-factors; /5 distinct producer",
+    "cloud_replay_full_entry": "await final cloud owner delivery",
+    "payload_recovery": "cloud owner"
+  }
+}
