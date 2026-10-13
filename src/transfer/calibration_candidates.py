@@ -732,6 +732,8 @@ def _operational_scoring_blocks(dataset, validation):
             targets = np.unique(np.asarray(timeline.target_candidate_ids)[block].astype(int))
             if len(targets) != 1 or targets[0] not in range(1, 10):
                 raise ValueError("BrainSync block requires one confirmed target identity")
+            if not np.array_equal(dataset.y[block_rows], codes[retained] == targets[0]):
+                raise ValueError("BrainSync block labels differ from its confirmed target membership")
             block_ids = dataset.metadata.iloc[block_rows]["block_id"].unique()
             if len(block_ids) > 1:
                 raise ValueError("45-event ledger disagrees with actual BrainSync block identifiers")
@@ -921,7 +923,8 @@ def replay_calibration_selection(record, *, dataset=None):
             if (indices.shape != (45,) or indices.dtype.kind not in "iu"
                     or np.any(indices < -1) or np.any(indices >= len(labels))
                     or codes.shape != (45,) or any(np.sum(codes == code) != 5 for code in range(1, 10))
-                    or block["target_candidate"] not in range(1, 10) or block_id in seen_blocks):
+                    or block["target_candidate"] not in range(1, 10) or block_id in seen_blocks
+                    or not np.array_equal(labels[indices[indices >= 0]], codes[indices >= 0] == block["target_candidate"])):
                 raise ValueError("calibration scoring support has an invalid requested R5 block")
             seen_rows.extend(indices[indices >= 0].tolist())
             seen_blocks.add(block_id)
