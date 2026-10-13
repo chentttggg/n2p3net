@@ -550,3 +550,54 @@ def test_before_group_rejects_changed_earlier_owner_header(prepared, tmp_path, o
         if borrowed is not None:
             borrowed.close()
             holder.close()
+
+
+@pytest.mark.parametrize("origin", ["original", "prepared"])
+def test_owned_group_matching_reuses_admitted_complete_records(prepared, tmp_path, monkeypatch, origin):
+    import transfer.ensemble_views as owner
+
+    compiler, borrowed, holder = _entrypoint_compiler(prepared, tmp_path, origin)
+    try:
+        parent = compiler.compile(400)
+        earlier = [(group, compiler.before_group(parent, group)) for group in parent.complete_groups]
+        assert len(earlier) == 3
+
+        def no_record(group):
+            raise AssertionError("unchanged owned groups must reuse their admitted complete records")
+
+        monkeypatch.setattr(owner.CalibrationSelection, "record", no_record)
+        for _ in range(3):
+            for group, prefix in earlier:
+                assert compiler.before_group(parent, group) is prefix
+    finally:
+        if borrowed is not None:
+            borrowed.close()
+            holder.close()
+
+
+@pytest.mark.parametrize("origin", ["original", "prepared"])
+def test_foreign_group_matching_hashes_one_complete_record_per_call(prepared, tmp_path, monkeypatch, origin):
+    import transfer.ensemble_views as owner
+
+    original_record = owner.CalibrationSelection.record
+    compiler, borrowed, holder = _entrypoint_compiler(prepared, tmp_path, origin)
+    try:
+        parent = compiler.compile(400)
+        held = parent.complete_groups[-1]
+        earlier = compiler.before_group(parent, held)
+        foreign = replace(held, view=replace(held.view))
+        calls = []
+
+        def complete_record(group):
+            calls.append(group)
+            return original_record(group)
+
+        monkeypatch.setattr(owner.CalibrationSelection, "record", complete_record)
+        for _ in range(2):
+            assert compiler.before_group(parent, foreign) is earlier
+        assert len(calls) == 2
+        assert all(group is foreign for group in calls)
+    finally:
+        if borrowed is not None:
+            borrowed.close()
+            holder.close()

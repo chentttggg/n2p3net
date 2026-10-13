@@ -865,6 +865,7 @@ class _OwnedCalibrationPrefix:
         self.prefix, self.identity = prefix, identity
         self.structure, arrays = _prefix_owner_snapshot(prefix)
         self.arrays = tuple((array, *immutable_input_array_geometry(array)) for array in arrays)
+        self._group_digests = None
 
     def assert_unchanged(self, prefix):
         structure, arrays = _prefix_owner_snapshot(prefix)
@@ -874,6 +875,25 @@ class _OwnedCalibrationPrefix:
             current_backing, current_geometry = immutable_input_array_geometry(array)
             if array is not original or current_backing is not backing or current_geometry != geometry:
                 raise ValueError("owned prefix array header or immutable backing changed after compiler admission")
+
+    def assert_group_match(self, held):
+        """Match complete record digests after the caller's owned geometry gate."""
+        if self._group_digests is None:
+            owned, occurrences = {}, {}
+            for group in self.prefix.complete_groups:
+                cached = owned.get(id(group))
+                digest = semantic_sha256(group.record()) if cached is None else cached[1]
+                owned[id(group)] = (group, digest)
+                occurrences[digest] = occurrences.get(digest, 0) + 1
+            self._group_digests = owned, occurrences
+        owned, occurrences = self._group_digests
+        if not occurrences:
+            raise ValueError("held group differs from original parent group authority")
+        cached = owned.get(id(held))
+        digest = (cached[1] if cached is not None and cached[0] is held
+                  else semantic_sha256(held.record()))
+        if occurrences.get(digest, 0) != 1:
+            raise ValueError("held group differs from original parent group authority")
 
 
 class CalibrationPrefixCompiler:
@@ -966,10 +986,7 @@ class CalibrationPrefixCompiler:
 
     def before_group(self, parent, held):
         parent = self.assert_original_prefix(parent)
-        matching = [group for group in parent.complete_groups
-                    if semantic_sha256(group.record()) == semantic_sha256(held.record())]
-        if len(matching) != 1:
-            raise ValueError("held group differs from original parent group authority")
+        self._prefix_ownership[parent.budget].assert_group_match(held)
         absolute = held.view.onsets + held.view.raw_scope[0]
         indices = np.searchsorted(parent.raw.onsets, absolute)
         if (np.any(indices >= parent.budget)
