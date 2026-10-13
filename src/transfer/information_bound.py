@@ -1,72 +1,35 @@
-"""Gaussian-model hit estimates and conservative pairwise error bounds.
+"""Calibration plug-in discriminability and declared Gaussian-model hit diagnostics.
 
-First-principles derivation
-----------------------------
-From Shannon's mutual information, the maximum number of bits that can be
-recovered from K independent observations of a Gaussian channel is:
+For independent flashes with common known covariance Sigma and binary activation
+A[i,q], let delta=mu1-mu0 and d²=delta.T @ inv(Sigma) @ delta. The log likelihood
+of candidate q, up to a candidate-independent term, is
 
-    I(q; Y_1..K) = (K/2) * log2(1 + d^2 / K_noise)
+    L_q = sum_i A[i,q] * (delta.T @ inv(Sigma) @ (y_i-mu0) - d²/2).
 
-where d^2 = (mu_1 - mu_0)^T K_noise^{-1} (mu_1 - mu_0) is the squared
-Mahalanobis distance between target and non-target ERP means, and K_noise is
-the noise covariance.
+Under true candidate t, L_q-L_t has mean -d²*h[t,q]/2 and variance d²*h[t,q],
+where h[t,q] is the number of flashes on which the two activation columns differ.
+Thus the pairwise error is Phi(-sqrt(d²*h[t,q])/2). Its union gives a lower
+bound on optimal model hit, and its maximum gives an upper bound. The exact
+model rate lies between them; finite Monte Carlo estimates it with a recorded
+standard error and may fluctuate beyond those bounds. Identical columns use uniform
+random tie resolution. Unequal activation counts are retained exactly.
 
-For the P300 row/column paradigm with Q candidates and R flashes per
-selection, the mutual information available per selection is:
+The calibration helper estimates both means and a shrinkage covariance on the
+same rows. Its raw plug-in d² is a fitted diagnostic, with same-sample optimism
+and covariance-estimation error. Subtracting p*(1/n1+1/n0) is unbiased only with
+the fixed true covariance, not this inverse fitted shrinkage covariance. The
+module supplies no debiased population estimator and no Shannon MI identity.
 
-    I_sel = sum_{flash i} I(q; y_i | q activates or not in flash i)
-
-Under the linear Gaussian signal model:
-    y_i | target_i=1 ~ N(mu_1, K_noise)
-    y_i | target_i=0 ~ N(mu_0, K_noise)
-
-    I(q; y_i) = (1/2) * [E_p(y|1)[log p(y|1)/p(y|0)] * P(target=1)
-                        + E_p(y|0)[log p(y|1)/p(y|0)] * P(target=0)]
-
-For equal priors P(1) = P(0) = 0.5 this simplifies to half the KL divergence:
-    I(q; y_i) = (1/8) * d_i^2   (in nats, for scalar case)
-
-where d_i^2 is the Mahalanobis distance for flash i.
-
-For the multi-candidate selection with Q candidates and F flashes per
-selection, each flash activates exactly 1/Q of all flashes as targets for
-the true candidate. The expected Mahalanobis information per flash is:
-
-    d_bar^2 = d^2 * (1/Q)
-
-where d^2 = || mu_1 - mu_0 ||^2_{K_noise^{-1}} is the per-flash SNR.
-
-    A model-based Monte Carlo estimate for Q-choice identification from F
-    flashes (continuous Gaussian, optimal Bayesian decoder, known parameters)
-    can be computed for a declared activation matrix. It is not a universal
-    information-theoretic upper bound: it inherits the equal-covariance,
-    independent-flash, known-parameter model and the estimated d².
-
-    P_hit_theoretical >= 1 - (Q-1) * exp(-F * d_bar^2 / 8)
-
-    The pairwise union calculation is a conservative lower bound on the
-    model hit probability. The Monte Carlo value is an estimate of the same
-    declared model, not a bound on arbitrary decoders or future data.
-
-For Q=36, F=120, this gives us a curve: as d^2 increases, P_hit approaches 1.
-Comparing the theoretical bound with the empirical 0.771 tells us how far
-the current method is from the information-theoretic optimum.
-
-This module computes:
-1. The empirical d^2 (signal detectability) from calibration data
-    2. The declared Gaussian-model hit estimate and pairwise lower bound
-    3. The gap between current performance and that model estimate
-4. Spectral decomposition to identify which frequency/spatial components
-   carry most of the ERP discriminability
-
-Scope
-------
-Research diagnostic, no production import.
-Results bind to declared calibration data digests.
+The known-parameter model optimum is an upper limit for decoders in that model;
+the Monte Carlo point estimate itself is finite-sample and is not an upper bound.
+Calibration plug-in and factored spectral diagnostics have their own estimation
+scope. This module has no production imports and preserves original provenance
+when a saved report is read without refitting.
 """
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -74,10 +37,16 @@ import numpy as np
 from scipy.linalg import solve_triangular
 from sklearn.covariance import LedoitWolf
 
-from transfer.noise_model import array_digest, metadata_digest
+from transfer.noise_model import (
+    array_digest,
+    finite_real_array,
+    freeze_metadata,
+    metadata_digest,
+    require_sha256,
+)
 
 _IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-_SCHEMA = "n2p3_information_bound/1"
+_SCHEMA = "n2p3_information_bound/2"
 
 
 # ---------------------------------------------------------------------------
@@ -114,8 +83,10 @@ def mahalanobis_snr(
         noise_cond       : float — condition number of noise covariance
         erp_mean_norm    : float — ||mu1 - mu0||_2
     """
-    tgt = np.asarray(target_epochs, dtype=float)
-    non = np.asarray(nontarget_epochs, dtype=float)
+    tgt = finite_real_array(target_epochs, name="target_epochs")
+    non = finite_real_array(nontarget_epochs, name="nontarget_epochs")
+    if tgt.ndim == non.ndim == 3 and tgt.shape[1:] != non.shape[1:]:
+        raise ValueError("epochs must have the same T and C")
     if tgt.ndim == 3:
         tgt = tgt.reshape(len(tgt), -1)
     if non.ndim == 3:
@@ -126,6 +97,8 @@ def mahalanobis_snr(
         raise ValueError("at least 2 epochs of each class are required")
 
     n_features = tgt.shape[1]
+    if n_features < 1:
+        raise ValueError("epochs need a nonempty feature dimension")
     mu1 = tgt.mean(axis=0)
     mu0 = non.mean(axis=0)
     delta = mu1 - mu0
@@ -150,9 +123,11 @@ def mahalanobis_snr(
 
     # Regularize for numerical stability
     min_eig = float(np.linalg.eigvalsh(Sigma).min())
+    ridge_variance = 0.0
     if min_eig < np.finfo(float).tiny * float(np.trace(Sigma)):
         eps = max(float(np.trace(Sigma)) * 1e-10, np.finfo(float).tiny)
         Sigma = Sigma + eps * np.eye(n_features)
+        ridge_variance = eps
 
     try:
         L = np.linalg.cholesky(Sigma)
@@ -161,17 +136,17 @@ def mahalanobis_snr(
 
     whitened_delta = solve_triangular(L, delta, lower=True)
     d2 = float(whitened_delta @ whitened_delta)
-    # The same rows estimate the mean difference and the covariance, so under
-    # no signal E[d2] ~= p (1/n1 + 1/n0); bounds must not treat that as signal.
-    plugin_bias = float(n_features * (1.0 / len(tgt) + 1.0 / len(non)))
     d2_euclidean = float(delta @ delta)
     noise_cond = float(np.linalg.cond(Sigma))
     erp_snr_db = 10.0 * np.log10(max(d2 / n_features, np.finfo(float).tiny))
 
     return {
         "d2_mahalanobis": d2,
-        "d2_plugin_null_bias": plugin_bias,
-        "d2_mahalanobis_debiased": max(0.0, d2 - plugin_bias),
+        "d2_estimator": "same_sample_shrinkage_covariance_plugin",
+        "estimation_scope": (
+            "Means and inverse shrinkage covariance use the same calibration rows; "
+            "the plug-in value includes same-sample optimism and covariance estimation error."
+        ),
         "d2_euclidean": d2_euclidean,
         "erp_snr_db": erp_snr_db,
         "n_target": len(tgt),
@@ -179,53 +154,55 @@ def mahalanobis_snr(
         "n_features": n_features,
         "noise_shrinkage": actual_shrinkage,
         "noise_cond": noise_cond,
+        "noise_ridge_variance": ridge_variance,
+        "covariance_interpretation": "fitted_positive_definite_diagnostic",
         "erp_mean_norm": float(np.linalg.norm(delta)),
     }
 
 
 # ---------------------------------------------------------------------------
-# Theoretical upper bound on hit rate
+# Declared activation geometry and Gaussian-model hit probability
 # ---------------------------------------------------------------------------
 
+
 def _activation_matrix(n_candidates: int, n_flashes: int, *, membership_kind: str):
-    """Balanced row/column activation matrix A of shape (n_flashes, n_candidates).
-
-    For a Q = L×L row/column paradigm, there are 2L lines (L rows + L columns)
-    and n_flashes total flashes, evenly split as n_flashes/(2L) per line.
-    Candidate q is activated whenever its row or its column flashes, so
-    |activations of any candidate| = n_flashes / L = n_flashes / sqrt(Q).
-
-    ``membership_kind="single_item"`` flashes one candidate per event in
-    balanced cycles (BrainSync); a 3x3 row/column layout is never inferred
-    from Q = 9. Row/column layouts require a perfect-square Q.
-    """
-    Q = n_candidates
-    F = n_flashes
+    """Synthetic canonical schedule; incomplete cycles retain unequal counts."""
+    Q, F = n_candidates, n_flashes
     if membership_kind == "single_item":
-        A = np.zeros((F, Q), dtype=float)
-        A[np.arange(F), np.arange(F) % Q] = 1.0
-        return A, Q
+        return np.eye(Q, dtype=float)[np.arange(F) % Q], None
     if membership_kind != "row_column":
         raise ValueError("membership_kind must be 'row_column' or 'single_item'")
-    root = int(round(np.sqrt(Q)))
-    if root * root == Q and root >= 2:
-        L = root
-        lines = 2 * L
-        per_line = F // lines
-        remainder = F - per_line * lines
-        A = np.zeros((F, Q), dtype=float)
-        flash = 0
-        for line in range(lines):
-            count = per_line + (1 if line < remainder else 0)
-            if line < L:
-                members = np.arange(line * L, (line + 1) * L)  # a row
-            else:
-                col = line - L
-                members = np.arange(col, Q, L)                 # a column
-            A[flash:flash + count, members] = 1.0
-            flash += count
-        return A, L
-    raise ValueError("a row/column layout needs a perfect-square candidate count of at least 4")
+    root = int(np.sqrt(Q))
+    if root * root != Q or root < 2:
+        raise ValueError("a row/column layout needs a perfect-square candidate count of at least 4")
+    templates = np.zeros((2 * root, Q), dtype=float)
+    for line in range(root):
+        templates[line, line * root:(line + 1) * root] = 1
+        templates[root + line, line::root] = 1
+    counts = np.full(2 * root, F // (2 * root))
+    counts[:F % (2 * root)] += 1
+    return np.repeat(templates, counts, axis=0), 2 * root
+
+
+def _declared_activation(Q, F, membership_kind, activation_matrix):
+    canonical, lines = _activation_matrix(Q, F, membership_kind=membership_kind)
+    if activation_matrix is None:
+        return canonical, lines, "synthetic_canonical_schedule"
+    raw = np.asarray(activation_matrix)
+    if raw.dtype.kind not in "biuf":
+        raise ValueError("activation_matrix must contain binary real membership")
+    A = np.asarray(raw, dtype=float)
+    if A.shape != (F, Q) or not np.all((A == 0) | (A == 1)):
+        raise ValueError("activation_matrix must be binary with shape (n_flashes, n_candidates)")
+    if membership_kind == "single_item":
+        if not np.all(A.sum(axis=1) == 1):
+            raise ValueError("single_item must activate exactly one candidate per flash")
+    else:
+        root = int(np.sqrt(Q))
+        templates, _ = _activation_matrix(Q, 2 * root, membership_kind=membership_kind)
+        if not np.all(np.any(np.all(A[:, None, :] == templates[None, :, :], axis=2), axis=1)):
+            raise ValueError("row_column flashes must be complete declared rows or columns")
+    return A, lines, "caller_supplied_schedule"
 
 
 def theoretical_hit_rate_bound(
@@ -234,41 +211,19 @@ def theoretical_hit_rate_bound(
     n_flashes_per_selection: int,
     *,
     membership_kind: str,
+    activation_matrix: np.ndarray | None = None,
+    mc_trials: int = 4000,
+    mc_seed: int = 20261005,
 ) -> dict:
-    """Gaussian-model hit estimate and pairwise lower bound.
+    """Known equal-covariance, independent-flash, uniform-prior Gaussian diagnostic.
 
-    Model
-    -----
-    Each flash i yields a per-candidate unit log-evidence contribution
-    t_i ~ N(0, d2) under the null, and the true candidate q* additionally
-    receives a shift of +d2/2 on the flashes that activate it (each of its
-    L = sqrt(Q) lines). Writing A[i, q] ∈ {0, 1} for "flash i activates q",
-    the log-evidence difference of competitor q against q* is
-
-        S_q = sum_i (A[i,q] - A[i,q*]) t_i
-              - (d2/2) * sum_i |A[i,q] - A[i,q*]|
-
-    and the optimal decoder is correct iff S_q < 0 for all q ≠ q*.
-
-    Because a competitor sharing a row or a column with q* differs on fewer
-    flashes than one sharing neither, the competitors split into two groups
-    with different Mahalanobis separations. Both groups are treated exactly by
-    the vectorised Monte Carlo below; no single-d' approximation is imposed.
-
-    Parameters
-    ----------
-    d2_per_flash : float
-        Squared Mahalanobis distance per flash (from mahalanobis_snr).
-    n_candidates : int
-        Number of candidates (Q = 36 for the BNCI 6×6 row/column grid).
-    n_flashes_per_selection : int
-        Total flashes per selection (120 for one BNCI C800 selection).
-
-    Returns
-    -------
-    dict with the Monte Carlo hit estimate, a conservative union lower bound,
-    and the per-flash d2 required to reach reference hit rates by bisection on
-    the Monte Carlo estimator.
+    Supply actual membership rows to bind an observed schedule; otherwise the
+    declared membership kind produces a synthetic canonical schedule. Bounds
+    use all candidate pairs, including indistinguishable activation columns.
+    Model hits use uniform random tie resolution, independently of production
+    tie/abstention policy. MC trials share draws across true candidates; its
+    reported standard error therefore uses trial-level averages, not Q*N iid
+    observations. Required d² values invert this finite seeded MC curve.
     """
     if not np.isfinite(d2_per_flash) or d2_per_flash < 0:
         raise ValueError("d2_per_flash must be finite and nonneg")
@@ -276,91 +231,130 @@ def theoretical_hit_rate_bound(
         raise ValueError("n_candidates must be integer >= 2")
     if type(n_flashes_per_selection) is not int or n_flashes_per_selection < 1:
         raise ValueError("n_flashes_per_selection must be positive integer")
+    if type(mc_trials) is not int or mc_trials < 2:
+        raise ValueError("mc_trials must be an integer >= 2")
+    if type(mc_seed) is not int or mc_seed < 0:
+        raise ValueError("mc_seed must be a nonnegative integer")
+    Q, F = n_candidates, n_flashes_per_selection
+    d2 = float(d2_per_flash)
+    A, lines, activation_scope = _declared_activation(Q, F, membership_kind, activation_matrix)
+    counts = A.sum(axis=0).astype(int)
+    pair_diff = np.abs(A[:, :, None] - A[:, None, :]).sum(axis=0)
+    identical = pair_diff == 0
+    indistinguishable_counts = identical.sum(axis=1)
 
-    Q = n_candidates
-    F = n_flashes_per_selection
-    A, lines = _activation_matrix(Q, F, membership_kind=membership_kind)
-    base_activation = A[:, 0]
-    activations_per_candidate = float(base_activation.sum())
-    p_act = activations_per_candidate / F
+    # Under true t, Lq-Lt = sqrt(d²)*(Zq-Zt) - d²*h[t,q]/2.
+    # For h>0, winning is equivalent to sqrt(d²) > 2*(Zq-Zt)/h.
+    # One normal draw and one threshold per trial/true candidate exactly define
+    # the monotone finite MC curve, without regenerating noise during bisection.
+    rng = np.random.default_rng(mc_seed)
+    Z = rng.standard_normal((mc_trials, F)) @ A
+    thresholds = np.empty((mc_trials, Q))
+    for true in range(Q):
+        competitors = pair_diff[true] > 0
+        if np.any(competitors):
+            thresholds[:, true] = np.max(
+                2 * (Z[:, competitors] - Z[:, [true]]) / pair_diff[true, competitors], axis=1
+            )
+        else:
+            thresholds[:, true] = -np.inf
 
-    # Pairwise differing-flash counts for every possible true candidate.  For
-    # F divisible by the number of lines this reduces to the usual two groups;
-    # for an uneven synthetic grid it avoids silently privileging candidate 0.
-    pair_diff = np.abs(A[:, :, None] - A[:, None, :]).sum(axis=0).astype(float)
-    base_diff_counts = pair_diff[0, 1:]
-    unique_counts, multiplicity = np.unique(base_diff_counts, return_counts=True)
-    n_shared = int(multiplicity[0]) if len(multiplicity) else 0
-    n_disjoint = int(Q - 1 - n_shared)
-    min_diff = float(pair_diff[np.triu_indices(Q, 1)].min()) if Q > 1 else 0.0
-    max_diff = float(pair_diff[np.triu_indices(Q, 1)].max()) if Q > 1 else 0.0
+    def hit_samples(value):
+        if value == 0:
+            return np.full((mc_trials, Q), 1 / Q)
+        return (np.sqrt(value) > thresholds) / indistinguishable_counts[None, :]
 
-    def _hit_monte_carlo(d2, n_trials=4000, seed=20261005):
-        if d2 <= 0:
-            return 1.0 / Q
-        rng = np.random.default_rng(seed)
-        # Per-flash discriminant noise shared across candidates.
-        noise = rng.normal(0.0, np.sqrt(d2), size=(n_trials, F))
-        T = noise @ A                       # (n_trials, Q)
-        hits = []
-        for true_candidate in range(Q):
-            competitors = np.arange(Q) != true_candidate
-            S = (T[:, competitors] - T[:, [true_candidate]])
-            S -= 0.5 * d2 * pair_diff[true_candidate, competitors][None, :]
-            hits.append(np.all(S < 0.0, axis=1))
-        return float(np.mean(np.stack(hits, axis=1)))
+    samples = hit_samples(d2)
+    per_true_mc = samples.mean(axis=0)
+    trial_means = samples.mean(axis=1)
+    p_hit_mc = float(trial_means.mean()) if d2 > 0 else 1 / Q
+    standard_error = float(trial_means.std(ddof=1) / np.sqrt(mc_trials)) if d2 > 0 else 0.
 
-    # Union bound. For competitor q, S_q ~ N(-0.5 d2 n_diff, d2 n_diff), so
-    # P(q beats q*) = Phi(-0.5 sqrt(d2 n_diff)) and the error probability is
-    # bounded by the sum over all competitors. Computing the sum directly over
-    # every diff_count avoids any two-group approximation.
     from scipy.special import ndtr
-    dprime_sq = 0.25 * d2_per_flash * pair_diff
-    np.fill_diagonal(dprime_sq, np.inf)  # The true candidate is not its own competitor.
-    per_true_fail_bound = np.sum(ndtr(-np.sqrt(np.maximum(dprime_sq, 0.0))), axis=1)
-    p_hit_lower = float(np.mean(np.maximum(0.0, 1.0 - per_true_fail_bound)))
 
-    p_hit_mc = _hit_monte_carlo(d2_per_flash)
-
-    # Required d2 for reference hit rates: bisection on the MC estimator.
-    target_hit_rates = [0.75, 0.85, 0.90, 0.95]
+    pair_error = ndtr(-0.5 * np.sqrt(d2 * pair_diff))
+    np.fill_diagonal(pair_error, 0)
+    lower_per_true = np.maximum(0, 1 - pair_error.sum(axis=1))
+    upper_per_true = 1 - pair_error.max(axis=1)
+    # A uniform-prior Bayes decoder can always achieve chance; the exact
+    # identical-column ceiling also improves the pairwise upper bound.
+    ceiling_per_true = 1 / indistinguishable_counts
+    p_lower = max(1 / Q, float(lower_per_true.mean()))
+    p_upper = float(np.minimum(upper_per_true, ceiling_per_true).mean())
     required_d2 = {}
-    for p_target in target_hit_rates:
-        lo, hi = 0.0, 50.0
-        if _hit_monte_carlo(hi) < p_target:
-            required_d2[f"p_hit_{int(p_target * 100)}"] = float("inf")
+    for target in (.75, .85, .90, .95):
+        lo, hi = 0., 50.
+        key = f"p_hit_{int(target * 100)}"
+        if float(hit_samples(hi).mean()) < target:
+            required_d2[key] = None  # finite search bracket, not an infinity in JSON
             continue
         for _ in range(32):
-            mid = 0.5 * (lo + hi)
-            if _hit_monte_carlo(mid) < p_target:
+            mid = (lo + hi) / 2
+            if float(hit_samples(mid).mean()) < target:
                 lo = mid
             else:
                 hi = mid
-        required_d2[f"p_hit_{int(p_target * 100)}"] = float(hi)
+        required_d2[key] = hi
 
+    balanced = bool(np.all(counts == counts[0]))
+    if membership_kind == "row_column":
+        templates, _ = _activation_matrix(Q, lines, membership_kind=membership_kind)
+        line_counts = np.all(A[:, None, :] == templates[None, :, :], axis=2).sum(axis=0)
+    else:
+        line_counts = counts
     return {
-        "p_hit_lower_bound": p_hit_lower,
+        "p_hit_lower_bound": p_lower,
+        "p_hit_upper_bound": p_upper,
         "p_hit_monte_carlo": p_hit_mc,
         "p_hit_model_estimate": p_hit_mc,
-        "d2_per_flash": float(d2_per_flash),
-        "d2_effective_per_selection": float(activations_per_candidate * d2_per_flash),
+        "p_hit_per_candidate_monte_carlo": per_true_mc.tolist(),
+        "p_hit_per_candidate_pairwise_lower_bound": lower_per_true.tolist(),
+        "p_hit_per_candidate_upper_bound": np.minimum(upper_per_true, ceiling_per_true).tolist(),
+        "d2_per_flash": d2,
+        "d2_effective_per_selection": float(counts.mean() * d2),
+        "d2_effective_per_candidate": (counts * d2).tolist(),
         "n_candidates": Q,
         "n_flashes": F,
         "membership_kind": membership_kind,
-        "grid_lines": lines if membership_kind == "row_column" else None,
-        "activations_per_candidate": activations_per_candidate,
-        "p_activation": float(p_act),
-        "n_competitors_sharing_line": n_shared,
-        "n_competitors_disjoint": n_disjoint,
-        "min_differing_flashes": min_diff,
-        "max_differing_flashes": max_diff,
+        "grid_lines": lines,
+        "activation_scope": activation_scope,
+        "activation_matrix": A.astype(int).tolist(),
+        "activation_sha256": array_digest(A),
+        "activation_counts_per_candidate": counts.tolist(),
+        "activations_per_candidate": float(counts.mean()),
+        "p_activation": float(counts.mean() / F),
+        "p_activation_per_candidate": (counts / F).tolist(),
+        "activation_counts_balanced": balanced,
+        "line_flash_counts": line_counts.tolist(),
+        "schedule_cycles_balanced": bool(np.all(line_counts == line_counts[0])),
+        "pairwise_differing_flashes": pair_diff.astype(int).tolist(),
+        "indistinguishable_candidates_per_candidate": indistinguishable_counts.tolist(),
+        "identifiable_hit_ceiling": float(ceiling_per_true.mean()),
+        "min_differing_flashes": float(pair_diff[np.triu_indices(Q, 1)].min()),
+        "max_differing_flashes": float(pair_diff.max()),
         "required_d2_for_targets": required_d2,
+        "required_d2_search_max": 50.,
+        "required_d2_interpretation": "seeded_finite_MC_inversion; null means outside search bracket",
+        "monte_carlo": {
+            "trials": mc_trials,
+            "seed": mc_seed,
+            "bit_generator": "PCG64",
+            "standard_error": standard_error,
+            "standard_error_scope": "trial_average_across_correlated_true_candidate_draws",
+            "per_candidate_standard_error": (samples.std(axis=0, ddof=1) / np.sqrt(mc_trials)).tolist(),
+        },
+        "model": {
+            "candidate_prior": "uniform",
+            "noise": "equal_covariance_independent_flashes_known_parameters",
+            "decoder": "maximum_likelihood_uniform_random_ties",
+            "d2_role": "supplied_parameter_for_declared_model",
+        },
         "interpretation": (
-            f"Balanced {membership_kind} layout: each candidate activates on "
-            f"{activations_per_candidate:.0f}/{F} flashes (p={p_act:.3f}). "
-            f"With d2_per_flash={d2_per_flash:.4f}, the declared Gaussian-model "
-            f"hit estimate is {p_hit_mc:.3f} (MC); the pairwise lower bound is "
-            f"{p_hit_lower:.3f}."
+            f"{'Equal' if balanced else 'Unequal'} activation counts for {membership_kind}: "
+            f"{counts.min()}..{counts.max()} of {F} flashes per candidate. "
+            f"Gaussian-model optimal hit MC={p_hit_mc:.3f}, "
+            f"pairwise lower={p_lower:.3f}, model upper={p_upper:.3f}; "
+            f"{mc_trials} trials, seed={mc_seed}."
         ),
     }
 
@@ -376,22 +370,21 @@ def spectral_discriminability(
     *,
     n_components: int = 8,
 ) -> dict:
-    """Decompose d^2 into temporal and spatial components.
+    """SVD of a fitted Kronecker-whitened mean contrast.
 
-    Returns the fraction of total Mahalanobis SNR carried by each
-    frequency band and each spatial direction, using the whitened
-    SVD of the ERP mean difference.
-
-    This identifies WHERE in time-frequency space the P300 information lives,
-    which informs which AR order or filter design would preserve most of it.
+    Fractions partition the factored plug-in d² across singular components.
+    Frequencies describe each unwhitened temporal pattern, rather than an
+    additive frequency-band information decomposition.
     """
-    tgt = np.asarray(target_epochs, dtype=float)
-    non = np.asarray(nontarget_epochs, dtype=float)
+    tgt = finite_real_array(target_epochs, name="target_epochs")
+    non = finite_real_array(nontarget_epochs, name="nontarget_epochs")
     if tgt.ndim != 3 or non.ndim != 3:
         raise ValueError("epochs must be 3-D: (n_epochs, T, C)")
     T, C = tgt.shape[1], tgt.shape[2]
     if non.shape[1:] != (T, C):
         raise ValueError("target and nontarget epochs must have the same T and C")
+    if len(tgt) < 2 or len(non) < 2 or T < 1 or C < 1:
+        raise ValueError("at least two epochs of each class and nonempty T and C are required")
     if not np.isfinite(sfreq) or sfreq <= 0:
         raise ValueError("sfreq must be positive")
     if type(n_components) is not int or n_components < 1:
@@ -473,12 +466,11 @@ def spectral_discriminability(
         "spatial_patterns": (L_s @ Vt[:keep].T).tolist(),  # (C, keep)
         "time_noise_shrinkage": float(lw_t.shrinkage_),
         "space_noise_shrinkage": float(lw_s.shrinkage_),
+        "estimation_scope": "same_sample_factored_shrinkage_covariance_plugin",
         "interpretation": (
-            "Components are ranked by discriminability fraction. "
-            "AR whitening preserves information best when it targets the "
-            "frequency bands with lowest d2_fraction (noise-dominated). "
-            "High-d2_fraction components near P300 latency must not be "
-            "attenuated by the whitening operator."
+            "Singular components partition fitted Kronecker-whitened contrast energy. "
+            "Temporal spectra describe patterns; selecting preprocessing from these "
+            "calibration diagnostics requires a separate evaluation."
         ),
     }
 
@@ -489,23 +481,68 @@ def spectral_discriminability(
 
 @dataclass(frozen=True)
 class InformationBoundReport:
-    """Full information-theoretic analysis of one participant's calibration.
+    """Immutable schema-2 calibration diagnostic, with all output content bound.
 
-    Computes and freezes:
-      - Mahalanobis SNR from empirical calibration epochs
-      - Declared Gaussian-model hit estimate and pairwise lower bound
-      - Spectral discriminability decomposition
-      - Efficiency gap: (empirical_hit - bound) / (1 - bound)
+    Save/load restores original numerical diagnostics and source identities,
+    without estimating covariance or drawing fresh Monte Carlo samples.
     """
     d2_per_flash: float
     n_candidates: int
     n_flashes: int
+    membership_kind: str
     empirical_hit_rate: float | None
     bound: dict
     snr_analysis: dict
     spectral_analysis: dict | None
     provenance: dict
     _integrity_sha256: str
+
+    def __post_init__(self):
+        for field in ("bound", "snr_analysis", "spectral_analysis", "provenance"):
+            object.__setattr__(self, field, freeze_metadata(getattr(self, field)))
+        self._assert_integrity()
+        if self.provenance.get("schema") != _SCHEMA:
+            raise ValueError("information report schema must be n2p3_information_bound/2")
+        for key in ("implementation_sha256", "metadata_contract_sha256", "target_sha256",
+                    "nontarget_sha256", "activation_sha256"):
+            require_sha256(self.provenance[key], key)
+        if (self.bound["d2_per_flash"] != self.d2_per_flash
+                or self.snr_analysis["d2_mahalanobis"] != self.d2_per_flash
+                or self.snr_analysis["d2_estimator"] != "same_sample_shrinkage_covariance_plugin"):
+            raise ValueError("information report plug-in d2 relation mismatch")
+        for field, key in ((self.n_candidates, "n_candidates"), (self.n_flashes, "n_flashes"),
+                           (self.membership_kind, "membership_kind")):
+            if self.bound[key] != field or self.provenance[key] != field:
+                raise ValueError(f"information report {key} relation mismatch")
+        if (self.empirical_hit_rate is not None
+                and (not np.isfinite(self.empirical_hit_rate)
+                     or not 0 <= self.empirical_hit_rate <= 1)):
+            raise ValueError("empirical_hit_rate must be in [0, 1]")
+        A, _, _ = _declared_activation(
+            self.n_candidates, self.n_flashes, self.membership_kind, self.bound["activation_matrix"]
+        )
+        if (array_digest(A) != self.bound["activation_sha256"]
+                or self.bound["activation_sha256"] != self.provenance["activation_sha256"]
+                or tuple(A.sum(axis=0).astype(int)) != self.bound["activation_counts_per_candidate"]):
+            raise ValueError("information report activation relation mismatch")
+
+    def _payload(self):
+        return {
+            "d2_per_flash": self.d2_per_flash,
+            "n_candidates": self.n_candidates,
+            "n_flashes": self.n_flashes,
+            "membership_kind": self.membership_kind,
+            "empirical_hit_rate": self.empirical_hit_rate,
+            "bound": self.bound,
+            "snr_analysis": self.snr_analysis,
+            "spectral_analysis": self.spectral_analysis,
+            "provenance": self.provenance,
+        }
+
+    def _assert_integrity(self):
+        require_sha256(self._integrity_sha256, "integrity_sha256")
+        if metadata_digest(self._payload()) != self._integrity_sha256:
+            raise ValueError("information report content integrity mismatch")
 
     @classmethod
     def compute(
@@ -521,91 +558,144 @@ class InformationBoundReport:
         compute_spectral: bool = True,
         n_spectral_components: int = 8,
         participant_id: str = "unknown",
+        activation_matrix: np.ndarray | None = None,
+        mc_trials: int = 4000,
+        mc_seed: int = 20261005,
     ) -> InformationBoundReport:
-        snr = mahalanobis_snr(target_epochs, nontarget_epochs)
-        d2 = snr["d2_mahalanobis_debiased"]
-
-        bound = theoretical_hit_rate_bound(d2, n_candidates, n_flashes_per_selection,
-                                           membership_kind=membership_kind)
-
-        spec = None
-        tgt = np.asarray(target_epochs, dtype=float)
-        non = np.asarray(nontarget_epochs, dtype=float)
-        if compute_spectral and tgt.ndim == 3:
-            spec = spectral_discriminability(
-                tgt, non, sfreq, n_components=n_spectral_components
-            )
-
-        # Efficiency gap: how much of the remaining room does empirical hit use?
-        # The Monte Carlo estimate is only the declared Gaussian-model rate;
-        # it is not a universal achievable rate or an information-theoretic cap.
-        efficiency = None
+        if not np.isfinite(sfreq) or sfreq <= 0:
+            raise ValueError("sfreq must be finite and positive")
+        if not isinstance(participant_id, str) or not participant_id.strip():
+            raise ValueError("participant_id must be nonempty text")
         if empirical_hit_rate is not None:
-            best_possible = float(bound["p_hit_monte_carlo"])
-            chance = 1.0 / n_candidates
-            gap = best_possible - float(empirical_hit_rate)
-            efficiency = {
-                "empirical_hit": float(empirical_hit_rate),
-                "achievable_hit_mc": best_possible,
+            if not np.isfinite(empirical_hit_rate) or not 0 <= empirical_hit_rate <= 1:
+                raise ValueError("empirical_hit_rate must be in [0, 1]")
+            empirical_hit_rate = float(empirical_hit_rate)
+        snr = mahalanobis_snr(target_epochs, nontarget_epochs)
+        d2 = snr["d2_mahalanobis"]
+        bound = theoretical_hit_rate_bound(
+            d2, n_candidates, n_flashes_per_selection, membership_kind=membership_kind,
+            activation_matrix=activation_matrix, mc_trials=mc_trials, mc_seed=mc_seed,
+        )
+        spec = None
+        tgt = finite_real_array(target_epochs, name="target_epochs")
+        non = finite_real_array(nontarget_epochs, name="nontarget_epochs")
+        if compute_spectral and tgt.ndim == 3:
+            spec = spectral_discriminability(tgt, non, sfreq, n_components=n_spectral_components)
+        if empirical_hit_rate is not None:
+            model_hit = bound["p_hit_model_estimate"]
+            chance = 1 / n_candidates
+            room = model_hit - chance
+            bound["empirical_comparison"] = {
+                "empirical_hit": empirical_hit_rate,
+                "gaussian_model_hit_mc": model_hit,
                 "chance_hit": chance,
-                "absolute_gap": gap,
-                "relative_gap_pct": 100.0 * gap / max(1.0 - float(empirical_hit_rate), np.finfo(float).tiny),
-                "fraction_of_room_used": max(
-                    0.0,
-                    (float(empirical_hit_rate) - chance)
-                    / max(best_possible - chance, np.finfo(float).tiny),
-                ),
+                "model_minus_empirical_hit": model_hit - empirical_hit_rate,
+                "above_chance_ratio": ((empirical_hit_rate - chance) / room if room > 0 else None),
+                "interpretation": "descriptive comparison with fitted model; ratio is not efficiency",
             }
-        if efficiency is not None:
-            bound["efficiency"] = efficiency
-
         prov = {
             "schema": _SCHEMA,
             "participant_id": participant_id,
             "n_candidates": n_candidates,
             "n_flashes": n_flashes_per_selection,
+            "membership_kind": membership_kind,
+            "activation_scope": bound["activation_scope"],
+            "activation_sha256": bound["activation_sha256"],
             "sfreq": float(sfreq),
-            "n_target_epochs": int(len(target_epochs)),
-            "n_nontarget_epochs": int(len(nontarget_epochs)),
-            "target_sha256": array_digest(np.asarray(target_epochs, dtype=float)),
-            "nontarget_sha256": array_digest(np.asarray(nontarget_epochs, dtype=float)),
+            "compute_spectral": compute_spectral,
+            "n_spectral_components": n_spectral_components,
+            "n_target_epochs": int(len(tgt)),
+            "n_nontarget_epochs": int(len(non)),
+            "target_sha256": array_digest(tgt),
+            "nontarget_sha256": array_digest(non),
             "implementation_sha256": _IMPLEMENTATION_SHA256,
-            "evidence_scope": "diagnostic_research_no_production_claim",
+            "metadata_contract_sha256": hashlib.sha256(
+                Path(__file__).with_name("noise_model.py").read_bytes()
+            ).hexdigest(),
+            "d2_estimator": snr["d2_estimator"],
+            "evidence_scope": "calibration_plugin_gaussian_model_diagnostic",
         }
-        integrity = metadata_digest({**prov, "d2": d2})
+        payload = {
+            "d2_per_flash": d2, "n_candidates": n_candidates,
+            "n_flashes": n_flashes_per_selection, "membership_kind": membership_kind,
+            "empirical_hit_rate": empirical_hit_rate, "bound": bound,
+            "snr_analysis": snr, "spectral_analysis": spec, "provenance": prov,
+        }
+        return cls(**payload, _integrity_sha256=metadata_digest(payload))
 
-        obj = object.__new__(cls)
-        object.__setattr__(obj, "d2_per_flash", d2)
-        object.__setattr__(obj, "n_candidates", n_candidates)
-        object.__setattr__(obj, "n_flashes", n_flashes_per_selection)
-        object.__setattr__(obj, "empirical_hit_rate", empirical_hit_rate)
-        object.__setattr__(obj, "bound", bound)
-        object.__setattr__(obj, "snr_analysis", snr)
-        object.__setattr__(obj, "spectral_analysis", spec)
-        object.__setattr__(obj, "provenance", prov)
-        object.__setattr__(obj, "_integrity_sha256", integrity)
-        return obj
+    def to_dict(self) -> dict:
+        """Detached JSON data; mutating it cannot change this report."""
+        self._assert_integrity()
+        return json.loads(json.dumps(
+            {**self._payload(), "integrity_sha256": self._integrity_sha256}, allow_nan=False
+        ))
+
+    @classmethod
+    def from_dict(cls, record: dict) -> InformationBoundReport:
+        """Read schema-2 output without refitting or relabelling old producer identity."""
+        if not isinstance(record, dict) or record.get("provenance", {}).get("schema") != _SCHEMA:
+            raise ValueError("information report schema must be n2p3_information_bound/2")
+        payload = dict(record)
+        integrity = payload.pop("integrity_sha256", None)
+        return cls(**payload, _integrity_sha256=integrity)
+
+    def save(self, path: str | Path) -> None:
+        """Write one complete JSON report, refusing to replace an existing artifact."""
+        record = self.to_dict()
+        with Path(path).open("x", encoding="utf-8", newline="\n") as stream:
+            json.dump(record, stream, sort_keys=True, indent=2, allow_nan=False)
+            stream.write("\n")
+
+    @classmethod
+    def load(cls, path: str | Path) -> InformationBoundReport:
+        return cls.from_dict(json.loads(Path(path).read_text(encoding="utf-8")))
+
+    def replay_model(self) -> dict:
+        """Recompute saved Gaussian diagnostics only; no calibration covariance fit.
+
+        Exact seeded replay uses the original producer implementation. A report
+        from different source bytes remains readable through load/to_dict.
+        """
+        self._assert_integrity()
+        if self.provenance["implementation_sha256"] != _IMPLEMENTATION_SHA256:
+            raise ValueError("model replay requires the original implementation bytes")
+        actual = (self.bound["activation_matrix"]
+                  if self.bound["activation_scope"] == "caller_supplied_schedule" else None)
+        replayed = theoretical_hit_rate_bound(
+            self.d2_per_flash, self.n_candidates, self.n_flashes,
+            membership_kind=self.membership_kind, activation_matrix=actual,
+            mc_trials=self.bound["monte_carlo"]["trials"],
+            mc_seed=self.bound["monte_carlo"]["seed"],
+        )
+        saved = dict(self.bound)
+        saved.pop("empirical_comparison", None)
+        if metadata_digest(replayed) != metadata_digest(saved):
+            raise ValueError("saved Gaussian-model diagnostics do not replay")
+        return replayed
 
     def summary(self) -> dict:
-        """JSON-serialisable summary for reporting."""
+        """Detached reporting view, retaining the model and estimator scope."""
+        self._assert_integrity()
         s = {
+            "schema": _SCHEMA,
             "d2_per_flash": self.d2_per_flash,
+            "d2_estimator": self.snr_analysis["d2_estimator"],
             "erp_snr_db": self.snr_analysis["erp_snr_db"],
             "n_candidates": self.n_candidates,
             "n_flashes": self.n_flashes,
+            "membership_kind": self.membership_kind,
             "p_hit_lower_bound": self.bound["p_hit_lower_bound"],
+            "p_hit_upper_bound": self.bound["p_hit_upper_bound"],
             "p_hit_monte_carlo": self.bound["p_hit_monte_carlo"],
             "d2_effective_per_selection": self.bound["d2_effective_per_selection"],
+            "activation_counts_per_candidate": self.bound["activation_counts_per_candidate"],
+            "activation_scope": self.bound["activation_scope"],
+            "monte_carlo": self.bound["monte_carlo"],
         }
-        if self.empirical_hit_rate is not None and "efficiency" in self.bound:
-            s.update(self.bound["efficiency"])
+        if "empirical_comparison" in self.bound:
+            s.update(self.bound["empirical_comparison"])
         if self.spectral_analysis:
-            s["top_component_d2_fraction"] = (
-                self.spectral_analysis["components"][0]["d2_fraction"]
-                if self.spectral_analysis["components"] else None
-            )
-            s["top_component_freq_hz"] = (
-                self.spectral_analysis["components"][0]["dominant_freq_hz"]
-                if self.spectral_analysis["components"] else None
-            )
-        return s
+            top = self.spectral_analysis["components"][0]
+            s["top_component_d2_fraction"] = top["d2_fraction"]
+            s["top_component_freq_hz"] = top["dominant_freq_hz"]
+        return json.loads(json.dumps(s, allow_nan=False))

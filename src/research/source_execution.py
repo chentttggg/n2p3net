@@ -1002,20 +1002,42 @@ def source_group_input_status(groups, state):
 CLOUD_RESOURCE_CONFIG = Path(__file__).resolve().parents[2] / "configs" / "cloud_training_resources.json"
 
 
-def with_cloud_resource_floor(plan, device):
-    """Apply the central cloud CPU/GPU floor to CUDA plans that do not declare their own.
-
-    Local GPU development and software-correctness probes opt out explicitly, so a cloud
-    plan that omits the floor can no longer resolve to fewer workers without an error.
-    """
-
+def _resolved_cloud_resource_floor(plan, device):
+    """Resolve the shared CUDA floor; explicit overrides may raise its minimum."""
     import torch
 
-    exempt = (plan.get("resource_scope") == "local_development"
+    def validate(floor):
+        if (not isinstance(floor, dict) or set(floor) != {"cpu_threads", "gpu_workers"}
+                or any(type(value) is not int or value < 1 for value in floor.values())):
+            raise ValueError("cloud_resource_floor requires positive cpu_threads and gpu_workers")
+
+    declared = plan.get("cloud_resource_floor")
+    if declared is not None:
+        validate(declared)
+    exempt = (plan.get("resource_scope") in {"local_development", "software_correctness"}
               or plan.get("evidence_scope") == "software_correctness")
-    if torch.device(device).type != "cuda" or exempt or "cloud_resource_floor" in plan:
+    if torch.device(device).type != "cuda" or exempt:
+        return declared
+    minimum = json.loads(CLOUD_RESOURCE_CONFIG.read_text(encoding="utf-8"))["cloud_resource_floor"]
+    validate(minimum)
+    if declared is None:
+        return minimum
+    if any(declared[axis] < value for axis, value in minimum.items()):
+        raise ValueError("declared floor is below the central cloud resource floor; "
+                         "use an explicit local/software scope for a probe")
+    return declared
+
+
+def with_cloud_resource_floor(plan, device):
+    """Apply the central floor to CUDA plans while preserving explicit probe scope.
+
+    Omitted/null floors use the configuration minimum. Cloud overrides may require
+    more capacity; they cannot lower the minimum. The input plan is never mutated.
+    """
+
+    floor = _resolved_cloud_resource_floor(plan, device)
+    if floor is plan.get("cloud_resource_floor"):
         return plan
-    floor = json.loads(CLOUD_RESOURCE_CONFIG.read_text(encoding="utf-8"))["cloud_resource_floor"]
     return {**plan, "cloud_resource_floor": floor}
 
 
@@ -1024,6 +1046,7 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
 
     from train.runtime import available_cpu_threads
 
+    floor = _resolved_cloud_resource_floor(plan, device)
     available = available_cpu_threads() if cpu_count is None else cpu_count
     if group_count < 1 or available < 1:
         raise ValueError("task count and available CPU budget must be positive")
@@ -1070,11 +1093,7 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
     if target_request not in (None, "auto") and (type(target_request) is not int or target_request < 1):
         raise ValueError("target_workers must be auto or a positive integer")
     target = min(host_budget // target_bytes, slots if target_request in (None, "auto") else min(target_request, slots))
-    floor = plan.get("cloud_resource_floor")
     if floor is not None:
-        if (not isinstance(floor, dict) or set(floor) != {"cpu_threads", "gpu_workers"}
-                or any(type(value) is not int or value < 1 for value in floor.values())):
-            raise ValueError("cloud_resource_floor requires positive cpu_threads and gpu_workers")
         if torch.device(device).type != "cuda":
             raise ValueError("declared cloud GPU worker floor requires a CUDA device; do not run it on CPU")
         if (budget < floor["cpu_threads"] or slots < floor["gpu_workers"]

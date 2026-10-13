@@ -1,0 +1,117 @@
+{
+  "schema": "n2p3_diagnostic_mathematics_integration/1",
+  "status": "accepted_root_and_independent_spec_standards_review",
+  "head_before_scientific_commit": "f6c8ca5e368d71546e94cdcb22a87c66e9561131",
+  "integrated_sources": {
+    "src/transfer/information_bound.py": "18218cb9be6814176279b681734aa25e84e625ca9327fc11c3ea815798c84e58",
+    "src/transfer/exact_covariance.py": "d3f27c60e6a42d25c84c5bc86e7d3aac5882b8aa6b865a82390ae5a410eea721",
+    "src/transfer/noise_model.py": "fe393308b556265f4fcce5df5a5002068744d6899a2bfb355d4674e0c2919e11",
+    "tests/transfer/test_information_bound_diagnostic.py": "01be4ffff5db6ff0457c257790cea5b02f16ea95d9d4684bd37e5a454e2b0f04",
+    "tests/transfer/test_exact_covariance_support.py": "f9bcd140c9e7ba61c9713b1b18dfb16bb3e50fb871e10b5e53be07f322ba8b82",
+    "tests/transfer/test_exact_covariance_and_bounds.py": "b78d298fb0671e501973c9690695a1250079438e2955344b399c0909f74ca9ec"
+  },
+  "information_bound": {
+    "schema": "n2p3_information_bound/2",
+    "estimator": "same_sample_shrinkage_covariance_plugin_raw_d2",
+    "model": "known equal covariance, independent flashes, uniform candidate prior",
+    "geometry": "complete actual or declared canonical binary activation; per-candidate and all-pair summaries",
+    "decoder": "maximum likelihood with uniform random ties in this diagnostic model",
+    "finite_MC": "seed/trial count and trial-level correlated-candidate standard error; point estimate not clipped to analytic bounds",
+    "report": "whole-payload frozen integrity, exclusive JSON save/load and original-implementation model-only replay",
+    "author_binding": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\INFORMATION_BOUND_REPAIR\\binding.json",
+      "sha256": "9b0c962d70896370d66194a1f644c6a3746da03ad9f1158c47c9ad622d591bf7",
+      "bytes": 6196
+    },
+    "final_contracts": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\INFORMATION_BOUND_REPAIR\\new_contracts.xml",
+      "sha256": "299a56300265bb0999fcd397b3821f355b69dbc5d23b2105c6eb0c58b9c65fdf",
+      "bytes": 5056,
+      "tests": 29,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "earlier_contracts": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\INFORMATION_BOUND_REPAIR\\existing_information_contracts.xml",
+      "sha256": "5c1fdeb6c6552d52acb369979ce0e0008580be7cbe65f7d8102959e00c5c37f0",
+      "bytes": 2211,
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_sha256": "4aeee7b401443e1a7653472ddf34430271ee9d55439116ca812f7589e77866d7",
+      "difference_from_final": "output integrity guards and finite-MC documentation; numerical model unchanged"
+    },
+    "known_legacy_caller": "D:/BCI/n2p3-net/experiments/run_information_bound.py is local-only and needs explicit membership/activation/schema migration before reuse; it was preserved"
+  },
+  "exact_covariance": {
+    "schema": "n2p3_exact_propagated_covariance/2",
+    "raw_relation": "F K_AR F.T, F=actual finite operator applied to identity",
+    "SPD": "raw Cholesky and ambient Gaussian density without ridge",
+    "identified_support": "caller-declared orthonormal Q with filter and noise-image witnesses; support volume is a distinct measure",
+    "unresolved": "raw covariance retained, factorization explicitly unavailable; no support or ridge invented",
+    "ridge": "separate explicit regularized diagnostic law",
+    "gain": "actual covariance L_AR^-1 K_prop L_AR^-T, not difference of root charts",
+    "author_binding": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\EXACT_COVARIANCE_REPAIR\\binding.json",
+      "sha256": "737c184939725954c3c3002ea0c6ec7fe4428d0dd0b001edf1c02c13392f87fe",
+      "bytes": 3321
+    },
+    "prior_37_contracts": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\EXACT_COVARIANCE_REPAIR\\focused.xml",
+      "sha256": "3370b8f87b09c2b5a72b6596224958fb0ab262e132a3e4ec4107a8948b73c399",
+      "bytes": 5691,
+      "tests": 37,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_sha256": "c71aed01f9a51f184f9bb3cfafa4b9726fd15b1be49b4295c7cb671fc10edb39"
+    },
+    "final_followup": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\EXACT_COVARIANCE_REPAIR\\unresolved_followup.xml",
+      "sha256": "5f12bee9604e3a915569d60ee825c96fa17f91c34ac2aa0ee56f103c7748eae2",
+      "bytes": 1159,
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_sha256": "d3f27c60e6a42d25c84c5bc86e7d3aac5882b8aa6b865a82390ae5a410eea721"
+    },
+    "public_production_adoption": "requires explicit pre-filter fitted noise, physical support and channel law; no production caller added"
+  },
+  "root_legacy_test_migration": {
+    "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\diagnostic_migration.xml",
+    "sha256": "2f2ce92fed307f9e157708c8e8e1b5fba5beb194f449dc1c2fc9b83b6983c586",
+    "bytes": 4431,
+    "tests": 28,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exact_source_at_run": "c71aed01f9a51f184f9bb3cfafa4b9726fd15b1be49b4295c7cb671fc10edb39",
+    "information_source_at_run": "18218cb9be6814176279b681734aa25e84e625ca9327fc11c3ea815798c84e58",
+    "last_exact_followup": "separately covered by final six targeted constructor checks"
+  },
+  "validation_counts_are_overlapping_software_cases_not_research_replicates": true,
+  "independent_review": {
+    "binding": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\DIAGNOSTIC_FINAL_REVIEW\\binding.json",
+      "sha256": "0fd0a945abaf9ab9a6022e1c653c72c98293e44691216b954146a0fecb09f4b1",
+      "bytes": 8311
+    },
+    "handoff": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\DIAGNOSTIC_FINAL_REVIEW\\HANDOFF.zh.md",
+      "sha256": "eb3051a83aff600292c3a37eaba44f9fc0fafb48b01e186e3214c40ebb92663d",
+      "bytes": 9325
+    },
+    "Spec": "GO",
+    "Standards": "GO",
+    "additional_fit_score_load_or_tests": 0
+  },
+  "synthetic_operations": "small covariance estimates, Gaussian draws, report save/load, analytic covariance compilation and density/whitening were executed",
+  "public_fit": 0,
+  "public_score": 0,
+  "public_model_load": 0,
+  "full_suite": false,
+  "historical_producers_resigned": false
+}

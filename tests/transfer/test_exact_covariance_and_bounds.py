@@ -163,12 +163,16 @@ def test_propagated_covariance_is_positive_semidefinite_with_explicit_null_space
     # Rank declaration is a partition of the full dimension.
     assert result.numerical_rank + result.null_dimension == n
     assert 0 < result.numerical_rank <= n
-    # The stored factor reconstructs the RIDGE-REGULARIZED covariance, not the
-    # raw singular one; the ridge is tiny relative to the identified spectrum.
-    L = result.cholesky_propagated
-    target = result.K_propagated + result.regularization_ridge * np.eye(n)
-    np.testing.assert_allclose(L @ L.T, target, atol=1e-8, rtol=1e-8)
-    assert result.regularization_ridge < 1e-9 * result.eigenvalues.max()
+    # Numerical rank is diagnostic; it does not authorize an implicit ridge
+    # or silently declare a Gaussian density on a smaller space.
+    assert result.provenance["regularization_ridge"] == 0
+    if result.cholesky_propagated is None:
+        assert result.support_basis is None
+        with pytest.raises(ValueError, match="support_basis"):
+            result.whiten(np.ones((n, 1)))
+    else:
+        L = result.cholesky_propagated
+        np.testing.assert_allclose(L @ L.T, result.K_propagated, atol=1e-8, rtol=1e-8)
     result.assert_integrity()
 
 
@@ -210,7 +214,7 @@ def test_le_bandpass_inflates_marginal_variance_relative_to_ar():
 
 def test_whiten_round_trip_and_shape_enforcement():
     noise = _ar_from_coefficients([0.5], 1.0)
-    operator = _operator()
+    operator = FiniteFilterOperator(((1., 0., 0., 1., 0., 0.),), 0)
     n = 50
     result = ExactPropagatedCovariance.compute(operator, noise, n)
     rng = np.random.default_rng(7)
@@ -226,18 +230,19 @@ def test_whiten_round_trip_and_shape_enforcement():
         result.whiten(bad)
 
 
-def test_whitening_gain_is_identity_when_operator_is_narrowband_identity_like():
-    # For a white-noise AR(0) process, any stable filter with unit DC gain in
-    # the passband distorts the covariance; for a pure identity-equivalent
-    # check we instead assert the gain matrix is finite and well-formed.
+def test_bandpass_whitening_gain_measures_covariance_deviation():
     noise = _ar_from_coefficients([], 1.0)
     operator = _operator()
     n = 40
     result = ExactPropagatedCovariance.compute(operator, noise, n)
     gain = result.whitening_gain()
-    assert gain["singular_values_min"] > 0
+    assert gain["singular_values_min"] >= 0
     assert gain["singular_values_max"] >= gain["singular_values_min"]
-    assert gain["frobenius_deviation_from_identity"] >= 0.0
+    # K_ar=I, so the diagnostic covariance after AR whitening is K_prop.
+    np.testing.assert_allclose(gain["covariance_after_ar_whitening"], result.K_propagated)
+    assert gain["frobenius_deviation_from_identity"] == pytest.approx(
+        np.linalg.norm(result.K_propagated - np.eye(n), "fro")
+    )
 
 
 def test_diagnostic_budget_rejects_oversized_grid():
@@ -248,31 +253,10 @@ def test_diagnostic_budget_rejects_oversized_grid():
 
 
 def test_log_likelihood_correction_is_zero_when_covariances_match():
-    # If the operator leaves the covariance unchanged (white noise through a
-    # near-identity in the relevant band), the correction is small; construct a
-    # synthetic case where K_propagated equals K_ar exactly by monkey-free math:
-    # use AR(0) and an operator that we then bypass by comparing K_ar to itself.
     noise = _ar_from_coefficients([], 1.0)
     n = 30
-    K = ar_toeplitz_covariance(noise, n)
-    # Build a result object whose propagated equals AR, via the operator that
-    # is the identity on the grid: use an empty SOS-free path is not available,
-    # so verify the formula directly on identical matrices.
-    L = np.linalg.cholesky(K)
-    result = object.__new__(ExactPropagatedCovariance)
-    object.__setattr__(result, "K_propagated", K)
-    object.__setattr__(result, "K_ar", K)
-    object.__setattr__(result, "cholesky_propagated", L)
-    object.__setattr__(result, "n_samples", n)
-    object.__setattr__(result, "null_dimension", 0)
-    object.__setattr__(result, "operator_digest", "x")
-    object.__setattr__(result, "noise_digest", "y")
-    object.__setattr__(result, "relative_error_trace", 0.0)
-    object.__setattr__(result, "provenance", {})
-    from transfer.noise_model import array_digest, metadata_digest
-    object.__setattr__(result, "_integrity_sha256", metadata_digest({
-        "K_propagated_sha256": array_digest(K), "K_ar_sha256": array_digest(K),
-        "cholesky_sha256": array_digest(L)}))
+    operator = FiniteFilterOperator(((1., 0., 0., 1., 0., 0.),), 0)
+    result = ExactPropagatedCovariance.compute(operator, noise, n)
     rng = np.random.default_rng(11)
     residual = rng.normal(size=(n, 2))
     correction = result.log_likelihood_correction(residual)
@@ -367,7 +351,7 @@ def test_spectral_discriminability_puts_information_in_the_signal_band():
     assert top["d2_fraction"] > 0.3
 
 
-def test_information_bound_report_shapes_and_efficiency():
+def test_information_bound_report_shapes_and_descriptive_comparison():
     rng = np.random.default_rng(4242)
     length, n_channels = 24, 4
     erp = np.zeros((length, n_channels))
@@ -380,9 +364,9 @@ def test_information_bound_report_shapes_and_efficiency():
     )
     summary = report.summary()
     for key in ("d2_per_flash", "p_hit_monte_carlo", "p_hit_lower_bound",
-                "empirical_hit", "fraction_of_room_used"):
+                "empirical_hit", "above_chance_ratio", "d2_estimator"):
         assert key in summary
-    assert 0.0 <= summary["fraction_of_room_used"] <= 5.0
+    assert 0.0 <= summary["above_chance_ratio"] <= 5.0
     assert report.provenance["participant_id"] == "unknown"
 
 
@@ -410,12 +394,14 @@ def test_activation_layout_is_declared_not_inferred_from_the_candidate_count():
         theoretical_hit_rate_bound(0.3, 2, 40, membership_kind="row_column")
 
 
-def test_plugin_d2_bias_is_removed_before_the_bound():
+def test_same_sample_plugin_d2_is_explicitly_retained_without_false_debias():
     rng = np.random.default_rng(4)
     target, nontarget = rng.normal(size=(40, 60)), rng.normal(size=(200, 60))
     snr = mahalanobis_snr(target, nontarget, shrinkage=0.0)
-    assert snr["d2_plugin_null_bias"] == pytest.approx(60 * (1 / 40 + 1 / 200))
-    assert snr["d2_mahalanobis"] > 1.0 > snr["d2_mahalanobis_debiased"]
+    assert snr["d2_mahalanobis"] > 1.0
+    assert snr["d2_estimator"] == "same_sample_shrinkage_covariance_plugin"
+    assert "d2_mahalanobis_debiased" not in snr
+    assert "d2_plugin_null_bias" not in snr
 
 
 def test_kronecker_discriminability_is_invariant_to_voltage_units():

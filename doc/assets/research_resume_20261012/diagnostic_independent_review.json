@@ -1,0 +1,199 @@
+{
+  "schema": "n2p3_diagnostic_final_independent_review/1",
+  "root": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net",
+  "git_head_at_final_binding": "f6c8ca5e368d71546e94cdcb22a87c66e9561131",
+  "source_sha256": {
+    "src/transfer/information_bound.py": "18218cb9be6814176279b681734aa25e84e625ca9327fc11c3ea815798c84e58",
+    "src/transfer/exact_covariance.py": "d3f27c60e6a42d25c84c5bc86e7d3aac5882b8aa6b865a82390ae5a410eea721"
+  },
+  "axes": {
+    "spec_mathematics": "GO",
+    "standards_callers_state": "GO"
+  },
+  "blocking_findings": [],
+  "scope": "two explicit research diagnostic modules; information report JSON persistence/model-only replay; exact covariance bound in-memory compute/consume state",
+  "exact_covariance_own_save_load_api": false,
+  "tracked_production_or_supported_experiment_importers": [],
+  "caller_search": {
+    "command": "git grep -n -e transfer.information_bound -e transfer.exact_covariance -e ExactPropagatedCovariance -e InformationBoundReport -- src experiments",
+    "exit": 0,
+    "actual_output": "src/transfer/exact_covariance.py:111:class ExactPropagatedCovariance:\nsrc/transfer/exact_covariance.py:144:                byte_budget: int = 64 * 1024 * 1024) -> ExactPropagatedCovariance:\nsrc/transfer/exact_covariance.py:262:            raise ValueError(\"ExactPropagatedCovariance integrity check failed\")\nsrc/transfer/information_bound.py:483:class InformationBoundReport:\nsrc/transfer/information_bound.py:564:    ) -> InformationBoundReport:\nsrc/transfer/information_bound.py:634:    def from_dict(cls, record: dict) -> InformationBoundReport:\nsrc/transfer/information_bound.py:650:    def load(cls, path: str | Path) -> InformationBoundReport:\n"
+  },
+  "local_only_cli": {
+    "path": "D:\\BCI\\n2p3-net\\experiments\\run_information_bound.py",
+    "sha256": "d4fefbf48cbf85d45ae83bfd5997ee7b429f392cfcf294160dad0b11c619237a",
+    "modified": false,
+    "admitted": false,
+    "reason": "missing mandatory membership_kind and legacy ceiling/efficiency interpretation; real activation and independent-flash model need caller contract"
+  },
+  "validation_evidence": [
+    {
+      "path": "tmp/INFORMATION_BOUND_REPAIR/new_contracts.xml",
+      "tests": 29,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "independently_rerun": false
+    },
+    {
+      "path": "tmp/INFORMATION_BOUND_REPAIR/existing_information_contracts.xml",
+      "tests": 13,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "independently_rerun": false
+    },
+    {
+      "path": "tmp/EXACT_COVARIANCE_REPAIR/focused.xml",
+      "tests": 37,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "independently_rerun": false
+    },
+    {
+      "path": "tmp/EXACT_COVARIANCE_REPAIR/unresolved_followup.xml",
+      "tests": 6,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "independently_rerun": false
+    },
+    {
+      "path": "tmp/diagnostic_migration.xml",
+      "tests": 28,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "independently_rerun": false
+    }
+  ],
+  "validation_identity_notes": [
+    "information 29 final raw; information 13 prior 4aeee7b4 source",
+    "exact 37 prior c71aed01 source; exact 6 final d3f27c60 source",
+    "root migration 28 current accepted diagnostic files; do not sum overlapping scopes as independent scientific replicates"
+  ],
+  "new_operations": {
+    "tests": 0,
+    "numerical_probes": 0,
+    "public_fit": 0,
+    "public_score": 0,
+    "public_model_load": 0,
+    "synthetic_fit": 0,
+    "synthetic_score": 0,
+    "synthetic_model_load": 0,
+    "report_load": 0
+  },
+  "existing_operations_preserved": "author tests/probes include covariance estimation, MC, report JSON/save/load and analytic density/whitening; retain their nonzero software operations and source identities",
+  "files": {
+    "src/transfer/information_bound.py": {
+      "sha256": "18218cb9be6814176279b681734aa25e84e625ca9327fc11c3ea815798c84e58",
+      "bytes": 32678
+    },
+    "src/transfer/exact_covariance.py": {
+      "sha256": "d3f27c60e6a42d25c84c5bc86e7d3aac5882b8aa6b865a82390ae5a410eea721",
+      "bytes": 19478
+    },
+    "src/transfer/noise_model.py": {
+      "sha256": "fe393308b556265f4fcce5df5a5002068744d6899a2bfb355d4674e0c2919e11",
+      "bytes": 20744
+    },
+    "src/transfer/temporal_noise.py": {
+      "sha256": "81e8ad45eabc980f5ee7e2d3131ae0ee2e08b0c663fbbbfc75427c3f43b0581b",
+      "bytes": 50168
+    },
+    "src/data/finite_filter_operator.py": {
+      "sha256": "c03d59e3e81e09cdc54903516f26387eaf33dadb77c322c9b373a6bbe026f3ef",
+      "bytes": 4583
+    },
+    "tests/transfer/test_information_bound_diagnostic.py": {
+      "sha256": "01be4ffff5db6ff0457c257790cea5b02f16ea95d9d4684bd37e5a454e2b0f04",
+      "bytes": 10175
+    },
+    "tests/transfer/test_exact_covariance_support.py": {
+      "sha256": "f9bcd140c9e7ba61c9713b1b18dfb16bb3e50fb871e10b5e53be07f322ba8b82",
+      "bytes": 11800
+    },
+    "tests/transfer/test_exact_covariance_and_bounds.py": {
+      "sha256": "b78d298fb0671e501973c9690695a1250079438e2955344b399c0909f74ca9ec",
+      "bytes": 18877
+    },
+    "AGENTS.md": {
+      "sha256": "0165c2c8f23862680702f9a208c21dff8bc89d86730c51713b1f2226165cc7f6",
+      "bytes": 3158
+    },
+    "doc/README.md": {
+      "sha256": "c87e68c04f6a9f7ecb4e0d4cad7f06074ef202763502638f857d4b57d8022126",
+      "bytes": 3805
+    },
+    "doc/research_program.zh.md": {
+      "sha256": "4e15e1c8fa951c4e52e9fefa56a0548559c071708ecf2b2d53ebac4aa931aafc",
+      "bytes": 41385
+    },
+    "doc/technical_structure.zh.md": {
+      "sha256": "d41b6cd198a2185def80f54875ad924da5c1221b25d11d6a07a85fb80f9f56dc",
+      "bytes": 72131
+    },
+    "doc/input_contract_math.zh.md": {
+      "sha256": "29f8198cea8876706deeacc3100ef8fff8a603852ae2cec919d970f870c59447",
+      "bytes": 43188
+    },
+    "doc/roadmap.zh.md": {
+      "sha256": "f6e50be3866aeaf81363302356c6488b4a3d6b6ec1ce3625653d54164732eda0",
+      "bytes": 21007
+    },
+    "doc/engineering.zh.md": {
+      "sha256": "a25cff4fa4f3c1767d5dac96104355311e6247e9e4889d7f82480ac0ecd8e88e",
+      "bytes": 69375
+    },
+    "doc/workstation.zh.md": {
+      "sha256": "15576880746321dc21f666b24b6203a2a251780c0818ad3e0b53c1a74b1370cc",
+      "bytes": 28978
+    },
+    "tmp/INFORMATION_BOUND_REPAIR/HANDOFF.zh.md": {
+      "sha256": "47c019e14ebc06a25e23a9a57823ddb5256885dd955602c5806ca0323a6d0949",
+      "bytes": 8491
+    },
+    "tmp/INFORMATION_BOUND_REPAIR/binding.json": {
+      "sha256": "9b0c962d70896370d66194a1f644c6a3746da03ad9f1158c47c9ad622d591bf7",
+      "bytes": 6196
+    },
+    "tmp/EXACT_COVARIANCE_REPAIR/HANDOFF.zh.md": {
+      "sha256": "e0af3738b4381d695e71536f1270e695bb351280e12c8272e6c8d68ab67653b3",
+      "bytes": 7227
+    },
+    "tmp/EXACT_COVARIANCE_REPAIR/binding.json": {
+      "sha256": "737c184939725954c3c3002ea0c6ec7fe4428d0dd0b001edf1c02c13392f87fe",
+      "bytes": 3321
+    },
+    "tmp/DIAGNOSTIC_FINAL_REVIEW/HANDOFF.zh.md": {
+      "sha256": "eb3051a83aff600292c3a37eaba44f9fc0fafb48b01e186e3214c40ebb92663d",
+      "bytes": 9325
+    },
+    "tmp/INFORMATION_BOUND_REPAIR/new_contracts.xml": {
+      "sha256": "299a56300265bb0999fcd397b3821f355b69dbc5d23b2105c6eb0c58b9c65fdf",
+      "bytes": 5056
+    },
+    "tmp/INFORMATION_BOUND_REPAIR/existing_information_contracts.xml": {
+      "sha256": "5c1fdeb6c6552d52acb369979ce0e0008580be7cbe65f7d8102959e00c5c37f0",
+      "bytes": 2211
+    },
+    "tmp/EXACT_COVARIANCE_REPAIR/focused.xml": {
+      "sha256": "3370b8f87b09c2b5a72b6596224958fb0ab262e132a3e4ec4107a8948b73c399",
+      "bytes": 5691
+    },
+    "tmp/EXACT_COVARIANCE_REPAIR/unresolved_followup.xml": {
+      "sha256": "5f12bee9604e3a915569d60ee825c96fa17f91c34ac2aa0ee56f103c7748eae2",
+      "bytes": 1159
+    },
+    "tmp/diagnostic_migration.xml": {
+      "sha256": "2f2ce92fed307f9e157708c8e8e1b5fba5beb194f449dc1c2fc9b83b6983c586",
+      "bytes": 4431
+    }
+  },
+  "owned_outputs": [
+    "tmp/DIAGNOSTIC_FINAL_REVIEW/HANDOFF.zh.md",
+    "tmp/DIAGNOSTIC_FINAL_REVIEW/binding.json"
+  ],
+  "source_tests_docs_modified_by_reviewer": false
+}

@@ -47,11 +47,12 @@ def test_auto_resources_use_quota_and_memory_instead_of_one_worker():
     assert result["gpu_slots"] == result["target_workers"] == 8
     assert result["inner_workers_per_group"] == 4
     assert result["compiler_threads_per_worker"] == 1
-    limited = resolve_source_resources({"cpu_budget": 3}, 9, "cuda",
+    limited = resolve_source_resources({"cpu_budget": 3, "resource_scope": "local_development"}, 9, "cuda",
                                        cpu_count=25, free_device_bytes=6 * 2**30, free_host_bytes=256 * 2**30)
     assert limited["source_workers"] == 2
     assert limited["gpu_slots"] == 1
-    explicit = resolve_source_resources({"source_workers": 2, "target_workers": 3}, 9,
+    explicit = resolve_source_resources({"source_workers": 2, "target_workers": 3,
+                                         "resource_scope": "local_development"}, 9,
                                          "cuda", cpu_count=25, free_device_bytes=32 * 2**30,
                                          free_host_bytes=256 * 2**30)
     assert explicit["source_workers"] == 2 and explicit["target_workers"] == 3
@@ -338,5 +339,6 @@ def test_cuda_plans_without_a_declared_floor_inherit_the_central_cloud_floor():
                                  free_host_bytes=88 * 2**30)
     assert with_cloud_resource_floor({}, "cpu") == {}
     assert "cloud_resource_floor" not in with_cloud_resource_floor({"resource_scope": "local_development"}, "cuda")
-    declared = {"cloud_resource_floor": {"cpu_threads": 8, "gpu_workers": 1}}
+    declared = {"cloud_resource_floor": {"cpu_threads": 8, "gpu_workers": 1},
+                "resource_scope": "local_development"}
     assert with_cloud_resource_floor(declared, "cuda") == declared
