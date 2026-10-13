@@ -28,9 +28,9 @@ from transfer.temporal_noise import TemporalNoise
 
 
 def make_source(person=0, *, rank_case="full", scope="source_training", observation="native", ar=0., unit_scale=1.,
-                zero_sample=False):
+                zero_sample=False, channels=("Fz", "Cz", "Pz"), acquisition_reference="right earlobe"):
     rng = np.random.default_rng(20261011 + person)
-    layout = SpatialLayout(("Fz", "Cz", "Pz"), "right earlobe", f"{person + 1:064x}", ("EEG",) * 3,
+    layout = SpatialLayout(channels, acquisition_reference, f"{person + 1:064x}", ("EEG",) * 3,
                            "V" if unit_scale == 1 else "uV")
     basis = np.array([[1., 0.], [.7, .4], [.2, 1.], [0., .6]])
     if zero_sample:

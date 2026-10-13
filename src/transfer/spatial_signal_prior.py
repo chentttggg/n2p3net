@@ -35,7 +35,7 @@ from transfer.temporal_noise import TemporalNoise
 
 IMPLEMENTATION_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 _PRIOR_SCHEMA = "n2p3_spatial_signal_prior/2"
-_POSTERIOR_SCHEMA = "n2p3_spatial_signal_posterior/3"
+_POSTERIOR_SCHEMA = "n2p3_spatial_signal_posterior/4"
 _OBSERVATION_SCHEMA = "n2p3_spatial_observation/2"
 _IDENTITY_RESOLUTION = float(np.sqrt(np.finfo(float).eps))
 _STRUCTURAL_MAX_SCALARS = 250_000
@@ -52,7 +52,9 @@ def _matrix(value, name):
 def _exact_structural_null(operators, width):
     """Exact binary64 structural null of actual design plus record nuisances.
 
-    The operators are the physical `X|Z` rows before noise/QR compression.
+    The operators are physical `X|Z` rows in the actual declared observation
+    chart before noise/QR compression. Declared CAR uses exact EEG differences;
+    this preserves its known reference null through floating chart generation.
     Every stored finite operand is promoted to its exact dyadic Fraction; no
     tolerance can turn an exact nonzero functional on this null into signal.
     """
@@ -473,6 +475,50 @@ class SpatialObservation:
         if values.shape[1] != len(self.layout.channels):
             raise ValueError("native samples differ from actual measured channels")
         return values @ self.matrix.T
+
+    def _structural_matrix(self):
+        if self.declaration["kind"] == "average_actual_EEG":
+            count = len(self.layout.channels)
+            return np.column_stack((np.eye(count - 1), -np.ones(count - 1)))
+        return self.normalized_support_basis.T @ self.normalized_matrix
+
+    def _exact_effect_map(self):
+        """Physical covectors and their actual declared generation roundoff.
+
+        Q is the stored Euclidean support chart. For declared CAR the physical
+        map is exactly Q.T diag(g) (I - 11.T/C), not a tiny reference component
+        created by floating matrix multiplication. An arbitrary output matrix
+        has no such authority and retains every stored nonzero coefficient.
+        """
+        numerical = self.support_basis.T @ self.matrix
+        if self.declaration["kind"] != "average_actual_EEG":
+            return tuple(tuple(Fraction.from_float(float(value)) for value in row) for row in numerical), {
+                "authority": "actual_binary64_functional", "generation_rounding_bound": np.zeros_like(numerical).tolist()}
+        count = len(self.layout.channels)
+        gains = tuple(Fraction.from_float(float(value)) for value in self.declaration["row_gains"])
+        q = [[Fraction.from_float(float(value)) for value in row] for row in self.support_basis]
+        nominal = [[gains[i] * (Fraction(int(i == j)) - Fraction(1, count))
+                    for j in range(count)] for i in range(count)]
+        stored = [[Fraction.from_float(float(value)) for value in row] for row in self.matrix]
+        exact, bounds = [], []
+        for column in range(self.support_basis.shape[1]):
+            values, row_bounds = [], []
+            for j in range(count):
+                ideal = sum((q[i][column] * nominal[i][j] for i in range(count)), Fraction(0))
+                defect = sum((abs(q[i][column]) * abs(stored[i][j] - nominal[i][j])
+                              for i in range(count)), Fraction(0))
+                magnitude = sum((abs(q[i][column] * stored[i][j]) for i in range(count)), Fraction(0))
+                bound = defect + Fraction.from_float(_gamma(count)) * magnitude
+                actual = Fraction.from_float(float(numerical[column, j]))
+                if abs(actual - ideal) > bound:
+                    raise SpatialPriorIdentificationError("declared_CAR_effect_generation_unresolved",
+                        support_coordinate=column, native_electrode=j)
+                values.append(ideal)
+                row_bounds.append(float(bound))
+            exact.append(tuple(values))
+            bounds.append(row_bounds)
+        return tuple(exact), {"authority": "declared_Q_transpose_gain_exact_average_reference",
+                              "generation_rounding_bound": bounds}
 
     def _noise_root(self, native_root):
         """Push the frozen native noise factor through the actual range map.
@@ -922,7 +968,10 @@ class SpatialSignalPosterior:
         if (not isinstance(self.structural_binding, dict)
                 or self.structural_binding.get("operator_sha256") != _structural_operator_digest(operators)
                 or self.structural_binding.get("arithmetic") != "exact_binary64_fraction_rref"
-                or self.structural_binding.get("resolution") != structural_resolution):
+                or self.structural_binding.get("resolution") != structural_resolution
+                or tuple(self.structural_binding.get("observation_coordinates", ())) != tuple(
+                    "declared_CAR_exact_EEG_differences" if record["observation"]["declaration"]["kind"] == "average_actual_EEG"
+                    else "actual_normalized_observation" for record in self.fit_records)):
             raise ValueError("saved structural C identifiability binding differs from actual operators")
         require_sha256(self.noise_binding.get("authority_sha256"), "fitted noise authority")
         if restore_state is not None:
@@ -981,14 +1030,17 @@ class SpatialSignalPosterior:
                                      "noise_factorization": "actual_range_square_root_pushforward_QR",
                                      "likelihood_sha256": array_digest(root, response)}
             records.append(record)
-            mapping = block.observation.normalized_support_basis.T @ block.observation.normalized_matrix
+            mapping = block.observation._structural_matrix()
             operator = np.kron(mapping, block.design)
             nuisance = (np.kron(np.eye(mapping.shape[0]), block.nuisance)
                         if block.nuisance is not None else np.empty((len(operator), 0)))
             structural_operators.append(np.column_stack((operator, nuisance)))
         null_basis, structural_resolution = _exact_structural_null(structural_operators, prior.mean.size)
         structural_binding = {"operator_sha256": _structural_operator_digest(structural_operators),
-            "arithmetic": "exact_binary64_fraction_rref", "resolution": structural_resolution}
+            "arithmetic": "exact_binary64_fraction_rref", "resolution": structural_resolution,
+            "observation_coordinates": ["declared_CAR_exact_EEG_differences"
+                if record["observation"]["declaration"]["kind"] == "average_actual_EEG"
+                else "actual_normalized_observation" for record in records]}
         return cls(prior, noise, tuple(roots), tuple(responses), tuple(records), noise_binding,
                    tuple(structural_operators), null_basis, structural_binding)
 
@@ -1124,6 +1176,8 @@ class ERPPhysicalEffect:
     response_functional: np.ndarray = field(init=False, repr=False, compare=False)
     spatial_map: np.ndarray = field(init=False, repr=False, compare=False)
     functional: np.ndarray = field(init=False, repr=False, compare=False)
+    structural_spatial_map: tuple[tuple[Fraction, ...], ...] = field(init=False, repr=False, compare=False)
+    structural_functional: tuple[tuple[Fraction, ...], ...] = field(init=False, repr=False, compare=False)
     definition: dict = field(init=False)
 
     def __post_init__(self):
@@ -1147,11 +1201,14 @@ class ERPPhysicalEffect:
         f = np.r_[np.zeros(basis.shape[1]), weights @ basis]
         mapping = self.observation.support_basis.T @ self.observation.matrix
         functional = np.kron(mapping, f[None, :])
+        exact_mapping, map_authority = self.observation._exact_effect_map()
+        exact_f = tuple(Fraction.from_float(float(value)) for value in f)
+        exact_functional = tuple(tuple(a * value for a in row for value in exact_f) for row in exact_mapping)
         # Participant-specific layout authority and noise are measurement law;
         # actual electrodes/reference/units and A are the common effect chart.
         physical_layout = {key: self.layout.record()[key] for key in
                            ("channels", "channel_types", "acquisition_reference", "signal_unit")}
-        definition = {"schema": "n2p3_physical_ERP_effect/1", "layout": physical_layout,
+        definition = {"schema": "n2p3_physical_ERP_effect/2", "layout": physical_layout,
             "dictionary_sha256": binding["dictionary_sha256"], "actual_basis_sha256": array_digest(basis),
             "waveform_weights": weights.tolist(), "grid_seconds": grid.tolist(),
             "sample_rate_hz": float(rate), "operator_identity": operator,
@@ -1159,12 +1216,16 @@ class ERPPhysicalEffect:
             "vectorization": "column_major_response_by_native_EEG",
             "output_names": list(self.observation.output_names),
             "output_reference": self.observation.output_reference,
-            "spatial_map": mapping.tolist(), "observed_rank": len(mapping)}
+            "spatial_map": mapping.tolist(), "observed_rank": len(mapping),
+            "structural_spatial_map": [[str(value) for value in row] for row in exact_mapping],
+            "structural_map_generation": map_authority}
         for name, value in (("basis", basis), ("waveform_weights", weights), ("grid_seconds", grid),
                             ("response_functional", f), ("spatial_map", mapping), ("functional", functional)):
             object.__setattr__(self, name, frozen_array(value))
         object.__setattr__(self, "design_binding", freeze_metadata(binding))
         object.__setattr__(self, "definition", freeze_metadata(definition))
+        object.__setattr__(self, "structural_spatial_map", exact_mapping)
+        object.__setattr__(self, "structural_functional", exact_functional)
 
     @classmethod
     def from_prior(cls, prior, *, basis, waveform_weights, grid_seconds, observation):
@@ -1185,7 +1246,7 @@ class ERPPhysicalEffect:
             raise ValueError("physical effect differs from the actual prior/design coefficient groups")
 
     def record(self):
-        payload = {"schema": "n2p3_physical_ERP_effect_state/1", "layout": self.layout.record(),
+        payload = {"schema": "n2p3_physical_ERP_effect_state/2", "layout": self.layout.record(),
             "design_binding": dict(self.design_binding), "basis": self.basis.tolist(),
             "waveform_weights": self.waveform_weights.tolist(), "grid_seconds": self.grid_seconds.tolist(),
             "observation": self.observation.record(), "definition": dict(self.definition)}
@@ -1195,7 +1256,7 @@ class ERPPhysicalEffect:
     def from_record(cls, record):
         payload = json.loads(json.dumps(record, allow_nan=False))
         digest = payload.pop("artifact_sha256", None)
-        if payload.get("schema") != "n2p3_physical_ERP_effect_state/1" or metadata_digest(payload) != digest:
+        if payload.get("schema") != "n2p3_physical_ERP_effect_state/2" or metadata_digest(payload) != digest:
             raise ValueError("physical effect state identity mismatch")
         layout = SpatialLayout.from_record(payload["layout"])
         observed = payload["observation"]
@@ -1206,6 +1267,103 @@ class ERPPhysicalEffect:
         if metadata_digest(effect.record()) != metadata_digest(record):
             raise ValueError("physical effect state differs from actual physical relations")
         return effect
+
+
+@dataclass(frozen=True, init=False)
+class ERPPhysicalTransport:
+    """A reference-free destination functional embedded in actual source EEG.
+
+    The source effect supplies its frozen temporal definition, not a measured
+    native effect or a prior-based completion. The destination's covectors are
+    placed in source coefficient coordinates; the real source likelihood must
+    subsequently identify them. Separate acquisition references are independent
+    unknown potentials, even when their provenance strings happen to match.
+    """
+
+    source_effect: ERPPhysicalEffect
+    destination_effect: ERPPhysicalEffect
+    local_effect: ERPPhysicalEffect
+    channel_map: np.ndarray
+    binding: dict
+    local_structural_functional: tuple[tuple[Fraction, ...], ...]
+
+    @classmethod
+    def between(cls, source_effect, destination_effect):
+        from data.channel import canonical_channel_name
+
+        if not isinstance(source_effect, ERPPhysicalEffect) or not isinstance(destination_effect, ERPPhysicalEffect):
+            raise TypeError("physical transport needs explicit source and destination effects")
+        source, destination = source_effect, destination_effect
+        temporal_fields = ("dictionary_sha256", "actual_basis_sha256", "sample_rate_hz",
+                           "operator_identity", "coefficient_groups", "vectorization")
+        if (any(source.definition[key] != destination.definition[key] for key in temporal_fields)
+                or not np.array_equal(source.basis, destination.basis)
+                or not np.array_equal(source.waveform_weights, destination.waveform_weights)
+                or not np.array_equal(source.grid_seconds, destination.grid_seconds)):
+            raise ValueError("source and destination temporal effect definitions differ")
+        if source.layout.signal_unit != destination.layout.signal_unit:
+            raise ValueError("physical transport requires the same explicit voltage unit")
+        source_channels = tuple(map(canonical_channel_name, source.layout.channels))
+        destination_channels = tuple(map(canonical_channel_name, destination.layout.channels))
+        if (len(set(source_channels)) != len(source_channels)
+                or len(set(destination_channels)) != len(destination_channels)):
+            raise ValueError("physical transport needs unique shared canonical electrode identities")
+        # An exact binary64 nonzero coefficient on the unknown acquisition
+        # reference is information, however small. A tolerant sum would erase it.
+        reference_coefficients = tuple(-sum(row, Fraction(0)) for row in destination.structural_spatial_map)
+        if any(reference_coefficients):
+            raise SpatialPriorIdentificationError("transport_reference_component_not_observed",
+                exact_reference_coefficients=[str(value) for value in reference_coefficients],
+                capability="reference_free_actual_electrode_functionals")
+        channel_map = np.zeros((len(destination_channels), len(source_channels)))
+        missing = []
+        for index, channel in enumerate(destination_channels):
+            if channel in source_channels:
+                channel_map[index, source_channels.index(channel)] = 1.
+            elif any(row[index] for row in destination.structural_spatial_map):
+                missing.append(channel)
+        if missing:
+            raise SpatialPriorIdentificationError("transport_required_electrode_not_measured",
+                required_missing_electrodes=missing, actual_source_electrodes=list(source_channels))
+        local_map = destination.spatial_map @ channel_map
+        # These are effect-support coordinates, not invented measured channels.
+        names = tuple(f"physical_effect_support:{index}" for index in range(len(local_map)))
+        local_observation = SpatialObservation(source.layout, local_map, names,
+                                                destination.observation.output_reference)
+        local = ERPPhysicalEffect(source.layout, dict(source.design_binding), source.basis,
+                                  source.waveform_weights, source.grid_seconds, local_observation)
+        exact_local_map = tuple(tuple(sum((row[j] * int(channel_map[j, i]) for j in range(len(row))), Fraction(0))
+                                     for i in range(len(source_channels)))
+                                for row in destination.structural_spatial_map)
+        exact_f = tuple(Fraction.from_float(float(value)) for value in source.response_functional)
+        exact_local_functional = tuple(tuple(a * value for a in row for value in exact_f) for row in exact_local_map)
+        # Embedding is a selector/permutation: every used coefficient survives
+        # exactly, including coefficients on channels absent from the other layout.
+        if not np.array_equal(local.spatial_map @ channel_map.T, destination.spatial_map):
+            raise SpatialPriorIdentificationError("transport_physical_embedding_unresolved")
+        result = object.__new__(cls)
+        for name, value in (("source_effect", source), ("destination_effect", destination), ("local_effect", local)):
+            object.__setattr__(result, name, value)
+        object.__setattr__(result, "channel_map", frozen_array(channel_map))
+        object.__setattr__(result, "local_structural_functional", exact_local_functional)
+        object.__setattr__(result, "binding", freeze_metadata({
+            "physical_relation": "destination_electrode_covectors_embedded_in_actual_source",
+            "source_canonical_electrodes": list(source_channels),
+            "destination_canonical_electrodes": list(destination_channels),
+            "exact_reference_coefficients": [str(value) for value in reference_coefficients],
+            "local_structural_spatial_map": [[str(value) for value in row] for row in exact_local_map],
+            "destination_structural_map_generation": dict(destination.definition["structural_map_generation"]),
+            "reference_policy": "separate_unknown_acquisition_potentials_cancel_exactly",
+            "observation_row_space_authority": "actual_source_joint_likelihood_structural_null_and_BLUE_witness",
+            "posterior_or_dprime_transport_used": False}))
+        return result
+
+    def record(self):
+        payload = {"schema": "n2p3_physical_ERP_transport/1", "source_effect": self.source_effect.record(),
+            "destination_effect_artifact_sha256": self.destination_effect.record()["artifact_sha256"],
+            "local_effect": self.local_effect.record(), "channel_map": self.channel_map.tolist(),
+            "binding": dict(self.binding)}
+        return {**payload, "artifact_sha256": metadata_digest(payload)}
 
 
 def _likelihood_frame(posterior):
@@ -1257,13 +1415,19 @@ class SpatialLikelihoodDependence:
         return {"frame": dict(self.frame), "factor": self.factor.tolist(), "authority": dict(self.authority)}
 
 
-def _effect_measurement(posterior, effect, dependence):
+def _effect_measurement(posterior, effect, dependence, *, physical_transport=None):
     """Joint identifiable functional BLUE; proper prior is only its numeric chart."""
+    structural_functional = effect.structural_functional
+    if physical_transport is not None:
+        if (not isinstance(physical_transport, ERPPhysicalTransport)
+                or metadata_digest(physical_transport.local_effect.record()) != metadata_digest(effect.record())):
+            raise ValueError("effect structural transport differs from its owned local functional")
+        structural_functional = physical_transport.local_structural_functional
     structural_witness = []
     for basis in posterior.structural_null_basis:
         witness = []
-        for row in effect.functional:
-            value = sum((Fraction.from_float(float(coefficient)) * coefficient_null
+        for row in structural_functional:
+            value = sum((coefficient * coefficient_null
                          for coefficient, coefficient_null in zip(row, basis, strict=True)), Fraction(0))
             witness.append(value)
         structural_witness.append(witness)
@@ -1351,7 +1515,60 @@ class ERPChannelEstimate:
     receipt: dict
 
     @classmethod
+    def from_transported_posterior(cls, posterior, *, source_effect, destination_effect, dependence, temporal_noise):
+        """Measure a common physical contrast directly in the actual source law.
+
+        No native BLUE is required: it may contain unobserved reference modes.
+        The local destination functional uses the existing joint-likelihood BLUE
+        and full native noise factor, then receives its common effect identity.
+        """
+        source_effect.validate_prior(posterior.prior)
+        source_kinds = {record["observation"]["declaration"]["kind"] for record in posterior.fit_records}
+        if not source_kinds <= {"native_EEG", "measured_reference", "average_actual_EEG"}:
+            raise SpatialPriorIdentificationError("transport_source_physical_structure_requires_declared_observation",
+                actual_source_observation_kinds=sorted(source_kinds),
+                capability="native_measured_reference_or_declared_CAR_source_likelihood")
+        # The posterior's stored likelihood is immutable. Its observation
+        # metadata must still prove this new physical capability at ingress;
+        # a re-signed kind string cannot authorize arbitrary generic matrices.
+        for record, operator, information in zip(posterior.fit_records, posterior.structural_operators,
+                                                  posterior.information_roots, strict=True):
+            saved = record["observation"]
+            observation = SpatialObservation(SpatialLayout.from_record(saved["layout"]), saved["matrix"],
+                tuple(saved["output_names"]), saved["output_reference"], dict(saved["declaration"]))
+            if metadata_digest(observation.record()) != metadata_digest(saved):
+                raise ValueError("source physical observation differs from its actual declared relations")
+            mapping = observation._structural_matrix()
+            samples, width, rank = record["samples"], record["response_dimensions"], len(mapping)
+            nuisance_width = record["nuisance_dimensions"]
+            if (operator.shape != (rank * samples, width * len(observation.layout.channels) + rank * nuisance_width)
+                    or information.shape != (rank * min(samples, width), posterior.prior.mean.size)
+                    or width != posterior.prior.mean.shape[0] or np.any(~np.isin(mapping, (-1., 0., 1.)))):
+                raise ValueError("source physical observation differs from its actual structural operator dimensions")
+            row, channel = np.argwhere(mapping != 0)[0]
+            design = operator[row * samples:(row + 1) * samples, channel * width:(channel + 1) * width] / mapping[row, channel]
+            nuisance = operator[:samples, posterior.prior.mean.size:posterior.prior.mean.size + nuisance_width]
+            expected = np.column_stack((np.kron(mapping, design), np.kron(np.eye(rank), nuisance)))
+            if not np.array_equal(operator, expected):
+                raise ValueError("source physical observation differs from its actual structural operator relation")
+        transport = ERPPhysicalTransport.between(source_effect, destination_effect)
+        local = cls._from_owned_posterior(posterior, effect=transport.local_effect,
+            dependence=dependence, temporal_noise=temporal_noise, physical_transport=transport)
+        result = object.__new__(cls)
+        object.__setattr__(result, "effect", destination_effect)
+        for name in ("mean", "covariance_factor", "noise_sd"):
+            object.__setattr__(result, name, getattr(local, name))
+        object.__setattr__(result, "receipt", freeze_metadata({**local.receipt,
+            "physical_transport": transport.record()}))
+        return result
+
+    @classmethod
     def from_posterior(cls, posterior, *, effect, dependence, temporal_noise):
+        return cls._from_owned_posterior(posterior, effect=effect, dependence=dependence,
+                                        temporal_noise=temporal_noise, physical_transport=None)
+
+    @classmethod
+    def _from_owned_posterior(cls, posterior, *, effect, dependence, temporal_noise, physical_transport):
         if (not isinstance(posterior, SpatialSignalPosterior) or not isinstance(effect, ERPPhysicalEffect)
                 or not isinstance(dependence, SpatialLikelihoodDependence)):
             raise TypeError("effect estimation needs owned posterior/effect/dependency inputs")
@@ -1368,7 +1585,7 @@ class ERPChannelEstimate:
         if (len(scopes) != 1 or len(participants) != 1 or None in participants
                 or any(r["authorization"]["temporal_program_sha256"] != temporal_sha for r in records)):
             raise ValueError("effect C scope/participant or functional noise differs from its actual producer")
-        mean, factor, resolution = _effect_measurement(posterior, effect, dependence)
+        mean, factor, resolution = _effect_measurement(posterior, effect, dependence, physical_transport=physical_transport)
         w = effect.waveform_weights
         inverse_white = np.linalg.solve(temporal_noise.whiten(np.eye(len(w))), np.eye(len(w)))
         temporal_variance = float(np.sum((w @ inverse_white) ** 2))
@@ -1400,7 +1617,8 @@ class ERPChannelEstimate:
         return factor @ factor.T
 
     def record(self):
-        payload = {"schema": "n2p3_ERP_effect_measurement/1", "effect": self.effect.record(),
+        schema = "n2p3_ERP_effect_measurement/2" if "physical_transport" in self.receipt else "n2p3_ERP_effect_measurement/1"
+        payload = {"schema": schema, "effect": self.effect.record(),
             "mean": self.mean.tolist(), "covariance_factor": self.covariance_factor.tolist(),
             "noise_sd": self.noise_sd.tolist(), "dprime_mean": (self.mean / self.noise_sd).tolist(),
             "receipt": dict(self.receipt)}
@@ -1413,14 +1631,22 @@ class ERPChannelEstimate:
     def load(cls, path, *, posterior, temporal_noise, expected_artifact_sha256):
         saved = json.loads(Path(path).read_text(encoding="utf-8"))
         payload = {key: value for key, value in saved.items() if key != "artifact_sha256"}
-        if (payload.get("schema") != "n2p3_ERP_effect_measurement/1"
+        if (payload.get("schema") not in {"n2p3_ERP_effect_measurement/1", "n2p3_ERP_effect_measurement/2"}
                 or saved.get("artifact_sha256") != expected_artifact_sha256
                 or metadata_digest(payload) != expected_artifact_sha256):
             raise ValueError("effect measurement differs from its external artifact identity")
         effect = ERPPhysicalEffect.from_record(saved["effect"])
         dependency = saved["receipt"]["dependency"]
         dependence = SpatialLikelihoodDependence(dependency["frame"], dependency["factor"], dependency["authority"])
-        actual = cls.from_posterior(posterior, effect=effect, dependence=dependence, temporal_noise=temporal_noise)
+        if payload["schema"] == "n2p3_ERP_effect_measurement/2":
+            transport = saved["receipt"]["physical_transport"]
+            source_effect = ERPPhysicalEffect.from_record(transport["source_effect"])
+            actual = cls.from_transported_posterior(posterior, source_effect=source_effect,
+                destination_effect=effect, dependence=dependence, temporal_noise=temporal_noise)
+            if metadata_digest(transport) != metadata_digest(actual.receipt["physical_transport"]):
+                raise ValueError("saved effect transport differs from its actual physical source relation")
+        else:
+            actual = cls.from_posterior(posterior, effect=effect, dependence=dependence, temporal_noise=temporal_noise)
         if (metadata_digest(actual.receipt) != metadata_digest(saved["receipt"])
                 or not np.array_equal(actual.noise_sd, saved["noise_sd"])):
             raise ValueError("effect measurement differs from its actual likelihood producer")
