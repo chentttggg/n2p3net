@@ -12,8 +12,10 @@ the state when it was written.
 - Acquisition and personal inference: [workstation](doc/workstation.zh.md).
 
 Use the repository virtual environment. Dependencies are declared in
-`pyproject.toml` and resolved in `uv.lock`. Run Ruff, relevant contract and
-counterexample tests, and `git diff --check`; use the full suite for broad changes.
+`pyproject.toml` and resolved in `uv.lock`. Review the affected modules and their
+actual builders, callers, save/load and replay paths before integration. Run Ruff,
+the contract and counterexample checks that distinguish the changed behavior,
+and `git diff --check`; expand testing for a concrete unresolved integration risk.
 Keep builders, callers, checkpoint gates, tests and active guidance consistent.
 
 Before every cloud training launch or resume, apply the
@@ -48,3 +50,9 @@ superseded research material before retiring it. Historical archives, raw data,
 caches, results and credentials stay local; archive manifests stay in Git.
 See [archive distribution](frozen/README.md). This checkout contains the backend;
 the BrainSync acquisition application is a separate local project.
+
+Research subagents have no agent-imposed time or compute limit. Give them clear
+scientific questions and code ownership, then review their logic before merging.
+Prefer code-only worktrees on D: and remove completed task trees after preserving
+their commits and necessary handoff. Maintain conclusions in the existing topic
+documents, with concrete positive statements and explicit assumptions where useful.

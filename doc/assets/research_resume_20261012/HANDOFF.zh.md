@@ -1,10 +1,10 @@
-# 科研总监暂停交接
+# 科研总监交接
 
-2026-10-13用户明确要求“暂停工作，收尾更新handoff”。本记录是续接入口，活动科学规范仍由六指南和四个主题页持有。科研目标暂停，整体计划未完成；本轮所有科研子代理已结束。云窗口是独立执行owner，本记录不改变其任务和进程。
+2026-10-13用户最新指令已恢复科研，授权自主修改并要求精简长期记忆。本记录沿用现有续接入口，活动科学规范由六指南和四主题页持有；原暂停检查点记录当时状态。科研集成树已迁至D盘，原详细日志随树保留；两个新实施树仅含Git代码。当前三路子任务为binary固定requested风险、B09物理效应/reference输运、只读全局科研依赖审阅。云窗口继续独占执行调度、回放图/IO及原结果恢复，等待其完整入口交付后逐模块集成。
 
 ## 工作身份与恢复
 
-- 当前工作树：`C:/Users/chent/.codex/worktrees/research-director-resume/n2p3-net`。
+- 当前工作树：`D:/BCI/worktrees/research-director`；从原C盘树迁移并修复Git注册，没有新增科研载荷副本。
 - 当前分支：`codex/research-director-resume-20261013`，恢复基点`f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c`。
 - 暂停前完整代码/结果文档提交：`577ac4c68db17cf3ce12431add8f371deaab5759`。本handoff及当前checkpoint随后作为文档提交；最终提交可由该分支tip解析，避免在文件中自引用提交SHA。
 - `f6c8ca5`：目标校准scope和严格warm-start完整状态覆盖；`2dc48dd`：Gaussian诊断及中央资源floor；`afa9bbb`：当前科学路线与验收；`577ac4c`：从云端`4c4b987`接收完成读数，保较新的科研记录并解决四个文档冲突。
@@ -63,4 +63,4 @@ src/research/source_execution.py af464538c1525dd71b95c952e90d64a3ee930b399d574b4
 4. 接云node/chunk候选时root仔细逐模块审阅，不以作者测试数量替代集成验收。优先核内存/lease/reduction与数学score等价，再做必要针对性检查。
 5. B07冻结同支持公共opt-in、fractional时钟authority及C-latent新producer；B05更多selection/类别、高置信校准和joint MLE；B09 source builder/reference transport/ensemble；B10/B11/B12完整科研出口及B13成人/设备确认继续按依赖推进。
 
-日常seed `20260918`，大版本才三seed；科研子代理无我方人工期限/额度。没有用户恢复指令前不再推进科研代码、新训练或新代理任务。暂停是用户选择，未完成研究不标complete或blocked。
+日常seed `20260918`，大版本才三seed；科研子代理无我方人工期限/额度。按最新授权自主推进研究和集成，围绕实际问题做定向验证。已整合任务树在保留提交与必要交接后清理，结论写入现有主题页。
