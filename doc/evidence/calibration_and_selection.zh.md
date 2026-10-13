@@ -6,7 +6,7 @@
 
 binary候选的排名量固定为fit前requested正负样本对的成功credit；任一输出缺失的pair记0，分母保持`n+×n−`。完整输出等于原AUC，删除输出只能丢失非负credit。可用子集ROC AUC作诊断单列，同风险先保coverage。legacy CE固定共同校准class cost与requested验证mass，完整输出才参与排名；BrainSync继续保全部真实45-flash block，缺失及tie为miss。普通/QC/EOG产品与公共E3共原fit/refit owner，保存支持、评分和final选择关系。两个实际source候选的新旧对照中，full-C参数、独立预测及保存加载逐bit一致；最终入口关系核查随集成源码绑定。
 
-下一选择切片针对迁移收益随数据集与个人变化的现象：把source NN、matched scratch NN及各自NN+xDAWN纳入一个新声明的四候选fixed程序族。它们共用物理输入、source/scratch匹配配方和真正更早的C prefix；原选择/graph/保存/parent接口已支持。固定baseline与tie规则在新计划声明，future队列评价最终程序。此新roster与原entry005四候选分别保存身份。
+`transfer_scratch_prefix_plan`已将source NN、matched scratch NN及各自NN+xDAWN接入新四候选fixed程序族，只替换新计划的`prefix_selection`。source/scratch共input profile、架构和匹配配方，xDAWN保其自身声明视图；物理decision、预算与可用时间由原owner核。baseline与tie政策预声明，future队列评价最终程序。实际source/scratch初始化、K0、C200/800、五个合法forward选择行、同run图/保存/零fit重放与parent评分已贯通，见[整合绑定](../assets/research_resume_20261012/research_integration_acceptance.json)。下一公共计划沿该新roster冻结，与原entry005分别保存身份。
 
 概率尾部的下一规格是pool层uniform-contamination：`pε=(1−ε)p+ε/J`，ε从完整pool的合法OOF概率以凸NLL目标学习。ε>0提供明确概率下限，ε<1保数学排序；有限精度near-tie继续由原decision owner判定。ε在每层训练scope重估，完整专家roster与requested失败账本沿用原owner，实施时给新概率程序和保存身份。当前优先完成其独立数学/行为验证，再接同run训练与重放。
 

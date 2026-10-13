@@ -1,6 +1,6 @@
 # 当前执行计划
 
-当前优先推进迁移异质性和高置信错误校准：在合法C内比较source NN、matched scratch NN，以及各自NN+xDAWN的四个完整fixed程序，复用真正forward-prefix选择、同run保存重放和独立future评价。既有factory支持此roster；新计划预声明baseline、tie规则和选择行数，接在云回放入口最终集成之后。fixed-only至少需一个先前完整训练组，K200单组继续走预声明baseline。
+当前优先推进迁移异质性和高置信错误校准：四个完整fixed程序（source NN、matched scratch NN及各自NN+xDAWN）已由opt-in factory接入真正forward-prefix选择，同run拟合、保存重放与parent链软件验收完成。新公共计划预声明baseline、tie规则和选择行数，接在云回放入口最终集成之后。fixed-only至少需一个先前完整训练组，K200单组继续走预声明baseline；K0依该baseline的实际源能力保输出及requested账本。
 
 另外两条科学主线可独立前进：B07建立多通道C-latent的新拟合后验及其权限、历史预测和持久包；B11建立固定noise shape K₀的真实来源与flat nuisance长记录的共同体积测度。现有native多通道frozen-C history和proper/no-flat联合尺度是可复用底座，新增C潜变量和flat能力分别形成自己的producer与纵向验收。B09先交共同物理效应/reference输运，B00先闭合固定requested风险；各块继续按真实依赖推进。
 

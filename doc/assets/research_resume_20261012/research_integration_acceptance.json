@@ -75,9 +75,57 @@
     "evidence_scope": "software_correctness"
   },
   "next": {
-    "four_fixed_family": "in_progress in root owned calibration_selection.py/test file",
+    "four_fixed_family": "accepted software; public evaluation awaits actual inputs/resources and final cloud caller",
     "spatial_exact_factors": "in_progress independent codex/spatial-exact-factors; /5 distinct producer",
     "cloud_replay_full_entry": "await final cloud owner delivery",
     "payload_recovery": "cloud owner"
+  },
+  "transfer_scratch_family": {
+    "status": "accepted",
+    "commit": "1edbeca3018201e7738c4c6156a907a0377ed901",
+    "factory": "src/research/calibration_selection.py",
+    "source_sha256": "5f6313fcfb83f940c5553d86a5fd04212c0485ebfe8d643192898ac8d53d3d44",
+    "test_sha256": "d06074b268a98723adf3df9abebece8e3aef952f0b03d9394eb2f3922d9e8d76",
+    "review": "root actual factory/matcher/CLI/prefix/graph/replay/parent read; actual source,scratch initial states and architecture verified",
+    "run_identity": "actual caller executed_source.json matches factory bytes",
+    "runs": {
+      "plan": {
+        "tests": 20,
+        "failures": 0,
+        "errors": 0,
+        "sha256": "879d80a84d881450d9f8684fa0b85108b6f4db09b063c3e77065978450c39e21",
+        "path": "tmp\\TRANSFER_SCRATCH_FAMILY\\plan.xml"
+      },
+      "caller": {
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "sha256": "451eb2b09aaa8ab335ffb1e5beeeb9b93e8cb86b132a6ed4ef534a96b5281f70",
+        "path": "tmp\\TRANSFER_SCRATCH_FAMILY\\caller.xml"
+      },
+      "caller-fixed": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "sha256": "eed3f614636c6244f3371dc981816d35a0a1bf5a49040904e9b9b17a5658aafc",
+        "path": "tmp\\TRANSFER_SCRATCH_FAMILY\\caller-fixed.xml"
+      },
+      "authority": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "sha256": "82c02c670f58a19f3ff0304dd358ca3d9c096dbc4c4de5bd0d2cb58332b501ab",
+        "path": "tmp\\TRANSFER_SCRATCH_FAMILY\\authority.xml"
+      }
+    },
+    "fixture": "synthetic MAT/modern source catalog",
+    "requested_decisions": 29,
+    "selected_predictions": 87,
+    "selection_packages": 3,
+    "k800_forward_selection_rows": 5,
+    "k800_same_run_nodes": 22,
+    "public_fit": 0,
+    "public_score": 0,
+    "next": "new frozen public plan under cloud-owned complete caller"
   }
 }

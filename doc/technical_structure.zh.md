@@ -1,5 +1,7 @@
 # 当前技术结构与完整链条
 
+`research.calibration_selection.transfer_scratch_prefix_plan`仅派生新的四fixed完整程序族：source/scratch单NN及各自NN+xDAWN。实际expert IDs、baseline/output/选择行政策显式传入，原source catalog、匹配architecture、time scope和checkpoint权限由原CLI消费；NN配对同profile，经典专家可保自己声明视图。原prefix selector、graph保存重放和parent核回概率继续持有实际执行。
+
 `transfer.information_bound`持有`/2`完整activation/模型诊断、raw plug-in估计量及不可变JSON报告，`save/load/replay_model`保护全部输出与原producer。`transfer.exact_covariance/2`持有raw传播、resolved SPD/显式identified support及独立ridge诊断，当前是内存诊断接口。二者没有生产调用；来源、反例和完整性验收见[数学整合](assets/research_resume_20261012/diagnostic_mathematics_integration.json)。原D树local-only `run_information_bound.py`保原字节，迁移membership、actual activation和报告schema后才可复用。
 
 2026-10-10[愿望清单整合](evidence/wishlist_progress_20261010.zh.md)继续复用原owner：`CandidateEvidence`在原tie判定处保存赢家索引；`candidate_metrics`持有requested层级的最大置信度、错时置信度、分箱ECE及实际J的uniform NLL contrast，原report consumer自动导出，现阶段只作描述性诊断。`SpatialSignalPrior.expected_whitened_signal_energy/energy_matched_graph`复用原response压缩root，以同C/noise匹配固定graph的centered信号能量；原posterior及B05物理因子继续消费该prior，learned空间估计器尚未准入。
