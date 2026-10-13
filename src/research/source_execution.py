@@ -336,6 +336,16 @@ class _SourceInputState:
             self._peak()
             return True
 
+    def try_resident_input(self, nbytes, token, identity):
+        with self.lock:
+            self._identity_allowed(identity)
+            if self.free < nbytes:
+                return False
+            self.free -= nbytes
+            self.leases[token] = {"kind": "resident_input", "phase": "resident", "nbytes": nbytes, **identity}
+            self._peak()
+            return True
+
     def try_snapshot(self, directory, key, nbytes, ram_bytes, ram_backed, token, identity):
         with self.lock:
             self._identity_allowed(identity)
@@ -384,7 +394,7 @@ class _SourceInputState:
                     return
                 if row["phase"] == "nn":
                     self.nn_active -= 1
-                else:
+                elif row["phase"] == "load":
                     self.load_active -= 1
                 if row["kind"] == "anonymous_snapshot":
                     self.filesystems[row["filesystem"]]["reserved_bytes"] -= row["disk_bytes"]
@@ -557,6 +567,8 @@ class _SourceInputState:
     def record(self):
         with self.lock:
             return {"shared_staging_capacity_bytes": self.capacity, "free_staging_bytes": self.free,
+                "resident_input_bytes": sum(row["nbytes"] for row in self.leases.values()
+                    if row["kind"] == "resident_input"),
                 "nn_waiting": self.nn_waiting, "nn_active": self.nn_active, "load_active": self.load_active,
                 "load_worker_capacity": self.load_workers, "peak_staging_bytes": self.peak_bytes,
                 "peak_loaders": self.peak_loaders, "peak_nn_staging": self.peak_nn, "ready_nn_priority": True,
@@ -583,6 +595,15 @@ class SourceInputAdmission:
     @staticmethod
     def _identity():
         return {"pid": os.getpid(), "task_id": os.environ.get("N2P3_CLOUD_TASK_ID")}
+
+    def try_resident_input(self, nbytes):
+        """Adopt shared reader bytes without blocking or occupying a decode slot."""
+        if type(nbytes) is not int or not 0 <= nbytes <= self.capacity:
+            raise ValueError("resident input bytes exceed the shared staging capacity")
+        token = uuid.uuid4().hex
+        if not self._ledger.try_resident_input(nbytes, token, self._identity()):
+            return None
+        return SourceInputLease(self, "resident", nbytes, token)
 
     @contextmanager
     def reserve(self, phase, nbytes=0):
