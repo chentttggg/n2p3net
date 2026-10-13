@@ -104,7 +104,7 @@ InformationBound 的 `membership_kind` 显式化方向已通过窄反例审阅�
 
 云端资源切片 `2e54ee0` 已接入：source-pool 的默认 CUDA cloud 入口在写 plan 前执行 CPU25/GPU4 floor，保存 `resource_scope/cloud_resource_floor` 并让 resume identity 随合同变化；nested worker 的空或非法 ready-job 请求在 ledger 分配前拒绝。local/software scope需显式声明；实际 GPU利用率、RSS、ready工作和墙钟仍由未来云运行验收，见[资源审阅绑定](../assets/research_resume_20261012/cloud_floor_nested_review.json)。
 
-覆盖审计中 `4faf130` 的 target-calibration scope 门已通过当前源码复核：CLI 和 `load_pds_selection_record` 都把空 scope 视为 unrestricted cache 并拒绝，selection record继续携带 feature/cache身份。定向 source-selection 测试与 Ruff通过；独立复核见[source scope审阅](../assets/research_resume_20261012/source_scope_review.json)。
+`4faf130` 的原scope复核确认CLI和consumer拒绝空mapping，但漏测了被删除、null或非mapping的target feature record。恢复后通过实际训练消费者复现四个绕过案例并修复：`load_pds_selection_record`始终要求明示的target-calibration scope；纯数学解析仍由`pds_selection_from_record`持有。另修strict warm-start的目标tensor覆盖：缺少任一parameter/buffer或空checkpoint在复制前拒绝，完整checkpoint仍逐bit加载。51项scope相关检查和4项warm-start检查通过，原失败与来源见[训练准入修复](../assets/research_resume_20261012/training_admission_repairs.json)；[原scope审阅](../assets/research_resume_20261012/source_scope_review.json)保其窄验证范围。
 
 云端 entry005 在10:14的权威快照为 `running`：原0–3四人重放已准入，4–7四worker各自保存1672个内部 prediction cells，actual exit、terminal receipt、complete result 和 8人/152 requested future decision receipt 当时尚未闭合。5.51秒资源采样为 aggregate CPU 835.83%、GPU样本 7/95/95/94/0%、controller RSS 2.439 GiB，cgroup memory约59.85 GiB、OOM 0；快照与源码/owner状态见[entry005记录](../assets/research_resume_20261012/entry005_status_20261012_101415.json)。entry005继续消费自己的冻结源。P1按既定完整16格计划推进：在原Windows export、科学caller/lease、最终controller和Linux资源门闭合并有资源后，由唯一云窗口自主冻结执行；科研代码修复不要求重跑entry005。
 

@@ -511,6 +511,8 @@ class DeepBaseline(Baseline):
         self.load_report = []
         if not self.pretrained_state_dict:
             self.load_report.append({"event": "no_pretrained_state", "message": "未提供预训练权重"})
+            if self.strict_load:
+                raise ValueError("strict_load=True requires a nonempty pretrained state.")
             return
 
         model_state = self.model_.state_dict()
@@ -542,15 +544,15 @@ class DeepBaseline(Baseline):
 
         # 从未出现在源 checkpoint 中的目标 key
         for key in model_state:
-            if key not in loaded and key not in self.load_mapping.values():
+            if key not in loaded:
                 self.load_report.append({"event": "not_in_source", "key": key})
 
         has_blocking = any(
-            e["event"] in ("missing_target", "shape_mismatch") for e in self.load_report
+            e["event"] in ("missing_target", "shape_mismatch", "not_in_source") for e in self.load_report
         )
         if self.strict_load and has_blocking:
             raise ValueError(
-                "strict_load=True 但预训练权重存在 missing_target/shape_mismatch，详见 load_report。"
+                "strict_load=True 但预训练权重存在 missing_target/shape_mismatch/not_in_source，详见 load_report。"
             )
 
         with torch.no_grad():

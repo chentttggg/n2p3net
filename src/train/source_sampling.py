@@ -469,11 +469,12 @@ def load_pds_selection_record(
         record, expected_source_cache_sha256=expected_source_cache_sha256
     )
     target_feature_record = record.get("target_feature_record")
-    if selection.selection_scope == "target_calibration" and isinstance(target_feature_record, Mapping):
+    if selection.selection_scope == "target_calibration":
         from data.epochs import TARGET_CALIBRATION_SCOPE_SCHEMA
 
-        scope = target_feature_record.get("dataset_scope") or {}
-        if scope.get("schema") != TARGET_CALIBRATION_SCOPE_SCHEMA:
+        scope = (target_feature_record.get("dataset_scope")
+                 if isinstance(target_feature_record, Mapping) else None)
+        if not isinstance(scope, Mapping) or scope.get("schema") != TARGET_CALIBRATION_SCOPE_SCHEMA:
             raise ValueError(
                 "target_calibration source selection was built from target features "
                 "without a target-calibration scope."

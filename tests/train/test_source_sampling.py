@@ -175,7 +175,10 @@ def test_pds_selection_record_round_trip(tmp_path) -> None:
     assert record["pds_fallback_count"] == 0
 
     path = tmp_path / "selection.json"
-    path.write_text(json.dumps(selection.record()), encoding="utf-8")
+    record["target_feature_record"] = {
+        "dataset_scope": {"schema": "n2p3_target_calibration_scope/1"}
+    }
+    path.write_text(json.dumps(record), encoding="utf-8")
 
     loaded, raw = load_pds_selection_record(path)
 
@@ -421,6 +424,9 @@ def test_dense_pds_selection_record_round_trip_and_legacy(tmp_path) -> None:
     assert record["pds_fallback_count"] == 1
 
     path = tmp_path / "dense_pds_selection.json"
+    record["target_feature_record"] = {
+        "dataset_scope": {"schema": "n2p3_target_calibration_scope/1"}
+    }
     path.write_text(json.dumps(record), encoding="utf-8")
     loaded, raw = load_pds_selection_record(path)
 

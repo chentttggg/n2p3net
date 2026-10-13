@@ -1,0 +1,64 @@
+{
+  "schema": "n2p3_training_admission_repairs/1",
+  "base_commit": "f1d0ec0b912af0e0dc8e8e5c269c5d9e8bb7b98c",
+  "status": "accepted_targeted_software_and_caller_review",
+  "sources": {
+    "src/train/source_sampling.py": "1aec08779a521702be5952896e7a74373917acfc644396f8778600d4c704b6c7",
+    "tests/train/test_source_sampling.py": "f801444d49187ec760bafa3364a864c51904c03c694b2ee38e9d8ef7969fa9d8",
+    "tests/train/test_source_selection_scope_admission.py": "a8f34ed7d1c14b2b9e6589858fea64ab69313f6d195c3690f0d1924ee7a66c79",
+    "src/baselines/deep.py": "5693c2ae9d0a752d806a7e9c72b2fe0b4bc16cfed8ccabe9f846d04a5369912f",
+    "tests/models/test_warm_start_coverage.py": "1982a6179f9ca6ab62073d999e45ba87abdff707ce5c0496c3a8865cd2b30566"
+  },
+  "scope": {
+    "owner": "load_pds_selection_record",
+    "original_defect": "target_calibration artifact bypassed scope check when target_feature_record was missing, null or not a mapping",
+    "before_validation": "four of five new cases failed to reject on the original actual source; empty mapping already rejected",
+    "new_contract": "training artifact always requires mapping target_feature_record.dataset_scope with n2p3_target_calibration_scope/1",
+    "primitive_reader": "pds_selection_from_record remains available for pure mathematical/legacy record parsing",
+    "callers": [
+      "experiments/run_pretrain_supervised.py",
+      "experiments/run_candidate_cross_decision.py"
+    ],
+    "boundary": "declared scope admission; original cache/identity/time-boundary owners continue physical authorization",
+    "supersedes_acceptance_scope": "source_scope_review.json proved empty mapping rejection but did not cover removed/null metadata"
+  },
+  "warm_start": {
+    "owner": "DeepBaseline._apply_pretrained_state_dict",
+    "original_defect": "strict loading ignored missing target tensors and empty declared state",
+    "new_contract": "all destination parameters and buffers must be loaded before any value is copied; source mapping cannot hide a missing destination",
+    "caller": "N2P3NetBaseline used by run_pretrain_supervised initial checkpoint selection and fresh refit",
+    "positive_case": "full checkpoint copies every parameter and buffer bit-identically",
+    "software_tensor_loading": "included in narrow tests; no public checkpoint or EEG input consumed"
+  },
+  "validation": {
+    "scope_after": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\scope_admission.xml",
+      "sha256": "628248f6e651b258790d9c1194c69d32a6d52219f03209276fe9f103d2305080",
+      "tests": 51,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "warm_start_before": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\warm_start_before.xml",
+      "sha256": "c25fc6a9194340ff3cd928150ca32cca099131f17f4217579e18f47b8ab7c150",
+      "tests": 3,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0
+    },
+    "warm_start_after": {
+      "path": "C:\\Users\\chent\\.codex\\worktrees\\research-director-resume\\n2p3-net\\tmp\\warm_start_after.xml",
+      "sha256": "5d448b510ce748f4977eabc0252e62b015a58a1c26018c3e9760cf19f731f973",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "historical_artifacts_resigned": false,
+  "public_fit": 0,
+  "public_score": 0,
+  "public_model_load": 0,
+  "full_suite": false
+}

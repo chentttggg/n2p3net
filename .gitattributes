@@ -1,5 +1,12 @@
 # These actively edited Python files use stable bytes across checkouts.
 .gitattributes text eol=lf
+src/baselines/deep.py text eol=lf
+src/train/source_sampling.py text eol=lf
+src/research/source_execution.py text eol=lf
+src/transfer/information_bound.py text eol=lf
+src/transfer/exact_covariance.py text eol=lf
+tests/train/test_source_sampling.py text eol=lf
+tests/transfer/test_exact_covariance_and_bounds.py text eol=lf
 src/models/candidate_evidence.py text eol=lf
 src/research/candidate_metrics.py text eol=lf
 src/research/execution.py text eol=lf
