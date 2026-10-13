@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from copy import deepcopy
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
@@ -76,6 +77,52 @@ class CalibrationProgramCandidate:
     def from_record(cls, record):
         return cls(record["name"], tuple(CalibrationExpertProgram.from_record(spec) for spec in record["expert_programs"]),
             EnsembleProgram.from_record(record["ensemble_program"]), record["strategy"], record["temperature_expert_ids"])
+
+
+def transfer_scratch_prefix_plan(plan, *, source_expert_id, scratch_expert_id, xdawn_expert_id,
+                                baseline_name, output_name, minimum_selection_rows):
+    """Derive four fixed programmes by replacing only ``prefix_selection``.
+
+    IDs identify actual declared programmes; no source/catalog metadata is
+    issued here. The original CLI still admits checkpoint architecture, source
+    exclusion, seed pairs, raw scopes and matched waveform controls. The result
+    is a new opt-in plan, never a reinterpretation of an existing execution.
+    """
+    if (plan.get("schema") != "n2p3_candidate_ensemble_study/1"
+            or plan.get("evaluation_design") != "independent_prefix"):
+        raise ValueError("fixed transfer/scratch family requires an independent-prefix scientific plan")
+    programmes = tuple(CalibrationExpertProgram.from_record(record) for record in plan["experts"])
+    declared = {programme.expert_id: programme for programme in programmes}
+    ids = (source_expert_id, scratch_expert_id, xdawn_expert_id)
+    if len(declared) != len(programmes) or len(set(ids)) != 3 or not set(ids) <= declared.keys():
+        raise ValueError("family IDs must identify three distinct actual declared expert programmes")
+    source, scratch, xdawn = (declared[name] for name in ids)
+    for programme, initialization in ((source, "source"), (scratch, "scratch"), (xdawn, "xdawn_erp")):
+        if programme.family != "trial" or programme.recipe.initialization != initialization:
+            raise ValueError("family roles require declared source NN, matched scratch NN and xDAWN ERP")
+    if source.profile.digest != scratch.profile.digest:
+        raise ValueError("source and matched scratch NN must share the actual input profile")
+    expected_scratch = replace(source.recipe, name=scratch.recipe.name, initialization="scratch",
+                               input_statistics="target_prefix")
+    if expected_scratch.record() != scratch.recipe.record():
+        raise ValueError("source/scratch recipes and declared target seeds must match")
+    roster = (("source_nn_fixed", (source,)), ("scratch_nn_fixed", (scratch,)),
+              ("source_nn_xdawn_fixed", (source, xdawn)), ("scratch_nn_xdawn_fixed", (scratch, xdawn)))
+    if baseline_name not in {name for name, _ in roster}:
+        raise ValueError("family baseline must explicitly name one of its four fixed programmes")
+    if (not isinstance(output_name, str) or not output_name or output_name != output_name.strip()
+            or output_name in {mixture["name"] for mixture in plan["mixtures"]}):
+        raise ValueError("family output name must be explicit and distinct from ordinary mixtures")
+    if type(minimum_selection_rows) is not int or minimum_selection_rows < 1:
+        raise ValueError("family selection row policy must be an explicit positive integer")
+    candidates = tuple(CalibrationProgramCandidate(name, experts,
+        EnsembleProgram.equal_weights(name, tuple(expert.expert_id for expert in experts)))
+        for name, experts in roster)
+    derived = deepcopy(plan)
+    derived["prefix_selection"] = {"schema": "n2p3_prefix_selection_plan/1", "output_name": output_name,
+        "baseline_name": baseline_name, "minimum_selection_rows": minimum_selection_rows,
+        "candidates": [candidate.record() for candidate in candidates]}
+    return derived
 
 
 def _scope(groups):
