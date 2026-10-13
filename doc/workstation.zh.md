@@ -261,7 +261,7 @@ Cz第二+第四次冻结epoch模型为同目录`signal_evidence.json`；原生�
 没有合法独立校准session划分时使用可合法拟合的完整校准LDA，标记无内部选模证据。
 每个校准session各自应具备两类，不能拼接两个单类session伪造合格训练集。
 选中后重新初始化并完整refit，保存实际normalizer、BN或LDA通道/系数；新模型包schema为
-`n2p3_calibrated_predictor/4`，仍可读取通过完整旧合同核验的`/3`、`/1`包，不改写历史模型。
+`n2p3_calibrated_predictor/5`，以必需`selection_contract`绑定选择程序；`/4`、`/3`、`/1`按原合同读取。binary候选按固定requested正负样本对计分，conditional AUC单列诊断；legacy CE使用共同校准class cost与完整验证支持。普通、QC及EOG源选择共用inner/final owner，保存支持、评分、选择与实际refit状态，加载可重放同一选择。
 采集应用已联动冻结QC入口，但没有新增成人/实机确认。
 
 采集槽顺序与七EEG/EOG角色由[研究规范](research_program.zh.md)和

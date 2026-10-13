@@ -356,6 +356,7 @@ session的`montage.reference_details`、BIDS的`EEGReference/EEGReferenceDetails
 `data.preprocess`消费完整排除区间。`data.ocular`绑定单HEOG接法和有效fit-sample范围。
 `transfer.quality`以真实session/block分组拟合个人信号证据QC或显式历史`data.artifact`，人员身份保持独立；
 calibration_candidates执行inner/final生命周期，calibrated保存状态并用NaN显式表示不可用证据。
+`calibration_candidates.replay_calibration_selection`核固定requested支持、评分、tie及refit关系。binary使用缺失pair零credit的固定配对量，legacy CE共用pre-QC训练class cost/完整held mass；产品普通、QC和EOG路径共同调用该owner。公共target-stage `/2`绑定task/manifest、cell、model与选择记录，个人包 `/5`要求`selection_contract`，保存态与actual refit同步。
 CLI及缓存记录处理摘要，R5从原始请求账本保留失败分母。没有自动去阶跃或自动认证恢复门限。
 
 2026-09-08`data.recovery.EpochStateRecovery`提供校准经验状态包络，`continuous_qc`通过
@@ -374,7 +375,7 @@ LDA完整观测行选择和预检共用接口，分别记账请求/实际拟合�
 `transfer.quality`按method/schema严格分派新旧模型，禁止把旧相对PTP数字解释成新方法。
 BrainSync新方法在拟合、读取冻结QC和个体模型加载时均要求已应用匹配的逐导连续QC `/4`，
 CLI预检及前端设置同步拒绝缺少参考前恒值检测的配置。连续检测实现仍由`data.continuous_qc`持有。
-新个人包写`n2p3_calibrated_predictor/4`，显式兼容通过原合同的 `/3`、`/1`，不接收 `/2`。
+新个人包写`n2p3_calibrated_predictor/5`，`/4`、`/3`、`/1`按各自原合同读取。
 fit复用键含训练行QC特征摘要；测试特征不改变拟合身份。冻结fit事件、物理X、mask和特征均核验。
 三臂开发runner可在一个worker内复用一次源checkpoint加载和共享合法校准缓存，各臂拟合状态独立。
 最终门禁下57模型/114预测只读重放已通过，见[本轮证据](evidence/brainsync_qc_redesign_20260908.zh.md)。
