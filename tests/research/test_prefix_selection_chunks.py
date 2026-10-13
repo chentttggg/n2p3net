@@ -8,13 +8,13 @@ import torch
 
 from research import prefix_selection_replay as owner
 from research.contracts import semantic_sha256
-from tests.research.test_prefix_replay_admission import graph_case as _original_graph_case
+from tests.support.prefix_replay import create_prefix_replay_graph
 from train.runtime import cpu_thread_budget
 
 
 @pytest.fixture(scope="module", name="actual_graph_case")
 def make_actual_graph_case(tmp_path_factory):
-    return _original_graph_case.__wrapped__(tmp_path_factory)
+    return create_prefix_replay_graph(tmp_path_factory.mktemp("admitted-prefix"))
 
 
 @pytest.fixture(scope="module")

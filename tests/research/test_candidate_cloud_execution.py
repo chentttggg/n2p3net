@@ -7,9 +7,7 @@ from dataclasses import replace
 from multiprocessing import get_context
 from pathlib import Path
 
-import numpy as np
 import pytest
-from scipy.io import savemat
 
 import experiments.run_candidate_ensemble_study as runner
 from research.cloud_execution import CloudExecutor, CloudResult
@@ -18,8 +16,7 @@ from research.source_execution import (
     SourceInputAdmission,
     resolve_source_resources,
 )
-from tests.support.bnci import bnci_mat_fields
-from tests.support.candidate_programs import study_plan
+from tests.support.candidate_programs import raw_plan, study_plan
 from transfer.ensemble import EnsembleProgram
 
 
@@ -35,23 +32,6 @@ def interrupted_candidate_adapter(arguments):
 
     runner._prediction_saved = save_and_exit
     return runner.candidate_participant_adapter(arguments)
-
-
-def raw_plan(tmp_path, *, records=1):
-    path = study_plan(tmp_path)
-    plan = json.loads(path.read_bytes())
-    plan["experts"] = plan["experts"][:1]
-    plan["mixtures"] = [EnsembleProgram.equal_weights("raw", ("raw",)).record()]
-    plan["baseline_mixture"] = "raw"
-    for index in range(1, records):
-        raw_path = tmp_path / f"A{index + 1:02d}.mat"
-        fields = bnci_mat_fields()
-        fields["X"] = np.random.default_rng(82 + index).normal(0, 4, fields["X"].shape).astype(np.float32)
-        savemat(raw_path, {"data": fields})
-        plan["records"].append({"path": str(raw_path), "sha256": hashlib.sha256(raw_path.read_bytes()).hexdigest()})
-    plan["workers"] = records
-    path.write_text(json.dumps(plan), encoding="utf-8")
-    return path
 
 
 def resources(plan_path):

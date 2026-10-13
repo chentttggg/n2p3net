@@ -439,8 +439,8 @@ def selection_reducer_adapter(arguments):
             raise ValueError("selection reducer prepared nodes differ from original graph/input authority")
         summary = plan.finish_replay(results)
         selected = admitted.graph["selection"]
-        original_summary = _read_sealed(row["replayed_summary"])
-        if (original_summary["graph_sha256"] != row["graph_sha256"]
+        original_summary = None if row["replayed_summary"] is None else _read_sealed(row["replayed_summary"])
+        if original_summary is not None and (original_summary["graph_sha256"] != row["graph_sha256"]
                 or original_summary["selection_sha256"] != job["selection_sha256"]
                 or original_summary["producer_count"] != summary["producer_count"]
                 or original_summary["exact_score_checks"] != summary["exact_score_checks"]

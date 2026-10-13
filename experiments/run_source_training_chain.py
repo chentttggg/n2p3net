@@ -926,6 +926,8 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                 consumers[declaration["name"]] = (index, programme)
                 report["consumers"].append({**declaration, "status": "waiting_source",
                     "source_dependency": group_ids[index], "requested_tasks": [task.task_id for task in programme.tasks]})
+                if declaration["kind"] == "candidate":
+                    report["consumers"][-1]["participant_task_ids"] = [task.task_id for task in programme.task_roster]
             _save_chain_report(output, report)
             state = inventory.inspect(required_studies) if inventory is not None else {"ready": {}, "pending": {}, "failed": {}}
             bindings = bind_source_inputs({}, state["ready"])
@@ -1012,6 +1014,21 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
             additional_ids = set()
             pipeline_ids = {*group_ids.values(), *input_nodes.values(),
                 *(task.task_id for _, programme in consumers.values() for task in programme.tasks)}
+
+            def register_consumer_tasks(declaration, programme, new_tasks, *, initial):
+                new_tasks = tuple(new_tasks)
+                ids = [task.task_id for task in new_tasks]
+                reserved = set(declaration["requested_tasks"]) if initial else set()
+                if (len(set(ids)) != len(ids)
+                        or (set(ids) - reserved) & (pipeline_ids | additional_ids | set(legacy_tasks))):
+                    raise ValueError("consumer tasks repeat a source pipeline task identity")
+                consumer_tasks.update((task.task_id, programme) for task in new_tasks)
+                pipeline_ids.update(ids)
+                if initial:
+                    declaration["requested_tasks"] = ids
+                else:
+                    declaration["requested_tasks"].extend(ids)
+                return new_tasks
 
             def register_additional(new_tasks):
                 new_tasks = tuple(new_tasks)
@@ -1104,11 +1121,12 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                         else:
                             ready = programme.tasks
                             declaration.update(status="source_dependency_failed", source_failure=outcome.failure)
-                        for task in ready:
-                            consumer_tasks[task.task_id] = programme
-                        additions.extend(ready)
+                        additions.extend(register_consumer_tasks(declaration, programme, ready, initial=True))
                 elif outcome.task_id in consumer_tasks:
-                    consumer_tasks[outcome.task_id].on_finished(outcome)
+                    programme = consumer_tasks[outcome.task_id]
+                    declaration = next(row for row in report["consumers"] if consumers[row["name"]][1] is programme)
+                    additions.extend(register_consumer_tasks(declaration, programme,
+                        programme.on_finished(outcome) or (), initial=False))
                 elif outcome.task_id in legacy_tasks:
                     entry = legacy_tasks[outcome.task_id]
                     entry.update(status=outcome.status, failure=outcome.failure)
@@ -1168,10 +1186,6 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
             run = executor.run(tasks, on_finished=on_finished, on_observation=on_observation)
             report["worker_diagnostics"] = run.diagnostics
             report["observation_failures"] = run.observation_failures
-            report["cloud_execution"] = {"status": run.status, "results": [asdict(result) for result in run.results.values()]}
-            if additional_ids:
-                report["additional_cloud_tasks"] = [asdict(result) for key, result in run.results.items()
-                    if key in additional_ids]
             try:
                 _assert_source_bytes(plan["source_snapshot_manifest"], snapshot)
                 report["execution_end_source_check"] = "actual_runtime_bytes_match_the_ingress_archive"
@@ -1180,7 +1194,8 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
             for declaration in report["consumers"]:
                 _, programme = consumers[declaration["name"]]
                 try:
-                    result = programme.finalize(run.results, input_admission=input_admission)
+                    options = {"cloud_run": run} if declaration["kind"] == "candidate" else {}
+                    result = programme.finalize(run.results, input_admission=input_admission, **options)
                     declaration.update(status=result["status"], result=result)
                 except Exception as error:
                     declaration.update(status="failed", failure={"type": type(error).__name__, "message": str(error)})
@@ -1223,6 +1238,12 @@ def _execute_source_groups(plan, *, output, device, stages, evaluate_outer, grou
                     report["additional_finalization"] = {"status": "failed", "failure": {
                         "type": type(error).__name__, "message": str(error), "stage": "additional_artifact_finalization"}}
             report["source_input_admission"] = input_admission.record()
+            # Consumer retirement can reject an otherwise exited preparation.
+            # Capture the same actual outcomes after those final admissions.
+            report["cloud_execution"] = {"status": run.status, "results": [asdict(result) for result in run.results.values()]}
+            if additional_ids:
+                report["additional_cloud_tasks"] = [asdict(result) for key, result in run.results.items()
+                    if key in additional_ids]
             failed = (run.status != "completed" or "execution_end_source_failure" in report
                       or any(entry["status"] == "failed" for entry in report["consumers"])
                       or report.get("additional_finalization", {}).get("status", "completed") != "completed")

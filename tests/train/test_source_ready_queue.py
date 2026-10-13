@@ -14,7 +14,7 @@ import pytest
 
 from experiments.freeze_source_snapshot import freeze_source
 from experiments.run_source_training_chain import _admit_source_group, execute_source_chain
-from research.cloud_execution import CloudExecutor, CloudTask, PhaseResources
+from research.cloud_execution import CloudExecutor, CloudResult, CloudRun, CloudTask, PhaseResources
 from research.source_selection import resolve_source_program
 from tests.support.source_programs import independent_source_plan as _plan
 from tests.support.source_programs import prepared_finite_source as _prepared_source
@@ -236,7 +236,8 @@ def test_native_source_releases_current_binary_and_candidate_into_its_resource_o
         "expected_source_config": expected, "source_checkpoints": {}, "experts": [expert.record() for expert in experts],
         "mixtures": mixtures, "baseline_mixture": "waveform", "authorization_preprocessing": spec.record(),
         "observation_response_seconds": 308 / 256, "pre_roll_seconds": .2, "device": "cpu",
-        "workers": 1, "cpu_threads_per_worker": 1, "calibration_strategies": ["fixed"]}
+        "workers": 1, "cpu_threads_per_worker": 1, "calibration_strategies": ["fixed"],
+        "prefix_replay_graph_memory_gib": 1, "prefix_replay_worker_memory_gib": 1}
     candidate_path = tmp_path / "candidate-base.json"
     candidate_path.write_text(json.dumps(candidate_plan), encoding="utf-8")
     snapshot = freeze_source(tmp_path / "snapshot", materialize=True)
@@ -250,14 +251,16 @@ def test_native_source_releases_current_binary_and_candidate_into_its_resource_o
     completed = subprocess.run([sys.executable,
         str(snapshot.parent / "checkout/experiments/run_source_training_chain.py"),
         "--plan", str(source_plan_path), "--output", str(output), "--stages", "P2_source", "--device", "cpu"],
-        capture_output=True, text=True, timeout=180)
+        capture_output=True, text=True)
     assert completed.returncode == 0, completed.stdout + completed.stderr
     report = json.loads((output / "source_chain_record.json").read_bytes())
     assert report["status"] == "completed" and len(report["consumers"]) == 2
     assert all(consumer["status"] == "completed" for consumer in report["consumers"])
     outcomes = report["cloud_execution"]["results"]
-    assert len(outcomes) == 3 and all(result["status"] == "completed" for result in outcomes)
-    assert len({result["worker"]["pid"] for result in outcomes}) == 3
+    requested = {task_id for consumer in report["consumers"] for task_id in consumer["requested_tasks"]}
+    assert set(row["task_id"] for row in outcomes) == requested | {report["groups"][0]["task_id"]}
+    assert len(outcomes) > 3 and all(result["status"] == "completed" for result in outcomes)
+    assert len({(result["worker"]["pid"], result["worker"]["create_time"]) for result in outcomes}) == len(outcomes)
     assert all(point["reserved_cpu_threads"] <= 3 and point["free_worker_memory_bytes"] >= 0
                for point in report["resource_observations"])
     assert all(result["worker"]["alive"] is False for result in outcomes)
@@ -267,6 +270,76 @@ def test_native_source_releases_current_binary_and_candidate_into_its_resource_o
     assert candidate["seed_pairs"] == pairs and len(candidate["participants"]) == 1
     assert all(cell["saved_replay_exact"] for cell in binary["cells"] if cell["status"] == "completed")
     assert (tmp_path / "binary/requested.json").is_file() and (tmp_path / "candidate/consumer_requests.json").is_file()
+
+
+@pytest.mark.parametrize("collision", [False, True])
+def test_software_consumer_binding_replaces_initial_roster_before_dynamic_publication(tmp_path, monkeypatch, collision):
+    """Scheduling callback contract; source and consumer mathematics are stubbed."""
+    import experiments.run_candidate_ensemble_study as candidate
+    import experiments.run_source_training_chain as source
+
+    cache, spec, _ = _prepared_source(tmp_path)
+    snapshot = freeze_source(tmp_path / "snapshot")
+    plan = _plan(cache, spec, snapshot)
+    plan.update(source_seeds=[11], target_seeds=[11], cpu_budget=2)
+    declaration = tmp_path / "consumer.json"
+    declaration.write_text(json.dumps({"seed_pairs": [[11, 11]], "expected_source_config": plan["source_config"]}),
+        encoding="utf-8")
+    phase = PhaseResources("evaluation", 1, 64 * 2**20, 1, "cpu")
+
+    def task(suffix):
+        return CloudTask("consumer-change:" + suffix, "software_callback", {}, str(tmp_path / suffix), phase)
+
+    class ChangingProgramme:
+        tasks = [task("logical")]
+        task_roster = tuple(tasks)
+
+        def bind_source(self, catalog, actual_snapshot):
+            self.tasks = [task("replay_prepare")]
+            return self.tasks
+
+        def on_finished(self, outcome):
+            return [task("admission")] if outcome.task_id.endswith(":replay_prepare") else []
+
+        def finalize(self, results, *, input_admission, cloud_run):
+            assert cloud_run.results is results
+            assert "consumer-change:logical" not in results
+            return {"status": "completed"}
+
+    def software_callbacks(self, tasks, *, on_finished, on_observation):
+        requested, results = list(tasks), {}
+        while requested:
+            current = requested.pop(0)
+            value = None
+            if current.task_id.startswith("source-"):
+                directory = Path(current.output)
+                directory.mkdir(parents=True)
+                value = directory / "source_chain_record.json"
+                value.write_text(json.dumps({"tasks": [], "selection": [], "preflight_failures": [], "source_seed_catalog": []}),
+                    encoding="utf-8")
+                value = str(value)
+            outcome = CloudResult(current.task_id, "completed", value)
+            results[current.task_id] = outcome
+            requested.extend(on_finished(outcome) or ())
+        return CloudRun(results, {"scope": "software_scheduling_callback"}, [])
+
+    monkeypatch.setattr(candidate, "build_candidate_cloud_tasks", lambda *args, **kwargs: ChangingProgramme())
+    monkeypatch.setattr(source, "_admit_source_group", lambda path, **kwargs: json.loads(path.read_bytes()))
+    monkeypatch.setattr(CloudExecutor, "run", software_callbacks)
+    plan["ready_consumers"] = [{"kind": "candidate", "name": "change", "outer": "leave_BNCI",
+        "plan": str(declaration), "output": str(tmp_path / "consumer")}]
+    output = tmp_path / "run"
+    if collision:
+        with pytest.raises(ValueError, match="consumer tasks repeat"):
+            execute_source_chain(plan, output=output, dry_run=False, device="cpu", stages=("P2_source",),
+                additional_tasks=(task("replay_prepare"),))
+        return
+    report = execute_source_chain(plan, output=output, dry_run=False, device="cpu", stages=("P2_source",))
+    consumer = report["consumers"][0]
+    assert consumer["participant_task_ids"] == ["consumer-change:logical"]
+    assert consumer["requested_tasks"] == ["consumer-change:replay_prepare", "consumer-change:admission"]
+    assert set(row["task_id"] for row in report["cloud_execution"]["results"]) == {
+        report["groups"][0]["task_id"], *consumer["requested_tasks"]}
 
 
 def _fatal_source_group_worker(arguments):

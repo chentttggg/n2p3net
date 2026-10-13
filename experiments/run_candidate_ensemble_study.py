@@ -8,7 +8,7 @@ import io
 import json
 import sys
 from contextlib import nullcontext
-from dataclasses import replace
+from dataclasses import asdict, replace
 from multiprocessing import get_context
 from pathlib import Path
 
@@ -875,7 +875,85 @@ def candidate_tasks(plan_path, output, resources, *, dependencies=(), task_prefi
         for index in range(len(plan["records"]))]
 
 
-def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, source_snapshots=None):
+def _participant_metadata_receipts(task):
+    group = Path(task.output).resolve()
+    directory = group / f"participant_{task.arguments['record_index']:03d}"
+    return [_file_receipt(path, group) for path in
+        (group / "plan.json", group / "executed_source.json", directory / "request_ledger.json",
+         directory / "scopes.json", directory / "result.json") if path.is_file()]
+
+
+def _admission_task_descriptor(record):
+    from research.cloud_execution import CloudTask, PhaseResources
+
+    return CloudTask(record["task_id"], record["adapter"], record["arguments"], record["output"],
+                     PhaseResources(**record["resources"]), tuple(record["depends_on"]))
+
+
+def candidate_participant_admission_adapter(arguments):
+    """An independent zero-fit numerical ingress, under the shared CPU owner."""
+    import os
+
+    from research.cloud_execution import CloudResult
+    from research.prefix_recovery import preserve_prefix_producer_output
+    from research.source_execution import current_input_admission
+
+    output = Path(arguments["output"]).resolve()
+    request = arguments["request"]
+    context_path = Path(arguments["context"]["path"])
+    if _file_receipt(context_path, context_path.parent)["sha256"] != arguments["context"]["sha256"]:
+        raise ValueError("candidate admission producer context bytes changed")
+    context = _read_sealed_record(context_path)
+    normalized, consumer_source, snapshots = _prepare_candidate_plan(arguments["plan"],
+        native_threads=int(os.environ["OMP_NUM_THREADS"]), load_sources="reducer_outcomes" not in arguments)
+    preserve_prefix_producer_output(normalized, output)
+    if (semantic_sha256(consumer_source) != request["consumer_source_digest"]
+            or semantic_sha256(_plan_authority(normalized)) != request["consumer_plan_digest"]
+            or semantic_sha256(context["source"]) != request["producer_source_digest"]
+            or semantic_sha256(_plan_authority(context["plan"])) != request["producer_plan_digest"]):
+        raise ValueError("candidate admission consumer or original producer identity changed")
+    original = _admission_task_descriptor(request["producer_task"])
+    outcome = CloudResult(**request["fit_outcome"])
+    if _participant_metadata_receipts(original) != request["participant_metadata"]:
+        raise ValueError("candidate admission original participant metadata changed before replay")
+    replay = None
+    if "reducer_outcomes" in arguments:
+        from research.prefix_replay_execution import CompletedParticipantReplay
+
+        authority = _candidate_participant_authority(original, outcome, context["plan"], context["source"])
+        if authority is None:
+            raise ValueError("candidate completed replay lacks its original participant/source anchor")
+        expected = _prefix_replay_participant_anchor(original, context["plan"], context["source"], consumer_source, authority)
+        actual = {key: arguments["replay_request"][key] for key in expected}
+        for key in ("selection_packages", "ordinary_packages"):
+            actual[key] = [{name: value for name, value in row.items() if name != "source_checkpoints"}
+                           for row in actual[key]]
+        if semantic_sha256(actual) != semantic_sha256(expected):
+            raise ValueError("candidate completed replay changed its original participant/source anchor")
+        replay = CompletedParticipantReplay.from_reduced(arguments["replay_request"], arguments["reducer_outcomes"])
+    admitted = _admit_candidate_participant(original, outcome, context["plan"], context["source"],
+        source_snapshots=snapshots, replay_admission=replay)
+    if _participant_metadata_receipts(original) != request["participant_metadata"]:
+        raise ValueError("candidate admission original participant metadata changed during replay")
+    if admitted is not None:
+        admitted["execution_binding"] = {"role": request["producer_role"],
+            "producer_source_digest": request["producer_source_digest"],
+            "producer_plan_digest": request["producer_plan_digest"],
+            "producer_native_threads": original.resources.native_threads,
+            "consumer_native_threads": int(os.environ["OMP_NUM_THREADS"]),
+            "consumer_source_digest": request["consumer_source_digest"],
+            "original_group": original.output}
+    owner = current_input_admission()
+    writer = owner.artifact_directory(output, arguments["output_estimate_bytes"]) if owner is not None else nullcontext()
+    with writer:
+        output.mkdir(parents=True, exist_ok=False)
+        _sealed_record(output / "admission.json", {"schema": "n2p3_candidate_participant_admission/1",
+            "request": request, "consumer_source": consumer_source, "participant": admitted})
+    return _file_receipt(output / "admission.json", output)
+
+
+def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, source_snapshots=None,
+                                     replay_admission=None):
     from research.prefix_selection_replay import _SelectionReplayAdmission
 
     expected = _prefix_selection_requests(plan, scopes)
@@ -907,19 +985,20 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, 
         for entry in plan["source_seed_catalog"] if entry["outer_target_study"] == BNCI2014_008_DATASET_ID
         and entry["source_seed"] in {pair[0] for pair in plan["seed_pairs"]}}
     prepared = {} if source_snapshots is None else source_snapshots
-    if (set(prepared) != set(declared_sources) or any(not isinstance(prepared[key], FrozenSourceCheckpoint)
+    if replay_admission is None and (set(prepared) != set(declared_sources) or any(not isinstance(prepared[key], FrozenSourceCheckpoint)
             or prepared[key].digest != digest for key, digest in declared_sources.items())):
         raise ValueError("nested prefix parent requires its declared canonical source snapshots")
     snapshots = {key[1]: snapshot for key, snapshot in prepared.items()}
     row = ledger["record"]
     declared = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
-    with cpu_thread_budget(1):
-        views = prepare_bnci_independent_prefixes(row["path"], source_sha256=row["sha256"], budgets=plan["budgets"],
-            profiles=[spec.profile for spec in declared if spec.family == "trial"],
-            authorization_preprocessing=parse_preprocessing_spec(plan["authorization_preprocessing"]),
-            response_seconds=plan["observation_response_seconds"], pre_roll_seconds=plan["pre_roll_seconds"])
-    if semantic_sha256(views.ledger) != semantic_sha256(scopes):
-        raise ValueError("nested prefix parent original source compilation differs from actor scopes")
+    if replay_admission is None:
+        with cpu_thread_budget(1):
+            views = prepare_bnci_independent_prefixes(row["path"], source_sha256=row["sha256"], budgets=plan["budgets"],
+                profiles=[spec.profile for spec in declared if spec.family == "trial"],
+                authorization_preprocessing=parse_preprocessing_spec(plan["authorization_preprocessing"]),
+                response_seconds=plan["observation_response_seconds"], pre_roll_seconds=plan["pre_roll_seconds"])
+        if semantic_sha256(views.ledger) != semantic_sha256(scopes):
+            raise ValueError("nested prefix parent original source compilation differs from actor scopes")
     for path in paths:
         seal = _read_sealed_record(path)
         request = seal["request"]
@@ -929,12 +1008,19 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, 
         package = directory / name
         if package.is_symlink() or not package.resolve().is_relative_to(directory.resolve()):
             raise ValueError("nested prefix package escapes its participant")
-        for receipt in seal["files"]:
-            if _file_receipt(directory / receipt["path"], directory) != receipt:
-                raise ValueError("nested prefix model/graph byte seal changed")
-        graph_owner = _SelectionReplayAdmission(package, expected_graph_sha256=seal["graph_sha256"])
-        graph = graph_owner.graph
-        selection = graph["selection"]
+        delivered = None if replay_admission is None else replay_admission.selection(name)
+        if delivered is None:
+            for receipt in seal["files"]:
+                if _file_receipt(directory / receipt["path"], directory) != receipt:
+                    raise ValueError("nested prefix model/graph byte seal changed")
+            graph_owner = _SelectionReplayAdmission(package, expected_graph_sha256=seal["graph_sha256"])
+            selection = graph_owner.graph["selection"]
+            selection_digest = semantic_sha256(selection)
+        else:
+            if (delivered["graph_sha256"] != seal["graph_sha256"]
+                    or semantic_sha256(delivered["byte_seal_files"]) != semantic_sha256(seal["files"])):
+                raise ValueError("nested prefix private admission changed original saved byte seals")
+            selection, selection_digest = delivered["selection"], delivered["selection_sha256"]
         if (semantic_sha256(selection["candidates"]) != semantic_sha256(request["candidates"])
                 or selection["baseline"] != request["baseline_name"]
                 or selection["minimum_selection_rows"] != request["minimum_selection_rows"]
@@ -946,13 +1032,18 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, 
             continue
         summary = _read_sealed_record(replay_seal)
         if (summary["graph_sha256"] != seal["graph_sha256"]
-                or summary["selection_sha256"] != semantic_sha256(selection)
+                or summary["selection_sha256"] != selection_digest
                 or summary["selected_candidate"] != selection["selected_candidate"]):
             raise ValueError("nested prefix saved replay summary changed its actual selected programme")
-        sources = {expert: snapshots[request["source_seed"]] for expert in request["source_checkpoint_sha256"]}
-        with cpu_thread_budget(1):
-            replay = graph_owner.replay(prefix=views.calibration[request["K"]],
-                prefix_compiler=views.prefix_compiler, future_views=views.decisions, source_checkpoints=sources)
+        if delivered is None:
+            sources = {expert: snapshots[request["source_seed"]] for expert in request["source_checkpoint_sha256"]}
+            with cpu_thread_budget(1):
+                replay = graph_owner.replay(prefix=views.calibration[request["K"]],
+                    prefix_compiler=views.prefix_compiler, future_views=views.decisions, source_checkpoints=sources)
+        else:
+            if semantic_sha256(summary) != semantic_sha256(delivered["original_summary"]):
+                raise ValueError("nested prefix private admission changed original replay summary")
+            replay = delivered["summary"]
         if (summary["producer_count"] != replay["producer_count"]
                 or summary["exact_score_checks"] != replay["exact_score_checks"]):
             raise ValueError("nested prefix actual parent replay did not retain captured outputs")
@@ -963,8 +1054,8 @@ def _admit_prefix_selection_packages(directory, group, plan, scopes, ledger, *, 
     return admitted, summaries, started, failed
 
 
-def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshots=None):
-    """One parent ingress for both complete and native-interrupted actors."""
+def _candidate_participant_authority(task, outcome, plan, source):
+    """The small physical/execution ingress shared by fit and numerical admission."""
     group = Path(task.output).resolve()
     index = task.arguments["record_index"]
     directory = group / f"participant_{index:03d}"
@@ -988,8 +1079,65 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
     scopes = json.loads((directory / "scopes.json").read_bytes())
     if scopes["source_sha256"] != plan["records"][index]["sha256"]:
         raise ValueError("candidate participant scopes differ from its actual raw record")
+    return group, index, directory, expected_path, ledger, scopes
+
+
+def _prefix_replay_participant_anchor(task, plan, source, consumer_source, authority):
+    """Derive replay identity from the original physical participant ingress."""
+    from research.prefix_replay_execution import SCHEMA as REPLAY_SCHEMA
+    from research.prefix_replay_execution import artifact_receipt
+
+    _, _, directory, _, ledger, scopes = authority
+    preparation_id = task.task_id + ":replay_prepare"
+    declared = tuple(CalibrationExpertProgram.from_record(value) for value in plan["experts"])
+    profiles = {spec.profile.digest: spec.profile for spec in declared if spec.family == "trial"}
+    mat_path = Path(ledger["record"]["path"]).resolve()
+    selections, ordinary = [], []
+    for path in sorted((directory / "selection_fit_receipts").glob("*.saved.json")):
+        seal = _read_sealed_record(path)
+        replayed = path.with_name(path.name.replace(".saved.json", ".replayed.json"))
+        selections.append({"package": seal["request"]["package"], "graph_sha256": seal["graph_sha256"],
+            "original_request": seal["request"], "files": seal["files"], "saved_seal": artifact_receipt(path),
+            "replayed_summary": artifact_receipt(replayed) if replayed.exists() else None})
+    for path in sorted((directory / "fit_receipts").glob("*.saved.json")):
+        seal = _read_sealed_record(path)
+        request = seal["request"]
+        prefix = _read_sealed_record(directory / request["package"] / "prefix_inner_replay.json")
+        aliases = [int(key) for key, actual in scopes["requested_to_actual_K"].items() if actual == request["K"]]
+        context = {"source_seed": request["source_seed"], "target_seed": request["target_seed"],
+            "requested_Ks": aliases, "requested_to_actual_K": scopes["requested_to_actual_K"],
+            "test_scope": scopes["test_scope"], "requested_decision_ids": [view["record_id"] for view in scopes["test_views"]],
+            "phase": "independent_prefix"}
+        ordinary.append({"package": request["package"], "prefix_record_sha256": semantic_sha256(prefix),
+            "original_request": request, "context": context, "files": seal["files"], "saved_seal": artifact_receipt(path)})
+    return {"schema": REPLAY_SCHEMA, "preparation_task_id": preparation_id, "participant_directory": str(directory),
+        "mat": {"path": str(mat_path), "sha256": ledger["record"]["sha256"], "bytes": mat_path.stat().st_size},
+        "scopes": {"path": str((directory / "scopes.json").resolve()), "sha256": ledger["scopes_sha256"],
+                   "bytes": (directory / "scopes.json").stat().st_size},
+        "producer_source": source, "consumer_source": consumer_source,
+        "input_request": {"schema": "n2p3_prefix_replay_input_request/1", "preparation_task_id": preparation_id,
+            "original_source_sha256": ledger["record"]["sha256"], "producer_source_sha256": source["src/transfer/ensemble_views.py"],
+            "participant_key": ledger["participant_key"], "source_relative_path": Path(ledger["record"]["path"]).name,
+            "requested_Ks": plan["budgets"], "actual_Ks": sorted(set(scopes["requested_to_actual_K"].values())),
+            "profiles": [profile.record() for profile in profiles.values()],
+            "authorization_preprocessing": plan["authorization_preprocessing"],
+            "observation_response_seconds": plan["observation_response_seconds"], "pre_roll_seconds": plan["pre_roll_seconds"]},
+        "selection_packages": selections, "ordinary_packages": ordinary}
+
+
+def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshots=None, replay_admission=None):
+    """One numerical ingress for both complete and native-interrupted actors."""
+    authority = _candidate_participant_authority(task, outcome, plan, source)
+    if authority is None:
+        return None
+    group, index, directory, expected_path, ledger, scopes = authority
+    if replay_admission is not None:
+        from research.prefix_replay_execution import CompletedParticipantReplay
+
+        if not isinstance(replay_admission, CompletedParticipantReplay):
+            raise TypeError("candidate admission requires the actual private completed replay owner")
     selection_packages, selection_fits, selection_started, selection_failed = _admit_prefix_selection_packages(
-        directory, group, plan, scopes, ledger, source_snapshots=source_snapshots)
+        directory, group, plan, scopes, ledger, source_snapshots=source_snapshots, replay_admission=replay_admission)
     if semantic_sha256(ledger["pipeline_requests"]) != semantic_sha256(
             _resolved_pipeline_requests(plan, index, ledger["requested"], scopes)):
         raise ValueError("candidate prefit request ledger omits or changes declared pipeline requests")
@@ -1008,7 +1156,7 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                    for name, request in requests.items())):
         raise ValueError("candidate fit ledger omits or changes declared physical package requests")
     seals, fits, in_flight, failed_fits, started = {}, [], [], [], set()
-    prefix_receipts = {}
+    prefix_receipts, package_records = {}, {}
     for path in sorted((directory / "fit_receipts").glob("*.saved.json")):
         seal = _read_sealed_record(path)
         request = seal["request"]
@@ -1022,13 +1170,18 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
         file_receipts = {receipt["path"]: receipt for receipt in seal["files"]}
         if len(file_receipts) != len(seal["files"]):
             raise ValueError("candidate package seal repeats an artifact")
-        for receipt in file_receipts.values():
-            if _file_receipt(directory / receipt["path"], directory) != receipt:
-                raise ValueError("saved candidate model or probability manifest bytes changed")
+        delivered = None if replay_admission is None else replay_admission.ordinary(package_name)
+        if delivered is None:
+            for receipt in file_receipts.values():
+                if _file_receipt(directory / receipt["path"], directory) != receipt:
+                    raise ValueError("saved candidate model or probability manifest bytes changed")
+        elif semantic_sha256(delivered["byte_seal_files"]) != semantic_sha256(seal["files"]):
+            raise ValueError("candidate private prefix admission changed original saved byte seals")
         manifest = package / "ensemble.json"
         if manifest.exists():
             payload = json.loads(manifest.read_bytes())
             record = payload["record"]
+            package_records[package_name] = record
             if (semantic_sha256(record) != payload["record_sha256"]
                     or semantic_sha256(record["program"]) != semantic_sha256(request["ensemble_program"])
                     or semantic_sha256([entry["program"] for entry in record["experts"]]) != semantic_sha256(request["expert_programs"])
@@ -1092,8 +1245,12 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                     or prefix_record["source_checkpoint_digests"] != request["source_checkpoint_sha256"]):
                 raise ValueError("candidate prefix replay receipt differs from its prefit request")
             prefix_digest = semantic_sha256(prefix_record)
-            replay_prefix_inner_replay(package, context=expected_context,
-                expected_record_sha256=prefix_digest, device=plan["device"])
+            if delivered is None:
+                replay_prefix_inner_replay(package, context=expected_context,
+                    expected_record_sha256=prefix_digest, device=plan["device"])
+            elif (delivered["record_sha256"] != prefix_digest
+                    or semantic_sha256(delivered["future_rows"]) != semantic_sha256(prefix_record["future_score_rows"])):
+                raise ValueError("candidate private prefix admission changed captured future probabilities")
             prefix_receipts[package_name] = {
                 "record_sha256": prefix_digest,
                 "future_rows": {(row["strategy"], row["input"]["view"]["decision_id"]): freeze_metadata(row)
@@ -1116,9 +1273,8 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
         if "K" in request:
             prefix = scopes["calibration"][str(request["K"])]
             temperature = json.loads((directory / request["package"] / "temperature_programs.json").read_bytes())["record"]["programs"]
-            manifest_path = directory / request["package"] / "ensemble.json"
             actual_experts = {entry["program"]["expert_id"]: entry for entry in
-                json.loads(manifest_path.read_bytes())["record"]["experts"]} if manifest_path.exists() else {}
+                package_records.get(request["package"], {}).get("experts", ())}
             fit_keys = set()
             for value in record["fits"]:
                 spec = next(spec for spec in request["expert_programs"] if spec["expert_id"] == value["expert_id"])
@@ -1209,8 +1365,8 @@ def _admit_candidate_participant(task, outcome, plan, source, *, source_snapshot
                         for value in evidence.expert_identities]
         models = {}
         for package_name in packages:
-            if package_name in seals and (directory / package_name / "ensemble.json").exists():
-                record = json.loads((directory / package_name / "ensemble.json").read_bytes())["record"]
+            if package_name in package_records:
+                record = package_records[package_name]
                 models.update((entry["program"]["expert_id"], entry["model_digest"]) for entry in record["experts"])
         if evidence.probability_available and (not prediction["saved_replay_exact"] or any(
                 models.get(value.expert_id) != value.model_digest for value in evidence.expert_identities)):
@@ -1292,12 +1448,25 @@ class CandidateCloudProgramme:
         self.source, self.normalized, self.admitted, self.admission_failures = None, None, {}, {}
         self.source_snapshots = {}
         self.recovery_binding = None
+        self.evaluation_tasks, self.fit_outcomes = {}, {}
+        self.replay_states, self.replay_task_roles = {}, {}
+        self.replay_pool = None
+        self.preparation_failures = {}
+        self.source_artifacts = {}
+        self.replay_enabled = self.plan.get("evaluation_design") == "independent_prefix" and input_admission is not None
+        if self.replay_enabled:
+            from research.prefix_replay_dispatch import PrefixReplayInputPool
+
+            self.replay_pool = PrefixReplayInputPool(input_admission,
+                release_backing_aliases=self._release_replay_backing_aliases)
         _write_candidate_json(self.output / "consumer_requests.json", {"schema": "n2p3_candidate_consumer_requests/1",
             "base_plan_sha256": _file_receipt(self.original_plan_path, self.original_plan_path.parent)["sha256"],
             "requests": [request for index in range(len(self.plan["records"])) for request in _pipeline_requests(self.plan, index)]}, input_admission)
         _write_candidate_json(self.plan_path, self.plan, input_admission)
         self.tasks = candidate_tasks(self.plan_path, self.output, resources, dependencies=self.dependencies, task_prefix=task_prefix)
         self.task_roster = tuple(self.tasks)
+        self.execution_workers = (resources["max_cache_group_processes"] if self.replay_enabled
+            else resources["target_workers"])
 
     def bind_source(self, source_seed_catalog=None, source_snapshot=None):
         if source_seed_catalog is not None:
@@ -1306,42 +1475,401 @@ class CandidateCloudProgramme:
             self.plan["source_snapshot_manifest"] = str(Path(source_snapshot).resolve())
         _write_candidate_json(self.plan_path, self.plan, self.input_admission)
         self.normalized, self.source, self.source_snapshots = _prepare_candidate_plan(
-            self.plan_path, load_sources=self.plan.get("prefix_selection") is not None)
+            self.plan_path, load_sources=self.replay_enabled or self.plan.get("prefix_selection") is not None
+            and self.plan.get("prefix_recovery") is None)
         _write_candidate_json(self.output / "plan.json", self.normalized, self.input_admission)
         _write_candidate_json(self.output / "executed_source.json", self.source, self.input_admission)
+        if self.replay_enabled:
+            self.current_context = self._write_admission_context("current", self.normalized, self.source)
         if self.plan.get("prefix_recovery") is not None:
             self._recover_participants()
         return self.tasks
 
     def _recover_participants(self):
-        from research.cloud_execution import CloudResult
+        from research.cloud_execution import CloudResult, PhaseResources
         from research.prefix_recovery import load_prefix_recovery
 
         producer = load_prefix_recovery(self.normalized, self.source, output=self.output, consumer_root=ROOT)
+        self.recovery_binding = producer.binding
+        self.current_context = self._write_admission_context("current", self.normalized, self.source)
+        original_context = self._write_admission_context("original", producer.plan, producer.source)
+        recovery_tasks = []
         for participant in producer.participants:
             current = self.task_roster[participant.record_index]
             original = replace(current, output=str(participant.group),
-                resources=replace(current.resources, native_threads=participant.native_threads))
+                resources=PhaseResources("calibration", participant.native_threads,
+                    current.resources.memory_bytes, participant.native_threads, producer.plan["device"]))
             outcome = CloudResult(original.task_id, "completed",
                 str(participant.group / f"participant_{participant.record_index:03d}" / "result.json"))
-            with cpu_thread_budget(1):
-                admitted = _admit_candidate_participant(original, outcome, producer.plan, producer.source,
-                                                       source_snapshots=self.source_snapshots)
-            admitted["execution_binding"] = {"role": "original_producer_zero_fit_parent_replay",
-                "producer_source_digest": semantic_sha256(producer.source),
-                "producer_plan_sha256": producer.binding["original_plan_sha256"],
-                "producer_native_threads": participant.native_threads, "consumer_native_threads": 1,
-                "consumer_source_digest": semantic_sha256(self.source),
-                "original_group": str(participant.group)}
-            self.admitted[current.task_id] = admitted
-            _write_candidate_json(self.output / f"recovered_participant_{participant.record_index:03d}.json",
-                                  admitted["execution_binding"], self.input_admission)
-        self.recovery_binding = producer.binding
+            if self.replay_enabled:
+                recovery_tasks.append(self._make_replay_preparation(original, outcome, original_context,
+                    producer.plan, producer.source, "original_producer_independent_worker_replay",
+                    source_root=producer.binding["original_source_root"], dependencies=self.dependencies))
+            else:
+                recovery_tasks.append(self._make_admission_task(original, outcome, original_context,
+                    producer.plan, producer.source, "original_producer_independent_worker_replay",
+                    dependencies=self.dependencies))
         recovered = set(producer.binding["reused_record_indexes"])
-        self.tasks = [task for task in self.task_roster if task.arguments["record_index"] not in recovered]
+        self.tasks = recovery_tasks + [task for task in self.task_roster if task.arguments["record_index"] not in recovered]
+        self.execution_workers = self.resources["max_cache_group_processes"]
         _write_candidate_json(self.output / "prefix_recovery_binding.json", self.recovery_binding, self.input_admission)
+        self._write_admission_progress()
+
+    def _write_admission_context(self, name, plan, source):
+        path = self.output / f"admission_context_{name}.json"
+        record = {"plan": plan, "source": source}
+        _write_candidate_json(path, {"record": record, "record_sha256": semantic_sha256(record)}, self.input_admission)
+        return {"path": str(path), "sha256": _file_receipt(path, self.output)["sha256"]}
+
+    def _make_admission_task(self, producer_task, fit_outcome, context, plan, source, role, *, dependencies=()):
+        from research.cloud_execution import CloudTask, PhaseResources
+
+        logical_id = producer_task.task_id
+        index = producer_task.arguments["record_index"]
+        directory = self.output / "admission_groups" / f"participant_{index:03d}"
+        request = {"logical_task_id": logical_id, "record_index": index, "producer_role": role,
+            "producer_source_digest": semantic_sha256(source), "producer_plan_digest": semantic_sha256(_plan_authority(plan)),
+            "consumer_source_digest": semantic_sha256(self.source),
+            "consumer_plan_digest": semantic_sha256(_plan_authority(self.normalized)),
+            "producer_task": asdict(producer_task), "fit_outcome": asdict(fit_outcome),
+            "participant_metadata": _participant_metadata_receipts(producer_task)}
+        task = CloudTask(logical_id + ":admission",
+            "experiments.run_candidate_ensemble_study:candidate_participant_admission_adapter",
+            {"plan": str(self.plan_path), "output": str(directory), "context": context, "request": request,
+             "output_estimate_bytes": min(2**26, self.resources["target_worker_memory_bytes"])}, str(directory),
+            PhaseResources("evaluation", 1, self.resources["target_worker_memory_bytes"], 1, "cpu"), tuple(dependencies))
+        self.evaluation_tasks[task.task_id] = task
+        return task
+
+    def _replay_memory(self, graph=False):
+        name = "prefix_replay_graph_memory_gib" if graph else "prefix_replay_worker_memory_gib"
+        value = self.plan.get(name)
+        if value is not None:
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
+                raise ValueError("prefix replay memory budgets must be explicit positive GiB")
+            return int(value * 2**30)
+        if graph and self.plan["evidence_scope"] != "software_correctness":
+            return 8 * 2**30
+        return self.resources["target_worker_memory_bytes"]
+
+    def _source_replay_artifacts(self):
+        from research.prefix_replay_execution import artifact_receipt
+
+        if self.source_artifacts or not self.source_snapshots:
+            return self.source_artifacts
+        directory = self.output / "replay_sources"
+        directory.mkdir(exist_ok=True)
+        for key, snapshot in self.source_snapshots.items():
+            path = directory / (snapshot.digest + ".pt")
+            if not path.exists():
+                writer = (self.input_admission.artifact_writer(path, len(snapshot.content))
+                    if self.input_admission is not None else nullcontext())
+                with writer, path.open("xb") as stream:
+                    stream.write(snapshot.content)
+            receipt = artifact_receipt(path)
+            if receipt["sha256"] != snapshot.digest:
+                raise ValueError("replay control artifact changed its original canonical source bytes")
+            self.source_artifacts[key] = receipt
+        return self.source_artifacts
+
+    def _make_replay_preparation(self, producer_task, fit_outcome, context, plan, source, role,
+                                 *, source_root, dependencies=()):
+        from research.cloud_execution import CloudTask, PhaseResources
+        from research.prefix_replay_execution import artifact_receipt
+
+        authority = _candidate_participant_authority(producer_task, fit_outcome, plan, source)
+        if authority is None:
+            raise ValueError("replay preparation requires the original physical participant authority")
+        _, index, _, _, _, _ = authority
+        source_artifacts = self._source_replay_artifacts()
+
+        def inputs_for(request):
+            if not request["source_checkpoint_sha256"]:
+                return {}
+            key = BNCI2014_008_DATASET_ID, request["source_seed"]
+            receipt = source_artifacts[key]
+            if any(digest != receipt["sha256"] for digest in request["source_checkpoint_sha256"].values()):
+                raise ValueError("replay source artifacts differ from the original prefit source request")
+            return {name: receipt for name in request["source_checkpoint_sha256"]}
+
+        request = _prefix_replay_participant_anchor(producer_task, plan, source, self.source, authority)
+        selection, ordinary = request["selection_packages"], request["ordinary_packages"]
+        for row in selection + ordinary:
+            row["source_checkpoints"] = inputs_for(row["original_request"])
+        if not selection and not ordinary:
+            return self._make_admission_task(producer_task, fit_outcome, context, plan, source, role,
+                dependencies=dependencies)
+        logical_id = producer_task.task_id
+        prep_id = request["preparation_task_id"]
+        request["producer_module"] = artifact_receipt(Path(source_root) / "src/transfer/ensemble_views.py")
+        task = CloudTask(prep_id, "research.prefix_replay_execution:prefix_replay_prepare_adapter",
+            {"request": request, "output": str(self.output / "replay_groups" / f"participant_{index:03d}" / "prepare"),
+             "output_estimate_bytes": max(2**26, sum(receipt["bytes"] for row in selection for receipt in row["files"]))},
+            str(self.output / "replay_groups" / f"participant_{index:03d}" / "prepare"),
+            PhaseResources("evaluation", 1, self._replay_memory(graph=True), 1, "cpu"), tuple(dependencies))
+        self.replay_states[prep_id] = {"logical_id": logical_id, "producer_task": producer_task,
+            "fit_outcome": fit_outcome, "context": context, "plan": plan, "source": source, "role": role,
+            "request": request, "tasks": {}, "worker_outcomes": {}, "reducer_outcomes": {}, "reducers": {}}
+        self.replay_task_roles[prep_id] = prep_id, "prepare", None
+        return task
+
+    def _replay_task(self, state, task_id, adapter, arguments, *, graph=False, dependencies=()):
+        from research.cloud_execution import CloudTask, PhaseResources
+
+        directory = self.output / "replay_groups" / f"participant_{state['producer_task'].arguments['record_index']:03d}" / task_id.rsplit(":", 1)[-1]
+        return CloudTask(task_id, "research.prefix_replay_execution:" + adapter,
+            {**state["reader_arguments"], **arguments, "output": str(directory),
+             "output_estimate_bytes": 2**26}, str(directory),
+            PhaseResources("evaluation", 1, self._replay_memory(graph=graph), 1, "cpu"), tuple(dependencies))
+
+    def _initial_replay_readers(self, preparation_id, holder):
+        state = self.replay_states[preparation_id]
+        manifest = state["manifest"]
+        common = {"request": state["request"], "shared_inputs": holder.descriptor,
+            "input_request_sha256": manifest["input_request_sha256"], "capsule_sha256": manifest["capsule"]["sha256"]}
+        state["reader_arguments"] = common
+        configured = self.plan.get("prefix_replay_chunk_size", 4)
+        if type(configured) is not int or configured < 1:
+            raise ValueError("prefix replay chunk size must be a positive integer")
+        node_count = sum(len(job["node_requests"]) for job in manifest["selection_jobs"])
+        ready_slots = max(1, min(self.execution_workers,
+            self.resources["cpu_budget"] - self.resources.get("coordinator_cpu_threads", 1)))
+        node_slots = max(1, ready_slots - min(ready_slots - 1, len(manifest["ordinary_jobs"])))
+        chunk_size = min(configured, max(1, node_count // node_slots))
+        state["batching"] = {"nodes": node_count, "ordinary_ready": len(manifest["ordinary_jobs"]),
+            "cpu_ready_slots": ready_slots, "node_slots": node_slots, "chunk_size": chunk_size}
+        tasks, roles = [], {}
+        for job in manifest["selection_jobs"]:
+            key = "selection", job["package"]
+            dependencies = []
+            for index, start in enumerate(range(0, len(job["node_requests"]), chunk_size)):
+                task_id = state["logical_id"] + f":node_{job['package']}_{index:03d}"
+                task = self._replay_task(state, task_id, "selection_chunk_adapter",
+                    {"package": job["package"], "node_requests": job["node_requests"][start:start + chunk_size]})
+                tasks.append(task)
+                roles[task_id] = preparation_id, "selection_worker", key
+                dependencies.append(task_id)
+            state["reducers"][key] = {"job": job, "dependencies": dependencies}
+        for row in manifest["ordinary_jobs"]:
+            key = "ordinary", row["package"]
+            task_id = state["logical_id"] + ":ordinary_" + row["package"]
+            task = self._replay_task(state, task_id, "ordinary_prefix_replay_adapter", {"package": row["package"]})
+            tasks.append(task)
+            roles[task_id] = preparation_id, "ordinary_worker", key
+            state["reducers"][key] = {"dependencies": [task_id]}
+        # Build facts survive a failed progress write; only returned tasks become actual executor work.
+        state["tasks"].update((task.task_id, task) for task in tasks)
+        self.replay_task_roles.update(roles)
+        self._write_admission_progress()
+        self.tasks.extend(tasks)
+        return tuple(tasks)
+
+    def _on_finished_preparation(self, preparation_id, outcome):
+        from research.prefix_replay_execution import read_prefix_preparation
+
+        state = self.replay_states[preparation_id]
+        state["preparation_outcome"] = outcome
+        if outcome.status != "completed":
+            self.preparation_failures[preparation_id] = outcome.failure
+            self._write_admission_progress()
+            return ()
+        task = next(task for task in self.tasks if task.task_id == preparation_id)
+        state["manifest"] = read_prefix_preparation(task, outcome, state["request"])
+        additions = self.replay_pool.queue_preparation(outcome, state["manifest"]["input_request"],
+            lambda holder: self._initial_replay_readers(preparation_id, holder), capsule_key="capsule")
+        self.preparation_failures.update(self.replay_pool.failures)
+        self._write_admission_progress()
+        return additions
+
+    def _on_finished_replay_reader(self, preparation_id, role, key, outcome):
+        state = self.replay_states[preparation_id]
+        additions = []
+        if role.endswith("worker"):
+            state["worker_outcomes"][outcome.task_id] = outcome
+            reducer = state["reducers"][key]
+            if ("task_id" not in reducer
+                    and all(task_id in state["worker_outcomes"] for task_id in reducer["dependencies"])):
+                kind, package = key
+                task_id = state["logical_id"] + ":reduce_" + kind + "_" + package
+                facts = [(state["tasks"][task_id], state["worker_outcomes"][task_id]) for task_id in reducer["dependencies"]]
+                arguments = ({"job": reducer["job"], "node_outcomes": facts} if kind == "selection"
+                    else {"package": package, "ordinary_outcome": facts[0]})
+                task = self._replay_task(state, task_id, kind + "_reducer_adapter", arguments,
+                    graph=kind == "selection", dependencies=reducer["dependencies"])
+                reducer["task_id"] = task_id
+                state["tasks"][task_id] = task
+                self.replay_task_roles[task_id] = preparation_id, "reducer", key
+                additions.append(task)
+        elif role == "reducer":
+            state["reducer_outcomes"][key] = outcome
+            if len(state["reducer_outcomes"]) == len(state["reducers"]):
+                task = self._make_admission_task(state["producer_task"], state["fit_outcome"], state["context"],
+                    state["plan"], state["source"], state["role"],
+                    dependencies=[row["task_id"] for row in state["reducers"].values()])
+                facts = [(state["tasks"][row["task_id"]], state["reducer_outcomes"][key])
+                    for key, row in state["reducers"].items()]
+                task = replace(task, arguments={**task.arguments, "replay_request": state["request"],
+                    "reducer_outcomes": facts}, resources=replace(task.resources, memory_bytes=self._replay_memory(graph=True)))
+                self.evaluation_tasks[task.task_id] = task
+                self.replay_task_roles[task.task_id] = preparation_id, "final_admission", None
+                state["tasks"][task.task_id] = task
+                additions.append(task)
+        elif role == "final_admission":
+            self._on_finished_admission(outcome)
+        # A successor owns the backing before the predecessor gives its lease back.
+        if additions:
+            self.replay_pool.add_readers(preparation_id, additions)
+            self._write_admission_progress()
+            self.tasks.extend(additions)
+        unlocked = self.replay_pool.finished_reader(outcome)
+        self._scrub_retired_replay_descriptors()
+        self.preparation_failures.update(self.replay_pool.failures)
+        return tuple(additions) + tuple(unlocked)
+
+    def _scrub_retired_replay_descriptors(self):
+        resident = set(self.replay_pool.record()["resident_preparations"])
+        for preparation_id, state in self.replay_states.items():
+            if preparation_id in resident or "reader_arguments" not in state:
+                continue
+            self._release_replay_backing_aliases(preparation_id)
+
+    def _release_replay_backing_aliases(self, preparation_id):
+        state = self.replay_states[preparation_id]
+        if "reader_arguments" not in state:
+            return
+        descriptor = state["reader_arguments"]["shared_inputs"]
+        if descriptor["backing"] == "immutable_bytes":
+            # The pool invokes this after the last actual tree retirement and
+            # before freeing its byte claim or adopting another preparation.
+            # All parent task arguments share this same descriptor mapping.
+            descriptor.pop("payload", None)
+            descriptor.pop("capsule", None)
+        state["input_descriptor_retired"] = True
+
+    def _write_admission_progress(self):
+        _write_candidate_json(self.output / "progress.json", {"status": "running",
+            "fitted_subjects": sum(value.status == "completed" for value in self.fit_outcomes.values()),
+            "completed_subjects": sum(row["status"] == "completed" for row in self.admitted.values()),
+            "resolved_subjects": len(self.admitted),
+            "pending_admission_subjects": [task.arguments["request"]["record_index"] for task in self.evaluation_tasks.values()
+                if task.arguments["request"]["logical_task_id"] not in self.admitted]}, self.input_admission)
+
+    def _on_finished_admission(self, outcome):
+        task = self.evaluation_tasks[outcome.task_id]
+        request = task.arguments["request"]
+        logical_id = request["logical_task_id"]
+        if outcome.status != "completed":
+            self.admission_failures[logical_id] = outcome.failure
+            self._write_admission_progress()
+            return ()
+        expected = Path(task.output) / "admission.json"
+        if outcome.value != _file_receipt(expected, task.output):
+            raise ValueError("candidate admission artifact differs from the independent worker's return digest")
+        record = _read_sealed_record(expected)
+        if (record["schema"] != "n2p3_candidate_participant_admission/1"
+                or semantic_sha256(record["request"]) != semantic_sha256(request)
+                or record["consumer_source"] != self.source
+                or _participant_metadata_receipts(_admission_task_descriptor(request["producer_task"])) != request["participant_metadata"]):
+            raise ValueError("candidate admission receipt rewrites its participant or producing execution")
+        admitted = record["participant"]
+        if admitted is not None:
+            ledger = _read_sealed_record(Path(request["producer_task"]["output"]) /
+                f"participant_{request['record_index']:03d}" / "request_ledger.json")
+            if (admitted["record_index"] != request["record_index"]
+                    or any(semantic_sha256(admitted[key]) != semantic_sha256(ledger[key]) for key in
+                        ("requested", "coverage", "participant_key", "candidate_vocabulary", "evidence_level"))
+                    or any(row["score_source_digest"] != request["producer_source_digest"] for row in admitted["predictions"])):
+                raise ValueError("candidate admission result omits requested authority or changes original score producer")
+            self.admitted[logical_id] = admitted
+            if request["producer_role"] == "original_producer_independent_worker_replay":
+                _write_candidate_json(self.output / f"recovered_participant_{request['record_index']:03d}.json",
+                                      admitted["execution_binding"], self.input_admission)
+        self._write_admission_progress()
+        return ()
+
+    def _on_finished_fit(self, outcome):
+        tasks = {task.task_id: task for task in self.task_roster}
+        task = tasks[outcome.task_id]
+        self.fit_outcomes[outcome.task_id] = replace(outcome,
+            worker=None if outcome.worker is None else dict(outcome.worker),
+            supplementary_failures=list(outcome.supplementary_failures))
+        authority = _candidate_participant_authority(task, outcome, self.normalized, self.source)
+        # Complete fallible IO before publishing a task for the executor's ACK.
+        self._write_admission_progress()
+        if authority is None:
+            return ()
+        evaluation = (self._make_replay_preparation(task, self.fit_outcomes[outcome.task_id], self.current_context,
+            self.normalized, self.source, "new_producer", source_root=ROOT)
+            if self.replay_enabled else self._make_admission_task(task, outcome, self.current_context,
+                self.normalized, self.source, "new_producer"))
+        self.tasks.append(evaluation)
+        return (evaluation,)
+
+    def _unresolved_pipeline_outcome(self, logical_id, results):
+        from research.cloud_execution import CloudResult
+
+        evaluation = results.get(logical_id + ":admission")
+        fitted = results.get(logical_id) or self.fit_outcomes.get(logical_id)
+        for preparation_id, state in self.replay_states.items():
+            if state["logical_id"] != logical_id:
+                continue
+            actual = [results[key] for key in [*state["tasks"], preparation_id] if key in results]
+            for status in ("failed", "blocked", "not_admitted"):
+                for value in actual:
+                    if value.status == status:
+                        return value
+            if logical_id in self.admission_failures:
+                return CloudResult(logical_id, "not_admitted", failure=self.admission_failures[logical_id])
+        if fitted is not None and fitted.status != "completed":
+            return fitted
+        if evaluation is not None and evaluation.status != "completed":
+            return evaluation
+        return CloudResult(logical_id, "not_admitted", failure={"type": "MissingIndependentAdmission",
+            "stage": "artifact_admission", "message": "fitted output has no accepted numerical admission"})
+
+    def _unresolved_participant(self, task, results):
+        actual_task, plan, source = task, self.normalized, self.source
+        for state in self.replay_states.values():
+            if state["logical_id"] == task.task_id:
+                actual_task, plan, source = state["producer_task"], state["plan"], state["source"]
+                break
+        fitted = self.fit_outcomes.get(task.task_id) or results.get(task.task_id)
+        if fitted is None:
+            fitted = next((state["fit_outcome"] for state in self.replay_states.values()
+                if state["logical_id"] == task.task_id), None)
+        if fitted is None or plan is None:
+            return None
+        authority = _candidate_participant_authority(actual_task, fitted, plan, source)
+        if authority is None:
+            return None
+        ledger = authority[-2]
+        failure = self._unresolved_pipeline_outcome(task.task_id, results)
+        metadata = {key: ledger[key] for key in ("requested", "coverage", "candidate_vocabulary", "evidence_level", "participant_key")}
+        metadata.update({key: ledger[key] for key in ("requested_to_actual_K", "budget_adjustments") if key in ledger})
+        return {**metadata, "status": "unresolved_admission", "predictions": [], "fits": [],
+            "selection_fits": [], "record_index": task.arguments["record_index"],
+            "pipeline_requests": [{**request, "status": failure.status, "failure": failure.failure}
+                for request in ledger["pipeline_requests"]], "admission_failure": failure.failure}
 
     def on_finished(self, outcome):
+        if self.replay_enabled:
+            if outcome.task_id in self.replay_task_roles:
+                preparation_id, role, key = self.replay_task_roles[outcome.task_id]
+                try:
+                    return (self._on_finished_preparation(preparation_id, outcome) if role == "prepare"
+                        else self._on_finished_replay_reader(preparation_id, role, key, outcome))
+                except Exception as error:
+                    state = self.replay_states[preparation_id]
+                    self.admission_failures[state["logical_id"]] = {
+                        "type": type(error).__name__, "message": str(error), "stage": "artifact_admission"}
+                    raise
+            if outcome.task_id in self.evaluation_tasks:
+                return self._on_finished_admission(outcome)
+            return self._on_finished_fit(outcome)
+        if self.recovery_binding is not None:
+            if outcome.task_id in self.evaluation_tasks:
+                return self._on_finished_admission(outcome)
+            return self._on_finished_fit(outcome)
         tasks = {task.task_id: task for task in self.tasks}
         if outcome.task_id not in tasks:
             raise ValueError("candidate consumer received another programme's task")
@@ -1353,10 +1881,6 @@ class CandidateCloudProgramme:
             result = _admit_candidate_participant(tasks[outcome.task_id], outcome, self.normalized, self.source,
                                                   source_snapshots=self.source_snapshots)
             if result is not None:
-                if self.recovery_binding is not None:
-                    result["execution_binding"] = {"role": "new_producer",
-                        "producer_source_digest": semantic_sha256(self.source),
-                        "consumer_source_digest": semantic_sha256(self.source)}
                 self.admitted[outcome.task_id] = result
         except Exception as error:
             self.admission_failures[outcome.task_id] = f"{type(error).__name__}: {error}"
@@ -1366,22 +1890,49 @@ class CandidateCloudProgramme:
             "resolved_subjects": len(self.admitted)}, self.input_admission)
         return ()
 
-    def finalize(self, results, *, input_admission=None):
+    def finalize(self, results, *, input_admission=None, cloud_run=None):
+        from research.cloud_execution import CloudResult
+
         owner = input_admission if input_admission is not None else self.input_admission
-        outcomes = [results[task.task_id] for task in self.tasks]
+        if self.replay_pool is not None:
+            if cloud_run is not None:
+                if cloud_run.results is not results:
+                    raise ValueError("candidate replay cleanup requires the actual originating run results")
+                self.replay_pool.retire_after_run(cloud_run)
+                self._scrub_retired_replay_descriptors()
+            elif self.replay_pool.record()["resident_preparations"] or self.replay_pool.record()["pending_preparations"]:
+                raise ValueError("candidate replay cleanup requires its actual settled CloudRun")
+            self.preparation_failures.update(self.replay_pool.failures)
+        outcomes = [results.get(task.task_id) or CloudResult(task.task_id, "not_started", failure={
+            "type": "UnpublishedReplayTask", "stage": "artifact_admission",
+            "message": "task construction or callback ACK failed before actual executor publication"}) for task in self.tasks]
         participants = [self.admitted[task.task_id] for task in self.task_roster if task.task_id in self.admitted]
+        if self.replay_enabled:
+            for task in self.task_roster:
+                if task.task_id not in self.admitted:
+                    unresolved = self._unresolved_participant(task, results)
+                    if unresolved is not None:
+                        participants.append(unresolved)
+        participant_records = {row["record_index"]: row for row in participants}
         failures = [{"task_id": value.task_id, "status": value.status, "failure": value.failure,
             "supplementary_failures": value.supplementary_failures} for value in outcomes if value.status != "completed"]
+        for task in self.task_roster:
+            if task.task_id not in self.admitted:
+                missing = self._unresolved_pipeline_outcome(task.task_id, results)
+                if not any(row["task_id"] == missing.task_id for row in failures):
+                    failures.append({"task_id": missing.task_id, "status": missing.status,
+                        "failure": missing.failure, "supplementary_failures": missing.supplementary_failures})
         if self.source is not None and _executing_source() != self.source:
             raise ValueError("candidate execution source changed during the programme")
         if failures:
             report = {"schema": "n2p3_candidate_ensemble_report/1", "status": "failed",
                 "evidence_scope": self.plan["evidence_scope"], "participants": participants,
                 "requested_records": self.plan["records"], "execution_failures": failures,
-                "admission_failures": self.admission_failures,
+                "admission_failures": self.admission_failures, "preparation_failures": self.preparation_failures,
                 "requested_pipeline_cells": [request for task in self.task_roster for request in
-                    (self.admitted[task.task_id]["pipeline_requests"] if task.task_id in self.admitted else
-                     [{**value, "status": results[task.task_id].status, "failure": results[task.task_id].failure}
+                    (participant_records[task.arguments["record_index"]]["pipeline_requests"] if task.arguments["record_index"] in participant_records else
+                     [{**value, "status": self._unresolved_pipeline_outcome(task.task_id, results).status,
+                        "failure": self._unresolved_pipeline_outcome(task.task_id, results).failure}
                       for value in _pipeline_requests(self.plan, task.arguments["record_index"])])],
                 "unresolved_record_indexes": [task.arguments["record_index"] for task in self.task_roster if task.task_id not in self.admitted],
                 "decision_denominator_complete": len(participants) == len(self.task_roster),
@@ -1393,15 +1944,41 @@ class CandidateCloudProgramme:
                     metrics_scope="all_resolved_requested_decisions" if report["decision_denominator_complete"] else "resolved_subset_with_unresolved_roster")
             if self.recovery_binding is not None:
                 report.update(prefix_recovery=self.recovery_binding,
-                    participant_execution={str(row["record_index"]): row["execution_binding"] for row in participants})
+                    participant_execution={str(row["record_index"]): row["execution_binding"] for row in participants if "execution_binding" in row},
+                    fit_execution={key: asdict(value) for key, value in self.fit_outcomes.items()},
+                    admission_execution={key: asdict(results[key]) if key in results else {
+                        "task_id": key, "status": "not_started", "worker": None} for key in self.evaluation_tasks})
+            if self.replay_enabled:
+                report.update(fit_execution={key: asdict(value) for key, value in self.fit_outcomes.items()},
+                    replay_execution={key: asdict(results[key]) if key in results else {
+                        "task_id": key, "status": "not_started", "worker": None} for key in self.replay_task_roles},
+                    replay_inputs=self.replay_pool.record())
+                report["replay_batching"] = {key: state["batching"] for key, state in self.replay_states.items() if "batching" in state}
             _write_candidate_json(self.output / "result.json", report, owner)
             _write_candidate_json(self.output / "progress.json", {"status": "failed", "resolved_subjects": len(participants),
                 "completed_subjects": sum(row["status"] == "completed" for row in participants)}, owner)
             return report
         if len(participants) != len(self.task_roster):
             raise ValueError("candidate programme lacks independently admitted participant results")
-        return _finalize_candidate_report(self.normalized, self.source, participants, self.output, input_admission=owner,
-                                          recovery_binding=self.recovery_binding)
+        report = _finalize_candidate_report(self.normalized, self.source, participants, self.output, input_admission=owner,
+            persist=self.recovery_binding is None, recovery_binding=self.recovery_binding)
+        report["decision_denominator_complete"] = len(participants) == len(self.task_roster)
+        if self.recovery_binding is not None:
+            report.update(fit_execution={key: asdict(value) for key, value in self.fit_outcomes.items()},
+                          admission_execution={key: asdict(results[key]) if key in results else {
+                              "task_id": key, "status": "not_started", "worker": None} for key in self.evaluation_tasks})
+            _write_candidate_json(self.output / "result.json", report, owner)
+            _write_candidate_json(self.output / "progress.json", {"status": report["status"],
+                "fitted_subjects": sum(value.status == "completed" for value in self.fit_outcomes.values()),
+                "completed_subjects": sum(row["status"] == "completed" for row in participants),
+                "resolved_subjects": len(participants)}, owner)
+        if self.replay_enabled:
+            report.update(fit_execution={key: asdict(value) for key, value in self.fit_outcomes.items()},
+                replay_execution={key: asdict(results[key]) for key in self.replay_task_roles if key in results},
+                replay_inputs=self.replay_pool.record())
+            report["replay_batching"] = {key: state["batching"] for key, state in self.replay_states.items() if "batching" in state}
+            _write_candidate_json(self.output / "result.json", report, owner)
+        return report
 
 
 def build_candidate_cloud_tasks(plan_path, output, resources, *, source_seed_catalog=None, source_snapshot=None,
@@ -1575,26 +2152,24 @@ def run_study(plan_path: str | Path, output: str | Path, *, _actor_index=None, _
             HostMemoryAdmission,
             SourceInputAdmission,
             resolve_source_resources,
-            with_cloud_resource_floor,
         )
 
         resource_plan = {"source_workers": plan["workers"], "target_workers": plan["workers"],
             "cpu_budget": plan["workers"] * plan["cpu_threads_per_worker"] + 1,
             "source_worker_memory_gib": plan.get("target_worker_memory_gib", .25 if plan["evidence_scope"] == "software_correctness" else 4.),
             "target_worker_memory_gib": .25 if plan["evidence_scope"] == "software_correctness" else 4., **plan}
-        resources = resolve_source_resources(with_cloud_resource_floor(resource_plan, plan.get("device", "cpu")),
-                                             len(plan["records"]), plan.get("device", "cpu"))
+        resources = resolve_source_resources(resource_plan, len(plan["records"]), plan.get("device", "cpu"))
         context = get_context("spawn")
         with context.Manager() as manager:
             input_owner = SourceInputAdmission(manager, capacity_bytes=resources["shared_staging_memory_bytes"],
                                                load_workers=plan.get("source_load_workers", resources["source_workers"]))
             admission = HostMemoryAdmission(manager, resources, input_admission=input_owner)
             programme = build_candidate_cloud_tasks(plan_path, output, resources, input_admission=input_owner)
-            run = CloudExecutor(admission, max_workers=resources["target_workers"],
+            run = CloudExecutor(admission, max_workers=programme.execution_workers,
                 diagnostic_directory=output / "worker_diagnostics",
                 identity={"actual_source_root": str(ROOT), "plan_sha256": semantic_sha256(plan)}).run(
                     programme.tasks, on_finished=programme.on_finished)
-            return programme.finalize(run.results, input_admission=input_owner)
+            return programme.finalize(run.results, input_admission=input_owner, cloud_run=run)
     except BaseException as error:
         atomic_write_json(output / "progress.json", {"status": "failed", "completed_subjects": len(completed),
                           "error": f"{type(error).__name__}: {error}"})
