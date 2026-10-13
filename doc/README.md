@@ -13,6 +13,8 @@
 
 ## 当前研究
 
+科研窗口已按用户要求于2026-10-13暂停。续接先读[总监handoff](assets/research_resume_20261012/HANDOFF.zh.md)和[当前暂停检查点](assets/research_resume_20261012/pause_checkpoint_20261013.json)，再核实际Git及云窗口状态；旧2026-10-12检查点保持历史身份。
+
 当前按[愿望清单进展](evidence/wishlist_progress_20261010.zh.md)推进123项。B03真正prefix整程序选择及保存重放/public parent准入已集成；修后entry005完成八人152请求，选择收益随K变化。P1新stationary law两臂16/16完成、0新fit，winner与旧law一致。source cache/shared score、conditional公共白化及逐decision horizon已接入。BI61人与BNCI8人的episode三臂队列已完成并独立复算；BNCI微调的NLL改善集中A04，scratch命中/Brier较好。当前科研独立树从保留的`f1d0ec0`恢复，源码和Git证据已恢复；旧ignored大结果/模型的本地路径已失效，恢复来源由云owner继续核对。结论集中维护在[校准与选择](evidence/calibration_and_selection.zh.md)、[响应与噪声](evidence/response_and_noise.zh.md)、[公共评估](evidence/public_evaluation.zh.md)和[执行与集成](evidence/execution_and_integration.zh.md)；六指南持有活动规范，各产物保持自己的来源与分母。
 
 科研窗口负责科学合同与代码最终集成，云端窗口负责唯一执行调度。科研用一个完整 source→target seed，大版本校验才三个；两窗口合计最多10并发，科研子代理没有我方时间或额度上限。职责内自主推进，只集中同步重要交付、接口变化和阻塞。

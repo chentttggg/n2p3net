@@ -1,0 +1,75 @@
+{
+  "schema": "n2p3_research_pause_checkpoint/2",
+  "status": "paused_by_user",
+  "created_at": "2026-10-13T19:02:02.069436+08:00",
+  "worktree": "C:/Users/chent/.codex/worktrees/research-director-resume/n2p3-net",
+  "branch": "codex/research-director-resume-20261013",
+  "head_before_handoff_commit": "577ac4c68db17cf3ce12431add8f371deaab5759",
+  "final_commit_locator": "branch tip; only handoff/checkpoint and index documentation follow head_before_handoff_commit",
+  "handoff": "doc/assets/research_resume_20261012/HANDOFF.zh.md",
+  "historical_checkpoint_preserved": "doc/assets/research_resume_20261012/pause_checkpoint_20261012.json",
+  "cherry_pick": "completed 4c4b987 as 577ac4c with documentation conflict resolution; no runtime changes",
+  "code_sources": {
+    "src/transfer/information_bound.py": "18218cb9be6814176279b681734aa25e84e625ca9327fc11c3ea815798c84e58",
+    "src/transfer/exact_covariance.py": "d3f27c60e6a42d25c84c5bc86e7d3aac5882b8aa6b865a82390ae5a410eea721",
+    "src/research/source_execution.py": "af464538c1525dd71b95c952e90d64a3ee930b399d574b4e2205c6bb138a2028"
+  },
+  "accepted_commits": [
+    "f6c8ca5",
+    "2dc48dd",
+    "afa9bbb",
+    "577ac4c"
+  ],
+  "evidence": [
+    "training_admission_repairs.json",
+    "diagnostic_mathematics_integration.json",
+    "diagnostic_independent_review.json",
+    "cloud_floor_authority_repair.json",
+    "runtime_coverage_review.json"
+  ],
+  "agents": "all research subagents completed; no new tasks dispatched",
+  "validation": {
+    "previous_targeted_contracts": "passed; original source-specific bindings retained",
+    "independent_final_review": "Spec GO / Standards GO",
+    "full_suite": "not rerun",
+    "public_fit": 0,
+    "public_score": 0,
+    "public_model_load": 0,
+    "synthetic_numerical_operations": "executed; see diagnostic binding",
+    "pause_checks": "documentation diff, links, JSON, source hashes and clean final Git state"
+  },
+  "original_main": {
+    "path": "D:/BCI/n2p3-net",
+    "head": "f1a303c42c68173e8b1452ceb26bd84923b8a6aa",
+    "porcelain_records_at_pause": 345,
+    "touched": false
+  },
+  "cloud": {
+    "thread_id": "01a10b0f-c672-7e73-8449-4ebdaf6fc5eb",
+    "host_id": "local",
+    "owner": "cloud window",
+    "completed": [
+      "BI Q1",
+      "BNCI C600",
+      "entry005",
+      "P1 stationary 16 cells"
+    ],
+    "entry005_science_exit": 0,
+    "p1_science_exit": 0,
+    "owned_after_completed_science": 0,
+    "outer_queue_exit": 1,
+    "raw_payload_persistence": "not reverified after old local paths disappeared / SSH unavailable",
+    "new_node_chunk_implementation": "cloud-owned WIP, not integrated into research tree; separate thread status is not a scientific execution receipt"
+  },
+  "remaining": [
+    "fair requested-risk/availability binary selector contract",
+    "cloud node/chunk final caller/lifecycle/reduction review",
+    "raw result/model recovery audit before cleanup",
+    "B07 public opt-in/C-latent/fractional-clock",
+    "B05 larger same-support panel/calibration/joint MLE",
+    "B09/B10/B11/B12 full research exits",
+    "B13 adult/device confirmation"
+  ],
+  "resume_requires": "user resume instruction; then current Git/cloud status and handoff",
+  "cleanup": "no push, main switch, branch/worktree deletion, prune or gc performed"
+}
