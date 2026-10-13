@@ -492,7 +492,7 @@ def execute_target_tasks(
             raise ValueError("source and target disagree on the frozen reference budget")
     manifest.update(analysis_design)
     output.mkdir(parents=True, exist_ok=False)
-    report = {**context, "schema": "n2p3_target_stage_run/1", "status": "running",
+    report = {**context, "schema": "n2p3_target_stage_run/2", "status": "running",
               **analysis_design, "task_manifest": manifest, "cells": [], "batch_selection_rows": []}
     atomic_write_json(output / "tasks.json", manifest)
     atomic_write_json(output / "record.json", report)
@@ -632,6 +632,7 @@ def execute_target_tasks(
                 )
                 recipe = fitted.recipe
                 cell["selection"] = selection
+                cell["recipe"] = recipe.record()
                 scores = fitted.predict_logit(dataset.X[test], observed[test])
             elif "epoch_selection" in task:
                 from transfer.epoch_selection import EpochSelectionPolicy, fit_with_epoch_selection
@@ -666,6 +667,7 @@ def execute_target_tasks(
                             "architecture": (fitted.adapter.trunk.architecture_record()
                                              if fitted.adapter is not None else None),
                             "fit_history": fitted.fit_history,
+                            **({"selection": cell["selection"]} if "selection" in cell else {}),
                             **({"global_early_stopping": task["global_early_stopping"]}
                                if "global_early_stopping" in task else {}),
                             **({"unified_training_budget": task["unified_training_budget"]}

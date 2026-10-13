@@ -9,7 +9,7 @@ import json
 import os
 import pickle
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import BinaryIO
@@ -17,7 +17,6 @@ from uuid import uuid4
 
 import numpy as np
 import torch
-from sklearn.metrics import roc_auc_score
 
 from baselines.structured_erp import ERP_FAMILIES, StructuredERP
 from baselines.temporal_transfer import resolve_temporal_basis
@@ -60,6 +59,7 @@ from transfer.calibration_candidates import (  # noqa: F401
     calibration_candidate_recipes,
     calibration_decision_groups,
     fit_calibration_candidate,
+    replay_calibration_selection,
     score_calibration_candidate,
     select_calibration_candidate,
     validate_calibration_quality_ingress,
@@ -87,9 +87,8 @@ from transfer.quality import (
     validate_personal_epoch_raw_quality,
 )
 from transfer.recipes import TargetRecipe
-from transfer.subject_adapter import SubjectAdapter
 
-CALIBRATED_PREDICTOR_SCHEMA = "n2p3_calibrated_predictor/4"
+CALIBRATED_PREDICTOR_SCHEMA = "n2p3_calibrated_predictor/5"
 
 
 @dataclass(frozen=True)
@@ -547,6 +546,13 @@ class CalibratedPredictor:
         self.metadata = _json_record(metadata)
         self.state = {name: value.detach().cpu().clone() for name, value in state.items()}
         self.device = torch.device(device)
+        selection = self.metadata.get("selection", {})
+        if selection.get("schema") == "n2p3_calibration_candidate_selection/1":
+            replay_calibration_selection(selection)
+            if (selection["refit_recipe"] != self.metadata["recipe"]
+                    or selection["requested_calibration_rows"] != list(range(self.metadata["calibration_trials"]))
+                    or selection["refit_state_sha256"] != _state_digest(self.state)):
+                raise ValueError("calibrated selection differs from its actual final refit")
         decision_score = self.metadata.get("decision_score")
         if decision_score is not None and (
             decision_score.get("method") != "membership_llr_sum/1"
@@ -858,7 +864,8 @@ def fit_calibrated_predictor(
             recipes, batch_size=batch_size, seed=seed, transfer_policy=transfer_policy)
     continuous = dataset.provenance.get("continuous_artifact_processing", {})
     local_quality = continuous.get("status") == "applied" and continuous.get("model", {}).get("spec", {}).get("channel_local") is True
-    if selector_mode != "legacy_product" or epoch_quality_policy is not None or epoch_quality_model is not None or local_quality:
+    if (source_checkpoint is not None or selector_mode != "legacy_product"
+            or epoch_quality_policy is not None or epoch_quality_model is not None or local_quality):
         return _fit_candidate_predictor(
             dataset, source_checkpoint=source_checkpoint, recipes=recipes, device=device,
             seed=seed, batch_size=batch_size, input_request=input_request, progress=progress,
@@ -935,86 +942,6 @@ def fit_calibrated_predictor(
             "intercept": torch.as_tensor(lda.intercept_[0], dtype=torch.float64),
         }
         return CalibratedPredictor(metadata, state, device=device)
-
-    payload = _load_calibration_checkpoint(source_checkpoint)
-    if not isinstance(payload, dict) or payload.get("schema") != CHECKPOINT_SCHEMA:
-        raise ValueError("source checkpoint must use the current audited transfer schema")
-    if not checkpoint_classifier_is_trained(payload):
-        raise ValueError("source checkpoint needs a supervised source classifier")
-    try:
-        source, _ = load_n2p3_trunk_checkpoint(payload, dataset, target_subject=subject)
-    except ValueError as error:
-        raise ValueError(
-            f"source checkpoint is incompatible: {error} Select a checkpoint with the same "
-            "EEG order/reference, or explicitly choose the required measured reference."
-        ) from error
-    configuration = plain_trunk_configuration(source)
-    source_mean, source_std = checkpoint_input_stats(payload, dataset.n_channels)
-    recipes = tuple(recipes)
-    if not recipes or len({recipe.name for recipe in recipes}) != len(recipes):
-        raise ValueError("calibration recipes must be a nonempty unique named set")
-    validation_count = max(1, int(np.ceil(0.2 * len(sessions))))
-    training_sessions, validation_sessions = sessions[:-validation_count], sessions[-validation_count:]
-    validation_start = min(row["session_start_timestamp_s"] for row in validation_sessions)
-    if max(row["calibration_available_timestamp_s"] for row in training_sessions) > validation_start:
-        raise ValueError("inner-training labels were unavailable before validation recording started")
-    train_mask = np.isin(session_ids, [row["session_id"] for row in training_sessions])
-    validation_mask = ~train_mask
-    validate_calibration_raw_fit_scope(dataset, train_mask)
-    recipe_records = []
-    for index, recipe in enumerate(recipes):
-        notify(15 + int(55 * index / len(recipes)), f"select_{recipe.name}")
-        adapter = SubjectAdapter(
-            copy.deepcopy(source), device=torch.device(device),
-            config=recipe.adapter_config(input_mean=source_mean, input_std=source_std),
-        )
-        adapter.fit(dataset.X, dataset.y, training_mask=train_mask, validation_mask=validation_mask,
-                    prefix_mask=np.ones(dataset.n_epochs, dtype=bool), trial_channel_mask=_observed(dataset))
-        history = adapter.last_history
-        if history["best_epoch"] is None or history["best_val_loss"] is None:
-            raise ValueError("internal validation did not select a finite training epoch")
-        recipe_records.append({
-            **recipe.record(), "learning_rate": recipe.lr,
-            "selected_epochs": int(history["best_epoch"]),
-            "validation_loss": float(history["best_val_loss"]),
-            "validation_auc": float(roc_auc_score(dataset.y[validation_mask], adapter.calibration_logits_)),
-            "fit_history": copy.deepcopy(history),
-        })
-    selected = min(recipe_records, key=lambda item: item["validation_loss"])
-    refit_recipe = replace(
-        next(recipe for recipe in recipes if recipe.name == selected["name"]),
-        epochs=selected["selected_epochs"],
-    )
-    notify(78, "refit_full_authorized_calibration")
-    adapter = SubjectAdapter(
-        copy.deepcopy(source), device=torch.device(device),
-        config=refit_recipe.adapter_config(input_mean=source_mean, input_std=source_std),
-    )
-    adapter.fit(dataset.X, dataset.y, prefix_mask=np.ones(dataset.n_epochs, dtype=bool),
-                trial_channel_mask=_observed(dataset))
-    metadata.update(
-        model_kind="source_initialized_n2p3", source_pretraining_used=True,
-        architecture=source.architecture_record(), architecture_configuration=asdict(configuration),
-        pooling_mode=source.pooling_mode,
-        source_checkpoint_sha256=hashlib.sha256(Path(source_checkpoint).read_bytes()).hexdigest(),
-        source_training_contract=checkpoint_training_contract(payload).record(),
-        recipe=refit_recipe.record(),
-        selection={"mode": "chronological_calibration_decisions_then_full_refit",
-                   "scoring_protocol": "legacy_epoch_validation_cross_entropy",
-                   "training_sessions": [row["session_id"] for row in training_sessions],
-                   "validation_sessions": [row["session_id"] for row in validation_sessions],
-                   "recipes": recipe_records, "selected": selected,
-                   "refit_recipe": refit_recipe.record(),
-                   "refit_rows": dataset.n_epochs, "fit_scope": adapter.last_history["fit_scope"],
-                   "refit_history": copy.deepcopy(adapter.last_history)},
-    )
-    state = {f"trunk.{name}": value.detach().cpu() for name, value in adapter.trunk.state_dict().items()}
-    fitted_mean, fitted_std = adapter.fitted_input_statistics()
-    state.update(input_mean=torch.as_tensor(fitted_mean), input_std=torch.as_tensor(fitted_std))
-    metadata["actual_fitted_state_sha256"] = _state_digest(state)
-    metadata["selection"]["refit_state_sha256"] = metadata["actual_fitted_state_sha256"]
-    return CalibratedPredictor(metadata, state, device=device)
-
 
 def _fit_candidate_predictor(
     dataset: EpochDataset, *, source_checkpoint, recipes, device, seed, batch_size,
@@ -1197,6 +1124,8 @@ def save_calibrated_predictor(path: str | Path, predictor: CalibratedPredictor) 
     temporary = destination.with_name(f".{destination.name}.{uuid4().hex}.tmp")
     payload = {
         "schema": CALIBRATED_PREDICTOR_SCHEMA,
+        "selection_contract": predictor.metadata["selection"].get(
+            "schema", "n2p3_fixed_or_historical_calibration/1"),
         "metadata": predictor.metadata, "metadata_digest": semantic_sha256(predictor.metadata),
         "state": predictor.state, "state_digest": _state_digest(predictor.state),
     }
@@ -1215,15 +1144,25 @@ def load_calibrated_predictor(path: str | Path | BinaryIO, *, device: str = "cpu
     """Restore a personal model from a path or an already verified byte stream."""
     payload = torch.load(path, map_location="cpu", weights_only=True)
     if not isinstance(payload, dict) or payload.get("schema") not in {
-        CALIBRATED_PREDICTOR_SCHEMA, "n2p3_calibrated_predictor/3", "n2p3_calibrated_predictor/1",
+        CALIBRATED_PREDICTOR_SCHEMA, "n2p3_calibrated_predictor/4",
+        "n2p3_calibrated_predictor/3", "n2p3_calibrated_predictor/1",
     }:
         raise ValueError("unsupported calibrated model artifact")
     if payload.get("metadata_digest") != semantic_sha256(payload["metadata"]):
         raise ValueError("calibrated model metadata digest mismatch")
     if payload.get("state_digest") != _state_digest(payload["state"]):
         raise ValueError("calibrated model state digest mismatch")
+    if payload["schema"] == CALIBRATED_PREDICTOR_SCHEMA:
+        declaration = payload.get("selection_contract")
+        selection = payload["metadata"]["selection"]
+        if declaration == "n2p3_calibration_candidate_selection/1":
+            if selection.get("schema") != declaration:
+                raise ValueError("calibrated model selection contract is missing or inconsistent")
+        elif (declaration != "n2p3_fixed_or_historical_calibration/1" or "schema" in selection
+              or "scoring_support" in selection or "selection_measure" in selection):
+            raise ValueError("calibrated model selection contract is missing or inconsistent")
     quality = payload["metadata"].get("epoch_quality")
-    if payload["schema"] != CALIBRATED_PREDICTOR_SCHEMA and quality is not None and (
+    if payload["schema"] not in {CALIBRATED_PREDICTOR_SCHEMA, "n2p3_calibrated_predictor/4"} and quality is not None and (
         quality["model"].get("method") != "fold_local_ptp_cv"
     ):
         raise ValueError("legacy calibrated artifact cannot declare a new epoch quality method")

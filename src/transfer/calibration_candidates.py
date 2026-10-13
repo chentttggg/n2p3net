@@ -40,6 +40,8 @@ from transfer.recipes import TargetRecipe
 from transfer.subject_adapter import SubjectAdapter
 
 SELECTOR_MODES = ("five_candidates", "transfer_only", "no_transfer", "legacy_product", "unified", "fixed_erp")
+_REQUESTED_TIE_RULE = "primary_desc_requested_pair_desc_coverage_desc_lda_scratch_source_low_high_candidate_id"
+_CE_TIE_RULE = "minimum_common_requested_ce_then_predeclared_candidate_order"
 
 
 def calibration_candidate_recipes(
@@ -703,75 +705,278 @@ def _fit_calibration_candidate(
     )
 
 
-def score_calibration_candidate(
-    dataset: EpochDataset, logits: np.ndarray, validation_mask: np.ndarray, *,
-    protocol: str = "binary_auc",
-) -> dict[str, object]:
-    validation = _mask(validation_mask, dataset.n_epochs)
-    values = np.asarray(logits, dtype=float)
-    if values.shape == (dataset.n_epochs,):
-        values = values[validation]
-    if values.shape != (int(validation.sum()),) or np.isinf(values).any():
-        raise ValueError("candidate predictions must align with validation rows; NaN means unavailable")
-    usable = np.isfinite(values)
-    auc = (float(roc_auc_score(dataset.y[validation][usable], values[usable]))
-           if len(np.unique(dataset.y[validation][usable])) == 2 else None)
-    result = {"protocol": protocol, "validation_auc": auc, "primary_score": auc}
-    result.update(requested_validation_rows=int(validation.sum()), usable_validation_rows=int(usable.sum()),
-                  unavailable_validation_rows=int((~usable).sum()))
-    if protocol == "binary_auc":
-        if auc is None:
-            raise ValueError("quality-filtered validation lacks both classes for AUC")
-        return result
-    if protocol != "brainsync_operational_r5":
-        raise ValueError("unknown calibration scoring protocol")
+def _operational_scoring_blocks(dataset, validation):
+    """Fix the physical block roster before any candidate predicts or abstains."""
     if "block_id" not in dataset.metadata or "session" not in dataset.metadata:
         raise ValueError("BrainSync operational R5 requires a real 45-flash block ledger")
     timeline = dataset.event_timeline
     evidence = np.asarray(timeline.evidence_indices, dtype=int)
     event_sessions = np.asarray(timeline.session_ids).astype(str)
     selected_sessions = tuple(np.unique(dataset.metadata.loc[validation, "session"].astype(str)))
-    by_row = np.full(dataset.n_epochs, np.nan)
-    by_row[validation] = values
-    session_scores = []
-    block_records = []
+    local_rows = np.full(dataset.n_epochs, -1, dtype=int)
+    local_rows[validation] = np.arange(int(validation.sum()))
+    blocks = []
     for session in selected_sessions:
         rows = np.flatnonzero(event_sessions == session)
         if len(rows) % 45 or not len(rows):
             raise ValueError("BrainSync operational R5 requires exactly 45 scheduled flashes per block")
-        hits = []
         for start in range(0, len(rows), 45):
             block = rows[start:start + 45]
             codes = np.asarray(timeline.candidate_ids)[block].astype(int)
             if any(int(np.sum(codes == code)) != 5 for code in range(1, 10)):
                 raise ValueError("BrainSync operational R5 requires all nine candidates five times per 45-flash block")
-            targets = np.unique(np.asarray(timeline.target_candidate_ids)[block].astype(int))
-            if len(targets) != 1 or targets[0] not in range(1, 10):
-                raise ValueError("BrainSync block requires one confirmed target identity")
             retained = evidence[block] >= 0
             block_rows = evidence[block][retained]
             if not validation[block_rows].all():
                 raise ValueError("operational R5 validation must retain complete recording blocks")
+            targets = np.unique(np.asarray(timeline.target_candidate_ids)[block].astype(int))
+            if len(targets) != 1 or targets[0] not in range(1, 10):
+                raise ValueError("BrainSync block requires one confirmed target identity")
             block_ids = dataset.metadata.iloc[block_rows]["block_id"].unique()
             if len(block_ids) > 1:
                 raise ValueError("45-event ledger disagrees with actual BrainSync block identifiers")
-            retained[retained] &= np.isfinite(by_row[block_rows])
-            block_rows = evidence[block][retained]
+            indices = np.full(45, -1, dtype=int)
+            indices[retained] = local_rows[block_rows]
+            blocks.append({"session": session, "block_index": start // 45,
+                           "validation_indices": indices.tolist(), "candidate_ids": codes.tolist(),
+                           "target_candidate": int(targets[0])})
+    return blocks
+
+
+def _calibration_scoring_support(dataset, validation, protocol):
+    if protocol not in {"binary_auc", "brainsync_operational_r5"}:
+        raise ValueError("unknown calibration scoring protocol")
+    labels = np.asarray(dataset.y)[validation].astype(np.int64)
+    counts = np.bincount(labels, minlength=2)
+    if len(counts) != 2 or (protocol == "binary_auc" and min(counts) < 1):
+        raise ValueError("requested validation requires both binary classes for AUC")
+    return {"schema": "n2p3_calibration_scoring_support/1", "protocol": protocol,
+            "dataset_epochs": dataset.n_epochs, "requested_rows": np.flatnonzero(validation).tolist(),
+            "requested_mask_sha256": _array_digest(validation), "requested_labels": labels.tolist(),
+            "requested_labels_sha256": _array_digest(labels), "class_counts": counts.tolist(),
+            "validation_input_sha256": _fit_rows_digest(dataset, validation),
+            "pair_measure": "uniform_requested_positive_negative_pairs",
+            "unavailable_pair_credit": 0, "tied_pair_credit": 0.5,
+            "conditional_auc_role": "available_pairs_diagnostic_only",
+            "operational_blocks": (_operational_scoring_blocks(dataset, validation)
+                                   if protocol == "brainsync_operational_r5" else [])}
+
+
+def _score_supported_logits(support, values):
+    labels = np.asarray(support["requested_labels"], dtype=np.int64)
+    if values.shape != labels.shape or np.isinf(values).any():
+        raise ValueError("candidate predictions must align with validation rows; NaN means unavailable")
+    usable = np.isfinite(values)
+    counts = np.asarray(support["class_counts"])
+    available_counts = np.bincount(labels[usable], minlength=2)
+    pairs = int(counts[0]) * int(counts[1])
+    available_pairs = int(available_counts[0]) * int(available_counts[1])
+    # Integer half-credit avoids subtracting or multiplying extreme logits and
+    # preserves the deletion inequality even when the resulting AUC is tiny.
+    negatives = np.sort(values[usable & (labels == 0)])
+    positives = values[usable & (labels == 1)]
+    lower = np.searchsorted(negatives, positives, side="left")
+    upper = np.searchsorted(negatives, positives, side="right")
+    twice_credit = int(np.sum(lower + upper))
+    requested_auc = twice_credit / (2 * pairs) if pairs else None
+    auc = float(roc_auc_score(labels[usable], values[usable])) if available_pairs else None
+    result = {"protocol": support["protocol"], "validation_auc": auc,
+              "validation_auc_role": support["conditional_auc_role"],
+              "requested_pair_auc": requested_auc, "primary_score": requested_auc,
+              "selection_measure": "requested_pair_credit",
+              "requested_validation_pairs": pairs, "available_validation_pairs": available_pairs,
+              "unavailable_validation_pairs": pairs - available_pairs,
+              "twice_pair_credit": twice_credit, "selection_eligible": bool(available_pairs),
+              "requested_validation_rows": len(values), "usable_validation_rows": int(usable.sum()),
+              "unavailable_validation_rows": int((~usable).sum())}
+    if support["protocol"] == "brainsync_operational_r5":
+        block_records = []
+        for block in support["operational_blocks"]:
+            indices = np.asarray(block["validation_indices"])
+            retained = indices >= 0
+            retained[retained] &= usable[indices[retained]]
+            codes = np.asarray(block["candidate_ids"])
             score = candidate_evidence_scores(
-                by_row[block_rows], codes[retained], tuple(range(1, 10)),
+                values[indices[retained]], codes[retained], tuple(range(1, 10)),
                 aggregation="mean",
             )
             complete = all(score.counts[code] == 5 for code in range(1, 10))
             predicted = score.predicted if complete else None
-            hit = int(predicted == int(targets[0]))
-            hits.append(hit)
-            block_records.append({"session": session, "block_index": start // 45,
+            hit = int(predicted == block["target_candidate"])
+            block_records.append({"session": block["session"], "block_index": block["block_index"],
                                   "prediction": predicted, "hit": hit, "complete": complete})
-        session_scores.append(float(np.mean(hits)))
-    result.update(primary_score=float(np.mean(session_scores)),
-                  operational_hit_r5=float(np.mean(session_scores)), blocks=block_records,
-                  session_count=len(session_scores), failure_denominator="all_scheduled_blocks")
+        sessions = tuple(dict.fromkeys(block["session"] for block in block_records))
+        session_scores = [np.mean([block["hit"] for block in block_records if block["session"] == session])
+                          for session in sessions]
+        result.update(primary_score=float(np.mean(session_scores)),
+                      selection_eligible=any(block["complete"] for block in block_records),
+                      selection_measure="session_macro_requested_block_hit",
+                      requested_operational_blocks=len(block_records),
+                      complete_operational_blocks=sum(block["complete"] for block in block_records),
+                      operational_hit_r5=float(np.mean(session_scores)), blocks=block_records,
+                      session_count=len(session_scores), failure_denominator="all_scheduled_blocks")
+    if "ce_pos_weight" in support:
+        complete = bool(usable.all())
+        ce = None
+        if complete:
+            weights = np.where(labels == 1, support["ce_pos_weight"], 1.)
+            losses = np.logaddexp(0., np.where(labels == 1, -values, values))
+            ce = float(np.sum(losses * (weights / weights.sum())))
+            if not np.isfinite(ce):
+                raise ValueError("requested validation CE became nonfinite")
+        result.update(validation_selection_ce=ce, primary_score=None if ce is None else -ce,
+                      validation_loss=ce, selection_eligible=complete,
+                      selection_measure="common_requested_weighted_logit_ce")
     return result
+
+
+def score_calibration_candidate(
+    dataset: EpochDataset, logits: np.ndarray, validation_mask: np.ndarray, *,
+    protocol: str = "binary_auc",
+) -> dict[str, object]:
+    """Score the fixed requested risk; conditional ROC AUC is a diagnostic.
+
+    Each requested positive-negative pair has credit 1, 1/2 or 0 when both
+    outputs exist, and 0 on abstention. This is a realizable AUC lower bound:
+    assign missing positive/negative scores below/above all available scores.
+    No imputed logit or probability is emitted. Complete candidates retain AUC.
+    """
+    validation = _mask(validation_mask, dataset.n_epochs)
+    values = np.asarray(logits, dtype=float)
+    if values.shape == (dataset.n_epochs,):
+        values = values[validation]
+    return _score_supported_logits(_calibration_scoring_support(dataset, validation, protocol), values)
+
+
+def _selected_scored_candidate(items, selector_mode):
+    eligible = [item for item in items if item["status"] == "completed" and item["selection_eligible"]]
+    if not eligible:
+        return None
+    if selector_mode == "legacy_product":
+        return min(eligible, key=lambda item: -item["primary_score"])
+    rank = {"waveform_lda": 0, "source_feature_lda": 0, "scratch": 1, "source": 2,
+            **{family: 0 for family in ERP_FAMILIES}}
+    return min(eligible, key=lambda item: (
+        -item["primary_score"], -(item["requested_pair_auc"] if item["requested_pair_auc"] is not None else -1),
+        -item["usable_validation_rows"], -item["available_validation_pairs"], rank[item["initialization"]],
+        item["epochs"], item["candidate_id"],
+    ))
+
+
+def replay_calibration_selection(record, *, dataset=None):
+    """Verify saved support and score relations, then replay the same selection.
+
+    A supplied calibration dataset additionally binds the original held input.
+    Model-only loading checks the saved score decision, without fitting EEG or
+    asserting that metadata alone proves the historical inner model producer.
+    """
+    if record.get("schema") != "n2p3_calibration_candidate_selection/1":
+        raise ValueError("unsupported calibration candidate selection schema")
+    legacy = record["selector_mode"] == "legacy_product"
+    if record["tie_rule"] != (_CE_TIE_RULE if legacy else _REQUESTED_TIE_RULE):
+        raise ValueError("calibration candidate score replay has a different tie rule")
+    calibration = record["requested_calibration_rows"]
+    if (len(calibration) != record["refit_rows"] or calibration != sorted(set(calibration))
+            or len(record["inner_row_indices"]["train"]) != record["training_rows"]
+            or len(record["inner_row_indices"]["validation"]) != record["validation_rows"]
+            or len(record["inner_row_indices"]["purged"]) != record["purged_rows"]
+            or semantic_sha256(record["inner_row_indices"]) != record["split_sha256"]):
+        raise ValueError("calibration candidate requested fit and split scope differ")
+    support = record.get("scoring_support")
+    if support is None:
+        if record["selection_evidence"] or record["recipes"] or record["selected"] is not None:
+            raise ValueError("calibration selection lacks scoring support")
+        first = record["candidate_recipes"][0]
+        if (record.get("fallback") != "full_calibration_waveform_lda"
+                or record["refit_recipe"] != waveform_lda_recipe(seed=first["seed"], batch_size=first["batch_size"]).record()):
+            raise ValueError("calibration selection lacks its declared fixed fallback")
+        return None
+    if record.get("scoring_support_sha256") != semantic_sha256(support):
+        raise ValueError("calibration scoring support digest differs")
+    rows = np.asarray(support["requested_rows"], dtype=np.int64)
+    mask = np.zeros(support["dataset_epochs"], dtype=bool)
+    mask[rows] = True
+    labels = np.asarray(support["requested_labels"], dtype=np.int64)
+    if (not np.array_equal(rows, np.flatnonzero(mask)) or len(labels) != len(rows)
+            or rows.tolist() != record["inner_row_indices"]["validation"]
+            or not np.isin(labels, (0, 1)).all()
+            or _array_digest(mask) != support["requested_mask_sha256"]
+            or _array_digest(labels) != support["requested_labels_sha256"]
+            or np.bincount(labels, minlength=2).tolist() != support["class_counts"]
+            or support["schema"] != "n2p3_calibration_scoring_support/1"
+            or support["pair_measure"] != "uniform_requested_positive_negative_pairs"
+            or support["unavailable_pair_credit"] != 0 or support["tied_pair_credit"] != .5
+            or support["conditional_auc_role"] != "available_pairs_diagnostic_only"):
+        raise ValueError("calibration scoring support is inconsistent")
+    if (support["protocol"] not in {"binary_auc", "brainsync_operational_r5"}
+            or record["scoring_protocol"] != ("legacy_epoch_validation_cross_entropy"
+                if record["selector_mode"] == "legacy_product" else support["protocol"])):
+        raise ValueError("calibration scoring support and requested protocol differ")
+    if support["protocol"] == "brainsync_operational_r5":
+        seen_rows, seen_blocks = [], set()
+        for block in support["operational_blocks"]:
+            indices = np.asarray(block["validation_indices"])
+            codes = np.asarray(block["candidate_ids"])
+            block_id = (block["session"], block["block_index"])
+            if (indices.shape != (45,) or indices.dtype.kind not in "iu"
+                    or np.any(indices < -1) or np.any(indices >= len(labels))
+                    or codes.shape != (45,) or any(np.sum(codes == code) != 5 for code in range(1, 10))
+                    or block["target_candidate"] not in range(1, 10) or block_id in seen_blocks):
+                raise ValueError("calibration scoring support has an invalid requested R5 block")
+            seen_rows.extend(indices[indices >= 0].tolist())
+            seen_blocks.add(block_id)
+        if sorted(seen_rows) != list(range(len(labels))):
+            raise ValueError("calibration scoring support R5 blocks differ from their requested rows")
+    elif support["operational_blocks"]:
+        raise ValueError("binary calibration scoring support cannot contain R5 blocks")
+    if legacy != ("ce_pos_weight" in support):
+        raise ValueError("calibration scoring support and selection measure differ")
+    if legacy:
+        counts = support["ce_class_counts"]
+        if (len(counts) != 2 or min(counts) < 1 or support["ce_pos_weight"] != counts[0] / counts[1]
+                or support["ce_training_rows"] != record["inner_row_indices"]["train"]
+                or support["ce_measure"] != "common_pre_quality_training_class_cost_requested_validation_mass"
+                or support["ce_availability"] != "complete_requested_validation_only"):
+            raise ValueError("calibration scoring support CE measure is inconsistent")
+    if dataset is not None:
+        expected = _calibration_scoring_support(dataset, mask, support["protocol"])
+        if any(semantic_sha256(expected[key]) != semantic_sha256(support[key]) for key in expected):
+            raise ValueError("calibration scoring support differs from original held input")
+        if legacy:
+            training_labels = dataset.y[support["ce_training_rows"]]
+            if (_array_digest(training_labels) != support["ce_fit_labels_sha256"]
+                    or np.bincount(training_labels, minlength=2).tolist() != support["ce_class_counts"]):
+                raise ValueError("calibration scoring support differs from original CE class measure")
+    roster = record["candidate_recipes"]
+    if len(roster) != len(record["recipes"]):
+        raise ValueError("calibration candidate score replay lacks the requested recipe roster")
+    for recipe, item in zip(roster, record["recipes"], strict=True):
+        if any(semantic_sha256(item[key]) != semantic_sha256(value) for key, value in recipe.items()):
+            raise ValueError("calibration candidate score replay differs from its requested recipe")
+        if item["status"] == "completed":
+            values = np.array([np.nan if value is None else value for value in item["validation_logits"]])
+            replayed = _score_supported_logits(support, values)
+            if any(semantic_sha256(item[key]) != semantic_sha256(value) for key, value in replayed.items()):
+                raise ValueError("calibration candidate score replay differs")
+            if legacy and (item["selected_epochs"] != item["fit_history"]["best_epoch"]
+                           or not 1 <= item["selected_epochs"] <= recipe["epochs"]):
+                raise ValueError("calibration candidate selected epoch differs from its actual inner history")
+    selected = _selected_scored_candidate(record["recipes"], record["selector_mode"])
+    if semantic_sha256(selected) != semantic_sha256(record["selected"]):
+        raise ValueError("calibration candidate score replay chose a different recipe")
+    if selected is not None:
+        if any(record[key] != selected[key] for key in ("validation_auc", "selection_measure", "requested_pair_auc")):
+            raise ValueError("calibration selection readout differs from its selected score")
+        recipe = TargetRecipe(**{key: selected[key] for key in record["refit_recipe"]})
+        if record["selector_mode"] == "legacy_product":
+            recipe = replace(recipe, epochs=selected["selected_epochs"])
+        if recipe.record() != record["refit_recipe"]:
+            raise ValueError("calibration candidate selection and final refit recipe differ")
+    else:
+        expected = waveform_lda_recipe(seed=roster[0]["seed"], batch_size=roster[0]["batch_size"])
+        if record["refit_recipe"] != expected.record() or record["selection_evidence"]:
+            raise ValueError("calibration candidate fallback and final refit recipe differ")
+    return selected
 
 
 def select_calibration_candidate(
@@ -794,14 +999,22 @@ def select_calibration_candidate(
     if any(recipe.refit_full_prefix for recipe in candidates):
         raise ValueError("selector candidates cannot request refit_full_prefix; use the chronological refit owner")
     split = dataset_calibration_inner_split(dataset, allowed, recording_order=recording_order)
-    record = {**split.record(), "selector_mode": selector_mode, "scoring_protocol": protocol,
+    record = {"schema": "n2p3_calibration_candidate_selection/1", **split.record(),
+              "selector_mode": selector_mode, "scoring_protocol": protocol,
               "selection_evidence": split.legal, "recipes": [], "refit_rows": int(allowed.sum()),
-              "tie_rule": "primary_desc_auc_desc_lda_scratch_source_low_high_candidate_id"}
+              "candidate_recipes": [recipe.record() for recipe in candidates],
+              "requested_calibration_rows": np.flatnonzero(allowed).tolist(),
+              "inner_row_indices": {"train": np.flatnonzero(split.training_mask).tolist(),
+                                    "validation": np.flatnonzero(split.validation_mask).tolist(),
+                                    "purged": np.flatnonzero(split.purged_mask).tolist()},
+              "tie_rule": _REQUESTED_TIE_RULE,
+              "scoring_support": None}
     before = fit_cache.record() if fit_cache is not None else None
     fit_calls = 0
     if selector_mode == "legacy_product":
         record.update(scoring_protocol="legacy_epoch_validation_cross_entropy",
-                      tie_rule="minimum_validation_ce_then_predeclared_candidate_order")
+                      tie_rule=_CE_TIE_RULE,
+                      inner_split_mode=split.mode, mode="chronological_calibration_decisions_then_full_refit")
     selection_legal = split.legal
     if selection_legal and split.mode == "within_recording_purged_80_20" and (
         not allow_within_recording
@@ -813,8 +1026,16 @@ def select_calibration_candidate(
                       reason="complete separate calibration sessions are required for this product/EOG selection")
     if selection_legal:
         # Operational protocol validity is a data gate, never a candidate failure.
-        score_calibration_candidate(dataset, np.zeros(int(split.validation_mask.sum())),
-                                    split.validation_mask, protocol=protocol)
+        support = _calibration_scoring_support(dataset, split.validation_mask, protocol)
+        if selector_mode == "legacy_product":
+            counts = np.bincount(dataset.y[split.training_mask], minlength=2)
+            support.update(ce_pos_weight=float(counts[0] / counts[1]),
+                           ce_class_counts=counts.tolist(),
+                           ce_training_rows=np.flatnonzero(split.training_mask).tolist(),
+                           ce_fit_labels_sha256=_array_digest(dataset.y[split.training_mask]),
+                           ce_measure="common_pre_quality_training_class_cost_requested_validation_mass",
+                           ce_availability="complete_requested_validation_only")
+        record.update(scoring_support=support, scoring_support_sha256=semantic_sha256(support))
     if selection_legal:
         validate_calibration_raw_fit_scope(dataset, split.training_mask)
         validate_epoch_quality_fit_scope(dataset, split.training_mask, policy=epoch_quality_policy, model=epoch_quality_model)
@@ -832,41 +1053,33 @@ def select_calibration_candidate(
                     **({"phase": "inner"} if fit_cache is not None else {}),
                 )
                 logits = fitted.predict_logit(dataset.X[split.validation_mask], _observed(dataset)[split.validation_mask])
-                item.update(status="completed", **score_calibration_candidate(
-                    dataset, logits, split.validation_mask, protocol=protocol),
+                item.update(status="completed", **_score_supported_logits(support, np.asarray(logits, dtype=float)),
+                    validation_logits=[float(value) if np.isfinite(value) else None for value in logits],
                     fitted_state_sha256=_state_digest(fitted.state),
                     fit_scope=fitted.fit_history["fit_scope"], fit_history=fitted.fit_history,
                 )
                 if selector_mode == "legacy_product":
                     item["selected_epochs"] = int(fitted.fit_history["best_epoch"])
-                    item["primary_score"] = -float(fitted.fit_history["best_val_loss"])
+                    item.update(validation_loss=item["validation_selection_ce"], learning_rate=recipe.lr)
                 del fitted
             except (ValueError, ExpectedSubjectError) as error:
                 item.update(status="failed", failure={"type": type(error).__name__, "message": str(error)})
             record["recipes"].append(item)
-    completed = [item for item in record["recipes"] if item["status"] == "completed"]
-    if completed:
-        rank = {"waveform_lda": 0, "source_feature_lda": 0, "scratch": 1, "source": 2,
-                **{family: 0 for family in ERP_FAMILIES}}
-        selected = (
-            min(completed, key=lambda item: -item["primary_score"])
-            if selector_mode == "legacy_product" else min(completed, key=lambda item: (
-                -item["primary_score"], -(item["validation_auc"] if item["validation_auc"] is not None else -1), rank[item["initialization"]],
-                item["epochs"], item["candidate_id"],
-            ))
-        )
+    selected = _selected_scored_candidate(record["recipes"], selector_mode)
+    if selected is not None:
         recipe = next(recipe for recipe in candidates if recipe.name == selected["candidate_id"])
         if selector_mode == "legacy_product":
             recipe = replace(recipe, epochs=selected["selected_epochs"])
-        record.update(selected=selected, validation_auc=selected["validation_auc"])
+        record.update(selected=selected, validation_auc=selected["validation_auc"],
+                      selection_measure=selected["selection_measure"], requested_pair_auc=selected["requested_pair_auc"])
     else:
         if selector_mode == "legacy_product":
             failures = "; ".join(item["failure"]["message"] for item in record["recipes"] if item["status"] == "failed")
-            raise ValueError(f"legacy source calibration failed: {record['reason'] or failures or 'no valid candidate'}")
+            raise ValueError(f"legacy source calibration failed: {record['reason'] or failures or 'no complete requested candidate'}")
         recipe = waveform_lda_recipe(seed=candidates[0].seed, batch_size=candidates[0].batch_size)
         record.update(selection_evidence=False, selected=None, validation_auc=None,
                       fallback="full_calibration_waveform_lda",
-                      fallback_reason=record["reason"] or "all_candidates_failed")
+                      fallback_reason=record["reason"] or "no_candidate_with_requested_selection_evidence")
     fit_calls += 1
     fit_function = fit_calibration_candidate if fit_cache is None else fit_cache.fit
     fitted = fit_function(

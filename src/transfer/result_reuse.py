@@ -168,7 +168,7 @@ def admit_completed_result(path: str | Path, *, kind: str, expected: Mapping) ->
 
 
 def _admit_public_result(record: Mapping, directory: Path) -> None:
-    if record["schema"] != "n2p3_target_stage_run/1":
+    if record["schema"] not in {"n2p3_target_stage_run/1", "n2p3_target_stage_run/2"}:
         raise ResultIntegrityError("result integrity: unsupported public target result schema")
     _read_artifact_bytes(record, directory)
     manifest = record["task_manifest"]
@@ -215,6 +215,25 @@ def _admit_public_result(record: Mapping, directory: Path) -> None:
             or _tensor_state_digest(model["state"]) != cell["fitted_state_sha256"]
         ):
             raise ResultIntegrityError("result integrity: saved model differs from its cell")
+        if record["schema"] == "n2p3_target_stage_run/2" and "selector_mode" in task:
+            from transfer.calibration_candidates import replay_calibration_selection
+
+            selection = cell.get("selection")
+            if (not isinstance(selection, Mapping)
+                    or selection.get("schema") != "n2p3_calibration_candidate_selection/1"
+                    or model is None or model.get("selection") != selection
+                    or selection["candidate_recipes"] != task["recipes"]
+                    or selection["selector_mode"] != task["selector_mode"]
+                    or selection["requested_calibration_rows"] != scope["calibration_rows"]
+                    or selection["inner_row_indices"]["validation"] != scope["inner_validation_rows"]
+                    or selection["split_sha256"] != scope["inner_split"]["split_sha256"]
+                    or selection["refit_recipe"] != model["recipe"]
+                    or selection["refit_state_sha256"] != cell["fitted_state_sha256"]):
+                raise ResultIntegrityError("result integrity: candidate selection differs from its saved refit")
+            try:
+                replay_calibration_selection(selection)
+            except (ValueError, KeyError, TypeError, IndexError) as error:
+                raise ResultIntegrityError("result integrity: candidate selection score replay differs") from error
     if (type(record["completed_cells"]) is not int or type(record["failed_cells"]) is not int
             or record["completed_cells"] != completed or record["failed_cells"] != len(cells) - completed):
         raise ResultIntegrityError("result integrity: completed/failed cell counts do not reconcile")

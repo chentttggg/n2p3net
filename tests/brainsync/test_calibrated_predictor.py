@@ -921,6 +921,15 @@ def test_source_selection_refits_full_calibration_and_round_trips(tmp_path, sess
 
     assert _model_summary(restored)["internal_validation"] == selection
     assert torch.load(saved, weights_only=True)["metadata"]["model_kind"] == "source_initialized_n2p3"
+    from research.contracts import semantic_sha256
+
+    payload = torch.load(saved, weights_only=True)
+    del payload["metadata"]["selection"]["schema"]
+    payload["metadata_digest"] = semantic_sha256(payload["metadata"])
+    broken = tmp_path / "removed_selection_contract.pt"
+    torch.save(payload, broken)
+    with pytest.raises(ValueError, match="selection contract"):
+        load_calibrated_predictor(broken)
 
 
 @pytest.mark.parametrize("weights", ["spatial", "temporal", "adapter"])

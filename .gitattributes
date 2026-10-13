@@ -133,3 +133,4 @@ tests/research/test_joint_response_compiled.py text eol=lf
 experiments/compact_cold_caches.py text eol=lf
 tests/train/test_external_file_reclaim.py text eol=lf
 tests/train/test_cold_cache_compaction.py text eol=lf
+tests/transfer/test_requested_calibration_scoring.py text eol=lf
