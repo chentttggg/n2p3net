@@ -361,7 +361,7 @@ class SpatialObservation:
             gains = finite_real_array(declaration.get("row_gains"), name="declared output row gains")
             if gains.shape != (rows,) or np.any(gains == 0):
                 raise ValueError("observation declaration needs one finite nonzero gain per actual output")
-            if declaration.get("native_channels") != list(self.layout.channels):
+            if tuple(declaration.get("native_channels", ())) != self.layout.channels:
                 raise ValueError("observation declaration differs from actual measured native EEG")
             if kind == "native_EEG":
                 expected = np.eye(count)
