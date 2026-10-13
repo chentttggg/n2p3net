@@ -81,6 +81,8 @@ B05数值中枢与history adapter已接通：`native_history_marginal_program`�
 
 当前推进跨reference的共同物理效应输运：直接在source真实joint likelihood中测目标reference-free泛函，保存BLUE均值、完整measurement covariance和native noise归一化，再进入群体forecast与目标prior。共同电极和参考关系来自共享authority；declared CAR的结构零与生成舍入需一起核对，任意未观测参考方向保其真实可识别性。原source builder、独立测量和消费者仍各自绑定实际来源。
 
+独立审阅确认一般full-row source的下一修复：结构可识别性应由物理空间map、时间design及record-local nuisance的精确因子乘积计算。四导单行`[1,3,5,−9]`的真实beta-nullity为12，现浮点归一化再Kronecker的逐项舍入却能给出0；微小但真实未观测泛函随后可能获准。下一切片保存并重建factorized physical law，数值likelihood/BLUE继续用原程序及逐项witness核对。当前输运先闭合已有生成authority的native、实测参考和CAR三条source路径。
+
 `ERPPhysicalEffect`绑定basis/window/grid/fs/operator/dictionary、真实reference与空间观测map。`ERPChannelEstimate`只从实际joint likelihood提取可识别BLUE，不把已有收缩posterior当独立measurement；measurement noise/dependence由其owner明确绑定。若压缩观测为`y=X beta+e`，物理泛函F必须存在witness`F=W X`，则效应mean为`W y`、covariance为`W W.T`。新关系检查逐entry使用原物理坐标，零观测列不从其它强列借容差；允许界来自浮点算法与运算尺度，不是全输入区间证明。
 
 source group以participant为单位，对效应measurement covariance与人际variance分别记账，使用外部模板、强anchor与整程序上界。forecast covariance为`S_between+V_population_mean`，variance component为plug-in，不声称完整Bayesian积分。`mean_only`与`separable`是两种明确completion；不能把标准化d-prime向量按reference线性推送或手工放大噪声precision。
