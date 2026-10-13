@@ -1,6 +1,17 @@
 # 科研总监交接
 
-2026-10-13用户最新指令已恢复科研，授权自主修改并要求精简长期记忆。本记录沿用现有续接入口，活动科学规范由六指南和四主题页持有；原暂停检查点记录当时状态。科研集成树已迁至D盘，原详细日志随树保留；两个新实施树仅含Git代码。当前三路子任务为binary固定requested风险、B09物理效应/reference输运、只读全局科研依赖审阅。云窗口继续独占执行调度、回放图/IO及原结果恢复，等待其完整入口交付后逐模块集成。
+2026-10-13用户最新指令已恢复科研，授权自主修改并要求精简长期记忆。本记录沿用现有续接入口，活动科学规范由六指南和四主题页持有；原暂停检查点记录当时状态。科研集成树已迁至D盘，原详细日志随树保留。binary固定requested风险与B09物理效应/reference输运已逐模块审阅并进入集成树；最终少量入口验证正与云端错峰。下一实施是四fixed source/scratch程序族及空间精确因子识别，沿独立文件/分支推进。云窗口继续独占调度、回放图/IO与原结果恢复，其完整入口交付后再集成整链。
+
+## 最新集成与当前工作
+
+- binary作者最终`ccd212c`：集成为`9edc355`加已审阅R5标签关系delta`0dbac03`，生产字节匹配作者；四个生产文件实际SHA在`tmp/BINARY_SELECTION_SOURCE_BINDING.json`。旧新真实产品对照的选轮、refit参数、独立预测及保存加载逐bit一致。独审完成，最后scope/tie/roster/R5/CE关系入口需窄核；个人包`/5`、公共target-stage`/2`及活动指南已联动。
+- 空间作者`fa27eda`：集成`71522f3`，生产SHA`6b8e4b8d4a16135e6608e2c20e0f892757306caed25d448827fe87b416fc9911`。native/实测参考/CAR的直接效应BLUE、完整noise SD及source→群体→target→B05链经独审；最后两种保存态关系反例与代表正向入口需5项窄核。新posterior`/4`、effect`/2`、transported measurement`/2`独立持有此候选身份。
+- 上述作者/独审handoff和兼容probe已保`tmp/BINARY_SELECTION_HANDOFF.md`、`tmp/BINARY_SELECTION_REVIEW.md`、`tmp/SPATIAL_SOURCE_HANDOFF.md`、`tmp/SPATIAL_TRANSPORT_MATH_REVIEW.md`及各自脚本/摘要。原测试阶段与最后candidate源码分别记录，最终验收后保紧凑绑定并移除已结束任务树。
+- 新四程序family由`global_research_review`在本集成树持有`src/research/calibration_selection.py`和`tests/research/test_transfer_scratch_prefix_family.py`，当前WIP。显式expert IDs、baseline/output/选择行政策，只替换新plan的`prefix_selection`，原科学字段保持；source/scratch同profile及配方，xDAWN消费自身已声明视图。实际纵向行为等待数值窗口，Ruff/静态已检查。
+- 空间精确因子修复由`spatial_math_review`复用`D:/BCI/worktrees/spatial-source-consumer`，分支`codex/spatial-exact-factors`，从`fa27eda`起。确认一般full-row的浮点kron可能虚增rank，现改为保存原空间map、D、record-local Z及当次QR生成witness，再以精确因子乘积核结构null。新posterior`/5`是后续候选；数值likelihood/BLUE复用原owner，最终接入后可去除已失去理由的transport白名单与重复入口核验。此WIP不与`/4`验收混签。
+- 云端作者当前已交`5584d48`等独审模块，整CLI/source-chain入口仍WIP。科研数值验证暂错开；云端实际owned-tree测量峰约461MiB，软件fixture640MiB并保余量，public8GiB与CPU25/GPU4保持。云owner在未触发/overlap出口收口后通知释放窗口，root先依次做上述最后入口，再让四程序及精确因子任务执行必要行为。
+- C盘已整合clean Claude树`647b20e`经祖先/进程/内容核对后移除，提交仍保留。原dirty main、数据、云活动树保持；本轮没有push/新公共训练。
+- memory精简更新按用户授权写入`C:/Users/chent/.codex/memories/extensions/ad_hoc/notes/20261013-215044-research-memory-simplification.md`，收敛为长期偏好、科学合同与主题/续接入口，退役过时当前状态及零散过程数字。
 
 ## 工作身份与恢复
 
