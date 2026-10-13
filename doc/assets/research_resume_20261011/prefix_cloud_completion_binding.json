@@ -1,0 +1,75 @@
+{
+  "schema": "n2p3_entry005_full_request_completion_binding/1",
+  "scientific_status": "completed",
+  "independent_acceptance": "accepted_bounded_public_development",
+  "requested_participants": 8,
+  "requested_decisions": 152,
+  "panels": 92,
+  "prediction_rows": 13984,
+  "ordinary_rows": 13376,
+  "selection_rows": 608,
+  "structural_anomalies": 0,
+  "source_target_seed_pair": [
+    20260918,
+    20260918
+  ],
+  "requested_budgets": [
+    0,
+    200,
+    800,
+    2000
+  ],
+  "ordinary_positive_K_probability_decisions": 144,
+  "incomplete_decisions_retained_in_hit_denominator": 8,
+  "science_exit": 0,
+  "owned_after_exit": 0,
+  "original_six_entry_queue_exit": 1,
+  "original_failed_entries_retained": [
+    2,
+    3,
+    4
+  ],
+  "source_commit": "bc6e60a441bcfa7ce96ce5c538a0172d5c0e4cf0",
+  "source_archive_sha256": "dac410ffdc208fe378b490045545a3ac8db336fd3df336f21ff25098b22bf4ee",
+  "result_sha256": "4b2498325c4a78bc80c0be9066f2baf8ad442424fb75bc72bb272aeae507626f",
+  "result_bytes": 451241859,
+  "review_artifacts": {
+    "ACCEPTANCE.binding.json": {
+      "sha256": "e8629f94a7c2ec5696f7387c1b61e380715e1d5281c98597c731aefc9d8cc5c7",
+      "bytes": 12177
+    },
+    "FINAL_SCIENTIFIC_REVIEW.zh.md": {
+      "sha256": "40bf013185ba118a0fe92e0b4b8608c0474c68418882696945fa6f8de1ed7fdc",
+      "bytes": 7639
+    },
+    "summary.json": {
+      "sha256": "a8b4296c2119062aacbfe283ec5a07aac91fd5196dc44dd623785033cff833a5",
+      "bytes": 3258744
+    },
+    "metrics.csv": {
+      "sha256": "0e98d98e7228a0c140bc2cad8ed7b0e42ca6ffcbc845188ff7545e8b9376fe2f",
+      "bytes": 12549
+    },
+    "selector.paired.analysis.json": {
+      "sha256": "cd42573bf6ae9a0f97ff433c85dbe0250664850bc6879914a64e21b2bf82f081",
+      "bytes": 17858
+    },
+    "selector.paired.participants.csv": {
+      "sha256": "2640b6d569060af2d6bd7c369c1c59e7757349f4cc4f436db06c4f53eb9cb356",
+      "bytes": 34171
+    },
+    "selection.metadata.compact.json": {
+      "sha256": "1562da47192a6d44e4302e599297c99a3db1425c03683ce61dd9085e1d5201a3",
+      "bytes": 62045
+    },
+    "extract.actual_exit.json": {
+      "sha256": "8a35d6e04aa2362367529fc7c6905d3fcd8ab43c1cbbf2a412f3c206aab06a4a",
+      "bytes": 714
+    }
+  },
+  "nesting_scope": "target-side program selection conditional on four frozen candidates and frozen external source checkpoints; source/architecture/prior selection nesting not inferred",
+  "replay_scope": "ordinary numerical replay in participant actors; parent package/context/captured-output and mixture admission; selection parent numerical replay of entire graph",
+  "selection_graph_nodes": 600,
+  "selection_exact_score_checks": 3290,
+  "local_raw_result": "ignored PREFIX_ANALYSIS/result.original.json; content verified; no local full parse"
+}

@@ -1,0 +1,201 @@
+{
+  "schema": "n2p3_saved_completion_evidence_readout/1",
+  "readout_date": "2026-10-13",
+  "input_level": "committed completion bindings and published independently reviewed report",
+  "current_raw_results_reparsed": false,
+  "current_cloud_probe": "SSH port 28863 timed out; no current process snapshot obtained",
+  "original_payload_retention": "not reverified after original worktree disappearance",
+  "source_report": {
+    "git_commit": "44ae338a9acb5ba67394d6c951c4362fa8f4a3cd",
+    "git_path": "doc/evidence/cloud_candidate_analysis_20261011.zh.md",
+    "sha256": "1d5efdbf54d39d41880e737a1fc338a86cec6acf2cebb15f5066cb5a536ed6b1"
+  },
+  "completion_bindings": {
+    "p1_cloud_completion_binding.json": {
+      "git_commit": "44ae338a9acb5ba67394d6c951c4362fa8f4a3cd",
+      "git_path": "doc/assets/research_resume_20261011/p1_cloud_completion_binding.json",
+      "sha256": "25bcdd9088a31a668100bc4b2da0da3b473e17abf1f6bebaa74575a4bab3af80"
+    },
+    "prefix_cloud_completion_binding.json": {
+      "git_commit": "44ae338a9acb5ba67394d6c951c4362fa8f4a3cd",
+      "git_path": "doc/assets/research_resume_20261011/prefix_cloud_completion_binding.json",
+      "sha256": "448e8c4509596f370ab454a791461bb32840db25a2478dc6898d0de260af6bdc"
+    }
+  },
+  "seed": 20260918,
+  "datasets": {
+    "BI": {
+      "zero-shot": {
+        "participant_macro_hit_percent": 9.8577,
+        "correct": 123,
+        "requested": 1287,
+        "available_nll": 3.444934,
+        "available_brier": 0.961288
+      },
+      "source full-fine": {
+        "participant_macro_hit_percent": 24.0776,
+        "correct": 303,
+        "requested": 1287,
+        "available_nll": 3.033917,
+        "available_brier": 0.898568
+      },
+      "matched scratch": {
+        "participant_macro_hit_percent": 13.1819,
+        "correct": 168,
+        "requested": 1287,
+        "available_nll": 3.624397,
+        "available_brier": 0.96455
+      },
+      "fine_minus_scratch": {
+        "hit_percentage_points_from_published_values": 10.8957,
+        "net_correct": 135,
+        "delta_available_nll_from_published_values": -0.5904799999999999,
+        "delta_available_brier_from_published_values": -0.06598199999999999
+      }
+    },
+    "BNCI": {
+      "zero-shot": {
+        "participant_macro_hit_percent": 5.0,
+        "correct": 12,
+        "requested": 240,
+        "available_nll": 3.544351,
+        "available_brier": 0.969383
+      },
+      "source full-fine": {
+        "participant_macro_hit_percent": 68.75,
+        "correct": 165,
+        "requested": 240,
+        "available_nll": 1.295361,
+        "available_brier": 0.470927
+      },
+      "matched scratch": {
+        "participant_macro_hit_percent": 72.0833,
+        "correct": 173,
+        "requested": 240,
+        "available_nll": 1.499893,
+        "available_brier": 0.426626
+      },
+      "fine_minus_scratch": {
+        "hit_percentage_points_from_published_values": -3.333299999999994,
+        "net_correct": -8,
+        "delta_available_nll_from_published_values": -0.20453199999999994,
+        "delta_available_brier_from_published_values": 0.04430099999999998
+      }
+    }
+  },
+  "prefix_selector": [
+    {
+      "K": 200,
+      "requested": 152,
+      "fixed_correct": 83,
+      "selected_correct": 83,
+      "fixed_hit_percent": 54.60526315789474,
+      "selected_hit_percent": 54.60526315789474,
+      "fixed_available_nll": 1.744359,
+      "selected_available_nll": 1.744716,
+      "delta_nll": 0.000357,
+      "relative_nll_reduction_percent": -0.020465970594355863
+    },
+    {
+      "K": 800,
+      "requested": 152,
+      "fixed_correct": 113,
+      "selected_correct": 112,
+      "fixed_hit_percent": 74.34210526315789,
+      "selected_hit_percent": 73.6842105263158,
+      "fixed_available_nll": 0.851939,
+      "selected_available_nll": 0.913046,
+      "delta_nll": 0.061107,
+      "relative_nll_reduction_percent": -7.172696636731033
+    },
+    {
+      "K": 2000,
+      "requested": 152,
+      "fixed_correct": 132,
+      "selected_correct": 132,
+      "fixed_hit_percent": 86.84210526315789,
+      "selected_hit_percent": 86.84210526315789,
+      "fixed_available_nll": 0.367674,
+      "selected_available_nll": 0.262927,
+      "delta_nll": -0.104747,
+      "relative_nll_reduction_percent": 28.48909631902174
+    }
+  ],
+  "prefix_k2000_available_support_ceiling_percent": 94.73684210526316,
+  "prefix_k2000_scratch_secondary_hit_on_available_percent": 93.75,
+  "p1_published_participant_metrics": [
+    {
+      "participant": "A01",
+      "hit_state": "错/错",
+      "shared_nll": 48.490739,
+      "private_nll": 38.248993,
+      "shared_brier": 2.0,
+      "private_brier": 2.0
+    },
+    {
+      "participant": "A02",
+      "hit_state": "对/对",
+      "shared_nll": 1.574e-06,
+      "private_nll": 0.000246489,
+      "shared_brier": 4.94e-12,
+      "private_brier": 1.1e-07
+    },
+    {
+      "participant": "A03",
+      "hit_state": "对/对",
+      "shared_nll": 2.372991,
+      "private_nll": 1.730251,
+      "shared_brier": 0.855408,
+      "private_brier": 0.71308
+    },
+    {
+      "participant": "A04",
+      "hit_state": "错/错",
+      "shared_nll": 6.232373,
+      "private_nll": 4.355889,
+      "shared_brier": 1.348207,
+      "private_brier": 1.098511
+    },
+    {
+      "participant": "A05",
+      "hit_state": "对/对",
+      "shared_nll": 0.001885,
+      "private_nll": 0.018609,
+      "shared_brier": 5.9e-06,
+      "private_brier": 0.00066
+    },
+    {
+      "participant": "A06",
+      "hit_state": "错/对",
+      "shared_nll": 1.591955,
+      "private_nll": 0.077927,
+      "shared_brier": 1.229124,
+      "private_brier": 0.009177
+    },
+    {
+      "participant": "A07",
+      "hit_state": "对/对",
+      "shared_nll": 9.14e-09,
+      "private_nll": 3.68e-06,
+      "shared_brier": 1.67e-16,
+      "private_brier": 2.59e-11
+    },
+    {
+      "participant": "A08",
+      "hit_state": "对/对",
+      "shared_nll": 0.001869,
+      "private_nll": 0.000177,
+      "shared_brier": 5.64e-06,
+      "private_brier": 4.71e-08
+    }
+  ],
+  "p1_tail_concentration_from_rounded_table": {
+    "A01_fraction_of_nll_improvement": 0.7182292399317982,
+    "A06_fraction_of_brier_improvement": 0.7571091998487927,
+    "shared_mean_nll": 7.3364766978925,
+    "private_mean_nll": 5.554012021125
+  },
+  "new_training_fit_calls": 0,
+  "new_model_reload_or_numerical_replay_calls": 0,
+  "arithmetic_precision": "published rounded decimals; not a raw-score independent reanalysis"
+}

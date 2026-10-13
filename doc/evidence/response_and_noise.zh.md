@@ -2,6 +2,21 @@
 
 本文按主题维护已复核的结论、代码接点和下一步。运行日期与源码身份留在各证据及绑定中；使用方式和工程规则由原六指南维护。
 
+## P1完整16格读数
+
+完整16格已完成并独审：8人各一个held selection05、R10、36选1，两噪声臂共576个候选分数，seed20260918，新增fit及response-fit均0。科学exit0、所属树0；[完成绑定](../assets/research_resume_20261011/p1_cloud_completion_binding.json)保原producer、新consumer、结果和两路独立复算。此处覆盖下文“A01已恢复、余14格待评”的阶段状态，原失败面板继续保原身份。
+
+| 噪声臂 | 正确/请求 | hit | NLL | Brier | 请求覆盖 |
+|---|---:|---:|---:|---:|---:|
+| shared8 | 5/8 | 62.5% | 7.336477 | 0.679094 | 8/8 |
+| private8 | 6/8 | 75.0% | 5.554012 | 0.477678 | 8/8 |
+
+private仅救回A06，其余七人命中状态相同。A01贡献约71.82%的NLL改善；其真值概率从8.72e-22变为2.45e-17，两臂仍为近100%置信错误。Brier改善约75.71%来自A06，真值概率从0.203527变为0.925032。因此当前研究优先级是高置信错误尾部与C内概率校准，并用多selection/类别扩展固定响应噪声对照。
+
+新旧stationary law的16格赢家全部相同，最大归一化概率变化约2.45e-8。private原密度修正接近候选共同偏移，softmax会抵消共同常数；quadratic与predictive logdet实际改变。A06救回在旧law中已经存在，属于噪声臂差异。数值修复完成了initial-state正确性、保存准入与完整执行闭环，其效能评价继续绑定真实候选概率。
+
+原观察后八人配对bootstrap的95% Δhit区间为[0,+37.5]个百分点；仅一个discordant pair，精确双侧McNemar p=1。每人一项且八项真值均为同一候选类别，下一实验预声明多selection和类别。2026-10-13按保存报告的舍入表复算尾部贡献及均值，记录在[当前读数](../assets/research_resume_20261011/cloud_completion_readout.json)；原始大载荷留存待核回，没有新增原分数重放。
+
 ## 当前模型与数值任务
 
 信息界诊断的`/2`已完成数学与状态审阅：保同C估计mean/inverse-shrinkage-covariance的raw plug-in d²，并完整保存实际或显式canonical activation及全部候选pair geometry。在已声明的独立flash、共同已知covariance和uniform prior模型下，pairwise error为`Phi(-sqrt(d²*h)/2)`；相同activation列按uniform tie，有限Monte Carlo另记录seed、trial数及相关candidate的trial-level误差。`Q=3/F=1`的解析高信噪极限为`2/3`，旧严格比较得到`1/3`的错误已修。候选曝光均衡与line-cycle均衡分列，`Q=9/F=45`每候选均15次，但line counts为8/8/8/7/7/7。

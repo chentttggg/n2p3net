@@ -1,0 +1,74 @@
+{
+  "schema": "n2p3_P1_full16_completion_and_analysis_binding/1",
+  "scientific_program_status": "completed",
+  "requested_participants": 8,
+  "requested_decisions": 8,
+  "requested_cells": 16,
+  "candidate_count": 36,
+  "candidate_slots": 576,
+  "seed": 20260918,
+  "fit_calls": 0,
+  "response_fit_calls": 0,
+  "science_exit_code": 0,
+  "active_owned_after_exit": 0,
+  "outer_seven_entry_queue_exit_code": 1,
+  "outer_exit_reason": "preserved three historical failed entries",
+  "source_commit": "0722be5a611983496999bb99221639bc0dab6a22",
+  "source_archive_sha256": "6d4c6285a1df436173bf986936992bdf60b0f1c2e6578682c051cdb1a4a5391c",
+  "source_manifest_sha256": "8e68b43aec799e9e74c7cc17cfaa2b33591422833c6422e62d54ee359ee4102c",
+  "plan_sha256": "5e92a7cca89a8d2adb8517e44509e4e39fbeb361a4925c2b108ddc1a41c02664",
+  "physical_mapping_acceptance_sha256": "a5ba8cf63d10205b5b56dc9861ac4585bb27fad0105093c69dbc8a282dd81f7d",
+  "result": {
+    "sha256": "f34dfce0f49202748f331b3aed3bc0a5f036743454b162205c0fc67e8f6ac9c0",
+    "bytes": 303226
+  },
+  "terminal": {
+    "sha256": "883640396fbc90f1c72a4d6f32ff36d21e0e1431c0c4746e72abb0ace5c2a742",
+    "bytes": 2783
+  },
+  "cloud_queue": {
+    "sha256": "e2ae740fcb44f97b5b5b2351c1355339ed8be25987f492d05912bfd1ec05190f",
+    "bytes": 64305
+  },
+  "old_reference": {
+    "sha256": "091fa663769395027e7ee5b9cdabd89079106daec62f77eb56167ec627f3ef7f",
+    "bytes": 311854
+  },
+  "independent_raw_analysis": {
+    "sha256": "65f3009fcdf32cc0e9236ac918a5639190aace689f897efca414638a4609b2d1",
+    "bytes": 35400
+  },
+  "second_independent_normalized_analysis": {
+    "sha256": "150f3dfe0cee406025436f652f2fc45cabc01a6967e6a152540bf85d398872a3",
+    "bytes": 6963
+  },
+  "analysis_script": {
+    "sha256": "7f0d58a452920c5fb2a23207bf369a640bd5b48c49438be95f8f295de6406c53",
+    "bytes": 5153
+  },
+  "raw_download_manifest": {
+    "sha256": "17369a96157e8fd97d0f5ddd6b94934b8b5073594267dad1cf9a293d9b94dd78",
+    "bytes": 9184
+  },
+  "models_download_manifest": {
+    "sha256": "117c0a7d83affa6cac973edf77652df0b8c0abcd42fef150c8af1d6cb13128f9",
+    "bytes": 2929
+  },
+  "scope": "eight original held selection05 decisions, all same truth class; separate from prefix152 and episode240; single seed development",
+  "models_and_raw_scores": "kept in local ignored P1_ANALYSIS/raw; archive identities only committed",
+  "strict_repro_script": {
+    "sha256": "796d7e9c2f66af7a067ca3d1ad70996341fcc2b8a7c0e0681147a97025062d48",
+    "bytes": 5232
+  },
+  "strict_repro_report": {
+    "sha256": "150f3dfe0cee406025436f652f2fc45cabc01a6967e6a152540bf85d398872a3",
+    "bytes": 6963
+  },
+  "strict_repro_matches_original_bytes": true,
+  "raw_analysis_scripts": {
+    "independent_analysis.py": {
+      "sha256": "490ca9f030968779de1a694351e8b5e66be7ee54f23d4c5160e9a712fd5ae72b",
+      "bytes": 10185
+    }
+  }
+}

@@ -1,12 +1,12 @@
 # 当前执行计划
 
-当前科研按[123项进展](evidence/wishlist_progress_20261010.zh.md)和四个主题页并行推进：B03完整组与真正prefix整程序nested选择、同run inner/final保存重放及public parent准入已有软件出口；P1数值稳定化、source cache/shared score、conditional白化和逐decision horizon已集成。B07五家族off-grid/完整history及中央评分/capsule软件切片已接受，B09可识别效应保已有出口；下一真实opt-in独立future评价、完整公共队列、C-latent新producer及B13成人确认按各块依赖推进。旧producer与失败保原身份，云窗口拥有公共执行源码和资源调度。
+当前科研按[123项进展](evidence/wishlist_progress_20261010.zh.md)和四个主题页并行推进：B03完整组与真正prefix整程序nested选择、同run inner/final保存重放及public parent准入已有软件出口；P1数值稳定化、source cache/shared score、conditional白化和逐decision horizon已集成。B07五家族off-grid/完整history及中央评分/capsule软件切片已接受，B09可识别效应保已有出口；修后entry005独立future评价及BI/BNCI队列已完成；下一新数据泛化、B07公共opt-in评价、C-latent新producer及B13成人确认按各块依赖推进。旧producer与失败保原身份，云窗口拥有公共执行源码和资源调度。
 
 P1数值续评16/16完成、0新fit：同支持新stationary law的shared/private命中5/8与6/8，NLL `7.3364765832`与`5.5540121013`，Brier `0.6790937536`与`0.4776784949`，全部概率/失败/来源经独立复算。真实平稳prefix compiler、新producer panel和Path修复已集成；全部8人Windows原态严格出口及33成员传输包已独立接受。本地三次执行由RAM门收敛、完整cell0/16，partial与失败保留。云科学接线的原输入授权/跨attempt互斥已修后接受，云端新law 16格真实exit0且owned tree归零；外层queue exit1单独保留。winner与旧law完全一致，law数值差异不改变决策，见[响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。B12基础公共程序独立前进。
 
 原云候选面板152共同请求与80原配对账本已读数收口，见[失败分母与配对效应](evidence/public_evaluation.zh.md#原云候选面板完整分母与配对读数)。grouped K800/2000因paired NLL增加不通过原开发门；source→scratch方向K2000部分对照是scratch改善，不能倒写迁移收益。该原producer结果不等同新prefix协议执行；下一研究核合法C内整程序选择和概率风险，不从未来成绩选默认。
 
-BI2014a首五episode三臂队列已封库：61人/183模型/183receipt、真实exit0，原1287 requested和1243有概率key保留；fullfine相对scratch宏hit增加0.10896、配对NLL降低0.59048。BNCI C600/R10八人三臂队列也已完成，24模型、每臂240请求、概率覆盖100%、真实exit0；保存结果与原owner输入证明均独立复签，fullfine−scratch宏hit−0.03333、NLL−0.204532、Brier+0.044301，NLL改善集中A04。label-K prefix selector旧entry003已failed；修后恢复代码已接受，下一新consumer先零fit重放原四人的保存产物，再拟合其余四人，完整原八人分母保留；见[公共评估](evidence/public_evaluation.zh.md#跨数据集队列)。
+BI2014a首五episode三臂队列已封库：61人/183模型/183receipt、真实exit0，原1287 requested和1243有概率key保留；fullfine相对scratch宏hit增加0.10896、配对NLL降低0.59048。BNCI C600/R10八人三臂队列也已完成，24模型、每臂240请求、概率覆盖100%、真实exit0；保存结果与原owner输入证明均独立复签，fullfine−scratch宏hit−0.03333、NLL−0.204532、Brier+0.044301，NLL改善集中A04。label-K prefix selector旧entry003已failed；修后entry005已零fit重放原四人并完成其余四人，完整八人152请求、92面板及13,984预测保留，科学exit0/owned0，读数与原失败分别绑定；见[公共评估](evidence/public_evaluation.zh.md#跨数据集队列)。
 
 2026-10-08最新执行规则覆盖下文待跑三seed数量：日常科研使用20260918单个完整source→target程序，重大版本校验才使用20260918/19/20三个独立程序。当前公共科研对应四个source checkpoint流程，各自选择与fresh refit，初始八个逻辑NN fit；B12两个公共面板继续按真实预算和requested账本验收。历史三seed设计与已执行身份不改写。科研线接B08可识别prior、B07字典可移植与B05/B06/B09机制，B14云底座和B12基础矩阵并行；各项代码、软件验证、公共效能分别见[集成状态](evidence/research_integration_20261008.zh.md)。
 
@@ -29,16 +29,16 @@ B07 [物理字典A0/A1](evidence/erp_dictionary_20261006.zh.md)已实现、修�
 | B00 比较/选择 | requested风险、配对、失败与概率覆盖owner；最大/错时置信度、分箱ECE与同J uniform contrast；逐decision真实horizon计划与同分母accounting/paired接口 | 正式风险阈值、全流程选择与独立效能验收 |
 | B01 信号/支持 | BNCI合法原字节、Cal/held无标签view与时间履历 | 其他candidate数据adapter与硬件/光学证据 |
 | B02 专家接口 | raw/成熟ERP/NN真实fit/score、冻结包与重放 | 独立C/test、K0及工作站入口 |
-| B03 校准/混合 | 固定池/分组温度、完整组与真正prefix整程序strict nested；同run graph/native/OOF/future重放、温度学习关系及public parent准入；K200单组/partial80与小repetition边界 | 真实opt-in独立future评价、partial-label专用学习入口、复杂gating与独立泛化；原K200 grouped保程序结构性不可用，fixed基线保持 |
+| B03 校准/混合 | 固定池/分组温度、完整组与真正prefix整程序strict nested；同run graph/native/OOF/future重放、温度学习关系及public parent准入；修后entry005完整八人独立future评价；K200单组/partial80与小repetition边界 | partial-label专用学习入口、低剂量选择稳定性、复杂gating与新数据泛化；原K200 grouped保程序结构性不可用，fixed基线保持 |
 | B04 神经归因 | full-fine/matched scratch/architecture/source关系 | 完整科研seed与同批互补性，大版再验三seed |
-| B05 AR/噪声 | 固定32前缀/M1、given-noise physical-prior；modern M/R/原Σ与完整source/C权限paired入口；冻结W态与新stationary `/3` 同支持16格云续评完成；双oracle、strict export/Path/控制面和结果账本通过 | 统一新law与旧law的更大同支持面板、Windows资源采样诊断、finite endpoint交互与joint MLE |
+| B05 AR/噪声 | 固定32前缀/M1、given-noise physical-prior；modern M/R/原Σ与完整source/C权限paired入口；冻结W态与新stationary `/3` 同支持16格云续评完成；双oracle、strict export/Path/控制面和结果账本通过 | 多selection/类别的更大同支持面板、高置信尾部校准、Windows资源采样诊断、finite endpoint交互与joint MLE |
 | B06 边界条件 | mean/Schur、逐泛函可识别性、真实A01有限T/外部witness | 未知state辨识、最终预处理T、E1–E3 |
 | B07 字典/历史 | A0/A1 portable、cubic `/3`及raised/multiscale `/4` native；actual prior/chart/容量/OOF/保存链；五家族精确δ/w、截止内history权限、中央full/prefix/conditional、有限joint mixture/C-law及capsule保存重放软件接受 | 冻结同支持公共opt-in评价；实测fractional时钟authority、wavelet、硬斜率、C-latent多channel新posterior与效能；multiscale按换坐标解释 |
 | B08 先验 | g/trace、生产QR后验、逐functional quotient与显式completion/弱方向反例 | 旧1344格独立源出口、新配对效能与同版本crosshost |
 | B09 空间 | 一般signal-prior/固定graph；source-only group forecast、完整effect绑定和exact structural null软件出口 | Pz4原证据不晋升；真实source builder/跨布局reference transport/OOF与ensemble consumer、d-prime/variance不确定性、joint MLE及新效能 |
 | B10 输入污染 | 真实adaptive完整增量/经验矩、独立反例与A01注入审计 | 完整分污染/可用时间配对实验 |
 | B11 动态/稳健 | noise-only Gamma、proper全C/test联合尺度；实际行数增广QR和显式β条件积分接研究owner；共同flat-Z小参考及源尺度反例 | 真实K0/独立noise/C权限、flat长记录采样/持久包、动态state、连续预测准确性与完整效能；多模态不由诊断保证 |
-| B12 公共流程 | 独立C/test/K0、完整requested/final账本；原producer四库binary/八人candidate读数；BI61人与BNCI8人episode三臂终态、保存结果和原输入证明独立复签 | label-K selector新consumer完整八人恢复、源/目标/资源统一接受与独立泛化 |
+| B12 公共流程 | 独立C/test/K0、完整requested/final账本；原producer四库binary/八人candidate读数；BI61人与BNCI8人episode三臂终态、保存结果和原输入证明独立复签；entry005完整八人恢复及独立future读数 | 大结果/模型恢复核验、源/目标/资源统一接受与独立泛化 |
 | B13 成人确认 | 产品估计量与新数据确认约束 | 新采集、时钟、冻结程序、跨日成人确认 |
 | B14 工程/吞吐 | B12同resource owner/完整账；旧完整candidate恢复、source prepared与共享评分实测云候选，纯CPU尾三拓扑读数；source cache/shared current-view scoring及conditional公共白化已合入并完成相关复核 | 统一新source实际25CPU/4GPU能力及ready工作路由，完整矩阵吞吐、跨host整包和新study owner边界 |
 
