@@ -20,6 +20,8 @@ _RESOURCE_FIELDS = frozenset({
     "source_load_workers", "target_workers", "source_worker_memory_gib", "shared_staging_memory_gib",
     "host_memory_fraction", "target_worker_memory_gib", "gpu_task_memory_gib",
     "target_native_threads_per_worker", "participant_output_estimate_bytes",
+    "cloud_resource_floor",
+    "prefix_replay_chunk_size", "prefix_replay_graph_memory_gib", "prefix_replay_worker_memory_gib",
 })
 _TRANSITION_ROLES = {
     "experiments/run_candidate_ensemble_study.py": "consumer_admission",
@@ -28,6 +30,11 @@ _TRANSITION_ROLES = {
     "src/transfer/ensemble_fit.py": "load_replay_admission",
     "src/research/cloud_execution.py": "resource_transport",
     "src/research/prefix_recovery.py": "recovery_consumer",
+    "src/research/source_execution.py": "resource_transport",
+    "src/research/prefix_replay_dispatch.py": "resource_transport",
+    "src/research/prefix_replay_execution.py": "load_replay_dispatch",
+    "src/research/prefix_replay_inputs.py": "immutable_input_transport",
+    "src/transfer/ensemble_views.py": "immutable_input_transport",
 }
 
 
@@ -173,6 +180,7 @@ def load_prefix_recovery(plan, consumer_source, *, output, consumer_root):
             raise ValueError("prefix recovery participant does not retain its complete original producer authority")
         participants.append(PrefixRecoveryParticipant(index, group, ledger["native_threads"]))
     binding = {"schema": "n2p3_prefix_participant_recovery_binding/1", "original_run": str(run),
+        "original_source_root": str(producer_root),
         "original_exit": declaration["original_exit"], "original_terminal": declaration["original_terminal"],
         "original_plan_sha256": facts["plan.json"]["sha256"], "producer_source_digest": semantic_sha256(source),
         "consumer_source_digest": semantic_sha256(consumer_source),
