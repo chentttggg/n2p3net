@@ -1089,12 +1089,29 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
     if not isinstance(host_fraction, (float, int)) or isinstance(host_fraction, bool) or not 0 < host_fraction <= .95:
         raise ValueError("host_memory_fraction must be in (0, .95]")
     host_budget = int(free_host_bytes * host_fraction)
-    staging_bytes = int(float(plan.get("shared_staging_memory_gib", 0)) * 2**30)
-    if staging_bytes < 0:
-        raise ValueError("shared staging memory must be nonnegative")
-    group_budget = host_budget - staging_bytes
     group_bytes = int(float(plan.get("source_worker_memory_gib", 6.0)) * 2**30)
     target_bytes = int(float(plan.get("target_worker_memory_gib", 4.0)) * 2**30)
+    replay_inputs = plan.get("evaluation_design") == "independent_prefix" or any(
+        row.get("kind") == "candidate" for row in plan.get("ready_consumers", ()))
+    staging_policy = "declared" if "shared_staging_memory_gib" in plan else "not_requested"
+    if "shared_staging_memory_gib" in plan:
+        staging_bytes = int(float(plan["shared_staging_memory_gib"]) * 2**30)
+    elif replay_inputs:
+        configured = json.loads(CLOUD_RESOURCE_CONFIG.read_text(encoding="utf-8"))["shared_staging_memory_gib"]
+        worker_memory = max(group_bytes, target_bytes)
+        if floor is not None:
+            # Reserve either full worker phase before sizing the shared input
+            # pool. A source dependency tail may contain fewer ready groups.
+            worker_memory = max(min(group_count, floor["gpu_workers"]) * group_bytes,
+                                floor["gpu_workers"] * target_bytes)
+        staging_bytes = min(int(configured * 2**30), int(host_budget * .15),
+            max(0, host_budget - worker_memory))
+        staging_policy = "replay_inputs_from_available_host_memory"
+    else:
+        staging_bytes = 0
+    if staging_bytes < 0 or replay_inputs and staging_bytes == 0:
+        raise ValueError("shared replay staging needs positive available bytes; other staging must be nonnegative")
+    group_budget = host_budget - staging_bytes
     if min(group_bytes, target_bytes) <= 0 or group_budget < max(group_bytes, target_bytes):
         raise ValueError("available host memory is below the declared worker requirement")
     groups = min(groups, group_budget // group_bytes)
@@ -1113,7 +1130,7 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
     target_request = plan.get("target_workers", "auto")
     if target_request not in (None, "auto") and (type(target_request) is not int or target_request < 1):
         raise ValueError("target_workers must be auto or a positive integer")
-    target = min(host_budget // target_bytes, slots if target_request in (None, "auto") else min(target_request, slots))
+    target = min(group_budget // target_bytes, slots if target_request in (None, "auto") else min(target_request, slots))
     if floor is not None:
         if torch.device(device).type != "cuda":
             raise ValueError("declared cloud GPU worker floor requires a CUDA device; do not run it on CPU")
@@ -1144,5 +1161,6 @@ def resolve_source_resources(plan, group_count, device, *, cpu_count=None, free_
                                              if torch.device(device).type == "cuda" else None),
             "available_host_memory_bytes": free_host_bytes, "host_memory_budget_bytes": host_budget,
             "host_memory_fraction": host_fraction, "shared_staging_memory_bytes": staging_bytes,
+            "shared_staging_policy": staging_policy,
             "source_worker_memory_bytes": group_bytes, "target_worker_memory_bytes": target_bytes,
             **({"target_native_threads_per_worker": target_native} if target_native is not None else {})}

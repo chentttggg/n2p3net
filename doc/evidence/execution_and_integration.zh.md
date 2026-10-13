@@ -50,6 +50,71 @@ CloudExecutor的IO调度切片已在科研WIP通过Windows19个相关case。Linu
 
 已交付cache作者树经独立恢复复核后请求应用归档：1,285个保留路径、648源码、59篇Paper与四个source owner可恢复，完整used_union为959对象/275,397,774 bytes、缺件/哈希错误0；七个活动代码/配置根与本机进程未见运行依赖，旧验收locator由恢复映射解释。应用目前返回queued，尚未确认退役；恢复载荷和冗余对象均未删除。请求与实际状态见[工作树整理绑定](../assets/research_resume_20261011/cache_author_archive_request_binding.json)。
 
+## 独立前缀请求与完成参与者恢复
+
+### 准备一次、分块重放与共享输入的当前实现
+
+云执行树已保存节点切片`9da2484`、共享输入`a6871e1`、实际adapter`f4677e1`和动态生命周期`c090086`；这些模块分别完成独立Spec/Standards审阅。公共CLI仍在同树接线，部分failed fit、发布后progress OSError和完整报告是下一验收层；不将各模块的通过数拼成一个完整公共运行。
+
+`prefix_selection_replay`在一次原图准入后产生小node请求，原序归并核完整唯一roster、原policy与fresh final关系，保持native1、atol=rtol=0。真实K800 raw/trial/grouped fixture的串行、分块和逆序结果一致，旧数值audit/load函数保持。`prefix_replay_execution`执行亲核的旧ensemble_views字节，独立准备各actualK与before-group闭包；原pretty graph只读取一次并封canonical，读者不读大图，reducer用独立临时预算解码。ordinary、selection和保存byte seals走同一输入及原数值入口。
+
+`prefix_replay_inputs`在Linux以两份kernel-sealed memfd分享numeric和capsule metadata，读者亲核parent PID/birth、fd身份、seals、span与外部SHA。1MiB metadata+8MiB numeric的受控primitive使用525B IPC描述符，四读者新增numeric副本从32MiB降到0；这是该primitive测量。Windows使用immutable bytes。raw先隔离再独立预处理，旧profile/native-fit身份保留，新consumer身份分列；future truth只留parent scoring owner的独立凭证。
+
+`SourceInputAdmission.try_resident_input`非阻塞地在原byte账本保留numeric+metadata，不占load/NN槽。`PrefixReplayInputPool`等待容量时先ACK准备结果，退出时按实际CloudResult退休reader；动态reducer必须先登记再退休最后前驱。延迟坏输入归回其准备任务，保同伴已成功的reducer；未发布frontier只在同源actualCloudRun、settled ownership及进程liveness核查后释放。
+
+生命周期与资源增量已独审：Windows先清caller/task的大bytes别名，再关闭holder、归还租约并接纳下一准备；settled pending保存具名artifact-admission失败，原OS0/完整树退休事实保持。默认replay staging先保各worker阶段的cloud floor内存，target容量也扣除staging。29GiB可用host、6GiB/target的独立账本反例中，自动staging从4.13GiB收至3.55GiB，四个ready target全部准入、CPU账本25线程；四路source、更高六路floor及CPU容量另有反例。11项资源和1项当前actual别名验收分别绑定自己的源码，不作为完整caller或公共吞吐结论。五个既有input/host owner类的AST保持。
+
+Windows实际adapter的K400程序有14项同源通过：闭包0/120/240/400，selection35次和ordinary67次exact检查，原图对reader不可见仍成功，坏node使reducer被阻止。动态调度器另有同一冻结源码的5项actualCloudExecutor通过，涵盖pending接纳、native79、blocked reducer、发布前OSError、延迟输入损坏及动态interop预算。两组凭证及各依赖SHA分别保留；Linux目前完成storage primitive，完整Linux caller和真实大图峰值/吞吐继续在云端资源恢复后验收。
+
+中央CUDA资源下限已从科研接受的`2dc48dd`移入本树，默认25CPU/4GPU；nested admission只分配实际ready jobs。恢复source transition新增五个精确transport路径，仍核每个实际source SHA；三个replay资源参数与自动补入的floor不改变科学K、seed和candidate authority。verified original_source_root直接来自原已核请求及source freeze，供旧compiler定位。
+
+源码、独审、实际XML与待办见[重放底座绑定](../assets/research_resume_20261011/prefix_replay_foundation_binding.json)。科研窗口已按用户要求暂停在`e0a33d7`；云窗口继续自己的独立任务。下一云freeze需审最新科研scope/diagnostic接口与本窗口调用链，原public producer及结果保持原身份。
+
+2026-10-12实际entry005的串行恢复baseline：plan/executed_source写入到old4全部重放完成为2994.64秒（49.91分钟）。
+后三位完成间隔746.05、739.62、755.77秒；这段期间科学进程约一核、RSS约2.2–2.7 GiB、GPU0，
+read_bytes为0而logical read_chars增长，不能称物理磁盘受限。fresh4进程在最后old3完成时才创建。
+随后fresh实际fit已推进，root独立窗口实测aggregate约2102% CPU及真实K800产物；当前生产进度不为新调度丢弃或改签。
+
+独立scheduler切片把old4真实parent数值checker移到受原owner准入的evaluation进程，fresh4fit无old4数值依赖；
+fresh fit的后验也在退出后动态解锁同一adapter，main只核结构及new receipt实际返回SHA/原source与完整请求后ACK。
+fit OS0而evaluation真实退出79的反例保完整失败分母；worker IPC返回SHA拒绝重新封签的篡改receipt。
+共享owner两进程实际liveness证据确认fresh开始早于阻塞old replay完成，原replay worker以fit sentinel证明0fit。
+27个既有/迁移行为案例、修正后的4个scheduler案例及一个25 CPU/4 GPU-capable reservation可行性案例分别保其冻结来源；
+不拼成一个单freeze通过数量。源码中原science prepare/roster/worker/finalizer及唯一数值checker从selection-package起的
+完整尾部AST与base保持相同；仅CLI调度/元数据ACK、测试与原guidance变化，未改fitter/math/controller。
+这是有限软件及配置可行性证据，新调度尚无公共端到端收益或新的fit/score主张。
+
+独立审阅发现动态evaluation登记之后、ACK之前的progress写入若抛OSError，finalizer会引用未执行task并
+产生KeyError。新增无fit/score的真实CloudExecutor单metadata actor＋七个依赖blocked请求反例，旧源码
+在云隐藏CUDA的1例中实际RED；修后同例OS0，保原fit退出0、callback OSError和八人96 requested cells，
+未执行evaluation为空。fix仅调整发布顺序、fit事实快照及集中unresolved失败来源；RED/GREEN各保独立
+source10/source11 archive/member、实际exit与JUnit，未重复既有宽suite，也未更改当前public producer。
+
+2026-10-12原BNCI整前缀矩阵保8人、K0/200/800/2000、seed20260918、12 ordinary臂及4预声明选择候选、
+minimum rows3与152共同future。原science CLI实际退出1，首4 actor的普通及选择包完整保存重放；
+原parent准入因JSON list与immutable tuple直接比较拒绝，后4另为artifact容量失败。
+原failed/result、OS exit及首4模型保持原身份。
+
+请求ABI修复`51cdf07e38e9316c87a2284cde45a14d213f1e81`对完整selection roster及started/saved/failed
+request做canonical比较，拒duplicate package及真实字段变化；原ordinary expected-field合同及后续实际fit gate保持。
+旧b6 runner在新serialized-started反例上实际RED；修后云CPU1、隐藏CUDA的35项必要验证OS0。
+原首4各4 started/4 saved、0 failed的完整请求canonical一致；每人duplicate/新增权限/seed/raw scope/空间矩阵/source
+六种篡改在读取大graph/model之前拒绝，共24次，新增fit和score均0。
+交付绑定为云集成树`tmp/PREFIX_CLOUD_PREPARATION/replay_admission/ABI14_DELIVERY.binding.json`，
+SHA`d0f3c86ac8bf311ed1d8287945b527762f8c4c9459a373d34f4dd564bee1d2f5`。
+
+新`prefix_recovery`作者切片在独立owner中核原request/terminal/实际exit、child创建身份、退出后所属树为0、
+原source archive及精确reviewed transition，再沿原parent ingress重建原MAT的C/future并载入全部普通与选择包。
+原预测保其producer source，consumer task roster仍含全部原人，实际新任务只含未恢复的原index。
+完整及失败报告都分别登记旧producer/new consumer，不通过inline或手动旧actor回退重拟。
+
+作者软件验证的Recovery23 source archive为`b9d0d2526ac4bc248f4398bbd85117a8931eb6e8f813289e22b622c4f8b918d2`，
+18项云CPU1、隐藏CUDA验证OS0；实际synthetic prefix/selection先生成toy producer，再以fit sentinel证明恢复0fit，
+只拟合剩余toy原index并合并完整矩阵。另核缩records/K/seed/candidate/future、篡改原凭证、重复参与者、
+错误OS退出/child/未退休树、原目录写入及inline/旧actor重拟反例。
+Recovery21的fixture Path类型错误保留；其10个既有caller/CLI验证与Recovery23运行时源码相同，
+仍分别绑定两个冻结，不拼成一个28项通过声明。上述软件验收未新增公共或NN fit。
+
 上述为恢复切片交付时的阶段状态。随后entry005已完成原首4零拟合准入及余4续跑，科学exit0、所属树0，独审确认8人152请求、92面板及零结构异常。P1也已完成16格、576分数和退出闭合；两份原完成绑定分别见[前缀](../assets/research_resume_20261011/prefix_cloud_completion_binding.json)与[P1](../assets/research_resume_20261011/p1_cloud_completion_binding.json)。2026-10-13当前SSH超时、旧ignored载荷未随Git恢复；完成身份可由Git核回，原始载荷留存仍待核回。新node/chunk执行底座仍在实施，尚无新公共吞吐验收。
 
 ## 恢复身份与文件所有权

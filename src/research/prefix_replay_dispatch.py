@@ -53,11 +53,25 @@ def _retired_reader(outcome):
 class PrefixReplayInputPool:
     """One parent owner; all methods run on the CloudExecutor callback thread."""
 
-    def __init__(self, input_admission):
+    def __init__(self, input_admission, *, release_backing_aliases=None):
         self._admission = input_admission
+        self._release_backing_aliases = release_backing_aliases
         self._pending, self._groups, self._readers, self._observed = {}, {}, {}, {}
         self._task_ids = set()
         self.failures = {}
+
+    def _close_holder(self, task_id, holder):
+        if self._release_backing_aliases is not None:
+            self._release_backing_aliases(task_id)
+        holder.close()
+
+    def _reject_preparation(self, task_id, pending, error):
+        failure = _failure(error, "artifact_admission")
+        self.failures[task_id] = failure
+        if pending.outcome.failure is None:
+            pending.outcome.status, pending.outcome.failure = "failed", failure
+        else:
+            pending.outcome.supplementary_failures.append(failure)
 
     def _reader_tasks(self, tasks):
         tasks = tuple(tasks)
@@ -108,18 +122,13 @@ class PrefixReplayInputPool:
                 tasks, ids = self._reader_tasks(pending.build_readers(holder))
             except BaseException as error:
                 if holder is not None:
-                    holder.close()
+                    self._close_holder(task_id, holder)
                 del self._pending[task_id]
                 if not isinstance(error, Exception):
                     raise
-                failure = _failure(error, "artifact_admission")
-                self.failures[task_id] = failure
                 # A deferred rejection belongs to its preparation, never the
                 # unrelated completed reader whose release enabled the retry.
-                if pending.outcome.failure is None:
-                    pending.outcome.status, pending.outcome.failure = "failed", failure
-                else:
-                    pending.outcome.supplementary_failures.append(failure)
+                self._reject_preparation(task_id, pending, error)
                 continue
             self._groups[task_id] = _ReaderGroup(holder, set(ids))
             self._readers.update((key, task_id) for key in ids)
@@ -136,7 +145,7 @@ class PrefixReplayInputPool:
         group.readers.remove(outcome.task_id)
         del self._readers[outcome.task_id]
         if not group.readers:
-            group.holder.close()
+            self._close_holder(group_id, group.holder)
             del self._groups[group_id]
         return self.adopt_pending()
 
@@ -153,8 +162,11 @@ class PrefixReplayInputPool:
         if record["identity"]["pool_instance_id"] != run.diagnostics["identity"]["pool_instance_id"]:
             raise ValueError("shared replay cleanup changed its actual controller identity")
         assert_no_prior_owned_live(directory)
-        for group in self._groups.values():
-            group.holder.close()
+        for task_id, group in self._groups.items():
+            self._close_holder(task_id, group.holder)
+        for task_id, pending in self._pending.items():
+            self._reject_preparation(task_id, pending, ValueError(
+                "shared replay input bytes could not be admitted before the executor retired"))
         self._groups.clear()
         self._readers.clear()
         self._pending.clear()

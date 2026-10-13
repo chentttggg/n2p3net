@@ -342,3 +342,86 @@ def test_cuda_plans_without_a_declared_floor_inherit_the_central_cloud_floor():
     declared = {"cloud_resource_floor": {"cpu_threads": 8, "gpu_workers": 1},
                 "resource_scope": "local_development"}
     assert with_cloud_resource_floor(declared, "cuda") == declared
+
+
+@pytest.mark.parametrize("declaration", [
+    {"evaluation_design": "independent_prefix"},
+    {"ready_consumers": [{"kind": "candidate"}]},
+])
+def test_replay_default_staging_uses_host_room_and_preserves_a_worker(declaration):
+    gib = 2**30
+    result = resolve_source_resources({"cpu_budget": 2, "source_workers": 1, "target_workers": 1,
+        "source_worker_memory_gib": 1, "target_worker_memory_gib": 1, **declaration}, 1, "cpu",
+        cpu_count=2, free_host_bytes=4 * gib)
+    assert 0 < result["shared_staging_memory_bytes"] < result["host_memory_budget_bytes"] - gib
+    assert result["shared_staging_policy"] == "replay_inputs_from_available_host_memory"
+    assert result["source_workers"] == result["target_workers"] == 1
+
+
+def test_public_replay_default_staging_uses_cloud_config_and_keeps_gpu_floor():
+    result = resolve_source_resources({"evaluation_design": "independent_prefix", "source_workers": 4,
+        "target_workers": 4, "source_worker_memory_gib": 18, "target_worker_memory_gib": 4,
+        "gpu_workers": 4, "cpu_budget": 25, "host_memory_fraction": .95}, 4, "cuda",
+        cpu_count=25, free_host_bytes=90 * 2**30, free_device_bytes=32 * 2**30)
+    assert result["shared_staging_memory_bytes"] == 10 * 2**30
+    assert result["source_workers"] == result["target_workers"] == result["gpu_slots"] == 4
+
+
+@pytest.mark.parametrize("groups,source_gib,target_gib,free_gib,gpu_floor", [
+    (1, 6, 6, 29, 4),
+    (4, 6, 2, 27, 4),
+    (1, 6, 6, 40, 6),
+])
+def test_auto_replay_staging_preserves_actual_cloud_phase_capacity(
+        groups, source_gib, target_gib, free_gib, gpu_floor):
+    from research.source_execution import _HostMemoryState
+
+    gib = 2**30
+    cpu_budget = 6 * gpu_floor + 1
+    resources = resolve_source_resources({"evaluation_design": "independent_prefix",
+        "cpu_budget": cpu_budget, "gpu_workers": gpu_floor, "source_workers": groups,
+        "source_worker_memory_gib": source_gib, "target_worker_memory_gib": target_gib,
+        "host_memory_fraction": .95,
+        "cloud_resource_floor": {"cpu_threads": cpu_budget, "gpu_workers": gpu_floor}},
+        groups, "cuda", cpu_count=cpu_budget, free_device_bytes=64 * gib,
+        free_host_bytes=free_gib * gib)
+    assert resources["shared_staging_memory_bytes"] > 0
+    assert resources["target_workers"] == gpu_floor
+    for phase, count, memory in (("source", groups, source_gib * gib),
+                                 ("calibration", gpu_floor, target_gib * gib)):
+        ledger = _HostMemoryState(resources)
+        claims = [ledger.reserve_phase(phase, resources["native_threads_per_worker"],
+            memory, 1, f"{phase}-{index}", phase == "calibration") for index in range(count)]
+        assert all(claims), ledger.record()
+        if phase == "calibration":
+            assert ledger.record()["reserved_cpu_threads"] == cpu_budget
+        for claim in claims:
+            ledger.release_phase(claim["token"])
+        assert ledger.record()["reserved_cpu_threads"] == 1
+        assert ledger.record()["free_worker_memory_bytes"] == (
+            resources["host_memory_budget_bytes"] - resources["shared_staging_memory_bytes"])
+
+
+def test_declared_staging_cannot_claim_a_cloud_target_capacity_it_cannot_admit():
+    with pytest.raises(ValueError, match="floor"):
+        resolve_source_resources({"evaluation_design": "independent_prefix", "cpu_budget": 25,
+            "gpu_workers": 4, "source_workers": 1, "target_workers": "auto",
+            "source_worker_memory_gib": 6, "target_worker_memory_gib": 6,
+            "host_memory_fraction": .95, "shared_staging_memory_gib": 10}, 1, "cuda",
+            cpu_count=25, free_device_bytes=32 * 2**30, free_host_bytes=29 * 2**30)
+
+
+def test_cpu_target_capacity_uses_memory_remaining_after_declared_staging():
+    from research.source_execution import _HostMemoryState
+
+    resources = resolve_source_resources({"cpu_budget": 25, "source_workers": 1,
+        "target_workers": 4, "source_worker_memory_gib": 6, "target_worker_memory_gib": 4,
+        "host_memory_fraction": .95, "shared_staging_memory_gib": 5}, 1, "cpu",
+        cpu_count=25, free_host_bytes=16 * 2**30)
+    assert resources["target_workers"] == 2
+    ledger = _HostMemoryState(resources)
+    claims = [ledger.reserve_phase("calibration", resources["native_threads_per_worker"],
+        resources["target_worker_memory_bytes"], 0, f"target-{index}", False)
+        for index in range(resources["target_workers"])]
+    assert all(claims), ledger.record()
+    assert ledger.record()["reserved_cpu_threads"] == 25

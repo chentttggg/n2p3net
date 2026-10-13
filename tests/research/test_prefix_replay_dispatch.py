@@ -7,12 +7,17 @@ import os
 from multiprocessing import get_context
 from pathlib import Path
 
+import pytest
+
 from research.cloud_execution import CloudExecutor, CloudTask, PhaseResources
 from research.contracts import semantic_sha256
 from research.source_execution import HostMemoryAdmission, SourceInputAdmission
-from tests.research import test_prefix_replay_inputs as input_cases
+from tests.support.prefix_replay_inputs import prepared_prefix_inputs
 
-prepared = input_cases.prepared
+
+@pytest.fixture(scope="module")
+def prepared(tmp_path_factory):
+    return prepared_prefix_inputs(tmp_path_factory.mktemp("dispatcher-prefix-inputs"))
 
 
 def fixture_preparation_adapter(arguments):
@@ -56,7 +61,8 @@ def _two_preparations(prepared, root):
     return tasks, requests, totals[0]
 
 
-def _run(prepared, root, *, native_exit=False, adoption_error=False, corrupt_pending=False, dynamic=False):
+def _run(prepared, root, *, native_exit=False, adoption_error=False, corrupt_pending=False, dynamic=False,
+         release_aliases=False):
     from research.prefix_replay_dispatch import PrefixReplayInputPool
 
     tasks, requests, capacity = _two_preparations(prepared, root)
@@ -64,17 +70,33 @@ def _run(prepared, root, *, native_exit=False, adoption_error=False, corrupt_pen
         "source_worker_memory_bytes": 2**30, "target_worker_memory_bytes": 2**30,
         "source_workers": 1, "target_workers": 1, "gpu_slots": 1, "cpu_budget": 3 if dynamic else 2,
         "coordinator_cpu_threads": 1, "native_threads_per_worker": 1}
-    events, staged_tasks = [], {}
+    events, staged_tasks, aliases = [], {}, {}
     with get_context("spawn").Manager() as manager:
         inputs = SourceInputAdmission(manager, capacity_bytes=capacity, load_workers=1)
         admission = HostMemoryAdmission(manager, resources, input_admission=inputs)
-        pool = PrefixReplayInputPool(inputs)
+        def release_backing_aliases(task_id):
+            # The old physical bytes must disappear before the ledger admits
+            # the next preparation, including aliases held by actual tasks.
+            assert inputs.record()["resident_input_bytes"] == capacity
+            descriptor = aliases[task_id]
+            descriptor.pop("payload", None)
+            if isinstance(descriptor.get("capsule"), bytes):
+                descriptor.pop("capsule")
+            events.append((task_id + ":aliases_released", capacity, {}))
+
+        options = {"release_backing_aliases": release_backing_aliases} if release_aliases else {}
+        pool = PrefixReplayInputPool(inputs, **options)
         later = {}
 
         def build(task_id, holder):
             if adoption_error:
                 raise OSError("injected after resident allocation, before task publication")
-            common = {"inputs": holder.descriptor, "request_sha": semantic_sha256(requests[task_id]),
+            if release_aliases and task_id.endswith("001"):
+                assert "payload" not in aliases["prepare:000"]
+                assert not isinstance(aliases["prepare:000"].get("capsule"), bytes)
+            descriptor = holder.descriptor
+            aliases[task_id] = descriptor
+            common = {"inputs": descriptor, "request_sha": semantic_sha256(requests[task_id]),
                       "capsule_sha": tasks[int(task_id[-3:])].arguments["artifact"]["sha256"]}
             phase = PhaseResources("evaluation", 2, 2**30, 1, interop_threads=1) if dynamic else (
                 PhaseResources("evaluation", 1, 2**30, 1))
@@ -171,3 +193,13 @@ def test_dynamic_reducer_frontier_retains_holder_with_explicit_interop_budget(pr
     run, _, final, _, capacity = _run(prepared, tmp_path, dynamic=True)
     assert run.status == "completed" and len(run.results) == 6
     assert final["resident_input_bytes"] == 0 and final["free_staging_bytes"] == capacity
+
+
+def test_task_aliases_are_released_before_pending_inputs_take_the_same_budget(prepared, tmp_path):
+    run, events, final, tasks, capacity = _run(prepared, tmp_path, release_aliases=True)
+    assert run.status == "completed" and len(run.results) == 6
+    assert [row[0] for row in events if row[0].endswith(":aliases_released")] == [
+        "prepare:000:aliases_released", "prepare:001:aliases_released"]
+    assert all("payload" not in task.arguments["inputs"]
+               and not isinstance(task.arguments["inputs"].get("capsule"), bytes) for task in tasks.values())
+    assert final["free_staging_bytes"] == capacity and final["resident_input_bytes"] == 0

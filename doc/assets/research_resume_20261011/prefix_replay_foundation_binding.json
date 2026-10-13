@@ -1,0 +1,153 @@
+{
+  "schema": "n2p3_prefix_replay_foundation_binding/1",
+  "status": "accepted_modules_public_caller_integration_in_progress",
+  "accepted_commits": {
+    "graph": "9da2484150de039217f2781ce9f4c5a9015adfd8",
+    "inputs": "a6871e115dc13eff89e44072a731e08abca9c2a6",
+    "adapters": "f4677e1",
+    "dispatch_and_resources": "c090086"
+  },
+  "module_reviews": {
+    "graph": {
+      "local_ignored_path": "tmp/replay_independent_review/GRAPH_ACCEPTANCE.binding.json",
+      "sha256": "c1a67c1f9fd49062c5fb8db7e91d281d53dbeea2602180a693c70a78bad87eea"
+    },
+    "input_bundle": {
+      "local_ignored_path": "tmp/replay_independent_review/IO_BUNDLE_ACCEPTANCE.binding.json",
+      "sha256": "f791e183d6355707632eb20fcdba942aff608071247d157c8a3af7639cfb8833"
+    },
+    "adapters": {
+      "local_ignored_path": "tmp/replay_independent_review/EXECUTION_ACCEPTANCE.binding.json",
+      "sha256": "c27d05d38de1e09cd2e351e9a8cd20b526c84db6bfe4c86da5088ac705769ad6"
+    },
+    "dispatch_and_resources": {
+      "local_ignored_path": "tmp/replay_independent_review/ROOT_MODULE_ACCEPTANCE.binding.json",
+      "sha256": "ca70450f98692fdd5053d94c56923bb73d4075e5ef1497ef231e6355999226bc"
+    },
+    "dispatch_actual_validation": {
+      "local_ignored_path": "tmp/replay_recovery/dispatch_final.receipt.json",
+      "sha256": "3f19b0689962048bf0821852be277e2b6b135d0cc47e005385ca4ef96781423c"
+    },
+    "root_delivery": {
+      "local_ignored_path": "tmp/replay_recovery/root_dispatch.delivery.json",
+      "sha256": "9257467cd6761d0250519092a341fba568c545b11864490608de2c213ae93682"
+    }
+  },
+  "accepted_root_working_bytes": {
+    "src/research/prefix_replay_dispatch.py": "56a4bdb18bd2a71052974b36642a39e6d57c56f4af135057e844af04a1623647",
+    "tests/research/test_prefix_replay_dispatch.py": "7f187b8f8559b4152d3b1d28e12759728c5d0e3f1e23d382b8d3a931e44c3333",
+    "src/research/prefix_recovery.py": "2a26a9e900ce6ee75fe88b5f5b6b0a4be8941cc935cf8183c89c36033581c438",
+    "tests/research/test_prefix_replay_source_transition.py": "a48060eac88d018a342555a0977e37f90f70111a5754a41a31f8efb7c918d1b2",
+    "src/research/source_execution.py": "3133eac5681f4fb946f0871ec830a7d8c98ce6598a520283bd25b7fd1cf4ede4",
+    "tests/train/test_source_execution_resources.py": "b6b830e1100e7fc3fcd8cc71c88ccaf739116f95b7483e304fac1fc21e5e6380"
+  },
+  "checks_kept_separate": {
+    "dispatch_final.xml": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "893034d4d942e0f5a2850dfb8a5085bd1c111e1b659d4a7522407c8c886bf639"
+    },
+    "source_transition_final02.xml": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "c9163cd2ab38100f95479695cd4fd75f33673bf023c9dbce182b0ceffb25b949"
+    },
+    "resource_floor_integration.xml": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "48a1aef5c0edaa8161f21aaff79b70338281f81ee8c5df6835200ccbd7241e19"
+    },
+    "resource_floor_resident_transition.xml": {
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "e2f69a18ff9d819328722dd384f50b276ae9c092a4b36d12ba4993171a68c1de"
+    }
+  },
+  "old_dispatch_dependency_context": {
+    "src/research/prefix_replay_dispatch.py": "56a4bdb18bd2a71052974b36642a39e6d57c56f4af135057e844af04a1623647",
+    "src/research/prefix_replay_inputs.py": "cbf495fafba7d32a18d3bb405cc19c12442671a3e1eae33a6baedfa1408a52de",
+    "src/research/source_execution.py": "c413cb408c8f0cffb4c4c5aa5eba370b43da54ee77f462732383049caef15040",
+    "src/research/cloud_execution.py": "fbe2a9c09a13886ad9eb5f0145b878336db9f0a63a9f929b89492907c2992db1",
+    "src/transfer/ensemble_views.py": "3664af24a732aa098f5d4105b359fcd301ba067a07ba469fc906c0d0297934bd",
+    "tests/research/test_prefix_replay_dispatch.py": "7f187b8f8559b4152d3b1d28e12759728c5d0e3f1e23d382b8d3a931e44c3333",
+    "tests/research/test_prefix_replay_inputs.py": "3951e36b75fc52263c82e3bf591d25158202072872bd0e56ee6d37f6355d494e",
+    "tests/support/independent_prefix.py": "b4cc7f9b5089fb315a780e8d5cce9c1faf88ce9ce163fa925666bb43acd9cc3d"
+  },
+  "resolved": [
+    "deferred bad input attribution preserves successful peer reducer",
+    "dynamic reducers register before their last predecessor retires",
+    "explicit inter-op claims remain within native-one replay policy",
+    "auto CUDA floor is excluded from scientific authority while K/seed/program changes remain significant"
+  ],
+  "remaining": [
+    "public candidate/source-chain CLI integration and exact reviewed source transition",
+    "partial failed-fit and progress OSError after task publication with complete requested reports",
+    "scientific accepted scope/diagnostic interface integration before next cloud freeze",
+    "full Linux caller and large-graph memory and throughput measurements",
+    "verify retained original public results and models outside vanished worktrees",
+    "final participant admission independently joins original task/source/directory/scope with completed replay owner",
+    "cached compiler returns and before_group earlier prefixes validate owned geometry"
+  ],
+  "new_public_training_calls": 0,
+  "new_public_score_calls": 0,
+  "research_director_pause_commit": "e0a33d72af8a2918540ec96badec117798453d47",
+  "active_cloud_owner_goal": "active",
+  "accepted_root_lifecycle_and_staging": {
+    "status": "accepted_module_scope",
+    "files": {
+      "src/research/prefix_replay_dispatch.py": "27570ad7129570a3dc4214f1470f279fd40868e8a6a246f1fa4b0df245375aaa",
+      "src/research/source_execution.py": "00d3f4c7b6338af766e86cee4d057baf68ed387ea39c338fd3a9678d257164a1",
+      "tests/research/test_prefix_replay_dispatch.py": "0d3292bbf653f8ae9c67f5b317e4069c64ddbf80763e76e5bcda5dd67e73655e",
+      "tests/train/test_source_execution_resources.py": "b36a9a13c3ca2d7e74b7085f1df468fb18520548f2dea6b24b4a3cf0d281ea25",
+      "tests/support/prefix_replay_inputs.py": "6a5e5d5bf38cfbcab9e2302e090366ea4d2057d62d8a5b30e9bcde5aa3301ef8",
+      "doc/engineering.zh.md": "a685f334cafd9b65eaf1868fa94a693872ae0b56968dfaaf756cb7c381922c16"
+    },
+    "author_delivery": {
+      "local_ignored_path": "tmp/replay_recovery/root_lifecycle_staging.delivery.json",
+      "sha256": "bab1c1336b017364b4630bfbf67de24eec2af5768fb41028bafe98290796ee16"
+    },
+    "spec_review": {
+      "local_ignored_path": "tmp/replay_independent_review/ROOT_LIFECYCLE_STAGING_ACCEPTANCE.binding.json",
+      "sha256": "11ba80489eec45b87e20a8f3eb46e3f90fec8a9c5c930459407ff4411948ff86"
+    },
+    "standards_review": {
+      "local_ignored_path": "tmp/replay_standards_review/OWNER_ACCEPTANCE.binding.json",
+      "sha256": "0fde6555e2060456170c9331517996d719e3472f00372cbd18a3d0b240df7731"
+    },
+    "separate_current_checks": {
+      "staging_capacity_green.xml": {
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "7ef6e25c1b018a453f3c42b31ec50e036eddcf7620cbba7f283c93e51a5f81d6"
+      },
+      "pre_release_alias_current_green.xml": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "6a61de497b44f771d443620071ddb16eb0b6aee675c59eac284acd655e9d8e6f"
+      }
+    },
+    "scope": [
+      "backing aliases removed before lease release and pending adoption",
+      "settled pending keeps artifact failure and original OS exit",
+      "default staging preserves direct worker-phase floor capacity",
+      "target capacity uses host budget after shared staging"
+    ],
+    "not_inferred": [
+      "full current public CLI/source-chain acceptance",
+      "nested-parent throughput",
+      "Linux large-graph/public throughput"
+    ]
+  }
+}

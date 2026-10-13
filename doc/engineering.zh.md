@@ -350,6 +350,39 @@ GPU计时同步，冷启动/编译与热运行分列。缓存就绪的训练时�
 
 ### 云端训练性能优先
 
+独立前缀矩阵的完成参与者恢复使用计划中的`prefix_recovery`，与M1的`resume`分开。
+恢复build只核原producer元数据并注册ready工作：旧包零拟合重放和新fit后的独立准入共用
+`candidate_participant_admission_adapter`，由同一`CloudExecutor`以CPU evaluation phase拥有进程、
+线程、RAM和完整树退休。唯一数值checker仍为`_admit_candidate_participant`，完整graph/model/OOF/future门不跳过。
+新fit退出后main先做小型source/plan/record结构核验，再动态注册evaluation；main按实际IPC返回SHA核
+新sealed receipt和原metadata/source/request后串行ACK，fitted与admitted分别留账，准入失败不能记completed。
+fit完成事实在回调入口独立留存；动态evaluation发布前完成进度写入。写入异常保留原callback失败及全部
+requested roster，不能把从未注册的evaluation列为已执行或让finalizer丢失失败报告。
+并发进程上限来自同resource owner的`max_cache_group_processes`；显式`target_native_threads_per_worker=4`
+时，4 GPU-capable fit各4 native＋1 interop、4 CPU replay各1及coordinator1合为25 CPU，GPU容量仍4。
+host/staging与每actor RAM继续由原owner核实际准入；配置可行和软件liveness不替代公共吞吐实测。
+独立前缀或source链candidate未显式声明staging时，同一资源owner从中央配置、host预算的15%和
+工作阶段剩余内存三者取最小值。有cloud floor时先保各source/target阶段的最低并发内存，
+source尾部只保真实group数；不预留两个阶段同时满载。source和target容量均用扣除staging后的余额。
+显式staging保原值，无法满足floor时明确拒绝。独立ledger反例核四路target实际全部准入及25线程，
+并覆盖四路source、提高到六路的floor和CPU容量；nested parent峰值继续按实际账本单独记载。
+共享输入最后一棵reader进程树退休后，先清caller/task的Windows大bytes别名，再关闭holder、归还byte租约，
+随后接纳pending准备。executor已退出但未获byte准入的准备保存artifact-admission失败及完整请求，
+原OS退出事实保持；source链在全部consumer和additional finalization后保存最终CloudRun状态。
+`research.prefix_recovery`绑定原队列request、实际science exit、完整树退休、terminal里的原plan/result字节、
+原executed source及物理归档，并核精确审阅后的load/replay/admission/resource源码变化。
+候选consumer从原MAT和已保存的全部ordinary/selection包做独立parent零拟合重放，保原producer及
+`score_source_digest`；完整records/K/seed/策略/选择器不缩减，只有原record index的未恢复补集进入新fit。
+新结果分别记录每人的producer和consumer，原failed运行保持只读。恢复在CPU重放冻结predictor，
+captured device用于核原拟合身份；实际阶段耗时、RSS和字节读写须另测，不能把零拟合当零成本。
+独立恢复consumer的actor入口在prepare和任何输出写入前调用同一producer输出保护门；
+资源模块接入已验收的进程私有exec环境、共享subreaper租约和逐pool历史恢复门。只允许
+`prefix_recovery._TRANSITION_ROLES`列出的精确路径变化：原load/admission/recovery/resource入口及
+新增source_execution、prefix_replay_dispatch、prefix_replay_execution、prefix_replay_inputs、
+ensemble_views的resource/immutable-input transport。每个路径仍须绑定原producer与新consumer的
+实际SHA和独立审阅，科学模型的其他改动继续拒绝；旧compiler由原亲核字节执行，旧模型保持自己的来源。
+接口的作者软件验证和实际公共恢复范围见[执行与集成](evidence/execution_and_integration.zh.md#独立前缀请求与完成参与者恢复)。
+
 条件连续score按本次actual record共享公共白化列；各candidate保完整AR history、prefix/full QR及原密度。公共函数抽取与新score接点已做相关Gaussian、multi-record和precision反例验证；当前科研fit/posterior/df逐函数保持原逻辑。性能以prepare＋load＋score阶段和完整矩阵墙钟实测；旧模型由原loader准入，显式新数值consumer另记身份。
 
 CUDA target可由`target_native_threads_per_worker`显式声明native线程，并另计一个interop
