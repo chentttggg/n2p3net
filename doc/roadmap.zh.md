@@ -1,5 +1,9 @@
 # 当前执行计划
 
+当前优先推进迁移异质性和高置信错误校准：在合法C内比较source NN、matched scratch NN，以及各自NN+xDAWN的四个完整fixed程序，复用真正forward-prefix选择、同run保存重放和独立future评价。既有factory支持此roster；新计划预声明baseline、tie规则和选择行数，接在云回放入口最终集成之后。fixed-only至少需一个先前完整训练组，K200单组继续走预声明baseline。
+
+另外两条科学主线可独立前进：B07建立多通道C-latent的新拟合后验及其权限、历史预测和持久包；B11建立固定noise shape K₀的真实来源与flat nuisance长记录的共同体积测度。现有native多通道frozen-C history和proper/no-flat联合尺度是可复用底座，新增C潜变量和flat能力分别形成自己的producer与纵向验收。B09先交共同物理效应/reference输运，B00先闭合固定requested风险；各块继续按真实依赖推进。
+
 当前科研按[123项进展](evidence/wishlist_progress_20261010.zh.md)和四个主题页并行推进：B03完整组与真正prefix整程序nested选择、同run inner/final保存重放及public parent准入已有软件出口；P1数值稳定化、source cache/shared score、conditional白化和逐decision horizon已集成。B07五家族off-grid/完整history及中央评分/capsule软件切片已接受，B09可识别效应保已有出口；修后entry005独立future评价及BI/BNCI队列已完成；下一新数据泛化、B07公共opt-in评价、C-latent新producer及B13成人确认按各块依赖推进。旧producer与失败保原身份，云窗口拥有公共执行源码和资源调度。
 
 P1数值续评16/16完成、0新fit：同支持新stationary law的shared/private命中5/8与6/8，NLL `7.3364765832`与`5.5540121013`，Brier `0.6790937536`与`0.4776784949`，全部概率/失败/来源经独立复算。真实平稳prefix compiler、新producer panel和Path修复已集成；全部8人Windows原态严格出口及33成员传输包已独立接受。本地三次执行由RAM门收敛、完整cell0/16，partial与失败保留。云科学接线的原输入授权/跨attempt互斥已修后接受，云端新law 16格真实exit0且owned tree归零；外层queue exit1单独保留。winner与旧law完全一致，law数值差异不改变决策，见[响应与噪声](evidence/response_and_noise.zh.md#当前模型与数值任务)。B12基础公共程序独立前进。

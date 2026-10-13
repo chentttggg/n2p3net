@@ -4,6 +4,10 @@
 
 ## 当前结论与实施
 
+下一选择切片针对迁移收益随数据集与个人变化的现象：把source NN、matched scratch NN及各自NN+xDAWN纳入一个新声明的四候选fixed程序族。它们共用物理输入、source/scratch匹配配方和真正更早的C prefix；原选择/graph/保存/parent接口已支持。固定baseline与tie规则在新计划声明，future队列评价最终程序。此新roster与原entry005四候选分别保存身份。
+
+概率尾部的下一规格是pool层uniform-contamination：`pε=(1−ε)p+ε/J`，ε从完整pool的合法OOF概率以凸NLL目标学习。ε>0提供明确概率下限，ε<1保数学排序；有限精度near-tie继续由原decision owner判定。ε在每层训练scope重估，完整专家roster与requested失败账本沿用原owner，实施时给新概率程序和保存身份。当前优先完成其独立数学/行为验证，再接同run训练与重放。
+
 fixed使用温度1，grouped按完整selection生成C内OOF概率，并为参与校准的专家学习温度；两个程序共用最终专家。现有K200最终拟合保全部200个raw标签和196个合法trial，完整selection有一个，后80个标签已经参与合法final fit。
 
 整程序选择已作为opt-in接入实际公共caller：每个h/v从原source重编真正更早的prefix，完整运行候选学习算法，再对held group评分；最终选定程序用原授权K全部合法标签refit。候选明确包含“单prefix final + group-LOO温度inner”；inner/final剂量不同是这个算法的一部分。排序复用已有hit/NLL/Brier与baseline policy，同run模型/输出保存后零新EEG拟合重放，父进程从真实专家重算混合概率。当前入口与接受来源见[整程序接线与复签](#整程序接线与复签)。
