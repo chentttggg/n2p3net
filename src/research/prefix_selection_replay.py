@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -13,16 +14,23 @@ from research.calibration_selection import (
     _prefix_common_training_groups,
     select_calibration_candidate,
 )
-from research.contracts import semantic_sha256
+from research.contracts import canonical_json_bytes, semantic_sha256
 from research.execution import ExpectedSubjectError, atomic_write_json
 from research.prefix_inner_replay import (
+    _manifest,
+    _normalise_sources,
     _PrefixPackageAdmission,
     _recursive_close,
+    future_input_identity,
     persist_prefix_inner_replay,
     prefix_input_identity,
 )
+from train.runtime import cpu_thread_budget
+from transfer.noise_model import freeze_metadata
 
 SCHEMA = "n2p3_whole_prefix_selection_replay/1"
+NODE_REQUEST_SCHEMA = "n2p3_selection_replay_node/1"
+NODE_RESULT_SCHEMA = "n2p3_selection_replay_node_result/1"
 
 
 def _failure(value):
@@ -35,14 +43,18 @@ def _load_graph(directory, expected_selection_sha256=None, expected_graph_sha256
     if path.is_symlink():
         raise ValueError("nested prefix graph path is a symlink")
     payload = json.loads(path.read_bytes())
-    graph = payload["record"]
+    return _admit_graph_record(payload["record"], payload["record_sha256"],
+        expected_selection_sha256=expected_selection_sha256, expected_graph_sha256=expected_graph_sha256)
+
+
+def _admit_graph_record(graph, record_sha256, *, expected_selection_sha256=None, expected_graph_sha256=None):
     digest = semantic_sha256(graph)
-    if (graph.get("schema") != SCHEMA or digest != payload["record_sha256"]
+    if (graph.get("schema") != SCHEMA or digest != record_sha256
             or expected_graph_sha256 is not None and digest != expected_graph_sha256
             or expected_selection_sha256 is not None
             and semantic_sha256(graph["selection"]) != expected_selection_sha256):
         raise ValueError("nested prefix graph differs from externally sealed original selection")
-    return graph
+    return graph, digest
 
 
 def _group_map(input_identity):
@@ -217,7 +229,21 @@ class _SelectionReplayAdmission:
 
     def __init__(self, directory, *, expected_selection_sha256=None, expected_graph_sha256=None):
         self.directory = Path(directory)
-        self.graph = _load_graph(self.directory, expected_selection_sha256, expected_graph_sha256)
+        self.graph, self.graph_sha256 = _load_graph(self.directory, expected_selection_sha256, expected_graph_sha256)
+
+    @classmethod
+    def from_prepared_graph(cls, directory, graph, *, expected_graph_sha256, expected_selection_sha256=None):
+        """Open a private graph snapshot from the original canonical seal."""
+        if expected_graph_sha256 is None:
+            raise ValueError("prepared graph requires its external original seal")
+        content = graph if isinstance(graph, bytes) else canonical_json_bytes(graph)
+        if hashlib.sha256(content).hexdigest() != expected_graph_sha256:
+            raise ValueError("prepared graph differs from its external original seal")
+        graph, digest = _admit_graph_record(json.loads(content), expected_graph_sha256,
+            expected_selection_sha256=expected_selection_sha256, expected_graph_sha256=expected_graph_sha256)
+        admission = cls.__new__(cls)
+        admission.directory, admission.graph, admission.graph_sha256 = Path(directory), graph, digest
+        return admission
 
     def load(self):
         return _load_admitted_selection(self)
@@ -225,6 +251,11 @@ class _SelectionReplayAdmission:
     def replay(self, *, prefix, prefix_compiler, future_views=(), source_checkpoints=None):
         return _replay_admitted_selection(self, prefix=prefix, prefix_compiler=prefix_compiler,
                                          future_views=future_views, source_checkpoints=source_checkpoints)
+
+    def prepare_replay(self, *, prefix, prefix_compiler, future_views=(), source_checkpoints=None):
+        """Prepare the graph once; export only sealed, ordered node requests."""
+        return SelectionReplayPlan(self, prefix=prefix, prefix_compiler=prefix_compiler,
+            future_views=future_views, source_checkpoints=source_checkpoints)
 
 
 def _loaded_final_selection(graph, final_record, final_programs):
@@ -250,29 +281,236 @@ def _load_admitted_selection(admission):
     return _loaded_final_selection(graph, records[graph["selection"]["final_refit_key"]], final_programs)
 
 
-def _replay_admitted_selection(admission, *, prefix, prefix_compiler, future_views=(), source_checkpoints=None):
-    graph, directory = admission.graph, admission.directory
+def _original_parent(prefix, prefix_compiler):
     prefix_compiler.assert_original_prefix(prefix)
-    if semantic_sha256(prefix_input_identity(prefix)) != semantic_sha256(graph["selection"]["parent_scope"]["input"]):
-        raise ValueError("nested prefix replay original parent observations/labels changed")
-    future_views = tuple(future_views)
+    return semantic_sha256(prefix_input_identity(prefix))
+
+
+def _seal_node_request(record):
+    return {"request": record, "request_sha256": semantic_sha256(record)}
+
+
+def _read_node_request(envelope):
+    request = envelope["request"]
+    if (request.get("schema") != NODE_REQUEST_SCHEMA
+            or envelope.get("request_sha256") != semantic_sha256(request)):
+        raise ValueError("selection node request digest changed")
+    _node_path(".", request)
+    return request
+
+
+def _requested_views(node, *, final, future_views, parent_groups):
+    if final:
+        return future_views
+    names = dict.fromkeys(use.get("selection_held_record_id", use.get("outer_held_record_id"))
+        for use in node["uses"])
+    if not names or None in names or set(names) - set(parent_groups):
+        raise ValueError("selection node use lacks its original parent held record")
+    return tuple(parent_groups[name].view for name in names)
+
+
+def _view_bindings(views):
+    return [{"record_id": view.record_id, "input_sha256": semantic_sha256(future_input_identity(view))}
+        for view in views]
+
+
+def _saved_replay_result(record, request):
+    """Reconstruct the original receipt rows, without admitting a checked flag."""
+    from transfer.ensemble import EnsembleProgram, EnsembleScorer
+
+    captured = {(row["strategy"], row["input"]["view"]["record_id"]): row
+        for row in record["future_score_rows"]}
+    expected = {(strategy, row["record_id"]) for strategy in record["programs"] for row in request["views"]}
+    if len(captured) != len(record["future_score_rows"]) or set(captured) != expected:
+        raise ValueError("selection node result lost the original requested score roster")
+    scorer = EnsembleScorer(EnsembleProgram.from_record(record["ensemble_program"]))
+    scores = []
+    for view in request["views"]:
+        row = {"decision_id": None, "strategies": {}}
+        for strategy in record["programs"]:
+            saved = captured[strategy, view["record_id"]]
+            if semantic_sha256(saved["input"]) != view["input_sha256"]:
+                raise ValueError("selection node result requested observations changed")
+            row["decision_id"] = saved["input"]["view"]["decision_id"]
+            row["strategies"][strategy] = scorer.score({name: CandidateEvidence.from_record(value)
+                for name, value in saved["expert_evidence"].items()}).record()
+        scores.append(row)
+    return {"status": "replayed", "actual_K": record["actual_K"], "requested_Ks": record["requested_Ks"],
+        "producer_count": len(record["inner_producers"]),
+        "exact_score_checks": sum(len(row["oof_rows"]) for row in record["inner_producers"])
+            + len(record["future_score_rows"]),
+        "preserved_oof_score_failures": [{"fit_key": producer["fit_key"], **failure}
+            for producer in record["inner_producers"] for failure in producer.get("oof_score_failures", ())],
+        "scores": scores, "truth_free": True}
+
+
+def _replay_selection_node(envelope, *, directory, parent_prefix, prefix_compiler,
+                           future_views, source_checkpoints, source_sha256, parent_sha256):
+    request = _read_node_request(envelope)
+    if request["parent_input_sha256"] != parent_sha256:
+        raise ValueError("selection node request changed its original parent scope")
+    current = prefix_compiler.compile(request["actual_K"])
+    identity = prefix_input_identity(current)
+    if (semantic_sha256(identity) != request["prefix_input_sha256"]
+            or semantic_sha256({"actual_K": current.budget, "input": identity}) != request["scope_sha256"]):
+        raise ValueError("selection node request changed its actual compiled scope")
+    parent_groups = {group.view.record_id: group for group in parent_prefix.complete_groups}
+    if not request["final"] and any(row["record_id"] not in parent_groups for row in request["views"]):
+        raise ValueError("selection node request names an unauthorized original parent held record")
+    views = future_views if request["final"] else tuple(parent_groups[row["record_id"]].view
+        for row in request["views"])
+    if _view_bindings(views) != request["views"]:
+        raise ValueError("selection node request changed its original requested observations")
+    candidate = CalibrationProgramCandidate.from_record(request["candidate"])
+    sources = {name: source_checkpoints[name] for name in candidate.ensemble_program.expert_ids
+        if name in source_checkpoints}
+    if {name: source_sha256[name] for name in sources} != request["source_checkpoint_sha256"]:
+        raise ValueError("selection node request changed its original source checkpoints")
+    path = _node_path(directory, request)
+    package = _PrefixPackageAdmission(path, expected_record_sha256=request["prefix_receipt_sha256"])
+    record = package.record
+    if (semantic_sha256(record["prefix_input"]) != request["prefix_input_sha256"]
+            or semantic_sha256(record["expert_programs"]) != semantic_sha256(candidate.record()["expert_programs"])
+            or semantic_sha256(record["ensemble_program"]) != candidate.ensemble_program.digest()
+            or set(record["programs"]) != {candidate.strategy}
+            or record["fit_context"].get("requested_decision_ids") != [view.record_id for view in views]):
+        raise ValueError("selection node request differs from its original producer declaration")
+    # Captured device remains a fit identity. Loaded predictors replay on CPU;
+    # passing device='cpu' would incorrectly rebind a historical CUDA fit.
+    result = package.replay(prefix=current, future_views=views, source_checkpoints=sources,
+        atol=0.0, rtol=0.0)
+    result_record = {"schema": NODE_RESULT_SCHEMA, "request": envelope,
+        "prefix_record_ref": f"{request['package']}/prefix_inner_replay.json",
+        "prefix_record_sha256": semantic_sha256(record), "replay": result,
+        "captured_fit_device": record["device"], "replay_device": "cpu", "native_threads": 1,
+        "atol": 0.0, "rtol": 0.0}
+    return {"record": result_record, "record_sha256": semantic_sha256(result_record)}, package
+
+
+def replay_selection_chunk(requests, *, directory, parent_prefix, prefix_compiler,
+                           future_views=(), source_checkpoints=None):
+    """Independently replay sealed nodes at native1/exact0, without a graph load."""
+    requests = tuple(requests)
+    if not requests:
+        raise ValueError("selection replay chunk requires at least one original node")
+    records = [_read_node_request(request) for request in requests]
+    keys = [(row["node_index"], row["fit_key"]) for row in records]
+    if (len(set(keys)) != len(keys) or len({row["fit_key"] for row in records}) != len(records)
+            or len({(row["graph_sha256"], row["selection_sha256"], row["parent_input_sha256"])
+                for row in records}) != 1):
+        raise ValueError("selection replay chunk repeats a node or mixes original graphs")
+    with cpu_thread_budget(1):
+        parent_sha256 = _original_parent(parent_prefix, prefix_compiler)
+        future_views, sources = tuple(future_views), _normalise_sources(source_checkpoints)
+        source_sha256 = {name: source.digest for name, source in sources.items()}
+        return [_replay_selection_node(request, directory=directory, parent_prefix=parent_prefix,
+            prefix_compiler=prefix_compiler, future_views=future_views, source_checkpoints=sources,
+            source_sha256=source_sha256, parent_sha256=parent_sha256)[0] for request in requests]
+
+
+class SelectionReplayPlan:
+    """One private original graph and complete ordered numerical reduction."""
+
+    def __init__(self, admission, *, prefix, prefix_compiler, future_views=(), source_checkpoints=None):
+        self._graph, self._directory = freeze_metadata(admission.graph), admission.directory
+        self._prefix, self._compiler = prefix, prefix_compiler
+        self._future_views = tuple(future_views)
+        self._sources = _normalise_sources(source_checkpoints)
+        self._source_sha256 = {name: source.digest for name, source in self._sources.items()}
+        parent_sha256 = _original_parent(prefix, prefix_compiler)
+        selection = self._graph["selection"]
+        if parent_sha256 != semantic_sha256(selection["parent_scope"]["input"]):
+            raise ValueError("nested prefix replay original parent observations/labels changed")
+        if self._source_sha256 != selection["source_checkpoint_sha256"]:
+            raise ValueError("nested prefix replay original source checkpoint roster changed")
+        parent_groups = {group.view.record_id: group for group in prefix.complete_groups}
+        selection_sha256 = semantic_sha256(selection)
+        requests = []
+        for index, node in enumerate(self._graph["nodes"]):
+            _node_path(self._directory, node)
+            final = node["fit_key"] == selection["final_refit_key"]
+            candidate = CalibrationProgramCandidate.from_record(node["candidate"])
+            views = _requested_views(node, final=final, future_views=self._future_views,
+                parent_groups=parent_groups)
+            request = {"schema": NODE_REQUEST_SCHEMA, "graph_sha256": admission.graph_sha256,
+                "selection_sha256": selection_sha256, "node_index": index, "fit_key": node["fit_key"],
+                "package": node["package"], "prefix_receipt_sha256": node["prefix_receipt_sha256"],
+                "candidate": node["candidate"], "scope_sha256": semantic_sha256(node["scope"]),
+                "prefix_input_sha256": semantic_sha256(node["scope"]["input"]),
+                "actual_K": node["scope"]["actual_K"], "parent_input_sha256": parent_sha256,
+                "final": final, "views": _view_bindings(views),
+                "source_checkpoint_sha256": {name: self._source_sha256[name]
+                    for name in candidate.ensemble_program.expert_ids if name in self._sources}}
+            requests.append(canonical_json_bytes(_seal_node_request(request)))
+        if (not requests or len({node["fit_key"] for node in self._graph["nodes"]}) != len(requests)
+                or sum(node["fit_key"] == selection["final_refit_key"] for node in self._graph["nodes"]) != 1):
+            raise ValueError("selection replay plan needs its complete unique original node roster")
+        self._requests = tuple(requests)
+        self._serial_records, self._serial_final_programs = {}, None
+
+    @property
+    def node_requests(self):
+        """Small JSON values cannot mutate this plan's private request seals."""
+        return tuple(json.loads(content) for content in self._requests)
+
+    def finish_replay(self, verified_results):
+        """Reduce complete independently executed nodes in original graph order."""
+        requests = self.node_requests
+        expected = {request["request_sha256"]: request for request in requests}
+        outcomes = {}
+        for envelope in verified_results:
+            result = envelope["record"]
+            if (result.get("schema") != NODE_RESULT_SCHEMA
+                    or envelope.get("record_sha256") != semantic_sha256(result)):
+                raise ValueError("selection node numerical result digest changed")
+            supplied = result["request"]
+            digest = supplied["request_sha256"]
+            if digest not in expected or canonical_json_bytes(supplied) != canonical_json_bytes(expected[digest]):
+                raise ValueError("selection node result differs from its original ordered request")
+            if digest in outcomes:
+                raise ValueError("selection replay reduction repeats a requested node")
+            request = expected[digest]["request"]
+            if (result["prefix_record_ref"] != f"{request['package']}/prefix_inner_replay.json"
+                    or result["prefix_record_sha256"] != request["prefix_receipt_sha256"]
+                    or result["replay_device"] != "cpu" or result["native_threads"] != 1
+                    or result["atol"] != 0.0 or result["rtol"] != 0.0):
+                raise ValueError("selection node result changed its producer or exact replay programme")
+            outcomes[digest] = result
+        if set(outcomes) != set(expected):
+            raise ValueError("selection replay reduction is missing original requested nodes")
+        records, results = {}, {}
+        for envelope in requests:
+            request = envelope["request"]
+            result = outcomes[envelope["request_sha256"]]
+            key = request["fit_key"]
+            record = self._serial_records.get(key)
+            if record is None:
+                record = _manifest(_node_path(self._directory, request),
+                    expected_record_sha256=request["prefix_receipt_sha256"])
+            if result["captured_fit_device"] != record["device"]:
+                raise ValueError("selection node result changed the captured fit device")
+            _recursive_close(result["replay"], _saved_replay_result(record, request))
+            records[key], results[key] = record, result["replay"]
+        graph, selection = self._graph, self._graph["selection"]
+        _audit_graph(graph, records)
+        _audit_replayed_policy(graph, self._prefix, self._compiler)
+        final_key = selection["final_refit_key"]
+        final_programs = self._serial_final_programs
+        if final_programs is None:
+            node = next(node for node in graph["nodes"] if node["fit_key"] == final_key)
+            final_package = _PrefixPackageAdmission(_node_path(self._directory, node),
+                expected_record_sha256=node["prefix_receipt_sha256"])
+            final_programs = final_package.programs
+        _loaded_final_selection(graph, records[final_key], final_programs)
+        summary = {"status": "replayed", "actual_K": self._prefix.budget, "producer_count": len(graph["nodes"]),
+            "exact_score_checks": sum(row["exact_score_checks"] for row in results.values()),
+            "scores": results[final_key]["scores"], "zero_new_fits": True,
+            "outer_requested": len(selection["outer_requested"]), "selected_candidate": selection["selected_candidate"]}
+        return json.loads(canonical_json_bytes(summary))
+
+
+def _audit_replayed_policy(graph, prefix, prefix_compiler):
     parent_groups = {group.view.record_id: group for group in prefix.complete_groups}
-    records, results, final_programs = {}, {}, None
-    for node in graph["nodes"]:
-        path = _node_path(directory, node)
-        current = prefix_compiler.compile(node["scope"]["actual_K"])
-        package = _PrefixPackageAdmission(path, expected_record_sha256=node["prefix_receipt_sha256"])
-        record = package.record
-        views = future_views if node["fit_key"] == graph["selection"]["final_refit_key"] else tuple(
-            parent_groups[name].view for name in record["fit_context"]["requested_decision_ids"])
-        candidate = CalibrationProgramCandidate.from_record(node["candidate"])
-        sources = {} if source_checkpoints is None else {name: source_checkpoints[name]
-            for name in candidate.ensemble_program.expert_ids if name in source_checkpoints}
-        results[node["fit_key"]] = package.replay(prefix=current, future_views=views, source_checkpoints=sources)
-        records[node["fit_key"]] = record
-        if node["fit_key"] == graph["selection"]["final_refit_key"]:
-            final_programs = package.programs
-    _audit_graph(graph, records)
     selection = graph["selection"]
     # Recompute the actual policy on the same saved h probabilities/truths.
     # Truth is C-only and is never supplied to a scorer or numerical fitter.
@@ -292,14 +530,23 @@ def _replay_admitted_selection(admission, *, prefix, prefix_compiler, future_vie
         if name != trace["decision"]["selected_candidate"]:
             raise ValueError("nested prefix actual selection decision does not replay")
         _recursive_close(decision, trace["decision"])
-    # All nodes were independently admitted and numerically replayed above.
-    # The final loaded-object relationship uses those same saved states; it
-    # does not reopen the graph or reload every final/inner predictor.
-    _loaded_final_selection(graph, records[selection["final_refit_key"]], final_programs)
-    return {"status": "replayed", "actual_K": prefix.budget, "producer_count": len(graph["nodes"]),
-        "exact_score_checks": sum(row["exact_score_checks"] for row in results.values()),
-        "scores": results[selection["final_refit_key"]]["scores"], "zero_new_fits": True,
-        "outer_requested": len(selection["outer_requested"]), "selected_candidate": selection["selected_candidate"]}
+
+
+def _replay_admitted_selection(admission, *, prefix, prefix_compiler, future_views=(), source_checkpoints=None):
+    plan = admission.prepare_replay(prefix=prefix, prefix_compiler=prefix_compiler,
+        future_views=future_views, source_checkpoints=source_checkpoints)
+    results = []
+    with cpu_thread_budget(1):
+        for envelope in plan.node_requests:
+            result, package = _replay_selection_node(envelope, directory=plan._directory,
+                parent_prefix=prefix, prefix_compiler=prefix_compiler, future_views=plan._future_views,
+                source_checkpoints=plan._sources, source_sha256=plan._source_sha256,
+                parent_sha256=envelope["request"]["parent_input_sha256"])
+            results.append(result)
+            plan._serial_records[envelope["request"]["fit_key"]] = package.record
+            if envelope["request"]["final"]:
+                plan._serial_final_programs = package.programs
+        return plan.finish_replay(results)
 
 
 def load_prefix_selection(directory, *, expected_selection_sha256=None, expected_graph_sha256=None):
