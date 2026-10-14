@@ -1,6 +1,6 @@
 # 当前执行计划
 
-base完整矩阵已按用户云端直接授权使用source/target seed20261014实际启动，冻结源码f3f32f8；四fold各选择与fresh refit形成八个逻辑fits。Huebner选轮后refit staging超过原18GiB门，其余三fold继续；原终态与成功产物经云owner核验后，以完整master4/remaining1恢复失败折，见[执行主题页](evidence/execution_and_integration.zh.md)。原20260918结果与prepared输入保持原来源。
+base完整矩阵已按用户云端授权以source/target seed20261014、冻结f3f32f8实际训练。原attempt三fold完成并准入6次成功fit，Huebner staging触发18GiB原门；原queue exit1、owned0、transient leases0，成功模型保原字节。Huebner已由云owner按完整master4/remaining1及30GiB预算恢复，原代码/数据/seed/科学配方保持；第四checkpoint准入后推进完整target，见[执行主题页](evidence/execution_and_integration.zh.md)。
 
 当前优先推进迁移异质性和高置信错误校准：四个完整fixed程序（source NN、matched scratch NN及各自NN+xDAWN）已由opt-in factory接入真正forward-prefix选择，同run拟合、保存重放与parent链软件验收完成。新公共计划预声明baseline、tie规则和选择行数，接在云回放入口最终集成之后。fixed-only至少需一个先前完整训练组，K200单组继续走预声明baseline；K0依该baseline的实际源能力保输出及requested账本。
 

@@ -12,6 +12,8 @@
 
 恢复保持四fold master和完整requested，原三个成功checkpoint直接复用，Huebner作为真实remaining1在实测资源预算下补跑选轮+refit。现有全局组预算无法让四组各30GiB同时通过90GiB与GPU4准入；单组依赖尾保持CPU25/GPU4容量。目标端`SourceSeedCatalog`可逐原三项加新一项核完整同seed四键集合，不要求改签原失败record。本次只读模块与原失败小凭证，未重复已绿色的source恢复测试。
 
+原source attempt现已终态：queue exit1、四worker OS0/owned0（Huebner scientific failed单列）、transient leases0；原三成功模型经原SourceSeedCatalog核准，共6fit。root逐原catalog文件SHA核三同seed唯一键、checkpoint摘要及study exclusion，保原source/producer；云owner已报告remaining1/30GiB Huebner恢复，原科学配方与f3代码保持。持久凭证`SOURCE_PARTIAL_CLOSED.binding.json`及下一tail实际launch/终态分别记录，第四模型完成后再绑定完整目标队列。
+
 今天完成空间精确因子与原生产者状态的代码集成，并恢复原云端科研载荷、核回逐人和逐项结果。空间修复解决了“舍入让未测方向看似可测”的实际反例：四导单行观测的真实未观察方向为12，旧归一化再乘法误报0，新实现恢复12。保存原观测坐标与QR因子后，恢复沿原数学关系核验并复用原数值；独立BLUE均值和方差与实际消费者闭合，保存重放逐bit一致。相关原state/consumer反例及最终源码分别记录在整合绑定，已结束空间作者树移除。
 
 原BI、BNCI、entry005与P1载荷已按原SHA恢复并独立复算。BI预训练后个人全网校准相对同配方随机初始化提高10.8958个百分点，42/61人命中改善；BNCI低3.3333个百分点，A02/A05各净少7个正确。BNCI全网校准的高置信组平均报98.276%而实际正确85.897%，下一程序同时研究命中与概率可信度。前缀K2000选择保持132/152命中并改善概率质量；K800的2项救回、3项损害集中A04。指标和完整分母维护在公共评估与校准选择页。

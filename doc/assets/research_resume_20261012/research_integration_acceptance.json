@@ -612,5 +612,102 @@
     },
     "public_fits_this_validation": 0,
     "next": "typed_ensemble_same_record_OOF_full_observed_history_candidate_capsule_and_continuous_Gamma_accuracy"
+  },
+  "base_source_partial_closed": {
+    "status": "original_partial_source_terminal_accepted_three_producers_remaining_Huebner_not_complete",
+    "binding": {
+      "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\source-run\\SOURCE_PARTIAL_CLOSED.binding.json",
+      "sha256": "b9079c08295ffe3c5cf9bdc8d2a33c199b5a97509e0b9a33ca8ee9790b08d811"
+    },
+    "original_catalog": {
+      "path": "D:\\BCI\\artifacts\\base-matrix-20261014\\source-run\\source_seed_catalog.json",
+      "sha256": "cd8d5967d524d68cf34649746b58d65ba40b79e7f8deef9d87d092465c696fa7"
+    },
+    "queue_actual_OS_exit": 1,
+    "original_workers": [
+      {
+        "task_id": "source-03-33899b88a276",
+        "science_or_admission_status": "failed",
+        "OS_exit_code": 0,
+        "owned_processes_after_exit": 0,
+        "cleanup_before_rss": 11825180672,
+        "cleanup_after_rss": 11824148480
+      },
+      {
+        "task_id": "source-01-32a8c325bb75",
+        "science_or_admission_status": "completed",
+        "OS_exit_code": 0,
+        "owned_processes_after_exit": 0,
+        "cleanup_before_rss": 3311636480,
+        "cleanup_after_rss": 3308539904
+      },
+      {
+        "task_id": "source-02-4796593addd9",
+        "science_or_admission_status": "completed",
+        "OS_exit_code": 0,
+        "owned_processes_after_exit": 0,
+        "cleanup_before_rss": 3147898880,
+        "cleanup_after_rss": 3140624384
+      },
+      {
+        "task_id": "source-00-d8a7f5984032",
+        "science_or_admission_status": "completed",
+        "OS_exit_code": 0,
+        "owned_processes_after_exit": 0,
+        "cleanup_before_rss": 3282006016,
+        "cleanup_after_rss": 3277860864
+      }
+    ],
+    "full_requested_source_procedures": 4,
+    "successful_source_procedures": 3,
+    "completed_physical_fits": 6,
+    "failed_source_procedures": 1,
+    "failed_actual_exposure_scope": "original Huebner selection progress retained; full fit accounting unavailable",
+    "source_end_611_members_match_ingress": true,
+    "transient_leases": 0,
+    "committed_persistent_artifact_leases": 36,
+    "cloud_original_core_SourceSeedCatalog_admission": [
+      {
+        "outer_target_study": "BI2014a",
+        "source_seed": 20261014,
+        "checkpoint_sha256": "669306ebd08b95c0ff9acea1bd4737c2802615122d98ea244396d4cd7fb45bae",
+        "training_contract_digest": "6ba7ee39a3082425508bf36b0f1993b1b8d510e928e58553d1f33d6275242a3a",
+        "producer_digest": "2479cf52e0f53b0951da526b009318d561ff9063a3cd3a80cf846e9713b994aa",
+        "selected_epochs": 16,
+        "actual_inner_updates": 46024,
+        "actual_refit_updates": 42928,
+        "selection_digest": "6a896394d69b753a6f2ae8e247e25ac62cde60d0600e4222aa707d7bc359d185",
+        "fit_ledger_digest": "9bdd6056b9ad4573d410b83ea4a38e9ccd00bd4b334dc588a0a514fbd9a77324"
+      },
+      {
+        "outer_target_study": "BI2015a",
+        "source_seed": 20261014,
+        "checkpoint_sha256": "cae2873fded1a96eac1d9a8ec09398e93314d735291d594df79a861bbc8dcb37",
+        "training_contract_digest": "e47579343248efcdc30c200f4afb18552cb5d451248a605e541adccdffc83e1a",
+        "producer_digest": "6135c553c38d7a1926b21cc9e9c045484f8b4a142eabde0161e5b0cee8b863a2",
+        "selected_epochs": 6,
+        "actual_inner_updates": 24984,
+        "actual_refit_updates": 16026,
+        "selection_digest": "e575d7ab0d8827621c961c75668b15adfc013ab0ddb5695f21a0e0c682f10010",
+        "fit_ledger_digest": "ada9f7b19337a3a1952470d00d5fa15b9511aa86dfd9c5ce53c196ca5cc8c6c1"
+      },
+      {
+        "outer_target_study": "BNCI2014-008",
+        "source_seed": 20261014,
+        "checkpoint_sha256": "b52c8d170a4d967006f2bdfb2de488fd91be36a66c774a68f390705e83478007",
+        "training_contract_digest": "1c53051b1f0c1ae111f563f3a9675c8ecad93b13af831954c7b4f0fa748f2040",
+        "producer_digest": "58e82a8dc52cd752199935d0f3b4cc5ce64db8b740d313c1b6dbc0bb4d1fb142",
+        "selected_epochs": 15,
+        "actual_inner_updates": 44835,
+        "actual_refit_updates": 40935,
+        "selection_digest": "e64e85390c01064020b24d21832e2131e197ad44cf8a8e089fcd0ff9b08ad928",
+        "fit_ledger_digest": "0ec240520f8ccc70bd3e0a1be6e6dfa861a16efea9a9e0a4c63da6d37d031698"
+      }
+    ],
+    "root_receipt_catalog_validation": "read original files; verify original catalog SHA, three unique same-seed keys, checkpoint SHA joins and study exclusions; no checkpoint copied or model loaded by root",
+    "remaining_launch": "cloud owner reports single Huebner selection/refit relaunched at 30GiB; compact launch/PID-birth receipt pending root recovery",
+    "target_training_not_launched_at_original_partial_closure": true,
+    "new_fits_by_root": 0,
+    "original_attempt_resigned": false
   }
 }
