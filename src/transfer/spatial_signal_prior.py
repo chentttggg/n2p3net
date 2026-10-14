@@ -1992,7 +1992,7 @@ class ERPChannelEstimate:
         effect.validate_prior(posterior.prior)
         if metadata_digest(dependence.frame) != metadata_digest(_likelihood_frame(posterior)):
             raise ValueError("dependency factor belongs to different actual likelihood rows/frame")
-        if (not isinstance(temporal_noise, TemporalNoise) or temporal_noise.innovation_variance != 1.
+        if (not isinstance(temporal_noise, TemporalNoise)
                 or temporal_noise.startup_mode == "conditional_prefix"):
             raise SpatialPriorIdentificationError("effect_noise_functional_requires_complete_unit_innovation_map")
         records = posterior.fit_records
@@ -2020,6 +2020,7 @@ class ERPChannelEstimate:
             "actual_C": list(records), "dependency": dependence.record(), "resolution": resolution,
             "temporal_noise_sha256": temporal_sha,
             "native_noise_sha256": array_digest(posterior.native_noise_covariance),
+            "original_noise_programme": dict(posterior.noise_binding),
             "noise_or_dependency_uncertainty_integrated": False, "posterior_mean_used_as_measurement": False}
         object.__setattr__(result, "receipt", freeze_metadata(receipt))
         return result
@@ -2332,6 +2333,7 @@ class SourceGroupPrior:
         temporal_lift = h @ f / variance
         mean = reference.mean + np.outer(temporal_lift, spatial_lift @ (self.mean - a @ (f @ reference.mean)))
         signal = s
+        forecast_factor, factor = None, None
         if completion == "separable":
             _, forecast_factor = _spd(self.forecast_covariance / variance, "new-person effect forecast")
             conditional_factor = (np.eye(len(s)) - spatial_lift @ a) @ native_factor
@@ -2342,10 +2344,85 @@ class SourceGroupPrior:
                 "source_participant_keys": list(self.fit_binding["source_participant_keys"]),
                 "target_participant_key": target_participant_key,
                 "effect_definition_sha256": metadata_digest(effect.definition),
+                "completion_witness": {"schema": "n2p3_source_spatial_completion/1",
+                    "reference_prior": reference.record(), "effect": effect.record(),
+                    "native_factor": native_factor.tolist(), "mapped_covariance_root": upper.tolist(),
+                    "spatial_lift": spatial_lift.tolist(), "temporal_lift": temporal_lift.tolist(),
+                    "forecast_factor": None if forecast_factor is None else forecast_factor.tolist(),
+                    "completion_factor": None if factor is None else factor.tolist()},
                 "variance_uncertainty_integrated": False,
                 "unseen_spatial_directions": "proper_reference_conditional_completion",
                 "source_forecast_uncertainty_propagated": completion == "separable"}}
         return SpatialSignalPrior(reference.layout, mean, h, signal, dict(reference.design_binding), source)
+
+    @staticmethod
+    def _generated_relation(actual, expected, magnitude, operations, name):
+        bound = 128 * _gamma(operations) * magnitude + np.finfo(float).eps * (np.abs(actual) + np.abs(expected))
+        if (not np.isfinite(bound).all() or np.any(np.abs(actual - expected) > bound)):
+            raise ValueError("saved source spatial completion differs from its actual " + name)
+
+    def validate_spatial_prior(self, prior, *, reference):
+        """Use the original completion operands; never re-QR/recompile a prior."""
+        learning = prior.source["source_learning"]
+        witness = learning["completion_witness"]
+        if (witness["schema"] != "n2p3_source_spatial_completion/1"
+                or metadata_digest(witness["reference_prior"]) != metadata_digest(reference.record())
+                or prior.source["authority_sha256"] != self.record()["artifact_sha256"]
+                or tuple(learning["source_participant_keys"]) != tuple(self.fit_binding["source_participant_keys"])
+                or prior.layout.record() != reference.layout.record()
+                or metadata_digest(prior.design_binding) != metadata_digest(reference.design_binding)
+                or not np.array_equal(prior.temporal_covariance, reference.temporal_covariance)):
+            raise ValueError("source spatial completion differs from its actual reference programme")
+        effect = ERPPhysicalEffect.from_record(witness["effect"])
+        effect.validate_prior(reference)
+        if (metadata_digest(effect.definition) != metadata_digest(self.effect.definition)
+                or learning["effect_definition_sha256"] != metadata_digest(effect.definition)):
+            raise ValueError("source spatial completion effect differs from the actual population forecast")
+        s, h, f, a = reference.signal_covariance, reference.temporal_covariance, effect.response_functional, effect.spatial_map
+        native = _matrix(witness["native_factor"], "producer reference native factor")
+        upper = _matrix(witness["mapped_covariance_root"], "producer effect covariance root")
+        lift = _matrix(witness["spatial_lift"], "producer spatial completion lift")
+        temporal = finite_real_array(witness["temporal_lift"], name="producer temporal completion lift")
+        if (native.shape != s.shape or np.any(np.triu(native, 1) != 0) or np.any(np.diag(native) <= 0)
+                or upper.shape != (len(a), len(a)) or np.any(np.tril(upper, -1) != 0)
+                or np.any(np.diag(upper) <= 0) or lift.shape != (len(s), len(a)) or temporal.shape != f.shape):
+            raise ValueError("source spatial completion producer factors differ from physical coordinates")
+        _, native_reference = _spd(s, "actual reference spatial covariance")
+        _unit_information_relation(native_reference.T, native.T)
+        _unit_information_relation((a @ native).T, upper)
+        variance = float(f @ h @ f)
+        if variance <= 0:
+            raise ValueError("source completion requires a nonzero temporal effect")
+        self._generated_relation(temporal*variance, h@f, np.abs(temporal)*abs(variance)+np.abs(h)@np.abs(f),
+                                 3*len(f), "temporal lift")
+        generated_lift = lift @ upper.T @ upper
+        rhs = s @ a.T
+        self._generated_relation(generated_lift, rhs, np.abs(lift)@np.abs(upper.T)@np.abs(upper)+np.abs(s)@np.abs(a.T),
+                                 4*len(a), "spatial lift")
+        delta = self.mean - a @ (f @ reference.mean)
+        expected_mean = reference.mean + np.outer(temporal, lift @ delta)
+        self._generated_relation(prior.mean, expected_mean,
+            np.abs(reference.mean)+np.outer(np.abs(temporal), np.abs(lift)@(np.abs(self.mean)+np.abs(a)@(np.abs(f)@np.abs(reference.mean)))),
+            8*(len(a)+len(f)+len(s)), "mean generation")
+        if learning["completion"] == "mean_only":
+            if (witness["forecast_factor"] is not None or witness["completion_factor"] is not None
+                    or not np.array_equal(prior.signal_covariance, s)):
+                raise ValueError("source mean-only completion changed the reference covariance")
+        else:
+            forecast = _matrix(witness["forecast_factor"], "producer source forecast factor")
+            final = _matrix(witness["completion_factor"], "producer completed spatial factor")
+            if (forecast.shape != (len(a), len(a)) or np.any(np.triu(forecast, 1) != 0)
+                    or np.any(np.diag(forecast) <= 0) or final.shape != (len(s), len(s)+len(a))):
+                raise ValueError("source completed spatial factors differ from forecast coordinates")
+            _, expected_forecast = _spd(self.forecast_covariance/variance, "actual new-person forecast")
+            _unit_information_relation(expected_forecast.T, forecast.T)
+            conditional = (np.eye(len(s)) - lift @ a) @ native
+            expected_final = np.column_stack((conditional, lift @ forecast))
+            magnitude = np.column_stack(((np.eye(len(s))+np.abs(lift)@np.abs(a))@np.abs(native),
+                                          np.abs(lift)@np.abs(forecast)))
+            self._generated_relation(final, expected_final, magnitude, 4*(len(s)+len(a)), "completion factor")
+            self._generated_relation(prior.signal_covariance, final@final.T, np.abs(final)@np.abs(final.T),
+                                     2*final.shape[1], "covariance generation")
 
     def record(self):
         payload = {"schema": "n2p3_source_group_prior/1", "effect": self.effect.record(),
@@ -2362,6 +2439,11 @@ class SourceGroupPrior:
     @classmethod
     def load(cls, path, *, expected_artifact_sha256):
         saved = json.loads(Path(path).read_text(encoding="utf-8"))
+        return cls.from_record(saved, expected_artifact_sha256=expected_artifact_sha256)
+
+    @classmethod
+    def from_record(cls, saved, *, expected_artifact_sha256):
+        saved = json.loads(json.dumps(saved, allow_nan=False))
         payload = {key: value for key, value in saved.items() if key != "artifact_sha256"}
         if (payload.get("schema") != "n2p3_source_group_prior/1"
                 or saved.get("artifact_sha256") != expected_artifact_sha256

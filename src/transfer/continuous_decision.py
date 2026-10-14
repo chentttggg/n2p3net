@@ -19,6 +19,7 @@ its small eigenvalues need not survive an ill-conditioned factor Gram product.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 from dataclasses import dataclass, field
 from fractions import Fraction
@@ -1288,14 +1289,23 @@ class ContinuousDecisionModel:
             raise ValueError("frozen continuous model integrity changed")
 
     def save(self, path):
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("xb") as handle:
+            self._write_state(handle)
+
+    def _write_state(self, handle):
         self.assert_integrity()
         state = self._state_arrays()
         metadata = self._metadata()
         metadata["artifact_sha256"] = metadata_digest(metadata)
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("xb") as handle:
-            np.savez_compressed(handle, **state, metadata=np.asarray(json.dumps(metadata, sort_keys=True)))
+        np.savez_compressed(handle, **state, metadata=np.asarray(json.dumps(metadata, sort_keys=True)))
+
+    def to_bytes(self):
+        """Encode the same original producer state for a composite programme."""
+        handle = io.BytesIO()
+        self._write_state(handle)
+        return handle.getvalue()
 
     @classmethod
     def load(cls, path):

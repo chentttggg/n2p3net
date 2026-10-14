@@ -46,6 +46,7 @@ from transfer.noise_model import array_digest, freeze_metadata
 from transfer.pool_calibration import POOL_OOF_SCHEMA, POOL_STRATEGY, uniform_contamination_from_oof
 from transfer.recipes import TargetRecipe
 from transfer.response_dictionary import ResponseDictionary, ResponseDictionarySpec
+from transfer.spatial_programme import SpatialDecisionModel, SpatialSignalProgram
 
 FITTED_ENSEMBLE_SCHEMA = "n2p3_fitted_candidate_ensemble/2"
 GROUPED_PROBABILITY_OOF_SCHEMA = "n2p3_complete_group_probability_oof/1"
@@ -142,6 +143,7 @@ class CalibrationExpertProgram:
     _prior_spec: KernelPriorSpec | None = field(init=False, repr=False, compare=False)
     _dictionary_spec: ResponseDictionarySpec | None = field(init=False, repr=False, compare=False)
     spatial: dict | None = None
+    signal_prior: SpatialSignalProgram | None = None
 
     def __post_init__(self):
         if not self.expert_id or self.family not in {"trial", "continuous_ar"}:
@@ -150,6 +152,9 @@ class CalibrationExpertProgram:
             raise ValueError("trial expert requires one target recipe and actual epoch profile")
         if self.spatial is not None:
             object.__setattr__(self, "spatial", freeze_metadata(self.spatial))
+        if self.signal_prior is not None and (not isinstance(self.signal_prior, SpatialSignalProgram)
+                or self.family != "continuous_ar" or self.spatial is not None):
+            raise ValueError("physical signal prior requires its native raw continuous programme")
         if self.family == "continuous_ar" and (self.recipe is not None or self.profile is not None):
             raise ValueError("continuous expert consumes native raw, without an epoch recipe or profile")
         if self.family == "trial":
@@ -218,6 +223,8 @@ class CalibrationExpertProgram:
             record["dictionary"] = self.dictionary.record()
         if self.spatial is not None:
             record["spatial"] = self.spatial
+        if self.signal_prior is not None:
+            record["signal_prior"] = self.signal_prior.record()
         return record
 
     @classmethod
@@ -229,13 +236,15 @@ class CalibrationExpertProgram:
             values["kernel_prior"] = KernelPriorSpec.from_record(values["kernel_prior"])
         if "dictionary" in values:
             values["dictionary"] = ResponseDictionarySpec.from_record(values["dictionary"])
+        if "signal_prior" in values:
+            values["signal_prior"] = SpatialSignalProgram.from_record(values["signal_prior"])
         return cls(**values)
 
 
 @dataclass(frozen=True)
 class _FittedExpert:
     program: CalibrationExpertProgram
-    predictor: FrozenTrialPredictor | ContinuousDecisionModel | None
+    predictor: FrozenTrialPredictor | ContinuousDecisionModel | SpatialDecisionModel | None
     model_digest: str | None
     fit_digest: str
     source_digest: str | None
@@ -252,6 +261,13 @@ class _FittedExpert:
                 raise ValueError("source inference epoch programme differs from its actual frozen capability")
         elif self.program.family == "continuous_ar":
             model = self.predictor
+            if self.program.signal_prior is not None:
+                if (not isinstance(model, SpatialDecisionModel)
+                        or semantic_sha256(model.programme.record()) != semantic_sha256(self.program.signal_prior.record())):
+                    raise ValueError("physical response expert differs from its actual signal programme")
+                model = model.baseline
+            elif isinstance(model, SpatialDecisionModel):
+                raise ValueError("physical response model requires its declared signal programme")
             if self.program.spatial is not None:
                 from transfer.ensemble_views import project_raw_observations
 
@@ -324,10 +340,13 @@ class _FittedExpert:
         samples, channels, operator, spatial_receipt = project_raw_observations(view.samples, view.channel_names,
             view.reference, self.program.spatial, sample_rate_hz=view.sample_rate_hz)
         try:
-            result = self.predictor.score(samples, view.onsets, view.decision.membership,
-                operator_identity=operator, sfreq=view.sample_rate_hz,
-                channels=channels, candidate_ids=view.decision.candidate_vocabulary,
-                record_id=view.record_id)
+            if self.program.signal_prior is not None:
+                result = self.predictor.score_view(view)
+            else:
+                result = self.predictor.score(samples, view.onsets, view.decision.membership,
+                    operator_identity=operator, sfreq=view.sample_rate_hz,
+                    channels=channels, candidate_ids=view.decision.candidate_vocabulary,
+                    record_id=view.record_id)
         except (UnidentifiableFitError, np.linalg.LinAlgError) as error:
             failure = {"stage": "read_only_prediction", "type": type(error).__name__, "message": str(error)}
             if hasattr(error, "record"):
@@ -337,11 +356,14 @@ class _FittedExpert:
         if spatial_receipt is not None:
             numerical_digest = semantic_sha256({"raw_input": view.raw_input_digest, "spatial": spatial_receipt})
         score_kind = "continuous_candidate_log_evidence"
+        if self.program.signal_prior is not None:
+            score_kind = "frozen_noise_physical_response_log_evidence/1"
         if self.program.conditioning_samples:
             numerical_digest = semantic_sha256({"raw_input": numerical_digest,
                 "conditioning_sample_support": [0, self.program.conditioning_samples],
                 "score_sample_support": [self.program.conditioning_samples, len(view.samples)]})
-            score_kind = "continuous_conditional_tail_log_density_fixed_candidate_prior/1"
+            score_kind = ("frozen_noise_physical_response_conditional_tail/1" if self.program.signal_prior is not None
+                          else "continuous_conditional_tail_log_density_fixed_candidate_prior/1")
         identity = CandidateExpertIdentity(self.program.expert_id, numerical_digest,
             self.model_digest, self.source_digest, self.fit_digest, score_kind, False)
         counts = tuple(int(value) for value in view.decision.membership.sum(axis=0))
@@ -646,7 +668,8 @@ class FittedEnsemble:
                     "source_digest": expert.source_digest, "logit_offset": expert.logit_offset,
                     "unavailable_reason": expert.unavailable_reason, "unavailable_kind": expert.unavailable_kind})
                 continue
-            filename = f"expert_{index:03d}." + ("pt" if expert.program.family == "trial" else "npz")
+            filename = f"expert_{index:03d}." + ("pt" if expert.program.family == "trial" else
+                "json" if expert.program.signal_prior is not None else "npz")
             path = directory / filename
             expert.predictor.save(path)
             entries.append({"program": expert.program.record(), "model": filename,
@@ -780,6 +803,7 @@ class FittedEnsemble:
             if hashlib.sha256(content).hexdigest() != entry["model_file_sha256"]:
                 raise ValueError("frozen ensemble model bytes changed")
             predictor = (FrozenTrialPredictor.load(io.BytesIO(content)) if program.family == "trial"
+                         else SpatialDecisionModel.load(io.BytesIO(content)) if program.signal_prior is not None
                          else ContinuousDecisionModel.load(io.BytesIO(content)))
             if predictor.digest() != entry["model_digest"]:
                 raise ValueError("frozen ensemble model state differs from its declared identity")
@@ -1004,11 +1028,13 @@ def _fit_expert(spec, data, raw_records, target, source, receipts, fit_inputs, *
             projected_records.append(replace(record, samples=samples))
             if receipt is not None:
                 spatial_receipts.append({"record_id": record.record_id, **receipt})
-        predictor = ContinuousDecisionModel.fit(projected_records, sfreq=rate, channels=channels,
-            candidate_ids=vocabulary, operator_identity=operator, noise_order=spec.noise_order,
-            **({"ridge": spec.ridge} if spec.prior_spec.kind == "isotropic_ridge" else {"kernel_prior": spec.kernel_prior}),
-            conditioning_samples=spec.conditioning_samples, noise_estimator=spec.noise_estimator,
-            dictionary=ResponseDictionary.compile(spec.dictionary_spec, sample_rate_hz=rate))
+        options = {"sfreq": rate, "channels": channels, "candidate_ids": vocabulary, "operator_identity": operator,
+            "noise_order": spec.noise_order, "conditioning_samples": spec.conditioning_samples,
+            "noise_estimator": spec.noise_estimator,
+            "dictionary": ResponseDictionary.compile(spec.dictionary_spec, sample_rate_hz=rate),
+            **({"ridge": spec.ridge} if spec.prior_spec.kind == "isotropic_ridge" else {"kernel_prior": spec.kernel_prior})}
+        predictor = (ContinuousDecisionModel.fit(projected_records, **options) if spec.signal_prior is None else
+                     SpatialDecisionModel.fit(projected_records, receipts, spec.signal_prior, **options))
         if spatial_receipts:
             predictor = replace(predictor, provenance={**predictor.provenance, "raw_spatial_execution": spatial_receipts})
         offset = 0.
