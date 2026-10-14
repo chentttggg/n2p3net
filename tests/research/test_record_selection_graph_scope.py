@@ -62,6 +62,13 @@ def test_structural_record_audit_uses_preroll_and_preserves_previous_acquisition
     _audit_record_before_held(original, scope, held)
 
 
+def test_structural_record_audit_accepts_owned_frozen_metadata():
+    from transfer.noise_model import freeze_metadata
+
+    original, scope, held = original_and_earlier()
+    _audit_record_before_held(freeze_metadata(original), freeze_metadata(scope), freeze_metadata(held))
+
+
 @pytest.mark.parametrize("violation", ["first_flash_instead_of_preroll", "changed_previous_record", "retained_unknown_event"])
 def test_structural_record_audit_rejects_wrong_global_dose_or_original_operands(violation):
     original, scope, held = original_and_earlier()

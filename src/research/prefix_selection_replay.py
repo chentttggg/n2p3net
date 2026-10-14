@@ -238,7 +238,7 @@ def _audit_record_before_held(original, scope, held):
             if derived[field] != record[field]:
                 raise ValueError("nested earlier prefix changed an original record identity")
         if name == key:
-            if (derived["global_label_indices"] != [base, expected_K]
+            if (tuple(derived["global_label_indices"]) != (base, expected_K)
                     or list(derived_native[name]["event_onsets"]) != list(onsets[:count])
                     or derived["read_sample_support"][1] > held["raw_scope"][0]):
                 raise ValueError("nested earlier record scope retains held labels or observations")
