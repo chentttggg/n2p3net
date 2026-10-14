@@ -1,0 +1,137 @@
+{
+  "schema": "n2p3_linux_memfd_binding_compatibility_delivery/1",
+  "status": "accepted_focused_software_correctness",
+  "base_commit": "e1c18f64fbfc660336662977f6224d3784390735",
+  "source": {
+    "author": {
+      "local_path": "src\\research\\prefix_replay_inputs.py",
+      "bytes": 36897,
+      "sha256": "f7e936ecf04e8a7f059c336205642d65b99f6387241cf593d5a010125fd56584"
+    },
+    "actual_scientific_composite_sha256": "42590c05863075d3fb362b2730c9a10f26b249507509e6d8e4188c3986399bc8",
+    "shared_IO_functions_AST_equal": {
+      "_LinuxMemfdAPI": true,
+      "_linux_memfd_api": true,
+      "_required_seals": true,
+      "PrefixReplayInputHolder.from_prepared": true,
+      "_open_sealed_backing": true
+    }
+  },
+  "tests": {
+    "local_path": "tests\\research\\test_prefix_replay_inputs.py",
+    "bytes": 35146,
+    "sha256": "56688b5140702163d868f29cc16cceda1f678245e9dc27837d75036ce91d2035"
+  },
+  "review_findings": {
+    "Spec": 0,
+    "Standards": 0
+  },
+  "actual_linux_cases": {
+    "primary": {
+      "node": "tests/research/test_prefix_replay_inputs.py::test_linux_missing_python_memfd_bindings_preserve_holder_reader_contract",
+      "actual_OS_exit_code": 0,
+      "wall_seconds": 7.318184683099389,
+      "junit_sha256": "2882839f1adcbef4278cd8c13c400e4599162c252f77727af06b32ed686775fe",
+      "start_sha256": "1424d439dd262629248edf8a42a8ea5546f1c89e88e11199229e4e47b517e8a8",
+      "original_RED_primary_AST_unchanged": true,
+      "verified": [
+        "fd0 accepted",
+        "numeric and metadata memfd seal15",
+        "CLOEXEC",
+        "kernel mutation refusal",
+        "O_RDONLY proc reader",
+        "zero numeric copy",
+        "readonly arrays",
+        "lease released once",
+        "all holder fds EBADF after close",
+        "Python module bindings remain absent"
+      ]
+    },
+    "metadata_creation_error": {
+      "node": "tests/research/test_prefix_replay_inputs.py::test_linux_kernel_memfd_creation_error_preserves_errno_and_releases_input_lease",
+      "actual_OS_exit_code": 0,
+      "wall_seconds": 4.532115674577653,
+      "junit_sha256": "7fd192bbf06aa03df3b293d42514643ffc43d855e14d0a9ba8e0680f264f9486",
+      "start_sha256": "4c91fb5ab712e6e79df20c899f707b4f8f8e0804618b3d69e071efc852bc60e5",
+      "verified": [
+        "actual kernel EINVAL retained",
+        "second metadata fd creation fails",
+        "created numeric fd closes",
+        "resident input lease releases"
+      ]
+    }
+  },
+  "runtime": {
+    "python": "3.12.3 Anaconda, GCC11.2.0",
+    "kernel": "5.15.0-94-generic",
+    "architecture": "x86_64",
+    "os_memfd_create_and_two_MFD_names": "absent",
+    "fcntl_ADD_GET_and_four_SEAL_names": "absent",
+    "libc_memfd_symbol": "existing typed symbol used; runtime unchanged",
+    "production_monkeypatches": 0,
+    "regular_file_or_unsealed_byte_fallback": false
+  },
+  "scientific_functions_preserved": true,
+  "public_fit_calls": 0,
+  "complete_linux_caller_status": "separate 2GiB complete source/four-family DAG case actual OS0; detailed phase artifact admission independent audit pending",
+  "science_root_integration_authority": "scientific director; rootWIP is not accepted by this delivery",
+  "owner_boundary_incident": {
+    "local_path": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\ROOT_OWNER_BOUNDARY_INCIDENT.json",
+    "bytes": 835,
+    "sha256": "73dcdf297a351f3a5b79b9eadb1e89471400f94bfb0018ace44f1afcc3a443d2"
+  },
+  "local_evidence": {
+    "patch_delivery.binding.json": {
+      "local_path": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\patch_delivery.binding.json",
+      "bytes": 2703,
+      "sha256": "79dff585562c7bc189e13771e943dd201064ad2ed9676c8c25f466c3d1168d39"
+    },
+    "SPEC_REVIEW.json": {
+      "local_path": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\SPEC_REVIEW.json",
+      "bytes": 7646,
+      "sha256": "8fd3e0627d5d463d1564366ec04c4d0a5255fd03f5e170ff67ccad545b0b2b51"
+    },
+    "STANDARDS_REVIEW.json": {
+      "local_path": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\STANDARDS_REVIEW.json",
+      "bytes": 4824,
+      "sha256": "b4b1242879fc0b308917fc1dc93c5e6a77b51ebc4cbc45dec9e505d8303937bb"
+    },
+    "MEMFD_GREEN_ACCEPTANCE.binding.json": {
+      "local_path": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\MEMFD_GREEN_ACCEPTANCE.binding.json",
+      "bytes": 4276,
+      "sha256": "134fb7c0568420b15f33a9f50fd0944cf9c752f43d5d66778a076a85cb1aad82"
+    },
+    "cloud_author_target_IO_AST_equal.json": {
+      "local_path": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\cloud_author_target_IO_AST_equal.json",
+      "bytes": 435,
+      "sha256": "10f13983138fd8a4bef364058c6d15cd75207119ffc66340a189950177042e06"
+    },
+    "linux_memfd_adapter.patch": {
+      "local_path": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\linux_memfd_adapter.patch",
+      "bytes": 12886,
+      "sha256": "f412c815de9ca1b717bca2a8cda7badae6d51640eea3e12eea3539d6295b4ad4"
+    },
+    "MEMFD_FOCUSED_GREEN.binding.json": {
+      "local_path": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\MEMFD_FOCUSED_GREEN.binding.json",
+      "bytes": 4481,
+      "sha256": "e55cde18f2a3e8885806f872db22e3d8044dcb95172d8ba1c21613a72079cf42"
+    },
+    "A76_IO_TRANSPLANT.binding.json": {
+      "local_path": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\A76_IO_TRANSPLANT.binding.json",
+      "bytes": 1221,
+      "sha256": "f074903b270d0f1c0eb431df0724767e92c6c1856494cd6488eab343aed764e6"
+    },
+    "RETRY_MEMFD_RED.binding.json": {
+      "local_path": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\RETRY_MEMFD_RED.binding.json",
+      "bytes": 10798,
+      "sha256": "b2ec9bedaadd9ee258cce6dab38eb80c1ed6b77ea06b5d567d75726e33d4c360"
+    },
+    "ROOT_OWNER_BOUNDARY_INCIDENT.json": {
+      "local_path": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\ROOT_OWNER_BOUNDARY_INCIDENT.json",
+      "bytes": 835,
+      "sha256": "73dcdf297a351f3a5b79b9eadb1e89471400f94bfb0018ace44f1afcc3a443d2"
+    }
+  },
+  "actual_focussed_artifact_directory": "D:\\BCI\\artifacts\\cloud-replay-validation\\linux-memfd-compatibility\\actual-focussed-runs",
+  "old_receipts_resigned": false
+}

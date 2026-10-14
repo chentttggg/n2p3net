@@ -17,6 +17,7 @@ import threading
 import weakref
 from collections.abc import Mapping
 from dataclasses import fields
+from functools import cache
 from pathlib import Path
 
 import numpy as np
@@ -367,10 +368,54 @@ def _validate_preparation(descriptor, request_sha, outcome, result_key):
     return payload, document
 
 
-def _required_seals():
-    import fcntl
+class _LinuxMemfdAPI:
+    """Linux UAPI with Python bindings or the same typed libc entry point."""
 
-    return fcntl.F_SEAL_WRITE | fcntl.F_SEAL_GROW | fcntl.F_SEAL_SHRINK | fcntl.F_SEAL_SEAL
+    def __init__(self):
+        import fcntl
+
+        # Stable Linux UAPI values also cover Python builds lacking these names.
+        self._flags = getattr(os, "MFD_CLOEXEC", 0x0001) | getattr(os, "MFD_ALLOW_SEALING", 0x0002)
+        self.required_seals = (getattr(fcntl, "F_SEAL_WRITE", 0x0008)
+                               | getattr(fcntl, "F_SEAL_GROW", 0x0004)
+                               | getattr(fcntl, "F_SEAL_SHRINK", 0x0002)
+                               | getattr(fcntl, "F_SEAL_SEAL", 0x0001))
+        self._add_seals = getattr(fcntl, "F_ADD_SEALS", 1033)
+        self._get_seals = getattr(fcntl, "F_GET_SEALS", 1034)
+        self._fcntl = fcntl.fcntl
+        self._python_create = getattr(os, "memfd_create", None)
+        if self._python_create is None:
+            import ctypes
+
+            self._libc = ctypes.CDLL(None, use_errno=True)
+            self._libc_create = self._libc.memfd_create
+            self._libc_create.argtypes = (ctypes.c_char_p, ctypes.c_uint)
+            self._libc_create.restype = ctypes.c_int
+            self._errno = ctypes.get_errno
+
+    def create(self, name):
+        if self._python_create is not None:
+            return self._python_create(name, self._flags)
+        fd = self._libc_create(os.fsencode(name), self._flags)
+        if fd < 0:
+            error = self._errno()
+            raise OSError(error, os.strerror(error), name)
+        return fd
+
+    def add_required_seals(self, fd):
+        self._fcntl(fd, self._add_seals, self.required_seals)
+
+    def get_seals(self, fd):
+        return self._fcntl(fd, self._get_seals)
+
+
+@cache
+def _linux_memfd_api():
+    return _LinuxMemfdAPI()
+
+
+def _required_seals():
+    return _linux_memfd_api().required_seals
 
 
 class PrefixReplayInputHolder:
@@ -394,9 +439,8 @@ class PrefixReplayInputHolder:
             digest, total = hashlib.sha256(), 0
             path = Path(descriptor["path"]).parent / document["blob"]["name"]
             if sys.platform == "linux":
-                import fcntl
-
-                fd = os.memfd_create("n2p3-prefix-replay", os.MFD_CLOEXEC | os.MFD_ALLOW_SEALING)
+                api = _linux_memfd_api()
+                fd = api.create("n2p3-prefix-replay")
                 with path.open("rb") as stream:
                     for block in iter(lambda: stream.read(_CHUNK_BYTES), b""):
                         total += len(block)
@@ -418,15 +462,15 @@ class PrefixReplayInputHolder:
             if total != document["blob"]["bytes"] or checksum != document["blob"]["sha256"]:
                 raise ValueError("prepared input numeric bytes differ from the admitted producer capsule")
             if fd is not None:
-                fcntl.fcntl(fd, fcntl.F_ADD_SEALS, _required_seals())
-                if fcntl.fcntl(fd, fcntl.F_GET_SEALS) != _required_seals():
+                api.add_required_seals(fd)
+                if api.get_seals(fd) != _required_seals():
                     raise RuntimeError("prepared input backing did not acquire all immutable kernel seals")
-                capsule_fd = os.memfd_create("n2p3-prefix-capsule", os.MFD_CLOEXEC | os.MFD_ALLOW_SEALING)
+                capsule_fd = api.create("n2p3-prefix-capsule")
                 view = memoryview(payload)
                 while view:
                     view = view[os.write(capsule_fd, view):]
-                fcntl.fcntl(capsule_fd, fcntl.F_ADD_SEALS, _required_seals())
-                if fcntl.fcntl(capsule_fd, fcntl.F_GET_SEALS) != _required_seals():
+                api.add_required_seals(capsule_fd)
+                if api.get_seals(capsule_fd) != _required_seals():
                     raise RuntimeError("prepared input capsule did not acquire all immutable kernel seals")
             return cls(payload, descriptor["sha256"], backing, lease, request_sha=request_sha,
                        fd=fd, capsule_fd=capsule_fd)
@@ -484,7 +528,7 @@ def _open_backing(descriptor, document):
 def _open_sealed_backing(descriptor, *, expected_bytes, expected_sha):
     if descriptor["backing"] != "sealed_memfd" or sys.platform != "linux":
         raise ValueError("prepared input backing is unavailable on this execution host")
-    import fcntl
+    api = _linux_memfd_api()
 
     pid, birth = descriptor["parent_pid"], descriptor["parent_birth"]
     if type(pid) is not int or type(descriptor["fd"]) is not int or descriptor["fd"] < 0:
@@ -494,7 +538,7 @@ def _open_sealed_backing(descriptor, *, expected_bytes, expected_sha):
     fd = os.open(f"/proc/{pid}/fd/{descriptor['fd']}", os.O_RDONLY | os.O_CLOEXEC)
     try:
         info = os.fstat(fd)
-        seals = fcntl.fcntl(fd, fcntl.F_GET_SEALS)
+        seals = api.get_seals(fd)
         if (psutil.Process(pid).create_time() != birth
                 or info.st_dev != descriptor["device"] or info.st_ino != descriptor["inode"]
                 or info.st_size != descriptor["bytes"] or info.st_size != expected_bytes

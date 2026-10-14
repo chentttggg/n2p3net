@@ -1,6 +1,7 @@
 """Shared-input immutability, original-producer authority, and prefix semantics."""
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import mmap
@@ -238,6 +239,142 @@ def test_producer_request_cannot_relabel_current_compilation_as_old(prepared, tm
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Linux kernel memfd seals")
+def test_linux_missing_python_memfd_bindings_preserve_holder_reader_contract(prepared, tmp_path):
+    """Real dual-fd holder and reader under the observed missing-binding runtime."""
+    _, _, request, descriptor = prepared
+    contract = tmp_path / "missing_python_memfd_bindings.json"
+    contract.write_text(json.dumps({"request": request, "descriptor": descriptor}), encoding="utf-8")
+    script = '''
+import errno, fcntl, json, mmap, os, pathlib, sys
+for module, names in ((os, ("memfd_create", "MFD_CLOEXEC", "MFD_ALLOW_SEALING")),
+        (fcntl, ("F_ADD_SEALS", "F_GET_SEALS", "F_SEAL_WRITE", "F_SEAL_GROW", "F_SEAL_SHRINK", "F_SEAL_SEAL"))):
+    for name in names:
+        if hasattr(module, name):
+            delattr(module, name)
+import numpy as np
+from research.cloud_execution import CloudResult
+from research.contracts import semantic_sha256
+from research.prefix_replay_inputs import (
+    PrefixReplayInputHolder, immutable_input_array, immutable_input_backing, open_prepared_inputs)
+
+class Lease:
+    released = 0
+    def release_unused(self):
+        self.released += 1
+class Admission:
+    def __init__(self):
+        self.lease = Lease()
+        self.claims = []
+    def try_resident_input(self, nbytes):
+        self.claims.append(nbytes)
+        return self.lease
+
+contract = json.loads(pathlib.Path(sys.argv[1]).read_text())
+request, prepared = contract["request"], contract["descriptor"]
+outcome = CloudResult(request["preparation_task_id"], "completed", value=prepared,
+    worker={"alive": False, "exit_code": 0,
+            "process_tree_retirement": {"active_owned_processes_after_exit": 0}})
+admission = Admission()
+os.close(0)
+holder = PrefixReplayInputHolder.from_prepared(prepared,
+    request_sha=semantic_sha256(request), prep_outcome=outcome, admission=admission)
+assert holder is not None and admission.lease.released == 0
+shared = holder.descriptor
+assert shared["backing"] == shared["capsule"]["backing"] == "sealed_memfd"
+owned_fds = [shared["fd"], shared["capsule"]["fd"]]
+assert owned_fds[0] == 0
+for backing in [shared, shared["capsule"]]:
+    fd = backing["fd"]
+    assert not os.get_inheritable(fd)
+    assert fcntl.fcntl(fd, 1034) == backing["seals"] == 0x0f
+    for operation in [lambda: os.pwrite(fd, b"x", 0),
+            lambda: os.ftruncate(fd, backing["bytes"] - 1),
+            lambda: os.ftruncate(fd, backing["bytes"] + 1),
+            lambda: fcntl.fcntl(fd, 1033, 0x10)]:
+        try:
+            operation()
+        except OSError as exc:
+            assert exc.errno == errno.EPERM
+        else:
+            raise AssertionError("kernel-sealed backing accepted mutation")
+    reader_fd = os.open(f"/proc/{backing['parent_pid']}/fd/{fd}", os.O_RDONLY | os.O_CLOEXEC)
+    try:
+        assert os.fstat(reader_fd).st_ino == backing["inode"]
+        assert not os.get_inheritable(reader_fd)
+        with mmap.mmap(reader_fd, 0, access=mmap.ACCESS_READ) as mapping:
+            assert mapping.size() == backing["bytes"]
+            try:
+                mapping[0] = 0
+            except TypeError:
+                pass
+            else:
+                raise AssertionError("reader mapping accepted write")
+    finally:
+        os.close(reader_fd)
+with open_prepared_inputs(shared, expected_request_sha=semantic_sha256(request),
+        expected_capsule_sha=prepared["sha256"]) as borrowed:
+    original = borrowed.views.calibration[200].raw.samples
+    assert isinstance(immutable_input_backing(original), mmap.mmap)
+    assert np.shares_memory(original, immutable_input_array(original, original.dtype))
+    try:
+        original.setflags(write=True)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("numeric reader became writable")
+assert not hasattr(os, "memfd_create") and not hasattr(fcntl, "F_GET_SEALS")
+del original
+holder.close()
+holder.close()
+assert admission.lease.released == 1
+for fd in owned_fds:
+    try:
+        os.fstat(fd)
+    except OSError as exc:
+        assert exc.errno == errno.EBADF
+    else:
+        raise AssertionError("retired holder leaked a file descriptor")
+print(json.dumps({"dual_fd_seals": 15, "readonly_numeric_and_metadata": True,
+    "no_numeric_copy": True, "close_on_exec": True, "released_once": True,
+    "all_holder_fds_closed": True, "python_bindings_remain_absent": True}))
+'''
+    environment = {**os.environ, "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1",
+                   "OPENBLAS_NUM_THREADS": "1"}
+    result = subprocess.run([sys.executable, "-B", "-c", script, str(contract)],
+                            env=environment, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    receipt = json.loads(result.stdout)
+    assert receipt["dual_fd_seals"] == 15 and receipt["all_holder_fds_closed"]
+
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux kernel memfd seals")
+def test_linux_kernel_memfd_creation_error_preserves_errno_and_releases_input_lease(prepared, monkeypatch):
+    import research.prefix_replay_inputs as owner
+
+    api = owner._linux_memfd_api()
+    create, numeric_fds = api.create, []
+
+    def fail_capsule_creation(name):
+        if name == "n2p3-prefix-capsule":
+            return create("n2p3-prefix-" + "x" * 400)
+        fd = create(name)
+        numeric_fds.append(fd)
+        return fd
+
+    monkeypatch.setattr(api, "create", fail_capsule_creation)
+    admission = Admission()
+    with pytest.raises(OSError) as failure:
+        _holder(prepared, admission)
+    assert failure.value.errno == errno.EINVAL
+    assert admission.lease.released and len(numeric_fds) == 1
+    with pytest.raises(OSError) as closed:
+        os.fstat(numeric_fds[0])
+    assert closed.value.errno == errno.EBADF
+
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux kernel memfd seals")
 def test_linux_seals_share_numeric_storage_and_check_parent_fd(prepared):
     import fcntl
 
@@ -251,7 +388,7 @@ def test_linux_seals_share_numeric_storage_and_check_parent_fd(prepared):
             os.pwrite(fd, b"x", 0)
         with pytest.raises(PermissionError):
             os.ftruncate(fd, descriptor["bytes"] - 1)
-        assert fcntl.fcntl(fd, fcntl.F_GET_SEALS) == descriptor["seals"]
+        assert fcntl.fcntl(fd, 1034) == descriptor["seals"]
     finally:
         os.close(fd)
     with _open(holder, prepared) as first, _open(holder, prepared) as second:
